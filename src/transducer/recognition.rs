@@ -5,9 +5,7 @@
 //! This replaces the flat `sensory_verdict` reflex (four `*_cells` table
 //! lookups). Recognition is ONE group action: a demand body is recognised as a
 //! transform of a known body iff a versor `M` carries one onto the other —
-//!
-//!     ∃ M   s.t.   M σ_demand M̃ = σ_known
-//!
+//! `∃ M s.t. M σ_demand M̃ = σ_known` —
 //! judged by TOPOLOGICAL CLOSURE (the sphere lands exactly on the target — the
 //! residual coboundary closes), NOT byte-replay. Exact-ℚ throughout; no digest,
 //! no bucket. The base fiber is translation (matching `field`'s m=2 displacement
