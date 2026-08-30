@@ -21,7 +21,7 @@ mod anti_flattening {
     use std::path::{Path, PathBuf};
 
     /// Trees that carry cognition — no maps allowed.
-    const COGNITION_ROOTS: &[&str] = &["src/core", "src/transducer"];
+    const COGNITION_ROOTS: &[&str] = &["src/core", "src/transducer", "src/cognition.rs"];
     /// Below-boundary subtrees exempt per the sovereignty rule (I/O + storage).
     const EXEMPT: &[&str] = &["src/core/chain", "src/network"];
     /// The forbidden associative containers.
@@ -67,7 +67,9 @@ mod anti_flattening {
         let mut files = Vec::new();
         for r in COGNITION_ROOTS {
             let d = root.join(r);
-            if d.exists() {
+            if d.is_file() {
+                files.push(d);
+            } else if d.exists() {
                 collect_rs(&d, &mut files);
             }
         }
