@@ -5,13 +5,13 @@
 //! saios-exec-kstep — Kernel binary.
 //!
 //! Thin wrapper over the engine library module.
-//! All core types and logic live in `mycelium::engine`.
+//! All core types and logic live in `mycelium::core::engine`.
 
 #![deny(clippy::float_arithmetic)]
 #![deny(clippy::cast_precision_loss)]
 
 #[allow(unused_imports)]
-use mycelium::engine::*;
+use mycelium::core::engine::*;
 #[allow(unused_imports)]
 use num_rational::BigRational;
 #[allow(unused_imports)]
@@ -243,7 +243,7 @@ mod tests {
         let mut delta = Delta::zero(2, 1);
         delta.set_antisym(0, 1, vec![q(3,2)]);
         // Cohomological operating level: state must be reduced
-        let delta = mycelium::engine::coboundary_reduce(&delta);
+        let delta = mycelium::core::engine::coboundary_reduce(&delta);
         let mut state = EntityState {
             entity_id: 1, k_index: 0, sluice_state: SluiceState::Locked,
             latest_sigma_enc: 0, delta_k: delta.clone(), delta_bar: delta,

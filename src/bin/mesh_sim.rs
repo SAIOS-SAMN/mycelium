@@ -6,7 +6,7 @@
 
 use num_bigint::BigInt;
 use num_rational::BigRational;
-use mycelium::sim::{PerturbationMode, MeshFabric};
+use mycelium::core::sim::{PerturbationMode, MeshFabric};
 
 fn qr(n: i64, d: i64) -> BigRational {
     BigRational::new(BigInt::from(n), BigInt::from(d))

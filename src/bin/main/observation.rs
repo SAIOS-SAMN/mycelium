@@ -16,9 +16,9 @@ use std::path::PathBuf;
 use num_bigint::BigInt;
 use num_rational::BigRational;
 
-use mycelium::boot;
-use mycelium::chain;
-use mycelium::sluice_log::{SluiceEntry, SluiceLog};
+use mycelium::core::boot;
+use mycelium::core::chain;
+use mycelium::core::sluice_log::{SluiceEntry, SluiceLog};
 
 use super::entity::{WorldStatus, get_rss_kb};
 
@@ -34,7 +34,7 @@ const SOCKET_NAME: &str = "saios-kernel.sock";
 
 pub fn run_timekeeper(
     config: &boot::BootConfig,
-    mut founder_state_record: mycelium::engine::StateRecord,
+    mut founder_state_record: mycelium::core::engine::StateRecord,
     dir: PathBuf,
     mut sluice: SluiceLog,
     _origin_rcf: [u8; 32],
@@ -54,14 +54,14 @@ pub fn run_timekeeper(
     // Temporal Ledger — distributed consensus across the timekeeper quorum.
     // Each observation becomes a Level. When 2/3 timekeepers attest the same
     // observation, the level finalizes. The finalized level IS the consensus.
-    let mut ledger = mycelium::chain::temporal_ledger::TemporalLedger::new();
+    let mut ledger = mycelium::core::chain::temporal_ledger::TemporalLedger::new();
     let mut latest_finalized: u64 = 0;
 
     // Epistate record — chronometric harmonics (K velocity, population, vocab rate, denom health)
     let epistate_record_path = dir.join("epistate_record.bin");
     let mut harmonic_tuning = std::fs::read(&epistate_record_path).ok()
-        .and_then(|data| mycelium::harmonic_tuning::HarmonicTuning::from_bytes(&data))
-        .unwrap_or_else(|| mycelium::harmonic_tuning::HarmonicTuning::new());
+        .and_then(|data| mycelium::core::harmonic_tuning::HarmonicTuning::from_bytes(&data))
+        .unwrap_or_else(|| mycelium::core::harmonic_tuning::HarmonicTuning::new());
 
     // World status — the timekeeper is visible to the observer
     let shm_path = PathBuf::from(format!("/dev/shm/saios-timekeeper-{}", config.entity_id));
@@ -245,7 +245,7 @@ pub fn run_timekeeper(
                         // T_k for the timekeeper = K velocity as rational
                         let t_k = Q::new(BigInt::from(k_velocity), BigInt::from(1u32));
 
-                        let mut receipt = mycelium::ledger::MeshReceipt::build(
+                        let mut receipt = mycelium::core::ledger::MeshReceipt::build(
                             &rcf_identity,
                             &t_k,
                             config.entity_id,
@@ -255,7 +255,7 @@ pub fn run_timekeeper(
                                 h[..16].copy_from_slice(&parent_hash);
                                 h
                             },
-                            mycelium::constants::DISC_NORMAL,
+                            mycelium::core::constants::DISC_NORMAL,
                             0,
                             0x01, // sluice locked
                             None,
@@ -289,7 +289,7 @@ pub fn run_timekeeper(
                         let _ = fs::write(&state_record_path, founder_state_record.to_bytes());
 
                         // Wire-encode the receipt for cross-pollination
-                        let wire = mycelium::mesh::receipt_to_wire(&receipt);
+                        let wire = mycelium::core::mesh::receipt_to_wire(&receipt);
                         let wire_hex: String = wire.iter().map(|b| format!("{b:02x}")).collect();
 
                         // Check ledger finality at this observation level
@@ -346,13 +346,13 @@ pub fn run_timekeeper(
                                     .step_by(2)
                                     .filter_map(|i| hex.get(i..i+2).and_then(|h| u8::from_str_radix(h, 16).ok()))
                                     .collect();
-                                (bytes.len() == mycelium::mesh::WIRE_SIZE).then(|| {
-                                    let mut wire = [0u8; mycelium::mesh::WIRE_SIZE];
+                                (bytes.len() == mycelium::core::mesh::WIRE_SIZE).then(|| {
+                                    let mut wire = [0u8; mycelium::core::mesh::WIRE_SIZE];
                                     wire.copy_from_slice(&bytes);
                                     wire
                                 })
                             })
-                            .and_then(|wire| mycelium::mesh::receipt_from_wire(&wire))
+                            .and_then(|wire| mycelium::core::mesh::receipt_from_wire(&wire))
                             .map(|peer_receipt| {
                                 let peer_id = peer_receipt.entity_id;
                                 let peer_k = peer_receipt.k_index;

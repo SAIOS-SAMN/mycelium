@@ -14,10 +14,10 @@ use num_bigint::BigInt;
 use num_rational::BigRational;
 use num_traits::{Zero, One, ToPrimitive};
 
-use mycelium::agent::AgentStateRecord;
-use mycelium::engine::*;
-use mycelium::irs;
-use mycelium::mdc;
+use mycelium::core::agent::AgentStateRecord;
+use mycelium::core::engine::*;
+use mycelium::core::irs;
+use mycelium::core::mdc;
 
 use super::entity::{Entity, condensate, get_rss_kb};
 
@@ -286,15 +286,15 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                 let membrane_partial = entity.knowledge.partial_operator(&obs_orbit).cloned();
 
                 let prior_knowledge = active_axiom.map(|axiom| {
-                    mycelium::thinking::ComprehensionRecord {
+                    mycelium::core::thinking::ComprehensionRecord {
                         sparse: false,
-                        object_count: match axiom.encoding_level { mycelium::membrane::EncodingLevel::Object => 2, _ => 0 },
-                        refraction_transparent: axiom.encoding_level != mycelium::membrane::EncodingLevel::Object,
+                        object_count: match axiom.encoding_level { mycelium::core::membrane::EncodingLevel::Object => 2, _ => 0 },
+                        refraction_transparent: axiom.encoding_level != mycelium::core::membrane::EncodingLevel::Object,
                         semantic_intent: "auto",
                         cognitive_path: harmonic_cognitive_path.unwrap_or(match axiom.encoding_level {
-                            mycelium::membrane::EncodingLevel::Vision => "vision_derived",
-                            mycelium::membrane::EncodingLevel::Object => "evolved",
-                            mycelium::membrane::EncodingLevel::Kronecker => "vision_derived",
+                            mycelium::core::membrane::EncodingLevel::Vision => "vision_derived",
+                            mycelium::core::membrane::EncodingLevel::Object => "evolved",
+                            mycelium::core::membrane::EncodingLevel::Kronecker => "vision_derived",
                             _ => "value_factored",
                         }),
                         transmutation_signal: false,
@@ -304,7 +304,7 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                     // No membrane axiom — check harmonic tuning + partial
                     let has_signal = harmonic_cognitive_path.is_some() || membrane_partial.is_some();
                     has_signal.then(|| {
-                        mycelium::thinking::ComprehensionRecord {
+                        mycelium::core::thinking::ComprehensionRecord {
                             sparse: false,
                             object_count: 0,
                             refraction_transparent: true,
@@ -317,7 +317,7 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                 });
 
                 // D.MEMBRANE.V.1: Query membrane for consensus T at this orbit.
-                let membrane_consensus_t: Option<mycelium::engine::Delta> =
+                let membrane_consensus_t: Option<mycelium::core::engine::Delta> =
                     entity.knowledge.compound_t(&obs_orbit).and_then(|tc| {
                         if tc.observing_entities.is_empty() { return None; }
                         // Reconstruct consensus T through coboundary_reduce — not arithmetic mean.
@@ -329,16 +329,16 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                         let d = tc.observing_entities[0].len();
                         let min_d = tc.observing_entities.iter().map(|e| e.len()).min().unwrap_or(d);
                         // Compound: sum across observing entities, dimension = intersection of measured
-                        let entity_vec: Vec<mycelium::engine::Q> = (0..min_d).map(|i| {
+                        let entity_vec: Vec<mycelium::core::engine::Q> = (0..min_d).map(|i| {
                             tc.observing_entities.iter()
                                 .filter_map(|e| e.get(i).cloned())
-                                .fold(mycelium::engine::Q::zero(), |acc, v| acc + v)
+                                .fold(mycelium::core::engine::Q::zero(), |acc, v| acc + v)
                         }).collect();
                         // Unflatten upper triangle to Delta
                         let t_n = tc.t_dim;
                         let t_m = tc.t_m;
                         if t_n < 2 { return None; }
-                        let mut t = mycelium::engine::Delta::zero(t_n, t_m);
+                        let mut t = mycelium::core::engine::Delta::zero(t_n, t_m);
                         let mut idx = 0;
                         for i in 0..t_n {
                             for j in (i+1)..t_n {
@@ -355,34 +355,34 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                         // Project to H^1 — the cohomological consensus.
                         // coboundary_reduce preserves torsion structure.
                         // If entitys disagree, the residual carries the disagreement.
-                        Some(mycelium::engine::coboundary_reduce(&t))
+                        Some(mycelium::core::engine::coboundary_reduce(&t))
                     });
 
                 // Compute harmonic spectrum — the transliminal bridge.
-                let local_origin_delta = mycelium::engine::Delta::zero(
+                let local_origin_delta = mycelium::core::engine::Delta::zero(
                     entity.delta.dim, entity.delta.m);
-                let entity_harmonics = mycelium::engine::HarmonicState::from_delta(
+                let entity_harmonics = mycelium::core::engine::HarmonicState::from_delta(
                     &entity.delta, &local_origin_delta, &entity.trajectory,
                     entity.k_index as u64,
                 );
-                let harmonics_vec: Vec<mycelium::engine::Q> =
+                let harmonics_vec: Vec<mycelium::core::engine::Q> =
                     entity_harmonics.vibrations.to_vec();
 
                 // D.VISION.LOOP: Query membrane for crystallized transmutation.
                 let mut trans_orbit = obs_orbit;
                 trans_orbit[3] = trans_orbit[3].wrapping_add(1);
-                let membrane_transmutation: Option<(mycelium::engine::Q, usize)> =
+                let membrane_transmutation: Option<(mycelium::core::engine::Q, usize)> =
                     entity.knowledge.compound_t_at_level(&trans_orbit, "transmutation").and_then(|tc| {
                         if tc.count < 2 { return None; }
                         if tc.t_dim != 2 || tc.t_m != 2 { return None; }
                         if tc.observing_entities.is_empty() { return None; }
-                        let k = mycelium::engine::Q::new(
+                        let k = mycelium::core::engine::Q::new(
                             num_bigint::BigInt::from(tc.count as i64),
                             num_bigint::BigInt::from(1),
                         );
-                        let quality_sum: mycelium::engine::Q = tc.observing_entities.iter()
+                        let quality_sum: mycelium::core::engine::Q = tc.observing_entities.iter()
                             .filter_map(|e| e.first().cloned())
-                            .fold(mycelium::engine::Q::zero(), |a, b| a + b);
+                            .fold(mycelium::core::engine::Q::zero(), |a, b| a + b);
                         let avg_quality = &quality_sum / &k;
                         // Torsion order: positive integer or dissolve.
                         // Torsion order 0 does not exist in group theory.
@@ -395,7 +395,7 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
 
                 // H_total = H_core + H_tuning
                 let harmonic_bias = entity.harmonic_tuning.as_harmonic_bias();
-                let harmonics_total: Vec<mycelium::engine::Q> = harmonics_vec.iter()
+                let harmonics_total: Vec<mycelium::core::engine::Q> = harmonics_vec.iter()
                     .enumerate()
                     .map(|(k, h_core)| {
                         if k < 11 { h_core + &harmonic_bias[k] } else { h_core.clone() }
@@ -403,14 +403,14 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                     .collect();
 
                 // Extract volatile value cocycle crystals from the membrane.
-                let membrane_crystals: Vec<(i64, i64, mycelium::engine::Q)> =
+                let membrane_crystals: Vec<(i64, i64, mycelium::core::engine::Q)> =
                     entity.knowledge.all_value_cocycle_crystals().iter()
                         .map(|vc| (vc.from_value, vc.to_value, vc.quality.clone()))
                         .collect();
 
                 let membrane_spatial = entity.knowledge.all_spatial_cochains();
 
-                let cog = mycelium::perception::cognize_with_membrane_and_transmutation(
+                let cog = mycelium::core::perception::cognize_with_membrane_and_transmutation(
                     &pairs, test_ref, None, prior_knowledge.as_ref(),
                     Some(&entity.delta),
                     membrane_consensus_t.as_ref(),
@@ -430,11 +430,11 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                 // Dimensional bridge
                 let bridge_json = if let Some(ref b) = cog.bridge {
                     let class_str = match &b.class {
-                        mycelium::perception::DimensionalClass::Isomorphic => "isomorphic".to_string(),
-                        mycelium::perception::DimensionalClass::Expansion { row_factor, col_factor, exponent } =>
+                        mycelium::core::perception::DimensionalClass::Isomorphic => "isomorphic".to_string(),
+                        mycelium::core::perception::DimensionalClass::Expansion { row_factor, col_factor, exponent } =>
                             format!("expansion({}x{},n={})", row_factor, col_factor, exponent),
-                        mycelium::perception::DimensionalClass::Contraction => "contraction".to_string(),
-                        mycelium::perception::DimensionalClass::Anisotropic => "anisotropic".to_string(),
+                        mycelium::core::perception::DimensionalClass::Contraction => "contraction".to_string(),
+                        mycelium::core::perception::DimensionalClass::Anisotropic => "anisotropic".to_string(),
                     };
                     format!(",\"bridge\":{{\"in\":\"{}x{}\",\"out\":\"{}x{}\",\"class\":\"{}\"}}",
                         b.input_rows, b.input_cols, b.output_rows, b.output_cols, class_str)
@@ -447,22 +447,22 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                     let t_k = Q::one();
                     let rcf = compute_rcf_hash(&entity.delta);
                     let receipt_hash_bytes = [0u8; 32];
-                    let entry = mycelium::sluice_log::SluiceEntry::from_k_step(
+                    let entry = mycelium::core::sluice_log::SluiceEntry::from_k_step(
                         entity.k_index as u64, rcf, receipt_hash_bytes,
                         entity.sluice_state.enc_u8(), 0, &t_k,
                     );
                     let _ = entity.sluice.append(&entry);
                     // state is in binary: state_record.bin, entity.sluice.bin, receipts.bin
 
-                    let mut chain_receipt = mycelium::ledger::MeshReceipt::build(
+                    let mut chain_receipt = mycelium::core::ledger::MeshReceipt::build(
                         &rcf, &t_k, entity.entity_id,
                         entity.k_index as u64, &receipt_hash_bytes,
-                        mycelium::constants::DISC_NORMAL,
+                        mycelium::core::constants::DISC_NORMAL,
                         0, entity.sluice_state.enc_u8(), None,
                     );
                     let conservation_ok = entity.delta.verify_conservation();
                     chain_receipt.attach_telemetry(&Q::zero(), &t_k, &t_k, conservation_ok);
-                    chain_receipt.dimensional = mycelium::ledger::DimensionalTelemetry::at_dimensions(
+                    chain_receipt.dimensional = mycelium::core::ledger::DimensionalTelemetry::at_dimensions(
                         cog.observation.n as u32, cog.observation.m as u32,
                     );
                     let hex: String = chain_receipt.receipt_hash.iter()
@@ -474,8 +474,8 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
 
                     // Harmonic marker: record which perception path solved this puzzle.
                     {
-                        use mycelium::harmonic_tuning::TransmutationPath;
-                        use mycelium::thinking::GeneratorSource;
+                        use mycelium::core::harmonic_tuning::TransmutationPath;
+                        use mycelium::core::thinking::GeneratorSource;
                         let epi_path = p.generator_source.map(|gs| match gs {
                             GeneratorSource::Luminal => TransmutationPath::LuminalPerceived,
                             GeneratorSource::ClusterSpatial => TransmutationPath::ClusterSpatial,
@@ -483,9 +483,9 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                             GeneratorSource::ValueFactored => TransmutationPath::ValueFactored,
                             GeneratorSource::Evolved => TransmutationPath::Evolved,
                         }).unwrap_or(match &k.path {
-                            mycelium::perception::CognitionPath::VisionDerived { .. } =>
+                            mycelium::core::perception::CognitionPath::VisionDerived { .. } =>
                                 TransmutationPath::VisionDerived,
-                            mycelium::perception::CognitionPath::Evolved { .. } =>
+                            mycelium::core::perception::CognitionPath::Evolved { .. } =>
                                 TransmutationPath::Evolved,
                             _ => TransmutationPath::ValueFactored,
                         });
@@ -549,7 +549,7 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                             let score = base_score
                                 + fiber_structural_bonus(entity, &cog.senses.touch.cohesion, base_score);
                             entity.state_record.assimilate(
-                                mycelium::engine::ComposedOperator {
+                                mycelium::core::engine::ComposedOperator {
                                     opcode: op,
                                     parameter: param,
                                     sigma,
@@ -587,7 +587,7 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                         // Composed operators from the entity's state record — the inscribed vocabulary.
                         // Report size bounded by capacity: smaller entities report less.
                         let report_ops_limit = (entity.state_record.capacity as usize / 10).max(1);
-                        let state_ops: Vec<&mycelium::engine::ComposedOperator> =
+                        let state_ops: Vec<&mycelium::core::engine::ComposedOperator> =
                             entity.state_record.composed_operators.iter().take(report_ops_limit).collect();
                         report_buf.push(state_ops.len() as u8);
                         state_ops.iter().for_each(|op| {
@@ -621,13 +621,13 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                     // Unknown paths dissolve to None — the sampler skips learning.
                     // Silence (recognized, zero contribution) != unknown (unrecognized path).
                     let epsilon: Option<(i16, u16)> = match &k.path {
-                        mycelium::perception::CognitionPath::ValueFactored =>
+                        mycelium::core::perception::CognitionPath::ValueFactored =>
                             Some((1, 20)),
-                        mycelium::perception::CognitionPath::VisionDerived { torsion_order } => {
+                        mycelium::core::perception::CognitionPath::VisionDerived { torsion_order } => {
                             let t = (*torsion_order).min(100) as i16;
                             Some((t.max(1), (t as u16).max(1) * 20))
                         }
-                        mycelium::perception::CognitionPath::Evolved { .. } =>
+                        mycelium::core::perception::CognitionPath::Evolved { .. } =>
                             Some((1, 10)),
                         _ => None, // Unknown path — do not learn from this
                     };
@@ -649,20 +649,20 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
 
                 // ── Build response from cognitive pipeline ──
                 let path_str = match &k.path {
-                    mycelium::perception::CognitionPath::VisionDerived { torsion_order } =>
+                    mycelium::core::perception::CognitionPath::VisionDerived { torsion_order } =>
                         format!("vision_derived(p={})", torsion_order),
-                    mycelium::perception::CognitionPath::ValueFactored =>
+                    mycelium::core::perception::CognitionPath::ValueFactored =>
                         "value_factored".to_string(),
-                    mycelium::perception::CognitionPath::Evolved { composition_depth } =>
+                    mycelium::core::perception::CognitionPath::Evolved { composition_depth } =>
                         format!("evolved(depth={})", composition_depth),
-                    mycelium::perception::CognitionPath::Incomplete { coherence } =>
+                    mycelium::core::perception::CognitionPath::Incomplete { coherence } =>
                         format!("incomplete(coherence={}/{})", coherence.numer(), coherence.denom()),
                 };
 
                 let class_str = match &p.class {
-                    mycelium::perception::PerceptionClass::Recognition => "recognition",
-                    mycelium::perception::PerceptionClass::Derivable { .. } => "derivable",
-                    mycelium::perception::PerceptionClass::Transmutable { .. } => "transmutable",
+                    mycelium::core::perception::PerceptionClass::Recognition => "recognition",
+                    mycelium::core::perception::PerceptionClass::Derivable { .. } => "derivable",
+                    mycelium::core::perception::PerceptionClass::Transmutable { .. } => "transmutable",
                 };
 
                 // Sensory model
@@ -762,12 +762,12 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
 
                 // ── D.MEMBRANE.AXIOM.1: Feed result into mesh knowledge ──
                 let encoding_level = match iq.routed_level {
-                    "kronecker" => mycelium::membrane::EncodingLevel::Kronecker,
-                    "object" => mycelium::membrane::EncodingLevel::Object,
-                    "vision" => mycelium::membrane::EncodingLevel::Vision,
-                    _ => mycelium::membrane::EncodingLevel::Cell,
+                    "kronecker" => mycelium::core::membrane::EncodingLevel::Kronecker,
+                    "object" => mycelium::core::membrane::EncodingLevel::Object,
+                    "vision" => mycelium::core::membrane::EncodingLevel::Vision,
+                    _ => mycelium::core::membrane::EncodingLevel::Cell,
                 };
-                let (entity_drift, _) = mycelium::engine::origin_displacement(
+                let (entity_drift, _) = mycelium::core::engine::origin_displacement(
                     &entity.delta, &entity.origin_delta,
                 );
                 entity.knowledge.record_observation(
@@ -784,7 +784,7 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                     while gc * gc <= n_cells { if n_cells % gc == 0 { best_cols = gc; } gc += 1; }
                     let g_cols = best_cols;
                     let g_rows = n_cells / g_cols.max(1);
-                    let touch_marrow = mycelium::perception::compute_adjacency_structure(grid0, g_rows, g_cols);
+                    let touch_marrow = mycelium::core::perception::compute_adjacency_structure(grid0, g_rows, g_cols);
                     let cohesion_field = touch_marrow.per_cell_cohesion.clone();
                     let bg = grid0.iter().copied()
                         .max_by_key(|&v| grid0.iter().filter(|&&x| x == v).count())
@@ -798,7 +798,7 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                             .max_by_key(|&&v| row_vals.iter().filter(|&&x| x == v).count())
                             .map(|&v| row_vals.iter().filter(|&&x| x == v).count())
                             .unwrap_or(0);
-                        let uniformity = mycelium::engine::Q::new(
+                        let uniformity = mycelium::core::engine::Q::new(
                             num_bigint::BigInt::from(dominant_count as i64),
                             num_bigint::BigInt::from(g_cols.max(1) as i64),
                         );
@@ -816,7 +816,7 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                             .max_by_key(|&&v| col_vals.iter().filter(|&&x| x == v).count())
                             .map(|&v| col_vals.iter().filter(|&&x| x == v).count())
                             .unwrap_or(0);
-                        let uniformity = mycelium::engine::Q::new(
+                        let uniformity = mycelium::core::engine::Q::new(
                             num_bigint::BigInt::from(dominant_count as i64),
                             num_bigint::BigInt::from(g_rows.max(1) as i64),
                         );
@@ -838,9 +838,9 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                     while gc * gc <= n_cells { if n_cells % gc == 0 { best_cols = gc; } gc += 1; }
                     let g_cols = best_cols;
                     let g_rows = n_cells / g_cols.max(1);
-                    let touch_comp = mycelium::perception::compute_adjacency_structure(grid0, g_rows, g_cols);
+                    let touch_comp = mycelium::core::perception::compute_adjacency_structure(grid0, g_rows, g_cols);
                     let cohesion_field = touch_comp.per_cell_cohesion.clone();
-                    let depth_denom = mycelium::engine::Q::new(
+                    let depth_denom = mycelium::core::engine::Q::new(
                         num_bigint::BigInt::from(1),
                         num_bigint::BigInt::from((comp.depth + 1) as i64),
                     );
@@ -853,7 +853,7 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
 
                 // ── Entity babble: partial compositions relayed upward ──
                 (entity.state_record.parent_id > 0).then(|| {
-                    let partial_ops: Vec<&mycelium::thinking::CompositionRecord> =
+                    let partial_ops: Vec<&mycelium::core::thinking::CompositionRecord> =
                         cog.compositions.iter()
                             .filter(|c| !c.sigma_post.is_empty())
                             .take(8)
@@ -902,7 +902,7 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                         .filter(|c| !c.sigma_post.is_empty())
                         .for_each(|comp| {
                             entity.state_record.assimilate(
-                                mycelium::engine::ComposedOperator {
+                                mycelium::core::engine::ComposedOperator {
                                     opcode: comp.operator,
                                     parameter: comp.parameter,
                                     sigma: comp.sigma_post.clone(),
@@ -948,17 +948,17 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
 
                 // ── D.VISION.TRANSMUTATION: Feed symmetry pointer to membrane ──
                 if let Some((ref quality, order)) = cog.transmutation {
-                    let mut t_trans = mycelium::engine::Delta::zero(2, 2);
+                    let mut t_trans = mycelium::core::engine::Delta::zero(2, 2);
                     t_trans.entries[0][1] = vec![
                         quality.clone(),
-                        mycelium::engine::Q::new(
+                        mycelium::core::engine::Q::new(
                             num_bigint::BigInt::from(order as i64),
                             num_bigint::BigInt::from(1),
                         ),
                     ];
                     t_trans.entries[1][0] = vec![
                         -quality.clone(),
-                        mycelium::engine::Q::new(
+                        mycelium::core::engine::Q::new(
                             num_bigint::BigInt::from(-(order as i64)),
                             num_bigint::BigInt::from(1),
                         ),
@@ -990,7 +990,7 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                         .collect();
                     if !consensus.is_empty() {
                         let t_dim = (consensus.len() + 1).max(2);
-                        let mut t_cocycle = mycelium::engine::Delta::zero(t_dim, 2);
+                        let mut t_cocycle = mycelium::core::engine::Delta::zero(t_dim, 2);
                         for (idx, (from_v, to_v)) in consensus.iter().enumerate() {
                             if idx + 1 < t_dim {
                                 t_cocycle.entries[idx][idx + 1] = vec![
@@ -1042,9 +1042,9 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                             "Membrane-crystallized: orbit {} at {} level. C(axiom_delta)={}.",
                             orbit_hex, iq.routed_level, c_str,
                         );
-                        let item = mycelium::register::RegisterItem::new(
+                        let item = mycelium::core::register::RegisterItem::new(
                             &axiom_id,
-                            mycelium::register::RegisterType::Crystallized,
+                            mycelium::core::register::RegisterType::Crystallized,
                             vec!["A.1", "A.2"],
                             content.as_bytes(),
                             entity.k_index as u64,
@@ -1098,7 +1098,7 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                             let score = matching
                                 + fiber_structural_bonus(entity, &cog.senses.touch.cohesion, matching);
                             entity.state_record.assimilate(
-                                mycelium::engine::ComposedOperator {
+                                mycelium::core::engine::ComposedOperator {
                                     opcode,
                                     parameter,
                                     sigma,
@@ -1113,7 +1113,7 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                         .map(|best_comp| {
                             entity.knowledge.record_partial_operator(
                                 obs_orbit,
-                                mycelium::engine::ComposedOperator {
+                                mycelium::core::engine::ComposedOperator {
                                     opcode: best_comp.operator,
                                     parameter: best_comp.parameter,
                                     sigma: best_comp.sigma_post.iter()
@@ -1168,10 +1168,10 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                 }
 
                 let orientation_str = match iq.orientation {
-                    mycelium::perception::Orientation::We => "we",
-                    mycelium::perception::Orientation::You => "you",
-                    mycelium::perception::Orientation::I => "i",
-                    mycelium::perception::Orientation::Me => "me",
+                    mycelium::core::perception::Orientation::We => "we",
+                    mycelium::core::perception::Orientation::You => "you",
+                    mycelium::core::perception::Orientation::I => "i",
+                    mycelium::core::perception::Orientation::Me => "me",
                 };
                 let cong = &iq.congruence;
                 let inquiry_json = format!(
@@ -1274,7 +1274,7 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                                 let fname_str = fname.to_string_lossy();
                                 let child_id: u16 = fname_str.rsplit('-').next()
                                     .and_then(|s| s.parse().ok()).unwrap_or(0);
-                                let child_tier = mycelium::lineage::Tier::from_depth(
+                                let child_tier = mycelium::core::lineage::Tier::from_depth(
                                     fields.get(6).and_then(|d| d.parse::<u8>().ok()).unwrap_or(2));
                                 let child_dir_name = child_tier.dir_name(child_id);
                                 let rpath = mesh_dir.join(&child_dir_name).join("reports.bin");
@@ -1324,7 +1324,7 @@ pub fn think(entity: &mut Entity, payload: &str) -> String {
                                                         }
                                                         (!sigma.is_empty()).then(|| {
                                                             entity.state_record.assimilate(
-                                                                mycelium::engine::ComposedOperator { opcode, parameter, sigma, score: 1 });
+                                                                mycelium::core::engine::ComposedOperator { opcode, parameter, sigma, score: 1 });
                                                         });
                                                     });
                                                 }
@@ -1452,13 +1452,13 @@ pub fn think_bin(entity: &mut Entity, _payload: &str, raw_data: &[u8]) -> String
         let entities: Vec<Vec<Q>> = pairs[0].0.iter()
             .map(|&v| vec![Q::new(BigInt::from(v), BigInt::from(1))])
             .collect();
-        let probe = mycelium::perception::encode_relational(&entities);
+        let probe = mycelium::core::perception::encode_relational(&entities);
         compute_rcf_hash(&probe)
     };
     let orbit_prefix: [u8; 4] = [probe_rcf[0], probe_rcf[1], probe_rcf[2], probe_rcf[3]];
-    let anchor_key = mycelium::sampler::LookupKey::from_state(
+    let anchor_key = mycelium::core::sampler::LookupKey::from_state(
         entity.k_index as u64,
-        mycelium::practice::SeedClass::Directed,
+        mycelium::core::practice::SeedClass::Directed,
         &probe_rcf,
     );
     let has_anchor = entity.sampler.table.lookup(&anchor_key).is_some();
@@ -1466,22 +1466,22 @@ pub fn think_bin(entity: &mut Entity, _payload: &str, raw_data: &[u8]) -> String
 
     // Comprehend before thinking — knowledge feeds the engine
     let test_ref_bin: &[i64] = test_input.as_deref().unwrap_or(&[]);
-    let bin_cog = mycelium::perception::cognize(&pairs, test_ref_bin, None);
-    let comp_record = mycelium::thinking::ComprehensionRecord {
+    let bin_cog = mycelium::core::perception::cognize(&pairs, test_ref_bin, None);
+    let comp_record = mycelium::core::thinking::ComprehensionRecord {
         sparse: bin_cog.comprehension.sparsity < num_rational::Ratio::new(num_bigint::BigInt::from(1), num_bigint::BigInt::from(4)),
         object_count: bin_cog.inquiry.object_count,
         refraction_transparent: bin_cog.inquiry.congruence.touch_refraction_congruence > num_rational::Ratio::new(num_bigint::BigInt::from(1), num_bigint::BigInt::from(2)),
         semantic_intent: bin_cog.inquiry.routed_level,
         cognitive_path: match &bin_cog.knowledge.path {
-            mycelium::perception::CognitionPath::VisionDerived { .. } => "vision_derived",
-            mycelium::perception::CognitionPath::ValueFactored => "value_factored",
-            mycelium::perception::CognitionPath::Evolved { .. } => "evolved",
-            mycelium::perception::CognitionPath::Incomplete { .. } => "incomplete",
+            mycelium::core::perception::CognitionPath::VisionDerived { .. } => "vision_derived",
+            mycelium::core::perception::CognitionPath::ValueFactored => "value_factored",
+            mycelium::core::perception::CognitionPath::Evolved { .. } => "evolved",
+            mycelium::core::perception::CognitionPath::Incomplete { .. } => "incomplete",
         },
         transmutation_signal: bin_cog.inquiry.congruence.transmutation_magnitude > num_rational::Ratio::new(num_bigint::BigInt::from(0), num_bigint::BigInt::from(1)),
         partial_operator: None,
     };
-    let result = mycelium::thinking::thought_with_comprehension(
+    let result = mycelium::core::thinking::thought_with_comprehension(
         &pairs, m, orbit_ref, 10, Some(&entity.sampler.table), Some(&comp_record),
     );
 
@@ -1495,11 +1495,11 @@ pub fn think_bin(entity: &mut Entity, _payload: &str, raw_data: &[u8]) -> String
 
     // Perception
     let perception_json = if let Some(ref test) = test_input {
-        let perception = mycelium::perception::perceive(&pairs, test, None);
+        let perception = mycelium::core::perception::perceive(&pairs, test, None);
         let class_str = match &perception.class {
-            mycelium::perception::PerceptionClass::Recognition => "recognition",
-            mycelium::perception::PerceptionClass::Derivable { .. } => "derivable",
-            mycelium::perception::PerceptionClass::Transmutable { .. } => "transmutable",
+            mycelium::core::perception::PerceptionClass::Recognition => "recognition",
+            mycelium::core::perception::PerceptionClass::Derivable { .. } => "derivable",
+            mycelium::core::perception::PerceptionClass::Transmutable { .. } => "transmutable",
         };
         let derived_str: String = perception.derived_output.iter()
             .map(|v| v.to_string()).collect::<Vec<_>>().join(",");
@@ -1537,21 +1537,21 @@ pub fn think_bin(entity: &mut Entity, _payload: &str, raw_data: &[u8]) -> String
         let t_k = Q::one();
         let rcf = compute_rcf_hash(&entity.delta);
         let receipt_hash_bytes = [0u8; 32];
-        let entry = mycelium::sluice_log::SluiceEntry::from_k_step(
+        let entry = mycelium::core::sluice_log::SluiceEntry::from_k_step(
             entity.k_index as u64, rcf, receipt_hash_bytes,
             entity.sluice_state.enc_u8(), 0, &t_k,
         );
         let _ = entity.sluice.append(&entry);
         // state is in binary: state_record.bin, entity.sluice.bin, receipts.bin
-        let mut chain_receipt = mycelium::ledger::MeshReceipt::build(
+        let mut chain_receipt = mycelium::core::ledger::MeshReceipt::build(
             &rcf, &t_k, entity.entity_id,
             entity.k_index as u64, &receipt_hash_bytes,
-            mycelium::constants::DISC_NORMAL,
+            mycelium::core::constants::DISC_NORMAL,
             0, entity.sluice_state.enc_u8(), None,
         );
         let conservation_ok = entity.delta.verify_conservation();
         chain_receipt.attach_telemetry(&Q::zero(), &t_k, &t_k, conservation_ok);
-        chain_receipt.dimensional = mycelium::ledger::DimensionalTelemetry::at_dimensions(
+        chain_receipt.dimensional = mycelium::core::ledger::DimensionalTelemetry::at_dimensions(
             result.n as u32, result.m as u32,
         );
         let _ = entity.chain.append(&chain_receipt);

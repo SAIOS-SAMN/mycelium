@@ -10,8 +10,8 @@ use num_bigint::BigInt;
 use num_rational::BigRational;
 use num_traits::{Zero, One};
 
-use mycelium::engine::*;
-use mycelium::membrane;
+use mycelium::core::engine::*;
+use mycelium::core::membrane;
 
 type Q = BigRational;
 
@@ -45,7 +45,7 @@ pub fn status(entity: &mut Entity, _payload: &str) -> String {
         let entities: Vec<Vec<Q>> = entity.known_peers.iter()
             .map(|p| p.to_entity())
             .collect();
-        let membrane_delta = mycelium::perception::encode_relational(&entities);
+        let membrane_delta = mycelium::core::perception::encode_relational(&entities);
         coherence_functional(&membrane_delta)
     } else {
         Q::zero() // need at least 2 peers to form a relational field
@@ -144,7 +144,7 @@ pub fn telemetry(entity: &mut Entity, _payload: &str) -> String {
     let v = verify_coherence(&entity.delta);
 
     // Compute alignment against current basis
-    let basis = mycelium::coordinator::OptimalBasis::from_delta(
+    let basis = mycelium::core::coordinator::OptimalBasis::from_delta(
         &entity.delta, entity.k_index as u64,
     );
 

@@ -46,7 +46,7 @@ pub fn create(entity: &mut Entity, payload: &str) -> String {
         .unwrap_or([0u8; 4]);
 
     let mesh_dir = entity.dir.parent().unwrap_or(&entity.dir);
-    match mycelium::lineage::create_offspring(
+    match mycelium::core::lineage::create_offspring(
         &mut entity.state_record, &entity.harmonic_tuning,
         entity.entity_id as u16, init_orbit, mesh_dir,
     ) {
@@ -55,7 +55,7 @@ pub fn create(entity: &mut Entity, payload: &str) -> String {
             entity.save_state_record();
 
             // Sovereign privilege: the parent creates its offspring
-            let child_tier = mycelium::lineage::Tier::from_depth(record.child_depth);
+            let child_tier = mycelium::core::lineage::Tier::from_depth(record.child_depth);
             let service_name = child_tier.service_name(record.child_entity_id);
             let started = std::process::Command::new("systemctl")
                 .args(["--user", "start", &service_name])
@@ -63,7 +63,7 @@ pub fn create(entity: &mut Entity, payload: &str) -> String {
                 .map(|o| o.status.success())
                 .unwrap_or(false);
 
-            let child_tier_display = mycelium::ccl::tier_name(record.child_depth, mycelium::ccl::Audience::Operator);
+            let child_tier_display = mycelium::core::ccl::tier_name(record.child_depth, mycelium::core::ccl::Audience::Operator);
             eprintln!("[lineage] {}-{} created {}-{} at orbit {:02x}{:02x}{:02x}{:02x} — service {}",
                 entity.tier_str(), entity.entity_id, child_tier_display, record.child_entity_id,
                 init_orbit[0], init_orbit[1], init_orbit[2], init_orbit[3],
@@ -77,14 +77,14 @@ pub fn create(entity: &mut Entity, payload: &str) -> String {
                 entity.state_record.created_count, started,
             )
         }
-        Err(mycelium::lineage::CreationObstruction::CapacitySaturated { depth, created, bound }) => {
+        Err(mycelium::core::lineage::CreationObstruction::CapacitySaturated { depth, created, bound }) => {
             format!("{{\"error\":\"capacity_saturated\",\"depth\":{},\"created\":{},\"bound\":{}}}\n",
                 depth, created, bound)
         }
-        Err(mycelium::lineage::CreationObstruction::NoSlotAvailable) => {
+        Err(mycelium::core::lineage::CreationObstruction::NoSlotAvailable) => {
             "{\"error\":\"no_slot_available\"}\n".to_string()
         }
-        Err(mycelium::lineage::CreationObstruction::ReplicationFailed(e)) => {
+        Err(mycelium::core::lineage::CreationObstruction::ReplicationFailed(e)) => {
             format!("{{\"error\":\"replication_failed\",\"detail\":\"{}\"}}\n", e)
         }
     }
@@ -156,7 +156,7 @@ pub fn interact(entity: &mut Entity, payload: &str) -> String {
                         let o3 = e.get(3)?.as_u64()? as u8;
                         let path_u8 = e.get(4)?.as_u64()? as u8;
                         let orbit = [o0, o1, o2, o3];
-                        let path = mycelium::harmonic_tuning::TransmutationPath::from_u8(path_u8);
+                        let path = mycelium::core::harmonic_tuning::TransmutationPath::from_u8(path_u8);
                         entity.harmonic_tuning.mark_transmutation(orbit, path);
                         absorbed += 1;
                         Some(())
@@ -179,7 +179,7 @@ pub fn interact(entity: &mut Entity, payload: &str) -> String {
                         let score = e.get(3).and_then(|s| s.as_i64()).unwrap_or(1);
                         (!sigma.is_empty()).then(|| {
                             entity.state_record.assimilate(
-                                mycelium::engine::ComposedOperator { opcode, parameter, sigma, score });
+                                mycelium::core::engine::ComposedOperator { opcode, parameter, sigma, score });
                         });
                         Some(())
                     });
@@ -260,7 +260,7 @@ pub fn absorb(entity: &mut Entity, _payload: &str) -> String {
                                 .rsplit('-').next()
                                 .and_then(|s| s.parse().ok())
                                 .unwrap_or(0);
-                            let child_tier = mycelium::lineage::Tier::from_depth(
+                            let child_tier = mycelium::core::lineage::Tier::from_depth(
                                 fields.get(6).and_then(|d| d.parse::<u8>().ok()).unwrap_or(2)
                             );
 
@@ -331,7 +331,7 @@ pub fn absorb(entity: &mut Entity, _payload: &str) -> String {
                                                     // Assimilate — score-based eviction, no boolean gates
                                                     (!sigma.is_empty()).then(|| {
                                                         entity.state_record.assimilate(
-                                                            mycelium::engine::ComposedOperator { opcode, parameter, sigma, score: 1 });
+                                                            mycelium::core::engine::ComposedOperator { opcode, parameter, sigma, score: 1 });
                                                         total_absorbed += 1;
                                                     });
                                                 });
@@ -370,7 +370,7 @@ pub fn absorb(entity: &mut Entity, _payload: &str) -> String {
             let dim = entity.delta.dim;
             let m = entity.delta.m;
             (dim >= 2).then(|| {
-                let mut t = mycelium::engine::Delta::zero(dim, m);
+                let mut t = mycelium::core::engine::Delta::zero(dim, m);
                 // Each cocycle (from_value, to_value, quality) maps to the Delta cell
                 // determined by its VALUE PAIR — the algebraic identity of the transition.
                 // from_value and to_value are the relational coordinates. No cyclic folding.
@@ -406,7 +406,7 @@ pub fn absorb(entity: &mut Entity, _payload: &str) -> String {
                     entity.perceptual_surface.record(super::entity::PerceptualImpression {
                         orbit: *orbit,
                         t_delta: t.clone(),
-                        coherence: mycelium::engine::coherence_functional(&t),
+                        coherence: mycelium::core::engine::coherence_functional(&t),
                         k_at: entity.k_index,
                     });
                 }
@@ -439,7 +439,7 @@ pub fn absorb(entity: &mut Entity, _payload: &str) -> String {
                     buf.extend_from_slice(&(d.unsigned_abs() as u16).to_le_bytes());
                 });
                 // Composed operators with full sigma
-                let ops: Vec<&mycelium::engine::ComposedOperator> =
+                let ops: Vec<&mycelium::core::engine::ComposedOperator> =
                     entity.state_record.composed_operators.iter().take(256).collect();
                 buf.push(ops.len() as u8);
                 ops.iter().for_each(|op| {
@@ -469,7 +469,7 @@ pub fn absorb(entity: &mut Entity, _payload: &str) -> String {
 
     // Update world status after absorption — the observer reads shm, not logs.
     // Without this, upper tiers show stale 0/0 because THINK never runs on them.
-    let c = mycelium::engine::coherence_functional(&entity.delta);
+    let c = mycelium::core::engine::coherence_functional(&entity.delta);
     entity.world_status.write("READY", entity.k_index as u64,
         &c.numer().to_string(), &c.denom().to_string(),
         super::entity::get_rss_kb(), entity.tier_str(),
@@ -599,7 +599,7 @@ pub fn project(entity: &mut Entity, _payload: &str) -> String {
                                 .rsplit('-').next()
                                 .and_then(|s| s.parse().ok())
                                 .unwrap_or(0);
-                            let child_tier = mycelium::lineage::Tier::from_depth(
+                            let child_tier = mycelium::core::lineage::Tier::from_depth(
                                 fields.get(6).and_then(|d| d.parse::<u8>().ok()).unwrap_or(2)
                             );
                             let child_dir = mesh_dir.join(child_tier.dir_name(child_id));

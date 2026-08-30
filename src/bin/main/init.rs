@@ -17,15 +17,15 @@ use num_bigint::BigInt;
 use num_rational::BigRational;
 use num_traits::Zero;
 
-use mycelium::agent::{AgentStateRecord, ReentryContext};
-use mycelium::boot::{self, BootConfig};
-use mycelium::chain;
-use mycelium::constants;
-use mycelium::engine::*;
-use mycelium::operators;
-use mycelium::sampler::AlgebraicSampler;
-use mycelium::signing;
-use mycelium::sluice_log::{SluiceEntry, SluiceLog};
+use mycelium::core::agent::{AgentStateRecord, ReentryContext};
+use mycelium::core::boot::{self, BootConfig};
+use mycelium::core::chain;
+use mycelium::core::constants;
+use mycelium::core::engine::*;
+use mycelium::core::operators;
+use mycelium::core::sampler::AlgebraicSampler;
+use mycelium::core::signing;
+use mycelium::core::sluice_log::{SluiceEntry, SluiceLog};
 
 use super::entity::{Entity, WorldStatus, PerceptualSurface, get_rss_kb};
 use super::{cognition, communication, evolution, lineage, memory, observation};
@@ -133,16 +133,16 @@ pub fn run() {
 
     // ── Register Store (D.REGISTER.1) ───────────────────────────────
     let register_path = dir.join("register.bin");
-    let mut register = mycelium::register::Register::open(&register_path)
+    let mut register = mycelium::core::register::Register::open(&register_path)
         .expect("cannot open register store");
     if register.is_empty() {
-        let axioms = mycelium::register::axiom_seed(0);
+        let axioms = mycelium::core::register::axiom_seed(0);
         for item in axioms {
             let _ = register.lock(item);
         }
         eprintln!("Register: seeded 5 axioms (A.1-A.5) at K=0 (&origin)");
     } else if register.query("A.5").is_none() {
-        let a5 = mycelium::register::axiom_seed(0).into_iter()
+        let a5 = mycelium::core::register::axiom_seed(0).into_iter()
             .find(|i| i.id == "A.5");
         if let Some(item) = a5 {
             let _ = register.lock(item);
@@ -151,9 +151,9 @@ pub fn run() {
     }
     // D.CHRONO.ANCHOR.1: Hierarchical Temporal Anchor — lock if not present
     if register.query("D.CHRONO.ANCHOR.1").is_none() {
-        let item = mycelium::register::RegisterItem::new(
+        let item = mycelium::core::register::RegisterItem::new(
             "D.CHRONO.ANCHOR.1",
-            mycelium::register::RegisterType::Definition,
+            mycelium::core::register::RegisterType::Definition,
             vec!["A.1", "A.2"],
             concat!(
                 "Hierarchical Temporal Anchor. The entity's algebraic state delta_k is ",
@@ -175,9 +175,9 @@ pub fn run() {
     }
     // D.COHOMOLOGY.1: Dimensional Cohomology Chain — lock if not present
     if register.query("D.COHOMOLOGY.1").is_none() {
-        let item = mycelium::register::RegisterItem::new(
+        let item = mycelium::core::register::RegisterItem::new(
             "D.COHOMOLOGY.1",
-            mycelium::register::RegisterType::Definition,
+            mycelium::core::register::RegisterType::Definition,
             vec!["A.1", "A.2", "A.4", "A.5"],
             concat!(
                 "Dimensional Cohomology Chain. The coherence functional C(delta) measures ",
@@ -204,9 +204,9 @@ pub fn run() {
     }
     // D.ORIGIN.EVOLUTION.1: Algebraic Evolution From Origin — lock if not present
     if register.query("D.ORIGIN.EVOLUTION.1").is_none() {
-        let item = mycelium::register::RegisterItem::new(
+        let item = mycelium::core::register::RegisterItem::new(
             "D.ORIGIN.EVOLUTION.1",
-            mycelium::register::RegisterType::Definition,
+            mycelium::core::register::RegisterType::Definition,
             vec!["A.1", "A.2", "A.5", "D.CHRONO.ANCHOR.1", "D.COHOMOLOGY.1"],
             concat!(
                 "Algebraic Evolution From Origin. Every entity begins at the origin ",
@@ -229,9 +229,9 @@ pub fn run() {
     }
     // D.SOUND.1: Mathematical Soundness as Cohomological Spectrum
     if register.query("D.SOUND.1").is_none() {
-        let item = mycelium::register::RegisterItem::new(
+        let item = mycelium::core::register::RegisterItem::new(
             "D.SOUND.1",
-            mycelium::register::RegisterType::Definition,
+            mycelium::core::register::RegisterType::Definition,
             vec!["A.1", "A.5", "D.COHOMOLOGY.1"],
             concat!(
                 "Mathematical Soundness as Cohomological Spectrum. Hearing is the ",
@@ -254,9 +254,9 @@ pub fn run() {
     }
     // D.VISION.1: Vision as Spatial Symmetry Cohomology
     if register.query("D.VISION.1").is_none() {
-        let item = mycelium::register::RegisterItem::new(
+        let item = mycelium::core::register::RegisterItem::new(
             "D.VISION.1",
-            mycelium::register::RegisterType::Definition,
+            mycelium::core::register::RegisterType::Definition,
             vec!["A.1", "A.2", "A.5", "D.COHOMOLOGY.1", "D.SOUND.1"],
             concat!(
                 "Vision as Spatial Symmetry Cohomology. Vision is not photon detection. ",
@@ -279,9 +279,9 @@ pub fn run() {
     }
     // D.PERIODICITY.1: Periodicity as Multi-Dimensional Orbital Closure
     if register.query("D.PERIODICITY.1").is_none() {
-        let item = mycelium::register::RegisterItem::new(
+        let item = mycelium::core::register::RegisterItem::new(
             "D.PERIODICITY.1",
-            mycelium::register::RegisterType::Definition,
+            mycelium::core::register::RegisterType::Definition,
             vec!["A.1", "A.4", "D.COHOMOLOGY.1", "D.VISION.1", "D.SOUND.1", "D.CHRONO.ANCHOR.1"],
             concat!(
                 "Periodicity as Multi-Dimensional Orbital Closure. Periodicity is not ",
@@ -304,9 +304,9 @@ pub fn run() {
     }
     // D.CRYSTALLIZE.1: Membrane Crystallization
     if register.query("D.CRYSTALLIZE.1").is_none() {
-        let item = mycelium::register::RegisterItem::new(
+        let item = mycelium::core::register::RegisterItem::new(
             "D.CRYSTALLIZE.1",
-            mycelium::register::RegisterType::Definition,
+            mycelium::core::register::RegisterType::Definition,
             vec!["A.5", "D.COHOMOLOGY.1", "D.ORIGIN.EVOLUTION.1", "D.CHRONO.ANCHOR.1"],
             concat!(
                 "Membrane Crystallization. A.5 applied at the membrane level, measured by ",
@@ -330,9 +330,9 @@ pub fn run() {
     }
     // D.MEMBRANE.LIVING.1: Membrane as Living Relational Field
     if register.query("D.MEMBRANE.LIVING.1").is_none() {
-        let item = mycelium::register::RegisterItem::new(
+        let item = mycelium::core::register::RegisterItem::new(
             "D.MEMBRANE.LIVING.1",
-            mycelium::register::RegisterType::Definition,
+            mycelium::core::register::RegisterType::Definition,
             vec!["A.5", "D.CHRONO.ANCHOR.1", "D.ORIGIN.EVOLUTION.1", "D.CRYSTALLIZE.1"],
             concat!(
                 "Membrane as Living Relational Field. The membrane is not a coordinator. ",
@@ -370,7 +370,7 @@ pub fn run() {
     // ── Membrane Knowledge (D.MEMBRANE.AXIOM.1) ───────────────────────
     let knowledge_path = dir.join("mesh_knowledge.bin");
     eprintln!("[mem] pre-knowledge: {} KB", get_rss_kb());
-    let mut mesh_knowledge = mycelium::membrane::MeshKnowledge::load_or_new(&knowledge_path);
+    let mut mesh_knowledge = mycelium::core::membrane::MeshKnowledge::load_or_new(&knowledge_path);
     eprintln!("[mem] post-knowledge: {} KB", get_rss_kb());
     // knowledge_save_counter removed — membrane saves after every observation.
     // No modular gate. The nervous system records continuously.
@@ -381,7 +381,7 @@ pub fn run() {
     // The entity's local membrane view. Updated on every COHERE interaction.
     // Each peer is stored as a full EntityState with vibrations — entity coordinates,
     // not messages. Old entries for same entity_id are replaced with latest.
-    let known_peers: Vec<mycelium::membrane::PeerState> = Vec::new();
+    let known_peers: Vec<mycelium::core::membrane::PeerState> = Vec::new();
 
     // ── Agent State Persistence (D.AGENT.STATE.1) ─────────────────────
     let agent_state_path = dir.join("agent_state.bin");
@@ -466,12 +466,12 @@ pub fn run() {
 
     let mut entity_state = {
         let loaded = fs::read(&state_record_path).ok()
-            .and_then(|data| mycelium::engine::StateRecord::from_bytes(&data))
+            .and_then(|data| mycelium::core::engine::StateRecord::from_bytes(&data))
             .or_else(|| {
                 // Runtime missing — try backup
                 eprintln!("[imprint] runtime state_record.bin unreadable — trying backup");
                 fs::read(&state_record_backup).ok()
-                    .and_then(|data| mycelium::engine::StateRecord::from_bytes(&data))
+                    .and_then(|data| mycelium::core::engine::StateRecord::from_bytes(&data))
                     .map(|g| {
                         eprintln!("[imprint] recovered from backup");
                         let _ = fs::copy(&state_record_backup, &state_record_path);
@@ -482,7 +482,7 @@ pub fn run() {
                 // Backup also missing — try persistent imprint directory
                 eprintln!("[imprint] trying persistent imprint at {:?}", persistent_imprint);
                 fs::read(&persistent_imprint).ok()
-                    .and_then(|data| mycelium::engine::StateRecord::from_bytes(&data))
+                    .and_then(|data| mycelium::core::engine::StateRecord::from_bytes(&data))
                     .map(|g| {
                         eprintln!("[imprint] recovered from persistent imprint — vocabulary and solved orbits restored");
                         let _ = fs::write(&state_record_path, g.to_bytes());
@@ -492,15 +492,15 @@ pub fn run() {
         match loaded {
             Some(mut g) if g.evolved.dim == anchor.dim && g.evolved.m == anchor.m => {
                 // Evolve state record: coboundary-reduce the persisted state
-                g.evolved = mycelium::engine::coboundary_reduce(&g.evolved);
+                g.evolved = mycelium::core::engine::coboundary_reduce(&g.evolved);
                 eprintln!("StateRecord loaded: process_class={} gen={} K={}",
                     g.process_class, g.generation, sluice.len().saturating_sub(1));
                 g
             }
             _ => {
                 // Init: create state record from the entity's origin anchor
-                let g = mycelium::engine::StateRecord::new(
-                    mycelium::engine::CLASS_PRIMARY,
+                let g = mycelium::core::engine::StateRecord::new(
+                    mycelium::core::engine::CLASS_PRIMARY,
                     1, // generation 1
                     &anchor,
                 );
@@ -520,7 +520,7 @@ pub fn run() {
     // ProcessClass 1 (founder/derived/emergent): thinks, derives, composes, learns.
     // ProcessClass 2 (timekeeper): observes, measures, inscribes. No cognition.
     match entity_state.process_class {
-        mycelium::engine::CLASS_TIMEKEEPER => {
+        mycelium::core::engine::CLASS_TIMEKEEPER => {
             observation::run_timekeeper(&config, entity_state, dir, sluice, origin.origin_rcf_hash);
         }
         _ => {} // ProcessClass 1: continue to learning class boot path below
@@ -535,8 +535,8 @@ pub fn run() {
     // perception and adapts at the rate the data determines.
     let epistate_record_path = dir.join("epistate_record.bin");
     let harmonic_tuning = std::fs::read(&epistate_record_path).ok()
-        .and_then(|data| mycelium::harmonic_tuning::HarmonicTuning::from_bytes(&data))
-        .unwrap_or_else(|| mycelium::harmonic_tuning::HarmonicTuning::new());
+        .and_then(|data| mycelium::core::harmonic_tuning::HarmonicTuning::from_bytes(&data))
+        .unwrap_or_else(|| mycelium::core::harmonic_tuning::HarmonicTuning::new());
 
     // Creator-defined environment boundaries.
     // The entity evolves within these limits. The creator expands them
@@ -559,9 +559,9 @@ pub fn run() {
         entity_state.capacity, entity_state.lineage_depth, env_capacity, env_capacity);
 
     // Sovereignty: founders and derived entities write to mesh, emergent entities report upward
-    let tier = mycelium::lineage::Tier::from_depth(entity_state.lineage_depth);
+    let tier = mycelium::core::lineage::Tier::from_depth(entity_state.lineage_depth);
     let mesh_sovereign = tier.mesh_sovereign();
-    let tier_display = mycelium::ccl::tier_name(entity_state.lineage_depth, mycelium::ccl::Audience::Operator);
+    let tier_display = mycelium::core::ccl::tier_name(entity_state.lineage_depth, mycelium::core::ccl::Audience::Operator);
     eprintln!("[lineage] tier={} depth={} parent={} created={} sovereign={}",
         tier_display, entity_state.lineage_depth, entity_state.parent_id,
         entity_state.created_count, mesh_sovereign);
@@ -607,7 +607,7 @@ pub fn run() {
 
     // Restore knowledge from state record (overrides separate mesh_knowledge.bin if state record has data)
     if !entity_state.knowledge.is_empty() {
-        let state_knowledge = mycelium::membrane::MeshKnowledge::decode_public(&entity_state.knowledge);
+        let state_knowledge = mycelium::core::membrane::MeshKnowledge::decode_public(&entity_state.knowledge);
         if state_knowledge.total_observations > 0 {
             mesh_knowledge = state_knowledge;
             eprintln!("Knowledge restored from state_record: {} axioms, {} observations",

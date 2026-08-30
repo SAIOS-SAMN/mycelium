@@ -15,15 +15,15 @@ use num_bigint::BigInt;
 use num_rational::BigRational;
 use num_traits::{Zero, One};
 
-use mycelium::agent::AgentStateRecord;
-use mycelium::chain;
-use mycelium::engine::*;
-use mycelium::harmonic_tuning::HarmonicTuning;
-use mycelium::lineage::Tier;
-use mycelium::membrane::{MeshKnowledge, PeerState};
-use mycelium::register::Register;
-use mycelium::sampler::AlgebraicSampler;
-use mycelium::sluice_log::SluiceLog;
+use mycelium::core::agent::AgentStateRecord;
+use mycelium::core::chain;
+use mycelium::core::engine::*;
+use mycelium::core::harmonic_tuning::HarmonicTuning;
+use mycelium::core::lineage::Tier;
+use mycelium::core::membrane::{MeshKnowledge, PeerState};
+use mycelium::core::register::Register;
+use mycelium::core::sampler::AlgebraicSampler;
+use mycelium::core::sluice_log::SluiceLog;
 
 type Q = BigRational;
 
@@ -120,7 +120,7 @@ pub struct PerceptualImpression {
     pub orbit: [u8; 4],
     /// The T Delta produced by cognition — the transformation signal.
     /// This is the structured residual. DERIVE reads it for direction.
-    pub t_delta: mycelium::engine::Delta,
+    pub t_delta: mycelium::core::engine::Delta,
     /// Coherence of the observation. Q measurement, not boolean.
     pub coherence: Q,
     /// K-index at which this impression was recorded.
@@ -152,7 +152,7 @@ impl PerceptualSurface {
     }
 
     /// The most recent T Delta — the freshest perceptual signal.
-    pub fn latest_t(&self) -> Option<&mycelium::engine::Delta> {
+    pub fn latest_t(&self) -> Option<&mycelium::core::engine::Delta> {
         self.impressions.last().map(|imp| &imp.t_delta)
     }
 
@@ -165,11 +165,11 @@ impl PerceptualSurface {
     /// aggregate should track the entity's current dimensionality, not its
     /// oldest still-buffered one.
     /// Returns None when surface is empty (no perception yet).
-    pub fn aggregate_direction(&self) -> Option<mycelium::engine::Delta> {
+    pub fn aggregate_direction(&self) -> Option<mycelium::core::engine::Delta> {
         self.impressions.last().map(|newest| {
             let dim = newest.t_delta.dim;
             let m = newest.t_delta.m;
-            let mut agg = mycelium::engine::Delta::zero(dim, m);
+            let mut agg = mycelium::core::engine::Delta::zero(dim, m);
             let n = self.impressions.len();
             for (idx, imp) in self.impressions.iter().enumerate() {
                 // Weight: (idx+1)/n · coherence — recency times how well the
@@ -405,7 +405,7 @@ impl Entity {
     }
 
     pub fn tier_str(&self) -> &'static str {
-        mycelium::ccl::tier_name(self.state_record.lineage_depth, mycelium::ccl::Audience::Operator)
+        mycelium::core::ccl::tier_name(self.state_record.lineage_depth, mycelium::core::ccl::Audience::Operator)
     }
 
     /// Save the state record — crystallize the entity's torsion to disk.
@@ -591,7 +591,7 @@ mod tests {
             sampler: AlgebraicSampler::empty(),
             knowledge: MeshKnowledge::new(),
             perceptual_surface: PerceptualSurface::new(8),
-            kernel: SaiosKernel::from_operators(mycelium::operators::production_operators_3x3()),
+            kernel: SaiosKernel::from_operators(mycelium::core::operators::production_operators_3x3()),
             sluice,
             chain: chain_store,
             register,

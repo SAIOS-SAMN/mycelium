@@ -12,12 +12,12 @@ use num_bigint::BigInt;
 use num_rational::BigRational;
 use num_traits::{Zero, One, Signed};
 
-use mycelium::agent::AgentStateRecord;
-use mycelium::coordinator;
-use mycelium::engine::*;
-use mycelium::irs;
-use mycelium::mdc;
-use mycelium::sluice_log::SluiceEntry;
+use mycelium::core::agent::AgentStateRecord;
+use mycelium::core::coordinator;
+use mycelium::core::engine::*;
+use mycelium::core::irs;
+use mycelium::core::mdc;
+use mycelium::core::sluice_log::SluiceEntry;
 
 use super::entity::Entity;
 
@@ -94,10 +94,10 @@ pub fn propose(entity: &mut Entity, payload: &str) -> String {
 
                         // Chain persistence (D.CHAIN.LOCAL.1)
                         // Build MeshReceipt for chain storage
-                        let chain_receipt = mycelium::ledger::MeshReceipt::build(
+                        let chain_receipt = mycelium::core::ledger::MeshReceipt::build(
                             &rcf, &t_k, entity.entity_id,
                             entity.k_index as u64, &receipt_hash,
-                            mycelium::constants::DISC_NORMAL,
+                            mycelium::core::constants::DISC_NORMAL,
                             0, entity.sluice_state.enc_u8(), None,
                         );
                         let _ = entity.chain.append(&chain_receipt);
@@ -222,7 +222,7 @@ pub fn derive(entity: &mut Entity, payload: &str) -> String {
     // No stasis wall. The sampler attempts regardless — C7 is the only judge.
     let response = {
     // Compute harmonic state for vibrational preference
-    let derive_harmonic = mycelium::engine::HarmonicState::from_delta(
+    let derive_harmonic = mycelium::core::engine::HarmonicState::from_delta(
         &entity.delta, &entity.origin_delta,
         &entity.trajectory, entity.k_index as u64,
     );
@@ -239,7 +239,7 @@ pub fn derive(entity: &mut Entity, payload: &str) -> String {
     // Effective curvature: superpose perceptual direction onto global curvature.
     // When perceptual surface is empty, global curvature alone. When both present,
     // perceptual direction adds to global curvature — no replacement, no gate.
-    let effective_curvature: Option<mycelium::engine::Delta> = match (&global_curvature, &perceptual_direction) {
+    let effective_curvature: Option<mycelium::core::engine::Delta> = match (&global_curvature, &perceptual_direction) {
         (Some(gc), Some(pd)) => {
             // Superpose: only when dimensions match. Otherwise use whichever is present.
             (gc.dim == pd.dim && gc.m == pd.m).then(|| {
@@ -332,10 +332,10 @@ pub fn derive(entity: &mut Entity, payload: &str) -> String {
                             let _ = entity.sluice.append(&entry);
                             // state is in binary: state_record.bin, entity.sluice.bin, receipts.bin
 
-                            let chain_receipt = mycelium::ledger::MeshReceipt::build(
+                            let chain_receipt = mycelium::core::ledger::MeshReceipt::build(
                                 &new_rcf, &t_k, entity.entity_id,
                                 entity.k_index as u64, &receipt_hash,
-                                mycelium::constants::DISC_NORMAL,
+                                mycelium::core::constants::DISC_NORMAL,
                                 0, entity.sluice_state.enc_u8(), None,
                             );
                             let _ = entity.chain.append(&chain_receipt);
@@ -470,7 +470,7 @@ pub fn upgrade(entity: &mut Entity, payload: &str) -> String {
         )
     } else {
         // Approved — write receipt, signal ready, exit for swap
-        let receipt = mycelium::ledger::UpgradeReceipt::new(
+        let receipt = mycelium::core::ledger::UpgradeReceipt::new(
             &[0u8; 32], version, modules,
             0, delta_tests.unsigned_abs(), entity.k_index as u64,
         );
@@ -552,7 +552,7 @@ pub fn irs_loop(entity: &mut Entity, _payload: &str) -> String {
     // Perception-driven when available (derived from actual observation).
     // MDC-driven as fallback (derived from echelon voting).
     // Perception IS the intent — the system acts on what it perceived.
-    let loop_perception = mycelium::perception::perceive(
+    let loop_perception = mycelium::core::perception::perceive(
         &[], // IRS loop has no practice pairs — it perceives the current state
         &[], // No test input — state perception only
         None,
@@ -593,7 +593,7 @@ pub fn irs_loop(entity: &mut Entity, _payload: &str) -> String {
     // Create substrate from current Delta state. Sample multiple
     // candidates. Hold them simultaneously. Accept the maximal
     // congruent set. Then C7 validates the accepted compound.
-    let mut substrate = mycelium::thinking::ThoughtSubstrate::new(&entity.delta);
+    let mut substrate = mycelium::core::thinking::ThoughtSubstrate::new(&entity.delta);
 
     // No stasis wall. Generate candidates regardless — C7 is the only judge.
     // Stasis modulates the sampler's proposal quality, not the algebra's chance.
@@ -651,16 +651,16 @@ pub fn irs_loop(entity: &mut Entity, _payload: &str) -> String {
                                 let new_rcf = compute_rcf_hash(&entity.delta);
                                 let c_delta = &c_after - &c_before;
                                 let receipt_hash = [0u8; 32];
-                                let entry = mycelium::sluice_log::SluiceEntry::from_k_step(
+                                let entry = mycelium::core::sluice_log::SluiceEntry::from_k_step(
                                     entity.k_index as u64, new_rcf, receipt_hash,
                                     entity.sluice_state.enc_u8(), 0, &t_k,
                                 );
                                 let _ = entity.sluice.append(&entry);
                                 // state is in binary: state_record.bin, entity.sluice.bin, receipts.bin
-                                let mut chain_receipt = mycelium::ledger::MeshReceipt::build(
+                                let mut chain_receipt = mycelium::core::ledger::MeshReceipt::build(
                                     &new_rcf, &t_k, entity.entity_id,
                                     entity.k_index as u64, &receipt_hash,
-                                    mycelium::constants::DISC_NORMAL,
+                                    mycelium::core::constants::DISC_NORMAL,
                                     0, entity.sluice_state.enc_u8(), None,
                                 );
                                 // D.CHRONO.1: Signed chronometric fact

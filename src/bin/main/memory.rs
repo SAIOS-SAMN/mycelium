@@ -11,8 +11,8 @@
 use num_rational::BigRational;
 use num_traits::One;
 
-use mycelium::engine::{coherence_functional, compute_rcf_hash};
-use mycelium::register::RegisterType;
+use mycelium::core::engine::{coherence_functional, compute_rcf_hash};
+use mycelium::core::register::RegisterType;
 
 use super::entity::Entity;
 
@@ -92,7 +92,7 @@ pub fn register_lock(entity: &mut Entity, payload: &str) -> String {
             "{\"error\":\"id and content required\"}\n".to_string()
         } else {
             let k = entity.k_index as u64;
-            let item = mycelium::register::RegisterItem::new(
+            let item = mycelium::core::register::RegisterItem::new(
                 id, item_type, deps, content.as_bytes(), k, supersedes,
             );
             let receipt_hash = item.receipt_hash;
@@ -104,17 +104,17 @@ pub fn register_lock(entity: &mut Entity, payload: &str) -> String {
                             .map(|r| r.receipt_hash)
                             .unwrap_or([0u8; 32])
                     } else { [0u8; 32] };
-                    let _reg_receipt = mycelium::ledger::RegisterReceipt::new(
+                    let _reg_receipt = mycelium::core::ledger::RegisterReceipt::new(
                         &tip, id, &receipt_hash, k, supersedes, content.len() as u32,
                     );
                     let t_k = Q::one();
                     let rcf = compute_rcf_hash(&entity.delta);
                     entity.k_index = entity.k_index.saturating_add(1);
                     entity.trajectory.observe(coherence_functional(&entity.delta));
-                    let chain_receipt = mycelium::ledger::MeshReceipt::build(
+                    let chain_receipt = mycelium::core::ledger::MeshReceipt::build(
                         &rcf, &t_k, entity.entity_id,
                         entity.k_index as u64, &_reg_receipt.receipt_id,
-                        mycelium::constants::DISC_NORMAL,
+                        mycelium::core::constants::DISC_NORMAL,
                         0, entity.sluice_state.enc_u8(), None,
                     );
                     let _ = entity.chain.append(&chain_receipt);
