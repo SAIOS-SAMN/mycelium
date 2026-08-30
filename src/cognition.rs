@@ -10,9 +10,9 @@
 
 use crate::network::consensus::{Admission, Receipt};
 use crate::network::nerve::Nerve;
-use crate::transducer::blade::{transduce, Blade};
-use crate::transducer::conception::recognize_scene;
-use crate::transducer::motor::{solve_conformal_motor, ConformalMotor, D4};
+use crate::transducer::blade::{components, lift};
+use crate::transducer::motor::D4;
+use crate::transducer::transform::{solve_transform, Transform};
 
 /// Mycelium's heritage floor: demands larger than this fragment (the 48% score
 /// depended on decomposing large corpus). Here the topological trigger is
@@ -40,7 +40,10 @@ pub enum Outcome {
 /// admission ledger + the Čech peer table.
 #[derive(Default)]
 pub struct Kernel {
-    basis: Vec<ConformalMotor>,
+    /// The germinated basis: anonymous ANASTOME elements (exact transforms). The
+    /// kernel never branches on their "kind" — they are opaque, addressed by
+    /// their canonical form. English descriptions live only in the `ccl` seam.
+    basis: Vec<Transform>,
     admission: Admission,
     pub nerve: Nerve,
 }
@@ -60,61 +63,60 @@ impl Kernel {
     /// each solved and admitted independently, then recomposed — the large-corpus
     /// path. An irreducible body makes the whole a pivot.
     pub fn ingest(&mut self, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)], voice: [u8; 32]) -> Outcome {
-        let (ba, bb) = (transduce(a, 0), transduce(b, 1));
-        if let Some(m) = recognize_scene(&ba, &bb) {
-            return self.conceive_motor(m, voice);
-        }
-        let Some(pairs) = fragment(&ba, &bb) else {
+        let (ca, cb) = (components(a), components(b));
+        if ca.is_empty() || ca.len() != cb.len() {
             return Outcome::Pivot;
-        };
-        let mut parts = Vec::with_capacity(pairs.len());
-        for (i, j) in pairs {
-            match solve_conformal_motor(&ba[i], &bb[j]) {
-                Some(m) => parts.push(self.conceive_motor(m, voice)),
-                None => return Outcome::Pivot, // a body resists — the demand is a pivot
+        }
+        // Correspond bodies by rigid-motion invariant (zero search), keeping the
+        // raw cells so the full transform (spatial ⊕ gauge) can be read.
+        let mut ai: Vec<usize> = (0..ca.len()).collect();
+        let mut bi: Vec<usize> = (0..cb.len()).collect();
+        ai.sort_by(|&x, &y| lift(&ca[x], 0).invariant().cmp(&lift(&ca[y], 0).invariant()));
+        bi.sort_by(|&x, &y| lift(&cb[x], 0).invariant().cmp(&lift(&cb[y], 0).invariant()));
+        for k in 0..ca.len() {
+            if lift(&ca[ai[k]], 0).invariant() != lift(&cb[bi[k]], 0).invariant() {
+                return Outcome::Pivot; // not the same bodies up to rigid motion
             }
         }
-        Outcome::Fragmented(parts)
+        // Solve each body's anonymous element; a resisting body → pivot.
+        let mut germs = Vec::with_capacity(ca.len());
+        for k in 0..ca.len() {
+            match solve_transform(&ca[ai[k]], &cb[bi[k]]) {
+                Some(t) => germs.push(t),
+                None => return Outcome::Pivot,
+            }
+        }
+        // One element closing every body is a single germ; otherwise the demand
+        // fragmented into independent per-body germs.
+        if germs.iter().all(|g| *g == germs[0]) {
+            self.conceive_germ(germs.swap_remove(0), voice)
+        } else {
+            Outcome::Fragmented(germs.into_iter().map(|g| self.conceive_germ(g, voice)).collect())
+        }
     }
 
-    /// Classify one solved motor against the basis and run the two-voice gate.
-    fn conceive_motor(&mut self, m: ConformalMotor, voice: [u8; 32]) -> Outcome {
-        if let Some(i) = self.basis.iter().position(|p| *p == m) {
+    /// Classify one anonymous germ against the basis and run the two-voice gate.
+    /// Opaque: matched by canonical address, never by "kind".
+    fn conceive_germ(&mut self, g: Transform, voice: [u8; 32]) -> Outcome {
+        if let Some(i) = self.basis.iter().position(|p| *p == g) {
             return Outcome::Recognised(i);
         }
-        let germ = motor_digest(&m);
+        let germ = germ_address(&g);
         if self.admission.record(Receipt { voice, germ }) {
-            self.basis.push(m);
+            self.basis.push(g);
             Outcome::Installed(self.basis.len() - 1)
         } else {
             Outcome::GermPending
         }
     }
+
+    /// A read-only view of the germinated basis (for the CCL display seam).
+    pub fn basis(&self) -> &[Transform] {
+        &self.basis
+    }
 }
 
-/// FRAGMENT a multi-body demand into per-body sub-demand index pairs: bodies
-/// correspond by their rigid-motion invariant (zero search). `None` when the
-/// ensembles are not the same bodies (different invariant multisets) or there is
-/// only one body (nothing to fragment). Each pair is then solved independently —
-/// this is what lets objects move by DIFFERENT motors (the case a single
-/// whole-scene motor refuses).
-fn fragment(a: &[Blade], b: &[Blade]) -> Option<Vec<(usize, usize)>> {
-    if a.len() != b.len() || a.len() < 2 {
-        return None;
-    }
-    let mut ai: Vec<usize> = (0..a.len()).collect();
-    let mut bi: Vec<usize> = (0..b.len()).collect();
-    ai.sort_by(|&x, &y| a[x].invariant().cmp(&a[y].invariant()));
-    bi.sort_by(|&x, &y| b[x].invariant().cmp(&b[y].invariant()));
-    for k in 0..a.len() {
-        if a[ai[k]].invariant() != b[bi[k]].invariant() {
-            return None;
-        }
-    }
-    Some(ai.into_iter().zip(bi).collect())
-}
-
-// ── wire identity of a motor (transport only, not cognition) ──────────────────
+// ── the ANASTOME address of a germ (canonical, opaque; transport identity) ────
 
 fn push_ratio(out: &mut Vec<u8>, r: &num_rational::BigRational) {
     for part in [r.numer(), r.denom()] {
@@ -128,20 +130,27 @@ fn d4_byte(d: D4) -> u8 {
     D4::ALL.iter().position(|x| *x == d).unwrap_or(0) as u8
 }
 
-/// Canonical bytes of a motor — for the wire and for the receipt digest.
-pub fn motor_bytes(m: &ConformalMotor) -> Vec<u8> {
+/// Canonical bytes of an anonymous germ (spatial element ⊕ gauge permutation).
+/// This is the germ's ANASTOME form — carries no English, no "kind".
+pub fn germ_bytes(g: &Transform) -> Vec<u8> {
     let mut out = Vec::new();
-    push_ratio(&mut out, &m.dilation);
-    out.push(d4_byte(m.rotation));
-    push_ratio(&mut out, &m.translation.0);
-    push_ratio(&mut out, &m.translation.1);
+    push_ratio(&mut out, &g.motor.dilation);
+    out.push(d4_byte(g.motor.rotation));
+    push_ratio(&mut out, &g.motor.translation.0);
+    push_ratio(&mut out, &g.motor.translation.1);
+    out.push(0xFF);
+    for (from, to) in &g.relabel {
+        out.push(*from);
+        out.push(*to);
+    }
     out
 }
 
-/// The germ's transport identity: a digest of the motor bytes. Used to MATCH
-/// consilience receipts across voices — never as a reasoning operand.
-pub fn motor_digest(m: &ConformalMotor) -> [u8; 32] {
-    *blake3::hash(&motor_bytes(m)).as_bytes()
+/// The germ's canonical ADDRESS — a digest of its ANASTOME form. Used to match
+/// consilience receipts across voices; it is a wire/cache identity, never a
+/// reasoning operand (the kernel reasons on the element, addresses by this).
+pub fn germ_address(g: &Transform) -> [u8; 32] {
+    *blake3::hash(&germ_bytes(g)).as_bytes()
 }
 
 // ── demand wire codec (server ⇄ client) ──────────────────────────────────────
