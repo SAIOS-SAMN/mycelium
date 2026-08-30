@@ -10,9 +10,15 @@
 
 use crate::network::consensus::{Admission, Receipt};
 use crate::network::nerve::Nerve;
-use crate::transducer::blade::transduce;
+use crate::transducer::blade::{transduce, Blade};
 use crate::transducer::conception::recognize_scene;
-use crate::transducer::motor::{ConformalMotor, D4};
+use crate::transducer::motor::{solve_conformal_motor, ConformalMotor, D4};
+
+/// Mycelium's heritage floor: demands larger than this fragment (the 48% score
+/// depended on decomposing large corpus). Here the topological trigger is
+/// "no single motor closes the scene AND ≥2 bodies" — size-independent — with
+/// the floor retained as the guard for whole-scene attempts.
+pub const FRAGMENT_FLOOR: usize = 9;
 
 /// The verdict of ingesting one demand.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -23,6 +29,9 @@ pub enum Outcome {
     GermPending,
     /// A novel germ that just reached quorum and installed to the basis.
     Installed(usize),
+    /// The scene had no single motor; it fragmented into per-body sub-demands,
+    /// each resolved independently and recomposed (the large-corpus path).
+    Fragmented(Vec<Outcome>),
     /// No motor closes the demand — an irreducible residual (a pivot).
     Pivot,
 }
@@ -46,11 +55,30 @@ impl Kernel {
     }
 
     /// Ingest a demand from `voice`: transduce → solve → conceive → admit.
+    /// A whole-scene coherent motor settles directly; otherwise the demand
+    /// FRAGMENTS into per-body sub-demands (bodies corresponded by invariant),
+    /// each solved and admitted independently, then recomposed — the large-corpus
+    /// path. An irreducible body makes the whole a pivot.
     pub fn ingest(&mut self, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)], voice: [u8; 32]) -> Outcome {
         let (ba, bb) = (transduce(a, 0), transduce(b, 1));
-        let Some(m) = recognize_scene(&ba, &bb) else {
+        if let Some(m) = recognize_scene(&ba, &bb) {
+            return self.conceive_motor(m, voice);
+        }
+        let Some(pairs) = fragment(&ba, &bb) else {
             return Outcome::Pivot;
         };
+        let mut parts = Vec::with_capacity(pairs.len());
+        for (i, j) in pairs {
+            match solve_conformal_motor(&ba[i], &bb[j]) {
+                Some(m) => parts.push(self.conceive_motor(m, voice)),
+                None => return Outcome::Pivot, // a body resists — the demand is a pivot
+            }
+        }
+        Outcome::Fragmented(parts)
+    }
+
+    /// Classify one solved motor against the basis and run the two-voice gate.
+    fn conceive_motor(&mut self, m: ConformalMotor, voice: [u8; 32]) -> Outcome {
         if let Some(i) = self.basis.iter().position(|p| *p == m) {
             return Outcome::Recognised(i);
         }
@@ -62,6 +90,28 @@ impl Kernel {
             Outcome::GermPending
         }
     }
+}
+
+/// FRAGMENT a multi-body demand into per-body sub-demand index pairs: bodies
+/// correspond by their rigid-motion invariant (zero search). `None` when the
+/// ensembles are not the same bodies (different invariant multisets) or there is
+/// only one body (nothing to fragment). Each pair is then solved independently —
+/// this is what lets objects move by DIFFERENT motors (the case a single
+/// whole-scene motor refuses).
+fn fragment(a: &[Blade], b: &[Blade]) -> Option<Vec<(usize, usize)>> {
+    if a.len() != b.len() || a.len() < 2 {
+        return None;
+    }
+    let mut ai: Vec<usize> = (0..a.len()).collect();
+    let mut bi: Vec<usize> = (0..b.len()).collect();
+    ai.sort_by(|&x, &y| a[x].invariant().cmp(&a[y].invariant()));
+    bi.sort_by(|&x, &y| b[x].invariant().cmp(&b[y].invariant()));
+    for k in 0..a.len() {
+        if a[ai[k]].invariant() != b[bi[k]].invariant() {
+            return None;
+        }
+    }
+    Some(ai.into_iter().zip(bi).collect())
 }
 
 // ── wire identity of a motor (transport only, not cognition) ──────────────────
@@ -143,6 +193,7 @@ pub fn outcome_code(o: &Outcome) -> u8 {
         Outcome::Recognised(_) => 1,
         Outcome::GermPending => 2,
         Outcome::Installed(_) => 3,
+        Outcome::Fragmented(_) => 5,
         Outcome::Pivot => 4,
     }
 }
@@ -176,6 +227,27 @@ mod tests {
         let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, 1)]; // L → bar
         assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::Pivot);
         assert_eq!(k.basis_len(), 0);
+    }
+
+    /// Two distinct objects moving by DIFFERENT motors: the whole scene has no
+    /// single motor, so the demand FRAGMENTS per body and resolves each — the
+    /// large-corpus path. Two voices install both germs (two distinct motors).
+    #[test]
+    fn independent_objects_fragment_and_resolve() {
+        let mut k = Kernel::new();
+        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1), (5, 5, 2), (5, 6, 2), (6, 5, 2), (6, 6, 2)];
+        let b = vec![(0, 3, 1), (0, 4, 1), (1, 3, 1), (5, 12, 2), (5, 13, 2), (6, 12, 2), (6, 13, 2)];
+        match k.ingest(&a, &b, [1; 32]) {
+            Outcome::Fragmented(parts) => assert_eq!(parts.len(), 2, "one sub-demand per body"),
+            o => panic!("expected Fragmented, got {o:?}"),
+        }
+        match k.ingest(&a, &b, [2; 32]) {
+            Outcome::Fragmented(parts) => {
+                assert!(parts.iter().all(|p| matches!(p, Outcome::Installed(_))));
+                assert_eq!(k.basis_len(), 2, "two distinct motors germinated");
+            }
+            o => panic!("expected Fragmented installs, got {o:?}"),
+        }
     }
 
     /// The demand codec roundtrips.

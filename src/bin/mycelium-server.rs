@@ -39,6 +39,7 @@ fn main() {
             Outcome::Recognised(i) => format!("recognised (recall) #{i}"),
             Outcome::GermPending => "germ pending (one voice)".to_string(),
             Outcome::Installed(i) => format!("GERM INSTALLED #{i} (two-voice consilience)"),
+            Outcome::Fragmented(parts) => format!("fragmented into {} sub-demands", parts.len()),
             Outcome::Pivot => "pivot (irreducible residual — new fiber owed)".to_string(),
         };
         eprintln!("  demand voice {:02x} → {label}; basis={basis}", voice[0]);
