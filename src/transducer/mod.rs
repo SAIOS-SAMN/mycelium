@@ -5,3 +5,4 @@
 //! bucket lookup (Anti-Flattening Law). Law-II clean: arrays/Vec/BigRational only.
 
 pub mod cga;
+pub mod blade;
