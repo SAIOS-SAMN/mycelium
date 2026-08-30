@@ -35,3 +35,4 @@ pub mod trinity;
 pub mod crucible;
 pub mod color;
 pub mod ccl;
+pub mod laws;
