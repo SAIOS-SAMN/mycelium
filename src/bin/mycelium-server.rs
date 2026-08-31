@@ -116,7 +116,9 @@ fn main() {
                 Outcome::Installed(i) => germ_bytes(&k.basis()[*i]),
                 _ => Vec::new(),
             };
-            (out, k.basis_len(), k.physics().order_flux(), taught)
+            // Report the per-lane PRESSURE (the entropic backlog) — the backpressure
+            // signal a kernel paces its intake against (the metabolism as governor).
+            (out, k.basis_len(), k.physics().metabolism_rate(), taught)
         };
         let label = match &out {
             Outcome::Decomposed(word) => format!("valid: decomposed → sentence {word:?} ({} generators)", word.len()),
@@ -127,10 +129,10 @@ fn main() {
         };
         let src = if kind == 1 { "gossip" } else { "client" };
         eprintln!("  {src} percept voice {:02x} → {label}; basis={basis}; metabolism {flux:?}", voice[0]);
-        // Reply: outcome | metabolism(4) | taught ANASTOME element (len16 | bytes).
+        // Reply: outcome | metabolism/pressure(4) | taught ANASTOME element (len16 | bytes).
         let mut body = vec![outcome_code(&out)];
         for f in flux {
-            body.push(f.clamp(-128, 127) as i8 as u8);
+            body.push(f.min(255) as u8); // per-lane pressure, saturated to a byte
         }
         body.extend_from_slice(&(taught.len() as u16).to_le_bytes());
         body.extend_from_slice(&taught);

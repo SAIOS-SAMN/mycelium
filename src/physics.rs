@@ -45,6 +45,17 @@ impl Physics {
         }
     }
 
+    /// The metabolism RELAXES — the entropic backlog DISSIPATES as the mesh works,
+    /// so per-lane pressure is a RATE (unresolved demand per unit of work), not a
+    /// one-way ratchet that saturates and stalls the governor. Called once per
+    /// adjudication; steady-state pressure then equilibrates where the germination
+    /// rate meets this relaxation — a bounded, self-limiting metabolism.
+    pub fn relax(&mut self) {
+        for l in 0..4 {
+            self.pressure[l] = self.pressure[l].saturating_sub(1);
+        }
+    }
+
     /// A pivot on `lane` — a torsion charge (the demand for a new fiber). An
     /// unattributable pivot charges all lanes (its resisting axis is unknown).
     pub fn pivot(&mut self, lanes: [bool; 4]) {

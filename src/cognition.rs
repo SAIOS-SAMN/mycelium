@@ -112,6 +112,7 @@ impl Kernel {
         cb: &[Vec<(i64, i64, u8)>],
         voice: [u8; 32],
     ) -> Outcome {
+        self.physics.relax(); // the metabolism dissipates its backlog as it works
         if ca.is_empty() || ca.len() != cb.len() {
             self.physics.pivot([false; 4]);
             return Outcome::Pivot;
@@ -200,15 +201,23 @@ impl Kernel {
     fn reduce(&self, g: &Element) -> NormalForm {
         let mut s = g.substance();
         let mut word = Vec::new();
-        // ≺_DM is well-founded so this terminates; the bound is only a safety net.
-        for _ in 0..64 {
+        let budget = self.peel_budget(); // the syntropic/entropic metabolism bounds compute
+        // ≺_DM is well-founded so this terminates; the 64 is only a safety net.
+        for step in 0..64 {
             if s.is_identity() {
                 return NormalForm::Decomposed(word); // fully reduced (empty = pure transposition)
             }
             // Terminal: the substance IS an installed generator (length-1 sentence).
+            // (A cheap scan — no matrix inverse; always affordable.)
             if let Some(i) = self.basis.iter().position(|p| p.substance().same_action(&s)) {
                 word.push(i);
                 return NormalForm::Decomposed(word);
+            }
+            // METABOLIC THROTTLE: peeling is the expensive arm (a matrix inverse per
+            // generator). Under backlog the budget is spent, so we stop and germinate
+            // the compound rather than brute-force — the mesh metabolizes first.
+            if step >= budget {
+                return NormalForm::Irreducible(s);
             }
             match self.best_peel(&s) {
                 Some((i, next)) => {
@@ -219,6 +228,19 @@ impl Kernel {
             }
         }
         NormalForm::Irreducible(s)
+    }
+
+    /// The metabolic PEEL BUDGET — how many expensive peels the confluent reduction
+    /// may spend, governed by the current per-lane PRESSURE (the entropic backlog),
+    /// never a monotone scalar (#34). Polytonic: the most-pressured lane governs
+    /// (Liebig). Calm → full reduction; loaded → shallow; saturated → direct-match
+    /// only, then germinate the compound (refined later, when the mesh is calm).
+    fn peel_budget(&self) -> usize {
+        match self.physics.metabolism_rate().iter().copied().max().unwrap_or(0) {
+            0..=7 => 64,   // calm — reduce to the full normal form
+            8..=31 => 8,   // loaded — a few peels, then defer
+            _ => 0,        // saturated — recognise cheaply or germinate; do not brute-force
+        }
     }
 
     /// Peel the MAXIMAL ≺_DM-descending generator from substance `s`: try each

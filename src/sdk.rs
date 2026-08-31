@@ -96,9 +96,10 @@ impl Session {
     }
 
     /// PERCEIVE the scene pair (segment A and B into bodies) and SUBMIT it as an
-    /// A→B demand under this kernel's voice; return the judge's verdict with any
-    /// taught element learned. The hypha only judges — the segmentation is ours.
-    pub fn submit(&self, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> io::Result<Verdict> {
+    /// A→B demand under this kernel's voice; return the judge's [`Reply`] — the
+    /// verdict with any taught element, plus the mesh's per-lane METABOLISM
+    /// (pressure) the kernel paces its intake against. The hypha only judges.
+    pub fn submit(&self, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> io::Result<Reply> {
         let (a_bodies, b_bodies) = perceive(a, b);
         let mut pbody = vec![0x00u8]; // kind 0 = a client-origin percept
         pbody.extend_from_slice(&encode_percept(&a_bodies, &b_bodies, &self.kernel.voice));
@@ -112,8 +113,30 @@ impl Session {
         let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
         let mut body = vec![0u8; len];
         s.read_exact(&mut body)?;
-        Ok(decode_verdict(&body))
+        Ok(Reply { verdict: decode_verdict(&body), metabolism: decode_metabolism(&body) })
     }
+}
+
+/// A hypha's answer: the verdict plus the per-lane METABOLISM (pressure) — the
+/// backpressure signal a kernel throttles its intake against so the mesh is not
+/// brute-forced (the syntropic/entropic metabolism as governor, never a scalar).
+#[derive(Clone, Debug)]
+pub struct Reply {
+    pub verdict: Verdict,
+    pub metabolism: [u8; 4],
+}
+
+impl Reply {
+    /// The most-pressured lane — the polytonic backpressure a kernel paces on
+    /// (Liebig: the bottleneck lane governs intake).
+    pub fn load(&self) -> u8 {
+        self.metabolism.iter().copied().max().unwrap_or(0)
+    }
+}
+
+/// The per-lane pressure bytes from a reply (`body[1..5]`).
+fn decode_metabolism(body: &[u8]) -> [u8; 4] {
+    std::array::from_fn(|i| body.get(1 + i).copied().unwrap_or(0))
 }
 
 /// Decode a hypha reply: `[code][metabolism 4][taught_len u16][taught…]`.

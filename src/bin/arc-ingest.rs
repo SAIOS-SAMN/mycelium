@@ -11,6 +11,13 @@ use mycelium::sdk::{Kernel, Session, Verdict};
 use std::path::PathBuf;
 use std::time::Instant;
 
+/// Below this per-lane pressure the mesh is calm — full-rate intake. Matches the
+/// hypha's reduce budget knee (calm ≤ 7).
+const BACKPRESSURE_KNEE: u8 = 7;
+/// Milliseconds of intake wait per unit of pressure above the knee (polytonic
+/// proportional backoff — resource stabilization, not a fixed poll).
+const BACKPRESSURE_MS: u64 = 4;
+
 fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
     args.windows(2).find(|w| w[0] == name).map(|w| w[1].as_str())
 }
@@ -99,7 +106,18 @@ fn main() {
                     continue; // an all-background side carries no percept
                 }
                 match session.submit(&a, &b) {
-                    Ok(v) => tally.record(&v),
+                    Ok(reply) => {
+                        tally.record(&reply.verdict);
+                        // METABOLIC BACKPRESSURE — pace intake by the mesh's per-lane
+                        // pressure (Liebig: the bottleneck lane governs). When the
+                        // mesh is loaded the kernel waits, letting it metabolize the
+                        // backlog into order instead of being brute-forced.
+                        let load = reply.load();
+                        if load > BACKPRESSURE_KNEE {
+                            let excess = (load - BACKPRESSURE_KNEE) as u64;
+                            std::thread::sleep(std::time::Duration::from_millis(excess * BACKPRESSURE_MS));
+                        }
+                    }
                     Err(_) => {
                         tally.errors += 1;
                         tally.pairs += 1;
