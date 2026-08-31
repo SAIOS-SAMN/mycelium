@@ -18,7 +18,10 @@ fn main() {
     let a = [(0, 0, 1u8), (0, 1, 1), (1, 0, 1)];
     let b = [(0, 3, 1u8), (0, 4, 1), (1, 3, 1)]; // +0,+3 translate
     let (a_bodies, b_bodies) = perceive(&a, &b);
-    let frame = Frame { lane: Stratum::Spatial, body: encode_percept(&a_bodies, &b_bodies, &[voice; 32]) };
+    // kind byte 0x00 = an ORIGIN percept from a client (a peer gossip is 0x01).
+    let mut pbody = vec![0x00u8];
+    pbody.extend_from_slice(&encode_percept(&a_bodies, &b_bodies, &[voice; 32]));
+    let frame = Frame { lane: Stratum::Spatial, body: pbody };
 
     let mut s = TcpStream::connect(&addr).expect("connect");
     s.write_all(&frame.encode().expect("encode")).expect("send");

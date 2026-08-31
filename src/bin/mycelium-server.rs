@@ -39,6 +39,25 @@ fn id_of(s: &str) -> [u8; 32] {
     *blake3::hash(s.as_bytes()).as_bytes()
 }
 
+/// The RENDEZVOUS for a content key: the peer whose id is XOR-closest to the key,
+/// IF closer than this node — else `None` (this node IS the rendezvous). One
+/// destination, content-addressed — never a fanout. (Single-hop here; multi-hop
+/// iterative routing is R5's follow-up.)
+fn rendezvous(key: &[u8; 32], self_id: &[u8; 32], peers: &[String]) -> Option<String> {
+    let dist = |idb: &[u8; 32]| -> [u8; 32] { std::array::from_fn(|i| idb[i] ^ key[i]) };
+    let mut best: Option<(String, [u8; 32])> = None;
+    for p in peers {
+        let d = dist(&id_of(p));
+        if best.as_ref().map_or(true, |(_, bd)| d < *bd) {
+            best = Some((p.clone(), d));
+        }
+    }
+    match best {
+        Some((addr, d)) if d < dist(self_id) => Some(addr),
+        _ => None,
+    }
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let addr = args.get(1).filter(|a| !a.starts_with("--")).cloned().unwrap_or_else(|| "127.0.0.1:7500".to_string());
@@ -71,8 +90,12 @@ fn main() {
     for stream in listener.incoming() {
         let Ok(mut s) = stream else { continue };
         let Some(frame) = read_frame(&mut s) else { continue };
+        // Body: [kind][..]. kind 0 = client origin ([percept]); kind 1 = routed
+        // gossip ([dest_key:32][percept]) — the destination is carried, not sprayed.
+        let Some((&kind, rest)) = frame.body.split_first() else { continue };
+        let pbytes = if kind == 1 && rest.len() >= 32 { &rest[32..] } else { rest };
         // The client PERCEIVED (segmented bodies); the JUDGE only adjudicates.
-        let Some((voice, a_bodies, b_bodies)) = decode_percept(&frame.body) else { continue };
+        let Some((voice, a_bodies, b_bodies)) = decode_percept(pbytes) else { continue };
         let (out, basis, flux, taught) = {
             let mut k = kernel.lock().unwrap();
             let out = k.adjudicate(&a_bodies, &b_bodies, voice);
@@ -90,7 +113,8 @@ fn main() {
             Outcome::Fragmented(parts) => format!("valid: fragmented ({} bodies)", parts.len()),
             Outcome::Pivot => "invalid: pivot (residual — new fiber owed)".to_string(),
         };
-        eprintln!("  percept voice {:02x} → {label}; basis={basis}; metabolism {flux:?}", voice[0]);
+        let src = if kind == 1 { "gossip" } else { "client" };
+        eprintln!("  {src} percept voice {:02x} → {label}; basis={basis}; metabolism {flux:?}", voice[0]);
         // Reply: outcome | metabolism(4) | taught ANASTOME element (len16 | bytes).
         let mut body = vec![outcome_code(&out)];
         for f in flux {
@@ -100,5 +124,24 @@ fn main() {
         body.extend_from_slice(&taught);
         let reply = Frame { lane: frame.lane, body };
         let _ = s.write_all(&reply.encode().unwrap_or_default());
+
+        // P6/R5 · sun_recon: a CLIENT percept still awaiting consilience routes ONE
+        // receipt to its RENDEZVOUS — the node XOR-closest to the demand's
+        // content-address (voice EXCLUDED so all voices of a germ converge there).
+        // The rendezvous accumulates the distinct voice + verifies by recomputation;
+        // quorum → install + teach outward. No fanout; a down rendezvous fails
+        // silently (resilience). Gossip (kind 1) is never re-routed here.
+        if kind == 0 && pbytes.len() > 32 && matches!(out, Outcome::GermPending | Outcome::Fragmented(_)) {
+            let key = *blake3::hash(&pbytes[32..]).as_bytes(); // demand address, voice-free
+            if let Some(dest) = rendezvous(&key, &id, &peers) {
+                let mut g = vec![0x01u8];
+                g.extend_from_slice(&key);
+                g.extend_from_slice(pbytes);
+                let gframe = Frame { lane: frame.lane, body: g }.encode().unwrap_or_default();
+                if let Ok(mut ps) = TcpStream::connect(&dest) {
+                    let _ = ps.write_all(&gframe);
+                }
+            }
+        }
     }
 }
