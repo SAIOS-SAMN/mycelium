@@ -81,53 +81,69 @@ impl Nerve {
     }
 }
 
-/// XOR ROUTING TRIE — the topological structure the Kademlia metric induces.
-/// A contact's id is its path (one bit per level); the node closest to any key
-/// is found by descending the key's bits (falling to the sibling when a branch is
-/// empty) in O(bits) — INDEPENDENT of N, never a scan of the peer set. This is
-/// what replaces the flat `for p in peers` cartesian lookup.
-#[derive(Default)]
-pub struct Router {
-    children: [Option<Box<Router>>; 2],
-    leaf: Option<([u8; 32], String)>,
+/// XOR ROUTING TRIE (PATRICIA / path-compressed) — the topological structure the
+/// Kademlia metric induces. Branches exist ONLY where contact ids actually
+/// differ, so the whole trie is O(N) nodes (not O(256·N)) with O(log N) effective
+/// depth over the full 2²⁵⁶ keyspace — no peer cap, no degenerate chains.
+/// `closest(key)` descends the key's bits to the longest-prefix leaf (= smallest
+/// XOR) in O(depth), never a scan of the peer set.
+pub enum Router {
+    Empty,
+    Leaf([u8; 32], String),
+    /// Split at bit `at`: contacts whose bit `at` is 0 go left, 1 go right.
+    Branch { at: usize, zero: Box<Router>, one: Box<Router> },
+}
+
+impl Default for Router {
+    fn default() -> Self {
+        Router::Empty
+    }
 }
 
 impl Router {
     pub fn new() -> Self {
-        Router::default()
+        Router::Empty
     }
 
     fn bit(id: &[u8; 32], i: usize) -> usize {
         ((id[i / 8] >> (7 - (i % 8))) & 1) as usize
     }
 
-    /// Insert a contact (id → address) at its bit-path.
+    /// First bit index where two ids differ (256 if identical).
+    fn first_diff(a: &[u8; 32], b: &[u8; 32]) -> usize {
+        (0..256).find(|&i| Self::bit(a, i) != Self::bit(b, i)).unwrap_or(256)
+    }
+
+    /// Insert a contact (id → address); path-compressed — a new branch is created
+    /// only at the first bit distinguishing this id from an existing leaf.
     pub fn insert(&mut self, id: [u8; 32], addr: String) {
-        let mut node = self;
-        for depth in 0..256 {
-            let b = Self::bit(&id, depth);
-            node = node.children[b].get_or_insert_with(|| Box::new(Router::new()));
-        }
-        node.leaf = Some((id, addr));
-    }
-
-    /// The contact XOR-closest to `key` — descend by the key's bits, sibling-
-    /// fallback on empty branches. O(bits), never O(N).
-    pub fn closest(&self, key: &[u8; 32]) -> Option<([u8; 32], String)> {
-        self.near(key, 0)
-    }
-
-    fn near(&self, key: &[u8; 32], depth: usize) -> Option<([u8; 32], String)> {
-        if depth == 256 {
-            return self.leaf.clone();
-        }
-        let b = Self::bit(key, depth);
-        if let Some(c) = &self.children[b] {
-            if let Some(hit) = c.near(key, depth + 1) {
-                return Some(hit);
+        match self {
+            Router::Empty => *self = Router::Leaf(id, addr),
+            Router::Leaf(eid, _) if *eid == id => *self = Router::Leaf(id, addr), // replace
+            Router::Leaf(eid, _) => {
+                let at = Self::first_diff(eid, &id);
+                let existing = std::mem::replace(self, Router::Empty);
+                let fresh = Router::Leaf(id, addr);
+                let (zero, one) = if Self::bit(&id, at) == 0 { (fresh, existing) } else { (existing, fresh) };
+                *self = Router::Branch { at, zero: Box::new(zero), one: Box::new(one) };
+            }
+            Router::Branch { at, zero, one } => {
+                if Self::bit(&id, *at) == 0 { zero.insert(id, addr) } else { one.insert(id, addr) }
             }
         }
-        self.children[1 - b].as_ref().and_then(|c| c.near(key, depth + 1))
+    }
+
+    /// The contact XOR-closest to `key` — descend the key's bits to the
+    /// longest-prefix leaf (sibling-fallback for safety). O(depth), never O(N).
+    pub fn closest(&self, key: &[u8; 32]) -> Option<([u8; 32], String)> {
+        match self {
+            Router::Empty => None,
+            Router::Leaf(id, addr) => Some((*id, addr.clone())),
+            Router::Branch { at, zero, one } => {
+                let (near, far) = if Self::bit(key, *at) == 0 { (zero, one) } else { (one, zero) };
+                near.closest(key).or_else(|| far.closest(key))
+            }
+        }
     }
 }
 
