@@ -6,3 +6,5 @@ pub mod transducer;
 pub mod network;
 pub mod cognition;
 pub mod ccl;
+pub mod physics;
+pub mod economy;

@@ -46,15 +46,29 @@ pub struct Kernel {
     basis: Vec<Transform>,
     admission: Admission,
     pub nerve: Nerve,
+    /// Polytonic kinematic pressure + torsion (per lane).
+    physics: crate::physics::Physics,
+    /// The settlement ledger (POW++-gated bounties, consilience splits).
+    treasury: crate::economy::Treasury,
 }
 
 impl Kernel {
     pub fn new() -> Self {
-        Kernel { basis: Vec::new(), admission: Admission::new(), nerve: Nerve::new() }
+        Kernel::default()
     }
 
     pub fn basis_len(&self) -> usize {
         self.basis.len()
+    }
+
+    /// The polytonic kinematic pressure + torsion spectrum (per lane).
+    pub fn physics(&self) -> &crate::physics::Physics {
+        &self.physics
+    }
+
+    /// The settlement ledger (bounties, consilience, recall yields).
+    pub fn treasury(&self) -> &crate::economy::Treasury {
+        &self.treasury
     }
 
     /// Ingest a demand from `voice`: transduce → solve → conceive → admit.
@@ -65,6 +79,7 @@ impl Kernel {
     pub fn ingest(&mut self, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)], voice: [u8; 32]) -> Outcome {
         let (ca, cb) = (components(a), components(b));
         if ca.is_empty() || ca.len() != cb.len() {
+            self.physics.pivot([false; 4]);
             return Outcome::Pivot;
         }
         // Correspond bodies by rigid-motion invariant (zero search), keeping the
@@ -75,6 +90,7 @@ impl Kernel {
         bi.sort_by(|&x, &y| lift(&cb[x], 0).invariant().cmp(&lift(&cb[y], 0).invariant()));
         for k in 0..ca.len() {
             if lift(&ca[ai[k]], 0).invariant() != lift(&cb[bi[k]], 0).invariant() {
+                self.physics.pivot([false; 4]);
                 return Outcome::Pivot; // not the same bodies up to rigid motion
             }
         }
@@ -83,7 +99,10 @@ impl Kernel {
         for k in 0..ca.len() {
             match solve_transform(&ca[ai[k]], &cb[bi[k]]) {
                 Some(t) => germs.push(t),
-                None => return Outcome::Pivot,
+                None => {
+                    self.physics.pivot([false; 4]);
+                    return Outcome::Pivot;
+                }
             }
         }
         // One element closing every body is a single germ; otherwise the demand
@@ -99,13 +118,20 @@ impl Kernel {
     /// Opaque: matched by canonical address, never by "kind".
     fn conceive_germ(&mut self, g: Transform, voice: [u8; 32]) -> Outcome {
         if let Some(i) = self.basis.iter().position(|p| *p == g) {
+            self.treasury.settle_recall(voice); // recall pays a small yield
             return Outcome::Recognised(i);
         }
-        let germ = germ_address(&g);
-        if self.admission.record(Receipt { voice, germ }) {
+        let lanes = crate::physics::lanes_of(&g);
+        let addr = germ_address(&g);
+        if self.admission.record(Receipt { voice, germ: addr }) {
+            // Two-voice consilience: install, POW++-gated bounty + consilience split.
+            let _ = self.treasury.settle_install(&g, voice); // descends by construction
+            self.treasury.settle_consilience(&self.admission.voices_of(&addr));
+            self.physics.relieve(lanes);
             self.basis.push(g);
             Outcome::Installed(self.basis.len() - 1)
         } else {
+            self.physics.bump(lanes); // an open germ raises per-lane pressure
             Outcome::GermPending
         }
     }

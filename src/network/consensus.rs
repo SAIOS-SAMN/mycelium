@@ -59,6 +59,11 @@ impl Admission {
     pub fn voices(&self, germ: &[u8; 32]) -> usize {
         self.seen.iter().find(|(g, _)| g == germ).map_or(0, |(_, v)| v.len())
     }
+
+    /// The distinct voices that attested a germ (for the consilience split).
+    pub fn voices_of(&self, germ: &[u8; 32]) -> Vec<[u8; 32]> {
+        self.seen.iter().find(|(g, _)| g == germ).map_or_else(Vec::new, |(_, v)| v.clone())
+    }
 }
 
 #[cfg(test)]
