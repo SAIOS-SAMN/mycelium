@@ -79,8 +79,23 @@ impl Kernel {
     /// FRAGMENTS into per-body sub-demands (bodies corresponded by invariant),
     /// each solved and admitted independently, then recomposed — the large-corpus
     /// path. An irreducible body makes the whole a pivot.
+    /// Convenience: PERCEIVE (segment) then ADJUDICATE. In the mesh, perception
+    /// belongs to the client (`client::perceive`) — this path is for local use
+    /// and tests. The server calls `adjudicate` on the client's reported percept.
     pub fn ingest(&mut self, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)], voice: [u8; 32]) -> Outcome {
-        let (ca, cb) = (components(a), components(b));
+        self.adjudicate(&components(a), &components(b), voice)
+    }
+
+    /// THE JUDGE — mathematics + ANASTOME only. Given a client's PERCEPT (already
+    /// segmented bodies of A and B), correspond by invariant, derive the exact
+    /// element per body, and answer valid (Recognised/Installed/Fragmented) or
+    /// invalid (Pivot). No sensing here — the client perceived; the judge reasons.
+    pub fn adjudicate(
+        &mut self,
+        ca: &[Vec<(i64, i64, u8)>],
+        cb: &[Vec<(i64, i64, u8)>],
+        voice: [u8; 32],
+    ) -> Outcome {
         if ca.is_empty() || ca.len() != cb.len() {
             self.physics.pivot([false; 4]);
             return Outcome::Pivot;
@@ -228,6 +243,57 @@ pub fn decode_demand(body: &[u8]) -> Option<([u8; 32], Vec<(i64, i64, u8)>, Vec<
     let mut p = 32;
     let a = read_cells(body, &mut p)?;
     let b = read_cells(body, &mut p)?;
+    Some((voice, a, b))
+}
+
+/// CLIENT PERCEPTION — segment each scene into bodies. This is the sensing act;
+/// it lives with the client, which reports the resulting percept to its hypha.
+pub fn perceive(
+    a: &[(i64, i64, u8)],
+    b: &[(i64, i64, u8)],
+) -> (Vec<Vec<(i64, i64, u8)>>, Vec<Vec<(i64, i64, u8)>>) {
+    (components(a), components(b))
+}
+
+fn push_bodies(out: &mut Vec<u8>, bodies: &[Vec<(i64, i64, u8)>]) {
+    out.extend_from_slice(&(bodies.len() as u32).to_le_bytes());
+    for body in bodies {
+        push_cells(out, body);
+    }
+}
+
+fn read_bodies(b: &[u8], p: &mut usize) -> Option<Vec<Vec<(i64, i64, u8)>>> {
+    let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
+    *p += 4;
+    let mut out = Vec::with_capacity(n);
+    for _ in 0..n {
+        out.push(read_cells(b, p)?);
+    }
+    Some(out)
+}
+
+/// Encode a client PERCEPT: `voice(32) | A bodies | B bodies` — segmented
+/// bodies, not raw cells: the client already perceived.
+pub fn encode_percept(
+    a_bodies: &[Vec<(i64, i64, u8)>],
+    b_bodies: &[Vec<(i64, i64, u8)>],
+    voice: &[u8; 32],
+) -> Vec<u8> {
+    let mut out = Vec::new();
+    out.extend_from_slice(voice);
+    push_bodies(&mut out, a_bodies);
+    push_bodies(&mut out, b_bodies);
+    out
+}
+
+#[allow(clippy::type_complexity)]
+pub fn decode_percept(
+    body: &[u8],
+) -> Option<([u8; 32], Vec<Vec<(i64, i64, u8)>>, Vec<Vec<(i64, i64, u8)>>)> {
+    let voice: [u8; 32] = body.get(0..32)?.try_into().ok()?;
+    let mut p = 32;
+    let a = read_bodies(body, &mut p)?;
+    let b = read_bodies(body, &mut p)?;
     Some((voice, a, b))
 }
 

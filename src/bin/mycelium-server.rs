@@ -6,7 +6,7 @@
 //! Clients dial a hypha (server/client split preserved); peers fuse bases via
 //! sun_recon (P6). Usage:
 //!   mycelium-server [bind] [--id N] [--tier founder|validator|participant] [--peer ADDR]...
-use mycelium::cognition::{decode_demand, outcome_code, Kernel, Outcome};
+use mycelium::cognition::{decode_percept, germ_bytes, outcome_code, Kernel, Outcome};
 use mycelium::economy::Tier;
 use mycelium::network::nerve::Fingerprint;
 use mycelium::network::wire::Frame;
@@ -71,24 +71,33 @@ fn main() {
     for stream in listener.incoming() {
         let Ok(mut s) = stream else { continue };
         let Some(frame) = read_frame(&mut s) else { continue };
-        let Some((voice, a, b)) = decode_demand(&frame.body) else { continue };
-        let (out, basis, flux) = {
+        // The client PERCEIVED (segmented bodies); the JUDGE only adjudicates.
+        let Some((voice, a_bodies, b_bodies)) = decode_percept(&frame.body) else { continue };
+        let (out, basis, flux, taught) = {
             let mut k = kernel.lock().unwrap();
-            let out = k.ingest(&a, &b, voice);
-            (out, k.basis_len(), k.physics().order_flux())
+            let out = k.adjudicate(&a_bodies, &b_bodies, voice);
+            // TEACH: on a valid element, hand its canonical ANASTOME form back.
+            let taught = match &out {
+                Outcome::Recognised(i) | Outcome::Installed(i) => germ_bytes(&k.basis()[*i]),
+                _ => Vec::new(),
+            };
+            (out, k.basis_len(), k.physics().order_flux(), taught)
         };
         let label = match &out {
-            Outcome::Recognised(i) => format!("recognised (recall) #{i}"),
-            Outcome::GermPending => "germ pending (one voice)".to_string(),
-            Outcome::Installed(i) => format!("GERM INSTALLED #{i} (two-voice consilience)"),
-            Outcome::Fragmented(parts) => format!("fragmented into {} sub-demands", parts.len()),
-            Outcome::Pivot => "pivot (irreducible residual — new fiber owed)".to_string(),
+            Outcome::Recognised(i) => format!("valid: recall #{i}"),
+            Outcome::GermPending => "valid: germ pending (one voice)".to_string(),
+            Outcome::Installed(i) => format!("valid: GERM INSTALLED #{i}"),
+            Outcome::Fragmented(parts) => format!("valid: fragmented ({} bodies)", parts.len()),
+            Outcome::Pivot => "invalid: pivot (residual — new fiber owed)".to_string(),
         };
-        eprintln!("  demand voice {:02x} → {label}; basis={basis}; metabolism {flux:?}", voice[0]);
+        eprintln!("  percept voice {:02x} → {label}; basis={basis}; metabolism {flux:?}", voice[0]);
+        // Reply: outcome | metabolism(4) | taught ANASTOME element (len16 | bytes).
         let mut body = vec![outcome_code(&out)];
         for f in flux {
             body.push(f.clamp(-128, 127) as i8 as u8);
         }
+        body.extend_from_slice(&(taught.len() as u16).to_le_bytes());
+        body.extend_from_slice(&taught);
         let reply = Frame { lane: frame.lane, body };
         let _ = s.write_all(&reply.encode().unwrap_or_default());
     }
