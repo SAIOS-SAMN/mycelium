@@ -113,18 +113,17 @@ fn main() {
             let out = k.adjudicate(&a_bodies, &b_bodies, voice);
             // TEACH: on a valid element, hand its canonical ANASTOME form back.
             let taught = match &out {
-                Outcome::Recognised(i) | Outcome::Installed(i) => germ_bytes(&k.basis()[*i]),
+                Outcome::Installed(i) => germ_bytes(&k.basis()[*i]),
                 _ => Vec::new(),
             };
             (out, k.basis_len(), k.physics().order_flux(), taught)
         };
         let label = match &out {
-            Outcome::Recognised(i) => format!("valid: recall #{i}"),
+            Outcome::Decomposed(word) => format!("valid: decomposed → sentence {word:?} ({} generators)", word.len()),
             Outcome::GermPending => "valid: germ pending (one voice)".to_string(),
             Outcome::Installed(i) => format!("valid: GERM INSTALLED #{i}"),
-            Outcome::Composed(i, j) => format!("valid: composed #{i}∘#{j} (spanned — nothing minted)"),
             Outcome::Fragmented(parts) => format!("valid: fragmented ({} bodies)", parts.len()),
-            Outcome::Pivot => "invalid: pivot (residual — new fiber owed)".to_string(),
+            Outcome::Pivot => "invalid: pivot (degenerate — nothing to reduce)".to_string(),
         };
         let src = if kind == 1 { "gossip" } else { "client" };
         eprintln!("  {src} percept voice {:02x} → {label}; basis={basis}; metabolism {flux:?}", voice[0]);

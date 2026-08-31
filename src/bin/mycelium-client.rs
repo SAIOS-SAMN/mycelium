@@ -44,12 +44,11 @@ fn main() {
     s.read_exact(&mut body).expect("reply body");
 
     let verdict = match body.first() {
-        Some(1) => "valid: recall",
+        Some(1) => "valid: decomposed (confluent sentence)",
         Some(2) => "valid: germ pending",
         Some(3) => "valid: GERM INSTALLED",
         Some(4) => "invalid: pivot",
         Some(5) => "valid: fragmented",
-        Some(6) => "valid: composed (spanned — nothing minted)",
         _ => "unknown",
     };
     let flux: Vec<i64> = body.get(1..5).map(|b| b.iter().map(|&x| x as i8 as i64).collect()).unwrap_or_default();

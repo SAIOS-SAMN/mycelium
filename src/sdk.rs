@@ -41,18 +41,16 @@ impl Kernel {
 /// kernel learns (the mesh's word for what it just described).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Verdict {
-    /// The demand is an installed primitive — recalled (the mesh already speaks it).
-    Recall { taught: Vec<u8> },
-    /// A novel germ awaiting a second kernel's voice (consilience pending).
+    /// The demand DECOMPOSED into a canonical sentence of installed generators (the
+    /// confluent normal form) — the mesh already speaks it, nothing minted.
+    Decomposed { taught: Vec<u8> },
+    /// A novel generator awaiting a second kernel's voice (consilience pending).
     GermPending,
-    /// A novel germ that reached two-voice consilience and installed.
+    /// An irreducible residual that reached consilience and adjoined (KB completion).
     Installed { taught: Vec<u8> },
-    /// The demand is a COMPOSITION of installed generators — the algebra spans it,
-    /// nothing minted (a sentence).
-    Composed,
     /// The scene fragmented into per-body sub-demands.
     Fragmented,
-    /// No motor closes it and no coboundary germinated — an empty/degenerate demand.
+    /// A degenerate demand — nothing to reduce.
     Pivot,
     /// An unrecognized reply code (forward-compat).
     Unknown(u8),
@@ -61,10 +59,9 @@ pub enum Verdict {
 impl Verdict {
     pub fn label(&self) -> &'static str {
         match self {
-            Verdict::Recall { .. } => "recall",
+            Verdict::Decomposed { .. } => "decomposed",
             Verdict::GermPending => "germ-pending",
             Verdict::Installed { .. } => "installed",
-            Verdict::Composed => "composed",
             Verdict::Fragmented => "fragmented",
             Verdict::Pivot => "pivot",
             Verdict::Unknown(_) => "unknown",
@@ -73,7 +70,7 @@ impl Verdict {
     /// The taught ANASTOME element the mesh handed back (empty when none).
     pub fn taught(&self) -> &[u8] {
         match self {
-            Verdict::Recall { taught } | Verdict::Installed { taught } => taught,
+            Verdict::Decomposed { taught } | Verdict::Installed { taught } => taught,
             _ => &[],
         }
     }
@@ -126,12 +123,11 @@ fn decode_verdict(body: &[u8]) -> Verdict {
         body.get(7..7 + tl).map(<[u8]>::to_vec).unwrap_or_default()
     };
     match body.first() {
-        Some(1) => Verdict::Recall { taught },
+        Some(1) => Verdict::Decomposed { taught },
         Some(2) => Verdict::GermPending,
         Some(3) => Verdict::Installed { taught },
         Some(4) => Verdict::Pivot,
         Some(5) => Verdict::Fragmented,
-        Some(6) => Verdict::Composed,
         Some(&c) => Verdict::Unknown(c),
         None => Verdict::Unknown(0),
     }
@@ -157,7 +153,7 @@ mod tests {
             Verdict::Installed { taught } => assert_eq!(taught, vec![0xAB, 0xCD]),
             v => panic!("expected Installed, got {v:?}"),
         }
-        assert_eq!(decode_verdict(&[6, 0, 0, 0, 0, 0, 0]), Verdict::Composed);
+        assert_eq!(decode_verdict(&[1, 0, 0, 0, 0, 0, 0]), Verdict::Decomposed { taught: vec![] });
         assert_eq!(decode_verdict(&[2, 0, 0, 0, 0, 0, 0]), Verdict::GermPending);
     }
 }

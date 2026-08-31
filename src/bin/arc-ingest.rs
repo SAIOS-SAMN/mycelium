@@ -21,10 +21,9 @@ fn has(args: &[String], name: &str) -> bool {
 #[derive(Default)]
 struct Tally {
     pairs: u64,
-    recall: u64,
+    decomposed: u64,
     germ_pending: u64,
     installed: u64,
-    composed: u64,
     fragmented: u64,
     pivot: u64,
     unknown: u64,
@@ -37,10 +36,9 @@ impl Tally {
         self.pairs += 1;
         self.taught_bytes += v.taught().len() as u64;
         match v {
-            Verdict::Recall { .. } => self.recall += 1,
+            Verdict::Decomposed { .. } => self.decomposed += 1,
             Verdict::GermPending => self.germ_pending += 1,
             Verdict::Installed { .. } => self.installed += 1,
-            Verdict::Composed => self.composed += 1,
             Verdict::Fragmented => self.fragmented += 1,
             Verdict::Pivot => self.pivot += 1,
             Verdict::Unknown(_) => self.unknown += 1,
@@ -50,11 +48,11 @@ impl Tally {
         let p = self.pairs.max(1) as f64;
         let pct = |n: u64| 100.0 * n as f64 / p;
         eprintln!(
-            "[{kernel}] {} pairs in {secs:.0}s ({:.1}/s) | recall {} ({:.0}%) germ {} installed {} composed {} pivot {} frag {} | err {} | taught {}KB",
+            "[{kernel}] {} pairs in {secs:.0}s ({:.1}/s) | decomposed {} ({:.0}%) germ {} installed {} pivot {} frag {} | err {} | taught {}KB",
             self.pairs,
             self.pairs as f64 / secs.max(1.0),
-            self.recall, pct(self.recall),
-            self.germ_pending, self.installed, self.composed, self.pivot, self.fragmented,
+            self.decomposed, pct(self.decomposed),
+            self.germ_pending, self.installed, self.pivot, self.fragmented,
             self.errors, self.taught_bytes / 1024,
         );
     }

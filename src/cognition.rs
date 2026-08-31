@@ -24,21 +24,30 @@ pub const FRAGMENT_FLOOR: usize = 9;
 /// The verdict of ingesting one demand.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Outcome {
-    /// The motor is already an installed primitive — recall.
-    Recognised(usize),
-    /// A novel germ awaiting a second voice (this voice recorded).
+    /// The demand's substance DECOMPOSED into a canonical sentence of installed
+    /// generators — the confluent normal form, reached by peeling under ≺_DM (no
+    /// lookup, no search). The algebra spans it, nothing minted. An empty word is a
+    /// pure transposition (no substance). This one outcome subsumes the old recall
+    /// (length 1) and composition (length k): one reduction, not two search kinds.
+    Decomposed(Vec<usize>),
+    /// A novel generator awaiting a second kernel's voice (consilience pending).
     GermPending,
-    /// A novel germ that just reached quorum and installed to the basis.
+    /// An irreducible residual that reached quorum and adjoined as a new generator
+    /// (Knuth–Bendix completion — the alphabet grows).
     Installed(usize),
-    /// The demand is the COMPOSITION of two installed generators (a depth-2
-    /// sentence) — the algebra already SPANS it, so nothing is minted. The two
-    /// cited basis indices (R6: reach new transforms by composition).
-    Composed(usize, usize),
     /// The scene had no single motor; it fragmented into per-body sub-demands,
-    /// each resolved independently and recomposed (the large-corpus path).
+    /// each reduced independently and recomposed (the large-corpus path).
     Fragmented(Vec<Outcome>),
-    /// No motor closes the demand — an irreducible residual (a pivot).
+    /// A degenerate demand (empty, or mismatched body counts) — nothing to reduce.
     Pivot,
+}
+
+/// The result of reducing a demand's substance against the generator basis: either
+/// a canonical sentence (fully decomposed) or an irreducible residual (a critical
+/// pair to complete by germination).
+enum NormalForm {
+    Decomposed(Vec<usize>),
+    Irreducible(Element),
 }
 
 /// The kernel's evolving state: the installed generator basis + the germ
@@ -146,59 +155,95 @@ impl Kernel {
     /// Opaque: matched by canonical address, never by "kind".
     fn conceive_germ(&mut self, g: Element, voice: [u8; 32]) -> Outcome {
         let lanes = g.lanes();
-        if let Some(i) = self.basis.iter().position(|p| *p == g) {
-            self.treasury.settle_recall(voice); // the recaller's small yield
-            self.treasury.settle_use(self.discoverers[i]); // UTILITY → the germ's discoverer
-            self.physics.syntropy(lanes); // recognition builds order (negentropy)
-            return Outcome::Recognised(i);
-        }
-        // R6 — COMPOSITIONAL RECALL: before minting, ask whether the algebra already
-        // SPANS this demand — i.e. it is the composition of installed generators (a
-        // depth-2 sentence). If so, recognise it as that sentence and mint NOTHING;
-        // both cited generators are USED, so their discoverers are paid (the corpus
-        // this composition unlocked). "Don't mint what the basis already spans."
-        if g.solution().is_some() {
-            if let Some((i, j)) = self.factor_pair(&g) {
-                self.treasury.settle_recall(voice);
-                self.treasury.settle_use(self.discoverers[i]);
-                self.treasury.settle_use(self.discoverers[j]);
+        // CONFLUENT DECOMPOSITION — reduce the demand's substance to normal form by
+        // peeling installed generators under ≺_DM. No lookup, no pair-search: a
+        // demand either decomposes into a canonical sentence, or leaves an
+        // irreducible residual (a Knuth–Bendix critical pair) to complete.
+        match self.reduce(&g) {
+            NormalForm::Decomposed(word) => {
+                self.treasury.settle_recall(voice); // the reader's small yield
+                for &i in &word {
+                    self.treasury.settle_use(self.discoverers[i]); // each cited generator, used
+                }
                 self.physics.syntropy(lanes); // a spanned sentence builds order
-                return Outcome::Composed(i, j);
+                Outcome::Decomposed(word)
             }
-        }
-        let addr = g.address();
-        if self.admission.record(Receipt { voice, germ: addr }) {
-            // Two-voice consilience: POW++ gate + consilience split (anti-
-            // hallucination). Installing pays NO flat novelty bounty — reward
-            // flows later, on real use (see the Recognised arm).
-            let _ = self.treasury.settle_install(&g, voice); // gate only
-            self.treasury.settle_consilience(&self.admission.voices_of(&addr));
-            self.physics.relieve(lanes);
-            self.physics.syntropy(lanes); // a germinated fiber is order built
-            self.basis.push(g);
-            self.discoverers.push(voice);
-            Outcome::Installed(self.basis.len() - 1)
-        } else {
-            self.physics.bump(lanes); // an open germ raises per-lane pressure
-            Outcome::GermPending
-        }
-    }
-
-    /// DEDUCE whether `g` factors as the composition `basis[i] ∘ basis[j]` of two
-    /// installed GROUP generators (a depth-2 Cayley spelling). Exact — matched by
-    /// realized action, no fuzzy search — and restricted to invertible (group)
-    /// generators so the realization is injective on the description. Bounded O(n²)
-    /// over the basis; deeper depths iterate the same reduction (future).
-    fn factor_pair(&self, g: &Element) -> Option<(usize, usize)> {
-        let groupish: Vec<usize> = (0..self.basis.len()).filter(|&i| self.basis[i].solution().is_some()).collect();
-        for &i in &groupish {
-            for &j in &groupish {
-                if self.basis[i].compose(&self.basis[j]).same_action(g) {
-                    return Some((i, j));
+            NormalForm::Irreducible(residual) => {
+                // KB COMPLETION — the irreducible residual adjoins as a NEW generator
+                // on two-kernel consilience. Confluence is the gate: two kernels
+                // reducing the same demand reach the SAME residual (same address),
+                // so agreement is a theorem about the algebra, not a matched card.
+                let addr = residual.address();
+                if self.admission.record(Receipt { voice, germ: addr }) {
+                    let _ = self.treasury.settle_install(&residual, voice); // POW++ gate only
+                    self.treasury.settle_consilience(&self.admission.voices_of(&addr));
+                    self.physics.relieve(lanes);
+                    self.physics.syntropy(lanes); // a completed rule is order built
+                    self.basis.push(residual);
+                    self.discoverers.push(voice);
+                    Outcome::Installed(self.basis.len() - 1)
+                } else {
+                    self.physics.bump(lanes); // an open critical pair raises pressure
+                    Outcome::GermPending
                 }
             }
         }
-        None
+    }
+
+    /// REDUCE a demand to its confluent normal form. (1) TRANSPOSE to substance
+    /// (quotient the ℤ² position). (2) PEEL installed generators while the reduction
+    /// magnitude strictly descends under ≺_DM — a terminating rewrite (the order is
+    /// well-founded). A demand whose substance directly IS a generator terminates at
+    /// length 1 (the old "recall"); a compound one peels to a longer sentence (the
+    /// old "composition"); one no generator lowers is IRREDUCIBLE — a critical pair
+    /// to germinate.
+    fn reduce(&self, g: &Element) -> NormalForm {
+        let mut s = g.substance();
+        let mut word = Vec::new();
+        // ≺_DM is well-founded so this terminates; the bound is only a safety net.
+        for _ in 0..64 {
+            if s.is_identity() {
+                return NormalForm::Decomposed(word); // fully reduced (empty = pure transposition)
+            }
+            // Terminal: the substance IS an installed generator (length-1 sentence).
+            if let Some(i) = self.basis.iter().position(|p| p.substance().same_action(&s)) {
+                word.push(i);
+                return NormalForm::Decomposed(word);
+            }
+            match self.best_peel(&s) {
+                Some((i, next)) => {
+                    word.push(i);
+                    s = next;
+                }
+                None => return NormalForm::Irreducible(s),
+            }
+        }
+        NormalForm::Irreducible(s)
+    }
+
+    /// Peel the MAXIMAL ≺_DM-descending generator from substance `s`: try each
+    /// invertible (group) generator γ, form `γ⁻¹ ∘ s`, and keep the one whose
+    /// reduction magnitude descends most (tie-broken by basis order — deterministic,
+    /// so the reduction is confluent). `None` when no generator lowers `s`.
+    fn best_peel(&self, s: &Element) -> Option<(usize, Element)> {
+        let before = s.reduction_magnitude();
+        let mut best: Option<(usize, Element, [u64; 4])> = None;
+        for (i, gen) in self.basis.iter().enumerate() {
+            let gs = gen.substance();
+            let Some(inv) = gs.solution() else { continue }; // only group generators peel
+            let cand = inv.compose(s);
+            let m = cand.reduction_magnitude();
+            if crate::economy::descends(&m, &before) {
+                let take = match &best {
+                    Some((_, _, bm)) => crate::economy::descends(&m, bm),
+                    None => true,
+                };
+                if take {
+                    best = Some((i, cand, m));
+                }
+            }
+        }
+        best.map(|(i, cand, _)| (i, cand))
     }
 
     /// A read-only view of the germinated basis (for the CCL display seam).
@@ -375,12 +420,11 @@ pub fn decode_percept(
 /// One byte on the wire summarising an outcome (server → client reply).
 pub fn outcome_code(o: &Outcome) -> u8 {
     match o {
-        Outcome::Recognised(_) => 1,
+        Outcome::Decomposed(_) => 1,
         Outcome::GermPending => 2,
         Outcome::Installed(_) => 3,
         Outcome::Fragmented(_) => 5,
         Outcome::Pivot => 4,
-        Outcome::Composed(_, _) => 6,
     }
 }
 
@@ -392,20 +436,21 @@ mod tests {
         vec![(sr, sc, 1), (sr, sc + 1, 1), (sr + 1, sc, 1)]
     }
 
-    /// A novel translation germinates: one voice pends, a second installs it;
-    /// afterward the same demand recalls.
+    /// A novel SUBSTANCE (here a rotation) germinates: one voice pends, a second
+    /// completes the rule; afterward the same demand REDUCES to the length-1
+    /// sentence [0] — no lookup, the confluent normal form.
     #[test]
-    fn a_germ_installs_on_two_voices_then_recalls() {
+    fn a_novel_substance_germinates_then_decomposes() {
         let mut k = Kernel::new();
-        let (a, b) = (scene(0, 0), scene(0, 3)); // +0,+3 translate
-        assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
-        assert_eq!(k.basis_len(), 0, "one voice does not install");
-        assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::Installed(0), "two voices install");
+        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)]; // L
+        let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)]; // R180 of L — non-trivial substance
+        assert_eq!(k.ingest(&a, &rot, [1; 32]), Outcome::GermPending);
+        assert_eq!(k.basis_len(), 0, "one voice does not complete");
+        assert_eq!(k.ingest(&a, &rot, [2; 32]), Outcome::Installed(0), "two kernels complete the rule");
         assert_eq!(k.basis_len(), 1);
-        assert_eq!(k.ingest(&a, &b, [3; 32]), Outcome::Recognised(0), "now recalled");
+        assert_eq!(k.ingest(&a, &rot, [3; 32]), Outcome::Decomposed(vec![0]), "reduces to the length-1 sentence");
     }
 
-    /// An irreducible residual is a pivot, never installed.
     /// P7 — the germinated language survives restart: install two germs, snapshot,
     /// restore into a fresh kernel, and the restored kernel RECALLS them (no
     /// re-germination) with balances intact.
@@ -413,47 +458,47 @@ mod tests {
     fn the_basis_survives_a_restart() {
         let mut k = Kernel::new();
         let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-        let t3 = vec![(0, 3, 1), (0, 4, 1), (1, 3, 1)];
-        let bar = vec![(0, 0, 1), (0, 1, 1), (0, 2, 1)];
-        k.ingest(&a, &t3, [1; 32]);
-        assert_eq!(k.ingest(&a, &t3, [2; 32]), Outcome::Installed(0)); // a motion germ
+        let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)]; // a rotation (group substance)
+        let bar = vec![(0, 0, 1), (0, 1, 1), (0, 2, 1)]; // a deformation (residual substance)
+        k.ingest(&a, &rot, [1; 32]);
+        assert_eq!(k.ingest(&a, &rot, [2; 32]), Outcome::Installed(0)); // a rotation generator
         k.ingest(&a, &bar, [1; 32]);
-        assert_eq!(k.ingest(&a, &bar, [2; 32]), Outcome::Installed(1)); // a residual germ
+        assert_eq!(k.ingest(&a, &bar, [2; 32]), Outcome::Installed(1)); // a residual generator
         let balance = k.treasury().balance(&[2; 32]);
         let snap = k.snapshot();
 
         // A fresh hypha boots from the snapshot.
         let mut booted = Kernel::new();
         assert!(booted.restore(&snap), "clean restore");
-        assert_eq!(booted.basis_len(), 2, "both germs came back");
+        assert_eq!(booted.basis_len(), 2, "both generators came back");
         assert_eq!(booted.treasury().balance(&[2; 32]), balance, "earned balance survived");
-        // Both are RECALLED, not re-germinated (the language persisted).
-        assert_eq!(booted.ingest(&a, &t3, [9; 32]), Outcome::Recognised(0), "motion recalled");
-        assert_eq!(booted.ingest(&a, &bar, [9; 32]), Outcome::Recognised(1), "residual recalled");
+        // Both REDUCE to their generator, not re-germinated (the language persisted).
+        assert_eq!(booted.ingest(&a, &rot, [9; 32]), Outcome::Decomposed(vec![0]), "rotation reduces");
+        assert_eq!(booted.ingest(&a, &bar, [9; 32]), Outcome::Decomposed(vec![1]), "residual reduces");
         assert_eq!(booted.basis_len(), 2, "no re-germination");
     }
 
-    /// R6 — COMPOSITIONAL RECALL: install a translate(+0,+3) generator, then a
-    /// translate(+0,+6) demand is DEDUCED as g₀∘g₀ (a depth-2 sentence). The algebra
-    /// spans it, so NOTHING is minted (basis stays 1), and the generator's
-    /// discoverer is paid for the composition's use.
+    /// CONFLUENT REDUCTION is TRANSPOSITION-INVARIANT (the win over lookup): install
+    /// a rotation, then the SAME rotation FAR AWAY reduces to the same normal form
+    /// (no re-mint) — a lookup on the coordinate-exact word would have missed it.
+    /// And a pure translate has EMPTY substance — it decomposes to the empty
+    /// sentence, minting nothing (a translate is pure transposition, not cognition).
     #[test]
-    fn a_composite_demand_is_deduced_not_minted() {
+    fn reduction_is_transposition_invariant() {
         let mut k = Kernel::new();
         let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-        let t3 = vec![(0, 3, 1), (0, 4, 1), (1, 3, 1)]; // +0,+3
-        let t6 = vec![(0, 6, 1), (0, 7, 1), (1, 6, 1)]; // +0,+6 = (+0,+3) ∘ (+0,+3)
-        // Install the atom on two voices.
-        assert_eq!(k.ingest(&a, &t3, [1; 32]), Outcome::GermPending);
-        assert_eq!(k.ingest(&a, &t3, [2; 32]), Outcome::Installed(0));
-        assert_eq!(k.basis_len(), 1);
-        // The discoverer is the installing (quorum-reaching) voice.
-        let before = k.treasury().balance(&[2; 32]);
-        // The composite is recognised as g₀∘g₀ — no new germ minted.
-        assert_eq!(k.ingest(&a, &t6, [3; 32]), Outcome::Composed(0, 0), "deduced as a sentence");
-        assert_eq!(k.basis_len(), 1, "the algebra spanned it — nothing minted");
-        // The cited generator's discoverer earned utility (used twice in the sentence).
-        assert!(k.treasury().balance(&[2; 32]) > before, "composition pays the cited generator");
+        let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)]; // R180 of L at origin
+        k.ingest(&a, &rot, [1; 32]);
+        assert_eq!(k.ingest(&a, &rot, [2; 32]), Outcome::Installed(0));
+        // the SAME rotation, transposed +10 in col: same substance → same sentence.
+        let a_far = vec![(0, 10, 1), (0, 11, 1), (1, 10, 1)];
+        let rot_far = vec![(0, 11, 1), (1, 10, 1), (1, 11, 1)];
+        assert_eq!(k.ingest(&a_far, &rot_far, [3; 32]), Outcome::Decomposed(vec![0]), "transposed → same normal form");
+        assert_eq!(k.basis_len(), 1, "transposition mints nothing");
+        // a pure translate is pure transposition — empty substance, empty sentence.
+        let t = vec![(0, 3, 1), (0, 4, 1), (1, 3, 1)];
+        assert_eq!(k.ingest(&a, &t, [4; 32]), Outcome::Decomposed(vec![]), "a translate carries no substance");
+        assert_eq!(k.basis_len(), 1, "still nothing minted");
     }
 
     /// A shape deformation (L → bar) that NO motor closes is not a dead-end: its
@@ -470,17 +515,18 @@ mod tests {
         assert_eq!(k.basis_len(), 0, "not yet installed");
         assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::Installed(0), "two voices install the residual germ");
         assert_eq!(k.basis_len(), 1, "the deformation germinated a new axis");
-        assert_eq!(k.ingest(&a, &b, [3; 32]), Outcome::Recognised(0), "and is recalled");
+        assert_eq!(k.ingest(&a, &b, [3; 32]), Outcome::Decomposed(vec![0]), "and reduces to it");
     }
 
-    /// Two distinct objects moving by DIFFERENT motors: the whole scene has no
-    /// single motor, so the demand FRAGMENTS per body and resolves each — the
-    /// large-corpus path. Two voices install both germs (two distinct motors).
+    /// Two distinct objects with DIFFERENT substances (one rotates, one recolours):
+    /// the whole scene has no single motor, so it FRAGMENTS per body and reduces
+    /// each — the large-corpus path. Two voices complete both generators.
     #[test]
     fn independent_objects_fragment_and_resolve() {
         let mut k = Kernel::new();
+        // L rotates (R180); square recolours 2→3 in place — each a real substance.
         let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1), (5, 5, 2), (5, 6, 2), (6, 5, 2), (6, 6, 2)];
-        let b = vec![(0, 3, 1), (0, 4, 1), (1, 3, 1), (5, 12, 2), (5, 13, 2), (6, 12, 2), (6, 13, 2)];
+        let b = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1), (5, 5, 3), (5, 6, 3), (6, 5, 3), (6, 6, 3)];
         match k.ingest(&a, &b, [1; 32]) {
             Outcome::Fragmented(parts) => assert_eq!(parts.len(), 2, "one sub-demand per body"),
             o => panic!("expected Fragmented, got {o:?}"),

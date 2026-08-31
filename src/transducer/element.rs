@@ -519,6 +519,49 @@ impl Element {
     pub fn magnitude(&self) -> [u64; 4] {
         self.mag
     }
+
+    /// THE TRANSPOSITION QUOTIENT — factor out the translation (the ℤ² orbit) so
+    /// the element becomes its position-independent SUBSTANCE
+    /// (dilation·rotation·gauge·residual). Two transposition-equivalent demands
+    /// (same substance, different position) share ONE substance — the object of
+    /// confluent reduction, not the coordinate-exact word. (Gauge S₁₀ canonical
+    /// relabel is a further quotient, still to land.)
+    pub fn substance(&self) -> Element {
+        let mut out = self.clone();
+        out.word = Vec::new(); // the substance is translation-invariant, not the exact word
+        for (i, m) in out.fibers.iter_mut() {
+            if *i == FIBER_SPATIAL && m.len() == GERM_DIM {
+                m[0][2] = Q::zero(); // zero the spatial translation column
+                m[1][2] = Q::zero();
+            }
+        }
+        // a pure transposition (translate only) becomes the identity — empty substance
+        out.fibers.retain(|(_, m)| !is_identity(m));
+        out.mag = out.reduction_magnitude();
+        out
+    }
+
+    /// THE REDUCTION MAGNITUDE ‖Δ‖ read from the MATRIX (drives the confluent
+    /// peeling's ≺_DM descent): per-lane count of non-identity structural entries —
+    /// 𝒮 the spatial block, 𝒢 the hue block. Distinct from the description-derived
+    /// germ [`magnitude`]: this is the well-founded order the reduction descends.
+    pub fn reduction_magnitude(&self) -> [u64; 4] {
+        match self.fiber(FIBER_SPATIAL) {
+            Some(m) if m.len() == GERM_DIM => {
+                let id = identity(GERM_DIM);
+                let spatial = (0..3)
+                    .flat_map(|i| (0..3).map(move |j| (i, j)))
+                    .filter(|&(i, j)| m[i][j] != id[i][j])
+                    .count();
+                let hue = (3..GERM_DIM)
+                    .flat_map(|i| (3..GERM_DIM).map(move |j| (i, j)))
+                    .filter(|&(i, j)| m[i][j] != id[i][j])
+                    .count();
+                [spatial as u64, hue as u64, 0, 0]
+            }
+            _ => [0; 4],
+        }
+    }
 }
 
 #[cfg(test)]
@@ -712,6 +755,24 @@ mod tests {
         assert!(germ.solution().is_none(), "no single-matrix inverse for a coboundary");
         let reverse = from_residual(&germinate(&b, &a).unwrap());
         assert_ne!(germ, reverse, "the reverse description is a distinct germ");
+    }
+
+    /// The transposition quotient: a pure translate has EMPTY substance (it is a
+    /// pure position change — the ℤ² orbit), while a rotation keeps its substance;
+    /// two translates of the SAME rotation share one substance (same form, new
+    /// position). The reduction magnitude descends toward the identity.
+    #[test]
+    fn substance_is_the_transposition_invariant() {
+        use crate::transducer::transform::solve_transform;
+        let tf = |a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]| from_transform(&solve_transform(a, b).unwrap());
+        // pure translate → empty substance (a pure transposition).
+        let translate = tf(&[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 3, 1), (0, 4, 1), (1, 3, 1)]);
+        assert!(translate.substance().is_identity(), "a translate is pure transposition — no substance");
+        // a rotation at two different positions → the SAME substance.
+        let rot_here = tf(&[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 1, 1), (1, 0, 1), (1, 1, 1)]);
+        let rot_far = tf(&[(0, 10, 1), (0, 11, 1), (1, 10, 1)], &[(0, 11, 1), (1, 10, 1), (1, 11, 1)]);
+        assert!(!rot_here.substance().is_identity(), "a rotation has substance");
+        assert!(rot_here.substance().same_action(&rot_far.substance()), "same form, new position — one substance");
     }
 
     /// P7: a germ round-trips through bytes losslessly — address, magnitude, and
