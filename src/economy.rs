@@ -36,8 +36,11 @@ pub fn descends(after: &[u64; 4], before: &[u64; 4]) -> bool {
     after.iter().zip(before).all(|(a, b)| a <= b) && after.iter().zip(before).any(|(a, b)| a < b)
 }
 
-const BOUNTY: i64 = 5;
 const CONSILIENCE: i64 = 16;
+/// The UTILITY yield paid to a germ's DISCOVERER each time a real later demand
+/// recalls it — reward is proportional to corpus actually unlocked, never a flat
+/// bounty for a germ that merely closes its own birth demand (anti-Goodhart).
+const USE_YIELD: i64 = 5;
 
 /// A settlement receipt (below-boundary storage — a Vec, not a map).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -61,17 +64,19 @@ impl Treasury {
         self.entries.push(Entry { kind, who, amount });
     }
 
-    /// Pay a germ install: only if it descends (POW++ gate). The germ reduces the
-    /// demand to nothing, so `after = 0⃗ ≺_DM magnitude(germ)` — it always
-    /// descends; the gate refuses a non-reducing "settlement".
-    pub fn settle_install(&mut self, g: &Transform, voice: [u8; 32]) -> bool {
-        let before = magnitude(g);
-        let after = [0u64; 4];
-        if !descends(&after, &before) {
-            return false; // nothing reduced — no pay
-        }
-        self.credit("mint", voice, BOUNTY);
-        true
+    /// The POW++ GATE on a germ install: it admits iff the germ reduces the demand
+    /// (`0⃗ ≺_DM magnitude`). NB: installing pays NOTHING here — a germ that only
+    /// closes its own birth demand has proven nothing about the corpus. Reward
+    /// flows later, on USE (`settle_use`), proportional to real demand unlocked.
+    pub fn settle_install(&mut self, g: &Transform, _voice: [u8; 32]) -> bool {
+        descends(&[0u64; 4], &magnitude(g))
+    }
+
+    /// A germ was USED — a real later demand recalled it. Pay its DISCOVERER the
+    /// utility yield: this is the corpus actually unlocked, the only novelty the
+    /// economy prices. Called once per recall of an installed germ.
+    pub fn settle_use(&mut self, discoverer: [u8; 32]) {
+        self.credit("utility", discoverer, USE_YIELD);
     }
 
     /// Split the consilience reward across the two voices on the admission event.
@@ -109,12 +114,15 @@ mod tests {
     }
 
     #[test]
-    fn a_reducing_germ_pays_its_voice() {
+    fn novelty_pays_on_use_not_on_existence() {
         let mut t = Treasury::new();
         let g = germ();
         assert!(magnitude(&g)[0] >= 1 && magnitude(&g)[1] == 1, "motion∘recolour has S+G cost");
-        assert!(t.settle_install(&g, [1; 32]));
-        assert_eq!(t.balance(&[1; 32]), 5);
+        assert!(t.settle_install(&g, [1; 32]), "gate admits a reducing germ");
+        assert_eq!(t.balance(&[1; 32]), 0, "installing pays NOTHING — no corpus proven yet");
+        t.settle_use([1; 32]); // a real demand later recalled it
+        t.settle_use([1; 32]);
+        assert_eq!(t.balance(&[1; 32]), 10, "reward flows with real use (2 × 5)");
     }
 
     #[test]

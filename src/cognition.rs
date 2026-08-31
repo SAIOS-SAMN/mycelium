@@ -44,6 +44,9 @@ pub struct Kernel {
     /// kernel never branches on their "kind" — they are opaque, addressed by
     /// their canonical form. English descriptions live only in the `ccl` seam.
     basis: Vec<Transform>,
+    /// The discoverer (installing voice) of each basis germ, parallel to `basis`
+    /// — so novelty yield flows to who germinated it, on real use.
+    discoverers: Vec<[u8; 32]>,
     admission: Admission,
     pub nerve: Nerve,
     /// Polytonic kinematic pressure + torsion (per lane).
@@ -119,18 +122,22 @@ impl Kernel {
     fn conceive_germ(&mut self, g: Transform, voice: [u8; 32]) -> Outcome {
         let lanes = crate::physics::lanes_of(&g);
         if let Some(i) = self.basis.iter().position(|p| *p == g) {
-            self.treasury.settle_recall(voice); // recall pays a small yield
+            self.treasury.settle_recall(voice); // the recaller's small yield
+            self.treasury.settle_use(self.discoverers[i]); // UTILITY → the germ's discoverer
             self.physics.syntropy(lanes); // recognition builds order (negentropy)
             return Outcome::Recognised(i);
         }
         let addr = germ_address(&g);
         if self.admission.record(Receipt { voice, germ: addr }) {
-            // Two-voice consilience: install, POW++-gated bounty + consilience split.
-            let _ = self.treasury.settle_install(&g, voice); // descends by construction
+            // Two-voice consilience: POW++ gate + consilience split (anti-
+            // hallucination). Installing pays NO flat novelty bounty — reward
+            // flows later, on real use (see the Recognised arm).
+            let _ = self.treasury.settle_install(&g, voice); // gate only
             self.treasury.settle_consilience(&self.admission.voices_of(&addr));
             self.physics.relieve(lanes);
             self.physics.syntropy(lanes); // a germinated fiber is order built
             self.basis.push(g);
+            self.discoverers.push(voice);
             Outcome::Installed(self.basis.len() - 1)
         } else {
             self.physics.bump(lanes); // an open germ raises per-lane pressure
