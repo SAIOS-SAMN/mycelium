@@ -15,12 +15,18 @@ pub fn lanes_of(g: &Transform) -> [bool; 4] {
     [!g.motor.is_identity(), !g.relabel.is_empty(), false, false]
 }
 
-/// Per-lane kinematic pressure + torsion. Arrays, never a summed scalar.
+/// Per-lane kinematic pressure, torsion, and the SYNTROPIC/ENTROPIC metabolism.
+/// Arrays, never a summed scalar (#34). The metabolism is the governing physics
+/// of the hypha↔client exchange: syntropic events (settlements — order built,
+/// negentropy) and entropic events (pivots/backlog — disorder) net per lane into
+/// the order flux that paces serving and demand cadence.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Physics {
     /// Open demand backlog per lane — the pressure.
     pub pressure: [u64; 4],
-    /// Unclosable-residual (pivot) charge per lane — the torsion spectrum.
+    /// SYNTROPIC events per lane — settlements that built structure (negentropy).
+    pub syntropic: [u64; 4],
+    /// ENTROPIC events per lane — pivots/torsion, disorder the demand injected.
     pub torsion: [u64; 4],
 }
 
@@ -54,10 +60,28 @@ impl Physics {
         }
     }
 
-    /// THE METABOLISM RATE — per-lane, proportional to pressure. Polytonic: each
-    /// lane's cadence is its own pressure, never one ranking across lanes.
+    /// A settlement built order on these lanes — a SYNTROPIC event (negentropy).
+    pub fn syntropy(&mut self, lanes: [bool; 4]) {
+        for l in 0..4 {
+            if lanes[l] {
+                self.syntropic[l] = self.syntropic[l].saturating_add(1);
+            }
+        }
+    }
+
+    /// THE METABOLISM RATE — per-lane serving cadence, proportional to pressure.
+    /// Polytonic: each lane's rate is its own pressure, never one ranking across
+    /// lanes. This is what paces the hypha's serving and the client's demand.
     pub fn metabolism_rate(&self) -> [u64; 4] {
         self.pressure
+    }
+
+    /// THE ORDER FLUX — per-lane syntropic minus entropic. Positive: the mesh is
+    /// building structure on that lane (settling faster than it pivots);
+    /// negative: it is losing ground (a lane demanding a new fiber). The dynamic
+    /// entropic/syntropic metabolism (#34), reported hypha→client each exchange.
+    pub fn order_flux(&self) -> [i64; 4] {
+        std::array::from_fn(|l| self.syntropic[l] as i64 - self.torsion[l] as i64)
     }
 }
 
@@ -89,5 +113,15 @@ mod tests {
         let mut p = Physics::default();
         p.pivot([false, false, false, false]); // unattributable
         assert_eq!(p.torsion, [1, 1, 1, 1], "an unresolved residual charges torsion");
+    }
+
+    /// The metabolism is per-lane syntropic minus entropic — the order flux.
+    #[test]
+    fn the_metabolism_is_order_flux_per_lane() {
+        let mut p = Physics::default();
+        p.syntropy([true, false, false, false]); // built order on 𝒮
+        p.syntropy([true, false, false, false]);
+        p.pivot([false, true, false, false]); // disorder on 𝒢
+        assert_eq!(p.order_flux(), [2, -1, 0, 0], "syntropic − entropic, never summed");
     }
 }

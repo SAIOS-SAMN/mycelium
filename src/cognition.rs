@@ -117,17 +117,19 @@ impl Kernel {
     /// Classify one anonymous germ against the basis and run the two-voice gate.
     /// Opaque: matched by canonical address, never by "kind".
     fn conceive_germ(&mut self, g: Transform, voice: [u8; 32]) -> Outcome {
+        let lanes = crate::physics::lanes_of(&g);
         if let Some(i) = self.basis.iter().position(|p| *p == g) {
             self.treasury.settle_recall(voice); // recall pays a small yield
+            self.physics.syntropy(lanes); // recognition builds order (negentropy)
             return Outcome::Recognised(i);
         }
-        let lanes = crate::physics::lanes_of(&g);
         let addr = germ_address(&g);
         if self.admission.record(Receipt { voice, germ: addr }) {
             // Two-voice consilience: install, POW++-gated bounty + consilience split.
             let _ = self.treasury.settle_install(&g, voice); // descends by construction
             self.treasury.settle_consilience(&self.admission.voices_of(&addr));
             self.physics.relieve(lanes);
+            self.physics.syntropy(lanes); // a germinated fiber is order built
             self.basis.push(g);
             Outcome::Installed(self.basis.len() - 1)
         } else {

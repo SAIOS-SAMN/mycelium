@@ -33,8 +33,11 @@ fn main() {
         let Ok(mut s) = stream else { continue };
         let Some(frame) = read_frame(&mut s) else { continue };
         let Some((voice, a, b)) = decode_demand(&frame.body) else { continue };
-        let out = kernel.lock().unwrap().ingest(&a, &b, voice);
-        let basis = kernel.lock().unwrap().basis_len();
+        let (out, basis, flux) = {
+            let mut k = kernel.lock().unwrap();
+            let out = k.ingest(&a, &b, voice);
+            (out, k.basis_len(), k.physics().order_flux())
+        };
         let label = match &out {
             Outcome::Recognised(i) => format!("recognised (recall) #{i}"),
             Outcome::GermPending => "germ pending (one voice)".to_string(),
@@ -42,8 +45,18 @@ fn main() {
             Outcome::Fragmented(parts) => format!("fragmented into {} sub-demands", parts.len()),
             Outcome::Pivot => "pivot (irreducible residual — new fiber owed)".to_string(),
         };
-        eprintln!("  demand voice {:02x} → {label}; basis={basis}", voice[0]);
-        let reply = Frame { lane: frame.lane, body: vec![outcome_code(&out)] };
+        eprintln!(
+            "  demand voice {:02x} → {label}; basis={basis}; metabolism(order flux) {flux:?}",
+            voice[0]
+        );
+        // Reply carries the outcome + the per-lane syntropic/entropic metabolism
+        // (order flux, i8-clamped) — the hypha→client physics report that paces
+        // the client's demand cadence.
+        let mut body = vec![outcome_code(&out)];
+        for f in flux {
+            body.push(f.clamp(-128, 127) as i8 as u8);
+        }
+        let reply = Frame { lane: frame.lane, body };
         let _ = s.write_all(&reply.encode().unwrap_or_default());
     }
 }

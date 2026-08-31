@@ -29,7 +29,12 @@ fn main() {
         Some(2) => "germ pending (one voice)",
         Some(3) => "GERM INSTALLED (two-voice consilience)",
         Some(4) => "pivot (irreducible residual)",
+        Some(5) => "fragmented (per-body)",
         _ => "unknown",
     };
-    println!("voice {voice} → {verdict}");
+    // The hypha reports its per-lane syntropic/entropic metabolism (order flux);
+    // a continuous client paces its demand cadence by it (syntropic lanes pull
+    // more, entropic lanes back off).
+    let flux: Vec<i64> = body.get(1..5).map(|b| b.iter().map(|&x| x as i8 as i64).collect()).unwrap_or_default();
+    println!("voice {voice} → {verdict}; hypha metabolism(order flux) {flux:?}");
 }
