@@ -57,7 +57,22 @@ fn main() {
     let id = flag(&args, "--id").map(id_of).unwrap_or_else(|| id_of(&addr));
     let peers = flags(&args, "--peer");
 
+    // P7 — durable state: the germinated basis + earned ledger persist across
+    // restart. Default path is per-node; override with --state PATH.
+    let id_tag = flag(&args, "--id").map(String::from).unwrap_or_else(|| addr.replace(':', "_"));
+    let state_path = flag(&args, "--state").map(String::from).unwrap_or_else(|| format!("/opt/mycelium-v0.1.0/state/hypha-{id_tag}.ledger"));
+    if let Some(dir) = std::path::Path::new(&state_path).parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+
     let kernel = Arc::new(Mutex::new(Kernel::new()));
+    // Resume the learned language from disk (a corrupt ledger boots clean, no crash).
+    if let Ok(bytes) = std::fs::read(&state_path) {
+        let mut k = kernel.lock().unwrap();
+        if k.restore(&bytes) {
+            eprintln!("restored basis={} from {state_path}", k.basis_len());
+        }
+    }
     // Register peers into the nerve — the non-ring Čech cover of hyphas. (Real
     // per-lane fingerprints arrive with sun_recon/P6; here presence + a seeded
     // bloom so adjacency is genuine, not a static ring.)
@@ -122,6 +137,16 @@ fn main() {
         body.extend_from_slice(&taught);
         let reply = Frame { lane: frame.lane, body };
         let _ = s.write_all(&reply.encode().unwrap_or_default());
+
+        // P7 — a new germ changed the durable language: persist it (atomic write —
+        // to .tmp then rename — so a crash mid-write never corrupts the ledger).
+        if matches!(out, Outcome::Installed(_)) {
+            let snap = kernel.lock().unwrap().snapshot();
+            let tmp = format!("{state_path}.tmp");
+            if std::fs::write(&tmp, &snap).is_ok() {
+                let _ = std::fs::rename(&tmp, &state_path);
+            }
+        }
 
         // P6/R5 · sun_recon: a CLIENT percept still awaiting consilience routes ONE
         // receipt to its RENDEZVOUS — the node XOR-closest to the demand's

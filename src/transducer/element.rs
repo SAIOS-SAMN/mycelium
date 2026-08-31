@@ -285,6 +285,75 @@ impl Element {
     pub fn address(&self) -> [u8; 32] {
         *blake3::hash(&self.canonical()).as_bytes()
     }
+
+    /// Serialize the FULL element (dim, coordinate-exact word, mag, exact-ℚ fibers)
+    /// for persistence — so a germinated basis survives restart (P7). Lossless: a
+    /// round trip reproduces address, algebra, identity, and magnitude exactly.
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        out.extend_from_slice(&(self.dim as u32).to_le_bytes());
+        out.extend_from_slice(&(self.word.len() as u32).to_le_bytes());
+        out.extend_from_slice(&self.word);
+        for m in &self.mag {
+            out.extend_from_slice(&m.to_le_bytes());
+        }
+        out.extend_from_slice(&(self.fibers.len() as u32).to_le_bytes());
+        for (i, mat) in &self.fibers {
+            out.extend_from_slice(&i.to_le_bytes());
+            for row in mat {
+                for v in row {
+                    let nb = v.numer().to_signed_bytes_le();
+                    let db = v.denom().to_signed_bytes_le();
+                    out.extend_from_slice(&(nb.len() as u32).to_le_bytes());
+                    out.extend_from_slice(&nb);
+                    out.extend_from_slice(&(db.len() as u32).to_le_bytes());
+                    out.extend_from_slice(&db);
+                }
+            }
+        }
+        out
+    }
+
+    /// Deserialize an element written by [`Element::to_bytes`], advancing `pos`.
+    /// `None` on a malformed ledger (never a panic on disk corruption).
+    pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Element> {
+        let u32_at = |b: &[u8], p: &mut usize| -> Option<u32> {
+            let v = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
+            *p += 4;
+            Some(v)
+        };
+        let dim = u32_at(b, pos)? as usize;
+        let wlen = u32_at(b, pos)? as usize;
+        let word = b.get(*pos..*pos + wlen)?.to_vec();
+        *pos += wlen;
+        let mut mag = [0u64; 4];
+        for m in &mut mag {
+            *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+            *pos += 8;
+        }
+        let nfib = u32_at(b, pos)? as usize;
+        let mut fibers = Vec::with_capacity(nfib);
+        for _ in 0..nfib {
+            let idx = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
+            *pos += 2;
+            let mut mat = vec![vec![Q::zero(); dim]; dim];
+            for row in mat.iter_mut() {
+                for cell in row.iter_mut() {
+                    let nl = u32_at(b, pos)? as usize;
+                    let nb = b.get(*pos..*pos + nl)?;
+                    *pos += nl;
+                    let numer = BigInt::from_signed_bytes_le(nb);
+                    let dl = u32_at(b, pos)? as usize;
+                    let db = b.get(*pos..*pos + dl)?;
+                    *pos += dl;
+                    let denom = BigInt::from_signed_bytes_le(db);
+                    *cell = Q::new(numer, denom);
+                }
+            }
+            fibers.push((idx, mat));
+        }
+        Some(Element { dim, fibers, word, mag })
+    }
 }
 
 /// Realize a conformal motor as a multi-axial element: the spatial fiber holds the
@@ -643,6 +712,25 @@ mod tests {
         assert!(germ.solution().is_none(), "no single-matrix inverse for a coboundary");
         let reverse = from_residual(&germinate(&b, &a).unwrap());
         assert_ne!(germ, reverse, "the reverse description is a distinct germ");
+    }
+
+    /// P7: a germ round-trips through bytes losslessly — address, magnitude, and
+    /// action all survive, so a persisted basis reloads identically.
+    #[test]
+    fn a_germ_round_trips_through_bytes() {
+        use crate::transducer::transform::solve_transform;
+        let motion = from_transform(&solve_transform(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 3, 5u8), (0, 4, 5), (1, 3, 5)]).unwrap());
+        let residual = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap());
+        for g in [&motion, &residual] {
+            let bytes = g.to_bytes();
+            let mut pos = 0;
+            let back = Element::from_bytes(&bytes, &mut pos).expect("reload");
+            assert_eq!(pos, bytes.len(), "consumed exactly");
+            assert_eq!(&back, g, "full equality (dim, word, mag, fibers)");
+            assert_eq!(back.address(), g.address(), "address survives");
+            assert_eq!(back.magnitude(), g.magnitude(), "magnitude survives");
+            assert!(back.same_action(g), "the algebra survives");
+        }
     }
 
     /// THE COORDINATE-EXACT IDENTITY: the case that broke the tally-only design.

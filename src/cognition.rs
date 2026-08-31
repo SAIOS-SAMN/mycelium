@@ -205,6 +205,61 @@ impl Kernel {
     pub fn basis(&self) -> &[Element] {
         &self.basis
     }
+
+    /// P7 — SNAPSHOT the durable cognitive state (the germinated basis + each
+    /// germ's discoverer + the settlement ledger) so a hypha resumes its learned
+    /// language and earned balances across restart, rather than re-germinating from
+    /// zero. Format: `MYC1 | [n][elem_len][elem][discoverer 32]… | treasury`.
+    pub fn snapshot(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        out.extend_from_slice(b"MYC1");
+        out.extend_from_slice(&(self.basis.len() as u32).to_le_bytes());
+        for (g, who) in self.basis.iter().zip(&self.discoverers) {
+            let eb = g.to_bytes();
+            out.extend_from_slice(&(eb.len() as u32).to_le_bytes());
+            out.extend_from_slice(&eb);
+            out.extend_from_slice(who);
+        }
+        out.extend_from_slice(&self.treasury.snapshot());
+        out
+    }
+
+    /// P7 — RESTORE a snapshot into a fresh kernel. Returns `false` (leaving the
+    /// kernel empty) on a bad magic or corruption — a corrupt ledger never crashes
+    /// a boot, it just starts clean.
+    pub fn restore(&mut self, b: &[u8]) -> bool {
+        let mut pos = 0usize;
+        if b.get(0..4) != Some(b"MYC1") {
+            return false;
+        }
+        pos = 4;
+        let read_u32 = |b: &[u8], p: &mut usize| -> Option<u32> {
+            let v = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
+            *p += 4;
+            Some(v)
+        };
+        let load = |kernel: &mut Kernel, b: &[u8], pos: &mut usize| -> Option<()> {
+            let n = read_u32(b, pos)? as usize;
+            for _ in 0..n {
+                let elen = read_u32(b, pos)? as usize;
+                let mut ep = *pos;
+                let elem = Element::from_bytes(b, &mut ep)?;
+                *pos += elen;
+                let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                *pos += 32;
+                kernel.basis.push(elem);
+                kernel.discoverers.push(who);
+            }
+            kernel.treasury = crate::economy::Treasury::restore(b, pos)?;
+            Some(())
+        };
+        if load(self, b, &mut pos).is_none() {
+            self.basis.clear();
+            self.discoverers.clear();
+            return false;
+        }
+        true
+    }
 }
 
 // ── the ANASTOME address of a germ (canonical, opaque; transport identity) ────
@@ -352,6 +407,33 @@ mod tests {
     }
 
     /// An irreducible residual is a pivot, never installed.
+    /// P7 — the germinated language survives restart: install two germs, snapshot,
+    /// restore into a fresh kernel, and the restored kernel RECALLS them (no
+    /// re-germination) with balances intact.
+    #[test]
+    fn the_basis_survives_a_restart() {
+        let mut k = Kernel::new();
+        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+        let t3 = vec![(0, 3, 1), (0, 4, 1), (1, 3, 1)];
+        let bar = vec![(0, 0, 1), (0, 1, 1), (0, 2, 1)];
+        k.ingest(&a, &t3, [1; 32]);
+        assert_eq!(k.ingest(&a, &t3, [2; 32]), Outcome::Installed(0)); // a motion germ
+        k.ingest(&a, &bar, [1; 32]);
+        assert_eq!(k.ingest(&a, &bar, [2; 32]), Outcome::Installed(1)); // a residual germ
+        let balance = k.treasury().balance(&[2; 32]);
+        let snap = k.snapshot();
+
+        // A fresh hypha boots from the snapshot.
+        let mut booted = Kernel::new();
+        assert!(booted.restore(&snap), "clean restore");
+        assert_eq!(booted.basis_len(), 2, "both germs came back");
+        assert_eq!(booted.treasury().balance(&[2; 32]), balance, "earned balance survived");
+        // Both are RECALLED, not re-germinated (the language persisted).
+        assert_eq!(booted.ingest(&a, &t3, [9; 32]), Outcome::Recognised(0), "motion recalled");
+        assert_eq!(booted.ingest(&a, &bar, [9; 32]), Outcome::Recognised(1), "residual recalled");
+        assert_eq!(booted.basis_len(), 2, "no re-germination");
+    }
+
     /// R6 — COMPOSITIONAL RECALL: install a translate(+0,+3) generator, then a
     /// translate(+0,+6) demand is DEDUCED as g₀∘g₀ (a depth-2 sentence). The algebra
     /// spans it, so NOTHING is minted (basis stays 1), and the generator's

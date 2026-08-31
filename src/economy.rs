@@ -127,6 +127,48 @@ impl Treasury {
     pub fn entries(&self) -> &[Entry] {
         &self.entries
     }
+
+    /// Serialize the ledger for persistence (P7): `[n][kind_tag u8][who 32][amount
+    /// i64]…`. Kinds map to a stable tag so earned balances survive restart.
+    pub fn snapshot(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        out.extend_from_slice(&(self.entries.len() as u32).to_le_bytes());
+        for e in &self.entries {
+            let tag: u8 = match e.kind {
+                "utility" => 0,
+                "consilience" => 1,
+                "recall" => 2,
+                _ => 255,
+            };
+            out.push(tag);
+            out.extend_from_slice(&e.who);
+            out.extend_from_slice(&e.amount.to_le_bytes());
+        }
+        out
+    }
+
+    /// Reload a ledger written by [`Treasury::snapshot`]. `None` on corruption.
+    pub fn restore(b: &[u8], pos: &mut usize) -> Option<Treasury> {
+        let n = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
+        *pos += 4;
+        let mut entries = Vec::with_capacity(n);
+        for _ in 0..n {
+            let tag = *b.get(*pos)?;
+            *pos += 1;
+            let kind = match tag {
+                0 => "utility",
+                1 => "consilience",
+                2 => "recall",
+                _ => "unknown",
+            };
+            let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+            *pos += 32;
+            let amount = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+            *pos += 8;
+            entries.push(Entry { kind, who, amount });
+        }
+        Some(Treasury { entries })
+    }
 }
 
 #[cfg(test)]
