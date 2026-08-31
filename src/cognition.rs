@@ -228,11 +228,10 @@ impl Kernel {
     /// kernel empty) on a bad magic or corruption — a corrupt ledger never crashes
     /// a boot, it just starts clean.
     pub fn restore(&mut self, b: &[u8]) -> bool {
-        let mut pos = 0usize;
         if b.get(0..4) != Some(b"MYC1") {
             return false;
         }
-        pos = 4;
+        let mut pos = 4usize;
         let read_u32 = |b: &[u8], p: &mut usize| -> Option<u32> {
             let v = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
             *p += 4;
