@@ -28,6 +28,7 @@ use crate::core::engine::{Delta, Operator, Q, QMatrix};
 use crate::core::matrix::{det, identity, invert, mul};
 use crate::transducer::germinate::ResidualGerm;
 use crate::transducer::motor::ConformalMotor;
+use crate::transducer::transform::Transform;
 use num_bigint::BigInt;
 use num_traits::{One, Zero};
 
@@ -294,6 +295,153 @@ pub fn germ_delta(g: &ResidualGerm) -> Delta {
     delta
 }
 
+// ─── THE GERM CARRIER — a demand's description as ONE block-diagonal operator ───
+//
+// A germ is realized at a common dimension `GERM_DIM = 3 + PALETTE`: the spatial
+// homogeneous plane (rows 0..3) ⊕ the hue axis (rows 3..13). Every germ — whether
+// a solved motion∘recolour or an irreducible residual — is the SAME shape, so the
+// basis is one uniform species (no kind-branch) and germs are cross-comparable
+// (the R6 Lie structure will compose them block-wise). The block-diagonal form
+// composes/inverts block-wise for free, and the two blocks read off the per-lane
+// physics/economy vectors below.
+
+/// Hue states carried on the gauge/germinated axis (ARC palette 0..9; 0 = absent).
+pub const PALETTE: usize = 10;
+/// The common germ dimension: spatial homogeneous plane (3) ⊕ hue axis (PALETTE).
+pub const GERM_DIM: usize = 3 + PALETTE;
+
+/// Copy a small square `block` into `dst` at diagonal offset `off`.
+fn place_block(dst: &mut QMatrix, off: usize, block: &QMatrix) {
+    let n = block.len();
+    for i in 0..n {
+        for j in 0..n {
+            dst[off + i][off + j] = block[i][j].clone();
+        }
+    }
+}
+
+/// Extract the `n×n` diagonal sub-block of `m` at offset `off`.
+fn sub_block(m: &QMatrix, off: usize, n: usize) -> QMatrix {
+    (0..n).map(|i| (0..n).map(|j| m[off + i][off + j].clone()).collect()).collect()
+}
+
+/// Is `m` a nonzero antisymmetric matrix (M = −Mᵀ, M ≠ 0)? — the computed test that
+/// distinguishes a COBOUNDARY block (a residual/non-group description) from a
+/// group block (a permutation/motion). Structure, not a stored kind tag.
+fn is_antisym_nonzero(m: &QMatrix) -> bool {
+    let n = m.len();
+    let mut any = false;
+    for i in 0..n {
+        for j in 0..n {
+            if m[i][j] != -&m[j][i] {
+                return false;
+            }
+            if !m[i][j].is_zero() {
+                any = true;
+            }
+        }
+    }
+    any
+}
+
+/// The DESCRIPTION of a solved body transform (motion ∘ recolour) as a germ: the
+/// spatial block is the homogeneous similarity `[[λR,t],[0,1]]`; the hue block is
+/// the relabel's transition matrix (column `from` ↦ row `to`). Its solution() is
+/// the block-wise inverse when the relabel is a bijection.
+pub fn from_transform(t: &Transform) -> Element {
+    let mut m = identity(GERM_DIM);
+    let r = t.motor.rotation.matrix();
+    let l = &t.motor.dilation;
+    let spatial = vec![
+        vec![l * q(r[0][0]), l * q(r[0][1]), t.motor.translation.0.clone()],
+        vec![l * q(r[1][0]), l * q(r[1][1]), t.motor.translation.1.clone()],
+        vec![q(0), q(0), q(1)],
+    ];
+    place_block(&mut m, 0, &spatial);
+    for (from, to) in &t.relabel {
+        let (f, tt) = (*from as usize, *to as usize);
+        if f < PALETTE && tt < PALETTE {
+            m[3 + f][3 + f] = q(0); // hue `f` no longer fixed
+            m[3 + tt][3 + f] = q(1); // it maps to `tt`
+        }
+    }
+    Element::identity(GERM_DIM).with_fiber(FIBER_SPATIAL, m)
+}
+
+/// The DESCRIPTION of an irreducible residual as a germ (the pivot that USED to be
+/// discarded): the spatial block is identity (no rigid motion closes it); the hue
+/// block is the antisymmetric coboundary of the residual's directed hue
+/// transitions (`Δ[before][after] += 1`). This is "germinate the description" — a
+/// new axis of perception minted from what resisted the group.
+pub fn from_residual(g: &ResidualGerm) -> Element {
+    let mut m = identity(GERM_DIM);
+    // The hue block is a PURE antisymmetric coboundary (zero diagonal) — a
+    // Lie-algebra element, not a group block — so it reads as the residual axis.
+    let mut hue = vec![vec![Q::zero(); PALETTE]; PALETTE];
+    for (_, _, before, after) in g {
+        let (a, b) = (*before as usize, *after as usize);
+        if a == b || a >= PALETTE || b >= PALETTE {
+            continue;
+        }
+        hue[a][b] += Q::one();
+        hue[b][a] -= Q::one();
+    }
+    place_block(&mut m, 3, &hue);
+    Element::identity(GERM_DIM).with_fiber(FIBER_SPATIAL, m)
+}
+
+impl Element {
+    /// Split a germ (a `GERM_DIM` element) into its (spatial, hue) blocks.
+    fn germ_blocks(&self) -> Option<(QMatrix, QMatrix)> {
+        let m = self.fiber(FIBER_SPATIAL)?;
+        if m.len() != GERM_DIM {
+            return None;
+        }
+        Some((sub_block(m, 0, 3), sub_block(m, 3, PALETTE)))
+    }
+
+    /// The four lanes this germ carries content on — 𝒮 spatial, 𝒢 gauge (a group
+    /// recolour), residual (a coboundary/new axis), 𝒽 shell. Derived from the
+    /// block structure, not a stored tag; used for the polytonic physics.
+    pub fn lanes(&self) -> [bool; 4] {
+        match self.germ_blocks() {
+            Some((a, b)) => {
+                let spatial = a != identity(3);
+                let residual = is_antisym_nonzero(&b);
+                let gauge = !residual && b != identity(PALETTE);
+                [spatial, gauge, residual, false]
+            }
+            None => [false; 4],
+        }
+    }
+
+    /// The germ's polytonic MAGNITUDE — per-lane support size (‖Δ‖'s |supp|
+    /// component), never summed. 𝒮 = structural support of the motion, 𝒢 = number
+    /// of relabeled hues, residual = number of directed hue transitions. A settled
+    /// demand's residual magnitude is 0⃗; a real germ's is nonzero — the descent
+    /// the POW++ gate reads.
+    pub fn magnitude(&self) -> [u64; 4] {
+        match self.germ_blocks() {
+            Some((a, b)) => {
+                let id3 = identity(3);
+                let spatial =
+                    (0..3).flat_map(|i| (0..3).map(move |j| (i, j))).filter(|&(i, j)| a[i][j] != id3[i][j]).count();
+                if is_antisym_nonzero(&b) {
+                    let residual = (0..PALETTE)
+                        .flat_map(|i| ((i + 1)..PALETTE).map(move |j| (i, j)))
+                        .filter(|&(i, j)| !b[i][j].is_zero())
+                        .count();
+                    [spatial as u64, 0, residual as u64, 0]
+                } else {
+                    let gauge = (0..PALETTE).filter(|&c| !b[c][c].is_one()).count();
+                    [spatial as u64, gauge as u64, 0, 0]
+                }
+            }
+            None => [0; 4],
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -433,6 +581,58 @@ mod tests {
                 assert_eq!(out.entries[i][j][0], -&out.entries[j][i][0], "A·Δ·A⁻¹ stays antisymmetric");
             }
         }
+    }
+
+    // ─── THE GERM CARRIER: parity with the live per-lane semantics + residuals ──
+
+    /// The carrier reproduces the EXACT lane-activity the live pipeline reads from
+    /// a `Transform` (`physics::lanes_of`) — so swapping the basis onto Element is
+    /// behavior-preserving on the physics.
+    #[test]
+    fn from_transform_lanes_match_the_live_transform_semantics() {
+        use crate::transducer::transform::solve_transform;
+        // pure motion → 𝒮 only
+        let motion = solve_transform(&[(0, 0, 7u8), (0, 1, 7)], &[(0, 3, 7u8), (0, 4, 7)]).unwrap();
+        assert_eq!(from_transform(&motion).lanes(), [true, false, false, false]);
+        // pure recolour → 𝒢 only
+        let recolour = solve_transform(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap();
+        assert_eq!(from_transform(&recolour).lanes(), [false, true, false, false]);
+        // motion ∘ recolour → 𝒮 and 𝒢
+        let both = solve_transform(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 3, 5u8), (0, 4, 5), (1, 3, 5)]).unwrap();
+        assert_eq!(from_transform(&both).lanes(), [true, true, false, false]);
+    }
+
+    /// The magnitude is nonzero on exactly the active lanes — so the POW++ install
+    /// gate (`0⃗ ≺_DM magnitude`) admits the germ, matching the live economy. (The
+    /// values are per-lane support size, the ratified ‖Δ‖ |supp| component.)
+    #[test]
+    fn germ_magnitude_is_nonzero_on_active_lanes() {
+        use crate::transducer::transform::solve_transform;
+        let both = solve_transform(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 3, 5u8), (0, 4, 5), (1, 3, 5)]).unwrap();
+        let m = from_transform(&both).magnitude();
+        assert!(m[0] >= 1 && m[1] == 1, "motion∘recolour: 𝒮≥1, 𝒢=1 (one relabeled hue)");
+        assert_eq!(m[2], 0);
+    }
+
+    /// THE RESIDUAL GERMINATES: a pivot that no motor closes becomes a first-class
+    /// germ on the residual lane — the description that used to be discarded. Its
+    /// magnitude is nonzero there, so the POW++ gate admits it.
+    #[test]
+    fn a_residual_germinates_as_a_coboundary_germ() {
+        // (0,1): 2→9 with the rest fixed — not a rigid motion; a pure residual.
+        let a = [(0, 0, 1u8), (0, 1, 2), (1, 0, 3)];
+        let b = [(0, 0, 1u8), (0, 1, 9), (1, 0, 3)];
+        let g = germinate(&a, &b).unwrap();
+        let germ = from_residual(&g);
+        assert_eq!(germ.lanes(), [false, false, true, false], "the residual lane, not 𝒮/𝒢");
+        let mag = germ.magnitude();
+        assert!(mag[2] >= 1 && mag[0] == 0 && mag[1] == 0, "cost on the residual lane only");
+        // A residual has no group inverse (its block is antisymmetric/singular);
+        // its solution is the reverse coboundary (from_residual of b→a), not a
+        // matrix inverse — the group solution() correctly declines.
+        assert!(germ.solution().is_none(), "no single-matrix inverse for a coboundary");
+        let reverse = from_residual(&germinate(&b, &a).unwrap());
+        assert_ne!(germ, reverse, "the reverse description is a distinct germ");
     }
 
     /// Multi-axial: distinct axes compose INDEPENDENTLY (no cross-talk, no cap on
