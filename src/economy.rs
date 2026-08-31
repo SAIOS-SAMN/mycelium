@@ -37,6 +37,37 @@ pub fn descends(after: &[u64; 4], before: &[u64; 4]) -> bool {
 }
 
 const CONSILIENCE: i64 = 16;
+
+/// Economic tiers for a decentralized mesh running cryptographic semantic
+/// operations: yields scale by the participant's tier. A hypha/client's standing
+/// weights its reward, so the topology supports staked, tiered roles — never a
+/// flat one-class network.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Tier {
+    Founder,
+    Validator,
+    Participant,
+    Observer,
+}
+
+impl Tier {
+    pub fn weight(self) -> i64 {
+        match self {
+            Tier::Founder => 8,
+            Tier::Validator => 4,
+            Tier::Participant => 2,
+            Tier::Observer => 1,
+        }
+    }
+    pub fn from_str(s: &str) -> Tier {
+        match s {
+            "founder" => Tier::Founder,
+            "validator" => Tier::Validator,
+            "observer" => Tier::Observer,
+            _ => Tier::Participant,
+        }
+    }
+}
 /// The UTILITY yield paid to a germ's DISCOVERER each time a real later demand
 /// recalls it — reward is proportional to corpus actually unlocked, never a flat
 /// bounty for a germ that merely closes its own birth demand (anti-Goodhart).
@@ -77,6 +108,12 @@ impl Treasury {
     /// economy prices. Called once per recall of an installed germ.
     pub fn settle_use(&mut self, discoverer: [u8; 32]) {
         self.credit("utility", discoverer, USE_YIELD);
+    }
+
+    /// Tiered utility yield: the discoverer's tier weights the reward — the
+    /// economic-tier hook for a decentralized, staked mesh.
+    pub fn settle_use_tiered(&mut self, discoverer: [u8; 32], tier: Tier) {
+        self.credit("utility", discoverer, USE_YIELD * tier.weight());
     }
 
     /// Split the consilience reward across the two voices on the admission event.

@@ -1,11 +1,14 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! mycelium-server — the new topological node. Binds a TCP listener, reads
-//! lane-tagged wire frames, and drives each demand through the cognition kernel
-//! (transducer → solve → conception → two-voice admission). Novel germs install
-//! to the basis only on the second independent voice. Plaintext TCP for now;
-//! Noise is a transport wrapper to add over the same `wire` framing.
+//! mycelium-server — a HYPHA in the Čech-nerve mesh (never a star). Each hypha
+//! runs its OWN Kernel (one eye per node), carries an id + economic tier, and
+//! registers its peers into its nerve so the mesh is a non-ring cover of hyphas.
+//! Clients dial a hypha (server/client split preserved); peers fuse bases via
+//! sun_recon (P6). Usage:
+//!   mycelium-server [bind] [--id N] [--tier founder|validator|participant] [--peer ADDR]...
 use mycelium::cognition::{decode_demand, outcome_code, Kernel, Outcome};
+use mycelium::economy::Tier;
+use mycelium::network::nerve::Fingerprint;
 use mycelium::network::wire::Frame;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
@@ -24,11 +27,47 @@ fn read_frame(s: &mut TcpStream) -> Option<Frame> {
     Frame::decode(&buf).map(|(f, _)| f)
 }
 
+fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
+    args.windows(2).find(|w| w[0] == name).map(|w| w[1].as_str())
+}
+fn flags(args: &[String], name: &str) -> Vec<String> {
+    args.windows(2).filter(|w| w[0] == name).map(|w| w[1].clone()).collect()
+}
+
+/// A stable node id from a string (address) — a wire identity, not cognition.
+fn id_of(s: &str) -> [u8; 32] {
+    *blake3::hash(s.as_bytes()).as_bytes()
+}
+
 fn main() {
-    let addr = std::env::args().nth(1).unwrap_or_else(|| "127.0.0.1:7500".to_string());
+    let args: Vec<String> = std::env::args().collect();
+    let addr = args.get(1).filter(|a| !a.starts_with("--")).cloned().unwrap_or_else(|| "127.0.0.1:7500".to_string());
+    let tier = Tier::from_str(flag(&args, "--tier").unwrap_or("participant"));
+    let id = flag(&args, "--id").map(id_of).unwrap_or_else(|| id_of(&addr));
+    let peers = flags(&args, "--peer");
+
     let kernel = Arc::new(Mutex::new(Kernel::new()));
+    // Register peers into the nerve — the non-ring Čech cover of hyphas. (Real
+    // per-lane fingerprints arrive with sun_recon/P6; here presence + a seeded
+    // bloom so adjacency is genuine, not a static ring.)
+    {
+        let mut k = kernel.lock().unwrap();
+        for p in &peers {
+            let pid = id_of(p);
+            let mut bloom = [0u8; 32];
+            bloom[(pid[0] as usize) % 32] |= 1 << (pid[1] % 8);
+            k.nerve.observe(pid, Fingerprint { beta1: [0; 4], bloom });
+        }
+    }
     let listener = TcpListener::bind(&addr).expect("bind");
-    eprintln!("mycelium-server: listening on {addr} (topological node, Δ-core)");
+    eprintln!(
+        "mycelium-hypha {:02x} tier {:?} bound {addr}; nerve peers {} {:?}",
+        id[0],
+        tier,
+        peers.len(),
+        peers
+    );
+
     for stream in listener.incoming() {
         let Ok(mut s) = stream else { continue };
         let Some(frame) = read_frame(&mut s) else { continue };
@@ -45,13 +84,7 @@ fn main() {
             Outcome::Fragmented(parts) => format!("fragmented into {} sub-demands", parts.len()),
             Outcome::Pivot => "pivot (irreducible residual — new fiber owed)".to_string(),
         };
-        eprintln!(
-            "  demand voice {:02x} → {label}; basis={basis}; metabolism(order flux) {flux:?}",
-            voice[0]
-        );
-        // Reply carries the outcome + the per-lane syntropic/entropic metabolism
-        // (order flux, i8-clamped) — the hypha→client physics report that paces
-        // the client's demand cadence.
+        eprintln!("  demand voice {:02x} → {label}; basis={basis}; metabolism {flux:?}", voice[0]);
         let mut body = vec![outcome_code(&out)];
         for f in flux {
             body.push(f.clamp(-128, 127) as i8 as u8);
