@@ -11,8 +11,9 @@
 use crate::network::consensus::{Admission, Receipt};
 use crate::network::nerve::Nerve;
 use crate::transducer::blade::{components, lift};
-use crate::transducer::motor::D4;
-use crate::transducer::transform::{solve_transform, Transform};
+use crate::transducer::element::{self, Element};
+use crate::transducer::germinate::germinate;
+use crate::transducer::transform::solve_transform;
 
 /// Mycelium's heritage floor: demands larger than this fragment (the 48% score
 /// depended on decomposing large corpus). Here the topological trigger is
@@ -40,10 +41,12 @@ pub enum Outcome {
 /// admission ledger + the Čech peer table.
 #[derive(Default)]
 pub struct Kernel {
-    /// The germinated basis: anonymous ANASTOME elements (exact transforms). The
-    /// kernel never branches on their "kind" — they are opaque, addressed by
-    /// their canonical form. English descriptions live only in the `ccl` seam.
-    basis: Vec<Transform>,
+    /// The germinated basis: anonymous ANASTOME elements — one uniform species
+    /// (block-diagonal descriptions with a coordinate-exact word), whether a solved
+    /// motion∘recolour or a residual coboundary. The kernel never branches on their
+    /// "kind"; they are opaque, addressed by canonical form. English lives only in
+    /// the `ccl` seam.
+    basis: Vec<Element>,
     /// The discoverer (installing voice) of each basis germ, parallel to `basis`
     /// — so novelty yield flows to who germinated it, on real use.
     discoverers: Vec<[u8; 32]>,
@@ -100,28 +103,31 @@ impl Kernel {
             self.physics.pivot([false; 4]);
             return Outcome::Pivot;
         }
-        // Correspond bodies by rigid-motion invariant (zero search), keeping the
-        // raw cells so the full transform (spatial ⊕ gauge) can be read.
+        // Correspond bodies by rigid-motion invariant (zero search) — the pairing,
+        // keeping the raw cells so the full description can be read per body.
         let mut ai: Vec<usize> = (0..ca.len()).collect();
         let mut bi: Vec<usize> = (0..cb.len()).collect();
         ai.sort_by(|&x, &y| lift(&ca[x], 0).invariant().cmp(&lift(&ca[y], 0).invariant()));
         bi.sort_by(|&x, &y| lift(&cb[x], 0).invariant().cmp(&lift(&cb[y], 0).invariant()));
+        // Derive each body's anonymous element. A body a motor CLOSES gives a solved
+        // description (from_transform). A body that RESISTS the group is NOT a
+        // dead-end — its residual IS the description, so it GERMINATES as a
+        // coordinate-exact coboundary germ (from_residual), a new axis of
+        // perception. Only a truly empty demand (no change at all) stays a pivot.
+        let mut germs: Vec<Element> = Vec::with_capacity(ca.len());
         for k in 0..ca.len() {
-            if lift(&ca[ai[k]], 0).invariant() != lift(&cb[bi[k]], 0).invariant() {
-                self.physics.pivot([false; 4]);
-                return Outcome::Pivot; // not the same bodies up to rigid motion
-            }
-        }
-        // Solve each body's anonymous element; a resisting body → pivot.
-        let mut germs = Vec::with_capacity(ca.len());
-        for k in 0..ca.len() {
-            match solve_transform(&ca[ai[k]], &cb[bi[k]]) {
-                Some(t) => germs.push(t),
-                None => {
-                    self.physics.pivot([false; 4]);
-                    return Outcome::Pivot;
-                }
-            }
+            let (a, b) = (&ca[ai[k]], &cb[bi[k]]);
+            let e = match solve_transform(a, b) {
+                Some(t) => element::from_transform(&t),
+                None => match germinate(a, b) {
+                    Some(rg) => element::from_residual(&rg),
+                    None => {
+                        self.physics.pivot([false; 4]);
+                        return Outcome::Pivot;
+                    }
+                },
+            };
+            germs.push(e);
         }
         // One element closing every body is a single germ; otherwise the demand
         // fragmented into independent per-body germs.
@@ -134,15 +140,15 @@ impl Kernel {
 
     /// Classify one anonymous germ against the basis and run the two-voice gate.
     /// Opaque: matched by canonical address, never by "kind".
-    fn conceive_germ(&mut self, g: Transform, voice: [u8; 32]) -> Outcome {
-        let lanes = crate::physics::lanes_of(&g);
+    fn conceive_germ(&mut self, g: Element, voice: [u8; 32]) -> Outcome {
+        let lanes = g.lanes();
         if let Some(i) = self.basis.iter().position(|p| *p == g) {
             self.treasury.settle_recall(voice); // the recaller's small yield
             self.treasury.settle_use(self.discoverers[i]); // UTILITY → the germ's discoverer
             self.physics.syntropy(lanes); // recognition builds order (negentropy)
             return Outcome::Recognised(i);
         }
-        let addr = germ_address(&g);
+        let addr = g.address();
         if self.admission.record(Receipt { voice, germ: addr }) {
             // Two-voice consilience: POW++ gate + consilience split (anti-
             // hallucination). Installing pays NO flat novelty bounty — reward
@@ -161,46 +167,26 @@ impl Kernel {
     }
 
     /// A read-only view of the germinated basis (for the CCL display seam).
-    pub fn basis(&self) -> &[Transform] {
+    pub fn basis(&self) -> &[Element] {
         &self.basis
     }
 }
 
 // ── the ANASTOME address of a germ (canonical, opaque; transport identity) ────
 
-fn push_ratio(out: &mut Vec<u8>, r: &num_rational::BigRational) {
-    for part in [r.numer(), r.denom()] {
-        let b = part.to_signed_bytes_le();
-        out.extend_from_slice(&(b.len() as u32).to_le_bytes());
-        out.extend_from_slice(&b);
-    }
-}
-
-fn d4_byte(d: D4) -> u8 {
-    D4::ALL.iter().position(|x| *x == d).unwrap_or(0) as u8
-}
-
-/// Canonical bytes of an anonymous germ (spatial element ⊕ gauge permutation).
-/// This is the germ's ANASTOME form — carries no English, no "kind".
-pub fn germ_bytes(g: &Transform) -> Vec<u8> {
-    let mut out = Vec::new();
-    push_ratio(&mut out, &g.motor.dilation);
-    out.push(d4_byte(g.motor.rotation));
-    push_ratio(&mut out, &g.motor.translation.0);
-    push_ratio(&mut out, &g.motor.translation.1);
-    out.push(0xFF);
-    for (from, to) in &g.relabel {
-        out.push(*from);
-        out.push(*to);
-    }
-    out
+/// Canonical bytes of an anonymous germ — its coordinate-exact ANASTOME form (the
+/// banked word ⊕ the block-diagonal algebra; carries no English, no "kind"). This
+/// is the language the hypha teaches back across the nerve; the client treats it
+/// opaquely (display only).
+pub fn germ_bytes(g: &Element) -> Vec<u8> {
+    g.canonical()
 }
 
 /// The germ's canonical ADDRESS — a digest of its ANASTOME form. Used to match
-/// consilience receipts across voices; it is a wire/cache identity, never a
-/// reasoning operand (the kernel reasons on the element, addresses by this).
-pub fn germ_address(g: &Transform) -> [u8; 32] {
-    *blake3::hash(&germ_bytes(g)).as_bytes()
+/// consilience receipts across voices; a wire/cache identity, never a reasoning
+/// operand (the kernel reasons on the element, addresses by this).
+pub fn germ_address(g: &Element) -> [u8; 32] {
+    g.address()
 }
 
 // ── demand wire codec (server ⇄ client) ──────────────────────────────────────
@@ -330,13 +316,21 @@ mod tests {
     }
 
     /// An irreducible residual is a pivot, never installed.
+    /// A shape deformation (L → bar) that NO motor closes is not a dead-end: its
+    /// residual IS the description, so it germinates a coordinate-exact coboundary
+    /// germ and installs on two-voice consilience (priced on USE per R3, so a
+    /// one-off earns ~0 — no basis flood). The reframe made operational: germinate
+    /// the description, never discard the residual.
     #[test]
-    fn a_pivot_never_installs() {
+    fn a_shape_deformation_germinates_a_residual() {
         let mut k = Kernel::new();
-        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-        let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, 1)]; // L → bar
-        assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::Pivot);
-        assert_eq!(k.basis_len(), 0);
+        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)]; // L
+        let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, 1)]; // bar — no rigid motor
+        assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending, "one voice awaits consilience");
+        assert_eq!(k.basis_len(), 0, "not yet installed");
+        assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::Installed(0), "two voices install the residual germ");
+        assert_eq!(k.basis_len(), 1, "the deformation germinated a new axis");
+        assert_eq!(k.ingest(&a, &b, [3; 32]), Outcome::Recognised(0), "and is recalled");
     }
 
     /// Two distinct objects moving by DIFFERENT motors: the whole scene has no

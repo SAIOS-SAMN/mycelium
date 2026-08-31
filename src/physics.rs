@@ -7,13 +7,9 @@
 //! Torsion is the obstruction reading: a demand that will not close is a PIVOT —
 //! a torsion charge on the lane it resisted, the demand for a new fiber.
 
-use crate::transducer::transform::Transform;
-
-/// The four lanes a germ carries content on: 𝒮 (spatial motor ≠ id), 𝒢 (gauge
-/// relabel ≠ ∅), 𝒯/𝒽 reserved (temporal/shell — filled as those fibers land).
-pub fn lanes_of(g: &Transform) -> [bool; 4] {
-    [!g.motor.is_identity(), !g.relabel.is_empty(), false, false]
-}
+// The four lanes a germ carries content on — 𝒮 (spatial), 𝒢 (gauge), residual (a
+// germinated coboundary axis), 𝒽 (shell) — are read off the germ's exact per-lane
+// support by `Element::lanes()` (transducer/element.rs), not derived here.
 
 /// Per-lane kinematic pressure, torsion, and the SYNTROPIC/ENTROPIC metabolism.
 /// Arrays, never a summed scalar (#34). The metabolism is the governing physics
@@ -88,7 +84,6 @@ impl Physics {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::transducer::transform::solve_transform;
 
     #[test]
     fn pressure_is_per_lane_and_relieves() {
@@ -100,12 +95,14 @@ mod tests {
         assert_eq!(p.metabolism_rate(), [0, 1, 0, 0]);
     }
 
+    /// A pure recolour charges only the gauge lane — now read off the germ's exact
+    /// per-lane support (`Element::lanes()`), the coordinate-exact carrier.
     #[test]
     fn a_recolour_charges_the_gauge_lane() {
-        let a = [(0, 0, 1u8), (0, 1, 1)];
-        let b = [(0, 0, 2u8), (0, 1, 2)];
-        let g = solve_transform(&a, &b).unwrap();
-        assert_eq!(lanes_of(&g), [false, true, false, false], "pure recolour = gauge only");
+        use crate::transducer::element::from_transform;
+        use crate::transducer::transform::solve_transform;
+        let g = from_transform(&solve_transform(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+        assert_eq!(g.lanes(), [false, true, false, false], "pure recolour = gauge only");
     }
 
     #[test]

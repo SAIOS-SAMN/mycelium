@@ -7,27 +7,15 @@
 //! The pricing decision (≺_DM) is topological and map-free; the ledger is a
 //! below-boundary Vec of receipts.
 
-use crate::transducer::motor::D4;
-use crate::transducer::transform::Transform;
+use crate::transducer::element::Element;
 
-/// A germ's polytonic magnitude — per-lane cost, never summed. 𝒮 = spatial
-/// complexity (shift + non-identity rotation + non-unit scale), 𝒢 = relabel
-/// size, 𝒯/𝒽 reserved. A settled demand's residual magnitude is the zero
-/// vector; the pre-settlement demand's is nonzero — hence the descent.
-pub fn magnitude(g: &Transform) -> [u64; 4] {
-    use num_traits::{One, Zero};
-    let (t0, t1) = &g.motor.translation;
-    let mut s = 0u64;
-    if !t0.is_zero() || !t1.is_zero() {
-        s += 1;
-    }
-    if g.motor.rotation != D4::E {
-        s += 1;
-    }
-    if !g.motor.dilation.is_one() {
-        s += 1;
-    }
-    [s, g.relabel.len() as u64, 0, 0]
+/// A germ's polytonic magnitude — per-lane support size (‖Δ‖'s |supp| component),
+/// never summed, computed EXACTLY from the germ's description. 𝒮 = motion support
+/// (shift/rotation/scale), 𝒢 = relabeled-hue count, residual = changed-cell count,
+/// 𝒽 reserved. A settled demand's residual magnitude is the zero vector; a real
+/// germ's is nonzero — hence the descent.
+pub fn magnitude(g: &Element) -> [u64; 4] {
+    g.magnitude()
 }
 
 /// The per-lane Dershowitz–Manna descent: `after ≺_DM before` iff after ≤ before
@@ -99,7 +87,7 @@ impl Treasury {
     /// (`0⃗ ≺_DM magnitude`). NB: installing pays NOTHING here — a germ that only
     /// closes its own birth demand has proven nothing about the corpus. Reward
     /// flows later, on USE (`settle_use`), proportional to real demand unlocked.
-    pub fn settle_install(&mut self, g: &Transform, _voice: [u8; 32]) -> bool {
+    pub fn settle_install(&mut self, g: &Element, _voice: [u8; 32]) -> bool {
         descends(&[0u64; 4], &magnitude(g))
     }
 
@@ -144,10 +132,12 @@ impl Treasury {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::transducer::element::from_transform;
     use crate::transducer::transform::solve_transform;
 
-    fn germ() -> Transform {
-        solve_transform(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 3, 5u8), (0, 4, 5), (1, 3, 5)]).unwrap()
+    fn germ() -> Element {
+        let t = solve_transform(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 3, 5u8), (0, 4, 5), (1, 3, 5)]).unwrap();
+        from_transform(&t)
     }
 
     #[test]

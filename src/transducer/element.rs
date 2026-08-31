@@ -26,8 +26,8 @@
 
 use crate::core::engine::{Delta, Operator, Q, QMatrix};
 use crate::core::matrix::{det, identity, invert, mul};
-use crate::transducer::germinate::ResidualGerm;
-use crate::transducer::motor::ConformalMotor;
+use crate::transducer::germinate::{germ_bytes as residual_word, ResidualGerm};
+use crate::transducer::motor::{ConformalMotor, D4};
 use crate::transducer::transform::Transform;
 use num_bigint::BigInt;
 use num_traits::{One, Zero};
@@ -66,12 +66,26 @@ fn is_identity(m: &QMatrix) -> bool {
     }) && m.iter().all(|r| r.len() == n)
 }
 
-/// A germ as a sparse multi-axial element: fibers sorted by index, each carrying
-/// a `dim×dim` exact rational generator. The element itself is the DESCRIPTION.
+/// A germ as a sparse multi-axial element carrying TWO complementary lenses of the
+/// same description, so nothing is collapsed:
+///   - `fibers` — the ALGEBRA lens: `dim×dim` exact rational generators for
+///     compose/bracket/solution/δ. A projection (a residual's hue tally is not
+///     injective — bidirectional swaps cancel), which is FINE for algebra.
+///   - `word` — the coordinate-EXACT ANASTOME description (the banked language):
+///     the exact transform bytes or the positional residual `(r,c,before,after)`.
+///     This is what drives identity/equality/address, so distinct descriptions
+///     never collide even where the tally does.
+///   - `mag` — per-lane support (‖Δ‖'s |supp|), computed EXACTLY from the
+///     description at germination, so economy/physics read a coordinate-exact cost
+///     (a residual's changed-cell count, never a canceling tally).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Element {
     dim: usize,
     fibers: Vec<(u16, QMatrix)>,
+    /// Coordinate-exact ANASTOME description (empty for pure-algebra elements).
+    word: Vec<u8>,
+    /// Per-lane support, exact from the description (0⃗ for pure-algebra elements).
+    mag: [u64; 4],
 }
 
 impl Element {
@@ -79,7 +93,7 @@ impl Element {
     /// transition on any axis). `dim` is the representation dimension shared by
     /// every fiber so they compose/bracket in a common GL(dim,ℚ).
     pub fn identity(dim: usize) -> Self {
-        Element { dim, fibers: Vec::new() }
+        Element { dim, fibers: Vec::new(), word: Vec::new(), mag: [0; 4] }
     }
 
     pub fn dim(&self) -> usize {
@@ -226,11 +240,14 @@ impl Element {
         Some(d)
     }
 
-    /// Canonical ANASTOME bytes: `[fiber:2][dim:2]` then each entry's exact ℚ
-    /// numer/denom, in fiber then row-major order. Order-independent (fibers are
-    /// kept sorted). WIRE IDENTITY ONLY — never a reasoning operand.
+    /// Canonical ANASTOME bytes: the coordinate-exact `word` (the banked
+    /// description — what makes identity injective), then `[dim:2]` and each
+    /// fiber's exact ℚ entries in fiber then row-major order. Order-independent
+    /// (fibers are kept sorted). WIRE IDENTITY ONLY — never a reasoning operand.
     pub fn canonical(&self) -> Vec<u8> {
         let mut out = Vec::new();
+        out.extend_from_slice(&(self.word.len() as u32).to_le_bytes());
+        out.extend_from_slice(&self.word);
         out.extend_from_slice(&(self.dim as u16).to_le_bytes());
         for (i, m) in &self.fibers {
             out.extend_from_slice(&i.to_le_bytes());
@@ -320,30 +337,6 @@ fn place_block(dst: &mut QMatrix, off: usize, block: &QMatrix) {
     }
 }
 
-/// Extract the `n×n` diagonal sub-block of `m` at offset `off`.
-fn sub_block(m: &QMatrix, off: usize, n: usize) -> QMatrix {
-    (0..n).map(|i| (0..n).map(|j| m[off + i][off + j].clone()).collect()).collect()
-}
-
-/// Is `m` a nonzero antisymmetric matrix (M = −Mᵀ, M ≠ 0)? — the computed test that
-/// distinguishes a COBOUNDARY block (a residual/non-group description) from a
-/// group block (a permutation/motion). Structure, not a stored kind tag.
-fn is_antisym_nonzero(m: &QMatrix) -> bool {
-    let n = m.len();
-    let mut any = false;
-    for i in 0..n {
-        for j in 0..n {
-            if m[i][j] != -&m[j][i] {
-                return false;
-            }
-            if !m[i][j].is_zero() {
-                any = true;
-            }
-        }
-    }
-    any
-}
-
 /// The DESCRIPTION of a solved body transform (motion ∘ recolour) as a germ: the
 /// spatial block is the homogeneous similarity `[[λR,t],[0,1]]`; the hue block is
 /// the relabel's transition matrix (column `from` ↦ row `to`). Its solution() is
@@ -365,7 +358,41 @@ pub fn from_transform(t: &Transform) -> Element {
             m[3 + tt][3 + f] = q(1); // it maps to `tt`
         }
     }
-    Element::identity(GERM_DIM).with_fiber(FIBER_SPATIAL, m)
+    // 𝒮 support = which of {shift, rotation, scale} the motion uses; 𝒢 = relabeled
+    // hue count. Exact from the description (coordinate-exact, never a tally).
+    let (t0, t1) = &t.motor.translation;
+    let spatial_supp = (!t0.is_zero() || !t1.is_zero()) as u64
+        + (t.motor.rotation != D4::E) as u64
+        + (!t.motor.dilation.is_one()) as u64;
+    let mag = [spatial_supp, t.relabel.len() as u64, 0, 0];
+    let mut e = Element::identity(GERM_DIM).with_fiber(FIBER_SPATIAL, m);
+    e.word = transform_word(t);
+    e.mag = mag;
+    e
+}
+
+/// The coordinate-exact ANASTOME word of a solved transform (the banked
+/// description): dilation ℚ, rotation index, translation ℚ², then the relabel
+/// pairs. Distinct transforms → distinct words → distinct germ identity.
+fn transform_word(t: &Transform) -> Vec<u8> {
+    let mut out = Vec::new();
+    let push_q = |out: &mut Vec<u8>, r: &Q| {
+        for part in [r.numer(), r.denom()] {
+            let b = part.to_signed_bytes_le();
+            out.extend_from_slice(&(b.len() as u32).to_le_bytes());
+            out.extend_from_slice(&b);
+        }
+    };
+    push_q(&mut out, &t.motor.dilation);
+    out.push(D4::ALL.iter().position(|x| *x == t.motor.rotation).unwrap_or(0) as u8);
+    push_q(&mut out, &t.motor.translation.0);
+    push_q(&mut out, &t.motor.translation.1);
+    out.push(0xFF);
+    for (from, to) in &t.relabel {
+        out.push(*from);
+        out.push(*to);
+    }
+    out
 }
 
 /// The DESCRIPTION of an irreducible residual as a germ (the pivot that USED to be
@@ -387,58 +414,31 @@ pub fn from_residual(g: &ResidualGerm) -> Element {
         hue[b][a] -= Q::one();
     }
     place_block(&mut m, 3, &hue);
-    Element::identity(GERM_DIM).with_fiber(FIBER_SPATIAL, m)
+    // Residual magnitude = the coordinate-exact changed-cell support (|supp|), read
+    // from the description itself — NEVER the hue tally (which cancels bidirectional
+    // swaps). word = the exact positional coboundary, so distinct residuals never
+    // collide even where the tally does.
+    let supp = g.iter().filter(|(_, _, before, after)| before != after).count() as u64;
+    let mut e = Element::identity(GERM_DIM).with_fiber(FIBER_SPATIAL, m);
+    e.word = residual_word(g);
+    e.mag = [0, 0, supp, 0];
+    e
 }
 
 impl Element {
-    /// Split a germ (a `GERM_DIM` element) into its (spatial, hue) blocks.
-    fn germ_blocks(&self) -> Option<(QMatrix, QMatrix)> {
-        let m = self.fiber(FIBER_SPATIAL)?;
-        if m.len() != GERM_DIM {
-            return None;
-        }
-        Some((sub_block(m, 0, 3), sub_block(m, 3, PALETTE)))
-    }
-
     /// The four lanes this germ carries content on — 𝒮 spatial, 𝒢 gauge (a group
-    /// recolour), residual (a coboundary/new axis), 𝒽 shell. Derived from the
-    /// block structure, not a stored tag; used for the polytonic physics.
+    /// recolour), residual (a coboundary/new axis), 𝒽 shell — exactly where the
+    /// coordinate-exact magnitude is nonzero (never the lossy tally).
     pub fn lanes(&self) -> [bool; 4] {
-        match self.germ_blocks() {
-            Some((a, b)) => {
-                let spatial = a != identity(3);
-                let residual = is_antisym_nonzero(&b);
-                let gauge = !residual && b != identity(PALETTE);
-                [spatial, gauge, residual, false]
-            }
-            None => [false; 4],
-        }
+        std::array::from_fn(|l| self.mag[l] > 0)
     }
 
     /// The germ's polytonic MAGNITUDE — per-lane support size (‖Δ‖'s |supp|
-    /// component), never summed. 𝒮 = structural support of the motion, 𝒢 = number
-    /// of relabeled hues, residual = number of directed hue transitions. A settled
-    /// demand's residual magnitude is 0⃗; a real germ's is nonzero — the descent
-    /// the POW++ gate reads.
+    /// component), never summed, computed EXACTLY from the description at
+    /// germination. A settled demand's residual magnitude is 0⃗; a real germ's is
+    /// nonzero — the descent the POW++ gate reads.
     pub fn magnitude(&self) -> [u64; 4] {
-        match self.germ_blocks() {
-            Some((a, b)) => {
-                let id3 = identity(3);
-                let spatial =
-                    (0..3).flat_map(|i| (0..3).map(move |j| (i, j))).filter(|&(i, j)| a[i][j] != id3[i][j]).count();
-                if is_antisym_nonzero(&b) {
-                    let residual = (0..PALETTE)
-                        .flat_map(|i| ((i + 1)..PALETTE).map(move |j| (i, j)))
-                        .filter(|&(i, j)| !b[i][j].is_zero())
-                        .count();
-                    [spatial as u64, 0, residual as u64, 0]
-                } else {
-                    let gauge = (0..PALETTE).filter(|&c| !b[c][c].is_one()).count();
-                    [spatial as u64, gauge as u64, 0, 0]
-                }
-            }
-            None => [0; 4],
-        }
+        self.mag
     }
 }
 
@@ -633,6 +633,29 @@ mod tests {
         assert!(germ.solution().is_none(), "no single-matrix inverse for a coboundary");
         let reverse = from_residual(&germinate(&b, &a).unwrap());
         assert_ne!(germ, reverse, "the reverse description is a distinct germ");
+    }
+
+    /// THE COORDINATE-EXACT IDENTITY: the case that broke the tally-only design.
+    /// L→bar has a bidirectional hue swap across cells — 0→1 at (0,2) and 1→0 at
+    /// (1,0) — whose antisymmetric hue tally CANCELS to zero. The coordinate-exact
+    /// `word` + `mag` keep it a real, non-colliding germ.
+    #[test]
+    fn a_bidirectional_swap_does_not_collapse_to_zero() {
+        let a = [(0, 0, 1u8), (0, 1, 1), (1, 0, 1)]; // L
+        let b = [(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]; // bar
+        let l_to_bar = from_residual(&germinate(&a, &b).unwrap());
+        // The hue tally cancels (the algebra lens is lossy) — but identity/magnitude
+        // do NOT, because they read the coordinate-exact description.
+        assert_eq!(l_to_bar.magnitude(), [0, 0, 2, 0], "two changed cells, exact — not a canceled 0");
+        assert_eq!(l_to_bar.lanes(), [false, false, true, false], "a real residual germ");
+        // A DIFFERENT deformation with the same hue-transition multiset must not
+        // collide: bar→L reverses the cells, distinct positions.
+        let bar_to_l = from_residual(&germinate(&b, &a).unwrap());
+        assert_ne!(l_to_bar.address(), bar_to_l.address(), "distinct descriptions, distinct address");
+        // And a pure-motion germ never collides with a residual germ.
+        use crate::transducer::transform::solve_transform;
+        let motion = from_transform(&solve_transform(&[(0, 0, 7u8)], &[(0, 3, 7u8)]).unwrap());
+        assert_ne!(l_to_bar.address(), motion.address());
     }
 
     /// Multi-axial: distinct axes compose INDEPENDENTLY (no cross-talk, no cap on

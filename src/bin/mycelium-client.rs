@@ -15,9 +15,16 @@ fn main() {
     let voice = std::env::args().nth(2).and_then(|s| s.parse::<u8>().ok()).unwrap_or(1);
 
     // PERCEPTION happens here, in the client — the sensorium, not the server.
-    let a = [(0, 0, 1u8), (0, 1, 1), (1, 0, 1)];
-    let b = [(0, 3, 1u8), (0, 4, 1), (1, 3, 1)]; // +0,+3 translate
-    let (a_bodies, b_bodies) = perceive(&a, &b);
+    // Scene mode (3rd arg): default = a rigid translate (a recall specimen);
+    // "deform" = an L→bar shape change no motor closes — a RESIDUAL the judge must
+    // germinate as a coordinate-exact coboundary germ (the reframe, on the wire).
+    let mode = std::env::args().nth(3).unwrap_or_default();
+    let (a, b): (&[(i64, i64, u8)], &[(i64, i64, u8)]) = if mode == "deform" {
+        (&[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 0, 1), (0, 1, 1), (0, 2, 1)])
+    } else {
+        (&[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 3, 1), (0, 4, 1), (1, 3, 1)])
+    };
+    let (a_bodies, b_bodies) = perceive(a, b);
     // kind byte 0x00 = an ORIGIN percept from a client (a peer gossip is 0x01).
     let mut pbody = vec![0x00u8];
     pbody.extend_from_slice(&encode_percept(&a_bodies, &b_bodies, &[voice; 32]));
