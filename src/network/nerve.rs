@@ -81,69 +81,53 @@ impl Nerve {
     }
 }
 
-/// XOR ROUTING TRIE (PATRICIA / path-compressed) — the topological structure the
-/// Kademlia metric induces. Branches exist ONLY where contact ids actually
-/// differ, so the whole trie is O(N) nodes (not O(256·N)) with O(log N) effective
-/// depth over the full 2²⁵⁶ keyspace — no peer cap, no degenerate chains.
-/// `closest(key)` descends the key's bits to the longest-prefix leaf (= smallest
-/// XOR) in O(depth), never a scan of the peer set.
-pub enum Router {
-    Empty,
-    Leaf([u8; 32], String),
-    /// Split at bit `at`: contacts whose bit `at` is 0 go left, 1 go right.
-    Branch { at: usize, zero: Box<Router>, one: Box<Router> },
-}
-
-impl Default for Router {
-    fn default() -> Self {
-        Router::Empty
-    }
+/// XOR ROUTING TRIE — the topological structure the Kademlia metric induces.
+/// `closest(key)` descends the key's bits greedily (matching child when present,
+/// sibling otherwise): because XOR is dominated by the highest differing bit,
+/// agreeing with the key at the earliest bit minimizes XOR — so the greedy leaf
+/// IS the XOR-closest, in O(bits), INDEPENDENT of N and never a scan of the peer
+/// set. (Correct + simple; path-compression to O(N) nodes is tracked as R5's
+/// follow-up — correctness first.)
+#[derive(Default)]
+pub struct Router {
+    children: [Option<Box<Router>>; 2],
+    leaf: Option<([u8; 32], String)>,
 }
 
 impl Router {
     pub fn new() -> Self {
-        Router::Empty
+        Router::default()
     }
 
     fn bit(id: &[u8; 32], i: usize) -> usize {
         ((id[i / 8] >> (7 - (i % 8))) & 1) as usize
     }
 
-    /// First bit index where two ids differ (256 if identical).
-    fn first_diff(a: &[u8; 32], b: &[u8; 32]) -> usize {
-        (0..256).find(|&i| Self::bit(a, i) != Self::bit(b, i)).unwrap_or(256)
-    }
-
-    /// Insert a contact (id → address); path-compressed — a new branch is created
-    /// only at the first bit distinguishing this id from an existing leaf.
     pub fn insert(&mut self, id: [u8; 32], addr: String) {
-        match self {
-            Router::Empty => *self = Router::Leaf(id, addr),
-            Router::Leaf(eid, _) if *eid == id => *self = Router::Leaf(id, addr), // replace
-            Router::Leaf(eid, _) => {
-                let at = Self::first_diff(eid, &id);
-                let existing = std::mem::replace(self, Router::Empty);
-                let fresh = Router::Leaf(id, addr);
-                let (zero, one) = if Self::bit(&id, at) == 0 { (fresh, existing) } else { (existing, fresh) };
-                *self = Router::Branch { at, zero: Box::new(zero), one: Box::new(one) };
-            }
-            Router::Branch { at, zero, one } => {
-                if Self::bit(&id, *at) == 0 { zero.insert(id, addr) } else { one.insert(id, addr) }
-            }
+        let mut node = self;
+        for depth in 0..256 {
+            let b = Self::bit(&id, depth);
+            node = node.children[b].get_or_insert_with(|| Box::new(Router::new()));
         }
+        node.leaf = Some((id, addr));
     }
 
-    /// The contact XOR-closest to `key` — descend the key's bits to the
-    /// longest-prefix leaf (sibling-fallback for safety). O(depth), never O(N).
+    /// The contact XOR-closest to `key` — O(bits), never O(N).
     pub fn closest(&self, key: &[u8; 32]) -> Option<([u8; 32], String)> {
-        match self {
-            Router::Empty => None,
-            Router::Leaf(id, addr) => Some((*id, addr.clone())),
-            Router::Branch { at, zero, one } => {
-                let (near, far) = if Self::bit(key, *at) == 0 { (zero, one) } else { (one, zero) };
-                near.closest(key).or_else(|| far.closest(key))
+        self.near(key, 0)
+    }
+
+    fn near(&self, key: &[u8; 32], depth: usize) -> Option<([u8; 32], String)> {
+        if depth == 256 {
+            return self.leaf.clone();
+        }
+        let b = Self::bit(key, depth);
+        if let Some(c) = &self.children[b] {
+            if let Some(hit) = c.near(key, depth + 1) {
+                return Some(hit);
             }
         }
+        self.children[1 - b].as_ref().and_then(|c| c.near(key, depth + 1))
     }
 }
 
