@@ -81,9 +81,79 @@ impl Nerve {
     }
 }
 
+/// XOR ROUTING TRIE — the topological structure the Kademlia metric induces.
+/// A contact's id is its path (one bit per level); the node closest to any key
+/// is found by descending the key's bits (falling to the sibling when a branch is
+/// empty) in O(bits) — INDEPENDENT of N, never a scan of the peer set. This is
+/// what replaces the flat `for p in peers` cartesian lookup.
+#[derive(Default)]
+pub struct Router {
+    children: [Option<Box<Router>>; 2],
+    leaf: Option<([u8; 32], String)>,
+}
+
+impl Router {
+    pub fn new() -> Self {
+        Router::default()
+    }
+
+    fn bit(id: &[u8; 32], i: usize) -> usize {
+        ((id[i / 8] >> (7 - (i % 8))) & 1) as usize
+    }
+
+    /// Insert a contact (id → address) at its bit-path.
+    pub fn insert(&mut self, id: [u8; 32], addr: String) {
+        let mut node = self;
+        for depth in 0..256 {
+            let b = Self::bit(&id, depth);
+            node = node.children[b].get_or_insert_with(|| Box::new(Router::new()));
+        }
+        node.leaf = Some((id, addr));
+    }
+
+    /// The contact XOR-closest to `key` — descend by the key's bits, sibling-
+    /// fallback on empty branches. O(bits), never O(N).
+    pub fn closest(&self, key: &[u8; 32]) -> Option<([u8; 32], String)> {
+        self.near(key, 0)
+    }
+
+    fn near(&self, key: &[u8; 32], depth: usize) -> Option<([u8; 32], String)> {
+        if depth == 256 {
+            return self.leaf.clone();
+        }
+        let b = Self::bit(key, depth);
+        if let Some(c) = &self.children[b] {
+            if let Some(hit) = c.near(key, depth + 1) {
+                return Some(hit);
+            }
+        }
+        self.children[1 - b].as_ref().and_then(|c| c.near(key, depth + 1))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn xor(a: &[u8; 32], b: &[u8; 32]) -> [u8; 32] {
+        std::array::from_fn(|i| a[i] ^ b[i])
+    }
+
+    /// The trie's closest matches a brute-force XOR argmin — but by descent, not
+    /// a scan. (Correctness anchor; the trie is O(bits), the brute-force O(N).)
+    #[test]
+    fn trie_closest_matches_brute_force_without_scanning() {
+        let ids: Vec<[u8; 32]> = (0u8..40).map(|k| *blake3::hash(&[k]).as_bytes()).collect();
+        let mut r = Router::new();
+        for (i, id) in ids.iter().enumerate() {
+            r.insert(*id, format!("peer{i}"));
+        }
+        for k in [7u8, 19, 33, 200] {
+            let key = *blake3::hash(&[k, 0xAA]).as_bytes();
+            let brute = ids.iter().min_by_key(|id| xor(id, &key)).copied().unwrap();
+            assert_eq!(r.closest(&key).unwrap().0, brute, "trie descent finds the XOR-closest");
+        }
+    }
 
     fn fp(bit: usize, beta: u64) -> Fingerprint {
         let mut bloom = [0u8; 32];

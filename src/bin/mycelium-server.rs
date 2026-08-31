@@ -8,7 +8,7 @@
 //!   mycelium-server [bind] [--id N] [--tier founder|validator|participant] [--peer ADDR]...
 use mycelium::cognition::{decode_percept, germ_bytes, outcome_code, Kernel, Outcome};
 use mycelium::economy::Tier;
-use mycelium::network::nerve::Fingerprint;
+use mycelium::network::nerve::{Fingerprint, Router};
 use mycelium::network::wire::Frame;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
@@ -39,21 +39,13 @@ fn id_of(s: &str) -> [u8; 32] {
     *blake3::hash(s.as_bytes()).as_bytes()
 }
 
-/// The RENDEZVOUS for a content key: the peer whose id is XOR-closest to the key,
-/// IF closer than this node — else `None` (this node IS the rendezvous). One
-/// destination, content-addressed — never a fanout. (Single-hop here; multi-hop
-/// iterative routing is R5's follow-up.)
-fn rendezvous(key: &[u8; 32], self_id: &[u8; 32], peers: &[String]) -> Option<String> {
+/// The RENDEZVOUS for a content key: the XOR-closest peer (found by trie descent,
+/// O(bits), never a peer scan), IF closer than this node — else `None` (self IS
+/// the rendezvous). One destination, content-addressed; no fanout.
+fn rendezvous(key: &[u8; 32], self_id: &[u8; 32], router: &Router) -> Option<String> {
     let dist = |idb: &[u8; 32]| -> [u8; 32] { std::array::from_fn(|i| idb[i] ^ key[i]) };
-    let mut best: Option<(String, [u8; 32])> = None;
-    for p in peers {
-        let d = dist(&id_of(p));
-        if best.as_ref().map_or(true, |(_, bd)| d < *bd) {
-            best = Some((p.clone(), d));
-        }
-    }
-    match best {
-        Some((addr, d)) if d < dist(self_id) => Some(addr),
+    match router.closest(key) {
+        Some((pid, addr)) if dist(&pid) < dist(self_id) => Some(addr),
         _ => None,
     }
 }
@@ -78,6 +70,11 @@ fn main() {
             k.nerve.observe(pid, Fingerprint { beta1: [0; 4], bloom });
         }
     }
+    // The XOR routing trie — O(bits) rendezvous lookup, built once (rebuilt on
+    // discovery churn later). No per-demand peer scan.
+    let mut router = Router::new();
+    for pr in &peers { router.insert(id_of(pr), pr.clone()); }
+
     let listener = TcpListener::bind(&addr).expect("bind");
     eprintln!(
         "mycelium-hypha {:02x} tier {:?} bound {addr}; nerve peers {} {:?}",
@@ -133,7 +130,7 @@ fn main() {
         // silently (resilience). Gossip (kind 1) is never re-routed here.
         if kind == 0 && pbytes.len() > 32 && matches!(out, Outcome::GermPending | Outcome::Fragmented(_)) {
             let key = *blake3::hash(&pbytes[32..]).as_bytes(); // demand address, voice-free
-            if let Some(dest) = rendezvous(&key, &id, &peers) {
+            if let Some(dest) = rendezvous(&key, &id, &router) {
                 let mut g = vec![0x01u8];
                 g.extend_from_slice(&key);
                 g.extend_from_slice(pbytes);
