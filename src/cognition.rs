@@ -30,6 +30,10 @@ pub enum Outcome {
     GermPending,
     /// A novel germ that just reached quorum and installed to the basis.
     Installed(usize),
+    /// The demand is the COMPOSITION of two installed generators (a depth-2
+    /// sentence) — the algebra already SPANS it, so nothing is minted. The two
+    /// cited basis indices (R6: reach new transforms by composition).
+    Composed(usize, usize),
     /// The scene had no single motor; it fragmented into per-body sub-demands,
     /// each resolved independently and recomposed (the large-corpus path).
     Fragmented(Vec<Outcome>),
@@ -148,6 +152,20 @@ impl Kernel {
             self.physics.syntropy(lanes); // recognition builds order (negentropy)
             return Outcome::Recognised(i);
         }
+        // R6 — COMPOSITIONAL RECALL: before minting, ask whether the algebra already
+        // SPANS this demand — i.e. it is the composition of installed generators (a
+        // depth-2 sentence). If so, recognise it as that sentence and mint NOTHING;
+        // both cited generators are USED, so their discoverers are paid (the corpus
+        // this composition unlocked). "Don't mint what the basis already spans."
+        if g.solution().is_some() {
+            if let Some((i, j)) = self.factor_pair(&g) {
+                self.treasury.settle_recall(voice);
+                self.treasury.settle_use(self.discoverers[i]);
+                self.treasury.settle_use(self.discoverers[j]);
+                self.physics.syntropy(lanes); // a spanned sentence builds order
+                return Outcome::Composed(i, j);
+            }
+        }
         let addr = g.address();
         if self.admission.record(Receipt { voice, germ: addr }) {
             // Two-voice consilience: POW++ gate + consilience split (anti-
@@ -164,6 +182,23 @@ impl Kernel {
             self.physics.bump(lanes); // an open germ raises per-lane pressure
             Outcome::GermPending
         }
+    }
+
+    /// DEDUCE whether `g` factors as the composition `basis[i] ∘ basis[j]` of two
+    /// installed GROUP generators (a depth-2 Cayley spelling). Exact — matched by
+    /// realized action, no fuzzy search — and restricted to invertible (group)
+    /// generators so the realization is injective on the description. Bounded O(n²)
+    /// over the basis; deeper depths iterate the same reduction (future).
+    fn factor_pair(&self, g: &Element) -> Option<(usize, usize)> {
+        let groupish: Vec<usize> = (0..self.basis.len()).filter(|&i| self.basis[i].solution().is_some()).collect();
+        for &i in &groupish {
+            for &j in &groupish {
+                if self.basis[i].compose(&self.basis[j]).same_action(g) {
+                    return Some((i, j));
+                }
+            }
+        }
+        None
     }
 
     /// A read-only view of the germinated basis (for the CCL display seam).
@@ -291,6 +326,7 @@ pub fn outcome_code(o: &Outcome) -> u8 {
         Outcome::Installed(_) => 3,
         Outcome::Fragmented(_) => 5,
         Outcome::Pivot => 4,
+        Outcome::Composed(_, _) => 6,
     }
 }
 
@@ -316,6 +352,29 @@ mod tests {
     }
 
     /// An irreducible residual is a pivot, never installed.
+    /// R6 — COMPOSITIONAL RECALL: install a translate(+0,+3) generator, then a
+    /// translate(+0,+6) demand is DEDUCED as g₀∘g₀ (a depth-2 sentence). The algebra
+    /// spans it, so NOTHING is minted (basis stays 1), and the generator's
+    /// discoverer is paid for the composition's use.
+    #[test]
+    fn a_composite_demand_is_deduced_not_minted() {
+        let mut k = Kernel::new();
+        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+        let t3 = vec![(0, 3, 1), (0, 4, 1), (1, 3, 1)]; // +0,+3
+        let t6 = vec![(0, 6, 1), (0, 7, 1), (1, 6, 1)]; // +0,+6 = (+0,+3) ∘ (+0,+3)
+        // Install the atom on two voices.
+        assert_eq!(k.ingest(&a, &t3, [1; 32]), Outcome::GermPending);
+        assert_eq!(k.ingest(&a, &t3, [2; 32]), Outcome::Installed(0));
+        assert_eq!(k.basis_len(), 1);
+        // The discoverer is the installing (quorum-reaching) voice.
+        let before = k.treasury().balance(&[2; 32]);
+        // The composite is recognised as g₀∘g₀ — no new germ minted.
+        assert_eq!(k.ingest(&a, &t6, [3; 32]), Outcome::Composed(0, 0), "deduced as a sentence");
+        assert_eq!(k.basis_len(), 1, "the algebra spanned it — nothing minted");
+        // The cited generator's discoverer earned utility (used twice in the sentence).
+        assert!(k.treasury().balance(&[2; 32]) > before, "composition pays the cited generator");
+    }
+
     /// A shape deformation (L → bar) that NO motor closes is not a dead-end: its
     /// residual IS the description, so it germinates a coordinate-exact coboundary
     /// germ and installs on two-voice consilience (priced on USE per R3, so a

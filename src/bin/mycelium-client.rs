@@ -19,10 +19,14 @@ fn main() {
     // "deform" = an L→bar shape change no motor closes — a RESIDUAL the judge must
     // germinate as a coordinate-exact coboundary germ (the reframe, on the wire).
     let mode = std::env::args().nth(3).unwrap_or_default();
-    let (a, b): (&[(i64, i64, u8)], &[(i64, i64, u8)]) = if mode == "deform" {
-        (&[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 0, 1), (0, 1, 1), (0, 2, 1)])
-    } else {
-        (&[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 3, 1), (0, 4, 1), (1, 3, 1)])
+    let (a, b): (&[(i64, i64, u8)], &[(i64, i64, u8)]) = match mode.as_str() {
+        // A shape change no motor closes — a RESIDUAL the judge germinates.
+        "deform" => (&[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 0, 1), (0, 1, 1), (0, 2, 1)]),
+        // translate(+0,+6) = translate(+0,+3) ∘ translate(+0,+3): the judge should
+        // DEDUCE this as a composition of the installed +3 atom, minting nothing.
+        "t6" => (&[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 6, 1), (0, 7, 1), (1, 6, 1)]),
+        // default: translate(+0,+3) — the atom.
+        _ => (&[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 3, 1), (0, 4, 1), (1, 3, 1)]),
     };
     let (a_bodies, b_bodies) = perceive(a, b);
     // kind byte 0x00 = an ORIGIN percept from a client (a peer gossip is 0x01).
@@ -45,6 +49,7 @@ fn main() {
         Some(3) => "valid: GERM INSTALLED",
         Some(4) => "invalid: pivot",
         Some(5) => "valid: fragmented",
+        Some(6) => "valid: composed (spanned — nothing minted)",
         _ => "unknown",
     };
     let flux: Vec<i64> = body.get(1..5).map(|b| b.iter().map(|&x| x as i8 as i64).collect()).unwrap_or_default();

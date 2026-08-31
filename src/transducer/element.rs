@@ -159,6 +159,16 @@ impl Element {
         Some(Operator { id, matrix: m, matrix_inv: inv, det_sign_positive: true })
     }
 
+    /// Do two elements realize the SAME transformation (the same operator on the
+    /// field), regardless of how each is identified? This compares the ALGEBRA lens
+    /// (the realized matrix), so a directly-perceived germ and a DEDUCED composition
+    /// of generators that act identically test equal — the basis of R6 compositional
+    /// recall. Exact for group (invertible) germs, where the realization is
+    /// injective on the description.
+    pub fn same_action(&self, other: &Element) -> bool {
+        self.realize() == other.realize()
+    }
+
     /// COMPOSE — the per-axis group product `self` then `other`. Shared axes
     /// multiply (matrix ·); disjoint axes are carried. Associative (the group law).
     pub fn compose(&self, other: &Element) -> Element {

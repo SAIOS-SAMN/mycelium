@@ -107,6 +107,7 @@ fn main() {
             Outcome::Recognised(i) => format!("valid: recall #{i}"),
             Outcome::GermPending => "valid: germ pending (one voice)".to_string(),
             Outcome::Installed(i) => format!("valid: GERM INSTALLED #{i}"),
+            Outcome::Composed(i, j) => format!("valid: composed #{i}∘#{j} (spanned — nothing minted)"),
             Outcome::Fragmented(parts) => format!("valid: fragmented ({} bodies)", parts.len()),
             Outcome::Pivot => "invalid: pivot (residual — new fiber owed)".to_string(),
         };
