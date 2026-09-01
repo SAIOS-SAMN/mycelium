@@ -13,7 +13,6 @@ use crate::network::nerve::Nerve;
 use crate::transducer::blade::{components, lift};
 use crate::transducer::element::{self, Element};
 use crate::transducer::germinate::germinate;
-use crate::transducer::transform::solve_transform;
 
 /// Mycelium's heritage floor: demands larger than this fragment (the 48% score
 /// depended on decomposing large corpus). Here the topological trigger is
@@ -133,23 +132,20 @@ impl Kernel {
         let mut bi: Vec<usize> = (0..cb.len()).collect();
         ai.sort_by(|&x, &y| lift(&ca[x], 0).invariant().cmp(&lift(&ca[y], 0).invariant()));
         bi.sort_by(|&x, &y| lift(&cb[x], 0).invariant().cmp(&lift(&cb[y], 0).invariant()));
-        // Derive each body's anonymous element. A body a motor CLOSES gives a solved
-        // description (from_transform). A body that RESISTS the group is NOT a
-        // dead-end — its residual IS the description, so it GERMINATES as a
-        // coordinate-exact coboundary germ (from_residual), a new axis of
-        // perception. Only a truly empty demand (no change at all) stays a pivot.
+        // POST-EXCISION DERIVATION — perception measures, never names. Each paired
+        // body is framed to its canonical origin by the SUBSTRATE (the hypha's
+        // transposition projection, per the ruling); the demand's substance is the
+        // coboundary between the framed scenes. Identical framed scenes = a pure
+        // transposition (no substance). Everything else GERMINATES as a centered
+        // coboundary germ — "rotation", "recolour", "deformation" are patterns the
+        // mesh must learn and consolidate, never solver verdicts.
         let mut germs: Vec<Element> = Vec::with_capacity(ca.len());
         for k in 0..ca.len() {
-            let (a, b) = (&ca[ai[k]], &cb[bi[k]]);
-            let e = match solve_transform(a, b) {
-                Some(t) => element::from_transform(&t),
-                None => match germinate(a, b) {
-                    Some(rg) => element::from_residual(&rg),
-                    None => {
-                        self.physics.pivot([false; 4]);
-                        return Outcome::Pivot;
-                    }
-                },
+            let fa = frame_to_origin(&ca[ai[k]]);
+            let fb = frame_to_origin(&cb[bi[k]]);
+            let e = match germinate(&fa, &fb) {
+                Some(rg) => element::from_residual(&rg),
+                None => Element::identity(element::GERM_DIM), // pure transposition
             };
             germs.push(e);
         }
@@ -226,7 +222,14 @@ impl Kernel {
     /// stroke's redundancy probe: "does the REST of the basis already derive this
     /// generator?" (`exclude = None` is the ordinary full reduction.)
     fn reduce_excluding(&self, g: &Element, exclude: Option<usize>) -> NormalForm {
-        let mut s = g.substance();
+        // Post-excision, a perceived demand is a CENTERED COBOUNDARY CHAIN — the
+        // chain reduction decomposes it over the germinated patterns. The matrix
+        // path below remains for pure-algebra (group) elements.
+        let sub = g.substance();
+        if !sub.sub().is_empty() {
+            return self.reduce_chain(sub.sub().to_vec(), exclude);
+        }
+        let mut s = sub;
         let mut word = Vec::new();
         let budget = self.peel_budget(); // the syntropic/entropic metabolism bounds compute
         // ≺_DM is well-founded so this terminates; the 64 is only a safety net.
@@ -301,6 +304,91 @@ impl Kernel {
             }
         }
         best.map(|(i, cand, _)| (i, cand))
+    }
+
+    /// CHAIN REDUCTION — the post-excision decomposition. Peel basis patterns that
+    /// occur as TRANSLATED sub-coboundaries of the demand's centered chain: each
+    /// peel removes the pattern's cells, so the support strictly descends (≺_DM on
+    /// the residual lane — termination is structural, no matrix inverse anywhere).
+    /// Deterministic choice (largest pattern, then basis order, then the chain's
+    /// row-major anchor) → one normal form. Empty ⇒ Decomposed(sentence); nothing
+    /// fits ⇒ the leftover, re-centered, is the irreducible critical pair.
+    fn reduce_chain(&self, first: Vec<(i64, i64, u8, u8)>, exclude: Option<usize>) -> NormalForm {
+        let budget = self.peel_budget();
+        let mut chain = first;
+        let mut word: Vec<usize> = Vec::new();
+        loop {
+            if chain.is_empty() {
+                return NormalForm::Decomposed(word);
+            }
+            // Direct terminal (always affordable): the re-centered remainder IS a
+            // basis pattern — the sentence's last letter.
+            let centered = recenter(&chain);
+            if let Some(i) = self
+                .basis
+                .iter()
+                .enumerate()
+                .position(|(j, p)| Some(j) != exclude && p.sub() == centered.as_slice())
+            {
+                word.push(i);
+                return NormalForm::Decomposed(word);
+            }
+            // The metabolic budget bounds the expensive sub-pattern scan.
+            if word.len() >= budget {
+                return NormalForm::Irreducible(element::from_residual(&chain));
+            }
+            match self.best_chain_peel(&chain, exclude) {
+                Some((i, remaining)) => {
+                    word.push(i);
+                    chain = remaining;
+                }
+                None => return NormalForm::Irreducible(element::from_residual(&chain)),
+            }
+        }
+    }
+
+    /// The best basis pattern embedding as a translated sub-coboundary of `chain`:
+    /// anchor each generator's first cell on every same-transition chain cell and
+    /// test exact embedding. The LARGEST pattern wins (maximal ≺_DM descent),
+    /// tie-broken by basis order then the first (row-major) anchor — deterministic.
+    fn best_chain_peel(
+        &self,
+        chain: &[(i64, i64, u8, u8)],
+        exclude: Option<usize>,
+    ) -> Option<(usize, Vec<(i64, i64, u8, u8)>)> {
+        let mut best: Option<(usize, usize, Vec<(i64, i64, u8, u8)>)> = None; // (|pat|, i, remaining)
+        for (i, gen) in self.basis.iter().enumerate() {
+            if Some(i) == exclude {
+                continue;
+            }
+            let pat = gen.sub();
+            // Strict descent: a proper, nonempty sub-pattern (the equal-size case
+            // is the direct terminal in reduce_chain).
+            if pat.is_empty() || pat.len() >= chain.len() {
+                continue;
+            }
+            let (pr, pc, pb, pa) = pat[0];
+            for &(cr, cc, cb_, ca_) in chain {
+                if (cb_, ca_) != (pb, pa) {
+                    continue;
+                }
+                let (dr, dc) = (cr - pr, cc - pc);
+                let translated: Vec<_> = pat.iter().map(|(r, c, b, a)| (r + dr, c + dc, *b, *a)).collect();
+                if translated.iter().all(|t| chain.contains(t)) {
+                    let better = match &best {
+                        Some((blen, _, _)) => pat.len() > *blen,
+                        None => true,
+                    };
+                    if better {
+                        let remaining: Vec<_> =
+                            chain.iter().filter(|t| !translated.contains(*t)).cloned().collect();
+                        best = Some((pat.len(), i, remaining));
+                    }
+                    break; // first row-major anchor for this generator (chain is sorted)
+                }
+            }
+        }
+        best.map(|(_, i, remaining)| (i, remaining))
     }
 
     /// THE SYNTROPIC STROKE — one bounded consolidation step, run when a lane's
@@ -384,6 +472,26 @@ impl Kernel {
         }
         true
     }
+}
+
+/// The SUBSTRATE's canonical framing projection (hypha-side, per the transposition
+/// ruling): a scene translated so its min-corner sits at the origin. Position is
+/// the sensor's coordinate embedding, not cognition — the engine deduces the
+/// substance invariant under this projection.
+fn frame_to_origin(cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
+    let min_r = cells.iter().map(|(r, _, _)| *r).min().unwrap_or(0);
+    let min_c = cells.iter().map(|(_, c, _)| *c).min().unwrap_or(0);
+    cells.iter().map(|(r, c, h)| (r - min_r, c - min_c, *h)).collect()
+}
+
+/// Re-center a coboundary chain after peeling (min-corner → origin, sorted) — the
+/// same framing projection, applied to the remainder for the direct terminal.
+fn recenter(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64, u8, u8)> {
+    let min_r = chain.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
+    let min_c = chain.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
+    let mut out: Vec<_> = chain.iter().map(|(r, c, b, a)| (r - min_r, c - min_c, *b, *a)).collect();
+    out.sort_unstable();
+    out
 }
 
 // ── the ANASTOME address of a germ (canonical, opaque; transport identity) ────
@@ -612,33 +720,58 @@ mod tests {
     }
 
     /// THE SYNTROPIC STROKE CONSOLIDATES: a generator the rest of the basis already
-    /// derives (a stale duplicate of the same substance under a different
-    /// coordinate-exact word — what an import or a pre-consolidation era leaves) is
-    /// retired by the redundancy probe; an essential generator survives it.
+    /// derives (a stale duplicate — what an import or a pre-consolidation era
+    /// leaves) is retired by the redundancy probe; an essential one survives it.
     #[test]
     fn the_syntropic_stroke_retires_a_redundant_generator() {
-        use crate::transducer::element::from_transform;
-        use crate::transducer::transform::solve_transform;
+        use crate::transducer::element::from_residual;
+        use crate::transducer::germinate::germinate;
         let mut k = Kernel::new();
         let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
         let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
         k.ingest(&a, &rot, [1; 32]);
         assert!(matches!(k.ingest(&a, &rot, [2; 32]), Outcome::Installed(0)));
-        // Fabricate the stale duplicate: the SAME rotation observed far away — same
-        // substance, different exact word — slipped in past the reduce-gate (as an
-        // imported/legacy entry would be).
-        let far = solve_transform(
-            &[(0, 10, 1), (0, 11, 1), (1, 10, 1)],
-            &[(0, 11, 1), (1, 10, 1), (1, 11, 1)],
-        )
-        .unwrap();
-        k.basis.push(from_transform(&far));
+        // Fabricate the stale duplicate: the SAME deformation germinated far away —
+        // centering makes it the identical pattern — slipped in past the
+        // reduce-gate (as an imported/legacy entry would be).
+        let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
+        let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
+        k.basis.push(from_residual(&germinate(&a_far, &rot_far).unwrap()));
         k.discoverers.push([7; 32]);
         assert_eq!(k.basis_len(), 2);
         k.optimize(); // probe basis[0]: the rest (its duplicate) derives it → retired
         assert_eq!(k.basis_len(), 1, "the redundant rule is consolidated away");
         k.optimize(); // the survivor is essential — nothing else derives it
         assert_eq!(k.basis_len(), 1, "an essential generator survives the probe");
+    }
+
+    /// THE CROWN PROOF OF THE EXCISION: with no solver anywhere, the mesh forms
+    /// SENTENCES over germinated patterns — install two single-cell patterns, then
+    /// a compound demand containing BOTH (at different offsets) DECOMPOSES into
+    /// the two-word sentence by chain peeling. Nothing minted; language composed.
+    #[test]
+    fn a_compound_demand_decomposes_over_germinated_patterns() {
+        let mut k = Kernel::new();
+        let a1 = vec![(0, 0, 1), (0, 1, 2)];
+        let b1 = vec![(0, 0, 4), (0, 1, 2)]; // (0,0): 1→4 — pattern P
+        k.ingest(&a1, &b1, [1; 32]);
+        assert!(matches!(k.ingest(&a1, &b1, [2; 32]), Outcome::Installed(0)));
+        let a2 = vec![(0, 0, 2), (0, 1, 3)];
+        let b2 = vec![(0, 0, 2), (0, 1, 9)]; // (0,1): 3→9 — pattern Q
+        k.ingest(&a2, &b2, [1; 32]);
+        assert!(matches!(k.ingest(&a2, &b2, [2; 32]), Outcome::Installed(1)));
+        // A compound scene: BOTH patterns fire at once, far apart in one body-pair.
+        let a3 = vec![(0, 0, 1), (0, 1, 2), (0, 2, 2), (0, 3, 3)];
+        let b3 = vec![(0, 0, 4), (0, 1, 2), (0, 2, 2), (0, 3, 9)];
+        match k.ingest(&a3, &b3, [3; 32]) {
+            Outcome::Decomposed(word) => {
+                let mut w = word.clone();
+                w.sort_unstable();
+                assert_eq!(w, vec![0, 1], "the compound is the SENTENCE of both patterns");
+            }
+            o => panic!("expected a two-word sentence, got {o:?}"),
+        }
+        assert_eq!(k.basis_len(), 2, "the algebra spanned it — nothing minted");
     }
 
     /// A shape deformation (L → bar) that NO motor closes is not a dead-end: its

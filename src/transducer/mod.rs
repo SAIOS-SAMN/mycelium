@@ -4,12 +4,13 @@
 //! becomes graded multivector blades; recognition is a versor sandwich, never a
 //! bucket lookup (Anti-Flattening Law). Law-II clean: arrays/Vec/BigRational only.
 
+// POST-EXCISION (alpha ruling 2026-09-01): no solver modules. The old motor.rs
+// (D4/conformal solve), transform.rs (motion∘recolour solve), and conception.rs
+// were OUR cognition coded into the engine — deleted. Perception MEASURES
+// (blade/field/cga); every generator above the substrate framing GERMINATES.
 pub mod cga;
 pub mod blade;
 pub mod field;
-pub mod motor;
-pub mod conception;
-pub mod transform;
 pub mod germinate;
 pub mod element;
 pub mod cech;

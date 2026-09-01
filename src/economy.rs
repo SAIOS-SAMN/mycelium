@@ -174,19 +174,19 @@ impl Treasury {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::transducer::element::from_transform;
-    use crate::transducer::transform::solve_transform;
+    use crate::transducer::element::from_residual;
+    use crate::transducer::germinate::germinate;
 
     fn germ() -> Element {
-        let t = solve_transform(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 3, 5u8), (0, 4, 5), (1, 3, 5)]).unwrap();
-        from_transform(&t)
+        // A germinated pattern (post-excision, the only species of germ).
+        from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap())
     }
 
     #[test]
     fn novelty_pays_on_use_not_on_existence() {
         let mut t = Treasury::new();
         let g = germ();
-        assert!(magnitude(&g)[0] >= 1 && magnitude(&g)[1] == 1, "motion∘recolour has S+G cost");
+        assert!(magnitude(&g)[2] >= 1, "a germinated pattern has residual-lane cost");
         assert!(t.settle_install(&g, [1; 32]), "gate admits a reducing germ");
         assert_eq!(t.balance(&[1; 32]), 0, "installing pays NOTHING — no corpus proven yet");
         t.settle_use([1; 32]); // a real demand later recalled it

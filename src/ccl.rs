@@ -4,52 +4,28 @@
 //! germinates and reasons over anonymous exact elements; this module translates
 //! one for a human, downstream and one-way. English READS the element; it never
 //! defines it, and nothing in the solve path calls this. (Law III: kernel
-//! general, translation interface-only.)
+//! general, translation interface-only.) Post-excision there are no named
+//! generator kinds to gloss — a germ is a germinated pattern, described only by
+//! its measured shape (cells touched, lanes, magnitude), never by a solver word.
 
 use crate::core::ccl::Audience;
-use crate::transducer::motor::D4;
-use crate::transducer::transform::Transform;
-use num_traits::One;
-
-fn rotation_word(d: D4) -> &'static str {
-    // English gloss of a group element — a label, not a definition.
-    match d {
-        D4::E => "",
-        D4::R90 => "quarter-turn",
-        D4::R180 => "half-turn",
-        D4::R270 => "three-quarter-turn",
-        D4::FlipRow => "row-mirror",
-        D4::FlipCol => "col-mirror",
-        D4::Transpose => "transpose",
-        D4::AntiTranspose => "anti-transpose",
-    }
-}
+use crate::transducer::element::Element;
 
 /// Translate an anonymous germ to an English phrase for a human audience. Purely
 /// descriptive; the germ's identity remains its ANASTOME address.
-pub fn describe(g: &Transform, audience: Audience) -> String {
-    let mut parts: Vec<String> = Vec::new();
-
-    if !g.motor.dilation.is_one() {
-        parts.push(format!("scale ×{}", g.motor.dilation));
-    }
-    let rot = rotation_word(g.motor.rotation);
-    if !rot.is_empty() {
-        parts.push(rot.to_string());
-    }
-    let (t0, t1) = &g.motor.translation;
-    if !num_traits::Zero::is_zero(t0) || !num_traits::Zero::is_zero(t1) {
-        parts.push(format!("shift ({t0},{t1})"));
-    }
-    if !g.relabel.is_empty() {
-        let pairs: Vec<String> = g.relabel.iter().map(|(a, b)| format!("{a}→{b}")).collect();
-        parts.push(format!("recolour {{{}}}", pairs.join(",")));
-    }
-
-    let body = if parts.is_empty() { "hold (identity)".to_string() } else { parts.join(" ∘ ") };
+pub fn describe(g: &Element, audience: Audience) -> String {
+    let cells = g.sub().len();
+    let m = g.magnitude();
+    let body = if g.is_identity() {
+        "a pure transposition (no substance)".to_string()
+    } else if cells > 0 {
+        format!("a germinated pattern touching {cells} cell{}", if cells == 1 { "" } else { "s" })
+    } else {
+        "an algebraic generator".to_string()
+    };
     match audience {
-        Audience::Mathematician => format!("germ: {body}"),
-        Audience::Biologist => format!("hypha reading: {body}"),
+        Audience::Engineer => format!("{body}; lanes {:?}", g.lanes()),
+        Audience::Mathematician => format!("{body}; μ⃗ = {m:?}"),
         _ => body,
     }
 }
@@ -57,23 +33,20 @@ pub fn describe(g: &Transform, audience: Audience) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::transducer::transform::solve_transform;
+    use crate::transducer::element::from_residual;
+    use crate::transducer::germinate::germinate;
 
+    /// The seam is one-way and downstream: English describes the germ's MEASURED
+    /// shape; it names no generator kind (there are none to name).
     #[test]
-    fn english_lives_only_here() {
-        // A motion∘recolour germ reads as English at the seam — the kernel never
-        // produced these words.
-        let a = [(0, 0, 1u8), (0, 1, 1), (1, 0, 1)];
-        let b = [(0, 3, 5u8), (0, 4, 5), (1, 3, 5)];
-        let g = solve_transform(&a, &b).unwrap();
+    fn english_reads_the_pattern_but_never_names_a_kind() {
+        let g = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap());
         let s = describe(&g, Audience::Operator);
-        assert!(s.contains("shift (0,3)") && s.contains("recolour {1→5}"), "{s}");
-    }
-
-    #[test]
-    fn the_identity_reads_as_a_hold() {
-        let a = [(0, 0, 1u8), (0, 1, 1)];
-        let g = solve_transform(&a, &a).unwrap();
-        assert_eq!(describe(&g, Audience::Operator), "hold (identity)");
+        assert!(s.contains("pattern"), "described by shape: {s}");
+        for banned in ["rotation", "recolour", "translate", "reflect"] {
+            assert!(!s.to_lowercase().contains(banned), "no solver vocabulary: {s}");
+        }
+        let ident = Element::identity(crate::transducer::element::GERM_DIM);
+        assert!(describe(&ident, Audience::Operator).contains("transposition"));
     }
 }

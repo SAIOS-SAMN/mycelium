@@ -160,14 +160,16 @@ mod tests {
         assert_eq!(p.metabolism_rate(), [0, 1, 0, 0]);
     }
 
-    /// A pure recolour charges only the gauge lane — now read off the germ's exact
-    /// per-lane support (`Element::lanes()`), the coordinate-exact carrier.
+    /// A germinated pattern charges the residual lane — read off the germ's exact
+    /// per-lane support (`Element::lanes()`), the coordinate-exact carrier. (Post-
+    /// excision every perceived change is a pattern until the mesh consolidates
+    /// richer structure; the gauge/spatial lanes fill as those axes germinate.)
     #[test]
-    fn a_recolour_charges_the_gauge_lane() {
-        use crate::transducer::element::from_transform;
-        use crate::transducer::transform::solve_transform;
-        let g = from_transform(&solve_transform(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
-        assert_eq!(g.lanes(), [false, true, false, false], "pure recolour = gauge only");
+    fn a_germinated_pattern_charges_the_residual_lane() {
+        use crate::transducer::element::from_residual;
+        use crate::transducer::germinate::germinate;
+        let g = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+        assert_eq!(g.lanes(), [false, false, true, false], "a pattern = residual lane");
     }
 
     #[test]

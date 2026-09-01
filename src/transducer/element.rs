@@ -27,8 +27,6 @@
 use crate::core::engine::{Delta, Operator, Q, QMatrix};
 use crate::core::matrix::{det, identity, invert, mul};
 use crate::transducer::germinate::{germ_bytes as residual_word, ResidualGerm};
-use crate::transducer::motor::{ConformalMotor, D4};
-use crate::transducer::transform::Transform;
 use num_bigint::BigInt;
 use num_traits::{One, Zero};
 
@@ -86,6 +84,14 @@ pub struct Element {
     word: Vec<u8>,
     /// Per-lane support, exact from the description (0⃗ for pure-algebra elements).
     mag: [u64; 4],
+    /// The CENTERED COBOUNDARY CHAIN — the residual's substance with geometry
+    /// preserved up to translation: `(row, col, before, after)` over the changed
+    /// cells, min-corner framed to the origin (the substrate's transposition
+    /// projection), sorted. This is what the confluent chain-reduction peels and
+    /// what `same_action` compares for residual germs — the position-free hue
+    /// tally (the `fibers` δ-lens) is a projection and never decides identity or
+    /// substance. Empty for pure-algebra (group) elements.
+    sub: Vec<(i64, i64, u8, u8)>,
 }
 
 impl Element {
@@ -93,7 +99,7 @@ impl Element {
     /// transition on any axis). `dim` is the representation dimension shared by
     /// every fiber so they compose/bracket in a common GL(dim,ℚ).
     pub fn identity(dim: usize) -> Self {
-        Element { dim, fibers: Vec::new(), word: Vec::new(), mag: [0; 4] }
+        Element { dim, fibers: Vec::new(), word: Vec::new(), mag: [0; 4], sub: Vec::new() }
     }
 
     pub fn dim(&self) -> usize {
@@ -133,7 +139,14 @@ impl Element {
     }
 
     pub fn is_identity(&self) -> bool {
-        self.fibers.is_empty()
+        // A residual with a canceling hue tally (a bidirectional swap) has empty
+        // FIBERS but a real chain — the chain decides; the tally never does.
+        self.fibers.is_empty() && self.sub.is_empty()
+    }
+
+    /// The centered coboundary chain (empty for pure-algebra elements).
+    pub fn sub(&self) -> &[(i64, i64, u8, u8)] {
+        &self.sub
     }
 
     /// The composite operator this description applies to the field — the product
@@ -159,13 +172,16 @@ impl Element {
         Some(Operator { id, matrix: m, matrix_inv: inv, det_sign_positive: true })
     }
 
-    /// Do two elements realize the SAME transformation (the same operator on the
-    /// field), regardless of how each is identified? This compares the ALGEBRA lens
-    /// (the realized matrix), so a directly-perceived germ and a DEDUCED composition
-    /// of generators that act identically test equal — the basis of R6 compositional
-    /// recall. Exact for group (invertible) germs, where the realization is
-    /// injective on the description.
+    /// Do two elements describe the SAME transformation, position quotiented? For
+    /// residual germs (non-empty chains) the CENTERED CHAIN decides — geometry
+    /// preserved up to translation, so equal-tally/different-geometry residuals
+    /// never conflate (the Step-1 finding, cured). For pure-algebra (group)
+    /// elements the realized matrix decides, where the realization is injective.
+    /// A chain-carrying and a chain-free element are never the same action.
     pub fn same_action(&self, other: &Element) -> bool {
+        if !self.sub.is_empty() || !other.sub.is_empty() {
+            return self.sub == other.sub;
+        }
         self.realize() == other.realize()
     }
 
@@ -311,6 +327,14 @@ impl Element {
                 }
             }
         }
+        // The centered coboundary chain (the substance geometry).
+        out.extend_from_slice(&(self.sub.len() as u32).to_le_bytes());
+        for (r, c, before, after) in &self.sub {
+            out.extend_from_slice(&r.to_le_bytes());
+            out.extend_from_slice(&c.to_le_bytes());
+            out.push(*before);
+            out.push(*after);
+        }
         out
     }
 
@@ -352,22 +376,18 @@ impl Element {
             }
             fibers.push((idx, mat));
         }
-        Some(Element { dim, fibers, word, mag })
+        let nsub = u32_at(b, pos)? as usize;
+        let mut sub = Vec::with_capacity(nsub);
+        for _ in 0..nsub {
+            let r = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+            let c = i64::from_le_bytes(b.get(*pos + 8..*pos + 16)?.try_into().ok()?);
+            let before = *b.get(*pos + 16)?;
+            let after = *b.get(*pos + 17)?;
+            *pos += 18;
+            sub.push((r, c, before, after));
+        }
+        Some(Element { dim, fibers, word, mag, sub })
     }
-}
-
-/// Realize a conformal motor as a multi-axial element: the spatial fiber holds the
-/// exact 3×3 homogeneous similarity `[[λR, t],[0,1]]` acting on `(r,c,1)`. This is
-/// the DESCRIPTION of the motion; its [`Element::solution`] is the inverse motor.
-pub fn from_conformal(m: &ConformalMotor) -> Element {
-    let r = m.rotation.matrix();
-    let l = &m.dilation;
-    let mat = vec![
-        vec![l * q(r[0][0]), l * q(r[0][1]), m.translation.0.clone()],
-        vec![l * q(r[1][0]), l * q(r[1][1]), m.translation.1.clone()],
-        vec![q(0), q(0), q(1)],
-    ];
-    Element::identity(3).with_fiber(FIBER_SPATIAL, mat)
 }
 
 /// Realize a residual germ as the antisymmetric hue-transition field over the core
@@ -416,75 +436,30 @@ fn place_block(dst: &mut QMatrix, off: usize, block: &QMatrix) {
     }
 }
 
-/// The DESCRIPTION of a solved body transform (motion ∘ recolour) as a germ: the
-/// spatial block is the homogeneous similarity `[[λR,t],[0,1]]`; the hue block is
-/// the relabel's transition matrix (column `from` ↦ row `to`). Its solution() is
-/// the block-wise inverse when the relabel is a bijection.
-pub fn from_transform(t: &Transform) -> Element {
-    let mut m = identity(GERM_DIM);
-    let r = t.motor.rotation.matrix();
-    let l = &t.motor.dilation;
-    let spatial = vec![
-        vec![l * q(r[0][0]), l * q(r[0][1]), t.motor.translation.0.clone()],
-        vec![l * q(r[1][0]), l * q(r[1][1]), t.motor.translation.1.clone()],
-        vec![q(0), q(0), q(1)],
-    ];
-    place_block(&mut m, 0, &spatial);
-    for (from, to) in &t.relabel {
-        let (f, tt) = (*from as usize, *to as usize);
-        if f < PALETTE && tt < PALETTE {
-            m[3 + f][3 + f] = q(0); // hue `f` no longer fixed
-            m[3 + tt][3 + f] = q(1); // it maps to `tt`
-        }
-    }
-    // 𝒮 support = which of {shift, rotation, scale} the motion uses; 𝒢 = relabeled
-    // hue count. Exact from the description (coordinate-exact, never a tally).
-    let (t0, t1) = &t.motor.translation;
-    let spatial_supp = (!t0.is_zero() || !t1.is_zero()) as u64
-        + (t.motor.rotation != D4::E) as u64
-        + (!t.motor.dilation.is_one()) as u64;
-    let mag = [spatial_supp, t.relabel.len() as u64, 0, 0];
-    let mut e = Element::identity(GERM_DIM).with_fiber(FIBER_SPATIAL, m);
-    e.word = transform_word(t);
-    e.mag = mag;
-    e
-}
-
-/// The coordinate-exact ANASTOME word of a solved transform (the banked
-/// description): dilation ℚ, rotation index, translation ℚ², then the relabel
-/// pairs. Distinct transforms → distinct words → distinct germ identity.
-fn transform_word(t: &Transform) -> Vec<u8> {
-    let mut out = Vec::new();
-    let push_q = |out: &mut Vec<u8>, r: &Q| {
-        for part in [r.numer(), r.denom()] {
-            let b = part.to_signed_bytes_le();
-            out.extend_from_slice(&(b.len() as u32).to_le_bytes());
-            out.extend_from_slice(&b);
-        }
-    };
-    push_q(&mut out, &t.motor.dilation);
-    out.push(D4::ALL.iter().position(|x| *x == t.motor.rotation).unwrap_or(0) as u8);
-    push_q(&mut out, &t.motor.translation.0);
-    push_q(&mut out, &t.motor.translation.1);
-    out.push(0xFF);
-    for (from, to) in &t.relabel {
-        out.push(*from);
-        out.push(*to);
-    }
-    out
-}
-
-/// The DESCRIPTION of an irreducible residual as a germ (the pivot that USED to be
-/// discarded): the spatial block is identity (no rigid motion closes it); the hue
-/// block is the antisymmetric coboundary of the residual's directed hue
-/// transitions (`Δ[before][after] += 1`). This is "germinate the description" — a
-/// new axis of perception minted from what resisted the group.
+/// The DESCRIPTION of a perceived residual as a germ — post-excision, the ONLY way
+/// cognition mints anything: every non-transposition demand IS a coboundary the
+/// eye measured, and every "rotation"/"recolour" the mesh will ever speak is a
+/// germinated pattern, never a named solver.
+///
+/// The chain is CENTERED — the changed-cell set framed with its min-corner at the
+/// origin (the substrate's transposition projection, hypha-side per the ruling) —
+/// so the same deformation at any position is ONE word, while geometry (the
+/// relative offsets between changed cells) is preserved exactly: equal-tally,
+/// different-geometry residuals stay distinct. The word/identity IS the centered
+/// chain; the antisymmetric hue tally is kept only as the δ-algebra lens.
 pub fn from_residual(g: &ResidualGerm) -> Element {
+    // The substrate framing projection: min-corner of the changed set → origin.
+    let min_r = g.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
+    let min_c = g.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
+    let mut centered: ResidualGerm =
+        g.iter().map(|(r, c, before, after)| (r - min_r, c - min_c, *before, *after)).collect();
+    centered.sort_unstable();
+
+    // The δ-lens: the position-free antisymmetric hue-transition tally (a
+    // projection — algebra only, never identity/substance).
     let mut m = identity(GERM_DIM);
-    // The hue block is a PURE antisymmetric coboundary (zero diagonal) — a
-    // Lie-algebra element, not a group block — so it reads as the residual axis.
     let mut hue = vec![vec![Q::zero(); PALETTE]; PALETTE];
-    for (_, _, before, after) in g {
+    for (_, _, before, after) in &centered {
         let (a, b) = (*before as usize, *after as usize);
         if a == b || a >= PALETTE || b >= PALETTE {
             continue;
@@ -493,14 +468,12 @@ pub fn from_residual(g: &ResidualGerm) -> Element {
         hue[b][a] -= Q::one();
     }
     place_block(&mut m, 3, &hue);
-    // Residual magnitude = the coordinate-exact changed-cell support (|supp|), read
-    // from the description itself — NEVER the hue tally (which cancels bidirectional
-    // swaps). word = the exact positional coboundary, so distinct residuals never
-    // collide even where the tally does.
-    let supp = g.iter().filter(|(_, _, before, after)| before != after).count() as u64;
+
+    let supp = centered.len() as u64;
     let mut e = Element::identity(GERM_DIM).with_fiber(FIBER_SPATIAL, m);
-    e.word = residual_word(g);
+    e.word = residual_word(&centered);
     e.mag = [0, 0, supp, 0];
+    e.sub = centered;
     e
 }
 
@@ -537,7 +510,9 @@ impl Element {
         }
         // a pure transposition (translate only) becomes the identity — empty substance
         out.fibers.retain(|(_, m)| !is_identity(m));
-        out.mag = out.reduction_magnitude();
+        // A residual's substance IS its centered chain (already position-quotiented
+        // by construction); its magnitude reads the CHAIN, never the cancelable tally.
+        out.mag = if out.sub.is_empty() { out.reduction_magnitude() } else { [0, 0, out.sub.len() as u64, 0] };
         out
     }
 
@@ -568,7 +543,6 @@ impl Element {
 mod tests {
     use super::*;
     use crate::transducer::germinate::germinate;
-    use crate::transducer::motor::D4;
 
     fn qm(rows: &[&[i64]]) -> QMatrix {
         rows.iter().map(|r| r.iter().map(|&v| q(v)).collect()).collect()
@@ -578,6 +552,10 @@ mod tests {
     fn shear(a: i64) -> QMatrix {
         qm(&[&[1, a, 0], &[0, 1, 0], &[0, 0, 1]])
     }
+
+    // NOTE post-excision: tests fabricate exact matrices to VERIFY the algebra
+    // laws (associativity, inverses, brackets, conjugation). They name nothing in
+    // cognition — no solver exists; the mesh germinates its own generators.
 
     // ─── THE GATE: algebra laws, not hash determinism ───────────────────────
 
@@ -594,31 +572,30 @@ mod tests {
 
     /// THE ASYMMETRY↔SYMMETRY LAW: description ∘ solution = identity. The germ is
     /// the description; solution() deduces g⁻¹; composed, the coboundary CLOSES.
+    /// (An exact homogeneous isometry matrix, fabricated to verify the group law.)
     #[test]
     fn description_composed_with_its_solution_is_identity() {
-        let g = from_conformal(&ConformalMotor {
-            dilation: q(1),
-            rotation: D4::R90,
-            translation: (q(3), q(-2)),
-        });
-        let sol = g.solution().expect("a motion is reversible — it has a solution");
+        let g = Element::identity(3).with_fiber(FIBER_SPATIAL, qm(&[&[0, -1, 3], &[1, 0, -2], &[0, 0, 1]]));
+        let sol = g.solution().expect("an invertible description has a solution");
         assert!(g.compose(&sol).is_identity(), "g ∘ g⁻¹ = e — the coboundary closes");
         assert!(sol.compose(&g).is_identity(), "g⁻¹ ∘ g = e");
     }
 
-    /// The solution is the INVERSE DEDUCTION: applying g⁻¹ to B recovers A. Here
-    /// the realized inverse matrix carries the moved point back to its origin.
+    /// The solution is the INVERSE DEDUCTION: applying g⁻¹ to the image recovers
+    /// the origin — the realized inverse matrix carries the moved point back.
     #[test]
     fn the_solution_inverts_the_described_motion() {
-        let m = ConformalMotor { dilation: q(1), rotation: D4::R180, translation: (q(4), q(4)) };
-        let g = from_conformal(&m);
+        let g = Element::identity(3).with_fiber(FIBER_SPATIAL, qm(&[&[-1, 0, 4], &[0, -1, 4], &[0, 0, 1]]));
+        let fwd = g.realize();
         let inv = g.solution().unwrap().realize();
-        // origin point p=(1,2,1) → B under g, then back under g⁻¹.
-        let (br, bc) = m.apply_point(&q(1), &q(2));
-        let bvec = [br, bc, q(1)];
-        let recovered: Vec<Q> =
-            (0..3).map(|i| (0..3).map(|k| &inv[i][k] * &bvec[k]).fold(Q::zero(), |s, x| s + x)).collect();
-        assert_eq!(recovered, vec![q(1), q(2), q(1)], "g⁻¹ deduces A back from B");
+        // p = (1,2,1) → g·p, then g⁻¹ carries it back.
+        let apply = |m: &QMatrix, v: &[Q; 3]| -> Vec<Q> {
+            (0..3).map(|i| (0..3).map(|k| &m[i][k] * &v[k]).fold(Q::zero(), |s, x| s + x)).collect()
+        };
+        let p = [q(1), q(2), q(1)];
+        let moved = apply(&fwd, &p);
+        let recovered = apply(&inv, &[moved[0].clone(), moved[1].clone(), moved[2].clone()]);
+        assert_eq!(recovered, vec![q(1), q(2), q(1)], "g⁻¹ deduces the origin back from the image");
     }
 
     /// BRACKET IS ANTISYMMETRIC: [X,Y] = −[Y,X] (XY−YX).
@@ -691,8 +668,8 @@ mod tests {
     /// invariant, which is exactly the physically meaningful case).
     #[test]
     fn conjugation_preserves_the_antisymmetric_field() {
-        // A rigid rotation (orthogonal, det 1) — an isometry description.
-        let g = from_conformal(&ConformalMotor { dilation: q(1), rotation: D4::R90, translation: (q(0), q(0)) });
+        // A rigid rotation (orthogonal, det 1) — an exact isometry matrix fixture.
+        let g = Element::identity(3).with_fiber(FIBER_SPATIAL, qm(&[&[0, -1, 0], &[1, 0, 0], &[0, 0, 1]]));
         let op = g.as_operator(0).expect("an isometry lifts to an Operator");
         let mut field = Delta::zero(3, 1);
         field.set_antisym(0, 1, vec![q(5)]);
@@ -705,36 +682,7 @@ mod tests {
         }
     }
 
-    // ─── THE GERM CARRIER: parity with the live per-lane semantics + residuals ──
-
-    /// The carrier reproduces the EXACT lane-activity the live pipeline reads from
-    /// a `Transform` (`physics::lanes_of`) — so swapping the basis onto Element is
-    /// behavior-preserving on the physics.
-    #[test]
-    fn from_transform_lanes_match_the_live_transform_semantics() {
-        use crate::transducer::transform::solve_transform;
-        // pure motion → 𝒮 only
-        let motion = solve_transform(&[(0, 0, 7u8), (0, 1, 7)], &[(0, 3, 7u8), (0, 4, 7)]).unwrap();
-        assert_eq!(from_transform(&motion).lanes(), [true, false, false, false]);
-        // pure recolour → 𝒢 only
-        let recolour = solve_transform(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap();
-        assert_eq!(from_transform(&recolour).lanes(), [false, true, false, false]);
-        // motion ∘ recolour → 𝒮 and 𝒢
-        let both = solve_transform(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 3, 5u8), (0, 4, 5), (1, 3, 5)]).unwrap();
-        assert_eq!(from_transform(&both).lanes(), [true, true, false, false]);
-    }
-
-    /// The magnitude is nonzero on exactly the active lanes — so the POW++ install
-    /// gate (`0⃗ ≺_DM magnitude`) admits the germ, matching the live economy. (The
-    /// values are per-lane support size, the ratified ‖Δ‖ |supp| component.)
-    #[test]
-    fn germ_magnitude_is_nonzero_on_active_lanes() {
-        use crate::transducer::transform::solve_transform;
-        let both = solve_transform(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 3, 5u8), (0, 4, 5), (1, 3, 5)]).unwrap();
-        let m = from_transform(&both).magnitude();
-        assert!(m[0] >= 1 && m[1] == 1, "motion∘recolour: 𝒮≥1, 𝒢=1 (one relabeled hue)");
-        assert_eq!(m[2], 0);
-    }
+    // ─── THE GERM CARRIER: centered coboundary chains (post-excision) ───────
 
     /// THE RESIDUAL GERMINATES: a pivot that no motor closes becomes a first-class
     /// germ on the residual lane — the description that used to be discarded. Its
@@ -757,64 +705,62 @@ mod tests {
         assert_ne!(germ, reverse, "the reverse description is a distinct germ");
     }
 
-    /// The transposition quotient: a pure translate has EMPTY substance (it is a
-    /// pure position change — the ℤ² orbit), while a rotation keeps its substance;
-    /// two translates of the SAME rotation share one substance (same form, new
-    /// position). The reduction magnitude descends toward the identity.
+    /// The transposition quotient is the CENTERED chain: the same deformation at
+    /// any position is ONE substance (min-corner framed to origin), while a
+    /// deformation with the SAME hue tally but DIFFERENT geometry stays DISTINCT —
+    /// the Step-1 conflation, cured (the tally never decides substance).
     #[test]
-    fn substance_is_the_transposition_invariant() {
-        use crate::transducer::transform::solve_transform;
-        let tf = |a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]| from_transform(&solve_transform(a, b).unwrap());
-        // pure translate → empty substance (a pure transposition).
-        let translate = tf(&[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 3, 1), (0, 4, 1), (1, 3, 1)]);
-        assert!(translate.substance().is_identity(), "a translate is pure transposition — no substance");
-        // a rotation at two different positions → the SAME substance.
-        let rot_here = tf(&[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 1, 1), (1, 0, 1), (1, 1, 1)]);
-        let rot_far = tf(&[(0, 10, 1), (0, 11, 1), (1, 10, 1)], &[(0, 11, 1), (1, 10, 1), (1, 11, 1)]);
-        assert!(!rot_here.substance().is_identity(), "a rotation has substance");
-        assert!(rot_here.substance().same_action(&rot_far.substance()), "same form, new position — one substance");
+    fn substance_is_the_centered_chain() {
+        let a = [(0, 0, 1u8), (0, 1, 2), (1, 0, 3)];
+        let b = [(0, 0, 1u8), (0, 1, 9), (1, 0, 3)]; // (0,1): 2→9
+        // The same deformation transposed +7 rows, +5 cols.
+        let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 7, c + 5, *h)).collect();
+        let b_far: Vec<_> = b.iter().map(|(r, c, h)| (r + 7, c + 5, *h)).collect();
+        let here = from_residual(&germinate(&a, &b).unwrap());
+        let far = from_residual(&germinate(&a_far, &b_far).unwrap());
+        assert_eq!(here, far, "same deformation, any position — ONE word");
+        assert!(here.same_action(&far), "one substance");
+        // Equal tally, different geometry — the cured conflation: {1→0 here, 0→4
+        // there} at two different relative offsets must stay DISTINCT.
+        let g1 = from_residual(&vec![(0, 0, 1, 0), (1, 1, 0, 4)]);
+        let g2 = from_residual(&vec![(1, 0, 1, 0), (0, 2, 0, 4)]);
+        assert!(!g1.same_action(&g2), "equal tally, different geometry — distinct substance");
+        assert_ne!(g1.address(), g2.address(), "and distinct identity");
     }
 
-    /// P7: a germ round-trips through bytes losslessly — address, magnitude, and
-    /// action all survive, so a persisted basis reloads identically.
+    /// P7: a germ round-trips through bytes losslessly — chain, address, magnitude,
+    /// and action all survive, so a persisted basis reloads identically.
     #[test]
     fn a_germ_round_trips_through_bytes() {
-        use crate::transducer::transform::solve_transform;
-        let motion = from_transform(&solve_transform(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 3, 5u8), (0, 4, 5), (1, 3, 5)]).unwrap());
         let residual = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap());
-        for g in [&motion, &residual] {
+        let swap = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]).unwrap());
+        for g in [&residual, &swap] {
             let bytes = g.to_bytes();
             let mut pos = 0;
             let back = Element::from_bytes(&bytes, &mut pos).expect("reload");
             assert_eq!(pos, bytes.len(), "consumed exactly");
-            assert_eq!(&back, g, "full equality (dim, word, mag, fibers)");
+            assert_eq!(&back, g, "full equality (dim, word, mag, fibers, chain)");
             assert_eq!(back.address(), g.address(), "address survives");
-            assert_eq!(back.magnitude(), g.magnitude(), "magnitude survives");
-            assert!(back.same_action(g), "the algebra survives");
+            assert_eq!(back.sub(), g.sub(), "the centered chain survives");
+            assert!(back.same_action(g), "the substance survives");
         }
     }
 
-    /// THE COORDINATE-EXACT IDENTITY: the case that broke the tally-only design.
-    /// L→bar has a bidirectional hue swap across cells — 0→1 at (0,2) and 1→0 at
-    /// (1,0) — whose antisymmetric hue tally CANCELS to zero. The coordinate-exact
-    /// `word` + `mag` keep it a real, non-colliding germ.
+    /// THE CANCELING TALLY IS NOT IDENTITY: L→bar's bidirectional hue swap cancels
+    /// the tally to zero — but the CHAIN keeps it a real, non-identity germ with
+    /// exact magnitude, and its reverse is a distinct word.
     #[test]
     fn a_bidirectional_swap_does_not_collapse_to_zero() {
         let a = [(0, 0, 1u8), (0, 1, 1), (1, 0, 1)]; // L
         let b = [(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]; // bar
         let l_to_bar = from_residual(&germinate(&a, &b).unwrap());
-        // The hue tally cancels (the algebra lens is lossy) — but identity/magnitude
-        // do NOT, because they read the coordinate-exact description.
         assert_eq!(l_to_bar.magnitude(), [0, 0, 2, 0], "two changed cells, exact — not a canceled 0");
         assert_eq!(l_to_bar.lanes(), [false, false, true, false], "a real residual germ");
-        // A DIFFERENT deformation with the same hue-transition multiset must not
-        // collide: bar→L reverses the cells, distinct positions.
+        assert!(!l_to_bar.is_identity(), "the chain decides — a canceled tally is not identity");
+        assert!(!l_to_bar.substance().is_identity(), "and its substance is real");
         let bar_to_l = from_residual(&germinate(&b, &a).unwrap());
         assert_ne!(l_to_bar.address(), bar_to_l.address(), "distinct descriptions, distinct address");
-        // And a pure-motion germ never collides with a residual germ.
-        use crate::transducer::transform::solve_transform;
-        let motion = from_transform(&solve_transform(&[(0, 0, 7u8)], &[(0, 3, 7u8)]).unwrap());
-        assert_ne!(l_to_bar.address(), motion.address());
+        assert!(!l_to_bar.same_action(&bar_to_l), "and distinct substance");
     }
 
     /// Multi-axial: distinct axes compose INDEPENDENTLY (no cross-talk, no cap on

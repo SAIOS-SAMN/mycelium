@@ -39,14 +39,23 @@ pub fn glues(g_ab: &Element, g_bc: &Element, g_ca: &Element) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::transducer::element::from_transform;
-    use crate::transducer::transform::solve_transform;
+    use crate::core::engine::Q;
+    use crate::transducer::element::FIBER_SPATIAL;
+    use num_bigint::BigInt;
 
-    // A few invertible motion germs to act as per-chart views.
+    // Invertible per-chart views as EXACT hand-built homogeneous matrices — pure
+    // algebra fixtures verifying the gluing laws (no solver names anything; the
+    // live mesh germinates its own generators).
     fn motion(dc: i64) -> Element {
-        let a = [(0, 0, 1u8), (0, 1, 1), (1, 0, 1)];
-        let b = [(0, dc, 1u8), (0, dc + 1, 1), (1, dc, 1)];
-        from_transform(&solve_transform(&a, &b).unwrap())
+        let q = |v: i64| Q::from(BigInt::from(v));
+        Element::identity(3).with_fiber(
+            FIBER_SPATIAL,
+            vec![
+                vec![q(1), q(0), q(0)],
+                vec![q(0), q(1), q(dc)],
+                vec![q(0), q(0), q(1)],
+            ],
+        )
     }
 
     /// A TRANSITION is antisymmetric: `g_XY ∘ g_YX = 1` (`g_YX = g_XY⁻¹`).
