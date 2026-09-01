@@ -106,7 +106,7 @@ pub struct Entry {
 /// orients nothing rather than silently crediting.
 pub fn orientation(kind: &str) -> i8 {
     match kind {
-        "utility" | "consilience" | "recall" | "torse" => 1,
+        "utility" | "consilience" | "recall" | "torse" | "assembly" => 1,
         "spend" | "fee" | "slash" => -1,
         _ => 0, // "stake", "finality", forward-compatible unknowns
     }
@@ -275,6 +275,23 @@ impl Treasury {
         self.pay("utility", who, mu, anchor)
     }
 
+    /// THE ASSEMBLY PREMIUM (7d): a fragmented parent demand's children all
+    /// completed and the overlap strips glued — distributed reassembly is
+    /// substantially-more-useful work, paid ON TOP of the children's own
+    /// settlements: μ⃗_composite = Σμ⃗(Wᵢ) + μ⃗_assembly(overlaps). Split per
+    /// lane across the reassembling voices, float-law bounded like every award.
+    pub fn settle_assembly(&mut self, voices: &[[u8; 32]], mu: [u64; 4], anchor: Anchor) {
+        if voices.is_empty() {
+            return;
+        }
+        let n = voices.len() as u64;
+        let share: [u64; 4] = std::array::from_fn(|l| if mu[l] == 0 { 0 } else { (mu[l] / n).max(1) });
+        for v in voices {
+            let bounded = self.award_bound(share);
+            self.pay("assembly", *v, bounded, anchor);
+        }
+    }
+
     /// PoWc — split the consilience award (the germ's μ⃗ PRICED at the moment's
     /// surface) across the attesting voices, per lane (each nonzero lane pays at
     /// least 1 to each voice — consilience is never free).
@@ -372,6 +389,7 @@ impl Treasury {
                 "fee" => 6,
                 "finality" => 7,
                 "slash" => 8,
+                "assembly" => 9,
                 _ => 255,
             };
             out.push(tag);
@@ -450,6 +468,7 @@ impl Treasury {
                 6 => "fee",
                 7 => "finality",
                 8 => "slash",
+                9 => "assembly",
                 _ => "unknown",
             };
             let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;

@@ -188,6 +188,13 @@ fn main() {
 
     let (mut solved, mut wrong, mut unverified, mut mute, mut dim_skip) = (0u64, 0u64, 0u64, 0u64, 0u64);
     let total = tasks.len();
+    // THE GATE VECTOR's structural coordinates (7e — never a scalar): sentence
+    // depth over attempted tasks, chains spoken/anchored over solves, and the
+    // per-lane μ⃗ volume of exactly reconstructed structure.
+    let (mut depth_sum, mut depth_n) = (0u64, 0u64);
+    let (mut chains_spoken, mut chains_anchored) = (0u64, 0u64);
+    let mut mu_solved: [u64; 4] = [0; 4];
+    let lang_anchored = language.iter().filter(|w| w.anchor().is_some()).count();
 
     'task: for path in &tasks {
         let Ok(text) = std::fs::read_to_string(path) else { continue };
@@ -287,8 +294,18 @@ fn main() {
         let all_exact = task.test.iter().all(|(x, y)| {
             delta(x, y).is_some() && apply(x, &spoken) == *y
         });
+        depth_sum += cited.len() as u64;
+        depth_n += 1;
+        chains_spoken += spoken.len() as u64;
+        chains_anchored += spoken.iter().filter(|(_, s)| s.is_some()).count() as u64;
         if all_exact && !task.test.is_empty() {
             solved += 1;
+            for &wi in &cited {
+                let m = language[wi].magnitude();
+                for l in 0..4 {
+                    mu_solved[l] = mu_solved[l].saturating_add(m[l]);
+                }
+            }
             let anchored = spoken.iter().filter(|(_, s)| s.is_some()).count();
             eprintln!(
                 "  SOLVED {} — {} chains spoken, {anchored} anchored",
@@ -300,9 +317,20 @@ fn main() {
         }
     }
 
-    let attempted = solved + wrong;
+    // Γ_gate — THE POLYTONIC GATE VECTOR (7e, ruled: scalar accuracy retired).
+    // Coordinates compare by DOMINANCE between runs on the frozen substrate:
+    // no axis worse, some axis better — a trade is visible as a trade.
+    println!("Γ_gate over {total} tasks, language {}:", state);
     println!(
-        "arc-solve: {total} tasks | SOLVED {solved} ({:.1}%) | wrong {wrong} | unverified {unverified} | mute {mute} | dim-skip {dim_skip} | attempted {attempted} (verify-gated)",
-        100.0 * solved as f64 / total.max(1) as f64,
+        "  buckets   [solved {solved}, unverified {unverified}, dim-skip {dim_skip}, mute {mute}, wrong {wrong}]"
+    );
+    println!(
+        "  structure [d̄_sentence {}/{depth_n}, |basis| {}, |anchored| {lang_anchored}, anchored-ratio {lang_anchored}/{}]",
+        depth_sum,
+        language.len(),
+        language.len(),
+    );
+    println!(
+        "  speech    [chains {chains_spoken}, anchored-chains {chains_anchored}]  μ⃗_solved {mu_solved:?}"
     );
 }

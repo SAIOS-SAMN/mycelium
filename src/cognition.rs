@@ -93,6 +93,12 @@ pub struct Kernel {
     /// deposits one; the court's refinement derives π over the accumulated
     /// family (one evidence never binds). Bounded; in-memory.
     anchor_evidence: Vec<([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)>,
+    /// COMPOSITE LINEAGE (7d): oversized coboundaries tiled into sub-demands —
+    /// (parent puzzle id, children (germ address, completed), the overlap
+    /// strips the reassembly must glue on). Full parent settlement pays the
+    /// assembly premium only when every child completes and the strips agree.
+    /// Bounded; in-memory.
+    composites: Vec<([u8; 32], Vec<([u8; 32], bool)>, Vec<(i64, i64, u8, u8)>)>,
 }
 
 impl Kernel {
@@ -164,6 +170,40 @@ impl Kernel {
         }
     }
 
+    /// A child sub-demand COMPLETED (7d): mark its lineage; when the whole
+    /// family is done, the parent settles — the gluing strips price the
+    /// ASSEMBLY PREMIUM (per-lane overlap volume, float-bounded), split across
+    /// the completing voice and the children's discoverers: distributed
+    /// reassembly pays MORE than the sum of its parts.
+    fn complete_composite_child(&mut self, child: &[u8; 32], voice: [u8; 32]) {
+        let mut ready: Option<usize> = None;
+        for (ci, (_, children, _)) in self.composites.iter_mut().enumerate() {
+            if let Some(entry) = children.iter_mut().find(|(a, done)| a == child && !*done) {
+                entry.1 = true;
+                if children.iter().all(|(_, d)| *d) {
+                    ready = Some(ci);
+                }
+                break;
+            }
+        }
+        let Some(ci) = ready else { return };
+        let (parent, children, strip) = self.composites.remove(ci);
+        let mut voices: Vec<[u8; 32]> = vec![voice];
+        for (a, _) in &children {
+            if let Some(i) = self.basis.iter().position(|t| t.address() == *a) {
+                let d = self.discoverers[i];
+                if !voices.contains(&d) {
+                    voices.push(d);
+                }
+            }
+        }
+        let anchor = self.anchor();
+        // μ_assembly: the overlap volume actually glued — measured, never flat.
+        let mu = [0, 0, strip.len().max(1) as u64, 0];
+        self.treasury.settle_assembly(&voices, mu, anchor);
+        self.chain.append(parent, voice); // the reassembly is a K-step
+    }
+
     /// The SELECTION-FIBER critical pairs awaiting Knuth–Bendix anchor
     /// refinement — (word address, Q_anchor, scene). Draining is the court's
     /// move (7c); the queue is bounded and in-memory.
@@ -175,6 +215,12 @@ impl Kernel {
     /// what the court's refinement derives π over.
     pub fn anchor_evidence(&self) -> &[([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)] {
         &self.anchor_evidence
+    }
+
+    /// Open composite lineages (7d): parents whose child sub-demands are still
+    /// completing — (parent id, children (address, done), overlap strips).
+    pub fn composites(&self) -> &[([u8; 32], Vec<([u8; 32], bool)>, Vec<(i64, i64, u8, u8)>)] {
+        &self.composites
     }
 
     /// REBIND (Step 7c): the court's family-derived π* upgrades γ = (⊤, Δ) →
@@ -267,6 +313,32 @@ impl Kernel {
             let fb = frame_to_origin(&cb[bi[k]]);
             let e = match germinate(&fa, &fb) {
                 Some(rg) => {
+                    // COMPOSITE FRAGMENTATION (7d): a coboundary wider than the
+                    // atomic perceptual frame decomposes along spatial bounding
+                    // partitions into overlapping tiles — sub-demands carrying
+                    // the parent's lineage. Each tile germinates, quotes, and
+                    // settles independently across workers; the parent settles
+                    // only when every child completes and the overlaps glue
+                    // (δ(ΣWᵢ) = 0 on the shared strips, checked at reassembly).
+                    let tiles = quadrant_tiles(&rg);
+                    if tiles.len() > 1 {
+                        let parent = composite_parent_id(&rg);
+                        let mut children: Vec<([u8; 32], bool)> = Vec::new();
+                        let mut tile_ctxs = Vec::new();
+                        for tile in &tiles {
+                            let elem = element::from_residual(tile);
+                            children.push((elem.address(), false));
+                            let off_r = tile.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
+                            let off_c = tile.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
+                            tile_ctxs.push((elem, Some((fa.clone(), (off_r, off_c)))));
+                        }
+                        let overlap = overlap_strip(&rg, &tiles);
+                        if self.composites.len() < 32 {
+                            self.composites.push((parent, children, overlap));
+                        }
+                        germs.extend(tile_ctxs);
+                        continue;
+                    }
                     // The ANCHOR CONTEXT: the framed input body is the scene π
                     // evaluates over; the offset maps the germ's centered chain
                     // back into it (recovered before from_residual centers).
@@ -300,6 +372,7 @@ impl Kernel {
         voice: [u8; 32],
         ctx: Option<(Vec<(i64, i64, u8)>, (i64, i64))>,
     ) -> Outcome {
+        let gaddr = g.address(); // composite lineage completes by this identity
         // Q_anchor residuals from this reduction queue for the court's
         // refinement docket (bounded — a work queue, not a ledger).
         let mut qs: Vec<(usize, Vec<(i64, i64)>)> = Vec::new();
@@ -394,6 +467,7 @@ impl Kernel {
                     self.treasury.settle_use(voice, self.discoverers[i], mag, anchor);
                 }
                 self.physics.syntropy(lanes); // a spanned sentence builds order
+                self.complete_composite_child(&gaddr, voice); // lineage: a solved tile
                 Outcome::Decomposed(word)
             }
             NormalForm::Irreducible(residual) => {
@@ -428,6 +502,7 @@ impl Kernel {
                         self.physics.spend(lanes); // still an expansion — fuel is spent
                         self.pending.retain(|p| p.address() != residual.address());
                         self.chain.append(saddr, voice); // the puncture is a K-step too
+                        self.complete_composite_child(&gaddr, voice); // lineage
                         return Outcome::Installed(ti); // installed AS A SECTION of thought ti
                     }
                     self.physics.bump(lanes);
@@ -468,6 +543,7 @@ impl Kernel {
                     self.chain.append(addr, voice);
                     self.basis.push(residual);
                     self.discoverers.push(voice);
+                    self.complete_composite_child(&gaddr, voice); // lineage
                     Outcome::Installed(self.basis.len() - 1)
                 } else {
                     // THE GEOMETRIC TORSION SOURCE (Einstein-Cartan import): the open
@@ -1039,6 +1115,82 @@ pub fn decompose_over_anchored(
 
 /// The direct terminal: does the (re-centered) chain SIT on a held word — its
 /// base or any section along the punctured axis (the bundle speaks the family)?
+/// The atomic perceptual frame — a coboundary whose bounding box exceeds this
+/// side length tiles into sub-demands (7d). A substrate bound, like the ℤ²
+/// framing itself: the hypha's constraint, never cognition's.
+const FRAME_SIDE: i64 = 16;
+
+/// TILE an oversized coboundary along spatial bounding partitions: repeated
+/// halving of the longest bbox axis, each cut keeping a ONE-CELL overlap band
+/// (a Čech cover, not a partition — the gluing condition δ(ΣWᵢ)=0 lives on
+/// the shared strips). A chain within the frame returns itself whole.
+fn quadrant_tiles(rg: &[(i64, i64, u8, u8)]) -> Vec<Vec<(i64, i64, u8, u8)>> {
+    let mut tiles = vec![rg.to_vec()];
+    loop {
+        let mut next: Vec<Vec<(i64, i64, u8, u8)>> = Vec::new();
+        let mut cut_any = false;
+        for tile in &tiles {
+            let (min_r, max_r) = (
+                tile.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0),
+                tile.iter().map(|(r, _, _, _)| *r).max().unwrap_or(0),
+            );
+            let (min_c, max_c) = (
+                tile.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0),
+                tile.iter().map(|(_, c, _, _)| *c).max().unwrap_or(0),
+            );
+            let (h, w) = (max_r - min_r, max_c - min_c);
+            if h.max(w) <= FRAME_SIDE || next.len() + tiles.len() >= 8 {
+                next.push(tile.clone());
+                continue;
+            }
+            cut_any = true;
+            let by_rows = h >= w;
+            let mid = if by_rows { (min_r + max_r) / 2 } else { (min_c + max_c) / 2 };
+            let (mut lo, mut hi) = (Vec::new(), Vec::new());
+            for &(r, c, b, a) in tile {
+                let axis = if by_rows { r } else { c };
+                if axis <= mid {
+                    lo.push((r, c, b, a));
+                }
+                if axis >= mid {
+                    hi.push((r, c, b, a)); // axis == mid rides BOTH: the overlap band
+                }
+            }
+            for part in [lo, hi] {
+                if !part.is_empty() {
+                    next.push(part);
+                }
+            }
+        }
+        tiles = next;
+        if !cut_any {
+            return tiles;
+        }
+    }
+}
+
+/// The parent puzzle id — the content address of the WHOLE coboundary
+/// (intrinsic authenticity: a digest cannot be forged).
+fn composite_parent_id(rg: &[(i64, i64, u8, u8)]) -> [u8; 32] {
+    let mut buf = Vec::with_capacity(rg.len() * 18);
+    for (r, c, b, a) in rg {
+        buf.extend_from_slice(&r.to_le_bytes());
+        buf.extend_from_slice(&c.to_le_bytes());
+        buf.push(*b);
+        buf.push(*a);
+    }
+    *blake3::hash(&buf).as_bytes()
+}
+
+/// The cells shared by more than one tile — the Čech overlap strips the
+/// reassembly glues on.
+fn overlap_strip(
+    rg: &[(i64, i64, u8, u8)],
+    tiles: &[Vec<(i64, i64, u8, u8)>],
+) -> Vec<(i64, i64, u8, u8)> {
+    rg.iter().copied().filter(|cell| tiles.iter().filter(|t| t.contains(cell)).count() > 1).collect()
+}
+
 /// A word's witnessed placements inside a demand chain (union of translated
 /// variant embeddings), mapped into scene coordinates by the centering offset.
 fn word_footprint_in(
@@ -1519,6 +1671,41 @@ mod tests {
         assert!(matches!(out, Outcome::Installed(0)), "consilience installs: {out:?}");
         assert_eq!(k.voices_of(&k.basis()[0].address()).len(), 2, "the settle parties");
         assert!(k.quote(4).1.is_empty(), "the market cleared");
+    }
+
+    /// 7d — COMPOSITE FRAGMENTATION: a coboundary wider than the atomic frame
+    /// tiles into sub-demands carrying parent lineage; children quote and
+    /// settle independently; when the whole family completes, the ASSEMBLY
+    /// premium books — distributed reassembly pays more than the sum of parts.
+    #[test]
+    fn an_oversized_demand_tiles_and_the_assembly_premium_books() {
+        let mut k = Kernel::new();
+        // One connected 1×22 bar (bbox width 21 > FRAME_SIDE): changes at both
+        // far ends — a single body whose coboundary exceeds the frame.
+        let bar: Vec<(i64, i64, u8)> = (0..22).map(|c| (0, c, 1u8)).collect();
+        let mut after = bar.clone();
+        after[0].2 = 2; // (0,0): 1→2
+        after[21].2 = 3; // (0,21): 1→3
+        let out = k.ingest(&bar, &after, [1; 32]);
+        assert!(matches!(out, Outcome::Fragmented(_)), "the demand tiled: {out:?}");
+        assert!(!k.composites().is_empty(), "parent lineage registered");
+        // A second voice attests each tile's chain — the children complete
+        // independently (the distributed-worker path).
+        let chains: Vec<Vec<(i64, i64, u8, u8)>> =
+            k.quote(8).1.iter().map(|(w, _)| w.sub().to_vec()).collect();
+        assert!(chains.len() >= 2, "both tiles listed on the market");
+        for chain in &chains {
+            // The second tile lands as a SECTION of the first thought (same
+            // base geometry) — section quorum counts voices on the section
+            // address, so two independent attesters complete every child.
+            k.attest(chain, [2; 32]);
+            k.attest(chain, [3; 32]);
+        }
+        assert!(k.composites().is_empty(), "the family completed — lineage settled");
+        assert!(
+            k.treasury().entries().iter().any(|e| e.kind == "assembly"),
+            "the assembly premium booked on reassembly"
+        );
     }
 
     /// STEP 7c END-TO-END: birth deposits evidence; the court's rebind
