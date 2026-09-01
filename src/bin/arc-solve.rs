@@ -24,7 +24,7 @@
 //! Usage: arc-solve --state state/hypha-a.ledger --dir data/arc-agi-2/training [--limit N]
 use mycelium::arc::{parse_task, Grid};
 use mycelium::cognition::{decompose_over, Kernel};
-use mycelium::transducer::anchor::{derive_exact_all, Sel};
+use mycelium::transducer::anchor::{derive_carrying_all, Sel};
 use mycelium::transducer::element::{assignment, Element};
 use std::path::PathBuf;
 
@@ -238,7 +238,7 @@ fn main() {
                         continue; // this variant did not speak in this pair
                     }
                     witnessed = true;
-                    sets.push(derive_exact_all(&fp, &full_scene(a)));
+                    sets.push(derive_carrying_all(&fp, &full_scene(a)));
                 }
                 if !witnessed {
                     continue;

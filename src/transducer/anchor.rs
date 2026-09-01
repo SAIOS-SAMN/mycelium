@@ -52,6 +52,16 @@ pub enum Sel {
     /// connectivity, the operator that composes enclosure:
     /// enclosed(K) = K ∖ Flood(K ∩ δ(whole), K).
     Flood(Box<Sel>, Box<Sel>),
+    /// ORDER-INVARIANT component selection: of the support's connected
+    /// components, the one UNIQUELY extremizing a measured C₀ invariant.
+    /// Code 0..4 = (max |K|, min |K|, max L1-bbox-diameter, min diameter).
+    /// A tie selects NOTHING — no unique extremum, no selection (exactness,
+    /// never a coin flip).
+    ArgExt(Box<Sel>, u8),
+    /// 1-cell TRANSPORT intersection: a ∩ Shift_d(b) where d is the exact
+    /// bbox-min corner difference extrema(a) − extrema(b) — the offset is
+    /// DERIVED from the two supports at evaluation time, never a parameter.
+    Transport(Box<Sel>, Box<Sel>),
 }
 
 fn sorted(mut v: Vec<(i64, i64)>) -> Vec<(i64, i64)> {
@@ -134,6 +144,68 @@ impl Sel {
                 let (sa, sb) = (a.eval(scene), b.eval(scene));
                 sa.into_iter().filter(|p| !has(&sb, *p)).collect()
             }
+            Sel::ArgExt(e, code) => {
+                let sup = e.eval(scene);
+                let cells: Vec<(i64, i64, u8)> = sup.iter().map(|&(r, c)| (r, c, 0)).collect();
+                let comps: Vec<Vec<(i64, i64)>> = components(&cells)
+                    .into_iter()
+                    .map(|c| sorted(c.into_iter().map(|(r, c, _)| (r, c)).collect()))
+                    .collect();
+                if comps.is_empty() {
+                    return Vec::new();
+                }
+                let measure = |k: &Vec<(i64, i64)>| -> i64 {
+                    match code {
+                        0 | 1 => k.len() as i64,
+                        _ => {
+                            let (r0, r1) = (
+                                k.iter().map(|(r, _)| *r).min().unwrap_or(0),
+                                k.iter().map(|(r, _)| *r).max().unwrap_or(0),
+                            );
+                            let (c0, c1) = (
+                                k.iter().map(|(_, c)| *c).min().unwrap_or(0),
+                                k.iter().map(|(_, c)| *c).max().unwrap_or(0),
+                            );
+                            (r1 - r0) + (c1 - c0)
+                        }
+                    }
+                };
+                let vals: Vec<i64> = comps.iter().map(measure).collect();
+                let target = match code {
+                    0 | 2 => vals.iter().max(),
+                    _ => vals.iter().min(),
+                }
+                .copied()
+                .unwrap();
+                let winners: Vec<&Vec<(i64, i64)>> = comps
+                    .iter()
+                    .zip(&vals)
+                    .filter(|(_, v)| **v == target)
+                    .map(|(k, _)| k)
+                    .collect();
+                match winners.as_slice() {
+                    [only] => (*only).clone(),
+                    _ => Vec::new(), // tie: no unique extremum, no selection
+                }
+            }
+            Sel::Transport(a, b) => {
+                let (sa, sb) = (a.eval(scene), b.eval(scene));
+                if sa.is_empty() || sb.is_empty() {
+                    return Vec::new();
+                }
+                let corner = |s: &[(i64, i64)]| {
+                    (
+                        s.iter().map(|(r, _)| *r).min().unwrap(),
+                        s.iter().map(|(_, c)| *c).min().unwrap(),
+                    )
+                };
+                let (ar, ac) = corner(&sa);
+                let (br, bc) = corner(&sb);
+                let (dr, dc) = (ar - br, ac - bc);
+                let shifted: Vec<(i64, i64)> =
+                    sorted(sb.iter().map(|(r, c)| (r + dr, c + dc)).collect());
+                sa.into_iter().filter(|p| has(&shifted, *p)).collect()
+            }
             Sel::Flood(seed, within) => {
                 let (sd, w) = (seed.eval(scene), within.eval(scene));
                 let mut reached: Vec<(i64, i64)> =
@@ -159,7 +231,10 @@ impl Sel {
         match self {
             Sel::Hue(_) => 1,
             Sel::Comp(e, _) | Sel::Delta(e) | Sel::Star(e) | Sel::Ext(e, _) => 1 + e.size(),
-            Sel::Inter(a, b) | Sel::Minus(a, b) | Sel::Flood(a, b) => 1 + a.size() + b.size(),
+            Sel::Inter(a, b) | Sel::Minus(a, b) | Sel::Flood(a, b) | Sel::Transport(a, b) => {
+                1 + a.size() + b.size()
+            }
+            Sel::ArgExt(e, _) => 1 + e.size(),
         }
     }
 }
@@ -227,6 +302,22 @@ fn candidates(fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel> {
         }
     }
 
+    // ORDER-INVARIANT selections join the bases before the closure, so
+    // "the boundary of the largest component" etc. compose naturally.
+    let arg_bases: Vec<Sel> = terms
+        .iter()
+        .flat_map(|t| (0..4).map(|code| Sel::ArgExt(Box::new(t.clone()), code)))
+        .collect();
+    terms.extend(arg_bases);
+    // 1-cell transports between the footprint's hues and the others.
+    for &h in &hues {
+        for &o in &others {
+            if o != h {
+                terms.push(Sel::Transport(Box::new(Sel::Hue(h)), Box::new(Sel::Hue(o))));
+            }
+        }
+    }
+
     // Level-2 closure over each base: component projection (only components
     // meeting the footprint), coboundary, interior, extremal projections.
     let mut grown: Vec<Sel> = Vec::new();
@@ -278,22 +369,35 @@ fn candidates(fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel> {
     terms
 }
 
-/// EVERY term that evaluates EXACTLY to the footprint on this scene — the full
-/// ambiguity set of one evidence. A single pair underdetermines its anchor;
-/// the train FAMILY determines it jointly: the binding term is the minimal
-/// member common to every pair's exact set (deduction by intersection, the
-/// same move consilience makes across voices).
-pub fn derive_exact_all(footprint: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel> {
+/// EVERY term CARRYING the footprint on this scene (eval ⊇ footprint), ranked
+/// tightest-first (carrier size, then term size) and capped. Exact terms rank
+/// first automatically (their eval IS the footprint). A single pair
+/// underdetermines its anchor; the train FAMILY determines it jointly: the
+/// binding term is the first member common to every pair's set — the tightest
+/// common carrier, exact when an exact one is shared (deduction by
+/// intersection, the same move consilience makes across voices). A carrier
+/// that is not exact still confines the word to its subcomplex — the replay
+/// gate downstream decides whether confined speech reproduces the evidence.
+pub fn derive_carrying_all(footprint: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel> {
     if footprint.is_empty() {
         return Vec::new();
     }
     let fp = sorted(footprint.to_vec());
-    let mut out: Vec<Sel> = candidates(&fp, scene)
+    let mut ranked: Vec<(usize, usize, Sel)> = candidates(&fp, scene)
         .into_iter()
-        .filter(|t| t.eval(scene) == fp)
+        .filter_map(|t| {
+            let sup = t.eval(scene);
+            if fp.iter().all(|p| has(&sup, *p)) {
+                Some((sup.len(), t.size(), t))
+            } else {
+                None
+            }
+        })
         .collect();
-    out.sort_by_key(|t| t.size());
+    ranked.sort_by(|a, b| (a.0, a.1).cmp(&(b.0, b.1)));
+    let mut out: Vec<Sel> = ranked.into_iter().map(|(_, _, t)| t).collect();
     out.dedup();
+    out.truncate(32);
     out
 }
 
@@ -349,6 +453,22 @@ mod tests {
         // And derive() does produce SOME exact term from the one pair.
         let d = derive(&[(0, 1)], &scene).expect("derivable");
         assert_eq!(d.eval(&scene), vec![(0, 1)], "exact on the evidence");
+    }
+
+    /// The LARGEST component selects by order invariant — uniquely, with ties
+    /// selecting nothing — and the same term transfers to a rearranged scene.
+    #[test]
+    fn argmax_component_selects_uniquely_and_transfers() {
+        let scene = vec![(0, 0, 3u8), (0, 1, 3), (0, 2, 3), (5, 5, 3)];
+        let t = Sel::ArgExt(Box::new(Sel::Hue(3)), 0);
+        assert_eq!(t.eval(&scene), vec![(0, 0), (0, 1), (0, 2)], "the 3-cell body wins");
+        let small = Sel::ArgExt(Box::new(Sel::Hue(3)), 1);
+        assert_eq!(small.eval(&scene), vec![(5, 5)], "the isolated cell is the argmin");
+        let moved = vec![(9, 9, 3u8), (2, 0, 3), (2, 1, 3)];
+        assert_eq!(t.eval(&moved), vec![(2, 0), (2, 1)], "the same term, the new largest");
+        // A TIE selects nothing: two equal bodies have no unique extremum.
+        let tie = vec![(0, 0, 3u8), (0, 1, 3), (5, 5, 3), (5, 6, 3)];
+        assert!(t.eval(&tie).is_empty(), "no coin flips");
     }
 
     /// ENCLOSURE composes from primitives: on a full-complex scene (background
