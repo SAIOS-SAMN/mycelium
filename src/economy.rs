@@ -344,6 +344,25 @@ impl Treasury {
         fee
     }
 
+    /// THE DOOR FEE (D12) — a strained mesh prices its own door: the speaker
+    /// pays the congestion fee (per lane, derived from the reserve deficit —
+    /// zero on a calm mesh) from earned balance INTO the pool. The door is an
+    /// economic rate limit, not a gate: what cannot be paid is simply not
+    /// paid, and the caller decides deferral from the shortfall. Returns the
+    /// per-lane amount actually paid.
+    pub fn settle_door(&mut self, voice: [u8; 32], fee: [u64; 4], anchor: Anchor) -> [u64; 4] {
+        let held = self.balance_mu(&voice);
+        let paid: [u64; 4] = std::array::from_fn(|l| fee[l].min(held[l]));
+        if paid.iter().all(|&m| m == 0) {
+            return paid;
+        }
+        for l in 0..4 {
+            self.escrow[l] = self.escrow[l].saturating_add(paid[l]);
+        }
+        self.entries.push(Entry { kind: "fee", who: voice, mu: paid, k_step: anchor.0, receipt: anchor.1 });
+        paid
+    }
+
     /// The POLYTONIC BALANCE — per-lane orientation-weighted sums; there is no
     /// scalar balance. Conservation reads pool + balances = Σ stakes, per lane.
     pub fn balance_mu(&self, who: &[u8; 32]) -> [u64; 4] {

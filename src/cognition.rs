@@ -120,6 +120,16 @@ impl Kernel {
         &self.treasury
     }
 
+    #[cfg(test)]
+    pub(crate) fn treasury_mut(&mut self) -> &mut crate::economy::Treasury {
+        &mut self.treasury
+    }
+
+    #[cfg(test)]
+    pub(crate) fn physics_mut(&mut self) -> &mut crate::physics::Physics {
+        &mut self.physics
+    }
+
     /// THE DOCKET (Step 5): every provisional word, exported for the court's
     /// blind replay + confluence audit — (element, attesting voices, escrowed μ⃗).
     pub fn dockets(&self) -> Vec<([u8; 32], Element, Vec<[u8; 32]>, [u64; 4])> {
@@ -168,6 +178,23 @@ impl Kernel {
             }
             ok
         }
+    }
+
+    /// D12 — charge the congestion door and decide deferral: fee[l] =
+    /// reserve_deficit[l]/8 (0 on a calm mesh, up to 4 at an empty lane); the
+    /// speaker pays what their balance holds; a zero payment on a FULLY
+    /// exhausted lane defers the demand. Returns true when the door defers.
+    fn door_defers(&mut self, voice: [u8; 32]) -> bool {
+        let deficit = self.physics.reserve_deficit();
+        let fee: [u64; 4] = std::array::from_fn(|l| deficit[l] / 8);
+        if fee.iter().all(|&f| f == 0) {
+            return false; // a calm mesh keeps a free door
+        }
+        let anchor = self.anchor();
+        let paid = self.treasury.settle_door(voice, fee, anchor);
+        (0..4).any(|l| {
+            deficit[l] >= crate::physics::RESERVE_MAX && fee[l] > 0 && paid[l] == 0
+        })
     }
 
     /// A child sub-demand COMPLETED (7d): mark its lineage; when the whole
@@ -288,6 +315,16 @@ impl Kernel {
         let idle = self.physics.metabolism_rate().iter().all(|&p| p <= 1);
         if self.physics.depleted() || idle {
             self.optimize();
+        }
+        // D12 — THE ESCROW-PRICED DOOR: a strained mesh charges congestion at
+        // the door (fee ∝ reserve deficit, per lane; a calm mesh is free),
+        // paid from earned balance into the pool. A speaker who pays NOTHING
+        // on a fully saturated lane is DEFERRED — the demand pends unheard
+        // (the honest "come back", which clients already retry) instead of
+        // brute-forcing an exhausted metabolism. An economic rate limit:
+        // spam costs exactly when strain is real.
+        if self.door_defers(voice) {
+            return Outcome::GermPending;
         }
         if ca.is_empty() || ca.len() != cb.len() {
             self.physics.pivot([false; 4]);
@@ -827,7 +864,11 @@ impl Kernel {
         self.enroll(voice, crate::economy::Tier::Participant); // first speech enrolls
         self.physics.relax();
         if self.physics.depleted() {
-            self.optimize();
+            self.optimize(); // the syntropic stroke ALWAYS gets its chance first
+        }
+        // D12 — the same congestion door as adjudicate: strain prices speech.
+        if self.door_defers(voice) {
+            return Outcome::GermPending;
         }
         self.conceive_germ(element::from_residual(&chain.to_vec()), voice, None)
     }
@@ -1671,6 +1712,44 @@ mod tests {
         assert!(matches!(out, Outcome::Installed(0)), "consilience installs: {out:?}");
         assert_eq!(k.voices_of(&k.basis()[0].address()).len(), 2, "the settle parties");
         assert!(k.quote(4).1.is_empty(), "the market cleared");
+    }
+
+    /// D12 — THE ESCROW-PRICED DOOR: a calm mesh keeps a free door; a
+    /// saturated mesh charges congestion (fee → the pool) and DEFERS a
+    /// speaker who can pay nothing on a fully exhausted lane — spam costs
+    /// exactly when strain is real, and paying members pass.
+    #[test]
+    fn the_door_charges_strain_and_defers_the_broke() {
+        let mut k = Kernel::new();
+        // Calm: the door is free — a normal percept adjudicates untouched.
+        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 3)];
+        let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 3)];
+        assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending, "calm door admits");
+        assert!(
+            !k.treasury().entries().iter().any(|e| e.kind == "fee"),
+            "no fee on a calm mesh"
+        );
+        // Exhaust the metabolism entirely (every lane to zero reserve).
+        for _ in 0..16 {
+            k.physics_mut().spend([true; 4]);
+        }
+        // A broke speaker (no earned balance) is DEFERRED at the door.
+        let a2 = vec![(5, 0, 2), (5, 1, 2)];
+        let b2 = vec![(5, 0, 6), (5, 1, 6)];
+        let broke = k.ingest(&a2, &b2, [9; 32]);
+        assert_eq!(broke, Outcome::GermPending, "saturated door defers the broke: {broke:?}");
+        assert!(k.basis().is_empty() || k.quote(8).1.iter().all(|(w, _)| w.sub() != [(0i64, 0i64, 2u8, 6u8)]),
+            "the deferred demand was never adjudicated");
+        // A FUNDED speaker pays the congestion fee and passes the door.
+        k.treasury_mut().settle_subsidy([7; 32], [8, 8, 8, 8], (0, [0; 32]));
+        for _ in 0..16 {
+            k.physics_mut().spend([true; 4]); // re-exhaust (the deferral relaxed some)
+        }
+        let _ = k.ingest(&a2, &b2, [7; 32]);
+        assert!(
+            k.treasury().entries().iter().any(|e| e.kind == "fee" && e.who == [7; 32]),
+            "the funded speaker paid the door into the pool"
+        );
     }
 
     /// 7d — COMPOSITE FRAGMENTATION: a coboundary wider than the atomic frame
