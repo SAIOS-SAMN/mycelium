@@ -65,6 +65,9 @@ pub struct Kernel {
     discoverers: Vec<[u8; 32]>,
     admission: Admission,
     pub nerve: Nerve,
+    /// Round-robin cursor for syntropic optimization — which generator to test for
+    /// redundancy next (bounds consolidation to one reduce per depleted step).
+    optimize_cursor: usize,
     /// Polytonic kinematic pressure + torsion (per lane).
     physics: crate::physics::Physics,
     /// The settlement ledger (POW++-gated bounties, consilience splits).
@@ -113,6 +116,13 @@ impl Kernel {
         voice: [u8; 32],
     ) -> Outcome {
         self.physics.relax(); // the metabolism dissipates its backlog as it works
+        // THE SYNTROPIC STROKE: when a lane is depleted (the entropic expansion has
+        // spent its fuel), the mesh OPTIMIZES — consolidate one generator the rest
+        // already derive — which regenerates the reserve. Expansion and optimization
+        // are the two strokes of one metabolism.
+        if self.physics.depleted() {
+            self.optimize();
+        }
         if ca.is_empty() || ca.len() != cb.len() {
             self.physics.pivot([false; 4]);
             return Outcome::Pivot;
@@ -175,11 +185,21 @@ impl Kernel {
                 // reducing the same demand reach the SAME residual (same address),
                 // so agreement is a theorem about the algebra, not a matched card.
                 let addr = residual.address();
-                if self.admission.record(Receipt { voice, germ: addr }) {
+                let _ = self.admission.record(Receipt { voice, germ: addr });
+                // ENTROPIC EXPANSION needs BOTH consilience (quorum of distinct
+                // kernels) AND metabolic fuel (reserve above the floor on the germ's
+                // lanes). A germ at quorum with a depleted lane DEFERS — it stays
+                // pending while the mesh optimizes/regenerates, and installs on a
+                // later voice's submission once the reserve recovers (the recheck
+                // below, not record()'s one-shot crossing, so deferral never
+                // strands a germ).
+                let quorum = self.admission.voices(&addr) >= crate::network::consensus::QUORUM;
+                if quorum && self.physics.can_expand(lanes) {
                     let _ = self.treasury.settle_install(&residual, voice); // POW++ gate only
                     self.treasury.settle_consilience(&self.admission.voices_of(&addr));
                     self.physics.relieve(lanes);
                     self.physics.syntropy(lanes); // a completed rule is order built
+                    self.physics.spend(lanes); // the expansion SHRINKS the reserve
                     self.basis.push(residual);
                     self.discoverers.push(voice);
                     Outcome::Installed(self.basis.len() - 1)
@@ -199,6 +219,13 @@ impl Kernel {
     /// old "composition"); one no generator lowers is IRREDUCIBLE — a critical pair
     /// to germinate.
     fn reduce(&self, g: &Element) -> NormalForm {
+        self.reduce_excluding(g, None)
+    }
+
+    /// The reduction with one generator EXCLUDED from the alphabet — the syntropic
+    /// stroke's redundancy probe: "does the REST of the basis already derive this
+    /// generator?" (`exclude = None` is the ordinary full reduction.)
+    fn reduce_excluding(&self, g: &Element, exclude: Option<usize>) -> NormalForm {
         let mut s = g.substance();
         let mut word = Vec::new();
         let budget = self.peel_budget(); // the syntropic/entropic metabolism bounds compute
@@ -209,7 +236,12 @@ impl Kernel {
             }
             // Terminal: the substance IS an installed generator (length-1 sentence).
             // (A cheap scan — no matrix inverse; always affordable.)
-            if let Some(i) = self.basis.iter().position(|p| p.substance().same_action(&s)) {
+            if let Some(i) = self
+                .basis
+                .iter()
+                .enumerate()
+                .position(|(j, p)| Some(j) != exclude && p.substance().same_action(&s))
+            {
                 word.push(i);
                 return NormalForm::Decomposed(word);
             }
@@ -219,7 +251,7 @@ impl Kernel {
             if step >= budget {
                 return NormalForm::Irreducible(s);
             }
-            match self.best_peel(&s) {
+            match self.best_peel(&s, exclude) {
                 Some((i, next)) => {
                     word.push(i);
                     s = next;
@@ -247,10 +279,13 @@ impl Kernel {
     /// invertible (group) generator γ, form `γ⁻¹ ∘ s`, and keep the one whose
     /// reduction magnitude descends most (tie-broken by basis order — deterministic,
     /// so the reduction is confluent). `None` when no generator lowers `s`.
-    fn best_peel(&self, s: &Element) -> Option<(usize, Element)> {
+    fn best_peel(&self, s: &Element, exclude: Option<usize>) -> Option<(usize, Element)> {
         let before = s.reduction_magnitude();
         let mut best: Option<(usize, Element, [u64; 4])> = None;
         for (i, gen) in self.basis.iter().enumerate() {
+            if Some(i) == exclude {
+                continue;
+            }
             let gs = gen.substance();
             let Some(inv) = gs.solution() else { continue }; // only group generators peel
             let cand = inv.compose(s);
@@ -266,6 +301,29 @@ impl Kernel {
             }
         }
         best.map(|(i, cand, _)| (i, cand))
+    }
+
+    /// THE SYNTROPIC STROKE — one bounded consolidation step, run when a lane's
+    /// reserve is depleted. Probe the cursor generator for REDUNDANCY: if the rest
+    /// of the basis already derives it (its substance decomposes with it excluded),
+    /// it is a closed critical pair wearing a generator's name — RETIRE it, and the
+    /// basis compresses toward a minimal confluent generating set. Either way the
+    /// reserve REGENERATES: optimization is the recovery stroke, so entropic
+    /// expansion resumes only at the pace the syntropic counterpart earns.
+    fn optimize(&mut self) {
+        if !self.basis.is_empty() {
+            let i = self.optimize_cursor % self.basis.len();
+            self.optimize_cursor = self.optimize_cursor.wrapping_add(1);
+            let candidate = self.basis[i].clone();
+            if let NormalForm::Decomposed(_) = self.reduce_excluding(&candidate, Some(i)) {
+                // The rest of the basis spells it — a redundant rule: retire it.
+                let lanes = candidate.lanes();
+                self.basis.remove(i);
+                self.discoverers.remove(i);
+                self.physics.syntropy(lanes); // a leaner alphabet is order built
+            }
+        }
+        self.physics.regenerate();
     }
 
     /// A read-only view of the germinated basis (for the CCL display seam).
@@ -521,6 +579,66 @@ mod tests {
         let t = vec![(0, 3, 1), (0, 4, 1), (1, 3, 1)];
         assert_eq!(k.ingest(&a, &t, [4; 32]), Outcome::Decomposed(vec![]), "a translate carries no substance");
         assert_eq!(k.basis_len(), 1, "still nothing minted");
+    }
+
+    /// THE TWO-STROKE BREATHES: sustained germination depletes the reserve; a germ
+    /// at QUORUM on a depleted lane DEFERS (pending, never stranded) while the
+    /// syntropic strokes regenerate; a later voice's submission completes the
+    /// deferred install once the lane re-earns expansion.
+    #[test]
+    fn a_depleted_lane_defers_germination_until_the_reserve_recovers() {
+        let mut k = Kernel::new();
+        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+        // ENTROPIC EXPANSION: eight distinct residual germs drain the residual lane.
+        for n in 0..8u8 {
+            let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, n + 2)];
+            k.ingest(&a, &b, [1; 32]);
+            assert!(matches!(k.ingest(&a, &b, [2; 32]), Outcome::Installed(_)), "germ {n} installs");
+        }
+        // Two fresh germs: their first voices each trigger a syntropic stroke (the
+        // mesh is depleted), partially recovering the lane.
+        // Distinct single-transition residuals (unique hue pairs, so their tallies
+        // are distinct — see the Step-2 note on residual-substance geometry).
+        let ga = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)]; // (0,0): 1→4
+        let gb = vec![(0, 0, 1), (0, 1, 5), (1, 0, 1)]; // (0,1): 1→5
+        assert_eq!(k.ingest(&a, &ga, [1; 32]), Outcome::GermPending);
+        assert_eq!(k.ingest(&a, &gb, [1; 32]), Outcome::GermPending);
+        // A's quorum lands on the recovered lane and installs — spending it back out…
+        assert!(matches!(k.ingest(&a, &ga, [2; 32]), Outcome::Installed(_)));
+        // …so B's quorum finds the lane DEPLETED and DEFERS: quorum met, fuel absent.
+        assert_eq!(k.ingest(&a, &gb, [2; 32]), Outcome::GermPending, "deferred, not lost");
+        // A further voice arrives after another stroke: the deferred germ installs.
+        assert!(matches!(k.ingest(&a, &gb, [3; 32]), Outcome::Installed(_)), "deferral completes on recovery");
+    }
+
+    /// THE SYNTROPIC STROKE CONSOLIDATES: a generator the rest of the basis already
+    /// derives (a stale duplicate of the same substance under a different
+    /// coordinate-exact word — what an import or a pre-consolidation era leaves) is
+    /// retired by the redundancy probe; an essential generator survives it.
+    #[test]
+    fn the_syntropic_stroke_retires_a_redundant_generator() {
+        use crate::transducer::element::from_transform;
+        use crate::transducer::transform::solve_transform;
+        let mut k = Kernel::new();
+        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+        let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
+        k.ingest(&a, &rot, [1; 32]);
+        assert!(matches!(k.ingest(&a, &rot, [2; 32]), Outcome::Installed(0)));
+        // Fabricate the stale duplicate: the SAME rotation observed far away — same
+        // substance, different exact word — slipped in past the reduce-gate (as an
+        // imported/legacy entry would be).
+        let far = solve_transform(
+            &[(0, 10, 1), (0, 11, 1), (1, 10, 1)],
+            &[(0, 11, 1), (1, 10, 1), (1, 11, 1)],
+        )
+        .unwrap();
+        k.basis.push(from_transform(&far));
+        k.discoverers.push([7; 32]);
+        assert_eq!(k.basis_len(), 2);
+        k.optimize(); // probe basis[0]: the rest (its duplicate) derives it → retired
+        assert_eq!(k.basis_len(), 1, "the redundant rule is consolidated away");
+        k.optimize(); // the survivor is essential — nothing else derives it
+        assert_eq!(k.basis_len(), 1, "an essential generator survives the probe");
     }
 
     /// A shape deformation (L → bar) that NO motor closes is not a dead-end: its

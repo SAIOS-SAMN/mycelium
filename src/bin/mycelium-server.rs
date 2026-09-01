@@ -108,7 +108,7 @@ fn main() {
         let pbytes = if kind == 1 && rest.len() >= 32 { &rest[32..] } else { rest };
         // The client PERCEIVED (segmented bodies); the JUDGE only adjudicates.
         let Some((voice, a_bodies, b_bodies)) = decode_percept(pbytes) else { continue };
-        let (out, basis, flux, taught) = {
+        let (out, basis, flux, reserve, taught) = {
             let mut k = kernel.lock().unwrap();
             let out = k.adjudicate(&a_bodies, &b_bodies, voice);
             // TEACH: on a valid element, hand its canonical ANASTOME form back.
@@ -118,7 +118,7 @@ fn main() {
             };
             // Report the per-lane PRESSURE (the entropic backlog) — the backpressure
             // signal a kernel paces its intake against (the metabolism as governor).
-            (out, k.basis_len(), k.physics().metabolism_rate(), taught)
+            (out, k.basis_len(), k.physics().metabolism_rate(), k.physics().reserve, taught)
         };
         let label = match &out {
             Outcome::Decomposed(word) => format!("valid: decomposed → sentence {word:?} ({} generators)", word.len()),
@@ -128,7 +128,10 @@ fn main() {
             Outcome::Pivot => "invalid: pivot (degenerate — nothing to reduce)".to_string(),
         };
         let src = if kind == 1 { "gossip" } else { "client" };
-        eprintln!("  {src} percept voice {:02x} → {label}; basis={basis}; metabolism {flux:?}", voice[0]);
+        eprintln!(
+            "  {src} percept voice {:02x} → {label}; basis={basis}; metabolism {flux:?}; reserve {reserve:?}",
+            voice[0]
+        );
         // Reply: outcome | metabolism/pressure(4) | taught ANASTOME element (len16 | bytes).
         let mut body = vec![outcome_code(&out)];
         for f in flux {
