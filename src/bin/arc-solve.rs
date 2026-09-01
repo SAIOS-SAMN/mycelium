@@ -22,7 +22,7 @@
 //!   SOLVED      — exact reconstruction of every test output
 //!
 //! Usage: arc-solve --state state/hypha-a.ledger --dir data/arc-agi-2/training [--limit N]
-use mycelium::arc::{grid_to_cells, parse_task, Grid};
+use mycelium::arc::{parse_task, Grid};
 use mycelium::cognition::{decompose_over, Kernel};
 use mycelium::transducer::anchor::{derive_exact_all, Sel};
 use mycelium::transducer::element::{assignment, Element};
@@ -30,6 +30,15 @@ use std::path::PathBuf;
 
 fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
     args.windows(2).find(|w| w[0] == name).map(|w| w[1].as_str())
+}
+
+/// The FULL complex of a grid — every cell including background hue 0: the
+/// selection algebra must see holes and halos, which live on hue-0 cells.
+fn full_scene(g: &Grid) -> Vec<(i64, i64, u8)> {
+    g.iter()
+        .enumerate()
+        .flat_map(|(r, row)| row.iter().enumerate().map(move |(c, &h)| (r as i64, c as i64, h)))
+        .collect()
 }
 
 /// The coboundary of a train pair — per-cell (r, c, before, after) where the
@@ -119,7 +128,7 @@ fn chain_footprint(chain: &[(i64, i64, u8, u8)], d: &[(i64, i64, u8, u8)]) -> Ve
 fn apply(grid: &Grid, spoken: &[(Vec<(i64, i64, u8, u8)>, Option<Sel>)]) -> Grid {
     let mut out = grid.clone();
     let (rows, cols) = (grid.len() as i64, grid.first().map_or(0, |r| r.len()) as i64);
-    let scene = grid_to_cells(grid);
+    let scene = full_scene(grid);
     let mut writes: Vec<(i64, i64, u8)> = Vec::new();
     for (chain, sel) in spoken {
         // π evaluated once per scene: the admissible subcomplex.
@@ -229,7 +238,7 @@ fn main() {
                         continue; // this variant did not speak in this pair
                     }
                     witnessed = true;
-                    sets.push(derive_exact_all(&fp, &grid_to_cells(a)));
+                    sets.push(derive_exact_all(&fp, &full_scene(a)));
                 }
                 if !witnessed {
                     continue;

@@ -47,6 +47,11 @@ pub enum Sel {
     Inter(Box<Sel>, Box<Sel>),
     /// ∖ — set difference of supports.
     Minus(Box<Sel>, Box<Sel>),
+    /// Connected closure: the cells of the second support 1-cell-reachable
+    /// from the first (seed ∩ within, grown through within) — pure Level-0
+    /// connectivity, the operator that composes enclosure:
+    /// enclosed(K) = K ∖ Flood(K ∩ δ(whole), K).
+    Flood(Box<Sel>, Box<Sel>),
 }
 
 fn sorted(mut v: Vec<(i64, i64)>) -> Vec<(i64, i64)> {
@@ -129,6 +134,23 @@ impl Sel {
                 let (sa, sb) = (a.eval(scene), b.eval(scene));
                 sa.into_iter().filter(|p| !has(&sb, *p)).collect()
             }
+            Sel::Flood(seed, within) => {
+                let (sd, w) = (seed.eval(scene), within.eval(scene));
+                let mut reached: Vec<(i64, i64)> =
+                    sd.into_iter().filter(|p| has(&w, *p)).collect();
+                reached.sort_unstable();
+                let mut frontier = reached.clone();
+                while let Some(p) = frontier.pop() {
+                    for q in neighbours(p) {
+                        if has(&w, q) && !has(&reached, q) {
+                            let i = reached.binary_search(&q).unwrap_err();
+                            reached.insert(i, q);
+                            frontier.push(q);
+                        }
+                    }
+                }
+                reached
+            }
         }
     }
 
@@ -137,7 +159,7 @@ impl Sel {
         match self {
             Sel::Hue(_) => 1,
             Sel::Comp(e, _) | Sel::Delta(e) | Sel::Star(e) | Sel::Ext(e, _) => 1 + e.size(),
-            Sel::Inter(a, b) | Sel::Minus(a, b) => 1 + a.size() + b.size(),
+            Sel::Inter(a, b) | Sel::Minus(a, b) | Sel::Flood(a, b) => 1 + a.size() + b.size(),
         }
     }
 }
@@ -225,6 +247,20 @@ fn candidates(fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel> {
             for axis in 0..4 {
                 grown.push(Sel::Ext(Box::new(t.clone()), axis));
             }
+            // The star and the HALO (star ∖ support): "the cells around".
+            grown.push(Sel::Star(Box::new(t.clone())));
+            grown.push(Sel::Minus(
+                Box::new(Sel::Star(Box::new(t.clone()))),
+                Box::new(t.clone()),
+            ));
+            // ENCLOSURE, composed: t ∖ Flood(t ∩ δ(whole), t) — the part of t
+            // unreachable from the scene's own border (the topological holes).
+            let border = Sel::Delta(Box::new(Sel::Hue(255)));
+            let reach = Sel::Flood(
+                Box::new(Sel::Inter(Box::new(t.clone()), Box::new(border))),
+                Box::new(t.clone()),
+            );
+            grown.push(Sel::Minus(Box::new(t.clone()), Box::new(reach)));
         }
     }
     // Level-3: coboundary/interior/extrema of the component projections (the
@@ -313,6 +349,35 @@ mod tests {
         // And derive() does produce SOME exact term from the one pair.
         let d = derive(&[(0, 1)], &scene).expect("derivable");
         assert_eq!(d.eval(&scene), vec![(0, 1)], "exact on the evidence");
+    }
+
+    /// ENCLOSURE composes from primitives: on a full-complex scene (background
+    /// included), the ring's hole is Hue(0) ∖ Flood(border∩Hue(0), Hue(0)) —
+    /// and the derived term transfers to a different ring.
+    #[test]
+    fn enclosure_composes_and_transfers() {
+        // A 3×3 ring of hue 5 with a hue-0 hole, on a 5×5 full grid.
+        let mut scene: Vec<(i64, i64, u8)> = Vec::new();
+        for r in 0..5 {
+            for c in 0..5 {
+                let on_ring = (1..=3).contains(&r) && (1..=3).contains(&c) && !(r == 2 && c == 2);
+                scene.push((r, c, if on_ring { 5 } else { 0 }));
+            }
+        }
+        let t = derive(&[(2, 2)], &scene).expect("the hole is derivable");
+        assert_eq!(t.eval(&scene), vec![(2, 2)], "exactly the enclosed cell");
+        // Transfer: a wider ring elsewhere on a 7×7 grid — same term, new hole.
+        let mut big: Vec<(i64, i64, u8)> = Vec::new();
+        for r in 0..7 {
+            for c in 0..7 {
+                let on_ring = (2..=5).contains(&r) && (2..=5).contains(&c)
+                    && !((3..=4).contains(&r) && (3..=4).contains(&c));
+                big.push((r, c, if on_ring { 5 } else { 0 }));
+            }
+        }
+        let hole = t.eval(&big);
+        assert_eq!(hole.len(), 4, "the 2×2 hole of the big ring: {hole:?}");
+        assert!(hole.contains(&(3, 3)));
     }
 
     /// Extremal projection: the top row of a component derives via Ext.
