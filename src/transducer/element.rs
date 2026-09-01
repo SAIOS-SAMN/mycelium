@@ -84,7 +84,7 @@ pub struct Element {
     /// Coordinate-exact ANASTOME description (empty for pure-algebra elements).
     word: Vec<u8>,
     /// Per-lane support, exact from the description (0⃗ for pure-algebra elements).
-    mag: [u64; 4],
+    pub(crate) mag: [u64; 4],
     /// The CENTERED COBOUNDARY CHAIN — the residual's substance with geometry
     /// preserved up to translation: `(row, col, before, after)` over the changed
     /// cells, min-corner framed to the origin (the substrate's transposition
@@ -92,7 +92,7 @@ pub struct Element {
     /// what `same_action` compares for residual germs — the position-free hue
     /// tally (the `fibers` δ-lens) is a projection and never decides identity or
     /// substance. Empty for pure-algebra (group) elements.
-    sub: Vec<(i64, i64, u8, u8)>,
+    pub(crate) sub: Vec<(i64, i64, u8, u8)>,
     /// THE PUNCTURED AXIS — sections along the germinated fiber pierced through
     /// this thought: alternative per-cell transition ASSIGNMENTS over the SAME
     /// base positions. A recurring family (same geometry, different transitions)

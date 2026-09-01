@@ -79,6 +79,10 @@ pub struct Kernel {
     physics: crate::physics::Physics,
     /// The settlement ledger (POW++-gated bounties, consilience splits).
     treasury: crate::economy::Treasury,
+    /// Words installed on two-voice consilience but NOT yet court-final
+    /// (Step 5): local dialect awaiting the admission docket — (address, the
+    /// element as spoken at install). Vec-of-relations.
+    provisional: Vec<([u8; 32], Element)>,
 }
 
 impl Kernel {
@@ -98,6 +102,49 @@ impl Kernel {
     /// The settlement ledger (bounties, consilience, recall yields).
     pub fn treasury(&self) -> &crate::economy::Treasury {
         &self.treasury
+    }
+
+    /// THE DOCKET (Step 5): every provisional word, exported for the court's
+    /// blind replay + confluence audit — (element, attesting voices, escrowed μ⃗).
+    pub fn dockets(&self) -> Vec<([u8; 32], Element, Vec<[u8; 32]>, [u64; 4])> {
+        self.provisional
+            .iter()
+            .filter_map(|(addr, spoken)| {
+                let (_, voices, mu, _) = self
+                    .treasury
+                    .escrowed_awards()
+                    .iter()
+                    .find(|(a, _, _, _)| a == addr)?;
+                Some((*addr, spoken.clone(), voices.clone(), *mu))
+            })
+            .collect()
+    }
+
+    /// APPLY the court's verdict on a provisional word.
+    /// upheld → release the escrowed award (finality: full settlement books).
+    /// rejected, slash=false → demote: stays local dialect, award evaporates.
+    /// rejected, slash=true → false speech: word excised from the basis and
+    /// each voice's would-be share debited back into the pool.
+    pub fn apply_verdict(&mut self, addr: &[u8; 32], upheld: bool, slash: bool) -> bool {
+        let Some(i) = self.provisional.iter().position(|(a, _)| a == addr) else {
+            return false;
+        };
+        self.provisional.remove(i);
+        if upheld {
+            self.treasury.release_award(addr)
+        } else {
+            let ok = self.treasury.revoke_award(addr, slash);
+            if slash {
+                // Excise a slashed BASE word. A slashed section puncture has no
+                // separate card to excise (growth was +axis) — the economic
+                // slash applies; the fiber coordinate stays local dialect.
+                if let Some(w) = self.basis.iter().position(|t| t.address() == *addr) {
+                    self.basis.remove(w);
+                    self.discoverers.remove(w);
+                }
+            }
+            ok
+        }
     }
 
     /// ENROLL an identity at a tier: its stake capitalizes the escrow pool —
@@ -220,7 +267,11 @@ impl Kernel {
                             &crate::economy::yield_surface(&self.physics),
                         );
                         let anchor = self.anchor();
-                        self.treasury.settle_consilience(&self.admission.voices_of(&saddr), mu, anchor);
+                        // PROVISIONAL (Step 5): the award escrows until the
+                        // court's finality verdict — unfinalized speech earns
+                        // nothing; the puncture itself is local dialect.
+                        self.treasury.escrow_award(saddr, self.admission.voices_of(&saddr), mu, anchor);
+                        self.provisional.push((saddr, residual.clone()));
                         self.physics.relieve(lanes);
                         self.physics.syntropy(lanes); // volume built through the axis
                         self.physics.spend(lanes); // still an expansion — fuel is spent
@@ -252,7 +303,11 @@ impl Kernel {
                         &crate::economy::yield_surface(&self.physics),
                     );
                     let anchor = self.anchor();
-                    self.treasury.settle_consilience(&self.admission.voices_of(&addr), mu, anchor);
+                    // PROVISIONAL (Step 5): consilience escrows pending the
+                    // court's admission docket; the word joins the basis as
+                    // local dialect, final settlement waits for the verdict.
+                    self.treasury.escrow_award(addr, self.admission.voices_of(&addr), mu, anchor);
+                    self.provisional.push((addr, residual.clone()));
                     self.physics.relieve(lanes);
                     self.physics.syntropy(lanes); // a completed rule is order built
                     self.physics.spend(lanes); // the expansion SHRINKS the reserve
@@ -619,6 +674,15 @@ impl Kernel {
             out.extend_from_slice(who);
         }
         out.extend_from_slice(&self.treasury.snapshot());
+        // PROVISIONAL section (Step 5) — appended so pre-court snapshots
+        // restore with an empty docket rather than failing.
+        out.extend_from_slice(&(self.provisional.len() as u32).to_le_bytes());
+        for (addr, spoken) in &self.provisional {
+            out.extend_from_slice(addr);
+            let eb = spoken.to_bytes();
+            out.extend_from_slice(&(eb.len() as u32).to_le_bytes());
+            out.extend_from_slice(&eb);
+        }
         out
     }
 
@@ -648,6 +712,22 @@ impl Kernel {
                 kernel.discoverers.push(who);
             }
             kernel.treasury = crate::economy::Treasury::restore(b, pos)?;
+            // Provisional section (absent in pre-court snapshots → empty docket).
+            if let Some(np) = read_u32(b, pos) {
+                let np = np as usize;
+                if np > b.len().saturating_sub(*pos) / 36 {
+                    return None; // untrusted count: ≥36 bytes per record
+                }
+                for _ in 0..np {
+                    let addr: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                    *pos += 32;
+                    let elen = read_u32(b, pos)? as usize;
+                    let mut ep = *pos;
+                    let spoken = Element::from_bytes(b, &mut ep)?;
+                    *pos += elen;
+                    kernel.provisional.push((addr, spoken));
+                }
+            }
             Some(())
         };
         if load(self, b, &mut pos).is_none() {
@@ -657,6 +737,37 @@ impl Kernel {
         }
         true
     }
+}
+
+/// THE BLIND REPLAY (Step 5, the contradiction docket) — the deterministic
+/// re-derivation of a spoken word from its own evidence. Returns None when the
+/// word replays clean; Some(reason) when the speech was false. Same chain →
+/// same word (from_residual is deterministic), the chain must be canonically
+/// framed, and the install must strictly descend (0⃗ ≺_DM μ⃗).
+pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
+    let chain = spoken.sub();
+    if chain.is_empty() {
+        return Some("empty chain — nothing was derived");
+    }
+    let min_r = chain.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
+    let min_c = chain.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
+    if (min_r, min_c) != (0, 0) {
+        return Some("chain not framed to origin");
+    }
+    if !chain.windows(2).all(|w| w[0] <= w[1]) {
+        return Some("chain not canonically ordered");
+    }
+    let rederived = element::from_residual(&chain.to_vec());
+    if rederived.address() != spoken.address() {
+        return Some("address does not re-derive from the chain");
+    }
+    if rederived.magnitude() != spoken.magnitude() {
+        return Some("magnitude does not re-derive from the chain");
+    }
+    if !crate::economy::descends(&[0; 4], &spoken.magnitude()) {
+        return Some("no strict descent — the germ closes nothing");
+    }
+    None
 }
 
 /// The SUBSTRATE's canonical framing projection (hypha-side, per the transposition
@@ -1124,6 +1235,76 @@ mod tests {
         assert!(matches!(out, Outcome::Installed(0)), "consilience installs: {out:?}");
         assert_eq!(k.voices_of(&k.basis()[0].address()).len(), 2, "the settle parties");
         assert!(k.quote(4).1.is_empty(), "the market cleared");
+    }
+
+    /// THE BLIND REPLAY refutes every tamper axis and upholds honest speech —
+    /// the contradiction docket's whole force is this determinism.
+    #[test]
+    fn blind_replay_refutes_tampered_words() {
+        use crate::transducer::germinate::germinate;
+        let w = element::from_residual(
+            &germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap(),
+        );
+        assert!(blind_replay(&w).is_none(), "an honest derivation replays clean");
+        // Tamper 1: shift the chain off origin (framing violation).
+        let mut off = w.clone();
+        off.sub = off.sub.iter().map(|(r, c, b, a)| (r + 3, *c, *b, *a)).collect();
+        assert!(blind_replay(&off).is_some(), "un-centered chain is false speech");
+        // Tamper 2: inflate the claimed magnitude (yield fraud).
+        let mut fat = w.clone();
+        fat.mag = [0, 0, 999, 0];
+        assert!(blind_replay(&fat).is_some(), "inflated magnitude does not re-derive");
+        // Tamper 3: an empty chain claiming work.
+        let mut empty = w.clone();
+        empty.sub.clear();
+        assert!(blind_replay(&empty).is_some(), "no evidence, no word");
+    }
+
+    /// STEP 5 — PROVISIONAL UNTIL THE COURT SPEAKS: a two-voice install escrows
+    /// its consilience award (unfinalized speech earns nothing); the docket
+    /// exports the spoken word; the upheld verdict releases the award; a
+    /// slashing verdict excises the word and debits the voices into the pool.
+    #[test]
+    fn installs_are_provisional_until_verdict() {
+        let mut k = Kernel::new();
+        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+        let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+        assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+        let chain = k.quote(4).1[0].0.sub().to_vec();
+        assert!(matches!(k.attest(&chain, [2; 32]), Outcome::Installed(0)));
+        // The install PAID NOTHING — the award sits in escrow.
+        assert_eq!(k.treasury().balance_mu(&[1; 32]), [0; 4], "unfinalized speech earns nothing");
+        assert_eq!(k.treasury().balance_mu(&[2; 32]), [0; 4]);
+        let dockets = k.dockets();
+        assert_eq!(dockets.len(), 1, "the provisional word is on the docket");
+        let (addr, spoken, voices, mu) = &dockets[0];
+        assert_eq!(voices.len(), 2, "both attesting voices ride the docket");
+        assert!(mu[2] > 0, "the escrowed award is real");
+        assert_eq!(spoken.address(), *addr, "the docket carries the word as spoken");
+        // UPHELD: finality releases the award — the voices are paid at last.
+        assert!(k.apply_verdict(&addr.clone(), true, false));
+        assert!(k.treasury().balance_mu(&[1; 32])[2] > 0, "finality pays voice A");
+        assert!(k.treasury().balance_mu(&[2; 32])[2] > 0, "finality pays voice B");
+        assert!(k.dockets().is_empty(), "the docket cleared");
+        assert!(!k.apply_verdict(&addr.clone(), true, false), "a verdict lands once");
+    }
+
+    /// A slashing verdict (failed blind replay — false speech) excises the word
+    /// from the basis and debits the voices' earned balances into the pool.
+    #[test]
+    fn a_slashing_verdict_excises_and_debits() {
+        let mut k = Kernel::new();
+        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+        let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+        assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+        let chain = k.quote(4).1[0].0.sub().to_vec();
+        assert!(matches!(k.attest(&chain, [2; 32]), Outcome::Installed(0)));
+        let before = k.basis_len();
+        let (addr, _, _, _) = k.dockets()[0].clone();
+        assert!(k.apply_verdict(&addr, false, true));
+        assert_eq!(k.basis_len(), before - 1, "the slashed word is excised");
+        assert_eq!(k.treasury().balance_mu(&[1; 32]), [0; 4], "nothing was ever paid");
+        assert!(k.dockets().is_empty());
     }
 
     /// PUNCTURE-BEFORE-MINT: a family member (same base geometry, new transition

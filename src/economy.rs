@@ -112,11 +112,16 @@ pub struct Treasury {
     escrow: [u64; 4],
     /// Enrolled identities and their staked μ⃗ (Vec-of-relations).
     stakes: Vec<([u8; 32], Tier, [u64; 4])>,
+    /// AWARDS IN ESCROW (Step 5): consilience settlements held unfinalized —
+    /// (germ address, attesting voices, μ⃗, anchor). Only the court's verdict
+    /// releases (pays) or revokes (drops / slashes) them. Provisional installs
+    /// earn nothing until linguistic finality.
+    escrowed: Vec<([u8; 32], Vec<[u8; 32]>, [u64; 4], Anchor)>,
 }
 
 impl Treasury {
     pub fn new() -> Self {
-        Treasury { entries: Vec::new(), escrow: [0; 4], stakes: Vec::new() }
+        Treasury { entries: Vec::new(), escrow: [0; 4], stakes: Vec::new(), escrowed: Vec::new() }
     }
 
     /// ENROLL an identity: the stake (tier × STAKE_BASE, per lane) is issued ONCE
@@ -140,6 +145,57 @@ impl Treasury {
     /// The escrow pool — what the market can actually pay, per lane.
     pub fn pool(&self) -> [u64; 4] {
         self.escrow
+    }
+
+    /// HOLD a consilience award in escrow pending the court's finality verdict
+    /// (Step 5: two-voice consilience is provisional, not final). Nothing books
+    /// to the ledger yet — unfinalized speech earns nothing.
+    pub fn escrow_award(&mut self, addr: [u8; 32], voices: Vec<[u8; 32]>, mu: [u64; 4], anchor: Anchor) {
+        if self.escrowed.iter().any(|(a, _, _, _)| *a == addr) {
+            return; // one docket per germ
+        }
+        self.escrowed.push((addr, voices, mu, anchor));
+    }
+
+    pub fn escrowed_awards(&self) -> &[([u8; 32], Vec<[u8; 32]>, [u64; 4], Anchor)] {
+        &self.escrowed
+    }
+
+    /// The court UPHELD the germ: release the escrowed award — the consilience
+    /// split pays now (float-law bounded), and a zero-μ "finality" marker entry
+    /// binds the ruling to the chain. Returns true if an award was released.
+    pub fn release_award(&mut self, addr: &[u8; 32]) -> bool {
+        let Some(i) = self.escrowed.iter().position(|(a, _, _, _)| a == addr) else {
+            return false;
+        };
+        let (_, voices, mu, anchor) = self.escrowed.remove(i);
+        self.entries.push(Entry { kind: "finality", who: *addr, mu: [0; 4], k_step: anchor.0, receipt: anchor.1 });
+        self.settle_consilience(&voices, mu, anchor);
+        true
+    }
+
+    /// The court REJECTED the germ: the escrowed award evaporates. With `slash`
+    /// (a failed blind replay — false speech, not mere non-confluence) each
+    /// voice is debited its would-be share from earned balance INTO the pool.
+    pub fn revoke_award(&mut self, addr: &[u8; 32], slash: bool) -> bool {
+        let Some(i) = self.escrowed.iter().position(|(a, _, _, _)| a == addr) else {
+            return false;
+        };
+        let (_, voices, mu, anchor) = self.escrowed.remove(i);
+        if slash {
+            let n = voices.len().max(1) as u64;
+            for v in &voices {
+                let held = self.balance_mu(v);
+                let cut: [u64; 4] = std::array::from_fn(|l| (mu[l] / n).min(held[l]));
+                if cut.iter().any(|&c| c > 0) {
+                    for l in 0..4 {
+                        self.escrow[l] = self.escrow[l].saturating_add(cut[l]);
+                    }
+                    self.entries.push(Entry { kind: "slash", who: *v, mu: cut, k_step: anchor.0, receipt: anchor.1 });
+                }
+            }
+        }
+        true
     }
 
     pub fn stakes(&self) -> &[([u8; 32], Tier, [u64; 4])] {
@@ -264,7 +320,7 @@ impl Treasury {
     pub fn balance_mu(&self, who: &[u8; 32]) -> [u64; 4] {
         let mut out = [0u64; 4];
         for e in self.entries.iter().filter(|e| e.who == *who && e.kind != "stake") {
-            let debit = e.kind == "spend" || e.kind == "fee";
+            let debit = e.kind == "spend" || e.kind == "fee" || e.kind == "slash";
             for l in 0..4 {
                 out[l] = if debit {
                     out[l].saturating_sub(e.mu[l])
@@ -305,6 +361,8 @@ impl Treasury {
                 "stake" => 4,
                 "spend" => 5,
                 "fee" => 6,
+                "finality" => 7,
+                "slash" => 8,
                 _ => 255,
             };
             out.push(tag);
@@ -314,6 +372,21 @@ impl Treasury {
             }
             out.extend_from_slice(&e.k_step.to_le_bytes());
             out.extend_from_slice(&e.receipt);
+        }
+        // ESCROWED AWARDS section (Step 5) — appended after entries so older
+        // snapshots (which simply end here) restore with an empty docket.
+        out.extend_from_slice(&(self.escrowed.len() as u32).to_le_bytes());
+        for (addr, voices, mu, anchor) in &self.escrowed {
+            out.extend_from_slice(addr);
+            out.extend_from_slice(&(voices.len() as u32).to_le_bytes());
+            for v in voices {
+                out.extend_from_slice(v);
+            }
+            for m in mu {
+                out.extend_from_slice(&m.to_le_bytes());
+            }
+            out.extend_from_slice(&anchor.0.to_le_bytes());
+            out.extend_from_slice(&anchor.1);
         }
         out
     }
@@ -366,6 +439,8 @@ impl Treasury {
                 4 => "stake",
                 5 => "spend",
                 6 => "fee",
+                7 => "finality",
+                8 => "slash",
                 _ => "unknown",
             };
             let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
@@ -381,7 +456,39 @@ impl Treasury {
             *pos += 32;
             entries.push(Entry { kind, who, mu, k_step, receipt });
         }
-        Some(Treasury { entries, escrow, stakes })
+        let mut escrowed = Vec::new();
+        if let Some(c4) = b.get(*pos..*pos + 4) {
+            let ne = u32::from_le_bytes(c4.try_into().ok()?) as usize;
+            *pos += 4;
+            if ne > b.len().saturating_sub(*pos) / 108 {
+                return None; // untrusted count: ≥108 bytes per award
+            }
+            for _ in 0..ne {
+                let addr: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                *pos += 32;
+                let nv = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
+                *pos += 4;
+                if nv > b.len().saturating_sub(*pos) / 32 {
+                    return None;
+                }
+                let mut voices = Vec::with_capacity(nv);
+                for _ in 0..nv {
+                    voices.push(b.get(*pos..*pos + 32)?.try_into().ok()?);
+                    *pos += 32;
+                }
+                let mut mu = [0u64; 4];
+                for m in &mut mu {
+                    *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+                    *pos += 8;
+                }
+                let k = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+                *pos += 8;
+                let r: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                *pos += 32;
+                escrowed.push((addr, voices, mu, (k, r)));
+            }
+        }
+        Some(Treasury { entries, escrow, stakes, escrowed })
     }
 }
 

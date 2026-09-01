@@ -1,64 +1,134 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! mycelium-client — a VOICE that PERCEIVES. The client senses the scene
-//! (segments bodies) and reports the PERCEPT to its hypha; the hypha's judge
-//! adjudicates valid/invalid and TEACHES back the canonical ANASTOME element,
-//! which the client learns (so no server↔client dialect drifts). Usage:
-//!   mycelium-client [addr] [voice_byte]
-use mycelium::cognition::{encode_percept, perceive};
-use mycelium::network::wire::{Frame, Stratum};
-use std::io::{Read, Write};
-use std::net::TcpStream;
+//! mycelium-client — THE WORKER ENTITY (the flagship end-user kernel). It owns
+//! no corpus: work arrives from the hypha's open-demand market. The loop is the
+//! ANASTOME conversation itself:
+//!
+//!   quote  → "I need something to solve" — pull the highest-yield pending
+//!            demands (content-addressed chains, priced per lane)
+//!   think  → INTERNAL reduction of each pulled chain over the entity's own
+//!            genome (the C-stack — comprehension, never a byte-store)
+//!   attest → speak the honest finding: a derived sentence (closure work) or
+//!            an independent irreducibility witness (coverage work) — both are
+//!            true speech; the hypha replays either against its projective
+//!            reduction, so false speech never installs
+//!   learn  → comprehend whatever the mesh teaches back; the genome grows by
+//!            inheritance and CRYSTALLIZES to disk (continuity); the epigenome
+//!            (expression, recollections, aperture) stays in memory by ruling
+//!
+//! Cadence is the entity's own two-stroke metabolism: pulling and attesting is
+//! the entropic stroke (spends per-lane reserve); depletion flips to the
+//! syntropic phase (persist genome, voice the tally on change, regenerate,
+//! dwelling in proportion to the judge's load). No counters, no timers.
+//!
+//! Usage: mycelium-client [ADDR] --kernel NAME [--state DIR]
+use mycelium::physics::{Physics, RESERVE_MAX};
+use mycelium::sdk::{Comprehension, Entity, Kernel};
+use std::time::Instant;
+
+fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
+    args.windows(2).find(|w| w[0] == name).map(|w| w[1].as_str())
+}
 
 fn main() {
-    let addr = std::env::args().nth(1).unwrap_or_else(|| "127.0.0.1:7500".to_string());
-    let voice = std::env::args().nth(2).and_then(|s| s.parse::<u8>().ok()).unwrap_or(1);
+    let args: Vec<String> = std::env::args().collect();
+    let addr = args
+        .get(1)
+        .filter(|a| !a.starts_with("--"))
+        .cloned()
+        .unwrap_or_else(|| "127.0.0.1:7500".to_string());
+    let name = flag(&args, "--kernel").unwrap_or("worker").to_string();
+    let state_dir = flag(&args, "--state").unwrap_or("state").to_string();
+    let genome_path = format!("{state_dir}/{name}.genome");
+    let _ = std::fs::create_dir_all(&state_dir);
 
-    // PERCEPTION happens here, in the client — the sensorium, not the server.
-    // Scene mode (3rd arg): default = a rigid translate (a recall specimen);
-    // "deform" = an L→bar shape change no motor closes — a RESIDUAL the judge must
-    // germinate as a coordinate-exact coboundary germ (the reframe, on the wire).
-    let mode = std::env::args().nth(3).unwrap_or_default();
-    let (a, b): (&[(i64, i64, u8)], &[(i64, i64, u8)]) = match mode.as_str() {
-        // A shape change no motor closes — a RESIDUAL the judge germinates.
-        "deform" => (&[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 0, 1), (0, 1, 1), (0, 2, 1)]),
-        // translate(+0,+6) = translate(+0,+3) ∘ translate(+0,+3): the judge should
-        // DEDUCE this as a composition of the installed +3 atom, minting nothing.
-        "t6" => (&[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 6, 1), (0, 7, 1), (1, 6, 1)]),
-        // default: translate(+0,+3) — the atom.
-        _ => (&[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 3, 1), (0, 4, 1), (1, 3, 1)]),
-    };
-    let (a_bodies, b_bodies) = perceive(a, b);
-    // kind byte 0x00 = an ORIGIN percept from a client (a peer gossip is 0x01).
-    let mut pbody = vec![0x00u8];
-    pbody.extend_from_slice(&encode_percept(&a_bodies, &b_bodies, &[voice; 32]));
-    let frame = Frame { lane: Stratum::Spatial, body: pbody };
-
-    let mut s = TcpStream::connect(&addr).expect("connect");
-    s.write_all(&frame.encode().expect("encode")).expect("send");
-
-    let mut head = [0u8; 5];
-    s.read_exact(&mut head).expect("reply header");
-    let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-    let mut body = vec![0u8; len];
-    s.read_exact(&mut body).expect("reply body");
-
-    let verdict = match body.first() {
-        Some(1) => "valid: decomposed (confluent sentence)",
-        Some(2) => "valid: germ pending",
-        Some(3) => "valid: GERM INSTALLED",
-        Some(4) => "invalid: pivot",
-        Some(5) => "valid: fragmented",
-        _ => "unknown",
-    };
-    let flux: Vec<i64> = body.get(1..5).map(|b| b.iter().map(|&x| x as i8 as i64).collect()).unwrap_or_default();
-    // The taught ANASTOME element (the language the hypha hands back).
-    let taught_len = body.get(5..7).map(|b| u16::from_le_bytes([b[0], b[1]]) as usize).unwrap_or(0);
-    let taught = body.get(7..7 + taught_len).map(|t| {
-        t.iter().take(6).map(|x| format!("{x:02x}")).collect::<String>()
-    });
-    println!(
-        "voice {voice} → {verdict}; metabolism {flux:?}; taught ANASTOME {}",
-        taught.map(|t| format!("{t}… ({taught_len}B)")).unwrap_or_else(|| "—".into())
+    let mut entity = Entity::open_persistent(&addr, Kernel::named(&name), &genome_path);
+    eprintln!(
+        "mycelium-client '{name}' → {addr}; genome {} words (crystallized at {genome_path})",
+        entity.epigenome.genome_len()
     );
+
+    let mut physics = Physics::default();
+    let (mut derived, mut witnessed, mut settles, mut errors) = (0u64, 0u64, 0u64, 0u64);
+    let (mut last_genome, mut last_settles) = (usize::MAX, u64::MAX);
+    let start = Instant::now();
+
+    loop {
+        // ENTROPIC STROKE — pull work off the market and think it through.
+        let mut judge_load = 0u8;
+        match entity.quote() {
+            Ok(q) => {
+                for cluster in &q.clusters {
+                    if cluster.chain.is_empty() {
+                        continue;
+                    }
+                    // THINK: reduce the pulled chain over the OWN genome. The
+                    // outcome decides what is honestly speakable — a sentence
+                    // (this entity re-derived the reduction independently) or
+                    // an irreducibility witness (its genome cannot say it
+                    // either: genuine coverage demand). Both attest truly.
+                    let e = mycelium::transducer::element::from_residual(&cluster.chain);
+                    let thought = entity.epigenome.comprehend(&e);
+                    match entity.attest(&cluster.chain) {
+                        Ok(reply) => {
+                            match thought {
+                                Comprehension::Understood(_) => derived += 1,
+                                Comprehension::Novel { .. } => witnessed += 1,
+                            }
+                            if reply.settle.is_some() {
+                                settles += 1;
+                            }
+                            if let t @ [_, ..] = reply.verdict.taught() {
+                                entity.epigenome.learn(t);
+                            }
+                            let mut lanes: [bool; 4] =
+                                std::array::from_fn(|l| reply.metabolism[l] > 0);
+                            if lanes.iter().all(|&x| !x) {
+                                lanes[2] = true;
+                            }
+                            physics.bump(lanes);
+                            physics.spend(lanes);
+                            judge_load = reply.load();
+                        }
+                        Err(_) => errors += 1,
+                    }
+                }
+                if q.clusters.iter().all(|c| c.chain.is_empty()) || q.clusters.is_empty() {
+                    // MARKET CLEAR — nothing to digest is itself the idle
+                    // signal: spend the stroke so the syntropic phase (and its
+                    // dwell) paces the next ask off the metabolism contract.
+                    physics.spend([true; 4]);
+                }
+            }
+            Err(_) => {
+                errors += 1;
+                physics.spend([true; 4]); // an unreachable judge earns a full dwell
+            }
+        }
+
+        // SYNTROPIC PHASE — persist what crystallized, voice change, regenerate.
+        if physics.depleted() {
+            if entity.epigenome.genome_len() != last_genome || settles != last_settles {
+                if entity.epigenome.genome_len() != last_genome {
+                    let _ = entity.save_genome(&genome_path);
+                }
+                last_genome = entity.epigenome.genome_len();
+                last_settles = settles;
+                eprintln!(
+                    "[{name}] {:.0}s | derived {derived} witnessed {witnessed} settles {settles} err {errors} | genome {} (peak expr {})",
+                    start.elapsed().as_secs_f64(),
+                    entity.epigenome.genome_len(),
+                    entity.epigenome.peak_expression(),
+                );
+            }
+            while physics.depleted() {
+                physics.regenerate();
+                physics.relax();
+                // Dwell ∝ the judge's load; RESERVE_MAX ms is the idle floor —
+                // a constant from the metabolism contract, not a new knob.
+                let dwell = (judge_load as u64).max(RESERVE_MAX as u64);
+                std::thread::sleep(std::time::Duration::from_millis(dwell));
+            }
+        }
+    }
 }

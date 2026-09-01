@@ -23,6 +23,11 @@ pub const ACT_DEMAND: u8 = 0x02;
 pub const ACT_QUOTE: u8 = 0x03;
 pub const ACT_TEACH: u8 = 0x04;
 pub const ACT_SETTLE: u8 = 0x05;
+/// Step 5 court acts: the docket pull ("what awaits finality?") and the signed
+/// verdict. The court speaks the same wire as everyone — its authority is the
+/// replay, not the socket.
+pub const ACT_DOCKET: u8 = 0x06;
+pub const ACT_VERDICT: u8 = 0x07;
 
 /// One centered coboundary cell `(row, col, before, after)`.
 pub type Cell = (i64, i64, u8, u8);
@@ -145,6 +150,99 @@ pub fn decode_quote_reply(body: &[u8]) -> Option<([u64; 4], Vec<WorkItem>)> {
 // ── teach: canonical element transmission ────────────────────────────────────
 
 /// `[ACT_TEACH][len u32][element bytes]`
+/// docket request: `[ACT_DOCKET][voice 32]`.
+pub fn encode_docket_request(voice: &[u8; 32]) -> Vec<u8> {
+    let mut out = vec![ACT_DOCKET];
+    out.extend_from_slice(voice);
+    out
+}
+
+pub fn decode_docket_request(body: &[u8]) -> Option<[u8; 32]> {
+    if body.first() != Some(&ACT_DOCKET) {
+        return None;
+    }
+    body.get(1..33)?.try_into().ok()
+}
+
+/// docket reply: `[n u32] ( [addr 32][elen u32][element][nv u32][voices 32·nv][μ⃗ 32] )…`
+pub fn encode_docket_reply(dockets: &[([u8; 32], Vec<u8>, Vec<[u8; 32]>, [u64; 4])]) -> Vec<u8> {
+    let mut out = Vec::new();
+    out.extend_from_slice(&(dockets.len() as u32).to_le_bytes());
+    for (addr, elem, voices, mu) in dockets {
+        out.extend_from_slice(addr);
+        out.extend_from_slice(&(elem.len() as u32).to_le_bytes());
+        out.extend_from_slice(elem);
+        out.extend_from_slice(&(voices.len() as u32).to_le_bytes());
+        for v in voices {
+            out.extend_from_slice(v);
+        }
+        push_mu(&mut out, mu);
+    }
+    out
+}
+
+pub fn decode_docket_reply(body: &[u8]) -> Option<Vec<([u8; 32], Vec<u8>, Vec<[u8; 32]>, [u64; 4])>> {
+    let mut p = 0usize;
+    let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+    p += 4;
+    if n > body.len().saturating_sub(p) / 72 {
+        return None; // untrusted count: ≥72 bytes per docket
+    }
+    let mut out = Vec::with_capacity(n);
+    for _ in 0..n {
+        let addr: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
+        p += 32;
+        let el = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+        p += 4;
+        if el > body.len().saturating_sub(p) {
+            return None;
+        }
+        let elem = body.get(p..p + el)?.to_vec();
+        p += el;
+        let nv = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+        p += 4;
+        if nv > body.len().saturating_sub(p) / 32 {
+            return None;
+        }
+        let mut voices = Vec::with_capacity(nv);
+        for _ in 0..nv {
+            voices.push(body.get(p..p + 32)?.try_into().ok()?);
+            p += 32;
+        }
+        let mu = read_mu(body, &mut p)?;
+        out.push((addr, elem, voices, mu));
+    }
+    Some(out)
+}
+
+/// Verdict rulings — the court's closed vocabulary.
+pub const RULING_UPHELD: u8 = 1;
+pub const RULING_DEMOTED: u8 = 2;
+pub const RULING_SLASHED: u8 = 0;
+
+/// verdict: `[ACT_VERDICT][court voice 32][addr 32][ruling u8][receipt 32]` —
+/// the receipt is the head of the court's own chronometric chain (the signature
+/// binding the ruling to the court's tamper-evident history).
+pub fn encode_verdict(voice: &[u8; 32], addr: &[u8; 32], ruling: u8, receipt: &[u8; 32]) -> Vec<u8> {
+    let mut out = vec![ACT_VERDICT];
+    out.extend_from_slice(voice);
+    out.extend_from_slice(addr);
+    out.push(ruling);
+    out.extend_from_slice(receipt);
+    out
+}
+
+pub fn decode_verdict(body: &[u8]) -> Option<([u8; 32], [u8; 32], u8, [u8; 32])> {
+    if body.first() != Some(&ACT_VERDICT) {
+        return None;
+    }
+    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    let addr: [u8; 32] = body.get(33..65)?.try_into().ok()?;
+    let ruling = *body.get(65)?;
+    let receipt: [u8; 32] = body.get(66..98)?.try_into().ok()?;
+    Some((voice, addr, ruling, receipt))
+}
+
 pub fn encode_teach(element_bytes: &[u8]) -> Vec<u8> {
     let mut out = vec![ACT_TEACH];
     out.extend_from_slice(&(element_bytes.len() as u32).to_le_bytes());

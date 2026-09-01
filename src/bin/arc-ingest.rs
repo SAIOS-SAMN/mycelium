@@ -84,7 +84,11 @@ fn main() {
     tasks.sort();
     tasks.truncate(limit);
 
-    let mut entity = Entity::open(&addr, Kernel::named(&name));
+    let genome_path = format!("state/{name}.genome");
+    if let Some(dir) = std::path::Path::new(&genome_path).parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+    let mut entity = Entity::open_persistent(&addr, Kernel::named(&name), &genome_path);
     eprintln!(
         "arc-ingest: kernel '{name}' → {addr}; {} tasks from {dir}{}",
         tasks.len(),
@@ -151,6 +155,9 @@ fn main() {
                     let grew = tally.settles != last_settles || entity.epigenome.genome_len() != last_genome;
                     if grew {
                         last_settles = tally.settles;
+                        if entity.epigenome.genome_len() != last_genome {
+                            let _ = entity.save_genome(&genome_path); // crystallize continuity
+                        }
                         last_genome = entity.epigenome.genome_len();
                         tally.report(&name, start.elapsed().as_secs_f64());
                         eprintln!(

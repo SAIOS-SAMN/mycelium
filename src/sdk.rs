@@ -131,6 +131,14 @@ impl Session {
     }
 
     /// One framed exchange: dial, speak the act, read the reply body.
+    /// The RAW ACT DOOR — speak any encoded dialogue act and receive the reply
+    /// body. The public SDK surface for custom kernels (and the court): the
+    /// wire is the universal language; authority comes from the mathematics,
+    /// never the socket.
+    pub fn speak(&self, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
+        self.exchange(act_body)
+    }
+
     fn exchange(&self, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         let frame = Frame { lane: Stratum::Spatial, body: act_body };
         let bytes = frame.encode().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "frame encode"))?;
@@ -300,6 +308,54 @@ impl Epigenome {
         }
         Some(heard)
     }
+
+    /// CRYSTALLIZE the genome for persistence — the permanent language only.
+    /// The epigenome (expression, recollections, aperture) is deliberately
+    /// ephemeral: dialect rebuilds each run; the genome carries continuity.
+    /// Format: `GEN1 | n u32 | (len u32 | element)…`.
+    pub fn crystallize(&self) -> Vec<u8> {
+        let mut out = Vec::with_capacity(4 + self.genome.len() * 64);
+        out.extend_from_slice(b"GEN1");
+        out.extend_from_slice(&(self.genome.len() as u32).to_le_bytes());
+        for g in &self.genome {
+            let b = g.to_bytes();
+            out.extend_from_slice(&(b.len() as u32).to_le_bytes());
+            out.extend_from_slice(&b);
+        }
+        out
+    }
+
+    /// Restore the crystallized genome (count-guarded; a corrupt file yields a
+    /// clean fresh genome, never a crash). Expression starts at zero — the
+    /// dialect re-forms through this run's hearing.
+    pub fn uncrystallize(&mut self, bytes: &[u8]) -> bool {
+        if bytes.len() < 8 || &bytes[..4] != b"GEN1" {
+            return false;
+        }
+        let n = u32::from_le_bytes(bytes[4..8].try_into().unwrap()) as usize;
+        if n > bytes.len().saturating_sub(8) / 5 {
+            return false; // untrusted count vs remaining bytes
+        }
+        let mut genome = Vec::with_capacity(n);
+        let mut pos = 8usize;
+        for _ in 0..n {
+            let Some(l4) = bytes.get(pos..pos + 4) else { return false };
+            let len = u32::from_le_bytes(l4.try_into().unwrap()) as usize;
+            pos += 4;
+            if len > bytes.len().saturating_sub(pos) {
+                return false;
+            }
+            let mut ep = 0usize;
+            let Some(e) = Element::from_bytes(&bytes[pos..pos + len], &mut ep) else {
+                return false;
+            };
+            pos += len;
+            genome.push(e);
+        }
+        self.expression = vec![0; genome.len()];
+        self.genome = genome;
+        true
+    }
 }
 
 /// THE ENTITY — a kernel identity with its genome/epigenome, conversing through
@@ -313,6 +369,26 @@ pub struct Entity {
 impl Entity {
     pub fn open(addr: &str, kernel: Kernel) -> Self {
         Entity { session: Session::open(addr, kernel), epigenome: Epigenome::new() }
+    }
+
+    /// Open with CONTINUITY: restore the crystallized genome from `genome_path`
+    /// if present (the permanent half; the epigenome re-forms in memory).
+    pub fn open_persistent(addr: &str, kernel: Kernel, genome_path: &str) -> Self {
+        let mut e = Entity::open(addr, kernel);
+        if let Ok(bytes) = std::fs::read(genome_path) {
+            if e.epigenome.uncrystallize(&bytes) {
+                eprintln!("genome restored: {} words from {genome_path}", e.epigenome.genome_len());
+            }
+        }
+        e
+    }
+
+    /// Persist the genome atomically (write-then-rename). Call from the
+    /// syntropic phase when the genome has grown.
+    pub fn save_genome(&self, genome_path: &str) -> io::Result<()> {
+        let tmp = format!("{genome_path}.tmp");
+        std::fs::write(&tmp, self.epigenome.crystallize())?;
+        std::fs::rename(&tmp, genome_path)
     }
     pub fn kernel(&self) -> &Kernel {
         self.session.kernel()
@@ -449,6 +525,15 @@ mod tests {
         let other = from_residual(&germinate(&[(0, 0, 5u8)], &[(0, 0, 9u8)]).unwrap());
         assert!(matches!(epi.comprehend(&other), Comprehension::Novel { .. }));
         assert_eq!(epi.genome_len(), 1, "comprehension never mutates the genome");
+        // 5a: the genome crystallizes and restores EXACTLY; the epigenome does
+        // not persist (expression resets — dialect is ephemeral by ruling).
+        let frozen = epi.crystallize();
+        let mut back = Epigenome::new();
+        assert!(back.uncrystallize(&frozen), "crystallized genome restores");
+        assert_eq!(back.genome_len(), epi.genome_len());
+        assert_eq!(back.genome()[0].address(), epi.genome()[0].address(), "words identical by address");
+        assert_eq!(back.peak_expression(), 0, "expression is NOT persisted — the dialect re-forms");
+        assert!(!Epigenome::new().uncrystallize(b"GEN1\xff\xff\xff\xff"), "hostile count refused");
     }
 
     /// THE CHROMATIC APERTURE (harmonic import): absorption is the EXACT running

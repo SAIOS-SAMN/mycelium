@@ -136,6 +136,49 @@ fn main() {
             continue;
         }
 
+        // ── docket: the court pulls what awaits finality ─────────────────────
+        if kind == dialogue::ACT_DOCKET {
+            let Some(_cvoice) = dialogue::decode_docket_request(&frame.body) else { continue };
+            let dockets: Vec<([u8; 32], Vec<u8>, Vec<[u8; 32]>, [u64; 4])> = {
+                let k = kernel.lock().unwrap();
+                k.dockets()
+                    .into_iter()
+                    .map(|(addr, spoken, voices, mu)| (addr, spoken.to_bytes(), voices, mu))
+                    .collect()
+            };
+            let reply = Frame { lane: frame.lane, body: dialogue::encode_docket_reply(&dockets) };
+            let _ = s.write_all(&reply.encode().unwrap_or_default());
+            continue;
+        }
+
+        // ── verdict: the court's signed ruling lands ─────────────────────────
+        if kind == dialogue::ACT_VERDICT {
+            let Some((cvoice, addr, ruling, receipt)) = dialogue::decode_verdict(&frame.body) else {
+                continue;
+            };
+            let applied = {
+                let mut k = kernel.lock().unwrap();
+                let upheld = ruling == dialogue::RULING_UPHELD;
+                let slash = ruling == dialogue::RULING_SLASHED;
+                let ok = k.apply_verdict(&addr, upheld, slash);
+                if ok {
+                    let bytes = k.snapshot();
+                    let tmp = format!("{state_path}.tmp");
+                    if std::fs::write(&tmp, &bytes).is_ok() {
+                        let _ = std::fs::rename(&tmp, &state_path);
+                    }
+                }
+                ok
+            };
+            eprintln!(
+                "  verdict court {:02x} on {:02x}{:02x}… ruling {ruling} receipt {:02x}{:02x}… applied={applied}",
+                cvoice[0], addr[0], addr[1], receipt[0], receipt[1]
+            );
+            let reply = Frame { lane: frame.lane, body: vec![applied as u8] };
+            let _ = s.write_all(&reply.encode().unwrap_or_default());
+            continue;
+        }
+
         // ── percept / gossip / demand → the judge ────────────────────────────
         let pbytes = if kind == dialogue::ACT_GOSSIP && rest.len() >= 32 { &rest[32..] } else { rest };
         let (out, basis, flux, reserve, taught, settle, voice) = {
