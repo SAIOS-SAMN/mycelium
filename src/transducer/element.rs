@@ -38,6 +38,7 @@ pub const FIBER_SHELL: u16 = 3;
 /// First index available to germinated (residual/new-axis) fibers.
 pub const FIBER_GERMINATED: u16 = 4;
 
+#[cfg(test)]
 fn q(v: i64) -> Q {
     Q::from(BigInt::from(v))
 }
