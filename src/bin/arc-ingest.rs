@@ -73,6 +73,25 @@ fn main() {
     let looping = has(&args, "--loop");
     let limit: usize = flag(&args, "--limit").and_then(|s| s.parse().ok()).unwrap_or(usize::MAX);
 
+    // P8 — THE CONDUCTOR-FOLLOWING FEEDER: with --conductor <board.json>, the
+    // netstratum world-model's board schedules the ingest — the feed rotates
+    // to the conductor's arc_next cursor, re-read every cycle, so a LIVE
+    // conductor daemon steers the corpus order and a resting one leaves its
+    // last cosmological schedule in force. The universe conducts; we feed.
+    let conductor = flag(&args, "--conductor").map(String::from);
+    let conductor_cursor = |path: &str| -> usize {
+        let Ok(text) = std::fs::read_to_string(path) else { return 0 };
+        text.split("\"arc_next\":")
+            .nth(1)
+            .and_then(|t| {
+                t.chars()
+                    .take_while(|c| c.is_ascii_digit())
+                    .collect::<String>()
+                    .parse()
+                    .ok()
+            })
+            .unwrap_or(0)
+    };
     let mut tasks: Vec<PathBuf> = std::fs::read_dir(&dir)
         .unwrap_or_else(|e| {
             eprintln!("arc-ingest: cannot read {dir}: {e}");
@@ -83,6 +102,11 @@ fn main() {
         .collect();
     tasks.sort();
     tasks.truncate(limit);
+    if let Some(board) = &conductor {
+        let cursor = conductor_cursor(board) % tasks.len().max(1);
+        tasks.rotate_left(cursor);
+        eprintln!("arc-ingest: conducted by {board} — cursor {cursor}/{}", tasks.len());
+    }
 
     let genome_path = format!("state/{name}.genome");
     if let Some(dir) = std::path::Path::new(&genome_path).parent() {
@@ -108,7 +132,18 @@ fn main() {
     let (mut last_settles, mut last_genome, mut last_top) = (u64::MAX, usize::MAX, [0u8; 2]);
     let start = Instant::now();
     loop {
-        for path in &tasks {
+        // A LIVE conductor re-steers each cycle: re-read the board's cursor
+        // and rotate the corpus to its schedule before the pass.
+        let cycle_tasks: Vec<PathBuf> = match &conductor {
+            Some(board) => {
+                let cursor = conductor_cursor(board) % tasks.len().max(1);
+                let mut t = tasks.clone();
+                t.rotate_left(cursor);
+                t
+            }
+            None => tasks.clone(),
+        };
+        for path in &cycle_tasks {
             let Ok(text) = std::fs::read_to_string(path) else {
                 continue;
             };
