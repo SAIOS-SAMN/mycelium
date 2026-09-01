@@ -99,8 +99,53 @@ pub struct Element {
     /// collapses into sections of this one bundle instead of sibling cards —
     /// growth as +axis (volume), not +card (area). The base `sub`'s own
     /// assignment is the implicit zeroth section. Vec-of-relations; empty until
-    /// the axis is pierced.
+    /// the axis is pierced. (The FREE part of the fiber; cycles condense into
+    /// `torsion` below.)
     sections: Vec<Vec<(u8, u8)>>,
+    /// THE TORSION OF THE AXIS — CE's law reaching the germinated fiber ("colors
+    /// are torsion fields, not lookup tables"; the torsion_order is the period of
+    /// the generating fold). When sections form the ORBIT of one hue-map
+    /// generator σ (derived from the witnessed family cell-wise, exactly as peel
+    /// derives offsets — never an enumerated plane), the fiber condenses from a
+    /// free list to a TORSION CYCLE: `(σ relations from↦to, period ℓ)`. The
+    /// orbit {base, σ·base, σ²·base, …} of length ℓ is spoken in O(1) storage —
+    /// and a CLOSED cycle (σ^ℓ = id on its support) speaks orbit members never
+    /// individually witnessed: capacity earned by exact structure. The fiber is
+    /// thus ℤ^r ⊕ ⊕ᵢ ℤ/tᵢ — free sections ⊕ torsion cycles.
+    torsion: Vec<(Vec<(u8, u8)>, u32)>,
+}
+
+/// Apply a hue-map σ (functional from↦to relations) to a transition assignment:
+/// every hue present must be in σ's domain, else the orbit ends (None).
+pub fn apply_hue_map(sigma: &[(u8, u8)], asg: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
+    let map = |h: u8| sigma.iter().find(|(f, _)| *f == h).map(|(_, t)| *t);
+    asg.iter().map(|(b, a)| Some((map(*b)?, map(*a)?))).collect()
+}
+
+/// Derive the hue-map carrying assignment A onto assignment B cell-wise —
+/// `None` if the relation is not functional (one hue demanding two images).
+/// This is DERIVATION from the data, never a hypothesized plane.
+pub fn derive_hue_map(a: &[(u8, u8)], b: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
+    let mut sigma: Vec<(u8, u8)> = Vec::new();
+    let mut bind = |from: u8, to: u8| -> bool {
+        match sigma.iter().find(|(f, _)| *f == from) {
+            Some((_, t)) => *t == to,
+            None => {
+                sigma.push((from, to));
+                true
+            }
+        }
+    };
+    if a.len() != b.len() {
+        return None;
+    }
+    for ((ab, aa), (bb, ba)) in a.iter().zip(b) {
+        if !bind(*ab, *bb) || !bind(*aa, *ba) {
+            return None;
+        }
+    }
+    sigma.sort_unstable();
+    Some(sigma)
 }
 
 /// The positions skeleton of a centered chain (its base geometry).
@@ -119,7 +164,15 @@ impl Element {
     /// transition on any axis). `dim` is the representation dimension shared by
     /// every fiber so they compose/bracket in a common GL(dim,ℚ).
     pub fn identity(dim: usize) -> Self {
-        Element { dim, fibers: Vec::new(), word: Vec::new(), mag: [0; 4], sub: Vec::new(), sections: Vec::new() }
+        Element {
+            dim,
+            fibers: Vec::new(),
+            word: Vec::new(),
+            mag: [0; 4],
+            sub: Vec::new(),
+            sections: Vec::new(),
+            torsion: Vec::new(),
+        }
     }
 
     pub fn dim(&self) -> usize {
@@ -169,28 +222,126 @@ impl Element {
         &self.sub
     }
 
-    /// The sections along the punctured axis (empty until the axis is pierced).
+    /// The free sections along the punctured axis (cycles live in `torsion`).
     pub fn sections(&self) -> &[Vec<(u8, u8)>] {
         &self.sections
     }
 
-    /// Every transition assignment this thought speaks: the base plus each
-    /// section along the punctured axis (the bundle's fiber coordinates).
+    /// The torsion cycles of the axis: `(generator σ, period ℓ)` each.
+    pub fn torsion(&self) -> &[(Vec<(u8, u8)>, u32)] {
+        &self.torsion
+    }
+
+    /// The fiber's total spoken span — base + free sections + every torsion-orbit
+    /// member (the volume metric; cycles count their full period).
+    pub fn fiber_span(&self) -> usize {
+        1 + self.sections.len()
+            + self.torsion.iter().map(|(_, l)| (*l as usize).saturating_sub(1)).sum::<usize>()
+    }
+
+    /// Every transition assignment this thought speaks: base, free sections, and
+    /// each torsion cycle's ORBIT expanded exactly to its period (bounded by ℓ —
+    /// a closed cycle speaks members never individually witnessed).
     pub fn assignments(&self) -> Vec<Vec<(u8, u8)>> {
-        let mut out = vec![assignment(&self.sub)];
+        let base = assignment(&self.sub);
+        let mut out = vec![base.clone()];
         out.extend(self.sections.iter().cloned());
+        for (sigma, l) in &self.torsion {
+            let mut cur = base.clone();
+            for _ in 1..*l {
+                match apply_hue_map(sigma, &cur) {
+                    Some(next) => {
+                        if !out.contains(&next) {
+                            out.push(next.clone());
+                        }
+                        cur = next;
+                    }
+                    None => break,
+                }
+            }
+        }
         out
     }
 
     /// Does a centered chain SIT on this thought — same base positions, and its
-    /// assignment is the base's or any section's? (The bundle speaks the whole
-    /// family; recognition through the punctured axis, no sibling cards.)
+    /// assignment is the base's, a free section's, or a member of a torsion
+    /// cycle's orbit (walked to the period, O(ℓ·cells) — the closed-form
+    /// membership that makes the compressed fiber CHEAPER than the list it
+    /// replaced)?
     pub fn matches_chain(&self, chain: &[(i64, i64, u8, u8)]) -> bool {
         if self.sub.is_empty() || positions(&self.sub) != positions(chain) {
             return false;
         }
         let asg = assignment(chain);
-        asg == assignment(&self.sub) || self.sections.contains(&asg)
+        let base = assignment(&self.sub);
+        if asg == base || self.sections.contains(&asg) {
+            return true;
+        }
+        for (sigma, l) in &self.torsion {
+            let mut cur = base.clone();
+            for _ in 1..*l {
+                match apply_hue_map(sigma, &cur) {
+                    Some(next) => {
+                        if next == asg {
+                            return true;
+                        }
+                        cur = next;
+                    }
+                    None => break,
+                }
+            }
+        }
+        false
+    }
+
+    /// THE TORSE MOVE — extract the torsion of the punctured axis. Candidate
+    /// generators are DERIVED from the witnessed family (base → each section,
+    /// cell-wise — the same way peel derives offsets; nothing enumerated); the
+    /// first σ whose orbit spans enough of the family condenses those sections
+    /// into ONE cycle `(σ, ℓ)`. A closure found within the walk (σ^t·base = base)
+    /// sets ℓ = t — the FULL cycle, including unwitnessed members: capacity by
+    /// exact structure. Returns the number of sections condensed (0 = no torsion
+    /// found; the free part stays as it was).
+    pub fn torse(&mut self) -> usize {
+        const MAX_ORBIT: usize = 32;
+        if self.sections.is_empty() {
+            return 0;
+        }
+        let base = assignment(&self.sub);
+        for k in 0..self.sections.len() {
+            let Some(sigma) = derive_hue_map(&base, &self.sections[k]) else { continue };
+            // Walk the orbit: collect members, note closure.
+            let mut orbit: Vec<Vec<(u8, u8)>> = Vec::new();
+            let mut cur = base.clone();
+            let mut period = 0u32;
+            for step in 1..=MAX_ORBIT {
+                match apply_hue_map(&sigma, &cur) {
+                    Some(next) => {
+                        if next == base {
+                            period = step as u32; // closed: σ^t = id on its support
+                            break;
+                        }
+                        orbit.push(next.clone());
+                        cur = next;
+                    }
+                    None => break,
+                }
+            }
+            let spanned: Vec<usize> = (0..self.sections.len())
+                .filter(|&i| orbit.contains(&self.sections[i]))
+                .collect();
+            // Worth condensing: the orbit spans ≥2 sections, or it CLOSES (a true
+            // ℤ/t cycle — structure even at one witnessed section, e.g. a swap).
+            if spanned.len() >= 2 || (period > 0 && !spanned.is_empty()) {
+                let l = if period > 0 { period } else { (orbit.len() + 1) as u32 };
+                for &i in spanned.iter().rev() {
+                    self.sections.remove(i);
+                }
+                self.torsion.push((sigma, l));
+                return spanned.len();
+            }
+        }
+        0
     }
 
     /// PUNCTURE — pierce (or extend) the germinated axis with a new section: a
@@ -199,8 +350,12 @@ impl Element {
     /// not a card. Returns false if the assignment is already spoken (or does
     /// not fit the base geometry).
     pub fn puncture(&mut self, asg: Vec<(u8, u8)>) -> bool {
-        if asg.len() != self.sub.len() || asg == assignment(&self.sub) || self.sections.contains(&asg) {
-            return false;
+        if asg.len() != self.sub.len()
+            || asg == assignment(&self.sub)
+            || self.sections.contains(&asg)
+            || self.assignments().contains(&asg)
+        {
+            return false; // already spoken — by base, a section, or a torsion orbit
         }
         self.sections.push(asg);
         true
@@ -336,6 +491,16 @@ impl Element {
                 out.push(*a);
             }
         }
+        // The torsion cycles: (generator relations, period).
+        out.extend_from_slice(&(self.torsion.len() as u32).to_le_bytes());
+        for (sigma, l) in &self.torsion {
+            out.extend_from_slice(&(sigma.len() as u32).to_le_bytes());
+            for (f, t) in sigma {
+                out.push(*f);
+                out.push(*t);
+            }
+            out.extend_from_slice(&l.to_le_bytes());
+        }
         out
     }
 
@@ -420,6 +585,16 @@ impl Element {
                 out.push(*a);
             }
         }
+        // The torsion cycles: (generator relations, period ℓ).
+        out.extend_from_slice(&(self.torsion.len() as u32).to_le_bytes());
+        for (sigma, l) in &self.torsion {
+            out.extend_from_slice(&(sigma.len() as u32).to_le_bytes());
+            for (f, t) in sigma {
+                out.push(*f);
+                out.push(*t);
+            }
+            out.extend_from_slice(&l.to_le_bytes());
+        }
         out
     }
 
@@ -503,7 +678,27 @@ impl Element {
             }
             sections.push(s);
         }
-        Some(Element { dim, fibers, word, mag, sub, sections })
+        let ntor = u32_at(b, pos)? as usize;
+        if ntor > remaining(b, pos) / 8 {
+            return None; // untrusted count: each cycle needs relations-len + period
+        }
+        let mut torsion = Vec::with_capacity(ntor);
+        for _ in 0..ntor {
+            let slen = u32_at(b, pos)? as usize;
+            if slen > remaining(b, pos) / 2 {
+                return None;
+            }
+            let mut sigma = Vec::with_capacity(slen);
+            for _ in 0..slen {
+                let f = *b.get(*pos)?;
+                let t = *b.get(*pos + 1)?;
+                *pos += 2;
+                sigma.push((f, t));
+            }
+            let l = u32_at(b, pos)?;
+            torsion.push((sigma, l));
+        }
+        Some(Element { dim, fibers, word, mag, sub, sections, torsion })
     }
 }
 
@@ -861,6 +1056,65 @@ mod tests {
             assert_eq!(back.sub(), g.sub(), "the centered chain survives");
             assert!(back.same_action(g), "the substance survives");
         }
+    }
+
+    /// THE TORSE CAPACITY THEOREM: a 3-cycle hue rotation derived from ONE
+    /// witnessed section closes (σ³ = id), so the cycle speaks the THIRD orbit
+    /// member that was never individually witnessed — capacity earned by exact
+    /// structure, in O(1) storage where the list held O(n).
+    #[test]
+    fn a_closed_cycle_speaks_unwitnessed_members() {
+        // base: transitions 1→2, 2→3, 3→1 over three cells.
+        let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
+        let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
+        let mut t = from_residual(&germinate(&a, &b).unwrap());
+        // One witnessed sibling: σ·base where σ = {1↦2, 2↦3, 3↦1}.
+        assert!(t.puncture(vec![(2, 3), (3, 1), (1, 2)]));
+        assert_eq!(t.torse(), 1, "the section condenses into the cycle");
+        assert_eq!(t.torsion().len(), 1, "one torsion cycle (σ, 3)");
+        assert_eq!(t.torsion()[0].1, 3, "the period is the torsion_order");
+        assert!(t.sections().is_empty(), "the free list drained into the cycle");
+        // THE UNWITNESSED MEMBER: σ²·base = transitions 3→1, 1→2, 2→3 — never
+        // punctured, never seen — yet the cycle speaks it.
+        let unwitnessed = vec![(0, 0, 3, 1), (0, 1, 1, 2), (0, 2, 2, 3)];
+        assert!(t.matches_chain(&unwitnessed), "capacity beyond the evidence, exactly");
+        assert!(!t.matches_chain(&vec![(0, 0, 5, 6), (0, 1, 1, 2), (0, 2, 2, 3)]), "no hallucination");
+        assert_eq!(t.fiber_span(), 3, "the volume counts the full orbit");
+    }
+
+    /// A SWAP is the smallest torsion (ℤ/2): one witnessed section closes at
+    /// period 2 and condenses. An orbit that neither closes nor spans two
+    /// sections extracts NOTHING — no false structure from thin evidence.
+    #[test]
+    fn a_swap_torses_and_thin_evidence_does_not() {
+        let mut swap = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 9)], &[(0, 0, 2u8), (0, 1, 9)]).unwrap());
+        assert!(swap.puncture(vec![(2, 1)]));
+        assert_eq!(swap.torse(), 1, "sigma 1↦2, 2↦1 closes at period 2");
+        assert_eq!(swap.torsion()[0].1, 2);
+        // Thin evidence: sections whose hues never recur — no orbit spans two,
+        // nothing closes — the free part stays free.
+        let mut open = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 9)], &[(0, 0, 2u8), (0, 1, 9)]).unwrap());
+        assert!(open.puncture(vec![(3, 4)]));
+        assert!(open.puncture(vec![(5, 6)]));
+        assert_eq!(open.torse(), 0, "no torsion invented from unrelated sections");
+        assert_eq!(open.sections().len(), 2, "the free part is untouched");
+    }
+
+    /// Torsion survives serde: the cycle (σ, ℓ) round-trips, and the reloaded
+    /// thought still speaks the unwitnessed orbit member.
+    #[test]
+    fn torsion_round_trips_through_bytes() {
+        let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
+        let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
+        let mut t = from_residual(&germinate(&a, &b).unwrap());
+        t.puncture(vec![(2, 3), (3, 1), (1, 2)]);
+        t.torse();
+        let bytes = t.to_bytes();
+        let mut pos = 0;
+        let back = Element::from_bytes(&bytes, &mut pos).expect("reload");
+        assert_eq!(pos, bytes.len());
+        assert_eq!(back, t, "full equality including the torsion");
+        assert!(back.matches_chain(&vec![(0, 0, 3, 1), (0, 1, 1, 2), (0, 2, 2, 3)]), "capacity survives restart");
     }
 
     /// THE CANCELING TALLY IS NOT IDENTITY: L→bar's bidirectional hue swap cancels

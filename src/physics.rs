@@ -91,6 +91,20 @@ impl Physics {
         }
     }
 
+    /// TORSE RELIEF — the mathematical torsion extraction dissipates the PHYSICAL
+    /// torsion charge: condensing a fiber's sections into a cycle converts
+    /// accumulated disorder into structure, per lane (the spanned count applied
+    /// on the active lanes only — polytonic, never a summed scalar), and books
+    /// the same amount as syntropic order built.
+    pub fn torse_relief(&mut self, lanes: [bool; 4], spanned: u64) {
+        for l in 0..4 {
+            if lanes[l] {
+                self.torsion[l] = self.torsion[l].saturating_sub(spanned);
+                self.syntropic[l] = self.syntropic[l].saturating_add(spanned);
+            }
+        }
+    }
+
     /// A settlement built order on these lanes — a SYNTROPIC event (negentropy).
     pub fn syntropy(&mut self, lanes: [bool; 4]) {
         for l in 0..4 {

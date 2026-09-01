@@ -405,11 +405,21 @@ impl Kernel {
                     }
                 }
             }
+            // THE TORSE MOVE (condense, one dimension deeper): extract the torsion
+            // of the cursor thought's axis — sections forming one generator's
+            // orbit condense into a cycle (σ, ℓ). The extracted mathematical
+            // torsion RELIEVES the physical torsion charge on the germ's lanes
+            // (disorder converted to structure — per-lane, never a scalar).
+            let spanned = self.basis[i].torse();
+            if spanned > 0 {
+                let lanes = self.basis[i].lanes();
+                self.physics.torse_relief(lanes, spanned as u64);
+            }
             // The redundancy probe: retire a rule the rest of the basis derives —
-            // but never a BUNDLE (its sections carry family volume no other word
-            // speaks; only a sectionless card can be redundant).
+            // but never a BUNDLE (its sections/cycles carry family volume no other
+            // word speaks; only a plain card can be redundant).
             let candidate = self.basis[i].clone();
-            if candidate.sections().is_empty() {
+            if candidate.sections().is_empty() && candidate.torsion().is_empty() {
                 if let NormalForm::Decomposed(_) = self.reduce_excluding(&candidate, Some(i)) {
                     let lanes = candidate.lanes();
                     self.basis.remove(i);
@@ -463,10 +473,17 @@ impl Kernel {
         self.admission.voices_of(germ)
     }
 
-    /// The basis's interior VOLUME — total sections along all punctured axes (the
-    /// 3.5g condensation metric: cardinality falls while this rises).
+    /// The basis's interior VOLUME — the full fiber span across all punctured
+    /// axes (free sections + every torsion orbit to its period; the condensation
+    /// metric: cardinality falls while this rises, and cycles carry span in O(1)).
     pub fn sections_total(&self) -> usize {
-        self.basis.iter().map(|t| t.sections().len()).sum()
+        self.basis.iter().map(|t| t.fiber_span().saturating_sub(1)).sum()
+    }
+
+    /// The torsion cycles held across the basis — how much of the language has
+    /// condensed from enumeration into group presentation.
+    pub fn torsion_total(&self) -> usize {
+        self.basis.iter().map(|t| t.torsion().len()).sum()
     }
 
     /// P7 — SNAPSHOT the durable cognitive state (the germinated basis + each
@@ -1044,6 +1061,33 @@ mod tests {
         assert_eq!(k.basis_len(), 1, "the family collapsed into one bundle");
         assert_eq!(k.basis()[0].sections().len(), 2, "two sections along the pierced axis");
         assert!(k.treasury().balance(&[9; 32]) > 0, "absorbed discoverers still earn");
+    }
+
+    /// THE TORSE STROKE tightens mathematics to physics: a swap family (1→4 and
+    /// 4→1 at one cell) installs as base + section; the syntropic stroke extracts
+    /// the ℤ/2 cycle — sections condense to (σ, 2) — and the extracted
+    /// mathematical torsion RELIEVES the physical torsion charge (booked as
+    /// syntropic order, per lane, never a scalar).
+    #[test]
+    fn the_torse_stroke_extracts_the_cycle_and_relieves_torsion() {
+        let mut k = Kernel::new();
+        let a = vec![(0, 0, 1), (0, 1, 9)];
+        let b = vec![(0, 0, 4), (0, 1, 9)]; // (0,0): 1→4
+        k.ingest(&a, &b, [1; 32]);
+        assert!(matches!(k.ingest(&a, &b, [2; 32]), Outcome::Installed(0)));
+        let rev = vec![(0, 0, 1), (0, 1, 9)];
+        let fwd = vec![(0, 0, 4), (0, 1, 9)];
+        k.ingest(&fwd, &rev, [1; 32]); // (0,0): 4→1 — the swap sibling
+        assert!(matches!(k.ingest(&fwd, &rev, [2; 32]), Outcome::Installed(0)), "punctures the axis");
+        assert_eq!(k.basis()[0].sections().len(), 1);
+        let syntropic_before = k.physics().syntropic[2];
+        k.optimize(); // the stroke: condense (nothing) → TORSE
+        assert_eq!(k.torsion_total(), 1, "the ℤ/2 cycle extracted");
+        assert!(k.basis()[0].sections().is_empty(), "the free list condensed");
+        assert!(k.physics().syntropic[2] > syntropic_before, "torsion converted to order, on the lane");
+        // The bundle still speaks both members through the cycle.
+        assert_eq!(k.ingest(&a, &b, [3; 32]), Outcome::Decomposed(vec![0]));
+        assert_eq!(k.ingest(&fwd, &rev, [3; 32]), Outcome::Decomposed(vec![0]));
     }
 
     /// THE CROWN PROOF OF THE EXCISION: with no solver anywhere, the mesh forms
