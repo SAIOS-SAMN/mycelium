@@ -177,9 +177,12 @@ impl Kernel {
         // irreducible residual (a Knuth–Bendix critical pair) to complete.
         match self.reduce(&g) {
             NormalForm::Decomposed(word) => {
-                self.treasury.settle_recall(voice); // the reader's small yield
+                let anchor = self.anchor();
+                self.treasury.settle_recall(voice, lanes, anchor); // the reader's per-lane unit
                 for &i in &word {
-                    self.treasury.settle_use(self.discoverers[i]); // each cited generator, used
+                    // PoUW: each cited word's discoverer earns the structure exercised.
+                    let mag = self.basis[i].magnitude();
+                    self.treasury.settle_use(self.discoverers[i], mag, anchor);
                 }
                 self.physics.syntropy(lanes); // a spanned sentence builds order
                 Outcome::Decomposed(word)
@@ -201,7 +204,12 @@ impl Kernel {
                     let quorum = self.admission.voices(&saddr) >= crate::network::consensus::QUORUM;
                     if quorum && self.physics.can_expand(lanes) {
                         self.basis[ti].puncture(asg);
-                        self.treasury.settle_consilience(&self.admission.voices_of(&saddr));
+                        let mu = crate::economy::price(
+                            &residual.magnitude(),
+                            &crate::economy::yield_surface(&self.physics),
+                        );
+                        let anchor = self.anchor();
+                        self.treasury.settle_consilience(&self.admission.voices_of(&saddr), mu, anchor);
                         self.physics.relieve(lanes);
                         self.physics.syntropy(lanes); // volume built through the axis
                         self.physics.spend(lanes); // still an expansion — fuel is spent
@@ -228,7 +236,12 @@ impl Kernel {
                 let quorum = self.admission.voices(&addr) >= crate::network::consensus::QUORUM;
                 if quorum && self.physics.can_expand(lanes) {
                     let _ = self.treasury.settle_install(&residual, voice); // POW++ gate only
-                    self.treasury.settle_consilience(&self.admission.voices_of(&addr));
+                    let mu = crate::economy::price(
+                        &residual.magnitude(),
+                        &crate::economy::yield_surface(&self.physics),
+                    );
+                    let anchor = self.anchor();
+                    self.treasury.settle_consilience(&self.admission.voices_of(&addr), mu, anchor);
                     self.physics.relieve(lanes);
                     self.physics.syntropy(lanes); // a completed rule is order built
                     self.physics.spend(lanes); // the expansion SHRINKS the reserve
@@ -417,7 +430,8 @@ impl Kernel {
                         self.basis.remove(j);
                         self.discoverers.remove(j);
                         if self.basis[i].puncture(asg) {
-                            self.treasury.settle_use(sibling_disc);
+                            let anchor = self.anchor();
+                            self.treasury.settle_use(sibling_disc, [0, 0, 1, 0], anchor);
                         }
                         self.physics.syntropy([false, false, true, false]);
                         absorbed += 1;
@@ -435,6 +449,13 @@ impl Kernel {
             if spanned > 0 {
                 let lanes = self.basis[i].lanes();
                 self.physics.torse_relief(lanes, spanned as u64);
+                // THE TORSE COIN — the strongest yield: structure condensed from
+                // disorder, priced at the surface on the residual lane, paid to
+                // the bundle's discoverer.
+                let surface = crate::economy::yield_surface(&self.physics);
+                let mu = [0, 0, (spanned as u64) * (1 + surface[2]), 0];
+                let anchor = self.anchor();
+                self.treasury.settle_torse(self.discoverers[i], mu, anchor);
             }
             // The redundancy probe: retire a rule the rest of the basis derives —
             // but never a BUNDLE (its sections/cycles carry family volume no other
@@ -464,11 +485,28 @@ impl Kernel {
     /// μ⃗[l] = magnitude[l] · (1 + surface[l]). Top clusters by strongest lane.
     pub fn quote(&self, top: usize) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
         let surface = crate::economy::yield_surface(&self.physics);
+        // The (C, I) pair DIFFERENTIATES the market (never summed): closure work
+        // (open demand on KNOWN geometry) carries the C premium; coverage work
+        // (unknown geometry) carries the I premium — expansion pays what
+        // expansion is worth, collapse what collapse is worth.
+        let (mut c, mut i) = (0u64, 0u64);
+        for p in &self.pending {
+            let pos = element::positions(p.sub());
+            if self.basis.iter().any(|t| element::positions(t.sub()) == pos) {
+                c += 1;
+            } else {
+                i += 1;
+            }
+        }
         let mut priced: Vec<(Element, [u64; 4])> = self
             .pending
             .iter()
             .map(|p| {
-                let mu = crate::economy::price(&p.magnitude(), &surface);
+                let pos = element::positions(p.sub());
+                let known = self.basis.iter().any(|t| element::positions(t.sub()) == pos);
+                let premium = if known { c } else { i };
+                let mut mu = crate::economy::price(&p.magnitude(), &surface);
+                mu[2] = p.magnitude()[2].saturating_mul(1 + surface[2] + premium);
                 (p.clone(), mu)
             })
             .collect();
@@ -510,6 +548,12 @@ impl Kernel {
     /// The mesh's algebraic clock — the next K-step index (chronometry import).
     pub fn k_step(&self) -> u64 {
         self.chain.next_step_index()
+    }
+
+    /// The current chronometric anchor for ledger entries: (K, head hash) — the
+    /// unforgeable temporal binding every settlement carries.
+    fn anchor(&self) -> crate::economy::Anchor {
+        (self.chain.next_step_index(), self.chain.head_hash())
     }
 
     /// The chronometric receipt chain (verifiable, parent-linked).
@@ -907,14 +951,14 @@ mod tests {
         assert_eq!(k.ingest(&a, &rot, [2; 32]), Outcome::Installed(0)); // a rotation generator
         k.ingest(&a, &bar, [1; 32]);
         assert_eq!(k.ingest(&a, &bar, [2; 32]), Outcome::Installed(1)); // a residual generator
-        let balance = k.treasury().balance(&[2; 32]);
+        let balance = k.treasury().balance_mu(&[2; 32]);
         let snap = k.snapshot();
 
         // A fresh hypha boots from the snapshot.
         let mut booted = Kernel::new();
         assert!(booted.restore(&snap), "clean restore");
         assert_eq!(booted.basis_len(), 2, "both generators came back");
-        assert_eq!(booted.treasury().balance(&[2; 32]), balance, "earned balance survived");
+        assert_eq!(booted.treasury().balance_mu(&[2; 32]), balance, "earned μ⃗ balance survived, per lane");
         // Both REDUCE to their generator, not re-germinated (the language persisted).
         assert_eq!(booted.ingest(&a, &rot, [9; 32]), Outcome::Decomposed(vec![0]), "rotation reduces");
         assert_eq!(booted.ingest(&a, &bar, [9; 32]), Outcome::Decomposed(vec![1]), "residual reduces");
@@ -1111,7 +1155,7 @@ mod tests {
         k.optimize(); // cursor 0 → the condense move absorbs both siblings
         assert_eq!(k.basis_len(), 1, "the family collapsed into one bundle");
         assert_eq!(k.basis()[0].sections().len(), 2, "two sections along the pierced axis");
-        assert!(k.treasury().balance(&[9; 32]) > 0, "absorbed discoverers still earn");
+        assert!(k.treasury().balance_mu(&[9; 32])[2] > 0, "absorbed discoverers still earn, on the lane");
     }
 
     /// THE TORSE STROKE tightens mathematics to physics: a swap family (1→4 and

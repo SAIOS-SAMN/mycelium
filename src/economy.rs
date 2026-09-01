@@ -1,11 +1,18 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! ECONOMY — the settlement ledger and POW++ pricing. A germ pays only when it
-//! REDUCES: the demand's polytonic magnitude must descend under the per-lane
-//! Dershowitz–Manna order (never a summed score). Bounties credit the voices
-//! that germinated; consilience splits a fixed reward on the two-voice crossing.
-//! The pricing decision (≺_DM) is topological and map-free; the ledger is a
-//! below-boundary Vec of receipts.
+//! ECONOMY — THE DIMENSIONAL LEDGER (alpha Step 4). Every balance and every
+//! receipt is a polytonic μ⃗ 4-vector (𝒮, 𝒢, residual, 𝒽) — scalar amounts are
+//! BANNED (a scalar balance is a flattened ledger). Every entry is ANCHORED to
+//! the chronometric chain (K-step + head hash — the unforgeable temporal
+//! binding; Step 5's court audits these). The treasury is a QUOTING ENGINE:
+//! yield follows the surface (pressure + reserve deficit + entropic excess) and
+//! the cohesion pair (C, I) differentiates the market — closure work prices by
+//! C, coverage work by I, never summed. PoUW = paid decomposition of real open
+//! demand (settle_use); PoWc = the ≺_DM descent gate + consilience receipts
+//! sealed on the chain. Torsion extraction (torse) is the strongest coin —
+//! structure condensed from disorder. Redundancy is structurally suppressed by
+//! puncture/condense (same-geometry siblings cannot coexist as cards), which is
+//! the anti-Goodhart inverse-redundancy law realized in the carrier itself.
 
 use crate::transducer::element::Element;
 
@@ -44,7 +51,8 @@ pub fn price(mag: &[u64; 4], surface: &[u64; 4]) -> [u64; 4] {
     std::array::from_fn(|l| mag[l] * (1 + surface[l]))
 }
 
-const CONSILIENCE: i64 = 16;
+/// The chronometric anchor of a ledger entry: (K-step, chain head hash).
+pub type Anchor = (u64, [u8; 32]);
 
 /// Economic tiers for a decentralized mesh running cryptographic semantic
 /// operations: yields scale by the participant's tier. A hypha/client's standing
@@ -76,17 +84,18 @@ impl Tier {
         }
     }
 }
-/// The UTILITY yield paid to a germ's DISCOVERER each time a real later demand
-/// recalls it — reward is proportional to corpus actually unlocked, never a flat
-/// bounty for a germ that merely closes its own birth demand (anti-Goodhart).
-const USE_YIELD: i64 = 5;
-
-/// A settlement receipt (below-boundary storage — a Vec, not a map).
+/// A settlement receipt (below-boundary storage — a Vec, not a map): a
+/// polytonic μ⃗ amount, chronometrically anchored.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Entry {
     pub kind: &'static str,
     pub who: [u8; 32],
-    pub amount: i64,
+    /// The per-lane vector amount — never a scalar.
+    pub mu: [u64; 4],
+    /// K-step at booking.
+    pub k_step: u64,
+    /// The chain head hash at booking (the unforgeable temporal binding).
+    pub receipt: [u8; 32],
 }
 
 #[derive(Debug, Default, Clone)]
@@ -99,8 +108,12 @@ impl Treasury {
         Treasury { entries: Vec::new() }
     }
 
-    fn credit(&mut self, kind: &'static str, who: [u8; 32], amount: i64) {
-        self.entries.push(Entry { kind, who, amount });
+    fn credit(&mut self, kind: &'static str, who: [u8; 32], mu: [u64; 4], anchor: Anchor) {
+        // A zero vector books nothing — the ledger records work, not noise.
+        if mu.iter().all(|&m| m == 0) {
+            return;
+        }
+        self.entries.push(Entry { kind, who, mu, k_step: anchor.0, receipt: anchor.1 });
     }
 
     /// The POW++ GATE on a germ install: it admits iff the germ reduces the demand
@@ -111,45 +124,63 @@ impl Treasury {
         descends(&[0u64; 4], &magnitude(g))
     }
 
-    /// A germ was USED — a real later demand recalled it. Pay its DISCOVERER the
-    /// utility yield: this is the corpus actually unlocked, the only novelty the
-    /// economy prices. Called once per recall of an installed germ.
-    pub fn settle_use(&mut self, discoverer: [u8; 32]) {
-        self.credit("utility", discoverer, USE_YIELD);
+    /// PoUW — a word was USED: a real later demand decomposed through it. Pay its
+    /// DISCOVERER the word's per-lane structure exercised (μ⃗ = the magnitude) —
+    /// the corpus actually unlocked, per lane, never a flat scalar bounty.
+    pub fn settle_use(&mut self, discoverer: [u8; 32], mag: [u64; 4], anchor: Anchor) {
+        self.credit("utility", discoverer, mag, anchor);
     }
 
-    /// Tiered utility yield: the discoverer's tier weights the reward — the
-    /// economic-tier hook for a decentralized, staked mesh.
-    pub fn settle_use_tiered(&mut self, discoverer: [u8; 32], tier: Tier) {
-        self.credit("utility", discoverer, USE_YIELD * tier.weight());
+    /// Tiered utility: the discoverer's stake tier weights the vector, per lane.
+    pub fn settle_use_tiered(&mut self, discoverer: [u8; 32], mag: [u64; 4], tier: Tier, anchor: Anchor) {
+        let w = tier.weight() as u64;
+        self.credit("utility", discoverer, std::array::from_fn(|l| mag[l] * w), anchor);
     }
 
-    /// Split the consilience reward across the two voices on the admission event.
-    pub fn settle_consilience(&mut self, voices: &[[u8; 32]]) {
+    /// PoWc — split the consilience award (the germ's μ⃗ PRICED at the moment's
+    /// surface) across the attesting voices, per lane (each nonzero lane pays at
+    /// least 1 to each voice — consilience is never free).
+    pub fn settle_consilience(&mut self, voices: &[[u8; 32]], mu: [u64; 4], anchor: Anchor) {
         if voices.len() < 2 {
             return;
         }
-        let share = (CONSILIENCE / voices.len() as i64).max(1);
+        let n = voices.len() as u64;
+        let share: [u64; 4] = std::array::from_fn(|l| if mu[l] == 0 { 0 } else { (mu[l] / n).max(1) });
         for v in voices {
-            self.credit("consilience", *v, share);
+            self.credit("consilience", *v, share, anchor);
         }
     }
 
-    /// A recall (recognised) pays a small proportional yield to the voice.
-    pub fn settle_recall(&mut self, voice: [u8; 32]) {
-        self.credit("recall", voice, 1);
+    /// The TORSE coin — structure condensed from disorder: the strongest yield,
+    /// paid on the residual lane to the bundle's discoverer, ∝ sections spanned
+    /// priced at the surface.
+    pub fn settle_torse(&mut self, discoverer: [u8; 32], mu: [u64; 4], anchor: Anchor) {
+        self.credit("torse", discoverer, mu, anchor);
     }
 
-    pub fn balance(&self, who: &[u8; 32]) -> i64 {
-        self.entries.iter().filter(|e| e.who == *who).map(|e| e.amount).sum()
+    /// A reading (decomposition) pays the reader a unit on each lane the sentence
+    /// exercised — proportional, per lane, small.
+    pub fn settle_recall(&mut self, voice: [u8; 32], lanes: [bool; 4], anchor: Anchor) {
+        self.credit("recall", voice, std::array::from_fn(|l| lanes[l] as u64), anchor);
+    }
+
+    /// The POLYTONIC BALANCE — per-lane sums; there is no scalar balance.
+    pub fn balance_mu(&self, who: &[u8; 32]) -> [u64; 4] {
+        let mut out = [0u64; 4];
+        for e in self.entries.iter().filter(|e| e.who == *who) {
+            for l in 0..4 {
+                out[l] = out[l].saturating_add(e.mu[l]);
+            }
+        }
+        out
     }
 
     pub fn entries(&self) -> &[Entry] {
         &self.entries
     }
 
-    /// Serialize the ledger for persistence (P7): `[n][kind_tag u8][who 32][amount
-    /// i64]…`. Kinds map to a stable tag so earned balances survive restart.
+    /// Serialize the dimensional ledger: `[n][tag u8][who 32][μ⃗ 4×u64][k u64]
+    /// [receipt 32]…` — vector amounts and chronometric anchors survive restart.
     pub fn snapshot(&self) -> Vec<u8> {
         let mut out = Vec::new();
         out.extend_from_slice(&(self.entries.len() as u32).to_le_bytes());
@@ -158,11 +189,16 @@ impl Treasury {
                 "utility" => 0,
                 "consilience" => 1,
                 "recall" => 2,
+                "torse" => 3,
                 _ => 255,
             };
             out.push(tag);
             out.extend_from_slice(&e.who);
-            out.extend_from_slice(&e.amount.to_le_bytes());
+            for m in &e.mu {
+                out.extend_from_slice(&m.to_le_bytes());
+            }
+            out.extend_from_slice(&e.k_step.to_le_bytes());
+            out.extend_from_slice(&e.receipt);
         }
         out
     }
@@ -171,8 +207,8 @@ impl Treasury {
     pub fn restore(b: &[u8], pos: &mut usize) -> Option<Treasury> {
         let n = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
         *pos += 4;
-        if n > b.len().saturating_sub(*pos) / 41 {
-            return None; // untrusted count: 41 bytes per entry, refuse before allocating
+        if n > b.len().saturating_sub(*pos) / 105 {
+            return None; // untrusted count: 105 bytes per entry, refuse before allocating
         }
         let mut entries = Vec::with_capacity(n);
         for _ in 0..n {
@@ -182,13 +218,21 @@ impl Treasury {
                 0 => "utility",
                 1 => "consilience",
                 2 => "recall",
+                3 => "torse",
                 _ => "unknown",
             };
             let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
             *pos += 32;
-            let amount = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+            let mut mu = [0u64; 4];
+            for m in &mut mu {
+                *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+                *pos += 8;
+            }
+            let k_step = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
             *pos += 8;
-            entries.push(Entry { kind, who, amount });
+            let receipt: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+            *pos += 32;
+            entries.push(Entry { kind, who, mu, k_step, receipt });
         }
         Some(Treasury { entries })
     }
@@ -209,12 +253,35 @@ mod tests {
     fn novelty_pays_on_use_not_on_existence() {
         let mut t = Treasury::new();
         let g = germ();
+        let anchor: Anchor = (3, [7; 32]);
         assert!(magnitude(&g)[2] >= 1, "a germinated pattern has residual-lane cost");
         assert!(t.settle_install(&g, [1; 32]), "gate admits a reducing germ");
-        assert_eq!(t.balance(&[1; 32]), 0, "installing pays NOTHING — no corpus proven yet");
-        t.settle_use([1; 32]); // a real demand later recalled it
-        t.settle_use([1; 32]);
-        assert_eq!(t.balance(&[1; 32]), 10, "reward flows with real use (2 × 5)");
+        assert_eq!(t.balance_mu(&[1; 32]), [0; 4], "installing pays NOTHING — no corpus proven yet");
+        t.settle_use([1; 32], magnitude(&g), anchor); // a real demand decomposed through it
+        t.settle_use([1; 32], magnitude(&g), anchor);
+        let bal = t.balance_mu(&[1; 32]);
+        assert_eq!(bal[2], 2 * magnitude(&g)[2], "reward flows with real use, per lane");
+        assert_eq!(bal[0], 0, "no lane is invented");
+        // Every entry carries its chronometric anchor — the unforgeable binding.
+        assert!(t.entries().iter().all(|e| e.k_step == 3 && e.receipt == [7; 32]));
+    }
+
+    /// The dimensional ledger: consilience splits the PRICED μ⃗ per lane (nonzero
+    /// lanes never split to zero), and the torse coin books on the residual lane.
+    #[test]
+    fn consilience_and_torse_settle_as_vectors() {
+        let mut t = Treasury::new();
+        let anchor: Anchor = (9, [1; 32]);
+        t.settle_consilience(&[[1; 32], [2; 32]], [0, 0, 5, 0], anchor);
+        assert_eq!(t.balance_mu(&[1; 32]), [0, 0, 2, 0]);
+        assert_eq!(t.balance_mu(&[2; 32]), [0, 0, 2, 0]);
+        t.settle_torse([1; 32], [0, 0, 40, 0], anchor);
+        assert_eq!(t.balance_mu(&[1; 32]), [0, 0, 42, 0], "the torse coin lands on the lane");
+        // The vector ledger round-trips with anchors intact.
+        let snap = t.snapshot();
+        let mut pos = 0;
+        let back = Treasury::restore(&snap, &mut pos).expect("restore");
+        assert_eq!(back.entries(), t.entries(), "μ⃗ entries + anchors survive, exactly");
     }
 
     #[test]
@@ -224,11 +291,5 @@ mod tests {
         assert!(!descends(&[1, 1, 0, 0], &[1, 1, 0, 0]), "equal is not descent");
     }
 
-    #[test]
-    fn consilience_splits_the_reward() {
-        let mut t = Treasury::new();
-        t.settle_consilience(&[[1; 32], [2; 32]]);
-        assert_eq!(t.balance(&[1; 32]), 8);
-        assert_eq!(t.balance(&[2; 32]), 8);
-    }
+
 }
