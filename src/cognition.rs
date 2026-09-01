@@ -67,6 +67,10 @@ pub struct Kernel {
     /// the un-factored chains the mesh QUOTES as work (Vec-of-relations, capped;
     /// ephemeral — the market is runtime tension, not persisted language).
     pending: Vec<Element>,
+    /// THE CHRONOMETRIC RECEIPT CHAIN — the K-step index is the mesh's temporal
+    /// authority (algebraic time, no wall clocks); every install seals a
+    /// parent-linked receipt (LAW-5 continuity). The Step-4 ledger's spine.
+    chain: crate::chronometry::ReceiptChain,
     pub nerve: Nerve,
     /// Round-robin cursor for syntropic optimization — which generator to test for
     /// redundancy next (bounds consolidation to one reduce per depleted step).
@@ -202,6 +206,7 @@ impl Kernel {
                         self.physics.syntropy(lanes); // volume built through the axis
                         self.physics.spend(lanes); // still an expansion — fuel is spent
                         self.pending.retain(|p| p.address() != residual.address());
+                        self.chain.append(saddr, voice); // the puncture is a K-step too
                         return Outcome::Installed(ti); // installed AS A SECTION of thought ti
                     }
                     self.physics.bump(lanes);
@@ -228,11 +233,27 @@ impl Kernel {
                     self.physics.syntropy(lanes); // a completed rule is order built
                     self.physics.spend(lanes); // the expansion SHRINKS the reserve
                     self.pending.retain(|p| p.address() != addr); // the market CLEARS
+                    // Seal the K-step receipt: the install IS a tick of algebraic
+                    // time, parent-linked to the mesh's whole history.
+                    self.chain.append(addr, voice);
                     self.basis.push(residual);
                     self.discoverers.push(voice);
                     Outcome::Installed(self.basis.len() - 1)
                 } else {
-                    self.physics.bump(lanes); // an open critical pair raises pressure
+                    // THE GEOMETRIC TORSION SOURCE (Einstein-Cartan import): the open
+                    // demand's pressure is COMPUTED from its δ-field's torsion
+                    // residue — kinematic energy over the relaxation rate — not a
+                    // flat event count. Bounded per demand; per-lane as ever.
+                    let residue = crate::torsion::extract_torsion_residue(
+                        &element::germ_delta(&residual.sub().to_vec()),
+                        8,
+                        8,
+                        residual.torsion().first().map(|(_, l)| *l),
+                    );
+                    let k = crate::torsion::required_k_steps(&residue).min(8);
+                    for _ in 0..k.max(1) {
+                        self.physics.bump(lanes);
+                    }
                     // LIST the un-factored residual on the open-demand market so the
                     // mesh can QUOTE it as work (bounded; oldest listing lapses).
                     if !self.pending.iter().any(|p| p.address() == addr) {
@@ -484,6 +505,36 @@ impl Kernel {
     /// condensed from enumeration into group presentation.
     pub fn torsion_total(&self) -> usize {
         self.basis.iter().map(|t| t.torsion().len()).sum()
+    }
+
+    /// The mesh's algebraic clock — the next K-step index (chronometry import).
+    pub fn k_step(&self) -> u64 {
+        self.chain.next_step_index()
+    }
+
+    /// The chronometric receipt chain (verifiable, parent-linked).
+    pub fn chain(&self) -> &crate::chronometry::ReceiptChain {
+        &self.chain
+    }
+
+    /// THE COHESION WITNESS (cohesion import) — the joint (C, I) state, both
+    /// axes exact and never traded: C counts open demands sitting on KNOWN
+    /// geometry (closure failing — collapse-side work); I counts open demands on
+    /// geometry NO thought speaks (coverage failing — expansion-side work).
+    pub fn cohesion(&self) -> crate::cohesion::CohesionWitness {
+        let (mut c, mut i) = (0u64, 0u64);
+        for p in &self.pending {
+            let pos = element::positions(p.sub());
+            if self.basis.iter().any(|t| element::positions(t.sub()) == pos) {
+                c += 1;
+            } else {
+                i += 1;
+            }
+        }
+        crate::cohesion::witness(
+            crate::core::engine::Q::from(num_bigint::BigInt::from(c)),
+            crate::core::engine::Q::from(num_bigint::BigInt::from(i)),
+        )
     }
 
     /// P7 — SNAPSHOT the durable cognitive state (the germinated basis + each

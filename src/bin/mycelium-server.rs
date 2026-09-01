@@ -111,11 +111,15 @@ fn main() {
         // ── quote: "what is the highest-yield work?" ─────────────────────────
         if kind == dialogue::ACT_QUOTE {
             let Some(qvoice) = dialogue::decode_quote_request(&frame.body) else { continue };
-            let (surface, priced) = kernel.lock().unwrap().quote(4);
+            let (surface, priced, k_step, cohesion) = {
+                let k = kernel.lock().unwrap();
+                let (s, p) = k.quote(4);
+                (s, p, k.k_step(), k.cohesion())
+            };
             let items: Vec<dialogue::WorkItem> =
                 priced.iter().map(|(e, mu)| (e.address(), *mu, e.sub().to_vec())).collect();
             eprintln!(
-                "  quote voice {:02x} → surface {surface:?}; {} clusters offered",
+                "  quote voice {:02x} → surface {surface:?}; {} clusters; K={k_step}; cohesion {cohesion:?}",
                 qvoice[0],
                 items.len()
             );

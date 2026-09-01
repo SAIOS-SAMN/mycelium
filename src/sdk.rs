@@ -168,6 +168,58 @@ pub enum Comprehension {
 /// store — per-word expression weightings and locally comprehended sentences —
 /// modifying EXPRESSION without touching the inherited record. Client↔client
 /// dialects may legitimately form here; the genome may not drift.
+/// THE 11-DIMENSIONAL CHROMATIC APERTURE — ported from ipsal-autic
+/// `perception/harmonic_tuning.rs`: the entity's exact-ℚ perceptual bias over
+/// the 11-dimensional harmonic basis (h[0] spectral/value; h[1–2]
+/// spatial/geometric; h[3] adjacency; h[4–10] higher torsion sensitivity).
+/// Each absorption is the exact running average h[k] = (h[k]·n + signal)/(n+1) —
+/// the same observation refracts differently through different entities: the
+/// aperture IS the dialect's optics, epigenome-side, genome-untouched.
+pub struct Aperture {
+    h: Vec<crate::core::engine::Q>,
+    counts: Vec<u64>,
+}
+
+impl Default for Aperture {
+    fn default() -> Self {
+        use num_traits::Zero;
+        Aperture { h: vec![crate::core::engine::Q::zero(); 11], counts: vec![0; 11] }
+    }
+}
+
+impl Aperture {
+    /// Absorb a signal into dimension `k` — exact running average, exact ℚ.
+    pub fn absorb(&mut self, dim: usize, signal: crate::core::engine::Q) {
+        use num_bigint::BigInt;
+        let (Some(h), Some(n)) = (self.h.get_mut(dim), self.counts.get_mut(dim)) else { return };
+        let nq = crate::core::engine::Q::from(BigInt::from(*n));
+        let n1 = crate::core::engine::Q::from(BigInt::from(n.saturating_add(1)));
+        *h = (h.clone() * nq + signal) / n1;
+        *n = n.saturating_add(1);
+    }
+    /// A spectral/value signal: |to − from| / 10 into h[0] (the hue axis).
+    pub fn absorb_value_signal(&mut self, from: u8, to: u8) {
+        use num_bigint::BigInt;
+        let d = (from as i64 - to as i64).unsigned_abs();
+        self.absorb(0, crate::core::engine::Q::new(BigInt::from(d), BigInt::from(10)));
+    }
+    /// A spatial/torsion-order signal: period / 8 into h[1] (normalized to the
+    /// source's D4-max convention).
+    pub fn absorb_spatial_signal(&mut self, torsion_order: u32) {
+        use num_bigint::BigInt;
+        self.absorb(1, crate::core::engine::Q::new(BigInt::from(torsion_order as i64), BigInt::from(8)));
+    }
+    pub fn tuned_dims(&self) -> usize {
+        self.counts.iter().filter(|&&n| n > 0).count()
+    }
+    pub fn count(&self, dim: usize) -> u64 {
+        self.counts.get(dim).copied().unwrap_or(0)
+    }
+    pub fn bias(&self, dim: usize) -> Option<&crate::core::engine::Q> {
+        self.h.get(dim)
+    }
+}
+
 #[derive(Default)]
 pub struct Epigenome {
     genome: Vec<Element>,
@@ -176,6 +228,8 @@ pub struct Epigenome {
     expression: Vec<u64>,
     /// Locally comprehended sentences and their recurrence — the dialect.
     recollections: Vec<(Vec<usize>, u64)>,
+    /// The entity's chromatic aperture — its perceptual bias (harmonic import).
+    pub aperture: Aperture,
 }
 
 impl Epigenome {
@@ -226,6 +280,15 @@ impl Epigenome {
     pub fn learn(&mut self, taught: &[u8]) -> Option<Comprehension> {
         let mut pos = 0usize;
         let e = Element::from_bytes(taught, &mut pos)?;
+        // The APERTURE tunes on what is inherited: each transition refracts a
+        // value signal into h[0]; each torsion period a spatial signal into h[1]
+        // — the entity's optics drift with its diet (dialect-legitimate).
+        for &(_, _, before, after) in e.sub() {
+            self.aperture.absorb_value_signal(before, after);
+        }
+        for (_, l) in e.torsion() {
+            self.aperture.absorb_spatial_signal(*l);
+        }
         let heard = self.comprehend(&e);
         let addr = e.address();
         match self.genome.iter().position(|g| g.address() == addr) {
@@ -386,6 +449,24 @@ mod tests {
         let other = from_residual(&germinate(&[(0, 0, 5u8)], &[(0, 0, 9u8)]).unwrap());
         assert!(matches!(epi.comprehend(&other), Comprehension::Novel { .. }));
         assert_eq!(epi.genome_len(), 1, "comprehension never mutates the genome");
+    }
+
+    /// THE CHROMATIC APERTURE (harmonic import): absorption is the EXACT running
+    /// average h[k] = (h[k]·n + signal)/(n+1) — signals 3/10 then 7/10 average to
+    /// exactly 1/2; dimensions tune independently; the aperture drifts with the
+    /// entity's diet, never with a clock.
+    #[test]
+    fn the_aperture_absorbs_as_an_exact_running_average() {
+        use crate::core::engine::Q;
+        use num_bigint::BigInt;
+        let mut ap = Aperture::default();
+        ap.absorb_value_signal(1, 4); // |1−4|/10 = 3/10 into h[0]
+        ap.absorb_value_signal(2, 9); // 7/10 → mean = 1/2 exactly
+        assert_eq!(ap.bias(0), Some(&Q::new(BigInt::from(1), BigInt::from(2))));
+        assert_eq!(ap.count(0), 2);
+        ap.absorb_spatial_signal(3); // 3/8 into h[1] — independent dimension
+        assert_eq!(ap.bias(1), Some(&Q::new(BigInt::from(3), BigInt::from(8))));
+        assert_eq!(ap.tuned_dims(), 2, "dimensions tune independently — no collapse");
     }
 
     #[test]
