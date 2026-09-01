@@ -7,16 +7,10 @@
 //! Usage:
 //!   arc-ingest [ADDR] --kernel NAME --dir CORPUS_DIR [--loop] [--limit N] [--every N]
 use mycelium::arc::{grid_to_cells, parse_task};
+use mycelium::physics::Physics;
 use mycelium::sdk::{Comprehension, Entity, Kernel, Verdict};
 use std::path::PathBuf;
 use std::time::Instant;
-
-/// Below this per-lane pressure the mesh is calm — full-rate intake. Matches the
-/// hypha's reduce budget knee (calm ≤ 7).
-const BACKPRESSURE_KNEE: u8 = 7;
-/// Milliseconds of intake wait per unit of pressure above the knee (polytonic
-/// proportional backoff — resource stabilization, not a fixed poll).
-const BACKPRESSURE_MS: u64 = 4;
 
 fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
     args.windows(2).find(|w| w[0] == name).map(|w| w[1].as_str())
@@ -78,7 +72,6 @@ fn main() {
     let dir = flag(&args, "--dir").unwrap_or("data/arc-agi-2/training").to_string();
     let looping = has(&args, "--loop");
     let limit: usize = flag(&args, "--limit").and_then(|s| s.parse().ok()).unwrap_or(usize::MAX);
-    let every: u64 = flag(&args, "--every").and_then(|s| s.parse().ok()).unwrap_or(500);
 
     let mut tasks: Vec<PathBuf> = std::fs::read_dir(&dir)
         .unwrap_or_else(|e| {
@@ -99,6 +92,16 @@ fn main() {
     );
 
     let mut tally = Tally::default();
+    // THE ENTITY'S OWN TWO-STROKE — ingestion is ENTROPIC (each submission
+    // spends the per-lane reserve on the lanes the judge's reply pressured);
+    // depletion flips the entity into its SYNTROPIC phase, where it stops
+    // ingesting and does the reflective work — tally, epigenome digest, the
+    // market quote — while the reserve regenerates. Cadence is a phase
+    // alignment with the judge's metabolism, never a counter or a timer.
+    let mut physics = Physics::default();
+    // Voiced-on-change state: the syntropic work runs EVERY stroke; the log
+    // speaks only when the stroke found something different from the last.
+    let (mut last_settles, mut last_genome, mut last_top) = (u64::MAX, usize::MAX, [0u8; 2]);
     let start = Instant::now();
     loop {
         for path in &tasks {
@@ -111,6 +114,7 @@ fn main() {
                 if a.is_empty() || b.is_empty() {
                     continue; // an all-background side carries no percept
                 }
+                let mut judge_load = 0u8;
                 match entity.submit(&a, &b) {
                     Ok((reply, heard)) => {
                         tally.record(&reply.verdict);
@@ -122,43 +126,64 @@ fn main() {
                             Some(Comprehension::Novel { .. }) => tally.heard_novel += 1,
                             None => {}
                         }
-                        // METABOLIC BACKPRESSURE — pace intake by the mesh's per-lane
-                        // pressure (Liebig: the bottleneck lane governs). When the
-                        // mesh is loaded the kernel waits, letting it metabolize the
-                        // backlog into order instead of being brute-forced.
-                        let load = reply.load();
-                        if load > BACKPRESSURE_KNEE {
-                            let excess = (load - BACKPRESSURE_KNEE) as u64;
-                            std::thread::sleep(std::time::Duration::from_millis(excess * BACKPRESSURE_MS));
+                        // ENTROPIC STROKE: this ingestion spent reserve on the
+                        // lanes the judge's reply reported pressured (a percept
+                        // always exercises at least the residual lane).
+                        let mut lanes: [bool; 4] = std::array::from_fn(|l| reply.metabolism[l] > 0);
+                        if lanes.iter().all(|&x| !x) {
+                            lanes[2] = true;
                         }
+                        physics.bump(lanes);
+                        physics.spend(lanes);
+                        judge_load = reply.load();
                     }
                     Err(_) => {
                         tally.errors += 1;
                         tally.pairs += 1;
                     }
                 }
-                if tally.pairs % every == 0 {
-                    tally.report(&name, start.elapsed().as_secs_f64());
-                    eprintln!(
-                        "[{name}] entity: genome {} words (peak expression {}), heard {} understood / {} novel",
-                        entity.epigenome.genome_len(),
-                        entity.epigenome.peak_expression(),
-                        tally.comprehended,
-                        tally.heard_novel,
-                    );
-                    // SPEAK the quote — "what is the highest-yield work?" — and log
-                    // the surface + top offered cluster (the conversation, audible).
+                // PHASE ALIGNMENT: depletion flips the entity into its
+                // SYNTROPIC phase — the reflective work runs exactly once per
+                // stroke, then the reserve regenerates, each tick dwelling in
+                // proportion to the judge's own load (a strained judge earns a
+                // longer quiet; an idle one, an immediate return to intake).
+                if physics.depleted() {
+                    let grew = tally.settles != last_settles || entity.epigenome.genome_len() != last_genome;
+                    if grew {
+                        last_settles = tally.settles;
+                        last_genome = entity.epigenome.genome_len();
+                        tally.report(&name, start.elapsed().as_secs_f64());
+                        eprintln!(
+                            "[{name}] entity: genome {} words (peak expression {}), heard {} understood / {} novel",
+                            entity.epigenome.genome_len(),
+                            entity.epigenome.peak_expression(),
+                            tally.comprehended,
+                            tally.heard_novel,
+                        );
+                    }
+                    // SPEAK the quote — the market survey is syntropic work —
+                    // and voice it when the offered work moved.
                     if let Ok(q) = entity.quote() {
                         match q.clusters.first() {
-                            Some(top) => eprintln!(
-                                "[{name}] quote: surface {:?}; top work {} cells @ μ⃗ {:?} ({:02x}{:02x}…)",
-                                q.surface,
-                                top.chain.len(),
-                                top.mu,
-                                top.address[0],
-                                top.address[1],
-                            ),
-                            None => eprintln!("[{name}] quote: surface {:?}; market clear", q.surface),
+                            Some(top) if grew || [top.address[0], top.address[1]] != last_top => {
+                                last_top = [top.address[0], top.address[1]];
+                                eprintln!(
+                                    "[{name}] quote: surface {:?}; top work {} cells @ μ⃗ {:?} ({:02x}{:02x}…)",
+                                    q.surface,
+                                    top.chain.len(),
+                                    top.mu,
+                                    top.address[0],
+                                    top.address[1],
+                                );
+                            }
+                            _ => {}
+                        }
+                    }
+                    while physics.depleted() {
+                        physics.regenerate();
+                        physics.relax();
+                        if judge_load > 0 {
+                            std::thread::sleep(std::time::Duration::from_millis(judge_load as u64));
                         }
                     }
                 }

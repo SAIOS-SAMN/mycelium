@@ -100,6 +100,15 @@ impl Kernel {
         &self.treasury
     }
 
+    /// ENROLL an identity at a tier: its stake capitalizes the escrow pool —
+    /// the one genesis issuance per identity (idempotent, C9: one stake admits).
+    /// The hypha enrolls ITSELF at boot with its own tier; arriving voices are
+    /// enrolled as participants on first speech. Returns the staked μ⃗.
+    pub fn enroll(&mut self, who: [u8; 32], tier: crate::economy::Tier) -> [u64; 4] {
+        let anchor = self.anchor();
+        self.treasury.enroll(who, tier, anchor)
+    }
+
     /// Ingest a demand from `voice`: transduce → solve → conceive → admit.
     /// A whole-scene coherent motor settles directly; otherwise the demand
     /// FRAGMENTS into per-body sub-demands (bodies corresponded by invariant),
@@ -122,6 +131,7 @@ impl Kernel {
         cb: &[Vec<(i64, i64, u8)>],
         voice: [u8; 32],
     ) -> Outcome {
+        self.enroll(voice, crate::economy::Tier::Participant); // first speech enrolls
         self.physics.relax(); // the metabolism dissipates its backlog as it works
         // THE SYNTROPIC STROKE fires in BOTH resting states of the two-stroke:
         // DEPLETED (expansion spent its fuel — optimize to regenerate) and IDLE
@@ -178,11 +188,12 @@ impl Kernel {
         match self.reduce(&g) {
             NormalForm::Decomposed(word) => {
                 let anchor = self.anchor();
-                self.treasury.settle_recall(voice, lanes, anchor); // the reader's per-lane unit
+                self.treasury.settle_recall(voice, lanes, anchor); // reader's fee → the pool recharges
                 for &i in &word {
-                    // PoUW: each cited word's discoverer earns the structure exercised.
+                    // PoUW circulation: the demander pays each cited word's
+                    // discoverer the structure exercised, from earned balance.
                     let mag = self.basis[i].magnitude();
-                    self.treasury.settle_use(self.discoverers[i], mag, anchor);
+                    self.treasury.settle_use(voice, self.discoverers[i], mag, anchor);
                 }
                 self.physics.syntropy(lanes); // a spanned sentence builds order
                 Outcome::Decomposed(word)
@@ -431,7 +442,7 @@ impl Kernel {
                         self.discoverers.remove(j);
                         if self.basis[i].puncture(asg) {
                             let anchor = self.anchor();
-                            self.treasury.settle_use(sibling_disc, [0, 0, 1, 0], anchor);
+                            self.treasury.settle_subsidy(sibling_disc, [0, 0, 1, 0], anchor);
                         }
                         self.physics.syntropy([false, false, true, false]);
                         absorbed += 1;
@@ -512,6 +523,17 @@ impl Kernel {
             .collect();
         priced.sort_by(|a, b| b.1.iter().max().cmp(&a.1.iter().max()));
         priced.truncate(top);
+        // THE SOLVENCY BOUND (P5): tension set the RANKING; the escrow pool sets
+        // the SCALE. Each quoted lane is capped at pool[l]/quoted so the market
+        // never offers more than it can pay — Σ quotes ≤ pool, dynamic weights
+        // anchored to reality. An empty pool quotes zero: an honest "cannot pay".
+        let pool = self.treasury.pool();
+        let quoted = priced.len().max(1) as u64;
+        for (_, mu) in &mut priced {
+            for l in 0..4 {
+                mu[l] = mu[l].min(pool[l] / quoted);
+            }
+        }
         (surface, priced)
     }
 
@@ -520,6 +542,7 @@ impl Kernel {
     /// DECOMPOSES instead of double-minting); a genuine irreducible joins the
     /// admission as this voice's attestation — consilience through conversation.
     pub fn attest(&mut self, chain: &[(i64, i64, u8, u8)], voice: [u8; 32]) -> Outcome {
+        self.enroll(voice, crate::economy::Tier::Participant); // first speech enrolls
         self.physics.relax();
         if self.physics.depleted() {
             self.optimize();

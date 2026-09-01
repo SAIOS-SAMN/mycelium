@@ -74,6 +74,14 @@ fn main() {
             eprintln!("restored basis={} from {state_path}", k.basis_len());
         }
     }
+    // THE NODE'S OWN STAKE (P5): the hypha enrolls itself at its tier — the
+    // genesis capitalization of its escrow pool. Every yield it ever quotes or
+    // settles is paid FROM this pool; nothing is minted by a formula.
+    {
+        let mut k = kernel.lock().unwrap();
+        let staked = k.enroll(id, tier);
+        eprintln!("enrolled self at {tier:?}; staked mu {staked:?}; pool {:?}", k.treasury().pool());
+    }
     // Register peers into the nerve — the non-ring Čech cover of hyphas. (Real
     // per-lane fingerprints arrive with sun_recon/P6; here presence + a seeded
     // bloom so adjacency is genuine, not a static ring.)
