@@ -390,6 +390,18 @@ impl Entity {
         std::fs::write(&tmp, self.epigenome.crystallize())?;
         std::fs::rename(&tmp, genome_path)
     }
+
+    /// PROJECT — the entity THINKS with its inherited language: apply the
+    /// genome's anchored words (γ = (π, Δ)) to a world state and return the
+    /// projected next state plus the sentence of words that spoke. This is
+    /// the intelligence-pull for embodied kernels (game individuals, world
+    /// models): comprehension reads the present, projection expects the
+    /// future — both from the SAME court-refined mesh language. Only π-bound
+    /// words speak; the unrefined stay silent, so a young genome projects
+    /// humbly and grows sharper exactly as the court binds anchors.
+    pub fn project(&self, grid: &crate::arc::Grid) -> (crate::arc::Grid, Vec<usize>) {
+        crate::arc::project_anchored(grid, self.epigenome.genome())
+    }
     pub fn kernel(&self) -> &Kernel {
         self.session.kernel()
     }

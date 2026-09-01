@@ -257,6 +257,34 @@ impl Element {
             + self.torsion.iter().map(|(_, l)| (*l as usize).saturating_sub(1)).sum::<usize>()
     }
 
+    /// Every concrete rewrite chain this word can speak — the base chain plus
+    /// each section/orbit assignment materialized over the base geometry
+    /// (positions held, hue-transition classes substituted class-for-class).
+    /// The single source for application/projection (the gate and the SDK's
+    /// `Entity::project` both speak through this).
+    pub fn variant_chains(&self) -> Vec<Vec<(i64, i64, u8, u8)>> {
+        let base = self.sub.clone();
+        if base.is_empty() {
+            return Vec::new();
+        }
+        let base_pairs = assignment(&base);
+        let mut out = vec![base.clone()];
+        for asg in self.assignments() {
+            if asg.len() != base_pairs.len() || asg == base_pairs {
+                continue;
+            }
+            let variant: Vec<_> = base
+                .iter()
+                .map(|(r, c, b, a)| {
+                    let i = base_pairs.iter().position(|p| *p == (*b, *a)).unwrap_or(0);
+                    (*r, *c, asg[i].0, asg[i].1)
+                })
+                .collect();
+            out.push(variant);
+        }
+        out
+    }
+
     /// Every transition assignment this thought speaks: base, free sections, and
     /// each torsion cycle's ORBIT expanded exactly to its period (bounded by ℓ —
     /// a closed cycle speaks members never individually witnessed).
