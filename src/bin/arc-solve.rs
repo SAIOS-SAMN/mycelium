@@ -119,11 +119,13 @@ fn chain_footprint(chain: &[(i64, i64, u8, u8)], d: &[(i64, i64, u8, u8)]) -> Ve
     fp
 }
 
-/// THE INVERSE DEDUCTION — apply anchored words to a grid: each cited word
-/// rewrites at every translation where its whole before-side holds on the
-/// pre-state AND (when the word is BOUND to a derived selection term) its
-/// footprint lies inside the term's evaluation on this scene — γ ∘ π: the
-/// substance restricted to the anchored subcomplex, never an ambient sweep.
+/// THE INVERSE DEDUCTION — apply anchored words to a grid, PLACEMENTS
+/// PROPOSED BY π: for a bound word the derived term is evaluated on the
+/// scene FIRST, and the region's own cells propose the only admissible
+/// translations (the chain's lead cell must land on a region cell, and the
+/// whole footprint inside it) — deduction from measured topology, where the
+/// substance only CONFIRMS; the O(grid²) sweep survives solely for ambient
+/// chains (the unrefined remainder, which the replay gate already polices).
 /// Placements are found against the unmodified grid, then written together.
 fn apply(grid: &Grid, spoken: &[(Vec<(i64, i64, u8, u8)>, Option<Sel>)]) -> Grid {
     let mut out = grid.clone();
@@ -131,22 +133,44 @@ fn apply(grid: &Grid, spoken: &[(Vec<(i64, i64, u8, u8)>, Option<Sel>)]) -> Grid
     let scene = full_scene(grid);
     let mut writes: Vec<(i64, i64, u8)> = Vec::new();
     for (chain, sel) in spoken {
-        // π evaluated once per scene: the admissible subcomplex.
-        let region: Option<Vec<(i64, i64)>> = sel.as_ref().map(|t| t.eval(&scene));
-        let max_r = chain.iter().map(|(r, _, _, _)| *r).max().unwrap_or(0);
-        let max_c = chain.iter().map(|(_, c, _, _)| *c).max().unwrap_or(0);
-        for dr in 0..(rows - max_r).max(0) {
-            for dc in 0..(cols - max_c).max(0) {
-                let fits = chain.iter().all(|(r, c, before, _)| {
-                    grid[(r + dr) as usize][(c + dc) as usize] == *before
-                });
-                let anchored = region.as_ref().map_or(true, |reg| {
-                    chain.iter().all(|(r, c, _, _)| reg.binary_search(&(r + dr, c + dc)).is_ok())
-                });
-                if fits && anchored {
-                    for (r, c, _, after) in chain {
-                        writes.push((r + dr, c + dc, *after));
-                    }
+        let Some(&(r0, c0, _, _)) = chain.first() else { continue };
+        // Candidate translations: proposed by the region for anchored chains
+        // (each region cell anchors the lead cell), swept only for ambient.
+        let candidates: Vec<(i64, i64)> = match sel {
+            Some(t) => {
+                let region = t.eval(&scene);
+                let proposals: Vec<(i64, i64)> =
+                    region.iter().map(|(rr, rc)| (rr - r0, rc - c0)).collect();
+                // The footprint-inside-region condition, checked per proposal.
+                proposals
+                    .into_iter()
+                    .filter(|(dr, dc)| {
+                        chain.iter().all(|(r, c, _, _)| {
+                            region.binary_search(&(r + dr, c + dc)).is_ok()
+                        })
+                    })
+                    .collect()
+            }
+            None => {
+                let max_r = chain.iter().map(|(r, _, _, _)| *r).max().unwrap_or(0);
+                let max_c = chain.iter().map(|(_, c, _, _)| *c).max().unwrap_or(0);
+                (0..(rows - max_r).max(0))
+                    .flat_map(|dr| (0..(cols - max_c).max(0)).map(move |dc| (dr, dc)))
+                    .collect()
+            }
+        };
+        for (dr, dc) in candidates {
+            let fits = chain.iter().all(|(r, c, before, _)| {
+                let (gr, gc) = (r + dr, c + dc);
+                gr >= 0
+                    && gc >= 0
+                    && gr < rows
+                    && gc < cols
+                    && grid[gr as usize][gc as usize] == *before
+            });
+            if fits {
+                for (r, c, _, after) in chain {
+                    writes.push((r + dr, c + dc, *after));
                 }
             }
         }
