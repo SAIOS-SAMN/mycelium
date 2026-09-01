@@ -6,6 +6,7 @@
 //! Clients dial a hypha (server/client split preserved); peers fuse bases via
 //! sun_recon (P6). Usage:
 //!   mycelium-server [bind] [--id N] [--tier founder|validator|participant] [--peer ADDR]...
+use mycelium::anastome::dialogue;
 use mycelium::cognition::{decode_percept, germ_bytes, outcome_code, Kernel, Outcome};
 use mycelium::economy::Tier;
 use mycelium::network::nerve::{Fingerprint, Router};
@@ -102,23 +103,56 @@ fn main() {
     for stream in listener.incoming() {
         let Ok(mut s) = stream else { continue };
         let Some(frame) = read_frame(&mut s) else { continue };
-        // Body: [kind][..]. kind 0 = client origin ([percept]); kind 1 = routed
-        // gossip ([dest_key:32][percept]) — the destination is carried, not sprayed.
+        // Body: [act][..] — the ANASTOME dialogue (anastome::dialogue). Percept and
+        // routed-gossip percepts keep their historical tags; quote and demand are
+        // the spoken economy; teach rides the reply; settle is appended on install.
         let Some((&kind, rest)) = frame.body.split_first() else { continue };
-        let pbytes = if kind == 1 && rest.len() >= 32 { &rest[32..] } else { rest };
-        // The client PERCEIVED (segmented bodies); the JUDGE only adjudicates.
-        let Some((voice, a_bodies, b_bodies)) = decode_percept(pbytes) else { continue };
-        let (out, basis, flux, reserve, taught) = {
+
+        // ── quote: "what is the highest-yield work?" ─────────────────────────
+        if kind == dialogue::ACT_QUOTE {
+            let Some(qvoice) = dialogue::decode_quote_request(&frame.body) else { continue };
+            let (surface, priced) = kernel.lock().unwrap().quote(4);
+            let items: Vec<dialogue::WorkItem> =
+                priced.iter().map(|(e, mu)| (e.address(), *mu, e.sub().to_vec())).collect();
+            eprintln!(
+                "  quote voice {:02x} → surface {surface:?}; {} clusters offered",
+                qvoice[0],
+                items.len()
+            );
+            let reply = Frame { lane: frame.lane, body: dialogue::encode_quote_reply(&surface, &items) };
+            let _ = s.write_all(&reply.encode().unwrap_or_default());
+            continue;
+        }
+
+        // ── percept / gossip / demand → the judge ────────────────────────────
+        let pbytes = if kind == dialogue::ACT_GOSSIP && rest.len() >= 32 { &rest[32..] } else { rest };
+        let (out, basis, flux, reserve, taught, settle, voice) = {
             let mut k = kernel.lock().unwrap();
-            let out = k.adjudicate(&a_bodies, &b_bodies, voice);
-            // TEACH: on a valid element, hand its canonical ANASTOME form back.
-            let taught = match &out {
-                Outcome::Installed(i) => germ_bytes(&k.basis()[*i]),
-                _ => Vec::new(),
+            let (out, voice) = if kind == dialogue::ACT_DEMAND {
+                // A spoken, unsolved coboundary challenge — a peer's independent
+                // derivation attesting an open residual.
+                let Some((dvoice, chain)) = dialogue::decode_demand(&frame.body) else { continue };
+                (k.attest(&chain, dvoice), dvoice)
+            } else {
+                // The client PERCEIVED (segmented bodies); the JUDGE adjudicates.
+                let Some((pvoice, a_bodies, b_bodies)) = decode_percept(pbytes) else { continue };
+                (k.adjudicate(&a_bodies, &b_bodies, pvoice), pvoice)
             };
-            // Report the per-lane PRESSURE (the entropic backlog) — the backpressure
-            // signal a kernel paces its intake against (the metabolism as governor).
-            (out, k.basis_len(), k.physics().metabolism_rate(), k.physics().reserve, taught)
+            // TEACH: on install, hand the canonical ANASTOME form back; SETTLE: the
+            // consilience receipt (parties + the μ⃗ award priced at the surface).
+            let (taught, settle) = match &out {
+                Outcome::Installed(i) => {
+                    let g = &k.basis()[*i];
+                    let addr = g.address();
+                    let mu = mycelium::economy::price(
+                        &g.magnitude(),
+                        &mycelium::economy::yield_surface(k.physics()),
+                    );
+                    (germ_bytes(g), Some((addr, k.voices_of(&addr), mu)))
+                }
+                _ => (Vec::new(), None),
+            };
+            (out, k.basis_len(), k.physics().metabolism_rate(), k.physics().reserve, taught, settle, voice)
         };
         let label = match &out {
             Outcome::Decomposed(word) => format!("valid: decomposed → sentence {word:?} ({} generators)", word.len()),
@@ -127,18 +161,25 @@ fn main() {
             Outcome::Fragmented(parts) => format!("valid: fragmented ({} bodies)", parts.len()),
             Outcome::Pivot => "invalid: pivot (degenerate — nothing to reduce)".to_string(),
         };
-        let src = if kind == 1 { "gossip" } else { "client" };
+        let src = match kind {
+            k if k == dialogue::ACT_GOSSIP => "gossip",
+            k if k == dialogue::ACT_DEMAND => "demand",
+            _ => "client",
+        };
         eprintln!(
             "  {src} percept voice {:02x} → {label}; basis={basis}; metabolism {flux:?}; reserve {reserve:?}",
             voice[0]
         );
-        // Reply: outcome | metabolism/pressure(4) | taught ANASTOME element (len16 | bytes).
+        // Reply: outcome | metabolism/pressure(4) | taught (len16 | bytes) | settle?
         let mut body = vec![outcome_code(&out)];
         for f in flux {
             body.push(f.min(255) as u8); // per-lane pressure, saturated to a byte
         }
         body.extend_from_slice(&(taught.len() as u16).to_le_bytes());
         body.extend_from_slice(&taught);
+        if let Some((germ, voices, mu)) = &settle {
+            body.extend_from_slice(&dialogue::encode_settle(germ, voices, mu));
+        }
         let reply = Frame { lane: frame.lane, body };
         let _ = s.write_all(&reply.encode().unwrap_or_default());
 
@@ -158,7 +199,10 @@ fn main() {
         // The rendezvous accumulates the distinct voice + verifies by recomputation;
         // quorum → install + teach outward. No fanout; a down rendezvous fails
         // silently (resilience). Gossip (kind 1) is never re-routed here.
-        if kind == 0 && pbytes.len() > 32 && matches!(out, Outcome::GermPending | Outcome::Fragmented(_)) {
+        if kind == dialogue::ACT_PERCEPT
+            && pbytes.len() > 32
+            && matches!(out, Outcome::GermPending | Outcome::Fragmented(_))
+        {
             let key = *blake3::hash(&pbytes[32..]).as_bytes(); // demand address, voice-free
             if let Some(dest) = rendezvous(&key, &id, &router) {
                 let mut g = vec![0x01u8];

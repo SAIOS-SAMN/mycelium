@@ -63,6 +63,10 @@ pub struct Kernel {
     /// — so novelty yield flows to who germinated it, on real use.
     discoverers: Vec<[u8; 32]>,
     admission: Admission,
+    /// THE OPEN-DEMAND MARKET: irreducible residuals still awaiting consilience —
+    /// the un-factored chains the mesh QUOTES as work (Vec-of-relations, capped;
+    /// ephemeral — the market is runtime tension, not persisted language).
+    pending: Vec<Element>,
     pub nerve: Nerve,
     /// Round-robin cursor for syntropic optimization — which generator to test for
     /// redundancy next (bounds consolidation to one reduce per depleted step).
@@ -196,11 +200,21 @@ impl Kernel {
                     self.physics.relieve(lanes);
                     self.physics.syntropy(lanes); // a completed rule is order built
                     self.physics.spend(lanes); // the expansion SHRINKS the reserve
+                    self.pending.retain(|p| p.address() != addr); // the market CLEARS
                     self.basis.push(residual);
                     self.discoverers.push(voice);
                     Outcome::Installed(self.basis.len() - 1)
                 } else {
                     self.physics.bump(lanes); // an open critical pair raises pressure
+                    // LIST the un-factored residual on the open-demand market so the
+                    // mesh can QUOTE it as work (bounded; oldest listing lapses).
+                    if !self.pending.iter().any(|p| p.address() == addr) {
+                        const PENDING_CAP: usize = 512;
+                        if self.pending.len() >= PENDING_CAP {
+                            self.pending.remove(0);
+                        }
+                        self.pending.push(residual);
+                    }
                     Outcome::GermPending
                 }
             }
@@ -306,68 +320,110 @@ impl Kernel {
         best.map(|(i, cand, _)| (i, cand))
     }
 
-    /// CHAIN REDUCTION — the post-excision decomposition. Peel basis patterns that
-    /// occur as TRANSLATED sub-coboundaries of the demand's centered chain: each
-    /// peel removes the pattern's cells, so the support strictly descends (≺_DM on
-    /// the residual lane — termination is structural, no matrix inverse anywhere).
-    /// Deterministic choice (largest pattern, then basis order, then the chain's
-    /// row-major anchor) → one normal form. Empty ⇒ Decomposed(sentence); nothing
-    /// fits ⇒ the leftover, re-centered, is the irreducible critical pair.
-    fn reduce_chain(&self, first: Vec<(i64, i64, u8, u8)>, exclude: Option<usize>) -> NormalForm {
-        let budget = self.peel_budget();
-        let mut chain = first;
-        let mut word: Vec<usize> = Vec::new();
-        loop {
-            if chain.is_empty() {
-                return NormalForm::Decomposed(word);
-            }
-            // Direct terminal (always affordable): the re-centered remainder IS a
-            // basis pattern — the sentence's last letter.
-            let centered = recenter(&chain);
-            if let Some(i) = self
-                .basis
-                .iter()
-                .enumerate()
-                .position(|(j, p)| Some(j) != exclude && p.sub() == centered.as_slice())
-            {
-                word.push(i);
-                return NormalForm::Decomposed(word);
-            }
-            // The metabolic budget bounds the expensive sub-pattern scan.
-            if word.len() >= budget {
-                return NormalForm::Irreducible(element::from_residual(&chain));
-            }
-            match self.best_chain_peel(&chain, exclude) {
-                Some((i, remaining)) => {
-                    word.push(i);
-                    chain = remaining;
-                }
-                None => return NormalForm::Irreducible(element::from_residual(&chain)),
-            }
+    /// THE SPECULATIVE PROJECTION BUDGET — the metabolism prices IMAGINATION: how
+    /// wide a superposition (uncommitted branches held in tension) and how deep a
+    /// virtual rollout the reduction may hold before collapse. Calm → wide and
+    /// deep; loaded → narrow; saturated → near-reactive (terminals only).
+    fn projection_budget(&self) -> (usize, usize) {
+        match self.physics.metabolism_rate().iter().copied().max().unwrap_or(0) {
+            0..=7 => (4, 16),
+            8..=31 => (2, 8),
+            _ => (1, 2),
         }
     }
 
-    /// The best basis pattern embedding as a translated sub-coboundary of `chain`:
-    /// anchor each generator's first cell on every same-transition chain cell and
-    /// test exact embedding. The LARGEST pattern wins (maximal ≺_DM descent),
-    /// tie-broken by basis order then the first (row-major) anchor — deterministic.
-    fn best_chain_peel(
+    /// CHAIN REDUCTION AS SPECULATIVE PROJECTION — never greedy one-step descent
+    /// (the mechanical trap: committing the largest local pattern can strand an
+    /// orphan and mint junk). The demand's chain is LIFTED into a superposition of
+    /// uncommitted branches — prospective sections over the grounded state — and
+    /// each step every branch rolls out every fitting peel VIRTUALLY (in memory:
+    /// zero mutation of basis, ledger, or mesh). The superposition is pruned to
+    /// the beam by GLOBAL remaining defect (the ≺_DM flow), never local pattern
+    /// size; a branch with no descending move is an obstruction, pruned with zero
+    /// residual trace. A branch whose remainder CLOSES (δσ̂ = 0 — trivial
+    /// holonomy) COLLAPSES the whole superposition into its canonical sentence.
+    /// If no projection closes, the MINIMAL remainder seen across all rollouts is
+    /// the genuine conceptual void — Knuth–Bendix germination. Expansion and
+    /// pruning are totally ordered, so the collapse is deterministic.
+    fn reduce_chain(&self, first: Vec<(i64, i64, u8, u8)>, exclude: Option<usize>) -> NormalForm {
+        if first.is_empty() {
+            return NormalForm::Decomposed(Vec::new());
+        }
+        if let Some(i) = self.pattern_matching(&first, exclude) {
+            return NormalForm::Decomposed(vec![i]); // the root is itself a word
+        }
+        let (beam_width, depth) = self.projection_budget();
+        // The superposition: (remaining chain, committed-so-far word) per branch.
+        let mut beam: Vec<(Vec<(i64, i64, u8, u8)>, Vec<usize>)> = vec![(first.clone(), Vec::new())];
+        // The minimal conceptual void observed across every rollout.
+        let mut void = first;
+        for _ in 0..depth {
+            let mut successors: Vec<(Vec<(i64, i64, u8, u8)>, Vec<usize>)> = Vec::new();
+            for (chain, word) in &beam {
+                for (i, translated) in self.fitting_peels(chain, exclude) {
+                    let remaining: Vec<_> =
+                        chain.iter().filter(|t| !translated.contains(*t)).cloned().collect();
+                    let mut w = word.clone();
+                    w.push(i);
+                    // CONFLUENT COLLAPSE — this rollout closed: δσ̂ = 0.
+                    if remaining.is_empty() {
+                        return NormalForm::Decomposed(w);
+                    }
+                    if let Some(j) = self.pattern_matching(&remaining, exclude) {
+                        w.push(j);
+                        return NormalForm::Decomposed(w);
+                    }
+                    if remaining.len() < void.len() {
+                        void = remaining.clone();
+                    }
+                    successors.push((remaining, w));
+                }
+            }
+            if successors.is_empty() {
+                break; // every branch obstructed — the superposition is exhausted
+            }
+            // Prune to the beam by GLOBAL defect, then depth, then word order —
+            // a total order, so two runs collapse identically.
+            successors.sort_by(|a, b| {
+                a.0.len().cmp(&b.0.len()).then(a.1.len().cmp(&b.1.len())).then(a.1.cmp(&b.1))
+            });
+            successors.truncate(beam_width);
+            beam = successors;
+        }
+        NormalForm::Irreducible(element::from_residual(&void))
+    }
+
+    /// The direct terminal: does the (re-centered) chain EQUAL a basis pattern?
+    fn pattern_matching(&self, chain: &[(i64, i64, u8, u8)], exclude: Option<usize>) -> Option<usize> {
+        let centered = recenter(chain);
+        self.basis
+            .iter()
+            .enumerate()
+            .position(|(j, p)| Some(j) != exclude && p.sub() == centered.as_slice())
+    }
+
+    /// Every fitting virtual peel — the branch alphabet: for each generator, each
+    /// of its first few row-major anchors whose translated pattern embeds exactly
+    /// in the chain. All of them are offered to the superposition; none is
+    /// committed here (basis order × anchor order keeps expansion deterministic).
+    fn fitting_peels(
         &self,
         chain: &[(i64, i64, u8, u8)],
         exclude: Option<usize>,
-    ) -> Option<(usize, Vec<(i64, i64, u8, u8)>)> {
-        let mut best: Option<(usize, usize, Vec<(i64, i64, u8, u8)>)> = None; // (|pat|, i, remaining)
+    ) -> Vec<(usize, Vec<(i64, i64, u8, u8)>)> {
+        const MAX_ANCHORS: usize = 3;
+        let mut out = Vec::new();
         for (i, gen) in self.basis.iter().enumerate() {
             if Some(i) == exclude {
                 continue;
             }
             let pat = gen.sub();
-            // Strict descent: a proper, nonempty sub-pattern (the equal-size case
-            // is the direct terminal in reduce_chain).
+            // A proper, nonempty sub-pattern (equal size is the direct terminal).
             if pat.is_empty() || pat.len() >= chain.len() {
                 continue;
             }
             let (pr, pc, pb, pa) = pat[0];
+            let mut anchors = 0;
             for &(cr, cc, cb_, ca_) in chain {
                 if (cb_, ca_) != (pb, pa) {
                     continue;
@@ -375,20 +431,15 @@ impl Kernel {
                 let (dr, dc) = (cr - pr, cc - pc);
                 let translated: Vec<_> = pat.iter().map(|(r, c, b, a)| (r + dr, c + dc, *b, *a)).collect();
                 if translated.iter().all(|t| chain.contains(t)) {
-                    let better = match &best {
-                        Some((blen, _, _)) => pat.len() > *blen,
-                        None => true,
-                    };
-                    if better {
-                        let remaining: Vec<_> =
-                            chain.iter().filter(|t| !translated.contains(*t)).cloned().collect();
-                        best = Some((pat.len(), i, remaining));
+                    out.push((i, translated));
+                    anchors += 1;
+                    if anchors >= MAX_ANCHORS {
+                        break;
                     }
-                    break; // first row-major anchor for this generator (chain is sorted)
                 }
             }
         }
-        best.map(|(_, i, remaining)| (i, remaining))
+        out
     }
 
     /// THE SYNTROPIC STROKE — one bounded consolidation step, run when a lane's
@@ -417,6 +468,43 @@ impl Kernel {
     /// A read-only view of the germinated basis (for the CCL display seam).
     pub fn basis(&self) -> &[Element] {
         &self.basis
+    }
+
+    /// QUOTE — the answer to "what is the highest-yield work?" The yield surface
+    /// is read from GENUINE metabolic tension (`economy::yield_surface`: pressure
+    /// + reserve deficit + entropic excess, per lane), and the open-demand market
+    /// is priced against it: each un-factored residual quoted at
+    /// μ⃗[l] = magnitude[l] · (1 + surface[l]). Top clusters by strongest lane.
+    pub fn quote(&self, top: usize) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
+        let surface = crate::economy::yield_surface(&self.physics);
+        let mut priced: Vec<(Element, [u64; 4])> = self
+            .pending
+            .iter()
+            .map(|p| {
+                let mu = crate::economy::price(&p.magnitude(), &surface);
+                (p.clone(), mu)
+            })
+            .collect();
+        priced.sort_by(|a, b| b.1.iter().max().cmp(&a.1.iter().max()));
+        priced.truncate(top);
+        (surface, priced)
+    }
+
+    /// ATTEST — a peer's INDEPENDENT derivation of an open residual arrives as a
+    /// spoken `demand` act. The projective reduction runs first (a stale quote
+    /// DECOMPOSES instead of double-minting); a genuine irreducible joins the
+    /// admission as this voice's attestation — consilience through conversation.
+    pub fn attest(&mut self, chain: &[(i64, i64, u8, u8)], voice: [u8; 32]) -> Outcome {
+        self.physics.relax();
+        if self.physics.depleted() {
+            self.optimize();
+        }
+        self.conceive_germ(element::from_residual(&chain.to_vec()), voice)
+    }
+
+    /// The consilience voices on record for a germ — the settle receipt's parties.
+    pub fn voices_of(&self, germ: &[u8; 32]) -> Vec<[u8; 32]> {
+        self.admission.voices_of(germ)
     }
 
     /// P7 — SNAPSHOT the durable cognitive state (the germinated basis + each
@@ -743,6 +831,64 @@ mod tests {
         assert_eq!(k.basis_len(), 1, "the redundant rule is consolidated away");
         k.optimize(); // the survivor is essential — nothing else derives it
         assert_eq!(k.basis_len(), 1, "an essential generator survives the probe");
+    }
+
+    /// THE PROJECTIVE LEAP (operator ruling): greedy largest-first descent is the
+    /// mechanical trap — it would commit the BIG pattern, strand an orphan cell,
+    /// and mint junk. The SUPERPOSITION holds both futures, rolls them out
+    /// virtually (zero mutation), and COLLAPSES into the branch whose remainder
+    /// closes (trivial holonomy): the two-word sentence. Nothing germinates —
+    /// imagination beats reaction.
+    #[test]
+    fn projection_escapes_the_greedy_trap() {
+        let mut k = Kernel::new();
+        let install = |k: &mut Kernel, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]| {
+            k.ingest(a, b, [1; 32]);
+            assert!(matches!(k.ingest(a, b, [2; 32]), Outcome::Installed(_)));
+        };
+        // BIG (3 cells) installs FIRST, so size-greed would prefer it.
+        install(&mut k, &[(0, 0, 1), (0, 1, 3), (0, 2, 5)], &[(0, 0, 2), (0, 1, 4), (0, 2, 6)]);
+        // SMALL1 (2 cells) and SMALL2 (2 cells) — together they tile the saddle.
+        install(&mut k, &[(0, 0, 1), (0, 1, 3)], &[(0, 0, 2), (0, 1, 4)]);
+        install(&mut k, &[(0, 0, 5), (0, 1, 7)], &[(0, 0, 6), (0, 1, 8)]);
+        assert_eq!(k.basis_len(), 3);
+        // The saddle demand: BIG embeds (and would strand (0,3)); SMALL1∘SMALL2
+        // is the only decomposition that CLOSES.
+        let a = [(0, 0, 1), (0, 1, 3), (0, 2, 5), (0, 3, 7)];
+        let b = [(0, 0, 2), (0, 1, 4), (0, 2, 6), (0, 3, 8)];
+        match k.ingest(&a, &b, [3; 32]) {
+            Outcome::Decomposed(mut w) => {
+                w.sort_unstable();
+                assert_eq!(w, vec![1, 2], "collapsed into the CLOSING sentence, not the greedy one");
+            }
+            o => panic!("expected the closing sentence, got {o:?}"),
+        }
+        assert_eq!(k.basis_len(), 3, "no junk germinated — the projection closed");
+    }
+
+    /// STEP 3's ECONOMIC CONVERSATION CLOSES: A speaks a novel PERCEPT (the germ
+    /// pends — an un-factored residual on the market); the mesh QUOTES it, priced
+    /// by genuine metabolic tension; B's independent derivation arrives as a
+    /// spoken DEMAND (attest); consilience installs it, the market CLEARS, and
+    /// the settle parties are the two voices. {percept → quote → demand → settle},
+    /// with teach riding the install reply.
+    #[test]
+    fn the_five_act_conversation_closes_with_settlement() {
+        let mut k = Kernel::new();
+        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+        let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)]; // (0,0): 1→4
+        assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending, "percept: voice A");
+        let (surface, quoted) = k.quote(4);
+        assert_eq!(quoted.len(), 1, "the un-factored residual is quoted as work");
+        assert!(surface[2] >= 1, "the open demand tensions the residual lane");
+        let (work, mu) = &quoted[0];
+        assert!(mu[2] > work.magnitude()[2], "priced ABOVE raw magnitude — tension premium");
+        // B independently derives the same centered chain and SPEAKS it as a demand.
+        let chain = work.sub().to_vec();
+        let out = k.attest(&chain, [2; 32]);
+        assert!(matches!(out, Outcome::Installed(0)), "consilience installs: {out:?}");
+        assert_eq!(k.voices_of(&k.basis()[0].address()).len(), 2, "the settle parties");
+        assert!(k.quote(4).1.is_empty(), "the market cleared");
     }
 
     /// THE CROWN PROOF OF THE EXCISION: with no solver anywhere, the mesh forms

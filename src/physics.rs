@@ -124,6 +124,12 @@ impl Physics {
         self.reserve.iter().any(|&r| r < EXPAND_MIN)
     }
 
+    /// Distance to the full reserve per lane — the DEPLETION PREMIUM the yield
+    /// surface charges (a strained metabolism prices its recovery work higher).
+    pub fn reserve_deficit(&self) -> [u64; 4] {
+        std::array::from_fn(|l| RESERVE_MAX - self.reserve[l])
+    }
+
     /// May the mesh EXPAND (germinate) on these lanes — is the reserve above the
     /// floor there (the entropic phase)?
     pub fn can_expand(&self, lanes: [bool; 4]) -> bool {

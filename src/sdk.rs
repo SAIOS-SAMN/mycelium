@@ -8,6 +8,7 @@
 //! internals leak across this seam: cells in, verdict out. Ported from the old
 //! mycelium SDK (Session / kernel emblem / observe) onto the v0.1.0 percept wire.
 
+use crate::anastome::dialogue;
 use crate::cognition::{encode_percept, perceive};
 use crate::network::wire::{Frame, Stratum};
 use std::io::{self, Read, Write};
@@ -101,11 +102,37 @@ impl Session {
     /// (pressure) the kernel paces its intake against. The hypha only judges.
     pub fn submit(&self, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> io::Result<Reply> {
         let (a_bodies, b_bodies) = perceive(a, b);
-        let mut pbody = vec![0x00u8]; // kind 0 = a client-origin percept
+        let mut pbody = vec![dialogue::ACT_PERCEPT];
         pbody.extend_from_slice(&encode_percept(&a_bodies, &b_bodies, &self.kernel.voice));
-        let frame = Frame { lane: Stratum::Spatial, body: pbody };
-        let bytes = frame.encode().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "frame encode"))?;
+        let body = self.exchange(pbody)?;
+        Ok(decode_reply(&body))
+    }
 
+    /// SPEAK a `demand` — this kernel's INDEPENDENT derivation of an open
+    /// residual (its centered coboundary chain), attesting it toward consilience.
+    pub fn attest(&self, chain: &[(i64, i64, u8, u8)]) -> io::Result<Reply> {
+        let body = self.exchange(dialogue::encode_demand(&self.kernel.voice, chain))?;
+        Ok(decode_reply(&body))
+    }
+
+    /// ASK the quote — "what is the highest-yield work?" The hypha answers with
+    /// the yield surface (per-lane, priced off genuine metabolic tension) and the
+    /// open-demand market's top clusters, each carrying its chain so this kernel
+    /// can actually attempt the reduction.
+    pub fn quote(&self) -> io::Result<YieldQuote> {
+        let body = self.exchange(dialogue::encode_quote_request(&self.kernel.voice))?;
+        let (surface, items) = dialogue::decode_quote_reply(&body)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
+        Ok(YieldQuote {
+            surface,
+            clusters: items.into_iter().map(|(address, mu, chain)| Cluster { address, mu, chain }).collect(),
+        })
+    }
+
+    /// One framed exchange: dial, speak the act, read the reply body.
+    fn exchange(&self, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
+        let frame = Frame { lane: Stratum::Spatial, body: act_body };
+        let bytes = frame.encode().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "frame encode"))?;
         let mut s = TcpStream::connect(&self.addr)?;
         s.write_all(&bytes)?;
         let mut head = [0u8; 5];
@@ -113,8 +140,43 @@ impl Session {
         let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
         let mut body = vec![0u8; len];
         s.read_exact(&mut body)?;
-        Ok(Reply { verdict: decode_verdict(&body), metabolism: decode_metabolism(&body) })
+        Ok(body)
     }
+}
+
+/// The quoted yield: the per-lane surface and the open-demand market's top
+/// clusters (address, priced μ⃗, and the chain itself — real, attemptable work).
+#[derive(Clone, Debug)]
+pub struct YieldQuote {
+    pub surface: [u64; 4],
+    pub clusters: Vec<Cluster>,
+}
+
+#[derive(Clone, Debug)]
+pub struct Cluster {
+    pub address: [u8; 32],
+    pub mu: [u64; 4],
+    pub chain: Vec<(i64, i64, u8, u8)>,
+}
+
+/// A settle receipt riding an install reply: the germ, its consilience parties,
+/// and the polytonic μ⃗ award priced at the moment's yield surface.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SettleReceipt {
+    pub germ: [u8; 32],
+    pub voices: Vec<[u8; 32]>,
+    pub mu: [u64; 4],
+}
+
+fn decode_reply(body: &[u8]) -> Reply {
+    // Trailing settle receipt (after the taught section), if present.
+    let settle = {
+        let tl = body.get(5..7).map(|b| u16::from_le_bytes([b[0], b[1]]) as usize).unwrap_or(0);
+        body.get(7 + tl..)
+            .and_then(dialogue::decode_settle)
+            .map(|(germ, voices, mu)| SettleReceipt { germ, voices, mu })
+    };
+    Reply { verdict: decode_verdict(body), metabolism: decode_metabolism(body), settle }
 }
 
 /// A hypha's answer: the verdict plus the per-lane METABOLISM (pressure) — the
@@ -124,6 +186,8 @@ impl Session {
 pub struct Reply {
     pub verdict: Verdict,
     pub metabolism: [u8; 4],
+    /// The settle receipt when this exchange completed a consilience install.
+    pub settle: Option<SettleReceipt>,
 }
 
 impl Reply {

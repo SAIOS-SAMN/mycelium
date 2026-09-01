@@ -36,6 +36,7 @@ struct Tally {
     unknown: u64,
     errors: u64,
     taught_bytes: u64,
+    settles: u64,
 }
 
 impl Tally {
@@ -55,11 +56,12 @@ impl Tally {
         let p = self.pairs.max(1) as f64;
         let pct = |n: u64| 100.0 * n as f64 / p;
         eprintln!(
-            "[{kernel}] {} pairs in {secs:.0}s ({:.1}/s) | decomposed {} ({:.0}%) germ {} installed {} pivot {} frag {} | err {} | taught {}KB",
+            "[{kernel}] {} pairs in {secs:.0}s ({:.1}/s) | decomposed {} ({:.0}%) germ {} installed {} pivot {} frag {} | settles {} | err {} | taught {}KB",
             self.pairs,
             self.pairs as f64 / secs.max(1.0),
             self.decomposed, pct(self.decomposed),
             self.germ_pending, self.installed, self.pivot, self.fragmented,
+            self.settles,
             self.errors, self.taught_bytes / 1024,
         );
     }
@@ -108,6 +110,9 @@ fn main() {
                 match session.submit(&a, &b) {
                     Ok(reply) => {
                         tally.record(&reply.verdict);
+                        if reply.settle.is_some() {
+                            tally.settles += 1; // a consilience receipt rode this reply
+                        }
                         // METABOLIC BACKPRESSURE — pace intake by the mesh's per-lane
                         // pressure (Liebig: the bottleneck lane governs). When the
                         // mesh is loaded the kernel waits, letting it metabolize the
@@ -125,6 +130,21 @@ fn main() {
                 }
                 if tally.pairs % every == 0 {
                     tally.report(&name, start.elapsed().as_secs_f64());
+                    // SPEAK the quote — "what is the highest-yield work?" — and log
+                    // the surface + top offered cluster (the conversation, audible).
+                    if let Ok(q) = session.quote() {
+                        match q.clusters.first() {
+                            Some(top) => eprintln!(
+                                "[{name}] quote: surface {:?}; top work {} cells @ μ⃗ {:?} ({:02x}{:02x}…)",
+                                q.surface,
+                                top.chain.len(),
+                                top.mu,
+                                top.address[0],
+                                top.address[1],
+                            ),
+                            None => eprintln!("[{name}] quote: surface {:?}; market clear", q.surface),
+                        }
+                    }
                 }
             }
         }

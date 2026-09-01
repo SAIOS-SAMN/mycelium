@@ -24,6 +24,26 @@ pub fn descends(after: &[u64; 4], before: &[u64; 4]) -> bool {
     after.iter().zip(before).all(|(a, b)| a <= b) && after.iter().zip(before).any(|(a, b)| a < b)
 }
 
+/// THE YIELD SURFACE — the treasury's dynamic per-lane quote, read from GENUINE
+/// metabolic tension: open pressure (unmet demand backlog) + reserve deficit
+/// (the depletion premium) + entropic excess (torsion outrunning syntropy).
+/// Strained lanes quote high; settled lanes quote low — never a static faucet,
+/// and never a summed scalar (polytonic, #34).
+pub fn yield_surface(p: &crate::physics::Physics) -> [u64; 4] {
+    let flux = p.order_flux();
+    let deficit = p.reserve_deficit();
+    std::array::from_fn(|l| {
+        let entropic = (-flux[l]).max(0) as u64;
+        p.pressure[l] + deficit[l] + entropic
+    })
+}
+
+/// Price a germ's work against the surface: `μ⃗[l] = magnitude[l] · (1 + surface[l])`
+/// — work-size scaled by the lane's systemic resistance.
+pub fn price(mag: &[u64; 4], surface: &[u64; 4]) -> [u64; 4] {
+    std::array::from_fn(|l| mag[l] * (1 + surface[l]))
+}
+
 const CONSILIENCE: i64 = 16;
 
 /// Economic tiers for a decentralized mesh running cryptographic semantic
