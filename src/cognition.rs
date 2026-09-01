@@ -177,6 +177,21 @@ impl Kernel {
         &self.anchor_evidence
     }
 
+    /// REBIND (Step 7c): the court's family-derived π* upgrades γ = (⊤, Δ) →
+    /// (π*, Δ) in place — canonical substance identity untouched (the address
+    /// is BASE-only), the dual condition activates for this word, and the
+    /// word's spent evidence/mismatch queues clear. Returns false for an
+    /// unknown address.
+    pub fn apply_rebind(&mut self, addr: &[u8; 32], pi: crate::transducer::anchor::Sel) -> bool {
+        let Some(i) = self.basis.iter().position(|t| t.address() == *addr) else {
+            return false;
+        };
+        self.basis[i] = self.basis[i].clone().with_anchor(pi);
+        self.anchor_evidence.retain(|(a, _, _)| a != addr);
+        self.anchor_mismatches.retain(|(a, _, _)| a != addr);
+        true
+    }
+
     /// ENROLL an identity at a tier: its stake capitalizes the escrow pool —
     /// the one genesis issuance per identity (idempotent, C9: one stake admits).
     /// The hypha enrolls ITSELF at boot with its own tier; arriving voices are
@@ -1439,6 +1454,50 @@ mod tests {
         assert!(matches!(out, Outcome::Installed(0)), "consilience installs: {out:?}");
         assert_eq!(k.voices_of(&k.basis()[0].address()).len(), 2, "the settle parties");
         assert!(k.quote(4).1.is_empty(), "the market cleared");
+    }
+
+    /// STEP 7c END-TO-END: birth deposits evidence; the court's rebind
+    /// upgrades (⊤, Δ) → (π*, Δ) in place; the dual condition then bites in
+    /// live adjudication — the same demand in an off-region scene stops
+    /// decomposing through the word and pends as new coverage instead.
+    #[test]
+    fn rebind_activates_the_dual_condition_in_adjudication() {
+        use crate::transducer::anchor::Sel;
+        let mut k = Kernel::new();
+        // Germinate a 1→4 recolour word next to hue 3 (two voices).
+        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 3)];
+        let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 3)];
+        assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+        assert!(!k.anchor_evidence().is_empty(), "birth deposited evidence");
+        let chain = k.quote(4).1[0].0.sub().to_vec();
+        assert!(matches!(k.attest(&chain, [2; 32]), Outcome::Installed(0)));
+        assert!(k.basis()[0].anchor().is_none(), "born ⊤ — one evidence never binds");
+        // The court's family-derived π*: hue-1 cells touching hue 3.
+        let addr = k.basis()[0].address();
+        let pi = Sel::Inter(Box::new(Sel::Hue(1)), Box::new(Sel::Star(Box::new(Sel::Hue(3)))));
+        assert!(k.apply_rebind(&addr, pi.clone()));
+        assert_eq!(k.basis()[0].anchor(), Some(&pi), "γ = (π*, Δ) in place");
+        assert!(k.anchor_evidence().is_empty(), "spent evidence cleared");
+        // ON the interface: the anchored word still speaks.
+        let a2 = vec![(5, 0, 1), (5, 1, 1), (6, 0, 3), (6, 1, 3)];
+        let b2 = vec![(5, 0, 4), (5, 1, 4), (6, 0, 3), (6, 1, 3)];
+        assert!(
+            matches!(k.ingest(&a2, &b2, [3; 32]), Outcome::Decomposed(_)),
+            "π covers the interface placement"
+        );
+        // OFF the interface (no hue 3 near): the word REFUSES — the demand is
+        // genuine new coverage, not a false generalization.
+        let a3 = vec![(0, 0, 1), (0, 1, 1)];
+        let b3 = vec![(0, 0, 4), (0, 1, 4)];
+        let out = k.ingest(&a3, &b3, [3; 32]);
+        assert!(
+            matches!(out, Outcome::GermPending | Outcome::Installed(_)),
+            "off-region the dual condition refuses the peel: {out:?}"
+        );
+        assert!(
+            !k.anchor_mismatch_dockets().is_empty(),
+            "the refusal spoke: Q_anchor queued for the court"
+        );
     }
 
     /// STEP 7 — THE DUAL CONDITION: an anchored word peels only where its π

@@ -28,6 +28,8 @@ pub const ACT_SETTLE: u8 = 0x05;
 /// replay, not the socket.
 pub const ACT_DOCKET: u8 = 0x06;
 pub const ACT_VERDICT: u8 = 0x07;
+/// Step 7c: the court pulls the selection fiber's accumulated birth evidence.
+pub const ACT_EVIDENCE: u8 = 0x08;
 
 /// One centered coboundary cell `(row, col, before, after)`.
 pub type Cell = (i64, i64, u8, u8);
@@ -219,20 +221,127 @@ pub fn decode_docket_reply(body: &[u8]) -> Option<Vec<([u8; 32], Vec<u8>, Vec<[u
 pub const RULING_UPHELD: u8 = 1;
 pub const RULING_DEMOTED: u8 = 2;
 pub const RULING_SLASHED: u8 = 0;
+/// Step 7c: rebind a word's anchor fiber — the verdict carries π* (a Sel term)
+/// derived from family-wide evidence; the kernel upgrades γ = (⊤, Δ) → (π*, Δ)
+/// in place (canonical substance identity untouched).
+pub const RULING_REBIND: u8 = 3;
+
+/// evidence request: `[ACT_EVIDENCE][voice 32]`.
+pub fn encode_evidence_request(voice: &[u8; 32]) -> Vec<u8> {
+    let mut out = vec![ACT_EVIDENCE];
+    out.extend_from_slice(voice);
+    out
+}
+
+pub fn decode_evidence_request(body: &[u8]) -> Option<[u8; 32]> {
+    if body.first() != Some(&ACT_EVIDENCE) {
+        return None;
+    }
+    body.get(1..33)?.try_into().ok()
+}
+
+/// evidence reply: `[n u32] ( [addr 32][nf u32][fp (r i64,c i64)·nf]
+/// [ns u32][scene (r i64,c i64,h u8)·ns] )…` — the selection fiber's birth
+/// evidence, count-guarded at every level.
+pub fn encode_evidence_reply(
+    items: &[([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)],
+) -> Vec<u8> {
+    let mut out = Vec::new();
+    out.extend_from_slice(&(items.len() as u32).to_le_bytes());
+    for (addr, fp, scene) in items {
+        out.extend_from_slice(addr);
+        out.extend_from_slice(&(fp.len() as u32).to_le_bytes());
+        for (r, c) in fp {
+            out.extend_from_slice(&r.to_le_bytes());
+            out.extend_from_slice(&c.to_le_bytes());
+        }
+        out.extend_from_slice(&(scene.len() as u32).to_le_bytes());
+        for (r, c, h) in scene {
+            out.extend_from_slice(&r.to_le_bytes());
+            out.extend_from_slice(&c.to_le_bytes());
+            out.push(*h);
+        }
+    }
+    out
+}
+
+pub fn decode_evidence_reply(
+    body: &[u8],
+) -> Option<Vec<([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)>> {
+    let mut p = 0usize;
+    let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+    p += 4;
+    if n > body.len().saturating_sub(p) / 40 {
+        return None; // untrusted count
+    }
+    let mut out = Vec::with_capacity(n);
+    for _ in 0..n {
+        let addr: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
+        p += 32;
+        let nf = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+        p += 4;
+        if nf > body.len().saturating_sub(p) / 16 {
+            return None;
+        }
+        let mut fp = Vec::with_capacity(nf);
+        for _ in 0..nf {
+            let r = i64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
+            let c = i64::from_le_bytes(body.get(p + 8..p + 16)?.try_into().ok()?);
+            p += 16;
+            fp.push((r, c));
+        }
+        let ns = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+        p += 4;
+        if ns > body.len().saturating_sub(p) / 17 {
+            return None;
+        }
+        let mut scene = Vec::with_capacity(ns);
+        for _ in 0..ns {
+            let r = i64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
+            let c = i64::from_le_bytes(body.get(p + 8..p + 16)?.try_into().ok()?);
+            let h = *body.get(p + 16)?;
+            p += 17;
+            scene.push((r, c, h));
+        }
+        out.push((addr, fp, scene));
+    }
+    Some(out)
+}
 
 /// verdict: `[ACT_VERDICT][court voice 32][addr 32][ruling u8][receipt 32]` —
 /// the receipt is the head of the court's own chronometric chain (the signature
 /// binding the ruling to the court's tamper-evident history).
 pub fn encode_verdict(voice: &[u8; 32], addr: &[u8; 32], ruling: u8, receipt: &[u8; 32]) -> Vec<u8> {
+    encode_verdict_payload(voice, addr, ruling, receipt, None)
+}
+
+/// With the optional π* payload (RULING_REBIND): `…[receipt 32][1][sel]` /
+/// `…[receipt 32][0]`.
+pub fn encode_verdict_payload(
+    voice: &[u8; 32],
+    addr: &[u8; 32],
+    ruling: u8,
+    receipt: &[u8; 32],
+    pi: Option<&crate::transducer::anchor::Sel>,
+) -> Vec<u8> {
     let mut out = vec![ACT_VERDICT];
     out.extend_from_slice(voice);
     out.extend_from_slice(addr);
     out.push(ruling);
     out.extend_from_slice(receipt);
+    match pi {
+        Some(t) => {
+            out.push(1);
+            t.to_bytes(&mut out);
+        }
+        None => out.push(0),
+    }
     out
 }
 
-pub fn decode_verdict(body: &[u8]) -> Option<([u8; 32], [u8; 32], u8, [u8; 32])> {
+pub fn decode_verdict(
+    body: &[u8],
+) -> Option<([u8; 32], [u8; 32], u8, [u8; 32], Option<crate::transducer::anchor::Sel>)> {
     if body.first() != Some(&ACT_VERDICT) {
         return None;
     }
@@ -240,7 +349,14 @@ pub fn decode_verdict(body: &[u8]) -> Option<([u8; 32], [u8; 32], u8, [u8; 32])>
     let addr: [u8; 32] = body.get(33..65)?.try_into().ok()?;
     let ruling = *body.get(65)?;
     let receipt: [u8; 32] = body.get(66..98)?.try_into().ok()?;
-    Some((voice, addr, ruling, receipt))
+    let pi = match body.get(98) {
+        Some(1) => {
+            let mut p = 99usize;
+            Some(crate::transducer::anchor::Sel::from_bytes(body, &mut p)?)
+        }
+        _ => None,
+    };
+    Some((voice, addr, ruling, receipt, pi))
 }
 
 pub fn encode_teach(element_bytes: &[u8]) -> Vec<u8> {

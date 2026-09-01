@@ -151,14 +151,36 @@ fn main() {
             continue;
         }
 
+        // ── evidence: the court pulls the selection fiber's birth evidence ───
+        if kind == dialogue::ACT_EVIDENCE {
+            let Some(_evoice) = dialogue::decode_evidence_request(&frame.body) else { continue };
+            let items: Vec<([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)> = {
+                let k = kernel.lock().unwrap();
+                k.anchor_evidence().iter().take(32).cloned().collect()
+            };
+            let reply = Frame { lane: frame.lane, body: dialogue::encode_evidence_reply(&items) };
+            let _ = s.write_all(&reply.encode().unwrap_or_default());
+            continue;
+        }
+
         // ── verdict: the court's signed ruling lands ─────────────────────────
         if kind == dialogue::ACT_VERDICT {
-            let Some((cvoice, addr, ruling, receipt)) = dialogue::decode_verdict(&frame.body) else {
+            let Some((cvoice, addr, ruling, receipt, pi)) = dialogue::decode_verdict(&frame.body)
+            else {
                 continue;
             };
             let applied = {
                 let mut k = kernel.lock().unwrap();
-                let ok = k.apply_verdict(&addr, ruling);
+                let ok = if ruling == dialogue::RULING_REBIND {
+                    // The court's family-derived π* rebinds the word's anchor
+                    // fiber — the dual condition activates for this word.
+                    match pi {
+                        Some(term) => k.apply_rebind(&addr, term),
+                        None => false, // a rebind with no term rules nothing
+                    }
+                } else {
+                    k.apply_verdict(&addr, ruling)
+                };
                 if ok {
                     let bytes = k.snapshot();
                     let tmp = format!("{state_path}.tmp");

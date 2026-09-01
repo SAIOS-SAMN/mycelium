@@ -37,6 +37,7 @@ use mycelium::anastome::dialogue;
 use mycelium::chronometry::ReceiptChain;
 use mycelium::physics::{Physics, RESERVE_MAX};
 use mycelium::sdk::{Kernel, Session};
+use mycelium::transducer::anchor::{derive_carrying_all, Sel};
 use mycelium::transducer::element::{self, Element};
 use std::time::Instant;
 
@@ -66,6 +67,11 @@ fn main() {
     // (address, the element as upheld). Vec-of-relations; the current tautology.
     let mut federation: Vec<([u8; 32], Element)> = Vec::new();
     let mut ruled: Vec<[u8; 32]> = Vec::new();
+    // THE SELECTION FIBER'S REFINEMENT STATE — evidence accumulated per word
+    // across the whole nerve, and the words already rebound.
+    let mut evidence: Vec<([u8; 32], Vec<(Vec<(i64, i64)>, Vec<(i64, i64, u8)>)>)> = Vec::new();
+    let mut rebound: Vec<[u8; 32]> = Vec::new();
+    let mut rebinds = 0u64;
     let (mut upheld, mut demoted, mut slashed) = (0u64, 0u64, 0u64);
     let mut last_total = u64::MAX; // voice the summary only when rulings moved
     let mut physics = Physics::default();
@@ -162,16 +168,83 @@ fn main() {
                 physics.spend(lanes);
             }
         }
+        // ── KB ANCHOR REFINEMENT (7c): drain each hypha's birth evidence,
+        // pool it per word across the NERVE, and when a family (≥2 evidences)
+        // exists, derive π* = the tightest common carrier (the intersection
+        // move — one evidence never binds) and speak the REBIND verdict.
+        for (hi, session) in sessions.iter().enumerate() {
+            let Ok(body) = session.speak(dialogue::encode_evidence_request(&voice)) else {
+                continue;
+            };
+            let Some(items) = dialogue::decode_evidence_reply(&body) else { continue };
+            for (addr, fp, scene) in items {
+                if rebound.contains(&addr) || fp.is_empty() {
+                    continue;
+                }
+                match evidence.iter_mut().find(|(a, _)| *a == addr) {
+                    Some((_, set)) => {
+                        if !set.iter().any(|(f, s)| *f == fp && *s == scene) && set.len() < 16 {
+                            set.push((fp, scene));
+                        }
+                    }
+                    None => evidence.push((addr, vec![(fp, scene)])),
+                }
+            }
+            let _ = hi;
+        }
+        evidence.retain(|(addr, set)| {
+            if rebound.contains(addr) || set.len() < 2 {
+                return true; // hold until a family exists
+            }
+            // π* = the first term common to every evidence's carrying set.
+            let sets: Vec<Vec<Sel>> =
+                set.iter().map(|(fp, scene)| derive_carrying_all(fp, scene)).collect();
+            let Some((first, rest)) = sets.split_first() else { return true };
+            let Some(pi) = first.iter().find(|t| rest.iter().all(|s| s.contains(t))) else {
+                return true; // no common carrier yet — more family needed
+            };
+            // Seal + speak the rebind to every hypha (the Čech-nerve broadcast).
+            let mut op = [0u8; 32];
+            op[0] = dialogue::RULING_REBIND;
+            let receipt = chain.append(*addr, op).chain_hash;
+            let verdict = dialogue::encode_verdict_payload(
+                &voice,
+                addr,
+                dialogue::RULING_REBIND,
+                &receipt,
+                Some(pi),
+            );
+            let mut applied_any = false;
+            for session in &sessions {
+                if session.speak(verdict.clone()).map(|r| r.first() == Some(&1)).unwrap_or(false) {
+                    applied_any = true;
+                }
+            }
+            rebinds += 1;
+            rebound.push(*addr);
+            eprintln!(
+                "  REBIND {:02x}{:02x}… π* {:?} from {} evidences, applied={applied_any} K={}",
+                addr[0],
+                addr[1],
+                pi,
+                set.len(),
+                chain.next_step_index(),
+            );
+            physics.bump([false, false, true, false]);
+            physics.spend([false, false, true, false]);
+            false // spent — the family bound its word
+        });
+
         // The court breathes like every kernel: rulings are the entropic
         // stroke; an empty docket round is the syntropic dwell.
         if !heard_any {
             physics.spend([true; 4]);
         }
         if physics.depleted() {
-            if upheld + demoted + slashed != last_total {
-                last_total = upheld + demoted + slashed;
+            if upheld + demoted + slashed + rebinds != last_total {
+                last_total = upheld + demoted + slashed + rebinds;
                 eprintln!(
-                    "[{name}] {:.0}s | upheld {upheld} demoted {demoted} slashed {slashed} | federation {} words | K={}",
+                    "[{name}] {:.0}s | upheld {upheld} demoted {demoted} slashed {slashed} rebinds {rebinds} | federation {} words | K={}",
                     start.elapsed().as_secs_f64(),
                     federation.len(),
                     chain.next_step_index(),
