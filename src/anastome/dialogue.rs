@@ -40,6 +40,9 @@ fn push_chain(out: &mut Vec<u8>, chain: &[Cell]) {
 fn read_chain(b: &[u8], p: &mut usize) -> Option<Vec<Cell>> {
     let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
     *p += 4;
+    if n > b.len().saturating_sub(*p) / 18 {
+        return None; // untrusted count: 18 bytes per cell, or refuse before allocating
+    }
     let mut out = Vec::with_capacity(n);
     for _ in 0..n {
         let r = i64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
@@ -126,7 +129,7 @@ pub fn decode_quote_reply(body: &[u8]) -> Option<([u64; 4], Vec<WorkItem>)> {
     }
     let mut p = 1usize;
     let surface = read_mu(body, &mut p)?;
-    let n = *body.get(p)? as usize;
+    let n = *body.get(p)? as usize; // u8 — bounded by construction
     p += 1;
     let mut items = Vec::with_capacity(n);
     for _ in 0..n {
@@ -176,7 +179,7 @@ pub fn decode_settle(body: &[u8]) -> Option<([u8; 32], Vec<[u8; 32]>, [u64; 4])>
         return None;
     }
     let germ: [u8; 32] = body.get(1..33)?.try_into().ok()?;
-    let n = *body.get(33)? as usize;
+    let n = *body.get(33)? as usize; // u8 — bounded by construction
     let mut p = 34usize;
     let mut voices = Vec::with_capacity(n);
     for _ in 0..n {

@@ -119,11 +119,12 @@ impl Kernel {
         voice: [u8; 32],
     ) -> Outcome {
         self.physics.relax(); // the metabolism dissipates its backlog as it works
-        // THE SYNTROPIC STROKE: when a lane is depleted (the entropic expansion has
-        // spent its fuel), the mesh OPTIMIZES — consolidate one generator the rest
-        // already derive — which regenerates the reserve. Expansion and optimization
-        // are the two strokes of one metabolism.
-        if self.physics.depleted() {
+        // THE SYNTROPIC STROKE fires in BOTH resting states of the two-stroke:
+        // DEPLETED (expansion spent its fuel — optimize to regenerate) and IDLE
+        // (no backlog — free energy condenses the basis). A mesh that is neither
+        // expanding nor optimizing is wasting its metabolism.
+        let idle = self.physics.metabolism_rate().iter().all(|&p| p <= 1);
+        if self.physics.depleted() || idle {
             self.optimize();
         }
         if ca.is_empty() || ca.len() != cb.len() {
@@ -180,8 +181,34 @@ impl Kernel {
                 Outcome::Decomposed(word)
             }
             NormalForm::Irreducible(residual) => {
-                // KB COMPLETION — the irreducible residual adjoins as a NEW generator
-                // on two-kernel consilience. Confluence is the gate: two kernels
+                // PUNCTURE-BEFORE-MINT: if this residual sits on an EXISTING
+                // thought's base positions with a new transition assignment, it is
+                // a SECTION prospect — the germinated axis extends (quorum-gated),
+                // and no sibling card is minted. Growth as +axis, not +card.
+                // (A residual matching a held section never reaches here — the
+                // reduction's direct terminal speaks the family.)
+                let centered = residual.sub().to_vec();
+                if let Some(ti) = self.basis.iter().position(|t| {
+                    !t.sub().is_empty() && element::positions(t.sub()) == element::positions(&centered)
+                }) {
+                    let asg = element::assignment(&centered);
+                    let saddr = section_address(&self.basis[ti].address(), &asg);
+                    let _ = self.admission.record(Receipt { voice, germ: saddr });
+                    let quorum = self.admission.voices(&saddr) >= crate::network::consensus::QUORUM;
+                    if quorum && self.physics.can_expand(lanes) {
+                        self.basis[ti].puncture(asg);
+                        self.treasury.settle_consilience(&self.admission.voices_of(&saddr));
+                        self.physics.relieve(lanes);
+                        self.physics.syntropy(lanes); // volume built through the axis
+                        self.physics.spend(lanes); // still an expansion — fuel is spent
+                        self.pending.retain(|p| p.address() != residual.address());
+                        return Outcome::Installed(ti); // installed AS A SECTION of thought ti
+                    }
+                    self.physics.bump(lanes);
+                    return Outcome::GermPending;
+                }
+                // KB COMPLETION — a genuinely new base thought adjoins on
+                // two-kernel consilience. Confluence is the gate: two kernels
                 // reducing the same demand reach the SAME residual (same address),
                 // so agreement is a theorem about the algebra, not a matched card.
                 let addr = residual.address();
@@ -332,114 +359,14 @@ impl Kernel {
         }
     }
 
-    /// CHAIN REDUCTION AS SPECULATIVE PROJECTION — never greedy one-step descent
-    /// (the mechanical trap: committing the largest local pattern can strand an
-    /// orphan and mint junk). The demand's chain is LIFTED into a superposition of
-    /// uncommitted branches — prospective sections over the grounded state — and
-    /// each step every branch rolls out every fitting peel VIRTUALLY (in memory:
-    /// zero mutation of basis, ledger, or mesh). The superposition is pruned to
-    /// the beam by GLOBAL remaining defect (the ≺_DM flow), never local pattern
-    /// size; a branch with no descending move is an obstruction, pruned with zero
-    /// residual trace. A branch whose remainder CLOSES (δσ̂ = 0 — trivial
-    /// holonomy) COLLAPSES the whole superposition into its canonical sentence.
-    /// If no projection closes, the MINIMAL remainder seen across all rollouts is
-    /// the genuine conceptual void — Knuth–Bendix germination. Expansion and
-    /// pruning are totally ordered, so the collapse is deterministic.
+    /// The kernel's chain reduction — delegates to the shared projective
+    /// decomposition ([`decompose_over`]) at the metabolic projection budget.
     fn reduce_chain(&self, first: Vec<(i64, i64, u8, u8)>, exclude: Option<usize>) -> NormalForm {
-        if first.is_empty() {
-            return NormalForm::Decomposed(Vec::new());
-        }
-        if let Some(i) = self.pattern_matching(&first, exclude) {
-            return NormalForm::Decomposed(vec![i]); // the root is itself a word
-        }
         let (beam_width, depth) = self.projection_budget();
-        // The superposition: (remaining chain, committed-so-far word) per branch.
-        let mut beam: Vec<(Vec<(i64, i64, u8, u8)>, Vec<usize>)> = vec![(first.clone(), Vec::new())];
-        // The minimal conceptual void observed across every rollout.
-        let mut void = first;
-        for _ in 0..depth {
-            let mut successors: Vec<(Vec<(i64, i64, u8, u8)>, Vec<usize>)> = Vec::new();
-            for (chain, word) in &beam {
-                for (i, translated) in self.fitting_peels(chain, exclude) {
-                    let remaining: Vec<_> =
-                        chain.iter().filter(|t| !translated.contains(*t)).cloned().collect();
-                    let mut w = word.clone();
-                    w.push(i);
-                    // CONFLUENT COLLAPSE — this rollout closed: δσ̂ = 0.
-                    if remaining.is_empty() {
-                        return NormalForm::Decomposed(w);
-                    }
-                    if let Some(j) = self.pattern_matching(&remaining, exclude) {
-                        w.push(j);
-                        return NormalForm::Decomposed(w);
-                    }
-                    if remaining.len() < void.len() {
-                        void = remaining.clone();
-                    }
-                    successors.push((remaining, w));
-                }
-            }
-            if successors.is_empty() {
-                break; // every branch obstructed — the superposition is exhausted
-            }
-            // Prune to the beam by GLOBAL defect, then depth, then word order —
-            // a total order, so two runs collapse identically.
-            successors.sort_by(|a, b| {
-                a.0.len().cmp(&b.0.len()).then(a.1.len().cmp(&b.1.len())).then(a.1.cmp(&b.1))
-            });
-            successors.truncate(beam_width);
-            beam = successors;
+        match decompose_over(&self.basis, &first, exclude, beam_width, depth) {
+            Ok(word) => NormalForm::Decomposed(word),
+            Err(void) => NormalForm::Irreducible(element::from_residual(&void)),
         }
-        NormalForm::Irreducible(element::from_residual(&void))
-    }
-
-    /// The direct terminal: does the (re-centered) chain EQUAL a basis pattern?
-    fn pattern_matching(&self, chain: &[(i64, i64, u8, u8)], exclude: Option<usize>) -> Option<usize> {
-        let centered = recenter(chain);
-        self.basis
-            .iter()
-            .enumerate()
-            .position(|(j, p)| Some(j) != exclude && p.sub() == centered.as_slice())
-    }
-
-    /// Every fitting virtual peel — the branch alphabet: for each generator, each
-    /// of its first few row-major anchors whose translated pattern embeds exactly
-    /// in the chain. All of them are offered to the superposition; none is
-    /// committed here (basis order × anchor order keeps expansion deterministic).
-    fn fitting_peels(
-        &self,
-        chain: &[(i64, i64, u8, u8)],
-        exclude: Option<usize>,
-    ) -> Vec<(usize, Vec<(i64, i64, u8, u8)>)> {
-        const MAX_ANCHORS: usize = 3;
-        let mut out = Vec::new();
-        for (i, gen) in self.basis.iter().enumerate() {
-            if Some(i) == exclude {
-                continue;
-            }
-            let pat = gen.sub();
-            // A proper, nonempty sub-pattern (equal size is the direct terminal).
-            if pat.is_empty() || pat.len() >= chain.len() {
-                continue;
-            }
-            let (pr, pc, pb, pa) = pat[0];
-            let mut anchors = 0;
-            for &(cr, cc, cb_, ca_) in chain {
-                if (cb_, ca_) != (pb, pa) {
-                    continue;
-                }
-                let (dr, dc) = (cr - pr, cc - pc);
-                let translated: Vec<_> = pat.iter().map(|(r, c, b, a)| (r + dr, c + dc, *b, *a)).collect();
-                if translated.iter().all(|t| chain.contains(t)) {
-                    out.push((i, translated));
-                    anchors += 1;
-                    if anchors >= MAX_ANCHORS {
-                        break;
-                    }
-                }
-            }
-        }
-        out
     }
 
     /// THE SYNTROPIC STROKE — one bounded consolidation step, run when a lane's
@@ -453,13 +380,42 @@ impl Kernel {
         if !self.basis.is_empty() {
             let i = self.optimize_cursor % self.basis.len();
             self.optimize_cursor = self.optimize_cursor.wrapping_add(1);
+            // THE CONDENSE MOVE: absorb position-identical siblings into the
+            // cursor thought as SECTIONS along its punctured axis — the family
+            // collapses into one bundle. The basis CONDENSES: cardinality falls,
+            // dimensional volume rises. Bounded per stroke; the absorbed word's
+            // discoverer still earns (its language lives on as a section).
+            let pos_i = element::positions(self.basis[i].sub());
+            if !pos_i.is_empty() {
+                let mut absorbed = 0usize;
+                let mut j = i + 1;
+                while j < self.basis.len() && absorbed < 8 {
+                    if element::positions(self.basis[j].sub()) == pos_i {
+                        let asg = element::assignment(self.basis[j].sub());
+                        let sibling_disc = self.discoverers[j];
+                        self.basis.remove(j);
+                        self.discoverers.remove(j);
+                        if self.basis[i].puncture(asg) {
+                            self.treasury.settle_use(sibling_disc);
+                        }
+                        self.physics.syntropy([false, false, true, false]);
+                        absorbed += 1;
+                    } else {
+                        j += 1;
+                    }
+                }
+            }
+            // The redundancy probe: retire a rule the rest of the basis derives —
+            // but never a BUNDLE (its sections carry family volume no other word
+            // speaks; only a sectionless card can be redundant).
             let candidate = self.basis[i].clone();
-            if let NormalForm::Decomposed(_) = self.reduce_excluding(&candidate, Some(i)) {
-                // The rest of the basis spells it — a redundant rule: retire it.
-                let lanes = candidate.lanes();
-                self.basis.remove(i);
-                self.discoverers.remove(i);
-                self.physics.syntropy(lanes); // a leaner alphabet is order built
+            if candidate.sections().is_empty() {
+                if let NormalForm::Decomposed(_) = self.reduce_excluding(&candidate, Some(i)) {
+                    let lanes = candidate.lanes();
+                    self.basis.remove(i);
+                    self.discoverers.remove(i);
+                    self.physics.syntropy(lanes); // a leaner alphabet is order built
+                }
             }
         }
         self.physics.regenerate();
@@ -505,6 +461,12 @@ impl Kernel {
     /// The consilience voices on record for a germ — the settle receipt's parties.
     pub fn voices_of(&self, germ: &[u8; 32]) -> Vec<[u8; 32]> {
         self.admission.voices_of(germ)
+    }
+
+    /// The basis's interior VOLUME — total sections along all punctured axes (the
+    /// 3.5g condensation metric: cardinality falls while this rises).
+    pub fn sections_total(&self) -> usize {
+        self.basis.iter().map(|t| t.sections().len()).sum()
     }
 
     /// P7 — SNAPSHOT the durable cognitive state (the germinated basis + each
@@ -582,6 +544,137 @@ fn recenter(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64, u8, u8)> {
     out
 }
 
+/// The consilience address of a SECTION prospect: the carrying thought's stable
+/// base address ⊕ the assignment — so two kernels independently proposing the
+/// same axis extension meet at one receipt (wire identity, never reasoned on).
+fn section_address(thought: &[u8; 32], asg: &[(u8, u8)]) -> [u8; 32] {
+    let mut buf = Vec::with_capacity(32 + asg.len() * 2);
+    buf.extend_from_slice(thought);
+    for (b, a) in asg {
+        buf.push(*b);
+        buf.push(*a);
+    }
+    *blake3::hash(&buf).as_bytes()
+}
+
+/// THE SHARED PROJECTIVE DECOMPOSITION — speculative projection over a held
+/// language, SECTION-AWARE (a bundle speaks its whole family through the
+/// punctured axis). This is one mathematics worn by two stacks: the kernel's
+/// reduction (perception-side) and the C-stack's COMPREHENSION — a received
+/// utterance decomposed toward understanding over the receiver's genome, never
+/// re-cognized, never recalled.
+///
+/// The chain lifts into a superposition of uncommitted branches; every branch
+/// rolls out every fitting peel VIRTUALLY (zero mutation); the superposition
+/// prunes to the beam by GLOBAL remaining defect (≺_DM flow), never local
+/// pattern size; obstructed branches die traceless; a branch whose remainder
+/// closes (δσ̂ = 0) collapses the whole superposition into its sentence. `Err`
+/// carries the MINIMAL void seen across all rollouts — the genuine conceptual
+/// gap (a germination prospect). Totally ordered → deterministic collapse.
+pub fn decompose_over(
+    language: &[Element],
+    first: &[(i64, i64, u8, u8)],
+    exclude: Option<usize>,
+    beam_width: usize,
+    depth: usize,
+) -> Result<Vec<usize>, Vec<(i64, i64, u8, u8)>> {
+    if first.is_empty() {
+        return Ok(Vec::new());
+    }
+    if let Some(i) = word_matching(language, first, exclude) {
+        return Ok(vec![i]); // the utterance is itself one word
+    }
+    let mut beam: Vec<(Vec<(i64, i64, u8, u8)>, Vec<usize>)> = vec![(first.to_vec(), Vec::new())];
+    let mut void = first.to_vec();
+    for _ in 0..depth {
+        let mut successors: Vec<(Vec<(i64, i64, u8, u8)>, Vec<usize>)> = Vec::new();
+        for (chain, word) in &beam {
+            for (i, translated) in fitting_peels(language, chain, exclude) {
+                let remaining: Vec<_> = chain.iter().filter(|t| !translated.contains(*t)).cloned().collect();
+                let mut w = word.clone();
+                w.push(i);
+                // CONFLUENT COLLAPSE — this rollout closed: δσ̂ = 0.
+                if remaining.is_empty() {
+                    return Ok(w);
+                }
+                if let Some(j) = word_matching(language, &remaining, exclude) {
+                    w.push(j);
+                    return Ok(w);
+                }
+                if remaining.len() < void.len() {
+                    void = remaining.clone();
+                }
+                successors.push((remaining, w));
+            }
+        }
+        if successors.is_empty() {
+            break; // every branch obstructed — the superposition is exhausted
+        }
+        // Prune to the beam by GLOBAL defect, then depth, then word order — a
+        // total order, so two runs collapse identically.
+        successors
+            .sort_by(|a, b| a.0.len().cmp(&b.0.len()).then(a.1.len().cmp(&b.1.len())).then(a.1.cmp(&b.1)));
+        successors.truncate(beam_width);
+        beam = successors;
+    }
+    Err(void)
+}
+
+/// The direct terminal: does the (re-centered) chain SIT on a held word — its
+/// base or any section along the punctured axis (the bundle speaks the family)?
+fn word_matching(language: &[Element], chain: &[(i64, i64, u8, u8)], exclude: Option<usize>) -> Option<usize> {
+    let centered = recenter(chain);
+    language
+        .iter()
+        .enumerate()
+        .position(|(j, p)| Some(j) != exclude && p.matches_chain(&centered))
+}
+
+/// Every fitting virtual peel — the branch alphabet: for each word, each of its
+/// assignments (base + sections: the ASCEND reframe rides the punctured axis),
+/// each of the first few row-major anchors whose translated pattern embeds
+/// exactly. All offered to the superposition; none committed here.
+fn fitting_peels(
+    language: &[Element],
+    chain: &[(i64, i64, u8, u8)],
+    exclude: Option<usize>,
+) -> Vec<(usize, Vec<(i64, i64, u8, u8)>)> {
+    const MAX_ANCHORS: usize = 3;
+    let mut out = Vec::new();
+    for (i, gen) in language.iter().enumerate() {
+        if Some(i) == exclude {
+            continue;
+        }
+        let base = gen.sub();
+        // A proper, nonempty sub-pattern (equal size is the direct terminal).
+        if base.is_empty() || base.len() >= chain.len() {
+            continue;
+        }
+        let pos = element::positions(base);
+        for asg in gen.assignments() {
+            let pat: Vec<(i64, i64, u8, u8)> =
+                pos.iter().zip(&asg).map(|((r, c), (b, a))| (*r, *c, *b, *a)).collect();
+            let (pr, pc, pb, pa) = pat[0];
+            let mut anchors = 0;
+            for &(cr, cc, cb_, ca_) in chain {
+                if (cb_, ca_) != (pb, pa) {
+                    continue;
+                }
+                let (dr, dc) = (cr - pr, cc - pc);
+                let translated: Vec<_> = pat.iter().map(|(r, c, b, a)| (r + dr, c + dc, *b, *a)).collect();
+                if translated.iter().all(|t| chain.contains(t)) {
+                    out.push((i, translated));
+                    anchors += 1;
+                    if anchors >= MAX_ANCHORS {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    out
+}
+
 // ── the ANASTOME address of a germ (canonical, opaque; transport identity) ────
 
 /// Canonical bytes of an anonymous germ — its coordinate-exact ANASTOME form (the
@@ -613,6 +706,9 @@ fn push_cells(out: &mut Vec<u8>, cells: &[(i64, i64, u8)]) {
 fn read_cells(b: &[u8], p: &mut usize) -> Option<Vec<(i64, i64, u8)>> {
     let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
     *p += 4;
+    if n > b.len().saturating_sub(*p) / 17 {
+        return None; // untrusted count: 17 bytes per cell, refuse before allocating
+    }
     let mut out = Vec::with_capacity(n);
     for _ in 0..n {
         let r = i64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
@@ -661,6 +757,9 @@ fn push_bodies(out: &mut Vec<u8>, bodies: &[Vec<(i64, i64, u8)>]) {
 fn read_bodies(b: &[u8], p: &mut usize) -> Option<Vec<Vec<(i64, i64, u8)>>> {
     let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
     *p += 4;
+    if n > b.len().saturating_sub(*p) / 4 {
+        return None; // untrusted count: each body needs at least its length prefix
+    }
     let mut out = Vec::with_capacity(n);
     for _ in 0..n {
         out.push(read_cells(b, p)?);
@@ -848,22 +947,23 @@ mod tests {
         };
         // BIG (3 cells) installs FIRST, so size-greed would prefer it.
         install(&mut k, &[(0, 0, 1), (0, 1, 3), (0, 2, 5)], &[(0, 0, 2), (0, 1, 4), (0, 2, 6)]);
-        // SMALL1 (2 cells) and SMALL2 (2 cells) — together they tile the saddle.
+        // SMALL1 (2 cells); SMALL2 shares its geometry — under 3.5 it PUNCTURES
+        // SMALL1's axis (a section, not a card): the basis holds BIG + one bundle.
         install(&mut k, &[(0, 0, 1), (0, 1, 3)], &[(0, 0, 2), (0, 1, 4)]);
         install(&mut k, &[(0, 0, 5), (0, 1, 7)], &[(0, 0, 6), (0, 1, 8)]);
-        assert_eq!(k.basis_len(), 3);
-        // The saddle demand: BIG embeds (and would strand (0,3)); SMALL1∘SMALL2
-        // is the only decomposition that CLOSES.
+        assert_eq!(k.basis_len(), 2, "the pair family is ONE bundle");
+        assert_eq!(k.basis()[1].sections().len(), 1, "SMALL2 lives as a section");
+        // The saddle demand: BIG embeds (and would strand (0,3)); the bundle's
+        // base ∘ section is the only decomposition that CLOSES.
         let a = [(0, 0, 1), (0, 1, 3), (0, 2, 5), (0, 3, 7)];
         let b = [(0, 0, 2), (0, 1, 4), (0, 2, 6), (0, 3, 8)];
         match k.ingest(&a, &b, [3; 32]) {
-            Outcome::Decomposed(mut w) => {
-                w.sort_unstable();
-                assert_eq!(w, vec![1, 2], "collapsed into the CLOSING sentence, not the greedy one");
+            Outcome::Decomposed(w) => {
+                assert_eq!(w, vec![1, 1], "collapsed into the CLOSING sentence — the bundle speaks both members");
             }
             o => panic!("expected the closing sentence, got {o:?}"),
         }
-        assert_eq!(k.basis_len(), 3, "no junk germinated — the projection closed");
+        assert_eq!(k.basis_len(), 2, "no junk germinated — the projection closed");
     }
 
     /// STEP 3's ECONOMIC CONVERSATION CLOSES: A speaks a novel PERCEPT (the germ
@@ -891,6 +991,61 @@ mod tests {
         assert!(k.quote(4).1.is_empty(), "the market cleared");
     }
 
+    /// PUNCTURE-BEFORE-MINT: a family member (same base geometry, new transition
+    /// assignment) does NOT mint sibling card n+1 — the axis pierces the existing
+    /// thought and the member becomes a SECTION (quorum-gated). Growth as +axis:
+    /// the basis count stays 1 while the thought's volume grows; afterward the
+    /// bundle SPEAKS the whole family (both assignments decompose to it).
+    #[test]
+    fn a_family_punctures_an_axis_instead_of_minting() {
+        let mut k = Kernel::new();
+        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+        let b1 = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)]; // (0,0): 1→4
+        k.ingest(&a, &b1, [1; 32]);
+        assert!(matches!(k.ingest(&a, &b1, [2; 32]), Outcome::Installed(0)));
+        assert_eq!(k.basis_len(), 1);
+        // The family member: same cell, DIFFERENT transition (1→7).
+        let b2 = vec![(0, 0, 7), (0, 1, 1), (1, 0, 1)];
+        assert_eq!(k.ingest(&a, &b2, [1; 32]), Outcome::GermPending, "the axis prospect pends");
+        assert_eq!(k.basis_len(), 1, "no sibling card");
+        assert!(matches!(k.ingest(&a, &b2, [2; 32]), Outcome::Installed(0)), "the axis PIERCES thought 0");
+        assert_eq!(k.basis_len(), 1, "count unchanged — growth was +axis");
+        assert_eq!(k.basis()[0].sections().len(), 1, "the thought gained a section (volume)");
+        // The bundle speaks the family: both members now decompose to the ONE word.
+        assert_eq!(k.ingest(&a, &b1, [3; 32]), Outcome::Decomposed(vec![0]));
+        assert_eq!(k.ingest(&a, &b2, [3; 32]), Outcome::Decomposed(vec![0]));
+        // And the address held stable across the puncture (identity = the word).
+        let far_b2: Vec<_> = b2.iter().map(|(r, c, h)| (r + 6, c + 6, *h)).collect();
+        let far_a: Vec<_> = a.iter().map(|(r, c, h)| (r + 6, c + 6, *h)).collect();
+        assert_eq!(k.ingest(&far_a, &far_b2, [4; 32]), Outcome::Decomposed(vec![0]), "transposed family member");
+    }
+
+    /// THE CONDENSE STROKE: position-identical sibling cards already in the basis
+    /// (a pre-puncture era's residue) are ABSORBED into one bundle during the
+    /// syntropic stroke — cardinality falls, sections rise, and the absorbed
+    /// words' discoverers still earn.
+    #[test]
+    fn the_condense_stroke_absorbs_a_family_into_one_bundle() {
+        use crate::transducer::element::from_residual;
+        use crate::transducer::germinate::germinate;
+        let mut k = Kernel::new();
+        let a = vec![(0, 0, 1), (0, 1, 2)];
+        let b = vec![(0, 0, 5), (0, 1, 2)]; // (0,0): 1→5
+        k.ingest(&a, &b, [1; 32]);
+        assert!(matches!(k.ingest(&a, &b, [2; 32]), Outcome::Installed(0)));
+        // Fabricate two sibling cards (as a legacy/import would leave them).
+        for hue in [6u8, 7] {
+            let bx = vec![(0, 0, hue), (0, 1, 2)];
+            k.basis.push(from_residual(&germinate(&a, &bx).unwrap()));
+            k.discoverers.push([9; 32]);
+        }
+        assert_eq!(k.basis_len(), 3, "the un-condensed family");
+        k.optimize(); // cursor 0 → the condense move absorbs both siblings
+        assert_eq!(k.basis_len(), 1, "the family collapsed into one bundle");
+        assert_eq!(k.basis()[0].sections().len(), 2, "two sections along the pierced axis");
+        assert!(k.treasury().balance(&[9; 32]) > 0, "absorbed discoverers still earn");
+    }
+
     /// THE CROWN PROOF OF THE EXCISION: with no solver anywhere, the mesh forms
     /// SENTENCES over germinated patterns — install two single-cell patterns, then
     /// a compound demand containing BOTH (at different offsets) DECOMPOSES into
@@ -903,21 +1058,21 @@ mod tests {
         k.ingest(&a1, &b1, [1; 32]);
         assert!(matches!(k.ingest(&a1, &b1, [2; 32]), Outcome::Installed(0)));
         let a2 = vec![(0, 0, 2), (0, 1, 3)];
-        let b2 = vec![(0, 0, 2), (0, 1, 9)]; // (0,1): 3→9 — pattern Q
+        let b2 = vec![(0, 0, 2), (0, 1, 9)]; // (0,1): 3→9 — Q shares P's geometry:
         k.ingest(&a2, &b2, [1; 32]);
-        assert!(matches!(k.ingest(&a2, &b2, [2; 32]), Outcome::Installed(1)));
-        // A compound scene: BOTH patterns fire at once, far apart in one body-pair.
+        // …so under 3.5 it PUNCTURES P's axis (Installed(0) as a section).
+        assert!(matches!(k.ingest(&a2, &b2, [2; 32]), Outcome::Installed(0)));
+        assert_eq!(k.basis_len(), 1, "the single-cell family is ONE bundle");
+        // A compound scene: BOTH members fire at once, far apart in one body-pair.
         let a3 = vec![(0, 0, 1), (0, 1, 2), (0, 2, 2), (0, 3, 3)];
         let b3 = vec![(0, 0, 4), (0, 1, 2), (0, 2, 2), (0, 3, 9)];
         match k.ingest(&a3, &b3, [3; 32]) {
             Outcome::Decomposed(word) => {
-                let mut w = word.clone();
-                w.sort_unstable();
-                assert_eq!(w, vec![0, 1], "the compound is the SENTENCE of both patterns");
+                assert_eq!(word, vec![0, 0], "the sentence cites the bundle twice — base and section");
             }
             o => panic!("expected a two-word sentence, got {o:?}"),
         }
-        assert_eq!(k.basis_len(), 2, "the algebra spanned it — nothing minted");
+        assert_eq!(k.basis_len(), 1, "the algebra spanned it — nothing minted");
     }
 
     /// A shape deformation (L → bar) that NO motor closes is not a dead-end: its

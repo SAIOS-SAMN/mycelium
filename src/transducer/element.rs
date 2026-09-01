@@ -92,6 +92,25 @@ pub struct Element {
     /// tally (the `fibers` δ-lens) is a projection and never decides identity or
     /// substance. Empty for pure-algebra (group) elements.
     sub: Vec<(i64, i64, u8, u8)>,
+    /// THE PUNCTURED AXIS — sections along the germinated fiber pierced through
+    /// this thought: alternative per-cell transition ASSIGNMENTS over the SAME
+    /// base positions. A recurring family (same geometry, different transitions)
+    /// collapses into sections of this one bundle instead of sibling cards —
+    /// growth as +axis (volume), not +card (area). The base `sub`'s own
+    /// assignment is the implicit zeroth section. Vec-of-relations; empty until
+    /// the axis is pierced.
+    sections: Vec<Vec<(u8, u8)>>,
+}
+
+/// The positions skeleton of a centered chain (its base geometry).
+pub fn positions(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64)> {
+    chain.iter().map(|(r, c, _, _)| (*r, *c)).collect()
+}
+
+/// The transition assignment of a centered chain (its fiber coordinate),
+/// index-aligned with [`positions`] (chains sort by position first).
+pub fn assignment(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
+    chain.iter().map(|(_, _, b, a)| (*b, *a)).collect()
 }
 
 impl Element {
@@ -99,7 +118,7 @@ impl Element {
     /// transition on any axis). `dim` is the representation dimension shared by
     /// every fiber so they compose/bracket in a common GL(dim,ℚ).
     pub fn identity(dim: usize) -> Self {
-        Element { dim, fibers: Vec::new(), word: Vec::new(), mag: [0; 4], sub: Vec::new() }
+        Element { dim, fibers: Vec::new(), word: Vec::new(), mag: [0; 4], sub: Vec::new(), sections: Vec::new() }
     }
 
     pub fn dim(&self) -> usize {
@@ -147,6 +166,43 @@ impl Element {
     /// The centered coboundary chain (empty for pure-algebra elements).
     pub fn sub(&self) -> &[(i64, i64, u8, u8)] {
         &self.sub
+    }
+
+    /// The sections along the punctured axis (empty until the axis is pierced).
+    pub fn sections(&self) -> &[Vec<(u8, u8)>] {
+        &self.sections
+    }
+
+    /// Every transition assignment this thought speaks: the base plus each
+    /// section along the punctured axis (the bundle's fiber coordinates).
+    pub fn assignments(&self) -> Vec<Vec<(u8, u8)>> {
+        let mut out = vec![assignment(&self.sub)];
+        out.extend(self.sections.iter().cloned());
+        out
+    }
+
+    /// Does a centered chain SIT on this thought — same base positions, and its
+    /// assignment is the base's or any section's? (The bundle speaks the whole
+    /// family; recognition through the punctured axis, no sibling cards.)
+    pub fn matches_chain(&self, chain: &[(i64, i64, u8, u8)]) -> bool {
+        if self.sub.is_empty() || positions(&self.sub) != positions(chain) {
+            return false;
+        }
+        let asg = assignment(chain);
+        asg == assignment(&self.sub) || self.sections.contains(&asg)
+    }
+
+    /// PUNCTURE — pierce (or extend) the germinated axis with a new section: a
+    /// fresh transition assignment over the same base positions. The Z through
+    /// the paper: the thought gains VOLUME; the family member becomes a section,
+    /// not a card. Returns false if the assignment is already spoken (or does
+    /// not fit the base geometry).
+    pub fn puncture(&mut self, asg: Vec<(u8, u8)>) -> bool {
+        if asg.len() != self.sub.len() || asg == assignment(&self.sub) || self.sections.contains(&asg) {
+            return false;
+        }
+        self.sections.push(asg);
+        true
     }
 
     /// The composite operator this description applies to the field — the product
@@ -266,11 +322,29 @@ impl Element {
         Some(d)
     }
 
-    /// Canonical ANASTOME bytes: the coordinate-exact `word` (the banked
+    /// Canonical ANASTOME bytes: the BASE identity (word, dim, fibers) followed
+    /// by the punctured axis's sections — the FULL bundle, so a taught thought
+    /// carries its interior volume across the nerve.
+    pub fn canonical(&self) -> Vec<u8> {
+        let mut out = self.base_canonical();
+        out.extend_from_slice(&(self.sections.len() as u32).to_le_bytes());
+        for s in &self.sections {
+            out.extend_from_slice(&(s.len() as u32).to_le_bytes());
+            for (b, a) in s {
+                out.push(*b);
+                out.push(*a);
+            }
+        }
+        out
+    }
+
+    /// The BASE canonical form: the coordinate-exact `word` (the banked
     /// description — what makes identity injective), then `[dim:2]` and each
     /// fiber's exact ℚ entries in fiber then row-major order. Order-independent
     /// (fibers are kept sorted). WIRE IDENTITY ONLY — never a reasoning operand.
-    pub fn canonical(&self) -> Vec<u8> {
+    /// Sections are EXCLUDED: puncturing deepens a thought's volume without
+    /// changing which word it is (address stability across the pierced axis).
+    fn base_canonical(&self) -> Vec<u8> {
         let mut out = Vec::new();
         out.extend_from_slice(&(self.word.len() as u32).to_le_bytes());
         out.extend_from_slice(&self.word);
@@ -296,10 +370,11 @@ impl Element {
         out
     }
 
-    /// The element's canonical ADDRESS — a digest of its ANASTOME form. Wire/cache
-    /// identity for matching consilience receipts; never a reasoning operand.
+    /// The element's canonical ADDRESS — a digest of its BASE form (sections
+    /// excluded: a pierced axis deepens the thought's volume without changing
+    /// which word it is). Wire/cache identity; never a reasoning operand.
     pub fn address(&self) -> [u8; 32] {
-        *blake3::hash(&self.canonical()).as_bytes()
+        *blake3::hash(&self.base_canonical()).as_bytes()
     }
 
     /// Serialize the FULL element (dim, coordinate-exact word, mag, exact-ℚ fibers)
@@ -335,6 +410,15 @@ impl Element {
             out.push(*before);
             out.push(*after);
         }
+        // The punctured axis's sections (the thought's interior volume).
+        out.extend_from_slice(&(self.sections.len() as u32).to_le_bytes());
+        for s in &self.sections {
+            out.extend_from_slice(&(s.len() as u32).to_le_bytes());
+            for (b, a) in s {
+                out.push(*b);
+                out.push(*a);
+            }
+        }
         out
     }
 
@@ -347,6 +431,9 @@ impl Element {
             Some(v)
         };
         let dim = u32_at(b, pos)? as usize;
+        if dim > 64 {
+            return None; // untrusted: no sane element exceeds this (GERM_DIM = 13)
+        }
         let wlen = u32_at(b, pos)? as usize;
         let word = b.get(*pos..*pos + wlen)?.to_vec();
         *pos += wlen;
@@ -355,7 +442,14 @@ impl Element {
             *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
             *pos += 8;
         }
+        // Counts are UNTRUSTED (disk corruption, old formats, the wire): validate
+        // against the remaining bytes BEFORE any allocation — a garbage count must
+        // return None, never abort the process on a phantom-capacity request.
+        let remaining = |b: &[u8], p: &usize| b.len().saturating_sub(*p);
         let nfib = u32_at(b, pos)? as usize;
+        if nfib > remaining(b, pos) / 2 {
+            return None; // each fiber needs at least its index bytes
+        }
         let mut fibers = Vec::with_capacity(nfib);
         for _ in 0..nfib {
             let idx = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
@@ -377,6 +471,9 @@ impl Element {
             fibers.push((idx, mat));
         }
         let nsub = u32_at(b, pos)? as usize;
+        if nsub > remaining(b, pos) / 18 {
+            return None; // 18 bytes per chain cell
+        }
         let mut sub = Vec::with_capacity(nsub);
         for _ in 0..nsub {
             let r = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
@@ -386,7 +483,26 @@ impl Element {
             *pos += 18;
             sub.push((r, c, before, after));
         }
-        Some(Element { dim, fibers, word, mag, sub })
+        let nsec = u32_at(b, pos)? as usize;
+        if nsec > remaining(b, pos) / 4 {
+            return None; // each section needs at least its length prefix
+        }
+        let mut sections = Vec::with_capacity(nsec);
+        for _ in 0..nsec {
+            let slen = u32_at(b, pos)? as usize;
+            if slen > remaining(b, pos) / 2 {
+                return None; // 2 bytes per section entry
+            }
+            let mut s = Vec::with_capacity(slen);
+            for _ in 0..slen {
+                let bb = *b.get(*pos)?;
+                let aa = *b.get(*pos + 1)?;
+                *pos += 2;
+                s.push((bb, aa));
+            }
+            sections.push(s);
+        }
+        Some(Element { dim, fibers, word, mag, sub, sections })
     }
 }
 

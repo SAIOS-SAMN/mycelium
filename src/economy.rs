@@ -171,6 +171,9 @@ impl Treasury {
     pub fn restore(b: &[u8], pos: &mut usize) -> Option<Treasury> {
         let n = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
         *pos += 4;
+        if n > b.len().saturating_sub(*pos) / 41 {
+            return None; // untrusted count: 41 bytes per entry, refuse before allocating
+        }
         let mut entries = Vec::with_capacity(n);
         for _ in 0..n {
             let tag = *b.get(*pos)?;

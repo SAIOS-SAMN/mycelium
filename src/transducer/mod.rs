@@ -13,4 +13,5 @@ pub mod blade;
 pub mod field;
 pub mod germinate;
 pub mod element;
+pub mod overlay;
 pub mod cech;

@@ -7,7 +7,7 @@
 //! Usage:
 //!   arc-ingest [ADDR] --kernel NAME --dir CORPUS_DIR [--loop] [--limit N] [--every N]
 use mycelium::arc::{grid_to_cells, parse_task};
-use mycelium::sdk::{Kernel, Session, Verdict};
+use mycelium::sdk::{Comprehension, Entity, Kernel, Verdict};
 use std::path::PathBuf;
 use std::time::Instant;
 
@@ -37,6 +37,10 @@ struct Tally {
     errors: u64,
     taught_bytes: u64,
     settles: u64,
+    /// C-stack outcomes: teachings COMPREHENDED (decomposed over the genome)
+    /// vs heard as novel (residual toward the mesh's next work).
+    comprehended: u64,
+    heard_novel: u64,
 }
 
 impl Tally {
@@ -87,7 +91,7 @@ fn main() {
     tasks.sort();
     tasks.truncate(limit);
 
-    let session = Session::open(&addr, Kernel::named(&name));
+    let mut entity = Entity::open(&addr, Kernel::named(&name));
     eprintln!(
         "arc-ingest: kernel '{name}' → {addr}; {} tasks from {dir}{}",
         tasks.len(),
@@ -107,11 +111,16 @@ fn main() {
                 if a.is_empty() || b.is_empty() {
                     continue; // an all-background side carries no percept
                 }
-                match session.submit(&a, &b) {
-                    Ok(reply) => {
+                match entity.submit(&a, &b) {
+                    Ok((reply, heard)) => {
                         tally.record(&reply.verdict);
                         if reply.settle.is_some() {
                             tally.settles += 1; // a consilience receipt rode this reply
+                        }
+                        match heard {
+                            Some(Comprehension::Understood(_)) => tally.comprehended += 1,
+                            Some(Comprehension::Novel { .. }) => tally.heard_novel += 1,
+                            None => {}
                         }
                         // METABOLIC BACKPRESSURE — pace intake by the mesh's per-lane
                         // pressure (Liebig: the bottleneck lane governs). When the
@@ -130,9 +139,16 @@ fn main() {
                 }
                 if tally.pairs % every == 0 {
                     tally.report(&name, start.elapsed().as_secs_f64());
+                    eprintln!(
+                        "[{name}] entity: genome {} words (peak expression {}), heard {} understood / {} novel",
+                        entity.epigenome.genome_len(),
+                        entity.epigenome.peak_expression(),
+                        tally.comprehended,
+                        tally.heard_novel,
+                    );
                     // SPEAK the quote — "what is the highest-yield work?" — and log
                     // the surface + top offered cluster (the conversation, audible).
-                    if let Ok(q) = session.quote() {
+                    if let Ok(q) = entity.quote() {
                         match q.clusters.first() {
                             Some(top) => eprintln!(
                                 "[{name}] quote: surface {:?}; top work {} cells @ μ⃗ {:?} ({:02x}{:02x}…)",

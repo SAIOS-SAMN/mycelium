@@ -7,7 +7,7 @@
 //! sun_recon (P6). Usage:
 //!   mycelium-server [bind] [--id N] [--tier founder|validator|participant] [--peer ADDR]...
 use mycelium::anastome::dialogue;
-use mycelium::cognition::{decode_percept, germ_bytes, outcome_code, Kernel, Outcome};
+use mycelium::cognition::{decode_percept, outcome_code, Kernel, Outcome};
 use mycelium::economy::Tier;
 use mycelium::network::nerve::{Fingerprint, Router};
 use mycelium::network::wire::Frame;
@@ -138,8 +138,9 @@ fn main() {
                 let Some((pvoice, a_bodies, b_bodies)) = decode_percept(pbytes) else { continue };
                 (k.adjudicate(&a_bodies, &b_bodies, pvoice), pvoice)
             };
-            // TEACH: on install, hand the canonical ANASTOME form back; SETTLE: the
-            // consilience receipt (parties + the μ⃗ award priced at the surface).
+            // TEACH: on install AND on a single-word sentence (the demand IS a held
+            // word — express it down so the entity's genome inherits it); SETTLE:
+            // the consilience receipt (parties + the μ⃗ award priced at the surface).
             let (taught, settle) = match &out {
                 Outcome::Installed(i) => {
                     let g = &k.basis()[*i];
@@ -148,11 +149,22 @@ fn main() {
                         &g.magnitude(),
                         &mycelium::economy::yield_surface(k.physics()),
                     );
-                    (germ_bytes(g), Some((addr, k.voices_of(&addr), mu)))
+                    // Teach the FULL lossless form (to_bytes) — the entity's genome
+                    // must reconstruct the exact element, sections and all.
+                    (g.to_bytes(), Some((addr, k.voices_of(&addr), mu)))
                 }
+                Outcome::Decomposed(word) if word.len() == 1 => (k.basis()[word[0]].to_bytes(), None),
                 _ => (Vec::new(), None),
             };
-            (out, k.basis_len(), k.physics().metabolism_rate(), k.physics().reserve, taught, settle, voice)
+            (
+                out,
+                (k.basis_len(), k.sections_total()),
+                k.physics().metabolism_rate(),
+                k.physics().reserve,
+                taught,
+                settle,
+                voice,
+            )
         };
         let label = match &out {
             Outcome::Decomposed(word) => format!("valid: decomposed → sentence {word:?} ({} generators)", word.len()),
@@ -167,8 +179,8 @@ fn main() {
             _ => "client",
         };
         eprintln!(
-            "  {src} percept voice {:02x} → {label}; basis={basis}; metabolism {flux:?}; reserve {reserve:?}",
-            voice[0]
+            "  {src} percept voice {:02x} → {label}; basis={} vol={}; metabolism {flux:?}; reserve {reserve:?}",
+            voice[0], basis.0, basis.1
         );
         // Reply: outcome | metabolism/pressure(4) | taught (len16 | bytes) | settle?
         let mut body = vec![outcome_code(&out)];

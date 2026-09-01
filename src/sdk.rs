@@ -9,8 +9,9 @@
 //! mycelium SDK (Session / kernel emblem / observe) onto the v0.1.0 percept wire.
 
 use crate::anastome::dialogue;
-use crate::cognition::{encode_percept, perceive};
+use crate::cognition::{decompose_over, encode_percept, perceive};
 use crate::network::wire::{Frame, Stratum};
+use crate::transducer::element::Element;
 use std::io::{self, Read, Write};
 use std::net::TcpStream;
 
@@ -144,6 +145,137 @@ impl Session {
     }
 }
 
+// ── the ENTITY: genome + epigenome (the client as what a CE entity was) ──────
+
+/// The comprehension verdict — the C-STACK's terminal (congruence → coherence →
+/// cohesion → converse → COMPREHENSION): the received utterance DECOMPOSED over
+/// the local genome toward understanding. Never re-cognition (that is the
+/// perception stack's overlay), never recall.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Comprehension {
+    /// The utterance decomposed into a sentence of held words — understood.
+    Understood(Vec<usize>),
+    /// Partially decomposed: the residual is the not-yet-understood part (a
+    /// prospective for the mesh, not a failure of the ear).
+    Novel { residual_cells: usize },
+}
+
+/// GENOME + EPIGENOME — carried from the CE entity design (core/ccl.rs: the
+/// State Record is the "H¹ representative"/"genome"; DOWN is "gene expression").
+/// The GENOME is the consilience-settled shared language the mesh expresses down
+/// via `teach` — never locally mutated, dialect-free, court-guarded. The
+/// EPIGENOME is this entity's local dialect over it: an efficient recollection
+/// store — per-word expression weightings and locally comprehended sentences —
+/// modifying EXPRESSION without touching the inherited record. Client↔client
+/// dialects may legitimately form here; the genome may not drift.
+#[derive(Default)]
+pub struct Epigenome {
+    genome: Vec<Element>,
+    /// Expression weighting per genome word — how often this entity speaks/hears
+    /// it (the recollection efficiency; parallel to `genome`).
+    expression: Vec<u64>,
+    /// Locally comprehended sentences and their recurrence — the dialect.
+    recollections: Vec<(Vec<usize>, u64)>,
+}
+
+impl Epigenome {
+    pub fn new() -> Self {
+        Epigenome::default()
+    }
+    pub fn genome_len(&self) -> usize {
+        self.genome.len()
+    }
+    pub fn genome(&self) -> &[Element] {
+        &self.genome
+    }
+    /// The strongest-expressed word's weight (the dialect's leading edge).
+    pub fn peak_expression(&self) -> u64 {
+        self.expression.iter().copied().max().unwrap_or(0)
+    }
+    pub fn recollections(&self) -> &[(Vec<usize>, u64)] {
+        &self.recollections
+    }
+
+    /// COMPREHEND a received utterance: decompose it over the genome (the shared
+    /// projective mathematics, `cognition::decompose_over`) and fold the
+    /// understanding into the epigenome — expression weights rise on the cited
+    /// words, the sentence joins the recollections. The genome is untouched.
+    pub fn comprehend(&mut self, utterance: &Element) -> Comprehension {
+        match decompose_over(&self.genome, utterance.sub(), None, 4, 16) {
+            Ok(sentence) => {
+                for &w in &sentence {
+                    if let Some(x) = self.expression.get_mut(w) {
+                        *x += 1;
+                    }
+                }
+                if !sentence.is_empty() {
+                    match self.recollections.iter_mut().find(|(s, _)| *s == sentence) {
+                        Some((_, n)) => *n += 1,
+                        None => self.recollections.push((sentence.clone(), 1)),
+                    }
+                }
+                Comprehension::Understood(sentence)
+            }
+            Err(void) => Comprehension::Novel { residual_cells: void.len() },
+        }
+    }
+
+    /// LEARN — the mesh expressed a word down (`teach`): comprehend it against
+    /// what is already held, then bank it in the genome if it is new (by base
+    /// address). Inheritance, not local invention: only taught words enter.
+    pub fn learn(&mut self, taught: &[u8]) -> Option<Comprehension> {
+        let mut pos = 0usize;
+        let e = Element::from_bytes(taught, &mut pos)?;
+        let heard = self.comprehend(&e);
+        let addr = e.address();
+        match self.genome.iter().position(|g| g.address() == addr) {
+            Some(i) => self.genome[i] = e, // the taught form may carry new sections — refresh
+            None => {
+                self.genome.push(e);
+                self.expression.push(0);
+            }
+        }
+        Some(heard)
+    }
+}
+
+/// THE ENTITY — a kernel identity with its genome/epigenome, conversing through
+/// a session: it submits percepts, learns what the mesh teaches (comprehending,
+/// not storing), asks quotes, and attests demands.
+pub struct Entity {
+    session: Session,
+    pub epigenome: Epigenome,
+}
+
+impl Entity {
+    pub fn open(addr: &str, kernel: Kernel) -> Self {
+        Entity { session: Session::open(addr, kernel), epigenome: Epigenome::new() }
+    }
+    pub fn kernel(&self) -> &Kernel {
+        self.session.kernel()
+    }
+    /// Submit a percept; COMPREHEND anything taught back (the C-stack, not a
+    /// byte-store). Returns the reply and the comprehension of the teaching.
+    pub fn submit(
+        &mut self,
+        a: &[(i64, i64, u8)],
+        b: &[(i64, i64, u8)],
+    ) -> io::Result<(Reply, Option<Comprehension>)> {
+        let reply = self.session.submit(a, b)?;
+        let heard = match reply.verdict.taught() {
+            t if t.is_empty() => None,
+            t => self.epigenome.learn(t),
+        };
+        Ok((reply, heard))
+    }
+    pub fn quote(&self) -> io::Result<YieldQuote> {
+        self.session.quote()
+    }
+    pub fn attest(&self, chain: &[(i64, i64, u8, u8)]) -> io::Result<Reply> {
+        self.session.attest(chain)
+    }
+}
+
 /// The quoted yield: the per-lane surface and the open-demand market's top
 /// clusters (address, priced μ⃗, and the chain itself — real, attemptable work).
 #[derive(Clone, Debug)]
@@ -230,6 +362,30 @@ mod tests {
     fn kernel_identity_is_stable_and_distinct() {
         assert_eq!(Kernel::named("sod").voice(), Kernel::named("sod").voice(), "stable seat");
         assert_ne!(Kernel::named("sod").voice(), Kernel::named("net").voice(), "distinct kernels");
+    }
+
+    /// THE C-STACK TERMINAL: a taught word enters the GENOME (inheritance via
+    /// gene expression); a received utterance is COMPREHENDED — decomposed over
+    /// the genome, moving the EPIGENOME's expression weights (the local dialect's
+    /// recollection) — never re-cognized, never recalled. And comprehension never
+    /// mutates the genome: the inherited record cannot drift locally.
+    #[test]
+    fn the_entity_comprehends_and_the_epigenome_expresses() {
+        use crate::transducer::element::from_residual;
+        use crate::transducer::germinate::germinate;
+        let mut epi = Epigenome::new();
+        // The mesh teaches a word down: first hearing is novel, then it is held.
+        let word = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 4u8), (0, 1, 2)]).unwrap());
+        assert!(matches!(epi.learn(&word.to_bytes()), Some(Comprehension::Novel { .. })));
+        assert_eq!(epi.genome_len(), 1);
+        // The same utterance again — COMPREHENDED as the held word; expression rises.
+        assert_eq!(epi.comprehend(&word), Comprehension::Understood(vec![0]));
+        assert_eq!(epi.peak_expression(), 1, "the dialect's recollection weight moved");
+        // An unrelated utterance is heard as novel — a prospective, not a failure —
+        // and the genome is untouched by hearing it.
+        let other = from_residual(&germinate(&[(0, 0, 5u8)], &[(0, 0, 9u8)]).unwrap());
+        assert!(matches!(epi.comprehend(&other), Comprehension::Novel { .. }));
+        assert_eq!(epi.genome_len(), 1, "comprehension never mutates the genome");
     }
 
     #[test]
