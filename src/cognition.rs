@@ -83,6 +83,16 @@ pub struct Kernel {
     /// (Step 5): local dialect awaiting the admission docket — (address, the
     /// element as spoken at install). Vec-of-relations.
     provisional: Vec<([u8; 32], Element)>,
+    /// SELECTION-FIBER CRITICAL PAIRS (Step 7): Q_anchor residuals — a word's
+    /// substance matched a defect but its π refused the support. (word address,
+    /// the symmetric difference, the scene it arose in). The court's admission
+    /// docket refines these into rebound anchors. Bounded; in-memory work queue.
+    anchor_mismatches: Vec<([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)>,
+    /// BIRTH EVIDENCE for the selection fiber: (word address, the footprint it
+    /// spoke on, the scene) — every germination and every witnessed placement
+    /// deposits one; the court's refinement derives π over the accumulated
+    /// family (one evidence never binds). Bounded; in-memory.
+    anchor_evidence: Vec<([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)>,
 }
 
 impl Kernel {
@@ -154,6 +164,19 @@ impl Kernel {
         }
     }
 
+    /// The SELECTION-FIBER critical pairs awaiting Knuth–Bendix anchor
+    /// refinement — (word address, Q_anchor, scene). Draining is the court's
+    /// move (7c); the queue is bounded and in-memory.
+    pub fn anchor_mismatch_dockets(&self) -> &[([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)] {
+        &self.anchor_mismatches
+    }
+
+    /// The selection fiber's birth evidence (word address, footprint, scene) —
+    /// what the court's refinement derives π over.
+    pub fn anchor_evidence(&self) -> &[([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)] {
+        &self.anchor_evidence
+    }
+
     /// ENROLL an identity at a tier: its stake capitalizes the escrow pool —
     /// the one genesis issuance per identity (idempotent, C9: one stake admits).
     /// The hypha enrolls ITSELF at boot with its own tier; arriving voices are
@@ -212,34 +235,107 @@ impl Kernel {
         // transposition (no substance). Everything else GERMINATES as a centered
         // coboundary germ — "rotation", "recolour", "deformation" are patterns the
         // mesh must learn and consolidate, never solver verdicts.
-        let mut germs: Vec<Element> = Vec::with_capacity(ca.len());
+        let mut germs: Vec<(Element, Option<(Vec<(i64, i64, u8)>, (i64, i64))>)> =
+            Vec::with_capacity(ca.len());
         for k in 0..ca.len() {
             let fa = frame_to_origin(&ca[ai[k]]);
             let fb = frame_to_origin(&cb[bi[k]]);
             let e = match germinate(&fa, &fb) {
-                Some(rg) => element::from_residual(&rg),
+                Some(rg) => {
+                    // The ANCHOR CONTEXT: the framed input body is the scene π
+                    // evaluates over; the offset maps the germ's centered chain
+                    // back into it (recovered before from_residual centers).
+                    let off_r = rg.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
+                    let off_c = rg.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
+                    let elem = element::from_residual(&rg);
+                    germs.push((elem, Some((fa, (off_r, off_c)))));
+                    continue;
+                }
                 None => Element::identity(element::GERM_DIM), // pure transposition
             };
-            germs.push(e);
+            germs.push((e, None));
         }
         // One element closing every body is a single germ; otherwise the demand
         // fragmented into independent per-body germs.
-        if germs.iter().all(|g| *g == germs[0]) {
-            self.conceive_germ(germs.swap_remove(0), voice)
+        if germs.iter().all(|(g, _)| *g == germs[0].0) {
+            let (g, ctx) = germs.swap_remove(0);
+            self.conceive_germ(g, voice, ctx)
         } else {
-            Outcome::Fragmented(germs.into_iter().map(|g| self.conceive_germ(g, voice)).collect())
+            Outcome::Fragmented(
+                germs.into_iter().map(|(g, ctx)| self.conceive_germ(g, voice, ctx)).collect(),
+            )
         }
     }
 
     /// Classify one anonymous germ against the basis and run the two-voice gate.
     /// Opaque: matched by canonical address, never by "kind".
-    fn conceive_germ(&mut self, g: Element, voice: [u8; 32]) -> Outcome {
+    fn conceive_germ(
+        &mut self,
+        g: Element,
+        voice: [u8; 32],
+        ctx: Option<(Vec<(i64, i64, u8)>, (i64, i64))>,
+    ) -> Outcome {
+        // Q_anchor residuals from this reduction queue for the court's
+        // refinement docket (bounded — a work queue, not a ledger).
+        let mut qs: Vec<(usize, Vec<(i64, i64)>)> = Vec::new();
+        let held_ctx: Option<AnchorCtx> = ctx.as_ref().map(|(s, o)| (s.as_slice(), *o));
         let lanes = g.lanes();
         // CONFLUENT DECOMPOSITION — reduce the demand's substance to normal form by
         // peeling installed generators under ≺_DM. No lookup, no pair-search: a
         // demand either decomposes into a canonical sentence, or leaves an
         // irreducible residual (a Knuth–Bendix critical pair) to complete.
-        match self.reduce(&g) {
+        let normal_form = {
+            let sub = g.substance();
+            if !sub.sub().is_empty() {
+                let (beam_width, depth) = self.projection_budget();
+                match decompose_over_anchored(
+                    &self.basis,
+                    sub.sub(),
+                    None,
+                    beam_width,
+                    depth,
+                    held_ctx.as_ref(),
+                    &mut qs,
+                ) {
+                    Ok(word) => NormalForm::Decomposed(word),
+                    Err(void) => {
+                        // A germ is born ⊤ — ONE evidence underdetermines its
+                        // selection (the same law as anchor consensus: the
+                        // family decides, never a single pair). Its birth
+                        // footprint+scene are RECORDED as evidence; the court's
+                        // KB refinement (7c) derives and binds π over the
+                        // accumulated family, and only then does the dual
+                        // condition begin to bite for this word.
+                        let res = element::from_residual(&void);
+                        if let Some((scene, (or, oc))) = &ctx {
+                            let fp: Vec<(i64, i64)> =
+                                void.iter().map(|(r, c, _, _)| (r + or, c + oc)).collect();
+                            if self.anchor_evidence.len() < 128 {
+                                self.anchor_evidence.push((res.address(), fp, scene.clone()));
+                            }
+                        }
+                        NormalForm::Irreducible(res)
+                    }
+                }
+            } else {
+                self.reduce(&g)
+            }
+        };
+        // Queue the selection critical pairs (bounded, deduped by word).
+        if let Some((scene, _)) = &ctx {
+            for (wi, q) in qs {
+                if self.anchor_mismatches.len() >= 64 {
+                    break;
+                }
+                if let Some(w) = self.basis.get(wi) {
+                    let addr = w.address();
+                    if !self.anchor_mismatches.iter().any(|(a, _, _)| *a == addr) {
+                        self.anchor_mismatches.push((addr, q, scene.clone()));
+                    }
+                }
+            }
+        }
+        match normal_form {
             NormalForm::Decomposed(word) => {
                 let anchor = self.anchor();
                 self.treasury.settle_recall(voice, lanes, anchor); // reader's fee → the pool recharges
@@ -609,7 +705,7 @@ impl Kernel {
         if self.physics.depleted() {
             self.optimize();
         }
-        self.conceive_germ(element::from_residual(&chain.to_vec()), voice)
+        self.conceive_germ(element::from_residual(&chain.to_vec()), voice, None)
     }
 
     /// The consilience voices on record for a germ — the settle receipt's parties.
@@ -831,10 +927,28 @@ pub fn decompose_over(
     beam_width: usize,
     depth: usize,
 ) -> Result<Vec<usize>, Vec<(i64, i64, u8, u8)>> {
+    decompose_over_anchored(language, first, exclude, beam_width, depth, None, &mut Vec::new())
+}
+
+/// The scene-aware reduction (Step 7): identical superposition, but every peel
+/// meets the DUAL CONDITION — substance ⊆ defect AND supp(Δ) ⊆ π(scene). A
+/// substance-match whose support diverges emits Q_anchor into `mismatches`
+/// (the selection-fiber critical pairs) instead of peeling. With ctx = None
+/// every anchor is the ⊤ carrier and this is exactly the prior reduction.
+pub fn decompose_over_anchored(
+    language: &[Element],
+    first: &[(i64, i64, u8, u8)],
+    exclude: Option<usize>,
+    beam_width: usize,
+    depth: usize,
+    ctx: Option<&AnchorCtx>,
+    mismatches: &mut Vec<(usize, Vec<(i64, i64)>)>,
+) -> Result<Vec<usize>, Vec<(i64, i64, u8, u8)>> {
     if first.is_empty() {
         return Ok(Vec::new());
     }
-    if let Some(i) = word_matching(language, first, exclude) {
+    let mut cache: Vec<(usize, Vec<(i64, i64)>)> = Vec::new();
+    if let Some(i) = word_matching_anchored(language, first, exclude, ctx, &mut cache, mismatches) {
         return Ok(vec![i]); // the utterance is itself one word
     }
     let mut beam: Vec<(Vec<(i64, i64, u8, u8)>, Vec<usize>)> = vec![(first.to_vec(), Vec::new())];
@@ -842,7 +956,7 @@ pub fn decompose_over(
     for _ in 0..depth {
         let mut successors: Vec<(Vec<(i64, i64, u8, u8)>, Vec<usize>)> = Vec::new();
         for (chain, word) in &beam {
-            for (i, translated) in fitting_peels(language, chain, exclude) {
+            for (i, translated) in fitting_peels(language, chain, exclude, ctx, mismatches) {
                 let remaining: Vec<_> = chain.iter().filter(|t| !translated.contains(*t)).cloned().collect();
                 let mut w = word.clone();
                 w.push(i);
@@ -850,7 +964,9 @@ pub fn decompose_over(
                 if remaining.is_empty() {
                     return Ok(w);
                 }
-                if let Some(j) = word_matching(language, &remaining, exclude) {
+                if let Some(j) =
+                    word_matching_anchored(language, &remaining, exclude, ctx, &mut cache, mismatches)
+                {
                     w.push(j);
                     return Ok(w);
                 }
@@ -875,12 +991,81 @@ pub fn decompose_over(
 
 /// The direct terminal: does the (re-centered) chain SIT on a held word — its
 /// base or any section along the punctured axis (the bundle speaks the family)?
+/// THE ANCHOR CONTEXT — the scene (framed-body coordinates) a demand was
+/// perceived in, plus the offset mapping the centered chain's coordinates back
+/// into that scene. None = no scene at hand (attest-borne chains, redundancy
+/// probes): every anchor admits, the ⊤ behavior.
+pub type AnchorCtx<'a> = (&'a [(i64, i64, u8)], (i64, i64));
+
+/// γ ∘ π admission: does the word's anchor cover this placement's footprint?
+/// Ok(()) admits; Err carries Q_anchor = supp(Δ) △ π(scene) — the symmetric
+/// difference, the SELECTION-FIBER critical pair (capped; the court refines).
+fn anchor_admits(
+    gen: &Element,
+    placement: &[(i64, i64, u8, u8)],
+    ctx: Option<&AnchorCtx>,
+    region_cache: &mut Vec<(usize, Vec<(i64, i64)>)>,
+    gen_idx: usize,
+) -> Result<(), Vec<(i64, i64)>> {
+    let (Some(pi), Some((scene, (or, oc)))) = (gen.anchor(), ctx) else {
+        return Ok(()); // ⊤ anchor or no scene: unconstrained carrier
+    };
+    let region = match region_cache.iter().find(|(i, _)| *i == gen_idx) {
+        Some((_, r)) => r.clone(),
+        None => {
+            let r = pi.eval(scene);
+            region_cache.push((gen_idx, r.clone()));
+            r
+        }
+    };
+    let footprint: Vec<(i64, i64)> =
+        placement.iter().map(|(r, c, _, _)| (r + or, c + oc)).collect();
+    if footprint.iter().all(|p| region.binary_search(p).is_ok()) {
+        return Ok(());
+    }
+    let mut q: Vec<(i64, i64)> = footprint
+        .iter()
+        .copied()
+        .filter(|p| region.binary_search(p).is_err())
+        .chain(region.iter().copied().filter(|p| !footprint.contains(p)))
+        .collect();
+    q.sort_unstable();
+    q.dedup();
+    q.truncate(64); // bounded residual — the court needs the shape, not the flood
+    Err(q)
+}
+
 fn word_matching(language: &[Element], chain: &[(i64, i64, u8, u8)], exclude: Option<usize>) -> Option<usize> {
     let centered = recenter(chain);
     language
         .iter()
         .enumerate()
         .position(|(j, p)| Some(j) != exclude && p.matches_chain(&centered))
+}
+
+/// The direct terminal under the dual condition: the whole chain must sit on a
+/// held word AND the word's π must cover the chain's footprint in the scene.
+/// A substance-terminal whose anchor refuses emits Q_anchor and the search
+/// continues over the remaining words.
+fn word_matching_anchored(
+    language: &[Element],
+    chain: &[(i64, i64, u8, u8)],
+    exclude: Option<usize>,
+    ctx: Option<&AnchorCtx>,
+    cache: &mut Vec<(usize, Vec<(i64, i64)>)>,
+    mismatches: &mut Vec<(usize, Vec<(i64, i64)>)>,
+) -> Option<usize> {
+    let centered = recenter(chain);
+    for (j, p) in language.iter().enumerate() {
+        if Some(j) == exclude || !p.matches_chain(&centered) {
+            continue;
+        }
+        match anchor_admits(p, chain, ctx, cache, j) {
+            Ok(()) => return Some(j),
+            Err(q) => mismatches.push((j, q)),
+        }
+    }
+    None
 }
 
 /// Every fitting virtual peel — the branch alphabet: for each word, each of its
@@ -891,9 +1076,12 @@ fn fitting_peels(
     language: &[Element],
     chain: &[(i64, i64, u8, u8)],
     exclude: Option<usize>,
+    ctx: Option<&AnchorCtx>,
+    mismatches: &mut Vec<(usize, Vec<(i64, i64)>)>,
 ) -> Vec<(usize, Vec<(i64, i64, u8, u8)>)> {
     const MAX_ANCHORS: usize = 3;
     let mut out = Vec::new();
+    let mut region_cache: Vec<(usize, Vec<(i64, i64)>)> = Vec::new();
     for (i, gen) in language.iter().enumerate() {
         if Some(i) == exclude {
             continue;
@@ -916,10 +1104,19 @@ fn fitting_peels(
                 let (dr, dc) = (cr - pr, cc - pc);
                 let translated: Vec<_> = pat.iter().map(|(r, c, b, a)| (r + dr, c + dc, *b, *a)).collect();
                 if translated.iter().all(|t| chain.contains(t)) {
-                    out.push((i, translated));
-                    anchors += 1;
-                    if anchors >= MAX_ANCHORS {
-                        break;
+                    // DUAL CONDITION (Step 7): substance ⊆ defect AND
+                    // supp(Δ) ⊆ π(scene). Substance-match with support
+                    // divergence is not a peel — it is a SELECTION critical
+                    // pair, emitted for Knuth–Bendix anchor refinement.
+                    match anchor_admits(gen, &translated, ctx, &mut region_cache, i) {
+                        Ok(()) => {
+                            out.push((i, translated));
+                            anchors += 1;
+                            if anchors >= MAX_ANCHORS {
+                                break;
+                            }
+                        }
+                        Err(q) => mismatches.push((i, q)),
                     }
                 }
             }
@@ -1242,6 +1439,44 @@ mod tests {
         assert!(matches!(out, Outcome::Installed(0)), "consilience installs: {out:?}");
         assert_eq!(k.voices_of(&k.basis()[0].address()).len(), 2, "the settle parties");
         assert!(k.quote(4).1.is_empty(), "the market cleared");
+    }
+
+    /// STEP 7 — THE DUAL CONDITION: an anchored word peels only where its π
+    /// covers the placement; a substance-match outside the region is REFUSED
+    /// and emits Q_anchor (the selection critical pair), never an ambient peel.
+    /// With ctx = None (no scene) the anchor is the ⊤ carrier — old behavior.
+    #[test]
+    fn anchored_words_refuse_out_of_region_placements() {
+        use crate::transducer::anchor::Sel;
+        // A 2-cell word 1→2, anchored to hue-1 cells ADJACENT TO hue-3 (the
+        // interface term) — composed, not named.
+        let w = element::from_residual(&vec![(0, 0, 1, 2), (0, 1, 1, 2)])
+            .with_anchor(Sel::Inter(Box::new(Sel::Hue(1)), Box::new(Sel::Star(Box::new(Sel::Hue(3))))));
+        let language = vec![w];
+        // Scene: hue-1 pair at (0,0)-(0,1) NOT near hue 3; hue-3 sits far away.
+        let scene: Vec<(i64, i64, u8)> = vec![(0, 0, 1), (0, 1, 1), (7, 7, 3)];
+        let chain = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
+        let ctx: AnchorCtx = (&scene, (0, 0));
+        let mut qs = Vec::new();
+        let out = decompose_over_anchored(&language, &chain, None, 4, 16, Some(&ctx), &mut qs);
+        assert!(out.is_err(), "π refused: the placement is outside the interface region");
+        assert!(!qs.is_empty(), "the refusal spoke: Q_anchor emitted");
+        assert_eq!(qs[0].0, 0, "the critical pair names the word");
+        // The SAME chain, but the scene puts the pair ON the interface — admits.
+        let near: Vec<(i64, i64, u8)> = vec![(0, 0, 1), (0, 1, 1), (1, 0, 3), (1, 1, 3)];
+        let ctx2: AnchorCtx = (&near, (0, 0));
+        let mut qs2 = Vec::new();
+        let ok = decompose_over_anchored(&language, &chain, None, 4, 16, Some(&ctx2), &mut qs2);
+        assert_eq!(ok, Ok(vec![0]), "on the interface the word speaks");
+        assert!(qs2.is_empty(), "no critical pair when π covers");
+        // No scene at hand: the ⊤ carrier — the word admits anywhere (the
+        // attest-borne path; the court's replay is the safety there).
+        let mut qs3 = Vec::new();
+        assert_eq!(
+            decompose_over_anchored(&language, &chain, None, 4, 16, None, &mut qs3),
+            Ok(vec![0]),
+            "ctx-free reduction is the prior behavior exactly"
+        );
     }
 
     /// THE BLIND REPLAY refutes every tamper axis and upholds honest speech —
