@@ -183,13 +183,23 @@ impl Kernel {
     /// word's spent evidence/mismatch queues clear. Returns false for an
     /// unknown address.
     pub fn apply_rebind(&mut self, addr: &[u8; 32], pi: crate::transducer::anchor::Sel) -> bool {
-        let Some(i) = self.basis.iter().position(|t| t.address() == *addr) else {
-            return false;
-        };
-        self.basis[i] = self.basis[i].clone().with_anchor(pi);
-        self.anchor_evidence.retain(|(a, _, _)| a != addr);
-        self.anchor_mismatches.retain(|(a, _, _)| a != addr);
-        true
+        let mut bound = false;
+        if let Some(i) = self.basis.iter().position(|t| t.address() == *addr) {
+            self.basis[i] = self.basis[i].clone().with_anchor(pi.clone());
+            bound = true;
+        }
+        // A germ still PENDING quorum accepts the bind too — it installs
+        // already anchored (evidence often reaches family size before the
+        // second voice completes the install).
+        if let Some(i) = self.pending.iter().position(|t| t.address() == *addr) {
+            self.pending[i] = self.pending[i].clone().with_anchor(pi);
+            bound = true;
+        }
+        if bound {
+            self.anchor_evidence.retain(|(a, _, _)| a != addr);
+            self.anchor_mismatches.retain(|(a, _, _)| a != addr);
+        }
+        bound
     }
 
     /// ENROLL an identity at a tier: its stake capitalizes the escrow pool —
@@ -352,6 +362,29 @@ impl Kernel {
         }
         match normal_form {
             NormalForm::Decomposed(word) => {
+                // USE-EVIDENCE (Step 7c): a witnessed placement is a family
+                // member — every word this demand decomposed through deposits
+                // (address, footprint, scene), so families reach the court's
+                // ≥2 threshold through ordinary speech, not only births.
+                if let Some((scene, (or, oc))) = &ctx {
+                    let chain = g.substance().sub().to_vec();
+                    for &i in &word {
+                        if self.anchor_evidence.len() >= 128 {
+                            break;
+                        }
+                        let fp = word_footprint_in(&self.basis[i], &chain, (*or, *oc));
+                        if !fp.is_empty() {
+                            let addr = self.basis[i].address();
+                            if !self
+                                .anchor_evidence
+                                .iter()
+                                .any(|(a, f, s)| *a == addr && *f == fp && s == scene)
+                            {
+                                self.anchor_evidence.push((addr, fp, scene.clone()));
+                            }
+                        }
+                    }
+                }
                 let anchor = self.anchor();
                 self.treasury.settle_recall(voice, lanes, anchor); // reader's fee → the pool recharges
                 for &i in &word {
@@ -1006,6 +1039,38 @@ pub fn decompose_over_anchored(
 
 /// The direct terminal: does the (re-centered) chain SIT on a held word — its
 /// base or any section along the punctured axis (the bundle speaks the family)?
+/// A word's witnessed placements inside a demand chain (union of translated
+/// variant embeddings), mapped into scene coordinates by the centering offset.
+fn word_footprint_in(
+    gen: &Element,
+    chain: &[(i64, i64, u8, u8)],
+    (or, oc): (i64, i64),
+) -> Vec<(i64, i64)> {
+    let base = gen.sub();
+    if base.is_empty() {
+        return Vec::new();
+    }
+    let pos = element::positions(base);
+    let mut fp: Vec<(i64, i64)> = Vec::new();
+    for asg in gen.assignments() {
+        let pat: Vec<(i64, i64, u8, u8)> =
+            pos.iter().zip(&asg).map(|((r, c), (b, a))| (*r, *c, *b, *a)).collect();
+        let Some(&(pr, pc, pb, pa)) = pat.first() else { continue };
+        for &(cr, cc, cb_, ca_) in chain {
+            if (cb_, ca_) != (pb, pa) {
+                continue;
+            }
+            let (dr, dc) = (cr - pr, cc - pc);
+            if pat.iter().all(|(r, c, b, a)| chain.contains(&(r + dr, c + dc, *b, *a))) {
+                fp.extend(pat.iter().map(|(r, c, _, _)| (r + dr + or, c + dc + oc)));
+            }
+        }
+    }
+    fp.sort_unstable();
+    fp.dedup();
+    fp
+}
+
 /// THE ANCHOR CONTEXT — the scene (framed-body coordinates) a demand was
 /// perceived in, plus the offset mapping the centered chain's coordinates back
 /// into that scene. None = no scene at hand (attest-borne chains, redundancy
