@@ -98,6 +98,20 @@ pub struct Entry {
     pub receipt: [u8; 32],
 }
 
+/// THE FLOW ORIENTATION of a ledger entry relative to its identity — a signed
+/// coefficient in the flow algebra (the chain-complex orientation), never a
+/// boolean gate: +1 credits the identity, −1 debits it, 0 orients nothing
+/// (markers whose μ⃗ moved escrow, not a balance: the stake capitalized the
+/// pool; finality is a seal). An exhaustive total function — an unknown kind
+/// orients nothing rather than silently crediting.
+pub fn orientation(kind: &str) -> i8 {
+    match kind {
+        "utility" | "consilience" | "recall" | "torse" => 1,
+        "spend" | "fee" | "slash" => -1,
+        _ => 0, // "stake", "finality", forward-compatible unknowns
+    }
+}
+
 /// The per-lane stake base a tier multiplies — the residual lane runs deeper
 /// (that is where the work lives). Genesis issuance happens ONCE per identity,
 /// at enrollment; thereafter the system conserves: pool + balances = Σ stakes.
@@ -313,20 +327,15 @@ impl Treasury {
         fee
     }
 
-    /// The POLYTONIC BALANCE — per-lane credits minus debits; there is no scalar
-    /// balance. Stake entries are excluded (a stake moved INTO escrow, it is not
-    /// held); "spend"/"fee" entries are debits, booked only up to the balance
-    /// they debit — conservation reads pool + balances = Σ stakes, per lane.
+    /// The POLYTONIC BALANCE — per-lane orientation-weighted sums; there is no
+    /// scalar balance. Conservation reads pool + balances = Σ stakes, per lane.
     pub fn balance_mu(&self, who: &[u8; 32]) -> [u64; 4] {
         let mut out = [0u64; 4];
-        for e in self.entries.iter().filter(|e| e.who == *who && e.kind != "stake") {
-            let debit = e.kind == "spend" || e.kind == "fee" || e.kind == "slash";
-            for l in 0..4 {
-                out[l] = if debit {
-                    out[l].saturating_sub(e.mu[l])
-                } else {
-                    out[l].saturating_add(e.mu[l])
-                };
+        for e in self.entries.iter().filter(|e| e.who == *who) {
+            match orientation(e.kind) {
+                1 => (0..4).for_each(|l| out[l] = out[l].saturating_add(e.mu[l])),
+                -1 => (0..4).for_each(|l| out[l] = out[l].saturating_sub(e.mu[l])),
+                _ => {} // 0-oriented: markers and stakes touch no balance
             }
         }
         out

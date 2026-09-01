@@ -120,19 +120,26 @@ impl Kernel {
             .collect()
     }
 
-    /// APPLY the court's verdict on a provisional word.
-    /// upheld → release the escrowed award (finality: full settlement books).
-    /// rejected, slash=false → demote: stays local dialect, award evaporates.
-    /// rejected, slash=true → false speech: word excised from the basis and
-    /// each voice's would-be share debited back into the pool.
-    pub fn apply_verdict(&mut self, addr: &[u8; 32], upheld: bool, slash: bool) -> bool {
+    /// APPLY the court's verdict on a provisional word. The ruling is the
+    /// closed 3-point vocabulary from the wire (never a product of booleans —
+    /// bool×bool spans four states for a three-point space):
+    /// RULING_UPHELD → release the escrowed award (finality books).
+    /// RULING_DEMOTED → stays local dialect, the award evaporates.
+    /// RULING_SLASHED → false speech: word excised, shares debited to the pool.
+    /// Any other byte is refused — an unknown ruling rules nothing.
+    pub fn apply_verdict(&mut self, addr: &[u8; 32], ruling: u8) -> bool {
+        use crate::anastome::dialogue::{RULING_DEMOTED, RULING_SLASHED, RULING_UPHELD};
+        if !matches!(ruling, RULING_UPHELD | RULING_DEMOTED | RULING_SLASHED) {
+            return false;
+        }
         let Some(i) = self.provisional.iter().position(|(a, _)| a == addr) else {
             return false;
         };
         self.provisional.remove(i);
-        if upheld {
+        if ruling == RULING_UPHELD {
             self.treasury.release_award(addr)
         } else {
+            let slash = ruling == RULING_SLASHED;
             let ok = self.treasury.revoke_award(addr, slash);
             if slash {
                 // Excise a slashed BASE word. A slashed section puncture has no
@@ -1282,11 +1289,11 @@ mod tests {
         assert!(mu[2] > 0, "the escrowed award is real");
         assert_eq!(spoken.address(), *addr, "the docket carries the word as spoken");
         // UPHELD: finality releases the award — the voices are paid at last.
-        assert!(k.apply_verdict(&addr.clone(), true, false));
+        assert!(k.apply_verdict(&addr.clone(), crate::anastome::dialogue::RULING_UPHELD));
         assert!(k.treasury().balance_mu(&[1; 32])[2] > 0, "finality pays voice A");
         assert!(k.treasury().balance_mu(&[2; 32])[2] > 0, "finality pays voice B");
         assert!(k.dockets().is_empty(), "the docket cleared");
-        assert!(!k.apply_verdict(&addr.clone(), true, false), "a verdict lands once");
+        assert!(!k.apply_verdict(&addr.clone(), crate::anastome::dialogue::RULING_UPHELD), "a verdict lands once");
     }
 
     /// A slashing verdict (failed blind replay — false speech) excises the word
@@ -1301,7 +1308,7 @@ mod tests {
         assert!(matches!(k.attest(&chain, [2; 32]), Outcome::Installed(0)));
         let before = k.basis_len();
         let (addr, _, _, _) = k.dockets()[0].clone();
-        assert!(k.apply_verdict(&addr, false, true));
+        assert!(k.apply_verdict(&addr, crate::anastome::dialogue::RULING_SLASHED));
         assert_eq!(k.basis_len(), before - 1, "the slashed word is excised");
         assert_eq!(k.treasury().balance_mu(&[1; 32]), [0; 4], "nothing was ever paid");
         assert!(k.dockets().is_empty());

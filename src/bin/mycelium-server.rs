@@ -158,9 +158,7 @@ fn main() {
             };
             let applied = {
                 let mut k = kernel.lock().unwrap();
-                let upheld = ruling == dialogue::RULING_UPHELD;
-                let slash = ruling == dialogue::RULING_SLASHED;
-                let ok = k.apply_verdict(&addr, upheld, slash);
+                let ok = k.apply_verdict(&addr, ruling);
                 if ok {
                     let bytes = k.snapshot();
                     let tmp = format!("{state_path}.tmp");

@@ -155,8 +155,11 @@ fn main() {
                     ruling.1,
                     chain.next_step_index(),
                 );
-                physics.bump([false, false, true, false]);
-                physics.spend([false, false, true, false]);
+                // The ruling's metabolic weight lands on the lanes the word's
+                // escrowed μ⃗ actually occupies — never a hardcoded plane.
+                let lanes: [bool; 4] = std::array::from_fn(|l| mu[l] > 0);
+                physics.bump(lanes);
+                physics.spend(lanes);
             }
         }
         // The court breathes like every kernel: rulings are the entropic
