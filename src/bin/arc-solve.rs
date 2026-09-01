@@ -22,8 +22,9 @@
 //!   SOLVED      — exact reconstruction of every test output
 //!
 //! Usage: arc-solve --state state/hypha-a.ledger --dir data/arc-agi-2/training [--limit N]
-use mycelium::arc::{parse_task, Grid};
+use mycelium::arc::{grid_to_cells, parse_task, Grid};
 use mycelium::cognition::{decompose_over, Kernel};
+use mycelium::transducer::anchor::{derive_exact_all, Sel};
 use mycelium::transducer::element::{assignment, Element};
 use std::path::PathBuf;
 
@@ -85,27 +86,57 @@ fn variants(w: &Element) -> Vec<Vec<(i64, i64, u8, u8)>> {
     out
 }
 
-/// THE INVERSE DEDUCTION — apply a sentence to a grid: each cited word (each
-/// family variant) rewrites at EVERY translation where its whole before-side
-/// holds on the pre-state. Placements are found against the unmodified grid,
-/// then written together (one coboundary application, not a feedback scan).
-fn apply(grid: &Grid, words: &[&Element]) -> Grid {
+/// A word's placements inside a train pair's ABSOLUTE coboundary: every
+/// translation of every family variant whose cells all sit in the δ with the
+/// exact (before, after) transitions. Returns the union footprint — the
+/// word's measured domain in that pair.
+fn chain_footprint(chain: &[(i64, i64, u8, u8)], d: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64)> {
+    let mut fp: Vec<(i64, i64)> = Vec::new();
+    let Some(&(r0, c0, _, _)) = chain.first() else { return fp };
+    for &(ar, ac, ab, aa) in d {
+        // Anchor the chain's first cell on this δ cell.
+        if (ab, aa) != (chain[0].2, chain[0].3) {
+            continue;
+        }
+        let (dr, dc) = (ar - r0, ac - c0);
+        let all_in =
+            chain.iter().all(|(r, c, b, a)| d.binary_search(&(r + dr, c + dc, *b, *a)).is_ok());
+        if all_in {
+            fp.extend(chain.iter().map(|(r, c, _, _)| (r + dr, c + dc)));
+        }
+    }
+    fp.sort_unstable();
+    fp.dedup();
+    fp
+}
+
+/// THE INVERSE DEDUCTION — apply anchored words to a grid: each cited word
+/// rewrites at every translation where its whole before-side holds on the
+/// pre-state AND (when the word is BOUND to a derived selection term) its
+/// footprint lies inside the term's evaluation on this scene — γ ∘ π: the
+/// substance restricted to the anchored subcomplex, never an ambient sweep.
+/// Placements are found against the unmodified grid, then written together.
+fn apply(grid: &Grid, spoken: &[(Vec<(i64, i64, u8, u8)>, Option<Sel>)]) -> Grid {
     let mut out = grid.clone();
     let (rows, cols) = (grid.len() as i64, grid.first().map_or(0, |r| r.len()) as i64);
+    let scene = grid_to_cells(grid);
     let mut writes: Vec<(i64, i64, u8)> = Vec::new();
-    for w in words {
-        for chain in variants(w) {
-            let max_r = chain.iter().map(|(r, _, _, _)| *r).max().unwrap_or(0);
-            let max_c = chain.iter().map(|(_, c, _, _)| *c).max().unwrap_or(0);
-            for dr in 0..(rows - max_r).max(0) {
-                for dc in 0..(cols - max_c).max(0) {
-                    let fits = chain.iter().all(|(r, c, before, _)| {
-                        grid[(r + dr) as usize][(c + dc) as usize] == *before
-                    });
-                    if fits {
-                        for (r, c, _, after) in &chain {
-                            writes.push((r + dr, c + dc, *after));
-                        }
+    for (chain, sel) in spoken {
+        // π evaluated once per scene: the admissible subcomplex.
+        let region: Option<Vec<(i64, i64)>> = sel.as_ref().map(|t| t.eval(&scene));
+        let max_r = chain.iter().map(|(r, _, _, _)| *r).max().unwrap_or(0);
+        let max_c = chain.iter().map(|(_, c, _, _)| *c).max().unwrap_or(0);
+        for dr in 0..(rows - max_r).max(0) {
+            for dc in 0..(cols - max_c).max(0) {
+                let fits = chain.iter().all(|(r, c, before, _)| {
+                    grid[(r + dr) as usize][(c + dc) as usize] == *before
+                });
+                let anchored = region.as_ref().map_or(true, |reg| {
+                    chain.iter().all(|(r, c, _, _)| reg.binary_search(&(r + dr, c + dc)).is_ok())
+                });
+                if fits && anchored {
+                    for (r, c, _, after) in chain {
+                        writes.push((r + dr, c + dc, *after));
                     }
                 }
             }
@@ -122,6 +153,7 @@ fn main() {
     let state = flag(&args, "--state").unwrap_or("state/hypha-a.ledger").to_string();
     let dir = flag(&args, "--dir").unwrap_or("data/arc-agi-2/training").to_string();
     let limit: usize = flag(&args, "--limit").and_then(|s| s.parse().ok()).unwrap_or(usize::MAX);
+    let mut probe: usize = flag(&args, "--probe").and_then(|s| s.parse().ok()).unwrap_or(0);
 
     let mut kernel = Kernel::new();
     match std::fs::read(&state) {
@@ -154,11 +186,13 @@ fn main() {
 
         // SPEAK: every train pair must decompose over today's language.
         let mut cited: Vec<usize> = Vec::new();
+        let mut deltas: Vec<Vec<(i64, i64, u8, u8)>> = Vec::new();
         for (a, b) in &task.train {
-            let Some(d) = delta(a, b) else {
+            let Some(mut d) = delta(a, b) else {
                 dim_skip += 1;
                 continue 'task;
             };
+            d.sort_unstable();
             match decompose_over(&language, &center(&d), None, 4, 16) {
                 Ok(sentence) => {
                     for wi in sentence {
@@ -166,6 +200,7 @@ fn main() {
                             cited.push(wi);
                         }
                     }
+                    deltas.push(d);
                 }
                 Err(_) => {
                     mute += 1;
@@ -173,13 +208,67 @@ fn main() {
                 }
             }
         }
-        let words: Vec<&Element> = cited.iter().map(|&i| &language[i]).collect();
+
+        // WITNESS + ANCHOR, per (word, VARIANT): a punctured thought speaks
+        // many variants, but only the variants the train family actually
+        // WITNESSED belong to this task's dialect — the rest stay silent (a
+        // 73-section cell-word is not "anything goes"). Each witnessed
+        // variant then derives its own selection term on every pair it placed
+        // in; the binding term is the minimal member of the INTERSECTION
+        // across those pairs (one pair underdetermines; the family decides).
+        // No common term → the variant applies ambient, and the replay gate
+        // below decides whether ambient speech survives.
+        let mut spoken: Vec<(Vec<(i64, i64, u8, u8)>, Option<Sel>)> = Vec::new();
+        for &wi in &cited {
+            for chain in variants(&language[wi]) {
+                let mut sets: Vec<Vec<Sel>> = Vec::new();
+                let mut witnessed = false;
+                for ((a, _), d) in task.train.iter().zip(&deltas) {
+                    let fp = chain_footprint(&chain, d);
+                    if fp.is_empty() {
+                        continue; // this variant did not speak in this pair
+                    }
+                    witnessed = true;
+                    sets.push(derive_exact_all(&fp, &grid_to_cells(a)));
+                }
+                if !witnessed {
+                    continue;
+                }
+                let consensus = match sets.split_first() {
+                    Some((first, rest)) => {
+                        first.iter().find(|t| rest.iter().all(|s| s.contains(t))).cloned()
+                    }
+                    None => None,
+                };
+                spoken.push((chain, consensus));
+            }
+        }
 
         // VERIFY: the sentence must REPLAY its own evidence — every train
         // input must reconstruct its train output exactly, or nothing is
         // predicted (the court's determinism, applied to speech).
-        for (a, b) in &task.train {
-            if apply(a, &words) != *b {
+        for (pi, (a, b)) in task.train.iter().enumerate() {
+            let got = apply(a, &spoken);
+            if got != *b {
+                if probe > 0 {
+                    probe -= 1;
+                    let extra = got.iter().flatten().zip(b.iter().flatten()).filter(|(g, e)| g != e).count();
+                    let dsz = deltas.get(pi).map_or(0, |d| d.len());
+                    eprintln!(
+                        "  PROBE {}: pair {pi}: {} spoken [{}], δ {dsz} cells, {extra} wrong cells",
+                        path.file_name().unwrap().to_string_lossy(),
+                        spoken.len(),
+                        spoken
+                            .iter()
+                            .map(|(c, s)| format!(
+                                "sup{}{}",
+                                c.len(),
+                                if s.is_some() { "@A" } else { "@amb" }
+                            ))
+                            .collect::<Vec<_>>()
+                            .join(" "),
+                    );
+                }
                 unverified += 1;
                 continue 'task;
             }
@@ -187,11 +276,16 @@ fn main() {
 
         // SOLVE: the inverse deduction on every test input, scored exactly.
         let all_exact = task.test.iter().all(|(x, y)| {
-            delta(x, y).is_some() && apply(x, &words) == *y
+            delta(x, y).is_some() && apply(x, &spoken) == *y
         });
         if all_exact && !task.test.is_empty() {
             solved += 1;
-            eprintln!("  SOLVED {} — {} words cited", path.file_name().unwrap().to_string_lossy(), words.len());
+            let anchored = spoken.iter().filter(|(_, s)| s.is_some()).count();
+            eprintln!(
+                "  SOLVED {} — {} chains spoken, {anchored} anchored",
+                path.file_name().unwrap().to_string_lossy(),
+                spoken.len()
+            );
         } else {
             wrong += 1;
         }
