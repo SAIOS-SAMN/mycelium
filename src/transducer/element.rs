@@ -113,6 +113,11 @@ pub struct Element {
     /// individually witnessed: capacity earned by exact structure. The fiber is
     /// thus ℤ^r ⊕ ⊕ᵢ ℤ/tᵢ — free sections ⊕ torsion cycles.
     torsion: Vec<(Vec<(u8, u8)>, u32)>,
+    /// THE ANCHOR FIBER (Step 7) — γ = (π_anchor, Δ_substance): the recursive
+    /// selection term restricting WHERE this word's substance applies on a
+    /// scene. None = ⊤, the unconstrained carrier (pure topological actions,
+    /// and every word born before selection entered the language).
+    pub(crate) anchor: Option<crate::transducer::anchor::Sel>,
 }
 
 /// Apply a hue-map σ (functional from↦to relations) to a transition assignment:
@@ -172,6 +177,7 @@ impl Element {
             sub: Vec::new(),
             sections: Vec::new(),
             torsion: Vec::new(),
+            anchor: None,
         }
     }
 
@@ -218,6 +224,18 @@ impl Element {
     }
 
     /// The centered coboundary chain (empty for pure-algebra elements).
+    /// The anchor fiber — None is ⊤ (the unconstrained carrier).
+    pub fn anchor(&self) -> Option<&crate::transducer::anchor::Sel> {
+        self.anchor.as_ref()
+    }
+
+    /// Bind the anchor fiber (germination writes it at birth; the court's
+    /// refinement rebinds it).
+    pub fn with_anchor(mut self, pi: crate::transducer::anchor::Sel) -> Self {
+        self.anchor = Some(pi);
+        self
+    }
+
     pub fn sub(&self) -> &[(i64, i64, u8, u8)] {
         &self.sub
     }
@@ -595,6 +613,15 @@ impl Element {
             }
             out.extend_from_slice(&l.to_le_bytes());
         }
+        // THE ANCHOR FIBER: [1][term] present, [0] the ⊤ carrier. Appended
+        // last so pre-anchor bytes parse with an unconstrained anchor.
+        match &self.anchor {
+            Some(t) => {
+                out.push(1);
+                t.to_bytes(&mut out);
+            }
+            None => out.push(0),
+        }
         out
     }
 
@@ -698,7 +725,19 @@ impl Element {
             let l = u32_at(b, pos)?;
             torsion.push((sigma, l));
         }
-        Some(Element { dim, fibers, word, mag, sub, sections, torsion })
+        // The anchor fiber tail (absent in pre-anchor serializations → ⊤).
+        let anchor = match b.get(*pos) {
+            Some(1) => {
+                *pos += 1;
+                Some(crate::transducer::anchor::Sel::from_bytes(b, pos)?)
+            }
+            Some(0) => {
+                *pos += 1;
+                None
+            }
+            _ => None,
+        };
+        Some(Element { dim, fibers, word, mag, sub, sections, torsion, anchor })
     }
 }
 
@@ -853,6 +892,31 @@ impl Element {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    /// γ = (π, Δ): the anchor fiber survives serde exactly; pre-anchor bytes
+    /// (no tail) parse to the ⊤ carrier — full backward compatibility.
+    #[test]
+    fn anchor_fiber_round_trips_and_top_is_default() {
+        use crate::transducer::anchor::Sel;
+        let g: ResidualGerm = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
+        let plain = from_residual(&g);
+        assert!(plain.anchor().is_none(), "born ⊤ until germination binds");
+        let pi = Sel::Minus(Box::new(Sel::Hue(1)), Box::new(Sel::Delta(Box::new(Sel::Hue(1)))));
+        let anchored = plain.clone().with_anchor(pi.clone());
+        let bytes = anchored.to_bytes();
+        let mut pos = 0;
+        let back = Element::from_bytes(&bytes, &mut pos).expect("parse");
+        assert_eq!(back.anchor(), Some(&pi), "π survives the wire");
+        assert_eq!(back.sub(), anchored.sub(), "Δ untouched");
+        assert_eq!(back.address(), anchored.address(), "address is BASE-only — π never renames");
+        // A pre-anchor serialization (tail stripped) parses to ⊤.
+        let plain_bytes = plain.to_bytes();
+        let mut pos2 = 0;
+        let old = Element::from_bytes(&plain_bytes[..plain_bytes.len() - 1], &mut pos2).expect("old form");
+        assert!(old.anchor().is_none(), "absent tail = the unconstrained carrier");
+    }
+
     use super::*;
     use crate::transducer::germinate::germinate;
 
