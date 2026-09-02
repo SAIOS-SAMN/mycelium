@@ -506,6 +506,12 @@ fn main() {
                             word[1],
                             entity.epigenome.genome_len(),
                         );
+                    } else if entity.epigenome.retire(&word) {
+                        // This genome derives the word by its other words and
+                        // the judge does not hold it: the copy is compression
+                        // this dialect owes itself. Retired locally; a word the
+                        // judge does hold returns through the sync.
+                        refined += 1;
                     }
                 }
             }

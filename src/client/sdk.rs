@@ -606,6 +606,9 @@ pub struct Entity {
     /// Rotating cursor for the refinement probe — one genome word examined
     /// per stroke, so the compression search is metabolic, never a sweep.
     refine_cursor: usize,
+    /// Words this voice has spoken up for adoption: said once, the judge
+    /// decided (installed, derivable, or refused).
+    taught_up: Vec<[u8; 32]>,
     /// The discordance measured at the last sync (strata whose roots differ
     /// from the hypha's); zero is a glued genome — the condition under which
     /// this entity speaks proofs.
@@ -618,6 +621,7 @@ impl Entity {
             session: Session::open(addr, kernel),
             epigenome: Epigenome::new(),
             refine_cursor: 0,
+            taught_up: Vec::new(),
             discordance: usize::MAX,
         }
     }
@@ -782,6 +786,9 @@ impl Entity {
         let mut used = 0usize;
         'strata: for d in &strata {
             for addr in sheaf::have(&atlas, self.epigenome.genome(), &d.inv) {
+                if self.taught_up.contains(&addr) {
+                    continue; // spoken for adoption once; the judge decided
+                }
                 let Some(word) = self.epigenome.genome().iter().find(|w| w.address() == addr) else { continue };
                 let bytes = word.to_bytes();
                 if used + bytes.len() > crate::network::wire::BODY_BUDGET {
@@ -789,6 +796,7 @@ impl Entity {
                 }
                 used += bytes.len();
                 if self.session.speak(dialogue::encode_adopt(&voice, &bytes)).is_ok() {
+                    self.taught_up.push(addr);
                     taught += 1;
                 }
             }

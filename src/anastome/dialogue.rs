@@ -1067,6 +1067,12 @@ mod tests {
         assert_eq!(s, [5, 0, 9, 0]);
         assert_eq!(k, 4208, "the judge's k-step rides the quote");
         assert_eq!(it, items);
+        // A settlement rides the docket after the dockets, with its utterance.
+        let docket: Docket = (germ, vec![1, 2, 3], vec![voice], [1, 2, 3, 4], [0, 0, 7, 0]);
+        let settlement: Settlement = (germ, chain.clone(), voice, cites.clone(), [2, 0, 2, 0], [0, 0, 1, 0]);
+        let body = encode_docket_reply_with(std::slice::from_ref(&docket), std::slice::from_ref(&settlement));
+        assert_eq!(decode_docket_reply(&body).unwrap(), vec![docket]);
+        assert_eq!(decode_settlements(&body), vec![settlement]);
         assert_eq!(decode_teach(&encode_teach(&[0xAB, 0xCD])).unwrap(), vec![0xAB, 0xCD]);
         let (g2, vs, mu) = decode_settle(&encode_settle(&germ, &[voice, germ], &[0, 0, 12, 0])).unwrap();
         assert_eq!((g2, vs, mu), (germ, vec![voice, germ], [0, 0, 12, 0]));

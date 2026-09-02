@@ -526,6 +526,9 @@ fn main() {
                     .collect();
                 (d, k.drain_settlements())
             };
+            if !settlements.is_empty() {
+                eprintln!("  docket served: {} words, {} settlements to the court", dockets.len(), settlements.len());
+            }
             let reply = Frame { lane: frame.lane, body: dialogue::encode_docket_reply_with(&dockets, &settlements) };
             let _ = s.write_all(&reply.encode().unwrap_or_default());
             continue;
