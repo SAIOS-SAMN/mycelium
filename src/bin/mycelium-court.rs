@@ -37,8 +37,8 @@ use mycelium::anastome::dialogue;
 use mycelium::chronometry::ReceiptChain;
 use mycelium::physics::{reserve_max, Physics};
 use mycelium::sdk::{Kernel, Session};
-use mycelium::transducer::anchor::{derive_carrying_all, Sel};
-use mycelium::transducer::element::{self, Element};
+use mycelium::transducer::element::Element;
+use mycelium::verdict;
 use std::time::Instant;
 
 fn flags<'a>(args: &'a [String], name: &str) -> Vec<&'a str> {
@@ -93,49 +93,18 @@ fn main() {
                     continue;
                 }
                 heard_any = true;
-                // ── CONTRADICTION DOCKET: the blind replay ──────────────────
+                // Both dockets rule through the isolated verification core
+                // (verdict::rule): blind replay, then the federated basis.
                 let mut pos = 0usize;
-                let ruling = match Element::from_bytes(&elem_bytes, &mut pos) {
-                    None => (dialogue::RULING_SLASHED, "unparseable word"),
-                    Some(spoken) => match mycelium::cognition::blind_replay(&spoken) {
-                        Some(reason) => (dialogue::RULING_SLASHED, reason),
-                        // ── ADMISSION DOCKET: meet the federated tautology ──
-                        None => match federation.iter().find(|(fa, _)| *fa == addr) {
-                            Some((_, held)) if held.sub() == spoken.sub() => {
-                                // Cross-hypha consilience — the strongest
-                                // confluence witness: two charts, one theorem.
-                                (dialogue::RULING_UPHELD, "federated consilience")
-                            }
-                            Some(_) => {
-                                // Same address, different substance: a dialect
-                                // — both derivations replayed clean, so the
-                                // transport between them is RECORDED, never
-                                // punished (the recohering judge).
-                                (dialogue::RULING_UPHELD, "dialect transport recorded")
-                            }
-                            None => {
-                                let pos_new = element::positions(spoken.sub());
-                                let axis_conflict = federation.iter().find(|(fa, held)| {
-                                    *fa != addr
-                                        && !held.sub().is_empty()
-                                        && element::positions(held.sub()) == pos_new
-                                });
-                                match axis_conflict {
-                                    Some(_) => {
-                                        // +AXIS LAW, network-wide: same base
-                                        // geometry must PUNCTURE the existing
-                                        // thought, not mint a sibling card.
-                                        (dialogue::RULING_DEMOTED, "+axis: belongs as a section")
-                                    }
-                                    None => {
-                                        federation.push((addr, spoken.clone()));
-                                        (dialogue::RULING_UPHELD, "extends the tautology")
-                                    }
-                                }
-                            }
-                        },
-                    },
-                };
+                let spoken = Element::from_bytes(&elem_bytes, &mut pos);
+                let (code, reason, joins) =
+                    verdict::rule(&federation, &addr, spoken.as_ref());
+                if joins {
+                    if let Some(w) = &spoken {
+                        federation.push((addr, w.clone()));
+                    }
+                }
+                let ruling = (code, reason);
                 // SEAL the ruling onto the court's chain: fp = the word's
                 // address, op = the ruling byte spread — then speak the verdict
                 // with the head hash as the signature.
@@ -202,11 +171,8 @@ fn main() {
                 Some(n) if set.len() <= n => return true, // no new evidence since binding
                 _ => {}
             }
-            // π* = the first term common to every evidence's carrying set.
-            let sets: Vec<Vec<Sel>> =
-                set.iter().map(|(fp, scene)| derive_carrying_all(fp, scene)).collect();
-            let Some((first, rest)) = sets.split_first() else { return true };
-            let Some(pi) = first.iter().find(|t| rest.iter().all(|s| s.contains(t))) else {
+            // π* from the pooled family, through the verification core.
+            let Some(pi) = verdict::derive_pi(set) else {
                 return true; // no common carrier yet — more family needed
             };
             // Seal + speak the rebind to every hypha (the Čech-nerve broadcast).
@@ -218,7 +184,7 @@ fn main() {
                 addr,
                 dialogue::RULING_REBIND,
                 &receipt,
-                Some(pi),
+                Some(&pi),
             );
             let mut applied_any = false;
             for session in &sessions {

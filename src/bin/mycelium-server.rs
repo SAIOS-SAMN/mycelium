@@ -170,6 +170,34 @@ fn main() {
     let mut syllabus: Vec<[u8; 32]> = Vec::new();
     let mut syllabus_served: Vec<([u8; 32], usize)> = Vec::new();
 
+    // THE ASYNC DISPATCHER (contemplation queue): dispatched tasks flow to a
+    // worker thread over a bounded channel, so the accept loop never blocks
+    // behind deep projection. The bound is the machine's parallelism; a full
+    // queue drops the send — speculation is optional, service is not.
+    let (synth_tx, synth_rx) = std::sync::mpsc::sync_channel::<([u8; 32], mycelium::arc::Task)>(
+        std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1),
+    );
+    {
+        let kernel = Arc::clone(&kernel);
+        let tu = tuniversal;
+        std::thread::spawn(move || {
+            while let Ok((tid, task)) = synth_rx.recv() {
+                let t0 = std::time::Instant::now();
+                if let Some((cited, deposited)) =
+                    mycelium::synthesis::contemplate(&kernel, &task)
+                {
+                    eprintln!(
+                        "  [{}] synthesis task {:02x}{:02x}… WELL-FORMED: {cited} cited, {deposited} evidence → admission ({} ms)",
+                        tu.stamp(),
+                        tid[0],
+                        tid[1],
+                        t0.elapsed().as_millis(),
+                    );
+                }
+            }
+        });
+    }
+
     for stream in listener.incoming() {
         let Ok(mut s) = stream else { continue };
         let Some(frame) = read_frame(&mut s) else { continue };
@@ -263,32 +291,14 @@ fn main() {
             };
             let reply = Frame { lane: frame.lane, body };
             let _ = s.write_all(&reply.encode().unwrap_or_default());
-            // THE SYNTHESIS STROKE (distributed cognition): the hypha THINKS
-            // about the work it just handed out — the same lift → beam →
-            // rollout the entity uses, at the judge's deeper budget, plus the
-            // CROSS-TEST CONSENSUS the entity lacks (one binding set must
-            // close on every train pair AND speak on every test jointly). A
-            // well-formed construct deposits its anchor evidence into the
-            // admission fiber — the court adjudicates, the verdict enters
-            // the syllabus, the CLIENTS earn the solves it enables. The
-            // server never settles a solve to itself: it holds the answers,
-            // so self-settlement would be self-dealing. Metabolic gate: only
-            // a calm judge speculates.
+            // The synthesis stroke rides the async dispatcher: the dispatched
+            // task queues for the contemplation worker (deep joint projection
+            // with cross-test consensus; a well-formed construct deposits
+            // evidence for the court, and the syllabus returns the ruling to
+            // the clients, who earn the solves it enables — the server never
+            // settles a solve to itself). A full queue drops the send.
             if let Some((tid, task)) = dispatched {
-                let t0 = std::time::Instant::now();
-                let outcome = {
-                    let mut k = kernel.lock().unwrap();
-                    mycelium::synthesis::contemplate(&mut k, &task)
-                };
-                if let Some((cited, deposited)) = outcome {
-                    eprintln!(
-                        "  [{}] synthesis task {:02x}{:02x}… WELL-FORMED: {cited} cited, {deposited} evidence → admission ({} ms)",
-                        tuniversal.stamp(),
-                        tid[0],
-                        tid[1],
-                        t0.elapsed().as_millis(),
-                    );
-                }
+                let _ = synth_tx.try_send((tid, task));
             }
             continue;
         }

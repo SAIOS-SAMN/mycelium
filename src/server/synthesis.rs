@@ -209,35 +209,56 @@ pub fn synthesize(
     Some(Construct { cited, bindings, evidence, closes, speaks_all_tests })
 }
 
-/// THE CONTEMPLATION STROKE — the deliberative arm, deliberately OUTSIDE
-/// the kernel (the kernel keeps only the reflex judge: adjudicate/attest/
-/// reduce; the COURT holds adjudication authority — this deposits evidence,
-/// it never rules). Physics-bound with NO gate constant: the speculative
-/// budget IS the metabolism's own projection budget (calm → wide and deep,
-/// strained → near-reactive), and the stroke SPENDS the reserve — thought
-/// is metabolically real, so contemplation self-paces against service
-/// through the same polytonic law as every other stroke.
+/// The contemplation stroke — the deliberative arm, outside the kernel
+/// (the kernel keeps only the request-path judge; the court holds
+/// adjudication authority — this deposits evidence, it never rules).
+///
+/// Designed for a worker thread behind a bounded queue (the async
+/// dispatcher): the kernel lock is held only for the earn/snapshot step
+/// and the commit; the deep projection runs on a cloned basis snapshot, so
+/// request traffic is never blocked behind speculation.
+///
+/// Metering, all derived from the metabolism (no independent constants):
+/// - Earn before drawing: consolidation strokes (optimize, which also
+///   regenerates) run until the reserve clears the expansion floor,
+///   bounded by the strokes-per-reserve ratio. Speculation is paid for by
+///   consolidation — genuine syntropic work, not a timer.
+/// - The speculative budget is the projection budget (calm → wide and
+///   deep, strained → near-reactive).
+/// - The stroke spends the reserve: thought is metabolically priced, so
+///   contemplation self-paces against service through the same two-stroke
+///   contract as every other stroke.
 pub fn contemplate(
-    k: &mut crate::cognition::Kernel,
+    k: &std::sync::Mutex<crate::cognition::Kernel>,
     task: &Task,
 ) -> Option<(usize, usize)> {
-    // Speculation is ENTROPIC EXPANSION of thought: it draws only from
-    // reserve above the expansion floor — the metabolism's own two-stroke
-    // contract (can_expand), never an independent threshold. Below the
-    // floor the judge serves; its service reserve is not thought's to burn.
-    if !k.physics().can_expand([true; 4]) {
-        return None;
-    }
-    let (beam, depth) = k.projection_budget();
-    k.physics_mut().spend([true; 4]); // thought is metabolically real
-    let c = synthesize(k.basis(), task, beam, depth)?;
+    let (snapshot, beam, depth) = {
+        let mut g = k.lock().ok()?;
+        let max_strokes =
+            (crate::physics::reserve_max() / crate::physics::spend_unit()).max(1);
+        let mut strokes = 0u64;
+        while !g.physics().can_expand([true; 4]) && strokes < max_strokes {
+            g.optimize(); // consolidation earns the regeneration
+            strokes += 1;
+        }
+        if !g.physics().can_expand([true; 4]) {
+            return None; // the reserve is service's; speculation waits
+        }
+        let (beam, depth) = g.projection_budget();
+        g.physics_mut().spend([true; 4]); // thought is metabolically priced
+        (g.basis().to_vec(), beam, depth)
+    };
+    // Deep projection on the snapshot — no lock held.
+    let c = synthesize(&snapshot, task, beam, depth)?;
     if !(c.closes && c.speaks_all_tests) {
         return None;
     }
+    // Commit: deposit the evidence under a brief lock.
+    let mut g = k.lock().ok()?;
     let deposited = c
         .evidence
         .iter()
-        .filter(|(a, fp, sc)| k.deposit_evidence(*a, fp.clone(), sc.clone()))
+        .filter(|(a, fp, sc)| g.deposit_evidence(*a, fp.clone(), sc.clone()))
         .count();
     Some((c.cited.len(), deposited))
 }

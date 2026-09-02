@@ -941,7 +941,7 @@ impl Kernel {
     /// basis compresses toward a minimal confluent generating set. Either way the
     /// reserve REGENERATES: optimization is the recovery stroke, so entropic
     /// expansion resumes only at the pace the syntropic counterpart earns.
-    fn optimize(&mut self) {
+    pub(crate) fn optimize(&mut self) {
         if !self.basis.is_empty() {
             let i = self.optimize_cursor % self.basis.len();
             self.optimize_cursor = self.optimize_cursor.wrapping_add(1);
@@ -1208,36 +1208,8 @@ impl Kernel {
     }
 }
 
-/// THE BLIND REPLAY (Step 5, the contradiction docket) — the deterministic
-/// re-derivation of a spoken word from its own evidence. Returns None when the
-/// word replays clean; Some(reason) when the speech was false. Same chain →
-/// same word (from_residual is deterministic), the chain must be canonically
-/// framed, and the install must strictly descend (0⃗ ≺_DM μ⃗).
-pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
-    let chain = spoken.sub();
-    if chain.is_empty() {
-        return Some("empty chain — nothing was derived");
-    }
-    let min_r = chain.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
-    let min_c = chain.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
-    if (min_r, min_c) != (0, 0) {
-        return Some("chain not framed to origin");
-    }
-    if !chain.windows(2).all(|w| w[0] <= w[1]) {
-        return Some("chain not canonically ordered");
-    }
-    let rederived = element::from_residual(&chain.to_vec());
-    if rederived.address() != spoken.address() {
-        return Some("address does not re-derive from the chain");
-    }
-    if rederived.magnitude() != spoken.magnitude() {
-        return Some("magnitude does not re-derive from the chain");
-    }
-    if !crate::economy::descends(&[0; 4], &spoken.magnitude()) {
-        return Some("no strict descent — the germ closes nothing");
-    }
-    None
-}
+// The blind replay moved to `crate::verdict` (#162): verification is the
+// court's substrate, not the server kernel's.
 
 /// The SUBSTRATE's canonical framing projection (hypha-side, per the transposition
 /// ruling): a scene translated so its min-corner sits at the origin. Position is
@@ -2173,6 +2145,7 @@ mod tests {
     #[test]
     fn blind_replay_refutes_tampered_words() {
         use crate::transducer::germinate::germinate;
+        use crate::verdict::blind_replay;
         let w = element::from_residual(
             &germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap(),
         );
