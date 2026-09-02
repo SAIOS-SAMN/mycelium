@@ -441,6 +441,12 @@ impl Epigenome {
         match self.genome.iter().position(|g| g.address() == addr) {
             Some(i) => self.genome[i] = e, // the taught form may carry new sections — refresh
             None => {
+                // The atlas admits the new word in place when it is current;
+                // otherwise it rebuilds on the next lookup.
+                if self.atlas_len == self.genome.len() {
+                    self.atlas.admit(&crate::transducer::stalk::invariant(e.sub()), self.genome.len());
+                    self.atlas_len += 1;
+                }
                 self.genome.push(e);
                 self.expression.push(0);
             }

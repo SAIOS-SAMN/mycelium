@@ -62,6 +62,7 @@ pub fn pieces(chain: &[Cell]) -> Vec<Vec<Cell>> {
 /// word for this geometry.
 pub fn base_points(genome: &[Element], atlas: &Stalks, piece: &[Cell], exclude: Option<usize>) -> Vec<Cite> {
     let chart = stalk::invariant(piece);
+    let Some(shape) = element::shape_of_chain(piece) else { return Vec::new() };
     atlas
         .fiber(&chart)
         .iter()
@@ -69,7 +70,7 @@ pub fn base_points(genome: &[Element], atlas: &Stalks, piece: &[Cell], exclude: 
         .filter(|&i| Some(i) != exclude)
         .filter_map(|i| {
             let word = genome.get(i)?;
-            let to_word = element::transition(piece, word.sub())?;
+            let to_word = element::transition_from_shape(&shape, word.sub())?;
             let v = to_word.versor_inverse()?; // the word carried onto the piece
             (0..word.assignments().len()).find_map(|asg| {
                 let cite: Cite = (i, v.clone(), asg);

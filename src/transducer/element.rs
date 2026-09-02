@@ -196,17 +196,29 @@ pub fn translator_versor(r: i64, c: i64) -> Versor {
 /// exact congruence test on the conformal orbit, returning the transport
 /// operator rather than a verdict.
 pub fn transition(from: &[(i64, i64, u8, u8)], to: &[(i64, i64, u8, u8)]) -> Option<Versor> {
-    use crate::transducer::blade::{shape_of, versor_between};
-    let mut a = positions(from);
+    let from_shape = shape_of_chain(from)?;
+    transition_from_shape(&from_shape, to)
+}
+
+/// The shape of a chain's support (None for an empty chain) — lifted once
+/// and reused across the candidates a lookup compares it with.
+pub fn shape_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<crate::transducer::blade::Shape> {
+    let mut a = positions(chain);
     a.sort_unstable();
     a.dedup();
-    let mut b = positions(to);
-    b.sort_unstable();
-    b.dedup();
-    if a.is_empty() || b.is_empty() {
+    if a.is_empty() {
         return None;
     }
-    versor_between(&shape_of(&a), &shape_of(&b))
+    Some(crate::transducer::blade::shape_of(&a))
+}
+
+/// The versor carrying an already-lifted shape onto `to`'s support.
+pub fn transition_from_shape(
+    from: &crate::transducer::blade::Shape,
+    to: &[(i64, i64, u8, u8)],
+) -> Option<Versor> {
+    let to_shape = shape_of_chain(to)?;
+    crate::transducer::blade::versor_between(from, &to_shape)
 }
 
 /// The cell whose unit square contains a rational point — exact

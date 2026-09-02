@@ -176,11 +176,12 @@ pub fn congruent<'a>(
     chains: impl Fn(usize) -> &'a [Cell],
     chain: &[Cell],
 ) -> Option<(usize, Versor)> {
+    let shape = element::shape_of_chain(chain)?;
     stalks
         .fiber(&invariant(chain))
         .iter()
         .copied()
-        .find_map(|i| element::transition(chain, chains(i)).map(|v| (i, v)))
+        .find_map(|i| element::transition_from_shape(&shape, chains(i)).map(|v| (i, v)))
 }
 
 #[cfg(test)]
