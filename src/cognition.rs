@@ -242,7 +242,7 @@ impl Kernel {
         let anchor = self.anchor();
         let paid = self.treasury.settle_door(voice, fee, anchor);
         (0..4).any(|l| {
-            deficit[l] >= crate::physics::RESERVE_MAX && fee[l] > 0 && paid[l] == 0
+            deficit[l] >= crate::physics::reserve_max() && fee[l] > 0 && paid[l] == 0
         })
     }
 
@@ -1473,7 +1473,7 @@ fn word_footprint_in(
 /// never its oldest.
 fn action_potential(mu_quoted: &[u64; 4], dwell_k: u64) -> u128 {
     let l1: u128 = mu_quoted.iter().map(|&m| m as u128).sum();
-    let r = crate::physics::RESERVE_MAX as u128;
+    let r = crate::physics::reserve_max() as u128;
     l1 * r / (r + dwell_k as u128)
 }
 

@@ -65,6 +65,17 @@ fn main() {
     if let Some(dir) = std::path::Path::new(&state_path).parent() {
         let _ = std::fs::create_dir_all(dir);
     }
+    // TUNIVERSAL (operator-ruled): the universe's ONE wall clock — genesis
+    // origin persisted on the shared state, never a local timezone. Every
+    // event line stamps with it so the universe replays on exactness.
+    let tuniversal = {
+        let dir = std::path::Path::new(&state_path)
+            .parent()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_else(|| ".".into());
+        mycelium::chronometry::TUniversal::load_or_genesis(&format!("{dir}/tuniversal"))
+    };
+    eprintln!("TUniversal {} (origin {})", tuniversal.stamp(), tuniversal.origin_unix);
 
     let kernel = Arc::new(Mutex::new(Kernel::new()));
     // Resume the learned language from disk (a corrupt ledger boots clean, no crash).
@@ -177,7 +188,7 @@ fn main() {
                 // a strained one serves its hottest few. depth = 4..16 by
                 // free reserve share (RESERVE_MAX the contract scale).
                 let free: u64 = k.physics().reserve.iter().sum();
-                let depth = (4 + (free as usize * 12) / (4 * mycelium::physics::RESERVE_MAX as usize)).min(16);
+                let depth = (4 + (free as usize * 12) / (4 * mycelium::physics::reserve_max() as usize)).min(16);
                 let (s, p) = k.quote(depth);
                 (s, p, k.k_step(), k.cohesion())
             };
@@ -271,7 +282,8 @@ fn main() {
                 };
                 if let Some((cited, deposited)) = outcome {
                     eprintln!(
-                        "  synthesis task {:02x}{:02x}… WELL-FORMED: {cited} cited, {deposited} evidence → admission ({} ms)",
+                        "  [{}] synthesis task {:02x}{:02x}… WELL-FORMED: {cited} cited, {deposited} evidence → admission ({} ms)",
+                        tuniversal.stamp(),
                         tid[0],
                         tid[1],
                         t0.elapsed().as_millis(),
@@ -314,7 +326,8 @@ fn main() {
                 }
             };
             eprintln!(
-                "  solve voice {:02x} task {:02x}{:02x}… → {} μ⃗ {mu:?}",
+                "  [{}] solve voice {:02x} task {:02x}{:02x}… → {} μ⃗ {mu:?}",
+                tuniversal.stamp(),
                 svoice[0],
                 tid[0],
                 tid[1],
@@ -344,7 +357,7 @@ fn main() {
                 // judge teaches more per contact, a strained one fewer.
                 let free: u64 = k.physics().reserve.iter().sum();
                 let depth =
-                    (1 + (free as usize * 7) / (4 * mycelium::physics::RESERVE_MAX as usize)).min(8);
+                    (1 + (free as usize * 7) / (4 * mycelium::physics::reserve_max() as usize)).min(8);
                 let mut out = Vec::new();
                 while *cursor < syllabus.len() && out.len() < depth {
                     let addr = syllabus[*cursor];
@@ -424,7 +437,8 @@ fn main() {
                 syllabus.push(addr);
             }
             eprintln!(
-                "  verdict court {:02x} on {:02x}{:02x}… ruling {ruling} receipt {:02x}{:02x}… applied={applied}",
+                "  [{}] verdict court {:02x} on {:02x}{:02x}… ruling {ruling} receipt {:02x}{:02x}… applied={applied}",
+                tuniversal.stamp(),
                 cvoice[0], addr[0], addr[1], receipt[0], receipt[1]
             );
             let reply = Frame { lane: frame.lane, body: vec![applied as u8] };

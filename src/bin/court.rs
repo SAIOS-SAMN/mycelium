@@ -35,7 +35,7 @@
 //! Usage: court [--kernel NAME] --hypha ADDR [--hypha ADDR]...
 use mycelium::anastome::dialogue;
 use mycelium::chronometry::ReceiptChain;
-use mycelium::physics::{Physics, RESERVE_MAX};
+use mycelium::physics::{reserve_max, Physics};
 use mycelium::sdk::{Kernel, Session};
 use mycelium::transducer::anchor::{derive_carrying_all, Sel};
 use mycelium::transducer::element::{self, Element};
@@ -262,11 +262,11 @@ fn main() {
             // Regenerate: to EXPAND_MIN when work flowed (quick return), to
             // the FULL reserve on an empty docket round — an idle court dials
             // gently, not hotly.
-            let floor = if heard_any { 0 } else { RESERVE_MAX };
+            let floor = if heard_any { 0 } else { reserve_max() };
             while physics.depleted() || physics.reserve.iter().any(|&r| r < floor) {
                 physics.regenerate();
                 physics.relax();
-                std::thread::sleep(std::time::Duration::from_millis(RESERVE_MAX));
+                std::thread::sleep(std::time::Duration::from_millis(reserve_max()));
             }
         }
     }

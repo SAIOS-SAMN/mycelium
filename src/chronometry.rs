@@ -93,9 +93,98 @@ impl ReceiptChain {
     }
 }
 
+/// TUNIVERSAL — the mycelium universe's ONE wall clock (operator-ruled).
+/// Local timezones mutate across "real world" hosts; the universe replays on
+/// EXACTNESS. Every stamp derives from a persisted GENESIS ORIGIN — written
+/// once at the universe's first boot, carried forever, shared by every node
+/// on the state — and monotonic ticks (whole seconds) since it. Never a
+/// local-time render.
+///
+/// The stamp `XX:XX:XX:XX:XX:XX` is the 48-bit tick count as six octets,
+/// read as the {S,G,T} triple — three u16 dimensions on the timetable
+/// (S = high pair, G = mid pair, T = low pair), the same three axes the
+/// K-step orbits carry around their local suns (v0.4 TUniversal lineage;
+/// K remains the ALGEBRAIC clock — TUniversal is the universe's wall).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TUniversal {
+    pub origin_unix: u64,
+}
+
+impl TUniversal {
+    /// Load the persisted genesis origin, or inscribe it NOW (first boot of
+    /// the universe on this state). The file holds one u64 LE — no timezone,
+    /// no locale, nothing mutable.
+    pub fn load_or_genesis(path: &str) -> Self {
+        if let Ok(bytes) = std::fs::read(path) {
+            if let Ok(raw) = <[u8; 8]>::try_from(bytes.as_slice()) {
+                return TUniversal { origin_unix: u64::from_le_bytes(raw) };
+            }
+        }
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        let tmp = format!("{path}.tmp");
+        if std::fs::write(&tmp, now.to_le_bytes()).is_ok() {
+            let _ = std::fs::rename(&tmp, path);
+        }
+        TUniversal { origin_unix: now }
+    }
+
+    /// Ticks since genesis — whole seconds, wrapped into the 48-bit stamp
+    /// space (over 8.9 million years of universe life before wrap).
+    pub fn ticks(&self) -> u64 {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        now.saturating_sub(self.origin_unix) & 0xFFFF_FFFF_FFFF
+    }
+
+    /// The {S,G,T} triple of a tick count — the three timetable dimensions.
+    pub fn sgt_of(ticks: u64) -> (u16, u16, u16) {
+        (((ticks >> 32) & 0xFFFF) as u16, ((ticks >> 16) & 0xFFFF) as u16, (ticks & 0xFFFF) as u16)
+    }
+
+    /// Render a tick count as the universal stamp `XX:XX:XX:XX:XX:XX`.
+    pub fn stamp_of(ticks: u64) -> String {
+        let b = ticks.to_be_bytes();
+        format!("{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}", b[2], b[3], b[4], b[5], b[6], b[7])
+    }
+
+    /// This instant's universal stamp.
+    pub fn stamp(&self) -> String {
+        Self::stamp_of(self.ticks())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The stamp is pure arithmetic on ticks — {S,G,T} decompose exactly and
+    /// the render carries no locale.
+    #[test]
+    fn tuniversal_stamp_is_exact_and_timezone_free() {
+        let t = 0x0001_0002_0003u64;
+        assert_eq!(TUniversal::sgt_of(t), (1, 2, 3), "{{S,G,T}} = the three u16 pairs");
+        assert_eq!(TUniversal::stamp_of(t), "00:01:00:02:00:03");
+        assert_eq!(TUniversal::stamp_of(0), "00:00:00:00:00:00", "genesis is the zero stamp");
+    }
+
+    /// Genesis persists: a second load reads the SAME origin (replay
+    /// exactness — the universe's clock never re-anchors).
+    #[test]
+    fn tuniversal_genesis_persists() {
+        let dir = std::env::temp_dir().join(format!("tuniv-test-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let path = dir.join("tuniversal");
+        let p = path.to_string_lossy().to_string();
+        let a = TUniversal::load_or_genesis(&p);
+        let b = TUniversal::load_or_genesis(&p);
+        assert_eq!(a.origin_unix, b.origin_unix, "one genesis, carried forever");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 
     /// K advances monotonically, links seal, integrity verifies — and one
     /// tampered byte anywhere breaks the whole chain.

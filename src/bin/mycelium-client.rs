@@ -27,7 +27,7 @@
 //! Usage: mycelium-client [ADDR] --kernel NAME [--state DIR]
 //!            [--feed CORPUS_DIR] [--loop] [--limit N] [--conductor BOARD]
 use mycelium::arc::{embed, frame_ratio, grid_to_cells, parse_task, readback};
-use mycelium::physics::{Physics, RESERVE_MAX};
+use mycelium::physics::{reserve_max, Physics};
 use mycelium::sdk::{Comprehension, Entity, Kernel};
 use std::path::PathBuf;
 use std::time::Instant;
@@ -89,6 +89,10 @@ fn main() {
     let conductor = flag(&args, "--conductor").map(String::from);
     let genome_path = format!("{state_dir}/{name}.genome");
     let _ = std::fs::create_dir_all(&state_dir);
+    // TUNIVERSAL: the universe's one wall clock (shared genesis on the
+    // state) — every status line stamps with it, never local time.
+    let tuniversal =
+        mycelium::chronometry::TUniversal::load_or_genesis(&format!("{state_dir}/tuniversal"));
 
     // The corpus (feeder role): every train pair, flattened once, re-walked
     // per cycle under the conductor's schedule when a board is given.
@@ -128,7 +132,6 @@ fn main() {
     let mut refined = 0u64; // accepted compression bids (0x09)
     let mut learned = 0u64; // syllabus words received (0x0D)
     let (mut last_genome, mut last_settles) = (usize::MAX, u64::MAX);
-    let start = Instant::now();
     // The feed walk: (task index within the cycle order, pair index within it).
     let mut cycle: Vec<PathBuf> = Vec::new();
     let (mut ti, mut pi) = (0usize, 0usize);
@@ -382,8 +385,8 @@ fn main() {
                 last_genome = entity.epigenome.genome_len();
                 last_settles = settles;
                 eprintln!(
-                    "[{name}] {:.0}s | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | refined {refined} learned {learned} | genome {} (peak expr {})",
-                    start.elapsed().as_secs_f64(),
+                    "[{name}] [{}] fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | refined {refined} learned {learned} | genome {} (peak expr {})",
+                    tuniversal.stamp(),
                     entity.epigenome.genome_len(),
                     entity.epigenome.peak_expression(),
                 );
@@ -391,7 +394,7 @@ fn main() {
             while physics.depleted() {
                 physics.regenerate();
                 physics.relax();
-                let dwell = (judge_load as u64).max(RESERVE_MAX as u64);
+                let dwell = (judge_load as u64).max(reserve_max());
                 std::thread::sleep(std::time::Duration::from_millis(dwell));
             }
         }
