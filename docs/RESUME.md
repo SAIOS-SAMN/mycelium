@@ -2,8 +2,8 @@
 
 # Resume notes (continuity across sessions)
 
-Last update: TUniversal 00:00:00:00:4A (genesis origin 1788326481),
-commit after 86be95a. Task list: docs/TRAJECTORY.md (rebuild the session
+Last update: TUniversal 00:00:00:00:70 (genesis origin 1788326481),
+commit after 4a7f0ed. Task list: docs/TRAJECTORY.md (rebuild the session
 task tracker from its "Open" section at the start of a new session).
 
 ## Boot check
@@ -22,40 +22,33 @@ and disabled by ruling.
 
 ## State at handoff
 
-- All nine units active on the current binaries. The persistent
-  `mycelium-v010-court` unit runs with the era-2 federation (3,151 words,
-  K=5,429, restored from state/court.federation). No transient units.
-- The era-2 re-audit under the bundle lens is complete (see TRAJECTORY
-  status note 41:53). The court's summary line now reads `attached`
-  where it read `demoted`: a placement of a held geometry attaches to
-  its base as a transported section, it is no longer discarded.
-- The court speaks through a per-wire outbox and logs
-  `aperture Occluded/Impeded: d/w delivered, n waiting` when a wire does
-  not drain. A hypha in boot (corpus intake, now about 3 s) reads as
-  occluded until its listener opens; that is expected.
-- Kernel persistence is paced: the ledger seals on the idle deliberation
-  stroke when the measurement (cards, fibre volume, docket, K) moved. A
-  hypha stopped between a change and its next idle stroke loses at most
-  that window. Restarting a hypha no longer sheds adoptions.
-- Unique verified solves: 3 (not re-measured this pass).
+- Nine units active on 4a7f0ed. Three binaries only (mycelium-server,
+  mycelium-client, mycelium-court).
+- The hypha is a verifier on the wire: percepts and demands carry the
+  entity's citations and are replayed (an unproven percept is deferred);
+  ACT_PROBE settles graded descent or closure on the book; refinement bids
+  carry citations and are replayed; the idle stroke runs only condense,
+  torsion, regenerate. `Kernel::adjudicate` keeps the in-lock reduction
+  for tests and local use only.
+- The entity thinks: it germinates its own percepts, reduces over its
+  genome with a metabolic budget, forms the superposition of hypotheses
+  for a listing (`Entity::abduce`), probes the head and speaks the next
+  when the hypha settles nothing, attests the settled residual, and bids
+  refinements from its own decompositions. Its summary line reports
+  discordance (strata differing from the hypha's).
+- The book is lineage-ranked by curvature, sealed per generation; a quote
+  prices only the served head; the cover replaces quadrant tiling.
+- Cross-complex pairs are read through the frame map onto the output
+  complex; ρ rides as an exact scaling fiber and on the percept wire.
+- Unique verified solves: 3 standing, 0 since the entities were rebuilt.
 
 ## Immediate next actions
 
-1. Watch the entities' genomes converge on the hypha's language (client
-   journals print `SYNC +n words by stratum (genome N)`; hypha journals
-   print `fetch voice … ← n words of stratum`). Convergence is reached
-   when a sync learns nothing for several contacts.
-2. Then TRAJECTORY item 1: ACT_PERCEPT as proof of reduction (the client
-   reduces over its genome; the hypha replays and attests), and item 2
-   (excise server contemplation). Only after the digests glue — flipping
-   earlier seizes the network on deferrals.
-3. Then item 3 (compression economics) and item 11 (connection-aware
-   peel), the measured levers for contraction and application.
-
-Note on state: hyphas judge on a reflex pool; the listener thread only
-accepts and dispatches. A quote is an O(1) read of the sealed closure.
-Persistence seals on the idle stroke; entity genomes crystallize to
-state/*.genome.
+1. Watch a full hour: entity genomes and discordance (syncs now fill the
+   carrier), probe settlement rates, installs, and the court's federation.
+2. TRAJECTORY item 1 (excise server contemplation), then item 2
+   (demotion barrier), item 3 (court sheaf sync), item 4 (connection-aware
+   peel).
 
 ## Standing operational rules
 
