@@ -13,6 +13,7 @@ use crate::network::nerve::Nerve;
 use crate::transducer::blade::{components, lift};
 use crate::transducer::element::{self, Element};
 use crate::transducer::germinate::germinate;
+pub use crate::transducer::sentence::{cited_pattern, replay, verify, Cite};
 
 /// Mycelium's heritage floor: demands larger than this fragment (the 48% score
 /// depended on decomposing large corpus). Here the topological trigger is
@@ -331,36 +332,37 @@ pub fn germinate_bodies(
     Some((germs, composites))
 }
 
-/// CONFLUENT DECOMPOSITION — pure. Reduce the germ's substance to normal form
-/// over the language snapshot by peeling generators under ≺_DM within the
-/// projection budget. No lookup, no pair-search: a canonical sentence, or an
-/// irreducible residual (a Knuth–Bendix critical pair). The selection
-/// critical pairs it met ride along, indexed into the snapshot.
+/// THE NORMAL FORM of a chain over a language: its deconstruction into the
+/// words that compose it (a sentence, when closed), or the residual no word
+/// speaks (irreducible — a critical pair). One closed-form pass; no search.
+pub fn normal_form(language: &Language, chain: &[(i64, i64, u8, u8)], exclude: Option<usize>) -> NormalForm {
+    let sentence = crate::transducer::sentence::deconstruct(
+        &language.words,
+        &language.stalks,
+        &|i| language.shape(i),
+        chain,
+        exclude,
+    );
+    match sentence.is_closed() {
+        true => NormalForm::Decomposed(sentence.cites.iter().map(|(i, _, _)| *i).collect()),
+        false => NormalForm::Irreducible(element::from_residual(&sentence.residual)),
+    }
+}
+
+/// Reduce a germ's substance to normal form over the language snapshot —
+/// pure. The anchor context rides along unused: placement is a coordinate
+/// of the transport now, not a selection rule.
 pub fn reduce_germ(
-    language: &[Element],
-    budget: (usize, usize),
+    language: &Language,
+    _budget: (usize, usize),
     g: &Element,
-    ctx: Option<&(Vec<(i64, i64, u8)>, (i64, i64))>,
+    _ctx: Option<&(Vec<(i64, i64, u8)>, (i64, i64))>,
 ) -> (NormalForm, Vec<(usize, Vec<(i64, i64)>)>) {
-    let mut qs: Vec<(usize, Vec<(i64, i64)>)> = Vec::new();
     let sub = g.substance();
     if sub.sub().is_empty() {
-        return (NormalForm::Decomposed(Vec::new()), qs); // a pure transposition
+        return (NormalForm::Decomposed(Vec::new()), Vec::new()); // a pure transposition
     }
-    let held_ctx: Option<AnchorCtx> = ctx.map(|(s, o)| (s.as_slice(), *o));
-    let form = match decompose_over_anchored(
-        language,
-        sub.sub(),
-        None,
-        budget.0,
-        budget.1,
-        held_ctx.as_ref(),
-        &mut qs,
-    ) {
-        Ok(word) => NormalForm::Decomposed(word),
-        Err(void) => NormalForm::Irreducible(element::from_residual(&void)),
-    };
-    (form, qs)
+    (normal_form(language, sub.sub(), None), Vec::new())
 }
 
 /// Reduce every germ over the snapshot — pure, off the lock.
@@ -372,7 +374,7 @@ pub fn reduce_all(
     germs
         .into_iter()
         .map(|(germ, ctx)| {
-            let (form, qs) = reduce_germ(&language.words, budget, &germ, ctx.as_ref());
+            let (form, qs) = reduce_germ(language, budget, &germ, ctx.as_ref());
             Reduction { germ, ctx, form, qs, language: std::sync::Arc::clone(language) }
         })
         .collect()
@@ -1100,7 +1102,7 @@ impl Kernel {
         if self.door_defers(voice) {
             return None;
         }
-        let budget = self.projection_budget();
+        let budget = (0usize, 0usize); // reduction is closed-form: no search budget
         Some((self.language(), budget))
     }
 
@@ -1139,8 +1141,8 @@ impl Kernel {
         ctx: Option<(Vec<(i64, i64, u8)>, (i64, i64))>,
     ) -> Outcome {
         let language = self.language();
-        let budget = self.projection_budget();
-        let (form, qs) = reduce_germ(&language.words, budget, &g, ctx.as_ref());
+        let budget = (0usize, 0usize); // reduction is closed-form: no search budget
+        let (form, qs) = reduce_germ(&language, budget, &g, ctx.as_ref());
         self.commit_germ(Reduction { germ: g, ctx, form, qs, language }, voice)
     }
 
@@ -1493,26 +1495,23 @@ impl Kernel {
         best.map(|(i, cand, _)| (i, cand))
     }
 
-    /// THE SPECULATIVE PROJECTION BUDGET — the metabolism prices IMAGINATION: how
-    /// wide a superposition (uncommitted branches held in tension) and how deep a
-    /// virtual rollout the reduction may hold before collapse. Calm → wide and
-    /// deep; loaded → narrow; saturated → near-reactive (terminals only).
-    pub(crate) fn projection_budget(&self) -> (usize, usize) {
-        match self.physics.metabolism_rate().iter().copied().max().unwrap_or(0) {
-            0..=7 => (4, 16),
-            8..=31 => (2, 8),
-            _ => (1, 2),
-        }
-    }
 
     /// The kernel's chain reduction — delegates to the shared projective
     /// decomposition ([`decompose_over`]) at the metabolic projection budget.
     fn reduce_chain(&self, first: Vec<(i64, i64, u8, u8)>, exclude: Option<usize>) -> NormalForm {
-        let (beam_width, depth) = self.projection_budget();
-        match decompose_over(&self.basis, &first, exclude, beam_width, depth) {
-            Ok(word) => NormalForm::Decomposed(word),
-            Err(void) => NormalForm::Irreducible(element::from_residual(&void)),
-        }
+        let fresh;
+        let language: &Language = match self.language_gen == self.basis_gen && self.language.words.len() == self.basis.len() {
+            true => &self.language,
+            false => {
+                fresh = Language {
+                    words: self.basis.clone(),
+                    stalks: self.stalks.clone(),
+                    shapes: (0..self.basis.len()).map(|_| std::sync::OnceLock::new()).collect(),
+                };
+                &fresh
+            }
+        };
+        normal_form(language, &first, exclude)
     }
 
     /// THE SYNTROPIC STROKE — one bounded consolidation step, run when a lane's
@@ -1851,183 +1850,6 @@ pub enum Adoption {
     Refused(&'static str),
 }
 
-/// The chain lifts into a superposition of uncommitted branches; every branch
-/// rolls out every fitting peel VIRTUALLY (zero mutation); the superposition
-/// prunes to the beam by GLOBAL remaining defect (≺_DM flow), never local
-/// pattern size; obstructed branches die traceless; a branch whose remainder
-/// closes (δσ̂ = 0) collapses the whole superposition into its sentence. `Err`
-/// carries the MINIMAL void seen across all rollouts — the genuine conceptual
-/// gap (a germination prospect). Totally ordered → deterministic collapse.
-pub fn decompose_over(
-    language: &[Element],
-    first: &[(i64, i64, u8, u8)],
-    exclude: Option<usize>,
-    beam_width: usize,
-    depth: usize,
-) -> Result<Vec<usize>, Vec<(i64, i64, u8, u8)>> {
-    decompose_over_anchored(language, first, exclude, beam_width, depth, None, &mut Vec::new())
-}
-
-/// The scene-aware reduction (Step 7): identical superposition, but every peel
-/// meets the DUAL CONDITION — substance ⊆ defect AND supp(Δ) ⊆ π(scene). A
-/// substance-match whose support diverges emits Q_anchor into `mismatches`
-/// (the selection-fiber critical pairs) instead of peeling. With ctx = None
-/// every anchor is the ⊤ carrier and this is exactly the prior reduction.
-pub fn decompose_over_anchored(
-    language: &[Element],
-    first: &[(i64, i64, u8, u8)],
-    exclude: Option<usize>,
-    beam_width: usize,
-    depth: usize,
-    ctx: Option<&AnchorCtx>,
-    mismatches: &mut Vec<(usize, Vec<(i64, i64)>)>,
-) -> Result<Vec<usize>, Vec<(i64, i64, u8, u8)>> {
-    decompose_cited(language, first, exclude, beam_width, depth, ctx, mismatches)
-        .map(|cites| cites.into_iter().map(|(i, _, _)| i).collect())
-        .map_err(|(void, _)| void)
-}
-
-/// The citation, the replay, and the cited pattern are the sentence
-/// algebra shared with the entity and the court.
-pub use crate::transducer::sentence::{cited_pattern, replay, verify, Cite};
-
-/// The cited decomposition — the same superposition, keeping every peel's
-/// coordinates so the sentence can be spoken as a proof. `Err` carries the
-/// minimal void seen across all rollouts together with the citations of the
-/// branch that reached it: the partial sentence and its residual.
-pub fn decompose_cited(
-    language: &[Element],
-    first: &[(i64, i64, u8, u8)],
-    exclude: Option<usize>,
-    beam_width: usize,
-    depth: usize,
-    ctx: Option<&AnchorCtx>,
-    mismatches: &mut Vec<(usize, Vec<(i64, i64)>)>,
-) -> Result<Vec<Cite>, (Vec<(i64, i64, u8, u8)>, Vec<Cite>)> {
-    if first.is_empty() {
-        return Ok(Vec::new());
-    }
-    let mut cache: Vec<(usize, Vec<(i64, i64)>)> = Vec::new();
-    if let Some(c) = word_matching_anchored(language, first, exclude, ctx, &mut cache, mismatches) {
-        return Ok(vec![c]); // the utterance is itself one word
-    }
-    let mut beam: Vec<(Vec<(i64, i64, u8, u8)>, Vec<Cite>)> = vec![(first.to_vec(), Vec::new())];
-    let mut void = first.to_vec();
-    let mut void_cites: Vec<Cite> = Vec::new();
-    for _ in 0..depth {
-        let mut successors: Vec<(Vec<(i64, i64, u8, u8)>, Vec<Cite>)> = Vec::new();
-        for (chain, word) in &beam {
-            for (cite, translated) in fitting_peels(language, chain, exclude, ctx, mismatches) {
-                let remaining: Vec<_> = chain.iter().filter(|t| !translated.contains(*t)).cloned().collect();
-                let mut w = word.clone();
-                w.push(cite);
-                // CONFLUENT COLLAPSE — this rollout closed: δσ̂ = 0.
-                if remaining.is_empty() {
-                    return Ok(w);
-                }
-                if let Some(c) =
-                    word_matching_anchored(language, &remaining, exclude, ctx, &mut cache, mismatches)
-                {
-                    w.push(c);
-                    return Ok(w);
-                }
-                if remaining.len() < void.len() {
-                    void = remaining.clone();
-                    void_cites = w.clone();
-                }
-                successors.push((remaining, w));
-            }
-        }
-        if successors.is_empty() {
-            break; // every branch obstructed — the superposition is exhausted
-        }
-        // Prune to the beam by GLOBAL defect, then depth, then citation order —
-        // a total order, so two runs collapse identically.
-        successors.sort_by(|a, b| {
-            a.0.len()
-                .cmp(&b.0.len())
-                .then(a.1.len().cmp(&b.1.len()))
-                .then(a.1.iter().map(|(i, _, _)| *i).cmp(b.1.iter().map(|(i, _, _)| *i)))
-        });
-        successors.truncate(beam_width);
-        beam = successors;
-    }
-    Err((void, void_cites))
-}
-
-/// FORWARD ABDUCTION — the superposition kept, not collapsed. Every branch
-/// of the rollout is a hypothesis Ŝ = ∏(wᵢ, gᵢ): a loop formed with the
-/// observed coboundary's inverse. A branch that closes (empty residual)
-/// has trivial holonomy — the flat connection; an open branch carries its
-/// holonomy defect as the residual's magnitude μ⃗(R). Branches rank by
-/// least defect under the multiset order Dershowitz–Manna refines (lanes
-/// sorted descending, compared lexicographically — never summed), then by
-/// citation order, so the ranking is total and deterministic. Width and
-/// depth come from the thinker's own metabolism.
-pub fn abduce(
-    language: &[Element],
-    first: &[(i64, i64, u8, u8)],
-    beam_width: usize,
-    depth: usize,
-) -> Vec<(Vec<Cite>, Vec<(i64, i64, u8, u8)>)> {
-    let mut mismatches = Vec::new();
-    let mut cache: Vec<(usize, Vec<(i64, i64)>)> = Vec::new();
-    if first.is_empty() {
-        return vec![(Vec::new(), Vec::new())];
-    }
-    if let Some(c) = word_matching_anchored(language, first, None, None, &mut cache, &mut mismatches) {
-        return vec![(vec![c], Vec::new())];
-    }
-    let mut beam: Vec<(Vec<(i64, i64, u8, u8)>, Vec<Cite>)> = vec![(first.to_vec(), Vec::new())];
-    let mut population: Vec<(Vec<(i64, i64, u8, u8)>, Vec<Cite>)> = beam.clone();
-    for _ in 0..depth {
-        let mut successors: Vec<(Vec<(i64, i64, u8, u8)>, Vec<Cite>)> = Vec::new();
-        for (chain, word) in &beam {
-            for (cite, translated) in fitting_peels(language, chain, None, None, &mut mismatches) {
-                let remaining: Vec<_> = chain.iter().filter(|t| !translated.contains(*t)).cloned().collect();
-                let mut w = word.clone();
-                w.push(cite);
-                if remaining.is_empty() {
-                    return vec![(w, Vec::new())]; // trivial holonomy: the loop closes
-                }
-                if let Some(c) =
-                    word_matching_anchored(language, &remaining, None, None, &mut cache, &mut mismatches)
-                {
-                    w.push(c);
-                    return vec![(w, Vec::new())];
-                }
-                successors.push((remaining, w));
-            }
-        }
-        if successors.is_empty() {
-            break;
-        }
-        successors.sort_by(|a, b| defect_order(&a.0, &b.0).then(cite_order(&a.1, &b.1)));
-        successors.truncate(beam_width);
-        population.extend(successors.iter().cloned());
-        beam = successors;
-    }
-    population.sort_by(|a, b| defect_order(&a.0, &b.0).then(cite_order(&a.1, &b.1)));
-    population.dedup_by(|a, b| a.1 == b.1);
-    population.into_iter().map(|(remaining, cites)| (cites, remaining)).collect()
-}
-
-/// The holonomy-defect order: the residual's lanes sorted descending,
-/// compared lexicographically (the multiset order ≺_DM refines).
-fn defect_order(a: &[(i64, i64, u8, u8)], b: &[(i64, i64, u8, u8)]) -> std::cmp::Ordering {
-    let mut la = element::measure_lanes(a);
-    let mut lb = element::measure_lanes(b);
-    la.sort_unstable_by(|x, y| y.cmp(x));
-    lb.sort_unstable_by(|x, y| y.cmp(x));
-    la.cmp(&lb)
-}
-
-fn cite_order(a: &[Cite], b: &[Cite]) -> std::cmp::Ordering {
-    a.len().cmp(&b.len()).then(a.iter().map(|(i, _, _)| *i).cmp(b.iter().map(|(i, _, _)| *i)))
-}
-
-/// The direct terminal: does the (re-centered) chain SIT on a held word — its
-/// base or any section along the punctured axis (the bundle speaks the family)?
 /// THE CARRIER'S CAPACITY in cells: what one contact's frame carries, read
 /// from the wire's own budget and its measured cell width — a physical
 /// limit of the transport, never a size chosen for cognition.
@@ -2186,145 +2008,6 @@ fn mem_available_bytes() -> u64 {
         .unwrap_or(64 * 1024 * 1024)
 }
 
-/// THE ANCHOR CONTEXT — the scene (framed-body coordinates) a demand was
-/// perceived in, plus the offset mapping the centered chain's coordinates back
-/// into that scene. None = no scene at hand (attest-borne chains, redundancy
-/// probes): every anchor admits, the ⊤ behavior.
-pub type AnchorCtx<'a> = (&'a [(i64, i64, u8)], (i64, i64));
-
-/// γ ∘ π admission: does the word's anchor cover this placement's footprint?
-/// Ok(()) admits; Err carries Q_anchor = supp(Δ) △ π(scene) — the symmetric
-/// difference, the SELECTION-FIBER critical pair (capped; the court refines).
-fn anchor_admits(
-    gen: &Element,
-    placement: &[(i64, i64, u8, u8)],
-    ctx: Option<&AnchorCtx>,
-    region_cache: &mut Vec<(usize, Vec<(i64, i64)>)>,
-    gen_idx: usize,
-) -> Result<(), Vec<(i64, i64)>> {
-    let (Some(pi), Some((scene, (or, oc)))) = (gen.anchor(), ctx) else {
-        return Ok(()); // ⊤ anchor or no scene: unconstrained carrier
-    };
-    let region = match region_cache.iter().find(|(i, _)| *i == gen_idx) {
-        Some((_, r)) => r.clone(),
-        None => {
-            let r = pi.eval(scene);
-            region_cache.push((gen_idx, r.clone()));
-            r
-        }
-    };
-    let footprint: Vec<(i64, i64)> =
-        placement.iter().map(|(r, c, _, _)| (r + or, c + oc)).collect();
-    if footprint.iter().all(|p| region.binary_search(p).is_ok()) {
-        return Ok(());
-    }
-    let mut q: Vec<(i64, i64)> = footprint
-        .iter()
-        .copied()
-        .filter(|p| region.binary_search(p).is_err())
-        .chain(region.iter().copied().filter(|p| !footprint.contains(p)))
-        .collect();
-    q.sort_unstable();
-    q.dedup();
-    q.truncate(64); // bounded residual — the court needs the shape, not the flood
-    Err(q)
-}
-
-fn word_matching(language: &[Element], chain: &[(i64, i64, u8, u8)], exclude: Option<usize>) -> Option<usize> {
-    let centered = recenter(chain);
-    language
-        .iter()
-        .enumerate()
-        .position(|(j, p)| Some(j) != exclude && p.matches_chain(&centered))
-}
-
-/// The direct terminal under the dual condition: the whole chain must sit on a
-/// held word AND the word's π must cover the chain's footprint in the scene.
-/// A substance-terminal whose anchor refuses emits Q_anchor and the search
-/// continues over the remaining words.
-fn word_matching_anchored(
-    language: &[Element],
-    chain: &[(i64, i64, u8, u8)],
-    exclude: Option<usize>,
-    ctx: Option<&AnchorCtx>,
-    cache: &mut Vec<(usize, Vec<(i64, i64)>)>,
-    mismatches: &mut Vec<(usize, Vec<(i64, i64)>)>,
-) -> Option<Cite> {
-    let centered = recenter(chain);
-    let min_r = chain.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
-    let min_c = chain.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
-    for (j, p) in language.iter().enumerate() {
-        if Some(j) == exclude {
-            continue;
-        }
-        let Some(asg) = p.matching_assignment(&centered) else { continue };
-        match anchor_admits(p, chain, ctx, cache, j) {
-            Ok(()) => {
-                return Some((j, element::translator_versor(min_r, min_c), asg));
-            }
-            Err(q) => mismatches.push((j, q)),
-        }
-    }
-    None
-}
-
-/// Every fitting virtual peel — the branch alphabet: for each word, each of its
-/// assignments (base + sections: the ASCEND reframe rides the punctured axis),
-/// each of the first few row-major anchors whose translated pattern embeds
-/// exactly. All offered to the superposition; none committed here.
-fn fitting_peels(
-    language: &[Element],
-    chain: &[(i64, i64, u8, u8)],
-    exclude: Option<usize>,
-    ctx: Option<&AnchorCtx>,
-    mismatches: &mut Vec<(usize, Vec<(i64, i64)>)>,
-) -> Vec<(Cite, Vec<(i64, i64, u8, u8)>)> {
-    const MAX_ANCHORS: usize = 3;
-    let mut out = Vec::new();
-    let mut region_cache: Vec<(usize, Vec<(i64, i64)>)> = Vec::new();
-    for (i, gen) in language.iter().enumerate() {
-        if Some(i) == exclude {
-            continue;
-        }
-        let base = gen.sub();
-        // A proper, nonempty sub-pattern (equal size is the direct terminal).
-        if base.is_empty() || base.len() >= chain.len() {
-            continue;
-        }
-        let pos = element::positions(base);
-        for (asg_idx, asg) in gen.assignments().into_iter().enumerate() {
-            let pat: Vec<(i64, i64, u8, u8)> =
-                pos.iter().zip(&asg).map(|((r, c), (b, a))| (*r, *c, *b, *a)).collect();
-            let (pr, pc, pb, pa) = pat[0];
-            let mut anchors = 0;
-            for &(cr, cc, cb_, ca_) in chain {
-                if (cb_, ca_) != (pb, pa) {
-                    continue;
-                }
-                let (dr, dc) = (cr - pr, cc - pc);
-                let translated: Vec<_> = pat.iter().map(|(r, c, b, a)| (r + dr, c + dc, *b, *a)).collect();
-                if translated.iter().all(|t| chain.contains(t)) {
-                    // DUAL CONDITION (Step 7): substance ⊆ defect AND
-                    // supp(Δ) ⊆ π(scene). Substance-match with support
-                    // divergence is not a peel — it is a SELECTION critical
-                    // pair, emitted for Knuth–Bendix anchor refinement.
-                    match anchor_admits(gen, &translated, ctx, &mut region_cache, i) {
-                        Ok(()) => {
-                            let g = element::translator_versor(dr, dc);
-                            out.push(((i, g, asg_idx), translated));
-                            anchors += 1;
-                            if anchors >= MAX_ANCHORS {
-                                break;
-                            }
-                        }
-                        Err(q) => mismatches.push((i, q)),
-                    }
-                }
-            }
-        }
-    }
-    out
-}
 
 // ── the ANASTOME address of a germ (canonical, opaque; transport identity) ────
 
@@ -2652,8 +2335,7 @@ mod tests {
         // reduce-gate (as an imported/legacy entry would be).
         let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
         let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
-        k.basis.push(from_residual(&germinate(&a_far, &rot_far).unwrap()));
-        k.discoverers.push([7; 32]);
+        k.basis_push(from_residual(&germinate(&a_far, &rot_far).unwrap()), [7; 32]);
         assert_eq!(k.basis_len(), 2);
         k.optimize(); // probe basis[0]: the rest (its duplicate) derives it → retired
         assert_eq!(k.basis_len(), 1, "the redundant rule is consolidated away");
@@ -2681,8 +2363,7 @@ mod tests {
         let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
         k.basis.push(from_residual(&germinate(&a, &rot).unwrap()));
         k.discoverers.push([1; 32]);
-        k.basis.push(from_residual(&germinate(&a_far, &rot_far).unwrap()));
-        k.discoverers.push([7; 32]);
+        k.basis_push(from_residual(&germinate(&a_far, &rot_far).unwrap()), [7; 32]);
         let derivable = k.basis[0].address(); // its duplicate speaks it
         // The bidder's sentence: the duplicate, cited at the identity.
         let sentence = vec![(k.basis[1].address(), element::identity_versor(), 0u32)];
@@ -2731,13 +2412,12 @@ mod tests {
         // base ∘ section is the only decomposition that CLOSES.
         let a = [(0, 0, 1), (0, 1, 3), (0, 2, 5), (0, 3, 7)];
         let b = [(0, 0, 2), (0, 1, 4), (0, 2, 6), (0, 3, 8)];
-        match k.ingest(&a, &b, [3; 32]) {
-            Outcome::Decomposed(w) => {
-                assert_eq!(w, vec![1, 1], "collapsed into the CLOSING sentence — the bundle speaks both members");
-            }
-            o => panic!("expected the closing sentence, got {o:?}"),
-        }
-        assert_eq!(k.basis_len(), 2, "no junk germinated — the projection closed");
+        // The saddle is one body no held word carries whole: it is not
+        // peeled by search into two words, it pends as a germ — the
+        // composite is the lineage's work on the book, and a second voice
+        // decides it.
+        assert!(matches!(k.ingest(&a, &b, [3; 32]), Outcome::GermPending), "a fused body pends as a germ");
+        assert_eq!(k.basis_len(), 2, "nothing installs on one voice");
     }
 
     /// STEP 3's ECONOMIC CONVERSATION CLOSES: A speaks a novel PERCEPT (the germ
@@ -2855,8 +2535,9 @@ mod tests {
         let word = k.basis()[0].address();
         // The entity's reduction over the language: the word cited at the
         // origin, the far cell left as the residual.
-        let mut mm = Vec::new();
-        let (void, cites) = decompose_cited(k.basis(), &chain, None, 4, 4, None, &mut mm).unwrap_err();
+        let language = k.language();
+        let sentence = crate::transducer::sentence::deconstruct(&language.words, &language.stalks, &|i| language.shape(i), &chain, None);
+        let (void, cites) = (sentence.residual.clone(), sentence.cites.clone());
         assert_eq!(void, vec![(0, 3, 3, 4)]);
         assert_eq!(cites.len(), 1);
         assert_eq!(replay(k.basis(), &cites, &chain), void, "the replay reproduces the residual");
@@ -2873,35 +2554,6 @@ mod tests {
         assert!(k.quote(8).1.is_empty(), "the listing cleared");
     }
 
-    /// ABDUCTION: the superposition is kept — a chain no single word closes
-    /// yields several cited hypotheses ranked by holonomy defect, the
-    /// closing one first when it exists, and every branch's residual is
-    /// exactly what its replay leaves.
-    #[test]
-    fn abduction_keeps_the_superposition_ranked_by_holonomy_defect() {
-        use crate::transducer::element::from_residual;
-        use crate::transducer::germinate::germinate;
-        let bar = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
-        let dot = from_residual(&germinate(&[(0, 0, 3u8)], &[(0, 0, 4u8)]).unwrap());
-        let language = vec![bar, dot];
-        // Two bars and a dot: the loop closes through three citations.
-        let closed = vec![(0, 0, 1, 2), (0, 1, 1, 2), (2, 0, 1, 2), (2, 1, 1, 2), (4, 4, 3, 4)];
-        let hyp = abduce(&language, &closed, 4, 8);
-        assert_eq!(hyp.len(), 1, "a closing branch collapses the superposition");
-        assert!(hyp[0].1.is_empty(), "trivial holonomy");
-        assert_eq!(replay(&language, &hyp[0].0, &closed), Vec::<(i64, i64, u8, u8)>::new());
-        // A bar, a dot, and a cell no word speaks: open branches, ranked.
-        let open = vec![(0, 0, 1, 2), (0, 1, 1, 2), (4, 4, 3, 4), (7, 7, 5, 6)];
-        let hyp = abduce(&language, &open, 4, 8);
-        assert!(hyp.len() > 1, "the superposition survives");
-        assert_eq!(hyp[0].1, vec![(7, 7, 5, 6)], "least defect first");
-        for (cites, residual) in &hyp {
-            assert_eq!(&replay(&language, cites, &open), residual, "each branch's residual is its replay");
-        }
-        let d0 = crate::transducer::element::measure_lanes(&hyp[0].1);
-        let d1 = crate::transducer::element::measure_lanes(&hyp[1].1);
-        assert!(d0.iter().max() <= d1.iter().max(), "ranked by defect");
-    }
 
     /// THE PROOF: on the wire the judge replays; a proven percept commits its
     /// sentence, an unproven one is deferred, never searched.
@@ -3018,58 +2670,13 @@ mod tests {
             matches!(k.ingest(&a2, &b2, [3; 32]), Outcome::Decomposed(_)),
             "π covers the interface placement"
         );
-        // OFF the interface (no hue 3 near): the word REFUSES — the demand is
-        // genuine new coverage, not a false generalization.
+        // Placement is a coordinate of the transport, not a selection rule:
+        // the same body elsewhere is the same word carried there.
         let a3 = vec![(0, 0, 1), (0, 1, 1)];
         let b3 = vec![(0, 0, 4), (0, 1, 4)];
-        let out = k.ingest(&a3, &b3, [3; 32]);
-        assert!(
-            matches!(out, Outcome::GermPending | Outcome::Installed(_)),
-            "off-region the dual condition refuses the peel: {out:?}"
-        );
-        assert!(
-            !k.anchor_mismatch_dockets().is_empty(),
-            "the refusal spoke: Q_anchor queued for the court"
-        );
+        assert!(matches!(k.ingest(&a3, &b3, [3; 32]), Outcome::Decomposed(_)), "the word speaks wherever it is carried");
     }
 
-    /// STEP 7 — THE DUAL CONDITION: an anchored word peels only where its π
-    /// covers the placement; a substance-match outside the region is REFUSED
-    /// and emits Q_anchor (the selection critical pair), never an ambient peel.
-    /// With ctx = None (no scene) the anchor is the ⊤ carrier — old behavior.
-    #[test]
-    fn anchored_words_refuse_out_of_region_placements() {
-        use crate::transducer::anchor::Sel;
-        // A 2-cell word 1→2, anchored to hue-1 cells ADJACENT TO hue-3 (the
-        // interface term) — composed, not named.
-        let w = element::from_residual(&vec![(0, 0, 1, 2), (0, 1, 1, 2)])
-            .with_anchor(Sel::Inter(Box::new(Sel::Hue(1)), Box::new(Sel::Star(Box::new(Sel::Hue(3))))));
-        let language = vec![w];
-        // Scene: hue-1 pair at (0,0)-(0,1) NOT near hue 3; hue-3 sits far away.
-        let scene: Vec<(i64, i64, u8)> = vec![(0, 0, 1), (0, 1, 1), (7, 7, 3)];
-        let chain = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
-        let ctx: AnchorCtx = (&scene, (0, 0));
-        let mut qs = Vec::new();
-        let out = decompose_over_anchored(&language, &chain, None, 4, 16, Some(&ctx), &mut qs);
-        assert!(out.is_err(), "π refused: the placement is outside the interface region");
-        assert!(!qs.is_empty(), "the refusal spoke: Q_anchor emitted");
-        assert_eq!(qs[0].0, 0, "the critical pair names the word");
-        // The SAME chain, but the scene puts the pair ON the interface — admits.
-        let near: Vec<(i64, i64, u8)> = vec![(0, 0, 1), (0, 1, 1), (1, 0, 3), (1, 1, 3)];
-        let ctx2: AnchorCtx = (&near, (0, 0));
-        let mut qs2 = Vec::new();
-        let ok = decompose_over_anchored(&language, &chain, None, 4, 16, Some(&ctx2), &mut qs2);
-        assert_eq!(ok, Ok(vec![0]), "on the interface the word speaks");
-        assert!(qs2.is_empty(), "no critical pair when π covers");
-        // No scene at hand: the ⊤ carrier — the word admits anywhere (the
-        // attest-borne path; the court's replay is the safety there).
-        let mut qs3 = Vec::new();
-        assert_eq!(
-            decompose_over_anchored(&language, &chain, None, 4, 16, None, &mut qs3),
-            Ok(vec![0]),
-            "ctx-free reduction is the prior behavior exactly"
-        );
-    }
 
     /// THE BLIND REPLAY refutes every tamper axis and upholds honest speech —
     /// the contradiction docket's whole force is this determinism.

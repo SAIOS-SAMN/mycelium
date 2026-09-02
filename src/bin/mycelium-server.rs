@@ -442,20 +442,6 @@ fn main() {
             };
             {
                 match work {
-                    mycelium::synthesis::Deliberation::Contemplate(tid, task) => {
-                        let t0 = std::time::Instant::now();
-                        if let Some((cited, deposited)) =
-                            mycelium::synthesis::contemplate(&kernel, &task)
-                        {
-                            eprintln!(
-                                "  [{}] synthesis task {:02x}{:02x}… WELL-FORMED: {cited} cited, {deposited} evidence → admission ({} ms)",
-                                tu.stamp(),
-                                tid[0],
-                                tid[1],
-                                t0.elapsed().as_millis(),
-                            );
-                        }
-                    }
                     mycelium::synthesis::Deliberation::Adopt(ratifier, word) => {
                         let before = kernel.lock().map(|k| k.volume()).unwrap_or_default();
                         let _ = mycelium::synthesis::adopt(&kernel, ratifier, &word);
@@ -572,16 +558,9 @@ fn main() {
             };
             let reply = Frame { lane: frame.lane, body };
             let _ = s.write_all(&reply.encode().unwrap_or_default());
-            // The synthesis stroke rides the async dispatcher: the dispatched
-            // task queues for the contemplation worker (deep joint projection
-            // with cross-test consensus; a well-formed construct deposits
-            // evidence for the court, and the syllabus returns the ruling to
-            // the clients, who earn the solves it enables — the server never
-            // settles a solve to itself). A full queue drops the send.
-            if let Some((tid, task)) = dispatched {
-                let _ =
-                    synth_tx.try_send(mycelium::synthesis::Deliberation::Contemplate(tid, task));
-            }
+            // The entity comprehends the family it is dispatched; the hypha
+            // only dispatches and verifies.
+            let _ = dispatched;
             continue;
         }
 

@@ -20,4 +20,5 @@ pub mod anchor;
 pub mod spectral;
 pub mod stalk;
 pub mod sentence;
+pub mod family;
 pub mod sheaf;

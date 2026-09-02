@@ -9,11 +9,9 @@
 //! mycelium SDK (Session / kernel emblem / observe) onto the v0.1.0 percept wire.
 
 use crate::anastome::dialogue;
-use crate::arc::{apply_bound_chains, chain_footprint, readback, refine_delta, Grid};
-use crate::cognition::{decompose_over, encode_percept, perceive};
+use crate::arc::Grid;
+use crate::cognition::{encode_percept, perceive};
 use crate::network::wire::{Frame, Stratum};
-use crate::transducer::anchor::{derive_carrying_all, Sel};
-use crate::transducer::spectral::rank_beam;
 use crate::transducer::element::Element;
 use std::io::{self, Read, Write};
 use std::net::TcpStream;
@@ -324,18 +322,6 @@ pub struct Epigenome {
     recollections: Vec<(Vec<usize>, u64)>,
     /// The entity's chromatic aperture — its perceptual bias (harmonic import).
     pub aperture: Aperture,
-    /// THE TASK DIALECT (ephemeral, never persisted) — the bound chains the
-    /// last study() crystallized: γ_local = (π*, Δ) formed from the immediate
-    /// family's evidence and verified by virtual rollout before anything is
-    /// spoken. Projection consults the dialect FIRST (π_dialect ⊓ π_genome):
-    /// the entity reasons with its highest-precision local knowledge without
-    /// waiting on the court's slower global cycle.
-    dialect: Vec<(Vec<(i64, i64, u8, u8)>, Option<Sel>)>,
-    /// The coherent beam (joint consensus, k ≤ 4): up to four distinct
-    /// rollout-verified readings of the family, spectral order. Projection
-    /// demands one reading serve every test input jointly, falling through
-    /// the beam when a head reading goes silent on a sibling.
-    dialect_beam: Vec<Vec<(Vec<(i64, i64, u8, u8)>, Option<Sel>)>>,
     /// THE ATLAS of the genome — the similarity charts of its words, the
     /// precision index thinking locates base points through. Measured from
     /// the genome, rebuilt when the genome's size moves; never persisted.
@@ -583,9 +569,6 @@ impl Epigenome {
 pub struct Entity {
     session: Session,
     pub epigenome: Epigenome,
-    /// Verified dialect findings awaiting the wire (bounded queue) — flushed
-    /// as anchor-evidence deposits so local thought feeds the court.
-    evidence_out: Vec<([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)>,
     /// Rotating cursor for the refinement probe — one genome word examined
     /// per stroke, so the compression search is metabolic, never a sweep.
     refine_cursor: usize,
@@ -600,7 +583,6 @@ impl Entity {
         Entity {
             session: Session::open(addr, kernel),
             epigenome: Epigenome::new(),
-            evidence_out: Vec::new(),
             refine_cursor: 0,
             discordance: usize::MAX,
         }
@@ -626,153 +608,6 @@ impl Entity {
         std::fs::rename(&tmp, genome_path)
     }
 
-    /// STUDY — the entity THINKS THROUGH THOUGHT over a family of observed
-    /// transitions (the epigenetic dialect engine):
-    ///   1. LIFT: each pair's coboundary (refined to the common complex when
-    ///      frames differ) decomposes over the GENOME into cited words — the
-    ///      superposition of candidate readings.
-    ///   2. BEAM: per (word, variant), the witnessed placements across the
-    ///      family derive a BEAM of candidate anchor terms (all common
-    ///      carriers, tightest-first — optionality retained, never a boolean
-    ///      filter; a variant with no common term stays ambient and lets the
-    ///      rollout judge it).
-    ///   3. ROLLOUT: the crystallization candidate replays VIRTUALLY against
-    ///      every pair; a nonzero residual on ANY pair is the one unambiguous
-    ///      terminal obstruction — the dialect is pruned whole (curvature,
-    ///      not preference).
-    ///   4. CRYSTALLIZE + SEED: the surviving dialect γ_local = (π*, Δ) lives
-    ///      in the epigenome (ephemeral, by ruling) and every VERIFIED
-    ///      binding queues as anchor evidence for the wire — local thought
-    ///      seeding the court's global refinement.
-    /// Returns the crystallized dialect size (0 = the family is beyond the
-    /// entity's current language — honest silence).
-    pub fn study(&mut self, family: &[(Grid, Grid)]) -> usize {
-        self.epigenome.dialect.clear();
-        self.epigenome.dialect_beam.clear();
-        if family.is_empty() {
-            return 0;
-        }
-        // 1. LIFT — decompose every pair over the genome.
-        let mut deltas: Vec<Vec<(i64, i64, u8, u8)>> = Vec::new();
-        let mut scenes: Vec<Grid> = Vec::new();
-        let mut cited: Vec<usize> = Vec::new();
-        for (a, b) in family {
-            let Some((mut d, refined_in, _frame)) = refine_delta(a, b) else { return 0 };
-            d.sort_unstable();
-            let min_r = d.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
-            let min_c = d.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
-            let mut centered: Vec<_> =
-                d.iter().map(|(r, c, x, y)| (r - min_r, c - min_c, *x, *y)).collect();
-            centered.sort_unstable();
-            match decompose_over(self.epigenome.genome(), &centered, None, 4, 16) {
-                Ok(sentence) => {
-                    for wi in sentence {
-                        if !cited.contains(&wi) {
-                            cited.push(wi);
-                        }
-                    }
-                }
-                Err(_) => return 0, // a mute pair: the family is unspeakable today
-            }
-            deltas.push(d);
-            scenes.push(refined_in);
-        }
-        // 2. BEAM — per witnessed variant, the common-carrier beam.
-        let cells_of = |g: &Grid| -> Vec<(i64, i64, u8)> {
-            g.iter()
-                .enumerate()
-                .flat_map(|(r, row)| {
-                    row.iter().enumerate().map(move |(c, &h)| (r as i64, c as i64, h))
-                })
-                .collect()
-        };
-        let mut ranked_bindings: Vec<(Vec<(i64, i64, u8, u8)>, Vec<Sel>)> = Vec::new();
-        let mut findings: Vec<([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)> = Vec::new();
-        for &wi in &cited {
-            let word_addr = self.epigenome.genome()[wi].address();
-            for chain in self.epigenome.genome()[wi].variant_chains() {
-                let mut sets: Vec<Vec<Sel>> = Vec::new();
-                let mut witnesses: Vec<(Vec<(i64, i64)>, Vec<(i64, i64, u8)>)> = Vec::new();
-                for (pi, d) in deltas.iter().enumerate() {
-                    let fp = chain_footprint(&chain, d);
-                    if fp.is_empty() {
-                        continue;
-                    }
-                    let sc = cells_of(&scenes[pi]);
-                    sets.push(derive_carrying_all(&fp, &sc));
-                    witnesses.push((fp, sc));
-                }
-                if witnesses.is_empty() {
-                    continue;
-                }
-                // The beam: every first-set term common to all witnessed pairs
-                // is a PROJECTED FUTURE STATE; the SPECTRAL COLLAPSE (DC3)
-                // takes the one whose selection resonates with the footprint
-                // across every witness — exact per-axis invariants, worst
-                // pair governing — with the tightest-first order as tiebreak.
-                // The uncollapsed tail is retained optionality for re-study.
-                let commons: Vec<Sel> = match sets.split_first() {
-                    Some((first, rest)) => first
-                        .iter()
-                        .filter(|t| rest.iter().all(|s| s.contains(*t)))
-                        .cloned()
-                        .collect(),
-                    None => Vec::new(),
-                };
-                // THE COHERENT BEAM (joint consensus, k = 4): every chain
-                // retains its full spectral ordering of common carriers —
-                // the head speaks first, and projection may fall through
-                // deeper readings when a sibling test input goes silent. A
-                // reading that explains one grid but not its sibling is not
-                // understanding.
-                let ranked = rank_beam(&commons, &witnesses);
-                if !ranked.is_empty() {
-                    findings.push((word_addr, witnesses[0].0.clone(), witnesses[0].1.clone()));
-                }
-                ranked_bindings.push((chain, ranked));
-            }
-        }
-        // 3. ROLLOUT — up to four candidate dialects assemble from the
-        // ranked carriers (depth k takes each chain's k-th reading, or its
-        // deepest available); each must re-derive the family's evidence
-        // exactly (δσ̂ = 0 on every train pair) to survive. The head dialect
-        // is terminal: if it fails, the study is pruned whole. Deeper
-        // dialects that fail are dropped, never spoken. Duplicates collapse.
-        let closes = |dialect: &[(Vec<(i64, i64, u8, u8)>, Option<Sel>)]| {
-            family
-                .iter()
-                .zip(&scenes)
-                .all(|((_, b), scene)| apply_bound_chains(scene, dialect) == *b)
-        };
-        let mut beam: Vec<Vec<(Vec<(i64, i64, u8, u8)>, Option<Sel>)>> = Vec::new();
-        for k in 0..4usize {
-            let dialect: Vec<(Vec<(i64, i64, u8, u8)>, Option<Sel>)> = ranked_bindings
-                .iter()
-                .map(|(chain, ranked)| {
-                    let pick = ranked.get(k).or_else(|| ranked.last()).cloned();
-                    (chain.clone(), pick)
-                })
-                .collect();
-            if beam.contains(&dialect) {
-                continue;
-            }
-            if k == 0 {
-                if !closes(&dialect) {
-                    return 0; // δσ̂ ≠ 0 on a pair: terminal curvature, pruned whole
-                }
-                beam.push(dialect);
-            } else if closes(&dialect) {
-                beam.push(dialect);
-            }
-        }
-        // 4. CRYSTALLIZE + SEED.
-        let size = beam.first().map_or(0, |d| d.len());
-        self.epigenome.dialect = beam.first().cloned().unwrap_or_default();
-        self.epigenome.dialect_beam = beam;
-        self.evidence_out.extend(findings);
-        self.evidence_out.truncate(64);
-        size
-    }
 
     /// PULL a signed work envelope from the hypha's authoritative registry —
     /// the client never arbitrates raw corpus; the server decides what is
@@ -914,56 +749,9 @@ impl Entity {
         Ok(learned)
     }
 
-    /// FLUSH verified dialect findings to the hypha as anchor evidence — the
-    /// entity's local reasoning seeding the court's global refinement.
-    pub fn flush_evidence(&mut self) -> io::Result<usize> {
-        if self.evidence_out.is_empty() {
-            return Ok(0);
-        }
-        let voice = self.session.kernel().voice();
-        let items: Vec<_> = self.evidence_out.drain(..).collect();
-        self.session.speak(dialogue::encode_evidence_deposit(&voice, &items))?;
-        Ok(items.len())
-    }
 
-    /// PROJECT — the entity THINKS with its language, DIALECT FIRST: the
-    /// task-local γ_local = (π*, Δ) crystallized by study() is its highest-
-    /// precision knowledge and speaks before the genome's global anchors
-    /// (π_dialect ⊓ π_genome); with no dialect at hand, the court-refined
-    /// genome speaks alone. Only bound speech acts; the unrefined stay
-    /// silent — a young mind projects humbly.
-    pub fn project(&self, grid: &crate::arc::Grid) -> (crate::arc::Grid, Vec<usize>) {
-        self.project_variant(grid, 0)
-    }
 
-    /// The number of distinct rollout-verified readings the last study
-    /// retained (the coherent beam, k ≤ 4; at least 1 when a study closed).
-    /// Joint consensus iterates these: one reading must serve every test
-    /// input of a family.
-    pub fn dialect_variants(&self) -> usize {
-        self.epigenome.dialect_beam.len().max(1)
-    }
 
-    /// Project with the beam's k-th retained reading (0 = the spectral
-    /// head; each deeper reading was rollout-verified at study time).
-    pub fn project_variant(
-        &self,
-        grid: &crate::arc::Grid,
-        variant: usize,
-    ) -> (crate::arc::Grid, Vec<usize>) {
-        let dialect = self
-            .epigenome
-            .dialect_beam
-            .get(variant)
-            .unwrap_or(&self.epigenome.dialect);
-        if !dialect.is_empty() {
-            let out = apply_bound_chains(grid, dialect);
-            let spoke: Vec<usize> =
-                if out != *grid { (0..dialect.len()).collect() } else { Vec::new() };
-            return (out, spoke);
-        }
-        crate::arc::project_anchored(grid, self.epigenome.genome())
-    }
     pub fn kernel(&self) -> &Kernel {
         self.session.kernel()
     }
@@ -1130,42 +918,6 @@ mod tests {
         assert_eq!(1 + s.impedance(), 1 + cycle);
     }
 
-    /// THE THOUGHT ORGAN: study lifts a family into the epigenetic
-    /// superposition, crystallizes a verified task dialect γ_local = (π*, Δ),
-    /// queues its findings as court evidence, and project — dialect-first —
-    /// solves a fresh instance the global genome alone could not.
-    #[test]
-    fn study_crystallizes_a_dialect_and_project_solves_with_it() {
-        use crate::transducer::element::from_residual;
-        // The entity holds ONE inherited word: the 1-cell recolour 1→2 (⊤ —
-        // the court has not bound it; alone it projects nothing).
-        let mut e = Entity::open("127.0.0.1:1", Kernel::named("study-test"));
-        let w = from_residual(&vec![(0, 0, 1, 2)]);
-        assert!(e.epigenome.learn(&w.to_bytes()).is_some());
-        assert!(e.epigenome.genome()[0].anchor().is_none(), "inherited ⊤");
-        // A family: hue-1 cells beside a hue-3 body recolour to 2 — twice,
-        // in different arrangements (the family, not one pair, decides).
-        let a1 = vec![vec![1, 1, 0], vec![3, 3, 0], vec![0, 0, 0]];
-        let b1 = vec![vec![2, 2, 0], vec![3, 3, 0], vec![0, 0, 0]];
-        let a2 = vec![vec![0, 3, 1], vec![0, 3, 1], vec![0, 0, 0]];
-        let b2 = vec![vec![0, 3, 2], vec![0, 3, 2], vec![0, 0, 0]];
-        let family = vec![(a1, b1), (a2, b2)];
-        let size = e.study(&family);
-        assert!(size > 0, "the dialect crystallized (rollout closed on both pairs)");
-        assert!(!e.evidence_out.is_empty(), "verified findings queued for the court");
-        // A FRESH instance: same relation, new geometry — the dialect thinks it
-        // through; the projected next state is exact.
-        let x = vec![vec![0, 0, 0], vec![1, 3, 0], vec![1, 3, 0]];
-        let y = vec![vec![0, 0, 0], vec![2, 3, 0], vec![2, 3, 0]];
-        let (guess, spoke) = e.project(&x);
-        assert!(!spoke.is_empty(), "the dialect spoke");
-        assert_eq!(guess, y, "the entity's own thought solved the fresh instance");
-        // A new study clears the old dialect — task thought is ephemeral.
-        assert_eq!(e.study(&[]), 0);
-        let (silent, said) = e.project(&x);
-        assert_eq!(silent, x, "no dialect, ⊤ genome: humble silence");
-        assert!(said.is_empty());
-    }
 
     /// A kernel's identity is stable and name-derived; distinct names → distinct
     /// voices (so two named kernels can reach consilience, one cannot with itself).

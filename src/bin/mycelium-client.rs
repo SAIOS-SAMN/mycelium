@@ -26,11 +26,10 @@
 //!
 //! Usage: mycelium-client [ADDR] --kernel NAME [--state DIR]
 //!            [--feed CORPUS_DIR] [--loop] [--limit N] [--conductor BOARD]
-use mycelium::arc::{embed, frame_ratio, grid_to_cells, parse_task, readback};
+use mycelium::arc::{embed, grid_to_cells, parse_task};
 use mycelium::physics::{reserve_max, Physics};
 use mycelium::sdk::{Comprehension, Entity, Kernel, YieldQuote};
 use std::path::PathBuf;
-use std::time::Instant;
 
 fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
     args.windows(2).find(|w| w[0] == name).map(|w| w[1].as_str())
@@ -38,33 +37,6 @@ fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
 fn has(args: &[String], name: &str) -> bool {
     args.iter().any(|a| a == name)
 }
-fn gcd(a: usize, b: usize) -> usize {
-    if b == 0 { a.max(1) } else { gcd(b, a % b) }
-}
-fn lcm(a: usize, b: usize) -> usize {
-    a / gcd(a, b) * b
-}
-
-/// MEASURE a family's frame ratio from its pairs — perception (reading
-/// dimensions), not derivation. None when the family disagrees: no single
-/// morphism exists to think with.
-fn family_ratio(train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)]) -> Option<((usize, usize), (usize, usize))> {
-    let mut ratio = None;
-    for (a, b) in train {
-        let f = (a.len(), a.first().map_or(0, |r| r.len()), b.len(), b.first().map_or(0, |r| r.len()));
-        if f.0 == 0 || f.1 == 0 || f.2 == 0 || f.3 == 0 {
-            return None;
-        }
-        let r = frame_ratio(&f);
-        match &ratio {
-            None => ratio = Some(r),
-            Some(held) if *held != r => return None,
-            _ => {}
-        }
-    }
-    ratio
-}
-
 /// The conductor's cursor — a world model's board schedules the corpus order.
 fn conductor_cursor(path: &str) -> usize {
     let Ok(text) = std::fs::read_to_string(path) else { return 0 };
@@ -193,34 +165,33 @@ fn main() {
                 continue;
             };
             let Some((input, output)) = task.train.get(pi) else {
-                // TASK BOUNDARY — the entity THINKS before moving on:
-                // STUDY the family it just fed (the epigenetic dialect
-                // engine: lift → beam → rollout → crystallize, with every
-                // verified binding seeding the court), then PROJECT each
-                // test input dialect-first and score its instinct. The frame
-                // ratio is MEASURED (perception); the output frame is
-                // CONSTRUCTED from it — integral or refused, never rounded.
-                let studied = entity.study(&task.train);
+                // TASK BOUNDARY — the entity thinks before moving on: the
+                // family it just fed is comprehended as a connection, each
+                // test input is spoken through it and scored, and a family
+                // the connection does not speak raises its residual as
+                // this voice's demand.
+                let comprehended = mycelium::transducer::family::comprehend(&task.train);
                 physics.spend([true; 4]); // thought is metabolically real
-                if studied > 0 {
-                    let _ = entity.flush_evidence(); // local findings → the court
-                }
-                if let Some(((hn, hd), (wn, wd))) = family_ratio(&task.train) {
-                    for (x, y) in &task.test {
-                        if y.is_empty() {
-                            continue; // withheld output: nothing to score against
+                match comprehended.transport {
+                    Some(transport) => {
+                        for (x, y) in &task.test {
+                            if y.is_empty() {
+                                continue; // withheld output: nothing to score against
+                            }
+                            if let Some(guess) = mycelium::transducer::family::speak(&transport, x) {
+                                projected += 1;
+                                if guess == *y {
+                                    proj_solved += 1;
+                                }
+                            }
                         }
-                        let (h, w) = (x.len(), x.first().map_or(0, |r| r.len()));
-                        if h == 0 || w == 0 || (h * hn) % hd != 0 || (w * wn) % wd != 0 {
-                            continue; // non-integral frame: refusal
-                        }
-                        let (oh, ow) = (h * hn / hd, w * wn / wd);
-                        let rx = embed(x, oh, ow); // the input on the codomain complex
-                        let (guess, spoke) = entity.project(&rx);
-                        if !spoke.is_empty() {
-                            projected += 1;
-                            if guess == *y {
-                                proj_solved += 1;
+                    }
+                    None => {
+                        if entity.epigenome.express(&comprehended.residual) {
+                            if let Ok(reply) = entity.attest(&comprehended.residual, &[]) {
+                                if let t @ [_, ..] = reply.verdict.taught() {
+                                    entity.epigenome.learn(t);
+                                }
                             }
                         }
                     }
@@ -377,50 +348,38 @@ fn main() {
         // tests through, submit. The REGISTRY rules bounty vs floor
         // (anti-replay yield collapse); unique solves count ONLY on BOUNTY.
         if let Ok(Some((tid, train, tests))) = if occluded { Ok(None) } else { entity.pull_task() } {
-            let studied = entity.study(&train);
+            // The family is comprehended as a connection in the entity's own
+            // algebra; every test is spoken through it, or the family's
+            // residual is the demand it raises.
+            let comprehended = mycelium::transducer::family::comprehend(&train);
             physics.spend([true; 4]); // thought is metabolically real
-            if studied > 0 {
-                let _ = entity.flush_evidence();
-                if let Some(((hn, hd), (wn, wd))) = family_ratio(&train) {
-                    // JOINT CROSS-TEST CONSENSUS: one retained reading must
-                    // serve EVERY test input of the family. The spectral
-                    // head speaks first; if any sibling goes silent, the
-                    // beam's rollout-verified alternative is tried whole.
-                    // A reading that explains one grid but not its sibling
-                    // is not understanding.
-                    for v in 0..entity.dialect_variants() {
-                        let mut outs: Vec<Vec<Vec<u8>>> = Vec::new();
-                        let mut complete = !tests.is_empty();
-                        for x in &tests {
-                            let (h, w) = (x.len(), x.first().map_or(0, |r| r.len()));
-                            if h == 0 || w == 0 || (h * hn) % hd != 0 || (w * wn) % wd != 0 {
-                                complete = false;
-                                break;
-                            }
-                            let (oh, ow) = (h * hn / hd, w * wn / wd);
-                            let rx = embed(x, oh, ow); // the input on the codomain complex
-                            let (guess, spoke) = entity.project_variant(&rx, v);
-                            if spoke.is_empty() {
-                                complete = false;
-                                break;
-                            }
-                            outs.push(guess);
-                        }
-                        if complete {
-                            if let Ok((code, _mu)) = entity.submit_solve(&tid, &outs) {
-                                projected += 1;
-                                match code {
-                                    mycelium::anastome::dialogue::SOLVE_BOUNTY => {
-                                        proj_solved += 1;
-                                        uniq_solved += 1;
-                                    }
-                                    mycelium::anastome::dialogue::SOLVE_FLOOR => {
-                                        proj_solved += 1
-                                    }
-                                    _ => {}
+            match comprehended.transport {
+                Some(transport) => {
+                    let outs: Vec<Option<Vec<Vec<u8>>>> =
+                        tests.iter().map(|x| mycelium::transducer::family::speak(&transport, x)).collect();
+                    if !tests.is_empty() && outs.iter().all(|o| o.is_some()) {
+                        let outs: Vec<Vec<Vec<u8>>> = outs.into_iter().flatten().collect();
+                        if let Ok((code, _mu)) = entity.submit_solve(&tid, &outs) {
+                            projected += 1;
+                            match code {
+                                mycelium::anastome::dialogue::SOLVE_BOUNTY => {
+                                    proj_solved += 1;
+                                    uniq_solved += 1;
                                 }
+                                mycelium::anastome::dialogue::SOLVE_FLOOR => proj_solved += 1,
+                                _ => {}
                             }
-                            break; // the family is jointly served — one submission
+                        }
+                    }
+                }
+                None => {
+                    // The residual is expressed once and attested once as
+                    // this voice's demand on the family.
+                    if entity.epigenome.express(&comprehended.residual) {
+                        if let Ok(reply) = entity.attest(&comprehended.residual, &[]) {
+                            if let t @ [_, ..] = reply.verdict.taught() {
+                                entity.epigenome.learn(t);
+                            }
                         }
                     }
                 }
