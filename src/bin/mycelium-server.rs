@@ -121,7 +121,13 @@ fn main() {
             let Some(qvoice) = dialogue::decode_quote_request(&frame.body) else { continue };
             let (surface, priced, k_step, cohesion) = {
                 let k = kernel.lock().unwrap();
-                let (s, p) = k.quote(4);
+                // Quote depth follows the metabolism, not a constant: a calm
+                // judge serves a deep book (workers reach far into coverage);
+                // a strained one serves its hottest few. depth = 4..16 by
+                // free reserve share (RESERVE_MAX the contract scale).
+                let free: u64 = k.physics().reserve.iter().sum();
+                let depth = (4 + (free as usize * 12) / (4 * mycelium::physics::RESERVE_MAX as usize)).min(16);
+                let (s, p) = k.quote(depth);
                 (s, p, k.k_step(), k.cohesion())
             };
             let items: Vec<dialogue::WorkItem> =
@@ -229,6 +235,21 @@ fn main() {
                     (g.to_bytes(), Some((addr, k.voices_of(&addr), mu)))
                 }
                 Outcome::Decomposed(word) if word.len() == 1 => (k.basis()[word[0]].to_bytes(), None),
+                // RE-TEACH ON REBIND: any sentence citing a court-ANCHORED word
+                // teaches that word's full γ = (π, Δ) form — Epigenome::learn
+                // refreshes by address, so the refined anchor propagates to
+                // every speaking genome organically (the fleet's instinct
+                // sharpens as its language is refined, no broadcast needed).
+                // Teach the heaviest anchored citation.
+                Outcome::Decomposed(word) => {
+                    let taught = word
+                        .iter()
+                        .filter(|&&i| k.basis()[i].anchor().is_some())
+                        .max_by_key(|&&i| k.basis()[i].magnitude()[2])
+                        .map(|&i| k.basis()[i].to_bytes())
+                        .unwrap_or_default();
+                    (taught, None)
+                }
                 _ => (Vec::new(), None),
             };
             (

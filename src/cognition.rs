@@ -318,7 +318,10 @@ impl Kernel {
             bound = true;
         }
         if bound {
-            self.anchor_evidence.retain(|(a, _, _)| a != addr);
+            // Spent critical pairs clear (they argued against the OLD π);
+            // EVIDENCE PERSISTS — the family keeps growing so the court can
+            // re-refine iteratively: loose early carriers tighten as more
+            // witnessed placements accumulate (rebinding is never one-shot).
             self.anchor_mismatches.retain(|(a, _, _)| a != addr);
         }
         bound
@@ -1957,7 +1960,10 @@ mod tests {
         let pi = Sel::Inter(Box::new(Sel::Hue(1)), Box::new(Sel::Star(Box::new(Sel::Hue(3)))));
         assert!(k.apply_rebind(&addr, pi.clone()));
         assert_eq!(k.basis()[0].anchor(), Some(&pi), "γ = (π*, Δ) in place");
-        assert!(k.anchor_evidence().is_empty(), "spent evidence cleared");
+        assert!(
+            !k.anchor_evidence().is_empty(),
+            "evidence PERSISTS through rebind — the family keeps growing for iterative refinement"
+        );
         // ON the interface: the anchored word still speaks.
         let a2 = vec![(5, 0, 1), (5, 1, 1), (6, 0, 3), (6, 1, 3)];
         let b2 = vec![(5, 0, 4), (5, 1, 4), (6, 0, 3), (6, 1, 3)];

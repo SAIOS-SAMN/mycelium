@@ -70,7 +70,10 @@ fn main() {
     // THE SELECTION FIBER'S REFINEMENT STATE — evidence accumulated per word
     // across the whole nerve, and the words already rebound.
     let mut evidence: Vec<([u8; 32], Vec<(Vec<(i64, i64)>, Vec<(i64, i64, u8)>)>)> = Vec::new();
-    let mut rebound: Vec<[u8; 32]> = Vec::new();
+    // (address, family size at the last binding) — rebinding is ITERATIVE:
+    // a word re-rules whenever its evidence family has grown since it bound,
+    // so loose early carriers tighten as witnessed placements accumulate.
+    let mut rebound: Vec<([u8; 32], usize)> = Vec::new();
     let mut rebinds = 0u64;
     let (mut upheld, mut demoted, mut slashed) = (0u64, 0u64, 0u64);
     let mut last_total = u64::MAX; // voice the summary only when rulings moved
@@ -178,8 +181,8 @@ fn main() {
             };
             let Some(items) = dialogue::decode_evidence_reply(&body) else { continue };
             for (addr, fp, scene) in items {
-                if rebound.contains(&addr) || fp.is_empty() {
-                    continue;
+                if fp.is_empty() {
+                    continue; // evidence keeps pooling even for bound words
                 }
                 match evidence.iter_mut().find(|(a, _)| *a == addr) {
                     Some((_, set)) => {
@@ -193,8 +196,11 @@ fn main() {
             let _ = hi;
         }
         evidence.retain(|(addr, set)| {
-            if rebound.contains(addr) || set.len() < 2 {
-                return true; // hold until a family exists
+            let bound_at = rebound.iter().find(|(a, _)| a == addr).map(|(_, n)| *n);
+            match bound_at {
+                None if set.len() < 2 => return true, // hold until a family exists
+                Some(n) if set.len() <= n => return true, // no new evidence since binding
+                _ => {}
             }
             // π* = the first term common to every evidence's carrying set.
             let sets: Vec<Vec<Sel>> =
@@ -221,7 +227,10 @@ fn main() {
                 }
             }
             rebinds += 1;
-            rebound.push(*addr);
+            match rebound.iter_mut().find(|(a, _)| a == addr) {
+                Some(entry) => entry.1 = set.len(), // re-refined: new family mark
+                None => rebound.push((*addr, set.len())),
+            }
             eprintln!(
                 "  REBIND {:02x}{:02x}… π* {:?} from {} evidences, applied={applied_any} K={}",
                 addr[0],
