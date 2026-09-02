@@ -471,6 +471,10 @@ fn main() {
         if physics.depleted() {
             if upheld + demoted + slashed + rebinds != last_total {
                 last_total = upheld + demoted + slashed + rebinds;
+                // Rulings moved this cycle: seal the judicial state now, so
+                // a genesis walk that never reaches its end page (a wire
+                // turned inward, a restart) still keeps every K-step.
+                persist(&chain, &federation, &ruled, &rebound, (upheld, demoted, slashed, rebinds));
                 eprintln!(
                     "[{name}] {:.0}s | upheld {upheld} attached {demoted} slashed {slashed} rebinds {rebinds} | federation {} words | K={}",
                     start.elapsed().as_secs_f64(),
