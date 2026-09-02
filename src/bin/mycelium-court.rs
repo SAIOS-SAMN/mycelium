@@ -206,7 +206,7 @@ fn main() {
                         let outcome = verdict::rule(&federation, &stalks, &addr, spoken.as_ref());
                         let mut op = [0u8; 32];
                         op[0] = outcome.code();
-                        chain.append(addr, op);
+                        let receipt = chain.append(addr, op).chain_hash;
                         ruled.push(addr);
                         // The tally IS the state map — one arm per outcome.
                         match outcome {
@@ -227,7 +227,27 @@ fn main() {
                                     .count();
                             }
                             verdict::Ruling::Consilient | verdict::Ruling::Dialect => upheld += 1,
-                            verdict::Ruling::Demoted => demoted += 1,
+                            verdict::Ruling::Attached { base, g } => {
+                                // The bundle connects: the placement transports
+                                // into the base frame as a section and g joins
+                                // the connection. The enriched base re-teaches
+                                // across the nerve, and the attach verdict lets
+                                // every hypha holding the placement retire its
+                                // card into the base.
+                                if let Some(w) = spoken.as_ref() {
+                                    federation[base].1.attach(w, &g);
+                                }
+                                let base_addr = federation[base].0;
+                                let base_bytes = federation[base].1.to_bytes();
+                                let attach = dialogue::encode_verdict_attach(
+                                    &voice, &addr, &receipt, &base_addr, &g,
+                                );
+                                for peer in &sessions {
+                                    let _ = peer.speak(dialogue::encode_adopt(&voice, &base_bytes));
+                                    let _ = peer.speak(attach.clone());
+                                }
+                                demoted += 1;
+                            }
                             verdict::Ruling::Slashed(_) => slashed += 1,
                         }
                     }
@@ -255,6 +275,17 @@ fn main() {
                     stalks.admit(&stalk::invariant(sealed.sub()), federation.len());
                     federation.push((addr, sealed.clone()));
                 }
+                // An attach connects the bundle at the court: (base address,
+                // the enriched base's bytes, g) ride to every hypha.
+                let attach = match &outcome {
+                    verdict::Ruling::Attached { base, g } => {
+                        if let Some(w) = spoken.as_ref() {
+                            federation[*base].1.attach(w, g);
+                        }
+                        Some((federation[*base].0, federation[*base].1.to_bytes(), *g))
+                    }
+                    _ => None,
+                };
                 let ruling = (outcome.code(), outcome.reason());
                 // SEAL the ruling onto the court's chain: fp = the word's
                 // address, op = the ruling byte spread — then speak the verdict
@@ -267,9 +298,19 @@ fn main() {
                 // TAUGHT across the nerve so the server bases converge to
                 // one universal genome — each adoption door re-verifies the
                 // blind replay itself before installing.
-                let verdict = dialogue::encode_verdict(&voice, &addr, ruling.0, &receipt);
+                let verdict = match &attach {
+                    Some((base_addr, _, g)) => {
+                        dialogue::encode_verdict_attach(&voice, &addr, &receipt, base_addr, g)
+                    }
+                    None => dialogue::encode_verdict(&voice, &addr, ruling.0, &receipt),
+                };
                 let mut applied = false;
                 for peer in &sessions {
+                    // The enriched base teaches before the attach lands, so a
+                    // hypha that lacks the base can adopt it first.
+                    if let Some((_, base_bytes, _)) = &attach {
+                        let _ = peer.speak(dialogue::encode_adopt(&voice, base_bytes));
+                    }
                     if peer.speak(verdict.clone()).map(|r| r.first() == Some(&1)).unwrap_or(false) {
                         applied = true;
                     }
@@ -279,7 +320,7 @@ fn main() {
                 }
                 match ruling.0 {
                     dialogue::RULING_UPHELD => upheld += 1,
-                    dialogue::RULING_DEMOTED => demoted += 1,
+                    dialogue::RULING_ATTACHED => demoted += 1,
                     _ => slashed += 1,
                 }
                 ruled.push(addr);
@@ -292,7 +333,7 @@ fn main() {
                     voices.len(),
                     match ruling.0 {
                         dialogue::RULING_UPHELD => "UPHELD",
-                        dialogue::RULING_DEMOTED => "DEMOTED",
+                        dialogue::RULING_ATTACHED => "ATTACHED",
                         _ => "SLASHED",
                     },
                     ruling.1,
@@ -385,7 +426,7 @@ fn main() {
             if upheld + demoted + slashed + rebinds != last_total {
                 last_total = upheld + demoted + slashed + rebinds;
                 eprintln!(
-                    "[{name}] {:.0}s | upheld {upheld} demoted {demoted} slashed {slashed} rebinds {rebinds} | federation {} words | K={}",
+                    "[{name}] {:.0}s | upheld {upheld} attached {demoted} slashed {slashed} rebinds {rebinds} | federation {} words | K={}",
                     start.elapsed().as_secs_f64(),
                     federation.len(),
                     chain.next_step_index(),

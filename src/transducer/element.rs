@@ -118,6 +118,104 @@ pub struct Element {
     /// scene. None = ⊤, the unconstrained carrier (pure topological actions,
     /// and every word born before selection entered the language).
     pub(crate) anchor: Option<crate::transducer::anchor::Sel>,
+    /// THE CONNECTION — for every assignment spoken on this fibre (the base's
+    /// own, a section, a torsion-orbit member), the group elements
+    /// g ∈ ℤ² ⋊ D4 under which a sibling was observed and transported into
+    /// this frame: `(assignment, g)`. The parallel-transport record of the
+    /// bundle; the set of g reached for one assignment is its holonomy.
+    /// Vec-of-relations; excluded from the address (a connection deepens the
+    /// thought, it does not rename it).
+    transitions: Vec<(Vec<(u8, u8)>, Transition)>,
+}
+
+/// The eight isometries of D4 as exact coordinate maps, in a fixed order:
+/// the identity, the three rotations, then the four reflections. The index
+/// into this table is the rotational coordinate of a [`Transition`].
+pub const D4: [fn(i64, i64) -> (i64, i64); 8] = [
+    |r, c| (r, c),
+    |r, c| (c, -r),
+    |r, c| (-r, -c),
+    |r, c| (-c, r),
+    |r, c| (r, -c),
+    |r, c| (-r, c),
+    |r, c| (c, r),
+    |r, c| (-c, -r),
+];
+
+/// A group element g = (t, r) of ℤ² ⋊ D4: the rotational part indexes
+/// [`D4`], the translation applies after it. The transition function of the
+/// bundle — the parallel-transport operator carrying one placement of a
+/// geometry onto another.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Transition {
+    pub d4: u8,
+    pub t: (i64, i64),
+}
+
+impl Transition {
+    pub const IDENTITY: Transition = Transition { d4: 0, t: (0, 0) };
+
+    pub fn apply(&self, r: i64, c: i64) -> (i64, i64) {
+        let (rr, cc) = D4[self.d4 as usize % 8](r, c);
+        (rr + self.t.0, cc + self.t.1)
+    }
+
+    /// `[d4 u8][t.0 i64][t.1 i64]`.
+    pub fn to_bytes(&self, out: &mut Vec<u8>) {
+        out.push(self.d4);
+        out.extend_from_slice(&self.t.0.to_le_bytes());
+        out.extend_from_slice(&self.t.1.to_le_bytes());
+    }
+
+    pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Transition> {
+        let d4 = *b.get(*pos)?;
+        let tr = i64::from_le_bytes(b.get(*pos + 1..*pos + 9)?.try_into().ok()?);
+        let tc = i64::from_le_bytes(b.get(*pos + 9..*pos + 17)?.try_into().ok()?);
+        *pos += 17;
+        Some(Transition { d4, t: (tr, tc) })
+    }
+}
+
+/// Transport a chain by g: every cell's position moves, its transition
+/// (before → after) rides unchanged. Sorted by position.
+pub fn transport(chain: &[(i64, i64, u8, u8)], g: &Transition) -> Vec<(i64, i64, u8, u8)> {
+    let mut out: Vec<(i64, i64, u8, u8)> = chain
+        .iter()
+        .map(|&(r, c, b, a)| {
+            let (rr, cc) = g.apply(r, c);
+            (rr, cc, b, a)
+        })
+        .collect();
+    out.sort_unstable();
+    out
+}
+
+/// The group element carrying `from`'s support onto `to`'s, when the two
+/// lie in one orbit: g · supp(from) = supp(to). The first image in [`D4`]
+/// order decides when the support has a stabilizer. None when the supports
+/// are not congruent — this is the exact orbit test, and it returns the
+/// transport operator rather than a verdict.
+pub fn transition(from: &[(i64, i64, u8, u8)], to: &[(i64, i64, u8, u8)]) -> Option<Transition> {
+    let mut target = positions(to);
+    target.sort_unstable();
+    target.dedup();
+    let tr = target.iter().map(|p| p.0).min()?;
+    let tc = target.iter().map(|p| p.1).min()?;
+    for (k, g) in D4.iter().enumerate() {
+        let mut img: Vec<(i64, i64)> = from.iter().map(|(r, c, _, _)| g(*r, *c)).collect();
+        img.sort_unstable();
+        img.dedup();
+        if img.len() != target.len() {
+            return None;
+        }
+        let mr = img.iter().map(|p| p.0).min()?;
+        let mc = img.iter().map(|p| p.1).min()?;
+        let t = (tr - mr, tc - mc);
+        if img.iter().all(|&(r, c)| target.binary_search(&(r + t.0, c + t.1)).is_ok()) {
+            return Some(Transition { d4: k as u8, t });
+        }
+    }
+    None
 }
 
 /// Apply a hue-map σ (functional from↦to relations) to a transition assignment:
@@ -167,19 +265,7 @@ pub fn positions(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64)> {
 /// and wire-frozen); this is the comparison lens for confluence and
 /// deduplication.
 pub fn orbit_positions(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64)> {
-    // The eight isometries of D4 as exact coordinate maps.
-    let images: [fn(i64, i64) -> (i64, i64); 8] = [
-        |r, c| (r, c),
-        |r, c| (c, -r),
-        |r, c| (-r, -c),
-        |r, c| (-c, r),
-        |r, c| (r, -c),
-        |r, c| (-r, c),
-        |r, c| (c, r),
-        |r, c| (-c, -r),
-    ];
-    images
-        .iter()
+    D4.iter()
         .map(|g| {
             let mut p: Vec<(i64, i64)> = chain.iter().map(|(r, c, _, _)| g(*r, *c)).collect();
             let min_r = p.iter().map(|(r, _)| *r).min().unwrap_or(0);
@@ -213,6 +299,7 @@ impl Element {
             sub: Vec::new(),
             sections: Vec::new(),
             torsion: Vec::new(),
+            transitions: Vec::new(),
             anchor: None,
         }
     }
@@ -284,6 +371,12 @@ impl Element {
     /// The torsion cycles of the axis: `(generator σ, period ℓ)` each.
     pub fn torsion(&self) -> &[(Vec<(u8, u8)>, u32)] {
         &self.torsion
+    }
+
+    /// The connection: every (assignment, g) under which a sibling was
+    /// transported into this frame.
+    pub fn transitions(&self) -> &[(Vec<(u8, u8)>, Transition)] {
+        &self.transitions
     }
 
     /// The fiber's total spoken span — base + free sections + every torsion-orbit
@@ -443,6 +536,43 @@ impl Element {
         true
     }
 
+    /// ATTACH — connect a congruent sibling to this bundle. Its chain is
+    /// transported by g into this frame (g · supp(sibling) = supp(self)), the
+    /// transported assignment becomes a section (or is recognised as one the
+    /// fibre already speaks), and (assignment, g) joins the connection.
+    /// Returns the sections the fibre gained (0 or 1); a g that does not
+    /// carry the sibling onto this base changes nothing.
+    pub fn attach(&mut self, sibling: &Element, g: &Transition) -> usize {
+        let moved = transport(&sibling.sub, g);
+        if positions(&moved) != positions(&self.sub) {
+            return 0;
+        }
+        let asg = assignment(&moved);
+        let gained = self.puncture(asg.clone()) as usize;
+        if !self.transitions.iter().any(|(a, h)| *a == asg && h == g) {
+            self.transitions.push((asg, *g));
+        }
+        gained
+    }
+
+    /// Merge another placement's fibre into this bundle (adoption of a word
+    /// already held at this address): its sections puncture here and its
+    /// connection joins. Returns the count of sections newly spoken.
+    pub fn merge_fibre(&mut self, other: &Element) -> usize {
+        let mut added = 0usize;
+        for s in &other.sections {
+            if self.puncture(s.clone()) {
+                added += 1;
+            }
+        }
+        for (a, g) in &other.transitions {
+            if !self.transitions.iter().any(|(aa, gg)| aa == a && gg == g) {
+                self.transitions.push((a.clone(), *g));
+            }
+        }
+        added
+    }
+
     /// The composite operator this description applies to the field — the product
     /// of its per-axis generators, in fiber order. (A convenience realization; the
     /// group laws below are per-axis, where they hold exactly.)
@@ -583,6 +713,16 @@ impl Element {
             }
             out.extend_from_slice(&l.to_le_bytes());
         }
+        // The connection: (assignment, g) relations.
+        out.extend_from_slice(&(self.transitions.len() as u32).to_le_bytes());
+        for (a, g) in &self.transitions {
+            out.extend_from_slice(&(a.len() as u32).to_le_bytes());
+            for (b, f) in a {
+                out.push(*b);
+                out.push(*f);
+            }
+            g.to_bytes(&mut out);
+        }
         out
     }
 
@@ -685,6 +825,18 @@ impl Element {
                 t.to_bytes(&mut out);
             }
             None => out.push(0),
+        }
+        // THE CONNECTION: appended after the anchor so pre-bundle bytes parse
+        // with an empty connection (the reader takes it from the remaining
+        // bytes of a bounded element slice).
+        out.extend_from_slice(&(self.transitions.len() as u32).to_le_bytes());
+        for (a, g) in &self.transitions {
+            out.extend_from_slice(&(a.len() as u32).to_le_bytes());
+            for (b, f) in a {
+                out.push(*b);
+                out.push(*f);
+            }
+            g.to_bytes(&mut out);
         }
         out
     }
@@ -806,7 +958,30 @@ impl Element {
         // load so persisted pre-projection words upgrade transparently and
         // the blind replay compares measurement against measurement.
         let mag = if sub.is_empty() { mag } else { measure_lanes(&sub) };
-        Some(Element { dim, fibers, word, mag, sub, sections, torsion, anchor })
+        // The connection tail (absent in pre-bundle serializations → none).
+        let mut transitions = Vec::new();
+        if *pos < b.len() {
+            let nt = u32_at(b, pos)? as usize;
+            if nt > remaining(b, pos) / 21 {
+                return None; // untrusted count: length prefix + g per relation
+            }
+            for _ in 0..nt {
+                let alen = u32_at(b, pos)? as usize;
+                if alen > remaining(b, pos) / 2 {
+                    return None;
+                }
+                let mut a = Vec::with_capacity(alen);
+                for _ in 0..alen {
+                    let bb = *b.get(*pos)?;
+                    let ff = *b.get(*pos + 1)?;
+                    *pos += 2;
+                    a.push((bb, ff));
+                }
+                let g = Transition::from_bytes(b, pos)?;
+                transitions.push((a, g));
+            }
+        }
+        Some(Element { dim, fibers, word, mag, sub, sections, torsion, anchor, transitions })
     }
 }
 
@@ -1038,11 +1213,13 @@ mod tests {
         assert_eq!(back.anchor(), Some(&pi), "π survives the wire");
         assert_eq!(back.sub(), anchored.sub(), "Δ untouched");
         assert_eq!(back.address(), anchored.address(), "address is BASE-only — π never renames");
-        // A pre-anchor serialization (tail stripped) parses to ⊤.
+        // A pre-anchor serialization (anchor byte and connection count
+        // stripped) parses to ⊤ with an empty connection.
         let plain_bytes = plain.to_bytes();
         let mut pos2 = 0;
-        let old = Element::from_bytes(&plain_bytes[..plain_bytes.len() - 1], &mut pos2).expect("old form");
+        let old = Element::from_bytes(&plain_bytes[..plain_bytes.len() - 5], &mut pos2).expect("old form");
         assert!(old.anchor().is_none(), "absent tail = the unconstrained carrier");
+        assert!(old.transitions().is_empty(), "absent connection = none recorded");
     }
 
     use super::*;

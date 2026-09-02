@@ -316,9 +316,11 @@ pub fn adopt(
     if let Some(reason) = crate::verdict::blind_replay(word) {
         return Adoption::Refused(reason);
     }
-    let Ok(g) = k.lock() else { return Adoption::Refused("kernel unavailable") };
+    let Ok(mut g) = k.lock() else { return Adoption::Refused("kernel unavailable") };
     if g.basis().iter().any(|t| t.address() == word.address()) {
-        return Adoption::Known;
+        // Held at this address: the arriving placement's fibre merges
+        // (Known or Enriched — the install door decides).
+        return g.install_adopted(word, ratifier);
     }
     let snapshot = g.basis().to_vec();
     let (beam, depth) = g.projection_budget();

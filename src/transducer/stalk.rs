@@ -1,34 +1,36 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! SPECTRAL STALKS — congruence lookup on the orbit quotient [Q]/(ℤ² ⋊ D4).
+//! THE ATLAS OF THE BASE MANIFOLD — charts on M = P/G for the bundle
+//! P → M whose structure group is the substrate isometry group ℤ² ⋊ D4.
 //!
-//! Two chains are congruent when their supports are isometry images of one
-//! another. The exact test is the orbit form ([`super::element::orbit_positions`]);
-//! finding the candidates that could pass it must not enumerate the
-//! federation, sort an arbitrary coordinate, or key a map. Instead every
-//! support projects to a STRUCTURAL INVARIANT VECTOR — quantities that are
-//! strictly invariant under the whole isometry group, computed with no
-//! group enumeration at all:
+//! The primary object is the principal bundle: the total space P is the
+//! observed cochains, the base M is their orbit classes, and the fibre over
+//! a class is the group itself — every placement, rotation, and reflection
+//! is a point on the fibre above its class, connected to the base
+//! representative by a transition g ∈ G ([`super::element::Transition`]).
+//! Congruence is the exact statement π(Q₁) = π(Q₂) ⟺ ∃g: Q₂ = g·Q₁, and
+//! [`super::element::transition`] computes that g.
+//!
+//! This module is only the atlas on M: to locate a cochain's base point
+//! without enumerating the manifold, every support projects to a
+//! STRUCTURAL INVARIANT VECTOR — quantities strictly invariant under the
+//! whole group, computed with no group enumeration:
 //!
 //!   β₀ (components), β₁ (holes of the cubical subcomplex), |V| cells,
 //!   |E| 4-adjacencies, |F| filled unit squares, the unordered bounding-box
 //!   extent, and the tally of (degree, diagonal-degree) cell types.
 //!
-//! The first Laplacian spectral moments are functions of this vector
-//! (tr L = 2|E|, tr L² = Σd² + 2|E|, tr L³ = Σd³ + 3Σd² on a triangle-free
-//! grid); |F| carries the 4-cycle term of tr L⁴. The full characteristic
-//! polynomial is not computed — a support can hold hundreds of cells and
-//! the stalk selector only has to be invariant and discriminating, since
-//! the exact orbit form decides inside the fiber.
-//!
-//! Different vectors imply different orbits: λ(Q₁) ≠ λ(Q₂) ⇒ [Q₁] ≠ [Q₂].
-//! So congruence lookup selects the STALK over λ — the fiber of held words
-//! sharing the vector — and applies the orbit test to that fiber alone. An
-//! empty stalk is immediate novelty. The stalks stratify by axis in
-//! structural order (topology, then volume, then extent, then cell types):
-//! each axis narrows the candidate set, a beam over content. Vec-of-relations
-//! throughout; no map, no sorted tape, no binary search.
+//! Because the vector is G-invariant, every point of one fibre projects to
+//! the same chart, and different vectors imply different orbits. The chart
+//! is never the classifier: the vector only narrows the candidate base
+//! points (an empty stratum is immediate novelty), and the group element
+//! decides — a spectrum can be shared by non-isometric complexes, and a
+//! spectrum carries no transport; the transition g is what the bundle
+//! keeps. The strata refine by axis in structural order (topology, then
+//! volume, then extent, then cell types) — Vec-of-relations throughout; no
+//! map, no sorted tape, no binary search over the manifold.
 
+use super::element::{self, Transition};
 use super::spectral::find;
 
 /// A chain cell: (row, col, hue before, hue after).
@@ -39,8 +41,8 @@ type Cell = (i64, i64, u8, u8);
 pub struct Invariant(pub Vec<u64>);
 
 /// Measure the invariant vector of a chain's support (hues are not part of
-/// the base geometry: the +axis ruling asks whether the GEOMETRY is held,
-/// so the selector is a function of positions alone).
+/// the base geometry: the base point is the geometry class, the hues are
+/// fibre coordinates over it).
 pub fn invariant(chain: &[Cell]) -> Invariant {
     let mut cells: Vec<(i64, i64)> = chain.iter().map(|(r, c, _, _)| (*r, *c)).collect();
     cells.sort_unstable();
@@ -115,8 +117,8 @@ pub fn invariant(chain: &[Cell]) -> Invariant {
     Invariant(v)
 }
 
-/// One stratum of the stalk space: the branches refine by the next axis of
-/// the invariant vector; the members are the indices whose vector ends here.
+/// One stratum of the atlas: the branches refine by the next axis of the
+/// invariant vector; the members are the indices whose vector ends here.
 #[derive(Debug, Clone, Default)]
 struct Stratum {
     branches: Vec<(u64, Stratum)>,
@@ -172,16 +174,16 @@ impl Stratum {
     }
 }
 
-/// The stalk space over an indexed relation of chains (a basis, a
-/// federation): each index sits in the stalk over its support's invariant.
+/// The atlas over an indexed relation of chains (a basis, a federation):
+/// each index sits in the stratum over its support's invariant.
 #[derive(Debug, Clone, Default)]
 pub struct Stalks {
     root: Stratum,
 }
 
 impl Stalks {
-    /// Stratify an existing relation (rehydration: the stalks are measured
-    /// from the held words, never persisted).
+    /// Chart an existing relation (rehydration: the atlas is measured from
+    /// the held words, never persisted).
     pub fn over<'a>(chains: impl Iterator<Item = &'a [Cell]>) -> Stalks {
         let mut s = Stalks::default();
         for (i, chain) in chains.enumerate() {
@@ -190,13 +192,13 @@ impl Stalks {
         s
     }
 
-    /// Place `index` in the stalk over `inv`.
+    /// Place `index` in the stratum over `inv`.
     pub fn admit(&mut self, inv: &Invariant, index: usize) {
         self.root.admit(&inv.0, index);
     }
 
-    /// The fiber over `inv`: every held index that could be congruent. The
-    /// exact orbit test runs on these alone.
+    /// The stratum over `inv`: every held index whose base point could be
+    /// this one. The group element decides on these alone.
     pub fn fiber(&self, inv: &Invariant) -> &[usize] {
         self.root.fiber(&inv.0)
     }
@@ -219,28 +221,27 @@ impl Stalks {
     }
 }
 
-/// Congruence lookup: the index of a held chain (from `chains`, the relation
-/// the stalks index) whose support is an isometry image of `chain`'s, if
-/// any. The stalk narrows; the orbit form decides.
+/// Congruence lookup: the held chain (from `chains`, the relation the atlas
+/// indexes) that is `chain`'s base point, with the transport g carrying
+/// `chain` onto it — g · supp(chain) = supp(held). The chart narrows; the
+/// group element decides and is returned, never discarded.
 pub fn congruent<'a>(
     stalks: &Stalks,
     chains: impl Fn(usize) -> &'a [Cell],
     chain: &[Cell],
-) -> Option<usize> {
-    let fiber = stalks.fiber(&invariant(chain));
-    if fiber.is_empty() {
-        return None;
-    }
-    let orbit = super::element::orbit_positions(chain);
-    fiber
+) -> Option<(usize, Transition)> {
+    stalks
+        .fiber(&invariant(chain))
         .iter()
         .copied()
-        .find(|&i| super::element::orbit_positions(chains(i)) == orbit)
+        .find_map(|i| element::transition(chain, chains(i)).map(|g| (i, g)))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::transducer::element::{from_residual, transport, D4};
+    use crate::transducer::germinate::germinate;
 
     fn chain(cells: &[(i64, i64)]) -> Vec<Cell> {
         cells.iter().map(|&(r, c)| (r, c, 0u8, 1u8)).collect()
@@ -252,22 +253,14 @@ mod tests {
     fn the_vector_is_invariant_under_the_isometry_group() {
         let l = chain(&[(0, 0), (1, 0), (2, 0), (2, 1)]);
         let base = invariant(&l);
-        let images: [fn(i64, i64) -> (i64, i64); 8] = [
-            |r, c| (r, c),
-            |r, c| (c, -r),
-            |r, c| (-r, -c),
-            |r, c| (-c, r),
-            |r, c| (r, -c),
-            |r, c| (-r, c),
-            |r, c| (c, r),
-            |r, c| (-c, -r),
-        ];
-        for g in images {
-            let moved: Vec<Cell> =
-                l.iter().map(|&(r, c, b, a)| {
+        for g in D4 {
+            let moved: Vec<Cell> = l
+                .iter()
+                .map(|&(r, c, b, a)| {
                     let (rr, cc) = g(r, c);
                     (rr + 7, cc - 3, b, a)
-                }).collect();
+                })
+                .collect();
             assert_eq!(invariant(&moved), base, "isometry image shares the vector");
         }
     }
@@ -286,31 +279,73 @@ mod tests {
         assert_eq!(invariant(&bar).0[1], 0, "a bar has no hole");
     }
 
-    /// The stalk lookup finds a rotated sibling through its fiber, reports
-    /// novelty on an empty stalk, and stays aligned after a removal.
+    /// The lookup finds a rotated sibling's base point through its chart and
+    /// returns the transport that carries it there; an empty stratum is
+    /// novelty; the atlas stays aligned after a removal.
     #[test]
-    fn the_stalk_finds_the_congruent_word_and_only_that() {
+    fn the_chart_finds_the_base_point_and_the_transport() {
         let held: Vec<Vec<Cell>> = vec![
-            chain(&[(0, 0), (0, 1), (0, 2)]),           // 0: a bar
-            chain(&[(0, 0), (0, 1), (1, 0)]),           // 1: an L
-            chain(&[(0, 0), (0, 1), (1, 0), (1, 1)]),   // 2: a square
+            chain(&[(0, 0), (0, 1), (0, 2)]),         // 0: a bar
+            chain(&[(0, 0), (0, 1), (1, 0)]),         // 1: an L
+            chain(&[(0, 0), (0, 1), (1, 0), (1, 1)]), // 2: a square
         ];
         let mut stalks = Stalks::over(held.iter().map(|c| c.as_slice()));
         assert_eq!(stalks.len(), 3);
         let get = |i: usize| held[i].as_slice();
         let bar_rotated = chain(&[(5, 5), (6, 5), (7, 5)]);
-        assert_eq!(congruent(&stalks, get, &bar_rotated), Some(0));
+        let (i, g) = congruent(&stalks, get, &bar_rotated).expect("the bar's orbit");
+        assert_eq!(i, 0);
+        assert_ne!(g.d4, 0, "a rotation connects the vertical bar to the base");
+        assert_eq!(
+            element::positions(&transport(&bar_rotated, &g)),
+            element::positions(&held[0]),
+            "g carries the sibling onto the base"
+        );
         let l_reflected = chain(&[(3, 3), (3, 2), (4, 3)]);
-        assert_eq!(congruent(&stalks, get, &l_reflected), Some(1));
+        assert_eq!(congruent(&stalks, get, &l_reflected).map(|(i, _)| i), Some(1));
         let zigzag = chain(&[(0, 0), (0, 1), (1, 1), (1, 2)]);
-        assert!(stalks.fiber(&invariant(&zigzag)).is_empty(), "an empty stalk is novelty");
+        assert!(stalks.fiber(&invariant(&zigzag)).is_empty(), "an empty stratum is novelty");
         assert_eq!(congruent(&stalks, get, &zigzag), None);
         // Remove the L: the square shifts down to index 1 and still resolves.
         let held2: Vec<Vec<Cell>> = vec![held[0].clone(), held[2].clone()];
         stalks.remove(1);
         assert_eq!(stalks.len(), 2);
         let get2 = |i: usize| held2[i].as_slice();
-        assert_eq!(congruent(&stalks, get2, &chain(&[(9, 9), (9, 10), (10, 9), (10, 10)])), Some(1));
+        let sq = chain(&[(9, 9), (9, 10), (10, 9), (10, 10)]);
+        assert_eq!(congruent(&stalks, get2, &sq).map(|(i, _)| i), Some(1));
         assert_eq!(congruent(&stalks, get2, &l_reflected), None);
+    }
+
+    /// Connecting the bundle: a rotated, differently-hued sibling attaches
+    /// to the base as a section transported by g, the connection records
+    /// (assignment, g), a second observation of the same section under the
+    /// same g adds nothing, and the whole bundle round-trips its bytes.
+    #[test]
+    fn the_sibling_attaches_as_a_transported_section() {
+        let mut base = from_residual(
+            &germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap(),
+        );
+        let sibling = from_residual(
+            &germinate(&[(0, 0, 3u8), (1, 0, 3)], &[(0, 0, 4u8), (1, 0, 4)]).unwrap(),
+        );
+        let g = element::transition(sibling.sub(), base.sub()).expect("congruent");
+        assert_eq!(base.attach(&sibling, &g), 1);
+        assert_eq!(base.sections().len(), 1, "the fibre gained a section");
+        assert_eq!(base.transitions().len(), 1, "the connection holds (assignment, g)");
+        assert_eq!(base.attach(&sibling, &g), 0, "already spoken");
+        assert_eq!(base.transitions().len(), 1, "no duplicate relation");
+        let bytes = base.to_bytes();
+        let mut pos = 0usize;
+        let back = crate::transducer::element::Element::from_bytes(&bytes, &mut pos).unwrap();
+        assert_eq!(back.address(), base.address(), "the connection never renames the word");
+        assert_eq!(back.transitions(), base.transitions());
+        assert_eq!(back.sections(), base.sections());
+        // A base of different geometry refuses the transport.
+        let mut bent = from_residual(
+            &germinate(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 0, 2u8), (0, 1, 2), (1, 0, 2)])
+                .unwrap(),
+        );
+        assert_eq!(bent.attach(&sibling, &g), 0);
+        assert!(bent.transitions().is_empty(), "a misfit records no connection");
     }
 }

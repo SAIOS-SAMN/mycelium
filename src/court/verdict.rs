@@ -15,7 +15,7 @@
 
 use crate::anastome::dialogue;
 use crate::transducer::anchor::{derive_carrying_all, Sel};
-use crate::transducer::element::{self, Element};
+use crate::transducer::element::{self, Element, Transition};
 use crate::transducer::stalk::{self, Stalks};
 
 /// Deterministic re-derivation of a spoken word from its own evidence
@@ -63,9 +63,11 @@ pub enum Ruling {
     /// Same address, different substance — a dialect; the transport is
     /// recorded, never punished.
     Dialect,
-    /// New address, identical base geometry to a federated word — the
-    /// +axis constraint: it belongs as a section, not a sibling entry.
-    Demoted,
+    /// New address, a placement of a federated base geometry — the bundle
+    /// connects: `base` indexes the federation entry and `g` is the
+    /// transport carrying the word into the base frame. The word attaches as
+    /// a section of that base, never a sibling entry.
+    Attached { base: usize, g: Transition },
     /// Genuinely new geometry: the word joins the federation. The sealed
     /// element rides the arm — admission IS the match, never a flag.
     Admitted(Element),
@@ -76,7 +78,7 @@ impl Ruling {
     pub fn code(&self) -> u8 {
         match self {
             Ruling::Slashed(_) => dialogue::RULING_SLASHED,
-            Ruling::Demoted => dialogue::RULING_DEMOTED,
+            Ruling::Attached { .. } => dialogue::RULING_ATTACHED,
             Ruling::Consilient | Ruling::Dialect | Ruling::Admitted(_) => dialogue::RULING_UPHELD,
         }
     }
@@ -87,7 +89,7 @@ impl Ruling {
             Ruling::Slashed(r) => r,
             Ruling::Consilient => "federated consilience",
             Ruling::Dialect => "dialect transport recorded",
-            Ruling::Demoted => "+axis: belongs as a section",
+            Ruling::Attached { .. } => "+axis: attached as a section of the base",
             Ruling::Admitted(_) => "extends the tautology",
         }
     }
@@ -119,16 +121,17 @@ pub fn rule(
             // federated word's is the same base geometry — a section of the
             // existing thought, never a sibling entry. Coordinate-set
             // equality was the lens that let a handful of morphisms
-            // federate as a thousand words. The stalk over the candidate's
-            // invariant holds every word that could be congruent; the orbit
-            // form decides inside that fiber — no federation scan.
+            // federate as a thousand words. The chart over the candidate's
+            // invariant holds every base point it could sit on; the group
+            // element decides inside that stratum and rides the ruling as
+            // the transport — no federation scan, no discarded connection.
             let congruent = match spoken.sub().is_empty() {
                 true => None,
                 false => stalk::congruent(stalks, |i| federation[i].1.sub(), spoken.sub())
-                    .filter(|&i| federation[i].0 != *addr),
+                    .filter(|(i, _)| federation[*i].0 != *addr),
             };
             match congruent {
-                Some(_) => Ruling::Demoted,
+                Some((base, g)) => Ruling::Attached { base, g },
                 None => Ruling::Admitted(spoken.clone()),
             }
         }
@@ -187,17 +190,25 @@ mod tests {
         let stalks = stalks_of(&fed);
         assert_eq!(rule(&fed, &stalks, &addr, Some(&w)), Ruling::Consilient);
         assert_eq!(rule(&fed, &stalks, &addr, Some(&w)).code(), dialogue::RULING_UPHELD);
-        // Different address, identical base geometry: demoted (+axis).
+        // Different address, identical base geometry: attached (+axis) by
+        // the identity transport.
         let mut other = addr;
         other[0] ^= 0xFF;
-        assert_eq!(rule(&fed, &stalks, &other, Some(&w)), Ruling::Demoted);
+        assert_eq!(
+            rule(&fed, &stalks, &other, Some(&w)),
+            Ruling::Attached { base: 0, g: Transition::IDENTITY }
+        );
         // A rotated sibling (the same geometry as a D4 image, other hues)
-        // resolves through the stalk to the same demotion; a genuinely
-        // different geometry finds an empty stalk and admits.
+        // resolves through the chart to the same base with a rotating
+        // transport; a genuinely different geometry finds an empty stratum
+        // and admits.
         let rotated = from_residual(
             &germinate(&[(0, 0, 3u8), (1, 0, 3)], &[(0, 0, 4u8), (1, 0, 4)]).unwrap(),
         );
-        assert_eq!(rule(&fed, &stalks, &rotated.address(), Some(&rotated)), Ruling::Demoted);
+        match rule(&fed, &stalks, &rotated.address(), Some(&rotated)) {
+            Ruling::Attached { base: 0, g } => assert_ne!(g.d4, 0, "the transport rotates"),
+            other => panic!("a rotated placement attaches, got {other:?}"),
+        }
         let bent = from_residual(
             &germinate(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 0, 2u8), (0, 1, 2), (1, 0, 2)])
                 .unwrap(),

@@ -142,10 +142,55 @@ impl Kernel {
         self.stalks.clear();
     }
 
-    /// The index of a held word whose support is an isometry image of
-    /// `chain`'s — the orbit-class lookup through the stalk space.
-    fn congruent_held(&self, chain: &[(i64, i64, u8, u8)]) -> Option<usize> {
+    /// The held word that is `chain`'s base point, with the transport
+    /// carrying `chain` onto it — the orbit-class lookup through the atlas.
+    fn congruent_held(&self, chain: &[(i64, i64, u8, u8)]) -> Option<(usize, element::Transition)> {
         crate::transducer::stalk::congruent(&self.stalks, |i| self.basis[i].sub(), chain)
+    }
+
+    /// APPLY an attach ruling: the court connected `sibling` to `base` by
+    /// the transport g. A provisional listing of the sibling clears with its
+    /// award evaporating (it is not a base word). When both words are held
+    /// here and g carries the sibling onto the base, the sibling transports
+    /// into the bundle as a section and its card retires — its discoverer
+    /// earns the section subsidy when the fibre gained volume. Returns the
+    /// cards retired (0 or 1).
+    pub fn apply_attach(
+        &mut self,
+        sibling: &[u8; 32],
+        base: &[u8; 32],
+        g: &element::Transition,
+    ) -> usize {
+        if let Some(i) = self.provisional.iter().position(|(a, _)| a == sibling) {
+            self.provisional.remove(i);
+            let _ = self.treasury.revoke_award(sibling, false);
+        }
+        let (Some(bi), Some(si)) = (
+            self.basis.iter().position(|t| t.address() == *base),
+            self.basis.iter().position(|t| t.address() == *sibling),
+        ) else {
+            return 0;
+        };
+        let sib = self.basis[si].clone();
+        if element::positions(&element::transport(sib.sub(), g)) != element::positions(self.basis[bi].sub()) {
+            return 0;
+        }
+        let disc = self.discoverers[si];
+        let gained = self.basis[bi].attach(&sib, g);
+        self.basis_remove(si);
+        if gained > 0 {
+            let anchor = self.anchor();
+            self.treasury.settle_subsidy(disc, [0, 0, 1, 0], anchor);
+        }
+        self.physics.syntropy([false, false, true, false]);
+        1
+    }
+
+    /// The bundle volume held here: (cards, sections + connection relations)
+    /// — a measurement; a change in either is a changed durable language.
+    pub fn volume(&self) -> (usize, usize) {
+        let fibre = self.basis.iter().map(|w| w.sections().len() + w.transitions().len()).sum();
+        (self.basis.len(), fibre)
     }
 
     /// The polytonic kinematic pressure + torsion spectrum (per lane).
@@ -389,7 +434,11 @@ impl Kernel {
     /// sentinel identity.
     pub fn install_adopted(&mut self, word: &Element, ratifier: [u8; 32]) -> Adoption {
         let addr = word.address();
-        if self.basis.iter().any(|t| t.address() == addr) {
+        if let Some(i) = self.basis.iter().position(|t| t.address() == addr) {
+            // The address is held: the arriving placement's fibre merges into
+            // the bundle (sections, connection) — the genome converges in
+            // volume, not only in vocabulary.
+            self.basis[i].merge_fibre(word);
             return Adoption::Known;
         }
         self.basis_push(word.clone(), ratifier);
@@ -998,29 +1047,38 @@ impl Kernel {
         if !self.basis.is_empty() {
             let i = self.optimize_cursor % self.basis.len();
             self.optimize_cursor = self.optimize_cursor.wrapping_add(1);
-            // THE CONDENSE MOVE: absorb position-identical siblings into the
-            // cursor thought as SECTIONS along its punctured axis — the family
-            // collapses into one bundle. The basis CONDENSES: cardinality falls,
-            // dimensional volume rises. Bounded per stroke; the absorbed word's
-            // discoverer still earns (its language lives on as a section).
-            let pos_i = element::positions(self.basis[i].sub());
-            if !pos_i.is_empty() {
+            // THE CONDENSE MOVE: connect the bundle — every later sibling on
+            // the cursor thought's base point (any placement: translated,
+            // rotated, reflected) transports into it as a SECTION along its
+            // punctured axis, the transport g joining the connection. The
+            // basis CONDENSES: cardinality falls, dimensional volume rises.
+            // Candidates come from the atlas (the stratum over the cursor's
+            // invariant), walked in descending index so a removal never
+            // shifts an index still to visit. Bounded per stroke; the absorbed
+            // word's discoverer still earns (its language lives on as a section).
+            if !self.basis[i].sub().is_empty() {
+                let inv = crate::transducer::stalk::invariant(self.basis[i].sub());
+                let mut fiber: Vec<usize> =
+                    self.stalks.fiber(&inv).iter().copied().filter(|&j| j > i).collect();
+                fiber.sort_unstable_by(|a, b| b.cmp(a));
                 let mut absorbed = 0usize;
-                let mut j = i + 1;
-                while j < self.basis.len() && absorbed < 8 {
-                    if element::positions(self.basis[j].sub()) == pos_i {
-                        let asg = element::assignment(self.basis[j].sub());
-                        let sibling_disc = self.discoverers[j];
-                        self.basis_remove(j);
-                        if self.basis[i].puncture(asg) {
-                            let anchor = self.anchor();
-                            self.treasury.settle_subsidy(sibling_disc, [0, 0, 1, 0], anchor);
-                        }
-                        self.physics.syntropy([false, false, true, false]);
-                        absorbed += 1;
-                    } else {
-                        j += 1;
+                for j in fiber {
+                    if absorbed >= 8 {
+                        break;
                     }
+                    let Some(g) = element::transition(self.basis[j].sub(), self.basis[i].sub())
+                    else {
+                        continue;
+                    };
+                    let sib = self.basis[j].clone();
+                    let sibling_disc = self.discoverers[j];
+                    self.basis_remove(j);
+                    if self.basis[i].attach(&sib, &g) > 0 {
+                        let anchor = self.anchor();
+                        self.treasury.settle_subsidy(sibling_disc, [0, 0, 1, 0], anchor);
+                    }
+                    self.physics.syntropy([false, false, true, false]);
+                    absorbed += 1;
                 }
             }
             // THE TORSE MOVE (condense, one dimension deeper): extract the torsion
@@ -1078,6 +1136,7 @@ impl Kernel {
         // demand's invariant, then the orbit form — never a basis scan.
         let known: Vec<bool> =
             self.pending.iter().map(|(p, _)| self.congruent_held(p.sub()).is_some()).collect();
+        // (the transport is not needed for pricing; the base point is)
         let c = known.iter().filter(|k| **k).count() as u64;
         let i = known.len() as u64 - c;
         let mut priced: Vec<(Element, [u64; 4])> = self
@@ -1223,7 +1282,10 @@ impl Kernel {
             for _ in 0..n {
                 let elen = read_u32(b, pos)? as usize;
                 let mut ep = *pos;
-                let elem = Element::from_bytes(b, &mut ep)?;
+                // The element reads a BOUNDED slice: its trailing relations
+                // (anchor, connection) are taken from the bytes that remain.
+                let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
+                let elem = Element::from_bytes(&b[..end], &mut ep)?;
                 *pos += elen;
                 let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                 *pos += 32;
@@ -1241,7 +1303,8 @@ impl Kernel {
                     *pos += 32;
                     let elen = read_u32(b, pos)? as usize;
                     let mut ep = *pos;
-                    let spoken = Element::from_bytes(b, &mut ep)?;
+                    let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
+                    let spoken = Element::from_bytes(&b[..end], &mut ep)?;
                     *pos += elen;
                     kernel.provisional.push((addr, spoken));
                 }
@@ -2321,8 +2384,7 @@ mod tests {
         // Fabricate two sibling cards (as a legacy/import would leave them).
         for hue in [6u8, 7] {
             let bx = vec![(0, 0, hue), (0, 1, 2)];
-            k.basis.push(from_residual(&germinate(&a, &bx).unwrap()));
-            k.discoverers.push([9; 32]);
+            k.basis_push(from_residual(&germinate(&a, &bx).unwrap()), [9; 32]);
         }
         assert_eq!(k.basis_len(), 3, "the un-condensed family");
         k.optimize(); // cursor 0 → the condense move absorbs both siblings

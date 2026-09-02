@@ -488,6 +488,11 @@ pub const RULING_SLASHED: u8 = 0;
 /// derived from family-wide evidence; the kernel upgrades γ = (⊤, Δ) → (π*, Δ)
 /// in place (canonical substance identity untouched).
 pub const RULING_REBIND: u8 = 3;
+/// The bundle connects: the ruled word is a placement of a federated base
+/// geometry — the verdict carries the base address and the group element g
+/// that transports the word into the base frame. A hypha holding both
+/// attaches the word as a section of the base and retires its card.
+pub const RULING_ATTACHED: u8 = 4;
 
 /// evidence request: `[ACT_EVIDENCE][voice 32]`.
 pub fn encode_evidence_request(voice: &[u8; 32]) -> Vec<u8> {
@@ -626,9 +631,38 @@ pub fn encode_verdict_payload(
     out
 }
 
-pub fn decode_verdict(
-    body: &[u8],
-) -> Option<([u8; 32], [u8; 32], u8, [u8; 32], Option<crate::transducer::anchor::Sel>)> {
+/// The attach payload (RULING_ATTACHED): `…[receipt 32][2][base 32][g 17]` —
+/// the base the word connects to and the transport g into its frame.
+pub fn encode_verdict_attach(
+    voice: &[u8; 32],
+    addr: &[u8; 32],
+    receipt: &[u8; 32],
+    base: &[u8; 32],
+    g: &crate::transducer::element::Transition,
+) -> Vec<u8> {
+    let mut out = vec![ACT_VERDICT];
+    out.extend_from_slice(voice);
+    out.extend_from_slice(addr);
+    out.push(RULING_ATTACHED);
+    out.extend_from_slice(receipt);
+    out.push(2);
+    out.extend_from_slice(base);
+    g.to_bytes(&mut out);
+    out
+}
+
+/// A decoded verdict: (court voice, word address, ruling, receipt, π* for a
+/// rebind, (base, g) for an attach).
+pub type Verdict = (
+    [u8; 32],
+    [u8; 32],
+    u8,
+    [u8; 32],
+    Option<crate::transducer::anchor::Sel>,
+    Option<([u8; 32], crate::transducer::element::Transition)>,
+);
+
+pub fn decode_verdict(body: &[u8]) -> Option<Verdict> {
     if body.first() != Some(&ACT_VERDICT) {
         return None;
     }
@@ -636,14 +670,20 @@ pub fn decode_verdict(
     let addr: [u8; 32] = body.get(33..65)?.try_into().ok()?;
     let ruling = *body.get(65)?;
     let receipt: [u8; 32] = body.get(66..98)?.try_into().ok()?;
-    let pi = match body.get(98) {
+    let (pi, attach) = match body.get(98) {
         Some(1) => {
             let mut p = 99usize;
-            Some(crate::transducer::anchor::Sel::from_bytes(body, &mut p)?)
+            (Some(crate::transducer::anchor::Sel::from_bytes(body, &mut p)?), None)
         }
-        _ => None,
+        Some(2) => {
+            let base: [u8; 32] = body.get(99..131)?.try_into().ok()?;
+            let mut p = 131usize;
+            let g = crate::transducer::element::Transition::from_bytes(body, &mut p)?;
+            (None, Some((base, g)))
+        }
+        _ => (None, None),
     };
-    Some((voice, addr, ruling, receipt, pi))
+    Some((voice, addr, ruling, receipt, pi, attach))
 }
 
 pub fn encode_teach(element_bytes: &[u8]) -> Vec<u8> {

@@ -231,14 +231,16 @@ fn main() {
                         }
                     }
                     mycelium::synthesis::Deliberation::Adopt(ratifier, word) => {
-                        let outcome = mycelium::synthesis::adopt(&kernel, ratifier, &word);
-                        if outcome == mycelium::cognition::Adoption::Installed {
-                            // The adopted word changed the durable language:
-                            // it persists now, like a germ or a verdict, so a
-                            // restart never sheds the synchronized genome.
+                        let before = kernel.lock().map(|k| k.volume()).unwrap_or_default();
+                        let _ = mycelium::synthesis::adopt(&kernel, ratifier, &word);
+                        let after = kernel.lock().map(|k| k.volume()).unwrap_or_default();
+                        // The measured volume decides: a new card or a grown
+                        // fibre is a changed durable language and persists
+                        // now, like a germ or a verdict.
+                        if after != before {
                             persist(&kernel, &state_path);
                             eprintln!(
-                                "  [{}] adopt {:02x}{:02x}… (genome sync from court {:02x})",
+                                "  [{}] adopt {:02x}{:02x}… volume {before:?} → {after:?} (court {:02x})",
                                 tu.stamp(),
                                 word.address()[0],
                                 word.address()[1],
@@ -524,21 +526,27 @@ fn main() {
 
         // ── verdict: the court's signed ruling lands ─────────────────────────
         if kind == dialogue::ACT_VERDICT {
-            let Some((cvoice, addr, ruling, receipt, pi)) = dialogue::decode_verdict(&frame.body)
+            let Some((cvoice, addr, ruling, receipt, pi, attach)) =
+                dialogue::decode_verdict(&frame.body)
             else {
                 continue;
             };
             let applied = {
                 let mut k = kernel.lock().unwrap();
-                let ok = if ruling == dialogue::RULING_REBIND {
+                let ok = match ruling {
                     // The court's family-derived π* rebinds the word's anchor
                     // fiber — the dual condition activates for this word.
-                    match pi {
+                    dialogue::RULING_REBIND => match pi {
                         Some(term) => k.apply_rebind(&addr, term),
                         None => false, // a rebind with no term rules nothing
-                    }
-                } else {
-                    k.apply_verdict(&addr, ruling)
+                    },
+                    // The bundle connects: the word transports into its base
+                    // here by the court's g; an attach with no base rules nothing.
+                    dialogue::RULING_ATTACHED => match attach {
+                        Some((base, g)) => k.apply_attach(&addr, &base, &g) > 0,
+                        None => false,
+                    },
+                    _ => k.apply_verdict(&addr, ruling),
                 };
                 drop(k);
                 if ok {
