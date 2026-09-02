@@ -346,6 +346,29 @@ pub fn attest(
     g.commit_all(reductions, voice)
 }
 
+/// THE QUOTE, off the lock: the market view leaves under a brief lock; the
+/// depth follows the metabolism (a calm judge serves a deep book, a strained
+/// one its hottest few); pricing and the cohesion witness compute over the
+/// snapshot. Returns (surface, priced clusters, K, cohesion).
+pub fn quote(
+    k: &std::sync::Mutex<crate::cognition::Kernel>,
+) -> Option<([u64; 4], Vec<(crate::transducer::element::Element, [u64; 4])>, u64, crate::cohesion::CohesionWitness)> {
+    let view = k.lock().ok()?.market_open();
+    let free: u64 = view.reserve.iter().sum();
+    let depth = (4 + (free as usize * 12) / (4 * crate::physics::reserve_max() as usize)).min(16);
+    let (surface, priced) = crate::cognition::quote_over(
+        &view.language.stalks,
+        &view.language.words,
+        &view.pending,
+        &view.surface,
+        &view.pool,
+        depth,
+    );
+    let cohesion =
+        crate::cognition::cohesion_over(&view.language.stalks, &view.language.words, &view.pending);
+    Some((surface, priced, view.k_step, cohesion))
+}
+
 /// Idle consolidation, orchestrated off the request path: the cheap moves
 /// run under a brief lock, the redundancy probe decomposes the candidate
 /// over a basis snapshot with no lock held, and only the retirement
@@ -355,9 +378,10 @@ pub fn consolidate(k: &std::sync::Mutex<crate::cognition::Kernel>) -> usize {
     let probe = g.consolidate_stroke();
     let (beam, depth) = g.projection_budget();
     drop(g);
-    let Some((addr, candidate, rest)) = probe else { return 0 };
+    let Some((addr, i, language)) = probe else { return 0 };
+    let Some(candidate) = language.words.get(i) else { return 0 };
     let sub = candidate.substance();
-    if crate::cognition::decompose_over(&rest, sub.sub(), None, beam, depth).is_err() {
+    if crate::cognition::decompose_over(&language.words, sub.sub(), Some(i), beam, depth).is_err() {
         return 0;
     }
     let Ok(mut g) = k.lock() else { return 0 };

@@ -59,6 +59,25 @@ pub type Germ = (Element, Option<(Vec<(i64, i64, u8)>, (i64, i64))>);
 /// overlap strips the reassembly glues on).
 pub type Composite = ([u8; 32], Vec<([u8; 32], bool)>, Vec<(i64, i64, u8, u8)>);
 
+/// THE LANGUAGE SNAPSHOT: the held words and their atlas, immutable and
+/// shared by pointer with every reflex worker. Reduction, congruence, and
+/// quoting run over it with no lock held.
+#[derive(Debug, Clone, Default)]
+pub struct Language {
+    pub words: Vec<Element>,
+    pub stalks: crate::transducer::stalk::Stalks,
+}
+
+/// The market as seen at one instant (see [`Kernel::market_open`]).
+pub struct MarketView {
+    pub language: std::sync::Arc<Language>,
+    pub pending: Vec<(Element, u64)>,
+    pub surface: [u64; 4],
+    pub pool: [u64; 4],
+    pub k_step: u64,
+    pub reserve: [u64; 4],
+}
+
 /// A reduction computed off the lock, ready to commit: the germ, its context,
 /// the normal form over `language` (the snapshot it reduced over, so cited
 /// indices resolve to addresses at commit), and the selection critical pairs.
@@ -67,7 +86,77 @@ pub struct Reduction {
     pub ctx: Option<(Vec<(i64, i64, u8)>, (i64, i64))>,
     pub form: NormalForm,
     pub qs: Vec<(usize, Vec<(i64, i64)>)>,
-    pub language: std::sync::Arc<Vec<Element>>,
+    pub language: std::sync::Arc<Language>,
+}
+
+/// QUOTE — pure, over a language snapshot and the open book. The yield
+/// surface is read from genuine metabolic tension; each un-factored residual
+/// is priced against it, μ⃗[l] = magnitude[l] · (1 + surface[l]). The (C, I)
+/// pair differentiates the market (never summed): closure work (open demand
+/// whose geometry a held word speaks, up to isometry, through the atlas)
+/// carries the C premium; coverage work (unknown geometry) the I premium.
+/// Top clusters by strongest lane; the escrow pool bounds the scale.
+pub fn quote_over(
+    stalks: &crate::transducer::stalk::Stalks,
+    words: &[Element],
+    pending: &[(Element, u64)],
+    surface: &[u64; 4],
+    pool: &[u64; 4],
+    top: usize,
+) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
+    let known: Vec<bool> = pending
+        .iter()
+        .map(|(p, _)| {
+            crate::transducer::stalk::congruent(stalks, |i| words[i].sub(), p.sub()).is_some()
+        })
+        .collect();
+    let c = known.iter().filter(|k| **k).count() as u64;
+    let i = known.len() as u64 - c;
+    let mut priced: Vec<(Element, [u64; 4])> = pending
+        .iter()
+        .zip(&known)
+        .map(|((p, _), known)| {
+            let premium = if *known { c } else { i };
+            let mut mu = crate::economy::price(&p.magnitude(), surface);
+            mu[2] = p.magnitude()[2].saturating_mul(1 + surface[2] + premium);
+            (p.clone(), mu)
+        })
+        .collect();
+    priced.sort_by(|a, b| b.1.iter().max().cmp(&a.1.iter().max()));
+    priced.truncate(top);
+    // THE SOLVENCY BOUND (P5): tension set the RANKING; the escrow pool sets
+    // the SCALE. Each quoted lane is capped at pool[l]/quoted so the market
+    // never offers more than it can pay — Σ quotes ≤ pool. An empty pool
+    // quotes zero: an honest "cannot pay".
+    let quoted = priced.len().max(1) as u64;
+    for (_, mu) in &mut priced {
+        for l in 0..4 {
+            mu[l] = mu[l].min(pool[l] / quoted);
+        }
+    }
+    (*surface, priced)
+}
+
+/// THE COHESION WITNESS — pure: the joint (C, I) state over the open book,
+/// both axes exact and never traded. C counts open demands sitting on held
+/// geometry (closure failing — collapse-side work); I counts open demands on
+/// geometry no thought speaks (coverage failing — expansion-side work).
+pub fn cohesion_over(
+    stalks: &crate::transducer::stalk::Stalks,
+    words: &[Element],
+    pending: &[(Element, u64)],
+) -> crate::cohesion::CohesionWitness {
+    let (mut c, mut i) = (0u64, 0u64);
+    for (p, _) in pending {
+        match crate::transducer::stalk::congruent(stalks, |k| words[k].sub(), p.sub()) {
+            Some(_) => c += 1,
+            None => i += 1,
+        }
+    }
+    crate::cohesion::witness(
+        crate::core::engine::Q::from(num_bigint::BigInt::from(c)),
+        crate::core::engine::Q::from(num_bigint::BigInt::from(i)),
+    )
 }
 
 /// PERCEPTION TO GERMS — pure. Correspond bodies by rigid-motion invariant
@@ -156,14 +245,14 @@ pub fn reduce_germ(
 
 /// Reduce every germ over the snapshot — pure, off the lock.
 pub fn reduce_all(
-    language: &std::sync::Arc<Vec<Element>>,
+    language: &std::sync::Arc<Language>,
     budget: (usize, usize),
     germs: Vec<Germ>,
 ) -> Vec<Reduction> {
     germs
         .into_iter()
         .map(|(germ, ctx)| {
-            let (form, qs) = reduce_germ(language, budget, &germ, ctx.as_ref());
+            let (form, qs) = reduce_germ(&language.words, budget, &germ, ctx.as_ref());
             Reduction { germ, ctx, form, qs, language: std::sync::Arc::clone(language) }
         })
         .collect()
@@ -194,7 +283,7 @@ pub struct Kernel {
     /// when its generation lags, so a stable language is shared by pointer.
     basis_gen: u64,
     language_gen: u64,
-    language: std::sync::Arc<Vec<Element>>,
+    language: std::sync::Arc<Language>,
     admission: Admission,
     /// THE OPEN-DEMAND MARKET: irreducible residuals still awaiting consilience —
     /// the un-factored chains the mesh QUOTES as work (Vec-of-relations, capped;
@@ -278,14 +367,32 @@ impl Kernel {
         self.basis_gen += 1;
     }
 
-    /// The language as an immutable shared snapshot for off-lock reduction,
-    /// rebuilt only when the basis generation moved since the last one.
-    pub fn language(&mut self) -> std::sync::Arc<Vec<Element>> {
-        if self.language_gen != self.basis_gen || self.language.len() != self.basis.len() {
-            self.language = std::sync::Arc::new(self.basis.clone());
+    /// The language as an immutable shared snapshot (words and their atlas)
+    /// for off-lock reduction and congruence, rebuilt only when the basis
+    /// generation moved since the last one.
+    pub fn language(&mut self) -> std::sync::Arc<Language> {
+        if self.language_gen != self.basis_gen || self.language.words.len() != self.basis.len() {
+            self.language = std::sync::Arc::new(Language {
+                words: self.basis.clone(),
+                stalks: self.stalks.clone(),
+            });
             self.language_gen = self.basis_gen;
         }
         std::sync::Arc::clone(&self.language)
+    }
+
+    /// THE MARKET VIEW — under a brief lock: the language snapshot, the open
+    /// book, the yield surface, the escrow pool, the clock, and the reserve.
+    /// Quoting and the cohesion witness compute over this with no lock held.
+    pub fn market_open(&mut self) -> MarketView {
+        MarketView {
+            language: self.language(),
+            pending: self.pending.clone(),
+            surface: crate::economy::yield_surface(&self.physics),
+            pool: self.treasury.pool(),
+            k_step: self.chain.next_step_index(),
+            reserve: self.physics.reserve,
+        }
     }
 
     /// The held word that is `chain`'s base point, with the transport
@@ -731,7 +838,7 @@ impl Kernel {
     pub fn reflex_open(
         &mut self,
         voice: [u8; 32],
-    ) -> Option<(std::sync::Arc<Vec<Element>>, (usize, usize))> {
+    ) -> Option<(std::sync::Arc<Language>, (usize, usize))> {
         self.enroll(voice, crate::economy::Tier::Participant);
         self.physics.relax();
         let idle = self.physics.metabolism_rate().iter().all(|&p| p <= 1);
@@ -782,7 +889,7 @@ impl Kernel {
     ) -> Outcome {
         let language = self.language();
         let budget = self.projection_budget();
-        let (form, qs) = reduce_germ(&language, budget, &g, ctx.as_ref());
+        let (form, qs) = reduce_germ(&language.words, budget, &g, ctx.as_ref());
         self.commit_germ(Reduction { germ: g, ctx, form, qs, language }, voice)
     }
 
@@ -801,7 +908,7 @@ impl Kernel {
                 if self.anchor_mismatches.len() >= 64 {
                     break;
                 }
-                if let Some(w) = language.get(wi) {
+                if let Some(w) = language.words.get(wi) {
                     let addr = w.address();
                     if !self.anchor_mismatches.iter().any(|(a, _, _)| *a == addr) {
                         self.anchor_mismatches.push((addr, q, scene.clone()));
@@ -814,6 +921,7 @@ impl Kernel {
                 let mut word = Vec::with_capacity(cited.len());
                 for wi in cited {
                     let live = language
+                        .words
                         .get(wi)
                         .map(|w| w.address())
                         .and_then(|a| self.basis.iter().position(|t| t.address() == a));
@@ -1181,15 +1289,14 @@ impl Kernel {
     /// full decomposition — is handed out as (address, candidate, the basis
     /// without it) to run on that snapshot with no lock held, exactly as
     /// adoption's derivability does. The reflex path never waits on it.
-    pub fn consolidate_stroke(&mut self) -> Option<([u8; 32], Element, Vec<Element>)> {
-        let probe = self.condense_stroke().map(|i| {
-            let candidate = self.basis[i].clone();
-            let mut rest = self.basis.clone();
-            rest.remove(i);
-            (candidate.address(), candidate, rest)
-        });
+    pub fn consolidate_stroke(
+        &mut self,
+    ) -> Option<([u8; 32], usize, std::sync::Arc<Language>)> {
+        let probe = self.condense_stroke().map(|i| (self.basis[i].address(), i));
         self.physics.regenerate();
-        probe
+        // The probe decomposes over the shared language snapshot with the
+        // candidate excluded by index — no per-stroke clone of the basis.
+        probe.map(|(addr, i)| (addr, i, self.language()))
     }
 
     /// Retire a plain card the rest of the basis derives (the off-lock probe
@@ -1284,45 +1391,7 @@ impl Kernel {
     /// μ⃗[l] = magnitude[l] · (1 + surface[l]). Top clusters by strongest lane.
     pub fn quote(&self, top: usize) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
         let surface = crate::economy::yield_surface(&self.physics);
-        // The (C, I) pair DIFFERENTIATES the market (never summed): closure work
-        // (open demand on KNOWN geometry) carries the C premium; coverage work
-        // (unknown geometry) carries the I premium — expansion pays what
-        // expansion is worth, collapse what collapse is worth.
-        // Known/unknown geometry evaluates on the ORBIT class — a demand
-        // whose support is an isometry image of a held word's is closure
-        // work, not coverage (coordinate-set equality undercounted C).
-        // The lookup runs through the stalk space: the fiber over the
-        // demand's invariant, then the orbit form — never a basis scan.
-        let known: Vec<bool> =
-            self.pending.iter().map(|(p, _)| self.congruent_held(p.sub()).is_some()).collect();
-        // (the transport is not needed for pricing; the base point is)
-        let c = known.iter().filter(|k| **k).count() as u64;
-        let i = known.len() as u64 - c;
-        let mut priced: Vec<(Element, [u64; 4])> = self
-            .pending
-            .iter()
-            .zip(&known)
-            .map(|((p, _), known)| {
-                let premium = if *known { c } else { i };
-                let mut mu = crate::economy::price(&p.magnitude(), &surface);
-                mu[2] = p.magnitude()[2].saturating_mul(1 + surface[2] + premium);
-                (p.clone(), mu)
-            })
-            .collect();
-        priced.sort_by(|a, b| b.1.iter().max().cmp(&a.1.iter().max()));
-        priced.truncate(top);
-        // THE SOLVENCY BOUND (P5): tension set the RANKING; the escrow pool sets
-        // the SCALE. Each quoted lane is capped at pool[l]/quoted so the market
-        // never offers more than it can pay — Σ quotes ≤ pool, dynamic weights
-        // anchored to reality. An empty pool quotes zero: an honest "cannot pay".
-        let pool = self.treasury.pool();
-        let quoted = priced.len().max(1) as u64;
-        for (_, mu) in &mut priced {
-            for l in 0..4 {
-                mu[l] = mu[l].min(pool[l] / quoted);
-            }
-        }
-        (surface, priced)
+        quote_over(&self.stalks, &self.basis, &self.pending, &surface, &self.treasury.pool(), top)
     }
 
     /// ATTEST — a peer's INDEPENDENT derivation of an open residual arrives as a
@@ -1377,19 +1446,7 @@ impl Kernel {
     /// geometry (closure failing — collapse-side work); I counts open demands on
     /// geometry NO thought speaks (coverage failing — expansion-side work).
     pub fn cohesion(&self) -> crate::cohesion::CohesionWitness {
-        // The (C, I) witness reads the orbit class through the stalk space,
-        // matching the market.
-        let (mut c, mut i) = (0u64, 0u64);
-        for (p, _) in &self.pending {
-            match self.congruent_held(p.sub()) {
-                Some(_) => c += 1,
-                None => i += 1,
-            }
-        }
-        crate::cohesion::witness(
-            crate::core::engine::Q::from(num_bigint::BigInt::from(c)),
-            crate::core::engine::Q::from(num_bigint::BigInt::from(i)),
-        )
+        cohesion_over(&self.stalks, &self.basis, &self.pending)
     }
 
     /// P7 — SNAPSHOT the durable cognitive state (the germinated basis + each

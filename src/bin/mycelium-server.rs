@@ -66,6 +66,24 @@ struct ReflexJob {
 fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32]) {
     let ReflexJob { mut stream, frame } = job;
     let Some((&kind, rest)) = frame.body.split_first() else { return };
+    // ── quote: the market view leaves under a brief lock; pricing and the
+    // cohesion witness compute over the snapshot.
+    if kind == dialogue::ACT_QUOTE {
+        let Some(qvoice) = dialogue::decode_quote_request(&frame.body) else { return };
+        let Some((surface, priced, k_step, cohesion)) = mycelium::synthesis::quote(kernel) else {
+            return;
+        };
+        let items: Vec<dialogue::WorkItem> =
+            priced.iter().map(|(e, mu)| (e.address(), *mu, e.sub().to_vec())).collect();
+        eprintln!(
+            "  quote voice {:02x} → surface {surface:?}; {} clusters; K={k_step}; cohesion {cohesion:?}",
+            qvoice[0],
+            items.len()
+        );
+        let reply = Frame { lane: frame.lane, body: dialogue::encode_quote_reply(&surface, &items) };
+        let _ = stream.write_all(&reply.encode().unwrap_or_default());
+        return;
+    }
     let pbytes = if kind == dialogue::ACT_GOSSIP && rest.len() >= 32 { &rest[32..] } else { rest };
     let (out, voice) = if kind == dialogue::ACT_DEMAND {
         // A spoken, unsolved coboundary challenge — a peer's independent
@@ -419,30 +437,7 @@ fn main() {
         let Some((&kind, rest)) = frame.body.split_first() else { continue };
 
         // ── quote: "what is the highest-yield work?" ─────────────────────────
-        if kind == dialogue::ACT_QUOTE {
-            let Some(qvoice) = dialogue::decode_quote_request(&frame.body) else { continue };
-            let (surface, priced, k_step, cohesion) = {
-                let k = kernel.lock().unwrap();
-                // Quote depth follows the metabolism, not a constant: a calm
-                // judge serves a deep book (workers reach far into coverage);
-                // a strained one serves its hottest few. depth = 4..16 by
-                // free reserve share (RESERVE_MAX the contract scale).
-                let free: u64 = k.physics().reserve.iter().sum();
-                let depth = (4 + (free as usize * 12) / (4 * mycelium::physics::reserve_max() as usize)).min(16);
-                let (s, p) = k.quote(depth);
-                (s, p, k.k_step(), k.cohesion())
-            };
-            let items: Vec<dialogue::WorkItem> =
-                priced.iter().map(|(e, mu)| (e.address(), *mu, e.sub().to_vec())).collect();
-            eprintln!(
-                "  quote voice {:02x} → surface {surface:?}; {} clusters; K={k_step}; cohesion {cohesion:?}",
-                qvoice[0],
-                items.len()
-            );
-            let reply = Frame { lane: frame.lane, body: dialogue::encode_quote_reply(&surface, &items) };
-            let _ = s.write_all(&reply.encode().unwrap_or_default());
-            continue;
-        }
+        // (ACT_QUOTE is judged on the reflex pool — see `judge`.)
 
         // ── docket: the court pulls what awaits finality ─────────────────────
         if kind == dialogue::ACT_DOCKET {
