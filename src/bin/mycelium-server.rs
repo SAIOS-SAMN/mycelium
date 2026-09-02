@@ -35,6 +35,21 @@ fn flags(args: &[String], name: &str) -> Vec<String> {
     args.windows(2).filter(|w| w[0] == name).map(|w| w[1].clone()).collect()
 }
 
+/// Durable state: the kernel snapshot lands atomically (to .tmp, then
+/// rename) so a crash mid-write never corrupts the ledger. Every path that
+/// changes the held language — germination, a verdict, an adoption — writes
+/// through here; a restart then resumes exactly what the node held.
+fn persist(kernel: &Mutex<Kernel>, state_path: &str) {
+    let snap = match kernel.lock() {
+        Ok(k) => k.snapshot(),
+        Err(_) => return,
+    };
+    let tmp = format!("{state_path}.tmp");
+    if std::fs::write(&tmp, &snap).is_ok() {
+        let _ = std::fs::rename(&tmp, state_path);
+    }
+}
+
 /// A stable node id from a string (address) — a wire identity, not cognition.
 fn id_of(s: &str) -> [u8; 32] {
     *blake3::hash(s.as_bytes()).as_bytes()
@@ -180,6 +195,7 @@ fn main() {
     {
         let kernel = Arc::clone(&kernel);
         let tu = tuniversal;
+        let state_path = state_path.clone();
         std::thread::spawn(move || loop {
             let work = match synth_rx.recv_timeout(std::time::Duration::from_millis(
                 mycelium::physics::reserve_max(),
@@ -217,6 +233,10 @@ fn main() {
                     mycelium::synthesis::Deliberation::Adopt(ratifier, word) => {
                         let outcome = mycelium::synthesis::adopt(&kernel, ratifier, &word);
                         if outcome == mycelium::cognition::Adoption::Installed {
+                            // The adopted word changed the durable language:
+                            // it persists now, like a germ or a verdict, so a
+                            // restart never sheds the synchronized genome.
+                            persist(&kernel, &state_path);
                             eprintln!(
                                 "  [{}] adopt {:02x}{:02x}… (genome sync from court {:02x})",
                                 tu.stamp(),
@@ -520,12 +540,9 @@ fn main() {
                 } else {
                     k.apply_verdict(&addr, ruling)
                 };
+                drop(k);
                 if ok {
-                    let bytes = k.snapshot();
-                    let tmp = format!("{state_path}.tmp");
-                    if std::fs::write(&tmp, &bytes).is_ok() {
-                        let _ = std::fs::rename(&tmp, &state_path);
-                    }
+                    persist(&kernel, &state_path);
                 }
                 ok
             };
@@ -635,11 +652,7 @@ fn main() {
         // P7 — a new germ changed the durable language: persist it (atomic write —
         // to .tmp then rename — so a crash mid-write never corrupts the ledger).
         if matches!(out, Outcome::Installed(_)) {
-            let snap = kernel.lock().unwrap().snapshot();
-            let tmp = format!("{state_path}.tmp");
-            if std::fs::write(&tmp, &snap).is_ok() {
-                let _ = std::fs::rename(&tmp, &state_path);
-            }
+            persist(&kernel, &state_path);
         }
 
         // P6/R5 · sun_recon: a CLIENT percept still awaiting consilience routes ONE
