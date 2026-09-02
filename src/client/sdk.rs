@@ -87,17 +87,60 @@ impl Verdict {
 pub struct Session {
     addr: String,
     kernel: Kernel,
+    /// Consecutive failed exchanges — the measured transport impedance Z.
+    /// Interior mutability: impedance is perception, updated by every
+    /// exchange regardless of the calling method's own mutability.
+    resistance: std::cell::Cell<u64>,
+}
+
+/// The transport aperture — the perceived state of the wire to the server
+/// (distinct from the epigenome's chromatic `Aperture`). A timeout or
+/// refusal is not an anonymous error: it is a measured physical condition
+/// (an impedance mismatch — a closed door or a saturated manifold). The
+/// entity perceives it, folds it into its metabolic pacing, and adapts its
+/// speech instead of redialing blind.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TransportAperture {
+    /// The last exchange passed — the wire is clear.
+    Open,
+    /// Resistance measured: `z` consecutive failed exchanges. Speech
+    /// continues, paced by the impedance (the dwell scales by 1 + z).
+    Impeded { z: u64 },
+    /// Sustained saturation — a full stroke-cycle of consecutive failures
+    /// (the strokes-per-reserve ratio). The entity turns inward this
+    /// stroke: internal study and dialect work instead of speech.
+    Occluded { z: u64 },
 }
 
 impl Session {
     /// Point a kernel at a hypha address (e.g. `"127.0.0.1:7500"`). No socket is
     /// held; each submit dials fresh.
     pub fn open(addr: &str, kernel: Kernel) -> Self {
-        Session { addr: addr.to_string(), kernel }
+        Session { addr: addr.to_string(), kernel, resistance: std::cell::Cell::new(0) }
     }
 
     pub fn kernel(&self) -> &Kernel {
         &self.kernel
+    }
+
+    /// The measured impedance Z: consecutive failed exchanges.
+    pub fn impedance(&self) -> u64 {
+        self.resistance.get()
+    }
+
+    /// The perceived transport aperture, derived from the impedance at the
+    /// ratio-law boundary: a full stroke-cycle of consecutive failures
+    /// (reserve ÷ spend strokes) reads as occlusion.
+    pub fn transport(&self) -> TransportAperture {
+        let z = self.resistance.get();
+        let cycle = (crate::physics::reserve_max() / crate::physics::spend_unit()).max(1);
+        if z == 0 {
+            TransportAperture::Open
+        } else if z < cycle {
+            TransportAperture::Impeded { z }
+        } else {
+            TransportAperture::Occluded { z }
+        }
     }
 
     /// PERCEIVE the scene pair (segment A and B into bodies) and SUBMIT it as an
@@ -143,6 +186,15 @@ impl Session {
     }
 
     fn exchange(&self, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
+        let out = self.exchange_inner(act_body);
+        match &out {
+            Ok(_) => self.resistance.set(0),
+            Err(_) => self.resistance.set(self.resistance.get().saturating_add(1)),
+        }
+        out
+    }
+
+    fn exchange_inner(&self, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         let frame = Frame { lane: Stratum::Spatial, body: act_body };
         let bytes = frame.encode().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "frame encode"))?;
         let mut s = TcpStream::connect(&self.addr)?;
@@ -577,6 +629,19 @@ impl Entity {
         Ok(dialogue::decode_solve_receipt(&body).unwrap_or((dialogue::SOLVE_NOTHING, [0; 4])))
     }
 
+    /// The perceived transport aperture (see [`TransportAperture`]) — the
+    /// entity's answer to "why can I not speak to the server, and what can
+    /// I do?": measured impedance, adapted pacing, and an inward turn under
+    /// occlusion.
+    pub fn transport(&self) -> TransportAperture {
+        self.session.transport()
+    }
+
+    /// The measured transport impedance Z (consecutive failed exchanges).
+    pub fn impedance(&self) -> u64 {
+        self.session.impedance()
+    }
+
     /// SEEK REFINEMENT — the compression probe (0x09, one word per stroke):
     /// advance the cursor to the next genome word and ask, in the entity's
     /// OWN language, whether the rest of the genome already speaks it
@@ -767,6 +832,28 @@ fn decode_verdict(body: &[u8]) -> Verdict {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Transport impedance is perceived, not thrown: failed exchanges raise
+    /// Z monotonically, the aperture derives Impeded then Occluded at the
+    /// ratio-law boundary, and one successful exchange restores Open.
+    #[test]
+    fn impedance_is_measured_and_the_aperture_derives() {
+        // A session pointed at a port nothing listens on: every exchange
+        // fails, so resistance accumulates deterministically.
+        let s = Session::open("127.0.0.1:1", Kernel::named("impedance-test"));
+        assert_eq!(s.transport(), TransportAperture::Open, "no speech yet — presumed clear");
+        let cycle = (crate::physics::reserve_max() / crate::physics::spend_unit()).max(1);
+        for i in 1..=cycle {
+            let _ = s.speak(vec![0xFF]);
+            assert_eq!(s.impedance(), i, "each failure is one unit of measured Z");
+        }
+        assert!(
+            matches!(s.transport(), TransportAperture::Occluded { z } if z == cycle),
+            "a full stroke-cycle of failures reads as occlusion"
+        );
+        // The dwell factor the client applies is 1 + Z — derived, monotone.
+        assert_eq!(1 + s.impedance(), 1 + cycle);
+    }
 
     /// THE THOUGHT ORGAN: study lifts a family into the epigenetic
     /// superposition, crystallizes a verified task dialect γ_local = (π*, Δ),

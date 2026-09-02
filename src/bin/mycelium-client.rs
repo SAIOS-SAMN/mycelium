@@ -28,7 +28,7 @@
 //!            [--feed CORPUS_DIR] [--loop] [--limit N] [--conductor BOARD]
 use mycelium::arc::{embed, frame_ratio, grid_to_cells, parse_task, readback};
 use mycelium::physics::{reserve_max, Physics};
-use mycelium::sdk::{Comprehension, Entity, Kernel};
+use mycelium::sdk::{Comprehension, Entity, Kernel, YieldQuote};
 use std::path::PathBuf;
 use std::time::Instant;
 
@@ -140,8 +140,19 @@ fn main() {
     loop {
         let mut judge_load = 0u8;
 
+        // ── TRANSPORT IMPEDANCE: perceive the wire before speaking. An
+        // occluded aperture (a full stroke-cycle of consecutive failures)
+        // turns this stroke INWARD — internal work instead of hammering a
+        // saturated manifold; the dwell below scales with the impedance, so
+        // resistance paces speech instead of throwing blind errors.
+        let occluded =
+            matches!(entity.transport(), mycelium::sdk::TransportAperture::Occluded { .. });
+        if occluded {
+            physics.spend([true; 4]); // the obstructed stroke is still a stroke
+        }
+
         // ── FEED (entropic): present corpus transitions until the stroke spends.
-        while feeding && !physics.depleted() {
+        while feeding && !occluded && !physics.depleted() {
             if ti >= cycle.len() {
                 // A new cycle: the conductor (if any) re-steers the order.
                 cycle = tasks.clone();
@@ -251,7 +262,10 @@ fn main() {
         }
 
         // ── WORK (entropic): pull the market's open demands and attest.
-        match entity.quote() {
+        // An occluded wire skips the ask entirely (no error counted — the
+        // impedance is already perceived); the answer is patience, not
+        // repetition.
+        match if occluded { Ok(YieldQuote { surface: [0; 4], clusters: Vec::new() }) } else { entity.quote() } {
             Ok(q) => {
                 for cluster in &q.clusters {
                     if cluster.chain.is_empty() {
@@ -299,7 +313,7 @@ fn main() {
         // the hypha's authoritative registry — study the family, think the
         // tests through, submit. The REGISTRY rules bounty vs floor
         // (anti-replay yield collapse); unique solves count ONLY on BOUNTY.
-        if let Ok(Some((tid, train, tests))) = entity.pull_task() {
+        if let Ok(Some((tid, train, tests))) = if occluded { Ok(None) } else { entity.pull_task() } {
             let studied = entity.study(&train);
             physics.spend([true; 4]); // thought is metabolically real
             if studied > 0 {
@@ -385,8 +399,9 @@ fn main() {
                 last_genome = entity.epigenome.genome_len();
                 last_settles = settles;
                 eprintln!(
-                    "[{name}] [{}] fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | refined {refined} learned {learned} | genome {} (peak expr {})",
+                    "[{name}] [{}] fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | refined {refined} learned {learned} | genome {} (peak expr {})",
                     tuniversal.stamp(),
+                    entity.impedance(),
                     entity.epigenome.genome_len(),
                     entity.epigenome.peak_expression(),
                 );
@@ -394,7 +409,11 @@ fn main() {
             while physics.depleted() {
                 physics.regenerate();
                 physics.relax();
-                let dwell = (judge_load as u64).max(reserve_max());
+                // The dwell scales with the measured impedance: resistance on
+                // the wire is a longer breath, not a retry storm.
+                let dwell = (judge_load as u64)
+                    .max(reserve_max())
+                    .saturating_mul(1 + entity.impedance());
                 std::thread::sleep(std::time::Duration::from_millis(dwell));
             }
         }

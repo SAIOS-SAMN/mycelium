@@ -177,7 +177,7 @@ pub fn apply_bound_chains(
         .collect();
     let mut writes: Vec<(i64, i64, u8)> = Vec::new();
     for (chain, sel) in spoken {
-        let Some(&(r0, c0, _, _)) = chain.first() else { continue };
+        let Some(&(r0, c0, before0, _)) = chain.first() else { continue };
         let candidates: Vec<(i64, i64)> = match sel {
             Some(t) => {
                 let region = t.eval(&scene);
@@ -191,13 +191,17 @@ pub fn apply_bound_chains(
                     })
                     .collect()
             }
-            None => {
-                let max_r = chain.iter().map(|(r, _, _, _)| *r).max().unwrap_or(0);
-                let max_c = chain.iter().map(|(_, c, _, _)| *c).max().unwrap_or(0);
-                (0..(rows - max_r).max(0))
-                    .flat_map(|dr| (0..(cols - max_c).max(0)).map(move |dc| (dr, dc)))
-                    .collect()
-            }
+            // Placements derive from the CARRIER, never a plane sweep: the
+            // chain's lead cell can only land where its before-hue actually
+            // stands, so the candidate set is that hue's support offset by
+            // the lead cell — exact (the fits check below still confirms
+            // every cell and the bounds), and restricted to supp rather than
+            // rows × cols.
+            None => scene
+                .iter()
+                .filter(|(_, _, h)| *h == before0)
+                .map(|(sr, sc, _)| (sr - r0, sc - c0))
+                .collect(),
         };
         for (dr, dc) in candidates {
             let fits = chain.iter().all(|(r, c, before, _)| {
