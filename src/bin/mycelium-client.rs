@@ -154,6 +154,15 @@ fn main() {
             matches!(entity.transport(), mycelium::sdk::TransportAperture::Occluded { .. });
         if occluded {
             physics.spend([true; 4]); // the obstructed stroke is still a stroke
+            // The inward stroke glues: one sync contact per stroke of the
+            // cycle, until the digests agree or the cycle is spent.
+            let cycle = (reserve_max() / mycelium::physics::spend_unit().max(1)).max(1);
+            for _ in 0..cycle {
+                match entity.sync_genome() {
+                    Ok(n) if n > 0 => learned += n as u64,
+                    _ => break,
+                }
+            }
         }
 
         // THE ENTITY'S REDUCTION BUDGET — from its own metabolism: the beam

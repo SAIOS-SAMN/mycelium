@@ -360,6 +360,11 @@ pub struct Epigenome {
 }
 
 impl Epigenome {
+    /// Deepen a held word's fiber with a section this genome verified.
+    pub fn puncture(&mut self, i: usize, asg: Vec<(u8, u8)>) -> bool {
+        self.genome.get_mut(i).is_some_and(|w| w.puncture(asg))
+    }
+
     /// The count of taught words refused for not verifying.
     pub fn refused(&self) -> u64 {
         self.refused
@@ -787,7 +792,7 @@ impl Entity {
         let genome = self.epigenome.genome();
         // Each citation carries its operator: the word's body under the
         // gauge it was read at, so the hearer verifies what was said.
-        let cites = located
+        let mut cites: Vec<dialogue::CiteWire> = located
             .cites
             .into_iter()
             .map(|(i, g, asg)| {
@@ -795,7 +800,19 @@ impl Entity {
                 (genome[i].address(), g, asg as u32, body)
             })
             .collect();
-        (cites, located.residual)
+        // A puncture is spoken as a section of the held word: the operator
+        // carries the word's cells under the body's own transitions. This
+        // genome deepens its own copy at once; the hearer deepens on
+        // verification.
+        let punctures = located.punctures;
+        for (i, g, body) in &punctures {
+            cites.push((genome[*i].address(), g.clone(), u32::MAX, body.clone()));
+        }
+        let residual = located.residual;
+        for (i, _, body) in punctures {
+            self.epigenome.puncture(i, crate::transducer::element::assignment(&body));
+        }
+        (cites, residual)
     }
 
     /// SPEAK a percept as a proof: perceive, germinate, reduce every germ

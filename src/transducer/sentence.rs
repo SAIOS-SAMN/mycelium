@@ -39,6 +39,11 @@ pub type Cite = (usize, Versor, usize);
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Sentence {
     pub cites: Vec<Cite>,
+    /// PUNCTURES: bodies a held word carries by shape under a gauge the
+    /// word does not yet hold — (word, versor, the word's cells under the
+    /// body's own transitions). Spoken as sections of the word, not as new
+    /// words: the fiber deepens instead of the vocabulary widening.
+    pub punctures: Vec<(usize, Versor, Vec<Cell>)>,
     pub connection: Vec<Versor>,
     pub residual: Vec<Cell>,
     /// 1 when every stratum read named one word; more is the measurement
@@ -51,6 +56,33 @@ impl Sentence {
     pub fn is_closed(&self) -> bool {
         self.residual.is_empty()
     }
+}
+
+/// PUNCTURE the held words a sentence's carried bodies name: a carried body
+/// on a word's own support under transitions the word does not yet hold
+/// becomes a section of that word. Returns how many fibers deepened. The
+/// receiving side of speech: the hearer's language deepens on what it
+/// verified, never on what it was told.
+pub fn puncture_from(words: &mut [Element], cites: &[crate::anastome::dialogue::CiteWire]) -> usize {
+    let mut deepened = 0usize;
+    for (addr, _, _, body) in cites {
+        let Some(i) = words.iter().position(|w| w.address() == *addr) else { continue };
+        let mut pos = element::positions(words[i].sub());
+        pos.sort_unstable();
+        let mut carried = body.clone();
+        carried.sort_unstable();
+        if element::positions(&carried) != pos {
+            continue; // not this word's support: a citation, not a puncture
+        }
+        let asg = element::assignment(&carried);
+        if words[i].assignments().contains(&asg) {
+            continue;
+        }
+        if words[i].puncture(asg) {
+            deepened += 1;
+        }
+    }
+    deepened
 }
 
 /// The connected components of a chain's support under 4-adjacency, each
@@ -277,11 +309,30 @@ pub fn locate<'a>(
     piece: &[Cell],
     exclude: Option<usize>,
 ) -> (Option<Cite>, usize) {
-    let Some(shape) = element::shape_of_chain(piece) else { return (None, 0) };
+    let (cite, _, m) = locate_or_puncture(words, atlas, shape_at, piece, exclude);
+    (cite, m)
+}
+
+/// LOCATE, and when a word carries the body by shape under a gauge it does
+/// not yet hold, the PUNCTURE: the word's cells under the body's own
+/// transitions pulled back through the transport, verified by replay. A
+/// citation is preferred; a puncture is returned only when no word speaks
+/// the body as held.
+pub fn locate_or_puncture<'a>(
+    words: &[Element],
+    atlas: &Stalks,
+    shape_at: &impl Fn(usize) -> Option<&'a Shape>,
+    piece: &[Cell],
+    exclude: Option<usize>,
+) -> (Option<Cite>, Option<(usize, Versor, Vec<Cell>)>, usize) {
+    let Some(shape) = element::shape_of_chain(piece) else { return (None, None, 0) };
     let want = profile(&element::assignment(piece));
     let stratum = atlas.fiber(&stalk::invariant(piece));
+    let mut puncture: Option<(usize, Versor, Vec<Cell>)> = None;
     let found = stratum.iter().copied().filter(|&i| Some(i) != exclude).find_map(|i| {
         let word = words.get(i)?;
+        let to_word = super::blade::versor_between(&shape, shape_at(i)?)?;
+        let v = to_word.versor_inverse()?; // the word carried onto the body
         let assignments = word.assignments();
         let gauge: Vec<usize> = assignments
             .iter()
@@ -289,17 +340,23 @@ pub fn locate<'a>(
             .filter(|(_, a)| same_profile(&profile(a), &want))
             .map(|(k, _)| k)
             .collect();
-        if gauge.is_empty() {
-            return None;
-        }
-        let to_word = super::blade::versor_between(&shape, shape_at(i)?)?;
-        let v = to_word.versor_inverse()?; // the word carried onto the body
-        gauge.into_iter().find_map(|asg| {
+        let cite = gauge.into_iter().find_map(|asg| {
             let cite: Cite = (i, v.clone(), asg);
             replay(words, std::slice::from_ref(&cite), piece).is_empty().then_some(cite)
-        })
+        });
+        if cite.is_none() && puncture.is_none() {
+            let pos = element::positions(word.sub());
+            if let Some(asg) = element::pullback(&pos, piece, &v) {
+                let mut body: Vec<Cell> = pos.iter().zip(&asg).map(|(&(r, c), &(b, a))| (r, c, b, a)).collect();
+                body.sort_unstable();
+                if replay_operators(&[(v.clone(), body.clone())], piece).is_empty() {
+                    puncture = Some((i, v.clone(), body));
+                }
+            }
+        }
+        cite
     });
-    (found, stratum.len())
+    (found, puncture, stratum.len())
 }
 
 /// DECONSTRUCT a chain over a language: the whole chain located first (a
@@ -327,11 +384,12 @@ pub fn deconstruct<'a>(
         }
     }
     for body in bodies {
-        let (c, m) = locate(words, atlas, shape_at, &body, exclude);
+        let (c, p, m) = locate_or_puncture(words, atlas, shape_at, &body, exclude);
         out.multiplicity = out.multiplicity.max(m);
-        match c {
-            Some(c) => out.cites.push(c),
-            None => {
+        match (c, p) {
+            (Some(c), _) => out.cites.push(c),
+            (None, Some(p)) => out.punctures.push(p),
+            (None, None) => {
                 // RECURSION: a body no word carries whole opens along its
                 // gauge classes (the cells of one transition), and each
                 // class's components is a sub-body located on its own. The
@@ -344,11 +402,12 @@ pub fn deconstruct<'a>(
                 }
                 for (_, fiber) in &fibers {
                     for sub in pieces(fiber) {
-                        let (c, m) = locate(words, atlas, shape_at, &sub, exclude);
+                        let (c, p, m) = locate_or_puncture(words, atlas, shape_at, &sub, exclude);
                         out.multiplicity = out.multiplicity.max(m);
-                        match c {
-                            Some(c) => out.cites.push(c),
-                            None => out.residual.extend(sub),
+                        match (c, p) {
+                            (Some(c), _) => out.cites.push(c),
+                            (None, Some(p)) => out.punctures.push(p),
+                            (None, None) => out.residual.extend(sub),
                         }
                     }
                 }

@@ -104,6 +104,7 @@ pub fn attest(
     let germ = (crate::transducer::element::from_residual(&chain.to_vec()), None);
     let reduction = crate::cognition::reduce_proven(&language, germ, cites, &frame);
     let Ok(mut g) = k.lock() else { return Outcome::GermPending };
+    g.puncture_from(cites);
     g.commit_all(vec![reduction], voice)
 }
 
@@ -126,9 +127,40 @@ pub fn probe(
     // The utterance is verified as spoken — its operators against the
     // listing — never against this hypha's copies of the words.
     let residual = crate::transducer::sentence::verify_utterance(cites, listing.sub());
+    // The reading of a sentence that covered nothing: how many carried
+    // cells landed on the listing at all, and how many landed outside it.
+    let mut listed = listing.sub().to_vec();
+    listed.sort_unstable();
+    if residual == listed {
+        let (mut on, mut off) = (0usize, 0usize);
+        for (_, v, _, body) in cites {
+            for &(r, c, _, _) in body {
+                match crate::transducer::element::carry_center(v, r, c) {
+                    Some(p) => {
+                        let cell = crate::transducer::element::cell_of(&p);
+                        match listed.binary_search_by(|x| (x.0, x.1).cmp(&cell)) {
+                            Ok(_) => on += 1,
+                            Err(_) => off += 1,
+                        }
+                    }
+                    None => off += 1,
+                }
+            }
+        }
+        eprintln!(
+            "  nothing: listing {} cells, {} cites, carried cells on {on} off {off}, first body {:?}",
+            listed.len(),
+            cites.len(),
+            cites.first().map(|(_, _, _, b)| b.len()),
+        );
+    }
     let cited: Vec<[u8; 32]> = cites.iter().map(|(a, _, _, _)| *a).collect();
     let Ok(mut g) = k.lock() else { return (PROBE_NOTHING, [0; 4], [0; 4]) };
-    g.settle_probe(voice, target, residual, &cited)
+    let settled = g.settle_probe(voice, target, residual, &cited);
+    if settled.0 != PROBE_NOTHING {
+        g.puncture_from(cites); // the fiber deepens on what was verified
+    }
+    settled
 }
 
 /// THE QUOTE, off the lock: the market view leaves under a brief lock; the

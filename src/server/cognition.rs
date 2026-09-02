@@ -1072,6 +1072,17 @@ impl Kernel {
         }
     }
 
+    /// PUNCTURE held words from a verified utterance's carried bodies: the
+    /// fiber deepens on what the hypha verified. A deepened basis moves the
+    /// basis generation so the language snapshot refreshes.
+    pub fn puncture_from(&mut self, cites: &[crate::anastome::dialogue::CiteWire]) -> usize {
+        let deepened = crate::transducer::sentence::puncture_from(&mut self.basis, cites);
+        if deepened > 0 {
+            self.basis_gen += 1;
+        }
+        deepened
+    }
+
     /// The deflation a provisional word's install measured on the book.
     pub fn deflation_of(&self, addr: &[u8; 32]) -> [u64; 4] {
         self.deflations.iter().find(|(a, _)| a == addr).map(|(_, d)| *d).unwrap_or([0; 4])
@@ -1913,6 +1924,23 @@ impl Kernel {
             out.extend_from_slice(&r.prev_receipt_hash);
             out.extend_from_slice(&r.chain_hash);
         }
+        // THE RANK section: each listing's closure and moduli as last
+        // measured, so a boot continues the measurement instead of walking
+        // the book from nothing.
+        let rank = &self.closure.2;
+        out.extend_from_slice(b"RNK1");
+        out.extend_from_slice(&(rank.basis_len as u64).to_le_bytes());
+        out.extend_from_slice(&(rank.addresses.len() as u32).to_le_bytes());
+        for (j, addr) in rank.addresses.iter().enumerate() {
+            out.extend_from_slice(addr);
+            let closed = rank.closure.get(j).copied().flatten().map_or(u64::MAX, |i| i as u64);
+            out.extend_from_slice(&closed.to_le_bytes());
+            let inv = rank.invariants.get(j).map(|i| i.0.as_slice()).unwrap_or(&[]);
+            out.extend_from_slice(&(inv.len() as u32).to_le_bytes());
+            for axis in inv {
+                out.extend_from_slice(&axis.to_le_bytes());
+            }
+        }
         out
     }
 
@@ -1990,6 +2018,37 @@ impl Kernel {
                 }
                 kernel.court_head = head;
                 kernel.chain = crate::chronometry::ReceiptChain::from_receipts(receipts)?;
+            }
+            // Rank section: the prior measurement, continued incrementally
+            // (never read as current: its generations are unknowable here).
+            if b.get(*pos..*pos + 4) == Some(b"RNK1") {
+                *pos += 4;
+                let basis_len = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?) as usize;
+                *pos += 8;
+                let n = read_u32(b, pos)? as usize;
+                if n > b.len().saturating_sub(*pos) / 44 {
+                    return None;
+                }
+                let mut rank = Rank { basis_gen: u64::MAX, basis_len, retire_gen: kernel.retire_gen, ..Rank::default() };
+                for _ in 0..n {
+                    let addr: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                    *pos += 32;
+                    let closed = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+                    *pos += 8;
+                    let m = read_u32(b, pos)? as usize;
+                    if m > b.len().saturating_sub(*pos) / 8 {
+                        return None;
+                    }
+                    let mut axes = Vec::with_capacity(m);
+                    for _ in 0..m {
+                        axes.push(u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?));
+                        *pos += 8;
+                    }
+                    rank.addresses.push(addr);
+                    rank.closure.push((closed != u64::MAX).then_some(closed as usize));
+                    rank.invariants.push(crate::transducer::stalk::Invariant(axes));
+                }
+                kernel.closure = (u64::MAX, u64::MAX, std::sync::Arc::new(rank));
             }
             Some(())
         };
