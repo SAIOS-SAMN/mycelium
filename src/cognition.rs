@@ -66,7 +66,12 @@ pub struct Kernel {
     /// THE OPEN-DEMAND MARKET: irreducible residuals still awaiting consilience —
     /// the un-factored chains the mesh QUOTES as work (Vec-of-relations, capped;
     /// ephemeral — the market is runtime tension, not persisted language).
-    pending: Vec<Element>,
+    /// THE OPEN-DEMAND MARKET — (listing, the K-step it listed at). Dwell is
+    /// measured in ALGEBRAIC time (K-steps, court-replayable), never a wall
+    /// clock. Capacity is thermodynamic (dynamic_lane_capacity — live memory
+    /// headroom × per-lane metabolic tension); eviction is by ACTION
+    /// POTENTIAL, never FIFO. No static cap exists.
+    pending: Vec<(Element, u64)>,
     /// THE CHRONOMETRIC RECEIPT CHAIN — the K-step index is the mesh's temporal
     /// authority (algebraic time, no wall clocks); every install seals a
     /// parent-linked receipt (LAW-5 continuity). The Step-4 ledger's spine.
@@ -180,6 +185,49 @@ impl Kernel {
         }
     }
 
+    /// THE THERMODYNAMIC CAPACITY VECTOR — no static cap exists. Per lane:
+    ///   C_L = C_total · (ΣP + P_L + 1) / (4 · (ΣP + 1))
+    /// where C_total = (machine's live MemAvailable / κ) ÷ the MEASURED mean
+    /// listing footprint — the machine's real breath divided by real entry
+    /// weight, so the book grows on an idle box and contracts under memory
+    /// pressure with no invented budget (α_mem is intrinsic: MemAvailable
+    /// already IS the headroom). High-tension lanes expand their share;
+    /// slack lanes cede it. κ = 16, the engine's fractional-contract family
+    /// (cohesion tolerance κ/16, the float law's pool/16, the use tithe /8).
+    pub fn dynamic_lane_capacity(&self) -> [usize; 4] {
+        let avail_bytes = mem_available_bytes().max(1);
+        let budget = avail_bytes / 16;
+        // Measured mean listing footprint: 18 bytes per chain cell, floored
+        // at one cell so an empty book still prices honestly.
+        let cells: usize = self.pending.iter().map(|(p, _)| p.sub().len().max(1)).sum();
+        let mean = (cells * 18 / self.pending.len().max(1)).max(18);
+        let c_total = (budget as usize / mean).max(4);
+        let p = &self.physics.pressure;
+        let sum: u64 = p.iter().sum();
+        std::array::from_fn(|l| {
+            ((c_total as u128 * (sum + p[l] + 1) as u128) / (4 * (sum + 1)) as u128) as usize
+        })
+    }
+
+    /// Market occupancy under LINEAGE COHESION: a composite's listed children
+    /// share the parent's budget envelope — the family counts ONCE, so a
+    /// fractured scene cannot flood the book with its own shards.
+    fn market_occupancy(&self) -> usize {
+        let mut children_listed = 0usize;
+        let mut parents_open = 0usize;
+        for (_, children, _) in &self.composites {
+            let listed = children
+                .iter()
+                .filter(|(a, done)| !done && self.pending.iter().any(|(p, _)| p.address() == *a))
+                .count();
+            if listed > 0 {
+                parents_open += 1;
+                children_listed += listed;
+            }
+        }
+        self.pending.len() - children_listed + parents_open
+    }
+
     /// D12 — charge the congestion door and decide deferral: fee[l] =
     /// reserve_deficit[l]/8 (0 on a calm mesh, up to 4 at an empty lane); the
     /// speaker pays what their balance holds; a zero payment on a FULLY
@@ -264,8 +312,9 @@ impl Kernel {
         // A germ still PENDING quorum accepts the bind too — it installs
         // already anchored (evidence often reaches family size before the
         // second voice completes the install).
-        if let Some(i) = self.pending.iter().position(|t| t.address() == *addr) {
-            self.pending[i] = self.pending[i].clone().with_anchor(pi);
+        if let Some(i) = self.pending.iter().position(|(t, _)| t.address() == *addr) {
+            let listed = self.pending[i].1;
+            self.pending[i] = (self.pending[i].0.clone().with_anchor(pi), listed);
             bound = true;
         }
         if bound {
@@ -537,7 +586,7 @@ impl Kernel {
                         self.physics.relieve(lanes);
                         self.physics.syntropy(lanes); // volume built through the axis
                         self.physics.spend(lanes); // still an expansion — fuel is spent
-                        self.pending.retain(|p| p.address() != residual.address());
+                        self.pending.retain(|(p, _)| p.address() != residual.address());
                         self.chain.append(saddr, voice); // the puncture is a K-step too
                         self.complete_composite_child(&gaddr, voice); // lineage
                         return Outcome::Installed(ti); // installed AS A SECTION of thought ti
@@ -574,7 +623,7 @@ impl Kernel {
                     self.physics.relieve(lanes);
                     self.physics.syntropy(lanes); // a completed rule is order built
                     self.physics.spend(lanes); // the expansion SHRINKS the reserve
-                    self.pending.retain(|p| p.address() != addr); // the market CLEARS
+                    self.pending.retain(|(p, _)| p.address() != addr); // the market CLEARS
                     // Seal the K-step receipt: the install IS a tick of algebraic
                     // time, parent-linked to the mesh's whole history.
                     self.chain.append(addr, voice);
@@ -597,14 +646,60 @@ impl Kernel {
                     for _ in 0..k.max(1) {
                         self.physics.bump(lanes);
                     }
-                    // LIST the un-factored residual on the open-demand market so the
-                    // mesh can QUOTE it as work (bounded; oldest listing lapses).
-                    if !self.pending.iter().any(|p| p.address() == addr) {
-                        const PENDING_CAP: usize = 512;
-                        if self.pending.len() >= PENDING_CAP {
-                            self.pending.remove(0);
+                    // LIST the un-factored residual on the open-demand market.
+                    // Capacity is THERMODYNAMIC (live memory headroom × lane
+                    // tension, recomputed every listing) and eviction is by
+                    // ACTION POTENTIAL — the market sheds its lowest-tension
+                    // stale listing, never its oldest (FIFO is banned). A new
+                    // demand weaker than everything already listed is not
+                    // listed at all: the book holds only what the machine can
+                    // honestly carry, ordered by what the network most needs.
+                    if !self.pending.iter().any(|(p, _)| p.address() == addr) {
+                        let lane = (0..4)
+                            .max_by_key(|&l| residual.magnitude()[l])
+                            .unwrap_or(2);
+                        let cap = self.dynamic_lane_capacity()[lane].max(1);
+                        let k_now = self.k_step();
+                        if self.market_occupancy() >= cap {
+                            let surface = crate::economy::yield_surface(&self.physics);
+                            let new_a = action_potential(
+                                &crate::economy::price(&residual.magnitude(), &surface),
+                                0,
+                            );
+                            let weakest = self
+                                .pending
+                                .iter()
+                                .enumerate()
+                                .min_by(|(_, (p, lk)), (_, (q, mk))| {
+                                    let ap = action_potential(
+                                        &crate::economy::price(&p.magnitude(), &surface),
+                                        k_now.saturating_sub(*lk),
+                                    );
+                                    let aq = action_potential(
+                                        &crate::economy::price(&q.magnitude(), &surface),
+                                        k_now.saturating_sub(*mk),
+                                    );
+                                    ap.cmp(&aq)
+                                })
+                                .map(|(i, (p, lk))| {
+                                    (
+                                        i,
+                                        action_potential(
+                                            &crate::economy::price(&p.magnitude(), &surface),
+                                            k_now.saturating_sub(*lk),
+                                        ),
+                                    )
+                                });
+                            match weakest {
+                                Some((i, a)) if a < new_a => {
+                                    self.pending.remove(i);
+                                    self.pending.push((residual, k_now));
+                                }
+                                _ => {} // the newcomer IS the weakest — unlisted
+                            }
+                        } else {
+                            self.pending.push((residual, k_now));
                         }
-                        self.pending.push(residual);
                     }
                     Outcome::GermPending
                 }
@@ -820,7 +915,7 @@ impl Kernel {
         // (unknown geometry) carries the I premium — expansion pays what
         // expansion is worth, collapse what collapse is worth.
         let (mut c, mut i) = (0u64, 0u64);
-        for p in &self.pending {
+        for (p, _) in &self.pending {
             let pos = element::positions(p.sub());
             if self.basis.iter().any(|t| element::positions(t.sub()) == pos) {
                 c += 1;
@@ -831,7 +926,7 @@ impl Kernel {
         let mut priced: Vec<(Element, [u64; 4])> = self
             .pending
             .iter()
-            .map(|p| {
+            .map(|(p, _)| {
                 let pos = element::positions(p.sub());
                 let known = self.basis.iter().any(|t| element::positions(t.sub()) == pos);
                 let premium = if known { c } else { i };
@@ -913,7 +1008,7 @@ impl Kernel {
     /// geometry NO thought speaks (coverage failing — expansion-side work).
     pub fn cohesion(&self) -> crate::cohesion::CohesionWitness {
         let (mut c, mut i) = (0u64, 0u64);
-        for p in &self.pending {
+        for (p, _) in &self.pending {
             let pos = element::positions(p.sub());
             if self.basis.iter().any(|t| element::positions(t.sub()) == pos) {
                 c += 1;
@@ -1262,6 +1357,32 @@ fn word_footprint_in(
     fp.sort_unstable();
     fp.dedup();
     fp
+}
+
+/// THE ACTION POTENTIAL of a listing — the thermodynamic tension deciding
+/// eviction order: 𝒜 = ‖μ⃗_quoted‖₁ · R / (R + Δk_dwell), with dwell in
+/// K-STEPS (algebraic time) and R = RESERVE_MAX as λ_decay's scale (the
+/// metabolism contract, not a new knob). Exact integer arithmetic; higher =
+/// hotter = kept. The market sheds argmin 𝒜 — its coldest stale residual —
+/// never its oldest.
+fn action_potential(mu_quoted: &[u64; 4], dwell_k: u64) -> u128 {
+    let l1: u128 = mu_quoted.iter().map(|&m| m as u128).sum();
+    let r = crate::physics::RESERVE_MAX as u128;
+    l1 * r / (r + dwell_k as u128)
+}
+
+/// The machine's live breath — MemAvailable from /proc/meminfo, in bytes.
+/// A platform without the sensor reports half of a modest measured floor
+/// rather than pretending to know (the capacity formula degrades gracefully).
+fn mem_available_bytes() -> u64 {
+    std::fs::read_to_string("/proc/meminfo")
+        .ok()
+        .and_then(|text| {
+            text.lines().find(|l| l.starts_with("MemAvailable:")).and_then(|l| {
+                l.split_whitespace().nth(1).and_then(|kb| kb.parse::<u64>().ok()).map(|kb| kb * 1024)
+            })
+        })
+        .unwrap_or(64 * 1024 * 1024)
 }
 
 /// THE ANCHOR CONTEXT — the scene (framed-body coordinates) a demand was
@@ -1712,6 +1833,34 @@ mod tests {
         assert!(matches!(out, Outcome::Installed(0)), "consilience installs: {out:?}");
         assert_eq!(k.voices_of(&k.basis()[0].address()).len(), 2, "the settle parties");
         assert!(k.quote(4).1.is_empty(), "the market cleared");
+    }
+
+    /// THE MARKET HAS NO STATIC CAP: capacity is thermodynamic (live machine
+    /// headroom × lane tension) and eviction is by ACTION POTENTIAL — the
+    /// coldest listing goes, never the oldest. FIFO is banned.
+    #[test]
+    fn market_capacity_is_thermodynamic_and_eviction_is_by_tension() {
+        let mut k = Kernel::new();
+        // Capacity: alive on every lane, and a pressured lane EXPANDS its share.
+        let calm = k.dynamic_lane_capacity();
+        assert!(calm.iter().all(|&c| c > 0), "no lane is ever pinched to zero: {calm:?}");
+        for _ in 0..24 {
+            k.physics_mut().bump([false, false, true, false]);
+        }
+        let tense = k.dynamic_lane_capacity();
+        assert!(
+            tense[2] > tense[0],
+            "the strained lane out-budgets the slack one: {tense:?}"
+        );
+        // Action potential: a VALUABLE stale listing outranks a worthless
+        // fresh one — eviction is argmin tension, not argmax age (anti-FIFO).
+        let rich_old = action_potential(&[0, 0, 900, 0], 64);
+        let poor_new = action_potential(&[0, 0, 3, 0], 0);
+        assert!(rich_old > poor_new, "value dominates age: {rich_old} vs {poor_new}");
+        // And dwell genuinely decays tension at equal value.
+        let fresh = action_potential(&[0, 0, 40, 0], 0);
+        let stale = action_potential(&[0, 0, 40, 0], 128);
+        assert!(fresh > stale, "dwell cools a listing: {fresh} vs {stale}");
     }
 
     /// D12 — THE ESCROW-PRICED DOOR: a calm mesh keeps a free door; a
