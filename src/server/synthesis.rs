@@ -234,12 +234,13 @@ pub fn contemplate(
 ) -> Option<(usize, usize)> {
     let (snapshot, beam, depth) = {
         let mut g = k.lock().ok()?;
-        let max_strokes =
-            (crate::physics::reserve_max() / crate::physics::spend_unit()).max(1);
-        let mut strokes = 0u64;
-        while !g.physics().can_expand([true; 4]) && strokes < max_strokes {
-            g.optimize(); // consolidation earns the regeneration
-            strokes += 1;
+        // One consolidation stroke per attempt: optimize both earns the
+        // regeneration and does real syntropic work, but it is a full
+        // redundancy probe — holding the lock for several would starve the
+        // request path. Below the floor after one stroke, speculation
+        // simply waits for the next queued task (the queue is the retry).
+        if !g.physics().can_expand([true; 4]) {
+            g.optimize();
         }
         if !g.physics().can_expand([true; 4]) {
             return None; // the reserve is service's; speculation waits

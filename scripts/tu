@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# tu — TUniversal shell helper (the universe's wall clock; see
+# src/chronometry.rs). Filters and stamps use the persisted genesis origin,
+# never a timezone or an "earth time" literal. The host clock is only the
+# underlying oscillator, exactly as in the binaries.
+#
+#   tu now          print the current universal stamp XX:XX:XX:XX:XX:XX
+#   tu ago N        print the stamp N ticks before now
+#   tu since STAMP  filter stdin to lines whose embedded [STAMP] is at or
+#                   after the given stamp (unstamped lines are dropped)
+set -euo pipefail
+ORIGIN_FILE="${TU_ORIGIN:-/opt/mycelium-v0.1.0/state/tuniversal}"
+
+ticks_now() {
+  local origin now
+  origin=$(od -A n -t u8 --endian=little "$ORIGIN_FILE" | tr -d ' ')
+  now=$(date -u +%s)
+  echo $(( (now - origin) & 0xFFFFFFFFFFFF ))
+}
+
+stamp_of() {
+  local t=$1
+  printf '%02X:%02X:%02X:%02X:%02X:%02X\n' \
+    $(( (t >> 40) & 255 )) $(( (t >> 32) & 255 )) $(( (t >> 24) & 255 )) \
+    $(( (t >> 16) & 255 )) $(( (t >> 8) & 255 )) $(( t & 255 ))
+}
+
+case "${1:-now}" in
+  now)
+    stamp_of "$(ticks_now)"
+    ;;
+  ago)
+    t=$(ticks_now)
+    n=${2:?usage: tu ago TICKS}
+    (( t > n )) && t=$(( t - n )) || t=0
+    stamp_of "$t"
+    ;;
+  since)
+    want="[${2:?usage: tu since XX:XX:XX:XX:XX:XX}]"
+    awk -v t="$want" '
+      match($0, /\[([0-9A-F]{2}:){5}[0-9A-F]{2}\]/) {
+        if (substr($0, RSTART, RLENGTH) >= t) print
+      }'
+    ;;
+  *)
+    echo "tu: unknown verb ${1}" >&2
+    exit 2
+    ;;
+esac
