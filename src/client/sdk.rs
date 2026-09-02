@@ -487,7 +487,7 @@ impl Epigenome {
                 }
                 Comprehension::Understood(sentence)
             }
-            false => Comprehension::Novel { residual_cells: located.residual.len() },
+            false => Comprehension::Novel { residual_cells: located.open(self.genome(), utterance.sub()).len() },
         }
     }
 

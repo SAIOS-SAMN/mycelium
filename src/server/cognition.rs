@@ -400,7 +400,7 @@ pub fn normal_form(language: &Language, chain: &[(i64, i64, u8, u8)], exclude: O
     );
     match sentence.is_closed() {
         true => NormalForm::Decomposed(sentence.cites.iter().map(|(i, _, _)| *i).collect()),
-        false => NormalForm::Irreducible(element::from_residual(&sentence.residual)),
+        false => NormalForm::Irreducible(element::from_residual(&sentence.open(&language.words, chain))),
     }
 }
 

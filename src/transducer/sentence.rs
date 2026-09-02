@@ -52,9 +52,20 @@ pub struct Sentence {
 }
 
 impl Sentence {
-    /// Closure: every body spoken, nothing left over.
+    /// Closure: every body spoken by held words as held, nothing left over
+    /// and no fiber to deepen.
     pub fn is_closed(&self) -> bool {
-        self.residual.is_empty()
+        self.residual.is_empty() && self.punctures.is_empty()
+    }
+
+    /// What the language does not yet hold: the residual, together with the
+    /// bodies spoken only as punctures — novelty in the fiber is novelty.
+    /// Measured as the replay of the citations alone over the chain.
+    pub fn open(&self, words: &[Element], chain: &[Cell]) -> Vec<Cell> {
+        match self.punctures.is_empty() {
+            true => self.residual.clone(),
+            false => replay(words, &self.cites, chain),
+        }
     }
 }
 
