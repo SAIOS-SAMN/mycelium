@@ -158,6 +158,42 @@ pub fn positions(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64)> {
     chain.iter().map(|(r, c, _, _)| (*r, *c)).collect()
 }
 
+/// The canonical position class of a chain under the substrate's isometry
+/// group ℤ² ⋊ D4: the lexicographic minimum over the eight D4 images, each
+/// re-centered to the origin and sorted. Two chains whose supports are
+/// translations, rotations, or reflections of one another share one class
+/// — congruence evaluated on the orbit [Q]/G, never on raw coordinate
+/// sets. Word addresses are untouched (identity stays coordinate-canonical
+/// and wire-frozen); this is the comparison lens for confluence and
+/// deduplication.
+pub fn orbit_positions(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64)> {
+    // The eight isometries of D4 as exact coordinate maps.
+    let images: [fn(i64, i64) -> (i64, i64); 8] = [
+        |r, c| (r, c),
+        |r, c| (c, -r),
+        |r, c| (-r, -c),
+        |r, c| (-c, r),
+        |r, c| (r, -c),
+        |r, c| (-r, c),
+        |r, c| (c, r),
+        |r, c| (-c, -r),
+    ];
+    images
+        .iter()
+        .map(|g| {
+            let mut p: Vec<(i64, i64)> = chain.iter().map(|(r, c, _, _)| g(*r, *c)).collect();
+            let min_r = p.iter().map(|(r, _)| *r).min().unwrap_or(0);
+            let min_c = p.iter().map(|(_, c)| *c).min().unwrap_or(0);
+            for cell in p.iter_mut() {
+                *cell = (cell.0 - min_r, cell.1 - min_c);
+            }
+            p.sort_unstable();
+            p
+        })
+        .min()
+        .unwrap_or_default()
+}
+
 /// The transition assignment of a centered chain (its fiber coordinate),
 /// index-aligned with [`positions`] (chains sort by position first).
 pub fn assignment(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
@@ -765,6 +801,11 @@ impl Element {
             }
             _ => None,
         };
+        // The magnitude is a MEASURED projection of the chain, not stored
+        // identity (the address covers word/dim/fibers only): re-measure on
+        // load so persisted pre-projection words upgrade transparently and
+        // the blind replay compares measurement against measurement.
+        let mag = if sub.is_empty() { mag } else { measure_lanes(&sub) };
         Some(Element { dim, fibers, word, mag, sub, sections, torsion, anchor })
     }
 }
@@ -848,12 +889,50 @@ pub fn from_residual(g: &ResidualGerm) -> Element {
     }
     place_block(&mut m, 3, &hue);
 
-    let supp = centered.len() as u64;
     let mut e = Element::identity(GERM_DIM).with_fiber(FIBER_SPATIAL, m);
     e.word = residual_word(&centered);
-    e.mag = [0, 0, supp, 0];
+    e.mag = measure_lanes(&centered);
     e.sub = centered;
     e
+}
+
+/// The perceptual lane projection of a centered coboundary chain — the
+/// per-lane magnitude MEASURED from the chain's geometry, never funneled
+/// onto one axis:
+///   𝒮 spatial:  occupancy transformation — cells where support appears or
+///               vanishes (mass moved, scaled, or reshaped).
+///   𝒢 gauge:    chromatic content — hue transitions on cells where the
+///               support stands on both sides (recolour, palette orbit).
+///   𝒯 residual: the whole chain's cell count — the un-factored coboundary
+///               defect every demand carries until reduced.
+///   𝒽 shell:    boundary topology — the connected-component and
+///               boundary-cochain deltas between the before-support and the
+///               after-support (merges, splits, enclosures).
+/// A recolour word is gauge-lane work; a move is spatial; a hole closing is
+/// shell. Without these projections the four-lane manifold degenerates to a
+/// scalar on 𝒯 and every gradient downstream flatlines.
+pub fn measure_lanes(chain: &[(i64, i64, u8, u8)]) -> [u64; 4] {
+    let mut spatial = 0u64;
+    let mut gauge = 0u64;
+    let mut before_pos: Vec<(i64, i64)> = Vec::new();
+    let mut after_pos: Vec<(i64, i64)> = Vec::new();
+    for &(r, c, b, a) in chain {
+        if b != 0 {
+            before_pos.push((r, c));
+        }
+        if a != 0 {
+            after_pos.push((r, c));
+        }
+        match (b != 0, a != 0) {
+            (true, true) if b != a => gauge += 1,
+            (true, false) | (false, true) => spatial += 1,
+            _ => {}
+        }
+    }
+    let sb = crate::transducer::spectral::signature(&before_pos, &[]);
+    let sa = crate::transducer::spectral::signature(&after_pos, &[]);
+    let shell = sb.components.abs_diff(sa.components) + sb.boundary.abs_diff(sa.boundary);
+    [spatial, gauge, chain.len() as u64, shell]
 }
 
 impl Element {
@@ -891,7 +970,7 @@ impl Element {
         out.fibers.retain(|(_, m)| !is_identity(m));
         // A residual's substance IS its centered chain (already position-quotiented
         // by construction); its magnitude reads the CHAIN, never the cancelable tally.
-        out.mag = if out.sub.is_empty() { out.reduction_magnitude() } else { [0, 0, out.sub.len() as u64, 0] };
+        out.mag = if out.sub.is_empty() { out.reduction_magnitude() } else { measure_lanes(&out.sub) };
         out
     }
 
@@ -921,6 +1000,27 @@ impl Element {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Congruence on the orbit [Q]/(ℤ² ⋊ D4): translations, rotations, and
+    /// reflections of a support share one canonical class; a genuinely
+    /// different shape does not.
+    #[test]
+    fn the_orbit_class_identifies_isometry_images() {
+        // An L-tromino at the origin.
+        let l = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2), (1, 0, 1, 2)];
+        // The same L translated far away.
+        let shifted: Vec<_> = l.iter().map(|(r, c, b, a)| (r + 7, c + 3, *b, *a)).collect();
+        // The same L rotated a quarter turn (support {(0,0),(1,0),(0,-1)}
+        // before re-centering).
+        let rotated = vec![(0i64, 0i64, 1u8, 2u8), (1, 0, 1, 2), (0, -1, 1, 2)];
+        // A straight tromino — a different shape entirely.
+        let bar = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2), (0, 2, 1, 2)];
+        assert_eq!(orbit_positions(&l), orbit_positions(&shifted), "translation is quotiented");
+        assert_eq!(orbit_positions(&l), orbit_positions(&rotated), "rotation is quotiented");
+        assert_ne!(orbit_positions(&l), orbit_positions(&bar), "distinct shapes stay distinct");
+        // Coordinate-set equality would have called all three distinct.
+        assert_ne!(positions(&l), positions(&shifted), "the raw lens sees only coordinates");
+    }
 
     /// γ = (π, Δ): the anchor fiber survives serde exactly; pre-anchor bytes
     /// (no tail) parse to the ⊤ carrier — full backward compatibility.
@@ -1098,9 +1198,11 @@ mod tests {
         let b = [(0, 0, 1u8), (0, 1, 9), (1, 0, 3)];
         let g = germinate(&a, &b).unwrap();
         let germ = from_residual(&g);
-        assert_eq!(germ.lanes(), [false, false, true, false], "the residual lane, not 𝒮/𝒢");
+        // A hue transition on a standing cell measures as GAUGE content
+        // alongside the residual defect (the four-lane projection).
+        assert_eq!(germ.lanes(), [false, true, true, false], "a recolour = 𝒢 + residual");
         let mag = germ.magnitude();
-        assert!(mag[2] >= 1 && mag[0] == 0 && mag[1] == 0, "cost on the residual lane only");
+        assert!(mag[2] >= 1 && mag[1] >= 1 && mag[0] == 0, "gauge + residual, no spatial");
         // A residual has no group inverse (its block is antisymmetric/singular);
         // its solution is the reverse coboundary (from_residual of b→a), not a
         // matrix inverse — the group solution() correctly declines.
@@ -1217,8 +1319,10 @@ mod tests {
         let a = [(0, 0, 1u8), (0, 1, 1), (1, 0, 1)]; // L
         let b = [(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]; // bar
         let l_to_bar = from_residual(&germinate(&a, &b).unwrap());
-        assert_eq!(l_to_bar.magnitude(), [0, 0, 2, 0], "two changed cells, exact — not a canceled 0");
-        assert_eq!(l_to_bar.lanes(), [false, false, true, false], "a real residual germ");
+        // One cell vacates and one appears: SPATIAL content (mass moved)
+        // alongside the two-cell residual defect — measured, not defaulted.
+        assert_eq!(l_to_bar.magnitude(), [2, 0, 2, 0], "two moved cells, exact — not a canceled 0");
+        assert_eq!(l_to_bar.lanes(), [true, false, true, false], "a real spatial+residual germ");
         assert!(!l_to_bar.is_identity(), "the chain decides — a canceled tally is not identity");
         assert!(!l_to_bar.substance().is_identity(), "and its substance is real");
         let bar_to_l = from_residual(&germinate(&b, &a).unwrap());

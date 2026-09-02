@@ -71,6 +71,11 @@ fn main() {
         .map(|w| w[1].clone())
         .unwrap_or_else(|| "state/court.federation".to_string());
     let restored = mycelium::court::ledger::CourtState::load(&state_path);
+    // --reaudit: re-derive the federation and ruled set under the current
+    // congruence lens (the K-chain continues — the journal keeps both
+    // judicial eras). Used when the lens itself is corrected, e.g. the
+    // orbit-quotient upgrade that obsoleted coordinate-set comparison.
+    let reaudit = args.iter().any(|a| a == "--reaudit");
     // The court's own tamper-evident history — every ruling is a K-step.
     let mut chain = ReceiptChain::default();
     // THE FEDERATION — every word this court has finalized, across all hyphas:
@@ -101,6 +106,14 @@ fn main() {
             federation.len(),
             ruled.len(),
             rebound.len(),
+        );
+    }
+    if reaudit {
+        federation.clear();
+        ruled.clear();
+        eprintln!(
+            "re-audit under the current congruence lens: federation and ruled cleared; K continues at {}",
+            chain.next_step_index(),
         );
     }
     // One closure seals the whole judicial state after every ruling — the

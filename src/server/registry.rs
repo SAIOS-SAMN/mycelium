@@ -74,12 +74,17 @@ pub fn task_id(task: &Task) -> [u8; 32] {
 }
 
 /// The task's boundary tension — the per-lane volume of its train
-/// coboundaries: what the full bounty prices.
+/// coboundaries, MEASURED across all four lanes (spatial/gauge/residual/
+/// shell) so the bounty prices the axes the work actually occupies instead
+/// of funneling every task onto the residual scalar.
 pub fn task_tension(task: &Task) -> [u64; 4] {
     let mut mu = [0u64; 4];
     for (a, b) in &task.train {
         if let Some((chain, _, _)) = refine_delta(a, b) {
-            mu[2] = mu[2].saturating_add(chain.len() as u64);
+            let lanes = crate::transducer::element::measure_lanes(&chain);
+            for l in 0..4 {
+                mu[l] = mu[l].saturating_add(lanes[l]);
+            }
         }
     }
     mu

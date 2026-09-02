@@ -1044,10 +1044,13 @@ impl Kernel {
         // (open demand on KNOWN geometry) carries the C premium; coverage work
         // (unknown geometry) carries the I premium — expansion pays what
         // expansion is worth, collapse what collapse is worth.
+        // Known/unknown geometry evaluates on the ORBIT class — a demand
+        // whose support is an isometry image of a held word's is closure
+        // work, not coverage (coordinate-set equality undercounted C).
         let (mut c, mut i) = (0u64, 0u64);
         for (p, _) in &self.pending {
-            let pos = element::positions(p.sub());
-            if self.basis.iter().any(|t| element::positions(t.sub()) == pos) {
+            let pos = element::orbit_positions(p.sub());
+            if self.basis.iter().any(|t| element::orbit_positions(t.sub()) == pos) {
                 c += 1;
             } else {
                 i += 1;
@@ -1057,8 +1060,9 @@ impl Kernel {
             .pending
             .iter()
             .map(|(p, _)| {
-                let pos = element::positions(p.sub());
-                let known = self.basis.iter().any(|t| element::positions(t.sub()) == pos);
+                let pos = element::orbit_positions(p.sub());
+                let known =
+                    self.basis.iter().any(|t| element::orbit_positions(t.sub()) == pos);
                 let premium = if known { c } else { i };
                 let mut mu = crate::economy::price(&p.magnitude(), &surface);
                 mu[2] = p.magnitude()[2].saturating_mul(1 + surface[2] + premium);
@@ -1137,10 +1141,11 @@ impl Kernel {
     /// geometry (closure failing — collapse-side work); I counts open demands on
     /// geometry NO thought speaks (coverage failing — expansion-side work).
     pub fn cohesion(&self) -> crate::cohesion::CohesionWitness {
+        // The (C, I) witness reads the orbit class, matching the market.
         let (mut c, mut i) = (0u64, 0u64);
         for (p, _) in &self.pending {
-            let pos = element::positions(p.sub());
-            if self.basis.iter().any(|t| element::positions(t.sub()) == pos) {
+            let pos = element::orbit_positions(p.sub());
+            if self.basis.iter().any(|t| element::orbit_positions(t.sub()) == pos) {
                 c += 1;
             } else {
                 i += 1;

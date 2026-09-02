@@ -110,11 +110,17 @@ pub fn rule(
         Some((_, held)) if held.sub() == spoken.sub() => Ruling::Consilient,
         Some(_) => Ruling::Dialect,
         None => {
-            let pos_new = element::positions(spoken.sub());
+            // The +axis constraint evaluates on the ORBIT [Q]/(ℤ² ⋊ D4):
+            // a support that is a translation, rotation, or reflection of a
+            // federated word's is the same base geometry — a section of the
+            // existing thought, never a sibling entry. Coordinate-set
+            // equality was the lens that let a handful of morphisms
+            // federate as a thousand words.
+            let orbit_new = element::orbit_positions(spoken.sub());
             let axis_conflict = federation.iter().any(|(fa, held)| {
                 fa != addr
                     && !held.sub().is_empty()
-                    && element::positions(held.sub()) == pos_new
+                    && element::orbit_positions(held.sub()) == orbit_new
             });
             match axis_conflict {
                 true => Ruling::Demoted,
