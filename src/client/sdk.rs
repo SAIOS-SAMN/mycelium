@@ -398,8 +398,12 @@ impl Epigenome {
     /// understanding into the epigenome — expression weights rise on the cited
     /// words, the sentence joins the recollections. The genome is untouched.
     pub fn comprehend(&mut self, utterance: &Element) -> Comprehension {
-        match decompose_over(&self.genome, utterance.sub(), None, 4, 16) {
-            Ok(sentence) => {
+        // Located through the atlas and the versor, never searched.
+        self.atlas();
+        let (cites, residual) = crate::thinking::cite(&self.genome, &self.atlas, utterance.sub(), None);
+        match residual.is_empty() {
+            true => {
+                let sentence: Vec<usize> = cites.into_iter().map(|(i, _, _)| i).collect();
                 for &w in &sentence {
                     if let Some(x) = self.expression.get_mut(w) {
                         *x += 1;
@@ -413,7 +417,7 @@ impl Epigenome {
                 }
                 Comprehension::Understood(sentence)
             }
-            Err(void) => Comprehension::Novel { residual_cells: void.len() },
+            false => Comprehension::Novel { residual_cells: residual.len() },
         }
     }
 

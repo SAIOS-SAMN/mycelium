@@ -1581,11 +1581,15 @@ impl Kernel {
                 let mut fiber: Vec<usize> =
                     self.stalks.fiber(&inv).iter().copied().filter(|&j| j > i).collect();
                 fiber.sort_unstable_by(|a, b| b.cmp(a));
+                // One versor solved per stroke: the stroke's cursor also picks
+                // which member of the stratum is tried, so successive strokes
+                // walk the whole stratum without ever solving it all at once.
+                let pick = match fiber.is_empty() {
+                    true => Vec::new(),
+                    false => vec![fiber[self.optimize_cursor % fiber.len()]],
+                };
                 let mut absorbed = 0usize;
-                for j in fiber {
-                    if absorbed >= 8 {
-                        break;
-                    }
+                for j in pick {
                     let Some(g) = element::transition(self.basis[j].sub(), self.basis[i].sub())
                     else {
                         continue;
@@ -3247,7 +3251,10 @@ mod tests {
             k.basis_push(from_residual(&germinate(&a, &bx).unwrap()), [9; 32]);
         }
         assert_eq!(k.basis_len(), 3, "the un-condensed family");
-        k.optimize(); // cursor 0 → the condense move absorbs both siblings
+        // One versor per stroke: the cursor walks the stratum over strokes.
+        for _ in 0..3 {
+            k.optimize();
+        }
         assert_eq!(k.basis_len(), 1, "the family collapsed into one bundle");
         assert_eq!(k.basis()[0].sections().len(), 2, "two sections along the pierced axis");
         assert!(k.treasury().balance_mu(&[9; 32])[2] > 0, "absorbed discoverers still earn, on the lane");
