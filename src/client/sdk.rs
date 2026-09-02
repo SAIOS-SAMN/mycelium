@@ -341,6 +341,8 @@ pub struct Epigenome {
     /// the genome, rebuilt when the genome's size moves; never persisted.
     atlas: crate::transducer::stalk::Stalks,
     atlas_len: usize,
+    /// Each word's shape, lifted once on first use (parallel to the genome).
+    shapes: Vec<std::sync::OnceLock<Option<crate::transducer::blade::Shape>>>,
 }
 
 impl Epigenome {
@@ -369,9 +371,22 @@ impl Epigenome {
     pub fn atlas(&mut self) -> &crate::transducer::stalk::Stalks {
         if self.atlas_len != self.genome.len() {
             self.atlas = crate::transducer::stalk::Stalks::over(self.genome.iter().map(|w| w.sub()));
+            self.shapes = (0..self.genome.len()).map(|_| std::sync::OnceLock::new()).collect();
             self.atlas_len = self.genome.len();
         }
         &self.atlas
+    }
+
+    /// The shape of word `i`, lifted on first use.
+    fn shape(&self, i: usize) -> Option<&crate::transducer::blade::Shape> {
+        let cell = self.shapes.get(i)?;
+        cell.get_or_init(|| crate::transducer::element::shape_of_chain(self.genome[i].sub())).as_ref()
+    }
+
+    /// Locate a chain over this genome: citations and the residual.
+    fn locate(&mut self, chain: &[(i64, i64, u8, u8)], exclude: Option<usize>) -> (Vec<crate::cognition::Cite>, Vec<(i64, i64, u8, u8)>) {
+        self.atlas();
+        crate::thinking::cite(&self.genome, &self.atlas, &|i| self.shape(i), chain, exclude)
     }
 
     pub fn retire(&mut self, addr: &[u8; 32]) -> bool {
@@ -399,8 +414,7 @@ impl Epigenome {
     /// words, the sentence joins the recollections. The genome is untouched.
     pub fn comprehend(&mut self, utterance: &Element) -> Comprehension {
         // Located through the atlas and the versor, never searched.
-        self.atlas();
-        let (cites, residual) = crate::thinking::cite(&self.genome, &self.atlas, utterance.sub(), None);
+        let (cites, residual) = self.locate(utterance.sub(), None);
         match residual.is_empty() {
             true => {
                 let sentence: Vec<usize> = cites.into_iter().map(|(i, _, _)| i).collect();
@@ -445,6 +459,7 @@ impl Epigenome {
                 // otherwise it rebuilds on the next lookup.
                 if self.atlas_len == self.genome.len() {
                     self.atlas.admit(&crate::transducer::stalk::invariant(e.sub()), self.genome.len());
+                    self.shapes.push(std::sync::OnceLock::new());
                     self.atlas_len += 1;
                 }
                 self.genome.push(e);
@@ -758,9 +773,8 @@ impl Entity {
             return None;
         }
         let _ = budget;
-        self.epigenome.atlas();
+        let (cites, residual) = self.epigenome.locate(sub.sub(), Some(i));
         let g = self.epigenome.genome();
-        let (cites, residual) = crate::thinking::cite(g, &self.epigenome.atlas, sub.sub(), Some(i));
         match (cites.is_empty(), residual.is_empty()) {
             (false, true) => Some((
                 g[i].address(),
@@ -898,9 +912,8 @@ impl Entity {
     /// citations (address, transport, gauge coordinate) and the residual it
     /// could not reduce. Cognition happens here; the hypha only replays.
     pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)], _budget: (usize, usize)) -> (Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>) {
-        self.epigenome.atlas();
+        let (cites, residual) = self.epigenome.locate(chain, None);
         let genome = self.epigenome.genome();
-        let (cites, residual) = crate::thinking::cite(genome, &self.epigenome.atlas, chain, None);
         (cites.into_iter().map(|(i, g, asg)| (genome[i].address(), g, asg as u32)).collect(), residual)
     }
 
@@ -914,8 +927,9 @@ impl Entity {
         budget: (usize, usize),
     ) -> Vec<(Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>)> {
         self.epigenome.atlas();
-        let genome = self.epigenome.genome();
-        crate::thinking::abduce(genome, &self.epigenome.atlas, chain, budget.0)
+        let epi = &self.epigenome;
+        let genome = epi.genome();
+        crate::thinking::abduce(genome, &epi.atlas, &|i| epi.shape(i), chain, budget.0)
             .into_iter()
             .map(|(cites, residual)| {
                 (

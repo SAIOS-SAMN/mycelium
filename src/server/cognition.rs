@@ -66,6 +66,17 @@ pub type Composite = ([u8; 32], Vec<([u8; 32], bool)>, Vec<(i64, i64, u8, u8)>);
 pub struct Language {
     pub words: Vec<Element>,
     pub stalks: crate::transducer::stalk::Stalks,
+    /// Each word's shape, lifted once on first use and shared by every
+    /// lookup over this snapshot (a measurement memoized, never persisted).
+    pub shapes: Vec<std::sync::OnceLock<Option<crate::transducer::blade::Shape>>>,
+}
+
+impl Language {
+    /// The shape of word `i`, lifted on first use.
+    pub fn shape(&self, i: usize) -> Option<&crate::transducer::blade::Shape> {
+        let cell = self.shapes.get(i)?;
+        cell.get_or_init(|| element::shape_of_chain(self.words[i].sub())).as_ref()
+    }
 }
 
 /// The market as seen at one instant (see [`Kernel::market_open`]).
@@ -125,13 +136,13 @@ fn lineage_of(addr: &[u8; 32], composites: &[Composite]) -> (u64, u64, u64) {
 
 /// Measure the rank of the book — pure.
 pub fn rank_over(
-    stalks: &crate::transducer::stalk::Stalks,
-    words: &[Element],
+    language: &Language,
     pending: &[(Element, u64)],
     composites: &[Composite],
     prior: &Rank,
     basis_gen: u64,
 ) -> Rank {
+    let stalks = &language.stalks;
     use crate::core::engine::Q;
     use num_bigint::BigInt;
     use num_traits::{One, Zero};
@@ -148,7 +159,7 @@ pub fn rank_over(
                 false => None,
             };
             held.unwrap_or_else(|| {
-                crate::transducer::stalk::congruent(stalks, |i| words[i].sub(), p.sub()).map(|(i, _)| i)
+                crate::transducer::stalk::congruent_shaped(stalks, |i| language.shape(i), p.sub()).map(|(i, _)| i)
             })
         })
         .collect();
@@ -488,9 +499,11 @@ impl Kernel {
     /// generation moved since the last one.
     pub fn language(&mut self) -> std::sync::Arc<Language> {
         if self.language_gen != self.basis_gen || self.language.words.len() != self.basis.len() {
+            let shapes = (0..self.basis.len()).map(|_| std::sync::OnceLock::new()).collect();
             self.language = std::sync::Arc::new(Language {
                 words: self.basis.clone(),
                 stalks: self.stalks.clone(),
+                shapes,
             });
             self.language_gen = self.basis_gen;
         }
@@ -534,14 +547,8 @@ impl Kernel {
     fn closure_now(&mut self) -> std::sync::Arc<Rank> {
         let gens = (self.basis_gen, self.book_gen);
         if (self.closure.0, self.closure.1) != gens {
-            let measured = rank_over(
-                &self.stalks,
-                &self.basis,
-                &self.pending,
-                &self.composites,
-                &self.closure.2,
-                gens.0,
-            );
+            let language = self.language();
+            let measured = rank_over(&language, &self.pending, &self.composites, &self.closure.2, gens.0);
             self.closure = (gens.0, gens.1, std::sync::Arc::new(measured));
         }
         std::sync::Arc::clone(&self.closure.2)

@@ -184,6 +184,21 @@ pub fn congruent<'a>(
         .find_map(|i| element::transition_from_shape(&shape, chains(i)).map(|v| (i, v)))
 }
 
+/// Congruence lookup over pre-lifted shapes: `shape_at` yields the held
+/// word's shape (lifted once per snapshot), so a lookup lifts only the
+/// chain it asks about.
+pub fn congruent_shaped<'a>(
+    stalks: &Stalks,
+    shape_at: impl Fn(usize) -> Option<&'a super::blade::Shape>,
+    chain: &[Cell],
+) -> Option<(usize, Versor)> {
+    let shape = element::shape_of_chain(chain)?;
+    stalks.fiber(&invariant(chain)).iter().copied().find_map(|i| {
+        let held = shape_at(i)?;
+        super::blade::versor_between(&shape, held).map(|v| (i, v))
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

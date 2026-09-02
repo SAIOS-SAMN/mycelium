@@ -395,8 +395,7 @@ pub fn quote(
         Some(c) => c,
         None => {
             let measured = crate::cognition::rank_over(
-                &view.language.stalks,
-                &view.language.words,
+                &view.language,
                 &view.pending,
                 &view.composites,
                 &view.prior,

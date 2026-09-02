@@ -60,7 +60,13 @@ pub fn pieces(chain: &[Cell]) -> Vec<Vec<Cell>> {
 /// rational versor carries onto it, with the gauge coordinate under which
 /// the replay closes — in stratum order. Empty when the language has no
 /// word for this geometry.
-pub fn base_points(genome: &[Element], atlas: &Stalks, piece: &[Cell], exclude: Option<usize>) -> Vec<Cite> {
+pub fn base_points<'a>(
+    genome: &[Element],
+    atlas: &Stalks,
+    shape_at: &impl Fn(usize) -> Option<&'a crate::transducer::blade::Shape>,
+    piece: &[Cell],
+    exclude: Option<usize>,
+) -> Vec<Cite> {
     let chart = stalk::invariant(piece);
     let Some(shape) = element::shape_of_chain(piece) else { return Vec::new() };
     atlas
@@ -70,7 +76,7 @@ pub fn base_points(genome: &[Element], atlas: &Stalks, piece: &[Cell], exclude: 
         .filter(|&i| Some(i) != exclude)
         .filter_map(|i| {
             let word = genome.get(i)?;
-            let to_word = element::transition_from_shape(&shape, word.sub())?;
+            let to_word = crate::transducer::blade::versor_between(&shape, shape_at(i)?)?;
             let v = to_word.versor_inverse()?; // the word carried onto the piece
             (0..word.assignments().len()).find_map(|asg| {
                 let cite: Cite = (i, v.clone(), asg);
@@ -82,17 +88,23 @@ pub fn base_points(genome: &[Element], atlas: &Stalks, piece: &[Cell], exclude: 
 
 /// CITE a chain over the genome: the whole chain located first, then each
 /// component; the residual is what no word speaks.
-pub fn cite(genome: &[Element], atlas: &Stalks, chain: &[Cell], exclude: Option<usize>) -> (Vec<Cite>, Vec<Cell>) {
+pub fn cite<'a>(
+    genome: &[Element],
+    atlas: &Stalks,
+    shape_at: &impl Fn(usize) -> Option<&'a crate::transducer::blade::Shape>,
+    chain: &[Cell],
+    exclude: Option<usize>,
+) -> (Vec<Cite>, Vec<Cell>) {
     if chain.is_empty() {
         return (Vec::new(), Vec::new());
     }
-    if let Some(c) = base_points(genome, atlas, chain, exclude).into_iter().next() {
+    if let Some(c) = base_points(genome, atlas, shape_at, chain, exclude).into_iter().next() {
         return (vec![c], Vec::new());
     }
     let mut cites = Vec::new();
     let mut residual: Vec<Cell> = Vec::new();
     for piece in pieces(chain) {
-        match base_points(genome, atlas, &piece, exclude).into_iter().next() {
+        match base_points(genome, atlas, shape_at, &piece, exclude).into_iter().next() {
             Some(c) => cites.push(c),
             None => residual.extend(piece),
         }
@@ -105,19 +117,25 @@ pub fn cite(genome: &[Element], atlas: &Stalks, chain: &[Cell], exclude: Option<
 /// alternatives per piece (the width is the thinker's reserve on the
 /// lane, never a constant here). The head is the located sentence; the
 /// others differ by one piece's word. All share the residual.
-pub fn abduce(genome: &[Element], atlas: &Stalks, chain: &[Cell], width: usize) -> Vec<(Vec<Cite>, Vec<Cell>)> {
+pub fn abduce<'a>(
+    genome: &[Element],
+    atlas: &Stalks,
+    shape_at: &impl Fn(usize) -> Option<&'a crate::transducer::blade::Shape>,
+    chain: &[Cell],
+    width: usize,
+) -> Vec<(Vec<Cite>, Vec<Cell>)> {
     let width = width.max(1);
     if chain.is_empty() {
         return vec![(Vec::new(), Vec::new())];
     }
-    let whole = base_points(genome, atlas, chain, None);
+    let whole = base_points(genome, atlas, shape_at, chain, None);
     if !whole.is_empty() {
         return whole.into_iter().take(width).map(|c| (vec![c], Vec::new())).collect();
     }
     let mut alternatives: Vec<Vec<Cite>> = Vec::new();
     let mut residual: Vec<Cell> = Vec::new();
     for piece in pieces(chain) {
-        let alts = base_points(genome, atlas, &piece, None);
+        let alts = base_points(genome, atlas, shape_at, &piece, None);
         match alts.is_empty() {
             true => residual.extend(piece),
             false => alternatives.push(alts.into_iter().take(width).collect()),
@@ -153,30 +171,33 @@ mod tests {
         let bar_other = from_residual(&germinate(&[(0, 0, 7u8), (0, 1, 7)], &[(0, 0, 8u8), (0, 1, 8)]).unwrap());
         let genome = vec![bar, dot, bar_other];
         let atlas = Stalks::over(genome.iter().map(|w| w.sub()));
+        let shapes: Vec<Option<crate::transducer::blade::Shape>> =
+            genome.iter().map(|w| element::shape_of_chain(w.sub())).collect();
+        let shape_at = |i: usize| shapes.get(i).and_then(|s| s.as_ref());
         // A vertical bar far away: the bar rotated and translated.
         let target = vec![(5, 5, 1, 2), (6, 5, 1, 2)];
-        let (cites, residual) = cite(&genome, &atlas, &target, None);
+        let (cites, residual) = cite(&genome, &atlas, &shape_at, &target, None);
         assert_eq!(cites.len(), 1);
         assert_eq!(cites[0].0, 0, "the bar, not the other-hued bar");
         assert!(residual.is_empty());
         assert!(replay(&genome, &cites, &target).is_empty(), "the citation replays to closure");
         // A 2× dilated bar with the other hues: the other bar at ρ = 2.
         let big = vec![(0, 0, 7, 8), (0, 1, 7, 8), (0, 2, 7, 8), (0, 3, 7, 8), (1, 0, 7, 8), (1, 1, 7, 8), (1, 2, 7, 8), (1, 3, 7, 8)];
-        let (cites, residual) = cite(&genome, &atlas, &big, None);
+        let (cites, residual) = cite(&genome, &atlas, &shape_at, &big, None);
         assert_eq!(cites.len(), 1);
         assert_eq!(cites[0].0, 2);
         assert!(residual.is_empty());
         // Two pieces and an unknown: two citations, one residual piece.
         let mixed = vec![(0, 0, 1, 2), (0, 1, 1, 2), (4, 4, 3, 4), (9, 9, 5, 6), (9, 10, 5, 6), (10, 9, 5, 6)];
-        let (cites, residual) = cite(&genome, &atlas, &mixed, None);
+        let (cites, residual) = cite(&genome, &atlas, &shape_at, &mixed, None);
         assert_eq!(cites.len(), 2);
         assert_eq!(residual, vec![(9, 9, 5, 6), (9, 10, 5, 6), (10, 9, 5, 6)]);
         // Excluding the bar itself: a bar chain has no other word of hue 1→2.
-        let (cites, residual) = cite(&genome, &atlas, genome[0].sub(), Some(0));
+        let (cites, residual) = cite(&genome, &atlas, &shape_at, genome[0].sub(), Some(0));
         assert!(cites.is_empty() && !residual.is_empty(), "no word but itself speaks it");
         // Abduction: nothing alternative for a bar of hue 1→2 (the other bar
         // has other hues), so one branch; width bounds alternatives.
-        let branches = abduce(&genome, &atlas, &target, 4);
+        let branches = abduce(&genome, &atlas, &shape_at, &target, 4);
         assert_eq!(branches.len(), 1);
     }
 }
