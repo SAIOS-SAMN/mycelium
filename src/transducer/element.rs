@@ -142,6 +142,39 @@ pub fn identity_versor() -> Versor {
     Versor::scalar(num_rational::BigRational::from_integer(BigInt::from(1)))
 }
 
+/// The legacy lattice transport (a D4 index over the eight isometries in
+/// their historical order, then an integer offset) lifted to its versor:
+/// the rational rotor or reflection whose action on the vertex lattice
+/// agrees with the isometry, settled against two lattice points rather
+/// than a chosen table of signs, then the translator. Decoding only.
+pub fn legacy_versor(d4: u8, tr: i64, tc: i64) -> Option<Versor> {
+    use crate::transducer::cga;
+    use num_rational::BigRational;
+    let images: [fn(i64, i64) -> (i64, i64); 8] = [
+        |r, c| (r, c),
+        |r, c| (c, -r),
+        |r, c| (-r, -c),
+        |r, c| (-c, r),
+        |r, c| (r, -c),
+        |r, c| (-r, c),
+        |r, c| (c, r),
+        |r, c| (-c, -r),
+    ];
+    let image = images.get(d4 as usize)?;
+    let q = |v: i64| BigRational::from_integer(BigInt::from(v));
+    let rotors = [cga::rotator(&q(1), &q(0)), cga::rotator(&q(1), &q(1)), cga::rotator(&q(0), &q(1)), cga::rotator(&q(-1), &q(1))];
+    let mut candidates: Vec<Versor> = rotors.to_vec();
+    candidates.extend(rotors.iter().map(|r| r.geo(&cga::reflector())));
+    let agrees = |v: &Versor| {
+        [(1i64, 0i64), (0, 1)].iter().all(|&(r, c)| {
+            let (ir, ic) = image(r, c);
+            cga::base(&v.sandwich(&cga::point(&q(r), &q(c)))) == Some((q(ir), q(ic)))
+        })
+    };
+    let rot = candidates.into_iter().find(agrees)?;
+    Some(cga::translator(&q(tr), &q(tc)).geo(&rot))
+}
+
 /// Projective equality of two versors: the same transport up to a nonzero
 /// rational scale (versors act projectively on the cone).
 pub fn same_versor(a: &Versor, b: &Versor) -> bool {
@@ -962,7 +995,21 @@ impl Element {
                     *pos += 2;
                     a.push((bb, ff));
                 }
-                let g = Versor::from_bytes(b, pos)?;
+                // The connection's transport: a versor, or the legacy lattice
+                // form (a D4 index and an integer offset) lifted to its
+                // versor — judicial continuity across the format change.
+                let save = *pos;
+                let g = match Versor::from_bytes(b, pos) {
+                    Some(v) => v,
+                    None => {
+                        *pos = save;
+                        let d4 = *b.get(*pos)?;
+                        let tr = i64::from_le_bytes(b.get(*pos + 1..*pos + 9)?.try_into().ok()?);
+                        let tc = i64::from_le_bytes(b.get(*pos + 9..*pos + 17)?.try_into().ok()?);
+                        *pos += 17;
+                        legacy_versor(d4, tr, tc)?
+                    }
+                };
                 transitions.push((a, g));
             }
         }
@@ -1192,6 +1239,19 @@ impl Element {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The legacy lattice transport decodes to the versor with the same
+    /// action: index 1 is (r, c) → (c, −r), then the offset.
+    #[test]
+    fn the_legacy_transport_lifts_to_its_versor() {
+        let v = legacy_versor(1, 2, 3).expect("a lattice isometry is a rational versor");
+        let q = |n: i64| num_rational::BigRational::from_integer(BigInt::from(n));
+        let at = |r: i64, c: i64| crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&q(r), &q(c))));
+        assert_eq!(at(0, 0), Some((q(2), q(3))));
+        assert_eq!(at(1, 0), Some((q(2), q(2))), "(1,0) → (0,−1) + (2,3)");
+        assert_eq!(at(0, 1), Some((q(3), q(3))), "(0,1) → (1,0) + (2,3)");
+        assert!(legacy_versor(9, 0, 0).is_none());
+    }
 
     /// Congruence on the conformal orbit: translations, rotations,
     /// reflections, and exact dilations of a support are carried by a

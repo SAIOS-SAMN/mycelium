@@ -82,6 +82,9 @@ pub struct MarketView {
     /// The sealed rank if it is current at `gens`; absent when either
     /// generation moved, so the reader measures it over the snapshot.
     pub closure: Option<std::sync::Arc<Rank>>,
+    /// The last sealed rank regardless of currency — the memo a fresh
+    /// measurement reuses closures from at the same basis generation.
+    pub prior: std::sync::Arc<Rank>,
 }
 
 /// THE RANK OF THE BOOK — a sealed carrier: for each listing its base point
@@ -96,6 +99,11 @@ pub struct Rank {
     /// Per listing, the lineage fraction as (resolved, total) — (0, 0) when
     /// the listing has no parent.
     pub lineage: Vec<(u64, u64)>,
+    /// Per listing, its address — the coordinate a later rank reuses the
+    /// closure by when the basis has not moved.
+    pub addresses: Vec<[u8; 32]>,
+    /// The basis generation the closure was measured at.
+    pub basis_gen: u64,
 }
 
 /// The lineage coordinate of a listing: its parent's (resolved, total,
@@ -121,14 +129,27 @@ pub fn rank_over(
     words: &[Element],
     pending: &[(Element, u64)],
     composites: &[Composite],
+    prior: &Rank,
+    basis_gen: u64,
 ) -> Rank {
     use crate::core::engine::Q;
     use num_bigint::BigInt;
     use num_traits::{One, Zero};
+    // A listing's base point moves only when the basis moves: at the same
+    // basis generation the prior rank's closure is reused by the listing's
+    // own address, and only listings the prior did not hold are located.
+    let addresses: Vec<[u8; 32]> = pending.iter().map(|(p, _)| p.address()).collect();
     let closure: Vec<Option<usize>> = pending
         .iter()
-        .map(|(p, _)| {
-            crate::transducer::stalk::congruent(stalks, |i| words[i].sub(), p.sub()).map(|(i, _)| i)
+        .zip(&addresses)
+        .map(|((p, _), addr)| {
+            let held = match prior.basis_gen == basis_gen {
+                true => prior.addresses.iter().position(|a| a == addr).map(|j| prior.closure[j]),
+                false => None,
+            };
+            held.unwrap_or_else(|| {
+                crate::transducer::stalk::congruent(stalks, |i| words[i].sub(), p.sub()).map(|(i, _)| i)
+            })
         })
         .collect();
     let lineage: Vec<(u64, u64)> = pending
@@ -156,7 +177,7 @@ pub fn rank_over(
         })
         .collect();
     keyed.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)));
-    Rank { closure, order: keyed.into_iter().map(|(_, _, i)| i).collect(), lineage }
+    Rank { closure, order: keyed.into_iter().map(|(_, _, i)| i).collect(), lineage, addresses, basis_gen }
 }
 
 /// A reduction computed off the lock, ready to commit: the germ, its context,
@@ -495,6 +516,7 @@ impl Kernel {
             reserve: self.physics.reserve,
             gens,
             closure,
+            prior: std::sync::Arc::clone(&self.closure.2),
         }
     }
 
@@ -512,7 +534,14 @@ impl Kernel {
     fn closure_now(&mut self) -> std::sync::Arc<Rank> {
         let gens = (self.basis_gen, self.book_gen);
         if (self.closure.0, self.closure.1) != gens {
-            let measured = rank_over(&self.stalks, &self.basis, &self.pending, &self.composites);
+            let measured = rank_over(
+                &self.stalks,
+                &self.basis,
+                &self.pending,
+                &self.composites,
+                &self.closure.2,
+                gens.0,
+            );
             self.closure = (gens.0, gens.1, std::sync::Arc::new(measured));
         }
         std::sync::Arc::clone(&self.closure.2)

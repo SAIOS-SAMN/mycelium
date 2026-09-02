@@ -399,6 +399,8 @@ pub fn quote(
                 &view.language.words,
                 &view.pending,
                 &view.composites,
+                &view.prior,
+                view.gens.0,
             );
             k.lock().ok()?.seal_closure(view.gens, measured)
         }
