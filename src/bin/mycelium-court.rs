@@ -127,109 +127,97 @@ fn main() {
     let start = Instant::now();
     eprintln!("court '{name}' voice {:02x} over {} hyphas {hyphas:?}", voice[0], hyphas.len());
 
-    // GENESIS AUDIT (federation seeding): with an empty federation, the
-    // court pages through every server's held basis, blind-replays each
-    // word through the verification core, seals the verified rulings onto
-    // its chain, and propagates upheld words as adoptions across the nerve
-    // — the server plane starts converging without waiting for incidental
-    // consensus. Runs once per empty-federation boot; the persisted journal
-    // makes it a one-time genesis, not a recurring sweep.
-    if federation.is_empty() {
-        // Each page fetch resolves to a NAMED outcome — the walk's end is
-        // asserted (an empty page), and transport failure is recorded as an
-        // unaudited server, never a silent break.
-        enum Page {
-            Words(Vec<Vec<u8>>),
-            End,
-            Unreachable,
-        }
-        let fetch = |session: &Session, cursor: u32| -> Page {
-            match session.speak(dialogue::encode_genesis_request(&voice, cursor)) {
+    // GENESIS AUDIT (federation seeding) — a drained work relation, not a
+    // sweep: each entry is (session index, page cursor). One stride runs
+    // per court round: the front entry fetches one page, seals its words,
+    // and either advances (more pages), rotates to the back (unreachable —
+    // other servers proceed, this one retries later), or completes and
+    // LEAVES the relation (end page). Work per round is one page whether
+    // the nerve holds three servers or a thousand; the ruled-set
+    // deduplication makes any retry idempotent. An empty relation is the
+    // audit's completed state — nothing iterates the finished.
+    let mut genesis_walk: Vec<(usize, u32)> = (0..sessions.len()).map(|i| (i, 0)).collect();
+    enum Page {
+        Words(Vec<Vec<u8>>),
+        End,
+        Unreachable,
+    }
+
+    loop {
+        let mut heard_any = false;
+        // ── one genesis stride, when the audit relation still holds work ────
+        if let Some(&(si, cursor)) = genesis_walk.first() {
+            let page = match sessions[si].speak(dialogue::encode_genesis_request(&voice, cursor))
+            {
                 Err(_) => Page::Unreachable,
                 Ok(body) => match dialogue::decode_syllabus_reply(&body) {
                     None => Page::Unreachable, // malformed page = an unreadable server
                     Some(words) if words.is_empty() => Page::End,
                     Some(words) => Page::Words(words),
                 },
-            }
-        };
-        // One adoption broadcast for a sealed word: the tally is a count of
-        // deterministic queue acknowledgements, not a boolean ladder.
-        let propagate = |wb: &Vec<u8>| -> usize {
-            sessions
-                .iter()
-                .filter(|peer| {
-                    matches!(
-                        peer.speak(dialogue::encode_adopt(&voice, wb)),
-                        Ok(ref r) if r.first() == Some(&1)
-                    )
-                })
-                .count()
-        };
-        let (mut admitted, mut consilient, mut demoted_g, mut slashed_g) = (0u64, 0u64, 0u64, 0u64);
-        let mut acks = 0usize;
-        let mut unaudited = 0usize;
-        for session in &sessions {
-            let mut cursor = 0u32;
-            let audited = loop {
-                let words = match fetch(session, cursor) {
-                    Page::Words(w) => w,
-                    Page::End => break true,
-                    Page::Unreachable => break false,
-                };
-                cursor += words.len() as u32; // Words is non-empty: the walk advances
-                for wb in &words {
-                    let mut pos = 0usize;
-                    let spoken = Element::from_bytes(wb, &mut pos);
-                    let addr = spoken.as_ref().map(|w| w.address()).unwrap_or([0u8; 32]);
-                    if ruled.contains(&addr) {
-                        continue; // sealed in a prior block — never re-adjudicated
-                    }
-                    let outcome = verdict::rule(&federation, &addr, spoken.as_ref());
-                    let mut op = [0u8; 32];
-                    op[0] = outcome.code();
-                    chain.append(addr, op);
-                    ruled.push(addr);
-                    // The tally IS the state map — one arm per outcome.
-                    match outcome {
-                        verdict::Ruling::Admitted(sealed) => {
-                            federation.push((addr, sealed));
-                            upheld += 1;
-                            admitted += 1;
-                            acks += propagate(wb);
-                        }
-                        verdict::Ruling::Consilient | verdict::Ruling::Dialect => {
-                            upheld += 1;
-                            consilient += 1;
-                        }
-                        verdict::Ruling::Demoted => {
-                            demoted += 1;
-                            demoted_g += 1;
-                        }
-                        verdict::Ruling::Slashed(_) => {
-                            slashed += 1;
-                            slashed_g += 1;
-                        }
-                    }
-                }
-                // Pace the wave: one stroke per page, a dwell so the
-                // servers' deliberation queues drain instead of dropping.
-                physics.spend([false, false, true, false]);
-                std::thread::sleep(std::time::Duration::from_millis(reserve_max()));
             };
-            if !audited {
-                unaudited += 1;
+            match page {
+                Page::End => {
+                    genesis_walk.remove(0); // audited whole — leaves the relation
+                    eprintln!(
+                        "genesis audit of {} complete: federation {} words, K={}",
+                        hyphas[si],
+                        federation.len(),
+                        chain.next_step_index(),
+                    );
+                    persist(
+                        &chain,
+                        &federation,
+                        &ruled,
+                        &rebound,
+                        (upheld, demoted, slashed, rebinds),
+                    );
+                }
+                Page::Unreachable => {
+                    let entry = genesis_walk.remove(0);
+                    genesis_walk.push(entry); // retries after the others advance
+                }
+                Page::Words(words) => {
+                    genesis_walk[0].1 += words.len() as u32; // non-empty: the walk advances
+                    heard_any = true;
+                    for wb in &words {
+                        let mut pos = 0usize;
+                        let spoken = Element::from_bytes(wb, &mut pos);
+                        let addr = spoken.as_ref().map(|w| w.address()).unwrap_or([0u8; 32]);
+                        if ruled.contains(&addr) {
+                            continue; // sealed in a prior block — never re-adjudicated
+                        }
+                        let outcome = verdict::rule(&federation, &addr, spoken.as_ref());
+                        let mut op = [0u8; 32];
+                        op[0] = outcome.code();
+                        chain.append(addr, op);
+                        ruled.push(addr);
+                        // The tally IS the state map — one arm per outcome.
+                        match outcome {
+                            verdict::Ruling::Admitted(sealed) => {
+                                federation.push((addr, sealed));
+                                upheld += 1;
+                                // Propagation: a count of deterministic queue
+                                // acknowledgements across the nerve.
+                                let _acks = sessions
+                                    .iter()
+                                    .filter(|peer| {
+                                        matches!(
+                                            peer.speak(dialogue::encode_adopt(&voice, wb)),
+                                            Ok(ref r) if r.first() == Some(&1)
+                                        )
+                                    })
+                                    .count();
+                            }
+                            verdict::Ruling::Consilient | verdict::Ruling::Dialect => upheld += 1,
+                            verdict::Ruling::Demoted => demoted += 1,
+                            verdict::Ruling::Slashed(_) => slashed += 1,
+                        }
+                    }
+                    physics.spend([false, false, true, false]); // the stride is a stroke
+                }
             }
         }
-        persist(&chain, &federation, &ruled, &rebound, (upheld, demoted, slashed, rebinds));
-        eprintln!(
-            "genesis audit: admitted {admitted}, consilient {consilient}, demoted {demoted_g}, slashed {slashed_g}; {acks} adoption acks; {unaudited} servers unaudited; K={}",
-            chain.next_step_index(),
-        );
-    }
-
-    loop {
-        let mut heard_any = false;
         for (hi, session) in sessions.iter().enumerate() {
             let Ok(body) = session.speak(dialogue::encode_docket_request(&voice)) else {
                 continue;
