@@ -6,20 +6,25 @@
 //! of an input body under a transport: the versor solved from the two
 //! bodies' moments and the gauge map read cell by cell. The family is
 //! comprehended when, class by class (bodies of the same moduli), the
-//! transports agree in one chart — the scene's own coordinates, the
-//! coordinates about the frame centers, or the coordinates about the
-//! bodies' own centroids — with one gauge map. Bodies created with no
-//! source must be the same body in every pair; bodies removed must be
-//! removed in every pair. What does not agree is the residual: the exact
-//! cells of the observed output the connection does not speak, which is
-//! the demand the family raises. Nothing here searches: every transport
-//! is a quotient, every agreement an equality in the algebra.
+//! transports agree in at least one reading — the scene's own coordinates,
+//! the coordinates about the scene bodies' centroids, or the coordinates
+//! about the bodies' own centroids — with one gauge map. Every reading
+//! that agrees is kept; none is preferred. Bodies created with no source
+//! must be the same body in every pair; bodies removed must be removed in
+//! every pair. What does not agree is the residual: the exact cells of the
+//! observed output the connection does not speak. Nothing here searches:
+//! every transport is a quotient, every agreement an equality in the
+//! algebra. Where several input bodies of one class could be the source of
+//! an output body, they are interchangeable under the class's own symmetry;
+//! the nearest by centroid is the representative taken, and the replay on
+//! every pair verifies the choice.
 //!
 //! Speaking a test input applies the connection: each body of the input is
-//! carried by its class's transport read back out of its chart, and the
-//! output is rendered by carrying every output cell's center back into the
-//! body — the serialization of the transported bodies onto the sensor's
-//! frame, the one place the lattice is allowed.
+//! carried by its class's transport read back out of every agreeing
+//! reading, the readings must render the same cells, and the output is
+//! rendered by carrying every output cell's center back into the body —
+//! the serialization of the transported bodies onto the sensor's frame, the
+//! one place the lattice is allowed.
 
 use super::blade::{self, Shape};
 use super::cga;
@@ -55,6 +60,17 @@ pub struct Body {
     pub centroid: (BigRational, BigRational),
 }
 
+fn body_of(comp: Vec<Cell3>) -> Body {
+    let mut pos: Vec<(i64, i64)> = comp.iter().map(|&(r, c, _)| (r, c)).collect();
+    pos.sort_unstable();
+    let shape = blade::shape_of(&pos);
+    let moduli = Invariant(blade::moduli(&shape.blade));
+    let centroid = shape.blade.centroid().map(|(x, y)| (x + qn(1, 2), y + qn(1, 2))).unwrap_or((q(0), q(0)));
+    let mut cells = comp;
+    cells.sort_unstable();
+    Body { cells, shape, moduli, centroid }
+}
+
 /// Perceive a scene: its bodies (connected components of the non-background
 /// cells; hue 0 is the background the eye does not see).
 pub fn perceive(grid: &Grid) -> Vec<Body> {
@@ -66,28 +82,21 @@ pub fn perceive(grid: &Grid) -> Vec<Body> {
             }
         }
     }
-    blade::components(&cells)
-        .into_iter()
-        .map(|comp| {
-            let mut pos: Vec<(i64, i64)> = comp.iter().map(|&(r, c, _)| (r, c)).collect();
-            pos.sort_unstable();
-            let shape = blade::shape_of(&pos);
-            let moduli = Invariant(blade::moduli(&shape.blade));
-            let centroid =
-                shape.blade.centroid().map(|(x, y)| (x + qn(1, 2), y + qn(1, 2))).unwrap_or((q(0), q(0)));
-            let mut cells = comp;
-            cells.sort_unstable();
-            Body { cells, shape, moduli, centroid }
-        })
-        .collect()
+    blade::components(&cells).into_iter().map(body_of).collect()
 }
 
 fn frame_of(g: &Grid) -> (usize, usize) {
     (g.len(), g.first().map_or(0, |r| r.len()))
 }
 
-fn frame_center(f: (usize, usize)) -> (BigRational, BigRational) {
-    (qn(f.0 as i64, 2), qn(f.1 as i64, 2))
+/// The scene as a body: the whole sensor extent lifted, so its centroid is
+/// a moment of a body, not a coordinate of a rectangle.
+fn scene_center(f: (usize, usize)) -> (BigRational, BigRational) {
+    let cells: Vec<Cell3> = (0..f.0 as i64).flat_map(|r| (0..f.1 as i64).map(move |c| (r, c, 1u8))).collect();
+    if cells.is_empty() {
+        return (q(0), q(0));
+    }
+    body_of(cells).centroid
 }
 
 /// The family's frame ratio ((h_num, h_den), (w_num, w_den)), identical
@@ -156,47 +165,52 @@ fn merge_sigma(a: &[(u8, u8)], b: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
     Some(out)
 }
 
-/// The charts a transport is read in: the scene's own coordinates, the
-/// coordinates about the frame centers, the coordinates about the bodies'
+/// The readings a transport is taken in, by the point it is read about:
+/// the scene's origin, the scene bodies' centroids, the bodies' own
 /// centroids (with the centroid displacement carried alongside).
-pub const CHARTS: usize = 3;
+pub const READINGS: usize = 3;
 
-fn in_chart(v: &Versor, chart: usize, a: &Body, b: &Body, fa: (usize, usize), fb: (usize, usize)) -> Versor {
-    let (pa, pb) = match chart {
-        0 => return v.clone(),
-        1 => (frame_center(fa), frame_center(fb)),
-        _ => (a.centroid.clone(), b.centroid.clone()),
-    };
-    cga::translator(&-pb.0, &-pb.1).geo(v).geo(&cga::translator(&pa.0, &pa.1))
+/// The anchors of a pair in one reading.
+fn anchors(
+    reading: usize,
+    a: &Body,
+    b: &Body,
+    sa: &(BigRational, BigRational),
+    sb: &(BigRational, BigRational),
+) -> Option<((BigRational, BigRational), (BigRational, BigRational))> {
+    match reading {
+        0 => None,
+        1 => Some((sa.clone(), sb.clone())),
+        _ => Some((a.centroid.clone(), b.centroid.clone())),
+    }
 }
 
-fn from_chart(u: &Versor, chart: usize, x: &Body, fx: (usize, usize), fy: (usize, usize), shift: &(BigRational, BigRational)) -> Versor {
-    let (px, py) = match chart {
-        0 => return u.clone(),
-        1 => (frame_center(fx), frame_center(fy)),
-        _ => (x.centroid.clone(), (&x.centroid.0 + &shift.0, &x.centroid.1 + &shift.1)),
-    };
-    cga::translator(&py.0, &py.1).geo(u).geo(&cga::translator(&-px.0, &-px.1))
+fn read_in(v: &Versor, pa: &(BigRational, BigRational), pb: &(BigRational, BigRational)) -> Versor {
+    cga::translator(&-&pb.0, &-&pb.1).geo(v).geo(&cga::translator(&pa.0, &pa.1))
 }
 
-/// A class rule: bodies of these moduli are carried by `u` read in `chart`
-/// (with the centroid displacement `shift` in the body chart) and recoloured
-/// by `sigma`.
+fn read_out(u: &Versor, px: &(BigRational, BigRational), py: &(BigRational, BigRational)) -> Versor {
+    cga::translator(&py.0, &py.1).geo(u).geo(&cga::translator(&-&px.0, &-&px.1))
+}
+
+/// A class rule: bodies of these moduli are carried by the transport in
+/// every reading that agreed across the family (reading index, versor in
+/// that reading), with the centroid displacement `shift` for the body
+/// reading, and recoloured by `sigma`.
 #[derive(Clone, Debug)]
 pub struct Rule {
     pub moduli: Invariant,
-    pub chart: usize,
-    pub u: Versor,
+    pub readings: Vec<(usize, Versor)>,
     pub shift: (BigRational, BigRational),
     pub sigma: Vec<(u8, u8)>,
 }
 
 /// A body created with no source, the same in every pair: its cells in
-/// the scene's coordinates (chart 0) or as doubled offsets from the frame
-/// center (chart 1).
+/// the scene's coordinates (reading 0) or as doubled offsets from the
+/// scene body's centroid (reading 1).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Creation {
-    pub chart: usize,
+    pub reading: usize,
     pub cells: Vec<Cell3>,
 }
 
@@ -212,14 +226,14 @@ pub struct Transport {
 /// What comprehending a family produced: the connection when every pair
 /// replays, and the residual — the observed output cells the connection
 /// does not speak, as a chain (row, col, spoken hue, observed hue) on the
-/// first pair that fails — the family's demand.
+/// first pair that fails.
 #[derive(Clone, Debug, Default)]
 pub struct Comprehended {
     pub transport: Option<Transport>,
     pub residual: Vec<(i64, i64, u8, u8)>,
     /// Whether the pairs share one frame ratio. A family whose frames
-    /// disagree has no single connection to read and raises no residual:
-    /// the refusal is the measurement.
+    /// disagree has no single connection to read; its pairs are spoken as
+    /// percepts carrying their frames, for the court to relate.
     pub framed: bool,
 }
 
@@ -230,30 +244,49 @@ struct Pairing {
     carriage: Carriage,
 }
 
-/// COMPREHEND a family: pair every output body with the input body it is
-/// the transport of, read each class's transport in the chart the pairs
-/// agree in, settle creations and removals, then replay the connection on
-/// every pair. The residual of the first pair that does not replay is the
-/// family's demand.
+struct Scene {
+    bodies_in: Vec<Body>,
+    bodies_out: Vec<Body>,
+    frame_in: (usize, usize),
+    frame_out: (usize, usize),
+    center_in: (BigRational, BigRational),
+    center_out: (BigRational, BigRational),
+}
+
+/// COMPREHEND a family: pair every output body with its source, read each
+/// class's transport in every reading the pairs agree in, settle creations
+/// and removals, then replay the connection on every pair. The residual of
+/// the first pair that does not replay is the family's demand.
 pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
     let mut out = Comprehended::default();
     let Some(ratio) = family_ratio(family) else { return out };
     out.framed = true;
-    let scenes: Vec<(Vec<Body>, Vec<Body>, (usize, usize), (usize, usize))> = family
+    let scenes: Vec<Scene> = family
         .iter()
-        .map(|(a, b)| (perceive(a), perceive(b), frame_of(a), frame_of(b)))
+        .map(|(a, b)| {
+            let (frame_in, frame_out) = (frame_of(a), frame_of(b));
+            Scene {
+                bodies_in: perceive(a),
+                bodies_out: perceive(b),
+                frame_in,
+                frame_out,
+                center_in: scene_center(frame_in),
+                center_out: scene_center(frame_out),
+            }
+        })
         .collect();
     // 1. PAIR each output body with its source: the input body of the same
-    // moduli that a carriage exists for, nearest by centroid displacement.
+    // moduli that a carriage exists for. Several such bodies are
+    // interchangeable under the class's symmetry; the nearest by centroid
+    // is the representative, and the replay below verifies it.
     let mut pairings: Vec<Pairing> = Vec::new();
-    let mut created: Vec<Vec<Cell3>> = Vec::new(); // per pair: unmatched output cells, body by body
-    let mut created_by_pair: Vec<Vec<(usize, Vec<Cell3>)>> = vec![Vec::new(); family.len()];
+    let mut created_by_pair: Vec<Vec<Vec<Cell3>>> = vec![Vec::new(); family.len()];
     let mut unmatched_inputs: Vec<(usize, usize)> = Vec::new();
-    for (p, (ia, ib, _, _)) in scenes.iter().enumerate() {
-        let mut used = vec![false; ia.len()];
-        for (j, ob) in ib.iter().enumerate() {
+    for (p, s) in scenes.iter().enumerate() {
+        let mut used = vec![false; s.bodies_in.len()];
+        for (j, ob) in s.bodies_out.iter().enumerate() {
             let mut best: Option<(BigRational, usize, Carriage)> = None;
-            for (i, ab) in ia.iter().enumerate() {
+            for (i, ab) in s.bodies_in.iter().enumerate() {
                 if used[i] || ab.moduli != ob.moduli {
                     continue;
                 }
@@ -269,7 +302,7 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
                     used[i] = true;
                     pairings.push(Pairing { pair: p, input: i, output: j, carriage: car });
                 }
-                None => created_by_pair[p].push((j, ob.cells.clone())),
+                None => created_by_pair[p].push(ob.cells.clone()),
             }
         }
         for (i, u) in used.iter().enumerate() {
@@ -277,82 +310,113 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
                 unmatched_inputs.push((p, i));
             }
         }
-        created.push(created_by_pair[p].iter().flat_map(|(_, c)| c.clone()).collect());
     }
-    // 2. RULES: per class, the chart every pairing agrees in.
+    // 2. RULES: per class, every reading the pairings agree in.
     let mut classes: Vec<Invariant> = Vec::new();
     for pr in &pairings {
-        let m = &scenes[pr.pair].0[pr.input].moduli;
+        let m = &scenes[pr.pair].bodies_in[pr.input].moduli;
         if !classes.contains(m) {
             classes.push(m.clone());
         }
     }
     let mut rules: Vec<Rule> = Vec::new();
-    let mut disagreeing: Vec<Invariant> = Vec::new();
     for class in &classes {
         let members: Vec<&Pairing> =
-            pairings.iter().filter(|pr| scenes[pr.pair].0[pr.input].moduli == *class).collect();
-        let mut settled: Option<Rule> = None;
-        for chart in 0..CHARTS {
-            let mut agreed: Option<Rule> = None;
+            pairings.iter().filter(|pr| scenes[pr.pair].bodies_in[pr.input].moduli == *class).collect();
+        let mut readings: Vec<(usize, Versor)> = Vec::new();
+        let mut sigma: Option<Vec<(u8, u8)>> = None;
+        let mut shift: Option<(BigRational, BigRational)> = None;
+        // The gauge map and the displacement are read once for the class.
+        let mut gauge_ok = true;
+        for pr in &members {
+            let s = &scenes[pr.pair];
+            let (a, b) = (&s.bodies_in[pr.input], &s.bodies_out[pr.output]);
+            let d = (&b.centroid.0 - &a.centroid.0, &b.centroid.1 - &a.centroid.1);
+            sigma = match &sigma {
+                None => Some(pr.carriage.sigma.clone()),
+                Some(held) => match merge_sigma(held, &pr.carriage.sigma) {
+                    Some(m) => Some(m),
+                    None => {
+                        gauge_ok = false;
+                        break;
+                    }
+                },
+            };
+            if shift.is_none() {
+                shift = Some(d);
+            }
+        }
+        if !gauge_ok {
+            continue;
+        }
+        for reading in 0..READINGS {
+            let mut agreed: Option<Versor> = None;
             let mut ok = true;
             for pr in &members {
-                let (ia, ib, fa, fb) = &scenes[pr.pair];
-                let (a, b) = (&ia[pr.input], &ib[pr.output]);
-                let u = in_chart(&pr.carriage.v, chart, a, b, *fa, *fb);
-                let shift = (&b.centroid.0 - &a.centroid.0, &b.centroid.1 - &a.centroid.1);
-                match &mut agreed {
-                    None => {
-                        agreed = Some(Rule { moduli: class.clone(), chart, u, shift, sigma: pr.carriage.sigma.clone() })
-                    }
-                    Some(rule) => {
-                        let same = element::same_versor(&rule.u, &u) && (chart != 2 || rule.shift == shift);
-                        match (same, merge_sigma(&rule.sigma, &pr.carriage.sigma)) {
-                            (true, Some(sigma)) => rule.sigma = sigma,
-                            _ => {
-                                ok = false;
-                                break;
-                            }
+                let s = &scenes[pr.pair];
+                let (a, b) = (&s.bodies_in[pr.input], &s.bodies_out[pr.output]);
+                let u = match anchors(reading, a, b, &s.center_in, &s.center_out) {
+                    None => pr.carriage.v.clone(),
+                    Some((pa, pb)) => read_in(&pr.carriage.v, &pa, &pb),
+                };
+                let d = (&b.centroid.0 - &a.centroid.0, &b.centroid.1 - &a.centroid.1);
+                let same_shift = reading != 2 || shift.as_ref() == Some(&d);
+                match &agreed {
+                    None => agreed = Some(u),
+                    Some(held) => {
+                        if !(element::same_versor(held, &u) && same_shift) {
+                            ok = false;
+                            break;
                         }
                     }
                 }
             }
-            if ok {
-                settled = agreed;
-                break;
+            if let (true, Some(u)) = (ok, agreed) {
+                readings.push((reading, u));
             }
         }
-        match settled {
-            Some(rule) => rules.push(rule),
-            None => disagreeing.push(class.clone()),
+        if !readings.is_empty() {
+            rules.push(Rule {
+                moduli: class.clone(),
+                readings,
+                shift: shift.unwrap_or((q(0), q(0))),
+                sigma: sigma.unwrap_or_default(),
+            });
         }
     }
-    // 3. REMOVALS: a class removed in every pair it appears unmatched in,
-    // and never carried.
+    // 3. REMOVALS: a class never carried, unmatched wherever it appears.
     let mut removed: Vec<Invariant> = Vec::new();
     for (p, i) in &unmatched_inputs {
-        let m = &scenes[*p].0[*i].moduli;
+        let m = &scenes[*p].bodies_in[*i].moduli;
         if !removed.contains(m) && !classes.contains(m) {
             removed.push(m.clone());
         }
     }
     // 4. CREATIONS: the same created bodies in every pair, in the scene's
-    // coordinates or about the frame center.
+    // coordinates or about the scene body's centroid.
     let mut creations: Vec<Creation> = Vec::new();
+    let about_center = |cells: &[Cell3], center: &(BigRational, BigRational)| -> Vec<Cell3> {
+        let (cr, cc) = (center.0.clone() * q(2), center.1.clone() * q(2));
+        cells
+            .iter()
+            .map(|&(r, c, h)| {
+                let dr = (q(2 * r) - &cr).to_integer();
+                let dc = (q(2 * c) - &cc).to_integer();
+                (dr.try_into().unwrap_or(i64::MAX), dc.try_into().unwrap_or(i64::MAX), h)
+            })
+            .collect()
+    };
     if let Some(first) = created_by_pair.first() {
-        for (_, cells) in first {
-            let fb0 = scenes[0].3;
-            let about_center =
-                |cells: &[Cell3], fb: (usize, usize)| -> Vec<Cell3> { cells.iter().map(|&(r, c, h)| (2 * r - fb.0 as i64, 2 * c - fb.1 as i64, h)).collect() };
-            let absolute_everywhere = created_by_pair.iter().all(|cp| cp.iter().any(|(_, c)| c == cells));
-            let centered = about_center(cells, fb0);
+        for cells in first {
+            let absolute_everywhere = created_by_pair.iter().all(|cp| cp.iter().any(|c| c == cells));
+            let centered = about_center(cells, &scenes[0].center_out);
             let centered_everywhere = created_by_pair
                 .iter()
                 .enumerate()
-                .all(|(p, cp)| cp.iter().any(|(_, c)| about_center(c, scenes[p].3) == centered));
+                .all(|(p, cp)| cp.iter().any(|c| about_center(c, &scenes[p].center_out) == centered));
             match (absolute_everywhere, centered_everywhere) {
-                (true, _) => creations.push(Creation { chart: 0, cells: cells.clone() }),
-                (false, true) => creations.push(Creation { chart: 1, cells: centered }),
+                (true, _) => creations.push(Creation { reading: 0, cells: cells.clone() }),
+                (false, true) => creations.push(Creation { reading: 1, cells: centered }),
                 _ => {}
             }
         }
@@ -360,12 +424,10 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
     let transport = Transport { ratio, rules, removed, created: creations };
     // 5. REPLAY the connection on every pair; the first failure's residual
     // is the demand.
-    for (p, (a, b)) in family.iter().enumerate() {
+    for (a, b) in family {
         let spoken = speak(&transport, a);
-        let matches = spoken.as_ref() == Some(b);
-        if !matches {
+        if spoken.as_ref() != Some(b) {
             out.residual = residual_of(spoken.as_ref(), b);
-            let _ = (p, &created, &disagreeing);
             return out;
         }
     }
@@ -400,27 +462,33 @@ fn residual_of(spoken: Option<&Grid>, observed: &Grid) -> Vec<(i64, i64, u8, u8)
     out
 }
 
-/// The image of a hue under a gauge map. A hue the family showed is
-/// carried as observed; a hue it did not show is carried only when the
-/// map's form is total — the identity on every observed hue, or one
-/// constant target — else refused.
+/// The image of a hue under a gauge map: the hue the family showed is
+/// carried as observed; a hue it never showed has no image — refused, not
+/// guessed.
 fn gauge_image(sigma: &[(u8, u8)], h: u8) -> Option<u8> {
-    if let Some((_, t)) = sigma.iter().find(|(f, _)| *f == h) {
-        return Some(*t);
+    sigma.iter().find(|(f, _)| *f == h).map(|(_, t)| *t)
+}
+
+/// Render one body through one transport onto the output frame: the cells
+/// (row, col, hue) it speaks, or None when a hue has no image.
+fn render(body: &Body, v: &Versor, sigma: &[(u8, u8)], fy: (usize, usize)) -> Option<Vec<Cell3>> {
+    let inv = v.versor_inverse()?;
+    let mut out: Vec<Cell3> = Vec::new();
+    for r in 0..fy.0 as i64 {
+        for c in 0..fy.1 as i64 {
+            let Some(p) = element::carry_center(&inv, r, c) else { continue };
+            let (br, bc) = element::cell_of(&p);
+            let Ok(i) = body.cells.binary_search_by(|x| (x.0, x.1).cmp(&(br, bc))) else { continue };
+            out.push((r, c, gauge_image(sigma, body.cells[i].2)?));
+        }
     }
-    let (first, rest) = sigma.split_first()?;
-    if sigma.iter().all(|(f, t)| f == t) {
-        return Some(h);
-    }
-    if rest.iter().all(|(_, t)| *t == first.1) {
-        return Some(first.1);
-    }
-    None
+    Some(out)
 }
 
 /// SPEAK a test input through the connection. None when the output frame
 /// is not integral, a body has no rule, a hue has no image under its rule,
-/// or two carried bodies disagree on a cell — refusal, never a guess.
+/// the rule's readings render differently, or two carried bodies disagree
+/// on a cell — refusal, never a guess.
 pub fn speak(t: &Transport, x: &Grid) -> Option<Grid> {
     let fx = frame_of(x);
     let ((hn, hd), (wn, wd)) = t.ratio;
@@ -428,6 +496,7 @@ pub fn speak(t: &Transport, x: &Grid) -> Option<Grid> {
         return None;
     }
     let fy = (fx.0 * hn / hd.max(1), fx.1 * wn / wd.max(1));
+    let (cx, cy) = (scene_center(fx), scene_center(fy));
     let mut out: Grid = vec![vec![0u8; fy.1]; fy.0];
     let paint = |out: &mut Grid, r: i64, c: i64, h: u8| -> bool {
         if r < 0 || c < 0 || r as usize >= fy.0 || c as usize >= fy.1 {
@@ -445,32 +514,40 @@ pub fn speak(t: &Transport, x: &Grid) -> Option<Grid> {
             continue;
         }
         let rule = t.rules.iter().find(|r| r.moduli == body.moduli)?;
-        let v = from_chart(&rule.u, rule.chart, &body, fx, fy, &rule.shift);
-        let inv = v.versor_inverse()?;
-        // Render by carrying every output cell's center back into the body.
-        for r in 0..fy.0 as i64 {
-            for c in 0..fy.1 as i64 {
-                let Some(p) = element::carry_center(&inv, r, c) else { continue };
-                let (br, bc) = element::cell_of(&p);
-                let Ok(i) = body.cells.binary_search_by(|x| (x.0, x.1).cmp(&(br, bc))) else { continue };
-                let h = body.cells[i].2;
-                let h2 = gauge_image(&rule.sigma, h)?;
-                if !paint(&mut out, r, c, h2) {
-                    return None;
+        let mut spoken: Option<Vec<Cell3>> = None;
+        for (reading, u) in &rule.readings {
+            let v = match *reading {
+                0 => u.clone(),
+                1 => read_out(u, &cx, &cy),
+                _ => read_out(u, &body.centroid, &(&body.centroid.0 + &rule.shift.0, &body.centroid.1 + &rule.shift.1)),
+            };
+            let cells = render(&body, &v, &rule.sigma, fy)?;
+            match &spoken {
+                None => spoken = Some(cells),
+                Some(held) => {
+                    if *held != cells {
+                        return None; // the readings disagree on this body: no speech
+                    }
                 }
+            }
+        }
+        for (r, c, h) in spoken? {
+            if !paint(&mut out, r, c, h) {
+                return None;
             }
         }
     }
     for creation in &t.created {
         for &(r, c, h) in &creation.cells {
-            let (rr, cc) = match creation.chart {
+            let (rr, cc) = match creation.reading {
                 0 => (r, c),
                 _ => {
-                    let (dr, dc) = (r + fy.0 as i64, c + fy.1 as i64);
-                    if dr % 2 != 0 || dc % 2 != 0 {
+                    let (dr, dc) = (q(r) + cy.0.clone() * q(2), q(c) + cy.1.clone() * q(2));
+                    let (dr, dc) = (dr / q(2), dc / q(2));
+                    if !dr.is_integer() || !dc.is_integer() {
                         return None;
                     }
-                    (dr / 2, dc / 2)
+                    (dr.to_integer().try_into().unwrap_or(i64::MAX), dc.to_integer().try_into().unwrap_or(i64::MAX))
                 }
             };
             if !paint(&mut out, rr, cc, h) {
@@ -490,11 +567,12 @@ mod tests {
     }
 
     /// A family that shifts every body two columns right and recolours
-    /// 1→2 is comprehended in the body chart with a constant displacement;
-    /// a new input is spoken exactly; a family that dilates the scene
-    /// twofold is comprehended in the scene's own chart.
+    /// 1→2 agrees in every reading; a body mirrored in place agrees only
+    /// about the bodies' own centroids; a family that dilates the scene
+    /// twofold agrees in the scene's own coordinates. Each speaks a new
+    /// input exactly.
     #[test]
-    fn a_shift_and_a_dilation_are_comprehended_and_spoken() {
+    fn a_shift_a_mirror_and_a_dilation_are_comprehended_and_spoken() {
         let family = vec![
             (grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"])),
             (grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"])),
@@ -507,10 +585,13 @@ mod tests {
         assert!(c.residual.is_empty(), "the family replays: {:?}", c.residual);
         let t = c.transport.expect("comprehended");
         assert_eq!(t.rules.len(), 1);
-        assert_eq!(t.rules[0].chart, 0, "a constant shift is one versor in the scene's own coordinates");
+        let readings: Vec<usize> = t.rules[0].readings.iter().map(|(r, _)| *r).collect();
+        assert_eq!(readings, vec![0, 1, 2], "a constant shift agrees in every reading");
         assert_eq!(t.rules[0].sigma, vec![(1, 2)]);
         let x = grid(&["0000", "0000", "1100"]);
         assert_eq!(speak(&t, &x), Some(grid(&["0000", "0000", "0022"])));
+        // A hue the family never showed has no image: silence, not a guess.
+        assert_eq!(speak(&t, &grid(&["0000", "0000", "3300"])), None);
         // A body mirrored in place: the reflection axis moves with the body,
         // so the transport agrees only about the bodies' own centroids.
         let family = vec![
@@ -520,7 +601,8 @@ mod tests {
         let c = comprehend(&family);
         assert!(c.residual.is_empty(), "the mirror replays: {:?}", c.residual);
         let t = c.transport.expect("comprehended");
-        assert_eq!(t.rules[0].chart, 2, "read about the body's centroid");
+        let readings: Vec<usize> = t.rules[0].readings.iter().map(|(r, _)| *r).collect();
+        assert_eq!(readings, vec![2], "read about the body's centroid only");
         assert_eq!(speak(&t, &grid(&["000", "100", "110"])), Some(grid(&["000", "010", "110"])));
         // Dilation: a 2×2 scene becomes 4×4, every body doubled about the origin.
         let family = vec![
@@ -531,8 +613,8 @@ mod tests {
         assert!(c.residual.is_empty(), "the dilation replays: {:?}", c.residual);
         let t = c.transport.expect("comprehended");
         assert_eq!(t.ratio, ((2, 1), (2, 1)));
-        assert_eq!(t.rules[0].chart, 0, "read in the scene's own coordinates");
-        assert_eq!(speak(&t, &grid(&["05", "00"])), Some(grid(&["0055", "0055", "0000", "0000"])));
+        assert!(t.rules[0].readings.iter().any(|(r, _)| *r == 0), "read in the scene's own coordinates");
+        assert_eq!(speak(&t, &grid(&["30", "00"])), Some(grid(&["3300", "3300", "0000", "0000"])));
     }
 
     /// A family whose rule depends on something the connection does not
@@ -545,7 +627,14 @@ mod tests {
         ];
         let c = comprehend(&family);
         assert!(c.transport.is_none());
+        assert!(c.framed);
         assert!(!c.residual.is_empty());
         assert!(c.residual.iter().all(|&(_, _, s, h)| s != h));
+        let disagree = vec![
+            (grid(&["10", "00"]), grid(&["1100", "1100", "0000", "0000"])),
+            (grid(&["10", "00"]), grid(&["110", "110", "000"])),
+        ];
+        let c = comprehend(&disagree);
+        assert!(!c.framed, "frames that disagree are not one connection");
     }
 }

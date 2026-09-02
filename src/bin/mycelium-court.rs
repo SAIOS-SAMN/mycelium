@@ -375,9 +375,8 @@ fn main() {
                 );
                 // The ruling's metabolic weight lands on the lanes the word's
                 // escrowed μ⃗ actually occupies — never a hardcoded plane.
-                let lanes: [bool; 4] = std::array::from_fn(|l| mu[l] > 0);
-                physics.bump(lanes);
-                physics.spend(lanes);
+                physics.bump(&mu);
+                physics.spend(mycelium::physics::Physics::lanes_of(&mu));
             }
         }
         // ── KB ANCHOR REFINEMENT (7c): drain each hypha's birth evidence,
@@ -444,7 +443,7 @@ fn main() {
                 set.len(),
                 chain.next_step_index(),
             );
-            physics.bump([false, false, true, false]);
+            physics.bump(&[0, 0, 1, 0]);
             physics.spend([false, false, true, false]);
             false // spent — the family bound its word
         });

@@ -599,18 +599,32 @@ pub fn decode_quote_request(body: &[u8]) -> Option<[u8; 32]> {
 /// itself (so a kernel can actually attempt the reduction).
 pub type WorkItem = ([u8; 32], [u64; 4], Vec<Cell>);
 
-/// `[ACT_QUOTE][surface 4×u64][n u8][item: addr 32 | μ⃗ 4×u64 | chain]…`
-pub fn encode_quote_reply(surface: &[u64; 4], items: &[WorkItem]) -> Vec<u8> {
-    encode_quote_reply_within(surface, items, usize::MAX)
+/// `[ACT_QUOTE][surface 4×u64][K u64][n u8][item: addr 32 | μ⃗ 4×u64 | chain]…`
+/// — K is the judge's k-step at the quote: the temporal coordinate every
+/// listing quoted here is read at.
+pub fn encode_quote_reply(surface: &[u64; 4], k: u64, items: &[WorkItem]) -> Vec<u8> {
+    encode_quote_reply_within(surface, k, items, usize::MAX)
+}
+
+/// The deferral a full judge answers every act with: the pending outcome
+/// and four zero lanes, nothing taught. For a percept or a demand it is a
+/// verdict; for any other act it is impedance.
+pub fn encode_deferral(code: u8) -> Vec<u8> {
+    vec![code, 0, 0, 0, 0, 0, 0]
+}
+
+pub fn is_deferral(body: &[u8], code: u8) -> bool {
+    body.len() == 7 && body[0] == code && body[1..].iter().all(|&x| x == 0)
 }
 
 /// The quote reply filled up to `budget` bytes: items ride in rank order
 /// until the next would not fit. The frame budget decides what a contact
 /// can carry; a wide book is served across contacts, never as a frame the
 /// wire refuses.
-pub fn encode_quote_reply_within(surface: &[u64; 4], items: &[WorkItem], budget: usize) -> Vec<u8> {
+pub fn encode_quote_reply_within(surface: &[u64; 4], k: u64, items: &[WorkItem], budget: usize) -> Vec<u8> {
     let mut out = vec![ACT_QUOTE];
     push_mu(&mut out, surface);
+    out.extend_from_slice(&k.to_le_bytes());
     let count_at = out.len();
     out.push(0);
     let mut served = 0u8;
@@ -628,12 +642,14 @@ pub fn encode_quote_reply_within(surface: &[u64; 4], items: &[WorkItem], budget:
     out
 }
 
-pub fn decode_quote_reply(body: &[u8]) -> Option<([u64; 4], Vec<WorkItem>)> {
+pub fn decode_quote_reply(body: &[u8]) -> Option<([u64; 4], u64, Vec<WorkItem>)> {
     if body.first() != Some(&ACT_QUOTE) {
         return None;
     }
     let mut p = 1usize;
     let surface = read_mu(body, &mut p)?;
+    let k = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
+    p += 8;
     let n = *body.get(p)? as usize; // u8 — bounded by construction
     p += 1;
     let mut items = Vec::with_capacity(n);
@@ -644,7 +660,7 @@ pub fn decode_quote_reply(body: &[u8]) -> Option<([u64; 4], Vec<WorkItem>)> {
         let chain = read_chain(body, &mut p)?;
         items.push((addr, mu, chain));
     }
-    Some((surface, items))
+    Some((surface, k, items))
 }
 
 // ── teach: canonical element transmission ────────────────────────────────────
@@ -982,8 +998,9 @@ mod tests {
         assert_eq!((v, c), (voice, chain.clone()));
         assert_eq!(decode_quote_request(&encode_quote_request(&voice)).unwrap(), voice);
         let items = vec![(germ, [1u64, 2, 30, 4], chain.clone())];
-        let (s, it) = decode_quote_reply(&encode_quote_reply(&[5, 0, 9, 0], &items)).unwrap();
+        let (s, k, it) = decode_quote_reply(&encode_quote_reply(&[5, 0, 9, 0], 4208, &items)).unwrap();
         assert_eq!(s, [5, 0, 9, 0]);
+        assert_eq!(k, 4208, "the judge's k-step rides the quote");
         assert_eq!(it, items);
         assert_eq!(decode_teach(&encode_teach(&[0xAB, 0xCD])).unwrap(), vec![0xAB, 0xCD]);
         let (g2, vs, mu) = decode_settle(&encode_settle(&germ, &[voice, germ], &[0, 0, 12, 0])).unwrap();

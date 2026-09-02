@@ -91,21 +91,26 @@ impl Default for Physics {
 }
 
 impl Physics {
-    /// A demand entered on these lanes — pressure rises.
-    pub fn bump(&mut self, lanes: [bool; 4]) {
+    /// The lanes a magnitude vector occupies — the selection a unit spend
+    /// runs along. The pressure itself is never this boolean: it carries
+    /// the magnitude.
+    pub fn lanes_of(m: &[u64; 4]) -> [bool; 4] {
+        std::array::from_fn(|l| m[l] > 0)
+    }
+
+    /// A demand entered — pressure rises by its exact per-lane magnitude,
+    /// the graded defect itself, never an event count through a threshold.
+    pub fn bump(&mut self, m: &[u64; 4]) {
         for l in 0..4 {
-            if lanes[l] {
-                self.pressure[l] = self.pressure[l].saturating_add(1);
-            }
+            self.pressure[l] = self.pressure[l].saturating_add(m[l]);
         }
     }
 
-    /// A demand closed on these lanes — pressure relieves.
-    pub fn relieve(&mut self, lanes: [bool; 4]) {
+    /// A demand closed — pressure falls by the magnitude the settlement
+    /// removed from the book.
+    pub fn relieve(&mut self, m: &[u64; 4]) {
         for l in 0..4 {
-            if lanes[l] {
-                self.pressure[l] = self.pressure[l].saturating_sub(1);
-            }
+            self.pressure[l] = self.pressure[l].saturating_sub(m[l]);
         }
     }
 
@@ -146,11 +151,10 @@ impl Physics {
     }
 
     /// A settlement built order on these lanes — a SYNTROPIC event (negentropy).
-    pub fn syntropy(&mut self, lanes: [bool; 4]) {
+    /// Order built, by the magnitude of what was settled or composed.
+    pub fn syntropy(&mut self, m: &[u64; 4]) {
         for l in 0..4 {
-            if lanes[l] {
-                self.syntropic[l] = self.syntropic[l].saturating_add(1);
-            }
+            self.syntropic[l] = self.syntropic[l].saturating_add(m[l]);
         }
     }
 
@@ -213,10 +217,10 @@ mod tests {
     #[test]
     fn pressure_is_per_lane_and_relieves() {
         let mut p = Physics::default();
-        p.bump([true, false, false, false]); // a spatial demand
-        p.bump([false, true, false, false]); // a gauge demand
+        p.bump(&[1, 0, 0, 0]); // a spatial demand
+        p.bump(&[0, 1, 0, 0]); // a gauge demand
         assert_eq!(p.metabolism_rate(), [1, 1, 0, 0], "per-lane, not summed");
-        p.relieve([true, false, false, false]);
+        p.relieve(&[1, 0, 0, 0]);
         assert_eq!(p.metabolism_rate(), [0, 1, 0, 0]);
     }
 
@@ -266,8 +270,8 @@ mod tests {
     #[test]
     fn the_metabolism_is_order_flux_per_lane() {
         let mut p = Physics::default();
-        p.syntropy([true, false, false, false]); // built order on 𝒮
-        p.syntropy([true, false, false, false]);
+        p.syntropy(&[1, 0, 0, 0]); // built order on 𝒮
+        p.syntropy(&[1, 0, 0, 0]);
         p.pivot([false, true, false, false]); // disorder on 𝒢
         assert_eq!(p.order_flux(), [2, -1, 0, 0], "syntropic − entropic, never summed");
     }

@@ -70,6 +70,8 @@ pub struct Language {
     /// Each word's shape, lifted once on first use and shared by every
     /// lookup over this snapshot (a measurement memoized, never persisted).
     pub shapes: Vec<std::sync::OnceLock<Option<crate::transducer::blade::Shape>>>,
+    /// The retirement generation of the basis this snapshot was taken at.
+    pub retire_gen: u64,
 }
 
 impl Language {
@@ -114,8 +116,15 @@ pub struct Rank {
     /// Per listing, its address — the coordinate a later rank reuses the
     /// closure by when the basis has not moved.
     pub addresses: Vec<[u8; 32]>,
+    /// Per listing, its moduli — the coordinate that says whether a word
+    /// added since could have closed it.
+    pub invariants: Vec<crate::transducer::stalk::Invariant>,
     /// The basis generation the closure was measured at.
     pub basis_gen: u64,
+    /// The basis length and retirement generation at measurement: with no
+    /// retirement since, every prior closure index still names its word.
+    pub basis_len: usize,
+    pub retire_gen: u64,
 }
 
 /// The lineage coordinate of a listing: its parent's (resolved, total,
@@ -147,18 +156,45 @@ pub fn rank_over(
     use crate::core::engine::Q;
     use num_bigint::BigInt;
     use num_traits::{One, Zero};
-    // A listing's base point moves only when the basis moves: at the same
-    // basis generation the prior rank's closure is reused by the listing's
-    // own address, and only listings the prior did not hold are located.
+    // A listing's base point moves only when a word lands in its own
+    // stratum. At the same basis generation every prior closure is reused
+    // by the listing's address. When the basis grew with no retirement,
+    // the words added since name the strata that moved, and only listings
+    // in those strata are located again — a coordinate read, never the
+    // whole book.
     let addresses: Vec<[u8; 32]> = pending.iter().map(|(p, _)| p.address()).collect();
+    let incremental = prior.basis_gen != basis_gen
+        && prior.retire_gen == language.retire_gen
+        && language.words.len() >= prior.basis_len
+        && prior.invariants.len() == prior.addresses.len();
+    let mut moved: Vec<crate::transducer::stalk::Invariant> = Vec::new();
+    if incremental {
+        for w in &language.words[prior.basis_len..] {
+            let inv = crate::transducer::stalk::invariant(w.sub());
+            if !moved.contains(&inv) {
+                moved.push(inv);
+            }
+        }
+    }
+    let prior_at: Vec<Option<usize>> =
+        addresses.iter().map(|addr| prior.addresses.iter().position(|a| a == addr)).collect();
+    let invariants: Vec<crate::transducer::stalk::Invariant> = pending
+        .iter()
+        .zip(&prior_at)
+        .map(|((p, _), j)| match j.and_then(|j| prior.invariants.get(j)) {
+            Some(inv) => inv.clone(),
+            None => crate::transducer::stalk::invariant(p.sub()),
+        })
+        .collect();
     let closure: Vec<Option<usize>> = pending
         .iter()
-        .zip(&addresses)
-        .map(|((p, _), addr)| {
-            let held = match prior.basis_gen == basis_gen {
-                true => prior.addresses.iter().position(|a| a == addr).map(|j| prior.closure[j]),
-                false => None,
-            };
+        .enumerate()
+        .map(|(i, (p, _))| {
+            let held = prior_at[i].and_then(|j| {
+                let same_basis = prior.basis_gen == basis_gen;
+                let untouched = incremental && !moved.contains(&invariants[i]);
+                (same_basis || untouched).then(|| prior.closure[j])
+            });
             held.unwrap_or_else(|| {
                 crate::transducer::stalk::congruent_shaped(stalks, |i| language.shape(i), p.sub()).map(|(i, _)| i)
             })
@@ -189,7 +225,16 @@ pub fn rank_over(
         })
         .collect();
     keyed.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)));
-    Rank { closure, order: keyed.into_iter().map(|(_, _, i)| i).collect(), lineage, addresses, basis_gen }
+    Rank {
+        closure,
+        order: keyed.into_iter().map(|(_, _, i)| i).collect(),
+        lineage,
+        addresses,
+        invariants,
+        basis_gen,
+        basis_len: language.words.len(),
+        retire_gen: language.retire_gen,
+    }
 }
 
 /// A reduction computed off the lock, ready to commit: the germ, its context,
@@ -431,6 +476,13 @@ pub struct Kernel {
     /// authority (algebraic time, no wall clocks); every install seals a
     /// parent-linked receipt (LAW-5 continuity). The Step-4 ledger's spine.
     chain: crate::chronometry::ReceiptChain,
+    /// The head hash of the court's chain as last ruled to this hypha —
+    /// every settlement receipt here links to it, so the hypha's k-steps
+    /// are causally ordered against the mesh's temporal authority.
+    court_head: [u8; 32],
+    /// Retirements of basis words, counted: while it stands still, every
+    /// index into the basis names the same word it did.
+    retire_gen: u64,
     pub nerve: Nerve,
     /// Round-robin cursor for syntropic optimization — which generator to test for
     /// redundancy next (bounds consolidation to one reduce per depleted step).
@@ -484,6 +536,7 @@ impl Kernel {
         self.discoverers.remove(i);
         self.stalks.remove(i);
         self.basis_gen += 1;
+        self.retire_gen += 1;
         self.basis.remove(i)
     }
 
@@ -510,6 +563,7 @@ impl Kernel {
                 words: self.basis.clone(),
                 stalks: self.stalks.clone(),
                 shapes,
+                retire_gen: self.retire_gen,
             });
             self.language_gen = self.basis_gen;
         }
@@ -549,10 +603,14 @@ impl Kernel {
     /// Seal a rank measured off the lock, if the generations it was
     /// measured at still hold. Returns the rank now in force.
     pub fn seal_closure(&mut self, gens: (u64, u64), rank: Rank) -> std::sync::Arc<Rank> {
+        // The measurement is served whether or not it seals: it is the
+        // book at its generation. It is sealed only when the generations
+        // still hold, so a stale seal never masquerades as current.
+        let measured = std::sync::Arc::new(rank);
         if gens == (self.basis_gen, self.book_gen) {
-            self.closure = (gens.0, gens.1, std::sync::Arc::new(rank));
+            self.closure = (gens.0, gens.1, std::sync::Arc::clone(&measured));
         }
-        std::sync::Arc::clone(&self.closure.2)
+        measured
     }
 
     /// The rank in force, measured now under the lock (tests and local use;
@@ -608,7 +666,7 @@ impl Kernel {
             let anchor = self.anchor();
             self.treasury.settle_subsidy(disc, [0, 0, 1, 0], anchor);
         }
-        self.physics.syntropy([false, false, true, false]);
+        self.physics.syntropy(&[0, 0, 1, 0]);
         1
     }
 
@@ -637,6 +695,7 @@ impl Kernel {
         let surface = crate::economy::yield_surface(&self.physics);
         let anchor = self.anchor();
         let lanes = listing.lanes();
+        let mag = listing.magnitude();
         if residual.is_empty() {
             let paid = self.treasury.settle_subsidy(voice, crate::economy::price(&before, &surface), anchor);
             for addr in cited {
@@ -647,9 +706,9 @@ impl Kernel {
             }
             self.pending.remove(li);
             self.book_gen += 1;
-            self.physics.relieve(lanes);
-            self.physics.syntropy(lanes);
-            self.chain.append(*target, voice);
+            self.physics.relieve(&mag);
+            self.physics.syntropy(&mag);
+            self.append_step(*target, voice);
             self.complete_composite_child(target, voice);
             return (PROBE_CLOSED, paid, [0; 4]);
         }
@@ -672,8 +731,8 @@ impl Kernel {
         let listed_at = self.pending[li].1;
         self.pending[li] = (next, listed_at);
         self.book_gen += 1;
-        self.physics.syntropy(lanes);
-        self.chain.append(*target, voice);
+        self.physics.syntropy(&mag);
+        self.append_step(*target, voice);
         (PROBE_DESCENT, paid, after)
     }
 
@@ -847,7 +906,7 @@ impl Kernel {
         // μ_assembly: the overlap volume actually glued — measured, never flat.
         let mu = [0, 0, strip.len().max(1) as u64, 0];
         self.treasury.settle_assembly(&voices, mu, anchor);
-        self.chain.append(parent, voice); // the reassembly is a K-step
+        self.append_step(parent, voice); // the reassembly is a K-step
     }
 
     /// The SELECTION-FIBER critical pairs awaiting Knuth–Bendix anchor
@@ -931,8 +990,8 @@ impl Kernel {
                 let paid = self.treasury.settle_refine(bidder, mu, anchor);
                 self.basis_remove(i);
                 // Compression is ORDER BUILT — the syntropic ledger credits it.
-                self.physics.syntropy(candidate.lanes());
-                self.chain.append(*addr, bidder); // the global rewrite is a K-step
+                self.physics.syntropy(&candidate.magnitude());
+                self.append_step(*addr, bidder); // the global rewrite is a K-step
                 Some(paid)
             }
             _ => None,
@@ -957,8 +1016,29 @@ impl Kernel {
             return Adoption::Known;
         }
         self.basis_push(word.clone(), ratifier);
-        self.physics.syntropy(word.lanes()); // convergence is order built
+        self.physics.syntropy(&word.magnitude()); // convergence is order built
         Adoption::Installed
+    }
+
+    /// A K-STEP on this hypha's chain, linked to the court: the operator
+    /// digest folds the acting voice with the court head last ruled here,
+    /// so the receipt is causally ordered against the mesh's chain of
+    /// record and verifiable end to end.
+    fn append_step(&mut self, fingerprint: [u8; 32], voice: [u8; 32]) {
+        let mut buf = [0u8; 64];
+        buf[..32].copy_from_slice(&voice);
+        buf[32..].copy_from_slice(&self.court_head);
+        let op = *blake3::hash(&buf).as_bytes();
+        self.chain.append(fingerprint, op);
+    }
+
+    /// The court's chain head as ruled to this hypha.
+    pub fn set_court_head(&mut self, head: [u8; 32]) {
+        self.court_head = head;
+    }
+
+    pub fn court_head(&self) -> [u8; 32] {
+        self.court_head
     }
 
     /// THE CORPUS INTAKE DOOR (server-side ingestion authority): an
@@ -1166,6 +1246,7 @@ impl Kernel {
         let Reduction { germ: g, ctx, form, qs, language } = r;
         let gaddr = g.address(); // composite lineage completes by this identity
         let lanes = g.lanes();
+        let mag = g.magnitude();
         // Queue the selection critical pairs (bounded, deduped by word).
         if let Some((scene, _)) = &ctx {
             for (wi, q) in qs {
@@ -1192,7 +1273,7 @@ impl Kernel {
                     match live {
                         Some(i) => word.push(i),
                         None => {
-                            self.physics.bump(lanes);
+                            self.physics.bump(&mag);
                             return Outcome::GermPending; // the language moved under it
                         }
                     }
@@ -1248,7 +1329,7 @@ impl Kernel {
                     let mag = self.basis[i].magnitude();
                     self.treasury.settle_use(voice, self.discoverers[i], mag, anchor);
                 }
-                self.physics.syntropy(lanes); // a spanned sentence builds order
+                self.physics.syntropy(&mag); // a spanned sentence builds order
                 self.complete_composite_child(&gaddr, voice); // lineage: a solved tile
                 Outcome::Decomposed(word)
             }
@@ -1280,16 +1361,16 @@ impl Kernel {
                         // nothing; the puncture itself is local dialect.
                         self.treasury.escrow_award(saddr, self.admission.voices_of(&saddr), mu, anchor);
                         self.provisional.push((saddr, residual.clone()));
-                        self.physics.relieve(lanes);
-                        self.physics.syntropy(lanes); // volume built through the axis
+                        self.physics.relieve(&mag);
+                        self.physics.syntropy(&mag); // volume built through the axis
                         self.physics.spend(lanes); // still an expansion — fuel is spent
                         self.pending.retain(|(p, _)| p.address() != residual.address());
                         self.book_gen += 1;
-                        self.chain.append(saddr, voice); // the puncture is a K-step too
+                        self.append_step(saddr, voice); // the puncture is a K-step too
                         self.complete_composite_child(&gaddr, voice); // lineage
                         return Outcome::Installed(ti); // installed AS A SECTION of thought ti
                     }
-                    self.physics.bump(lanes);
+                    self.physics.bump(&mag);
                     return Outcome::GermPending;
                 }
                 // KB COMPLETION — a genuinely new base thought adjoins on
@@ -1318,14 +1399,14 @@ impl Kernel {
                     // local dialect, final settlement waits for the verdict.
                     self.treasury.escrow_award(addr, self.admission.voices_of(&addr), mu, anchor);
                     self.provisional.push((addr, residual.clone()));
-                    self.physics.relieve(lanes);
-                    self.physics.syntropy(lanes); // a completed rule is order built
+                    self.physics.relieve(&mag);
+                    self.physics.syntropy(&mag); // a completed rule is order built
                     self.physics.spend(lanes); // the expansion SHRINKS the reserve
                     self.pending.retain(|(p, _)| p.address() != addr); // the market CLEARS
                     self.book_gen += 1;
                     // Seal the K-step receipt: the install IS a tick of algebraic
                     // time, parent-linked to the mesh's whole history.
-                    self.chain.append(addr, voice);
+                    self.append_step(addr, voice);
                     self.basis_push(residual, voice);
                     self.complete_composite_child(&gaddr, voice); // lineage
                     Outcome::Installed(self.basis.len() - 1)
@@ -1342,7 +1423,7 @@ impl Kernel {
                     );
                     let k = crate::torsion::required_k_steps(&residue).min(8);
                     for _ in 0..k.max(1) {
-                        self.physics.bump(lanes);
+                        self.physics.bump(&mag);
                     }
                     // LIST the un-factored residual on the open-demand market.
                     // Capacity is THERMODYNAMIC (live memory headroom × lane
@@ -1518,6 +1599,7 @@ impl Kernel {
                     words: self.basis.clone(),
                     stalks: self.stalks.clone(),
                     shapes: (0..self.basis.len()).map(|_| std::sync::OnceLock::new()).collect(),
+                    retire_gen: self.retire_gen,
                 };
                 &fresh
             }
@@ -1572,8 +1654,9 @@ impl Kernel {
             return 0;
         }
         let lanes = self.basis[i].lanes();
+        let mag = self.basis[i].magnitude();
         self.basis_remove(i);
-        self.physics.syntropy(lanes); // a leaner alphabet is order built
+        self.physics.syntropy(&mag); // a leaner alphabet is order built
         1
     }
 
@@ -1618,7 +1701,7 @@ impl Kernel {
                         let anchor = self.anchor();
                         self.treasury.settle_subsidy(sibling_disc, [0, 0, 1, 0], anchor);
                     }
-                    self.physics.syntropy([false, false, true, false]);
+                    self.physics.syntropy(&[0, 0, 1, 0]);
                     absorbed += 1;
                 }
             }
@@ -1630,6 +1713,7 @@ impl Kernel {
             let spanned = self.basis[i].torse();
             if spanned > 0 {
                 let lanes = self.basis[i].lanes();
+        let mag = self.basis[i].magnitude();
                 self.physics.torse_relief(lanes, spanned as u64);
                 // THE TORSE COIN — the strongest yield: structure condensed from
                 // disorder, priced at the surface on the residual lane, paid to
@@ -1743,6 +1827,19 @@ impl Kernel {
             out.extend_from_slice(&(eb.len() as u32).to_le_bytes());
             out.extend_from_slice(&eb);
         }
+        // THE CHAIN section: the court head and every k-step receipt, so
+        // the hypha's clock continues across boots instead of restarting.
+        out.extend_from_slice(b"KCH1");
+        out.extend_from_slice(&self.court_head);
+        let receipts = self.chain.receipts();
+        out.extend_from_slice(&(receipts.len() as u32).to_le_bytes());
+        for r in receipts {
+            out.extend_from_slice(&r.step_index.to_le_bytes());
+            out.extend_from_slice(&r.delta_fingerprint);
+            out.extend_from_slice(&r.operator_hash);
+            out.extend_from_slice(&r.prev_receipt_hash);
+            out.extend_from_slice(&r.chain_hash);
+        }
         out
     }
 
@@ -1790,6 +1887,36 @@ impl Kernel {
                     *pos += elen;
                     kernel.provisional.push((addr, spoken));
                 }
+            }
+            // Chain section (absent in earlier snapshots → the clock starts).
+            if b.get(*pos..*pos + 4) == Some(b"KCH1") {
+                *pos += 4;
+                let head: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                *pos += 32;
+                let n = read_u32(b, pos)? as usize;
+                if n > b.len().saturating_sub(*pos) / 136 {
+                    return None;
+                }
+                let mut receipts = Vec::with_capacity(n);
+                for _ in 0..n {
+                    let step = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+                    *pos += 8;
+                    let mut field = |p: &mut usize| -> Option<[u8; 32]> {
+                        let f: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+                        *p += 32;
+                        Some(f)
+                    };
+                    let (fp, op, prev, hash) = (field(pos)?, field(pos)?, field(pos)?, field(pos)?);
+                    receipts.push(crate::chronometry::KStepReceipt {
+                        step_index: step,
+                        delta_fingerprint: fp,
+                        operator_hash: op,
+                        prev_receipt_hash: prev,
+                        chain_hash: hash,
+                    });
+                }
+                kernel.court_head = head;
+                kernel.chain = crate::chronometry::ReceiptChain::from_receipts(receipts)?;
             }
             Some(())
         };
@@ -2466,7 +2593,7 @@ mod tests {
         let calm = k.dynamic_lane_capacity();
         assert!(calm.iter().all(|&c| c > 0), "no lane is ever pinched to zero: {calm:?}");
         for _ in 0..24 {
-            k.physics_mut().bump([false, false, true, false]);
+            k.physics_mut().bump(&[0, 0, 1, 0]);
         }
         let tense = k.dynamic_lane_capacity();
         assert!(

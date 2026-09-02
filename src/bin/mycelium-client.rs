@@ -28,6 +28,8 @@
 //!            [--feed CORPUS_DIR] [--loop] [--limit N] [--conductor BOARD]
 use mycelium::arc::{embed, grid_to_cells, parse_task};
 use mycelium::physics::{reserve_max, Physics};
+use mycelium::transducer::element::measure_lanes;
+use mycelium::transducer::germinate::germinate;
 use mycelium::sdk::{Comprehension, Entity, Kernel, YieldQuote};
 use std::path::PathBuf;
 
@@ -37,6 +39,26 @@ fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
 fn has(args: &[String], name: &str) -> bool {
     args.iter().any(|a| a == name)
 }
+/// The magnitude of a family, per lane: the sum over its pairs of the
+/// coboundary's lane magnitudes — what thinking it through is priced on.
+fn family_magnitude(train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)]) -> [u64; 4] {
+    let mut mag = [0u64; 4];
+    for (x, y) in train {
+        let (ho, wo) = (y.len(), y.first().map_or(0, |r| r.len()));
+        if x.is_empty() || ho == 0 || wo == 0 {
+            continue;
+        }
+        let (a, b) = (grid_to_cells(&embed(x, ho, wo)), grid_to_cells(y));
+        if let Some(g) = germinate(&a, &b) {
+            let m = measure_lanes(&g);
+            for l in 0..4 {
+                mag[l] = mag[l].saturating_add(m[l]);
+            }
+        }
+    }
+    mag
+}
+
 /// The conductor's cursor — a world model's board schedules the corpus order.
 fn conductor_cursor(path: &str) -> usize {
     let Ok(text) = std::fs::read_to_string(path) else { return 0 };
@@ -104,6 +126,7 @@ fn main() {
     let mut refined = 0u64; // accepted compression bids (0x09)
     let mut learned = 0u64; // syllabus words received (0x0D)
     let (mut last_genome, mut last_settles) = (usize::MAX, u64::MAX);
+    let mut k_step = 0u64; // the judge's k-step last read: this voice's temporal coordinate
     // The feed walk: (task index within the cycle order, pair index within it).
     let mut cycle: Vec<PathBuf> = Vec::new();
     let (mut ti, mut pi) = (0usize, 0usize);
@@ -171,7 +194,9 @@ fn main() {
                 // the connection does not speak raises its residual as
                 // this voice's demand.
                 let comprehended = mycelium::transducer::family::comprehend(&task.train);
-                physics.spend([true; 4]); // thought is metabolically real
+                let mag = family_magnitude(&task.train);
+                physics.bump(&mag);
+                physics.spend(Physics::lanes_of(&mag)); // thought is priced on the lanes it occupies
                 match comprehended.transport {
                     Some(transport) => {
                         for (x, y) in &task.test {
@@ -186,15 +211,9 @@ fn main() {
                             }
                         }
                     }
-                    None => {
-                        if entity.epigenome.express(&comprehended.residual) {
-                            if let Ok(reply) = entity.attest(&comprehended.residual, &[]) {
-                                if let t @ [_, ..] = reply.verdict.taught() {
-                                    entity.epigenome.learn(t);
-                                }
-                            }
-                        }
-                    }
+                    // The family's pairs were already spoken as percepts
+                    // by the feed; an uncomprehended family is on the book.
+                    None => {}
                 }
                 ti += 1;
                 pi = 0;
@@ -225,12 +244,11 @@ fn main() {
                         Some(Comprehension::Novel { .. }) => witnessed += 1,
                         None => {}
                     }
-                    let mut lanes: [bool; 4] = std::array::from_fn(|l| reply.metabolism[l] > 0);
-                    if lanes.iter().all(|&x| !x) {
-                        lanes[2] = true;
-                    }
-                    physics.bump(lanes);
-                    physics.spend(lanes);
+                    // The percept's own magnitude, per lane, is the pressure
+                    // this stroke adds and the lanes it spends along.
+                    let mag = germinate(&a, &b).map(|g| measure_lanes(&g)).unwrap_or([0; 4]);
+                    physics.bump(&mag);
+                    physics.spend(Physics::lanes_of(&mag));
                     judge_load = reply.load();
                 }
                 Err(_) => {
@@ -245,8 +263,9 @@ fn main() {
         // impedance is already perceived); the answer is patience, not
         // repetition.
         lap("feed");
-        match if occluded { Ok(YieldQuote { surface: [0; 4], clusters: Vec::new() }) } else { entity.quote() } {
+        match if occluded { Ok(YieldQuote { surface: [0; 4], k: k_step, clusters: Vec::new() }) } else { entity.quote() } {
             Ok(q) => {
+                k_step = q.k;
                 let (mut n_closed, mut n_descent, mut n_nothing, mut n_silent, mut n_attested, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32, 0u32);
                 for cluster in &q.clusters {
                     if cluster.chain.is_empty() {
@@ -256,7 +275,6 @@ fn main() {
                     // this genome forms for the listing, least holonomy
                     // defect first; the beam width is this lane's free
                     // reserve in expansions (the listing's strongest lane).
-                    let lane = (0..4).max_by_key(|&l| cluster.mu[l]).unwrap_or(2);
                     // The superposition is rolled out and settled here, in
                     // the genome's own algebra; the wire carries one
                     // commitment per cluster: the concluded sentence with
@@ -279,23 +297,20 @@ fn main() {
                         n_silent += 1;
                         continue;
                     }
-                    let mut lanes: [bool; 4] = std::array::from_fn(|l| cluster.mu[l] > 0);
-                    if lanes.iter().all(|&x| !x) {
-                        lanes[lane] = true;
-                    }
-                    physics.spend(lanes); // the stroke spoken is metabolically real
+                    let mag = measure_lanes(&cluster.chain);
+                    physics.spend(Physics::lanes_of(&mag)); // the stroke spoken is metabolically real
                     if !cites.is_empty() {
                         match entity.probe(&cluster.address, &cites) {
                             Ok((code, _paid, _remaining)) => match code {
                                 mycelium::anastome::dialogue::PROBE_CLOSED => {
                                     derived += 1;
                                     n_closed += 1;
-                                    physics.bump(lanes);
+                                    physics.bump(&mag);
                                 }
                                 mycelium::anastome::dialogue::PROBE_DESCENT => {
                                     witnessed += 1;
                                     n_descent += 1;
-                                    physics.bump(lanes);
+                                    physics.bump(&mag);
                                 }
                                 _ => n_nothing += 1,
                             },
@@ -352,7 +367,9 @@ fn main() {
             // algebra; every test is spoken through it, or the family's
             // residual is the demand it raises.
             let comprehended = mycelium::transducer::family::comprehend(&train);
-            physics.spend([true; 4]); // thought is metabolically real
+            let mag = family_magnitude(&train);
+            physics.bump(&mag);
+            physics.spend(Physics::lanes_of(&mag)); // thought is priced on the lanes it occupies
             eprintln!(
                 "[{name}] [{}] family {:02x}{:02x}… {} pairs, {} tests: {}",
                 tuniversal.stamp(),
@@ -386,13 +403,33 @@ fn main() {
                     }
                 }
                 None => {
-                    // The residual is expressed once and attested once as
-                    // this voice's demand on the family.
-                    if entity.epigenome.express(&comprehended.residual) {
-                        if let Ok(reply) = entity.attest(&comprehended.residual, &[]) {
-                            if let t @ [_, ..] = reply.verdict.taught() {
-                                entity.epigenome.learn(t);
+                    // The family is spoken as anastome: each pair a percept
+                    // carrying its measured frame and this genome's proof,
+                    // once. The hypha germinates; the court adjudicates the
+                    // frame relation across voices. Frames that disagree are
+                    // spoken the same way — the frame rides in the percept.
+                    for (x, y) in &train {
+                        let (hi, wi) = (x.len(), x.first().map_or(0, |r| r.len()));
+                        let (ho, wo) = (y.len(), y.first().map_or(0, |r| r.len()));
+                        if hi == 0 || wi == 0 || ho == 0 || wo == 0 {
+                            continue;
+                        }
+                        let (a, b) = (grid_to_cells(&embed(x, ho, wo)), grid_to_cells(y));
+                        let Some(germ) = germinate(&a, &b) else { continue };
+                        if !entity.epigenome.express(&germ) {
+                            continue; // this pair was spoken already
+                        }
+                        if let Ok((reply, heard)) = entity.submit(&a, &b, &(hi, wi, ho, wo)) {
+                            fed += 1;
+                            if reply.settle.is_some() {
+                                settles += 1;
                             }
+                            match heard {
+                                Some(Comprehension::Understood(_)) => derived += 1,
+                                Some(Comprehension::Novel { .. }) => witnessed += 1,
+                                None => {}
+                            }
+                            judge_load = reply.load();
                         }
                     }
                 }
@@ -454,7 +491,7 @@ fn main() {
                 last_genome = entity.epigenome.genome_len();
                 last_settles = settles;
                 eprintln!(
-                    "[{name}] [{}] fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | refined {refined} learned {learned} | genome {} (peak expr {}) discordance {}",
+                    "[{name}] [{}] K {k_step} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | refined {refined} learned {learned} | genome {} (peak expr {}) discordance {}",
                     tuniversal.stamp(),
                     entity.impedance(),
                     entity.epigenome.genome_len(),

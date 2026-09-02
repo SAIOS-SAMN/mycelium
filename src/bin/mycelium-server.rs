@@ -79,6 +79,7 @@ fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32])
         // rank order until the next would not fit.
         let body = dialogue::encode_quote_reply_within(
             &surface,
+            k_step,
             &items,
             mycelium::network::wire::BODY_BUDGET,
         );
@@ -743,6 +744,7 @@ fn main() {
             };
             let applied = {
                 let mut k = kernel.lock().unwrap();
+                k.set_court_head(receipt); // the court's head is this hypha's temporal root
                 let ok = match ruling {
                     // The court's family-derived π* rebinds the word's anchor
                     // fiber — the dual condition activates for this word.
@@ -787,7 +789,7 @@ fn main() {
                 std::sync::mpsc::TrySendError::Full(j) | std::sync::mpsc::TrySendError::Disconnected(j) => j,
             };
             let mut s = job.stream;
-            let body = vec![outcome_code(&Outcome::GermPending), 0, 0, 0, 0, 0, 0];
+            let body = dialogue::encode_deferral(outcome_code(&Outcome::GermPending));
             let _ = s.write_all(&Frame { lane, body }.encode().unwrap_or_default());
         }
     }

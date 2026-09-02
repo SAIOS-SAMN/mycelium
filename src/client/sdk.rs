@@ -182,10 +182,11 @@ impl Session {
     /// can actually attempt the reduction.
     pub fn quote(&self) -> io::Result<YieldQuote> {
         let body = self.exchange(dialogue::encode_quote_request(&self.kernel.voice))?;
-        let (surface, items) = dialogue::decode_quote_reply(&body)
+        let (surface, k, items) = dialogue::decode_quote_reply(&body)
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
         Ok(YieldQuote {
             surface,
+            k,
             clusters: items.into_iter().map(|(address, mu, chain)| Cluster { address, mu, chain }).collect(),
         })
     }
@@ -207,9 +208,7 @@ impl Session {
         // that is a verdict; for any other act it is the judge's measured
         // impedance, and the aperture reads it as resistance.
         let deferred = matches!(&out, Ok(b)
-            if b.len() == 7
-                && b[0] == crate::cognition::outcome_code(&crate::cognition::Outcome::GermPending)
-                && b[1..].iter().all(|&x| x == 0)
+            if dialogue::is_deferral(b, crate::cognition::outcome_code(&crate::cognition::Outcome::GermPending))
                 && !matches!(act, Some(dialogue::ACT_PERCEPT) | Some(dialogue::ACT_DEMAND)));
         // Impedance is a running measurement: a clear exchange relaxes it
         // by one stroke, a refused or timed-out one raises it by one, so a
@@ -838,6 +837,9 @@ impl Entity {
 #[derive(Clone, Debug)]
 pub struct YieldQuote {
     pub surface: [u64; 4],
+    /// The judge's k-step at the quote — the temporal coordinate of the
+    /// book this quote reads.
+    pub k: u64,
     pub clusters: Vec<Cluster>,
 }
 
