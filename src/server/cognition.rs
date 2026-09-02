@@ -76,6 +76,26 @@ pub struct MarketView {
     pub pool: [u64; 4],
     pub k_step: u64,
     pub reserve: [u64; 4],
+    /// The (basis, book) generations this view was taken at.
+    pub gens: (u64, u64),
+    /// The sealed closure if it is current at `gens`; absent when either
+    /// generation moved, so the reader measures it over the snapshot.
+    pub closure: Option<std::sync::Arc<Vec<Option<usize>>>>,
+}
+
+/// THE CLOSURE — pure: for each listing, the base point in the language its
+/// geometry sits on, through the atlas and the transport (None = coverage).
+pub fn closure_over(
+    stalks: &crate::transducer::stalk::Stalks,
+    words: &[Element],
+    pending: &[(Element, u64)],
+) -> Vec<Option<usize>> {
+    pending
+        .iter()
+        .map(|(p, _)| {
+            crate::transducer::stalk::congruent(stalks, |i| words[i].sub(), p.sub()).map(|(i, _)| i)
+        })
+        .collect()
 }
 
 /// A reduction computed off the lock, ready to commit: the germ, its context,
@@ -97,26 +117,19 @@ pub struct Reduction {
 /// carries the C premium; coverage work (unknown geometry) the I premium.
 /// Top clusters by strongest lane; the escrow pool bounds the scale.
 pub fn quote_over(
-    stalks: &crate::transducer::stalk::Stalks,
-    words: &[Element],
+    closure: &[Option<usize>],
     pending: &[(Element, u64)],
     surface: &[u64; 4],
     pool: &[u64; 4],
     top: usize,
 ) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
-    let known: Vec<bool> = pending
-        .iter()
-        .map(|(p, _)| {
-            crate::transducer::stalk::congruent(stalks, |i| words[i].sub(), p.sub()).is_some()
-        })
-        .collect();
-    let c = known.iter().filter(|k| **k).count() as u64;
-    let i = known.len() as u64 - c;
+    let c = closure.iter().filter(|k| k.is_some()).count() as u64;
+    let i = closure.len() as u64 - c;
     let mut priced: Vec<(Element, [u64; 4])> = pending
         .iter()
-        .zip(&known)
-        .map(|((p, _), known)| {
-            let premium = if *known { c } else { i };
+        .zip(closure)
+        .map(|((p, _), base)| {
+            let premium = if base.is_some() { c } else { i };
             let mut mu = crate::economy::price(&p.magnitude(), surface);
             mu[2] = p.magnitude()[2].saturating_mul(1 + surface[2] + premium);
             (p.clone(), mu)
@@ -141,18 +154,9 @@ pub fn quote_over(
 /// both axes exact and never traded. C counts open demands sitting on held
 /// geometry (closure failing — collapse-side work); I counts open demands on
 /// geometry no thought speaks (coverage failing — expansion-side work).
-pub fn cohesion_over(
-    stalks: &crate::transducer::stalk::Stalks,
-    words: &[Element],
-    pending: &[(Element, u64)],
-) -> crate::cohesion::CohesionWitness {
-    let (mut c, mut i) = (0u64, 0u64);
-    for (p, _) in pending {
-        match crate::transducer::stalk::congruent(stalks, |k| words[k].sub(), p.sub()) {
-            Some(_) => c += 1,
-            None => i += 1,
-        }
-    }
+pub fn cohesion_over(closure: &[Option<usize>]) -> crate::cohesion::CohesionWitness {
+    let c = closure.iter().filter(|k| k.is_some()).count() as u64;
+    let i = closure.len() as u64 - c;
     crate::cohesion::witness(
         crate::core::engine::Q::from(num_bigint::BigInt::from(c)),
         crate::core::engine::Q::from(num_bigint::BigInt::from(i)),
@@ -284,6 +288,13 @@ pub struct Kernel {
     basis_gen: u64,
     language_gen: u64,
     language: std::sync::Arc<Language>,
+    /// THE MARKET CLOSURE — for every listing, the base point (an index into
+    /// the language) its geometry sits on, or none (coverage work). A
+    /// measured carrier sealed at (basis generation, book generation); a
+    /// quote reads it, and it is recomputed off the lock only when either
+    /// generation moved. `book_gen` counts every mutation of the open book.
+    book_gen: u64,
+    closure: (u64, u64, std::sync::Arc<Vec<Option<usize>>>),
     admission: Admission,
     /// THE OPEN-DEMAND MARKET: irreducible residuals still awaiting consilience —
     /// the un-factored chains the mesh QUOTES as work (Vec-of-relations, capped;
@@ -385,6 +396,11 @@ impl Kernel {
     /// book, the yield surface, the escrow pool, the clock, and the reserve.
     /// Quoting and the cohesion witness compute over this with no lock held.
     pub fn market_open(&mut self) -> MarketView {
+        let gens = (self.basis_gen, self.book_gen);
+        let closure = match (self.closure.0, self.closure.1) == gens {
+            true => Some(std::sync::Arc::clone(&self.closure.2)),
+            false => None,
+        };
         MarketView {
             language: self.language(),
             pending: self.pending.clone(),
@@ -392,7 +408,33 @@ impl Kernel {
             pool: self.treasury.pool(),
             k_step: self.chain.next_step_index(),
             reserve: self.physics.reserve,
+            gens,
+            closure,
         }
+    }
+
+    /// Seal a closure computed off the lock, if the generations it was
+    /// measured at still hold. Returns the closure now in force.
+    pub fn seal_closure(
+        &mut self,
+        gens: (u64, u64),
+        closure: Vec<Option<usize>>,
+    ) -> std::sync::Arc<Vec<Option<usize>>> {
+        if gens == (self.basis_gen, self.book_gen) {
+            self.closure = (gens.0, gens.1, std::sync::Arc::new(closure));
+        }
+        std::sync::Arc::clone(&self.closure.2)
+    }
+
+    /// The closure in force, measured now under the lock (tests and local
+    /// use; the server measures off the lock through the market view).
+    fn closure_now(&mut self) -> std::sync::Arc<Vec<Option<usize>>> {
+        let gens = (self.basis_gen, self.book_gen);
+        if (self.closure.0, self.closure.1) != gens {
+            let measured = closure_over(&self.stalks, &self.basis, &self.pending);
+            self.closure = (gens.0, gens.1, std::sync::Arc::new(measured));
+        }
+        std::sync::Arc::clone(&self.closure.2)
     }
 
     /// The held word that is `chain`'s base point, with the transport
@@ -727,6 +769,7 @@ impl Kernel {
         }
         let k_now = self.k_step();
         self.pending.push((residual, k_now));
+        self.book_gen += 1;
         true
     }
 
@@ -773,6 +816,7 @@ impl Kernel {
         if let Some(i) = self.pending.iter().position(|(t, _)| t.address() == *addr) {
             let listed = self.pending[i].1;
             self.pending[i] = (self.pending[i].0.clone().with_anchor(pi), listed);
+            self.book_gen += 1;
             bound = true;
         }
         if bound {
@@ -1020,6 +1064,7 @@ impl Kernel {
                         self.physics.syntropy(lanes); // volume built through the axis
                         self.physics.spend(lanes); // still an expansion — fuel is spent
                         self.pending.retain(|(p, _)| p.address() != residual.address());
+                        self.book_gen += 1;
                         self.chain.append(saddr, voice); // the puncture is a K-step too
                         self.complete_composite_child(&gaddr, voice); // lineage
                         return Outcome::Installed(ti); // installed AS A SECTION of thought ti
@@ -1057,6 +1102,7 @@ impl Kernel {
                     self.physics.syntropy(lanes); // a completed rule is order built
                     self.physics.spend(lanes); // the expansion SHRINKS the reserve
                     self.pending.retain(|(p, _)| p.address() != addr); // the market CLEARS
+                    self.book_gen += 1;
                     // Seal the K-step receipt: the install IS a tick of algebraic
                     // time, parent-linked to the mesh's whole history.
                     self.chain.append(addr, voice);
@@ -1126,11 +1172,13 @@ impl Kernel {
                                 Some((i, a)) if a < new_a => {
                                     self.pending.remove(i);
                                     self.pending.push((residual, k_now));
+                                    self.book_gen += 1;
                                 }
                                 _ => {} // the newcomer IS the weakest — unlisted
                             }
                         } else {
                             self.pending.push((residual, k_now));
+                            self.book_gen += 1;
                         }
                     }
                     Outcome::GermPending
@@ -1389,9 +1437,10 @@ impl Kernel {
     /// + reserve deficit + entropic excess, per lane), and the open-demand market
     /// is priced against it: each un-factored residual quoted at
     /// μ⃗[l] = magnitude[l] · (1 + surface[l]). Top clusters by strongest lane.
-    pub fn quote(&self, top: usize) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
+    pub fn quote(&mut self, top: usize) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
         let surface = crate::economy::yield_surface(&self.physics);
-        quote_over(&self.stalks, &self.basis, &self.pending, &surface, &self.treasury.pool(), top)
+        let closure = self.closure_now();
+        quote_over(&closure, &self.pending, &surface, &self.treasury.pool(), top)
     }
 
     /// ATTEST — a peer's INDEPENDENT derivation of an open residual arrives as a
@@ -1445,8 +1494,9 @@ impl Kernel {
     /// axes exact and never traded: C counts open demands sitting on KNOWN
     /// geometry (closure failing — collapse-side work); I counts open demands on
     /// geometry NO thought speaks (coverage failing — expansion-side work).
-    pub fn cohesion(&self) -> crate::cohesion::CohesionWitness {
-        cohesion_over(&self.stalks, &self.basis, &self.pending)
+    pub fn cohesion(&mut self) -> crate::cohesion::CohesionWitness {
+        let closure = self.closure_now();
+        cohesion_over(&closure)
     }
 
     /// P7 — SNAPSHOT the durable cognitive state (the germinated basis + each

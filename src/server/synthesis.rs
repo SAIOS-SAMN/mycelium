@@ -354,18 +354,24 @@ pub fn quote(
     k: &std::sync::Mutex<crate::cognition::Kernel>,
 ) -> Option<([u64; 4], Vec<(crate::transducer::element::Element, [u64; 4])>, u64, crate::cohesion::CohesionWitness)> {
     let view = k.lock().ok()?.market_open();
+    // The closure is a sealed carrier: read when current, measured over the
+    // snapshot (no lock) and sealed back only when a generation moved.
+    let closure = match view.closure {
+        Some(c) => c,
+        None => {
+            let measured = crate::cognition::closure_over(
+                &view.language.stalks,
+                &view.language.words,
+                &view.pending,
+            );
+            k.lock().ok()?.seal_closure(view.gens, measured)
+        }
+    };
     let free: u64 = view.reserve.iter().sum();
     let depth = (4 + (free as usize * 12) / (4 * crate::physics::reserve_max() as usize)).min(16);
-    let (surface, priced) = crate::cognition::quote_over(
-        &view.language.stalks,
-        &view.language.words,
-        &view.pending,
-        &view.surface,
-        &view.pool,
-        depth,
-    );
-    let cohesion =
-        crate::cognition::cohesion_over(&view.language.stalks, &view.language.words, &view.pending);
+    let (surface, priced) =
+        crate::cognition::quote_over(&closure, &view.pending, &view.surface, &view.pool, depth);
+    let cohesion = crate::cognition::cohesion_over(&closure);
     Some((surface, priced, view.k_step, cohesion))
 }
 
