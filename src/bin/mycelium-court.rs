@@ -137,27 +137,27 @@ fn main() {
     // deduplication makes any retry idempotent. An empty relation is the
     // audit's completed state — nothing iterates the finished.
     let mut genesis_walk: Vec<(usize, u32)> = (0..sessions.len()).map(|i| (i, 0)).collect();
-    enum Page {
-        Words(Vec<Vec<u8>>),
-        End,
-        Unreachable,
-    }
 
     loop {
         let mut heard_any = false;
-        // ── one genesis stride, when the audit relation still holds work ────
+        // ── one genesis stride, when the audit relation still holds work.
+        // The direct call decides everything: transport failure is the
+        // exchange's io::Result (the session's impedance already measured
+        // it), a malformed body is None, and the carrier itself carries the
+        // walk's states — a non-empty page is work, the empty page is the
+        // end. No wrapper types.
         if let Some(&(si, cursor)) = genesis_walk.first() {
-            let page = match sessions[si].speak(dialogue::encode_genesis_request(&voice, cursor))
-            {
-                Err(_) => Page::Unreachable,
-                Ok(body) => match dialogue::decode_syllabus_reply(&body) {
-                    None => Page::Unreachable, // malformed page = an unreadable server
-                    Some(words) if words.is_empty() => Page::End,
-                    Some(words) => Page::Words(words),
-                },
-            };
+            let page = sessions[si]
+                .speak(dialogue::encode_genesis_request(&voice, cursor))
+                .map(|body| dialogue::decode_syllabus_reply(&body));
             match page {
-                Page::End => {
+                Err(_) | Ok(None) => {
+                    // Unreachable or unreadable: the entry retries after the
+                    // others advance.
+                    let entry = genesis_walk.remove(0);
+                    genesis_walk.push(entry);
+                }
+                Ok(Some(words)) if words.is_empty() => {
                     genesis_walk.remove(0); // audited whole — leaves the relation
                     eprintln!(
                         "genesis audit of {} complete: federation {} words, K={}",
@@ -173,11 +173,7 @@ fn main() {
                         (upheld, demoted, slashed, rebinds),
                     );
                 }
-                Page::Unreachable => {
-                    let entry = genesis_walk.remove(0);
-                    genesis_walk.push(entry); // retries after the others advance
-                }
-                Page::Words(words) => {
+                Ok(Some(words)) => {
                     genesis_walk[0].1 += words.len() as u32; // non-empty: the walk advances
                     heard_any = true;
                     for wb in &words {

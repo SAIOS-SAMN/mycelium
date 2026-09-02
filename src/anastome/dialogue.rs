@@ -112,6 +112,12 @@ pub fn decode_genesis_request(body: &[u8]) -> Option<([u8; 32], u32)> {
     Some((voice, cursor))
 }
 
+// The genesis reply is the syllabus page shape (`decode_syllabus_reply`)
+// with no wrapper type: the carrier itself decides — a non-empty page is
+// work, the empty page is the walk's end, a malformed body is None, and
+// transport failure is the exchange's io::Result. Everything the walk
+// needs is a measurable property of the data.
+
 /// THE SYLLABUS (distributed cognition, operator-ruled): court-ratified
 /// vocabulary PUSHED to every enrolled voice on its next contact — teaching
 /// as an act of the network, not a passive download. The client asks with
