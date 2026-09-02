@@ -147,24 +147,35 @@ impl Session {
     /// A→B demand under this kernel's voice; return the judge's [`Reply`] — the
     /// verdict with any taught element, plus the mesh's per-lane METABOLISM
     /// (pressure) the kernel paces its intake against. The hypha only judges.
+    /// SPEAK a percept with its PROOF: the bodies, the measured frame, and
+    /// per germ the citations this kernel reduced it to over its genome.
     pub fn submit(
         &self,
         a: &[(i64, i64, u8)],
         b: &[(i64, i64, u8)],
         frame: &crate::arc::Frame,
+        proof: &[Vec<dialogue::CiteWire>],
     ) -> io::Result<Reply> {
         let (a_bodies, b_bodies) = perceive(a, b);
         let mut pbody = vec![dialogue::ACT_PERCEPT];
-        pbody.extend_from_slice(&encode_percept(&a_bodies, &b_bodies, &self.kernel.voice, frame));
+        pbody.extend_from_slice(&encode_percept(&a_bodies, &b_bodies, &self.kernel.voice, frame, proof));
         let body = self.exchange(pbody)?;
         Ok(decode_reply(&body))
     }
 
     /// SPEAK a `demand` — this kernel's INDEPENDENT derivation of an open
-    /// residual (its centered coboundary chain), attesting it toward consilience.
-    pub fn attest(&self, chain: &[(i64, i64, u8, u8)]) -> io::Result<Reply> {
-        let body = self.exchange(dialogue::encode_demand(&self.kernel.voice, chain))?;
+    /// residual with its citations (empty: irreducible for this voice).
+    pub fn attest(&self, chain: &[(i64, i64, u8, u8)], cites: &[dialogue::CiteWire]) -> io::Result<Reply> {
+        let body = self.exchange(dialogue::encode_demand(&self.kernel.voice, chain, cites))?;
         Ok(decode_reply(&body))
+    }
+
+    /// PROBE an open listing with a tentative sentence; the hypha replays and
+    /// settles graded descent or closure. Returns (code, paid, remaining).
+    pub fn probe(&self, target: &[u8; 32], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4], [u64; 4])> {
+        let body = self.exchange(dialogue::encode_probe(&self.kernel.voice, target, cites))?;
+        dialogue::decode_probe_reply(&body)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "probe decode"))
     }
 
     /// ASK the quote — "what is the highest-yield work?" The hypha answers with
@@ -480,6 +491,10 @@ pub struct Entity {
     /// Rotating cursor for the refinement probe — one genome word examined
     /// per stroke, so the compression search is metabolic, never a sweep.
     refine_cursor: usize,
+    /// The discordance measured at the last sync (strata whose roots differ
+    /// from the hypha's); zero is a glued genome — the condition under which
+    /// this entity speaks proofs.
+    discordance: usize,
 }
 
 impl Entity {
@@ -489,6 +504,7 @@ impl Entity {
             epigenome: Epigenome::new(),
             evidence_out: Vec::new(),
             refine_cursor: 0,
+            discordance: usize::MAX,
         }
     }
 
@@ -760,6 +776,7 @@ impl Entity {
         let atlas = sheaf::atlas(self.epigenome.genome());
         let local = sheaf::digests(&atlas, self.epigenome.genome());
         let strata: Vec<_> = sheaf::discordant(&remote, &local).into_iter().cloned().collect();
+        self.discordance = strata.len();
         let per_contact =
             (crate::physics::reserve_max() / crate::physics::spend_unit()).max(1) as usize;
         let mut learned = 0usize;
@@ -843,13 +860,41 @@ impl Entity {
     }
     /// Submit a percept; COMPREHEND anything taught back (the C-stack, not a
     /// byte-store). Returns the reply and the comprehension of the teaching.
+    /// CITE: this kernel's reduction of a chain over its own genome — the
+    /// citations (address, transport, gauge coordinate) and the residual it
+    /// could not reduce. Cognition happens here; the hypha only replays.
+    pub fn cite(&self, chain: &[(i64, i64, u8, u8)], budget: (usize, usize)) -> (Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>) {
+        let genome = self.epigenome.genome();
+        let mut mismatches = Vec::new();
+        match crate::cognition::decompose_cited(genome, chain, None, budget.0, budget.1, None, &mut mismatches) {
+            Ok(cites) => (
+                cites.into_iter().map(|(i, g, asg)| (genome[i].address(), g, asg as u32)).collect(),
+                Vec::new(),
+            ),
+            Err((void, cites)) => {
+                // The residual is what remains after the best branch: the
+                // citations of that branch ride with it.
+                (cites.into_iter().map(|(i, g, asg)| (genome[i].address(), g, asg as u32)).collect(), void)
+            }
+        }
+    }
+
+    /// SPEAK a percept as a proof: perceive, germinate, reduce every germ
+    /// over the genome, and submit the citations with the bodies.
     pub fn submit(
         &mut self,
         a: &[(i64, i64, u8)],
         b: &[(i64, i64, u8)],
         frame: &crate::arc::Frame,
+        budget: (usize, usize),
     ) -> io::Result<(Reply, Option<Comprehension>)> {
-        let reply = self.session.submit(a, b, frame)?;
+        let (a_bodies, b_bodies) = perceive(a, b);
+        let proof: Vec<Vec<dialogue::CiteWire>> = crate::cognition::germinate_bodies(&a_bodies, &b_bodies, frame)
+            .map(|(germs, _)| {
+                germs.iter().map(|(g, _)| self.cite(g.substance().sub(), budget).0).collect()
+            })
+            .unwrap_or_default();
+        let reply = self.session.submit(a, b, frame, &proof)?;
         let heard = match reply.verdict.taught() {
             t if t.is_empty() => None,
             t => self.epigenome.learn(t),
@@ -859,8 +904,16 @@ impl Entity {
     pub fn quote(&self) -> io::Result<YieldQuote> {
         self.session.quote()
     }
-    pub fn attest(&self, chain: &[(i64, i64, u8, u8)]) -> io::Result<Reply> {
-        self.session.attest(chain)
+    pub fn attest(&self, chain: &[(i64, i64, u8, u8)], cites: &[dialogue::CiteWire]) -> io::Result<Reply> {
+        self.session.attest(chain, cites)
+    }
+    pub fn probe(&self, target: &[u8; 32], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4], [u64; 4])> {
+        self.session.probe(target, cites)
+    }
+    /// The discordance measured at the last sync: strata whose roots differ
+    /// from the hypha's. Zero is a glued genome.
+    pub fn discordance(&self) -> usize {
+        self.discordance
     }
 }
 

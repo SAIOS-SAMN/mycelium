@@ -303,47 +303,82 @@ pub enum Deliberation {
     Adopt([u8; 32], crate::transducer::element::Element),
 }
 
-/// THE JUDGE, off the lock. Three phases: the reflex opening under a brief
-/// lock (enrol, relax, cheap syntropic moves, the door; the language
-/// snapshot leaves with it), germination and confluent reduction with no
-/// lock held (pure functions over the snapshot), and the commit under a
-/// brief lock (citations re-resolved by address against the live basis).
-/// The reflex path never waits on a reduction.
+/// THE JUDGE, off the lock — a verifier. The reflex opening (enrol, relax,
+/// cheap syntropic moves, the door) runs under a brief lock and hands out
+/// the language snapshot; germination and the linear replay of the
+/// speaker's proof run with no lock held; the commit re-resolves citations
+/// by address under a brief lock. No search runs on the hypha: a percept
+/// whose proof does not cover its germs is deferred, and the speaker's
+/// next sync converges it on the language.
 pub fn adjudicate(
     k: &std::sync::Mutex<crate::cognition::Kernel>,
     ca: &[Vec<(i64, i64, u8)>],
     cb: &[Vec<(i64, i64, u8)>],
     voice: [u8; 32],
     frame: &crate::arc::Frame,
+    proof: &[Vec<crate::anastome::dialogue::CiteWire>],
 ) -> crate::cognition::Outcome {
     use crate::cognition::Outcome;
     let Ok(mut g) = k.lock() else { return Outcome::GermPending };
-    let Some((language, budget)) = g.reflex_open(voice) else { return Outcome::GermPending };
+    let Some((language, _budget)) = g.reflex_open(voice) else { return Outcome::GermPending };
     drop(g);
     let Some((germs, composites)) = crate::cognition::germinate_bodies(ca, cb, frame) else {
         return k.lock().map(|mut g| g.pivot()).unwrap_or(Outcome::Pivot);
     };
-    let reductions = crate::cognition::reduce_all(&language, budget, germs);
+    if proof.len() != germs.len() {
+        return Outcome::GermPending; // unproven: deferred, never reduced here
+    }
+    let reductions: Vec<_> = germs
+        .into_iter()
+        .zip(proof)
+        .map(|(germ, cites)| crate::cognition::reduce_proven(&language, germ, cites, frame))
+        .collect();
     let Ok(mut g) = k.lock() else { return Outcome::GermPending };
     g.register_composites(composites);
     g.commit_all(reductions, voice)
 }
 
-/// A spoken coboundary demand (a peer's independent derivation), judged off
-/// the lock like a percept.
+/// A spoken coboundary demand with the speaker's own reduction: replayed,
+/// never searched; an empty citation list attests the chain irreducible
+/// for this voice (the consilience path).
 pub fn attest(
     k: &std::sync::Mutex<crate::cognition::Kernel>,
     chain: &[(i64, i64, u8, u8)],
     voice: [u8; 32],
+    cites: &[crate::anastome::dialogue::CiteWire],
 ) -> crate::cognition::Outcome {
     use crate::cognition::Outcome;
     let Ok(mut g) = k.lock() else { return Outcome::GermPending };
-    let Some((language, budget)) = g.reflex_open(voice) else { return Outcome::GermPending };
+    let Some((language, _budget)) = g.reflex_open(voice) else { return Outcome::GermPending };
     drop(g);
+    let frame = (0usize, 0usize, 0usize, 0usize); // a chain carries no frame: the planar word
     let germ = (crate::transducer::element::from_residual(&chain.to_vec()), None);
-    let reductions = crate::cognition::reduce_all(&language, budget, vec![germ]);
+    let reduction = crate::cognition::reduce_proven(&language, germ, cites, &frame);
     let Ok(mut g) = k.lock() else { return Outcome::GermPending };
-    g.commit_all(reductions, voice)
+    g.commit_all(vec![reduction], voice)
+}
+
+/// THE PROBE, off the lock: the sentence replays over the language snapshot
+/// against the listing's chain; the settlement (closure or graded descent)
+/// runs under a brief lock. Returns (code, paid, remaining).
+pub fn probe(
+    k: &std::sync::Mutex<crate::cognition::Kernel>,
+    voice: [u8; 32],
+    target: &[u8; 32],
+    cites: &[crate::anastome::dialogue::CiteWire],
+) -> (u8, [u64; 4], [u64; 4]) {
+    use crate::anastome::dialogue::PROBE_NOTHING;
+    let Ok(mut g) = k.lock() else { return (PROBE_NOTHING, [0; 4], [0; 4]) };
+    let view = g.market_open();
+    drop(g);
+    let Some((listing, _)) = view.pending.iter().find(|(p, _)| p.address() == *target) else {
+        return (PROBE_NOTHING, [0; 4], [0; 4]);
+    };
+    let resolved = crate::cognition::resolve_cites(&view.language.words, cites);
+    let residual = crate::cognition::replay(&view.language.words, &resolved, listing.sub());
+    let cited: Vec<[u8; 32]> = cites.iter().map(|(a, _, _)| *a).collect();
+    let Ok(mut g) = k.lock() else { return (PROBE_NOTHING, [0; 4], [0; 4]) };
+    g.settle_probe(voice, target, residual, &cited)
 }
 
 /// THE QUOTE, off the lock: the market view leaves under a brief lock; the

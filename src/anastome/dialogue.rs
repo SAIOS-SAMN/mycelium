@@ -107,6 +107,81 @@ pub const ACT_DIGESTS: u8 = 0x10;
 /// Reply: the syllabus page shape.
 pub const ACT_FETCH: u8 = 0x11;
 
+/// THE PROBE (interrogative grammar): a tentative sentence spoken against an
+/// open listing — citations (word address, transport g, gauge coordinate)
+/// the hypha replays linearly. Yield settles on graded descent of the
+/// residual without germination; closure clears the listing.
+/// Request: `[ACT_PROBE][voice 32][target 32][n u32][(addr 32)(g 17)(asg u32)]·n`.
+/// Reply: `[code][paid μ⃗ 4×u64][remaining μ⃗ 4×u64]`.
+pub const ACT_PROBE: u8 = 0x12;
+pub const PROBE_NOTHING: u8 = 0;
+pub const PROBE_DESCENT: u8 = 1;
+pub const PROBE_CLOSED: u8 = 2;
+
+/// A citation on the wire: (word address, transport, gauge coordinate).
+pub type CiteWire = ([u8; 32], crate::transducer::element::Transition, u32);
+
+pub fn push_cites(out: &mut Vec<u8>, cites: &[CiteWire]) {
+    out.extend_from_slice(&(cites.len() as u32).to_le_bytes());
+    for (addr, g, asg) in cites {
+        out.extend_from_slice(addr);
+        g.to_bytes(out);
+        out.extend_from_slice(&asg.to_le_bytes());
+    }
+}
+
+pub fn read_cites(b: &[u8], p: &mut usize) -> Option<Vec<CiteWire>> {
+    let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
+    *p += 4;
+    if n > b.len().saturating_sub(*p) / 53 {
+        return None; // untrusted count: 53 bytes per citation
+    }
+    let mut out = Vec::with_capacity(n);
+    for _ in 0..n {
+        let addr: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+        *p += 32;
+        let g = crate::transducer::element::Transition::from_bytes(b, p)?;
+        let asg = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
+        *p += 4;
+        out.push((addr, g, asg));
+    }
+    Some(out)
+}
+
+pub fn encode_probe(voice: &[u8; 32], target: &[u8; 32], cites: &[CiteWire]) -> Vec<u8> {
+    let mut out = vec![ACT_PROBE];
+    out.extend_from_slice(voice);
+    out.extend_from_slice(target);
+    push_cites(&mut out, cites);
+    out
+}
+
+pub fn decode_probe(body: &[u8]) -> Option<([u8; 32], [u8; 32], Vec<CiteWire>)> {
+    if body.first() != Some(&ACT_PROBE) {
+        return None;
+    }
+    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    let target: [u8; 32] = body.get(33..65)?.try_into().ok()?;
+    let mut p = 65usize;
+    let cites = read_cites(body, &mut p)?;
+    Some((voice, target, cites))
+}
+
+pub fn encode_probe_reply(code: u8, paid: &[u64; 4], remaining: &[u64; 4]) -> Vec<u8> {
+    let mut out = vec![code];
+    push_mu(&mut out, paid);
+    push_mu(&mut out, remaining);
+    out
+}
+
+pub fn decode_probe_reply(body: &[u8]) -> Option<(u8, [u64; 4], [u64; 4])> {
+    let code = *body.first()?;
+    let mut p = 1usize;
+    let paid = read_mu(body, &mut p)?;
+    let remaining = read_mu(body, &mut p)?;
+    Some((code, paid, remaining))
+}
+
 pub fn encode_digests_request(voice: &[u8; 32]) -> Vec<u8> {
     let mut out = vec![ACT_DIGESTS];
     out.extend_from_slice(voice);
@@ -458,22 +533,26 @@ fn read_mu(b: &[u8], p: &mut usize) -> Option<[u64; 4]> {
 
 // ── demand: an unsolved coboundary challenge ─────────────────────────────────
 
-/// `[ACT_DEMAND][voice 32][chain]`
-pub fn encode_demand(voice: &[u8; 32], chain: &[Cell]) -> Vec<u8> {
+/// `[ACT_DEMAND][voice 32][chain][cites]` — the speaker's own reduction of
+/// the chain over its genome rides as citations; an empty citation list
+/// attests the chain irreducible for this voice.
+pub fn encode_demand(voice: &[u8; 32], chain: &[Cell], cites: &[CiteWire]) -> Vec<u8> {
     let mut out = vec![ACT_DEMAND];
     out.extend_from_slice(voice);
     push_chain(&mut out, chain);
+    push_cites(&mut out, cites);
     out
 }
 
-pub fn decode_demand(body: &[u8]) -> Option<([u8; 32], Vec<Cell>)> {
+pub fn decode_demand(body: &[u8]) -> Option<([u8; 32], Vec<Cell>, Vec<CiteWire>)> {
     if body.first() != Some(&ACT_DEMAND) {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
     let mut p = 33usize;
     let chain = read_chain(body, &mut p)?;
-    Some((voice, chain))
+    let cites = read_cites(body, &mut p).unwrap_or_default();
+    Some((voice, chain, cites))
 }
 
 // ── quote: the yield question and the quoted surface ─────────────────────────
@@ -873,7 +952,9 @@ mod tests {
     fn the_five_acts_round_trip() {
         let chain = vec![(0i64, 0i64, 1u8, 4u8), (2, 3, 0, 7)];
         let (voice, germ) = ([9u8; 32], [7u8; 32]);
-        let (v, c) = decode_demand(&encode_demand(&voice, &chain)).unwrap();
+        let cites = vec![([3u8; 32], crate::transducer::element::Transition { d4: 2, t: (1, -1) }, 1u32)];
+        let (v, c, k) = decode_demand(&encode_demand(&voice, &chain, &cites)).unwrap();
+        assert_eq!(k, cites, "the citations ride the demand");
         assert_eq!((v, c), (voice, chain.clone()));
         assert_eq!(decode_quote_request(&encode_quote_request(&voice)).unwrap(), voice);
         let items = vec![(germ, [1u64, 2, 30, 4], chain.clone())];

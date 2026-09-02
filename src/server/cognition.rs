@@ -563,6 +563,71 @@ impl Kernel {
         1
     }
 
+    /// SETTLE A PROBE: the replayed residual of an open listing against the
+    /// speaker's sentence. Closure (empty residual) clears the listing: the
+    /// closer earns the listing's quoted tension from the pool, the cited
+    /// words' discoverers earn their use, the lineage advances. Graded
+    /// descent (every lane ≤, one <) earns the reduction per lane and the
+    /// residual replaces the listing under its own frame fiber; the book's
+    /// tension falls monotonically. No descent settles nothing. Returns
+    /// (code, paid μ⃗, remaining μ⃗).
+    pub fn settle_probe(
+        &mut self,
+        voice: [u8; 32],
+        target: &[u8; 32],
+        residual: Vec<(i64, i64, u8, u8)>,
+        cited: &[[u8; 32]],
+    ) -> (u8, [u64; 4], [u64; 4]) {
+        use crate::anastome::dialogue::{PROBE_CLOSED, PROBE_DESCENT, PROBE_NOTHING};
+        let Some(li) = self.pending.iter().position(|(p, _)| p.address() == *target) else {
+            return (PROBE_NOTHING, [0; 4], [0; 4]);
+        };
+        let listing = self.pending[li].0.clone();
+        let before = listing.magnitude();
+        let after = element::measure_lanes(&residual);
+        let surface = crate::economy::yield_surface(&self.physics);
+        let anchor = self.anchor();
+        let lanes = listing.lanes();
+        if residual.is_empty() {
+            let paid = self.treasury.settle_subsidy(voice, crate::economy::price(&before, &surface), anchor);
+            for addr in cited {
+                if let Some(i) = self.basis.iter().position(|t| t.address() == *addr) {
+                    let mag = self.basis[i].magnitude();
+                    self.treasury.settle_use(voice, self.discoverers[i], mag, anchor);
+                }
+            }
+            self.pending.remove(li);
+            self.book_gen += 1;
+            self.physics.relieve(lanes);
+            self.physics.syntropy(lanes);
+            self.chain.append(*target, voice);
+            self.complete_composite_child(target, voice);
+            return (PROBE_CLOSED, paid, [0; 4]);
+        }
+        if !crate::economy::descends(&after, &before) {
+            return (PROBE_NOTHING, [0; 4], before);
+        }
+        let delta: [u64; 4] = std::array::from_fn(|l| before[l] - after[l]);
+        let paid = self.treasury.settle_subsidy(voice, crate::economy::price(&delta, &surface), anchor);
+        // The residual inherits the listing's frame fiber (the scale
+        // generators of its spatial block), never its hue tally.
+        let mut next = element::from_residual(&residual);
+        if let (Some(old), Some(new)) =
+            (listing.fiber(element::FIBER_SPATIAL), next.fiber(element::FIBER_SPATIAL))
+        {
+            let mut m = new.clone();
+            m[0][0] = old[0][0].clone();
+            m[1][1] = old[1][1].clone();
+            next.set_fiber(element::FIBER_SPATIAL, m);
+        }
+        let listed_at = self.pending[li].1;
+        self.pending[li] = (next, listed_at);
+        self.book_gen += 1;
+        self.physics.syntropy(lanes);
+        self.chain.append(*target, voice);
+        (PROBE_DESCENT, paid, after)
+    }
+
     /// The durable state's measurement: (cards, sections + connection
     /// relations, provisional docket size, K). A change in any coordinate is
     /// a changed durable language — the persistence trigger reads this, never
@@ -1757,34 +1822,61 @@ pub fn decompose_over_anchored(
     ctx: Option<&AnchorCtx>,
     mismatches: &mut Vec<(usize, Vec<(i64, i64)>)>,
 ) -> Result<Vec<usize>, Vec<(i64, i64, u8, u8)>> {
+    decompose_cited(language, first, exclude, beam_width, depth, ctx, mismatches)
+        .map(|cites| cites.into_iter().map(|(i, _, _)| i).collect())
+        .map_err(|(void, _)| void)
+}
+
+/// A CITATION: the coordinates a sentence speaks for one word — its index
+/// in the language, the transport carrying the word's chain into the
+/// utterance's frame, and the gauge coordinate (which assignment along the
+/// punctured axis). A proof is a sequence of citations; a replay applies
+/// them and measures what remains.
+pub type Cite = (usize, element::Transition, usize);
+
+/// The cited decomposition — the same superposition, keeping every peel's
+/// coordinates so the sentence can be spoken as a proof. `Err` carries the
+/// minimal void seen across all rollouts together with the citations of the
+/// branch that reached it: the partial sentence and its residual.
+pub fn decompose_cited(
+    language: &[Element],
+    first: &[(i64, i64, u8, u8)],
+    exclude: Option<usize>,
+    beam_width: usize,
+    depth: usize,
+    ctx: Option<&AnchorCtx>,
+    mismatches: &mut Vec<(usize, Vec<(i64, i64)>)>,
+) -> Result<Vec<Cite>, (Vec<(i64, i64, u8, u8)>, Vec<Cite>)> {
     if first.is_empty() {
         return Ok(Vec::new());
     }
     let mut cache: Vec<(usize, Vec<(i64, i64)>)> = Vec::new();
-    if let Some(i) = word_matching_anchored(language, first, exclude, ctx, &mut cache, mismatches) {
-        return Ok(vec![i]); // the utterance is itself one word
+    if let Some(c) = word_matching_anchored(language, first, exclude, ctx, &mut cache, mismatches) {
+        return Ok(vec![c]); // the utterance is itself one word
     }
-    let mut beam: Vec<(Vec<(i64, i64, u8, u8)>, Vec<usize>)> = vec![(first.to_vec(), Vec::new())];
+    let mut beam: Vec<(Vec<(i64, i64, u8, u8)>, Vec<Cite>)> = vec![(first.to_vec(), Vec::new())];
     let mut void = first.to_vec();
+    let mut void_cites: Vec<Cite> = Vec::new();
     for _ in 0..depth {
-        let mut successors: Vec<(Vec<(i64, i64, u8, u8)>, Vec<usize>)> = Vec::new();
+        let mut successors: Vec<(Vec<(i64, i64, u8, u8)>, Vec<Cite>)> = Vec::new();
         for (chain, word) in &beam {
-            for (i, translated) in fitting_peels(language, chain, exclude, ctx, mismatches) {
+            for (cite, translated) in fitting_peels(language, chain, exclude, ctx, mismatches) {
                 let remaining: Vec<_> = chain.iter().filter(|t| !translated.contains(*t)).cloned().collect();
                 let mut w = word.clone();
-                w.push(i);
+                w.push(cite);
                 // CONFLUENT COLLAPSE — this rollout closed: δσ̂ = 0.
                 if remaining.is_empty() {
                     return Ok(w);
                 }
-                if let Some(j) =
+                if let Some(c) =
                     word_matching_anchored(language, &remaining, exclude, ctx, &mut cache, mismatches)
                 {
-                    w.push(j);
+                    w.push(c);
                     return Ok(w);
                 }
                 if remaining.len() < void.len() {
                     void = remaining.clone();
+                    void_cites = w.clone();
                 }
                 successors.push((remaining, w));
             }
@@ -1792,14 +1884,55 @@ pub fn decompose_over_anchored(
         if successors.is_empty() {
             break; // every branch obstructed — the superposition is exhausted
         }
-        // Prune to the beam by GLOBAL defect, then depth, then word order — a
-        // total order, so two runs collapse identically.
-        successors
-            .sort_by(|a, b| a.0.len().cmp(&b.0.len()).then(a.1.len().cmp(&b.1.len())).then(a.1.cmp(&b.1)));
+        // Prune to the beam by GLOBAL defect, then depth, then citation order —
+        // a total order, so two runs collapse identically.
+        successors.sort_by(|a, b| {
+            a.0.len()
+                .cmp(&b.0.len())
+                .then(a.1.len().cmp(&b.1.len()))
+                .then(a.1.iter().map(|(i, _, _)| *i).cmp(b.1.iter().map(|(i, _, _)| *i)))
+        });
         successors.truncate(beam_width);
         beam = successors;
     }
-    Err(void)
+    Err((void, void_cites))
+}
+
+/// The chain a citation speaks: the word's assignment along its axis,
+/// transported into the utterance's frame.
+pub fn cited_chain(word: &Element, asg: usize, g: &element::Transition) -> Vec<(i64, i64, u8, u8)> {
+    let pos = element::positions(word.sub());
+    let Some(assignment) = word.assignments().into_iter().nth(asg) else { return Vec::new() };
+    let pat: Vec<(i64, i64, u8, u8)> =
+        pos.iter().zip(&assignment).map(|((r, c), (b, a))| (*r, *c, *b, *a)).collect();
+    element::transport(&pat, g)
+}
+
+/// THE REPLAY — pure and linear in the proof: apply every citation and
+/// measure the residual of the target against the spoken sum, R = Q △ S:
+/// the target cells the sentence does not reproduce, and the cells the
+/// sentence speaks outside the target. An empty residual is closure; a
+/// citation that names nothing held speaks nothing.
+pub fn replay(
+    language: &[Element],
+    cites: &[Cite],
+    target: &[(i64, i64, u8, u8)],
+) -> Vec<(i64, i64, u8, u8)> {
+    let mut spoken: Vec<(i64, i64, u8, u8)> = Vec::new();
+    for (i, g, asg) in cites {
+        if let Some(w) = language.get(*i) {
+            spoken.extend(cited_chain(w, *asg, g));
+        }
+    }
+    spoken.sort_unstable();
+    spoken.dedup();
+    let mut residual: Vec<(i64, i64, u8, u8)> =
+        target.iter().filter(|t| spoken.binary_search(t).is_err()).copied().collect();
+    let mut sorted_target = target.to_vec();
+    sorted_target.sort_unstable();
+    residual.extend(spoken.iter().filter(|s| sorted_target.binary_search(s).is_err()));
+    residual.sort_unstable();
+    residual
 }
 
 /// The direct terminal: does the (re-centered) chain SIT on a held word — its
@@ -2025,14 +2158,19 @@ fn word_matching_anchored(
     ctx: Option<&AnchorCtx>,
     cache: &mut Vec<(usize, Vec<(i64, i64)>)>,
     mismatches: &mut Vec<(usize, Vec<(i64, i64)>)>,
-) -> Option<usize> {
+) -> Option<Cite> {
     let centered = recenter(chain);
+    let min_r = chain.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
+    let min_c = chain.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
     for (j, p) in language.iter().enumerate() {
-        if Some(j) == exclude || !p.matches_chain(&centered) {
+        if Some(j) == exclude {
             continue;
         }
+        let Some(asg) = p.matching_assignment(&centered) else { continue };
         match anchor_admits(p, chain, ctx, cache, j) {
-            Ok(()) => return Some(j),
+            Ok(()) => {
+                return Some((j, element::Transition { d4: 0, t: (min_r, min_c) }, asg));
+            }
             Err(q) => mismatches.push((j, q)),
         }
     }
@@ -2049,7 +2187,7 @@ fn fitting_peels(
     exclude: Option<usize>,
     ctx: Option<&AnchorCtx>,
     mismatches: &mut Vec<(usize, Vec<(i64, i64)>)>,
-) -> Vec<(usize, Vec<(i64, i64, u8, u8)>)> {
+) -> Vec<(Cite, Vec<(i64, i64, u8, u8)>)> {
     const MAX_ANCHORS: usize = 3;
     let mut out = Vec::new();
     let mut region_cache: Vec<(usize, Vec<(i64, i64)>)> = Vec::new();
@@ -2063,7 +2201,7 @@ fn fitting_peels(
             continue;
         }
         let pos = element::positions(base);
-        for asg in gen.assignments() {
+        for (asg_idx, asg) in gen.assignments().into_iter().enumerate() {
             let pat: Vec<(i64, i64, u8, u8)> =
                 pos.iter().zip(&asg).map(|((r, c), (b, a))| (*r, *c, *b, *a)).collect();
             let (pr, pc, pb, pa) = pat[0];
@@ -2081,7 +2219,8 @@ fn fitting_peels(
                     // pair, emitted for Knuth–Bendix anchor refinement.
                     match anchor_admits(gen, &translated, ctx, &mut region_cache, i) {
                         Ok(()) => {
-                            out.push((i, translated));
+                            let g = element::Transition { d4: 0, t: (dr, dc) };
+                            out.push(((i, g, asg_idx), translated));
                             anchors += 1;
                             if anchors >= MAX_ANCHORS {
                                 break;
@@ -2198,6 +2337,7 @@ pub fn encode_percept(
     b_bodies: &[Vec<(i64, i64, u8)>],
     voice: &[u8; 32],
     frame: &crate::arc::Frame,
+    proof: &[Vec<crate::anastome::dialogue::CiteWire>],
 ) -> Vec<u8> {
     let mut out = Vec::new();
     out.extend_from_slice(voice);
@@ -2206,13 +2346,24 @@ pub fn encode_percept(
     for d in [frame.0, frame.1, frame.2, frame.3] {
         out.extend_from_slice(&(d as u32).to_le_bytes());
     }
+    // THE PROOF: per germ (in germination order), the speaker's citations.
+    out.extend_from_slice(&(proof.len() as u32).to_le_bytes());
+    for cites in proof {
+        crate::anastome::dialogue::push_cites(&mut out, cites);
+    }
     out
 }
 
-#[allow(clippy::type_complexity)]
-pub fn decode_percept(
-    body: &[u8],
-) -> Option<([u8; 32], Vec<Vec<(i64, i64, u8)>>, Vec<Vec<(i64, i64, u8)>>, crate::arc::Frame)> {
+/// A decoded percept: (voice, bodies A, bodies B, frame, proof per germ).
+pub type Percept = (
+    [u8; 32],
+    Vec<Vec<(i64, i64, u8)>>,
+    Vec<Vec<(i64, i64, u8)>>,
+    crate::arc::Frame,
+    Vec<Vec<crate::anastome::dialogue::CiteWire>>,
+);
+
+pub fn decode_percept(body: &[u8]) -> Option<Percept> {
     let voice: [u8; 32] = body.get(0..32)?.try_into().ok()?;
     let mut p = 32;
     let a = read_bodies(body, &mut p)?;
@@ -2222,7 +2373,47 @@ pub fn decode_percept(
         *slot = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
         p += 4;
     }
-    Some((voice, a, b, (d[0], d[1], d[2], d[3])))
+    let mut proof = Vec::new();
+    if let Some(n) = body.get(p..p + 4).map(|x| u32::from_le_bytes(x.try_into().unwrap()) as usize) {
+        p += 4;
+        for _ in 0..n {
+            proof.push(crate::anastome::dialogue::read_cites(body, &mut p)?);
+        }
+    }
+    Some((voice, a, b, (d[0], d[1], d[2], d[3]), proof))
+}
+
+/// Resolve citations spoken by address into the language snapshot's
+/// coordinates — each by its own address, a bounded find; a citation naming
+/// nothing held is dropped (it speaks nothing in the replay).
+pub fn resolve_cites(language: &[Element], cites: &[crate::anastome::dialogue::CiteWire]) -> Vec<Cite> {
+    cites
+        .iter()
+        .filter_map(|(addr, g, asg)| {
+            language.iter().position(|w| w.address() == *addr).map(|i| (i, *g, *asg as usize))
+        })
+        .collect()
+}
+
+/// THE PROVEN REDUCTION of one germ: the replay of the speaker's citations
+/// over the language snapshot decides the normal form — closure cites the
+/// sentence, a residual is the speaker's irreducible claim, carried as the
+/// germ to complete. No search runs here.
+pub fn reduce_proven(
+    language: &std::sync::Arc<Language>,
+    germ: Germ,
+    cites: &[crate::anastome::dialogue::CiteWire],
+    frame: &crate::arc::Frame,
+) -> Reduction {
+    let (g, ctx) = germ;
+    let resolved = resolve_cites(&language.words, cites);
+    let sub = g.substance();
+    let residual = replay(&language.words, &resolved, sub.sub());
+    let form = match residual.is_empty() {
+        true => NormalForm::Decomposed(resolved.iter().map(|(i, _, _)| *i).collect()),
+        false => NormalForm::Irreducible(element::from_residual_framed(&residual, frame)),
+    };
+    Reduction { germ: g, ctx, form, qs: Vec::new(), language: std::sync::Arc::clone(language) }
 }
 
 /// The frame measured from two cell scenes (their 0-cell extents) — the
@@ -2543,6 +2734,70 @@ mod tests {
             k.treasury().entries().iter().any(|e| e.kind == "fee" && e.who == [7; 32]),
             "the funded speaker paid the door into the pool"
         );
+    }
+
+    /// THE CONVERSATION: a listing is probed with a cited sentence. Graded
+    /// descent settles the reduction and the residual replaces the listing
+    /// under its frame; closure clears it and advances the lineage; a
+    /// sentence that names nothing settles nothing. The replay is linear in
+    /// the proof and the hypha runs no search.
+    #[test]
+    fn a_probe_settles_descent_then_closure_without_search() {
+        use crate::anastome::dialogue::{PROBE_CLOSED, PROBE_DESCENT, PROBE_NOTHING};
+        let mut k = Kernel::new();
+        // A demand listed whole on an empty language (one connected body).
+        let c = vec![(0, 0, 1u8), (0, 1, 1), (0, 2, 1), (0, 3, 3)];
+        let d = vec![(0, 0, 2u8), (0, 1, 2), (0, 2, 1), (0, 3, 4)];
+        assert!(matches!(k.ingest(&c, &d, [1; 32]), Outcome::GermPending));
+        let target = k.quote(8).1[0].0.address();
+        let chain = k.quote(8).1[0].0.sub().to_vec();
+        assert_eq!(chain.len(), 3);
+        // Then a word that covers it in part installs.
+        let a = vec![(0, 0, 1u8), (0, 1, 1)];
+        let b = vec![(0, 0, 2u8), (0, 1, 2)];
+        k.ingest(&a, &b, [1; 32]);
+        assert!(matches!(k.ingest(&a, &b, [2; 32]), Outcome::Installed(0)));
+        let word = k.basis()[0].address();
+        // The entity's reduction over the language: the word cited at the
+        // origin, the far cell left as the residual.
+        let mut mm = Vec::new();
+        let (void, cites) = decompose_cited(k.basis(), &chain, None, 4, 4, None, &mut mm).unwrap_err();
+        assert_eq!(void, vec![(0, 3, 3, 4)]);
+        assert_eq!(cites.len(), 1);
+        assert_eq!(replay(k.basis(), &cites, &chain), void, "the replay reproduces the residual");
+        let (code, paid, remaining) = k.settle_probe([3; 32], &target, void.clone(), &[word]);
+        assert_eq!(code, PROBE_DESCENT);
+        assert!(paid.iter().any(|&p| p > 0), "graded descent earns per lane");
+        assert_eq!(remaining, crate::transducer::element::measure_lanes(&void));
+        let listing = k.quote(8).1[0].0.clone();
+        assert_eq!(listing.sub(), &[(0, 0, 3, 4)], "the residual replaced the listing, re-centered");
+        // No descent settles nothing; closure clears the book.
+        let t2 = listing.address();
+        assert_eq!(k.settle_probe([3; 32], &t2, listing.sub().to_vec(), &[]).0, PROBE_NOTHING);
+        assert_eq!(k.settle_probe([3; 32], &t2, Vec::new(), &[word]).0, PROBE_CLOSED);
+        assert!(k.quote(8).1.is_empty(), "the listing cleared");
+    }
+
+    /// THE PROOF: on the wire the judge replays; a proven percept commits its
+    /// sentence, an unproven one is deferred, never searched.
+    #[test]
+    fn the_wire_judge_replays_proofs_and_defers_the_unproven() {
+        let k = std::sync::Mutex::new(Kernel::new());
+        let a = vec![(0, 0, 1u8), (0, 1, 1)];
+        let b = vec![(0, 0, 2u8), (0, 1, 2)];
+        {
+            let mut g = k.lock().unwrap();
+            g.ingest(&a, &b, [1; 32]);
+            g.ingest(&a, &b, [2; 32]);
+        }
+        let word = k.lock().unwrap().basis()[0].address();
+        let (ca, cb) = perceive(&a, &b);
+        let frame = frame_of(&a, &b);
+        let proof = vec![vec![(word, element::Transition::IDENTITY, 0u32)]];
+        let out = crate::synthesis::adjudicate(&k, &ca, &cb, [3; 32], &frame, &proof);
+        assert!(matches!(out, Outcome::Decomposed(ref w) if w == &vec![0]), "{out:?}");
+        let out = crate::synthesis::adjudicate(&k, &ca, &cb, [3; 32], &frame, &[]);
+        assert!(matches!(out, Outcome::GermPending), "unproven: deferred, {out:?}");
     }
 
     /// THE COVER: a chain the carrier holds is one piece; wider, it opens

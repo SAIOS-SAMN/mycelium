@@ -133,16 +133,33 @@ fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32])
         let _ = stream.write_all(&reply.encode().unwrap_or_default());
         return;
     }
+    // ── probe: a tentative sentence against an open listing — replayed,
+    // settled on graded descent or closure, never germinated.
+    if kind == dialogue::ACT_PROBE {
+        let Some((pvoice, target, cites)) = dialogue::decode_probe(&frame.body) else { return };
+        let (code, paid, remaining) = mycelium::synthesis::probe(kernel, pvoice, &target, &cites);
+        if code != dialogue::PROBE_NOTHING {
+            eprintln!(
+                "  probe voice {:02x} on {:02x}{:02x}… code {code} paid {paid:?} remaining {remaining:?}",
+                pvoice[0], target[0], target[1]
+            );
+        }
+        let reply = Frame { lane: frame.lane, body: dialogue::encode_probe_reply(code, &paid, &remaining) };
+        let _ = stream.write_all(&reply.encode().unwrap_or_default());
+        return;
+    }
     let pbytes = if kind == dialogue::ACT_GOSSIP && rest.len() >= 32 { &rest[32..] } else { rest };
     let (out, voice) = if kind == dialogue::ACT_DEMAND {
-        // A spoken, unsolved coboundary challenge — a peer's independent
-        // derivation attesting an open residual.
-        let Some((dvoice, chain)) = dialogue::decode_demand(&frame.body) else { return };
-        (mycelium::synthesis::attest(kernel, &chain, dvoice), dvoice)
+        // A spoken coboundary with the speaker's own reduction — replayed.
+        let Some((dvoice, chain, cites)) = dialogue::decode_demand(&frame.body) else { return };
+        (mycelium::synthesis::attest(kernel, &chain, dvoice, &cites), dvoice)
     } else {
-        // The client PERCEIVED (segmented bodies); the JUDGE adjudicates.
-        let Some((pvoice, a_bodies, b_bodies, frame)) = decode_percept(pbytes) else { return };
-        (mycelium::synthesis::adjudicate(kernel, &a_bodies, &b_bodies, pvoice, &frame), pvoice)
+        // The client PERCEIVED and REDUCED; the JUDGE replays the proof.
+        let Some((pvoice, a_bodies, b_bodies, frame, proof)) = decode_percept(pbytes) else { return };
+        (
+            mycelium::synthesis::adjudicate(kernel, &a_bodies, &b_bodies, pvoice, &frame, &proof),
+            pvoice,
+        )
     };
     // TEACH: on install AND on a single-word sentence (the demand IS a held
     // word — express it down so the entity's genome inherits it); SETTLE:

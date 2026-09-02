@@ -27,7 +27,7 @@
 //! Usage: mycelium-client [ADDR] --kernel NAME [--state DIR]
 //!            [--feed CORPUS_DIR] [--loop] [--limit N] [--conductor BOARD]
 use mycelium::arc::{embed, frame_ratio, grid_to_cells, parse_task, readback};
-use mycelium::physics::{reserve_max, Physics};
+use mycelium::physics::{reserve_max, spend_unit, Physics};
 use mycelium::sdk::{Comprehension, Entity, Kernel, YieldQuote};
 use std::path::PathBuf;
 use std::time::Instant;
@@ -151,8 +151,19 @@ fn main() {
             physics.spend([true; 4]); // the obstructed stroke is still a stroke
         }
 
-        // ── FEED (entropic): present corpus transitions until the stroke spends.
-        while feeding && !occluded && !physics.depleted() {
+        // THE ENTITY'S REDUCTION BUDGET — from its own metabolism: the beam
+        // is one expansion's worth of branches, the depth one reserve of
+        // strokes. Hardware-calibrated, never a constant.
+        let budget = (
+            spend_unit().max(1) as usize,
+            (reserve_max() / spend_unit().max(1)).max(1) as usize,
+        );
+
+        // ── FEED (entropic): present corpus transitions until the stroke
+        // spends. A percept is a PROOF spoken over this genome, so the feed
+        // runs on a glued genome (discordance zero at the last sync); an
+        // unglued entity syncs first.
+        while feeding && !occluded && !physics.depleted() && entity.discordance() == 0 {
             if ti >= cycle.len() {
                 // A new cycle: the conductor (if any) re-steers the order.
                 cycle = tasks.clone();
@@ -229,7 +240,7 @@ fn main() {
             if a.is_empty() || b.is_empty() {
                 continue;
             }
-            match entity.submit(&a, &b, &(hi, wi, ho, wo)) {
+            match entity.submit(&a, &b, &(hi, wi, ho, wo), budget) {
                 Ok((reply, heard)) => {
                     fed += 1;
                     if reply.settle.is_some() {
@@ -265,14 +276,24 @@ fn main() {
                     if cluster.chain.is_empty() {
                         continue;
                     }
-                    let e = mycelium::transducer::element::from_residual(&cluster.chain);
-                    let thought = entity.epigenome.comprehend(&e);
-                    match entity.attest(&cluster.chain) {
+                    // THINK, then CONVERSE: reduce the listing over this
+                    // genome; probe the hypha with the sentence (closure or
+                    // graded descent settles without germination); attest
+                    // the residual as this voice's irreducible claim.
+                    let (cites, residual) = entity.cite(&cluster.chain, budget);
+                    match entity.probe(&cluster.address, &cites) {
+                        Ok((code, _paid, _remaining)) => match code {
+                            mycelium::anastome::dialogue::PROBE_CLOSED => derived += 1,
+                            mycelium::anastome::dialogue::PROBE_DESCENT => witnessed += 1,
+                            _ => {}
+                        },
+                        Err(_) => errors += 1,
+                    }
+                    if residual.is_empty() {
+                        continue;
+                    }
+                    match entity.attest(&residual, &[]) {
                         Ok(reply) => {
-                            match thought {
-                                Comprehension::Understood(_) => derived += 1,
-                                Comprehension::Novel { .. } => witnessed += 1,
-                            }
                             if reply.settle.is_some() {
                                 settles += 1;
                             }

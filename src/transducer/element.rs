@@ -448,6 +448,17 @@ impl Element {
     /// cycle's orbit (walked to the period, O(ℓ·cells) — the closed-form
     /// membership that makes the compressed fiber CHEAPER than the list it
     /// replaced)?
+    /// Which assignment (in [`assignments`] order: base, sections, torsion
+    /// orbit) the centered chain sits on, if any — the gauge coordinate a
+    /// citation names.
+    pub fn matching_assignment(&self, chain: &[(i64, i64, u8, u8)]) -> Option<usize> {
+        if self.sub.is_empty() || positions(&self.sub) != positions(chain) {
+            return None;
+        }
+        let asg = assignment(chain);
+        self.assignments().iter().position(|a| *a == asg)
+    }
+
     pub fn matches_chain(&self, chain: &[(i64, i64, u8, u8)]) -> bool {
         if self.sub.is_empty() || positions(&self.sub) != positions(chain) {
             return false;
