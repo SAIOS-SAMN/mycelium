@@ -2,8 +2,8 @@
 
 # Resume notes (continuity across sessions)
 
-Last update: TUniversal 00:00:00:00:34:A1 (genesis origin 1788326481),
-commit after 92f1d69. Task list: docs/TRAJECTORY.md (rebuild the session
+Last update: TUniversal 00:00:00:00:41:53 (genesis origin 1788326481),
+commit after 955c14e. Task list: docs/TRAJECTORY.md (rebuild the session
 task tracker from its "Open" section at the start of a new session).
 
 ## Boot check
@@ -12,7 +12,7 @@ task tracker from its "Open" section at the start of a new session).
 cd /opt/mycelium-v0.1.0
 scripts/tu now                              # universal stamp; never use earth-time --since
 systemctl --user list-units 'mycelium-v010-*' --no-legend
-cargo test --release 2>&1 | grep -E "test result|FAILED"   # one foreground command
+cargo test --release 2>&1 | grep -E "test result|FAILED"   # one foreground command; 206 expected
 ```
 
 Fleet units: hypha-a (7500, training corpus), hypha-b (7501, evaluation
@@ -22,44 +22,39 @@ and disabled by ruling.
 
 ## State at handoff
 
-- The court is running as a TRANSIENT unit `mycelium-v010-court-reaudit`
-  (launched with `--reaudit` to re-derive the federation under the orbit
-  lens). The persistent `mycelium-v010-court` unit is STOPPED. When the
-  re-audit completes (all three "genesis audit of ... complete" lines in
-  its journal), stop the transient unit and `systemctl --user start
-  mycelium-v010-court` (its unit has no --reaudit flag; the journal at
-  state/court.federation carries the re-derived federation).
-- Re-audit progress: federation 1020 words at K=2121, demoted 31 total
-  (about 19 in the orbit era), walk still on hypha-a's book at roughly
-  6 words/minute (the orbit comparison is an O(federation) scan per
-  ruling — see TRAJECTORY item 3).
-- Finding: the orbit lens has demoted only a few dozen words so far. The
-  1,151-word era-1 federation was not mostly translation/rotation
-  shadows; the bulk are distinct orbit classes (hue-distinct dust). The
-  lever for contraction is therefore the demotion barrier / maintenance
-  drag and D4-aware sections (TRAJECTORY items 5–6), not the lens alone.
-- Four-lane surfaces verified on both corpus servers: hypha-a
-  [18, 0, 18, 18], hypha-b [9, 27, 27, 9] (spatial, gauge, residual,
-  shell all populated from measurement).
-- Unique verified solves: 3 (unchanged). The joint-consensus beam has
-  not yet converted; entities re-study against the converged genome
-  once the re-audit and adoption wave settle.
-- Unverified: whether the hypha restarts for Q2 discarded hypha-c's 461
-  in-memory adoptions (kernel snapshots write on verdict application
-  only). TRAJECTORY item 1.
+- All nine units active on the current binaries. The persistent
+  `mycelium-v010-court` unit runs with the era-2 federation (3,151 words,
+  K=5,429, restored from state/court.federation). No transient units.
+- The era-2 re-audit under the bundle lens is complete (see TRAJECTORY
+  status note 41:53). The court's summary line now reads `attached`
+  where it read `demoted`: a placement of a held geometry attaches to
+  its base as a transported section, it is no longer discarded.
+- The court speaks through a per-wire outbox and logs
+  `aperture Occluded/Impeded: d/w delivered, n waiting` when a wire does
+  not drain. A hypha in boot (corpus intake, now about 3 s) reads as
+  occluded until its listener opens; that is expected.
+- Kernel persistence is paced: the ledger seals on the idle deliberation
+  stroke when the measurement (cards, fibre volume, docket, K) moved. A
+  hypha stopped between a change and its next idle stroke loses at most
+  that window. Restarting a hypha no longer sheds adoptions.
+- Unique verified solves: 3 (not re-measured this pass).
 
 ## Immediate next actions
 
-1. Finish the re-audit; restore the persistent court unit; read the
-   final era-2 federation size.
-2. Verify adoption persistence on hypha-c; add snapshot-on-adoption.
-3. Proceed down docs/TRAJECTORY.md "Open" in order.
+1. TRAJECTORY item 1 (Q3 sheaf reconciliation over bundles, keyed by
+   the atlas stratum), then item 2 (compression economics: the measured
+   lever for contraction).
+2. Read hypha-a's reflex CPU after an hour of soak with its entities back
+   (it was pinned by per-event persistence and address recomputation,
+   both now removed); if still pinned, profile the percept/demand
+   handlers (they reduce under the lock).
 
 ## Standing operational rules
 
 - Read+Edit/Write only for source changes (no sed/awk/python edits).
 - Single foreground `cargo test --release` for verification.
 - Bounded probes only; the fleet soaks under systemd; no unbounded
-  background pollers.
+  background pollers. Tracing is unavailable (ptrace scope 1, perf
+  paranoid 4): measure through journals, thread CPU, and apertures.
 - Commit locally only (no remote until alpha/beta).
 - Commit trailer: `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.

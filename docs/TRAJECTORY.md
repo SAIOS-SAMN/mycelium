@@ -25,45 +25,56 @@ registered corpus (currently 3 of 1,120).
 | 35dfed7 | Quorum focusing; two-stroke courtesy; coherent 4-beam; genesis federation audit; verdict::Ruling enum |
 | 9a8929b, 1cb8cea | Genesis audit as a drained (session, cursor) relation; direct-call page decode (no wrapper types) |
 | 338179c | Orbit-quotient congruence (Q1: [Q]/(Z^2 x D4) lens at court and market); measured four-lane projection (Q2) |
+| 4ce3439 | Adoption installs persist (the per-event write later replaced by paced persistence, 3fcf1b0) |
+| 9717d27 | Atlas on the base manifold: G-invariant structural vector (β₀, β₁, V, E, F, extent, cell-type tally) stratified by axis as the chart that locates a base point; no federation scan, no sorted tape |
+| 8b2a949 | The bundle connects: the orbit test returns the transition g; a placement attaches to its base as a transported section with (assignment, g) in the element's connection; RULING_ATTACHED carries (base, g); adoption of a held address merges the fibre; condense uses the same transport over the atlas stratum |
+| b2db523, 7fe4804 | Court transport aperture: one outbox per wire, drained through the session's perceived impedance (open drains, impeded/occluded probes once per round); reply-bearing requests skip an occluded wire the outbox is probing; judicial state sealed whenever rulings move |
+| eb9b237, 3fcf1b0, 955c14e | Reflex-path relief: the idle redundancy probe decomposes over a snapshot off the lock; kernel persistence paced on the idle stroke by measurement (cards, fibre volume, docket, K), never per event; element address memoized and cleared where the base mutates (boot corpus intake 105 s → 3 s) |
 
 ## Open, in priority order
 
-1. **Contraction measurement and adoption persistence.** Read the era-2
-   federation size against era-1's 1,151. Verify whether the hypha
-   restarts discarded in-memory adoptions (the kernel snapshot writes on
-   verdict application only); add a snapshot trigger on adoption
-   install.
-2. **Q3 — sheaf reconciliation.** Digest-cochain exchange (ACT_DIGESTS)
-   and fetch-by-address (ACT_FETCH) replace the linear genesis pager;
-   cost scales with divergence. The fetch reply carries the origin
-   discoverer voice so adoption installs true provenance; a repair
-   sweep re-attributes the court-attributed installs.
-3. **Spectral congruence lookup.** The orbit check resonates the
-   candidate's invariant signature against the federation's signature
-   field and applies the exact orbit test inside the matching fiber.
-   No sorted scans, no binary search.
-4. **Four-lane completion.** Market quote pricing across all four lanes
+1. **Q3 — sheaf reconciliation over bundles.** Digest exchange
+   (ACT_DIGESTS) keyed by the atlas stratum (the invariant vector) and
+   fetch-by-address (ACT_FETCH) replace the linear genesis pager: the
+   court and each hypha compare per-stratum digests of held base points
+   and their fibre volume, and only divergent strata exchange words.
+   Cost scales with divergence; a restarted hypha re-converges without a
+   re-audit. The fetch reply carries the origin discoverer voice so
+   adoption installs true provenance; a repair sweep re-attributes the
+   court-attributed installs.
+2. **Compression economics.** The era-2 measurement (status note 41:53)
+   shows the vocabulary is distinct geometry classes, not isometry
+   shadows and not hue variants (both now attach). Contraction must come
+   from the economy: a demotion barrier for words that never join a
+   sentence within a metabolic horizon, maintenance drag, and sub-chain
+   rewriting bids (factor w1∘w2 through higher relations).
+3. **Four-lane completion.** Market quote pricing across all four lanes
    (the residual-lane special case in `quote` retires); shell lane
    measured against scene topology rather than changed cells only.
-5. **D4-aware sections.** The condense move absorbs isometry-equivalent
-   siblings so origin bases contract, not only the federation.
-6. **Compression economics.** Demotion barrier for words that never join
-   a sentence within a metabolic horizon; maintenance drag; sub-chain
-   rewriting bids (factor w1∘w2 through higher relations).
-7. **EMA-RTT transport deadline.** Deadline = max(metabolic floor,
-   k·EMA-RTT) per session; the trigger condition (spurious misses on a
-   loaded server) has been observed.
-8. **Residual static ceilings.** `.min(16)`, `.min(8)`, evidence caps
-   (16/64/128), beam cap 4, page depth 8: derive from the metabolism.
-9. **Ledger.** SNF epoching with the finality-root entry schema
+4. **Incremental persistence.** The kernel seal rewrites the whole ledger
+   (17 MB on the training server) on every changed measurement; an
+   append-only ledger of installs/attachments/retirements with periodic
+   compaction makes the seal proportional to the change. Also: open the
+   listener before corpus intake at boot, so a restart never reads as
+   occlusion to its peers.
+5. **EMA-RTT transport deadline.** Deadline = max(metabolic floor,
+   k·EMA-RTT) per session (currently one metabolic cycle, 512 ms on this
+   machine); the trigger condition has been observed twice (loaded
+   reflex path; boot intake).
+6. **Residual static ceilings.** `.min(16)`, `.min(8)`, evidence caps
+   (16/64/128), beam cap 4, page depth 8, condense absorb 8 per stroke:
+   derive from the metabolism.
+7. **Ledger.** SNF epoching with the finality-root entry schema
    (Root(gamma), pi*, voices, mu, receipt); an economic observability
    act for balances, pool, and flows.
-10. **Wire freeze v2.** ed25519 voice signing, sybil-resistant stake
-    bonds, TUniversal origin in the handshake, teach/adopt carrying
-    origin voices.
-11. **#97 frame fiber and Gamma re-measurement**; orbit-quotient variant
-    matching in the peel (replace per-variant probing).
-12. **Solve trajectory.** After items 1–5, re-census the three bases for
+8. **Wire freeze v2.** ed25519 voice signing, sybil-resistant stake
+   bonds, TUniversal origin in the handshake, teach/adopt carrying
+   origin voices; RULING_ATTACHED (base, g) and the element connection
+   tail enter the frozen format.
+9. **#97 frame fiber and Gamma re-measurement**; the peel applies a held
+   word through its connection (the recorded g's) instead of per-variant
+   probing.
+10. **Solve trajectory.** After items 1–2, re-census the three bases for
     convergence and re-run the entities against the shared genome; the
     unique-solve count is the reading.
 
@@ -71,13 +82,20 @@ registered corpus (currently 3 of 1,120).
 
 - No static constants or caps; scale derives from hardware and the
   two-stroke ratios.
-- No boolean gates or out-parameters; deterministic status types
-  matched exhaustively; tallies as match arms.
+- No boolean gates or out-parameters; no status enumerations where a
+  carrier provides the coordinates — a move returns what it measured
+  (sections gained, cards retired, the transition g), and persistence
+  triggers read a measurement, never an event.
 - No wrapper enumerations over protocol replies; the carrier's own
   properties decide.
-- No coordinate-set congruence; orbit classes and invariants.
+- No coordinate-set congruence. The object is the principal bundle
+  P → M with structure group Z² ⋊ D4: the invariant stratification is
+  only the atlas on M, the group element g decides congruence and is
+  never discarded (it is the connection).
 - No linear tape paging or session sweeps; drained relations, digest
-  diffs, peels over content.
+  diffs, peels over content. No binary search over the manifold.
+- Nothing long-running holds the kernel lock on a reflex path;
+  decomposition runs on a snapshot (adoption, the redundancy probe).
 - No local timestamps in probes or logs; TUniversal stamps and
   `scripts/tu`.
 - Servers hold no dialects; the court is the only author of the
@@ -86,7 +104,15 @@ registered corpus (currently 3 of 1,120).
 
 ## Status notes (append at each landing)
 
-- 34:A1 — re-audit in flight (transient unit, see docs/RESUME.md):
-  federation 1020 @ K=2121, orbit-era demotions ~19. Orbit lens alone
-  contracts little; the mass is hue-distinct dust (items 5–6 are the
-  lever). Four-lane surfaces verified on hypha-a and hypha-b.
+- 34:A1 — re-audit in flight under the orbit lens: federation 1020 @
+  K=2121. Four-lane surfaces verified on hypha-a and hypha-b.
+- 41:53 — era-2 re-audit COMPLETE under the bundle lens: federation
+  3,151 words @ K=5,429, 3,262 ruled, 112 attachments this era (of about
+  3,370 rulings, 3.3%). Books at completion: hypha-a 1,507, hypha-b
+  1,104, hypha-c 1,724 (hypha-c now retains its adoptions). Era-1's
+  1,151 is not a comparable baseline: the books tripled through a day of
+  soak. The reading is that the vocabulary is distinct geometry classes;
+  neither isometry shadows nor hue variants account for it (both attach
+  now), so item 2 is the lever. Boot corpus intake on hypha-a fell from
+  105 s to 3 s (address memoization). Unique solves not re-measured this
+  pass (3 standing).
