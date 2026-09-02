@@ -13,26 +13,29 @@
 //! [`super::element::transition`] solves that V in closed form.
 //!
 //! This module is only the atlas on M: to locate a cochain's base point
-//! without enumerating the manifold, every support projects to its
-//! SIMILARITY CHART (`blade::similarity_chart`): corner count, boundary
-//! length over area, anisotropy, spread — exact rationals invariant under
-//! the whole group, computed with no group enumeration. Different charts
-//! imply different orbits. The chart is never the classifier: it only
-//! narrows the candidate base points (an empty stratum is immediate
-//! novelty), and the versor decides and is returned, never discarded. The
-//! strata refine by axis — Vec-of-relations throughout; no map, no sorted
-//! tape, no binary search over the manifold.
+//! without enumerating the manifold, every support reads its MODULI
+//! (`blade::moduli`): components and holes, the boundary's turning count,
+//! boundary length over area, anisotropy, spread, the fourth moment, the
+//! hue fractions — exact scale-free rationals invariant under the whole
+//! group, computed with no group enumeration. Different moduli imply
+//! different orbits. The moduli are coordinates, never a classifier: they
+//! name the stratum (an empty stratum is immediate novelty), and the versor
+//! decides and is returned, never discarded. A stratum holding two words no
+//! versor relates is the measurement that the coordinate set is too coarse:
+//! an axis to extend, not a candidate list to test. The strata refine by
+//! axis — Vec-of-relations throughout; no map, no sorted tape, no binary
+//! search over the manifold.
 
 use super::element::{self, Versor};
 
 /// A chain cell: (row, col, hue before, hue after).
 type Cell = (i64, i64, u8, u8);
 
-/// The chart of a support, flattened in structural order.
+/// The moduli of a support, in axis order.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Invariant(pub Vec<u64>);
 
-/// Measure the chart of a chain's support (hues are fibre coordinates over
+/// Measure the moduli of a chain's support (hues are fibre coordinates over
 /// the base point, not part of the geometry class).
 pub fn invariant(chain: &[Cell]) -> Invariant {
     let mut cells = element::positions(chain);
@@ -42,7 +45,7 @@ pub fn invariant(chain: &[Cell]) -> Invariant {
         return Invariant(Vec::new());
     }
     let shape = super::blade::shape_of(&cells);
-    Invariant(super::blade::similarity_chart(&shape.blade))
+    Invariant(super::blade::moduli(&shape.blade))
 }
 
 /// One stratum of the atlas: the branches refine by the next axis of the
@@ -238,8 +241,8 @@ mod tests {
         let ring = chain(&[(0, 0), (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1), (2, 2)]);
         assert_ne!(invariant(&square), invariant(&bar));
         assert_ne!(invariant(&square), invariant(&ring));
-        assert_eq!(invariant(&square).0[0], 4, "four corners");
-        assert_eq!(invariant(&ring).0[0], 8, "an outer and an inner loop of corners");
+        assert_eq!(&invariant(&square).0[..3], &[1, 0, 4], "one body, no hole, four turns");
+        assert_eq!(&invariant(&ring).0[..3], &[1, 1, 8], "one body, one hole, eight turns");
     }
 
     /// The lookup finds a rotated sibling's base point through its chart and
