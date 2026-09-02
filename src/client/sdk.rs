@@ -336,6 +336,11 @@ pub struct Epigenome {
     /// demands one reading serve every test input jointly, falling through
     /// the beam when a head reading goes silent on a sibling.
     dialect_beam: Vec<Vec<(Vec<(i64, i64, u8, u8)>, Option<Sel>)>>,
+    /// THE ATLAS of the genome — the similarity charts of its words, the
+    /// precision index thinking locates base points through. Measured from
+    /// the genome, rebuilt when the genome's size moves; never persisted.
+    atlas: crate::transducer::stalk::Stalks,
+    atlas_len: usize,
 }
 
 impl Epigenome {
@@ -360,6 +365,15 @@ impl Epigenome {
     /// (the accepted compression bid). Expression rides along (parallel
     /// vector); recollections citing the retired index dissolve — they were
     /// spellings in the old vocabulary — and surviving citations reindex.
+    /// The genome's atlas, current with the genome.
+    pub fn atlas(&mut self) -> &crate::transducer::stalk::Stalks {
+        if self.atlas_len != self.genome.len() {
+            self.atlas = crate::transducer::stalk::Stalks::over(self.genome.iter().map(|w| w.sub()));
+            self.atlas_len = self.genome.len();
+        }
+        &self.atlas
+    }
+
     pub fn retire(&mut self, addr: &[u8; 32]) -> bool {
         let Some(i) = self.genome.iter().position(|w| w.address() == *addr) else {
             return false;
@@ -733,9 +747,12 @@ impl Entity {
         if sub.sub().is_empty() {
             return None;
         }
-        let mut mm = Vec::new();
-        match crate::cognition::decompose_cited(g, sub.sub(), Some(i), budget.0, budget.1, None, &mut mm) {
-            Ok(cites) if !cites.is_empty() => Some((
+        let _ = budget;
+        self.epigenome.atlas();
+        let g = self.epigenome.genome();
+        let (cites, residual) = crate::thinking::cite(g, &self.epigenome.atlas, sub.sub(), Some(i));
+        match (cites.is_empty(), residual.is_empty()) {
+            (false, true) => Some((
                 g[i].address(),
                 cites.into_iter().map(|(j, t, asg)| (g[j].address(), t, asg as u32)).collect(),
             )),
@@ -870,20 +887,11 @@ impl Entity {
     /// CITE: this kernel's reduction of a chain over its own genome — the
     /// citations (address, transport, gauge coordinate) and the residual it
     /// could not reduce. Cognition happens here; the hypha only replays.
-    pub fn cite(&self, chain: &[(i64, i64, u8, u8)], budget: (usize, usize)) -> (Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>) {
+    pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)], _budget: (usize, usize)) -> (Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>) {
+        self.epigenome.atlas();
         let genome = self.epigenome.genome();
-        let mut mismatches = Vec::new();
-        match crate::cognition::decompose_cited(genome, chain, None, budget.0, budget.1, None, &mut mismatches) {
-            Ok(cites) => (
-                cites.into_iter().map(|(i, g, asg)| (genome[i].address(), g, asg as u32)).collect(),
-                Vec::new(),
-            ),
-            Err((void, cites)) => {
-                // The residual is what remains after the best branch: the
-                // citations of that branch ride with it.
-                (cites.into_iter().map(|(i, g, asg)| (genome[i].address(), g, asg as u32)).collect(), void)
-            }
-        }
+        let (cites, residual) = crate::thinking::cite(genome, &self.epigenome.atlas, chain, None);
+        (cites.into_iter().map(|(i, g, asg)| (genome[i].address(), g, asg as u32)).collect(), residual)
     }
 
     /// ABDUCE: the superposition of hypotheses this genome forms for a
@@ -891,12 +899,13 @@ impl Entity {
     /// residual), least defect first. The head is what the entity speaks;
     /// the rest is what it says next when the hypha answers "nothing".
     pub fn abduce(
-        &self,
+        &mut self,
         chain: &[(i64, i64, u8, u8)],
         budget: (usize, usize),
     ) -> Vec<(Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>)> {
+        self.epigenome.atlas();
         let genome = self.epigenome.genome();
-        crate::cognition::abduce(genome, chain, budget.0, budget.1)
+        crate::thinking::abduce(genome, &self.epigenome.atlas, chain, budget.0)
             .into_iter()
             .map(|(cites, residual)| {
                 (

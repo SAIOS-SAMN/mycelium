@@ -6,3 +6,4 @@
 //! arbitrate corpus.
 
 pub mod sdk;
+pub mod thinking;
