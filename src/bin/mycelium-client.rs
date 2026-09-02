@@ -276,18 +276,38 @@ fn main() {
                     if cluster.chain.is_empty() {
                         continue;
                     }
-                    // THINK, then CONVERSE: reduce the listing over this
-                    // genome; probe the hypha with the sentence (closure or
-                    // graded descent settles without germination); attest
-                    // the residual as this voice's irreducible claim.
-                    let (cites, residual) = entity.cite(&cluster.chain, budget);
-                    match entity.probe(&cluster.address, &cites) {
-                        Ok((code, _paid, _remaining)) => match code {
-                            mycelium::anastome::dialogue::PROBE_CLOSED => derived += 1,
-                            mycelium::anastome::dialogue::PROBE_DESCENT => witnessed += 1,
-                            _ => {}
-                        },
-                        Err(_) => errors += 1,
+                    // THINK, then CONVERSE. The superposition of hypotheses
+                    // this genome forms for the listing, least holonomy
+                    // defect first; the beam width is this lane's free
+                    // reserve in expansions (the listing's strongest lane).
+                    let lane = (0..4).max_by_key(|&l| cluster.mu[l]).unwrap_or(2);
+                    let width = (physics.reserve[lane] / spend_unit().max(1)).max(1) as usize;
+                    let hypotheses = entity.abduce(&cluster.chain, (width, budget.1));
+                    // Speak the head; when the hypha answers "nothing", say
+                    // the next hypothesis — until one settles or the
+                    // superposition is spent. The settled branch's residual
+                    // is then attested as this voice's irreducible claim.
+                    let mut residual: Vec<(i64, i64, u8, u8)> = cluster.chain.clone();
+                    for (cites, branch_residual) in &hypotheses {
+                        match entity.probe(&cluster.address, cites) {
+                            Ok((code, _paid, _remaining)) => match code {
+                                mycelium::anastome::dialogue::PROBE_CLOSED => {
+                                    derived += 1;
+                                    residual = Vec::new();
+                                    break;
+                                }
+                                mycelium::anastome::dialogue::PROBE_DESCENT => {
+                                    witnessed += 1;
+                                    residual = branch_residual.clone();
+                                    break;
+                                }
+                                _ => continue,
+                            },
+                            Err(_) => {
+                                errors += 1;
+                                break;
+                            }
+                        }
                     }
                     if residual.is_empty() {
                         continue;

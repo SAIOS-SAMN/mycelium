@@ -1898,6 +1898,77 @@ pub fn decompose_cited(
     Err((void, void_cites))
 }
 
+/// FORWARD ABDUCTION — the superposition kept, not collapsed. Every branch
+/// of the rollout is a hypothesis Ŝ = ∏(wᵢ, gᵢ): a loop formed with the
+/// observed coboundary's inverse. A branch that closes (empty residual)
+/// has trivial holonomy — the flat connection; an open branch carries its
+/// holonomy defect as the residual's magnitude μ⃗(R). Branches rank by
+/// least defect under the multiset order Dershowitz–Manna refines (lanes
+/// sorted descending, compared lexicographically — never summed), then by
+/// citation order, so the ranking is total and deterministic. Width and
+/// depth come from the thinker's own metabolism.
+pub fn abduce(
+    language: &[Element],
+    first: &[(i64, i64, u8, u8)],
+    beam_width: usize,
+    depth: usize,
+) -> Vec<(Vec<Cite>, Vec<(i64, i64, u8, u8)>)> {
+    let mut mismatches = Vec::new();
+    let mut cache: Vec<(usize, Vec<(i64, i64)>)> = Vec::new();
+    if first.is_empty() {
+        return vec![(Vec::new(), Vec::new())];
+    }
+    if let Some(c) = word_matching_anchored(language, first, None, None, &mut cache, &mut mismatches) {
+        return vec![(vec![c], Vec::new())];
+    }
+    let mut beam: Vec<(Vec<(i64, i64, u8, u8)>, Vec<Cite>)> = vec![(first.to_vec(), Vec::new())];
+    let mut population: Vec<(Vec<(i64, i64, u8, u8)>, Vec<Cite>)> = beam.clone();
+    for _ in 0..depth {
+        let mut successors: Vec<(Vec<(i64, i64, u8, u8)>, Vec<Cite>)> = Vec::new();
+        for (chain, word) in &beam {
+            for (cite, translated) in fitting_peels(language, chain, None, None, &mut mismatches) {
+                let remaining: Vec<_> = chain.iter().filter(|t| !translated.contains(*t)).cloned().collect();
+                let mut w = word.clone();
+                w.push(cite);
+                if remaining.is_empty() {
+                    return vec![(w, Vec::new())]; // trivial holonomy: the loop closes
+                }
+                if let Some(c) =
+                    word_matching_anchored(language, &remaining, None, None, &mut cache, &mut mismatches)
+                {
+                    w.push(c);
+                    return vec![(w, Vec::new())];
+                }
+                successors.push((remaining, w));
+            }
+        }
+        if successors.is_empty() {
+            break;
+        }
+        successors.sort_by(|a, b| defect_order(&a.0, &b.0).then(cite_order(&a.1, &b.1)));
+        successors.truncate(beam_width);
+        population.extend(successors.iter().cloned());
+        beam = successors;
+    }
+    population.sort_by(|a, b| defect_order(&a.0, &b.0).then(cite_order(&a.1, &b.1)));
+    population.dedup_by(|a, b| a.1 == b.1);
+    population.into_iter().map(|(remaining, cites)| (cites, remaining)).collect()
+}
+
+/// The holonomy-defect order: the residual's lanes sorted descending,
+/// compared lexicographically (the multiset order ≺_DM refines).
+fn defect_order(a: &[(i64, i64, u8, u8)], b: &[(i64, i64, u8, u8)]) -> std::cmp::Ordering {
+    let mut la = element::measure_lanes(a);
+    let mut lb = element::measure_lanes(b);
+    la.sort_unstable_by(|x, y| y.cmp(x));
+    lb.sort_unstable_by(|x, y| y.cmp(x));
+    la.cmp(&lb)
+}
+
+fn cite_order(a: &[Cite], b: &[Cite]) -> std::cmp::Ordering {
+    a.len().cmp(&b.len()).then(a.iter().map(|(i, _, _)| *i).cmp(b.iter().map(|(i, _, _)| *i)))
+}
+
 /// The chain a citation speaks: the word's assignment along its axis,
 /// transported into the utterance's frame.
 pub fn cited_chain(word: &Element, asg: usize, g: &element::Transition) -> Vec<(i64, i64, u8, u8)> {
@@ -2776,6 +2847,36 @@ mod tests {
         assert_eq!(k.settle_probe([3; 32], &t2, listing.sub().to_vec(), &[]).0, PROBE_NOTHING);
         assert_eq!(k.settle_probe([3; 32], &t2, Vec::new(), &[word]).0, PROBE_CLOSED);
         assert!(k.quote(8).1.is_empty(), "the listing cleared");
+    }
+
+    /// ABDUCTION: the superposition is kept — a chain no single word closes
+    /// yields several cited hypotheses ranked by holonomy defect, the
+    /// closing one first when it exists, and every branch's residual is
+    /// exactly what its replay leaves.
+    #[test]
+    fn abduction_keeps_the_superposition_ranked_by_holonomy_defect() {
+        use crate::transducer::element::from_residual;
+        use crate::transducer::germinate::germinate;
+        let bar = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+        let dot = from_residual(&germinate(&[(0, 0, 3u8)], &[(0, 0, 4u8)]).unwrap());
+        let language = vec![bar, dot];
+        // Two bars and a dot: the loop closes through three citations.
+        let closed = vec![(0, 0, 1, 2), (0, 1, 1, 2), (2, 0, 1, 2), (2, 1, 1, 2), (4, 4, 3, 4)];
+        let hyp = abduce(&language, &closed, 4, 8);
+        assert_eq!(hyp.len(), 1, "a closing branch collapses the superposition");
+        assert!(hyp[0].1.is_empty(), "trivial holonomy");
+        assert_eq!(replay(&language, &hyp[0].0, &closed), Vec::<(i64, i64, u8, u8)>::new());
+        // A bar, a dot, and a cell no word speaks: open branches, ranked.
+        let open = vec![(0, 0, 1, 2), (0, 1, 1, 2), (4, 4, 3, 4), (7, 7, 5, 6)];
+        let hyp = abduce(&language, &open, 4, 8);
+        assert!(hyp.len() > 1, "the superposition survives");
+        assert_eq!(hyp[0].1, vec![(7, 7, 5, 6)], "least defect first");
+        for (cites, residual) in &hyp {
+            assert_eq!(&replay(&language, cites, &open), residual, "each branch's residual is its replay");
+        }
+        let d0 = crate::transducer::element::measure_lanes(&hyp[0].1);
+        let d1 = crate::transducer::element::measure_lanes(&hyp[1].1);
+        assert!(d0.iter().max() <= d1.iter().max(), "ranked by defect");
     }
 
     /// THE PROOF: on the wire the judge replays; a proven percept commits its

@@ -879,6 +879,27 @@ impl Entity {
         }
     }
 
+    /// ABDUCE: the superposition of hypotheses this genome forms for a
+    /// chain — every branch a cited sentence with its holonomy defect (the
+    /// residual), least defect first. The head is what the entity speaks;
+    /// the rest is what it says next when the hypha answers "nothing".
+    pub fn abduce(
+        &self,
+        chain: &[(i64, i64, u8, u8)],
+        budget: (usize, usize),
+    ) -> Vec<(Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>)> {
+        let genome = self.epigenome.genome();
+        crate::cognition::abduce(genome, chain, budget.0, budget.1)
+            .into_iter()
+            .map(|(cites, residual)| {
+                (
+                    cites.into_iter().map(|(i, g, asg)| (genome[i].address(), g, asg as u32)).collect(),
+                    residual,
+                )
+            })
+            .collect()
+    }
+
     /// SPEAK a percept as a proof: perceive, germinate, reduce every germ
     /// over the genome, and submit the citations with the bodies.
     pub fn submit(
