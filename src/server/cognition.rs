@@ -772,29 +772,7 @@ impl Kernel {
         if chain.is_empty() {
             return false;
         }
-        // COMPOSITE FRAGMENTATION (7d) at the corpus door, as at the percept
-        // door: a coboundary wider than the atomic perceptual frame lists as
-        // overlapping tiles carrying the parent's lineage, never as one
-        // chain no contact can carry and no entity can reduce.
-        let tiles = quadrant_tiles(chain);
-        if tiles.len() > 1 {
-            let parent = composite_parent_id(chain);
-            let children: Vec<([u8; 32], bool)> =
-                tiles.iter().map(|t| (element::from_residual(t).address(), false)).collect();
-            let overlap = overlap_strip(chain, &tiles);
-            self.register_composites(vec![(parent, children, overlap)]);
-            let mut listed = false;
-            for tile in &tiles {
-                listed |= self.list_residual(element::from_residual(tile));
-            }
-            return listed;
-        }
-        self.list_residual(element::from_residual(&chain.to_vec()))
-    }
-
-    /// List one un-factored residual on the open book under the thermodynamic
-    /// discipline (already speakable or listed: no; book full: no).
-    fn list_residual(&mut self, residual: Element) -> bool {
+        let residual = element::from_residual(&chain.to_vec());
         let addr = residual.address();
         if self.basis.iter().any(|t| t.address() == addr)
             || self.pending.iter().any(|(p, _)| p.address() == addr)
