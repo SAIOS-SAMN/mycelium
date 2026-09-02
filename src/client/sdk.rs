@@ -383,10 +383,11 @@ impl Epigenome {
         cell.get_or_init(|| crate::transducer::element::shape_of_chain(self.genome[i].sub())).as_ref()
     }
 
-    /// Locate a chain over this genome: citations and the residual.
-    fn locate(&mut self, chain: &[(i64, i64, u8, u8)], exclude: Option<usize>, strokes: usize) -> crate::thinking::Located {
+    /// Deconstruct a chain over this genome: the sentence it composes and
+    /// the residual no word speaks.
+    fn locate(&mut self, chain: &[(i64, i64, u8, u8)], exclude: Option<usize>) -> crate::transducer::sentence::Sentence {
         self.atlas();
-        crate::thinking::cite(&self.genome, &self.atlas, &|i| self.shape(i), chain, exclude, strokes)
+        crate::transducer::sentence::deconstruct(&self.genome, &self.atlas, &|i| self.shape(i), chain, exclude)
     }
 
     pub fn retire(&mut self, addr: &[u8; 32]) -> bool {
@@ -415,8 +416,8 @@ impl Epigenome {
     pub fn comprehend(&mut self, utterance: &Element) -> Comprehension {
         // Located through the atlas and the versor, never searched. A taught
         // word is one piece: one stroke locates it.
-        let located = self.locate(utterance.sub(), None, 1);
-        match located.residual.is_empty() && located.deferred.is_empty() {
+        let located = self.locate(utterance.sub(), None);
+        match located.is_closed() {
             true => {
                 let sentence: Vec<usize> = located.cites.into_iter().map(|(i, _, _)| i).collect();
                 for &w in &sentence {
@@ -432,7 +433,7 @@ impl Epigenome {
                 }
                 Comprehension::Understood(sentence)
             }
-            false => Comprehension::Novel { residual_cells: located.residual.len() + located.deferred.len() },
+            false => Comprehension::Novel { residual_cells: located.residual.len() },
         }
     }
 
@@ -762,7 +763,7 @@ impl Entity {
     /// redundancy the vocabulary is carrying — a compression bid. The probe
     /// is a virtual rollout (zero mutation); the hypha's deterministic
     /// replay, not this discovery, decides retirement.
-    pub fn seek_refinement(&mut self, budget: (usize, usize)) -> Option<([u8; 32], Vec<dialogue::CiteWire>)> {
+    pub fn seek_refinement(&mut self) -> Option<([u8; 32], Vec<dialogue::CiteWire>)> {
         let g = self.epigenome.genome();
         if g.len() < 2 {
             return None;
@@ -773,10 +774,10 @@ impl Entity {
         if sub.sub().is_empty() {
             return None;
         }
-        let located = self.epigenome.locate(sub.sub(), Some(i), budget.1);
+        let located = self.epigenome.locate(sub.sub(), Some(i));
         let (cites, residual) = (located.cites, located.residual);
         let g = self.epigenome.genome();
-        match (cites.is_empty(), residual.is_empty() && located.deferred.is_empty()) {
+        match (cites.is_empty(), residual.is_empty()) {
             (false, true) => Some((
                 g[i].address(),
                 cites.into_iter().map(|(j, t, asg)| (g[j].address(), t, asg as u32)).collect(),
@@ -914,33 +915,10 @@ impl Entity {
     /// CITE: this kernel's reduction of a chain over its own genome — the
     /// citations (address, transport, gauge coordinate) and the residual it
     /// could not reduce. Cognition happens here; the hypha only replays.
-    pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)], budget: (usize, usize)) -> (Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>) {
-        let located = self.epigenome.locate(chain, None, budget.1);
+    pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)]) -> (Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>) {
+        let located = self.epigenome.locate(chain, None);
         let genome = self.epigenome.genome();
         (located.cites.into_iter().map(|(i, g, asg)| (genome[i].address(), g, asg as u32)).collect(), located.residual)
-    }
-
-    /// ABDUCE: the superposition of hypotheses this genome forms for a
-    /// chain — every branch a cited sentence with its holonomy defect (the
-    /// residual), least defect first. The head is what the entity speaks;
-    /// the rest is what it says next when the hypha answers "nothing".
-    pub fn abduce(
-        &mut self,
-        chain: &[(i64, i64, u8, u8)],
-        budget: (usize, usize),
-    ) -> Vec<(Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>)> {
-        self.epigenome.atlas();
-        let epi = &self.epigenome;
-        let genome = epi.genome();
-        crate::thinking::abduce(genome, &epi.atlas, &|i| epi.shape(i), chain, budget.0, budget.1)
-            .into_iter()
-            .map(|(cites, residual)| {
-                (
-                    cites.into_iter().map(|(i, g, asg)| (genome[i].address(), g, asg as u32)).collect(),
-                    residual,
-                )
-            })
-            .collect()
     }
 
     /// SPEAK a percept as a proof: perceive, germinate, reduce every germ
@@ -950,12 +928,11 @@ impl Entity {
         a: &[(i64, i64, u8)],
         b: &[(i64, i64, u8)],
         frame: &crate::arc::Frame,
-        budget: (usize, usize),
     ) -> io::Result<(Reply, Option<Comprehension>)> {
         let (a_bodies, b_bodies) = perceive(a, b);
         let proof: Vec<Vec<dialogue::CiteWire>> = crate::cognition::germinate_bodies(&a_bodies, &b_bodies, frame)
             .map(|(germs, _)| {
-                germs.iter().map(|(g, _)| self.cite(g.substance().sub(), budget).0).collect()
+                germs.iter().map(|(g, _)| self.cite(g.substance().sub()).0).collect()
             })
             .unwrap_or_default();
         let reply = self.session.submit(a, b, frame, &proof)?;
@@ -971,19 +948,16 @@ impl Entity {
     pub fn attest(&self, chain: &[(i64, i64, u8, u8)], cites: &[dialogue::CiteWire]) -> io::Result<Reply> {
         self.session.attest(chain, cites)
     }
-    /// CONCLUDE a listing in this genome's own algebra: the superposition is
-    /// rolled out and replayed locally, and the branch of least residual is
-    /// the one sentence this voice commits to the wire. None when the genome
-    /// speaks no part of the chain — silence, not a query.
+    /// CONCLUDE a listing in this genome's own algebra: the chain is
+    /// deconstructed into the words that compose it, and that one sentence
+    /// with its residual is what this voice commits to the wire. None when
+    /// the genome speaks no part of the chain — silence, not a query.
     pub fn conclude(
         &mut self,
         chain: &[(i64, i64, u8, u8)],
-        budget: (usize, usize),
     ) -> Option<(Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>)> {
-        self.abduce(chain, budget)
-            .into_iter()
-            .filter(|(cites, _)| !cites.is_empty())
-            .min_by_key(|(cites, residual)| (residual.len(), cites.len()))
+        let (cites, residual) = self.cite(chain);
+        (!cites.is_empty()).then_some((cites, residual))
     }
     pub fn probe(&self, target: &[u8; 32], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4], [u64; 4])> {
         self.session.probe(target, cites)

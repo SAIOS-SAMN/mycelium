@@ -27,7 +27,7 @@
 //! Usage: mycelium-client [ADDR] --kernel NAME [--state DIR]
 //!            [--feed CORPUS_DIR] [--loop] [--limit N] [--conductor BOARD]
 use mycelium::arc::{embed, frame_ratio, grid_to_cells, parse_task, readback};
-use mycelium::physics::{reserve_max, spend_unit, Physics};
+use mycelium::physics::{reserve_max, Physics};
 use mycelium::sdk::{Comprehension, Entity, Kernel, YieldQuote};
 use std::path::PathBuf;
 use std::time::Instant;
@@ -161,10 +161,6 @@ fn main() {
         // THE ENTITY'S REDUCTION BUDGET — from its own metabolism: the beam
         // is one expansion's worth of branches, the depth one reserve of
         // strokes. Hardware-calibrated, never a constant.
-        let budget = (
-            spend_unit().max(1) as usize,
-            (reserve_max() / spend_unit().max(1)).max(1) as usize,
-        );
 
         // ── FEED (entropic): present corpus transitions until the stroke
         // spends. A percept is a PROOF spoken over this genome: what the
@@ -247,7 +243,7 @@ fn main() {
             if a.is_empty() || b.is_empty() {
                 continue;
             }
-            match entity.submit(&a, &b, &(hi, wi, ho, wo), budget) {
+            match entity.submit(&a, &b, &(hi, wi, ho, wo)) {
                 Ok((reply, heard)) => {
                     fed += 1;
                     if reply.settle.is_some() {
@@ -290,16 +286,14 @@ fn main() {
                     // defect first; the beam width is this lane's free
                     // reserve in expansions (the listing's strongest lane).
                     let lane = (0..4).max_by_key(|&l| cluster.mu[l]).unwrap_or(2);
-                    let width = (physics.reserve[lane] / spend_unit().max(1)).max(1) as usize;
                     // The superposition is rolled out and settled here, in
                     // the genome's own algebra; the wire carries one
                     // commitment per cluster: the concluded sentence with
                     // its residual. A genome with nothing to say stays silent.
                     let t0 = std::time::Instant::now();
-                    eprintln!("[{name}] [{}] cluster {} cells width {width}: concluding", tuniversal.stamp(), cluster.chain.len());
-                    let concluded = entity.conclude(&cluster.chain, (width, budget.1));
+                    let concluded = entity.conclude(&cluster.chain);
                     eprintln!(
-                        "[{name}] [{}] cluster {} cells width {width}: concluded in {} ms -> {}",
+                        "[{name}] [{}] cluster {} cells: concluded in {} ms -> {}",
                         tuniversal.stamp(),
                         cluster.chain.len(),
                         t0.elapsed().as_millis(),
@@ -441,7 +435,7 @@ fn main() {
             // compression. The hypha's replay rules; on acceptance the word
             // retires fleet-wide and the entity earns the compression yield.
             lap("sync");
-            if let Some((word, cites)) = entity.seek_refinement(budget) {
+            if let Some((word, cites)) = entity.seek_refinement() {
                 if let Ok((code, mu)) = entity.bid_refinement(&word, &cites) {
                     if code == mycelium::anastome::dialogue::REFINE_ACCEPTED {
                         refined += 1;

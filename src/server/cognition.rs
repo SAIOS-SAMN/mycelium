@@ -1887,12 +1887,9 @@ pub fn decompose_over_anchored(
         .map_err(|(void, _)| void)
 }
 
-/// A CITATION: the coordinates a sentence speaks for one word — its index
-/// in the language, the transport carrying the word's chain into the
-/// utterance's frame, and the gauge coordinate (which assignment along the
-/// punctured axis). A proof is a sequence of citations; a replay applies
-/// them and measures what remains.
-pub type Cite = (usize, element::Versor, usize);
+/// The citation, the replay, and the cited pattern are the sentence
+/// algebra shared with the entity and the court.
+pub use crate::transducer::sentence::{cited_pattern, replay, Cite};
 
 /// The cited decomposition — the same superposition, keeping every peel's
 /// coordinates so the sentence can be spoken as a proof. `Err` carries the
@@ -2027,71 +2024,6 @@ fn defect_order(a: &[(i64, i64, u8, u8)], b: &[(i64, i64, u8, u8)]) -> std::cmp:
 
 fn cite_order(a: &[Cite], b: &[Cite]) -> std::cmp::Ordering {
     a.len().cmp(&b.len()).then(a.iter().map(|(i, _, _)| *i).cmp(b.iter().map(|(i, _, _)| *i)))
-}
-
-/// The chain a citation names in the word's own frame: the word's
-/// assignment along its axis over its support.
-fn cited_pattern(word: &Element, asg: usize) -> Option<Vec<(i64, i64, u8, u8)>> {
-    let pos = element::positions(word.sub());
-    let assignment = word.assignments().into_iter().nth(asg)?;
-    let mut pat: Vec<(i64, i64, u8, u8)> =
-        pos.iter().zip(&assignment).map(|((r, c), (b, a))| (*r, *c, *b, *a)).collect();
-    pat.sort_unstable();
-    Some(pat)
-}
-
-/// THE REPLAY — in the algebra and linear in the proof. For every citation
-/// the target's cell centers are carried back by V⁻¹ into the word's frame,
-/// and the word cell whose unit square contains the carried point must
-/// speak the same transition — exact containment on the sensor's own
-/// lattice, never a rasterization of the word. A word cell whose carried
-/// center lands outside the target is over-explanation. The residual is
-/// R = Q △ S: the target cells no citation speaks, plus the over-explained
-/// cells. An empty residual is closure; a citation naming nothing held
-/// speaks nothing.
-pub fn replay(
-    language: &[Element],
-    cites: &[Cite],
-    target: &[(i64, i64, u8, u8)],
-) -> Vec<(i64, i64, u8, u8)> {
-    let mut sorted_target = target.to_vec();
-    sorted_target.sort_unstable();
-    let mut spoken = vec![false; sorted_target.len()];
-    let mut over: Vec<(i64, i64, u8, u8)> = Vec::new();
-    for (i, v, asg) in cites {
-        let Some(w) = language.get(*i) else { continue };
-        let Some(pat) = cited_pattern(w, *asg) else { continue };
-        let Some(inv) = v.versor_inverse() else { continue };
-        for (k, &(r, c, b, a)) in sorted_target.iter().enumerate() {
-            if spoken[k] {
-                continue;
-            }
-            let Some(p) = element::carry_center(&inv, r, c) else { continue };
-            let (wr, wc) = element::cell_of(&p);
-            if let Ok(j) = pat.binary_search_by(|x| (x.0, x.1).cmp(&(wr, wc))) {
-                if (pat[j].2, pat[j].3) == (b, a) {
-                    spoken[k] = true;
-                }
-            }
-        }
-        for &(wr, wc, wb, wa) in &pat {
-            let Some(p) = element::carry_center(v, wr, wc) else { continue };
-            let (tr, tc) = element::cell_of(&p);
-            if sorted_target.binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc))).is_err() {
-                over.push((tr, tc, wb, wa));
-            }
-        }
-    }
-    let mut residual: Vec<(i64, i64, u8, u8)> = sorted_target
-        .iter()
-        .zip(&spoken)
-        .filter(|(_, s)| !**s)
-        .map(|(t, _)| *t)
-        .collect();
-    residual.extend(over);
-    residual.sort_unstable();
-    residual.dedup();
-    residual
 }
 
 /// The direct terminal: does the (re-centered) chain SIT on a held word — its
