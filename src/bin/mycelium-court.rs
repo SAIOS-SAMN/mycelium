@@ -36,11 +36,51 @@
 use mycelium::anastome::dialogue;
 use mycelium::chronometry::ReceiptChain;
 use mycelium::physics::{reserve_max, Physics};
-use mycelium::sdk::{Kernel, Session};
+use mycelium::sdk::{Kernel, Session, TransportAperture};
 use mycelium::transducer::element::Element;
 use mycelium::transducer::stalk::{self, Stalks};
 use mycelium::verdict;
 use std::time::Instant;
+
+/// THE COURT'S TRANSPORT APERTURE. Every utterance to a hypha waits in that
+/// wire's outbox and leaves through the perceived aperture: an open wire
+/// drains, an impeded or occluded wire carries one probe per round (the
+/// head), so a saturated hypha is neither hammered nor forgotten — its
+/// verdicts and teachings wait and deliver when the wire clears. The
+/// impedance is the session's own measurement (a timed-out exchange raises
+/// it, a passed one clears it); nothing here redials blind. Returns the
+/// utterances delivered.
+fn drain(session: &Session, outbox: &mut Vec<Vec<u8>>) -> usize {
+    let budget = match session.transport() {
+        TransportAperture::Open => outbox.len(),
+        TransportAperture::Impeded { .. } | TransportAperture::Occluded { .. } => {
+            outbox.len().min(1)
+        }
+    };
+    let mut delivered = 0usize;
+    while delivered < budget {
+        match session.speak(outbox[0].clone()) {
+            Ok(_) => {
+                outbox.remove(0);
+                delivered += 1;
+            }
+            Err(_) => break,
+        }
+    }
+    delivered
+}
+
+/// A request whose reply is needed now (a page, a docket, an evidence pool)
+/// passes only through a wire that is not occluded; an occluded wire with
+/// waiting utterances is probed by its outbox instead, so the court never
+/// pays two deadlines on one saturated hypha in a round. None = the wire is
+/// turned inward this round.
+fn ask(session: &Session, outbox: &[Vec<u8>], body: Vec<u8>) -> Option<Vec<u8>> {
+    match session.transport() {
+        TransportAperture::Occluded { .. } if !outbox.is_empty() => None,
+        _ => session.speak(body).ok(),
+    }
+}
 
 fn flags<'a>(args: &'a [String], name: &str) -> Vec<&'a str> {
     args.windows(2).filter(|w| w[0] == name).map(|w| w[1].as_str()).collect()
@@ -157,6 +197,9 @@ fn main() {
     // deduplication makes any retry idempotent. An empty relation is the
     // audit's completed state — nothing iterates the finished.
     let mut genesis_walk: Vec<(usize, u32)> = (0..sessions.len()).map(|i| (i, 0)).collect();
+    // One outbox per wire: the court's utterances to that hypha, delivered
+    // through its aperture at the end of every round (see `drain`).
+    let mut outbox: Vec<Vec<Vec<u8>>> = vec![Vec::new(); sessions.len()];
 
     loop {
         let mut heard_any = false;
@@ -167,17 +210,16 @@ fn main() {
         // walk's states — a non-empty page is work, the empty page is the
         // end. No wrapper types.
         if let Some(&(si, cursor)) = genesis_walk.first() {
-            let page = sessions[si]
-                .speak(dialogue::encode_genesis_request(&voice, cursor))
+            let page = ask(&sessions[si], &outbox[si], dialogue::encode_genesis_request(&voice, cursor))
                 .map(|body| dialogue::decode_syllabus_reply(&body));
             match page {
-                Err(_) | Ok(None) => {
-                    // Unreachable or unreadable: the entry retries after the
-                    // others advance.
+                None | Some(None) => {
+                    // Turned inward, unreachable, or unreadable: the entry
+                    // retries after the others advance.
                     let entry = genesis_walk.remove(0);
                     genesis_walk.push(entry);
                 }
-                Ok(Some(words)) if words.is_empty() => {
+                Some(Some(words)) if words.is_empty() => {
                     genesis_walk.remove(0); // audited whole — leaves the relation
                     eprintln!(
                         "genesis audit of {} complete: federation {} words, K={}",
@@ -193,7 +235,7 @@ fn main() {
                         (upheld, demoted, slashed, rebinds),
                     );
                 }
-                Ok(Some(words)) => {
+                Some(Some(words)) => {
                     genesis_walk[0].1 += words.len() as u32; // non-empty: the walk advances
                     heard_any = true;
                     for wb in &words {
@@ -214,17 +256,11 @@ fn main() {
                                 stalks.admit(&stalk::invariant(sealed.sub()), federation.len());
                                 federation.push((addr, sealed));
                                 upheld += 1;
-                                // Propagation: a count of deterministic queue
-                                // acknowledgements across the nerve.
-                                let _acks = sessions
-                                    .iter()
-                                    .filter(|peer| {
-                                        matches!(
-                                            peer.speak(dialogue::encode_adopt(&voice, wb)),
-                                            Ok(ref r) if r.first() == Some(&1)
-                                        )
-                                    })
-                                    .count();
+                                // Propagation: the word teaches across the
+                                // nerve through every wire's aperture.
+                                for ob in outbox.iter_mut() {
+                                    ob.push(dialogue::encode_adopt(&voice, wb));
+                                }
                             }
                             verdict::Ruling::Consilient | verdict::Ruling::Dialect => upheld += 1,
                             verdict::Ruling::Attached { base, g } => {
@@ -242,9 +278,9 @@ fn main() {
                                 let attach = dialogue::encode_verdict_attach(
                                     &voice, &addr, &receipt, &base_addr, &g,
                                 );
-                                for peer in &sessions {
-                                    let _ = peer.speak(dialogue::encode_adopt(&voice, &base_bytes));
-                                    let _ = peer.speak(attach.clone());
+                                for ob in outbox.iter_mut() {
+                                    ob.push(dialogue::encode_adopt(&voice, &base_bytes));
+                                    ob.push(attach.clone());
                                 }
                                 demoted += 1;
                             }
@@ -256,7 +292,8 @@ fn main() {
             }
         }
         for (hi, session) in sessions.iter().enumerate() {
-            let Ok(body) = session.speak(dialogue::encode_docket_request(&voice)) else {
+            let Some(body) = ask(session, &outbox[hi], dialogue::encode_docket_request(&voice))
+            else {
                 continue;
             };
             let Some(dockets) = dialogue::decode_docket_reply(&body) else { continue };
@@ -304,18 +341,15 @@ fn main() {
                     }
                     None => dialogue::encode_verdict(&voice, &addr, ruling.0, &receipt),
                 };
-                let mut applied = false;
-                for peer in &sessions {
+                for ob in outbox.iter_mut() {
                     // The enriched base teaches before the attach lands, so a
                     // hypha that lacks the base can adopt it first.
                     if let Some((_, base_bytes, _)) = &attach {
-                        let _ = peer.speak(dialogue::encode_adopt(&voice, base_bytes));
+                        ob.push(dialogue::encode_adopt(&voice, base_bytes));
                     }
-                    if peer.speak(verdict.clone()).map(|r| r.first() == Some(&1)).unwrap_or(false) {
-                        applied = true;
-                    }
+                    ob.push(verdict.clone());
                     if ruling.0 == dialogue::RULING_UPHELD {
-                        let _ = peer.speak(dialogue::encode_adopt(&voice, &elem_bytes));
+                        ob.push(dialogue::encode_adopt(&voice, &elem_bytes));
                     }
                 }
                 match ruling.0 {
@@ -326,7 +360,7 @@ fn main() {
                 ruled.push(addr);
                 persist(&chain, &federation, &ruled, &rebound, (upheld, demoted, slashed, rebinds));
                 eprintln!(
-                    "  [{}] {:02x}{:02x}… voices {} μ⃗ {mu:?} → {} ({}) applied={applied} K={}",
+                    "  [{}] {:02x}{:02x}… voices {} μ⃗ {mu:?} → {} ({}) K={}",
                     hyphas[hi],
                     addr[0],
                     addr[1],
@@ -351,7 +385,8 @@ fn main() {
         // exists, derive π* = the tightest common carrier (the intersection
         // move — one evidence never binds) and speak the REBIND verdict.
         for (hi, session) in sessions.iter().enumerate() {
-            let Ok(body) = session.speak(dialogue::encode_evidence_request(&voice)) else {
+            let Some(body) = ask(session, &outbox[hi], dialogue::encode_evidence_request(&voice))
+            else {
                 continue;
             };
             let Some(items) = dialogue::decode_evidence_reply(&body) else { continue };
@@ -392,11 +427,8 @@ fn main() {
                 &receipt,
                 Some(&pi),
             );
-            let mut applied_any = false;
-            for session in &sessions {
-                if session.speak(verdict.clone()).map(|r| r.first() == Some(&1)).unwrap_or(false) {
-                    applied_any = true;
-                }
+            for ob in outbox.iter_mut() {
+                ob.push(verdict.clone());
             }
             rebinds += 1;
             match rebound.iter_mut().find(|(a, _)| a == addr) {
@@ -405,7 +437,7 @@ fn main() {
             }
             persist(&chain, &federation, &ruled, &rebound, (upheld, demoted, slashed, rebinds));
             eprintln!(
-                "  REBIND {:02x}{:02x}… π* {:?} from {} evidences, applied={applied_any} K={}",
+                "  REBIND {:02x}{:02x}… π* {:?} from {} evidences, K={}",
                 addr[0],
                 addr[1],
                 pi,
@@ -417,6 +449,20 @@ fn main() {
             false // spent — the family bound its word
         });
 
+        // ── SPEAK through every wire's aperture: the outboxes drain where
+        // the wire is open and probe where it is not.
+        for (i, session) in sessions.iter().enumerate() {
+            let waiting = outbox[i].len();
+            let delivered = drain(session, &mut outbox[i]);
+            if delivered < waiting {
+                eprintln!(
+                    "  [{}] aperture {:?}: {delivered}/{waiting} delivered, {} waiting",
+                    hyphas[i],
+                    session.transport(),
+                    outbox[i].len(),
+                );
+            }
+        }
         // The court breathes like every kernel: rulings are the entropic
         // stroke; an empty docket round is the syntropic dwell.
         if !heard_any {
