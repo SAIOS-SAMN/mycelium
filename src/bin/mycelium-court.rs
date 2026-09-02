@@ -245,7 +245,7 @@ fn main() {
                         if ruled.contains(&addr) {
                             continue; // sealed in a prior block — never re-adjudicated
                         }
-                        let outcome = verdict::rule(&federation, &stalks, &addr, spoken.as_ref());
+                        let outcome = verdict::rule(&federation, &stalks, &addr, spoken.as_ref(), None);
                         let mut op = [0u8; 32];
                         op[0] = outcome.code();
                         let receipt = chain.append(addr, op).chain_hash;
@@ -297,7 +297,7 @@ fn main() {
                 continue;
             };
             let Some(dockets) = dialogue::decode_docket_reply(&body) else { continue };
-            for (addr, elem_bytes, voices, mu) in dockets {
+            for (addr, elem_bytes, voices, mu, deflation) in dockets {
                 if ruled.contains(&addr) {
                     continue;
                 }
@@ -307,7 +307,7 @@ fn main() {
                 // carrying its sealed element, never a flag.
                 let mut pos = 0usize;
                 let spoken = Element::from_bytes(&elem_bytes, &mut pos);
-                let outcome = verdict::rule(&federation, &stalks, &addr, spoken.as_ref());
+                let outcome = verdict::rule(&federation, &stalks, &addr, spoken.as_ref(), Some(&deflation));
                 if let verdict::Ruling::Admitted(sealed) = &outcome {
                     stalks.admit(&stalk::invariant(sealed.sub()), federation.len());
                     federation.push((addr, sealed.clone()));

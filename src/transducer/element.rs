@@ -307,6 +307,22 @@ pub fn assignment(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
     chain.iter().map(|(_, _, b, a)| (*b, *a)).collect()
 }
 
+/// THE GAUGE FIBERS of a chain: the chain opened along its fiber
+/// coordinate, one sub-chain per transition class, in class order. The
+/// carrier reads its own coordinate; nothing scans cells against a test.
+pub fn gauge_fibers(chain: &[(i64, i64, u8, u8)]) -> Vec<((u8, u8), Vec<(i64, i64, u8, u8)>)> {
+    let mut out: Vec<((u8, u8), Vec<(i64, i64, u8, u8)>)> = Vec::new();
+    for &cell in chain {
+        let class = (cell.2, cell.3);
+        match out.iter_mut().find(|(k, _)| *k == class) {
+            Some((_, fiber)) => fiber.push(cell),
+            None => out.push((class, vec![cell])),
+        }
+    }
+    out.sort_by_key(|(k, _)| *k);
+    out
+}
+
 impl Element {
     /// The identity element on `dim` coordinates — the empty description (no
     /// transition on any axis). `dim` is the representation dimension shared by

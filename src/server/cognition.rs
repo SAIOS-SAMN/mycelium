@@ -492,6 +492,10 @@ pub struct Kernel {
     /// closes or descends changes address and leaves this relation; a quote
     /// never serves a voice a listing it has already spoken on.
     spoken: Vec<([u8; 32], [u8; 32])>,
+    /// THE DEFLATIONS: per provisional word, the magnitude of the listed
+    /// demand its install settled — zero when the germ settled nothing on
+    /// the book. The court's proof of convergence rides with the word.
+    deflations: Vec<([u8; 32], [u64; 4])>,
     pub nerve: Nerve,
     /// Round-robin cursor for syntropic optimization — which generator to test for
     /// redundancy next (bounds consolidation to one reduce per depleted step).
@@ -786,7 +790,7 @@ impl Kernel {
 
     /// THE DOCKET (Step 5): every provisional word, exported for the court's
     /// blind replay + confluence audit — (element, attesting voices, escrowed μ⃗).
-    pub fn dockets(&self) -> Vec<([u8; 32], Element, Vec<[u8; 32]>, [u64; 4])> {
+    pub fn dockets(&self) -> Vec<([u8; 32], Element, Vec<[u8; 32]>, [u64; 4], [u64; 4])> {
         self.provisional
             .iter()
             .filter_map(|(addr, spoken)| {
@@ -795,7 +799,7 @@ impl Kernel {
                     .escrowed_awards()
                     .iter()
                     .find(|(a, _, _, _)| a == addr)?;
-                Some((*addr, spoken.clone(), voices.clone(), *mu))
+                Some((*addr, spoken.clone(), voices.clone(), *mu, self.deflation_of(addr)))
             })
             .collect()
     }
@@ -1060,6 +1064,19 @@ impl Kernel {
         if !self.spoken.iter().any(|(a, v)| *a == listing && *v == voice) {
             self.spoken.push((listing, voice));
         }
+    }
+
+    /// The deflation a provisional word's install measured on the book.
+    pub fn deflation_of(&self, addr: &[u8; 32]) -> [u64; 4] {
+        self.deflations.iter().find(|(a, _)| a == addr).map(|(_, d)| *d).unwrap_or([0; 4])
+    }
+
+    /// Measure and record what installing `addr` settles on the book: the
+    /// magnitude of the listed demand at that address, or nothing.
+    fn record_deflation(&mut self, addr: [u8; 32]) {
+        let deflation = self.pending.iter().find(|(p, _)| p.address() == addr).map(|(p, _)| p.magnitude()).unwrap_or([0; 4]);
+        self.deflations.retain(|(a, _)| *a != addr);
+        self.deflations.push((addr, deflation));
     }
 
     /// The listings this voice has already spoken on, in their current state.
@@ -1396,6 +1413,7 @@ impl Kernel {
                         // court's finality verdict — unfinalized speech earns
                         // nothing; the puncture itself is local dialect.
                         self.treasury.escrow_award(saddr, self.admission.voices_of(&saddr), mu, anchor);
+                        self.record_deflation(saddr);
                         self.provisional.push((saddr, residual.clone()));
                         self.physics.relieve(&mag);
                         self.physics.syntropy(&mag); // volume built through the axis
@@ -1434,6 +1452,7 @@ impl Kernel {
                     // court's admission docket; the word joins the basis as
                     // local dialect, final settlement waits for the verdict.
                     self.treasury.escrow_award(addr, self.admission.voices_of(&addr), mu, anchor);
+                    self.record_deflation(addr);
                     self.provisional.push((addr, residual.clone()));
                     self.physics.relieve(&mag);
                     self.physics.syntropy(&mag); // a completed rule is order built
@@ -2914,7 +2933,7 @@ mod tests {
         assert_eq!(k.treasury().balance_mu(&[2; 32]), [0; 4]);
         let dockets = k.dockets();
         assert_eq!(dockets.len(), 1, "the provisional word is on the docket");
-        let (addr, spoken, voices, mu) = &dockets[0];
+        let (addr, spoken, voices, mu, _) = &dockets[0];
         assert_eq!(voices.len(), 2, "both attesting voices ride the docket");
         assert!(mu[2] > 0, "the escrowed award is real");
         assert_eq!(spoken.address(), *addr, "the docket carries the word as spoken");
@@ -2937,7 +2956,7 @@ mod tests {
         let chain = k.quote(4).1[0].0.sub().to_vec();
         assert!(matches!(k.attest(&chain, [2; 32]), Outcome::Installed(0)));
         let before = k.basis_len();
-        let (addr, _, _, _) = k.dockets()[0].clone();
+        let (addr, _, _, _, _) = k.dockets()[0].clone();
         assert!(k.apply_verdict(&addr, crate::anastome::dialogue::RULING_SLASHED));
         assert_eq!(k.basis_len(), before - 1, "the slashed word is excised");
         assert_eq!(k.treasury().balance_mu(&[1; 32]), [0; 4], "nothing was ever paid");

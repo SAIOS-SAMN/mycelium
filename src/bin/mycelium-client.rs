@@ -445,12 +445,10 @@ fn main() {
             }
         }
 
-        // ── SYNTROPIC PHASE — crystallize, voice change, regenerate.
-        if physics.depleted() {
-            // THE SYLLABUS (distributed cognition): the crystallization phase
-            // is the learning phase — pull the court-ratified stream from
-            // this voice's cursor; the dialect re-resolves against the
-            // higher-order language on the next study.
+        // THE SYLLABUS: the court-ratified stream from this voice's cursor,
+        // pulled every stroke — teaching is part of the conversation, not a
+        // charity of the depleted phase.
+        if !occluded {
             if let Ok(n) = entity.pull_syllabus() {
                 if n > 0 {
                     learned += n as u64;
@@ -460,6 +458,10 @@ fn main() {
                     );
                 }
             }
+        }
+
+        // ── SYNTROPIC PHASE — crystallize, voice change, regenerate.
+        if physics.depleted() {
             lap("task");
             // THE SHEAF SYNC (Q3): converge the genome on the hypha's
             // language by discordant stratum — the entity thinks in the

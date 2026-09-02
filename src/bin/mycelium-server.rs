@@ -515,11 +515,11 @@ fn main() {
         // ── docket: the court pulls what awaits finality ─────────────────────
         if kind == dialogue::ACT_DOCKET {
             let Some(_cvoice) = dialogue::decode_docket_request(&frame.body) else { continue };
-            let dockets: Vec<([u8; 32], Vec<u8>, Vec<[u8; 32]>, [u64; 4])> = {
+            let dockets: Vec<dialogue::Docket> = {
                 let k = kernel.lock().unwrap();
                 k.dockets()
                     .into_iter()
-                    .map(|(addr, spoken, voices, mu)| (addr, spoken.to_bytes(), voices, mu))
+                    .map(|(addr, spoken, voices, mu, deflation)| (addr, spoken.to_bytes(), voices, mu, deflation))
                     .collect()
             };
             let reply = Frame { lane: frame.lane, body: dialogue::encode_docket_reply(&dockets) };

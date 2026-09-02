@@ -105,10 +105,20 @@ pub fn rule(
     stalks: &Stalks,
     addr: &[u8; 32],
     spoken: Option<&Element>,
+    deflation: Option<&[u64; 4]>,
 ) -> Ruling {
     let Some(spoken) = spoken else {
         return Ruling::Slashed("unparseable word");
     };
+    // PROOF OF CONVERGENCE: a word is ratified for what it settled. Two
+    // voices installed it, and the install measured the deflation of a
+    // listed demand; a word that deflated nothing on the book is speech
+    // about nothing the mesh asked for, and is slashed. A word audited
+    // from the genesis chain carries no settlement measurement (None) and
+    // is judged on its form and congruence alone.
+    if deflation.is_some_and(|d| d.iter().all(|&x| x == 0)) {
+        return Ruling::Slashed("no deflation on a listed demand");
+    }
     if let Some(reason) = blind_replay(spoken) {
         return Ruling::Slashed(reason);
     }
@@ -167,7 +177,11 @@ mod tests {
     fn replay_accepts_clean_and_names_false_speech() {
         let w = clean_word();
         assert!(blind_replay(&w).is_none(), "a clean derivation replays");
-        let ruling = rule(&[], &Stalks::default(), &w.address(), None);
+        let ruling = rule(&[], &Stalks::default(), &w.address(), None, None);
+        assert!(
+            matches!(rule(&[], &Stalks::default(), &w.address(), Some(&w), Some(&[0; 4])), Ruling::Slashed(_)),
+            "a word that deflated nothing on the book is slashed"
+        );
         assert_eq!(ruling, Ruling::Slashed("unparseable word"));
         assert_eq!(ruling.code(), dialogue::RULING_SLASHED);
     }
@@ -181,20 +195,20 @@ mod tests {
         let addr = w.address();
         // Empty federation: new geometry admits — the sealed element is
         // the arm's payload, not a flag.
-        match rule(&[], &Stalks::default(), &addr, Some(&w)) {
+        match rule(&[], &Stalks::default(), &addr, Some(&w), None) {
             Ruling::Admitted(sealed) => assert_eq!(sealed.address(), addr),
             other => panic!("new geometry must admit, got {other:?}"),
         }
         // Same address, same substance: consilience (no re-admission).
         let fed = vec![(addr, w.clone())];
         let stalks = stalks_of(&fed);
-        assert_eq!(rule(&fed, &stalks, &addr, Some(&w)), Ruling::Consilient);
-        assert_eq!(rule(&fed, &stalks, &addr, Some(&w)).code(), dialogue::RULING_UPHELD);
+        assert_eq!(rule(&fed, &stalks, &addr, Some(&w), None), Ruling::Consilient);
+        assert_eq!(rule(&fed, &stalks, &addr, Some(&w), None).code(), dialogue::RULING_UPHELD);
         // Different address, identical base geometry: attached (+axis) by
         // the identity transport.
         let mut other = addr;
         other[0] ^= 0xFF;
-        match rule(&fed, &stalks, &other, Some(&w)) {
+        match rule(&fed, &stalks, &other, Some(&w), None) {
             Ruling::Attached { base: 0, g } => {
                 assert!(element::same_versor(&g, &element::identity_versor()), "the identity transport")
             }
@@ -207,7 +221,7 @@ mod tests {
         let rotated = from_residual(
             &germinate(&[(0, 0, 3u8), (1, 0, 3)], &[(0, 0, 4u8), (1, 0, 4)]).unwrap(),
         );
-        match rule(&fed, &stalks, &rotated.address(), Some(&rotated)) {
+        match rule(&fed, &stalks, &rotated.address(), Some(&rotated), None) {
             Ruling::Attached { base: 0, g } => {
                 assert!(!element::same_versor(&g, &element::identity_versor()), "the transport rotates")
             }
@@ -217,6 +231,6 @@ mod tests {
             &germinate(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 0, 2u8), (0, 1, 2), (1, 0, 2)])
                 .unwrap(),
         );
-        assert!(matches!(rule(&fed, &stalks, &bent.address(), Some(&bent)), Ruling::Admitted(_)));
+        assert!(matches!(rule(&fed, &stalks, &bent.address(), Some(&bent), None), Ruling::Admitted(_)));
     }
 }

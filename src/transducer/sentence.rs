@@ -331,7 +331,28 @@ pub fn deconstruct<'a>(
         out.multiplicity = out.multiplicity.max(m);
         match c {
             Some(c) => out.cites.push(c),
-            None => out.residual.extend(body),
+            None => {
+                // RECURSION: a body no word carries whole opens along its
+                // gauge classes (the cells of one transition), and each
+                // class's components is a sub-body located on its own. The
+                // recursion ends at a single component of a single class,
+                // which is a stalk: cited or residual, never opened further.
+                let fibers = element::gauge_fibers(&body);
+                if fibers.len() <= 1 {
+                    out.residual.extend(body);
+                    continue;
+                }
+                for (_, fiber) in &fibers {
+                    for sub in pieces(fiber) {
+                        let (c, m) = locate(words, atlas, shape_at, &sub, exclude);
+                        out.multiplicity = out.multiplicity.max(m);
+                        match c {
+                            Some(c) => out.cites.push(c),
+                            None => out.residual.extend(sub),
+                        }
+                    }
+                }
+            }
         }
     }
     out.residual.sort_unstable();

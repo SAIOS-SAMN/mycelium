@@ -690,11 +690,16 @@ pub fn decode_docket_request(body: &[u8]) -> Option<[u8; 32]> {
     body.get(1..33)?.try_into().ok()
 }
 
-/// docket reply: `[n u32] ( [addr 32][elen u32][element][nv u32][voices 32·nv][μ⃗ 32] )…`
-pub fn encode_docket_reply(dockets: &[([u8; 32], Vec<u8>, Vec<[u8; 32]>, [u64; 4])]) -> Vec<u8> {
+/// docket reply: `[n u32] ( [addr 32][elen u32][element][nv u32][voices 32·nv][μ⃗ 32][Δμ⃗ 32] )…`
+/// — Δμ⃗ is the deflation the word's install measured on a listed demand
+/// (zero when the germ settled nothing on the book): the court's proof of
+/// convergence rides with the word.
+pub type Docket = ([u8; 32], Vec<u8>, Vec<[u8; 32]>, [u64; 4], [u64; 4]);
+
+pub fn encode_docket_reply(dockets: &[Docket]) -> Vec<u8> {
     let mut out = Vec::new();
     out.extend_from_slice(&(dockets.len() as u32).to_le_bytes());
-    for (addr, elem, voices, mu) in dockets {
+    for (addr, elem, voices, mu, deflation) in dockets {
         out.extend_from_slice(addr);
         out.extend_from_slice(&(elem.len() as u32).to_le_bytes());
         out.extend_from_slice(elem);
@@ -703,16 +708,17 @@ pub fn encode_docket_reply(dockets: &[([u8; 32], Vec<u8>, Vec<[u8; 32]>, [u64; 4
             out.extend_from_slice(v);
         }
         push_mu(&mut out, mu);
+        push_mu(&mut out, deflation);
     }
     out
 }
 
-pub fn decode_docket_reply(body: &[u8]) -> Option<Vec<([u8; 32], Vec<u8>, Vec<[u8; 32]>, [u64; 4])>> {
+pub fn decode_docket_reply(body: &[u8]) -> Option<Vec<Docket>> {
     let mut p = 0usize;
     let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
     p += 4;
-    if n > body.len().saturating_sub(p) / 72 {
-        return None; // untrusted count: ≥72 bytes per docket
+    if n > body.len().saturating_sub(p) / 104 {
+        return None; // untrusted count: ≥104 bytes per docket
     }
     let mut out = Vec::with_capacity(n);
     for _ in 0..n {
@@ -736,7 +742,8 @@ pub fn decode_docket_reply(body: &[u8]) -> Option<Vec<([u8; 32], Vec<u8>, Vec<[u
             p += 32;
         }
         let mu = read_mu(body, &mut p)?;
-        out.push((addr, elem, voices, mu));
+        let deflation = read_mu(body, &mut p)?;
+        out.push((addr, elem, voices, mu, deflation));
     }
     Some(out)
 }
