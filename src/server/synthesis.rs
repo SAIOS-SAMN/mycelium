@@ -304,6 +304,24 @@ pub enum Deliberation {
     Adopt([u8; 32], crate::transducer::element::Element),
 }
 
+/// Idle consolidation, orchestrated off the request path: the cheap moves
+/// run under a brief lock, the redundancy probe decomposes the candidate
+/// over a basis snapshot with no lock held, and only the retirement
+/// re-locks. Returns the cards retired.
+pub fn consolidate(k: &std::sync::Mutex<crate::cognition::Kernel>) -> usize {
+    let Ok(mut g) = k.lock() else { return 0 };
+    let probe = g.consolidate_stroke();
+    let (beam, depth) = g.projection_budget();
+    drop(g);
+    let Some((addr, candidate, rest)) = probe else { return 0 };
+    let sub = candidate.substance();
+    if crate::cognition::decompose_over(&rest, sub.sub(), None, beam, depth).is_err() {
+        return 0;
+    }
+    let Ok(mut g) = k.lock() else { return 0 };
+    g.retire_redundant(&addr)
+}
+
 /// Adoption, orchestrated off the request path: the blind replay is pure
 /// (no lock), derivability probes a basis snapshot (no lock), and only the
 /// brief install re-locks. Returns the deterministic [`Adoption`] status.

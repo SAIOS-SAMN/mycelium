@@ -1043,7 +1043,51 @@ impl Kernel {
         self.optimize();
     }
 
+    /// The whole stroke under one lock (the reflex and test paths).
     pub(crate) fn optimize(&mut self) {
+        if let Some(i) = self.condense_stroke() {
+            let candidate = self.basis[i].clone();
+            if let NormalForm::Decomposed(_) = self.reduce_excluding(&candidate, Some(i)) {
+                self.retire_redundant(&candidate.address());
+            }
+        }
+        self.physics.regenerate();
+    }
+
+    /// The stroke for the idle deliberation worker: the cheap moves (condense,
+    /// torse, regenerate) run here under the lock; the redundancy probe — a
+    /// full decomposition — is handed out as (address, candidate, the basis
+    /// without it) to run on that snapshot with no lock held, exactly as
+    /// adoption's derivability does. The reflex path never waits on it.
+    pub fn consolidate_stroke(&mut self) -> Option<([u8; 32], Element, Vec<Element>)> {
+        let probe = self.condense_stroke().map(|i| {
+            let candidate = self.basis[i].clone();
+            let mut rest = self.basis.clone();
+            rest.remove(i);
+            (candidate.address(), candidate, rest)
+        });
+        self.physics.regenerate();
+        probe
+    }
+
+    /// Retire a plain card the rest of the basis derives (the off-lock probe
+    /// found it decomposable). Returns the cards retired (0 or 1): the word
+    /// may have gone, or gained a fibre, while the probe ran.
+    pub fn retire_redundant(&mut self, addr: &[u8; 32]) -> usize {
+        let Some(i) = self.basis.iter().position(|t| t.address() == *addr) else { return 0 };
+        if !self.basis[i].sections().is_empty() || !self.basis[i].torsion().is_empty() {
+            return 0;
+        }
+        let lanes = self.basis[i].lanes();
+        self.basis_remove(i);
+        self.physics.syntropy(lanes); // a leaner alphabet is order built
+        1
+    }
+
+    /// Condense and torse at the cursor; returns the cursor index when the
+    /// cursor word is a plain card (a redundancy-probe candidate — never a
+    /// bundle: its sections/cycles carry family volume no other word speaks).
+    fn condense_stroke(&mut self) -> Option<usize> {
         if !self.basis.is_empty() {
             let i = self.optimize_cursor % self.basis.len();
             self.optimize_cursor = self.optimize_cursor.wrapping_add(1);
@@ -1098,19 +1142,11 @@ impl Kernel {
                 let anchor = self.anchor();
                 self.treasury.settle_torse(self.discoverers[i], mu, anchor);
             }
-            // The redundancy probe: retire a rule the rest of the basis derives —
-            // but never a BUNDLE (its sections/cycles carry family volume no other
-            // word speaks; only a plain card can be redundant).
-            let candidate = self.basis[i].clone();
-            if candidate.sections().is_empty() && candidate.torsion().is_empty() {
-                if let NormalForm::Decomposed(_) = self.reduce_excluding(&candidate, Some(i)) {
-                    let lanes = candidate.lanes();
-                    self.basis_remove(i);
-                    self.physics.syntropy(lanes); // a leaner alphabet is order built
-                }
+            if self.basis[i].sections().is_empty() && self.basis[i].torsion().is_empty() {
+                return Some(i);
             }
         }
-        self.physics.regenerate();
+        None
     }
 
     /// A read-only view of the germinated basis (for the CCL display seam).

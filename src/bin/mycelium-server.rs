@@ -207,9 +207,7 @@ fn main() {
                     // compresses toward its minimal generating set even
                     // when no work is dispatched (vocabulary maintenance
                     // is continuous, not incidental).
-                    if let Ok(mut k) = kernel.lock() {
-                        k.consolidate();
-                    }
+                    mycelium::synthesis::consolidate(&kernel);
                     continue;
                 }
                 Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
