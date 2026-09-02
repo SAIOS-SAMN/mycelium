@@ -122,10 +122,11 @@ pub fn quote_over(
     surface: &[u64; 4],
     pool: &[u64; 4],
     top: usize,
+    budget: usize,
 ) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
     let c = closure.iter().filter(|k| k.is_some()).count() as u64;
     let i = closure.len() as u64 - c;
-    let mut priced: Vec<(Element, [u64; 4])> = pending
+    let mut ranked: Vec<(Element, [u64; 4])> = pending
         .iter()
         .zip(closure)
         .map(|((p, _), base)| {
@@ -135,8 +136,24 @@ pub fn quote_over(
             (p.clone(), mu)
         })
         .collect();
-    priced.sort_by(|a, b| b.1.iter().max().cmp(&a.1.iter().max()));
-    priced.truncate(top);
+    ranked.sort_by(|a, b| b.1.iter().max().cmp(&a.1.iter().max()));
+    // THE CONTACT'S CARRIER: up to `top` items, in rank order, whose wire
+    // form fits the remaining byte budget (32 address + 32 μ⃗ + 4 + 18 per
+    // cell). An item too wide for the frame is passed over, not served as a
+    // frame the wire refuses; the next contact sees the same rank.
+    let mut priced: Vec<(Element, [u64; 4])> = Vec::with_capacity(top);
+    let mut used = 0usize;
+    for item in ranked {
+        if priced.len() >= top {
+            break;
+        }
+        let wire = 68 + item.0.sub().len() * 18;
+        if used + wire > budget {
+            continue;
+        }
+        used += wire;
+        priced.push(item);
+    }
     // THE SOLVENCY BOUND (P5): tension set the RANKING; the escrow pool sets
     // the SCALE. Each quoted lane is capped at pool[l]/quoted so the market
     // never offers more than it can pay — Σ quotes ≤ pool. An empty pool
@@ -1440,7 +1457,7 @@ impl Kernel {
     pub fn quote(&mut self, top: usize) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
         let surface = crate::economy::yield_surface(&self.physics);
         let closure = self.closure_now();
-        quote_over(&closure, &self.pending, &surface, &self.treasury.pool(), top)
+        quote_over(&closure, &self.pending, &surface, &self.treasury.pool(), top, usize::MAX)
     }
 
     /// ATTEST — a peer's INDEPENDENT derivation of an open residual arrives as a

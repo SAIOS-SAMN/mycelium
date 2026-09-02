@@ -369,8 +369,16 @@ pub fn quote(
     };
     let free: u64 = view.reserve.iter().sum();
     let depth = (4 + (free as usize * 12) / (4 * crate::physics::reserve_max() as usize)).min(16);
-    let (surface, priced) =
-        crate::cognition::quote_over(&closure, &view.pending, &view.surface, &view.pool, depth);
+    // The frame budget less the reply head (act, surface, count).
+    let budget = crate::network::wire::BODY_BUDGET - 34;
+    let (surface, priced) = crate::cognition::quote_over(
+        &closure,
+        &view.pending,
+        &view.surface,
+        &view.pool,
+        depth,
+        budget,
+    );
     let cohesion = crate::cognition::cohesion_over(&closure);
     Some((surface, priced, view.k_step, cohesion))
 }
