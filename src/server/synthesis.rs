@@ -256,12 +256,22 @@ pub fn contemplate(
         // One consolidation stroke per attempt: optimize both earns the
         // regeneration and does real syntropic work, but it is a full
         // redundancy probe — holding the lock for several would starve the
-        // request path. Below the floor after one stroke, speculation
+        // request path. Below the band after one stroke, speculation
         // simply waits for the next queued task (the queue is the retry).
-        if !g.physics().can_expand(lanes) {
+        //
+        // THE TWO-STROKE COURTESY: speculation may take a lane's SECOND
+        // stroke, never its last — draining a lane to zero puts the door at
+        // full deficit and defers the very attestations that feed
+        // germination (the quorum deadlock). Requiring two strokes of
+        // reserve (one for thought, one held for service) keeps the door
+        // open on the lanes the corpus demands actually occupy.
+        let speculative = |p: &crate::physics::Physics| {
+            (0..4).all(|l| !lanes[l] || p.reserve[l] >= 2 * crate::physics::spend_unit())
+        };
+        if !speculative(g.physics()) {
             g.optimize();
         }
-        if !g.physics().can_expand(lanes) {
+        if !speculative(g.physics()) {
             return None; // the reserve is service's; speculation waits
         }
         let (beam, depth) = g.projection_budget();

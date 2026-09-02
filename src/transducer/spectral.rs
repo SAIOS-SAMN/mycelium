@@ -132,31 +132,41 @@ pub fn collapse_beam(
     candidates: &[Sel],
     witnesses: &[(Vec<(i64, i64)>, Vec<(i64, i64, u8)>)],
 ) -> Option<Sel> {
-    if candidates.is_empty() {
-        return None;
-    }
-    if candidates.len() == 1 || witnesses.is_empty() {
-        return candidates.first().cloned();
+    rank_beam(candidates, witnesses).into_iter().next()
+}
+
+/// The full spectral ordering of the beam: every candidate measured by its
+/// governed per-axis mismatch (worst witnessing pair, lexicographic in
+/// structural order), best first, stable on ties (the incoming
+/// tightest-first order is the tiebreak). The head is the collapse; the
+/// tail is the retained optionality a coherent multi-reading projection
+/// draws from.
+pub fn rank_beam(
+    candidates: &[Sel],
+    witnesses: &[(Vec<(i64, i64)>, Vec<(i64, i64, u8)>)],
+) -> Vec<Sel> {
+    if candidates.len() <= 1 || witnesses.is_empty() {
+        return candidates.to_vec();
     }
     let fp_sigs: Vec<Signature> =
         witnesses.iter().map(|(fp, scene)| signature(fp, scene)).collect();
-    let mut best: Option<([u64; 4], usize)> = None;
-    for (i, t) in candidates.iter().enumerate() {
-        let mut governed = [0u64; 4];
-        for ((_, scene), fp_sig) in witnesses.iter().zip(&fp_sigs) {
-            let sel_sig = signature(&t.eval(scene), scene);
-            let m = mismatch(&sel_sig, fp_sig);
-            for l in 0..4 {
-                governed[l] = governed[l].max(m[l]);
+    let mut measured: Vec<([u64; 4], usize)> = candidates
+        .iter()
+        .enumerate()
+        .map(|(i, t)| {
+            let mut governed = [0u64; 4];
+            for ((_, scene), fp_sig) in witnesses.iter().zip(&fp_sigs) {
+                let sel_sig = signature(&t.eval(scene), scene);
+                let m = mismatch(&sel_sig, fp_sig);
+                for l in 0..4 {
+                    governed[l] = governed[l].max(m[l]);
+                }
             }
-        }
-        // Lexicographic on the per-axis vector; strict improvement moves the
-        // collapse, equality keeps the earlier (tighter) candidate.
-        if best.as_ref().is_none_or(|(b, _)| governed < *b) {
-            best = Some((governed, i));
-        }
-    }
-    best.map(|(_, i)| candidates[i].clone())
+            (governed, i)
+        })
+        .collect();
+    measured.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
+    measured.into_iter().map(|(_, i)| candidates[i].clone()).collect()
 }
 
 #[cfg(test)]

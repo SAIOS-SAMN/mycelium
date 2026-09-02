@@ -48,35 +48,67 @@ pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
     None
 }
 
+/// The deterministic outcome of ruling one candidate word — every arm
+/// names what the mathematics found; callers match these states
+/// exhaustively rather than branching on booleans or out-parameters.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Ruling {
+    /// The word does not replay from its own evidence (or does not parse):
+    /// false speech, the failed axis named.
+    Slashed(&'static str),
+    /// Same address, same substance as a federated word — cross-instance
+    /// consilience, the strongest confluence witness.
+    Consilient,
+    /// Same address, different substance — a dialect; the transport is
+    /// recorded, never punished.
+    Dialect,
+    /// New address, identical base geometry to a federated word — the
+    /// +axis constraint: it belongs as a section, not a sibling entry.
+    Demoted,
+    /// Genuinely new geometry: the word joins the federation. The sealed
+    /// element rides the arm — admission IS the match, never a flag.
+    Admitted(Element),
+}
+
+impl Ruling {
+    /// The wire ruling byte this outcome seals and speaks.
+    pub fn code(&self) -> u8 {
+        match self {
+            Ruling::Slashed(_) => dialogue::RULING_SLASHED,
+            Ruling::Demoted => dialogue::RULING_DEMOTED,
+            Ruling::Consilient | Ruling::Dialect | Ruling::Admitted(_) => dialogue::RULING_UPHELD,
+        }
+    }
+
+    /// The named ground of the ruling (receipt/log text).
+    pub fn reason(&self) -> &'static str {
+        match self {
+            Ruling::Slashed(r) => r,
+            Ruling::Consilient => "federated consilience",
+            Ruling::Dialect => "dialect transport recorded",
+            Ruling::Demoted => "+axis: belongs as a section",
+            Ruling::Admitted(_) => "extends the tautology",
+        }
+    }
+}
+
 /// The two-docket ruling for one candidate word against the federated
-/// basis. Returns the ruling byte, the reason, and whether the word joins
-/// the federation (the caller owns the federation Vec; this function does
-/// not mutate it, so the decision is a pure map over the current state).
-///
-/// - Failed replay → SLASHED (false speech).
-/// - Same address, same substance → UPHELD (cross-instance consilience).
-/// - Same address, different substance → UPHELD, dialect transport
-///   recorded rather than punished.
-/// - New address but identical base geometry to a federated word →
-///   DEMOTED (the +axis constraint: it belongs as a section, not a
-///   sibling entry).
-/// - Genuinely new geometry → UPHELD and admitted to the federation.
+/// basis — a pure map over the current state; the caller applies
+/// [`Ruling::Admitted`] itself.
 pub fn rule(
     federation: &[([u8; 32], Element)],
     addr: &[u8; 32],
     spoken: Option<&Element>,
-) -> (u8, &'static str, bool) {
+) -> Ruling {
     let Some(spoken) = spoken else {
-        return (dialogue::RULING_SLASHED, "unparseable word", false);
+        return Ruling::Slashed("unparseable word");
     };
     if let Some(reason) = blind_replay(spoken) {
-        return (dialogue::RULING_SLASHED, reason, false);
+        return Ruling::Slashed(reason);
     }
     match federation.iter().find(|(fa, _)| fa == addr) {
-        Some((_, held)) if held.sub() == spoken.sub() => {
-            (dialogue::RULING_UPHELD, "federated consilience", false)
-        }
-        Some(_) => (dialogue::RULING_UPHELD, "dialect transport recorded", false),
+        Some((_, held)) if held.sub() == spoken.sub() => Ruling::Consilient,
+        Some(_) => Ruling::Dialect,
         None => {
             let pos_new = element::positions(spoken.sub());
             let axis_conflict = federation.iter().any(|(fa, held)| {
@@ -84,10 +116,9 @@ pub fn rule(
                     && !held.sub().is_empty()
                     && element::positions(held.sub()) == pos_new
             });
-            if axis_conflict {
-                (dialogue::RULING_DEMOTED, "+axis: belongs as a section", false)
-            } else {
-                (dialogue::RULING_UPHELD, "extends the tautology", true)
+            match axis_conflict {
+                true => Ruling::Demoted,
+                false => Ruling::Admitted(spoken.clone()),
             }
         }
     }
@@ -113,36 +144,36 @@ mod tests {
         from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap())
     }
 
-    /// A clean word replays; a tampered address, a shifted frame, or an
-    /// unparseable body are each named and slashed.
+    /// A clean word replays; an unparseable body is a named Slashed state.
     #[test]
     fn replay_accepts_clean_and_names_false_speech() {
         let w = clean_word();
         assert!(blind_replay(&w).is_none(), "a clean derivation replays");
-        let (code, reason, _) = rule(&[], &w.address(), None);
-        assert_eq!(code, dialogue::RULING_SLASHED);
-        assert_eq!(reason, "unparseable word");
+        let ruling = rule(&[], &w.address(), None);
+        assert_eq!(ruling, Ruling::Slashed("unparseable word"));
+        assert_eq!(ruling.code(), dialogue::RULING_SLASHED);
     }
 
-    /// The two-docket ruling over a federation: consilience upholds, a
-    /// same-geometry sibling demotes, new geometry admits.
+    /// The two-docket ruling over a federation is an exhaustive state map:
+    /// new geometry admits (the element rides the arm), same substance is
+    /// consilient, a same-geometry sibling demotes.
     #[test]
     fn the_ruling_maps_the_federation_correctly() {
         let w = clean_word();
         let addr = w.address();
-        // Empty federation: new geometry admits.
-        let (code, _, joins) = rule(&[], &addr, Some(&w));
-        assert_eq!(code, dialogue::RULING_UPHELD);
-        assert!(joins, "new geometry joins the federation");
+        // Empty federation: new geometry admits — the sealed element is
+        // the arm's payload, not a flag.
+        match rule(&[], &addr, Some(&w)) {
+            Ruling::Admitted(sealed) => assert_eq!(sealed.address(), addr),
+            other => panic!("new geometry must admit, got {other:?}"),
+        }
         // Same address, same substance: consilience (no re-admission).
         let fed = vec![(addr, w.clone())];
-        let (code, reason, joins) = rule(&fed, &addr, Some(&w));
-        assert_eq!((code, joins), (dialogue::RULING_UPHELD, false));
-        assert_eq!(reason, "federated consilience");
+        assert_eq!(rule(&fed, &addr, Some(&w)), Ruling::Consilient);
+        assert_eq!(rule(&fed, &addr, Some(&w)).code(), dialogue::RULING_UPHELD);
         // Different address, identical base geometry: demoted (+axis).
         let mut other = addr;
         other[0] ^= 0xFF;
-        let (code, _, joins) = rule(&fed, &other, Some(&w));
-        assert_eq!((code, joins), (dialogue::RULING_DEMOTED, false));
+        assert_eq!(rule(&fed, &other, Some(&w)), Ruling::Demoted);
     }
 }

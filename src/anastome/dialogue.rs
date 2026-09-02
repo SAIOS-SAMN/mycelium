@@ -87,6 +87,31 @@ pub fn decode_adopt(body: &[u8]) -> Option<([u8; 32], Vec<u8>)> {
     Some((voice, body[33..].to_vec()))
 }
 
+/// GENESIS AUDIT (federation seeding): the court pages through a server's
+/// held basis, blind-replays each word, and seals the verified core into
+/// its federation — then propagates adoptions across the nerve so the
+/// server plane converges without waiting for incidental consensus.
+/// Request: `[ACT_GENESIS][voice 32][cursor u32]`. Reply shares the
+/// syllabus page shape (`encode_syllabus_reply`); an empty page ends the
+/// walk.
+pub const ACT_GENESIS: u8 = 0x0F;
+
+pub fn encode_genesis_request(voice: &[u8; 32], cursor: u32) -> Vec<u8> {
+    let mut out = vec![ACT_GENESIS];
+    out.extend_from_slice(voice);
+    out.extend_from_slice(&cursor.to_le_bytes());
+    out
+}
+
+pub fn decode_genesis_request(body: &[u8]) -> Option<([u8; 32], u32)> {
+    if body.first() != Some(&ACT_GENESIS) || body.len() != 37 {
+        return None;
+    }
+    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    let cursor = u32::from_le_bytes(body.get(33..37)?.try_into().ok()?);
+    Some((voice, cursor))
+}
+
 /// THE SYLLABUS (distributed cognition, operator-ruled): court-ratified
 /// vocabulary PUSHED to every enrolled voice on its next contact — teaching
 /// as an act of the network, not a passive download. The client asks with

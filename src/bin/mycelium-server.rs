@@ -410,6 +410,32 @@ fn main() {
             continue;
         }
 
+        // ── genesis: the court pages through the held basis for its audit —
+        // a brief serialization under the lock, depth paced by the
+        // metabolism like the syllabus. An empty page ends the walk.
+        if kind == dialogue::ACT_GENESIS {
+            let Some((_gvoice, cursor)) = dialogue::decode_genesis_request(&frame.body) else {
+                continue;
+            };
+            let words: Vec<Vec<u8>> = {
+                let k = kernel.lock().unwrap();
+                let free: u64 = k.physics().reserve.iter().sum();
+                let depth = (1
+                    + (free as usize * 7) / (4 * mycelium::physics::reserve_max() as usize))
+                    .min(8);
+                k.basis()
+                    .iter()
+                    .skip(cursor as usize)
+                    .take(depth)
+                    .map(|w| w.to_bytes())
+                    .collect()
+            };
+            let reply =
+                Frame { lane: frame.lane, body: dialogue::encode_syllabus_reply(&words) };
+            let _ = s.write_all(&reply.encode().unwrap_or_default());
+            continue;
+        }
+
         // ── syllabus: the ratified stream served from this voice's cursor ────
         if kind == dialogue::ACT_SYLLABUS {
             let Some(svoice) = dialogue::decode_syllabus_request(&frame.body) else { continue };
