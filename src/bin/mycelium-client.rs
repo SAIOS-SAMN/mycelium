@@ -26,7 +26,7 @@
 //!
 //! Usage: mycelium-client [ADDR] --kernel NAME [--state DIR]
 //!            [--feed CORPUS_DIR] [--loop] [--limit N] [--conductor BOARD]
-use mycelium::arc::{grid_to_cells, parse_task};
+use mycelium::arc::{embed, frame_ratio, grid_to_cells, parse_task, readback, Task};
 use mycelium::physics::{Physics, RESERVE_MAX};
 use mycelium::sdk::{Comprehension, Entity, Kernel};
 use std::path::PathBuf;
@@ -37,6 +37,32 @@ fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
 }
 fn has(args: &[String], name: &str) -> bool {
     args.iter().any(|a| a == name)
+}
+fn gcd(a: usize, b: usize) -> usize {
+    if b == 0 { a.max(1) } else { gcd(b, a % b) }
+}
+fn lcm(a: usize, b: usize) -> usize {
+    a / gcd(a, b) * b
+}
+
+/// MEASURE the task family's frame ratio from its train pairs — perception
+/// (reading dimensions), not derivation. None when the family disagrees:
+/// no single morphism exists to think with.
+fn task_ratio(task: &Task) -> Option<((usize, usize), (usize, usize))> {
+    let mut ratio = None;
+    for (a, b) in &task.train {
+        let f = (a.len(), a.first().map_or(0, |r| r.len()), b.len(), b.first().map_or(0, |r| r.len()));
+        if f.0 == 0 || f.1 == 0 || f.2 == 0 || f.3 == 0 {
+            return None;
+        }
+        let r = frame_ratio(&f);
+        match &ratio {
+            None => ratio = Some(r),
+            Some(held) if *held != r => return None,
+            _ => {}
+        }
+    }
+    ratio
 }
 
 /// The conductor's cursor — a world model's board schedules the corpus order.
@@ -95,6 +121,9 @@ fn main() {
 
     let mut physics = Physics::default();
     let (mut fed, mut derived, mut witnessed, mut settles, mut errors) = (0u64, 0u64, 0u64, 0u64, 0u64);
+    // THE POUW SOLVE COUNTERS — the entity's own instinct on test inputs,
+    // spoken through Entity::project (the engine's language, nothing local).
+    let (mut projected, mut proj_solved) = (0u64, 0u64);
     let (mut last_genome, mut last_settles) = (usize::MAX, u64::MAX);
     let start = Instant::now();
     // The feed walk: (task index within the cycle order, pair index within it).
@@ -133,12 +162,53 @@ fn main() {
                 continue;
             };
             let Some((input, output)) = task.train.get(pi) else {
+                // TASK BOUNDARY — the entity THINKS before moving on: project
+                // each test input with its own genome (Entity::project — the
+                // engine's language, nothing local) and score its instinct.
+                // The frame ratio is MEASURED from the pairs it just fed
+                // (perception, like reading a bounding box), the output frame
+                // CONSTRUCTED from it — integral or refused, never rounded.
+                if let Some(((hn, hd), (wn, wd))) = task_ratio(&task) {
+                    for (x, y) in &task.test {
+                        if y.is_empty() {
+                            continue; // withheld output: nothing to score against
+                        }
+                        let (h, w) = (x.len(), x.first().map_or(0, |r| r.len()));
+                        if h == 0 || w == 0 || (h * hn) % hd != 0 || (w * wn) % wd != 0 {
+                            continue; // non-integral frame: refusal
+                        }
+                        let (oh, ow) = (h * hn / hd, w * wn / wd);
+                        let (lh, lw) = (lcm(h, oh), lcm(w, ow));
+                        let rx = embed(x, lh, lw);
+                        let (guess, spoke) = entity.project(&rx);
+                        if !spoke.is_empty() {
+                            projected += 1;
+                            if readback(&guess, oh, ow).is_some_and(|g| g == *y) {
+                                proj_solved += 1;
+                            }
+                        }
+                    }
+                }
                 ti += 1;
                 pi = 0;
                 continue;
             };
             pi += 1;
-            let (a, b) = (grid_to_cells(input), grid_to_cells(output));
+            // THE EYE EMBEDS (sensor hardware, ruled): a dimension-changing
+            // pair lifts to its common refinement BEFORE speech, so the
+            // engine digests an ordinary chain — all cognition stays in the
+            // engine; the client only widened its retina.
+            let (hi, wi) = (input.len(), input.first().map_or(0, |r| r.len()));
+            let (ho, wo) = (output.len(), output.first().map_or(0, |r| r.len()));
+            let (a, b) = if (hi, wi) == (ho, wo) {
+                (grid_to_cells(input), grid_to_cells(output))
+            } else {
+                if hi == 0 || wi == 0 || ho == 0 || wo == 0 {
+                    continue;
+                }
+                let (lh, lw) = (lcm(hi, ho), lcm(wi, wo));
+                (grid_to_cells(&embed(input, lh, lw)), grid_to_cells(&embed(output, lh, lw)))
+            };
             if a.is_empty() || b.is_empty() {
                 continue;
             }
@@ -222,7 +292,7 @@ fn main() {
                 last_genome = entity.epigenome.genome_len();
                 last_settles = settles;
                 eprintln!(
-                    "[{name}] {:.0}s | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} | genome {} (peak expr {})",
+                    "[{name}] {:.0}s | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} | SOLVES {proj_solved}/{projected} | genome {} (peak expr {})",
                     start.elapsed().as_secs_f64(),
                     entity.epigenome.genome_len(),
                     entity.epigenome.peak_expression(),

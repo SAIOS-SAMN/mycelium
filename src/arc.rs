@@ -57,6 +57,83 @@ pub fn grid_to_cells(g: &Grid) -> Vec<(i64, i64, u8)> {
     out
 }
 
+// ── #97 Phase A: THE CODOMAIN APERTURE — cross-complex chains ────────────────
+//
+// Both frames embed EXACTLY into their common refinement K_lcm by integer
+// block subdivision (pure arithmetic — no interpolation, no direction bias,
+// no rounding policy; uniform for every ratio including (1,1), which
+// reproduces the planar path bit-for-bit). The cross-frame demand is then an
+// ORDINARY chain on the refinement. Banned surface: no branch anywhere on
+// ratio VALUES — the mapper is total.
+
+fn gcd(a: usize, b: usize) -> usize {
+    if b == 0 { a.max(1) } else { gcd(b, a % b) }
+}
+fn lcm(a: usize, b: usize) -> usize {
+    a / gcd(a, b) * b
+}
+
+/// EMBED a grid into a refinement lattice: each source cell becomes an exact
+/// (lh/h) × (lw/w) block. Total whenever lh, lw are multiples of the dims.
+pub fn embed(g: &Grid, lh: usize, lw: usize) -> Grid {
+    let (h, w) = (g.len().max(1), g.first().map_or(1, |r| r.len().max(1)));
+    (0..lh).map(|r| (0..lw).map(|c| g[r * h / lh][c * w / lw]).collect()).collect()
+}
+
+/// READ BACK from a refinement lattice to target dims — every target cell's
+/// block must be CONSTANT (an ill-formed prediction is a REFUSAL, never a
+/// rounding: None).
+pub fn readback(refined: &Grid, h: usize, w: usize) -> Option<Grid> {
+    let (lh, lw) = (refined.len().max(1), refined.first().map_or(1, |r| r.len().max(1)));
+    let mut out = vec![vec![0u8; w]; h];
+    for (r, row) in refined.iter().enumerate() {
+        for (c, &v) in row.iter().enumerate() {
+            let (tr, tc) = (r * h / lh, c * w / lw);
+            if (r, c) == (tr * lh / h, tc * lw / w) {
+                out[tr][tc] = v;
+            } else if refined[tr * lh / h][tc * lw / w] != v {
+                return None; // the block disagrees — no policy resolves it
+            }
+        }
+    }
+    Some(out)
+}
+
+/// The MEASURED frame of a pair — (h_in, w_in, h_out, w_out) exact counts —
+/// and its reduced ratio ((h_num, h_den), (w_num, w_den)).
+pub type Frame = (usize, usize, usize, usize);
+pub fn frame_ratio(f: &Frame) -> ((usize, usize), (usize, usize)) {
+    let (hi, wi, ho, wo) = *f;
+    let (gh, gw) = (gcd(ho, hi), gcd(wo, wi));
+    ((ho / gh.max(1), hi / gh.max(1)), (wo / gw.max(1), wi / gw.max(1)))
+}
+
+/// THE CROSS-COMPLEX COBOUNDARY: embed both scenes into K_lcm and take the
+/// ordinary per-cell difference. Returns (chain on K_lcm, the refined input
+/// grid — the scene π evaluates over, the measured frame). Total for all
+/// dims ≥ 1; equal frames yield exactly the planar delta.
+pub fn refine_delta(a: &Grid, b: &Grid) -> Option<(Vec<(i64, i64, u8, u8)>, Grid, Frame)> {
+    let (hi, wi) = (a.len(), a.first().map(|r| r.len()).unwrap_or(0));
+    let (ho, wo) = (b.len(), b.first().map(|r| r.len()).unwrap_or(0));
+    if hi == 0 || wi == 0 || ho == 0 || wo == 0 {
+        return None;
+    }
+    if a.iter().any(|r| r.len() != wi) || b.iter().any(|r| r.len() != wo) {
+        return None; // ragged grids carry no complex
+    }
+    let (lh, lw) = (lcm(hi, ho), lcm(wi, wo));
+    let (ra, rb) = (embed(a, lh, lw), embed(b, lh, lw));
+    let mut chain = Vec::new();
+    for r in 0..lh {
+        for c in 0..lw {
+            if ra[r][c] != rb[r][c] {
+                chain.push((r as i64, c as i64, ra[r][c], rb[r][c]));
+            }
+        }
+    }
+    Some((chain, ra, (hi, wi, ho, wo)))
+}
+
 /// THE PROJECTION — the inverse deduction as a library organ: apply anchored
 /// words to a world state and return the projected next state plus the indices
 /// of the words that spoke (the prediction's sentence). Discipline:
