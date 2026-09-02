@@ -62,6 +62,12 @@ pub struct Kernel {
     /// The discoverer (installing voice) of each basis germ, parallel to `basis`
     /// — so novelty yield flows to who germinated it, on real use.
     discoverers: Vec<[u8; 32]>,
+    /// The stalk space over `basis` (index-aligned): congruence lookup on
+    /// the orbit quotient selects the fiber over a support's invariant and
+    /// runs the exact orbit test there. Measured from the basis, never
+    /// persisted; every basis mutation passes through `basis_push`,
+    /// `basis_remove`, `basis_clear` so the alignment holds.
+    stalks: crate::transducer::stalk::Stalks,
     admission: Admission,
     /// THE OPEN-DEMAND MARKET: irreducible residuals still awaiting consilience —
     /// the un-factored chains the mesh QUOTES as work (Vec-of-relations, capped;
@@ -113,6 +119,33 @@ impl Kernel {
 
     pub fn basis_len(&self) -> usize {
         self.basis.len()
+    }
+
+    /// Install a word at the end of the basis with its discoverer; the stalk
+    /// space admits its support at the same index.
+    fn basis_push(&mut self, word: Element, discoverer: [u8; 32]) {
+        self.stalks.admit(&crate::transducer::stalk::invariant(word.sub()), self.basis.len());
+        self.basis.push(word);
+        self.discoverers.push(discoverer);
+    }
+
+    /// Remove the word at `i` from the basis, its discoverer, and its stalk.
+    fn basis_remove(&mut self, i: usize) -> Element {
+        self.discoverers.remove(i);
+        self.stalks.remove(i);
+        self.basis.remove(i)
+    }
+
+    fn basis_clear(&mut self) {
+        self.basis.clear();
+        self.discoverers.clear();
+        self.stalks.clear();
+    }
+
+    /// The index of a held word whose support is an isometry image of
+    /// `chain`'s — the orbit-class lookup through the stalk space.
+    fn congruent_held(&self, chain: &[(i64, i64, u8, u8)]) -> Option<usize> {
+        crate::transducer::stalk::congruent(&self.stalks, |i| self.basis[i].sub(), chain)
     }
 
     /// The polytonic kinematic pressure + torsion spectrum (per lane).
@@ -178,8 +211,7 @@ impl Kernel {
                 // separate card to excise (growth was +axis) — the economic
                 // slash applies; the fiber coordinate stays local dialect.
                 if let Some(w) = self.basis.iter().position(|t| t.address() == *addr) {
-                    self.basis.remove(w);
-                    self.discoverers.remove(w);
+                    self.basis_remove(w);
                 }
             }
             ok
@@ -338,8 +370,7 @@ impl Kernel {
                 let mu = crate::economy::price(&saved, &surface);
                 let anchor = self.anchor();
                 let paid = self.treasury.settle_refine(bidder, mu, anchor);
-                self.basis.remove(i);
-                self.discoverers.remove(i);
+                self.basis_remove(i);
                 // Compression is ORDER BUILT — the syntropic ledger credits it.
                 self.physics.syntropy(candidate.lanes());
                 self.chain.append(*addr, bidder); // the global rewrite is a K-step
@@ -361,8 +392,7 @@ impl Kernel {
         if self.basis.iter().any(|t| t.address() == addr) {
             return Adoption::Known;
         }
-        self.basis.push(word.clone());
-        self.discoverers.push(ratifier);
+        self.basis_push(word.clone(), ratifier);
         self.physics.syntropy(word.lanes()); // convergence is order built
         Adoption::Installed
     }
@@ -751,8 +781,7 @@ impl Kernel {
                     // Seal the K-step receipt: the install IS a tick of algebraic
                     // time, parent-linked to the mesh's whole history.
                     self.chain.append(addr, voice);
-                    self.basis.push(residual);
-                    self.discoverers.push(voice);
+                    self.basis_push(residual, voice);
                     self.complete_composite_child(&gaddr, voice); // lineage
                     Outcome::Installed(self.basis.len() - 1)
                 } else {
@@ -982,8 +1011,7 @@ impl Kernel {
                     if element::positions(self.basis[j].sub()) == pos_i {
                         let asg = element::assignment(self.basis[j].sub());
                         let sibling_disc = self.discoverers[j];
-                        self.basis.remove(j);
-                        self.discoverers.remove(j);
+                        self.basis_remove(j);
                         if self.basis[i].puncture(asg) {
                             let anchor = self.anchor();
                             self.treasury.settle_subsidy(sibling_disc, [0, 0, 1, 0], anchor);
@@ -1019,8 +1047,7 @@ impl Kernel {
             if candidate.sections().is_empty() && candidate.torsion().is_empty() {
                 if let NormalForm::Decomposed(_) = self.reduce_excluding(&candidate, Some(i)) {
                     let lanes = candidate.lanes();
-                    self.basis.remove(i);
-                    self.discoverers.remove(i);
+                    self.basis_remove(i);
                     self.physics.syntropy(lanes); // a leaner alphabet is order built
                 }
             }
@@ -1047,23 +1074,18 @@ impl Kernel {
         // Known/unknown geometry evaluates on the ORBIT class — a demand
         // whose support is an isometry image of a held word's is closure
         // work, not coverage (coordinate-set equality undercounted C).
-        let (mut c, mut i) = (0u64, 0u64);
-        for (p, _) in &self.pending {
-            let pos = element::orbit_positions(p.sub());
-            if self.basis.iter().any(|t| element::orbit_positions(t.sub()) == pos) {
-                c += 1;
-            } else {
-                i += 1;
-            }
-        }
+        // The lookup runs through the stalk space: the fiber over the
+        // demand's invariant, then the orbit form — never a basis scan.
+        let known: Vec<bool> =
+            self.pending.iter().map(|(p, _)| self.congruent_held(p.sub()).is_some()).collect();
+        let c = known.iter().filter(|k| **k).count() as u64;
+        let i = known.len() as u64 - c;
         let mut priced: Vec<(Element, [u64; 4])> = self
             .pending
             .iter()
-            .map(|(p, _)| {
-                let pos = element::orbit_positions(p.sub());
-                let known =
-                    self.basis.iter().any(|t| element::orbit_positions(t.sub()) == pos);
-                let premium = if known { c } else { i };
+            .zip(&known)
+            .map(|((p, _), known)| {
+                let premium = if *known { c } else { i };
                 let mut mu = crate::economy::price(&p.magnitude(), &surface);
                 mu[2] = p.magnitude()[2].saturating_mul(1 + surface[2] + premium);
                 (p.clone(), mu)
@@ -1141,14 +1163,13 @@ impl Kernel {
     /// geometry (closure failing — collapse-side work); I counts open demands on
     /// geometry NO thought speaks (coverage failing — expansion-side work).
     pub fn cohesion(&self) -> crate::cohesion::CohesionWitness {
-        // The (C, I) witness reads the orbit class, matching the market.
+        // The (C, I) witness reads the orbit class through the stalk space,
+        // matching the market.
         let (mut c, mut i) = (0u64, 0u64);
         for (p, _) in &self.pending {
-            let pos = element::orbit_positions(p.sub());
-            if self.basis.iter().any(|t| element::orbit_positions(t.sub()) == pos) {
-                c += 1;
-            } else {
-                i += 1;
+            match self.congruent_held(p.sub()) {
+                Some(_) => c += 1,
+                None => i += 1,
             }
         }
         crate::cohesion::witness(
@@ -1206,8 +1227,7 @@ impl Kernel {
                 *pos += elen;
                 let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                 *pos += 32;
-                kernel.basis.push(elem);
-                kernel.discoverers.push(who);
+                kernel.basis_push(elem, who);
             }
             kernel.treasury = crate::economy::Treasury::restore(b, pos)?;
             // Provisional section (absent in pre-court snapshots → empty docket).
@@ -1229,8 +1249,7 @@ impl Kernel {
             Some(())
         };
         if load(self, b, &mut pos).is_none() {
-            self.basis.clear();
-            self.discoverers.clear();
+            self.basis_clear();
             return false;
         }
         true

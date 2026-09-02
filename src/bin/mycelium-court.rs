@@ -38,6 +38,7 @@ use mycelium::chronometry::ReceiptChain;
 use mycelium::physics::{reserve_max, Physics};
 use mycelium::sdk::{Kernel, Session};
 use mycelium::transducer::element::Element;
+use mycelium::transducer::stalk::{self, Stalks};
 use mycelium::verdict;
 use std::time::Instant;
 
@@ -81,6 +82,10 @@ fn main() {
     // THE FEDERATION — every word this court has finalized, across all hyphas:
     // (address, the element as upheld). Vec-of-relations; the current tautology.
     let mut federation: Vec<([u8; 32], Element)> = Vec::new();
+    // The federation's stalk space (index-aligned): congruence lookup
+    // selects the fiber over a candidate's invariant; measured from the
+    // held words at boot, admitted alongside every federation entry.
+    let mut stalks = Stalks::default();
     let mut ruled: Vec<[u8; 32]> = Vec::new();
     // THE SELECTION FIBER'S REFINEMENT STATE — evidence accumulated per word
     // across the whole nerve, and the words already rebound.
@@ -94,6 +99,7 @@ fn main() {
     if let Some(s) = restored {
         chain = s.chain;
         federation = s.federation;
+        stalks = Stalks::over(federation.iter().map(|(_, e)| e.sub()));
         ruled = s.ruled;
         rebound = s.rebound;
         upheld = s.upheld;
@@ -110,6 +116,7 @@ fn main() {
     }
     if reaudit {
         federation.clear();
+        stalks.clear();
         ruled.clear();
         eprintln!(
             "re-audit under the current congruence lens: federation and ruled cleared; K continues at {}",
@@ -196,7 +203,7 @@ fn main() {
                         if ruled.contains(&addr) {
                             continue; // sealed in a prior block — never re-adjudicated
                         }
-                        let outcome = verdict::rule(&federation, &addr, spoken.as_ref());
+                        let outcome = verdict::rule(&federation, &stalks, &addr, spoken.as_ref());
                         let mut op = [0u8; 32];
                         op[0] = outcome.code();
                         chain.append(addr, op);
@@ -204,6 +211,7 @@ fn main() {
                         // The tally IS the state map — one arm per outcome.
                         match outcome {
                             verdict::Ruling::Admitted(sealed) => {
+                                stalks.admit(&stalk::invariant(sealed.sub()), federation.len());
                                 federation.push((addr, sealed));
                                 upheld += 1;
                                 // Propagation: a count of deterministic queue
@@ -242,8 +250,9 @@ fn main() {
                 // carrying its sealed element, never a flag.
                 let mut pos = 0usize;
                 let spoken = Element::from_bytes(&elem_bytes, &mut pos);
-                let outcome = verdict::rule(&federation, &addr, spoken.as_ref());
+                let outcome = verdict::rule(&federation, &stalks, &addr, spoken.as_ref());
                 if let verdict::Ruling::Admitted(sealed) = &outcome {
+                    stalks.admit(&stalk::invariant(sealed.sub()), federation.len());
                     federation.push((addr, sealed.clone()));
                 }
                 let ruling = (outcome.code(), outcome.reason());

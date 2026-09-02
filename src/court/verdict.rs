@@ -16,6 +16,7 @@
 use crate::anastome::dialogue;
 use crate::transducer::anchor::{derive_carrying_all, Sel};
 use crate::transducer::element::{self, Element};
+use crate::transducer::stalk::{self, Stalks};
 
 /// Deterministic re-derivation of a spoken word from its own evidence
 /// (the contradiction docket). Returns None when the word replays clean;
@@ -94,9 +95,12 @@ impl Ruling {
 
 /// The two-docket ruling for one candidate word against the federated
 /// basis — a pure map over the current state; the caller applies
-/// [`Ruling::Admitted`] itself.
+/// [`Ruling::Admitted`] itself. `stalks` is the federation's stalk space
+/// (index-aligned with `federation`): the +axis check selects the fiber
+/// over the candidate's invariant and runs the exact orbit test there.
 pub fn rule(
     federation: &[([u8; 32], Element)],
+    stalks: &Stalks,
     addr: &[u8; 32],
     spoken: Option<&Element>,
 ) -> Ruling {
@@ -115,16 +119,17 @@ pub fn rule(
             // federated word's is the same base geometry — a section of the
             // existing thought, never a sibling entry. Coordinate-set
             // equality was the lens that let a handful of morphisms
-            // federate as a thousand words.
-            let orbit_new = element::orbit_positions(spoken.sub());
-            let axis_conflict = federation.iter().any(|(fa, held)| {
-                fa != addr
-                    && !held.sub().is_empty()
-                    && element::orbit_positions(held.sub()) == orbit_new
-            });
-            match axis_conflict {
-                true => Ruling::Demoted,
-                false => Ruling::Admitted(spoken.clone()),
+            // federate as a thousand words. The stalk over the candidate's
+            // invariant holds every word that could be congruent; the orbit
+            // form decides inside that fiber — no federation scan.
+            let congruent = match spoken.sub().is_empty() {
+                true => None,
+                false => stalk::congruent(stalks, |i| federation[i].1.sub(), spoken.sub())
+                    .filter(|&i| federation[i].0 != *addr),
+            };
+            match congruent {
+                Some(_) => Ruling::Demoted,
+                None => Ruling::Admitted(spoken.clone()),
             }
         }
     }
@@ -150,12 +155,16 @@ mod tests {
         from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap())
     }
 
+    fn stalks_of(fed: &[([u8; 32], Element)]) -> Stalks {
+        Stalks::over(fed.iter().map(|(_, e)| e.sub()))
+    }
+
     /// A clean word replays; an unparseable body is a named Slashed state.
     #[test]
     fn replay_accepts_clean_and_names_false_speech() {
         let w = clean_word();
         assert!(blind_replay(&w).is_none(), "a clean derivation replays");
-        let ruling = rule(&[], &w.address(), None);
+        let ruling = rule(&[], &Stalks::default(), &w.address(), None);
         assert_eq!(ruling, Ruling::Slashed("unparseable word"));
         assert_eq!(ruling.code(), dialogue::RULING_SLASHED);
     }
@@ -169,17 +178,30 @@ mod tests {
         let addr = w.address();
         // Empty federation: new geometry admits — the sealed element is
         // the arm's payload, not a flag.
-        match rule(&[], &addr, Some(&w)) {
+        match rule(&[], &Stalks::default(), &addr, Some(&w)) {
             Ruling::Admitted(sealed) => assert_eq!(sealed.address(), addr),
             other => panic!("new geometry must admit, got {other:?}"),
         }
         // Same address, same substance: consilience (no re-admission).
         let fed = vec![(addr, w.clone())];
-        assert_eq!(rule(&fed, &addr, Some(&w)), Ruling::Consilient);
-        assert_eq!(rule(&fed, &addr, Some(&w)).code(), dialogue::RULING_UPHELD);
+        let stalks = stalks_of(&fed);
+        assert_eq!(rule(&fed, &stalks, &addr, Some(&w)), Ruling::Consilient);
+        assert_eq!(rule(&fed, &stalks, &addr, Some(&w)).code(), dialogue::RULING_UPHELD);
         // Different address, identical base geometry: demoted (+axis).
         let mut other = addr;
         other[0] ^= 0xFF;
-        assert_eq!(rule(&fed, &other, Some(&w)), Ruling::Demoted);
+        assert_eq!(rule(&fed, &stalks, &other, Some(&w)), Ruling::Demoted);
+        // A rotated sibling (the same geometry as a D4 image, other hues)
+        // resolves through the stalk to the same demotion; a genuinely
+        // different geometry finds an empty stalk and admits.
+        let rotated = from_residual(
+            &germinate(&[(0, 0, 3u8), (1, 0, 3)], &[(0, 0, 4u8), (1, 0, 4)]).unwrap(),
+        );
+        assert_eq!(rule(&fed, &stalks, &rotated.address(), Some(&rotated)), Ruling::Demoted);
+        let bent = from_residual(
+            &germinate(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 0, 2u8), (0, 1, 2), (1, 0, 2)])
+                .unwrap(),
+        );
+        assert!(matches!(rule(&fed, &stalks, &bent.address(), Some(&bent)), Ruling::Admitted(_)));
     }
 }

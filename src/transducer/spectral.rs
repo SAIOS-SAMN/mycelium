@@ -32,7 +32,7 @@ pub struct Signature {
     pub hues: Vec<(u8, u64)>,
 }
 
-fn find(parent: &mut Vec<usize>, i: usize) -> usize {
+pub(crate) fn find(parent: &mut Vec<usize>, i: usize) -> usize {
     let mut r = i;
     while parent[r] != r {
         r = parent[r];
