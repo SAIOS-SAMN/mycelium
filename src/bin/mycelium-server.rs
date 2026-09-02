@@ -83,7 +83,7 @@ fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32])
             &items,
             mycelium::network::wire::BODY_BUDGET,
         );
-        let served = body.get(33).copied().unwrap_or(0);
+        let served = body.get(dialogue::QUOTE_COUNT_AT).copied().unwrap_or(0);
         eprintln!(
             "  quote voice {:02x} → surface {surface:?}; {served}/{} clusters ({} bytes); K={k_step}; cohesion {cohesion:?}",
             qvoice[0],

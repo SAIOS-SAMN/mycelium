@@ -127,13 +127,24 @@ pub fn cited_pattern(word: &Element, asg: usize) -> Option<Vec<Cell>> {
 /// cells. An empty residual is closure; a citation naming nothing held
 /// speaks nothing.
 pub fn replay(language: &[Element], cites: &[Cite], target: &[Cell]) -> Vec<Cell> {
+    let ops: Vec<(Versor, Vec<Cell>)> = cites
+        .iter()
+        .filter_map(|(i, v, asg)| Some((v.clone(), cited_pattern(language.get(*i)?, *asg)?)))
+        .collect();
+    replay_operators(&ops, target)
+}
+
+/// THE REPLAY OF OPERATORS: each operator is a body (the word's cells in
+/// its own frame) with the versor that carries it; nothing is fetched. The
+/// utterance is verified as it was spoken.
+pub fn replay_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Vec<Cell> {
     let mut sorted_target = target.to_vec();
     sorted_target.sort_unstable();
     let mut spoken = vec![false; sorted_target.len()];
     let mut over: Vec<Cell> = Vec::new();
-    for (i, v, asg) in cites {
-        let Some(w) = language.get(*i) else { continue };
-        let Some(pat) = cited_pattern(w, *asg) else { continue };
+    for (v, pat) in ops {
+        let mut pat = pat.clone();
+        pat.sort_unstable();
         let Some(inv) = v.versor_inverse() else { continue };
         for (k, &(r, c, b, a)) in sorted_target.iter().enumerate() {
             if spoken[k] {
@@ -163,18 +174,51 @@ pub fn replay(language: &[Element], cites: &[Cite], target: &[Cell]) -> Vec<Cell
     residual
 }
 
+/// THE GAUGE COORDINATE OF A CITATION, read from the target: the word's
+/// assignment whose transitions, carried by `v`, agree with the target on
+/// every cell they land on. An index into a word's assignments is not a
+/// stable coordinate across copies of the word (a copy that gained a
+/// section orders them differently); the target's own transitions are.
+/// None when no assignment agrees.
+pub fn gauge_of(word: &Element, v: &Versor, target: &[Cell]) -> Option<usize> {
+    let mut sorted_target = target.to_vec();
+    sorted_target.sort_unstable();
+    let pos = element::positions(word.sub());
+    word.assignments().iter().position(|assignment| {
+        let mut landed = 0usize;
+        let agrees = pos.iter().zip(assignment).all(|(&(wr, wc), &(wb, wa))| {
+            let Some(p) = element::carry_center(v, wr, wc) else { return true };
+            let (tr, tc) = element::cell_of(&p);
+            match sorted_target.binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc))) {
+                Ok(k) => {
+                    landed += 1;
+                    (sorted_target[k].2, sorted_target[k].3) == (wb, wa)
+                }
+                Err(_) => true,
+            }
+        });
+        agrees && landed > 0
+    })
+}
+
 /// THE SEAM CONDITION — the cocycle on overlaps. Where two citations carry
 /// their words onto the same target cell, they must speak the same
 /// transition; the cells where they disagree are the seam defect, located
 /// exactly. A sentence with no overlap has no seam.
 pub fn seam_defect(language: &[Element], cites: &[Cite], target: &[Cell]) -> Vec<Cell> {
+    let ops: Vec<(Versor, Vec<Cell>)> = cites
+        .iter()
+        .filter_map(|(i, v, asg)| Some((v.clone(), cited_pattern(language.get(*i)?, *asg)?)))
+        .collect();
+    seam_defect_operators(&ops, target)
+}
+
+pub fn seam_defect_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Vec<Cell> {
     let mut sorted_target = target.to_vec();
     sorted_target.sort_unstable();
     let mut spoken: Vec<Vec<(u8, u8)>> = vec![Vec::new(); sorted_target.len()];
-    for (i, v, asg) in cites {
-        let Some(w) = language.get(*i) else { continue };
-        let Some(pat) = cited_pattern(w, *asg) else { continue };
-        for &(wr, wc, wb, wa) in &pat {
+    for (v, pat) in ops {
+        for &(wr, wc, wb, wa) in pat {
             let Some(p) = element::carry_center(v, wr, wc) else { continue };
             let (tr, tc) = element::cell_of(&p);
             if let Ok(k) = sorted_target.binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc))) {
@@ -193,6 +237,19 @@ pub fn seam_defect(language: &[Element], cites: &[Cite], target: &[Cell]) -> Vec
 pub fn verify(language: &[Element], cites: &[Cite], target: &[Cell]) -> Vec<Cell> {
     let mut out = replay(language, cites, target);
     out.extend(seam_defect(language, cites, target));
+    out.sort_unstable();
+    out.dedup();
+    out
+}
+
+/// VERIFY AN UTTERANCE as spoken: the operators the citations carry are
+/// replayed against the target and checked on their seams, with no copy
+/// of any word fetched. The hearer's lexicon is consulted only afterward,
+/// to name what was verified.
+pub fn verify_utterance(cites: &[crate::anastome::dialogue::CiteWire], target: &[Cell]) -> Vec<Cell> {
+    let ops: Vec<(Versor, Vec<Cell>)> = cites.iter().map(|(_, v, _, body)| (v.clone(), body.clone())).collect();
+    let mut out = replay_operators(&ops, target);
+    out.extend(seam_defect_operators(&ops, target));
     out.sort_unstable();
     out.dedup();
     out

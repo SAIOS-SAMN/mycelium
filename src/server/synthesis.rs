@@ -123,9 +123,10 @@ pub fn probe(
     let Some((listing, _)) = view.pending.iter().find(|(p, _)| p.address() == *target) else {
         return (PROBE_NOTHING, [0; 4], [0; 4]);
     };
-    let resolved = crate::cognition::resolve_cites(&view.language.words, cites);
-    let residual = crate::cognition::verify(&view.language.words, &resolved, listing.sub());
-    let cited: Vec<[u8; 32]> = cites.iter().map(|(a, _, _)| *a).collect();
+    // The utterance is verified as spoken — its operators against the
+    // listing — never against this hypha's copies of the words.
+    let residual = crate::transducer::sentence::verify_utterance(cites, listing.sub());
+    let cited: Vec<[u8; 32]> = cites.iter().map(|(a, _, _, _)| *a).collect();
     let Ok(mut g) = k.lock() else { return (PROBE_NOTHING, [0; 4], [0; 4]) };
     g.settle_probe(voice, target, residual, &cited)
 }

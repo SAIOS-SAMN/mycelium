@@ -124,22 +124,29 @@ pub const PROBE_DESCENT: u8 = 1;
 pub const PROBE_CLOSED: u8 = 2;
 
 /// A citation on the wire: (word address, transport, gauge coordinate).
-pub type CiteWire = ([u8; 32], crate::transducer::element::Versor, u32);
+/// A CITATION ON THE WIRE carries its operator: the word's address as a
+/// hint for the hearer's lexicon, the versor, the gauge coordinate as the
+/// speaker held it, and the body itself — the word's cells under that
+/// gauge, (row, col, before, after) in the word's own frame. The hearer
+/// verifies the operator it received; it never fetches a copy of the word
+/// to verify against.
+pub type CiteWire = ([u8; 32], crate::transducer::element::Versor, u32, Vec<Cell>);
 
 pub fn push_cites(out: &mut Vec<u8>, cites: &[CiteWire]) {
     out.extend_from_slice(&(cites.len() as u32).to_le_bytes());
-    for (addr, g, asg) in cites {
+    for (addr, g, asg, body) in cites {
         out.extend_from_slice(addr);
         g.to_bytes(out);
         out.extend_from_slice(&asg.to_le_bytes());
+        push_chain(out, body);
     }
 }
 
 pub fn read_cites(b: &[u8], p: &mut usize) -> Option<Vec<CiteWire>> {
     let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
     *p += 4;
-    if n > b.len().saturating_sub(*p) / 36 {
-        return None; // untrusted count: address, versor, coordinate per citation
+    if n > b.len().saturating_sub(*p) / 40 {
+        return None; // untrusted count: address, versor, coordinate, body per citation
     }
     let mut out = Vec::with_capacity(n);
     for _ in 0..n {
@@ -148,7 +155,8 @@ pub fn read_cites(b: &[u8], p: &mut usize) -> Option<Vec<CiteWire>> {
         let g = crate::transducer::element::Versor::from_bytes(b, p)?;
         let asg = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
         *p += 4;
-        out.push((addr, g, asg));
+        let body = read_chain(b, p)?;
+        out.push((addr, g, asg, body));
     }
     Some(out)
 }
@@ -602,6 +610,8 @@ pub type WorkItem = ([u8; 32], [u64; 4], Vec<Cell>);
 /// `[ACT_QUOTE][surface 4×u64][K u64][n u8][item: addr 32 | μ⃗ 4×u64 | chain]…`
 /// — K is the judge's k-step at the quote: the temporal coordinate every
 /// listing quoted here is read at.
+/// The offset of the served count in a quote reply (act, surface, K).
+pub const QUOTE_COUNT_AT: usize = 1 + 32 + 8;
 pub fn encode_quote_reply(surface: &[u64; 4], k: u64, items: &[WorkItem]) -> Vec<u8> {
     encode_quote_reply_within(surface, k, items, usize::MAX)
 }
@@ -992,7 +1002,7 @@ mod tests {
     fn the_five_acts_round_trip() {
         let chain = vec![(0i64, 0i64, 1u8, 4u8), (2, 3, 0, 7)];
         let (voice, germ) = ([9u8; 32], [7u8; 32]);
-        let cites = vec![([3u8; 32], crate::transducer::element::translator_versor(1, -1), 1u32)];
+        let cites = vec![([3u8; 32], crate::transducer::element::translator_versor(1, -1), 1u32, chain.clone())];
         let (v, c, k) = decode_demand(&encode_demand(&voice, &chain, &cites)).unwrap();
         assert_eq!(k, cites, "the citations ride the demand");
         assert_eq!((v, c), (voice, chain.clone()));

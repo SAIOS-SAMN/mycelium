@@ -688,7 +688,13 @@ impl Entity {
         match (cites.is_empty(), residual.is_empty()) {
             (false, true) => Some((
                 g[i].address(),
-                cites.into_iter().map(|(j, t, asg)| (g[j].address(), t, asg as u32)).collect(),
+                cites
+                    .into_iter()
+                    .map(|(j, t, asg)| {
+                        let body = crate::transducer::sentence::cited_pattern(&g[j], asg).unwrap_or_default();
+                        (g[j].address(), t, asg as u32, body)
+                    })
+                    .collect(),
             )),
             _ => None,
         }
@@ -779,7 +785,17 @@ impl Entity {
     pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)]) -> (Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>) {
         let located = self.epigenome.locate(chain, None);
         let genome = self.epigenome.genome();
-        (located.cites.into_iter().map(|(i, g, asg)| (genome[i].address(), g, asg as u32)).collect(), located.residual)
+        // Each citation carries its operator: the word's body under the
+        // gauge it was read at, so the hearer verifies what was said.
+        let cites = located
+            .cites
+            .into_iter()
+            .map(|(i, g, asg)| {
+                let body = crate::transducer::sentence::cited_pattern(&genome[i], asg).unwrap_or_default();
+                (genome[i].address(), g, asg as u32, body)
+            })
+            .collect();
+        (cites, located.residual)
     }
 
     /// SPEAK a percept as a proof: perceive, germinate, reduce every germ

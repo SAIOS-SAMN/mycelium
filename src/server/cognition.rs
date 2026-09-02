@@ -603,13 +603,13 @@ impl Kernel {
     /// Seal a rank measured off the lock, if the generations it was
     /// measured at still hold. Returns the rank now in force.
     pub fn seal_closure(&mut self, gens: (u64, u64), rank: Rank) -> std::sync::Arc<Rank> {
-        // The measurement is served whether or not it seals: it is the
-        // book at its generation. It is sealed only when the generations
-        // still hold, so a stale seal never masquerades as current.
+        // The measurement is served and kept with the generations it was
+        // measured at: the market view reads it as current only when those
+        // generations still hold, and as the prior the next measurement
+        // continues from otherwise — so a book that never stands still is
+        // still measured incrementally, never from nothing.
         let measured = std::sync::Arc::new(rank);
-        if gens == (self.basis_gen, self.book_gen) {
-            self.closure = (gens.0, gens.1, std::sync::Arc::clone(&measured));
-        }
+        self.closure = (gens.0, gens.1, std::sync::Arc::clone(&measured));
         measured
     }
 
@@ -712,10 +712,16 @@ impl Kernel {
             self.complete_composite_child(target, voice);
             return (PROBE_CLOSED, paid, [0; 4]);
         }
-        if !crate::economy::descends(&after, &before) {
+        // Replay and list: a sentence is a factorization, not a descent to
+        // reward. What the citations covered leaves the listing; what
+        // remains is listed as the next demand whatever its magnitude. Only
+        // a sentence that covered nothing is answered with nothing.
+        let mut listed = listing.sub().to_vec();
+        listed.sort_unstable();
+        if residual == listed {
             return (PROBE_NOTHING, [0; 4], before);
         }
-        let delta: [u64; 4] = std::array::from_fn(|l| before[l] - after[l]);
+        let delta: [u64; 4] = std::array::from_fn(|l| before[l].saturating_sub(after[l]));
         let paid = self.treasury.settle_subsidy(voice, crate::economy::price(&delta, &surface), anchor);
         // The residual inherits the listing's frame fiber (the scale
         // generators of its spatial block), never its hue tally.
@@ -971,7 +977,7 @@ impl Kernel {
         // duplicate card at another index is exactly what a bid names).
         let resolved: Vec<Cite> = cites
             .iter()
-            .filter_map(|(a, g, asg)| {
+            .filter_map(|(a, g, asg, _)| {
                 self.basis
                     .iter()
                     .enumerate()
@@ -980,7 +986,12 @@ impl Kernel {
             })
             .collect();
         let sub = candidate.substance();
-        let residual = verify(&self.basis, &resolved, sub.sub());
+        // A bid citing the candidate itself names nothing; the utterance is
+        // verified as spoken.
+        if resolved.len() != cites.len() {
+            return None;
+        }
+        let residual = crate::transducer::sentence::verify_utterance(cites, sub.sub());
         match (residual.is_empty(), resolved.is_empty()) {
             (true, false) => {
                 let saved = candidate.magnitude();
@@ -2298,11 +2309,19 @@ pub fn decode_percept(body: &[u8]) -> Option<Percept> {
 /// Resolve citations spoken by address into the language snapshot's
 /// coordinates — each by its own address, a bounded find; a citation naming
 /// nothing held is dropped (it speaks nothing in the replay).
-pub fn resolve_cites(language: &[Element], cites: &[crate::anastome::dialogue::CiteWire]) -> Vec<Cite> {
+pub fn resolve_cites(
+    language: &[Element],
+    cites: &[crate::anastome::dialogue::CiteWire],
+    target: &[(i64, i64, u8, u8)],
+) -> Vec<Cite> {
     cites
         .iter()
-        .filter_map(|(addr, g, asg)| {
-            language.iter().position(|w| w.address() == *addr).map(|i| (i, g.clone(), *asg as usize))
+        .filter_map(|(addr, g, asg, _)| {
+            let i = language.iter().position(|w| w.address() == *addr)?;
+            // The gauge coordinate is read from the target, never trusted
+            // as an index into this copy of the word.
+            let gauge = crate::transducer::sentence::gauge_of(&language[i], g, target).unwrap_or(*asg as usize);
+            Some((i, g.clone(), gauge))
         })
         .collect()
 }
@@ -2318,12 +2337,21 @@ pub fn reduce_proven(
     frame: &crate::arc::Frame,
 ) -> Reduction {
     let (g, ctx) = germ;
-    let resolved = resolve_cites(&language.words, cites);
     let sub = g.substance();
-    let residual = verify(&language.words, &resolved, sub.sub());
-    let form = match residual.is_empty() {
-        true => NormalForm::Decomposed(resolved.iter().map(|(i, _, _)| *i).collect()),
-        false => NormalForm::Irreducible(element::from_residual_framed(&residual, frame)),
+    // The utterance is verified as spoken: the operators it carries are
+    // replayed against the germ; the lexicon is consulted only to name
+    // what was verified. A closing operator the language does not hold is
+    // the missing generator, listed as the demand.
+    let residual = crate::transducer::sentence::verify_utterance(cites, sub.sub());
+    let resolved = resolve_cites(&language.words, cites, sub.sub());
+    let form = match (residual.is_empty(), resolved.len() == cites.len()) {
+        (true, true) => NormalForm::Decomposed(resolved.iter().map(|(i, _, _)| *i).collect()),
+        (true, false) => {
+            let named: Vec<[u8; 32]> = resolved.iter().map(|(i, _, _)| language.words[*i].address()).collect();
+            let missing = cites.iter().find(|(a, _, _, _)| !named.contains(a)).map(|(_, _, _, body)| body.clone()).unwrap_or_default();
+            NormalForm::Irreducible(element::from_residual_framed(&missing, frame))
+        }
+        (false, _) => NormalForm::Irreducible(element::from_residual_framed(&residual, frame)),
     };
     Reduction { germ: g, ctx, form, qs: Vec::new(), language: std::sync::Arc::clone(language) }
 }
@@ -2504,12 +2532,13 @@ mod tests {
         k.basis_push(from_residual(&germinate(&a_far, &rot_far).unwrap()), [7; 32]);
         let derivable = k.basis[0].address(); // its duplicate speaks it
         // The bidder's sentence: the duplicate, cited at the identity.
-        let sentence = vec![(k.basis[1].address(), element::identity_versor(), 0u32)];
+        let body = |w: &Element| crate::transducer::sentence::cited_pattern(w, 0).unwrap();
+        let sentence = vec![(k.basis[1].address(), element::identity_versor(), 0u32, body(&k.basis[1]))];
         let paid = k.try_refine(&derivable, [5; 32], &sentence);
         assert!(paid.is_some(), "the derivable word is a confirmed compression bid");
         assert_eq!(k.basis_len(), 1, "the vocabulary compressed");
         let essential = k.basis[0].address();
-        let self_cite = vec![(essential, element::identity_versor(), 0u32)];
+        let self_cite = vec![(essential, element::identity_versor(), 0u32, body(&k.basis[0]))];
         assert!(k.try_refine(&essential, [5; 32], &self_cite).is_none(), "an essential word is refused");
         assert_eq!(k.basis_len(), 1, "refusal mutates nothing");
         assert!(k.try_refine(&[3; 32], [5; 32], &sentence).is_none(), "an unknown address is refused");
@@ -2520,7 +2549,7 @@ mod tests {
         k.discoverers.push([1; 32]);
         let addr = k.basis[1].address();
         k.provisional.push((addr, k.basis[1].clone()));
-        let sentence = vec![(k.basis[0].address(), element::identity_versor(), 0u32)];
+        let sentence = vec![(k.basis[0].address(), element::identity_versor(), 0u32, body(&k.basis[0]))];
         assert!(k.try_refine(&addr, [5; 32], &sentence).is_none(), "provisional words are refused");
         assert_eq!(k.basis_len(), 2);
     }
@@ -2705,10 +2734,13 @@ mod tests {
             g.ingest(&a, &b, [1; 32]);
             g.ingest(&a, &b, [2; 32]);
         }
-        let word = k.lock().unwrap().basis()[0].address();
+        let (word, body) = {
+            let g = k.lock().unwrap();
+            (g.basis()[0].address(), crate::transducer::sentence::cited_pattern(&g.basis()[0], 0).unwrap())
+        };
         let (ca, cb) = perceive(&a, &b);
         let frame = frame_of(&a, &b);
-        let proof = vec![vec![(word, element::identity_versor(), 0u32)]];
+        let proof = vec![vec![(word, element::identity_versor(), 0u32, body)]];
         let out = crate::synthesis::adjudicate(&k, &ca, &cb, [3; 32], &frame, &proof);
         assert!(matches!(out, Outcome::Decomposed(ref w) if w == &vec![0]), "{out:?}");
         let out = crate::synthesis::adjudicate(&k, &ca, &cb, [3; 32], &frame, &[]);
