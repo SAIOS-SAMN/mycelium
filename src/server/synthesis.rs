@@ -304,6 +304,48 @@ pub enum Deliberation {
     Adopt([u8; 32], crate::transducer::element::Element),
 }
 
+/// THE JUDGE, off the lock. Three phases: the reflex opening under a brief
+/// lock (enrol, relax, cheap syntropic moves, the door; the language
+/// snapshot leaves with it), germination and confluent reduction with no
+/// lock held (pure functions over the snapshot), and the commit under a
+/// brief lock (citations re-resolved by address against the live basis).
+/// The reflex path never waits on a reduction.
+pub fn adjudicate(
+    k: &std::sync::Mutex<crate::cognition::Kernel>,
+    ca: &[Vec<(i64, i64, u8)>],
+    cb: &[Vec<(i64, i64, u8)>],
+    voice: [u8; 32],
+) -> crate::cognition::Outcome {
+    use crate::cognition::Outcome;
+    let Ok(mut g) = k.lock() else { return Outcome::GermPending };
+    let Some((language, budget)) = g.reflex_open(voice) else { return Outcome::GermPending };
+    drop(g);
+    let Some((germs, composites)) = crate::cognition::germinate_bodies(ca, cb) else {
+        return k.lock().map(|mut g| g.pivot()).unwrap_or(Outcome::Pivot);
+    };
+    let reductions = crate::cognition::reduce_all(&language, budget, germs);
+    let Ok(mut g) = k.lock() else { return Outcome::GermPending };
+    g.register_composites(composites);
+    g.commit_all(reductions, voice)
+}
+
+/// A spoken coboundary demand (a peer's independent derivation), judged off
+/// the lock like a percept.
+pub fn attest(
+    k: &std::sync::Mutex<crate::cognition::Kernel>,
+    chain: &[(i64, i64, u8, u8)],
+    voice: [u8; 32],
+) -> crate::cognition::Outcome {
+    use crate::cognition::Outcome;
+    let Ok(mut g) = k.lock() else { return Outcome::GermPending };
+    let Some((language, budget)) = g.reflex_open(voice) else { return Outcome::GermPending };
+    drop(g);
+    let germ = (crate::transducer::element::from_residual(&chain.to_vec()), None);
+    let reductions = crate::cognition::reduce_all(&language, budget, vec![germ]);
+    let Ok(mut g) = k.lock() else { return Outcome::GermPending };
+    g.commit_all(reductions, voice)
+}
+
 /// Idle consolidation, orchestrated off the request path: the cheap moves
 /// run under a brief lock, the redundancy probe decomposes the candidate
 /// over a basis snapshot with no lock held, and only the retirement

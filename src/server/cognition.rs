@@ -42,11 +42,131 @@ pub enum Outcome {
 }
 
 /// The result of reducing a demand's substance against the generator basis: either
-/// a canonical sentence (fully decomposed) or an irreducible residual (a critical
-/// pair to complete by germination).
-enum NormalForm {
+/// a canonical sentence (fully decomposed; indices into the language the
+/// reduction ran over) or an irreducible residual (a critical pair to complete
+/// by germination).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum NormalForm {
     Decomposed(Vec<usize>),
     Irreducible(Element),
+}
+
+/// A germ ready for reduction: the element and its anchor context (the framed
+/// input body and the offset of the centered chain within it).
+pub type Germ = (Element, Option<(Vec<(i64, i64, u8)>, (i64, i64))>);
+
+/// A composite lineage to register: (parent id, children (address, done), the
+/// overlap strips the reassembly glues on).
+pub type Composite = ([u8; 32], Vec<([u8; 32], bool)>, Vec<(i64, i64, u8, u8)>);
+
+/// A reduction computed off the lock, ready to commit: the germ, its context,
+/// the normal form over `language` (the snapshot it reduced over, so cited
+/// indices resolve to addresses at commit), and the selection critical pairs.
+pub struct Reduction {
+    pub germ: Element,
+    pub ctx: Option<(Vec<(i64, i64, u8)>, (i64, i64))>,
+    pub form: NormalForm,
+    pub qs: Vec<(usize, Vec<(i64, i64)>)>,
+    pub language: std::sync::Arc<Vec<Element>>,
+}
+
+/// PERCEPTION TO GERMS — pure. Correspond bodies by rigid-motion invariant
+/// (zero search), frame each pair to its canonical origin, and germinate the
+/// coboundary between the framed scenes; identical framed scenes are a pure
+/// transposition (no substance). A coboundary wider than the atomic frame
+/// fragments into overlapping tiles carrying a composite lineage. None when
+/// the percept is degenerate (no bodies, or mismatched counts). Identical
+/// germs across every body collapse to one.
+pub fn germinate_bodies(
+    ca: &[Vec<(i64, i64, u8)>],
+    cb: &[Vec<(i64, i64, u8)>],
+) -> Option<(Vec<Germ>, Vec<Composite>)> {
+    if ca.is_empty() || ca.len() != cb.len() {
+        return None;
+    }
+    let mut ai: Vec<usize> = (0..ca.len()).collect();
+    let mut bi: Vec<usize> = (0..cb.len()).collect();
+    ai.sort_by(|&x, &y| lift(&ca[x], 0).invariant().cmp(&lift(&ca[y], 0).invariant()));
+    bi.sort_by(|&x, &y| lift(&cb[x], 0).invariant().cmp(&lift(&cb[y], 0).invariant()));
+    let mut germs: Vec<Germ> = Vec::with_capacity(ca.len());
+    let mut composites: Vec<Composite> = Vec::new();
+    for k in 0..ca.len() {
+        let fa = frame_to_origin(&ca[ai[k]]);
+        let fb = frame_to_origin(&cb[bi[k]]);
+        match germinate(&fa, &fb) {
+            Some(rg) => {
+                let tiles = quadrant_tiles(&rg);
+                if tiles.len() > 1 {
+                    let parent = composite_parent_id(&rg);
+                    let mut children: Vec<([u8; 32], bool)> = Vec::new();
+                    for tile in &tiles {
+                        let elem = element::from_residual(tile);
+                        children.push((elem.address(), false));
+                        let off_r = tile.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
+                        let off_c = tile.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
+                        germs.push((elem, Some((fa.clone(), (off_r, off_c)))));
+                    }
+                    composites.push((parent, children, overlap_strip(&rg, &tiles)));
+                    continue;
+                }
+                let off_r = rg.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
+                let off_c = rg.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
+                germs.push((element::from_residual(&rg), Some((fa, (off_r, off_c)))));
+            }
+            None => germs.push((Element::identity(element::GERM_DIM), None)),
+        }
+    }
+    if germs.iter().all(|(g, _)| *g == germs[0].0) {
+        germs.truncate(1);
+    }
+    Some((germs, composites))
+}
+
+/// CONFLUENT DECOMPOSITION — pure. Reduce the germ's substance to normal form
+/// over the language snapshot by peeling generators under ≺_DM within the
+/// projection budget. No lookup, no pair-search: a canonical sentence, or an
+/// irreducible residual (a Knuth–Bendix critical pair). The selection
+/// critical pairs it met ride along, indexed into the snapshot.
+pub fn reduce_germ(
+    language: &[Element],
+    budget: (usize, usize),
+    g: &Element,
+    ctx: Option<&(Vec<(i64, i64, u8)>, (i64, i64))>,
+) -> (NormalForm, Vec<(usize, Vec<(i64, i64)>)>) {
+    let mut qs: Vec<(usize, Vec<(i64, i64)>)> = Vec::new();
+    let sub = g.substance();
+    if sub.sub().is_empty() {
+        return (NormalForm::Decomposed(Vec::new()), qs); // a pure transposition
+    }
+    let held_ctx: Option<AnchorCtx> = ctx.map(|(s, o)| (s.as_slice(), *o));
+    let form = match decompose_over_anchored(
+        language,
+        sub.sub(),
+        None,
+        budget.0,
+        budget.1,
+        held_ctx.as_ref(),
+        &mut qs,
+    ) {
+        Ok(word) => NormalForm::Decomposed(word),
+        Err(void) => NormalForm::Irreducible(element::from_residual(&void)),
+    };
+    (form, qs)
+}
+
+/// Reduce every germ over the snapshot — pure, off the lock.
+pub fn reduce_all(
+    language: &std::sync::Arc<Vec<Element>>,
+    budget: (usize, usize),
+    germs: Vec<Germ>,
+) -> Vec<Reduction> {
+    germs
+        .into_iter()
+        .map(|(germ, ctx)| {
+            let (form, qs) = reduce_germ(language, budget, &germ, ctx.as_ref());
+            Reduction { germ, ctx, form, qs, language: std::sync::Arc::clone(language) }
+        })
+        .collect()
 }
 
 /// The kernel's evolving state: the installed generator basis + the germ
@@ -68,6 +188,13 @@ pub struct Kernel {
     /// persisted; every basis mutation passes through `basis_push`,
     /// `basis_remove`, `basis_clear` so the alignment holds.
     stalks: crate::transducer::stalk::Stalks,
+    /// THE LANGUAGE SNAPSHOT — the basis as an immutable shared value the
+    /// reflex path reduces over with no lock held. `basis_gen` counts every
+    /// mutation of the basis (cards or fibres); the snapshot is rebuilt only
+    /// when its generation lags, so a stable language is shared by pointer.
+    basis_gen: u64,
+    language_gen: u64,
+    language: std::sync::Arc<Vec<Element>>,
     admission: Admission,
     /// THE OPEN-DEMAND MARKET: irreducible residuals still awaiting consilience —
     /// the un-factored chains the mesh QUOTES as work (Vec-of-relations, capped;
@@ -127,12 +254,14 @@ impl Kernel {
         self.stalks.admit(&crate::transducer::stalk::invariant(word.sub()), self.basis.len());
         self.basis.push(word);
         self.discoverers.push(discoverer);
+        self.basis_gen += 1;
     }
 
     /// Remove the word at `i` from the basis, its discoverer, and its stalk.
     fn basis_remove(&mut self, i: usize) -> Element {
         self.discoverers.remove(i);
         self.stalks.remove(i);
+        self.basis_gen += 1;
         self.basis.remove(i)
     }
 
@@ -140,6 +269,23 @@ impl Kernel {
         self.basis.clear();
         self.discoverers.clear();
         self.stalks.clear();
+        self.basis_gen += 1;
+    }
+
+    /// A held word changed in place (a section, a connection, an anchor):
+    /// the language moved.
+    fn touch(&mut self) {
+        self.basis_gen += 1;
+    }
+
+    /// The language as an immutable shared snapshot for off-lock reduction,
+    /// rebuilt only when the basis generation moved since the last one.
+    pub fn language(&mut self) -> std::sync::Arc<Vec<Element>> {
+        if self.language_gen != self.basis_gen || self.language.len() != self.basis.len() {
+            self.language = std::sync::Arc::new(self.basis.clone());
+            self.language_gen = self.basis_gen;
+        }
+        std::sync::Arc::clone(&self.language)
     }
 
     /// The held word that is `chain`'s base point, with the transport
@@ -177,6 +323,7 @@ impl Kernel {
         }
         let disc = self.discoverers[si];
         let gained = self.basis[bi].attach(&sib, g);
+        self.touch();
         self.basis_remove(si);
         if gained > 0 {
             let anchor = self.anchor();
@@ -441,6 +588,7 @@ impl Kernel {
             // the bundle (sections, connection) — the genome converges in
             // volume, not only in vocabulary.
             self.basis[i].merge_fibre(word);
+            self.touch();
             return Adoption::Known;
         }
         self.basis_push(word.clone(), ratifier);
@@ -509,6 +657,7 @@ impl Kernel {
         let mut bound = false;
         if let Some(i) = self.basis.iter().position(|t| t.address() == *addr) {
             self.basis[i] = self.basis[i].clone().with_anchor(pi.clone());
+            self.touch();
             bound = true;
         }
         // A germ still PENDING quorum accepts the bind too — it installs
@@ -560,163 +709,99 @@ impl Kernel {
         cb: &[Vec<(i64, i64, u8)>],
         voice: [u8; 32],
     ) -> Outcome {
-        self.enroll(voice, crate::economy::Tier::Participant); // first speech enrolls
-        self.physics.relax(); // the metabolism dissipates its backlog as it works
-        // THE SYNTROPIC STROKE fires in BOTH resting states of the two-stroke:
-        // DEPLETED (expansion spent its fuel — optimize to regenerate) and IDLE
-        // (no backlog — free energy condenses the basis). A mesh that is neither
-        // expanding nor optimizing is wasting its metabolism.
+        // The whole path under one lock (tests and local use); the server
+        // runs the same three phases with the lock dropped around the
+        // reduction (synthesis::adjudicate).
+        let Some((language, budget)) = self.reflex_open(voice) else {
+            return Outcome::GermPending;
+        };
+        let Some((germs, composites)) = germinate_bodies(ca, cb) else { return self.pivot() };
+        let reductions = reduce_all(&language, budget, germs);
+        self.register_composites(composites);
+        self.commit_all(reductions, voice)
+    }
+
+    /// THE REFLEX OPENING — under a brief lock: the voice enrols on first
+    /// speech, the metabolism dissipates its backlog, the cheap syntropic
+    /// moves fire in both resting states of the two-stroke (depleted or
+    /// idle; the redundancy probe stays with the idle worker), and the
+    /// escrow-priced door prices congestion. Returns the language snapshot
+    /// and the projection budget the off-lock reduction runs with; None when
+    /// the door defers (the honest "come back", which clients retry).
+    pub fn reflex_open(
+        &mut self,
+        voice: [u8; 32],
+    ) -> Option<(std::sync::Arc<Vec<Element>>, (usize, usize))> {
+        self.enroll(voice, crate::economy::Tier::Participant);
+        self.physics.relax();
         let idle = self.physics.metabolism_rate().iter().all(|&p| p <= 1);
         if self.physics.depleted() || idle {
-            self.optimize();
+            self.condense_stroke();
+            self.physics.regenerate();
         }
-        // D12 — THE ESCROW-PRICED DOOR: a strained mesh charges congestion at
-        // the door (fee ∝ reserve deficit, per lane; a calm mesh is free),
-        // paid from earned balance into the pool. A speaker who pays NOTHING
-        // on a fully saturated lane is DEFERRED — the demand pends unheard
-        // (the honest "come back", which clients already retry) instead of
-        // brute-forcing an exhausted metabolism. An economic rate limit:
-        // spam costs exactly when strain is real.
         if self.door_defers(voice) {
-            return Outcome::GermPending;
+            return None;
         }
-        if ca.is_empty() || ca.len() != cb.len() {
-            self.physics.pivot([false; 4]);
-            return Outcome::Pivot;
-        }
-        // Correspond bodies by rigid-motion invariant (zero search) — the pairing,
-        // keeping the raw cells so the full description can be read per body.
-        let mut ai: Vec<usize> = (0..ca.len()).collect();
-        let mut bi: Vec<usize> = (0..cb.len()).collect();
-        ai.sort_by(|&x, &y| lift(&ca[x], 0).invariant().cmp(&lift(&ca[y], 0).invariant()));
-        bi.sort_by(|&x, &y| lift(&cb[x], 0).invariant().cmp(&lift(&cb[y], 0).invariant()));
-        // POST-EXCISION DERIVATION — perception measures, never names. Each paired
-        // body is framed to its canonical origin by the SUBSTRATE (the hypha's
-        // transposition projection, per the ruling); the demand's substance is the
-        // coboundary between the framed scenes. Identical framed scenes = a pure
-        // transposition (no substance). Everything else GERMINATES as a centered
-        // coboundary germ — "rotation", "recolour", "deformation" are patterns the
-        // mesh must learn and consolidate, never solver verdicts.
-        let mut germs: Vec<(Element, Option<(Vec<(i64, i64, u8)>, (i64, i64))>)> =
-            Vec::with_capacity(ca.len());
-        for k in 0..ca.len() {
-            let fa = frame_to_origin(&ca[ai[k]]);
-            let fb = frame_to_origin(&cb[bi[k]]);
-            let e = match germinate(&fa, &fb) {
-                Some(rg) => {
-                    // COMPOSITE FRAGMENTATION (7d): a coboundary wider than the
-                    // atomic perceptual frame decomposes along spatial bounding
-                    // partitions into overlapping tiles — sub-demands carrying
-                    // the parent's lineage. Each tile germinates, quotes, and
-                    // settles independently across workers; the parent settles
-                    // only when every child completes and the overlaps glue
-                    // (δ(ΣWᵢ) = 0 on the shared strips, checked at reassembly).
-                    let tiles = quadrant_tiles(&rg);
-                    if tiles.len() > 1 {
-                        let parent = composite_parent_id(&rg);
-                        let mut children: Vec<([u8; 32], bool)> = Vec::new();
-                        let mut tile_ctxs = Vec::new();
-                        for tile in &tiles {
-                            let elem = element::from_residual(tile);
-                            children.push((elem.address(), false));
-                            let off_r = tile.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
-                            let off_c = tile.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
-                            tile_ctxs.push((elem, Some((fa.clone(), (off_r, off_c)))));
-                        }
-                        let overlap = overlap_strip(&rg, &tiles);
-                        if self.composites.len() < 32 {
-                            self.composites.push((parent, children, overlap));
-                        }
-                        germs.extend(tile_ctxs);
-                        continue;
-                    }
-                    // The ANCHOR CONTEXT: the framed input body is the scene π
-                    // evaluates over; the offset maps the germ's centered chain
-                    // back into it (recovered before from_residual centers).
-                    let off_r = rg.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
-                    let off_c = rg.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
-                    let elem = element::from_residual(&rg);
-                    germs.push((elem, Some((fa, (off_r, off_c)))));
-                    continue;
-                }
-                None => Element::identity(element::GERM_DIM), // pure transposition
-            };
-            germs.push((e, None));
-        }
-        // One element closing every body is a single germ; otherwise the demand
-        // fragmented into independent per-body germs.
-        if germs.iter().all(|(g, _)| *g == germs[0].0) {
-            let (g, ctx) = germs.swap_remove(0);
-            self.conceive_germ(g, voice, ctx)
-        } else {
-            Outcome::Fragmented(
-                germs.into_iter().map(|(g, ctx)| self.conceive_germ(g, voice, ctx)).collect(),
-            )
+        let budget = self.projection_budget();
+        Some((self.language(), budget))
+    }
+
+    /// A degenerate percept: nothing to reduce.
+    pub fn pivot(&mut self) -> Outcome {
+        self.physics.pivot([false; 4]);
+        Outcome::Pivot
+    }
+
+    /// Register composite lineages from a fragmented percept (bounded).
+    pub fn register_composites(&mut self, composites: Vec<Composite>) {
+        for c in composites {
+            if self.composites.len() < 32 {
+                self.composites.push(c);
+            }
         }
     }
 
-    /// Classify one anonymous germ against the basis and run the two-voice gate.
-    /// Opaque: matched by canonical address, never by "kind".
+    /// COMMIT every reduction under the lock: one reduction is the demand's
+    /// outcome; several are a fragmented demand recomposed per body.
+    pub fn commit_all(&mut self, mut reductions: Vec<Reduction>, voice: [u8; 32]) -> Outcome {
+        match reductions.len() {
+            1 => self.commit_germ(reductions.swap_remove(0), voice),
+            _ => Outcome::Fragmented(
+                reductions.into_iter().map(|r| self.commit_germ(r, voice)).collect(),
+            ),
+        }
+    }
+
+    /// Classify one anonymous germ against the basis and run the two-voice gate,
+    /// whole under the lock (tests and the pure-transposition path).
     fn conceive_germ(
         &mut self,
         g: Element,
         voice: [u8; 32],
         ctx: Option<(Vec<(i64, i64, u8)>, (i64, i64))>,
     ) -> Outcome {
+        let language = self.language();
+        let budget = self.projection_budget();
+        let (form, qs) = reduce_germ(&language, budget, &g, ctx.as_ref());
+        self.commit_germ(Reduction { germ: g, ctx, form, qs, language }, voice)
+    }
+
+    /// COMMIT a reduction: the state changes a normal form implies, under the
+    /// lock. Cited words resolve from the snapshot's indices to addresses and
+    /// then to the live basis; a citation that left the basis while the
+    /// reduction ran defers the demand (it re-reduces on the client's retry).
+    /// Opaque: matched by canonical address, never by "kind".
+    pub fn commit_germ(&mut self, r: Reduction, voice: [u8; 32]) -> Outcome {
+        let Reduction { germ: g, ctx, form, qs, language } = r;
         let gaddr = g.address(); // composite lineage completes by this identity
-        // Q_anchor residuals from this reduction queue for the court's
-        // refinement docket (bounded — a work queue, not a ledger).
-        let mut qs: Vec<(usize, Vec<(i64, i64)>)> = Vec::new();
-        let held_ctx: Option<AnchorCtx> = ctx.as_ref().map(|(s, o)| (s.as_slice(), *o));
         let lanes = g.lanes();
-        // CONFLUENT DECOMPOSITION — reduce the demand's substance to normal form by
-        // peeling installed generators under ≺_DM. No lookup, no pair-search: a
-        // demand either decomposes into a canonical sentence, or leaves an
-        // irreducible residual (a Knuth–Bendix critical pair) to complete.
-        let normal_form = {
-            let sub = g.substance();
-            if !sub.sub().is_empty() {
-                let (beam_width, depth) = self.projection_budget();
-                match decompose_over_anchored(
-                    &self.basis,
-                    sub.sub(),
-                    None,
-                    beam_width,
-                    depth,
-                    held_ctx.as_ref(),
-                    &mut qs,
-                ) {
-                    Ok(word) => NormalForm::Decomposed(word),
-                    Err(void) => {
-                        // A germ is born ⊤ — ONE evidence underdetermines its
-                        // selection (the same law as anchor consensus: the
-                        // family decides, never a single pair). Its birth
-                        // footprint+scene are RECORDED as evidence; the court's
-                        // KB refinement (7c) derives and binds π over the
-                        // accumulated family, and only then does the dual
-                        // condition begin to bite for this word.
-                        let res = element::from_residual(&void);
-                        if let Some((scene, (or, oc))) = &ctx {
-                            let fp: Vec<(i64, i64)> =
-                                void.iter().map(|(r, c, _, _)| (r + or, c + oc)).collect();
-                            if self.anchor_evidence.len() < 128 {
-                                self.anchor_evidence.push((res.address(), fp, scene.clone()));
-                            }
-                        }
-                        NormalForm::Irreducible(res)
-                    }
-                }
-            } else {
-                self.reduce(&g)
-            }
-        };
         // Queue the selection critical pairs (bounded, deduped by word).
         if let Some((scene, _)) = &ctx {
             for (wi, q) in qs {
                 if self.anchor_mismatches.len() >= 64 {
                     break;
                 }
-                if let Some(w) = self.basis.get(wi) {
+                if let Some(w) = language.get(wi) {
                     let addr = w.address();
                     if !self.anchor_mismatches.iter().any(|(a, _, _)| *a == addr) {
                         self.anchor_mismatches.push((addr, q, scene.clone()));
@@ -724,6 +809,40 @@ impl Kernel {
                 }
             }
         }
+        let normal_form = match form {
+            NormalForm::Decomposed(cited) => {
+                let mut word = Vec::with_capacity(cited.len());
+                for wi in cited {
+                    let live = language
+                        .get(wi)
+                        .map(|w| w.address())
+                        .and_then(|a| self.basis.iter().position(|t| t.address() == a));
+                    match live {
+                        Some(i) => word.push(i),
+                        None => {
+                            self.physics.bump(lanes);
+                            return Outcome::GermPending; // the language moved under it
+                        }
+                    }
+                }
+                NormalForm::Decomposed(word)
+            }
+            NormalForm::Irreducible(res) => {
+                // A germ is born ⊤ — ONE evidence underdetermines its
+                // selection (the same law as anchor consensus: the family
+                // decides, never a single pair). Its birth footprint+scene are
+                // RECORDED as evidence; the court's KB refinement (7c) derives
+                // and binds π over the accumulated family.
+                if let Some((scene, (or, oc))) = &ctx {
+                    let fp: Vec<(i64, i64)> =
+                        res.sub().iter().map(|(r, c, _, _)| (r + or, c + oc)).collect();
+                    if self.anchor_evidence.len() < 128 {
+                        self.anchor_evidence.push((res.address(), fp, scene.clone()));
+                    }
+                }
+                NormalForm::Irreducible(res)
+            }
+        };
         match normal_form {
             NormalForm::Decomposed(word) => {
                 // USE-EVIDENCE (Step 7c): a witnessed placement is a family
@@ -778,6 +897,7 @@ impl Kernel {
                     let quorum = self.admission.voices(&saddr) >= crate::network::consensus::QUORUM;
                     if quorum && self.physics.can_expand(lanes) {
                         self.basis[ti].puncture(asg);
+                        self.touch();
                         let mu = crate::economy::price(
                             &residual.magnitude(),
                             &crate::economy::yield_surface(&self.physics),
@@ -1144,6 +1264,7 @@ impl Kernel {
                 let anchor = self.anchor();
                 self.treasury.settle_torse(self.discoverers[i], mu, anchor);
             }
+            self.touch(); // sections and cycles may have moved at the cursor
             if self.basis[i].sections().is_empty() && self.basis[i].torsion().is_empty() {
                 return Some(i);
             }
@@ -1209,16 +1330,12 @@ impl Kernel {
     /// DECOMPOSES instead of double-minting); a genuine irreducible joins the
     /// admission as this voice's attestation — consilience through conversation.
     pub fn attest(&mut self, chain: &[(i64, i64, u8, u8)], voice: [u8; 32]) -> Outcome {
-        self.enroll(voice, crate::economy::Tier::Participant); // first speech enrolls
-        self.physics.relax();
-        if self.physics.depleted() {
-            self.optimize(); // the syntropic stroke ALWAYS gets its chance first
-        }
-        // D12 — the same congestion door as adjudicate: strain prices speech.
-        if self.door_defers(voice) {
+        let Some((language, budget)) = self.reflex_open(voice) else {
             return Outcome::GermPending;
-        }
-        self.conceive_germ(element::from_residual(&chain.to_vec()), voice, None)
+        };
+        let germ = (element::from_residual(&chain.to_vec()), None);
+        let reductions = reduce_all(&language, budget, vec![germ]);
+        self.commit_all(reductions, voice)
     }
 
     /// The consilience voices on record for a germ — the settle receipt's parties.

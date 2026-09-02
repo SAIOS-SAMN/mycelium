@@ -128,7 +128,7 @@ pub struct Element {
     transitions: Vec<(Vec<(u8, u8)>, Transition)>,
     /// The memoized address — a measurement of the base (word, dim, fibers),
     /// taken once and cleared wherever the base mutates. Never serialized.
-    address: std::cell::OnceCell<[u8; 32]>,
+    address: std::sync::OnceLock<[u8; 32]>,
 }
 
 /// The eight isometries of D4 as exact coordinate maps, in a fixed order:
@@ -303,7 +303,7 @@ impl Element {
             sections: Vec::new(),
             torsion: Vec::new(),
             transitions: Vec::new(),
-            address: std::cell::OnceCell::new(),
+            address: std::sync::OnceLock::new(),
             anchor: None,
         }
     }
@@ -996,7 +996,7 @@ impl Element {
             torsion,
             anchor,
             transitions,
-            address: std::cell::OnceCell::new(),
+            address: std::sync::OnceLock::new(),
         })
     }
 }

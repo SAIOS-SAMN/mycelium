@@ -50,6 +50,132 @@ fn persist(kernel: &Mutex<Kernel>, state_path: &str) {
     }
 }
 
+/// A percept, gossip, or demand frame handed from the listener to the reflex
+/// pool with its open socket: the reply is written by the judging worker.
+struct ReflexJob {
+    stream: TcpStream,
+    frame: Frame,
+}
+
+/// THE JUDGE on a reflex worker. The kernel lock is held only for the reflex
+/// opening and the commit (synthesis::adjudicate / attest); the reduction
+/// runs over the language snapshot with no lock held. The reply carries the
+/// outcome, the per-lane metabolism, what was taught, and the settle
+/// receipt; a percept still awaiting consilience routes one receipt to its
+/// rendezvous.
+fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32]) {
+    let ReflexJob { mut stream, frame } = job;
+    let Some((&kind, rest)) = frame.body.split_first() else { return };
+    let pbytes = if kind == dialogue::ACT_GOSSIP && rest.len() >= 32 { &rest[32..] } else { rest };
+    let (out, voice) = if kind == dialogue::ACT_DEMAND {
+        // A spoken, unsolved coboundary challenge — a peer's independent
+        // derivation attesting an open residual.
+        let Some((dvoice, chain)) = dialogue::decode_demand(&frame.body) else { return };
+        (mycelium::synthesis::attest(kernel, &chain, dvoice), dvoice)
+    } else {
+        // The client PERCEIVED (segmented bodies); the JUDGE adjudicates.
+        let Some((pvoice, a_bodies, b_bodies)) = decode_percept(pbytes) else { return };
+        (mycelium::synthesis::adjudicate(kernel, &a_bodies, &b_bodies, pvoice), pvoice)
+    };
+    // TEACH: on install AND on a single-word sentence (the demand IS a held
+    // word — express it down so the entity's genome inherits it); SETTLE:
+    // the consilience receipt (parties + the μ⃗ award priced at the surface).
+    // A brief lock: reads only.
+    let (basis, flux, reserve, taught, settle) = {
+        let k = kernel.lock().unwrap();
+        let (taught, settle) = match &out {
+            Outcome::Installed(i) => match k.basis().get(*i) {
+                Some(g) => {
+                    let addr = g.address();
+                    let mu = mycelium::economy::price(
+                        &g.magnitude(),
+                        &mycelium::economy::yield_surface(k.physics()),
+                    );
+                    // Teach the FULL lossless form (to_bytes) — the entity's
+                    // genome must reconstruct the exact element, sections and all.
+                    (g.to_bytes(), Some((addr, k.voices_of(&addr), mu)))
+                }
+                None => (Vec::new(), None), // retired while the reply formed
+            },
+            Outcome::Decomposed(word) if word.len() == 1 => {
+                (k.basis().get(word[0]).map(|g| g.to_bytes()).unwrap_or_default(), None)
+            }
+            // RE-TEACH ON REBIND: any sentence citing a court-ANCHORED word
+            // teaches that word's full γ = (π, Δ) form — Epigenome::learn
+            // refreshes by address, so the refined anchor propagates to every
+            // speaking genome. Teach the heaviest anchored citation.
+            Outcome::Decomposed(word) => {
+                let taught = word
+                    .iter()
+                    .filter_map(|&i| k.basis().get(i))
+                    .filter(|g| g.anchor().is_some())
+                    .max_by_key(|g| g.magnitude()[2])
+                    .map(|g| g.to_bytes())
+                    .unwrap_or_default();
+                (taught, None)
+            }
+            _ => (Vec::new(), None),
+        };
+        (
+            (k.basis_len(), k.sections_total()),
+            k.physics().metabolism_rate(),
+            k.physics().reserve,
+            taught,
+            settle,
+        )
+    };
+    let label = match &out {
+        Outcome::Decomposed(word) => format!("valid: decomposed → sentence {word:?} ({} generators)", word.len()),
+        Outcome::GermPending => "valid: germ pending (one voice)".to_string(),
+        Outcome::Installed(i) => format!("valid: GERM INSTALLED #{i}"),
+        Outcome::Fragmented(parts) => format!("valid: fragmented ({} bodies)", parts.len()),
+        Outcome::Pivot => "invalid: pivot (degenerate — nothing to reduce)".to_string(),
+    };
+    let src = match kind {
+        k if k == dialogue::ACT_GOSSIP => "gossip",
+        k if k == dialogue::ACT_DEMAND => "demand",
+        _ => "client",
+    };
+    eprintln!(
+        "  {src} percept voice {:02x} → {label}; basis={} vol={}; metabolism {flux:?}; reserve {reserve:?}",
+        voice[0], basis.0, basis.1
+    );
+    // Reply: outcome | metabolism/pressure(4) | taught (len16 | bytes) | settle?
+    let mut body = vec![outcome_code(&out)];
+    for f in flux {
+        body.push(f.min(255) as u8); // per-lane pressure, saturated to a byte
+    }
+    body.extend_from_slice(&(taught.len() as u16).to_le_bytes());
+    body.extend_from_slice(&taught);
+    if let Some((germ, voices, mu)) = &settle {
+        body.extend_from_slice(&dialogue::encode_settle(germ, voices, mu));
+    }
+    let reply = Frame { lane: frame.lane, body };
+    let _ = stream.write_all(&reply.encode().unwrap_or_default());
+
+    // P6/R5 · sun_recon: a CLIENT percept still awaiting consilience routes ONE
+    // receipt to its RENDEZVOUS — the node XOR-closest to the demand's
+    // content-address (voice EXCLUDED so all voices of a germ converge there).
+    // The rendezvous accumulates the distinct voice + verifies by recomputation;
+    // quorum → install + teach outward. No fanout; a down rendezvous fails
+    // silently (resilience). Gossip (kind 1) is never re-routed here.
+    if kind == dialogue::ACT_PERCEPT
+        && pbytes.len() > 32
+        && matches!(out, Outcome::GermPending | Outcome::Fragmented(_))
+    {
+        let key = *blake3::hash(&pbytes[32..]).as_bytes(); // demand address, voice-free
+        if let Some(dest) = rendezvous(&key, id, router) {
+            let mut g = vec![0x01u8];
+            g.extend_from_slice(&key);
+            g.extend_from_slice(pbytes);
+            let gframe = Frame { lane: frame.lane, body: g }.encode().unwrap_or_default();
+            if let Ok(mut ps) = TcpStream::connect(&dest) {
+                let _ = ps.write_all(&gframe);
+            }
+        }
+    }
+}
+
 /// A stable node id from a string (address) — a wire identity, not cognition.
 fn id_of(s: &str) -> [u8; 32] {
     *blake3::hash(s.as_bytes()).as_bytes()
@@ -255,6 +381,31 @@ fn main() {
                         }
                     }
                 }
+            }
+        });
+    }
+
+    // THE REFLEX POOL: percepts and demands are judged on worker threads —
+    // the reflex opening and the commit are brief locks, the reduction runs
+    // over the language snapshot with no lock held — so the listener only
+    // accepts and dispatches. Sized by the machine's parallelism; a full
+    // pool defers the demand (the honest "come back", which clients retry).
+    let cores = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
+    let (reflex_tx, reflex_rx) = std::sync::mpsc::sync_channel::<ReflexJob>(cores);
+    let reflex_rx = Arc::new(Mutex::new(reflex_rx));
+    let router = Arc::new(router);
+    for _ in 0..(cores / 2).max(1) {
+        let rx = Arc::clone(&reflex_rx);
+        let kernel = Arc::clone(&kernel);
+        let router = Arc::clone(&router);
+        std::thread::spawn(move || loop {
+            let job = match rx.lock() {
+                Ok(r) => r.recv(),
+                Err(_) => break,
+            };
+            match job {
+                Ok(job) => judge(job, &kernel, &router, &id),
+                Err(_) => break,
             }
         });
     }
@@ -573,115 +724,18 @@ fn main() {
             continue;
         }
 
-        // ── percept / gossip / demand → the judge ────────────────────────────
-        let pbytes = if kind == dialogue::ACT_GOSSIP && rest.len() >= 32 { &rest[32..] } else { rest };
-        let (out, basis, flux, reserve, taught, settle, voice) = {
-            let mut k = kernel.lock().unwrap();
-            let (out, voice) = if kind == dialogue::ACT_DEMAND {
-                // A spoken, unsolved coboundary challenge — a peer's independent
-                // derivation attesting an open residual.
-                let Some((dvoice, chain)) = dialogue::decode_demand(&frame.body) else { continue };
-                (k.attest(&chain, dvoice), dvoice)
-            } else {
-                // The client PERCEIVED (segmented bodies); the JUDGE adjudicates.
-                let Some((pvoice, a_bodies, b_bodies)) = decode_percept(pbytes) else { continue };
-                (k.adjudicate(&a_bodies, &b_bodies, pvoice), pvoice)
+        // ── percept / gossip / demand → the reflex pool. The listener never
+        // reduces; a full pool defers the demand in the reply's own shape
+        // (outcome, four zero lanes, nothing taught).
+        let lane = frame.lane;
+        let job = ReflexJob { stream: s, frame };
+        if let Err(e) = reflex_tx.try_send(job) {
+            let job = match e {
+                std::sync::mpsc::TrySendError::Full(j) | std::sync::mpsc::TrySendError::Disconnected(j) => j,
             };
-            // TEACH: on install AND on a single-word sentence (the demand IS a held
-            // word — express it down so the entity's genome inherits it); SETTLE:
-            // the consilience receipt (parties + the μ⃗ award priced at the surface).
-            let (taught, settle) = match &out {
-                Outcome::Installed(i) => {
-                    let g = &k.basis()[*i];
-                    let addr = g.address();
-                    let mu = mycelium::economy::price(
-                        &g.magnitude(),
-                        &mycelium::economy::yield_surface(k.physics()),
-                    );
-                    // Teach the FULL lossless form (to_bytes) — the entity's genome
-                    // must reconstruct the exact element, sections and all.
-                    (g.to_bytes(), Some((addr, k.voices_of(&addr), mu)))
-                }
-                Outcome::Decomposed(word) if word.len() == 1 => (k.basis()[word[0]].to_bytes(), None),
-                // RE-TEACH ON REBIND: any sentence citing a court-ANCHORED word
-                // teaches that word's full γ = (π, Δ) form — Epigenome::learn
-                // refreshes by address, so the refined anchor propagates to
-                // every speaking genome organically (the fleet's instinct
-                // sharpens as its language is refined, no broadcast needed).
-                // Teach the heaviest anchored citation.
-                Outcome::Decomposed(word) => {
-                    let taught = word
-                        .iter()
-                        .filter(|&&i| k.basis()[i].anchor().is_some())
-                        .max_by_key(|&&i| k.basis()[i].magnitude()[2])
-                        .map(|&i| k.basis()[i].to_bytes())
-                        .unwrap_or_default();
-                    (taught, None)
-                }
-                _ => (Vec::new(), None),
-            };
-            (
-                out,
-                (k.basis_len(), k.sections_total()),
-                k.physics().metabolism_rate(),
-                k.physics().reserve,
-                taught,
-                settle,
-                voice,
-            )
-        };
-        let label = match &out {
-            Outcome::Decomposed(word) => format!("valid: decomposed → sentence {word:?} ({} generators)", word.len()),
-            Outcome::GermPending => "valid: germ pending (one voice)".to_string(),
-            Outcome::Installed(i) => format!("valid: GERM INSTALLED #{i}"),
-            Outcome::Fragmented(parts) => format!("valid: fragmented ({} bodies)", parts.len()),
-            Outcome::Pivot => "invalid: pivot (degenerate — nothing to reduce)".to_string(),
-        };
-        let src = match kind {
-            k if k == dialogue::ACT_GOSSIP => "gossip",
-            k if k == dialogue::ACT_DEMAND => "demand",
-            _ => "client",
-        };
-        eprintln!(
-            "  {src} percept voice {:02x} → {label}; basis={} vol={}; metabolism {flux:?}; reserve {reserve:?}",
-            voice[0], basis.0, basis.1
-        );
-        // Reply: outcome | metabolism/pressure(4) | taught (len16 | bytes) | settle?
-        let mut body = vec![outcome_code(&out)];
-        for f in flux {
-            body.push(f.min(255) as u8); // per-lane pressure, saturated to a byte
-        }
-        body.extend_from_slice(&(taught.len() as u16).to_le_bytes());
-        body.extend_from_slice(&taught);
-        if let Some((germ, voices, mu)) = &settle {
-            body.extend_from_slice(&dialogue::encode_settle(germ, voices, mu));
-        }
-        let reply = Frame { lane: frame.lane, body };
-        let _ = s.write_all(&reply.encode().unwrap_or_default());
-
-        // P7 — a new germ changed the durable language: the idle stroke seals
-        // it (the measurement moved), off the reflex path.
-
-        // P6/R5 · sun_recon: a CLIENT percept still awaiting consilience routes ONE
-        // receipt to its RENDEZVOUS — the node XOR-closest to the demand's
-        // content-address (voice EXCLUDED so all voices of a germ converge there).
-        // The rendezvous accumulates the distinct voice + verifies by recomputation;
-        // quorum → install + teach outward. No fanout; a down rendezvous fails
-        // silently (resilience). Gossip (kind 1) is never re-routed here.
-        if kind == dialogue::ACT_PERCEPT
-            && pbytes.len() > 32
-            && matches!(out, Outcome::GermPending | Outcome::Fragmented(_))
-        {
-            let key = *blake3::hash(&pbytes[32..]).as_bytes(); // demand address, voice-free
-            if let Some(dest) = rendezvous(&key, &id, &router) {
-                let mut g = vec![0x01u8];
-                g.extend_from_slice(&key);
-                g.extend_from_slice(pbytes);
-                let gframe = Frame { lane: frame.lane, body: g }.encode().unwrap_or_default();
-                if let Ok(mut ps) = TcpStream::connect(&dest) {
-                    let _ = ps.write_all(&gframe);
-                }
-            }
+            let mut s = job.stream;
+            let body = vec![outcome_code(&Outcome::GermPending), 0, 0, 0, 0, 0, 0];
+            let _ = s.write_all(&Frame { lane, body }.encode().unwrap_or_default());
         }
     }
 }
