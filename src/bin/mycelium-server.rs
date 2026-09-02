@@ -442,7 +442,11 @@ fn main() {
                 Frame { lane: frame.lane, body: dialogue::encode_syllabus_reply(&words) };
             let _ = s.write_all(&reply.encode().unwrap_or_default());
             if served > 0 {
-                eprintln!("  syllabus voice {:02x} ← {served} ratified words", svoice[0]);
+                eprintln!(
+                    "  [{}] syllabus voice {:02x} ← {served} ratified words",
+                    tuniversal.stamp(),
+                    svoice[0],
+                );
             }
             continue;
         }
@@ -459,8 +463,11 @@ fn main() {
             };
             if code == dialogue::REFINE_ACCEPTED {
                 eprintln!(
-                    "  refine voice {:02x} word {:02x}{:02x}… RETIRED (vocabulary compressed) μ⃗ {mu:?}",
-                    rvoice[0], word[0], word[1],
+                    "  [{}] refine voice {:02x} word {:02x}{:02x}… RETIRED (vocabulary compressed) μ⃗ {mu:?}",
+                    tuniversal.stamp(),
+                    rvoice[0],
+                    word[0],
+                    word[1],
                 );
             }
             let reply =

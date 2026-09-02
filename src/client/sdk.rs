@@ -197,7 +197,22 @@ impl Session {
     fn exchange_inner(&self, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         let frame = Frame { lane: Stratum::Spatial, body: act_body };
         let bytes = frame.encode().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "frame encode"))?;
-        let mut s = TcpStream::connect(&self.addr)?;
+        // THE TRANSPORT DEADLINE: no exchange may hang forever — a silent
+        // wire must become MEASURED impedance (a hung read is invisible to
+        // the aperture; a timed-out one raises Z and the metabolism adapts).
+        // The deadline is one full metabolic cycle in dwell-milliseconds
+        // (strokes-per-reserve × the base dwell) — hardware-calibrated, no
+        // free constant.
+        let deadline = std::time::Duration::from_millis(
+            crate::physics::reserve_max()
+                * (crate::physics::reserve_max() / crate::physics::spend_unit()).max(1),
+        );
+        let sockaddr = std::net::ToSocketAddrs::to_socket_addrs(&self.addr.as_str())?
+            .next()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "unresolvable address"))?;
+        let mut s = TcpStream::connect_timeout(&sockaddr, deadline)?;
+        s.set_read_timeout(Some(deadline))?;
+        s.set_write_timeout(Some(deadline))?;
         s.write_all(&bytes)?;
         let mut head = [0u8; 5];
         s.read_exact(&mut head)?;
