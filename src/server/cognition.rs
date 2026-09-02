@@ -186,11 +186,13 @@ impl Kernel {
         1
     }
 
-    /// The bundle volume held here: (cards, sections + connection relations)
-    /// — a measurement; a change in either is a changed durable language.
-    pub fn volume(&self) -> (usize, usize) {
+    /// The durable state's measurement: (cards, sections + connection
+    /// relations, provisional docket size, K). A change in any coordinate is
+    /// a changed durable language — the persistence trigger reads this, never
+    /// an event.
+    pub fn volume(&self) -> (usize, usize, usize, u64) {
         let fibre = self.basis.iter().map(|w| w.sections().len() + w.transitions().len()).sum();
-        (self.basis.len(), fibre)
+        (self.basis.len(), fibre, self.provisional.len(), self.chain.next_step_index())
     }
 
     /// The polytonic kinematic pressure + torsion spectrum (per lane).

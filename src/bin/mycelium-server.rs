@@ -196,6 +196,11 @@ fn main() {
         let kernel = Arc::clone(&kernel);
         let tu = tuniversal;
         let state_path = state_path.clone();
+        // The measurement last sealed to disk. Persistence is PACED: it runs
+        // on the idle stroke when the live measurement differs, never per
+        // event — a ledger of this size serialized on every adoption or
+        // verdict held the lock long enough to starve the reflex path.
+        let mut persisted = kernel.lock().map(|k| k.volume()).unwrap_or_default();
         std::thread::spawn(move || loop {
             let work = match synth_rx.recv_timeout(std::time::Duration::from_millis(
                 mycelium::physics::reserve_max(),
@@ -208,6 +213,11 @@ fn main() {
                     // when no work is dispatched (vocabulary maintenance
                     // is continuous, not incidental).
                     mycelium::synthesis::consolidate(&kernel);
+                    let live = kernel.lock().map(|k| k.volume()).unwrap_or_default();
+                    if live != persisted {
+                        persist(&kernel, &state_path);
+                        persisted = live;
+                    }
                     continue;
                 }
                 Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
@@ -232,11 +242,9 @@ fn main() {
                         let before = kernel.lock().map(|k| k.volume()).unwrap_or_default();
                         let _ = mycelium::synthesis::adopt(&kernel, ratifier, &word);
                         let after = kernel.lock().map(|k| k.volume()).unwrap_or_default();
-                        // The measured volume decides: a new card or a grown
-                        // fibre is a changed durable language and persists
-                        // now, like a germ or a verdict.
+                        // A new card or a grown fibre is a changed durable
+                        // language; the idle stroke seals it.
                         if after != before {
-                            persist(&kernel, &state_path);
                             eprintln!(
                                 "  [{}] adopt {:02x}{:02x}… volume {before:?} → {after:?} (court {:02x})",
                                 tu.stamp(),
@@ -546,10 +554,6 @@ fn main() {
                     },
                     _ => k.apply_verdict(&addr, ruling),
                 };
-                drop(k);
-                if ok {
-                    persist(&kernel, &state_path);
-                }
                 ok
             };
             // RATIFICATION → SYLLABUS: an upheld or rebound word enters the
@@ -655,11 +659,8 @@ fn main() {
         let reply = Frame { lane: frame.lane, body };
         let _ = s.write_all(&reply.encode().unwrap_or_default());
 
-        // P7 — a new germ changed the durable language: persist it (atomic write —
-        // to .tmp then rename — so a crash mid-write never corrupts the ledger).
-        if matches!(out, Outcome::Installed(_)) {
-            persist(&kernel, &state_path);
-        }
+        // P7 — a new germ changed the durable language: the idle stroke seals
+        // it (the measurement moved), off the reflex path.
 
         // P6/R5 · sun_recon: a CLIENT percept still awaiting consilience routes ONE
         // receipt to its RENDEZVOUS — the node XOR-closest to the demand's
