@@ -94,23 +94,42 @@ pub fn cite<'a>(
     shape_at: &impl Fn(usize) -> Option<&'a crate::transducer::blade::Shape>,
     chain: &[Cell],
     exclude: Option<usize>,
-) -> (Vec<Cite>, Vec<Cell>) {
+    strokes: usize,
+) -> Located {
+    let mut out = Located::default();
     if chain.is_empty() {
-        return (Vec::new(), Vec::new());
+        return out;
     }
     if let Some(c) = base_points(genome, atlas, shape_at, chain, exclude).into_iter().next() {
-        return (vec![c], Vec::new());
+        out.cites.push(c);
+        return out;
     }
-    let mut cites = Vec::new();
-    let mut residual: Vec<Cell> = Vec::new();
-    for piece in pieces(chain) {
+    // Each piece located costs a stroke of the thinker's reserve; pieces
+    // beyond the stroke budget are deferred, not claimed irreducible.
+    for (n, piece) in pieces(chain).into_iter().enumerate() {
+        if n >= strokes.max(1) {
+            out.deferred.extend(piece);
+            continue;
+        }
         match base_points(genome, atlas, shape_at, &piece, exclude).into_iter().next() {
-            Some(c) => cites.push(c),
-            None => residual.extend(piece),
+            Some(c) => out.cites.push(c),
+            None => out.residual.extend(piece),
         }
     }
-    residual.sort_unstable();
-    (cites, residual)
+    out.residual.sort_unstable();
+    out.deferred.sort_unstable();
+    out
+}
+
+/// What locating a chain produced: the citations, the residual the
+/// language has no word for (this voice's irreducible claim), and the
+/// pieces the stroke could not afford to think about (deferred, never
+/// claimed).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Located {
+    pub cites: Vec<Cite>,
+    pub residual: Vec<Cell>,
+    pub deferred: Vec<Cell>,
 }
 
 /// ABDUCE: the superposition of hypotheses for a chain, at most `width`
@@ -123,6 +142,7 @@ pub fn abduce<'a>(
     shape_at: &impl Fn(usize) -> Option<&'a crate::transducer::blade::Shape>,
     chain: &[Cell],
     width: usize,
+    strokes: usize,
 ) -> Vec<(Vec<Cite>, Vec<Cell>)> {
     let width = width.max(1);
     if chain.is_empty() {
@@ -134,7 +154,10 @@ pub fn abduce<'a>(
     }
     let mut alternatives: Vec<Vec<Cite>> = Vec::new();
     let mut residual: Vec<Cell> = Vec::new();
-    for piece in pieces(chain) {
+    for (n, piece) in pieces(chain).into_iter().enumerate() {
+        if n >= strokes.max(1) {
+            continue; // beyond this stroke: deferred, neither cited nor claimed
+        }
         let alts = base_points(genome, atlas, shape_at, &piece, None);
         match alts.is_empty() {
             true => residual.extend(piece),
@@ -176,28 +199,34 @@ mod tests {
         let shape_at = |i: usize| shapes.get(i).and_then(|s| s.as_ref());
         // A vertical bar far away: the bar rotated and translated.
         let target = vec![(5, 5, 1, 2), (6, 5, 1, 2)];
-        let (cites, residual) = cite(&genome, &atlas, &shape_at, &target, None);
+        let Located { cites, residual, deferred } = cite(&genome, &atlas, &shape_at, &target, None, 8);
         assert_eq!(cites.len(), 1);
         assert_eq!(cites[0].0, 0, "the bar, not the other-hued bar");
-        assert!(residual.is_empty());
+        assert!(residual.is_empty() && deferred.is_empty());
         assert!(replay(&genome, &cites, &target).is_empty(), "the citation replays to closure");
         // A 2× dilated bar with the other hues: the other bar at ρ = 2.
         let big = vec![(0, 0, 7, 8), (0, 1, 7, 8), (0, 2, 7, 8), (0, 3, 7, 8), (1, 0, 7, 8), (1, 1, 7, 8), (1, 2, 7, 8), (1, 3, 7, 8)];
-        let (cites, residual) = cite(&genome, &atlas, &shape_at, &big, None);
-        assert_eq!(cites.len(), 1);
-        assert_eq!(cites[0].0, 2);
-        assert!(residual.is_empty());
+        let l = cite(&genome, &atlas, &shape_at, &big, None, 8);
+        assert_eq!(l.cites.len(), 1);
+        assert_eq!(l.cites[0].0, 2);
+        assert!(l.residual.is_empty());
         // Two pieces and an unknown: two citations, one residual piece.
         let mixed = vec![(0, 0, 1, 2), (0, 1, 1, 2), (4, 4, 3, 4), (9, 9, 5, 6), (9, 10, 5, 6), (10, 9, 5, 6)];
-        let (cites, residual) = cite(&genome, &atlas, &shape_at, &mixed, None);
-        assert_eq!(cites.len(), 2);
-        assert_eq!(residual, vec![(9, 9, 5, 6), (9, 10, 5, 6), (10, 9, 5, 6)]);
+        let l = cite(&genome, &atlas, &shape_at, &mixed, None, 8);
+        assert_eq!(l.cites.len(), 2);
+        assert_eq!(l.residual, vec![(9, 9, 5, 6), (9, 10, 5, 6), (10, 9, 5, 6)]);
+        // With one stroke only the first piece is thought about; the rest is
+        // deferred, never claimed irreducible.
+        let l1 = cite(&genome, &atlas, &shape_at, &mixed, None, 1);
+        assert_eq!(l1.cites.len(), 1);
+        assert!(l1.residual.is_empty());
+        assert_eq!(l1.deferred.len(), 4);
         // Excluding the bar itself: a bar chain has no other word of hue 1→2.
-        let (cites, residual) = cite(&genome, &atlas, &shape_at, genome[0].sub(), Some(0));
-        assert!(cites.is_empty() && !residual.is_empty(), "no word but itself speaks it");
+        let l = cite(&genome, &atlas, &shape_at, genome[0].sub(), Some(0), 8);
+        assert!(l.cites.is_empty() && !l.residual.is_empty(), "no word but itself speaks it");
         // Abduction: nothing alternative for a bar of hue 1→2 (the other bar
         // has other hues), so one branch; width bounds alternatives.
-        let branches = abduce(&genome, &atlas, &shape_at, &target, 4);
+        let branches = abduce(&genome, &atlas, &shape_at, &target, 4, 8);
         assert_eq!(branches.len(), 1);
     }
 }

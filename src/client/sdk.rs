@@ -384,9 +384,9 @@ impl Epigenome {
     }
 
     /// Locate a chain over this genome: citations and the residual.
-    fn locate(&mut self, chain: &[(i64, i64, u8, u8)], exclude: Option<usize>) -> (Vec<crate::cognition::Cite>, Vec<(i64, i64, u8, u8)>) {
+    fn locate(&mut self, chain: &[(i64, i64, u8, u8)], exclude: Option<usize>, strokes: usize) -> crate::thinking::Located {
         self.atlas();
-        crate::thinking::cite(&self.genome, &self.atlas, &|i| self.shape(i), chain, exclude)
+        crate::thinking::cite(&self.genome, &self.atlas, &|i| self.shape(i), chain, exclude, strokes)
     }
 
     pub fn retire(&mut self, addr: &[u8; 32]) -> bool {
@@ -413,11 +413,12 @@ impl Epigenome {
     /// understanding into the epigenome — expression weights rise on the cited
     /// words, the sentence joins the recollections. The genome is untouched.
     pub fn comprehend(&mut self, utterance: &Element) -> Comprehension {
-        // Located through the atlas and the versor, never searched.
-        let (cites, residual) = self.locate(utterance.sub(), None);
-        match residual.is_empty() {
+        // Located through the atlas and the versor, never searched. A taught
+        // word is one piece: one stroke locates it.
+        let located = self.locate(utterance.sub(), None, 1);
+        match located.residual.is_empty() && located.deferred.is_empty() {
             true => {
-                let sentence: Vec<usize> = cites.into_iter().map(|(i, _, _)| i).collect();
+                let sentence: Vec<usize> = located.cites.into_iter().map(|(i, _, _)| i).collect();
                 for &w in &sentence {
                     if let Some(x) = self.expression.get_mut(w) {
                         *x += 1;
@@ -431,7 +432,7 @@ impl Epigenome {
                 }
                 Comprehension::Understood(sentence)
             }
-            false => Comprehension::Novel { residual_cells: residual.len() },
+            false => Comprehension::Novel { residual_cells: located.residual.len() + located.deferred.len() },
         }
     }
 
@@ -772,10 +773,10 @@ impl Entity {
         if sub.sub().is_empty() {
             return None;
         }
-        let _ = budget;
-        let (cites, residual) = self.epigenome.locate(sub.sub(), Some(i));
+        let located = self.epigenome.locate(sub.sub(), Some(i), budget.1);
+        let (cites, residual) = (located.cites, located.residual);
         let g = self.epigenome.genome();
-        match (cites.is_empty(), residual.is_empty()) {
+        match (cites.is_empty(), residual.is_empty() && located.deferred.is_empty()) {
             (false, true) => Some((
                 g[i].address(),
                 cites.into_iter().map(|(j, t, asg)| (g[j].address(), t, asg as u32)).collect(),
@@ -818,7 +819,9 @@ impl Entity {
         let voice = self.session.kernel().voice();
         let body = self.session.speak(dialogue::encode_digests_request(&voice))?;
         let remote = dialogue::decode_digests_reply(&body).unwrap_or_default();
-        let atlas = sheaf::atlas(self.epigenome.genome());
+        // The genome's own atlas (current, admitted in place), never rebuilt here.
+        self.epigenome.atlas();
+        let atlas = self.epigenome.atlas.clone();
         let local = sheaf::digests(&atlas, self.epigenome.genome());
         let strata: Vec<_> = sheaf::discordant(&remote, &local).into_iter().cloned().collect();
         self.discordance = strata.len();
@@ -911,10 +914,10 @@ impl Entity {
     /// CITE: this kernel's reduction of a chain over its own genome — the
     /// citations (address, transport, gauge coordinate) and the residual it
     /// could not reduce. Cognition happens here; the hypha only replays.
-    pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)], _budget: (usize, usize)) -> (Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>) {
-        let (cites, residual) = self.epigenome.locate(chain, None);
+    pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)], budget: (usize, usize)) -> (Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>) {
+        let located = self.epigenome.locate(chain, None, budget.1);
         let genome = self.epigenome.genome();
-        (cites.into_iter().map(|(i, g, asg)| (genome[i].address(), g, asg as u32)).collect(), residual)
+        (located.cites.into_iter().map(|(i, g, asg)| (genome[i].address(), g, asg as u32)).collect(), located.residual)
     }
 
     /// ABDUCE: the superposition of hypotheses this genome forms for a
@@ -929,7 +932,7 @@ impl Entity {
         self.epigenome.atlas();
         let epi = &self.epigenome;
         let genome = epi.genome();
-        crate::thinking::abduce(genome, &epi.atlas, &|i| epi.shape(i), chain, budget.0)
+        crate::thinking::abduce(genome, &epi.atlas, &|i| epi.shape(i), chain, budget.0, budget.1)
             .into_iter()
             .map(|(cites, residual)| {
                 (
