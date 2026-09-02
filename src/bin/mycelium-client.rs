@@ -430,8 +430,8 @@ fn main() {
             // if the rest of the vocabulary already speaks it, bid the
             // compression. The hypha's replay rules; on acceptance the word
             // retires fleet-wide and the entity earns the compression yield.
-            if let Some(word) = entity.seek_refinement() {
-                if let Ok((code, mu)) = entity.bid_refinement(&word) {
+            if let Some((word, cites)) = entity.seek_refinement(budget) {
+                if let Ok((code, mu)) = entity.bid_refinement(&word, &cites) {
                     if code == mycelium::anastome::dialogue::REFINE_ACCEPTED {
                         refined += 1;
                         eprintln!(

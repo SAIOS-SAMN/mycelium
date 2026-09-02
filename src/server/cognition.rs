@@ -841,19 +841,40 @@ impl Kernel {
     /// optimization, halting geometric bloat), the bidder earns the
     /// COMPRESSION YIELD Δ‖·‖_DM × tension (float-bounded), and the rewrite
     /// seals a K-step. Provisional words are the court's business — refused.
-    pub fn try_refine(&mut self, addr: &[u8; 32], bidder: [u8; 32]) -> Option<[u64; 4]> {
+    pub fn try_refine(
+        &mut self,
+        addr: &[u8; 32],
+        bidder: [u8; 32],
+        cites: &[crate::anastome::dialogue::CiteWire],
+    ) -> Option<[u64; 4]> {
         let i = self.basis.iter().position(|t| t.address() == *addr)?;
         if self.provisional.iter().any(|(a, _)| a == addr) {
             return None;
         }
         // Never a BUNDLE — its sections/cycles carry family volume no other
-        // word speaks (the redundancy probe's own guard).
+        // word speaks.
         let candidate = self.basis[i].clone();
         if !candidate.sections().is_empty() || !candidate.torsion().is_empty() {
             return None;
         }
-        match self.reduce_excluding(&candidate, Some(i)) {
-            NormalForm::Decomposed(_) => {
+        // THE REPLAY rules: the bidder's sentence, spoken by other words,
+        // must reproduce the candidate's substance exactly. No search here.
+        // Citations resolve to any held index but the candidate's own (a
+        // duplicate card at another index is exactly what a bid names).
+        let resolved: Vec<Cite> = cites
+            .iter()
+            .filter_map(|(a, g, asg)| {
+                self.basis
+                    .iter()
+                    .enumerate()
+                    .position(|(j, w)| j != i && w.address() == *a)
+                    .map(|j| (j, *g, *asg as usize))
+            })
+            .collect();
+        let sub = candidate.substance();
+        let residual = replay(&self.basis, &resolved, sub.sub());
+        match (residual.is_empty(), resolved.is_empty()) {
+            (true, false) => {
                 let saved = candidate.magnitude();
                 let surface = crate::economy::yield_surface(&self.physics);
                 let mu = crate::economy::price(&saved, &surface);
@@ -1487,24 +1508,13 @@ impl Kernel {
     /// full decomposition — is handed out as (address, candidate, the basis
     /// without it) to run on that snapshot with no lock held, exactly as
     /// adoption's derivability does. The reflex path never waits on it.
-    pub fn consolidate_stroke(
-        &mut self,
-    ) -> Option<([u8; 32], usize, std::sync::Arc<Language>)> {
-        let candidate = self.condense_stroke().map(|i| (self.basis[i].address(), i));
+    pub fn consolidate_stroke(&mut self) {
+        // The cheap topological moves only: condense siblings through their
+        // transports, extract torsion, regenerate. Redundancy is discovered
+        // by the entities (the refinement bid) and replayed here — the
+        // hypha runs no decomposition of its own.
+        self.condense_stroke();
         self.physics.regenerate();
-        // The redundancy probe is a decomposition: it is paid for like any
-        // expansion, from a full reserve, and spends a stroke, so the idle
-        // worker probes at the pace the metabolism regenerates — never
-        // every tick. The probe decomposes over the shared language
-        // snapshot with the candidate excluded by index.
-        let lanes = [true; 4];
-        match (candidate, self.physics.can_expand(lanes)) {
-            (Some((addr, i)), true) => {
-                self.physics.spend(lanes);
-                Some((addr, i, self.language()))
-            }
-            _ => None,
-        }
     }
 
     /// Retire a plain card the rest of the basis derives (the off-lock probe
@@ -2674,13 +2684,16 @@ mod tests {
         k.basis.push(from_residual(&germinate(&a_far, &rot_far).unwrap()));
         k.discoverers.push([7; 32]);
         let derivable = k.basis[0].address(); // its duplicate speaks it
-        let paid = k.try_refine(&derivable, [5; 32]);
+        // The bidder's sentence: the duplicate, cited at the identity.
+        let sentence = vec![(k.basis[1].address(), element::Transition::IDENTITY, 0u32)];
+        let paid = k.try_refine(&derivable, [5; 32], &sentence);
         assert!(paid.is_some(), "the derivable word is a confirmed compression bid");
         assert_eq!(k.basis_len(), 1, "the vocabulary compressed");
         let essential = k.basis[0].address();
-        assert!(k.try_refine(&essential, [5; 32]).is_none(), "an essential word is refused");
+        let self_cite = vec![(essential, element::Transition::IDENTITY, 0u32)];
+        assert!(k.try_refine(&essential, [5; 32], &self_cite).is_none(), "an essential word is refused");
         assert_eq!(k.basis_len(), 1, "refusal mutates nothing");
-        assert!(k.try_refine(&[3; 32], [5; 32]).is_none(), "an unknown address is refused");
+        assert!(k.try_refine(&[3; 32], [5; 32], &sentence).is_none(), "an unknown address is refused");
 
         // THE COURT'S BUSINESS STAYS THE COURT'S: a provisional word cannot be
         // bid away, even if derivable.
@@ -2688,7 +2701,8 @@ mod tests {
         k.discoverers.push([1; 32]);
         let addr = k.basis[1].address();
         k.provisional.push((addr, k.basis[1].clone()));
-        assert!(k.try_refine(&addr, [5; 32]).is_none(), "provisional words are refused");
+        let sentence = vec![(k.basis[0].address(), element::Transition::IDENTITY, 0u32)];
+        assert!(k.try_refine(&addr, [5; 32], &sentence).is_none(), "provisional words are refused");
         assert_eq!(k.basis_len(), 2);
     }
 

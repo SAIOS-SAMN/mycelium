@@ -48,20 +48,25 @@ pub const ACT_REFINE: u8 = 0x09;
 pub const REFINE_ACCEPTED: u8 = 1;
 pub const REFINE_NOTHING: u8 = 0;
 
-pub fn encode_refine(voice: &[u8; 32], word: &[u8; 32]) -> Vec<u8> {
+/// `[ACT_REFINE][voice 32][word 32][cites]` — the bidder's sentence for the
+/// word (spoken by other words) rides as citations; the hypha replays.
+pub fn encode_refine(voice: &[u8; 32], word: &[u8; 32], cites: &[CiteWire]) -> Vec<u8> {
     let mut out = vec![ACT_REFINE];
     out.extend_from_slice(voice);
     out.extend_from_slice(word);
+    push_cites(&mut out, cites);
     out
 }
 
-pub fn decode_refine(body: &[u8]) -> Option<([u8; 32], [u8; 32])> {
-    if body.first() != Some(&ACT_REFINE) || body.len() != 65 {
+pub fn decode_refine(body: &[u8]) -> Option<([u8; 32], [u8; 32], Vec<CiteWire>)> {
+    if body.first() != Some(&ACT_REFINE) {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
     let word: [u8; 32] = body.get(33..65)?.try_into().ok()?;
-    Some((voice, word))
+    let mut p = 65usize;
+    let cites = read_cites(body, &mut p).unwrap_or_default();
+    Some((voice, word, cites))
 }
 
 /// ADOPTION (genome synchronization): the court propagates an upheld word
@@ -242,41 +247,60 @@ pub fn decode_digests_reply(body: &[u8]) -> Option<Vec<crate::transducer::sheaf:
     Some(out)
 }
 
-pub fn encode_fetch(
-    voice: &[u8; 32],
-    inv: &crate::transducer::stalk::Invariant,
-    have: &[[u8; 32]],
-) -> Vec<u8> {
+/// A fetch names every discordant chart with the asker's have-list in each;
+/// the request itself is filled within the frame budget.
+/// `[ACT_FETCH][voice 32][k u32]{[len u8][inv u64·len][n u32][addr 32·n]}·k`.
+pub type Chart = (crate::transducer::stalk::Invariant, Vec<[u8; 32]>);
+
+pub fn encode_fetch(voice: &[u8; 32], charts: &[Chart], budget: usize) -> Vec<u8> {
     let mut out = vec![ACT_FETCH];
     out.extend_from_slice(voice);
-    push_invariant(&mut out, inv);
-    out.extend_from_slice(&(have.len() as u32).to_le_bytes());
-    for a in have {
-        out.extend_from_slice(a);
+    let count_at = out.len();
+    out.extend_from_slice(&0u32.to_le_bytes());
+    let mut k = 0u32;
+    for (inv, have) in charts {
+        let width = 1 + 8 * inv.0.len() + 4 + 32 * have.len();
+        if out.len() + width > budget {
+            break;
+        }
+        push_invariant(&mut out, inv);
+        out.extend_from_slice(&(have.len() as u32).to_le_bytes());
+        for a in have {
+            out.extend_from_slice(a);
+        }
+        k += 1;
     }
+    out[count_at..count_at + 4].copy_from_slice(&k.to_le_bytes());
     out
 }
 
-pub fn decode_fetch(
-    body: &[u8],
-) -> Option<([u8; 32], crate::transducer::stalk::Invariant, Vec<[u8; 32]>)> {
+pub fn decode_fetch(body: &[u8]) -> Option<([u8; 32], Vec<Chart>)> {
     if body.first() != Some(&ACT_FETCH) {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
     let mut p = 33usize;
-    let inv = read_invariant(body, &mut p)?;
-    let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+    let k = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
     p += 4;
-    if n > body.len().saturating_sub(p) / 32 {
+    if k > body.len().saturating_sub(p) / 5 {
         return None;
     }
-    let mut have = Vec::with_capacity(n);
-    for _ in 0..n {
-        have.push(body.get(p..p + 32)?.try_into().ok()?);
-        p += 32;
+    let mut charts = Vec::with_capacity(k);
+    for _ in 0..k {
+        let inv = read_invariant(body, &mut p)?;
+        let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+        p += 4;
+        if n > body.len().saturating_sub(p) / 32 {
+            return None;
+        }
+        let mut have = Vec::with_capacity(n);
+        for _ in 0..n {
+            have.push(body.get(p..p + 32)?.try_into().ok()?);
+            p += 32;
+        }
+        charts.push((inv, have));
     }
-    Some((voice, inv, have))
+    Some((voice, charts))
 }
 
 pub fn encode_genesis_request(voice: &[u8; 32], cursor: u32) -> Vec<u8> {

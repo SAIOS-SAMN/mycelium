@@ -426,17 +426,8 @@ pub fn quote(
 /// re-locks. Returns the cards retired.
 pub fn consolidate(k: &std::sync::Mutex<crate::cognition::Kernel>) -> usize {
     let Ok(mut g) = k.lock() else { return 0 };
-    let probe = g.consolidate_stroke();
-    let (beam, depth) = g.projection_budget();
-    drop(g);
-    let Some((addr, i, language)) = probe else { return 0 };
-    let Some(candidate) = language.words.get(i) else { return 0 };
-    let sub = candidate.substance();
-    if crate::cognition::decompose_over(&language.words, sub.sub(), Some(i), beam, depth).is_err() {
-        return 0;
-    }
-    let Ok(mut g) = k.lock() else { return 0 };
-    g.retire_redundant(&addr)
+    g.consolidate_stroke();
+    0
 }
 
 /// Adoption, orchestrated off the request path: the blind replay is pure

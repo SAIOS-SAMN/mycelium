@@ -107,26 +107,34 @@ fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32])
         return;
     }
     if kind == dialogue::ACT_FETCH {
-        let Some((fvoice, inv, have)) = dialogue::decode_fetch(&frame.body) else { return };
+        let Some((fvoice, charts)) = dialogue::decode_fetch(&frame.body) else { return };
         let language = match kernel.lock() {
             Ok(mut k) => k.language(),
             Err(_) => return,
         };
-        let budget = mycelium::network::wire::BODY_BUDGET - 64;
-        let words = mycelium::transducer::sheaf::serve(
-            &language.stalks,
-            &language.words,
-            &inv,
-            &have,
-            budget,
-        );
+        // The reply fills the carrier across the asked charts, in order.
+        let mut budget = mycelium::network::wire::BODY_BUDGET - 64;
+        let mut words: Vec<Vec<u8>> = Vec::new();
+        for (inv, have) in &charts {
+            let page = mycelium::transducer::sheaf::serve(
+                &language.stalks,
+                &language.words,
+                inv,
+                have,
+                budget,
+            );
+            budget = budget.saturating_sub(page.iter().map(|w| w.len() + 4).sum::<usize>());
+            words.extend(page);
+            if budget == 0 {
+                break;
+            }
+        }
         if !words.is_empty() {
             eprintln!(
-                "  fetch voice {:02x} ← {} words of stratum {:?} (had {})",
+                "  fetch voice {:02x} ← {} words across {} charts",
                 fvoice[0],
                 words.len(),
-                &inv.0[..inv.0.len().min(5)],
-                have.len()
+                charts.len()
             );
         }
         let reply = Frame { lane: frame.lane, body: dialogue::encode_syllabus_reply(&words) };
@@ -719,10 +727,10 @@ fn main() {
 
         // ── refine: a compression bid — verified by deterministic replay ─────
         if kind == dialogue::ACT_REFINE {
-            let Some((rvoice, word)) = dialogue::decode_refine(&frame.body) else { continue };
+            let Some((rvoice, word, cites)) = dialogue::decode_refine(&frame.body) else { continue };
             let (code, mu) = {
                 let mut k = kernel.lock().unwrap();
-                match k.try_refine(&word, rvoice) {
+                match k.try_refine(&word, rvoice, &cites) {
                     Some(paid) => (dialogue::REFINE_ACCEPTED, paid),
                     None => (dialogue::REFINE_NOTHING, [0; 4]),
                 }

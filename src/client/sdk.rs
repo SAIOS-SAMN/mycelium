@@ -722,7 +722,7 @@ impl Entity {
     /// redundancy the vocabulary is carrying — a compression bid. The probe
     /// is a virtual rollout (zero mutation); the hypha's deterministic
     /// replay, not this discovery, decides retirement.
-    pub fn seek_refinement(&mut self) -> Option<[u8; 32]> {
+    pub fn seek_refinement(&mut self, budget: (usize, usize)) -> Option<([u8; 32], Vec<dialogue::CiteWire>)> {
         let g = self.epigenome.genome();
         if g.len() < 2 {
             return None;
@@ -733,8 +733,12 @@ impl Entity {
         if sub.sub().is_empty() {
             return None;
         }
-        match decompose_over(g, sub.sub(), Some(i), 4, 16) {
-            Ok(sentence) if !sentence.is_empty() => Some(g[i].address()),
+        let mut mm = Vec::new();
+        match crate::cognition::decompose_cited(g, sub.sub(), Some(i), budget.0, budget.1, None, &mut mm) {
+            Ok(cites) if !cites.is_empty() => Some((
+                g[i].address(),
+                cites.into_iter().map(|(j, t, asg)| (g[j].address(), t, asg as u32)).collect(),
+            )),
             _ => None,
         }
     }
@@ -744,9 +748,9 @@ impl Entity {
     /// `(REFINE_NOTHING, 0⃗)` otherwise. On acceptance the entity drops its
     /// own copy too — the compression is global, and its next decomposition
     /// of the retired meaning re-derives the sentence form.
-    pub fn bid_refinement(&mut self, word: &[u8; 32]) -> io::Result<(u8, [u64; 4])> {
+    pub fn bid_refinement(&mut self, word: &[u8; 32], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4])> {
         let voice = self.session.kernel().voice();
-        let body = self.session.speak(dialogue::encode_refine(&voice, word))?;
+        let body = self.session.speak(dialogue::encode_refine(&voice, word, cites))?;
         let (code, mu) =
             dialogue::decode_solve_receipt(&body).unwrap_or((dialogue::REFINE_NOTHING, [0; 4]));
         if code == dialogue::REFINE_ACCEPTED {
@@ -777,16 +781,19 @@ impl Entity {
         let local = sheaf::digests(&atlas, self.epigenome.genome());
         let strata: Vec<_> = sheaf::discordant(&remote, &local).into_iter().cloned().collect();
         self.discordance = strata.len();
-        let per_contact =
-            (crate::physics::reserve_max() / crate::physics::spend_unit()).max(1) as usize;
+        // One exchange per contact: every discordant chart with this
+        // genome's have-list, the request and the reply each filled to the
+        // carrier. A wide discordance converges over contacts.
+        let charts: Vec<dialogue::Chart> = strata
+            .iter()
+            .map(|d| (d.inv.clone(), sheaf::have(&atlas, self.epigenome.genome(), &d.inv)))
+            .collect();
+        let request = dialogue::encode_fetch(&voice, &charts, crate::network::wire::BODY_BUDGET);
         let mut learned = 0usize;
-        for d in strata.iter().take(per_contact) {
-            let have = sheaf::have(&atlas, self.epigenome.genome(), &d.inv);
-            let body = self.session.speak(dialogue::encode_fetch(&voice, &d.inv, &have))?;
-            for w in dialogue::decode_syllabus_reply(&body).unwrap_or_default() {
-                if self.epigenome.learn(&w).is_some() {
-                    learned += 1;
-                }
+        let body = self.session.speak(request)?;
+        for w in dialogue::decode_syllabus_reply(&body).unwrap_or_default() {
+            if self.epigenome.learn(&w).is_some() {
+                learned += 1;
             }
         }
         Ok(learned)
