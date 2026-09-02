@@ -139,6 +139,13 @@ fn main() {
 
     loop {
         let mut judge_load = 0u8;
+        // Stroke phase laps — one reading across every axis of the stroke.
+        let mut laps: Vec<(&'static str, u128)> = Vec::new();
+        let mut t_last = std::time::Instant::now();
+        let mut lap = |label: &'static str| {
+            laps.push((label, t_last.elapsed().as_millis()));
+            t_last = std::time::Instant::now();
+        };
 
         // ── TRANSPORT IMPEDANCE: perceive the wire before speaking. An
         // occluded aperture (a full stroke-cycle of consecutive failures)
@@ -270,8 +277,10 @@ fn main() {
         // An occluded wire skips the ask entirely (no error counted — the
         // impedance is already perceived); the answer is patience, not
         // repetition.
+        lap("feed");
         match if occluded { Ok(YieldQuote { surface: [0; 4], clusters: Vec::new() }) } else { entity.quote() } {
             Ok(q) => {
+                let (mut n_closed, mut n_descent, mut n_nothing, mut n_silent, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32);
                 for cluster in &q.clusters {
                     if cluster.chain.is_empty() {
                         continue;
@@ -282,68 +291,68 @@ fn main() {
                     // reserve in expansions (the listing's strongest lane).
                     let lane = (0..4).max_by_key(|&l| cluster.mu[l]).unwrap_or(2);
                     let width = (physics.reserve[lane] / spend_unit().max(1)).max(1) as usize;
-                    let hypotheses = entity.abduce(&cluster.chain, (width, budget.1));
-                    // Speak the head; when the hypha answers "nothing", say
-                    // the next hypothesis — until one settles or the
-                    // superposition is spent. The settled branch's residual
-                    // is then attested as this voice's irreducible claim.
-                    let mut residual: Vec<(i64, i64, u8, u8)> = cluster.chain.clone();
-                    for (cites, branch_residual) in &hypotheses {
-                        match entity.probe(&cluster.address, cites) {
-                            Ok((code, _paid, _remaining)) => match code {
-                                mycelium::anastome::dialogue::PROBE_CLOSED => {
-                                    derived += 1;
-                                    residual = Vec::new();
-                                    break;
-                                }
-                                mycelium::anastome::dialogue::PROBE_DESCENT => {
-                                    witnessed += 1;
-                                    residual = branch_residual.clone();
-                                    break;
-                                }
-                                _ => continue,
-                            },
-                            Err(_) => {
-                                errors += 1;
-                                break;
-                            }
-                        }
-                    }
-                    if residual.is_empty() {
+                    // The superposition is rolled out and settled here, in
+                    // the genome's own algebra; the wire carries one
+                    // commitment per cluster: the concluded sentence with
+                    // its residual. A genome with nothing to say stays silent.
+                    let t0 = std::time::Instant::now();
+                    eprintln!("[{name}] [{}] cluster {} cells width {width}: concluding", tuniversal.stamp(), cluster.chain.len());
+                    let concluded = entity.conclude(&cluster.chain, (width, budget.1));
+                    eprintln!(
+                        "[{name}] [{}] cluster {} cells width {width}: concluded in {} ms -> {}",
+                        tuniversal.stamp(),
+                        cluster.chain.len(),
+                        t0.elapsed().as_millis(),
+                        concluded.as_ref().map_or("silent".to_string(), |(c, r)| format!("{} cites, {} residual", c.len(), r.len())),
+                    );
+                    let Some((cites, _residual)) = concluded else {
+                        n_silent += 1;
                         continue;
+                    };
+                    let mut lanes: [bool; 4] = std::array::from_fn(|l| cluster.mu[l] > 0);
+                    if lanes.iter().all(|&x| !x) {
+                        lanes[lane] = true;
                     }
-                    match entity.attest(&residual, &[]) {
-                        Ok(reply) => {
-                            if reply.settle.is_some() {
-                                settles += 1;
+                    physics.spend(lanes); // the stroke spoken is metabolically real
+                    match entity.probe(&cluster.address, &cites) {
+                        Ok((code, _paid, _remaining)) => match code {
+                            mycelium::anastome::dialogue::PROBE_CLOSED => {
+                                derived += 1;
+                                n_closed += 1;
+                                physics.bump(lanes);
                             }
-                            if let t @ [_, ..] = reply.verdict.taught() {
-                                entity.epigenome.learn(t);
+                            mycelium::anastome::dialogue::PROBE_DESCENT => {
+                                witnessed += 1;
+                                n_descent += 1;
+                                physics.bump(lanes);
                             }
-                            let mut lanes: [bool; 4] =
-                                std::array::from_fn(|l| reply.metabolism[l] > 0);
-                            if lanes.iter().all(|&x| !x) {
-                                lanes[2] = true;
-                            }
-                            physics.bump(lanes);
-                            physics.spend(lanes);
-                            judge_load = reply.load();
+                            _ => n_nothing += 1,
+                        },
+                        Err(_) => {
+                            errors += 1;
+                            n_err += 1;
                         }
-                        Err(_) => errors += 1,
                     }
                 }
+                eprintln!(
+                    "[{name}] [{}] quote {} clusters: closed {n_closed} descent {n_descent} nothing {n_nothing} silent {n_silent} err {n_err}",
+                    tuniversal.stamp(),
+                    q.clusters.len(),
+                );
                 if !feeding && (q.clusters.iter().all(|c| c.chain.is_empty()) || q.clusters.is_empty()) {
                     // MARKET CLEAR with nothing to feed — the idle signal:
                     // spend the stroke so the dwell paces the next ask.
                     physics.spend([true; 4]);
                 }
             }
-            Err(_) => {
+            Err(e) => {
                 errors += 1;
+                eprintln!("[{name}] [{}] quote err: {e}", tuniversal.stamp());
                 physics.spend([true; 4]); // an unreachable judge earns a full dwell
             }
         }
 
+        lap("quote");
         // ── PULL REGISTERED WORK (PoUW): one signed envelope per stroke from
         // the hypha's authoritative registry — study the family, think the
         // tests through, submit. The REGISTRY rules bounty vs floor
@@ -414,6 +423,7 @@ fn main() {
                     );
                 }
             }
+            lap("task");
             // THE SHEAF SYNC (Q3): converge the genome on the hypha's
             // language by discordant stratum — the entity thinks in the
             // whole language, not the syllabus drip.
@@ -430,6 +440,7 @@ fn main() {
             // if the rest of the vocabulary already speaks it, bid the
             // compression. The hypha's replay rules; on acceptance the word
             // retires fleet-wide and the entity earns the compression yield.
+            lap("sync");
             if let Some((word, cites)) = entity.seek_refinement(budget) {
                 if let Ok((code, mu)) = entity.bid_refinement(&word, &cites) {
                     if code == mycelium::anastome::dialogue::REFINE_ACCEPTED {
@@ -443,6 +454,8 @@ fn main() {
                     }
                 }
             }
+            lap("refine");
+            eprintln!("[{name}] [{}] stroke laps ms {laps:?}", tuniversal.stamp());
             if entity.epigenome.genome_len() != last_genome || settles != last_settles {
                 if entity.epigenome.genome_len() != last_genome {
                     let _ = entity.save_genome(&genome_path);

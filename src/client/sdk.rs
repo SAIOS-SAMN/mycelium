@@ -971,6 +971,20 @@ impl Entity {
     pub fn attest(&self, chain: &[(i64, i64, u8, u8)], cites: &[dialogue::CiteWire]) -> io::Result<Reply> {
         self.session.attest(chain, cites)
     }
+    /// CONCLUDE a listing in this genome's own algebra: the superposition is
+    /// rolled out and replayed locally, and the branch of least residual is
+    /// the one sentence this voice commits to the wire. None when the genome
+    /// speaks no part of the chain — silence, not a query.
+    pub fn conclude(
+        &mut self,
+        chain: &[(i64, i64, u8, u8)],
+        budget: (usize, usize),
+    ) -> Option<(Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>)> {
+        self.abduce(chain, budget)
+            .into_iter()
+            .filter(|(cites, _)| !cites.is_empty())
+            .min_by_key(|(cites, residual)| (residual.len(), cites.len()))
+    }
     pub fn probe(&self, target: &[u8; 32], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4], [u64; 4])> {
         self.session.probe(target, cites)
     }

@@ -66,9 +66,16 @@ pub fn base_points<'a>(
     shape_at: &impl Fn(usize) -> Option<&'a crate::transducer::blade::Shape>,
     piece: &[Cell],
     exclude: Option<usize>,
+    limit: usize,
 ) -> Vec<Cite> {
     let chart = stalk::invariant(piece);
     let Some(shape) = element::shape_of_chain(piece) else { return Vec::new() };
+    // THE GAUGE COORDINATE FIRST: a versor permutes cells, so a word can
+    // speak the piece only through an assignment whose transition multiset
+    // equals the piece's. That multiset names the candidate assignments
+    // before any versor is solved; a hue variant of the same geometry
+    // never reaches the algebra.
+    let want = transition_multiset(piece);
     atlas
         .fiber(&chart)
         .iter()
@@ -76,14 +83,54 @@ pub fn base_points<'a>(
         .filter(|&i| Some(i) != exclude)
         .filter_map(|i| {
             let word = genome.get(i)?;
+            let assignments = word.assignments();
+            let gauge: Vec<usize> = assignments
+                .iter()
+                .enumerate()
+                .filter(|(_, a)| same_gauge_profile(&multiset_of(a), &want))
+                .map(|(k, _)| k)
+                .collect();
+            if gauge.is_empty() {
+                return None;
+            }
             let to_word = crate::transducer::blade::versor_between(&shape, shape_at(i)?)?;
             let v = to_word.versor_inverse()?; // the word carried onto the piece
-            (0..word.assignments().len()).find_map(|asg| {
+            gauge.into_iter().find_map(|asg| {
                 let cite: Cite = (i, v.clone(), asg);
                 replay(genome, std::slice::from_ref(&cite), piece).is_empty().then_some(cite)
             })
         })
+        .take(limit.max(1))
         .collect()
+}
+
+/// The transition multiset of a chain: sorted ((before, after), count).
+fn transition_multiset(chain: &[Cell]) -> Vec<((u8, u8), u32)> {
+    let asg: Vec<(u8, u8)> = chain.iter().map(|&(_, _, b, a)| (b, a)).collect();
+    multiset_of(&asg)
+}
+
+/// Two transition multisets have the same gauge profile when they hold
+/// the same classes in the same proportions — a dilation by ρ scales every
+/// count by ρ², never the proportions. Exact cross-multiplication.
+fn same_gauge_profile(a: &[((u8, u8), u32)], b: &[((u8, u8), u32)]) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    let (ta, tb): (u64, u64) = (a.iter().map(|(_, n)| *n as u64).sum(), b.iter().map(|(_, n)| *n as u64).sum());
+    a.iter().zip(b).all(|((ka, na), (kb, nb))| ka == kb && (*na as u64) * tb == (*nb as u64) * ta)
+}
+
+fn multiset_of(asg: &[(u8, u8)]) -> Vec<((u8, u8), u32)> {
+    let mut out: Vec<((u8, u8), u32)> = Vec::new();
+    for t in asg {
+        match out.iter_mut().find(|(k, _)| k == t) {
+            Some((_, n)) => *n += 1,
+            None => out.push((*t, 1)),
+        }
+    }
+    out.sort_unstable();
+    out
 }
 
 /// CITE a chain over the genome: the whole chain located first, then each
@@ -100,7 +147,7 @@ pub fn cite<'a>(
     if chain.is_empty() {
         return out;
     }
-    if let Some(c) = base_points(genome, atlas, shape_at, chain, exclude).into_iter().next() {
+    if let Some(c) = base_points(genome, atlas, shape_at, chain, exclude, 1).into_iter().next() {
         out.cites.push(c);
         return out;
     }
@@ -111,7 +158,7 @@ pub fn cite<'a>(
             out.deferred.extend(piece);
             continue;
         }
-        match base_points(genome, atlas, shape_at, &piece, exclude).into_iter().next() {
+        match base_points(genome, atlas, shape_at, &piece, exclude, 1).into_iter().next() {
             Some(c) => out.cites.push(c),
             None => out.residual.extend(piece),
         }
@@ -148,7 +195,7 @@ pub fn abduce<'a>(
     if chain.is_empty() {
         return vec![(Vec::new(), Vec::new())];
     }
-    let whole = base_points(genome, atlas, shape_at, chain, None);
+    let whole = base_points(genome, atlas, shape_at, chain, None, width);
     if !whole.is_empty() {
         return whole.into_iter().take(width).map(|c| (vec![c], Vec::new())).collect();
     }
@@ -158,7 +205,7 @@ pub fn abduce<'a>(
         if n >= strokes.max(1) {
             continue; // beyond this stroke: deferred, neither cited nor claimed
         }
-        let alts = base_points(genome, atlas, shape_at, &piece, None);
+        let alts = base_points(genome, atlas, shape_at, &piece, None, width);
         match alts.is_empty() {
             true => residual.extend(piece),
             false => alternatives.push(alts.into_iter().take(width).collect()),
