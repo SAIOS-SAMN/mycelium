@@ -2,8 +2,8 @@
 
 # Resume notes (continuity across sessions)
 
-Last update: TUniversal 00:00:00:00:70 (genesis origin 1788326481),
-commit after 4a7f0ed. Task list: docs/TRAJECTORY.md (rebuild the session
+Last update: TUniversal 00:00:00:00:7B (genesis origin 1788326481),
+commit after 6f67e9c. Task list: docs/TRAJECTORY.md (rebuild the session
 task tracker from its "Open" section at the start of a new session).
 
 ## Boot check
@@ -22,33 +22,32 @@ and disabled by ruling.
 
 ## State at handoff
 
-- Nine units active on 4a7f0ed. Three binaries only (mycelium-server,
-  mycelium-client, mycelium-court).
-- The hypha is a verifier on the wire: percepts and demands carry the
-  entity's citations and are replayed (an unproven percept is deferred);
-  ACT_PROBE settles graded descent or closure on the book; refinement bids
-  carry citations and are replayed; the idle stroke runs only condense,
-  torsion, regenerate. `Kernel::adjudicate` keeps the in-lock reduction
-  for tests and local use only.
-- The entity thinks: it germinates its own percepts, reduces over its
-  genome with a metabolic budget, forms the superposition of hypotheses
-  for a listing (`Entity::abduce`), probes the head and speaks the next
-  when the hypha settles nothing, attests the settled residual, and bids
-  refinements from its own decompositions. Its summary line reports
-  discordance (strata differing from the hypha's).
-- The book is lineage-ranked by curvature, sealed per generation; a quote
-  prices only the served head; the cover replaces quadrant tiling.
-- Cross-complex pairs are read through the frame map onto the output
-  complex; ρ rides as an exact scaling fiber and on the percept wire.
+- Nine units active on 6f67e9c. Three binaries only.
+- The transport is a rational conformal versor (Spin(4,1) over ℚ) in the
+  bundle's connection, the court's attach ruling, the wire's citations,
+  the atlas, and the replay. Congruence is solved in closed form on two
+  shapes and verified corner by corner; the replay carries target cell
+  centers back into the word's frame by exact containment. No D4 table,
+  no least-common-multiple lattice, no bounding box exists in the
+  thinking path.
+- The entity thinks in `client/thinking.rs`: shape, chart, stratum,
+  versor, replay-verified gauge coordinate; whole chain then components;
+  residual = irreducible claim; deferred pieces are never claimed. Its
+  epigenome carries an atlas admitted in place and lazily lifted shapes.
+- The hypha replays citations, prices the book from a sealed rank
+  memoized by listing address, and runs only condense (one versor per
+  stroke), torsion, regenerate on its idle stroke.
+- Persisted ledgers and genomes in the legacy lattice format load through
+  `element::legacy_versor`. The court journal is now tracked in git.
 - Unique verified solves: 3 standing, 0 since the entities were rebuilt.
 
 ## Immediate next actions
 
-1. Watch a full hour: entity genomes and discordance (syncs now fill the
-   carrier), probe settlement rates, installs, and the court's federation.
-2. TRAJECTORY item 1 (excise server contemplation), then item 2
-   (demotion barrier), item 3 (court sheaf sync), item 4 (connection-aware
-   peel).
+1. Watch an hour: entity discordance to zero, probe settlement rates,
+   entity error counters (deadline misses), hypha CPU.
+2. TRAJECTORY items 1 (journal epoch and backup), 2 (study and projection
+   in the algebra), 3 (excise server contemplation), 4 (compression
+   economics).
 
 ## Standing operational rules
 

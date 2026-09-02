@@ -38,47 +38,48 @@ registered corpus (currently 3 of 1,120).
 | 7050437 | Probe and proof: citations (word, transport, gauge coordinate) from the cited decomposition; linear replay on the hypha; ACT_PROBE with graded descent (partial yield, residual replaces the listing) or closure; percepts and demands carry proofs; no search on the wire path |
 | 7f0ad7e | Forward abduction: the superposition of hypotheses kept and ranked by holonomy defect; width from the listing's strongest lane's free reserve; the entity speaks the next hypothesis when the hypha settles nothing |
 | e7ca2df, 4a7f0ed | Feed without a glue gate; the hypha's redundancy probe excised (idle stroke = condense, torsion, regenerate); refinement bids carry citations and are replayed; fetch fills the carrier across every discordant chart |
+| e6b8a79 | Transducer: Cl(3,1)(ℚ) gains the unnormalized dilator (orientation settled against the embedding), the reflector, the versor test, projective equality as the scalar-only reverse product, and serialization; the blade's inertia is the body's (each cell carries its own moment); the shell: boundary corners, a similarity chart (corner count, boundary length over area, anisotropy, spread, hue fractions), and the versor between two shapes in closed form, verified corner by corner |
+| c96303a | The transport is a rational conformal versor everywhere: the bundle's connection, the court's attach ruling, the wire's citations, the atlas's congruence, and the replay; a sibling's assignment pulls back through the inverse versor by exact cell containment; versor equality is projective; no D4 table exists |
+| e99b6f7 | The entity thinks in the algebra (`client/thinking.rs`): a chain is located, not searched — shape, chart, stratum, closed-form versor, replay-verified gauge coordinate; whole chain first, then components; the residual is the irreducible claim; abduction keeps every verified word per piece within the lane's width; the lattice peel leaves the wire path |
+| e3e6d62, ce588cf, 253e711, 75dcb43, 6f67e9c | Continuity and pacing: legacy lattice transports decode to versors so ledgers and genomes load; the book's closure is memoized by listing address across book generations; comprehension locates through the atlas; the condense stroke solves one versor per stroke; the genome's atlas admits in place; shapes lift once per snapshot and per genome; locating is paid per piece from the stroke (deferred pieces are never claimed); the sync uses the genome's own atlas |
 
 ## Open, in priority order
 
 The ruling that orders this list (2026-09-02): entities think, reason,
-posit, and produce; hyphas replay, price from sealed carriers, hold the
-genome, and forward the docket; courts validate. Landed on 2026-09-02:
-the entity reduces and probes, the hypha replays.
+posit, and produce in the exact rational conformal algebra; hyphas
+replay, price from sealed carriers, hold the genome, and forward the
+docket; courts validate in the algebra. The lattice exists only as the
+sensor's cochain and the wire's serialization.
 
-1. **Excise server contemplation.** `synthesis::contemplate` still runs on
-   the hypha for dispatched tasks (ACT_TASK); deliberation and
-   cross-family abduction belong to `Entity::study`, which the entity
-   already runs. Remove the server path and the `Deliberation::Contemplate`
-   queue.
-2. **Compression economics.** The refinement bid now runs entity-side and
-   replays on the hypha. Missing: the entropic demotion barrier (a word
-   uncited across a metabolic horizon degrades to provisional and forfeits
-   its slot) as an exact ratio law, and sub-chain factorization through
-   higher relations.
-3. **Court sheaf sync.** The genesis pager and adoption pushes move onto
-   ACT_DIGESTS/ACT_FETCH; a restarted hypha re-converges without a
-   re-audit; fetch carries origin voices so adoption installs true
-   provenance.
-4. **Connection-aware peel.** Citations carry a full transport, but the
-   peel still places words by translation (`fitting_peels`); apply words
-   through the recorded D4 transports so rotated placements cite instead
-   of germinating siblings.
-5. **Four-lane completion.** The quote's residual-lane premium special
-   case retires; the shell lane reads scene topology.
-6. **Incremental persistence; listener before intake.**
-7. **EMA-RTT transport deadline.**
-8. **Residual static ceilings.** MAX_ANCHORS 3, composites 32, evidence
+1. **The court journal.** `state/court.federation` was never tracked and
+   the format change overwrote it; the era-2 chain (K about 6,300,
+   3,841 words) is lost. The journal is tracked from 6f67e9c. Add a
+   format epoch to the journal and ledgers with a rotating backup on
+   epoch change.
+2. **Study and projection in the algebra.** `Entity::study` and
+   `Entity::project` still run the lattice peel, anchors, and
+   footprints; lift them to shapes, versors, and blade incidence so the
+   entity's deep path is coordinate-free like its wire path.
+3. **Excise server contemplation.** `synthesis::contemplate` still runs
+   on the hypha for dispatched tasks.
+4. **Compression economics.** Entropic demotion barrier as an exact ratio
+   law; sub-chain factorization through higher relations. The conformal
+   re-audit attached 87 of 4,121: the vocabulary is distinct shapes even
+   up to similarity, so the economy is the lever.
+5. **Court sheaf sync.** Genesis pager and adoption pushes onto
+   ACT_DIGESTS/ACT_FETCH with origin voices.
+6. **Entity transport deadline.** Entities miss the 512 ms deadline under
+   hypha load (err counters); the EMA-RTT deadline per session.
+7. **Four-lane completion.** The quote's residual-lane special case.
+8. **Incremental persistence; listener before intake.**
+9. **Residual static ceilings.** MAX_ANCHORS 3, composites 32, evidence
    caps 64/128, peel and projection budgets, quote depth 4..16, wire
-   counts 255/64: derive from the metabolism and the carrier.
-9. **Ledger.** SNF epoching; economic observability act.
-10. **Wire freeze v2.** ed25519 voice signing, stake bonds, TUniversal
-    origin; the new forms (frame on the percept, citations on percept,
-    demand, and refine, ACT_PROBE, ACT_DIGESTS/ACT_FETCH with charts,
-    RULING_ATTACHED, the element connection tail) enter the frozen format.
-11. **Solve trajectory.** Unique solves are 3 standing and 0 since the
-    entities were rebuilt; re-census once genomes glue and the book's
-    tension has fallen.
+   counts 255/64.
+10. **Ledger.** SNF epoching; economic observability act.
+11. **Wire freeze v2.** ed25519 voice signing, stake bonds, TUniversal
+    origin; the versor forms enter the frozen format.
+12. **Solve trajectory.** Unique solves 3 standing, 0 since the entities
+    were rebuilt; re-census once genomes glue.
 
 ## Standing rulings that govern all of the above
 
@@ -132,3 +133,11 @@ the entity reduces and probes, the hypha replays.
   replayed, zero entity errors, court apertures clean. A sync moves about
   200 words per contact (was 8). Federation 3,841 at K=6,226. Unique
   solves 0 since the rebuild (3 standing).
+- 7B — the conformal lift landed and live-fired. The format change booted
+  every node empty (legacy transports refused); ledgers and genomes were
+  restored from git and decode through the legacy lifter; the court
+  journal was not tracked and its chain restarted (re-audit under the
+  conformal lens: federation 4,121 at K=4,208, 87 attached). After the
+  pacing fixes: hypha-a 125%, hypha-b 47%, hypha-c 3%; entities converging
+  (genomes 2,400 to 2,700, discordance about 50, syncs several per
+  interval), quotes 189 per interval on hypha-a, court apertures clean.
