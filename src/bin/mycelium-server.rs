@@ -70,7 +70,7 @@ fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32])
     // cohesion witness compute over the snapshot.
     if kind == dialogue::ACT_QUOTE {
         let Some(qvoice) = dialogue::decode_quote_request(&frame.body) else { return };
-        let Some((surface, priced, k_step, cohesion)) = mycelium::synthesis::quote(kernel) else {
+        let Some((surface, priced, k_step, cohesion)) = mycelium::synthesis::quote(kernel, qvoice) else {
             return;
         };
         let items: Vec<dialogue::WorkItem> =
@@ -457,6 +457,13 @@ fn main() {
                                 word.address()[1],
                                 ratifier[0],
                             );
+                        }
+                        // BOUNDED PERSISTENCE: the language never runs more
+                        // than one metabolic unit of installs ahead of the
+                        // ledger, whatever the reflex path is doing.
+                        if after.0 >= persisted.0 + mycelium::physics::spend_unit() as usize {
+                            persist(&kernel, &state_path);
+                            persisted = after;
                         }
                     }
                 }

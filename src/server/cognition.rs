@@ -263,6 +263,7 @@ pub fn quote_over(
     pool: &[u64; 4],
     top: usize,
     budget: usize,
+    exclude: &[[u8; 32]],
 ) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
     let c = rank.closure.iter().filter(|k| k.is_some()).count() as u64;
     let i = rank.closure.len() as u64 - c;
@@ -278,6 +279,9 @@ pub fn quote_over(
             break;
         }
         let Some((p, _)) = pending.get(idx) else { continue };
+        if exclude.contains(&p.address()) {
+            continue; // this voice has spoken on it in this state
+        }
         let wire = 68 + p.sub().len() * cell;
         if used + wire > budget {
             continue;
@@ -483,6 +487,11 @@ pub struct Kernel {
     /// Retirements of basis words, counted: while it stands still, every
     /// index into the basis names the same word it did.
     retire_gen: u64,
+    /// THE RECEIPTS OF SPEECH: (listing address, voice) for every listing a
+    /// voice has probed or attested in its current state. A listing that
+    /// closes or descends changes address and leaves this relation; a quote
+    /// never serves a voice a listing it has already spoken on.
+    spoken: Vec<([u8; 32], [u8; 32])>,
     pub nerve: Nerve,
     /// Round-robin cursor for syntropic optimization — which generator to test for
     /// redundancy next (bounds consolidation to one reduce per depleted step).
@@ -690,6 +699,7 @@ impl Kernel {
             return (PROBE_NOTHING, [0; 4], [0; 4]);
         };
         let listing = self.pending[li].0.clone();
+        self.record_spoken(*target, voice);
         let before = listing.magnitude();
         let after = element::measure_lanes(&residual);
         let surface = crate::economy::yield_surface(&self.physics);
@@ -705,6 +715,7 @@ impl Kernel {
                 }
             }
             self.pending.remove(li);
+            self.spoken.retain(|(a, _)| a != target);
             self.book_gen += 1;
             self.physics.relieve(&mag);
             self.physics.syntropy(&mag);
@@ -736,6 +747,7 @@ impl Kernel {
         }
         let listed_at = self.pending[li].1;
         self.pending[li] = (next, listed_at);
+        self.spoken.retain(|(a, _)| a != target);
         self.book_gen += 1;
         self.physics.syntropy(&mag);
         self.append_step(*target, voice);
@@ -1041,6 +1053,18 @@ impl Kernel {
         buf[32..].copy_from_slice(&self.court_head);
         let op = *blake3::hash(&buf).as_bytes();
         self.chain.append(fingerprint, op);
+    }
+
+    /// A voice spoke on a listing in its current state.
+    fn record_spoken(&mut self, listing: [u8; 32], voice: [u8; 32]) {
+        if !self.spoken.iter().any(|(a, v)| *a == listing && *v == voice) {
+            self.spoken.push((listing, voice));
+        }
+    }
+
+    /// The listings this voice has already spoken on, in their current state.
+    pub fn spoken_by(&self, voice: &[u8; 32]) -> Vec<[u8; 32]> {
+        self.spoken.iter().filter(|(_, v)| v == voice).map(|(a, _)| *a).collect()
     }
 
     /// The court's chain head as ruled to this hypha.
@@ -1358,6 +1382,7 @@ impl Kernel {
                     let asg = element::assignment(&centered);
                     let saddr = section_address(&self.basis[ti].address(), &asg);
                     let _ = self.admission.record(Receipt { voice, germ: saddr });
+                    self.record_spoken(saddr, voice);
                     let quorum = self.admission.voices(&saddr) >= crate::network::consensus::QUORUM;
                     if quorum && self.physics.can_expand(lanes) {
                         self.basis[ti].puncture(asg);
@@ -1755,7 +1780,7 @@ impl Kernel {
     pub fn quote(&mut self, top: usize) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
         let surface = crate::economy::yield_surface(&self.physics);
         let rank = self.closure_now();
-        quote_over(&rank, &self.composites, &self.pending, &surface, &self.treasury.pool(), top, usize::MAX)
+        quote_over(&rank, &self.composites, &self.pending, &surface, &self.treasury.pool(), top, usize::MAX, &[])
     }
 
     /// ATTEST — a peer's INDEPENDENT derivation of an open residual arrives as a

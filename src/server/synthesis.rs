@@ -137,8 +137,12 @@ pub fn probe(
 /// snapshot. Returns (surface, priced clusters, K, cohesion).
 pub fn quote(
     k: &std::sync::Mutex<crate::cognition::Kernel>,
+    voice: [u8; 32],
 ) -> Option<([u64; 4], Vec<(crate::transducer::element::Element, [u64; 4])>, u64, crate::cohesion::CohesionWitness)> {
-    let view = k.lock().ok()?.market_open();
+    let (view, spoken) = {
+        let mut g = k.lock().ok()?;
+        (g.market_open(), g.spoken_by(&voice))
+    };
     // The closure is a sealed carrier: read when current, measured over the
     // snapshot (no lock) and sealed back only when a generation moved.
     let t0 = std::time::Instant::now();
@@ -176,6 +180,7 @@ pub fn quote(
         &view.pool,
         depth,
         budget,
+        &spoken,
     );
     let cohesion = crate::cognition::cohesion_over(&rank.closure);
     Some((surface, priced, view.k_step, cohesion))
