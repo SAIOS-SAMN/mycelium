@@ -2,52 +2,42 @@
 
 # The Anti-Flattening Law
 
-A foundational structural invariant of mycelium v0.1.0. It extends the
-convergence-engine Laws (I: no boolean gates; II: no maps in cognition; V: no
-residual suppression) with an explicit statement of *why* flat associative
-storage is forbidden in the reasoning path.
+A structural invariant of mycelium v0.1.0. It extends the convergence-engine
+design constraints (I: no boolean gates; II: no maps in cognition; V: no
+residual suppression) with a statement of why flat associative storage is
+excluded from the reasoning path.
 
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                      THE ANTI-FLATTENING LAW                             │
-│                                                                          │
-│  1. A hash or digest ([u8; 32]) is strictly a wire-transport encoding    │
-│     and cold-cache index — NEVER the operand of cognitive reasoning.     │
-│                                                                          │
-│  2. Recognition, recall, and settlement MUST execute as exact group      │
-│     actions, geometric contractions (V σ Ṽ), or boundary morphisms       │
-│     (∂₂Σ = Q) on the retained graded multivector manifold.               │
-│                                                                          │
-│  3. Multi-dimensional perceptual axes (holonomy, harmonic spectrum,      │
-│     torsion, scale) must exist as intrinsic grades or fiber              │
-│     coordinates on the Cl(3,1) Blade — NEVER as standalone *_cells       │
-│     lookup tables.                                                       │
-│                                                                          │
-│  4. Any operation that collapses manifold curvature into a flat 0D       │
-│     scalar/hash comparison to bypass geometric deduction is a            │
-│     structural violation and must be refused.                           │
-└────────────────────────────────────────────────────────────────────────┘
-```
+1. A hash or digest (`[u8; 32]`) is a wire-transport encoding and cold-cache
+   index only; it is not an operand of cognitive reasoning.
+2. Recognition, recall, and settlement execute as exact group actions,
+   geometric contractions (V σ Ṽ), or boundary morphisms (∂₂Σ = Q) on the
+   retained graded multivector manifold.
+3. Multi-dimensional perceptual axes (holonomy, harmonic spectrum, torsion,
+   scale) exist as intrinsic grades or fiber coordinates on the Cl(3,1)
+   blade, not as standalone `*_cells` lookup tables.
+4. An operation that collapses manifold curvature into a flat 0-dimensional
+   scalar or hash comparison, bypassing geometric deduction, is a structural
+   violation and is refused.
 
-## Why
+## Rationale
 
 Storing structured perception in a `HashMap`/`BTreeMap` keyed by a digest
 collapses every computed dimension to a 0-dimensional point at the storage
-boundary. The only operation left on a bucket of points is equality-lookup — a
-card catalog. The engine's whole reason for existing (relational curvature,
-torsion, dimensional resolution) dies the instant a blade is hashed and filed.
-Recognition must remain a *geometric relation on the retained object*: a versor
-carrying one blade to another, a contraction, a boundary morphism — never a
-bucket dereference.
+boundary. The only operation available on a bucket of points is equality
+lookup. The properties the engine exists to compute — relational curvature,
+torsion, dimensional resolution — are lost once a blade is hashed and filed.
+Recognition therefore remains a geometric relation on the retained object: a
+versor carrying one blade to another, a contraction, or a boundary morphism,
+rather than a bucket dereference.
 
 ## The sovereignty boundary (the one exception)
 
-Law II permits standard-library maps **below the sovereignty boundary** —
-transport framing, the cold block store, the append-only temporal ledger keyed
-by block height / K-step. These are I/O and persistence indices, not reasoning
-operands, and match clause 1's "wire-transport encoding and cold-cache index."
+Constraint II permits standard-library maps below the sovereignty boundary:
+transport framing, the cold block store, and the append-only temporal ledger
+keyed by block height / K-step. These are I/O and persistence indices, not
+reasoning operands, and fall under clause 1's transport-encoding category.
 
-Concretely: `src/core/chain/**` (block store, temporal ledger) and
-`src/network/**` (wire/gossip framing) may use maps as indices. The cognition
-path — everything else in `src/core/` and all of `src/transducer/` — may not.
-The guard in `core::laws` enforces this by scanning those trees.
+Concretely, `src/core/chain/**` (block store, temporal ledger) and
+`src/network/**` (wire/gossip framing) may use maps as indices. The
+cognition path — the remainder of `src/core/` and all of `src/transducer/` —
+may not. The guard in `core::laws` enforces this by scanning those trees.
