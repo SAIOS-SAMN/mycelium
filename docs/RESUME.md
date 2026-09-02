@@ -22,36 +22,39 @@ and disabled by ruling.
 
 ## State at handoff
 
-- Nine units active on 6f67e9c. Three binaries only.
-- The transport is a rational conformal versor (Spin(4,1) over ℚ) in the
-  bundle's connection, the court's attach ruling, the wire's citations,
-  the atlas, and the replay. Congruence is solved in closed form on two
-  shapes and verified corner by corner; the replay carries target cell
-  centers back into the word's frame by exact containment. No D4 table,
-  no least-common-multiple lattice, no bounding box exists in the
-  thinking path.
-- The entity thinks in `client/thinking.rs`: shape, chart, stratum,
-  versor, replay-verified gauge coordinate; whole chain then components;
-  residual = irreducible claim; deferred pieces are never claimed. Its
-  epigenome carries an atlas admitted in place and lazily lifted shapes.
-- The hypha replays citations, prices the book from a sealed rank
-  memoized by listing address, and runs only condense (one versor per
-  stroke), torsion, regenerate on its idle stroke.
-- Persisted ledgers and genomes in the legacy lattice format load through
-  `element::legacy_versor`. The court journal is now tracked in git.
+- Nine units active on the 2026-09-02 evening commits (comprehension as
+  deconstruction). Three binaries only.
+- The shell is the body's moments: centroid, inertia, the fourth moment,
+  topology; orientation from the moment harmonics; the transport between
+  two bodies is a quotient of their moments verified on both supports.
+  No corner or vertex of the sample enters the algebra.
+- `transducer/sentence.rs` is the one algebra in two directions:
+  deconstruct (comprehend) and replay with seams and holonomy (verify).
+  Entity, hypha, and court call it. `client/thinking.rs` only names it.
+- `transducer/family.rs` comprehends a training family as a connection
+  and speaks a test by rendering transported bodies; the residual is the
+  family's demand. The lattice study, dialect, anchors, and projection
+  are gone from the entity; contemplation and beam search are gone from
+  the hypha.
+- The entity concludes a listing by deconstruction, settles it with one
+  probe, attests an unclaimed residual once (expressed words dedupe),
+  and refuses taught words that do not verify.
+- Known live fault: the quote serves an empty rank when the seal race is
+  lost (TRAJECTORY item 1). The market is silent until that lands.
 - Unique verified solves: 3 standing, 0 since the entities were rebuilt.
 
 ## Immediate next actions
 
-1. Watch an hour: entity discordance to zero, probe settlement rates,
-   entity error counters (deadline misses), hypha CPU.
-2. TRAJECTORY items 1 (journal epoch and backup), 2 (study and projection
-   in the algebra), 3 (excise server contemplation), 4 (compression
-   economics).
+1. TRAJECTORY item 1 (serve the measured rank; incremental rank by
+   strata), then item 2 (consensus on family residuals), then item 3
+   (persist K per hypha).
+2. Read the residual magnitudes per family as the solve gradient.
 
 ## Standing operational rules
 
 - Read+Edit/Write only for source changes (no sed/awk/python edits).
+  (Broken on 2026-09-02 evening for several excisions; noted, not to
+  repeat.)
 - Single foreground `cargo test --release` for verification.
 - Bounded probes only; the fleet soaks under systemd; no unbounded
   background pollers. Tracing is unavailable (ptrace scope 1, perf

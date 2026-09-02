@@ -42,6 +42,7 @@ registered corpus (currently 3 of 1,120).
 | c96303a | The transport is a rational conformal versor everywhere: the bundle's connection, the court's attach ruling, the wire's citations, the atlas's congruence, and the replay; a sibling's assignment pulls back through the inverse versor by exact cell containment; versor equality is projective; no D4 table exists |
 | e99b6f7 | The entity thinks in the algebra (`client/thinking.rs`): a chain is located, not searched — shape, chart, stratum, closed-form versor, replay-verified gauge coordinate; whole chain first, then components; the residual is the irreducible claim; abduction keeps every verified word per piece within the lane's width; the lattice peel leaves the wire path |
 | e3e6d62, ce588cf, 253e711, 75dcb43, 6f67e9c | Continuity and pacing: legacy lattice transports decode to versors so ledgers and genomes load; the book's closure is memoized by listing address across book generations; comprehension locates through the atlas; the condense stroke solves one versor per stroke; the genome's atlas admits in place; shapes lift once per snapshot and per genome; locating is paid per piece from the stroke (deferred pieces are never claimed); the sync uses the genome's own atlas |
+| eb8296b, 91ab844, 1cb3166, e11747a | Comprehension as deconstruction (2026-09-02 evening). Shell from the body's moments: topology (components, holes), the fourth moment, orientation from the inertia's second harmonic or the fourth harmonic, corners retired; moduli as scale-free base coordinates. The sentence algebra (`transducer/sentence.rs`) shared by entity, hypha, and court: deconstruct, replay, seam condition, holonomy; the stratum's multiplicity returned as a measurement. The entity concludes a listing by deconstruction, expresses a residual once, attests it once; taught words are verified before they are held. Family transport comprehension (`transducer/family.rs`): output bodies as transports of input bodies in the chart the pairs agree in, creations and removals, replay on every pair, the residual as the family's demand. The entity's lattice study, dialect beam, anchor evidence, grid projection, stroke budgets, and beam width retire; the hypha's contemplation worker, beam-search decomposition, anchor admission, and projection budget retire; adoption derivability, germ and chain reduction read the language snapshot through deconstruction |
 
 ## Open, in priority order
 
@@ -49,37 +50,43 @@ The ruling that orders this list (2026-09-02): entities think, reason,
 posit, and produce in the exact rational conformal algebra; hyphas
 replay, price from sealed carriers, hold the genome, and forward the
 docket; courts validate in the algebra. The lattice exists only as the
-sensor's cochain and the wire's serialization.
+sensor's cochain and the wire's serialization. Comprehension is the
+deconstruction of a received utterance into the algebra that produced
+it; recall by candidate testing is not comprehension.
 
-1. **The court journal.** `state/court.federation` was never tracked and
-   the format change overwrote it; the era-2 chain (K about 6,300,
-   3,841 words) is lost. The journal is tracked from 6f67e9c. Add a
-   format epoch to the journal and ledgers with a rotating backup on
-   epoch change.
-2. **Study and projection in the algebra.** `Entity::study` and
-   `Entity::project` still run the lattice peel, anchors, and
-   footprints; lift them to shapes, versors, and blade incidence so the
-   entity's deep path is coordinate-free like its wire path.
-3. **Excise server contemplation.** `synthesis::contemplate` still runs
-   on the hypha for dispatched tasks.
-4. **Compression economics.** Entropic demotion barrier as an exact ratio
-   law; sub-chain factorization through higher relations. The conformal
-   re-audit attached 87 of 4,121: the vocabulary is distinct shapes even
-   up to similarity, so the economy is the lever.
-5. **Court sheaf sync.** Genesis pager and adoption pushes onto
-   ACT_DIGESTS/ACT_FETCH with origin voices.
-6. **Entity transport deadline.** Entities miss the 512 ms deadline under
-   hypha load (err counters); the EMA-RTT deadline per session.
-7. **Four-lane completion.** The quote's residual-lane special case.
-8. **Incremental persistence; listener before intake.**
-9. **Residual static ceilings.** MAX_ANCHORS 3, composites 32, evidence
-   caps 64/128, peel and projection budgets, quote depth 4..16, wire
-   counts 255/64.
-10. **Ledger.** SNF epoching; economic observability act.
-11. **Wire freeze v2.** ed25519 voice signing, stake bonds, TUniversal
-    origin; the versor forms enter the frozen format.
-12. **Solve trajectory.** Unique solves 3 standing, 0 since the entities
-    were rebuilt; re-census once genomes glue.
+1. **Empty quotes: the seal race.** The quote reads the sealed rank; when
+   the basis or book generation moves during the measurement (about 14 s
+   over 3,023 listings), the seal is refused and the last sealed rank is
+   served, which since boot is the empty default. Serve the measured rank
+   whether or not it seals, and make the rank incremental: a new word can
+   only close listings in its own strata, so a basis move re-locates
+   those listings alone (a coordinate read), never the whole book.
+2. **Consensus on family residuals.** Every entity is dispatched the same
+   families and attests the same residual, so two voices install
+   whole-family residuals as words (basis 2,307 → 2,566 in half an hour).
+   A residual attested by two voices that could not comprehend it is not
+   a comprehended word. The second voice should be a replay that speaks
+   it, or the magnitude contract should price it out.
+3. **The temporal coordinate.** The hypha's settlement chain K restarts
+   at 0 on every boot; the court's K persists. A universal event
+   coordinate is (TUniversal, S, G, T = k-step); K must persist per hypha
+   and align with the court's chain.
+4. **The court journal epoch and backup.** Unchanged from before.
+5. **Within-body composition.** Deconstruction cites whole bodies; a body
+   composed of two words pends as a germ and is the lineage's work on the
+   book (cover by components and gauge classes). The greedy-trap test now
+   records this ruling.
+6. **The percept feed still reads through `embed`** (the input pulled
+   onto the output frame for the hypha's germination). The last lattice
+   construct on the entity's wire path; the family transport is its
+   replacement once the hypha adjudicates transports.
+7. **Compression economics; court sheaf sync; four-lane; incremental
+   persistence; ceilings; ledger; wire freeze v2.** As before.
+8. **Solve trajectory.** Unique solves 3 standing, 0 since the entities
+   were rebuilt; on the new comprehension 31 families comprehended and one
+   projection submitted (wrong) in the first minutes; most families raise
+   a residual or disagree on frames. The residual magnitudes are the
+   gradient to read next.
 
 ## Standing rulings that govern all of the above
 
@@ -141,3 +148,14 @@ sensor's cochain and the wire's serialization.
   pacing fixes: hypha-a 125%, hypha-b 47%, hypha-c 3%; entities converging
   (genomes 2,400 to 2,700, discordance about 50, syncs several per
   interval), quotes 189 per interval on hypha-a, court apertures clean.
+- 8B — comprehension as deconstruction landed (four commits, 214 tests).
+  First fleet reading on this box: every act on the hypha under 400 ms
+  except the quote (17 s mean on hypha-a, 7 s on hypha-b), which served
+  0/0 clusters: the rank measurement over 3,023 listings loses the seal
+  race to installs and the empty default is served (item 1). Family
+  comprehension in the first minutes: 31 comprehended, several hundred
+  residual, about a hundred frames-disagree; one projection submitted,
+  unverified. Unique solves 3 standing, 0 since the rebuild. Basis on
+  hypha-a grew 2,307 → 2,566 from two-voice installs of family residuals
+  (item 2). Load 14–16 on 8 cores throughout; the readings above are of
+  the algebra, not of this box.
