@@ -520,7 +520,7 @@ impl Kernel {
 
     /// The held word that is `chain`'s base point, with the transport
     /// carrying `chain` onto it — the orbit-class lookup through the atlas.
-    fn congruent_held(&self, chain: &[(i64, i64, u8, u8)]) -> Option<(usize, element::Transition)> {
+    fn congruent_held(&self, chain: &[(i64, i64, u8, u8)]) -> Option<(usize, element::Versor)> {
         crate::transducer::stalk::congruent(&self.stalks, |i| self.basis[i].sub(), chain)
     }
 
@@ -535,7 +535,7 @@ impl Kernel {
         &mut self,
         sibling: &[u8; 32],
         base: &[u8; 32],
-        g: &element::Transition,
+        g: &element::Versor,
     ) -> usize {
         if let Some(i) = self.provisional.iter().position(|(a, _)| a == sibling) {
             self.provisional.remove(i);
@@ -548,7 +548,7 @@ impl Kernel {
             return 0;
         };
         let sib = self.basis[si].clone();
-        if element::positions(&element::transport(sib.sub(), g)) != element::positions(self.basis[bi].sub()) {
+        if element::pullback(&element::positions(self.basis[bi].sub()), sib.sub(), g).is_none() {
             return 0;
         }
         let disc = self.discoverers[si];
@@ -868,7 +868,7 @@ impl Kernel {
                     .iter()
                     .enumerate()
                     .position(|(j, w)| j != i && w.address() == *a)
-                    .map(|j| (j, *g, *asg as usize))
+                    .map(|j| (j, g.clone(), *asg as usize))
             })
             .collect();
         let sub = candidate.substance();
@@ -1852,7 +1852,7 @@ pub fn decompose_over_anchored(
 /// utterance's frame, and the gauge coordinate (which assignment along the
 /// punctured axis). A proof is a sequence of citations; a replay applies
 /// them and measures what remains.
-pub type Cite = (usize, element::Transition, usize);
+pub type Cite = (usize, element::Versor, usize);
 
 /// The cited decomposition — the same superposition, keeping every peel's
 /// coordinates so the sentence can be spoken as a proof. `Err` carries the
@@ -1989,40 +1989,68 @@ fn cite_order(a: &[Cite], b: &[Cite]) -> std::cmp::Ordering {
     a.len().cmp(&b.len()).then(a.iter().map(|(i, _, _)| *i).cmp(b.iter().map(|(i, _, _)| *i)))
 }
 
-/// The chain a citation speaks: the word's assignment along its axis,
-/// transported into the utterance's frame.
-pub fn cited_chain(word: &Element, asg: usize, g: &element::Transition) -> Vec<(i64, i64, u8, u8)> {
+/// The chain a citation names in the word's own frame: the word's
+/// assignment along its axis over its support.
+fn cited_pattern(word: &Element, asg: usize) -> Option<Vec<(i64, i64, u8, u8)>> {
     let pos = element::positions(word.sub());
-    let Some(assignment) = word.assignments().into_iter().nth(asg) else { return Vec::new() };
-    let pat: Vec<(i64, i64, u8, u8)> =
+    let assignment = word.assignments().into_iter().nth(asg)?;
+    let mut pat: Vec<(i64, i64, u8, u8)> =
         pos.iter().zip(&assignment).map(|((r, c), (b, a))| (*r, *c, *b, *a)).collect();
-    element::transport(&pat, g)
+    pat.sort_unstable();
+    Some(pat)
 }
 
-/// THE REPLAY — pure and linear in the proof: apply every citation and
-/// measure the residual of the target against the spoken sum, R = Q △ S:
-/// the target cells the sentence does not reproduce, and the cells the
-/// sentence speaks outside the target. An empty residual is closure; a
-/// citation that names nothing held speaks nothing.
+/// THE REPLAY — in the algebra and linear in the proof. For every citation
+/// the target's cell centers are carried back by V⁻¹ into the word's frame,
+/// and the word cell whose unit square contains the carried point must
+/// speak the same transition — exact containment on the sensor's own
+/// lattice, never a rasterization of the word. A word cell whose carried
+/// center lands outside the target is over-explanation. The residual is
+/// R = Q △ S: the target cells no citation speaks, plus the over-explained
+/// cells. An empty residual is closure; a citation naming nothing held
+/// speaks nothing.
 pub fn replay(
     language: &[Element],
     cites: &[Cite],
     target: &[(i64, i64, u8, u8)],
 ) -> Vec<(i64, i64, u8, u8)> {
-    let mut spoken: Vec<(i64, i64, u8, u8)> = Vec::new();
-    for (i, g, asg) in cites {
-        if let Some(w) = language.get(*i) {
-            spoken.extend(cited_chain(w, *asg, g));
-        }
-    }
-    spoken.sort_unstable();
-    spoken.dedup();
-    let mut residual: Vec<(i64, i64, u8, u8)> =
-        target.iter().filter(|t| spoken.binary_search(t).is_err()).copied().collect();
     let mut sorted_target = target.to_vec();
     sorted_target.sort_unstable();
-    residual.extend(spoken.iter().filter(|s| sorted_target.binary_search(s).is_err()));
+    let mut spoken = vec![false; sorted_target.len()];
+    let mut over: Vec<(i64, i64, u8, u8)> = Vec::new();
+    for (i, v, asg) in cites {
+        let Some(w) = language.get(*i) else { continue };
+        let Some(pat) = cited_pattern(w, *asg) else { continue };
+        let Some(inv) = v.versor_inverse() else { continue };
+        for (k, &(r, c, b, a)) in sorted_target.iter().enumerate() {
+            if spoken[k] {
+                continue;
+            }
+            let Some(p) = element::carry_center(&inv, r, c) else { continue };
+            let (wr, wc) = element::cell_of(&p);
+            if let Ok(j) = pat.binary_search_by(|x| (x.0, x.1).cmp(&(wr, wc))) {
+                if (pat[j].2, pat[j].3) == (b, a) {
+                    spoken[k] = true;
+                }
+            }
+        }
+        for &(wr, wc, wb, wa) in &pat {
+            let Some(p) = element::carry_center(v, wr, wc) else { continue };
+            let (tr, tc) = element::cell_of(&p);
+            if sorted_target.binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc))).is_err() {
+                over.push((tr, tc, wb, wa));
+            }
+        }
+    }
+    let mut residual: Vec<(i64, i64, u8, u8)> = sorted_target
+        .iter()
+        .zip(&spoken)
+        .filter(|(_, s)| !**s)
+        .map(|(t, _)| *t)
+        .collect();
+    residual.extend(over);
     residual.sort_unstable();
+    residual.dedup();
     residual
 }
 
@@ -2260,7 +2288,7 @@ fn word_matching_anchored(
         let Some(asg) = p.matching_assignment(&centered) else { continue };
         match anchor_admits(p, chain, ctx, cache, j) {
             Ok(()) => {
-                return Some((j, element::Transition { d4: 0, t: (min_r, min_c) }, asg));
+                return Some((j, element::translator_versor(min_r, min_c), asg));
             }
             Err(q) => mismatches.push((j, q)),
         }
@@ -2310,7 +2338,7 @@ fn fitting_peels(
                     // pair, emitted for Knuth–Bendix anchor refinement.
                     match anchor_admits(gen, &translated, ctx, &mut region_cache, i) {
                         Ok(()) => {
-                            let g = element::Transition { d4: 0, t: (dr, dc) };
+                            let g = element::translator_versor(dr, dc);
                             out.push(((i, g, asg_idx), translated));
                             anchors += 1;
                             if anchors >= MAX_ANCHORS {
@@ -2481,7 +2509,7 @@ pub fn resolve_cites(language: &[Element], cites: &[crate::anastome::dialogue::C
     cites
         .iter()
         .filter_map(|(addr, g, asg)| {
-            language.iter().position(|w| w.address() == *addr).map(|i| (i, *g, *asg as usize))
+            language.iter().position(|w| w.address() == *addr).map(|i| (i, g.clone(), *asg as usize))
         })
         .collect()
 }
@@ -2685,12 +2713,12 @@ mod tests {
         k.discoverers.push([7; 32]);
         let derivable = k.basis[0].address(); // its duplicate speaks it
         // The bidder's sentence: the duplicate, cited at the identity.
-        let sentence = vec![(k.basis[1].address(), element::Transition::IDENTITY, 0u32)];
+        let sentence = vec![(k.basis[1].address(), element::identity_versor(), 0u32)];
         let paid = k.try_refine(&derivable, [5; 32], &sentence);
         assert!(paid.is_some(), "the derivable word is a confirmed compression bid");
         assert_eq!(k.basis_len(), 1, "the vocabulary compressed");
         let essential = k.basis[0].address();
-        let self_cite = vec![(essential, element::Transition::IDENTITY, 0u32)];
+        let self_cite = vec![(essential, element::identity_versor(), 0u32)];
         assert!(k.try_refine(&essential, [5; 32], &self_cite).is_none(), "an essential word is refused");
         assert_eq!(k.basis_len(), 1, "refusal mutates nothing");
         assert!(k.try_refine(&[3; 32], [5; 32], &sentence).is_none(), "an unknown address is refused");
@@ -2701,7 +2729,7 @@ mod tests {
         k.discoverers.push([1; 32]);
         let addr = k.basis[1].address();
         k.provisional.push((addr, k.basis[1].clone()));
-        let sentence = vec![(k.basis[0].address(), element::Transition::IDENTITY, 0u32)];
+        let sentence = vec![(k.basis[0].address(), element::identity_versor(), 0u32)];
         assert!(k.try_refine(&addr, [5; 32], &sentence).is_none(), "provisional words are refused");
         assert_eq!(k.basis_len(), 2);
     }
@@ -2918,7 +2946,7 @@ mod tests {
         let word = k.lock().unwrap().basis()[0].address();
         let (ca, cb) = perceive(&a, &b);
         let frame = frame_of(&a, &b);
-        let proof = vec![vec![(word, element::Transition::IDENTITY, 0u32)]];
+        let proof = vec![vec![(word, element::identity_versor(), 0u32)]];
         let out = crate::synthesis::adjudicate(&k, &ca, &cb, [3; 32], &frame, &proof);
         assert!(matches!(out, Outcome::Decomposed(ref w) if w == &vec![0]), "{out:?}");
         let out = crate::synthesis::adjudicate(&k, &ca, &cb, [3; 32], &frame, &[]);

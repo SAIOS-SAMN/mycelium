@@ -124,7 +124,7 @@ pub const PROBE_DESCENT: u8 = 1;
 pub const PROBE_CLOSED: u8 = 2;
 
 /// A citation on the wire: (word address, transport, gauge coordinate).
-pub type CiteWire = ([u8; 32], crate::transducer::element::Transition, u32);
+pub type CiteWire = ([u8; 32], crate::transducer::element::Versor, u32);
 
 pub fn push_cites(out: &mut Vec<u8>, cites: &[CiteWire]) {
     out.extend_from_slice(&(cites.len() as u32).to_le_bytes());
@@ -138,14 +138,14 @@ pub fn push_cites(out: &mut Vec<u8>, cites: &[CiteWire]) {
 pub fn read_cites(b: &[u8], p: &mut usize) -> Option<Vec<CiteWire>> {
     let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
     *p += 4;
-    if n > b.len().saturating_sub(*p) / 53 {
-        return None; // untrusted count: 53 bytes per citation
+    if n > b.len().saturating_sub(*p) / 36 {
+        return None; // untrusted count: address, versor, coordinate per citation
     }
     let mut out = Vec::with_capacity(n);
     for _ in 0..n {
         let addr: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
         *p += 32;
-        let g = crate::transducer::element::Transition::from_bytes(b, p)?;
+        let g = crate::transducer::element::Versor::from_bytes(b, p)?;
         let asg = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
         *p += 4;
         out.push((addr, g, asg));
@@ -873,7 +873,7 @@ pub fn encode_verdict_attach(
     addr: &[u8; 32],
     receipt: &[u8; 32],
     base: &[u8; 32],
-    g: &crate::transducer::element::Transition,
+    g: &crate::transducer::element::Versor,
 ) -> Vec<u8> {
     let mut out = vec![ACT_VERDICT];
     out.extend_from_slice(voice);
@@ -894,7 +894,7 @@ pub type Verdict = (
     u8,
     [u8; 32],
     Option<crate::transducer::anchor::Sel>,
-    Option<([u8; 32], crate::transducer::element::Transition)>,
+    Option<([u8; 32], crate::transducer::element::Versor)>,
 );
 
 pub fn decode_verdict(body: &[u8]) -> Option<Verdict> {
@@ -913,7 +913,7 @@ pub fn decode_verdict(body: &[u8]) -> Option<Verdict> {
         Some(2) => {
             let base: [u8; 32] = body.get(99..131)?.try_into().ok()?;
             let mut p = 131usize;
-            let g = crate::transducer::element::Transition::from_bytes(body, &mut p)?;
+            let g = crate::transducer::element::Versor::from_bytes(body, &mut p)?;
             (None, Some((base, g)))
         }
         _ => (None, None),
@@ -976,7 +976,7 @@ mod tests {
     fn the_five_acts_round_trip() {
         let chain = vec![(0i64, 0i64, 1u8, 4u8), (2, 3, 0, 7)];
         let (voice, germ) = ([9u8; 32], [7u8; 32]);
-        let cites = vec![([3u8; 32], crate::transducer::element::Transition { d4: 2, t: (1, -1) }, 1u32)];
+        let cites = vec![([3u8; 32], crate::transducer::element::translator_versor(1, -1), 1u32)];
         let (v, c, k) = decode_demand(&encode_demand(&voice, &chain, &cites)).unwrap();
         assert_eq!(k, cites, "the citations ride the demand");
         assert_eq!((v, c), (voice, chain.clone()));

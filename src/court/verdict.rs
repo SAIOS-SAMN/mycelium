@@ -15,7 +15,7 @@
 
 use crate::anastome::dialogue;
 use crate::transducer::anchor::{derive_carrying_all, Sel};
-use crate::transducer::element::{self, Element, Transition};
+use crate::transducer::element::{self, Element, Versor};
 use crate::transducer::stalk::{self, Stalks};
 
 /// Deterministic re-derivation of a spoken word from its own evidence
@@ -67,7 +67,7 @@ pub enum Ruling {
     /// connects: `base` indexes the federation entry and `g` is the
     /// transport carrying the word into the base frame. The word attaches as
     /// a section of that base, never a sibling entry.
-    Attached { base: usize, g: Transition },
+    Attached { base: usize, g: Versor },
     /// Genuinely new geometry: the word joins the federation. The sealed
     /// element rides the arm — admission IS the match, never a flag.
     Admitted(Element),
@@ -194,10 +194,12 @@ mod tests {
         // the identity transport.
         let mut other = addr;
         other[0] ^= 0xFF;
-        assert_eq!(
-            rule(&fed, &stalks, &other, Some(&w)),
-            Ruling::Attached { base: 0, g: Transition::IDENTITY }
-        );
+        match rule(&fed, &stalks, &other, Some(&w)) {
+            Ruling::Attached { base: 0, g } => {
+                assert!(element::same_versor(&g, &element::identity_versor()), "the identity transport")
+            }
+            other => panic!("identical geometry attaches, got {other:?}"),
+        }
         // A rotated sibling (the same geometry as a D4 image, other hues)
         // resolves through the chart to the same base with a rotating
         // transport; a genuinely different geometry finds an empty stratum
@@ -206,7 +208,9 @@ mod tests {
             &germinate(&[(0, 0, 3u8), (1, 0, 3)], &[(0, 0, 4u8), (1, 0, 4)]).unwrap(),
         );
         match rule(&fed, &stalks, &rotated.address(), Some(&rotated)) {
-            Ruling::Attached { base: 0, g } => assert_ne!(g.d4, 0, "the transport rotates"),
+            Ruling::Attached { base: 0, g } => {
+                assert!(!element::same_versor(&g, &element::identity_versor()), "the transport rotates")
+            }
             other => panic!("a rotated placement attaches, got {other:?}"),
         }
         let bent = from_residual(

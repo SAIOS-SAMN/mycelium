@@ -319,7 +319,7 @@ fn main() {
                         if let Some(w) = spoken.as_ref() {
                             federation[*base].1.attach(w, g);
                         }
-                        Some((federation[*base].0, federation[*base].1.to_bytes(), *g))
+                        Some((federation[*base].0, federation[*base].1.to_bytes(), g.clone()))
                     }
                     _ => None,
                 };

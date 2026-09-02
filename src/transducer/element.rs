@@ -119,106 +119,103 @@ pub struct Element {
     /// and every word born before selection entered the language).
     pub(crate) anchor: Option<crate::transducer::anchor::Sel>,
     /// THE CONNECTION — for every assignment spoken on this fibre (the base's
-    /// own, a section, a torsion-orbit member), the group elements
-    /// g ∈ ℤ² ⋊ D4 under which a sibling was observed and transported into
-    /// this frame: `(assignment, g)`. The parallel-transport record of the
-    /// bundle; the set of g reached for one assignment is its holonomy.
-    /// Vec-of-relations; excluded from the address (a connection deepens the
-    /// thought, it does not rename it).
-    transitions: Vec<(Vec<(u8, u8)>, Transition)>,
+    /// own, a section, a torsion-orbit member), the versors V ∈ Spin(4,1)(ℚ)
+    /// under which a sibling was observed and carried into this frame:
+    /// `(assignment, V)`. The parallel-transport record of the bundle; the
+    /// set of V reached for one assignment is its holonomy. Vec-of-relations;
+    /// excluded from the address (a connection deepens the thought, it does
+    /// not rename it).
+    transitions: Vec<(Vec<(u8, u8)>, Versor)>,
     /// The memoized address — a measurement of the base (word, dim, fibers),
     /// taken once and cleared wherever the base mutates. Never serialized.
     address: std::sync::OnceLock<[u8; 32]>,
 }
 
-/// The eight isometries of D4 as exact coordinate maps, in a fixed order:
-/// the identity, the three rotations, then the four reflections. The index
-/// into this table is the rotational coordinate of a [`Transition`].
-pub const D4: [fn(i64, i64) -> (i64, i64); 8] = [
-    |r, c| (r, c),
-    |r, c| (c, -r),
-    |r, c| (-r, -c),
-    |r, c| (-c, r),
-    |r, c| (r, -c),
-    |r, c| (-r, c),
-    |r, c| (c, r),
-    |r, c| (-c, -r),
-];
+/// THE TRANSPORT of the bundle: a rational conformal versor V ∈ Spin(4,1)(ℚ)
+/// (translation, rotation by any rational rotor, reflection, exact dilation,
+/// and their products), acting by the sandwich V X Ṽ on the null points of
+/// a support. The lattice isometries are the special case; no table of
+/// images exists anywhere.
+pub type Versor = crate::transducer::cga::Mv;
 
-/// A group element g = (t, r) of ℤ² ⋊ D4: the rotational part indexes
-/// [`D4`], the translation applies after it. The transition function of the
-/// bundle — the parallel-transport operator carrying one placement of a
-/// geometry onto another.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Transition {
-    pub d4: u8,
-    pub t: (i64, i64),
+pub fn identity_versor() -> Versor {
+    Versor::scalar(num_rational::BigRational::from_integer(BigInt::from(1)))
 }
 
-impl Transition {
-    pub const IDENTITY: Transition = Transition { d4: 0, t: (0, 0) };
-
-    pub fn apply(&self, r: i64, c: i64) -> (i64, i64) {
-        let (rr, cc) = D4[self.d4 as usize % 8](r, c);
-        (rr + self.t.0, cc + self.t.1)
-    }
-
-    /// `[d4 u8][t.0 i64][t.1 i64]`.
-    pub fn to_bytes(&self, out: &mut Vec<u8>) {
-        out.push(self.d4);
-        out.extend_from_slice(&self.t.0.to_le_bytes());
-        out.extend_from_slice(&self.t.1.to_le_bytes());
-    }
-
-    pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Transition> {
-        let d4 = *b.get(*pos)?;
-        let tr = i64::from_le_bytes(b.get(*pos + 1..*pos + 9)?.try_into().ok()?);
-        let tc = i64::from_le_bytes(b.get(*pos + 9..*pos + 17)?.try_into().ok()?);
-        *pos += 17;
-        Some(Transition { d4, t: (tr, tc) })
-    }
+/// Projective equality of two versors: the same transport up to a nonzero
+/// rational scale (versors act projectively on the cone).
+pub fn same_versor(a: &Versor, b: &Versor) -> bool {
+    crate::transducer::cga::projective_ratio(a, b).is_some()
 }
 
-/// Transport a chain by g: every cell's position moves, its transition
-/// (before → after) rides unchanged. Sorted by position.
-pub fn transport(chain: &[(i64, i64, u8, u8)], g: &Transition) -> Vec<(i64, i64, u8, u8)> {
-    let mut out: Vec<(i64, i64, u8, u8)> = chain
-        .iter()
-        .map(|&(r, c, b, a)| {
-            let (rr, cc) = g.apply(r, c);
-            (rr, cc, b, a)
+/// The translator by an integer lattice offset — the lattice peel's transport
+/// as a rational versor.
+pub fn translator_versor(r: i64, c: i64) -> Versor {
+    crate::transducer::cga::translator(
+        &num_rational::BigRational::from_integer(BigInt::from(r)),
+        &num_rational::BigRational::from_integer(BigInt::from(c)),
+    )
+}
+
+/// The versor carrying `from`'s support onto `to`'s, solved in closed form
+/// on the two shapes (see `blade::versor_between`) and verified corner by
+/// corner. None when no rational versor carries one onto the other — the
+/// exact congruence test on the conformal orbit, returning the transport
+/// operator rather than a verdict.
+pub fn transition(from: &[(i64, i64, u8, u8)], to: &[(i64, i64, u8, u8)]) -> Option<Versor> {
+    use crate::transducer::blade::{shape_of, versor_between};
+    let mut a = positions(from);
+    a.sort_unstable();
+    a.dedup();
+    let mut b = positions(to);
+    b.sort_unstable();
+    b.dedup();
+    if a.is_empty() || b.is_empty() {
+        return None;
+    }
+    versor_between(&shape_of(&a), &shape_of(&b))
+}
+
+/// The cell whose unit square contains a rational point — exact
+/// containment on the sensor's own lattice (the floor of a rational is an
+/// exact integer, not a rounding).
+pub fn cell_of(p: &(num_rational::BigRational, num_rational::BigRational)) -> (i64, i64) {
+    let f = |x: &num_rational::BigRational| -> i64 { x.floor().to_integer().try_into().unwrap_or(i64::MAX) };
+    (f(&p.0), f(&p.1))
+}
+
+/// Carry a cell's center by V and read the base point back (None at
+/// infinity).
+pub fn carry_center(v: &Versor, r: i64, c: i64) -> Option<(num_rational::BigRational, num_rational::BigRational)> {
+    let half = num_rational::BigRational::new(BigInt::from(1), BigInt::from(2));
+    let x = num_rational::BigRational::from_integer(BigInt::from(r)) + &half;
+    let y = num_rational::BigRational::from_integer(BigInt::from(c)) + &half;
+    crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&x, &y)))
+}
+
+/// THE PULLBACK of a sibling's assignment onto a base support through the
+/// versor V carrying the sibling onto the base: each base cell's center is
+/// carried back by V⁻¹ to the sibling's frame, and the sibling cell whose
+/// square contains it speaks the transition. Exact at every scale (a
+/// dilated sibling's block, a shrunken sibling's shared cell); None when a
+/// base cell lands outside the sibling.
+pub fn pullback(
+    base: &[(i64, i64)],
+    sibling: &[(i64, i64, u8, u8)],
+    v: &Versor,
+) -> Option<Vec<(u8, u8)>> {
+    let inv = v.versor_inverse()?;
+    let mut sorted: Vec<(i64, i64, u8, u8)> = sibling.to_vec();
+    sorted.sort_unstable();
+    base.iter()
+        .map(|&(r, c)| {
+            let (sr, sc) = cell_of(&carry_center(&inv, r, c)?);
+            sorted
+                .binary_search_by(|x| (x.0, x.1).cmp(&(sr, sc)))
+                .ok()
+                .map(|i| (sorted[i].2, sorted[i].3))
         })
-        .collect();
-    out.sort_unstable();
-    out
-}
-
-/// The group element carrying `from`'s support onto `to`'s, when the two
-/// lie in one orbit: g · supp(from) = supp(to). The first image in [`D4`]
-/// order decides when the support has a stabilizer. None when the supports
-/// are not congruent — this is the exact orbit test, and it returns the
-/// transport operator rather than a verdict.
-pub fn transition(from: &[(i64, i64, u8, u8)], to: &[(i64, i64, u8, u8)]) -> Option<Transition> {
-    let mut target = positions(to);
-    target.sort_unstable();
-    target.dedup();
-    let tr = target.iter().map(|p| p.0).min()?;
-    let tc = target.iter().map(|p| p.1).min()?;
-    for (k, g) in D4.iter().enumerate() {
-        let mut img: Vec<(i64, i64)> = from.iter().map(|(r, c, _, _)| g(*r, *c)).collect();
-        img.sort_unstable();
-        img.dedup();
-        if img.len() != target.len() {
-            return None;
-        }
-        let mr = img.iter().map(|p| p.0).min()?;
-        let mc = img.iter().map(|p| p.1).min()?;
-        let t = (tr - mr, tc - mc);
-        if img.iter().all(|&(r, c)| target.binary_search(&(r + t.0, c + t.1)).is_ok()) {
-            return Some(Transition { d4: k as u8, t });
-        }
-    }
-    None
+        .collect()
 }
 
 /// Apply a hue-map σ (functional from↦to relations) to a transition assignment:
@@ -257,30 +254,6 @@ pub fn derive_hue_map(a: &[(u8, u8)], b: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
 /// The positions skeleton of a centered chain (its base geometry).
 pub fn positions(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64)> {
     chain.iter().map(|(r, c, _, _)| (*r, *c)).collect()
-}
-
-/// The canonical position class of a chain under the substrate's isometry
-/// group ℤ² ⋊ D4: the lexicographic minimum over the eight D4 images, each
-/// re-centered to the origin and sorted. Two chains whose supports are
-/// translations, rotations, or reflections of one another share one class
-/// — congruence evaluated on the orbit [Q]/G, never on raw coordinate
-/// sets. Word addresses are untouched (identity stays coordinate-canonical
-/// and wire-frozen); this is the comparison lens for confluence and
-/// deduplication.
-pub fn orbit_positions(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64)> {
-    D4.iter()
-        .map(|g| {
-            let mut p: Vec<(i64, i64)> = chain.iter().map(|(r, c, _, _)| g(*r, *c)).collect();
-            let min_r = p.iter().map(|(r, _)| *r).min().unwrap_or(0);
-            let min_c = p.iter().map(|(_, c)| *c).min().unwrap_or(0);
-            for cell in p.iter_mut() {
-                *cell = (cell.0 - min_r, cell.1 - min_c);
-            }
-            p.sort_unstable();
-            p
-        })
-        .min()
-        .unwrap_or_default()
 }
 
 /// The transition assignment of a centered chain (its fiber coordinate),
@@ -380,7 +353,7 @@ impl Element {
 
     /// The connection: every (assignment, g) under which a sibling was
     /// transported into this frame.
-    pub fn transitions(&self) -> &[(Vec<(u8, u8)>, Transition)] {
+    pub fn transitions(&self) -> &[(Vec<(u8, u8)>, Versor)] {
         &self.transitions
     }
 
@@ -558,15 +531,11 @@ impl Element {
     /// fibre already speaks), and (assignment, g) joins the connection.
     /// Returns the sections the fibre gained (0 or 1); a g that does not
     /// carry the sibling onto this base changes nothing.
-    pub fn attach(&mut self, sibling: &Element, g: &Transition) -> usize {
-        let moved = transport(&sibling.sub, g);
-        if positions(&moved) != positions(&self.sub) {
-            return 0;
-        }
-        let asg = assignment(&moved);
+    pub fn attach(&mut self, sibling: &Element, g: &Versor) -> usize {
+        let Some(asg) = pullback(&positions(&self.sub), &sibling.sub, g) else { return 0 };
         let gained = self.puncture(asg.clone()) as usize;
-        if !self.transitions.iter().any(|(a, h)| *a == asg && h == g) {
-            self.transitions.push((asg, *g));
+        if !self.transitions.iter().any(|(a, h)| *a == asg && same_versor(h, g)) {
+            self.transitions.push((asg, g.clone()));
         }
         gained
     }
@@ -582,8 +551,8 @@ impl Element {
             }
         }
         for (a, g) in &other.transitions {
-            if !self.transitions.iter().any(|(aa, gg)| aa == a && gg == g) {
-                self.transitions.push((a.clone(), *g));
+            if !self.transitions.iter().any(|(aa, gg)| aa == a && same_versor(gg, g)) {
+                self.transitions.push((a.clone(), g.clone()));
             }
         }
         added
@@ -993,7 +962,7 @@ impl Element {
                     *pos += 2;
                     a.push((bb, ff));
                 }
-                let g = Transition::from_bytes(b, pos)?;
+                let g = Versor::from_bytes(b, pos)?;
                 transitions.push((a, g));
             }
         }
@@ -1224,24 +1193,32 @@ impl Element {
 mod tests {
     use super::*;
 
-    /// Congruence on the orbit [Q]/(ℤ² ⋊ D4): translations, rotations, and
-    /// reflections of a support share one canonical class; a genuinely
-    /// different shape does not.
+    /// Congruence on the conformal orbit: translations, rotations,
+    /// reflections, and exact dilations of a support are carried by a
+    /// rational versor found in closed form; a genuinely different shape
+    /// refuses; the pullback reads a sibling's assignment onto the base at
+    /// any scale exactly.
     #[test]
-    fn the_orbit_class_identifies_isometry_images() {
-        // An L-tromino at the origin.
+    fn the_versor_identifies_conformal_images_and_pulls_back_sections() {
         let l = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2), (1, 0, 1, 2)];
-        // The same L translated far away.
         let shifted: Vec<_> = l.iter().map(|(r, c, b, a)| (r + 7, c + 3, *b, *a)).collect();
-        // The same L rotated a quarter turn (support {(0,0),(1,0),(0,-1)}
-        // before re-centering).
         let rotated = vec![(0i64, 0i64, 1u8, 2u8), (1, 0, 1, 2), (0, -1, 1, 2)];
-        // A straight tromino — a different shape entirely.
         let bar = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2), (0, 2, 1, 2)];
-        assert_eq!(orbit_positions(&l), orbit_positions(&shifted), "translation is quotiented");
-        assert_eq!(orbit_positions(&l), orbit_positions(&rotated), "rotation is quotiented");
-        assert_ne!(orbit_positions(&l), orbit_positions(&bar), "distinct shapes stay distinct");
-        // Coordinate-set equality would have called all three distinct.
+        assert!(transition(&l, &shifted).is_some(), "translation is a versor");
+        assert!(transition(&l, &rotated).is_some(), "rotation is a versor");
+        assert!(transition(&l, &bar).is_none(), "distinct shapes refuse");
+        // A 2× dilated L with other hues: the versor exists and the pullback
+        // reads its assignment onto the base's three cells.
+        let big: Vec<(i64, i64, u8, u8)> = l
+            .iter()
+            .flat_map(|&(r, c, _, _)| {
+                [(2 * r, 2 * c), (2 * r, 2 * c + 1), (2 * r + 1, 2 * c), (2 * r + 1, 2 * c + 1)]
+                    .into_iter()
+                    .map(|(rr, cc)| (rr, cc, 5u8, 6u8))
+            })
+            .collect();
+        let v = transition(&big, &l).expect("a dilation by 1/2 carries the big L onto the L");
+        assert_eq!(pullback(&positions(&l), &big, &v), Some(vec![(5, 6); 3]));
         assert_ne!(positions(&l), positions(&shifted), "the raw lens sees only coordinates");
     }
 
