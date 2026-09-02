@@ -96,6 +96,114 @@ pub fn decode_adopt(body: &[u8]) -> Option<([u8; 32], Vec<u8>)> {
 /// walk.
 pub const ACT_GENESIS: u8 = 0x0F;
 
+/// THE SHEAF SYNC (Q3): a holder asks for the other's section digests over
+/// the atlas; a discordant stratum is then fetched by chart, with the
+/// asker's have-list, so only the lacking words travel (sections and
+/// connection riding with each). Cost scales with divergence.
+/// Digests request: `[ACT_DIGESTS][voice 32]`. Reply: `[n u32]` then per
+/// stratum `[len u8][inv u64·len][count u32][root 32]`.
+pub const ACT_DIGESTS: u8 = 0x10;
+/// Fetch request: `[ACT_FETCH][voice 32][len u8][inv u64·len][n u32][addr 32·n]`.
+/// Reply: the syllabus page shape.
+pub const ACT_FETCH: u8 = 0x11;
+
+pub fn encode_digests_request(voice: &[u8; 32]) -> Vec<u8> {
+    let mut out = vec![ACT_DIGESTS];
+    out.extend_from_slice(voice);
+    out
+}
+
+pub fn decode_digests_request(body: &[u8]) -> Option<[u8; 32]> {
+    if body.first() != Some(&ACT_DIGESTS) || body.len() != 33 {
+        return None;
+    }
+    body.get(1..33)?.try_into().ok()
+}
+
+fn push_invariant(out: &mut Vec<u8>, inv: &crate::transducer::stalk::Invariant) {
+    out.push(inv.0.len().min(255) as u8);
+    for v in inv.0.iter().take(255) {
+        out.extend_from_slice(&v.to_le_bytes());
+    }
+}
+
+fn read_invariant(b: &[u8], p: &mut usize) -> Option<crate::transducer::stalk::Invariant> {
+    let len = *b.get(*p)? as usize;
+    *p += 1;
+    let mut v = Vec::with_capacity(len);
+    for _ in 0..len {
+        v.push(u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?));
+        *p += 8;
+    }
+    Some(crate::transducer::stalk::Invariant(v))
+}
+
+pub fn encode_digests_reply(digests: &[crate::transducer::sheaf::StratumDigest]) -> Vec<u8> {
+    let mut out = Vec::new();
+    out.extend_from_slice(&(digests.len() as u32).to_le_bytes());
+    for d in digests {
+        push_invariant(&mut out, &d.inv);
+        out.extend_from_slice(&d.count.to_le_bytes());
+        out.extend_from_slice(&d.root);
+    }
+    out
+}
+
+pub fn decode_digests_reply(body: &[u8]) -> Option<Vec<crate::transducer::sheaf::StratumDigest>> {
+    let n = u32::from_le_bytes(body.get(0..4)?.try_into().ok()?) as usize;
+    if n > body.len().saturating_sub(4) / 37 {
+        return None; // untrusted count: at least len + count + root per stratum
+    }
+    let mut p = 4usize;
+    let mut out = Vec::with_capacity(n);
+    for _ in 0..n {
+        let inv = read_invariant(body, &mut p)?;
+        let count = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?);
+        p += 4;
+        let root: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
+        p += 32;
+        out.push(crate::transducer::sheaf::StratumDigest { inv, count, root });
+    }
+    Some(out)
+}
+
+pub fn encode_fetch(
+    voice: &[u8; 32],
+    inv: &crate::transducer::stalk::Invariant,
+    have: &[[u8; 32]],
+) -> Vec<u8> {
+    let mut out = vec![ACT_FETCH];
+    out.extend_from_slice(voice);
+    push_invariant(&mut out, inv);
+    out.extend_from_slice(&(have.len() as u32).to_le_bytes());
+    for a in have {
+        out.extend_from_slice(a);
+    }
+    out
+}
+
+pub fn decode_fetch(
+    body: &[u8],
+) -> Option<([u8; 32], crate::transducer::stalk::Invariant, Vec<[u8; 32]>)> {
+    if body.first() != Some(&ACT_FETCH) {
+        return None;
+    }
+    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    let mut p = 33usize;
+    let inv = read_invariant(body, &mut p)?;
+    let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+    p += 4;
+    if n > body.len().saturating_sub(p) / 32 {
+        return None;
+    }
+    let mut have = Vec::with_capacity(n);
+    for _ in 0..n {
+        have.push(body.get(p..p + 32)?.try_into().ok()?);
+        p += 32;
+    }
+    Some((voice, inv, have))
+}
+
 pub fn encode_genesis_request(voice: &[u8; 32], cursor: u32) -> Vec<u8> {
     let mut out = vec![ACT_GENESIS];
     out.extend_from_slice(voice);

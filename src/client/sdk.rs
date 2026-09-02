@@ -741,6 +741,36 @@ impl Entity {
     /// new vocabulary and rebound anchors propagate; the dialect then
     /// re-resolves against the higher-order language on the next study.
     /// Returns how many words were learned this contact.
+    /// THE SHEAF SYNC (Q3): converge this genome on the hypha's language by
+    /// stratum. The hypha's section digests over the atlas arrive; the
+    /// genome measures its own over the same cover; only the discordant
+    /// strata are fetched, each with this genome's have-list, so only the
+    /// lacking words travel (their sections and connection riding along).
+    /// Strata per contact follow the two-stroke ratio; a wide stratum
+    /// converges over successive contacts. Returns the words learned.
+    pub fn sync_genome(&mut self) -> io::Result<usize> {
+        use crate::transducer::sheaf;
+        let voice = self.session.kernel().voice();
+        let body = self.session.speak(dialogue::encode_digests_request(&voice))?;
+        let remote = dialogue::decode_digests_reply(&body).unwrap_or_default();
+        let atlas = sheaf::atlas(self.epigenome.genome());
+        let local = sheaf::digests(&atlas, self.epigenome.genome());
+        let strata: Vec<_> = sheaf::discordant(&remote, &local).into_iter().cloned().collect();
+        let per_contact =
+            (crate::physics::reserve_max() / crate::physics::spend_unit()).max(1) as usize;
+        let mut learned = 0usize;
+        for d in strata.iter().take(per_contact) {
+            let have = sheaf::have(&atlas, self.epigenome.genome(), &d.inv);
+            let body = self.session.speak(dialogue::encode_fetch(&voice, &d.inv, &have))?;
+            for w in dialogue::decode_syllabus_reply(&body).unwrap_or_default() {
+                if self.epigenome.learn(&w).is_some() {
+                    learned += 1;
+                }
+            }
+        }
+        Ok(learned)
+    }
+
     pub fn pull_syllabus(&mut self) -> io::Result<usize> {
         let voice = self.session.kernel().voice();
         let body = self.session.speak(dialogue::encode_syllabus_request(&voice))?;

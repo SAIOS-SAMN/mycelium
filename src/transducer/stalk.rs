@@ -172,6 +172,17 @@ impl Stratum {
     fn len(&self) -> usize {
         self.members.len() + self.branches.iter().map(|(_, s)| s.len()).sum::<usize>()
     }
+
+    fn strata(&self, path: &mut Vec<u64>, out: &mut Vec<(Invariant, Vec<usize>)>) {
+        if !self.members.is_empty() {
+            out.push((Invariant(path.clone()), self.members.clone()));
+        }
+        for (v, s) in &self.branches {
+            path.push(*v);
+            s.strata(path, out);
+            path.pop();
+        }
+    }
 }
 
 /// The atlas over an indexed relation of chains (a basis, a federation):
@@ -218,6 +229,14 @@ impl Stalks {
 
     pub fn is_empty(&self) -> bool {
         self.root.len() == 0
+    }
+
+    /// Every populated stratum as (invariant, members) — the open cover the
+    /// sheaf reconciliation works over. Deterministic order (the trie's).
+    pub fn strata(&self) -> Vec<(Invariant, Vec<usize>)> {
+        let mut out = Vec::new();
+        self.root.strata(&mut Vec::new(), &mut out);
+        out
     }
 }
 

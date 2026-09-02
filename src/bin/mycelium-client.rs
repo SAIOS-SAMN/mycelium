@@ -386,6 +386,18 @@ fn main() {
                     );
                 }
             }
+            // THE SHEAF SYNC (Q3): converge the genome on the hypha's
+            // language by discordant stratum — the entity thinks in the
+            // whole language, not the syllabus drip.
+            if let Ok(n) = entity.sync_genome() {
+                if n > 0 {
+                    learned += n as u64;
+                    eprintln!(
+                        "[{name}] SYNC +{n} words by stratum (genome {})",
+                        entity.epigenome.genome_len(),
+                    );
+                }
+            }
             // REFINEMENT PROBE (0x09): one genome word per syntropic stroke —
             // if the rest of the vocabulary already speaks it, bid the
             // compression. The hypha's replay rules; on acceptance the word

@@ -84,6 +84,46 @@ fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32])
         let _ = stream.write_all(&reply.encode().unwrap_or_default());
         return;
     }
+    // ── sheaf sync: section digests over the atlas, and a stratum fetch —
+    // both reads over the language snapshot, no lock held.
+    if kind == dialogue::ACT_DIGESTS {
+        let Some(_dvoice) = dialogue::decode_digests_request(&frame.body) else { return };
+        let language = match kernel.lock() {
+            Ok(mut k) => k.language(),
+            Err(_) => return,
+        };
+        let digests = mycelium::transducer::sheaf::digests(&language.stalks, &language.words);
+        let reply = Frame { lane: frame.lane, body: dialogue::encode_digests_reply(&digests) };
+        let _ = stream.write_all(&reply.encode().unwrap_or_default());
+        return;
+    }
+    if kind == dialogue::ACT_FETCH {
+        let Some((fvoice, inv, have)) = dialogue::decode_fetch(&frame.body) else { return };
+        let language = match kernel.lock() {
+            Ok(mut k) => k.language(),
+            Err(_) => return,
+        };
+        let budget = mycelium::network::wire::BODY_BUDGET - 64;
+        let words = mycelium::transducer::sheaf::serve(
+            &language.stalks,
+            &language.words,
+            &inv,
+            &have,
+            budget,
+        );
+        if !words.is_empty() {
+            eprintln!(
+                "  fetch voice {:02x} ← {} words of stratum {:?} (had {})",
+                fvoice[0],
+                words.len(),
+                &inv.0[..inv.0.len().min(5)],
+                have.len()
+            );
+        }
+        let reply = Frame { lane: frame.lane, body: dialogue::encode_syllabus_reply(&words) };
+        let _ = stream.write_all(&reply.encode().unwrap_or_default());
+        return;
+    }
     let pbytes = if kind == dialogue::ACT_GOSSIP && rest.len() >= 32 { &rest[32..] } else { rest };
     let (out, voice) = if kind == dialogue::ACT_DEMAND {
         // A spoken, unsolved coboundary challenge — a peer's independent

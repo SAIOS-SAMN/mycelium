@@ -19,3 +19,4 @@ pub mod cech;
 pub mod anchor;
 pub mod spectral;
 pub mod stalk;
+pub mod sheaf;
