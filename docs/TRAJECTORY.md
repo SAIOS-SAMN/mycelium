@@ -43,6 +43,9 @@ registered corpus (currently 3 of 1,120).
 | e99b6f7 | The entity thinks in the algebra (`client/thinking.rs`): a chain is located, not searched — shape, chart, stratum, closed-form versor, replay-verified gauge coordinate; whole chain first, then components; the residual is the irreducible claim; abduction keeps every verified word per piece within the lane's width; the lattice peel leaves the wire path |
 | e3e6d62, ce588cf, 253e711, 75dcb43, 6f67e9c | Continuity and pacing: legacy lattice transports decode to versors so ledgers and genomes load; the book's closure is memoized by listing address across book generations; comprehension locates through the atlas; the condense stroke solves one versor per stroke; the genome's atlas admits in place; shapes lift once per snapshot and per genome; locating is paid per piece from the stroke (deferred pieces are never claimed); the sync uses the genome's own atlas |
 | eb8296b, 91ab844, 1cb3166, e11747a | Comprehension as deconstruction (2026-09-02 evening). Shell from the body's moments: topology (components, holes), the fourth moment, orientation from the inertia's second harmonic or the fourth harmonic, corners retired; moduli as scale-free base coordinates. The sentence algebra (`transducer/sentence.rs`) shared by entity, hypha, and court: deconstruct, replay, seam condition, holonomy; the stratum's multiplicity returned as a measurement. The entity concludes a listing by deconstruction, expresses a residual once, attests it once; taught words are verified before they are held. Family transport comprehension (`transducer/family.rs`): output bodies as transports of input bodies in the chart the pairs agree in, creations and removals, replay on every pair, the residual as the family's demand. The entity's lattice study, dialect beam, anchor evidence, grid projection, stroke budgets, and beam width retire; the hypha's contemplation worker, beam-search decomposition, anchor admission, and projection budget retire; adoption derivability, germ and chain reduction read the language snapshot through deconstruction |
+| 4970b9b … 44e7750 | Conversation (2026-09-02 night). Replay-and-list at the probe (no descent gate); the citation carries its operator and the hearer verifies what was said; voice-aware quoting from the hypha's receipts, open pages first, settled-elsewhere answered as such; bounded persistence on installs; recursion along the gauge fibers; the docket carries the deflation and the court slashes a word that deflated nothing; the syllabus fed by every ratification held; punctures spoken as sections and heard as fiber deepening; the inward stroke glues; the rank persists |
+| (this) | The organs (2026-09-03). `perception/` (eye: the luminal lift; ear: the eleven harmonics as the atlas's axes, tuned by the aperture; touch: topology, fibers, seams; congruence: the reading), `thought/` (deconstruction, family transport, germination; the strokes ascend, descend, expand, contract, puncture), `voice/` (identity with a clock; the five forms and their acts). The session is the mouth; the entity's voice reads the judge's clock on every quote |
+| afc08ae | Remediation (2026-09-02 night). Pressure, relief, and syntropy carry the exact per-lane magnitude of the work; a unit spend runs along the lanes the magnitude occupies; no lane is chosen by a maximum (the [x, 0, x, x] surface dissolves). The quote serves the rank it measures and keeps it as the prior for the next measurement; at a grown basis with no retirement only listings in the strata of the added words are located again. The hypha's k-step chain persists in the ledger with the court head last ruled to it, and every receipt's operator folds the court head; the quote carries the judge's k-step; the entity reports it. A family the connection does not speak, or whose frames disagree, is spoken as anastome: each pair a percept with its frame and proof, once. The transport keeps every reading the pairs agree in and speaks only where the readings render alike; a hue the family never showed has no image; the scene center is a moment of the scene body. The deferral shape is one encoder |
 
 ## Open, in priority order
 
@@ -54,23 +57,26 @@ sensor's cochain and the wire's serialization. Comprehension is the
 deconstruction of a received utterance into the algebra that produced
 it; recall by candidate testing is not comprehension.
 
-1. **Empty quotes: the seal race.** The quote reads the sealed rank; when
-   the basis or book generation moves during the measurement (about 14 s
-   over 3,023 listings), the seal is refused and the last sealed rank is
-   served, which since boot is the empty default. Serve the measured rank
-   whether or not it seals, and make the rank incremental: a new word can
-   only close listings in its own strata, so a basis move re-locates
-   those listings alone (a coordinate read), never the whole book.
-2. **Consensus on family residuals.** Every entity is dispatched the same
-   families and attests the same residual, so two voices install
-   whole-family residuals as words (basis 2,307 → 2,566 in half an hour).
-   A residual attested by two voices that could not comprehend it is not
-   a comprehended word. The second voice should be a replay that speaks
-   it, or the magnitude contract should price it out.
-3. **The temporal coordinate.** The hypha's settlement chain K restarts
-   at 0 on every boot; the court's K persists. A universal event
-   coordinate is (TUniversal, S, G, T = k-step); K must persist per hypha
-   and align with the court's chain.
+1. **The quote's measurement cost.** The measured rank is now served and
+   continued incrementally (afc08ae), but the first measurement after a
+   boot, and any measurement after a retirement, still locates every
+   listing (about 50 s over 3,027 listings on this box). Persist the
+   rank's closures with the ledger, keyed by listing address and word
+   address, so a boot continues from them.
+2. **Consensus on family pairs.** Every entity is dispatched the same
+   families and now speaks the same pairs as percepts, so two voices
+   install the same germs as words (basis 2,307 → 3,863 in one evening).
+   A germ attested by two voices that could not comprehend it is not a
+   comprehended word. The second voice should be a replay that speaks
+   it, or the magnitude contract should price it out. The frame relation
+   ρ = f(moduli) across a family's pairs is the court's to adjudicate as
+   a higher-grade generator; the percepts carry ρ, the ruling does not
+   exist yet.
+3. **The temporal coordinate.** The hypha's chain now persists and links
+   to the court head (afc08ae). Still open: the blade's temporal lane is
+   a scene index, not (TUniversal, k); the percept and settle wires carry
+   no k; the client stamps wall time only. The universal event coordinate
+   is (TUniversal, S, G, T = k-step) on every body and every receipt.
 4. **The court journal epoch and backup.** Unchanged from before.
 5. **Within-body composition.** Deconstruction cites whole bodies; a body
    composed of two words pends as a germ and is the lineage's work on the

@@ -85,6 +85,8 @@ impl Verdict {
 pub struct Session {
     addr: String,
     kernel: Kernel,
+    /// The voice this session is the mouth of.
+    voice: crate::voice::Voice,
     /// Consecutive failed exchanges — the measured transport impedance Z.
     /// Interior mutability: impedance is perception, updated by every
     /// exchange regardless of the calling method's own mutability.
@@ -114,11 +116,22 @@ impl Session {
     /// Point a kernel at a hypha address (e.g. `"127.0.0.1:7500"`). No socket is
     /// held; each submit dials fresh.
     pub fn open(addr: &str, kernel: Kernel) -> Self {
-        Session { addr: addr.to_string(), kernel, resistance: std::cell::Cell::new(0) }
+        let voice = crate::voice::Voice::named(kernel.name());
+        Session { addr: addr.to_string(), kernel, voice, resistance: std::cell::Cell::new(0) }
     }
 
     pub fn kernel(&self) -> &Kernel {
         &self.kernel
+    }
+
+    /// The voice this session speaks with.
+    pub fn voice(&self) -> &crate::voice::Voice {
+        &self.voice
+    }
+
+    /// The voice read the judge's clock.
+    pub fn at(&mut self, k: u64) {
+        self.voice.at(k);
     }
 
     /// The measured impedance Z: consecutive failed exchanges.
@@ -838,6 +851,10 @@ impl Entity {
     }
     pub fn quote(&self) -> io::Result<YieldQuote> {
         self.session.quote()
+    }
+    /// This entity's voice read the judge's clock.
+    pub fn at(&mut self, k: u64) {
+        self.session.at(k);
     }
     pub fn attest(&self, chain: &[(i64, i64, u8, u8)], cites: &[dialogue::CiteWire]) -> io::Result<Reply> {
         self.session.attest(chain, cites)

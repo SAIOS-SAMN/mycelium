@@ -343,36 +343,23 @@ fn ratio_axes(x: &BigRational) -> [u64; 2] {
     [sat(x.numer()), sat(x.denom())]
 }
 
-/// THE MODULI of a body — its coordinates on the base, invariant under
-/// translation, rotation, reflection, and exact dilation, with no group
-/// enumeration: components and holes; the boundary's turning count;
-/// boundary length² over area; det(I)/tr(I)² (anisotropy); tr(I)/n²
-/// (spread per area); the isotropic fourth moment over n³; the hue
-/// fractions sorted. Every ratio is exact and scale-free (the count and
-/// the moments themselves are fiber coordinates: they carry the scale).
-/// Coordinates, never a classifier: the transport decides.
+/// The boundary's length: the count of unit edges with the support on
+/// exactly one side.
+pub fn boundary_length(cells: &[(i64, i64)]) -> usize {
+    let (h, v) = boundary_edges(cells);
+    h.len() + v.len()
+}
+
+/// A rational as two saturated coordinates on the base (public for the
+/// ear, which lays the harmonics out as axes).
+pub fn axes_of(x: &BigRational) -> [u64; 2] {
+    ratio_axes(x)
+}
+
+/// THE MODULI of a body — its coordinates on the base: the ear's
+/// harmonics laid out as axes. See [`crate::perception::ear::Harmonics`].
 pub fn moduli(b: &Blade) -> Vec<u64> {
-    let (h, v) = boundary_edges(&b.cells);
-    let (b0, b1) = topology(&b.cells);
-    let n = b.shell.clone();
-    let edges = q((h.len() + v.len()) as i64);
-    let (ixx, iyy, ixy) = (&b.inertia[0], &b.inertia[1], &b.inertia[2]);
-    let tr = ixx + iyy;
-    let det = ixx * iyy - ixy * ixy;
-    let mut axes = vec![b0, b1, turns(&b.cells) as u64];
-    axes.extend(ratio_axes(&(&edges * &edges / &n)));
-    axes.extend(ratio_axes(&match tr.is_zero() {
-        true => q(0),
-        false => &det / (&tr * &tr),
-    }));
-    axes.extend(ratio_axes(&(&tr / (&n * &n))));
-    axes.extend(ratio_axes(&(&b.quartic[0] / (&n * &n * &n))));
-    let mut fractions: Vec<BigRational> = b.gauge.iter().map(|(_, c)| c / &n).collect();
-    fractions.sort();
-    for f in fractions {
-        axes.extend(ratio_axes(&f));
-    }
-    axes
+    crate::perception::ear::Harmonics::of(b).axes()
 }
 
 /// A body as the carrier a transport is solved on and verified against.

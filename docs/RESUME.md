@@ -39,8 +39,14 @@ and disabled by ruling.
 - The entity concludes a listing by deconstruction, settles it with one
   probe, attests an unclaimed residual once (expressed words dedupe),
   and refuses taught words that do not verify.
-- Known live fault: the quote serves an empty rank when the seal race is
-  lost (TRAJECTORY item 1). The market is silent until that lands.
+- The layout: `perception/` (eye, ear, touch, congruence) is how every
+  kernel perceives scenes and other voices; `thought/` is its mathematics
+  over its own dialect, with the five strokes named; `voice/` is how it
+  speaks. Entity, hypha, and court use the same organs over epigenome,
+  basis, and federation. The transducer modules remain the algebra these
+  organs are built from.
+- The market is live: the measured rank is served and continued, the
+  citation carries its operator, the probe lists what a sentence left.
 - Unique verified solves: 3 standing, 0 since the entities were rebuilt.
 
 ## Immediate next actions

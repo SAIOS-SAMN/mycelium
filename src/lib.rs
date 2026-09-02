@@ -9,6 +9,9 @@
 // Shared: exact algebra, transduction, wire, physics, chronometry.
 pub mod core;
 pub mod transducer;
+pub mod perception;
+pub mod thought;
+pub mod voice;
 pub mod network;
 pub mod ccl;
 pub mod physics;

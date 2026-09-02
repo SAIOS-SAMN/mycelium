@@ -278,6 +278,7 @@ fn main() {
         match if occluded { Ok(YieldQuote { surface: [0; 4], k: k_step, clusters: Vec::new() }) } else { entity.quote() } {
             Ok(q) => {
                 k_step = q.k;
+                entity.at(q.k);
                 concluded.retain(|a| q.clusters.iter().any(|c| c.address == *a));
                 let (mut n_closed, mut n_descent, mut n_nothing, mut n_settled, mut n_silent, mut n_attested, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32, 0u32, 0u32);
                 for cluster in &q.clusters {
