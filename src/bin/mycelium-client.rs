@@ -125,6 +125,7 @@ fn main() {
     // proj_solved = verified correct (bounty + floor); uniq_solved = FIRST
     // verified solves (the only ones that count as new useful work).
     let (mut projected, mut proj_solved, mut uniq_solved) = (0u64, 0u64, 0u64);
+    let mut refined = 0u64; // accepted compression bids (0x09)
     let (mut last_genome, mut last_settles) = (usize::MAX, u64::MAX);
     let start = Instant::now();
     // The feed walk: (task index within the cycle order, pair index within it).
@@ -343,6 +344,23 @@ fn main() {
 
         // ── SYNTROPIC PHASE — crystallize, voice change, regenerate.
         if physics.depleted() {
+            // REFINEMENT PROBE (0x09): one genome word per syntropic stroke —
+            // if the rest of the vocabulary already speaks it, bid the
+            // compression. The hypha's replay rules; on acceptance the word
+            // retires fleet-wide and the entity earns the compression yield.
+            if let Some(word) = entity.seek_refinement() {
+                if let Ok((code, mu)) = entity.bid_refinement(&word) {
+                    if code == mycelium::anastome::dialogue::REFINE_ACCEPTED {
+                        refined += 1;
+                        eprintln!(
+                            "[{name}] REFINED {:02x}{:02x}… (vocabulary compressed, genome {}) μ⃗ {mu:?}",
+                            word[0],
+                            word[1],
+                            entity.epigenome.genome_len(),
+                        );
+                    }
+                }
+            }
             if entity.epigenome.genome_len() != last_genome || settles != last_settles {
                 if entity.epigenome.genome_len() != last_genome {
                     let _ = entity.save_genome(&genome_path);
@@ -350,7 +368,7 @@ fn main() {
                 last_genome = entity.epigenome.genome_len();
                 last_settles = settles;
                 eprintln!(
-                    "[{name}] {:.0}s | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | genome {} (peak expr {})",
+                    "[{name}] {:.0}s | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | refined {refined} | genome {} (peak expr {})",
                     start.elapsed().as_secs_f64(),
                     entity.epigenome.genome_len(),
                     entity.epigenome.peak_expression(),

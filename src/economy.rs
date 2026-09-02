@@ -275,6 +275,14 @@ impl Treasury {
         self.pay("utility", who, mu, anchor)
     }
 
+    /// THE COMPRESSION YIELD (refinement bid, 0x09): a bidder proved an
+    /// existing word derivable — the vocabulary shrank while holonomy held.
+    /// Systemic entropy reduction is paid work. Float-bounded.
+    pub fn settle_refine(&mut self, bidder: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+        let bounded = self.award_bound(mu);
+        self.pay("refine", bidder, bounded, anchor)
+    }
+
     /// A VERIFIED SOLVE (PoUW): the registry confirmed a prediction against
     /// its held answers — the one settlement species whose usefulness is
     /// externally verified before it books. Float-law bounded; the

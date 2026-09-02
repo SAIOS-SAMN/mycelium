@@ -267,6 +267,29 @@ impl Epigenome {
         &self.recollections
     }
 
+    /// RETIRE a word whose meaning the rest of the genome already carries
+    /// (the accepted compression bid). Expression rides along (parallel
+    /// vector); recollections citing the retired index dissolve — they were
+    /// spellings in the old vocabulary — and surviving citations reindex.
+    pub fn retire(&mut self, addr: &[u8; 32]) -> bool {
+        let Some(i) = self.genome.iter().position(|w| w.address() == *addr) else {
+            return false;
+        };
+        self.genome.remove(i);
+        if i < self.expression.len() {
+            self.expression.remove(i);
+        }
+        self.recollections.retain(|(s, _)| !s.contains(&i));
+        for (s, _) in self.recollections.iter_mut() {
+            for j in s.iter_mut() {
+                if *j > i {
+                    *j -= 1;
+                }
+            }
+        }
+        true
+    }
+
     /// COMPREHEND a received utterance: decompose it over the genome (the shared
     /// projective mathematics, `cognition::decompose_over`) and fold the
     /// understanding into the epigenome — expression weights rise on the cited
@@ -376,11 +399,19 @@ pub struct Entity {
     /// Verified dialect findings awaiting the wire (bounded queue) — flushed
     /// as anchor-evidence deposits so local thought feeds the court.
     evidence_out: Vec<([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)>,
+    /// Rotating cursor for the refinement probe — one genome word examined
+    /// per stroke, so the compression search is metabolic, never a sweep.
+    refine_cursor: usize,
 }
 
 impl Entity {
     pub fn open(addr: &str, kernel: Kernel) -> Self {
-        Entity { session: Session::open(addr, kernel), epigenome: Epigenome::new(), evidence_out: Vec::new() }
+        Entity {
+            session: Session::open(addr, kernel),
+            epigenome: Epigenome::new(),
+            evidence_out: Vec::new(),
+            refine_cursor: 0,
+        }
     }
 
     /// Open with CONTINUITY: restore the crystallized genome from `genome_path`
@@ -542,6 +573,46 @@ impl Entity {
         let voice = self.session.kernel().voice();
         let body = self.session.speak(dialogue::encode_solve(&voice, id, outputs))?;
         Ok(dialogue::decode_solve_receipt(&body).unwrap_or((dialogue::SOLVE_NOTHING, [0; 4])))
+    }
+
+    /// SEEK REFINEMENT — the compression probe (0x09, one word per stroke):
+    /// advance the cursor to the next genome word and ask, in the entity's
+    /// OWN language, whether the rest of the genome already speaks it
+    /// (decompose its substance with itself excluded). A derivable word is a
+    /// redundancy the vocabulary is carrying — a compression bid. The probe
+    /// is a virtual rollout (zero mutation); the hypha's deterministic
+    /// replay, not this discovery, decides retirement.
+    pub fn seek_refinement(&mut self) -> Option<[u8; 32]> {
+        let g = self.epigenome.genome();
+        if g.len() < 2 {
+            return None;
+        }
+        self.refine_cursor = (self.refine_cursor + 1) % g.len();
+        let i = self.refine_cursor;
+        let sub = g[i].substance();
+        if sub.sub().is_empty() {
+            return None;
+        }
+        match decompose_over(g, sub.sub(), Some(i), 4, 16) {
+            Ok(sentence) if !sentence.is_empty() => Some(g[i].address()),
+            _ => None,
+        }
+    }
+
+    /// BID the refinement on the wire: `(REFINE_ACCEPTED, μ⃗ compression
+    /// yield)` if the hypha's replay confirms and the word retires;
+    /// `(REFINE_NOTHING, 0⃗)` otherwise. On acceptance the entity drops its
+    /// own copy too — the compression is global, and its next decomposition
+    /// of the retired meaning re-derives the sentence form.
+    pub fn bid_refinement(&mut self, word: &[u8; 32]) -> io::Result<(u8, [u64; 4])> {
+        let voice = self.session.kernel().voice();
+        let body = self.session.speak(dialogue::encode_refine(&voice, word))?;
+        let (code, mu) =
+            dialogue::decode_solve_receipt(&body).unwrap_or((dialogue::REFINE_NOTHING, [0; 4]));
+        if code == dialogue::REFINE_ACCEPTED {
+            self.epigenome.retire(word);
+        }
+        Ok((code, mu))
     }
 
     /// FLUSH verified dialect findings to the hypha as anchor evidence — the

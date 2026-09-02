@@ -125,6 +125,60 @@ impl TaskRegistry {
         None
     }
 
+    /// SNAPSHOT the settlement states — `[n u32][(id 32)(settled u8)(count
+    /// u32)]·n`. The TASKS re-register from corpus at boot (content is
+    /// identity, so ids are stable across restarts); only the STATES need
+    /// disk. Without this, a hypha restart resets Settled → Unsolved and a
+    /// crash-loop becomes a replay-bounty mint.
+    pub fn snapshot(&self) -> Vec<u8> {
+        let mut out = Vec::with_capacity(4 + self.tasks.len() * 37);
+        out.extend_from_slice(&(self.tasks.len() as u32).to_le_bytes());
+        for (id, _, state) in &self.tasks {
+            out.extend_from_slice(id);
+            match state {
+                TaskState::Unsolved => {
+                    out.push(0);
+                    out.extend_from_slice(&0u32.to_le_bytes());
+                }
+                TaskState::Settled(n) => {
+                    out.push(1);
+                    out.extend_from_slice(&n.to_le_bytes());
+                }
+            }
+        }
+        out
+    }
+
+    /// OVERLAY persisted states onto the registered book (call after corpus
+    /// registration). Ids that no longer exist in the corpus are skipped —
+    /// the corpus is the authority on WHAT exists; the snapshot only on what
+    /// was already settled. Returns how many states were restored.
+    pub fn overlay(&mut self, bytes: &[u8]) -> usize {
+        let Some(n) = bytes.get(0..4).map(|b| u32::from_le_bytes(b.try_into().unwrap()) as usize)
+        else {
+            return 0;
+        };
+        let mut restored = 0usize;
+        let mut p = 4usize;
+        for _ in 0..n {
+            let Some(id) = bytes.get(p..p + 32) else { break };
+            let (Some(&settled), Some(count)) = (
+                bytes.get(p + 32),
+                bytes.get(p + 33..p + 37).map(|b| u32::from_le_bytes(b.try_into().unwrap())),
+            ) else {
+                break;
+            };
+            p += 37;
+            if settled == 1 {
+                if let Some(entry) = self.tasks.iter_mut().find(|(t, _, _)| t == id) {
+                    entry.2 = TaskState::Settled(count);
+                    restored += 1;
+                }
+            }
+        }
+        restored
+    }
+
     /// VERIFY-AND-SETTLE a submission: predictions must match the held test
     /// outputs EXACTLY (the server is the authority — it holds the answers
     /// for its registered corpus). First verified solve → full bounty;
@@ -189,6 +243,28 @@ mod tests {
         );
         assert_eq!(reg.settle(&[9u8; 32], &right), SolveYield::Nothing, "no origin, no yield");
         assert_eq!(reg.unsolved(), 0);
+    }
+
+    /// A restart must not resurrect settled bounties: snapshot → fresh
+    /// registry (corpus re-registered) → overlay → the replay still
+    /// collapses to the floor.
+    #[test]
+    fn settled_states_survive_the_restart_overlay() {
+        let mut reg = TaskRegistry::new();
+        let id = reg.register(toy_task());
+        let right = vec![vec![vec![0u8, 0], vec![2, 2]]];
+        assert!(matches!(reg.settle(&id, &right), SolveYield::Bounty(_)));
+        let snap = reg.snapshot();
+
+        let mut reborn = TaskRegistry::new();
+        reborn.register(toy_task()); // corpus re-registration at boot
+        assert_eq!(reborn.overlay(&snap), 1, "one settled state restored");
+        assert_eq!(
+            reborn.settle(&id, &right),
+            SolveYield::VerifyFloor,
+            "the restart must not re-mint the bounty"
+        );
+        assert_eq!(reborn.overlay(&[]), 0, "garbage snapshot restores nothing");
     }
 
     /// Dispatch rotates over the unsolved book and dries up when settled.

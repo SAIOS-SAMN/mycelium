@@ -37,6 +37,32 @@ pub const ACT_TASK: u8 = 0x0B;
 /// task_id; the hypha verifies against its held answers — first verified
 /// solve takes the bounty, replays collapse to the verification floor.
 pub const ACT_SOLVE: u8 = 0x0C;
+/// REFINEMENT BID (compression IS learning): a client claims basis word W
+/// is derivable — the rest of the vocabulary already speaks it (S' ≺_DM S,
+/// holonomy preserved because the replacement IS a decomposition of W's own
+/// substance). The hypha verifies by deterministic replay; on success the
+/// word retires, the vocabulary compresses, and the bidder earns the
+/// compression yield. `[ACT_REFINE][voice 32][word address 32]`.
+/// Receipt: solve-receipt shape — `[REFINE_ACCEPTED|REFINE_NOTHING][μ⃗ 32]`.
+pub const ACT_REFINE: u8 = 0x09;
+pub const REFINE_ACCEPTED: u8 = 1;
+pub const REFINE_NOTHING: u8 = 0;
+
+pub fn encode_refine(voice: &[u8; 32], word: &[u8; 32]) -> Vec<u8> {
+    let mut out = vec![ACT_REFINE];
+    out.extend_from_slice(voice);
+    out.extend_from_slice(word);
+    out
+}
+
+pub fn decode_refine(body: &[u8]) -> Option<([u8; 32], [u8; 32])> {
+    if body.first() != Some(&ACT_REFINE) || body.len() != 65 {
+        return None;
+    }
+    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    let word: [u8; 32] = body.get(33..65)?.try_into().ok()?;
+    Some((voice, word))
+}
 
 fn push_grid(out: &mut Vec<u8>, g: &[Vec<u8>]) {
     out.extend_from_slice(&(g.len() as u16).to_le_bytes());

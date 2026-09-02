@@ -115,8 +115,13 @@ fn main() {
             }
             reg.register(task);
         }
+        // Settled states OVERLAY from disk after content re-registration — a
+        // restart must not resurrect settled bounties (the crash-loop mint).
+        let restored = std::fs::read(format!("{state_path}.registry"))
+            .map(|b| reg.overlay(&b))
+            .unwrap_or(0);
         eprintln!(
-            "corpus registered: {} tasks from {corpus_dir} ({} unsolved, {listed} demands listed)",
+            "corpus registered: {} tasks from {corpus_dir} ({} unsolved, {listed} demands listed, {restored} settled states restored)",
             reg.len(),
             reg.unsolved(),
         );
@@ -250,7 +255,14 @@ fn main() {
                 match reg.settle(&tid, &outputs) {
                     mycelium::registry::SolveYield::Bounty(tension) => {
                         // FIRST VERIFIED SOLVE: the full bounty, priced at the
-                        // surface, float-law bounded like every award.
+                        // surface, float-law bounded like every award. The
+                        // settled state persists NOW — a restart between here
+                        // and the next snapshot must not re-mint this bounty.
+                        let snap = reg.snapshot();
+                        let tmp = format!("{state_path}.registry.tmp");
+                        if std::fs::write(&tmp, &snap).is_ok() {
+                            let _ = std::fs::rename(&tmp, format!("{state_path}.registry"));
+                        }
                         let mut k = kernel.lock().unwrap();
                         let surface = mycelium::economy::yield_surface(k.physics());
                         let priced = mycelium::economy::price(&tension, &surface);
@@ -278,6 +290,28 @@ fn main() {
                     _ => "nothing",
                 },
             );
+            let reply =
+                Frame { lane: frame.lane, body: dialogue::encode_solve_receipt(code, &mu) };
+            let _ = s.write_all(&reply.encode().unwrap_or_default());
+            continue;
+        }
+
+        // ── refine: a compression bid — verified by deterministic replay ─────
+        if kind == dialogue::ACT_REFINE {
+            let Some((rvoice, word)) = dialogue::decode_refine(&frame.body) else { continue };
+            let (code, mu) = {
+                let mut k = kernel.lock().unwrap();
+                match k.try_refine(&word, rvoice) {
+                    Some(paid) => (dialogue::REFINE_ACCEPTED, paid),
+                    None => (dialogue::REFINE_NOTHING, [0; 4]),
+                }
+            };
+            if code == dialogue::REFINE_ACCEPTED {
+                eprintln!(
+                    "  refine voice {:02x} word {:02x}{:02x}… RETIRED (vocabulary compressed) μ⃗ {mu:?}",
+                    rvoice[0], word[0], word[1],
+                );
+            }
             let reply =
                 Frame { lane: frame.lane, body: dialogue::encode_solve_receipt(code, &mu) };
             let _ = s.write_all(&reply.encode().unwrap_or_default());

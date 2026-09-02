@@ -311,6 +311,43 @@ impl Kernel {
         self.treasury.settle_solve(voice, mu, anchor)
     }
 
+    /// THE REFINEMENT BID (0x09 — compression IS learning): a client claims
+    /// basis word W is DERIVABLE — the rest of the basis already speaks it.
+    /// Verification is the redundancy probe's own deterministic replay
+    /// (decompose W's substance with W excluded); no trust, no vote. On
+    /// success: W retires (the vocabulary compresses — ontological
+    /// optimization, halting geometric bloat), the bidder earns the
+    /// COMPRESSION YIELD Δ‖·‖_DM × tension (float-bounded), and the rewrite
+    /// seals a K-step. Provisional words are the court's business — refused.
+    pub fn try_refine(&mut self, addr: &[u8; 32], bidder: [u8; 32]) -> Option<[u64; 4]> {
+        let i = self.basis.iter().position(|t| t.address() == *addr)?;
+        if self.provisional.iter().any(|(a, _)| a == addr) {
+            return None;
+        }
+        // Never a BUNDLE — its sections/cycles carry family volume no other
+        // word speaks (the redundancy probe's own guard).
+        let candidate = self.basis[i].clone();
+        if !candidate.sections().is_empty() || !candidate.torsion().is_empty() {
+            return None;
+        }
+        match self.reduce_excluding(&candidate, Some(i)) {
+            NormalForm::Decomposed(_) => {
+                let saved = candidate.magnitude();
+                let surface = crate::economy::yield_surface(&self.physics);
+                let mu = crate::economy::price(&saved, &surface);
+                let anchor = self.anchor();
+                let paid = self.treasury.settle_refine(bidder, mu, anchor);
+                self.basis.remove(i);
+                self.discoverers.remove(i);
+                // Compression is ORDER BUILT — the syntropic ledger credits it.
+                self.physics.syntropy(candidate.lanes());
+                self.chain.append(*addr, bidder); // the global rewrite is a K-step
+                Some(paid)
+            }
+            _ => None,
+        }
+    }
+
     /// THE CORPUS INTAKE DOOR (server-side ingestion authority): an
     /// un-factored demand from the hypha's OWN registered corpus lists on
     /// the open market under the same thermodynamic discipline as every
@@ -1842,6 +1879,47 @@ mod tests {
         assert_eq!(k.basis_len(), 1, "the redundant rule is consolidated away");
         k.optimize(); // the survivor is essential — nothing else derives it
         assert_eq!(k.basis_len(), 1, "an essential generator survives the probe");
+    }
+
+    /// THE REFINEMENT BID (0x09): a bidder claims a word the rest of the
+    /// vocabulary already speaks; the kernel's deterministic replay confirms,
+    /// the word retires (compression), the bidder earns the yield. A bid on
+    /// an ESSENTIAL word is refused — nothing else derives it.
+    #[test]
+    fn a_refinement_bid_retires_a_derivable_word_and_pays_the_bidder() {
+        use crate::transducer::element::from_residual;
+        use crate::transducer::germinate::germinate;
+        let mut k = Kernel::new();
+        k.enroll([9; 32], crate::economy::Tier::Validator); // capitalize the pool
+        // Two stale duplicates of the same deformation germinated far apart —
+        // identical substance after centering (what an import or a
+        // pre-consolidation era leaves). Neither is provisional: this is
+        // final vocabulary carrying a redundancy.
+        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+        let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
+        let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
+        let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
+        k.basis.push(from_residual(&germinate(&a, &rot).unwrap()));
+        k.discoverers.push([1; 32]);
+        k.basis.push(from_residual(&germinate(&a_far, &rot_far).unwrap()));
+        k.discoverers.push([7; 32]);
+        let derivable = k.basis[0].address(); // its duplicate speaks it
+        let paid = k.try_refine(&derivable, [5; 32]);
+        assert!(paid.is_some(), "the derivable word is a confirmed compression bid");
+        assert_eq!(k.basis_len(), 1, "the vocabulary compressed");
+        let essential = k.basis[0].address();
+        assert!(k.try_refine(&essential, [5; 32]).is_none(), "an essential word is refused");
+        assert_eq!(k.basis_len(), 1, "refusal mutates nothing");
+        assert!(k.try_refine(&[3; 32], [5; 32]).is_none(), "an unknown address is refused");
+
+        // THE COURT'S BUSINESS STAYS THE COURT'S: a provisional word cannot be
+        // bid away, even if derivable.
+        k.basis.push(from_residual(&germinate(&a, &rot).unwrap()));
+        k.discoverers.push([1; 32]);
+        let addr = k.basis[1].address();
+        k.provisional.push((addr, k.basis[1].clone()));
+        assert!(k.try_refine(&addr, [5; 32]).is_none(), "provisional words are refused");
+        assert_eq!(k.basis_len(), 2);
     }
 
     /// THE PROJECTIVE LEAP (operator ruling): greedy largest-first descent is the
