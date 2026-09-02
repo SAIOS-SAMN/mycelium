@@ -83,3 +83,10 @@ registered corpus (currently 3 of 1,120).
 - Servers hold no dialects; the court is the only author of the
   universal genome; the court never holds yield.
 - Neutral technical register in all documentation.
+
+## Status notes (append at each landing)
+
+- 34:A1 — re-audit in flight (transient unit, see docs/RESUME.md):
+  federation 1020 @ K=2121, orbit-era demotions ~19. Orbit lens alone
+  contracts little; the mass is hue-distinct dust (items 5–6 are the
+  lever). Four-lane surfaces verified on hypha-a and hypha-b.
