@@ -490,14 +490,30 @@ pub type WorkItem = ([u8; 32], [u64; 4], Vec<Cell>);
 
 /// `[ACT_QUOTE][surface 4×u64][n u8][item: addr 32 | μ⃗ 4×u64 | chain]…`
 pub fn encode_quote_reply(surface: &[u64; 4], items: &[WorkItem]) -> Vec<u8> {
+    encode_quote_reply_within(surface, items, usize::MAX)
+}
+
+/// The quote reply filled up to `budget` bytes: items ride in rank order
+/// until the next would not fit. The frame budget decides what a contact
+/// can carry; a wide book is served across contacts, never as a frame the
+/// wire refuses.
+pub fn encode_quote_reply_within(surface: &[u64; 4], items: &[WorkItem], budget: usize) -> Vec<u8> {
     let mut out = vec![ACT_QUOTE];
     push_mu(&mut out, surface);
-    out.push(items.len().min(255) as u8);
+    let count_at = out.len();
+    out.push(0);
+    let mut served = 0u8;
     for (addr, mu, chain) in items.iter().take(255) {
+        let item_len = 32 + 32 + 4 + chain.len() * 18;
+        if out.len() + item_len > budget {
+            break;
+        }
         out.extend_from_slice(addr);
         push_mu(&mut out, mu);
         push_chain(&mut out, chain);
+        served += 1;
     }
+    out[count_at] = served;
     out
 }
 

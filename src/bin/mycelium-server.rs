@@ -75,12 +75,21 @@ fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32])
         };
         let items: Vec<dialogue::WorkItem> =
             priced.iter().map(|(e, mu)| (e.address(), *mu, e.sub().to_vec())).collect();
-        eprintln!(
-            "  quote voice {:02x} → surface {surface:?}; {} clusters; K={k_step}; cohesion {cohesion:?}",
-            qvoice[0],
-            items.len()
+        // The frame budget bounds what one contact carries: items ride in
+        // rank order until the next would not fit.
+        let body = dialogue::encode_quote_reply_within(
+            &surface,
+            &items,
+            mycelium::network::wire::BODY_BUDGET,
         );
-        let reply = Frame { lane: frame.lane, body: dialogue::encode_quote_reply(&surface, &items) };
+        let served = body.get(33).copied().unwrap_or(0);
+        eprintln!(
+            "  quote voice {:02x} → surface {surface:?}; {served}/{} clusters ({} bytes); K={k_step}; cohesion {cohesion:?}",
+            qvoice[0],
+            items.len(),
+            body.len()
+        );
+        let reply = Frame { lane: frame.lane, body };
         let _ = stream.write_all(&reply.encode().unwrap_or_default());
         return;
     }
