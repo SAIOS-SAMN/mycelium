@@ -126,6 +126,9 @@ pub struct Element {
     /// Vec-of-relations; excluded from the address (a connection deepens the
     /// thought, it does not rename it).
     transitions: Vec<(Vec<(u8, u8)>, Transition)>,
+    /// The memoized address — a measurement of the base (word, dim, fibers),
+    /// taken once and cleared wherever the base mutates. Never serialized.
+    address: std::cell::OnceCell<[u8; 32]>,
 }
 
 /// The eight isometries of D4 as exact coordinate maps, in a fixed order:
@@ -300,6 +303,7 @@ impl Element {
             sections: Vec::new(),
             torsion: Vec::new(),
             transitions: Vec::new(),
+            address: std::cell::OnceCell::new(),
             anchor: None,
         }
     }
@@ -313,6 +317,7 @@ impl Element {
     pub fn set_fiber(&mut self, index: u16, mat: QMatrix) {
         assert_eq!(mat.len(), self.dim, "generator dimension mismatch");
         assert!(mat.iter().all(|r| r.len() == self.dim), "generator not square");
+        self.address.take();
         self.fibers.retain(|(i, _)| *i != index);
         if !is_identity(&mat) {
             self.fibers.push((index, mat));
@@ -762,7 +767,7 @@ impl Element {
     /// excluded: a pierced axis deepens the thought's volume without changing
     /// which word it is). Wire/cache identity; never a reasoning operand.
     pub fn address(&self) -> [u8; 32] {
-        *blake3::hash(&self.base_canonical()).as_bytes()
+        *self.address.get_or_init(|| *blake3::hash(&self.base_canonical()).as_bytes())
     }
 
     /// Serialize the FULL element (dim, coordinate-exact word, mag, exact-ℚ fibers)
@@ -981,7 +986,18 @@ impl Element {
                 transitions.push((a, g));
             }
         }
-        Some(Element { dim, fibers, word, mag, sub, sections, torsion, anchor, transitions })
+        Some(Element {
+            dim,
+            fibers,
+            word,
+            mag,
+            sub,
+            sections,
+            torsion,
+            anchor,
+            transitions,
+            address: std::cell::OnceCell::new(),
+        })
     }
 }
 
@@ -1066,6 +1082,7 @@ pub fn from_residual(g: &ResidualGerm) -> Element {
 
     let mut e = Element::identity(GERM_DIM).with_fiber(FIBER_SPATIAL, m);
     e.word = residual_word(&centered);
+    e.address.take();
     e.mag = measure_lanes(&centered);
     e.sub = centered;
     e
@@ -1135,6 +1152,7 @@ impl Element {
     pub fn substance(&self) -> Element {
         let mut out = self.clone();
         out.word = Vec::new(); // the substance is translation-invariant, not the exact word
+        out.address.take();
         for (i, m) in out.fibers.iter_mut() {
             if *i == FIBER_SPATIAL && m.len() == GERM_DIM {
                 m[0][2] = Q::zero(); // zero the spatial translation column
