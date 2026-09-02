@@ -300,6 +300,10 @@ pub struct Epigenome {
     /// the entity reasons with its highest-precision local knowledge without
     /// waiting on the court's slower global cycle.
     dialect: Vec<(Vec<(i64, i64, u8, u8)>, Option<Sel>)>,
+    /// The beam's retained ALTERNATIVE READING (joint consensus): when the
+    /// head dialect goes silent on a sibling test input, projection falls
+    /// to this reading — one reading must serve every test jointly.
+    dialect_alt: Vec<(Vec<(i64, i64, u8, u8)>, Option<Sel>)>,
 }
 
 impl Epigenome {
@@ -509,6 +513,7 @@ impl Entity {
     /// entity's current language — honest silence).
     pub fn study(&mut self, family: &[(Grid, Grid)]) -> usize {
         self.epigenome.dialect.clear();
+        self.epigenome.dialect_alt.clear();
         if family.is_empty() {
             return 0;
         }
@@ -547,6 +552,7 @@ impl Entity {
                 .collect()
         };
         let mut spoken: Vec<(Vec<(i64, i64, u8, u8)>, Option<Sel>)> = Vec::new();
+        let mut spoken_alt: Vec<(Vec<(i64, i64, u8, u8)>, Option<Sel>)> = Vec::new();
         let mut findings: Vec<([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)> = Vec::new();
         for &wi in &cited {
             let word_addr = self.epigenome.genome()[wi].address();
@@ -583,21 +589,43 @@ impl Entity {
                 if binding.is_some() {
                     findings.push((word_addr, witnesses[0].0.clone(), witnesses[0].1.clone()));
                 }
+                // JOINT CONSENSUS (the gate's missing thought-form): the
+                // beam's runner-up is retained as a full ALTERNATIVE READING
+                // — projection later demands one reading serve EVERY test
+                // input jointly, and falls to the alternative when the head
+                // reading goes silent on a sibling.
+                let alt = match &binding {
+                    Some(head) => {
+                        let rest: Vec<Sel> =
+                            commons.iter().filter(|t| *t != head).cloned().collect();
+                        collapse_beam(&rest, &witnesses).or_else(|| binding.clone())
+                    }
+                    None => None,
+                };
+                spoken_alt.push((chain.clone(), alt));
                 spoken.push((chain, binding));
             }
         }
-        // 3. ROLLOUT — the dialect must re-derive its own evidence exactly.
-        for ((_, b), refined_in) in family.iter().zip(&scenes) {
-            let refined_got = apply_bound_chains(refined_in, &spoken);
-            let ok = readback(&refined_got, b.len(), b.first().map_or(0, |r| r.len()))
-                .is_some_and(|g| g == *b);
-            if !ok {
-                return 0; // δσ̂ ≠ 0 on a pair: terminal curvature, pruned whole
-            }
+        // 3. ROLLOUT — each candidate dialect must re-derive its own
+        // evidence exactly. The primary is terminal (δσ̂ ≠ 0 prunes the
+        // study whole); a failing alternative collapses back to the primary.
+        let closes = |dialect: &[(Vec<(i64, i64, u8, u8)>, Option<Sel>)]| {
+            family.iter().zip(&scenes).all(|((_, b), refined_in)| {
+                let refined_got = apply_bound_chains(refined_in, dialect);
+                readback(&refined_got, b.len(), b.first().map_or(0, |r| r.len()))
+                    .is_some_and(|g| g == *b)
+            })
+        };
+        if !closes(&spoken) {
+            return 0; // δσ̂ ≠ 0 on a pair: terminal curvature, pruned whole
+        }
+        if spoken_alt != spoken && !closes(&spoken_alt) {
+            spoken_alt = spoken.clone();
         }
         // 4. CRYSTALLIZE + SEED.
         let size = spoken.len();
         self.epigenome.dialect = spoken;
+        self.epigenome.dialect_alt = spoken_alt;
         self.evidence_out.extend(findings);
         self.evidence_out.truncate(64);
         size
@@ -720,10 +748,38 @@ impl Entity {
     /// genome speaks alone. Only bound speech acts; the unrefined stay
     /// silent — a young mind projects humbly.
     pub fn project(&self, grid: &crate::arc::Grid) -> (crate::arc::Grid, Vec<usize>) {
-        if !self.epigenome.dialect.is_empty() {
-            let out = apply_bound_chains(grid, &self.epigenome.dialect);
+        self.project_variant(grid, 0)
+    }
+
+    /// The number of candidate readings the last study retained (1 when the
+    /// beam had no distinct runner-up). Joint consensus iterates these: one
+    /// reading must serve every test input of a family.
+    pub fn dialect_variants(&self) -> usize {
+        if !self.epigenome.dialect_alt.is_empty()
+            && self.epigenome.dialect_alt != self.epigenome.dialect
+        {
+            2
+        } else {
+            1
+        }
+    }
+
+    /// Project with a specific retained reading: 0 = the spectral head,
+    /// 1 = the beam's alternative (rollout-verified or collapsed to the
+    /// head at study time).
+    pub fn project_variant(
+        &self,
+        grid: &crate::arc::Grid,
+        variant: usize,
+    ) -> (crate::arc::Grid, Vec<usize>) {
+        let dialect = match variant {
+            0 => &self.epigenome.dialect,
+            _ => &self.epigenome.dialect_alt,
+        };
+        if !dialect.is_empty() {
+            let out = apply_bound_chains(grid, dialect);
             let spoke: Vec<usize> =
-                if out != *grid { (0..self.epigenome.dialect.len()).collect() } else { Vec::new() };
+                if out != *grid { (0..dialect.len()).collect() } else { Vec::new() };
             return (out, spoke);
         }
         crate::arc::project_anchored(grid, self.epigenome.genome())

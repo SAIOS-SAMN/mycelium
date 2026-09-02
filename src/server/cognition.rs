@@ -349,6 +349,24 @@ impl Kernel {
         }
     }
 
+    /// GENOME SYNCHRONIZATION, commit step (operator-ruled: servers hold no
+    /// dialects — one universal genome on the server plane, authored only
+    /// by the court's finality). The caller (the deliberation worker) has
+    /// already verified the blind replay and derivability OFF the lock on a
+    /// basis snapshot; this brief step re-checks presence and installs. The
+    /// ratifying voice is the discoverer of record — real provenance, no
+    /// sentinel identity.
+    pub fn install_adopted(&mut self, word: &Element, ratifier: [u8; 32]) -> Adoption {
+        let addr = word.address();
+        if self.basis.iter().any(|t| t.address() == addr) {
+            return Adoption::Known;
+        }
+        self.basis.push(word.clone());
+        self.discoverers.push(ratifier);
+        self.physics.syntropy(word.lanes()); // convergence is order built
+        Adoption::Installed
+    }
+
     /// THE CORPUS INTAKE DOOR (server-side ingestion authority): an
     /// un-factored demand from the hypha's OWN registered corpus lists on
     /// the open market under the same thermodynamic discipline as every
@@ -941,6 +959,12 @@ impl Kernel {
     /// basis compresses toward a minimal confluent generating set. Either way the
     /// reserve REGENERATES: optimization is the recovery stroke, so entropic
     /// expansion resumes only at the pace the syntropic counterpart earns.
+    /// One bounded consolidation stroke, public for the server's idle
+    /// deliberation worker: condense, torse, probe redundancy, regenerate.
+    pub fn consolidate(&mut self) {
+        self.optimize();
+    }
+
     pub(crate) fn optimize(&mut self) {
         if !self.basis.is_empty() {
             let i = self.optimize_cursor % self.basis.len();
@@ -1251,6 +1275,23 @@ fn section_address(thought: &[u8; 32], asg: &[(u8, u8)]) -> [u8; 32] {
 /// utterance decomposed toward understanding over the receiver's genome, never
 /// re-cognized, never recalled.
 ///
+/// The adoption outcome — a deterministic status, never a boolean gate.
+/// Every arm names what actually happened; the caller maps states, it does
+/// not branch on success.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Adoption {
+    /// The word entered the universal genome here.
+    Installed,
+    /// Already present — the genome had converged at this address.
+    Known,
+    /// The current language already derives it — adoption would add
+    /// redundancy, not vocabulary.
+    Derivable,
+    /// The word does not replay from its own evidence — not ratifiable
+    /// speech; the reason names the failed axis.
+    Refused(&'static str),
+}
+
 /// The chain lifts into a superposition of uncommitted branches; every branch
 /// rolls out every fitting peel VIRTUALLY (zero mutation); the superposition
 /// prunes to the beam by GLOBAL remaining defect (≺_DM flow), never local

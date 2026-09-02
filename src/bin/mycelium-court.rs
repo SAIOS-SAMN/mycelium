@@ -111,8 +111,21 @@ fn main() {
                 let mut op = [0u8; 32];
                 op[0] = ruling.0;
                 let receipt = chain.append(addr, op).chain_hash;
+                // Every verdict broadcasts to EVERY server (finality is
+                // network-wide, not per-origin), and an upheld word is
+                // TAUGHT across the nerve so the server bases converge to
+                // one universal genome — each adoption door re-verifies the
+                // blind replay itself before installing.
                 let verdict = dialogue::encode_verdict(&voice, &addr, ruling.0, &receipt);
-                let applied = session.speak(verdict).map(|r| r.first() == Some(&1)).unwrap_or(false);
+                let mut applied = false;
+                for peer in &sessions {
+                    if peer.speak(verdict.clone()).map(|r| r.first() == Some(&1)).unwrap_or(false) {
+                        applied = true;
+                    }
+                    if ruling.0 == dialogue::RULING_UPHELD {
+                        let _ = peer.speak(dialogue::encode_adopt(&voice, &elem_bytes));
+                    }
+                }
                 match ruling.0 {
                     dialogue::RULING_UPHELD => upheld += 1,
                     dialogue::RULING_DEMOTED => demoted += 1,

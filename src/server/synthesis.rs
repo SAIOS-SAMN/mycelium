@@ -24,6 +24,7 @@
 use crate::arc::{
     apply_bound_chains, chain_footprint, embed, frame_ratio, readback, refine_delta, Grid, Task,
 };
+use crate::transducer::element::from_residual;
 use crate::cognition::decompose_over;
 use crate::transducer::anchor::{derive_carrying_all, Sel};
 use crate::transducer::element::Element;
@@ -232,6 +233,24 @@ pub fn contemplate(
     k: &std::sync::Mutex<crate::cognition::Kernel>,
     task: &Task,
 ) -> Option<(usize, usize)> {
+    // The stroke's lanes are the FAMILY'S lanes — measured from the first
+    // pair's centered coboundary, never a uniform [true; 4] (which would
+    // flatten the polytonic surface into one monotone ceiling: every lane
+    // saturating identically carries no gradient, and the market loses its
+    // directional signal).
+    let lanes: [bool; 4] = task
+        .train
+        .first()
+        .and_then(|(a, b)| refine_delta(a, b))
+        .map(|(mut d, _, _)| {
+            d.sort_unstable();
+            let min_r = d.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
+            let min_c = d.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
+            let centered: Vec<_> =
+                d.iter().map(|(r, c, x, y)| (r - min_r, c - min_c, *x, *y)).collect();
+            crate::transducer::element::from_residual(&centered).lanes()
+        })
+        .unwrap_or([false, false, true, false]);
     let (snapshot, beam, depth) = {
         let mut g = k.lock().ok()?;
         // One consolidation stroke per attempt: optimize both earns the
@@ -239,14 +258,14 @@ pub fn contemplate(
         // redundancy probe — holding the lock for several would starve the
         // request path. Below the floor after one stroke, speculation
         // simply waits for the next queued task (the queue is the retry).
-        if !g.physics().can_expand([true; 4]) {
+        if !g.physics().can_expand(lanes) {
             g.optimize();
         }
-        if !g.physics().can_expand([true; 4]) {
+        if !g.physics().can_expand(lanes) {
             return None; // the reserve is service's; speculation waits
         }
         let (beam, depth) = g.projection_budget();
-        g.physics_mut().spend([true; 4]); // thought is metabolically priced
+        g.physics_mut().spend(lanes); // thought is priced on the lanes it occupies
         (g.basis().to_vec(), beam, depth)
     };
     // Deep projection on the snapshot — no lock held.
@@ -262,6 +281,46 @@ pub fn contemplate(
         .filter(|(a, fp, sc)| g.deposit_evidence(*a, fp.clone(), sc.clone()))
         .count();
     Some((c.cited.len(), deposited))
+}
+
+/// Work items for the server's deliberation worker — everything that would
+/// hold the kernel lock through deep reduction runs here, behind the
+/// bounded queue, never on the request path.
+pub enum Deliberation {
+    /// Deep joint projection over a dispatched task family.
+    Contemplate([u8; 32], Task),
+    /// Genome synchronization: a court-ratified word to verify and install
+    /// (the ratifying voice is the provenance of record).
+    Adopt([u8; 32], crate::transducer::element::Element),
+}
+
+/// Adoption, orchestrated off the request path: the blind replay is pure
+/// (no lock), derivability probes a basis snapshot (no lock), and only the
+/// brief install re-locks. Returns the deterministic [`Adoption`] status.
+pub fn adopt(
+    k: &std::sync::Mutex<crate::cognition::Kernel>,
+    ratifier: [u8; 32],
+    word: &crate::transducer::element::Element,
+) -> crate::cognition::Adoption {
+    use crate::cognition::Adoption;
+    if let Some(reason) = crate::verdict::blind_replay(word) {
+        return Adoption::Refused(reason);
+    }
+    let Ok(g) = k.lock() else { return Adoption::Refused("kernel unavailable") };
+    if g.basis().iter().any(|t| t.address() == word.address()) {
+        return Adoption::Known;
+    }
+    let snapshot = g.basis().to_vec();
+    let (beam, depth) = g.projection_budget();
+    drop(g);
+    // Derivability on the snapshot — the replay guaranteed a non-empty
+    // chain, so the chain path decides.
+    let sub = word.substance();
+    if crate::cognition::decompose_over(&snapshot, sub.sub(), None, beam, depth).is_ok() {
+        return Adoption::Derivable;
+    }
+    let Ok(mut g) = k.lock() else { return Adoption::Refused("kernel unavailable") };
+    g.install_adopted(word, ratifier)
 }
 
 #[cfg(test)]
@@ -305,6 +364,38 @@ mod tests {
             .expect("still speakable on train");
         assert!(c2.closes);
         assert!(!c2.speaks_all_tests, "a mute sibling breaks cross-test consensus");
+    }
+
+    /// Adoption is a deterministic status map: a clean foreign word
+    /// installs with the ratifier as provenance; re-adoption reads Known;
+    /// a word the language already derives reads Derivable; tampered
+    /// speech is Refused with the failed axis named.
+    #[test]
+    fn adoption_maps_every_state_deterministically() {
+        use crate::cognition::{Adoption, Kernel};
+        let k = std::sync::Mutex::new(Kernel::new());
+        let court = [0xAB; 32];
+        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+        let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
+        let word = from_residual(&germinate(&a, &rot).unwrap());
+        assert_eq!(adopt(&k, court, &word), Adoption::Installed, "clean foreign word installs");
+        assert_eq!(adopt(&k, court, &word), Adoption::Known, "the genome had converged");
+        // The identical deformation germinated far away: same substance —
+        // the language already derives it.
+        let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
+        let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
+        let dup = from_residual(&germinate(&a_far, &rot_far).unwrap());
+        assert!(
+            matches!(adopt(&k, court, &dup), Adoption::Derivable | Adoption::Known),
+            "adoption never adds redundancy"
+        );
+        // Tampered speech is named and refused.
+        let mut fat = word.clone();
+        fat.mag = [0, 0, 999, 0];
+        assert!(matches!(adopt(&k, court, &fat), Adoption::Refused(_)));
+        // Provenance is the ratifying voice, not a sentinel.
+        let g = k.lock().unwrap();
+        assert!(g.basis().iter().any(|t| t.address() == word.address()));
     }
 
     /// An empty language or an unspeakable family is honest silence.

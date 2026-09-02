@@ -319,41 +319,52 @@ fn main() {
             if studied > 0 {
                 let _ = entity.flush_evidence();
                 if let Some(((hn, hd), (wn, wd))) = family_ratio(&train) {
-                    let mut outs: Vec<Vec<Vec<u8>>> = Vec::new();
-                    let mut complete = !tests.is_empty();
-                    for x in &tests {
-                        let (h, w) = (x.len(), x.first().map_or(0, |r| r.len()));
-                        if h == 0 || w == 0 || (h * hn) % hd != 0 || (w * wn) % wd != 0 {
-                            complete = false;
-                            break;
-                        }
-                        let (oh, ow) = (h * hn / hd, w * wn / wd);
-                        let (lh, lw) = (lcm(h, oh), lcm(w, ow));
-                        let rx = embed(x, lh, lw);
-                        let (guess, spoke) = entity.project(&rx);
-                        if spoke.is_empty() {
-                            complete = false;
-                            break;
-                        }
-                        match readback(&guess, oh, ow) {
-                            Some(g) => outs.push(g),
-                            None => {
+                    // JOINT CROSS-TEST CONSENSUS: one retained reading must
+                    // serve EVERY test input of the family. The spectral
+                    // head speaks first; if any sibling goes silent, the
+                    // beam's rollout-verified alternative is tried whole.
+                    // A reading that explains one grid but not its sibling
+                    // is not understanding.
+                    for v in 0..entity.dialect_variants() {
+                        let mut outs: Vec<Vec<Vec<u8>>> = Vec::new();
+                        let mut complete = !tests.is_empty();
+                        for x in &tests {
+                            let (h, w) = (x.len(), x.first().map_or(0, |r| r.len()));
+                            if h == 0 || w == 0 || (h * hn) % hd != 0 || (w * wn) % wd != 0 {
                                 complete = false;
                                 break;
                             }
-                        }
-                    }
-                    if complete {
-                        if let Ok((code, _mu)) = entity.submit_solve(&tid, &outs) {
-                            projected += 1;
-                            match code {
-                                mycelium::anastome::dialogue::SOLVE_BOUNTY => {
-                                    proj_solved += 1;
-                                    uniq_solved += 1;
-                                }
-                                mycelium::anastome::dialogue::SOLVE_FLOOR => proj_solved += 1,
-                                _ => {}
+                            let (oh, ow) = (h * hn / hd, w * wn / wd);
+                            let (lh, lw) = (lcm(h, oh), lcm(w, ow));
+                            let rx = embed(x, lh, lw);
+                            let (guess, spoke) = entity.project_variant(&rx, v);
+                            if spoke.is_empty() {
+                                complete = false;
+                                break;
                             }
+                            match readback(&guess, oh, ow) {
+                                Some(g) => outs.push(g),
+                                None => {
+                                    complete = false;
+                                    break;
+                                }
+                            }
+                        }
+                        if complete {
+                            if let Ok((code, _mu)) = entity.submit_solve(&tid, &outs) {
+                                projected += 1;
+                                match code {
+                                    mycelium::anastome::dialogue::SOLVE_BOUNTY => {
+                                        proj_solved += 1;
+                                        uniq_solved += 1;
+                                    }
+                                    mycelium::anastome::dialogue::SOLVE_FLOOR => {
+                                        proj_solved += 1
+                                    }
+                                    _ => {}
+                                }
+                            }
+                            break; // the family is jointly served — one submission
                         }
                     }
                 }

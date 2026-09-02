@@ -64,6 +64,29 @@ pub fn decode_refine(body: &[u8]) -> Option<([u8; 32], [u8; 32])> {
     Some((voice, word))
 }
 
+/// ADOPTION (genome synchronization): the court propagates an upheld word
+/// to every server with ITS OWN VOICE as provenance — the ratifier is the
+/// discoverer of record until origin voices ride the wire (freeze v2).
+/// `[ACT_ADOPT][voice 32][element bytes]`. The reply acknowledges queueing
+/// only; verification and installation run on the server's deliberation
+/// worker (never on the request path).
+pub const ACT_ADOPT: u8 = 0x0E;
+
+pub fn encode_adopt(voice: &[u8; 32], element_bytes: &[u8]) -> Vec<u8> {
+    let mut out = vec![ACT_ADOPT];
+    out.extend_from_slice(voice);
+    out.extend_from_slice(element_bytes);
+    out
+}
+
+pub fn decode_adopt(body: &[u8]) -> Option<([u8; 32], Vec<u8>)> {
+    if body.first() != Some(&ACT_ADOPT) || body.len() <= 33 {
+        return None;
+    }
+    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    Some((voice, body[33..].to_vec()))
+}
+
 /// THE SYLLABUS (distributed cognition, operator-ruled): court-ratified
 /// vocabulary PUSHED to every enrolled voice on its next contact — teaching
 /// as an act of the network, not a passive download. The client asks with

@@ -174,25 +174,58 @@ fn main() {
     // worker thread over a bounded channel, so the accept loop never blocks
     // behind deep projection. The bound is the machine's parallelism; a full
     // queue drops the send — speculation is optional, service is not.
-    let (synth_tx, synth_rx) = std::sync::mpsc::sync_channel::<([u8; 32], mycelium::arc::Task)>(
+    let (synth_tx, synth_rx) = std::sync::mpsc::sync_channel::<mycelium::synthesis::Deliberation>(
         std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1),
     );
     {
         let kernel = Arc::clone(&kernel);
         let tu = tuniversal;
-        std::thread::spawn(move || {
-            while let Ok((tid, task)) = synth_rx.recv() {
-                let t0 = std::time::Instant::now();
-                if let Some((cited, deposited)) =
-                    mycelium::synthesis::contemplate(&kernel, &task)
-                {
-                    eprintln!(
-                        "  [{}] synthesis task {:02x}{:02x}… WELL-FORMED: {cited} cited, {deposited} evidence → admission ({} ms)",
-                        tu.stamp(),
-                        tid[0],
-                        tid[1],
-                        t0.elapsed().as_millis(),
-                    );
+        std::thread::spawn(move || loop {
+            let work = match synth_rx.recv_timeout(std::time::Duration::from_millis(
+                mycelium::physics::reserve_max(),
+            )) {
+                Ok(w) => w,
+                Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                    // A dry queue is the syntropic opening: one bounded
+                    // consolidation stroke per idle interval — the basis
+                    // compresses toward its minimal generating set even
+                    // when no work is dispatched (vocabulary maintenance
+                    // is continuous, not incidental).
+                    if let Ok(mut k) = kernel.lock() {
+                        k.consolidate();
+                    }
+                    continue;
+                }
+                Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
+            };
+            {
+                match work {
+                    mycelium::synthesis::Deliberation::Contemplate(tid, task) => {
+                        let t0 = std::time::Instant::now();
+                        if let Some((cited, deposited)) =
+                            mycelium::synthesis::contemplate(&kernel, &task)
+                        {
+                            eprintln!(
+                                "  [{}] synthesis task {:02x}{:02x}… WELL-FORMED: {cited} cited, {deposited} evidence → admission ({} ms)",
+                                tu.stamp(),
+                                tid[0],
+                                tid[1],
+                                t0.elapsed().as_millis(),
+                            );
+                        }
+                    }
+                    mycelium::synthesis::Deliberation::Adopt(ratifier, word) => {
+                        let outcome = mycelium::synthesis::adopt(&kernel, ratifier, &word);
+                        if outcome == mycelium::cognition::Adoption::Installed {
+                            eprintln!(
+                                "  [{}] adopt {:02x}{:02x}… (genome sync from court {:02x})",
+                                tu.stamp(),
+                                word.address()[0],
+                                word.address()[1],
+                                ratifier[0],
+                            );
+                        }
+                    }
                 }
             }
         });
@@ -298,7 +331,8 @@ fn main() {
             // the clients, who earn the solves it enables — the server never
             // settles a solve to itself). A full queue drops the send.
             if let Some((tid, task)) = dispatched {
-                let _ = synth_tx.try_send((tid, task));
+                let _ =
+                    synth_tx.try_send(mycelium::synthesis::Deliberation::Contemplate(tid, task));
             }
             continue;
         }
@@ -349,6 +383,29 @@ fn main() {
             );
             let reply =
                 Frame { lane: frame.lane, body: dialogue::encode_solve_receipt(code, &mu) };
+            let _ = s.write_all(&reply.encode().unwrap_or_default());
+            continue;
+        }
+
+        // ── adopt (genome synchronization): a court-ratified word arriving
+        // with the ratifier's voice. The request path only parses and
+        // queues; verification and installation run on the deliberation
+        // worker (replay pure, derivability on a snapshot, brief install) —
+        // no long lock on the reflex path, no boolean ladder. The reply
+        // acknowledges queueing.
+        if kind == dialogue::ACT_ADOPT {
+            let Some((ratifier, elem_bytes)) = dialogue::decode_adopt(&frame.body) else {
+                continue;
+            };
+            let mut pos = 0usize;
+            let queued = mycelium::transducer::element::Element::from_bytes(&elem_bytes, &mut pos)
+                .map(|word| {
+                    synth_tx
+                        .try_send(mycelium::synthesis::Deliberation::Adopt(ratifier, word))
+                        .is_ok()
+                })
+                .unwrap_or(false);
+            let reply = Frame { lane: frame.lane, body: vec![queued as u8] };
             let _ = s.write_all(&reply.encode().unwrap_or_default());
             continue;
         }
