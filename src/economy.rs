@@ -106,7 +106,7 @@ pub struct Entry {
 /// orients nothing rather than silently crediting.
 pub fn orientation(kind: &str) -> i8 {
     match kind {
-        "utility" | "consilience" | "recall" | "torse" | "assembly" => 1,
+        "utility" | "consilience" | "recall" | "torse" | "assembly" | "solve" => 1,
         "spend" | "fee" | "slash" => -1,
         _ => 0, // "stake", "finality", forward-compatible unknowns
     }
@@ -275,6 +275,15 @@ impl Treasury {
         self.pay("utility", who, mu, anchor)
     }
 
+    /// A VERIFIED SOLVE (PoUW): the registry confirmed a prediction against
+    /// its held answers — the one settlement species whose usefulness is
+    /// externally verified before it books. Float-law bounded; the
+    /// anti-replay decay (bounty vs floor) was decided by the registry.
+    pub fn settle_solve(&mut self, voice: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+        let bounded = self.award_bound(mu);
+        self.pay("solve", voice, bounded, anchor)
+    }
+
     /// THE ASSEMBLY PREMIUM (7d): a fragmented parent demand's children all
     /// completed and the overlap strips glued — distributed reassembly is
     /// substantially-more-useful work, paid ON TOP of the children's own
@@ -409,6 +418,7 @@ impl Treasury {
                 "finality" => 7,
                 "slash" => 8,
                 "assembly" => 9,
+                "solve" => 10,
                 _ => 255,
             };
             out.push(tag);
@@ -488,6 +498,7 @@ impl Treasury {
                 7 => "finality",
                 8 => "slash",
                 9 => "assembly",
+                10 => "solve",
                 _ => "unknown",
             };
             let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;

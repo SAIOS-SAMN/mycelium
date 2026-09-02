@@ -292,6 +292,52 @@ impl Kernel {
         &self.anchor_evidence
     }
 
+    /// The chronometric anchor, public (settlement callers outside the
+    /// kernel — the registry's solve settlements — bind to the same chain).
+    pub fn anchor_pub(&self) -> crate::economy::Anchor {
+        self.anchor()
+    }
+
+    /// SETTLE a verified SOLVE (PoUW: the registry confirmed the prediction
+    /// against held answers). Pool-funded, float-law bounded like every
+    /// award; the anti-replay collapse happened upstream in the registry —
+    /// this pays whatever the registry ruled (bounty or floor).
+    pub fn treasury_settle_solve(
+        &mut self,
+        voice: [u8; 32],
+        mu: [u64; 4],
+        anchor: crate::economy::Anchor,
+    ) -> [u64; 4] {
+        self.treasury.settle_solve(voice, mu, anchor)
+    }
+
+    /// THE CORPUS INTAKE DOOR (server-side ingestion authority): an
+    /// un-factored demand from the hypha's OWN registered corpus lists on
+    /// the open market under the same thermodynamic discipline as every
+    /// spoken demand — no voice spoke it (the corpus is the source), so it
+    /// germinates only when client voices independently attest it. The
+    /// server decides what is work; the entities do the cognition.
+    pub fn intake(&mut self, chain: &[(i64, i64, u8, u8)]) -> bool {
+        if chain.is_empty() {
+            return false;
+        }
+        let residual = element::from_residual(&chain.to_vec());
+        let addr = residual.address();
+        if self.basis.iter().any(|t| t.address() == addr)
+            || self.pending.iter().any(|(p, _)| p.address() == addr)
+        {
+            return false; // already speakable or already listed
+        }
+        let lane = (0..4).max_by_key(|&l| residual.magnitude()[l]).unwrap_or(2);
+        let cap = self.dynamic_lane_capacity()[lane].max(1);
+        if self.market_occupancy() >= cap {
+            return false; // the thermodynamic book is full; corpus can wait
+        }
+        let k_now = self.k_step();
+        self.pending.push((residual, k_now));
+        true
+    }
+
     /// DEPOSIT evidence from the wire (an entity's verified dialect finding):
     /// local thought seeds the court's global refinement — what tasks
     /// repeatedly confirm locally is what the mesh promotes. Bounded, deduped.

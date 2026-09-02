@@ -82,6 +82,45 @@ fn main() {
         let staked = k.enroll(id, tier);
         eprintln!("enrolled self at {tier:?}; staked mu {staked:?}; pool {:?}", k.treasury().pool());
     }
+
+    // THE AUTHORITATIVE CORPUS REGISTRY (PoUW integrity): the hypha — never a
+    // client — decides what counts as work. --corpus DIR ingests each task,
+    // registers its content-addressed identity (anti-replay: the FIRST
+    // verified solve takes the bounty, replays collapse to the verification
+    // floor), and INTAKES its train coboundaries onto the open market so the
+    // language grows from the same authority that dispatches the work.
+    let registry = Arc::new(Mutex::new(mycelium::registry::TaskRegistry::new()));
+    if let Some(corpus_dir) = flag(&args, "--corpus") {
+        let mut files: Vec<_> = std::fs::read_dir(corpus_dir)
+            .map(|rd| {
+                rd.filter_map(|e| e.ok().map(|e| e.path()))
+                    .filter(|p| p.extension().is_some_and(|x| x == "json"))
+                    .collect()
+            })
+            .unwrap_or_default();
+        files.sort();
+        let mut reg = registry.lock().unwrap();
+        let mut k = kernel.lock().unwrap();
+        let mut listed = 0usize;
+        for f in &files {
+            let Ok(text) = std::fs::read_to_string(f) else { continue };
+            let Some(task) = mycelium::arc::parse_task(&text) else { continue };
+            for (a, b) in &task.train {
+                if let Some((mut chain, _, _)) = mycelium::arc::refine_delta(a, b) {
+                    chain.sort_unstable();
+                    if k.intake(&chain) {
+                        listed += 1;
+                    }
+                }
+            }
+            reg.register(task);
+        }
+        eprintln!(
+            "corpus registered: {} tasks from {corpus_dir} ({} unsolved, {listed} demands listed)",
+            reg.len(),
+            reg.unsolved(),
+        );
+    }
     // Register peers into the nerve — the non-ring Čech cover of hyphas. (Real
     // per-lane fingerprints arrive with sun_recon/P6; here presence + a seeded
     // bloom so adjacency is genuine, not a static ring.)
@@ -181,6 +220,66 @@ fn main() {
                 k.anchor_evidence().iter().take(32).cloned().collect()
             };
             let reply = Frame { lane: frame.lane, body: dialogue::encode_evidence_reply(&items) };
+            let _ = s.write_all(&reply.encode().unwrap_or_default());
+            continue;
+        }
+
+        // ── task: a client pulls a signed work envelope from the registry ────
+        if kind == dialogue::ACT_TASK {
+            let Some(_tvoice) = dialogue::decode_task_request(&frame.body) else { continue };
+            let body = {
+                let mut reg = registry.lock().unwrap();
+                match reg.dispatch() {
+                    Some((tid, task)) => {
+                        let tests: Vec<_> = task.test.iter().map(|(x, _)| x.clone()).collect();
+                        dialogue::encode_task_envelope(&tid, &task.train, &tests)
+                    }
+                    None => Vec::new(), // an empty envelope: the book is settled
+                }
+            };
+            let reply = Frame { lane: frame.lane, body };
+            let _ = s.write_all(&reply.encode().unwrap_or_default());
+            continue;
+        }
+
+        // ── solve: verify against held answers; ANTI-REPLAY yield collapse ───
+        if kind == dialogue::ACT_SOLVE {
+            let Some((svoice, tid, outputs)) = dialogue::decode_solve(&frame.body) else { continue };
+            let (code, mu) = {
+                let mut reg = registry.lock().unwrap();
+                match reg.settle(&tid, &outputs) {
+                    mycelium::registry::SolveYield::Bounty(tension) => {
+                        // FIRST VERIFIED SOLVE: the full bounty, priced at the
+                        // surface, float-law bounded like every award.
+                        let mut k = kernel.lock().unwrap();
+                        let surface = mycelium::economy::yield_surface(k.physics());
+                        let priced = mycelium::economy::price(&tension, &surface);
+                        let anchor = k.anchor_pub();
+                        let paid = k.treasury_settle_solve(svoice, priced, anchor);
+                        (dialogue::SOLVE_BOUNTY, paid)
+                    }
+                    mycelium::registry::SolveYield::VerifyFloor => {
+                        let mut k = kernel.lock().unwrap();
+                        let anchor = k.anchor_pub();
+                        let paid = k.treasury_settle_solve(svoice, [0, 0, 1, 0], anchor);
+                        (dialogue::SOLVE_FLOOR, paid)
+                    }
+                    mycelium::registry::SolveYield::Nothing => (dialogue::SOLVE_NOTHING, [0; 4]),
+                }
+            };
+            eprintln!(
+                "  solve voice {:02x} task {:02x}{:02x}… → {} μ⃗ {mu:?}",
+                svoice[0],
+                tid[0],
+                tid[1],
+                match code {
+                    dialogue::SOLVE_BOUNTY => "BOUNTY (first verified solve)",
+                    dialogue::SOLVE_FLOOR => "floor (replay)",
+                    _ => "nothing",
+                },
+            );
+            let reply =
+                Frame { lane: frame.lane, body: dialogue::encode_solve_receipt(code, &mu) };
             let _ = s.write_all(&reply.encode().unwrap_or_default());
             continue;
         }

@@ -518,6 +518,32 @@ impl Entity {
         size
     }
 
+    /// PULL a signed work envelope from the hypha's authoritative registry —
+    /// the client never arbitrates raw corpus; the server decides what is
+    /// useful work. None = the book is settled (or no registry).
+    pub fn pull_task(&self) -> io::Result<Option<dialogue::TaskEnvelope>> {
+        let voice = self.session.kernel().voice();
+        let body = self.session.speak(dialogue::encode_task_request(&voice))?;
+        if body.is_empty() {
+            return Ok(None);
+        }
+        Ok(dialogue::decode_task_envelope(&body))
+    }
+
+    /// SUBMIT predicted outputs for a dispatched task. The hypha verifies
+    /// against its held answers: (SOLVE_BOUNTY, μ⃗) on the first verified
+    /// solve, (SOLVE_FLOOR, μ⃗) on a replay, (SOLVE_NOTHING, 0⃗) otherwise —
+    /// the anti-replay collapse is the server's ruling, never the client's.
+    pub fn submit_solve(
+        &self,
+        id: &[u8; 32],
+        outputs: &[Grid],
+    ) -> io::Result<(u8, [u64; 4])> {
+        let voice = self.session.kernel().voice();
+        let body = self.session.speak(dialogue::encode_solve(&voice, id, outputs))?;
+        Ok(dialogue::decode_solve_receipt(&body).unwrap_or((dialogue::SOLVE_NOTHING, [0; 4])))
+    }
+
     /// FLUSH verified dialect findings to the hypha as anchor evidence — the
     /// entity's local reasoning seeding the court's global refinement.
     pub fn flush_evidence(&mut self) -> io::Result<usize> {

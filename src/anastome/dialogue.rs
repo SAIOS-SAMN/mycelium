@@ -30,6 +30,141 @@ pub const ACT_DOCKET: u8 = 0x06;
 pub const ACT_VERDICT: u8 = 0x07;
 /// Step 7c: the court pulls the selection fiber's accumulated birth evidence.
 pub const ACT_EVIDENCE: u8 = 0x08;
+/// PoUW dispatch: a client pulls a SIGNED WORK ENVELOPE — the hypha's
+/// authoritative registry chooses; clients never arbitrate raw corpus.
+pub const ACT_TASK: u8 = 0x0B;
+/// PoUW settlement: a client submits predicted outputs for a dispatched
+/// task_id; the hypha verifies against its held answers — first verified
+/// solve takes the bounty, replays collapse to the verification floor.
+pub const ACT_SOLVE: u8 = 0x0C;
+
+fn push_grid(out: &mut Vec<u8>, g: &[Vec<u8>]) {
+    out.extend_from_slice(&(g.len() as u16).to_le_bytes());
+    out.extend_from_slice(&(g.first().map_or(0, |r| r.len()) as u16).to_le_bytes());
+    for row in g {
+        out.extend_from_slice(row);
+    }
+}
+
+fn read_grid(b: &[u8], p: &mut usize) -> Option<Vec<Vec<u8>>> {
+    let h = u16::from_le_bytes(b.get(*p..*p + 2)?.try_into().ok()?) as usize;
+    let w = u16::from_le_bytes(b.get(*p + 2..*p + 4)?.try_into().ok()?) as usize;
+    *p += 4;
+    if h * w > b.len().saturating_sub(*p) || h > 1024 || w > 1024 {
+        return None; // untrusted dims
+    }
+    let mut g = Vec::with_capacity(h);
+    for _ in 0..h {
+        g.push(b.get(*p..*p + w)?.to_vec());
+        *p += w;
+    }
+    Some(g)
+}
+
+/// task request: `[ACT_TASK][voice 32]`.
+pub fn encode_task_request(voice: &[u8; 32]) -> Vec<u8> {
+    let mut out = vec![ACT_TASK];
+    out.extend_from_slice(voice);
+    out
+}
+
+pub fn decode_task_request(body: &[u8]) -> Option<[u8; 32]> {
+    if body.first() != Some(&ACT_TASK) || body.len() != 33 {
+        return None;
+    }
+    body.get(1..33)?.try_into().ok()
+}
+
+/// work envelope: `[task_id 32][nt u8][(input grid, output grid)·nt]
+/// [nx u8][test-input grid·nx]` — train pairs to STUDY, test inputs to
+/// SOLVE; the held answers never ride the wire. An empty body = no work.
+pub fn encode_task_envelope(
+    id: &[u8; 32],
+    train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
+    tests: &[Vec<Vec<u8>>],
+) -> Vec<u8> {
+    let mut out = Vec::new();
+    out.extend_from_slice(id);
+    out.push(train.len().min(255) as u8);
+    for (a, b) in train.iter().take(255) {
+        push_grid(&mut out, a);
+        push_grid(&mut out, b);
+    }
+    out.push(tests.len().min(255) as u8);
+    for x in tests.iter().take(255) {
+        push_grid(&mut out, x);
+    }
+    out
+}
+
+pub type TaskEnvelope = ([u8; 32], Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>, Vec<Vec<Vec<u8>>>);
+
+pub fn decode_task_envelope(body: &[u8]) -> Option<TaskEnvelope> {
+    let id: [u8; 32] = body.get(0..32)?.try_into().ok()?;
+    let mut p = 32usize;
+    let nt = *body.get(p)? as usize;
+    p += 1;
+    let mut train = Vec::with_capacity(nt.min(64));
+    for _ in 0..nt {
+        let a = read_grid(body, &mut p)?;
+        let b = read_grid(body, &mut p)?;
+        train.push((a, b));
+    }
+    let nx = *body.get(p)? as usize;
+    p += 1;
+    let mut tests = Vec::with_capacity(nx.min(64));
+    for _ in 0..nx {
+        tests.push(read_grid(body, &mut p)?);
+    }
+    Some((id, train, tests))
+}
+
+/// solve submission: `[ACT_SOLVE][voice 32][task_id 32][n u8][grid·n]`.
+pub fn encode_solve(voice: &[u8; 32], id: &[u8; 32], outputs: &[Vec<Vec<u8>>]) -> Vec<u8> {
+    let mut out = vec![ACT_SOLVE];
+    out.extend_from_slice(voice);
+    out.extend_from_slice(id);
+    out.push(outputs.len().min(255) as u8);
+    for g in outputs.iter().take(255) {
+        push_grid(&mut out, g);
+    }
+    out
+}
+
+pub fn decode_solve(body: &[u8]) -> Option<([u8; 32], [u8; 32], Vec<Vec<Vec<u8>>>)> {
+    if body.first() != Some(&ACT_SOLVE) {
+        return None;
+    }
+    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    let id: [u8; 32] = body.get(33..65)?.try_into().ok()?;
+    let mut p = 65usize;
+    let n = *body.get(p)? as usize;
+    p += 1;
+    let mut outputs = Vec::with_capacity(n.min(64));
+    for _ in 0..n {
+        outputs.push(read_grid(body, &mut p)?);
+    }
+    Some((voice, id, outputs))
+}
+
+/// solve receipt: `[code u8][μ⃗ 32]` — code 2 = BOUNTY (first verified solve),
+/// 1 = verification floor (replay), 0 = nothing (wrong or unregistered).
+pub const SOLVE_BOUNTY: u8 = 2;
+pub const SOLVE_FLOOR: u8 = 1;
+pub const SOLVE_NOTHING: u8 = 0;
+
+pub fn encode_solve_receipt(code: u8, mu: &[u64; 4]) -> Vec<u8> {
+    let mut out = vec![code];
+    push_mu(&mut out, mu);
+    out
+}
+
+pub fn decode_solve_receipt(body: &[u8]) -> Option<(u8, [u64; 4])> {
+    let code = *body.first()?;
+    let mut p = 1usize;
+    let mu = read_mu(body, &mut p)?;
+    Some((code, mu))
+}
 
 /// One centered coboundary cell `(row, col, before, after)`.
 pub type Cell = (i64, i64, u8, u8);

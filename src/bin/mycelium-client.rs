@@ -26,7 +26,7 @@
 //!
 //! Usage: mycelium-client [ADDR] --kernel NAME [--state DIR]
 //!            [--feed CORPUS_DIR] [--loop] [--limit N] [--conductor BOARD]
-use mycelium::arc::{embed, frame_ratio, grid_to_cells, parse_task, readback, Task};
+use mycelium::arc::{embed, frame_ratio, grid_to_cells, parse_task, readback};
 use mycelium::physics::{Physics, RESERVE_MAX};
 use mycelium::sdk::{Comprehension, Entity, Kernel};
 use std::path::PathBuf;
@@ -45,12 +45,12 @@ fn lcm(a: usize, b: usize) -> usize {
     a / gcd(a, b) * b
 }
 
-/// MEASURE the task family's frame ratio from its train pairs — perception
-/// (reading dimensions), not derivation. None when the family disagrees:
-/// no single morphism exists to think with.
-fn task_ratio(task: &Task) -> Option<((usize, usize), (usize, usize))> {
+/// MEASURE a family's frame ratio from its pairs — perception (reading
+/// dimensions), not derivation. None when the family disagrees: no single
+/// morphism exists to think with.
+fn family_ratio(train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)]) -> Option<((usize, usize), (usize, usize))> {
     let mut ratio = None;
-    for (a, b) in &task.train {
+    for (a, b) in train {
         let f = (a.len(), a.first().map_or(0, |r| r.len()), b.len(), b.first().map_or(0, |r| r.len()));
         if f.0 == 0 || f.1 == 0 || f.2 == 0 || f.3 == 0 {
             return None;
@@ -121,9 +121,10 @@ fn main() {
 
     let mut physics = Physics::default();
     let (mut fed, mut derived, mut witnessed, mut settles, mut errors) = (0u64, 0u64, 0u64, 0u64, 0u64);
-    // THE POUW SOLVE COUNTERS — the entity's own instinct on test inputs,
-    // spoken through Entity::project (the engine's language, nothing local).
-    let (mut projected, mut proj_solved) = (0u64, 0u64);
+    // THE POUW SOLVE COUNTERS — projected = registry submissions tried;
+    // proj_solved = verified correct (bounty + floor); uniq_solved = FIRST
+    // verified solves (the only ones that count as new useful work).
+    let (mut projected, mut proj_solved, mut uniq_solved) = (0u64, 0u64, 0u64);
     let (mut last_genome, mut last_settles) = (usize::MAX, u64::MAX);
     let start = Instant::now();
     // The feed walk: (task index within the cycle order, pair index within it).
@@ -174,7 +175,7 @@ fn main() {
                 if studied > 0 {
                     let _ = entity.flush_evidence(); // local findings → the court
                 }
-                if let Some(((hn, hd), (wn, wd))) = task_ratio(&task) {
+                if let Some(((hn, hd), (wn, wd))) = family_ratio(&task.train) {
                     for (x, y) in &task.test {
                         if y.is_empty() {
                             continue; // withheld output: nothing to score against
@@ -289,6 +290,57 @@ fn main() {
             }
         }
 
+        // ── PULL REGISTERED WORK (PoUW): one signed envelope per stroke from
+        // the hypha's authoritative registry — study the family, think the
+        // tests through, submit. The REGISTRY rules bounty vs floor
+        // (anti-replay yield collapse); unique solves count ONLY on BOUNTY.
+        if let Ok(Some((tid, train, tests))) = entity.pull_task() {
+            let studied = entity.study(&train);
+            physics.spend([true; 4]); // thought is metabolically real
+            if studied > 0 {
+                let _ = entity.flush_evidence();
+                if let Some(((hn, hd), (wn, wd))) = family_ratio(&train) {
+                    let mut outs: Vec<Vec<Vec<u8>>> = Vec::new();
+                    let mut complete = !tests.is_empty();
+                    for x in &tests {
+                        let (h, w) = (x.len(), x.first().map_or(0, |r| r.len()));
+                        if h == 0 || w == 0 || (h * hn) % hd != 0 || (w * wn) % wd != 0 {
+                            complete = false;
+                            break;
+                        }
+                        let (oh, ow) = (h * hn / hd, w * wn / wd);
+                        let (lh, lw) = (lcm(h, oh), lcm(w, ow));
+                        let rx = embed(x, lh, lw);
+                        let (guess, spoke) = entity.project(&rx);
+                        if spoke.is_empty() {
+                            complete = false;
+                            break;
+                        }
+                        match readback(&guess, oh, ow) {
+                            Some(g) => outs.push(g),
+                            None => {
+                                complete = false;
+                                break;
+                            }
+                        }
+                    }
+                    if complete {
+                        if let Ok((code, _mu)) = entity.submit_solve(&tid, &outs) {
+                            projected += 1;
+                            match code {
+                                mycelium::anastome::dialogue::SOLVE_BOUNTY => {
+                                    proj_solved += 1;
+                                    uniq_solved += 1;
+                                }
+                                mycelium::anastome::dialogue::SOLVE_FLOOR => proj_solved += 1,
+                                _ => {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // ── SYNTROPIC PHASE — crystallize, voice change, regenerate.
         if physics.depleted() {
             if entity.epigenome.genome_len() != last_genome || settles != last_settles {
@@ -298,7 +350,7 @@ fn main() {
                 last_genome = entity.epigenome.genome_len();
                 last_settles = settles;
                 eprintln!(
-                    "[{name}] {:.0}s | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} | SOLVES {proj_solved}/{projected} | genome {} (peak expr {})",
+                    "[{name}] {:.0}s | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | genome {} (peak expr {})",
                     start.elapsed().as_secs_f64(),
                     entity.epigenome.genome_len(),
                     entity.epigenome.peak_expression(),
