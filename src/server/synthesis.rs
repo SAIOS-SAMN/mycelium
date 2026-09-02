@@ -375,7 +375,7 @@ pub fn probe(
         return (PROBE_NOTHING, [0; 4], [0; 4]);
     };
     let resolved = crate::cognition::resolve_cites(&view.language.words, cites);
-    let residual = crate::cognition::replay(&view.language.words, &resolved, listing.sub());
+    let residual = crate::cognition::verify(&view.language.words, &resolved, listing.sub());
     let cited: Vec<[u8; 32]> = cites.iter().map(|(a, _, _)| *a).collect();
     let Ok(mut g) = k.lock() else { return (PROBE_NOTHING, [0; 4], [0; 4]) };
     g.settle_probe(voice, target, residual, &cited)

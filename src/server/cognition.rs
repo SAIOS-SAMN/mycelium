@@ -908,7 +908,7 @@ impl Kernel {
             })
             .collect();
         let sub = candidate.substance();
-        let residual = replay(&self.basis, &resolved, sub.sub());
+        let residual = verify(&self.basis, &resolved, sub.sub());
         match (residual.is_empty(), resolved.is_empty()) {
             (true, false) => {
                 let saved = candidate.magnitude();
@@ -1889,7 +1889,7 @@ pub fn decompose_over_anchored(
 
 /// The citation, the replay, and the cited pattern are the sentence
 /// algebra shared with the entity and the court.
-pub use crate::transducer::sentence::{cited_pattern, replay, Cite};
+pub use crate::transducer::sentence::{cited_pattern, replay, verify, Cite};
 
 /// The cited decomposition — the same superposition, keeping every peel's
 /// coordinates so the sentence can be spoken as a proof. `Err` carries the
@@ -2499,7 +2499,7 @@ pub fn reduce_proven(
     let (g, ctx) = germ;
     let resolved = resolve_cites(&language.words, cites);
     let sub = g.substance();
-    let residual = replay(&language.words, &resolved, sub.sub());
+    let residual = verify(&language.words, &resolved, sub.sub());
     let form = match residual.is_empty() {
         true => NormalForm::Decomposed(resolved.iter().map(|(i, _, _)| *i).collect()),
         false => NormalForm::Irreducible(element::from_residual_framed(&residual, frame)),

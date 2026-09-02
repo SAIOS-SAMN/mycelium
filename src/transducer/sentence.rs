@@ -163,6 +163,52 @@ pub fn replay(language: &[Element], cites: &[Cite], target: &[Cell]) -> Vec<Cell
     residual
 }
 
+/// THE SEAM CONDITION — the cocycle on overlaps. Where two citations carry
+/// their words onto the same target cell, they must speak the same
+/// transition; the cells where they disagree are the seam defect, located
+/// exactly. A sentence with no overlap has no seam.
+pub fn seam_defect(language: &[Element], cites: &[Cite], target: &[Cell]) -> Vec<Cell> {
+    let mut sorted_target = target.to_vec();
+    sorted_target.sort_unstable();
+    let mut spoken: Vec<Vec<(u8, u8)>> = vec![Vec::new(); sorted_target.len()];
+    for (i, v, asg) in cites {
+        let Some(w) = language.get(*i) else { continue };
+        let Some(pat) = cited_pattern(w, *asg) else { continue };
+        for &(wr, wc, wb, wa) in &pat {
+            let Some(p) = element::carry_center(v, wr, wc) else { continue };
+            let (tr, tc) = element::cell_of(&p);
+            if let Ok(k) = sorted_target.binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc))) {
+                if !spoken[k].contains(&(wb, wa)) {
+                    spoken[k].push((wb, wa));
+                }
+            }
+        }
+    }
+    sorted_target.iter().zip(&spoken).filter(|(_, s)| s.len() > 1).map(|(t, _)| *t).collect()
+}
+
+/// VERIFY a received sentence — the receiving direction of the algebra:
+/// the replay's residual together with the seam defect. Empty is closure
+/// with a coherent cover.
+pub fn verify(language: &[Element], cites: &[Cite], target: &[Cell]) -> Vec<Cell> {
+    let mut out = replay(language, cites, target);
+    out.extend(seam_defect(language, cites, target));
+    out.sort_unstable();
+    out.dedup();
+    out
+}
+
+/// THE HOLONOMY of a cycle of transports: their product around the loop.
+pub fn holonomy(cycle: &[Versor]) -> Versor {
+    cycle.iter().fold(element::identity_versor(), |acc, v| acc.geo(v))
+}
+
+/// A connection is flat around a cycle when its holonomy is the identity
+/// up to the projective scale — the loop closes with no stress.
+pub fn is_flat(cycle: &[Versor]) -> bool {
+    element::same_versor(&holonomy(cycle), &element::identity_versor())
+}
+
 /// LOCATE one body: read its moduli, take the stratum, and for the word
 /// there whose gauge charge is the body's, solve the transport from the
 /// moments and verify it by replay. Returns the citation and the stratum's
@@ -282,7 +328,29 @@ mod tests {
         assert_eq!(s.connection.len(), 1, "one relative transport between two cited bodies");
         assert_eq!(s.residual, vec![(9, 9, 5, 6), (9, 10, 5, 6), (10, 9, 5, 6)]);
         // Excluding the bar itself: a bar chain has no other word of hue 1→2.
-        let s = deconstruct(&words, &atlas, &shape_at, words[0].sub(), Some(0), );
+        let s = deconstruct(&words, &atlas, &shape_at, words[0].sub(), Some(0));
         assert!(s.cites.is_empty() && !s.is_closed(), "no word but itself speaks it");
+    }
+
+    /// The receiving direction: two citations carrying different words
+    /// onto the same cells are a seam defect the replay alone would miss;
+    /// a transport and its inverse are a flat loop, two translations are
+    /// not.
+    #[test]
+    fn seams_and_holonomy_are_located_exactly() {
+        let bar = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+        let bar_other = from_residual(&germinate(&[(0, 0, 7u8), (0, 1, 7)], &[(0, 0, 8u8), (0, 1, 8)]).unwrap());
+        let words = vec![bar, bar_other];
+        let target = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
+        let id = element::identity_versor();
+        let cites: Vec<Cite> = vec![(0, id.clone(), 0), (1, id.clone(), 0)];
+        assert!(replay(&words, &cites[..1], &target).is_empty());
+        assert_eq!(seam_defect(&words, &cites, &target), target, "both cells spoken twice, differently");
+        assert_eq!(verify(&words, &cites, &target), target);
+        assert!(verify(&words, &cites[..1], &target).is_empty(), "one word, no seam");
+        let t = element::translator_versor(3, 0);
+        assert!(is_flat(&[t.clone(), t.versor_inverse().unwrap()]));
+        assert!(!is_flat(&[t.clone(), element::translator_versor(0, 2)]));
+        assert!(is_flat(&[]), "the empty loop is flat");
     }
 }

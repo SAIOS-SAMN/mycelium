@@ -276,7 +276,7 @@ fn main() {
         lap("feed");
         match if occluded { Ok(YieldQuote { surface: [0; 4], clusters: Vec::new() }) } else { entity.quote() } {
             Ok(q) => {
-                let (mut n_closed, mut n_descent, mut n_nothing, mut n_silent, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32);
+                let (mut n_closed, mut n_descent, mut n_nothing, mut n_silent, mut n_attested, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32, 0u32);
                 for cluster in &q.clusters {
                     if cluster.chain.is_empty() {
                         continue;
@@ -291,45 +291,70 @@ fn main() {
                     // commitment per cluster: the concluded sentence with
                     // its residual. A genome with nothing to say stays silent.
                     let t0 = std::time::Instant::now();
-                    let concluded = entity.conclude(&cluster.chain);
+                    let (cites, residual, familiar) = entity.conclude(&cluster.chain);
                     eprintln!(
-                        "[{name}] [{}] cluster {} cells: concluded in {} ms -> {}",
+                        "[{name}] [{}] cluster {} cells: concluded in {} ms -> {} cites, {} residual{}",
                         tuniversal.stamp(),
                         cluster.chain.len(),
                         t0.elapsed().as_millis(),
-                        concluded.as_ref().map_or("silent".to_string(), |(c, r)| format!("{} cites, {} residual", c.len(), r.len())),
+                        cites.len(),
+                        residual.len(),
+                        if familiar { " (familiar)" } else { "" },
                     );
-                    let Some((cites, _residual)) = concluded else {
+                    // Two utterances at most: the sentence settles the
+                    // listing; a residual not yet claimed is attested once
+                    // as this voice's irreducible claim.
+                    if cites.is_empty() && (residual.is_empty() || familiar) {
                         n_silent += 1;
                         continue;
-                    };
+                    }
                     let mut lanes: [bool; 4] = std::array::from_fn(|l| cluster.mu[l] > 0);
                     if lanes.iter().all(|&x| !x) {
                         lanes[lane] = true;
                     }
                     physics.spend(lanes); // the stroke spoken is metabolically real
-                    match entity.probe(&cluster.address, &cites) {
-                        Ok((code, _paid, _remaining)) => match code {
-                            mycelium::anastome::dialogue::PROBE_CLOSED => {
-                                derived += 1;
-                                n_closed += 1;
-                                physics.bump(lanes);
+                    if !cites.is_empty() {
+                        match entity.probe(&cluster.address, &cites) {
+                            Ok((code, _paid, _remaining)) => match code {
+                                mycelium::anastome::dialogue::PROBE_CLOSED => {
+                                    derived += 1;
+                                    n_closed += 1;
+                                    physics.bump(lanes);
+                                }
+                                mycelium::anastome::dialogue::PROBE_DESCENT => {
+                                    witnessed += 1;
+                                    n_descent += 1;
+                                    physics.bump(lanes);
+                                }
+                                _ => n_nothing += 1,
+                            },
+                            Err(_) => {
+                                errors += 1;
+                                n_err += 1;
                             }
-                            mycelium::anastome::dialogue::PROBE_DESCENT => {
-                                witnessed += 1;
-                                n_descent += 1;
-                                physics.bump(lanes);
+                        }
+                    }
+                    if !residual.is_empty() && !familiar {
+                        match entity.attest(&residual, &cites) {
+                            Ok(reply) => {
+                                n_attested += 1;
+                                if reply.settle.is_some() {
+                                    settles += 1;
+                                }
+                                if let t @ [_, ..] = reply.verdict.taught() {
+                                    entity.epigenome.learn(t);
+                                }
+                                judge_load = reply.load();
                             }
-                            _ => n_nothing += 1,
-                        },
-                        Err(_) => {
-                            errors += 1;
-                            n_err += 1;
+                            Err(_) => {
+                                errors += 1;
+                                n_err += 1;
+                            }
                         }
                     }
                 }
                 eprintln!(
-                    "[{name}] [{}] quote {} clusters: closed {n_closed} descent {n_descent} nothing {n_nothing} silent {n_silent} err {n_err}",
+                    "[{name}] [{}] quote {} clusters: closed {n_closed} descent {n_descent} nothing {n_nothing} silent {n_silent} attested {n_attested} err {n_err}",
                     tuniversal.stamp(),
                     q.clusters.len(),
                 );

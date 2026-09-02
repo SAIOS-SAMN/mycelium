@@ -343,9 +343,56 @@ pub struct Epigenome {
     atlas_len: usize,
     /// Each word's shape, lifted once on first use (parallel to the genome).
     shapes: Vec<std::sync::OnceLock<Option<crate::transducer::blade::Shape>>>,
+    /// Taught words refused because they did not verify (a transition
+    /// that is not a versor, a section that does not span the support) —
+    /// the entity's measured discordance with what it was taught.
+    refused: u64,
+    /// THE EXPRESSED WORDS (ephemeral, never persisted): the residual
+    /// bodies this entity germinated itself, before any court ratified
+    /// them. They let the entity recognise a residual it has already
+    /// claimed, so a claim is spoken once; a ratified word arrives by
+    /// teaching and enters the genome.
+    expressed: Vec<Element>,
+    expressed_atlas: crate::transducer::stalk::Stalks,
+    expressed_shapes: Vec<std::sync::OnceLock<Option<crate::transducer::blade::Shape>>>,
 }
 
 impl Epigenome {
+    /// The count of taught words refused for not verifying.
+    pub fn refused(&self) -> u64 {
+        self.refused
+    }
+
+    /// The words this entity has expressed and not yet had ratified.
+    pub fn expressed_len(&self) -> usize {
+        self.expressed.len()
+    }
+
+    /// EXPRESS a residual: germinate it as this entity's own word. Returns
+    /// false when the expressed vocabulary already speaks it (the same body
+    /// under a transport) — a claim already made, not to be made again.
+    pub fn express(&mut self, residual: &[(i64, i64, u8, u8)]) -> bool {
+        if residual.is_empty() {
+            return false;
+        }
+        let known = {
+            let expressed = &self.expressed;
+            let shapes = &self.expressed_shapes;
+            let shape_at = |i: usize| {
+                shapes.get(i).and_then(|c| c.get_or_init(|| crate::transducer::element::shape_of_chain(expressed[i].sub())).as_ref())
+            };
+            crate::transducer::sentence::deconstruct(expressed, &self.expressed_atlas, &shape_at, residual, None).is_closed()
+        };
+        if known {
+            return false;
+        }
+        let word = crate::transducer::element::from_residual(&residual.to_vec());
+        self.expressed_atlas.admit(&crate::transducer::stalk::invariant(word.sub()), self.expressed.len());
+        self.expressed_shapes.push(std::sync::OnceLock::new());
+        self.expressed.push(word);
+        true
+    }
+
     pub fn new() -> Self {
         Epigenome::default()
     }
@@ -443,6 +490,16 @@ impl Epigenome {
     pub fn learn(&mut self, taught: &[u8]) -> Option<Comprehension> {
         let mut pos = 0usize;
         let e = Element::from_bytes(taught, &mut pos)?;
+        // A taught word is comprehended before it is held: every transport
+        // in its connection must be a versor and every section must span
+        // its support. A word that does not verify is refused and counted.
+        let n = e.sub().len();
+        let coherent = e.transitions().iter().all(|(a, g)| a.len() == n && crate::transducer::cga::is_versor(g).is_some())
+            && e.sections().iter().all(|s| s.len() == n);
+        if !coherent {
+            self.refused += 1;
+            return None;
+        }
         // The APERTURE tunes on what is inherited: each transition refracts a
         // value signal into h[0]; each torsion period a spatial signal into h[1]
         // — the entity's optics drift with its diet (dialect-legitimate).
@@ -949,15 +1006,17 @@ impl Entity {
         self.session.attest(chain, cites)
     }
     /// CONCLUDE a listing in this genome's own algebra: the chain is
-    /// deconstructed into the words that compose it, and that one sentence
-    /// with its residual is what this voice commits to the wire. None when
-    /// the genome speaks no part of the chain — silence, not a query.
+    /// deconstructed into the words that compose it; the residual is
+    /// expressed as this entity's own word. Returns the citations, the
+    /// residual, and whether the residual was already claimed (familiar):
+    /// a familiar residual is not spoken again.
     pub fn conclude(
         &mut self,
         chain: &[(i64, i64, u8, u8)],
-    ) -> Option<(Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>)> {
+    ) -> (Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>, bool) {
         let (cites, residual) = self.cite(chain);
-        (!cites.is_empty()).then_some((cites, residual))
+        let familiar = !self.epigenome.express(&residual);
+        (cites, residual, familiar)
     }
     pub fn probe(&self, target: &[u8; 32], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4], [u64; 4])> {
         self.session.probe(target, cites)
