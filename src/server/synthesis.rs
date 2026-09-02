@@ -140,6 +140,8 @@ pub fn quote(
     let view = k.lock().ok()?.market_open();
     // The closure is a sealed carrier: read when current, measured over the
     // snapshot (no lock) and sealed back only when a generation moved.
+    let t0 = std::time::Instant::now();
+    let sealed = view.closure.is_some();
     let rank = match view.closure {
         Some(c) => c,
         None => {
@@ -153,6 +155,14 @@ pub fn quote(
             k.lock().ok()?.seal_closure(view.gens, measured)
         }
     };
+    eprintln!(
+        "  rank: book {} listings, order {}, closed {}, sealed {sealed}, gens {:?}, {} ms",
+        view.pending.len(),
+        rank.order.len(),
+        rank.closure.iter().filter(|c| c.is_some()).count(),
+        view.gens,
+        t0.elapsed().as_millis(),
+    );
     let free: u64 = view.reserve.iter().sum();
     let depth = (4 + (free as usize * 12) / (4 * crate::physics::reserve_max() as usize)).min(16);
     // The frame budget less the reply head (act, surface, count).

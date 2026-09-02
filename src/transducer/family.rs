@@ -217,6 +217,10 @@ pub struct Transport {
 pub struct Comprehended {
     pub transport: Option<Transport>,
     pub residual: Vec<(i64, i64, u8, u8)>,
+    /// Whether the pairs share one frame ratio. A family whose frames
+    /// disagree has no single connection to read and raises no residual:
+    /// the refusal is the measurement.
+    pub framed: bool,
 }
 
 struct Pairing {
@@ -234,6 +238,7 @@ struct Pairing {
 pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
     let mut out = Comprehended::default();
     let Some(ratio) = family_ratio(family) else { return out };
+    out.framed = true;
     let scenes: Vec<(Vec<Body>, Vec<Body>, (usize, usize), (usize, usize))> = family
         .iter()
         .map(|(a, b)| (perceive(a), perceive(b), frame_of(a), frame_of(b)))

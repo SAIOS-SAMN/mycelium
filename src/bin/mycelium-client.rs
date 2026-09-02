@@ -353,6 +353,19 @@ fn main() {
             // residual is the demand it raises.
             let comprehended = mycelium::transducer::family::comprehend(&train);
             physics.spend([true; 4]); // thought is metabolically real
+            eprintln!(
+                "[{name}] [{}] family {:02x}{:02x}… {} pairs, {} tests: {}",
+                tuniversal.stamp(),
+                tid[0],
+                tid[1],
+                train.len(),
+                tests.len(),
+                match (&comprehended.transport, comprehended.framed) {
+                    (Some(t), _) => format!("comprehended ({} rules, {} created, {} removed)", t.rules.len(), t.created.len(), t.removed.len()),
+                    (None, true) => format!("residual {} cells", comprehended.residual.len()),
+                    (None, false) => "frames disagree".to_string(),
+                },
+            );
             match comprehended.transport {
                 Some(transport) => {
                     let outs: Vec<Option<Vec<Vec<u8>>>> =

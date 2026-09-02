@@ -83,8 +83,8 @@ impl Language {
 /// The market as seen at one instant (see [`Kernel::market_open`]).
 pub struct MarketView {
     pub language: std::sync::Arc<Language>,
-    pub pending: Vec<(Element, u64)>,
-    pub composites: Vec<Composite>,
+    pub pending: std::sync::Arc<Vec<(Element, u64)>>,
+    pub composites: std::sync::Arc<Vec<Composite>>,
     pub surface: [u64; 4],
     pub pool: [u64; 4],
     pub k_step: u64,
@@ -399,6 +399,10 @@ pub struct Kernel {
     /// persisted; every basis mutation passes through `basis_push`,
     /// `basis_remove`, `basis_clear` so the alignment holds.
     stalks: crate::transducer::stalk::Stalks,
+    /// THE BOOK SNAPSHOT — the open listings and composites as immutable
+    /// shared values sealed at a book generation; a market view shares
+    /// them by pointer and the book is copied only when it moved.
+    book: (u64, std::sync::Arc<Vec<(Element, u64)>>, std::sync::Arc<Vec<Composite>>),
     /// THE LANGUAGE SNAPSHOT — the basis as an immutable shared value the
     /// reflex path reduces over with no lock held. `basis_gen` counts every
     /// mutation of the basis (cards or fibres); the snapshot is rebuilt only
@@ -521,10 +525,17 @@ impl Kernel {
             true => Some(std::sync::Arc::clone(&self.closure.2)),
             false => None,
         };
+        if self.book.0 != self.book_gen || self.book.1.len() != self.pending.len() || self.book.2.len() != self.composites.len() {
+            self.book = (
+                self.book_gen,
+                std::sync::Arc::new(self.pending.clone()),
+                std::sync::Arc::new(self.composites.clone()),
+            );
+        }
         MarketView {
             language: self.language(),
-            pending: self.pending.clone(),
-            composites: self.composites.clone(),
+            pending: std::sync::Arc::clone(&self.book.1),
+            composites: std::sync::Arc::clone(&self.book.2),
             surface: crate::economy::yield_surface(&self.physics),
             pool: self.treasury.pool(),
             k_step: self.chain.next_step_index(),

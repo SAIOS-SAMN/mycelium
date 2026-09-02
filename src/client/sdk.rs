@@ -200,10 +200,27 @@ impl Session {
     }
 
     fn exchange(&self, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
+        let act = act_body.first().copied();
         let out = self.exchange_inner(act_body);
-        match &out {
-            Ok(_) => self.resistance.set(0),
-            Err(_) => self.resistance.set(self.resistance.get().saturating_add(1)),
+        // A full reflex pool answers every act with the deferral shape (the
+        // pending outcome and four zero lanes). For a percept or a demand
+        // that is a verdict; for any other act it is the judge's measured
+        // impedance, and the aperture reads it as resistance.
+        let deferred = matches!(&out, Ok(b)
+            if b.len() == 7
+                && b[0] == crate::cognition::outcome_code(&crate::cognition::Outcome::GermPending)
+                && b[1..].iter().all(|&x| x == 0)
+                && !matches!(act, Some(dialogue::ACT_PERCEPT) | Some(dialogue::ACT_DEMAND)));
+        // Impedance is a running measurement: a clear exchange relaxes it
+        // by one stroke, a refused or timed-out one raises it by one, so a
+        // judge deferring most of the time reads as sustained resistance
+        // even when some acts pass.
+        match (&out, deferred) {
+            (Ok(_), false) => self.resistance.set(self.resistance.get().saturating_sub(1)),
+            _ => self.resistance.set(self.resistance.get().saturating_add(1)),
+        }
+        if deferred {
+            return Err(io::Error::new(io::ErrorKind::WouldBlock, "deferred by the judge"));
         }
         out
     }

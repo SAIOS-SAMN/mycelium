@@ -482,7 +482,12 @@ fn main() {
                 Err(_) => break,
             };
             match job {
-                Ok(job) => judge(job, &kernel, &router, &id),
+                Ok(job) => {
+                    let kind = job.frame.body.first().copied().unwrap_or(0xff);
+                    let t0 = std::time::Instant::now();
+                    judge(job, &kernel, &router, &id);
+                    eprintln!("  reflex act {kind:02x} {} ms", t0.elapsed().as_millis());
+                }
                 Err(_) => break,
             }
         });
