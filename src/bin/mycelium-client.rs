@@ -160,10 +160,10 @@ fn main() {
         );
 
         // ── FEED (entropic): present corpus transitions until the stroke
-        // spends. A percept is a PROOF spoken over this genome, so the feed
-        // runs on a glued genome (discordance zero at the last sync); an
-        // unglued entity syncs first.
-        while feeding && !occluded && !physics.depleted() && entity.discordance() == 0 {
+        // spends. A percept is a PROOF spoken over this genome: what the
+        // genome reduces is cited, what it cannot is this voice's
+        // irreducible claim; the sync converges the genome between strokes.
+        while feeding && !occluded && !physics.depleted() {
             if ti >= cycle.len() {
                 // A new cycle: the conductor (if any) re-steers the order.
                 cycle = tasks.clone();
@@ -450,11 +450,12 @@ fn main() {
                 last_genome = entity.epigenome.genome_len();
                 last_settles = settles;
                 eprintln!(
-                    "[{name}] [{}] fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | refined {refined} learned {learned} | genome {} (peak expr {})",
+                    "[{name}] [{}] fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | refined {refined} learned {learned} | genome {} (peak expr {}) discordance {}",
                     tuniversal.stamp(),
                     entity.impedance(),
                     entity.epigenome.genome_len(),
                     entity.epigenome.peak_expression(),
+                    entity.discordance(),
                 );
             }
             while physics.depleted() {

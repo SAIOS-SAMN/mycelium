@@ -1490,11 +1490,21 @@ impl Kernel {
     pub fn consolidate_stroke(
         &mut self,
     ) -> Option<([u8; 32], usize, std::sync::Arc<Language>)> {
-        let probe = self.condense_stroke().map(|i| (self.basis[i].address(), i));
+        let candidate = self.condense_stroke().map(|i| (self.basis[i].address(), i));
         self.physics.regenerate();
-        // The probe decomposes over the shared language snapshot with the
-        // candidate excluded by index — no per-stroke clone of the basis.
-        probe.map(|(addr, i)| (addr, i, self.language()))
+        // The redundancy probe is a decomposition: it is paid for like any
+        // expansion, from a full reserve, and spends a stroke, so the idle
+        // worker probes at the pace the metabolism regenerates — never
+        // every tick. The probe decomposes over the shared language
+        // snapshot with the candidate excluded by index.
+        let lanes = [true; 4];
+        match (candidate, self.physics.can_expand(lanes)) {
+            (Some((addr, i)), true) => {
+                self.physics.spend(lanes);
+                Some((addr, i, self.language()))
+            }
+            _ => None,
+        }
     }
 
     /// Retire a plain card the rest of the basis derives (the off-lock probe
