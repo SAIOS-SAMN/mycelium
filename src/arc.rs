@@ -58,27 +58,29 @@ pub fn grid_to_cells(g: &Grid) -> Vec<(i64, i64, u8)> {
     out
 }
 
-// ── #97 Phase A: THE CODOMAIN APERTURE — cross-complex chains ────────────────
+// ── #97: THE CODOMAIN APERTURE — cross-complex chains ────────────────────────
 //
-// Both frames embed EXACTLY into their common refinement K_lcm by integer
-// block subdivision (pure arithmetic — no interpolation, no direction bias,
-// no rounding policy; uniform for every ratio including (1,1), which
-// reproduces the planar path bit-for-bit). The cross-frame demand is then an
-// ORDINARY chain on the refinement. Banned surface: no branch anywhere on
-// ratio VALUES — the mapper is total.
+// A pair of complexes K_in (h_in × w_in) and K_out (h_out × w_out) is related
+// by the exact frame map ρ = (h_out/h_in, w_out/w_in) ∈ ℚ². The cross-frame
+// coboundary is supported on the codomain complex: every K_out cell reads the
+// input through ρ⁻¹ (the input cell containing the output cell's min corner —
+// the substrate's framing convention, the same min-corner quotient every chain
+// is centered by) and differs, or not, from the output. No common refinement
+// is materialized: the support is bounded by |K_out|, and ρ rides as the
+// word's frame fiber. Uniform for every ratio including (1,1), which is the
+// planar delta bit-for-bit. Banned surface: no branch anywhere on ratio
+// VALUES — the map is total.
 
 fn gcd(a: usize, b: usize) -> usize {
     if b == 0 { a.max(1) } else { gcd(b, a % b) }
 }
-fn lcm(a: usize, b: usize) -> usize {
-    a / gcd(a, b) * b
-}
 
-/// EMBED a grid into a refinement lattice: each source cell becomes an exact
-/// (lh/h) × (lw/w) block. Total whenever lh, lw are multiples of the dims.
-pub fn embed(g: &Grid, lh: usize, lw: usize) -> Grid {
-    let (h, w) = (g.len().max(1), g.first().map_or(1, |r| r.len().max(1)));
-    (0..lh).map(|r| (0..lw).map(|c| g[r * h / lh][c * w / lw]).collect()).collect()
+/// THE PULLBACK along ρ⁻¹: the grid read on a complex of `h × w` cells,
+/// each output cell taking the input cell that contains its min corner.
+/// Exact integer arithmetic; the identity when the frames agree.
+pub fn embed(g: &Grid, h: usize, w: usize) -> Grid {
+    let (gh, gw) = (g.len().max(1), g.first().map_or(1, |r| r.len().max(1)));
+    (0..h).map(|r| (0..w).map(|c| g[r * gh / h][c * gw / w]).collect()).collect()
 }
 
 /// READ BACK from a refinement lattice to target dims — every target cell's
@@ -109,10 +111,11 @@ pub fn frame_ratio(f: &Frame) -> ((usize, usize), (usize, usize)) {
     ((ho / gh.max(1), hi / gh.max(1)), (wo / gw.max(1), wi / gw.max(1)))
 }
 
-/// THE CROSS-COMPLEX COBOUNDARY: embed both scenes into K_lcm and take the
-/// ordinary per-cell difference. Returns (chain on K_lcm, the refined input
-/// grid — the scene π evaluates over, the measured frame). Total for all
-/// dims ≥ 1; equal frames yield exactly the planar delta.
+/// THE CROSS-COMPLEX COBOUNDARY on the codomain: the input pulled back along
+/// ρ⁻¹ onto K_out, then the ordinary per-cell difference. Returns (chain on
+/// K_out, the pulled-back input — the scene π evaluates over, the measured
+/// frame). Total for all dims ≥ 1; equal frames yield exactly the planar
+/// delta. Support ≤ |K_out|.
 pub fn refine_delta(a: &Grid, b: &Grid) -> Option<(Vec<(i64, i64, u8, u8)>, Grid, Frame)> {
     let (hi, wi) = (a.len(), a.first().map(|r| r.len()).unwrap_or(0));
     let (ho, wo) = (b.len(), b.first().map(|r| r.len()).unwrap_or(0));
@@ -122,17 +125,16 @@ pub fn refine_delta(a: &Grid, b: &Grid) -> Option<(Vec<(i64, i64, u8, u8)>, Grid
     if a.iter().any(|r| r.len() != wi) || b.iter().any(|r| r.len() != wo) {
         return None; // ragged grids carry no complex
     }
-    let (lh, lw) = (lcm(hi, ho), lcm(wi, wo));
-    let (ra, rb) = (embed(a, lh, lw), embed(b, lh, lw));
+    let scene = embed(a, ho, wo);
     let mut chain = Vec::new();
-    for r in 0..lh {
-        for c in 0..lw {
-            if ra[r][c] != rb[r][c] {
-                chain.push((r as i64, c as i64, ra[r][c], rb[r][c]));
+    for r in 0..ho {
+        for c in 0..wo {
+            if scene[r][c] != b[r][c] {
+                chain.push((r as i64, c as i64, scene[r][c], b[r][c]));
             }
         }
     }
-    Some((chain, ra, (hi, wi, ho, wo)))
+    Some((chain, scene, (hi, wi, ho, wo)))
 }
 
 /// A chain's witnessed placements inside a coboundary — every translation

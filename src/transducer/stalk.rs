@@ -335,6 +335,22 @@ mod tests {
         assert_eq!(congruent(&stalks, get2, &l_reflected), None);
     }
 
+    /// The frame fiber: the same codomain chain at ρ = (2,2) and at ρ = (1,1)
+    /// are different words (identity and substance carry ρ); the planar word
+    /// keeps its identity bit-for-bit.
+    #[test]
+    fn the_frame_fiber_separates_scales_and_keeps_the_planar_word() {
+        use crate::transducer::element::from_residual_framed;
+        let g = germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap();
+        let planar = from_residual(&g);
+        let same = from_residual_framed(&g, &(3, 3, 3, 3));
+        let scaled = from_residual_framed(&g, &(3, 3, 6, 6));
+        assert_eq!(same.address(), planar.address(), "ρ = (1,1) is the planar word");
+        assert_ne!(scaled.address(), planar.address(), "ρ = (2,2) is another word");
+        assert_ne!(scaled.substance(), planar.substance(), "the substance carries ρ");
+        assert_eq!(scaled.sub(), planar.sub(), "the support stays on the codomain");
+    }
+
     /// Connecting the bundle: a rotated, differently-hued sibling attaches
     /// to the base as a section transported by g, the connection records
     /// (assignment, g), a second observation of the same section under the

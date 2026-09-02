@@ -201,12 +201,11 @@ fn main() {
                             continue; // non-integral frame: refusal
                         }
                         let (oh, ow) = (h * hn / hd, w * wn / wd);
-                        let (lh, lw) = (lcm(h, oh), lcm(w, ow));
-                        let rx = embed(x, lh, lw);
+                        let rx = embed(x, oh, ow); // the input on the codomain complex
                         let (guess, spoke) = entity.project(&rx);
                         if !spoke.is_empty() {
                             projected += 1;
-                            if readback(&guess, oh, ow).is_some_and(|g| g == *y) {
+                            if guess == *y {
                                 proj_solved += 1;
                             }
                         }
@@ -217,25 +216,20 @@ fn main() {
                 continue;
             };
             pi += 1;
-            // THE EYE EMBEDS (sensor hardware, ruled): a dimension-changing
-            // pair lifts to its common refinement BEFORE speech, so the
-            // engine digests an ordinary chain — all cognition stays in the
-            // engine; the client only widened its retina.
+            // THE EYE READS THROUGH ρ⁻¹ (sensor hardware, ruled): a
+            // dimension-changing pair is spoken on the codomain complex — the
+            // input pulled back along the exact frame map, the output native —
+            // so the engine digests an ordinary chain bounded by the output.
             let (hi, wi) = (input.len(), input.first().map_or(0, |r| r.len()));
             let (ho, wo) = (output.len(), output.first().map_or(0, |r| r.len()));
-            let (a, b) = if (hi, wi) == (ho, wo) {
-                (grid_to_cells(input), grid_to_cells(output))
-            } else {
-                if hi == 0 || wi == 0 || ho == 0 || wo == 0 {
-                    continue;
-                }
-                let (lh, lw) = (lcm(hi, ho), lcm(wi, wo));
-                (grid_to_cells(&embed(input, lh, lw)), grid_to_cells(&embed(output, lh, lw)))
-            };
+            if hi == 0 || wi == 0 || ho == 0 || wo == 0 {
+                continue;
+            }
+            let (a, b) = (grid_to_cells(&embed(input, ho, wo)), grid_to_cells(output));
             if a.is_empty() || b.is_empty() {
                 continue;
             }
-            match entity.submit(&a, &b) {
+            match entity.submit(&a, &b, &(hi, wi, ho, wo)) {
                 Ok((reply, heard)) => {
                     fed += 1;
                     if reply.settle.is_some() {
@@ -335,20 +329,13 @@ fn main() {
                                 break;
                             }
                             let (oh, ow) = (h * hn / hd, w * wn / wd);
-                            let (lh, lw) = (lcm(h, oh), lcm(w, ow));
-                            let rx = embed(x, lh, lw);
+                            let rx = embed(x, oh, ow); // the input on the codomain complex
                             let (guess, spoke) = entity.project_variant(&rx, v);
                             if spoke.is_empty() {
                                 complete = false;
                                 break;
                             }
-                            match readback(&guess, oh, ow) {
-                                Some(g) => outs.push(g),
-                                None => {
-                                    complete = false;
-                                    break;
-                                }
-                            }
+                            outs.push(guess);
                         }
                         if complete {
                             if let Ok((code, _mu)) = entity.submit_solve(&tid, &outs) {

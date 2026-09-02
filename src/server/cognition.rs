@@ -190,6 +190,7 @@ pub fn cohesion_over(closure: &[Option<usize>]) -> crate::cohesion::CohesionWitn
 pub fn germinate_bodies(
     ca: &[Vec<(i64, i64, u8)>],
     cb: &[Vec<(i64, i64, u8)>],
+    frame: &crate::arc::Frame,
 ) -> Option<(Vec<Germ>, Vec<Composite>)> {
     if ca.is_empty() || ca.len() != cb.len() {
         return None;
@@ -210,7 +211,7 @@ pub fn germinate_bodies(
                     let parent = composite_parent_id(&rg);
                     let mut children: Vec<([u8; 32], bool)> = Vec::new();
                     for tile in &tiles {
-                        let elem = element::from_residual(tile);
+                        let elem = element::from_residual_framed(tile, frame);
                         children.push((elem.address(), false));
                         let off_r = tile.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
                         let off_c = tile.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
@@ -221,7 +222,7 @@ pub fn germinate_bodies(
                 }
                 let off_r = rg.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
                 let off_c = rg.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
-                germs.push((element::from_residual(&rg), Some((fa, (off_r, off_c)))));
+                germs.push((element::from_residual_framed(&rg, frame), Some((fa, (off_r, off_c)))));
             }
             None => germs.push((Element::identity(element::GERM_DIM), None)),
         }
@@ -768,11 +769,11 @@ impl Kernel {
     /// spoken demand — no voice spoke it (the corpus is the source), so it
     /// germinates only when client voices independently attest it. The
     /// server decides what is work; the entities do the cognition.
-    pub fn intake(&mut self, chain: &[(i64, i64, u8, u8)]) -> bool {
+    pub fn intake(&mut self, chain: &[(i64, i64, u8, u8)], frame: &crate::arc::Frame) -> bool {
         if chain.is_empty() {
             return false;
         }
-        let residual = element::from_residual(&chain.to_vec());
+        let residual = element::from_residual_framed(&chain.to_vec(), frame);
         let addr = residual.address();
         if self.basis.iter().any(|t| t.address() == addr)
             || self.pending.iter().any(|(p, _)| p.address() == addr)
@@ -864,7 +865,8 @@ impl Kernel {
     /// belongs to the client (`client::perceive`) — this path is for local use
     /// and tests. The server calls `adjudicate` on the client's reported percept.
     pub fn ingest(&mut self, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)], voice: [u8; 32]) -> Outcome {
-        self.adjudicate(&components(a), &components(b), voice)
+        let frame = frame_of(a, b);
+        self.adjudicate(&components(a), &components(b), voice, &frame)
     }
 
     /// THE JUDGE — mathematics + ANASTOME only. Given a client's PERCEPT (already
@@ -876,6 +878,7 @@ impl Kernel {
         ca: &[Vec<(i64, i64, u8)>],
         cb: &[Vec<(i64, i64, u8)>],
         voice: [u8; 32],
+        frame: &crate::arc::Frame,
     ) -> Outcome {
         // The whole path under one lock (tests and local use); the server
         // runs the same three phases with the lock dropped around the
@@ -883,7 +886,9 @@ impl Kernel {
         let Some((language, budget)) = self.reflex_open(voice) else {
             return Outcome::GermPending;
         };
-        let Some((germs, composites)) = germinate_bodies(ca, cb) else { return self.pivot() };
+        let Some((germs, composites)) = germinate_bodies(ca, cb, frame) else {
+            return self.pivot();
+        };
         let reductions = reduce_all(&language, budget, germs);
         self.register_composites(composites);
         self.commit_all(reductions, voice)
@@ -2098,27 +2103,53 @@ fn read_bodies(b: &[u8], p: &mut usize) -> Option<Vec<Vec<(i64, i64, u8)>>> {
 
 /// Encode a client PERCEPT: `voice(32) | A bodies | B bodies` — segmented
 /// bodies, not raw cells: the client already perceived.
+/// `[voice 32][a bodies][b bodies][frame 4×u32]` — the measured frame
+/// (h_in, w_in, h_out, w_out) rides with the bodies so the word germinated
+/// from a cross-frame pair carries its frame fiber ρ.
 pub fn encode_percept(
     a_bodies: &[Vec<(i64, i64, u8)>],
     b_bodies: &[Vec<(i64, i64, u8)>],
     voice: &[u8; 32],
+    frame: &crate::arc::Frame,
 ) -> Vec<u8> {
     let mut out = Vec::new();
     out.extend_from_slice(voice);
     push_bodies(&mut out, a_bodies);
     push_bodies(&mut out, b_bodies);
+    for d in [frame.0, frame.1, frame.2, frame.3] {
+        out.extend_from_slice(&(d as u32).to_le_bytes());
+    }
     out
 }
 
 #[allow(clippy::type_complexity)]
 pub fn decode_percept(
     body: &[u8],
-) -> Option<([u8; 32], Vec<Vec<(i64, i64, u8)>>, Vec<Vec<(i64, i64, u8)>>)> {
+) -> Option<([u8; 32], Vec<Vec<(i64, i64, u8)>>, Vec<Vec<(i64, i64, u8)>>, crate::arc::Frame)> {
     let voice: [u8; 32] = body.get(0..32)?.try_into().ok()?;
     let mut p = 32;
     let a = read_bodies(body, &mut p)?;
     let b = read_bodies(body, &mut p)?;
-    Some((voice, a, b))
+    let mut d = [0usize; 4];
+    for slot in d.iter_mut() {
+        *slot = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+        p += 4;
+    }
+    Some((voice, a, b, (d[0], d[1], d[2], d[3])))
+}
+
+/// The frame measured from two cell scenes (their 0-cell extents) — the
+/// identity frame when both share dims; used where no grid is at hand.
+pub fn frame_of(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> crate::arc::Frame {
+    let extent = |s: &[(i64, i64, u8)]| {
+        (
+            s.iter().map(|(r, _, _)| *r + 1).max().unwrap_or(0).max(0) as usize,
+            s.iter().map(|(_, c, _)| *c + 1).max().unwrap_or(0).max(0) as usize,
+        )
+    };
+    let (hi, wi) = extent(a);
+    let (ho, wo) = extent(b);
+    (hi, wi, ho, wo)
 }
 
 /// One byte on the wire summarising an outcome (server → client reply).

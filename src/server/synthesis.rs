@@ -169,10 +169,10 @@ pub fn synthesize(
     }
     // 3. ROLLOUT — δσ̂ = 0 on every train pair or the construct dies whole.
     let mut closes = true;
-    for ((_, b), refined_in) in task.train.iter().zip(&scenes) {
-        let refined_got = apply_bound_chains(refined_in, &bindings);
-        let ok = readback(&refined_got, b.len(), b.first().map_or(0, |r| r.len()))
-            .is_some_and(|g| g == *b);
+    for ((_, b), scene) in task.train.iter().zip(&scenes) {
+        // The scene is the input on the codomain complex: the rollout lands
+        // at the output's own dims, compared exactly.
+        let ok = apply_bound_chains(scene, &bindings) == *b;
         if !ok {
             closes = false;
             break;
@@ -189,8 +189,7 @@ pub fn synthesize(
                     break;
                 }
                 let (oh, ow) = (h * hn / hd, w * wn / wd);
-                let (lh, lw) = (lcm(h, oh), lcm(w, ow));
-                let rx = embed(x, lh, lw);
+                let rx = embed(x, oh, ow); // the test input on the codomain complex
                 let bound: Vec<_> =
                     bindings.iter().filter(|(_, s)| s.is_some()).cloned().collect();
                 if bound.is_empty() {
@@ -198,8 +197,8 @@ pub fn synthesize(
                     break;
                 }
                 let projected = apply_bound_chains(&rx, &bound);
-                if projected == rx || readback(&projected, oh, ow).is_none() {
-                    speaks_all_tests = false; // silent or frame-incoherent
+                if projected == rx {
+                    speaks_all_tests = false; // silent
                     break;
                 }
             }
@@ -315,12 +314,13 @@ pub fn adjudicate(
     ca: &[Vec<(i64, i64, u8)>],
     cb: &[Vec<(i64, i64, u8)>],
     voice: [u8; 32],
+    frame: &crate::arc::Frame,
 ) -> crate::cognition::Outcome {
     use crate::cognition::Outcome;
     let Ok(mut g) = k.lock() else { return Outcome::GermPending };
     let Some((language, budget)) = g.reflex_open(voice) else { return Outcome::GermPending };
     drop(g);
-    let Some((germs, composites)) = crate::cognition::germinate_bodies(ca, cb) else {
+    let Some((germs, composites)) = crate::cognition::germinate_bodies(ca, cb, frame) else {
         return k.lock().map(|mut g| g.pivot()).unwrap_or(Outcome::Pivot);
     };
     let reductions = crate::cognition::reduce_all(&language, budget, germs);

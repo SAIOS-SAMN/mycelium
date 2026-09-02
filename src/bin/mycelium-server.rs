@@ -141,8 +141,8 @@ fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32])
         (mycelium::synthesis::attest(kernel, &chain, dvoice), dvoice)
     } else {
         // The client PERCEIVED (segmented bodies); the JUDGE adjudicates.
-        let Some((pvoice, a_bodies, b_bodies)) = decode_percept(pbytes) else { return };
-        (mycelium::synthesis::adjudicate(kernel, &a_bodies, &b_bodies, pvoice), pvoice)
+        let Some((pvoice, a_bodies, b_bodies, frame)) = decode_percept(pbytes) else { return };
+        (mycelium::synthesis::adjudicate(kernel, &a_bodies, &b_bodies, pvoice, &frame), pvoice)
     };
     // TEACH: on install AND on a single-word sentence (the demand IS a held
     // word — express it down so the entity's genome inherits it); SETTLE:
@@ -325,9 +325,9 @@ fn main() {
             let Ok(text) = std::fs::read_to_string(f) else { continue };
             let Some(task) = mycelium::arc::parse_task(&text) else { continue };
             for (a, b) in &task.train {
-                if let Some((mut chain, _, _)) = mycelium::arc::refine_delta(a, b) {
+                if let Some((mut chain, _, frame)) = mycelium::arc::refine_delta(a, b) {
                     chain.sort_unstable();
-                    if k.intake(&chain) {
+                    if k.intake(&chain, &frame) {
                         listed += 1;
                     }
                 }

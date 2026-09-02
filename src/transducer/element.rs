@@ -1088,6 +1088,25 @@ pub fn from_residual(g: &ResidualGerm) -> Element {
     e
 }
 
+/// A residual germ with its FRAME FIBER: the exact frame map
+/// ρ = (h_out/h_in, w_out/w_in) ∈ ℚ² enters the spatial generator's
+/// diagonal, so a word at ρ ≠ (1,1) is a different word from its planar
+/// shadow (identity and substance both carry the fiber; only translation is
+/// quotiented). `frame` is (h_in, w_in, h_out, w_out).
+pub fn from_residual_framed(g: &ResidualGerm, frame: &(usize, usize, usize, usize)) -> Element {
+    let mut e = from_residual(g);
+    let (hi, wi, ho, wo) = *frame;
+    if hi > 0 && wi > 0 && (hi, wi) != (ho, wo) {
+        if let Some(m) = e.fiber(FIBER_SPATIAL) {
+            let mut m = m.clone();
+            m[0][0] = Q::new(BigInt::from(ho as u64), BigInt::from(hi as u64));
+            m[1][1] = Q::new(BigInt::from(wo as u64), BigInt::from(wi as u64));
+            e.set_fiber(FIBER_SPATIAL, m);
+        }
+    }
+    e
+}
+
 /// The perceptual lane projection of a centered coboundary chain — the
 /// per-lane magnitude MEASURED from the chain's geometry, never funneled
 /// onto one axis:

@@ -147,10 +147,15 @@ impl Session {
     /// A→B demand under this kernel's voice; return the judge's [`Reply`] — the
     /// verdict with any taught element, plus the mesh's per-lane METABOLISM
     /// (pressure) the kernel paces its intake against. The hypha only judges.
-    pub fn submit(&self, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> io::Result<Reply> {
+    pub fn submit(
+        &self,
+        a: &[(i64, i64, u8)],
+        b: &[(i64, i64, u8)],
+        frame: &crate::arc::Frame,
+    ) -> io::Result<Reply> {
         let (a_bodies, b_bodies) = perceive(a, b);
         let mut pbody = vec![dialogue::ACT_PERCEPT];
-        pbody.extend_from_slice(&encode_percept(&a_bodies, &b_bodies, &self.kernel.voice));
+        pbody.extend_from_slice(&encode_percept(&a_bodies, &b_bodies, &self.kernel.voice, frame));
         let body = self.exchange(pbody)?;
         Ok(decode_reply(&body))
     }
@@ -620,11 +625,10 @@ impl Entity {
         // is terminal: if it fails, the study is pruned whole. Deeper
         // dialects that fail are dropped, never spoken. Duplicates collapse.
         let closes = |dialect: &[(Vec<(i64, i64, u8, u8)>, Option<Sel>)]| {
-            family.iter().zip(&scenes).all(|((_, b), refined_in)| {
-                let refined_got = apply_bound_chains(refined_in, dialect);
-                readback(&refined_got, b.len(), b.first().map_or(0, |r| r.len()))
-                    .is_some_and(|g| g == *b)
-            })
+            family
+                .iter()
+                .zip(&scenes)
+                .all(|((_, b), scene)| apply_bound_chains(scene, dialect) == *b)
         };
         let mut beam: Vec<Vec<(Vec<(i64, i64, u8, u8)>, Option<Sel>)>> = Vec::new();
         for k in 0..4usize {
@@ -843,8 +847,9 @@ impl Entity {
         &mut self,
         a: &[(i64, i64, u8)],
         b: &[(i64, i64, u8)],
+        frame: &crate::arc::Frame,
     ) -> io::Result<(Reply, Option<Comprehension>)> {
-        let reply = self.session.submit(a, b)?;
+        let reply = self.session.submit(a, b, frame)?;
         let heard = match reply.verdict.taught() {
             t if t.is_empty() => None,
             t => self.epigenome.learn(t),
