@@ -270,7 +270,7 @@ fn main() {
             Ok(q) => {
                 k_step = q.k;
                 concluded.retain(|a| q.clusters.iter().any(|c| c.address == *a));
-                let (mut n_closed, mut n_descent, mut n_nothing, mut n_silent, mut n_attested, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32, 0u32);
+                let (mut n_closed, mut n_descent, mut n_nothing, mut n_settled, mut n_silent, mut n_attested, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32, 0u32, 0u32);
                 for cluster in &q.clusters {
                     if cluster.chain.is_empty() {
                         continue;
@@ -321,6 +321,7 @@ fn main() {
                                     n_descent += 1;
                                     physics.bump(&mag);
                                 }
+                                mycelium::anastome::dialogue::PROBE_SETTLED => n_settled += 1,
                                 _ => n_nothing += 1,
                             },
                             Err(_) => {
@@ -349,7 +350,7 @@ fn main() {
                     }
                 }
                 eprintln!(
-                    "[{name}] [{}] quote {} clusters: closed {n_closed} descent {n_descent} nothing {n_nothing} silent {n_silent} attested {n_attested} err {n_err}",
+                    "[{name}] [{}] quote {} clusters: closed {n_closed} descent {n_descent} nothing {n_nothing} settled {n_settled} silent {n_silent} attested {n_attested} err {n_err}",
                     tuniversal.stamp(),
                     q.clusters.len(),
                 );

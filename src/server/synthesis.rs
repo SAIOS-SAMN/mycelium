@@ -121,7 +121,7 @@ pub fn probe(
     let view = g.market_open();
     drop(g);
     let Some((listing, _)) = view.pending.iter().find(|(p, _)| p.address() == *target) else {
-        return (PROBE_NOTHING, [0; 4], [0; 4]);
+        return (crate::anastome::dialogue::PROBE_SETTLED, [0; 4], [0; 4]);
     };
     // The utterance is verified as spoken — its operators against the
     // listing — never against this hypha's copies of the words.
@@ -139,9 +139,9 @@ pub fn quote(
     k: &std::sync::Mutex<crate::cognition::Kernel>,
     voice: [u8; 32],
 ) -> Option<([u64; 4], Vec<(crate::transducer::element::Element, [u64; 4])>, u64, crate::cohesion::CohesionWitness)> {
-    let (view, spoken) = {
+    let (view, spoken, spoken_any) = {
         let mut g = k.lock().ok()?;
-        (g.market_open(), g.spoken_by(&voice))
+        (g.market_open(), g.spoken_by(&voice), g.spoken_by_any())
     };
     // The closure is a sealed carrier: read when current, measured over the
     // snapshot (no lock) and sealed back only when a generation moved.
@@ -181,6 +181,7 @@ pub fn quote(
         depth,
         budget,
         &spoken,
+        &spoken_any,
     );
     let cohesion = crate::cognition::cohesion_over(&rank.closure);
     Some((surface, priced, view.k_step, cohesion))

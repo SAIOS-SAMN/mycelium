@@ -640,6 +640,13 @@ fn main() {
             let mut pos = 0usize;
             let queued = mycelium::transducer::element::Element::from_bytes(&elem_bytes, &mut pos)
                 .map(|word| {
+                    // A court-ratified word arriving for adoption is ratified
+                    // language wherever it was first spoken: it enters the
+                    // teaching stream here.
+                    let addr = word.address();
+                    if !syllabus.contains(&addr) {
+                        syllabus.push(addr);
+                    }
                     synth_tx
                         .try_send(mycelium::synthesis::Deliberation::Adopt(ratifier, word))
                         .is_ok()
@@ -684,6 +691,7 @@ fn main() {
             }
             let cursor =
                 &mut syllabus_served.iter_mut().find(|(v, _)| *v == svoice).unwrap().1;
+            let mut missed: Vec<[u8; 32]> = Vec::new();
             let words: Vec<Vec<u8>> = {
                 let k = kernel.lock().unwrap();
                 // Depth follows the metabolism like the quote book: a calm
@@ -694,16 +702,28 @@ fn main() {
                 let mut out = Vec::new();
                 while *cursor < syllabus.len() && out.len() < depth {
                     let addr = syllabus[*cursor];
-                    *cursor += 1;
                     // Serve the CURRENT form — a rebind since ruling teaches
-                    // the refined γ; a retired word is silently skipped.
-                    if let Some(w) = k.basis().iter().find(|t| t.address() == addr) {
-                        out.push(w.to_bytes());
+                    // the refined γ. A word not yet held (adoption in flight)
+                    // holds the cursor until it lands; a retired word is
+                    // passed over.
+                    match k.basis().iter().find(|t| t.address() == addr) {
+                        Some(w) => out.push(w.to_bytes()),
+                        None => missed.push(addr), // adoption in flight: taught once it lands
                     }
+                    *cursor += 1;
                 }
                 out
             };
             let served = words.len();
+            // A word not yet held returns to the tail of the stream once, so
+            // an adoption in flight is taught when it lands and a retired
+            // word falls out.
+            let ahead = *cursor;
+            for addr in missed {
+                if !syllabus[ahead..].contains(&addr) {
+                    syllabus.push(addr);
+                }
+            }
             let reply =
                 Frame { lane: frame.lane, body: dialogue::encode_syllabus_reply(&words) };
             let _ = s.write_all(&reply.encode().unwrap_or_default());
@@ -769,10 +789,13 @@ fn main() {
                 };
                 ok
             };
-            // RATIFICATION → SYLLABUS: an upheld or rebound word enters the
-            // teaching stream for every enrolled voice (push-on-contact).
-            if applied
-                && (ruling == dialogue::RULING_UPHELD || ruling == dialogue::RULING_REBIND)
+            // RATIFICATION → SYLLABUS: a ratified word this hypha holds enters
+            // the teaching stream for every enrolled voice, whether the
+            // ruling arrived while it was provisional or after it installed.
+            let held = kernel.lock().map(|k| k.basis().iter().any(|w| w.address() == addr)).unwrap_or(false);
+            if held
+                && matches!(ruling, dialogue::RULING_UPHELD | dialogue::RULING_REBIND | dialogue::RULING_ATTACHED)
+                && !syllabus.contains(&addr)
             {
                 syllabus.push(addr);
             }

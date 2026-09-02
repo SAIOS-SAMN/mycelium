@@ -122,6 +122,9 @@ pub const ACT_PROBE: u8 = 0x12;
 pub const PROBE_NOTHING: u8 = 0;
 pub const PROBE_DESCENT: u8 = 1;
 pub const PROBE_CLOSED: u8 = 2;
+/// The listing is no longer on the book in the state it was quoted:
+/// another voice settled or descended it first.
+pub const PROBE_SETTLED: u8 = 3;
 
 /// A citation on the wire: (word address, transport, gauge coordinate).
 /// A CITATION ON THE WIRE carries its operator: the word's address as a

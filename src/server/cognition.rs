@@ -264,6 +264,7 @@ pub fn quote_over(
     top: usize,
     budget: usize,
     exclude: &[[u8; 32]],
+    spoken_any: &[[u8; 32]],
 ) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
     let c = rank.closure.iter().filter(|k| k.is_some()).count() as u64;
     let i = rank.closure.len() as u64 - c;
@@ -274,7 +275,12 @@ pub fn quote_over(
     // a frame the wire refuses. Only the served head is priced.
     let mut priced: Vec<(Element, [u64; 4])> = Vec::with_capacity(top);
     let mut used = 0usize;
-    for &idx in &rank.order {
+    // Listings no voice has spoken on come first in rank order, then the
+    // ones other voices are already on: every voice reads an open page
+    // before it joins a conversation in progress.
+    let open = rank.order.iter().copied().filter(|&i| pending.get(i).is_some_and(|(p, _)| !spoken_any.contains(&p.address())));
+    let joined = rank.order.iter().copied().filter(|&i| pending.get(i).is_some_and(|(p, _)| spoken_any.contains(&p.address())));
+    for idx in open.chain(joined) {
         if priced.len() >= top {
             break;
         }
@@ -1084,6 +1090,17 @@ impl Kernel {
         self.spoken.iter().filter(|(_, v)| v == voice).map(|(a, _)| *a).collect()
     }
 
+    /// The listings any voice has spoken on, in their current state.
+    pub fn spoken_by_any(&self) -> Vec<[u8; 32]> {
+        let mut out: Vec<[u8; 32]> = Vec::new();
+        for (a, _) in &self.spoken {
+            if !out.contains(a) {
+                out.push(*a);
+            }
+        }
+        out
+    }
+
     /// The court's chain head as ruled to this hypha.
     pub fn set_court_head(&mut self, head: [u8; 32]) {
         self.court_head = head;
@@ -1417,7 +1434,8 @@ impl Kernel {
                         self.provisional.push((saddr, residual.clone()));
                         self.physics.relieve(&mag);
                         self.physics.syntropy(&mag); // volume built through the axis
-                        self.physics.spend(lanes); // still an expansion — fuel is spent
+                        // A puncture deepens a held word: order built, no
+                        // reserve spent — the fiber is the cheaper direction.
                         self.pending.retain(|(p, _)| p.address() != residual.address());
                         self.book_gen += 1;
                         self.append_step(saddr, voice); // the puncture is a K-step too
@@ -1799,7 +1817,7 @@ impl Kernel {
     pub fn quote(&mut self, top: usize) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
         let surface = crate::economy::yield_surface(&self.physics);
         let rank = self.closure_now();
-        quote_over(&rank, &self.composites, &self.pending, &surface, &self.treasury.pool(), top, usize::MAX, &[])
+        quote_over(&rank, &self.composites, &self.pending, &surface, &self.treasury.pool(), top, usize::MAX, &[], &[])
     }
 
     /// ATTEST — a peer's INDEPENDENT derivation of an open residual arrives as a
