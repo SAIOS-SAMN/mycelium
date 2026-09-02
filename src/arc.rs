@@ -134,6 +134,92 @@ pub fn refine_delta(a: &Grid, b: &Grid) -> Option<(Vec<(i64, i64, u8, u8)>, Grid
     Some((chain, ra, (hi, wi, ho, wo)))
 }
 
+/// A chain's witnessed placements inside a coboundary — every translation
+/// whose cells all sit in the δ with exact transitions; the union footprint
+/// is the chain's measured domain in that pair (engine organ; the entity's
+/// study composes it, the court's evidence speaks it).
+pub fn chain_footprint(
+    chain: &[(i64, i64, u8, u8)],
+    d: &[(i64, i64, u8, u8)],
+) -> Vec<(i64, i64)> {
+    let mut fp: Vec<(i64, i64)> = Vec::new();
+    let Some(&(r0, c0, _, _)) = chain.first() else { return fp };
+    for &(ar, ac, ab, aa) in d {
+        if (ab, aa) != (chain[0].2, chain[0].3) {
+            continue;
+        }
+        let (dr, dc) = (ar - r0, ac - c0);
+        if chain.iter().all(|(r, c, b, a)| d.binary_search(&(r + dr, c + dc, *b, *a)).is_ok()) {
+            fp.extend(chain.iter().map(|(r, c, _, _)| (r + dr, c + dc)));
+        }
+    }
+    fp.sort_unstable();
+    fp.dedup();
+    fp
+}
+
+/// APPLY bound chains (a dialect: concrete rewrite chains each carrying an
+/// optional selection term) to a grid. π-bound chains place ONLY where the
+/// term's region proposes (the region's cells anchor the lead cell, the whole
+/// footprint inside it — deduction, no sweep); unbound chains fall back to
+/// the confirming sweep, and the caller's replay gate polices them.
+pub fn apply_bound_chains(
+    grid: &Grid,
+    spoken: &[(Vec<(i64, i64, u8, u8)>, Option<crate::transducer::anchor::Sel>)],
+) -> Grid {
+    let mut out = grid.clone();
+    let (rows, cols) = (grid.len() as i64, grid.first().map_or(0, |r| r.len()) as i64);
+    let scene: Vec<(i64, i64, u8)> = grid
+        .iter()
+        .enumerate()
+        .flat_map(|(r, row)| row.iter().enumerate().map(move |(c, &h)| (r as i64, c as i64, h)))
+        .collect();
+    let mut writes: Vec<(i64, i64, u8)> = Vec::new();
+    for (chain, sel) in spoken {
+        let Some(&(r0, c0, _, _)) = chain.first() else { continue };
+        let candidates: Vec<(i64, i64)> = match sel {
+            Some(t) => {
+                let region = t.eval(&scene);
+                region
+                    .iter()
+                    .map(|(rr, rc)| (rr - r0, rc - c0))
+                    .filter(|(dr, dc)| {
+                        chain
+                            .iter()
+                            .all(|(r, c, _, _)| region.binary_search(&(r + dr, c + dc)).is_ok())
+                    })
+                    .collect()
+            }
+            None => {
+                let max_r = chain.iter().map(|(r, _, _, _)| *r).max().unwrap_or(0);
+                let max_c = chain.iter().map(|(_, c, _, _)| *c).max().unwrap_or(0);
+                (0..(rows - max_r).max(0))
+                    .flat_map(|dr| (0..(cols - max_c).max(0)).map(move |dc| (dr, dc)))
+                    .collect()
+            }
+        };
+        for (dr, dc) in candidates {
+            let fits = chain.iter().all(|(r, c, before, _)| {
+                let (gr, gc) = (r + dr, c + dc);
+                gr >= 0
+                    && gc >= 0
+                    && gr < rows
+                    && gc < cols
+                    && grid[gr as usize][gc as usize] == *before
+            });
+            if fits {
+                for (r, c, _, after) in chain {
+                    writes.push((r + dr, c + dc, *after));
+                }
+            }
+        }
+    }
+    for (r, c, v) in writes {
+        out[r as usize][c as usize] = v;
+    }
+    out
+}
+
 /// THE PROJECTION — the inverse deduction as a library organ: apply anchored
 /// words to a world state and return the projected next state plus the indices
 /// of the words that spoke (the prediction's sentence). Discipline:

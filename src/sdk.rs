@@ -9,8 +9,10 @@
 //! mycelium SDK (Session / kernel emblem / observe) onto the v0.1.0 percept wire.
 
 use crate::anastome::dialogue;
+use crate::arc::{apply_bound_chains, chain_footprint, readback, refine_delta, Grid};
 use crate::cognition::{decompose_over, encode_percept, perceive};
 use crate::network::wire::{Frame, Stratum};
+use crate::transducer::anchor::{derive_carrying_all, Sel};
 use crate::transducer::element::Element;
 use std::io::{self, Read, Write};
 use std::net::TcpStream;
@@ -238,6 +240,13 @@ pub struct Epigenome {
     recollections: Vec<(Vec<usize>, u64)>,
     /// The entity's chromatic aperture — its perceptual bias (harmonic import).
     pub aperture: Aperture,
+    /// THE TASK DIALECT (ephemeral, never persisted) — the bound chains the
+    /// last study() crystallized: γ_local = (π*, Δ) formed from the immediate
+    /// family's evidence and verified by virtual rollout before anything is
+    /// spoken. Projection consults the dialect FIRST (π_dialect ⊓ π_genome):
+    /// the entity reasons with its highest-precision local knowledge without
+    /// waiting on the court's slower global cycle.
+    dialect: Vec<(Vec<(i64, i64, u8, u8)>, Option<Sel>)>,
 }
 
 impl Epigenome {
@@ -364,11 +373,14 @@ impl Epigenome {
 pub struct Entity {
     session: Session,
     pub epigenome: Epigenome,
+    /// Verified dialect findings awaiting the wire (bounded queue) — flushed
+    /// as anchor-evidence deposits so local thought feeds the court.
+    evidence_out: Vec<([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)>,
 }
 
 impl Entity {
     pub fn open(addr: &str, kernel: Kernel) -> Self {
-        Entity { session: Session::open(addr, kernel), epigenome: Epigenome::new() }
+        Entity { session: Session::open(addr, kernel), epigenome: Epigenome::new(), evidence_out: Vec::new() }
     }
 
     /// Open with CONTINUITY: restore the crystallized genome from `genome_path`
@@ -391,15 +403,146 @@ impl Entity {
         std::fs::rename(&tmp, genome_path)
     }
 
-    /// PROJECT — the entity THINKS with its inherited language: apply the
-    /// genome's anchored words (γ = (π, Δ)) to a world state and return the
-    /// projected next state plus the sentence of words that spoke. This is
-    /// the intelligence-pull for embodied kernels (game individuals, world
-    /// models): comprehension reads the present, projection expects the
-    /// future — both from the SAME court-refined mesh language. Only π-bound
-    /// words speak; the unrefined stay silent, so a young genome projects
-    /// humbly and grows sharper exactly as the court binds anchors.
+    /// STUDY — the entity THINKS THROUGH THOUGHT over a family of observed
+    /// transitions (the epigenetic dialect engine):
+    ///   1. LIFT: each pair's coboundary (refined to the common complex when
+    ///      frames differ) decomposes over the GENOME into cited words — the
+    ///      superposition of candidate readings.
+    ///   2. BEAM: per (word, variant), the witnessed placements across the
+    ///      family derive a BEAM of candidate anchor terms (all common
+    ///      carriers, tightest-first — optionality retained, never a boolean
+    ///      filter; a variant with no common term stays ambient and lets the
+    ///      rollout judge it).
+    ///   3. ROLLOUT: the crystallization candidate replays VIRTUALLY against
+    ///      every pair; a nonzero residual on ANY pair is the one unambiguous
+    ///      terminal obstruction — the dialect is pruned whole (curvature,
+    ///      not preference).
+    ///   4. CRYSTALLIZE + SEED: the surviving dialect γ_local = (π*, Δ) lives
+    ///      in the epigenome (ephemeral, by ruling) and every VERIFIED
+    ///      binding queues as anchor evidence for the wire — local thought
+    ///      seeding the court's global refinement.
+    /// Returns the crystallized dialect size (0 = the family is beyond the
+    /// entity's current language — honest silence).
+    pub fn study(&mut self, family: &[(Grid, Grid)]) -> usize {
+        self.epigenome.dialect.clear();
+        if family.is_empty() {
+            return 0;
+        }
+        // 1. LIFT — decompose every pair over the genome.
+        let mut deltas: Vec<Vec<(i64, i64, u8, u8)>> = Vec::new();
+        let mut scenes: Vec<Grid> = Vec::new();
+        let mut cited: Vec<usize> = Vec::new();
+        for (a, b) in family {
+            let Some((mut d, refined_in, _frame)) = refine_delta(a, b) else { return 0 };
+            d.sort_unstable();
+            let min_r = d.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
+            let min_c = d.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
+            let mut centered: Vec<_> =
+                d.iter().map(|(r, c, x, y)| (r - min_r, c - min_c, *x, *y)).collect();
+            centered.sort_unstable();
+            match decompose_over(self.epigenome.genome(), &centered, None, 4, 16) {
+                Ok(sentence) => {
+                    for wi in sentence {
+                        if !cited.contains(&wi) {
+                            cited.push(wi);
+                        }
+                    }
+                }
+                Err(_) => return 0, // a mute pair: the family is unspeakable today
+            }
+            deltas.push(d);
+            scenes.push(refined_in);
+        }
+        // 2. BEAM — per witnessed variant, the common-carrier beam.
+        let mut spoken: Vec<(Vec<(i64, i64, u8, u8)>, Option<Sel>)> = Vec::new();
+        let mut findings: Vec<([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)> = Vec::new();
+        for &wi in &cited {
+            let word_addr = self.epigenome.genome()[wi].address();
+            for chain in self.epigenome.genome()[wi].variant_chains() {
+                let mut sets: Vec<Vec<Sel>> = Vec::new();
+                let mut first_witness: Option<(Vec<(i64, i64)>, usize)> = None;
+                for (pi, d) in deltas.iter().enumerate() {
+                    let fp = chain_footprint(&chain, d);
+                    if fp.is_empty() {
+                        continue;
+                    }
+                    let scene_cells: Vec<(i64, i64, u8)> = scenes[pi]
+                        .iter()
+                        .enumerate()
+                        .flat_map(|(r, row)| {
+                            row.iter().enumerate().map(move |(c, &h)| (r as i64, c as i64, h))
+                        })
+                        .collect();
+                    sets.push(derive_carrying_all(&fp, &scene_cells));
+                    if first_witness.is_none() {
+                        first_witness = Some((fp, pi));
+                    }
+                }
+                let Some((fp0, pi0)) = first_witness else { continue };
+                // The beam: every first-set term common to all witnessed pairs,
+                // already tightest-first; collapse takes the head, the tail is
+                // retained optionality for future re-study.
+                let binding = match sets.split_first() {
+                    Some((first, rest)) => {
+                        first.iter().find(|t| rest.iter().all(|s| s.contains(t))).cloned()
+                    }
+                    None => None,
+                };
+                if binding.is_some() {
+                    let scene_cells: Vec<(i64, i64, u8)> = scenes[pi0]
+                        .iter()
+                        .enumerate()
+                        .flat_map(|(r, row)| {
+                            row.iter().enumerate().map(move |(c, &h)| (r as i64, c as i64, h))
+                        })
+                        .collect();
+                    findings.push((word_addr, fp0, scene_cells));
+                }
+                spoken.push((chain, binding));
+            }
+        }
+        // 3. ROLLOUT — the dialect must re-derive its own evidence exactly.
+        for ((_, b), refined_in) in family.iter().zip(&scenes) {
+            let refined_got = apply_bound_chains(refined_in, &spoken);
+            let ok = readback(&refined_got, b.len(), b.first().map_or(0, |r| r.len()))
+                .is_some_and(|g| g == *b);
+            if !ok {
+                return 0; // δσ̂ ≠ 0 on a pair: terminal curvature, pruned whole
+            }
+        }
+        // 4. CRYSTALLIZE + SEED.
+        let size = spoken.len();
+        self.epigenome.dialect = spoken;
+        self.evidence_out.extend(findings);
+        self.evidence_out.truncate(64);
+        size
+    }
+
+    /// FLUSH verified dialect findings to the hypha as anchor evidence — the
+    /// entity's local reasoning seeding the court's global refinement.
+    pub fn flush_evidence(&mut self) -> io::Result<usize> {
+        if self.evidence_out.is_empty() {
+            return Ok(0);
+        }
+        let voice = self.session.kernel().voice();
+        let items: Vec<_> = self.evidence_out.drain(..).collect();
+        self.session.speak(dialogue::encode_evidence_deposit(&voice, &items))?;
+        Ok(items.len())
+    }
+
+    /// PROJECT — the entity THINKS with its language, DIALECT FIRST: the
+    /// task-local γ_local = (π*, Δ) crystallized by study() is its highest-
+    /// precision knowledge and speaks before the genome's global anchors
+    /// (π_dialect ⊓ π_genome); with no dialect at hand, the court-refined
+    /// genome speaks alone. Only bound speech acts; the unrefined stay
+    /// silent — a young mind projects humbly.
     pub fn project(&self, grid: &crate::arc::Grid) -> (crate::arc::Grid, Vec<usize>) {
+        if !self.epigenome.dialect.is_empty() {
+            let out = apply_bound_chains(grid, &self.epigenome.dialect);
+            let spoke: Vec<usize> =
+                if out != *grid { (0..self.epigenome.dialect.len()).collect() } else { Vec::new() };
+            return (out, spoke);
+        }
         crate::arc::project_anchored(grid, self.epigenome.genome())
     }
     pub fn kernel(&self) -> &Kernel {
@@ -506,6 +649,43 @@ fn decode_verdict(body: &[u8]) -> Verdict {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// THE THOUGHT ORGAN: study lifts a family into the epigenetic
+    /// superposition, crystallizes a verified task dialect γ_local = (π*, Δ),
+    /// queues its findings as court evidence, and project — dialect-first —
+    /// solves a fresh instance the global genome alone could not.
+    #[test]
+    fn study_crystallizes_a_dialect_and_project_solves_with_it() {
+        use crate::transducer::element::from_residual;
+        // The entity holds ONE inherited word: the 1-cell recolour 1→2 (⊤ —
+        // the court has not bound it; alone it projects nothing).
+        let mut e = Entity::open("127.0.0.1:1", Kernel::named("study-test"));
+        let w = from_residual(&vec![(0, 0, 1, 2)]);
+        assert!(e.epigenome.learn(&w.to_bytes()).is_some());
+        assert!(e.epigenome.genome()[0].anchor().is_none(), "inherited ⊤");
+        // A family: hue-1 cells beside a hue-3 body recolour to 2 — twice,
+        // in different arrangements (the family, not one pair, decides).
+        let a1 = vec![vec![1, 1, 0], vec![3, 3, 0], vec![0, 0, 0]];
+        let b1 = vec![vec![2, 2, 0], vec![3, 3, 0], vec![0, 0, 0]];
+        let a2 = vec![vec![0, 3, 1], vec![0, 3, 1], vec![0, 0, 0]];
+        let b2 = vec![vec![0, 3, 2], vec![0, 3, 2], vec![0, 0, 0]];
+        let family = vec![(a1, b1), (a2, b2)];
+        let size = e.study(&family);
+        assert!(size > 0, "the dialect crystallized (rollout closed on both pairs)");
+        assert!(!e.evidence_out.is_empty(), "verified findings queued for the court");
+        // A FRESH instance: same relation, new geometry — the dialect thinks it
+        // through; the projected next state is exact.
+        let x = vec![vec![0, 0, 0], vec![1, 3, 0], vec![1, 3, 0]];
+        let y = vec![vec![0, 0, 0], vec![2, 3, 0], vec![2, 3, 0]];
+        let (guess, spoke) = e.project(&x);
+        assert!(!spoke.is_empty(), "the dialect spoke");
+        assert_eq!(guess, y, "the entity's own thought solved the fresh instance");
+        // A new study clears the old dialect — task thought is ephemeral.
+        assert_eq!(e.study(&[]), 0);
+        let (silent, said) = e.project(&x);
+        assert_eq!(silent, x, "no dialect, ⊤ genome: humble silence");
+        assert!(said.is_empty());
+    }
 
     /// A kernel's identity is stable and name-derived; distinct names → distinct
     /// voices (so two named kernels can reach consilience, one cannot with itself).

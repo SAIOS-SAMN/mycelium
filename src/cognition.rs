@@ -292,6 +292,25 @@ impl Kernel {
         &self.anchor_evidence
     }
 
+    /// DEPOSIT evidence from the wire (an entity's verified dialect finding):
+    /// local thought seeds the court's global refinement — what tasks
+    /// repeatedly confirm locally is what the mesh promotes. Bounded, deduped.
+    pub fn deposit_evidence(
+        &mut self,
+        addr: [u8; 32],
+        fp: Vec<(i64, i64)>,
+        scene: Vec<(i64, i64, u8)>,
+    ) -> bool {
+        if fp.is_empty() || self.anchor_evidence.len() >= 128 {
+            return false;
+        }
+        if self.anchor_evidence.iter().any(|(a, f, s)| *a == addr && *f == fp && *s == scene) {
+            return false;
+        }
+        self.anchor_evidence.push((addr, fp, scene));
+        true
+    }
+
     /// Open composite lineages (7d): parents whose child sub-demands are still
     /// completing — (parent id, children (address, done), overlap strips).
     pub fn composites(&self) -> &[([u8; 32], Vec<([u8; 32], bool)>, Vec<(i64, i64, u8, u8)>)] {

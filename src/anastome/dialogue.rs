@@ -234,10 +234,34 @@ pub fn encode_evidence_request(voice: &[u8; 32]) -> Vec<u8> {
 }
 
 pub fn decode_evidence_request(body: &[u8]) -> Option<[u8; 32]> {
-    if body.first() != Some(&ACT_EVIDENCE) {
-        return None;
+    if body.first() != Some(&ACT_EVIDENCE) || body.len() != 33 {
+        return None; // exactly [act][voice] — longer bodies are DEPOSITS
     }
     body.get(1..33)?.try_into().ok()
+}
+
+/// evidence DEPOSIT (an entity's verified dialect finding → the court's
+/// docket): `[ACT_EVIDENCE][voice 32][evidence-reply payload]`. A 33-byte
+/// body is a pull; anything longer is a deposit — one act, two directions.
+pub fn encode_evidence_deposit(
+    voice: &[u8; 32],
+    items: &[([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)],
+) -> Vec<u8> {
+    let mut out = vec![ACT_EVIDENCE];
+    out.extend_from_slice(voice);
+    out.extend_from_slice(&encode_evidence_reply(items));
+    out
+}
+
+pub fn decode_evidence_deposit(
+    body: &[u8],
+) -> Option<([u8; 32], Vec<([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)>)> {
+    if body.first() != Some(&ACT_EVIDENCE) || body.len() <= 33 {
+        return None;
+    }
+    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    let items = decode_evidence_reply(&body[33..])?;
+    Some((voice, items))
 }
 
 /// evidence reply: `[n u32] ( [addr 32][nf u32][fp (r i64,c i64)·nf]

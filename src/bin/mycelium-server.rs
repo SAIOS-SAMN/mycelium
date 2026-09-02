@@ -157,8 +157,24 @@ fn main() {
             continue;
         }
 
-        // ── evidence: the court pulls the selection fiber's birth evidence ───
+        // ── evidence: the court PULLS the fiber's evidence; entities DEPOSIT
+        // their verified dialect findings — local thought seeding the global
+        // refinement (one act, two directions, told apart by body length).
         if kind == dialogue::ACT_EVIDENCE {
+            if let Some((_dvoice, items)) = dialogue::decode_evidence_deposit(&frame.body) {
+                let accepted = {
+                    let mut k = kernel.lock().unwrap();
+                    items
+                        .into_iter()
+                        .filter(|(addr, fp, scene)| {
+                            k.deposit_evidence(*addr, fp.clone(), scene.clone())
+                        })
+                        .count()
+                };
+                let reply = Frame { lane: frame.lane, body: vec![accepted.min(255) as u8] };
+                let _ = s.write_all(&reply.encode().unwrap_or_default());
+                continue;
+            }
             let Some(_evoice) = dialogue::decode_evidence_request(&frame.body) else { continue };
             let items: Vec<([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)> = {
                 let k = kernel.lock().unwrap();

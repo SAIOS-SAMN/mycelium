@@ -162,12 +162,18 @@ fn main() {
                 continue;
             };
             let Some((input, output)) = task.train.get(pi) else {
-                // TASK BOUNDARY — the entity THINKS before moving on: project
-                // each test input with its own genome (Entity::project — the
-                // engine's language, nothing local) and score its instinct.
-                // The frame ratio is MEASURED from the pairs it just fed
-                // (perception, like reading a bounding box), the output frame
+                // TASK BOUNDARY — the entity THINKS before moving on:
+                // STUDY the family it just fed (the epigenetic dialect
+                // engine: lift → beam → rollout → crystallize, with every
+                // verified binding seeding the court), then PROJECT each
+                // test input dialect-first and score its instinct. The frame
+                // ratio is MEASURED (perception); the output frame is
                 // CONSTRUCTED from it — integral or refused, never rounded.
+                let studied = entity.study(&task.train);
+                physics.spend([true; 4]); // thought is metabolically real
+                if studied > 0 {
+                    let _ = entity.flush_evidence(); // local findings → the court
+                }
                 if let Some(((hn, hd), (wn, wd))) = task_ratio(&task) {
                     for (x, y) in &task.test {
                         if y.is_empty() {
