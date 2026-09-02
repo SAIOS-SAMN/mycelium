@@ -282,3 +282,167 @@ pub fn boundary_dual(sigma: &Mv) -> Option<Mv> {
     let i = Mv::blade(PSEUDO, one());
     Some(sigma.geo(&i.versor_inverse()?))
 }
+
+// ---- the rational conformal group Spin(4,1)(ℚ): dilation, reflection, tests ----
+
+/// The bivector `E = e_o ∧ e_∞` (the dilation generator's plane).
+fn e_plane() -> Mv {
+    // e_o e_∞ = e_o·e_∞ + e_o∧e_∞ = −1 + E.
+    e_o().geo(&e_inf()).add(&Mv::scalar(one()))
+}
+
+/// THE DILATOR by an exact rational ρ > 0, as an UNNORMALIZED versor
+/// `(ρ+1) ± (ρ−1) E`: a positive scalar multiple of exp(±½ ln ρ E), so the
+/// sandwich carries points on the cone to their ρ-scaled images up to the
+/// homogeneous scale, with no logarithm and no root. The orientation of E is
+/// settled against the embedding itself (the form that carries X(1,0) to
+/// X(ρ,0)), never by a chosen sign.
+pub fn dilator(rho: &BigRational) -> Mv {
+    let e = e_plane();
+    let plus = Mv::scalar(rho + one()).add(&e.scale(&(rho - one())));
+    let target = point(rho, &zero());
+    let probe = plus.sandwich(&point(&one(), &zero()));
+    match projective_ratio(&probe, &target) {
+        Some(_) => plus,
+        None => Mv::scalar(rho + one()).sub(&e.scale(&(rho - one()))),
+    }
+}
+
+/// THE REFLECTOR across the e2 axis (rows negated): the odd versor `e1`.
+pub fn reflector() -> Mv {
+    Mv::blade(E1, one())
+}
+
+/// Is `m` a versor: `m m̃` a nonzero scalar? Returns that scalar.
+pub fn is_versor(m: &Mv) -> Option<BigRational> {
+    let prod = m.geo(&m.reverse());
+    let s = prod.scalar_part();
+    if s.is_zero() || !prod.sub(&Mv::scalar(s.clone())).is_zero() {
+        return None;
+    }
+    Some(s)
+}
+
+/// PROJECTIVE EQUALITY of two blades: `a = λ b` for some λ ∈ ℚ×. The test is
+/// `a b̃` having a scalar part only, nonzero; returns λ. This is the exact
+/// closed-form check replay and verification run — never a wedge, never a
+/// rasterization.
+pub fn projective_ratio(a: &Mv, b: &Mv) -> Option<BigRational> {
+    let bb = b.norm2();
+    if bb.is_zero() {
+        // A null blade: compare through the reverse product against itself.
+        let prod = a.geo(&b.reverse());
+        let s = prod.scalar_part();
+        // For null vectors a b̃ has no scalar part; fall back to the exact
+        // componentwise proportionality, which is what projective equality is.
+        return proportional(a, b).or(if s.is_zero() { None } else { None });
+    }
+    let prod = a.geo(&b.reverse());
+    let s = prod.scalar_part();
+    if s.is_zero() || !prod.sub(&Mv::scalar(s.clone())).is_zero() {
+        return None;
+    }
+    Some(s / bb)
+}
+
+/// Exact componentwise proportionality `a = λ b` (λ ≠ 0), for null blades
+/// where the reverse product carries no scalar.
+fn proportional(a: &Mv, b: &Mv) -> Option<BigRational> {
+    let mut lambda: Option<BigRational> = None;
+    for mask in 0..16 {
+        let (x, y) = (a.coeff(mask), b.coeff(mask));
+        match (x.is_zero(), y.is_zero()) {
+            (true, true) => continue,
+            (true, false) | (false, true) => return None,
+            (false, false) => {
+                let l = x / y;
+                match &lambda {
+                    None => lambda = Some(l),
+                    Some(k) if *k == l => {}
+                    Some(_) => return None,
+                }
+            }
+        }
+    }
+    lambda
+}
+
+impl Mv {
+    /// Serialize the 16 exact coefficients: per coefficient `[sign u8][nlen
+    /// u32][numerator][dlen u32][denominator]`, little-endian magnitudes.
+    pub fn to_bytes(&self, out: &mut Vec<u8>) {
+        for mask in 0..16 {
+            let v = &self.c[mask];
+            let (ns, nb) = v.numer().to_bytes_le();
+            let db = v.denom().to_bytes_le().1;
+            out.push(match ns {
+                num_bigint::Sign::Minus => 2,
+                num_bigint::Sign::NoSign => 0,
+                num_bigint::Sign::Plus => 1,
+            });
+            out.extend_from_slice(&(nb.len() as u32).to_le_bytes());
+            out.extend_from_slice(&nb);
+            out.extend_from_slice(&(db.len() as u32).to_le_bytes());
+            out.extend_from_slice(&db);
+        }
+    }
+
+    pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Mv> {
+        let mut m = Mv::zero();
+        for mask in 0..16 {
+            let sign = *b.get(*pos)?;
+            *pos += 1;
+            let nl = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
+            *pos += 4;
+            let nb = b.get(*pos..*pos + nl)?;
+            *pos += nl;
+            let dl = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
+            *pos += 4;
+            let db = b.get(*pos..*pos + dl)?;
+            *pos += dl;
+            let s = match sign {
+                2 => num_bigint::Sign::Minus,
+                1 => num_bigint::Sign::Plus,
+                _ => num_bigint::Sign::NoSign,
+            };
+            let numer = BigInt::from_bytes_le(s, nb);
+            let denom = BigInt::from_bytes_le(num_bigint::Sign::Plus, db);
+            if denom.is_zero() {
+                return None;
+            }
+            m.c[mask] = BigRational::new(numer, denom);
+        }
+        Some(m)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn q(n: i64, d: i64) -> BigRational {
+        BigRational::new(BigInt::from(n), BigInt::from(d))
+    }
+
+    /// The dilator scales points exactly with no root or logarithm; the
+    /// reflector negates rows; both are versors; projective equality reads
+    /// the scalar ratio and refuses non-proportional blades; bytes round-trip.
+    #[test]
+    fn rational_versors_act_exactly_and_are_verified_in_closed_form() {
+        let d = dilator(&q(3, 2));
+        assert!(is_versor(&d).is_some(), "the dilator is a versor");
+        let moved = d.sandwich(&point(&q(2, 1), &q(-4, 1)));
+        assert_eq!(base(&moved), Some((q(3, 1), q(-6, 1))), "X(2,−4) → X(3,−6) at ρ = 3/2");
+        let r = reflector();
+        let flipped = r.sandwich(&point(&q(2, 1), &q(5, 1)));
+        assert_eq!(base(&flipped), Some((q(-2, 1), q(5, 1))));
+        let s = sphere(&q(1, 1), &q(1, 1), &q(5, 1));
+        assert_eq!(projective_ratio(&s.scale(&q(7, 3)), &s), Some(q(7, 3)));
+        assert!(projective_ratio(&s, &sphere(&q(1, 1), &q(1, 1), &q(6, 1))).is_none());
+        let composed = translator(&q(1, 1), &q(0, 1)).geo(&d);
+        let mut bytes = Vec::new();
+        composed.to_bytes(&mut bytes);
+        let mut pos = 0usize;
+        assert_eq!(Mv::from_bytes(&bytes, &mut pos), Some(composed));
+    }
+}
