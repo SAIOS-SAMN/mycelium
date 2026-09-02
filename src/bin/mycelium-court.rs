@@ -61,6 +61,16 @@ fn main() {
     let kernel = Kernel::named(&name);
     let voice = kernel.voice();
     let sessions: Vec<Session> = hyphas.iter().map(|h| Session::open(h, Kernel::named(&name))).collect();
+    // JUDICIAL CONTINUITY: the full court state (K-chain, federation, ruled
+    // set, rebind marks, counters) persists via atomic write-rename and
+    // rehydrates at boot — the judicial clock never resets, sealed words
+    // are never re-adjudicated, and a corrupted journal refuses whole.
+    let state_path = args
+        .windows(2)
+        .find(|w| w[0] == "--state")
+        .map(|w| w[1].clone())
+        .unwrap_or_else(|| "state/court.federation".to_string());
+    let restored = mycelium::court::ledger::CourtState::load(&state_path);
     // The court's own tamper-evident history — every ruling is a K-step.
     let mut chain = ReceiptChain::default();
     // THE FEDERATION — every word this court has finalized, across all hyphas:
@@ -76,6 +86,42 @@ fn main() {
     let mut rebound: Vec<([u8; 32], usize)> = Vec::new();
     let mut rebinds = 0u64;
     let (mut upheld, mut demoted, mut slashed) = (0u64, 0u64, 0u64);
+    if let Some(s) = restored {
+        chain = s.chain;
+        federation = s.federation;
+        ruled = s.ruled;
+        rebound = s.rebound;
+        upheld = s.upheld;
+        demoted = s.demoted;
+        slashed = s.slashed;
+        rebinds = s.rebinds;
+        eprintln!(
+            "court restored: K={} federation {} words, {} ruled, {} rebound",
+            chain.next_step_index(),
+            federation.len(),
+            ruled.len(),
+            rebound.len(),
+        );
+    }
+    // One closure seals the whole judicial state after every ruling — the
+    // atomic write-rename pattern; a crash leaves the previous sealed state.
+    let persist = |chain: &ReceiptChain,
+                   federation: &Vec<([u8; 32], Element)>,
+                   ruled: &Vec<[u8; 32]>,
+                   rebound: &Vec<([u8; 32], usize)>,
+                   counters: (u64, u64, u64, u64)| {
+        let s = mycelium::court::ledger::CourtState {
+            chain: chain.clone(),
+            federation: federation.clone(),
+            ruled: ruled.clone(),
+            rebound: rebound.clone(),
+            upheld: counters.0,
+            demoted: counters.1,
+            slashed: counters.2,
+            rebinds: counters.3,
+        };
+        let _ = s.save(&state_path);
+    };
     let mut last_total = u64::MAX; // voice the summary only when rulings moved
     let mut physics = Physics::default();
     let start = Instant::now();
@@ -132,6 +178,7 @@ fn main() {
                     _ => slashed += 1,
                 }
                 ruled.push(addr);
+                persist(&chain, &federation, &ruled, &rebound, (upheld, demoted, slashed, rebinds));
                 eprintln!(
                     "  [{}] {:02x}{:02x}… voices {} μ⃗ {mu:?} → {} ({}) applied={applied} K={}",
                     hyphas[hi],
@@ -210,6 +257,7 @@ fn main() {
                 Some(entry) => entry.1 = set.len(), // re-refined: new family mark
                 None => rebound.push((*addr, set.len())),
             }
+            persist(&chain, &federation, &ruled, &rebound, (upheld, demoted, slashed, rebinds));
             eprintln!(
                 "  REBIND {:02x}{:02x}… π* {:?} from {} evidences, applied={applied_any} K={}",
                 addr[0],

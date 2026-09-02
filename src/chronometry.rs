@@ -91,6 +91,18 @@ impl ReceiptChain {
     pub fn receipts(&self) -> &[KStepReceipt] {
         &self.receipts
     }
+
+    /// Rehydrate a chain from persisted receipts. Integrity is verified
+    /// before acceptance — a tampered journal refuses whole (continuity or
+    /// nothing), so a restored K-lineage is exactly the sealed one.
+    pub fn from_receipts(receipts: Vec<KStepReceipt>) -> Option<ReceiptChain> {
+        let c = ReceiptChain { receipts };
+        if c.verify_chain_integrity() {
+            Some(c)
+        } else {
+            None
+        }
+    }
 }
 
 /// TUNIVERSAL — the mycelium universe's ONE wall clock (operator-ruled).
