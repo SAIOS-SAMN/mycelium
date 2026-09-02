@@ -1,56 +1,63 @@
-# The Three Binaries — launch alignment (operator-ruled 2026-09-02)
+# Three-binary architecture (2026-09-02)
 
-The network launches as THREE distinct organisms, each with ITS OWN
-cognition — not a monolith whose binaries could be interposed. A beta/alpha
-user pays in the network's currency to validate a specific COMPONENT; the
-economics build on top of this split, so the split comes first.
+The network is built as three distinct binaries — mycelium-server,
+mycelium-client, mycelium-court — each with its own cognition module tree.
+The binaries are not interchangeable. A planned economic layer lets a
+beta/alpha user pay in the network currency to validate a specific
+component; that layer depends on this separation, so the separation is
+established first.
 
-## mycelium-server (heavy)
+## mycelium-server
 
-The judge-and-market organism. Owns: the reflex judge (adjudicate/attest/
-reduce at the door), the demand market + treasury + registry (PoUW
-authority: corpus ingestion, task dispatch, anti-replay settlement), the
-deliberative arm (synthesis::contemplate — deep joint projection,
-cross-test consensus, always metabolically priced), and the syllabus
-(teaching ratified vocabulary back to every voice). Designed for many
-cores and deep memory; its metabolism calibrates up.
+Responsibilities: request-path adjudication (attest, adjudicate, reduce at
+the door), the demand market, treasury, and task registry (corpus
+ingestion, task dispatch, anti-replay settlement), deliberative synthesis
+(synthesis::contemplate — deep joint projection with cross-test
+consistency, metered by the metabolism), and syllabus distribution
+(serving court-ratified vocabulary to enrolled voices). Intended for
+multi-core hosts with substantial memory; the metabolism calibration
+scales accordingly.
 
-## mycelium-client (lightweight)
+## mycelium-client
 
-The entity organism. Owns: perception (the eye embeds at the retina),
-Entity::study (lift → beam → spectral collapse → rollout), the epigenome
-(genome persisted, dialect ephemeral), humble projection, and the earning
-verbs (attest, solve, refinement bids, evidence deposits, syllabus pulls).
-Must run in the background of an ordinary machine; its metabolism
-calibrates down. NEVER holds answer keys, never arbitrates corpus.
+Responsibilities: perception (frame embedding at input), Entity::study
+(lift, beam, spectral collapse, rollout), the epigenome (persistent genome,
+ephemeral dialect), projection, and the earning operations (attestation,
+solve submission, refinement bids, evidence deposits, syllabus pulls).
+Designed to run in the background on commodity hardware; the metabolism
+calibration scales down. The client does not hold answer keys and does not
+arbitrate corpus.
 
-## mycelium-court (verification-specialized)
+## mycelium-court
 
-The finality organism. Owns: blind algebraic replay, Knuth–Bendix
-confluence audit, the two dockets (contradiction/admission), anchor
-refinement from evidence (π*), and the signed verdict. Compute nodes can
-be DESIGNED for this role (verification is embarrassingly parallel and
-stateless per case). The court is the ONLY holder of finality — server
-and client constructs are evidence and speech until it rules.
+Responsibilities: blind algebraic replay, Knuth–Bendix confluence audit,
+the two dockets (contradiction, admission), anchor refinement from
+deposited evidence (π*), and signed verdicts. Verification is stateless
+per case and parallelizes well, so dedicated compute nodes can be
+provisioned for this role. Finality is issued only by the court; server
+and client outputs remain evidence until ruled on.
 
-## Structural consequences (the de-monolith path)
+## Structural work required
 
-1. cognition.rs splits along the role boundary: the reflex judge + market
-   + door stay server-side; entity cognition lives in sdk (already true);
-   court verification moves OUT of the kernel into a `verdict` module the
-   court binary owns (today the court re-uses Kernel for replay — it
-   should own a leaner verification core with no market/treasury arms).
-2. The lib remains one crate for now (shared exact algebra: core Δ,
-   transducer, wire, physics), but each binary's cognition module tree is
-   disjoint: `synthesis`+`registry`+market → server; `sdk` → client;
-   `verdict` (to be extracted) → court. No binary imports another's arm.
-3. Wire acts are the ONLY coupling. A component's validation surface =
-   its acts — which is exactly what a paid validator will attest.
-4. Metabolism calibrates per organism (T1): same physics, different
-   hardware, honest scale.
+1. Split cognition.rs along the role boundary: request-path adjudication,
+   market, and door logic remain server-side; entity cognition stays in
+   sdk; court verification moves out of Kernel into a separate module
+   owned by the court binary (the court currently reuses Kernel for
+   replay, which pulls in market and treasury code it does not need).
+2. The library remains a single crate for the shared exact algebra (core
+   Δ, transducer, wire, physics), but each binary's cognition tree is
+   disjoint: synthesis + registry + market for the server; sdk for the
+   client; a verification module (to be extracted) for the court. No
+   binary imports another's role-specific modules.
+3. Wire acts are the only coupling between binaries. A component's
+   validation surface is its set of wire acts, which is also the surface
+   the paid-validation economics will attest.
+4. Metabolism calibration is per-host (see physics.rs): the same ratio
+   algebra at a hardware-derived scale.
 
-## Not yet built (economics on top)
+## Deferred (economics layer)
 
 - Paid component validation (stake to validate a component, earn on
-  attestations) — needs ed25519 voice signing + sybil bonds first.
-- Court-specialized compute node profile.
+  attestations); requires ed25519 voice signing and sybil-resistant
+  stake bonds.
+- A court-specialized node profile.
