@@ -264,33 +264,18 @@ fn main() {
             // so self-settlement would be self-dealing. Metabolic gate: only
             // a calm judge speculates.
             if let Some((tid, task)) = dispatched {
-                let mut k = kernel.lock().unwrap();
-                let free: u64 = k.physics().reserve.iter().sum();
-                let half = 2 * mycelium::physics::RESERVE_MAX as u64;
-                if free > half {
-                    let depth = (4 + (free as usize * 12)
-                        / (4 * mycelium::physics::RESERVE_MAX as usize))
-                        .min(16);
-                    let beam = (depth / 4).max(2);
-                    let construct =
-                        mycelium::synthesis::synthesize(k.basis(), &task, beam, depth);
-                    if let Some(c) = construct {
-                        if c.closes && c.speaks_all_tests {
-                            let deposited = c
-                                .evidence
-                                .iter()
-                                .filter(|(a, fp, sc)| {
-                                    k.deposit_evidence(*a, fp.clone(), sc.clone())
-                                })
-                                .count();
-                            eprintln!(
-                                "  synthesis task {:02x}{:02x}… WELL-FORMED: {} cited, {deposited} evidence → admission",
-                                tid[0],
-                                tid[1],
-                                c.cited.len(),
-                            );
-                        }
-                    }
+                let t0 = std::time::Instant::now();
+                let outcome = {
+                    let mut k = kernel.lock().unwrap();
+                    mycelium::synthesis::contemplate(&mut k, &task)
+                };
+                if let Some((cited, deposited)) = outcome {
+                    eprintln!(
+                        "  synthesis task {:02x}{:02x}… WELL-FORMED: {cited} cited, {deposited} evidence → admission ({} ms)",
+                        tid[0],
+                        tid[1],
+                        t0.elapsed().as_millis(),
+                    );
                 }
             }
             continue;

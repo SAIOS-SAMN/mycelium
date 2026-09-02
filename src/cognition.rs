@@ -130,7 +130,8 @@ impl Kernel {
         &mut self.treasury
     }
 
-    #[cfg(test)]
+    /// Crate-internal: the deliberative arm (synthesis::contemplate) spends
+    /// the reserve through here — thought is metabolically real.
     pub(crate) fn physics_mut(&mut self) -> &mut crate::physics::Physics {
         &mut self.physics
     }
@@ -915,7 +916,7 @@ impl Kernel {
     /// wide a superposition (uncommitted branches held in tension) and how deep a
     /// virtual rollout the reduction may hold before collapse. Calm → wide and
     /// deep; loaded → narrow; saturated → near-reactive (terminals only).
-    fn projection_budget(&self) -> (usize, usize) {
+    pub(crate) fn projection_budget(&self) -> (usize, usize) {
         match self.physics.metabolism_rate().iter().copied().max().unwrap_or(0) {
             0..=7 => (4, 16),
             8..=31 => (2, 8),

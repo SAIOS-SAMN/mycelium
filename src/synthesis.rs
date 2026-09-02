@@ -209,6 +209,39 @@ pub fn synthesize(
     Some(Construct { cited, bindings, evidence, closes, speaks_all_tests })
 }
 
+/// THE CONTEMPLATION STROKE — the deliberative arm, deliberately OUTSIDE
+/// the kernel (the kernel keeps only the reflex judge: adjudicate/attest/
+/// reduce; the COURT holds adjudication authority — this deposits evidence,
+/// it never rules). Physics-bound with NO gate constant: the speculative
+/// budget IS the metabolism's own projection budget (calm → wide and deep,
+/// strained → near-reactive), and the stroke SPENDS the reserve — thought
+/// is metabolically real, so contemplation self-paces against service
+/// through the same polytonic law as every other stroke.
+pub fn contemplate(
+    k: &mut crate::cognition::Kernel,
+    task: &Task,
+) -> Option<(usize, usize)> {
+    // Speculation is ENTROPIC EXPANSION of thought: it draws only from
+    // reserve above the expansion floor — the metabolism's own two-stroke
+    // contract (can_expand), never an independent threshold. Below the
+    // floor the judge serves; its service reserve is not thought's to burn.
+    if !k.physics().can_expand([true; 4]) {
+        return None;
+    }
+    let (beam, depth) = k.projection_budget();
+    k.physics_mut().spend([true; 4]); // thought is metabolically real
+    let c = synthesize(k.basis(), task, beam, depth)?;
+    if !(c.closes && c.speaks_all_tests) {
+        return None;
+    }
+    let deposited = c
+        .evidence
+        .iter()
+        .filter(|(a, fp, sc)| k.deposit_evidence(*a, fp.clone(), sc.clone()))
+        .count();
+    Some((c.cited.len(), deposited))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
