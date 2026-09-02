@@ -64,6 +64,54 @@ pub fn decode_refine(body: &[u8]) -> Option<([u8; 32], [u8; 32])> {
     Some((voice, word))
 }
 
+/// THE SYLLABUS (distributed cognition, operator-ruled): court-ratified
+/// vocabulary PUSHED to every enrolled voice on its next contact — teaching
+/// as an act of the network, not a passive download. The client asks with
+/// its voice; the hypha serves the ratified stream from that voice's cursor
+/// (each ratification reaches each voice exactly once, in ruling order).
+/// Request: `[ACT_SYLLABUS][voice 32]`. Reply: `[n u8][(len u32)(word
+/// bytes)·n]` — full lossless element forms (Epigenome::learn refreshes by
+/// address, so rebinds propagate too).
+pub const ACT_SYLLABUS: u8 = 0x0D;
+
+pub fn encode_syllabus_request(voice: &[u8; 32]) -> Vec<u8> {
+    let mut out = vec![ACT_SYLLABUS];
+    out.extend_from_slice(voice);
+    out
+}
+
+pub fn decode_syllabus_request(body: &[u8]) -> Option<[u8; 32]> {
+    if body.first() != Some(&ACT_SYLLABUS) || body.len() != 33 {
+        return None;
+    }
+    body.get(1..33)?.try_into().ok()
+}
+
+pub fn encode_syllabus_reply(words: &[Vec<u8>]) -> Vec<u8> {
+    let mut out = vec![words.len().min(255) as u8];
+    for w in words.iter().take(255) {
+        out.extend_from_slice(&(w.len() as u32).to_le_bytes());
+        out.extend_from_slice(w);
+    }
+    out
+}
+
+pub fn decode_syllabus_reply(body: &[u8]) -> Option<Vec<Vec<u8>>> {
+    let n = *body.first()? as usize;
+    let mut p = 1usize;
+    let mut words = Vec::with_capacity(n.min(64));
+    for _ in 0..n {
+        let len = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+        p += 4;
+        if len > body.len().saturating_sub(p) {
+            return None; // untrusted length
+        }
+        words.push(body.get(p..p + len)?.to_vec());
+        p += len;
+    }
+    Some(words)
+}
+
 fn push_grid(out: &mut Vec<u8>, g: &[Vec<u8>]) {
     out.extend_from_slice(&(g.len() as u16).to_le_bytes());
     out.extend_from_slice(&(g.first().map_or(0, |r| r.len()) as u16).to_le_bytes());

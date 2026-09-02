@@ -29,6 +29,7 @@ struct RawTask {
 
 /// A parsed ARC task: the train family (input→output demonstrations) and the test
 /// inputs (output may be withheld in evaluation tasks — empty then).
+#[derive(Clone)]
 pub struct Task {
     pub train: Vec<(Grid, Grid)>,
     pub test: Vec<(Grid, Grid)>,

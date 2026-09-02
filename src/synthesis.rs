@@ -1,0 +1,269 @@
+// AI-GENERATED CONTENT — see DISCLAIMER.md.
+//
+//! THE HYPHA'S DEEP JOINT PROJECTION (distributed cognition, operator-ruled).
+//!
+//! The gate's thought was correct; its LOCATION was the crime. The cognition
+//! that once lived in an isolated test runner is redistributed here to the
+//! node whose role it is: the CLIENT perceives and humbly projects; the
+//! SERVER projects more deeply, analyses, and reassembles — using ONLY the
+//! engine's own primitives (the same lift → beam → rollout the entity
+//! thinks with, at the judge's deeper budget); the COURT adjudicates the
+//! well-formed constructs the server dockets; the server then teaches the
+//! ratified syllabus back to every client, whose dialects re-resolve and
+//! produce MORE VALID results. Nothing here is task-specific and nothing is
+//! searched: candidate bindings are derived carriers (comprehension),
+//! rollout is virtual replay (mathematics), and the only judge of a
+//! construct is δσ̂ = 0.
+//!
+//! CROSS-TEST CONSENSUS — what the gate had and the entity lacks: a
+//! construct is WELL-FORMED only if one binding set closes on EVERY train
+//! pair AND speaks (bound, non-silent) on EVERY test input JOINTLY. A
+//! reading that explains one grid but goes mute on its sibling is not
+//! understanding; joint coherence is the consensus.
+
+use crate::arc::{
+    apply_bound_chains, chain_footprint, embed, frame_ratio, readback, refine_delta, Grid, Task,
+};
+use crate::cognition::decompose_over;
+use crate::transducer::anchor::{derive_carrying_all, Sel};
+use crate::transducer::element::Element;
+use crate::transducer::spectral::collapse_beam;
+
+/// A well-formed construct: the server's synthesized reading of a task
+/// family, ready for the court (evidence) and the syllabus (cited words).
+pub struct Construct {
+    /// Addresses of every basis word the family's joint reading cites.
+    pub cited: Vec<[u8; 32]>,
+    /// The bound chains γ = (π, Δ) the synthesis crystallized.
+    pub bindings: Vec<(Vec<(i64, i64, u8, u8)>, Option<Sel>)>,
+    /// Anchor evidence (word address, footprint, scene) for the admission
+    /// fiber — the court's raw material.
+    pub evidence: Vec<([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)>,
+    /// δσ̂ = 0 replayed on every train pair (the terminal judge).
+    pub closes: bool,
+    /// The construct speaks — bound and non-silent — on every test input.
+    pub speaks_all_tests: bool,
+}
+
+fn gcd(a: usize, b: usize) -> usize {
+    if b == 0 { a } else { gcd(b, a % b) }
+}
+fn lcm(a: usize, b: usize) -> usize {
+    a / gcd(a, b) * b
+}
+
+/// The family's measured frame ratio — perception, identical across pairs
+/// or refused (never rounded).
+pub fn family_ratio(train: &[(Grid, Grid)]) -> Option<((usize, usize), (usize, usize))> {
+    let mut ratio = None;
+    for (a, b) in train {
+        let f =
+            (a.len(), a.first().map_or(0, |r| r.len()), b.len(), b.first().map_or(0, |r| r.len()));
+        if f.0 == 0 || f.1 == 0 || f.2 == 0 || f.3 == 0 {
+            return None;
+        }
+        let r = frame_ratio(&f);
+        match &ratio {
+            None => ratio = Some(r),
+            Some(held) if *held != r => return None,
+            _ => {}
+        }
+    }
+    ratio
+}
+
+fn scene_cells(scene: &Grid) -> Vec<(i64, i64, u8)> {
+    scene
+        .iter()
+        .enumerate()
+        .flat_map(|(r, row)| row.iter().enumerate().map(move |(c, &h)| (r as i64, c as i64, h)))
+        .collect()
+}
+
+/// SYNTHESIZE — the deep joint projection over a task family, in the given
+/// language (the judge's basis), at the given speculative budget.
+///
+/// 1. LIFT: every train pair's refined coboundary decomposes over the
+///    language (a mute pair = the family is beyond it — honest None).
+/// 2. BEAM: per cited word variant, the common-carrier anchor terms across
+///    every witnessing pair (tightest-first; optionality retained).
+/// 3. ROLLOUT: the crystallized bindings replay virtually on every train
+///    pair — δσ̂ ≠ 0 anywhere prunes the construct whole.
+/// 4. CONSENSUS: the same bindings must speak (bound, non-silent, frame-
+///    integral) on EVERY test input jointly.
+///
+/// Returns the construct with its closure/consensus verdicts; the caller
+/// (the hypha) decides what to docket, and NEVER settles a solve to itself
+/// — the server holds the answers, so self-settlement would be self-dealing.
+/// Its synthesis becomes evidence and syllabus; the YIELD stays with the
+/// clients the syllabus empowers.
+pub fn synthesize(
+    language: &[Element],
+    task: &Task,
+    beam_width: usize,
+    depth: usize,
+) -> Option<Construct> {
+    if task.train.is_empty() || language.is_empty() {
+        return None;
+    }
+    // 1. LIFT.
+    let mut deltas: Vec<Vec<(i64, i64, u8, u8)>> = Vec::new();
+    let mut scenes: Vec<Grid> = Vec::new();
+    let mut cited_idx: Vec<usize> = Vec::new();
+    for (a, b) in &task.train {
+        let (mut d, refined_in, _frame) = refine_delta(a, b)?;
+        d.sort_unstable();
+        let min_r = d.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
+        let min_c = d.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
+        let mut centered: Vec<_> =
+            d.iter().map(|(r, c, x, y)| (r - min_r, c - min_c, *x, *y)).collect();
+        centered.sort_unstable();
+        match decompose_over(language, &centered, None, beam_width, depth) {
+            Ok(sentence) => {
+                for wi in sentence {
+                    if !cited_idx.contains(&wi) {
+                        cited_idx.push(wi);
+                    }
+                }
+            }
+            Err(_) => return None, // a mute pair: unspeakable in this language today
+        }
+        deltas.push(d);
+        scenes.push(refined_in);
+    }
+    // 2. BEAM — common carriers as projected future states, collapsed by the
+    // SPECTRAL resonance (DC3): exact per-axis invariants against the
+    // footprint, worst witnessing pair governing, tightest-first as tiebreak.
+    let mut bindings: Vec<(Vec<(i64, i64, u8, u8)>, Option<Sel>)> = Vec::new();
+    let mut evidence: Vec<([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)> = Vec::new();
+    for &wi in &cited_idx {
+        let word_addr = language[wi].address();
+        for chain in language[wi].variant_chains() {
+            let mut sets: Vec<Vec<Sel>> = Vec::new();
+            let mut witnesses: Vec<(Vec<(i64, i64)>, Vec<(i64, i64, u8)>)> = Vec::new();
+            for (pi, d) in deltas.iter().enumerate() {
+                let fp = chain_footprint(&chain, d);
+                if fp.is_empty() {
+                    continue;
+                }
+                let sc = scene_cells(&scenes[pi]);
+                sets.push(derive_carrying_all(&fp, &sc));
+                witnesses.push((fp, sc));
+            }
+            if witnesses.is_empty() {
+                continue;
+            }
+            let commons: Vec<Sel> = match sets.split_first() {
+                Some((first, rest)) => {
+                    first.iter().filter(|t| rest.iter().all(|s| s.contains(*t))).cloned().collect()
+                }
+                None => Vec::new(),
+            };
+            let binding = collapse_beam(&commons, &witnesses);
+            if binding.is_some() {
+                evidence.push((word_addr, witnesses[0].0.clone(), witnesses[0].1.clone()));
+            }
+            bindings.push((chain, binding));
+        }
+    }
+    // 3. ROLLOUT — δσ̂ = 0 on every train pair or the construct dies whole.
+    let mut closes = true;
+    for ((_, b), refined_in) in task.train.iter().zip(&scenes) {
+        let refined_got = apply_bound_chains(refined_in, &bindings);
+        let ok = readback(&refined_got, b.len(), b.first().map_or(0, |r| r.len()))
+            .is_some_and(|g| g == *b);
+        if !ok {
+            closes = false;
+            break;
+        }
+    }
+    // 4. CROSS-TEST CONSENSUS — the joint condition over the whole family.
+    let mut speaks_all_tests = !task.test.is_empty();
+    match family_ratio(&task.train) {
+        Some(((hn, hd), (wn, wd))) => {
+            for (x, _) in &task.test {
+                let (h, w) = (x.len(), x.first().map_or(0, |r| r.len()));
+                if h == 0 || w == 0 || (h * hn) % hd != 0 || (w * wn) % wd != 0 {
+                    speaks_all_tests = false; // non-integral frame: refusal
+                    break;
+                }
+                let (oh, ow) = (h * hn / hd, w * wn / wd);
+                let (lh, lw) = (lcm(h, oh), lcm(w, ow));
+                let rx = embed(x, lh, lw);
+                let bound: Vec<_> =
+                    bindings.iter().filter(|(_, s)| s.is_some()).cloned().collect();
+                if bound.is_empty() {
+                    speaks_all_tests = false;
+                    break;
+                }
+                let projected = apply_bound_chains(&rx, &bound);
+                if projected == rx || readback(&projected, oh, ow).is_none() {
+                    speaks_all_tests = false; // silent or frame-incoherent
+                    break;
+                }
+            }
+        }
+        None => speaks_all_tests = false,
+    }
+    let cited = cited_idx.iter().map(|&i| language[i].address()).collect();
+    Some(Construct { cited, bindings, evidence, closes, speaks_all_tests })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::transducer::element::from_residual;
+    use crate::transducer::germinate::germinate;
+
+    /// A language holding the recolour word 1→2; a family where every pair
+    /// speaks it and both tests carry it jointly: the construct closes and
+    /// speaks all tests. A family whose second test is mute breaks consensus.
+    #[test]
+    fn joint_coherence_is_the_consensus() {
+        // The word: hue 1 → hue 2 wherever 1 stands (a 1-cell recolour germ).
+        let a = vec![(0, 0, 1)];
+        let b = vec![(0, 0, 2)];
+        let word = from_residual(&germinate(&a, &b).unwrap());
+        let language = vec![word];
+
+        let train = vec![
+            (vec![vec![1, 0], vec![0, 0]], vec![vec![2, 0], vec![0, 0]]),
+            (vec![vec![0, 0], vec![0, 1]], vec![vec![0, 0], vec![0, 2]]),
+        ];
+        let test_ok = vec![
+            (vec![vec![1, 1], vec![0, 0]], vec![vec![2, 2], vec![0, 0]]),
+            (vec![vec![0, 1], vec![1, 0]], vec![vec![0, 2], vec![2, 0]]),
+        ];
+        let c = synthesize(&language, &Task { train: train.clone(), test: test_ok }, 4, 16)
+            .expect("the family is speakable");
+        assert!(c.closes, "δσ̂ = 0 on every train pair");
+        assert!(c.speaks_all_tests, "the construct carries jointly across both tests");
+        assert_eq!(c.cited.len(), 1, "one word cited");
+        assert!(!c.evidence.is_empty(), "anchored bindings deposit evidence");
+
+        // A mute sibling test (no hue-1 anywhere): the joint condition fails.
+        let test_mute = vec![
+            (vec![vec![1, 0], vec![0, 0]], vec![vec![2, 0], vec![0, 0]]),
+            (vec![vec![0, 0], vec![0, 0]], vec![vec![0, 0], vec![0, 0]]),
+        ];
+        let c2 = synthesize(&language, &Task { train, test: test_mute }, 4, 16)
+            .expect("still speakable on train");
+        assert!(c2.closes);
+        assert!(!c2.speaks_all_tests, "a mute sibling breaks cross-test consensus");
+    }
+
+    /// An empty language or an unspeakable family is honest silence.
+    #[test]
+    fn silence_is_honest() {
+        assert!(synthesize(&[], &Task { train: vec![], test: vec![] }, 4, 16).is_none());
+        let a = vec![(0, 0, 1)];
+        let b = vec![(0, 0, 2)];
+        let word = from_residual(&germinate(&a, &b).unwrap());
+        // A family demanding a word the language does not hold (3 → 7).
+        let train = vec![(vec![vec![3]], vec![vec![7]])];
+        assert!(
+            synthesize(&[word], &Task { train, test: vec![] }, 4, 16).is_none(),
+            "an unspeakable family returns None, never a guess"
+        );
+    }
+}

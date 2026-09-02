@@ -152,6 +152,13 @@ fn main() {
         peers
     );
 
+    // THE SYLLABUS (distributed cognition): every court-ratified word, in
+    // ruling order; each enrolled voice carries a cursor and receives the
+    // stream exactly once on contact (a rebind re-enters the stream — learn
+    // refreshes by address, so refinements propagate). Vec-of-relations.
+    let mut syllabus: Vec<[u8; 32]> = Vec::new();
+    let mut syllabus_served: Vec<([u8; 32], usize)> = Vec::new();
+
     for stream in listener.incoming() {
         let Ok(mut s) = stream else { continue };
         let Some(frame) = read_frame(&mut s) else { continue };
@@ -232,18 +239,60 @@ fn main() {
         // ── task: a client pulls a signed work envelope from the registry ────
         if kind == dialogue::ACT_TASK {
             let Some(_tvoice) = dialogue::decode_task_request(&frame.body) else { continue };
-            let body = {
+            let dispatched = {
                 let mut reg = registry.lock().unwrap();
-                match reg.dispatch() {
-                    Some((tid, task)) => {
-                        let tests: Vec<_> = task.test.iter().map(|(x, _)| x.clone()).collect();
-                        dialogue::encode_task_envelope(&tid, &task.train, &tests)
-                    }
-                    None => Vec::new(), // an empty envelope: the book is settled
+                reg.dispatch().map(|(tid, task)| (tid, task.clone()))
+            };
+            let body = match &dispatched {
+                Some((tid, task)) => {
+                    let tests: Vec<_> = task.test.iter().map(|(x, _)| x.clone()).collect();
+                    dialogue::encode_task_envelope(tid, &task.train, &tests)
                 }
+                None => Vec::new(), // an empty envelope: the book is settled
             };
             let reply = Frame { lane: frame.lane, body };
             let _ = s.write_all(&reply.encode().unwrap_or_default());
+            // THE SYNTHESIS STROKE (distributed cognition): the hypha THINKS
+            // about the work it just handed out — the same lift → beam →
+            // rollout the entity uses, at the judge's deeper budget, plus the
+            // CROSS-TEST CONSENSUS the entity lacks (one binding set must
+            // close on every train pair AND speak on every test jointly). A
+            // well-formed construct deposits its anchor evidence into the
+            // admission fiber — the court adjudicates, the verdict enters
+            // the syllabus, the CLIENTS earn the solves it enables. The
+            // server never settles a solve to itself: it holds the answers,
+            // so self-settlement would be self-dealing. Metabolic gate: only
+            // a calm judge speculates.
+            if let Some((tid, task)) = dispatched {
+                let mut k = kernel.lock().unwrap();
+                let free: u64 = k.physics().reserve.iter().sum();
+                let half = 2 * mycelium::physics::RESERVE_MAX as u64;
+                if free > half {
+                    let depth = (4 + (free as usize * 12)
+                        / (4 * mycelium::physics::RESERVE_MAX as usize))
+                        .min(16);
+                    let beam = (depth / 4).max(2);
+                    let construct =
+                        mycelium::synthesis::synthesize(k.basis(), &task, beam, depth);
+                    if let Some(c) = construct {
+                        if c.closes && c.speaks_all_tests {
+                            let deposited = c
+                                .evidence
+                                .iter()
+                                .filter(|(a, fp, sc)| {
+                                    k.deposit_evidence(*a, fp.clone(), sc.clone())
+                                })
+                                .count();
+                            eprintln!(
+                                "  synthesis task {:02x}{:02x}… WELL-FORMED: {} cited, {deposited} evidence → admission",
+                                tid[0],
+                                tid[1],
+                                c.cited.len(),
+                            );
+                        }
+                    }
+                }
+            }
             continue;
         }
 
@@ -296,6 +345,43 @@ fn main() {
             continue;
         }
 
+        // ── syllabus: the ratified stream served from this voice's cursor ────
+        if kind == dialogue::ACT_SYLLABUS {
+            let Some(svoice) = dialogue::decode_syllabus_request(&frame.body) else { continue };
+            if !syllabus_served.iter().any(|(v, _)| *v == svoice) {
+                syllabus_served.push((svoice, 0));
+            }
+            let cursor =
+                &mut syllabus_served.iter_mut().find(|(v, _)| *v == svoice).unwrap().1;
+            let words: Vec<Vec<u8>> = {
+                let k = kernel.lock().unwrap();
+                // Depth follows the metabolism like the quote book: a calm
+                // judge teaches more per contact, a strained one fewer.
+                let free: u64 = k.physics().reserve.iter().sum();
+                let depth =
+                    (1 + (free as usize * 7) / (4 * mycelium::physics::RESERVE_MAX as usize)).min(8);
+                let mut out = Vec::new();
+                while *cursor < syllabus.len() && out.len() < depth {
+                    let addr = syllabus[*cursor];
+                    *cursor += 1;
+                    // Serve the CURRENT form — a rebind since ruling teaches
+                    // the refined γ; a retired word is silently skipped.
+                    if let Some(w) = k.basis().iter().find(|t| t.address() == addr) {
+                        out.push(w.to_bytes());
+                    }
+                }
+                out
+            };
+            let served = words.len();
+            let reply =
+                Frame { lane: frame.lane, body: dialogue::encode_syllabus_reply(&words) };
+            let _ = s.write_all(&reply.encode().unwrap_or_default());
+            if served > 0 {
+                eprintln!("  syllabus voice {:02x} ← {served} ratified words", svoice[0]);
+            }
+            continue;
+        }
+
         // ── refine: a compression bid — verified by deterministic replay ─────
         if kind == dialogue::ACT_REFINE {
             let Some((rvoice, word)) = dialogue::decode_refine(&frame.body) else { continue };
@@ -345,6 +431,13 @@ fn main() {
                 }
                 ok
             };
+            // RATIFICATION → SYLLABUS: an upheld or rebound word enters the
+            // teaching stream for every enrolled voice (push-on-contact).
+            if applied
+                && (ruling == dialogue::RULING_UPHELD || ruling == dialogue::RULING_REBIND)
+            {
+                syllabus.push(addr);
+            }
             eprintln!(
                 "  verdict court {:02x} on {:02x}{:02x}… ruling {ruling} receipt {:02x}{:02x}… applied={applied}",
                 cvoice[0], addr[0], addr[1], receipt[0], receipt[1]

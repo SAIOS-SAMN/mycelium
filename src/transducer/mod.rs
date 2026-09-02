@@ -17,3 +17,4 @@ pub mod overlay;
 pub mod toroid;
 pub mod cech;
 pub mod anchor;
+pub mod spectral;

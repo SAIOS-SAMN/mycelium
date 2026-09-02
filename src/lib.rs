@@ -11,6 +11,7 @@ pub mod economy;
 pub mod sdk;
 pub mod arc;
 pub mod registry;
+pub mod synthesis;
 pub mod anastome;
 pub mod torsion;
 pub mod chronometry;

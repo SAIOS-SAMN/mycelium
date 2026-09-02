@@ -126,6 +126,7 @@ fn main() {
     // verified solves (the only ones that count as new useful work).
     let (mut projected, mut proj_solved, mut uniq_solved) = (0u64, 0u64, 0u64);
     let mut refined = 0u64; // accepted compression bids (0x09)
+    let mut learned = 0u64; // syllabus words received (0x0D)
     let (mut last_genome, mut last_settles) = (usize::MAX, u64::MAX);
     let start = Instant::now();
     // The feed walk: (task index within the cycle order, pair index within it).
@@ -344,6 +345,19 @@ fn main() {
 
         // ── SYNTROPIC PHASE — crystallize, voice change, regenerate.
         if physics.depleted() {
+            // THE SYLLABUS (distributed cognition): the crystallization phase
+            // is the learning phase — pull the court-ratified stream from
+            // this voice's cursor; the dialect re-resolves against the
+            // higher-order language on the next study.
+            if let Ok(n) = entity.pull_syllabus() {
+                if n > 0 {
+                    learned += n as u64;
+                    eprintln!(
+                        "[{name}] SYLLABUS +{n} ratified words (genome {})",
+                        entity.epigenome.genome_len(),
+                    );
+                }
+            }
             // REFINEMENT PROBE (0x09): one genome word per syntropic stroke —
             // if the rest of the vocabulary already speaks it, bid the
             // compression. The hypha's replay rules; on acceptance the word
@@ -368,7 +382,7 @@ fn main() {
                 last_genome = entity.epigenome.genome_len();
                 last_settles = settles;
                 eprintln!(
-                    "[{name}] {:.0}s | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | refined {refined} | genome {} (peak expr {})",
+                    "[{name}] {:.0}s | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | refined {refined} learned {learned} | genome {} (peak expr {})",
                     start.elapsed().as_secs_f64(),
                     entity.epigenome.genome_len(),
                     entity.epigenome.peak_expression(),

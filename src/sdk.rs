@@ -13,6 +13,7 @@ use crate::arc::{apply_bound_chains, chain_footprint, readback, refine_delta, Gr
 use crate::cognition::{decompose_over, encode_percept, perceive};
 use crate::network::wire::{Frame, Stratum};
 use crate::transducer::anchor::{derive_carrying_all, Sel};
+use crate::transducer::spectral::collapse_beam;
 use crate::transducer::element::Element;
 use std::io::{self, Read, Write};
 use std::net::TcpStream;
@@ -485,49 +486,50 @@ impl Entity {
             scenes.push(refined_in);
         }
         // 2. BEAM — per witnessed variant, the common-carrier beam.
+        let cells_of = |g: &Grid| -> Vec<(i64, i64, u8)> {
+            g.iter()
+                .enumerate()
+                .flat_map(|(r, row)| {
+                    row.iter().enumerate().map(move |(c, &h)| (r as i64, c as i64, h))
+                })
+                .collect()
+        };
         let mut spoken: Vec<(Vec<(i64, i64, u8, u8)>, Option<Sel>)> = Vec::new();
         let mut findings: Vec<([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)> = Vec::new();
         for &wi in &cited {
             let word_addr = self.epigenome.genome()[wi].address();
             for chain in self.epigenome.genome()[wi].variant_chains() {
                 let mut sets: Vec<Vec<Sel>> = Vec::new();
-                let mut first_witness: Option<(Vec<(i64, i64)>, usize)> = None;
+                let mut witnesses: Vec<(Vec<(i64, i64)>, Vec<(i64, i64, u8)>)> = Vec::new();
                 for (pi, d) in deltas.iter().enumerate() {
                     let fp = chain_footprint(&chain, d);
                     if fp.is_empty() {
                         continue;
                     }
-                    let scene_cells: Vec<(i64, i64, u8)> = scenes[pi]
-                        .iter()
-                        .enumerate()
-                        .flat_map(|(r, row)| {
-                            row.iter().enumerate().map(move |(c, &h)| (r as i64, c as i64, h))
-                        })
-                        .collect();
-                    sets.push(derive_carrying_all(&fp, &scene_cells));
-                    if first_witness.is_none() {
-                        first_witness = Some((fp, pi));
-                    }
+                    let sc = cells_of(&scenes[pi]);
+                    sets.push(derive_carrying_all(&fp, &sc));
+                    witnesses.push((fp, sc));
                 }
-                let Some((fp0, pi0)) = first_witness else { continue };
-                // The beam: every first-set term common to all witnessed pairs,
-                // already tightest-first; collapse takes the head, the tail is
-                // retained optionality for future re-study.
-                let binding = match sets.split_first() {
-                    Some((first, rest)) => {
-                        first.iter().find(|t| rest.iter().all(|s| s.contains(t))).cloned()
-                    }
-                    None => None,
-                };
-                if binding.is_some() {
-                    let scene_cells: Vec<(i64, i64, u8)> = scenes[pi0]
+                if witnesses.is_empty() {
+                    continue;
+                }
+                // The beam: every first-set term common to all witnessed pairs
+                // is a PROJECTED FUTURE STATE; the SPECTRAL COLLAPSE (DC3)
+                // takes the one whose selection resonates with the footprint
+                // across every witness — exact per-axis invariants, worst
+                // pair governing — with the tightest-first order as tiebreak.
+                // The uncollapsed tail is retained optionality for re-study.
+                let commons: Vec<Sel> = match sets.split_first() {
+                    Some((first, rest)) => first
                         .iter()
-                        .enumerate()
-                        .flat_map(|(r, row)| {
-                            row.iter().enumerate().map(move |(c, &h)| (r as i64, c as i64, h))
-                        })
-                        .collect();
-                    findings.push((word_addr, fp0, scene_cells));
+                        .filter(|t| rest.iter().all(|s| s.contains(*t)))
+                        .cloned()
+                        .collect(),
+                    None => Vec::new(),
+                };
+                let binding = collapse_beam(&commons, &witnesses);
+                if binding.is_some() {
+                    findings.push((word_addr, witnesses[0].0.clone(), witnesses[0].1.clone()));
                 }
                 spoken.push((chain, binding));
             }
@@ -613,6 +615,25 @@ impl Entity {
             self.epigenome.retire(word);
         }
         Ok((code, mu))
+    }
+
+    /// PULL THE SYLLABUS — the court-ratified teaching stream, served from
+    /// this voice's cursor on the hypha (push-on-contact). Every received
+    /// word folds into the genome by address (Epigenome::learn), so both
+    /// new vocabulary and rebound anchors propagate; the dialect then
+    /// re-resolves against the higher-order language on the next study.
+    /// Returns how many words were learned this contact.
+    pub fn pull_syllabus(&mut self) -> io::Result<usize> {
+        let voice = self.session.kernel().voice();
+        let body = self.session.speak(dialogue::encode_syllabus_request(&voice))?;
+        let words = dialogue::decode_syllabus_reply(&body).unwrap_or_default();
+        let mut learned = 0usize;
+        for w in &words {
+            if self.epigenome.learn(w).is_some() {
+                learned += 1;
+            }
+        }
+        Ok(learned)
     }
 
     /// FLUSH verified dialect findings to the hypha as anchor evidence — the
