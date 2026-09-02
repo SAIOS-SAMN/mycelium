@@ -2,8 +2,8 @@
 
 # Resume notes (continuity across sessions)
 
-Last update: TUniversal 00:00:00:00:41:53 (genesis origin 1788326481),
-commit after 955c14e. Task list: docs/TRAJECTORY.md (rebuild the session
+Last update: TUniversal 00:00:00:00:4A (genesis origin 1788326481),
+commit after 86be95a. Task list: docs/TRAJECTORY.md (rebuild the session
 task tracker from its "Open" section at the start of a new session).
 
 ## Boot check
@@ -41,13 +41,21 @@ and disabled by ruling.
 
 ## Immediate next actions
 
-1. TRAJECTORY item 1 (Q3 sheaf reconciliation over bundles, keyed by
-   the atlas stratum), then item 2 (compression economics: the measured
-   lever for contraction).
-2. Read hypha-a's reflex CPU after an hour of soak with its entities back
-   (it was pinned by per-event persistence and address recomputation,
-   both now removed); if still pinned, profile the percept/demand
-   handlers (they reduce under the lock).
+1. Watch the entities' genomes converge on the hypha's language (client
+   journals print `SYNC +n words by stratum (genome N)`; hypha journals
+   print `fetch voice … ← n words of stratum`). Convergence is reached
+   when a sync learns nothing for several contacts.
+2. Then TRAJECTORY item 1: ACT_PERCEPT as proof of reduction (the client
+   reduces over its genome; the hypha replays and attests), and item 2
+   (excise server contemplation). Only after the digests glue — flipping
+   earlier seizes the network on deferrals.
+3. Then item 3 (compression economics) and item 11 (connection-aware
+   peel), the measured levers for contraction and application.
+
+Note on state: hyphas judge on a reflex pool; the listener thread only
+accepts and dispatches. A quote is an O(1) read of the sealed closure.
+Persistence seals on the idle stroke; entity genomes crystallize to
+state/*.genome.
 
 ## Standing operational rules
 

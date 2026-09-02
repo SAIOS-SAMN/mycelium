@@ -30,51 +30,66 @@ registered corpus (currently 3 of 1,120).
 | 8b2a949 | The bundle connects: the orbit test returns the transition g; a placement attaches to its base as a transported section with (assignment, g) in the element's connection; RULING_ATTACHED carries (base, g); adoption of a held address merges the fibre; condense uses the same transport over the atlas stratum |
 | b2db523, 7fe4804 | Court transport aperture: one outbox per wire, drained through the session's perceived impedance (open drains, impeded/occluded probes once per round); reply-bearing requests skip an occluded wire the outbox is probing; judicial state sealed whenever rulings move |
 | eb9b237, 3fcf1b0, 955c14e | Reflex-path relief: the idle redundancy probe decomposes over a snapshot off the lock; kernel persistence paced on the idle stroke by measurement (cards, fibre volume, docket, K), never per event; element address memoized and cleared where the base mutates (boot corpus intake 105 s → 3 s) |
+| c240311, bfe4db7 | The reflex path unbound: reflex opening (enrol, relax, cheap moves, door) under a brief lock hands out an Arc language snapshot (words + atlas, rebuilt on generation change); germination and confluent reduction are pure functions over it; commit re-resolves citations by address; a reflex pool sized by parallelism judges percepts, demands, and quotes; the listener only accepts |
+| c326711 | Market closure sealed at (basis, book) generation: a quote reads the carrier; re-measured off the lock only when a generation moved (2.7 cores → 1) |
+| 86be95a | Q3 sheaf sync, genome to client: atlas strata as the open cover, section roots over (address, fibre volume), ACT_DIGESTS/ACT_FETCH by discordant chart with a have-list, paged within the body budget; entities converge on the hypha's language (client-a 203 → 326 words in two minutes) |
 
 ## Open, in priority order
 
-1. **Q3 — sheaf reconciliation over bundles.** Digest exchange
-   (ACT_DIGESTS) keyed by the atlas stratum (the invariant vector) and
-   fetch-by-address (ACT_FETCH) replace the linear genesis pager: the
-   court and each hypha compare per-stratum digests of held base points
-   and their fibre volume, and only divergent strata exchange words.
-   Cost scales with divergence; a restarted hypha re-converges without a
-   re-audit. The fetch reply carries the origin discoverer voice so
-   adoption installs true provenance; a repair sweep re-attributes the
-   court-attributed installs.
-2. **Compression economics.** The era-2 measurement (status note 41:53)
+The ruling that orders this list (2026-09-02): clients think, hyphas
+judge. Cognition moves to the entity; the hypha collapses toward a
+linear replayer, attestation verifier, market, genome store, and docket.
+Perception cannot flip to proofs before the entities hold the language
+(Q3 landed first for that reason; it converges over contacts).
+
+1. **ACT_PERCEPT as proof of reduction.** Once an entity's genome has
+   converged (its digests glue with the hypha's), it reduces its own
+   percept over its genome and speaks the sentence (word addresses with
+   transports g) and the irreducible residue. The hypha replays in O(k)
+   and attests; a client without the words is deferred and synced, not
+   served. The server-side beam search retires from the reflex path.
+2. **Excise server contemplation.** `synthesis::contemplate` leaves the
+   hypha; deliberation and cross-family abduction belong to
+   `Entity::study`.
+3. **Compression economics.** The era-2 measurement (status note 41:53)
    shows the vocabulary is distinct geometry classes, not isometry
    shadows and not hue variants (both now attach). Contraction must come
    from the economy: a demotion barrier for words that never join a
    sentence within a metabolic horizon, maintenance drag, and sub-chain
    rewriting bids (factor w1∘w2 through higher relations).
-3. **Four-lane completion.** Market quote pricing across all four lanes
+4. **Court sheaf sync.** The court's genesis pager and adoption pushes
+   move onto the same ACT_DIGESTS/ACT_FETCH: it compares stratum roots
+   with each hypha and rules only divergent strata; a restarted hypha
+   re-converges without a re-audit. The fetch reply carries the origin
+   discoverer voice so adoption installs true provenance; a repair sweep
+   re-attributes the court-attributed installs.
+5. **Four-lane completion.** Market quote pricing across all four lanes
    (the residual-lane special case in `quote` retires); shell lane
    measured against scene topology rather than changed cells only.
-4. **Incremental persistence.** The kernel seal rewrites the whole ledger
+6. **Incremental persistence.** The kernel seal rewrites the whole ledger
    (17 MB on the training server) on every changed measurement; an
    append-only ledger of installs/attachments/retirements with periodic
    compaction makes the seal proportional to the change. Also: open the
    listener before corpus intake at boot, so a restart never reads as
    occlusion to its peers.
-5. **EMA-RTT transport deadline.** Deadline = max(metabolic floor,
+7. **EMA-RTT transport deadline.** Deadline = max(metabolic floor,
    k·EMA-RTT) per session (currently one metabolic cycle, 512 ms on this
    machine); the trigger condition has been observed twice (loaded
    reflex path; boot intake).
-6. **Residual static ceilings.** `.min(16)`, `.min(8)`, evidence caps
+8. **Residual static ceilings.** `.min(16)`, `.min(8)`, evidence caps
    (16/64/128), beam cap 4, page depth 8, condense absorb 8 per stroke:
    derive from the metabolism.
-7. **Ledger.** SNF epoching with the finality-root entry schema
+9. **Ledger.** SNF epoching with the finality-root entry schema
    (Root(gamma), pi*, voices, mu, receipt); an economic observability
    act for balances, pool, and flows.
-8. **Wire freeze v2.** ed25519 voice signing, sybil-resistant stake
-   bonds, TUniversal origin in the handshake, teach/adopt carrying
-   origin voices; RULING_ATTACHED (base, g) and the element connection
-   tail enter the frozen format.
-9. **#97 frame fiber and Gamma re-measurement**; the peel applies a held
-   word through its connection (the recorded g's) instead of per-variant
-   probing.
-10. **Solve trajectory.** After items 1–2, re-census the three bases for
+10. **Wire freeze v2.** ed25519 voice signing, sybil-resistant stake
+    bonds, TUniversal origin in the handshake, teach/adopt carrying
+    origin voices; RULING_ATTACHED (base, g), ACT_DIGESTS/ACT_FETCH, and
+    the element connection tail enter the frozen format.
+11. **Connection-aware peel (#97).** The peel applies a held word through
+    its connection (the recorded g's) instead of per-variant probing;
+    Gamma re-measurement.
+12. **Solve trajectory.** After items 1–3, re-census the three bases for
     convergence and re-run the entities against the shared genome; the
     unique-solve count is the reading.
 
@@ -116,3 +131,11 @@ registered corpus (currently 3 of 1,120).
   now), so item 2 is the lever. Boot corpus intake on hypha-a fell from
   105 s to 3 s (address memoization). Unique solves not re-measured this
   pass (3 standing).
+- 4A:xx — reflex path unbound, market closure sealed, Q3 genome-to-client
+  sync live. hypha-a: listener idle, about one core (was 2.7 answering
+  quotes), court apertures clean. Entities converging by stratum: in two
+  minutes client-a 203 → 326, client-b 265 → 268, worker-a 76 → 164,
+  worker-b → 181, worker-c → 400; hypha-a served 376 fetches. Ruling
+  recorded: clients think, hyphas judge — the server-side reduction is a
+  transitional verifier's convenience, to retire under item 1 once the
+  digests glue.
