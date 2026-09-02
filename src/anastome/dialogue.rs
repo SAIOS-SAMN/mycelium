@@ -415,6 +415,14 @@ fn push_chain(out: &mut Vec<u8>, chain: &[Cell]) {
     }
 }
 
+/// The wire width of one chain cell, measured from the encoder itself (the
+/// carrier's own coordinate, never a number chosen elsewhere).
+pub fn cell_wire_width() -> usize {
+    let mut probe = Vec::new();
+    push_chain(&mut probe, &[(0, 0, 0, 0)]);
+    probe.len() - 4
+}
+
 fn read_chain(b: &[u8], p: &mut usize) -> Option<Vec<Cell>> {
     let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
     *p += 4;

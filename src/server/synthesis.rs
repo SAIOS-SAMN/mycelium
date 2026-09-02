@@ -356,13 +356,14 @@ pub fn quote(
     let view = k.lock().ok()?.market_open();
     // The closure is a sealed carrier: read when current, measured over the
     // snapshot (no lock) and sealed back only when a generation moved.
-    let closure = match view.closure {
+    let rank = match view.closure {
         Some(c) => c,
         None => {
-            let measured = crate::cognition::closure_over(
+            let measured = crate::cognition::rank_over(
                 &view.language.stalks,
                 &view.language.words,
                 &view.pending,
+                &view.composites,
             );
             k.lock().ok()?.seal_closure(view.gens, measured)
         }
@@ -372,14 +373,15 @@ pub fn quote(
     // The frame budget less the reply head (act, surface, count).
     let budget = crate::network::wire::BODY_BUDGET - 34;
     let (surface, priced) = crate::cognition::quote_over(
-        &closure,
+        &rank,
+        &view.composites,
         &view.pending,
         &view.surface,
         &view.pool,
         depth,
         budget,
     );
-    let cohesion = crate::cognition::cohesion_over(&closure);
+    let cohesion = crate::cognition::cohesion_over(&rank.closure);
     Some((surface, priced, view.k_step, cohesion))
 }
 

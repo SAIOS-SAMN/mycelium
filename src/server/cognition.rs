@@ -72,30 +72,91 @@ pub struct Language {
 pub struct MarketView {
     pub language: std::sync::Arc<Language>,
     pub pending: Vec<(Element, u64)>,
+    pub composites: Vec<Composite>,
     pub surface: [u64; 4],
     pub pool: [u64; 4],
     pub k_step: u64,
     pub reserve: [u64; 4],
     /// The (basis, book) generations this view was taken at.
     pub gens: (u64, u64),
-    /// The sealed closure if it is current at `gens`; absent when either
+    /// The sealed rank if it is current at `gens`; absent when either
     /// generation moved, so the reader measures it over the snapshot.
-    pub closure: Option<std::sync::Arc<Vec<Option<usize>>>>,
+    pub closure: Option<std::sync::Arc<Rank>>,
 }
 
-/// THE CLOSURE — pure: for each listing, the base point in the language its
-/// geometry sits on, through the atlas and the transport (None = coverage).
-pub fn closure_over(
+/// THE RANK OF THE BOOK — a sealed carrier: for each listing its base point
+/// in the language (closure) or none (coverage), and the book's order by
+/// homological curvature, κ⃗ = μ⃗ / |supp| per lane, lifted by the lineage
+/// fraction (resolved / total children of its parent). The order is
+/// surface-free, so it holds across strokes; a quote takes its head.
+#[derive(Debug, Clone, Default)]
+pub struct Rank {
+    pub closure: Vec<Option<usize>>,
+    pub order: Vec<usize>,
+    /// Per listing, the lineage fraction as (resolved, total) — (0, 0) when
+    /// the listing has no parent.
+    pub lineage: Vec<(u64, u64)>,
+}
+
+/// The lineage coordinate of a listing: its parent's (resolved, total,
+/// ribbon volume), found by the listing's own address in the composites
+/// relation. (0, 0, 0) when it has no parent.
+fn lineage_of(addr: &[u8; 32], composites: &[Composite]) -> (u64, u64, u64) {
+    composites
+        .iter()
+        .find(|(_, children, _)| children.iter().any(|(a, _)| a == addr))
+        .map(|(_, children, ribbon)| {
+            (
+                children.iter().filter(|(_, done)| *done).count() as u64,
+                children.len() as u64,
+                ribbon.len() as u64,
+            )
+        })
+        .unwrap_or((0, 0, 0))
+}
+
+/// Measure the rank of the book — pure.
+pub fn rank_over(
     stalks: &crate::transducer::stalk::Stalks,
     words: &[Element],
     pending: &[(Element, u64)],
-) -> Vec<Option<usize>> {
-    pending
+    composites: &[Composite],
+) -> Rank {
+    use crate::core::engine::Q;
+    use num_bigint::BigInt;
+    use num_traits::{One, Zero};
+    let closure: Vec<Option<usize>> = pending
         .iter()
         .map(|(p, _)| {
             crate::transducer::stalk::congruent(stalks, |i| words[i].sub(), p.sub()).map(|(i, _)| i)
         })
-        .collect()
+        .collect();
+    let lineage: Vec<(u64, u64)> = pending
+        .iter()
+        .map(|(p, _)| {
+            let (r, t, _) = lineage_of(&p.address(), composites);
+            (r, t)
+        })
+        .collect();
+    // κ⃗ lifted by the lineage fraction; the key is the strongest lane, exact.
+    let mut keyed: Vec<(Q, [u8; 32], usize)> = pending
+        .iter()
+        .enumerate()
+        .map(|(i, (p, _))| {
+            let supp = BigInt::from(p.sub().len().max(1) as u64);
+            let (r, t) = lineage[i];
+            let lift = Q::one() + Q::new(BigInt::from(r), BigInt::from(t.max(1)));
+            let key = p
+                .magnitude()
+                .iter()
+                .map(|&m| Q::new(BigInt::from(m), supp.clone()) * lift.clone())
+                .max()
+                .unwrap_or_else(Q::zero);
+            (key, p.address(), i)
+        })
+        .collect();
+    keyed.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)));
+    Rank { closure, order: keyed.into_iter().map(|(_, _, i)| i).collect(), lineage }
 }
 
 /// A reduction computed off the lock, ready to commit: the germ, its context,
@@ -117,42 +178,47 @@ pub struct Reduction {
 /// carries the C premium; coverage work (unknown geometry) the I premium.
 /// Top clusters by strongest lane; the escrow pool bounds the scale.
 pub fn quote_over(
-    closure: &[Option<usize>],
+    rank: &Rank,
+    composites: &[Composite],
     pending: &[(Element, u64)],
     surface: &[u64; 4],
     pool: &[u64; 4],
     top: usize,
     budget: usize,
 ) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
-    let c = closure.iter().filter(|k| k.is_some()).count() as u64;
-    let i = closure.len() as u64 - c;
-    let mut ranked: Vec<(Element, [u64; 4])> = pending
-        .iter()
-        .zip(closure)
-        .map(|((p, _), base)| {
-            let premium = if base.is_some() { c } else { i };
-            let mut mu = crate::economy::price(&p.magnitude(), surface);
-            mu[2] = p.magnitude()[2].saturating_mul(1 + surface[2] + premium);
-            (p.clone(), mu)
-        })
-        .collect();
-    ranked.sort_by(|a, b| b.1.iter().max().cmp(&a.1.iter().max()));
-    // THE CONTACT'S CARRIER: up to `top` items, in rank order, whose wire
-    // form fits the remaining byte budget (32 address + 32 μ⃗ + 4 + 18 per
-    // cell). An item too wide for the frame is passed over, not served as a
-    // frame the wire refuses; the next contact sees the same rank.
+    let c = rank.closure.iter().filter(|k| k.is_some()).count() as u64;
+    let i = rank.closure.len() as u64 - c;
+    let cell = crate::anastome::dialogue::cell_wire_width();
+    // THE CONTACT'S CARRIER: the head of the sealed rank, up to `top` items
+    // whose wire form fits the remaining byte budget (address, μ⃗, count,
+    // cells). An item too wide for the frame is passed over, not served as
+    // a frame the wire refuses. Only the served head is priced.
     let mut priced: Vec<(Element, [u64; 4])> = Vec::with_capacity(top);
     let mut used = 0usize;
-    for item in ranked {
+    for &idx in &rank.order {
         if priced.len() >= top {
             break;
         }
-        let wire = 68 + item.0.sub().len() * 18;
+        let Some((p, _)) = pending.get(idx) else { continue };
+        let wire = 68 + p.sub().len() * cell;
         if used + wire > budget {
             continue;
         }
         used += wire;
-        priced.push(item);
+        let base = rank.closure.get(idx).copied().flatten();
+        let premium = if base.is_some() { c } else { i };
+        let mut mu = crate::economy::price(&p.magnitude(), surface);
+        mu[2] = p.magnitude()[2].saturating_mul(1 + surface[2] + premium);
+        // Lineage-aware assembly pricing: a child of a partly resolved
+        // parent carries the parent's assembly premium (its ribbon volume,
+        // priced at the surface) scaled by the resolved fraction, so the
+        // closing pieces of an assembly quote highest without assignment.
+        let (resolved, total, ribbon) = lineage_of(&p.address(), composites);
+        let assembly = crate::economy::price(&[0, 0, ribbon, 0], surface);
+        for l in 0..4 {
+            mu[l] = mu[l].saturating_add(assembly[l].saturating_mul(resolved) / total.max(1));
+        }
+        priced.push((p.clone(), mu));
     }
     // THE SOLVENCY BOUND (P5): tension set the RANKING; the escrow pool sets
     // the SCALE. Each quoted lane is capped at pool[l]/quoted so the market
@@ -206,7 +272,7 @@ pub fn germinate_bodies(
         let fb = frame_to_origin(&cb[bi[k]]);
         match germinate(&fa, &fb) {
             Some(rg) => {
-                let tiles = quadrant_tiles(&rg);
+                let (tiles, ribbon) = cover(&rg, carrier_capacity());
                 if tiles.len() > 1 {
                     let parent = composite_parent_id(&rg);
                     let mut children: Vec<([u8; 32], bool)> = Vec::new();
@@ -217,7 +283,7 @@ pub fn germinate_bodies(
                         let off_c = tile.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
                         germs.push((elem, Some((fa.clone(), (off_r, off_c)))));
                     }
-                    composites.push((parent, children, overlap_strip(&rg, &tiles)));
+                    composites.push((parent, children, ribbon));
                     continue;
                 }
                 let off_r = rg.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
@@ -312,7 +378,7 @@ pub struct Kernel {
     /// quote reads it, and it is recomputed off the lock only when either
     /// generation moved. `book_gen` counts every mutation of the open book.
     book_gen: u64,
-    closure: (u64, u64, std::sync::Arc<Vec<Option<usize>>>),
+    closure: (u64, u64, std::sync::Arc<Rank>),
     admission: Admission,
     /// THE OPEN-DEMAND MARKET: irreducible residuals still awaiting consilience —
     /// the un-factored chains the mesh QUOTES as work (Vec-of-relations, capped;
@@ -422,6 +488,7 @@ impl Kernel {
         MarketView {
             language: self.language(),
             pending: self.pending.clone(),
+            composites: self.composites.clone(),
             surface: crate::economy::yield_surface(&self.physics),
             pool: self.treasury.pool(),
             k_step: self.chain.next_step_index(),
@@ -431,25 +498,21 @@ impl Kernel {
         }
     }
 
-    /// Seal a closure computed off the lock, if the generations it was
-    /// measured at still hold. Returns the closure now in force.
-    pub fn seal_closure(
-        &mut self,
-        gens: (u64, u64),
-        closure: Vec<Option<usize>>,
-    ) -> std::sync::Arc<Vec<Option<usize>>> {
+    /// Seal a rank measured off the lock, if the generations it was
+    /// measured at still hold. Returns the rank now in force.
+    pub fn seal_closure(&mut self, gens: (u64, u64), rank: Rank) -> std::sync::Arc<Rank> {
         if gens == (self.basis_gen, self.book_gen) {
-            self.closure = (gens.0, gens.1, std::sync::Arc::new(closure));
+            self.closure = (gens.0, gens.1, std::sync::Arc::new(rank));
         }
         std::sync::Arc::clone(&self.closure.2)
     }
 
-    /// The closure in force, measured now under the lock (tests and local
-    /// use; the server measures off the lock through the market view).
-    fn closure_now(&mut self) -> std::sync::Arc<Vec<Option<usize>>> {
+    /// The rank in force, measured now under the lock (tests and local use;
+    /// the server measures off the lock through the market view).
+    fn closure_now(&mut self) -> std::sync::Arc<Rank> {
         let gens = (self.basis_gen, self.book_gen);
         if (self.closure.0, self.closure.1) != gens {
-            let measured = closure_over(&self.stalks, &self.basis, &self.pending);
+            let measured = rank_over(&self.stalks, &self.basis, &self.pending, &self.composites);
             self.closure = (gens.0, gens.1, std::sync::Arc::new(measured));
         }
         std::sync::Arc::clone(&self.closure.2)
@@ -1461,8 +1524,8 @@ impl Kernel {
     /// μ⃗[l] = magnitude[l] · (1 + surface[l]). Top clusters by strongest lane.
     pub fn quote(&mut self, top: usize) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
         let surface = crate::economy::yield_surface(&self.physics);
-        let closure = self.closure_now();
-        quote_over(&closure, &self.pending, &surface, &self.treasury.pool(), top, usize::MAX)
+        let rank = self.closure_now();
+        quote_over(&rank, &self.composites, &self.pending, &surface, &self.treasury.pool(), top, usize::MAX)
     }
 
     /// ATTEST — a peer's INDEPENDENT derivation of an open residual arrives as a
@@ -1517,8 +1580,8 @@ impl Kernel {
     /// geometry (closure failing — collapse-side work); I counts open demands on
     /// geometry NO thought speaks (coverage failing — expansion-side work).
     pub fn cohesion(&mut self) -> crate::cohesion::CohesionWitness {
-        let closure = self.closure_now();
-        cohesion_over(&closure)
+        let rank = self.closure_now();
+        cohesion_over(&rank.closure)
     }
 
     /// P7 — SNAPSHOT the durable cognitive state (the germinated basis + each
@@ -1741,58 +1804,91 @@ pub fn decompose_over_anchored(
 
 /// The direct terminal: does the (re-centered) chain SIT on a held word — its
 /// base or any section along the punctured axis (the bundle speaks the family)?
-/// The atomic perceptual frame — a coboundary whose bounding box exceeds this
-/// side length tiles into sub-demands (7d). A substrate bound, like the ℤ²
-/// framing itself: the hypha's constraint, never cognition's.
-const FRAME_SIDE: i64 = 16;
+/// THE CARRIER'S CAPACITY in cells: what one contact's frame carries, read
+/// from the wire's own budget and its measured cell width — a physical
+/// limit of the transport, never a size chosen for cognition.
+pub fn carrier_capacity() -> usize {
+    (crate::network::wire::BODY_BUDGET / crate::anastome::dialogue::cell_wire_width()).max(1)
+}
 
-/// TILE an oversized coboundary along spatial bounding partitions: repeated
-/// halving of the longest bbox axis, each cut keeping a ONE-CELL overlap band
-/// (a Čech cover, not a partition — the gluing condition δ(ΣWᵢ)=0 lives on
-/// the shared strips). A chain within the frame returns itself whole.
-fn quadrant_tiles(rg: &[(i64, i64, u8, u8)]) -> Vec<Vec<(i64, i64, u8, u8)>> {
-    let mut tiles = vec![rg.to_vec()];
-    loop {
-        let mut next: Vec<Vec<(i64, i64, u8, u8)>> = Vec::new();
-        let mut cut_any = false;
-        for tile in &tiles {
-            let (min_r, max_r) = (
-                tile.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0),
-                tile.iter().map(|(r, _, _, _)| *r).max().unwrap_or(0),
-            );
-            let (min_c, max_c) = (
-                tile.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0),
-                tile.iter().map(|(_, c, _, _)| *c).max().unwrap_or(0),
-            );
-            let (h, w) = (max_r - min_r, max_c - min_c);
-            if h.max(w) <= FRAME_SIDE || next.len() + tiles.len() >= 8 {
-                next.push(tile.clone());
-                continue;
-            }
-            cut_any = true;
-            let by_rows = h >= w;
-            let mid = if by_rows { (min_r + max_r) / 2 } else { (min_c + max_c) / 2 };
-            let (mut lo, mut hi) = (Vec::new(), Vec::new());
-            for &(r, c, b, a) in tile {
-                let axis = if by_rows { r } else { c };
-                if axis <= mid {
-                    lo.push((r, c, b, a));
-                }
-                if axis >= mid {
-                    hi.push((r, c, b, a)); // axis == mid rides BOTH: the overlap band
+/// THE COVER of a coboundary. A chain the carrier holds whole is one piece.
+/// Wider than the carrier, it opens along its own structure: first the
+/// connected components of its support (disjoint — zero cut defect), then
+/// any component still wider than the carrier along its gauge classes (the
+/// cells grouped by transition before→after), whose shared 1-cell
+/// boundaries are the overlap ribbons the reassembly glues on. No bounding
+/// box, no tile count. Returns (pieces, ribbon cells).
+pub fn cover(
+    rg: &[(i64, i64, u8, u8)],
+    capacity: usize,
+) -> (Vec<Vec<(i64, i64, u8, u8)>>, Vec<(i64, i64, u8, u8)>) {
+    if rg.len() <= capacity {
+        return (vec![rg.to_vec()], Vec::new());
+    }
+    let mut cells: Vec<(i64, i64, u8, u8)> = rg.to_vec();
+    cells.sort_unstable();
+    let at = |r: i64, c: i64| cells.binary_search_by(|x| (x.0, x.1).cmp(&(r, c))).ok();
+    // Components under 4-adjacency (union-find over the sorted support).
+    let mut parent: Vec<usize> = (0..cells.len()).collect();
+    for (i, &(r, c, _, _)) in cells.iter().enumerate() {
+        for (dr, dc) in [(0i64, 1i64), (1, 0)] {
+            if let Some(j) = at(r + dr, c + dc) {
+                let (ri, rj) = (
+                    crate::transducer::spectral::find(&mut parent, i),
+                    crate::transducer::spectral::find(&mut parent, j),
+                );
+                if ri != rj {
+                    parent[ri] = rj;
                 }
             }
-            for part in [lo, hi] {
-                if !part.is_empty() {
-                    next.push(part);
-                }
-            }
-        }
-        tiles = next;
-        if !cut_any {
-            return tiles;
         }
     }
+    let mut components: Vec<(usize, Vec<(i64, i64, u8, u8)>)> = Vec::new();
+    for i in 0..cells.len() {
+        let root = crate::transducer::spectral::find(&mut parent, i);
+        match components.iter_mut().find(|(r, _)| *r == root) {
+            Some((_, piece)) => piece.push(cells[i]),
+            None => components.push((root, vec![cells[i]])),
+        }
+    }
+    // A component wider than the carrier opens along its gauge classes.
+    let mut pieces: Vec<Vec<(i64, i64, u8, u8)>> = Vec::new();
+    for (_, component) in components {
+        if component.len() <= capacity {
+            pieces.push(component);
+            continue;
+        }
+        let mut classes: Vec<((u8, u8), Vec<(i64, i64, u8, u8)>)> = Vec::new();
+        for cell in component {
+            let key = (cell.2, cell.3);
+            match classes.iter_mut().find(|(k, _)| *k == key) {
+                Some((_, piece)) => piece.push(cell),
+                None => classes.push((key, vec![cell])),
+            }
+        }
+        classes.sort_by_key(|(k, _)| *k);
+        pieces.extend(classes.into_iter().map(|(_, p)| p));
+    }
+    // The ribbons: every cell 4-adjacent to a cell of another piece.
+    let mut owner: Vec<usize> = vec![0; cells.len()];
+    for (pi, piece) in pieces.iter().enumerate() {
+        for cell in piece {
+            if let Some(i) = at(cell.0, cell.1) {
+                owner[i] = pi;
+            }
+        }
+    }
+    let mut ribbon: Vec<(i64, i64, u8, u8)> = Vec::new();
+    for (i, &(r, c, b, a)) in cells.iter().enumerate() {
+        let crosses = [(0i64, 1i64), (0, -1), (1, 0), (-1, 0)]
+            .iter()
+            .filter_map(|(dr, dc)| at(r + dr, c + dc))
+            .any(|j| owner[j] != owner[i]);
+        if crosses {
+            ribbon.push((r, c, b, a));
+        }
+    }
+    (pieces, ribbon)
 }
 
 /// The parent puzzle id — the content address of the WHOLE coboundary
@@ -1806,15 +1902,6 @@ fn composite_parent_id(rg: &[(i64, i64, u8, u8)]) -> [u8; 32] {
         buf.push(*a);
     }
     *blake3::hash(&buf).as_bytes()
-}
-
-/// The cells shared by more than one tile — the Čech overlap strips the
-/// reassembly glues on.
-fn overlap_strip(
-    rg: &[(i64, i64, u8, u8)],
-    tiles: &[Vec<(i64, i64, u8, u8)>],
-) -> Vec<(i64, i64, u8, u8)> {
-    rg.iter().copied().filter(|cell| tiles.iter().filter(|t| t.contains(cell)).count() > 1).collect()
 }
 
 /// A word's witnessed placements inside a demand chain (union of translated
@@ -2458,34 +2545,60 @@ mod tests {
         );
     }
 
-    /// 7d — COMPOSITE FRAGMENTATION: a coboundary wider than the atomic frame
-    /// tiles into sub-demands carrying parent lineage; children quote and
-    /// settle independently; when the whole family completes, the ASSEMBLY
-    /// premium books — distributed reassembly pays more than the sum of parts.
+    /// THE COVER: a chain the carrier holds is one piece; wider, it opens
+    /// along its components, and a component still wider than the carrier
+    /// along its gauge classes, with the shared 1-cell boundaries as the
+    /// ribbon. No bounding box, no count.
     #[test]
-    fn an_oversized_demand_tiles_and_the_assembly_premium_books() {
+    fn the_cover_opens_along_components_then_gauge_classes() {
+        // Two components: a 1→2 bar of 4 and a far 3→4 bar of 2.
+        let mut rg: Vec<(i64, i64, u8, u8)> = (0..4).map(|c| (0, c, 1u8, 2u8)).collect();
+        rg.extend((0..2).map(|c| (5, c, 3u8, 4u8)));
+        let (whole, ribbon) = cover(&rg, 6);
+        assert_eq!(whole.len(), 1, "the carrier holds it whole");
+        assert!(ribbon.is_empty());
+        let (pieces, ribbon) = cover(&rg, 5);
+        assert_eq!(pieces.len(), 2, "wider than the carrier: the components");
+        assert!(ribbon.is_empty(), "disjoint components share no boundary");
+        // One component of 6 with two gauge classes, carrier of 5: the
+        // classes open it, and the ribbon is the class boundary (both sides).
+        let mixed: Vec<(i64, i64, u8, u8)> =
+            (0..3).map(|c| (0, c, 1u8, 2u8)).chain((3..6).map(|c| (0, c, 1u8, 3u8))).collect();
+        let (pieces, ribbon) = cover(&mixed, 5);
+        assert_eq!(pieces.len(), 2);
+        assert_eq!(ribbon.len(), 2, "the two cells across the class boundary");
+        assert!(ribbon.contains(&(0, 2, 1, 2)) && ribbon.contains(&(0, 3, 1, 3)));
+    }
+
+    /// 7d — COMPOSITE LINEAGE: children of a registered parent quote and
+    /// settle independently; the assembly premium books when the family
+    /// completes, and the rank lifts a partly resolved parent's remaining
+    /// children by the resolved fraction.
+    #[test]
+    fn a_lineage_lifts_its_closing_pieces_and_the_assembly_premium_books() {
         let mut k = Kernel::new();
-        // One connected 1×22 bar (bbox width 21 > FRAME_SIDE): changes at both
-        // far ends — a single body whose coboundary exceeds the frame.
-        let bar: Vec<(i64, i64, u8)> = (0..22).map(|c| (0, c, 1u8)).collect();
-        let mut after = bar.clone();
-        after[0].2 = 2; // (0,0): 1→2
-        after[21].2 = 3; // (0,21): 1→3
-        let out = k.ingest(&bar, &after, [1; 32]);
-        assert!(matches!(out, Outcome::Fragmented(_)), "the demand tiled: {out:?}");
-        assert!(!k.composites().is_empty(), "parent lineage registered");
-        // A second voice attests each tile's chain — the children complete
-        // independently (the distributed-worker path).
-        let chains: Vec<Vec<(i64, i64, u8, u8)>> =
-            k.quote(8).1.iter().map(|(w, _)| w.sub().to_vec()).collect();
-        assert!(chains.len() >= 2, "both tiles listed on the market");
-        for chain in &chains {
-            // The second tile lands as a SECTION of the first thought (same
-            // base geometry) — section quorum counts voices on the section
-            // address, so two independent attesters complete every child.
-            k.attest(chain, [2; 32]);
-            k.attest(chain, [3; 32]);
-        }
+        let a = vec![(0, 0, 1u8), (0, 1, 1)];
+        let b = vec![(0, 0, 2u8), (0, 1, 2)];
+        let c = vec![(0, 0, 5u8), (0, 1, 5), (0, 2, 5)];
+        let d = vec![(0, 0, 7u8), (0, 1, 7), (0, 2, 7)];
+        // Two listings (one voice each: pending), registered as one lineage.
+        assert!(matches!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending));
+        assert!(matches!(k.ingest(&c, &d, [1; 32]), Outcome::GermPending));
+        let listed: Vec<[u8; 32]> = k.quote(8).1.iter().map(|(w, _)| w.address()).collect();
+        assert_eq!(listed.len(), 2);
+        let parent = [9u8; 32];
+        k.register_composites(vec![(parent, vec![(listed[0], false), (listed[1], false)], vec![(0, 0, 1, 2)])]);
+        // Complete the first child: the second's rank key lifts by 1/2.
+        let first = k.quote(8).1[0].0.sub().to_vec();
+        k.attest(&first, [2; 32]);
+        let rank = k.closure_now();
+        let remaining = k.quote(8);
+        assert_eq!(remaining.1.len(), 1, "one child remains listed");
+        let (resolved, total) = rank.lineage[0];
+        assert_eq!((resolved, total), (1, 2), "the lineage fraction is measured");
+        // Complete the second child: the family settles and the premium books.
+        let second = remaining.1[0].0.sub().to_vec();
+        k.attest(&second, [2; 32]);
         assert!(k.composites().is_empty(), "the family completed — lineage settled");
         assert!(
             k.treasury().entries().iter().any(|e| e.kind == "assembly"),
