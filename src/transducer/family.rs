@@ -168,9 +168,13 @@ fn merge_sigma(a: &[(u8, u8)], b: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
 /// The readings a transport is taken in, by the point it is read about:
 /// the scene's origin, the scene bodies' centroids, the bodies' own
 /// centroids (with the centroid displacement carried alongside).
-pub const READINGS: usize = 3;
+pub const READINGS: usize = 5;
 
-/// The anchors of a pair in one reading.
+/// The anchors of a pair in one reading: the scene's origin (0); the
+/// scene bodies' centroids (1); the bodies' own centroids (2); mixed —
+/// from the scene body to the body (3), from the body to the scene body
+/// (4). The mixed readings are the compositions: a body gathered to the
+/// scene's center, or released from it.
 fn anchors(
     reading: usize,
     a: &Body,
@@ -181,7 +185,9 @@ fn anchors(
     match reading {
         0 => None,
         1 => Some((sa.clone(), sb.clone())),
-        _ => Some((a.centroid.clone(), b.centroid.clone())),
+        2 => Some((a.centroid.clone(), b.centroid.clone())),
+        3 => Some((sa.clone(), b.centroid.clone())),
+        _ => Some((a.centroid.clone(), sb.clone())),
     }
 }
 
@@ -360,7 +366,7 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
                     Some((pa, pb)) => read_in(&pr.carriage.v, &pa, &pb),
                 };
                 let d = (&b.centroid.0 - &a.centroid.0, &b.centroid.1 - &a.centroid.1);
-                let same_shift = reading != 2 || shift.as_ref() == Some(&d);
+                let same_shift = !matches!(reading, 2 | 3) || shift.as_ref() == Some(&d);
                 match &agreed {
                     None => agreed = Some(u),
                     Some(held) => {
@@ -516,10 +522,13 @@ pub fn speak(t: &Transport, x: &Grid) -> Option<Grid> {
         let rule = t.rules.iter().find(|r| r.moduli == body.moduli)?;
         let mut spoken: Option<Vec<Cell3>> = None;
         for (reading, u) in &rule.readings {
+            let shifted = (&body.centroid.0 + &rule.shift.0, &body.centroid.1 + &rule.shift.1);
             let v = match *reading {
                 0 => u.clone(),
                 1 => read_out(u, &cx, &cy),
-                _ => read_out(u, &body.centroid, &(&body.centroid.0 + &rule.shift.0, &body.centroid.1 + &rule.shift.1)),
+                2 => read_out(u, &body.centroid, &shifted),
+                3 => read_out(u, &cx, &shifted),
+                _ => read_out(u, &body.centroid, &cy),
             };
             let cells = render(&body, &v, &rule.sigma, fy)?;
             match &spoken {
@@ -586,7 +595,7 @@ mod tests {
         let t = c.transport.expect("comprehended");
         assert_eq!(t.rules.len(), 1);
         let readings: Vec<usize> = t.rules[0].readings.iter().map(|(r, _)| *r).collect();
-        assert_eq!(readings, vec![0, 1, 2], "a constant shift agrees in every reading");
+        assert_eq!(readings, vec![0, 1, 2], "a constant shift agrees in the scene, frame, and body readings; the mixed anchors move with the body");
         assert_eq!(t.rules[0].sigma, vec![(1, 2)]);
         let x = grid(&["0000", "0000", "1100"]);
         assert_eq!(speak(&t, &x), Some(grid(&["0000", "0000", "0022"])));

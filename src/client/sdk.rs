@@ -773,7 +773,27 @@ impl Entity {
                 learned += 1;
             }
         }
-        Ok(learned)
+        // THE OTHER DIRECTION OF THE SHEAF: in a discordant stratum this
+        // genome may hold what the hypha lacks (a basis that regressed, a
+        // word learned from another judge). Those words are taught up for
+        // adoption, one contact's budget per stroke; the hypha verifies
+        // and installs what it cannot already derive.
+        let mut taught = 0usize;
+        let mut used = 0usize;
+        'strata: for d in &strata {
+            for addr in sheaf::have(&atlas, self.epigenome.genome(), &d.inv) {
+                let Some(word) = self.epigenome.genome().iter().find(|w| w.address() == addr) else { continue };
+                let bytes = word.to_bytes();
+                if used + bytes.len() > crate::network::wire::BODY_BUDGET {
+                    break 'strata;
+                }
+                used += bytes.len();
+                if self.session.speak(dialogue::encode_adopt(&voice, &bytes)).is_ok() {
+                    taught += 1;
+                }
+            }
+        }
+        Ok(learned + taught)
     }
 
     pub fn pull_syllabus(&mut self) -> io::Result<usize> {

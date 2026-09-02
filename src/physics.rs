@@ -76,6 +76,9 @@ pub struct Physics {
     pub syntropic: [u64; 4],
     /// ENTROPIC events per lane — pivots/torsion, disorder the demand injected.
     pub torsion: [u64; 4],
+    /// The syntropic count each lane last regenerated at: the relief a
+    /// lane produced since is what earns it a second regeneration.
+    pub regen_mark: [u64; 4],
     /// The METABOLIC RESERVE per lane — the two-stroke engine's fuel. ENTROPIC
     /// expansion (germination) SPENDS it (the reserve shrinks as the alphabet
     /// grows); SYNTROPIC optimization (consolidation) REGENERATES it (the reserve
@@ -86,7 +89,7 @@ pub struct Physics {
 
 impl Default for Physics {
     fn default() -> Self {
-        Physics { pressure: [0; 4], syntropic: [0; 4], torsion: [0; 4], reserve: [reserve_max(); 4] }
+        Physics { pressure: [0; 4], syntropic: [0; 4], torsion: [0; 4], regen_mark: [0; 4], reserve: [reserve_max(); 4] }
     }
 }
 
@@ -172,7 +175,13 @@ impl Physics {
     /// metabolism RECOVERS as the basis consolidates and rests (capped at full).
     pub fn regenerate(&mut self) {
         for l in 0..4 {
-            self.reserve[l] = (self.reserve[l] + regen_unit()).min(reserve_max());
+            // Every lane recovers one regeneration; a lane on which order
+            // was built since the last recovery earns a second — the
+            // reserve differentiates by the relief each lane produced.
+            let built = self.syntropic[l] > self.regen_mark[l];
+            let units = 1 + built as u64;
+            self.reserve[l] = (self.reserve[l] + units * regen_unit()).min(reserve_max());
+            self.regen_mark[l] = self.syntropic[l];
         }
     }
 

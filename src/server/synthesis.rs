@@ -156,9 +156,13 @@ pub fn probe(
     }
     let cited: Vec<[u8; 32]> = cites.iter().map(|(a, _, _, _)| *a).collect();
     let Ok(mut g) = k.lock() else { return (PROBE_NOTHING, [0; 4], [0; 4]) };
+    let before = listing.magnitude();
     let settled = g.settle_probe(voice, target, residual, &cited);
-    if settled.0 != PROBE_NOTHING {
+    if matches!(settled.0, crate::anastome::dialogue::PROBE_CLOSED | crate::anastome::dialogue::PROBE_DESCENT) {
         g.puncture_from(cites); // the fiber deepens on what was verified
+        // The settlement goes to the court with the utterance that made it,
+        // for the court to replay and measure itself.
+        g.record_settlement(*target, listing.sub().to_vec(), voice, cites, before, settled.2);
     }
     settled
 }

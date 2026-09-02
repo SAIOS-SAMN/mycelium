@@ -498,6 +498,14 @@ pub struct Kernel {
     /// closes or descends changes address and leaves this relation; a quote
     /// never serves a voice a listing it has already spoken on.
     spoken: Vec<([u8; 32], [u8; 32])>,
+    /// THE SETTLEMENTS awaiting the court: (listing, its chain, the voice,
+    /// the utterance, magnitude before, magnitude after). The court replays
+    /// the utterance and measures the deflation itself — proof of
+    /// convergence on the work that actually happens. Bounded by the
+    /// reserve ceiling; drained as the court pulls the docket.
+    settlements: Vec<([u8; 32], Vec<(i64, i64, u8, u8)>, [u8; 32], Vec<crate::anastome::dialogue::CiteWire>, [u64; 4], [u64; 4])>,
+    /// The book generation the pressure was last measured at.
+    pressure_gen: u64,
     /// THE DEFLATIONS: per provisional word, the magnitude of the listed
     /// demand its install settled — zero when the germ settled nothing on
     /// the book. The court's proof of convergence rides with the word.
@@ -593,6 +601,7 @@ impl Kernel {
     /// book, the yield surface, the escrow pool, the clock, and the reserve.
     /// Quoting and the cohesion witness compute over this with no lock held.
     pub fn market_open(&mut self) -> MarketView {
+        self.remeasure_pressure();
         let gens = (self.basis_gen, self.book_gen);
         let closure = match (self.closure.0, self.closure.1) == gens {
             true => Some(std::sync::Arc::clone(&self.closure.2)),
@@ -1081,6 +1090,49 @@ impl Kernel {
             self.basis_gen += 1;
         }
         deepened
+    }
+
+    /// RECORD a settlement for the court, bounded by the reserve ceiling
+    /// (the oldest leaves when the docket is full and the court has not
+    /// pulled).
+    pub fn record_settlement(
+        &mut self,
+        listing: [u8; 32],
+        chain: Vec<(i64, i64, u8, u8)>,
+        voice: [u8; 32],
+        cites: &[crate::anastome::dialogue::CiteWire],
+        before: [u64; 4],
+        after: [u64; 4],
+    ) {
+        let cap = crate::physics::reserve_max() as usize;
+        if self.settlements.len() >= cap {
+            self.settlements.remove(0);
+        }
+        self.settlements.push((listing, chain, voice, cites.to_vec(), before, after));
+    }
+
+    /// The settlements the court has not yet heard, drained.
+    pub fn drain_settlements(&mut self) -> Vec<([u8; 32], Vec<(i64, i64, u8, u8)>, [u8; 32], Vec<crate::anastome::dialogue::CiteWire>, [u64; 4], [u64; 4])> {
+        std::mem::take(&mut self.settlements)
+    }
+
+    /// PRESSURE IS THE OPEN BOOK: the per-lane magnitude of every listing,
+    /// measured whenever the book moved — never an accumulator. A demand
+    /// the language already speaks adds nothing; a settlement removes
+    /// exactly what it settled.
+    fn remeasure_pressure(&mut self) {
+        if self.pressure_gen == self.book_gen && !self.pending.is_empty() {
+            return;
+        }
+        let mut p = [0u64; 4];
+        for (listing, _) in &self.pending {
+            let m = listing.magnitude();
+            for l in 0..4 {
+                p[l] = p[l].saturating_add(m[l]);
+            }
+        }
+        self.physics.pressure = p;
+        self.pressure_gen = self.book_gen;
     }
 
     /// The deflation a provisional word's install measured on the book.

@@ -699,7 +699,18 @@ pub fn decode_docket_request(body: &[u8]) -> Option<[u8; 32]> {
 /// convergence rides with the word.
 pub type Docket = ([u8; 32], Vec<u8>, Vec<[u8; 32]>, [u64; 4], [u64; 4]);
 
+/// A SETTLEMENT on the docket: the listing, its chain, the voice, the
+/// utterance that settled it, and the magnitudes before and after as the
+/// hypha measured them. The court replays the utterance and measures for
+/// itself: two measurements of one deflation are the proof of convergence.
+pub type Settlement = ([u8; 32], Vec<Cell>, [u8; 32], Vec<CiteWire>, [u64; 4], [u64; 4]);
+
 pub fn encode_docket_reply(dockets: &[Docket]) -> Vec<u8> {
+    encode_docket_reply_with(dockets, &[])
+}
+
+/// `[dockets…][ns u32] ( [listing 32][chain][voice 32][cites][μ⃗ before 32][μ⃗ after 32] )…`
+pub fn encode_docket_reply_with(dockets: &[Docket], settlements: &[Settlement]) -> Vec<u8> {
     let mut out = Vec::new();
     out.extend_from_slice(&(dockets.len() as u32).to_le_bytes());
     for (addr, elem, voices, mu, deflation) in dockets {
@@ -713,10 +724,44 @@ pub fn encode_docket_reply(dockets: &[Docket]) -> Vec<u8> {
         push_mu(&mut out, mu);
         push_mu(&mut out, deflation);
     }
+    out.extend_from_slice(&(settlements.len() as u32).to_le_bytes());
+    for (listing, chain, voice, cites, before, after) in settlements {
+        out.extend_from_slice(listing);
+        push_chain(&mut out, chain);
+        out.extend_from_slice(voice);
+        push_cites(&mut out, cites);
+        push_mu(&mut out, before);
+        push_mu(&mut out, after);
+    }
+    out
+}
+
+/// The settlements on a docket reply, after the dockets (absent in an
+/// older reply: none).
+pub fn decode_settlements(body: &[u8]) -> Vec<Settlement> {
+    let Some((_, mut p)) = decode_dockets_at(body) else { return Vec::new() };
+    let Some(n) = body.get(p..p + 4).map(|b| u32::from_le_bytes(b.try_into().unwrap()) as usize) else { return Vec::new() };
+    p += 4;
+    let mut out = Vec::new();
+    for _ in 0..n {
+        let Some(listing) = body.get(p..p + 32).and_then(|b| b.try_into().ok()) else { break };
+        p += 32;
+        let Some(chain) = read_chain(body, &mut p) else { break };
+        let Some(voice) = body.get(p..p + 32).and_then(|b| b.try_into().ok()) else { break };
+        p += 32;
+        let Some(cites) = read_cites(body, &mut p) else { break };
+        let Some(before) = read_mu(body, &mut p) else { break };
+        let Some(after) = read_mu(body, &mut p) else { break };
+        out.push((listing, chain, voice, cites, before, after));
+    }
     out
 }
 
 pub fn decode_docket_reply(body: &[u8]) -> Option<Vec<Docket>> {
+    decode_dockets_at(body).map(|(d, _)| d)
+}
+
+fn decode_dockets_at(body: &[u8]) -> Option<(Vec<Docket>, usize)> {
     let mut p = 0usize;
     let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
     p += 4;
@@ -748,7 +793,7 @@ pub fn decode_docket_reply(body: &[u8]) -> Option<Vec<Docket>> {
         let deflation = read_mu(body, &mut p)?;
         out.push((addr, elem, voices, mu, deflation));
     }
-    Some(out)
+    Some((out, p))
 }
 
 /// Verdict rulings — the court's closed vocabulary.

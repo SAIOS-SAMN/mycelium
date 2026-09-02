@@ -312,7 +312,7 @@ fn main() {
                     // Two utterances at most: the sentence settles the
                     // listing; a residual not yet claimed is attested once
                     // as this voice's irreducible claim.
-                    if cites.is_empty() && (residual.is_empty() || familiar) {
+                    if cites.is_empty() && residual.is_empty() {
                         n_silent += 1;
                         continue;
                     }
@@ -340,7 +340,12 @@ fn main() {
                             }
                         }
                     }
-                    if !residual.is_empty() && !familiar {
+                    // The residual is attested whenever it stands: consensus is
+                    // the hypha's receipts across voices, never this voice's
+                    // memory of having said it. A familiar residual is one this
+                    // genome already expressed — said again for the quorum.
+                    let _ = familiar;
+                    if !residual.is_empty() {
                         match entity.attest(&residual, &cites) {
                             Ok(reply) => {
                                 n_attested += 1;

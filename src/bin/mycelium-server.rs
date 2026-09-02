@@ -461,7 +461,9 @@ fn main() {
                         // BOUNDED PERSISTENCE: the language never runs more
                         // than one metabolic unit of installs ahead of the
                         // ledger, whatever the reflex path is doing.
-                        if after.0 >= persisted.0 + mycelium::physics::spend_unit() as usize {
+                        if after.0 >= persisted.0 + mycelium::physics::spend_unit() as usize
+                            || after.3 >= persisted.3 + mycelium::physics::reserve_max()
+                        {
                             persist(&kernel, &state_path);
                             persisted = after;
                         }
@@ -515,14 +517,16 @@ fn main() {
         // ── docket: the court pulls what awaits finality ─────────────────────
         if kind == dialogue::ACT_DOCKET {
             let Some(_cvoice) = dialogue::decode_docket_request(&frame.body) else { continue };
-            let dockets: Vec<dialogue::Docket> = {
-                let k = kernel.lock().unwrap();
-                k.dockets()
+            let (dockets, settlements): (Vec<dialogue::Docket>, Vec<dialogue::Settlement>) = {
+                let mut k = kernel.lock().unwrap();
+                let d = k
+                    .dockets()
                     .into_iter()
                     .map(|(addr, spoken, voices, mu, deflation)| (addr, spoken.to_bytes(), voices, mu, deflation))
-                    .collect()
+                    .collect();
+                (d, k.drain_settlements())
             };
-            let reply = Frame { lane: frame.lane, body: dialogue::encode_docket_reply(&dockets) };
+            let reply = Frame { lane: frame.lane, body: dialogue::encode_docket_reply_with(&dockets, &settlements) };
             let _ = s.write_all(&reply.encode().unwrap_or_default());
             continue;
         }

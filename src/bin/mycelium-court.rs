@@ -297,6 +297,39 @@ fn main() {
                 continue;
             };
             let Some(dockets) = dialogue::decode_docket_reply(&body) else { continue };
+            // PROOF OF CONVERGENCE: every settlement the hypha made arrives
+            // with the utterance that made it. The court replays the
+            // utterance in its own algebra and measures the deflation for
+            // itself; two measurements that agree are a converged k-step,
+            // two that differ are a divergence on record against the voice.
+            let (mut converged_n, mut diverged_n) = (0usize, 0usize);
+            for (listing, listed, voice, cites, before, after) in dialogue::decode_settlements(&body) {
+                let residual = mycelium::transducer::sentence::verify_utterance(&cites, &listed);
+                let measured_before = mycelium::transducer::element::measure_lanes(&listed);
+                let measured_after = mycelium::transducer::element::measure_lanes(&residual);
+                let converged = measured_before == before && measured_after == after;
+                let mut op = [0u8; 32];
+                op[..32].copy_from_slice(&voice);
+                op[0] ^= converged as u8;
+                chain.append(listing, op);
+                heard_any = true;
+                match converged {
+                    true => converged_n += 1,
+                    false => {
+                        diverged_n += 1;
+                        eprintln!(
+                            "  DIVERGED voice {:02x} on {:02x}{:02x}…: hypha {before:?}→{after:?}, court {measured_before:?}→{measured_after:?} K={}",
+                            voice[0],
+                            listing[0],
+                            listing[1],
+                            chain.next_step_index(),
+                        );
+                    }
+                }
+            }
+            if converged_n + diverged_n > 0 {
+                eprintln!("  settlements heard: {converged_n} converged, {diverged_n} diverged, K={}", chain.next_step_index());
+            }
             for (addr, elem_bytes, voices, mu, deflation) in dockets {
                 if ruled.contains(&addr) {
                     continue;
