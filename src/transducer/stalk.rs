@@ -38,6 +38,22 @@ type Cell = (i64, i64, u8, u8);
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Invariant(pub Vec<u64>);
 
+/// Closure of one chart a thought has been probed through. Never a number:
+/// the loop closed (Flat), returned twisted (Twisted), or found no section
+/// (Cavity). Magnitudes are read from remainders, never stored here.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Closure {
+    Flat,
+    Twisted(Versor),
+    Cavity,
+}
+
+impl Closure {
+    pub fn is_flat(&self) -> bool {
+        matches!(self, Closure::Flat)
+    }
+}
+
 /// Measure the moduli of a chain's support (hues are fibre coordinates over
 /// the base point, not part of the geometry class).
 pub fn invariant(chain: &[Cell]) -> Invariant {
@@ -218,6 +234,23 @@ impl Stalks {
     pub fn admit(&mut self, inv: &Invariant, addr: [u8; 32]) {
         self.charts.insert(addr, inv.clone());
         self.root.admit(&inv.0, addr);
+    }
+
+    /// A second chart for the same address (the remainder face). The base
+    /// chart in `charts` is not overwritten.
+    pub fn admit_also(&mut self, inv: &Invariant, addr: [u8; 32]) {
+        if self.charts.get(&addr).is_some_and(|c| c == inv) {
+            return;
+        }
+        self.root.admit(&inv.0, addr);
+    }
+
+    /// Retract `addr` from one stratum without touching its base chart.
+    pub fn retract(&mut self, inv: &Invariant, addr: &[u8; 32]) {
+        if self.charts.get(addr).is_some_and(|c| c == inv) {
+            return;
+        }
+        self.root.remove(&inv.0, addr);
     }
 
     /// The stratum over `inv`: every held address whose base point could
@@ -428,9 +461,9 @@ mod tests {
         let shift = |dr: i64, dc: i64| -> Vec<Vec<num_rational::BigRational>> {
             vec![vec![q(1), q(0), q(dr)], vec![q(0), q(1), q(dc)], vec![q(0), q(0), q(1)]]
         };
-        let a = from_connection(&shift(0, 2), &[(1, 2), (2, 1)], &Vec::new(), [4, 2, 0, 0]);
-        let b = from_connection(&shift(5, -3), &[(1, 2), (2, 1)], &Vec::new(), [4, 2, 0, 0]);
-        let c = from_connection(&shift(0, 2), &[(1, 2), (2, 3), (3, 1)], &Vec::new(), [4, 2, 0, 0]);
+        let a = from_connection(&shift(0, 2), &[(1, 2), (2, 1)], &Vec::new(), [4, 2, 0, 0]).expect("spells");
+        let b = from_connection(&shift(5, -3), &[(1, 2), (2, 1)], &Vec::new(), [4, 2, 0, 0]).expect("spells");
+        let c = from_connection(&shift(0, 2), &[(1, 2), (2, 3), (3, 1)], &Vec::new(), [4, 2, 0, 0]).expect("spells");
         assert!(!invariant_of(&a).0.is_empty(), "a connection never lands on the empty chart");
         assert_eq!(invariant_of(&a), invariant_of(&b), "two identical motions at different origins share the chart");
         assert_ne!(invariant_of(&a), invariant_of(&c), "a different cycle type is a different chart");

@@ -463,8 +463,18 @@ pub fn versor_between(a: &Shape, b: &Shape) -> Option<Mv> {
     let to_origin = cga::translator(&(-&ca1), &(-&ca2));
     let to_target = cga::translator(&cb1, &cb2);
     let dil = cga::dilator(&rho);
-    let quarter = cga::rotator(&q(1), &q(1)); // the quarter turn, unnormalized
-    let half_turn = cga::rotator(&q(0), &q(1)); // e₁₂
+    // The stabilizer turns and the orientation sheet are WORDS of the
+    // alphabet realised as conformal versors — the quarter letter on the
+    // sensor's plane, its square, and the half turn through the third axis
+    // (the plane's flip). Nothing here is tabulated.
+    use crate::transducer::alphabet::{LetterId, Spelling, Word, PLANE_COL, PLANE_ROW};
+    let realise = |tape: &[(LetterId, bool)]| -> Option<Mv> {
+        crate::transducer::element::conformal_of(&Spelling { word: Word::from_letters(tape), rho: q(1) }, &(q(0), q(0)))
+    };
+    let quarter = realise(&[(LetterId::quarter((PLANE_ROW, PLANE_COL))?, false)])?;
+    let half_turn = quarter.geo(&quarter);
+    let flip_letter = LetterId::quarter((PLANE_COL, 2))?;
+    let sheet = realise(&[(flip_letter, false), (flip_letter, false)])?;
     let a_inv = a.blade.cells.clone();
     let b_cells = b.blade.cells.clone();
     let lands = |v: &Mv, r: i64, c: i64, held: &[(i64, i64)]| -> bool {
@@ -526,7 +536,7 @@ pub fn versor_between(a: &Shape, b: &Shape) -> Option<Mv> {
             }
             let mut v = rotor.geo(&to_origin);
             if reflect {
-                v = rotor.geo(&cga::reflector()).geo(&to_origin);
+                v = rotor.geo(&sheet).geo(&to_origin);
             }
             v = to_target.geo(&dil).geo(&v);
             if verify(&v) {

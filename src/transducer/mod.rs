@@ -25,3 +25,9 @@ pub mod stalk;
 pub mod sentence;
 pub mod family;
 pub mod sheaf;
+/// THE ALPHABET (LAW VIII) and THE PEEL: the seventeen immutable Cayley
+/// letters every transport is spelled in, and the shell-by-shell peel law
+/// (v0.4) that reads nested manifolds outer to inner. Base geometry: the
+/// conformal versors and the lattice isometries are realised from words.
+pub mod peel;
+pub mod alphabet;

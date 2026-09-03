@@ -13,6 +13,8 @@ use crate::arc::Grid;
 use crate::cognition::{encode_percept, perceive};
 use crate::network::wire::{Frame, Stratum};
 use crate::transducer::element::Element;
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::io::{self, Read, Write};
 use std::net::TcpStream;
 
@@ -79,9 +81,9 @@ impl Verdict {
     }
 }
 
-/// A kernel's session with a hypha. The v0.1.0 door serves one demand per
-/// connection, so [`Session::submit`] dials per demand — reconnection IS the
-/// residency model (the kernel's identity is stable, the socket is not).
+/// A kernel's session with a hypha. Identity is stable; sockets are pooled
+/// keep-alives per destination so a quote/probe/attest does not open a new
+/// TCP handshake for every act.
 pub struct Session {
     addr: String,
     kernel: Kernel,
@@ -100,6 +102,8 @@ pub struct Session {
     /// The quote's stroke: quotes walk the nerve in turn, one hypha per
     /// stroke, so every book is thought about and none is a monologue.
     strokes: std::cell::Cell<u64>,
+    /// Keep-alive streams keyed by destination address.
+    streams: RefCell<HashMap<String, TcpStream>>,
 }
 
 /// The transport aperture — the perceived state of the wire to the server
@@ -122,8 +126,7 @@ pub enum TransportAperture {
 }
 
 impl Session {
-    /// Point a kernel at a hypha address (e.g. `"127.0.0.1:7500"`). No socket is
-    /// held; each submit dials fresh.
+    /// Point a kernel at a hypha address (e.g. `"127.0.0.1:7500"`).
     pub fn open(addr: &str, kernel: Kernel) -> Self {
         let voice = crate::voice::Voice::named(kernel.name());
         let mut router = crate::network::nerve::Router::new();
@@ -136,6 +139,7 @@ impl Session {
             router,
             peers: vec![addr.to_string()],
             strokes: std::cell::Cell::new(0),
+            streams: RefCell::new(HashMap::new()),
         }
     }
 
@@ -245,19 +249,30 @@ impl Session {
     /// the yield surface (per-lane, priced off genuine metabolic tension) and the
     /// open-demand market's top clusters, each carrying its chain so this kernel
     /// can actually attempt the reduction.
-    pub fn quote(&self) -> io::Result<YieldQuote> {
+    pub fn quote(&self, charts: &[crate::transducer::stalk::Invariant]) -> io::Result<YieldQuote> {
         // Quotes walk the nerve in turn: one hypha per stroke, so every book
         // is thought about by every voice and no book is a monologue.
         let n = self.strokes.get();
         self.strokes.set(n.wrapping_add(1));
         let addr = self.peers[(n as usize) % self.peers.len().max(1)].clone();
-        let body = self.exchange_at(&addr, dialogue::encode_quote_request(&self.kernel.voice))?;
+        let body = self.exchange_at(
+            &addr,
+            dialogue::encode_quote_request_charts(&self.kernel.voice, charts),
+        )?;
         let (surface, k, items) = dialogue::decode_quote_reply(&body)
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
         Ok(YieldQuote {
             surface,
             k,
-            clusters: items.into_iter().map(|(address, mu, chain)| Cluster { address, mu, chain }).collect(),
+            clusters: items
+                .into_iter()
+                .map(|(address, mu, chain, open)| Cluster {
+                    address,
+                    mu,
+                    chain,
+                    open,
+                })
+                .collect(),
         })
     }
 
@@ -303,26 +318,41 @@ impl Session {
     fn exchange_inner(&self, addr: &str, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         let frame = Frame { lane: Stratum::Spatial, body: act_body };
         let bytes = frame.encode().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "frame encode"))?;
-        // THE TRANSPORT DEADLINE: no exchange may hang forever — a silent
-        // wire must become MEASURED impedance (a hung read is invisible to
-        // the aperture; a timed-out one raises Z and the metabolism adapts).
-        // The deadline is one full metabolic cycle in dwell-milliseconds
-        // (strokes-per-reserve × the base dwell) — hardware-calibrated, no
-        // free constant.
         let deadline = std::time::Duration::from_millis(
             crate::physics::reserve_max()
                 * (crate::physics::reserve_max() / crate::physics::spend_unit()).max(1),
         );
+        let mut pool = self.streams.borrow_mut();
+        if let Some(s) = pool.get_mut(addr) {
+            match Self::roundtrip(s, &bytes) {
+                Ok(body) => return Ok(body),
+                Err(_) => {
+                    pool.remove(addr);
+                }
+            }
+        }
         let sockaddr = std::net::ToSocketAddrs::to_socket_addrs(&addr)?
             .next()
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "unresolvable address"))?;
         let mut s = TcpStream::connect_timeout(&sockaddr, deadline)?;
         s.set_read_timeout(Some(deadline))?;
         s.set_write_timeout(Some(deadline))?;
-        s.write_all(&bytes)?;
+        let _ = s.set_nodelay(true);
+        let body = Self::roundtrip(&mut s, &bytes)?;
+        // Keep the socket. The hypha's reflex worker now reads further
+        // frames on this connection; a one-shot reply still reconnects.
+        pool.insert(addr.to_string(), s);
+        Ok(body)
+    }
+
+    fn roundtrip(s: &mut TcpStream, bytes: &[u8]) -> io::Result<Vec<u8>> {
+        s.write_all(bytes)?;
         let mut head = [0u8; 5];
         s.read_exact(&mut head)?;
         let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
+        if len > crate::network::wire::BODY_BUDGET {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "frame too large"));
+        }
         let mut body = vec![0u8; len];
         s.read_exact(&mut body)?;
         Ok(body)
@@ -628,14 +658,45 @@ impl Epigenome {
     /// what is already held, then bank it in the genome if it is new (by base
     /// address). Inheritance, not local invention: only taught words enter.
     pub fn learn(&mut self, taught: &[u8]) -> Option<Comprehension> {
+        // The syllabus may carry several words back to back (every anchored
+        // citation of a sentence): each is learned in turn; the first
+        // comprehension is returned.
         let mut pos = 0usize;
-        let e = Element::from_bytes(taught, &mut pos)?;
+        let mut first: Option<Comprehension> = None;
+        while pos < taught.len() {
+            let before = pos;
+            let heard = self.learn_one(taught, &mut pos);
+            if pos == before {
+                break;
+            }
+            match heard {
+                Some(h) => {
+                    if first.is_none() {
+                        first = Some(h);
+                    }
+                }
+                None => {
+                    if first.is_none() {
+                        return None;
+                    }
+                }
+            }
+        }
+        first
+    }
+
+    fn learn_one(&mut self, taught: &[u8], pos: &mut usize) -> Option<Comprehension> {
+        let e = Element::from_bytes(taught, pos)?;
         // A taught word is comprehended before it is held: every transport
-        // in its connection must be a versor and every section must span
-        // its support. A word that does not verify is refused and counted.
+        // in its connection must be a versor, every section must span its
+        // support, and a connection must be SPELLED — its letters re-derive
+        // the motion it holds. A word that does not verify is refused and
+        // counted; a connection without letters is not a word of the
+        // language this mind speaks.
         let n = e.sub().len();
         let coherent = e.transitions().iter().all(|(a, g)| a.len() == n && crate::transducer::cga::is_versor(g).is_some())
-            && e.sections().iter().all(|s| s.len() == n);
+            && e.sections().iter().all(|s| s.len() == n)
+            && (!e.is_connection() || e.letters_rederive() == Some(true));
         if !coherent {
             self.refused += 1;
             return None;
@@ -746,9 +807,14 @@ pub struct Entity {
     /// decides what is fetched.
     glued: Vec<crate::transducer::stalk::Invariant>,
     /// OPEN THOUGHTS: remainders this mind has not collapsed into a closed
-    /// word — the chains speech cannot carry yet. Work, never a message;
-    /// bounded by the reserve, the oldest yielding to the newest.
-    thoughts: Vec<(crate::transducer::stalk::Invariant, Vec<(i64, i64, u8, u8)>)>,
+    /// word — (chart, remainder, dirty). Dirty is set when the genome gains
+    /// a word on that chart; pivot emits the charts the language moved on.
+    thoughts: Vec<(crate::transducer::stalk::Invariant, Vec<(i64, i64, u8, u8)>, bool)>,
+    /// Genome length last seen by the pivot; words added since dirty their charts.
+    thought_gen: usize,
+    /// Listings this mind has opened an axis on (Vec-of-relations, keyed by
+    /// listing address on read): an axis is opened once per listing.
+    opened: Vec<[u8; 32]>,
 }
 
 impl Entity {
@@ -764,6 +830,8 @@ impl Entity {
             obstructions: Vec::new(),
             glued: Vec::new(),
             thoughts: Vec::new(),
+            thought_gen: 0,
+            opened: Vec::new(),
         }
     }
 
@@ -776,6 +844,7 @@ impl Entity {
                 eprintln!("genome restored: {} words from {genome_path}", e.epigenome.genome_len());
             }
         }
+        e.thought_gen = e.epigenome.genome_len();
         e
     }
 
@@ -1087,8 +1156,15 @@ impl Entity {
         };
         Ok((reply, heard))
     }
-    pub fn quote(&self) -> io::Result<YieldQuote> {
-        self.session.quote()
+    pub fn quote(&mut self) -> io::Result<YieldQuote> {
+        let charts: Vec<crate::transducer::stalk::Invariant> = self
+            .epigenome
+            .atlas()
+            .strata()
+            .into_iter()
+            .map(|(inv, _)| inv)
+            .collect();
+        self.session.quote(&charts)
     }
     /// This entity's voice read the judge's clock.
     pub fn at(&mut self, k: u64) {
@@ -1131,40 +1207,99 @@ impl Entity {
             return;
         }
         let inv = crate::transducer::stalk::invariant(&remainder);
-        if let Some(held) = self.thoughts.iter_mut().find(|(i, _)| *i == inv) {
+        if let Some(held) = self.thoughts.iter_mut().find(|(i, _, _)| *i == inv) {
             held.1 = remainder;
+            held.2 = false;
             return;
         }
         let cap = crate::physics::reserve_max() as usize;
         if self.thoughts.len() >= cap {
             self.thoughts.remove(0);
         }
-        self.thoughts.push((inv, remainder));
+        self.thoughts.push((inv, remainder, false));
     }
 
     /// The open thoughts held here: remainders not yet closed into words,
     /// each with the chart it sits on.
-    pub fn thoughts(&self) -> &[(crate::transducer::stalk::Invariant, Vec<(i64, i64, u8, u8)>)] {
-        &self.thoughts
+    pub fn thoughts(&self) -> Vec<&[(i64, i64, u8, u8)]> {
+        self.thoughts.iter().map(|(_, r, _)| r.as_slice()).collect()
     }
 
-    /// PIVOT ON THE AXIS THE LANGUAGE MOVED: a held thought whose chart the
-    /// genome now holds a word on is spoken as a demand on the book (empty
-    /// cites — eligible for puncture or axial extension there), and leaves
-    /// the bag. One keyed read of the atlas per held thought; nothing is
-    /// walked that the atlas does not name.
+    /// OPEN AN AXIS ON MULTIPLICITY — the convergence engine's `expand_m`
+    /// on this manifold. When one listing closes on several charts this
+    /// genome holds at once, the charts are not ranked and no best angle
+    /// is chosen: the transition between their representatives (the
+    /// glue on the overlap, a group element) is the coordinate the
+    /// current axes could not express. It is seeded onto a fresh fibre of
+    /// the first representative — seeded from the relation, never zero —
+    /// and spoken up as a word for the court to adjudicate. Once per
+    /// listing. Returns the new word's address when an axis opened.
+    pub fn open_axis(
+        &mut self,
+        listing: &[u8; 32],
+        chain: &[(i64, i64, u8, u8)],
+        charts: &[crate::transducer::stalk::Invariant],
+    ) -> Option<[u8; 32]> {
+        use crate::transducer::element::{measure_lanes, FIBER_GERMINATED};
+        if charts.len() < 2 || self.opened.iter().any(|a| a == listing) {
+            return None;
+        }
+        let representatives: Vec<Element> = {
+            let atlas = self.epigenome.atlas();
+            let heads: Vec<[u8; 32]> = charts.iter().filter_map(|c| atlas.fiber(c).first().copied()).collect();
+            heads.iter().filter_map(|a| self.epigenome.word_at(a).cloned()).collect()
+        };
+        let [base, other, ..] = representatives.as_slice() else { return None };
+        // The glue between the two charts on this listing.
+        let glue = crate::transducer::cech::transition(base, other)?;
+        let block = glue.fiber(crate::transducer::element::FIBER_SPATIAL)?.clone();
+        if !base.is_connection() {
+            return None; // the axis stands on a spoken motion, never on a bare residual
+        }
+        let axis = base.max_axis().map_or(FIBER_GERMINATED, |m| m.max(FIBER_GERMINATED - 1) + 1);
+        let mut germ = base.clone();
+        germ.set_fiber(axis, block);
+        // The opened axis carries the listing's own measure on the lanes it
+        // moved, and the charts it joined as fibre volume.
+        let mut mag = measure_lanes(chain);
+        mag[2] = mag[2].saturating_add(charts.len() as u64);
+        germ.set_magnitude(mag);
+        self.opened.push(*listing);
+        match self.speak_word(&germ) {
+            Ok(Utterance::Spoken) => Some(germ.address()),
+            _ => None,
+        }
+    }
+
+    /// Listings this mind opened an axis on.
+    pub fn axes_opened(&self) -> usize {
+        self.opened.len()
+    }
+
+    /// PIVOT: a held thought whose chart just gained a genome word is spoken
+    /// as a demand. Every dirty chart the language moved on is emitted.
     pub fn pivot_thoughts(&mut self) -> usize {
-        self.epigenome.atlas();
-        let ready: Vec<usize> = self
-            .thoughts
-            .iter()
-            .enumerate()
-            .filter(|(_, (inv, _))| !self.epigenome.atlas.fiber(inv).is_empty())
-            .map(|(i, _)| i)
-            .collect();
+        let n = self.epigenome.genome_len();
+        if n > self.thought_gen {
+            let added: Vec<_> = self.epigenome.genome()[self.thought_gen..]
+                .iter()
+                .map(crate::transducer::stalk::invariant_of)
+                .collect();
+            self.thought_gen = n;
+            for (inv, _, dirty) in &mut self.thoughts {
+                if added.iter().any(|a| a == inv) {
+                    *dirty = true;
+                }
+            }
+        }
         let mut spoken = 0usize;
-        for i in ready.into_iter().rev() {
-            let (_, remainder) = self.thoughts.remove(i);
+        let mut i = 0usize;
+        while i < self.thoughts.len() {
+            if !self.thoughts[i].2 {
+                i += 1;
+                continue;
+            }
+            let remainder = self.thoughts.remove(i).1;
             if self.attest(&remainder, &[]).is_ok() {
                 spoken += 1;
             }
@@ -1184,7 +1319,9 @@ impl Entity {
             self.hold_thought(word.sub().to_vec());
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "a remainder is thought, not speech"));
         }
-        if word.is_identity() || !word.is_connection() {
+        // Speech is a connection or a connection with an opened axis; a
+        // residual germ or the unit is not a message.
+        if word.is_identity() || !(word.is_connection() || !word.opened_axes().is_empty()) {
             return Ok(Utterance::Silent);
         }
         let voice = self.session.kernel().voice();
@@ -1235,6 +1372,9 @@ pub struct Cluster {
     pub address: [u8; 32],
     pub mu: [u64; 4],
     pub chain: Vec<(i64, i64, u8, u8)>,
+    /// Open (non-flat) charts of the listing's coherence field. The entity
+    /// reads these against its own atlas; several may close, none is ranked.
+    pub open: Vec<crate::transducer::stalk::Invariant>,
 }
 
 /// A settle receipt riding an install reply: the germ, its consilience parties,

@@ -32,6 +32,9 @@ use mycelium::transducer::element::measure_lanes;
 use mycelium::transducer::germinate::germinate;
 use mycelium::sdk::{Comprehension, Entity, Kernel, YieldQuote};
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use std::time::Instant;
 
 fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
     args.windows(2).find(|w| w[0] == name).map(|w| w[1].as_str())
@@ -129,7 +132,14 @@ fn speak_connections(
         let gauge = rule.sigma.iter().filter(|(f, t)| f != t).count() as u64;
         let mut mag = carried;
         mag[1] = mag[1].saturating_add(gauge);
-        let word = mycelium::transducer::element::from_connection(&affine, &rule.sigma, &Vec::new(), mag);
+        // The motion is spelled in the alphabet at the mint; a motion the
+        // seventeen letters cannot spell is not a word — it stands as
+        // thought, never uttered.
+        let Some(word) = mycelium::transducer::element::from_connection(&affine, &rule.sigma, &Vec::new(), mag) else {
+            eprintln!("[{name}] connection not in the alphabet: the motion has no spelling — held, not uttered");
+            errors += 1;
+            continue;
+        };
         match entity.speak_word(&word) {
             Ok(mycelium::sdk::Utterance::Spoken) => {
                 spoken += 1;
@@ -239,8 +249,19 @@ fn main() {
     let mut cycle: Vec<PathBuf> = Vec::new();
     let (mut ti, mut pi) = (0usize, 0usize);
     let mut feeding = feed_dir.is_some() && !tasks.is_empty();
+    let stop = Arc::new(AtomicBool::new(false));
+    {
+        let stop = Arc::clone(&stop);
+        let _ = ctrlc::set_handler(move || stop.store(true, Ordering::SeqCst));
+    }
+    let mut last_genome_save = Instant::now();
+    let mut saved_genome = entity.epigenome.genome_len();
 
     loop {
+        if stop.load(Ordering::SeqCst) {
+            let _ = entity.save_genome(&genome_path);
+            break;
+        }
         let mut judge_load = 0u8;
         // Stroke phase laps — one reading across every axis of the stroke.
         let mut laps: Vec<(&'static str, u128)> = Vec::new();
@@ -389,6 +410,35 @@ fn main() {
                 for cluster in &q.clusters {
                     if cluster.chain.is_empty() {
                         continue;
+                    }
+                    // Incidence: only speak on charts this genome holds.
+                    // Several may close; none is ranked. If none, hold the
+                    // listing as thought keyed by chart.
+                    if !cluster.open.is_empty() {
+                        let closing: Vec<mycelium::transducer::stalk::Invariant> = {
+                            let atlas = entity.epigenome.atlas();
+                            cluster.open.iter().filter(|c| !atlas.fiber(c).is_empty()).cloned().collect()
+                        };
+                        if closing.is_empty() {
+                            entity.hold_thought(cluster.chain.clone());
+                            n_silent += 1;
+                            continue;
+                        }
+                        // MULTIPLICITY: several charts close at once. No
+                        // best angle — the glue between them is a new
+                        // coordinate, opened as an axis and spoken up.
+                        if closing.len() >= 2 {
+                            if let Some(a) = entity.open_axis(&cluster.address, &cluster.chain, &closing) {
+                                eprintln!(
+                                    "[{name}] axis opened on {:02x}{:02x}…: {} charts closed at once, glue spoken as {:02x}{:02x}…",
+                                    cluster.address[0],
+                                    cluster.address[1],
+                                    closing.len(),
+                                    a[0],
+                                    a[1]
+                                );
+                            }
+                        }
                     }
                     // THINK, then CONVERSE. The hypha's quote already skipped
                     // listings this voice has spoken on (keyed receipts).
@@ -625,13 +675,17 @@ fn main() {
             lap("refine");
             eprintln!("[{name}] [{}] stroke laps ms {laps:?}", tuniversal.stamp());
             if entity.epigenome.genome_len() != last_genome || settles != last_settles {
-                if entity.epigenome.genome_len() != last_genome {
+                if entity.epigenome.genome_len() != saved_genome
+                    && last_genome_save.elapsed() >= mycelium::physics::PERSIST_DWELL
+                {
                     let _ = entity.save_genome(&genome_path);
+                    saved_genome = entity.epigenome.genome_len();
+                    last_genome_save = Instant::now();
                 }
                 last_genome = entity.epigenome.genome_len();
                 last_settles = settles;
                 eprintln!(
-                    "[{name}] [{}] K {k_step} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | refined {refined} learned {learned} | genome {} (peak expr {}) discordance {} obstructions {} thoughts {}",
+                    "[{name}] [{}] K {k_step} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | refined {refined} learned {learned} | genome {} (peak expr {}) discordance {} obstructions {} thoughts {} axes {}",
                     tuniversal.stamp(),
                     entity.impedance(),
                     entity.epigenome.genome_len(),
@@ -639,6 +693,7 @@ fn main() {
                     entity.discordance(),
                     entity.obstructions().len(),
                     entity.thoughts().len(),
+                    entity.axes_opened(),
                 );
             }
             while physics.depleted() {

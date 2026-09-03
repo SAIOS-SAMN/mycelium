@@ -57,6 +57,20 @@ pub fn spend_unit() -> u64 {
     (reserve_max() / 8).max(2)
 }
 
+/// Absolute minimum between hypha ledger flushes. Ticking K is not a
+/// persist event; a 50 MB snapshot may not land more often than this.
+pub const PERSIST_DWELL: std::time::Duration = std::time::Duration::from_secs(30);
+
+/// Court federation flush: whichever comes first.
+pub const COURT_PERSIST_DWELL: std::time::Duration = std::time::Duration::from_secs(60);
+pub const COURT_PERSIST_RULINGS: u64 = 500;
+
+/// Strokes per reserve cycle — the aperture ratio κ. Drain reads this;
+/// it is not a free constant.
+pub fn aperture_cycle() -> u32 {
+    (reserve_max() / spend_unit()).max(1) as u32
+}
+
 /// One syntropic regeneration — half an expansion, rounded up so exactly two
 /// strokes re-earn one expansion (the two-stroke governor, scale-exact).
 fn regen_unit() -> u64 {

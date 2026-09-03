@@ -304,12 +304,21 @@ impl Treasury {
 
     /// A VERIFIED SOLVE (PoUW): the registry confirmed a prediction against
     /// its held answers and named the task's tension. Occupied lanes pay at
-    /// least 1 while the pool holds anything there — a verified solve is
-    /// never free. Float-law bounded; bounty vs floor was decided upstream.
+    /// least 1. This is syntropic mining — the bounty is the task's locked
+    /// tension, not a share of the door pool. What the pool holds is
+    /// debited; any remainder is issued so a verified solve is never 0⃗
+    /// because a lane ran dry.
     pub fn settle_solve(&mut self, voice: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
         let asked: [u64; 4] = std::array::from_fn(|l| if mu[l] == 0 { 0 } else { mu[l].max(1) });
-        let bounded = self.award_bound(asked);
-        self.pay("solve", voice, bounded, anchor)
+        if asked.iter().all(|&m| m == 0) {
+            return asked;
+        }
+        let from_pool: [u64; 4] = std::array::from_fn(|l| asked[l].min(self.escrow[l]));
+        for l in 0..4 {
+            self.escrow[l] -= from_pool[l];
+        }
+        self.entries.push(Entry { kind: "solve", who: voice, mu: asked, k_step: anchor.0, receipt: anchor.1 });
+        asked
     }
 
     /// THE ASSEMBLY PREMIUM (7d): a fragmented parent demand's children all
@@ -683,6 +692,21 @@ mod tests {
             t.pool()
         );
         assert_eq!(t.entries().iter().filter(|e| e.kind == "solve").count(), 1);
+        assert_eq!(paid, tension, "occupied lanes pay the registered tension, not a pool share");
+    }
+
+    /// A verified solve is base-money: an empty pool still books the tension.
+    #[test]
+    fn a_verified_solve_mints_when_the_pool_is_empty() {
+        let mut t = Treasury::new();
+        t.enroll([1; 32], Tier::Observer, (0, [0; 32]));
+        let _ = t.settle_subsidy([1; 32], [u64::MAX; 4], (1, [1; 32]));
+        assert_eq!(t.pool(), [0; 4]);
+        let tension = [3u64, 0, 5, 1];
+        let paid = t.settle_solve([9; 32], tension, (2, [2; 32]));
+        assert_eq!(paid, tension, "PoUW issues the tension when the door pool is dry");
+        assert_eq!(t.balance_mu(&[9; 32]), tension);
+        assert_eq!(t.pool(), [0; 4], "issuance does not debit an empty pool");
     }
 
     /// An exhausted pool pays partial then nothing — the ledger records only

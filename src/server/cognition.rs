@@ -64,7 +64,9 @@ pub type Composite = ([u8; 32], Vec<([u8; 32], bool)>, Vec<(i64, i64, u8, u8)>);
 /// quoting run over it with no lock held.
 #[derive(Debug, Clone, Default)]
 pub struct Language {
-    pub words: Vec<Element>,
+    /// Shared snapshot of the held words. Readers borrow this Arc; the
+    /// kernel clones the basis into a new Arc only when the generation moved.
+    pub words: std::sync::Arc<[Element]>,
     pub stalks: crate::transducer::stalk::Stalks,
     /// Each word's shape, lifted once on first use and shared by every
     /// lookup over this snapshot (a measurement memoized, never persisted).
@@ -136,6 +138,44 @@ pub struct Rank {
     /// retirement since, every prior closure index still names its word.
     pub basis_len: usize,
     pub retire_gen: u64,
+}
+
+/// One chart a listing has been probed through, with its closure, the
+/// remainder that still stands on that chart, and per-lane stagnation on
+/// that chart. The closure is never a number.
+#[derive(Debug, Clone)]
+pub struct FieldEntry {
+    pub chart: crate::transducer::stalk::Invariant,
+    pub state: crate::transducer::stalk::Closure,
+    pub remainder: Vec<(i64, i64, u8, u8)>,
+    pub stagnant: [u32; 4],
+}
+
+fn union_remainders(entries: &[FieldEntry]) -> Vec<(i64, i64, u8, u8)> {
+    let mut u = Vec::new();
+    for e in entries {
+        if !e.state.is_flat() {
+            u.extend_from_slice(&e.remainder);
+        }
+    }
+    u.sort_unstable();
+    u.dedup();
+    u
+}
+
+fn open_charts_of(
+    addr: &[u8; 32],
+    listing: &Element,
+    field: &crate::network::nerve::Keyed<Vec<FieldEntry>>,
+) -> Vec<crate::transducer::stalk::Invariant> {
+    match field.get(addr) {
+        Some(entries) if !entries.is_empty() => entries
+            .iter()
+            .filter(|e| !e.state.is_flat())
+            .map(|e| e.chart.clone())
+            .collect(),
+        _ => vec![crate::transducer::stalk::invariant_of(listing)],
+    }
 }
 
 /// The lineage coordinate of a listing: its parent's (resolved, total,
@@ -282,81 +322,68 @@ pub struct Reduction {
 /// whose geometry a held word speaks, up to isometry, through the atlas)
 /// carries the C premium; coverage work (unknown geometry) the I premium.
 /// Top clusters by strongest lane; the escrow pool bounds the scale.
-pub fn quote_over(
-    rank: &Rank,
-    composites: &[Composite],
+/// QUOTE as incidence: listings whose open charts meet `voice_charts`,
+/// served in atlas order of those charts, within the body budget. No
+/// total order over the book. Returns (surface, priced items with open charts).
+pub fn quote_incidence(
     pending: &[(Element, u64)],
+    book_index: &crate::network::nerve::Keyed<usize>,
+    listing_atlas: &crate::transducer::stalk::Stalks,
+    field: &crate::network::nerve::Keyed<Vec<FieldEntry>>,
+    on_page: &crate::network::nerve::Keyed<()>,
+    voice_charts: &[crate::transducer::stalk::Invariant],
     surface: &[u64; 4],
     pool: &[u64; 4],
     pressure: &[u64; 4],
-    top: usize,
+    composites: &[Composite],
     budget: usize,
     spoken: &crate::network::nerve::Keyed<Vec<[u8; 32]>>,
     voice: &[u8; 32],
-    frontier: &crate::network::nerve::Keyed<()>,
-) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
-    let c = rank.closure.iter().filter(|k| k.is_some()).count() as u64;
-    let i = rank.closure.len() as u64 - c;
+) -> (
+    [u64; 4],
+    Vec<(Element, [u64; 4], Vec<crate::transducer::stalk::Invariant>)>,
+) {
     let cell = crate::anastome::dialogue::cell_wire_width();
-    // THE CONTACT'S CARRIER: the head of the sealed rank, up to `top` items
-    // whose wire form fits the remaining byte budget (address, μ⃗, count,
-    // cells). An item too wide for the frame is passed over, not served as
-    // a frame the wire refuses. Only the served head is priced.
-    let mut priced: Vec<(Element, [u64; 4])> = Vec::with_capacity(top);
+    let mut priced: Vec<(Element, [u64; 4], Vec<crate::transducer::stalk::Invariant>)> = Vec::new();
     let mut used = 0usize;
-    // Listings no voice has spoken on come first in rank order, then the
-    // ones other voices are already on: every voice reads an open page
-    // before it joins a conversation in progress.
-    // Each listing's receipts are read at its own address.
-    let open = rank.order.iter().copied().filter(|&i| pending.get(i).is_some_and(|(p, _)| !spoken.contains(&p.address())));
-    let joined = rank.order.iter().copied().filter(|&i| pending.get(i).is_some_and(|(p, _)| spoken.contains(&p.address())));
-    // Frontier (remainder-of-g, unreached moduli) first; corpus demands
-    // fill the rest of the page when the frontier is dry or short.
-    let ranked: Vec<usize> = open.chain(joined).collect();
-    let on_frontier: Vec<usize> = ranked
-        .iter()
-        .copied()
-        .filter(|&i| pending.get(i).is_some_and(|(p, _)| frontier.contains(&p.address())))
-        .collect();
-    let corpus: Vec<usize> = ranked
-        .iter()
-        .copied()
-        .filter(|&i| pending.get(i).is_some_and(|(p, _)| !frontier.contains(&p.address())))
-        .collect();
-    for idx in on_frontier.into_iter().chain(corpus) {
-        if priced.len() >= top {
-            break;
+    let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    for chart in voice_charts {
+        for addr in listing_atlas.fiber(chart) {
+            if !on_page.contains(addr) || seen.contains(addr) {
+                continue;
+            }
+            if spoken.get(addr).is_some_and(|voices| voices.contains(voice)) {
+                continue;
+            }
+            let Some(&idx) = book_index.get(addr) else { continue };
+            let Some((p, _)) = pending.get(idx) else { continue };
+            let open = open_charts_of(addr, p, field);
+            if !open.iter().any(|c| c == chart) {
+                continue;
+            }
+            let open_len: usize = 1 + open.iter().map(|c| 1 + 8 * c.0.len().min(255)).sum::<usize>();
+            let wire = 68 + p.sub().len() * cell + open_len;
+            if used + wire > budget {
+                continue;
+            }
+            used += wire;
+            seen.insert(*addr, ());
+            let mut mu = crate::economy::price(&p.magnitude(), pressure, pool);
+            mu[2] = p.magnitude()[2].saturating_mul(1 + surface[2]);
+            let (resolved, total, ribbon) = lineage_of(&p.address(), composites);
+            let assembly = crate::economy::price(&[0, 0, ribbon, 0], pressure, pool);
+            for l in 0..4 {
+                mu[l] = mu[l].saturating_add(assembly[l].saturating_mul(resolved) / total.max(1));
+            }
+            priced.push((p.clone(), mu, open));
         }
-        let Some((p, _)) = pending.get(idx) else { continue };
-        if spoken.get(&p.address()).is_some_and(|voices| voices.contains(voice)) {
-            continue; // this voice has spoken on it in this state
-        }
-        let wire = 68 + p.sub().len() * cell;
-        if used + wire > budget {
-            continue;
-        }
-        used += wire;
-        let base = rank.closure.get(idx).copied().flatten();
-        let premium = if base.is_some() { c } else { i };
-        let mut mu = crate::economy::price(&p.magnitude(), pressure, pool);
-        mu[2] = p.magnitude()[2].saturating_mul(1 + surface[2] + premium);
-        // Lineage-aware assembly pricing: a child of a partly resolved
-        // parent carries the parent's assembly premium (its ribbon volume,
-        // priced at the surface) scaled by the resolved fraction, so the
-        // closing pieces of an assembly quote highest without assignment.
-        let (resolved, total, ribbon) = lineage_of(&p.address(), composites);
-        let assembly = crate::economy::price(&[0, 0, ribbon, 0], pressure, pool);
-        for l in 0..4 {
-            mu[l] = mu[l].saturating_add(assembly[l].saturating_mul(resolved) / total.max(1));
-        }
-        priced.push((p.clone(), mu));
     }
     // THE SOLVENCY BOUND (P5): tension set the RANKING; the escrow pool sets
     // the SCALE. Each quoted lane is capped at pool[l]/quoted so the market
     // never offers more than it can pay — Σ quotes ≤ pool. An empty pool
     // quotes zero: an honest "cannot pay".
     let quoted = priced.len().max(1) as u64;
-    for (_, mu) in &mut priced {
+    for (_, mu, _) in &mut priced {
         for l in 0..4 {
             mu[l] = mu[l].min(pool[l] / quoted);
         }
@@ -562,11 +589,29 @@ pub struct Kernel {
     /// (empty-cites attest). Percept-pair coboundary tapes stay on the
     /// book for consilience but are not served on a quote page.
     quote_frontier: crate::network::nerve::Keyed<()>,
-    /// THE REMAINING TENSION of a listing after descents: a sentence that
-    /// covers part of a body settles that part and the body stays whole on
-    /// the book — never re-listed as a fragment — with its remainder's
-    /// measure here, keyed by the listing. Absent means the full magnitude.
+    /// THE REMAINING TENSION of a listing: derived from the union of
+    /// remainders over the field's non-flat charts. Keyed, a vector, never
+    /// primary — recomputed when a probe lands.
     tension: crate::network::nerve::Keyed<[u64; 4]>,
+    /// THE COHERENCE FIELD: per listing, the charts it has been probed
+    /// through and their closure. One entry per chart; a later probe on
+    /// the same chart replaces its state. Never summed, never ordered.
+    field: crate::network::nerve::Keyed<Vec<FieldEntry>>,
+    /// Listings still on the quote page (not relocated to the cavity atlas).
+    on_page: crate::network::nerve::Keyed<()>,
+    /// Pending index by address, so incidence is a keyed read.
+    book_index: crate::network::nerve::Keyed<usize>,
+    /// Voices that have closed a chart of a listing, with the cited versor:
+    /// two Flat loops on one chart whose versors glue are consilient.
+    flat_loops: crate::network::nerve::Keyed<Vec<(crate::transducer::stalk::Invariant, [u8; 32], element::Versor)>>,
+    /// Atlas of listings and cavities: admitted under the base chart at
+    /// list and under every face in the field. Drain never removes from here.
+    listing_atlas: crate::transducer::stalk::Stalks,
+    /// Relocated cavity elements, keyed, reachable through congruence.
+    cavity_book: crate::network::nerve::Keyed<Element>,
+    /// Unreachable listings for the court docket: the cavity is the
+    /// element itself. Drained as the court pulls.
+    cavities: Vec<Element>,
     /// THE SETTLEMENTS awaiting the court: (listing, its chain, the voice,
     /// the utterance, magnitude before, magnitude after). The court replays
     /// the utterance and measures the deflation itself — proof of
@@ -648,7 +693,257 @@ impl Kernel {
     fn syntropic_on_admit(&mut self, addr: [u8; 32]) -> usize {
         let survivor = self.condense_on(&addr);
         self.refine_stratum(&survivor);
+        self.drain_unreachable();
         self.basis_index.get(&survivor).copied().unwrap_or(0)
+    }
+
+    /// Drain listings whose occupied lanes have each sat through a full
+    /// aperture cycle of unmoved probes on every non-flat chart. Relocates
+    /// to the cavity atlas; never removes from listing_atlas.
+    fn drain_unreachable(&mut self) {
+        let kappa = crate::physics::aperture_cycle();
+        let keys: Vec<[u8; 32]> = self
+            .field
+            .entries()
+            .into_iter()
+            .filter_map(|(k, entries)| {
+                if !self.on_page.contains(k) {
+                    return None;
+                }
+                let t = self.tension.get(k)?;
+                let occupied = t.iter().any(|&x| x > 0);
+                let nonflat: Vec<_> = entries.iter().filter(|e| !e.state.is_flat()).collect();
+                if occupied
+                    && !nonflat.is_empty()
+                    && (0..4).all(|l| t[l] == 0 || nonflat.iter().all(|e| e.stagnant[l] >= kappa))
+                {
+                    Some(*k)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        for key in keys {
+            self.relocate_cavity(&key);
+        }
+    }
+
+    /// List a residual on the book and admit its base chart.
+    fn book_list(&mut self, residual: Element, k_now: u64) {
+        let addr = residual.address();
+        let inv = crate::transducer::stalk::invariant_of(&residual);
+        self.listing_atlas.admit(&inv, addr);
+        self.tension.insert(addr, residual.magnitude());
+        self.book_index.insert(addr, self.pending.len());
+        self.on_page.insert(addr, ());
+        self.pending.push((residual, k_now));
+        self.book_gen += 1;
+    }
+
+    fn pending_take(&mut self, addr: &[u8; 32]) -> Option<Element> {
+        let i = self.book_index.remove(addr).or_else(|| {
+            self.pending.iter().position(|(p, _)| p.address() == *addr)
+        })?;
+        if i >= self.pending.len() {
+            return None;
+        }
+        let (elem, _) = self.pending.swap_remove(i);
+        if i < self.pending.len() {
+            self.book_index.insert(self.pending[i].0.address(), i);
+        }
+        Some(elem)
+    }
+
+    /// True closure of the whole listing: the thought glued. Leaves the
+    /// page and the listing atlas (the word, if any, lives on the language).
+    fn unlist(&mut self, addr: &[u8; 32], as_cavity: bool) {
+        if as_cavity {
+            self.relocate_cavity(addr);
+            return;
+        }
+        if let Some(elem) = self.pending_take(addr) {
+            let _ = elem;
+        }
+        if let Some(entries) = self.field.remove(addr) {
+            for e in &entries {
+                if !e.state.is_flat() {
+                    self.listing_atlas.retract(&e.chart, addr);
+                }
+            }
+        }
+        self.listing_atlas.remove(addr);
+        self.tension.remove(addr);
+        self.spoken.remove(addr);
+        self.quote_frontier.remove(addr);
+        self.on_page.remove(addr);
+        self.flat_loops.remove(addr);
+        self.book_gen += 1;
+    }
+
+    /// Relocate a listing off the quote page onto the cavity atlas. The
+    /// element, field, and charts stay; pressure re-measures without it.
+    fn relocate_cavity(&mut self, addr: &[u8; 32]) {
+        let Some(elem) = self.pending_take(addr) else {
+            return;
+        };
+        self.on_page.remove(addr);
+        self.quote_frontier.remove(addr);
+        self.spoken.remove(addr);
+        if let Some(entries) = self.field.get(addr) {
+            for e in entries {
+                if !e.state.is_flat() {
+                    self.listing_atlas.admit_also(&e.chart, *addr);
+                }
+            }
+        }
+        let inv = crate::transducer::stalk::invariant_of(&elem);
+        self.listing_atlas.admit_also(&inv, *addr);
+        self.cavity_book.insert(*addr, elem.clone());
+        self.cavities.push(elem);
+        self.book_gen += 1;
+    }
+
+    fn recompute_tension(&mut self, addr: &[u8; 32]) {
+        let t = match self.field.get(addr) {
+            Some(entries) if entries.iter().any(|e| !e.state.is_flat()) => {
+                element::measure_lanes(&union_remainders(entries))
+            }
+            Some(_) => [0; 4],
+            None => self
+                .book_index
+                .get(addr)
+                .and_then(|&i| self.pending.get(i))
+                .map(|(p, _)| p.magnitude())
+                .or_else(|| self.cavity_book.get(addr).map(|e| e.magnitude()))
+                .unwrap_or([0; 4]),
+        };
+        self.tension.insert(*addr, t);
+    }
+
+    fn write_field(
+        &mut self,
+        addr: &[u8; 32],
+        chart: crate::transducer::stalk::Invariant,
+        state: crate::transducer::stalk::Closure,
+        remainder: Vec<(i64, i64, u8, u8)>,
+        before: &[u64; 4],
+        after: &[u64; 4],
+    ) {
+        use crate::transducer::stalk::Closure;
+        let mut entries = self.field.get(addr).cloned().unwrap_or_default();
+        for e in &mut entries {
+            if e.state.is_flat() {
+                continue;
+            }
+            for l in 0..4 {
+                if before[l] > 0 && after[l] == before[l] {
+                    e.stagnant[l] = e.stagnant[l].saturating_add(1);
+                } else {
+                    e.stagnant[l] = 0;
+                }
+            }
+        }
+        let mut stag = [0u32; 4];
+        for l in 0..4 {
+            if before[l] > 0 && after[l] == before[l] {
+                stag[l] = 1;
+            }
+        }
+        if let Some(e) = entries.iter_mut().find(|e| e.chart == chart) {
+            if !e.state.is_flat() {
+                stag = e.stagnant;
+            }
+            if e.state.is_flat() != state.is_flat() && !state.is_flat() {
+                // keep atlas admission for a newly opened chart
+            }
+            if matches!((&e.state, &state), (Closure::Twisted(_) | Closure::Cavity, Closure::Flat)) {
+                let base = self.listing_atlas.chart_of(addr).cloned();
+                if base.as_ref() != Some(&chart) {
+                    self.listing_atlas.retract(&chart, addr);
+                }
+            }
+            e.state = state;
+            e.remainder = remainder;
+            e.stagnant = stag;
+        } else {
+            entries.push(FieldEntry {
+                chart: chart.clone(),
+                state,
+                remainder,
+                stagnant: stag,
+            });
+        }
+        self.field.insert(*addr, entries);
+        self.recompute_tension(addr);
+    }
+
+    /// The remainder face of a listing: the first non-flat chart in its field.
+    pub fn face_of(&self, addr: &[u8; 32]) -> Option<&crate::transducer::stalk::Invariant> {
+        self.field.get(addr).and_then(|es| {
+            es.iter().find(|e| !e.state.is_flat()).map(|e| &e.chart)
+        })
+    }
+
+    /// The coherence field, keyed by listing.
+    pub fn field(&self) -> &crate::network::nerve::Keyed<Vec<FieldEntry>> {
+        &self.field
+    }
+
+    pub fn listing_atlas(&self) -> &crate::transducer::stalk::Stalks {
+        &self.listing_atlas
+    }
+
+    pub fn on_page(&self) -> &crate::network::nerve::Keyed<()> {
+        &self.on_page
+    }
+
+    pub fn book_index(&self) -> &crate::network::nerve::Keyed<usize> {
+        &self.book_index
+    }
+
+    /// Open (non-flat) charts of a listing, or its base chart if unprobed.
+    pub fn open_charts(&self, addr: &[u8; 32]) -> Vec<crate::transducer::stalk::Invariant> {
+        let listing = self
+            .book_index
+            .get(addr)
+            .and_then(|&i| self.pending.get(i).map(|(p, _)| p))
+            .or_else(|| self.cavity_book.get(addr));
+        match listing {
+            Some(p) => open_charts_of(addr, p, &self.field),
+            None => Vec::new(),
+        }
+    }
+
+    pub fn cavities(&self) -> &[Element] {
+        &self.cavities
+    }
+
+    /// The court heard `n` cavities; they leave the docket.
+    pub fn cavities_heard(&mut self, n: usize) {
+        let n = n.min(self.cavities.len());
+        self.cavities.drain(..n);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn stagnant_of(&self, addr: &[u8; 32]) -> [u32; 4] {
+        let Some(entries) = self.field.get(addr) else {
+            return [0; 4];
+        };
+        let mut s = [0u32; 4];
+        for e in entries {
+            if e.state.is_flat() {
+                continue;
+            }
+            for l in 0..4 {
+                s[l] = s[l].max(e.stagnant[l]);
+            }
+        }
+        s
+    }
+
+    #[cfg(test)]
+    pub(crate) fn drain_now(&mut self) {
+        self.drain_unreachable();
     }
 
     /// If the fibre over `addr` names exactly one other word a versor
@@ -780,7 +1075,10 @@ impl Kernel {
 
     /// The word at an address, read by its coordinate.
     pub fn word_at(&self, addr: &[u8; 32]) -> Option<&Element> {
-        self.basis_index.get(addr).and_then(|&i| self.basis.get(i))
+        self.basis_index
+            .get(addr)
+            .and_then(|&i| self.basis.get(i))
+            .or_else(|| self.cavity_book.get(addr))
     }
 
     /// A word the court finalized here joins the ruled cover (keyed admit).
@@ -866,7 +1164,7 @@ impl Kernel {
         if self.language_gen != self.basis_gen || self.language.words.len() != self.basis.len() {
             let shapes = (0..self.basis.len()).map(|_| std::sync::OnceLock::new()).collect();
             self.language = std::sync::Arc::new(Language {
-                words: self.basis.clone(),
+                words: std::sync::Arc::from(self.basis.as_slice()),
                 stalks: self.stalks.clone(),
                 shapes,
                 retire_gen: self.retire_gen,
@@ -989,62 +1287,99 @@ impl Kernel {
         voice: [u8; 32],
         target: &[u8; 32],
         residual: Vec<(i64, i64, u8, u8)>,
-        cited: &[[u8; 32]],
+        cites: &[crate::anastome::dialogue::CiteWire],
         section: bool,
     ) -> (u8, [u64; 4], [u64; 4]) {
         use crate::anastome::dialogue::{PROBE_CLOSED, PROBE_DESCENT, PROBE_NOTHING};
-        let Some(li) = self.pending.iter().position(|(p, _)| p.address() == *target) else {
+        use crate::transducer::stalk::Closure;
+        let Some(&li) = self.book_index.get(target) else {
             return (PROBE_NOTHING, [0; 4], [0; 4]);
         };
         let listing = self.pending[li].0.clone();
         self.record_spoken(*target, voice);
-        // The tension a sentence descends from: what earlier descents left
-        // of this body, or its whole magnitude.
         let before = self.tension.get(target).copied().unwrap_or_else(|| listing.magnitude());
-        let after = element::measure_lanes(&residual);
+        let rem = element::measure_lanes(&residual);
+        let after = rem;
         let anchor = self.anchor();
         let mag = listing.magnitude();
+        let mut charts: Vec<crate::transducer::stalk::Invariant> = Vec::new();
+        for (_, _, _, body) in cites {
+            let inv = crate::transducer::stalk::invariant(body);
+            if !charts.contains(&inv) {
+                charts.push(inv);
+            }
+        }
+        if charts.is_empty() {
+            charts.push(crate::transducer::stalk::invariant(listing.sub()));
+        }
+        let cite_g = cites.first().map(|(_, g, _, _)| g.clone()).unwrap_or_else(element::identity_versor);
         if let [] = residual.as_slice() {
-            // Raster covering of a tape is zero-yield; fibre section closure
-            // and a connection listing still pay morphism deflation.
             let paid = if section || listing.is_connection() {
                 self.treasury.settle_subsidy(voice, crate::economy::price(&before, &self.physics.pressure, &self.treasury.pool()), anchor)
             } else {
                 [0; 4]
             };
-            for addr in cited {
+            for (addr, _, _, _) in cites {
                 if let Some(i) = self.basis_index.get(addr).copied() {
                     let mag = self.basis[i].magnitude();
                     self.treasury.settle_use(voice, self.discoverers[i], mag, anchor);
                 }
             }
-            self.pending.remove(li);
-            self.spoken.remove(target);
-            self.quote_frontier.remove(target);
-            self.tension.remove(target);
-            self.book_gen += 1;
+            for chart in charts {
+                self.write_field(target, chart.clone(), Closure::Flat, Vec::new(), &before, &[0; 4]);
+                self.record_flat(target, chart, voice, cite_g.clone());
+            }
+            self.unlist(target, false);
             self.physics.relieve(&mag);
             self.physics.syntropy(&mag);
             self.append_step(*target, voice);
             self.complete_composite_child(target, voice);
             return (PROBE_CLOSED, paid, [0; 4]);
         }
-        // Replay and list: a sentence is a factorization, not a descent to
-        // reward. What the citations covered leaves the listing; what
-        // remains is listed as the next demand whatever its magnitude. Only
-        // a sentence that covered nothing is answered with nothing.
         let mut listed = listing.sub().to_vec();
         listed.sort_unstable();
         if residual == listed {
+            let standing = self
+                .field
+                .get(target)
+                .map(|e| union_remainders(e))
+                .filter(|r| !r.is_empty())
+                .unwrap_or_else(|| residual.clone());
+            for chart in charts {
+                self.write_field(target, chart, Closure::Cavity, standing.clone(), &before, &before);
+            }
             return (PROBE_NOTHING, [0; 4], before);
         }
+        let rem_inv = crate::transducer::stalk::invariant(&residual);
+        for chart in &charts {
+            if *chart != rem_inv {
+                self.write_field(target, chart.clone(), Closure::Flat, Vec::new(), &before, &after);
+                self.record_flat(target, chart.clone(), voice, cite_g.clone());
+            }
+        }
+        let v_disloc = {
+            let base_shape = element::shape_of_chain(listing.sub());
+            let rem_shape = element::shape_of_chain(&residual);
+            match (base_shape, rem_shape) {
+                (Some(sb), Some(sr)) => crate::transducer::blade::versor_between(&sb, &sr),
+                _ => None,
+            }
+        };
+        let state = match v_disloc.clone() {
+            Some(v) => Closure::Twisted(v),
+            None => Closure::Cavity,
+        };
+        self.write_field(target, rem_inv.clone(), state, residual.clone(), &before, &after);
+        self.listing_atlas.admit_also(&rem_inv, *target);
+        if let Some(&li) = self.book_index.get(target) {
+            if let Some(held) = self.pending.get_mut(li) {
+                held.0.mag[2] = residual.len() as u64;
+                if let Some(v) = v_disloc {
+                    held.0.record_dislocation(element::assignment(&residual), v);
+                }
+            }
+        }
         let settled: [u64; 4] = std::array::from_fn(|l| before[l].saturating_sub(after[l]));
-        // THE LISTING STAYS THE BODY: the descent measures what the sentence
-        // covered and the body stays whole on the book — a coboundary is
-        // never re-listed as a fragment of itself. What remains is the
-        // body's tension, keyed by the listing; the physics relaxes by what
-        // settled. Payment is zero: a partial cover opens no axis.
-        self.tension.insert(*target, after);
         self.spoken.remove(target);
         self.physics.relieve(&settled);
         self.book_gen += 1;
@@ -1053,13 +1388,25 @@ impl Kernel {
         (PROBE_DESCENT, [0; 4], after)
     }
 
-    /// The durable state's measurement: (cards, sections + connection
-    /// relations, provisional docket size, K). A change in any coordinate is
-    /// a changed durable language — the persistence trigger reads this, never
-    /// an event.
-    pub fn volume(&self) -> (usize, usize, usize, u64) {
-        let fibre = self.basis.iter().map(|w| w.sections().len() + w.transitions().len()).sum();
-        (self.basis.len(), fibre, self.provisional.len(), self.chain.next_step_index())
+    fn record_flat(
+        &mut self,
+        listing: &[u8; 32],
+        chart: crate::transducer::stalk::Invariant,
+        voice: [u8; 32],
+        g: element::Versor,
+    ) {
+        let mut loops = self.flat_loops.get(listing).cloned().unwrap_or_default();
+        if loops.iter().any(|(c, w, _)| c == &chart && *w == voice) {
+            return;
+        }
+        loops.push((chart, voice, g));
+        self.flat_loops.insert(*listing, loops);
+    }
+
+    /// Topological volume: cards, fibre span, open listings. K is algebraic
+    /// time and is not a persist event — ticking it must not flush the ledger.
+    pub fn volume(&self) -> (usize, usize, usize) {
+        (self.basis.len(), self.sections_total(), self.pending.len())
     }
 
     /// The polytonic kinematic pressure + torsion spectrum (per lane).
@@ -1137,11 +1484,23 @@ impl Kernel {
             let slash = ruling == RULING_SLASHED;
             let ok = self.treasury.revoke_award(addr, slash);
             if slash {
-                // Excise a slashed BASE word. A slashed section puncture has no
-                // separate card to excise (growth was +axis) — the economic
-                // slash applies; the fiber coordinate stays local dialect.
+                // A slashed word leaves the language and is admitted as a
+                // cavity chart: the residual is a boundary, never garbage.
                 if let Some(w) = self.basis_index.get(addr).copied() {
+                    let elem = self.basis[w].clone();
                     self.basis_remove(w);
+                    let inv = crate::transducer::stalk::invariant_of(&elem);
+                    self.listing_atlas.admit(&inv, *addr);
+                    self.write_field(
+                        addr,
+                        inv.clone(),
+                        crate::transducer::stalk::Closure::Cavity,
+                        elem.sub().to_vec(),
+                        &elem.magnitude(),
+                        &elem.magnitude(),
+                    );
+                    self.cavity_book.insert(*addr, elem.clone());
+                    self.cavities.push(elem);
                 }
             }
             ok
@@ -1175,6 +1534,30 @@ impl Kernel {
     /// Market occupancy under LINEAGE COHESION: a composite's listed children
     /// share the parent's budget envelope — the family counts ONCE, so a
     /// fractured scene cannot flood the book with its own shards.
+    /// THE ROOM ON EVERY LANE: the lane capacity less the listings that
+    /// stand on that lane, read on all four lanes at once. A residual fits
+    /// the book when every lane it has magnitude on has room — no lane is
+    /// chosen, no lane is ordered above another (the polytonic law).
+    fn lane_room(&self) -> [usize; 4] {
+        let cap = self.dynamic_lane_capacity();
+        let mut occupied = [0usize; 4];
+        for (p, _) in &self.pending {
+            let m = p.magnitude();
+            for l in 0..4 {
+                if m[l] > 0 {
+                    occupied[l] += 1;
+                }
+            }
+        }
+        std::array::from_fn(|l| cap[l].max(1).saturating_sub(occupied[l]))
+    }
+
+    /// Does a residual fit the book on every lane it moves?
+    fn fits_book(&self, mag: &[u64; 4]) -> bool {
+        let room = self.lane_room();
+        (0..4).all(|l| mag[l] == 0 || room[l] > 0)
+    }
+
     fn market_occupancy(&self) -> usize {
         let mut children_listed = 0usize;
         let mut parents_open = 0usize;
@@ -1538,14 +1921,12 @@ impl Kernel {
         {
             return false; // already speakable or already listed
         }
-        let lane = (0..4).max_by_key(|&l| residual.magnitude()[l]).unwrap_or(2);
-        let cap = self.dynamic_lane_capacity()[lane].max(1);
-        if self.market_occupancy() >= cap {
-            return false; // the thermodynamic book is full; corpus can wait
+        // Every lane the residual moves must have room; none is chosen.
+        if !self.fits_book(&residual.magnitude()) {
+            return false; // the thermodynamic book is full on a lane it needs; corpus can wait
         }
         let k_now = self.k_step();
-        self.pending.push((residual, k_now));
-        self.book_gen += 1;
+        self.book_list(residual, k_now);
         true
     }
 
@@ -1842,9 +2223,7 @@ impl Kernel {
                         self.physics.syntropy(&mag); // volume built through the axis
                         // A puncture deepens a held word: order built, no
                         // reserve spent — the fiber is the cheaper direction.
-                        self.pending.retain(|(p, _)| p.address() != residual.address());
-                        self.quote_frontier.remove(&residual.address());
-                        self.book_gen += 1;
+                        self.unlist(&residual.address(), false);
                         self.append_step(saddr, voice); // the puncture is a K-step too
                         self.complete_composite_child(&gaddr, voice); // lineage
                         return Outcome::Installed(ti); // installed AS A SECTION of thought ti
@@ -1885,9 +2264,7 @@ impl Kernel {
                     self.physics.relieve(&mag);
                     self.physics.syntropy(&mag); // a completed rule is order built
                     self.physics.spend(lanes); // the expansion SHRINKS the reserve
-                    self.pending.retain(|(p, _)| p.address() != addr); // the market CLEARS
-                    self.quote_frontier.remove(&addr);
-                    self.book_gen += 1;
+                    self.unlist(&addr, false); // the market CLEARS
                     // Seal the K-step receipt: the install IS a tick of algebraic
                     // time, parent-linked to the mesh's whole history.
                     self.append_step(addr, voice);
@@ -1956,12 +2333,15 @@ impl Kernel {
                         self.quote_frontier.insert(addr, ());
                     }
                     if !self.pending.iter().any(|(p, _)| p.address() == addr) {
-                        let lane = (0..4)
-                            .max_by_key(|&l| residual.magnitude()[l])
-                            .unwrap_or(2);
-                        let cap = self.dynamic_lane_capacity()[lane].max(1);
+                        // Every lane the residual moves must have room; no
+                        // lane is chosen. When one it needs is full, the
+                        // weakest listing standing on a full lane it needs
+                        // may yield its place.
                         let k_now = self.k_step();
-                        if self.market_occupancy() >= cap {
+                        let room = self.lane_room();
+                        let need = residual.magnitude();
+                        let saturated: Vec<usize> = (0..4).filter(|&l| need[l] > 0 && room[l] == 0).collect();
+                        if !self.fits_book(&need) {
                             let surface = crate::economy::yield_surface(&self.physics);
                             let new_a = action_potential(
                                 &crate::economy::price(&residual.magnitude(), &self.physics.pressure, &self.treasury.pool()),
@@ -1971,6 +2351,7 @@ impl Kernel {
                                 .pending
                                 .iter()
                                 .enumerate()
+                                .filter(|(_, (p, _))| saturated.iter().any(|&l| p.magnitude()[l] > 0))
                                 .min_by(|(_, (p, lk)), (_, (q, mk))| {
                                     let ap = action_potential(
                                         &crate::economy::price(&p.magnitude(), &self.physics.pressure, &self.treasury.pool()),
@@ -1993,15 +2374,14 @@ impl Kernel {
                                 });
                             match weakest {
                                 Some((i, a)) if a < new_a => {
-                                    self.pending.remove(i);
-                                    self.pending.push((residual, k_now));
-                                    self.book_gen += 1;
+                                    let evicted = self.pending[i].0.address();
+                                    self.unlist(&evicted, false);
+                                    self.book_list(residual, k_now);
                                 }
                                 _ => {} // the newcomer IS the weakest — unlisted
                             }
                         } else {
-                            self.pending.push((residual, k_now));
-                            self.book_gen += 1;
+                            self.book_list(residual, k_now);
                         }
                     }
                     Outcome::GermPending
@@ -2107,7 +2487,7 @@ impl Kernel {
             true => &self.language,
             false => {
                 fresh = Language {
-                    words: self.basis.clone(),
+                    words: std::sync::Arc::from(self.basis.as_slice()),
                     stalks: self.stalks.clone(),
                     shapes: (0..self.basis.len()).map(|_| std::sync::OnceLock::new()).collect(),
                     retire_gen: self.retire_gen,
@@ -2271,15 +2651,26 @@ impl Kernel {
         &self.basis
     }
 
-    /// QUOTE — the answer to "what is the highest-yield work?" The yield surface
-    /// is read from GENUINE metabolic tension (`economy::yield_surface`: pressure
-    /// + reserve deficit + entropic excess, per lane), and the open-demand market
-    /// is priced against it: each un-factored residual quoted at
-    /// μ⃗[l] = magnitude[l] · (1 + surface[l]). Top clusters by strongest lane.
+    /// QUOTE — a local reading of the page: listings still on_page, in
+    /// atlas order of pending, bounded by `top`. Tests use this; the wire
+    /// quote is an incidence query over the voice's charts.
     pub fn quote(&mut self, top: usize) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
+        self.remeasure_pressure();
         let surface = crate::economy::yield_surface(&self.physics);
-        let rank = self.closure_now();
-        quote_over(&rank, &self.composites, &self.pending, &surface, &self.treasury.pool(), &self.physics.pressure, top, usize::MAX, &self.spoken, &[0; 32], &self.quote_frontier)
+        let pool = self.treasury.pool();
+        let mut priced = Vec::new();
+        for (p, _) in self.pending.iter() {
+            if priced.len() >= top {
+                break;
+            }
+            if !self.on_page.contains(&p.address()) {
+                continue;
+            }
+            let mut mu = crate::economy::price(&p.magnitude(), &self.physics.pressure, &pool);
+            mu[2] = p.magnitude()[2].saturating_mul(1 + surface[2]);
+            priced.push((p.clone(), mu));
+        }
+        (surface, priced)
     }
 
     /// ATTEST — a peer's INDEPENDENT derivation of an open residual arrives as a
@@ -2406,6 +2797,55 @@ impl Kernel {
                 out.extend_from_slice(&m.to_le_bytes());
             }
             out.extend_from_slice(&self.provisional_k.get(addr).copied().unwrap_or(0).to_le_bytes());
+        }
+        // Coherence field beside DEF1: which angles each thought has been
+        // probed through. A restart must not forget the field.
+        out.extend_from_slice(b"FLD1");
+        let fields = self.field.entries();
+        out.extend_from_slice(&(fields.len() as u32).to_le_bytes());
+        for (addr, entries) in fields {
+            out.extend_from_slice(addr);
+            out.extend_from_slice(&(entries.len() as u32).to_le_bytes());
+            for e in entries {
+                out.extend_from_slice(&(e.chart.0.len() as u32).to_le_bytes());
+                for axis in &e.chart.0 {
+                    out.extend_from_slice(&axis.to_le_bytes());
+                }
+                match &e.state {
+                    crate::transducer::stalk::Closure::Flat => out.push(0),
+                    crate::transducer::stalk::Closure::Twisted(v) => {
+                        out.push(1);
+                        v.to_bytes(&mut out);
+                    }
+                    crate::transducer::stalk::Closure::Cavity => out.push(2),
+                }
+                out.extend_from_slice(&(e.remainder.len() as u32).to_le_bytes());
+                for &(r, c, hb, ha) in &e.remainder {
+                    out.extend_from_slice(&r.to_le_bytes());
+                    out.extend_from_slice(&c.to_le_bytes());
+                    out.push(hb);
+                    out.push(ha);
+                }
+                for s in e.stagnant {
+                    out.extend_from_slice(&s.to_le_bytes());
+                }
+            }
+        }
+        out.extend_from_slice(b"BOK1");
+        out.extend_from_slice(&(self.pending.len() as u32).to_le_bytes());
+        for (elem, k) in &self.pending {
+            let eb = elem.to_bytes();
+            out.extend_from_slice(&(eb.len() as u32).to_le_bytes());
+            out.extend_from_slice(&eb);
+            out.extend_from_slice(&k.to_le_bytes());
+        }
+        out.extend_from_slice(b"CAV1");
+        let cavs = self.cavity_book.entries();
+        out.extend_from_slice(&(cavs.len() as u32).to_le_bytes());
+        for (_, elem) in cavs {
+            let eb = elem.to_bytes();
+            out.extend_from_slice(&(eb.len() as u32).to_le_bytes());
+            out.extend_from_slice(&eb);
         }
         out
     }
@@ -2536,6 +2976,103 @@ impl Kernel {
                     kernel.deflations.insert(addr, mag);
                     kernel.provisional_k.insert(addr, k);
                 }
+            }
+            if b.get(*pos..*pos + 4) == Some(b"FLD1") {
+                *pos += 4;
+                let n = read_u32(b, pos)? as usize;
+                for _ in 0..n {
+                    let addr: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                    *pos += 32;
+                    let ne = read_u32(b, pos)? as usize;
+                    let mut entries = Vec::with_capacity(ne.min(64));
+                    for _ in 0..ne {
+                        let m = read_u32(b, pos)? as usize;
+                        let mut axes = Vec::with_capacity(m);
+                        for _ in 0..m {
+                            axes.push(u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?));
+                            *pos += 8;
+                        }
+                        let tag = *b.get(*pos)?;
+                        *pos += 1;
+                        let state = match tag {
+                            0 => crate::transducer::stalk::Closure::Flat,
+                            1 => crate::transducer::stalk::Closure::Twisted(
+                                element::Versor::from_bytes(b, pos)?,
+                            ),
+                            _ => crate::transducer::stalk::Closure::Cavity,
+                        };
+                        let nc = read_u32(b, pos)? as usize;
+                        let mut remainder = Vec::with_capacity(nc.min(1 << 16));
+                        for _ in 0..nc {
+                            let r = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+                            *pos += 8;
+                            let c = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+                            *pos += 8;
+                            let hb = *b.get(*pos)?;
+                            *pos += 1;
+                            let ha = *b.get(*pos)?;
+                            *pos += 1;
+                            remainder.push((r, c, hb, ha));
+                        }
+                        let mut stagnant = [0u32; 4];
+                        for s in &mut stagnant {
+                            *s = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
+                            *pos += 4;
+                        }
+                        entries.push(FieldEntry {
+                            chart: crate::transducer::stalk::Invariant(axes),
+                            state,
+                            remainder,
+                            stagnant,
+                        });
+                    }
+                    kernel.field.insert(addr, entries);
+                }
+            }
+            if b.get(*pos..*pos + 4) == Some(b"BOK1") {
+                *pos += 4;
+                let n = read_u32(b, pos)? as usize;
+                for _ in 0..n {
+                    let elen = read_u32(b, pos)? as usize;
+                    let mut ep = *pos;
+                    let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
+                    let elem = Element::from_bytes(&b[..end], &mut ep)?;
+                    *pos += elen;
+                    let k = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+                    *pos += 8;
+                    let addr = elem.address();
+                    kernel.book_index.insert(addr, kernel.pending.len());
+                    kernel.on_page.insert(addr, ());
+                    kernel.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), addr);
+                    kernel.pending.push((elem, k));
+                }
+            }
+            if b.get(*pos..*pos + 4) == Some(b"CAV1") {
+                *pos += 4;
+                let n = read_u32(b, pos)? as usize;
+                for _ in 0..n {
+                    let elen = read_u32(b, pos)? as usize;
+                    let mut ep = *pos;
+                    let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
+                    let elem = Element::from_bytes(&b[..end], &mut ep)?;
+                    *pos += elen;
+                    let addr = elem.address();
+                    kernel.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), addr);
+                    kernel.cavity_book.insert(addr, elem);
+                }
+            }
+            for (addr, entries) in kernel.field.entries() {
+                for e in entries {
+                    if !e.state.is_flat() {
+                        kernel.listing_atlas.admit_also(&e.chart, *addr);
+                    }
+                }
+                let t = if entries.iter().any(|e| !e.state.is_flat()) {
+                    element::measure_lanes(&union_remainders(entries))
+                } else {
+                    [0; 4]
+                };
+                kernel.tension.insert(*addr, t);
             }
             Some(())
         };
@@ -3371,7 +3908,7 @@ mod tests {
         let b = vec![(0, 0, 2u8), (0, 1, 2)];
         k.ingest(&a, &b, [1; 32]);
         assert!(matches!(k.ingest(&a, &b, [2; 32]), Outcome::Installed(0)));
-        let word = k.basis()[0].address();
+        let _word = k.basis()[0].address();
         // The entity's reduction over the language: the word cited at the
         // origin, the far cell left as the residual.
         let language = k.language();
@@ -3380,7 +3917,7 @@ mod tests {
         assert_eq!(void, vec![(0, 3, 3, 4)]);
         assert_eq!(cites.len(), 1);
         assert_eq!(replay(k.basis(), &cites, &chain), void, "the replay reproduces the residual");
-        let (code, paid, remaining) = k.settle_probe([3; 32], &target, void.clone(), &[word], false);
+        let (code, paid, remaining) = k.settle_probe([3; 32], &target, void.clone(), &[], false);
         assert_eq!(code, PROBE_DESCENT);
         assert_eq!(paid, [0; 4], "a descent is measured, never paid: covering cells opens no axis");
         assert_eq!(remaining, crate::transducer::element::measure_lanes(&void));
@@ -3394,8 +3931,99 @@ mod tests {
         // No descent settles nothing; closure clears the book.
         let t2 = listing.address();
         assert_eq!(k.settle_probe([3; 32], &t2, listing.sub().to_vec(), &[], false).0, PROBE_NOTHING);
-        assert_eq!(k.settle_probe([3; 32], &t2, Vec::new(), &[word], false).0, PROBE_CLOSED);
+        assert_eq!(k.settle_probe([3; 32], &t2, Vec::new(), &[], false).0, PROBE_CLOSED);
         assert!(k.quote(8).1.is_empty(), "the listing cleared");
+    }
+
+    /// Descent records a remainder face and a fibre cell-count, stagnation
+    /// counts only unmoved occupied lanes, and a full aperture of failed
+    /// probes sheds the listing as a cavity.
+    #[test]
+    fn descent_opens_a_face_and_drain_sheds_the_unmoved() {
+        use crate::anastome::dialogue::PROBE_DESCENT;
+        let mut k = Kernel::new();
+        let a = vec![(0, 0, 1u8), (0, 1, 1)];
+        let b = vec![(0, 0, 2u8)];
+        assert!(matches!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending));
+        let chain = germinate(&a, &b).unwrap();
+        assert!(matches!(k.attest(&chain, [1; 32]), Outcome::GermPending));
+        let target = k.quote(8).1[0].0.address();
+        let listed = k.quote(8).1[0].0.sub().to_vec();
+        let rem = vec![(0, 1, 1u8, 0u8)];
+        let before = k.tension.get(&target).copied().unwrap_or_else(|| k.quote(8).1[0].0.magnitude());
+        let after = crate::transducer::element::measure_lanes(&rem);
+        assert_ne!(after, before, "the residual is a proper descent");
+        let (code, _, remaining) = k.settle_probe([3; 32], &target, rem.clone(), &[], false);
+        assert_eq!(code, PROBE_DESCENT);
+        assert_eq!(remaining, after);
+        let listing = k.quote(8).1[0].0.clone();
+        assert_eq!(listing.address(), target, "the listing stays the body");
+        assert_eq!(listing.magnitude()[2], rem.len() as u64, "fibre demand is the remainder cell count");
+        let rem_inv = crate::transducer::stalk::invariant(&rem);
+        assert_eq!(k.face_of(&target).cloned(), Some(rem_inv.clone()));
+        assert!(
+            k.listing_atlas.fiber(&rem_inv).iter().any(|a| *a == target),
+            "the remainder chart admits the listing"
+        );
+        let base_inv = crate::transducer::stalk::invariant(&listed);
+        assert_eq!(
+            k.listing_atlas.chart_of(&target).cloned().as_ref(),
+            Some(&base_inv),
+            "base moduli are never written"
+        );
+        let s = k.stagnant_of(&target);
+        for l in 0..4 {
+            if before[l] > 0 && after[l] == before[l] {
+                assert!(s[l] >= 1, "unmoved occupied lane {l} stagnates: {s:?}");
+            } else {
+                assert_eq!(s[l], 0, "a moved or empty lane {l} resets: {s:?}");
+            }
+        }
+        let mut listed_sorted = listed.clone();
+        listed_sorted.sort_unstable();
+        let kappa = crate::physics::aperture_cycle();
+        for _ in 0..kappa {
+            assert_eq!(
+                k.settle_probe([4; 32], &target, listed_sorted.clone(), &[], false).0,
+                crate::anastome::dialogue::PROBE_NOTHING
+            );
+        }
+        let s = k.stagnant_of(&target);
+        let t = k.tension.get(&target).copied().unwrap();
+        assert!(
+            (0..4).all(|l| t[l] == 0 || s[l] >= kappa),
+            "every occupied lane sat a full cycle: tension {t:?} stagnant {s:?} kappa {kappa}"
+        );
+        k.drain_now();
+        assert!(k.quote(8).1.is_empty(), "the unreachable listing left the page");
+        assert_eq!(k.cavities().len(), 1, "the cavity is the relocated element");
+        assert_eq!(k.cavities()[0].address(), target);
+        assert_eq!(k.cavities()[0].magnitude()[2], rem.len() as u64);
+        assert!(
+            k.listing_atlas.fiber(&rem_inv).iter().any(|a| *a == target),
+            "drain relocates: the listing stays on the atlas"
+        );
+        assert_eq!(
+            k.listing_atlas.chart_of(&target).cloned().as_ref(),
+            Some(&base_inv),
+            "base moduli stay on the cavity chart"
+        );
+        assert!(k.face_of(&target).is_some(), "the field stays with the cavity");
+        assert!(k.cavity_book.get(&target).is_some(), "the element is keyed on the cavity book");
+        let entries = k.field.get(&target).expect("the field stays with the cavity");
+        let mut seen = Vec::new();
+        for e in entries {
+            assert!(!seen.contains(&e.chart), "a chart appears once per listing");
+            seen.push(e.chart.clone());
+        }
+        let bytes = k.snapshot();
+        let mut k2 = Kernel::new();
+        assert!(k2.restore(&bytes), "the field persists beside DEF1");
+        assert!(k2.cavity_book.get(&target).is_some(), "a restart keeps the cavity");
+        assert!(
+            k2.field.get(&target).is_some_and(|e| !e.is_empty()),
+            "a restart does not forget which angles were probed"
+        );
     }
 
 
@@ -3593,7 +4221,8 @@ mod tests {
         let before = k.basis_len();
         let (addr, _, _, _, _, _) = k.dockets()[0].clone();
         assert!(k.apply_verdict(&addr, crate::anastome::dialogue::RULING_SLASHED));
-        assert_eq!(k.basis_len(), before - 1, "the slashed word is excised");
+        assert_eq!(k.basis_len(), before - 1, "the slashed word leaves the language");
+        assert!(k.cavity_book.get(&addr).is_some(), "the residual is a cavity chart, not garbage");
         assert_eq!(k.treasury().balance_mu(&[1; 32]), [0; 4], "nothing was ever paid");
         assert!(k.dockets().is_empty());
     }

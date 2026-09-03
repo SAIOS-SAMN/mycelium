@@ -14,6 +14,7 @@ use mycelium::network::wire::Frame;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
+use std::time::Instant;
 
 fn read_frame(s: &mut TcpStream) -> Option<Frame> {
     let mut head = [0u8; 5];
@@ -108,8 +109,7 @@ fn tell_peer(addr: &str, body: Vec<u8>) -> Option<Vec<u8>> {
     Some(reply)
 }
 
-fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32]) {
-    let ReflexJob { mut stream, frame } = job;
+fn judge(stream: &mut TcpStream, frame: Frame, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32]) {
     // A demand routed on the nerve is heard as the demand it carries; only
     // a peer the router knows is heard, and it is never routed on.
     let frame = match frame.body.first() {
@@ -123,12 +123,14 @@ fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32])
     // ── quote: the market view leaves under a brief lock; pricing and the
     // cohesion witness compute over the snapshot.
     if kind == dialogue::ACT_QUOTE {
-        let Some(qvoice) = dialogue::decode_quote_request(&frame.body) else { return };
-        let Some((surface, priced, k_step, cohesion)) = mycelium::synthesis::quote(kernel, qvoice) else {
+        let Some((qvoice, charts)) = dialogue::decode_quote_request(&frame.body) else { return };
+        let Some((surface, priced, k_step, cohesion)) = mycelium::synthesis::quote(kernel, qvoice, &charts) else {
             return;
         };
-        let items: Vec<dialogue::WorkItem> =
-            priced.iter().map(|(e, mu)| (e.address(), *mu, e.sub().to_vec())).collect();
+        let items: Vec<dialogue::WorkItem> = priced
+            .iter()
+            .map(|(e, mu, open)| (e.address(), *mu, e.sub().to_vec(), open.clone()))
+            .collect();
         // The frame budget bounds what one contact carries: items ride in
         // rank order until the next would not fit.
         let body = dialogue::encode_quote_reply_within(
@@ -251,17 +253,15 @@ fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32])
                 (k.basis().get(word[0]).map(|g| g.to_bytes()).unwrap_or_default(), None)
             }
             // RE-TEACH ON REBIND: any sentence citing a court-ANCHORED word
-            // teaches that word's full γ = (π, Δ) form — Epigenome::learn
-            // refreshes by address, so the refined anchor propagates to every
-            // speaking genome. Teach the heaviest anchored citation.
+            // teaches those words' full γ = (π, Δ) forms — Epigenome::learn
+            // refreshes by address, so the refined anchors propagate to every
+            // speaking genome. Every anchored citation is taught, back to
+            // back; none is ranked above another.
             Outcome::Decomposed(word) => {
-                let taught = word
-                    .iter()
-                    .filter_map(|&i| k.basis().get(i))
-                    .filter(|g| g.anchor().is_some())
-                    .max_by_key(|g| g.magnitude()[2])
-                    .map(|g| g.to_bytes())
-                    .unwrap_or_default();
+                let mut taught = Vec::new();
+                for g in word.iter().filter_map(|&i| k.basis().get(i)).filter(|g| g.anchor().is_some()) {
+                    taught.extend_from_slice(&g.to_bytes());
+                }
                 (taught, None)
             }
             _ => (Vec::new(), None),
@@ -374,6 +374,14 @@ fn main() {
     eprintln!("TUniversal {} (origin {})", tuniversal.stamp(), tuniversal.origin_unix);
 
     let kernel = Arc::new(Mutex::new(Kernel::new()));
+    {
+        let k = Arc::clone(&kernel);
+        let path = state_path.clone();
+        let _ = ctrlc::set_handler(move || {
+            persist(&k, &path);
+            std::process::exit(0);
+        });
+    }
     // Resume the learned language from disk (a corrupt ledger boots clean, no crash).
     if let Ok(bytes) = std::fs::read(&state_path) {
         let mut k = kernel.lock().unwrap();
@@ -455,7 +463,7 @@ fn main() {
     // PROVEN ROOTS heard on the nerve: (task, solver). A root is gossiped
     // once and re-dispatched here first; a voice that reproduces the solve
     // proves it shares the root.
-    let mut roots: mycelium::network::nerve::Keyed<[u8; 32]> = mycelium::network::nerve::Keyed::new();
+    let mut roots: mycelium::network::nerve::Keyed<Vec<[u8; 32]>> = mycelium::network::nerve::Keyed::new();
     // THE NERVE THREAD: every act this node speaks to a peer leaves through
     // a bounded channel drained here, so the door never dials. The bound is
     // the reserve ceiling; a full nerve drops the act, as a full reflex
@@ -482,7 +490,7 @@ fn main() {
     // at boot, so a family proven here is re-spoken on every peer's book.
     let settled = registry.lock().map(|r| r.settled_ids()).unwrap_or_default();
     for t in &settled {
-        roots.insert(*t, id);
+        roots.insert(*t, vec![id]);
         speak_root(&router, &nerve_tx, &nerve_id, t, &id, None, tuniversal.ticks());
     }
     if !settled.is_empty() {
@@ -501,27 +509,22 @@ fn main() {
         let kernel = Arc::clone(&kernel);
         let tu = tuniversal;
         let state_path = state_path.clone();
-        // The measurement last sealed to disk. Persistence is PACED: it runs
-        // on the idle stroke when the live measurement differs, never per
-        // event — a ledger of this size serialized on every adoption or
-        // verdict held the lock long enough to starve the reflex path.
+        // Persistence is PACED: topological volume (cards, fibre, listings)
+        // and an absolute dwell. K is not a persist event.
         let mut persisted = kernel.lock().map(|k| k.volume()).unwrap_or_default();
+        let mut last_persist = Instant::now();
         std::thread::spawn(move || loop {
             let work = match synth_rx.recv_timeout(std::time::Duration::from_millis(
                 mycelium::physics::reserve_max(),
             )) {
                 Ok(w) => w,
                 Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
-                    // A dry queue is the syntropic opening: one bounded
-                    // consolidation stroke per idle interval — the basis
-                    // compresses toward its minimal generating set even
-                    // when no work is dispatched (vocabulary maintenance
-                    // is continuous, not incidental).
                     mycelium::synthesis::consolidate(&kernel);
                     let live = kernel.lock().map(|k| k.volume()).unwrap_or_default();
-                    if live != persisted {
+                    if live != persisted && last_persist.elapsed() >= mycelium::physics::PERSIST_DWELL {
                         persist(&kernel, &state_path);
                         persisted = live;
+                        last_persist = Instant::now();
                     }
                     continue;
                 }
@@ -533,8 +536,6 @@ fn main() {
                         let before = kernel.lock().map(|k| k.volume()).unwrap_or_default();
                         let _ = mycelium::synthesis::adopt(&kernel, ratifier, &word);
                         let after = kernel.lock().map(|k| k.volume()).unwrap_or_default();
-                        // A new card or a grown fibre is a changed durable
-                        // language; the idle stroke seals it.
                         if after != before {
                             eprintln!(
                                 "  [{}] adopt {:02x}{:02x}… volume {before:?} → {after:?} (court {:02x})",
@@ -544,14 +545,10 @@ fn main() {
                                 ratifier[0],
                             );
                         }
-                        // BOUNDED PERSISTENCE: the language never runs more
-                        // than one metabolic unit of installs ahead of the
-                        // ledger, whatever the reflex path is doing.
-                        if after.0 >= persisted.0 + mycelium::physics::spend_unit() as usize
-                            || after.3 >= persisted.3 + mycelium::physics::reserve_max()
-                        {
+                        if after != persisted && last_persist.elapsed() >= mycelium::physics::PERSIST_DWELL {
                             persist(&kernel, &state_path);
                             persisted = after;
+                            last_persist = Instant::now();
                         }
                     }
                 }
@@ -579,10 +576,17 @@ fn main() {
             };
             match job {
                 Ok(job) => {
-                    let kind = job.frame.body.first().copied().unwrap_or(0xff);
-                    let t0 = std::time::Instant::now();
-                    judge(job, &kernel, &router, &id);
-                    eprintln!("  reflex act {kind:02x} {} ms", t0.elapsed().as_millis());
+                    let ReflexJob { mut stream, mut frame } = job;
+                    loop {
+                        let kind = frame.body.first().copied().unwrap_or(0xff);
+                        let t0 = std::time::Instant::now();
+                        judge(&mut stream, frame, &kernel, &router, &id);
+                        eprintln!("  reflex act {kind:02x} {} ms", t0.elapsed().as_millis());
+                        match read_frame(&mut stream) {
+                            Some(next) => frame = next,
+                            None => break,
+                        }
+                    }
                 }
                 Err(_) => break,
             }
@@ -591,11 +595,12 @@ fn main() {
 
     for stream in listener.incoming() {
         let Ok(mut s) = stream else { continue };
-        let Some(frame) = read_frame(&mut s) else { continue };
+        loop {
+        let Some(frame) = read_frame(&mut s) else { break };
         // Body: [act][..] — the ANASTOME dialogue (anastome::dialogue). Percept and
         // routed-gossip percepts keep their historical tags; quote and demand are
         // the spoken economy; teach rides the reply; settle is appended on install.
-        let Some((&kind, rest)) = frame.body.split_first() else { continue };
+        let Some((&kind, rest)) = frame.body.split_first() else { break };
 
         // ── quote: "what is the highest-yield work?" ─────────────────────────
         // (ACT_QUOTE is judged on the reflex pool — see `judge`.)
@@ -609,8 +614,18 @@ fn main() {
                 continue;
             }
             let _ = spoken_at;
-            if roots.get(&task).is_none() {
-                roots.insert(task, solver);
+            let n = {
+                if let Some(v) = roots.get_mut(&task) {
+                    if !v.contains(&solver) {
+                        v.push(solver);
+                    }
+                    v.len()
+                } else {
+                    roots.insert(task, vec![solver]);
+                    1
+                }
+            };
+            if n == 1 {
                 let prioritized = registry.lock().map(|mut r| r.prioritize(&task)).unwrap_or(false);
                 eprintln!(
                     "  ROOT heard from {:02x}: task {:02x}{:02x}… solved by voice {:02x}; {}",
@@ -621,9 +636,19 @@ fn main() {
                     if prioritized { "re-dispatched first here" } else { "not open on this book" }
                 );
                 speak_root(&router, &nerve_tx, &nerve_id, &task, &solver, Some(from), tuniversal.ticks());
+            } else if n == 2 {
+                for (_, c) in syllabus_served.iter_mut() {
+                    *c = 0;
+                }
+                eprintln!(
+                    "  ROOT CONSILIENT task {:02x}{:02x}… two voices; syllabus rewound",
+                    task[0],
+                    task[1],
+                );
+                speak_root(&router, &nerve_tx, &nerve_id, &task, &solver, Some(from), tuniversal.ticks());
             }
             // The reply is this node's record for the task and its clock.
-            let reply = dialogue::encode_root_reply(roots.get(&task).copied(), tuniversal.ticks());
+            let reply = dialogue::encode_root_reply(roots.get(&task).and_then(|v| v.first().copied()), tuniversal.ticks());
             let _ = s.write_all(&Frame { lane: frame.lane, body: reply }.encode().unwrap_or_default());
             continue;
         }
@@ -635,7 +660,7 @@ fn main() {
             // the k-step it heard to; what lies at or before it is
             // acknowledged and leaves the docket; what lies past it is
             // served, within one frame, and the rest on the next pull.
-            let (body, words, served) = {
+            let (body, words, served, ncav) = {
                 let mut k = kernel.lock().unwrap();
                 k.settlements_heard_to(since_k);
                 let fresh: Vec<dialogue::Docket> = k
@@ -643,11 +668,19 @@ fn main() {
                     .into_iter()
                     .map(|(addr, spoken, voices, mu, deflation, kk)| (addr, spoken.to_bytes(), voices, mu, deflation, kk))
                     .collect();
-                dialogue::encode_docket_reply_paged(&fresh, k.settlements_since(since_k), mycelium::network::wire::BODY_BUDGET)
+                let cavities: Vec<Vec<u8>> = k.cavities().iter().map(|e| e.to_bytes()).collect();
+                let (body, words, served, ncav) = dialogue::encode_docket_reply_paged(
+                    &fresh,
+                    k.settlements_since(since_k),
+                    &cavities,
+                    mycelium::network::wire::BODY_BUDGET,
+                );
+                k.cavities_heard(ncav);
+                (body, words, served, ncav)
             };
-            if words + served > 0 {
+            if words + served + ncav > 0 {
                 let (s, g, t) = mycelium::chronometry::TUniversal::sgt_of(tuniversal.ticks().saturating_sub(court_ticks));
-                eprintln!("  docket served: {words} words, {served} settlements past K={since_k}; court delta S:{s} G:{g} T:{t}");
+                eprintln!("  docket served: {words} words, {served} settlements, {ncav} cavities past K={since_k}; court delta S:{s} G:{g} T:{t}");
             }
             let reply = Frame { lane: frame.lane, body };
             let _ = s.write_all(&reply.encode().unwrap_or_default());
@@ -711,10 +744,6 @@ fn main() {
                 let mut reg = registry.lock().unwrap();
                 match reg.settle(&tid, &outputs) {
                     mycelium::registry::SolveYield::Bounty(tension) => {
-                        // FIRST VERIFIED SOLVE: the registry's task tension,
-                        // float-law bounded. Not surface-priced covering —
-                        // the corpus already verified the work. Persist NOW
-                        // so a restart cannot re-mint this bounty.
                         let snap = reg.snapshot();
                         let tmp = format!("{state_path}.registry.tmp");
                         if std::fs::write(&tmp, &snap).is_ok() {
@@ -724,20 +753,24 @@ fn main() {
                         let anchor = k.anchor_pub();
                         let paid = k.treasury_settle_solve(svoice, tension, anchor);
                         drop(k);
-                        // A PROVEN ROOT. A first solve here of a root heard
-                        // from the nerve is its reproduction by this book's
-                        // voice; a first solve of an unheard family is a new
-                        // root, gossiped once to every peer.
-                        match roots.get(&tid).copied() {
-                            Some(solver) => eprintln!(
-                                "  ROOT REPRODUCED task {:02x}{:02x}… by voice {:02x} (root solver {:02x})",
-                                tid[0], tid[1], svoice[0], solver[0]
-                            ),
-                            None => {
-                                roots.insert(tid, svoice);
-                                eprintln!("  ROOT task {:02x}{:02x}… proven by voice {:02x}; spoken to its key's next hop", tid[0], tid[1], svoice[0]);
-                                speak_root(&router, &nerve_tx, &nerve_id, &tid, &svoice, None, tuniversal.ticks());
+                        let n = {
+                            if let Some(v) = roots.get_mut(&tid) {
+                                if !v.contains(&svoice) {
+                                    v.push(svoice);
+                                }
+                                v.len()
+                            } else {
+                                roots.insert(tid, vec![svoice]);
+                                1
                             }
+                        };
+                        eprintln!("  ROOT task {:02x}{:02x}… proven by voice {:02x}; spoken to its key's next hop", tid[0], tid[1], svoice[0]);
+                        speak_root(&router, &nerve_tx, &nerve_id, &tid, &svoice, None, tuniversal.ticks());
+                        if n >= 2 {
+                            for (_, c) in syllabus_served.iter_mut() {
+                                *c = 0;
+                            }
+                            eprintln!("  ROOT CONSILIENT task {:02x}{:02x}… {n} voices; syllabus rewound", tid[0], tid[1]);
                         }
                         (dialogue::SOLVE_BOUNTY, paid)
                     }
@@ -745,6 +778,25 @@ fn main() {
                         let mut k = kernel.lock().unwrap();
                         let anchor = k.anchor_pub();
                         let paid = k.treasury_settle_solve(svoice, [0, 0, 1, 0], anchor);
+                        drop(k);
+                        let n = {
+                            if let Some(v) = roots.get_mut(&tid) {
+                                if !v.contains(&svoice) {
+                                    v.push(svoice);
+                                }
+                                v.len()
+                            } else {
+                                roots.insert(tid, vec![svoice]);
+                                1
+                            }
+                        };
+                        if n == 2 {
+                            for (_, c) in syllabus_served.iter_mut() {
+                                *c = 0;
+                            }
+                            speak_root(&router, &nerve_tx, &nerve_id, &tid, &svoice, None, tuniversal.ticks());
+                            eprintln!("  ROOT CONSILIENT task {:02x}{:02x}… two voices; syllabus rewound", tid[0], tid[1]);
+                        }
                         (dialogue::SOLVE_FLOOR, paid)
                     }
                     mycelium::registry::SolveYield::Nothing => (dialogue::SOLVE_NOTHING, [0; 4]),
@@ -985,6 +1037,8 @@ fn main() {
             let mut s = job.stream;
             let body = dialogue::encode_deferral(outcome_code(&Outcome::GermPending));
             let _ = s.write_all(&Frame { lane, body }.encode().unwrap_or_default());
+        }
+        break;
         }
     }
 }

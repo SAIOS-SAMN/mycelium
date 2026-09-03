@@ -697,23 +697,45 @@ pub fn decode_demand(body: &[u8]) -> Option<([u8; 32], Vec<Cell>, Vec<CiteWire>)
 
 // ── quote: the yield question and the quoted surface ─────────────────────────
 
-/// `[ACT_QUOTE][voice 32]` — the question ("what is the highest-yield work?").
+/// `[ACT_QUOTE][voice 32][n u8][invariants…]` — the question, carrying the
+/// charts of the voice's own atlas so the hypha can answer by incidence.
 pub fn encode_quote_request(voice: &[u8; 32]) -> Vec<u8> {
+    encode_quote_request_charts(voice, &[])
+}
+
+pub fn encode_quote_request_charts(
+    voice: &[u8; 32],
+    charts: &[crate::transducer::stalk::Invariant],
+) -> Vec<u8> {
     let mut out = vec![ACT_QUOTE];
     out.extend_from_slice(voice);
+    out.push(charts.len().min(255) as u8);
+    for inv in charts.iter().take(255) {
+        push_invariant(&mut out, inv);
+    }
     out
 }
 
-pub fn decode_quote_request(body: &[u8]) -> Option<[u8; 32]> {
+pub fn decode_quote_request(body: &[u8]) -> Option<([u8; 32], Vec<crate::transducer::stalk::Invariant>)> {
     if body.first() != Some(&ACT_QUOTE) {
         return None;
     }
-    body.get(1..33)?.try_into().ok()
+    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    if body.len() == 33 {
+        return Some((voice, Vec::new()));
+    }
+    let n = *body.get(33)? as usize;
+    let mut p = 34usize;
+    let mut charts = Vec::with_capacity(n);
+    for _ in 0..n {
+        charts.push(read_invariant(body, &mut p)?);
+    }
+    Some((voice, charts))
 }
 
-/// One quoted work item: the residual's address, its priced μ⃗, and the chain
-/// itself (so a kernel can actually attempt the reduction).
-pub type WorkItem = ([u8; 32], [u64; 4], Vec<Cell>);
+/// One quoted work item: the residual's address, its priced μ⃗, the chain,
+/// and the open (non-flat) charts of its coherence field.
+pub type WorkItem = ([u8; 32], [u64; 4], Vec<Cell>, Vec<crate::transducer::stalk::Invariant>);
 
 /// `[ACT_QUOTE][surface 4×u64][K u64][n u8][item: addr 32 | μ⃗ 4×u64 | chain]…`
 /// — K is the judge's k-step at the quote: the temporal coordinate every
@@ -746,14 +768,19 @@ pub fn encode_quote_reply_within(surface: &[u64; 4], k: u64, items: &[WorkItem],
     let count_at = out.len();
     out.push(0);
     let mut served = 0u8;
-    for (addr, mu, chain) in items.iter().take(255) {
-        let item_len = 32 + 32 + 4 + chain.len() * 18;
+    for (addr, mu, chain, open) in items.iter().take(255) {
+        let open_len: usize = 1 + open.iter().map(|i| 1 + 8 * i.0.len().min(255)).sum::<usize>();
+        let item_len = 32 + 32 + 4 + chain.len() * 18 + open_len;
         if out.len() + item_len > budget {
             break;
         }
         out.extend_from_slice(addr);
         push_mu(&mut out, mu);
         push_chain(&mut out, chain);
+        out.push(open.len().min(255) as u8);
+        for inv in open.iter().take(255) {
+            push_invariant(&mut out, inv);
+        }
         served += 1;
     }
     out[count_at] = served;
@@ -776,7 +803,13 @@ pub fn decode_quote_reply(body: &[u8]) -> Option<([u64; 4], u64, Vec<WorkItem>)>
         p += 32;
         let mu = read_mu(body, &mut p)?;
         let chain = read_chain(body, &mut p)?;
-        items.push((addr, mu, chain));
+        let nopen = *body.get(p)? as usize;
+        p += 1;
+        let mut open = Vec::with_capacity(nopen);
+        for _ in 0..nopen {
+            open.push(read_invariant(body, &mut p)?);
+        }
+        items.push((addr, mu, chain, open));
     }
     Some((surface, k, items))
 }
@@ -828,14 +861,20 @@ pub fn encode_docket_reply(dockets: &[Docket]) -> Vec<u8> {
 
 /// `[dockets…][ns u32] ( [listing 32][chain][voice 32][cites][μ⃗ before 32][μ⃗ after 32] )…`
 pub fn encode_docket_reply_with(dockets: &[Docket], settlements: &[Settlement]) -> Vec<u8> {
-    encode_docket_reply_paged(dockets, settlements, usize::MAX).0
+    encode_docket_reply_paged(dockets, settlements, &[], usize::MAX).0
 }
 
-/// THE DOCKET PAGE: words first, then settlements, each taken in order
-/// until the next would not fit the budget. Returns the body and how many
-/// words and settlements it carries, so the server drains exactly what
-/// the court will hear and serves the rest on the next pull.
-pub fn encode_docket_reply_paged(dockets: &[Docket], settlements: &[Settlement], budget: usize) -> (Vec<u8>, usize, usize) {
+/// THE DOCKET PAGE: words first, then settlements, then cavities, each
+/// taken in order until the next would not fit the budget. Returns the
+/// body and how many words, settlements, and cavities it carries, so the
+/// server drains exactly what the court will hear and serves the rest
+/// on the next pull.
+pub fn encode_docket_reply_paged(
+    dockets: &[Docket],
+    settlements: &[Settlement],
+    cavities: &[Vec<u8>],
+    budget: usize,
+) -> (Vec<u8>, usize, usize, usize) {
     // Settlements are the proof of convergence and bounded by the reserve;
     // they are measured first, and the words take what remains, so a long
     // provisional list never starves the court of what actually settled.
@@ -883,7 +922,20 @@ pub fn encode_docket_reply_paged(dockets: &[Docket], settlements: &[Settlement],
     for item in settled {
         out.extend_from_slice(&item);
     }
-    (out, words, served)
+    // Cavities: evicted unreachable listings, each the element itself.
+    let cav_at = out.len();
+    out.extend_from_slice(&0u32.to_le_bytes());
+    let mut ncav = 0u32;
+    for elem in cavities {
+        if out.len() + 4 + elem.len() > budget {
+            break;
+        }
+        out.extend_from_slice(&(elem.len() as u32).to_le_bytes());
+        out.extend_from_slice(elem);
+        ncav += 1;
+    }
+    out[cav_at..cav_at + 4].copy_from_slice(&ncav.to_le_bytes());
+    (out, words, served, ncav as usize)
 }
 
 /// The settlements on a docket reply, after the dockets (absent in an
@@ -905,6 +957,40 @@ pub fn decode_settlements(body: &[u8]) -> Vec<Settlement> {
         let Some(k) = body.get(p..p + 8).map(|b| u64::from_le_bytes(b.try_into().unwrap())) else { break };
         p += 8;
         out.push((listing, chain, voice, cites, before, after, k));
+    }
+    out
+}
+
+/// Cavities riding after the settlements: the evicted element's bytes.
+/// Absent on an older reply.
+pub fn decode_cavities(body: &[u8]) -> Vec<Vec<u8>> {
+    let Some((_, mut p)) = decode_dockets_at(body) else { return Vec::new() };
+    let Some(ns) = body.get(p..p + 4).map(|b| u32::from_le_bytes(b.try_into().unwrap()) as usize) else {
+        return Vec::new();
+    };
+    p += 4;
+    for _ in 0..ns {
+        p += 32;
+        let Some(_) = read_chain(body, &mut p) else { return Vec::new() };
+        p += 32;
+        let Some(_) = read_cites(body, &mut p) else { return Vec::new() };
+        let Some(_) = read_mu(body, &mut p) else { return Vec::new() };
+        let Some(_) = read_mu(body, &mut p) else { return Vec::new() };
+        p += 8;
+    }
+    let Some(n) = body.get(p..p + 4).map(|b| u32::from_le_bytes(b.try_into().unwrap()) as usize) else {
+        return Vec::new();
+    };
+    p += 4;
+    let mut out = Vec::with_capacity(n.min(64));
+    for _ in 0..n {
+        let Some(el) = body.get(p..p + 4).map(|b| u32::from_le_bytes(b.try_into().unwrap()) as usize) else {
+            break;
+        };
+        p += 4;
+        let Some(bytes) = body.get(p..p + el) else { break };
+        p += el;
+        out.push(bytes.to_vec());
     }
     out
 }
@@ -963,6 +1049,8 @@ pub const RULING_REBIND: u8 = 3;
 /// that transports the word into the base frame. A hypha holding both
 /// attaches the word as a section of the base and retires its card.
 pub const RULING_ATTACHED: u8 = 4;
+/// Two independent voices verified the same task: a proven root.
+pub const RULING_ROOT: u8 = 5;
 
 /// evidence request: `[ACT_EVIDENCE][voice 32]`.
 pub fn encode_evidence_request(voice: &[u8; 32]) -> Vec<u8> {
@@ -1215,8 +1303,8 @@ mod tests {
         let (v, c, k) = decode_demand(&encode_demand(&voice, &chain, &cites)).unwrap();
         assert_eq!(k, cites, "the citations ride the demand");
         assert_eq!((v, c), (voice, chain.clone()));
-        assert_eq!(decode_quote_request(&encode_quote_request(&voice)).unwrap(), voice);
-        let items = vec![(germ, [1u64, 2, 30, 4], chain.clone())];
+        assert_eq!(decode_quote_request(&encode_quote_request(&voice)).unwrap(), (voice, Vec::new()));
+        let items = vec![(germ, [1u64, 2, 30, 4], chain.clone(), Vec::new())];
         let (s, k, it) = decode_quote_reply(&encode_quote_reply(&[5, 0, 9, 0], 4208, &items)).unwrap();
         assert_eq!(s, [5, 0, 9, 0]);
         assert_eq!(k, 4208, "the judge's k-step rides the quote");
@@ -1225,8 +1313,17 @@ mod tests {
         let docket: Docket = (germ, vec![1, 2, 3], vec![voice], [1, 2, 3, 4], [0, 0, 7, 0], 41);
         let settlement: Settlement = (germ, chain.clone(), voice, cites.clone(), [2, 0, 2, 0], [0, 0, 1, 0], 42);
         let body = encode_docket_reply_with(std::slice::from_ref(&docket), std::slice::from_ref(&settlement));
-        assert_eq!(decode_docket_reply(&body).unwrap(), vec![docket]);
-        assert_eq!(decode_settlements(&body), vec![settlement]);
+        assert_eq!(decode_docket_reply(&body).unwrap(), vec![docket.clone()]);
+        assert_eq!(decode_settlements(&body), vec![settlement.clone()]);
+        let cavity = vec![0xCAu8, 0xFE, 0xBA, 0xBE];
+        let (paged, w, s, n) = encode_docket_reply_paged(
+            std::slice::from_ref(&docket),
+            std::slice::from_ref(&settlement),
+            std::slice::from_ref(&cavity),
+            usize::MAX,
+        );
+        assert_eq!((w, s, n), (1, 1, 1));
+        assert_eq!(decode_cavities(&paged), vec![cavity]);
         assert_eq!(decode_teach(&encode_teach(&[0xAB, 0xCD])).unwrap(), vec![0xAB, 0xCD]);
         let (g2, vs, mu) = decode_settle(&encode_settle(&germ, &[voice, germ], &[0, 0, 12, 0])).unwrap();
         assert_eq!((g2, vs, mu), (germ, vec![voice, germ], [0, 0, 12, 0]));

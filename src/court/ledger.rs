@@ -21,6 +21,9 @@ pub struct CourtState {
     pub demoted: u64,
     pub slashed: u64,
     pub rebinds: u64,
+    /// Cavities admitted without replay: the sheaf boundary where no
+    /// global section glued under the current basis.
+    pub dialect: Vec<Element>,
 }
 
 fn push_u32(out: &mut Vec<u8>, v: usize) {
@@ -66,6 +69,12 @@ impl CourtState {
         }
         for c in [self.upheld, self.demoted, self.slashed, self.rebinds] {
             out.extend_from_slice(&c.to_le_bytes());
+        }
+        push_u32(&mut out, self.dialect.len());
+        for elem in &self.dialect {
+            let bytes = elem.to_bytes();
+            push_u32(&mut out, bytes.len());
+            out.extend_from_slice(&bytes);
         }
         out
     }
@@ -117,6 +126,19 @@ impl CourtState {
             *c = u64::from_le_bytes(b.get(p..p + 8)?.try_into().ok()?);
             p += 8;
         }
+        let mut dialect = Vec::new();
+        if p < b.len() {
+            let n = read_u32(b, &mut p)?;
+            dialect.reserve(n.min(1 << 16));
+            for _ in 0..n {
+                let len = read_u32(b, &mut p)?;
+                let slice = b.get(p..p + len)?;
+                let mut ep = 0usize;
+                let elem = Element::from_bytes(slice, &mut ep)?;
+                p += len;
+                dialect.push(elem);
+            }
+        }
         Some(CourtState {
             chain,
             federation,
@@ -126,6 +148,7 @@ impl CourtState {
             demoted: counters[1],
             slashed: counters[2],
             rebinds: counters[3],
+            dialect,
         })
     }
 
@@ -174,6 +197,7 @@ mod tests {
             demoted: 0,
             slashed: 0,
             rebinds: 1,
+            dialect: Vec::new(),
         };
         let bytes = state.to_bytes();
         let back = CourtState::from_bytes(&bytes).expect("clean state rehydrates");
@@ -183,6 +207,7 @@ mod tests {
         assert_eq!(back.federation.len(), 1);
         assert_eq!(back.federation[0].1.address(), addr, "the word rehydrates exactly");
         assert_eq!((back.upheld, back.rebinds), (1, 1));
+        assert!(back.dialect.is_empty(), "a journal with no cavities rehydrates an empty dialect");
         // Tamper one byte inside the receipt region: the chain fails to
         // verify and the WHOLE state refuses.
         let mut bad = bytes.clone();

@@ -161,13 +161,12 @@ pub fn probe(
             cites.first().map(|(_, _, _, b)| b.len()),
         );
     }
-    let cited: Vec<[u8; 32]> = cites.iter().map(|(a, _, _, _)| *a).collect();
     let section = cites.iter().any(|(_, _, asg, _)| *asg == u32::MAX);
     let Ok(mut g) = k.lock() else { return (PROBE_NOTHING, [0; 4], [0; 4]) };
     // The court replays the settlement on the chains it is handed, so the
     // measure spoken here is the chain's own, not the listing's fibre.
     let before = crate::transducer::element::measure_lanes(listing.sub());
-    let settled = g.settle_probe(voice, target, residual, &cited, section);
+    let settled = g.settle_probe(voice, target, residual, cites, section);
     if matches!(settled.0, crate::anastome::dialogue::PROBE_CLOSED | crate::anastome::dialogue::PROBE_DESCENT) {
         g.puncture_from(cites); // the fiber deepens on what was verified
         // The settlement goes to the court with the utterance that made it,
@@ -177,17 +176,24 @@ pub fn probe(
     settled
 }
 
-/// THE QUOTE, off the lock: the market view leaves under a brief lock; the
-/// depth follows the metabolism (a calm judge serves a deep book, a strained
-/// one its hottest few); pricing and the cohesion witness compute over the
-/// snapshot. Returns (surface, priced clusters, K, cohesion).
+/// THE QUOTE, off the lock: incidence of the voice's charts against the
+/// listing atlas. The page width is the body budget. Returns (surface,
+/// priced items with open charts, K, cohesion).
 pub fn quote(
     k: &std::sync::Mutex<crate::cognition::Kernel>,
     voice: [u8; 32],
-) -> Option<([u64; 4], Vec<(crate::transducer::element::Element, [u64; 4])>, u64, crate::cohesion::CohesionWitness)> {
+    charts: &[crate::transducer::stalk::Invariant],
+) -> Option<(
+    [u64; 4],
+    Vec<(
+        crate::transducer::element::Element,
+        [u64; 4],
+        Vec<crate::transducer::stalk::Invariant>,
+    )>,
+    u64,
+    crate::cohesion::CohesionWitness,
+)> {
     let view = k.lock().ok()?.market_open();
-    // The closure is a sealed carrier: read when current, measured over the
-    // snapshot (no lock) and sealed back only when a generation moved.
     let t0 = std::time::Instant::now();
     let sealed = view.closure.is_some();
     let rank = match view.closure {
@@ -211,26 +217,23 @@ pub fn quote(
         view.gens,
         t0.elapsed().as_millis(),
     );
-    let free: u64 = view.reserve.iter().sum();
-    let depth = (4 + (free as usize * 12) / (4 * crate::physics::reserve_max() as usize)).min(16);
-    // The frame budget less the reply head (act, surface, count).
     let budget = crate::network::wire::BODY_BUDGET - 34;
-    // The page is taken under a brief lock so each listing's receipts of
-    // speech are read at its own address as they stand.
     let (surface, priced) = {
         let g = k.lock().ok()?;
-        crate::cognition::quote_over(
-            &rank,
-            &view.composites,
+        crate::cognition::quote_incidence(
             &view.pending,
+            g.book_index(),
+            g.listing_atlas(),
+            g.field(),
+            g.on_page(),
+            charts,
             &view.surface,
             &view.pool,
             &view.pressure,
-            depth,
+            &view.composites,
             budget,
             g.spoken(),
             &voice,
-            g.quote_frontier(),
         )
     };
     let cohesion = crate::cognition::cohesion_over(&rank.closure);

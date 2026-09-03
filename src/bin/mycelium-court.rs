@@ -40,6 +40,8 @@ use mycelium::sdk::{Kernel, Session, TransportAperture};
 use mycelium::transducer::element::Element;
 use mycelium::transducer::stalk::{self, Stalks};
 use mycelium::verdict;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::time::Instant;
 
 /// THE COURT'S TRANSPORT APERTURE. Every utterance to a hypha waits in that
@@ -149,6 +151,9 @@ fn main() {
     let mut rebound: Vec<([u8; 32], usize)> = Vec::new();
     let mut rebinds = 0u64;
     let (mut upheld, mut demoted, mut slashed) = (0u64, 0u64, 0u64);
+    let mut dialect: Vec<Element> = Vec::new();
+    let mut flats: mycelium::network::nerve::Keyed<Vec<(mycelium::transducer::stalk::Invariant, [u8; 32], mycelium::transducer::element::Versor)>> =
+        mycelium::network::nerve::Keyed::new();
     if let Some(s) = restored {
         chain = s.chain;
         federation = s.federation;
@@ -170,12 +175,14 @@ fn main() {
         demoted = s.demoted;
         slashed = s.slashed;
         rebinds = s.rebinds;
+        dialect = s.dialect;
         eprintln!(
-            "court restored: K={} federation {} words, {} ruled, {} rebound",
+            "court restored: K={} federation {} words, {} ruled, {} rebound, {} cavities",
             chain.next_step_index(),
             federation.len(),
             ruled.len(),
             rebound.len(),
+            dialect.len(),
         );
     }
     if reaudit {
@@ -194,6 +201,7 @@ fn main() {
                    federation: &Vec<([u8; 32], Element)>,
                    ruled: &Vec<[u8; 32]>,
                    rebound: &Vec<([u8; 32], usize)>,
+                   dialect: &Vec<Element>,
                    counters: (u64, u64, u64, u64)| {
         let s = mycelium::court::ledger::CourtState {
             chain: chain.clone(),
@@ -204,9 +212,18 @@ fn main() {
             demoted: counters.1,
             slashed: counters.2,
             rebinds: counters.3,
+            dialect: dialect.clone(),
         };
         let _ = s.save(&state_path);
     };
+    let mut last_persist = Instant::now();
+    let mut rulings_since_flush = 0u64;
+    let mut persist_dirty = false;
+    let stop = Arc::new(AtomicBool::new(false));
+    {
+        let stop = Arc::clone(&stop);
+        let _ = ctrlc::set_handler(move || stop.store(true, Ordering::SeqCst));
+    }
     let mut last_total = u64::MAX; // voice the summary only when rulings moved
     let mut physics = Physics::default();
     let start = Instant::now();
@@ -238,6 +255,10 @@ fn main() {
         (0..sessions.len()).map(|_| mycelium::network::nerve::Keyed::new()).collect();
 
     loop {
+        if stop.load(Ordering::SeqCst) {
+            persist(&chain, &federation, &ruled, &rebound, &dialect, (upheld, demoted, slashed, rebinds));
+            break;
+        }
         let mut heard_any = false;
         // ── one genesis stride, when the audit relation still holds work.
         // The direct call decides everything: transport failure is the
@@ -268,6 +289,7 @@ fn main() {
                         &federation,
                         &ruled,
                         &rebound,
+                        &dialect,
                         (upheld, demoted, slashed, rebinds),
                     );
                 }
@@ -377,6 +399,75 @@ fn main() {
             if converged_n + diverged_n > 0 {
                 eprintln!("  settlements heard from hypha {hi}: {converged_n} converged, {diverged_n} diverged, K={}", chain.next_step_index());
             }
+            // Consilience of settlements: two Flat loops on one chart whose
+            // cited versors glue (identity) are one closure, not two labels.
+            for (listing, listed, voice, cites, _before, after, _k) in dialogue::decode_settlements(&body) {
+                let residual = mycelium::transducer::sentence::verify_utterance(&cites, &listed);
+                let whole_flat = after.iter().all(|&x| x == 0);
+                for (_addr, g, _, body) in &cites {
+                    let chart = mycelium::transducer::stalk::invariant(body);
+                    let covered = whole_flat || {
+                        let mut rem = residual.clone();
+                        rem.sort_unstable();
+                        body.iter().all(|&(r, c, _, _)| {
+                            rem.binary_search_by(|x| (x.0, x.1).cmp(&(r, c))).is_err()
+                        })
+                    };
+                    if !covered {
+                        continue;
+                    }
+                    let mut loops = flats.get(&listing).cloned().unwrap_or_default();
+                    let prior = loops.iter().find(|(c, w, _)| c == &chart && *w != voice).cloned();
+                    if !loops.iter().any(|(c, w, _)| c == &chart && *w == voice) {
+                        loops.push((chart.clone(), voice, g.clone()));
+                        flats.insert(listing, loops);
+                    }
+                    if let Some((_, w, gw)) = prior {
+                        let id = mycelium::transducer::element::identity_versor();
+                        let glue = gw.versor_inverse().map(|inv| g.geo(&inv)).unwrap_or_else(|| g.clone());
+                        if glue == id || g == &gw {
+                            eprintln!(
+                                "  consilient flats on {:02x}{:02x}… voices {:02x}/{:02x} (δ⁰ = 0)",
+                                listing[0], listing[1], w[0], voice[0]
+                            );
+                        } else {
+                            eprintln!(
+                                "  dialect flats on {:02x}{:02x}… voices {:02x}/{:02x}: versors do not glue",
+                                listing[0], listing[1], w[0], voice[0]
+                            );
+                        }
+                    }
+                }
+            }
+            // Cavities: unreachable listings the hypha shed. Admitted to
+            // the dialect ledger without replay — the sheaf boundary
+            // where no local section glued under the current basis.
+            let mut cavity_n = 0usize;
+            for bytes in dialogue::decode_cavities(&body) {
+                let mut pos = 0usize;
+                let Some(elem) = Element::from_bytes(&bytes, &mut pos) else {
+                    continue;
+                };
+                let addr = elem.address();
+                if dialect.iter().any(|e| e.address() == addr) {
+                    continue;
+                }
+                eprintln!(
+                    "  cavity {:02x}{:02x}…: sheaf boundary recorded ({} dislocations)",
+                    addr[0],
+                    addr[1],
+                    elem.transitions().len(),
+                );
+                let inv = stalk::invariant_of(&elem);
+                stalks.admit(&inv, addr);
+                dialect.push(elem);
+                cavity_n += 1;
+                heard_any = true;
+            }
+            if cavity_n > 0 {
+                persist_dirty = true;
+                eprintln!("  cavities heard from hypha {hi}: {cavity_n}, dialect {}", dialect.len());
+            }
             // Re-speak sealed docket words only into an empty outbox, one
             // page per drain — same valve as reconciliation — so a round
             // of new rulings is not buried under thousands of verdicts.
@@ -475,7 +566,16 @@ fn main() {
                 }
                 ruled.push(addr);
                 ruled_at.insert(addr, ruling.0);
-                persist(&chain, &federation, &ruled, &rebound, (upheld, demoted, slashed, rebinds));
+                persist_dirty = true;
+                rulings_since_flush += 1;
+                if rulings_since_flush >= mycelium::physics::COURT_PERSIST_RULINGS
+                    || last_persist.elapsed() >= mycelium::physics::COURT_PERSIST_DWELL
+                {
+                    persist(&chain, &federation, &ruled, &rebound, &dialect, (upheld, demoted, slashed, rebinds));
+                    last_persist = Instant::now();
+                    rulings_since_flush = 0;
+                    persist_dirty = false;
+                }
                 eprintln!(
                     "  [{}] {:02x}{:02x}… voices {} μ⃗ {mu:?} → {} ({}) K={}",
                     hyphas[hi],
@@ -600,7 +700,16 @@ fn main() {
                 Some(entry) => entry.1 = set.len(), // re-refined: new family mark
                 None => rebound.push((*addr, set.len())),
             }
-            persist(&chain, &federation, &ruled, &rebound, (upheld, demoted, slashed, rebinds));
+            persist_dirty = true;
+            rulings_since_flush += 1;
+            if rulings_since_flush >= mycelium::physics::COURT_PERSIST_RULINGS
+                || last_persist.elapsed() >= mycelium::physics::COURT_PERSIST_DWELL
+            {
+                persist(&chain, &federation, &ruled, &rebound, &dialect, (upheld, demoted, slashed, rebinds));
+                last_persist = Instant::now();
+                rulings_since_flush = 0;
+                persist_dirty = false;
+            }
             eprintln!(
                 "  REBIND {:02x}{:02x}… π* {:?} from {} evidences, K={}",
                 addr[0],
@@ -636,10 +745,12 @@ fn main() {
         if physics.depleted() {
             if upheld + demoted + slashed + rebinds != last_total {
                 last_total = upheld + demoted + slashed + rebinds;
-                // Rulings moved this cycle: seal the judicial state now, so
-                // a genesis walk that never reaches its end page (a wire
-                // turned inward, a restart) still keeps every K-step.
-                persist(&chain, &federation, &ruled, &rebound, (upheld, demoted, slashed, rebinds));
+                if persist_dirty && last_persist.elapsed() >= mycelium::physics::COURT_PERSIST_DWELL {
+                    persist(&chain, &federation, &ruled, &rebound, &dialect, (upheld, demoted, slashed, rebinds));
+                    last_persist = Instant::now();
+                    rulings_since_flush = 0;
+                    persist_dirty = false;
+                }
                 eprintln!(
                     "[{name}] {:.0}s | upheld {upheld} attached {demoted} slashed {slashed} rebinds {rebinds} | federation {} words | K={}",
                     start.elapsed().as_secs_f64(),

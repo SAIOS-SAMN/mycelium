@@ -38,8 +38,40 @@ pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
     // across its family on top of the chain's own measure, so it is bounded
     // below by the chain, never equal to it.
     let connection = spoken.is_connection();
+    // THE ALPHABET IS THE LAW OF SPEECH: a connection is a word only when
+    // its motion is spelled in the seventeen letters and the tape
+    // re-derives the block the fibre holds. A tape that disagrees with its
+    // fibre is false speech; a connection without a tape was never a word.
+    if connection {
+        match spoken.letters_rederive() {
+            None => return Some("connection has no letters — not a word of the alphabet"),
+            Some(false) => return Some("motion does not re-derive from its letters"),
+            Some(true) => {}
+        }
+    }
     match (chain.is_empty(), connection) {
-        (true, false) => return Some("empty chain — nothing was derived"),
+        (true, false) => {
+            // An OPENED AXIS with no chain: the germinated fibres must be
+            // group elements whose planar block spells, and the word must
+            // stand on a spelled base motion.
+            let axes = spoken.opened_axes();
+            if axes.is_empty() {
+                return Some("empty chain — nothing was derived");
+            }
+            if spoken.solution().is_none() {
+                return Some("opened axis is not invertible");
+            }
+            for axis in axes {
+                let Some(m) = spoken.fiber(axis) else { continue };
+                if m.len() < 3 {
+                    return Some("opened axis has no planar block");
+                }
+                let block = [[m[0][0].clone(), m[0][1].clone()], [m[1][0].clone(), m[1][1].clone()]];
+                if crate::transducer::alphabet::spell(&block).is_none() {
+                    return Some("opened axis does not spell in the alphabet");
+                }
+            }
+        }
         (true, true) => {
             if spoken.solution().is_none() {
                 return Some("connection is not invertible");

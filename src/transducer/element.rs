@@ -192,11 +192,10 @@ pub fn identity_versor() -> Versor {
 
 /// The legacy lattice transport (a D4 index over the eight isometries in
 /// their historical order, then an integer offset) lifted to its versor:
-/// the rational rotor or reflection whose action on the vertex lattice
-/// agrees with the isometry, settled against two lattice points rather
-/// than a chosen table of signs, then the translator. Decoding only.
+/// the word of the alphabet whose action on the row and column steps is
+/// the isometry, realised as a conformal versor, then the translator. The
+/// index table is the legacy wire's convention; decoding only.
 pub fn legacy_versor(d4: u8, tr: i64, tc: i64) -> Option<Versor> {
-    use crate::transducer::cga;
     use num_rational::BigRational;
     let images: [fn(i64, i64) -> (i64, i64); 8] = [
         |r, c| (r, c),
@@ -210,17 +209,56 @@ pub fn legacy_versor(d4: u8, tr: i64, tc: i64) -> Option<Versor> {
     ];
     let image = images.get(d4 as usize)?;
     let q = |v: i64| BigRational::from_integer(BigInt::from(v));
-    let rotors = [cga::rotator(&q(1), &q(0)), cga::rotator(&q(1), &q(1)), cga::rotator(&q(0), &q(1)), cga::rotator(&q(-1), &q(1))];
-    let mut candidates: Vec<Versor> = rotors.to_vec();
-    candidates.extend(rotors.iter().map(|r| r.geo(&cga::reflector())));
-    let agrees = |v: &Versor| {
-        [(1i64, 0i64), (0, 1)].iter().all(|&(r, c)| {
-            let (ir, ic) = image(r, c);
-            cga::base(&v.sandwich(&cga::point(&q(r), &q(c)))) == Some((q(ir), q(ic)))
-        })
+    // The isometry is the images of the row and column steps, spelled in
+    // the alphabet; the versor is realised from the word, never tabulated.
+    let spelling = crate::transducer::alphabet::spell_images(image(1, 0), image(0, 1))?;
+    conformal_of(&spelling, &(q(tr), q(tc)))
+}
+
+/// THE CONFORMAL REALISATION OF A WORD: the versor of Spin(4,1)(ℚ) whose
+/// action on the plane is the spelling at its dilation, placed by `shift`.
+/// The rotation rotor is `(1 + cos) − sin·e₁₂` (the half-angle form, exact
+/// whenever the rotation is rational; the half turn is `e₁₂` itself), the
+/// orientation sheet is the odd versor `e₁`, the dilation and translation
+/// their versors. Verified against the word's own block; `None` when the
+/// word does not preserve the plane.
+pub fn conformal_of(spelling: &crate::transducer::alphabet::Spelling, shift: &(Q, Q)) -> Option<Versor> {
+    use crate::transducer::cga;
+    let block = spelling.block()?;
+    let rho = &spelling.rho;
+    if rho.is_zero() {
+        return None;
+    }
+    let r: [[Q; 2]; 2] = std::array::from_fn(|i| std::array::from_fn(|j| &block[i][j] / rho));
+    let det = &r[0][0] * &r[1][1] - &r[0][1] * &r[1][0];
+    let flipped = if det.is_one() {
+        false
+    } else if (-&det).is_one() {
+        true
+    } else {
+        return None;
     };
-    let rot = candidates.into_iter().find(agrees)?;
-    Some(cga::translator(&q(tr), &q(tc)).geo(&rot))
+    let (c, s) = (&r[0][0], &r[1][0]);
+    let rot = if (-c).is_one() {
+        cga::rotator(&Q::zero(), &Q::one())
+    } else {
+        cga::rotator(&(Q::one() + c), &(-s))
+    };
+    let mut v = cga::translator(&shift.0, &shift.1).geo(&cga::dilator(rho)).geo(&rot);
+    if flipped {
+        // The sheet the alphabet spells negates the column step; the odd
+        // versor `e₁` negates the row step, so the half turn composes it.
+        v = v.geo(&cga::rotator(&Q::zero(), &Q::one())).geo(&cga::reflector());
+    }
+    let target = vec![
+        vec![block[0][0].clone(), block[0][1].clone(), shift.0.clone()],
+        vec![block[1][0].clone(), block[1][1].clone(), shift.1.clone()],
+        vec![Q::zero(), Q::zero(), Q::one()],
+    ];
+    if affine_of(&v)? != target {
+        return None;
+    }
+    Some(v)
 }
 
 /// Projective equality of two versors: the same transport up to a nonzero
@@ -460,6 +498,12 @@ impl Element {
         self.fibers.iter().map(|(i, _)| *i).max()
     }
 
+    /// Set the per-lane support this word carries (an opened axis carries
+    /// the listing's measure and the charts it joined).
+    pub fn set_magnitude(&mut self, mag: [u64; 4]) {
+        self.mag = mag;
+    }
+
     pub fn is_identity(&self) -> bool {
         // A residual with a canceling hue tally (a bidirectional swap) has empty
         // FIBERS but a real chain — the chain decides; the tally never does.
@@ -497,6 +541,14 @@ impl Element {
     /// transported into this frame.
     pub fn transitions(&self) -> &[(Vec<(u8, u8)>, Versor)] {
         &self.transitions
+    }
+
+    /// Record a dislocation versor on the fibre: (assignment, V) excluded
+    /// from the address. Duplicate (asg, V) pairs are not stored twice.
+    pub fn record_dislocation(&mut self, asg: Vec<(u8, u8)>, g: Versor) {
+        if !self.transitions.iter().any(|(a, h)| a == &asg && same_versor(h, &g)) {
+            self.transitions.push((asg, g));
+        }
     }
 
     /// The fiber's total spoken span — base + free sections + every torsion-orbit
@@ -1315,8 +1367,23 @@ pub fn affine_of(v: &Versor) -> Option<QMatrix> {
 /// an empty remainder is a closed word. `carried` is the volume the
 /// connection speaks across its family, added to the chain's own measure
 /// per lane, so a closed connection has magnitude on the lanes it moves.
-pub fn from_connection(affine: &QMatrix, sigma: &[(u8, u8)], remainder: &ResidualGerm, carried: [u64; 4]) -> Element {
+pub fn from_connection(affine: &QMatrix, sigma: &[(u8, u8)], remainder: &ResidualGerm, carried: [u64; 4]) -> Option<Element> {
+    if affine.len() != 3 || affine.iter().any(|r| r.len() != 3) {
+        return None;
+    }
+    if !(affine[2][0].is_zero() && affine[2][1].is_zero() && affine[2][2].is_one()) {
+        return None;
+    }
+    // THE ALPHABET SPEAKS THE MOTION: the linear block is spelled into the
+    // seventeen letters (a peel, never a search); a block the alphabet
+    // cannot spell is not a word of the language — the caller holds it as
+    // thought. The tape is the word's ANASTOME description, so the letters
+    // enter the address and the court re-derives the block from them.
+    let block = [[affine[0][0].clone(), affine[0][1].clone()], [affine[1][0].clone(), affine[1][1].clone()]];
+    let spelling = crate::transducer::alphabet::spell(&block)?;
+    let shift = (affine[0][2].clone(), affine[1][2].clone());
     let mut e = from_residual(remainder);
+    e.word = connection_word(&spelling, &shift, sigma, &e.sub);
     let mut m = identity(GERM_DIM);
     place_block(&mut m, 0, affine);
     let mut image: Vec<usize> = (0..PALETTE).collect();
@@ -1343,10 +1410,106 @@ pub fn from_connection(affine: &QMatrix, sigma: &[(u8, u8)], remainder: &Residua
     for l in 0..4 {
         e.mag[l] = e.mag[l].saturating_add(carried[l]);
     }
-    e
+    Some(e)
+}
+
+/// The leading byte of a connection's description: what follows is a
+/// letter tape, not a residual germ.
+pub const CONNECTION_TAG: u8 = 0x11;
+
+/// The description of a connection: its spelling in the alphabet at its
+/// dilation, the placement, the gauge map, and the centered remainder.
+fn connection_word(
+    spelling: &crate::transducer::alphabet::Spelling,
+    shift: &(Q, Q),
+    sigma: &[(u8, u8)],
+    remainder: &ResidualGerm,
+) -> Vec<u8> {
+    use crate::transducer::alphabet::put_q;
+    let mut out = vec![CONNECTION_TAG];
+    spelling.to_bytes(&mut out);
+    put_q(&mut out, &shift.0);
+    put_q(&mut out, &shift.1);
+    out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
+    for &(f, t) in sigma {
+        out.push(f);
+        out.push(t);
+    }
+    let germ = residual_word(remainder);
+    out.extend_from_slice(&(germ.len() as u32).to_le_bytes());
+    out.extend_from_slice(&germ);
+    out
+}
+
+/// THE LETTERS OF A CONNECTION as read off its description: the word and
+/// its dilation, the placement, and the gauge map it was spoken with.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Letters {
+    pub spelling: crate::transducer::alphabet::Spelling,
+    pub shift: (Q, Q),
+    pub sigma: Vec<(u8, u8)>,
+}
+
+impl Letters {
+    /// The homogeneous affine block the letters speak.
+    pub fn affine(&self) -> Option<QMatrix> {
+        let b = self.spelling.block()?;
+        Some(vec![
+            vec![b[0][0].clone(), b[0][1].clone(), self.shift.0.clone()],
+            vec![b[1][0].clone(), b[1][1].clone(), self.shift.1.clone()],
+            vec![Q::zero(), Q::zero(), Q::one()],
+        ])
+    }
 }
 
 impl Element {
+    /// The letters of this word — `None` for a residual germ or a word
+    /// spoken before the alphabet (no tape: not a word of the language).
+    pub fn letters(&self) -> Option<Letters> {
+        use crate::transducer::alphabet::{take_q, Spelling};
+        let b = &self.word;
+        if b.first() != Some(&CONNECTION_TAG) {
+            return None;
+        }
+        let mut pos = 1usize;
+        let spelling = Spelling::from_bytes(b, &mut pos)?;
+        let shift = (take_q(b, &mut pos)?, take_q(b, &mut pos)?);
+        let n = u16::from_le_bytes(b.get(pos..pos + 2)?.try_into().ok()?) as usize;
+        pos += 2;
+        let mut sigma = Vec::with_capacity(n);
+        for _ in 0..n {
+            sigma.push((*b.get(pos)?, *b.get(pos + 1)?));
+            pos += 2;
+        }
+        let len = u32::from_le_bytes(b.get(pos..pos + 4)?.try_into().ok()?) as usize;
+        pos += 4;
+        if pos + len != b.len() {
+            return None;
+        }
+        Some(Letters { spelling, shift, sigma })
+    }
+
+    /// The affine block the spatial fibre holds on its motion rows.
+    pub fn held_affine(&self) -> Option<QMatrix> {
+        let m = self.fiber(FIBER_SPATIAL)?;
+        if m.len() < 3 {
+            return None;
+        }
+        Some((0..3).map(|r| (0..3).map(|c| m[r][c].clone()).collect()).collect())
+    }
+
+    /// Do the letters re-derive the held motion? `None` when there are no
+    /// letters; `Some(false)` when the tape and the fibre disagree.
+    pub fn letters_rederive(&self) -> Option<bool> {
+        let spoken = self.letters()?.affine()?;
+        Some(self.held_affine().as_ref() == Some(&spoken))
+    }
+
+    /// The axes opened above the four strata: the germinated fibres.
+    pub fn opened_axes(&self) -> Vec<u16> {
+        self.fibers.iter().map(|(i, _)| *i).filter(|&i| i >= FIBER_GERMINATED).collect()
+    }
+
     /// Is this word a CONNECTION — a group component the court can invert
     /// and glue? Read on the spatial fibre: the motion rows are a
     /// homogeneous affine block and the hue rows are a permutation (the
@@ -1735,20 +1898,29 @@ mod tests {
         let affine = affine_of(&identity_versor()).expect("the identity versor is affine");
         assert_eq!(affine, crate::core::matrix::identity(3));
         let remainder = vec![(0, 0, 3u8, 4u8)];
-        let w = from_connection(&affine, &[(1, 2), (2, 1)], &remainder, [5, 2, 0, 0]);
+        let w = from_connection(&affine, &[(1, 2), (2, 1)], &remainder, [5, 2, 0, 0]).expect("the identity spells");
         assert!(w.is_connection(), "affine motion rows and a permutation on the hue rows");
+        assert_eq!(w.letters_rederive(), Some(true), "the tape re-derives the held motion");
+        assert_eq!(w.letters().map(|l| l.sigma), Some(vec![(1, 2), (2, 1)]), "the gauge rides the tape");
+        let mut pos = 0;
+        let back = Element::from_bytes(&w.to_bytes(), &mut pos).expect("round trip");
+        assert_eq!(back.letters(), w.letters(), "the letters survive the wire");
+        // A shear is no similarity: the alphabet cannot spell it, so it is
+        // not a word — held as thought, never minted.
+        let shear = vec![vec![q(1), q(1), q(0)], vec![q(0), q(1), q(0)], vec![q(0), q(0), q(1)]];
+        assert!(from_connection(&shear, &[], &Vec::new(), [1, 0, 0, 0]).is_none(), "an unspellable motion is not a word");
         assert!(w.solution().is_some(), "the group component inverts");
         assert_eq!(w.sub(), remainder.as_slice(), "the remainder is the chain");
         assert_ne!(w.address(), from_residual(&remainder).address(), "the connection is not the bare residual");
         assert!(w.magnitude()[0] >= 5 && w.magnitude()[1] >= 2, "carried volume rides on the lanes");
-        let closed = from_connection(&affine, &[(1, 2), (2, 1)], &Vec::new(), [5, 2, 0, 0]);
+        let closed = from_connection(&affine, &[(1, 2), (2, 1)], &Vec::new(), [5, 2, 0, 0]).expect("spells");
         assert!(closed.is_connection() && closed.sub().is_empty(), "an empty remainder is a closed connection");
-        let merge = from_connection(&affine, &[(1, 2)], &Vec::new(), [1, 1, 0, 0]);
+        let merge = from_connection(&affine, &[(1, 2)], &Vec::new(), [1, 1, 0, 0]).expect("spells");
         assert!(!merge.is_connection(), "a merging gauge with the identity motion carries no group component");
         assert!(!from_residual(&remainder).is_connection(), "a residual's tally is never a permutation");
         // Identity motion and identity gauge drop the fibre: the unit, not a
         // connection, not speech — the 5839 empty-chain refusal.
-        let unit = from_connection(&affine, &[], &Vec::new(), [77, 0, 0, 0]);
+        let unit = from_connection(&affine, &[], &Vec::new(), [77, 0, 0, 0]).expect("spells");
         assert!(unit.is_identity(), "identity motion and gauge leave no fibre and no chain");
         assert!(!unit.is_connection(), "the unit is not a connection");
         assert!(unit.sub().is_empty(), "nothing residual to hold as thought");
