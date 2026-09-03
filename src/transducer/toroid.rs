@@ -66,6 +66,19 @@ pub fn witness_thought(thought: &Element) -> Vec<HolonomicLoopWitness> {
         .collect()
 }
 
+/// Every stored cycle held against its witness: (the period ℓ the word
+/// speaks, the loop as walked). A caller matches the witness arms: a
+/// Closed loop at the stored period is a witnessed winding; Closed at
+/// another period is a misspoken winding; Open names the anholonomity the
+/// label was filing over.
+pub fn witness_stored(thought: &Element) -> Vec<(u32, HolonomicLoopWitness)> {
+    thought
+        .torsion()
+        .iter()
+        .map(|(sigma, l)| (*l, witness_cycle(thought, sigma, l.saturating_mul(2).max(4))))
+        .collect()
+}
+
 /// The total winding of a thought — Σ valencies of its CLOSED loops (exact ℚ;
 /// an open loop contributes nothing: only proven monodromy counts).
 pub fn total_winding(witnesses: &[HolonomicLoopWitness]) -> Q {

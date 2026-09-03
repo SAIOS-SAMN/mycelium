@@ -587,14 +587,16 @@ impl Element {
             let spanned: Vec<usize> = (0..self.sections.len())
                 .filter(|&i| orbit.contains(&self.sections[i]))
                 .collect();
-            // Worth condensing: the orbit spans ≥2 sections, or it CLOSES (a true
-            // ℤ/t cycle — structure even at one witnessed section, e.g. a swap).
-            if spanned.len() >= 2 || (period > 0 && !spanned.is_empty()) {
-                let l = if period > 0 { period } else { (orbit.len() + 1) as u32 };
+            // Only a CLOSED orbit is a cycle (σ^t = id on its support, the loop
+            // witnessed at the mint): it condenses the sections it spans, even
+            // one (a swap). An orbit that leaves its domain is not filed under
+            // a period — those sections stay free; the open walk is the
+            // remainder the word carries, never a winding it claims.
+            if period > 0 && !spanned.is_empty() {
                 for &i in spanned.iter().rev() {
                     self.sections.remove(i);
                 }
-                self.torsion.push((sigma, l));
+                self.torsion.push((sigma, period));
                 return spanned.len();
             }
         }

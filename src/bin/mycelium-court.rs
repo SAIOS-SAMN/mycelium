@@ -272,7 +272,14 @@ fn main() {
                                     ob.push(dialogue::encode_adopt(&voice, wb));
                                 }
                             }
-                            verdict::Ruling::Consilient | verdict::Ruling::Dialect => upheld += 1,
+                            verdict::Ruling::Consilient => upheld += 1,
+                            verdict::Ruling::Dialect(obstruction) => {
+                                // The obstruction is recorded, never punished.
+                                if let Some(h) = &obstruction {
+                                    eprintln!("  dialect on {:02x}{:02x}…: holonomy {:02x}{:02x}… recorded", addr[0], addr[1], h.address()[0], h.address()[1]);
+                                }
+                                upheld += 1;
+                            }
                             verdict::Ruling::Attached { base, g } => {
                                 // The bundle connects: the placement transports
                                 // into the base frame as a section and g joins
@@ -365,6 +372,11 @@ fn main() {
                             federation[*base].1.attach(w, g);
                         }
                         Some((federation[*base].0, federation[*base].1.to_bytes(), g.clone()))
+                    }
+                    verdict::Ruling::Dialect(Some(h)) => {
+                        // The obstruction is recorded, never punished.
+                        eprintln!("  dialect on {:02x}{:02x}…: holonomy {:02x}{:02x}… recorded", addr[0], addr[1], h.address()[0], h.address()[1]);
+                        None
                     }
                     _ => None,
                 };

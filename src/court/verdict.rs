@@ -15,8 +15,10 @@
 
 use crate::anastome::dialogue;
 use crate::transducer::anchor::{derive_carrying_all, Sel};
+use crate::transducer::cech;
 use crate::transducer::element::{self, Element, Versor};
 use crate::transducer::stalk::{self, Stalks};
+use crate::transducer::toroid::{self, HolonomicLoopWitness};
 
 /// Deterministic re-derivation of a spoken word from its own evidence
 /// (the contradiction docket). Returns None when the word replays clean;
@@ -46,6 +48,19 @@ pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
     if !crate::economy::descends(&[0; 4], &spoken.magnitude()) {
         return Some("no strict descent — the germ closes nothing");
     }
+    // THE LOOP CHECK on the germinated axis: every torsion cycle the word
+    // speaks is walked from its base assignment. A period is believed only
+    // as a witnessed closed loop; an open walk names the anholonomity the
+    // label was filing over, and a closure at another period is a winding
+    // the word misspoke. Replay was Δ = 0 on the chain; this is ∮ dX = 0 on
+    // the fibre.
+    for (stored, witness) in toroid::witness_stored(spoken) {
+        match witness {
+            HolonomicLoopWitness::Closed { period, .. } if period == stored => {}
+            HolonomicLoopWitness::Closed { .. } => return Some("torsion period does not re-derive — the winding was misspoken"),
+            HolonomicLoopWitness::Open { .. } => return Some("torsion cycle does not close — the period was a filing"),
+        }
+    }
     None
 }
 
@@ -57,12 +72,16 @@ pub enum Ruling {
     /// The word does not replay from its own evidence (or does not parse):
     /// false speech, the failed axis named.
     Slashed(&'static str),
-    /// Same address, same substance as a federated word — cross-instance
+    /// The federated view and the spoken view are one sheaf: the Čech
+    /// obstruction on their overlap is the identity — cross-instance
     /// consilience, the strongest confluence witness.
     Consilient,
-    /// Same address, different substance — a dialect; the transport is
-    /// recorded, never punished.
-    Dialect,
+    /// Two views of one object that do not glue — a dialect, recorded and
+    /// never punished. The obstruction rides the arm: the holonomy element
+    /// (a group view-change, or the triangle's composite) when the views
+    /// are group elements; None when the overlap is only the additive
+    /// coboundary (chains that differ, no group view to compare).
+    Dialect(Option<Element>),
     /// New address, a placement of a federated base geometry — the bundle
     /// connects: `base` indexes the federation entry and `g` is the
     /// transport carrying the word into the base frame. The word attaches as
@@ -79,7 +98,7 @@ impl Ruling {
         match self {
             Ruling::Slashed(_) => dialogue::RULING_SLASHED,
             Ruling::Attached { .. } => dialogue::RULING_ATTACHED,
-            Ruling::Consilient | Ruling::Dialect | Ruling::Admitted(_) => dialogue::RULING_UPHELD,
+            Ruling::Consilient | Ruling::Dialect(_) | Ruling::Admitted(_) => dialogue::RULING_UPHELD,
         }
     }
 
@@ -87,8 +106,9 @@ impl Ruling {
     pub fn reason(&self) -> &'static str {
         match self {
             Ruling::Slashed(r) => r,
-            Ruling::Consilient => "federated consilience",
-            Ruling::Dialect => "dialect transport recorded",
+            Ruling::Consilient => "federated consilience: the overlap glues",
+            Ruling::Dialect(Some(_)) => "dialect: the holonomy on the overlap is recorded",
+            Ruling::Dialect(None) => "dialect: the chains differ on the additive coboundary",
             Ruling::Attached { .. } => "+axis: attached as a section of the base",
             Ruling::Admitted(_) => "extends the tautology",
         }
@@ -123,8 +143,49 @@ pub fn rule(
         return Ruling::Slashed(reason);
     }
     match federation.iter().find(|(fa, _)| fa == addr) {
-        Some((_, held)) if held.sub() == spoken.sub() => Ruling::Consilient,
-        Some(_) => Ruling::Dialect,
+        Some((_, held)) => {
+            // ČECH ON THE OVERLAP: the federated view and the spoken view
+            // of one object are two charts. When the held view is a group
+            // element, the change of view g = spoken ∘ held⁻¹ is the
+            // transition on their overlap; a third germ on the same stalk
+            // fibre closes the triangle and the composite holonomy H is the
+            // obstruction. Identity glues (one sheaf: the views are the
+            // coboundary of one assignment); a non-identity element is the
+            // dialect, carried on the arm and never punished. A held view
+            // with no group axis has only the additive coboundary to
+            // compare: the chains themselves.
+            let group_view = match held.axes().is_empty() {
+                true => None,
+                false => cech::transition(held, spoken),
+            };
+            match group_view {
+                None => match held.sub() == spoken.sub() {
+                    true => Ruling::Consilient,
+                    false => Ruling::Dialect(None),
+                },
+                Some(g) => {
+                    let third = stalks
+                        .fiber(&stalk::invariant(spoken.sub()))
+                        .iter()
+                        .copied()
+                        .find(|&i| federation[i].0 != *addr && !federation[i].1.axes().is_empty());
+                    let obstruction = match third {
+                        Some(i) => {
+                            let z = &federation[i].1;
+                            match (cech::transition(spoken, z), cech::transition(z, held)) {
+                                (Some(g_sz), Some(g_zh)) => cech::holonomy(&g, &g_sz, &g_zh),
+                                _ => g,
+                            }
+                        }
+                        None => g,
+                    };
+                    match obstruction.is_identity() {
+                        true => Ruling::Consilient,
+                        false => Ruling::Dialect(Some(obstruction)),
+                    }
+                }
+            }
+        }
         None => {
             // The +axis constraint evaluates on the ORBIT [Q]/(ℤ² ⋊ D4):
             // a support that is a translation, rotation, or reflection of a

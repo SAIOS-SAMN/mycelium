@@ -1096,6 +1096,20 @@ impl Kernel {
     /// ratifying voice is the discoverer of record — real provenance, no
     /// sentinel identity.
     pub fn install_adopted(&mut self, word: &Element, ratifier: [u8; 32]) -> Adoption {
+        // The loop check at the mint: an arriving word's torsion cycles are
+        // walked before they enter the genome. Only a witnessed closed loop
+        // at the spoken period is believed.
+        for (stored, witness) in crate::transducer::toroid::witness_stored(word) {
+            match witness {
+                crate::transducer::toroid::HolonomicLoopWitness::Closed { period, .. } if period == stored => {}
+                crate::transducer::toroid::HolonomicLoopWitness::Closed { .. } => {
+                    return Adoption::Refused("torsion period does not re-derive — the winding was misspoken")
+                }
+                crate::transducer::toroid::HolonomicLoopWitness::Open { .. } => {
+                    return Adoption::Refused("torsion cycle does not close — the period was a filing")
+                }
+            }
+        }
         let addr = word.address();
         if let Some(i) = self.basis.iter().position(|t| t.address() == addr) {
             // The address is held: the arriving placement's fibre merges into
@@ -1616,17 +1630,34 @@ impl Kernel {
                     self.complete_composite_child(&gaddr, voice); // lineage
                     Outcome::Installed(self.basis.len() - 1)
                 } else {
-                    // THE GEOMETRIC TORSION SOURCE (Einstein-Cartan import): the open
-                    // demand's pressure is COMPUTED from its δ-field's torsion
-                    // residue — kinematic energy over the relaxation rate — not a
-                    // flat event count. Bounded per demand; per-lane as ever.
-                    let residue = crate::torsion::extract_torsion_residue(
-                        &element::germ_delta(&residual.sub().to_vec()),
-                        8,
-                        8,
-                        residual.torsion().first().map(|(_, l)| *l),
-                    );
-                    let k = crate::torsion::required_k_steps(&residue).min(8);
+                    // THE TORSION SOURCE: the open demand's pressure is the
+                    // torsion the word actually carries. Every stored cycle
+                    // is walked from the base assignment: an Open walk is
+                    // the anholonomity — its residual span charges the
+                    // lanes; a Closed loop is proven monodromy and charges
+                    // nothing. A word with no cycle falls back to the
+                    // δ-field's kinematic residue. Bounded per demand;
+                    // per-lane as ever, never a summed winding.
+                    let witnesses = crate::transducer::toroid::witness_thought(&residual);
+                    let k = match witnesses.is_empty() {
+                        true => {
+                            let residue = crate::torsion::extract_torsion_residue(
+                                &element::germ_delta(&residual.sub().to_vec()),
+                                8,
+                                8,
+                                None,
+                            );
+                            crate::torsion::required_k_steps(&residue)
+                        }
+                        false => witnesses
+                            .iter()
+                            .map(|w| match w {
+                                crate::transducer::toroid::HolonomicLoopWitness::Open { walked } => (*walked as u64).max(1),
+                                crate::transducer::toroid::HolonomicLoopWitness::Closed { .. } => 0,
+                            })
+                            .sum::<u64>(),
+                    }
+                    .min(8);
                     for _ in 0..k.max(1) {
                         self.physics.bump(&mag);
                     }
