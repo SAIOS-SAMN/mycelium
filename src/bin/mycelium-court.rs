@@ -136,6 +136,8 @@ fn main() {
     // selects the fiber over a candidate's invariant; measured from the
     // held words at boot, admitted alongside every federation entry.
     let mut stalks = Stalks::default();
+    // Every federation entry reached by its address (index-aligned).
+    let mut fed_index: mycelium::network::nerve::Keyed<usize> = mycelium::network::nerve::Keyed::new();
     let mut ruled: Vec<[u8; 32]> = Vec::new();
     // THE SELECTION FIBER'S REFINEMENT STATE — evidence accumulated per word
     // across the whole nerve, and the words already rebound.
@@ -150,6 +152,9 @@ fn main() {
         chain = s.chain;
         federation = s.federation;
         stalks = Stalks::over(federation.iter().map(|(_, e)| e.sub()));
+        for (i, (a, _)) in federation.iter().enumerate() {
+            fed_index.insert(*a, i);
+        }
         ruled = s.ruled;
         rebound = s.rebound;
         upheld = s.upheld;
@@ -255,7 +260,7 @@ fn main() {
                         if ruled.contains(&addr) {
                             continue; // sealed in a prior block — never re-adjudicated
                         }
-                        let outcome = verdict::rule(&federation, &stalks, &addr, spoken.as_ref(), None);
+                        let outcome = verdict::rule(&federation, &fed_index, &stalks, &addr, spoken.as_ref(), None);
                         let mut op = [0u8; 32];
                         op[0] = outcome.code();
                         let receipt = chain.append(addr, op).chain_hash;
@@ -264,6 +269,7 @@ fn main() {
                         match outcome {
                             verdict::Ruling::Admitted(sealed) => {
                                 stalks.admit(&stalk::invariant(sealed.sub()), federation.len());
+                                fed_index.insert(addr, federation.len());
                                 federation.push((addr, sealed));
                                 upheld += 1;
                                 // Propagation: the word teaches across the
@@ -357,9 +363,10 @@ fn main() {
                 // carrying its sealed element, never a flag.
                 let mut pos = 0usize;
                 let spoken = Element::from_bytes(&elem_bytes, &mut pos);
-                let outcome = verdict::rule(&federation, &stalks, &addr, spoken.as_ref(), Some(&deflation));
+                let outcome = verdict::rule(&federation, &fed_index, &stalks, &addr, spoken.as_ref(), Some(&deflation));
                 if let verdict::Ruling::Admitted(sealed) = &outcome {
                     stalks.admit(&stalk::invariant(sealed.sub()), federation.len());
+                    fed_index.insert(addr, federation.len());
                     federation.push((addr, sealed.clone()));
                 }
                 // An attach connects the bundle at the court: (base address,

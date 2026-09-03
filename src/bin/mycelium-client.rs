@@ -223,7 +223,44 @@ fn main() {
                                             proj_solved += 1;
                                         }
                                     }
-                                    unsaid => eprintln!("[{name}] speech left {} cells unspoken (hues without an image)", unsaid.len()),
+                                    unsaid => {
+                                        // THE REMAINDER IS THE NEXT DEMAND: the input
+                                        // cells whose hue has no image, paired with
+                                        // what the held answer says at their carried
+                                        // positions, spoken as a percept on the book —
+                                        // the coboundary of the speech, never a log.
+                                        let (hi, wi) = (x.len(), x.first().map_or(0, |r| r.len()));
+                                        let (ho, wo) = (y.len(), y.first().map_or(0, |r| r.len()));
+                                        let mut rem: Vec<Vec<u8>> = vec![vec![0u8; wi]; hi];
+                                        for &(r, c, h) in unsaid {
+                                            if r >= 0 && c >= 0 && (r as usize) < hi && (c as usize) < wi {
+                                                rem[r as usize][c as usize] = h;
+                                            }
+                                        }
+                                        let a = grid_to_cells(&embed(&rem, ho, wo));
+                                        let y_cells = grid_to_cells(y);
+                                        // The answer's cells at the remainder's positions: one
+                                        // merge walk over the two ordered supports.
+                                        let mut b: Vec<(i64, i64, u8)> = Vec::new();
+                                        let (mut i, mut j) = (0usize, 0usize);
+                                        while i < a.len() && j < y_cells.len() {
+                                            match (a[i].0, a[i].1).cmp(&(y_cells[j].0, y_cells[j].1)) {
+                                                std::cmp::Ordering::Less => i += 1,
+                                                std::cmp::Ordering::Greater => j += 1,
+                                                std::cmp::Ordering::Equal => {
+                                                    b.push(y_cells[j]);
+                                                    i += 1;
+                                                    j += 1;
+                                                }
+                                            }
+                                        }
+                                        if !a.is_empty() && !b.is_empty() {
+                                            match entity.submit(&a, &b, &(hi, wi, ho, wo)) {
+                                                Ok(_) => eprintln!("[{name}] speech remainder of {} cells spoken as a demand", unsaid.len()),
+                                                Err(_) => errors += 1,
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

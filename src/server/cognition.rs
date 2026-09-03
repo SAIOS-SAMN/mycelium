@@ -1654,7 +1654,14 @@ impl Kernel {
                         false => witnesses
                             .iter()
                             .map(|w| match w {
-                                crate::transducer::toroid::HolonomicLoopWitness::Open { walked } => (*walked as u64).max(1),
+                                crate::transducer::toroid::HolonomicLoopWitness::Open { walked } => {
+                                    // A failed loop is the torsion charge the economy
+                                    // already names: it pivots the lanes the demand
+                                    // occupies, and the listing below carries it to
+                                    // the market as the demand for a new fiber.
+                                    self.physics.pivot(crate::physics::Physics::lanes_of(&mag));
+                                    (*walked as u64).max(1)
+                                }
                                 crate::transducer::toroid::HolonomicLoopWitness::Closed { .. } => 0,
                             })
                             .sum::<u64>(),

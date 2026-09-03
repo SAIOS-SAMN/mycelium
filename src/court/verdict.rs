@@ -14,6 +14,7 @@
 //! server's role-specific machinery.
 
 use crate::anastome::dialogue;
+use crate::network::nerve::Keyed;
 use crate::transducer::anchor::{derive_carrying_all, Sel};
 use crate::transducer::cech;
 use crate::transducer::element::{self, Element, Versor};
@@ -122,6 +123,7 @@ impl Ruling {
 /// over the candidate's invariant and runs the exact orbit test there.
 pub fn rule(
     federation: &[([u8; 32], Element)],
+    index: &Keyed<usize>,
     stalks: &Stalks,
     addr: &[u8; 32],
     spoken: Option<&Element>,
@@ -142,7 +144,7 @@ pub fn rule(
     if let Some(reason) = blind_replay(spoken) {
         return Ruling::Slashed(reason);
     }
-    match federation.iter().find(|(fa, _)| fa == addr) {
+    match index.get(addr).and_then(|&i| federation.get(i)) {
         Some((_, held)) => {
             // ČECH ON THE OVERLAP: the federated view and the spoken view
             // of one object are two charts. When the held view is a group
@@ -154,38 +156,45 @@ pub fn rule(
             // dialect, carried on the arm and never punished. A held view
             // with no group axis has only the additive coboundary to
             // compare: the chains themselves.
+            // ONE OBSTRUCTION WITH TWO COMPONENTS, on one fibre: the additive
+            // coboundary (the symmetric difference of the two chains) and
+            // the group transition (spoken ∘ held⁻¹, closed through a third
+            // germ on the fibre when one stands there) are measured together
+            // for the same pair and composed into one element — the chain
+            // is its base, the transition its axes.
+            let diff = symmetric_difference(held.sub(), spoken.sub());
             let group_view = match held.axes().as_slice() {
                 [] => None,
                 _ => cech::transition(held, spoken),
             };
-            let obstruction = match group_view {
-                // The additive coboundary: the symmetric difference of the
-                // two chains, carried as a residual word (empty = one sheaf).
-                None => {
-                    let diff = symmetric_difference(held.sub(), spoken.sub());
-                    match diff.as_slice() {
-                        [] => Element::identity(spoken.dim()),
-                        _ => element::from_residual(&diff),
-                    }
-                }
-                Some(g) => {
-                    let third = stalks
-                        .fiber(&stalk::invariant(spoken.sub()))
-                        .iter()
-                        .copied()
-                        .find(|&i| federation[i].0 != *addr && !federation[i].1.axes().is_empty());
-                    match third {
-                        Some(i) => {
-                            let z = &federation[i].1;
-                            match (cech::transition(spoken, z), cech::transition(z, held)) {
-                                (Some(g_sz), Some(g_zh)) => cech::holonomy(&g, &g_sz, &g_zh),
-                                _ => g,
-                            }
+            let group_view = group_view.map(|g| {
+                let third = stalks
+                    .fiber(&stalk::invariant(spoken.sub()))
+                    .iter()
+                    .copied()
+                    .find(|&i| federation[i].0 != *addr && !federation[i].1.axes().is_empty());
+                match third {
+                    Some(i) => {
+                        let z = &federation[i].1;
+                        match (cech::transition(spoken, z), cech::transition(z, held)) {
+                            (Some(g_sz), Some(g_zh)) => cech::holonomy(&g, &g_sz, &g_zh),
+                            _ => g,
                         }
-                        None => g,
+                    }
+                    None => g,
+                }
+            });
+            let mut obstruction = match diff.as_slice() {
+                [] => Element::identity(spoken.dim()),
+                _ => element::from_residual(&diff),
+            };
+            if let Some(h) = group_view {
+                for a in h.axes() {
+                    if let Some(m) = h.fiber(a) {
+                        obstruction.set_fiber(a, m.clone());
                     }
                 }
-            };
+            }
             // δg = 0 read on the element itself: no axis and no chain is
             // the identity, one sheaf; anything else is the dialect.
             match (obstruction.axes().as_slice(), obstruction.sub()) {
@@ -266,14 +275,22 @@ mod tests {
         Stalks::over(fed.iter().map(|(_, e)| e.sub()))
     }
 
+    fn index_of(fed: &[([u8; 32], Element)]) -> Keyed<usize> {
+        let mut k = Keyed::new();
+        for (i, (a, _)) in fed.iter().enumerate() {
+            k.insert(*a, i);
+        }
+        k
+    }
+
     /// A clean word replays; an unparseable body is a named Slashed state.
     #[test]
     fn replay_accepts_clean_and_names_false_speech() {
         let w = clean_word();
         assert!(blind_replay(&w).is_none(), "a clean derivation replays");
-        let ruling = rule(&[], &Stalks::default(), &w.address(), None, None);
+        let ruling = rule(&[], &Keyed::new(), &Stalks::default(),&w.address(), None, None);
         assert!(
-            matches!(rule(&[], &Stalks::default(), &w.address(), Some(&w), Some(&[0; 4])), Ruling::Slashed(_)),
+            matches!(rule(&[], &Keyed::new(), &Stalks::default(),&w.address(), Some(&w), Some(&[0; 4])), Ruling::Slashed(_)),
             "a word that deflated nothing on the book is slashed"
         );
         assert_eq!(ruling, Ruling::Slashed("unparseable word"));
@@ -289,20 +306,20 @@ mod tests {
         let addr = w.address();
         // Empty federation: new geometry admits — the sealed element is
         // the arm's payload, not a flag.
-        match rule(&[], &Stalks::default(), &addr, Some(&w), None) {
+        match rule(&[], &Keyed::new(), &Stalks::default(),&addr, Some(&w), None) {
             Ruling::Admitted(sealed) => assert_eq!(sealed.address(), addr),
             other => panic!("new geometry must admit, got {other:?}"),
         }
         // Same address, same substance: consilience (no re-admission).
         let fed = vec![(addr, w.clone())];
         let stalks = stalks_of(&fed);
-        assert!(matches!(rule(&fed, &stalks, &addr, Some(&w), None), Ruling::Consilient(_)));
-        assert_eq!(rule(&fed, &stalks, &addr, Some(&w), None).code(), dialogue::RULING_UPHELD);
+        assert!(matches!(rule(&fed, &index_of(&fed), &stalks,&addr, Some(&w), None), Ruling::Consilient(_)));
+        assert_eq!(rule(&fed, &index_of(&fed), &stalks,&addr, Some(&w), None).code(), dialogue::RULING_UPHELD);
         // Different address, identical base geometry: attached (+axis) by
         // the identity transport.
         let mut other = addr;
         other[0] ^= 0xFF;
-        match rule(&fed, &stalks, &other, Some(&w), None) {
+        match rule(&fed, &index_of(&fed), &stalks,&other, Some(&w), None) {
             Ruling::Attached { base: 0, g } => {
                 assert!(element::same_versor(&g, &element::identity_versor()), "the identity transport")
             }
@@ -315,7 +332,7 @@ mod tests {
         let rotated = from_residual(
             &germinate(&[(0, 0, 3u8), (1, 0, 3)], &[(0, 0, 4u8), (1, 0, 4)]).unwrap(),
         );
-        match rule(&fed, &stalks, &rotated.address(), Some(&rotated), None) {
+        match rule(&fed, &index_of(&fed), &stalks,&rotated.address(), Some(&rotated), None) {
             Ruling::Attached { base: 0, g } => {
                 assert!(!element::same_versor(&g, &element::identity_versor()), "the transport rotates")
             }
@@ -325,6 +342,6 @@ mod tests {
             &germinate(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 0, 2u8), (0, 1, 2), (1, 0, 2)])
                 .unwrap(),
         );
-        assert!(matches!(rule(&fed, &stalks, &bent.address(), Some(&bent), None), Ruling::Admitted(_)));
+        assert!(matches!(rule(&fed, &index_of(&fed), &stalks,&bent.address(), Some(&bent), None), Ruling::Admitted(_)));
     }
 }

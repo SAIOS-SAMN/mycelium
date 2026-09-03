@@ -250,19 +250,32 @@ pub fn transduce(cells: &[(i64, i64, u8)], time_index: i64) -> Vec<Blade> {
 /// the coboundary of the support's 2-chain; its length is a measurement of
 /// the body, not a coordinate of it.
 fn boundary_edges(cells: &[(i64, i64)]) -> (Vec<(i64, i64)>, Vec<(i64, i64)>) {
-    let held = |r: i64, c: i64| cells.binary_search(&(r, c)).is_ok();
+    // Which of a cell's four faces are shared is read off the support's
+    // 1-skeleton (sentence::incidence_of): a row edge (i, j) closes i's
+    // right face and j's left face; a column edge closes i's lower face
+    // and j's upper face. Every face left open is boundary.
+    let mut open = vec![[true; 4]; cells.len()]; // up, down, left, right
+    for (i, j) in super::sentence::incidence_of(cells) {
+        if cells[i].0 == cells[j].0 {
+            open[i][3] = false;
+            open[j][2] = false;
+        } else {
+            open[i][1] = false;
+            open[j][0] = false;
+        }
+    }
     let (mut h, mut v) = (Vec::new(), Vec::new());
-    for &(r, c) in cells {
-        if !held(r - 1, c) {
+    for (i, &(r, c)) in cells.iter().enumerate() {
+        if open[i][0] {
             h.push((r, c));
         }
-        if !held(r + 1, c) {
+        if open[i][1] {
             h.push((r + 1, c));
         }
-        if !held(r, c - 1) {
+        if open[i][2] {
             v.push((r, c));
         }
-        if !held(r, c + 1) {
+        if open[i][3] {
             v.push((r, c + 1));
         }
     }

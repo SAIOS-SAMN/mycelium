@@ -51,38 +51,31 @@ pub fn signature(region: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Signature {
     let mut cells: Vec<(i64, i64)> = region.to_vec();
     cells.sort_unstable();
     cells.dedup();
-    // β₀ via union-find over the flat cell list (a Vec, not a map).
-    let mut parent: Vec<usize> = (0..cells.len()).collect();
-    for (i, &(r, c)) in cells.iter().enumerate() {
-        for (dr, dc) in [(0i64, 1i64), (1, 0)] {
-            if let Ok(j) = cells.binary_search(&(r + dr, c + dc)) {
-                let (ri, rj) = (find(&mut parent, i), find(&mut parent, j));
-                if ri != rj {
-                    parent[ri] = rj;
-                }
-            }
-        }
-    }
-    let mut roots: Vec<usize> = (0..cells.len()).map(|i| find(&mut parent, i)).collect();
+    // The region's 1-skeleton, read off the ordered support: β₀ is its
+    // component count and the boundary cochain is every cell face not
+    // shared along an edge (4 faces per cell, 2 closed per edge).
+    let edges = super::sentence::incidence_of(&cells);
+    let mut roots = super::sentence::components(cells.len(), &edges);
     roots.sort_unstable();
     roots.dedup();
-    // Boundary cochain: each 1-cell face from a region cell to a non-region
-    // neighbour is exposed.
-    let mut boundary = 0u64;
-    for &(r, c) in &cells {
-        for (dr, dc) in [(0i64, 1i64), (0, -1), (1, 0), (-1, 0)] {
-            if cells.binary_search(&(r + dr, c + dc)).is_err() {
-                boundary += 1;
-            }
-        }
-    }
-    // Hue tally of the scene's cells inside the region.
+    let boundary = (4 * cells.len() as u64).saturating_sub(2 * edges.len() as u64);
+    // Hue tally of the scene's cells inside the region: one merge walk over
+    // the two ordered supports, never a lookup per cell.
+    let mut ordered: Vec<(i64, i64, u8)> = scene.to_vec();
+    ordered.sort_unstable();
     let mut hues: Vec<(u8, u64)> = Vec::new();
-    for &(r, c, h) in scene {
-        if cells.binary_search(&(r, c)).is_ok() {
-            match hues.iter_mut().find(|(hh, _)| *hh == h) {
-                Some((_, n)) => *n += 1,
-                None => hues.push((h, 1)),
+    let (mut i, mut j) = (0usize, 0usize);
+    while i < cells.len() && j < ordered.len() {
+        let (r, c, h) = ordered[j];
+        match cells[i].cmp(&(r, c)) {
+            std::cmp::Ordering::Less => i += 1,
+            std::cmp::Ordering::Greater => j += 1,
+            std::cmp::Ordering::Equal => {
+                match hues.iter_mut().find(|(hh, _)| *hh == h) {
+                    Some((_, n)) => *n += 1,
+                    None => hues.push((h, 1)),
+                }
+                j += 1;
             }
         }
     }

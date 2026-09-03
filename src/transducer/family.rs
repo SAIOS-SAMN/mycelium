@@ -282,29 +282,25 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
         })
         .collect();
     // 1. PAIR each output body with its source: the input body of the same
-    // moduli that a carriage exists for. Several such bodies are
-    // interchangeable under the class's symmetry; the nearest by centroid
-    // is the representative, and the replay below verifies it.
+    // moduli that a carriage exists for. The class is the pairing and the
+    // carriage is the versor; several such bodies are interchangeable under
+    // the class's symmetry, so the first in the support's own order is the
+    // representative taken, and the replay below verifies it. No distance
+    // is measured to choose.
     let mut pairings: Vec<Pairing> = Vec::new();
     let mut created_by_pair: Vec<Vec<Vec<Cell3>>> = vec![Vec::new(); family.len()];
     let mut unmatched_inputs: Vec<(usize, usize)> = Vec::new();
     for (p, s) in scenes.iter().enumerate() {
         let mut used = vec![false; s.bodies_in.len()];
         for (j, ob) in s.bodies_out.iter().enumerate() {
-            let mut best: Option<(BigRational, usize, Carriage)> = None;
-            for (i, ab) in s.bodies_in.iter().enumerate() {
-                if used[i] || ab.moduli != ob.moduli {
-                    continue;
-                }
-                let Some(car) = carriage(ab, ob) else { continue };
-                let (dr, dc) = (&ob.centroid.0 - &ab.centroid.0, &ob.centroid.1 - &ab.centroid.1);
-                let d2 = &dr * &dr + &dc * &dc;
-                if best.as_ref().map_or(true, |(bd, _, _)| d2 < *bd) {
-                    best = Some((d2, i, car));
-                }
-            }
+            let best: Option<(usize, Carriage)> = s
+                .bodies_in
+                .iter()
+                .enumerate()
+                .filter(|(i, ab)| !used[*i] && ab.moduli == ob.moduli)
+                .find_map(|(i, ab)| carriage(ab, ob).map(|car| (i, car)));
             match best {
-                Some((_, i, car)) => {
+                Some((i, car)) => {
                     used[i] = true;
                     pairings.push(Pairing { pair: p, input: i, output: j, carriage: car });
                 }

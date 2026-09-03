@@ -370,9 +370,25 @@ pub struct Epigenome {
     expressed: Vec<Element>,
     expressed_atlas: crate::transducer::stalk::Stalks,
     expressed_shapes: Vec<std::sync::OnceLock<Option<crate::transducer::blade::Shape>>>,
+    /// Every genome word reached by its address (index-aligned with
+    /// `genome`): a keyed relation, never a walk of the genome.
+    index: crate::network::nerve::Keyed<usize>,
 }
 
 impl Epigenome {
+    /// The held word at an address, read from the key.
+    pub fn word_at(&self, addr: &[u8; 32]) -> Option<&Element> {
+        self.index.get(addr).and_then(|&i| self.genome.get(i))
+    }
+
+    /// Re-key the genome after a removal or a restore shifted positions.
+    fn reindex(&mut self) {
+        self.index = crate::network::nerve::Keyed::new();
+        for (i, w) in self.genome.iter().enumerate() {
+            self.index.insert(w.address(), i);
+        }
+    }
+
     /// Deepen a held word's fiber with a section this genome verified.
     pub fn puncture(&mut self, i: usize, asg: Vec<(u8, u8)>) -> bool {
         self.genome.get_mut(i).is_some_and(|w| w.puncture(asg))
@@ -473,6 +489,7 @@ impl Epigenome {
                 }
             }
         }
+        self.reindex();
         true
     }
 
@@ -543,6 +560,7 @@ impl Epigenome {
                     self.shapes.push(std::sync::OnceLock::new());
                     self.atlas_len += 1;
                 }
+                self.index.insert(e.address(), self.genome.len());
                 self.genome.push(e);
                 self.expression.push(0);
             }
@@ -595,6 +613,7 @@ impl Epigenome {
         }
         self.expression = vec![0; genome.len()];
         self.genome = genome;
+        self.reindex();
         true
     }
 }
@@ -620,6 +639,11 @@ pub struct Entity {
     /// word's address, the transition that did not vanish). The digest
     /// only indexed the wire; this is the glue, on the elements.
     obstructions: Vec<([u8; 32], Element)>,
+    /// Strata the fibre Čech has already glued (a fetched word's transition
+    /// to the held representative vanished): the outer index is not walked
+    /// there again. The digest names what differs by address; the geometry
+    /// decides what is fetched.
+    glued: Vec<crate::transducer::stalk::Invariant>,
 }
 
 impl Entity {
@@ -631,6 +655,7 @@ impl Entity {
             taught_up: Vec::new(),
             discordance: usize::MAX,
             obstructions: Vec::new(),
+            glued: Vec::new(),
         }
     }
 
@@ -768,7 +793,13 @@ impl Entity {
         self.epigenome.atlas();
         let atlas = self.epigenome.atlas.clone();
         let local = sheaf::digests(&atlas, self.epigenome.genome());
-        let strata: Vec<_> = sheaf::discordant(&remote, &local).into_iter().cloned().collect();
+        // The outer index names what differs by address; a stratum the
+        // fibre Čech already glued is not walked again.
+        let strata: Vec<_> = sheaf::discordant(&remote, &local)
+            .into_iter()
+            .filter(|d| !self.glued.contains(&d.inv))
+            .cloned()
+            .collect();
         self.discordance = strata.len();
         // One exchange per contact: every discordant chart with this
         // genome's have-list, the request and the reply each filled to the
@@ -797,20 +828,43 @@ impl Entity {
                 continue; // no group view: the additive coboundary has no transition
             }
             self.epigenome.atlas();
-            let fibre: Vec<usize> = self.epigenome.atlas.fiber(&crate::transducer::stalk::invariant(fetched.sub())).to_vec();
+            let inv = crate::transducer::stalk::invariant(fetched.sub());
+            let fibre: Vec<usize> = self.epigenome.atlas.fiber(&inv).to_vec();
             let genome = self.epigenome.genome();
-            for i in fibre {
-                let Some(held) = genome.get(i) else { continue };
-                if held.address() == fetched.address() || held.axes().is_empty() {
-                    continue;
+            // One transition, to the stratum's representative: the first
+            // held word on the fibre with a group view that is not the
+            // fetched word itself. Siblings are interchangeable under the
+            // class's symmetry; the transition to one of them is the glue.
+            let representative = fibre
+                .iter()
+                .filter_map(|&i| genome.get(i))
+                .find(|held| held.address() != fetched.address() && !held.axes().is_empty());
+            let Some(held) = representative else { continue };
+            let Some(g) = crate::transducer::cech::transition(held, &fetched) else { continue };
+            match (g.axes().as_slice(), g.sub()) {
+                ([], []) => {
+                    if !self.glued.contains(&inv) {
+                        self.glued.push(inv);
+                    }
                 }
-                let Some(g) = crate::transducer::cech::transition(held, &fetched) else { continue };
-                match (g.axes().as_slice(), g.sub()) {
-                    ([], []) => {}
-                    _ => {
-                        if !self.obstructions.iter().any(|(a, _)| *a == fetched.address()) {
-                            self.obstructions.push((fetched.address(), g));
-                        }
+                _ => {
+                    if !self.obstructions.iter().any(|(a, _)| *a == fetched.address()) {
+                        // THE OBSTRUCTION RIDES UP: the two views of one
+                        // object are spoken to the hypha as a percept pair
+                        // (held view → fetched view), a demand on the book
+                        // for the word that carries one onto the other. The
+                        // docket takes it to the court, where it lands on
+                        // the Dialect arm if the federation cannot glue it.
+                        let scene = |w: &Element| -> Vec<(i64, i64, u8)> { w.sub().iter().map(|&(r, c, _, h)| (r, c, h)).collect() };
+                        let (a, b) = (scene(held), scene(&fetched));
+                        let extent = |s: &[(i64, i64, u8)]| -> (usize, usize) {
+                            let h = s.iter().map(|c| c.0 + 1).max().unwrap_or(0).max(1) as usize;
+                            let w = s.iter().map(|c| c.1 + 1).max().unwrap_or(0).max(1) as usize;
+                            (h, w)
+                        };
+                        let ((ha, wa), (hb, wb)) = (extent(&a), extent(&b));
+                        let _ = self.session.submit(&a, &b, &(ha, wa, hb, wb), &[]);
+                        self.obstructions.push((fetched.address(), g));
                     }
                 }
             }
@@ -827,7 +881,7 @@ impl Entity {
                 if self.taught_up.contains(&addr) {
                     continue; // spoken for adoption once; the judge decided
                 }
-                let Some(word) = self.epigenome.genome().iter().find(|w| w.address() == addr) else { continue };
+                let Some(word) = self.epigenome.word_at(&addr) else { continue };
                 let bytes = word.to_bytes();
                 if used + bytes.len() > crate::network::wire::BODY_BUDGET {
                     break 'strata;
