@@ -219,6 +219,9 @@ fn main() {
     // federation's own digests (re-measured only when the federation grew),
     // and per wire the addresses already re-taught by reconciliation.
     let mut recon_cursor = 0usize;
+    let mut conn_cover = Stalks::over_elements(
+        federation.iter().filter(|(_, e)| e.is_connection()).map(|(_, e)| e),
+    );
     let mut fed_digests: Vec<mycelium::transducer::sheaf::StratumDigest> = Vec::new();
     let mut fed_digests_len = usize::MAX;
     let mut recon_taught: Vec<mycelium::network::nerve::Keyed<bool>> =
@@ -277,6 +280,9 @@ fn main() {
                         match outcome {
                             verdict::Ruling::Admitted(sealed) => {
                                 stalks.admit(&stalk::invariant_of(&sealed), addr);
+                                if sealed.is_connection() {
+                                    conn_cover.admit(&stalk::invariant_of(&sealed), addr);
+                                }
                                 fed_index.insert(addr, federation.len());
                                 federation.push((addr, sealed));
                                 upheld += 1;
@@ -374,6 +380,9 @@ fn main() {
                 let outcome = verdict::rule(&federation, &fed_index, &stalks, &addr, spoken.as_ref(), Some(&deflation));
                 if let verdict::Ruling::Admitted(sealed) = &outcome {
                     stalks.admit(&stalk::invariant_of(&sealed), addr);
+                    if sealed.is_connection() {
+                        conn_cover.admit(&stalk::invariant_of(&sealed), addr);
+                    }
                     fed_index.insert(addr, federation.len());
                     federation.push((addr, sealed.clone()));
                 }
@@ -465,9 +474,9 @@ fn main() {
             let hi = recon_cursor % sessions.len();
             recon_cursor = recon_cursor.wrapping_add(1);
             if outbox[hi].is_empty() {
-            if fed_digests_len != federation.len() {
-                fed_digests = mycelium::transducer::sheaf::digests(&stalks);
-                fed_digests_len = federation.len();
+            if fed_digests_len != conn_cover.len() {
+                fed_digests = mycelium::transducer::sheaf::digests(&conn_cover);
+                fed_digests_len = conn_cover.len();
             }
             if let Some(remote) = ask(&sessions[hi], &outbox[hi], dialogue::encode_digests_request(&voice))
                 .and_then(|body| dialogue::decode_digests_reply(&body))
@@ -477,7 +486,7 @@ fn main() {
                 let mut strata = 0usize;
                 'strata: for d in mycelium::transducer::sheaf::discordant(&fed_digests, &remote) {
                     strata += 1;
-                    for member in stalks.fiber(&d.inv) {
+                    for member in conn_cover.fiber(&d.inv) {
                         let Some((a, w)) = fed_index.get(member).and_then(|&i| federation.get(i)) else { continue };
                         if recon_taught[hi].contains(a) {
                             continue;

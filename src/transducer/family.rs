@@ -571,7 +571,20 @@ fn speak_with(t: &Transport, x: &Grid, total: bool) -> Option<Speech> {
         if t.removed.contains(&body.moduli) {
             continue;
         }
-        let rule = t.rules.iter().find(|r| r.moduli == body.moduli)?;
+        let rule = t.rules.iter().find(|r| r.moduli == body.moduli);
+        let Some(rule) = rule else {
+            // Unreached body: do not drop the scene. Under the total map,
+            // identity-carry as a trivial section of g (1, σ₀); always flag
+            // the body's cells as remainder so the closed sub-morphism can
+            // still be uttered.
+            if total {
+                if let Some((said, _)) = render(&body, &element::identity_versor(), &[], fy, true) {
+                    cells.extend(said);
+                }
+            }
+            remainder.extend(body.cells.iter().copied());
+            continue;
+        };
         let mut spoken: Option<(Vec<Cell3>, Vec<Cell3>)> = None;
         for (reading, u) in &rule.readings {
             let shifted = (&body.centroid.0 + &rule.shift.0, &body.centroid.1 + &rule.shift.1);
@@ -662,6 +675,12 @@ mod tests {
         let unsaid = speak(&t, &grid(&["0000", "0000", "3300"])).expect("spoken with a remainder");
         assert!(unsaid.cells.is_empty());
         assert_eq!(unsaid.remainder, vec![(2, 0, 3), (2, 1, 3)]);
+        // An extra body of unseen moduli (a lone cell, not the family's bar)
+        // does not refuse the scene: identity-carry plus remainder of that
+        // body, the rest still spoken.
+        let mixed = speak_total(&t, &grid(&["1100", "0000", "0030"])).expect("partial g");
+        assert!(mixed.cells.iter().any(|&(r, c, h)| r == 0 && c == 2 && h == 2), "the reached body speaks");
+        assert!(mixed.remainder.iter().any(|&(r, c, h)| r == 2 && c == 2 && h == 3), "the unreached body is remainder, not a dropped scene");
         // A body mirrored in place: the reflection axis moves with the body,
         // so the transport agrees only about the bodies' own centroids.
         let family = vec![

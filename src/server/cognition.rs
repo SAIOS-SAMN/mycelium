@@ -616,11 +616,41 @@ impl Kernel {
     }
 
     /// A word the court finalized here joins the ruled cover (keyed admit).
+    /// Only closed connections: residual tapes stay off the mesh digest.
     fn ruled_admit(&mut self, addr: &[u8; 32]) {
         if let Some(w) = self.word_at(addr) {
-            let inv = crate::transducer::stalk::invariant_of(w);
-            self.ruled.admit(&inv, *addr);
+            if w.is_connection() {
+                let inv = crate::transducer::stalk::invariant_of(w);
+                self.ruled.admit(&inv, *addr);
+            }
         }
+    }
+
+    fn ruled_contains(&self, addr: &[u8; 32]) -> bool {
+        let Some(w) = self.word_at(addr) else { return false };
+        self.ruled.fiber(&crate::transducer::stalk::invariant_of(w)).iter().any(|a| a == addr)
+    }
+
+    /// List a connection on the docket if it is not already provisional.
+    fn docket_connection(&mut self, word: &Element, ratifier: [u8; 32]) {
+        if !word.is_connection() {
+            return;
+        }
+        let addr = word.address();
+        if self.provisional.iter().any(|(a, _)| a == &addr) {
+            return;
+        }
+        let mag = word.magnitude();
+        let surface = crate::economy::yield_surface(&self.physics);
+        let mu = crate::economy::price(&mag, &surface);
+        let anchor = self.anchor();
+        self.treasury.escrow_award(addr, vec![ratifier], mu, anchor);
+        self.deflations.insert(addr, mag);
+        let k_now = self.k_step();
+        self.provisional_k.insert(addr, k_now);
+        self.provisional.push((addr, word.clone()));
+        self.book_gen += 1;
+        self.append_step(addr, ratifier);
     }
 
     /// The court's voice, heard on its verdicts.
@@ -788,6 +818,7 @@ impl Kernel {
         target: &[u8; 32],
         residual: Vec<(i64, i64, u8, u8)>,
         cited: &[[u8; 32]],
+        section: bool,
     ) -> (u8, [u64; 4], [u64; 4]) {
         use crate::anastome::dialogue::{PROBE_CLOSED, PROBE_DESCENT, PROBE_NOTHING};
         let Some(li) = self.pending.iter().position(|(p, _)| p.address() == *target) else {
@@ -802,7 +833,13 @@ impl Kernel {
         let lanes = listing.lanes();
         let mag = listing.magnitude();
         if let [] = residual.as_slice() {
-            let paid = self.treasury.settle_subsidy(voice, crate::economy::price(&before, &surface), anchor);
+            // Raster covering of a tape is zero-yield; fibre section closure
+            // and a connection listing still pay morphism deflation.
+            let paid = if section || listing.is_connection() {
+                self.treasury.settle_subsidy(voice, crate::economy::price(&before, &surface), anchor)
+            } else {
+                [0; 4]
+            };
             for addr in cited {
                 if let Some(i) = self.basis_index.get(addr).copied() {
                     let mag = self.basis[i].magnitude();
@@ -1151,6 +1188,11 @@ impl Kernel {
             // volume, not only in vocabulary.
             self.basis[i].merge_fibre(word);
             self.touch();
+            // Presence is not finality: an unruled connection stays on the
+            // docket until the court measures it.
+            if word.is_connection() && !self.ruled_contains(&addr) {
+                self.docket_connection(word, ratifier);
+            }
             return Adoption::Known;
         }
         // A CONNECTION arriving from an entity is listed as itself: it enters
@@ -1159,17 +1201,7 @@ impl Kernel {
         // pays it as a word, never as a copied pair. A residual word taught
         // up is installed as before.
         if word.is_connection() {
-            let mag = word.magnitude();
-            let surface = crate::economy::yield_surface(&self.physics);
-            let mu = crate::economy::price(&mag, &surface);
-            let anchor = self.anchor();
-            self.treasury.escrow_award(addr, vec![ratifier], mu, anchor);
-            self.deflations.insert(addr, mag);
-            let k_now = self.k_step();
-            self.provisional_k.insert(addr, k_now);
-            self.provisional.push((addr, word.clone()));
-            self.book_gen += 1;
-            self.append_step(addr, ratifier);
+            self.docket_connection(word, ratifier);
         }
         self.basis_push(word.clone(), ratifier);
         // A word the court itself teaches is finalized language: it joins
@@ -2277,11 +2309,27 @@ impl Kernel {
             self.basis_clear();
             return false;
         }
-        // THE RULED COVER, measured once at restore: every held word that is
-        // not still provisional was finalized before the restart.
+        // THE RULED COVER, measured once at restore: court-ratified
+        // connections only. Residual tapes stay off the mesh digest.
         self.ruled = crate::transducer::stalk::Stalks::over_elements(
-            self.basis.iter().filter(|w| !self.provisional.iter().any(|(a, _)| *a == w.address())),
+            self.basis.iter().filter(|w| {
+                w.is_connection() && !self.provisional.iter().any(|(a, _)| *a == w.address())
+            }),
         );
+        // Unruled connections on the basis re-enter the docket: Known is not
+        // a court receipt.
+        let held: Vec<Element> = self
+            .basis
+            .iter()
+            .filter(|w| w.is_connection())
+            .cloned()
+            .collect();
+        let ratifier = self.discoverers.first().copied().unwrap_or([0; 32]);
+        for w in held {
+            if !self.ruled_contains(&w.address()) {
+                self.docket_connection(&w, ratifier);
+            }
+        }
         true
     }
 }
@@ -3045,7 +3093,7 @@ mod tests {
         assert_eq!(void, vec![(0, 3, 3, 4)]);
         assert_eq!(cites.len(), 1);
         assert_eq!(replay(k.basis(), &cites, &chain), void, "the replay reproduces the residual");
-        let (code, paid, remaining) = k.settle_probe([3; 32], &target, void.clone(), &[word]);
+        let (code, paid, remaining) = k.settle_probe([3; 32], &target, void.clone(), &[word], false);
         assert_eq!(code, PROBE_DESCENT);
         assert!(paid.iter().any(|&p| p > 0), "graded descent earns per lane");
         assert_eq!(remaining, crate::transducer::element::measure_lanes(&void));
@@ -3053,8 +3101,8 @@ mod tests {
         assert_eq!(listing.sub(), &[(0, 0, 3, 4)], "the residual replaced the listing, re-centered");
         // No descent settles nothing; closure clears the book.
         let t2 = listing.address();
-        assert_eq!(k.settle_probe([3; 32], &t2, listing.sub().to_vec(), &[]).0, PROBE_NOTHING);
-        assert_eq!(k.settle_probe([3; 32], &t2, Vec::new(), &[word]).0, PROBE_CLOSED);
+        assert_eq!(k.settle_probe([3; 32], &t2, listing.sub().to_vec(), &[], false).0, PROBE_NOTHING);
+        assert_eq!(k.settle_probe([3; 32], &t2, Vec::new(), &[word], false).0, PROBE_CLOSED);
         assert!(k.quote(8).1.is_empty(), "the listing cleared");
     }
 

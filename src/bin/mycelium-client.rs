@@ -65,22 +65,54 @@ fn speak_connections(
     // rides as itself — the identity section, the gauge puncture the
     // remainder asked for). What is left unspoken is not a hue without an
     // image but a body the connection does not reach.
-    for x in train.iter().map(|(a, _)| a).chain(tests.iter()) {
-        let Some(speech) = mycelium::transducer::family::speak_total(transport, x) else {
-            // The connection refuses this scene outright: the scene is the remainder.
-            remainder.extend(grid_to_cells(x).into_iter().map(|(r, c, h)| (r, c, h, h)));
+    for (a, b) in train {
+        let Some(speech) = mycelium::transducer::family::speak_total(transport, a) else {
             continue;
         };
         carried[0] = carried[0].saturating_add(speech.cells.len() as u64);
-        remainder.extend(speech.remainder.iter().map(|&(r, c, h)| (r, c, h, h)));
+        if let [_, ..] = speech.remainder.as_slice() {
+            // Isolate the unreached body: germinate its support against the
+            // matching output cells and attest as demand (empty cites). Do
+            // not drop the scene and do not block the closed sub-morphism.
+            let a_cells: Vec<(i64, i64, u8)> = speech.remainder.iter().map(|&(r, c, h)| (r, c, h)).collect();
+            let b_cells = grid_to_cells(b);
+            let mut y: Vec<(i64, i64, u8)> = Vec::new();
+            let (mut i, mut j) = (0usize, 0usize);
+            let mut aa = a_cells.clone();
+            aa.sort_unstable();
+            let mut bb = b_cells;
+            bb.sort_unstable();
+            while i < aa.len() && j < bb.len() {
+                match (aa[i].0, aa[i].1).cmp(&(bb[j].0, bb[j].1)) {
+                    std::cmp::Ordering::Less => i += 1,
+                    std::cmp::Ordering::Greater => j += 1,
+                    std::cmp::Ordering::Equal => {
+                        y.push(bb[j]);
+                        i += 1;
+                        j += 1;
+                    }
+                }
+            }
+            if let Some(g) = germinate(&aa, &y) {
+                remainder.extend(g.iter().copied());
+                let _ = entity.attest(&g, &[]);
+            } else {
+                remainder.extend(aa.iter().map(|&(r, c, h)| (r, c, 0, h)));
+            }
+        }
+    }
+    for x in tests {
+        let Some(speech) = mycelium::transducer::family::speak_total(transport, x) else {
+            continue;
+        };
+        carried[0] = carried[0].saturating_add(speech.cells.len() as u64);
+        remainder.extend(speech.remainder.iter().map(|&(r, c, h)| (r, c, 0, h)));
     }
     remainder.sort_unstable();
     remainder.dedup();
     if let [_, ..] = remainder.as_slice() {
-        // THOUGHT, NOT SPEECH: the remainder stays here until it closes.
         entity.hold_thought(remainder.clone());
-        eprintln!("[{name}] thought held: {} rules leave {} cells unspoken — not uttered", transport.rules.len(), remainder.len());
-        return (0, 1, 0);
+        eprintln!("[{name}] thought held: {} rules leave {} cells unspoken — partial g still uttered", transport.rules.len(), remainder.len());
     }
     let (mut spoken, mut errors) = (0u64, 0u64);
     for rule in &transport.rules {

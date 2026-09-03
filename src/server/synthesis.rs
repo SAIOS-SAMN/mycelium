@@ -162,11 +162,12 @@ pub fn probe(
         );
     }
     let cited: Vec<[u8; 32]> = cites.iter().map(|(a, _, _, _)| *a).collect();
+    let section = cites.iter().any(|(_, _, asg, _)| *asg == u32::MAX);
     let Ok(mut g) = k.lock() else { return (PROBE_NOTHING, [0; 4], [0; 4]) };
     // The court replays the settlement on the chains it is handed, so the
     // measure spoken here is the chain's own, not the listing's fibre.
     let before = crate::transducer::element::measure_lanes(listing.sub());
-    let settled = g.settle_probe(voice, target, residual, &cited);
+    let settled = g.settle_probe(voice, target, residual, &cited, section);
     if matches!(settled.0, crate::anastome::dialogue::PROBE_CLOSED | crate::anastome::dialogue::PROBE_DESCENT) {
         g.puncture_from(cites); // the fiber deepens on what was verified
         // The settlement goes to the court with the utterance that made it,
