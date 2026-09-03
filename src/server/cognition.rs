@@ -716,8 +716,8 @@ impl Kernel {
             let _ = self.treasury.revoke_award(sibling, false);
         }
         let (Some(bi), Some(si)) = (
-            self.basis.iter().position(|t| t.address() == *base),
-            self.basis.iter().position(|t| t.address() == *sibling),
+            self.basis_index.get(base).copied(),
+            self.basis_index.get(sibling).copied(),
         ) else {
             return 0;
         };
@@ -767,7 +767,7 @@ impl Kernel {
         if let [] = residual.as_slice() {
             let paid = self.treasury.settle_subsidy(voice, crate::economy::price(&before, &surface), anchor);
             for addr in cited {
-                if let Some(i) = self.basis.iter().position(|t| t.address() == *addr) {
+                if let Some(i) = self.basis_index.get(addr).copied() {
                     let mag = self.basis[i].magnitude();
                     self.treasury.settle_use(voice, self.discoverers[i], mag, anchor);
                 }
@@ -892,7 +892,7 @@ impl Kernel {
                 // Excise a slashed BASE word. A slashed section puncture has no
                 // separate card to excise (growth was +axis) — the economic
                 // slash applies; the fiber coordinate stays local dialect.
-                if let Some(w) = self.basis.iter().position(|t| t.address() == *addr) {
+                if let Some(w) = self.basis_index.get(addr).copied() {
                     self.basis_remove(w);
                 }
             }
@@ -980,7 +980,7 @@ impl Kernel {
         let (parent, children, strip) = self.composites.remove(ci);
         let mut voices: Vec<[u8; 32]> = vec![voice];
         for (a, _) in &children {
-            if let Some(i) = self.basis.iter().position(|t| t.address() == *a) {
+            if let Some(i) = self.basis_index.get(a).copied() {
                 let d = self.discoverers[i];
                 if !voices.contains(&d) {
                     voices.push(d);
@@ -1040,7 +1040,7 @@ impl Kernel {
         bidder: [u8; 32],
         cites: &[crate::anastome::dialogue::CiteWire],
     ) -> Option<[u64; 4]> {
-        let i = self.basis.iter().position(|t| t.address() == *addr)?;
+        let i = self.basis_index.get(addr).copied()?;
         if self.provisional.iter().any(|(a, _)| a == addr) {
             return None;
         }
@@ -1107,7 +1107,7 @@ impl Kernel {
             }
         }
         let addr = word.address();
-        if let Some(i) = self.basis.iter().position(|t| t.address() == addr) {
+        if let Some(i) = self.basis_index.get(&addr).copied() {
             // The address is held: the arriving placement's fibre merges into
             // the bundle (sections, connection) — the genome converges in
             // volume, not only in vocabulary.
@@ -1277,7 +1277,7 @@ impl Kernel {
         }
         let residual = element::from_residual_framed(&chain.to_vec(), frame);
         let addr = residual.address();
-        if self.basis.iter().any(|t| t.address() == addr)
+        if self.basis_index.contains(&addr)
             || self.pending.iter().any(|(p, _)| p.address() == addr)
         {
             return false; // already speakable or already listed
@@ -1325,7 +1325,7 @@ impl Kernel {
     /// unknown address.
     pub fn apply_rebind(&mut self, addr: &[u8; 32], pi: crate::transducer::anchor::Sel) -> bool {
         let mut bound = false;
-        if let Some(i) = self.basis.iter().position(|t| t.address() == *addr) {
+        if let Some(i) = self.basis_index.get(addr).copied() {
             self.basis[i] = self.basis[i].clone().with_anchor(pi.clone());
             self.touch();
             bound = true;
@@ -1479,7 +1479,7 @@ impl Kernel {
                         .words
                         .get(wi)
                         .map(|w| w.address())
-                        .and_then(|a| self.basis.iter().position(|t| t.address() == a));
+                        .and_then(|a| self.basis_index.get(&a).copied());
                     match live {
                         Some(i) => word.push(i),
                         None => {
@@ -1881,7 +1881,7 @@ impl Kernel {
     /// found it decomposable). Returns the cards retired (0 or 1): the word
     /// may have gone, or gained a fibre, while the probe ran.
     pub fn retire_redundant(&mut self, addr: &[u8; 32]) -> usize {
-        let Some(i) = self.basis.iter().position(|t| t.address() == *addr) else { return 0 };
+        let Some(i) = self.basis_index.get(addr).copied() else { return 0 };
         if !self.basis[i].sections().is_empty() || !self.basis[i].torsion().is_empty() {
             return 0;
         }
@@ -2784,8 +2784,10 @@ mod tests {
         let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
         let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
         let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
-        k.basis.push(from_residual(&germinate(&a, &rot).unwrap()));
-        k.discoverers.push([1; 32]);
+        // Two words, one centered chain: the first carries a frame fibre (a
+        // distinct address, since a keyed basis holds one word per address)
+        // and the second speaks its chain exactly.
+        k.basis_push(element::from_residual_framed(&germinate(&a, &rot).unwrap(), &(4, 4, 8, 8)), [1; 32]);
         k.basis_push(from_residual(&germinate(&a_far, &rot_far).unwrap()), [7; 32]);
         let derivable = k.basis[0].address(); // its duplicate speaks it
         // The bidder's sentence: the duplicate, cited at the identity.
@@ -2802,8 +2804,7 @@ mod tests {
 
         // THE COURT'S BUSINESS STAYS THE COURT'S: a provisional word cannot be
         // bid away, even if derivable.
-        k.basis.push(from_residual(&germinate(&a, &rot).unwrap()));
-        k.discoverers.push([1; 32]);
+        k.basis_push(from_residual(&germinate(&a, &rot).unwrap()), [1; 32]);
         let addr = k.basis[1].address();
         k.provisional.push((addr, k.basis[1].clone()));
         let sentence = vec![(k.basis[0].address(), element::identity_versor(), 0u32, body(&k.basis[0]))];

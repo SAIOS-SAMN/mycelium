@@ -474,7 +474,7 @@ impl Epigenome {
     }
 
     pub fn retire(&mut self, addr: &[u8; 32]) -> bool {
-        let Some(i) = self.genome.iter().position(|w| w.address() == *addr) else {
+        let Some(i) = self.index.get(addr).copied() else {
             return false;
         };
         self.genome.remove(i);
@@ -550,7 +550,7 @@ impl Epigenome {
         }
         let heard = self.comprehend(&e);
         let addr = e.address();
-        match self.genome.iter().position(|g| g.address() == addr) {
+        match self.index.get(&addr).copied() {
             Some(i) => self.genome[i] = e, // the taught form may carry new sections — refresh
             None => {
                 // The atlas admits the new word in place when it is current;
