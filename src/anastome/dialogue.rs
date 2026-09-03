@@ -136,6 +136,27 @@ pub const ACT_ROOT: u8 = 0x13;
 /// on the speaker's clock. The reply is the receiver's record for that
 /// task: `[solver 32 (zeros: none)][ticks u64]`, its own clock, so the
 /// speaker knows the root was delivered later than it was spoken.
+/// A DEMAND ROUTED ON THE NERVE to the listing key's home hypha — so the
+/// second voice on a listing can be a stranger's, not a local twin's:
+/// `[ACT_DEMAND_ROUTED][origin hypha 32][the demand body as spoken]`.
+/// Heard once as a demand at the home; never routed again.
+pub const ACT_DEMAND_ROUTED: u8 = 0x14;
+
+pub fn encode_routed_demand(origin: &[u8; 32], demand: &[u8]) -> Vec<u8> {
+    let mut out = vec![ACT_DEMAND_ROUTED];
+    out.extend_from_slice(origin);
+    out.extend_from_slice(demand);
+    out
+}
+
+pub fn decode_routed_demand(body: &[u8]) -> Option<([u8; 32], &[u8])> {
+    if body.first() != Some(&ACT_DEMAND_ROUTED) || body.len() < 34 {
+        return None;
+    }
+    let origin: [u8; 32] = body[1..33].try_into().ok()?;
+    Some((origin, &body[33..]))
+}
+
 pub fn encode_root(voice: &[u8; 32], task: &[u8; 32], solver: &[u8; 32], ticks: u64) -> Vec<u8> {
     let mut out = vec![ACT_ROOT];
     out.extend_from_slice(voice);

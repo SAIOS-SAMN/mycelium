@@ -1430,7 +1430,10 @@ impl Element {
     /// element itself so the lane is independent of the chain's sum.
     pub fn magnitude(&self) -> [u64; 4] {
         let mut m = self.mag;
-        m[2] = (self.sections.len() + self.torsion.len()) as u64;
+        // The fibre lane: the demand a listing projects onto the fibre (a
+        // body a held word carries by shape under a gauge it lacks) plus the
+        // volume a word already holds there.
+        m[2] = m[2].saturating_add((self.sections.len() + self.torsion.len()) as u64);
         m
     }
 

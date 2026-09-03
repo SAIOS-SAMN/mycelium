@@ -110,6 +110,15 @@ fn tell_peer(addr: &str, body: Vec<u8>) -> Option<Vec<u8>> {
 
 fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32]) {
     let ReflexJob { mut stream, frame } = job;
+    // A demand routed on the nerve is heard as the demand it carries; only
+    // a peer the router knows is heard, and it is never routed on.
+    let frame = match frame.body.first() {
+        Some(&k) if k == dialogue::ACT_DEMAND_ROUTED => match dialogue::decode_routed_demand(&frame.body) {
+            Some((origin, demand)) if router.knows(&origin) => Frame { lane: frame.lane, body: demand.to_vec() },
+            _ => return,
+        },
+        _ => frame,
+    };
     let Some((&kind, rest)) = frame.body.split_first() else { return };
     // ── quote: the market view leaves under a brief lock; pricing and the
     // cohesion witness compute over the snapshot.
@@ -230,6 +239,7 @@ fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32])
                     let mu = mycelium::economy::price(
                         &g.magnitude(),
                         &mycelium::economy::yield_surface(k.physics()),
+                        &k.treasury().pool(),
                     );
                     // Teach the FULL lossless form (to_bytes) — the entity's
                     // genome must reconstruct the exact element, sections and all.
@@ -941,6 +951,18 @@ fn main() {
             continue;
         }
 
+        // ── demand → also spoken on the nerve, to the one peer the router
+        // places closest to the listing's key (its home in the mesh), so the
+        // second voice on a listing can be a stranger's. One hop, keyed,
+        // never a broadcast; a routed demand is heard once and not routed on.
+        if kind == dialogue::ACT_DEMAND {
+            if let Some((_, chain, _)) = dialogue::decode_demand(&frame.body) {
+                let key = mycelium::transducer::element::from_residual(&chain).address();
+                if let Some((_, addr)) = router.closest_excluding(&key, &[nerve_id]) {
+                    let _ = nerve_tx.try_send((addr, dialogue::encode_routed_demand(&nerve_id, &frame.body)));
+                }
+            }
+        }
         // ── percept / gossip / demand → the reflex pool. The listener never
         // reduces; a full pool defers the demand in the reply's own shape
         // (outcome, four zero lanes, nothing taught).

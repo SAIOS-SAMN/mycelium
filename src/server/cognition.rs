@@ -334,14 +334,14 @@ pub fn quote_over(
         used += wire;
         let base = rank.closure.get(idx).copied().flatten();
         let premium = if base.is_some() { c } else { i };
-        let mut mu = crate::economy::price(&p.magnitude(), surface);
+        let mut mu = crate::economy::price(&p.magnitude(), surface, pool);
         mu[2] = p.magnitude()[2].saturating_mul(1 + surface[2] + premium);
         // Lineage-aware assembly pricing: a child of a partly resolved
         // parent carries the parent's assembly premium (its ribbon volume,
         // priced at the surface) scaled by the resolved fraction, so the
         // closing pieces of an assembly quote highest without assignment.
         let (resolved, total, ribbon) = lineage_of(&p.address(), composites);
-        let assembly = crate::economy::price(&[0, 0, ribbon, 0], surface);
+        let assembly = crate::economy::price(&[0, 0, ribbon, 0], surface, pool);
         for l in 0..4 {
             mu[l] = mu[l].saturating_add(assembly[l].saturating_mul(resolved) / total.max(1));
         }
@@ -558,6 +558,11 @@ pub struct Kernel {
     /// (empty-cites attest). Percept-pair coboundary tapes stay on the
     /// book for consilience but are not served on a quote page.
     quote_frontier: crate::network::nerve::Keyed<()>,
+    /// THE REMAINING TENSION of a listing after descents: a sentence that
+    /// covers part of a body settles that part and the body stays whole on
+    /// the book — never re-listed as a fragment — with its remainder's
+    /// measure here, keyed by the listing. Absent means the full magnitude.
+    tension: crate::network::nerve::Keyed<[u64; 4]>,
     /// THE SETTLEMENTS awaiting the court: (listing, its chain, the voice,
     /// the utterance, magnitude before, magnitude after). The court replays
     /// the utterance and measures the deflation itself — proof of
@@ -663,7 +668,7 @@ impl Kernel {
         }
         let mag = word.magnitude();
         let surface = crate::economy::yield_surface(&self.physics);
-        let mu = crate::economy::price(&mag, &surface);
+        let mu = crate::economy::price(&mag, &surface, &self.treasury.pool());
         let anchor = self.anchor();
         self.treasury.escrow_award(addr, vec![ratifier], mu, anchor);
         self.deflations.insert(addr, mag);
@@ -847,7 +852,9 @@ impl Kernel {
         };
         let listing = self.pending[li].0.clone();
         self.record_spoken(*target, voice);
-        let before = listing.magnitude();
+        // The tension a sentence descends from: what earlier descents left
+        // of this body, or its whole magnitude.
+        let before = self.tension.get(target).copied().unwrap_or_else(|| listing.magnitude());
         let after = element::measure_lanes(&residual);
         let surface = crate::economy::yield_surface(&self.physics);
         let anchor = self.anchor();
@@ -857,7 +864,7 @@ impl Kernel {
             // Raster covering of a tape is zero-yield; fibre section closure
             // and a connection listing still pay morphism deflation.
             let paid = if section || listing.is_connection() {
-                self.treasury.settle_subsidy(voice, crate::economy::price(&before, &surface), anchor)
+                self.treasury.settle_subsidy(voice, crate::economy::price(&before, &surface, &self.treasury.pool()), anchor)
             } else {
                 [0; 4]
             };
@@ -870,6 +877,7 @@ impl Kernel {
             self.pending.remove(li);
             self.spoken.remove(target);
             self.quote_frontier.remove(target);
+            self.tension.remove(target);
             self.book_gen += 1;
             self.physics.relieve(&mag);
             self.physics.syntropy(&mag);
@@ -887,26 +895,16 @@ impl Kernel {
             return (PROBE_NOTHING, [0; 4], before);
         }
         let delta: [u64; 4] = std::array::from_fn(|l| before[l].saturating_sub(after[l]));
-        let paid = self.treasury.settle_subsidy(voice, crate::economy::price(&delta, &surface), anchor);
-        // The residual inherits the listing's frame fiber (the scale
-        // generators of its spatial block), never its hue tally.
-        let mut next = element::from_residual(&residual);
-        if let (Some(old), Some(new)) =
-            (listing.fiber(element::FIBER_SPATIAL), next.fiber(element::FIBER_SPATIAL))
-        {
-            let mut m = new.clone();
-            m[0][0] = old[0][0].clone();
-            m[1][1] = old[1][1].clone();
-            next.set_fiber(element::FIBER_SPATIAL, m);
-        }
-        let listed_at = self.pending[li].1;
-        let next_addr = next.address();
-        self.pending[li] = (next, listed_at);
-        if self.quote_frontier.contains(target) {
-            self.quote_frontier.remove(target);
-            self.quote_frontier.insert(next_addr, ());
-        }
+        let paid = self.treasury.settle_subsidy(voice, crate::economy::price(&delta, &surface, &self.treasury.pool()), anchor);
+        // THE LISTING STAYS THE BODY: the descent settles what the sentence
+        // covered and the body stays whole on the book — a coboundary is
+        // never re-listed as a fragment of itself. What remains is the
+        // body's tension, keyed by the listing, and the next sentence
+        // descends from there; the physics relaxes by what settled.
+        let settled: [u64; 4] = std::array::from_fn(|l| before[l].saturating_sub(after[l]));
+        self.tension.insert(*target, after);
         self.spoken.remove(target);
+        self.physics.relieve(&settled);
         self.book_gen += 1;
         self.physics.syntropy(&mag);
         self.append_step(*target, voice);
@@ -1173,7 +1171,7 @@ impl Kernel {
             ([], 1..) => {
                 let saved = candidate.magnitude();
                 let surface = crate::economy::yield_surface(&self.physics);
-                let mu = crate::economy::price(&saved, &surface);
+                let mu = crate::economy::price(&saved, &surface, &self.treasury.pool());
                 let anchor = self.anchor();
                 let paid = self.treasury.settle_refine(bidder, mu, anchor);
                 self.basis_remove(i);
@@ -1678,6 +1676,7 @@ impl Kernel {
                         let mu = crate::economy::price(
                             &residual.magnitude(),
                             &crate::economy::yield_surface(&self.physics),
+                            &self.treasury.pool(),
                         );
                         let anchor = self.anchor();
                         // PROVISIONAL (Step 5): the award escrows until the
@@ -1721,6 +1720,7 @@ impl Kernel {
                     let mu = crate::economy::price(
                         &residual.magnitude(),
                         &crate::economy::yield_surface(&self.physics),
+                        &self.treasury.pool(),
                     );
                     let anchor = self.anchor();
                     // PROVISIONAL (Step 5): consilience escrows pending the
@@ -1790,6 +1790,17 @@ impl Kernel {
                     // demand weaker than everything already listed is not
                     // listed at all: the book holds only what the machine can
                     // honestly carry, ordered by what the network most needs.
+                    // LANE THREE HAS A PLANE: a residual a held word carries by
+                    // shape, under a gauge the word does not hold, is a FIBRE
+                    // demand — its tension projects onto the fibre lane, so
+                    // the puncture that settles it is paid there.
+                    let residual = {
+                        let mut r = residual;
+                        if crate::transducer::stalk::congruent(&self.stalks, |a| self.word_at(a), &r).is_some() {
+                            r.mag[2] = r.sub().len() as u64;
+                        }
+                        r
+                    };
                     if frontier {
                         self.quote_frontier.insert(addr, ());
                     }
@@ -1802,7 +1813,7 @@ impl Kernel {
                         if self.market_occupancy() >= cap {
                             let surface = crate::economy::yield_surface(&self.physics);
                             let new_a = action_potential(
-                                &crate::economy::price(&residual.magnitude(), &surface),
+                                &crate::economy::price(&residual.magnitude(), &surface, &self.treasury.pool()),
                                 0,
                             );
                             let weakest = self
@@ -1811,11 +1822,11 @@ impl Kernel {
                                 .enumerate()
                                 .min_by(|(_, (p, lk)), (_, (q, mk))| {
                                     let ap = action_potential(
-                                        &crate::economy::price(&p.magnitude(), &surface),
+                                        &crate::economy::price(&p.magnitude(), &surface, &self.treasury.pool()),
                                         k_now.saturating_sub(*lk),
                                     );
                                     let aq = action_potential(
-                                        &crate::economy::price(&q.magnitude(), &surface),
+                                        &crate::economy::price(&q.magnitude(), &surface, &self.treasury.pool()),
                                         k_now.saturating_sub(*mk),
                                     );
                                     ap.cmp(&aq)
@@ -1824,7 +1835,7 @@ impl Kernel {
                                     (
                                         i,
                                         action_potential(
-                                            &crate::economy::price(&p.magnitude(), &surface),
+                                            &crate::economy::price(&p.magnitude(), &surface, &self.treasury.pool()),
                                             k_now.saturating_sub(*lk),
                                         ),
                                     )
@@ -3222,7 +3233,12 @@ mod tests {
         assert!(paid.iter().any(|&p| p > 0), "graded descent earns per lane");
         assert_eq!(remaining, crate::transducer::element::measure_lanes(&void));
         let listing = k.quote(8).1[0].0.clone();
-        assert_eq!(listing.sub(), &[(0, 0, 3, 4)], "the residual replaced the listing, re-centered");
+        assert_eq!(listing.address(), target, "the listing stays the body: a descent never re-lists a fragment");
+        assert_eq!(
+            k.tension.get(&target).copied(),
+            Some(crate::transducer::element::measure_lanes(&void)),
+            "the body's remaining tension is the residual's measure, keyed by the listing"
+        );
         // No descent settles nothing; closure clears the book.
         let t2 = listing.address();
         assert_eq!(k.settle_probe([3; 32], &t2, listing.sub().to_vec(), &[], false).0, PROBE_NOTHING);

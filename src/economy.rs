@@ -45,10 +45,21 @@ pub fn yield_surface(p: &crate::physics::Physics) -> [u64; 4] {
     })
 }
 
-/// Price a germ's work against the surface: `μ⃗[l] = magnitude[l] · (1 + surface[l])`
-/// — work-size scaled by the lane's systemic resistance.
-pub fn price(mag: &[u64; 4], surface: &[u64; 4]) -> [u64; 4] {
-    std::array::from_fn(|l| mag[l] * (1 + surface[l]))
+/// PRICE AS A SHARE OF THE POOL: on each lane the work is the fraction of
+/// the book's tension it carries (the surface is the open book's tension
+/// on that lane, at least the work itself), paid from the pool's capacity
+/// on that lane — `μ⃗[l] = pool[l] · mag[l] / max(surface[l], mag[l])`,
+/// rounded up so real work never prices at nothing. Prices are relative
+/// weights; the pool is the absolute scale. Nothing is ever quoted that the
+/// pool does not hold.
+pub fn price(mag: &[u64; 4], surface: &[u64; 4], pool: &[u64; 4]) -> [u64; 4] {
+    std::array::from_fn(|l| {
+        if mag[l] == 0 || pool[l] == 0 {
+            return 0;
+        }
+        let book = surface[l].max(mag[l]) as u128;
+        ((pool[l] as u128 * mag[l] as u128 + book - 1) / book) as u64
+    })
 }
 
 /// The chronometric anchor of a ledger entry: (K-step, chain head hash).
@@ -647,7 +658,7 @@ mod tests {
         t.enroll([1; 32], Tier::Founder, (0, [0; 32]));
         let tension = [4u64, 2, 0, 1];
         let surface = [1_000u64, 1_000, 1_000, 1_000];
-        let priced = price(&tension, &surface);
+        let priced = price(&tension, &surface, &t.pool());
         let paid = t.settle_solve([1; 32], tension, (1, [9; 32]));
         assert!(descends(&[0; 4], &paid), "a first verified solve settles μ⃗ ≻ 0");
         assert!(
@@ -655,8 +666,9 @@ mod tests {
             "the float law never inflates the registered tension: paid {paid:?} tension {tension:?}"
         );
         assert!(
-            priced.iter().zip(tension).any(|(p, m)| *p > m),
-            "surface pricing would have inflated; the solve path must not"
+            priced.iter().zip(t.pool()).all(|(p, c)| *p <= c),
+            "the price is a share of the pool: never more than the lane's capacity, priced {priced:?} pool {:?}",
+            t.pool()
         );
         assert_eq!(t.entries().iter().filter(|e| e.kind == "solve").count(), 1);
     }
