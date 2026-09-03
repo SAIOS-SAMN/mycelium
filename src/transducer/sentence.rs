@@ -121,17 +121,24 @@ pub fn pieces(chain: &[Cell]) -> Vec<Vec<Cell>> {
 /// over two orderings of the same support. `cells` must be sorted and
 /// deduplicated; the pairs are indices into it.
 pub fn incidence(cells: &[Cell]) -> Vec<(usize, usize)> {
+    let positions: Vec<(i64, i64)> = cells.iter().map(|c| (c.0, c.1)).collect();
+    incidence_of(&positions)
+}
+
+/// The incidence of a support given as positions in row order (sorted,
+/// deduplicated): the same two linear passes, for any carrier of cells.
+pub fn incidence_of(positions: &[(i64, i64)]) -> Vec<(usize, usize)> {
     let mut edges = Vec::new();
-    for i in 1..cells.len() {
-        let (p, q) = (cells[i - 1], cells[i]);
+    for i in 1..positions.len() {
+        let (p, q) = (positions[i - 1], positions[i]);
         if p.0 == q.0 && p.1 + 1 == q.1 {
             edges.push((i - 1, i));
         }
     }
-    let mut by_column: Vec<usize> = (0..cells.len()).collect();
-    by_column.sort_unstable_by_key(|&i| (cells[i].1, cells[i].0));
+    let mut by_column: Vec<usize> = (0..positions.len()).collect();
+    by_column.sort_unstable_by_key(|&i| (positions[i].1, positions[i].0));
     for w in by_column.windows(2) {
-        let (p, q) = (cells[w[0]], cells[w[1]]);
+        let (p, q) = (positions[w[0]], positions[w[1]]);
         if p.1 == q.1 && p.0 + 1 == q.0 {
             edges.push((w[0], w[1]));
         }

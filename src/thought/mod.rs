@@ -35,7 +35,7 @@ pub mod strokes {
 
     /// DESCEND: a comprehended transport is realized on a new scene — the
     /// bodies carried and rendered onto the sensor's frame, or refused.
-    pub fn descend(transport: &crate::transducer::family::Transport, scene: &crate::transducer::family::Grid) -> Option<crate::transducer::family::Grid> {
+    pub fn descend(transport: &crate::transducer::family::Transport, scene: &crate::transducer::family::Grid) -> Option<crate::transducer::family::Speech> {
         crate::transducer::family::speak(transport, scene)
     }
 

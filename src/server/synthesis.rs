@@ -272,7 +272,7 @@ pub fn adopt(
         sub.sub(),
         None,
     );
-    if sentence.is_closed() && !sentence.cites.is_empty() {
+    if let ([], [], [_, ..]) = (sentence.residual.as_slice(), sentence.punctures.as_slice(), sentence.cites.as_slice()) {
         return Adoption::Derivable;
     }
     let Ok(mut g) = k.lock() else { return Adoption::Refused("kernel unavailable") };

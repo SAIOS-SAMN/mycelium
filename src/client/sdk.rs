@@ -392,19 +392,19 @@ impl Epigenome {
     /// false when the expressed vocabulary already speaks it (the same body
     /// under a transport) — a claim already made, not to be made again.
     pub fn express(&mut self, residual: &[(i64, i64, u8, u8)]) -> bool {
-        if residual.is_empty() {
+        if let [] = residual {
             return false;
         }
-        let known = {
+        let located = {
             let expressed = &self.expressed;
             let shapes = &self.expressed_shapes;
             let shape_at = |i: usize| {
                 shapes.get(i).and_then(|c| c.get_or_init(|| crate::transducer::element::shape_of_chain(expressed[i].sub())).as_ref())
             };
-            crate::transducer::sentence::deconstruct(expressed, &self.expressed_atlas, &shape_at, residual, None).is_closed()
+            crate::transducer::sentence::deconstruct(expressed, &self.expressed_atlas, &shape_at, residual, None)
         };
-        if known {
-            return false;
+        if let ([], []) = (located.residual.as_slice(), located.punctures.as_slice()) {
+            return false; // already spoken: the same body under a transport
         }
         let word = crate::transducer::element::from_residual(&residual.to_vec());
         self.expressed_atlas.admit(&crate::transducer::stalk::invariant(word.sub()), self.expressed.len());
@@ -484,8 +484,10 @@ impl Epigenome {
         // Located through the atlas and the versor, never searched. A taught
         // word is one piece: one stroke locates it.
         let located = self.locate(utterance.sub(), None);
-        match located.is_closed() {
-            true => {
+        // The remainder decides: no residual and no fiber to deepen is the
+        // understood arm; anything left over is the novelty, measured.
+        match (located.residual.len(), located.punctures.len()) {
+            (0, 0) => {
                 let sentence: Vec<usize> = located.cites.into_iter().map(|(i, _, _)| i).collect();
                 for &w in &sentence {
                     if let Some(x) = self.expression.get_mut(w) {
@@ -500,7 +502,7 @@ impl Epigenome {
                 }
                 Comprehension::Understood(sentence)
             }
-            false => Comprehension::Novel { residual_cells: located.open(self.genome(), utterance.sub()).len() },
+            _ => Comprehension::Novel { residual_cells: located.open(self.genome(), utterance.sub()).len() },
         }
     }
 
@@ -613,6 +615,11 @@ pub struct Entity {
     /// from the hypha's); zero is a glued genome — the condition under which
     /// this entity speaks proofs.
     discordance: usize,
+    /// ČECH AFTER FETCH: the obstructions measured on the fibre when a
+    /// fetched word met the words already held there — (the fetched
+    /// word's address, the transition that did not vanish). The digest
+    /// only indexed the wire; this is the glue, on the elements.
+    obstructions: Vec<([u8; 32], Element)>,
 }
 
 impl Entity {
@@ -623,6 +630,7 @@ impl Entity {
             refine_cursor: 0,
             taught_up: Vec::new(),
             discordance: usize::MAX,
+            obstructions: Vec::new(),
         }
     }
 
@@ -707,8 +715,8 @@ impl Entity {
         let located = self.epigenome.locate(sub.sub(), Some(i));
         let (cites, residual) = (located.cites, located.residual);
         let g = self.epigenome.genome();
-        match (cites.is_empty(), residual.is_empty()) {
-            (false, true) => Some((
+        match (cites.len(), residual.as_slice()) {
+            (1.., []) => Some((
                 g[i].address(),
                 cites
                     .into_iter()
@@ -773,8 +781,38 @@ impl Entity {
         let mut learned = 0usize;
         let body = self.session.speak(request)?;
         for w in dialogue::decode_syllabus_reply(&body).unwrap_or_default() {
+            let mut pos = 0usize;
+            let fetched = Element::from_bytes(&w, &mut pos);
             if self.epigenome.learn(&w).is_some() {
                 learned += 1;
+            }
+            // ČECH AFTER FETCH: the word is glued on the elements, not on
+            // the root that indexed it. Every held word on the same fibre
+            // with a group view is a chart overlapping this one; the
+            // transition between them is the obstruction, and only a
+            // transition with no axis and no chain glues. What does not
+            // vanish is kept as the dialect measured, never discarded.
+            let Some(fetched) = fetched else { continue };
+            if let [] = fetched.axes().as_slice() {
+                continue; // no group view: the additive coboundary has no transition
+            }
+            self.epigenome.atlas();
+            let fibre: Vec<usize> = self.epigenome.atlas.fiber(&crate::transducer::stalk::invariant(fetched.sub())).to_vec();
+            let genome = self.epigenome.genome();
+            for i in fibre {
+                let Some(held) = genome.get(i) else { continue };
+                if held.address() == fetched.address() || held.axes().is_empty() {
+                    continue;
+                }
+                let Some(g) = crate::transducer::cech::transition(held, &fetched) else { continue };
+                match (g.axes().as_slice(), g.sub()) {
+                    ([], []) => {}
+                    _ => {
+                        if !self.obstructions.iter().any(|(a, _)| *a == fetched.address()) {
+                            self.obstructions.push((fetched.address(), g));
+                        }
+                    }
+                }
             }
         }
         // THE OTHER DIRECTION OF THE SHEAF: in a discordant stratum this
@@ -905,6 +943,12 @@ impl Entity {
     }
     /// The discordance measured at the last sync: strata whose roots differ
     /// from the hypha's. Zero is a glued genome.
+    /// The Čech obstructions measured after fetch: fetched words whose
+    /// transition to a held word on the same fibre did not vanish.
+    pub fn obstructions(&self) -> &[([u8; 32], Element)] {
+        &self.obstructions
+    }
+
     pub fn discordance(&self) -> usize {
         self.discordance
     }

@@ -431,7 +431,10 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
     // 5. REPLAY the connection on every pair; the first failure's residual
     // is the demand.
     for (a, b) in family {
-        let spoken = speak(&transport, a);
+        let spoken = speak(&transport, a).and_then(|s| match s.remainder.as_slice() {
+            [] => Some(s.grid()),
+            _ => None,
+        });
         if spoken.as_ref() != Some(b) {
             out.residual = residual_of(spoken.as_ref(), b);
             return out;
@@ -482,10 +485,21 @@ fn gauge_image(sigma: &[(u8, u8)], h: u8) -> Option<u8> {
 /// visited; the output frame is the wire's boundary, so an image cell
 /// outside it is not spoken. The cells come back in canonical order so two
 /// readings compare as sets.
-fn render(body: &Body, v: &Versor, sigma: &[(u8, u8)], fy: (usize, usize)) -> Option<Vec<Cell3>> {
+/// Carry the body's support forward by V, each cell as a blade, and read
+/// the hue of every image cell through the gauge rule. Only the support is
+/// visited; the output frame is the wire's boundary, so an image cell
+/// outside it is not spoken. A cell whose hue has no image under the rule
+/// is not dropped: it rides out as the remainder (in the input's own
+/// coordinates). The spoken cells come back in canonical order so two
+/// readings compare as sets.
+fn render(body: &Body, v: &Versor, sigma: &[(u8, u8)], fy: (usize, usize)) -> Option<(Vec<Cell3>, Vec<Cell3>)> {
     let mut out: Vec<Cell3> = Vec::new();
+    let mut remainder: Vec<Cell3> = Vec::new();
     for &(r, c, h) in &body.cells {
-        let hue = gauge_image(sigma, h)?;
+        let Some(hue) = gauge_image(sigma, h) else {
+            remainder.push((r, c, h));
+            continue;
+        };
         for (i, j) in element::carry_cell(v, r, c)? {
             if i < 0 || j < 0 || i as usize >= fy.0 || j as usize >= fy.1 {
                 continue;
@@ -495,14 +509,38 @@ fn render(body: &Body, v: &Versor, sigma: &[(u8, u8)], fy: (usize, usize)) -> Op
     }
     out.sort_unstable();
     out.dedup();
-    Some(out)
+    Some((out, remainder))
+}
+
+/// What a transport says about a new input: the spoken set of cells on
+/// the output frame, and the remainder — the input cells whose hue the
+/// rules give no image, carried out unspoken rather than dropped. The
+/// frame is the wire's rectangle; the speech itself is a set.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Speech {
+    pub frame: (usize, usize),
+    pub cells: Vec<Cell3>,
+    pub remainder: Vec<Cell3>,
+}
+
+impl Speech {
+    /// The wire form: the spoken set laid on the frame's rectangle. Only
+    /// here does a rectangle exist; an unspoken cell reads as the ground.
+    pub fn grid(&self) -> Grid {
+        let mut out: Grid = vec![vec![0u8; self.frame.1]; self.frame.0];
+        for &(r, c, h) in &self.cells {
+            out[r as usize][c as usize] = h;
+        }
+        out
+    }
 }
 
 /// SPEAK a test input through the connection. None when the output frame
-/// is not integral, a body has no rule, a hue has no image under its rule,
-/// the rule's readings render differently, or two carried bodies disagree
-/// on a cell — refusal, never a guess.
-pub fn speak(t: &Transport, x: &Grid) -> Option<Grid> {
+/// is not integral, a body has no rule, the rule's readings render
+/// differently, or two carried bodies disagree on a cell — refusal, never
+/// a guess. A hue with no image is not a refusal: it is the remainder on
+/// the speech.
+pub fn speak(t: &Transport, x: &Grid) -> Option<Speech> {
     let fx = frame_of(x);
     let ((hn, hd), (wn, wd)) = t.ratio;
     if fx.0 == 0 || fx.1 == 0 || (fx.0 * hn) % hd.max(1) != 0 || (fx.1 * wn) % wd.max(1) != 0 {
@@ -510,24 +548,14 @@ pub fn speak(t: &Transport, x: &Grid) -> Option<Grid> {
     }
     let fy = (fx.0 * hn / hd.max(1), fx.1 * wn / wd.max(1));
     let (cx, cy) = (scene_center(fx), scene_center(fy));
-    let mut out: Grid = vec![vec![0u8; fy.1]; fy.0];
-    let paint = |out: &mut Grid, r: i64, c: i64, h: u8| -> bool {
-        if r < 0 || c < 0 || r as usize >= fy.0 || c as usize >= fy.1 {
-            return false;
-        }
-        let cell = &mut out[r as usize][c as usize];
-        if *cell != 0 && *cell != h {
-            return false;
-        }
-        *cell = h;
-        true
-    };
+    let mut cells: Vec<Cell3> = Vec::new();
+    let mut remainder: Vec<Cell3> = Vec::new();
     for body in perceive(x) {
         if t.removed.contains(&body.moduli) {
             continue;
         }
         let rule = t.rules.iter().find(|r| r.moduli == body.moduli)?;
-        let mut spoken: Option<Vec<Cell3>> = None;
+        let mut spoken: Option<(Vec<Cell3>, Vec<Cell3>)> = None;
         for (reading, u) in &rule.readings {
             let shifted = (&body.centroid.0 + &rule.shift.0, &body.centroid.1 + &rule.shift.1);
             let v = match *reading {
@@ -537,21 +565,19 @@ pub fn speak(t: &Transport, x: &Grid) -> Option<Grid> {
                 3 => read_out(u, &cx, &shifted),
                 _ => read_out(u, &body.centroid, &cy),
             };
-            let cells = render(&body, &v, &rule.sigma, fy)?;
+            let rendered = render(&body, &v, &rule.sigma, fy)?;
             match &spoken {
-                None => spoken = Some(cells),
+                None => spoken = Some(rendered),
                 Some(held) => {
-                    if *held != cells {
+                    if *held != rendered {
                         return None; // the readings disagree on this body: no speech
                     }
                 }
             }
         }
-        for (r, c, h) in spoken? {
-            if !paint(&mut out, r, c, h) {
-                return None;
-            }
-        }
+        let (said, unsaid) = spoken?;
+        cells.extend(said);
+        remainder.extend(unsaid);
     }
     for creation in &t.created {
         for &(r, c, h) in &creation.cells {
@@ -566,12 +592,20 @@ pub fn speak(t: &Transport, x: &Grid) -> Option<Grid> {
                     (dr.to_integer().try_into().unwrap_or(i64::MAX), dc.to_integer().try_into().unwrap_or(i64::MAX))
                 }
             };
-            if !paint(&mut out, rr, cc, h) {
-                return None;
+            if rr < 0 || cc < 0 || rr as usize >= fy.0 || cc as usize >= fy.1 {
+                return None; // a creation outside the frame: no speech
             }
+            cells.push((rr, cc, h));
         }
     }
-    Some(out)
+    // Two bodies speaking different hues on one cell contradict: refusal.
+    cells.sort_unstable();
+    cells.dedup();
+    if cells.windows(2).any(|w| (w[0].0, w[0].1) == (w[1].0, w[1].1)) {
+        return None;
+    }
+    remainder.sort_unstable();
+    Some(Speech { frame: fy, cells, remainder })
 }
 
 #[cfg(test)]
@@ -605,9 +639,12 @@ mod tests {
         assert_eq!(readings, vec![0, 1, 2], "a constant shift agrees in the scene, frame, and body readings; the mixed anchors move with the body");
         assert_eq!(t.rules[0].sigma, vec![(1, 2)]);
         let x = grid(&["0000", "0000", "1100"]);
-        assert_eq!(speak(&t, &x), Some(grid(&["0000", "0000", "0022"])));
-        // A hue the family never showed has no image: silence, not a guess.
-        assert_eq!(speak(&t, &grid(&["0000", "0000", "3300"])), None);
+        assert_eq!(speak(&t, &x).map(|s| s.grid()), Some(grid(&["0000", "0000", "0022"])));
+        // A hue the family never showed has no image: it rides out as the
+        // remainder of the speech, never a guess and never dropped.
+        let unsaid = speak(&t, &grid(&["0000", "0000", "3300"])).expect("spoken with a remainder");
+        assert!(unsaid.cells.is_empty());
+        assert_eq!(unsaid.remainder, vec![(2, 0, 3), (2, 1, 3)]);
         // A body mirrored in place: the reflection axis moves with the body,
         // so the transport agrees only about the bodies' own centroids.
         let family = vec![
@@ -619,7 +656,7 @@ mod tests {
         let t = c.transport.expect("comprehended");
         let readings: Vec<usize> = t.rules[0].readings.iter().map(|(r, _)| *r).collect();
         assert_eq!(readings, vec![2], "read about the body's centroid only");
-        assert_eq!(speak(&t, &grid(&["000", "100", "110"])), Some(grid(&["000", "010", "110"])));
+        assert_eq!(speak(&t, &grid(&["000", "100", "110"])).map(|s| s.grid()), Some(grid(&["000", "010", "110"])));
         // Dilation: a 2×2 scene becomes 4×4, every body doubled about the origin.
         let family = vec![
             (grid(&["10", "00"]), grid(&["1100", "1100", "0000", "0000"])),
@@ -630,7 +667,7 @@ mod tests {
         let t = c.transport.expect("comprehended");
         assert_eq!(t.ratio, ((2, 1), (2, 1)));
         assert!(t.rules[0].readings.iter().any(|(r, _)| *r == 0), "read in the scene's own coordinates");
-        assert_eq!(speak(&t, &grid(&["30", "00"])), Some(grid(&["3300", "3300", "0000", "0000"])));
+        assert_eq!(speak(&t, &grid(&["30", "00"])).map(|s| s.grid()), Some(grid(&["3300", "3300", "0000", "0000"])));
     }
 
     /// A family whose rule depends on something the connection does not

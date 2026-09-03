@@ -218,29 +218,22 @@ pub fn lift(comp: &[(i64, i64, u8)], time_index: i64) -> Blade {
 /// Two cells join iff they are orthogonally adjacent, regardless of hue (the
 /// object is a shape; the relabel is read afterward as `Δ𝒢`).
 pub fn components(cells: &[(i64, i64, u8)]) -> Vec<Vec<(i64, i64, u8)>> {
-    let n = cells.len();
-    let mut visited = vec![false; n];
-    let mut out: Vec<Vec<(i64, i64, u8)>> = Vec::new();
-    for start in 0..n {
-        if visited[start] {
-            continue;
+    // The support in row order; its 1-skeleton read off the ordering
+    // (sentence::incidence_of), never a distance test against every cell.
+    let mut sorted: Vec<(i64, i64, u8)> = cells.to_vec();
+    sorted.sort_unstable();
+    sorted.dedup_by_key(|c| (c.0, c.1));
+    let positions: Vec<(i64, i64)> = sorted.iter().map(|c| (c.0, c.1)).collect();
+    let edges = super::sentence::incidence_of(&positions);
+    let roots = super::sentence::components(sorted.len(), &edges);
+    let mut out: Vec<(usize, Vec<(i64, i64, u8)>)> = Vec::new();
+    for (i, cell) in sorted.into_iter().enumerate() {
+        match out.iter_mut().find(|(r, _)| *r == roots[i]) {
+            Some((_, comp)) => comp.push(cell),
+            None => out.push((roots[i], vec![cell])),
         }
-        let mut comp: Vec<(i64, i64, u8)> = Vec::new();
-        let mut stack = vec![start];
-        visited[start] = true;
-        while let Some(i) = stack.pop() {
-            let (r, c, _) = cells[i];
-            comp.push(cells[i]);
-            for (j, &(rj, cj, _)) in cells.iter().enumerate() {
-                if !visited[j] && (r - rj).abs() + (c - cj).abs() == 1 {
-                    visited[j] = true;
-                    stack.push(j);
-                }
-            }
-        }
-        out.push(comp);
     }
-    out
+    out.into_iter().map(|(_, comp)| comp).collect()
 }
 
 /// Transduce a whole scene: segment into components, lift each to a blade at

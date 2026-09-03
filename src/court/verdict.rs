@@ -73,15 +73,16 @@ pub enum Ruling {
     /// false speech, the failed axis named.
     Slashed(&'static str),
     /// The federated view and the spoken view are one sheaf: the Čech
-    /// obstruction on their overlap is the identity — cross-instance
-    /// consilience, the strongest confluence witness.
-    Consilient,
+    /// obstruction on their overlap has no axis and no chain — the identity
+    /// element rides the arm. Cross-instance consilience, the strongest
+    /// confluence witness.
+    Consilient(Element),
     /// Two views of one object that do not glue — a dialect, recorded and
     /// never punished. The obstruction rides the arm: the holonomy element
     /// (a group view-change, or the triangle's composite) when the views
-    /// are group elements; None when the overlap is only the additive
-    /// coboundary (chains that differ, no group view to compare).
-    Dialect(Option<Element>),
+    /// are group elements; the symmetric difference of the chains, as a
+    /// residual word, when the overlap is only the additive coboundary.
+    Dialect(Element),
     /// New address, a placement of a federated base geometry — the bundle
     /// connects: `base` indexes the federation entry and `g` is the
     /// transport carrying the word into the base frame. The word attaches as
@@ -98,7 +99,7 @@ impl Ruling {
         match self {
             Ruling::Slashed(_) => dialogue::RULING_SLASHED,
             Ruling::Attached { .. } => dialogue::RULING_ATTACHED,
-            Ruling::Consilient | Ruling::Dialect(_) | Ruling::Admitted(_) => dialogue::RULING_UPHELD,
+            Ruling::Consilient(_) | Ruling::Dialect(_) | Ruling::Admitted(_) => dialogue::RULING_UPHELD,
         }
     }
 
@@ -106,9 +107,8 @@ impl Ruling {
     pub fn reason(&self) -> &'static str {
         match self {
             Ruling::Slashed(r) => r,
-            Ruling::Consilient => "federated consilience: the overlap glues",
-            Ruling::Dialect(Some(_)) => "dialect: the holonomy on the overlap is recorded",
-            Ruling::Dialect(None) => "dialect: the chains differ on the additive coboundary",
+            Ruling::Consilient(_) => "federated consilience: the overlap glues",
+            Ruling::Dialect(_) => "dialect: the obstruction on the overlap is recorded",
             Ruling::Attached { .. } => "+axis: attached as a section of the base",
             Ruling::Admitted(_) => "extends the tautology",
         }
@@ -154,22 +154,27 @@ pub fn rule(
             // dialect, carried on the arm and never punished. A held view
             // with no group axis has only the additive coboundary to
             // compare: the chains themselves.
-            let group_view = match held.axes().is_empty() {
-                true => None,
-                false => cech::transition(held, spoken),
+            let group_view = match held.axes().as_slice() {
+                [] => None,
+                _ => cech::transition(held, spoken),
             };
-            match group_view {
-                None => match held.sub() == spoken.sub() {
-                    true => Ruling::Consilient,
-                    false => Ruling::Dialect(None),
-                },
+            let obstruction = match group_view {
+                // The additive coboundary: the symmetric difference of the
+                // two chains, carried as a residual word (empty = one sheaf).
+                None => {
+                    let diff = symmetric_difference(held.sub(), spoken.sub());
+                    match diff.as_slice() {
+                        [] => Element::identity(spoken.dim()),
+                        _ => element::from_residual(&diff),
+                    }
+                }
                 Some(g) => {
                     let third = stalks
                         .fiber(&stalk::invariant(spoken.sub()))
                         .iter()
                         .copied()
                         .find(|&i| federation[i].0 != *addr && !federation[i].1.axes().is_empty());
-                    let obstruction = match third {
+                    match third {
                         Some(i) => {
                             let z = &federation[i].1;
                             match (cech::transition(spoken, z), cech::transition(z, held)) {
@@ -178,12 +183,14 @@ pub fn rule(
                             }
                         }
                         None => g,
-                    };
-                    match obstruction.is_identity() {
-                        true => Ruling::Consilient,
-                        false => Ruling::Dialect(Some(obstruction)),
                     }
                 }
+            };
+            // δg = 0 read on the element itself: no axis and no chain is
+            // the identity, one sheaf; anything else is the dialect.
+            match (obstruction.axes().as_slice(), obstruction.sub()) {
+                ([], []) => Ruling::Consilient(obstruction),
+                _ => Ruling::Dialect(obstruction),
             }
         }
         None => {
@@ -207,6 +214,32 @@ pub fn rule(
             }
         }
     }
+}
+
+/// The symmetric difference of two canonically ordered chains — one merge
+/// walk, never a lookup: the cells one view speaks and the other does not.
+fn symmetric_difference(a: &[(i64, i64, u8, u8)], b: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64, u8, u8)> {
+    let (mut i, mut j) = (0usize, 0usize);
+    let mut out = Vec::new();
+    while i < a.len() && j < b.len() {
+        match a[i].cmp(&b[j]) {
+            std::cmp::Ordering::Less => {
+                out.push(a[i]);
+                i += 1;
+            }
+            std::cmp::Ordering::Greater => {
+                out.push(b[j]);
+                j += 1;
+            }
+            std::cmp::Ordering::Equal => {
+                i += 1;
+                j += 1;
+            }
+        }
+    }
+    out.extend_from_slice(&a[i..]);
+    out.extend_from_slice(&b[j..]);
+    out
 }
 
 /// π* derivation from a pooled evidence family: the first anchor term
@@ -263,7 +296,7 @@ mod tests {
         // Same address, same substance: consilience (no re-admission).
         let fed = vec![(addr, w.clone())];
         let stalks = stalks_of(&fed);
-        assert_eq!(rule(&fed, &stalks, &addr, Some(&w), None), Ruling::Consilient);
+        assert!(matches!(rule(&fed, &stalks, &addr, Some(&w), None), Ruling::Consilient(_)));
         assert_eq!(rule(&fed, &stalks, &addr, Some(&w), None).code(), dialogue::RULING_UPHELD);
         // Different address, identical base geometry: attached (+axis) by
         // the identity transport.

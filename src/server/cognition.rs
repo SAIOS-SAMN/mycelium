@@ -415,9 +415,11 @@ pub fn normal_form(language: &Language, chain: &[(i64, i64, u8, u8)], exclude: O
         chain,
         exclude,
     );
-    match sentence.is_closed() {
-        true => NormalForm::Decomposed(sentence.cites.iter().map(|(i, _, _)| *i).collect()),
-        false => NormalForm::Irreducible(element::from_residual(&sentence.open(&language.words, chain))),
+    // The remainder decides as chains: an empty residual and no fiber to
+    // deepen is the closed arm; anything left over is the demand.
+    match (sentence.residual.as_slice(), sentence.punctures.as_slice()) {
+        ([], []) => NormalForm::Decomposed(sentence.cites.iter().map(|(i, _, _)| *i).collect()),
+        _ => NormalForm::Irreducible(element::from_residual(&sentence.open(&language.words, chain))),
     }
 }
 
@@ -768,7 +770,7 @@ impl Kernel {
         let anchor = self.anchor();
         let lanes = listing.lanes();
         let mag = listing.magnitude();
-        if residual.is_empty() {
+        if let [] = residual.as_slice() {
             let paid = self.treasury.settle_subsidy(voice, crate::economy::price(&before, &surface), anchor);
             for addr in cited {
                 if let Some(i) = self.basis.iter().position(|t| t.address() == *addr) {
@@ -1071,8 +1073,8 @@ impl Kernel {
             return None;
         }
         let residual = crate::transducer::sentence::verify_utterance(cites, sub.sub());
-        match (residual.is_empty(), resolved.is_empty()) {
-            (true, false) => {
+        match (residual.as_slice(), resolved.len()) {
+            ([], 1..) => {
                 let saved = candidate.magnitude();
                 let surface = crate::economy::yield_surface(&self.physics);
                 let mu = crate::economy::price(&saved, &surface);
@@ -2606,14 +2608,14 @@ pub fn reduce_proven(
     // the missing generator, listed as the demand.
     let residual = crate::transducer::sentence::verify_utterance(cites, sub.sub());
     let resolved = resolve_cites(language, cites, sub.sub());
-    let form = match (residual.is_empty(), resolved.len() == cites.len()) {
-        (true, true) => NormalForm::Decomposed(resolved.iter().map(|(i, _, _)| *i).collect()),
-        (true, false) => {
+    let form = match (residual.as_slice(), resolved.len() == cites.len()) {
+        ([], true) => NormalForm::Decomposed(resolved.iter().map(|(i, _, _)| *i).collect()),
+        ([], false) => {
             let named: Vec<[u8; 32]> = resolved.iter().map(|(i, _, _)| language.words[*i].address()).collect();
             let missing = cites.iter().find(|(a, _, _, _)| !named.contains(a)).map(|(_, _, _, body)| body.clone()).unwrap_or_default();
             NormalForm::Irreducible(element::from_residual_framed(&missing, frame))
         }
-        (false, _) => NormalForm::Irreducible(element::from_residual_framed(&residual, frame)),
+        ([_, ..], _) => NormalForm::Irreducible(element::from_residual_framed(&residual, frame)),
     };
     Reduction { germ: g, ctx, form, qs: Vec::new(), language: std::sync::Arc::clone(language), listing }
 }

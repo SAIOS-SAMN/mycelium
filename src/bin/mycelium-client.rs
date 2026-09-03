@@ -215,10 +215,15 @@ fn main() {
                             if y.is_empty() {
                                 continue; // withheld output: nothing to score against
                             }
-                            if let Some(guess) = mycelium::transducer::family::speak(&transport, x) {
-                                projected += 1;
-                                if guess == *y {
-                                    proj_solved += 1;
+                            if let Some(speech) = mycelium::transducer::family::speak(&transport, x) {
+                                match speech.remainder.as_slice() {
+                                    [] => {
+                                        projected += 1;
+                                        if speech.grid() == *y {
+                                            proj_solved += 1;
+                                        }
+                                    }
+                                    unsaid => eprintln!("[{name}] speech left {} cells unspoken (hues without an image)", unsaid.len()),
                                 }
                             }
                         }
@@ -312,7 +317,7 @@ fn main() {
                     // Two utterances at most: the sentence settles the
                     // listing; a residual not yet claimed is attested once
                     // as this voice's irreducible claim.
-                    if cites.is_empty() && residual.is_empty() {
+                    if let (0, []) = (cites.len(), residual.as_slice()) {
                         n_silent += 1;
                         continue;
                     }
@@ -345,7 +350,7 @@ fn main() {
                     // memory of having said it. A familiar residual is one this
                     // genome already expressed — said again for the quorum.
                     let _ = familiar;
-                    if !residual.is_empty() {
+                    if let [_, ..] = residual.as_slice() {
                         match entity.attest(&residual, &cites) {
                             Ok(reply) => {
                                 n_attested += 1;
@@ -411,7 +416,15 @@ fn main() {
             match comprehended.transport {
                 Some(transport) => {
                     let outs: Vec<Option<Vec<Vec<u8>>>> =
-                        tests.iter().map(|x| mycelium::transducer::family::speak(&transport, x)).collect();
+                        tests
+                            .iter()
+                            .map(|x| {
+                                mycelium::transducer::family::speak(&transport, x).and_then(|s| match s.remainder.as_slice() {
+                                    [] => Some(s.grid()),
+                                    _ => None, // an unspoken hue is not submitted as a guess
+                                })
+                            })
+                            .collect();
                     if !tests.is_empty() && outs.iter().all(|o| o.is_some()) {
                         let outs: Vec<Vec<Vec<u8>>> = outs.into_iter().flatten().collect();
                         if let Ok((code, _mu)) = entity.submit_solve(&tid, &outs) {
@@ -524,12 +537,13 @@ fn main() {
                 last_genome = entity.epigenome.genome_len();
                 last_settles = settles;
                 eprintln!(
-                    "[{name}] [{}] K {k_step} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | refined {refined} learned {learned} | genome {} (peak expr {}) discordance {}",
+                    "[{name}] [{}] K {k_step} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | refined {refined} learned {learned} | genome {} (peak expr {}) discordance {} obstructions {}",
                     tuniversal.stamp(),
                     entity.impedance(),
                     entity.epigenome.genome_len(),
                     entity.epigenome.peak_expression(),
                     entity.discordance(),
+                    entity.obstructions().len(),
                 );
             }
             while physics.depleted() {
