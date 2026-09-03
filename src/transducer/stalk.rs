@@ -27,6 +27,7 @@
 //! search over the manifold.
 
 use super::element::{self, Versor};
+use crate::network::nerve::Keyed;
 
 /// A chain cell: (row, col, hue before, hue after).
 type Cell = (i64, i64, u8, u8);
@@ -50,10 +51,24 @@ pub fn invariant(chain: &[Cell]) -> Invariant {
 
 /// One stratum of the atlas: the branches refine by the next axis of the
 /// chart; the members are the indices whose chart ends here.
+/// The branches are a keyed relation over the axis value: the next chart
+/// coordinate is read by its bits, never scanned among siblings.
 #[derive(Debug, Clone, Default)]
 struct Stratum {
-    branches: Vec<(u64, Stratum)>,
+    branches: Keyed<Stratum>,
     members: Vec<usize>,
+}
+
+/// An axis value as a key: the coordinate's bytes, big-endian, so the
+/// trie's order is the axis's order.
+fn axis_key(a: u64) -> [u8; 32] {
+    let mut k = [0u8; 32];
+    k[24..].copy_from_slice(&a.to_be_bytes());
+    k
+}
+
+fn axis_of(key: &[u8; 32]) -> u64 {
+    u64::from_be_bytes(key[24..].try_into().unwrap())
 }
 
 impl Stratum {
@@ -61,14 +76,11 @@ impl Stratum {
         match axes.split_first() {
             None => self.members.push(index),
             Some((&a, rest)) => {
-                let branch = match self.branches.iter().position(|(v, _)| *v == a) {
-                    Some(p) => &mut self.branches[p].1,
-                    None => {
-                        self.branches.push((a, Stratum::default()));
-                        &mut self.branches.last_mut().unwrap().1
-                    }
-                };
-                branch.admit(rest, index);
+                let key = axis_key(a);
+                if !self.branches.contains(&key) {
+                    self.branches.insert(key, Stratum::default());
+                }
+                self.branches.get_mut(&key).unwrap().admit(rest, index);
             }
         }
     }
@@ -76,13 +88,12 @@ impl Stratum {
     fn fiber(&self, axes: &[u64]) -> &[usize] {
         match axes.split_first() {
             None => &self.members,
-            Some((&a, rest)) => self
-                .branches
-                .iter()
-                .find(|(v, _)| *v == a)
-                .map(|(_, s)| s.fiber(rest))
-                .unwrap_or(&[]),
+            Some((&a, rest)) => self.branches.get(&axis_key(a)).map(|s| s.fiber(rest)).unwrap_or(&[]),
         }
+    }
+
+    fn is_empty(&self) -> bool {
+        self.members.is_empty() && self.branches.entries().is_empty()
     }
 
     /// Drop the member at `index`; every higher index shifts down by one
@@ -94,22 +105,26 @@ impl Stratum {
                 *m -= 1;
             }
         }
-        for (_, s) in self.branches.iter_mut() {
+        let keys: Vec<[u8; 32]> = self.branches.entries().into_iter().map(|(k, _)| *k).collect();
+        for key in keys {
+            let s = self.branches.get_mut(&key).unwrap();
             s.remove(index);
+            if s.is_empty() {
+                self.branches.remove(&key);
+            }
         }
-        self.branches.retain(|(_, s)| !s.members.is_empty() || !s.branches.is_empty());
     }
 
     fn len(&self) -> usize {
-        self.members.len() + self.branches.iter().map(|(_, s)| s.len()).sum::<usize>()
+        self.members.len() + self.branches.entries().iter().map(|(_, s)| s.len()).sum::<usize>()
     }
 
     fn strata(&self, path: &mut Vec<u64>, out: &mut Vec<(Invariant, Vec<usize>)>) {
         if !self.members.is_empty() {
             out.push((Invariant(path.clone()), self.members.clone()));
         }
-        for (v, s) in &self.branches {
-            path.push(*v);
+        for (k, s) in self.branches.entries() {
+            path.push(axis_of(k));
             s.strata(path, out);
             path.pop();
         }

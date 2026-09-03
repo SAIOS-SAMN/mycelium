@@ -9,7 +9,7 @@
 use mycelium::anastome::dialogue;
 use mycelium::cognition::{decode_percept, outcome_code, Kernel, Outcome};
 use mycelium::economy::Tier;
-use mycelium::network::nerve::{Fingerprint, Router};
+use mycelium::network::nerve::Router;
 use mycelium::network::wire::Frame;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
@@ -420,18 +420,6 @@ fn main() {
             reg.len(),
             reg.unsolved(),
         );
-    }
-    // Register peers into the nerve — the non-ring Čech cover of hyphas. (Real
-    // per-lane fingerprints arrive with sun_recon/P6; here presence + a seeded
-    // bloom so adjacency is genuine, not a static ring.)
-    {
-        let mut k = kernel.lock().unwrap();
-        for p in &peers {
-            let pid = id_of(p);
-            let mut bloom = [0u8; 32];
-            bloom[(pid[0] as usize) % 32] |= 1 << (pid[1] % 8);
-            k.nerve.observe(pid, Fingerprint { beta1: [0; 4], bloom });
-        }
     }
     // The XOR routing trie — O(bits) rendezvous lookup, built once (rebuilt on
     // discovery churn later). No per-demand peer scan.

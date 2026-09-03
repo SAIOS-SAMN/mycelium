@@ -9,7 +9,6 @@
 //! motor digest below is a WIRE identity for matching receipts, never reasoned on.
 
 use crate::network::consensus::{Admission, Receipt};
-use crate::network::nerve::Nerve;
 use crate::transducer::blade::{components, lift};
 use crate::transducer::element::{self, Element};
 use crate::transducer::germinate::germinate;
@@ -535,7 +534,6 @@ pub struct Kernel {
     /// The k-step at which each provisional word was installed — the
     /// coordinate a court's "since" is read against.
     provisional_k: crate::network::nerve::Keyed<u64>,
-    pub nerve: Nerve,
     /// Round-robin cursor for syntropic optimization — which generator to test for
     /// redundancy next (bounds consolidation to one reduce per depleted step).
     optimize_cursor: usize,
@@ -2268,67 +2266,53 @@ pub fn cover(
     }
     let mut cells: Vec<(i64, i64, u8, u8)> = rg.to_vec();
     cells.sort_unstable();
-    let at = |r: i64, c: i64| cells.binary_search_by(|x| (x.0, x.1).cmp(&(r, c))).ok();
-    // Components under 4-adjacency (union-find over the sorted support).
-    let mut parent: Vec<usize> = (0..cells.len()).collect();
-    for (i, &(r, c, _, _)) in cells.iter().enumerate() {
-        for (dr, dc) in [(0i64, 1i64), (1, 0)] {
-            if let Some(j) = at(r + dr, c + dc) {
-                let (ri, rj) = (
-                    crate::transducer::spectral::find(&mut parent, i),
-                    crate::transducer::spectral::find(&mut parent, j),
-                );
-                if ri != rj {
-                    parent[ri] = rj;
-                }
-            }
-        }
-    }
-    let mut components: Vec<(usize, Vec<(i64, i64, u8, u8)>)> = Vec::new();
+    cells.dedup();
+    // The support's 1-skeleton, read off the support (sentence::incidence);
+    // its components are the disjoint pieces.
+    let edges = crate::transducer::sentence::incidence(&cells);
+    let roots = crate::transducer::sentence::components(cells.len(), &edges);
+    let mut components: Vec<(usize, Vec<usize>)> = Vec::new();
     for i in 0..cells.len() {
-        let root = crate::transducer::spectral::find(&mut parent, i);
-        match components.iter_mut().find(|(r, _)| *r == root) {
-            Some((_, piece)) => piece.push(cells[i]),
-            None => components.push((root, vec![cells[i]])),
+        match components.iter_mut().find(|(r, _)| *r == roots[i]) {
+            Some((_, piece)) => piece.push(i),
+            None => components.push((roots[i], vec![i])),
         }
     }
     // A component wider than the carrier opens along its gauge classes.
-    let mut pieces: Vec<Vec<(i64, i64, u8, u8)>> = Vec::new();
+    let mut pieces: Vec<Vec<usize>> = Vec::new();
     for (_, component) in components {
         if component.len() <= capacity {
             pieces.push(component);
             continue;
         }
-        let mut classes: Vec<((u8, u8), Vec<(i64, i64, u8, u8)>)> = Vec::new();
-        for cell in component {
-            let key = (cell.2, cell.3);
+        let mut classes: Vec<((u8, u8), Vec<usize>)> = Vec::new();
+        for i in component {
+            let key = (cells[i].2, cells[i].3);
             match classes.iter_mut().find(|(k, _)| *k == key) {
-                Some((_, piece)) => piece.push(cell),
-                None => classes.push((key, vec![cell])),
+                Some((_, piece)) => piece.push(i),
+                None => classes.push((key, vec![i])),
             }
         }
         classes.sort_by_key(|(k, _)| *k);
         pieces.extend(classes.into_iter().map(|(_, p)| p));
     }
-    // The ribbons: every cell 4-adjacent to a cell of another piece.
+    // The ribbons: every cell sharing an edge of the 1-skeleton with a cell
+    // of another piece — read off the incidence, never by probing neighbours.
     let mut owner: Vec<usize> = vec![0; cells.len()];
     for (pi, piece) in pieces.iter().enumerate() {
-        for cell in piece {
-            if let Some(i) = at(cell.0, cell.1) {
-                owner[i] = pi;
-            }
+        for &i in piece {
+            owner[i] = pi;
         }
     }
-    let mut ribbon: Vec<(i64, i64, u8, u8)> = Vec::new();
-    for (i, &(r, c, b, a)) in cells.iter().enumerate() {
-        let crosses = [(0i64, 1i64), (0, -1), (1, 0), (-1, 0)]
-            .iter()
-            .filter_map(|(dr, dc)| at(r + dr, c + dc))
-            .any(|j| owner[j] != owner[i]);
-        if crosses {
-            ribbon.push((r, c, b, a));
+    let mut crosses: Vec<bool> = vec![false; cells.len()];
+    for &(i, j) in &edges {
+        if owner[i] != owner[j] {
+            crosses[i] = true;
+            crosses[j] = true;
         }
     }
+    let ribbon: Vec<(i64, i64, u8, u8)> = cells.iter().zip(&crosses).filter(|(_, &x)| x).map(|(c, _)| *c).collect();
+    let pieces: Vec<Vec<(i64, i64, u8, u8)>> = pieces.into_iter().map(|p| p.into_iter().map(|i| cells[i]).collect()).collect();
     (pieces, ribbon)
 }
 

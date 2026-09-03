@@ -477,17 +477,24 @@ fn gauge_image(sigma: &[(u8, u8)], h: u8) -> Option<u8> {
 
 /// Render one body through one transport onto the output frame: the cells
 /// (row, col, hue) it speaks, or None when a hue has no image.
+/// Carry the body's support forward by V, each cell as a blade, and read
+/// the hue of every image cell through the gauge rule. Only the support is
+/// visited; the output frame is the wire's boundary, so an image cell
+/// outside it is not spoken. The cells come back in canonical order so two
+/// readings compare as sets.
 fn render(body: &Body, v: &Versor, sigma: &[(u8, u8)], fy: (usize, usize)) -> Option<Vec<Cell3>> {
-    let inv = v.versor_inverse()?;
     let mut out: Vec<Cell3> = Vec::new();
-    for r in 0..fy.0 as i64 {
-        for c in 0..fy.1 as i64 {
-            let Some(p) = element::carry_center(&inv, r, c) else { continue };
-            let (br, bc) = element::cell_of(&p);
-            let Ok(i) = body.cells.binary_search_by(|x| (x.0, x.1).cmp(&(br, bc))) else { continue };
-            out.push((r, c, gauge_image(sigma, body.cells[i].2)?));
+    for &(r, c, h) in &body.cells {
+        let hue = gauge_image(sigma, h)?;
+        for (i, j) in element::carry_cell(v, r, c)? {
+            if i < 0 || j < 0 || i as usize >= fy.0 || j as usize >= fy.1 {
+                continue;
+            }
+            out.push((i, j, hue));
         }
     }
+    out.sort_unstable();
+    out.dedup();
     Some(out)
 }
 

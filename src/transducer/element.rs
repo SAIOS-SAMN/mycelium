@@ -238,6 +238,38 @@ pub fn carry_center(v: &Versor, r: i64, c: i64) -> Option<(num_rational::BigRati
     crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&x, &y)))
 }
 
+/// Carry a whole cell by V as a blade — its unit square — and read back the
+/// cells whose centers the image square holds: one cell under an
+/// isometry, an s×s block under a dilation by s, the one shared cell (or
+/// none) under a shrink. The support is carried forward; nothing outside
+/// it is visited. None at infinity.
+pub fn carry_cell(v: &Versor, r: i64, c: i64) -> Option<Vec<(i64, i64)>> {
+    let corner = |dr: i64, dc: i64| -> Option<(num_rational::BigRational, num_rational::BigRational)> {
+        let x = num_rational::BigRational::from_integer(BigInt::from(r + dr));
+        let y = num_rational::BigRational::from_integer(BigInt::from(c + dc));
+        crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&x, &y)))
+    };
+    let (p0, p1) = (corner(0, 0)?, corner(1, 1)?);
+    let half = num_rational::BigRational::new(BigInt::from(1), BigInt::from(2));
+    // The cells whose center (i + ½) lies in the half-open image range
+    // [lo, hi): i ≥ ⌈lo − ½⌉ and i + ½ < hi.
+    let span = |a: &num_rational::BigRational, b: &num_rational::BigRational| -> (i64, i64) {
+        let (lo, hi) = if a <= b { (a, b) } else { (b, a) };
+        let first: i64 = (lo - &half).ceil().to_integer().try_into().unwrap_or(i64::MAX);
+        let last: i64 = (hi - &half).ceil().to_integer().try_into().unwrap_or(i64::MIN); // exclusive
+        (first, last)
+    };
+    let (r0, r1) = span(&p0.0, &p1.0);
+    let (c0, c1) = span(&p0.1, &p1.1);
+    let mut out = Vec::new();
+    for i in r0..r1 {
+        for j in c0..c1 {
+            out.push((i, j));
+        }
+    }
+    Some(out)
+}
+
 /// THE PULLBACK of a sibling's assignment onto a base support through the
 /// versor V carrying the sibling onto the base: each base cell's center is
 /// carried back by V⁻¹ to the sibling's frame, and the sibling cell whose

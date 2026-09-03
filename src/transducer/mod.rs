@@ -10,10 +10,13 @@
 // (blade/field/cga); every generator above the substrate framing GERMINATES.
 pub mod cga;
 pub mod blade;
-pub mod field;
 pub mod germinate;
 pub mod element;
-pub mod overlay;
+/// Unmounted organs (2026-09-03 ruling): Čech glue across hyphae (δg = 0 on
+/// the triangle of transitions) and the toroid witness that a torsion cycle
+/// closes. Neither is on the beat yet; the live path substitutes digest
+/// agreement and a filed period. They are missing implementations, not
+/// surplus code.
 pub mod toroid;
 pub mod cech;
 pub mod anchor;

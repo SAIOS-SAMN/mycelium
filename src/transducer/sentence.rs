@@ -102,27 +102,54 @@ pub fn pieces(chain: &[Cell]) -> Vec<Vec<Cell>> {
     let mut cells: Vec<Cell> = chain.to_vec();
     cells.sort_unstable();
     cells.dedup();
-    let at = |r: i64, c: i64| cells.binary_search_by(|x| (x.0, x.1).cmp(&(r, c))).ok();
-    let mut parent: Vec<usize> = (0..cells.len()).collect();
-    for (i, &(r, c, _, _)) in cells.iter().enumerate() {
-        for (dr, dc) in [(0i64, 1i64), (1, 0)] {
-            if let Some(j) = at(r + dr, c + dc) {
-                let (ri, rj) = (super::spectral::find(&mut parent, i), super::spectral::find(&mut parent, j));
-                if ri != rj {
-                    parent[ri] = rj;
-                }
-            }
-        }
-    }
+    let owner = components(cells.len(), &incidence(&cells));
     let mut out: Vec<(usize, Vec<Cell>)> = Vec::new();
-    for i in 0..cells.len() {
-        let root = super::spectral::find(&mut parent, i);
-        match out.iter_mut().find(|(r, _)| *r == root) {
-            Some((_, piece)) => piece.push(cells[i]),
-            None => out.push((root, vec![cells[i]])),
+    for (i, cell) in cells.into_iter().enumerate() {
+        match out.iter_mut().find(|(r, _)| *r == owner[i]) {
+            Some((_, piece)) => piece.push(cell),
+            None => out.push((owner[i], vec![cell])),
         }
     }
     out.into_iter().map(|(_, p)| p).collect()
+}
+
+/// THE INCIDENCE of a support: its 1-skeleton, the pairs of cells sharing
+/// an edge, read off the support itself and never by looking a coordinate
+/// up. In row order two cells are edge-adjacent along a row exactly when
+/// they are consecutive in the list and differ by one column; in column
+/// order, exactly when consecutive and one row apart. Two linear passes
+/// over two orderings of the same support. `cells` must be sorted and
+/// deduplicated; the pairs are indices into it.
+pub fn incidence(cells: &[Cell]) -> Vec<(usize, usize)> {
+    let mut edges = Vec::new();
+    for i in 1..cells.len() {
+        let (p, q) = (cells[i - 1], cells[i]);
+        if p.0 == q.0 && p.1 + 1 == q.1 {
+            edges.push((i - 1, i));
+        }
+    }
+    let mut by_column: Vec<usize> = (0..cells.len()).collect();
+    by_column.sort_unstable_by_key(|&i| (cells[i].1, cells[i].0));
+    for w in by_column.windows(2) {
+        let (p, q) = (cells[w[0]], cells[w[1]]);
+        if p.1 == q.1 && p.0 + 1 == q.0 {
+            edges.push((w[0], w[1]));
+        }
+    }
+    edges
+}
+
+/// The connected components of `n` cells under an incidence: each cell's
+/// component root (union-find over the edges).
+pub fn components(n: usize, edges: &[(usize, usize)]) -> Vec<usize> {
+    let mut parent: Vec<usize> = (0..n).collect();
+    for &(i, j) in edges {
+        let (ri, rj) = (super::spectral::find(&mut parent, i), super::spectral::find(&mut parent, j));
+        if ri != rj {
+            parent[ri] = rj;
+        }
+    }
+    (0..n).map(|i| super::spectral::find(&mut parent, i)).collect()
 }
 
 /// The transition profile of an assignment: sorted ((before, after), count).

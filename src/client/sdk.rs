@@ -784,8 +784,8 @@ impl Entity {
         // and installs what it cannot already derive.
         let mut taught = 0usize;
         let mut used = 0usize;
-        'strata: for d in &strata {
-            for addr in sheaf::have(&atlas, self.epigenome.genome(), &d.inv) {
+        'strata: for (_, held) in &charts {
+            for &addr in held {
                 if self.taught_up.contains(&addr) {
                     continue; // spoken for adoption once; the judge decided
                 }

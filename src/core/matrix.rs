@@ -16,7 +16,7 @@ use num_traits::{Zero, One};
 use crate::core::engine::Q;
 
 // Re-exports for backward compatibility
-pub use crate::core::engine::{Operator, compute_omega};
+pub use crate::core::engine::Operator;
 
 /// Compute the determinant of an n×n rational matrix via Gaussian elimination.
 /// Exact over Q. O(n³).
