@@ -77,10 +77,16 @@ pub fn adjudicate(
     if proof.len() != germs.len() {
         return Outcome::GermPending; // unproven: deferred, never reduced here
     }
+    // The listing a percept settles is the pair's whole coboundary as the
+    // corpus intake listed it; every germ of the percept reads its
+    // deflation there.
+    let listing = crate::transducer::germinate::germinate(&ca.concat(), &cb.concat())
+        .map(|g| crate::transducer::element::from_residual_framed(&g, frame).address())
+        .unwrap_or([0; 32]);
     let reductions: Vec<_> = germs
         .into_iter()
         .zip(proof)
-        .map(|(germ, cites)| crate::cognition::reduce_proven(&language, germ, cites, frame))
+        .map(|(germ, cites)| crate::cognition::reduce_proven(&language, germ, cites, frame, listing))
         .collect();
     let Ok(mut g) = k.lock() else { return Outcome::GermPending };
     g.register_composites(composites);
@@ -102,7 +108,8 @@ pub fn attest(
     drop(g);
     let frame = (0usize, 0usize, 0usize, 0usize); // a chain carries no frame: the planar word
     let germ = (crate::transducer::element::from_residual(&chain.to_vec()), None);
-    let reduction = crate::cognition::reduce_proven(&language, germ, cites, &frame);
+    let listing = germ.0.address();
+    let reduction = crate::cognition::reduce_proven(&language, germ, cites, &frame, listing);
     let Ok(mut g) = k.lock() else { return Outcome::GermPending };
     g.puncture_from(cites);
     g.commit_all(vec![reduction], voice)

@@ -259,6 +259,10 @@ pub struct Reduction {
     pub form: NormalForm,
     pub qs: Vec<(usize, Vec<(i64, i64)>)>,
     pub language: std::sync::Arc<Language>,
+    /// The listing this reduction settles: the address of the whole
+    /// utterance's coboundary (a percept's pair, a demand's chain), where
+    /// the deflation an installed word earns is read.
+    pub listing: [u8; 32],
 }
 
 /// QUOTE — pure, over a language snapshot and the open book. The yield
@@ -444,7 +448,8 @@ pub fn reduce_all(
         .into_iter()
         .map(|(germ, ctx)| {
             let (form, qs) = reduce_germ(language, budget, &germ, ctx.as_ref());
-            Reduction { germ, ctx, form, qs, language: std::sync::Arc::clone(language) }
+            let listing = germ.address();
+            Reduction { germ, ctx, form, qs, language: std::sync::Arc::clone(language), listing }
         })
         .collect()
 }
@@ -1410,7 +1415,8 @@ impl Kernel {
         let language = self.language();
         let budget = (0usize, 0usize); // reduction is closed-form: no search budget
         let (form, qs) = reduce_germ(&language, budget, &g, ctx.as_ref());
-        self.commit_germ(Reduction { germ: g, ctx, form, qs, language }, voice)
+        let listing = g.address();
+        self.commit_germ(Reduction { germ: g, ctx, form, qs, language, listing }, voice)
     }
 
     /// COMMIT a reduction: the state changes a normal form implies, under the
@@ -1419,7 +1425,7 @@ impl Kernel {
     /// reduction ran defers the demand (it re-reduces on the client's retry).
     /// Opaque: matched by canonical address, never by "kind".
     pub fn commit_germ(&mut self, r: Reduction, voice: [u8; 32]) -> Outcome {
-        let Reduction { germ: g, ctx, form, qs, language } = r;
+        let Reduction { germ: g, ctx, form, qs, language, listing } = r;
         let gaddr = g.address(); // composite lineage completes by this identity
         let lanes = g.lanes();
         let mag = g.magnitude();
@@ -1537,7 +1543,7 @@ impl Kernel {
                         // court's finality verdict — unfinalized speech earns
                         // nothing; the puncture itself is local dialect.
                         self.treasury.escrow_award(saddr, self.admission.voices_of(&saddr), mu, anchor);
-                        self.record_deflation(saddr, gaddr);
+                        self.record_deflation(saddr, listing);
                         self.provisional.push((saddr, residual.clone()));
                         self.physics.relieve(&mag);
                         self.physics.syntropy(&mag); // volume built through the axis
@@ -1577,7 +1583,7 @@ impl Kernel {
                     // court's admission docket; the word joins the basis as
                     // local dialect, final settlement waits for the verdict.
                     self.treasury.escrow_award(addr, self.admission.voices_of(&addr), mu, anchor);
-                    self.record_deflation(addr, gaddr);
+                    self.record_deflation(addr, listing);
                     self.provisional.push((addr, residual.clone()));
                     self.physics.relieve(&mag);
                     self.physics.syntropy(&mag); // a completed rule is order built
@@ -2554,6 +2560,7 @@ pub fn reduce_proven(
     germ: Germ,
     cites: &[crate::anastome::dialogue::CiteWire],
     frame: &crate::arc::Frame,
+    listing: [u8; 32],
 ) -> Reduction {
     let (g, ctx) = germ;
     let sub = g.substance();
@@ -2572,7 +2579,7 @@ pub fn reduce_proven(
         }
         (false, _) => NormalForm::Irreducible(element::from_residual_framed(&residual, frame)),
     };
-    Reduction { germ: g, ctx, form, qs: Vec::new(), language: std::sync::Arc::clone(language) }
+    Reduction { germ: g, ctx, form, qs: Vec::new(), language: std::sync::Arc::clone(language), listing }
 }
 
 /// The frame measured from two cell scenes (their 0-cell extents) — the
