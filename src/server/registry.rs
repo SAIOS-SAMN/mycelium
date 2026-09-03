@@ -155,7 +155,11 @@ impl TaskRegistry {
     /// disk. Without this, a hypha restart resets Settled → Unsolved and a
     /// crash-loop becomes a replay-bounty mint.
     pub fn snapshot(&self) -> Vec<u8> {
-        let mut out = Vec::with_capacity(4 + self.tasks.len() * 37);
+        let mut out = Vec::with_capacity(8 + self.tasks.len() * 37);
+        // The dispatch cursor leads: a restart continues the corpus from
+        // where it stood instead of re-dispatching its head.
+        out.extend_from_slice(b"CUR1");
+        out.extend_from_slice(&(self.cursor as u32).to_le_bytes());
         out.extend_from_slice(&(self.tasks.len() as u32).to_le_bytes());
         for (id, _, state) in &self.tasks {
             out.extend_from_slice(id);
@@ -178,12 +182,19 @@ impl TaskRegistry {
     /// the corpus is the authority on WHAT exists; the snapshot only on what
     /// was already settled. Returns how many states were restored.
     pub fn overlay(&mut self, bytes: &[u8]) -> usize {
-        let Some(n) = bytes.get(0..4).map(|b| u32::from_le_bytes(b.try_into().unwrap()) as usize)
+        let mut p = 0usize;
+        if bytes.get(0..4) == Some(b"CUR1") {
+            if let Some(c) = bytes.get(4..8).map(|b| u32::from_le_bytes(b.try_into().unwrap()) as usize) {
+                self.cursor = c % self.tasks.len().max(1);
+            }
+            p = 8;
+        }
+        let Some(n) = bytes.get(p..p + 4).map(|b| u32::from_le_bytes(b.try_into().unwrap()) as usize)
         else {
             return 0;
         };
         let mut restored = 0usize;
-        let mut p = 4usize;
+        p += 4;
         for _ in 0..n {
             let Some(id) = bytes.get(p..p + 32) else { break };
             let (Some(&settled), Some(count)) = (

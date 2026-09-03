@@ -525,13 +525,16 @@ pub struct Kernel {
     /// the utterance and measures the deflation itself — proof of
     /// convergence on the work that actually happens. Bounded by the
     /// reserve ceiling; drained as the court pulls the docket.
-    settlements: Vec<([u8; 32], Vec<(i64, i64, u8, u8)>, [u8; 32], Vec<crate::anastome::dialogue::CiteWire>, [u64; 4], [u64; 4])>,
+    settlements: Vec<crate::anastome::dialogue::Settlement>,
     /// The book generation the pressure was last measured at.
     pressure_gen: u64,
     /// THE DEFLATIONS: per provisional word, the magnitude of the listed
     /// demand its install settled — zero when the germ settled nothing on
     /// the book. The court's proof of convergence rides with the word.
     deflations: crate::network::nerve::Keyed<[u64; 4]>,
+    /// The k-step at which each provisional word was installed — the
+    /// coordinate a court's "since" is read against.
+    provisional_k: crate::network::nerve::Keyed<u64>,
     pub nerve: Nerve,
     /// Round-robin cursor for syntropic optimization — which generator to test for
     /// redundancy next (bounds consolidation to one reduce per depleted step).
@@ -847,16 +850,25 @@ impl Kernel {
 
     /// THE DOCKET (Step 5): every provisional word, exported for the court's
     /// blind replay + confluence audit — (element, attesting voices, escrowed μ⃗).
-    pub fn dockets(&self) -> Vec<([u8; 32], Element, Vec<[u8; 32]>, [u64; 4], [u64; 4])> {
+    pub fn dockets(&self) -> Vec<([u8; 32], Element, Vec<[u8; 32]>, [u64; 4], [u64; 4], u64)> {
+        self.dockets_since(0)
+    }
+
+    /// The provisional words installed past a court's "since" k-step.
+    pub fn dockets_since(&self, since_k: u64) -> Vec<([u8; 32], Element, Vec<[u8; 32]>, [u64; 4], [u64; 4], u64)> {
         self.provisional
             .iter()
             .filter_map(|(addr, spoken)| {
+                let k = self.provisional_k.get(addr).copied().unwrap_or(0);
+                if k <= since_k && since_k > 0 {
+                    return None;
+                }
                 let (_, voices, mu, _) = self
                     .treasury
                     .escrowed_awards()
                     .iter()
                     .find(|(a, _, _, _)| a == addr)?;
-                Some((*addr, spoken.clone(), voices.clone(), *mu, self.deflation_of(addr)))
+                Some((*addr, spoken.clone(), voices.clone(), *mu, self.deflation_of(addr), k))
             })
             .collect()
     }
@@ -1159,22 +1171,27 @@ impl Kernel {
         if self.settlements.len() >= cap {
             self.settlements.remove(0);
         }
-        self.settlements.push((listing, chain, voice, cites.to_vec(), before, after));
+        let k = self.k_step();
+        self.settlements.push((listing, chain, voice, cites.to_vec(), before, after, k));
     }
 
-    /// The settlements the court has not yet heard, drained.
-    pub fn drain_settlements(&mut self) -> Vec<([u8; 32], Vec<(i64, i64, u8, u8)>, [u8; 32], Vec<crate::anastome::dialogue::CiteWire>, [u64; 4], [u64; 4])> {
-        std::mem::take(&mut self.settlements)
+    /// The settlements past a court's "since": the relation is in k-step
+    /// order, so the walk is over the delta only, from the newest back.
+    pub fn settlements_since(&self, since_k: u64) -> &[crate::anastome::dialogue::Settlement] {
+        let mut start = self.settlements.len();
+        while start > 0 && self.settlements[start - 1].6 > since_k {
+            start -= 1;
+        }
+        &self.settlements[start..]
     }
 
-    /// The settlements awaiting the court, in order, without draining.
-    pub fn settlements(&self) -> &[([u8; 32], Vec<(i64, i64, u8, u8)>, [u8; 32], Vec<crate::anastome::dialogue::CiteWire>, [u64; 4], [u64; 4])] {
-        &self.settlements
-    }
-
-    /// The court heard the first `n`: they leave the docket.
-    pub fn settlements_heard(&mut self, n: usize) {
-        let n = n.min(self.settlements.len());
+    /// The court stands at `since_k`: everything at or before it is heard
+    /// and leaves the docket.
+    pub fn settlements_heard_to(&mut self, since_k: u64) {
+        let mut n = 0usize;
+        while n < self.settlements.len() && self.settlements[n].6 <= since_k {
+            n += 1;
+        }
         self.settlements.drain(..n);
     }
 
@@ -1544,6 +1561,8 @@ impl Kernel {
                         // nothing; the puncture itself is local dialect.
                         self.treasury.escrow_award(saddr, self.admission.voices_of(&saddr), mu, anchor);
                         self.record_deflation(saddr, listing);
+                        let k_now = self.k_step();
+                        self.provisional_k.insert(saddr, k_now);
                         self.provisional.push((saddr, residual.clone()));
                         self.physics.relieve(&mag);
                         self.physics.syntropy(&mag); // volume built through the axis
@@ -1584,6 +1603,8 @@ impl Kernel {
                     // local dialect, final settlement waits for the verdict.
                     self.treasury.escrow_award(addr, self.admission.voices_of(&addr), mu, anchor);
                     self.record_deflation(addr, listing);
+                    let k_now = self.k_step();
+                    self.provisional_k.insert(addr, k_now);
                     self.provisional.push((addr, residual.clone()));
                     self.physics.relieve(&mag);
                     self.physics.syntropy(&mag); // a completed rule is order built
@@ -3115,7 +3136,7 @@ mod tests {
         assert_eq!(k.treasury().balance_mu(&[2; 32]), [0; 4]);
         let dockets = k.dockets();
         assert_eq!(dockets.len(), 1, "the provisional word is on the docket");
-        let (addr, spoken, voices, mu, _) = &dockets[0];
+        let (addr, spoken, voices, mu, _, _) = &dockets[0];
         assert_eq!(voices.len(), 2, "both attesting voices ride the docket");
         assert!(mu[2] > 0, "the escrowed award is real");
         assert_eq!(spoken.address(), *addr, "the docket carries the word as spoken");
@@ -3138,7 +3159,7 @@ mod tests {
         let chain = k.quote(4).1[0].0.sub().to_vec();
         assert!(matches!(k.attest(&chain, [2; 32]), Outcome::Installed(0)));
         let before = k.basis_len();
-        let (addr, _, _, _, _) = k.dockets()[0].clone();
+        let (addr, _, _, _, _, _) = k.dockets()[0].clone();
         assert!(k.apply_verdict(&addr, crate::anastome::dialogue::RULING_SLASHED));
         assert_eq!(k.basis_len(), before - 1, "the slashed word is excised");
         assert_eq!(k.treasury().balance_mu(&[1; 32]), [0; 4], "nothing was ever paid");

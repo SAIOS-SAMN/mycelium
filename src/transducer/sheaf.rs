@@ -25,20 +25,15 @@ pub struct StratumDigest {
 }
 
 /// The root over a stratum's members: sorted by address so two holders of
-/// the same words measure the same root; the fibre volume (sections and
-/// connection relations) enters so a bundle that grew reads as changed.
+/// the same words measure the same root. The root is over the BASE — the
+/// words held — never their fibre volume: a copy with fewer sections
+/// speaks the same words and is glued; sections travel by teaching.
 fn root_of(members: &[usize], words: &[Element]) -> [u8; 32] {
-    let mut rows: Vec<([u8; 32], u32, u32)> = members
-        .iter()
-        .filter_map(|&i| words.get(i))
-        .map(|w| (w.address(), w.sections().len() as u32, w.transitions().len() as u32))
-        .collect();
+    let mut rows: Vec<[u8; 32]> = members.iter().filter_map(|&i| words.get(i)).map(|w| w.address()).collect();
     rows.sort_unstable();
     let mut h = blake3::Hasher::new();
-    for (a, s, t) in &rows {
+    for a in &rows {
         h.update(a);
-        h.update(&s.to_le_bytes());
-        h.update(&t.to_le_bytes());
     }
     *h.finalize().as_bytes()
 }
@@ -142,12 +137,14 @@ mod tests {
         entity.push(learned);
         let es2 = atlas(&entity);
         assert!(discordant(&hd, &digests(&es2, &entity)).is_empty(), "glued everywhere");
-        // A grown fibre changes the root: attaching a section re-opens the stratum.
+        // A grown fibre does not change the root: the base is what glues;
+        // a section attached on one side travels by teaching, never as
+        // discordance.
         let mut grown = hypha.clone();
         let g = crate::transducer::element::transition(bar_hue.sub(), grown[0].sub()).unwrap();
         grown[0].attach(&bar_hue, &g);
         let gd = digests(&atlas(&grown), &grown);
-        assert_eq!(discordant(&gd, &digests(&es2, &entity)).len(), 1, "fibre volume is in the root");
+        assert!(discordant(&gd, &digests(&es2, &entity)).is_empty(), "the root is over the base");
         // A budget too small for one word serves nothing and never overflows.
         assert!(serve(&hs, &hypha, &d[0].inv, &mine, 8).is_empty());
     }

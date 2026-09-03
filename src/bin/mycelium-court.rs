@@ -112,6 +112,16 @@ fn main() {
         .map(|w| w[1].clone())
         .unwrap_or_else(|| "state/court.federation".to_string());
     let restored = mycelium::court::ledger::CourtState::load(&state_path);
+    // THE COURT'S CLOCK: the universe's one wall clock, shared genesis on
+    // the state directory; every docket request states it.
+    let tuniversal = mycelium::chronometry::TUniversal::load_or_genesis(&format!(
+        "{}/tuniversal",
+        std::path::Path::new(&state_path).parent().map(|p| p.display().to_string()).unwrap_or_else(|| "state".to_string())
+    ));
+    // Where this court stands on each hypha's chain: the last k-step heard.
+    // A pull states it; the hypha serves what lies past it and prunes what
+    // lies before.
+    let mut since: Vec<u64> = vec![0; hyphas.len()];
     // --reaudit: re-derive the federation and ruled set under the current
     // congruence lens (the K-chain continues — the journal keeps both
     // judicial eras). Used when the lens itself is corrected, e.g. the
@@ -292,7 +302,7 @@ fn main() {
             }
         }
         for (hi, session) in sessions.iter().enumerate() {
-            let Some(body) = ask(session, &outbox[hi], dialogue::encode_docket_request(&voice))
+            let Some(body) = ask(session, &outbox[hi], dialogue::encode_docket_request(&voice, since[hi], tuniversal.ticks()))
             else {
                 continue;
             };
@@ -303,7 +313,8 @@ fn main() {
             // itself; two measurements that agree are a converged k-step,
             // two that differ are a divergence on record against the voice.
             let (mut converged_n, mut diverged_n) = (0usize, 0usize);
-            for (listing, listed, voice, cites, before, after) in dialogue::decode_settlements(&body) {
+            for (listing, listed, voice, cites, before, after, k) in dialogue::decode_settlements(&body) {
+                since[hi] = since[hi].max(k);
                 let residual = mycelium::transducer::sentence::verify_utterance(&cites, &listed);
                 let measured_before = mycelium::transducer::element::measure_lanes(&listed);
                 let measured_after = mycelium::transducer::element::measure_lanes(&residual);
@@ -330,7 +341,8 @@ fn main() {
             if converged_n + diverged_n > 0 {
                 eprintln!("  settlements heard from hypha {hi}: {converged_n} converged, {diverged_n} diverged, K={}", chain.next_step_index());
             }
-            for (addr, elem_bytes, voices, mu, deflation) in dockets {
+            for (addr, elem_bytes, voices, mu, deflation, k) in dockets {
+                since[hi] = since[hi].max(k);
                 if ruled.contains(&addr) {
                     continue;
                 }

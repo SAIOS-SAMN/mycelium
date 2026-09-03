@@ -132,19 +132,37 @@ pub const PROBE_SETTLED: u8 = 3;
 /// reproduces the solve from the taught language proves it shares the root.
 pub const ACT_ROOT: u8 = 0x13;
 
-pub fn encode_root(voice: &[u8; 32], task: &[u8; 32], solver: &[u8; 32]) -> Vec<u8> {
+/// `[ACT_ROOT][voice 32][task 32][solver 32][ticks u64]` — the root's stamp
+/// on the speaker's clock. The reply is the receiver's record for that
+/// task: `[solver 32 (zeros: none)][ticks u64]`, its own clock, so the
+/// speaker knows the root was delivered later than it was spoken.
+pub fn encode_root(voice: &[u8; 32], task: &[u8; 32], solver: &[u8; 32], ticks: u64) -> Vec<u8> {
     let mut out = vec![ACT_ROOT];
     out.extend_from_slice(voice);
     out.extend_from_slice(task);
     out.extend_from_slice(solver);
+    out.extend_from_slice(&ticks.to_le_bytes());
     out
 }
 
-pub fn decode_root(body: &[u8]) -> Option<([u8; 32], [u8; 32], [u8; 32])> {
+pub fn decode_root(body: &[u8]) -> Option<([u8; 32], [u8; 32], [u8; 32], u64)> {
     if body.first() != Some(&ACT_ROOT) || body.len() < 97 {
         return None;
     }
-    Some((body[1..33].try_into().ok()?, body[33..65].try_into().ok()?, body[65..97].try_into().ok()?))
+    let ticks = body.get(97..105).map(|b| u64::from_le_bytes(b.try_into().unwrap())).unwrap_or(0);
+    Some((body[1..33].try_into().ok()?, body[33..65].try_into().ok()?, body[65..97].try_into().ok()?, ticks))
+}
+
+pub fn encode_root_reply(solver: Option<[u8; 32]>, ticks: u64) -> Vec<u8> {
+    let mut out = solver.unwrap_or([0; 32]).to_vec();
+    out.extend_from_slice(&ticks.to_le_bytes());
+    out
+}
+
+pub fn decode_root_reply(body: &[u8]) -> Option<(Option<[u8; 32]>, u64)> {
+    let solver: [u8; 32] = body.get(0..32)?.try_into().ok()?;
+    let ticks = u64::from_le_bytes(body.get(32..40)?.try_into().ok()?);
+    Some(((solver != [0; 32]).then_some(solver), ticks))
 }
 
 /// A citation on the wire: (word address, transport, gauge coordinate).
@@ -701,30 +719,42 @@ pub fn decode_quote_reply(body: &[u8]) -> Option<([u64; 4], u64, Vec<WorkItem>)>
 
 /// `[ACT_TEACH][len u32][element bytes]`
 /// docket request: `[ACT_DOCKET][voice 32]`.
-pub fn encode_docket_request(voice: &[u8; 32]) -> Vec<u8> {
+/// docket request: `[ACT_DOCKET][voice 32][since K u64][ticks u64]` — the
+/// court states where it stands on this hypha's chain (the last k-step
+/// it heard) and its own TUniversal clock; the hypha serves what lies
+/// past that point and prunes what lies before it.
+pub fn encode_docket_request(voice: &[u8; 32], since_k: u64, ticks: u64) -> Vec<u8> {
     let mut out = vec![ACT_DOCKET];
     out.extend_from_slice(voice);
+    out.extend_from_slice(&since_k.to_le_bytes());
+    out.extend_from_slice(&ticks.to_le_bytes());
     out
 }
 
-pub fn decode_docket_request(body: &[u8]) -> Option<[u8; 32]> {
+pub fn decode_docket_request(body: &[u8]) -> Option<([u8; 32], u64, u64)> {
     if body.first() != Some(&ACT_DOCKET) {
         return None;
     }
-    body.get(1..33)?.try_into().ok()
+    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    let since = body.get(33..41).map(|b| u64::from_le_bytes(b.try_into().unwrap())).unwrap_or(0);
+    let ticks = body.get(41..49).map(|b| u64::from_le_bytes(b.try_into().unwrap())).unwrap_or(0);
+    Some((voice, since, ticks))
 }
 
 /// docket reply: `[n u32] ( [addr 32][elen u32][element][nv u32][voices 32·nv][μ⃗ 32][Δμ⃗ 32] )…`
 /// — Δμ⃗ is the deflation the word's install measured on a listed demand
 /// (zero when the germ settled nothing on the book): the court's proof of
 /// convergence rides with the word.
-pub type Docket = ([u8; 32], Vec<u8>, Vec<[u8; 32]>, [u64; 4], [u64; 4]);
+/// The last field is the hypha's k-step at which the word was installed:
+/// the coordinate a court's "since" is read against.
+pub type Docket = ([u8; 32], Vec<u8>, Vec<[u8; 32]>, [u64; 4], [u64; 4], u64);
 
 /// A SETTLEMENT on the docket: the listing, its chain, the voice, the
 /// utterance that settled it, and the magnitudes before and after as the
 /// hypha measured them. The court replays the utterance and measures for
 /// itself: two measurements of one deflation are the proof of convergence.
-pub type Settlement = ([u8; 32], Vec<Cell>, [u8; 32], Vec<CiteWire>, [u64; 4], [u64; 4]);
+/// The last field is the hypha's k-step of the settlement.
+pub type Settlement = ([u8; 32], Vec<Cell>, [u8; 32], Vec<CiteWire>, [u64; 4], [u64; 4], u64);
 
 pub fn encode_docket_reply(dockets: &[Docket]) -> Vec<u8> {
     encode_docket_reply_with(dockets, &[])
@@ -745,7 +775,7 @@ pub fn encode_docket_reply_paged(dockets: &[Docket], settlements: &[Settlement],
     // provisional list never starves the court of what actually settled.
     let mut settled: Vec<Vec<u8>> = Vec::new();
     let mut settled_len = 8usize;
-    for (listing, chain, voice, cites, before, after) in settlements {
+    for (listing, chain, voice, cites, before, after, k) in settlements {
         let mut item = Vec::new();
         item.extend_from_slice(listing);
         push_chain(&mut item, chain);
@@ -753,6 +783,7 @@ pub fn encode_docket_reply_paged(dockets: &[Docket], settlements: &[Settlement],
         push_cites(&mut item, cites);
         push_mu(&mut item, before);
         push_mu(&mut item, after);
+        item.extend_from_slice(&k.to_le_bytes());
         if settled_len + item.len() > budget {
             break;
         }
@@ -762,8 +793,8 @@ pub fn encode_docket_reply_paged(dockets: &[Docket], settlements: &[Settlement],
     let mut out = Vec::new();
     out.extend_from_slice(&0u32.to_le_bytes());
     let mut words = 0usize;
-    for (addr, elem, voices, mu, deflation) in dockets {
-        let mut item = Vec::with_capacity(104 + elem.len() + 32 * voices.len());
+    for (addr, elem, voices, mu, deflation, k) in dockets {
+        let mut item = Vec::with_capacity(112 + elem.len() + 32 * voices.len());
         item.extend_from_slice(addr);
         item.extend_from_slice(&(elem.len() as u32).to_le_bytes());
         item.extend_from_slice(elem);
@@ -773,6 +804,7 @@ pub fn encode_docket_reply_paged(dockets: &[Docket], settlements: &[Settlement],
         }
         push_mu(&mut item, mu);
         push_mu(&mut item, deflation);
+        item.extend_from_slice(&k.to_le_bytes());
         if out.len() + item.len() + settled_len > budget {
             break;
         }
@@ -804,7 +836,9 @@ pub fn decode_settlements(body: &[u8]) -> Vec<Settlement> {
         let Some(cites) = read_cites(body, &mut p) else { break };
         let Some(before) = read_mu(body, &mut p) else { break };
         let Some(after) = read_mu(body, &mut p) else { break };
-        out.push((listing, chain, voice, cites, before, after));
+        let Some(k) = body.get(p..p + 8).map(|b| u64::from_le_bytes(b.try_into().unwrap())) else { break };
+        p += 8;
+        out.push((listing, chain, voice, cites, before, after, k));
     }
     out
 }
@@ -843,7 +877,9 @@ fn decode_dockets_at(body: &[u8]) -> Option<(Vec<Docket>, usize)> {
         }
         let mu = read_mu(body, &mut p)?;
         let deflation = read_mu(body, &mut p)?;
-        out.push((addr, elem, voices, mu, deflation));
+        let k = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
+        p += 8;
+        out.push((addr, elem, voices, mu, deflation, k));
     }
     Some((out, p))
 }
@@ -1120,8 +1156,8 @@ mod tests {
         assert_eq!(k, 4208, "the judge's k-step rides the quote");
         assert_eq!(it, items);
         // A settlement rides the docket after the dockets, with its utterance.
-        let docket: Docket = (germ, vec![1, 2, 3], vec![voice], [1, 2, 3, 4], [0, 0, 7, 0]);
-        let settlement: Settlement = (germ, chain.clone(), voice, cites.clone(), [2, 0, 2, 0], [0, 0, 1, 0]);
+        let docket: Docket = (germ, vec![1, 2, 3], vec![voice], [1, 2, 3, 4], [0, 0, 7, 0], 41);
+        let settlement: Settlement = (germ, chain.clone(), voice, cites.clone(), [2, 0, 2, 0], [0, 0, 1, 0], 42);
         let body = encode_docket_reply_with(std::slice::from_ref(&docket), std::slice::from_ref(&settlement));
         assert_eq!(decode_docket_reply(&body).unwrap(), vec![docket]);
         assert_eq!(decode_settlements(&body), vec![settlement]);

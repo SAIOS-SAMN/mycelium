@@ -74,30 +74,38 @@ fn speak_root(
     task: &[u8; 32],
     solver: &[u8; 32],
     heard_from: Option<[u8; 32]>,
+    ticks: u64,
 ) {
     let mut exclude = vec![*self_id];
     exclude.extend(heard_from);
     if let Some((_, addr)) = router.closest_excluding(task, &exclude) {
         // Never dialed from the door: queued for the nerve thread, dropped
         // when the nerve is full — the mesh's own impedance.
-        let _ = nerve.try_send((addr, dialogue::encode_root(self_id, task, solver)));
+        let _ = nerve.try_send((addr, dialogue::encode_root(self_id, task, solver, ticks)));
     }
 }
 
 /// Speak one act to a peer on the nerve, bounded by the transport deadline;
 /// the reply, if any, is not needed. Silence is the peer's impedance.
-fn tell_peer(addr: &str, body: Vec<u8>) {
+fn tell_peer(addr: &str, body: Vec<u8>) -> Option<Vec<u8>> {
     let deadline = std::time::Duration::from_millis(
         mycelium::physics::reserve_max() * (mycelium::physics::reserve_max() / mycelium::physics::spend_unit()).max(1),
     );
-    let Some(sock) = std::net::ToSocketAddrs::to_socket_addrs(&addr).ok().and_then(|mut a| a.next()) else { return };
-    let Ok(mut s) = std::net::TcpStream::connect_timeout(&sock, deadline) else { return };
+    let sock = std::net::ToSocketAddrs::to_socket_addrs(&addr).ok().and_then(|mut a| a.next())?;
+    let mut s = std::net::TcpStream::connect_timeout(&sock, deadline).ok()?;
     let _ = s.set_write_timeout(Some(deadline));
     let _ = s.set_read_timeout(Some(deadline));
     let frame = Frame { lane: mycelium::network::wire::Stratum::Spatial, body };
-    let _ = s.write_all(&frame.encode().unwrap_or_default());
+    s.write_all(&frame.encode()?).ok()?;
     let mut head = [0u8; 5];
-    let _ = std::io::Read::read_exact(&mut s, &mut head);
+    std::io::Read::read_exact(&mut s, &mut head).ok()?;
+    let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
+    if len > mycelium::network::wire::BODY_BUDGET {
+        return None;
+    }
+    let mut reply = vec![0u8; len];
+    std::io::Read::read_exact(&mut s, &mut reply).ok()?;
+    Some(reply)
 }
 
 fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32]) {
@@ -444,8 +452,6 @@ fn main() {
     // stream exactly once on contact (a rebind re-enters the stream — learn
     // refreshes by address, so refinements propagate). Vec-of-relations.
     let mut syllabus: Vec<[u8; 32]> = Vec::new();
-    // The docket page cursor: provisional words are served round the list.
-    let mut docket_cursor = 0usize;
     // PROVEN ROOTS heard on the nerve: (task, solver). A root is gossiped
     // once and re-dispatched here first; a voice that reproduces the solve
     // proves it shares the root.
@@ -457,7 +463,19 @@ fn main() {
     let (nerve_tx, nerve_rx) = std::sync::mpsc::sync_channel::<(String, Vec<u8>)>(mycelium::physics::reserve_max() as usize);
     std::thread::spawn(move || {
         for (addr, body) in nerve_rx {
-            tell_peer(&addr, body);
+            // Each dial's outcome is the peer's measured impedance: a root
+            // is delivered when the peer answers with its own clock.
+            match tell_peer(&addr, body) {
+                Some(reply) => match dialogue::decode_root_reply(&reply) {
+                    Some((held, at)) => eprintln!(
+                        "  nerve → {addr}: root delivered at {} ({})",
+                        mycelium::chronometry::TUniversal::stamp_of(at),
+                        if held.is_some() { "held there" } else { "new there" }
+                    ),
+                    None => eprintln!("  nerve → {addr}: answered {} bytes", reply.len()),
+                },
+                None => eprintln!("  nerve → {addr}: no answer"),
+            }
         }
     });
     // The roots this book already holds settled are announced to the nerve
@@ -465,7 +483,7 @@ fn main() {
     let settled = registry.lock().map(|r| r.settled_ids()).unwrap_or_default();
     for t in &settled {
         roots.insert(*t, id);
-        speak_root(&router, &nerve_tx, &nerve_id, t, &id, None);
+        speak_root(&router, &nerve_tx, &nerve_id, t, &id, None, tuniversal.ticks());
     }
     if !settled.is_empty() {
         eprintln!("  roots announced: {} settled families, each to its key's next hop", settled.len());
@@ -584,12 +602,13 @@ fn main() {
 
         // ── root: a proven family heard on the nerve ─────────────────────────
         if kind == dialogue::ACT_ROOT {
-            let Some((from, task, solver)) = dialogue::decode_root(&frame.body) else { continue };
+            let Some((from, task, solver, spoken_at)) = dialogue::decode_root(&frame.body) else { continue };
             // Only a peer the nerve was configured with is heard.
             if !router.knows(&from) {
                 let _ = s.write_all(&Frame { lane: frame.lane, body: Vec::new() }.encode().unwrap_or_default());
                 continue;
             }
+            let _ = spoken_at;
             if roots.get(&task).is_none() {
                 roots.insert(task, solver);
                 let prioritized = registry.lock().map(|mut r| r.prioritize(&task)).unwrap_or(false);
@@ -601,40 +620,34 @@ fn main() {
                     solver[0],
                     if prioritized { "re-dispatched first here" } else { "not open on this book" }
                 );
-                speak_root(&router, &nerve_tx, &nerve_id, &task, &solver, Some(from));
+                speak_root(&router, &nerve_tx, &nerve_id, &task, &solver, Some(from), tuniversal.ticks());
             }
-            let _ = s.write_all(&Frame { lane: frame.lane, body: Vec::new() }.encode().unwrap_or_default());
+            // The reply is this node's record for the task and its clock.
+            let reply = dialogue::encode_root_reply(roots.get(&task).copied(), tuniversal.ticks());
+            let _ = s.write_all(&Frame { lane: frame.lane, body: reply }.encode().unwrap_or_default());
             continue;
         }
 
         // ── docket: the court pulls what awaits finality ─────────────────────
         if kind == dialogue::ACT_DOCKET {
-            let Some(_cvoice) = dialogue::decode_docket_request(&frame.body) else { continue };
-            // THE DOCKET PAGE: words from the cursor round the provisional
-            // list, then settlements in order, within one frame; the court
-            // hears exactly what the page carries and the rest is served
-            // on its next pull. Nothing is dropped for being too much.
+            let Some((_cvoice, since_k, court_ticks)) = dialogue::decode_docket_request(&frame.body) else { continue };
+            // THE DOCKET AS A TRANSPORT BETWEEN TWO CLOCKS: the court states
+            // the k-step it heard to; what lies at or before it is
+            // acknowledged and leaves the docket; what lies past it is
+            // served, within one frame, and the rest on the next pull.
             let (body, words, served) = {
                 let mut k = kernel.lock().unwrap();
-                let all: Vec<dialogue::Docket> = k
-                    .dockets()
+                k.settlements_heard_to(since_k);
+                let fresh: Vec<dialogue::Docket> = k
+                    .dockets_since(since_k)
                     .into_iter()
-                    .map(|(addr, spoken, voices, mu, deflation)| (addr, spoken.to_bytes(), voices, mu, deflation))
+                    .map(|(addr, spoken, voices, mu, deflation, kk)| (addr, spoken.to_bytes(), voices, mu, deflation, kk))
                     .collect();
-                let n = all.len();
-                let start = if n == 0 { 0 } else { docket_cursor % n };
-                let rotated: Vec<dialogue::Docket> = all[start..].iter().chain(all[..start].iter()).cloned().collect();
-                let (body, words, served) = dialogue::encode_docket_reply_paged(
-                    &rotated,
-                    k.settlements(),
-                    mycelium::network::wire::BODY_BUDGET,
-                );
-                k.settlements_heard(served);
-                docket_cursor = if n == 0 { 0 } else { (start + words) % n };
-                (body, words, served)
+                dialogue::encode_docket_reply_paged(&fresh, k.settlements_since(since_k), mycelium::network::wire::BODY_BUDGET)
             };
-            if served > 0 {
-                eprintln!("  docket served: {words} words, {served} settlements to the court");
+            if words + served > 0 {
+                let (s, g, t) = mycelium::chronometry::TUniversal::sgt_of(tuniversal.ticks().saturating_sub(court_ticks));
+                eprintln!("  docket served: {words} words, {served} settlements past K={since_k}; court delta S:{s} G:{g} T:{t}");
             }
             let reply = Frame { lane: frame.lane, body };
             let _ = s.write_all(&reply.encode().unwrap_or_default());
@@ -725,7 +738,7 @@ fn main() {
                             None => {
                                 roots.insert(tid, svoice);
                                 eprintln!("  ROOT task {:02x}{:02x}… proven by voice {:02x}; spoken to its key's next hop", tid[0], tid[1], svoice[0]);
-                                speak_root(&router, &nerve_tx, &nerve_id, &tid, &svoice, None);
+                                speak_root(&router, &nerve_tx, &nerve_id, &tid, &svoice, None, tuniversal.ticks());
                             }
                         }
                         (dialogue::SOLVE_BOUNTY, paid)
