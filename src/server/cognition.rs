@@ -267,6 +267,9 @@ pub struct Reduction {
     /// utterance's coboundary (a percept's pair, a demand's chain), where
     /// the deflation an installed word earns is read.
     pub listing: [u8; 32],
+    /// Empty-cites irreducible: remainder of a spoken connection or an
+    /// unreached-moduli demand. Quoted. A percept-pair tape is not.
+    pub frontier: bool,
 }
 
 /// QUOTE — pure, over a language snapshot and the open book. The yield
@@ -286,6 +289,7 @@ pub fn quote_over(
     budget: usize,
     spoken: &crate::network::nerve::Keyed<Vec<[u8; 32]>>,
     voice: &[u8; 32],
+    frontier: &crate::network::nerve::Keyed<()>,
 ) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
     let c = rank.closure.iter().filter(|k| k.is_some()).count() as u64;
     let i = rank.closure.len() as u64 - c;
@@ -307,6 +311,9 @@ pub fn quote_over(
             break;
         }
         let Some((p, _)) = pending.get(idx) else { continue };
+        if !frontier.contains(&p.address()) {
+            continue; // percept-pair tape: not remainder-of-g, not unreached moduli
+        }
         if spoken.get(&p.address()).is_some_and(|voices| voices.contains(voice)) {
             continue; // this voice has spoken on it in this state
         }
@@ -456,7 +463,7 @@ pub fn reduce_all(
         .map(|(germ, ctx)| {
             let (form, qs) = reduce_germ(language, budget, &germ, ctx.as_ref());
             let listing = germ.address();
-            Reduction { germ, ctx, form, qs, language: std::sync::Arc::clone(language), listing }
+            Reduction { germ, ctx, form, qs, language: std::sync::Arc::clone(language), listing, frontier: false }
         })
         .collect()
 }
@@ -537,6 +544,10 @@ pub struct Kernel {
     /// closes or descends changes address and leaves this relation; a quote
     /// never serves a voice a listing it has already spoken on.
     spoken: crate::network::nerve::Keyed<Vec<[u8; 32]>>,
+    /// THE QUOTE FRONTIER: remainder-of-g and unreached-moduli demands
+    /// (empty-cites attest). Percept-pair coboundary tapes stay on the
+    /// book for consilience but are not served on a quote page.
+    quote_frontier: crate::network::nerve::Keyed<()>,
     /// THE SETTLEMENTS awaiting the court: (listing, its chain, the voice,
     /// the utterance, magnitude before, magnitude after). The court replays
     /// the utterance and measures the deflation itself — proof of
@@ -848,6 +859,7 @@ impl Kernel {
             }
             self.pending.remove(li);
             self.spoken.remove(target);
+            self.quote_frontier.remove(target);
             self.book_gen += 1;
             self.physics.relieve(&mag);
             self.physics.syntropy(&mag);
@@ -878,7 +890,12 @@ impl Kernel {
             next.set_fiber(element::FIBER_SPATIAL, m);
         }
         let listed_at = self.pending[li].1;
+        let next_addr = next.address();
         self.pending[li] = (next, listed_at);
+        if self.quote_frontier.contains(target) {
+            self.quote_frontier.remove(target);
+            self.quote_frontier.insert(next_addr, ());
+        }
         self.spoken.remove(target);
         self.book_gen += 1;
         self.physics.syntropy(&mag);
@@ -1245,6 +1262,10 @@ impl Kernel {
         &self.spoken
     }
 
+    pub fn quote_frontier(&self) -> &crate::network::nerve::Keyed<()> {
+        &self.quote_frontier
+    }
+
     /// PUNCTURE held words from a verified utterance's carried bodies: the
     /// fiber deepens on what the hypha verified. A deepened basis moves the
     /// basis generation so the language snapshot refreshes.
@@ -1529,7 +1550,7 @@ impl Kernel {
     /// reduction ran defers the demand (it re-reduces on the client's retry).
     /// Opaque: matched by canonical address, never by "kind".
     pub fn commit_germ(&mut self, r: Reduction, voice: [u8; 32]) -> Outcome {
-        let Reduction { germ: g, ctx, form, qs, language, listing } = r;
+        let Reduction { germ: g, ctx, form, qs, language, listing, frontier } = r;
         let gaddr = g.address(); // composite lineage completes by this identity
         let lanes = g.lanes();
         let mag = g.magnitude();
@@ -1662,6 +1683,7 @@ impl Kernel {
                         // A puncture deepens a held word: order built, no
                         // reserve spent — the fiber is the cheaper direction.
                         self.pending.retain(|(p, _)| p.address() != residual.address());
+                        self.quote_frontier.remove(&residual.address());
                         self.book_gen += 1;
                         self.append_step(saddr, voice); // the puncture is a K-step too
                         self.complete_composite_child(&gaddr, voice); // lineage
@@ -1703,6 +1725,7 @@ impl Kernel {
                     self.physics.syntropy(&mag); // a completed rule is order built
                     self.physics.spend(lanes); // the expansion SHRINKS the reserve
                     self.pending.retain(|(p, _)| p.address() != addr); // the market CLEARS
+                    self.quote_frontier.remove(&addr);
                     self.book_gen += 1;
                     // Seal the K-step receipt: the install IS a tick of algebraic
                     // time, parent-linked to the mesh's whole history.
@@ -1757,6 +1780,9 @@ impl Kernel {
                     // demand weaker than everything already listed is not
                     // listed at all: the book holds only what the machine can
                     // honestly carry, ordered by what the network most needs.
+                    if frontier {
+                        self.quote_frontier.insert(addr, ());
+                    }
                     if !self.pending.iter().any(|(p, _)| p.address() == addr) {
                         let lane = (0..4)
                             .max_by_key(|&l| residual.magnitude()[l])
@@ -2080,7 +2106,7 @@ impl Kernel {
     pub fn quote(&mut self, top: usize) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
         let surface = crate::economy::yield_surface(&self.physics);
         let rank = self.closure_now();
-        quote_over(&rank, &self.composites, &self.pending, &surface, &self.treasury.pool(), top, usize::MAX, &self.spoken, &[0; 32])
+        quote_over(&rank, &self.composites, &self.pending, &surface, &self.treasury.pool(), top, usize::MAX, &self.spoken, &[0; 32], &self.quote_frontier)
     }
 
     /// ATTEST — a peer's INDEPENDENT derivation of an open residual arrives as a
@@ -2092,7 +2118,10 @@ impl Kernel {
             return Outcome::GermPending;
         };
         let germ = (element::from_residual(&chain.to_vec()), None);
-        let reductions = reduce_all(&language, budget, vec![germ]);
+        let mut reductions = reduce_all(&language, budget, vec![germ]);
+        for r in &mut reductions {
+            r.frontier = true;
+        }
         self.commit_all(reductions, voice)
     }
 
@@ -2735,7 +2764,15 @@ pub fn reduce_proven(
         }
         ([_, ..], _) => NormalForm::Irreducible(element::from_residual_framed(&residual, frame)),
     };
-    Reduction { germ: g, ctx, form, qs: Vec::new(), language: std::sync::Arc::clone(language), listing }
+    Reduction {
+        germ: g,
+        ctx,
+        form,
+        qs: Vec::new(),
+        language: std::sync::Arc::clone(language),
+        listing,
+        frontier: cites.is_empty(),
+    }
 }
 
 /// The frame measured from two cell scenes (their 0-cell extents) — the
@@ -2973,23 +3010,23 @@ mod tests {
     }
 
     /// STEP 3's ECONOMIC CONVERSATION CLOSES: A speaks a novel PERCEPT (the germ
-    /// pends — an un-factored residual on the market); the mesh QUOTES it, priced
-    /// by genuine metabolic tension; B's independent derivation arrives as a
-    /// spoken DEMAND (attest); consilience installs it, the market CLEARS, and
-    /// the settle parties are the two voices. {percept → quote → demand → settle},
-    /// with teach riding the install reply.
+    /// pends as a tape, not quoted); A's empty-cites demand lists the remainder
+    /// on the quote frontier; B independently attests; consilience installs,
+    /// the market CLEARS. {demand → quote → demand → settle}.
     #[test]
     fn the_five_act_conversation_closes_with_settlement() {
         let mut k = Kernel::new();
         let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
         let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)]; // (0,0): 1→4
         assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending, "percept: voice A");
+        assert!(k.quote(4).1.is_empty(), "a percept-pair tape is not quoted");
+        let chain = germinate(&a, &b).unwrap();
+        assert_eq!(k.attest(&chain, [1; 32]), Outcome::GermPending, "remainder-of-g / unreached demand");
         let (surface, quoted) = k.quote(4);
-        assert_eq!(quoted.len(), 1, "the un-factored residual is quoted as work");
+        assert_eq!(quoted.len(), 1, "the unreached/remainder demand is quoted as work");
         assert!(surface.iter().any(|&s| s >= 1), "the open demand tensions the lanes it occupies");
         let (work, mu) = &quoted[0];
         assert!((0..4).any(|l| mu[l] > work.magnitude()[l]), "priced ABOVE raw magnitude — tension premium");
-        // B independently derives the same centered chain and SPEAKS it as a demand.
         let chain = work.sub().to_vec();
         let out = k.attest(&chain, [2; 32]);
         assert!(matches!(out, Outcome::Installed(0)), "consilience installs: {out:?}");
@@ -3076,6 +3113,8 @@ mod tests {
         let c = vec![(0, 0, 1u8), (0, 1, 1), (0, 2, 1), (0, 3, 3)];
         let d = vec![(0, 0, 2u8), (0, 1, 2), (0, 2, 1), (0, 3, 4)];
         assert!(matches!(k.ingest(&c, &d, [1; 32]), Outcome::GermPending));
+        let chain = germinate(&c, &d).unwrap();
+        assert!(matches!(k.attest(&chain, [1; 32]), Outcome::GermPending));
         let target = k.quote(8).1[0].0.address();
         let chain = k.quote(8).1[0].0.sub().to_vec();
         assert_eq!(chain.len(), 3);
@@ -3171,6 +3210,8 @@ mod tests {
         // Two listings (one voice each: pending), registered as one lineage.
         assert!(matches!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending));
         assert!(matches!(k.ingest(&c, &d, [1; 32]), Outcome::GermPending));
+        assert!(matches!(k.attest(&germinate(&a, &b).unwrap(), [1; 32]), Outcome::GermPending));
+        assert!(matches!(k.attest(&germinate(&c, &d).unwrap(), [1; 32]), Outcome::GermPending));
         let listed: Vec<[u8; 32]> = k.quote(8).1.iter().map(|(w, _)| w.address()).collect();
         assert_eq!(listed.len(), 2);
         let parent = [9u8; 32];
@@ -3206,7 +3247,7 @@ mod tests {
         let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 3)];
         assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
         assert!(!k.anchor_evidence().is_empty(), "birth deposited evidence");
-        let chain = k.quote(4).1[0].0.sub().to_vec();
+        let chain = germinate(&a, &b).unwrap();
         assert!(matches!(k.attest(&chain, [2; 32]), Outcome::Installed(0)));
         assert!(k.basis()[0].anchor().is_none(), "born ⊤ — one evidence never binds");
         // The court's family-derived π*: hue-1 cells touching hue 3.
@@ -3267,7 +3308,7 @@ mod tests {
         let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
         let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
         assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
-        let chain = k.quote(4).1[0].0.sub().to_vec();
+        let chain = germinate(&a, &b).unwrap();
         assert!(matches!(k.attest(&chain, [2; 32]), Outcome::Installed(0)));
         // The install PAID NOTHING — the award sits in escrow.
         assert_eq!(k.treasury().balance_mu(&[1; 32]), [0; 4], "unfinalized speech earns nothing");
@@ -3294,7 +3335,7 @@ mod tests {
         let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
         let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
         assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
-        let chain = k.quote(4).1[0].0.sub().to_vec();
+        let chain = germinate(&a, &b).unwrap();
         assert!(matches!(k.attest(&chain, [2; 32]), Outcome::Installed(0)));
         let before = k.basis_len();
         let (addr, _, _, _, _, _) = k.dockets()[0].clone();

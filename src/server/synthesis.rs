@@ -229,6 +229,7 @@ pub fn quote(
             budget,
             g.spoken(),
             &voice,
+            g.quote_frontier(),
         )
     };
     let cohesion = crate::cognition::cohesion_over(&rank.closure);
