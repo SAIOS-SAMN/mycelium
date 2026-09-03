@@ -644,6 +644,10 @@ pub struct Entity {
     /// there again. The digest names what differs by address; the geometry
     /// decides what is fetched.
     glued: Vec<crate::transducer::stalk::Invariant>,
+    /// OPEN THOUGHTS: remainders this mind has not collapsed into a closed
+    /// word — the chains speech cannot carry yet. Work, never a message;
+    /// bounded by the reserve, the oldest yielding to the newest.
+    thoughts: Vec<Vec<(i64, i64, u8, u8)>>,
 }
 
 impl Entity {
@@ -656,6 +660,7 @@ impl Entity {
             discordance: usize::MAX,
             obstructions: Vec::new(),
             glued: Vec::new(),
+            thoughts: Vec::new(),
         }
     }
 
@@ -1003,10 +1008,35 @@ impl Entity {
         &self.obstructions
     }
 
-    /// SPEAK A WORD this entity minted — a connection with its remainder —
-    /// up to the hypha for adoption. The word enters the entity's own
-    /// genome as its expressed thought and travels as itself on the wire.
+    /// HOLD A THOUGHT: a remainder this mind has not collapsed. Bounded by
+    /// the reserve; the oldest open thought yields to the newest.
+    pub fn hold_thought(&mut self, remainder: Vec<(i64, i64, u8, u8)>) {
+        if remainder.is_empty() || self.thoughts.contains(&remainder) {
+            return;
+        }
+        let cap = crate::physics::reserve_max() as usize;
+        if self.thoughts.len() >= cap {
+            self.thoughts.remove(0);
+        }
+        self.thoughts.push(remainder);
+    }
+
+    /// The open thoughts held here: remainders not yet closed into words.
+    pub fn thoughts(&self) -> &[Vec<(i64, i64, u8, u8)>] {
+        &self.thoughts
+    }
+
+    /// SPEAK A WORD this entity minted — a closed connection — up to the
+    /// hypha for adoption. The word enters the entity's own genome first
+    /// and travels as itself on the wire; a word with a remainder is held
+    /// as thought instead.
     pub fn speak_word(&mut self, word: &Element) -> io::Result<()> {
+        // A thought that still has a remainder is work, not a message: the
+        // wire never carries ∂g. A word with a chain is held, not uttered.
+        if let [_, ..] = word.sub() {
+            self.hold_thought(word.sub().to_vec());
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "a remainder is thought, not speech"));
+        }
         let voice = self.session.kernel().voice();
         let addr = word.address();
         if self.taught_up.contains(&addr) {

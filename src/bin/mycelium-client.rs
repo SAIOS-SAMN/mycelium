@@ -41,13 +41,15 @@ fn has(args: &[String], name: &str) -> bool {
 }
 /// The magnitude of a family, per lane: the sum over its pairs of the
 /// coboundary's lane magnitudes — what thinking it through is priced on.
-/// THE CONNECTION IS THE WORD (the overlay is apply g). One connection per
-/// rule of a comprehended transport: the versor's affine block and the gauge
-/// as the group component, the volume spoken across the family on the
-/// lanes, and the test remainder as the chain — each unspoken input cell
-/// paired with the held answer at that position when an answer is held,
-/// with itself when it is withheld. Spoken up as a word, never as another
-/// input→output pair and never through a rectangle. Returns (spoken,
+/// SPEECH IS A CLOSED CONNECTION (the overlay is apply g). A thought that
+/// still has a remainder is work, not a message: the family's inputs and
+/// the tests are replayed through the transport, and any cell the
+/// connection cannot speak keeps the whole thought here, as this mind's
+/// open remainder, until it closes. Only when every replay is closed is one
+/// connection per rule minted — the versor's affine block and the gauge as
+/// the group component, the volume spoken across the family on the lanes,
+/// and an EMPTY chain — held in the epigenome and spoken up as the word.
+/// Nothing residual reaches the wire. Returns (spoken, held as thought,
 /// errors).
 fn speak_connections(
     entity: &mut Entity,
@@ -55,52 +57,52 @@ fn speak_connections(
     transport: &mycelium::transducer::family::Transport,
     train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
     tests: &[Vec<Vec<u8>>],
-    answers: &[Vec<Vec<u8>>],
-) -> (u64, u64) {
+) -> (u64, u64, u64) {
     let mut carried = [0u64; 4];
-    for (a, _) in train {
-        if let Some(s) = mycelium::transducer::family::speak(transport, a) {
-            carried[0] = carried[0].saturating_add(s.cells.len() as u64);
-        }
-    }
     let mut remainder: Vec<(i64, i64, u8, u8)> = Vec::new();
-    for (k, x) in tests.iter().enumerate() {
-        let Some(speech) = mycelium::transducer::family::speak(transport, x) else { continue };
-        for &(r, c, h) in &speech.remainder {
-            let observed = answers
-                .get(k)
-                .and_then(|y| y.get(r as usize))
-                .and_then(|row| row.get(c as usize))
-                .copied()
-                .unwrap_or(h);
-            remainder.push((r, c, h, observed));
-        }
+    for x in train.iter().map(|(a, _)| a).chain(tests.iter()) {
+        let Some(speech) = mycelium::transducer::family::speak(transport, x) else {
+            // The connection refuses this scene outright: the scene is the remainder.
+            remainder.extend(grid_to_cells(x).into_iter().map(|(r, c, h)| (r, c, h, h)));
+            continue;
+        };
+        carried[0] = carried[0].saturating_add(speech.cells.len() as u64);
+        remainder.extend(speech.remainder.iter().map(|&(r, c, h)| (r, c, h, h)));
     }
     remainder.sort_unstable();
     remainder.dedup();
+    if let [_, ..] = remainder.as_slice() {
+        // THOUGHT, NOT SPEECH: the remainder stays here until it closes.
+        entity.hold_thought(remainder.clone());
+        eprintln!("[{name}] thought held: {} rules leave {} cells unspoken — not uttered", transport.rules.len(), remainder.len());
+        return (0, 1, 0);
+    }
     let (mut spoken, mut errors) = (0u64, 0u64);
     for rule in &transport.rules {
         let Some((_, u)) = rule.readings.iter().find(|(r, _)| *r == 0).or(rule.readings.first()) else { continue };
-        let Some(affine) = mycelium::transducer::element::affine_of(u) else { continue };
+        let Some(affine) = mycelium::transducer::element::affine_of(u) else {
+            eprintln!("[{name}] connection not affine: a rule's versor has no affine block — held, not uttered");
+            errors += 1;
+            continue;
+        };
         let gauge = rule.sigma.iter().filter(|(f, t)| f != t).count() as u64;
         let mut mag = carried;
         mag[1] = mag[1].saturating_add(gauge);
-        let word = mycelium::transducer::element::from_connection(&affine, &rule.sigma, &remainder, mag);
+        let word = mycelium::transducer::element::from_connection(&affine, &rule.sigma, &Vec::new(), mag);
         match entity.speak_word(&word) {
             Ok(()) => {
                 spoken += 1;
                 eprintln!(
-                    "[{name}] connection spoken: {:02x}{:02x}… remainder {} cells, carried {:?}",
+                    "[{name}] connection spoken: {:02x}{:02x}… closed, carried {:?}",
                     word.address()[0],
                     word.address()[1],
-                    remainder.len(),
                     word.magnitude()
                 );
             }
             Err(_) => errors += 1,
         }
     }
-    (spoken, errors)
+    (spoken, 0, errors)
 }
 
 fn family_magnitude(train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)]) -> [u64; 4] {
@@ -290,8 +292,7 @@ fn main() {
                             }
                         }
                         let tests: Vec<Vec<Vec<u8>>> = task.test.iter().map(|(x, _)| x.clone()).collect();
-                        let answers: Vec<Vec<Vec<u8>>> = task.test.iter().map(|(_, y)| y.clone()).collect();
-                        let (_, e) = speak_connections(&mut entity, &name, &transport, &task.train, &tests, &answers);
+                        let (_, _, e) = speak_connections(&mut entity, &name, &transport, &task.train, &tests);
                         errors += e;
                     }
                     // The family's pairs were already spoken as percepts
@@ -483,7 +484,7 @@ fn main() {
                 Some(transport) => {
                     // THE MINT ON THE LIVE PATH: the comprehended connection
                     // is spoken up as the word before any solve is projected.
-                    let (_, e) = speak_connections(&mut entity, &name, &transport, &train, &tests, &[]);
+                    let (_, _, e) = speak_connections(&mut entity, &name, &transport, &train, &tests);
                     errors += e;
                     let outs: Vec<Option<Vec<Vec<u8>>>> =
                         tests
@@ -511,11 +512,13 @@ fn main() {
                     }
                 }
                 None => {
-                    // The family is spoken as anastome: each pair a percept
-                    // carrying its measured frame and this genome's proof,
-                    // once. The hypha germinates; the court adjudicates the
-                    // frame relation across voices. Frames that disagree are
-                    // spoken the same way — the frame rides in the percept.
+                    // THINKING, NOT SPEECH: a family the connection does not
+                    // collapse is this mind's open remainder. Its pairs are
+                    // germinated and held here as thought — never spoken as
+                    // percept pairs, never entered as vocabulary. The corpus
+                    // itself stands on the hypha's book as market demand; the
+                    // entity's work is to close the remainder into a word.
+                    let mut held = 0usize;
                     for (x, y) in &train {
                         let (hi, wi) = (x.len(), x.first().map_or(0, |r| r.len()));
                         let (ho, wo) = (y.len(), y.first().map_or(0, |r| r.len()));
@@ -524,21 +527,11 @@ fn main() {
                         }
                         let (a, b) = (grid_to_cells(&embed(x, ho, wo)), grid_to_cells(y));
                         let Some(germ) = germinate(&a, &b) else { continue };
-                        if !entity.epigenome.express(&germ) {
-                            continue; // this pair was spoken already
-                        }
-                        if let Ok((reply, heard)) = entity.submit(&a, &b, &(hi, wi, ho, wo)) {
-                            fed += 1;
-                            if reply.settle.is_some() {
-                                settles += 1;
-                            }
-                            match heard {
-                                Some(Comprehension::Understood(_)) => derived += 1,
-                                Some(Comprehension::Novel { .. }) => witnessed += 1,
-                                None => {}
-                            }
-                            judge_load = reply.load();
-                        }
+                        entity.hold_thought(germ);
+                        held += 1;
+                    }
+                    if held > 0 {
+                        eprintln!("[{name}] thought held: family {:02x}{:02x}… {held} pairs uncollapsed — not uttered", tid[0], tid[1]);
                     }
                 }
             }
@@ -607,13 +600,14 @@ fn main() {
                 last_genome = entity.epigenome.genome_len();
                 last_settles = settles;
                 eprintln!(
-                    "[{name}] [{}] K {k_step} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | refined {refined} learned {learned} | genome {} (peak expr {}) discordance {} obstructions {}",
+                    "[{name}] [{}] K {k_step} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | refined {refined} learned {learned} | genome {} (peak expr {}) discordance {} obstructions {} thoughts {}",
                     tuniversal.stamp(),
                     entity.impedance(),
                     entity.epigenome.genome_len(),
                     entity.epigenome.peak_expression(),
                     entity.discordance(),
                     entity.obstructions().len(),
+                    entity.thoughts().len(),
                 );
             }
             while physics.depleted() {
