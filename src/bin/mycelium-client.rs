@@ -287,7 +287,7 @@ fn main() {
                             if y.is_empty() {
                                 continue; // withheld output: nothing to score against
                             }
-                            if let Some(speech) = mycelium::transducer::family::speak(&transport, x) {
+                            if let Some(speech) = mycelium::transducer::family::speak_total(&transport, x) {
                                 if let [] = speech.remainder.as_slice() {
                                     projected += 1;
                                     if speech.grid() == *y {
@@ -388,7 +388,8 @@ fn main() {
                     );
                     // Two utterances at most: the sentence settles the
                     // listing; a residual not yet claimed is attested once
-                    // as this voice's irreducible claim.
+                    // as this voice's irreducible claim. Puncture cites
+                    // (u32::MAX sections) are speech, not silence.
                     if let (0, []) = (cites.len(), residual.as_slice()) {
                         n_silent += 1;
                         continue;
@@ -402,11 +403,13 @@ fn main() {
                                     derived += 1;
                                     n_closed += 1;
                                     physics.bump(&mag);
+                                    let _ = entity.puncture_verified(&cites);
                                 }
                                 mycelium::anastome::dialogue::PROBE_DESCENT => {
                                     witnessed += 1;
                                     n_descent += 1;
                                     physics.bump(&mag);
+                                    let _ = entity.puncture_verified(&cites);
                                 }
                                 mycelium::anastome::dialogue::PROBE_SETTLED => n_settled += 1,
                                 _ => n_nothing += 1,
@@ -426,6 +429,7 @@ fn main() {
                         match entity.attest(&residual, &cites) {
                             Ok(reply) => {
                                 n_attested += 1;
+                                let _ = entity.puncture_verified(&cites);
                                 if reply.settle.is_some() {
                                     settles += 1;
                                 }
@@ -495,9 +499,9 @@ fn main() {
                         tests
                             .iter()
                             .map(|x| {
-                                mycelium::transducer::family::speak(&transport, x).and_then(|s| match s.remainder.as_slice() {
+                                mycelium::transducer::family::speak_total(&transport, x).and_then(|s| match s.remainder.as_slice() {
                                     [] => Some(s.grid()),
-                                    _ => None, // an unspoken hue is not submitted as a guess
+                                    _ => None, // an unreached body is not submitted as a guess
                                 })
                             })
                             .collect();

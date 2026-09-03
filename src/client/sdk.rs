@@ -391,6 +391,11 @@ impl Epigenome {
         self.index.get(addr).and_then(|&i| self.genome.get(i))
     }
 
+    /// The genome index of an address, read from the key.
+    pub fn index_of(&self, addr: &[u8; 32]) -> Option<usize> {
+        self.index.get(addr).copied()
+    }
+
     /// Re-key the genome after a removal or a restore shifted positions.
     fn reindex(&mut self) {
         self.index = crate::network::nerve::Keyed::new();
@@ -971,18 +976,29 @@ impl Entity {
             })
             .collect();
         // A puncture is spoken as a section of the held word: the operator
-        // carries the word's cells under the body's own transitions. This
-        // genome deepens its own copy at once; the hearer deepens on
-        // verification.
-        let punctures = located.punctures;
-        for (i, g, body) in &punctures {
+        // carries the word's cells under the body's own transitions. The
+        // wire carries it; this genome deepens only after the hypha verifies
+        // (probe closed/descent or attest), never before the utterance.
+        for (i, g, body) in &located.punctures {
             cites.push((genome[*i].address(), g.clone(), u32::MAX, body.clone()));
         }
-        let residual = located.residual;
-        for (i, _, body) in punctures {
-            self.epigenome.puncture(i, crate::transducer::element::assignment(&body));
+        (cites, located.residual)
+    }
+
+    /// Deepen fibres from puncture cites the hypha has verified. Linear in
+    /// the proof; each address is a keyed read.
+    pub fn puncture_verified(&mut self, cites: &[dialogue::CiteWire]) -> usize {
+        let mut deepened = 0usize;
+        for (addr, _, asg, body) in cites {
+            if *asg != u32::MAX {
+                continue;
+            }
+            let Some(i) = self.epigenome.index_of(addr) else { continue };
+            if self.epigenome.puncture(i, crate::transducer::element::assignment(body)) {
+                deepened += 1;
+            }
         }
-        (cites, residual)
+        deepened
     }
 
     /// SPEAK a percept as a proof: perceive, germinate, reduce every germ
