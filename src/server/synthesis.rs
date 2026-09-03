@@ -175,10 +175,7 @@ pub fn quote(
     k: &std::sync::Mutex<crate::cognition::Kernel>,
     voice: [u8; 32],
 ) -> Option<([u64; 4], Vec<(crate::transducer::element::Element, [u64; 4])>, u64, crate::cohesion::CohesionWitness)> {
-    let (view, spoken, spoken_any) = {
-        let mut g = k.lock().ok()?;
-        (g.market_open(), g.spoken_by(&voice), g.spoken_by_any())
-    };
+    let view = k.lock().ok()?.market_open();
     // The closure is a sealed carrier: read when current, measured over the
     // snapshot (no lock) and sealed back only when a generation moved.
     let t0 = std::time::Instant::now();
@@ -208,17 +205,22 @@ pub fn quote(
     let depth = (4 + (free as usize * 12) / (4 * crate::physics::reserve_max() as usize)).min(16);
     // The frame budget less the reply head (act, surface, count).
     let budget = crate::network::wire::BODY_BUDGET - 34;
-    let (surface, priced) = crate::cognition::quote_over(
-        &rank,
-        &view.composites,
-        &view.pending,
-        &view.surface,
-        &view.pool,
-        depth,
-        budget,
-        &spoken,
-        &spoken_any,
-    );
+    // The page is taken under a brief lock so each listing's receipts of
+    // speech are read at its own address as they stand.
+    let (surface, priced) = {
+        let g = k.lock().ok()?;
+        crate::cognition::quote_over(
+            &rank,
+            &view.composites,
+            &view.pending,
+            &view.surface,
+            &view.pool,
+            depth,
+            budget,
+            g.spoken(),
+            &voice,
+        )
+    };
     let cohesion = crate::cognition::cohesion_over(&rank.closure);
     Some((surface, priced, view.k_step, cohesion))
 }

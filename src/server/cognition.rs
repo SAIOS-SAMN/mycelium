@@ -72,6 +72,8 @@ pub struct Language {
     pub shapes: Vec<std::sync::OnceLock<Option<crate::transducer::blade::Shape>>>,
     /// The retirement generation of the basis this snapshot was taken at.
     pub retire_gen: u64,
+    /// Each word reached by its address — a coordinate read, never a scan.
+    pub index: crate::network::nerve::Keyed<usize>,
 }
 
 impl Language {
@@ -79,6 +81,11 @@ impl Language {
     pub fn shape(&self, i: usize) -> Option<&crate::transducer::blade::Shape> {
         let cell = self.shapes.get(i)?;
         cell.get_or_init(|| element::shape_of_chain(self.words[i].sub())).as_ref()
+    }
+
+    /// The index of the word at an address.
+    pub fn at(&self, addr: &[u8; 32]) -> Option<usize> {
+        self.index.get(addr).copied()
     }
 }
 
@@ -119,6 +126,8 @@ pub struct Rank {
     /// Per listing, its moduli — the coordinate that says whether a word
     /// added since could have closed it.
     pub invariants: Vec<crate::transducer::stalk::Invariant>,
+    /// Each listing's position reached by its address.
+    pub index: crate::network::nerve::Keyed<usize>,
     /// The basis generation the closure was measured at.
     pub basis_gen: u64,
     /// The basis length and retirement generation at measurement: with no
@@ -176,8 +185,11 @@ pub fn rank_over(
             }
         }
     }
-    let prior_at: Vec<Option<usize>> =
-        addresses.iter().map(|addr| prior.addresses.iter().position(|a| a == addr)).collect();
+    let prior_at: Vec<Option<usize>> = addresses.iter().map(|addr| prior.index.get(addr).copied()).collect();
+    let mut index = crate::network::nerve::Keyed::new();
+    for (i, addr) in addresses.iter().enumerate() {
+        index.insert(*addr, i);
+    }
     let invariants: Vec<crate::transducer::stalk::Invariant> = pending
         .iter()
         .zip(&prior_at)
@@ -231,6 +243,7 @@ pub fn rank_over(
         lineage,
         addresses,
         invariants,
+        index,
         basis_gen,
         basis_len: language.words.len(),
         retire_gen: language.retire_gen,
@@ -263,8 +276,8 @@ pub fn quote_over(
     pool: &[u64; 4],
     top: usize,
     budget: usize,
-    exclude: &[[u8; 32]],
-    spoken_any: &[[u8; 32]],
+    spoken: &crate::network::nerve::Keyed<Vec<[u8; 32]>>,
+    voice: &[u8; 32],
 ) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
     let c = rank.closure.iter().filter(|k| k.is_some()).count() as u64;
     let i = rank.closure.len() as u64 - c;
@@ -278,14 +291,15 @@ pub fn quote_over(
     // Listings no voice has spoken on come first in rank order, then the
     // ones other voices are already on: every voice reads an open page
     // before it joins a conversation in progress.
-    let open = rank.order.iter().copied().filter(|&i| pending.get(i).is_some_and(|(p, _)| !spoken_any.contains(&p.address())));
-    let joined = rank.order.iter().copied().filter(|&i| pending.get(i).is_some_and(|(p, _)| spoken_any.contains(&p.address())));
+    // Each listing's receipts are read at its own address.
+    let open = rank.order.iter().copied().filter(|&i| pending.get(i).is_some_and(|(p, _)| !spoken.contains(&p.address())));
+    let joined = rank.order.iter().copied().filter(|&i| pending.get(i).is_some_and(|(p, _)| spoken.contains(&p.address())));
     for idx in open.chain(joined) {
         if priced.len() >= top {
             break;
         }
         let Some((p, _)) = pending.get(idx) else { continue };
-        if exclude.contains(&p.address()) {
+        if spoken.get(&p.address()).is_some_and(|voices| voices.contains(voice)) {
             continue; // this voice has spoken on it in this state
         }
         let wire = 68 + p.sub().len() * cell;
@@ -454,6 +468,9 @@ pub struct Kernel {
     /// persisted; every basis mutation passes through `basis_push`,
     /// `basis_remove`, `basis_clear` so the alignment holds.
     stalks: crate::transducer::stalk::Stalks,
+    /// Each basis word reached by its address (index-aligned with `basis`;
+    /// rebuilt on the rare removal).
+    basis_index: crate::network::nerve::Keyed<usize>,
     /// THE BOOK SNAPSHOT — the open listings and composites as immutable
     /// shared values sealed at a book generation; a market view shares
     /// them by pointer and the book is copied only when it moved.
@@ -497,7 +514,7 @@ pub struct Kernel {
     /// voice has probed or attested in its current state. A listing that
     /// closes or descends changes address and leaves this relation; a quote
     /// never serves a voice a listing it has already spoken on.
-    spoken: Vec<([u8; 32], [u8; 32])>,
+    spoken: crate::network::nerve::Keyed<Vec<[u8; 32]>>,
     /// THE SETTLEMENTS awaiting the court: (listing, its chain, the voice,
     /// the utterance, magnitude before, magnitude after). The court replays
     /// the utterance and measures the deflation itself — proof of
@@ -509,7 +526,7 @@ pub struct Kernel {
     /// THE DEFLATIONS: per provisional word, the magnitude of the listed
     /// demand its install settled — zero when the germ settled nothing on
     /// the book. The court's proof of convergence rides with the word.
-    deflations: Vec<([u8; 32], [u64; 4])>,
+    deflations: crate::network::nerve::Keyed<[u64; 4]>,
     pub nerve: Nerve,
     /// Round-robin cursor for syntropic optimization — which generator to test for
     /// redundancy next (bounds consolidation to one reduce per depleted step).
@@ -553,9 +570,25 @@ impl Kernel {
     /// space admits its support at the same index.
     fn basis_push(&mut self, word: Element, discoverer: [u8; 32]) {
         self.stalks.admit(&crate::transducer::stalk::invariant(word.sub()), self.basis.len());
+        self.basis_index.insert(word.address(), self.basis.len());
         self.basis.push(word);
         self.discoverers.push(discoverer);
         self.basis_gen += 1;
+    }
+
+    /// Rebuild the address index from the basis (after a removal shifted
+    /// every later index; removals are the rare stroke).
+    fn reindex_basis(&mut self) {
+        let mut index = crate::network::nerve::Keyed::new();
+        for (i, w) in self.basis.iter().enumerate() {
+            index.insert(w.address(), i);
+        }
+        self.basis_index = index;
+    }
+
+    /// The word at an address, read by its coordinate.
+    pub fn word_at(&self, addr: &[u8; 32]) -> Option<&Element> {
+        self.basis_index.get(addr).and_then(|&i| self.basis.get(i))
     }
 
     /// Remove the word at `i` from the basis, its discoverer, and its stalk.
@@ -564,13 +597,16 @@ impl Kernel {
         self.stalks.remove(i);
         self.basis_gen += 1;
         self.retire_gen += 1;
-        self.basis.remove(i)
+        let removed = self.basis.remove(i);
+        self.reindex_basis();
+        removed
     }
 
     fn basis_clear(&mut self) {
         self.basis.clear();
         self.discoverers.clear();
         self.stalks.clear();
+        self.basis_index = crate::network::nerve::Keyed::new();
         self.basis_gen += 1;
     }
 
@@ -591,6 +627,7 @@ impl Kernel {
                 stalks: self.stalks.clone(),
                 shapes,
                 retire_gen: self.retire_gen,
+                index: self.basis_index.clone(),
             });
             self.language_gen = self.basis_gen;
         }
@@ -734,7 +771,7 @@ impl Kernel {
                 }
             }
             self.pending.remove(li);
-            self.spoken.retain(|(a, _)| a != target);
+            self.spoken.remove(target);
             self.book_gen += 1;
             self.physics.relieve(&mag);
             self.physics.syntropy(&mag);
@@ -766,7 +803,7 @@ impl Kernel {
         }
         let listed_at = self.pending[li].1;
         self.pending[li] = (next, listed_at);
-        self.spoken.retain(|(a, _)| a != target);
+        self.spoken.remove(target);
         self.book_gen += 1;
         self.physics.syntropy(&mag);
         self.append_step(*target, voice);
@@ -1009,11 +1046,7 @@ impl Kernel {
         let resolved: Vec<Cite> = cites
             .iter()
             .filter_map(|(a, g, asg, _)| {
-                self.basis
-                    .iter()
-                    .enumerate()
-                    .position(|(j, w)| j != i && w.address() == *a)
-                    .map(|j| (j, g.clone(), *asg as usize))
+                self.basis_index.get(a).copied().filter(|j| *j != i).map(|j| (j, g.clone(), *asg as usize))
             })
             .collect();
         let sub = candidate.substance();
@@ -1076,9 +1109,22 @@ impl Kernel {
 
     /// A voice spoke on a listing in its current state.
     fn record_spoken(&mut self, listing: [u8; 32], voice: [u8; 32]) {
-        if !self.spoken.iter().any(|(a, v)| *a == listing && *v == voice) {
-            self.spoken.push((listing, voice));
+        match self.spoken.get_mut(&listing) {
+            Some(voices) => {
+                if !voices.contains(&voice) {
+                    voices.push(voice);
+                }
+            }
+            None => {
+                self.spoken.insert(listing, vec![voice]);
+            }
         }
+    }
+
+    /// The receipts of speech, keyed by listing: read at a listing's own
+    /// address, never walked.
+    pub fn spoken(&self) -> &crate::network::nerve::Keyed<Vec<[u8; 32]>> {
+        &self.spoken
     }
 
     /// PUNCTURE held words from a verified utterance's carried bodies: the
@@ -1148,7 +1194,7 @@ impl Kernel {
 
     /// The deflation a provisional word's install measured on the book.
     pub fn deflation_of(&self, addr: &[u8; 32]) -> [u64; 4] {
-        self.deflations.iter().find(|(a, _)| a == addr).map(|(_, d)| *d).unwrap_or([0; 4])
+        self.deflations.get(addr).copied().unwrap_or([0; 4])
     }
 
     /// Measure and record what installing `addr` settles on the book: the
@@ -1159,24 +1205,7 @@ impl Kernel {
         // deflation is read on the listing, then on the word itself.
         let on = |addr: [u8; 32]| self.pending.iter().find(|(p, _)| p.address() == addr).map(|(p, _)| p.magnitude());
         let deflation = on(listing).or_else(|| on(word)).unwrap_or([0; 4]);
-        self.deflations.retain(|(a, _)| *a != word);
-        self.deflations.push((word, deflation));
-    }
-
-    /// The listings this voice has already spoken on, in their current state.
-    pub fn spoken_by(&self, voice: &[u8; 32]) -> Vec<[u8; 32]> {
-        self.spoken.iter().filter(|(_, v)| v == voice).map(|(a, _)| *a).collect()
-    }
-
-    /// The listings any voice has spoken on, in their current state.
-    pub fn spoken_by_any(&self) -> Vec<[u8; 32]> {
-        let mut out: Vec<[u8; 32]> = Vec::new();
-        for (a, _) in &self.spoken {
-            if !out.contains(a) {
-                out.push(*a);
-            }
-        }
-        out
+        self.deflations.insert(word, deflation);
     }
 
     /// The court's chain head as ruled to this hypha.
@@ -1751,6 +1780,7 @@ impl Kernel {
                     stalks: self.stalks.clone(),
                     shapes: (0..self.basis.len()).map(|_| std::sync::OnceLock::new()).collect(),
                     retire_gen: self.retire_gen,
+                    index: self.basis_index.clone(),
                 };
                 &fresh
             }
@@ -1895,7 +1925,7 @@ impl Kernel {
     pub fn quote(&mut self, top: usize) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
         let surface = crate::economy::yield_surface(&self.physics);
         let rank = self.closure_now();
-        quote_over(&rank, &self.composites, &self.pending, &surface, &self.treasury.pool(), top, usize::MAX, &[], &[])
+        quote_over(&rank, &self.composites, &self.pending, &surface, &self.treasury.pool(), top, usize::MAX, &self.spoken, &[0; 32])
     }
 
     /// ATTEST — a peer's INDEPENDENT derivation of an open residual arrives as a
@@ -2111,6 +2141,7 @@ impl Kernel {
                         axes.push(u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?));
                         *pos += 8;
                     }
+                    rank.index.insert(addr, rank.addresses.len());
                     rank.addresses.push(addr);
                     rank.closure.push((closed != u64::MAX).then_some(closed as usize));
                     rank.invariants.push(crate::transducer::stalk::Invariant(axes));
@@ -2498,17 +2529,17 @@ pub fn decode_percept(body: &[u8]) -> Option<Percept> {
 /// coordinates — each by its own address, a bounded find; a citation naming
 /// nothing held is dropped (it speaks nothing in the replay).
 pub fn resolve_cites(
-    language: &[Element],
+    language: &Language,
     cites: &[crate::anastome::dialogue::CiteWire],
     target: &[(i64, i64, u8, u8)],
 ) -> Vec<Cite> {
     cites
         .iter()
         .filter_map(|(addr, g, asg, _)| {
-            let i = language.iter().position(|w| w.address() == *addr)?;
+            let i = language.at(addr)?;
             // The gauge coordinate is read from the target, never trusted
             // as an index into this copy of the word.
-            let gauge = crate::transducer::sentence::gauge_of(&language[i], g, target).unwrap_or(*asg as usize);
+            let gauge = crate::transducer::sentence::gauge_of(&language.words[i], g, target).unwrap_or(*asg as usize);
             Some((i, g.clone(), gauge))
         })
         .collect()
@@ -2531,7 +2562,7 @@ pub fn reduce_proven(
     // what was verified. A closing operator the language does not hold is
     // the missing generator, listed as the demand.
     let residual = crate::transducer::sentence::verify_utterance(cites, sub.sub());
-    let resolved = resolve_cites(&language.words, cites, sub.sub());
+    let resolved = resolve_cites(language, cites, sub.sub());
     let form = match (residual.is_empty(), resolved.len() == cites.len()) {
         (true, true) => NormalForm::Decomposed(resolved.iter().map(|(i, _, _)| *i).collect()),
         (true, false) => {

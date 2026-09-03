@@ -449,15 +449,26 @@ fn main() {
     // PROVEN ROOTS heard on the nerve: (task, solver). A root is gossiped
     // once and re-dispatched here first; a voice that reproduces the solve
     // proves it shares the root.
-    let mut roots: Vec<([u8; 32], [u8; 32])> = Vec::new();
+    let mut roots: mycelium::network::nerve::Keyed<[u8; 32]> = mycelium::network::nerve::Keyed::new();
+    // THE NERVE THREAD: every act this node speaks to a peer leaves through
+    // a bounded channel drained here, so the door never dials. The bound is
+    // the reserve ceiling; a full nerve drops the act, as a full reflex
+    // pool defers a demand.
+    let (nerve_tx, nerve_rx) = std::sync::mpsc::sync_channel::<(String, Vec<u8>)>(mycelium::physics::reserve_max() as usize);
+    std::thread::spawn(move || {
+        for (addr, body) in nerve_rx {
+            tell_peer(&addr, body);
+        }
+    });
     // The roots this book already holds settled are announced to the nerve
     // at boot, so a family proven here is re-spoken on every peer's book.
-    for t in registry.lock().map(|r| r.settled_ids()).unwrap_or_default() {
-        roots.push((t, id));
-        speak_root(&router, &nerve_id,&t, &id, None);
+    let settled = registry.lock().map(|r| r.settled_ids()).unwrap_or_default();
+    for t in &settled {
+        roots.insert(*t, id);
+        speak_root(&router, &nerve_tx, &nerve_id, t, &id, None);
     }
-    if !roots.is_empty() {
-        eprintln!("  roots announced: {} settled families, each to its key's next hop", roots.len());
+    if !settled.is_empty() {
+        eprintln!("  roots announced: {} settled families, each to its key's next hop", settled.len());
     }
     let mut syllabus_served: Vec<([u8; 32], usize)> = Vec::new();
 
@@ -579,18 +590,8 @@ fn main() {
                 let _ = s.write_all(&Frame { lane: frame.lane, body: Vec::new() }.encode().unwrap_or_default());
                 continue;
             }
-            if !roots.iter().any(|(t, sv)| *t == task && *sv == solver) {
-                // A new root heard: the nerve exchanges roots with the peer
-                // that spoke it — each of ours goes back along its own
-                // key's hop when that hop is the speaker.
-                for (t, sv) in roots.clone().iter() {
-                    if router.closest_excluding(t, &[nerve_id]).is_some_and(|(hop, _)| hop == from) {
-                        if let Some((_, back)) = router.closest(&from) {
-                            let _ = nerve_tx.try_send((back, dialogue::encode_root(&nerve_id, t, sv)));
-                        }
-                    }
-                }
-                roots.push((task, solver));
+            if roots.get(&task).is_none() {
+                roots.insert(task, solver);
                 let prioritized = registry.lock().map(|mut r| r.prioritize(&task)).unwrap_or(false);
                 eprintln!(
                     "  ROOT heard from {:02x}: task {:02x}{:02x}… solved by voice {:02x}; {}",
@@ -600,7 +601,7 @@ fn main() {
                     solver[0],
                     if prioritized { "re-dispatched first here" } else { "not open on this book" }
                 );
-                speak_root(&router, &nerve_id,&task, &solver, Some(from));
+                speak_root(&router, &nerve_tx, &nerve_id, &task, &solver, Some(from));
             }
             let _ = s.write_all(&Frame { lane: frame.lane, body: Vec::new() }.encode().unwrap_or_default());
             continue;
@@ -716,15 +717,15 @@ fn main() {
                         // from the nerve is its reproduction by this book's
                         // voice; a first solve of an unheard family is a new
                         // root, gossiped once to every peer.
-                        match roots.iter().find(|(t, _)| *t == tid) {
-                            Some((_, solver)) => eprintln!(
+                        match roots.get(&tid).copied() {
+                            Some(solver) => eprintln!(
                                 "  ROOT REPRODUCED task {:02x}{:02x}… by voice {:02x} (root solver {:02x})",
                                 tid[0], tid[1], svoice[0], solver[0]
                             ),
                             None => {
-                                roots.push((tid, svoice));
+                                roots.insert(tid, svoice);
                                 eprintln!("  ROOT task {:02x}{:02x}… proven by voice {:02x}; spoken to its key's next hop", tid[0], tid[1], svoice[0]);
-                                speak_root(&router, &nerve_id,&tid, &svoice, None);
+                                speak_root(&router, &nerve_tx, &nerve_id, &tid, &svoice, None);
                             }
                         }
                         (dialogue::SOLVE_BOUNTY, paid)
@@ -835,7 +836,7 @@ fn main() {
                     // the refined γ. A word not yet held (adoption in flight)
                     // holds the cursor until it lands; a retired word is
                     // passed over.
-                    match k.basis().iter().find(|t| t.address() == addr) {
+                    match k.word_at(&addr) {
                         Some(w) => out.push(w.to_bytes()),
                         None => missed.push(addr), // adoption in flight: taught once it lands
                     }

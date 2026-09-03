@@ -88,6 +88,95 @@ impl Nerve {
 /// IS the XOR-closest, in O(bits), INDEPENDENT of N and never a scan of the peer
 /// set. (Correct + simple; path-compression to O(N) nodes is tracked as R5's
 /// follow-up — correctness first.)
+/// A KEYED RELATION over 32-byte identities: a value reached by its key's
+/// bits, O(bits) per read and write, never a scan of the relation. The
+/// carrier every address-keyed fact in the engine is reached through —
+/// listings spoken on, deflations, roots, a language's words — so an
+/// endpoint is always read from the key, whatever the relation's size.
+#[derive(Clone, Debug)]
+pub struct Keyed<V> {
+    children: [Option<Box<Keyed<V>>>; 2],
+    leaf: Option<([u8; 32], V)>,
+}
+
+impl<V> Default for Keyed<V> {
+    fn default() -> Self {
+        Keyed { children: [None, None], leaf: None }
+    }
+}
+
+impl<V> Keyed<V> {
+    pub fn new() -> Self {
+        Keyed::default()
+    }
+
+    fn bit(key: &[u8; 32], i: usize) -> usize {
+        ((key[i / 8] >> (7 - (i % 8))) & 1) as usize
+    }
+
+    /// Bind `key` to `value`; a held key is rebound. Returns the value
+    /// displaced, if any.
+    pub fn insert(&mut self, key: [u8; 32], value: V) -> Option<V> {
+        let mut node = self;
+        for depth in 0..256 {
+            let b = Self::bit(&key, depth);
+            node = node.children[b].get_or_insert_with(|| Box::new(Keyed::default()));
+        }
+        node.leaf.replace((key, value)).map(|(_, v)| v)
+    }
+
+    fn node(&self, key: &[u8; 32]) -> Option<&Keyed<V>> {
+        let mut node = self;
+        for depth in 0..256 {
+            node = node.children[Self::bit(key, depth)].as_deref()?;
+        }
+        Some(node)
+    }
+
+    fn node_mut(&mut self, key: &[u8; 32]) -> Option<&mut Keyed<V>> {
+        let mut node = self;
+        for depth in 0..256 {
+            node = node.children[Self::bit(key, depth)].as_deref_mut()?;
+        }
+        Some(node)
+    }
+
+    pub fn get(&self, key: &[u8; 32]) -> Option<&V> {
+        self.node(key).and_then(|n| n.leaf.as_ref()).map(|(_, v)| v)
+    }
+
+    pub fn get_mut(&mut self, key: &[u8; 32]) -> Option<&mut V> {
+        self.node_mut(key).and_then(|n| n.leaf.as_mut()).map(|(_, v)| v)
+    }
+
+    pub fn contains(&self, key: &[u8; 32]) -> bool {
+        self.get(key).is_some()
+    }
+
+    /// Unbind `key`; the value it held, if any. Empty branches are left in
+    /// place (a later rebind reuses them).
+    pub fn remove(&mut self, key: &[u8; 32]) -> Option<V> {
+        self.node_mut(key).and_then(|n| n.leaf.take()).map(|(_, v)| v)
+    }
+
+    /// Every bound (key, value), in key order — a walk of the relation for
+    /// persistence and for measurements over the whole, never for lookup.
+    pub fn entries(&self) -> Vec<(&[u8; 32], &V)> {
+        let mut out = Vec::new();
+        self.walk(&mut out);
+        out
+    }
+
+    fn walk<'a>(&'a self, out: &mut Vec<(&'a [u8; 32], &'a V)>) {
+        if let Some((k, v)) = &self.leaf {
+            out.push((k, v));
+        }
+        for c in self.children.iter().flatten() {
+            c.walk(out);
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct Router {
     children: [Option<Box<Router>>; 2],
