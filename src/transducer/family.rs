@@ -488,11 +488,20 @@ fn gauge_image(sigma: &[(u8, u8)], h: u8) -> Option<u8> {
 /// is not dropped: it rides out as the remainder (in the input's own
 /// coordinates). The spoken cells come back in canonical order so two
 /// readings compare as sets.
-fn render(body: &Body, v: &Versor, sigma: &[(u8, u8)], fy: (usize, usize)) -> Option<(Vec<Cell3>, Vec<Cell3>)> {
+fn render(body: &Body, v: &Versor, sigma: &[(u8, u8)], fy: (usize, usize), total: bool) -> Option<(Vec<Cell3>, Vec<Cell3>)> {
     let mut out: Vec<Cell3> = Vec::new();
     let mut remainder: Vec<Cell3> = Vec::new();
     for &(r, c, h) in &body.cells {
-        let Some(hue) = gauge_image(sigma, h) else {
+        // THE GAUGE AS A TOTAL MAP: under `total` a hue the family never
+        // showed rides as itself — the identity section the minted
+        // connection already carries on its hue rows (apply g). Under the
+        // partial map it is the remainder.
+        let image = match (gauge_image(sigma, h), total) {
+            (Some(hue), _) => Some(hue),
+            (None, true) => Some(h),
+            (None, false) => None,
+        };
+        let Some(hue) = image else {
             remainder.push((r, c, h));
             continue;
         };
@@ -537,6 +546,18 @@ impl Speech {
 /// a guess. A hue with no image is not a refusal: it is the remainder on
 /// the speech.
 pub fn speak(t: &Transport, x: &Grid) -> Option<Speech> {
+    speak_with(t, x, false)
+}
+
+/// SPEAK THROUGH THE MINTED CONNECTION: the same transport applied as the
+/// total map its word carries — a hue outside the family's palette is its
+/// own image (the identity section). This is apply g: the close-test for a
+/// thought, and the gauge puncture that lets an unseen hue ride.
+pub fn speak_total(t: &Transport, x: &Grid) -> Option<Speech> {
+    speak_with(t, x, true)
+}
+
+fn speak_with(t: &Transport, x: &Grid, total: bool) -> Option<Speech> {
     let fx = frame_of(x);
     let ((hn, hd), (wn, wd)) = t.ratio;
     if fx.0 == 0 || fx.1 == 0 || (fx.0 * hn) % hd.max(1) != 0 || (fx.1 * wn) % wd.max(1) != 0 {
@@ -561,7 +582,7 @@ pub fn speak(t: &Transport, x: &Grid) -> Option<Speech> {
                 3 => read_out(u, &cx, &shifted),
                 _ => read_out(u, &body.centroid, &cy),
             };
-            let rendered = render(&body, &v, &rule.sigma, fy)?;
+            let rendered = render(&body, &v, &rule.sigma, fy, total)?;
             match &spoken {
                 None => spoken = Some(rendered),
                 Some(held) => {

@@ -60,8 +60,13 @@ fn speak_connections(
 ) -> (u64, u64, u64) {
     let mut carried = [0u64; 4];
     let mut remainder: Vec<(i64, i64, u8, u8)> = Vec::new();
+    // THE CLOSE-TEST IS APPLY g: the replay goes through the connection as
+    // the total map its word carries (a hue outside the family's palette
+    // rides as itself — the identity section, the gauge puncture the
+    // remainder asked for). What is left unspoken is not a hue without an
+    // image but a body the connection does not reach.
     for x in train.iter().map(|(a, _)| a).chain(tests.iter()) {
-        let Some(speech) = mycelium::transducer::family::speak(transport, x) else {
+        let Some(speech) = mycelium::transducer::family::speak_total(transport, x) else {
             // The connection refuses this scene outright: the scene is the remainder.
             remainder.extend(grid_to_cells(x).into_iter().map(|(r, c, h)| (r, c, h, h)));
             continue;
@@ -324,8 +329,8 @@ fn main() {
                         settles += 1;
                     }
                     match heard {
-                        Some(Comprehension::Understood(_)) => derived += 1,
-                        Some(Comprehension::Novel { .. }) => witnessed += 1,
+                        Some(Comprehension::Understood(_)) | Some(Comprehension::Held) | Some(Comprehension::Admitted) => derived += 1,
+                        Some(Comprehension::Novel { .. }) | Some(Comprehension::Dialect(_)) => witnessed += 1,
                         None => {}
                     }
                     // The percept's own magnitude, per lane, is the pressure

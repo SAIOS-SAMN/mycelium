@@ -23,9 +23,11 @@ use crate::transducer::toroid::{self, HolonomicLoopWitness};
 
 /// Deterministic re-derivation of a spoken word from its own evidence
 /// (the contradiction docket). Returns None when the word replays clean;
-/// Some(reason) when the speech was false. Same chain → same word
-/// (from_residual is deterministic), the chain must be canonically framed,
-/// and the install must strictly descend (0⃗ ≺_DM μ⃗).
+/// Some(reason) when the speech was false. A residual word re-derives from
+/// its chain (from_residual is deterministic, the chain canonically
+/// framed); a CONNECTION re-derives by inversion of its group component,
+/// with its remainder chain re-deriving as any germ's; every torsion cycle
+/// is walked; and the install must strictly descend (0⃗ ≺_DM μ⃗).
 pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
     let chain = spoken.sub();
     // A CONNECTION is a word with two components: the group component (an
@@ -202,9 +204,9 @@ pub fn rule(
             };
             let group_view = group_view.map(|g| {
                 let third = stalks
-                    .fiber(&stalk::invariant(spoken.sub()))
+                    .fiber(&stalk::invariant_of(spoken))
                     .iter()
-                    .copied()
+                    .filter_map(|a| index.get(a).copied())
                     .find(|&i| federation[i].0 != *addr && !federation[i].1.axes().is_empty());
                 match third {
                     Some(i) => {
@@ -245,12 +247,33 @@ pub fn rule(
             // invariant holds every base point it could sit on; the group
             // element decides inside that stratum and rides the ruling as
             // the transport — no federation scan, no discarded connection.
-            let congruent = match spoken.sub().is_empty() {
-                true => None,
-                false => stalk::congruent(stalks, |i| federation[i].1.sub(), spoken.sub())
-                    .filter(|(i, _)| federation[*i].0 != *addr),
-            };
-            match congruent {
+            // A CONNECTION at a new address is heard against the fibre's
+            // representative: the transition vanishing is the same word
+            // (consilient), a non-identity transition is a dialect carried
+            // on the arm, and an empty fibre admits new geometry. Never an
+            // empty-support Attached.
+            if spoken.is_connection() {
+                let representative = stalks
+                    .fiber(&stalk::invariant_of(spoken))
+                    .iter()
+                    .filter_map(|a| index.get(a).copied())
+                    .find(|&i| federation[i].0 != *addr && !federation[i].1.axes().is_empty());
+                return match representative.map(|i| (i, cech::transition(&federation[i].1, spoken))) {
+                    None | Some((_, None)) => Ruling::Admitted(spoken.clone()),
+                    Some((base, Some(g))) => match (g.axes().as_slice(), g.sub()) {
+                        ([], []) => Ruling::Consilient(g),
+                        // The same motion placed elsewhere attaches as a
+                        // section of the base, the translation its versor.
+                        _ => match stalk::placement_of(&g) {
+                            Some(v) => Ruling::Attached { base, g: v },
+                            None => Ruling::Dialect(g),
+                        },
+                    },
+                };
+            }
+            let at = |a: &[u8; 32]| index.get(a).and_then(|&i| federation.get(i)).map(|(_, e)| e);
+            let congruent = stalk::congruent(stalks, at, spoken).filter(|(a, _)| a != addr);
+            match congruent.and_then(|(a, g)| index.get(&a).map(|&base| (base, g))) {
                 Some((base, g)) => Ruling::Attached { base, g },
                 None => Ruling::Admitted(spoken.clone()),
             }
@@ -305,7 +328,7 @@ mod tests {
     }
 
     fn stalks_of(fed: &[([u8; 32], Element)]) -> Stalks {
-        Stalks::over(fed.iter().map(|(_, e)| e.sub()))
+        Stalks::over_elements(fed.iter().map(|(_, e)| e))
     }
 
     fn index_of(fed: &[([u8; 32], Element)]) -> Keyed<usize> {

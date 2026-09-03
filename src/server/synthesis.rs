@@ -270,6 +270,7 @@ pub fn adopt(
     let sentence = crate::transducer::sentence::deconstruct(
         &language.words,
         &language.stalks,
+        &|a| language.index.get(a).copied(),
         &|i| language.shape(i),
         sub.sub(),
         None,

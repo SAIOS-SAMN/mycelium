@@ -279,6 +279,15 @@ pub enum Comprehension {
     /// Partially decomposed: the residual is the not-yet-understood part (a
     /// prospective for the mesh, not a failure of the ear).
     Novel { residual_cells: usize },
+    /// A CONNECTION heard by holding it: the transition to the held word on
+    /// its fibre vanished — the same word, glued.
+    Held,
+    /// A connection heard whose transition to the fibre's representative
+    /// did not vanish: the obstruction element is the dialect, carried.
+    Dialect(Element),
+    /// A connection on a fibre this genome holds no representative on:
+    /// admitted as new geometry.
+    Admitted,
 }
 
 /// GENOME + EPIGENOME — carried from the CE entity design (core/ccl.rs: the
@@ -370,6 +379,7 @@ pub struct Epigenome {
     expressed: Vec<Element>,
     expressed_atlas: crate::transducer::stalk::Stalks,
     expressed_shapes: Vec<std::sync::OnceLock<Option<crate::transducer::blade::Shape>>>,
+    expressed_index: crate::network::nerve::Keyed<usize>,
     /// Every genome word reached by its address (index-aligned with
     /// `genome`): a keyed relation, never a walk of the genome.
     index: crate::network::nerve::Keyed<usize>,
@@ -414,16 +424,18 @@ impl Epigenome {
         let located = {
             let expressed = &self.expressed;
             let shapes = &self.expressed_shapes;
+            let index = &self.expressed_index;
             let shape_at = |i: usize| {
                 shapes.get(i).and_then(|c| c.get_or_init(|| crate::transducer::element::shape_of_chain(expressed[i].sub())).as_ref())
             };
-            crate::transducer::sentence::deconstruct(expressed, &self.expressed_atlas, &shape_at, residual, None)
+            crate::transducer::sentence::deconstruct(expressed, &self.expressed_atlas, &|a| index.get(a).copied(), &shape_at, residual, None)
         };
         if let ([], []) = (located.residual.as_slice(), located.punctures.as_slice()) {
             return false; // already spoken: the same body under a transport
         }
         let word = crate::transducer::element::from_residual(&residual.to_vec());
-        self.expressed_atlas.admit(&crate::transducer::stalk::invariant(word.sub()), self.expressed.len());
+        self.expressed_atlas.admit(&crate::transducer::stalk::invariant_of(&word), word.address());
+        self.expressed_index.insert(word.address(), self.expressed.len());
         self.expressed_shapes.push(std::sync::OnceLock::new());
         self.expressed.push(word);
         true
@@ -453,7 +465,7 @@ impl Epigenome {
     /// The genome's atlas, current with the genome.
     pub fn atlas(&mut self) -> &crate::transducer::stalk::Stalks {
         if self.atlas_len != self.genome.len() {
-            self.atlas = crate::transducer::stalk::Stalks::over(self.genome.iter().map(|w| w.sub()));
+            self.atlas = crate::transducer::stalk::Stalks::over_elements(self.genome.iter());
             self.shapes = (0..self.genome.len()).map(|_| std::sync::OnceLock::new()).collect();
             self.atlas_len = self.genome.len();
         }
@@ -470,7 +482,7 @@ impl Epigenome {
     /// the residual no word speaks.
     fn locate(&mut self, chain: &[(i64, i64, u8, u8)], exclude: Option<usize>) -> crate::transducer::sentence::Sentence {
         self.atlas();
-        crate::transducer::sentence::deconstruct(&self.genome, &self.atlas, &|i| self.shape(i), chain, exclude)
+        crate::transducer::sentence::deconstruct(&self.genome, &self.atlas, &|a| self.index.get(a).copied(), &|i| self.shape(i), chain, exclude)
     }
 
     pub fn retire(&mut self, addr: &[u8; 32]) -> bool {
@@ -498,6 +510,27 @@ impl Epigenome {
     /// understanding into the epigenome — expression weights rise on the cited
     /// words, the sentence joins the recollections. The genome is untouched.
     pub fn comprehend(&mut self, utterance: &Element) -> Comprehension {
+        // HEAR g BY HOLDING IT: a connection has no chain to cover. It is
+        // glued against the representative on its fibre — the transition
+        // vanishes (held), does not (dialect, the element carried), or there
+        // is no representative (admitted). Never an empty covering.
+        if utterance.is_connection() && utterance.sub().is_empty() {
+            self.atlas();
+            let inv = crate::transducer::stalk::invariant_of(utterance);
+            let representative = self
+                .atlas
+                .fiber(&inv)
+                .iter()
+                .filter_map(|a| self.word_at(a))
+                .find(|held| held.address() != utterance.address() && !held.axes().is_empty());
+            return match representative.and_then(|held| crate::transducer::cech::transition(held, utterance)) {
+                None => Comprehension::Admitted,
+                Some(g) => match (g.axes().as_slice(), g.sub()) {
+                    ([], []) => Comprehension::Held,
+                    _ => Comprehension::Dialect(g),
+                },
+            };
+        }
         // Located through the atlas and the versor, never searched. A taught
         // word is one piece: one stroke locates it.
         let located = self.locate(utterance.sub(), None);
@@ -556,7 +589,7 @@ impl Epigenome {
                 // The atlas admits the new word in place when it is current;
                 // otherwise it rebuilds on the next lookup.
                 if self.atlas_len == self.genome.len() {
-                    self.atlas.admit(&crate::transducer::stalk::invariant(e.sub()), self.genome.len());
+                    self.atlas.admit(&crate::transducer::stalk::invariant_of(&e), e.address());
                     self.shapes.push(std::sync::OnceLock::new());
                     self.atlas_len += 1;
                 }
@@ -797,7 +830,7 @@ impl Entity {
         // The genome's own atlas (current, admitted in place), never rebuilt here.
         self.epigenome.atlas();
         let atlas = self.epigenome.atlas.clone();
-        let local = sheaf::digests(&atlas, self.epigenome.genome());
+        let local = sheaf::digests(&atlas);
         // The outer index names what differs by address; a stratum the
         // fibre Čech already glued is not walked again.
         let strata: Vec<_> = sheaf::discordant(&remote, &local)
@@ -811,7 +844,7 @@ impl Entity {
         // carrier. A wide discordance converges over contacts.
         let charts: Vec<dialogue::Chart> = strata
             .iter()
-            .map(|d| (d.inv.clone(), sheaf::have(&atlas, self.epigenome.genome(), &d.inv)))
+            .map(|d| (d.inv.clone(), sheaf::have(&atlas, &d.inv)))
             .collect();
         let request = dialogue::encode_fetch(&voice, &charts, crate::network::wire::BODY_BUDGET);
         let mut learned = 0usize;
@@ -833,16 +866,15 @@ impl Entity {
                 continue; // no group view: the additive coboundary has no transition
             }
             self.epigenome.atlas();
-            let inv = crate::transducer::stalk::invariant(fetched.sub());
-            let fibre: Vec<usize> = self.epigenome.atlas.fiber(&inv).to_vec();
-            let genome = self.epigenome.genome();
+            let inv = crate::transducer::stalk::invariant_of(&fetched);
+            let fibre: Vec<[u8; 32]> = self.epigenome.atlas.fiber(&inv).to_vec();
             // One transition, to the stratum's representative: the first
             // held word on the fibre with a group view that is not the
             // fetched word itself. Siblings are interchangeable under the
             // class's symmetry; the transition to one of them is the glue.
             let representative = fibre
                 .iter()
-                .filter_map(|&i| genome.get(i))
+                .filter_map(|a| self.epigenome.word_at(a))
                 .find(|held| held.address() != fetched.address() && !held.axes().is_empty());
             let Some(held) = representative else { continue };
             let Some(g) = crate::transducer::cech::transition(held, &fetched) else { continue };

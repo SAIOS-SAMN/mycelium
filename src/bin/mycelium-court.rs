@@ -151,7 +151,7 @@ fn main() {
     if let Some(s) = restored {
         chain = s.chain;
         federation = s.federation;
-        stalks = Stalks::over(federation.iter().map(|(_, e)| e.sub()));
+        stalks = Stalks::over_elements(federation.iter().map(|(_, e)| e));
         for (i, (a, _)) in federation.iter().enumerate() {
             fed_index.insert(*a, i);
         }
@@ -276,7 +276,7 @@ fn main() {
                         // The tally IS the state map — one arm per outcome.
                         match outcome {
                             verdict::Ruling::Admitted(sealed) => {
-                                stalks.admit(&stalk::invariant(sealed.sub()), federation.len());
+                                stalks.admit(&stalk::invariant_of(&sealed), addr);
                                 fed_index.insert(addr, federation.len());
                                 federation.push((addr, sealed));
                                 upheld += 1;
@@ -373,7 +373,7 @@ fn main() {
                 let spoken = Element::from_bytes(&elem_bytes, &mut pos);
                 let outcome = verdict::rule(&federation, &fed_index, &stalks, &addr, spoken.as_ref(), Some(&deflation));
                 if let verdict::Ruling::Admitted(sealed) = &outcome {
-                    stalks.admit(&stalk::invariant(sealed.sub()), federation.len());
+                    stalks.admit(&stalk::invariant_of(&sealed), addr);
                     fed_index.insert(addr, federation.len());
                     federation.push((addr, sealed.clone()));
                 }
@@ -461,7 +461,7 @@ fn main() {
             let hi = recon_cursor % sessions.len();
             recon_cursor = recon_cursor.wrapping_add(1);
             if fed_digests_len != federation.len() {
-                fed_digests = mycelium::transducer::sheaf::digests_with(&stalks, |i| federation.get(i).map(|(_, e)| e));
+                fed_digests = mycelium::transducer::sheaf::digests(&stalks);
                 fed_digests_len = federation.len();
             }
             if let Some(remote) = ask(&sessions[hi], &outbox[hi], dialogue::encode_digests_request(&voice))
@@ -472,8 +472,8 @@ fn main() {
                 let mut strata = 0usize;
                 'strata: for d in mycelium::transducer::sheaf::discordant(&fed_digests, &remote) {
                     strata += 1;
-                    for &i in stalks.fiber(&d.inv) {
-                        let Some((a, w)) = federation.get(i) else { continue };
+                    for member in stalks.fiber(&d.inv) {
+                        let Some((a, w)) = fed_index.get(member).and_then(|&i| federation.get(i)) else { continue };
                         if recon_taught[hi].contains(a) {
                             continue;
                         }

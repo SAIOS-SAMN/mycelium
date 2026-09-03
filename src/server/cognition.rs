@@ -178,7 +178,7 @@ pub fn rank_over(
     let mut moved: Vec<crate::transducer::stalk::Invariant> = Vec::new();
     if incremental {
         for w in &language.words[prior.basis_len..] {
-            let inv = crate::transducer::stalk::invariant(w.sub());
+            let inv = crate::transducer::stalk::invariant_of(w);
             if !moved.contains(&inv) {
                 moved.push(inv);
             }
@@ -194,7 +194,7 @@ pub fn rank_over(
         .zip(&prior_at)
         .map(|((p, _), j)| match j.and_then(|j| prior.invariants.get(j)) {
             Some(inv) => inv.clone(),
-            None => crate::transducer::stalk::invariant(p.sub()),
+            None => crate::transducer::stalk::invariant_of(p),
         })
         .collect();
     let closure: Vec<Option<usize>> = pending
@@ -207,7 +207,12 @@ pub fn rank_over(
                 (same_basis || untouched).then(|| prior.closure[j])
             });
             held.unwrap_or_else(|| {
-                crate::transducer::stalk::congruent_shaped(stalks, |i| language.shape(i), p.sub()).map(|(i, _)| i)
+                crate::transducer::stalk::congruent_shaped(
+                    stalks,
+                    |a| language.index.get(a).and_then(|&i| language.shape(i)),
+                    p.sub(),
+                )
+                .and_then(|(a, _)| language.index.get(&a).copied())
             })
         })
         .collect();
@@ -411,6 +416,7 @@ pub fn normal_form(language: &Language, chain: &[(i64, i64, u8, u8)], exclude: O
     let sentence = crate::transducer::sentence::deconstruct(
         &language.words,
         &language.stalks,
+        &|a| language.index.get(a).copied(),
         &|i| language.shape(i),
         chain,
         exclude,
@@ -577,7 +583,7 @@ impl Kernel {
     /// Install a word at the end of the basis with its discoverer; the stalk
     /// space admits its support at the same index.
     fn basis_push(&mut self, word: Element, discoverer: [u8; 32]) {
-        self.stalks.admit(&crate::transducer::stalk::invariant(word.sub()), self.basis.len());
+        self.stalks.admit(&crate::transducer::stalk::invariant_of(&word), word.address());
         self.basis_index.insert(word.address(), self.basis.len());
         self.basis.push(word);
         self.discoverers.push(discoverer);
@@ -602,7 +608,7 @@ impl Kernel {
     /// Remove the word at `i` from the basis, its discoverer, and its stalk.
     fn basis_remove(&mut self, i: usize) -> Element {
         self.discoverers.remove(i);
-        self.stalks.remove(i);
+        self.stalks.remove(&self.basis[i].address());
         self.basis_gen += 1;
         self.retire_gen += 1;
         let removed = self.basis.remove(i);
@@ -1174,7 +1180,8 @@ impl Kernel {
     /// fiber deepens on what the hypha verified. A deepened basis moves the
     /// basis generation so the language snapshot refreshes.
     pub fn puncture_from(&mut self, cites: &[crate::anastome::dialogue::CiteWire]) -> usize {
-        let deepened = crate::transducer::sentence::puncture_from(&mut self.basis, cites);
+        let index = &self.basis_index;
+        let deepened = crate::transducer::sentence::puncture_from(&mut self.basis, |a| index.get(a).copied(), cites);
         if deepened > 0 {
             self.basis_gen += 1;
         }
@@ -1551,9 +1558,15 @@ impl Kernel {
                 // (A residual matching a held section never reaches here — the
                 // reduction's direct terminal speaks the family.)
                 let centered = residual.sub().to_vec();
-                if let Some(ti) = self.basis.iter().position(|t| {
-                    !t.sub().is_empty() && element::positions(t.sub()) == element::positions(&centered)
-                }) {
+                // The stratum over the residual's chart, read by key: a held
+                // word on the same base positions is a section prospect.
+                let same_base = self
+                    .stalks
+                    .fiber(&crate::transducer::stalk::invariant(&centered))
+                    .iter()
+                    .filter_map(|a| self.basis_index.get(a).copied())
+                    .find(|&t| !self.basis[t].sub().is_empty() && element::positions(self.basis[t].sub()) == element::positions(&centered));
+                if let Some(ti) = same_base {
                     let asg = element::assignment(&centered);
                     let saddr = section_address(&self.basis[ti].address(), &asg);
                     let _ = self.admission.record(Receipt { voice, germ: saddr });
@@ -1908,11 +1921,28 @@ impl Kernel {
             // invariant), walked in descending index so a removal never
             // shifts an index still to visit. Bounded per stroke; the absorbed
             // word's discoverer still earns (its language lives on as a section).
+            let own = self.basis[i].address();
             if !self.basis[i].sub().is_empty() {
-                let inv = crate::transducer::stalk::invariant(self.basis[i].sub());
-                let mut fiber: Vec<usize> =
-                    self.stalks.fiber(&inv).iter().copied().filter(|&j| j > i).collect();
-                fiber.sort_unstable_by(|a, b| b.cmp(a));
+                let inv = crate::transducer::stalk::invariant_of(&self.basis[i]);
+                // The stratum's other members, by address — the atlas is not
+                // a function of array order; the cursor's own word is found
+                // again by its key after a removal.
+                // A bundle absorbs cards; a card never absorbs a bundle (the
+                // bundle absorbs it when the cursor reaches it). Read on the
+                // fibre volume, never on array order.
+                let fiber: Vec<[u8; 32]> = self
+                    .stalks
+                    .fiber(&inv)
+                    .iter()
+                    .copied()
+                    .filter(|a| *a != own)
+                    .filter(|a| {
+                        self.basis_index
+                            .get(a)
+                            .and_then(|&j| self.basis.get(j))
+                            .is_some_and(|w| w.sections().is_empty() && w.torsion().is_empty())
+                    })
+                    .collect();
                 // One versor solved per stroke: the stroke's cursor also picks
                 // which member of the stratum is tried, so successive strokes
                 // walk the whole stratum without ever solving it all at once.
@@ -1921,7 +1951,8 @@ impl Kernel {
                     false => vec![fiber[self.optimize_cursor % fiber.len()]],
                 };
                 let mut absorbed = 0usize;
-                for j in pick {
+                for sibling in pick {
+                    let (Some(j), Some(i)) = (self.basis_index.get(&sibling).copied(), self.basis_index.get(&own).copied()) else { continue };
                     let Some(g) = element::transition(self.basis[j].sub(), self.basis[i].sub())
                     else {
                         continue;
@@ -1929,6 +1960,7 @@ impl Kernel {
                     let sib = self.basis[j].clone();
                     let sibling_disc = self.discoverers[j];
                     self.basis_remove(j);
+                    let Some(i) = self.basis_index.get(&own).copied() else { continue };
                     if self.basis[i].attach(&sib, &g) > 0 {
                         let anchor = self.anchor();
                         self.treasury.settle_subsidy(sibling_disc, [0, 0, 1, 0], anchor);
@@ -1937,6 +1969,9 @@ impl Kernel {
                     absorbed += 1;
                 }
             }
+            // The cursor's word, found again by its key: a removal above may
+            // have moved its position.
+            let Some(i) = self.basis_index.get(&own).copied() else { return None };
             // THE TORSE MOVE (condense, one dimension deeper): extract the torsion
             // of the cursor thought's axis — sections forming one generator's
             // orbit condense into a cycle (σ, ℓ). The extracted mathematical
@@ -2758,7 +2793,9 @@ mod tests {
         // reduce-gate (as an imported/legacy entry would be).
         let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
         let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
-        k.basis_push(from_residual(&germinate(&a_far, &rot_far).unwrap()), [7; 32]);
+        // A keyed basis holds one word per address: the stale duplicate carries
+        // a frame fibre (a distinct address) over the same centered chain.
+        k.basis_push(element::from_residual_framed(&germinate(&a_far, &rot_far).unwrap(), &(4, 4, 8, 8)), [7; 32]);
         assert_eq!(k.basis_len(), 2);
         k.optimize(); // probe basis[0]: the rest (its duplicate) derives it → retired
         assert_eq!(k.basis_len(), 1, "the redundant rule is consolidated away");
@@ -2961,7 +2998,7 @@ mod tests {
         // The entity's reduction over the language: the word cited at the
         // origin, the far cell left as the residual.
         let language = k.language();
-        let sentence = crate::transducer::sentence::deconstruct(&language.words, &language.stalks, &|i| language.shape(i), &chain, None);
+        let sentence = crate::transducer::sentence::deconstruct(&language.words, &language.stalks, &|a| language.index.get(a).copied(), &|i| language.shape(i), &chain, None);
         let (void, cites) = (sentence.residual.clone(), sentence.cites.clone());
         assert_eq!(void, vec![(0, 3, 3, 4)]);
         assert_eq!(cites.len(), 1);

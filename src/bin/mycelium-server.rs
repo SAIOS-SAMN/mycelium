@@ -147,7 +147,7 @@ fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32])
             Ok(mut k) => k.language(),
             Err(_) => return,
         };
-        let digests = mycelium::transducer::sheaf::digests(&language.stalks, &language.words);
+        let digests = mycelium::transducer::sheaf::digests(&language.stalks);
         let reply = Frame { lane: frame.lane, body: dialogue::encode_digests_reply(&digests) };
         let _ = stream.write_all(&reply.encode().unwrap_or_default());
         return;
@@ -164,7 +164,7 @@ fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32])
         for (inv, have) in &charts {
             let page = mycelium::transducer::sheaf::serve(
                 &language.stalks,
-                &language.words,
+                |a| language.index.get(a).and_then(|&i| language.words.get(i)),
                 inv,
                 have,
                 budget,

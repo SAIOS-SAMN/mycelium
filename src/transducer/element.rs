@@ -129,6 +129,54 @@ pub struct Element {
     /// The memoized address — a measurement of the base (word, dim, fibers),
     /// taken once and cleared wherever the base mutates. Never serialized.
     address: std::sync::OnceLock<[u8; 32]>,
+    /// THE GAUGE AXIS KEYED BY PROFILE: every assignment this word speaks
+    /// (its own, its sections, its torsion orbits) reached by the key of
+    /// its gauge charge — one read names the 0 / 1 / many assignments a
+    /// body could be spoken with. Memoized; cleared wherever the fibre
+    /// mutates. Never serialized.
+    profiles: std::sync::OnceLock<Vec<([u8; 32], Vec<usize>)>>,
+}
+
+/// THE GAUGE PROFILE of an assignment: its transition classes with their
+/// counts reduced to proportions (the counts divided by their common
+/// factor), so a dilation by ρ — which scales every count by ρ² — has the
+/// same profile. Sorted; one run-length pass over the sorted assignment.
+pub fn gauge_profile(asg: &[(u8, u8)]) -> Vec<((u8, u8), u32)> {
+    let mut sorted = asg.to_vec();
+    sorted.sort_unstable();
+    let mut out: Vec<((u8, u8), u32)> = Vec::new();
+    for t in sorted {
+        match out.last_mut() {
+            Some((k, n)) if *k == t => *n += 1,
+            _ => out.push((t, 1)),
+        }
+    }
+    let g = out.iter().fold(0u32, |g, (_, n)| gcd(g, *n));
+    if g > 1 {
+        for (_, n) in out.iter_mut() {
+            *n /= g;
+        }
+    }
+    out
+}
+
+fn gcd(a: u32, b: u32) -> u32 {
+    if b == 0 {
+        a
+    } else {
+        gcd(b, a % b)
+    }
+}
+
+/// The key of a gauge profile: one coordinate for the whole charge.
+pub fn gauge_key(asg: &[(u8, u8)]) -> [u8; 32] {
+    let mut buf = Vec::new();
+    for ((b, a), n) in gauge_profile(asg) {
+        buf.push(b);
+        buf.push(a);
+        buf.extend_from_slice(&n.to_le_bytes());
+    }
+    *blake3::hash(&buf).as_bytes()
 }
 
 /// THE TRANSPORT of the bundle: a rational conformal versor V ∈ Spin(4,1)(ℚ)
@@ -370,6 +418,7 @@ impl Element {
             torsion: Vec::new(),
             transitions: Vec::new(),
             address: std::sync::OnceLock::new(),
+            profiles: std::sync::OnceLock::new(),
             anchor: None,
         }
     }
@@ -488,6 +537,29 @@ impl Element {
     /// Every transition assignment this thought speaks: base, free sections, and
     /// each torsion cycle's ORBIT expanded exactly to its period (bounded by ℓ —
     /// a closed cycle speaks members never individually witnessed).
+    /// The assignments this word speaks with a given gauge charge, read by
+    /// the charge's key: 0 is no such gauge, 1 is the citation, many is
+    /// multiplicity on the fibre. One read; the axis is never walked.
+    pub fn assignments_by_profile(&self, key: &[u8; 32]) -> Vec<usize> {
+        let table = self.profiles.get_or_init(|| {
+            let mut rows: Vec<([u8; 32], Vec<usize>)> = Vec::new();
+            let mut keyed: Vec<([u8; 32], usize)> =
+                self.assignments().iter().enumerate().map(|(i, a)| (gauge_key(a), i)).collect();
+            keyed.sort_unstable();
+            for (k, i) in keyed {
+                match rows.last_mut() {
+                    Some((last, is)) if *last == k => is.push(i),
+                    _ => rows.push((k, vec![i])),
+                }
+            }
+            rows
+        });
+        match table.binary_search_by(|(k, _)| k.cmp(key)) {
+            Ok(i) => table[i].1.clone(),
+            Err(_) => Vec::new(),
+        }
+    }
+
     pub fn assignments(&self) -> Vec<Vec<(u8, u8)>> {
         let base = assignment(&self.sub);
         let mut out = vec![base.clone()];
@@ -597,6 +669,7 @@ impl Element {
                     self.sections.remove(i);
                 }
                 self.torsion.push((sigma, period));
+                self.profiles.take();
                 return spanned.len();
             }
         }
@@ -617,6 +690,7 @@ impl Element {
             return false; // already spoken — by base, a section, or a torsion orbit
         }
         self.sections.push(asg);
+        self.profiles.take();
         true
     }
 
@@ -1095,6 +1169,7 @@ impl Element {
             anchor,
             transitions,
             address: std::sync::OnceLock::new(),
+            profiles: std::sync::OnceLock::new(),
         })
     }
 }
@@ -1300,8 +1375,9 @@ impl Element {
 ///               vanishes (mass moved, scaled, or reshaped).
 ///   𝒢 gauge:    chromatic content — hue transitions on cells where the
 ///               support stands on both sides (recolour, palette orbit).
-///   𝒯 residual: the whole chain's cell count — the un-factored coboundary
-///               defect every demand carries until reduced.
+///   𝒯 fibre:    the FIBRE VOLUME — sections and torsion cycles the word
+///               holds — measured on the element (`Element::magnitude`),
+///               never on the chain; 0 here.
 ///   𝒽 shell:    boundary topology — the connected-component and
 ///               boundary-cochain deltas between the before-support and the
 ///               after-support (merges, splits, enclosures).
