@@ -701,20 +701,18 @@ fn main() {
                 let mut reg = registry.lock().unwrap();
                 match reg.settle(&tid, &outputs) {
                     mycelium::registry::SolveYield::Bounty(tension) => {
-                        // FIRST VERIFIED SOLVE: the full bounty, priced at the
-                        // surface, float-law bounded like every award. The
-                        // settled state persists NOW — a restart between here
-                        // and the next snapshot must not re-mint this bounty.
+                        // FIRST VERIFIED SOLVE: the registry's task tension,
+                        // float-law bounded. Not surface-priced covering —
+                        // the corpus already verified the work. Persist NOW
+                        // so a restart cannot re-mint this bounty.
                         let snap = reg.snapshot();
                         let tmp = format!("{state_path}.registry.tmp");
                         if std::fs::write(&tmp, &snap).is_ok() {
                             let _ = std::fs::rename(&tmp, format!("{state_path}.registry"));
                         }
                         let mut k = kernel.lock().unwrap();
-                        let surface = mycelium::economy::yield_surface(k.physics());
-                        let priced = mycelium::economy::price(&tension, &surface);
                         let anchor = k.anchor_pub();
-                        let paid = k.treasury_settle_solve(svoice, priced, anchor);
+                        let paid = k.treasury_settle_solve(svoice, tension, anchor);
                         drop(k);
                         // A PROVEN ROOT. A first solve here of a root heard
                         // from the nerve is its reproduction by this book's

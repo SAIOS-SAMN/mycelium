@@ -284,11 +284,12 @@ impl Treasury {
     }
 
     /// A VERIFIED SOLVE (PoUW): the registry confirmed a prediction against
-    /// its held answers — the one settlement species whose usefulness is
-    /// externally verified before it books. Float-law bounded; the
-    /// anti-replay decay (bounty vs floor) was decided by the registry.
+    /// its held answers and named the task's tension. Occupied lanes pay at
+    /// least 1 while the pool holds anything there — a verified solve is
+    /// never free. Float-law bounded; bounty vs floor was decided upstream.
     pub fn settle_solve(&mut self, voice: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        let bounded = self.award_bound(mu);
+        let asked: [u64; 4] = std::array::from_fn(|l| if mu[l] == 0 { 0 } else { mu[l].max(1) });
+        let bounded = self.award_bound(asked);
         self.pay("solve", voice, bounded, anchor)
     }
 
@@ -635,6 +636,29 @@ mod tests {
         for l in 0..4 {
             assert_eq!(t.pool()[l] + held[l], supply[l], "lane {l}: pool + balances = Σ stakes");
         }
+    }
+
+    /// A verified solve books the registry tension, never a surface-priced
+    /// covering: occupied lanes settle μ⃗ ≻ 0 while the pool holds them,
+    /// and the float law never inflates the tension.
+    #[test]
+    fn a_verified_solve_settles_the_registered_tension() {
+        let mut t = Treasury::new();
+        t.enroll([1; 32], Tier::Founder, (0, [0; 32]));
+        let tension = [4u64, 2, 0, 1];
+        let surface = [1_000u64, 1_000, 1_000, 1_000];
+        let priced = price(&tension, &surface);
+        let paid = t.settle_solve([1; 32], tension, (1, [9; 32]));
+        assert!(descends(&[0; 4], &paid), "a first verified solve settles μ⃗ ≻ 0");
+        assert!(
+            paid.iter().zip(tension).all(|(p, m)| *p <= m),
+            "the float law never inflates the registered tension: paid {paid:?} tension {tension:?}"
+        );
+        assert!(
+            priced.iter().zip(tension).any(|(p, m)| *p > m),
+            "surface pricing would have inflated; the solve path must not"
+        );
+        assert_eq!(t.entries().iter().filter(|e| e.kind == "solve").count(), 1);
     }
 
     /// An exhausted pool pays partial then nothing — the ledger records only

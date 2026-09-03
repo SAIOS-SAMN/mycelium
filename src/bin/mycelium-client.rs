@@ -106,7 +106,11 @@ fn speak_connections(
             continue;
         };
         carried[0] = carried[0].saturating_add(speech.cells.len() as u64);
-        remainder.extend(speech.remainder.iter().map(|&(r, c, h)| (r, c, 0, h)));
+        // Withheld y: the unreached body is thought, not a germ. Do not
+        // invent a coboundary and do not attest.
+        if let [_, ..] = speech.remainder.as_slice() {
+            entity.hold_thought(speech.remainder.iter().map(|&(r, c, h)| (r, c, h, h)).collect());
+        }
     }
     remainder.sort_unstable();
     remainder.dedup();

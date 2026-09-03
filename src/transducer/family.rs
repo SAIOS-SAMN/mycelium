@@ -229,6 +229,14 @@ pub struct Transport {
     pub created: Vec<Creation>,
 }
 
+impl Transport {
+    /// The class rule for these moduli. Rules are sorted by moduli at
+    /// comprehend; one read, not a scan of the family.
+    pub fn rule(&self, moduli: &Invariant) -> Option<&Rule> {
+        self.rules.binary_search_by(|r| r.moduli.0.cmp(&moduli.0)).ok().map(|i| &self.rules[i])
+    }
+}
+
 /// What comprehending a family produced: the connection when every pair
 /// replays, and the residual — the observed output cells the connection
 /// does not speak, as a chain (row, col, spoken hue, observed hue) on the
@@ -423,6 +431,8 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
             }
         }
     }
+    // One rule per class, keyed by moduli: speak is a read, not a scan.
+    rules.sort_by(|a, b| a.moduli.0.cmp(&b.moduli.0));
     let transport = Transport { ratio, rules, removed, created: creations };
     // 5. REPLAY the connection on every pair; the first failure's residual
     // is the demand.
@@ -571,8 +581,7 @@ fn speak_with(t: &Transport, x: &Grid, total: bool) -> Option<Speech> {
         if t.removed.contains(&body.moduli) {
             continue;
         }
-        let rule = t.rules.iter().find(|r| r.moduli == body.moduli);
-        let Some(rule) = rule else {
+        let Some(rule) = t.rule(&body.moduli) else {
             // Unreached body: do not drop the scene. Under the total map,
             // identity-carry as a trivial section of g (1, σ₀); always flag
             // the body's cells as remainder so the closed sub-morphism can
@@ -681,6 +690,12 @@ mod tests {
         let mixed = speak_total(&t, &grid(&["1100", "0000", "0030"])).expect("partial g");
         assert!(mixed.cells.iter().any(|&(r, c, h)| r == 0 && c == 2 && h == 2), "the reached body speaks");
         assert!(mixed.remainder.iter().any(|&(r, c, h)| r == 2 && c == 2 && h == 3), "the unreached body is remainder, not a dropped scene");
+        let reached = perceive(&grid(&["1100", "0000", "0000"]));
+        assert_eq!(reached.len(), 1);
+        assert!(t.rule(&reached[0].moduli).is_some(), "the class is a keyed read, not a scan");
+        let lone = perceive(&grid(&["0030"]));
+        assert_eq!(lone.len(), 1);
+        assert!(t.rule(&lone[0].moduli).is_none(), "unreached moduli have no rule");
         // A body mirrored in place: the reflection axis moves with the body,
         // so the transport agrees only about the bodies' own centroids.
         let family = vec![

@@ -1089,8 +1089,8 @@ impl Kernel {
     }
 
     /// SETTLE a verified SOLVE (PoUW: the registry confirmed the prediction
-    /// against held answers). Pool-funded, float-law bounded like every
-    /// award; the anti-replay collapse happened upstream in the registry —
+    /// against held answers). Pays the registered task tension, pool-funded
+    /// and float-law bounded; the anti-replay collapse happened upstream —
     /// this pays whatever the registry ruled (bounty or floor).
     pub fn treasury_settle_solve(
         &mut self,
