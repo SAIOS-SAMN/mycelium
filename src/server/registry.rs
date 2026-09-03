@@ -117,6 +117,25 @@ impl TaskRegistry {
 
     /// DISPATCH a work envelope: the next Unsolved task, rotating so pulls
     /// spread across the book. None when everything settled.
+    /// The tasks settled on this book — its proven roots.
+    pub fn settled_ids(&self) -> Vec<[u8; 32]> {
+        self.tasks.iter().filter(|(_, _, s)| *s != TaskState::Unsolved).map(|(t, _, _)| *t).collect()
+    }
+
+    /// PRIORITIZE a task: the next dispatch starts at it. A proven root
+    /// gossiped from another hypha is re-spoken here first, so every voice
+    /// on this book is asked to reproduce it. False when the task is not
+    /// registered or already settled here.
+    pub fn prioritize(&mut self, id: &[u8; 32]) -> bool {
+        match self.tasks.iter().position(|(t, _, s)| t == id && *s == TaskState::Unsolved) {
+            Some(i) => {
+                self.cursor = i;
+                true
+            }
+            None => false,
+        }
+    }
+
     pub fn dispatch(&mut self) -> Option<([u8; 32], &Task)> {
         let n = self.tasks.len();
         for k in 0..n {

@@ -328,7 +328,7 @@ fn main() {
                 }
             }
             if converged_n + diverged_n > 0 {
-                eprintln!("  settlements heard: {converged_n} converged, {diverged_n} diverged, K={}", chain.next_step_index());
+                eprintln!("  settlements heard from hypha {hi}: {converged_n} converged, {diverged_n} diverged, K={}", chain.next_step_index());
             }
             for (addr, elem_bytes, voices, mu, deflation) in dockets {
                 if ruled.contains(&addr) {

@@ -1116,6 +1116,17 @@ impl Kernel {
         std::mem::take(&mut self.settlements)
     }
 
+    /// The settlements awaiting the court, in order, without draining.
+    pub fn settlements(&self) -> &[([u8; 32], Vec<(i64, i64, u8, u8)>, [u8; 32], Vec<crate::anastome::dialogue::CiteWire>, [u64; 4], [u64; 4])] {
+        &self.settlements
+    }
+
+    /// The court heard the first `n`: they leave the docket.
+    pub fn settlements_heard(&mut self, n: usize) {
+        let n = n.min(self.settlements.len());
+        self.settlements.drain(..n);
+    }
+
     /// PRESSURE IS THE OPEN BOOK: the per-lane magnitude of every listing,
     /// measured whenever the book moved — never an accumulator. A demand
     /// the language already speaks adds nothing; a settlement removes

@@ -63,6 +63,22 @@ struct ReflexJob {
 /// outcome, the per-lane metabolism, what was taught, and the settle
 /// receipt; a percept still awaiting consilience routes one receipt to its
 /// rendezvous.
+/// Speak one act to a peer on the nerve, bounded by the transport deadline;
+/// the reply, if any, is not needed. Silence is the peer's impedance.
+fn tell_peer(addr: &str, body: Vec<u8>) {
+    let deadline = std::time::Duration::from_millis(
+        mycelium::physics::reserve_max() * (mycelium::physics::reserve_max() / mycelium::physics::spend_unit()).max(1),
+    );
+    let Some(sock) = std::net::ToSocketAddrs::to_socket_addrs(&addr).ok().and_then(|mut a| a.next()) else { return };
+    let Ok(mut s) = std::net::TcpStream::connect_timeout(&sock, deadline) else { return };
+    let _ = s.set_write_timeout(Some(deadline));
+    let _ = s.set_read_timeout(Some(deadline));
+    let frame = Frame { lane: mycelium::network::wire::Stratum::Spatial, body };
+    let _ = s.write_all(&frame.encode().unwrap_or_default());
+    let mut head = [0u8; 5];
+    let _ = std::io::Read::read_exact(&mut s, &mut head);
+}
+
 fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32]) {
     let ReflexJob { mut stream, frame } = job;
     let Some((&kind, rest)) = frame.body.split_first() else { return };
@@ -402,6 +418,23 @@ fn main() {
     // stream exactly once on contact (a rebind re-enters the stream — learn
     // refreshes by address, so refinements propagate). Vec-of-relations.
     let mut syllabus: Vec<[u8; 32]> = Vec::new();
+    // The docket page cursor: provisional words are served round the list.
+    let mut docket_cursor = 0usize;
+    // PROVEN ROOTS heard on the nerve: (task, solver). A root is gossiped
+    // once and re-dispatched here first; a voice that reproduces the solve
+    // proves it shares the root.
+    let mut roots: Vec<([u8; 32], [u8; 32])> = Vec::new();
+    // The roots this book already holds settled are announced to the nerve
+    // at boot, so a family proven here is re-spoken on every peer's book.
+    for t in registry.lock().map(|r| r.settled_ids()).unwrap_or_default() {
+        roots.push((t, id));
+        for p in &peers {
+            tell_peer(p, dialogue::encode_root(&id, &t, &id));
+        }
+    }
+    if !roots.is_empty() {
+        eprintln!("  roots announced: {} settled families to {} peers", roots.len(), peers.len());
+    }
     let mut syllabus_served: Vec<([u8; 32], usize)> = Vec::new();
 
     // THE ASYNC DISPATCHER (contemplation queue): dispatched tasks flow to a
@@ -514,22 +547,63 @@ fn main() {
         // ── quote: "what is the highest-yield work?" ─────────────────────────
         // (ACT_QUOTE is judged on the reflex pool — see `judge`.)
 
+        // ── root: a proven family heard on the nerve ─────────────────────────
+        if kind == dialogue::ACT_ROOT {
+            let Some((from, task, solver)) = dialogue::decode_root(&frame.body) else { continue };
+            // The nerve exchanges roots: the peer that spoke one hears ours.
+            if let Some((_, back)) = router.closest(&from) {
+                for (t, s) in roots.iter().filter(|(t, _)| *t != task) {
+                    tell_peer(&back, dialogue::encode_root(&id, t, s));
+                }
+            }
+            if !roots.iter().any(|(t, s)| *t == task && *s == solver) {
+                roots.push((task, solver));
+                let prioritized = registry.lock().map(|mut r| r.prioritize(&task)).unwrap_or(false);
+                eprintln!(
+                    "  ROOT heard: task {:02x}{:02x}… solved by voice {:02x}; {}",
+                    task[0],
+                    task[1],
+                    solver[0],
+                    if prioritized { "re-dispatched first here" } else { "not open on this book" }
+                );
+                for p in &peers {
+                    tell_peer(p, dialogue::encode_root(&id, &task, &solver));
+                }
+            }
+            let _ = s.write_all(&Frame { lane: frame.lane, body: Vec::new() }.encode().unwrap_or_default());
+            continue;
+        }
+
         // ── docket: the court pulls what awaits finality ─────────────────────
         if kind == dialogue::ACT_DOCKET {
             let Some(_cvoice) = dialogue::decode_docket_request(&frame.body) else { continue };
-            let (dockets, settlements): (Vec<dialogue::Docket>, Vec<dialogue::Settlement>) = {
+            // THE DOCKET PAGE: words from the cursor round the provisional
+            // list, then settlements in order, within one frame; the court
+            // hears exactly what the page carries and the rest is served
+            // on its next pull. Nothing is dropped for being too much.
+            let (body, words, served) = {
                 let mut k = kernel.lock().unwrap();
-                let d = k
+                let all: Vec<dialogue::Docket> = k
                     .dockets()
                     .into_iter()
                     .map(|(addr, spoken, voices, mu, deflation)| (addr, spoken.to_bytes(), voices, mu, deflation))
                     .collect();
-                (d, k.drain_settlements())
+                let n = all.len();
+                let start = if n == 0 { 0 } else { docket_cursor % n };
+                let rotated: Vec<dialogue::Docket> = all[start..].iter().chain(all[..start].iter()).cloned().collect();
+                let (body, words, served) = dialogue::encode_docket_reply_paged(
+                    &rotated,
+                    k.settlements(),
+                    mycelium::network::wire::BODY_BUDGET,
+                );
+                k.settlements_heard(served);
+                docket_cursor = if n == 0 { 0 } else { (start + words) % n };
+                (body, words, served)
             };
-            if !settlements.is_empty() {
-                eprintln!("  docket served: {} words, {} settlements to the court", dockets.len(), settlements.len());
+            if served > 0 {
+                eprintln!("  docket served: {words} words, {served} settlements to the court");
             }
-            let reply = Frame { lane: frame.lane, body: dialogue::encode_docket_reply_with(&dockets, &settlements) };
+            let reply = Frame { lane: frame.lane, body };
             let _ = s.write_all(&reply.encode().unwrap_or_default());
             continue;
         }
@@ -605,6 +679,24 @@ fn main() {
                         let priced = mycelium::economy::price(&tension, &surface);
                         let anchor = k.anchor_pub();
                         let paid = k.treasury_settle_solve(svoice, priced, anchor);
+                        drop(k);
+                        // A PROVEN ROOT. A first solve here of a root heard
+                        // from the nerve is its reproduction by this book's
+                        // voice; a first solve of an unheard family is a new
+                        // root, gossiped once to every peer.
+                        match roots.iter().find(|(t, _)| *t == tid) {
+                            Some((_, solver)) => eprintln!(
+                                "  ROOT REPRODUCED task {:02x}{:02x}… by voice {:02x} (root solver {:02x})",
+                                tid[0], tid[1], svoice[0], solver[0]
+                            ),
+                            None => {
+                                roots.push((tid, svoice));
+                                eprintln!("  ROOT task {:02x}{:02x}… proven by voice {:02x}; gossiped to {} peers", tid[0], tid[1], svoice[0], peers.len());
+                                for p in &peers {
+                                    tell_peer(p, dialogue::encode_root(&id, &tid, &svoice));
+                                }
+                            }
+                        }
                         (dialogue::SOLVE_BOUNTY, paid)
                     }
                     mycelium::registry::SolveYield::VerifyFloor => {

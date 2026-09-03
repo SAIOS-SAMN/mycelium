@@ -126,6 +126,27 @@ pub const PROBE_CLOSED: u8 = 2;
 /// another voice settled or descended it first.
 pub const PROBE_SETTLED: u8 = 3;
 
+/// A PROVEN ROOT — a family a voice solved and a registry verified —
+/// gossiped across the nerve: `[ACT_ROOT][voice 32][task 32][solver 32]`.
+/// Every hypha holding the task re-dispatches it first; a voice that
+/// reproduces the solve from the taught language proves it shares the root.
+pub const ACT_ROOT: u8 = 0x13;
+
+pub fn encode_root(voice: &[u8; 32], task: &[u8; 32], solver: &[u8; 32]) -> Vec<u8> {
+    let mut out = vec![ACT_ROOT];
+    out.extend_from_slice(voice);
+    out.extend_from_slice(task);
+    out.extend_from_slice(solver);
+    out
+}
+
+pub fn decode_root(body: &[u8]) -> Option<([u8; 32], [u8; 32], [u8; 32])> {
+    if body.first() != Some(&ACT_ROOT) || body.len() < 97 {
+        return None;
+    }
+    Some((body[1..33].try_into().ok()?, body[33..65].try_into().ok()?, body[65..97].try_into().ok()?))
+}
+
 /// A citation on the wire: (word address, transport, gauge coordinate).
 /// A CITATION ON THE WIRE carries its operator: the word's address as a
 /// hint for the hearer's lexicon, the versor, the gauge coordinate as the
@@ -711,29 +732,54 @@ pub fn encode_docket_reply(dockets: &[Docket]) -> Vec<u8> {
 
 /// `[dockets…][ns u32] ( [listing 32][chain][voice 32][cites][μ⃗ before 32][μ⃗ after 32] )…`
 pub fn encode_docket_reply_with(dockets: &[Docket], settlements: &[Settlement]) -> Vec<u8> {
+    encode_docket_reply_paged(dockets, settlements, usize::MAX).0
+}
+
+/// THE DOCKET PAGE: words first, then settlements, each taken in order
+/// until the next would not fit the budget. Returns the body and how many
+/// words and settlements it carries, so the server drains exactly what
+/// the court will hear and serves the rest on the next pull.
+pub fn encode_docket_reply_paged(dockets: &[Docket], settlements: &[Settlement], budget: usize) -> (Vec<u8>, usize, usize) {
     let mut out = Vec::new();
-    out.extend_from_slice(&(dockets.len() as u32).to_le_bytes());
+    out.extend_from_slice(&0u32.to_le_bytes());
+    let mut words = 0usize;
     for (addr, elem, voices, mu, deflation) in dockets {
-        out.extend_from_slice(addr);
-        out.extend_from_slice(&(elem.len() as u32).to_le_bytes());
-        out.extend_from_slice(elem);
-        out.extend_from_slice(&(voices.len() as u32).to_le_bytes());
+        let mut item = Vec::with_capacity(104 + elem.len() + 32 * voices.len());
+        item.extend_from_slice(addr);
+        item.extend_from_slice(&(elem.len() as u32).to_le_bytes());
+        item.extend_from_slice(elem);
+        item.extend_from_slice(&(voices.len() as u32).to_le_bytes());
         for v in voices {
-            out.extend_from_slice(v);
+            item.extend_from_slice(v);
         }
-        push_mu(&mut out, mu);
-        push_mu(&mut out, deflation);
+        push_mu(&mut item, mu);
+        push_mu(&mut item, deflation);
+        if out.len() + item.len() + 4 > budget {
+            break;
+        }
+        out.extend_from_slice(&item);
+        words += 1;
     }
-    out.extend_from_slice(&(settlements.len() as u32).to_le_bytes());
+    out[..4].copy_from_slice(&(words as u32).to_le_bytes());
+    let count_at = out.len();
+    out.extend_from_slice(&0u32.to_le_bytes());
+    let mut served = 0usize;
     for (listing, chain, voice, cites, before, after) in settlements {
-        out.extend_from_slice(listing);
-        push_chain(&mut out, chain);
-        out.extend_from_slice(voice);
-        push_cites(&mut out, cites);
-        push_mu(&mut out, before);
-        push_mu(&mut out, after);
+        let mut item = Vec::new();
+        item.extend_from_slice(listing);
+        push_chain(&mut item, chain);
+        item.extend_from_slice(voice);
+        push_cites(&mut item, cites);
+        push_mu(&mut item, before);
+        push_mu(&mut item, after);
+        if out.len() + item.len() > budget {
+            break;
+        }
+        out.extend_from_slice(&item);
+        served += 1;
     }
-    out
+    out[count_at..count_at + 4].copy_from_slice(&(served as u32).to_le_bytes());
+    (out, words, served)
 }
 
 /// The settlements on a docket reply, after the dockets (absent in an
