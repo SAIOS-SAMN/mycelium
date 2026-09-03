@@ -620,14 +620,152 @@ impl Kernel {
         self.basis.len()
     }
 
-    /// Install a word at the end of the basis with its discoverer; the stalk
-    /// space admits its support at the same index.
-    fn basis_push(&mut self, word: Element, discoverer: [u8; 32]) {
+    /// Place a word on the basis with no syntropic stroke: restore and the
+    /// fallback cursor walk insert this way so a snapshot does not condense
+    /// the language it is loading.
+    fn basis_insert(&mut self, word: Element, discoverer: [u8; 32]) -> usize {
         self.stalks.admit(&crate::transducer::stalk::invariant_of(&word), word.address());
-        self.basis_index.insert(word.address(), self.basis.len());
+        let i = self.basis.len();
+        self.basis_index.insert(word.address(), i);
         self.basis.push(word);
         self.discoverers.push(discoverer);
         self.basis_gen += 1;
+        i
+    }
+
+    /// Install a word and pivot Path 2 on the axis it just moved: condense
+    /// a congruent sibling, probe the stratum for a derivable generator,
+    /// pay each yield on its own lane. Returns the surviving word's index.
+    fn basis_push(&mut self, word: Element, discoverer: [u8; 32]) -> usize {
+        let addr = word.address();
+        self.basis_insert(word, discoverer);
+        self.syntropic_on_admit(addr)
+    }
+
+    /// Path 2 at admit: the atlas names the sibling a versor relates, the
+    /// stratum names a word the new generator derives. Fallback consolidate
+    /// still walks the cursor when these reads are empty.
+    fn syntropic_on_admit(&mut self, addr: [u8; 32]) -> usize {
+        let survivor = self.condense_on(&addr);
+        self.refine_stratum(&survivor);
+        self.basis_index.get(&survivor).copied().unwrap_or(0)
+    }
+
+    /// If the fibre over `addr` names exactly one other word a versor
+    /// relates, absorb the card into the bundle and pay the absorbed
+    /// discoverer the condense yield. Returns the surviving address.
+    fn condense_on(&mut self, addr: &[u8; 32]) -> [u8; 32] {
+        let Some(word) = self.word_at(addr).cloned() else {
+            return *addr;
+        };
+        let Some((sib, _)) = crate::transducer::stalk::congruent(
+            &self.stalks,
+            |a| {
+                if a == addr {
+                    None
+                } else {
+                    self.word_at(a)
+                }
+            },
+            &word,
+        ) else {
+            return *addr;
+        };
+        self.absorb_pair(*addr, sib)
+    }
+
+    /// Absorb one of `new` / `sib` into the other: a bundle keeps the
+    /// fibre; two cards make the newly admitted word the bundle. Pays the
+    /// absorbed discoverer. Returns the surviving address.
+    fn absorb_pair(&mut self, new: [u8; 32], sib: [u8; 32]) -> [u8; 32] {
+        let (Some(ni), Some(si)) = (self.basis_index.get(&new).copied(), self.basis_index.get(&sib).copied()) else {
+            return new;
+        };
+        let new_card = self.basis[ni].sections().is_empty() && self.basis[ni].torsion().is_empty();
+        let sib_card = self.basis[si].sections().is_empty() && self.basis[si].torsion().is_empty();
+        let (base, absorbed) = if new_card && !sib_card { (sib, new) } else { (new, sib) };
+        let (Some(bi), Some(ai)) = (self.basis_index.get(&base).copied(), self.basis_index.get(&absorbed).copied()) else {
+            return new;
+        };
+        let Some(g) = element::transition(self.basis[ai].sub(), self.basis[bi].sub()) else {
+            return new;
+        };
+        let card = self.basis[ai].clone();
+        let disc = self.discoverers[ai];
+        self.basis_remove(ai);
+        let Some(bi) = self.basis_index.get(&base).copied() else {
+            return new;
+        };
+        if self.basis[bi].attach(&card, &g) > 0 {
+            let mag = card.magnitude();
+            let mut yield_mag = mag;
+            if yield_mag[2] == 0 {
+                yield_mag[2] = 1;
+            }
+            let mu = crate::economy::price(&yield_mag, &self.physics.pressure, &self.treasury.pool());
+            let anchor = self.anchor();
+            self.treasury.settle_condense(disc, mu, anchor);
+            self.physics.syntropy(&[0, 0, 1, 0]);
+            self.torse_at(bi);
+        }
+        base
+    }
+
+    /// Torse one word: a closed orbit pays the torse coin on the residual
+    /// lane immediately, not on the idle cursor.
+    fn torse_at(&mut self, i: usize) {
+        if i >= self.basis.len() {
+            return;
+        }
+        let spanned = self.basis[i].torse();
+        if spanned == 0 {
+            return;
+        }
+        let lanes = self.basis[i].lanes();
+        self.physics.torse_relief(lanes, spanned as u64);
+        let mu = crate::economy::price(&[0, 0, spanned as u64, 0], &self.physics.pressure, &self.treasury.pool());
+        let anchor = self.anchor();
+        self.treasury.settle_torse(self.discoverers[i], mu, anchor);
+        self.touch();
+    }
+
+    /// Redundancy probe on the admitted word's own stratum: a plain card
+    /// the rest now derives retires, and the voice whose word derived it
+    /// earns the refine yield.
+    fn refine_stratum(&mut self, new: &[u8; 32]) {
+        let Some(i) = self.basis_index.get(new).copied() else {
+            return;
+        };
+        let inv = crate::transducer::stalk::invariant_of(&self.basis[i]);
+        let members: Vec<[u8; 32]> = self
+            .stalks
+            .fiber(&inv)
+            .iter()
+            .copied()
+            .filter(|a| a != new)
+            .collect();
+        let bidder = self.discoverers[i];
+        for addr in members {
+            let Some(j) = self.basis_index.get(&addr).copied() else {
+                continue;
+            };
+            if !self.basis[j].sections().is_empty() || !self.basis[j].torsion().is_empty() {
+                continue;
+            }
+            if self.provisional.iter().any(|(a, _)| a == &addr) {
+                continue;
+            }
+            let candidate = self.basis[j].clone();
+            if !matches!(self.reduce_excluding(&candidate, Some(j)), NormalForm::Decomposed(_)) {
+                continue;
+            }
+            let mu = crate::economy::price(&candidate.magnitude(), &self.physics.pressure, &self.treasury.pool());
+            let anchor = self.anchor();
+            self.treasury.settle_refine(bidder, mu, anchor);
+            self.basis_remove(j);
+            self.physics.syntropy(&candidate.magnitude());
+            self.append_step(addr, bidder);
+        }
     }
 
     /// Rebuild the address index from the basis (after a removal shifted
@@ -828,20 +966,23 @@ impl Kernel {
         self.touch();
         self.basis_remove(si);
         if gained > 0 {
+            let mu = crate::economy::price(&[0, 0, 1, 0], &self.physics.pressure, &self.treasury.pool());
             let anchor = self.anchor();
-            self.treasury.settle_subsidy(disc, [0, 0, 1, 0], anchor);
+            self.treasury.settle_condense(disc, mu, anchor);
+            if let Some(bi) = self.basis_index.get(base).copied() {
+                self.torse_at(bi);
+            }
         }
         self.physics.syntropy(&[0, 0, 1, 0]);
         1
     }
 
     /// SETTLE A PROBE: the replayed residual of an open listing against the
-    /// speaker's sentence. Closure (empty residual) clears the listing: the
-    /// closer earns the listing's quoted tension from the pool, the cited
-    /// words' discoverers earn their use, the lineage advances. Graded
-    /// descent (every lane ≤, one <) earns the reduction per lane and the
-    /// residual replaces the listing under its own frame fiber; the book's
-    /// tension falls monotonically. No descent settles nothing. Returns
+    /// speaker's sentence. Closure (empty residual) of a fibre section or a
+    /// connection listing pays morphism deflation; a tape covering pays
+    /// nothing. A partial descent updates tension and relieves the physics
+    /// (the measurement is real) but pays μ⃗ = 0⃗ — covering cells is not
+    /// an axial move. Cited words still earn settle_use. Returns
     /// (code, paid μ⃗, remaining μ⃗).
     pub fn settle_probe(
         &mut self,
@@ -861,9 +1002,7 @@ impl Kernel {
         // of this body, or its whole magnitude.
         let before = self.tension.get(target).copied().unwrap_or_else(|| listing.magnitude());
         let after = element::measure_lanes(&residual);
-        let surface = crate::economy::yield_surface(&self.physics);
         let anchor = self.anchor();
-        let lanes = listing.lanes();
         let mag = listing.magnitude();
         if let [] = residual.as_slice() {
             // Raster covering of a tape is zero-yield; fibre section closure
@@ -899,21 +1038,19 @@ impl Kernel {
         if residual == listed {
             return (PROBE_NOTHING, [0; 4], before);
         }
-        let delta: [u64; 4] = std::array::from_fn(|l| before[l].saturating_sub(after[l]));
-        let paid = self.treasury.settle_subsidy(voice, crate::economy::price(&delta, &self.physics.pressure, &self.treasury.pool()), anchor);
-        // THE LISTING STAYS THE BODY: the descent settles what the sentence
+        let settled: [u64; 4] = std::array::from_fn(|l| before[l].saturating_sub(after[l]));
+        // THE LISTING STAYS THE BODY: the descent measures what the sentence
         // covered and the body stays whole on the book — a coboundary is
         // never re-listed as a fragment of itself. What remains is the
-        // body's tension, keyed by the listing, and the next sentence
-        // descends from there; the physics relaxes by what settled.
-        let settled: [u64; 4] = std::array::from_fn(|l| before[l].saturating_sub(after[l]));
+        // body's tension, keyed by the listing; the physics relaxes by what
+        // settled. Payment is zero: a partial cover opens no axis.
         self.tension.insert(*target, after);
         self.spoken.remove(target);
         self.physics.relieve(&settled);
         self.book_gen += 1;
         self.physics.syntropy(&mag);
         self.append_step(*target, voice);
-        (PROBE_DESCENT, paid, after)
+        (PROBE_DESCENT, [0; 4], after)
     }
 
     /// The durable state's measurement: (cards, sections + connection
@@ -966,7 +1103,13 @@ impl Kernel {
                     .escrowed_awards()
                     .iter()
                     .find(|(a, _, _, _)| a == addr)?;
-                Some((*addr, spoken.clone(), voices.clone(), *mu, self.deflation_of(addr), k))
+                // A word whose deflation is unmeasured is not served: the
+                // court rules what was measured, never a fabricated zero.
+                let deflation = self.deflation_of(addr);
+                if deflation.iter().all(|&x| x == 0) {
+                    return None;
+                }
+                Some((*addr, spoken.clone(), voices.clone(), *mu, deflation, k))
             })
             .collect()
     }
@@ -1357,12 +1500,15 @@ impl Kernel {
 
     /// Measure and record what installing `addr` settles on the book: the
     /// magnitude of the listed demand at that address, or nothing.
-    fn record_deflation(&mut self, word: [u8; 32], listing: [u8; 32]) {
+    fn record_deflation(&mut self, word: [u8; 32], listing: [u8; 32], own: [u64; 4]) {
         // The demand a percept settles is the listing of its whole chain;
         // the word installed may be the residual after citations, so the
-        // deflation is read on the listing, then on the word itself.
+        // deflation is read on the listing, then on the word itself. A germ
+        // consilienced at this home from routed demands whose listing never
+        // stood here (or was evicted) deflated at least its own measure —
+        // never a fabricated zero for the court to slash.
         let on = |addr: [u8; 32]| self.pending.iter().find(|(p, _)| p.address() == addr).map(|(p, _)| p.magnitude());
-        let deflation = on(listing).or_else(|| on(word)).unwrap_or([0; 4]);
+        let deflation = on(listing).or_else(|| on(word)).unwrap_or(own);
         self.deflations.insert(word, deflation);
     }
 
@@ -1688,7 +1834,7 @@ impl Kernel {
                         // court's finality verdict — unfinalized speech earns
                         // nothing; the puncture itself is local dialect.
                         self.treasury.escrow_award(saddr, self.admission.voices_of(&saddr), mu, anchor);
-                        self.record_deflation(saddr, listing);
+                        self.record_deflation(saddr, listing, residual.magnitude());
                         let k_now = self.k_step();
                         self.provisional_k.insert(saddr, k_now);
                         self.provisional.push((saddr, residual.clone()));
@@ -1732,7 +1878,7 @@ impl Kernel {
                     // court's admission docket; the word joins the basis as
                     // local dialect, final settlement waits for the verdict.
                     self.treasury.escrow_award(addr, self.admission.voices_of(&addr), mu, anchor);
-                    self.record_deflation(addr, listing);
+                    self.record_deflation(addr, listing, residual.magnitude());
                     let k_now = self.k_step();
                     self.provisional_k.insert(addr, k_now);
                     self.provisional.push((addr, residual.clone()));
@@ -2084,7 +2230,8 @@ impl Kernel {
                     let Some(i) = self.basis_index.get(&own).copied() else { continue };
                     if self.basis[i].attach(&sib, &g) > 0 {
                         let anchor = self.anchor();
-                        self.treasury.settle_subsidy(sibling_disc, [0, 0, 1, 0], anchor);
+                        let mu = crate::economy::price(&[0, 0, 1, 0], &self.physics.pressure, &self.treasury.pool());
+                        self.treasury.settle_condense(sibling_disc, mu, anchor);
                     }
                     self.physics.syntropy(&[0, 0, 1, 0]);
                     absorbed += 1;
@@ -3023,7 +3170,7 @@ mod tests {
         let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
         // A keyed basis holds one word per address: the stale duplicate carries
         // a frame fibre (a distinct address) over the same centered chain.
-        k.basis_push(element::from_residual_framed(&germinate(&a_far, &rot_far).unwrap(), &(4, 4, 8, 8)), [7; 32]);
+        k.basis_insert(element::from_residual_framed(&germinate(&a_far, &rot_far).unwrap(), &(4, 4, 8, 8)), [7; 32]);
         assert_eq!(k.basis_len(), 2);
         k.optimize(); // probe basis[0]: the rest (its duplicate) derives it → retired
         assert_eq!(k.basis_len(), 1, "the redundant rule is consolidated away");
@@ -3052,8 +3199,8 @@ mod tests {
         // Two words, one centered chain: the first carries a frame fibre (a
         // distinct address, since a keyed basis holds one word per address)
         // and the second speaks its chain exactly.
-        k.basis_push(element::from_residual_framed(&germinate(&a, &rot).unwrap(), &(4, 4, 8, 8)), [1; 32]);
-        k.basis_push(from_residual(&germinate(&a_far, &rot_far).unwrap()), [7; 32]);
+        k.basis_insert(element::from_residual_framed(&germinate(&a, &rot).unwrap(), &(4, 4, 8, 8)), [1; 32]);
+        k.basis_insert(from_residual(&germinate(&a_far, &rot_far).unwrap()), [7; 32]);
         let derivable = k.basis[0].address(); // its duplicate speaks it
         // The bidder's sentence: the duplicate, cited at the identity.
         let body = |w: &Element| crate::transducer::sentence::cited_pattern(w, 0).unwrap();
@@ -3069,7 +3216,7 @@ mod tests {
 
         // THE COURT'S BUSINESS STAYS THE COURT'S: a provisional word cannot be
         // bid away, even if derivable.
-        k.basis_push(from_residual(&germinate(&a, &rot).unwrap()), [1; 32]);
+        k.basis_insert(from_residual(&germinate(&a, &rot).unwrap()), [1; 32]);
         let addr = k.basis[1].address();
         k.provisional.push((addr, k.basis[1].clone()));
         let sentence = vec![(k.basis[0].address(), element::identity_versor(), 0u32, body(&k.basis[0]))];
@@ -3235,7 +3382,7 @@ mod tests {
         assert_eq!(replay(k.basis(), &cites, &chain), void, "the replay reproduces the residual");
         let (code, paid, remaining) = k.settle_probe([3; 32], &target, void.clone(), &[word], false);
         assert_eq!(code, PROBE_DESCENT);
-        assert!(paid.iter().any(|&p| p > 0), "graded descent earns per lane");
+        assert_eq!(paid, [0; 4], "a descent is measured, never paid: covering cells opens no axis");
         assert_eq!(remaining, crate::transducer::element::measure_lanes(&void));
         let listing = k.quote(8).1[0].0.clone();
         assert_eq!(listing.address(), target, "the listing stays the body: a descent never re-lists a fragment");
@@ -3496,7 +3643,7 @@ mod tests {
         // Fabricate two sibling cards (as a legacy/import would leave them).
         for hue in [6u8, 7] {
             let bx = vec![(0, 0, hue), (0, 1, 2)];
-            k.basis_push(from_residual(&germinate(&a, &bx).unwrap()), [9; 32]);
+            k.basis_insert(from_residual(&germinate(&a, &bx).unwrap()), [9; 32]);
         }
         assert_eq!(k.basis_len(), 3, "the un-condensed family");
         // One versor per stroke: the cursor walks the stratum over strokes.

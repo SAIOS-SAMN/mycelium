@@ -434,18 +434,31 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
     // One rule per class, keyed by moduli: speak is a read, not a scan.
     rules.sort_by(|a, b| a.moduli.0.cmp(&b.moduli.0));
     let transport = Transport { ratio, rules, removed, created: creations };
-    // 5. REPLAY the connection on every pair; the first failure's residual
-    // is the demand.
+    // 5. REPLAY the connection on every pair. The classes that agree are a
+    // connection in their own right: a body of a class no rule reaches is
+    // the REMAINDER of the family, not a refutation of it. The connection
+    // is refuted only where a cell it does speak disagrees with the
+    // observation; where it speaks nothing, the unreached body's cells are
+    // the residual carried alongside the partial transport.
+    let mut remainder: Vec<(i64, i64, u8, u8)> = Vec::new();
     for (a, b) in family {
-        let spoken = speak(&transport, a).and_then(|s| match s.remainder.as_slice() {
-            [] => Some(s.grid()),
-            _ => None,
-        });
-        if spoken.as_ref() != Some(b) {
-            out.residual = residual_of(spoken.as_ref(), b);
+        let Some(s) = speak_total(&transport, a) else {
+            out.residual = residual_of(None, b);
+            return out;
+        };
+        let grid = s.grid();
+        let unreached: Vec<(i64, i64)> = s.remainder.iter().map(|&(r, c, _)| (r, c)).collect();
+        let diff = residual_of(Some(&grid), b);
+        let (unspoken, refuted): (Vec<_>, Vec<_>) = diff.into_iter().partition(|(r, c, _, _)| unreached.contains(&(*r, *c)));
+        if !refuted.is_empty() {
+            out.residual = refuted;
             return out;
         }
+        remainder.extend(unspoken);
     }
+    remainder.sort_unstable();
+    remainder.dedup();
+    out.residual = remainder;
     out.transport = Some(transport);
     out
 }

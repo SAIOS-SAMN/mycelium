@@ -570,6 +570,12 @@ fn main() {
             // Syllabus and sheaf sync live on the depletion dwell so the
             // door serves quotes and percepts on the hot stroke.
             if !occluded {
+                // THE PIVOT: a held thought whose chart the language moved on
+                // becomes a demand on the book; the bag is not a queue.
+                let pivoted = entity.pivot_thoughts();
+                if pivoted > 0 {
+                    eprintln!("[{name}] pivot: {pivoted} held thoughts spoken as demands on charts the language now holds");
+                }
                 if let Ok(n) = entity.pull_syllabus() {
                     if n > 0 {
                         learned += n as u64;

@@ -117,7 +117,7 @@ pub struct Entry {
 /// orients nothing rather than silently crediting.
 pub fn orientation(kind: &str) -> i8 {
     match kind {
-        "utility" | "consilience" | "recall" | "torse" | "assembly" | "solve" => 1,
+        "utility" | "consilience" | "recall" | "torse" | "condense" | "refine" | "assembly" | "solve" => 1,
         "spend" | "fee" | "slash" => -1,
         _ => 0, // "stake", "finality", forward-compatible unknowns
     }
@@ -294,6 +294,14 @@ impl Treasury {
         self.pay("refine", bidder, bounded, anchor)
     }
 
+    /// THE CONDENSE YIELD: a sibling card was absorbed into a bundle along
+    /// a conformal versor. Neighbour of the torse coin — paid on the lane
+    /// the fibre gained, float-bounded.
+    pub fn settle_condense(&mut self, discoverer: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+        let bounded = self.award_bound(mu);
+        self.pay("condense", discoverer, bounded, anchor)
+    }
+
     /// A VERIFIED SOLVE (PoUW): the registry confirmed a prediction against
     /// its held answers and named the task's tension. Occupied lanes pay at
     /// least 1 while the pool holds anything there — a verified solve is
@@ -439,6 +447,8 @@ impl Treasury {
                 "slash" => 8,
                 "assembly" => 9,
                 "solve" => 10,
+                "refine" => 11,
+                "condense" => 12,
                 _ => 255,
             };
             out.push(tag);
@@ -519,6 +529,8 @@ impl Treasury {
                 8 => "slash",
                 9 => "assembly",
                 10 => "solve",
+                11 => "refine",
+                12 => "condense",
                 _ => "unknown",
             };
             let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;

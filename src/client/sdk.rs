@@ -748,7 +748,7 @@ pub struct Entity {
     /// OPEN THOUGHTS: remainders this mind has not collapsed into a closed
     /// word — the chains speech cannot carry yet. Work, never a message;
     /// bounded by the reserve, the oldest yielding to the newest.
-    thoughts: Vec<Vec<(i64, i64, u8, u8)>>,
+    thoughts: Vec<(crate::transducer::stalk::Invariant, Vec<(i64, i64, u8, u8)>)>,
 }
 
 impl Entity {
@@ -1121,22 +1121,55 @@ impl Entity {
         &self.obstructions
     }
 
-    /// HOLD A THOUGHT: a remainder this mind has not collapsed. Bounded by
-    /// the reserve; the oldest open thought yields to the newest.
+    /// HOLD A THOUGHT: a remainder this mind has not collapsed, keyed by
+    /// the chart of its support — one open thought per chart, the newest
+    /// remainder on that chart replacing the older. Bounded by the reserve.
+    /// Not a queue: a thought is re-tried only when the language moves on
+    /// its chart (see `pivot_thoughts`).
     pub fn hold_thought(&mut self, remainder: Vec<(i64, i64, u8, u8)>) {
-        if remainder.is_empty() || self.thoughts.contains(&remainder) {
+        if remainder.is_empty() {
+            return;
+        }
+        let inv = crate::transducer::stalk::invariant(&remainder);
+        if let Some(held) = self.thoughts.iter_mut().find(|(i, _)| *i == inv) {
+            held.1 = remainder;
             return;
         }
         let cap = crate::physics::reserve_max() as usize;
         if self.thoughts.len() >= cap {
             self.thoughts.remove(0);
         }
-        self.thoughts.push(remainder);
+        self.thoughts.push((inv, remainder));
     }
 
-    /// The open thoughts held here: remainders not yet closed into words.
-    pub fn thoughts(&self) -> &[Vec<(i64, i64, u8, u8)>] {
+    /// The open thoughts held here: remainders not yet closed into words,
+    /// each with the chart it sits on.
+    pub fn thoughts(&self) -> &[(crate::transducer::stalk::Invariant, Vec<(i64, i64, u8, u8)>)] {
         &self.thoughts
+    }
+
+    /// PIVOT ON THE AXIS THE LANGUAGE MOVED: a held thought whose chart the
+    /// genome now holds a word on is spoken as a demand on the book (empty
+    /// cites — eligible for puncture or axial extension there), and leaves
+    /// the bag. One keyed read of the atlas per held thought; nothing is
+    /// walked that the atlas does not name.
+    pub fn pivot_thoughts(&mut self) -> usize {
+        self.epigenome.atlas();
+        let ready: Vec<usize> = self
+            .thoughts
+            .iter()
+            .enumerate()
+            .filter(|(_, (inv, _))| !self.epigenome.atlas.fiber(inv).is_empty())
+            .map(|(i, _)| i)
+            .collect();
+        let mut spoken = 0usize;
+        for i in ready.into_iter().rev() {
+            let (_, remainder) = self.thoughts.remove(i);
+            if self.attest(&remainder, &[]).is_ok() {
+                spoken += 1;
+            }
+        }
+        spoken
     }
 
     /// SPEAK A WORD this entity minted — a closed connection — up to the
