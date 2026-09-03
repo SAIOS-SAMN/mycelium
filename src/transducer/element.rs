@@ -1205,6 +1205,94 @@ pub fn from_residual_framed(g: &ResidualGerm, frame: &(usize, usize, usize, usiz
     e
 }
 
+/// THE AFFINE BLOCK of a versor: the exact 3×3 homogeneous matrix of its
+/// action on the plane, read by carrying three points (the origin and the
+/// two unit steps) and checked on a fourth. None when the versor is not
+/// affine (a conformal action that bends lines has no such block) or
+/// reaches infinity.
+pub fn affine_of(v: &Versor) -> Option<QMatrix> {
+    let carry = |r: i64, c: i64| -> Option<(Q, Q)> {
+        let x = Q::from(BigInt::from(r));
+        let y = Q::from(BigInt::from(c));
+        crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&x, &y)))
+    };
+    let (t, er, ec, d) = (carry(0, 0)?, carry(1, 0)?, carry(0, 1)?, carry(1, 1)?);
+    let (a, c_) = (&er.0 - &t.0, &er.1 - &t.1);
+    let (b, d_) = (&ec.0 - &t.0, &ec.1 - &t.1);
+    // Affine iff the fourth point is the sum of the two steps.
+    if d.0 != &t.0 + &a + &b || d.1 != &t.1 + &c_ + &d_ {
+        return None;
+    }
+    Some(vec![
+        vec![a, b, t.0.clone()],
+        vec![c_, d_, t.1.clone()],
+        vec![Q::zero(), Q::zero(), Q::one()],
+    ])
+}
+
+/// MINT THE CONNECTION: one element with two components. The group
+/// component is the comprehended transport — the versor's affine block on
+/// the motion rows of the spatial fibre and the gauge map σ as a
+/// permutation on the hue rows (when σ, extended by the identity on the
+/// hues it does not touch, is a bijection; otherwise the hue rows stay the
+/// identity and the gauge is carried by the chain). The additive component
+/// is the remainder — what the connection could not speak — as the chain;
+/// an empty remainder is a closed word. `carried` is the volume the
+/// connection speaks across its family, added to the chain's own measure
+/// per lane, so a closed connection has magnitude on the lanes it moves.
+pub fn from_connection(affine: &QMatrix, sigma: &[(u8, u8)], remainder: &ResidualGerm, carried: [u64; 4]) -> Element {
+    let mut e = from_residual(remainder);
+    let mut m = identity(GERM_DIM);
+    place_block(&mut m, 0, affine);
+    let mut image: Vec<usize> = (0..PALETTE).collect();
+    for &(from, to) in sigma {
+        if (from as usize) < PALETTE && (to as usize) < PALETTE {
+            image[from as usize] = to as usize;
+        }
+    }
+    let mut seen = vec![false; PALETTE];
+    let bijective = image.iter().all(|&t| {
+        let fresh = !seen[t];
+        seen[t] = true;
+        fresh
+    });
+    if bijective {
+        let mut perm = vec![vec![Q::zero(); PALETTE]; PALETTE];
+        for (from, &to) in image.iter().enumerate() {
+            perm[from][to] = Q::one();
+        }
+        place_block(&mut m, 3, &perm);
+    }
+    e.set_fiber(FIBER_SPATIAL, m);
+    e.address.take();
+    for l in 0..4 {
+        e.mag[l] = e.mag[l].saturating_add(carried[l]);
+    }
+    e
+}
+
+impl Element {
+    /// Is this word a CONNECTION — a group component the court can invert
+    /// and glue? Read on the spatial fibre: the motion rows are a
+    /// homogeneous affine block and the hue rows are a permutation (the
+    /// identity included). A residual germ's antisymmetric hue tally is
+    /// never a permutation, so the two kinds of word never conflate.
+    pub fn is_connection(&self) -> bool {
+        let Some(m) = self.fiber(FIBER_SPATIAL) else { return false };
+        if m.len() != GERM_DIM {
+            return false;
+        }
+        let homogeneous = m[2][0].is_zero() && m[2][1].is_zero() && m[2][2].is_one();
+        let permutation = (3..GERM_DIM).all(|r| {
+            let ones = (3..GERM_DIM).filter(|&c| m[r][c].is_one()).count();
+            let zeros = (3..GERM_DIM).filter(|&c| m[r][c].is_zero()).count();
+            ones == 1 && zeros == GERM_DIM - 4
+        }) && (3..GERM_DIM).all(|c| (3..GERM_DIM).filter(|&r| m[r][c].is_one()).count() == 1);
+        let no_mixing = (0..3).all(|r| (3..GERM_DIM).all(|c| m[r][c].is_zero())) && (3..GERM_DIM).all(|r| (0..3).all(|c| m[r][c].is_zero()));
+        homogeneous && permutation && no_mixing
+    }
+}
+
 /// The perceptual lane projection of a centered coboundary chain — the
 /// per-lane magnitude MEASURED from the chain's geometry, never funneled
 /// onto one axis:
@@ -1548,6 +1636,29 @@ mod tests {
     /// any position is ONE substance (min-corner framed to origin), while a
     /// deformation with the SAME hue tally but DIFFERENT geometry stays DISTINCT —
     /// the Step-1 conflation, cured (the tally never decides substance).
+    /// A connection minted from a transport is a word with two components:
+    /// the identity motion with a hue swap is a permutation on the hue rows
+    /// (invertible, a connection), the remainder is its chain, and its
+    /// address differs from the bare residual's. A non-bijective gauge
+    /// leaves the hue rows the identity.
+    #[test]
+    fn a_connection_is_one_element_with_two_components() {
+        let affine = affine_of(&identity_versor()).expect("the identity versor is affine");
+        assert_eq!(affine, crate::core::matrix::identity(3));
+        let remainder = vec![(0, 0, 3u8, 4u8)];
+        let w = from_connection(&affine, &[(1, 2), (2, 1)], &remainder, [5, 2, 0, 0]);
+        assert!(w.is_connection(), "affine motion rows and a permutation on the hue rows");
+        assert!(w.solution().is_some(), "the group component inverts");
+        assert_eq!(w.sub(), remainder.as_slice(), "the remainder is the chain");
+        assert_ne!(w.address(), from_residual(&remainder).address(), "the connection is not the bare residual");
+        assert!(w.magnitude()[0] >= 5 && w.magnitude()[1] >= 2, "carried volume rides on the lanes");
+        let closed = from_connection(&affine, &[(1, 2), (2, 1)], &Vec::new(), [5, 2, 0, 0]);
+        assert!(closed.is_connection() && closed.sub().is_empty(), "an empty remainder is a closed connection");
+        let merge = from_connection(&affine, &[(1, 2)], &Vec::new(), [1, 1, 0, 0]);
+        assert!(!merge.is_connection(), "a merging gauge with the identity motion carries no group component");
+        assert!(!from_residual(&remainder).is_connection(), "a residual's tally is never a permutation");
+    }
+
     #[test]
     fn substance_is_the_centered_chain() {
         let a = [(0, 0, 1u8), (0, 1, 2), (1, 0, 3)];

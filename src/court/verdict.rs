@@ -28,23 +28,53 @@ use crate::transducer::toroid::{self, HolonomicLoopWitness};
 /// and the install must strictly descend (0⃗ ≺_DM μ⃗).
 pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
     let chain = spoken.sub();
-    if chain.is_empty() {
-        return Some("empty chain — nothing was derived");
-    }
-    let min_r = chain.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
-    let min_c = chain.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
-    if (min_r, min_c) != (0, 0) {
-        return Some("chain not framed to origin");
-    }
-    if !chain.windows(2).all(|w| w[0] <= w[1]) {
-        return Some("chain not canonically ordered");
-    }
-    let rederived = element::from_residual(&chain.to_vec());
-    if rederived.address() != spoken.address() {
-        return Some("address does not re-derive from the chain");
-    }
-    if rederived.magnitude() != spoken.magnitude() {
-        return Some("magnitude does not re-derive from the chain");
+    // A CONNECTION is a word with two components: the group component (an
+    // invertible motion and gauge on the spatial fibre) and the remainder
+    // chain. Its chain part re-derives like any germ's; its group part is
+    // verified by inversion — a connection the court cannot invert cannot
+    // glue and is false speech. Its magnitude carries the volume it speaks
+    // across its family on top of the chain's own measure, so it is bounded
+    // below by the chain, never equal to it.
+    let connection = spoken.is_connection();
+    match (chain.is_empty(), connection) {
+        (true, false) => return Some("empty chain — nothing was derived"),
+        (true, true) => {
+            if spoken.solution().is_none() {
+                return Some("connection is not invertible");
+            }
+        }
+        (false, _) => {
+            let min_r = chain.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
+            let min_c = chain.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
+            if (min_r, min_c) != (0, 0) {
+                return Some("chain not framed to origin");
+            }
+            if !chain.windows(2).all(|w| w[0] <= w[1]) {
+                return Some("chain not canonically ordered");
+            }
+            let rederived = element::from_residual(&chain.to_vec());
+            match connection {
+                false => {
+                    if rederived.address() != spoken.address() {
+                        return Some("address does not re-derive from the chain");
+                    }
+                    if rederived.magnitude() != spoken.magnitude() {
+                        return Some("magnitude does not re-derive from the chain");
+                    }
+                }
+                true => {
+                    if rederived.sub() != spoken.sub() {
+                        return Some("remainder does not re-derive from the chain");
+                    }
+                    if (0..4).any(|l| spoken.magnitude()[l] < rederived.magnitude()[l]) {
+                        return Some("magnitude below the remainder's own measure");
+                    }
+                    if spoken.solution().is_none() {
+                        return Some("connection is not invertible");
+                    }
+                }
+            }
+        }
     }
     if !crate::economy::descends(&[0; 4], &spoken.magnitude()) {
         return Some("no strict descent — the germ closes nothing");

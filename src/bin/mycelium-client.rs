@@ -211,6 +211,20 @@ fn main() {
                 physics.spend(Physics::lanes_of(&mag)); // thought is priced on the lanes it occupies
                 match comprehended.transport {
                     Some(transport) => {
+                        // THE CONNECTION IS THE WORD. Its volume is what it
+                        // speaks across the family; its remainder is what the
+                        // tests leave unspoken, each cell paired with the held
+                        // answer at that position. One element, two
+                        // components, minted from the comprehension and
+                        // spoken up as itself — never another input→output
+                        // pair, never a rectangle.
+                        let mut carried = [0u64; 4];
+                        for (a, _) in &task.train {
+                            if let Some(s) = mycelium::transducer::family::speak(&transport, a) {
+                                carried[0] = carried[0].saturating_add(s.cells.len() as u64);
+                            }
+                        }
+                        let mut remainder: Vec<(i64, i64, u8, u8)> = Vec::new();
                         for (x, y) in &task.test {
                             if y.is_empty() {
                                 continue; // withheld output: nothing to score against
@@ -224,44 +238,33 @@ fn main() {
                                         }
                                     }
                                     unsaid => {
-                                        // THE REMAINDER IS THE NEXT DEMAND: the input
-                                        // cells whose hue has no image, paired with
-                                        // what the held answer says at their carried
-                                        // positions, spoken as a percept on the book —
-                                        // the coboundary of the speech, never a log.
-                                        let (hi, wi) = (x.len(), x.first().map_or(0, |r| r.len()));
-                                        let (ho, wo) = (y.len(), y.first().map_or(0, |r| r.len()));
-                                        let mut rem: Vec<Vec<u8>> = vec![vec![0u8; wi]; hi];
                                         for &(r, c, h) in unsaid {
-                                            if r >= 0 && c >= 0 && (r as usize) < hi && (c as usize) < wi {
-                                                rem[r as usize][c as usize] = h;
-                                            }
-                                        }
-                                        let a = grid_to_cells(&embed(&rem, ho, wo));
-                                        let y_cells = grid_to_cells(y);
-                                        // The answer's cells at the remainder's positions: one
-                                        // merge walk over the two ordered supports.
-                                        let mut b: Vec<(i64, i64, u8)> = Vec::new();
-                                        let (mut i, mut j) = (0usize, 0usize);
-                                        while i < a.len() && j < y_cells.len() {
-                                            match (a[i].0, a[i].1).cmp(&(y_cells[j].0, y_cells[j].1)) {
-                                                std::cmp::Ordering::Less => i += 1,
-                                                std::cmp::Ordering::Greater => j += 1,
-                                                std::cmp::Ordering::Equal => {
-                                                    b.push(y_cells[j]);
-                                                    i += 1;
-                                                    j += 1;
-                                                }
-                                            }
-                                        }
-                                        if !a.is_empty() && !b.is_empty() {
-                                            match entity.submit(&a, &b, &(hi, wi, ho, wo)) {
-                                                Ok(_) => eprintln!("[{name}] speech remainder of {} cells spoken as a demand", unsaid.len()),
-                                                Err(_) => errors += 1,
-                                            }
+                                            let observed = y.get(r as usize).and_then(|row| row.get(c as usize)).copied().unwrap_or(0);
+                                            remainder.push((r, c, h, observed));
                                         }
                                     }
                                 }
+                            }
+                        }
+                        remainder.sort_unstable();
+                        remainder.dedup();
+                        for rule in &transport.rules {
+                            let Some((_, u)) = rule.readings.iter().find(|(r, _)| *r == 0).or(rule.readings.first()) else { continue };
+                            let Some(affine) = mycelium::transducer::element::affine_of(u) else { continue };
+                            let gauge = rule.sigma.iter().filter(|(f, t)| f != t).count() as u64;
+                            let mut mag = carried;
+                            mag[1] = mag[1].saturating_add(gauge);
+                            mag[2] = mag[2].saturating_add(remainder.len() as u64);
+                            let word = mycelium::transducer::element::from_connection(&affine, &rule.sigma, &remainder, mag);
+                            match entity.speak_word(&word) {
+                                Ok(()) => eprintln!(
+                                    "[{name}] connection spoken: {:02x}{:02x}… remainder {} cells, carried {:?}",
+                                    word.address()[0],
+                                    word.address()[1],
+                                    remainder.len(),
+                                    mag
+                                ),
+                                Err(_) => errors += 1,
                             }
                         }
                     }

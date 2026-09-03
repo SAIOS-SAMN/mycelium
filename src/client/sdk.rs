@@ -1003,6 +1003,20 @@ impl Entity {
         &self.obstructions
     }
 
+    /// SPEAK A WORD this entity minted — a connection with its remainder —
+    /// up to the hypha for adoption. The word enters the entity's own
+    /// genome as its expressed thought and travels as itself on the wire.
+    pub fn speak_word(&mut self, word: &Element) -> io::Result<()> {
+        let voice = self.session.kernel().voice();
+        let addr = word.address();
+        if self.taught_up.contains(&addr) {
+            return Ok(()); // spoken once; the judge decided
+        }
+        self.session.speak(dialogue::encode_adopt(&voice, &word.to_bytes()))?;
+        self.taught_up.push(addr);
+        Ok(())
+    }
+
     pub fn discordance(&self) -> usize {
         self.discordance
     }

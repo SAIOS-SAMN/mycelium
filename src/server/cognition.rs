@@ -1115,6 +1115,24 @@ impl Kernel {
             self.touch();
             return Adoption::Known;
         }
+        // A CONNECTION arriving from an entity is listed as itself: it enters
+        // the docket with its own magnitude as the deflation it claims, so
+        // the court rules it (inversion, remainder, torsion) and the mesh
+        // pays it as a word, never as a copied pair. A residual word taught
+        // up is installed as before.
+        if word.is_connection() {
+            let mag = word.magnitude();
+            let surface = crate::economy::yield_surface(&self.physics);
+            let mu = crate::economy::price(&mag, &surface);
+            let anchor = self.anchor();
+            self.treasury.escrow_award(addr, vec![ratifier], mu, anchor);
+            self.deflations.insert(addr, mag);
+            let k_now = self.k_step();
+            self.provisional_k.insert(addr, k_now);
+            self.provisional.push((addr, word.clone()));
+            self.book_gen += 1;
+            self.append_step(addr, ratifier);
+        }
         self.basis_push(word.clone(), ratifier);
         self.physics.syntropy(&word.magnitude()); // convergence is order built
         Adoption::Installed
