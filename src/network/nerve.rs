@@ -114,20 +114,34 @@ impl Router {
 
     /// The contact XOR-closest to `key` — O(bits), never O(N).
     pub fn closest(&self, key: &[u8; 32]) -> Option<([u8; 32], String)> {
-        self.near(key, 0)
+        self.near(key, 0, &[])
     }
 
-    fn near(&self, key: &[u8; 32], depth: usize) -> Option<([u8; 32], String)> {
+    /// The contact XOR-closest to `key` among those not excluded — the next
+    /// hop on the nerve when the closest is the speaker itself or the one
+    /// it heard from. Deterministic: the same key walks the same path from
+    /// every node.
+    pub fn closest_excluding(&self, key: &[u8; 32], exclude: &[[u8; 32]]) -> Option<([u8; 32], String)> {
+        self.near(key, 0, exclude)
+    }
+
+    /// Does the router hold this exact identity — a peer it was configured
+    /// with, the only kind whose speech the nerve accepts?
+    pub fn knows(&self, id: &[u8; 32]) -> bool {
+        self.closest(id).is_some_and(|(held, _)| held == *id)
+    }
+
+    fn near(&self, key: &[u8; 32], depth: usize, exclude: &[[u8; 32]]) -> Option<([u8; 32], String)> {
         if depth == 256 {
-            return self.leaf.clone();
+            return self.leaf.clone().filter(|(id, _)| !exclude.contains(id));
         }
         let b = Self::bit(key, depth);
         if let Some(c) = &self.children[b] {
-            if let Some(hit) = c.near(key, depth + 1) {
+            if let Some(hit) = c.near(key, depth + 1, exclude) {
                 return Some(hit);
             }
         }
-        self.children[1 - b].as_ref().and_then(|c| c.near(key, depth + 1))
+        self.children[1 - b].as_ref().and_then(|c| c.near(key, depth + 1, exclude))
     }
 }
 

@@ -63,6 +63,18 @@ struct ReflexJob {
 /// outcome, the per-lane metabolism, what was taught, and the settle
 /// receipt; a percept still awaiting consilience routes one receipt to its
 /// rendezvous.
+/// SPEAK A ROOT ON THE NERVE: to the one peer the router places closest to
+/// the family's key, other than this node and the voice it was heard from.
+/// Every node walks the same key to the same next hop, so a root crosses
+/// the nerve along one deterministic path and never as a broadcast.
+fn speak_root(router: &Router, self_id: &[u8; 32], task: &[u8; 32], solver: &[u8; 32], heard_from: Option<[u8; 32]>) {
+    let mut exclude = vec![*self_id];
+    exclude.extend(heard_from);
+    if let Some((_, addr)) = router.closest_excluding(task, &exclude) {
+        tell_peer(&addr, dialogue::encode_root(self_id, task, solver));
+    }
+}
+
 /// Speak one act to a peer on the nerve, bounded by the transport deadline;
 /// the reply, if any, is not needed. Silence is the peer's impedance.
 fn tell_peer(addr: &str, body: Vec<u8>) {
@@ -428,12 +440,10 @@ fn main() {
     // at boot, so a family proven here is re-spoken on every peer's book.
     for t in registry.lock().map(|r| r.settled_ids()).unwrap_or_default() {
         roots.push((t, id));
-        for p in &peers {
-            tell_peer(p, dialogue::encode_root(&id, &t, &id));
-        }
+        speak_root(&router, &id, &t, &id, None);
     }
     if !roots.is_empty() {
-        eprintln!("  roots announced: {} settled families to {} peers", roots.len(), peers.len());
+        eprintln!("  roots announced: {} settled families, each to its key's next hop", roots.len());
     }
     let mut syllabus_served: Vec<([u8; 32], usize)> = Vec::new();
 
@@ -550,25 +560,33 @@ fn main() {
         // ── root: a proven family heard on the nerve ─────────────────────────
         if kind == dialogue::ACT_ROOT {
             let Some((from, task, solver)) = dialogue::decode_root(&frame.body) else { continue };
-            // The nerve exchanges roots: the peer that spoke one hears ours.
-            if let Some((_, back)) = router.closest(&from) {
-                for (t, s) in roots.iter().filter(|(t, _)| *t != task) {
-                    tell_peer(&back, dialogue::encode_root(&id, t, s));
+            // Only a peer the nerve was configured with is heard.
+            if !router.knows(&from) {
+                let _ = s.write_all(&Frame { lane: frame.lane, body: Vec::new() }.encode().unwrap_or_default());
+                continue;
+            }
+            // The nerve exchanges roots with the peer that spoke: each of
+            // ours goes back along its own key's hop, which for that peer
+            // is the peer itself when it is the closest.
+            for (t, sv) in roots.clone().iter().filter(|(t, _)| *t != task) {
+                if router.closest_excluding(t, &[id]).is_some_and(|(hop, _)| hop == from) {
+                    if let Some((_, back)) = router.closest(&from) {
+                        tell_peer(&back, dialogue::encode_root(&id, t, sv));
+                    }
                 }
             }
-            if !roots.iter().any(|(t, s)| *t == task && *s == solver) {
+            if !roots.iter().any(|(t, sv)| *t == task && *sv == solver) {
                 roots.push((task, solver));
                 let prioritized = registry.lock().map(|mut r| r.prioritize(&task)).unwrap_or(false);
                 eprintln!(
-                    "  ROOT heard: task {:02x}{:02x}… solved by voice {:02x}; {}",
+                    "  ROOT heard from {:02x}: task {:02x}{:02x}… solved by voice {:02x}; {}",
+                    from[0],
                     task[0],
                     task[1],
                     solver[0],
                     if prioritized { "re-dispatched first here" } else { "not open on this book" }
                 );
-                for p in &peers {
-                    tell_peer(p, dialogue::encode_root(&id, &task, &solver));
-                }
+                speak_root(&router, &id, &task, &solver, Some(from));
             }
             let _ = s.write_all(&Frame { lane: frame.lane, body: Vec::new() }.encode().unwrap_or_default());
             continue;
@@ -691,10 +709,8 @@ fn main() {
                             ),
                             None => {
                                 roots.push((tid, svoice));
-                                eprintln!("  ROOT task {:02x}{:02x}… proven by voice {:02x}; gossiped to {} peers", tid[0], tid[1], svoice[0], peers.len());
-                                for p in &peers {
-                                    tell_peer(p, dialogue::encode_root(&id, &tid, &svoice));
-                                }
+                                eprintln!("  ROOT task {:02x}{:02x}… proven by voice {:02x}; spoken to its key's next hop", tid[0], tid[1], svoice[0]);
+                                speak_root(&router, &id, &tid, &svoice, None);
                             }
                         }
                         (dialogue::SOLVE_BOUNTY, paid)
