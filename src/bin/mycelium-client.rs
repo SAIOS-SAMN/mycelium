@@ -41,6 +41,68 @@ fn has(args: &[String], name: &str) -> bool {
 }
 /// The magnitude of a family, per lane: the sum over its pairs of the
 /// coboundary's lane magnitudes — what thinking it through is priced on.
+/// THE CONNECTION IS THE WORD (the overlay is apply g). One connection per
+/// rule of a comprehended transport: the versor's affine block and the gauge
+/// as the group component, the volume spoken across the family on the
+/// lanes, and the test remainder as the chain — each unspoken input cell
+/// paired with the held answer at that position when an answer is held,
+/// with itself when it is withheld. Spoken up as a word, never as another
+/// input→output pair and never through a rectangle. Returns (spoken,
+/// errors).
+fn speak_connections(
+    entity: &mut Entity,
+    name: &str,
+    transport: &mycelium::transducer::family::Transport,
+    train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
+    tests: &[Vec<Vec<u8>>],
+    answers: &[Vec<Vec<u8>>],
+) -> (u64, u64) {
+    let mut carried = [0u64; 4];
+    for (a, _) in train {
+        if let Some(s) = mycelium::transducer::family::speak(transport, a) {
+            carried[0] = carried[0].saturating_add(s.cells.len() as u64);
+        }
+    }
+    let mut remainder: Vec<(i64, i64, u8, u8)> = Vec::new();
+    for (k, x) in tests.iter().enumerate() {
+        let Some(speech) = mycelium::transducer::family::speak(transport, x) else { continue };
+        for &(r, c, h) in &speech.remainder {
+            let observed = answers
+                .get(k)
+                .and_then(|y| y.get(r as usize))
+                .and_then(|row| row.get(c as usize))
+                .copied()
+                .unwrap_or(h);
+            remainder.push((r, c, h, observed));
+        }
+    }
+    remainder.sort_unstable();
+    remainder.dedup();
+    let (mut spoken, mut errors) = (0u64, 0u64);
+    for rule in &transport.rules {
+        let Some((_, u)) = rule.readings.iter().find(|(r, _)| *r == 0).or(rule.readings.first()) else { continue };
+        let Some(affine) = mycelium::transducer::element::affine_of(u) else { continue };
+        let gauge = rule.sigma.iter().filter(|(f, t)| f != t).count() as u64;
+        let mut mag = carried;
+        mag[1] = mag[1].saturating_add(gauge);
+        let word = mycelium::transducer::element::from_connection(&affine, &rule.sigma, &remainder, mag);
+        match entity.speak_word(&word) {
+            Ok(()) => {
+                spoken += 1;
+                eprintln!(
+                    "[{name}] connection spoken: {:02x}{:02x}… remainder {} cells, carried {:?}",
+                    word.address()[0],
+                    word.address()[1],
+                    remainder.len(),
+                    word.magnitude()
+                );
+            }
+            Err(_) => errors += 1,
+        }
+    }
+    (spoken, errors)
+}
+
 fn family_magnitude(train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)]) -> [u64; 4] {
     let mut mag = [0u64; 4];
     for (x, y) in train {
@@ -211,62 +273,26 @@ fn main() {
                 physics.spend(Physics::lanes_of(&mag)); // thought is priced on the lanes it occupies
                 match comprehended.transport {
                     Some(transport) => {
-                        // THE CONNECTION IS THE WORD. Its volume is what it
-                        // speaks across the family; its remainder is what the
-                        // tests leave unspoken, each cell paired with the held
-                        // answer at that position. One element, two
-                        // components, minted from the comprehension and
-                        // spoken up as itself — never another input→output
-                        // pair, never a rectangle.
-                        let mut carried = [0u64; 4];
-                        for (a, _) in &task.train {
-                            if let Some(s) = mycelium::transducer::family::speak(&transport, a) {
-                                carried[0] = carried[0].saturating_add(s.cells.len() as u64);
-                            }
-                        }
-                        let mut remainder: Vec<(i64, i64, u8, u8)> = Vec::new();
+                        // Score each held answer through the connection, then
+                        // mint the connection as the word (one helper, the
+                        // same mint as the live task path).
                         for (x, y) in &task.test {
                             if y.is_empty() {
                                 continue; // withheld output: nothing to score against
                             }
                             if let Some(speech) = mycelium::transducer::family::speak(&transport, x) {
-                                match speech.remainder.as_slice() {
-                                    [] => {
-                                        projected += 1;
-                                        if speech.grid() == *y {
-                                            proj_solved += 1;
-                                        }
-                                    }
-                                    unsaid => {
-                                        for &(r, c, h) in unsaid {
-                                            let observed = y.get(r as usize).and_then(|row| row.get(c as usize)).copied().unwrap_or(0);
-                                            remainder.push((r, c, h, observed));
-                                        }
+                                if let [] = speech.remainder.as_slice() {
+                                    projected += 1;
+                                    if speech.grid() == *y {
+                                        proj_solved += 1;
                                     }
                                 }
                             }
                         }
-                        remainder.sort_unstable();
-                        remainder.dedup();
-                        for rule in &transport.rules {
-                            let Some((_, u)) = rule.readings.iter().find(|(r, _)| *r == 0).or(rule.readings.first()) else { continue };
-                            let Some(affine) = mycelium::transducer::element::affine_of(u) else { continue };
-                            let gauge = rule.sigma.iter().filter(|(f, t)| f != t).count() as u64;
-                            let mut mag = carried;
-                            mag[1] = mag[1].saturating_add(gauge);
-                            mag[2] = mag[2].saturating_add(remainder.len() as u64);
-                            let word = mycelium::transducer::element::from_connection(&affine, &rule.sigma, &remainder, mag);
-                            match entity.speak_word(&word) {
-                                Ok(()) => eprintln!(
-                                    "[{name}] connection spoken: {:02x}{:02x}… remainder {} cells, carried {:?}",
-                                    word.address()[0],
-                                    word.address()[1],
-                                    remainder.len(),
-                                    mag
-                                ),
-                                Err(_) => errors += 1,
-                            }
-                        }
+                        let tests: Vec<Vec<Vec<u8>>> = task.test.iter().map(|(x, _)| x.clone()).collect();
+                        let answers: Vec<Vec<Vec<u8>>> = task.test.iter().map(|(_, y)| y.clone()).collect();
+                        let (_, e) = speak_connections(&mut entity, &name, &transport, &task.train, &tests, &answers);
+                        errors += e;
                     }
                     // The family's pairs were already spoken as percepts
                     // by the feed; an uncomprehended family is on the book.
@@ -455,6 +481,10 @@ fn main() {
             );
             match comprehended.transport {
                 Some(transport) => {
+                    // THE MINT ON THE LIVE PATH: the comprehended connection
+                    // is spoken up as the word before any solve is projected.
+                    let (_, e) = speak_connections(&mut entity, &name, &transport, &train, &tests, &[]);
+                    errors += e;
                     let outs: Vec<Option<Vec<Vec<u8>>>> =
                         tests
                             .iter()

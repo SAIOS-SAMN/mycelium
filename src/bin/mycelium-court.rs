@@ -215,6 +215,14 @@ fn main() {
     // One outbox per wire: the court's utterances to that hypha, delivered
     // through its aperture at the end of every round (see `drain`).
     let mut outbox: Vec<Vec<Vec<u8>>> = vec![Vec::new(); sessions.len()];
+    // RECONCILIATION STATE: which hypha presents its digests this round, the
+    // federation's own digests (re-measured only when the federation grew),
+    // and per wire the addresses already re-taught by reconciliation.
+    let mut recon_cursor = 0usize;
+    let mut fed_digests: Vec<mycelium::transducer::sheaf::StratumDigest> = Vec::new();
+    let mut fed_digests_len = usize::MAX;
+    let mut recon_taught: Vec<mycelium::network::nerve::Keyed<bool>> =
+        (0..sessions.len()).map(|_| mycelium::network::nerve::Keyed::new()).collect();
 
     loop {
         let mut heard_any = false;
@@ -439,6 +447,49 @@ fn main() {
                 // escrowed μ⃗ actually occupies — never a hardcoded plane.
                 physics.bump(&mu);
                 physics.spend(mycelium::physics::Physics::lanes_of(&mu));
+            }
+        }
+        // ── RECONCILIATION: teaching as a state, not an event. One hypha per
+        // round presents the digests of its basis; the court measures the
+        // federation over its own atlas and answers every discordant stratum
+        // with the federation's words on that fibre, within the wire's
+        // budget. A ruled word is taught again wherever it is not held; the
+        // hypha's adopt door answers Known for what it already holds, and an
+        // address is re-taught to a wire once. Restart order no longer
+        // decides which hypha holds the language.
+        if !sessions.is_empty() {
+            let hi = recon_cursor % sessions.len();
+            recon_cursor = recon_cursor.wrapping_add(1);
+            if fed_digests_len != federation.len() {
+                fed_digests = mycelium::transducer::sheaf::digests_with(&stalks, |i| federation.get(i).map(|(_, e)| e));
+                fed_digests_len = federation.len();
+            }
+            if let Some(remote) = ask(&sessions[hi], &outbox[hi], dialogue::encode_digests_request(&voice))
+                .and_then(|body| dialogue::decode_digests_reply(&body))
+            {
+                let mut used = 0usize;
+                let mut taught = 0usize;
+                let mut strata = 0usize;
+                'strata: for d in mycelium::transducer::sheaf::discordant(&fed_digests, &remote) {
+                    strata += 1;
+                    for &i in stalks.fiber(&d.inv) {
+                        let Some((a, w)) = federation.get(i) else { continue };
+                        if recon_taught[hi].contains(a) {
+                            continue;
+                        }
+                        let bytes = w.to_bytes();
+                        if used + bytes.len() > mycelium::network::wire::BODY_BUDGET {
+                            break 'strata;
+                        }
+                        used += bytes.len();
+                        outbox[hi].push(dialogue::encode_adopt(&voice, &bytes));
+                        recon_taught[hi].insert(*a, true);
+                        taught += 1;
+                    }
+                }
+                if taught > 0 {
+                    eprintln!("  reconciliation with hypha {hi}: {taught} federation words re-taught over {strata} discordant strata");
+                }
             }
         }
         // ── KB ANCHOR REFINEMENT (7c): drain each hypha's birth evidence,

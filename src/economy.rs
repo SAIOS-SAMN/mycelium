@@ -575,7 +575,7 @@ mod tests {
         t.enroll([1; 32], Tier::Founder, (0, [0; 32])); // genesis: the pool must exist to pay
         let g = germ();
         let anchor: Anchor = (3, [7; 32]);
-        assert!(magnitude(&g)[2] >= 1, "a germinated pattern has residual-lane cost");
+        assert!(magnitude(&g).iter().any(|&m| m >= 1), "a germinated pattern has cost on the lanes it moves");
         assert!(t.settle_install(&g, [1; 32]), "gate admits a reducing germ");
         assert_eq!(t.balance_mu(&[1; 32]), [0; 4], "installing pays NOTHING — no corpus proven yet");
         // CIRCULATION: a funded demander pays the discoverer on each real use.

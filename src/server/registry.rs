@@ -268,7 +268,7 @@ mod tests {
         assert_eq!(reg.settle(&id, &wrong), SolveYield::Nothing, "wrong earns nothing");
         let right = vec![vec![vec![0u8, 0], vec![2, 2]]];
         match reg.settle(&id, &right) {
-            SolveYield::Bounty(mu) => assert!(mu[2] > 0, "the first solve prices the tension"),
+            SolveYield::Bounty(mu) => assert!(mu.iter().any(|&m| m > 0), "the first solve prices the tension"),
             other => panic!("first verified solve must take the bounty, got {other:?}"),
         }
         assert_eq!(

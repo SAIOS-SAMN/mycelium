@@ -245,7 +245,7 @@ mod tests {
         // GAUGE content, carried alongside the residual defect — the lane
         // projection is measured from the chain, never funneled to one axis.
         let g = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
-        assert_eq!(g.lanes(), [false, true, true, false], "a recolour = gauge + residual");
+        assert_eq!(g.lanes(), [false, true, false, false], "a recolour is gauge content; the fibre lane is empty until punctured");
     }
 
     #[test]

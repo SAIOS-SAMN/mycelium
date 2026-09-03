@@ -1329,7 +1329,10 @@ pub fn measure_lanes(chain: &[(i64, i64, u8, u8)]) -> [u64; 4] {
     let sb = crate::transducer::spectral::signature(&before_pos, &[]);
     let sa = crate::transducer::spectral::signature(&after_pos, &[]);
     let shell = sb.components.abs_diff(sa.components) + sb.boundary.abs_diff(sa.boundary);
-    [spatial, gauge, chain.len() as u64, shell]
+    // The third lane is the FIBRE VOLUME — sections and torsion cycles the
+    // word carries — and is measured on the element, never on the chain:
+    // the chain's cell count was a sum of the spatial and gauge lanes.
+    [spatial, gauge, 0, shell]
 }
 
 impl Element {
@@ -1337,15 +1340,22 @@ impl Element {
     /// recolour), residual (a coboundary/new axis), 𝒽 shell — exactly where the
     /// coordinate-exact magnitude is nonzero (never the lossy tally).
     pub fn lanes(&self) -> [bool; 4] {
-        std::array::from_fn(|l| self.mag[l] > 0)
+        let m = self.magnitude();
+        std::array::from_fn(|l| m[l] > 0)
     }
 
     /// The germ's polytonic MAGNITUDE — per-lane support size (‖Δ‖'s |supp|
     /// component), never summed, computed EXACTLY from the description at
     /// germination. A settled demand's residual magnitude is 0⃗; a real germ's is
     /// nonzero — the descent the POW++ gate reads.
+    /// The four-lane magnitude: spatial, gauge, and shell from the chain
+    /// (and what a connection carries), and the FIBRE VOLUME — sections and
+    /// torsion cycles this word holds — on the third lane, read from the
+    /// element itself so the lane is independent of the chain's sum.
     pub fn magnitude(&self) -> [u64; 4] {
-        self.mag
+        let mut m = self.mag;
+        m[2] = (self.sections.len() + self.torsion.len()) as u64;
+        m
     }
 
     /// THE TRANSPOSITION QUOTIENT — factor out the translation (the ℤ² orbit) so
@@ -1621,9 +1631,9 @@ mod tests {
         let germ = from_residual(&g);
         // A hue transition on a standing cell measures as GAUGE content
         // alongside the residual defect (the four-lane projection).
-        assert_eq!(germ.lanes(), [false, true, true, false], "a recolour = 𝒢 + residual");
+        assert_eq!(germ.lanes(), [false, true, false, false], "a recolour is 𝒢 content; the fibre lane is empty until punctured");
         let mag = germ.magnitude();
-        assert!(mag[2] >= 1 && mag[1] >= 1 && mag[0] == 0, "gauge + residual, no spatial");
+        assert!(mag[2] == 0 && mag[1] >= 1 && mag[0] == 0, "gauge only: no spatial, no fibre volume yet");
         // A residual has no group inverse (its block is antisymmetric/singular);
         // its solution is the reverse coboundary (from_residual of b→a), not a
         // matrix inverse — the group solution() correctly declines.
@@ -1765,8 +1775,8 @@ mod tests {
         let l_to_bar = from_residual(&germinate(&a, &b).unwrap());
         // One cell vacates and one appears: SPATIAL content (mass moved)
         // alongside the two-cell residual defect — measured, not defaulted.
-        assert_eq!(l_to_bar.magnitude(), [2, 0, 2, 0], "two moved cells, exact — not a canceled 0");
-        assert_eq!(l_to_bar.lanes(), [true, false, true, false], "a real spatial+residual germ");
+        assert_eq!(l_to_bar.magnitude(), [2, 0, 0, 0], "two moved cells, exact — not a canceled 0; the fibre lane is empty until punctured");
+        assert_eq!(l_to_bar.lanes(), [true, false, false, false], "a real spatial germ");
         assert!(!l_to_bar.is_identity(), "the chain decides — a canceled tally is not identity");
         assert!(!l_to_bar.substance().is_identity(), "and its substance is real");
         let bar_to_l = from_residual(&germinate(&b, &a).unwrap());

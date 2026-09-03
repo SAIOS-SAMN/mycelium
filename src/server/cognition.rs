@@ -2859,9 +2859,9 @@ mod tests {
         assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending, "percept: voice A");
         let (surface, quoted) = k.quote(4);
         assert_eq!(quoted.len(), 1, "the un-factored residual is quoted as work");
-        assert!(surface[2] >= 1, "the open demand tensions the residual lane");
+        assert!(surface.iter().any(|&s| s >= 1), "the open demand tensions the lanes it occupies");
         let (work, mu) = &quoted[0];
-        assert!(mu[2] > work.magnitude()[2], "priced ABOVE raw magnitude — tension premium");
+        assert!((0..4).any(|l| mu[l] > work.magnitude()[l]), "priced ABOVE raw magnitude — tension premium");
         // B independently derives the same centered chain and SPEAKS it as a demand.
         let chain = work.sub().to_vec();
         let out = k.attest(&chain, [2; 32]);
@@ -3122,7 +3122,7 @@ mod tests {
         assert!(blind_replay(&off).is_some(), "un-centered chain is false speech");
         // Tamper 2: inflate the claimed magnitude (yield fraud).
         let mut fat = w.clone();
-        fat.mag = [0, 0, 999, 0];
+        fat.mag = [999, 0, 0, 0];
         assert!(blind_replay(&fat).is_some(), "inflated magnitude does not re-derive");
         // Tamper 3: an empty chain claiming work.
         let mut empty = w.clone();
@@ -3149,12 +3149,12 @@ mod tests {
         assert_eq!(dockets.len(), 1, "the provisional word is on the docket");
         let (addr, spoken, voices, mu, _, _) = &dockets[0];
         assert_eq!(voices.len(), 2, "both attesting voices ride the docket");
-        assert!(mu[2] > 0, "the escrowed award is real");
+        assert!(mu.iter().any(|&m| m > 0), "the escrowed award is real");
         assert_eq!(spoken.address(), *addr, "the docket carries the word as spoken");
         // UPHELD: finality releases the award — the voices are paid at last.
         assert!(k.apply_verdict(&addr.clone(), crate::anastome::dialogue::RULING_UPHELD));
-        assert!(k.treasury().balance_mu(&[1; 32])[2] > 0, "finality pays voice A");
-        assert!(k.treasury().balance_mu(&[2; 32])[2] > 0, "finality pays voice B");
+        assert!(k.treasury().balance_mu(&[1; 32]).iter().any(|&m| m > 0), "finality pays voice A");
+        assert!(k.treasury().balance_mu(&[2; 32]).iter().any(|&m| m > 0), "finality pays voice B");
         assert!(k.dockets().is_empty(), "the docket cleared");
         assert!(!k.apply_verdict(&addr.clone(), crate::anastome::dialogue::RULING_UPHELD), "a verdict lands once");
     }

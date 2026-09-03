@@ -1012,7 +1012,12 @@ impl Entity {
         if self.taught_up.contains(&addr) {
             return Ok(()); // spoken once; the judge decided
         }
-        self.session.speak(dialogue::encode_adopt(&voice, &word.to_bytes()))?;
+        let bytes = word.to_bytes();
+        // The entity holds what it speaks: the connection enters its own
+        // genome first, so the fibre Čech has a representative here and the
+        // word's return does not depend on the syllabus.
+        self.epigenome.learn(&bytes);
+        self.session.speak(dialogue::encode_adopt(&voice, &bytes))?;
         self.taught_up.push(addr);
         Ok(())
     }

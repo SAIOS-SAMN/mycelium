@@ -40,13 +40,24 @@ fn root_of(members: &[usize], words: &[Element]) -> [u8; 32] {
 
 /// Measure the section digests of a language over its atlas.
 pub fn digests(stalks: &Stalks, words: &[Element]) -> Vec<StratumDigest> {
+    digests_with(stalks, |i| words.get(i))
+}
+
+/// The same measurement over any indexed holder of words (a federation of
+/// (address, element) pairs, a basis behind a lock): the atlas names the
+/// members, the accessor reads each by its index.
+pub fn digests_with<'a>(stalks: &Stalks, at: impl Fn(usize) -> Option<&'a Element>) -> Vec<StratumDigest> {
     stalks
         .strata()
         .into_iter()
-        .map(|(inv, members)| StratumDigest {
-            count: members.len() as u32,
-            root: root_of(&members, words),
-            inv,
+        .map(|(inv, members)| {
+            let mut rows: Vec<[u8; 32]> = members.iter().filter_map(|&i| at(i)).map(|w| w.address()).collect();
+            rows.sort_unstable();
+            let mut h = blake3::Hasher::new();
+            for a in &rows {
+                h.update(a);
+            }
+            StratumDigest { count: members.len() as u32, root: *h.finalize().as_bytes(), inv }
         })
         .collect()
 }

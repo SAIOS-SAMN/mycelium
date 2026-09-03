@@ -54,11 +54,14 @@ pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
             }
             let rederived = element::from_residual(&chain.to_vec());
             match connection {
+                // The chain lanes (spatial, gauge, shell) re-derive from the
+                // chain; the fibre lane is the word's own sections and cycles,
+                // which the court counts on the word itself.
                 false => {
                     if rederived.address() != spoken.address() {
                         return Some("address does not re-derive from the chain");
                     }
-                    if rederived.magnitude() != spoken.magnitude() {
+                    if [0, 1, 3].iter().any(|&l| rederived.magnitude()[l] != spoken.magnitude()[l]) {
                         return Some("magnitude does not re-derive from the chain");
                     }
                 }
@@ -66,7 +69,7 @@ pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
                     if rederived.sub() != spoken.sub() {
                         return Some("remainder does not re-derive from the chain");
                     }
-                    if (0..4).any(|l| spoken.magnitude()[l] < rederived.magnitude()[l]) {
+                    if [0, 1, 3].iter().any(|&l| spoken.magnitude()[l] < rederived.magnitude()[l]) {
                         return Some("magnitude below the remainder's own measure");
                     }
                     if spoken.solution().is_none() {
