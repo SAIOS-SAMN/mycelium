@@ -480,6 +480,16 @@ pub struct Kernel {
     /// persisted; every basis mutation passes through `basis_push`,
     /// `basis_remove`, `basis_clear` so the alignment holds.
     stalks: crate::transducer::stalk::Stalks,
+    /// THE RULED COVER: the atlas over the words the court has finalized
+    /// here — admitted when a verdict lands or a court adoption installs,
+    /// removed on slash or retirement, measured once at restore. It is the
+    /// cover the court reconciles against, so a stratum is discordant only
+    /// where this hypha lacks federation words, never where it holds a
+    /// provisional or corpus germ the court has not seen.
+    ruled: crate::transducer::stalk::Stalks,
+    /// The court's voice, heard on its first verdict: the one asker whose
+    /// digest request is answered with the ruled cover.
+    court_voice: Option<[u8; 32]>,
     /// Each basis word reached by its address (index-aligned with `basis`;
     /// rebuilt on the rare removal).
     basis_index: crate::network::nerve::Keyed<usize>,
@@ -605,10 +615,31 @@ impl Kernel {
         self.basis_index.get(addr).and_then(|&i| self.basis.get(i))
     }
 
+    /// A word the court finalized here joins the ruled cover (keyed admit).
+    fn ruled_admit(&mut self, addr: &[u8; 32]) {
+        if let Some(w) = self.word_at(addr) {
+            let inv = crate::transducer::stalk::invariant_of(w);
+            self.ruled.admit(&inv, *addr);
+        }
+    }
+
+    /// The court's voice, heard on its verdicts.
+    pub fn set_court_voice(&mut self, voice: [u8; 32]) {
+        self.court_voice = Some(voice);
+    }
+
+    /// The digests the court reconciles against: the ruled cover, served to
+    /// the court's own voice. Any other asker (an entity's sync) is answered
+    /// with the whole language elsewhere.
+    pub fn ruled_digests_for(&self, voice: &[u8; 32]) -> Option<Vec<crate::transducer::sheaf::StratumDigest>> {
+        (self.court_voice.as_ref() == Some(voice)).then(|| crate::transducer::sheaf::digests(&self.ruled))
+    }
+
     /// Remove the word at `i` from the basis, its discoverer, and its stalk.
     fn basis_remove(&mut self, i: usize) -> Element {
         self.discoverers.remove(i);
         self.stalks.remove(&self.basis[i].address());
+        self.ruled.remove(&self.basis[i].address());
         self.basis_gen += 1;
         self.retire_gen += 1;
         let removed = self.basis.remove(i);
@@ -890,6 +921,7 @@ impl Kernel {
         };
         self.provisional.remove(i);
         if ruling == RULING_UPHELD {
+            self.ruled_admit(addr); // finalized here: it joins the ruled cover
             self.treasury.release_award(addr)
         } else {
             let slash = ruling == RULING_SLASHED;
@@ -1140,6 +1172,11 @@ impl Kernel {
             self.append_step(addr, ratifier);
         }
         self.basis_push(word.clone(), ratifier);
+        // A word the court itself teaches is finalized language: it joins
+        // the ruled cover on arrival.
+        if self.court_voice == Some(ratifier) {
+            self.ruled_admit(&addr);
+        }
         self.physics.syntropy(&word.magnitude()); // convergence is order built
         Adoption::Installed
     }
@@ -2240,6 +2277,11 @@ impl Kernel {
             self.basis_clear();
             return false;
         }
+        // THE RULED COVER, measured once at restore: every held word that is
+        // not still provisional was finalized before the restart.
+        self.ruled = crate::transducer::stalk::Stalks::over_elements(
+            self.basis.iter().filter(|w| !self.provisional.iter().any(|(a, _)| *a == w.address())),
+        );
         true
     }
 }

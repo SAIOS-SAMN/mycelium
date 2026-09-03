@@ -457,9 +457,14 @@ fn main() {
         // hypha's adopt door answers Known for what it already holds, and an
         // address is re-taught to a wire once. Restart order no longer
         // decides which hypha holds the language.
+        // The wire's outbox is the valve: reconciliation speaks only into an
+        // empty outbox, so one page travels per drain, the docket ask at the
+        // head of the next round finds the wire clear, and no discordance is
+        // measured while the wire is still carrying the last page.
         if !sessions.is_empty() {
             let hi = recon_cursor % sessions.len();
             recon_cursor = recon_cursor.wrapping_add(1);
+            if outbox[hi].is_empty() {
             if fed_digests_len != federation.len() {
                 fed_digests = mycelium::transducer::sheaf::digests(&stalks);
                 fed_digests_len = federation.len();
@@ -490,6 +495,7 @@ fn main() {
                 if taught > 0 {
                     eprintln!("  reconciliation with hypha {hi}: {taught} federation words re-taught over {strata} discordant strata");
                 }
+            }
             }
         }
         // ── KB ANCHOR REFINEMENT (7c): drain each hypha's birth evidence,

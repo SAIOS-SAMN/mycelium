@@ -142,12 +142,14 @@ fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32])
     // ── sheaf sync: section digests over the atlas, and a stratum fetch —
     // both reads over the language snapshot, no lock held.
     if kind == dialogue::ACT_DIGESTS {
-        let Some(_dvoice) = dialogue::decode_digests_request(&frame.body) else { return };
-        let language = match kernel.lock() {
-            Ok(mut k) => k.language(),
+        let Some(dvoice) = dialogue::decode_digests_request(&frame.body) else { return };
+        // The court is answered with the RULED cover (what it finalized
+        // here); an entity's sync is answered with the whole language.
+        let (ruled, language) = match kernel.lock() {
+            Ok(mut k) => (k.ruled_digests_for(&dvoice), k.language()),
             Err(_) => return,
         };
-        let digests = mycelium::transducer::sheaf::digests(&language.stalks);
+        let digests = ruled.unwrap_or_else(|| mycelium::transducer::sheaf::digests(&language.stalks));
         let reply = Frame { lane: frame.lane, body: dialogue::encode_digests_reply(&digests) };
         let _ = stream.write_all(&reply.encode().unwrap_or_default());
         return;
@@ -903,6 +905,7 @@ fn main() {
             let applied = {
                 let mut k = kernel.lock().unwrap();
                 k.set_court_head(receipt); // the court's head is this hypha's temporal root
+                k.set_court_voice(cvoice); // the court's voice, for the ruled cover it reconciles against
                 let ok = match ruling {
                     // The court's family-derived π* rebinds the word's anchor
                     // fiber — the dual condition activates for this word.
