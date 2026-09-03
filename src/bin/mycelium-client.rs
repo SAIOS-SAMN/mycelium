@@ -228,9 +228,8 @@ fn main() {
     let mut learned = 0u64; // syllabus words received (0x0D)
     let (mut last_genome, mut last_settles) = (usize::MAX, u64::MAX);
     let mut k_step = 0u64; // the judge's k-step last read: this voice's temporal coordinate
-    // Listings this voice has concluded in their current state: a listing
-    // that descends changes address and is read again.
-    let mut concluded: Vec<[u8; 32]> = Vec::new();
+    // The hypha's spoken receipts, not a local memo, decide which listings
+    // this voice has already worked; the quote page is already filtered.
     // The feed walk: (task index within the cycle order, pair index within it).
     let mut cycle: Vec<PathBuf> = Vec::new();
     let (mut ti, mut pi) = (0usize, 0usize);
@@ -388,25 +387,14 @@ fn main() {
             Ok(q) => {
                 k_step = q.k;
                 entity.at(q.k);
-                concluded.retain(|a| q.clusters.iter().any(|c| c.address == *a));
                 let (mut n_closed, mut n_descent, mut n_nothing, mut n_settled, mut n_silent, mut n_attested, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32, 0u32, 0u32);
                 for cluster in &q.clusters {
                     if cluster.chain.is_empty() {
                         continue;
                     }
-                    // THINK, then CONVERSE. The superposition of hypotheses
-                    // this genome forms for the listing, least holonomy
-                    // defect first; the beam width is this lane's free
-                    // reserve in expansions (the listing's strongest lane).
-                    // The superposition is rolled out and settled here, in
-                    // the genome's own algebra; the wire carries one
-                    // commitment per cluster: the concluded sentence with
-                    // its residual. A genome with nothing to say stays silent.
-                    if concluded.contains(&cluster.address) {
-                        n_silent += 1;
-                        continue; // already concluded in this state
-                    }
-                    concluded.push(cluster.address);
+                    // THINK, then CONVERSE. The hypha's quote already skipped
+                    // listings this voice has spoken on (keyed receipts).
+                    // The page is new work; do not mask it locally.
                     let t0 = std::time::Instant::now();
                     let (cites, residual, familiar) = entity.conclude(&cluster.chain);
                     eprintln!(

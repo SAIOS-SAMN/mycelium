@@ -139,6 +139,7 @@ fn main() {
     // Every federation entry reached by its address (index-aligned).
     let mut fed_index: mycelium::network::nerve::Keyed<usize> = mycelium::network::nerve::Keyed::new();
     let mut ruled: Vec<[u8; 32]> = Vec::new();
+    let mut ruled_at: mycelium::network::nerve::Keyed<u8> = mycelium::network::nerve::Keyed::new();
     // THE SELECTION FIBER'S REFINEMENT STATE — evidence accumulated per word
     // across the whole nerve, and the words already rebound.
     let mut evidence: Vec<([u8; 32], Vec<(Vec<(i64, i64)>, Vec<(i64, i64, u8)>)>)> = Vec::new();
@@ -156,6 +157,14 @@ fn main() {
             fed_index.insert(*a, i);
         }
         ruled = s.ruled;
+        for a in &ruled {
+            let code = if fed_index.get(a).is_some() {
+                dialogue::RULING_UPHELD
+            } else {
+                dialogue::RULING_SLASHED
+            };
+            ruled_at.insert(*a, code);
+        }
         rebound = s.rebound;
         upheld = s.upheld;
         demoted = s.demoted;
@@ -173,6 +182,7 @@ fn main() {
         federation.clear();
         stalks.clear();
         ruled.clear();
+        ruled_at = mycelium::network::nerve::Keyed::new();
         eprintln!(
             "re-audit under the current congruence lens: federation and ruled cleared; K continues at {}",
             chain.next_step_index(),
@@ -276,6 +286,7 @@ fn main() {
                         op[0] = outcome.code();
                         let receipt = chain.append(addr, op).chain_hash;
                         ruled.push(addr);
+                        ruled_at.insert(addr, outcome.code());
                         // The tally IS the state map — one arm per outcome.
                         match outcome {
                             verdict::Ruling::Admitted(sealed) => {
@@ -368,7 +379,18 @@ fn main() {
             }
             for (addr, elem_bytes, voices, mu, deflation, k) in dockets {
                 since[hi] = since[hi].max(k);
-                if ruled.contains(&addr) {
+                if let Some(&code) = ruled_at.get(&addr) {
+                    // Already sealed: re-speak the stored verdict so the
+                    // hypha's provisional clears. Presence in the federation
+                    // is Upheld; otherwise Slashed. No new K-step.
+                    let receipt = chain.head_hash();
+                    outbox[hi].push(dialogue::encode_verdict(&voice, &addr, code, &receipt));
+                    if code == dialogue::RULING_UPHELD {
+                        if let Some((_, el)) = fed_index.get(&addr).and_then(|&i| federation.get(i)) {
+                            outbox[hi].push(dialogue::encode_adopt(&voice, &el.to_bytes()));
+                        }
+                    }
+                    heard_any = true;
                     continue;
                 }
                 heard_any = true;
@@ -437,6 +459,7 @@ fn main() {
                     _ => slashed += 1,
                 }
                 ruled.push(addr);
+                ruled_at.insert(addr, ruling.0);
                 persist(&chain, &federation, &ruled, &rebound, (upheld, demoted, slashed, rebinds));
                 eprintln!(
                     "  [{}] {:02x}{:02x}… voices {} μ⃗ {mu:?} → {} ({}) K={}",
