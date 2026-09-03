@@ -67,11 +67,20 @@ struct ReflexJob {
 /// the family's key, other than this node and the voice it was heard from.
 /// Every node walks the same key to the same next hop, so a root crosses
 /// the nerve along one deterministic path and never as a broadcast.
-fn speak_root(router: &Router, self_id: &[u8; 32], task: &[u8; 32], solver: &[u8; 32], heard_from: Option<[u8; 32]>) {
+fn speak_root(
+    router: &Router,
+    nerve: &std::sync::mpsc::SyncSender<(String, Vec<u8>)>,
+    self_id: &[u8; 32],
+    task: &[u8; 32],
+    solver: &[u8; 32],
+    heard_from: Option<[u8; 32]>,
+) {
     let mut exclude = vec![*self_id];
     exclude.extend(heard_from);
     if let Some((_, addr)) = router.closest_excluding(task, &exclude) {
-        tell_peer(&addr, dialogue::encode_root(self_id, task, solver));
+        // Never dialed from the door: queued for the nerve thread, dropped
+        // when the nerve is full — the mesh's own impedance.
+        let _ = nerve.try_send((addr, dialogue::encode_root(self_id, task, solver)));
     }
 }
 
@@ -570,17 +579,17 @@ fn main() {
                 let _ = s.write_all(&Frame { lane: frame.lane, body: Vec::new() }.encode().unwrap_or_default());
                 continue;
             }
-            // The nerve exchanges roots with the peer that spoke: each of
-            // ours goes back along its own key's hop, which for that peer
-            // is the peer itself when it is the closest.
-            for (t, sv) in roots.clone().iter().filter(|(t, _)| *t != task) {
-                if router.closest_excluding(t, &[nerve_id]).is_some_and(|(hop, _)| hop == from) {
-                    if let Some((_, back)) = router.closest(&from) {
-                        tell_peer(&back, dialogue::encode_root(&nerve_id, t, sv));
+            if !roots.iter().any(|(t, sv)| *t == task && *sv == solver) {
+                // A new root heard: the nerve exchanges roots with the peer
+                // that spoke it — each of ours goes back along its own
+                // key's hop when that hop is the speaker.
+                for (t, sv) in roots.clone().iter() {
+                    if router.closest_excluding(t, &[nerve_id]).is_some_and(|(hop, _)| hop == from) {
+                        if let Some((_, back)) = router.closest(&from) {
+                            let _ = nerve_tx.try_send((back, dialogue::encode_root(&nerve_id, t, sv)));
+                        }
                     }
                 }
-            }
-            if !roots.iter().any(|(t, sv)| *t == task && *sv == solver) {
                 roots.push((task, solver));
                 let prioritized = registry.lock().map(|mut r| r.prioritize(&task)).unwrap_or(false);
                 eprintln!(
