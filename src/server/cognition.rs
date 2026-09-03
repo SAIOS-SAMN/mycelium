@@ -306,14 +306,24 @@ pub fn quote_over(
     // Each listing's receipts are read at its own address.
     let open = rank.order.iter().copied().filter(|&i| pending.get(i).is_some_and(|(p, _)| !spoken.contains(&p.address())));
     let joined = rank.order.iter().copied().filter(|&i| pending.get(i).is_some_and(|(p, _)| spoken.contains(&p.address())));
-    for idx in open.chain(joined) {
+    // Frontier (remainder-of-g, unreached moduli) first; corpus demands
+    // fill the rest of the page when the frontier is dry or short.
+    let ranked: Vec<usize> = open.chain(joined).collect();
+    let on_frontier: Vec<usize> = ranked
+        .iter()
+        .copied()
+        .filter(|&i| pending.get(i).is_some_and(|(p, _)| frontier.contains(&p.address())))
+        .collect();
+    let corpus: Vec<usize> = ranked
+        .iter()
+        .copied()
+        .filter(|&i| pending.get(i).is_some_and(|(p, _)| !frontier.contains(&p.address())))
+        .collect();
+    for idx in on_frontier.into_iter().chain(corpus) {
         if priced.len() >= top {
             break;
         }
         let Some((p, _)) = pending.get(idx) else { continue };
-        if !frontier.contains(&p.address()) {
-            continue; // percept-pair tape: not remainder-of-g, not unreached moduli
-        }
         if spoken.get(&p.address()).is_some_and(|voices| voices.contains(voice)) {
             continue; // this voice has spoken on it in this state
         }
@@ -2222,6 +2232,18 @@ impl Kernel {
                 out.extend_from_slice(&axis.to_le_bytes());
             }
         }
+        // DEFLATION section: each provisional's measured descent, so a
+        // restart does not docket Δ⃗ = 0 and feed the court a slash list.
+        out.extend_from_slice(b"DEF1");
+        let defs = self.deflations.entries();
+        out.extend_from_slice(&(defs.len() as u32).to_le_bytes());
+        for (addr, mag) in defs {
+            out.extend_from_slice(addr);
+            for m in mag {
+                out.extend_from_slice(&m.to_le_bytes());
+            }
+            out.extend_from_slice(&self.provisional_k.get(addr).copied().unwrap_or(0).to_le_bytes());
+        }
         out
     }
 
@@ -2332,6 +2354,26 @@ impl Kernel {
                 }
                 kernel.closure = (u64::MAX, u64::MAX, std::sync::Arc::new(rank));
             }
+            if b.get(*pos..*pos + 4) == Some(b"DEF1") {
+                *pos += 4;
+                let n = read_u32(b, pos)? as usize;
+                if n > b.len().saturating_sub(*pos) / 72 {
+                    return None;
+                }
+                for _ in 0..n {
+                    let addr: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                    *pos += 32;
+                    let mut mag = [0u64; 4];
+                    for m in &mut mag {
+                        *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+                        *pos += 8;
+                    }
+                    let k = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+                    *pos += 8;
+                    kernel.deflations.insert(addr, mag);
+                    kernel.provisional_k.insert(addr, k);
+                }
+            }
             Some(())
         };
         if load(self, b, &mut pos).is_none() {
@@ -2345,6 +2387,28 @@ impl Kernel {
                 w.is_connection() && !self.provisional.iter().any(|(a, _)| *a == w.address())
             }),
         );
+        // A snapshot without DEF1 (or a zero record) re-measures from the
+        // spoken word: presence on the docket is not Δ⃗ = 0.
+        let pending_mag = |addr: &[u8; 32], pending: &[(Element, u64)]| {
+            pending.iter().find(|(p, _)| p.address() == *addr).map(|(p, _)| p.magnitude())
+        };
+        let zeros = [0u64; 4];
+        let need: Vec<([u8; 32], [u64; 4])> = self
+            .provisional
+            .iter()
+            .filter_map(|(addr, spoken)| {
+                let held = self.deflations.get(addr).copied().unwrap_or(zeros);
+                if held.iter().any(|&x| x > 0) {
+                    return None;
+                }
+                Some((*addr, pending_mag(addr, &self.pending).unwrap_or_else(|| spoken.magnitude())))
+            })
+            .collect();
+        for (addr, mag) in need {
+            if mag.iter().any(|&x| x > 0) {
+                self.deflations.insert(addr, mag);
+            }
+        }
         // Unruled connections on the basis re-enter the docket: Known is not
         // a court receipt.
         let held: Vec<Element> = self
@@ -2850,6 +2914,27 @@ mod tests {
         assert_eq!(booted.basis_len(), 2, "no re-germination");
     }
 
+    /// A restart must not docket Δ⃗ = 0: deflation records survive the
+    /// snapshot, so the court does not slash a live provisional as empty.
+    #[test]
+    fn deflation_survives_a_restart() {
+        let mut k = Kernel::new();
+        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+        let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+        assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+        let chain = germinate(&a, &b).unwrap();
+        assert!(matches!(k.attest(&chain, [2; 32]), Outcome::Installed(0)));
+        let before = k.dockets();
+        assert_eq!(before.len(), 1);
+        assert!(before[0].4.iter().any(|&x| x > 0), "deflation was measured at install");
+        let snap = k.snapshot();
+        let mut booted = Kernel::new();
+        assert!(booted.restore(&snap), "clean restore");
+        let after = booted.dockets();
+        assert_eq!(after.len(), 1, "the provisional survived");
+        assert_eq!(after[0].4, before[0].4, "deflation survived; the court will not slash Δ⃗ = 0");
+    }
+
     /// CONFLUENT REDUCTION is TRANSPOSITION-INVARIANT (the win over lookup): install
     /// a rotation, then the SAME rotation FAR AWAY reduces to the same normal form
     /// (no re-mint) — a lookup on the coordinate-exact word would have missed it.
@@ -3019,7 +3104,7 @@ mod tests {
         let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
         let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)]; // (0,0): 1→4
         assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending, "percept: voice A");
-        assert!(k.quote(4).1.is_empty(), "a percept-pair tape is not quoted");
+        assert_eq!(k.quote(4).1.len(), 1, "corpus demand is quoted when the frontier is dry");
         let chain = germinate(&a, &b).unwrap();
         assert_eq!(k.attest(&chain, [1; 32]), Outcome::GermPending, "remainder-of-g / unreached demand");
         let (surface, quoted) = k.quote(4);

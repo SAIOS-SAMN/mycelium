@@ -377,18 +377,33 @@ fn main() {
             if converged_n + diverged_n > 0 {
                 eprintln!("  settlements heard from hypha {hi}: {converged_n} converged, {diverged_n} diverged, K={}", chain.next_step_index());
             }
+            // Re-speak sealed docket words only into an empty outbox, one
+            // page per drain — same valve as reconciliation — so a round
+            // of new rulings is not buried under thousands of verdicts.
+            let mut respeaking = outbox[hi].is_empty();
+            let mut respeaking_used = 0usize;
             for (addr, elem_bytes, voices, mu, deflation, k) in dockets {
                 since[hi] = since[hi].max(k);
                 if let Some(&code) = ruled_at.get(&addr) {
-                    // Already sealed: re-speak the stored verdict so the
-                    // hypha's provisional clears. Presence in the federation
-                    // is Upheld; otherwise Slashed. No new K-step.
+                    if !respeaking {
+                        continue;
+                    }
                     let receipt = chain.head_hash();
-                    outbox[hi].push(dialogue::encode_verdict(&voice, &addr, code, &receipt));
-                    if code == dialogue::RULING_UPHELD {
-                        if let Some((_, el)) = fed_index.get(&addr).and_then(|&i| federation.get(i)) {
-                            outbox[hi].push(dialogue::encode_adopt(&voice, &el.to_bytes()));
-                        }
+                    let verdict = dialogue::encode_verdict(&voice, &addr, code, &receipt);
+                    let adopt = if code == dialogue::RULING_UPHELD {
+                        fed_index.get(&addr).and_then(|&i| federation.get(i)).map(|(_, el)| dialogue::encode_adopt(&voice, &el.to_bytes()))
+                    } else {
+                        None
+                    };
+                    let add = verdict.len() + adopt.as_ref().map_or(0, |a| a.len());
+                    if respeaking_used + add > mycelium::network::wire::BODY_BUDGET {
+                        respeaking = false;
+                        continue;
+                    }
+                    respeaking_used += add;
+                    outbox[hi].push(verdict);
+                    if let Some(a) = adopt {
+                        outbox[hi].push(a);
                     }
                     heard_any = true;
                     continue;

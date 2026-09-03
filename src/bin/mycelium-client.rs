@@ -259,15 +259,8 @@ fn main() {
             matches!(entity.transport(), mycelium::sdk::TransportAperture::Occluded { .. });
         if occluded {
             physics.spend([true; 4]); // the obstructed stroke is still a stroke
-            // The inward stroke glues: one sync contact per stroke of the
-            // cycle, until the digests agree or the cycle is spent.
-            let cycle = (reserve_max() / mycelium::physics::spend_unit().max(1)).max(1);
-            for _ in 0..cycle {
-                match entity.sync_genome() {
-                    Ok(n) if n > 0 => learned += n as u64,
-                    _ => break,
-                }
-            }
+            // Sync waits for the depletion dwell: every-stroke digest/fetch
+            // saturates the door and starves quote and percept.
         }
 
         // THE ENTITY'S REDUCTION BUDGET — from its own metabolism: the beam
@@ -571,24 +564,22 @@ fn main() {
             }
         }
 
-        // THE SYLLABUS: the court-ratified stream from this voice's cursor,
-        // pulled every stroke — teaching is part of the conversation, not a
-        // charity of the depleted phase.
-        if !occluded {
-            if let Ok(n) = entity.pull_syllabus() {
-                if n > 0 {
-                    learned += n as u64;
-                    eprintln!(
-                        "[{name}] SYLLABUS +{n} ratified words (genome {})",
-                        entity.epigenome.genome_len(),
-                    );
-                }
-            }
-        }
-
         // ── SYNTROPIC PHASE — crystallize, voice change, regenerate.
         if physics.depleted() {
             lap("task");
+            // Syllabus and sheaf sync live on the depletion dwell so the
+            // door serves quotes and percepts on the hot stroke.
+            if !occluded {
+                if let Ok(n) = entity.pull_syllabus() {
+                    if n > 0 {
+                        learned += n as u64;
+                        eprintln!(
+                            "[{name}] SYLLABUS +{n} ratified words (genome {})",
+                            entity.epigenome.genome_len(),
+                        );
+                    }
+                }
+            }
             // THE SHEAF SYNC (Q3): converge the genome on the hypha's
             // language by discordant stratum — the entity thinks in the
             // whole language, not the syllabus drip.
