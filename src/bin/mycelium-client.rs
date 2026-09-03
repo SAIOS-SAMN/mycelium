@@ -131,7 +131,7 @@ fn speak_connections(
         mag[1] = mag[1].saturating_add(gauge);
         let word = mycelium::transducer::element::from_connection(&affine, &rule.sigma, &Vec::new(), mag);
         match entity.speak_word(&word) {
-            Ok(()) => {
+            Ok(mycelium::sdk::Utterance::Spoken) => {
                 spoken += 1;
                 eprintln!(
                     "[{name}] connection spoken: {:02x}{:02x}… closed, carried {:?}",
@@ -140,6 +140,7 @@ fn speak_connections(
                     word.magnitude()
                 );
             }
+            Ok(mycelium::sdk::Utterance::Already | mycelium::sdk::Utterance::Silent) => {}
             Err(_) => errors += 1,
         }
     }

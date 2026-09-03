@@ -1077,18 +1077,22 @@ impl Entity {
     /// SPEAK A WORD this entity minted — a closed connection — up to the
     /// hypha for adoption. The word enters the entity's own genome first
     /// and travels as itself on the wire; a word with a remainder is held
-    /// as thought instead.
-    pub fn speak_word(&mut self, word: &Element) -> io::Result<()> {
+    /// as thought instead. Identity and a mint that dropped its fibre are
+    /// not speech: no frame, no memo, no "spoken" log.
+    pub fn speak_word(&mut self, word: &Element) -> io::Result<Utterance> {
         // A thought that still has a remainder is work, not a message: the
         // wire never carries ∂g. A word with a chain is held, not uttered.
         if let [_, ..] = word.sub() {
             self.hold_thought(word.sub().to_vec());
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "a remainder is thought, not speech"));
         }
+        if word.is_identity() || !word.is_connection() {
+            return Ok(Utterance::Silent);
+        }
         let voice = self.session.kernel().voice();
         let addr = word.address();
         if self.taught_up.contains(&addr) {
-            return Ok(()); // spoken once; the judge decided
+            return Ok(Utterance::Already);
         }
         let bytes = word.to_bytes();
         // The entity holds what it speaks: the connection enters its own
@@ -1097,12 +1101,24 @@ impl Entity {
         self.epigenome.learn(&bytes);
         self.session.speak(dialogue::encode_adopt(&voice, &bytes))?;
         self.taught_up.push(addr);
-        Ok(())
+        Ok(Utterance::Spoken)
     }
 
     pub fn discordance(&self) -> usize {
         self.discordance
     }
+}
+
+/// What `speak_word` did with a closed mint. Only [`Utterance::Spoken`]
+/// is a fresh frame; the memo and the identity gate are not speech.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Utterance {
+    /// Adopted up; the address is now on the memo.
+    Spoken,
+    /// This address was already uttered; the judge has the word.
+    Already,
+    /// Identity, or a mint with no group component: not a message.
+    Silent,
 }
 
 /// The quoted yield: the per-lane surface and the open-demand market's top

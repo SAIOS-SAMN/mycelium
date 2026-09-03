@@ -1743,6 +1743,12 @@ mod tests {
         let merge = from_connection(&affine, &[(1, 2)], &Vec::new(), [1, 1, 0, 0]);
         assert!(!merge.is_connection(), "a merging gauge with the identity motion carries no group component");
         assert!(!from_residual(&remainder).is_connection(), "a residual's tally is never a permutation");
+        // Identity motion and identity gauge drop the fibre: the unit, not a
+        // connection, not speech — the 5839 empty-chain refusal.
+        let unit = from_connection(&affine, &[], &Vec::new(), [77, 0, 0, 0]);
+        assert!(unit.is_identity(), "identity motion and gauge leave no fibre and no chain");
+        assert!(!unit.is_connection(), "the unit is not a connection");
+        assert!(unit.sub().is_empty(), "nothing residual to hold as thought");
     }
 
     #[test]
