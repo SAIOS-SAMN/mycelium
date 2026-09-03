@@ -1153,10 +1153,14 @@ impl Kernel {
 
     /// Measure and record what installing `addr` settles on the book: the
     /// magnitude of the listed demand at that address, or nothing.
-    fn record_deflation(&mut self, addr: [u8; 32]) {
-        let deflation = self.pending.iter().find(|(p, _)| p.address() == addr).map(|(p, _)| p.magnitude()).unwrap_or([0; 4]);
-        self.deflations.retain(|(a, _)| *a != addr);
-        self.deflations.push((addr, deflation));
+    fn record_deflation(&mut self, word: [u8; 32], listing: [u8; 32]) {
+        // The demand a percept settles is the listing of its whole chain;
+        // the word installed may be the residual after citations, so the
+        // deflation is read on the listing, then on the word itself.
+        let on = |addr: [u8; 32]| self.pending.iter().find(|(p, _)| p.address() == addr).map(|(p, _)| p.magnitude());
+        let deflation = on(listing).or_else(|| on(word)).unwrap_or([0; 4]);
+        self.deflations.retain(|(a, _)| *a != word);
+        self.deflations.push((word, deflation));
     }
 
     /// The listings this voice has already spoken on, in their current state.
@@ -1504,7 +1508,7 @@ impl Kernel {
                         // court's finality verdict — unfinalized speech earns
                         // nothing; the puncture itself is local dialect.
                         self.treasury.escrow_award(saddr, self.admission.voices_of(&saddr), mu, anchor);
-                        self.record_deflation(saddr);
+                        self.record_deflation(saddr, gaddr);
                         self.provisional.push((saddr, residual.clone()));
                         self.physics.relieve(&mag);
                         self.physics.syntropy(&mag); // volume built through the axis
@@ -1544,7 +1548,7 @@ impl Kernel {
                     // court's admission docket; the word joins the basis as
                     // local dialect, final settlement waits for the verdict.
                     self.treasury.escrow_award(addr, self.admission.voices_of(&addr), mu, anchor);
-                    self.record_deflation(addr);
+                    self.record_deflation(addr, gaddr);
                     self.provisional.push((addr, residual.clone()));
                     self.physics.relieve(&mag);
                     self.physics.syntropy(&mag); // a completed rule is order built

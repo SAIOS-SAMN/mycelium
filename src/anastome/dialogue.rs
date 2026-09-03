@@ -740,6 +740,25 @@ pub fn encode_docket_reply_with(dockets: &[Docket], settlements: &[Settlement]) 
 /// words and settlements it carries, so the server drains exactly what
 /// the court will hear and serves the rest on the next pull.
 pub fn encode_docket_reply_paged(dockets: &[Docket], settlements: &[Settlement], budget: usize) -> (Vec<u8>, usize, usize) {
+    // Settlements are the proof of convergence and bounded by the reserve;
+    // they are measured first, and the words take what remains, so a long
+    // provisional list never starves the court of what actually settled.
+    let mut settled: Vec<Vec<u8>> = Vec::new();
+    let mut settled_len = 8usize;
+    for (listing, chain, voice, cites, before, after) in settlements {
+        let mut item = Vec::new();
+        item.extend_from_slice(listing);
+        push_chain(&mut item, chain);
+        item.extend_from_slice(voice);
+        push_cites(&mut item, cites);
+        push_mu(&mut item, before);
+        push_mu(&mut item, after);
+        if settled_len + item.len() > budget {
+            break;
+        }
+        settled_len += item.len();
+        settled.push(item);
+    }
     let mut out = Vec::new();
     out.extend_from_slice(&0u32.to_le_bytes());
     let mut words = 0usize;
@@ -754,31 +773,18 @@ pub fn encode_docket_reply_paged(dockets: &[Docket], settlements: &[Settlement],
         }
         push_mu(&mut item, mu);
         push_mu(&mut item, deflation);
-        if out.len() + item.len() + 4 > budget {
+        if out.len() + item.len() + settled_len > budget {
             break;
         }
         out.extend_from_slice(&item);
         words += 1;
     }
     out[..4].copy_from_slice(&(words as u32).to_le_bytes());
-    let count_at = out.len();
-    out.extend_from_slice(&0u32.to_le_bytes());
-    let mut served = 0usize;
-    for (listing, chain, voice, cites, before, after) in settlements {
-        let mut item = Vec::new();
-        item.extend_from_slice(listing);
-        push_chain(&mut item, chain);
-        item.extend_from_slice(voice);
-        push_cites(&mut item, cites);
-        push_mu(&mut item, before);
-        push_mu(&mut item, after);
-        if out.len() + item.len() > budget {
-            break;
-        }
+    out.extend_from_slice(&(settled.len() as u32).to_le_bytes());
+    let served = settled.len();
+    for item in settled {
         out.extend_from_slice(&item);
-        served += 1;
     }
-    out[count_at..count_at + 4].copy_from_slice(&(served as u32).to_le_bytes());
     (out, words, served)
 }
 

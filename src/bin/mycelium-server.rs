@@ -318,6 +318,11 @@ fn main() {
     let addr = args.get(1).filter(|a| !a.starts_with("--")).cloned().unwrap_or_else(|| "127.0.0.1:7500".to_string());
     let tier = Tier::from_str(flag(&args, "--tier").unwrap_or("participant"));
     let id = flag(&args, "--id").map(id_of).unwrap_or_else(|| id_of(&addr));
+    // THE NERVE IDENTITY: what peers key this node by — the digest of the
+    // address they were configured with, the same function of the same
+    // string on both sides. Speech on the nerve is signed with it and
+    // accepted only from identities the router holds.
+    let nerve_id = id_of(&addr);
     let peers = flags(&args, "--peer");
 
     // P7 — durable state: the germinated basis + earned ledger persist across
@@ -440,7 +445,7 @@ fn main() {
     // at boot, so a family proven here is re-spoken on every peer's book.
     for t in registry.lock().map(|r| r.settled_ids()).unwrap_or_default() {
         roots.push((t, id));
-        speak_root(&router, &id, &t, &id, None);
+        speak_root(&router, &nerve_id,&t, &id, None);
     }
     if !roots.is_empty() {
         eprintln!("  roots announced: {} settled families, each to its key's next hop", roots.len());
@@ -569,9 +574,9 @@ fn main() {
             // ours goes back along its own key's hop, which for that peer
             // is the peer itself when it is the closest.
             for (t, sv) in roots.clone().iter().filter(|(t, _)| *t != task) {
-                if router.closest_excluding(t, &[id]).is_some_and(|(hop, _)| hop == from) {
+                if router.closest_excluding(t, &[nerve_id]).is_some_and(|(hop, _)| hop == from) {
                     if let Some((_, back)) = router.closest(&from) {
-                        tell_peer(&back, dialogue::encode_root(&id, t, sv));
+                        tell_peer(&back, dialogue::encode_root(&nerve_id, t, sv));
                     }
                 }
             }
@@ -586,7 +591,7 @@ fn main() {
                     solver[0],
                     if prioritized { "re-dispatched first here" } else { "not open on this book" }
                 );
-                speak_root(&router, &id, &task, &solver, Some(from));
+                speak_root(&router, &nerve_id,&task, &solver, Some(from));
             }
             let _ = s.write_all(&Frame { lane: frame.lane, body: Vec::new() }.encode().unwrap_or_default());
             continue;
@@ -710,7 +715,7 @@ fn main() {
                             None => {
                                 roots.push((tid, svoice));
                                 eprintln!("  ROOT task {:02x}{:02x}… proven by voice {:02x}; spoken to its key's next hop", tid[0], tid[1], svoice[0]);
-                                speak_root(&router, &id, &tid, &svoice, None);
+                                speak_root(&router, &nerve_id,&tid, &svoice, None);
                             }
                         }
                         (dialogue::SOLVE_BOUNTY, paid)
