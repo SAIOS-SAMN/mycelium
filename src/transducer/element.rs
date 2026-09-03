@@ -676,17 +676,26 @@ impl Element {
         Some(Operator { id, matrix: m, matrix_inv: inv, det_sign_positive: true })
     }
 
-    /// Do two elements describe the SAME transformation, position quotiented? For
-    /// residual germs (non-empty chains) the CENTERED CHAIN decides — geometry
-    /// preserved up to translation, so equal-tally/different-geometry residuals
-    /// never conflate (the Step-1 finding, cured). For pure-algebra (group)
-    /// elements the realized matrix decides, where the realization is injective.
-    /// A chain-carrying and a chain-free element are never the same action.
-    pub fn same_action(&self, other: &Element) -> bool {
-        if !self.sub.is_empty() || !other.sub.is_empty() {
-            return self.sub == other.sub;
+    /// THE CARRIAGE between two thoughts — the versor carrying this one's
+    /// base geometry onto the other's, when they sit on one orbit. The chain
+    /// is the boundary of a thought, never its identity: two germs are the
+    /// same thought exactly when a versor relates their supports (equal
+    /// tallies at different geometries never conflate; same-geometry
+    /// siblings are sections of one word, not two cards). For pure-algebra
+    /// (group) elements the realized matrix decides, where the realization
+    /// is injective, and the carriage is the identity. A chain-carrying and
+    /// a chain-free element are never carried onto each other.
+    pub fn carriage(&self, other: &Element) -> Option<Versor> {
+        match (self.sub.as_slice(), other.sub.as_slice()) {
+            ([], []) => (self.realize() == other.realize()).then(identity_versor),
+            ([], _) | (_, []) => None,
+            (a, b) => transition(a, b),
         }
-        self.realize() == other.realize()
+    }
+
+    /// Group elements only: the same action iff the realized matrices agree.
+    pub fn same_action(&self, other: &Element) -> bool {
+        self.sub.is_empty() && other.sub.is_empty() && self.realize() == other.realize()
     }
 
     /// COMPOSE — the per-axis group product `self` then `other`. Shared axes
@@ -1549,12 +1558,12 @@ mod tests {
         let here = from_residual(&germinate(&a, &b).unwrap());
         let far = from_residual(&germinate(&a_far, &b_far).unwrap());
         assert_eq!(here, far, "same deformation, any position — ONE word");
-        assert!(here.same_action(&far), "one substance");
+        assert!(here.carriage(&far).is_some(), "one thought: a versor carries one onto the other");
         // Equal tally, different geometry — the cured conflation: {1→0 here, 0→4
         // there} at two different relative offsets must stay DISTINCT.
         let g1 = from_residual(&vec![(0, 0, 1, 0), (1, 1, 0, 4)]);
         let g2 = from_residual(&vec![(1, 0, 1, 0), (0, 2, 0, 4)]);
-        assert!(!g1.same_action(&g2), "equal tally, different geometry — distinct substance");
+        assert!(g1.carriage(&g2).is_none(), "equal tally, different geometry — no versor relates them");
         assert_ne!(g1.address(), g2.address(), "and distinct identity");
     }
 
@@ -1572,7 +1581,7 @@ mod tests {
             assert_eq!(&back, g, "full equality (dim, word, mag, fibers, chain)");
             assert_eq!(back.address(), g.address(), "address survives");
             assert_eq!(back.sub(), g.sub(), "the centered chain survives");
-            assert!(back.same_action(g), "the substance survives");
+            assert!(back.carriage(g).is_some(), "the thought survives: the identity carriage relates them");
         }
     }
 
@@ -1651,7 +1660,10 @@ mod tests {
         assert!(!l_to_bar.substance().is_identity(), "and its substance is real");
         let bar_to_l = from_residual(&germinate(&b, &a).unwrap());
         assert_ne!(l_to_bar.address(), bar_to_l.address(), "distinct descriptions, distinct address");
-        assert!(!l_to_bar.same_action(&bar_to_l), "and distinct substance");
+        // The two descriptions share one base geometry: a versor carries one
+        // support onto the other, and the reversed gauge is a second section
+        // of the same word, never a second card.
+        assert!(l_to_bar.carriage(&bar_to_l).is_some(), "one base geometry, two sections");
     }
 
     /// Multi-axial: distinct axes compose INDEPENDENTLY (no cross-talk, no cap on

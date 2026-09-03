@@ -698,12 +698,6 @@ impl Kernel {
         std::sync::Arc::clone(&self.closure.2)
     }
 
-    /// The held word that is `chain`'s base point, with the transport
-    /// carrying `chain` onto it — the orbit-class lookup through the atlas.
-    fn congruent_held(&self, chain: &[(i64, i64, u8, u8)]) -> Option<(usize, element::Versor)> {
-        crate::transducer::stalk::congruent(&self.stalks, |i| self.basis[i].sub(), chain)
-    }
-
     /// APPLY an attach ruling: the court connected `sibling` to `base` by
     /// the transport g. A provisional listing of the sibling clears with its
     /// award evaporating (it is not a base word). When both words are held
@@ -1435,21 +1429,6 @@ impl Kernel {
         }
     }
 
-    /// Classify one anonymous germ against the basis and run the two-voice gate,
-    /// whole under the lock (tests and the pure-transposition path).
-    fn conceive_germ(
-        &mut self,
-        g: Element,
-        voice: [u8; 32],
-        ctx: Option<(Vec<(i64, i64, u8)>, (i64, i64))>,
-    ) -> Outcome {
-        let language = self.language();
-        let budget = (0usize, 0usize); // reduction is closed-form: no search budget
-        let (form, qs) = reduce_germ(&language, budget, &g, ctx.as_ref());
-        let listing = g.address();
-        self.commit_germ(Reduction { germ: g, ctx, form, qs, language, listing }, voice)
-    }
-
     /// COMMIT a reduction: the state changes a normal form implies, under the
     /// lock. Cited words resolve from the snapshot's indices to addresses and
     /// then to the live basis; a citation that left the basis while the
@@ -1731,17 +1710,6 @@ impl Kernel {
                 }
             }
         }
-    }
-
-    /// REDUCE a demand to its confluent normal form. (1) TRANSPOSE to substance
-    /// (quotient the ℤ² position). (2) PEEL installed generators while the reduction
-    /// magnitude strictly descends under ≺_DM — a terminating rewrite (the order is
-    /// well-founded). A demand whose substance directly IS a generator terminates at
-    /// length 1 (the old "recall"); a compound one peels to a longer sentence (the
-    /// old "composition"); one no generator lowers is IRREDUCIBLE — a critical pair
-    /// to germinate.
-    fn reduce(&self, g: &Element) -> NormalForm {
-        self.reduce_excluding(g, None)
     }
 
     /// The reduction with one generator EXCLUDED from the alphabet — the syntropic
