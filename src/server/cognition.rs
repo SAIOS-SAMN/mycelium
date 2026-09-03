@@ -94,6 +94,9 @@ pub struct MarketView {
     pub pending: std::sync::Arc<Vec<(Element, u64)>>,
     pub composites: std::sync::Arc<Vec<Composite>>,
     pub surface: [u64; 4],
+    /// The open book's tension per lane — the denominator every price is a
+    /// share of.
+    pub pressure: [u64; 4],
     pub pool: [u64; 4],
     pub k_step: u64,
     pub reserve: [u64; 4],
@@ -285,6 +288,7 @@ pub fn quote_over(
     pending: &[(Element, u64)],
     surface: &[u64; 4],
     pool: &[u64; 4],
+    pressure: &[u64; 4],
     top: usize,
     budget: usize,
     spoken: &crate::network::nerve::Keyed<Vec<[u8; 32]>>,
@@ -334,14 +338,14 @@ pub fn quote_over(
         used += wire;
         let base = rank.closure.get(idx).copied().flatten();
         let premium = if base.is_some() { c } else { i };
-        let mut mu = crate::economy::price(&p.magnitude(), surface, pool);
+        let mut mu = crate::economy::price(&p.magnitude(), pressure, pool);
         mu[2] = p.magnitude()[2].saturating_mul(1 + surface[2] + premium);
         // Lineage-aware assembly pricing: a child of a partly resolved
         // parent carries the parent's assembly premium (its ribbon volume,
         // priced at the surface) scaled by the resolved fraction, so the
         // closing pieces of an assembly quote highest without assignment.
         let (resolved, total, ribbon) = lineage_of(&p.address(), composites);
-        let assembly = crate::economy::price(&[0, 0, ribbon, 0], surface, pool);
+        let assembly = crate::economy::price(&[0, 0, ribbon, 0], pressure, pool);
         for l in 0..4 {
             mu[l] = mu[l].saturating_add(assembly[l].saturating_mul(resolved) / total.max(1));
         }
@@ -668,7 +672,7 @@ impl Kernel {
         }
         let mag = word.magnitude();
         let surface = crate::economy::yield_surface(&self.physics);
-        let mu = crate::economy::price(&mag, &surface, &self.treasury.pool());
+        let mu = crate::economy::price(&mag, &self.physics.pressure, &self.treasury.pool());
         let anchor = self.anchor();
         self.treasury.escrow_award(addr, vec![ratifier], mu, anchor);
         self.deflations.insert(addr, mag);
@@ -757,6 +761,7 @@ impl Kernel {
             pending: std::sync::Arc::clone(&self.book.1),
             composites: std::sync::Arc::clone(&self.book.2),
             surface: crate::economy::yield_surface(&self.physics),
+            pressure: self.physics.pressure,
             pool: self.treasury.pool(),
             k_step: self.chain.next_step_index(),
             reserve: self.physics.reserve,
@@ -864,7 +869,7 @@ impl Kernel {
             // Raster covering of a tape is zero-yield; fibre section closure
             // and a connection listing still pay morphism deflation.
             let paid = if section || listing.is_connection() {
-                self.treasury.settle_subsidy(voice, crate::economy::price(&before, &surface, &self.treasury.pool()), anchor)
+                self.treasury.settle_subsidy(voice, crate::economy::price(&before, &self.physics.pressure, &self.treasury.pool()), anchor)
             } else {
                 [0; 4]
             };
@@ -895,7 +900,7 @@ impl Kernel {
             return (PROBE_NOTHING, [0; 4], before);
         }
         let delta: [u64; 4] = std::array::from_fn(|l| before[l].saturating_sub(after[l]));
-        let paid = self.treasury.settle_subsidy(voice, crate::economy::price(&delta, &surface, &self.treasury.pool()), anchor);
+        let paid = self.treasury.settle_subsidy(voice, crate::economy::price(&delta, &self.physics.pressure, &self.treasury.pool()), anchor);
         // THE LISTING STAYS THE BODY: the descent settles what the sentence
         // covered and the body stays whole on the book — a coboundary is
         // never re-listed as a fragment of itself. What remains is the
@@ -1171,7 +1176,7 @@ impl Kernel {
             ([], 1..) => {
                 let saved = candidate.magnitude();
                 let surface = crate::economy::yield_surface(&self.physics);
-                let mu = crate::economy::price(&saved, &surface, &self.treasury.pool());
+                let mu = crate::economy::price(&saved, &self.physics.pressure, &self.treasury.pool());
                 let anchor = self.anchor();
                 let paid = self.treasury.settle_refine(bidder, mu, anchor);
                 self.basis_remove(i);
@@ -1675,7 +1680,7 @@ impl Kernel {
                         self.touch();
                         let mu = crate::economy::price(
                             &residual.magnitude(),
-                            &crate::economy::yield_surface(&self.physics),
+                            &self.physics.pressure,
                             &self.treasury.pool(),
                         );
                         let anchor = self.anchor();
@@ -1719,7 +1724,7 @@ impl Kernel {
                     let _ = self.treasury.settle_install(&residual, voice); // POW++ gate only
                     let mu = crate::economy::price(
                         &residual.magnitude(),
-                        &crate::economy::yield_surface(&self.physics),
+                        &self.physics.pressure,
                         &self.treasury.pool(),
                     );
                     let anchor = self.anchor();
@@ -1813,7 +1818,7 @@ impl Kernel {
                         if self.market_occupancy() >= cap {
                             let surface = crate::economy::yield_surface(&self.physics);
                             let new_a = action_potential(
-                                &crate::economy::price(&residual.magnitude(), &surface, &self.treasury.pool()),
+                                &crate::economy::price(&residual.magnitude(), &self.physics.pressure, &self.treasury.pool()),
                                 0,
                             );
                             let weakest = self
@@ -1822,11 +1827,11 @@ impl Kernel {
                                 .enumerate()
                                 .min_by(|(_, (p, lk)), (_, (q, mk))| {
                                     let ap = action_potential(
-                                        &crate::economy::price(&p.magnitude(), &surface, &self.treasury.pool()),
+                                        &crate::economy::price(&p.magnitude(), &self.physics.pressure, &self.treasury.pool()),
                                         k_now.saturating_sub(*lk),
                                     );
                                     let aq = action_potential(
-                                        &crate::economy::price(&q.magnitude(), &surface, &self.treasury.pool()),
+                                        &crate::economy::price(&q.magnitude(), &self.physics.pressure, &self.treasury.pool()),
                                         k_now.saturating_sub(*mk),
                                     );
                                     ap.cmp(&aq)
@@ -1835,7 +1840,7 @@ impl Kernel {
                                     (
                                         i,
                                         action_potential(
-                                            &crate::economy::price(&p.magnitude(), &surface, &self.treasury.pool()),
+                                            &crate::economy::price(&p.magnitude(), &self.physics.pressure, &self.treasury.pool()),
                                             k_now.saturating_sub(*lk),
                                         ),
                                     )
@@ -2127,7 +2132,7 @@ impl Kernel {
     pub fn quote(&mut self, top: usize) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
         let surface = crate::economy::yield_surface(&self.physics);
         let rank = self.closure_now();
-        quote_over(&rank, &self.composites, &self.pending, &surface, &self.treasury.pool(), top, usize::MAX, &self.spoken, &[0; 32], &self.quote_frontier)
+        quote_over(&rank, &self.composites, &self.pending, &surface, &self.treasury.pool(), &self.physics.pressure, top, usize::MAX, &self.spoken, &[0; 32], &self.quote_frontier)
     }
 
     /// ATTEST — a peer's INDEPENDENT derivation of an open residual arrives as a

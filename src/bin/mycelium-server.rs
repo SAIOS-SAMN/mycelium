@@ -238,7 +238,7 @@ fn judge(job: ReflexJob, kernel: &Mutex<Kernel>, router: &Router, id: &[u8; 32])
                     let addr = g.address();
                     let mu = mycelium::economy::price(
                         &g.magnitude(),
-                        &mycelium::economy::yield_surface(k.physics()),
+                        &k.physics().pressure,
                         &k.treasury().pool(),
                     );
                     // Teach the FULL lossless form (to_bytes) — the entity's
@@ -774,6 +774,16 @@ fn main() {
         // worker (replay pure, derivability on a snapshot, brief install) —
         // no long lock on the reflex path, no boolean ladder. The reply
         // acknowledges queueing.
+        // ── peers: the nerve this hypha stands in, for an entity's router.
+        if kind == dialogue::ACT_PEERS {
+            if dialogue::decode_peers_request(&frame.body).is_some() {
+                let mut nerve_addrs = vec![addr.clone()];
+                nerve_addrs.extend(peers.iter().cloned());
+                let reply = Frame { lane: frame.lane, body: dialogue::encode_peers_reply(&nerve_addrs) };
+                let _ = s.write_all(&reply.encode().unwrap_or_default());
+            }
+            continue;
+        }
         if kind == dialogue::ACT_ADOPT {
             let Some((ratifier, elem_bytes)) = dialogue::decode_adopt(&frame.body) else {
                 continue;

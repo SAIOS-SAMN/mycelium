@@ -225,6 +225,7 @@ pub fn quote(
             &view.pending,
             &view.surface,
             &view.pool,
+            &view.pressure,
             depth,
             budget,
             g.spoken(),

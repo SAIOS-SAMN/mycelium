@@ -136,6 +136,51 @@ pub const ACT_ROOT: u8 = 0x13;
 /// on the speaker's clock. The reply is the receiver's record for that
 /// task: `[solver 32 (zeros: none)][ticks u64]`, its own clock, so the
 /// speaker knows the root was delivered later than it was spoken.
+/// THE PEERS an entity routes over: `[ACT_PEERS][voice 32]` asks a hypha for
+/// the addresses of the nerve it stands in (itself and its configured
+/// peers); the reply is `[n u16] ([len u16][addr bytes])…`. The entity
+/// builds the same XOR router the hyphas use, so every act it speaks goes
+/// to the key's home.
+pub const ACT_PEERS: u8 = 0x15;
+
+pub fn encode_peers_request(voice: &[u8; 32]) -> Vec<u8> {
+    let mut out = vec![ACT_PEERS];
+    out.extend_from_slice(voice);
+    out
+}
+
+pub fn decode_peers_request(body: &[u8]) -> Option<[u8; 32]> {
+    if body.first() != Some(&ACT_PEERS) || body.len() != 33 {
+        return None;
+    }
+    body[1..33].try_into().ok()
+}
+
+pub fn encode_peers_reply(addrs: &[String]) -> Vec<u8> {
+    let mut out = Vec::new();
+    out.extend_from_slice(&(addrs.len().min(u16::MAX as usize) as u16).to_le_bytes());
+    for a in addrs.iter().take(u16::MAX as usize) {
+        let b = a.as_bytes();
+        out.extend_from_slice(&(b.len().min(u16::MAX as usize) as u16).to_le_bytes());
+        out.extend_from_slice(&b[..b.len().min(u16::MAX as usize)]);
+    }
+    out
+}
+
+pub fn decode_peers_reply(body: &[u8]) -> Option<Vec<String>> {
+    let mut p = 0usize;
+    let n = u16::from_le_bytes(body.get(p..p + 2)?.try_into().ok()?) as usize;
+    p += 2;
+    let mut out = Vec::with_capacity(n);
+    for _ in 0..n {
+        let len = u16::from_le_bytes(body.get(p..p + 2)?.try_into().ok()?) as usize;
+        p += 2;
+        out.push(String::from_utf8(body.get(p..p + len)?.to_vec()).ok()?);
+        p += len;
+    }
+    Some(out)
+}
+
 /// A DEMAND ROUTED ON THE NERVE to the listing key's home hypha — so the
 /// second voice on a listing can be a stranger's, not a local twin's:
 /// `[ACT_DEMAND_ROUTED][origin hypha 32][the demand body as spoken]`.

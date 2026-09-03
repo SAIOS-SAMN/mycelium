@@ -91,6 +91,15 @@ pub struct Session {
     /// Interior mutability: impedance is perception, updated by every
     /// exchange regardless of the calling method's own mutability.
     resistance: std::cell::Cell<u64>,
+    /// THE NERVE, as this entity holds it: every hypha it has learned of,
+    /// placed by the same XOR router the hyphas use, so an act carrying a
+    /// key (a listing, a task, a word) is spoken to that key's home and a
+    /// stranger there is the second voice. The dial address is the seed.
+    router: crate::network::nerve::Router,
+    peers: Vec<String>,
+    /// The quote's stroke: quotes walk the nerve in turn, one hypha per
+    /// stroke, so every book is thought about and none is a monologue.
+    strokes: std::cell::Cell<u64>,
 }
 
 /// The transport aperture — the perceived state of the wire to the server
@@ -117,7 +126,47 @@ impl Session {
     /// held; each submit dials fresh.
     pub fn open(addr: &str, kernel: Kernel) -> Self {
         let voice = crate::voice::Voice::named(kernel.name());
-        Session { addr: addr.to_string(), kernel, voice, resistance: std::cell::Cell::new(0) }
+        let mut router = crate::network::nerve::Router::new();
+        router.insert(*blake3::hash(addr.as_bytes()).as_bytes(), addr.to_string());
+        Session {
+            addr: addr.to_string(),
+            kernel,
+            voice,
+            resistance: std::cell::Cell::new(0),
+            router,
+            peers: vec![addr.to_string()],
+            strokes: std::cell::Cell::new(0),
+        }
+    }
+
+    /// DISCOVER the nerve: ask the dial hypha for the addresses it stands
+    /// among and place each by the same key the hyphas use (the hash of
+    /// its address). A hypha that does not answer leaves the seed alone.
+    pub fn discover(&mut self) {
+        let Ok(body) = self.exchange_at(&self.addr.clone(), dialogue::encode_peers_request(&self.kernel.voice)) else { return };
+        for a in dialogue::decode_peers_reply(&body).unwrap_or_default() {
+            if !self.peers.contains(&a) {
+                self.router.insert(*blake3::hash(a.as_bytes()).as_bytes(), a.clone());
+                self.peers.push(a);
+            }
+        }
+    }
+
+    /// The hypha a key lives on: the nerve's closest by XOR, the seed when
+    /// nothing else is known.
+    pub fn route(&self, key: &[u8; 32]) -> String {
+        self.router.closest(key).map(|(_, a)| a).unwrap_or_else(|| self.addr.clone())
+    }
+
+    /// The hyphas this entity knows.
+    pub fn peers(&self) -> &[String] {
+        &self.peers
+    }
+
+    /// Speak an act carrying a key to that key's home.
+    pub fn speak_keyed(&self, key: &[u8; 32], act_body: Vec<u8>) -> io::Result<Vec<u8>> {
+        let addr = self.route(key);
+        self.exchange_at(&addr, act_body)
     }
 
     pub fn kernel(&self) -> &Kernel {
@@ -177,14 +226,17 @@ impl Session {
     /// SPEAK a `demand` — this kernel's INDEPENDENT derivation of an open
     /// residual with its citations (empty: irreducible for this voice).
     pub fn attest(&self, chain: &[(i64, i64, u8, u8)], cites: &[dialogue::CiteWire]) -> io::Result<Reply> {
-        let body = self.exchange(dialogue::encode_demand(&self.kernel.voice, chain, cites))?;
+        // The demand goes to the listing's home on the nerve: the address of
+        // the germ the chain would be — the same key every hypha routes by.
+        let key = crate::transducer::element::from_residual(&chain.to_vec()).address();
+        let body = self.speak_keyed(&key, dialogue::encode_demand(&self.kernel.voice, chain, cites))?;
         Ok(decode_reply(&body))
     }
 
     /// PROBE an open listing with a tentative sentence; the hypha replays and
     /// settles graded descent or closure. Returns (code, paid, remaining).
     pub fn probe(&self, target: &[u8; 32], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4], [u64; 4])> {
-        let body = self.exchange(dialogue::encode_probe(&self.kernel.voice, target, cites))?;
+        let body = self.speak_keyed(target, dialogue::encode_probe(&self.kernel.voice, target, cites))?;
         dialogue::decode_probe_reply(&body)
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "probe decode"))
     }
@@ -194,7 +246,12 @@ impl Session {
     /// open-demand market's top clusters, each carrying its chain so this kernel
     /// can actually attempt the reduction.
     pub fn quote(&self) -> io::Result<YieldQuote> {
-        let body = self.exchange(dialogue::encode_quote_request(&self.kernel.voice))?;
+        // Quotes walk the nerve in turn: one hypha per stroke, so every book
+        // is thought about by every voice and no book is a monologue.
+        let n = self.strokes.get();
+        self.strokes.set(n.wrapping_add(1));
+        let addr = self.peers[(n as usize) % self.peers.len().max(1)].clone();
+        let body = self.exchange_at(&addr, dialogue::encode_quote_request(&self.kernel.voice))?;
         let (surface, k, items) = dialogue::decode_quote_reply(&body)
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
         Ok(YieldQuote {
@@ -214,8 +271,14 @@ impl Session {
     }
 
     fn exchange(&self, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
+        self.exchange_at(&self.addr.clone(), act_body)
+    }
+
+    /// One exchange with a named hypha on the nerve; the impedance is
+    /// measured on the wire as a whole.
+    fn exchange_at(&self, addr: &str, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         let act = act_body.first().copied();
-        let out = self.exchange_inner(act_body);
+        let out = self.exchange_inner(addr, act_body);
         // A full reflex pool answers every act with the deferral shape (the
         // pending outcome and four zero lanes). For a percept or a demand
         // that is a verdict; for any other act it is the judge's measured
@@ -237,7 +300,7 @@ impl Session {
         out
     }
 
-    fn exchange_inner(&self, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
+    fn exchange_inner(&self, addr: &str, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         let frame = Frame { lane: Stratum::Spatial, body: act_body };
         let bytes = frame.encode().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "frame encode"))?;
         // THE TRANSPORT DEADLINE: no exchange may hang forever — a silent
@@ -250,7 +313,7 @@ impl Session {
             crate::physics::reserve_max()
                 * (crate::physics::reserve_max() / crate::physics::spend_unit()).max(1),
         );
-        let sockaddr = std::net::ToSocketAddrs::to_socket_addrs(&self.addr.as_str())?
+        let sockaddr = std::net::ToSocketAddrs::to_socket_addrs(&addr)?
             .next()
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "unresolvable address"))?;
         let mut s = TcpStream::connect_timeout(&sockaddr, deadline)?;
@@ -690,8 +753,10 @@ pub struct Entity {
 
 impl Entity {
     pub fn open(addr: &str, kernel: Kernel) -> Self {
+        let mut session = Session::open(addr, kernel);
+        session.discover();
         Entity {
-            session: Session::open(addr, kernel),
+            session,
             epigenome: Epigenome::new(),
             refine_cursor: 0,
             taught_up: Vec::new(),
@@ -728,7 +793,7 @@ impl Entity {
     /// useful work. None = the book is settled (or no registry).
     pub fn pull_task(&self) -> io::Result<Option<dialogue::TaskEnvelope>> {
         let voice = self.session.kernel().voice();
-        let body = self.session.speak(dialogue::encode_task_request(&voice))?;
+        let body = self.session.speak_keyed(&voice, dialogue::encode_task_request(&voice))?;
         if body.is_empty() {
             return Ok(None);
         }
@@ -745,7 +810,7 @@ impl Entity {
         outputs: &[Grid],
     ) -> io::Result<(u8, [u64; 4])> {
         let voice = self.session.kernel().voice();
-        let body = self.session.speak(dialogue::encode_solve(&voice, id, outputs))?;
+        let body = self.session.speak_keyed(id, dialogue::encode_solve(&voice, id, outputs))?;
         Ok(dialogue::decode_solve_receipt(&body).unwrap_or((dialogue::SOLVE_NOTHING, [0; 4])))
     }
 
@@ -805,7 +870,7 @@ impl Entity {
     /// of the retired meaning re-derives the sentence form.
     pub fn bid_refinement(&mut self, word: &[u8; 32], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4])> {
         let voice = self.session.kernel().voice();
-        let body = self.session.speak(dialogue::encode_refine(&voice, word, cites))?;
+        let body = self.session.speak_keyed(word, dialogue::encode_refine(&voice, word, cites))?;
         let (code, mu) =
             dialogue::decode_solve_receipt(&body).unwrap_or((dialogue::REFINE_NOTHING, [0; 4]));
         if code == dialogue::REFINE_ACCEPTED {
@@ -830,7 +895,7 @@ impl Entity {
     pub fn sync_genome(&mut self) -> io::Result<usize> {
         use crate::transducer::sheaf;
         let voice = self.session.kernel().voice();
-        let body = self.session.speak(dialogue::encode_digests_request(&voice))?;
+        let body = self.session.speak_keyed(&voice, dialogue::encode_digests_request(&voice))?;
         let remote = dialogue::decode_digests_reply(&body).unwrap_or_default();
         // The genome's own atlas (current, admitted in place), never rebuilt here.
         self.epigenome.atlas();
@@ -853,7 +918,7 @@ impl Entity {
             .collect();
         let request = dialogue::encode_fetch(&voice, &charts, crate::network::wire::BODY_BUDGET);
         let mut learned = 0usize;
-        let body = self.session.speak(request)?;
+        let body = self.session.speak_keyed(&voice, request)?;
         for w in dialogue::decode_syllabus_reply(&body).unwrap_or_default() {
             let mut pos = 0usize;
             let fetched = Element::from_bytes(&w, &mut pos);
@@ -929,7 +994,7 @@ impl Entity {
                     break 'strata;
                 }
                 used += bytes.len();
-                if self.session.speak(dialogue::encode_adopt(&voice, &bytes)).is_ok() {
+                if self.session.speak_keyed(&addr, dialogue::encode_adopt(&voice, &bytes)).is_ok() {
                     self.taught_up.push(addr);
                     taught += 1;
                 }
@@ -940,7 +1005,7 @@ impl Entity {
 
     pub fn pull_syllabus(&mut self) -> io::Result<usize> {
         let voice = self.session.kernel().voice();
-        let body = self.session.speak(dialogue::encode_syllabus_request(&voice))?;
+        let body = self.session.speak_keyed(&voice, dialogue::encode_syllabus_request(&voice))?;
         let words = dialogue::decode_syllabus_reply(&body).unwrap_or_default();
         let mut learned = 0usize;
         for w in &words {
@@ -1099,7 +1164,7 @@ impl Entity {
         // genome first, so the fibre Čech has a representative here and the
         // word's return does not depend on the syllabus.
         self.epigenome.learn(&bytes);
-        self.session.speak(dialogue::encode_adopt(&voice, &bytes))?;
+        self.session.speak_keyed(&addr, dialogue::encode_adopt(&voice, &bytes))?;
         self.taught_up.push(addr);
         Ok(Utterance::Spoken)
     }
