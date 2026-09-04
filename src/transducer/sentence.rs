@@ -576,12 +576,16 @@ use super::cech::{self, Complex, Fill, Section};
 use super::element::{affine_of, from_connection, GERM_DIM};
 
 /// One germ of a sentence: a body the family carried, spelled.
+/// Source or target may be absent: a created body has no source, an
+/// erased body has no target.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Germ {
     pub address: [u8; 32],
     pub versor: Versor,
     pub word: Word,
     pub chain: Vec<Cell>,
+    pub source: Option<stalk::Invariant>,
+    pub target: Option<stalk::Invariant>,
 }
 
 /// A face of the nerve: two germs whose after-supports meet, with the
@@ -741,8 +745,30 @@ fn first_class(c: &Complex) -> Option<(Rotor, usize)> {
 }
 
 /// After-support of a germ: the input positions carried by its versor.
+/// A germ with no source (created) uses the chain's after-cells; a germ
+/// with no target (erased) uses the before-cells.
 pub fn after_support(g: &Germ) -> Vec<(i64, i64)> {
     let mut out = Vec::new();
+    if g.source.is_none() && g.target.is_some() {
+        for &(r, c, _, a) in &g.chain {
+            if a != 0 {
+                out.push((r, c));
+            }
+        }
+        out.sort_unstable();
+        out.dedup();
+        return out;
+    }
+    if g.target.is_none() && g.source.is_some() {
+        for &(r, c, b, _) in &g.chain {
+            if b != 0 {
+                out.push((r, c));
+            }
+        }
+        out.sort_unstable();
+        out.dedup();
+        return out;
+    }
     for &(r, c, _, _) in &g.chain {
         if let Some(image) = element::carry_cell(&g.versor, r, c) {
             out.extend(image);
@@ -889,6 +915,93 @@ pub fn assemble(mut germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
     let cycles = project_cycles(&complex);
     let class = first_class(&complex);
     Nerve { germs, complex, faces, cycles, remainder, class, cover: crate::network::nerve::Keyed::new() }
+}
+
+/// The invariant cochain of a family: germ charts, face words, holonomies,
+/// and hue maps keyed by chart. Per-pair gauges are not on the tape.
+#[derive(Debug, Clone)]
+pub struct SentenceRule {
+    pub charts: Vec<(Option<stalk::Invariant>, Option<stalk::Invariant>)>,
+    pub faces: Vec<(usize, usize, Word, u8, bool)>,
+    pub holonomies: Vec<Word>,
+    pub hue_maps: crate::network::nerve::Keyed<Vec<(u8, u8)>>,
+    pub nerve: Nerve,
+}
+
+fn chart_key(inv: &Option<stalk::Invariant>) -> [u8; 32] {
+    inv.as_ref().map(|i| i.key()).unwrap_or([0u8; 32])
+}
+
+fn germ_hue_map(g: &Germ) -> Vec<(u8, u8)> {
+    let mut m = Vec::new();
+    for &(_, _, b, a) in &g.chain {
+        if !m.iter().any(|(x, _)| *x == b) {
+            m.push((b, a));
+        }
+    }
+    m.sort_unstable();
+    m
+}
+
+fn nerve_signature(n: &Nerve) -> (Vec<([u8; 32], [u8; 32])>, Vec<(usize, usize, Word, u8, bool)>, Vec<Word>) {
+    let mut order: Vec<usize> = (0..n.germs.len()).collect();
+    order.sort_by_key(|&i| (chart_key(&n.germs[i].source), chart_key(&n.germs[i].target)));
+    let mut rank = vec![0usize; n.germs.len()];
+    for (r, &i) in order.iter().enumerate() {
+        rank[i] = r;
+    }
+    let charts: Vec<([u8; 32], [u8; 32])> = order
+        .iter()
+        .map(|&i| (chart_key(&n.germs[i].source), chart_key(&n.germs[i].target)))
+        .collect();
+    let mut faces: Vec<(usize, usize, Word, u8, bool)> = n
+        .faces
+        .iter()
+        .map(|f| {
+            let (a, b) = (rank[f.i], rank[f.j]);
+            let (i, j) = if a < b { (a, b) } else { (b, a) };
+            (i, j, f.g_ij.clone(), f.shells, f.spelled)
+        })
+        .collect();
+    faces.sort_by_key(|f| (f.0, f.1));
+    let mut holonomies: Vec<Word> = n.cycles.iter().map(|c| c.holonomy.clone()).collect();
+    holonomies.sort_by(|a, b| format!("{a:?}").cmp(&format!("{b:?}")));
+    (charts, faces, holonomies)
+}
+
+/// Accept a rule when every pair's nerve has the same germ charts, face
+/// words, and holonomies. Hue maps that differ are keyed by chart prefix.
+pub fn agree_up_to_gauge(nerves: &[Nerve]) -> Option<SentenceRule> {
+    let first = nerves.first()?;
+    if first.germs.is_empty() {
+        return None;
+    }
+    let (charts0, faces0, holo0) = nerve_signature(first);
+    for n in nerves.iter().skip(1) {
+        let (c, f, h) = nerve_signature(n);
+        if c != charts0 || f != faces0 || h != holo0 {
+            return None;
+        }
+    }
+    let mut hue_maps = crate::network::nerve::Keyed::new();
+    for g in &first.germs {
+        let key = chart_key(&g.target);
+        if key == [0u8; 32] {
+            continue;
+        }
+        hue_maps.insert(key, germ_hue_map(g));
+    }
+    Some(SentenceRule {
+        charts: first
+            .germs
+            .iter()
+            .map(|g| (g.source.clone(), g.target.clone()))
+            .collect(),
+        faces: faces0,
+        holonomies: holo0,
+        hue_maps,
+        nerve: first.clone(),
+    })
 }
 
 /// Solve δγ = ω: a gauge per germ, integer-linear in letter exponents.
@@ -1177,7 +1290,7 @@ fn decode_nerve_tail(b: &[u8], pos: &mut usize) -> Option<Nerve> {
         for _ in 0..nc.min(1 << 16) {
             chain.push(take_cell(b, pos)?);
         }
-        germs.push(Germ { address, versor, word, chain });
+        germs.push(Germ { address, versor, word, chain, source: None, target: None });
     }
     let nf = take_u32(b, pos)? as usize;
     let mut faces = Vec::with_capacity(nf.min(1024));
@@ -1486,12 +1599,16 @@ mod tests {
             versor: identity_versor(),
             word: Word::identity(),
             chain: chain_a,
+            source: None,
+            target: None,
         };
         let gb = Germ {
             address: from_residual(&chain_b).address(),
             versor: identity_versor(),
             word: Word::identity(),
             chain: chain_b,
+            source: None,
+            target: None,
         };
         let mut n = assemble(vec![ga, gb], Vec::new());
         assert_eq!(n.germs.len(), 2);
@@ -1513,12 +1630,16 @@ mod tests {
             versor: identity_versor(),
             word: Word::identity(),
             chain: chain_a,
+            source: None,
+            target: None,
         };
         let gb = Germ {
             address: from_residual(&chain_b).address(),
             versor: identity_versor(),
             word: Word::identity(),
             chain: chain_b,
+            source: None,
+            target: None,
         };
         let n = assemble(vec![ga, gb], Vec::new());
         assert_eq!(n.faces.len(), 1, "two bodies in one thought share a face");
@@ -1537,12 +1658,16 @@ mod tests {
             versor: identity_versor(),
             word: Word::identity(),
             chain: chain_a,
+            source: None,
+            target: None,
         };
         let gb = Germ {
             address: from_residual(&chain_b).address(),
             versor: identity_versor(),
             word: Word::identity(),
             chain: chain_b,
+            source: None,
+            target: None,
         };
         let e = as_element(&assemble(vec![ga, gb], Vec::new())).expect("nerve element");
         assert!(e.is_sentence());
@@ -1562,12 +1687,16 @@ mod tests {
             versor: identity_versor(),
             word: Word::identity(),
             chain: chain_a,
+            source: None,
+            target: None,
         };
         let gb = Germ {
             address: from_residual(&chain_b).address(),
             versor: identity_versor(),
             word: Word::identity(),
             chain: chain_b,
+            source: None,
+            target: None,
         };
         let n = assemble(vec![ga, gb], Vec::new());
         let e = as_element(&n).expect("a two-germ nerve is an element");

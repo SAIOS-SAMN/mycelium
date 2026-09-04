@@ -105,6 +105,10 @@ impl TaskRegistry {
         self.tasks.iter().filter(|(_, _, s)| *s == TaskState::Unsolved).count()
     }
 
+    pub fn task(&self, id: &[u8; 32]) -> Option<&Task> {
+        self.tasks.iter().find(|(t, _, _)| t == id).map(|(_, task, _)| task)
+    }
+
     /// REGISTER a task (idempotent by content — re-feeding under a new file
     /// name registers nothing). Returns the id.
     pub fn register(&mut self, task: Task) -> [u8; 32] {

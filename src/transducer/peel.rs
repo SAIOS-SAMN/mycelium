@@ -87,6 +87,106 @@ where
     }
 }
 
+/// Perception shells of one body. Not letters: the seventeen stay fixed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ShellKind {
+    Whole,
+    Outline,
+    Core,
+    Interior,
+    Adjacent,
+    Cut,
+    Magnified,
+    Reduced,
+    Tiled,
+    Bordered,
+}
+
+const SHELL_ORDER: [ShellKind; 10] = [
+    ShellKind::Whole,
+    ShellKind::Outline,
+    ShellKind::Core,
+    ShellKind::Interior,
+    ShellKind::Adjacent,
+    ShellKind::Cut,
+    ShellKind::Magnified,
+    ShellKind::Reduced,
+    ShellKind::Tiled,
+    ShellKind::Bordered,
+];
+
+/// One shell of a body: its kind and its cells (row, col, hue).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Shell {
+    pub kind: ShellKind,
+    pub cells: Vec<(i64, i64, u8)>,
+}
+
+fn apply_kind(kind: ShellKind, cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
+    use crate::transducer::blade;
+    match kind {
+        ShellKind::Whole => cells.to_vec(),
+        ShellKind::Outline => blade::outline(cells),
+        ShellKind::Core => blade::core(cells),
+        ShellKind::Interior => blade::enclosed_interior(cells),
+        ShellKind::Adjacent => blade::adjacent_ring(cells),
+        ShellKind::Cut => blade::cut(cells).unwrap_or_default(),
+        ShellKind::Magnified => blade::magnified(cells, 2),
+        ShellKind::Reduced => blade::reduced(cells, 2).unwrap_or_default(),
+        ShellKind::Tiled => blade::tiled(cells, 2, 2),
+        ShellKind::Bordered => blade::bordered(cells, 0),
+    }
+}
+
+/// Residual of a body peel: the support plus the next kind index.
+type BodyArc = (Vec<(i64, i64, u8)>, usize);
+
+struct BodyKindStep;
+impl ShellStep for BodyKindStep {
+    type Residual = BodyArc;
+    type Core = Shell;
+    fn shell(&self, residual: &BodyArc) -> Option<(Shell, BodyArc)> {
+        let (cells, i) = residual;
+        let kind = *SHELL_ORDER.get(*i)?;
+        let shell_cells = apply_kind(kind, cells);
+        Some((
+            Shell { kind, cells: shell_cells },
+            (cells.clone(), i + 1),
+        ))
+    }
+}
+
+struct KindGovernor(usize);
+impl ShrinkGovernor for KindGovernor {
+    type Residual = BodyArc;
+    fn read(&mut self, residual: &BodyArc) -> ShellMotion {
+        if residual.1 >= SHELL_ORDER.len() {
+            return ShellMotion::Closed;
+        }
+        if residual.1 > self.0 {
+            self.0 = residual.1;
+            return ShellMotion::Shrinking;
+        }
+        if residual.1 == 0 && self.0 == 0 {
+            return ShellMotion::Shrinking;
+        }
+        ShellMotion::Stalled
+    }
+}
+
+/// Peel a body into its shells. Depth is the peel's own kind count.
+pub fn peel_body(cells: &[(i64, i64, u8)]) -> Vec<Shell> {
+    if cells.is_empty() {
+        return Vec::new();
+    }
+    let nest = peel_nest((cells.to_vec(), 0usize), &BodyKindStep, &mut KindGovernor(0));
+    nest.cores()
+        .iter()
+        .filter(|s| !s.cells.is_empty())
+        .cloned()
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -141,5 +241,19 @@ mod tests {
         assert_eq!(empty, PeelNest::Closed { cores: vec![] });
         let standing = peel_nest(vec![1, 0xff, 3], &TakeUnlessPoison, &mut Shorter(None));
         assert_eq!(standing, PeelNest::Standing { cores: vec![1], arc: vec![0xff, 3] });
+    }
+
+    #[test]
+    fn a_body_peels_into_outline_and_core() {
+        let mut cells = Vec::new();
+        for r in 0..3 {
+            for c in 0..3 {
+                cells.push((r, c, 1u8));
+            }
+        }
+        let shells = peel_body(&cells);
+        assert!(shells.iter().any(|s| s.kind == ShellKind::Whole && s.cells.len() == 9));
+        assert!(shells.iter().any(|s| s.kind == ShellKind::Outline && s.cells.len() == 8));
+        assert!(shells.iter().any(|s| s.kind == ShellKind::Core && s.cells.len() == 1));
     }
 }

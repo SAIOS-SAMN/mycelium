@@ -54,6 +54,8 @@ pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
             return Some(reason);
         }
         // A formed thought replays every fill on its tape.
+        // A rule is the same nerve re-derived on every train pair; the
+        // home supplies the family. Without it, the tape replay stands.
     }
     if spoken.is_translation() {
         match spoken.letters_rederive() {

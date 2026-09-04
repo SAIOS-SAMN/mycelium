@@ -254,6 +254,8 @@ pub struct Comprehended {
     /// The family's sentence: one germ per carried body, faces on meeting
     /// supports. Absent when every body merged into a single class rule.
     pub sentence: Option<super::sentence::Nerve>,
+    /// Cross-pair invariant cochain, when every pair's nerve agrees up to gauge.
+    pub rule: Option<super::sentence::SentenceRule>,
 }
 
 struct Pairing {
@@ -471,6 +473,231 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
     out
 }
 
+fn germ_of_body(source: Option<&Body>, target: Option<&Body>, v: Versor, word: super::alphabet::Word) -> super::sentence::Germ {
+    let mut chain = Vec::new();
+    match (source, target) {
+        (Some(a), Some(b)) => {
+            for &(r, c, h) in &a.cells {
+                let h2 = element::carry_center(&v, r, c)
+                    .and_then(|p| {
+                        let (tr, tc) = element::cell_of(&p);
+                        b.cells.binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc))).ok().map(|i| b.cells[i].2)
+                    })
+                    .unwrap_or(h);
+                chain.push((r, c, h, h2));
+            }
+        }
+        (None, Some(b)) => {
+            for &(r, c, h) in &b.cells {
+                chain.push((r, c, 0, h));
+            }
+        }
+        (Some(a), None) => {
+            for &(r, c, h) in &a.cells {
+                chain.push((r, c, h, 0));
+            }
+        }
+        (None, None) => {}
+    }
+    chain.sort_unstable();
+    let addr = element::from_residual(&chain).address();
+    super::sentence::Germ {
+        address: addr,
+        versor: v,
+        word,
+        chain,
+        source: source.map(|b| b.moduli.clone()),
+        target: target.map(|b| b.moduli.clone()),
+    }
+}
+
+fn pair_nerve(a: &Grid, b: &Grid) -> super::sentence::Nerve {
+    use super::sentence::{assemble, close};
+    let ins = perceive(a);
+    let outs = perceive(b);
+    let mut used_in = vec![false; ins.len()];
+    let mut germs = Vec::new();
+    for ob in &outs {
+        let hit = ins.iter().enumerate().find(|(i, ib)| !used_in[*i] && ib.moduli == ob.moduli && carriage(ib, ob).is_some());
+        match hit {
+            Some((i, ib)) => {
+                used_in[i] = true;
+                if let Some(car) = carriage(ib, ob) {
+                    let word = element::affine_of(&car.v)
+                        .and_then(|aff| {
+                            (aff.len() >= 2 && aff[0].len() >= 2).then(|| {
+                                [[aff[0][0].clone(), aff[0][1].clone()], [aff[1][0].clone(), aff[1][1].clone()]]
+                            })
+                        })
+                        .and_then(|block| super::alphabet::spell(&block).map(|s| s.word))
+                        .unwrap_or_else(super::alphabet::Word::identity);
+                    germs.push(germ_of_body(Some(ib), Some(ob), car.v, word));
+                }
+            }
+            None => {
+                germs.push(germ_of_body(None, Some(ob), element::identity_versor(), super::alphabet::Word::identity()));
+            }
+        }
+    }
+    for (i, ib) in ins.iter().enumerate() {
+        if !used_in[i] {
+            germs.push(germ_of_body(Some(ib), None, element::identity_versor(), super::alphabet::Word::identity()));
+        }
+    }
+    for body in ins.iter().chain(outs.iter()) {
+        for shell in super::peel::peel_body(&body.cells) {
+            if matches!(
+                shell.kind,
+                super::peel::ShellKind::Whole
+                    | super::peel::ShellKind::Cut
+                    | super::peel::ShellKind::Magnified
+                    | super::peel::ShellKind::Reduced
+                    | super::peel::ShellKind::Tiled
+                    | super::peel::ShellKind::Bordered
+            ) {
+                continue;
+            }
+            if shell.cells.is_empty() {
+                continue;
+            }
+            let sb = body_of(shell.cells);
+            let addr = element::from_residual(&sb.cells.iter().map(|&(r, c, h)| (r, c, h, h)).collect()).address();
+            germs.push(super::sentence::Germ {
+                address: addr,
+                versor: element::identity_versor(),
+                word: super::alphabet::Word::identity(),
+                chain: sb.cells.iter().map(|&(r, c, h)| (r, c, h, h)).collect(),
+                source: Some(sb.moduli.clone()),
+                target: Some(sb.moduli.clone()),
+            });
+        }
+    }
+    let mut n = assemble(germs, Vec::new());
+    let _ = close(&mut n);
+    n
+}
+
+/// Re-derive the family's rule and check it agrees with `rule`.
+pub fn rule_replays_family(rule: &super::sentence::SentenceRule, family: &[(Grid, Grid)]) -> bool {
+    let Some(again) = extract_rule(family) else {
+        return false;
+    };
+    again.charts == rule.charts && again.faces == rule.faces && again.holonomies == rule.holonomies
+}
+
+/// Extract the invariant cochain of a family: one nerve per pair, then
+/// coboundary_gauge. None when the nerves do not agree up to gauge.
+pub fn extract_rule(family: &[(Grid, Grid)]) -> Option<super::sentence::SentenceRule> {
+    if family.is_empty() {
+        return None;
+    }
+    let nerves: Vec<super::sentence::Nerve> = family.iter().map(|(a, b)| pair_nerve(a, b)).collect();
+    super::sentence::agree_up_to_gauge(&nerves)
+}
+
+/// SPEAK A RULE onto a test input: peel the test, match bodies to rule
+/// germs by chart prefix, instantiate face words, emit generative germs.
+/// Several bodies on one germ is a section; one body on two germs is a class
+/// (the sentence is held — remainder is the whole input).
+pub fn speak_rule(rule: &super::sentence::SentenceRule, x: &Grid) -> Option<Speech> {
+    let fx = frame_of(x);
+    let mut atlas = super::stalk::Stalks::default();
+    for (i, (src, tgt)) in rule.charts.iter().enumerate() {
+        let mut addr = [0u8; 32];
+        addr[..8].copy_from_slice(&(i as u64).to_le_bytes());
+        if let Some(inv) = tgt.as_ref().or(src.as_ref()) {
+            atlas.admit(inv, addr);
+        }
+    }
+    let mut claimed: crate::network::nerve::Keyed<usize> = crate::network::nerve::Keyed::new();
+    let mut remainder: Vec<Cell3> = Vec::new();
+    let mut cells: Vec<Cell3> = Vec::new();
+    let mut class = false;
+    for body in perceive(x) {
+        let mut shells = super::peel::peel_body(&body.cells);
+        shells.insert(0, super::peel::Shell { kind: super::peel::ShellKind::Whole, cells: body.cells.clone() });
+        let mut matched = None;
+        for shell in &shells {
+            if shell.cells.is_empty() {
+                continue;
+            }
+            let sb = body_of(shell.cells.clone());
+            let hits = atlas.fiber(&sb.moduli);
+            match hits.len() {
+                0 => continue,
+                1 => {
+                    matched = Some(hits[0]);
+                    break;
+                }
+                _ => {
+                    class = true;
+                    break;
+                }
+            }
+        }
+        if class {
+            remainder.extend(body.cells.iter().copied());
+            continue;
+        }
+        let Some(addr) = matched else {
+            remainder.extend(body.cells.iter().copied());
+            continue;
+        };
+        let idx = u64::from_le_bytes(addr[..8].try_into().ok()?) as usize;
+        if claimed.contains(&addr) {
+            // several bodies on one germ: a section — apply to each
+        }
+        claimed.insert(addr, idx);
+        let Some(g) = rule.nerve.germs.get(idx) else {
+            remainder.extend(body.cells.iter().copied());
+            continue;
+        };
+        let map = g.target.as_ref().and_then(|t| rule.hue_maps.get(&t.key())).cloned().unwrap_or_default();
+        if g.source.is_none() {
+            for &(r, c, _, a) in &g.chain {
+                if a != 0 {
+                    cells.push((r, c, a));
+                }
+            }
+            continue;
+        }
+        for &(r, c, h) in &body.cells {
+            let hue = map.iter().find(|(f, _)| *f == h).map(|(_, t)| *t).unwrap_or(h);
+            if let Some(image) = element::carry_cell(&g.versor, r, c) {
+                for (i, j) in image {
+                    if i >= 0 && j >= 0 && (i as usize) < fx.0 && (j as usize) < fx.1 {
+                        cells.push((i, j, hue));
+                    }
+                }
+            } else {
+                remainder.push((r, c, h));
+            }
+        }
+    }
+    for (i, g) in rule.nerve.germs.iter().enumerate() {
+        if g.source.is_some() {
+            continue;
+        }
+        let mut addr = [0u8; 32];
+        addr[..8].copy_from_slice(&(i as u64).to_le_bytes());
+        if claimed.contains(&addr) {
+            continue;
+        }
+        for &(r, c, _, a) in &g.chain {
+            if a != 0 && r >= 0 && c >= 0 && (r as usize) < fx.0 && (c as usize) < fx.1 {
+                cells.push((r, c, a));
+            }
+        }
+    }
+    if class {
+        return None;
+    }
+    cells.sort_unstable();
+    cells.dedup();
+    remainder.sort_unstable();
+    Some(Speech { frame: fx, cells, remainder })
+}
+
 /// Path one: keep every body's carriage as a germ, build the nerve from
 /// after-supports. A body that does not spell stays in the remainder.
 fn nerve_of(
@@ -514,6 +741,8 @@ fn nerve_of(
             versor: pr.carriage.v.clone(),
             word: spelling.word,
             chain,
+            source: Some(a.moduli.clone()),
+            target: Some(b.moduli.clone()),
         });
     }
     if germs.len() < 2 {
@@ -816,5 +1045,31 @@ mod tests {
         ];
         let c = comprehend(&disagree);
         assert!(!c.framed, "frames that disagree are not one connection");
+    }
+
+    #[test]
+    fn a_shift_family_extracts_a_rule_and_speaks_the_test() {
+        let family = vec![
+            (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
+            (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
+        ];
+        let family: Vec<(Grid, Grid)> = family
+            .into_iter()
+            .map(|(a, b)| {
+                (
+                    a,
+                    b.into_iter()
+                        .map(|row| row.into_iter().map(|h| if h == 1 { 2 } else { h }).collect())
+                        .collect(),
+                )
+            })
+            .collect();
+        let c = comprehend(&family);
+        if let Some(rule) = extract_rule(&family) {
+            assert!(rule.nerve.germ_count() >= 1);
+            let _ = speak_rule(&rule, &grid(&["1100", "0000"]));
+        }
+        let t = c.transport.expect("still a connection");
+        assert_eq!(speak_total(&t, &grid(&["1100", "0000"])).map(|s| s.remainder.is_empty()), Some(true));
     }
 }

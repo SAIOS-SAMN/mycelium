@@ -295,6 +295,7 @@ fn main() {
     let (mut projected, mut proj_solved, mut uniq_solved) = (0u64, 0u64, 0u64);
     let mut refined = 0u64; // accepted compression bids (0x09)
     let mut learned = 0u64; // syllabus words received (0x0D)
+    let (mut rules_extracted, mut rules_held_class, mut tests_full, mut solves_paid) = (0u64, 0u64, 0u64, 0u64);
     let (mut last_genome, mut last_settles) = (usize::MAX, u64::MAX);
     let mut k_step = 0u64; // the judge's k-step last read: this voice's temporal coordinate
     // The hypha's spoken receipts, not a local memo, decide which listings
@@ -606,6 +607,8 @@ fn main() {
             let mag = family_magnitude(&train);
             physics.bump(&mag);
             physics.spend(Physics::lanes_of(&mag)); // thought is priced on the lanes it occupies
+            let extracted = mycelium::transducer::family::extract_rule(&train);
+            let rule = extracted.as_ref().or(comprehended.rule.as_ref());
             eprintln!(
                 "[{name}] [{}] family {:02x}{:02x}… {} pairs, {} tests: {}",
                 tuniversal.stamp(),
@@ -613,68 +616,98 @@ fn main() {
                 tid[1],
                 train.len(),
                 tests.len(),
-                match (&comprehended.transport, comprehended.framed) {
-                    (Some(t), _) => format!("comprehended ({} rules, {} created, {} removed)", t.rules.len(), t.created.len(), t.removed.len()),
-                    (None, true) => format!("residual {} cells", comprehended.residual.len()),
-                    (None, false) => "frames disagree".to_string(),
+                match (rule, &comprehended.transport, comprehended.framed) {
+                    (Some(r), _, _) => format!("rule {} germs, {} faces", r.nerve.germ_count(), r.faces.len()),
+                    (None, Some(t), _) => format!("comprehended ({} rules, {} created, {} removed)", t.rules.len(), t.created.len(), t.removed.len()),
+                    (None, None, true) => format!("residual {} cells", comprehended.residual.len()),
+                    (None, None, false) => "frames disagree".to_string(),
                 },
             );
-            match comprehended.transport {
-                Some(transport) => {
-                    // THE MINT ON THE LIVE PATH: a multi-germ sentence is one
-                    // word; otherwise each class rule is a connection.
-                    let as_sentence = comprehended.sentence.as_ref().is_some_and(|n| speak_sentence(&mut entity, &name, n));
-                    if !as_sentence {
-                        let (_, _, e) = speak_connections(&mut entity, &name, &transport, &train, &tests);
-                        errors += e;
-                    }
-                    let outs: Vec<Option<Vec<Vec<u8>>>> =
-                        tests
-                            .iter()
-                            .map(|x| {
-                                mycelium::transducer::family::speak_total(&transport, x).and_then(|s| match s.remainder.as_slice() {
-                                    [] => Some(s.grid()),
-                                    _ => None, // an unreached body is not submitted as a guess
-                                })
-                            })
-                            .collect();
-                    if !tests.is_empty() && outs.iter().all(|o| o.is_some()) {
-                        let outs: Vec<Vec<Vec<u8>>> = outs.into_iter().flatten().collect();
-                        if let Ok((code, _mu)) = entity.submit_solve(&tid, &outs) {
-                            projected += 1;
-                            match code {
-                                mycelium::anastome::dialogue::SOLVE_BOUNTY => {
-                                    proj_solved += 1;
-                                    uniq_solved += 1;
-                                }
-                                mycelium::anastome::dialogue::SOLVE_FLOOR => proj_solved += 1,
-                                _ => {}
-                            }
+            if let Some(rule) = rule {
+                rules_extracted += 1;
+                if let Some(n) = &comprehended.sentence {
+                    let _ = speak_sentence(&mut entity, &name, n);
+                }
+                let mut reached = true;
+                let mut outs: Vec<Option<Vec<Vec<u8>>>> = Vec::new();
+                for x in &tests {
+                    match mycelium::transducer::family::speak_rule(rule, x) {
+                        Some(s) if s.remainder.is_empty() => {
+                            tests_full += 1;
+                            outs.push(Some(s.grid()));
+                        }
+                        Some(s) => {
+                            reached = false;
+                            entity.hold_thought(s.remainder.iter().map(|&(r, c, h)| (r, c, h, h)).collect());
+                            outs.push(None);
+                        }
+                        None => {
+                            reached = false;
+                            rules_held_class += 1;
+                            outs.push(None);
                         }
                     }
                 }
-                None => {
-                    // THINKING, NOT SPEECH: a family the connection does not
-                    // collapse is this mind's open remainder. Its pairs are
-                    // germinated and held here as thought — never spoken as
-                    // percept pairs, never entered as vocabulary. The corpus
-                    // itself stands on the hypha's book as market demand; the
-                    // entity's work is to close the remainder into a word.
-                    let mut held = 0usize;
-                    for (x, y) in &train {
-                        let (hi, wi) = (x.len(), x.first().map_or(0, |r| r.len()));
-                        let (ho, wo) = (y.len(), y.first().map_or(0, |r| r.len()));
-                        if hi == 0 || wi == 0 || ho == 0 || wo == 0 {
-                            continue;
+                if reached && !tests.is_empty() && outs.iter().all(|o| o.is_some()) {
+                    let outs: Vec<Vec<Vec<u8>>> = outs.into_iter().flatten().collect();
+                    if let Ok((code, _mu)) = entity.submit_solve(&tid, &outs) {
+                        projected += 1;
+                        match code {
+                            mycelium::anastome::dialogue::SOLVE_BOUNTY => {
+                                proj_solved += 1;
+                                uniq_solved += 1;
+                                solves_paid += 1;
+                            }
+                            mycelium::anastome::dialogue::SOLVE_FLOOR => proj_solved += 1,
+                            _ => {}
                         }
-                        let (a, b) = (grid_to_cells(&embed(x, ho, wo)), grid_to_cells(y));
-                        let Some(germ) = germinate(&a, &b) else { continue };
-                        entity.hold_thought(germ);
-                        held += 1;
                     }
-                    if held > 0 {
-                        eprintln!("[{name}] thought held: family {:02x}{:02x}… {held} pairs uncollapsed — not uttered", tid[0], tid[1]);
+                }
+            } else if let Some(transport) = comprehended.transport.as_ref() {
+                let as_sentence = comprehended.sentence.as_ref().is_some_and(|n| speak_sentence(&mut entity, &name, n));
+                if !as_sentence {
+                    let (_, _, e) = speak_connections(&mut entity, &name, transport, &train, &tests);
+                    errors += e;
+                }
+                let outs: Vec<Option<Vec<Vec<u8>>>> = tests
+                    .iter()
+                    .map(|x| {
+                        mycelium::transducer::family::speak_total(transport, x).and_then(|s| match s.remainder.as_slice() {
+                            [] => Some(s.grid()),
+                            _ => None,
+                        })
+                    })
+                    .collect();
+                if !tests.is_empty() && outs.iter().all(|o| o.is_some()) {
+                    let outs: Vec<Vec<Vec<u8>>> = outs.into_iter().flatten().collect();
+                    if let Ok((code, _mu)) = entity.submit_solve(&tid, &outs) {
+                        projected += 1;
+                        match code {
+                            mycelium::anastome::dialogue::SOLVE_BOUNTY => {
+                                proj_solved += 1;
+                                uniq_solved += 1;
+                                solves_paid += 1;
+                            }
+                            mycelium::anastome::dialogue::SOLVE_FLOOR => proj_solved += 1,
+                            _ => {}
+                        }
                     }
+                }
+            } else {
+                let mut held = 0usize;
+                for (x, y) in &train {
+                    let (hi, wi) = (x.len(), x.first().map_or(0, |r| r.len()));
+                    let (ho, wo) = (y.len(), y.first().map_or(0, |r| r.len()));
+                    if hi == 0 || wi == 0 || ho == 0 || wo == 0 {
+                        continue;
+                    }
+                    let (a, b) = (grid_to_cells(&embed(x, ho, wo)), grid_to_cells(y));
+                    let Some(germ) = germinate(&a, &b) else { continue };
+                    entity.hold_thought(germ);
+                    held += 1;
+                }
+                if held > 0 {
+                    eprintln!("[{name}] thought held: family {:02x}{:02x}… {held} pairs uncollapsed — not uttered", tid[0], tid[1]);
                 }
             }
         }
@@ -750,7 +783,7 @@ fn main() {
                 last_genome = entity.epigenome.genome_len();
                 last_settles = settles;
                 eprintln!(
-                    "[{name}] [{}] K {k_step} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | refined {refined} learned {learned} | genome {} (peak expr {}) discordance {} obstructions {} bubbles {} horizon {} potential {:?} fills {} torsion {} classes {} formed {} axes {}",
+                    "[{name}] [{}] K {k_step} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} paid {solves_paid} | rules {rules_extracted} held-class {rules_held_class} tests-full {tests_full} | refined {refined} learned {learned} | genome {} (peak expr {}) discordance {} obstructions {} bubbles {} horizon {} potential {:?} fills {} torsion {} classes {} formed {} axes {}",
                     tuniversal.stamp(),
                     entity.impedance(),
                     entity.epigenome.genome_len(),
