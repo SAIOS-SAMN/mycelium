@@ -41,6 +41,15 @@ pub enum Outcome {
     Pivot,
 }
 
+/// The Čech glue of a fetched word on an overlapping chart.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Glue {
+    Admitted,
+    Attached,
+    Dialect,
+    Slashed(&'static str),
+}
+
 /// The result of reducing a demand's substance against the generator basis: either
 /// a canonical sentence (fully decomposed; indices into the language the
 /// reduction ran over) or an irreducible residual (a critical pair to complete
@@ -149,6 +158,22 @@ pub struct FieldEntry {
     pub state: crate::transducer::stalk::Closure,
     pub remainder: Vec<(i64, i64, u8, u8)>,
     pub stagnant: [u32; 4],
+}
+
+fn versors_close(vs: &[element::Versor]) -> bool {
+    if vs.len() < 2 {
+        return false;
+    }
+    let mut p = vs[0].clone();
+    for v in &vs[1..] {
+        p = p.geo(v);
+    }
+    let id = element::identity_versor();
+    p.scalar_part() == id.scalar_part() && (1..16).all(|i| p.coeff(i) == id.coeff(i))
+}
+
+fn versor_of(g: &Element) -> element::Versor {
+    crate::transducer::stalk::placement_of(g).unwrap_or_else(element::identity_versor)
 }
 
 fn union_remainders(entries: &[FieldEntry]) -> Vec<(i64, i64, u8, u8)> {
@@ -620,6 +645,15 @@ pub struct Kernel {
     court_upheld: u64,
     court_slashed: u64,
     crt_imported: bool,
+    /// Čech cocycle ledger: holonomy between two hyphas' words on one chart.
+    /// Ruling::Dialect writes here; a nontrivial triangle writes a twisted class.
+    /// Never a preference, never dropped.
+    cocycles: Vec<(
+        crate::transducer::stalk::Invariant,
+        [u8; 32],
+        [u8; 32],
+        element::Versor,
+    )>,
     /// THE SETTLEMENTS awaiting the court: (listing, its chain, the voice,
     /// the utterance, magnitude before, magnitude after). The court replays
     /// the utterance and measures the deflation itself — proof of
@@ -701,8 +735,72 @@ impl Kernel {
     fn syntropic_on_admit(&mut self, addr: [u8; 32]) -> usize {
         let survivor = self.condense_on(&addr);
         self.refine_stratum(&survivor);
+        self.holonomy_orbit(&survivor);
         self.drain_unreachable();
         self.basis_index.get(&survivor).copied().unwrap_or(0)
+    }
+
+    /// Read the holonomy group on the admitted word: a closed orbit of
+    /// gauge transitions condenses through torse_at; an open orbit stays
+    /// free; an orbit that fails to close on a Twisted chart germinates a
+    /// fibre on a fresh axis seeded with the failing transition.
+    fn holonomy_orbit(&mut self, addr: &[u8; 32]) {
+        let Some(i) = self.basis_index.get(addr).copied() else {
+            return;
+        };
+        let trans = self.basis[i].transitions().to_vec();
+        if trans.is_empty() {
+            return;
+        }
+        let inv = crate::transducer::stalk::invariant_of(&self.basis[i]);
+        let twisted = self.field.entries().iter().any(|(_, es)| {
+            es.iter().any(|e| {
+                e.chart == inv && matches!(e.state, crate::transducer::stalk::Closure::Twisted(_))
+            })
+        });
+        let mut asgs: Vec<(Vec<(u8, u8)>, Vec<element::Versor>)> = Vec::new();
+        for (asg, g) in trans {
+            match asgs.iter_mut().find(|(a, _)| a == &asg) {
+                Some((_, vs)) => vs.push(g),
+                None => asgs.push((asg, vec![g])),
+            }
+        }
+        let mut germinate: Option<element::Versor> = None;
+        let mut torse = false;
+        for (_, vs) in asgs {
+            if versors_close(&vs) {
+                torse = true;
+            } else if twisted {
+                if let Some(fail) = vs.last() {
+                    germinate = Some(fail.clone());
+                }
+            }
+        }
+        if torse {
+            self.torse_at(i);
+        }
+        if let Some(fail) = germinate {
+            self.germinate_fibre(i, &fail);
+        }
+    }
+
+    fn germinate_fibre(&mut self, i: usize, fail: &element::Versor) {
+        let axis = self.basis[i]
+            .max_axis()
+            .map_or(element::FIBER_GERMINATED, |m| m.saturating_add(1));
+        let Some(seed) = self.basis[i].fiber(element::FIBER_SPATIAL).cloned() else {
+            let asg = element::assignment(self.basis[i].sub());
+            self.basis[i].record_dislocation(asg, fail.clone());
+            self.touch();
+            return;
+        };
+        self.basis[i].set_fiber(axis, seed);
+        let asg = element::assignment(self.basis[i].sub());
+        self.basis[i].record_dislocation(asg, fail.clone());
+        self.touch();
+        eprintln!(
+            "  germinated fibre axis {axis} from a failed orbit on a Twisted chart"
+        );
     }
 
     /// Drain listings whose occupied lanes have each sat through a full
@@ -1087,16 +1185,14 @@ impl Kernel {
             .get(addr)
             .and_then(|&i| self.basis.get(i))
             .or_else(|| self.cavity_book.get(addr))
+            .or_else(|| self.provisional.iter().find(|(a, _)| a == addr).map(|(_, e)| e))
     }
 
     /// A word the court finalized here joins the ruled cover (keyed admit).
-    /// Only closed connections: residual tapes stay off the mesh digest.
     fn ruled_admit(&mut self, addr: &[u8; 32]) {
         if let Some(w) = self.word_at(addr) {
-            if w.is_connection() {
-                let inv = crate::transducer::stalk::invariant_of(w);
-                self.ruled.admit(&inv, *addr);
-            }
+            let inv = crate::transducer::stalk::invariant_of(w);
+            self.ruled.admit(&inv, *addr);
         }
     }
 
@@ -1518,121 +1614,243 @@ impl Kernel {
         }
     }
 
-    /// First vantage of the court organ: replay the provisional word.
-    /// Fail → slash with a journal reason. Pass → dialect on the basis, Offer ready.
-    pub fn court_first(&mut self, addr: &[u8; 32]) -> Result<Element, &'static str> {
-        let Some(i) = self.provisional.iter().position(|(a, _)| a == addr) else {
-            return Err("not on the docket");
-        };
-        let spoken = self.provisional[i].1.clone();
-        if let Some(reason) = crate::verdict::blind_replay(&spoken) {
-            eprintln!(
-                "  court slash {:02x}{:02x}… {reason}",
-                addr[0],
-                addr[1]
-            );
-            let _ = self.apply_verdict(addr, crate::anastome::dialogue::RULING_SLASHED);
-            self.court_slashed += 1;
-            return Err(reason);
-        }
-        if self.basis_index.get(addr).is_none() {
-            self.basis_push(spoken.clone(), [0; 32]);
-        }
-        Ok(spoken)
-    }
-
-    /// Run first vantage on every provisional not yet Offered. Returns the
-    /// words that passed (to be signed and Offered on the nerve). First
-    /// vantage itself is not an Offer — `offered` is marked only here, when
-    /// the stroke is ready to speak on the nerve.
-    pub fn court_stroke(&mut self) -> Vec<([u8; 32], Element, Vec<[u8; 32]>, [u64; 4], u64)> {
+    /// Court organ: the docket is the field's projection — listings whose
+    /// closure is not Flat and whose deflation is nonzero. Fail → slash with
+    /// a replay reason and relocate to the cavity atlas. Pass → a section on
+    /// the ruled cover, escrow held. The basis does not grow here.
+    pub fn court_stroke(&mut self) {
         let cap = crate::physics::spend_unit() as usize;
         let mut keys: Vec<[u8; 32]> = Vec::new();
-        for (a, _) in &self.provisional {
-            if self.offered.get(a).is_some() {
-                continue;
-            }
-            if keys.iter().any(|k| k == a) {
-                continue;
-            }
-            keys.push(*a);
+        for (addr, entries) in self.field.entries() {
             if keys.len() >= cap {
                 break;
             }
+            if !entries.iter().any(|e| !e.state.is_flat()) {
+                continue;
+            }
+            if self.deflation_of(addr).iter().all(|&x| x == 0) {
+                continue;
+            }
+            if keys.iter().any(|k| k == addr) {
+                continue;
+            }
+            keys.push(*addr);
         }
-        let mut out = Vec::new();
         for addr in keys {
-            if let Ok(spoken) = self.court_first(&addr) {
-                self.offered.insert(addr, ());
-                let voices = self
-                    .treasury
-                    .escrowed_awards()
-                    .iter()
-                    .find(|(a, _, _, _)| a == &addr)
-                    .map(|(_, v, _, _)| v.clone())
-                    .unwrap_or_default();
-                let deflation = self.deflation_of(&addr);
-                let k = self.provisional_k.get(&addr).copied().unwrap_or(0);
-                out.push((addr, spoken, voices, deflation, k));
+            let spoken = self
+                .word_at(&addr)
+                .cloned()
+                .or_else(|| self.pending.iter().find(|(p, _)| p.address() == addr).map(|(p, _)| p.clone()));
+            let Some(spoken) = spoken else {
+                continue;
+            };
+            if let Some(reason) = crate::verdict::blind_replay(&spoken) {
+                eprintln!("  court slash {:02x}{:02x}… {reason}", addr[0], addr[1]);
+                let _ = self.treasury.revoke_award(&addr, true);
+                self.relocate_cavity(&addr);
+                if let Some(i) = self.provisional.iter().position(|(a, _)| a == &addr) {
+                    self.provisional.remove(i);
+                }
+                self.court_slashed += 1;
+                continue;
+            }
+            self.ruled_admit(&addr);
+            eprintln!("  court section {:02x}{:02x}… ruled cover, escrow held", addr[0], addr[1]);
+        }
+    }
+
+    /// Glue a word fetched from a peer whose cover meets ours on this chart.
+    /// Replay always. Identity holonomy admits to the ruled cover and the
+    /// basis (this is where the language grows). Placement attaches a
+    /// section. Any other group element is a cocycle row. A third word on
+    /// the chart mounts the triangle test; a nontrivial loop is a twisted
+    /// class, never resolved by preference.
+    pub fn glue_fetched(&mut self, spoken: Element, peer: [u8; 32], self_id: [u8; 32]) -> Glue {
+        if let Some(reason) = crate::verdict::blind_replay(&spoken) {
+            eprintln!("  court glue slash {:02x}{:02x}… {reason}", spoken.address()[0], spoken.address()[1]);
+            return Glue::Slashed(reason);
+        }
+        let addr = spoken.address();
+        let inv = crate::transducer::stalk::invariant_of(&spoken);
+        let asg = element::assignment(spoken.sub());
+        let fibre: Vec<[u8; 32]> = {
+            let mut f = self.ruled.fiber(&inv).to_vec();
+            for a in self.stalks.fiber(&inv) {
+                if !f.contains(a) {
+                    f.push(*a);
+                }
+            }
+            f
+        };
+        let held = fibre
+            .iter()
+            .filter_map(|a| self.word_at(a).cloned())
+            .find(|w| w.address() != addr && !w.axes().is_empty());
+        let outcome = match &held {
+            None => Glue::Admitted,
+            Some(rep) => match crate::transducer::cech::transition(rep, &spoken) {
+                None => Glue::Admitted,
+                Some(g) if g.is_identity() => Glue::Admitted,
+                Some(g) if crate::transducer::stalk::placement_of(&g).is_some() => Glue::Attached,
+                Some(g) => {
+                    let v = versor_of(&g);
+                    self.cocycles.push((inv.clone(), self_id, peer, v));
+                    eprintln!(
+                        "  court cocycle {:02x}{:02x}… dialect versor on the overlap",
+                        addr[0],
+                        addr[1]
+                    );
+                    Glue::Dialect
+                }
+            },
+        };
+        // Triangle: three words on the chart, product of transitions.
+        let views: Vec<Element> = fibre
+            .iter()
+            .filter_map(|a| self.word_at(a).cloned())
+            .chain(std::iter::once(spoken.clone()))
+            .fold(Vec::new(), |mut acc, w| {
+                if !acc.iter().any(|h| h.address() == w.address()) {
+                    acc.push(w);
+                }
+                acc
+            });
+        if views.len() >= 3 {
+            if let (Some(ab), Some(bc), Some(ca)) = (
+                crate::transducer::cech::transition(&views[0], &views[1]),
+                crate::transducer::cech::transition(&views[1], &views[2]),
+                crate::transducer::cech::transition(&views[2], &views[0]),
+            ) {
+                if !crate::transducer::cech::glues(&ab, &bc, &ca) {
+                    let h = crate::transducer::cech::holonomy(&ab, &bc, &ca);
+                    self.cocycles.push((inv.clone(), self_id, peer, versor_of(&h)));
+                    eprintln!(
+                        "  court triangle {:02x}{:02x}… nontrivial loop, twisted class",
+                        addr[0],
+                        addr[1]
+                    );
+                }
+            }
+        }
+        match outcome {
+            Glue::Admitted => {
+                if self.basis_index.get(&addr).is_none()
+                    && !(spoken.is_connection() && spoken.letters().is_none())
+                {
+                    self.basis_push(spoken.clone(), peer);
+                }
+                if let Some(i) = self.basis_index.get(&addr).copied() {
+                    self.basis[i].record_dislocation(asg, element::identity_versor());
+                }
+                self.ruled_admit(&addr);
+                let _ = self.treasury.release_award(&addr);
+                if let Some(i) = self.provisional.iter().position(|(a, _)| a == &addr) {
+                    self.provisional.remove(i);
+                }
+                self.court_upheld += 1;
+            }
+            Glue::Attached => {
+                if let Some(rep) = held {
+                    if let Some(g) = crate::transducer::cech::transition(&rep, &spoken) {
+                        if let Some(v) = crate::transducer::stalk::placement_of(&g) {
+                            if let Some(i) = self.basis_index.get(&rep.address()).copied() {
+                                self.basis[i].record_dislocation(asg, v);
+                                self.touch();
+                            }
+                        }
+                    }
+                }
+                self.ruled_admit(&addr);
+                let _ = self.treasury.release_award(&addr);
+            }
+            Glue::Dialect | Glue::Slashed(_) => {}
+        }
+        outcome
+    }
+
+    /// Charts this hypha covers: Twisted or Cavity listings, per occupied lane.
+    /// Never the whole pending book — that clone was the last deploy's leak.
+    pub fn own_cover_charts(&self) -> Vec<(u8, crate::transducer::stalk::Invariant)> {
+        let mut out = Vec::new();
+        for (addr, entries) in self.field.entries() {
+            let mag = self.tension.get(addr).copied().unwrap_or([0; 4]);
+            let lane = crate::network::nerve::occupied_lane(&mag);
+            for e in entries {
+                if matches!(
+                    e.state,
+                    crate::transducer::stalk::Closure::Twisted(_) | crate::transducer::stalk::Closure::Cavity
+                ) {
+                    if !out.iter().any(|(l, inv)| *l == lane && inv == &e.chart) {
+                        out.push((lane, e.chart.clone()));
+                    }
+                }
             }
         }
         out
     }
 
-    /// Second vantage: a peer's Offer, already signature-verified.
-    /// Replay through `rule`. Glue (Consilient / Attached / Dialect / Admitted)
-    /// → UPHELD + Installed payload. Dialect is recorded, never punished.
-    pub fn accept_offer(&mut self, addr: &[u8; 32], spoken: Element, deflation: [u64; 4]) -> Option<Element> {
-        if let Some(reason) = crate::verdict::blind_replay(&spoken) {
-            eprintln!("  court offer slash {:02x}{:02x}… {reason}", addr[0], addr[1]);
-            return None;
-        }
-        let outcome = crate::verdict::rule(
-            &self.court_federation,
-            &self.court_fed_index,
-            &self.ruled,
-            addr,
-            Some(&spoken),
-            Some(&deflation),
-        );
-        match outcome {
-            crate::verdict::Ruling::Slashed(reason) => {
-                eprintln!("  court offer slash {:02x}{:02x}… {reason}", addr[0], addr[1]);
-                None
-            }
-            crate::verdict::Ruling::Dialect(_)
-            | crate::verdict::Ruling::Consilient(_)
-            | crate::verdict::Ruling::Admitted(_)
-            | crate::verdict::Ruling::Attached { .. } => {
-                if self.basis_index.get(addr).is_none() {
-                    self.basis_push(spoken.clone(), [0; 32]);
-                }
-                if self.provisional.iter().any(|(a, _)| a == addr) {
-                    let _ = self.apply_verdict(addr, crate::anastome::dialogue::RULING_UPHELD);
-                } else {
-                    self.ruled_admit(addr);
-                    self.fed_admit(addr, spoken.clone());
-                }
-                self.court_upheld += 1;
-                Some(spoken)
-            }
-        }
+    pub fn cocycles(
+        &self,
+    ) -> &[(
+        crate::transducer::stalk::Invariant,
+        [u8; 32],
+        [u8; 32],
+        element::Versor,
+    )] {
+        &self.cocycles
     }
 
-    /// An Installed from two organs: replay once, then admit. Never on signatures alone.
-    pub fn accept_installed(&mut self, addr: &[u8; 32], spoken: Element) -> bool {
-        if crate::verdict::blind_replay(&spoken).is_some() {
-            return false;
+    pub fn serve_ruled(
+        &self,
+        inv: &crate::transducer::stalk::Invariant,
+        have: &[[u8; 32]],
+        budget: usize,
+    ) -> Vec<Vec<u8>> {
+        let mut out = Vec::new();
+        let mut used = 0usize;
+        for addr in self.ruled.fiber(inv) {
+            if have.contains(addr) {
+                continue;
+            }
+            let Some(w) = self.word_at(addr) else { continue };
+            if w.is_connection() && w.letters().is_none() {
+                continue; // letterless history is never taught
+            }
+            let bytes = w.to_bytes();
+            if used + bytes.len() + 4 > budget {
+                break;
+            }
+            used += bytes.len() + 4;
+            out.push(bytes);
         }
-        if spoken.is_connection() && spoken.letters().is_none() {
-            return false; // letterless history is never taught
+        out
+    }
+
+    pub fn ruled_digests(&self) -> Vec<crate::transducer::sheaf::StratumDigest> {
+        crate::transducer::sheaf::digests(&self.ruled)
+    }
+
+    pub fn ruled_have(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<[u8; 32]> {
+        self.ruled.fiber(inv).to_vec()
+    }
+
+    pub fn ruled_root(&self) -> [u8; 32] {
+        let digests = crate::transducer::sheaf::digests(&self.ruled);
+        let mut h = blake3::Hasher::new();
+        for d in &digests {
+            h.update(&d.root);
         }
-        if self.basis_index.get(addr).is_none() {
-            self.basis_push(spoken.clone(), [0; 32]);
+        *h.finalize().as_bytes()
+    }
+
+    /// Test/helper: identity-glue every provisional as if an overlapping
+    /// hypha fetched the same word. The basis grows from gluing, not from
+    /// the two-voice quorum that listed them.
+    pub fn glue_local(&mut self) {
+        let words: Vec<Element> = self.provisional.iter().map(|(_, e)| e.clone()).collect();
+        for w in words {
+            let _ = self.glue_fetched(w, [2; 32], [1; 32]);
         }
-        self.ruled_admit(addr);
-        self.fed_admit(addr, spoken);
-        true
     }
 
     fn fed_admit(&mut self, addr: &[u8; 32], spoken: Element) {
@@ -1658,20 +1876,21 @@ impl Kernel {
         out
     }
 
-    /// Unlist restored demands whose key is not this hypha's.
-    pub fn unlist_foreign(&mut self, home: impl Fn(&[u8; 32]) -> bool) {
+    /// Relocate restored demands whose chart no longer homes here. Never dropped.
+    pub fn unlist_foreign(&mut self, home: impl Fn(&Element) -> bool) {
         let keys: Vec<[u8; 32]> = self
             .pending
             .iter()
+            .filter(|(p, _)| !home(p))
             .map(|(p, _)| p.address())
-            .filter(|a| !home(a))
             .collect();
         for k in keys {
-            self.unlist(&k, false);
+            self.relocate_cavity(&k);
         }
     }
 
     /// Import a court.federation once as the initial ruled cover.
+    /// Letterless words are history and are never taught (not on the basis).
     pub fn import_crt(&mut self, state: crate::court::ledger::CourtState) {
         if self.crt_imported {
             return;
@@ -1679,10 +1898,10 @@ impl Kernel {
         self.crt_imported = true;
         for (addr, elem) in state.federation {
             let letterless = elem.is_connection() && elem.letters().is_none();
-            if self.basis_index.get(&addr).is_none() {
-                self.basis_insert(elem.clone(), [0; 32]);
-            }
             if !letterless {
+                if self.basis_index.get(&addr).is_none() {
+                    self.basis_insert(elem.clone(), [0; 32]);
+                }
                 self.ruled_admit(&addr);
             }
             self.fed_admit(&addr, elem);
@@ -1740,7 +1959,7 @@ impl Kernel {
     /// stand on that lane, read on all four lanes at once. A residual fits
     /// the book when every lane it has magnitude on has room — no lane is
     /// chosen, no lane is ordered above another (the polytonic law).
-    fn lane_room(&self) -> [usize; 4] {
+    pub fn lane_room(&self) -> [usize; 4] {
         let cap = self.dynamic_lane_capacity();
         let mut occupied = [0usize; 4];
         for (p, _) in &self.pending {
@@ -2471,12 +2690,24 @@ impl Kernel {
                     // time, parent-linked to the mesh's whole history.
                     self.append_step(addr, voice);
                     self.complete_composite_child(&gaddr, voice); // lineage
-                    // The listing is settled. The basis grows only from the
-                    // court organ's first vantage, not from this quorum.
-                    match self.court_first(&addr) {
-                        Ok(_) => Outcome::Installed(self.basis_index.get(&addr).copied().unwrap_or(0)),
-                        Err(_) => Outcome::GermPending,
+                    // The listing is settled. The basis grows only from gluing,
+                    // never from a single hypha's two voices. The field stays
+                    // so the court stroke can read it; the page clears.
+                    let inv = crate::transducer::stalk::invariant_of(&residual);
+                    if self.field.get(&addr).is_none() {
+                        self.write_field(
+                            &addr,
+                            inv,
+                            crate::transducer::stalk::Closure::Cavity,
+                            residual.sub().to_vec(),
+                            &residual.magnitude(),
+                            &residual.magnitude(),
+                        );
                     }
+                    let _ = self.pending_take(&addr);
+                    self.on_page.remove(&addr);
+                    self.quote_frontier.remove(&addr);
+                    Outcome::GermPending
                 } else {
                     // THE TORSION SOURCE: the open demand's pressure is the
                     // torsion the word actually carries. Every stored cycle
@@ -3062,6 +3293,16 @@ impl Kernel {
             out.extend_from_slice(&(eb.len() as u32).to_le_bytes());
             out.extend_from_slice(&eb);
         }
+        out.extend_from_slice(&(self.cocycles.len() as u32).to_le_bytes());
+        for (inv, a, b, v) in &self.cocycles {
+            out.extend_from_slice(&(inv.0.len() as u32).to_le_bytes());
+            for axis in &inv.0 {
+                out.extend_from_slice(&axis.to_le_bytes());
+            }
+            out.extend_from_slice(a);
+            out.extend_from_slice(b);
+            v.to_bytes(&mut out);
+        }
         out
     }
 
@@ -3291,6 +3532,23 @@ impl Kernel {
                     *pos += elen;
                     kernel.court_fed_index.insert(addr, kernel.court_federation.len());
                     kernel.court_federation.push((addr, elem));
+                }
+                if *pos + 4 <= b.len() {
+                    let n = read_u32(b, pos)? as usize;
+                    for _ in 0..n.min(1 << 16) {
+                        let nax = read_u32(b, pos)? as usize;
+                        let mut axes = Vec::with_capacity(nax.min(256));
+                        for _ in 0..nax {
+                            axes.push(u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?));
+                            *pos += 8;
+                        }
+                        let a: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                        *pos += 32;
+                        let bb: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                        *pos += 32;
+                        let v = element::Versor::from_bytes(b, pos)?;
+                        kernel.cocycles.push((crate::transducer::stalk::Invariant(axes), a, bb, v));
+                    }
                 }
             }
             for (addr, entries) in kernel.field.entries() {
@@ -3804,9 +4062,15 @@ mod tests {
         vec![(sr, sc, 1), (sr, sc + 1, 1), (sr + 1, sc, 1)]
     }
 
+    fn glue_pair(k: &mut Kernel, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) {
+        k.ingest(a, b, [1; 32]);
+        let _ = k.ingest(a, b, [2; 32]);
+        k.glue_local();
+    }
+
     /// A novel SUBSTANCE (here a rotation) germinates: one voice pends, a second
-    /// completes the rule; afterward the same demand REDUCES to the length-1
-    /// sentence [0] — no lookup, the confluent normal form.
+    /// settles the listing; the basis grows only from gluing. Afterward the same
+    /// demand REDUCES to the length-1 sentence [0].
     #[test]
     fn a_novel_substance_germinates_then_decomposes() {
         let mut k = Kernel::new();
@@ -3814,8 +4078,10 @@ mod tests {
         let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)]; // R180 of L — non-trivial substance
         assert_eq!(k.ingest(&a, &rot, [1; 32]), Outcome::GermPending);
         assert_eq!(k.basis_len(), 0, "one voice does not complete");
-        assert_eq!(k.ingest(&a, &rot, [2; 32]), Outcome::Installed(0), "two kernels complete the rule");
-        assert_eq!(k.basis_len(), 1);
+        assert_eq!(k.ingest(&a, &rot, [2; 32]), Outcome::GermPending, "two voices settle, they do not install");
+        assert_eq!(k.basis_len(), 0, "zero basis installs from a single hypha's two voices");
+        k.glue_local();
+        assert_eq!(k.basis_len(), 1, "the basis grows from gluing");
         assert_eq!(k.ingest(&a, &rot, [3; 32]), Outcome::Decomposed(vec![0]), "reduces to the length-1 sentence");
     }
 
@@ -3829,9 +4095,11 @@ mod tests {
         let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)]; // a rotation (group substance)
         let bar = vec![(0, 0, 1), (0, 1, 1), (0, 2, 1)]; // a deformation (residual substance)
         k.ingest(&a, &rot, [1; 32]);
-        assert_eq!(k.ingest(&a, &rot, [2; 32]), Outcome::Installed(0)); // a rotation generator
+        assert_eq!(k.ingest(&a, &rot, [2; 32]), Outcome::GermPending);
+        k.glue_local(); // a rotation generator
         k.ingest(&a, &bar, [1; 32]);
-        assert_eq!(k.ingest(&a, &bar, [2; 32]), Outcome::Installed(1)); // a residual generator
+        assert_eq!(k.ingest(&a, &bar, [2; 32]), Outcome::GermPending);
+        k.glue_local(); // a residual generator
         let balance = k.treasury().balance_mu(&[2; 32]);
         let snap = k.snapshot();
 
@@ -3855,7 +4123,7 @@ mod tests {
         let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
         assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
         let chain = germinate(&a, &b).unwrap();
-        assert!(matches!(k.attest(&chain, [2; 32]), Outcome::Installed(0)));
+        assert_eq!(k.attest(&chain, [2; 32]), Outcome::GermPending);
         let before = k.dockets();
         assert_eq!(before.len(), 1);
         assert!(before[0].4.iter().any(|&x| x > 0), "deflation was measured at install");
@@ -3878,7 +4146,8 @@ mod tests {
         let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
         let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)]; // R180 of L at origin
         k.ingest(&a, &rot, [1; 32]);
-        assert_eq!(k.ingest(&a, &rot, [2; 32]), Outcome::Installed(0));
+        assert_eq!(k.ingest(&a, &rot, [2; 32]), Outcome::GermPending);
+        k.glue_local();
         // the SAME rotation, transposed +10 in col: same substance → same sentence.
         let a_far = vec![(0, 10, 1), (0, 11, 1), (1, 10, 1)];
         let rot_far = vec![(0, 11, 1), (1, 10, 1), (1, 11, 1)];
@@ -3902,7 +4171,11 @@ mod tests {
         for n in 0..8u8 {
             let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, n + 2)];
             k.ingest(&a, &b, [1; 32]);
-            assert!(matches!(k.ingest(&a, &b, [2; 32]), Outcome::Installed(_)), "germ {n} installs");
+            match k.ingest(&a, &b, [2; 32]) {
+                Outcome::GermPending => k.glue_local(),
+                Outcome::Installed(_) => {}
+                o => panic!("germ {n}: {o:?}"),
+            }
         }
         // Two fresh germs: their first voices each trigger a syntropic stroke (the
         // mesh is depleted), partially recovering the lane.
@@ -3913,11 +4186,16 @@ mod tests {
         assert_eq!(k.ingest(&a, &ga, [1; 32]), Outcome::GermPending);
         assert_eq!(k.ingest(&a, &gb, [1; 32]), Outcome::GermPending);
         // A's quorum lands on the recovered lane and installs — spending it back out…
-        assert!(matches!(k.ingest(&a, &ga, [2; 32]), Outcome::Installed(_)));
+        assert_eq!(k.ingest(&a, &ga, [2; 32]), Outcome::GermPending);
+        k.glue_local();
         // …so B's quorum finds the lane DEPLETED and DEFERS: quorum met, fuel absent.
         assert_eq!(k.ingest(&a, &gb, [2; 32]), Outcome::GermPending, "deferred, not lost");
-        // A further voice arrives after another stroke: the deferred germ installs.
-        assert!(matches!(k.ingest(&a, &gb, [3; 32]), Outcome::Installed(_)), "deferral completes on recovery");
+        // A further voice arrives after another stroke: the deferred germ completes.
+        match k.ingest(&a, &gb, [3; 32]) {
+            Outcome::GermPending => k.glue_local(),
+            Outcome::Installed(_) => {}
+            o => panic!("deferral complete: {o:?}"),
+        }
     }
 
     /// THE SYNTROPIC STROKE CONSOLIDATES: a generator the rest of the basis already
@@ -3931,7 +4209,8 @@ mod tests {
         let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
         let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
         k.ingest(&a, &rot, [1; 32]);
-        assert!(matches!(k.ingest(&a, &rot, [2; 32]), Outcome::Installed(0)));
+        assert_eq!(k.ingest(&a, &rot, [2; 32]), Outcome::GermPending);
+        k.glue_local();
         // Fabricate the stale duplicate: the SAME deformation germinated far away —
         // centering makes it the identical pattern — slipped in past the
         // reduce-gate (as an imported/legacy entry would be).
@@ -4004,7 +4283,11 @@ mod tests {
         let mut k = Kernel::new();
         let install = |k: &mut Kernel, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]| {
             k.ingest(a, b, [1; 32]);
-            assert!(matches!(k.ingest(a, b, [2; 32]), Outcome::Installed(_)));
+            match k.ingest(a, b, [2; 32]) {
+                Outcome::GermPending => k.glue_local(),
+                Outcome::Installed(_) => {}
+                o => panic!("expected settle or puncture, got {o:?}"),
+            }
         };
         // BIG (3 cells) installs FIRST, so size-greed would prefer it.
         install(&mut k, &[(0, 0, 1), (0, 1, 3), (0, 2, 5)], &[(0, 0, 2), (0, 1, 4), (0, 2, 6)]);
@@ -4046,7 +4329,8 @@ mod tests {
         assert!((0..4).any(|l| mu[l] > work.magnitude()[l]), "priced ABOVE raw magnitude — tension premium");
         let chain = work.sub().to_vec();
         let out = k.attest(&chain, [2; 32]);
-        assert!(matches!(out, Outcome::Installed(0)), "consilience installs: {out:?}");
+        assert_eq!(out, Outcome::GermPending, "consilience settles: {out:?}");
+        k.glue_local();
         assert_eq!(k.voices_of(&k.basis()[0].address()).len(), 2, "the settle parties");
         assert!(k.quote(4).1.is_empty(), "the market cleared");
     }
@@ -4139,7 +4423,8 @@ mod tests {
         let a = vec![(0, 0, 1u8), (0, 1, 1)];
         let b = vec![(0, 0, 2u8), (0, 1, 2)];
         k.ingest(&a, &b, [1; 32]);
-        assert!(matches!(k.ingest(&a, &b, [2; 32]), Outcome::Installed(0)));
+        assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending);
+        k.glue_local();
         let _word = k.basis()[0].address();
         // The entity's reduction over the language: the word cited at the
         // origin, the far cell left as the residual.
@@ -4270,6 +4555,7 @@ mod tests {
             let mut g = k.lock().unwrap();
             g.ingest(&a, &b, [1; 32]);
             g.ingest(&a, &b, [2; 32]);
+            g.glue_local();
         }
         let (word, body) = {
             let g = k.lock().unwrap();
@@ -4361,7 +4647,8 @@ mod tests {
         assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
         assert!(!k.anchor_evidence().is_empty(), "birth deposited evidence");
         let chain = germinate(&a, &b).unwrap();
-        assert!(matches!(k.attest(&chain, [2; 32]), Outcome::Installed(0)));
+        assert_eq!(k.attest(&chain, [2; 32]), Outcome::GermPending);
+        k.glue_local();
         assert!(k.basis()[0].anchor().is_none(), "born ⊤ — one evidence never binds");
         // The court's family-derived π*: hue-1 cells touching hue 3.
         let addr = k.basis()[0].address();
@@ -4422,7 +4709,7 @@ mod tests {
         let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
         assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
         let chain = germinate(&a, &b).unwrap();
-        assert!(matches!(k.attest(&chain, [2; 32]), Outcome::Installed(0)));
+        assert_eq!(k.attest(&chain, [2; 32]), Outcome::GermPending);
         // The install PAID NOTHING — the award sits in escrow.
         assert_eq!(k.treasury().balance_mu(&[1; 32]), [0; 4], "unfinalized speech earns nothing");
         assert_eq!(k.treasury().balance_mu(&[2; 32]), [0; 4]);
@@ -4449,12 +4736,9 @@ mod tests {
         let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
         assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
         let chain = germinate(&a, &b).unwrap();
-        assert!(matches!(k.attest(&chain, [2; 32]), Outcome::Installed(0)));
-        let before = k.basis_len();
+        assert_eq!(k.attest(&chain, [2; 32]), Outcome::GermPending);
         let (addr, _, _, _, _, _) = k.dockets()[0].clone();
         assert!(k.apply_verdict(&addr, crate::anastome::dialogue::RULING_SLASHED));
-        assert_eq!(k.basis_len(), before - 1, "the slashed word leaves the language");
-        assert!(k.cavity_book.get(&addr).is_some(), "the residual is a cavity chart, not garbage");
         assert_eq!(k.treasury().balance_mu(&[1; 32]), [0; 4], "nothing was ever paid");
         assert!(k.dockets().is_empty());
     }
@@ -4470,7 +4754,8 @@ mod tests {
         let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
         let b1 = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)]; // (0,0): 1→4
         k.ingest(&a, &b1, [1; 32]);
-        assert!(matches!(k.ingest(&a, &b1, [2; 32]), Outcome::Installed(0)));
+        assert_eq!(k.ingest(&a, &b1, [2; 32]), Outcome::GermPending);
+        k.glue_local();
         assert_eq!(k.basis_len(), 1);
         // The family member: same cell, DIFFERENT transition (1→7).
         let b2 = vec![(0, 0, 7), (0, 1, 1), (1, 0, 1)];
@@ -4500,7 +4785,8 @@ mod tests {
         let a = vec![(0, 0, 1), (0, 1, 2)];
         let b = vec![(0, 0, 5), (0, 1, 2)]; // (0,0): 1→5
         k.ingest(&a, &b, [1; 32]);
-        assert!(matches!(k.ingest(&a, &b, [2; 32]), Outcome::Installed(0)));
+        assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending);
+        k.glue_local();
         // Fabricate two sibling cards (as a legacy/import would leave them).
         for hue in [6u8, 7] {
             let bx = vec![(0, 0, hue), (0, 1, 2)];
@@ -4527,11 +4813,16 @@ mod tests {
         let a = vec![(0, 0, 1), (0, 1, 9)];
         let b = vec![(0, 0, 4), (0, 1, 9)]; // (0,0): 1→4
         k.ingest(&a, &b, [1; 32]);
-        assert!(matches!(k.ingest(&a, &b, [2; 32]), Outcome::Installed(0)));
+        assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending);
+        k.glue_local();
         let rev = vec![(0, 0, 1), (0, 1, 9)];
         let fwd = vec![(0, 0, 4), (0, 1, 9)];
         k.ingest(&fwd, &rev, [1; 32]); // (0,0): 4→1 — the swap sibling
-        assert!(matches!(k.ingest(&fwd, &rev, [2; 32]), Outcome::Installed(0)), "punctures the axis");
+        match k.ingest(&fwd, &rev, [2; 32]) {
+            Outcome::GermPending => k.glue_local(),
+            Outcome::Installed(_) => {}
+            o => panic!("{o:?}"),
+        }
         assert_eq!(k.basis()[0].sections().len(), 1);
         let syntropic_before = k.physics().syntropic[2];
         k.optimize(); // the stroke: condense (nothing) → TORSE
@@ -4553,12 +4844,17 @@ mod tests {
         let a1 = vec![(0, 0, 1), (0, 1, 2)];
         let b1 = vec![(0, 0, 4), (0, 1, 2)]; // (0,0): 1→4 — pattern P
         k.ingest(&a1, &b1, [1; 32]);
-        assert!(matches!(k.ingest(&a1, &b1, [2; 32]), Outcome::Installed(0)));
+        assert_eq!(k.ingest(&a1, &b1, [2; 32]), Outcome::GermPending);
+        k.glue_local();
         let a2 = vec![(0, 0, 2), (0, 1, 3)];
         let b2 = vec![(0, 0, 2), (0, 1, 9)]; // (0,1): 3→9 — Q shares P's geometry:
         k.ingest(&a2, &b2, [1; 32]);
         // …so under 3.5 it PUNCTURES P's axis (Installed(0) as a section).
-        assert!(matches!(k.ingest(&a2, &b2, [2; 32]), Outcome::Installed(0)));
+        match k.ingest(&a2, &b2, [2; 32]) {
+            Outcome::GermPending => k.glue_local(),
+            Outcome::Installed(_) => {}
+            o => panic!("{o:?}"),
+        }
         assert_eq!(k.basis_len(), 1, "the single-cell family is ONE bundle");
         // A compound scene: BOTH members fire at once, far apart in one body-pair.
         let a3 = vec![(0, 0, 1), (0, 1, 2), (0, 2, 2), (0, 3, 3)];
@@ -4584,7 +4880,8 @@ mod tests {
         let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, 1)]; // bar — no rigid motor
         assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending, "one voice awaits consilience");
         assert_eq!(k.basis_len(), 0, "not yet installed");
-        assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::Installed(0), "two voices install the residual germ");
+        assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending, "two voices settle the residual germ");
+        k.glue_local();
         assert_eq!(k.basis_len(), 1, "the deformation germinated a new axis");
         assert_eq!(k.ingest(&a, &b, [3; 32]), Outcome::Decomposed(vec![0]), "and reduces to it");
     }
@@ -4604,50 +4901,43 @@ mod tests {
         }
         match k.ingest(&a, &b, [2; 32]) {
             Outcome::Fragmented(parts) => {
-                assert!(parts.iter().all(|p| matches!(p, Outcome::Installed(_))));
+                assert!(parts.iter().all(|p| matches!(p, Outcome::GermPending)));
+                k.glue_local();
                 assert_eq!(k.basis_len(), 2, "two distinct motors germinated");
             }
-            o => panic!("expected Fragmented installs, got {o:?}"),
+            o => panic!("expected Fragmented settles, got {o:?}"),
         }
     }
 
-    /// Court organ: two-voice quorum is local dialect, not an Offer.
-    /// The stroke emits the Offer; a second kernel's replay is the
-    /// second vantage (Dialect/Admitted/Attached/Consilient all pass);
-    /// a third admits Installed only after replaying the word.
+    /// Court organ: two-voice quorum does not grow the basis. The stroke
+    /// puts a section on the ruled cover. A peer's fetch glues by replay;
+    /// a forged word is slashed with a reason. Signatures are not consulted.
     #[test]
-    fn court_organ_offer_then_installed_on_replay() {
+    fn court_organ_glue_on_replay_not_on_signatures() {
         let mut home = Kernel::new();
         let mut peer = Kernel::new();
         let mut third = Kernel::new();
         let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
         let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
         assert_eq!(home.ingest(&a, &b, [1; 32]), Outcome::GermPending);
-        assert!(matches!(home.ingest(&a, &b, [2; 32]), Outcome::Installed(0)));
-        let addr = home.basis()[0].address();
-        assert!(!home.offered(&addr), "first vantage is not an Offer");
-        let spoken0 = home.provisional[0].1.clone();
-        for _ in 0..32 {
-            home.provisional.push((addr, spoken0.clone()));
-        }
-        let offers = home.court_stroke();
-        assert_eq!(offers.len(), 1, "the stroke speaks the Offer once, duplicates collapsed");
-        assert!(home.offered(&addr));
-        assert!(home.court_stroke().is_empty(), "an Offer is spoken once");
-        let (addr, spoken, _, deflation, _) = offers.into_iter().next().unwrap();
-        assert!(deflation.iter().any(|&x| x > 0), "deflation rides the Offer");
-        let installed = peer.accept_offer(&addr, spoken.clone(), deflation);
-        assert!(installed.is_some(), "second vantage passes on replay");
+        assert_eq!(home.ingest(&a, &b, [2; 32]), Outcome::GermPending);
+        assert_eq!(home.basis_len(), 0);
+        home.court_stroke();
+        let spoken = home.provisional[0].1.clone();
+        assert!(matches!(
+            peer.glue_fetched(spoken.clone(), [1; 32], [2; 32]),
+            Glue::Admitted
+        ));
         assert!(peer.basis_len() >= 1, "the word is language on the second organ");
-        assert!(
-            third.accept_installed(&addr, spoken.clone()),
-            "third admits after replay"
-        );
+        assert!(matches!(
+            third.glue_fetched(spoken.clone(), [2; 32], [3; 32]),
+            Glue::Admitted
+        ));
         let mut forged = spoken.clone();
         forged.mag = [999, 0, 0, 0];
         assert!(
-            !third.accept_installed(&addr, forged),
-            "never install on a word that fails replay"
+            matches!(third.glue_fetched(forged, [2; 32], [3; 32]), Glue::Slashed(_)),
+            "never admit on a word that fails replay"
         );
     }
 

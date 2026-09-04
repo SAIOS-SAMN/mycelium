@@ -367,6 +367,105 @@ pub fn decode_digests_reply(body: &[u8]) -> Option<Vec<crate::transducer::sheaf:
     Some(out)
 }
 
+/// Bytes the cover/ruled-root signature covers: per-lane cover roots, the
+/// ruled root, and the room vector. Never an individual word.
+pub fn cover_signed_prefix(cover_roots: &[[u8; 32]; 4], ruled_root: &[u8; 32], room: &[u64; 4]) -> Vec<u8> {
+    let mut out = Vec::new();
+    for r in cover_roots {
+        out.extend_from_slice(r);
+    }
+    out.extend_from_slice(ruled_root);
+    for x in room {
+        out.extend_from_slice(&x.to_le_bytes());
+    }
+    out
+}
+
+/// Tail of a digest reply: charts this hypha covers, room, roots, vk, bind, sig.
+/// `[n u32]([lane u8][inv])* [room 4·u64][cover_roots 4·32][ruled_root 32][vk 32][alen u8][addr][sig 64]`
+pub fn encode_cover_digest(
+    charts: &[(u8, crate::transducer::stalk::Invariant)],
+    room: &[u64; 4],
+    cover_roots: &[[u8; 32]; 4],
+    ruled_root: &[u8; 32],
+    vk: &[u8; 32],
+    addr: &str,
+    sig: &[u8; 64],
+) -> Vec<u8> {
+    let mut out = Vec::new();
+    out.extend_from_slice(&(charts.len() as u32).to_le_bytes());
+    for (lane, inv) in charts {
+        out.push(*lane);
+        push_invariant(&mut out, inv);
+    }
+    for x in room {
+        out.extend_from_slice(&x.to_le_bytes());
+    }
+    for r in cover_roots {
+        out.extend_from_slice(r);
+    }
+    out.extend_from_slice(ruled_root);
+    out.extend_from_slice(vk);
+    let ab = addr.as_bytes();
+    out.push(ab.len().min(255) as u8);
+    out.extend_from_slice(&ab[..ab.len().min(255)]);
+    out.extend_from_slice(sig);
+    out
+}
+
+pub fn decode_cover_digest(
+    body: &[u8],
+) -> Option<(
+    Vec<(u8, crate::transducer::stalk::Invariant)>,
+    [u64; 4],
+    [[u8; 32]; 4],
+    [u8; 32],
+    [u8; 32],
+    String,
+    [u8; 64],
+)> {
+    // Skip the stratum-digest prefix if present: n then n records.
+    let mut p = 0usize;
+    if let Some(digests) = decode_digests_reply(body) {
+        p = 4;
+        for d in &digests {
+            p += 1 + 8 * d.inv.0.len() + 4 + 32;
+        }
+        if p >= body.len() {
+            return None;
+        }
+    }
+    let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+    p += 4;
+    let mut charts = Vec::with_capacity(n.min(1024));
+    for _ in 0..n.min(1024) {
+        let lane = *body.get(p)?;
+        p += 1;
+        let inv = read_invariant(body, &mut p)?;
+        charts.push((lane, inv));
+    }
+    let mut room = [0u64; 4];
+    for r in &mut room {
+        *r = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
+        p += 8;
+    }
+    let mut cover_roots = [[0u8; 32]; 4];
+    for r in &mut cover_roots {
+        *r = body.get(p..p + 32)?.try_into().ok()?;
+        p += 32;
+    }
+    let ruled_root: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
+    p += 32;
+    let vk: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
+    p += 32;
+    let alen = *body.get(p)? as usize;
+    p += 1;
+    let addr = String::from_utf8(body.get(p..p + alen)?.to_vec()).ok()?;
+    p += alen;
+    let sig: [u8; 64] = body.get(p..p + 64)?.try_into().ok()?;
+    Some((charts, room, cover_roots, ruled_root, vk, addr, sig))
+}
+
 /// Cover: `[ACT_COVER][vk 32][alen u8][addr][n u32]([lane u8][invariant])*`
 pub fn encode_cover(vk: &[u8; 32], addr: &str, charts: &[(u8, crate::transducer::stalk::Invariant)]) -> Vec<u8> {
     let mut out = vec![ACT_COVER];

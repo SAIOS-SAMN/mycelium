@@ -102,6 +102,10 @@ pub struct Session {
     strokes: std::cell::Cell<u64>,
     /// Keep-alive streams keyed by destination address.
     streams: RefCell<HashMap<String, TcpStream>>,
+    /// Cover trie learned from digest replies. Same read as the hypha.
+    cover: RefCell<crate::network::nerve::Cover>,
+    rooms: RefCell<crate::network::nerve::Keyed<[u64; 4]>>,
+    addrs: RefCell<crate::network::nerve::Keyed<String>>,
 }
 
 /// The transport aperture — the perceived state of the wire to the server
@@ -138,6 +142,9 @@ impl Session {
             peers: vec![addr.to_string()],
             strokes: std::cell::Cell::new(0),
             streams: RefCell::new(HashMap::new()),
+            cover: RefCell::new(crate::network::nerve::Cover::new()),
+            rooms: RefCell::new(crate::network::nerve::Keyed::new()),
+            addrs: RefCell::new(crate::network::nerve::Keyed::new()),
         }
     }
 
@@ -154,10 +161,49 @@ impl Session {
         }
     }
 
-    /// The hypha a key lives on: the nerve's closest by XOR, the seed when
-    /// nothing else is known.
+    /// The hypha a key lives on: longest-common-prefix on the cover trie,
+    /// the seed when nothing else is known. Same read as the hypha.
     pub fn route(&self, key: &[u8; 32]) -> String {
         self.router.closest(key).map(|(_, a)| a).unwrap_or_else(|| self.addr.clone())
+    }
+
+    /// Home a word by its chart and magnitude. Occluded edges drop out of
+    /// the fiber so incidence falls.
+    pub fn route_chart(&self, inv: &crate::transducer::stalk::Invariant, mag: &[u64; 4]) -> String {
+        use crate::network::nerve::home;
+        let cover = self.cover.borrow();
+        let rooms = self.rooms.borrow();
+        let addrs = self.addrs.borrow();
+        let mut live = crate::network::nerve::Keyed::new();
+        for (id, a) in addrs.entries() {
+            if !self.occluded_at(a) {
+                live.insert(*id, a.clone());
+            }
+        }
+        let (_, dest) = home(&cover, inv, mag, &rooms, &live, None);
+        if dest.is_empty() {
+            self.addr.clone()
+        } else {
+            dest
+        }
+    }
+
+    fn absorb_digest(&self, body: &[u8]) {
+        let Some((charts, room, cover_roots, ruled_root, vk, addr, sig)) =
+            crate::anastome::dialogue::decode_cover_digest(body)
+        else {
+            return;
+        };
+        let prefix = crate::anastome::dialogue::cover_signed_prefix(&cover_roots, &ruled_root, &room);
+        if !crate::court::identity::verify(&vk, &prefix, &sig) {
+            return;
+        }
+        self.cover.borrow_mut().retract_hypha(&vk);
+        for (lane, inv) in &charts {
+            self.cover.borrow_mut().admit(*lane, inv, vk);
+        }
+        self.rooms.borrow_mut().insert(vk, room);
+        self.addrs.borrow_mut().insert(vk, addr);
     }
 
     /// The hyphas this entity knows.
@@ -246,7 +292,11 @@ impl Session {
     /// residual with its citations (empty: irreducible for this voice).
     pub fn attest(&self, chain: &[(i64, i64, u8, u8)], cites: &[dialogue::CiteWire]) -> io::Result<Reply> {
         let key = crate::transducer::element::listing_key(chain, &crate::transducer::element::IDENTITY_FRAME);
-        let body = self.speak_keyed(&key, dialogue::encode_demand(&self.kernel.voice, chain, cites))?;
+        let inv = crate::transducer::stalk::invariant(chain);
+        let mag = crate::transducer::element::measure_lanes(chain);
+        let dest = self.route_chart(&inv, &mag);
+        let body = self.exchange_at(&dest, dialogue::encode_demand(&self.kernel.voice, chain, cites))?;
+        let _ = key;
         Ok(decode_reply(&body))
     }
 
@@ -835,17 +885,13 @@ pub struct Entity {
     /// there again. The digest names what differs by address; the geometry
     /// decides what is fetched.
     glued: Vec<crate::transducer::stalk::Invariant>,
-    /// OPEN THOUGHTS: remainders this mind has not collapsed into a closed
-    /// word — (chart, remainder, dirty). Dirty is set when the genome gains
-    /// a word on that chart; pivot emits the charts the language moved on.
-    thoughts: Vec<(crate::transducer::stalk::Invariant, Vec<(i64, i64, u8, u8)>, bool)>,
+    /// OPEN THOUGHTS: remainders keyed by chart, no cap, no eviction.
+    thoughts: crate::network::nerve::Keyed<(Vec<(i64, i64, u8, u8)>, bool)>,
     /// Genome length last seen by the pivot; words added since dirty their charts.
     thought_gen: usize,
     /// Listings this mind has opened an axis on (Vec-of-relations, keyed by
     /// listing address on read): an axis is opened once per listing.
     opened: Vec<[u8; 32]>,
-    /// Remainders relocated off the bag: the pivot still reads them.
-    thought_cavities: Vec<(crate::transducer::stalk::Invariant, Vec<(i64, i64, u8, u8)>, bool)>,
 }
 
 impl Entity {
@@ -864,10 +910,9 @@ impl Entity {
             discordance: usize::MAX,
             obstructions: Vec::new(),
             glued: Vec::new(),
-            thoughts: Vec::new(),
+            thoughts: crate::network::nerve::Keyed::new(),
             thought_gen: 0,
             opened: Vec::new(),
-            thought_cavities: Vec::new(),
         }
     }
 
@@ -1001,6 +1046,7 @@ impl Entity {
         use crate::transducer::sheaf;
         let voice = self.session.kernel().voice();
         let body = self.session.speak_keyed(&voice, dialogue::encode_digests_request(&voice))?;
+        self.session.absorb_digest(&body);
         let remote = dialogue::decode_digests_reply(&body).unwrap_or_default();
         // The genome's own atlas (current, admitted in place), never rebuilt here.
         self.epigenome.atlas();
@@ -1193,13 +1239,40 @@ impl Entity {
         Ok((reply, heard))
     }
     pub fn quote(&mut self) -> io::Result<YieldQuote> {
-        let charts: Vec<crate::transducer::stalk::Invariant> = self
-            .epigenome
-            .atlas()
-            .strata()
+        let thought_charts: Vec<crate::transducer::stalk::Invariant> = self
+            .thoughts
+            .entries()
             .into_iter()
-            .map(|(inv, _)| inv)
+            .map(|(_, (r, _))| crate::transducer::stalk::invariant(r))
             .collect();
+        let charts = if thought_charts.is_empty() {
+            self.epigenome
+                .atlas()
+                .strata()
+                .into_iter()
+                .map(|(inv, _)| inv)
+                .collect()
+        } else {
+            thought_charts
+        };
+        if let Some(inv) = charts.first() {
+            let mag = [1u64, 0, 0, 0];
+            let dest = self.session.route_chart(inv, &mag);
+            let body = self.session.exchange_at(
+                &dest,
+                dialogue::encode_quote_request_charts(&self.session.kernel().voice(), &charts),
+            )?;
+            let (surface, k, items) = dialogue::decode_quote_reply(&body)
+                .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
+            return Ok(YieldQuote {
+                surface,
+                k,
+                clusters: items
+                    .into_iter()
+                    .map(|(address, mu, chain, open)| Cluster { address, mu, chain, open })
+                    .collect(),
+            });
+        }
         self.session.quote(&charts)
     }
     /// This entity's voice read the judge's clock.
@@ -1234,32 +1307,20 @@ impl Entity {
     }
 
     /// HOLD A THOUGHT: a remainder this mind has not collapsed, keyed by
-    /// the chart of its support — one open thought per chart, the newest
-    /// remainder on that chart replacing the older. Bounded by the reserve.
-    /// Not a queue: a thought is re-tried only when the language moves on
-    /// its chart (see `pivot_thoughts`).
+    /// the chart of its support. No cap, no eviction — the bag never shrinks
+    /// by drop. A later remainder on the same chart rebinds.
     pub fn hold_thought(&mut self, remainder: Vec<(i64, i64, u8, u8)>) {
         if remainder.is_empty() {
             return;
         }
         let inv = crate::transducer::stalk::invariant(&remainder);
-        if let Some(held) = self.thoughts.iter_mut().find(|(i, _, _)| *i == inv) {
-            held.1 = remainder;
-            held.2 = false;
-            return;
-        }
-        let cap = crate::physics::reserve_max() as usize;
-        if self.thoughts.len() >= cap {
-            let stale = self.thoughts.remove(0);
-            self.thought_cavities.push(stale);
-        }
-        self.thoughts.push((inv, remainder, false));
+        self.thoughts.insert(inv.key(), (remainder, false));
     }
 
     /// The open thoughts held here: remainders not yet closed into words,
     /// each with the chart it sits on.
     pub fn thoughts(&self) -> Vec<&[(i64, i64, u8, u8)]> {
-        self.thoughts.iter().map(|(_, r, _)| r.as_slice()).collect()
+        self.thoughts.entries().into_iter().map(|(_, (r, _))| r.as_slice()).collect()
     }
 
     /// OPEN AN AXIS ON MULTIPLICITY — the convergence engine's `expand_m`
@@ -1314,47 +1375,36 @@ impl Entity {
     }
 
     /// PIVOT: a held thought whose chart just gained a genome word is spoken
-    /// as a demand. Every dirty chart the language moved on is emitted.
+    /// as a demand. The bag never shrinks: dirty remainder stays, dirty clears.
     pub fn pivot_thoughts(&mut self) -> usize {
         let n = self.epigenome.genome_len();
         if n > self.thought_gen {
             let added: Vec<_> = self.epigenome.genome()[self.thought_gen..]
                 .iter()
-                .map(crate::transducer::stalk::invariant_of)
+                .map(|w| crate::transducer::stalk::invariant_of(w).key())
                 .collect();
             self.thought_gen = n;
-            for (inv, _, dirty) in &mut self.thoughts {
-                if added.iter().any(|a| a == inv) {
-                    *dirty = true;
-                }
-            }
-            for (inv, _, dirty) in &mut self.thought_cavities {
-                if added.iter().any(|a| a == inv) {
+            for key in &added {
+                if let Some((_, dirty)) = self.thoughts.get_mut(key) {
                     *dirty = true;
                 }
             }
         }
+        let dirty: Vec<Vec<(i64, i64, u8, u8)>> = self
+            .thoughts
+            .entries()
+            .into_iter()
+            .filter(|(_, (_, d))| *d)
+            .map(|(_, (r, _))| r.clone())
+            .collect();
         let mut spoken = 0usize;
-        let mut i = 0usize;
-        while i < self.thoughts.len() {
-            if !self.thoughts[i].2 {
-                i += 1;
-                continue;
-            }
-            let remainder = self.thoughts.remove(i).1;
+        for remainder in dirty {
+            let key = crate::transducer::stalk::invariant(&remainder).key();
             if self.attest(&remainder, &[]).is_ok() {
                 spoken += 1;
             }
-        }
-        let mut i = 0usize;
-        while i < self.thought_cavities.len() {
-            if !self.thought_cavities[i].2 {
-                i += 1;
-                continue;
-            }
-            let remainder = self.thought_cavities.remove(i).1;
-            if self.attest(&remainder, &[]).is_ok() {
-                spoken += 1;
+            if let Some((_, d)) = self.thoughts.get_mut(&key) {
+                *d = false;
             }
         }
         spoken

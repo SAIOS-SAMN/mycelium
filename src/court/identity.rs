@@ -1,7 +1,9 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! One ed25519 identity per hypha. Minted on first boot, persisted beside
-//! the ledger. Offer and Installed are signed; the verifying key rides Cover.
+//! the ledger. Signs per-lane cover roots and ruled roots only — never an
+//! individual Offer, Installed, or fetch. The signature bounds who may be
+//! slashed for a false root; replay decides what is believed.
 
 use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
 use rand_core::{OsRng, RngCore};

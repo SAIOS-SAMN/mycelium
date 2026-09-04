@@ -38,6 +38,18 @@ type Cell = (i64, i64, u8, u8);
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Invariant(pub Vec<u64>);
 
+impl Invariant {
+    /// A Keyed key for this chart: the little-endian axes hashed so a
+    /// thought bag and a cover digest name the same plane without a map.
+    pub fn key(&self) -> [u8; 32] {
+        let mut h = blake3::Hasher::new();
+        for a in &self.0 {
+            h.update(&a.to_le_bytes());
+        }
+        *h.finalize().as_bytes()
+    }
+}
+
 /// Closure of one chart a thought has been probed through. Never a number:
 /// the loop closed (Flat), returned twisted (Twisted), or found no section
 /// (Cavity). Magnitudes are read from remainders, never stored here.
