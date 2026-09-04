@@ -150,7 +150,7 @@ fn connection_chart(word: &element::Element) -> Option<Invariant> {
 #[derive(Debug, Clone, Default)]
 struct Stratum {
     branches: Keyed<Stratum>,
-    members: Vec<[u8; 32]>,
+    members: Keyed<()>,
 }
 
 /// An axis value as a key: the coordinate's bytes, big-endian, so the
@@ -169,56 +169,66 @@ impl Stratum {
     fn admit(&mut self, axes: &[u64], addr: [u8; 32]) {
         match axes.split_first() {
             None => {
-                if !self.members.contains(&addr) {
-                    self.members.push(addr);
-                }
+                self.members.insert(addr, ());
             }
             Some((&a, rest)) => {
                 let key = axis_key(a);
-                if !self.branches.contains(&key) {
-                    self.branches.insert(key, Stratum::default());
-                }
-                self.branches.get_mut(&key).unwrap().admit(rest, addr);
-            }
-        }
-    }
-
-    fn fiber(&self, axes: &[u64]) -> &[[u8; 32]] {
-        match axes.split_first() {
-            None => &self.members,
-            Some((&a, rest)) => self.branches.get(&axis_key(a)).map(|s| s.fiber(rest)).unwrap_or(&[]),
-        }
-    }
-
-    fn is_empty(&self) -> bool {
-        self.members.is_empty() && self.branches.entries().is_empty()
-    }
-
-    /// Drop one member along its own chart path; strata left empty are pruned.
-    fn remove(&mut self, axes: &[u64], addr: &[u8; 32]) {
-        match axes.split_first() {
-            None => self.members.retain(|m| m != addr),
-            Some((&a, rest)) => {
-                let key = axis_key(a);
-                if let Some(s) = self.branches.get_mut(&key) {
-                    s.remove(rest, addr);
-                    if s.is_empty() {
-                        self.branches.remove(&key);
+                match self.branches.get_mut(&key) {
+                    Some(s) => s.admit(rest, addr),
+                    None => {
+                        let mut s = Stratum::default();
+                        s.admit(rest, addr);
+                        self.branches.insert(key, s);
                     }
                 }
             }
         }
     }
 
+    fn fiber(&self, axes: &[u64]) -> Vec<[u8; 32]> {
+        match axes.split_first() {
+            None => self.members.entries().into_iter().map(|(k, _)| *k).collect(),
+            Some((&a, rest)) => self.branches.get(&axis_key(a)).map(|s| s.fiber(rest)).unwrap_or_default(),
+        }
+    }
+
+    fn is_empty(&self) -> bool {
+        self.members.is_empty() && self.branches.is_empty()
+    }
+
+    /// Drop one member along its own chart path; strata left empty are pruned.
+    fn remove(&mut self, axes: &[u64], addr: &[u8; 32]) {
+        match axes.split_first() {
+            None => {
+                self.members.remove(addr);
+            }
+            Some((&a, rest)) => {
+                let key = axis_key(a);
+                let empty = {
+                    let Some(s) = self.branches.get_mut(&key) else { return };
+                    s.remove(rest, addr);
+                    s.is_empty()
+                };
+                if empty {
+                    self.branches.remove(&key);
+                }
+            }
+        }
+    }
+
     fn len(&self) -> usize {
-        self.members.len() + self.branches.entries().iter().map(|(_, s)| s.len()).sum::<usize>()
+        let mut n = self.members.len();
+        self.branches.for_each(|_, s| n += s.len());
+        n
     }
 
     fn strata(&self, path: &mut Vec<u64>, out: &mut Vec<(Invariant, Vec<[u8; 32]>)>) {
         if !self.members.is_empty() {
-            out.push((Invariant(path.clone()), self.members.clone()));
+            let members: Vec<[u8; 32]> = self.members.entries().into_iter().map(|(k, _)| *k).collect();
+            out.push((Invariant(path.clone()), members));
         }
-        for (k, s) in self.branches.entries() {
+        let kids = self.branches.entries();
+        for (k, s) in kids {
             path.push(axis_of(k));
             s.strata(path, out);
             path.pop();
@@ -270,7 +280,7 @@ impl Stalks {
 
     /// The stratum over `inv`: every held address whose base point could
     /// be this one. The versor decides on these alone.
-    pub fn fiber(&self, inv: &Invariant) -> &[[u8; 32]] {
+    pub fn fiber(&self, inv: &Invariant) -> Vec<[u8; 32]> {
         self.root.fiber(&inv.0)
     }
 
@@ -384,8 +394,8 @@ pub fn congruent_shaped<'a>(
     chain: &[Cell],
 ) -> Option<([u8; 32], Versor)> {
     let shape = element::shape_of_chain(chain)?;
-    let mut related = stalks
-        .fiber(&invariant(chain))
+    let fibre = stalks.fiber(&invariant(chain));
+    let mut related = fibre
         .iter()
         .filter_map(|a| shape_at(a).and_then(|held| super::blade::versor_between(&shape, held)).map(|v| (*a, v)));
     let first = related.next()?;

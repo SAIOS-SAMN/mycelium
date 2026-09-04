@@ -619,10 +619,12 @@ fn main() {
     // stream exactly once on contact (a rebind re-enters the stream — learn
     // refreshes by address, so refinements propagate). Vec-of-relations.
     let mut syllabus: Vec<[u8; 32]> = Vec::new();
+    let mut syllabus_at: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
     // PROVEN ROOTS heard on the nerve: (task, solver). A root is gossiped
     // once and re-dispatched here first; a voice that reproduces the solve
     // proves it shares the root.
-    let mut roots: mycelium::network::nerve::Keyed<Vec<[u8; 32]>> = mycelium::network::nerve::Keyed::new();
+    let mut roots: mycelium::network::nerve::Keyed<mycelium::network::nerve::Keyed<()>> =
+        mycelium::network::nerve::Keyed::new();
     // THE NERVE THREAD: every act this node speaks to a peer leaves through
     // a bounded channel drained here, so the door never dials. The bound is
     // the reserve ceiling; a full nerve drops the act, as a full reflex
@@ -658,13 +660,15 @@ fn main() {
     // at boot, so a family proven here is re-spoken on every peer's book.
     let settled = registry.lock().map(|r| r.settled_ids()).unwrap_or_default();
     for t in &settled {
-        roots.insert(*t, vec![id]);
+        let mut v = mycelium::network::nerve::Keyed::new();
+        v.insert(id, ());
+        roots.insert(*t, v);
         speak_root(&router, &nerve_tx, &nerve_id, t, &id, None, tuniversal.ticks());
     }
     if !settled.is_empty() {
         eprintln!("  roots announced: {} settled families, each to its key's next hop", settled.len());
     }
-    let mut syllabus_served: Vec<([u8; 32], usize)> = Vec::new();
+    let mut syllabus_served: mycelium::network::nerve::Keyed<usize> = mycelium::network::nerve::Keyed::new();
 
     // THE ASYNC DISPATCHER (contemplation queue): dispatched tasks flow to a
     // worker thread over a bounded channel, so the accept loop never blocks
@@ -747,15 +751,19 @@ fn main() {
                     k.court_stroke();
                 }
                 rebuild_own_cover(&kernel, &mesh);
-                let mut dests: Vec<String> = join.clone();
+                let mut dests: mycelium::network::nerve::Keyed<String> = mycelium::network::nerve::Keyed::new();
+                for p in &join {
+                    if p != &mesh.bind {
+                        dests.insert(*blake3::hash(p.as_bytes()).as_bytes(), p.clone());
+                    }
+                }
                 if let Ok(a) = mesh.addrs.lock() {
-                    for (_, addr) in a.entries() {
-                        if addr != &mesh.bind && !dests.contains(addr) {
-                            dests.push(addr.clone());
+                    for (id, addr) in a.entries() {
+                        if addr != &mesh.bind {
+                            dests.insert(*id, addr.clone());
                         }
                     }
                 }
-                dests.retain(|d| d != &mesh.bind);
                 if dests.is_empty() {
                     wait = mycelium::physics::from_transport(mesh_rtt(&mesh), ratio);
                     continue;
@@ -763,7 +771,8 @@ fn main() {
                 let req = dialogue::encode_digests_request(&mesh.vk);
                 let deadline = mesh_deadline(&mesh);
                 let mut any_moved = false;
-                for d in dests {
+                let dest_list: Vec<String> = dests.entries().into_iter().map(|(_, a)| a.clone()).collect();
+                for d in dest_list {
                     match tell_peer(&d, req.clone(), deadline) {
                         Some((reply, dt)) => {
                             note_rtt(&mesh, dt);
@@ -906,12 +915,12 @@ fn main() {
             let _ = spoken_at;
             let n = {
                 if let Some(v) = roots.get_mut(&task) {
-                    if !v.contains(&solver) {
-                        v.push(solver);
-                    }
+                    v.insert(solver, ());
                     v.len()
                 } else {
-                    roots.insert(task, vec![solver]);
+                    let mut v = mycelium::network::nerve::Keyed::new();
+                    v.insert(solver, ());
+                    roots.insert(task, v);
                     1
                 }
             };
@@ -927,8 +936,9 @@ fn main() {
                 );
                 speak_root(&router, &nerve_tx, &nerve_id, &task, &solver, Some(from), tuniversal.ticks());
             } else if n == 2 {
-                for (_, c) in syllabus_served.iter_mut() {
-                    *c = 0;
+                let voices: Vec<[u8; 32]> = syllabus_served.entries().into_iter().map(|(v, _)| *v).collect();
+                for v in voices {
+                    syllabus_served.insert(v, 0);
                 }
                 eprintln!(
                     "  ROOT CONSILIENT task {:02x}{:02x}… two voices; syllabus rewound",
@@ -938,7 +948,10 @@ fn main() {
                 speak_root(&router, &nerve_tx, &nerve_id, &task, &solver, Some(from), tuniversal.ticks());
             }
             // The reply is this node's record for the task and its clock.
-            let reply = dialogue::encode_root_reply(roots.get(&task).and_then(|v| v.first().copied()), tuniversal.ticks());
+            let reply = dialogue::encode_root_reply(
+                roots.get(&task).and_then(|v| v.entries().first().map(|(k, _)| **k)),
+                tuniversal.ticks(),
+            );
             let _ = s.write_all(&Frame { lane: frame.lane, body: reply }.encode().unwrap_or_default());
             continue;
         }
@@ -1010,20 +1023,21 @@ fn main() {
                         drop(k);
                         let n = {
                             if let Some(v) = roots.get_mut(&tid) {
-                                if !v.contains(&svoice) {
-                                    v.push(svoice);
-                                }
+                                v.insert(svoice, ());
                                 v.len()
                             } else {
-                                roots.insert(tid, vec![svoice]);
+                                let mut v = mycelium::network::nerve::Keyed::new();
+                                v.insert(svoice, ());
+                                roots.insert(tid, v);
                                 1
                             }
                         };
                         eprintln!("  ROOT task {:02x}{:02x}… proven by voice {:02x}; spoken to its key's next hop", tid[0], tid[1], svoice[0]);
                         speak_root(&router, &nerve_tx, &nerve_id, &tid, &svoice, None, tuniversal.ticks());
                         if n >= 2 {
-                            for (_, c) in syllabus_served.iter_mut() {
-                                *c = 0;
+                            let voices: Vec<[u8; 32]> = syllabus_served.entries().into_iter().map(|(v, _)| *v).collect();
+                            for v in voices {
+                                syllabus_served.insert(v, 0);
                             }
                             eprintln!("  ROOT CONSILIENT task {:02x}{:02x}… {n} voices; syllabus rewound", tid[0], tid[1]);
                         }
@@ -1035,18 +1049,19 @@ fn main() {
                         drop(k);
                         let n = {
                             if let Some(v) = roots.get_mut(&tid) {
-                                if !v.contains(&svoice) {
-                                    v.push(svoice);
-                                }
+                                v.insert(svoice, ());
                                 v.len()
                             } else {
-                                roots.insert(tid, vec![svoice]);
+                                let mut v = mycelium::network::nerve::Keyed::new();
+                                v.insert(svoice, ());
+                                roots.insert(tid, v);
                                 1
                             }
                         };
                         if n == 2 {
-                            for (_, c) in syllabus_served.iter_mut() {
-                                *c = 0;
+                            let voices: Vec<[u8; 32]> = syllabus_served.entries().into_iter().map(|(v, _)| *v).collect();
+                            for v in voices {
+                                syllabus_served.insert(v, 0);
                             }
                             speak_root(&router, &nerve_tx, &nerve_id, &tid, &svoice, None, tuniversal.ticks());
                             eprintln!("  ROOT CONSILIENT task {:02x}{:02x}… two voices; syllabus rewound", tid[0], tid[1]);
@@ -1101,7 +1116,8 @@ fn main() {
                     // language wherever it was first spoken: it enters the
                     // teaching stream here.
                     let addr = word.address();
-                    if !syllabus.contains(&addr) {
+                    if !syllabus_at.contains(&addr) {
+                        syllabus_at.insert(addr, ());
                         syllabus.push(addr);
                     }
                     synth_tx
@@ -1143,11 +1159,10 @@ fn main() {
         // ── syllabus: the ratified stream served from this voice's cursor ────
         if kind == dialogue::ACT_SYLLABUS {
             let Some(svoice) = dialogue::decode_syllabus_request(&frame.body) else { continue };
-            if !syllabus_served.iter().any(|(v, _)| *v == svoice) {
-                syllabus_served.push((svoice, 0));
+            if syllabus_served.get(&svoice).is_none() {
+                syllabus_served.insert(svoice, 0);
             }
-            let cursor =
-                &mut syllabus_served.iter_mut().find(|(v, _)| *v == svoice).unwrap().1;
+            let cursor = syllabus_served.get_mut(&svoice).unwrap();
             let mut missed: Vec<[u8; 32]> = Vec::new();
             let words: Vec<Vec<u8>> = {
                 let k = kernel.lock().unwrap();
@@ -1177,7 +1192,11 @@ fn main() {
             // word falls out.
             let ahead = *cursor;
             for addr in missed {
-                if !syllabus[ahead..].contains(&addr) {
+                let mut tail: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
+                for a in &syllabus[ahead..] {
+                    tail.insert(*a, ());
+                }
+                if !tail.contains(&addr) {
                     syllabus.push(addr);
                 }
             }
@@ -1250,11 +1269,12 @@ fn main() {
             // RATIFICATION → SYLLABUS: a ratified word this hypha holds enters
             // the teaching stream for every enrolled voice, whether the
             // ruling arrived while it was provisional or after it installed.
-            let held = kernel.lock().map(|k| k.basis().iter().any(|w| w.address() == addr)).unwrap_or(false);
+            let held = kernel.lock().map(|k| k.word_at(&addr).is_some()).unwrap_or(false);
             if held
                 && matches!(ruling, dialogue::RULING_UPHELD | dialogue::RULING_REBIND | dialogue::RULING_ATTACHED)
-                && !syllabus.contains(&addr)
+                && !syllabus_at.contains(&addr)
             {
+                syllabus_at.insert(addr, ());
                 syllabus.push(addr);
             }
             eprintln!(

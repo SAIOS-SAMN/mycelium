@@ -207,6 +207,8 @@ fn read_out(u: &Versor, px: &(BigRational, BigRational), py: &(BigRational, BigR
 pub struct Rule {
     pub moduli: Invariant,
     pub readings: Vec<(usize, Versor)>,
+    /// The family's anchor reading — a coordinate of the rule, not the first entry.
+    pub anchor: usize,
     pub shift: (BigRational, BigRational),
     pub sigma: Vec<(u8, u8)>,
 }
@@ -389,9 +391,11 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
             }
         }
         if !readings.is_empty() {
+            let anchor = readings.first().map(|(r, _)| *r).unwrap_or(0);
             rules.push(Rule {
                 moduli: class.clone(),
                 readings,
+                anchor,
                 shift: shift.unwrap_or((q(0), q(0))),
                 sigma: sigma.unwrap_or_default(),
             });

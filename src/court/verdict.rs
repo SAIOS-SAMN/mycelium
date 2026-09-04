@@ -347,11 +347,31 @@ fn symmetric_difference(a: &[(i64, i64, u8, u8)], b: &[(i64, i64, u8, u8)]) -> V
 /// π* derivation from a pooled evidence family: the first anchor term
 /// common to every evidence's carrying set (the intersection move — one
 /// evidence never binds; the caller holds families of at least two).
+fn sel_key(s: &Sel) -> [u8; 32] {
+    *blake3::hash(format!("{s:?}").as_bytes()).as_bytes()
+}
+
 pub fn derive_pi(family: &[(Vec<(i64, i64)>, Vec<(i64, i64, u8)>)]) -> Option<Sel> {
     let sets: Vec<Vec<Sel>> =
         family.iter().map(|(fp, scene)| derive_carrying_all(fp, scene)).collect();
     let (first, rest) = sets.split_first()?;
-    first.iter().find(|t| rest.iter().all(|s| s.contains(*t))).cloned()
+    let rest_tries: Vec<Keyed<()>> = rest
+        .iter()
+        .map(|s| {
+            let mut k = Keyed::new();
+            for t in s {
+                k.insert(sel_key(t), ());
+            }
+            k
+        })
+        .collect();
+    first
+        .iter()
+        .find(|t| {
+            let key = sel_key(t);
+            rest_tries.iter().all(|s| s.contains(&key))
+        })
+        .cloned()
 }
 
 #[cfg(test)]

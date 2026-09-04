@@ -52,9 +52,17 @@ pub fn digests(stalks: &Stalks) -> Vec<StratumDigest> {
 /// The remote strata this holder disagrees with: absent here, or a
 /// different root. Everything else is glued.
 pub fn discordant<'a>(remote: &'a [StratumDigest], local: &[StratumDigest]) -> Vec<&'a StratumDigest> {
+    use crate::network::nerve::Keyed;
+    let mut here: Keyed<([u8; 32], u32)> = Keyed::new();
+    for l in local {
+        here.insert(l.inv.key(), (l.root, l.count));
+    }
     remote
         .iter()
-        .filter(|r| !local.iter().any(|l| l.inv == r.inv && l.root == r.root))
+        .filter(|r| match here.get(&r.inv.key()) {
+            Some((root, _)) => *root != r.root,
+            None => true,
+        })
         .collect()
 }
 
@@ -77,11 +85,16 @@ pub fn serve<'a>(
 ) -> Vec<Vec<u8>> {
     let mut out = Vec::new();
     let mut used = 0usize;
+    use crate::network::nerve::Keyed;
+    let mut held: Keyed<()> = Keyed::new();
+    for h in have {
+        held.insert(*h, ());
+    }
     for a in stalks.fiber(inv) {
-        if have.contains(a) {
+        if held.contains(&a) {
             continue;
         }
-        let Some(w) = at(a) else { continue };
+        let Some(w) = at(&a) else { continue };
         let bytes = w.to_bytes();
         if used + bytes.len() + 4 > budget {
             break;
@@ -133,7 +146,11 @@ mod tests {
         assert_eq!(d[0].count, 2);
         let mine = have(&es, &d[0].inv);
         assert_eq!(mine, vec![bar.address()]);
-        let at = |a: &[u8; 32]| hypha.iter().find(|w| w.address() == *a);
+        let mut at_index: crate::network::nerve::Keyed<usize> = crate::network::nerve::Keyed::new();
+        for (i, w) in hypha.iter().enumerate() {
+            at_index.insert(w.address(), i);
+        }
+        let at = |a: &[u8; 32]| at_index.get(a).copied().and_then(|i| hypha.get(i));
         let page = serve(&hs, at, &d[0].inv, &mine, 1 << 20);
         assert_eq!(page.len(), 1, "only the lacking word travels");
         let mut pos = 0usize;

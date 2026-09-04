@@ -20,6 +20,7 @@
 #[derive(Clone, Debug)]
 pub struct Keyed<V> {
     root: Option<Box<Node<V>>>,
+    n: usize,
 }
 
 /// A path-compressed binary trie (PATRICIA): a branch only where two keys
@@ -35,7 +36,7 @@ enum Node<V> {
 
 impl<V> Default for Keyed<V> {
     fn default() -> Self {
-        Keyed { root: None }
+        Keyed { root: None, n: 0 }
     }
 }
 
@@ -101,6 +102,17 @@ impl<V> Node<V> {
             }
         }
     }
+
+    fn for_each<F: FnMut(&[u8; 32], &V)>(&self, f: &mut F) {
+        match self {
+            Node::Leaf(k, v) => f(k, v),
+            Node::Branch { children, .. } => {
+                for c in children.iter().flatten() {
+                    c.for_each(f);
+                }
+            }
+        }
+    }
 }
 
 /// Insert into the subtree at `slot`, splitting at bit `d` (the first bit
@@ -160,6 +172,7 @@ impl<V> Keyed<V> {
     pub fn insert(&mut self, key: [u8; 32], value: V) -> Option<V> {
         let Some(root) = self.root.as_deref() else {
             self.root = Some(Box::new(Node::Leaf(key, value)));
+            self.n = 1;
             return None;
         };
         let held = root.held_key(&key);
@@ -167,6 +180,7 @@ impl<V> Keyed<V> {
             None => self.root.as_deref_mut()?.get_mut(&key).map(|v| std::mem::replace(v, value)),
             Some(d) => {
                 insert_at(&mut self.root, key, value, d);
+                self.n += 1;
                 None
             }
         }
@@ -186,13 +200,32 @@ impl<V> Keyed<V> {
 
     /// Unbind `key`; the value it held, if any.
     pub fn remove(&mut self, key: &[u8; 32]) -> Option<V> {
-        remove_at(&mut self.root, key)
+        let v = remove_at(&mut self.root, key);
+        if v.is_some() {
+            self.n = self.n.saturating_sub(1);
+        }
+        v
+    }
+
+    pub fn len(&self) -> usize {
+        self.n
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.n == 0
+    }
+
+    /// Walk every bound (key, value) in key order without allocating a Vec.
+    pub fn for_each<F: FnMut(&[u8; 32], &V)>(&self, mut f: F) {
+        if let Some(root) = self.root.as_deref() {
+            root.for_each(&mut f);
+        }
     }
 
     /// Every bound (key, value), in key order — a walk of the relation for
     /// persistence and for measurements over the whole, never for lookup.
     pub fn entries(&self) -> Vec<(&[u8; 32], &V)> {
-        let mut out = Vec::new();
+        let mut out = Vec::with_capacity(self.n);
         if let Some(root) = self.root.as_deref() {
             root.walk(&mut out);
         }
@@ -247,49 +280,70 @@ fn axis_of_le(key: &[u8; 32]) -> u64 {
 /// Cover trie: per lane, nested Keyed by invariant axes. The fiber at a
 /// node is the hyphas covering that plane (this prefix and every finer
 /// chart beneath it). Own charts and peer charts share the trie.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct Cover {
     lanes: [CoverNode; 4],
+    /// Cover root per lane, hashed in trie order on admit/retract.
+    roots: [[u8; 32]; 4],
+    /// Charts each hypha holds, so retract walks those paths only.
+    held: Keyed<Vec<(u8, crate::transducer::stalk::Invariant)>>,
+}
+
+fn empty_cover_root() -> [u8; 32] {
+    *blake3::Hasher::new().finalize().as_bytes()
+}
+
+impl Default for Cover {
+    fn default() -> Self {
+        Cover {
+            lanes: Default::default(),
+            roots: [empty_cover_root(); 4],
+            held: Keyed::new(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default)]
 struct CoverNode {
-    here: Vec<[u8; 32]>,
+    here: Keyed<()>,
     next: Keyed<CoverNode>,
 }
 
 impl CoverNode {
     fn is_empty(&self) -> bool {
-        self.here.is_empty() && self.next.entries().is_empty()
+        self.here.is_empty() && self.next.is_empty()
     }
 
     fn admit(&mut self, axes: &[u64], hypha: [u8; 32]) {
         match axes.split_first() {
             None => {
-                if !self.here.contains(&hypha) {
-                    self.here.push(hypha);
-                }
+                self.here.insert(hypha, ());
             }
             Some((&a, rest)) => {
                 let k = axis_key_le(a);
-                if self.next.get(&k).is_none() {
-                    self.next.insert(k, CoverNode::default());
+                match self.next.get_mut(&k) {
+                    Some(ch) => ch.admit(rest, hypha),
+                    None => {
+                        let mut ch = CoverNode::default();
+                        ch.admit(rest, hypha);
+                        self.next.insert(k, ch);
+                    }
                 }
-                self.next.get_mut(&k).unwrap().admit(rest, hypha);
             }
         }
     }
 
+    fn collect_into(&self, out: &mut Keyed<()>) {
+        self.here.for_each(|id, _| {
+            out.insert(*id, ());
+        });
+        self.next.for_each(|_, child| child.collect_into(out));
+    }
+
     fn collect(&self) -> Vec<[u8; 32]> {
-        let mut out = self.here.clone();
-        for (_, child) in self.next.entries() {
-            for id in child.collect() {
-                if !out.contains(&id) {
-                    out.push(id);
-                }
-            }
-        }
-        out
+        let mut out = Keyed::new();
+        self.collect_into(&mut out);
+        out.entries().into_iter().map(|(k, _)| *k).collect()
     }
 
     /// Longest common prefix: descend while axes match. A miss after some
@@ -306,18 +360,39 @@ impl CoverNode {
         }
     }
 
-    fn retract(&mut self, hypha: &[u8; 32]) {
-        self.here.retain(|h| h != hypha);
-        let keys: Vec<[u8; 32]> = self.next.entries().into_iter().map(|(k, _)| *k).collect();
-        for k in keys {
-            let empty = {
-                let Some(ch) = self.next.get_mut(&k) else { continue };
-                ch.retract(hypha);
-                ch.is_empty()
-            };
-            if empty {
-                self.next.remove(&k);
+    /// Retract one hypha along one chart path (the hypha's own axes).
+    fn retract_path(&mut self, axes: &[u64], hypha: &[u8; 32]) {
+        match axes.split_first() {
+            None => {
+                self.here.remove(hypha);
             }
+            Some((&a, rest)) => {
+                let k = axis_key_le(a);
+                let empty = {
+                    let Some(ch) = self.next.get_mut(&k) else { return };
+                    ch.retract_path(rest, hypha);
+                    ch.is_empty()
+                };
+                if empty {
+                    self.next.remove(&k);
+                }
+            }
+        }
+    }
+
+    fn hash_charts(&self, hasher: &mut blake3::Hasher, path: &mut Vec<u64>) {
+        if !self.here.is_empty() {
+            for a in path.iter() {
+                hasher.update(&a.to_le_bytes());
+            }
+            hasher.update(&[0xff]);
+        }
+        // Trie order is key order: hash without materialising a Vec of charts.
+        let kids = self.next.entries();
+        for (k, ch) in kids {
+            path.push(axis_of_le(k));
+            ch.hash_charts(hasher, path);
+            path.pop();
         }
     }
 
@@ -325,7 +400,8 @@ impl CoverNode {
         if !self.here.is_empty() {
             out.push(crate::transducer::stalk::Invariant(path.clone()));
         }
-        for (k, ch) in self.next.entries() {
+        let kids = self.next.entries();
+        for (k, ch) in kids {
             path.push(axis_of_le(k));
             ch.walk(path, out);
             path.pop();
@@ -339,15 +415,43 @@ impl Cover {
     }
 
     pub fn admit(&mut self, lane: u8, inv: &crate::transducer::stalk::Invariant, hypha: [u8; 32]) {
-        self.lanes[(lane as usize) & 3].admit(&inv.0, hypha);
+        let lane = lane & 3;
+        self.lanes[lane as usize].admit(&inv.0, hypha);
+        match self.held.get_mut(&hypha) {
+            Some(charts) => {
+                if !charts.iter().any(|(l, i)| *l == lane && i == inv) {
+                    charts.push((lane, inv.clone()));
+                }
+            }
+            None => {
+                self.held.insert(hypha, vec![(lane, inv.clone())]);
+            }
+        }
+        self.refresh_root(lane);
     }
 
-    /// Drop every chart of this hypha. Used to replace a peer's cover from
-    /// a fresh digest rather than union forever (the leak of last deploy).
+    /// Drop every chart of this hypha. Retract along the hypha's own chart
+    /// paths rather than visiting the whole trie.
     pub fn retract_hypha(&mut self, hypha: &[u8; 32]) {
-        for lane in &mut self.lanes {
-            lane.retract(hypha);
+        let Some(charts) = self.held.remove(hypha) else {
+            return;
+        };
+        let mut touched = [false; 4];
+        for (lane, inv) in charts {
+            self.lanes[lane as usize].retract_path(&inv.0, hypha);
+            touched[lane as usize] = true;
         }
+        for (l, t) in touched.iter().enumerate() {
+            if *t {
+                self.refresh_root(l as u8);
+            }
+        }
+    }
+
+    fn refresh_root(&mut self, lane: u8) {
+        let mut h = blake3::Hasher::new();
+        self.lanes[(lane as usize) & 3].hash_charts(&mut h, &mut Vec::new());
+        self.roots[(lane as usize) & 3] = *h.finalize().as_bytes();
     }
 
     /// Fiber at the deepest matching prefix on `lane`. Empty at every
@@ -373,24 +477,12 @@ impl Cover {
     }
 
     pub fn root(&self, lane: u8) -> [u8; 32] {
-        let mut h = blake3::Hasher::new();
-        for inv in self.charts(lane) {
-            for a in &inv.0 {
-                h.update(&a.to_le_bytes());
-            }
-            h.update(&[0xff]);
-        }
-        *h.finalize().as_bytes()
+        self.roots[(lane as usize) & 3]
     }
 
     pub fn roots(&self) -> [[u8; 32]; 4] {
-        std::array::from_fn(|l| self.root(l as u8))
+        self.roots
     }
-}
-
-/// The lane a word moves on: the first occupied lane, else 0.
-pub fn occupied_lane(mag: &[u64; 4]) -> u8 {
-    mag.iter().position(|&x| x > 0).unwrap_or(0) as u8
 }
 
 /// Occupied lanes of a magnitude — every lane the word moves, not the first.
@@ -416,8 +508,21 @@ fn addr_of(
     addrs.get(id).cloned()
 }
 
+/// Remaining-room comparison on occupied lanes: more room wins; identity
+/// only when the room vector is equal on every occupied lane.
+fn room_cmp(a: &[u64; 4], b: &[u64; 4], lanes: &[u8]) -> std::cmp::Ordering {
+    for &l in lanes {
+        match a[l as usize].cmp(&b[l as usize]) {
+            std::cmp::Ordering::Equal => continue,
+            o => return o,
+        }
+    }
+    std::cmp::Ordering::Equal
+}
+
 /// Home by incidence: intersection of cover fibers on every occupied lane,
-/// then room on those same lanes, then identity order as the last tiebreak.
+/// then the per-lane room vector on those lanes, then identity only when
+/// rooms are equal on every occupied lane.
 pub fn home(
     cover: &Cover,
     inv: &crate::transducer::stalk::Invariant,
@@ -436,49 +541,56 @@ pub fn home(
         }
         rooms.get(id).copied()
     };
-    // Intersection of fibers across occupied lanes.
-    let mut fiber: Option<Vec<[u8; 32]>> = None;
+    // Intersection of fibers across occupied lanes, as a trie union/meet.
+    let mut fiber: Option<Keyed<()>> = None;
     for l in &lanes {
         let f = cover.fiber(*l, inv);
-        fiber = Some(match fiber {
-            None => f,
-            Some(c) => c.into_iter().filter(|id| f.contains(id)).collect(),
-        });
+        let mut next = Keyed::new();
+        for id in f {
+            if fiber.as_ref().map_or(true, |acc| acc.contains(&id)) {
+                next.insert(id, ());
+            }
+        }
+        fiber = Some(next);
     }
     let fiber = fiber.unwrap_or_default();
-    let mut best: Option<([u8; 32], String)> = None;
-    let consider = |best: &mut Option<([u8; 32], String)>, id: [u8; 32], addr: String| {
+    let mut best: Option<([u8; 32], String, [u64; 4])> = None;
+    let consider = |best: &mut Option<([u8; 32], String, [u64; 4])>, id: [u8; 32], addr: String, room: [u64; 4]| {
         match best {
-            Some((b, _)) if *b < id => {}
-            _ => *best = Some((id, addr)),
+            None => *best = Some((id, addr, room)),
+            Some((bid, _, broom)) => match room_cmp(&room, broom, &lanes) {
+                std::cmp::Ordering::Greater => *best = Some((id, addr, room)),
+                std::cmp::Ordering::Equal if id < *bid => *best = Some((id, addr, room)),
+                _ => {}
+            },
         }
     };
-    for id in &fiber {
+    fiber.for_each(|id, _| {
         if let Some(room) = room_of(id) {
             if fits(&room) {
                 if let Some(a) = addr_of(id, addrs, self_id) {
-                    consider(&mut best, *id, a);
+                    consider(&mut best, *id, a, room);
                 }
             }
         }
-    }
-    if let Some(hit) = best {
-        return hit;
+    });
+    if let Some((id, addr, _)) = best {
+        return (id, addr);
     }
     // No covering hypha with room: novel (or the fiber is full), room then identity.
     if let Some((sid, sroom, saddr)) = self_id {
         if fits(sroom) {
-            consider(&mut best, *sid, saddr.to_string());
+            consider(&mut best, *sid, saddr.to_string(), *sroom);
         }
     }
     for (id, room) in rooms.entries() {
         if fits(room) {
             if let Some(a) = addrs.get(id) {
-                consider(&mut best, *id, a.clone());
+                consider(&mut best, *id, a.clone(), *room);
             }
         }
     }
-    best.unwrap_or_else(|| {
+    best.map(|(id, addr, _)| (id, addr)).unwrap_or_else(|| {
         self_id
             .map(|(id, _, a)| (*id, a.to_string()))
             .unwrap_or(([0u8; 32], String::new()))
@@ -521,8 +633,15 @@ mod cover_tests {
         rooms.insert(lo, [8, 8, 8, 8]);
         rooms.insert(hi, [8, 8, 8, 8]);
         let (id, addr) = home(&c, &inv(&[4]), &[1, 0, 0, 0], &rooms, &addrs, None);
-        assert_eq!(id, lo, "identity order, not XOR");
+        assert_eq!(id, lo, "equal rooms: identity is the last tiebreak");
         assert_eq!(addr, "127.0.0.1:7500");
+        // Unequal rooms on the occupied lane: more remaining room wins.
+        rooms.insert(lo, [2, 8, 8, 8]);
+        rooms.insert(hi, [8, 8, 8, 8]);
+        let (id, _) = home(&c, &inv(&[4]), &[1, 0, 0, 0], &rooms, &addrs, None);
+        assert_eq!(id, hi, "more remaining room on the occupied lane homes there");
+        rooms.insert(lo, [8, 8, 8, 8]);
+        rooms.insert(hi, [8, 8, 8, 8]);
         // Novel chart: both have room; identity still wins.
         let (id, _) = home(&c, &inv(&[99]), &[1, 0, 0, 0], &rooms, &addrs, None);
         assert_eq!(id, lo);

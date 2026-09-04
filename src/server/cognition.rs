@@ -107,6 +107,7 @@ impl Language {
 pub struct MarketView {
     pub language: std::sync::Arc<Language>,
     pub pending: std::sync::Arc<Vec<(Element, u64)>>,
+    pub book_index: std::sync::Arc<crate::network::nerve::Keyed<usize>>,
     pub composites: std::sync::Arc<Vec<Composite>>,
     pub surface: [u64; 4],
     /// The open book's tension per lane — the denominator every price is a
@@ -210,18 +211,37 @@ fn open_charts_of(
 /// The lineage coordinate of a listing: its parent's (resolved, total,
 /// ribbon volume), found by the listing's own address in the composites
 /// relation. (0, 0, 0) when it has no parent.
+fn composite_child_index(composites: &[Composite]) -> crate::network::nerve::Keyed<usize> {
+    let mut idx = crate::network::nerve::Keyed::new();
+    for (i, (_, children, _)) in composites.iter().enumerate() {
+        for (a, _) in children {
+            idx.insert(*a, i);
+        }
+    }
+    idx
+}
+
 fn lineage_of(addr: &[u8; 32], composites: &[Composite]) -> (u64, u64, u64) {
-    composites
-        .iter()
-        .find(|(_, children, _)| children.iter().any(|(a, _)| a == addr))
-        .map(|(_, children, ribbon)| {
-            (
-                children.iter().filter(|(_, done)| *done).count() as u64,
-                children.len() as u64,
-                ribbon.len() as u64,
-            )
-        })
-        .unwrap_or((0, 0, 0))
+    let idx = composite_child_index(composites);
+    lineage_at(addr, composites, &idx)
+}
+
+fn lineage_at(
+    addr: &[u8; 32],
+    composites: &[Composite],
+    idx: &crate::network::nerve::Keyed<usize>,
+) -> (u64, u64, u64) {
+    let Some(&i) = idx.get(addr) else {
+        return (0, 0, 0);
+    };
+    let Some((_, children, ribbon)) = composites.get(i) else {
+        return (0, 0, 0);
+    };
+    (
+        children.iter().filter(|(_, done)| *done).count() as u64,
+        children.len() as u64,
+        ribbon.len() as u64,
+    )
 }
 
 /// Measure the rank of the book — pure.
@@ -247,13 +267,12 @@ pub fn rank_over(
         && prior.retire_gen == language.retire_gen
         && language.words.len() >= prior.basis_len
         && prior.invariants.len() == prior.addresses.len();
-    let mut moved: Vec<crate::transducer::stalk::Invariant> = Vec::new();
+    let mut moved: crate::network::nerve::Keyed<crate::transducer::stalk::Invariant> =
+        crate::network::nerve::Keyed::new();
     if incremental {
         for w in &language.words[prior.basis_len..] {
             let inv = crate::transducer::stalk::invariant_of(w);
-            if !moved.contains(&inv) {
-                moved.push(inv);
-            }
+            moved.insert(inv.key(), inv);
         }
     }
     let prior_at: Vec<Option<usize>> = addresses.iter().map(|addr| prior.index.get(addr).copied()).collect();
@@ -275,7 +294,7 @@ pub fn rank_over(
         .map(|(i, (p, _))| {
             let held = prior_at[i].and_then(|j| {
                 let same_basis = prior.basis_gen == basis_gen;
-                let untouched = incremental && !moved.contains(&invariants[i]);
+                let untouched = incremental && !moved.contains(&invariants[i].key());
                 (same_basis || untouched).then(|| prior.closure[j])
             });
             held.unwrap_or_else(|| {
@@ -288,10 +307,11 @@ pub fn rank_over(
             })
         })
         .collect();
+    let child_idx = composite_child_index(composites);
     let lineage: Vec<(u64, u64)> = pending
         .iter()
         .map(|(p, _)| {
-            let (r, t, _) = lineage_of(&p.address(), composites);
+            let (r, t, _) = lineage_at(&p.address(), composites, &child_idx);
             (r, t)
         })
         .collect();
@@ -366,7 +386,7 @@ pub fn quote_incidence(
     pressure: &[u64; 4],
     composites: &[Composite],
     budget: usize,
-    spoken: &crate::network::nerve::Keyed<Vec<[u8; 32]>>,
+    spoken: &crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     voice: &[u8; 32],
 ) -> (
     [u64; 4],
@@ -377,17 +397,22 @@ pub fn quote_incidence(
     let mut used = 0usize;
     let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     for chart in voice_charts {
+        let chart_key = chart.key();
         for addr in listing_atlas.fiber(chart) {
-            if !on_page.contains(addr) || seen.contains(addr) {
+            if !on_page.contains(&addr) || seen.contains(&addr) {
                 continue;
             }
-            if spoken.get(addr).is_some_and(|voices| voices.contains(voice)) {
+            if spoken.get(&addr).is_some_and(|voices| voices.contains(voice)) {
                 continue;
             }
-            let Some(&idx) = book_index.get(addr) else { continue };
+            let Some(&idx) = book_index.get(&addr) else { continue };
             let Some((p, _)) = pending.get(idx) else { continue };
-            let open = open_charts_of(addr, p, field);
-            if !open.iter().any(|c| c == chart) {
+            let open = open_charts_of(&addr, p, field);
+            let mut open_set: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+            for c in &open {
+                open_set.insert(c.key(), ());
+            }
+            if !open_set.contains(&chart_key) {
                 continue;
             }
             let open_len: usize = 1 + open.iter().map(|c| 1 + 8 * c.0.len().min(255)).sum::<usize>();
@@ -396,7 +421,7 @@ pub fn quote_incidence(
                 continue;
             }
             used += wire;
-            seen.insert(*addr, ());
+            seen.insert(addr, ());
             let mut mu = crate::economy::price(&p.magnitude(), pressure, pool);
             mu[2] = p.magnitude()[2].saturating_mul(1 + surface[2]);
             let (resolved, total, ribbon) = lineage_of(&p.address(), composites);
@@ -548,9 +573,9 @@ pub struct Kernel {
     basis: Vec<Element>,
     /// Pointer-stable copies of `basis` for incremental snapshots.
     word_arcs: Vec<std::sync::Arc<Element>>,
-    /// The discoverer (installing voice) of each basis germ, parallel to `basis`
-    /// — so novelty yield flows to who germinated it, on real use.
-    discoverers: Vec<[u8; 32]>,
+    /// The discoverer of each basis germ, keyed by the word's address —
+    /// retire must not shift a parallel Vec.
+    discoverers: crate::network::nerve::Keyed<[u8; 32]>,
     /// The stalk space over `basis` (index-aligned): congruence lookup on
     /// the orbit quotient selects the fiber over a support's invariant and
     /// runs the exact orbit test there. Measured from the basis, never
@@ -611,11 +636,8 @@ pub struct Kernel {
     /// Retirements of basis words, counted: while it stands still, every
     /// index into the basis names the same word it did.
     retire_gen: u64,
-    /// THE RECEIPTS OF SPEECH: (listing address, voice) for every listing a
-    /// voice has probed or attested in its current state. A listing that
-    /// closes or descends changes address and leaves this relation; a quote
-    /// never serves a voice a listing it has already spoken on.
-    spoken: crate::network::nerve::Keyed<Vec<[u8; 32]>>,
+    /// THE RECEIPTS OF SPEECH: listing → voices that have spoken on it.
+    spoken: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// THE QUOTE FRONTIER: remainder-of-g and unreached-moduli demands
     /// (empty-cites attest). Percept-pair coboundary tapes stay on the
     /// book for consilience but are not served on a quote page.
@@ -632,9 +654,8 @@ pub struct Kernel {
     on_page: crate::network::nerve::Keyed<()>,
     /// Pending index by address, so incidence is a keyed read.
     book_index: crate::network::nerve::Keyed<usize>,
-    /// Voices that have closed a chart of a listing, with the cited versor:
-    /// two Flat loops on one chart whose versors glue are consilient.
-    flat_loops: crate::network::nerve::Keyed<Vec<(crate::transducer::stalk::Invariant, [u8; 32], element::Versor)>>,
+    /// Voices that have closed a chart of a listing, keyed by chart then voice.
+    flat_loops: crate::network::nerve::Keyed<crate::network::nerve::Keyed<(crate::transducer::stalk::Invariant, element::Versor)>>,
     /// Atlas of listings and cavities: admitted under the base chart at
     /// list and under every face in the field. Drain never removes from here.
     listing_atlas: crate::transducer::stalk::Stalks,
@@ -664,6 +685,8 @@ pub struct Kernel {
     heard: crate::network::nerve::Keyed<()>,
     /// Listing address → corpus task id, so a verified solve pays the same escrow.
     listing_task: crate::network::nerve::Keyed<[u8; 32]>,
+    /// Reverse: task → listings bound to it.
+    task_listings: crate::network::nerve::Keyed<Vec<[u8; 32]>>,
     /// THE SETTLEMENTS awaiting the court: (listing, its chain, the voice,
     /// the utterance, magnitude before, magnitude after). The court replays
     /// the utterance and measures the deflation itself — proof of
@@ -687,9 +710,26 @@ pub struct Kernel {
     /// The settlement ledger (POW++-gated bounties, consilience splits).
     treasury: crate::economy::Treasury,
     /// Words installed on two-voice consilience but NOT yet court-final
-    /// (Step 5): local dialect awaiting the admission docket — (address, the
-    /// element as spoken at install). Vec-of-relations.
-    provisional: Vec<([u8; 32], Element)>,
+    /// (Step 5): local dialect awaiting the admission docket, keyed by address.
+    provisional: crate::network::nerve::Keyed<Element>,
+    /// Listings whose field has a non-Flat chart — the court's docket, written
+    /// in write_field, read in key order.
+    open: crate::network::nerve::Keyed<()>,
+    /// Ruled addresses beside the ruled cover trie.
+    ruled_addrs: crate::network::nerve::Keyed<()>,
+    /// Ruled cover root, maintained on admit/remove.
+    ruled_root: [u8; 32],
+    /// Per-lane listing occupancy, updated in book_list/unlist.
+    occupancy: [u64; 4],
+    /// Per-lane magnitude sum of the open book, updated on list/unlist.
+    pressure_sum: [u64; 4],
+    /// Listings standing on each lane, for eviction candidates.
+    lane_listings: [crate::network::nerve::Keyed<()>; 4],
+    /// Cocycle rows keyed by (chart, ordered pair).
+    cocycle_at: crate::network::nerve::Keyed<Vec<element::Versor>>,
+    /// Anchor evidence/mismatch membership keyed by address+footprint.
+    evidence_at: crate::network::nerve::Keyed<()>,
+    mismatch_at: crate::network::nerve::Keyed<()>,
     /// SELECTION-FIBER CRITICAL PAIRS (Step 7): Q_anchor residuals — a word's
     /// substance matched a defect but its π refused the support. (word address,
     /// the symmetric difference, the scene it arose in). The court's admission
@@ -708,6 +748,37 @@ pub struct Kernel {
     composites: Vec<([u8; 32], Vec<([u8; 32], bool)>, Vec<(i64, i64, u8, u8)>)>,
 }
 
+fn cocycle_key(inv: &crate::transducer::stalk::Invariant, a: [u8; 32], b: [u8; 32]) -> [u8; 32] {
+    let mut h = blake3::Hasher::new();
+    h.update(&inv.key());
+    h.update(&a);
+    h.update(&b);
+    *h.finalize().as_bytes()
+}
+
+fn loop_key(chart: &crate::transducer::stalk::Invariant, voice: &[u8; 32]) -> [u8; 32] {
+    let mut h = blake3::Hasher::new();
+    h.update(&chart.key());
+    h.update(voice);
+    *h.finalize().as_bytes()
+}
+
+fn footprint_key(addr: [u8; 32], fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> [u8; 32] {
+    let mut h = blake3::Hasher::new();
+    h.update(&addr);
+    for (r, c) in fp {
+        h.update(&r.to_le_bytes());
+        h.update(&c.to_le_bytes());
+    }
+    h.update(&[0xff]);
+    for (r, c, hue) in scene {
+        h.update(&r.to_le_bytes());
+        h.update(&c.to_le_bytes());
+        h.update(&[*hue]);
+    }
+    *h.finalize().as_bytes()
+}
+
 impl Kernel {
     pub fn new() -> Self {
         Kernel::default()
@@ -717,13 +788,54 @@ impl Kernel {
         self.basis.len()
     }
 
+    fn discoverer_of(&self, addr: &[u8; 32]) -> [u8; 32] {
+        self.discoverers.get(addr).copied().unwrap_or([0; 32])
+    }
+
+    fn discoverer_at(&self, i: usize) -> [u8; 32] {
+        self.basis.get(i).map(|w| self.discoverer_of(&w.address())).unwrap_or([0; 32])
+    }
+
+    fn book_elem(&self, addr: &[u8; 32]) -> Option<&Element> {
+        self.book_index.get(addr).and_then(|&i| self.pending.get(i).map(|(p, _)| p))
+    }
+
+    fn occupy(&mut self, addr: [u8; 32], mag: &[u64; 4], add: bool) {
+        for l in 0..4 {
+            if mag[l] > 0 {
+                if add {
+                    self.occupancy[l] = self.occupancy[l].saturating_add(1);
+                    self.lane_listings[l].insert(addr, ());
+                } else {
+                    self.occupancy[l] = self.occupancy[l].saturating_sub(1);
+                    self.lane_listings[l].remove(&addr);
+                }
+            }
+            if add {
+                self.pressure_sum[l] = self.pressure_sum[l].saturating_add(mag[l]);
+            } else {
+                self.pressure_sum[l] = self.pressure_sum[l].saturating_sub(mag[l]);
+            }
+        }
+    }
+
+    fn refresh_ruled_root(&mut self) {
+        let digests = crate::transducer::sheaf::digests(&self.ruled);
+        let mut h = blake3::Hasher::new();
+        for d in &digests {
+            h.update(&d.root);
+        }
+        self.ruled_root = *h.finalize().as_bytes();
+    }
+
     /// Place a word on the basis with no syntropic stroke: restore and the
     /// fallback cursor walk insert this way so a snapshot does not condense
     /// the language it is loading.
     fn basis_insert(&mut self, word: Element, discoverer: [u8; 32]) -> usize {
         let i = self.basis.len();
+        let addr = word.address();
         self.basis.push(word);
-        self.discoverers.push(discoverer);
+        self.discoverers.insert(addr, discoverer);
         self.word_arcs.push(std::sync::Arc::new(self.basis[i].clone()));
         self.basis_gen += 1;
         self.language_append_arc(std::sync::Arc::clone(&self.word_arcs[i]));
@@ -763,11 +875,14 @@ impl Kernel {
             return;
         }
         let inv = crate::transducer::stalk::invariant_of(&self.basis[i]);
-        let twisted = self.field.entries().iter().any(|(_, es)| {
-            es.iter().any(|e| {
-                e.chart == inv && matches!(e.state, crate::transducer::stalk::Closure::Twisted(_))
-            })
-        });
+        let twisted = self
+            .field
+            .get(&self.basis[i].address())
+            .is_some_and(|es| {
+                es.iter().any(|e| {
+                    e.chart == inv && matches!(e.state, crate::transducer::stalk::Closure::Twisted(_))
+                })
+            });
         let mut asgs: Vec<(Vec<(u8, u8)>, Vec<element::Versor>)> = Vec::new();
         for (asg, g) in trans {
             match asgs.iter_mut().find(|(a, _)| a == &asg) {
@@ -801,13 +916,13 @@ impl Kernel {
         let Some(seed) = self.basis[i].fiber(element::FIBER_SPATIAL).cloned() else {
             let asg = element::assignment(self.basis[i].sub());
             self.basis[i].record_dislocation(asg, fail.clone());
-            self.touch();
+            self.touch_at(i);
             return;
         };
         self.basis[i].set_fiber(axis, seed);
         let asg = element::assignment(self.basis[i].sub());
         self.basis[i].record_dislocation(asg, fail.clone());
-        self.touch();
+        self.touch_at(i);
         eprintln!(
             "  germinated fibre axis {axis} from a failed orbit on a Twisted chart"
         );
@@ -827,6 +942,9 @@ impl Kernel {
                     return None;
                 }
                 let t = self.tension.get(k)?;
+                if !self.open.contains(k) {
+                    return None;
+                }
                 let occupied = t.iter().any(|&x| x > 0);
                 let nonflat: Vec<_> = entries.iter().filter(|e| !e.state.is_flat()).collect();
                 if occupied
@@ -847,23 +965,24 @@ impl Kernel {
     /// List a residual on the book and admit its base chart.
     fn book_list(&mut self, residual: Element, k_now: u64) {
         let addr = residual.address();
+        let mag = residual.magnitude();
         let inv = crate::transducer::stalk::invariant_of(&residual);
         self.listing_atlas.admit(&inv, addr);
-        self.tension.insert(addr, residual.magnitude());
+        self.tension.insert(addr, mag);
         self.book_index.insert(addr, self.pending.len());
         self.on_page.insert(addr, ());
+        self.occupy(addr, &mag, true);
         self.pending.push((residual, k_now));
         self.book_gen += 1;
     }
 
     fn pending_take(&mut self, addr: &[u8; 32]) -> Option<Element> {
-        let i = self.book_index.remove(addr).or_else(|| {
-            self.pending.iter().position(|(p, _)| p.address() == *addr)
-        })?;
+        let i = self.book_index.remove(addr)?;
         if i >= self.pending.len() {
             return None;
         }
         let (elem, _) = self.pending.swap_remove(i);
+        self.occupy(*addr, &elem.magnitude(), false);
         if i < self.pending.len() {
             self.book_index.insert(self.pending[i].0.address(), i);
         }
@@ -920,18 +1039,16 @@ impl Kernel {
     }
 
     fn recompute_tension(&mut self, addr: &[u8; 32]) {
-        let t = match self.field.get(addr) {
-            Some(entries) if entries.iter().any(|e| !e.state.is_flat()) => {
-                element::measure_lanes(&union_remainders(entries))
-            }
-            Some(_) => [0; 4],
-            None => self
-                .book_index
+        let t = if self.open.contains(addr) {
+            self.field
                 .get(addr)
-                .and_then(|&i| self.pending.get(i))
-                .map(|(p, _)| p.magnitude())
+                .map(|entries| element::measure_lanes(&union_remainders(entries)))
+                .unwrap_or([0; 4])
+        } else {
+            self.book_elem(addr)
+                .map(|p| p.magnitude())
                 .or_else(|| self.cavity_book.get(addr).map(|e| e.magnitude()))
-                .unwrap_or([0; 4]),
+                .unwrap_or([0; 4])
         };
         self.tension.insert(*addr, t);
     }
@@ -988,6 +1105,12 @@ impl Kernel {
                 remainder,
                 stagnant: stag,
             });
+        }
+        let nonflat = entries.iter().filter(|e| !e.state.is_flat()).count();
+        if nonflat > 0 {
+            self.open.insert(*addr, ());
+        } else {
+            self.open.remove(addr);
         }
         self.field.insert(*addr, entries);
         self.recompute_tension(addr);
@@ -1115,7 +1238,7 @@ impl Kernel {
             return new;
         };
         let card = self.basis[ai].clone();
-        let disc = self.discoverers[ai];
+        let disc = self.discoverer_at(ai);
         self.basis_remove(ai);
         let Some(bi) = self.basis_index.get(&base).copied() else {
             return new;
@@ -1149,8 +1272,8 @@ impl Kernel {
         self.physics.torse_relief(lanes, spanned as u64);
         let mu = crate::economy::price(&[0, 0, spanned as u64, 0], &self.physics.pressure, &self.treasury.pool());
         let anchor = self.anchor();
-        self.treasury.settle_torse(self.discoverers[i], mu, anchor);
-        self.touch();
+        self.treasury.settle_torse(self.discoverer_at(i), mu, anchor);
+        self.touch_at(i);
     }
 
     /// Redundancy probe on the admitted word's own stratum: a plain card
@@ -1168,7 +1291,7 @@ impl Kernel {
             .copied()
             .filter(|a| a != new)
             .collect();
-        let bidder = self.discoverers[i];
+        let bidder = self.discoverer_at(i);
         for addr in members {
             let Some(j) = self.basis_index.get(&addr).copied() else {
                 continue;
@@ -1176,7 +1299,7 @@ impl Kernel {
             if !self.basis[j].sections().is_empty() || !self.basis[j].torsion().is_empty() {
                 continue;
             }
-            if self.provisional.iter().any(|(a, _)| a == &addr) {
+            if self.provisional.contains(&addr) {
                 continue;
             }
             let candidate = self.basis[j].clone();
@@ -1208,7 +1331,7 @@ impl Kernel {
             .get(addr)
             .and_then(|&i| self.basis.get(i))
             .or_else(|| self.cavity_book.get(addr))
-            .or_else(|| self.provisional.iter().find(|(a, _)| a == addr).map(|(_, e)| e))
+            .or_else(|| self.provisional.get(addr))
     }
 
     /// A word the court finalized here joins the ruled cover (keyed admit).
@@ -1216,12 +1339,13 @@ impl Kernel {
         if let Some(w) = self.word_at(addr) {
             let inv = crate::transducer::stalk::invariant_of(w);
             self.ruled.admit(&inv, *addr);
+            self.ruled_addrs.insert(*addr, ());
+            self.refresh_ruled_root();
         }
     }
 
     fn ruled_contains(&self, addr: &[u8; 32]) -> bool {
-        let Some(w) = self.word_at(addr) else { return false };
-        self.ruled.fiber(&crate::transducer::stalk::invariant_of(w)).iter().any(|a| a == addr)
+        self.ruled_addrs.contains(addr)
     }
 
     /// List a connection on the docket if it is not already provisional.
@@ -1230,7 +1354,7 @@ impl Kernel {
             return;
         }
         let addr = word.address();
-        if self.provisional.iter().any(|(a, _)| a == &addr) {
+        if self.provisional.contains(&addr) {
             return;
         }
         let mag = word.magnitude();
@@ -1241,7 +1365,7 @@ impl Kernel {
         self.deflations.insert(addr, mag);
         let k_now = self.k_step();
         self.provisional_k.insert(addr, k_now);
-        self.provisional.push((addr, word.clone()));
+        self.provisional.insert(addr, word.clone());
         let inv = crate::transducer::stalk::invariant_of(word);
         if self.field.get(&addr).is_none() {
             self.write_field(
@@ -1271,9 +1395,13 @@ impl Kernel {
 
     /// Remove the word at `i` from the basis, its discoverer, and its stalk.
     fn basis_remove(&mut self, i: usize) -> Element {
-        self.discoverers.remove(i);
-        std::sync::Arc::make_mut(&mut self.stalks).remove(&self.basis[i].address());
-        self.ruled.remove(&self.basis[i].address());
+        let addr = self.basis[i].address();
+        self.discoverers.remove(&addr);
+        std::sync::Arc::make_mut(&mut self.stalks).remove(&addr);
+        self.ruled.remove(&addr);
+        if self.ruled_addrs.remove(&addr).is_some() {
+            self.refresh_ruled_root();
+        }
         self.basis_gen += 1;
         self.retire_gen += 1;
         let removed = self.basis.remove(i);
@@ -1288,7 +1416,7 @@ impl Kernel {
     fn basis_clear(&mut self) {
         self.basis.clear();
         self.word_arcs.clear();
-        self.discoverers.clear();
+        self.discoverers = crate::network::nerve::Keyed::new();
         self.stalks = std::sync::Arc::new(crate::transducer::stalk::Stalks::default());
         self.basis_index = std::sync::Arc::new(crate::network::nerve::Keyed::new());
         self.basis_gen += 1;
@@ -1296,14 +1424,22 @@ impl Kernel {
     }
 
     /// A held word changed in place (a section, a connection, an anchor):
-    /// the language moved.
+    /// the language moved. Refresh every arc (unknown which card moved).
     fn touch(&mut self) {
         self.basis_gen += 1;
-        // In-place fibre: refresh arcs from live basis then rebuild the pointer slice.
         if self.word_arcs.len() == self.basis.len() {
             for i in 0..self.basis.len() {
                 self.word_arcs[i] = std::sync::Arc::new(self.basis[i].clone());
             }
+        }
+        self.language_rebuild();
+    }
+
+    /// A known index moved: replace that one Arc, not the whole slice.
+    fn touch_at(&mut self, i: usize) {
+        self.basis_gen += 1;
+        if i < self.word_arcs.len() && i < self.basis.len() {
+            self.word_arcs[i] = std::sync::Arc::new(self.basis[i].clone());
         }
         self.language_rebuild();
     }
@@ -1388,6 +1524,7 @@ impl Kernel {
         MarketView {
             language: self.language(),
             pending: std::sync::Arc::clone(&self.book.1),
+            book_index: std::sync::Arc::new(self.book_index.clone()),
             composites: std::sync::Arc::clone(&self.book.2),
             surface: crate::economy::yield_surface(&self.physics),
             pressure: self.physics.pressure,
@@ -1438,8 +1575,7 @@ impl Kernel {
         base: &[u8; 32],
         g: &element::Versor,
     ) -> usize {
-        if let Some(i) = self.provisional.iter().position(|(a, _)| a == sibling) {
-            self.provisional.remove(i);
+        if self.provisional.remove(sibling).is_some() {
             let _ = self.treasury.revoke_award(sibling, false);
         }
         let (Some(bi), Some(si)) = (
@@ -1452,9 +1588,9 @@ impl Kernel {
         if element::pullback(&element::positions(self.basis[bi].sub()), sib.sub(), g).is_none() {
             return 0;
         }
-        let disc = self.discoverers[si];
+        let disc = self.discoverer_at(si);
         let gained = self.basis[bi].attach(&sib, g);
-        self.touch();
+        self.touch_at(bi);
         self.basis_remove(si);
         if gained > 0 {
             let mu = crate::economy::price(&[0, 0, 1, 0], &self.physics.pressure, &self.treasury.pool());
@@ -1495,13 +1631,17 @@ impl Kernel {
         let after = rem;
         let anchor = self.anchor();
         let mag = listing.magnitude();
-        let mut charts: Vec<crate::transducer::stalk::Invariant> = Vec::new();
+        let mut charts_at: crate::network::nerve::Keyed<crate::transducer::stalk::Invariant> =
+            crate::network::nerve::Keyed::new();
         for (_, _, _, body) in cites {
             let inv = crate::transducer::stalk::invariant(body);
-            if !charts.contains(&inv) {
-                charts.push(inv);
-            }
+            charts_at.insert(inv.key(), inv);
         }
+        let mut charts: Vec<crate::transducer::stalk::Invariant> = charts_at
+            .entries()
+            .into_iter()
+            .map(|(_, inv)| inv.clone())
+            .collect();
         if charts.is_empty() {
             charts.push(crate::transducer::stalk::invariant(listing.sub()));
         }
@@ -1515,7 +1655,7 @@ impl Kernel {
             for (addr, _, _, _) in cites {
                 if let Some(i) = self.basis_index.get(addr).copied() {
                     let mag = self.basis[i].magnitude();
-                    self.treasury.settle_use(voice, self.discoverers[i], mag, anchor);
+                    self.treasury.settle_use(voice, self.discoverer_at(i), mag, anchor);
                 }
             }
             for chart in charts {
@@ -1564,13 +1704,23 @@ impl Kernel {
         };
         self.write_field(target, rem_inv.clone(), state, residual.clone(), &before, &after);
         self.listing_atlas.admit_also(&rem_inv, *target);
-        if let Some(&li) = self.book_index.get(target) {
+        let mag_shift = if let Some(&li) = self.book_index.get(target) {
             if let Some(held) = self.pending.get_mut(li) {
+                let old = held.0.magnitude();
                 held.0.mag[2] = residual.len() as u64;
                 if let Some(v) = v_disloc {
                     held.0.record_dislocation(element::assignment(&residual), v);
                 }
+                Some((old, held.0.magnitude()))
+            } else {
+                None
             }
+        } else {
+            None
+        };
+        if let Some((old, newm)) = mag_shift {
+            self.occupy(*target, &old, false);
+            self.occupy(*target, &newm, true);
         }
         let settled: [u64; 4] = std::array::from_fn(|l| before[l].saturating_sub(after[l]));
         self.spoken.remove(target);
@@ -1588,12 +1738,20 @@ impl Kernel {
         voice: [u8; 32],
         g: element::Versor,
     ) {
-        let mut loops = self.flat_loops.get(listing).cloned().unwrap_or_default();
-        if loops.iter().any(|(c, w, _)| c == &chart && *w == voice) {
+        let key = loop_key(&chart, &voice);
+        if self.flat_loops.get(listing).is_some_and(|m| m.contains(&key)) {
             return;
         }
-        loops.push((chart, voice, g));
-        self.flat_loops.insert(*listing, loops);
+        match self.flat_loops.get_mut(listing) {
+            Some(m) => {
+                m.insert(key, (chart, g));
+            }
+            None => {
+                let mut m = crate::network::nerve::Keyed::new();
+                m.insert(key, (chart, g));
+                self.flat_loops.insert(*listing, m);
+            }
+        }
     }
 
     /// Topological volume: cards, fibre span, open listings. K is algebraic
@@ -1632,17 +1790,14 @@ impl Kernel {
     /// The provisional words installed past a court's "since" k-step.
     pub fn dockets_since(&self, since_k: u64) -> Vec<([u8; 32], Element, Vec<[u8; 32]>, [u64; 4], [u64; 4], u64)> {
         self.provisional
-            .iter()
+            .entries()
+            .into_iter()
             .filter_map(|(addr, spoken)| {
                 let k = self.provisional_k.get(addr).copied().unwrap_or(0);
                 if k <= since_k && since_k > 0 {
                     return None;
                 }
-                let (_, voices, mu, _) = self
-                    .treasury
-                    .escrowed_awards()
-                    .iter()
-                    .find(|(a, _, _, _)| a == addr)?;
+                let (voices, mu, _) = self.treasury.escrow_of(addr)?;
                 // A word whose deflation is unmeasured is not served: the
                 // court rules what was measured, never a fabricated zero.
                 let deflation = self.deflation_of(addr);
@@ -1666,10 +1821,9 @@ impl Kernel {
         if !matches!(ruling, RULING_UPHELD | RULING_DEMOTED | RULING_SLASHED) {
             return false;
         }
-        let Some(i) = self.provisional.iter().position(|(a, _)| a == addr) else {
+        if self.provisional.remove(addr).is_none() {
             return false;
-        };
-        self.provisional.remove(i);
+        }
         if ruling == RULING_UPHELD {
             self.ruled_admit(addr); // finalized here: it joins the ruled cover
             if let Some(w) = self.word_at(addr).cloned() {
@@ -1709,30 +1863,19 @@ impl Kernel {
     /// the ruled cover, escrow held. The basis does not grow here.
     pub fn court_stroke(&mut self) {
         let cap = crate::physics::spend_unit() as usize;
-        let mut keys: Vec<[u8; 32]> = Vec::new();
-        for (addr, entries) in self.field.entries() {
-            if keys.len() >= cap {
-                break;
-            }
-            if self.ruled_contains(addr) {
-                continue;
-            }
-            if !entries.iter().any(|e| !e.state.is_flat()) {
-                continue;
-            }
-            if self.deflation_of(addr).iter().all(|&x| x == 0) {
-                continue;
-            }
-            if keys.iter().any(|k| k == addr) {
-                continue;
-            }
-            keys.push(*addr);
-        }
+        let keys: Vec<[u8; 32]> = self
+            .open
+            .entries()
+            .into_iter()
+            .map(|(addr, _)| *addr)
+            .filter(|addr| !self.ruled_contains(addr) && self.deflation_of(addr).iter().any(|&x| x > 0))
+            .take(cap)
+            .collect();
         for addr in keys {
             let spoken = self
                 .word_at(&addr)
                 .cloned()
-                .or_else(|| self.pending.iter().find(|(p, _)| p.address() == addr).map(|(p, _)| p.clone()));
+                .or_else(|| self.book_elem(&addr).cloned());
             let Some(spoken) = spoken else {
                 continue;
             };
@@ -1740,9 +1883,7 @@ impl Kernel {
                 eprintln!("  court slash {:02x}{:02x}… {reason}", addr[0], addr[1]);
                 let _ = self.treasury.revoke_award(&addr, true);
                 self.relocate_cavity(&addr);
-                if let Some(i) = self.provisional.iter().position(|(a, _)| a == &addr) {
-                    self.provisional.remove(i);
-                }
+                self.provisional.remove(&addr);
                 self.court_slashed += 1;
                 continue;
             }
@@ -1770,13 +1911,14 @@ impl Kernel {
         let inv = crate::transducer::stalk::invariant_of(&spoken);
         let asg = element::assignment(spoken.sub());
         let fibre: Vec<[u8; 32]> = {
-            let mut f = self.ruled.fiber(&inv).to_vec();
-            for a in self.stalks.fiber(&inv) {
-                if !f.contains(a) {
-                    f.push(*a);
-                }
+            let mut f: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+            for a in self.ruled.fiber(&inv) {
+                f.insert(a, ());
             }
-            f
+            for a in self.stalks.fiber(&inv) {
+                f.insert(a, ());
+            }
+            f.entries().into_iter().map(|(k, _)| *k).collect()
         };
         let held = fibre
             .iter()
@@ -1784,9 +1926,7 @@ impl Kernel {
             .find(|w| w.address() != addr && !w.axes().is_empty());
         if spoken.is_sentence() {
             if let Some(n) = crate::transducer::sentence::from_element(&spoken) {
-                let missing = n.germs.iter().any(|g| {
-                    g.address != addr && self.basis_index.get(&g.address).is_none() && self.word_at(&g.address).is_none()
-                });
+                let missing = n.germs.iter().any(|g| g.address != addr && self.word_at(&g.address).is_none());
                 if missing {
                     self.heard.insert(addr, ());
                     return Glue::Dialect;
@@ -1841,21 +1981,25 @@ impl Kernel {
                 }
             },
         };
-        // Triangle: every triple on the chart, never the first three.
-        let views: Vec<Element> = fibre
-            .iter()
-            .filter_map(|a| self.word_at(a).cloned())
-            .chain(std::iter::once(spoken.clone()))
-            .fold(Vec::new(), |mut acc, w| {
-                if !acc.iter().any(|h| h.address() == w.address()) {
-                    acc.push(w);
-                }
-                acc
-            });
+        // Triangle: fiber members are unique addresses; the fetched word's
+        // index is the matching fiber slot (or appended if not yet held).
+        let mut views: Vec<Element> = Vec::new();
+        let mut ni = None;
+        for a in &fibre {
+            let Some(w) = self.word_at(a) else { continue };
+            if *a == addr {
+                ni = Some(views.len());
+            }
+            views.push(w.clone());
+        }
+        if ni.is_none() {
+            ni = Some(views.len());
+            views.push(spoken.clone());
+        }
         if spoken.is_sentence() {
             // The sentence's own cycles are the triangles that share a face
             // with it; the chart-wide triple walk does not run.
-        } else if let Some(ni) = views.iter().position(|w| w.address() == addr) {
+        } else if let Some(ni) = ni {
             for j in 0..views.len() {
                 if j == ni {
                     continue;
@@ -1894,9 +2038,7 @@ impl Kernel {
                 }
                 self.ruled_admit(&addr);
                 self.fed_admit(&addr, spoken.clone());
-                if let Some(i) = self.provisional.iter().position(|(a, _)| a == &addr) {
-                    self.provisional.remove(i);
-                }
+                self.provisional.remove(&addr);
                 self.court_upheld += 1;
             }
             Glue::Attached => {
@@ -1905,7 +2047,7 @@ impl Kernel {
                         if let Some(v) = crate::transducer::stalk::placement_of(&g) {
                             if let Some(i) = self.basis_index.get(&rep.address()).copied() {
                                 self.basis[i].record_dislocation(asg, v);
-                                self.touch();
+                                self.touch_at(i);
                             }
                         }
                     }
@@ -1927,10 +2069,19 @@ impl Kernel {
         v: element::Versor,
     ) {
         let (p, q) = if a <= b { (a, b) } else { (b, a) };
-        if self.cocycles.iter().any(|(i, x, y, w)| {
-            i == &inv && *x == p && *y == q && element::same_versor(w, &v)
-        }) {
+        let key = cocycle_key(&inv, p, q);
+        if self
+            .cocycle_at
+            .get(&key)
+            .is_some_and(|vs| vs.iter().any(|w| element::same_versor(w, &v)))
+        {
             return;
+        }
+        match self.cocycle_at.get_mut(&key) {
+            Some(vs) => vs.push(v.clone()),
+            None => {
+                self.cocycle_at.insert(key, vec![v.clone()]);
+            }
         }
         self.cocycles.push((inv, p, q, v));
     }
@@ -1939,14 +2090,20 @@ impl Kernel {
     /// the same stratum (same root and count) — evidence the peer glued it.
     pub fn confirm_peer_holds(&mut self, remote: &[crate::transducer::sheaf::StratumDigest]) {
         let local = crate::transducer::sheaf::digests(&self.ruled);
-        let pending: Vec<[u8; 32]> = self.provisional.iter().map(|(a, _)| *a).collect();
+        let mut ours: crate::network::nerve::Keyed<([u8; 32], u32)> = crate::network::nerve::Keyed::new();
+        for d in &local {
+            ours.insert(d.inv.key(), (d.root, d.count));
+        }
+        let mut theirs: crate::network::nerve::Keyed<([u8; 32], u32)> = crate::network::nerve::Keyed::new();
+        for d in remote {
+            theirs.insert(d.inv.key(), (d.root, d.count));
+        }
+        let pending: Vec<[u8; 32]> = self.provisional.entries().into_iter().map(|(a, _)| *a).collect();
         for addr in pending {
             let Some(w) = self.word_at(&addr) else { continue };
-            let inv = crate::transducer::stalk::invariant_of(w);
-            let ours = local.iter().find(|d| d.inv == inv);
-            let theirs = remote.iter().find(|d| d.inv == inv);
-            if let (Some(o), Some(t)) = (ours, theirs) {
-                if o.root == t.root && o.count == t.count {
+            let k = crate::transducer::stalk::invariant_of(w).key();
+            if let (Some(o), Some(t)) = (ours.get(&k), theirs.get(&k)) {
+                if o.0 == t.0 && o.1 == t.1 {
                     self.home_install(&addr);
                 }
             }
@@ -1964,9 +2121,7 @@ impl Kernel {
         }
         self.ruled_admit(addr);
         let _ = self.treasury.release_award(addr);
-        if let Some(i) = self.provisional.iter().position(|(a, _)| a == addr) {
-            self.provisional.remove(i);
-        }
+        self.provisional.remove(addr);
         self.court_upheld += 1;
         eprintln!("  court home installed {:02x}{:02x}… peer holds the stratum", addr[0], addr[1]);
     }
@@ -1974,9 +2129,13 @@ impl Kernel {
     /// A peer's have-list naming a ruled provisional is the same evidence:
     /// the address is on their cover, so the home installs.
     pub fn confirm_peer_holds_addrs(&mut self, have: &[[u8; 32]]) {
-        let pending: Vec<[u8; 32]> = self.provisional.iter().map(|(a, _)| *a).collect();
+        let mut held: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        for h in have {
+            held.insert(*h, ());
+        }
+        let pending: Vec<[u8; 32]> = self.provisional.entries().into_iter().map(|(a, _)| *a).collect();
         for addr in pending {
-            if self.ruled_contains(&addr) && have.iter().any(|h| h == &addr) {
+            if self.ruled_contains(&addr) && held.contains(&addr) {
                 self.home_install(&addr);
             }
         }
@@ -2024,11 +2183,15 @@ impl Kernel {
     ) -> Vec<Vec<u8>> {
         let mut out = Vec::new();
         let mut used = 0usize;
+        let mut held: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        for h in have {
+            held.insert(*h, ());
+        }
         for addr in self.ruled.fiber(inv) {
-            if have.contains(addr) {
+            if held.contains(&addr) {
                 continue;
             }
-            let Some(w) = self.word_at(addr) else { continue };
+            let Some(w) = self.word_at(&addr) else { continue };
             if w.is_connection() && w.letters().is_none() {
                 continue; // letterless history is never taught
             }
@@ -2051,28 +2214,33 @@ impl Kernel {
     }
 
     pub fn fetch_have(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<[u8; 32]> {
-        let mut h = self.ruled_have(inv);
-        for (a, _) in self.heard.entries() {
-            if !h.contains(a) {
-                h.push(*a);
-            }
+        let mut h: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        for a in self.ruled.fiber(inv) {
+            h.insert(a, ());
         }
-        h
+        self.heard.for_each(|a, _| {
+            h.insert(*a, ());
+        });
+        h.entries().into_iter().map(|(k, _)| *k).collect()
     }
 
     pub fn bind_listing_task(&mut self, listing: [u8; 32], task: [u8; 32]) {
         self.listing_task.insert(listing, task);
+        match self.task_listings.get_mut(&task) {
+            Some(v) => {
+                if !v.iter().any(|a| a == &listing) {
+                    v.push(listing);
+                }
+            }
+            None => {
+                self.task_listings.insert(task, vec![listing]);
+            }
+        }
     }
 
     /// Pay a verified solve from the escrow of listings that task deflated.
     pub fn pay_solve(&mut self, task: &[u8; 32], voice: [u8; 32], mu: [u64; 4]) -> [u64; 4] {
-        let listings: Vec<[u8; 32]> = self
-            .listing_task
-            .entries()
-            .into_iter()
-            .filter(|(_, t)| *t == task)
-            .map(|(a, _)| *a)
-            .collect();
+        let listings: Vec<[u8; 32]> = self.task_listings.get(task).cloned().unwrap_or_default();
         let mut paid = [0u64; 4];
         let anchor = self.anchor();
         for addr in &listings {
@@ -2090,39 +2258,40 @@ impl Kernel {
     /// Drop the inflated basis; keep only lettered court-federation words
     /// (the ruled cover). Returns how many cards left.
     pub fn prune_basis_to_ruled(&mut self) -> usize {
-        let mut keep: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        let before = self.basis.len();
+        let mut nb = Vec::new();
+        let mut nd = crate::network::nerve::Keyed::new();
+        let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        // Walk the federation once through the fed index; peel the live word.
         for (addr, elem) in &self.court_federation {
-            if !(elem.is_connection() && elem.letters().is_none()) {
-                keep.insert(*addr, ());
+            if elem.is_connection() && elem.letters().is_none() {
+                continue;
+            }
+            if seen.contains(addr) {
+                continue;
+            }
+            seen.insert(*addr, ());
+            if let Some(&i) = self.basis_index.get(addr) {
+                nb.push(self.basis[i].clone());
+                nd.insert(*addr, self.discoverer_of(addr));
+            } else {
+                nb.push(elem.clone());
+                nd.insert(*addr, [0; 32]);
             }
         }
-        let before = self.basis.len();
-        if keep.entries().is_empty() {
-            // No ruled cover on disk: drop the leaked basis entirely.
+        if seen.is_empty() {
             self.basis.clear();
             self.word_arcs.clear();
-            self.discoverers.clear();
+            self.discoverers = crate::network::nerve::Keyed::new();
             self.reindex_basis();
             self.stalks = std::sync::Arc::new(crate::transducer::stalk::Stalks::default());
             self.ruled = crate::transducer::stalk::Stalks::default();
+            self.ruled_addrs = crate::network::nerve::Keyed::new();
+            self.refresh_ruled_root();
             self.basis_gen += 1;
             self.retire_gen += 1;
             self.language_rebuild();
             return before;
-        }
-        let mut nb = Vec::new();
-        let mut nd = Vec::new();
-        for (w, d) in self.basis.iter().zip(&self.discoverers) {
-            if keep.contains(&w.address()) {
-                nb.push(w.clone());
-                nd.push(*d);
-            }
-        }
-        for (addr, elem) in &self.court_federation {
-            if keep.contains(addr) && !nb.iter().any(|w| w.address() == *addr) {
-                nb.push(elem.clone());
-                nd.push([0; 32]);
-            }
         }
         let dropped = before.saturating_sub(nb.len());
         self.basis = nb;
@@ -2131,6 +2300,11 @@ impl Kernel {
         self.reindex_basis();
         self.stalks = std::sync::Arc::new(crate::transducer::stalk::Stalks::over_elements(self.basis.iter()));
         self.ruled = crate::transducer::stalk::Stalks::over_elements(self.basis.iter());
+        self.ruled_addrs = crate::network::nerve::Keyed::new();
+        for w in &self.basis {
+            self.ruled_addrs.insert(w.address(), ());
+        }
+        self.refresh_ruled_root();
         self.basis_gen += 1;
         self.retire_gen += 1;
         self.language_rebuild();
@@ -2138,19 +2312,14 @@ impl Kernel {
     }
 
     pub fn ruled_root(&self) -> [u8; 32] {
-        let digests = crate::transducer::sheaf::digests(&self.ruled);
-        let mut h = blake3::Hasher::new();
-        for d in &digests {
-            h.update(&d.root);
-        }
-        *h.finalize().as_bytes()
+        self.ruled_root
     }
 
     /// Test/helper: identity-glue every provisional as if an overlapping
     /// hypha fetched the same word. The basis grows from gluing, not from
     /// the two-voice quorum that listed them.
     pub fn glue_local(&mut self) {
-        let words: Vec<Element> = self.provisional.iter().map(|(_, e)| e.clone()).collect();
+        let words: Vec<Element> = self.provisional.entries().into_iter().map(|(_, e)| e.clone()).collect();
         for w in words {
             let _ = self.glue_fetched(w, [2; 32], [1; 32]);
         }
@@ -2163,7 +2332,7 @@ impl Kernel {
 
     #[cfg(test)]
     pub(crate) fn rule_all_provisionals(&mut self) {
-        let addrs: Vec<[u8; 32]> = self.provisional.iter().map(|(a, _)| *a).collect();
+        let addrs: Vec<[u8; 32]> = self.provisional.entries().into_iter().map(|(a, _)| *a).collect();
         for a in addrs {
             self.ruled_admit(&a);
         }
@@ -2181,8 +2350,8 @@ impl Kernel {
     /// the first Cover), plus charts of open listings and of the ruled language.
     pub fn active_cover(&self) -> Vec<(u8, crate::transducer::stalk::Invariant)> {
         let mut out = vec![(0, crate::transducer::stalk::invariant_of(&Element::identity(2)))];
-        for (p, _) in &self.pending {
-            out.push((0, crate::transducer::stalk::invariant_of(p)));
+        for (inv, _) in self.listing_atlas.strata() {
+            out.push((0, inv));
         }
         for (inv, _) in self.ruled.strata() {
             out.push((0, inv));
@@ -2277,16 +2446,7 @@ impl Kernel {
     /// chosen, no lane is ordered above another (the polytonic law).
     pub fn lane_room(&self) -> [usize; 4] {
         let cap = self.dynamic_lane_capacity();
-        let mut occupied = [0usize; 4];
-        for (p, _) in &self.pending {
-            let m = p.magnitude();
-            for l in 0..4 {
-                if m[l] > 0 {
-                    occupied[l] += 1;
-                }
-            }
-        }
-        std::array::from_fn(|l| cap[l].max(1).saturating_sub(occupied[l]))
+        std::array::from_fn(|l| cap[l].max(1).saturating_sub(self.occupancy[l] as usize))
     }
 
     /// Does a residual fit the book on every lane it moves?
@@ -2301,7 +2461,7 @@ impl Kernel {
         for (_, children, _) in &self.composites {
             let listed = children
                 .iter()
-                .filter(|(a, done)| !done && self.pending.iter().any(|(p, _)| p.address() == *a))
+                .filter(|(a, done)| !done && self.book_index.contains(a))
                 .count();
             if listed > 0 {
                 parents_open += 1;
@@ -2346,15 +2506,14 @@ impl Kernel {
         }
         let Some(ci) = ready else { return };
         let (parent, children, strip) = self.composites.remove(ci);
-        let mut voices: Vec<[u8; 32]> = vec![voice];
+        let mut voices: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        voices.insert(voice, ());
         for (a, _) in &children {
             if let Some(i) = self.basis_index.get(a).copied() {
-                let d = self.discoverers[i];
-                if !voices.contains(&d) {
-                    voices.push(d);
-                }
+                voices.insert(self.discoverer_at(i), ());
             }
         }
+        let voices: Vec<[u8; 32]> = voices.entries().into_iter().map(|(k, _)| *k).collect();
         let anchor = self.anchor();
         // μ_assembly: the overlap volume actually glued — measured, never flat.
         let mu = [0, 0, strip.len().max(1) as u64, 0];
@@ -2409,7 +2568,7 @@ impl Kernel {
         cites: &[crate::anastome::dialogue::CiteWire],
     ) -> Option<[u64; 4]> {
         let i = self.basis_index.get(addr).copied()?;
-        if self.provisional.iter().any(|(a, _)| a == addr) {
+        if self.provisional.contains(addr) {
             return None;
         }
         // Never a BUNDLE — its sections/cycles carry family volume no other
@@ -2480,7 +2639,7 @@ impl Kernel {
             // the bundle (sections, connection) — the genome converges in
             // volume, not only in vocabulary.
             self.basis[i].merge_fibre(word);
-            self.touch();
+            self.touch_at(i);
             // Presence is not finality: an unruled connection stays on the
             // docket until the court measures it.
             if word.is_connection() && !self.ruled_contains(&addr) {
@@ -2522,19 +2681,19 @@ impl Kernel {
     fn record_spoken(&mut self, listing: [u8; 32], voice: [u8; 32]) {
         match self.spoken.get_mut(&listing) {
             Some(voices) => {
-                if !voices.contains(&voice) {
-                    voices.push(voice);
-                }
+                voices.insert(voice, ());
             }
             None => {
-                self.spoken.insert(listing, vec![voice]);
+                let mut voices = crate::network::nerve::Keyed::new();
+                voices.insert(voice, ());
+                self.spoken.insert(listing, voices);
             }
         }
     }
 
     /// The receipts of speech, keyed by listing: read at a listing's own
     /// address, never walked.
-    pub fn spoken(&self) -> &crate::network::nerve::Keyed<Vec<[u8; 32]>> {
+    pub fn spoken(&self) -> &crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>> {
         &self.spoken
     }
 
@@ -2566,10 +2725,7 @@ impl Kernel {
         before: [u64; 4],
         after: [u64; 4],
     ) {
-        let cap = crate::physics::reserve_max() as usize;
-        if self.settlements.len() >= cap {
-            self.settlements.remove(0);
-        }
+        // Settlements are receipts: they stay until the court hears them, never drop.
         let k = self.k_step();
         self.settlements.push((listing, chain, voice, cites.to_vec(), before, after, k));
     }
@@ -2602,14 +2758,7 @@ impl Kernel {
         if self.pressure_gen == self.book_gen && !self.pending.is_empty() {
             return;
         }
-        let mut p = [0u64; 4];
-        for (listing, _) in &self.pending {
-            let m = listing.magnitude();
-            for l in 0..4 {
-                p[l] = p[l].saturating_add(m[l]);
-            }
-        }
-        self.physics.pressure = p;
+        self.physics.pressure = self.pressure_sum;
         self.pressure_gen = self.book_gen;
     }
 
@@ -2627,7 +2776,7 @@ impl Kernel {
         // consilienced at this home from routed demands whose listing never
         // stood here (or was evicted) deflated at least its own measure —
         // never a fabricated zero for the court to slash.
-        let on = |addr: [u8; 32]| self.pending.iter().find(|(p, _)| p.address() == addr).map(|(p, _)| p.magnitude());
+        let on = |addr: [u8; 32]| self.book_elem(&addr).map(|p| p.magnitude());
         let deflation = on(listing).or_else(|| on(word)).unwrap_or(own);
         self.deflations.insert(word, deflation);
     }
@@ -2653,9 +2802,7 @@ impl Kernel {
         }
         let residual = element::from_residual_framed(&chain.to_vec(), frame);
         let addr = residual.address();
-        if self.basis_index.contains(&addr)
-            || self.pending.iter().any(|(p, _)| p.address() == addr)
-        {
+        if self.basis_index.contains(&addr) || self.book_index.contains(&addr) {
             return false; // already speakable or already listed
         }
         // Every lane the residual moves must have room; none is chosen.
@@ -2679,9 +2826,11 @@ impl Kernel {
         if fp.is_empty() || self.anchor_evidence.len() >= 128 {
             return false;
         }
-        if self.anchor_evidence.iter().any(|(a, f, s)| *a == addr && *f == fp && *s == scene) {
+        let key = footprint_key(addr, &fp, &scene);
+        if self.evidence_at.contains(&key) {
             return false;
         }
+        self.evidence_at.insert(key, ());
         self.anchor_evidence.push((addr, fp, scene));
         true
     }
@@ -2701,13 +2850,13 @@ impl Kernel {
         let mut bound = false;
         if let Some(i) = self.basis_index.get(addr).copied() {
             self.basis[i] = self.basis[i].clone().with_anchor(pi.clone());
-            self.touch();
+            self.touch_at(i);
             bound = true;
         }
         // A germ still PENDING quorum accepts the bind too — it installs
         // already anchored (evidence often reaches family size before the
         // second voice completes the install).
-        if let Some(i) = self.pending.iter().position(|(t, _)| t.address() == *addr) {
+        if let Some(&i) = self.book_index.get(addr) {
             let listed = self.pending[i].1;
             self.pending[i] = (self.pending[i].0.clone().with_anchor(pi), listed);
             self.book_gen += 1;
@@ -2718,6 +2867,7 @@ impl Kernel {
             // EVIDENCE PERSISTS — the family keeps growing so the court can
             // re-refine iteratively: loose early carriers tighten as more
             // witnessed placements accumulate (rebinding is never one-shot).
+            self.mismatch_at.remove(addr);
             self.anchor_mismatches.retain(|(a, _, _)| a != addr);
         }
         bound
@@ -2839,7 +2989,8 @@ impl Kernel {
                 }
                 if let Some(w) = language.words.get(wi) {
                     let addr = w.address();
-                    if !self.anchor_mismatches.iter().any(|(a, _, _)| *a == addr) {
+                    if !self.mismatch_at.contains(&addr) {
+                        self.mismatch_at.insert(addr, ());
                         self.anchor_mismatches.push((addr, q, scene.clone()));
                     }
                 }
@@ -2895,11 +3046,9 @@ impl Kernel {
                         let fp = word_footprint_in(&self.basis[i], &chain, (*or, *oc));
                         if !fp.is_empty() {
                             let addr = self.basis[i].address();
-                            if !self
-                                .anchor_evidence
-                                .iter()
-                                .any(|(a, f, s)| *a == addr && *f == fp && s == scene)
-                            {
+                            let key = footprint_key(addr, &fp, scene);
+                            if !self.evidence_at.contains(&key) {
+                                self.evidence_at.insert(key, ());
                                 self.anchor_evidence.push((addr, fp, scene.clone()));
                             }
                         }
@@ -2911,7 +3060,7 @@ impl Kernel {
                     // PoUW circulation: the demander pays each cited word's
                     // discoverer the structure exercised, from earned balance.
                     let mag = self.basis[i].magnitude();
-                    self.treasury.settle_use(voice, self.discoverers[i], mag, anchor);
+                    self.treasury.settle_use(voice, self.discoverer_at(i), mag, anchor);
                 }
                 self.physics.syntropy(&mag); // a spanned sentence builds order
                 self.complete_composite_child(&gaddr, voice); // lineage: a solved tile
@@ -2941,7 +3090,7 @@ impl Kernel {
                     let quorum = self.admission.voices(&saddr) >= crate::network::consensus::QUORUM;
                     if quorum && self.physics.can_expand(lanes) {
                         self.basis[ti].puncture(asg);
-                        self.touch();
+                        self.touch_at(ti);
                         let mu = crate::economy::price(
                             &residual.magnitude(),
                             &self.physics.pressure,
@@ -2955,7 +3104,7 @@ impl Kernel {
                         self.record_deflation(saddr, listing, residual.magnitude());
                         let k_now = self.k_step();
                         self.provisional_k.insert(saddr, k_now);
-                        self.provisional.push((saddr, residual.clone()));
+                        self.provisional.insert(saddr, residual.clone());
                         self.physics.relieve(&mag);
                         self.physics.syntropy(&mag); // volume built through the axis
                         // A puncture deepens a held word: order built, no
@@ -2997,7 +3146,7 @@ impl Kernel {
                     self.record_deflation(addr, listing, residual.magnitude());
                     let k_now = self.k_step();
                     self.provisional_k.insert(addr, k_now);
-                    self.provisional.push((addr, residual.clone()));
+                    self.provisional.insert(addr, residual.clone());
                     self.physics.relieve(&mag);
                     self.physics.syntropy(&mag); // a completed rule is order built
                     self.physics.spend(lanes); // the expansion SHRINKS the reserve
@@ -3085,7 +3234,7 @@ impl Kernel {
                     if frontier {
                         self.quote_frontier.insert(addr, ());
                     }
-                    if !self.pending.iter().any(|(p, _)| p.address() == addr) {
+                    if !self.book_index.contains(&addr) {
                         // Every lane the residual moves must have room; no
                         // lane is chosen. When one it needs is full, the
                         // weakest listing standing on a full lane it needs
@@ -3100,31 +3249,21 @@ impl Kernel {
                                 &crate::economy::price(&residual.magnitude(), &self.physics.pressure, &self.treasury.pool()),
                                 0,
                             );
-                            let weakest = self
-                                .pending
-                                .iter()
-                                .enumerate()
-                                .filter(|(_, (p, _))| saturated.iter().any(|&l| p.magnitude()[l] > 0))
-                                .min_by(|(_, (p, lk)), (_, (q, mk))| {
-                                    let ap = action_potential(
-                                        &crate::economy::price(&p.magnitude(), &self.physics.pressure, &self.treasury.pool()),
-                                        k_now.saturating_sub(*lk),
-                                    );
-                                    let aq = action_potential(
-                                        &crate::economy::price(&q.magnitude(), &self.physics.pressure, &self.treasury.pool()),
-                                        k_now.saturating_sub(*mk),
-                                    );
-                                    ap.cmp(&aq)
-                                })
-                                .map(|(i, (p, lk))| {
-                                    (
-                                        i,
-                                        action_potential(
-                                            &crate::economy::price(&p.magnitude(), &self.physics.pressure, &self.treasury.pool()),
-                                            k_now.saturating_sub(*lk),
-                                        ),
-                                    )
+                            let mut cands: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+                            for &l in &saturated {
+                                self.lane_listings[l].for_each(|a, _| {
+                                    cands.insert(*a, ());
                                 });
+                            }
+                            let weakest = cands.entries().into_iter().filter_map(|(addr, _)| {
+                                let &i = self.book_index.get(addr)?;
+                                let (p, lk) = self.pending.get(i)?;
+                                let a = action_potential(
+                                    &crate::economy::price(&p.magnitude(), &self.physics.pressure, &self.treasury.pool()),
+                                    k_now.saturating_sub(*lk),
+                                );
+                                Some((i, a))
+                            }).min_by_key(|(_, a)| *a);
                             match weakest {
                                 Some((i, a)) if a < new_a => {
                                     let evicted = self.pending[i].0.address();
@@ -3344,7 +3483,7 @@ impl Kernel {
                         continue;
                     };
                     let sib = self.basis[j].clone();
-                    let sibling_disc = self.discoverers[j];
+                    let sibling_disc = self.discoverer_at(j);
                     self.basis_remove(j);
                     let Some(i) = self.basis_index.get(&own).copied() else { continue };
                     if self.basis[i].attach(&sib, &g) > 0 {
@@ -3375,9 +3514,9 @@ impl Kernel {
                 let surface = crate::economy::yield_surface(&self.physics);
                 let mu = [0, 0, (spanned as u64) * (1 + surface[2]), 0];
                 let anchor = self.anchor();
-                self.treasury.settle_torse(self.discoverers[i], mu, anchor);
+                self.treasury.settle_torse(self.discoverer_at(i), mu, anchor);
             }
-            self.touch(); // sections and cycles may have moved at the cursor
+            self.touch_at(i); // sections and cycles may have moved at the cursor
             if self.basis[i].sections().is_empty() && self.basis[i].torsion().is_empty() {
                 return Some(i);
             }
@@ -3479,17 +3618,18 @@ impl Kernel {
         let mut out = Vec::new();
         out.extend_from_slice(b"MYC1");
         out.extend_from_slice(&(self.basis.len() as u32).to_le_bytes());
-        for (g, who) in self.basis.iter().zip(&self.discoverers) {
+        for g in &self.basis {
+            let who = self.discoverer_of(&g.address());
             let eb = g.to_bytes();
             out.extend_from_slice(&(eb.len() as u32).to_le_bytes());
             out.extend_from_slice(&eb);
-            out.extend_from_slice(who);
+            out.extend_from_slice(&who);
         }
         out.extend_from_slice(&self.treasury.snapshot());
         // PROVISIONAL section (Step 5) — appended so pre-court snapshots
         // restore with an empty docket rather than failing.
         out.extend_from_slice(&(self.provisional.len() as u32).to_le_bytes());
-        for (addr, spoken) in &self.provisional {
+        for (addr, spoken) in self.provisional.entries() {
             out.extend_from_slice(addr);
             let eb = spoken.to_bytes();
             out.extend_from_slice(&(eb.len() as u32).to_le_bytes());
@@ -3645,7 +3785,7 @@ impl Kernel {
                     let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
                     let spoken = Element::from_bytes(&b[..end], &mut ep)?;
                     *pos += elen;
-                    kernel.provisional.push((addr, spoken));
+                    kernel.provisional.insert(addr, spoken);
                 }
             }
             // Chain section (absent in earlier snapshots → the clock starts).
@@ -3797,6 +3937,7 @@ impl Kernel {
                     kernel.book_index.insert(addr, kernel.pending.len());
                     kernel.on_page.insert(addr, ());
                     kernel.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), addr);
+                    kernel.occupy(addr, &elem.magnitude(), true);
                     kernel.pending.push((elem, k));
                 }
             }
@@ -3844,22 +3985,34 @@ impl Kernel {
                         let bb: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                         *pos += 32;
                         let v = element::Versor::from_bytes(b, pos)?;
-                        kernel.cocycles.push((crate::transducer::stalk::Invariant(axes), a, bb, v));
+                        let inv = crate::transducer::stalk::Invariant(axes);
+                        let (p, q) = if a <= bb { (a, bb) } else { (bb, a) };
+                        let key = cocycle_key(&inv, p, q);
+                        match kernel.cocycle_at.get_mut(&key) {
+                            Some(vs) => vs.push(v.clone()),
+                            None => {
+                                kernel.cocycle_at.insert(key, vec![v.clone()]);
+                            }
+                        }
+                        kernel.cocycles.push((inv, a, bb, v));
                     }
                 }
             }
-            for (addr, entries) in kernel.field.entries() {
-                for e in entries {
+            let field_keys: Vec<[u8; 32]> = kernel.field.entries().into_iter().map(|(k, _)| *k).collect();
+            for addr in field_keys {
+                let Some(entries) = kernel.field.get(&addr).cloned() else { continue };
+                let nonflat = entries.iter().filter(|e| !e.state.is_flat()).count();
+                for e in &entries {
                     if !e.state.is_flat() {
-                        kernel.listing_atlas.admit_also(&e.chart, *addr);
+                        kernel.listing_atlas.admit_also(&e.chart, addr);
                     }
                 }
-                let t = if entries.iter().any(|e| !e.state.is_flat()) {
-                    element::measure_lanes(&union_remainders(entries))
+                if nonflat > 0 {
+                    kernel.open.insert(addr, ());
+                    kernel.tension.insert(addr, element::measure_lanes(&union_remainders(&entries)));
                 } else {
-                    [0; 4]
-                };
-                kernel.tension.insert(*addr, t);
+                    kernel.tension.insert(addr, [0; 4]);
+                }
             }
             Some(())
         };
@@ -3883,19 +4036,17 @@ impl Kernel {
         }
         // A snapshot without DEF1 (or a zero record) re-measures from the
         // spoken word: presence on the docket is not Δ⃗ = 0.
-        let pending_mag = |addr: &[u8; 32], pending: &[(Element, u64)]| {
-            pending.iter().find(|(p, _)| p.address() == *addr).map(|(p, _)| p.magnitude())
-        };
         let zeros = [0u64; 4];
         let need: Vec<([u8; 32], [u64; 4])> = self
             .provisional
-            .iter()
+            .entries()
+            .into_iter()
             .filter_map(|(addr, spoken)| {
                 let held = self.deflations.get(addr).copied().unwrap_or(zeros);
                 if held.iter().any(|&x| x > 0) {
                     return None;
                 }
-                Some((*addr, pending_mag(addr, &self.pending).unwrap_or_else(|| spoken.magnitude())))
+                Some((*addr, self.book_elem(addr).map(|p| p.magnitude()).unwrap_or_else(|| spoken.magnitude())))
             })
             .collect();
         for (addr, mag) in need {
@@ -3910,7 +4061,7 @@ impl Kernel {
             .filter(|w| w.is_connection())
             .cloned()
             .collect();
-        let ratifier = self.discoverers.first().copied().unwrap_or([0; 32]);
+        let ratifier = self.discoverers.entries().first().map(|(w, _)| **w).unwrap_or([0; 32]);
         for w in held {
             if !self.ruled_contains(&w.address()) {
                 self.docket_connection(&w, ratifier);
@@ -4077,6 +4228,9 @@ fn word_footprint_in(
     if base.is_empty() {
         return Vec::new();
     }
+    let mut chain = chain.to_vec();
+    chain.sort_unstable();
+    let chain = chain.as_slice();
     let pos = element::positions(base);
     let mut fp: Vec<(i64, i64)> = Vec::new();
     for asg in gen.assignments() {
@@ -4088,7 +4242,7 @@ fn word_footprint_in(
                 continue;
             }
             let (dr, dc) = (cr - pr, cc - pc);
-            if pat.iter().all(|(r, c, b, a)| chain.contains(&(r + dr, c + dc, *b, *a))) {
+            if pat.iter().all(|(r, c, b, a)| chain.binary_search(&(r + dr, c + dc, *b, *a)).is_ok()) {
                 fp.extend(pat.iter().map(|(r, c, _, _)| (r + dr + or, c + dc + oc)));
             }
         }
@@ -4569,7 +4723,7 @@ mod tests {
         // bid away, even if derivable.
         k.basis_insert(from_residual(&germinate(&a, &rot).unwrap()), [1; 32]);
         let addr = k.basis[1].address();
-        k.provisional.push((addr, k.basis[1].clone()));
+        k.provisional.insert(addr, k.basis[1].clone());
         let sentence = vec![(k.basis[0].address(), element::identity_versor(), 0u32, body(&k.basis[0]))];
         assert!(k.try_refine(&addr, [5; 32], &sentence).is_none(), "provisional words are refused");
         assert_eq!(k.basis_len(), 2);
@@ -5226,7 +5380,7 @@ mod tests {
         assert_eq!(home.ingest(&a, &b, [2; 32]), Outcome::GermPending);
         assert_eq!(home.basis_len(), 0);
         home.court_stroke();
-        let spoken = home.provisional[0].1.clone();
+        let spoken = home.provisional.entries()[0].1.clone();
         assert!(matches!(
             peer.glue_fetched(spoken.clone(), [1; 32], [2; 32]),
             Glue::Admitted
@@ -5347,7 +5501,7 @@ mod tests {
         let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
         k.ingest(&a, &b, [1; 32]);
         k.ingest(&a, &b, [2; 32]);
-        let spoken = k.provisional[0].1.clone();
+        let spoken = k.provisional.entries()[0].1.clone();
         let mut forged = spoken.clone();
         forged.mag = [999, 0, 0, 0];
         assert!(matches!(k.glue_fetched(forged.clone(), [2; 32], [1; 32]), Glue::Slashed(_)));
@@ -5368,7 +5522,7 @@ mod tests {
         assert_eq!(home.ingest(&a, &b, [2; 32]), Outcome::GermPending);
         assert_eq!(home.basis_len(), 0);
         home.rule_all_provisionals();
-        let spoken = home.provisional[0].1.clone();
+        let spoken = home.provisional.entries()[0].1.clone();
         assert!(matches!(peer.glue_fetched(spoken, [1; 32], [2; 32]), Glue::Admitted));
         assert!(peer.basis_len() >= 1);
         home.confirm_peer_holds(&peer.ruled_digests());

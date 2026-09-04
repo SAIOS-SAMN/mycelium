@@ -22,6 +22,7 @@
 use super::blade::Shape;
 use super::element::{self, Element, Versor};
 use super::stalk::{self, Stalks};
+use crate::network::nerve::Keyed;
 
 /// A chain cell: (row, col, hue before, hue after).
 pub type Cell = (i64, i64, u8, u8);
@@ -315,14 +316,15 @@ pub fn seam_defect(language: &[Element], cites: &[Cite], target: &[Cell]) -> Vec
 pub fn seam_defect_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Vec<Cell> {
     let mut sorted_target = target.to_vec();
     sorted_target.sort_unstable();
-    let mut spoken: Vec<Vec<(u8, u8)>> = vec![Vec::new(); sorted_target.len()];
+    let mut spoken: Vec<Vec<u16>> = vec![Vec::new(); sorted_target.len()];
     for (v, pat) in ops {
         for &(wr, wc, wb, wa) in pat {
             let Some(p) = element::carry_center(v, wr, wc) else { continue };
             let (tr, tc) = element::cell_of(&p);
             if let Ok(k) = sorted_target.binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc))) {
-                if !spoken[k].contains(&(wb, wa)) {
-                    spoken[k].push((wb, wa));
+                let pair = ((wb as u16) << 8) | wa as u16;
+                if !spoken[k].iter().any(|&p| p == pair) {
+                    spoken[k].push(pair);
                 }
             }
         }
@@ -706,22 +708,77 @@ fn face_word(a: &Germ, b: &Germ) -> (Word, bool) {
     }
 }
 
+fn cell_key(r: i64, c: i64) -> [u8; 32] {
+    let mut k = [0u8; 32];
+    k[..8].copy_from_slice(&r.to_le_bytes());
+    k[8..16].copy_from_slice(&c.to_le_bytes());
+    k
+}
+
+fn germ_pair_key(i: usize, j: usize) -> [u8; 32] {
+    let (a, b) = if i < j { (i, j) } else { (j, i) };
+    let mut k = [0u8; 32];
+    k[..8].copy_from_slice(&(a as u64).to_le_bytes());
+    k[8..16].copy_from_slice(&(b as u64).to_le_bytes());
+    k
+}
+
 /// Assemble a nerve from germs: faces from meeting after-supports, cycles
 /// from a spanning tree plus chords. Canonical germ order is by address.
 pub fn assemble(mut germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
     germs.sort_by(|a, b| a.address.cmp(&b.address));
-    let mut faces = Vec::new();
-    for i in 0..germs.len() {
-        for j in i + 1..germs.len() {
-            let ai = after_support(&germs[i]);
-            let aj = after_support(&germs[j]);
-            if !supports_meet(&ai, &aj) {
-                continue;
+    let supports: Vec<Vec<(i64, i64)>> = germs.iter().map(after_support).collect();
+    let mut at: Keyed<Vec<usize>> = Keyed::new();
+    for (i, sup) in supports.iter().enumerate() {
+        for &(r, c) in sup {
+            let k = cell_key(r, c);
+            match at.get_mut(&k) {
+                Some(v) => {
+                    if !v.contains(&i) {
+                        v.push(i);
+                    }
+                }
+                None => {
+                    at.insert(k, vec![i]);
+                }
             }
-            let overlap = overlap_cells(&ai, &aj);
-            let (g_ij, spelled) = face_word(&germs[i], &germs[j]);
-            faces.push(Face { i, j, overlap, g_ij, spelled });
         }
+    }
+    let mut meet: Keyed<()> = Keyed::new();
+    at.for_each(|_, germs_here| {
+        for a in 0..germs_here.len() {
+            for b in a + 1..germs_here.len() {
+                meet.insert(germ_pair_key(germs_here[a], germs_here[b]), ());
+            }
+        }
+    });
+    for (i, sup) in supports.iter().enumerate() {
+        for &(r, c) in sup {
+            for (dr, dc) in [(-1, 0), (1, 0), (0, -1), (0, 1)] {
+                if let Some(others) = at.get(&cell_key(r + dr, c + dc)) {
+                    for &j in others {
+                        if j != i {
+                            meet.insert(germ_pair_key(i, j), ());
+                        }
+                    }
+                }
+            }
+        }
+    }
+    let mut faces = Vec::new();
+    let pairs: Vec<(usize, usize)> = meet
+        .entries()
+        .into_iter()
+        .map(|(k, _)| {
+            let i = u64::from_le_bytes(k[..8].try_into().unwrap()) as usize;
+            let j = u64::from_le_bytes(k[8..16].try_into().unwrap()) as usize;
+            (i, j)
+        })
+        .collect();
+    for (i, j) in pairs {
+        let overlap = overlap_cells(&supports[i], &supports[j]);
+        let (g_ij, spelled) = face_word(&germs[i], &germs[j]);
+        faces.push(Face { i, j, overlap, g_ij, spelled });
     }
     let cycles = independent_cycles(germs.len(), &faces);
     Nerve { germs, faces, cycles, remainder }
@@ -753,6 +810,10 @@ fn independent_cycles(n: usize, faces: &[Face]) -> Vec<Cycle> {
             adj[f.i].push((f.j, k));
             adj[f.j].push((f.i, k));
         }
+    }
+    let mut by_pair: Keyed<usize> = Keyed::new();
+    for (fi, face) in faces.iter().enumerate() {
+        by_pair.insert(germ_pair_key(face.i, face.j), fi);
     }
     let mut cycles = Vec::new();
     for (k, f) in faces.iter().enumerate() {
@@ -787,7 +848,8 @@ fn independent_cycles(n: usize, faces: &[Face]) -> Vec<Cycle> {
         nodes.reverse();
         let mut hol = Word::identity();
         for w in nodes.windows(2) {
-            if let Some(face) = faces.iter().find(|x| (x.i == w[0] && x.j == w[1]) || (x.i == w[1] && x.j == w[0])) {
+            if let Some(&fi) = by_pair.get(&germ_pair_key(w[0], w[1])) {
+                let face = &faces[fi];
                 hol = if face.i == w[0] {
                     hol.compose(&face.g_ij)
                 } else {
@@ -936,7 +998,10 @@ pub fn as_element(n: &Nerve) -> Option<Element> {
         }
     }
     if !n.is_closed() {
-        if let Some(c) = n.cycles.iter().find(|c| !c.holonomy.abelian_identity()) {
+        for c in &n.cycles {
+            if c.holonomy.abelian_identity() {
+                continue;
+            }
             if let Some(ell) = c.holonomy.period() {
                 let sigma: Vec<(u8, u8)> = c.germs.windows(2).map(|w| (w[0] as u8, w[1] as u8)).collect();
                 e.record_torsion(sigma, ell);

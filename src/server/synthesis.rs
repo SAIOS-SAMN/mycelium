@@ -128,7 +128,10 @@ pub fn probe(
     let Ok(mut g) = k.lock() else { return (PROBE_NOTHING, [0; 4], [0; 4]) };
     let view = g.market_open();
     drop(g);
-    let Some((listing, _)) = view.pending.iter().find(|(p, _)| p.address() == *target) else {
+    let Some(&idx) = view.book_index.get(target) else {
+        return (crate::anastome::dialogue::PROBE_SETTLED, [0; 4], [0; 4]);
+    };
+    let Some((listing, _)) = view.pending.get(idx) else {
         return (crate::anastome::dialogue::PROBE_SETTLED, [0; 4], [0; 4]);
     };
     // The utterance is verified as spoken — its operators against the
@@ -263,7 +266,7 @@ pub fn adopt(
         return Adoption::Refused(reason);
     }
     let Ok(mut g) = k.lock() else { return Adoption::Refused("kernel unavailable") };
-    if g.basis().iter().any(|t| t.address() == word.address()) {
+    if g.word_at(&word.address()).is_some() {
         // Held at this address: the arriving placement's fibre merges
         // (Known or Enriched — the install door decides).
         return g.install_adopted(word, ratifier);
@@ -324,7 +327,7 @@ mod tests {
         assert!(matches!(adopt(&k, court, &fat), Adoption::Refused(_)));
         // Provenance is the ratifying voice, not a sentinel.
         let g = k.lock().unwrap();
-        assert!(g.basis().iter().any(|t| t.address() == word.address()));
+        assert!(g.word_at(&word.address()).is_some());
     }
 
 }

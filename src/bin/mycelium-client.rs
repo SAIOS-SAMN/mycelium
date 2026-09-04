@@ -166,7 +166,14 @@ fn speak_connections(
     }
     let (mut spoken, mut errors) = (0u64, 0u64);
     for rule in &transport.rules {
-        let Some((_, u)) = rule.readings.iter().find(|(r, _)| *r == 0).or(rule.readings.first()) else { continue };
+        let Some((_, u)) = rule
+            .readings
+            .iter()
+            .find(|(r, _)| *r == rule.anchor)
+            .or(rule.readings.first())
+        else {
+            continue;
+        };
         let Some(affine) = mycelium::transducer::element::affine_of(u) else {
             eprintln!("[{name}] connection not affine: a rule's versor has no affine block — held, not uttered");
             errors += 1;
@@ -467,7 +474,12 @@ fn main() {
                     if !cluster.open.is_empty() {
                         let closing: Vec<mycelium::transducer::stalk::Invariant> = {
                             let atlas = entity.epigenome.atlas();
-                            cluster.open.iter().filter(|c| !atlas.fiber(c).is_empty()).cloned().collect()
+                            cluster
+                                .open
+                                .iter()
+                                .filter(|c| !atlas.fiber(c).is_empty())
+                                .cloned()
+                                .collect()
                         };
                         if closing.is_empty() {
                             entity.hold_thought(cluster.chain.clone());
