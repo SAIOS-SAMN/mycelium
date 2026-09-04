@@ -22,7 +22,7 @@
 use super::blade::Shape;
 use super::element::{self, Element, Versor};
 use super::stalk::{self, Stalks};
-use crate::network::nerve::Keyed;
+use crate::network::nerve::{Keyed, ROOT};
 
 /// A chain cell: (row, col, hue before, hue after).
 pub type Cell = (i64, i64, u8, u8);
@@ -670,12 +670,12 @@ fn word_of_rotor(r: &Rotor) -> Word {
 fn project_cycles(c: &Complex) -> Vec<Cycle> {
     let mut out = Vec::new();
     if let Some(layer) = c.degrees.get(2) {
-        layer.for_each(|_, cell| {
+        for (_, cell) in layer.fiber(&ROOT) {
             out.push(Cycle {
                 germs: cell.vertices.iter().map(germ_index).collect(),
                 holonomy: word_of_rotor(&cell.coefficient),
             });
-        });
+        }
     }
     out
 }
@@ -835,7 +835,7 @@ pub fn assemble(mut germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
     }
     let mut meet: Keyed<()> = Keyed::new();
     // index: keyed fiber of the cell trie; pairs at a cell, peel to 4-neighbours
-    at.for_each(|k, germs_here| {
+    for (k, germs_here) in at.fiber(&ROOT) {
         // index: germs on this cell (the fiber)
         for a in 0..germs_here.len() {
             for b in a + 1..germs_here.len() {
@@ -856,11 +856,10 @@ pub fn assemble(mut germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
                 }
             }
         }
-    });
+    }
     let mut faces = Vec::new();
     let pairs: Vec<(usize, usize)> = meet
-        .entries()
-        .into_iter()
+        .fiber(&ROOT)
         .map(|(k, _)| {
             let i = u64::from_le_bytes(k[..8].try_into().unwrap()) as usize;
             let j = u64::from_le_bytes(k[8..16].try_into().unwrap()) as usize;
@@ -1005,29 +1004,31 @@ pub fn as_element(n: &Nerve) -> Option<Element> {
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     // index: keyed cells of this nerve (tape projection)
     for layer in &n.complex.degrees {
-        layer.for_each(|_, cell| match &cell.fill {
-            Fill::Filled(gamma) if !gamma.is_identity() => {
-                let w = word_of_rotor(gamma);
-                if let Some(v) = element::conformal_of(&alphabet::Spelling { word: w, rho: one.clone() }, &(zero.clone(), zero.clone())) {
+        for (_, cell) in layer.fiber(&ROOT) {
+            match &cell.fill {
+                Fill::Filled(gamma) if !gamma.is_identity() => {
+                    let w = word_of_rotor(gamma);
+                    if let Some(v) = element::conformal_of(&alphabet::Spelling { word: w, rho: one.clone() }, &(zero.clone(), zero.clone())) {
+                        let asg: Vec<(u8, u8)> = cell
+                            .vertices
+                            .windows(2)
+                            .map(|p| (germ_index(&p[0]) as u8, germ_index(&p[1]) as u8))
+                            .collect();
+                        e.record_dislocation(asg, v, element::FIBER_SPATIAL);
+                    }
+                }
+                Fill::Congruent(g, ell) => {
                     let asg: Vec<(u8, u8)> = cell
                         .vertices
                         .windows(2)
                         .map(|p| (germ_index(&p[0]) as u8, germ_index(&p[1]) as u8))
                         .collect();
-                    e.record_dislocation(asg, v, element::FIBER_SPATIAL);
+                    e.record_torsion(asg, *ell, element::FIBER_SPATIAL);
+                    let _ = g;
                 }
+                _ => {}
             }
-            Fill::Congruent(g, ell) => {
-                let asg: Vec<(u8, u8)> = cell
-                    .vertices
-                    .windows(2)
-                    .map(|p| (germ_index(&p[0]) as u8, germ_index(&p[1]) as u8))
-                    .collect();
-                e.record_torsion(asg, *ell, element::FIBER_SPATIAL);
-                let _ = g;
-            }
-            _ => {}
-        });
+        }
     }
     if let Some((class, degree)) = &n.class {
         let sigma: Vec<(u8, u8)> = n
@@ -1036,7 +1037,7 @@ pub fn as_element(n: &Nerve) -> Option<Element> {
             .get(*degree)
             .and_then(|layer| {
                 let mut s = None;
-                layer.for_each(|_, cell| {
+                for (_, cell) in layer.fiber(&ROOT) {
                     if s.is_none() && cell.coefficient == *class {
                         s = Some(
                             cell.vertices
@@ -1045,7 +1046,7 @@ pub fn as_element(n: &Nerve) -> Option<Element> {
                                 .collect(),
                         );
                     }
-                });
+                }
                 s
             })
             .unwrap_or_default();
@@ -1128,7 +1129,7 @@ fn encode_nerve_tail(n: &Nerve, out: &mut Vec<u8>) {
         }
     }
     out.extend_from_slice(&(n.cover.len() as u32).to_le_bytes());
-    n.cover.for_each(|k, _| out.extend_from_slice(k));
+    crate::snapshot::persist(&n.cover, |k, _| out.extend_from_slice(k));
 }
 
 fn take_u32(b: &[u8], pos: &mut usize) -> Option<u32> {

@@ -187,7 +187,7 @@ impl Session {
         // Impedance is a coordinate on the address entry; occluded hyphas
         // drop out of rooms rather than rebuilding a live trie.
         let mut open_rooms = crate::network::nerve::Keyed::new();
-        for (id, room) in rooms.entries() {
+        for (id, room) in rooms.fiber(&crate::network::nerve::ROOT) {
             if addrs.get(id).is_some_and(|a| self.occluded_at(a)) {
                 continue;
             }
@@ -221,7 +221,7 @@ impl Session {
 
     /// The hyphas this entity knows.
     pub fn peers(&self) -> Vec<String> {
-        self.peers.entries().into_iter().map(|(_, a)| a.clone()).collect()
+        self.peers.fiber(&crate::network::nerve::ROOT).map(|(_, a)| a.clone()).collect()
     }
 
     pub fn add_peer(&mut self, addr: &str) {
@@ -267,7 +267,7 @@ impl Session {
     }
 
     fn occluded_at(&self, addr: &str) -> bool {
-        let cycle = (crate::physics::reserve_max() / crate::physics::spend_unit()).max(1);
+        let cycle = crate::physics::aperture_cycle() as u64;
         self.z_at(addr) >= cycle
     }
 
@@ -276,7 +276,7 @@ impl Session {
     /// (reserve ÷ spend strokes) reads as occlusion.
     pub fn transport(&self) -> TransportAperture {
         let z = self.impedance();
-        let cycle = (crate::physics::reserve_max() / crate::physics::spend_unit()).max(1);
+        let cycle = crate::physics::aperture_cycle() as u64;
         if z == 0 {
             TransportAperture::Open
         } else if z < cycle {
@@ -655,8 +655,7 @@ impl Epigenome {
     }
     pub fn recollections(&self) -> Vec<(Vec<[u8; 32]>, u64)> {
         self.recollections
-            .entries()
-            .into_iter()
+            .fiber(&crate::network::nerve::ROOT)
             .map(|(_, (a, n))| (a.clone(), *n))
             .collect()
     }
@@ -699,8 +698,7 @@ impl Epigenome {
         }
         let drop: Vec<[u8; 32]> = self
             .recollections
-            .entries()
-            .into_iter()
+            .fiber(&crate::network::nerve::ROOT)
             .filter(|(_, (addrs, _))| addrs.iter().any(|a| a == &gone))
             .map(|(k, _)| *k)
             .collect();
@@ -967,6 +965,7 @@ pub struct Entity {
     /// Listings this mind has opened an axis on (Vec-of-relations, keyed by
     /// listing address on read): an axis is opened once per listing.
     opened: crate::network::nerve::Keyed<()>,
+    physics: crate::physics::Physics,
 }
 
 impl Entity {
@@ -988,6 +987,7 @@ impl Entity {
             contemplation: crate::transducer::bubble::Contemplation::new(),
             thought_gen: 0,
             opened: crate::network::nerve::Keyed::new(),
+            physics: crate::physics::Physics::default(),
         }
     }
 
@@ -1327,7 +1327,7 @@ impl Entity {
         let thought_charts: Vec<crate::transducer::stalk::Invariant> = {
             let mut charts = Vec::new();
             // index: held bubbles; each cover is a peel of its invariant
-            self.contemplation.bubbles.for_each(|_, b| {
+            for (_, b) in self.contemplation.bubbles.fiber(&crate::network::nerve::ROOT) {
                 let inv = crate::transducer::stalk::invariant(&b.remainder);
                 let mut cur = inv;
                 loop {
@@ -1339,7 +1339,7 @@ impl Entity {
                     }
                     cur = cur.peel();
                 }
-            });
+            }
             charts
         };
         let charts = thought_charts;
@@ -1349,8 +1349,7 @@ impl Entity {
         let bubbles: Vec<(Vec<(i64, i64, u8, u8)>, [u64; 4])> = self
             .contemplation
             .bubbles
-            .entries()
-            .into_iter()
+            .fiber(&crate::network::nerve::ROOT)
             .map(|(_, b)| (b.remainder.clone(), b.volume))
             .collect();
         for (remainder, mag) in &bubbles {
@@ -1442,8 +1441,7 @@ impl Entity {
     /// transition to a held word on the same fibre did not vanish.
     pub fn obstructions(&self) -> Vec<([u8; 32], Element)> {
         self.obstructions
-            .entries()
-            .into_iter()
+            .fiber(&crate::network::nerve::ROOT)
             .map(|(a, g)| (*a, g.clone()))
             .collect()
     }
@@ -1573,9 +1571,9 @@ impl Entity {
     /// PIVOT ON A WORD: expand dirty bubbles, read by_chart at the word's
     /// chart and prefixes, fill cells on those bubbles' links, merge filled
     /// components, speak any component that closes. Fills and expansions
-    /// are capped at spend_unit.
+    /// are capped by one stroke Budget.
     pub fn pivot_on(&mut self, word: &Element) -> usize {
-        let cap = crate::physics::spend_unit() as usize;
+        let mut budget = self.physics.stroke();
         let atlas = self.epigenome.atlas().clone();
         let mut rotors = crate::network::nerve::Keyed::new();
         let inv = crate::transducer::stalk::invariant_of(word);
@@ -1587,8 +1585,8 @@ impl Entity {
                 }
             }
         }
-        let _ = self.contemplation.expand_all(&atlas, &rotors, cap);
-        let (_fills, _formed, _classes, spoken) = self.contemplation.pivot_on(word, cap);
+        let _ = self.contemplation.expand_all(&atlas, &rotors, &mut budget);
+        let (_fills, _formed, _classes, spoken) = self.contemplation.pivot_on(word, &mut budget);
         let mut n = 0usize;
         for e in spoken {
             match self.speak_word(&e) {
@@ -1774,7 +1772,7 @@ mod tests {
         // fails, so resistance accumulates deterministically.
         let s = Session::open("127.0.0.1:1", Kernel::named("impedance-test"));
         assert_eq!(s.transport(), TransportAperture::Open, "no speech yet — presumed clear");
-        let cycle = (crate::physics::reserve_max() / crate::physics::spend_unit()).max(1);
+        let cycle = crate::physics::aperture_cycle() as u64;
         for i in 1..=cycle {
             let _ = s.speak(vec![0xFF]);
             assert_eq!(s.impedance(), i, "each failure is one unit of measured Z");

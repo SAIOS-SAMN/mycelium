@@ -13,6 +13,7 @@ pub mod perception;
 pub mod thought;
 pub mod voice;
 pub mod network;
+mod snapshot;
 pub mod ccl;
 pub mod physics;
 pub mod economy;

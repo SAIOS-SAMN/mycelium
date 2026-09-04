@@ -57,6 +57,30 @@ pub fn spend_unit() -> u64 {
     (reserve_max() / 8).max(2)
 }
 
+/// Linear token for one stroke's keyed reads. Non-Copy, non-Clone: a
+/// function that wants more than a fiber must take a Budget in its
+/// signature. Constructed only by [`Physics::stroke`].
+#[derive(Debug)]
+pub struct Budget {
+    remaining: usize,
+}
+
+impl Budget {
+    /// Reads still granted on this token.
+    pub fn remaining(&self) -> usize {
+        self.remaining
+    }
+
+    /// Spend one read. False when the token is exhausted.
+    pub fn spend(&mut self) -> bool {
+        if self.remaining == 0 {
+            return false;
+        }
+        self.remaining -= 1;
+        true
+    }
+}
+
 /// A duration derived from a measured transport time and a stroke-count
 /// factor. Reserve and spend are counts, never milliseconds. An unmeasured
 /// RTT uses a one-millisecond tick so the first dial can complete; every
@@ -146,6 +170,19 @@ impl Default for Physics {
 }
 
 impl Physics {
+    /// Draw one stroke's read token. The only constructor of [`Budget`].
+    /// Remaining reads equal one spend; cognition never names that number.
+    pub fn stroke(&mut self) -> Budget {
+        Budget { remaining: spend_unit() as usize }
+    }
+
+    /// Test-only: a stroke whose remaining reads are `n`, so the N vs 4N
+    /// counters stay independent of a machine whose spend exceeds N.
+    #[cfg(test)]
+    pub fn stroke_n(&mut self, n: usize) -> Budget {
+        Budget { remaining: n }
+    }
+
     /// The lanes a magnitude vector occupies — the selection a unit spend
     /// runs along. The pressure itself is never this boolean: it carries
     /// the magnitude.

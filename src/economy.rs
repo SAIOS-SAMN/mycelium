@@ -212,8 +212,7 @@ impl Treasury {
 
     pub fn escrowed_awards(&self) -> Vec<([u8; 32], Vec<[u8; 32]>, [u64; 4], Anchor)> {
         self.escrowed
-            .entries()
-            .into_iter()
+            .fiber(&crate::network::nerve::ROOT)
             .map(|(a, (v, mu, an))| (*a, v.clone(), *mu, *an))
             .collect()
     }
@@ -271,8 +270,7 @@ impl Treasury {
 
     pub fn stakes(&self) -> Vec<([u8; 32], Tier, [u64; 4])> {
         self.stakes
-            .entries()
-            .into_iter()
+            .fiber(&crate::network::nerve::ROOT)
             .map(|(w, (tier, mu))| (*w, *tier, *mu))
             .collect()
     }
@@ -513,15 +511,14 @@ impl Treasury {
         for p in &self.escrow {
             out.extend_from_slice(&p.to_le_bytes());
         }
-        let stakes = self.stakes.entries();
-        out.extend_from_slice(&(stakes.len() as u32).to_le_bytes());
-        for (who, (tier, mu)) in stakes {
+        out.extend_from_slice(&(self.stakes.len() as u32).to_le_bytes());
+        crate::snapshot::persist(&self.stakes, |who, (tier, mu)| {
             out.extend_from_slice(who);
             out.push(tier.weight() as u8);
             for m in mu {
                 out.extend_from_slice(&m.to_le_bytes());
             }
-        }
+        });
         out.extend_from_slice(&(self.entries.len() as u32).to_le_bytes());
         for e in &self.entries {
             let tag: u8 = match e.kind {
@@ -550,9 +547,8 @@ impl Treasury {
         }
         // ESCROWED AWARDS section (Step 5) — appended after entries so older
         // snapshots (which simply end here) restore with an empty docket.
-        let escrowed = self.escrowed.entries();
-        out.extend_from_slice(&(escrowed.len() as u32).to_le_bytes());
-        for (addr, (voices, mu, anchor)) in escrowed {
+        out.extend_from_slice(&(self.escrowed.len() as u32).to_le_bytes());
+        crate::snapshot::persist(&self.escrowed, |addr, (voices, mu, anchor)| {
             out.extend_from_slice(addr);
             out.extend_from_slice(&(voices.len() as u32).to_le_bytes());
             for v in voices {
@@ -563,7 +559,7 @@ impl Treasury {
             }
             out.extend_from_slice(&anchor.0.to_le_bytes());
             out.extend_from_slice(&anchor.1);
-        }
+        });
         out
     }
 

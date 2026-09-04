@@ -1,0 +1,10 @@
+# AI-GENERATED CONTENT — see DISCLAIMER.md
+[package]
+name = "xtask"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "lint-enumeration"
+path = "main.rs"

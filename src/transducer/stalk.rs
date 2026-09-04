@@ -30,7 +30,8 @@
 
 use super::alphabet::Rotor;
 use super::element::{self, Versor};
-use crate::network::nerve::Keyed;
+use crate::network::nerve::{Keyed, ROOT};
+use crate::physics::Budget;
 
 /// A chain cell: (row, col, hue before, hue after).
 type Cell = (i64, i64, u8, u8);
@@ -213,7 +214,7 @@ impl Stratum {
 
     fn fiber(&self, axes: &[u64]) -> Vec<[u8; 32]> {
         match axes.split_first() {
-            None => self.members.entries().into_iter().map(|(k, _)| *k).collect(),
+            None => self.members.fiber(&ROOT).map(|(k, _)| *k).collect(),
             Some((&a, rest)) => self.branches.get(&axis_key(a)).map(|s| s.fiber(rest)).unwrap_or_default(),
         }
     }
@@ -244,17 +245,18 @@ impl Stratum {
 
     fn len(&self) -> usize {
         let mut n = self.members.len();
-        self.branches.for_each(|_, s| n += s.len());
+        for (_, s) in self.branches.fiber(&ROOT) {
+            n += s.len();
+        }
         n
     }
 
     fn strata(&self, path: &mut Vec<u64>, out: &mut Vec<(Invariant, Vec<[u8; 32]>)>) {
         if !self.members.is_empty() {
-            let members: Vec<[u8; 32]> = self.members.entries().into_iter().map(|(k, _)| *k).collect();
+            let members: Vec<[u8; 32]> = self.members.fiber(&ROOT).map(|(k, _)| *k).collect();
             out.push((Invariant(path.clone()), members));
         }
-        let kids = self.branches.entries();
-        for (k, s) in kids {
+        for (k, s) in self.branches.fiber(&ROOT) {
             path.push(axis_of(k));
             s.strata(path, out);
             path.pop();
@@ -265,7 +267,9 @@ impl Stratum {
         match axes.split_first() {
             None => {
                 let mut out = Vec::new();
-                self.branches.for_each(|k, _| out.push(axis_of(k)));
+                for (k, _) in self.branches.fiber(&ROOT) {
+                    out.push(axis_of(k));
+                }
                 out
             }
             Some((&a, rest)) => self
@@ -284,8 +288,12 @@ impl Stratum {
     }
 
     fn collect_members(&self, out: &mut Vec<[u8; 32]>) {
-        self.members.for_each(|k, _| out.push(*k));
-        self.branches.for_each(|_, s| s.collect_members(out));
+        for (k, _) in self.members.fiber(&ROOT) {
+            out.push(*k);
+        }
+        for (_, s) in self.branches.fiber(&ROOT) {
+            s.collect_members(out);
+        }
     }
 
     fn fiber_under(&self, axes: &[u64]) -> Vec<[u8; 32]> {
@@ -383,19 +391,22 @@ impl Stalks {
         &self,
         inv: &Invariant,
         after: Option<&[u8; 32]>,
-        budget: usize,
+        budget: &mut Budget,
         mut f: impl FnMut(Invariant),
     ) -> Option<[u8; 32]> {
         let branches = self.root.branches_at(&inv.0);
         let Some(branches) = branches else {
             return after.copied();
         };
-        let last = branches.for_each_from(after, budget, |k, _| {
+        let from = after.copied().unwrap_or(ROOT);
+        let mut last = after.copied();
+        for (k, _) in branches.cursor(from, budget) {
+            last = Some(*k);
             let a = axis_of(k);
             let mut axes = inv.0.clone();
             axes.push(a);
             f(Invariant(axes));
-        });
+        }
         last
     }
 

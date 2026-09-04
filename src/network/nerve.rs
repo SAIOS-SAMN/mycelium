@@ -92,64 +92,6 @@ impl<V> Node<V> {
         }
     }
 
-    fn walk<'a>(&'a self, out: &mut Vec<(&'a [u8; 32], &'a V)>) {
-        match self {
-            Node::Leaf(k, v) => out.push((k, v)),
-            Node::Branch { children, .. } => {
-                for c in children.iter().flatten() {
-                    c.walk(out);
-                }
-            }
-        }
-    }
-
-    fn for_each<F: FnMut(&[u8; 32], &V)>(&self, f: &mut F) {
-        match self {
-            Node::Leaf(k, v) => f(k, v),
-            Node::Branch { children, .. } => {
-                // index: the two children of a PATRICIA branch (fixed arity)
-                for c in children.iter().flatten() {
-                    c.for_each(f);
-                }
-            }
-        }
-    }
-
-    fn for_each_from<F: FnMut(&[u8; 32], &V)>(
-        &self,
-        after: Option<&[u8; 32]>,
-        started: &mut bool,
-        left: &mut usize,
-        last: &mut Option<[u8; 32]>,
-        f: &mut F,
-    ) {
-        if *left == 0 {
-            return;
-        }
-        match self {
-            Node::Leaf(k, v) => {
-                if !*started {
-                    if after.map_or(true, |a| k > a) {
-                        *started = true;
-                    } else {
-                        return;
-                    }
-                }
-                f(k, v);
-                *last = Some(*k);
-                *left -= 1;
-            }
-            Node::Branch { children, .. } => {
-                // index: the two children of a PATRICIA branch (fixed arity)
-                for c in children.iter().flatten() {
-                    c.for_each_from(after, started, left, last, f);
-                    if *left == 0 {
-                        return;
-                    }
-                }
-            }
-        }
-    }
 }
 
 /// Insert into the subtree at `slot`, splitting at bit `d` (the first bit
@@ -299,48 +241,215 @@ impl<V> Keyed<V> {
         self.n == 0
     }
 
-    /// Walk every bound (key, value) in key order without allocating a Vec.
-    pub fn for_each<F: FnMut(&[u8; 32], &V)>(&self, mut f: F) {
+    /// Subtree under `prefix`. The empty prefix [`ROOT`] is this carrier's
+    /// own fiber — valid when the Keyed is already scoped (one bubble's
+    /// charts, one vertex's star, one chart's incidence).
+    pub fn fiber(&self, prefix: &[u8; 32]) -> Fiber<'_, V> {
+        let mut stack = Vec::new();
         if let Some(root) = self.root.as_deref() {
-            root.for_each(&mut f);
+            stack.push(root);
+        }
+        Fiber { stack, prefix: *prefix }
+    }
+
+    /// Parent shell of `key`: the branch that split this leaf. None when
+    /// the key is unbound or is the sole leaf.
+    pub fn peel(&self, key: &[u8; 32]) -> Option<Shell<'_, V>> {
+        let mut node = self.root.as_deref()?;
+        let mut parent: Option<&Node<V>> = None;
+        let mut parent_bit = 0usize;
+        loop {
+            match node {
+                Node::Leaf(k, _) => {
+                    if k != key {
+                        return None;
+                    }
+                    let p = parent?;
+                    return Some(Shell {
+                        fiber: Fiber { stack: vec![p], prefix: ROOT },
+                        prefix: clear_after_bit(key, parent_bit),
+                    });
+                }
+                Node::Branch { bit, children } => {
+                    parent = Some(node);
+                    parent_bit = *bit;
+                    node = children[key_bit(key, *bit)].as_deref()?;
+                }
+            }
         }
     }
 
-    /// Budgeted walk in trie order from a keyed cursor: skip keys `<= after`,
-    /// visit at most `budget` entries, return the last key visited so the
-    /// next stroke resumes. `after = None` starts at the first key.
-    pub fn for_each_from<F: FnMut(&[u8; 32], &V)>(
-        &self,
-        after: Option<&[u8; 32]>,
-        budget: usize,
-        mut f: F,
-    ) -> Option<[u8; 32]> {
-        if budget == 0 {
-            return after.copied();
+    /// At most `budget` entries in key order after `from`. [`ROOT`] starts
+    /// at the first key. The last yielded key is the resume cursor.
+    pub fn cursor<'a>(&'a self, from: [u8; 32], budget: &'a mut crate::physics::Budget) -> Cursor<'a, V> {
+        Cursor {
+            fiber: self.fiber(&ROOT),
+            budget,
+            from,
+            last: if from == ROOT { None } else { Some(from) },
         }
-        let mut started = after.is_none();
-        let mut left = budget;
-        let mut last = after.copied();
-        if let Some(root) = self.root.as_deref() {
-            root.for_each_from(after, &mut started, &mut left, &mut last, &mut f);
-        }
-        last
     }
+}
 
-    /// Every bound (key, value), in key order — a walk of the relation for
-    /// persistence and for measurements over the whole, never for lookup.
-    pub fn entries(&self) -> Vec<(&[u8; 32], &V)> {
-        let mut out = Vec::with_capacity(self.n);
-        if let Some(root) = self.root.as_deref() {
-            root.walk(&mut out);
+/// The empty prefix: the root fiber of a keyed that is already a fiber.
+pub const ROOT: [u8; 32] = [0u8; 32];
+
+fn prefix_len(prefix: &[u8; 32]) -> usize {
+    prefix.iter().rposition(|&b| b != 0).map(|i| i + 1).unwrap_or(0)
+}
+
+fn key_in_fiber(key: &[u8; 32], prefix: &[u8; 32]) -> bool {
+    let n = prefix_len(prefix);
+    n == 0 || key[..n] == prefix[..n]
+}
+
+fn clear_after_bit(key: &[u8; 32], bit: usize) -> [u8; 32] {
+    let mut p = *key;
+    let start = bit.saturating_add(1);
+    let byte = start / 8;
+    let off = start % 8;
+    if byte >= 32 {
+        return p;
+    }
+    if off == 0 {
+        p[byte..].fill(0);
+    } else {
+        p[byte] &= 0xffu8 << (8 - off);
+        if byte + 1 < 32 {
+            p[byte + 1..].fill(0);
         }
-        out
+    }
+    p
+}
+
+/// Subtree under a key prefix. The only read of more than one entry that
+/// is not a link, a peel, or a budgeted cursor.
+pub struct Fiber<'a, V> {
+    stack: Vec<&'a Node<V>>,
+    prefix: [u8; 32],
+}
+
+impl<'a, V> Fiber<'a, V> {
+    fn empty() -> Self {
+        Fiber { stack: Vec::new(), prefix: ROOT }
+    }
+}
+
+impl<'a, V> Iterator for Fiber<'a, V> {
+    type Item = (&'a [u8; 32], &'a V);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(node) = self.stack.pop() {
+            match node {
+                Node::Leaf(k, v) => {
+                    if key_in_fiber(k, &self.prefix) {
+                        return Some((k, v));
+                    }
+                }
+                Node::Branch { children, .. } => {
+                    // index: the two children of a PATRICIA branch (fixed arity)
+                    if let Some(c) = children[1].as_deref() {
+                        self.stack.push(c);
+                    }
+                    if let Some(c) = children[0].as_deref() {
+                        self.stack.push(c);
+                    }
+                }
+            }
+        }
+        None
+    }
+}
+
+/// Entries incident to one key: the inner trie at that key.
+pub struct Link<'a, V> {
+    fiber: Fiber<'a, V>,
+}
+
+impl<'a, V> Iterator for Link<'a, V> {
+    type Item = (&'a [u8; 32], &'a V);
+    fn next(&mut self) -> Option<Self::Item> {
+        self.fiber.next()
+    }
+}
+
+impl<T> Keyed<Keyed<T>> {
+    /// The inner trie at `key` — cells on a vertex, bubbles on a chart.
+    pub fn link(&self, key: &[u8; 32]) -> Link<'_, T> {
+        Link {
+            fiber: match self.get(key) {
+                Some(inner) => inner.fiber(&ROOT),
+                None => Fiber::empty(),
+            },
+        }
+    }
+}
+
+/// Budgeted walk in key order from `from`, consuming a [`crate::physics::Budget`].
+pub struct Cursor<'a, V> {
+    fiber: Fiber<'a, V>,
+    budget: &'a mut crate::physics::Budget,
+    from: [u8; 32],
+    last: Option<[u8; 32]>,
+}
+
+impl<'a, V> Cursor<'a, V> {
+    /// Last key yielded, so the next stroke resumes after it.
+    pub fn last_key(&self) -> Option<[u8; 32]> {
+        self.last
+    }
+}
+
+impl<'a, V> Iterator for Cursor<'a, V> {
+    type Item = (&'a [u8; 32], &'a V);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if self.budget.remaining() == 0 {
+                return None;
+            }
+            let (k, v) = self.fiber.next()?;
+            if self.from != ROOT && k <= &self.from {
+                continue;
+            }
+            if !self.budget.spend() {
+                return None;
+            }
+            self.last = Some(*k);
+            return Some((k, v));
+        }
+    }
+}
+
+/// One shell: the parent prefix of a peel, and the entries at that branch.
+pub struct Shell<'a, V> {
+    fiber: Fiber<'a, V>,
+    prefix: [u8; 32],
+}
+
+impl<'a, V> Shell<'a, V> {
+    pub fn key(&self) -> [u8; 32] {
+        self.prefix
+    }
+}
+
+impl<'a, V> Iterator for Shell<'a, V> {
+    type Item = (&'a [u8; 32], &'a V);
+    fn next(&mut self) -> Option<Self::Item> {
+        self.fiber.next()
+    }
+}
+
+/// Sealed persist walk: only [`crate::snapshot`] names this.
+pub(crate) fn keyed_persist_walk<V>(k: &Keyed<V>, f: &mut impl FnMut(&[u8; 32], &V)) {
+    for (key, v) in k.fiber(&ROOT) {
+        f(key, v);
     }
 }
 
 #[cfg(test)]
 mod keyed_tests {
-    use super::Keyed;
+    use super::{Keyed, ROOT};
 
     /// Keys bind, rebind, read, and unbind exactly; a branch left with one
     /// child collapses; the walk lists everything.
@@ -358,14 +467,16 @@ mod keyed_tests {
         assert_eq!(k.get(&c), Some(&3));
         assert_eq!(k.insert(b, 20), Some(2));
         assert_eq!(k.get(&b), Some(&20));
-        assert_eq!(k.entries().len(), 3);
+        assert_eq!(k.len(), 3);
+        assert_eq!(k.fiber(&ROOT).count(), 3);
         assert_eq!(k.remove(&b), Some(20));
         assert_eq!(k.get(&b), None);
         assert_eq!(k.get(&a), Some(&1));
         assert_eq!(k.get(&c), Some(&3));
         assert_eq!(k.remove(&a), Some(1));
         assert_eq!(k.remove(&a), None);
-        assert_eq!(k.entries().len(), 1);
+        assert_eq!(k.len(), 1);
+        assert_eq!(k.fiber(&ROOT).count(), 1);
         assert_eq!(k.get(&c), Some(&3));
     }
 }
@@ -439,16 +550,18 @@ impl CoverNode {
     }
 
     fn collect_into(&self, out: &mut Keyed<()>) {
-        self.here.for_each(|id, _| {
+        for (id, _) in self.here.fiber(&ROOT) {
             out.insert(*id, ());
-        });
-        self.next.for_each(|_, child| child.collect_into(out));
+        }
+        for (_, child) in self.next.fiber(&ROOT) {
+            child.collect_into(out);
+        }
     }
 
     fn collect(&self) -> Vec<[u8; 32]> {
         let mut out = Keyed::new();
         self.collect_into(&mut out);
-        out.entries().into_iter().map(|(k, _)| *k).collect()
+        out.fiber(&ROOT).map(|(k, _)| *k).collect()
     }
 
     /// Longest common prefix: descend while axes match. A miss after some
@@ -493,8 +606,7 @@ impl CoverNode {
             hasher.update(&[0xff]);
         }
         // Trie order is key order: hash without materialising a Vec of charts.
-        let kids = self.next.entries();
-        for (k, ch) in kids {
+        for (k, ch) in self.next.fiber(&ROOT) {
             path.push(axis_of_le(k));
             ch.hash_charts(hasher, path);
             path.pop();
@@ -505,8 +617,7 @@ impl CoverNode {
         if !self.here.is_empty() {
             out.push(crate::transducer::stalk::Invariant(path.clone()));
         }
-        let kids = self.next.entries();
-        for (k, ch) in kids {
+        for (k, ch) in self.next.fiber(&ROOT) {
             path.push(axis_of_le(k));
             ch.walk(path, out);
             path.pop();
@@ -711,7 +822,7 @@ pub fn home(
             }
         }
     };
-    fiber.for_each(|id, _| {
+    for (id, _) in fiber.fiber(&ROOT) {
         if let Some(room) = room_of(id) {
             if fits(&room) {
                 if let Some(a) = addr_of(id, addrs, self_id) {
@@ -719,7 +830,7 @@ pub fn home(
                 }
             }
         }
-    });
+    }
     if let Some((id, addr, _)) = best {
         return (id, addr);
     }
@@ -729,7 +840,7 @@ pub fn home(
             consider(&mut best, *sid, saddr.to_string(), *sroom);
         }
     }
-    for (id, room) in rooms.entries() {
+    for (id, room) in rooms.fiber(&ROOT) {
         if fits(room) {
             if let Some(a) = addrs.get(id) {
                 consider(&mut best, *id, a.clone(), *room);

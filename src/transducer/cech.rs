@@ -8,7 +8,7 @@
 //! volume persists. A transition that does not realise as a rotor is a
 //! remainder; no cell forms over it. The tower has no top.
 
-use crate::network::nerve::Keyed;
+use crate::network::nerve::{Keyed, ROOT};
 use crate::transducer::alphabet::Rotor;
 use crate::transducer::element::Element;
 
@@ -286,17 +286,14 @@ impl Complex {
     /// Spec name for the all-degree link of one vertex.
     pub fn link_of(&self, vertex: &[u8; 32]) -> Vec<Cell> {
         let mut out = Vec::new();
-        let Some(keys) = self.star.get(vertex) else {
-            return out;
-        };
         // index: keyed fiber of star(vertex)
-        keys.for_each(|k, _| {
+        for (k, _) in self.star.link(vertex) {
             if let Some(&d) = self.by_key.get(k) {
                 if let Some(c) = self.degrees.get(d as usize).and_then(|l| l.get(k)) {
                     out.push(c.clone());
                 }
             }
-        });
+        }
         out
     }
 
@@ -333,17 +330,14 @@ impl Complex {
     /// Cells of one degree that contain `vertex` — a peel of the star.
     pub fn link(&self, vertex: &[u8; 32], degree: usize) -> Vec<Cell> {
         let mut out = Vec::new();
-        let Some(keys) = self.star.get(vertex) else {
-            return out;
-        };
         let Some(layer) = self.degrees.get(degree) else {
             return out;
         };
-        keys.for_each(|k, _| {
+        for (k, _) in self.star.link(vertex) {
             if let Some(c) = layer.get(k) {
                 out.push(c.clone());
             }
-        });
+        }
         out
     }
 
@@ -593,7 +587,9 @@ impl Complex {
         };
         let mut drop: Vec<[u8; 32]> = Vec::new();
         // index: keyed fiber of star(vertex)
-        keys.for_each(|k, _| drop.push(*k));
+        for (k, _) in keys.fiber(&ROOT) {
+            drop.push(*k);
+        }
         for k in drop {
             if let Some(d) = self.by_key.remove(&k) {
                 if let Some(layer) = self.degrees.get_mut(d as usize) {
@@ -607,21 +603,21 @@ impl Complex {
     pub fn classes(&self) -> Vec<(Rotor, usize)> {
         let mut out = Vec::new();
         // index: keyed cells of this complex (one chart's nerve)
-        self.by_key.for_each(|k, d| {
+        for (k, d) in self.by_key.fiber(&ROOT) {
             let d = *d as usize;
             if let Some(c) = self.degrees.get(d).and_then(|l| l.get(k)) {
                 if let Fill::Class(r) = &c.fill {
                     out.push((r.clone(), d));
                 }
             }
-        });
+        }
         out
     }
 
     pub fn unfilled(&self) -> Vec<(usize, [u8; 32])> {
         let mut out = Vec::new();
         // index: keyed cells of this complex (one chart's nerve)
-        self.by_key.for_each(|k, d| {
+        for (k, d) in self.by_key.fiber(&ROOT) {
             let d = *d as usize;
             if d >= 1 {
                 if let Some(c) = self.degrees.get(d).and_then(|l| l.get(k)) {
@@ -630,7 +626,7 @@ impl Complex {
                     }
                 }
             }
-        });
+        }
         out
     }
 
@@ -641,25 +637,25 @@ impl Complex {
     pub fn byte_len(&self) -> usize {
         let mut n = 0usize;
         // index: keyed cells of this complex (persistence size)
-        self.by_key.for_each(|k, d| {
+        for (k, d) in self.by_key.fiber(&ROOT) {
             if let Some(c) = self.degrees.get(*d as usize).and_then(|l| l.get(k)) {
                 n += 32 * c.vertices.len() + 32 + 32;
             }
-        });
+        }
         n
     }
 
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
         out.extend_from_slice(&(self.sections.len() as u32).to_le_bytes());
-        for (k, s) in self.sections.entries() {
+        crate::snapshot::persist(&self.sections, |k, s| {
             out.extend_from_slice(k);
             out.extend_from_slice(&s.addr);
             s.gamma.to_bytes(out);
-        }
+        });
         out.extend_from_slice(&(self.degrees.len() as u32).to_le_bytes());
         for layer in &self.degrees {
             out.extend_from_slice(&(layer.len() as u32).to_le_bytes());
-            for (_, c) in layer.entries() {
+            crate::snapshot::persist(layer, |_, c| {
                 out.push(c.vertices.len() as u8);
                 for v in &c.vertices {
                     out.extend_from_slice(v);
@@ -684,12 +680,12 @@ impl Complex {
                         out.extend_from_slice(&ell.to_le_bytes());
                     }
                 }
-            }
+            });
         }
         out.extend_from_slice(&(self.remainder.len() as u32).to_le_bytes());
-        for (k, _) in self.remainder.entries() {
+        crate::snapshot::persist(&self.remainder, |k, _| {
             out.extend_from_slice(k);
-        }
+        });
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Complex> {

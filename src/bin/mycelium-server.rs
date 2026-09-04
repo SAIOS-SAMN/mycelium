@@ -742,7 +742,7 @@ fn main() {
         let mesh = mesh.clone();
         let join = join_peers.clone();
         std::thread::spawn(move || {
-            let ratio = (mycelium::physics::reserve_max() / mycelium::physics::spend_unit()).max(1);
+            let ratio = mycelium::physics::aperture_cycle() as u64;
             let mut wait = mycelium::physics::from_transport(mesh_rtt(&mesh), 1);
             let mut last_moved = Instant::now();
             loop {
@@ -758,7 +758,7 @@ fn main() {
                     }
                 }
                 if let Ok(a) = mesh.addrs.lock() {
-                    for (id, addr) in a.entries() {
+                    for (id, addr) in a.fiber(&mycelium::network::nerve::ROOT) {
                         if addr != &mesh.bind {
                             dests.insert(*id, addr.clone());
                         }
@@ -771,7 +771,7 @@ fn main() {
                 let req = dialogue::encode_digests_request(&mesh.vk);
                 let deadline = mesh_deadline(&mesh);
                 let mut any_moved = false;
-                let dest_list: Vec<String> = dests.entries().into_iter().map(|(_, a)| a.clone()).collect();
+                let dest_list: Vec<String> = dests.fiber(&mycelium::network::nerve::ROOT).map(|(_, a)| a.clone()).collect();
                 for d in dest_list {
                     match tell_peer(&d, req.clone(), deadline) {
                         Some((reply, dt)) => {
@@ -939,7 +939,7 @@ fn main() {
                 );
                 speak_root(&router, &nerve_tx, &nerve_id, &task, &solver, Some(from), tuniversal.ticks());
             } else if n == 2 {
-                let voices: Vec<[u8; 32]> = syllabus_served.entries().into_iter().map(|(v, _)| *v).collect();
+                let voices: Vec<[u8; 32]> = syllabus_served.fiber(&mycelium::network::nerve::ROOT).map(|(v, _)| *v).collect();
                 for v in voices {
                     syllabus_served.insert(v, 0);
                 }
@@ -952,7 +952,7 @@ fn main() {
             }
             // The reply is this node's record for the task and its clock.
             let reply = dialogue::encode_root_reply(
-                roots.get(&task).and_then(|v| v.entries().first().map(|(k, _)| **k)),
+                roots.get(&task).and_then(|v| v.fiber(&mycelium::network::nerve::ROOT).next().map(|(k, _)| *k)),
                 tuniversal.ticks(),
             );
             let _ = s.write_all(&Frame { lane: frame.lane, body: reply }.encode().unwrap_or_default());
@@ -1038,7 +1038,7 @@ fn main() {
                         eprintln!("  ROOT task {:02x}{:02x}… proven by voice {:02x}; spoken to its key's next hop", tid[0], tid[1], svoice[0]);
                         speak_root(&router, &nerve_tx, &nerve_id, &tid, &svoice, None, tuniversal.ticks());
                         if n >= 2 {
-                            let voices: Vec<[u8; 32]> = syllabus_served.entries().into_iter().map(|(v, _)| *v).collect();
+                            let voices: Vec<[u8; 32]> = syllabus_served.fiber(&mycelium::network::nerve::ROOT).map(|(v, _)| *v).collect();
                             for v in voices {
                                 syllabus_served.insert(v, 0);
                             }
@@ -1062,7 +1062,7 @@ fn main() {
                             }
                         };
                         if n == 2 {
-                            let voices: Vec<[u8; 32]> = syllabus_served.entries().into_iter().map(|(v, _)| *v).collect();
+                            let voices: Vec<[u8; 32]> = syllabus_served.fiber(&mycelium::network::nerve::ROOT).map(|(v, _)| *v).collect();
                             for v in voices {
                                 syllabus_served.insert(v, 0);
                             }

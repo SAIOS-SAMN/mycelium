@@ -6,7 +6,8 @@
 //! and hyphas-on-a-chart. Connections are computed on the link of one new
 //! bubble through by_chart; bubbles are never enumerated.
 
-use crate::network::nerve::Keyed;
+use crate::network::nerve::{Keyed, ROOT};
+use crate::physics::Budget;
 use crate::transducer::alphabet::Rotor;
 use crate::transducer::cech::{self, Cell as CechCell, Complex, Fill, Section};
 use crate::transducer::element::{self, Element};
@@ -109,18 +110,18 @@ impl Bubble {
     /// per stroke, only over overlaps with nonzero volume. Extended grows
     /// the cover; Congruent grows it with a torsion axis; Class writes the
     /// horizon and stops that branch.
-    pub fn expand(&mut self, atlas: &Stalks, budget: usize) -> usize {
+    pub fn expand(&mut self, atlas: &Stalks, budget: &mut Budget) -> usize {
         self.expand_with(atlas, &Keyed::new(), budget)
     }
 
-    pub fn expand_with(&mut self, atlas: &Stalks, rotors: &Keyed<Rotor>, budget: usize) -> usize {
+    pub fn expand_with(&mut self, atlas: &Stalks, rotors: &Keyed<Rotor>, budget: &mut Budget) -> usize {
         self.potential = element::measure_lanes(&self.remainder);
-        if budget == 0 || !self.potential.iter().any(|&x| x > 0) {
+        if budget.remaining() == 0 || !self.potential.iter().any(|&x| x > 0) {
             return 0;
         }
         let inv = stalk::invariant(&self.remainder);
         let peel = inv.peel();
-        let after = if self.cursor == [0u8; 32] {
+        let after = if self.cursor == ROOT {
             None
         } else {
             Some(self.cursor)
@@ -128,9 +129,6 @@ impl Bubble {
         let mut spent = 0usize;
         // index: budgeted sibling keys of one trie node (peel)
         let last = atlas.each_child(&peel, after.as_ref(), budget, |child| {
-            if spent >= budget {
-                return;
-            }
             let ck = child.key();
             if self.cover.contains(&ck) || self.horizon.contains(&ck) {
                 return;
@@ -178,7 +176,7 @@ impl Bubble {
         if let Some(k) = last {
             self.cursor = k;
         }
-        self.dirty = spent >= budget;
+        self.dirty = spent > 0 && budget.remaining() == 0;
         spent
     }
 }
@@ -210,11 +208,11 @@ impl Contemplation {
     }
 
     pub fn remainders(&self) -> Vec<&[RemCell]> {
-        self.bubbles.entries().into_iter().map(|(_, b)| b.remainder.as_slice()).collect()
+        self.bubbles.fiber(&ROOT).map(|(_, b)| b.remainder.as_slice()).collect()
     }
 
     fn retract_incidence(&mut self, key: &[u8; 32], b: &Bubble) {
-        let charts: Vec<[u8; 32]> = b.cover.entries().into_iter().map(|(k, _)| *k).collect();
+        let charts: Vec<[u8; 32]> = b.cover.fiber(&ROOT).map(|(k, _)| *k).collect();
         for ck in charts {
             if let Some(m) = self.by_chart.get_mut(&ck) {
                 m.remove(key);
@@ -230,16 +228,18 @@ impl Contemplation {
     }
 
     fn admit_incidence(&mut self, key: [u8; 32], b: &Bubble) {
-        b.cover.for_each(|ck, _| match self.by_chart.get_mut(ck) {
-            Some(m) => {
-                m.insert(key, ());
+        for (ck, _) in b.cover.fiber(&ROOT) {
+            match self.by_chart.get_mut(ck) {
+                Some(m) => {
+                    m.insert(key, ());
+                }
+                None => {
+                    let mut m = Keyed::new();
+                    m.insert(key, ());
+                    self.by_chart.insert(*ck, m);
+                }
             }
-            None => {
-                let mut m = Keyed::new();
-                m.insert(key, ());
-                self.by_chart.insert(*ck, m);
-            }
-        });
+        }
         for &(r, c, _, _) in &b.remainder {
             let ck = rem_cell_key(r, c);
             match self.by_cell.get_mut(&ck) {
@@ -301,7 +301,7 @@ impl Contemplation {
                 return;
             };
             (
-                b.cover.entries().into_iter().map(|(k, _)| *k).collect::<Vec<_>>(),
+                b.cover.fiber(&ROOT).map(|(k, _)| *k).collect::<Vec<_>>(),
                 b.volume,
             )
         };
@@ -315,15 +315,13 @@ impl Contemplation {
         );
         let mut neighbors = Keyed::new();
         for ck in &charts {
-            if let Some(here) = self.by_chart.get(ck) {
-                here.for_each(|id, _| {
-                    if id != &key {
-                        neighbors.insert(*id, ());
-                    }
-                });
+            for (id, _) in self.by_chart.link(ck) {
+                if id != &key {
+                    neighbors.insert(*id, ());
+                }
             }
         }
-        let nbs: Vec<[u8; 32]> = neighbors.entries().into_iter().map(|(k, _)| *k).collect();
+        let nbs: Vec<[u8; 32]> = neighbors.fiber(&ROOT).map(|(k, _)| *k).collect();
         let mut rems: Keyed<Vec<RemCell>> = Keyed::new();
         if let Some(b) = self.bubbles.get(&key) {
             rems.insert(key, b.remainder.clone());
@@ -354,7 +352,7 @@ impl Contemplation {
                     for v in &cell.vertices {
                         if let Some(b) = self.bubbles.get_mut(v) {
                             let keys: Vec<[u8; 32]> =
-                                b.nerve.sections.entries().into_iter().map(|(k, _)| *k).collect();
+                                b.nerve.sections.fiber(&ROOT).map(|(k, _)| *k).collect();
                             for sk in keys {
                                 if let Some(sec) = b.nerve.sections.get_mut(&sk) {
                                     sec.gamma = gamma.geo(&sec.gamma);
@@ -433,13 +431,13 @@ impl Contemplation {
         };
         let mut cover = cover_of(&stalk::invariant(&remainder));
         for g in &n.germs {
-            cover_of(&stalk::invariant(&g.chain)).for_each(|k, _| {
+            for (k, _) in cover_of(&stalk::invariant(&g.chain)).fiber(&ROOT) {
                 cover.insert(*k, ());
-            });
+            }
         }
-        n.cover.for_each(|k, _| {
+        for (k, _) in n.cover.fiber(&ROOT) {
             cover.insert(*k, ());
-        });
+        }
         let volume = element::measure_lanes(&remainder);
         let bubble = Bubble {
             remainder,
@@ -477,12 +475,12 @@ impl Contemplation {
             self.retract_incidence(v, &b);
             remainder = union_rem(&remainder, &b.remainder);
             germs.extend(b.germs.clone());
-            b.cover.for_each(|k, _| {
+            for (k, _) in b.cover.fiber(&ROOT) {
                 cover.insert(*k, ());
-            });
-            b.horizon.for_each(|k, c| {
+            }
+            for (k, c) in b.horizon.fiber(&ROOT) {
                 horizon.insert(*k, c.clone());
-            });
+            }
             nerve = b.nerve.clone();
             self.bubbles.remove(v);
         }
@@ -530,7 +528,7 @@ impl Contemplation {
                 }
             }
         }
-        seen.entries().into_iter().map(|(k, _)| *k).collect()
+        seen.fiber(&ROOT).map(|(k, _)| *k).collect()
     }
 
     fn component_closed(&self, verts: &[[u8; 32]]) -> bool {
@@ -556,31 +554,26 @@ impl Contemplation {
         true
     }
 
-    /// Expand dirty bubbles from the atlas, spend_unit charts per call.
-    pub fn expand_all(&mut self, atlas: &Stalks, rotors: &Keyed<Rotor>, budget: usize) -> usize {
-        if budget == 0 {
-            return 0;
-        }
-        let mut keys: Vec<[u8; 32]> = Vec::new();
-        let after = if self.expand_cursor == [0u8; 32] {
-            None
-        } else {
-            Some(self.expand_cursor)
-        };
-        // index: budgeted keyed cursor over dirty bubbles
-        let last = self.dirty.for_each_from(after.as_ref(), budget, |k, _| {
-            keys.push(*k);
-        });
-        if let Some(k) = last {
-            self.expand_cursor = k;
-        }
+    /// Expand dirty bubbles from the atlas, one Budget of charts per call.
+    pub fn expand_all(&mut self, atlas: &Stalks, rotors: &Keyed<Rotor>, budget: &mut Budget) -> usize {
         let mut spent = 0usize;
-        for k in keys {
-            if spent >= budget {
-                break;
+        let mut from = self.expand_cursor;
+        // index: budgeted keyed cursor over dirty bubbles; each expand spends the rest
+        while budget.remaining() > 0 {
+            let mut nxt = None;
+            {
+                let mut cur = self.dirty.cursor(from, budget);
+                if let Some((k, _)) = Iterator::next(&mut cur) {
+                    nxt = Some(*k);
+                }
             }
+            let Some(k) = nxt else {
+                break;
+            };
+            from = k;
+            self.expand_cursor = k;
             if let Some(b) = self.bubbles.get_mut(&k) {
-                spent += b.expand_with(atlas, rotors, budget - spent);
+                spent += b.expand_with(atlas, rotors, budget);
                 if !b.dirty {
                     self.dirty.remove(&k);
                 }
@@ -594,30 +587,28 @@ impl Contemplation {
     /// Attempt fill on the link of bubbles at `word`'s chart and prefixes.
     /// Merges filled cells; speaks a closed component as one sentence.
     /// Returns (fills, formed, classes, spoken elements).
-    pub fn pivot_on(&mut self, word: &Element, cap: usize) -> (u64, u64, u64, Vec<Element>) {
+    pub fn pivot_on(&mut self, word: &Element, budget: &mut Budget) -> (u64, u64, u64, Vec<Element>) {
         let inv = stalk::invariant_of(word);
         let mut keys = Keyed::new();
         for p in inv.prefixes() {
-            if let Some(here) = self.by_chart.get(&p.key()) {
-                here.for_each(|id, _| {
-                    keys.insert(*id, ());
-                });
+            for (id, _) in self.by_chart.link(&p.key()) {
+                keys.insert(*id, ());
             }
         }
         let word_rotor = cech::rotor_of(word);
         let mut fills = 0u64;
         let mut new_classes = 0u64;
         let mut spoken: Vec<Element> = Vec::new();
-        let bubble_keys: Vec<[u8; 32]> = keys.entries().into_iter().map(|(k, _)| *k).collect();
+        let bubble_keys: Vec<[u8; 32]> = keys.fiber(&ROOT).map(|(k, _)| *k).collect();
         // index: by_chart fiber at the word's chart and peels
         for bk in &bubble_keys {
-            if fills as usize >= cap {
+            if budget.remaining() == 0 {
                 break;
             }
             // index: link of this bubble
             let cells: Vec<CechCell> = self.complex.link_of(bk);
             for cell in cells {
-                if fills as usize >= cap {
+                if !budget.spend() {
                     break;
                 }
                 if cell.degree() == 0 {
@@ -701,9 +692,9 @@ impl Contemplation {
             }
             germs.extend(b.germs.clone());
             remainder = union_rem(&remainder, &b.remainder);
-            b.cover.for_each(|k, _| {
+            for (k, _) in b.cover.fiber(&ROOT) {
                 cover.insert(*k, ());
-            });
+            }
         }
         if germs.is_empty() {
             return None;
@@ -727,7 +718,7 @@ impl Contemplation {
     pub fn component_count(&self) -> usize {
         let mut seen = Keyed::new();
         let mut n = 0usize;
-        let keys: Vec<[u8; 32]> = self.bubbles.entries().into_iter().map(|(k, _)| *k).collect();
+        let keys: Vec<[u8; 32]> = self.bubbles.fiber(&ROOT).map(|(k, _)| *k).collect();
         for k in keys {
             if seen.contains(&k) {
                 continue;
@@ -745,7 +736,7 @@ impl Contemplation {
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
         out.extend_from_slice(Self::THT1);
         out.extend_from_slice(&(self.bubbles.len() as u32).to_le_bytes());
-        for (k, b) in self.bubbles.entries() {
+        crate::snapshot::persist(&self.bubbles, |k, b| {
             out.extend_from_slice(k);
             out.extend_from_slice(&(b.remainder.len() as u32).to_le_bytes());
             for &(r, c, hb, ha) in &b.remainder {
@@ -755,7 +746,7 @@ impl Contemplation {
                 out.push(ha);
             }
             out.extend_from_slice(&(b.cover.len() as u32).to_le_bytes());
-            b.cover.for_each(|ck, _| out.extend_from_slice(ck));
+            crate::snapshot::persist(&b.cover, |ck, _| out.extend_from_slice(ck));
             for x in &b.volume {
                 out.extend_from_slice(&x.to_le_bytes());
             }
@@ -770,15 +761,15 @@ impl Contemplation {
             out.extend_from_slice(&(germ_bytes.len() as u32).to_le_bytes());
             out.extend_from_slice(&germ_bytes);
             out.extend_from_slice(&(b.horizon.len() as u32).to_le_bytes());
-            for (hk, (r, d)) in b.horizon.entries() {
+            crate::snapshot::persist(&b.horizon, |hk, (r, d)| {
                 out.extend_from_slice(hk);
                 r.to_bytes(out);
                 out.push(*d);
-            }
+            });
             for x in &b.potential {
                 out.extend_from_slice(&x.to_le_bytes());
             }
-        }
+        });
         self.complex.to_bytes(out);
         out.extend_from_slice(&self.fills.to_le_bytes());
         out.extend_from_slice(&self.torsion_merges.to_le_bytes());
@@ -891,17 +882,19 @@ impl Contemplation {
 
     pub fn horizon_cells(&self) -> usize {
         let mut n = 0usize;
-        self.bubbles.for_each(|_, b| n += b.horizon.len());
+        for (_, b) in self.bubbles.fiber(&ROOT) {
+            n += b.horizon.len();
+        }
         n
     }
 
     pub fn potential(&self) -> [u64; 4] {
         let mut p = [0u64; 4];
-        self.bubbles.for_each(|_, b| {
+        for (_, b) in self.bubbles.fiber(&ROOT) {
             for l in 0..4 {
                 p[l] = p[l].saturating_add(b.potential[l]);
             }
-        });
+        }
         p
     }
 }
@@ -916,7 +909,7 @@ mod tests {
         c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
         c.hold(vec![(5, 5, 3, 4), (5, 6, 3, 4)]);
         assert_eq!(c.len(), 2, "disjoint remainders are two bubbles");
-        let keys: Vec<[u8; 32]> = c.bubbles.entries().into_iter().map(|(k, _)| *k).collect();
+        let keys: Vec<[u8; 32]> = c.bubbles.fiber(&ROOT).map(|(k, _)| *k).collect();
         let edges = c.complex.link(&keys[0], 1);
         assert!(!edges.is_empty() || c.complex.degrees.get(1).map_or(true, |l| !l.is_empty()) || {
             // same chart prefix (leading axis of a bar) may or may not coincide;
@@ -935,7 +928,7 @@ mod tests {
         c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
         c.hold(vec![(0, 1, 3, 4), (0, 2, 3, 4)]);
         assert_eq!(c.len(), 1, "shared cell is Extended: the bubbles merge");
-        let keys: Vec<[u8; 32]> = c.bubbles.entries().into_iter().map(|(k, _)| *k).collect();
+        let keys: Vec<[u8; 32]> = c.bubbles.fiber(&ROOT).map(|(k, _)| *k).collect();
         assert_eq!(keys.len(), 1);
         assert!(c.bubbles.get(&keys[0]).unwrap().potential.iter().any(|&x| x > 0));
     }
@@ -972,11 +965,12 @@ mod tests {
             c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
             let hold = work::total();
             work::reset();
-            let _ = c.expand_all(&atlas, &Keyed::new(), 4);
+            let mut budget = crate::physics::Physics::default().stroke_n(4);
+            let _ = c.expand_all(&atlas, &Keyed::new(), &mut budget);
             let expand = work::total();
             work::reset();
             let mut charts = 0usize;
-            c.bubbles.for_each(|_, b| {
+            for (_, b) in c.bubbles.fiber(&ROOT) {
                 let mut cur = stalk::invariant(&b.remainder);
                 loop {
                     if b.cover.contains(&cur.key()) {
@@ -987,7 +981,7 @@ mod tests {
                     }
                     cur = cur.peel();
                 }
-            });
+            }
             let quote = work::total();
             assert!(charts > 0);
             (hold, expand, quote)
