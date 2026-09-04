@@ -53,6 +53,8 @@ pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
         if let Some(reason) = crate::transducer::sentence::replay_nerve(spoken) {
             return Some(reason);
         }
+        // Tetrahedra that do not satisfy δh = 1 and carry no class are false
+        // speech; a carried class is re-derived inside replay_nerve.
     }
     match (chain.is_empty(), connection) {
         (true, false) => {

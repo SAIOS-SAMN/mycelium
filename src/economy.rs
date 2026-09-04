@@ -31,6 +31,14 @@ pub fn descends(after: &[u64; 4], before: &[u64; 4]) -> bool {
     after.iter().zip(before).all(|(a, b)| a <= b) && after.iter().zip(before).any(|(a, b)| a < b)
 }
 
+/// A refinement is measured as deflation on the split strata. No new price.
+pub fn split_deflation(before: &[u64; 4], after: &[u64; 4]) -> Option<[u64; 4]> {
+    if !descends(after, before) {
+        return None;
+    }
+    Some(std::array::from_fn(|l| before[l] - after[l]))
+}
+
 /// THE YIELD SURFACE — the treasury's dynamic per-lane quote, read from GENUINE
 /// metabolic tension: open pressure (unmet demand backlog) + reserve deficit
 /// (the depletion premium) + entropic excess (torsion outrunning syntropy).
@@ -208,6 +216,21 @@ impl Treasury {
             .into_iter()
             .map(|(a, (v, mu, an))| (*a, v.clone(), *mu, *an))
             .collect()
+    }
+
+    /// A filled triangle releases the escrow of the listings its dialects settled.
+    pub fn release_filled(&mut self, listings: &[[u8; 32]]) -> [u64; 4] {
+        let mut released = [0u64; 4];
+        for addr in listings {
+            if let Some((_, mu, _)) = self.escrowed.get(addr).cloned() {
+                if self.release_award(addr) {
+                    for l in 0..4 {
+                        released[l] = released[l].saturating_add(mu[l]);
+                    }
+                }
+            }
+        }
+        released
     }
 
     /// The court UPHELD the germ: release the escrowed award — the consilience

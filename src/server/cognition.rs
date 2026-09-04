@@ -185,8 +185,17 @@ fn versors_close(vs: &[element::Versor]) -> bool {
     p.scalar_part() == id.scalar_part() && (1..16).all(|i| p.coeff(i) == id.coeff(i))
 }
 
-fn versor_of(g: &Element) -> element::Versor {
-    crate::transducer::stalk::placement_of(g).unwrap_or_else(element::identity_versor)
+fn gamma_versor(g: &crate::transducer::alphabet::PlaneForm) -> Option<element::Versor> {
+    crate::transducer::element::conformal_of(
+        &crate::transducer::alphabet::Spelling {
+            word: g.to_word(),
+            rho: num_rational::BigRational::from_integer(num_bigint::BigInt::from(1)),
+        },
+        &(
+            num_rational::BigRational::from_integer(num_bigint::BigInt::from(0)),
+            num_rational::BigRational::from_integer(num_bigint::BigInt::from(0)),
+        ),
+    )
 }
 
 fn union_remainders(entries: &[FieldEntry]) -> Vec<(i64, i64, u8, u8)> {
@@ -677,17 +686,13 @@ pub struct Kernel {
     court_upheld: u64,
     court_slashed: u64,
     crt_imported: bool,
-    /// Čech cocycle ledger: holonomy between two hyphas' words on one chart,
-    /// keyed by (chart, ordered pair). Ruling::Dialect writes here; a
-    /// nontrivial triangle writes a twisted class. Never a preference, never dropped.
-    cocycles: crate::network::nerve::Keyed<
-        Vec<(
-            crate::transducer::stalk::Invariant,
-            [u8; 32],
-            [u8; 32],
-            element::Versor,
-        )>,
-    >,
+    /// Čech cochains per chart: vertices are covering hyphas, coefficients
+    /// are PlaneForm. One Keyed entry per simplex; never Elements.
+    cochains_at: crate::network::nerve::Keyed<crate::transducer::cech::Cochains>,
+    /// Unfilled triangles, keyed by (chart, simplex). Filled within spend_unit.
+    unfilled: crate::network::nerve::Keyed<(crate::transducer::stalk::Invariant, [u8; 32])>,
+    /// Tetrahedra whose δh ≠ 1, awaiting a prefix split.
+    pending_refine: crate::network::nerve::Keyed<(crate::transducer::stalk::Invariant, crate::transducer::alphabet::PlaneForm)>,
     /// Addresses fetched as Dialect or Slashed — neither re-fetched nor re-rowed.
     heard: crate::network::nerve::Keyed<()>,
     /// Listing address → corpus task id, so a verified solve pays the same escrow.
@@ -753,11 +758,10 @@ pub struct Kernel {
     composites: Vec<([u8; 32], Vec<([u8; 32], bool)>, Vec<(i64, i64, u8, u8)>)>,
 }
 
-fn cocycle_key(inv: &crate::transducer::stalk::Invariant, a: [u8; 32], b: [u8; 32]) -> [u8; 32] {
+fn chart_simplex_key(inv: &crate::transducer::stalk::Invariant, sim: &[u8; 32]) -> [u8; 32] {
     let mut h = blake3::Hasher::new();
     h.update(&inv.key());
-    h.update(&a);
-    h.update(&b);
+    h.update(sim);
     *h.finalize().as_bytes()
 }
 
@@ -887,7 +891,12 @@ impl Kernel {
         let twisted = self.field.get(&self.basis[i].address()).is_some_and(|f| {
             f.nonflat > 0
                 && f.entries.iter().any(|e| {
-                    e.chart == inv && matches!(e.state, crate::transducer::stalk::Closure::Twisted(_))
+                    e.chart == inv
+                        && matches!(
+                            e.state,
+                            crate::transducer::stalk::Closure::Twisted(_)
+                                | crate::transducer::stalk::Closure::Class(_)
+                        )
                 })
         });
         let mut asgs: Vec<(Vec<(u8, u8)>, Vec<element::Versor>)> = Vec::new();
@@ -1100,7 +1109,10 @@ impl Kernel {
             if e.state.is_flat() != state.is_flat() && !state.is_flat() {
                 // keep atlas admission for a newly opened chart
             }
-            if matches!((&e.state, &state), (Closure::Twisted(_) | Closure::Cavity, Closure::Flat)) {
+            if matches!(
+                (&e.state, &state),
+                (Closure::Twisted(_) | Closure::Class(_) | Closure::Cavity, Closure::Flat)
+            ) {
                 let base = self.listing_atlas.chart_of(addr).cloned();
                 if base.as_ref() != Some(&chart) {
                     self.listing_atlas.retract(&chart, addr);
@@ -1859,11 +1871,13 @@ impl Kernel {
     }
 
     /// Court organ: the docket is the field's projection — listings whose
-    /// closure is not Flat and whose deflation is nonzero. Fail → slash with
-    /// a replay reason and relocate to the cavity atlas. Pass → a section on
-    /// the ruled cover, escrow held. The basis does not grow here.
+    /// closure is not Flat and whose deflation is nonzero — plus unfilled
+    /// triangles and tetrahedron classes. Fail → slash with a replay reason
+    /// and relocate to the cavity atlas. Pass → a section on the ruled
+    /// cover, escrow held. Fills and refinements share the spend_unit cap.
     pub fn court_stroke(&mut self) {
         let cap = crate::physics::spend_unit() as usize;
+        let mut used = 0usize;
         let keys: Vec<[u8; 32]> = self
             .open
             .entries()
@@ -1873,6 +1887,7 @@ impl Kernel {
             .take(cap)
             .collect();
         for addr in keys {
+            used += 1;
             let spoken = self
                 .word_at(&addr)
                 .cloned()
@@ -1891,15 +1906,91 @@ impl Kernel {
             self.ruled_admit(&addr);
             eprintln!("  court section {:02x}{:02x}… ruled cover, escrow held", addr[0], addr[1]);
         }
+        let rest = cap.saturating_sub(used);
+        self.stroke_fills(rest);
+    }
+
+    fn stroke_fills(&mut self, cap: usize) {
+        if cap == 0 {
+            return;
+        }
+        let mut used = 0usize;
+        let pending: Vec<(crate::transducer::stalk::Invariant, [u8; 32])> = self
+            .unfilled
+            .entries()
+            .into_iter()
+            .take(cap)
+            .map(|(_, v)| v.clone())
+            .collect();
+        for (inv, sim_key) in pending {
+            if used >= cap {
+                break;
+            }
+            used += 1;
+            let dkey = chart_simplex_key(&inv, &sim_key);
+            self.unfilled.remove(&dkey);
+            let filled = {
+                let Some(chains) = self.cochains_at.get_mut(&inv.key()) else {
+                    continue;
+                };
+                let Some((s, _)) = chains.of_degree(2).into_iter().find(|(s, _)| s.key() == sim_key) else {
+                    continue;
+                };
+                let addrs: Vec<[u8; 32]> = s
+                    .verts
+                    .iter()
+                    .filter_map(|v| chains.c0.get(v).map(|sec| sec.addr))
+                    .collect();
+                (chains.fill(&s), addrs)
+            };
+            match filled {
+                (crate::transducer::cech::Fill::Filled(gamma), addrs) => {
+                    eprintln!(
+                        "  court triangle filled {:02x}{:02x}… γ recorded",
+                        sim_key[0], sim_key[1]
+                    );
+                    self.record_gamma(&addrs, gamma);
+                    let _ = self.treasury.release_filled(&addrs);
+                }
+                (crate::transducer::cech::Fill::Twisted(class), _) => {
+                    eprintln!(
+                        "  court triangle twisted {:02x}{:02x}… class on c²",
+                        sim_key[0], sim_key[1]
+                    );
+                    self.mark_twisted(&inv, class);
+                }
+            }
+        }
+        let rest = cap.saturating_sub(used);
+        let refine: Vec<(crate::transducer::stalk::Invariant, crate::transducer::alphabet::PlaneForm)> = self
+            .pending_refine
+            .entries()
+            .into_iter()
+            .take(rest)
+            .map(|(_, v)| v.clone())
+            .collect();
+        for (inv, class) in refine {
+            let key = inv.key();
+            self.pending_refine.remove(&key);
+            eprintln!(
+                "  court tetra class {:02x}{:02x}… chart refined",
+                key[0], key[1]
+            );
+            self.refine_chart(&inv, class, None);
+        }
     }
 
     /// Glue a word fetched from a peer whose cover meets ours on this chart.
-    /// Replay always. Identity holonomy admits to the ruled cover and the
-    /// basis (this is where the language grows). Placement attaches a
-    /// section. Any other group element is a cocycle row. A third word on
-    /// the chart mounts the triangle test; a nontrivial loop is a twisted
-    /// class, never resolved by preference.
-    pub fn glue_fetched(&mut self, spoken: Element, peer: [u8; 32], self_id: [u8; 32]) -> Glue {
+    /// Vertices are covering hyphas, never words on the fibre. The peer's
+    /// representative updates c⁰; c¹ edges from every held representative;
+    /// then δ on the link of the peer only.
+    pub fn glue_fetched(
+        &mut self,
+        spoken: Element,
+        peer: [u8; 32],
+        self_id: [u8; 32],
+        cover: &mut crate::network::nerve::Cover,
+    ) -> Glue {
         let addr = spoken.address();
         if self.heard.contains(&addr) {
             return Glue::Dialect;
@@ -1911,20 +2002,6 @@ impl Kernel {
         }
         let inv = crate::transducer::stalk::invariant_of(&spoken);
         let asg = element::assignment(spoken.sub());
-        let fibre: Vec<[u8; 32]> = {
-            let mut f: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-            for a in self.ruled.fiber(&inv) {
-                f.insert(a, ());
-            }
-            for a in self.stalks.fiber(&inv) {
-                f.insert(a, ());
-            }
-            f.entries().into_iter().map(|(k, _)| *k).collect()
-        };
-        let held = fibre
-            .iter()
-            .filter_map(|a| self.word_at(a).cloned())
-            .find(|w| w.address() != addr && !w.axes().is_empty());
         if spoken.is_sentence() {
             if let Some(n) = crate::transducer::sentence::from_element(&spoken) {
                 let missing = n.germs.iter().any(|g| g.address != addr && self.word_at(&g.address).is_none());
@@ -1933,99 +2010,141 @@ impl Kernel {
                     return Glue::Dialect;
                 }
             }
-            if let Some(rep) = &held {
-                if let (Some(na), Some(nb)) = (
-                    crate::transducer::sentence::from_element(rep),
-                    crate::transducer::sentence::from_element(&spoken),
-                ) {
-                    if crate::transducer::sentence::coboundary_gauge(&na, &nb).is_some() {
-                        self.ruled_admit(&addr);
-                        return Glue::Attached;
-                    }
-                    for (ca, cb) in na.cycles.iter().zip(&nb.cycles) {
-                        if !ca.holonomy.same_form(&cb.holonomy) {
-                            let diff = cb.holonomy.compose(&ca.holonomy.inverse());
-                            if let Some(v) = crate::transducer::element::conformal_of(
-                                &crate::transducer::alphabet::Spelling {
-                                    word: diff,
-                                    rho: num_rational::BigRational::from_integer(num_bigint::BigInt::from(1)),
-                                },
-                                &(
-                                    num_rational::BigRational::from_integer(num_bigint::BigInt::from(0)),
-                                    num_rational::BigRational::from_integer(num_bigint::BigInt::from(0)),
-                                ),
-                            ) {
-                                self.push_cocycle(inv.clone(), self_id, peer, v);
-                            }
-                            self.heard.insert(addr, ());
-                            return Glue::Dialect;
-                        }
-                    }
-                }
+        }
+        let mag = spoken.magnitude();
+        let lanes = crate::network::nerve::occupied_lanes(&mag);
+        let mut verts: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        verts.insert(self_id, ());
+        verts.insert(peer, ());
+        for lane in &lanes {
+            for v in cover.fiber(*lane, &inv) {
+                verts.insert(v, ());
             }
         }
-        let outcome = match &held {
-            None => Glue::Admitted,
-            Some(rep) => match crate::transducer::cech::transition(rep, &spoken) {
-                None => Glue::Admitted,
-                Some(g) if g.is_identity() => Glue::Admitted,
-                Some(g) if crate::transducer::stalk::placement_of(&g).is_some() => Glue::Attached,
-                Some(g) => {
-                    let v = versor_of(&g);
-                    self.push_cocycle(inv.clone(), self_id, peer, v);
-                    eprintln!(
-                        "  court cocycle {:02x}{:02x}… dialect versor on the overlap",
-                        addr[0],
-                        addr[1]
-                    );
-                    Glue::Dialect
-                }
+        let mut chains = self
+            .cochains_at
+            .remove(&inv.key())
+            .unwrap_or_else(crate::transducer::cech::Cochains::new);
+        chains.set_vertex(
+            peer,
+            crate::transducer::cech::Section {
+                addr,
+                gamma: crate::transducer::alphabet::PlaneForm::identity(),
             },
-        };
-        // Triangle: fiber members are unique addresses; the fetched word's
-        // index is the matching fiber slot (or appended if not yet held).
-        let mut views: Vec<Element> = Vec::new();
-        let mut ni = None;
-        for a in &fibre {
-            let Some(w) = self.word_at(a) else { continue };
-            if *a == addr {
-                ni = Some(views.len());
-            }
-            views.push(w.clone());
+        );
+        let self_rep = chains.c0.get(&self_id).map(|s| s.addr).or_else(|| {
+            self.ruled
+                .fiber(&inv)
+                .into_iter()
+                .find(|a| *a != addr && self.word_at(a).is_some())
+        });
+        if let Some(rep_addr) = self_rep {
+            chains.set_vertex(
+                self_id,
+                crate::transducer::cech::Section {
+                    addr: rep_addr,
+                    gamma: chains
+                        .c0
+                        .get(&self_id)
+                        .map(|s| s.gamma)
+                        .unwrap_or_else(crate::transducer::alphabet::PlaneForm::identity),
+                },
+            );
         }
-        if ni.is_none() {
-            ni = Some(views.len());
-            views.push(spoken.clone());
-        }
-        if spoken.is_sentence() {
-            // The sentence's own cycles are the triangles that share a face
-            // with it; the chart-wide triple walk does not run.
-        } else if let Some(ni) = ni {
-            for j in 0..views.len() {
-                if j == ni {
-                    continue;
+        let mut outcome = Glue::Admitted;
+        let held_rep = self_rep.and_then(|a| self.word_at(&a).cloned());
+        if let Some(rep) = &held_rep {
+            match crate::transducer::cech::transition(rep, &spoken) {
+                None => {}
+                Some(g) if g.is_identity() => {}
+                Some(g) if crate::transducer::stalk::placement_of(&g).is_some() => {
+                    outcome = Glue::Attached;
                 }
-                for k in j + 1..views.len() {
-                    if k == ni {
-                        continue;
-                    }
-                    if let (Some(ab), Some(bc), Some(ca)) = (
-                        crate::transducer::cech::transition(&views[ni], &views[j]),
-                        crate::transducer::cech::transition(&views[j], &views[k]),
-                        crate::transducer::cech::transition(&views[k], &views[ni]),
-                    ) {
-                        if !crate::transducer::cech::glues(&ab, &bc, &ca) {
-                            let h = crate::transducer::cech::holonomy(&ab, &bc, &ca);
-                            self.push_cocycle(inv.clone(), self_id, peer, versor_of(&h));
-                            eprintln!(
-                                "  court triangle {:02x}{:02x}… nontrivial loop, twisted class",
-                                addr[0],
-                                addr[1]
-                            );
-                        }
-                    }
+                Some(_) => {
+                    outcome = Glue::Dialect;
                 }
             }
+        }
+        let others: Vec<[u8; 32]> = verts.entries().into_iter().map(|(k, _)| *k).collect();
+        for v in &others {
+            if *v == peer {
+                continue;
+            }
+            let Some(sec) = chains.c0.get(v).copied() else {
+                continue;
+            };
+            let Some(w) = self.word_at(&sec.addr) else {
+                continue;
+            };
+            match crate::transducer::cech::transition(w, &spoken).and_then(|g| crate::transducer::cech::form_of(&g)) {
+                Some(g) => chains.set_edge(*v, peer, g),
+                None => {
+                    if crate::transducer::cech::transition(w, &spoken).is_some() {
+                        chains.set_remainder_edge(*v, peer);
+                    }
+                }
+            }
+        }
+        chains.delta_on_link(&peer);
+        let mut filled = false;
+        let mut twisted: Option<crate::transducer::alphabet::PlaneForm> = None;
+        let mut refine_class: Option<crate::transducer::alphabet::PlaneForm> = None;
+        let mut fill_addrs: Vec<[u8; 32]> = Vec::new();
+        let mut fill_gamma = crate::transducer::alphabet::PlaneForm::identity();
+        for s in chains.link(&peer) {
+            if s.dim() == 2 {
+                match chains.fill(&s) {
+                    crate::transducer::cech::Fill::Filled(gamma) => {
+                        filled = true;
+                        fill_gamma = gamma;
+                        fill_addrs = s
+                            .verts
+                            .iter()
+                            .filter_map(|v| chains.c0.get(v).map(|sec| sec.addr))
+                            .collect();
+                        eprintln!(
+                            "  court triangle filled {:02x}{:02x}… γ recorded",
+                            s.key()[0],
+                            s.key()[1]
+                        );
+                    }
+                    crate::transducer::cech::Fill::Twisted(class) => {
+                        twisted = Some(class);
+                        let dkey = chart_simplex_key(&inv, &s.key());
+                        self.unfilled.insert(dkey, (inv.clone(), s.key()));
+                        eprintln!(
+                            "  court triangle twisted {:02x}{:02x}… class on c²",
+                            s.key()[0],
+                            s.key()[1]
+                        );
+                    }
+                }
+            }
+            if s.dim() == 3 {
+                if let Some(class) = chains.class(&s) {
+                    refine_class = Some(class);
+                    self.pending_refine.insert(inv.key(), (inv.clone(), class));
+                    eprintln!(
+                        "  court tetra class {:02x}{:02x}… chart refined",
+                        s.key()[0],
+                        s.key()[1]
+                    );
+                }
+            }
+        }
+        self.cochains_at.insert(inv.key(), chains);
+        if filled {
+            self.record_gamma(&fill_addrs, fill_gamma);
+            let _ = self.treasury.release_filled(&fill_addrs);
+            outcome = Glue::Attached;
+        }
+        if let Some(class) = twisted {
+            self.mark_twisted(&inv, class);
+            outcome = Glue::Dialect;
+        }
+        if let Some(class) = refine_class {
+            self.refine_chart(&inv, class, Some(cover));
+            outcome = Glue::Dialect;
         }
         match outcome {
             Glue::Admitted => {
@@ -2044,7 +2163,7 @@ impl Kernel {
                 self.court_upheld += 1;
             }
             Glue::Attached => {
-                if let Some(rep) = held {
+                if let Some(rep) = held_rep {
                     if let Some(g) = crate::transducer::cech::transition(&rep, &spoken) {
                         if let Some(v) = crate::transducer::stalk::placement_of(&g) {
                             if let Some(i) = self.basis_index.get(&rep.address()).copied() {
@@ -2063,28 +2182,89 @@ impl Kernel {
         outcome
     }
 
-    fn push_cocycle(
-        &mut self,
-        inv: crate::transducer::stalk::Invariant,
-        a: [u8; 32],
-        b: [u8; 32],
-        v: element::Versor,
-    ) {
-        let (p, q) = if a <= b { (a, b) } else { (b, a) };
-        let key = cocycle_key(&inv, p, q);
-        if self
-            .cocycles
-            .get(&key)
-            .is_some_and(|rows| rows.iter().any(|(_, _, _, w)| element::same_versor(w, &v)))
-        {
+    fn record_gamma(&mut self, addrs: &[[u8; 32]], gamma: crate::transducer::alphabet::PlaneForm) {
+        let Some(v) = gamma_versor(&gamma) else {
             return;
-        }
-        match self.cocycles.get_mut(&key) {
-            Some(rows) => rows.push((inv, p, q, v)),
-            None => {
-                self.cocycles.insert(key, vec![(inv, p, q, v)]);
+        };
+        for addr in addrs {
+            if let Some(i) = self.basis_index.get(addr).copied() {
+                let asg = element::assignment(self.basis[i].sub());
+                self.word_mut(i).record_dislocation(asg, v.clone());
+                self.touch_at(i);
             }
         }
+    }
+
+    fn mark_twisted(&mut self, inv: &crate::transducer::stalk::Invariant, class: crate::transducer::alphabet::PlaneForm) {
+        let members: Vec<[u8; 32]> = self.listing_atlas.fiber(inv);
+        for addr in members {
+            let mag = self.tension.get(&addr).copied().unwrap_or([0; 4]);
+            self.write_field(
+                &addr,
+                inv.clone(),
+                crate::transducer::stalk::Closure::Class(class),
+                Vec::new(),
+                &mag,
+                &mag,
+            );
+        }
+    }
+
+    fn refine_chart(
+        &mut self,
+        inv: &crate::transducer::stalk::Invariant,
+        class: crate::transducer::alphabet::PlaneForm,
+        mut cover: Option<&mut crate::network::nerve::Cover>,
+    ) {
+        let coord = class.coordinate();
+        let chains = self.cochains_at.get(&inv.key()).cloned();
+        let coord_of = |addr: &[u8; 32]| -> u64 {
+            if let Some(c) = &chains {
+                let mut side = 0u64;
+                c.c0.for_each(|_, sec| {
+                    if sec.addr == *addr && !sec.gamma.is_identity() {
+                        side = coord;
+                    }
+                });
+                return side;
+            }
+            0
+        };
+        let before: Vec<[u8; 32]> = self.listing_atlas.fiber(inv);
+        let before_mag: Vec<([u8; 32], [u64; 4])> = before
+            .iter()
+            .map(|a| (*a, self.tension.get(a).copied().unwrap_or([0; 4])))
+            .collect();
+        self.ruled.split_stratum(inv, coord_of);
+        std::sync::Arc::make_mut(&mut self.stalks).split_stratum(inv, coord_of);
+        self.listing_atlas.split_stratum(inv, coord_of);
+        if let Some(cover) = cover.as_mut() {
+            for lane in 0..4u8 {
+                let hyphas = cover.fiber(lane, inv);
+                for h in hyphas {
+                    let side = chains
+                        .as_ref()
+                        .and_then(|c| c.c0.get(&h))
+                        .map(|sec| if sec.gamma.is_identity() { 0 } else { coord })
+                        .unwrap_or(0);
+                    let new = crate::transducer::stalk::Stalks::refine(inv, side);
+                    cover.rehome(lane, inv, &new, h);
+                }
+            }
+        }
+        for (addr, mag) in before_mag {
+            let after = self.tension.get(&addr).copied().unwrap_or(mag);
+            if let Some(d) = crate::economy::split_deflation(&mag, &after) {
+                self.deflations.insert(addr, d);
+            }
+        }
+        if let Some(c) = self.cochains_at.remove(&inv.key()) {
+            let a = crate::transducer::stalk::Stalks::refine(inv, 0);
+            let b = crate::transducer::stalk::Stalks::refine(inv, coord);
+            self.cochains_at.insert(a.key(), c.clone());
+            self.cochains_at.insert(b.key(), c);
+        }
+        self.basis_gen += 1;
     }
 
     /// The home installs a word it ruled once a peer's ruled digest holds
@@ -2152,7 +2332,9 @@ impl Kernel {
             for e in &listing.entries {
                 if matches!(
                     e.state,
-                    crate::transducer::stalk::Closure::Twisted(_) | crate::transducer::stalk::Closure::Cavity
+                    crate::transducer::stalk::Closure::Twisted(_)
+                        | crate::transducer::stalk::Closure::Class(_)
+                        | crate::transducer::stalk::Closure::Cavity
                 ) {
                     for lane in &lanes {
                         out.push((*lane, e.chart.clone()));
@@ -2165,17 +2347,14 @@ impl Kernel {
         out
     }
 
-    pub fn cocycles(
-        &self,
-    ) -> Vec<(
-        crate::transducer::stalk::Invariant,
-        [u8; 32],
-        [u8; 32],
-        element::Versor,
-    )> {
-        let mut out = Vec::new();
-        self.cocycles.for_each(|_, rows| out.extend(rows.iter().cloned()));
-        out
+    pub fn cochains_at(&self) -> &crate::network::nerve::Keyed<crate::transducer::cech::Cochains> {
+        &self.cochains_at
+    }
+
+    pub fn cochain_bytes(&self) -> usize {
+        let mut n = 0usize;
+        self.cochains_at.for_each(|_, c| n += c.byte_len());
+        n
     }
 
     pub fn serve_ruled(
@@ -2321,8 +2500,9 @@ impl Kernel {
     /// the two-voice quorum that listed them.
     pub fn glue_local(&mut self) {
         let words: Vec<Element> = self.provisional.entries().into_iter().map(|(_, e)| e.clone()).collect();
+        let mut cover = crate::network::nerve::Cover::new();
         for w in words {
-            let _ = self.glue_fetched(w, [2; 32], [1; 32]);
+            let _ = self.glue_fetched(w, [2; 32], [1; 32], &mut cover);
         }
     }
 
@@ -3695,6 +3875,10 @@ impl Kernel {
                         v.to_bytes(&mut out);
                     }
                     crate::transducer::stalk::Closure::Cavity => out.push(2),
+                    crate::transducer::stalk::Closure::Class(p) => {
+                        out.push(3);
+                        p.to_bytes(&mut out);
+                    }
                 }
                 out.extend_from_slice(&(e.remainder.len() as u32).to_le_bytes());
                 for &(r, c, hb, ha) in &e.remainder {
@@ -3733,16 +3917,13 @@ impl Kernel {
             out.extend_from_slice(&(eb.len() as u32).to_le_bytes());
             out.extend_from_slice(&eb);
         }
-        let cocycle_rows = self.cocycles();
-        out.extend_from_slice(&(cocycle_rows.len() as u32).to_le_bytes());
-        for (inv, a, b, v) in &cocycle_rows {
-            out.extend_from_slice(&(inv.0.len() as u32).to_le_bytes());
-            for axis in &inv.0 {
-                out.extend_from_slice(&axis.to_le_bytes());
-            }
-            out.extend_from_slice(a);
-            out.extend_from_slice(b);
-            v.to_bytes(&mut out);
+        out.extend_from_slice(&0u32.to_le_bytes());
+        out.extend_from_slice(b"COC1");
+        let charts = self.cochains_at.entries();
+        out.extend_from_slice(&(charts.len() as u32).to_le_bytes());
+        for (k, c) in charts {
+            out.extend_from_slice(k);
+            c.to_bytes(&mut out);
         }
         out
     }
@@ -3891,6 +4072,9 @@ impl Kernel {
                             1 => crate::transducer::stalk::Closure::Twisted(
                                 element::Versor::from_bytes(b, pos)?,
                             ),
+                            3 => crate::transducer::stalk::Closure::Class(
+                                crate::transducer::alphabet::PlaneForm::from_bytes(b, pos)?,
+                            ),
                             _ => crate::transducer::stalk::Closure::Cavity,
                         };
                         let nc = read_u32(b, pos)? as usize;
@@ -3971,30 +4155,26 @@ impl Kernel {
                     kernel.court_fed_index.insert(addr, kernel.court_federation.len());
                     kernel.court_federation.push((addr, elem));
                 }
-                if *pos + 4 <= b.len() {
+                if *pos + 4 <= b.len() && b.get(*pos..*pos + 4) != Some(b"COC1") {
                     let n = read_u32(b, pos)? as usize;
                     for _ in 0..n.min(1 << 16) {
                         let nax = read_u32(b, pos)? as usize;
-                        let mut axes = Vec::with_capacity(nax.min(256));
                         for _ in 0..nax {
-                            axes.push(u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?));
-                            *pos += 8;
+                            *pos = pos.checked_add(8).filter(|e| *e <= b.len())?;
                         }
-                        let a: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-                        *pos += 32;
-                        let bb: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-                        *pos += 32;
-                        let v = element::Versor::from_bytes(b, pos)?;
-                        let inv = crate::transducer::stalk::Invariant(axes);
-                        let (p, q) = if a <= bb { (a, bb) } else { (bb, a) };
-                        let key = cocycle_key(&inv, p, q);
-                        match kernel.cocycles.get_mut(&key) {
-                            Some(rows) => rows.push((inv, a, bb, v)),
-                            None => {
-                                kernel.cocycles.insert(key, vec![(inv, a, bb, v)]);
-                            }
-                        }
+                        *pos = pos.checked_add(64).filter(|e| *e <= b.len())?;
+                        let _ = element::Versor::from_bytes(b, pos)?;
                     }
+                }
+            }
+            if b.get(*pos..*pos + 4) == Some(b"COC1") {
+                *pos += 4;
+                let n = read_u32(b, pos)? as usize;
+                for _ in 0..n.min(1 << 16) {
+                    let key: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                    *pos += 32;
+                    let c = crate::transducer::cech::Cochains::from_bytes(b, pos)?;
+                    kernel.cochains_at.insert(key, c);
                 }
             }
             let field_keys: Vec<[u8; 32]> = kernel.field.entries().into_iter().map(|(k, _)| *k).collect();
@@ -5384,19 +5564,20 @@ mod tests {
         assert_eq!(home.basis_len(), 0);
         home.court_stroke();
         let spoken = home.provisional.entries()[0].1.clone();
+        let mut cover = crate::network::nerve::Cover::new();
         assert!(matches!(
-            peer.glue_fetched(spoken.clone(), [1; 32], [2; 32]),
+            peer.glue_fetched(spoken.clone(), [1; 32], [2; 32], &mut cover),
             Glue::Admitted
         ));
         assert!(peer.basis_len() >= 1, "the word is language on the second organ");
         assert!(matches!(
-            third.glue_fetched(spoken.clone(), [2; 32], [3; 32]),
+            third.glue_fetched(spoken.clone(), [2; 32], [3; 32], &mut cover),
             Glue::Admitted
         ));
         let mut forged = spoken.clone();
         forged.mag = [999, 0, 0, 0];
         assert!(
-            matches!(third.glue_fetched(forged, [2; 32], [3; 32]), Glue::Slashed(_)),
+            matches!(third.glue_fetched(forged, [2; 32], [3; 32], &mut cover), Glue::Slashed(_)),
             "never admit on a word that fails replay"
         );
     }
@@ -5507,11 +5688,12 @@ mod tests {
         let spoken = k.provisional.entries()[0].1.clone();
         let mut forged = spoken.clone();
         forged.mag = [999, 0, 0, 0];
-        assert!(matches!(k.glue_fetched(forged.clone(), [2; 32], [1; 32]), Glue::Slashed(_)));
-        let n = k.cocycles().len();
+        let mut cover = crate::network::nerve::Cover::new();
+        assert!(matches!(k.glue_fetched(forged.clone(), [2; 32], [1; 32], &mut cover), Glue::Slashed(_)));
+        let n = k.cochain_bytes();
         assert!(k.heard.contains(&forged.address()));
-        assert!(matches!(k.glue_fetched(forged, [2; 32], [1; 32]), Glue::Dialect));
-        assert_eq!(k.cocycles().len(), n, "a heard slash is not re-rowed");
+        assert!(matches!(k.glue_fetched(forged, [2; 32], [1; 32], &mut cover), Glue::Dialect));
+        assert_eq!(k.cochain_bytes(), n, "a heard slash is not re-rowed");
     }
 
     /// The home installs when a peer's ruled digest holds the stratum.
@@ -5526,7 +5708,8 @@ mod tests {
         assert_eq!(home.basis_len(), 0);
         home.rule_all_provisionals();
         let spoken = home.provisional.entries()[0].1.clone();
-        assert!(matches!(peer.glue_fetched(spoken, [1; 32], [2; 32]), Glue::Admitted));
+        let mut cover = crate::network::nerve::Cover::new();
+        assert!(matches!(peer.glue_fetched(spoken, [1; 32], [2; 32], &mut cover), Glue::Admitted));
         assert!(peer.basis_len() >= 1);
         home.confirm_peer_holds(&peer.ruled_digests());
         assert!(home.basis_len() >= 1, "the home's own word is language once a peer holds the stratum");

@@ -28,6 +28,7 @@
 //! order they were held in — reached through a keyed trie, no map, no
 //! sorted tape, no sibling scan.
 
+use super::alphabet::PlaneForm;
 use super::element::{self, Versor};
 use crate::network::nerve::Keyed;
 
@@ -51,12 +52,15 @@ impl Invariant {
 }
 
 /// Closure of one chart a thought has been probed through. Never a number:
-/// the loop closed (Flat), returned twisted (Twisted), or found no section
-/// (Cavity). Magnitudes are read from remainders, never stored here.
+/// the loop closed (Flat), returned twisted (Twisted), a Čech class on the
+/// nerve (Class — the same coefficient the cochains speak), or found no
+/// section (Cavity). Magnitudes are read from remainders, never stored here.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Closure {
     Flat,
     Twisted(Versor),
+    /// The triangle's torsion class, a PlaneForm.
+    Class(PlaneForm),
     Cavity,
 }
 
@@ -316,6 +320,25 @@ impl Stalks {
         self.root.strata(&mut Vec::new(), &mut out);
         out
     }
+
+    /// Append one axis: the H² class as a new coordinate of the chart.
+    pub fn refine(inv: &Invariant, coordinate: u64) -> Invariant {
+        let mut axes = inv.0.clone();
+        axes.push(coordinate);
+        Invariant(axes)
+    }
+
+    /// Re-admit members of `inv` under the refined chart, splitting the
+    /// stratum by the new coordinate. Prefix only: other charts are untouched.
+    pub fn split_stratum(&mut self, inv: &Invariant, mut coordinate_of: impl FnMut(&[u8; 32]) -> u64) {
+        let members = self.fiber(inv);
+        for addr in members {
+            let next = Self::refine(inv, coordinate_of(&addr));
+            self.root.remove(&inv.0, &addr);
+            self.root.admit(&next.0, addr);
+            self.charts.insert(addr, next);
+        }
+    }
 }
 
 /// A PLACEMENT: a transition between two connections that is a pure
@@ -521,5 +544,26 @@ mod tests {
         let mut pos = 0usize;
         let back = Element::from_bytes(&bytes, &mut pos).expect("round trip");
         assert_eq!(back, base, "the bundle round-trips");
+    }
+
+    /// A class refines one axis; members re-home under the new prefix.
+    #[test]
+    fn refine_splits_the_stratum_by_the_new_coordinate() {
+        let a = from_residual(&chain(&[(0, 0), (0, 1), (0, 2)]));
+        let b = from_residual(&vec![(0, 0, 2, 3), (0, 1, 2, 3), (0, 2, 2, 3)]);
+        let mut stalks = Stalks::over_elements([&a, &b].into_iter());
+        let inv = invariant_of(&a);
+        assert_eq!(stalks.fiber(&inv).len(), 2);
+        let class_coord = 7u64;
+        stalks.split_stratum(&inv, |addr| {
+            if *addr == a.address() {
+                0
+            } else {
+                class_coord
+            }
+        });
+        assert!(stalks.fiber(&inv).is_empty(), "the coarse chart is empty after the split");
+        assert_eq!(stalks.fiber(&Stalks::refine(&inv, 0)), vec![a.address()]);
+        assert_eq!(stalks.fiber(&Stalks::refine(&inv, class_coord)), vec![b.address()]);
     }
 }

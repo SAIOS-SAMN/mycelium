@@ -1458,14 +1458,10 @@ impl Entity {
     }
 
     /// OPEN AN AXIS ON MULTIPLICITY — the convergence engine's `expand_m`
-    /// on this manifold. When one listing closes on several charts this
-    /// genome holds at once, the charts are not ranked and no best angle
-    /// is chosen: the transition between their representatives (the
-    /// glue on the overlap, a group element) is the coordinate the
-    /// current axes could not express. It is seeded onto a fresh fibre of
-    /// the first representative — seeded from the relation, never zero —
-    /// and spoken up as a word for the court to adjudicate. Once per
-    /// listing. Returns the new word's address when an axis opened.
+    /// on this manifold. The sentence's H² class is the coordinate the
+    /// current axes could not express; it is seeded first, never from zero.
+    /// A listing that closes on several charts without a class still seeds
+    /// from the transition on the overlap. Once per listing.
     pub fn open_axis(
         &mut self,
         listing: &[u8; 32],
@@ -1506,42 +1502,41 @@ impl Entity {
         }
     }
 
-    /// Two withheld sentences on the same germ set with different cycle
-    /// words: the difference is a new axis, spoken up.
+    /// Seed a new fibre from the sentence's H² class — the coordinate the
+    /// current axes could not express. That is exactly what expand_m seeds from.
     fn open_sentence_axis(&mut self) -> Option<[u8; 32]> {
         use crate::transducer::element::FIBER_GERMINATED;
-        let held: Vec<( [u8; 32], crate::transducer::sentence::Nerve )> = self
+        let held: Vec<crate::transducer::sentence::Nerve> = self
             .sentences
             .entries()
             .into_iter()
-            .map(|(k, n)| (*k, n.clone()))
+            .map(|(_, n)| n.clone())
             .collect();
-        for i in 0..held.len() {
-            for j in i + 1..held.len() {
-                let (na, nb) = (&held[i].1, &held[j].1);
-                let ga: Vec<[u8; 32]> = na.germs.iter().map(|g| g.address).collect();
-                let gb: Vec<[u8; 32]> = nb.germs.iter().map(|g| g.address).collect();
-                if ga != gb || ga.is_empty() {
-                    continue;
-                }
-                let ha: Vec<_> = na.cycles.iter().map(|c| c.holonomy.form()).collect();
-                let hb: Vec<_> = nb.cycles.iter().map(|c| c.holonomy.form()).collect();
-                if ha == hb {
-                    continue;
-                }
-                let Some(ea) = crate::transducer::sentence::as_element(na) else { continue };
-                if !ea.is_connection() {
-                    continue;
-                }
-                let axis = ea.max_axis().map_or(FIBER_GERMINATED, |m| m.max(FIBER_GERMINATED - 1) + 1);
-                let mut germ = ea;
-                if let Some(block) = germ.fiber(crate::transducer::element::FIBER_SPATIAL).cloned() {
+        for n in &held {
+            let Some(class) = n.class else {
+                continue;
+            };
+            let Some(ea) = crate::transducer::sentence::as_element(n) else {
+                continue;
+            };
+            if !ea.is_connection() {
+                continue;
+            }
+            let axis = ea.max_axis().map_or(FIBER_GERMINATED, |m| m.max(FIBER_GERMINATED - 1) + 1);
+            let mut germ = ea;
+            let spelling = crate::transducer::alphabet::Spelling {
+                word: class.to_word(),
+                rho: num_rational::BigRational::from_integer(num_bigint::BigInt::from(1)),
+            };
+            let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+            if let Some(v) = crate::transducer::element::conformal_of(&spelling, &(zero.clone(), zero)) {
+                if let Some(block) = crate::transducer::element::affine_of(&v) {
                     germ.set_fiber(axis, block);
                 }
-                match self.speak_word(&germ) {
-                    Ok(Utterance::Spoken) => return Some(germ.address()),
-                    _ => {}
-                }
+            }
+            match self.speak_word(&germ) {
+                Ok(Utterance::Spoken) => return Some(germ.address()),
+                _ => {}
             }
         }
         None

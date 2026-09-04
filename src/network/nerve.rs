@@ -455,9 +455,38 @@ impl Cover {
     }
 
     /// Fiber at the deepest matching prefix on `lane`. Empty at every
-    /// prefix means the chart is novel to the mesh.
+    /// prefix means the chart is novel to the mesh. Ordered by the trie's
+    /// walk: these identities are the vertices simplex keys are built from.
     pub fn fiber(&self, lane: u8, inv: &crate::transducer::stalk::Invariant) -> Vec<[u8; 32]> {
         self.lanes[(lane as usize) & 3].lcp(&inv.0, false)
+    }
+
+    /// Cover multiplicity of a chart: the vertex count of the Čech nerve,
+    /// not the word count. Read, never chosen; the room vector is untouched.
+    pub fn multiplicity(&self, lane: u8, inv: &crate::transducer::stalk::Invariant) -> usize {
+        self.fiber(lane, inv).len()
+    }
+
+    /// Prefix split: one hypha leaves `old` and is admitted under `new`.
+    /// Only the refined path is touched.
+    pub fn rehome(
+        &mut self,
+        lane: u8,
+        old: &crate::transducer::stalk::Invariant,
+        new: &crate::transducer::stalk::Invariant,
+        hypha: [u8; 32],
+    ) {
+        let lane = lane & 3;
+        self.lanes[lane as usize].retract_path(&old.0, &hypha);
+        self.lanes[lane as usize].admit(&new.0, hypha);
+        if let Some(charts) = self.held.get_mut(&hypha) {
+            for slot in charts.iter_mut() {
+                if slot.0 == lane && slot.1 == *old {
+                    slot.1 = new.clone();
+                }
+            }
+        }
+        self.refresh_root(lane);
     }
 
     pub fn charts(&self, lane: u8) -> Vec<crate::transducer::stalk::Invariant> {
@@ -616,7 +645,12 @@ mod cover_tests {
         let plane = c.fiber(0, &inv(&[1, 2]));
         assert!(plane.contains(&a) && plane.contains(&b), "prefix 1,2 is the plane both cover");
         assert_eq!(c.fiber(0, &inv(&[1, 2, 3])), vec![a], "exact chart is one hypha");
+        assert_eq!(c.multiplicity(0, &inv(&[1, 2])), 2, "multiplicity is the vertex count");
         assert!(c.fiber(0, &inv(&[7, 8])).is_empty(), "a first-axis miss is novel");
+        let refined = inv(&[1, 2, 3, 7]);
+        c.rehome(0, &inv(&[1, 2, 3]), &refined, a);
+        assert_eq!(c.fiber(0, &refined), vec![a], "the hypha re-homes under the refined prefix");
+        assert_eq!(c.multiplicity(0, &inv(&[1, 2])), 2, "the plane still has both covering vertices");
     }
 
     #[test]

@@ -826,7 +826,10 @@ fn main() {
                                     if let Some(spoken) = mycelium::transducer::element::Element::from_bytes(&w, &mut p)
                                     {
                                         if let Ok(mut k) = kernel.lock() {
-                                            let g = k.glue_fetched(spoken, vk_peer, mesh.vk);
+                                            let g = match mesh.cover.lock() {
+                                                Ok(mut c) => k.glue_fetched(spoken, vk_peer, mesh.vk, &mut c),
+                                                Err(_) => continue,
+                                            };
                                             match g {
                                                 mycelium::cognition::Glue::Admitted => {
                                                     eprintln!("  court glued admitted from {d}");

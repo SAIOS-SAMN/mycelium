@@ -431,15 +431,133 @@ impl Word {
 /// rotation in (e0, e1). Rotation exponents are those of the unflipped
 /// spelling; a sheet conjugates a rotation to its inverse, so this is
 /// not the commuting sum of the tape.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PlaneForm {
     pub parity: bool,
     pub rot: [i64; CAYLEY_ALPHABET_LEN],
 }
 
+impl Default for PlaneForm {
+    fn default() -> Self {
+        PlaneForm { parity: false, rot: [0; CAYLEY_ALPHABET_LEN] }
+    }
+}
+
 impl PlaneForm {
+    pub fn identity() -> PlaneForm {
+        PlaneForm::default()
+    }
+
     pub fn is_identity(&self) -> bool {
         !self.parity && self.rot.iter().all(|&x| x == 0)
+    }
+
+    /// Plane-group product: rotations ⋊ sheet parity. A trailing sheet
+    /// conjugates the leading rotation to its inverse.
+    pub fn compose(&self, other: &PlaneForm) -> PlaneForm {
+        let parity = self.parity ^ other.parity;
+        let mut rot = [0i64; CAYLEY_ALPHABET_LEN];
+        if other.parity {
+            for i in 0..CAYLEY_ALPHABET_LEN {
+                rot[i] = -self.rot[i] + other.rot[i];
+            }
+        } else {
+            for i in 0..CAYLEY_ALPHABET_LEN {
+                rot[i] = self.rot[i] + other.rot[i];
+            }
+        }
+        PlaneForm { parity, rot }
+    }
+
+    pub fn inverse(&self) -> PlaneForm {
+        if self.parity {
+            *self
+        } else {
+            let mut rot = [0i64; CAYLEY_ALPHABET_LEN];
+            for i in 0..CAYLEY_ALPHABET_LEN {
+                rot[i] = -self.rot[i];
+            }
+            PlaneForm { parity: false, rot }
+        }
+    }
+
+    /// The sheet acting on exponents: `S R S⁻¹ = R⁻¹`.
+    pub fn conjugate_by(&self, by: &PlaneForm) -> PlaneForm {
+        if !by.parity {
+            *self
+        } else if self.parity {
+            let mut rot = [0i64; CAYLEY_ALPHABET_LEN];
+            for i in 0..CAYLEY_ALPHABET_LEN {
+                rot[i] = -self.rot[i];
+            }
+            PlaneForm { parity: true, rot }
+        } else {
+            let mut rot = [0i64; CAYLEY_ALPHABET_LEN];
+            for i in 0..CAYLEY_ALPHABET_LEN {
+                rot[i] = -self.rot[i];
+            }
+            PlaneForm { parity: false, rot }
+        }
+    }
+
+    /// Half-turn on (e1,e2): the column flip of the sensor plane, two
+    /// quarter-turns, the sheet letter of the plane group.
+    fn sheet_word() -> Word {
+        let id = LetterId::quarter((1, 2)).expect("plane (1,2) is a letter");
+        Word::from_letters(&[(id, false), (id, false)])
+    }
+
+    pub fn to_word(&self) -> Word {
+        let mut w = if self.parity {
+            Self::sheet_word()
+        } else {
+            Word::identity()
+        };
+        for (i, &n) in self.rot.iter().enumerate() {
+            if n == 0 {
+                continue;
+            }
+            let Some(id) = LetterId::try_new(i as u8) else { continue };
+            if id.raw() == 0 {
+                continue;
+            }
+            let inv = n < 0;
+            for _ in 0..n.unsigned_abs() {
+                w.push(id, inv);
+            }
+        }
+        w
+    }
+
+    pub fn key(&self) -> [u8; 32] {
+        let mut h = blake3::Hasher::new();
+        h.update(&[self.parity as u8]);
+        for &n in &self.rot {
+            h.update(&n.to_le_bytes());
+        }
+        *h.finalize().as_bytes()
+    }
+
+    pub fn coordinate(&self) -> u64 {
+        u64::from_le_bytes(self.key()[..8].try_into().unwrap())
+    }
+
+    pub fn to_bytes(&self, out: &mut Vec<u8>) {
+        out.push(self.parity as u8);
+        for &n in &self.rot {
+            out.extend_from_slice(&n.to_le_bytes());
+        }
+    }
+
+    pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<PlaneForm> {
+        let parity = *b.get(*pos)? != 0;
+        *pos += 1;
+        let mut rot = [0i64; CAYLEY_ALPHABET_LEN];
+        for n in &mut rot {
+            *n = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+            *pos += 8;
+        }
+        Some(PlaneForm { parity, rot })
     }
 
     pub fn period(&self) -> Option<u32> {
@@ -967,5 +1085,20 @@ mod tests {
         assert_eq!(w.period(), Some(2));
         let half = spell_images((-1, 0), (0, -1)).expect("rot180");
         assert!(w.same_form(&half.word));
+    }
+
+    /// PlaneForm is the coefficient group: products and inverses are exact
+    /// and O(1); a sheet conjugates exponents.
+    #[test]
+    fn plane_form_is_the_coefficient_group() {
+        let q = LetterId::quarter((0, 1)).unwrap();
+        let rot = Word::from_letters(&[(q, false)]).form().unwrap();
+        let sheet = PlaneForm { parity: true, rot: [0; CAYLEY_ALPHABET_LEN] };
+        assert!(rot.compose(&rot.inverse()).is_identity());
+        assert!(sheet.compose(&sheet).is_identity(), "a sheet has order 2");
+        let conj = rot.conjugate_by(&sheet);
+        assert_eq!(conj, rot.inverse(), "S R S⁻¹ = R⁻¹");
+        assert_eq!(rot.compose(&sheet), sheet.compose(&rot.inverse()));
+        assert_eq!(rot.key(), rot.to_word().form().unwrap().key());
     }
 }
