@@ -968,6 +968,21 @@ fn pos_overlap(a: &[(i64, i64)], b: &[(i64, i64)]) -> Vec<(i64, i64)> {
 /// Dilate both supports one shell at a time until the rings meet. The
 /// shell count is the face's coordinate. Bounded by the bodies in this
 /// thought (the max 4-distance on the two supports).
+fn germ_anchor(g: &Germ) -> (i64, i64) {
+    if g.chain.is_empty() {
+        return (0, 0);
+    }
+    let n = g.chain.len() as i64;
+    (
+        g.chain.iter().map(|c| c.0).sum::<i64>() / n,
+        g.chain.iter().map(|c| c.1).sum::<i64>() / n,
+    )
+}
+
+fn anchor_dist(a: (i64, i64), b: (i64, i64)) -> i64 {
+    (a.0 - b.0).abs() + (a.1 - b.1).abs()
+}
+
 fn contact(a: &[(i64, i64)], b: &[(i64, i64)]) -> (u8, Vec<Cell>) {
     if a.is_empty() || b.is_empty() {
         return (0, Vec::new());
@@ -1022,6 +1037,7 @@ pub fn assemble(mut germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
         }
     }
     let bound = (max_r.saturating_add(max_c).saturating_add(1) as usize).min(255);
+    let anchors: Vec<(i64, i64)> = germs.iter().map(germ_anchor).collect();
     let mut claimed = vec![false; n];
     let mut faces = Vec::new();
     // index: dilation rings of this thought (bodies per scene, together)
@@ -1030,7 +1046,7 @@ pub fn assemble(mut germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
         if open.len() < 2 {
             break;
         }
-        let mut met = vec![false; n];
+        let mut hit: Vec<(usize, usize, Vec<Cell>)> = Vec::new();
         // index: unclaimed pairs at this ring
         for ii in 0..open.len() {
             let i = open[ii];
@@ -1046,11 +1062,25 @@ pub fn assemble(mut germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
                 if overlap.is_empty() {
                     continue;
                 }
-                let (g_ij, spelled) = face_word(&germs[i], &germs[j]);
-                faces.push(Face { i, j, overlap, g_ij, spelled, shells: s as u8 });
-                met[i] = true;
-                met[j] = true;
+                hit.push((i, j, overlap));
             }
+        }
+        let mut nearest = vec![i64::MAX; n];
+        for &(i, j, _) in &hit {
+            let d = anchor_dist(anchors[i], anchors[j]);
+            nearest[i] = nearest[i].min(d);
+            nearest[j] = nearest[j].min(d);
+        }
+        let mut met = vec![false; n];
+        for (i, j, overlap) in hit {
+            let d = anchor_dist(anchors[i], anchors[j]);
+            if d != nearest[i] || d != nearest[j] {
+                continue;
+            }
+            let (g_ij, spelled) = face_word(&germs[i], &germs[j]);
+            faces.push(Face { i, j, overlap, g_ij, spelled, shells: s as u8 });
+            met[i] = true;
+            met[j] = true;
         }
         for i in 0..n {
             if met[i] {
@@ -2028,6 +2058,34 @@ mod tests {
         assert_eq!(n.faces.len(), 1, "two bodies in one thought share a face");
         assert!(n.faces[0].shells > 0, "background between them is shells of dilation");
         assert!(!n.faces[0].overlap.is_empty(), "the rings meet on a neighbourhood cell");
+    }
+
+    /// Equidistant bodies in a row: each meets only its nearest neighbours,
+    /// so the middle has two faces and the ends one — not a complete graph.
+    #[test]
+    fn a_row_of_three_has_two_faces_not_three() {
+        let germ = |chain: Vec<(i64, i64, u8, u8)>| Germ {
+            address: from_residual(&chain).address(),
+            versor: identity_versor(),
+            word: Word::identity(),
+            chain,
+            source: None,
+            target: None,
+            kind: ShellKind::Whole,
+            shift: None,
+        };
+        let ga = germ(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
+        let gb = germ(vec![(0, 4, 1, 2), (0, 5, 1, 2)]);
+        let gc = germ(vec![(0, 8, 1, 2), (0, 9, 1, 2)]);
+        let n = assemble(vec![ga, gb, gc], Vec::new());
+        assert_eq!(n.faces.len(), 2, "a row is a path, got {:?}", n.faces.iter().map(|f| (f.i, f.j, f.shells)).collect::<Vec<_>>());
+        let mut deg = [0u8; 3];
+        for f in &n.faces {
+            deg[f.i] = deg[f.i].saturating_add(1);
+            deg[f.j] = deg[f.j].saturating_add(1);
+        }
+        assert_eq!(deg.iter().filter(|&&d| d == 1).count(), 2, "two ends");
+        assert_eq!(deg.iter().filter(|&&d| d == 2).count(), 1, "one middle");
     }
 
     /// A sentence Element is charted on leading axis 2, disjoint from

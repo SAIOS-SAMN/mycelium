@@ -57,6 +57,11 @@ pub fn spend_unit() -> u64 {
     (reserve_max() / 8).max(2)
 }
 
+/// One expansion, named for callers that must not mention the spend count.
+pub fn expansion_unit() -> u64 {
+    spend_unit()
+}
+
 /// Linear token for one stroke's keyed reads. Non-Copy, non-Clone: a
 /// function that wants more than a fiber must take a Budget in its
 /// signature. Constructed only by [`Physics::stroke`].
@@ -260,16 +265,15 @@ impl Physics {
         }
     }
 
-    /// SYNTROPIC OPTIMIZATION regenerates the reserve on every lane — the
-    /// metabolism RECOVERS as the basis consolidates and rests (capped at full).
+    /// SYNTROPIC OPTIMIZATION regenerates each lane toward the deflation
+    /// that lane verified since the last aperture — not toward one scalar cap.
     pub fn regenerate(&mut self) {
         for l in 0..4 {
-            // Every lane recovers one regeneration; a lane on which order
-            // was built since the last recovery earns a second — the
-            // reserve differentiates by the relief each lane produced.
-            let built = self.syntropic[l] > self.regen_mark[l];
-            let units = 1 + built as u64;
-            self.reserve[l] = (self.reserve[l] + units * regen_unit()).min(reserve_max());
+            let verified = self.syntropic[l].saturating_sub(self.regen_mark[l]);
+            let add = regen_unit() * (1 + (verified > 0) as u64);
+            let target = verified.max(expand_floor());
+            let next = self.reserve[l].saturating_add(add);
+            self.reserve[l] = next.min(target.max(self.reserve[l]));
             self.regen_mark[l] = self.syntropic[l];
         }
     }

@@ -13,7 +13,7 @@ use crate::arc::Grid;
 use crate::cognition::{encode_percept, perceive};
 use crate::network::wire::{Frame, Stratum};
 use crate::transducer::element::Element;
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::io::{self, Read, Write};
 use std::net::TcpStream;
@@ -108,8 +108,9 @@ pub struct Session {
     cover: RefCell<crate::network::nerve::Cover>,
     rooms: RefCell<crate::network::nerve::Keyed<[u64; 4]>>,
     addrs: RefCell<crate::network::nerve::Keyed<String>>,
-    /// Last measured round-trip; durations are this times a stroke count.
-    rtt: Cell<Duration>,
+    /// Last measured round-trip per hypha address; a timeout raises it by
+    /// the aperture ratio, a success sets it to the measured trip.
+    rtt: RefCell<HashMap<String, Duration>>,
 }
 
 /// The transport aperture — the perceived state of the wire to the server
@@ -153,7 +154,7 @@ impl Session {
             cover: RefCell::new(crate::network::nerve::Cover::new()),
             rooms: RefCell::new(crate::network::nerve::Keyed::new()),
             addrs: RefCell::new(crate::network::nerve::Keyed::new()),
-            rtt: Cell::new(Duration::from_millis(1)),
+            rtt: RefCell::new(HashMap::new()),
         }
     }
 
@@ -259,7 +260,22 @@ impl Session {
     }
 
     pub fn rtt(&self) -> Duration {
-        self.rtt.get()
+        self.rtt_of(&self.addr)
+    }
+
+    fn rtt_of(&self, addr: &str) -> Duration {
+        self.rtt.borrow().get(addr).copied().unwrap_or(Duration::from_millis(1))
+    }
+
+    fn rtt_ok(&self, addr: &str, dt: Duration) {
+        self.rtt.borrow_mut().insert(addr.to_string(), dt.max(Duration::from_micros(1)));
+    }
+
+    fn rtt_timeout(&self, addr: &str) {
+        let ratio = crate::physics::aperture_cycle().max(2);
+        let mut m = self.rtt.borrow_mut();
+        let cur = m.get(addr).copied().unwrap_or(Duration::from_millis(1));
+        m.insert(addr.to_string(), cur.saturating_mul(ratio));
     }
 
     fn z_at(&self, addr: &str) -> u64 {
@@ -416,13 +432,13 @@ impl Session {
     fn exchange_inner(&self, addr: &str, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         let frame = Frame { lane: Stratum::Spatial, body: act_body };
         let bytes = frame.encode().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "frame encode"))?;
-        let deadline = crate::physics::transport_deadline(self.rtt.get());
+        let deadline = crate::physics::transport_deadline(self.rtt_of(addr));
         let t0 = Instant::now();
         let mut pool = self.streams.borrow_mut();
         if let Some(s) = pool.get_mut(addr) {
             match Self::roundtrip(s, &bytes) {
                 Ok(body) => {
-                    self.rtt.set(t0.elapsed().max(Duration::from_micros(1)));
+                    self.rtt_ok(addr, t0.elapsed());
                     return Ok(body);
                 }
                 Err(_) => {
@@ -433,12 +449,24 @@ impl Session {
         let sockaddr = std::net::ToSocketAddrs::to_socket_addrs(&addr)?
             .next()
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "unresolvable address"))?;
-        let mut s = TcpStream::connect_timeout(&sockaddr, deadline)?;
+        let mut s = match TcpStream::connect_timeout(&sockaddr, deadline) {
+            Ok(s) => s,
+            Err(e) => {
+                self.rtt_timeout(addr);
+                return Err(e);
+            }
+        };
         s.set_read_timeout(Some(deadline))?;
         s.set_write_timeout(Some(deadline))?;
         let _ = s.set_nodelay(true);
-        let body = Self::roundtrip(&mut s, &bytes)?;
-        self.rtt.set(t0.elapsed().max(Duration::from_micros(1)));
+        let body = match Self::roundtrip(&mut s, &bytes) {
+            Ok(b) => b,
+            Err(e) => {
+                self.rtt_timeout(addr);
+                return Err(e);
+            }
+        };
+        self.rtt_ok(addr, t0.elapsed());
         // Keep the socket. The hypha's reflex worker now reads further
         // frames on this connection; a one-shot reply still reconnects.
         pool.insert(addr.to_string(), s);

@@ -234,6 +234,32 @@ impl Rotor {
         Some(s)
     }
 
+    /// Projective representative: divide by the absolute value of the first
+    /// nonzero coefficient so two rotors that differ by a positive scalar
+    /// store the same tape. Sign of that coefficient is kept, so −Φ stays −Φ.
+    pub fn normalised(&self) -> Rotor {
+        let Some(i) = (0..16).find(|&i| !self.c[i].is_zero()) else {
+            return Rotor::zero();
+        };
+        let a = self.c[i].abs();
+        if a.is_one() {
+            return self.clone();
+        }
+        self.scale(&(Q::one() / a))
+    }
+
+    /// True when `self ∘ other⁻¹` is a positive scalar (the same transport
+    /// at a different weight). Non-versors compare by normalised equality.
+    pub fn projective_eq(&self, other: &Rotor) -> bool {
+        match other.inverse() {
+            Some(inv) => {
+                let p = self.geo(&inv);
+                p.c[0].is_positive() && (1..16).all(|i| p.c[i].is_zero())
+            }
+            None => self.normalised() == other.normalised(),
+        }
+    }
+
     /// The exact inverse `Φ̃ / (Φ Φ̃)`.
     pub fn inverse(&self) -> Option<Rotor> {
         let w = self.weight()?;
@@ -1142,6 +1168,9 @@ mod tests {
             let phi = letter(id);
             assert!(phi.weight().is_some(), "letter {} is a versor", id.raw());
             assert_eq!(phi.geo(&letter_inverse(id)), Rotor::identity(), "letter {} carries its inverse", id.raw());
+            let scaled = phi.scale(&qn(3, 2));
+            assert!(phi.projective_eq(&scaled), "a positive weight is the same transport");
+            assert_eq!(phi.normalised(), scaled.normalised());
         }
     }
 

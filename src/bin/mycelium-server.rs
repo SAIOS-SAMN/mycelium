@@ -37,6 +37,15 @@ fn read_frame(s: &mut TcpStream) -> Option<Frame> {
 fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
     args.windows(2).find(|w| w[0] == name).map(|w| w[1].as_str())
 }
+fn parse_bond(s: Option<&str>) -> Option<[u64; 4]> {
+    let s = s?;
+    let mut it = s.split(',');
+    let a = it.next()?.parse().ok()?;
+    let b = it.next()?.parse().ok()?;
+    let c = it.next()?.parse().ok()?;
+    let d = it.next()?.parse().ok()?;
+    Some([a, b, c, d])
+}
 fn flags(args: &[String], name: &str) -> Vec<String> {
     args.windows(2).filter(|w| w[0] == name).map(|w| w[1].clone()).collect()
 }
@@ -174,7 +183,7 @@ struct Mesh {
     vk: [u8; 32],
     sk: ed25519_dalek::SigningKey,
     bind: String,
-    rtt: Arc<Mutex<std::time::Duration>>,
+    rtt: Arc<Mutex<Keyed<std::time::Duration>>>,
     last_roots: Arc<Mutex<Keyed<([[u8; 32]; 4], [u8; 32])>>>,
 }
 
@@ -194,17 +203,40 @@ impl Clone for Mesh {
 }
 
 fn mesh_deadline(mesh: &Mesh) -> std::time::Duration {
-    let rtt = mesh.rtt.lock().map(|t| *t).unwrap_or_default();
-    mycelium::physics::transport_deadline(rtt)
+    mycelium::physics::transport_deadline(mesh_rtt(mesh))
 }
 
 fn mesh_rtt(mesh: &Mesh) -> std::time::Duration {
-    mesh.rtt.lock().map(|t| *t).unwrap_or_default()
+    mesh.rtt
+        .lock()
+        .ok()
+        .and_then(|m| m.fiber(&mycelium::network::nerve::ROOT).map(|(_, d)| *d).max())
+        .unwrap_or(std::time::Duration::from_millis(1))
 }
 
-fn note_rtt(mesh: &Mesh, dt: std::time::Duration) {
-    if let Ok(mut t) = mesh.rtt.lock() {
-        *t = if dt.is_zero() { std::time::Duration::from_micros(1) } else { dt };
+fn peer_rtt(mesh: &Mesh, id: &[u8; 32]) -> std::time::Duration {
+    mesh.rtt
+        .lock()
+        .ok()
+        .and_then(|m| m.get(id).copied())
+        .unwrap_or(std::time::Duration::from_millis(1))
+}
+
+fn peer_deadline(mesh: &Mesh, id: &[u8; 32]) -> std::time::Duration {
+    mycelium::physics::transport_deadline(peer_rtt(mesh, id))
+}
+
+fn note_rtt_ok(mesh: &Mesh, id: [u8; 32], dt: std::time::Duration) {
+    if let Ok(mut m) = mesh.rtt.lock() {
+        m.insert(id, if dt.is_zero() { std::time::Duration::from_micros(1) } else { dt });
+    }
+}
+
+fn note_rtt_timeout(mesh: &Mesh, id: [u8; 32]) {
+    let ratio = mycelium::physics::aperture_cycle().max(2);
+    if let Ok(mut m) = mesh.rtt.lock() {
+        let cur = m.get(&id).copied().unwrap_or(std::time::Duration::from_millis(1));
+        m.insert(id, cur.saturating_mul(ratio));
     }
 }
 
@@ -924,8 +956,9 @@ fn main() {
     // is below the tier, so a restored founder is bonded, never zero.
     {
         let mut k = kernel.lock().unwrap();
-        let staked = k.enroll(id, tier);
-        eprintln!("enrolled self at {tier:?}; staked mu {staked:?}; pool {:?}", k.treasury().pool());
+        let bond = parse_bond(flag(&args, "--bond")).unwrap_or(mycelium::economy::UNIT_BOND);
+        let staked = k.enroll_bond(id, tier, bond);
+        eprintln!("enrolled self at {tier:?}; bond {bond:?}; staked mu {staked:?}; pool {:?}", k.treasury().pool());
     }
 
     let mesh = Mesh {
@@ -935,15 +968,18 @@ fn main() {
         vk: hypha_key.vk_bytes(),
         sk: hypha_key.sk.clone(),
         bind: addr.clone(),
-        rtt: Arc::new(Mutex::new(std::time::Duration::ZERO)),
+        rtt: Arc::new(Mutex::new(Keyed::new())),
         last_roots: Arc::new(Mutex::new(Keyed::new())),
     };
     rebuild_own_cover(&kernel, &mesh);
-    let join_deadline = mesh_deadline(&mesh);
     for p in &join_peers {
-        if let Some((reply, dt)) = tell_peer(p, dialogue::encode_digests_request(&mesh.vk), join_deadline) {
-            note_rtt(&mesh, dt);
-            let _ = admit_peer_digest(&mesh, &reply);
+        let pid = id_of(p);
+        match tell_peer(p, dialogue::encode_digests_request(&mesh.vk), peer_deadline(&mesh, &pid)) {
+            Some((reply, dt)) => {
+                note_rtt_ok(&mesh, pid, dt);
+                let _ = admit_peer_digest(&mesh, &reply);
+            }
+            None => note_rtt_timeout(&mesh, pid),
         }
     }
 
@@ -1055,13 +1091,14 @@ fn main() {
         let rtt = Arc::clone(&mesh.rtt);
         std::thread::spawn(move || {
             for (addr, body) in nerve_rx {
+                let id = id_of(&addr);
                 let deadline = mycelium::physics::transport_deadline(
-                    rtt.lock().map(|t| *t).unwrap_or_default(),
+                    rtt.lock().ok().and_then(|m| m.get(&id).copied()).unwrap_or(std::time::Duration::from_millis(1)),
                 );
                 match tell_peer(&addr, body, deadline) {
                     Some((reply, dt)) => {
-                        if let Ok(mut t) = rtt.lock() {
-                            *t = if dt.is_zero() { std::time::Duration::from_micros(1) } else { dt };
+                        if let Ok(mut m) = rtt.lock() {
+                            m.insert(id, if dt.is_zero() { std::time::Duration::from_micros(1) } else { dt });
                         }
                         match dialogue::decode_root_reply(&reply) {
                             Some((held, at)) => eprintln!(
@@ -1072,7 +1109,14 @@ fn main() {
                             None => eprintln!("  nerve → {addr}: answered {} bytes", reply.len()),
                         }
                     }
-                    None => eprintln!("  nerve → {addr}: no answer"),
+                    None => {
+                        let ratio = mycelium::physics::aperture_cycle().max(2);
+                        if let Ok(mut m) = rtt.lock() {
+                            let cur = m.get(&id).copied().unwrap_or(std::time::Duration::from_millis(1));
+                            m.insert(id, cur.saturating_mul(ratio));
+                        }
+                        eprintln!("  nerve → {addr}: no answer");
+                    }
                 }
             }
         });
@@ -1114,7 +1158,11 @@ fn main() {
         let mut persisted = kernel.lock().map(|k| k.volume()).unwrap_or_default();
         let mut last_persist = Instant::now();
         std::thread::spawn(move || loop {
-            let rtt_now = rtt.lock().map(|t| *t).unwrap_or_default();
+            let rtt_now = rtt
+                .lock()
+                .ok()
+                .and_then(|m| m.fiber(&mycelium::network::nerve::ROOT).map(|(_, d)| *d).max())
+                .unwrap_or(std::time::Duration::from_millis(1));
             let work = match synth_rx.recv_timeout(mycelium::physics::transport_deadline(rtt_now)) {
                 Ok(w) => w,
                 Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
@@ -1211,13 +1259,15 @@ fn main() {
                     continue;
                 }
                 let req = dialogue::encode_digests_request(&mesh.vk);
-                let deadline = mesh_deadline(&mesh);
                 let mut any_moved = false;
-                let dest_list: Vec<String> = dests.fiber(&mycelium::network::nerve::ROOT).map(|(_, a)| a.clone()).collect();
-                for d in dest_list {
-                    match tell_peer(&d, req.clone(), deadline) {
+                let dest_list: Vec<([u8; 32], String)> = dests
+                    .fiber(&mycelium::network::nerve::ROOT)
+                    .map(|(id, a)| (*id, a.clone()))
+                    .collect();
+                for (pid, d) in dest_list {
+                    match tell_peer(&d, req.clone(), peer_deadline(&mesh, &pid)) {
                         Some((reply, dt)) => {
-                            note_rtt(&mesh, dt);
+                            note_rtt_ok(&mesh, pid, dt);
                             if !admit_peer_digest(&mesh, &reply) {
                                 continue;
                             }
@@ -1264,37 +1314,40 @@ fn main() {
                                 &charts,
                                 mycelium::network::wire::frame_budget(),
                             );
-                            if let Some((page, dt2)) = tell_peer(&d, fetch, mesh_deadline(&mesh)) {
-                                note_rtt(&mesh, dt2);
-                                for w in dialogue::decode_syllabus_reply(&page).unwrap_or_default() {
-                                    let mut p = 0usize;
-                                    if let Some(spoken) = mycelium::transducer::element::Element::from_bytes(&w, &mut p)
-                                    {
-                                        if let Ok(mut k) = kernel.lock() {
-                                            let g = match mesh.cover.lock() {
-                                                Ok(mut c) => k.glue_fetched(spoken, vk_peer, mesh.vk, &mut c),
-                                                Err(_) => continue,
-                                            };
-                                            match g {
-                                                mycelium::cognition::Glue::Admitted => {
-                                                    eprintln!("  court glued admitted from {d}");
-                                                }
-                                                mycelium::cognition::Glue::Attached => {
-                                                    eprintln!("  court glued attached from {d}");
-                                                }
-                                                mycelium::cognition::Glue::Dialect => {
-                                                    eprintln!("  court glued dialect from {d}");
-                                                }
-                                                mycelium::cognition::Glue::Slashed(r) => {
-                                                    eprintln!("  court glued slash from {d}: {r}");
+                            match tell_peer(&d, fetch, peer_deadline(&mesh, &pid)) {
+                                Some((page, dt2)) => {
+                                    note_rtt_ok(&mesh, pid, dt2);
+                                    for w in dialogue::decode_syllabus_reply(&page).unwrap_or_default() {
+                                        let mut p = 0usize;
+                                        if let Some(spoken) = mycelium::transducer::element::Element::from_bytes(&w, &mut p)
+                                        {
+                                            if let Ok(mut k) = kernel.lock() {
+                                                let g = match mesh.cover.lock() {
+                                                    Ok(mut c) => k.glue_fetched(spoken, vk_peer, mesh.vk, &mut c),
+                                                    Err(_) => continue,
+                                                };
+                                                match g {
+                                                    mycelium::cognition::Glue::Admitted => {
+                                                        eprintln!("  court glued admitted from {d}");
+                                                    }
+                                                    mycelium::cognition::Glue::Attached => {
+                                                        eprintln!("  court glued attached from {d}");
+                                                    }
+                                                    mycelium::cognition::Glue::Dialect => {
+                                                        eprintln!("  court glued dialect from {d}");
+                                                    }
+                                                    mycelium::cognition::Glue::Slashed(r) => {
+                                                        eprintln!("  court glued slash from {d}: {r}");
+                                                    }
                                                 }
                                             }
                                         }
                                     }
                                 }
+                                None => note_rtt_timeout(&mesh, pid),
                             }
                         }
-                        None => {}
+                        None => note_rtt_timeout(&mesh, pid),
                     }
                 }
                 let rtt = mesh_rtt(&mesh);

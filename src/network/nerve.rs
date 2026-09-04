@@ -742,6 +742,14 @@ impl Cover {
     }
 }
 
+/// Room on one lane: that lane's bonded μ times the host's remaining
+/// strokes per unit bond on that lane, minus occupancy. Other lanes do
+/// not enter. A zero bond yields zero room.
+pub fn lane_cover_room(bond: u64, reserve: u64, occupancy: u64, spend: u64) -> u64 {
+    let per = (reserve / spend.max(1)).max(1);
+    bond.saturating_mul(per).saturating_sub(occupancy)
+}
+
 /// Occupied lanes of a magnitude — every lane the word moves, not the first.
 pub fn occupied_lanes(mag: &[u64; 4]) -> Vec<u8> {
     let v: Vec<u8> = (0..4u8).filter(|&l| mag[l as usize] > 0).collect();

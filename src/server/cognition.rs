@@ -282,29 +282,27 @@ pub fn rank_over(
     // in those strata are located again — a coordinate read, never the
     // whole book.
     let addresses: Vec<[u8; 32]> = pending.iter().map(|(p, _)| p.address()).collect();
-    let incremental = prior.basis_gen != basis_gen
-        && prior.retire_gen == language.retire_gen
-        && language.words.len() >= prior.basis_len
-        && prior.invariants.len() == prior.addresses.len();
+    let reuse = prior.retire_gen == language.retire_gen && !prior.addresses.is_empty();
     let mut moved: crate::network::nerve::Keyed<crate::transducer::stalk::Invariant> =
         crate::network::nerve::Keyed::new();
-    if incremental {
+    if reuse && prior.basis_gen != basis_gen && language.words.len() >= prior.basis_len {
         for w in &language.words[prior.basis_len..] {
             let inv = crate::transducer::stalk::invariant_of(w);
             moved.insert(inv.key(), inv);
         }
     }
-    let prior_at: Vec<Option<usize>> = addresses.iter().map(|addr| prior.index.get(addr).copied()).collect();
     let mut index = crate::network::nerve::Keyed::new();
     for (i, addr) in addresses.iter().enumerate() {
         index.insert(*addr, i);
     }
     let invariants: Vec<crate::transducer::stalk::Invariant> = pending
         .iter()
-        .zip(&prior_at)
-        .map(|((p, _), j)| match j.and_then(|j| prior.invariants.get(j)) {
-            Some(inv) => inv.clone(),
-            None => crate::transducer::stalk::invariant_of(p),
+        .map(|(p, _)| {
+            prior
+                .index
+                .get(&p.address())
+                .and_then(|&j| prior.invariants.get(j).cloned())
+                .unwrap_or_else(|| crate::transducer::stalk::invariant_of(p))
         })
         .collect();
     let locate = |p: &Element| {
@@ -315,32 +313,49 @@ pub fn rank_over(
         )
         .and_then(|(a, _)| language.index.get(&a).copied())
     };
-    let closure: Vec<Option<usize>> = if incremental {
-        let mut closure: Vec<Option<usize>> = prior_at
-            .iter()
-            .map(|j| j.and_then(|j| prior.closure.get(j).copied().flatten()))
-            .collect();
-        if let Some(by_chart) = chart_listings {
-            // index: moved charts, then listing fiber under each
-            for (ck, _) in moved.fiber(&crate::network::nerve::ROOT) {
-                for (addr, _) in by_chart.link(ck) {
-                    if let Some(&i) = index.get(addr) {
-                        closure[i] = locate(&pending[i].0);
+    let mut closure: Vec<Option<usize>> = pending
+        .iter()
+        .map(|(p, _)| {
+            prior
+                .index
+                .get(&p.address())
+                .and_then(|&j| prior.closure.get(j).copied().flatten())
+        })
+        .collect();
+    match reuse {
+        false => {
+            for (i, (p, _)) in pending.iter().enumerate() {
+                closure[i] = locate(p);
+            }
+        }
+        true => {
+            if !moved.is_empty() {
+                match chart_listings {
+                    Some(by_chart) => {
+                        for (ck, _) in moved.fiber(&crate::network::nerve::ROOT) {
+                            for (addr, _) in by_chart.link(ck) {
+                                if let Some(&i) = index.get(addr) {
+                                    closure[i] = locate(&pending[i].0);
+                                }
+                            }
+                        }
+                    }
+                    None => {
+                        for (i, (p, _)) in pending.iter().enumerate() {
+                            if moved.contains(&invariants[i].key()) {
+                                closure[i] = locate(p);
+                            }
+                        }
                     }
                 }
             }
-        } else {
-            // index: listings whose chart key is in the moved set
             for (i, (p, _)) in pending.iter().enumerate() {
-                if moved.contains(&invariants[i].key()) {
+                if prior.index.get(&p.address()).is_none() {
                     closure[i] = locate(p);
                 }
             }
         }
-        closure
-    } else {
-        pending.iter().map(|(p, _)| locate(p)).collect()
-    };
+    }
     let child_idx = composite_child_index(composites);
     let lineage: Vec<(u64, u64)> = pending
         .iter()
@@ -3334,40 +3349,27 @@ impl Kernel {
         closest_is_self
     }
 
-    /// THE THERMODYNAMIC CAPACITY VECTOR — no static cap exists. Per lane:
-    ///   C_L = C_total · (ΣP + P_L + 1) / (4 · (ΣP + 1))
-    /// where C_total = (machine's live MemAvailable / κ) ÷ the MEASURED mean
-    /// listing footprint — the machine's real breath divided by real entry
-    /// weight, so the book grows on an idle box and contracts under memory
-    /// pressure with no invented budget (α_mem is intrinsic: MemAvailable
-    /// already IS the headroom). High-tension lanes expand their share;
-    /// slack lanes cede it. κ = 16, the engine's fractional-contract family
-    /// (cohesion tolerance κ/16, the float law's pool/16, the use tithe /8).
-    pub fn dynamic_lane_capacity(&self) -> [usize; 4] {
-        let avail_bytes = mem_available_bytes().max(1);
-        let budget = avail_bytes / 16;
-        // Measured mean listing footprint: 18 bytes per chain cell, floored
-        // at one cell so an empty book still prices honestly.
-        let cells: usize = self.pending.iter().map(|(p, _)| p.sub().len().max(1)).sum();
-        let mean = (cells * 18 / self.pending.len().max(1)).max(18);
-        let c_total = (budget as usize / mean).max(4);
-        let p = &self.physics.pressure;
-        let sum: u64 = p.iter().sum();
+    /// Room on each lane from that lane only: bonded μ × (reserve/spend)
+    /// minus occupancy. Lane 2 is standing-extent slots per unit T-bond;
+    /// ticks never enter S, G, or H. An unbonded kernel (tests) uses one
+    /// unit of bond so the host's reserve still grants cover.
+    pub fn lane_room(&self) -> [usize; 4] {
+        if let Some(cap) = self.lane_cap {
+            return std::array::from_fn(|l| cap[l].max(1).saturating_sub(self.occupancy[l] as usize));
+        }
+        let bond = self.treasury.pool();
+        let spend = crate::physics::expansion_unit();
+        let unbonded = bond.iter().all(|&x| x == 0);
         std::array::from_fn(|l| {
-            ((c_total as u128 * (sum + p[l] + 1) as u128) / (4 * (sum + 1)) as u128) as usize
+            let b = if unbonded { 1 } else { bond[l] };
+            crate::network::nerve::lane_cover_room(b, self.physics.reserve[l], self.occupancy[l], spend) as usize
         })
     }
 
-    /// Market occupancy under LINEAGE COHESION: a composite's listed children
-    /// share the parent's budget envelope — the family counts ONCE, so a
-    /// fractured scene cannot flood the book with its own shards.
-    /// THE ROOM ON EVERY LANE: the lane capacity less the listings that
-    /// stand on that lane, read on all four lanes at once. A residual fits
-    /// the book when every lane it has magnitude on has room — no lane is
-    /// chosen, no lane is ordered above another (the polytonic law).
-    pub fn lane_room(&self) -> [usize; 4] {
-        let cap = self.lane_cap.unwrap_or_else(|| self.dynamic_lane_capacity());
-        std::array::from_fn(|l| cap[l].max(1).saturating_sub(self.occupancy[l] as usize))
+    /// Test helper: remaining listing room, from each lane's own bond and reserve.
+    pub fn dynamic_lane_capacity(&self) -> [usize; 4] {
+        let room = self.lane_room();
+        std::array::from_fn(|l| room[l].saturating_add(self.occupancy[l] as usize).max(1))
     }
 
     /// Does a residual fit the book on every lane it moves?
@@ -3819,8 +3821,12 @@ impl Kernel {
     /// The hypha enrolls ITSELF at boot with its own tier; arriving voices are
     /// enrolled as participants on first speech. Returns the staked μ⃗.
     pub fn enroll(&mut self, who: [u8; 32], tier: crate::economy::Tier) -> [u64; 4] {
+        self.enroll_bond(who, tier, crate::economy::UNIT_BOND)
+    }
+
+    pub fn enroll_bond(&mut self, who: [u8; 32], tier: crate::economy::Tier, bond: [u64; 4]) -> [u64; 4] {
         let anchor = self.anchor();
-        self.treasury.enroll(who, tier, anchor)
+        self.treasury.enroll(who, tier, bond, anchor)
     }
 
     /// Ingest a demand from `voice`: transduce → solve → conceive → admit.
@@ -4237,7 +4243,7 @@ impl Kernel {
         }
         let mut s = sub;
         let mut word = Vec::new();
-        let budget = self.peel_budget(); // the syntropic/entropic metabolism bounds compute
+        let budget = self.peel_budget(&g.magnitude());
         // ≺_DM is well-founded so this terminates; the 64 is only a safety net.
         for step in 0..64 {
             if s.is_identity() {
@@ -4276,11 +4282,16 @@ impl Kernel {
     /// never a monotone scalar (#34). Polytonic: the most-pressured lane governs
     /// (Liebig). Calm → full reduction; loaded → shallow; saturated → direct-match
     /// only, then germinate the compound (refined later, when the mesh is calm).
-    fn peel_budget(&self) -> usize {
-        match self.physics.metabolism_rate().iter().copied().max().unwrap_or(0) {
-            0..=7 => 64,   // calm — reduce to the full normal form
-            8..=31 => 8,   // loaded — a few peels, then defer
-            _ => 0,        // saturated — recognise cheaply or germinate; do not brute-force
+    fn peel_budget(&self, mag: &[u64; 4]) -> usize {
+        let rate = (0..4)
+            .filter(|&l| mag[l] > 0)
+            .map(|l| self.physics.pressure[l])
+            .max()
+            .unwrap_or(0);
+        match rate {
+            0..=7 => 64,
+            8..=31 => 8,
+            _ => 0,
         }
     }
 
@@ -5572,6 +5583,7 @@ fn action_potential(mu_quoted: &[u64; 4], dwell_k: u64) -> u128 {
 /// The machine's live breath — MemAvailable from /proc/meminfo, in bytes.
 /// A platform without the sensor reports half of a modest measured floor
 /// rather than pretending to know (the capacity formula degrades gracefully).
+#[allow(dead_code)]
 fn mem_available_bytes() -> u64 {
     std::fs::read_to_string("/proc/meminfo")
         .ok()
@@ -6155,23 +6167,19 @@ mod tests {
         assert!(k.quote(4).1.is_empty(), "the market cleared");
     }
 
-    /// THE MARKET HAS NO STATIC CAP: capacity is thermodynamic (live machine
-    /// headroom × lane tension) and eviction is by ACTION POTENTIAL — the
-    /// coldest listing goes, never the oldest. FIFO is banned.
+    /// Room is per-lane from bond and reserve; ticks on T do not steal
+    /// S, G, or H. Eviction is by ACTION POTENTIAL, never FIFO.
     #[test]
     fn market_capacity_is_thermodynamic_and_eviction_is_by_tension() {
         let mut k = Kernel::new();
-        // Capacity: alive on every lane, and a pressured lane EXPANDS its share.
-        let calm = k.dynamic_lane_capacity();
+        let calm = k.lane_room();
         assert!(calm.iter().all(|&c| c > 0), "no lane is ever pinched to zero: {calm:?}");
+        let s0 = calm[0];
         for _ in 0..24 {
             k.physics_mut().bump(&[0, 0, 1, 0]);
         }
-        let tense = k.dynamic_lane_capacity();
-        assert!(
-            tense[2] > tense[0],
-            "the strained lane out-budgets the slack one: {tense:?}"
-        );
+        let tense = k.lane_room();
+        assert_eq!(tense[0], s0, "T pressure does not steal spatial room: {tense:?}");
         // Action potential: a VALUABLE stale listing outranks a worthless
         // fresh one — eviction is argmin tension, not argmax age (anti-FIFO).
         let rich_old = action_potential(&[0, 0, 900, 0], 64);

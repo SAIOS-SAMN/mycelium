@@ -182,7 +182,8 @@ impl Complex {
         }
     }
 
-    fn remember(&mut self, cell: Cell) {
+    fn remember(&mut self, mut cell: Cell) {
+        cell.coefficient = cell.coefficient.normalised();
         let degree = cell.degree();
         let key = cell.key();
         self.ensure(degree);
@@ -201,6 +202,10 @@ impl Complex {
             }
         }
         self.degrees[degree].insert(key, cell);
+    }
+
+    fn store_coeff(g: Rotor) -> Rotor {
+        g.normalised()
     }
 
     pub fn set_section(&mut self, vertex: [u8; 32], section: Section, volume: [u64; 4]) {
@@ -227,7 +232,7 @@ impl Complex {
         let stored = if vertices[0] == a { g } else { g.inverse().unwrap_or_else(Rotor::identity) };
         self.remember(Cell {
             vertices,
-            coefficient: stored,
+            coefficient: Self::store_coeff(stored),
             volume,
             fill: Fill::Open,
         });
@@ -299,13 +304,14 @@ impl Complex {
         let Some(coefficient) = self.coboundary_coeff(verts) else {
             return;
         };
+        let coefficient = Self::store_coeff(coefficient);
         let c = self.stored_mut(key);
-        match c.coefficient == coefficient {
+        match c.coefficient.projective_eq(&coefficient) {
+            true => {}
             false => {
                 c.coefficient = coefficient;
                 c.fill = Fill::Open;
             }
-            true => {}
         }
     }
 
