@@ -252,6 +252,45 @@ impl Rotor {
         }
         Some(std::array::from_fn(|k| &out.c[1 << k] / &w))
     }
+
+    pub fn is_identity(&self) -> bool {
+        self.c[0].is_one() && (1..16).all(|i| self.c[i].is_zero())
+    }
+
+    /// `by Φ by⁻¹`. A non-invertible conjugator leaves Φ unmoved.
+    pub fn conjugate(&self, by: &Rotor) -> Rotor {
+        match by.inverse() {
+            Some(inv) => by.geo(self).geo(&inv),
+            None => self.clone(),
+        }
+    }
+
+    pub fn key(&self) -> [u8; 32] {
+        let mut h = blake3::Hasher::new();
+        let mut buf = Vec::new();
+        self.to_bytes(&mut buf);
+        h.update(&buf);
+        *h.finalize().as_bytes()
+    }
+
+    /// First eight bytes of the key as an atlas axis.
+    pub fn coordinate(&self) -> u64 {
+        u64::from_le_bytes(self.key()[..8].try_into().unwrap())
+    }
+
+    pub fn to_bytes(&self, out: &mut Vec<u8>) {
+        for c in &self.c {
+            put_q(out, c);
+        }
+    }
+
+    pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Rotor> {
+        let mut c: [Q; 16] = std::array::from_fn(|_| Q::zero());
+        for slot in &mut c {
+            *slot = take_q(b, pos)?;
+        }
+        Some(Rotor { c })
+    }
 }
 
 /// The rotor `Φ` of a letter.
@@ -329,6 +368,40 @@ impl Word {
         let mut t = self.0.clone();
         t.extend_from_slice(&other.0);
         Word(t)
+    }
+
+    /// Reduce the tape by the per-plane spelling peel so equal rotors have
+    /// equal tapes on the wire. The sensor-plane projection is PlaneForm;
+    /// other invariant pair-planes are spelled in slot order.
+    pub fn normal_form(&self) -> Word {
+        if let Some(f) = self.form() {
+            return f.to_word();
+        }
+        let Some(m) = self.matrix() else {
+            return self.clone();
+        };
+        let mut out = Word::identity();
+        for &(i, j) in &SLOT_PLANES_SIX {
+            let (ii, jj) = (i as usize, j as usize);
+            let closed = (0..4).all(|row| {
+                row == ii || row == jj || (m[row][ii].is_zero() && m[row][jj].is_zero())
+            });
+            if !closed {
+                continue;
+            }
+            let block = [
+                [m[ii][ii].clone(), m[ii][jj].clone()],
+                [m[jj][ii].clone(), m[jj][jj].clone()],
+            ];
+            if let Some(sp) = spell(&block) {
+                out = out.compose(&sp.word);
+            }
+        }
+        if out.is_empty() {
+            self.clone()
+        } else {
+            out
+        }
     }
 
     /// The plane group is rotations ⋊ sheet parity, not a commuting tape.
@@ -1100,5 +1173,10 @@ mod tests {
         assert_eq!(conj, rot.inverse(), "S R S⁻¹ = R⁻¹");
         assert_eq!(rot.compose(&sheet), sheet.compose(&rot.inverse()));
         assert_eq!(rot.key(), rot.to_word().form().unwrap().key());
+        let w = Word::from_letters(&[(q, false)]);
+        let r = w.rotor();
+        assert!(r.geo(&r.inverse().unwrap()).is_identity());
+        let n = w.compose(&w.inverse()).normal_form();
+        assert!(n.rotor().is_identity(), "normal form of a cancelling tape is 1");
     }
 }

@@ -28,7 +28,7 @@
 //! order they were held in — reached through a keyed trie, no map, no
 //! sorted tape, no sibling scan.
 
-use super::alphabet::PlaneForm;
+use super::alphabet::Rotor;
 use super::element::{self, Versor};
 use crate::network::nerve::Keyed;
 
@@ -59,8 +59,8 @@ impl Invariant {
 pub enum Closure {
     Flat,
     Twisted(Versor),
-    /// The triangle's torsion class, a PlaneForm.
-    Class(PlaneForm),
+    /// A Čech class at a degree, a Rotor of the alphabet.
+    Class(Rotor, u8),
     Cavity,
 }
 
@@ -321,8 +321,9 @@ impl Stalks {
         out
     }
 
-    /// Append one axis: the H² class as a new coordinate of the chart.
-    pub fn refine(inv: &Invariant, coordinate: u64) -> Invariant {
+    /// Append one axis: the class key as a new coordinate of the chart.
+    pub fn refine(inv: &Invariant, class_key: [u8; 32]) -> Invariant {
+        let coordinate = u64::from_le_bytes(class_key[..8].try_into().unwrap());
         let mut axes = inv.0.clone();
         axes.push(coordinate);
         Invariant(axes)
@@ -333,7 +334,9 @@ impl Stalks {
     pub fn split_stratum(&mut self, inv: &Invariant, mut coordinate_of: impl FnMut(&[u8; 32]) -> u64) {
         let members = self.fiber(inv);
         for addr in members {
-            let next = Self::refine(inv, coordinate_of(&addr));
+            let mut key = [0u8; 32];
+            key[..8].copy_from_slice(&coordinate_of(&addr).to_le_bytes());
+            let next = Self::refine(inv, key);
             self.root.remove(&inv.0, &addr);
             self.root.admit(&next.0, addr);
             self.charts.insert(addr, next);
@@ -563,7 +566,11 @@ mod tests {
             }
         });
         assert!(stalks.fiber(&inv).is_empty(), "the coarse chart is empty after the split");
-        assert_eq!(stalks.fiber(&Stalks::refine(&inv, 0)), vec![a.address()]);
-        assert_eq!(stalks.fiber(&Stalks::refine(&inv, class_coord)), vec![b.address()]);
+        let mut zero = [0u8; 32];
+        zero[..8].copy_from_slice(&0u64.to_le_bytes());
+        let mut cls = [0u8; 32];
+        cls[..8].copy_from_slice(&class_coord.to_le_bytes());
+        assert_eq!(stalks.fiber(&Stalks::refine(&inv, zero)), vec![a.address()]);
+        assert_eq!(stalks.fiber(&Stalks::refine(&inv, cls)), vec![b.address()]);
     }
 }

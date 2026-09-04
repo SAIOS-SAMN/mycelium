@@ -571,8 +571,8 @@ pub fn deconstruct_at<'a>(
 
 // ── a sentence is a nerve of germs ──────────────────────────────────────────
 
-use super::alphabet::{self, PlaneForm, Word};
-use super::cech::{self, Cochains, Fill, Section};
+use super::alphabet::{self, Rotor, Word};
+use super::cech::{self, Complex, Fill, Section};
 use super::element::{affine_of, from_connection, GERM_DIM};
 
 /// One germ of a sentence: a body the family carried, spelled.
@@ -604,17 +604,17 @@ pub struct Cycle {
 }
 
 /// A sentence: a nerve of germs inside one thought. Germs are vertices,
-/// faces are c¹, cycles are c², tetrahedra of mutually adjacent germs are
-/// c³. The cochains are the object; faces and cycles are the tape
-/// projection. An H² class is torsion: the sentence is thought.
+/// k-fold body overlaps are k-cells. The complex is the object; faces and
+/// cycles are the tape projection. A class at any degree is torsion: the
+/// sentence is thought.
 #[derive(Debug, Clone, Default)]
 pub struct Nerve {
     pub germs: Vec<Germ>,
-    pub cochains: Cochains,
+    pub complex: Complex,
     pub faces: Vec<Face>,
     pub cycles: Vec<Cycle>,
     pub remainder: Vec<Cell>,
-    pub class: Option<PlaneForm>,
+    pub class: Option<(Rotor, usize)>,
 }
 
 impl PartialEq for Nerve {
@@ -651,48 +651,97 @@ fn germ_index(v: &[u8; 32]) -> usize {
     u64::from_le_bytes(v[..8].try_into().unwrap_or([0; 8])) as usize
 }
 
-fn project_cycles(c: &Cochains) -> Vec<Cycle> {
-    c.of_degree(2)
-        .into_iter()
-        .map(|(s, h)| Cycle {
-            germs: s.verts.iter().map(germ_index).collect(),
-            holonomy: h.to_word(),
-        })
-        .collect()
+fn word_of_rotor(r: &Rotor) -> Word {
+    let one = alphabet::Q::from_integer(num_bigint::BigInt::from(1));
+    let zero = alphabet::Q::from_integer(num_bigint::BigInt::from(0));
+    let e0 = r.carry(&[one.clone(), zero.clone(), zero.clone(), zero.clone()]);
+    let e1 = r.carry(&[zero.clone(), one, zero.clone(), zero]);
+    if let (Some(a), Some(b)) = (e0, e1) {
+        let block = [[a[0].clone(), b[0].clone()], [a[1].clone(), b[1].clone()]];
+        if let Some(sp) = alphabet::spell(&block) {
+            return sp.word;
+        }
+    }
+    Word::identity()
 }
 
-fn bind_cochains(germs: &[Germ], faces: &[Face]) -> Cochains {
-    let mut cochains = Cochains::new();
+fn project_cycles(c: &Complex) -> Vec<Cycle> {
+    let mut out = Vec::new();
+    if let Some(layer) = c.degrees.get(2) {
+        layer.for_each(|_, cell| {
+            out.push(Cycle {
+                germs: cell.vertices.iter().map(germ_index).collect(),
+                holonomy: word_of_rotor(&cell.coefficient),
+            });
+        });
+    }
+    out
+}
+
+fn shared_volume(supports: &[Vec<(i64, i64)>], verts: &[[u8; 32]]) -> [u64; 4] {
+    if verts.is_empty() || supports.is_empty() {
+        return [0; 4];
+    }
+    let i0 = germ_index(&verts[0]);
+    if i0 >= supports.len() {
+        return [0; 4];
+    }
+    let mut acc = supports[i0].clone();
+    for v in &verts[1..] {
+        let i = germ_index(v);
+        if i >= supports.len() {
+            return [0; 4];
+        }
+        acc.retain(|p| supports[i].binary_search(p).is_ok());
+    }
+    let cells: Vec<Cell> = acc.into_iter().map(|(r, c)| (r, c, 0, 0)).collect();
+    element::measure_lanes(&cells)
+}
+
+fn bind_complex(germs: &[Germ], faces: &[Face]) -> Complex {
+    let mut cx = Complex::new();
+    let supports: Vec<Vec<(i64, i64)>> = germs.iter().map(after_support).collect();
     for (i, g) in germs.iter().enumerate() {
-        cochains.set_vertex(
+        cx.set_section(
             germ_vertex(i),
             Section {
                 addr: g.address,
-                gamma: g.word.form().unwrap_or_else(PlaneForm::identity),
+                gamma: g.word.rotor(),
             },
+            element::measure_lanes(&g.chain),
         );
     }
     for f in faces {
+        let vol = element::measure_lanes(&f.overlap);
         if f.spelled {
-            if let Some(g) = f.g_ij.form() {
-                cochains.set_edge(germ_vertex(f.i), germ_vertex(f.j), g);
-            } else {
-                cochains.set_remainder_edge(germ_vertex(f.i), germ_vertex(f.j));
-            }
+            cx.set_edge(germ_vertex(f.i), germ_vertex(f.j), f.g_ij.rotor(), vol);
         } else {
-            cochains.set_remainder_edge(germ_vertex(f.i), germ_vertex(f.j));
+            cx.set_remainder_edge(germ_vertex(f.i), germ_vertex(f.j));
         }
     }
     for i in 0..germs.len() {
-        cochains.delta_on_link(&germ_vertex(i));
+        cx.coboundary_on_link(&germ_vertex(i), |verts| shared_volume(&supports, verts));
     }
-    cochains
+    cx
 }
 
-fn first_class(c: &Cochains) -> Option<PlaneForm> {
-    for (s, _) in c.of_degree(3) {
-        if let Some(h) = c.class(&s) {
-            return Some(h);
+fn first_class(c: &Complex) -> Option<(Rotor, usize)> {
+    for (d, key) in c.unfilled() {
+        if let Some(cl) = c.class(&key) {
+            return Some(cl);
+        }
+        let _ = d;
+    }
+    for (d, layer) in c.degrees.iter().enumerate().skip(2) {
+        let mut found = None;
+        layer.for_each(|k, cell| {
+            if found.is_none() && !cell.coefficient.is_identity() {
+                found = Some((cell.coefficient.clone(), d));
+            }
+            let _ = k;
+        });
+        if found.is_some() {
+            return found;
         }
     }
     None
@@ -829,10 +878,10 @@ pub fn assemble(mut germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
         let (g_ij, spelled) = face_word(&germs[i], &germs[j]);
         faces.push(Face { i, j, overlap, g_ij, spelled });
     }
-    let cochains = bind_cochains(&germs, &faces);
-    let cycles = project_cycles(&cochains);
-    let class = first_class(&cochains);
-    Nerve { germs, cochains, faces, cycles, remainder, class }
+    let complex = bind_complex(&germs, &faces);
+    let cycles = project_cycles(&complex);
+    let class = first_class(&complex);
+    Nerve { germs, complex, faces, cycles, remainder, class }
 }
 
 /// Solve δγ = ω: a gauge per germ, integer-linear in letter exponents.
@@ -844,12 +893,9 @@ pub fn solve_coboundary(n: &Nerve) -> Option<Vec<Word>> {
         if !f.spelled {
             continue;
         }
-        let Some(g) = f.g_ij.form() else {
-            continue;
-        };
-        edges.push((f.i, f.j, g));
+        edges.push((f.i, f.j, f.g_ij.rotor()));
     }
-    cech::solve_gauge(n.germs.len(), &edges).map(|gs| gs.into_iter().map(|g| g.to_word()).collect())
+    cech::solve_gauge(n.germs.len(), &edges).map(|gs| gs.into_iter().map(|g| word_of_rotor(&g)).collect())
 }
 
 /// Apply a gauge: each germ's tape is re-anchored by γ_i, then the nerve
@@ -870,36 +916,34 @@ pub fn apply_gauge(n: &mut Nerve, gamma: &[Word]) {
     *n = assemble(std::mem::take(&mut n.germs), std::mem::take(&mut n.remainder));
 }
 
-/// Close the sentence: fill every triangle on each germ's link. A tetrahedron
-/// with δh ≠ 1 carries its H² class as torsion and is thought.
+/// Close the sentence: fill up the degrees on each germ's link. A class
+/// at any degree stays as torsion and the sentence is thought.
 pub fn close(n: &mut Nerve) -> bool {
     let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     let mut all_filled = true;
     for i in 0..n.germs.len() {
-        n.cochains.delta_on_link(&germ_vertex(i));
-        for s in n.cochains.link(&germ_vertex(i)) {
-            if s.dim() == 2 {
-                let k = s.key();
+        n.complex.coboundary_on_link(&germ_vertex(i), |_| [1, 0, 0, 0]);
+        for d in 1..n.complex.degrees.len() {
+            for cell in n.complex.link(&germ_vertex(i), d) {
+                let k = cell.key();
                 if seen.contains(&k) {
                     continue;
                 }
                 seen.insert(k, ());
-                match n.cochains.fill(&s) {
+                match n.complex.fill(&k) {
                     Fill::Filled(_) => {}
-                    Fill::Twisted(_) => {
+                    Fill::Class(r) => {
+                        n.class = Some((r, d));
+                        all_filled = false;
+                    }
+                    Fill::Unfilled => {
                         all_filled = false;
                     }
                 }
             }
-            if s.dim() == 3 {
-                if let Some(class) = n.cochains.class(&s) {
-                    n.class = Some(class);
-                    all_filled = false;
-                }
-            }
         }
     }
-    n.cycles = project_cycles(&n.cochains);
+    n.cycles = project_cycles(&n.complex);
     if !all_filled || n.class.is_some() {
         return false;
     }
@@ -955,19 +999,27 @@ pub fn as_element(n: &Nerve) -> Option<Element> {
             e.record_dislocation(asg, v);
         }
     }
-    if let Some(class) = &n.class {
+    if let Some((class, degree)) = &n.class {
         let sigma: Vec<(u8, u8)> = n
-            .cochains
-            .of_degree(3)
-            .first()
-            .map(|(s, _)| {
-                s.verts
-                    .windows(2)
-                    .map(|w| (germ_index(&w[0]) as u8, germ_index(&w[1]) as u8))
-                    .collect()
+            .complex
+            .degrees
+            .get(*degree)
+            .and_then(|layer| {
+                let mut s = None;
+                layer.for_each(|_, cell| {
+                    if s.is_none() && cell.coefficient == *class {
+                        s = Some(
+                            cell.vertices
+                                .windows(2)
+                                .map(|w| (germ_index(&w[0]) as u8, germ_index(&w[1]) as u8))
+                                .collect(),
+                        );
+                    }
+                });
+                s
             })
             .unwrap_or_default();
-        e.record_torsion(sigma, class.period().unwrap_or(2));
+        e.record_torsion(sigma, 2);
     } else if !n.is_closed() {
         for c in &n.cycles {
             if c.holonomy.abelian_identity() {
@@ -1039,8 +1091,9 @@ fn encode_nerve_tail(n: &Nerve, out: &mut Vec<u8>) {
     }
     match &n.class {
         None => out.push(0),
-        Some(class) => {
+        Some((class, degree)) => {
             out.push(1);
+            out.push(*degree as u8);
             class.to_bytes(out);
         }
     }
@@ -1112,15 +1165,17 @@ fn decode_nerve_tail(b: &[u8], pos: &mut usize) -> Option<Nerve> {
     }
     let class = if *pos < b.len() && b[*pos] == 1 {
         *pos += 1;
-        Some(PlaneForm::from_bytes(b, pos)?)
+        let degree = *b.get(*pos)? as usize;
+        *pos += 1;
+        Some((Rotor::from_bytes(b, pos)?, degree))
     } else {
         if *pos < b.len() {
             *pos += 1;
         }
         None
     };
-    let cochains = bind_cochains(&germs, &faces);
-    Some(Nerve { germs, cochains, faces, cycles, remainder, class })
+    let complex = bind_complex(&germs, &faces);
+    Some(Nerve { germs, complex, faces, cycles, remainder, class })
 }
 
 /// A sentence Element: tagged tape, not an opened-axis connection.
@@ -1132,7 +1187,11 @@ pub fn is_sentence(e: &Element) -> bool {
 /// counts from the tape, then each germ's linear invariants.
 pub fn chart_of(e: &Element) -> crate::transducer::stalk::Invariant {
     let n = from_element(e);
-    let (germs, faces, cycles) = n.as_ref().map(|n| (n.germs.len() as u64, n.cochains.c1.len() as u64, n.cochains.c2.len() as u64)).unwrap_or((1, 0, 0));
+    let (germs, faces, cycles) = n.as_ref().map(|n| {
+        let d1 = n.complex.degrees.get(1).map(|l| l.len() as u64).unwrap_or(0);
+        let d2 = n.complex.degrees.get(2).map(|l| l.len() as u64).unwrap_or(0);
+        (n.germs.len() as u64, d1, d2)
+    }).unwrap_or((1, 0, 0));
     let mut axes = vec![2u64, germs, faces, cycles];
     if let Some(n) = n {
         let mut extra: Vec<Vec<u64>> = Vec::new();
@@ -1213,21 +1272,13 @@ pub fn replay_nerve(e: &Element) -> Option<&'static str> {
             return Some("sentence cycle holonomy does not close under repetition");
         }
     }
-    let derived = bind_cochains(&n.germs, &n.faces);
-    for i in 0..n.germs.len() {
-        // c² and c³ re-derived on the tape from the faces, per germ link.
-        let _ = i;
-    }
-    let mut class_got = None;
-    for (s, _) in derived.of_degree(3) {
-        if let Some(h) = derived.class(&s) {
-            class_got = Some(h);
-            break;
+    let derived = bind_complex(&n.germs, &n.faces);
+    let class_got = first_class(&derived);
+    match (class_got, n.class.clone()) {
+        (Some(_), None) => return Some("sentence has a non-coboundary coefficient with no class"),
+        (Some((got, gd)), Some((held, hd))) if got != held || gd != hd => {
+            return Some("sentence H² class does not re-derive")
         }
-    }
-    match (class_got, n.class) {
-        (Some(_), None) => return Some("sentence tetrahedra do not satisfy δh = 1"),
-        (Some(got), Some(held)) if got != held => return Some("sentence H² class does not re-derive"),
         (None, Some(_)) => return Some("sentence H² class does not re-derive"),
         _ => {}
     }

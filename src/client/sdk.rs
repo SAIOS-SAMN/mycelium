@@ -1513,7 +1513,7 @@ impl Entity {
             .map(|(_, n)| n.clone())
             .collect();
         for n in &held {
-            let Some(class) = n.class else {
+            let Some((class, _degree)) = n.class.clone() else {
                 continue;
             };
             let Some(ea) = crate::transducer::sentence::as_element(n) else {
@@ -1524,14 +1524,19 @@ impl Entity {
             }
             let axis = ea.max_axis().map_or(FIBER_GERMINATED, |m| m.max(FIBER_GERMINATED - 1) + 1);
             let mut germ = ea;
-            let spelling = crate::transducer::alphabet::Spelling {
-                word: class.to_word(),
-                rho: num_rational::BigRational::from_integer(num_bigint::BigInt::from(1)),
-            };
+            let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
             let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-            if let Some(v) = crate::transducer::element::conformal_of(&spelling, &(zero.clone(), zero)) {
-                if let Some(block) = crate::transducer::element::affine_of(&v) {
-                    germ.set_fiber(axis, block);
+            if let (Some(e0), Some(e1)) = (
+                class.carry(&[one.clone(), zero.clone(), zero.clone(), zero.clone()]),
+                class.carry(&[zero.clone(), one.clone(), zero.clone(), zero.clone()]),
+            ) {
+                let block = [[e0[0].clone(), e1[0].clone()], [e0[1].clone(), e1[1].clone()]];
+                if let Some(spelling) = crate::transducer::alphabet::spell(&block) {
+                    if let Some(v) = crate::transducer::element::conformal_of(&spelling, &(zero.clone(), zero)) {
+                        if let Some(m) = crate::transducer::element::affine_of(&v) {
+                            germ.set_fiber(axis, m);
+                        }
+                    }
                 }
             }
             match self.speak_word(&germ) {
