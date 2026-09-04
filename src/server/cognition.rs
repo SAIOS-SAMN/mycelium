@@ -1546,12 +1546,20 @@ impl Kernel {
     /// vantage itself is not an Offer — `offered` is marked only here, when
     /// the stroke is ready to speak on the nerve.
     pub fn court_stroke(&mut self) -> Vec<([u8; 32], Element, Vec<[u8; 32]>, [u64; 4], u64)> {
-        let keys: Vec<[u8; 32]> = self
-            .provisional
-            .iter()
-            .map(|(a, _)| *a)
-            .filter(|a| self.offered.get(a).is_none())
-            .collect();
+        let cap = crate::physics::spend_unit() as usize;
+        let mut keys: Vec<[u8; 32]> = Vec::new();
+        for (a, _) in &self.provisional {
+            if self.offered.get(a).is_some() {
+                continue;
+            }
+            if keys.iter().any(|k| k == a) {
+                continue;
+            }
+            keys.push(*a);
+            if keys.len() >= cap {
+                break;
+            }
+        }
         let mut out = Vec::new();
         for addr in keys {
             if let Ok(spoken) = self.court_first(&addr) {
@@ -4618,8 +4626,12 @@ mod tests {
         assert!(matches!(home.ingest(&a, &b, [2; 32]), Outcome::Installed(0)));
         let addr = home.basis()[0].address();
         assert!(!home.offered(&addr), "first vantage is not an Offer");
+        let spoken0 = home.provisional[0].1.clone();
+        for _ in 0..32 {
+            home.provisional.push((addr, spoken0.clone()));
+        }
         let offers = home.court_stroke();
-        assert_eq!(offers.len(), 1, "the stroke speaks the Offer");
+        assert_eq!(offers.len(), 1, "the stroke speaks the Offer once, duplicates collapsed");
         assert!(home.offered(&addr));
         assert!(home.court_stroke().is_empty(), "an Offer is spoken once");
         let (addr, spoken, _, deflation, _) = offers.into_iter().next().unwrap();

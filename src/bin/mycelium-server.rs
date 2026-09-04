@@ -601,22 +601,29 @@ fn main() {
         let bind = addr.clone();
         std::thread::spawn(move || {
             let sk = ed25519_dalek::SigningKey::from_bytes(&sk_bytes);
+            let mut last_cover = Instant::now() - std::time::Duration::from_secs(10);
             loop {
                 std::thread::sleep(std::time::Duration::from_secs(2));
                 // Cover first: the peer must hold this vk before an Offer
                 // can verify. The nerve thread is FIFO, one dial at a time.
-                let charts = kernel.lock().map(|k| k.active_cover()).unwrap_or_default();
-                let cover = dialogue::encode_cover(&vk, &bind, &charts);
-                let mut cover_dests = join.clone();
-                if let Ok(ov) = overlap.lock() {
-                    for (_, a, _, _) in ov.iter() {
-                        if !cover_dests.contains(a) {
-                            cover_dests.push(a.clone());
+                // Bootstrap Covers every tick until overlap exists; then
+                // every ten seconds, so Offers keep the nerve.
+                let overlap_empty = overlap.lock().map(|o| o.is_empty()).unwrap_or(true);
+                if overlap_empty || last_cover.elapsed() >= std::time::Duration::from_secs(10) {
+                    let charts = kernel.lock().map(|k| k.active_cover()).unwrap_or_default();
+                    let cover = dialogue::encode_cover(&vk, &bind, &charts);
+                    let mut cover_dests = join.clone();
+                    if let Ok(ov) = overlap.lock() {
+                        for (_, a, _, _) in ov.iter() {
+                            if !cover_dests.contains(a) {
+                                cover_dests.push(a.clone());
+                            }
                         }
                     }
-                }
-                for d in cover_dests {
-                    let _ = nerve_tx.try_send((d, cover.clone()));
+                    for d in cover_dests {
+                        let _ = nerve_tx.try_send((d, cover.clone()));
+                    }
+                    last_cover = Instant::now();
                 }
                 let offers = match kernel.lock() {
                     Ok(mut k) => k.court_stroke(),
