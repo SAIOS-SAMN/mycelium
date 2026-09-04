@@ -344,6 +344,9 @@ impl Contemplation {
     fn decide_neighbors(&mut self, key: [u8; 32]) {
         let cells: Vec<CechCell> = self.complex.link(&key, 1);
         for cell in cells {
+            if !matches!(cell.fill, Fill::Open) {
+                continue;
+            }
             let vol_nz = cell.volume.iter().any(|&x| x > 0);
             let outcome = self.complex.fill(&cell.key());
             match outcome {
@@ -611,7 +614,7 @@ impl Contemplation {
                 if !budget.spend() {
                     break;
                 }
-                if cell.degree() == 0 {
+                if cell.degree() == 0 || !matches!(cell.fill, Fill::Open) {
                     continue;
                 }
                 let key = cell.key();

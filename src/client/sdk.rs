@@ -910,19 +910,32 @@ impl Epigenome {
         }
         let mut genome = Vec::with_capacity(n);
         let mut pos = 8usize;
+        let mut skipped = 0usize;
         for _ in 0..n {
-            let Some(l4) = bytes.get(pos..pos + 4) else { return false };
+            let Some(l4) = bytes.get(pos..pos + 4) else { break };
             let len = u32::from_le_bytes(l4.try_into().unwrap()) as usize;
             pos += 4;
             if len > bytes.len().saturating_sub(pos) {
-                return false;
+                break;
             }
-            let mut ep = 0usize;
-            let Some(e) = Element::from_bytes(&bytes[pos..pos + len], &mut ep) else {
-                return false;
-            };
+            let slice = &bytes[pos..pos + len];
             pos += len;
-            genome.push(e);
+            let mut ep = 0usize;
+            match Element::from_bytes(slice, &mut ep) {
+                Some(e) => genome.push(e),
+                None => {
+                    // Previous GEN1 layouts (pre-fibre-index tails, a
+                    // word that will not uncrystallize) must not sink the
+                    // rest: residuals are never lost.
+                    skipped += 1;
+                }
+            }
+        }
+        if genome.is_empty() {
+            return false;
+        }
+        if skipped > 0 {
+            eprintln!("genome migrated: {} words, {skipped} shells skipped", genome.len());
         }
         self.expression = vec![0; genome.len()];
         self.genome = genome;
@@ -1369,7 +1382,12 @@ impl Entity {
             }
         }
         if dests.is_empty() {
-            return self.session.quote(&charts);
+            // An empty atlas is incident to the root prefix: the first
+            // quote reads the book at depth zero, so a mind need not
+            // already hold a word to learn one.
+            let root = [crate::transducer::stalk::Invariant(Vec::new())];
+            let asked = if charts.is_empty() { root.as_slice() } else { charts.as_slice() };
+            return self.session.quote(asked);
         }
         let mut last_err = io::Error::new(io::ErrorKind::NotConnected, "no hypha");
         let mut out: Option<YieldQuote> = None;
@@ -1825,6 +1843,12 @@ mod tests {
         assert_eq!(back.genome()[0].address(), epi.genome()[0].address(), "words identical by address");
         assert_eq!(back.peak_expression(), 0, "expression is NOT persisted — the dialect re-forms");
         assert!(!Epigenome::new().uncrystallize(b"GEN1\xff\xff\xff\xff"), "hostile count refused");
+        if let Ok(bytes) = std::fs::read("state/client-a.genome") {
+            let mut old = Epigenome::new();
+            if old.uncrystallize(&bytes) {
+                assert!(old.genome_len() > 0, "a prior GEN1 is residuals, not lost");
+            }
+        }
     }
 
     /// THE CHROMATIC APERTURE (harmonic import): absorption is the EXACT running

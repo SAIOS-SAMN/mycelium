@@ -594,6 +594,8 @@ pub struct Face {
     pub g_ij: Word,
     /// False when the relative transport does not spell: a face with remainder.
     pub spelled: bool,
+    /// Shells of 4-neighbour dilation until the supports' rings meet.
+    pub shells: u8,
 }
 
 /// An independent loop of the nerve, carrying its holonomy word.
@@ -804,72 +806,84 @@ fn cell_key(r: i64, c: i64) -> [u8; 32] {
     k
 }
 
-fn germ_pair_key(i: usize, j: usize) -> [u8; 32] {
-    let (a, b) = if i < j { (i, j) } else { (j, i) };
-    let mut k = [0u8; 32];
-    k[..8].copy_from_slice(&(a as u64).to_le_bytes());
-    k[8..16].copy_from_slice(&(b as u64).to_le_bytes());
-    k
+/// One 4-neighbour shell: the support together with every orthogonally
+/// adjacent cell. The peel of a body's neighbourhood, never a scan of the
+/// scene.
+fn adjacent_ring(cells: &[(i64, i64)]) -> Vec<(i64, i64)> {
+    let mut have = Keyed::new();
+    let mut out = cells.to_vec();
+    for &(r, c) in cells {
+        have.insert(cell_key(r, c), ());
+    }
+    for &(r, c) in cells {
+        for (nr, nc) in [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)] {
+            let k = cell_key(nr, nc);
+            if !have.contains(&k) {
+                have.insert(k, ());
+                out.push((nr, nc));
+            }
+        }
+    }
+    out.sort_unstable();
+    out.dedup();
+    out
 }
 
-/// Assemble a nerve from germs: faces from meeting after-supports, cycles
-/// from a spanning tree plus chords. Canonical germ order is by address.
+fn pos_overlap(a: &[(i64, i64)], b: &[(i64, i64)]) -> Vec<(i64, i64)> {
+    a.iter().copied().filter(|p| b.binary_search(p).is_ok()).collect()
+}
+
+/// Dilate both supports one shell at a time until the rings meet. The
+/// shell count is the face's coordinate. Bounded by the bodies in this
+/// thought (the max 4-distance on the two supports).
+fn contact(a: &[(i64, i64)], b: &[(i64, i64)]) -> (u8, Vec<Cell>) {
+    if a.is_empty() || b.is_empty() {
+        return (0, Vec::new());
+    }
+    let mut da = a.to_vec();
+    let mut db = b.to_vec();
+    da.sort_unstable();
+    db.sort_unstable();
+    let first = overlap_cells(&da, &db);
+    if !first.is_empty() {
+        return (0, first);
+    }
+    let mut max_r = 0i64;
+    let mut max_c = 0i64;
+    for &(r, c) in a.iter().chain(b.iter()) {
+        max_r = max_r.max(r.abs());
+        max_c = max_c.max(c.abs());
+    }
+    let bound = (max_r.saturating_add(max_c).saturating_add(1) as usize).min(255);
+    for s in 1..=bound {
+        da = adjacent_ring(&da);
+        db = adjacent_ring(&db);
+        let hit = pos_overlap(&da, &db);
+        if !hit.is_empty() {
+            let cells: Vec<Cell> = hit.into_iter().map(|(r, c)| (r, c, 0, 0)).collect();
+            return (s as u8, cells);
+        }
+    }
+    (0, Vec::new())
+}
+
+/// Assemble a nerve from germs: faces from meeting neighbourhoods (peel
+/// one shell at a time until rings meet), cycles from a spanning tree plus
+/// chords. Canonical germ order is by address.
 pub fn assemble(mut germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
     germs.sort_by(|a, b| a.address.cmp(&b.address));
     let supports: Vec<Vec<(i64, i64)>> = germs.iter().map(after_support).collect();
-    let mut at: Keyed<Vec<usize>> = Keyed::new();
-    for (i, sup) in supports.iter().enumerate() {
-        for &(r, c) in sup {
-            let k = cell_key(r, c);
-            match at.get_mut(&k) {
-                Some(v) => {
-                    if !v.contains(&i) {
-                        v.push(i);
-                    }
-                }
-                None => {
-                    at.insert(k, vec![i]);
-                }
-            }
-        }
-    }
-    let mut meet: Keyed<()> = Keyed::new();
-    // index: keyed fiber of the cell trie; pairs at a cell, peel to 4-neighbours
-    for (k, germs_here) in at.fiber(&ROOT) {
-        // index: germs on this cell (the fiber)
-        for a in 0..germs_here.len() {
-            for b in a + 1..germs_here.len() {
-                meet.insert(germ_pair_key(germs_here[a], germs_here[b]), ());
-            }
-        }
-        let r = i64::from_le_bytes(k[..8].try_into().unwrap_or([0; 8]));
-        let c = i64::from_le_bytes(k[8..16].try_into().unwrap_or([0; 8]));
-        // index: four adjacent cells (peel of the residual)
-        for (dr, dc) in [(-1, 0), (1, 0), (0, -1), (0, 1)] {
-            if let Some(others) = at.get(&cell_key(r + dr, c + dc)) {
-                for &i in germs_here {
-                    for &j in others {
-                        if j != i {
-                            meet.insert(germ_pair_key(i, j), ());
-                        }
-                    }
-                }
-            }
-        }
-    }
     let mut faces = Vec::new();
-    let pairs: Vec<(usize, usize)> = meet
-        .fiber(&ROOT)
-        .map(|(k, _)| {
-            let i = u64::from_le_bytes(k[..8].try_into().unwrap()) as usize;
-            let j = u64::from_le_bytes(k[8..16].try_into().unwrap()) as usize;
-            (i, j)
-        })
-        .collect();
-    for (i, j) in pairs {
-        let overlap = overlap_cells(&supports[i], &supports[j]);
-        let (g_ij, spelled) = face_word(&germs[i], &germs[j]);
-        faces.push(Face { i, j, overlap, g_ij, spelled });
+    // index: pairs of germs in this thought (bodies per scene)
+    for i in 0..germs.len() {
+        for j in i + 1..germs.len() {
+            let (shells, overlap) = contact(&supports[i], &supports[j]);
+            if overlap.is_empty() && shells == 0 {
+                continue;
+            }
+            let (g_ij, spelled) = face_word(&germs[i], &germs[j]);
+            faces.push(Face { i, j, overlap, g_ij, spelled, shells });
+        }
     }
     let complex = bind_complex(&germs, &faces);
     let cycles = project_cycles(&complex);
@@ -1178,7 +1192,7 @@ fn decode_nerve_tail(b: &[u8], pos: &mut usize) -> Option<Nerve> {
         let g_ij = Word::from_bytes(b, pos)?;
         let spelled = *b.get(*pos)? != 0;
         *pos += 1;
-        faces.push(Face { i, j, overlap, g_ij, spelled });
+        faces.push(Face { i, j, overlap, g_ij, spelled, shells: 0 });
     }
     let ncyc = take_u32(b, pos)? as usize;
     let mut cycles = Vec::with_capacity(ncyc.min(1024));
@@ -1473,9 +1487,34 @@ mod tests {
         let mut n = assemble(vec![ga, gb], Vec::new());
         assert_eq!(n.germs.len(), 2);
         assert!(!n.faces.is_empty(), "adjacent after-supports meet");
+        assert_eq!(n.faces[0].shells, 0);
         assert!(n.cycles.is_empty(), "a tree has no independent cycle");
         assert!(solve_coboundary(&n).is_some(), "a tree 1-cochain is exact");
         assert!(close(&mut n));
+    }
+
+    /// Bodies separated by background still form a face: each support
+    /// dilates one shell at a time until the rings meet.
+    #[test]
+    fn separated_bodies_meet_by_peel() {
+        let chain_a = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
+        let chain_b = vec![(0, 4, 3, 4), (0, 5, 3, 4)];
+        let ga = Germ {
+            address: from_residual(&chain_a).address(),
+            versor: identity_versor(),
+            word: Word::identity(),
+            chain: chain_a,
+        };
+        let gb = Germ {
+            address: from_residual(&chain_b).address(),
+            versor: identity_versor(),
+            word: Word::identity(),
+            chain: chain_b,
+        };
+        let n = assemble(vec![ga, gb], Vec::new());
+        assert_eq!(n.faces.len(), 1, "two bodies in one thought share a face");
+        assert!(n.faces[0].shells > 0, "background between them is shells of dilation");
+        assert!(!n.faces[0].overlap.is_empty(), "the rings meet on a neighbourhood cell");
     }
 
     /// A sentence Element is charted on leading axis 2, disjoint from

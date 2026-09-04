@@ -310,6 +310,9 @@ impl Complex {
         let Some(cell) = self.degrees[degree].get(key).cloned() else {
             return Fill::Open;
         };
+        if !matches!(cell.fill, Fill::Open) {
+            return cell.fill;
+        }
         let matches = cell.coefficient == *gamma
             || cell.coefficient.inverse().as_ref() == Some(gamma);
         if matches {
@@ -523,6 +526,16 @@ impl Complex {
         let Some(cell) = self.degrees[degree].get(key).cloned() else {
             return Fill::Open;
         };
+        if !matches!(cell.fill, Fill::Open) {
+            return cell.fill;
+        }
+        if cell.degree() == 0 {
+            let filled = Fill::Filled(Rotor::identity());
+            if let Some(c) = self.degrees[degree].get_mut(key) {
+                c.fill = filled.clone();
+            }
+            return filled;
+        }
         if cell.coefficient.is_identity() {
             let filled = Fill::Filled(Rotor::identity());
             if let Some(c) = self.degrees[degree].get_mut(key) {
@@ -1026,5 +1039,20 @@ mod tests {
         eprintln!("work fetched-vertex N=32 {a} N=128 {b}");
         assert_eq!(a, b, "4N differs by zero: {a} vs {b}");
         assert!(a > 0, "the operation does work");
+    }
+
+    #[test]
+    fn fill_is_attempted_once() {
+        let mut c = Complex::new();
+        let (a, b) = (v(1), v(2));
+        c.set_section(a, Section { addr: a, gamma: Rotor::identity() }, vol());
+        c.set_section(b, Section { addr: b, gamma: Rotor::identity() }, vol());
+        c.set_edge(a, b, Rotor::identity(), vol());
+        let key = c.link(&a, 1)[0].key();
+        let first = c.fill(&key);
+        assert!(matches!(first, Fill::Filled(_)));
+        let second = c.fill(&key);
+        assert_eq!(first, second, "a filled cell is not filled again");
+        assert!(matches!(c.link(&a, 1)[0].fill, Fill::Filled(_)));
     }
 }

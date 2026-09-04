@@ -1126,6 +1126,9 @@ impl Element {
                     let db = b.get(*pos..*pos + dl)?;
                     *pos += dl;
                     let denom = BigInt::from_signed_bytes_le(db);
+                    if denom == BigInt::from(0) {
+                        return None;
+                    }
                     *cell = Q::new(numer, denom);
                 }
             }

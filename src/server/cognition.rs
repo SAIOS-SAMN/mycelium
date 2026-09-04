@@ -428,9 +428,24 @@ pub fn quote_incidence(
     let mut priced: Vec<(Element, [u64; 4], Vec<crate::transducer::stalk::Invariant>)> = Vec::new();
     let mut used = 0usize;
     let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    for chart in voice_charts {
+    let root_chart = crate::transducer::stalk::Invariant(Vec::new());
+    let charts: &[crate::transducer::stalk::Invariant] = if voice_charts.is_empty() {
+        std::slice::from_ref(&root_chart)
+    } else {
+        voice_charts
+    };
+    for chart in charts {
         let chart_key = chart.key();
-        for addr in listing_atlas.fiber(chart) {
+        let addrs: Vec<[u8; 32]> = if chart.0.is_empty() {
+            pending
+                .iter()
+                .map(|(p, _)| p.address())
+                .filter(|a| on_page.contains(a))
+                .collect()
+        } else {
+            listing_atlas.fiber(chart)
+        };
+        for addr in addrs {
             if !on_page.contains(&addr) || seen.contains(&addr) {
                 continue;
             }
@@ -3895,6 +3910,7 @@ impl Kernel {
                         let anchor = self.anchor();
                         let mu = crate::economy::price(&[0, 0, 1, 0], &self.physics.pressure, &self.treasury.pool());
                         self.treasury.settle_condense(sibling_disc, mu, anchor);
+                        self.touch_at(i);
                     }
                     self.physics.syntropy(&[0, 0, 1, 0]);
                     absorbed += 1;
@@ -3909,6 +3925,7 @@ impl Kernel {
             // torsion RELIEVES the physical torsion charge on the germ's lanes
             // (disorder converted to structure — per-lane, never a scalar).
             let spanned = self.word_mut(i).torse();
+            let wrote = spanned > 0;
             if spanned > 0 {
                 let lanes = self.basis[i].lanes();
                 self.physics.torse_relief(lanes, spanned as u64);
@@ -3920,7 +3937,9 @@ impl Kernel {
                 let anchor = self.anchor();
                 self.treasury.settle_torse(self.discoverer_at(i), mu, anchor);
             }
-            self.touch_at(i); // sections and cycles may have moved at the cursor
+            if wrote {
+                self.touch_at(i);
+            }
             if self.basis[i].sections().is_empty() && self.basis[i].torsion().is_empty() {
                 return Some(i);
             }
