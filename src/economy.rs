@@ -53,20 +53,17 @@ pub fn yield_surface(p: &crate::physics::Physics) -> [u64; 4] {
     })
 }
 
-/// PRICE AS A SHARE OF THE POOL: on each lane the work is the fraction of
-/// the book's tension it carries (the surface is the open book's tension
-/// on that lane, at least the work itself), paid from the pool's capacity
-/// on that lane — `μ⃗[l] = pool[l] · mag[l] / max(surface[l], mag[l])`,
-/// rounded up so real work never prices at nothing. Prices are relative
-/// weights; the pool is the absolute scale. Nothing is ever quoted that the
-/// pool does not hold.
-pub fn price(mag: &[u64; 4], surface: &[u64; 4], pool: &[u64; 4]) -> [u64; 4] {
+/// PRICE IS THE WORD AGAINST THE BOOK: on each lane `mag[l]² / max(surface[l], mag[l])`,
+/// rounded up, at least 1 on a lane the word moves. The stake bond never
+/// enters pricing.
+pub fn price(mag: &[u64; 4], surface: &[u64; 4]) -> [u64; 4] {
     std::array::from_fn(|l| {
-        if mag[l] == 0 || pool[l] == 0 {
+        if mag[l] == 0 {
             return 0;
         }
         let book = surface[l].max(mag[l]) as u128;
-        ((pool[l] as u128 * mag[l] as u128 + book - 1) / book) as u64
+        let p = (mag[l] as u128 * mag[l] as u128 + book - 1) / book;
+        p.max(1) as u64
     })
 }
 
@@ -120,28 +117,28 @@ pub struct Entry {
 /// THE FLOW ORIENTATION of a ledger entry relative to its identity — a signed
 /// coefficient in the flow algebra (the chain-complex orientation), never a
 /// boolean gate: +1 credits the identity, −1 debits it, 0 orients nothing
-/// (markers whose μ⃗ moved escrow, not a balance: the stake capitalized the
-/// pool; finality is a seal). An exhaustive total function — an unknown kind
-/// orients nothing rather than silently crediting.
+/// (markers whose μ⃗ moved the stake bond, not a balance). An exhaustive total
+/// function — an unknown kind orients nothing rather than silently crediting.
+/// Transfer credits are the second of a paired pair (same μ⃗, K, receipt);
+/// `recompute_balances` applies those, not this sign.
 pub fn orientation(kind: &str) -> i8 {
     match kind {
-        "utility" | "consilience" | "recall" | "torse" | "condense" | "refine" | "assembly" | "solve" | "rewrite" => 1,
-        "spend" | "fee" | "slash" => -1,
-        _ => 0, // "stake", "finality", forward-compatible unknowns
+        "mint" => 1,
+        "transfer" | "slash" => -1,
+        _ => 0,
     }
 }
 
 /// The per-lane stake base a tier multiplies — the residual lane runs deeper
-/// (that is where the work lives). Genesis issuance happens ONCE per identity,
-/// at enrollment; thereafter the system conserves: pool + balances = Σ stakes.
+/// (that is where the work lives). Enrollment bonds this vector; verified
+/// deflation mints supply independently of the bond.
 pub const STAKE_BASE: [u64; 4] = [8, 8, 32, 8];
 
 #[derive(Debug, Default, Clone)]
 pub struct Treasury {
     entries: Vec<Entry>,
-    /// THE ESCROW POOL — the finite per-lane reserve every yield is PAID FROM.
-    /// Nothing is minted by a formula: prices are relative weights; the pool is
-    /// the absolute scale (P5 — dynamic weights anchored to reality).
+    /// THE STAKE BOND — enrollment capital. `enroll` credits it;
+    /// `revoke_award(slash=true)` debits it; mint does not touch it.
     escrow: [u64; 4],
     /// Enrolled identities and their staked μ⃗, keyed by identity.
     stakes: crate::network::nerve::Keyed<(Tier, [u64; 4])>,
@@ -173,37 +170,73 @@ impl Treasury {
         self.balances.insert(who, b);
     }
 
-    /// ENROLL an identity: the stake (tier × STAKE_BASE, per lane) is issued ONCE
-    /// and capitalizes the escrow pool — the genesis event; conservation holds
-    /// thereafter. Idempotent per identity (one stake admits, C9). Returns the
-    /// staked vector ([0;4] if already enrolled).
+    /// ENROLL an identity: the stake (tier × STAKE_BASE) bonds the identity.
+    /// Tops up when the recorded stake is below the tier, so a restored
+    /// founder is bonded. Returns the vector added this call.
     pub fn enroll(&mut self, who: [u8; 32], tier: Tier, anchor: Anchor) -> [u64; 4] {
-        if self.stakes.contains(&who) {
-            return [0; 4];
-        }
         let w = tier.weight() as u64;
-        let stake: [u64; 4] = std::array::from_fn(|l| STAKE_BASE[l] * w);
-        for l in 0..4 {
-            self.escrow[l] = self.escrow[l].saturating_add(stake[l]);
+        let want: [u64; 4] = std::array::from_fn(|l| STAKE_BASE[l] * w);
+        let held = self.stakes.get(&who).map(|(_, s)| *s).unwrap_or([0; 4]);
+        let add: [u64; 4] = std::array::from_fn(|l| want[l].saturating_sub(held[l]));
+        if add.iter().any(|&x| x > 0) {
+            for l in 0..4 {
+                self.escrow[l] = self.escrow[l].saturating_add(add[l]);
+            }
+            self.stakes.insert(who, (tier, want));
+            self.entries.push(Entry { kind: "stake", who, mu: add, k_step: anchor.0, receipt: anchor.1 });
         }
-        self.stakes.insert(who, (tier, stake));
-        self.entries.push(Entry { kind: "stake", who, mu: stake, k_step: anchor.0, receipt: anchor.1 });
-        stake
+        if self.escrow.iter().all(|&x| x == 0) {
+            for l in 0..4 {
+                self.escrow[l] = want[l];
+            }
+        }
+        add
     }
 
-    /// The escrow pool — what the market can actually pay, per lane.
+    /// The stake bond, per lane.
     pub fn pool(&self) -> [u64; 4] {
         self.escrow
+    }
+
+    /// Sum of mint entries, per lane — issued supply.
+    pub fn supply(&self) -> [u64; 4] {
+        let mut s = [0u64; 4];
+        for e in &self.entries {
+            if e.kind == "mint" {
+                for l in 0..4 {
+                    s[l] = s[l].saturating_add(e.mu[l]);
+                }
+            }
+        }
+        s
+    }
+
+    fn mint_to(&mut self, who: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+        if mu.iter().all(|&x| x == 0) {
+            return [0; 4];
+        }
+        self.entries.push(Entry { kind: "mint", who, mu, k_step: anchor.0, receipt: anchor.1 });
+        self.credit(who, mu);
+        mu
     }
 
     /// HOLD a consilience award in escrow pending the court's finality verdict
     /// (Step 5: two-voice consilience is provisional, not final). Nothing books
     /// to the ledger yet — unfinalized speech earns nothing.
     pub fn escrow_award(&mut self, addr: [u8; 32], voices: Vec<[u8; 32]>, mu: [u64; 4], anchor: Anchor) {
-        if self.escrowed.contains(&addr) {
-            return; // one docket per germ
+        match self.escrowed.get_mut(&addr) {
+            Some((held, _, _)) => {
+                for v in voices {
+                    match held.iter().position(|h| *h == v) {
+                        Some(_) => {}
+                        None => held.push(v),
+                    }
+                }
+            }
+            None => {
+                self.escrowed.insert(addr, (voices, mu, anchor));
+            }
         }
-        self.escrowed.insert(addr, (voices, mu, anchor));
     }
 
     pub fn escrow_of(&self, addr: &[u8; 32]) -> Option<&(Vec<[u8; 32]>, [u64; 4], Anchor)> {
@@ -221,49 +254,43 @@ impl Treasury {
     pub fn release_filled(&mut self, listings: &[[u8; 32]]) -> [u64; 4] {
         let mut released = [0u64; 4];
         for addr in listings {
-            if let Some((_, mu, _)) = self.escrowed.get(addr).cloned() {
-                if self.release_award(addr) {
-                    for l in 0..4 {
-                        released[l] = released[l].saturating_add(mu[l]);
-                    }
+            if let Some((voices, mu, anchor)) = self.release_award(addr) {
+                self.mint_claim(&voices, mu, anchor);
+                for l in 0..4 {
+                    released[l] = released[l].saturating_add(mu[l]);
                 }
             }
         }
         released
     }
 
-    /// The court UPHELD the germ: release the escrowed award — the consilience
-    /// split pays now (float-law bounded), and a zero-μ "finality" marker entry
-    /// binds the ruling to the chain. Returns true if an award was released.
-    pub fn release_award(&mut self, addr: &[u8; 32]) -> bool {
-        let Some((voices, mu, anchor)) = self.escrowed.remove(addr) else {
-            return false;
-        };
-        self.entries.push(Entry { kind: "finality", who: *addr, mu: [0; 4], k_step: anchor.0, receipt: anchor.1 });
-        self.settle_consilience(&voices, mu, anchor);
-        true
+    /// Clear the listing claim. Payment is a mint of the same vector, done
+    /// by the caller after this returns (release then mint).
+    pub fn release_award(&mut self, addr: &[u8; 32]) -> Option<(Vec<[u8; 32]>, [u64; 4], Anchor)> {
+        self.escrowed.remove(addr)
     }
 
-    /// The court REJECTED the germ: the escrowed award evaporates. With `slash`
-    /// (a failed blind replay — false speech, not mere non-confluence) each
-    /// voice is debited its would-be share from earned balance INTO the pool.
+    /// Mint a released claim: consilience split when two voices stand, else
+    /// the first voice takes the vector.
+    pub fn mint_claim(&mut self, voices: &[[u8; 32]], mu: [u64; 4], anchor: Anchor) {
+        if voices.len() >= 2 {
+            self.settle_consilience(voices, mu, anchor);
+        } else if let Some(&v) = voices.first() {
+            self.mint_to(v, mu, anchor);
+        }
+    }
+
+    /// Drop the listing claim. A slash debits the stake bond and mints nothing.
     pub fn revoke_award(&mut self, addr: &[u8; 32], slash: bool) -> bool {
         let Some((voices, mu, anchor)) = self.escrowed.remove(addr) else {
             return false;
         };
         if slash {
-            let n = voices.len().max(1) as u64;
-            for v in &voices {
-                let held = self.balance_mu(v);
-                let cut: [u64; 4] = std::array::from_fn(|l| (mu[l] / n).min(held[l]));
-                if cut.iter().any(|&c| c > 0) {
-                    for l in 0..4 {
-                        self.escrow[l] = self.escrow[l].saturating_add(cut[l]);
-                    }
-                    self.entries.push(Entry { kind: "slash", who: *v, mu: cut, k_step: anchor.0, receipt: anchor.1 });
-                    self.debit(*v, cut);
-                }
+            for l in 0..4 {
+                self.escrow[l] = self.escrow[l].saturating_sub(mu[l]);
             }
+            let who = voices.first().copied().unwrap_or(*addr);
+            self.entries.push(Entry { kind: "slash", who, mu, k_step: anchor.0, receipt: anchor.1 });
         }
         true
     }
@@ -275,24 +302,8 @@ impl Treasury {
             .collect()
     }
 
-    /// PAY from the pool — the conservation law: each lane pays min(asked,
-    /// escrow); the pool debits what the earner credits; an empty pool pays
-    /// nothing and the ledger records only what was REAL. Returns the paid μ⃗.
-    fn pay(&mut self, kind: &'static str, who: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        let paid: [u64; 4] = std::array::from_fn(|l| mu[l].min(self.escrow[l]));
-        if paid.iter().all(|&m| m == 0) {
-            return paid;
-        }
-        for l in 0..4 {
-            self.escrow[l] -= paid[l];
-        }
-        self.entries.push(Entry { kind, who, mu: paid, k_step: anchor.0, receipt: anchor.1 });
-        if orientation(kind) == 1 {
-            self.credit(who, paid);
-        } else if orientation(kind) == -1 {
-            self.debit(who, paid);
-        }
-        paid
+    fn pay(&mut self, _kind: &'static str, who: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+        self.mint_to(who, mu, anchor)
     }
 
     /// The POW++ GATE on a germ install: it admits iff the germ reduces the demand
@@ -309,11 +320,8 @@ impl Treasury {
     /// bounded by what the payer really holds. Knowledge is nonrival: a broke
     /// demander is still served; the discoverer earns what was real. A demander
     /// paying itself transfers nothing (no wash trades). Returns the paid μ⃗.
-    /// Of every use-payment, the discoverer keeps 7/8 and 1/8 TITHES to the
-    /// pool — the market-maker's cut that refills the subsidy float in
-    /// proportion to real consumption, so discovery bounties never die at an
-    /// empty pool while value still circulates (the spend entry carries the
-    /// full amount; spend − utility on the same anchor IS the audited tithe).
+    /// Two `transfer` entries share the anchor: first debits the demander,
+    /// second credits the discoverer. Neither is a mint.
     pub fn settle_use(&mut self, demander: [u8; 32], discoverer: [u8; 32], mag: [u64; 4], anchor: Anchor) -> [u64; 4] {
         if demander == discoverer {
             return [0; 4];
@@ -323,22 +331,17 @@ impl Treasury {
         if paid.iter().all(|&m| m == 0) {
             return paid;
         }
-        let tithe: [u64; 4] = std::array::from_fn(|l| paid[l] / 8);
-        for l in 0..4 {
-            self.escrow[l] = self.escrow[l].saturating_add(tithe[l]);
-        }
-        self.entries.push(Entry { kind: "spend", who: demander, mu: paid, k_step: anchor.0, receipt: anchor.1 });
+        self.entries.push(Entry { kind: "transfer", who: demander, mu: paid, k_step: anchor.0, receipt: anchor.1 });
         self.debit(demander, paid);
-        let kept: [u64; 4] = std::array::from_fn(|l| paid[l] - tithe[l]);
-        self.entries.push(Entry { kind: "utility", who: discoverer, mu: kept, k_step: anchor.0, receipt: anchor.1 });
-        self.credit(discoverer, kept);
+        self.entries.push(Entry { kind: "transfer", who: discoverer, mu: paid, k_step: anchor.0, receipt: anchor.1 });
+        self.credit(discoverer, paid);
         paid
     }
 
     /// A SUBSIDY from the pool (system-initiated yields with no payer: the
     /// redundancy probe, bootstrap awards). Bounded by the pool, like all pay.
     pub fn settle_subsidy(&mut self, who: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        self.pay("utility", who, mu, anchor)
+        self.mint_to(who, mu, anchor)
     }
 
     /// Yield of an optimisation, read on the carriers as a lane vector.
@@ -357,39 +360,27 @@ impl Treasury {
         }
     }
 
-    /// Release an escrowed Rewrite to its discoverer on the lane it moved.
+    /// Release an escrowed Rewrite: mint the claimed vector to the discoverer.
     pub fn release_rewrite(&mut self, addr: &[u8; 32], voice: [u8; 32]) -> [u64; 4] {
         let Some((voices, mu, anchor)) = self.escrowed.remove(addr) else {
             return [0; 4];
         };
         let who = voices.first().copied().unwrap_or(voice);
-        self.entries.push(Entry { kind: "rewrite", who, mu, k_step: anchor.0, receipt: anchor.1 });
-        self.credit(who, mu);
-        mu
+        self.mint_to(who, mu, anchor)
     }
 
-    /// THE COMPRESSION YIELD (refinement bid, 0x09): a bidder proved an
-    /// existing word derivable — the vocabulary shrank while holonomy held.
-    /// Systemic entropy reduction is paid work. Float-bounded.
     pub fn settle_refine(&mut self, bidder: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        let bounded = self.award_bound(mu);
-        self.pay("refine", bidder, bounded, anchor)
+        self.mint_to(bidder, mu, anchor)
     }
 
-    /// THE CONDENSE YIELD: a sibling card was absorbed into a bundle along
-    /// a conformal versor. Neighbour of the torse coin — paid on the lane
-    /// the fibre gained, float-bounded.
     pub fn settle_condense(&mut self, discoverer: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        let bounded = self.award_bound(mu);
-        self.pay("condense", discoverer, bounded, anchor)
+        self.mint_to(discoverer, mu, anchor)
     }
 
     /// A VERIFIED SOLVE (PoUW): the registry confirmed a prediction against
     /// its held answers and named the task's tension. Occupied lanes pay at
-    /// least 1. This is syntropic mining — the bounty is the task's locked
-    /// tension, not a share of the door pool. What the pool holds is
-    /// debited; any remainder is issued so a verified solve is never 0⃗
-    /// because a lane ran dry.
+    /// least 1. This is syntropic mining — the bounty is minted as the
+    /// task's locked tension, never drawn from the stake bond.
     /// Draw a verified-solve payment from an escrowed listing award, so
     /// reduction and solve share one ledger. Remaining escrow stays for
     /// consilience release.
@@ -407,9 +398,7 @@ impl Treasury {
                 held[l] -= take[l];
             }
         }
-        self.entries.push(Entry { kind: "solve", who: voice, mu: take, k_step: anchor.0, receipt: anchor.1 });
-        self.credit(voice, take);
-        take
+        self.mint_to(voice, take, anchor)
     }
 
     #[cfg(test)]
@@ -419,16 +408,7 @@ impl Treasury {
 
     pub fn settle_solve(&mut self, voice: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
         let asked: [u64; 4] = std::array::from_fn(|l| if mu[l] == 0 { 0 } else { mu[l].max(1) });
-        if asked.iter().all(|&m| m == 0) {
-            return asked;
-        }
-        let from_pool: [u64; 4] = std::array::from_fn(|l| asked[l].min(self.escrow[l]));
-        for l in 0..4 {
-            self.escrow[l] -= from_pool[l];
-        }
-        self.entries.push(Entry { kind: "solve", who: voice, mu: asked, k_step: anchor.0, receipt: anchor.1 });
-        self.credit(voice, asked);
-        asked
+        self.mint_to(voice, asked, anchor)
     }
 
     /// THE ASSEMBLY PREMIUM (7d): a fragmented parent demand's children all
@@ -443,8 +423,7 @@ impl Treasury {
         let n = voices.len() as u64;
         let share: [u64; 4] = std::array::from_fn(|l| if mu[l] == 0 { 0 } else { (mu[l] / n).max(1) });
         for v in voices {
-            let bounded = self.award_bound(share);
-            self.pay("assembly", *v, bounded, anchor);
+            self.mint_to(*v, share, anchor);
         }
     }
 
@@ -458,29 +437,12 @@ impl Treasury {
         let n = voices.len() as u64;
         let share: [u64; 4] = std::array::from_fn(|l| if mu[l] == 0 { 0 } else { (mu[l] / n).max(1) });
         for v in voices {
-            let bounded = self.award_bound(share);
-            self.pay("consilience", *v, bounded, anchor);
+            self.mint_to(*v, share, anchor);
         }
     }
 
-    /// THE FLOAT LAW: a single award never takes more than pool/16 per lane
-    /// (floor 1 while the lane holds anything). The formula RANKS; the pool
-    /// SCALES — awards decay geometrically with the float instead of zeroing
-    /// it, so the price signal breathes: rich pool → rich bounties, poor pool
-    /// → poor ones, and tithe/fee inflow lifts both.
-    fn award_bound(&self, asked: [u64; 4]) -> [u64; 4] {
-        std::array::from_fn(|l| {
-            let cap = (self.escrow[l] / 16).max((self.escrow[l] > 0) as u64);
-            asked[l].min(cap)
-        })
-    }
-
-    /// The TORSE coin — structure condensed from disorder: the strongest yield,
-    /// paid on the holonomic lane to the bundle's discoverer, ∝ sections spanned
-    /// priced at the surface.
     pub fn settle_torse(&mut self, discoverer: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        let bounded = self.award_bound(mu);
-        self.pay("torse", discoverer, bounded, anchor)
+        self.mint_to(discoverer, mu, anchor)
     }
 
     /// A reading (decomposition) charges the READER a unit fee on each lane the
@@ -493,10 +455,7 @@ impl Treasury {
         if fee.iter().all(|&m| m == 0) {
             return fee;
         }
-        for l in 0..4 {
-            self.escrow[l] = self.escrow[l].saturating_add(fee[l]);
-        }
-        self.entries.push(Entry { kind: "fee", who: voice, mu: fee, k_step: anchor.0, receipt: anchor.1 });
+        self.entries.push(Entry { kind: "transfer", who: voice, mu: fee, k_step: anchor.0, receipt: anchor.1 });
         self.debit(voice, fee);
         fee
     }
@@ -513,16 +472,13 @@ impl Treasury {
         if paid.iter().all(|&m| m == 0) {
             return paid;
         }
-        for l in 0..4 {
-            self.escrow[l] = self.escrow[l].saturating_add(paid[l]);
-        }
-        self.entries.push(Entry { kind: "fee", who: voice, mu: paid, k_step: anchor.0, receipt: anchor.1 });
+        self.entries.push(Entry { kind: "transfer", who: voice, mu: paid, k_step: anchor.0, receipt: anchor.1 });
         self.debit(voice, paid);
         paid
     }
 
     /// The POLYTONIC BALANCE — per-lane orientation-weighted sums; there is no
-    /// scalar balance. Conservation reads pool + balances = Σ stakes, per lane.
+    /// scalar balance. Mint grows supply; the stake bond is independent.
     pub fn balance_mu(&self, who: &[u8; 32]) -> [u64; 4] {
         self.balances.get(who).copied().unwrap_or([0; 4])
     }
@@ -549,20 +505,12 @@ impl Treasury {
         out.extend_from_slice(&(self.entries.len() as u32).to_le_bytes());
         for e in &self.entries {
             let tag: u8 = match e.kind {
-                "utility" => 0,
-                "consilience" => 1,
-                "recall" => 2,
-                "torse" => 3,
+                "mint" => 14,
                 "stake" => 4,
-                "spend" => 5,
-                "fee" => 6,
-                "finality" => 7,
                 "slash" => 8,
-                "assembly" => 9,
-                "solve" => 10,
-                "refine" => 11,
-                "condense" => 12,
-                "rewrite" => 13,
+                "transfer" => 15,
+                "utility" | "consilience" | "torse" | "assembly" | "solve" | "refine" | "condense" | "rewrite" => 14,
+                "spend" | "fee" => 15,
                 _ => 255,
             };
             out.push(tag);
@@ -632,20 +580,12 @@ impl Treasury {
             let tag = *b.get(*pos)?;
             *pos += 1;
             let kind = match tag {
-                0 => "utility",
-                1 => "consilience",
-                2 => "recall",
-                3 => "torse",
                 4 => "stake",
-                5 => "spend",
-                6 => "fee",
-                7 => "finality",
                 8 => "slash",
-                9 => "assembly",
-                10 => "solve",
-                11 => "refine",
-                12 => "condense",
-                13 => "rewrite",
+                14 => "mint",
+                15 => "transfer",
+                0 | 1 | 3 | 9 | 10 | 11 | 12 | 13 => "mint",
+                5 | 6 => "transfer",
                 _ => "unknown",
             };
             let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
@@ -700,26 +640,31 @@ impl Treasury {
 
     fn recompute_balances(&mut self) {
         self.balances = crate::network::nerve::Keyed::new();
-        for i in 0..self.entries.len() {
+        let mut i = 0;
+        while i < self.entries.len() {
             let who = self.entries[i].who;
             let mu = self.entries[i].mu;
-            match orientation(self.entries[i].kind) {
-                1 => {
-                    let mut b = self.balances.get(&who).copied().unwrap_or([0; 4]);
-                    for l in 0..4 {
-                        b[l] = b[l].saturating_add(mu[l]);
+            match self.entries[i].kind {
+                "mint" => self.credit(who, mu),
+                "transfer" => {
+                    self.debit(who, mu);
+                    if i + 1 < self.entries.len() {
+                        let nxt = &self.entries[i + 1];
+                        if nxt.kind == "transfer"
+                            && nxt.mu == mu
+                            && nxt.k_step == self.entries[i].k_step
+                            && nxt.receipt == self.entries[i].receipt
+                            && nxt.who != who
+                        {
+                            self.credit(nxt.who, nxt.mu);
+                            i += 2;
+                            continue;
+                        }
                     }
-                    self.balances.insert(who, b);
-                }
-                -1 => {
-                    let mut b = self.balances.get(&who).copied().unwrap_or([0; 4]);
-                    for l in 0..4 {
-                        b[l] = b[l].saturating_sub(mu[l]);
-                    }
-                    self.balances.insert(who, b);
                 }
                 _ => {}
             }
+            i += 1;
         }
     }
 }
@@ -767,13 +712,11 @@ mod tests {
         t.settle_consilience(&[[1; 32], [2; 32]], [0, 0, 5, 0], anchor);
         assert_eq!(t.balance_mu(&[1; 32]), [0, 0, 2, 0]);
         assert_eq!(t.balance_mu(&[2; 32]), [0, 0, 2, 0]);
-        // The FLOAT LAW bounds the torse coin to pool/16 on the lane.
-        let cap = t.pool()[2] / 16;
         t.settle_torse([1; 32], [0, 0, 40, 0], anchor);
         assert_eq!(
             t.balance_mu(&[1; 32])[2],
-            2 + 40u64.min(cap),
-            "the torse coin lands on the lane, bounded by the float law"
+            42,
+            "the torse coin mints the measured vector"
         );
         // The vector ledger round-trips with anchors intact.
         let snap = t.snapshot();
@@ -782,121 +725,49 @@ mod tests {
         assert_eq!(back.entries(), t.entries(), "μ⃗ entries + anchors survive, exactly");
     }
 
-    /// P5 — THE CONSERVATION LAW: pool + balances = Σ stakes, on every lane,
-    /// after any settlement sequence. Nothing is minted by a formula.
+    /// A release with an empty stake bond still pays the measured vector.
     #[test]
-    fn escrow_conserves_per_lane() {
+    fn release_mints_when_the_bond_is_empty() {
         let mut t = Treasury::new();
-        let s1 = t.enroll([1; 32], Tier::Founder, (0, [0; 32]));
-        let s2 = t.enroll([2; 32], Tier::Participant, (0, [0; 32]));
-        let supply: [u64; 4] = std::array::from_fn(|l| s1[l] + s2[l]);
-        assert_eq!(t.pool(), supply, "stakes capitalize the pool exactly");
-        assert_eq!(t.enroll([1; 32], Tier::Founder, (0, [0; 32])), [0; 4], "one stake admits — idempotent");
-        t.settle_consilience(&[[1; 32], [2; 32]], [0, 0, 9, 0], (2, [1; 32]));
-        t.settle_use([1; 32], [2; 32], [0, 0, 3, 0], (1, [1; 32])); // peer transfer
-        t.settle_recall([2; 32], [false, false, true, false], (2, [1; 32])); // fee → pool
-        t.settle_torse([2; 32], [0, 0, 40, 0], (3, [1; 32]));
-        let held: [u64; 4] =
-            std::array::from_fn(|l| t.balance_mu(&[1; 32])[l] + t.balance_mu(&[2; 32])[l]);
-        for l in 0..4 {
-            assert_eq!(t.pool()[l] + held[l], supply[l], "lane {l}: pool + balances = Σ stakes");
-        }
-    }
-
-    /// A verified solve books the registry tension, never a surface-priced
-    /// covering: occupied lanes settle μ⃗ ≻ 0 while the pool holds them,
-    /// and the float law never inflates the tension.
-    #[test]
-    fn a_verified_solve_settles_the_registered_tension() {
-        let mut t = Treasury::new();
-        t.enroll([1; 32], Tier::Founder, (0, [0; 32]));
-        let tension = [4u64, 2, 0, 1];
-        let surface = [1_000u64, 1_000, 1_000, 1_000];
-        let priced = price(&tension, &surface, &t.pool());
-        let paid = t.settle_solve([1; 32], tension, (1, [9; 32]));
-        assert!(descends(&[0; 4], &paid), "a first verified solve settles μ⃗ ≻ 0");
-        assert!(
-            paid.iter().zip(tension).all(|(p, m)| *p <= m),
-            "the float law never inflates the registered tension: paid {paid:?} tension {tension:?}"
-        );
-        assert!(
-            priced.iter().zip(t.pool()).all(|(p, c)| *p <= c),
-            "the price is a share of the pool: never more than the lane's capacity, priced {priced:?} pool {:?}",
-            t.pool()
-        );
-        assert_eq!(t.entries().iter().filter(|e| e.kind == "solve").count(), 1);
-        assert_eq!(paid, tension, "occupied lanes pay the registered tension, not a pool share");
-    }
-
-    /// A verified solve draws from the listing's escrow; remainder stays for
-    /// consilience so reduction and solve share one ledger.
-    #[test]
-    fn a_verified_solve_draws_from_the_listing_escrow() {
-        let mut t = Treasury::new();
-        t.enroll([1; 32], Tier::Founder, (0, [0; 32]));
         let addr = [7u8; 32];
-        t.escrow_award(addr, vec![[1; 32], [2; 32]], [8, 0, 0, 0], (1, [3; 32]));
-        let take = t.draw_escrow(&addr, [9; 32], [3, 0, 0, 0], (2, [4; 32]));
-        assert_eq!(take, [3, 0, 0, 0]);
-        assert_eq!(t.escrowed_remaining(&addr), [5, 0, 0, 0], "remainder stays for consilience");
-        assert_eq!(t.entries().iter().filter(|e| e.kind == "solve").count(), 1);
-    }
-
-    /// A verified solve is base-money: an empty pool still books the tension.
-    #[test]
-    fn a_verified_solve_mints_when_the_pool_is_empty() {
-        let mut t = Treasury::new();
-        t.enroll([1; 32], Tier::Observer, (0, [0; 32]));
-        let _ = t.settle_subsidy([1; 32], [u64::MAX; 4], (1, [1; 32]));
+        t.escrow_award(addr, vec![[1; 32], [2; 32]], [4, 0, 2, 0], (1, [9; 32]));
         assert_eq!(t.pool(), [0; 4]);
-        let tension = [3u64, 0, 5, 1];
-        let paid = t.settle_solve([9; 32], tension, (2, [2; 32]));
-        assert_eq!(paid, tension, "PoUW issues the tension when the door pool is dry");
-        assert_eq!(t.balance_mu(&[9; 32]), tension);
-        assert_eq!(t.pool(), [0; 4], "issuance does not debit an empty pool");
+        let (voices, mu, anchor) = t.release_award(&addr).expect("claim");
+        t.mint_claim(&voices, mu, anchor);
+        assert_eq!(t.balance_mu(&[1; 32]), [2, 0, 1, 0]);
+        assert_eq!(t.balance_mu(&[2; 32]), [2, 0, 1, 0]);
+        assert_eq!(t.supply(), [4, 0, 2, 0]);
+        assert_eq!(t.pool(), [0; 4], "mint does not touch the stake bond");
     }
 
-    /// An exhausted pool pays partial then nothing — the ledger records only
-    /// what was REAL; the astronomical formula-price can never be booked.
+    /// Supply after N installs equals the sum of their deflations per lane.
     #[test]
-    fn empty_pool_pays_nothing() {
+    fn supply_is_the_sum_of_minted_deflations() {
         let mut t = Treasury::new();
-        t.enroll([1; 32], Tier::Observer, (0, [0; 32])); // smallest stake
-        let supply = t.pool();
-        // Ask for astronomically more than exists — pays exactly the pool, once.
-        let paid = t.settle_subsidy([1; 32], [u64::MAX; 4], (1, [1; 32]));
-        assert_eq!(paid, supply, "pays the whole pool, never more");
-        assert_eq!(t.pool(), [0; 4]);
-        let again = t.settle_subsidy([1; 32], [0, 0, 694154, 0], (2, [1; 32]));
-        assert_eq!(again, [0; 4], "an empty pool books NOTHING — honest scarcity");
-        assert_eq!(t.balance_mu(&[1; 32]), supply, "total earned = total staked; conservation");
-        // A broke demander transfers nothing; the discoverer earns only what was real.
-        let broke = t.settle_use([9; 32], [1; 32], [0, 0, 50, 0], (3, [1; 32]));
-        assert_eq!(broke, [0; 4], "no balance, no transfer — never a mint");
+        t.enroll([1; 32], Tier::Founder, (0, [0; 32]));
+        let d1 = [4u64, 2, 0, 2];
+        let d2 = [0u64, 4, 6, 2];
+        t.escrow_award([8; 32], vec![[1; 32], [2; 32]], d1, (1, [1; 32]));
+        t.escrow_award([9; 32], vec![[1; 32], [2; 32]], d2, (2, [2; 32]));
+        let (v1, m1, a1) = t.release_award(&[8; 32]).expect("d1");
+        t.mint_claim(&v1, m1, a1);
+        let (v2, m2, a2) = t.release_award(&[9; 32]).expect("d2");
+        t.mint_claim(&v2, m2, a2);
+        let expect: [u64; 4] = std::array::from_fn(|l| d1[l] + d2[l]);
+        assert_eq!(t.supply(), expect);
     }
 
-    /// THE POOL BREATHES: discovery subsidies drain it, consumption fees refill
-    /// it — the market's absolute scale tracks real circulation, never dying at
-    /// zero while value still moves.
+    /// A slash debits the bond and mints nothing.
     #[test]
-    fn fees_recharge_the_pool() {
+    fn slash_debits_the_bond_and_mints_nothing() {
         let mut t = Treasury::new();
-        t.enroll([1; 32], Tier::Participant, (0, [0; 32]));
-        t.settle_subsidy([1; 32], [0, 0, 10, 0], (1, [2; 32])); // pool → earner
-        let drained = t.pool();
-        let fee = t.settle_recall([1; 32], [false, false, true, false], (2, [2; 32]));
-        assert_eq!(fee, [0, 0, 1, 0], "the reader paid the lane's unit fee");
-        assert_eq!(t.pool()[2], drained[2] + 1, "the fee flowed INTO the pool — recharge");
-        assert_eq!(t.balance_mu(&[1; 32])[2], 9, "and OUT of the reader's balance");
-        // Wash trade pays nothing: a demander citing their own word transfers zero.
-        assert_eq!(t.settle_use([1; 32], [1; 32], [0, 0, 5, 0], (3, [2; 32])), [0; 4]);
-        // THE TITHE: a large use-payment returns 1/8 to the pool — proportional
-        // recharge; the discoverer keeps 7/8; conservation closes exactly.
-        let before = t.pool();
-        let paid = t.settle_use([1; 32], [3; 32], [0, 0, 8, 0], (4, [2; 32]));
-        assert_eq!(paid, [0, 0, 8, 0]);
-        assert_eq!(t.pool()[2], before[2] + 1, "1/8 tithed into the pool");
-        assert_eq!(t.balance_mu(&[3; 32])[2], 7, "the discoverer kept 7/8");
+        let bond = t.enroll([1; 32], Tier::Founder, (0, [0; 32]));
+        let addr = [3u8; 32];
+        t.escrow_award(addr, vec![[1; 32]], [8, 0, 0, 0], (1, [1; 32]));
+        assert!(t.revoke_award(&addr, true));
+        assert_eq!(t.pool()[0], bond[0].saturating_sub(8));
+        assert_eq!(t.supply(), [0; 4]);
+        assert_eq!(t.balance_mu(&[1; 32]), [0; 4]);
     }
 
     /// Pool + stakes survive the v3 snapshot exactly.

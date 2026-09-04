@@ -286,6 +286,29 @@ impl Complex {
         self.degrees.get(d as usize)?.get(key)
     }
 
+    /// A key in `by_key` is a stored cell. The degree is the layer.
+    fn stored_mut(&mut self, key: &[u8; 32]) -> &mut Cell {
+        let d = *self.by_key.get(key).expect("by_key names a stored cell") as usize;
+        assert!(d < self.degrees.len(), "by_key degree is a live layer");
+        self.degrees[d].get_mut(key).expect("by_key names a stored cell")
+    }
+
+    /// Reopen a stored cell only when its coboundary coefficient moved.
+    /// Absence of a rotor is remainder: the fill stands.
+    fn reopen_on_coeff_change(&mut self, key: &[u8; 32], verts: &[[u8; 32]]) {
+        let Some(coefficient) = self.coboundary_coeff(verts) else {
+            return;
+        };
+        let c = self.stored_mut(key);
+        match c.coefficient == coefficient {
+            false => {
+                c.coefficient = coefficient;
+                c.fill = Fill::Open;
+            }
+            true => {}
+        }
+    }
+
     /// The link of `vertex`: every incident cell, all degrees. A peel of
     /// the star; work per glue never leaves this set.
     pub fn star(&self, vertex: &[u8; 32]) -> Vec<[u8; 32]> {
@@ -476,17 +499,12 @@ impl Complex {
                                 continue;
                             }
                             seen.insert(nkey, ());
-                            if self.by_key.contains(&nkey) {
-                                let coefficient = self.coboundary_coeff(&verts);
-                                if let Some(coefficient) = coefficient {
-                                    if let Some(&d) = self.by_key.get(&nkey) {
-                                        if let Some(c) = self.degrees.get_mut(d as usize).and_then(|l| l.get_mut(&nkey)) {
-                                            c.coefficient = coefficient;
-                                            c.fill = Fill::Open;
-                                        }
-                                    }
+                            match self.by_key.get(&nkey).copied() {
+                                Some(_) => {
+                                    self.reopen_on_coeff_change(&nkey, &verts);
+                                    continue;
                                 }
-                                continue;
+                                None => {}
                             }
                             let mut blocked = false;
                             // index: pairs on this simplex (faces)

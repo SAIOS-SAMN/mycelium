@@ -1113,6 +1113,33 @@ mod tests {
         assert_eq!(c.cavity_len(), 1, "the older remainder is a cavity chart");
     }
 
+    /// Two pivots on the same bubble with no new word leave fills unchanged.
+    #[test]
+    fn two_pivots_without_a_new_word_leave_fills() {
+        use crate::transducer::element::from_residual;
+        let mut c = Contemplation::new();
+        let rem = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
+        c.hold(rem.clone());
+        c.hold(vec![(0, 1, 3, 4), (0, 2, 3, 4)]);
+        let word = from_residual(&rem);
+        let snap = |c: &Contemplation| {
+            let mut out = Vec::new();
+            for layer in &c.complex.degrees {
+                for (k, cell) in layer.fiber(&ROOT) {
+                    out.push((*k, cell.fill.clone()));
+                }
+            }
+            out.sort_by(|a, b| a.0.cmp(&b.0));
+            out
+        };
+        let mut budget = crate::physics::Physics::default().stroke_n(64);
+        let _ = c.pivot_on(&word, &mut budget);
+        let before = snap(&c);
+        let mut budget = crate::physics::Physics::default().stroke_n(64);
+        let _ = c.pivot_on(&word, &mut budget);
+        assert_eq!(snap(&c), before, "a second pivot with no new word leaves fills");
+    }
+
     #[test]
     fn tht1_round_trips_bubbles() {
         let mut c = Contemplation::new();

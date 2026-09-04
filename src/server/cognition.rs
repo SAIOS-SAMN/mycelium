@@ -416,7 +416,7 @@ pub fn quote_incidence(
     on_page: &crate::network::nerve::Keyed<()>,
     voice_charts: &[crate::transducer::stalk::Invariant],
     surface: &[u64; 4],
-    pool: &[u64; 4],
+    _pool: &[u64; 4],
     pressure: &[u64; 4],
     composites: &[Composite],
     budget: usize,
@@ -469,24 +469,14 @@ pub fn quote_incidence(
             }
             used += wire;
             seen.insert(addr, ());
-            let mut mu = crate::economy::price(&p.magnitude(), pressure, pool);
+            let mut mu = crate::economy::price(&p.magnitude(), pressure);
             mu[2] = p.magnitude()[2].saturating_mul(1 + surface[2]);
             let (resolved, total, ribbon) = lineage_of(&p.address(), composites);
-            let assembly = crate::economy::price(&[0, 0, ribbon, 0], pressure, pool);
+            let assembly = crate::economy::price(&[0, 0, ribbon, 0], pressure);
             for l in 0..4 {
                 mu[l] = mu[l].saturating_add(assembly[l].saturating_mul(resolved) / total.max(1));
             }
             priced.push((p.clone(), mu, open));
-        }
-    }
-    // THE SOLVENCY BOUND (P5): tension set the RANKING; the escrow pool sets
-    // the SCALE. Each quoted lane is capped at pool[l]/quoted so the market
-    // never offers more than it can pay — Σ quotes ≤ pool. An empty pool
-    // quotes zero: an honest "cannot pay".
-    let quoted = priced.len().max(1) as u64;
-    for (_, mu, _) in &mut priced {
-        for l in 0..4 {
-            mu[l] = mu[l].min(pool[l] / quoted);
         }
     }
     (*surface, priced)
@@ -1255,6 +1245,7 @@ impl Kernel {
         let addr = residual.address();
         self.stamp_standing(addr);
         let mag = self.standing_mag(&addr, &residual.magnitude());
+        self.physics.bump(&mag);
         let inv = crate::transducer::stalk::invariant_of(&residual);
         self.listing_atlas.admit(&inv, addr);
         self.tension.insert(addr, mag);
@@ -1273,6 +1264,7 @@ impl Kernel {
         let mag = self.standing_mag(addr, &self.pending[i].0.magnitude());
         let (elem, _) = self.pending.swap_remove(i);
         self.occupy(*addr, &mag, false);
+        self.physics.relieve(&mag);
         if i < self.pending.len() {
             self.book_index.insert(self.pending[i].0.address(), i);
         }
@@ -1719,9 +1711,9 @@ impl Kernel {
         self.ruled_addrs.contains(addr)
     }
 
-    /// List a connection on the docket if it is not already provisional.
+    /// List a word on the docket if it is not already provisional.
     fn docket_connection(&mut self, word: &Element, ratifier: [u8; 32]) {
-        if !word.is_connection() && !word.is_sentence() && !word.is_rewrite() {
+        if word.is_identity() && !word.is_rewrite() {
             return;
         }
         let addr = word.address();
@@ -1732,7 +1724,7 @@ impl Kernel {
         let mu = if word.is_rewrite() {
             mag
         } else {
-            crate::economy::price(&mag, &self.physics.pressure, &self.treasury.pool())
+            crate::economy::price(&mag, &self.physics.pressure)
         };
         let anchor = self.anchor();
         self.treasury.escrow_award(addr, vec![ratifier], mu, anchor);
@@ -2066,7 +2058,7 @@ impl Kernel {
         let cite_g = cites.first().map(|(_, g, _, _)| g.clone()).unwrap_or_else(element::identity_versor);
         if let [] = residual.as_slice() {
             let paid = if section || listing.is_connection() {
-                self.treasury.settle_subsidy(voice, crate::economy::price(&before, &self.physics.pressure, &self.treasury.pool()), anchor)
+                self.treasury.settle_subsidy(voice, crate::economy::price(&before, &self.physics.pressure), anchor)
             } else {
                 [0; 4]
             };
@@ -2255,11 +2247,16 @@ impl Kernel {
                     let _ = self.treasury.release_rewrite(addr, voice);
                     self.retire_rewrite_inputs(&w);
                     self.fed_admit(addr, w);
+                    self.unlist(addr, false);
                     return true;
                 }
                 self.fed_admit(addr, w);
             }
-            self.treasury.release_award(addr)
+            if let Some((voices, mu, anchor)) = self.treasury.release_award(addr) {
+                self.treasury.mint_claim(&voices, mu, anchor);
+            }
+            self.unlist(addr, false);
+            true
         } else {
             let slash = ruling == RULING_SLASHED;
             let ok = self.treasury.revoke_award(addr, slash);
@@ -2771,6 +2768,10 @@ impl Kernel {
                 }
                 self.ruled_admit(&addr);
                 self.fed_admit(&addr, spoken.clone());
+                if let Some((voices, mu, anchor)) = self.treasury.release_award(&addr) {
+                    self.treasury.mint_claim(&voices, mu, anchor);
+                }
+                self.unlist(&addr, false);
                 self.provisional.remove(&addr);
                 self.court_upheld += 1;
             }
@@ -2947,12 +2948,13 @@ impl Kernel {
                     .unwrap_or([0; 32]);
                 let _ = self.treasury.release_rewrite(addr, voice);
                 self.retire_rewrite_inputs(&w);
-            } else {
-                let _ = self.treasury.release_award(addr);
+            } else if let Some((voices, mu, anchor)) = self.treasury.release_award(addr) {
+                self.treasury.mint_claim(&voices, mu, anchor);
             }
-        } else {
-            let _ = self.treasury.release_award(addr);
+        } else if let Some((voices, mu, anchor)) = self.treasury.release_award(addr) {
+            self.treasury.mint_claim(&voices, mu, anchor);
         }
+        self.unlist(addr, false);
         self.provisional.remove(addr);
         self.court_upheld += 1;
         eprintln!("  court home installed {:02x}{:02x}… peer holds the stratum", addr[0], addr[1]);
@@ -3124,9 +3126,11 @@ impl Kernel {
         let mut paid = [0u64; 4];
         let anchor = self.anchor();
         for addr in &listings {
-            let take = self.treasury.draw_escrow(addr, voice, mu, anchor);
-            for l in 0..4 {
-                paid[l] = paid[l].saturating_add(take[l]);
+            if let Some((_, held, a)) = self.treasury.release_award(addr) {
+                let take = self.treasury.settle_solve(voice, held, a);
+                for l in 0..4 {
+                    paid[l] = paid[l].saturating_add(take[l]);
+                }
             }
         }
         if paid.iter().all(|&x| x == 0) {
@@ -3238,6 +3242,16 @@ impl Kernel {
         out.sort_by(|a, b| a.1 .0.cmp(&b.1 .0));
         out.dedup();
         out
+    }
+
+    /// Whether this address still stands on the quote book.
+    pub fn has_listing(&self, addr: &[u8; 32]) -> bool {
+        self.book_index.contains(addr)
+    }
+
+    /// Relocate one listing onto the cavity atlas. The address is kept.
+    pub fn relocate_listing(&mut self, addr: &[u8; 32]) {
+        self.relocate_cavity(addr);
     }
 
     /// Relocate restored demands whose chart no longer homes here. Never dropped.
@@ -3677,10 +3691,13 @@ impl Kernel {
     /// the language already speaks adds nothing; a settlement removes
     /// exactly what it settled.
     fn remeasure_pressure(&mut self) {
-        if self.pressure_gen == self.book_gen && !self.pending.is_empty() {
-            return;
+        let now = self.now_tu();
+        let mut p = self.pressure_sum;
+        p[2] = 0;
+        for (elem, _) in &self.pending {
+            p[2] = p[2].saturating_add(self.t_extent(&elem.address(), now));
         }
-        self.physics.pressure = self.pressure_sum;
+        self.physics.pressure = p;
         self.pressure_gen = self.book_gen;
     }
 
@@ -3732,6 +3749,7 @@ impl Kernel {
             return false; // the thermodynamic book is full on a lane it needs; corpus can wait
         }
         let k_now = self.k_step();
+        self.stamp_standing(addr);
         self.book_list(residual, k_now);
         true
     }
@@ -4014,11 +4032,7 @@ impl Kernel {
                     if quorum && self.physics.can_expand(lanes) {
                         self.word_mut(ti).puncture(asg);
                         self.touch_at(ti);
-                        let mu = crate::economy::price(
-                            &residual.magnitude(),
-                            &self.physics.pressure,
-                            &self.treasury.pool(),
-                        );
+                        let mu = crate::economy::price(&residual.magnitude(), &self.physics.pressure);
                         let anchor = self.anchor();
                         // PROVISIONAL (Step 5): the award escrows until the
                         // court's finality verdict — unfinalized speech earns
@@ -4058,11 +4072,7 @@ impl Kernel {
                 let quorum = self.admission.voices(&addr) >= crate::network::consensus::QUORUM;
                 if quorum && self.physics.can_expand(lanes) {
                     let _ = self.treasury.settle_install(&residual, voice); // POW++ gate only
-                    let mu = crate::economy::price(
-                        &residual.magnitude(),
-                        &self.physics.pressure,
-                        &self.treasury.pool(),
-                    );
+                    let mu = crate::economy::price(&residual.magnitude(), &self.physics.pressure);
                     let anchor = self.anchor();
                     // PROVISIONAL (Step 5): consilience escrows pending the
                     // court's admission docket; the word joins the basis as
@@ -4077,7 +4087,6 @@ impl Kernel {
                     self.physics.relieve(&mag);
                     self.physics.syntropy(&mag); // a completed rule is order built
                     self.physics.spend(lanes); // the expansion SHRINKS the reserve
-                    self.unlist(&addr, false); // the market CLEARS
                     // Seal the K-step receipt: the install IS a tick of algebraic
                     // time, parent-linked to the mesh's whole history.
                     self.append_step(addr, voice);
@@ -4096,9 +4105,8 @@ impl Kernel {
                             &residual.magnitude(),
                         );
                     }
-                    let _ = self.pending_take(&addr);
-                    self.on_page.remove(&addr);
-                    self.quote_frontier.remove(&addr);
+                    self.docket_connection(&residual, voice);
+                    self.offered.insert(addr, ());
                     Outcome::GermPending
                 } else {
                     // THE TORSION SOURCE: the open demand's pressure is the
@@ -4176,7 +4184,7 @@ impl Kernel {
                         let saturated: Vec<usize> = (0..4).filter(|&l| l != 2 && need[l] > 0 && room[l] == 0).collect();
                         if !self.fits_book(&need) {
                             let new_a = action_potential(
-                                &crate::economy::price(&residual.magnitude(), &self.physics.pressure, &self.treasury.pool()),
+                                &crate::economy::price(&residual.magnitude(), &self.physics.pressure),
                                 0,
                             );
                             let mut cands: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
@@ -4189,7 +4197,7 @@ impl Kernel {
                                 let &i = self.book_index.get(addr)?;
                                 let (p, lk) = self.pending.get(i)?;
                                 let a = action_potential(
-                                    &crate::economy::price(&p.magnitude(), &self.physics.pressure, &self.treasury.pool()),
+                                    &crate::economy::price(&p.magnitude(), &self.physics.pressure),
                                     k_now.saturating_sub(*lk),
                                 );
                                 Some((i, a))
@@ -4198,12 +4206,16 @@ impl Kernel {
                                 Some((i, a)) if a < new_a => {
                                     let evicted = self.pending[i].0.address();
                                     self.unlist(&evicted, false);
-                                    self.book_list(residual, k_now);
+                                    self.book_list(residual.clone(), k_now);
+                                    self.docket_connection(&residual, voice);
+                                    self.offered.insert(addr, ());
                                 }
                                 _ => {} // the newcomer IS the weakest — unlisted
                             }
                         } else {
-                            self.book_list(residual, k_now);
+                            self.book_list(residual.clone(), k_now);
+                            self.docket_connection(&residual, voice);
+                            self.offered.insert(addr, ());
                         }
                     }
                     Outcome::GermPending
@@ -4593,7 +4605,6 @@ impl Kernel {
     pub fn quote(&mut self, top: usize) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
         self.remeasure_pressure();
         let surface = crate::economy::yield_surface(&self.physics);
-        let pool = self.treasury.pool();
         let mut priced = Vec::new();
         for (p, _) in self.pending.iter() {
             if priced.len() >= top {
@@ -4602,7 +4613,7 @@ impl Kernel {
             if !self.on_page.contains(&p.address()) {
                 continue;
             }
-            let mut mu = crate::economy::price(&p.magnitude(), &self.physics.pressure, &pool);
+            let mut mu = crate::economy::price(&p.magnitude(), &self.physics.pressure);
             mu[2] = p.magnitude()[2].saturating_mul(1 + surface[2]);
             priced.push((p.clone(), mu));
         }
@@ -5956,7 +5967,14 @@ mod tests {
         assert_eq!(k.ingest(&a, &gb, [1; 32]), Outcome::GermPending);
         // A's quorum lands on the recovered lane and installs — spending it back out…
         assert_eq!(k.ingest(&a, &ga, [2; 32]), Outcome::GermPending);
-        k.glue_local();
+        let ga_spoken = k
+            .provisional
+            .fiber(&crate::network::nerve::ROOT)
+            .map(|(_, e)| e.clone())
+            .find(|e| e.sub().iter().any(|c| c.2 == 1 && c.3 == 4))
+            .expect("ga's residual is on the docket");
+        let mut cover = crate::network::nerve::Cover::new();
+        let _ = k.glue_fetched(ga_spoken, [2; 32], [1; 32], &mut cover);
         // …so B's quorum finds the lane DEPLETED and DEFERS: quorum met, fuel absent.
         assert_eq!(k.ingest(&a, &gb, [2; 32]), Outcome::GermPending, "deferred, not lost");
         // A further voice arrives after another stroke: the deferred germ completes.
@@ -6125,7 +6143,10 @@ mod tests {
         assert_eq!(quoted.len(), 1, "the unreached/remainder demand is quoted as work");
         assert!(surface.iter().any(|&s| s >= 1), "the open demand tensions the lanes it occupies");
         let (work, mu) = &quoted[0];
-        assert!((0..4).any(|l| mu[l] > work.magnitude()[l]), "priced ABOVE raw magnitude — tension premium");
+        assert!(
+            (0..4).any(|l| work.magnitude()[l] > 0 && mu[l] > 0),
+            "price is nonzero on a lane the word moves"
+        );
         let chain = work.sub().to_vec();
         let out = k.attest(&chain, [2; 32]);
         assert_eq!(out, Outcome::GermPending, "consilience settles: {out:?}");
@@ -6195,8 +6216,8 @@ mod tests {
         }
         let _ = k.ingest(&a2, &b2, [7; 32]);
         assert!(
-            k.treasury().entries().iter().any(|e| e.kind == "fee" && e.who == [7; 32]),
-            "the funded speaker paid the door into the pool"
+            k.treasury().entries().iter().any(|e| e.kind == "transfer" && e.who == [7; 32]),
+            "the funded speaker paid the door as a transfer"
         );
     }
 
@@ -6224,7 +6245,14 @@ mod tests {
         let b = vec![(0, 0, 2u8), (0, 1, 2)];
         k.ingest(&a, &b, [1; 32]);
         assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending);
-        k.glue_local();
+        let small = k
+            .provisional
+            .fiber(&crate::network::nerve::ROOT)
+            .map(|(_, e)| e.clone())
+            .find(|e| e.sub().len() == 2)
+            .expect("the covering word is on the docket");
+        let mut cover = crate::network::nerve::Cover::new();
+        let _ = k.glue_fetched(small, [2; 32], [1; 32], &mut cover);
         let _word = k.basis()[0].address();
         // The entity's reduction over the language: the word cited at the
         // origin, the far cell left as the residual.
@@ -6420,20 +6448,28 @@ mod tests {
         let parent = [9u8; 32];
         k.register_composites(vec![(parent, vec![(listed[0], false), (listed[1], false)], vec![(0, 0, 1, 2)])]);
         // Complete the first child: the second's rank key lifts by 1/2.
+        let first_addr = k.quote(8).1[0].0.address();
         let first = k.quote(8).1[0].0.sub().to_vec();
         k.attest(&first, [2; 32]);
         let rank = k.closure_now();
         let remaining = k.quote(8);
-        assert_eq!(remaining.1.len(), 1, "one child remains listed");
+        assert!(!remaining.1.is_empty(), "the unfinished child stays on the book");
         let (resolved, total) = rank.lineage[0];
         assert_eq!((resolved, total), (1, 2), "the lineage fraction is measured");
         // Complete the second child: the family settles and the premium books.
-        let second = remaining.1[0].0.sub().to_vec();
+        let second = remaining
+            .1
+            .iter()
+            .find(|(w, _)| w.address() != first_addr)
+            .expect("the other child stays listed")
+            .0
+            .sub()
+            .to_vec();
         k.attest(&second, [2; 32]);
         assert!(k.composites().is_empty(), "the family completed — lineage settled");
         assert!(
-            k.treasury().entries().iter().any(|e| e.kind == "assembly"),
-            "the assembly premium booked on reassembly"
+            k.treasury().entries().iter().any(|e| e.kind == "mint"),
+            "the assembly premium minted on reassembly"
         );
     }
 
@@ -6885,6 +6921,40 @@ mod tests {
         home.confirm_peer_holds(&peer.ruled_digests());
         assert!(home.basis_len() >= 1, "the home's own word is language once a peer holds the stratum");
         assert!(home.provisional.is_empty(), "the provisional leaves the home");
+    }
+
+    /// A single-voice percept stays on the book, is Offered, glues at a
+    /// peer, and the home installs with the escrow released and minted.
+    #[test]
+    fn a_single_voice_percept_stays_on_the_docket_and_installs_with_a_mint() {
+        let mut home = Kernel::new();
+        let mut peer = Kernel::new();
+        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+        let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+        assert_eq!(home.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+        assert!(!home.pending.is_empty(), "the listing stays on the book");
+        assert_eq!(home.provisional.len(), 1, "the residual is on the docket");
+        let addr = home.provisional.fiber(&crate::network::nerve::ROOT).next().unwrap().0.clone();
+        assert!(home.offered(&addr), "the court Offers a first-vantage germ");
+        assert!(home.treasury().escrow_of(&addr).is_some(), "the priced magnitude is the claim");
+        assert_eq!(home.treasury().supply(), [0; 4], "the claim is not yet payment");
+        home.court_stroke();
+        let spoken = home.provisional.get(&addr).cloned().expect("still provisional until a peer glues");
+        let mut cover = crate::network::nerve::Cover::new();
+        assert!(matches!(
+            peer.glue_fetched(spoken, [1; 32], [2; 32], &mut cover),
+            Glue::Admitted
+        ));
+        let bond = home.treasury().pool();
+        home.confirm_peer_holds(&peer.ruled_digests());
+        assert!(home.basis_len() >= 1, "the home installs after the peer glues");
+        assert!(home.provisional.is_empty(), "the docket clears on install");
+        assert!(home.treasury().escrow_of(&addr).is_none(), "the claim is released");
+        assert!(
+            home.treasury().supply().iter().any(|&x| x > 0),
+            "release mints the priced vector"
+        );
+        assert_eq!(home.treasury().pool(), bond, "mint does not debit the stake bond");
     }
 
     /// The demand codec roundtrips.

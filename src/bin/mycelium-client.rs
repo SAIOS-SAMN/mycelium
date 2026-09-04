@@ -651,7 +651,7 @@ fn main() {
                 }
                 if reached && !tests.is_empty() && outs.iter().all(|o| o.is_some()) {
                     let outs: Vec<Vec<Vec<u8>>> = outs.into_iter().flatten().collect();
-                    let spoken = mycelium::transducer::sentence::as_element(&rule.nerve);
+                    let spoken = mycelium::transducer::family::mint_sentence(rule, &train);
                     if let Ok((code, _mu)) = entity.submit_solve_rule(&tid, &outs, spoken.as_ref()) {
                         projected += 1;
                         match code {

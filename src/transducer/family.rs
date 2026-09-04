@@ -605,6 +605,12 @@ fn scene_cands(grid: &Grid, scale: Option<((usize, usize), (usize, usize))>) -> 
     out
 }
 
+fn centroid_dist2(a: &Body, b: &Body) -> BigRational {
+    let dr = &a.centroid.0 - &b.centroid.0;
+    let dc = &a.centroid.1 - &b.centroid.1;
+    &dr * &dr + &dc * &dc
+}
+
 fn pair_rank(ic: &Cand, oc: &Cand) -> Option<(u8, Carriage)> {
     if oc.kind != super::peel::ShellKind::Whole {
         return None;
@@ -639,7 +645,6 @@ fn pair_nerve(a: &Grid, b: &Grid, scale: Option<((usize, usize), (usize, usize))
     let mut used_in = vec![false; ins.len()];
     let mut used_out = vec![false; outs.len()];
     let mut pairs: Vec<(usize, usize, Carriage)> = Vec::new();
-    let mut class = false;
     // index: peel of this pair's bodies, one rank at a time; a body is one vertex
     for want in 0u8..=3 {
         let mut edges: Vec<(usize, usize, Carriage)> = Vec::new();
@@ -665,19 +670,27 @@ fn pair_nerve(a: &Grid, b: &Grid, scale: Option<((usize, usize), (usize, usize))
             dout[*j] = dout[*j].saturating_add(1);
         }
         if din.iter().any(|&d| d > 1) || dout.iter().any(|&d| d > 1) {
-            class = true;
-            break;
+            // Multiplicity is a section: greedy nearest matching, not a class.
+            edges.sort_by(|a, b| {
+                let da = centroid_dist2(&ins[a.0].body, &outs[a.1].body);
+                let db = centroid_dist2(&ins[b.0].body, &outs[b.1].body);
+                da.cmp(&db)
+            });
+            for (i, j, car) in edges {
+                if used_in[i] || used_out[j] {
+                    continue;
+                }
+                mark_parent(&mut used_in, &ins, i);
+                mark_parent(&mut used_out, &outs, j);
+                pairs.push((i, j, car));
+            }
+            continue;
         }
         for (i, j, car) in edges {
             mark_parent(&mut used_in, &ins, i);
             mark_parent(&mut used_out, &outs, j);
             pairs.push((i, j, car));
         }
-    }
-    if class {
-        let mut n = assemble(Vec::new(), Vec::new());
-        n.class = Some((super::alphabet::Rotor::identity(), 1));
-        return n;
     }
     let mut germs = vec![frame_germ(a, b)];
     for (i, j, car) in pairs {
@@ -882,10 +895,104 @@ fn speak_created(
     }
 }
 
+fn cell3_key(r: i64, c: i64) -> [u8; 32] {
+    let mut k = [0u8; 32];
+    k[..8].copy_from_slice(&r.to_le_bytes());
+    k[8..16].copy_from_slice(&c.to_le_bytes());
+    k
+}
+
+fn hue_conflict(cells: &[Cell3]) -> bool {
+    let mut at = crate::network::nerve::Keyed::new();
+    for &(r, c, h) in cells {
+        let k = cell3_key(r, c);
+        if let Some(&old) = at.get(&k) {
+            if old != h {
+                return true;
+            }
+        } else {
+            at.insert(k, h);
+        }
+    }
+    false
+}
+
+fn hue_conflict_against(prior: &[Cell3], next: &[Cell3]) -> bool {
+    let mut at = crate::network::nerve::Keyed::new();
+    for &(r, c, h) in prior {
+        at.insert(cell3_key(r, c), h);
+    }
+    for &(r, c, h) in next {
+        if let Some(&old) = at.get(&cell3_key(r, c)) {
+            if old != h {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+fn support_centroid(g: &super::sentence::Germ) -> (BigRational, BigRational) {
+    let s = super::sentence::after_support(g);
+    if s.is_empty() {
+        return (q(0), q(0));
+    }
+    let cells: Vec<Cell3> = s.iter().map(|&(r, c)| (r, c, 1)).collect();
+    body_of(cells).centroid
+}
+
+fn section_agrees(
+    rule: &super::sentence::SentenceRule,
+    gi: usize,
+    body_c: &(BigRational, BigRational),
+    placed: &crate::network::nerve::Keyed<(BigRational, BigRational)>,
+) -> bool {
+    let Some(g) = rule.nerve.germs.get(gi) else {
+        return false;
+    };
+    let this_t = support_centroid(g);
+    for f in &rule.nerve.faces {
+        let other = if f.i == gi {
+            f.j
+        } else if f.j == gi {
+            f.i
+        } else {
+            continue;
+        };
+        let Some(anchor) = placed.get(&germ_idx_key(other)) else {
+            continue;
+        };
+        let other_t = support_centroid(&rule.nerve.germs[other]);
+        let expected = (
+            anchor.0.clone() + &this_t.0 - &other_t.0,
+            anchor.1.clone() + &this_t.1 - &other_t.1,
+        );
+        let dr = &expected.0 - &body_c.0;
+        let dc = &expected.1 - &body_c.1;
+        if &dr * &dr + &dc * &dc > qn(1, 4) {
+            return false;
+        }
+    }
+    true
+}
+
+/// Mint the family's sentence: lane 2 is the scene-state span.
+pub fn mint_sentence(rule: &super::sentence::SentenceRule, family: &[(Grid, Grid)]) -> Option<element::Element> {
+    let mut e = super::sentence::as_element(&rule.nerve)?;
+    let extra = (e.sections().len() + e.torsion().len()) as u64;
+    let mut mag = e.magnitude();
+    mag[3] = mag[3].saturating_sub(extra);
+    mag[2] = (family.len() as u64).saturating_sub(1).max(1);
+    e.set_magnitude(mag);
+    Some(e)
+}
+
 /// SPEAK A RULE onto a test input: match bodies to rule germs by chart,
 /// instantiate transports from faces and the word's linear block, never
 /// from a training pair's absolute versor. Several bodies on one germ is
-/// a section; one body on two germs is a class.
+/// a section; one body on two germs is a section whose face words to
+/// already-placed anchors agree. None only when two anchors conflict on
+/// the same output cells.
 pub fn speak_rule(rule: &super::sentence::SentenceRule, x: &Grid) -> Option<Speech> {
     let fx = frame_of(x);
     let fy = output_frame(fx, rule.ratio);
@@ -935,33 +1042,59 @@ pub fn speak_rule(rule: &super::sentence::SentenceRule, x: &Grid) -> Option<Spee
                 }
             }
         }
-        match hits.len() {
+        let multi = hits.len() > 1;
+        let speak_idx: Vec<usize> = match hits.len() {
             0 => {
                 remainder.extend(body.cells.iter().copied());
                 continue;
             }
-            1 => {}
-            _ => return None,
-        }
-        let idx = hits[0];
-        let addr = germ_idx_key(idx);
-        if claimed.contains(&addr) {
-            // several bodies on one germ: a section — apply to each
-        } else {
-            claimed.insert(addr, idx);
-        }
-        let Some(g) = rule.nerve.germs.get(idx) else {
-            remainder.extend(body.cells.iter().copied());
-            continue;
+            1 => hits,
+            _ => {
+                let agreeing: Vec<usize> = hits
+                    .iter()
+                    .copied()
+                    .filter(|&idx| section_agrees(rule, idx, &body.centroid, &placed))
+                    .collect();
+                if agreeing.is_empty() {
+                    remainder.extend(body.cells.iter().copied());
+                    continue;
+                }
+                agreeing
+            }
         };
-        placed.insert(addr, body.centroid.clone());
-        let map = g.target.as_ref().and_then(|t| rule.hue_maps.get(&t.key())).cloned().unwrap_or_default();
-        if g.source.is_none() {
-            speak_created(rule, g, idx, &placed, fy, &mut cells);
-            continue;
+        let start = cells.len();
+        let mut body_remainder: Vec<Cell3> = Vec::new();
+        for &idx in &speak_idx {
+            let addr = germ_idx_key(idx);
+            if !claimed.contains(&addr) {
+                claimed.insert(addr, idx);
+            }
+            let Some(g) = rule.nerve.germs.get(idx) else {
+                body_remainder.extend(body.cells.iter().copied());
+                continue;
+            };
+            placed.insert(addr, body.centroid.clone());
+            let map = g.target.as_ref().and_then(|t| rule.hue_maps.get(&t.key())).cloned().unwrap_or_default();
+            if g.source.is_none() {
+                speak_created(rule, g, idx, &placed, fy, &mut cells);
+                continue;
+            }
+            let v = match multi {
+                false => test_transport(rule, g, idx, &body.centroid, &placed),
+                true => {
+                    let rho = ratio_rho(rule.ratio);
+                    let linear = realize_word(&g.word, &rho, &(q(0), q(0)));
+                    let t_body = cga::translator(&body.centroid.0, &body.centroid.1);
+                    let t_inv = cga::translator(&-&body.centroid.0, &-&body.centroid.1);
+                    t_body.geo(&linear).geo(&t_inv)
+                }
+            };
+            emit_carried(&body, &v, &map, fy, &mut cells, &mut body_remainder);
         }
-        let v = test_transport(rule, g, idx, &body.centroid, &placed);
-        emit_carried(&body, &v, &map, fy, &mut cells, &mut remainder);
+        if hue_conflict(&cells[start..]) || hue_conflict_against(&cells[..start], &cells[start..]) {
+            return None;
+        }
+        remainder.extend(body_remainder);
     }
     // index: created germs of this rule
     for (i, g) in rule.nerve.germs.iter().enumerate() {
@@ -1370,5 +1503,29 @@ mod tests {
         assert_eq!(spoken.grid(), grid(&["0022", "0000"]));
         let t = c.transport.expect("still a connection");
         assert_eq!(speak_total(&t, &grid(&["1100", "0000"])).map(|s| s.remainder.is_empty()), Some(true));
+    }
+
+    /// Three identical squares in one family are a section: the test
+    /// recolours all three.
+    #[test]
+    fn three_identical_squares_recolour_all_three_on_the_test() {
+        let train_in = grid(&[
+            "11011",
+            "11011",
+            "00000",
+            "11000",
+            "11000",
+        ]);
+        let train_out: Grid = train_in
+            .iter()
+            .map(|row| row.iter().map(|&h| if h == 1 { 2 } else { h }).collect())
+            .collect();
+        let family = vec![(train_in.clone(), train_out.clone())];
+        let rule = extract_rule(&family).expect("three squares extract as a section");
+        let spoken = speak_rule(&rule, &train_in).expect("the test is spoken");
+        assert!(spoken.remainder.is_empty(), "all three squares are reached: {:?}", spoken.remainder);
+        assert_eq!(spoken.grid(), train_out);
+        let minted = mint_sentence(&rule, &family).expect("the family mints");
+        assert!(minted.magnitude()[2] >= 1, "lane 2 carries the scene-state span");
     }
 }

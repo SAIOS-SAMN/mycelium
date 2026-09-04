@@ -999,22 +999,71 @@ fn contact(a: &[(i64, i64)], b: &[(i64, i64)]) -> (u8, Vec<Cell>) {
     (0, Vec::new())
 }
 
-/// Assemble a nerve from germs: faces from meeting neighbourhoods (peel
-/// one shell at a time until rings meet), cycles from a spanning tree plus
-/// chords. Canonical germ order is by address.
+/// Assemble a nerve from germs: dilate all supports one ring at a time
+/// together. At ring s a pair whose rings meet forms a face only if neither
+/// support met a different body at a ring below s. The ring count is the
+/// face coordinate, so faces per germ equal its neighbour count at first
+/// contact. Cycles from a spanning tree plus chords. Canonical germ order
+/// is by address.
 pub fn assemble(mut germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
     germs.sort_by(|a, b| a.address.cmp(&b.address));
-    let supports: Vec<Vec<(i64, i64)>> = germs.iter().map(after_support).collect();
+    let n = germs.len();
+    let mut rings: Vec<Vec<(i64, i64)>> = germs.iter().map(|g| {
+        let mut s = after_support(g);
+        s.sort_unstable();
+        s
+    }).collect();
+    let mut max_r = 0i64;
+    let mut max_c = 0i64;
+    for r in &rings {
+        for &(rr, cc) in r {
+            max_r = max_r.max(rr.abs());
+            max_c = max_c.max(cc.abs());
+        }
+    }
+    let bound = (max_r.saturating_add(max_c).saturating_add(1) as usize).min(255);
+    let mut claimed = vec![false; n];
     let mut faces = Vec::new();
-    // index: pairs of germs in this thought (bodies per scene)
-    for i in 0..germs.len() {
-        for j in i + 1..germs.len() {
-            let (shells, overlap) = contact(&supports[i], &supports[j]);
-            if overlap.is_empty() && shells == 0 {
-                continue;
+    // index: dilation rings of this thought (bodies per scene, together)
+    for s in 0..=bound {
+        let open: Vec<usize> = (0..n).filter(|&i| !claimed[i] && !rings[i].is_empty()).collect();
+        if open.len() < 2 {
+            break;
+        }
+        let mut met = vec![false; n];
+        // index: unclaimed pairs at this ring
+        for ii in 0..open.len() {
+            let i = open[ii];
+            for &j in &open[ii + 1..] {
+                let overlap = if s == 0 {
+                    overlap_cells(&rings[i], &rings[j])
+                } else {
+                    pos_overlap(&rings[i], &rings[j])
+                        .into_iter()
+                        .map(|(r, c)| (r, c, 0, 0))
+                        .collect()
+                };
+                if overlap.is_empty() {
+                    continue;
+                }
+                let (g_ij, spelled) = face_word(&germs[i], &germs[j]);
+                faces.push(Face { i, j, overlap, g_ij, spelled, shells: s as u8 });
+                met[i] = true;
+                met[j] = true;
             }
-            let (g_ij, spelled) = face_word(&germs[i], &germs[j]);
-            faces.push(Face { i, j, overlap, g_ij, spelled, shells });
+        }
+        for i in 0..n {
+            if met[i] {
+                claimed[i] = true;
+            }
+        }
+        if s == bound {
+            break;
+        }
+        for r in &mut rings {
+            if !r.is_empty() {
+                *r = adjacent_ring(r);
+            }
         }
     }
     let complex = bind_complex(&germs, &faces);
@@ -1064,13 +1113,13 @@ pub fn germ_class_key(g: &Germ) -> [u8; 32] {
 
 fn index_by_class(n: &Nerve) -> Option<crate::network::nerve::Keyed<usize>> {
     let mut m = crate::network::nerve::Keyed::new();
-    // index: germs of this nerve (its vertices)
+    // index: germs of this nerve (its vertices). Several germs of one
+    // class are a section: the first is the correspondence representative.
     for (i, g) in n.germs.iter().enumerate() {
         let k = germ_class_key(g);
-        if m.contains(&k) {
-            return None;
+        if !m.contains(&k) {
+            m.insert(k, i);
         }
-        m.insert(k, i);
     }
     Some(m)
 }
@@ -1121,8 +1170,8 @@ fn same_face_word(a: &Word, b: &Word) -> bool {
 
 /// Accept a rule when every pair's nerve has the same germs by
 /// (source chart, target chart, kind), the same faces and holonomies
-/// under that correspondence, and the same hue maps. Two germs of one
-/// class in a single pair withhold the family.
+/// under that correspondence, and the same hue maps. Several germs of
+/// one class in a pair are a section.
 pub fn agree_up_to_gauge(nerves: &[Nerve]) -> Option<SentenceRule> {
     let first = nerves.first()?;
     if first.germs.is_empty() || first.class.is_some() {

@@ -45,6 +45,8 @@ pub struct TaskRegistry {
     tasks: Vec<([u8; 32], Task, TaskState)>,
     /// Dispatch cursor (rotates so pull requests spread across the book).
     cursor: usize,
+    /// Cover-change cursor: a budgeted walk relocates and reintakes by home.
+    cover_cursor: usize,
 }
 
 /// The boundary-root digest: identity from CONTENT — the train coboundaries
@@ -92,7 +94,24 @@ pub fn task_tension(task: &Task) -> [u64; 4] {
 
 impl TaskRegistry {
     pub fn new() -> Self {
-        TaskRegistry { tasks: Vec::new(), cursor: 0 }
+        TaskRegistry { tasks: Vec::new(), cursor: 0, cover_cursor: 0 }
+    }
+
+    /// Next `n` tasks for a cover-change relocate/reintake stroke.
+    pub fn next_cover_batch(&mut self, n: usize) -> Vec<([u8; 32], Task)> {
+        let len = self.tasks.len();
+        if len == 0 || n == 0 {
+            return Vec::new();
+        }
+        let take = n.min(len);
+        let mut out = Vec::with_capacity(take);
+        for _ in 0..take {
+            let i = self.cover_cursor % len;
+            self.cover_cursor = (self.cover_cursor + 1) % len;
+            let (id, task, _) = &self.tasks[i];
+            out.push((*id, task.clone()));
+        }
+        out
     }
 
     pub fn len(&self) -> usize {

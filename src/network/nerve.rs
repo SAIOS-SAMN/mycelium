@@ -933,6 +933,40 @@ mod cover_tests {
         c.retract_hypha(&a);
         assert!(c.fiber(0, &inv(&[1])).is_empty());
     }
+
+    /// Three covers over one corpus: each listing homes at one hypha, and
+    /// the home counts sum to the corpus.
+    #[test]
+    fn three_covers_home_counts_sum_to_the_corpus() {
+        let mut c = Cover::new();
+        let mut rooms = Keyed::new();
+        let mut addrs = Keyed::new();
+        let ha = [1u8; 32];
+        let hb = [2u8; 32];
+        let hc = [3u8; 32];
+        c.admit(0, &inv(&[10]), ha);
+        c.admit(0, &inv(&[20]), hb);
+        c.admit(0, &inv(&[30]), hc);
+        addrs.insert(ha, "127.0.0.1:7500".into());
+        addrs.insert(hb, "127.0.0.1:7501".into());
+        addrs.insert(hc, "127.0.0.1:7502".into());
+        rooms.insert(ha, [8, 8, 8, 8]);
+        rooms.insert(hb, [8, 8, 8, 8]);
+        rooms.insert(hc, [8, 8, 8, 8]);
+        let corpus: Vec<Invariant> = (0..9).map(|i| inv(&[10 + 10 * (i % 3)])).collect();
+        let mut counts = [0usize; 3];
+        for chart in &corpus {
+            let (id, _) = home(&c, chart, &[1, 0, 0, 0], &rooms, &addrs, None);
+            match id {
+                x if x == ha => counts[0] += 1,
+                x if x == hb => counts[1] += 1,
+                x if x == hc => counts[2] += 1,
+                _ => panic!("a corpus listing must home on a covering hypha, got {id:?}"),
+            }
+        }
+        assert_eq!(counts[0] + counts[1] + counts[2], corpus.len(), "home counts sum to the corpus");
+        assert!(counts.iter().all(|&n| n > 0), "each cover homes some of the corpus");
+    }
 }
 
 #[derive(Default)]

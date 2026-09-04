@@ -575,6 +575,47 @@ fn homes_here(mesh: &Mesh, kernel: &Mutex<Kernel>, inv: &mycelium::transducer::s
     home(&c, inv, mag, &r, &a, Some((&mesh.vk, &room, &mesh.bind))).0 == mesh.vk
 }
 
+/// Budgeted cover-change walk: relocate listings whose key no longer homes
+/// here, reintake those that now do.
+fn relocate_corpus(
+    kernel: &Mutex<Kernel>,
+    mesh: &Mesh,
+    registry: &Mutex<mycelium::registry::TaskRegistry>,
+    budget: usize,
+) {
+    let batch = match registry.lock() {
+        Ok(mut r) => r.next_cover_batch(budget),
+        Err(_) => return,
+    };
+    for (tid, task) in batch {
+        for (a, b) in &task.train {
+            let Some((mut chain, _, frame)) = mycelium::arc::refine_delta(a, b) else {
+                continue;
+            };
+            chain.sort_unstable();
+            let residual = mycelium::transducer::element::from_residual_framed(&chain, &frame);
+            let inv = mycelium::transducer::stalk::invariant_of(&residual);
+            let addr = residual.address();
+            let here = homes_here(mesh, kernel, &inv, &residual.magnitude());
+            let mut k = match kernel.lock() {
+                Ok(g) => g,
+                Err(_) => continue,
+            };
+            match here {
+                true => {
+                    if k.intake(&chain, &frame) {
+                        k.bind_listing_task(addr, tid);
+                    }
+                }
+                false => match k.has_listing(&addr) {
+                    true => k.relocate_listing(&addr),
+                    false => {}
+                },
+            }
+        }
+    }
+}
+
 fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
     let kernel = &door.kernel;
     let router = door.router.as_ref();
@@ -713,11 +754,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
             Outcome::Installed(i) => match k.basis().get(*i) {
                 Some(g) => {
                     let addr = g.address();
-                    let mu = mycelium::economy::price(
-                        &g.magnitude(),
-                        &k.physics().pressure,
-                        &k.treasury().pool(),
-                    );
+                    let mu = mycelium::economy::price(&g.magnitude(), &k.physics().pressure);
                     // Teach the FULL lossless form (to_bytes) — the entity's
                     // genome must reconstruct the exact element, sections and all.
                     (g.to_bytes(), Some((addr, k.voices_of(&addr), mu)))
@@ -882,9 +919,9 @@ fn main() {
             eprintln!("imported court federation {n} words into CRT1");
         }
     }
-    // THE NODE'S OWN STAKE (P5): the hypha enrolls itself at its tier — the
-    // genesis capitalization of its escrow pool. Every yield it ever quotes or
-    // settles is paid FROM this pool; nothing is minted by a formula.
+    // THE NODE'S OWN STAKE: enrollment bonds the identity at its tier.
+    // On restore, enroll tops up when the ledger's stake for this identity
+    // is below the tier, so a restored founder is bonded, never zero.
     {
         let mut k = kernel.lock().unwrap();
         let staked = k.enroll(id, tier);
@@ -935,28 +972,24 @@ fn main() {
         for f in &files {
             let Ok(text) = std::fs::read_to_string(f) else { continue };
             let Some(task) = mycelium::arc::parse_task(&text) else { continue };
-            let mut here = false;
+            let tid = mycelium::registry::task_id(&task);
+            registry.lock().unwrap().register(task.clone());
+            tasked += 1;
             for (a, b) in &task.train {
                 if let Some((mut chain, _, frame)) = mycelium::arc::refine_delta(a, b) {
                     chain.sort_unstable();
-                    let _key = mycelium::transducer::element::listing_key(&chain, &frame);
                     let residual = mycelium::transducer::element::from_residual_framed(&chain, &frame);
                     let inv = mycelium::transducer::stalk::invariant_of(&residual);
-                    if !homes_here(&mesh, &kernel, &inv, &residual.magnitude()) {
-                        continue;
+                    match homes_here(&mesh, &kernel, &inv, &residual.magnitude()) {
+                        false => continue,
+                        true => {}
                     }
-                    here = true;
                     let key = mycelium::transducer::element::listing_key(&chain, &frame);
-                    let tid = mycelium::registry::task_id(&task);
                     if kernel.lock().unwrap().intake(&chain, &frame) {
                         listed += 1;
                         kernel.lock().unwrap().bind_listing_task(key, tid);
                     }
                 }
-            }
-            if here {
-                registry.lock().unwrap().register(task);
-                tasked += 1;
             }
         }
         let self_room = room64(kernel.lock().unwrap().lane_room());
@@ -971,7 +1004,7 @@ fn main() {
             .map(|b| registry.lock().unwrap().overlay(&b))
             .unwrap_or(0);
         eprintln!(
-            "corpus registered: {tasked} home tasks from {corpus_dir} ({} unsolved, {listed} demands listed, {restored} settled states restored)",
+            "corpus registered: {tasked} tasks from {corpus_dir} ({} unsolved, {listed} home demands listed, {restored} settled states restored)",
             registry.lock().unwrap().unsolved(),
         );
     }
@@ -1148,6 +1181,7 @@ fn main() {
         let kernel = Arc::clone(&kernel);
         let mesh = mesh.clone();
         let join = join_peers.clone();
+        let registry = Arc::clone(&registry);
         std::thread::spawn(move || {
             let ratio = mycelium::physics::aperture_cycle() as u64;
             let mut wait = mycelium::physics::from_transport(mesh_rtt(&mesh), 1);
@@ -1158,6 +1192,7 @@ fn main() {
                     k.court_stroke();
                 }
                 rebuild_own_cover(&kernel, &mesh);
+                relocate_corpus(&kernel, &mesh, &registry, 8);
                 let mut dests: mycelium::network::nerve::Keyed<String> = mycelium::network::nerve::Keyed::new();
                 for p in &join {
                     if p != &mesh.bind {
