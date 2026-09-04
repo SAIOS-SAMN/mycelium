@@ -3816,17 +3816,20 @@ impl Kernel {
         bound
     }
 
-    /// ENROLL an identity at a tier: its stake capitalizes the escrow pool —
-    /// the one genesis issuance per identity (idempotent, C9: one stake admits).
-    /// The hypha enrolls ITSELF at boot with its own tier; arriving voices are
-    /// enrolled as participants on first speech. Returns the staked μ⃗.
-    pub fn enroll(&mut self, who: [u8; 32], tier: crate::economy::Tier) -> [u64; 4] {
-        self.enroll_bond(who, tier, crate::economy::UNIT_BOND)
+    /// ENROLL an identity with a per-lane bond. The hypha enrolls itself
+    /// from genesis or from a restored stake; arriving voices stay unbonded
+    /// until they bond from balance. Returns the vector added this call.
+    pub fn enroll(&mut self, who: [u8; 32], bond: [u64; 4]) -> [u64; 4] {
+        let anchor = self.anchor();
+        self.treasury.enroll(who, bond, anchor)
     }
 
-    pub fn enroll_bond(&mut self, who: [u8; 32], tier: crate::economy::Tier, bond: [u64; 4]) -> [u64; 4] {
-        let anchor = self.anchor();
-        self.treasury.enroll(who, tier, bond, anchor)
+    /// Mint a genesis allocation once per identity.
+    pub fn allocate(&mut self, who: [u8; 32], mu: [u64; 4]) -> [u64; 4] {
+        if self.treasury.has_mint(&who) {
+            return [0; 4];
+        }
+        self.treasury.settle_subsidy(who, mu, self.anchor())
     }
 
     /// Ingest a demand from `voice`: transduce → solve → conceive → admit.
@@ -3878,7 +3881,6 @@ impl Kernel {
         &mut self,
         voice: [u8; 32],
     ) -> Option<(std::sync::Arc<Language>, (usize, usize))> {
-        self.enroll(voice, crate::economy::Tier::Participant);
         self.physics.relax();
         let idle = self.physics.metabolism_rate().iter().all(|&p| p <= 1);
         if self.physics.depleted() || idle {
@@ -6064,7 +6066,7 @@ mod tests {
         use crate::transducer::element::from_residual;
         use crate::transducer::germinate::germinate;
         let mut k = Kernel::new();
-        k.enroll([9; 32], crate::economy::Tier::Validator); // capitalize the pool
+        k.enroll([9; 32], crate::economy::UNIT_BOND); // capitalize the pool
         // Two stale duplicates of the same deformation germinated far apart —
         // identical substance after centering (what an import or a
         // pre-consolidation era leaves). Neither is provisional: this is

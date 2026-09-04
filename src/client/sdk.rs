@@ -35,6 +35,13 @@ impl Kernel {
         let voice = *blake3::hash(format!("mycelium-kernel:{name}").as_bytes()).as_bytes();
         Kernel { name: name.to_string(), voice }
     }
+    /// Seat a kernel on verifying-key bytes (home/voice.key).
+    pub fn from_voice(voice: [u8; 32]) -> Self {
+        Kernel {
+            name: format!("{:02x}{:02x}", voice[0], voice[1]),
+            voice,
+        }
+    }
     pub fn voice(&self) -> [u8; 32] {
         self.voice
     }
@@ -135,7 +142,7 @@ pub enum TransportAperture {
 impl Session {
     /// Point a kernel at a hypha address (e.g. `"127.0.0.1:7500"`).
     pub fn open(addr: &str, kernel: Kernel) -> Self {
-        let voice = crate::voice::Voice::named(kernel.name());
+        let voice = crate::voice::Voice::from_identity(kernel.voice());
         let mut router = crate::network::nerve::Router::new();
         router.insert(*blake3::hash(addr.as_bytes()).as_bytes(), addr.to_string());
         Session {
@@ -1017,6 +1024,11 @@ impl Entity {
         self.session.add_peer(addr);
     }
 
+    /// Ask the bootstrap hypha for the rest of the nerve.
+    pub fn discover(&mut self) {
+        self.session.discover();
+    }
+
     pub fn open(addr: &str, kernel: Kernel) -> Self {
         let mut session = Session::open(addr, kernel);
         session.discover();
@@ -1046,7 +1058,9 @@ impl Entity {
 
     /// Open with CONTINUITY: restore the crystallized genome from `genome_path`
     /// if present (the permanent half; the epigenome re-forms in memory).
-    pub fn open_persistent(addr: &str, kernel: Kernel, genome_path: &str) -> Self {
+    /// Thoughts restore from `thoughts_path` when present, else from a THT1
+    /// trailer on an older genome file.
+    pub fn open_persistent(addr: &str, kernel: Kernel, genome_path: &str, thoughts_path: &str) -> Self {
         let mut e = Entity::open(addr, kernel);
         if let Ok(bytes) = std::fs::read(genome_path) {
             if e.epigenome.uncrystallize(&bytes) {
@@ -1059,6 +1073,12 @@ impl Entity {
                 }
             }
         }
+        if let Ok(bytes) = std::fs::read(thoughts_path) {
+            let mut p = 0usize;
+            if let Some(c) = crate::transducer::bubble::Contemplation::from_bytes(&bytes, &mut p) {
+                e.contemplation = c;
+            }
+        }
         e.thought_gen = e.epigenome.genome_len();
         e
     }
@@ -1067,10 +1087,18 @@ impl Entity {
     /// syntropic phase when the genome has grown.
     pub fn save_genome(&self, genome_path: &str) -> io::Result<()> {
         let tmp = format!("{genome_path}.tmp");
-        let mut bytes = self.epigenome.crystallize();
-        self.contemplation.to_bytes(&mut bytes);
+        let bytes = self.epigenome.crystallize();
         std::fs::write(&tmp, bytes)?;
         std::fs::rename(&tmp, genome_path)
+    }
+
+    /// Persist open thoughts atomically.
+    pub fn save_thoughts(&self, thoughts_path: &str) -> io::Result<()> {
+        let tmp = format!("{thoughts_path}.tmp");
+        let mut bytes = Vec::new();
+        self.contemplation.to_bytes(&mut bytes);
+        std::fs::write(&tmp, bytes)?;
+        std::fs::rename(&tmp, thoughts_path)
     }
 
 

@@ -1,18 +1,17 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! mycelium-server — a HYPHA in the Čech-nerve mesh (never a star). Each hypha
-//! runs its OWN Kernel (one eye per node), carries an id + economic tier, and
-//! registers its peers into its nerve so the mesh is a non-ring cover of hyphas.
-//! Clients dial a hypha (server/client split preserved); peers fuse bases via
-//! sun_recon (P6). Usage:
-//!   mycelium-server [bind] [--id N] [--tier founder|validator|participant] [--peer ADDR]...
+//! runs its OWN Kernel (one eye per node). Identity is `home/hypha.key`; bind,
+//! peers, genesis, and corpora live under `--home`. Usage:
+//!   mycelium-server --home DIR
 use mycelium::anastome::dialogue;
 use mycelium::cognition::{decode_percept, outcome_code, Kernel, Outcome};
-use mycelium::economy::Tier;
+use mycelium::court::identity::{parse_hex32, parse_hex64, HyphaKey};
 use mycelium::network::nerve::{home, Cover, Keyed, Router};
 use mycelium::network::wire::Frame;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
@@ -37,17 +36,113 @@ fn read_frame(s: &mut TcpStream) -> Option<Frame> {
 fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
     args.windows(2).find(|w| w[0] == name).map(|w| w[1].as_str())
 }
-fn parse_bond(s: Option<&str>) -> Option<[u64; 4]> {
-    let s = s?;
-    let mut it = s.split(',');
-    let a = it.next()?.parse().ok()?;
-    let b = it.next()?.parse().ok()?;
-    let c = it.next()?.parse().ok()?;
-    let d = it.next()?.parse().ok()?;
-    Some([a, b, c, d])
+
+fn home_dir(args: &[String]) -> Result<PathBuf, String> {
+    let mut i = 1;
+    while i < args.len() {
+        if args[i] == "--home" {
+            i += 2;
+            continue;
+        }
+        if args[i].starts_with("--") {
+            return Err(format!("unknown flag {}", args[i]));
+        }
+        return Err(format!("unexpected argument {}", args[i]));
+    }
+    if let Some(p) = flag(args, "--home") {
+        return Ok(PathBuf::from(p));
+    }
+    if let Ok(p) = std::env::var("MYCELIUM_HOME") {
+        return Ok(PathBuf::from(p));
+    }
+    let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
+    Ok(PathBuf::from(home).join(".mycelium"))
 }
-fn flags(args: &[String], name: &str) -> Vec<String> {
-    args.windows(2).filter(|w| w[0] == name).map(|w| w[1].clone()).collect()
+
+fn read_lines(path: &Path) -> Vec<String> {
+    std::fs::read_to_string(path)
+        .map(|s| {
+            s.lines()
+                .map(|l| l.trim())
+                .filter(|l| !l.is_empty() && !l.starts_with('#'))
+                .map(String::from)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+struct Genesis {
+    hypha: Vec<([u8; 32], [u64; 4])>,
+    voice: Vec<([u8; 32], [u64; 4])>,
+}
+
+fn parse_genesis(path: &Path) -> Genesis {
+    let mut g = Genesis { hypha: Vec::new(), voice: Vec::new() };
+    for line in read_lines(path) {
+        let mut it = line.split_whitespace();
+        let Some(kind) = it.next() else { continue };
+        let Some(hex) = it.next() else { continue };
+        let Some(vk) = parse_hex32(hex) else { continue };
+        let n = |s: Option<&str>| s.and_then(|x| x.parse().ok()).unwrap_or(0u64);
+        let bond = [n(it.next()), n(it.next()), n(it.next()), n(it.next())];
+        match kind {
+            "hypha" => g.hypha.push((vk, bond)),
+            "voice" => g.voice.push((vk, bond)),
+            _ => {}
+        }
+    }
+    g
+}
+
+fn corpus_hash(dir: &Path) -> Option<[u8; 32]> {
+    let mut files: Vec<_> = std::fs::read_dir(dir)
+        .ok()?
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.extension().is_some_and(|x| x == "json"))
+        .collect();
+    files.sort();
+    let mut h = blake3::Hasher::new();
+    for f in &files {
+        let rel = f.strip_prefix(dir).unwrap_or(f.as_path());
+        h.update(rel.to_string_lossy().as_bytes());
+        let bytes = std::fs::read(f).ok()?;
+        h.update(&bytes);
+    }
+    Some(*h.finalize().as_bytes())
+}
+
+fn parse_manifest(path: &Path) -> Option<(PathBuf, [u8; 32], [u8; 64])> {
+    let text = std::fs::read_to_string(path).ok()?;
+    let mut lines = text
+        .lines()
+        .map(|l| l.trim())
+        .filter(|l| !l.is_empty() && !l.starts_with('#'));
+    let dir = PathBuf::from(lines.next()?);
+    let hash = parse_hex32(lines.next()?)?;
+    let sig = parse_hex64(lines.next()?)?;
+    Some((dir, hash, sig))
+}
+
+fn resolved_bind(local: std::net::SocketAddr) -> String {
+    if local.ip().is_unspecified() {
+        format!("127.0.0.1:{}", local.port())
+    } else {
+        local.to_string()
+    }
+}
+
+fn speak_root_locked(
+    router: &Mutex<Router>,
+    nerve: &std::sync::mpsc::SyncSender<(String, Vec<u8>)>,
+    self_id: &[u8; 32],
+    task: &[u8; 32],
+    solver: &[u8; 32],
+    heard_from: Option<[u8; 32]>,
+    ticks: u64,
+) {
+    if let Ok(r) = router.lock() {
+        speak_root(&r, nerve, self_id, task, solver, heard_from, ticks);
+    }
 }
 
 /// Durable state: the kernel snapshot lands atomically (to .tmp, then
@@ -84,7 +179,7 @@ struct Syllabus {
 struct Door {
     kernel: Arc<Mutex<Kernel>>,
     mesh: Mesh,
-    router: Arc<Router>,
+    router: Arc<Mutex<Router>>,
     id: [u8; 32],
     bind: String,
     join_peers: Arc<Vec<String>>,
@@ -279,7 +374,7 @@ fn sign_cover_digest(kernel: &Mutex<Kernel>, mesh: &Mesh) -> Vec<u8> {
     dialogue::encode_cover_digest(&charts, &room, &cover_roots, &ruled_root, &mesh.vk, &mesh.bind, &sig)
 }
 
-fn admit_peer_digest(mesh: &Mesh, body: &[u8]) -> bool {
+fn admit_peer_digest(mesh: &Mesh, body: &[u8], router: &Mutex<Router>) -> bool {
     let Some((charts, room, cover_roots, ruled_root, vk, addr, sig)) = dialogue::decode_cover_digest(body) else {
         return false;
     };
@@ -297,7 +392,10 @@ fn admit_peer_digest(mesh: &Mesh, body: &[u8]) -> bool {
         r.insert(vk, room);
     }
     if let Ok(mut a) = mesh.addrs.lock() {
-        a.insert(vk, addr);
+        a.insert(vk, addr.clone());
+    }
+    if let Ok(mut r) = router.lock() {
+        r.insert(vk, addr);
     }
     true
 }
@@ -308,7 +406,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
     let Some((&kind, _rest)) = frame.body.split_first() else { return false };
     if kind == dialogue::ACT_ROOT {
         let Some((from, task, solver, spoken_at)) = dialogue::decode_root(&frame.body) else { return true };
-        if !door.router.knows(&from) {
+        if !door.router.lock().map(|r| r.knows(&from)).unwrap_or(false) {
             let _ = s.write_all(&Frame { lane: frame.lane, body: Vec::new() }.encode().unwrap_or_default());
             return true;
         }
@@ -325,7 +423,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
                     from[0], task[0], task[1], solver[0],
                     if prioritized { "re-dispatched first here" } else { "not open on this book" }
                 );
-                speak_root(&door.router, &door.nerve_tx, &door.id, &task, &solver, Some(from), spoken_at);
+                speak_root_locked(&door.router, &door.nerve_tx, &door.id, &task, &solver, Some(from), spoken_at);
             }
             RootHear::Second => {
                 let voices: Vec<[u8; 32]> = {
@@ -338,7 +436,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
                     }
                 }
                 eprintln!("  ROOT CONSILIENT task {:02x}{:02x}… two voices; syllabus rewound", task[0], task[1]);
-                speak_root(&door.router, &door.nerve_tx, &door.id, &task, &solver, Some(from), spoken_at);
+                speak_root_locked(&door.router, &door.nerve_tx, &door.id, &task, &solver, Some(from), spoken_at);
             }
         }
         let reply = {
@@ -426,7 +524,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
                         RootHear::Known => {}
                         RootHear::First | RootHear::Second => {
                             eprintln!("  ROOT task {:02x}{:02x}… proven by voice {:02x}; spoken to its key's next hop", tid[0], tid[1], svoice[0]);
-                            speak_root(&door.router, &door.nerve_tx, &door.id, &tid, &svoice, None, 0);
+                            speak_root_locked(&door.router, &door.nerve_tx, &door.id, &tid, &svoice, None, 0);
                         }
                     }
                     if matches!(hear, RootHear::Second) {
@@ -453,7 +551,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
                         if let Ok(mut sy) = door.syllabus.lock() {
                             for v in voices { sy.served.insert(v, 0); }
                         }
-                        speak_root(&door.router, &door.nerve_tx, &door.id, &tid, &svoice, None, 0);
+                        speak_root_locked(&door.router, &door.nerve_tx, &door.id, &tid, &svoice, None, 0);
                         eprintln!("  ROOT CONSILIENT task {:02x}{:02x}… two voices; syllabus rewound", tid[0], tid[1]);
                     }
                     (dialogue::SOLVE_FLOOR, paid)
@@ -468,7 +566,18 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
     if kind == dialogue::ACT_PEERS {
         if dialogue::decode_peers_request(&frame.body).is_some() {
             let mut nerve_addrs = vec![door.bind.clone()];
-            nerve_addrs.extend(door.join_peers.iter().cloned());
+            for p in door.join_peers.iter() {
+                if !nerve_addrs.iter().any(|a| a == p) {
+                    nerve_addrs.push(p.clone());
+                }
+            }
+            if let Ok(addrs) = door.mesh.addrs.lock() {
+                for (_, a) in addrs.fiber(&mycelium::network::nerve::ROOT) {
+                    if !nerve_addrs.iter().any(|x| x == a) {
+                        nerve_addrs.push(a.clone());
+                    }
+                }
+            }
             let reply = Frame { lane: frame.lane, body: dialogue::encode_peers_reply(&nerve_addrs) };
             let _ = s.write_all(&reply.encode().unwrap_or_default());
         }
@@ -650,7 +759,6 @@ fn relocate_corpus(
 
 fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
     let kernel = &door.kernel;
-    let router = door.router.as_ref();
     let id = &door.id;
     let mesh = &door.mesh;
     if serve_control(stream, &frame, door) {
@@ -660,7 +768,9 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
     // a peer the router knows is heard, and it is never routed on.
     let frame = match frame.body.first() {
         Some(&k) if k == dialogue::ACT_DEMAND_ROUTED => match dialogue::decode_routed_demand(&frame.body) {
-            Some((origin, demand)) if router.knows(&origin) => Frame { lane: frame.lane, body: demand.to_vec() },
+            Some((origin, demand)) if door.router.lock().map(|r| r.knows(&origin)).unwrap_or(false) => {
+                Frame { lane: frame.lane, body: demand.to_vec() }
+            }
             _ => return,
         },
         _ => frame,
@@ -759,7 +869,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
     if kind == dialogue::ACT_DEMAND {
         if let Some((_, chain, _)) = dialogue::decode_demand(&frame.body) {
             let key = mycelium::transducer::element::from_residual(&chain).address();
-            if let Some((_, addr)) = router.closest_excluding(&key, &[*id]) {
+            if let Some((_, addr)) = door.router.lock().ok().and_then(|r| r.closest_excluding(&key, &[*id])) {
                 let _ = door.nerve_tx.try_send((addr, dialogue::encode_routed_demand(id, &frame.body)));
             }
         }
@@ -858,7 +968,8 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         && matches!(out, Outcome::GermPending | Outcome::Fragmented(_))
     {
         let key = *blake3::hash(&pbytes[32..]).as_bytes(); // demand address, voice-free
-        if let Some(dest) = rendezvous(&key, id, router) {
+        let dest = door.router.lock().ok().and_then(|r| rendezvous(&key, id, &r));
+        if let Some(dest) = dest {
             let mut g = vec![0x01u8];
             g.extend_from_slice(&key);
             g.extend_from_slice(pbytes);
@@ -888,34 +999,29 @@ fn rendezvous(key: &[u8; 32], self_id: &[u8; 32], router: &Router) -> Option<Str
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    let addr = args.get(1).filter(|a| !a.starts_with("--")).cloned().unwrap_or_else(|| "127.0.0.1:7500".to_string());
-    let tier = Tier::from_str(flag(&args, "--tier").unwrap_or("participant"));
-    let id = flag(&args, "--id").map(id_of).unwrap_or_else(|| id_of(&addr));
-    // THE NERVE IDENTITY: what peers key this node by — the digest of the
-    // address they were configured with, the same function of the same
-    // string on both sides. Speech on the nerve is signed with it and
-    // accepted only from identities the router holds.
-    let nerve_id = id_of(&addr);
-    let join_peers = flags(&args, "--peer");
-
-    // P7 — durable state: the germinated basis + earned ledger persist across
-    // restart. Default path is per-node; override with --state PATH.
-    let id_tag = flag(&args, "--id").map(String::from).unwrap_or_else(|| addr.replace(':', "_"));
-    let state_path = flag(&args, "--state").map(String::from).unwrap_or_else(|| format!("/opt/mycelium-v0.1.0/state/hypha-{id_tag}.ledger"));
-    if let Some(dir) = std::path::Path::new(&state_path).parent() {
-        let _ = std::fs::create_dir_all(dir);
-    }
-    // TUNIVERSAL (operator-ruled): the universe's ONE wall clock — genesis
-    // origin persisted on the shared state, never a local timezone. Every
-    // event line stamps with it so the universe replays on exactness.
-    let tuniversal = {
-        let dir = std::path::Path::new(&state_path)
-            .parent()
-            .map(|p| p.to_string_lossy().to_string())
-            .unwrap_or_else(|| ".".into());
-        mycelium::chronometry::TUniversal::load_or_genesis(&format!("{dir}/tuniversal"))
+    let home = match home_dir(&args) {
+        Ok(h) => h,
+        Err(e) => {
+            eprintln!("mycelium-server --home DIR: {e}");
+            std::process::exit(2);
+        }
     };
-    eprintln!("TUniversal {} (origin {})", tuniversal.stamp(), tuniversal.origin_unix);
+    let _ = std::fs::create_dir_all(&home);
+    let _ = std::fs::create_dir_all(home.join("corpora"));
+    let state_path = home.join("ledger").to_string_lossy().into_owned();
+    let hypha_key = HyphaKey::load_or_mint(home.join("hypha.key").to_str().unwrap_or("hypha.key"));
+    let vk = hypha_key.vk_bytes();
+    let id = vk;
+    let tag = hypha_key.prefix();
+    let join_peers: Vec<String> = read_lines(&home.join("peers"))
+        .into_iter()
+        .filter(|p| !p.is_empty())
+        .collect();
+
+    let tuniversal = mycelium::chronometry::TUniversal::load_or_genesis(
+        home.join("tuniversal").to_str().unwrap_or("tuniversal"),
+    );
+    eprintln!("[{tag}] TUniversal {} (origin {})", tuniversal.stamp(), tuniversal.origin_unix);
 
     let kernel = Arc::new(Mutex::new(Kernel::with_tuniversal(tuniversal)));
     {
@@ -926,133 +1032,173 @@ fn main() {
             std::process::exit(0);
         });
     }
-    // Resume the learned language from disk (a corrupt ledger boots clean, no crash).
     let mut pruned = false;
     if let Ok(bytes) = std::fs::read(&state_path) {
         let mut k = kernel.lock().unwrap();
         if k.restore(&bytes) {
-            eprintln!("restored basis={} from {state_path}", k.basis_len());
+            eprintln!("[{tag}] restored basis={} from {state_path}", k.basis_len());
             pruned = true;
         }
     }
     if pruned {
         persist(&kernel, &state_path);
     }
-    let hypha_key = mycelium::court::identity::HyphaKey::load_or_mint(&format!("{state_path}.key"));
-    eprintln!("hypha identity vk {:02x}{:02x}…", hypha_key.vk_bytes()[0], hypha_key.vk_bytes()[1]);
+    eprintln!("[{tag}] hypha identity vk {}…", mycelium::court::identity::hex32(&vk));
     if !kernel.lock().unwrap().crt_imported() {
-        let fed_path = std::path::Path::new(&state_path)
-            .parent()
-            .map(|p| p.join("court.federation"))
-            .unwrap_or_else(|| std::path::PathBuf::from("state/court.federation"));
-        if let Some(s) = mycelium::court::ledger::CourtState::load(fed_path.to_str().unwrap_or("state/court.federation")) {
+        let fed_path = home.join("court.federation");
+        if let Some(s) = mycelium::court::ledger::CourtState::load(fed_path.to_str().unwrap_or("court.federation")) {
             let n = s.federation.len();
             kernel.lock().unwrap().import_crt(s);
-            eprintln!("imported court federation {n} words into CRT1");
+            eprintln!("[{tag}] imported court federation {n} words into CRT1");
         }
     }
-    // THE NODE'S OWN STAKE: enrollment bonds the identity at its tier.
-    // On restore, enroll tops up when the ledger's stake for this identity
-    // is below the tier, so a restored founder is bonded, never zero.
+    let genesis = parse_genesis(&home.join("genesis"));
     {
         let mut k = kernel.lock().unwrap();
-        let bond = parse_bond(flag(&args, "--bond")).unwrap_or(mycelium::economy::UNIT_BOND);
-        let staked = k.enroll_bond(id, tier, bond);
-        eprintln!("enrolled self at {tier:?}; bond {bond:?}; staked mu {staked:?}; pool {:?}", k.treasury().pool());
+        match k.treasury().stake_of(&vk) {
+            Some(held) => eprintln!("[{tag}] bond from ledger {held:?}; pool {:?}", k.treasury().pool()),
+            None => match genesis.hypha.iter().find(|(who, _)| *who == vk).map(|(_, b)| *b) {
+                Some(bond) => {
+                    let staked = k.enroll(vk, bond);
+                    eprintln!("[{tag}] genesis bond {bond:?}; staked {staked:?}; pool {:?}", k.treasury().pool());
+                }
+                None => eprintln!("[{tag}] unbonded; earn until a bond can stand"),
+            },
+        }
+        for (who, mu) in &genesis.voice {
+            let paid = k.allocate(*who, *mu);
+            if paid.iter().any(|&x| x > 0) {
+                eprintln!("[{tag}] genesis voice {:02x}{:02x}… allocated {paid:?}", who[0], who[1]);
+            }
+        }
     }
+
+    let bind_path = home.join("bind");
+    let (early_listener, addr) = match read_lines(&bind_path).into_iter().next() {
+        Some(a) => (None, a),
+        None => {
+            let listener = TcpListener::bind("0.0.0.0:0").expect("bind");
+            let resolved = resolved_bind(listener.local_addr().expect("local_addr"));
+            let _ = std::fs::write(&bind_path, format!("{resolved}\n"));
+            eprintln!("[{tag}] wrote bind {resolved}");
+            (Some(listener), resolved)
+        }
+    };
 
     let mesh = Mesh {
         cover: Arc::new(Mutex::new(Cover::new())),
         rooms: Arc::new(Mutex::new(Keyed::new())),
         addrs: Arc::new(Mutex::new(Keyed::new())),
-        vk: hypha_key.vk_bytes(),
+        vk,
         sk: hypha_key.sk.clone(),
         bind: addr.clone(),
         rtt: Arc::new(Mutex::new(Keyed::new())),
         last_roots: Arc::new(Mutex::new(Keyed::new())),
     };
+    let router = Arc::new(Mutex::new(Router::new()));
+    if let Ok(mut r) = router.lock() {
+        r.insert(vk, addr.clone());
+    }
     rebuild_own_cover(&kernel, &mesh);
     for p in &join_peers {
+        if p == &addr {
+            continue;
+        }
         let pid = id_of(p);
         match tell_peer(p, dialogue::encode_digests_request(&mesh.vk), peer_deadline(&mesh, &pid)) {
             Some((reply, dt)) => {
                 note_rtt_ok(&mesh, pid, dt);
-                let _ = admit_peer_digest(&mesh, &reply);
+                let _ = admit_peer_digest(&mesh, &reply, &router);
             }
             None => note_rtt_timeout(&mesh, pid),
         }
     }
 
-    // THE AUTHORITATIVE CORPUS REGISTRY (PoUW integrity): the hypha — never a
-    // client — decides what counts as work. --corpus DIR ingests each task,
-    // registers its content-addressed identity (anti-replay: the FIRST
-    // verified solve takes the bounty, replays collapse to the verification
-    // floor), and INTAKES its train coboundaries onto the open market so the
-    // language grows from the same authority that dispatches the work.
-    let mut router = Router::new();
-    for pr in &join_peers {
-        router.insert(id_of(pr), pr.clone());
-    }
     let registry = Arc::new(Mutex::new(mycelium::registry::TaskRegistry::new()));
-    if let Some(corpus_dir) = flag(&args, "--corpus") {
-        let mut files: Vec<_> = std::fs::read_dir(corpus_dir)
-            .map(|rd| {
-                rd.filter_map(|e| e.ok().map(|e| e.path()))
-                    .filter(|p| p.extension().is_some_and(|x| x == "json"))
-                    .collect()
-            })
-            .unwrap_or_default();
-        files.sort();
-        let mut listed = 0usize;
-        let mut tasked = 0usize;
-        for f in &files {
-            let Ok(text) = std::fs::read_to_string(f) else { continue };
-            let Some(task) = mycelium::arc::parse_task(&text) else { continue };
-            let tid = mycelium::registry::task_id(&task);
-            registry.lock().unwrap().register(task.clone());
-            tasked += 1;
-            for (a, b) in &task.train {
-                if let Some((mut chain, _, frame)) = mycelium::arc::refine_delta(a, b) {
-                    chain.sort_unstable();
-                    let residual = mycelium::transducer::element::from_residual_framed(&chain, &frame);
-                    let inv = mycelium::transducer::stalk::invariant_of(&residual);
-                    match homes_here(&mesh, &kernel, &inv, &residual.magnitude()) {
-                        false => continue,
-                        true => {}
-                    }
-                    let key = mycelium::transducer::element::listing_key(&chain, &frame);
-                    if kernel.lock().unwrap().intake(&chain, &frame) {
-                        listed += 1;
-                        kernel.lock().unwrap().bind_listing_task(key, tid);
+    let genesis_vks: Vec<[u8; 32]> = genesis.hypha.iter().map(|(v, _)| *v).collect();
+    if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
+        let mut manifests: Vec<_> = rd.filter_map(|e| e.ok().map(|e| e.path())).filter(|p| {
+            p.extension().is_some_and(|x| x == "manifest")
+        }).collect();
+        manifests.sort();
+        for man in manifests {
+            let Some((corpus_dir, want, sig)) = parse_manifest(&man) else {
+                eprintln!("[{tag}] corpus manifest {} unreadable", man.display());
+                continue;
+            };
+            let Some(got) = corpus_hash(&corpus_dir) else {
+                eprintln!("[{tag}] corpus {} unreadable", corpus_dir.display());
+                continue;
+            };
+            if got != want {
+                eprintln!("[{tag}] corpus {} hash mismatch", corpus_dir.display());
+                continue;
+            }
+            let signers: Vec<[u8; 32]> = if genesis_vks.is_empty() { vec![vk] } else { genesis_vks.clone() };
+            let signed = signers.iter().any(|s| mycelium::court::identity::verify(s, &want, &sig));
+            if !signed {
+                eprintln!("[{tag}] corpus {} signature refused", corpus_dir.display());
+                continue;
+            }
+            let mut files: Vec<_> = std::fs::read_dir(&corpus_dir)
+                .map(|rd| {
+                    rd.filter_map(|e| e.ok().map(|e| e.path()))
+                        .filter(|p| p.extension().is_some_and(|x| x == "json"))
+                        .collect()
+                })
+                .unwrap_or_default();
+            files.sort();
+            let mut listed = 0usize;
+            let mut tasked = 0usize;
+            for f in &files {
+                let Ok(text) = std::fs::read_to_string(f) else { continue };
+                let Some(task) = mycelium::arc::parse_task(&text) else { continue };
+                let tid = mycelium::registry::task_id(&task);
+                registry.lock().unwrap().register(task.clone());
+                tasked += 1;
+                for (a, b) in &task.train {
+                    if let Some((mut chain, _, frame)) = mycelium::arc::refine_delta(a, b) {
+                        chain.sort_unstable();
+                        let residual = mycelium::transducer::element::from_residual_framed(&chain, &frame);
+                        let inv = mycelium::transducer::stalk::invariant_of(&residual);
+                        match homes_here(&mesh, &kernel, &inv, &residual.magnitude()) {
+                            false => continue,
+                            true => {}
+                        }
+                        let key = mycelium::transducer::element::listing_key(&chain, &frame);
+                        if kernel.lock().unwrap().intake(&chain, &frame) {
+                            listed += 1;
+                            kernel.lock().unwrap().bind_listing_task(key, tid);
+                        }
                     }
                 }
             }
+            let self_room = room64(kernel.lock().unwrap().lane_room());
+            kernel.lock().unwrap().unlist_foreign(|p| {
+                let inv = mycelium::transducer::stalk::invariant_of(p);
+                let c = mesh.cover.lock().unwrap();
+                let r = mesh.rooms.lock().unwrap();
+                let a = mesh.addrs.lock().unwrap();
+                mycelium::network::nerve::home(&c, &inv, &p.magnitude(), &r, &a, Some((&mesh.vk, &self_room, &mesh.bind))).0 == mesh.vk
+            });
+            let restored = std::fs::read(format!("{state_path}.registry"))
+                .map(|b| registry.lock().unwrap().overlay(&b))
+                .unwrap_or(0);
+            eprintln!(
+                "[{tag}] corpus registered: {tasked} tasks from {} ({} unsolved, {listed} home demands listed, {restored} settled states restored)",
+                corpus_dir.display(),
+                registry.lock().unwrap().unsolved(),
+            );
         }
-        let self_room = room64(kernel.lock().unwrap().lane_room());
-        kernel.lock().unwrap().unlist_foreign(|p| {
-            let inv = mycelium::transducer::stalk::invariant_of(p);
-            let c = mesh.cover.lock().unwrap();
-            let r = mesh.rooms.lock().unwrap();
-            let a = mesh.addrs.lock().unwrap();
-            home(&c, &inv, &p.magnitude(), &r, &a, Some((&mesh.vk, &self_room, &mesh.bind))).0 == mesh.vk
-        });
-        let restored = std::fs::read(format!("{state_path}.registry"))
-            .map(|b| registry.lock().unwrap().overlay(&b))
-            .unwrap_or(0);
-        eprintln!(
-            "corpus registered: {tasked} tasks from {corpus_dir} ({} unsolved, {listed} home demands listed, {restored} settled states restored)",
-            registry.lock().unwrap().unsolved(),
-        );
     }
 
-    let listener = TcpListener::bind(&addr).expect("bind");
+    let listener = match early_listener {
+        Some(l) => l,
+        None => TcpListener::bind(&addr).expect("bind"),
+    };
     eprintln!(
-        "mycelium-hypha {:02x} tier {:?} bound {addr}; join {:?} vk {:02x}{:02x}…",
-        id[0],
-        tier,
+        "[{tag}] mycelium-hypha bound {addr}; join {:?}; vk {tag}…",
         join_peers,
-        hypha_key.vk_bytes()[0],
-        hypha_key.vk_bytes()[1],
     );
 
     // THE SYLLABUS (distributed cognition): every court-ratified word, in
@@ -1133,7 +1279,7 @@ fn main() {
         match hear {
             RootHear::Known => {}
             RootHear::First | RootHear::Second => {
-                speak_root(&router, &nerve_tx, &nerve_id, t, &id, None, boot_stamp);
+                speak_root_locked(&router, &nerve_tx, &id, t, &id, None, boot_stamp);
             }
         }
     }
@@ -1210,7 +1356,6 @@ fn main() {
     let cores = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
     let (reflex_tx, reflex_rx) = std::sync::mpsc::sync_channel::<ReflexJob>(cores);
     let reflex_rx = Arc::new(Mutex::new(reflex_rx));
-    let router = Arc::new(router);
     let door = Door {
         kernel: Arc::clone(&kernel),
         mesh: mesh.clone(),
@@ -1230,6 +1375,7 @@ fn main() {
         let mesh = mesh.clone();
         let join = join_peers.clone();
         let registry = Arc::clone(&registry);
+        let router = Arc::clone(&router);
         std::thread::spawn(move || {
             let ratio = mycelium::physics::aperture_cycle() as u64;
             let mut wait = mycelium::physics::from_transport(mesh_rtt(&mesh), 1);
@@ -1268,7 +1414,7 @@ fn main() {
                     match tell_peer(&d, req.clone(), peer_deadline(&mesh, &pid)) {
                         Some((reply, dt)) => {
                             note_rtt_ok(&mesh, pid, dt);
-                            if !admit_peer_digest(&mesh, &reply) {
+                            if !admit_peer_digest(&mesh, &reply, &router) {
                                 continue;
                             }
                             let Some((_, _, cover_roots, ruled_root, vk_peer, _, _)) =

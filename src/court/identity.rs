@@ -35,9 +35,43 @@ impl HyphaKey {
         self.vk.to_bytes()
     }
 
+    /// Log tag and ledger prefix: first two bytes of the verifying key.
+    pub fn prefix(&self) -> String {
+        let b = self.vk_bytes();
+        format!("{:02x}{:02x}", b[0], b[1])
+    }
+
     pub fn sign(&self, msg: &[u8]) -> [u8; 64] {
         self.sk.sign(msg).to_bytes()
     }
+}
+
+pub fn hex32(bytes: &[u8; 32]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+pub fn parse_hex32(s: &str) -> Option<[u8; 32]> {
+    let s = s.trim();
+    if s.len() != 64 {
+        return None;
+    }
+    let mut out = [0u8; 32];
+    for i in 0..32 {
+        out[i] = u8::from_str_radix(&s[i * 2..i * 2 + 2], 16).ok()?;
+    }
+    Some(out)
+}
+
+pub fn parse_hex64(s: &str) -> Option<[u8; 64]> {
+    let s = s.trim();
+    if s.len() != 128 {
+        return None;
+    }
+    let mut out = [0u8; 64];
+    for i in 0..64 {
+        out[i] = u8::from_str_radix(&s[i * 2..i * 2 + 2], 16).ok()?;
+    }
+    Some(out)
 }
 
 pub fn verify(vk: &[u8; 32], msg: &[u8], sig: &[u8; 64]) -> bool {

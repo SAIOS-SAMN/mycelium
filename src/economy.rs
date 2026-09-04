@@ -74,32 +74,15 @@ pub type Anchor = (u64, [u8; 32]);
 /// operations: yields scale by the participant's tier. A hypha/client's standing
 /// weights its reward, so the topology supports staked, tiered roles — never a
 /// flat one-class network.
+/// Persistence discriminant for older snapshots. Not a value, not a scale,
+/// not an enroll argument.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum Tier {
     Founder,
     Validator,
     Participant,
     Observer,
-}
-
-impl Tier {
-    /// Persistence discriminant only — not a value, not a scale.
-    fn tag(self) -> u8 {
-        match self {
-            Tier::Founder => 8,
-            Tier::Validator => 4,
-            Tier::Participant => 2,
-            Tier::Observer => 1,
-        }
-    }
-    pub fn from_str(s: &str) -> Tier {
-        match s {
-            "founder" => Tier::Founder,
-            "validator" => Tier::Validator,
-            "observer" => Tier::Observer,
-            _ => Tier::Participant,
-        }
-    }
 }
 /// A settlement receipt (below-boundary storage — a Vec, not a map): a
 /// polytonic μ⃗ amount, chronometrically anchored.
@@ -140,7 +123,7 @@ pub struct Treasury {
     /// `revoke_award(slash=true)` debits it; mint does not touch it.
     escrow: [u64; 4],
     /// Enrolled identities and their staked μ⃗, keyed by identity.
-    stakes: crate::network::nerve::Keyed<(Tier, [u64; 4])>,
+    stakes: crate::network::nerve::Keyed<[u64; 4]>,
     /// AWARDS IN ESCROW (Step 5): consilience settlements held unfinalized —
     /// keyed by germ address. Only the court's verdict releases or revokes.
     escrowed: crate::network::nerve::Keyed<(Vec<[u8; 32]>, [u64; 4], Anchor)>,
@@ -169,19 +152,19 @@ impl Treasury {
         self.balances.insert(who, b);
     }
 
-    /// ENROLL an identity with an operator-chosen per-lane bond. Tier is a
-    /// name, not a scale. Tops up when the recorded stake is below `bond`.
-    /// Pool is the sum of bonds; leftover escrow history does not enter it.
-    /// Returns the vector added this call.
-    pub fn enroll(&mut self, who: [u8; 32], tier: Tier, bond: [u64; 4], anchor: Anchor) -> [u64; 4] {
+    /// ENROLL an identity with an operator-chosen per-lane bond. Tops up
+    /// when the recorded stake is below `bond`. Pool is the sum of bonds;
+    /// leftover escrow history does not enter it. Returns the vector added
+    /// this call.
+    pub fn enroll(&mut self, who: [u8; 32], bond: [u64; 4], anchor: Anchor) -> [u64; 4] {
         let want = bond;
-        let held = self.stakes.get(&who).map(|(_, s)| *s).unwrap_or([0; 4]);
+        let held = self.stakes.get(&who).copied().unwrap_or([0; 4]);
         let add: [u64; 4] = std::array::from_fn(|l| want[l].saturating_sub(held[l]));
         if add.iter().any(|&x| x > 0) {
-            self.stakes.insert(who, (tier, want));
+            self.stakes.insert(who, want);
             self.entries.push(Entry { kind: "stake", who, mu: add, k_step: anchor.0, receipt: anchor.1 });
         } else if self.stakes.get(&who).is_none() {
-            self.stakes.insert(who, (tier, want));
+            self.stakes.insert(who, want);
         }
         self.refresh_bond();
         add
@@ -189,12 +172,17 @@ impl Treasury {
 
     fn refresh_bond(&mut self) {
         let mut e = [0u64; 4];
-        crate::snapshot::persist(&self.stakes, |_, (_, mu)| {
+        crate::snapshot::persist(&self.stakes, |_, mu| {
             for l in 0..4 {
                 e[l] = e[l].saturating_add(mu[l]);
             }
         });
         self.escrow = e;
+    }
+
+    /// Bond recorded for an identity, if enrolled.
+    pub fn stake_of(&self, who: &[u8; 32]) -> Option<[u64; 4]> {
+        self.stakes.get(who).copied()
     }
 
     /// The stake bond, per lane.
@@ -291,9 +279,9 @@ impl Treasury {
         };
         if slash {
             let who = voices.first().copied().unwrap_or(*addr);
-            if let Some(&(tier, held)) = self.stakes.get(&who) {
+            if let Some(&held) = self.stakes.get(&who) {
                 let next: [u64; 4] = std::array::from_fn(|l| held[l].saturating_sub(mu[l]));
-                self.stakes.insert(who, (tier, next));
+                self.stakes.insert(who, next);
             }
             self.entries.push(Entry { kind: "slash", who, mu, k_step: anchor.0, receipt: anchor.1 });
             self.refresh_bond();
@@ -301,10 +289,10 @@ impl Treasury {
         true
     }
 
-    pub fn stakes(&self) -> Vec<([u8; 32], Tier, [u64; 4])> {
+    pub fn stakes(&self) -> Vec<([u8; 32], [u64; 4])> {
         self.stakes
             .fiber(&crate::network::nerve::ROOT)
-            .map(|(w, (tier, mu))| (*w, *tier, *mu))
+            .map(|(w, mu)| (*w, *mu))
             .collect()
     }
 
@@ -493,6 +481,11 @@ impl Treasury {
         &self.entries
     }
 
+    /// Whether a mint entry already stands for this identity.
+    pub fn has_mint(&self, who: &[u8; 32]) -> bool {
+        self.entries.iter().any(|e| e.kind == "mint" && e.who == *who)
+    }
+
     /// Serialize the dimensional ledger: `[n][tag u8][who 32][μ⃗ 4×u64][k u64]
     /// [receipt 32]…` — vector amounts and chronometric anchors survive restart.
     pub fn snapshot(&self) -> Vec<u8> {
@@ -501,9 +494,9 @@ impl Treasury {
             out.extend_from_slice(&p.to_le_bytes());
         }
         out.extend_from_slice(&(self.stakes.len() as u32).to_le_bytes());
-        crate::snapshot::persist(&self.stakes, |who, (tier, mu)| {
+        crate::snapshot::persist(&self.stakes, |who, mu| {
             out.extend_from_slice(who);
-            out.push(tier.tag());
+            out.push(0); // former tier discriminant; unused
             for m in mu {
                 out.extend_from_slice(&m.to_le_bytes());
             }
@@ -561,20 +554,13 @@ impl Treasury {
         for _ in 0..ns {
             let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
             *pos += 32;
-            let w = *b.get(*pos)?;
-            *pos += 1;
-            let tier = match w {
-                8 => Tier::Founder,
-                4 => Tier::Validator,
-                1 => Tier::Observer,
-                _ => Tier::Participant,
-            };
+            *pos += 1; // former tier discriminant
             let mut mu = [0u64; 4];
             for m in &mut mu {
                 *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                 *pos += 8;
             }
-            stakes.insert(who, (tier, mu));
+            stakes.insert(who, mu);
         }
         let n = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
         *pos += 4;
@@ -690,7 +676,7 @@ mod tests {
     #[test]
     fn novelty_pays_on_use_not_on_existence() {
         let mut t = Treasury::new();
-        t.enroll([1; 32], Tier::Founder, UNIT_BOND, (0, [0; 32])); // genesis: the bond must exist
+        t.enroll([1; 32], UNIT_BOND, (0, [0; 32])); // genesis: the bond must exist
         let g = germ();
         let anchor: Anchor = (3, [7; 32]);
         assert!(magnitude(&g).iter().any(|&m| m >= 1), "a germinated pattern has cost on the lanes it moves");
@@ -714,7 +700,7 @@ mod tests {
     #[test]
     fn consilience_and_torse_settle_as_vectors() {
         let mut t = Treasury::new();
-        t.enroll([1; 32], Tier::Founder, UNIT_BOND, (0, [0; 32])); // capitalize before settling
+        t.enroll([1; 32], UNIT_BOND, (0, [0; 32])); // capitalize before settling
         let anchor: Anchor = (9, [1; 32]);
         t.settle_consilience(&[[1; 32], [2; 32]], [0, 0, 5, 0], anchor);
         assert_eq!(t.balance_mu(&[1; 32]), [0, 0, 2, 0]);
@@ -751,7 +737,7 @@ mod tests {
     #[test]
     fn supply_is_the_sum_of_minted_deflations() {
         let mut t = Treasury::new();
-        t.enroll([1; 32], Tier::Founder, UNIT_BOND, (0, [0; 32]));
+        t.enroll([1; 32], UNIT_BOND, (0, [0; 32]));
         let d1 = [4u64, 2, 0, 2];
         let d2 = [0u64, 4, 6, 2];
         t.escrow_award([8; 32], vec![[1; 32], [2; 32]], d1, (1, [1; 32]));
@@ -768,7 +754,7 @@ mod tests {
     #[test]
     fn slash_debits_the_bond_and_mints_nothing() {
         let mut t = Treasury::new();
-        let bond = t.enroll([1; 32], Tier::Founder, [8, 8, 8, 8], (0, [0; 32]));
+        let bond = t.enroll([1; 32], [8, 8, 8, 8], (0, [0; 32]));
         let addr = [3u8; 32];
         t.escrow_award(addr, vec![[1; 32]], [8, 0, 0, 0], (1, [1; 32]));
         assert!(t.revoke_award(&addr, true));
@@ -781,14 +767,14 @@ mod tests {
     #[test]
     fn escrow_snapshot_round_trips() {
         let mut t = Treasury::new();
-        t.enroll([3; 32], Tier::Validator, UNIT_BOND, (0, [4; 32]));
+        t.enroll([3; 32], UNIT_BOND, (0, [4; 32]));
         t.settle_subsidy([3; 32], [0, 0, 5, 0], (1, [4; 32]));
         t.settle_recall([3; 32], [false, false, true, false], (2, [4; 32]));
         let snap = t.snapshot();
         let mut pos = 0;
         let back = Treasury::restore(&snap, &mut pos).expect("restore v3");
         assert_eq!(back.pool(), t.pool(), "the escrow pool survives, per lane");
-        assert_eq!(back.stakes(), t.stakes(), "stakes + tiers survive");
+        assert_eq!(back.stakes(), t.stakes(), "stakes survive");
         assert_eq!(back.entries(), t.entries());
     }
 

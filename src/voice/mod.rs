@@ -33,6 +33,21 @@ impl Voice {
         Voice { name: name.to_string(), identity, k: 0 }
     }
 
+    /// Seat a voice on verifying-key bytes (home/voice.key).
+    pub fn from_identity(identity: [u8; 32]) -> Voice {
+        Voice {
+            name: format!("{:02x}{:02x}", identity[0], identity[1]),
+            identity,
+            k: 0,
+        }
+    }
+
+    /// Mint or restore an ed25519 voice at `path` (32-byte seed, same as a hypha key).
+    pub fn load_or_mint(path: &str) -> Voice {
+        let key = crate::court::identity::HyphaKey::load_or_mint(path);
+        Voice::from_identity(key.vk_bytes())
+    }
+
     pub fn name(&self) -> &str {
         &self.name
     }
