@@ -1242,6 +1242,17 @@ impl Kernel {
         let k_now = self.k_step();
         self.provisional_k.insert(addr, k_now);
         self.provisional.push((addr, word.clone()));
+        let inv = crate::transducer::stalk::invariant_of(word);
+        if self.field.get(&addr).is_none() {
+            self.write_field(
+                &addr,
+                inv,
+                crate::transducer::stalk::Closure::Cavity,
+                word.sub().to_vec(),
+                &mag,
+                &mag,
+            );
+        }
         self.book_gen += 1;
         self.append_step(addr, ratifier);
     }
@@ -1703,6 +1714,9 @@ impl Kernel {
             if keys.len() >= cap {
                 break;
             }
+            if self.ruled_contains(addr) {
+                continue;
+            }
             if !entries.iter().any(|e| !e.state.is_flat()) {
                 continue;
             }
@@ -1715,9 +1729,6 @@ impl Kernel {
             keys.push(*addr);
         }
         for addr in keys {
-            if self.ruled_contains(&addr) {
-                continue;
-            }
             let spoken = self
                 .word_at(&addr)
                 .cloned()
@@ -1772,6 +1783,15 @@ impl Kernel {
             .filter_map(|a| self.word_at(a).cloned())
             .find(|w| w.address() != addr && !w.axes().is_empty());
         if spoken.is_sentence() {
+            if let Some(n) = crate::transducer::sentence::from_element(&spoken) {
+                let missing = n.germs.iter().any(|g| {
+                    g.address != addr && self.basis_index.get(&g.address).is_none() && self.word_at(&g.address).is_none()
+                });
+                if missing {
+                    self.heard.insert(addr, ());
+                    return Glue::Dialect;
+                }
+            }
             if let Some(rep) = &held {
                 if let (Some(na), Some(nb)) = (
                     crate::transducer::sentence::from_element(rep),
@@ -1782,7 +1802,7 @@ impl Kernel {
                         return Glue::Attached;
                     }
                     for (ca, cb) in na.cycles.iter().zip(&nb.cycles) {
-                        if ca.holonomy.exponents() != cb.holonomy.exponents() {
+                        if !ca.holonomy.same_form(&cb.holonomy) {
                             let diff = cb.holonomy.compose(&ca.holonomy.inverse());
                             if let Some(v) = crate::transducer::element::conformal_of(
                                 &crate::transducer::alphabet::Spelling {
@@ -1832,24 +1852,31 @@ impl Kernel {
                 }
                 acc
             });
-        if views.len() >= 3 {
-            for i in 0..views.len() {
-                for j in i + 1..views.len() {
-                    for k in j + 1..views.len() {
-                        if let (Some(ab), Some(bc), Some(ca)) = (
-                            crate::transducer::cech::transition(&views[i], &views[j]),
-                            crate::transducer::cech::transition(&views[j], &views[k]),
-                            crate::transducer::cech::transition(&views[k], &views[i]),
-                        ) {
-                            if !crate::transducer::cech::glues(&ab, &bc, &ca) {
-                                let h = crate::transducer::cech::holonomy(&ab, &bc, &ca);
-                                self.push_cocycle(inv.clone(), self_id, peer, versor_of(&h));
-                                eprintln!(
-                                    "  court triangle {:02x}{:02x}… nontrivial loop, twisted class",
-                                    addr[0],
-                                    addr[1]
-                                );
-                            }
+        if spoken.is_sentence() {
+            // The sentence's own cycles are the triangles that share a face
+            // with it; the chart-wide triple walk does not run.
+        } else if let Some(ni) = views.iter().position(|w| w.address() == addr) {
+            for j in 0..views.len() {
+                if j == ni {
+                    continue;
+                }
+                for k in j + 1..views.len() {
+                    if k == ni {
+                        continue;
+                    }
+                    if let (Some(ab), Some(bc), Some(ca)) = (
+                        crate::transducer::cech::transition(&views[ni], &views[j]),
+                        crate::transducer::cech::transition(&views[j], &views[k]),
+                        crate::transducer::cech::transition(&views[k], &views[ni]),
+                    ) {
+                        if !crate::transducer::cech::glues(&ab, &bc, &ca) {
+                            let h = crate::transducer::cech::holonomy(&ab, &bc, &ca);
+                            self.push_cocycle(inv.clone(), self_id, peer, versor_of(&h));
+                            eprintln!(
+                                "  court triangle {:02x}{:02x}… nontrivial loop, twisted class",
+                                addr[0],
+                                addr[1]
+                            );
                         }
                     }
                 }
@@ -5215,6 +5242,46 @@ mod tests {
             matches!(third.glue_fetched(forged, [2; 32], [3; 32]), Glue::Slashed(_)),
             "never admit on a word that fails replay"
         );
+    }
+
+    /// Adopt writes a field entry and a deflation so the stroke can rule
+    /// a client-minted connection. Ruled listings do not starve later ones.
+    #[test]
+    fn adopt_reaches_the_docket_and_stroke_skips_ruled() {
+        use crate::transducer::element::from_connection;
+        fn q(v: i64) -> num_rational::BigRational {
+            num_rational::BigRational::from_integer(num_bigint::BigInt::from(v))
+        }
+        fn conn(shift: i64) -> Element {
+            let affine = vec![
+                vec![q(1), q(0), q(shift)],
+                vec![q(0), q(1), q(0)],
+                vec![q(0), q(0), q(1)],
+            ];
+            from_connection(&affine, &[], &Vec::new(), [1, 0, 0, 0]).expect("spells")
+        }
+        let mut k = Kernel::new();
+        let cap = crate::physics::spend_unit() as usize;
+        let mut addrs = Vec::new();
+        for i in 0..(cap + 1) {
+            let w = conn(i as i64 + 1);
+            let addr = w.address();
+            assert!(matches!(k.install_adopted(&w, [1; 32]), Adoption::Installed));
+            assert!(k.field().get(&addr).is_some(), "adopt writes a field entry");
+            addrs.push(addr);
+        }
+        let ruled_n = |k: &Kernel, addrs: &[[u8; 32]]| {
+            addrs
+                .iter()
+                .filter(|a| {
+                    k.word_at(a).is_some_and(|w| k.ruled_have(&crate::transducer::stalk::invariant_of(w)).contains(a))
+                })
+                .count()
+        };
+        k.court_stroke();
+        assert_eq!(ruled_n(&k, &addrs), cap, "one stroke rules a spend of unruled listings, not already-ruled ones");
+        k.court_stroke();
+        assert_eq!(ruled_n(&k, &addrs), cap + 1, "later listings are not starved by already-ruled ones");
     }
 
     /// Restore keeps the lettered federation and drops a leaked basis card.

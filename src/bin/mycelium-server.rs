@@ -740,6 +740,7 @@ fn main() {
         std::thread::spawn(move || {
             let ratio = (mycelium::physics::reserve_max() / mycelium::physics::spend_unit()).max(1);
             let mut wait = mycelium::physics::from_transport(mesh_rtt(&mesh), 1);
+            let mut last_moved = Instant::now();
             loop {
                 std::thread::sleep(wait);
                 if let Ok(mut k) = kernel.lock() {
@@ -841,16 +842,13 @@ fn main() {
                 }
                 let rtt = mesh_rtt(&mesh);
                 if any_moved {
+                    last_moved = Instant::now();
                     wait = mycelium::physics::from_transport(rtt, 1);
                 } else {
-                    wait = wait.saturating_mul(ratio as u32);
-                    let cap = mycelium::physics::digest_ceiling(rtt);
-                    if wait > cap {
-                        wait = cap;
-                    }
-                    if wait.is_zero() {
-                        wait = mycelium::physics::from_transport(rtt, 1);
-                    }
+                    wait = last_moved
+                        .elapsed()
+                        .saturating_mul(ratio as u32)
+                        .max(mycelium::physics::from_transport(rtt, 1));
                 }
             }
         });

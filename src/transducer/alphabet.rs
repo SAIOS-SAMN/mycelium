@@ -331,51 +331,57 @@ impl Word {
         Word(t)
     }
 
-    /// Abelianized letter exponents: the plane's commuting image. Inverse
-    /// letters count negative. The 2-cocycle equation is linear in these.
-    pub fn exponents(&self) -> [i64; CAYLEY_ALPHABET_LEN] {
-        let mut e = [0i64; CAYLEY_ALPHABET_LEN];
-        for &(id, inv) in &self.0 {
-            let i = id.raw() as usize;
-            e[i] += if inv { -1 } else { 1 };
+    /// The plane group is rotations ⋊ sheet parity, not a commuting tape.
+    /// `None` when the word does not preserve the sensor plane.
+    pub fn form(&self) -> Option<PlaneForm> {
+        let b = self.plane_block()?;
+        let det = &b[0][0] * &b[1][1] - &b[0][1] * &b[1][0];
+        let rho2 = &b[0][0] * &b[0][0] + &b[1][0] * &b[1][0];
+        if rho2.is_zero() {
+            return None;
         }
-        e
+        let ori = det / &rho2;
+        let parity = if ori.is_one() {
+            false
+        } else if (-&ori).is_one() {
+            true
+        } else {
+            return None;
+        };
+        let mut r = b;
+        if parity {
+            r[0][1] = -&r[0][1];
+            r[1][1] = -&r[1][1];
+        }
+        let sp = spell(&r)?;
+        let mut rot = [0i64; CAYLEY_ALPHABET_LEN];
+        for &(id, inv) in sp.word.letters() {
+            rot[id.raw() as usize] += if inv { -1 } else { 1 };
+        }
+        Some(PlaneForm { parity, rot })
     }
 
-    /// Rebuild a tape from abelianized exponents (positive then inverse).
-    pub fn from_exponents(e: &[i64; CAYLEY_ALPHABET_LEN]) -> Word {
-        let mut w = Word::identity();
-        for (i, &n) in e.iter().enumerate() {
-            let Some(id) = LetterId::try_new(i as u8) else { continue };
-            let (n, inv) = if n >= 0 { (n, false) } else { (-n, true) };
-            for _ in 0..n {
-                w.push(id, inv);
-            }
+    /// Two words are the same plane element: same sheet parity and the
+    /// same rotation, never a commuting exponent sum.
+    pub fn same_form(&self, other: &Word) -> bool {
+        match (self.form(), other.form()) {
+            (Some(a), Some(b)) => a == b,
+            (None, None) => self.0 == other.0,
+            _ => false,
         }
-        w
     }
 
-    /// The abelianized word is the identity tape.
+    /// The plane element is the identity: even sheet, trivial rotation.
     pub fn abelian_identity(&self) -> bool {
-        self.exponents().iter().all(|&x| x == 0)
+        self.form().is_some_and(|f| f.is_identity())
     }
 
-    /// Smallest positive ℓ such that the word's rotor to the ℓ is identity.
-    /// None when it does not close under repetition within `bound`.
-    pub fn period(&self, bound: u32) -> Option<u32> {
-        if self.abelian_identity() {
-            return Some(1);
-        }
-        let id = Rotor::identity();
-        let r = self.rotor();
-        let mut acc = r.clone();
-        for ell in 1..=bound {
-            if acc == id {
-                return Some(ell);
-            }
-            acc = acc.geo(&r);
-        }
-        None
+    /// Exact period of the plane element. A sheet has order 2. A rotation
+    /// closes iff its prime exponents vanish and the unit (quarter) exponent
+    /// is read mod 4. None when the word does not close under repetition.
+    pub fn period(&self) -> Option<u32> {
+        let f = self.form()?;
+        f.period()
     }
 
     /// The exact 4×4 matrix of the word on the chart, columns the images
@@ -419,6 +425,59 @@ impl Word {
         }
         Some(Word(tape))
     }
+}
+
+/// The plane group element a word represents: sheet parity and the
+/// rotation in (e0, e1). Rotation exponents are those of the unflipped
+/// spelling; a sheet conjugates a rotation to its inverse, so this is
+/// not the commuting sum of the tape.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PlaneForm {
+    pub parity: bool,
+    pub rot: [i64; CAYLEY_ALPHABET_LEN],
+}
+
+impl PlaneForm {
+    pub fn is_identity(&self) -> bool {
+        !self.parity && self.rot.iter().all(|&x| x == 0)
+    }
+
+    pub fn period(&self) -> Option<u32> {
+        if self.is_identity() {
+            return Some(1);
+        }
+        if self.parity {
+            return Some(2);
+        }
+        let q01 = LetterId::quarter((0, 1)).map(|id| id.raw() as usize);
+        let p5 = LetterId::pythagorean_5((0, 1)).map(|id| id.raw() as usize);
+        let p13 = LetterId::pythagorean_13((0, 1)).map(|id| id.raw() as usize);
+        for (i, &n) in self.rot.iter().enumerate() {
+            if n == 0 {
+                continue;
+            }
+            if Some(i) == p5 || Some(i) == p13 {
+                return None;
+            }
+            if Some(i) != q01 {
+                return None;
+            }
+        }
+        let q = q01.map(|i| self.rot[i]).unwrap_or(0).rem_euclid(4) as u32;
+        if q == 0 {
+            return Some(1);
+        }
+        Some(4 / gcd_u32(q, 4))
+    }
+}
+
+fn gcd_u32(mut a: u32, mut b: u32) -> u32 {
+    while b != 0 {
+        let t = b;
+        b = a % b;
+        a = t;
+    }
+    a.max(1)
 }
 
 /// A SPELLING: a rational similarity of the plane reduced to the alphabet —
@@ -894,5 +953,19 @@ mod tests {
         let sp = spell(&block).expect("spells back");
         assert_eq!(sp.word.plane_block(), Some(block));
         assert_eq!(sp.word.len(), 2);
+    }
+
+    /// Sheet conjugates a rotation to its inverse: S Q S Q⁻¹ is a half
+    /// turn, not the identity the commuting sum would claim.
+    #[test]
+    fn sheet_conjugation_is_not_abelian() {
+        let sheet = spell_images((1, 0), (0, -1)).expect("column flip");
+        let q = spell_images((0, -1), (1, 0)).expect("rot90");
+        let w = sheet.word.compose(&q.word).compose(&sheet.word).compose(&q.word.inverse());
+        let f = w.form().expect("the product preserves the plane");
+        assert!(!f.is_identity(), "S Q S Q⁻¹ is a half turn, not 1");
+        assert_eq!(w.period(), Some(2));
+        let half = spell_images((-1, 0), (0, -1)).expect("rot180");
+        assert!(w.same_form(&half.word));
     }
 }

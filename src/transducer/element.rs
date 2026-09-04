@@ -527,6 +527,17 @@ impl Element {
         &self.sub
     }
 
+    /// The ANASTOME description tape (connection or sentence).
+    pub fn description(&self) -> &[u8] {
+        &self.word
+    }
+
+    /// Replace the description tape and drop the memoized address.
+    pub fn set_description(&mut self, word: Vec<u8>) {
+        self.word = word;
+        self.address.take();
+    }
+
     /// The free sections along the punctured axis (cycles live in `torsion`).
     pub fn sections(&self) -> &[Vec<(u8, u8)>] {
         &self.sections
@@ -1439,6 +1450,10 @@ pub fn from_connection(affine: &QMatrix, sigma: &[(u8, u8)], remainder: &Residua
 /// The leading byte of a connection's description: what follows is a
 /// letter tape, not a residual germ.
 pub const CONNECTION_TAG: u8 = 0x11;
+/// A sentence: a nerve of germs. The tape after this tag is the base
+/// connection, then the germ addresses, faces and cycles. Distinct from
+/// CONNECTION_TAG so an opened-axis connection is not replayed as a sentence.
+pub const SENTENCE_TAG: u8 = 0x12;
 
 /// The description of a connection: its spelling in the alphabet at its
 /// dilation, the placement, the gauge map, and the centered remainder.
@@ -1491,7 +1506,8 @@ impl Element {
     pub fn letters(&self) -> Option<Letters> {
         use crate::transducer::alphabet::{take_q, Spelling};
         let b = &self.word;
-        if b.first() != Some(&CONNECTION_TAG) {
+        let tag = b.first().copied()?;
+        if tag != CONNECTION_TAG && tag != SENTENCE_TAG {
             return None;
         }
         let mut pos = 1usize;
@@ -1506,7 +1522,7 @@ impl Element {
         }
         let len = u32::from_le_bytes(b.get(pos..pos + 4)?.try_into().ok()?) as usize;
         pos += 4;
-        if pos + len != b.len() {
+        if pos + len > b.len() {
             return None;
         }
         Some(Letters { spelling, shift, sigma })
@@ -1553,9 +1569,9 @@ impl Element {
         homogeneous && permutation && no_mixing
     }
 
-    /// A sentence: a connection whose further germs occupy germinated axes.
+    /// A sentence: its own tape tag, never merely an opened-axis connection.
     pub fn is_sentence(&self) -> bool {
-        self.is_connection() && !self.opened_axes().is_empty()
+        self.word.first().copied() == Some(SENTENCE_TAG)
     }
 }
 

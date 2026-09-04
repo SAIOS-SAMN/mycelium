@@ -1477,8 +1477,8 @@ impl Entity {
                 if ga != gb || ga.is_empty() {
                     continue;
                 }
-                let ha: Vec<_> = na.cycles.iter().map(|c| c.holonomy.exponents()).collect();
-                let hb: Vec<_> = nb.cycles.iter().map(|c| c.holonomy.exponents()).collect();
+                let ha: Vec<_> = na.cycles.iter().map(|c| c.holonomy.form()).collect();
+                let hb: Vec<_> = nb.cycles.iter().map(|c| c.holonomy.form()).collect();
                 if ha == hb {
                     continue;
                 }
