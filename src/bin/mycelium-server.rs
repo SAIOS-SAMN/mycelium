@@ -1406,7 +1406,7 @@ fn main() {
                     let rtt = mesh_rtt(&mesh);
                     let ms = rtt.as_millis() as u64;
                     if ms > 1 {
-                        k.set_transport_ms(ms);
+                        k.set_transport_ms(ms.max(1000));
                     }
                 }
                 let budget = mycelium::physics::expansion_unit() as usize;
