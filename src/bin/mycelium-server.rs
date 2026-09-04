@@ -821,6 +821,34 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
     let Some((&kind, rest)) = frame.body.split_first() else { return };
     // ── quote: the market view leaves under a brief lock; pricing and the
     // cohesion witness compute over the snapshot.
+    if kind == dialogue::ACT_SPEECH {
+        let Some((svoice, task, _tu, blobs)) = dialogue::decode_speech(&frame.body) else { return };
+        let mut sentences = Vec::new();
+        for b in &blobs {
+            let mut p = 0usize;
+            if let Some(e) = mycelium::transducer::element::Element::from_bytes(b, &mut p) {
+                sentences.push(e);
+            }
+        }
+        let codes = match kernel.lock() {
+            Ok(mut k) => k.perceive_speech(svoice, task, &sentences),
+            Err(_) => return,
+        };
+        for (i, e) in sentences.iter().enumerate() {
+            if codes.get(i).copied() == Some(dialogue::SPEECH_STOOD) {
+                eprintln!(
+                    "  speech stood {:02x}{:02x}… sectioned at home",
+                    e.address()[0],
+                    e.address()[1]
+                );
+            }
+        }
+        persist(kernel, &door.state_path);
+        let body = dialogue::encode_speech_reply(&codes);
+        let reply = Frame { lane: frame.lane, body };
+        let _ = stream.write_all(&reply.encode().unwrap_or_default());
+        return;
+    }
     if kind == dialogue::ACT_QUOTE {
         let Some((qvoice, charts)) = dialogue::decode_quote_request(&frame.body) else { return };
         let Some((surface, priced, k_step, cohesion)) = mycelium::synthesis::quote(kernel, qvoice, &charts) else {
@@ -1079,7 +1107,11 @@ fn main() {
     if let Ok(bytes) = std::fs::read(&state_path) {
         let mut k = kernel.lock().unwrap();
         if k.restore(&bytes) {
-            eprintln!("[{tag}] restored basis={} from {state_path}", k.basis_len());
+            eprintln!(
+                "[{tag}] ledger MYC2: {} ruled sentences, treasury entries {}, book derived at intake",
+                k.basis_len(),
+                k.treasury_entry_count()
+            );
             pruned = true;
         }
     }
@@ -1331,11 +1363,7 @@ fn main() {
                 Ok(w) => w,
                 Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
                     let live = kernel.lock().map(|k| k.volume()).unwrap_or_default();
-                    if live != persisted && last_persist.elapsed() >= mycelium::physics::persist_dwell(rtt_now) {
-                        persist(&kernel, &state_path);
-                        persisted = live;
-                        last_persist = Instant::now();
-                    }
+                    let _ = (live, persisted, last_persist, rtt_now);
                     continue;
                 }
                 Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
@@ -1355,7 +1383,7 @@ fn main() {
                                 ratifier[0],
                             );
                         }
-                        if after != persisted && last_persist.elapsed() >= mycelium::physics::persist_dwell(rtt_now) {
+                        if after != persisted {
                             persist(&kernel, &state_path);
                             persisted = after;
                             last_persist = Instant::now();

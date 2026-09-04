@@ -578,6 +578,20 @@ impl Aperture {
     }
 }
 
+/// A sentence this mind spoke that the hypha sectioned or settled.
+/// Memory only; never serialized.
+#[derive(Debug, Clone)]
+pub struct Dialect {
+    pub sentence: Element,
+    pub last_used_k: u64,
+    pub uses: u64,
+}
+
+/// The crystallized language: words on disk. The epigenome is the rest.
+pub struct GenomeView<'a> {
+    pub words: &'a [Element],
+}
+
 #[derive(Default)]
 pub struct Epigenome {
     genome: Vec<Element>,
@@ -611,6 +625,10 @@ pub struct Epigenome {
     /// Every genome word reached by its address (index-aligned with
     /// `genome`): a keyed relation, never a walk of the genome.
     index: crate::network::nerve::Keyed<usize>,
+    /// Sentences this mind spoke that stood. Memory only.
+    dialect: crate::network::nerve::Keyed<Dialect>,
+    /// Dialects dropped this process.
+    shed_n: u64,
 }
 
 impl Epigenome {
@@ -640,6 +658,45 @@ impl Epigenome {
     /// The count of taught words refused for not verifying.
     pub fn refused(&self) -> u64 {
         self.refused
+    }
+
+    pub fn dialect_len(&self) -> usize {
+        self.dialect.len()
+    }
+
+    pub fn shed_n(&self) -> u64 {
+        self.shed_n
+    }
+
+    /// Drop dialect unused for an aperture of K, and expression/taught/glued
+    /// for words no longer in the genome.
+    pub fn shed(&mut self, k: u64) -> usize {
+        let aperture = crate::physics::aperture_cycle() as u64;
+        let drop: Vec<[u8; 32]> = self
+            .dialect
+            .fiber(&crate::network::nerve::ROOT)
+            .filter(|(_, d)| k.saturating_sub(d.last_used_k) > aperture)
+            .map(|(a, _)| *a)
+            .collect();
+        let n = drop.len();
+        for a in &drop {
+            self.dialect.remove(a);
+        }
+        self.shed_n = self.shed_n.saturating_add(n as u64);
+        n
+    }
+
+    pub fn stand_dialect(&mut self, sentence: Element, k: u64) {
+        let addr = sentence.address();
+        match self.dialect.get_mut(&addr) {
+            Some(d) => {
+                d.last_used_k = k;
+                d.uses = d.uses.saturating_add(1);
+            }
+            None => {
+                self.dialect.insert(addr, Dialect { sentence, last_used_k: k, uses: 1 });
+            }
+        }
     }
 
     /// The words this entity has expressed and not yet had ratified.
@@ -912,14 +969,10 @@ impl Epigenome {
     }
 
     /// CRYSTALLIZE the genome for persistence — the permanent language only.
-    /// The epigenome (expression, recollections, aperture) is deliberately
-    /// ephemeral: dialect rebuilds each run; the genome carries continuity.
-    /// taught_up, glued, and recollections are never written: they rebuild
-    /// from the genome at boot.
-    /// Format: `GEN1 | n u32 | (len u32 | element)…`.
+    /// The epigenome is memory-only. Format: `GEN2 | n u32 | (len u32 | element)…`.
     pub fn crystallize(&self) -> Vec<u8> {
         let mut out = Vec::with_capacity(4 + self.genome.len() * 64);
-        out.extend_from_slice(b"GEN1");
+        out.extend_from_slice(b"GEN2");
         out.extend_from_slice(&(self.genome.len() as u32).to_le_bytes());
         for g in &self.genome {
             let b = g.to_bytes();
@@ -929,11 +982,13 @@ impl Epigenome {
         out
     }
 
-    /// Restore the crystallized genome (count-guarded; a corrupt file yields a
-    /// clean fresh genome, never a crash). Expression starts at zero — the
-    /// dialect re-forms through this run's hearing.
+    /// Restore GEN2, else migrate GEN1 in place. Expression starts at zero.
     pub fn uncrystallize(&mut self, bytes: &[u8]) -> bool {
-        if bytes.len() < 8 || &bytes[..4] != b"GEN1" {
+        if bytes.len() < 8 {
+            return false;
+        }
+        let tag = &bytes[..4];
+        if tag != b"GEN2" && tag != b"GEN1" {
             return false;
         }
         let n = u32::from_le_bytes(bytes[4..8].try_into().unwrap()) as usize;
@@ -967,7 +1022,10 @@ impl Epigenome {
             return false;
         }
         if skipped > 0 {
-            eprintln!("genome migrated: {} words, {skipped} shells skipped", genome.len());
+            eprintln!("genome migrated: {} words, {skipped} skipped", genome.len());
+        }
+        if tag == b"GEN1" {
+            eprintln!("genome migrated GEN1 → GEN2: {} words", genome.len());
         }
         self.expression = vec![0; genome.len()];
         self.genome = genome;
@@ -1059,27 +1117,21 @@ impl Entity {
     }
 
     /// Open with CONTINUITY: restore the crystallized genome from `genome_path`
-    /// if present (the permanent half; the epigenome re-forms in memory).
-    /// Thoughts restore from `thoughts_path` when present, else from a THT1
-    /// trailer on an older genome file.
-    pub fn open_persistent(addr: &str, kernel: Kernel, genome_path: &str, thoughts_path: &str) -> Self {
+    /// if present (GEN2, migrating GEN1 in place). The epigenome starts empty.
+    pub fn open_persistent(addr: &str, kernel: Kernel, genome_path: &str, _thoughts_path: &str) -> Self {
         let mut e = Entity::open(addr, kernel);
         if let Ok(bytes) = std::fs::read(genome_path) {
             if e.epigenome.uncrystallize(&bytes) {
-                eprintln!("genome restored: {} words from {genome_path}", e.epigenome.genome_len());
-            }
-            if let Some(pos) = bytes.windows(4).position(|w| w == b"THT1") {
-                let mut p = pos;
-                if let Some(c) = crate::transducer::bubble::Contemplation::from_bytes(&bytes, &mut p) {
-                    e.contemplation = c;
+                let n = e.epigenome.genome_len();
+                let tag = if bytes.get(..4) == Some(b"GEN2") { "GEN2" } else { "GEN1" };
+                if tag == "GEN1" {
+                    let _ = e.save_genome(genome_path);
                 }
+                let kb = std::fs::metadata(genome_path).map(|m| m.len() / 1024).unwrap_or(0);
+                eprintln!("genome {n} words ({tag}, {kb} KB), epigenome empty");
             }
-        }
-        if let Ok(bytes) = std::fs::read(thoughts_path) {
-            let mut p = 0usize;
-            if let Some(c) = crate::transducer::bubble::Contemplation::from_bytes(&bytes, &mut p) {
-                e.contemplation = c;
-            }
+        } else {
+            eprintln!("genome 0 words, epigenome empty");
         }
         e.thought_gen = e.epigenome.genome_len();
         e
@@ -1735,11 +1787,28 @@ impl Entity {
         self.epigenome.learn(taught)
     }
 
-    /// SPEAK A WORD this entity minted — a closed connection — up to the
-    /// hypha for adoption. The word enters the entity's own genome first
-    /// and travels as itself on the wire; a word with a remainder is held
-    /// as thought instead. Identity and a mint that dropped its fibre are
-    /// not speech: no frame, no memo, no "spoken" log.
+    /// SPEAK a family's cohering sentences as one act. Refuses if two
+    /// sentences share a germ with a non-identity transition. Stood
+    /// sentences enter the dialect, never the genome.
+    pub fn speak(&mut self, sentences: &[Element]) -> io::Result<Vec<u8>> {
+        if sentences.is_empty() {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "no sentence"));
+        }
+        let voice = self.session.kernel().voice();
+        let bytes: Vec<Vec<u8>> = sentences.iter().map(|e| e.to_bytes()).collect();
+        let body = dialogue::encode_speech(&voice, &[0u8; 32], self.now_tu(), &bytes);
+        let reply = self.session.speak(body)?;
+        let codes = dialogue::decode_speech_reply(&reply).unwrap_or_default();
+        for (i, e) in sentences.iter().enumerate() {
+            if codes.get(i).copied() == Some(dialogue::SPEECH_STOOD) {
+                self.epigenome.stand_dialect(e.clone(), self.now_tu());
+            }
+        }
+        Ok(codes)
+    }
+
+    /// SPEAK A WORD as a one-sentence family. The word enters the dialect
+    /// when it stands; the genome receives it only from the syllabus.
     pub fn speak_word(&mut self, word: &Element) -> io::Result<Utterance> {
         // A thought that still has a remainder is work, not a message: the
         // wire never carries ∂g. A word with a chain is held, not uttered.
@@ -1758,17 +1827,34 @@ impl Entity {
             return Ok(Utterance::Already);
         }
         let bytes = word.to_bytes();
-        // The entity holds what it speaks: the connection enters its own
-        // genome first, so the fibre Čech has a representative here and the
-        // word's return does not depend on the syllabus.
-        self.absorb_taught(&bytes);
-        self.session.speak_keyed(&addr, dialogue::encode_adopt(&voice, &bytes))?;
+        let codes = self.speak(std::slice::from_ref(word))?;
         self.taught_up.insert(addr, ());
-        Ok(Utterance::Spoken)
+        let _ = (voice, bytes);
+        match codes.first().copied() {
+            Some(dialogue::SPEECH_STOOD) | None => Ok(Utterance::Spoken),
+            Some(dialogue::SPEECH_REFUSED) => Ok(Utterance::Silent),
+            _ => Ok(Utterance::Spoken),
+        }
     }
 
     pub fn discordance(&self) -> usize {
         self.discordance
+    }
+
+    pub fn shed(&mut self, k: u64) -> usize {
+        self.epigenome.shed(k)
+    }
+
+    pub fn dialect_len(&self) -> usize {
+        self.epigenome.dialect_len()
+    }
+
+    pub fn ideas_len(&self) -> usize {
+        self.contemplation.len()
+    }
+
+    pub fn shed_n(&self) -> u64 {
+        self.epigenome.shed_n()
     }
 }
 

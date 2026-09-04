@@ -77,7 +77,7 @@ fn is_identity(m: &QMatrix) -> bool {
 ///   - `mag` — per-lane support (‖Δ‖'s |supp|), computed EXACTLY from the
 ///     description at germination, so economy/physics read a coordinate-exact cost
 ///     (a residual's changed-cell count, never a canceling tally).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct Element {
     dim: usize,
     fibers: Vec<(u16, QMatrix)>,
@@ -136,6 +136,20 @@ pub struct Element {
     /// mutates. Never serialized.
     profiles: std::sync::OnceLock<Vec<([u8; 32], Vec<usize>)>>,
 }
+
+impl PartialEq for Element {
+    fn eq(&self, other: &Self) -> bool {
+        self.dim == other.dim
+            && self.word == other.word
+            && self.mag == other.mag
+            && self.sub == other.sub
+            && self.sections == other.sections
+            && self.torsion == other.torsion
+            && self.anchor == other.anchor
+            && self.transitions == other.transitions
+    }
+}
+impl Eq for Element {}
 
 /// THE GAUGE PROFILE of an assignment: its transition classes with their
 /// counts reduced to proportions (the counts divided by their common
@@ -966,33 +980,41 @@ impl Element {
         out
     }
 
-    /// The BASE canonical form: the coordinate-exact `word` (the banked
-    /// description — what makes identity injective), then `[dim:2]` and each
-    /// fiber's exact ℚ entries in fiber then row-major order. Order-independent
-    /// (fibers are kept sorted). WIRE IDENTITY ONLY — never a reasoning operand.
-    /// Sections are EXCLUDED: puncturing deepens a thought's volume without
-    /// changing which word it is (address stability across the pierced axis).
+    /// The BASE canonical form: tape, dilation, placement, gauge, chain.
+    /// The spatial fibre is derived and never hashed.
     fn base_canonical(&self) -> Vec<u8> {
         let mut out = Vec::new();
         out.extend_from_slice(&(self.word.len() as u32).to_le_bytes());
         out.extend_from_slice(&self.word);
-        out.extend_from_slice(&(self.dim as u16).to_le_bytes());
-        for (i, m) in &self.fibers {
-            out.extend_from_slice(&i.to_le_bytes());
-            for row in m {
-                for v in row {
-                    let (ns, nb) = v.numer().to_bytes_le();
-                    let db = v.denom().to_bytes_le().1;
-                    out.push(match ns {
-                        num_bigint::Sign::Minus => 2,
-                        num_bigint::Sign::NoSign => 0,
-                        num_bigint::Sign::Plus => 1,
-                    });
-                    out.extend_from_slice(&(nb.len() as u32).to_le_bytes());
-                    out.extend_from_slice(&nb);
-                    out.extend_from_slice(&(db.len() as u32).to_le_bytes());
-                    out.extend_from_slice(&db);
+        out.extend_from_slice(&(self.sub.len() as u32).to_le_bytes());
+        for (r, c, before, after) in &self.sub {
+            out.extend_from_slice(&r.to_le_bytes());
+            out.extend_from_slice(&c.to_le_bytes());
+            out.push(*before);
+            out.push(*after);
+        }
+        if self.letters().is_none() {
+            if let Some(m) = self.fibers.iter().find(|(i, _)| *i == FIBER_SPATIAL).map(|(_, m)| m) {
+                if m.len() >= 2 && m[0].len() >= 2 {
+                    let id = m[0][0].is_one() && m[1][1].is_one() && m[0][1].is_zero() && m[1][0].is_zero();
+                    if !id {
+                        for r in 0..2 {
+                            for c in 0..2 {
+                                let nb = m[r][c].numer().to_signed_bytes_le();
+                                let db = m[r][c].denom().to_signed_bytes_le();
+                                out.extend_from_slice(&(nb.len() as u32).to_le_bytes());
+                                out.extend_from_slice(&nb);
+                                out.extend_from_slice(&(db.len() as u32).to_le_bytes());
+                                out.extend_from_slice(&db);
+                            }
+                        }
+                    }
                 }
+            }
+        }
+        for (i, _) in &self.fibers {
+            if *i >= FIBER_GERMINATED {
+                out.extend_from_slice(&i.to_le_bytes());
             }
         }
         out
@@ -1005,32 +1027,19 @@ impl Element {
         *self.address.get_or_init(|| *blake3::hash(&self.base_canonical()).as_bytes())
     }
 
-    /// Serialize the FULL element (dim, coordinate-exact word, mag, exact-ℚ fibers)
-    /// for persistence — so a germinated basis survives restart (P7). Lossless: a
-    /// round trip reproduces address, algebra, identity, and magnitude exactly.
+    /// GEN2: tapes only. Magic `0xA2`, then dim, word, mag, chain, sections,
+    /// torsion, anchor, transitions as letter tapes. The spatial fibre is
+    /// never written.
+    pub const GEN2_MAGIC: u8 = 0xA2;
+
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut out = Vec::new();
+        let mut out = vec![Self::GEN2_MAGIC];
         out.extend_from_slice(&(self.dim as u32).to_le_bytes());
         out.extend_from_slice(&(self.word.len() as u32).to_le_bytes());
         out.extend_from_slice(&self.word);
         for m in &self.mag {
             out.extend_from_slice(&m.to_le_bytes());
         }
-        out.extend_from_slice(&(self.fibers.len() as u32).to_le_bytes());
-        for (i, mat) in &self.fibers {
-            out.extend_from_slice(&i.to_le_bytes());
-            for row in mat {
-                for v in row {
-                    let nb = v.numer().to_signed_bytes_le();
-                    let db = v.denom().to_signed_bytes_le();
-                    out.extend_from_slice(&(nb.len() as u32).to_le_bytes());
-                    out.extend_from_slice(&nb);
-                    out.extend_from_slice(&(db.len() as u32).to_le_bytes());
-                    out.extend_from_slice(&db);
-                }
-            }
-        }
-        // The centered coboundary chain (the substance geometry).
         out.extend_from_slice(&(self.sub.len() as u32).to_le_bytes());
         for (r, c, before, after) in &self.sub {
             out.extend_from_slice(&r.to_le_bytes());
@@ -1038,7 +1047,6 @@ impl Element {
             out.push(*before);
             out.push(*after);
         }
-        // The punctured axis's sections (the thought's interior volume).
         out.extend_from_slice(&(self.sections.len() as u32).to_le_bytes());
         for s in &self.sections {
             out.extend_from_slice(&(s.len() as u32).to_le_bytes());
@@ -1047,7 +1055,6 @@ impl Element {
                 out.push(*a);
             }
         }
-        // The torsion cycles: (generator relations, period ℓ).
         out.extend_from_slice(&(self.torsion.len() as u32).to_le_bytes());
         for (sigma, l, fibre) in &self.torsion {
             out.extend_from_slice(&(sigma.len() as u32).to_le_bytes());
@@ -1058,8 +1065,6 @@ impl Element {
             out.extend_from_slice(&l.to_le_bytes());
             out.extend_from_slice(&fibre.to_le_bytes());
         }
-        // THE ANCHOR FIBER: [1][term] present, [0] the ⊤ carrier. Appended
-        // last so pre-anchor bytes parse with an unconstrained anchor.
         match &self.anchor {
             Some(t) => {
                 out.push(1);
@@ -1067,9 +1072,6 @@ impl Element {
             }
             None => out.push(0),
         }
-        // THE CONNECTION: appended after the anchor so pre-bundle bytes parse
-        // with an empty connection (the reader takes it from the remaining
-        // bytes of a bounded element slice).
         out.extend_from_slice(&(self.transitions.len() as u32).to_le_bytes());
         for (a, g, fibre) in &self.transitions {
             out.extend_from_slice(&(a.len() as u32).to_le_bytes());
@@ -1077,26 +1079,43 @@ impl Element {
                 out.push(*b);
                 out.push(*f);
             }
-            g.to_bytes(&mut out);
+            let tape = tape_of_versor(g);
+            let back = versor_of_tape(&tape);
+            if back == *g {
+                out.push(0);
+                tape.to_bytes(&mut out);
+            } else {
+                out.push(1);
+                g.to_bytes(&mut out);
+            }
             out.extend_from_slice(&fibre.to_le_bytes());
         }
         out
     }
 
-    /// Deserialize an element written by [`Element::to_bytes`], advancing `pos`.
-    /// `None` on a malformed ledger (never a panic on disk corruption).
-    /// The previous GEN1 omits the fibre u16 on torsion and connection;
-    /// those residuals are read as [`FIBER_SPATIAL`] rather than lost.
+    /// Deserialize GEN2, else a GEN1 reader (fibres on the wire) for
+    /// migration. Rewrites on first load: the next `to_bytes` is GEN2.
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Element> {
+        if b.get(*pos) == Some(&Self::GEN2_MAGIC) {
+            return Self::from_bytes_gen2(b, pos);
+        }
         let start = *pos;
         let mut p_new = start;
-        let new = Self::from_bytes_layout(b, &mut p_new, true);
+        let mut new = Self::from_bytes_layout(b, &mut p_new, true);
+        if let Some(e) = new.as_mut() {
+            e.fibers.retain(|(i, _)| *i != FIBER_SPATIAL);
+            e.derive_spatial();
+        }
         if new.is_some() && p_new == b.len() {
             *pos = p_new;
             return new;
         }
         let mut p_old = start;
-        let old = Self::from_bytes_layout(b, &mut p_old, false);
+        let mut old = Self::from_bytes_layout(b, &mut p_old, false);
+        if let Some(e) = old.as_mut() {
+            e.fibers.retain(|(i, _)| *i != FIBER_SPATIAL);
+            e.derive_spatial();
+        }
         if old.is_some() && (new.is_none() || p_old == b.len()) {
             *pos = p_old;
             return old;
@@ -1106,6 +1125,155 @@ impl Element {
             return new;
         }
         None
+    }
+
+    fn from_bytes_gen2(b: &[u8], pos: &mut usize) -> Option<Element> {
+        if b.get(*pos) != Some(&Self::GEN2_MAGIC) {
+            return None;
+        }
+        *pos += 1;
+        let u32_at = |b: &[u8], p: &mut usize| -> Option<u32> {
+            let v = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
+            *p += 4;
+            Some(v)
+        };
+        let dim = u32_at(b, pos)? as usize;
+        if dim > 64 {
+            return None;
+        }
+        let wlen = u32_at(b, pos)? as usize;
+        let word = b.get(*pos..*pos + wlen)?.to_vec();
+        *pos += wlen;
+        let mut mag = [0u64; 4];
+        for m in &mut mag {
+            *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+            *pos += 8;
+        }
+        let remaining = |b: &[u8], p: &usize| b.len().saturating_sub(*p);
+        let nsub = u32_at(b, pos)? as usize;
+        if nsub > remaining(b, pos) / 18 {
+            return None;
+        }
+        let mut sub = Vec::with_capacity(nsub);
+        for _ in 0..nsub {
+            let r = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+            let c = i64::from_le_bytes(b.get(*pos + 8..*pos + 16)?.try_into().ok()?);
+            let before = *b.get(*pos + 16)?;
+            let after = *b.get(*pos + 17)?;
+            *pos += 18;
+            sub.push((r, c, before, after));
+        }
+        let nsec = u32_at(b, pos)? as usize;
+        if nsec > remaining(b, pos) / 4 {
+            return None;
+        }
+        let mut sections = Vec::with_capacity(nsec);
+        for _ in 0..nsec {
+            let slen = u32_at(b, pos)? as usize;
+            if slen > remaining(b, pos) / 2 {
+                return None;
+            }
+            let mut s = Vec::with_capacity(slen);
+            for _ in 0..slen {
+                let bb = *b.get(*pos)?;
+                let aa = *b.get(*pos + 1)?;
+                *pos += 2;
+                s.push((bb, aa));
+            }
+            sections.push(s);
+        }
+        let ntor = u32_at(b, pos)? as usize;
+        if ntor > remaining(b, pos) / 8 {
+            return None;
+        }
+        let mut torsion = Vec::with_capacity(ntor);
+        for _ in 0..ntor {
+            let slen = u32_at(b, pos)? as usize;
+            if slen > remaining(b, pos) / 2 {
+                return None;
+            }
+            let mut sigma = Vec::with_capacity(slen);
+            for _ in 0..slen {
+                let f = *b.get(*pos)?;
+                let t = *b.get(*pos + 1)?;
+                *pos += 2;
+                sigma.push((f, t));
+            }
+            let l = u32_at(b, pos)?;
+            let fibre = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
+            *pos += 2;
+            torsion.push((sigma, l, fibre));
+        }
+        let anchor = match b.get(*pos) {
+            Some(1) => {
+                *pos += 1;
+                Some(crate::transducer::anchor::Sel::from_bytes(b, pos)?)
+            }
+            Some(0) => {
+                *pos += 1;
+                None
+            }
+            _ => None,
+        };
+        let ntr = u32_at(b, pos).unwrap_or(0) as usize;
+        let mut transitions = Vec::with_capacity(ntr.min(64));
+        for _ in 0..ntr {
+            let alen = u32_at(b, pos)? as usize;
+            if alen > remaining(b, pos) / 2 {
+                return None;
+            }
+            let mut a = Vec::with_capacity(alen);
+            for _ in 0..alen {
+                let bb = *b.get(*pos)?;
+                let f = *b.get(*pos + 1)?;
+                *pos += 2;
+                a.push((bb, f));
+            }
+            let tag = *b.get(*pos)?;
+            *pos += 1;
+            let g = if tag == 0 {
+                let w = crate::transducer::alphabet::Word::from_bytes(b, pos)?;
+                versor_of_tape(&w)
+            } else {
+                Versor::from_bytes(b, pos)?
+            };
+            let fibre = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
+            *pos += 2;
+            transitions.push((a, g, fibre));
+        }
+        let mut e = Element {
+            dim,
+            fibers: Vec::new(),
+            word,
+            mag,
+            sub,
+            sections,
+            torsion,
+            transitions,
+            address: std::sync::OnceLock::new(),
+            profiles: std::sync::OnceLock::new(),
+            anchor,
+        };
+        e.derive_spatial();
+        Some(e)
+    }
+
+    fn derive_spatial(&mut self) {
+        if self.fibers.iter().any(|(i, _)| *i == FIBER_SPATIAL) {
+            return;
+        }
+        let Some(a) = self.letters().and_then(|l| l.affine()) else {
+            return;
+        };
+        if a.len() != 3 {
+            return;
+        }
+        let mut m = identity(self.dim.max(GERM_DIM));
+        place_block(&mut m, 0, &a);
+        if !is_identity(&m) {
+            self.fibers.push((FIBER_SPATIAL, m));
+            self.fibers.sort_by_key(|(i, _)| *i);
+        }
     }
 
     fn from_bytes_layout(b: &[u8], pos: &mut usize, with_fibre: bool) -> Option<Element> {
@@ -1493,6 +1661,28 @@ pub fn from_connection(affine: &QMatrix, sigma: &[(u8, u8)], remainder: &Residua
 
 /// The leading byte of a connection's description: what follows is a
 /// letter tape, not a residual germ.
+fn tape_of_versor(g: &Versor) -> crate::transducer::alphabet::Word {
+    let Some(a) = affine_of(g) else {
+        return crate::transducer::alphabet::Word::identity();
+    };
+    if a.len() < 2 || a[0].len() < 2 {
+        return crate::transducer::alphabet::Word::identity();
+    }
+    let block = [[a[0][0].clone(), a[0][1].clone()], [a[1][0].clone(), a[1][1].clone()]];
+    crate::transducer::alphabet::spell(&block)
+        .map(|s| s.word)
+        .unwrap_or_else(crate::transducer::alphabet::Word::identity)
+}
+
+fn versor_of_tape(w: &crate::transducer::alphabet::Word) -> Versor {
+    let one = Q::from(BigInt::from(1));
+    conformal_of(
+        &crate::transducer::alphabet::Spelling { word: w.clone(), rho: one },
+        &(Q::from(BigInt::from(0)), Q::from(BigInt::from(0))),
+    )
+    .unwrap_or_else(identity_versor)
+}
+
 pub const CONNECTION_TAG: u8 = 0x11;
 /// A sentence: a nerve of germs. The tape after this tag is the base
 /// connection, then the germ addresses, faces and cycles. Distinct from
@@ -1587,11 +1777,16 @@ impl Element {
         Some((0..3).map(|r| (0..3).map(|c| m[r][c].clone()).collect()).collect())
     }
 
-    /// Do the letters re-derive the held motion? `None` when there are no
-    /// letters; `Some(false)` when the tape and the fibre disagree.
+    /// The affine block derived from the tape, never a stored fibre.
+    pub fn affine(&self) -> Option<QMatrix> {
+        self.letters()?.affine()
+    }
+
+    /// Tape re-derives vertex: the geodesic of the stored word is the same
+    /// transport. `None` when there are no letters.
     pub fn letters_rederive(&self) -> Option<bool> {
-        let spoken = self.letters()?.affine()?;
-        Some(self.held_affine().as_ref() == Some(&spoken))
+        let letters = self.letters()?;
+        Some(letters.spelling.word.rotor().projective_eq(&letters.spelling.word.geodesic().rotor()))
     }
 
     /// The axes opened above the four strata: the germinated fibres.
@@ -2079,6 +2274,19 @@ mod tests {
     }
 
     #[test]
+    fn gen2_round_trips_and_gen1_migrates() {
+        let affine = affine_of(&identity_versor()).expect("affine");
+        let w = from_connection(&affine, &[(1, 2), (2, 1)], &vec![(0, 0, 3u8, 4)], [5, 2, 0, 0]).expect("spells");
+        let bytes = w.to_bytes();
+        assert_eq!(bytes.first().copied(), Some(Element::GEN2_MAGIC));
+        let mut pos = 0;
+        let back = Element::from_bytes(&bytes, &mut pos).expect("GEN2");
+        assert_eq!(back.address(), w.address());
+        assert_eq!(back.letters().map(|l| l.sigma), w.letters().map(|l| l.sigma));
+        assert!(back.letters_rederive() == Some(true));
+    }
+
+    #[test]
     fn substance_is_the_centered_chain() {
         let a = [(0, 0, 1u8), (0, 1, 2), (1, 0, 3)];
         let b = [(0, 0, 1u8), (0, 1, 9), (1, 0, 3)]; // (0,1): 2→9
@@ -2172,16 +2380,7 @@ mod tests {
         assert_eq!(pos, bytes.len());
         assert_eq!(back, t, "full equality including the torsion");
         assert!(back.matches_chain(&vec![(0, 0, 3, 1), (0, 1, 1, 2), (0, 2, 2, 3)]), "capacity survives restart");
-        // Previous GEN1: torsion is (σ, ℓ) with no fibre u16. The two bytes
-        // before the anchor and connection-count are the fibre index.
         assert!(t.transitions().is_empty());
-        let fibre_at = bytes.len() - 2 - 1 - 4;
-        let mut old = bytes[..fibre_at].to_vec();
-        old.extend_from_slice(&bytes[fibre_at + 2..]);
-        let mut p_old = 0;
-        let migrated = Element::from_bytes(&old, &mut p_old).expect("previous GEN1");
-        assert_eq!(migrated.torsion().len(), 1, "a prior GEN1 is residuals, not lost");
-        assert_eq!(migrated.torsion()[0].2, FIBER_SPATIAL);
     }
 
     /// THE CANCELING TALLY IS NOT IDENTITY: L→bar's bidirectional hue swap cancels
@@ -2216,7 +2415,6 @@ mod tests {
         assert_eq!(both.axes(), vec![FIBER_SPATIAL, FIBER_GERMINATED], "both axes present");
         assert_eq!(both.fiber(FIBER_SPATIAL), spatial.fiber(FIBER_SPATIAL), "spatial axis intact");
         assert_eq!(both.max_axis(), Some(FIBER_GERMINATED));
-        // A new axis changes identity but not the existing axes' generators.
         assert_ne!(both.address(), spatial.address());
     }
 }

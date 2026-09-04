@@ -209,6 +209,10 @@ impl Treasury {
         }
         self.entries.push(Entry { kind: "mint", who, mu, k_step: anchor.0, receipt: anchor.1 });
         self.credit(who, mu);
+        eprintln!(
+            "  mint {:02x}{:02x}… μ⃗ {mu:?} k {}",
+            who[0], who[1], anchor.0
+        );
         mu
     }
 
@@ -479,6 +483,10 @@ impl Treasury {
 
     pub fn entries(&self) -> &[Entry] {
         &self.entries
+    }
+
+    pub fn entry_count(&self) -> usize {
+        self.entries.len()
     }
 
     /// Whether a mint entry already stands for this identity.

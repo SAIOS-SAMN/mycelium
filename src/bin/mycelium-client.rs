@@ -121,7 +121,7 @@ fn speak_sentence(entity: &mut Entity, tag: &str, n: &mycelium::transducer::sent
     match entity.speak_word(&word) {
         Ok(mycelium::sdk::Utterance::Spoken) => {
             eprintln!(
-                "[{tag}] sentence spoken: {:02x}{:02x}… {} germs, {} faces, carried {:?}",
+                "[{tag}] sentence formed: {:02x}{:02x}… {} germs, {} faces (constant relative words), carried {:?}",
                 word.address()[0],
                 word.address()[1],
                 n.germs.len(),
@@ -755,6 +755,10 @@ fn main() {
         // ── SYNTROPIC PHASE — crystallize, voice change, regenerate.
         if physics.depleted() {
             lap("task");
+            let shed = entity.shed(k_step);
+            if shed > 0 {
+                eprintln!("[{tag}] shed {shed} dialect");
+            }
             entity.discover();
             // Syllabus and sheaf sync live on the depletion dwell so the
             // door serves quotes and percepts on the hot stroke.
@@ -813,35 +817,24 @@ fn main() {
             }
             lap("refine");
             eprintln!("[{tag}] [{}] stroke laps ms {laps:?}", tuniversal.stamp());
-            if entity.epigenome.genome_len() != last_genome || settles != last_settles {
-                if entity.epigenome.genome_len() != saved_genome
-                    && last_genome_save.elapsed() >= mycelium::physics::persist_dwell(entity.transport_rtt())
-                {
-                    let _ = entity.save_genome(&genome_path);
-                    let _ = entity.save_thoughts(&thoughts_path);
-                    saved_genome = entity.epigenome.genome_len();
-                    last_genome_save = Instant::now();
-                }
+            if entity.epigenome.genome_len() != last_genome {
+                let _ = entity.save_genome(&genome_path);
+                saved_genome = entity.epigenome.genome_len();
+                last_genome_save = Instant::now();
                 last_genome = entity.epigenome.genome_len();
-                last_settles = settles;
-                eprintln!(
-                    "[{tag}] [{}] K {k_step} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} paid {solves_paid} | rules {rules_extracted} held-class {rules_held_class} tests-full {tests_full} | refined {refined} learned {learned} | genome {} (peak expr {}) discordance {} obstructions {} bubbles {} horizon {} potential {:?} fills {} torsion {} classes {} formed {} axes {}",
-                    tuniversal.stamp(),
-                    entity.impedance(),
-                    entity.epigenome.genome_len(),
-                    entity.epigenome.peak_expression(),
-                    entity.discordance(),
-                    entity.obstructions().len(),
-                    entity.bubbles(),
-                    entity.horizon_cells(),
-                    entity.thought_potential(),
-                    entity.contemplation_fills(),
-                    entity.torsion_merges(),
-                    entity.contemplation_classes(),
-                    entity.thoughts_formed(),
-                    entity.axes_opened(),
-                );
             }
+            last_settles = settles;
+            eprintln!(
+                "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | shed {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} discordance {} axes {}",
+                tuniversal.stamp(),
+                entity.epigenome.genome_len(),
+                entity.dialect_len(),
+                entity.ideas_len(),
+                entity.shed_n(),
+                entity.impedance(),
+                entity.discordance(),
+                entity.axes_opened(),
+            );
             while physics.depleted() {
                 physics.regenerate();
                 physics.relax();

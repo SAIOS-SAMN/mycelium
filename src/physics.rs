@@ -128,9 +128,7 @@ pub fn court_persist_rulings() -> u64 {
 /// Backward name: a count, equal to the measured reserve.
 pub const COURT_PERSIST_RULINGS: u64 = 0;
 
-/// Backward names: callers must pass a measured RTT through persist_dwell.
-pub const PERSIST_DWELL: std::time::Duration = std::time::Duration::from_secs(30);
-pub const COURT_PERSIST_DWELL: std::time::Duration = std::time::Duration::from_secs(60);
+
 
 /// Strokes per reserve cycle — the aperture ratio κ. Drain reads this;
 /// it is not a free constant.

@@ -130,10 +130,19 @@ pub fn rotor_pair(id: LetterId) -> (Q, Q) {
 
 /// An exact multivector of `Cl(4,0)`: 16 blade coefficients indexed by a
 /// 4-bit mask over `e0..e3`, every generator squaring to +1.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// Vertex equality is [`Rotor::projective_eq`]; coefficient identity is
+/// only the normal-form constructor's check.
+#[derive(Debug, Clone)]
 pub struct Rotor {
     c: [Q; 16],
 }
+
+impl PartialEq for Rotor {
+    fn eq(&self, other: &Self) -> bool {
+        self.projective_eq(other)
+    }
+}
+impl Eq for Rotor {}
 
 /// The parity of the transpositions sorting blade `a` before blade `b`.
 fn reorder_sign(a: usize, b: usize) -> i64 {
@@ -248,15 +257,21 @@ impl Rotor {
         self.scale(&(Q::one() / a))
     }
 
+    /// Coefficient identity: the normal-form constructor's check, never
+    /// vertex equality.
+    fn coeffs_eq(&self, other: &Rotor) -> bool {
+        self.c == other.c
+    }
+
     /// True when `self ∘ other⁻¹` is a positive scalar (the same transport
-    /// at a different weight). Non-versors compare by normalised equality.
+    /// at a different weight). Non-versors compare by normalised coefficients.
     pub fn projective_eq(&self, other: &Rotor) -> bool {
         match other.inverse() {
             Some(inv) => {
                 let p = self.geo(&inv);
                 p.c[0].is_positive() && (1..16).all(|i| p.c[i].is_zero())
             }
-            None => self.normalised() == other.normalised(),
+            None => self.normalised().coeffs_eq(&other.normalised()),
         }
     }
 
@@ -350,9 +365,8 @@ pub fn letter_inverse(id: LetterId) -> Rotor {
 // ---- words ----
 
 /// A WORD: an oriented tape of letters. `true` reads the letter backwards
-/// (its carried `Φ⁻¹`). The word's rotor is the product in tape order, so
-/// the LAST letter acts first on a vector. The rotor is memoised; equal
-/// words compare by tape, never by folding.
+/// (its carried `Φ⁻¹`). The stored tape is the geodesic normal form.
+/// Equal words compare by vertex ([`Word::key`]), never by a raw tape.
 #[derive(Debug)]
 pub struct Word(Vec<(LetterId, bool)>, std::sync::OnceLock<Rotor>);
 
@@ -374,18 +388,22 @@ impl Clone for Word {
 
 impl PartialEq for Word {
     fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
+        self.key() == other.key()
     }
 }
 impl Eq for Word {}
 
 impl Word {
+    fn raw(tape: Vec<(LetterId, bool)>) -> Word {
+        Word(tape, std::sync::OnceLock::new())
+    }
+
     pub fn identity() -> Word {
-        Word(Vec::new(), std::sync::OnceLock::new())
+        Word::raw(Vec::new())
     }
 
     pub fn from_letters(tape: &[(LetterId, bool)]) -> Word {
-        Word(tape.to_vec(), std::sync::OnceLock::new())
+        Word::raw(tape.to_vec())
     }
 
     pub fn letters(&self) -> &[(LetterId, bool)] {
@@ -405,6 +423,20 @@ impl Word {
         self.1.take();
     }
 
+    /// Vertex key: BLAKE3 of the geodesic normal form.
+    pub fn key(&self) -> [u8; 32] {
+        let n = self.geodesic();
+        let mut buf = Vec::with_capacity(2 + n.0.len());
+        n.to_bytes(&mut buf);
+        *blake3::hash(&buf).as_bytes()
+    }
+
+    /// Shortest tape for this vertex: unit exponents mod 4, primes as
+    /// spelled, planes in slot order.
+    pub fn geodesic(&self) -> Word {
+        self.normal_form()
+    }
+
     /// The formed product `γ` of the tape, built once and memoised.
     pub fn rotor(&self) -> Rotor {
         self.1
@@ -418,24 +450,22 @@ impl Word {
 
     /// The word read backwards: the inverse transport.
     pub fn inverse(&self) -> Word {
-        Word(
-            self.0.iter().rev().map(|&(id, inv)| (id, !inv)).collect(),
-            std::sync::OnceLock::new(),
-        )
+        Word::raw(self.0.iter().rev().map(|&(id, inv)| (id, !inv)).collect())
     }
 
     /// Concatenate tapes: `self` then `other` (last letter of `other` acts first).
     pub fn compose(&self, other: &Word) -> Word {
         let mut t = self.0.clone();
         t.extend_from_slice(&other.0);
-        Word(t, std::sync::OnceLock::new())
+        Word::raw(t)
     }
 
     /// Reduce the tape by the per-plane spelling peel so equal rotors have
-    /// equal tapes on the wire. The sensor-plane projection is PlaneForm;
-    /// other invariant pair-planes are spelled in slot order.
+    /// equal tapes on the wire. Per plane: sheet parity, unit exponent
+    /// mod 4, prime-5 and prime-13 exponents; planes in slot order.
     pub fn normal_form(&self) -> Word {
-        if let Some(f) = self.form() {
+        if let Some(mut f) = self.form() {
+            reduce_unit_exponents(&mut f);
             return f.to_word();
         }
         let Some(m) = self.matrix() else {
@@ -455,7 +485,14 @@ impl Word {
                 [m[jj][ii].clone(), m[jj][jj].clone()],
             ];
             if let Some(sp) = spell(&block) {
-                out = out.compose(&sp.word);
+                let mut piece = sp.word;
+                if let Some(mut f) = piece.form() {
+                    reduce_unit_exponents(&mut f);
+                    piece = f.to_word();
+                }
+                let mut t = out.0.clone();
+                t.extend_from_slice(&piece.0);
+                out = Word::raw(t);
             }
         }
         if out.is_empty() {
@@ -568,8 +605,89 @@ impl Word {
             *pos += 1;
             tape.push((LetterId::try_new(byte & 0x7f)?, byte & 0x80 != 0));
         }
-        Some(Word(tape, std::sync::OnceLock::new()))
+        Some(Word::raw(tape))
     }
+}
+
+/// Reduce quarter-turn exponents mod 4; three quarters is one inverse.
+fn reduce_unit_exponents(f: &mut PlaneForm) {
+    for i in 1..=6 {
+        let mut n = f.rot[i as usize].rem_euclid(4);
+        if n == 3 {
+            n = -1;
+        }
+        f.rot[i as usize] = n;
+    }
+}
+
+/// A relation of the Cayley group: a tape that multiplies to the identity,
+/// or a prime letter of infinite order (empty tape, kind records it).
+#[derive(Debug, Clone)]
+pub struct Relator {
+    pub kind: RelatorKind,
+    pub plane: Option<(u8, u8)>,
+    pub word: Word,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RelatorKind {
+    QuarterOrderFour,
+    PlaneCommute,
+    SheetConjugate,
+    PrimeInfinite,
+}
+
+const RELATOR_N: usize = 12;
+
+/// Grammar of the seventeen: quarter turns order four, complementary
+/// planes commute, a sheet conjugates a rotation to its inverse, prime
+/// letters have infinite order.
+pub fn relators() -> [Relator; RELATOR_N] {
+    let q = |plane: (u8, u8)| LetterId::quarter(plane).expect("pair plane");
+    let mut out: [Relator; RELATOR_N] = std::array::from_fn(|_| Relator {
+        kind: RelatorKind::PrimeInfinite,
+        plane: None,
+        word: Word::identity(),
+    });
+    let mut i = 0usize;
+    for &plane in &SLOT_PLANES_SIX {
+        let id = q(plane);
+        // q^4 = 1 — stored as the raw tape of four quarters, then reduced
+        // to the identity vertex.
+        let w = Word::from_letters(&[(id, false), (id, false), (id, false), (id, false)]);
+        out[i] = Relator { kind: RelatorKind::QuarterOrderFour, plane: Some(plane), word: w };
+        i += 1;
+    }
+    let complements: [((u8, u8), (u8, u8)); 3] = [((0, 1), (2, 3)), ((0, 2), (1, 3)), ((0, 3), (1, 2))];
+    for &(a, b) in &complements {
+        let qa = q(a);
+        let qb = q(b);
+        // aba^{-1}b^{-1} = 1
+        let w = Word::from_letters(&[(qa, false), (qb, false), (qa, true), (qb, true)]);
+        out[i] = Relator { kind: RelatorKind::PlaneCommute, plane: Some(a), word: w };
+        i += 1;
+    }
+    let sheet = LetterId::quarter((1, 2)).expect("sheet plane");
+    // S² = 1: four quarter-turns on the sheet plane reduce to the identity.
+    let w = Word::from_letters(&[(sheet, false), (sheet, false), (sheet, false), (sheet, false)]);
+    out[i] = Relator {
+        kind: RelatorKind::SheetConjugate,
+        plane: Some((1, 2)),
+        word: w,
+    };
+    i += 1;
+    out[i] = Relator {
+        kind: RelatorKind::PrimeInfinite,
+        plane: Some((0, 1)),
+        word: Word::from_letters(&[(LetterId::pythagorean_5((0, 1)).unwrap(), false)]),
+    };
+    i += 1;
+    out[i] = Relator {
+        kind: RelatorKind::PrimeInfinite,
+        plane: Some((0, 1)),
+        word: Word::from_letters(&[(LetterId::pythagorean_13((0, 1)).unwrap(), false)]),
+    };
+    out
 }
 
 /// The plane group element a word represents: sheet parity and the
@@ -649,7 +767,7 @@ impl PlaneForm {
     /// quarter-turns, the sheet letter of the plane group.
     fn sheet_word() -> Word {
         let id = LetterId::quarter((1, 2)).expect("plane (1,2) is a letter");
-        Word::from_letters(&[(id, false), (id, false)])
+        Word::raw(vec![(id, false), (id, false)])
     }
 
     pub fn to_word(&self) -> Word {
@@ -913,7 +1031,7 @@ impl SpellStep {
         let l5 = LetterId::pythagorean_5(plane)?;
         let l13 = LetterId::pythagorean_13(plane)?;
         let flip = LetterId::quarter((PLANE_COL, 2))?;
-        let quarter_unit = unit_of_block(&Word::from_letters(&[(quarter, false)]).plane_block()?)?;
+        let quarter_unit = unit_of_block(&Word::raw(vec![(quarter, false)]).plane_block()?)?;
         let pi5 = Gauss::new(2, 1);
         let pi13 = Gauss::new(3, 2);
         // ((2+i)/(2−i))² = (2+i)⁴/25 and ((3+2i)/(3−2i))² = (3+2i)⁴/169:
@@ -921,7 +1039,7 @@ impl SpellStep {
         let t5 = pi5.mul(&pi5).mul(&pi5).mul(&pi5);
         let t13 = pi13.mul(&pi13).mul(&pi13).mul(&pi13);
         let action = |id: LetterId, weight: i64| -> Option<Gauss> {
-            let b = Word::from_letters(&[(id, false)]).plane_block()?;
+            let b = Word::raw(vec![(id, false)]).plane_block()?;
             let w = q(weight);
             unit_of_block(&[[&b[0][0] * &w, &b[0][1] * &w], [&b[1][0] * &w, &b[1][1] * &w]])
         };
@@ -1263,5 +1381,29 @@ mod tests {
         assert!(r.geo(&r.inverse().unwrap()).is_identity());
         let n = w.compose(&w.inverse()).normal_form();
         assert!(n.rotor().is_identity(), "normal form of a cancelling tape is 1");
+    }
+
+    /// Two tapes of one vertex have one key; a tape and its geodesic
+    /// replay to the same affine.
+    #[test]
+    fn two_tapes_of_one_vertex_have_one_key() {
+        let q = LetterId::quarter((0, 1)).unwrap();
+        let a = Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
+        let b = Word::identity();
+        assert_eq!(a.key(), b.key(), "q^4 and 1 are one vertex");
+        assert_eq!(a, b);
+        let long = Word::raw(vec![(q, false), (q, false), (q, false), (q, false), (q, false)]);
+        let geo = long.geodesic();
+        assert_eq!(geo.len(), 1, "five quarters geodesic to one");
+        let ma = long.matrix().expect("affine");
+        let mb = geo.matrix().expect("affine");
+        assert_eq!(ma, mb, "tape and geodesic replay the same affine");
+        let g = relators();
+        assert_eq!(g.len(), RELATOR_N);
+        assert!(g.iter().any(|r| r.kind == RelatorKind::QuarterOrderFour));
+        assert!(g.iter().any(|r| r.kind == RelatorKind::PlaneCommute));
+        assert!(g.iter().any(|r| r.kind == RelatorKind::SheetConjugate));
+        assert!(g.iter().any(|r| r.kind == RelatorKind::PrimeInfinite));
+        assert!(g.iter().any(|r| r.kind == RelatorKind::QuarterOrderFour && r.word.geodesic().is_empty()));
     }
 }

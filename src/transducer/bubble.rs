@@ -247,6 +247,29 @@ impl Contemplation {
         self.bubbles.len()
     }
 
+    /// Per-lane congruent mass on each chart: ideas that share a class.
+    /// Compared per lane, never an argmax across lanes.
+    pub fn cohesion(&self) -> crate::network::nerve::Keyed<[u64; 4]> {
+        let mut out: crate::network::nerve::Keyed<[u64; 4]> = crate::network::nerve::Keyed::new();
+        // index: ideas keyed by remainder, then by chart cover
+        for (_, b) in self.bubbles.fiber(&ROOT) {
+            for (ck, _) in b.cover.fiber(&ROOT) {
+                let add = b.volume;
+                match out.get_mut(ck) {
+                    Some(v) => {
+                        for l in 0..4 {
+                            v[l] = v[l].saturating_add(add[l]);
+                        }
+                    }
+                    None => {
+                        out.insert(*ck, add);
+                    }
+                }
+            }
+        }
+        out
+    }
+
     pub fn cavity_len(&self) -> usize {
         self.cavity.len()
     }

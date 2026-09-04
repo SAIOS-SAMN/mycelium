@@ -87,6 +87,60 @@ pub const THT1: &[u8; 4] = b"THT1";
 pub const COC1: &[u8; 4] = b"COC1";
 
 pub const ACT_ADOPT: u8 = 0x0E;
+/// One family's cohering sentences. `[ACT_SPEECH][voice 32][task 32][tu u64][n u32][len u32|element]…`.
+pub const ACT_SPEECH: u8 = 0x16;
+
+pub fn encode_speech(voice: &[u8; 32], task: &[u8; 32], tu: u64, sentences: &[Vec<u8>]) -> Vec<u8> {
+    let mut out = vec![ACT_SPEECH];
+    out.extend_from_slice(voice);
+    out.extend_from_slice(task);
+    out.extend_from_slice(&tu.to_le_bytes());
+    out.extend_from_slice(&(sentences.len() as u32).to_le_bytes());
+    for s in sentences {
+        out.extend_from_slice(&(s.len() as u32).to_le_bytes());
+        out.extend_from_slice(s);
+    }
+    out
+}
+
+pub fn decode_speech(body: &[u8]) -> Option<([u8; 32], [u8; 32], u64, Vec<Vec<u8>>)> {
+    if body.first() != Some(&ACT_SPEECH) || body.len() < 77 {
+        return None;
+    }
+    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    let task: [u8; 32] = body.get(33..65)?.try_into().ok()?;
+    let tu = u64::from_le_bytes(body.get(65..73)?.try_into().ok()?);
+    let n = u32::from_le_bytes(body.get(73..77)?.try_into().ok()?) as usize;
+    let mut pos = 77usize;
+    let mut sentences = Vec::with_capacity(n.min(64));
+    for _ in 0..n {
+        let len = u32::from_le_bytes(body.get(pos..pos + 4)?.try_into().ok()?) as usize;
+        pos += 4;
+        let s = body.get(pos..pos + len)?.to_vec();
+        pos += len;
+        sentences.push(s);
+    }
+    Some((voice, task, tu, sentences))
+}
+
+/// Per-sentence: 0 Stood, 1 Dialect, 2 Refused.
+pub const SPEECH_STOOD: u8 = 0;
+pub const SPEECH_DIALECT: u8 = 1;
+pub const SPEECH_REFUSED: u8 = 2;
+
+pub fn encode_speech_reply(codes: &[u8]) -> Vec<u8> {
+    let mut out = vec![ACT_SPEECH, codes.len() as u8];
+    out.extend_from_slice(codes);
+    out
+}
+
+pub fn decode_speech_reply(body: &[u8]) -> Option<Vec<u8>> {
+    if body.first() != Some(&ACT_SPEECH) {
+        return None;
+    }
+    let n = *body.get(1)? as usize;
+    Some(body.get(2..2 + n)?.to_vec())
+}
 
 pub fn encode_adopt(voice: &[u8; 32], element_bytes: &[u8]) -> Vec<u8> {
     let mut out = vec![ACT_ADOPT];

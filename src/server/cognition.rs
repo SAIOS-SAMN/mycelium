@@ -1754,6 +1754,25 @@ impl Kernel {
         self.ruled_addrs.contains(addr)
     }
 
+    /// List a sentence on the docket if it is not already provisional.
+    fn docket_sentence(&mut self, word: &Element, ratifier: [u8; 32]) {
+        self.docket_connection(word, ratifier);
+    }
+
+    /// Perceive a family's speech: replay each sentence, docket what stands.
+    pub fn perceive_speech(&mut self, voice: [u8; 32], _task: [u8; 32], sentences: &[Element]) -> Vec<u8> {
+        let mut codes = Vec::with_capacity(sentences.len());
+        for s in sentences {
+            if let Some(_reason) = crate::court::verdict::blind_replay(s) {
+                codes.push(crate::anastome::dialogue::SPEECH_REFUSED);
+                continue;
+            }
+            self.docket_sentence(s, voice);
+            codes.push(crate::anastome::dialogue::SPEECH_STOOD);
+        }
+        codes
+    }
+
     /// List a word on the docket if it is not already provisional.
     fn docket_connection(&mut self, word: &Element, ratifier: [u8; 32]) {
         if word.is_identity() && !word.is_rewrite() {
@@ -2225,6 +2244,10 @@ impl Kernel {
     }
 
     /// The settlement ledger (bounties, consilience, recall yields).
+    pub fn treasury_entry_count(&self) -> usize {
+        self.treasury.entry_count()
+    }
+
     pub fn treasury(&self) -> &crate::economy::Treasury {
         &self.treasury
     }
@@ -4325,16 +4348,14 @@ impl Kernel {
     /// (Liebig). Calm → full reduction; loaded → shallow; saturated → direct-match
     /// only, then germinate the compound (refined later, when the mesh is calm).
     fn peel_budget(&self, mag: &[u64; 4]) -> usize {
-        let rate = (0..4)
-            .filter(|&l| mag[l] > 0)
-            .map(|l| self.physics.pressure[l])
-            .max()
-            .unwrap_or(0);
-        match rate {
-            0..=7 => 64,
-            8..=31 => 8,
-            _ => 0,
+        // The occupied lane of this reduction; no max across lanes.
+        for l in 0..4 {
+            if mag[l] > 0 {
+                let unit = crate::physics::expansion_unit().max(1);
+                return (self.physics.reserve[l] / unit) as usize;
+            }
         }
+        0
     }
 
     /// Peel the MAXIMAL ≺_DM-descending generator from substance `s`: try each
@@ -4739,7 +4760,7 @@ impl Kernel {
     /// zero. Format: `MYC1 | [n][elem_len][elem][discoverer 32]… | treasury`.
     pub fn snapshot(&self) -> Vec<u8> {
         let mut out = Vec::new();
-        out.extend_from_slice(b"MYC1");
+        out.extend_from_slice(b"MYC2");
         out.extend_from_slice(&(self.basis.len() as u32).to_le_bytes());
         for g in &self.basis {
             let who = self.discoverer_of(&g.address());
@@ -4943,7 +4964,7 @@ impl Kernel {
     /// kernel empty) on a bad magic or corruption — a corrupt ledger never crashes
     /// a boot, it just starts clean.
     pub fn restore(&mut self, b: &[u8]) -> bool {
-        if b.get(0..4) != Some(b"MYC1") {
+        if b.get(0..4) != Some(b"MYC2") && b.get(0..4) != Some(b"MYC1") {
             return false;
         }
         let mut pos = 4usize;
