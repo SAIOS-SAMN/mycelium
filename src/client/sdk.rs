@@ -589,9 +589,8 @@ pub struct Epigenome {
     recollections: crate::network::nerve::Keyed<(Vec<[u8; 32]>, u64)>,
     /// The entity's chromatic aperture — its perceptual bias (harmonic import).
     pub aperture: Aperture,
-    /// THE ATLAS of the genome — the similarity charts of its words, the
-    /// precision index thinking locates base points through. Measured from
-    /// the genome, rebuilt when the genome's size moves; never persisted.
+    /// THE ATLAS of the genome — admitted in place as words are learned
+    /// or restored; rebuilt only on retire. Never persisted.
     atlas: crate::transducer::stalk::Stalks,
     atlas_len: usize,
     /// Each word's shape, lifted once on first use (parallel to the genome).
@@ -625,7 +624,7 @@ impl Epigenome {
         self.index.get(addr).copied()
     }
 
-    /// Re-key the genome after a removal or a restore shifted positions.
+    /// Re-key the genome after a removal shifted positions.
     fn reindex(&mut self) {
         self.index = crate::network::nerve::Keyed::new();
         for (i, w) in self.genome.iter().enumerate() {
@@ -699,14 +698,13 @@ impl Epigenome {
     /// (the accepted compression bid). Expression rides along (parallel
     /// vector); recollections citing the retired index dissolve — they were
     /// spellings in the old vocabulary — and surviving citations reindex.
-    /// The genome's atlas, current with the genome.
-    pub fn atlas(&mut self) -> &crate::transducer::stalk::Stalks {
-        if self.atlas_len != self.genome.len() {
-            self.atlas = crate::transducer::stalk::Stalks::over_elements(self.genome.iter());
-            self.shapes = (0..self.genome.len()).map(|_| std::sync::OnceLock::new()).collect();
-            self.atlas_len = self.genome.len();
-        }
+    /// The genome's atlas, admitted in place. Never rebuilt here.
+    pub fn atlas(&self) -> &crate::transducer::stalk::Stalks {
         &self.atlas
+    }
+
+    pub fn atlas_is_empty(&self) -> bool {
+        self.atlas_len == 0
     }
 
     /// The shape of word `i`, lifted on first use.
@@ -718,7 +716,6 @@ impl Epigenome {
     /// Deconstruct a chain over this genome: the sentence it composes and
     /// the residual no word speaks.
     fn locate(&mut self, chain: &[(i64, i64, u8, u8)], exclude: Option<usize>) -> crate::transducer::sentence::Sentence {
-        self.atlas();
         crate::transducer::sentence::deconstruct(&self.genome, &self.atlas, &|a| self.index.get(a).copied(), &|i| self.shape(i), chain, exclude)
     }
 
@@ -740,6 +737,11 @@ impl Epigenome {
         for k in drop {
             self.recollections.remove(&k);
         }
+        self.atlas.remove(&gone);
+        if i < self.shapes.len() {
+            self.shapes.remove(i);
+        }
+        self.atlas_len = self.genome.len();
         self.reindex();
         true
     }
@@ -761,7 +763,6 @@ impl Epigenome {
             }
             let mut understood = Vec::new();
             for g in &n.germs {
-                self.atlas();
                 let inv = crate::transducer::stalk::invariant(&g.chain);
                 if let Some(i) = self.atlas.fiber(&inv).first().and_then(|a| self.index.get(a).copied()) {
                     if let Some(x) = self.expression.get_mut(i) {
@@ -783,11 +784,9 @@ impl Epigenome {
         // vanishes (held), does not (dialect, the element carried), or there
         // is no representative (admitted). Never an empty covering.
         if utterance.is_translation() {
-            self.atlas();
             return Comprehension::Admitted;
         }
         if utterance.is_connection() && utterance.sub().is_empty() {
-            self.atlas();
             let inv = crate::transducer::stalk::invariant_of(utterance);
             let representative = self
                 .atlas
@@ -901,13 +900,9 @@ impl Epigenome {
         match self.index.get(&addr).copied() {
             Some(i) => self.genome[i] = e, // the taught form may carry new sections — refresh
             None => {
-                // The atlas admits the new word in place when it is current;
-                // otherwise it rebuilds on the next lookup.
-                if self.atlas_len == self.genome.len() {
-                    self.atlas.admit(&crate::transducer::stalk::invariant_of(&e), e.address());
-                    self.shapes.push(std::sync::OnceLock::new());
-                    self.atlas_len += 1;
-                }
+                self.atlas.admit(&crate::transducer::stalk::invariant_of(&e), e.address());
+                self.shapes.push(std::sync::OnceLock::new());
+                self.atlas_len = self.atlas_len.saturating_add(1);
                 self.index.insert(e.address(), self.genome.len());
                 self.genome.push(e);
                 self.expression.push(0);
@@ -976,6 +971,13 @@ impl Epigenome {
         }
         self.expression = vec![0; genome.len()];
         self.genome = genome;
+        self.atlas = crate::transducer::stalk::Stalks::default();
+        self.shapes.clear();
+        for w in &self.genome {
+            self.atlas.admit(&crate::transducer::stalk::invariant_of(w), w.address());
+            self.shapes.push(std::sync::OnceLock::new());
+        }
+        self.atlas_len = self.genome.len();
         self.reindex();
         true
     }
@@ -1231,7 +1233,6 @@ impl Entity {
         self.session.absorb_digest(&body);
         let remote = dialogue::decode_digests_reply(&body).unwrap_or_default();
         // The genome's own atlas (current, admitted in place), never rebuilt here.
-        self.epigenome.atlas();
         let atlas = self.epigenome.atlas.clone();
         let local = sheaf::digests(&atlas);
         // The outer index names what differs by address; a stratum the
@@ -1268,7 +1269,6 @@ impl Entity {
             if let [] = fetched.axes().as_slice() {
                 continue; // no group view: the additive coboundary has no transition
             }
-            self.epigenome.atlas();
             let inv = crate::transducer::stalk::invariant_of(&fetched);
             let fibre: Vec<[u8; 32]> = self.epigenome.atlas.fiber(&inv).to_vec();
             // One transition, to the stratum's representative: the first
@@ -1463,12 +1463,16 @@ impl Entity {
                 }
             }
         }
-        if dests.is_empty() {
+        if dests.is_empty() || self.epigenome.atlas_is_empty() {
             // An empty atlas is incident to the root prefix: the first
             // quote reads the book at depth zero, so a mind need not
             // already hold a word to learn one.
             let root = [crate::transducer::stalk::Invariant(Vec::new())];
-            let asked = if charts.is_empty() { root.as_slice() } else { charts.as_slice() };
+            let asked = if charts.is_empty() || self.epigenome.atlas_is_empty() {
+                root.as_slice()
+            } else {
+                charts.as_slice()
+            };
             return self.session.quote(asked);
         }
         let mut last_err = io::Error::new(io::ErrorKind::NotConnected, "no hypha");

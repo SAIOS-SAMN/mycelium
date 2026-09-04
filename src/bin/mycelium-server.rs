@@ -1403,6 +1403,11 @@ fn main() {
                 std::thread::sleep(wait);
                 if let Ok(mut k) = kernel.lock() {
                     k.court_stroke();
+                    let rtt = mesh_rtt(&mesh);
+                    let ms = rtt.as_millis() as u64;
+                    if ms > 1 {
+                        k.set_transport_ms(ms);
+                    }
                 }
                 let budget = mycelium::physics::expansion_unit() as usize;
                 intake_corpus(&kernel, &mesh, &registry, budget);
@@ -1545,9 +1550,11 @@ fn main() {
             match job {
                 Ok(job) => {
                     let ReflexJob { mut stream } = job;
-                    loop {
-                        arm_deadline(&stream, mesh_deadline(&door.mesh));
-                        let Some(frame) = read_frame(&mut stream) else { break };
+                    // One act, then the worker returns — keep-alive must not
+                    // hold a reflex slot for the client's stroke. The
+                    // transport deadline bounds the wait for that one frame.
+                    arm_deadline(&stream, mesh_deadline(&door.mesh));
+                    if let Some(frame) = read_frame(&mut stream) {
                         let kind = frame.body.first().copied().unwrap_or(0xff);
                         let t0 = std::time::Instant::now();
                         judge(&mut stream, frame, &door);

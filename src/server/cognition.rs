@@ -117,6 +117,8 @@ pub struct MarketView {
     pub k_step: u64,
     /// TUniversal at this view — the quote's temporal coordinate.
     pub tu: u64,
+    /// Standing extent per listing, in transports.
+    pub standing_t: std::sync::Arc<crate::network::nerve::Keyed<u64>>,
     pub reserve: [u64; 4],
     /// The (basis, book) generations this view was taken at.
     pub gens: (u64, u64),
@@ -437,6 +439,7 @@ pub fn quote_incidence(
     budget: usize,
     spoken: &crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     voice: &[u8; 32],
+    standing_t: &crate::network::nerve::Keyed<u64>,
 ) -> (
     [u64; 4],
     Vec<(Element, [u64; 4], Vec<crate::transducer::stalk::Invariant>)>,
@@ -446,53 +449,60 @@ pub fn quote_incidence(
     let mut used = 0usize;
     let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     let root_chart = crate::transducer::stalk::Invariant(Vec::new());
-    let charts: &[crate::transducer::stalk::Invariant] = if voice_charts.is_empty() {
-        std::slice::from_ref(&root_chart)
-    } else {
-        voice_charts
-    };
-    for chart in charts {
-        let chart_key = chart.key();
-        let addrs: Vec<[u8; 32]> = if chart.0.is_empty() {
-            listing_atlas.fiber_under(chart)
-        } else {
-            listing_atlas.fiber(chart)
-        };
-        for addr in addrs {
-            if !on_page.contains(&addr) || seen.contains(&addr) {
-                continue;
+    let mut run = |charts: &[crate::transducer::stalk::Invariant]| {
+        for chart in charts {
+            let chart_key = chart.key();
+            let addrs: Vec<[u8; 32]> = if chart.0.is_empty() {
+                listing_atlas.fiber_under(chart)
+            } else {
+                listing_atlas.fiber(chart)
+            };
+            for addr in addrs {
+                if !on_page.contains(&addr) || seen.contains(&addr) {
+                    continue;
+                }
+                if spoken.get(&addr).is_some_and(|voices| voices.contains(voice)) {
+                    continue;
+                }
+                let Some(&idx) = book_index.get(&addr) else { continue };
+                let Some((p, _)) = pending.get(idx) else { continue };
+                let open = open_charts_of(&addr, p, field);
+                let mut open_set: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+                for c in &open {
+                    open_set.insert(c.key(), ());
+                }
+                if !chart.0.is_empty() && !open_set.contains(&chart_key) {
+                    continue;
+                }
+                let open_len: usize = 1 + open.iter().map(|c| 1 + 8 * c.0.len().min(255)).sum::<usize>();
+                let wire = 68 + p.sub().len() * cell + open_len;
+                if used + wire > budget {
+                    continue;
+                }
+                used += wire;
+                seen.insert(addr, ());
+                let mut mag = p.magnitude();
+                if let Some(&t) = standing_t.get(&addr) {
+                    mag[2] = t;
+                }
+                let mut mu = crate::economy::price(&mag, pressure);
+                let (resolved, total, ribbon) = lineage_of(&p.address(), composites);
+                let assembly = crate::economy::price(&[0, 0, ribbon, 0], pressure);
+                for l in 0..4 {
+                    mu[l] = mu[l].saturating_add(assembly[l].saturating_mul(resolved) / total.max(1));
+                }
+                priced.push((p.clone(), mu, open));
             }
-            if spoken.get(&addr).is_some_and(|voices| voices.contains(voice)) {
-                continue;
-            }
-            let Some(&idx) = book_index.get(&addr) else { continue };
-            let Some((p, _)) = pending.get(idx) else { continue };
-            let open = open_charts_of(&addr, p, field);
-            let mut open_set: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-            for c in &open {
-                open_set.insert(c.key(), ());
-            }
-            // The empty chart is the root prefix: every listing is incident
-            // to it, so the first quote of an empty atlas reads the book.
-            if !chart.0.is_empty() && !open_set.contains(&chart_key) {
-                continue;
-            }
-            let open_len: usize = 1 + open.iter().map(|c| 1 + 8 * c.0.len().min(255)).sum::<usize>();
-            let wire = 68 + p.sub().len() * cell + open_len;
-            if used + wire > budget {
-                continue;
-            }
-            used += wire;
-            seen.insert(addr, ());
-            let mut mu = crate::economy::price(&p.magnitude(), pressure);
-            mu[2] = p.magnitude()[2].saturating_mul(1 + surface[2]);
-            let (resolved, total, ribbon) = lineage_of(&p.address(), composites);
-            let assembly = crate::economy::price(&[0, 0, ribbon, 0], pressure);
-            for l in 0..4 {
-                mu[l] = mu[l].saturating_add(assembly[l].saturating_mul(resolved) / total.max(1));
-            }
-            priced.push((p.clone(), mu, open));
         }
+    };
+    // An empty voice atlas is incident to the root prefix and receives
+    // the book's shallowest strata. A miss on the asked charts falls
+    // through to the same root walk (seen skips duplicates).
+    if voice_charts.is_empty() {
+        run(std::slice::from_ref(&root_chart));
+    } else {
+        run(voice_charts);
+        run(std::slice::from_ref(&root_chart));
     }
     (*surface, priced)
 }
@@ -749,6 +759,9 @@ pub struct Kernel {
     tu: crate::chronometry::TUniversal,
     /// Test clock: when set, now_tu returns this tick count.
     clock: Option<u64>,
+    /// Measured transport in milliseconds. Standing T is ticks (seconds)
+    /// over this unit. Zero means one second (one transport).
+    transport_ms: u64,
     /// Test lane capacity override; production reads dynamic_lane_capacity.
     lane_cap: Option<[usize; 4]>,
     /// TUniversal at first vantage of a standing carrier (listing or docket).
@@ -878,6 +891,19 @@ impl Kernel {
         self.lane_cap = Some(cap);
     }
 
+    /// Measured transport in milliseconds. Standing T is TU ticks (seconds)
+    /// converted to transports: (ticks × 1000) / transport_ms.
+    pub fn set_transport_ms(&mut self, ms: u64) {
+        self.transport_ms = ms.max(1);
+    }
+
+    fn transport_ms(&self) -> u64 {
+        match self.transport_ms {
+            0 => 1000,
+            n => n,
+        }
+    }
+
     fn t_extent(&self, addr: &[u8; 32], now: u64) -> u64 {
         let tu = self
             .provisional_tu
@@ -885,7 +911,9 @@ impl Kernel {
             .copied()
             .or_else(|| self.standing_tu.get(addr).copied())
             .unwrap_or(now);
-        now.saturating_sub(tu).max(1)
+        let ticks = now.saturating_sub(tu).max(1);
+        let ms = ticks.saturating_mul(1000);
+        (ms / self.transport_ms()).max(1)
     }
 
     fn standing_mag(&self, addr: &[u8; 32], base: &[u64; 4]) -> [u64; 4] {
@@ -1937,6 +1965,11 @@ impl Kernel {
                 std::sync::Arc::new(self.composites.clone()),
             );
         }
+        let now = self.now_tu();
+        let mut standing_t = crate::network::nerve::Keyed::new();
+        for (elem, _) in &self.pending {
+            standing_t.insert(elem.address(), self.t_extent(&elem.address(), now));
+        }
         MarketView {
             language: self.language(),
             pending: std::sync::Arc::clone(&self.book.1),
@@ -1946,7 +1979,8 @@ impl Kernel {
             pressure: self.physics.pressure,
             pool: self.treasury.pool(),
             k_step: self.chain.next_step_index(),
-            tu: self.now_tu(),
+            tu: now,
+            standing_t: std::sync::Arc::new(standing_t),
             reserve: self.physics.reserve,
             gens,
             closure,
@@ -3035,7 +3069,13 @@ impl Kernel {
         for h in have {
             held.insert(*h, ());
         }
-        for addr in self.ruled.fiber(inv) {
+        // An empty mind is seeded from the root: coarsest ruled words first.
+        let addrs: Vec<[u8; 32]> = if inv.0.is_empty() {
+            self.syllabus_seed()
+        } else {
+            self.ruled.fiber(inv)
+        };
+        for addr in addrs {
             if held.contains(&addr) {
                 continue;
             }
@@ -4626,8 +4666,9 @@ impl Kernel {
             if !self.on_page.contains(&p.address()) {
                 continue;
             }
-            let mut mu = crate::economy::price(&p.magnitude(), &self.physics.pressure);
-            mu[2] = p.magnitude()[2].saturating_mul(1 + surface[2]);
+            let mut mag = p.magnitude();
+            mag[2] = self.t_extent(&p.address(), self.now_tu());
+            let mu = crate::economy::price(&mag, &self.physics.pressure);
             priced.push((p.clone(), mu));
         }
         (surface, priced)
