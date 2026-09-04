@@ -54,7 +54,7 @@ pub mod strokes {
     /// PUNCTURE: a held word's fiber deepens by a section an utterance
     /// carried and the listener verified. Returns the fibers deepened.
     pub fn puncture(
-        words: &mut [crate::transducer::element::Element],
+        words: &mut [std::sync::Arc<crate::transducer::element::Element>],
         index_of: impl Fn(&[u8; 32]) -> Option<usize>,
         cites: &[crate::anastome::dialogue::CiteWire],
     ) -> usize {

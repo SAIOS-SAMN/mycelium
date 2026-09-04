@@ -83,7 +83,7 @@ impl Sentence {
 /// receiving side of speech: the hearer's language deepens on what it
 /// verified, never on what it was told.
 pub fn puncture_from(
-    words: &mut [Element],
+    words: &mut [std::sync::Arc<Element>],
     index_of: impl Fn(&[u8; 32]) -> Option<usize>,
     cites: &[crate::anastome::dialogue::CiteWire],
 ) -> usize {
@@ -105,7 +105,7 @@ pub fn puncture_from(
         if same_charge.iter().any(|&k| held.get(k) == Some(&asg)) {
             continue;
         }
-        if words[i].puncture(asg) {
+        if std::sync::Arc::make_mut(&mut words[i]).puncture(asg) {
             deepened += 1;
         }
     }
@@ -639,33 +639,8 @@ pub fn after_support(g: &Germ) -> Vec<(i64, i64)> {
     out
 }
 
-fn supports_meet(a: &[(i64, i64)], b: &[(i64, i64)]) -> bool {
-    if a.is_empty() || b.is_empty() {
-        return false;
-    }
-    if overlap_positions(a, b).next().is_some() {
-        return true;
-    }
-    if encloses(a, b) || encloses(b, a) {
-        return true;
-    }
-    adjacent(a, b)
-}
-
 fn overlap_positions<'a>(a: &'a [(i64, i64)], b: &'a [(i64, i64)]) -> impl Iterator<Item = (i64, i64)> + 'a {
     a.iter().copied().filter(|p| b.binary_search(p).is_ok())
-}
-
-fn encloses(outer: &[(i64, i64)], inner: &[(i64, i64)]) -> bool {
-    !inner.is_empty() && inner.iter().all(|p| outer.binary_search(p).is_ok())
-}
-
-fn adjacent(a: &[(i64, i64)], b: &[(i64, i64)]) -> bool {
-    a.iter().any(|&(r, c)| {
-        [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)]
-            .iter()
-            .any(|p| b.binary_search(p).is_ok())
-    })
 }
 
 fn overlap_cells(a: &[(i64, i64)], b: &[(i64, i64)]) -> Vec<Cell> {

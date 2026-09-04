@@ -508,21 +508,18 @@ fn addr_of(
     addrs.get(id).cloned()
 }
 
-/// Remaining-room comparison on occupied lanes: more room wins; identity
-/// only when the room vector is equal on every occupied lane.
-fn room_cmp(a: &[u64; 4], b: &[u64; 4], lanes: &[u8]) -> std::cmp::Ordering {
-    for &l in lanes {
-        match a[l as usize].cmp(&b[l as usize]) {
-            std::cmp::Ordering::Equal => continue,
-            o => return o,
-        }
-    }
-    std::cmp::Ordering::Equal
+/// Dershowitz–Manna dominance on occupied lanes: `a` wins only when it is
+/// at least as large on every occupied lane and larger on one. Inverse of
+/// `economy::descends` (more remaining room, never a lane ordering).
+fn room_dominates(a: &[u64; 4], b: &[u64; 4], lanes: &[u8]) -> bool {
+    lanes.iter().all(|&l| a[l as usize] >= b[l as usize])
+        && lanes.iter().any(|&l| a[l as usize] > b[l as usize])
 }
 
 /// Home by incidence: intersection of cover fibers on every occupied lane,
-/// then the per-lane room vector on those lanes, then identity only when
-/// rooms are equal on every occupied lane.
+/// then remaining-room dominance on those lanes (a hypha wins only when its
+/// room is ≥ on every occupied lane and > on one), then identity when rooms
+/// are equal or incomparable.
 pub fn home(
     cover: &Cover,
     inv: &crate::transducer::stalk::Invariant,
@@ -558,11 +555,14 @@ pub fn home(
     let consider = |best: &mut Option<([u8; 32], String, [u64; 4])>, id: [u8; 32], addr: String, room: [u64; 4]| {
         match best {
             None => *best = Some((id, addr, room)),
-            Some((bid, _, broom)) => match room_cmp(&room, broom, &lanes) {
-                std::cmp::Ordering::Greater => *best = Some((id, addr, room)),
-                std::cmp::Ordering::Equal if id < *bid => *best = Some((id, addr, room)),
-                _ => {}
-            },
+            Some((bid, _, broom)) => {
+                if room_dominates(&room, broom, &lanes) {
+                    *best = Some((id, addr, room));
+                } else if !room_dominates(broom, &room, &lanes) && id < *bid {
+                    // Equal or incomparable: identity is the last tiebreak.
+                    *best = Some((id, addr, room));
+                }
+            }
         }
     };
     fiber.for_each(|id, _| {
@@ -640,6 +640,12 @@ mod cover_tests {
         rooms.insert(hi, [8, 8, 8, 8]);
         let (id, _) = home(&c, &inv(&[4]), &[1, 0, 0, 0], &rooms, &addrs, None);
         assert_eq!(id, hi, "more remaining room on the occupied lane homes there");
+        // Incomparable rooms on two occupied lanes: no lane is ranked above
+        // another, so identity is the tiebreak (lexicographic room would pick hi).
+        rooms.insert(lo, [2, 8, 8, 8]);
+        rooms.insert(hi, [8, 2, 8, 8]);
+        let (id, _) = home(&c, &inv(&[4]), &[1, 1, 0, 0], &rooms, &addrs, None);
+        assert_eq!(id, lo, "incomparable rooms fall to identity, never a lane order");
         rooms.insert(lo, [8, 8, 8, 8]);
         rooms.insert(hi, [8, 8, 8, 8]);
         // Novel chart: both have room; identity still wins.
