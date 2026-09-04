@@ -111,6 +111,10 @@ pub const ACT_DIGESTS: u8 = 0x10;
 /// Fetch request: `[ACT_FETCH][voice 32][len u8][inv u64·len][n u32][addr 32·n]`.
 /// Reply: the syllabus page shape.
 pub const ACT_FETCH: u8 = 0x11;
+/// Hypha-to-hypha court organ: cover, offer, installed. Clients never send these.
+pub const ACT_COVER: u8 = 0x20;
+pub const ACT_OFFER: u8 = 0x21;
+pub const ACT_INSTALLED: u8 = 0x22;
 
 /// THE PROBE (interrogative grammar): a tentative sentence spoken against an
 /// open listing — citations (word address, transport g, gauge coordinate)
@@ -361,6 +365,135 @@ pub fn decode_digests_reply(body: &[u8]) -> Option<Vec<crate::transducer::sheaf:
         out.push(crate::transducer::sheaf::StratumDigest { inv, count, root });
     }
     Some(out)
+}
+
+/// Cover: `[ACT_COVER][vk 32][alen u8][addr][n u32]([lane u8][invariant])*`
+pub fn encode_cover(vk: &[u8; 32], addr: &str, charts: &[(u8, crate::transducer::stalk::Invariant)]) -> Vec<u8> {
+    let mut out = vec![ACT_COVER];
+    out.extend_from_slice(vk);
+    let ab = addr.as_bytes();
+    out.push(ab.len().min(255) as u8);
+    out.extend_from_slice(&ab[..ab.len().min(255)]);
+    out.extend_from_slice(&(charts.len() as u32).to_le_bytes());
+    for (lane, inv) in charts {
+        out.push(*lane);
+        push_invariant(&mut out, inv);
+    }
+    out
+}
+
+pub fn decode_cover(body: &[u8]) -> Option<([u8; 32], String, Vec<(u8, crate::transducer::stalk::Invariant)>)> {
+    if body.first() != Some(&ACT_COVER) {
+        return None;
+    }
+    let vk: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    let alen = *body.get(33)? as usize;
+    let addr = String::from_utf8(body.get(34..34 + alen)?.to_vec()).ok()?;
+    let mut p = 34 + alen;
+    let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+    p += 4;
+    let mut charts = Vec::with_capacity(n.min(1024));
+    for _ in 0..n {
+        let lane = *body.get(p)?;
+        p += 1;
+        let inv = read_invariant(body, &mut p)?;
+        charts.push((lane, inv));
+    }
+    Some((vk, addr, charts))
+}
+
+/// Offer: `[ACT_OFFER][addr 32][elen u32][elem][nv u32][voices][deflation 32][k 8][sig 64]`
+pub fn encode_offer(
+    addr: &[u8; 32],
+    elem: &[u8],
+    voices: &[[u8; 32]],
+    deflation: &[u64; 4],
+    k: u64,
+    sig: &[u8; 64],
+) -> Vec<u8> {
+    let mut out = vec![ACT_OFFER];
+    out.extend_from_slice(addr);
+    out.extend_from_slice(&(elem.len() as u32).to_le_bytes());
+    out.extend_from_slice(elem);
+    out.extend_from_slice(&(voices.len() as u32).to_le_bytes());
+    for v in voices {
+        out.extend_from_slice(v);
+    }
+    push_mu(&mut out, deflation);
+    out.extend_from_slice(&k.to_le_bytes());
+    out.extend_from_slice(sig);
+    out
+}
+
+pub fn decode_offer(body: &[u8]) -> Option<([u8; 32], Vec<u8>, Vec<[u8; 32]>, [u64; 4], u64, [u8; 64])> {
+    if body.first() != Some(&ACT_OFFER) {
+        return None;
+    }
+    let addr: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    let elen = u32::from_le_bytes(body.get(33..37)?.try_into().ok()?) as usize;
+    let mut p = 37usize;
+    let elem = body.get(p..p + elen)?.to_vec();
+    p += elen;
+    let nv = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+    p += 4;
+    let mut voices = Vec::with_capacity(nv.min(16));
+    for _ in 0..nv {
+        voices.push(body.get(p..p + 32)?.try_into().ok()?);
+        p += 32;
+    }
+    let deflation = read_mu(body, &mut p)?;
+    let k = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
+    p += 8;
+    let sig: [u8; 64] = body.get(p..p + 64)?.try_into().ok()?;
+    Some((addr, elem, voices, deflation, k, sig))
+}
+
+/// Installed: `[ACT_INSTALLED][addr 32][elen u32][elem][sig_home 64][sig_peer 64]`
+pub fn encode_installed(addr: &[u8; 32], elem: &[u8], sig_home: &[u8; 64], sig_peer: &[u8; 64]) -> Vec<u8> {
+    let mut out = vec![ACT_INSTALLED];
+    out.extend_from_slice(addr);
+    out.extend_from_slice(&(elem.len() as u32).to_le_bytes());
+    out.extend_from_slice(elem);
+    out.extend_from_slice(sig_home);
+    out.extend_from_slice(sig_peer);
+    out
+}
+
+pub fn decode_installed(body: &[u8]) -> Option<([u8; 32], Vec<u8>, [u8; 64], [u8; 64])> {
+    if body.first() != Some(&ACT_INSTALLED) {
+        return None;
+    }
+    let addr: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    let elen = u32::from_le_bytes(body.get(33..37)?.try_into().ok()?) as usize;
+    let p = 37usize;
+    let elem = body.get(p..p + elen)?.to_vec();
+    let p = p + elen;
+    let sig_home: [u8; 64] = body.get(p..p + 64)?.try_into().ok()?;
+    let sig_peer: [u8; 64] = body.get(p + 64..p + 128)?.try_into().ok()?;
+    Some((addr, elem, sig_home, sig_peer))
+}
+
+/// Bytes of an Offer/Installed body that the signature covers (everything after the act except the trailing sigs).
+pub fn offer_signed_prefix(addr: &[u8; 32], elem: &[u8], voices: &[[u8; 32]], deflation: &[u64; 4], k: u64) -> Vec<u8> {
+    let mut out = Vec::new();
+    out.extend_from_slice(addr);
+    out.extend_from_slice(&(elem.len() as u32).to_le_bytes());
+    out.extend_from_slice(elem);
+    out.extend_from_slice(&(voices.len() as u32).to_le_bytes());
+    for v in voices {
+        out.extend_from_slice(v);
+    }
+    push_mu(&mut out, deflation);
+    out.extend_from_slice(&k.to_le_bytes());
+    out
+}
+
+pub fn installed_signed_prefix(addr: &[u8; 32], elem: &[u8]) -> Vec<u8> {
+    let mut out = Vec::new();
+    out.extend_from_slice(addr);
+    out.extend_from_slice(&(elem.len() as u32).to_le_bytes());
+    out.extend_from_slice(elem);
+    out
 }
 
 /// A fetch names every discordant chart with the asker's have-list in each;

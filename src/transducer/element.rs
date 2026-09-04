@@ -1318,6 +1318,17 @@ pub fn from_residual(g: &ResidualGerm) -> Element {
 /// diagonal, so a word at ρ ≠ (1,1) is a different word from its planar
 /// shadow (identity and substance both carry the fiber; only translation is
 /// quotiented). `frame` is (h_in, w_in, h_out, w_out).
+/// The unique listing key of a demand: the address of the framed residual.
+/// Intake, the book, quote, attest, probe, settle, task, and the nerve
+/// route all use this, never an unframed shadow.
+pub fn listing_key(chain: &[(i64, i64, u8, u8)], frame: &(usize, usize, usize, usize)) -> [u8; 32] {
+    from_residual_framed(&chain.to_vec(), frame).address()
+}
+
+/// Identity frame: no scale. Unframed speech uses this so its key matches
+/// a planar intake.
+pub const IDENTITY_FRAME: (usize, usize, usize, usize) = (1, 1, 1, 1);
+
 pub fn from_residual_framed(g: &ResidualGerm, frame: &(usize, usize, usize, usize)) -> Element {
     let mut e = from_residual(g);
     let (hi, wi, ho, wo) = *frame;

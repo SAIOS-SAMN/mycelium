@@ -612,6 +612,14 @@ pub struct Kernel {
     /// Unreachable listings for the court docket: the cavity is the
     /// element itself. Drained as the court pulls.
     cavities: Vec<Element>,
+    /// First-vantage words already Offered.
+    offered: crate::network::nerve::Keyed<()>,
+    /// The court organ's federation (ruled language) and index.
+    court_federation: Vec<([u8; 32], Element)>,
+    court_fed_index: crate::network::nerve::Keyed<usize>,
+    court_upheld: u64,
+    court_slashed: u64,
+    crt_imported: bool,
     /// THE SETTLEMENTS awaiting the court: (listing, its chain, the voice,
     /// the utterance, magnitude before, magnitude after). The court replays
     /// the utterance and measures the deflation itself — proof of
@@ -1479,6 +1487,9 @@ impl Kernel {
         self.provisional.remove(i);
         if ruling == RULING_UPHELD {
             self.ruled_admit(addr); // finalized here: it joins the ruled cover
+            if let Some(w) = self.word_at(addr).cloned() {
+                self.fed_admit(addr, w);
+            }
             self.treasury.release_award(addr)
         } else {
             let slash = ruling == RULING_SLASHED;
@@ -1505,6 +1516,188 @@ impl Kernel {
             }
             ok
         }
+    }
+
+    /// First vantage of the court organ: replay the provisional word.
+    /// Fail → slash with a journal reason. Pass → dialect on the basis, Offer ready.
+    pub fn court_first(&mut self, addr: &[u8; 32]) -> Result<Element, &'static str> {
+        let Some(i) = self.provisional.iter().position(|(a, _)| a == addr) else {
+            return Err("not on the docket");
+        };
+        let spoken = self.provisional[i].1.clone();
+        if let Some(reason) = crate::verdict::blind_replay(&spoken) {
+            eprintln!(
+                "  court slash {:02x}{:02x}… {reason}",
+                addr[0],
+                addr[1]
+            );
+            let _ = self.apply_verdict(addr, crate::anastome::dialogue::RULING_SLASHED);
+            self.court_slashed += 1;
+            return Err(reason);
+        }
+        if self.basis_index.get(addr).is_none() {
+            self.basis_push(spoken.clone(), [0; 32]);
+        }
+        self.offered.insert(*addr, ());
+        Ok(spoken)
+    }
+
+    /// Run first vantage on every provisional not yet Offered. Returns the
+    /// words that passed (to be signed and Offered on the nerve).
+    pub fn court_stroke(&mut self) -> Vec<([u8; 32], Element, Vec<[u8; 32]>, [u64; 4], u64)> {
+        let keys: Vec<[u8; 32]> = self
+            .provisional
+            .iter()
+            .map(|(a, _)| *a)
+            .filter(|a| self.offered.get(a).is_none())
+            .collect();
+        let mut out = Vec::new();
+        for addr in keys {
+            if let Ok(spoken) = self.court_first(&addr) {
+                let voices = self
+                    .treasury
+                    .escrowed_awards()
+                    .iter()
+                    .find(|(a, _, _, _)| a == &addr)
+                    .map(|(_, v, _, _)| v.clone())
+                    .unwrap_or_default();
+                let deflation = self.deflation_of(&addr);
+                let k = self.provisional_k.get(&addr).copied().unwrap_or(0);
+                out.push((addr, spoken, voices, deflation, k));
+            }
+        }
+        out
+    }
+
+    /// Second vantage: a peer's Offer, already signature-verified.
+    /// Replay through `rule`. Glue (Consilient / Admitted / Attached) → UPHELD + Installed payload.
+    pub fn accept_offer(&mut self, addr: &[u8; 32], spoken: Element, deflation: [u64; 4]) -> Option<Element> {
+        if let Some(reason) = crate::verdict::blind_replay(&spoken) {
+            eprintln!("  court offer slash {:02x}{:02x}… {reason}", addr[0], addr[1]);
+            return None;
+        }
+        let outcome = crate::verdict::rule(
+            &self.court_federation,
+            &self.court_fed_index,
+            &self.ruled,
+            addr,
+            Some(&spoken),
+            Some(&deflation),
+        );
+        match outcome {
+            crate::verdict::Ruling::Dialect(_) => {
+                eprintln!("  court dialect on {:02x}{:02x}…", addr[0], addr[1]);
+                None
+            }
+            crate::verdict::Ruling::Slashed(reason) => {
+                eprintln!("  court offer slash {:02x}{:02x}… {reason}", addr[0], addr[1]);
+                None
+            }
+            crate::verdict::Ruling::Consilient(_)
+            | crate::verdict::Ruling::Admitted(_)
+            | crate::verdict::Ruling::Attached { .. } => {
+                if self.basis_index.get(addr).is_none() {
+                    self.basis_push(spoken.clone(), [0; 32]);
+                }
+                if self.provisional.iter().any(|(a, _)| a == addr) {
+                    let _ = self.apply_verdict(addr, crate::anastome::dialogue::RULING_UPHELD);
+                } else {
+                    self.ruled_admit(addr);
+                    self.fed_admit(addr, spoken.clone());
+                }
+                self.court_upheld += 1;
+                Some(spoken)
+            }
+        }
+    }
+
+    /// An Installed from two organs: replay once, then admit. Never on signatures alone.
+    pub fn accept_installed(&mut self, addr: &[u8; 32], spoken: Element) -> bool {
+        if crate::verdict::blind_replay(&spoken).is_some() {
+            return false;
+        }
+        if spoken.is_connection() && spoken.letters().is_none() {
+            return false; // letterless history is never taught
+        }
+        if self.basis_index.get(addr).is_none() {
+            self.basis_push(spoken.clone(), [0; 32]);
+        }
+        self.ruled_admit(addr);
+        self.fed_admit(addr, spoken);
+        true
+    }
+
+    fn fed_admit(&mut self, addr: &[u8; 32], spoken: Element) {
+        if self.court_fed_index.get(addr).is_some() {
+            return;
+        }
+        self.court_fed_index.insert(*addr, self.court_federation.len());
+        self.court_federation.push((*addr, spoken));
+    }
+
+    /// Active cover: charts of open listings and of the ruled language, lane 0.
+    pub fn active_cover(&self) -> Vec<(u8, crate::transducer::stalk::Invariant)> {
+        let mut out = Vec::new();
+        for (p, _) in &self.pending {
+            out.push((0, crate::transducer::stalk::invariant_of(p)));
+        }
+        for (inv, _) in self.ruled.strata() {
+            out.push((0, inv));
+        }
+        out.sort_by(|a, b| a.1 .0.cmp(&b.1 .0));
+        out.dedup();
+        out
+    }
+
+    /// Unlist restored demands whose key is not this hypha's.
+    pub fn unlist_foreign(&mut self, home: impl Fn(&[u8; 32]) -> bool) {
+        let keys: Vec<[u8; 32]> = self
+            .pending
+            .iter()
+            .map(|(p, _)| p.address())
+            .filter(|a| !home(a))
+            .collect();
+        for k in keys {
+            self.unlist(&k, false);
+        }
+    }
+
+    /// Import a court.federation once as the initial ruled cover.
+    pub fn import_crt(&mut self, state: crate::court::ledger::CourtState) {
+        if self.crt_imported {
+            return;
+        }
+        self.crt_imported = true;
+        for (addr, elem) in state.federation {
+            let letterless = elem.is_connection() && elem.letters().is_none();
+            if self.basis_index.get(&addr).is_none() {
+                self.basis_insert(elem.clone(), [0; 32]);
+            }
+            if !letterless {
+                self.ruled_admit(&addr);
+            }
+            self.fed_admit(&addr, elem);
+        }
+        if !state.chain.receipts().is_empty() && self.chain.receipts().is_empty() {
+            self.chain = state.chain;
+        }
+    }
+
+    pub fn court_federation_len(&self) -> usize {
+        self.court_federation.len()
+    }
+
+    pub fn crt_imported(&self) -> bool {
+        self.crt_imported
+    }
+
+    pub fn offered(&self, addr: &[u8; 32]) -> bool {
+        self.offered.get(addr).is_some()
+    }
+
+    pub fn is_home_listing(&self, addr: &[u8; 32], closest_is_self: bool) -> bool {
+        let _ = addr;
+        closest_is_self
     }
 
     /// THE THERMODYNAMIC CAPACITY VECTOR — no static cap exists. Per lane:
@@ -2268,9 +2461,13 @@ impl Kernel {
                     // Seal the K-step receipt: the install IS a tick of algebraic
                     // time, parent-linked to the mesh's whole history.
                     self.append_step(addr, voice);
-                    self.basis_push(residual, voice);
                     self.complete_composite_child(&gaddr, voice); // lineage
-                    Outcome::Installed(self.basis.len() - 1)
+                    // The listing is settled. The basis grows only from the
+                    // court organ's first vantage, not from this quorum.
+                    match self.court_first(&addr) {
+                        Ok(_) => Outcome::Installed(self.basis_index.get(&addr).copied().unwrap_or(0)),
+                        Err(_) => Outcome::GermPending,
+                    }
                 } else {
                     // THE TORSION SOURCE: the open demand's pressure is the
                     // torsion the word actually carries. Every stored cycle
@@ -2847,6 +3044,15 @@ impl Kernel {
             out.extend_from_slice(&(eb.len() as u32).to_le_bytes());
             out.extend_from_slice(&eb);
         }
+        out.extend_from_slice(b"CRT1");
+        out.push(self.crt_imported as u8);
+        out.extend_from_slice(&(self.court_federation.len() as u32).to_le_bytes());
+        for (addr, elem) in &self.court_federation {
+            out.extend_from_slice(addr);
+            let eb = elem.to_bytes();
+            out.extend_from_slice(&(eb.len() as u32).to_le_bytes());
+            out.extend_from_slice(&eb);
+        }
         out
     }
 
@@ -3059,6 +3265,23 @@ impl Kernel {
                     let addr = elem.address();
                     kernel.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), addr);
                     kernel.cavity_book.insert(addr, elem);
+                }
+            }
+            if b.get(*pos..*pos + 4) == Some(b"CRT1") {
+                *pos += 4;
+                kernel.crt_imported = *b.get(*pos)? != 0;
+                *pos += 1;
+                let n = read_u32(b, pos)? as usize;
+                for _ in 0..n {
+                    let addr: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                    *pos += 32;
+                    let elen = read_u32(b, pos)? as usize;
+                    let mut ep = *pos;
+                    let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
+                    let elem = Element::from_bytes(&b[..end], &mut ep)?;
+                    *pos += elen;
+                    kernel.court_fed_index.insert(addr, kernel.court_federation.len());
+                    kernel.court_federation.push((addr, elem));
                 }
             }
             for (addr, entries) in kernel.field.entries() {

@@ -352,7 +352,7 @@ fn main() {
     // string on both sides. Speech on the nerve is signed with it and
     // accepted only from identities the router holds.
     let nerve_id = id_of(&addr);
-    let peers = flags(&args, "--peer");
+    let join_peers = flags(&args, "--peer");
 
     // P7 — durable state: the germinated basis + earned ledger persist across
     // restart. Default path is per-node; override with --state PATH.
@@ -389,6 +389,19 @@ fn main() {
             eprintln!("restored basis={} from {state_path}", k.basis_len());
         }
     }
+    let hypha_key = mycelium::court::identity::HyphaKey::load_or_mint(&format!("{state_path}.key"));
+    eprintln!("hypha identity vk {:02x}{:02x}…", hypha_key.vk_bytes()[0], hypha_key.vk_bytes()[1]);
+    if !kernel.lock().unwrap().crt_imported() {
+        let fed_path = std::path::Path::new(&state_path)
+            .parent()
+            .map(|p| p.join("court.federation"))
+            .unwrap_or_else(|| std::path::PathBuf::from("state/court.federation"));
+        if let Some(s) = mycelium::court::ledger::CourtState::load(fed_path.to_str().unwrap_or("state/court.federation")) {
+            let n = s.federation.len();
+            kernel.lock().unwrap().import_crt(s);
+            eprintln!("imported court federation {n} words into CRT1");
+        }
+    }
     // THE NODE'S OWN STAKE (P5): the hypha enrolls itself at its tier — the
     // genesis capitalization of its escrow pool. Every yield it ever quotes or
     // settles is paid FROM this pool; nothing is minted by a formula.
@@ -404,6 +417,10 @@ fn main() {
     // verified solve takes the bounty, replays collapse to the verification
     // floor), and INTAKES its train coboundaries onto the open market so the
     // language grows from the same authority that dispatches the work.
+    let mut router = Router::new();
+    for pr in &join_peers {
+        router.insert(id_of(pr), pr.clone());
+    }
     let registry = Arc::new(Mutex::new(mycelium::registry::TaskRegistry::new()));
     if let Some(corpus_dir) = flag(&args, "--corpus") {
         let mut files: Vec<_> = std::fs::read_dir(corpus_dir)
@@ -417,42 +434,47 @@ fn main() {
         let mut reg = registry.lock().unwrap();
         let mut k = kernel.lock().unwrap();
         let mut listed = 0usize;
+        let mut tasked = 0usize;
         for f in &files {
             let Ok(text) = std::fs::read_to_string(f) else { continue };
             let Some(task) = mycelium::arc::parse_task(&text) else { continue };
+            let mut home = false;
             for (a, b) in &task.train {
                 if let Some((mut chain, _, frame)) = mycelium::arc::refine_delta(a, b) {
                     chain.sort_unstable();
+                    let key = mycelium::transducer::element::listing_key(&chain, &frame);
+                    if rendezvous(&key, &nerve_id, &router).is_some() {
+                        continue;
+                    }
+                    home = true;
                     if k.intake(&chain, &frame) {
                         listed += 1;
                     }
                 }
             }
-            reg.register(task);
+            if home {
+                reg.register(task);
+                tasked += 1;
+            }
         }
-        // Settled states OVERLAY from disk after content re-registration — a
-        // restart must not resurrect settled bounties (the crash-loop mint).
+        k.unlist_foreign(|addr| rendezvous(addr, &nerve_id, &router).is_none());
         let restored = std::fs::read(format!("{state_path}.registry"))
             .map(|b| reg.overlay(&b))
             .unwrap_or(0);
         eprintln!(
-            "corpus registered: {} tasks from {corpus_dir} ({} unsolved, {listed} demands listed, {restored} settled states restored)",
-            reg.len(),
+            "corpus registered: {tasked} home tasks from {corpus_dir} ({} unsolved, {listed} demands listed, {restored} settled states restored)",
             reg.unsolved(),
         );
     }
-    // The XOR routing trie — O(bits) rendezvous lookup, built once (rebuilt on
-    // discovery churn later). No per-demand peer scan.
-    let mut router = Router::new();
-    for pr in &peers { router.insert(id_of(pr), pr.clone()); }
 
     let listener = TcpListener::bind(&addr).expect("bind");
     eprintln!(
-        "mycelium-hypha {:02x} tier {:?} bound {addr}; nerve peers {} {:?}",
+        "mycelium-hypha {:02x} tier {:?} bound {addr}; join {:?} vk {:02x}{:02x}…",
         id[0],
         tier,
-        peers.len(),
-        peers
+        join_peers,
+        hypha_key.vk_bytes()[0],
+        hypha_key.vk_bytes()[1],
     );
 
     // THE SYLLABUS (distributed cognition): every court-ratified word, in
@@ -565,6 +587,72 @@ fn main() {
     let (reflex_tx, reflex_rx) = std::sync::mpsc::sync_channel::<ReflexJob>(cores);
     let reflex_rx = Arc::new(Mutex::new(reflex_rx));
     let router = Arc::new(router);
+    let overlap: Arc<Mutex<Vec<([u8; 32], String, [u8; 32])>>> = Arc::new(Mutex::new(Vec::new()));
+    {
+        let kernel = Arc::clone(&kernel);
+        let nerve_tx = nerve_tx.clone();
+        let router = Arc::clone(&router);
+        let overlap = Arc::clone(&overlap);
+        let join = join_peers.clone();
+        let vk = hypha_key.vk_bytes();
+        let sk_bytes = hypha_key.sk.to_bytes();
+        let nerve_id = nerve_id;
+        let bind = addr.clone();
+        std::thread::spawn(move || {
+            let sk = ed25519_dalek::SigningKey::from_bytes(&sk_bytes);
+            loop {
+                std::thread::sleep(std::time::Duration::from_millis(
+                    mycelium::physics::reserve_max().max(50),
+                ));
+                let offers = match kernel.lock() {
+                    Ok(mut k) => k.court_stroke(),
+                    Err(_) => continue,
+                };
+                for (addr, spoken, voices, deflation, kstep) in offers {
+                    let elem = spoken.to_bytes();
+                    let prefix = dialogue::offer_signed_prefix(&addr, &elem, &voices, &deflation, kstep);
+                    let sig = {
+                        use ed25519_dalek::Signer;
+                        sk.sign(&prefix).to_bytes()
+                    };
+                    let body = dialogue::encode_offer(&addr, &elem, &voices, &deflation, kstep, &sig);
+                    let chart = mycelium::transducer::stalk::invariant_of(&spoken);
+                    let dests = {
+                        let ov = overlap.lock().unwrap();
+                        let hits: Vec<String> = ov.iter().map(|(_, a, _)| a.clone()).collect();
+                        if hits.is_empty() {
+                            rendezvous(&*blake3::hash(&chart.0.iter().flat_map(|x| x.to_le_bytes()).collect::<Vec<_>>()).as_bytes(), &nerve_id, &router)
+                                .into_iter()
+                                .collect()
+                        } else {
+                            hits
+                        }
+                    };
+                    for d in dests {
+                        let _ = nerve_tx.try_send((d, body.clone()));
+                    }
+                    eprintln!(
+                        "  court Offer {:02x}{:02x}… first vantage",
+                        addr[0],
+                        addr[1]
+                    );
+                }
+                let charts = kernel.lock().map(|k| k.active_cover()).unwrap_or_default();
+                let cover = dialogue::encode_cover(&vk, &bind, &charts);
+                let mut dests = join.clone();
+                if let Ok(ov) = overlap.lock() {
+                    for (_, a, _) in ov.iter() {
+                        if !dests.contains(a) {
+                            dests.push(a.clone());
+                        }
+                    }
+                }
+                for d in dests {
+                    let _ = nerve_tx.try_send((d, cover.clone()));
+                }
+            }
+        });
+    }
     for _ in 0..(cores / 2).max(1) {
         let rx = Arc::clone(&reflex_rx);
         let kernel = Arc::clone(&kernel);
@@ -653,37 +741,74 @@ fn main() {
             continue;
         }
 
-        // ── docket: the court pulls what awaits finality ─────────────────────
-        if kind == dialogue::ACT_DOCKET {
-            let Some((_cvoice, since_k, court_ticks)) = dialogue::decode_docket_request(&frame.body) else { continue };
-            // THE DOCKET AS A TRANSPORT BETWEEN TWO CLOCKS: the court states
-            // the k-step it heard to; what lies at or before it is
-            // acknowledged and leaves the docket; what lies past it is
-            // served, within one frame, and the rest on the next pull.
-            let (body, words, served, ncav) = {
-                let mut k = kernel.lock().unwrap();
-                k.settlements_heard_to(since_k);
-                let fresh: Vec<dialogue::Docket> = k
-                    .dockets_since(since_k)
-                    .into_iter()
-                    .map(|(addr, spoken, voices, mu, deflation, kk)| (addr, spoken.to_bytes(), voices, mu, deflation, kk))
-                    .collect();
-                let cavities: Vec<Vec<u8>> = k.cavities().iter().map(|e| e.to_bytes()).collect();
-                let (body, words, served, ncav) = dialogue::encode_docket_reply_paged(
-                    &fresh,
-                    k.settlements_since(since_k),
-                    &cavities,
-                    mycelium::network::wire::BODY_BUDGET,
-                );
-                k.cavities_heard(ncav);
-                (body, words, served, ncav)
-            };
-            if words + served + ncav > 0 {
-                let (s, g, t) = mycelium::chronometry::TUniversal::sgt_of(tuniversal.ticks().saturating_sub(court_ticks));
-                eprintln!("  docket served: {words} words, {served} settlements, {ncav} cavities past K={since_k}; court delta S:{s} G:{g} T:{t}");
+        if kind == dialogue::ACT_COVER {
+            if let Some((vk, from, charts)) = dialogue::decode_cover(&frame.body) {
+                let ours = kernel.lock().map(|k| k.active_cover()).unwrap_or_default();
+                let hit = charts.iter().any(|(_, inv)| ours.iter().any(|(_, o)| o == inv));
+                let pid = id_of(&from);
+                if let Ok(mut ov) = overlap.lock() {
+                    ov.retain(|(id, _, _)| *id != pid);
+                    if hit || ours.is_empty() {
+                        ov.push((pid, from.clone(), vk));
+                    }
+                }
+                let _ = s.write_all(&Frame { lane: frame.lane, body: Vec::new() }.encode().unwrap_or_default());
             }
-            let reply = Frame { lane: frame.lane, body };
-            let _ = s.write_all(&reply.encode().unwrap_or_default());
+            continue;
+        }
+        if kind == dialogue::ACT_OFFER {
+            if let Some((addr, bytes, voices, deflation, kstep, sig)) = dialogue::decode_offer(&frame.body) {
+                let prefix = dialogue::offer_signed_prefix(&addr, &bytes, &voices, &deflation, kstep);
+                let known = overlap.lock().map(|ov| ov.clone()).unwrap_or_default();
+                let ok = known.iter().any(|(_, _, vk)| mycelium::court::identity::verify(vk, &prefix, &sig));
+                let mut installed_body = None;
+                if ok {
+                    let mut pos = 0usize;
+                    if let Some(spoken) = mycelium::transducer::element::Element::from_bytes(&bytes, &mut pos) {
+                        if let Ok(mut k) = kernel.lock() {
+                            if let Some(elem) = k.accept_offer(&addr, spoken, deflation) {
+                                let eb = elem.to_bytes();
+                                let pre = dialogue::installed_signed_prefix(&addr, &eb);
+                                use ed25519_dalek::Signer;
+                                let sig_peer = hypha_key.sk.sign(&pre).to_bytes();
+                                installed_body = Some(dialogue::encode_installed(&addr, &eb, &sig, &sig_peer));
+                                eprintln!("  court Installed {:02x}{:02x}… second vantage", addr[0], addr[1]);
+                            }
+                        }
+                    }
+                }
+                if let Some(body) = installed_body {
+                    let dests: Vec<String> = overlap.lock().map(|ov| ov.iter().map(|(_, a, _)| a.clone()).collect()).unwrap_or_default();
+                    for d in dests {
+                        let _ = nerve_tx.try_send((d, body.clone()));
+                    }
+                }
+                let _ = s.write_all(&Frame { lane: frame.lane, body: Vec::new() }.encode().unwrap_or_default());
+            }
+            continue;
+        }
+        if kind == dialogue::ACT_INSTALLED {
+            if let Some((addr, bytes, sig_home, sig_peer)) = dialogue::decode_installed(&frame.body) {
+                let prefix = dialogue::installed_signed_prefix(&addr, &bytes);
+                let known = overlap.lock().map(|ov| ov.clone()).unwrap_or_default();
+                let nsig = known.iter().filter(|(_, _, vk)| {
+                    mycelium::court::identity::verify(vk, &prefix, &sig_home)
+                        || mycelium::court::identity::verify(vk, &prefix, &sig_peer)
+                }).count();
+                let self_ok = mycelium::court::identity::verify(&hypha_key.vk_bytes(), &prefix, &sig_home)
+                    || mycelium::court::identity::verify(&hypha_key.vk_bytes(), &prefix, &sig_peer);
+                if nsig + (self_ok as usize) >= 2 {
+                    let mut pos = 0usize;
+                    if let Some(spoken) = mycelium::transducer::element::Element::from_bytes(&bytes, &mut pos) {
+                        if let Ok(mut k) = kernel.lock() {
+                            if k.accept_installed(&addr, spoken) {
+                                eprintln!("  court admitted Installed {:02x}{:02x}…", addr[0], addr[1]);
+                            }
+                        }
+                    }
+                }
+                let _ = s.write_all(&Frame { lane: frame.lane, body: Vec::new() }.encode().unwrap_or_default());
+            }
             continue;
         }
 
@@ -830,7 +955,7 @@ fn main() {
         if kind == dialogue::ACT_PEERS {
             if dialogue::decode_peers_request(&frame.body).is_some() {
                 let mut nerve_addrs = vec![addr.clone()];
-                nerve_addrs.extend(peers.iter().cloned());
+                nerve_addrs.extend(join_peers.iter().cloned());
                 let reply = Frame { lane: frame.lane, body: dialogue::encode_peers_reply(&nerve_addrs) };
                 let _ = s.write_all(&reply.encode().unwrap_or_default());
             }

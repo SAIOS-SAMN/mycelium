@@ -89,10 +89,8 @@ pub struct Session {
     kernel: Kernel,
     /// The voice this session is the mouth of.
     voice: crate::voice::Voice,
-    /// Consecutive failed exchanges — the measured transport impedance Z.
-    /// Interior mutability: impedance is perception, updated by every
-    /// exchange regardless of the calling method's own mutability.
-    resistance: std::cell::Cell<u64>,
+    /// Consecutive failed exchanges per hypha address.
+    resistance: RefCell<std::collections::HashMap<String, u64>>,
     /// THE NERVE, as this entity holds it: every hypha it has learned of,
     /// placed by the same XOR router the hyphas use, so an act carrying a
     /// key (a listing, a task, a word) is spoken to that key's home and a
@@ -135,7 +133,7 @@ impl Session {
             addr: addr.to_string(),
             kernel,
             voice,
-            resistance: std::cell::Cell::new(0),
+            resistance: RefCell::new(std::collections::HashMap::new()),
             router,
             peers: vec![addr.to_string()],
             strokes: std::cell::Cell::new(0),
@@ -167,6 +165,14 @@ impl Session {
         &self.peers
     }
 
+    pub fn add_peer(&mut self, addr: &str) {
+        if self.peers.iter().any(|p| p == addr) {
+            return;
+        }
+        self.router.insert(*blake3::hash(addr.as_bytes()).as_bytes(), addr.to_string());
+        self.peers.push(addr.to_string());
+    }
+
     /// Speak an act carrying a key to that key's home.
     pub fn speak_keyed(&self, key: &[u8; 32], act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         let addr = self.route(key);
@@ -189,14 +195,23 @@ impl Session {
 
     /// The measured impedance Z: consecutive failed exchanges.
     pub fn impedance(&self) -> u64 {
-        self.resistance.get()
+        self.resistance.borrow().values().copied().max().unwrap_or(0)
+    }
+
+    fn z_at(&self, addr: &str) -> u64 {
+        self.resistance.borrow().get(addr).copied().unwrap_or(0)
+    }
+
+    fn occluded_at(&self, addr: &str) -> bool {
+        let cycle = (crate::physics::reserve_max() / crate::physics::spend_unit()).max(1);
+        self.z_at(addr) >= cycle
     }
 
     /// The perceived transport aperture, derived from the impedance at the
     /// ratio-law boundary: a full stroke-cycle of consecutive failures
     /// (reserve ÷ spend strokes) reads as occlusion.
     pub fn transport(&self) -> TransportAperture {
-        let z = self.resistance.get();
+        let z = self.impedance();
         let cycle = (crate::physics::reserve_max() / crate::physics::spend_unit()).max(1);
         if z == 0 {
             TransportAperture::Open
@@ -230,9 +245,7 @@ impl Session {
     /// SPEAK a `demand` — this kernel's INDEPENDENT derivation of an open
     /// residual with its citations (empty: irreducible for this voice).
     pub fn attest(&self, chain: &[(i64, i64, u8, u8)], cites: &[dialogue::CiteWire]) -> io::Result<Reply> {
-        // The demand goes to the listing's home on the nerve: the address of
-        // the germ the chain would be — the same key every hypha routes by.
-        let key = crate::transducer::element::from_residual(&chain.to_vec()).address();
+        let key = crate::transducer::element::listing_key(chain, &crate::transducer::element::IDENTITY_FRAME);
         let body = self.speak_keyed(&key, dialogue::encode_demand(&self.kernel.voice, chain, cites))?;
         Ok(decode_reply(&body))
     }
@@ -250,30 +263,42 @@ impl Session {
     /// open-demand market's top clusters, each carrying its chain so this kernel
     /// can actually attempt the reduction.
     pub fn quote(&self, charts: &[crate::transducer::stalk::Invariant]) -> io::Result<YieldQuote> {
-        // Quotes walk the nerve in turn: one hypha per stroke, so every book
-        // is thought about by every voice and no book is a monologue.
         let n = self.strokes.get();
         self.strokes.set(n.wrapping_add(1));
-        let addr = self.peers[(n as usize) % self.peers.len().max(1)].clone();
-        let body = self.exchange_at(
-            &addr,
-            dialogue::encode_quote_request_charts(&self.kernel.voice, charts),
-        )?;
-        let (surface, k, items) = dialogue::decode_quote_reply(&body)
-            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
-        Ok(YieldQuote {
-            surface,
-            k,
-            clusters: items
-                .into_iter()
-                .map(|(address, mu, chain, open)| Cluster {
-                    address,
-                    mu,
-                    chain,
-                    open,
-                })
-                .collect(),
-        })
+        let mut last_err = io::Error::new(io::ErrorKind::NotConnected, "no hypha");
+        let start = (n as usize) % self.peers.len().max(1);
+        let npeers = self.peers.len().max(1);
+        let any_open = (0..npeers).any(|i| !self.occluded_at(&self.peers[(start + i) % npeers]));
+        for i in 0..npeers {
+            let addr = self.peers[(start + i) % npeers].clone();
+            if any_open && self.occluded_at(&addr) {
+                continue;
+            }
+            match self.exchange_at(
+                &addr,
+                dialogue::encode_quote_request_charts(&self.kernel.voice, charts),
+            ) {
+                Ok(body) => {
+                    let (surface, k, items) = dialogue::decode_quote_reply(&body)
+                        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
+                    return Ok(YieldQuote {
+                        surface,
+                        k,
+                        clusters: items
+                            .into_iter()
+                            .map(|(address, mu, chain, open)| Cluster {
+                                address,
+                                mu,
+                                chain,
+                                open,
+                            })
+                            .collect(),
+                    });
+                }
+                Err(e) => last_err = e,
+            }
+        }
+        Err(last_err)
     }
 
     /// One framed exchange: dial, speak the act, read the reply body.
@@ -305,9 +330,13 @@ impl Session {
         // by one stroke, a refused or timed-out one raises it by one, so a
         // judge deferring most of the time reads as sustained resistance
         // even when some acts pass.
-        match (&out, deferred) {
-            (Ok(_), false) => self.resistance.set(self.resistance.get().saturating_sub(1)),
-            _ => self.resistance.set(self.resistance.get().saturating_add(1)),
+        {
+            let mut r = self.resistance.borrow_mut();
+            let z = r.entry(addr.to_string()).or_insert(0);
+            match (&out, deferred) {
+                (Ok(_), false) => *z = z.saturating_sub(1),
+                _ => *z = z.saturating_add(1),
+            }
         }
         if deferred {
             return Err(io::Error::new(io::ErrorKind::WouldBlock, "deferred by the judge"));
@@ -815,9 +844,15 @@ pub struct Entity {
     /// Listings this mind has opened an axis on (Vec-of-relations, keyed by
     /// listing address on read): an axis is opened once per listing.
     opened: Vec<[u8; 32]>,
+    /// Remainders relocated off the bag: the pivot still reads them.
+    thought_cavities: Vec<(crate::transducer::stalk::Invariant, Vec<(i64, i64, u8, u8)>, bool)>,
 }
 
 impl Entity {
+    pub fn add_hypha(&mut self, addr: &str) {
+        self.session.add_peer(addr);
+    }
+
     pub fn open(addr: &str, kernel: Kernel) -> Self {
         let mut session = Session::open(addr, kernel);
         session.discover();
@@ -832,6 +867,7 @@ impl Entity {
             thoughts: Vec::new(),
             thought_gen: 0,
             opened: Vec::new(),
+            thought_cavities: Vec::new(),
         }
     }
 
@@ -1214,7 +1250,8 @@ impl Entity {
         }
         let cap = crate::physics::reserve_max() as usize;
         if self.thoughts.len() >= cap {
-            self.thoughts.remove(0);
+            let stale = self.thoughts.remove(0);
+            self.thought_cavities.push(stale);
         }
         self.thoughts.push((inv, remainder, false));
     }
@@ -1291,6 +1328,11 @@ impl Entity {
                     *dirty = true;
                 }
             }
+            for (inv, _, dirty) in &mut self.thought_cavities {
+                if added.iter().any(|a| a == inv) {
+                    *dirty = true;
+                }
+            }
         }
         let mut spoken = 0usize;
         let mut i = 0usize;
@@ -1300,6 +1342,17 @@ impl Entity {
                 continue;
             }
             let remainder = self.thoughts.remove(i).1;
+            if self.attest(&remainder, &[]).is_ok() {
+                spoken += 1;
+            }
+        }
+        let mut i = 0usize;
+        while i < self.thought_cavities.len() {
+            if !self.thought_cavities[i].2 {
+                i += 1;
+                continue;
+            }
+            let remainder = self.thought_cavities.remove(i).1;
             if self.attest(&remainder, &[]).is_ok() {
                 spoken += 1;
             }

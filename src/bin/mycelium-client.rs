@@ -39,6 +39,9 @@ use std::time::Instant;
 fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
     args.windows(2).find(|w| w[0] == name).map(|w| w[1].as_str())
 }
+fn flags<'a>(args: &'a [String], name: &str) -> Vec<&'a str> {
+    args.windows(2).filter(|w| w[0] == name).map(|w| w[1].as_str()).collect()
+}
 fn has(args: &[String], name: &str) -> bool {
     args.iter().any(|a| a == name)
 }
@@ -186,10 +189,11 @@ fn conductor_cursor(path: &str) -> usize {
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    let addr = args
-        .get(1)
-        .filter(|a| !a.starts_with("--"))
+    let hyphas: Vec<String> = flags(&args, "--hypha").into_iter().map(String::from).collect();
+    let addr = hyphas
+        .first()
         .cloned()
+        .or_else(|| args.get(1).filter(|a| !a.starts_with("--")).cloned())
         .unwrap_or_else(|| "127.0.0.1:7500".to_string());
     let name = flag(&args, "--kernel").unwrap_or("worker").to_string();
     let state_dir = flag(&args, "--state").unwrap_or("state").to_string();
@@ -220,6 +224,9 @@ fn main() {
     }
 
     let mut entity = Entity::open_persistent(&addr, Kernel::named(&name), &genome_path);
+    for h in &hyphas {
+        entity.add_hypha(h);
+    }
     eprintln!(
         "mycelium-client '{name}' → {addr}; genome {} words{}{}",
         entity.epigenome.genome_len(),
@@ -402,7 +409,7 @@ fn main() {
         // impedance is already perceived); the answer is patience, not
         // repetition.
         lap("feed");
-        match if occluded { Ok(YieldQuote { surface: [0; 4], k: k_step, clusters: Vec::new() }) } else { entity.quote() } {
+        match entity.quote() {
             Ok(q) => {
                 k_step = q.k;
                 entity.at(q.k);
@@ -536,7 +543,7 @@ fn main() {
         // the hypha's authoritative registry — study the family, think the
         // tests through, submit. The REGISTRY rules bounty vs floor
         // (anti-replay yield collapse); unique solves count ONLY on BOUNTY.
-        if let Ok(Some((tid, train, tests))) = if occluded { Ok(None) } else { entity.pull_task() } {
+        if let Ok(Some((tid, train, tests))) = entity.pull_task() {
             // The family is comprehended as a connection in the entity's own
             // algebra; every test is spoken through it, or the family's
             // residual is the demand it raises.
@@ -619,7 +626,7 @@ fn main() {
             lap("task");
             // Syllabus and sheaf sync live on the depletion dwell so the
             // door serves quotes and percepts on the hot stroke.
-            if !occluded {
+            {
                 // THE PIVOT: a held thought whose chart the language moved on
                 // becomes a demand on the book; the bag is not a queue.
                 let pivoted = entity.pivot_thoughts();
