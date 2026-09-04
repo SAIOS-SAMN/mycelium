@@ -342,17 +342,20 @@ impl Contemplation {
     /// re-gauges; Congruent merges with a torsion axis; Class keeps both
     /// and writes each into the other's horizon. Zero volume never merges.
     fn decide_neighbors(&mut self, key: [u8; 32]) {
-        let cells: Vec<CechCell> = self.complex.link(&key, 1);
-        for cell in cells {
-            if !matches!(cell.fill, Fill::Open) {
+        let keys = self.complex.link(&key, 1);
+        for ck in keys {
+            let Some((fill, volume, vertices)) = self.complex.cell(&ck).map(|c| (c.fill.clone(), c.volume, c.vertices.clone())) else {
+                continue;
+            };
+            if !matches!(fill, Fill::Open) {
                 continue;
             }
-            let vol_nz = cell.volume.iter().any(|&x| x > 0);
-            let outcome = self.complex.fill(&cell.key());
+            let vol_nz = volume.iter().any(|&x| x > 0);
+            let outcome = self.complex.fill(&ck);
             match outcome {
                 Fill::Filled(gamma) if vol_nz => {
                     self.fills += 1;
-                    for v in &cell.vertices {
+                    for v in &vertices {
                         if let Some(b) = self.bubbles.get_mut(v) {
                             let keys: Vec<[u8; 32]> =
                                 b.nerve.sections.fiber(&ROOT).map(|(k, _)| *k).collect();
@@ -363,13 +366,13 @@ impl Contemplation {
                             }
                         }
                     }
-                    let _ = self.merge(&cell.vertices);
+                    let _ = self.merge(&vertices);
                     return;
                 }
                 Fill::Congruent(g, ell) if vol_nz => {
                     self.torsion_merges += 1;
-                    let ends = [cell.vertices[0], cell.vertices.get(1).copied().unwrap_or(cell.vertices[0])];
-                    if let Some(nk) = self.merge(&cell.vertices) {
+                    let ends = [vertices[0], vertices.get(1).copied().unwrap_or(vertices[0])];
+                    if let Some(nk) = self.merge(&vertices) {
                         if let Some(b) = self.bubbles.get_mut(&nk) {
                             b.nerve.file_congruent(ends[0], ends[1], g, ell);
                         }
@@ -380,11 +383,10 @@ impl Contemplation {
                 Fill::Filled(_) | Fill::Congruent(_, _) => {}
                 Fill::Class(r) => {
                     self.classes += 1;
-                    let deg = cell.degree() as u8;
-                    let hk = cell.key();
-                    for v in &cell.vertices {
+                    let deg = vertices.len().saturating_sub(1) as u8;
+                    for v in &vertices {
                         if let Some(b) = self.bubbles.get_mut(v) {
-                            b.horizon.insert(hk, (r.clone(), deg));
+                            b.horizon.insert(ck, (r.clone(), deg));
                         }
                     }
                 }
@@ -520,11 +522,16 @@ impl Contemplation {
         let mut stack = vec![*start];
         seen.insert(*start, ());
         while let Some(v) = stack.pop() {
-            for cell in self.complex.link(&v, 1) {
-                if !matches!(cell.fill, Fill::Filled(_)) {
+            for ck in self.complex.link(&v, 1) {
+                let Some((fill, vertices)) = self.complex.cell(&ck).map(|c| {
+                    (matches!(c.fill, Fill::Filled(_)), c.vertices.clone())
+                }) else {
+                    continue;
+                };
+                if !fill {
                     continue;
                 }
-                for u in &cell.vertices {
+                for u in &vertices {
                     if !seen.contains(u) {
                         seen.insert(*u, ());
                         stack.push(*u);
@@ -545,7 +552,10 @@ impl Contemplation {
         }
         // index: vertices of this component; each cell from that vertex's link
         for v in verts {
-            for cell in self.complex.link_of(v) {
+            for ck in self.complex.link_of(v) {
+                let Some(cell) = self.complex.cell(&ck) else {
+                    continue;
+                };
                 if cell.degree() == 0 {
                     continue;
                 }
@@ -610,20 +620,37 @@ impl Contemplation {
                 break;
             }
             // index: link of this bubble
-            let cells: Vec<CechCell> = self.complex.link_of(bk);
-            for cell in cells {
+            let cells = self.complex.link_of(bk);
+            for key in cells {
                 if !budget.spend() {
                     break;
                 }
-                if cell.degree() == 0 || !matches!(cell.fill, Fill::Open) {
+                let Some((d, fill_open, coeff_id, v0, v1, vertices)) = self.complex.cell(&key).map(|c| {
+                    (
+                        c.degree(),
+                        matches!(c.fill, Fill::Open),
+                        c.coefficient.is_identity(),
+                        c.vertices.first().copied(),
+                        c.vertices.get(1).copied(),
+                        c.vertices.clone(),
+                    )
+                }) else {
+                    continue;
+                };
+                if d == 0 || !fill_open {
                     continue;
                 }
-                let key = cell.key();
-                let d = cell.degree();
-                let outcome = if d == 1 && !cell.coefficient.is_identity() {
+                let outcome = if d == 1 && !coeff_id {
                     match &word_rotor {
-                        Some(g) if *g == cell.coefficient || g.inverse().as_ref() == Some(&cell.coefficient) => {
-                            self.complex.fill_by_gauge(&key, g)
+                        Some(g) => {
+                            let coeff_hit = self.complex.cell(&key).is_some_and(|c| {
+                                *g == c.coefficient || g.inverse().as_ref() == Some(&c.coefficient)
+                            });
+                            if coeff_hit {
+                                self.complex.fill_by_gauge(&key, g)
+                            } else {
+                                self.complex.fill(&key)
+                            }
                         }
                         _ => self.complex.fill(&key),
                     }
@@ -635,11 +662,13 @@ impl Contemplation {
                             fills += 1;
                             self.fills += 1;
                             if d == 1 && !gamma.is_identity() {
-                                if let Some(t) = element::from_translation(&gamma, cell.vertices[0], cell.vertices[1]) {
-                                    spoken.push(t);
+                                if let (Some(a), Some(b)) = (v0, v1) {
+                                    if let Some(t) = element::from_translation(&gamma, a, b) {
+                                        spoken.push(t);
+                                    }
                                 }
                             }
-                            if let Some(merged) = self.merge(&cell.vertices) {
+                            if let Some(merged) = self.merge(&vertices) {
                                 let comp = self.component_of(&merged);
                                 if self.component_closed(&comp) {
                                     if let Some(e) = self.form_thought(&comp) {
@@ -657,10 +686,10 @@ impl Contemplation {
                         }
                         Fill::Congruent(g, ell) => {
                             self.torsion_merges += 1;
-                            if let Some(merged) = self.merge(&cell.vertices) {
+                            if let Some(merged) = self.merge(&vertices) {
                                 if let Some(b) = self.bubbles.get_mut(&merged) {
-                                    let a = cell.vertices[0];
-                                    let c = cell.vertices.get(1).copied().unwrap_or(a);
+                                    let a = vertices[0];
+                                    let c = vertices.get(1).copied().unwrap_or(a);
                                     b.nerve.file_congruent(a, c, g, ell);
                                 }
                             }
@@ -670,7 +699,7 @@ impl Contemplation {
                             self.classes += 1;
                             let deg = d as u8;
                             let hk = key;
-                            for v in &cell.vertices {
+                            for v in &vertices {
                                 if let Some(b) = self.bubbles.get_mut(v) {
                                     b.horizon.insert(hk, (r.clone(), deg));
                                 }

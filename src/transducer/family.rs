@@ -473,7 +473,13 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
     out
 }
 
-fn germ_of_body(source: Option<&Body>, target: Option<&Body>, v: Versor, word: super::alphabet::Word) -> super::sentence::Germ {
+fn germ_of_body(
+    source: Option<&Body>,
+    target: Option<&Body>,
+    v: Versor,
+    word: super::alphabet::Word,
+    kind: super::peel::ShellKind,
+) -> super::sentence::Germ {
     let mut chain = Vec::new();
     match (source, target) {
         (Some(a), Some(b)) => {
@@ -508,68 +514,204 @@ fn germ_of_body(source: Option<&Body>, target: Option<&Body>, v: Versor, word: s
         chain,
         source: source.map(|b| b.moduli.clone()),
         target: target.map(|b| b.moduli.clone()),
+        kind,
+        shift: None,
     }
 }
 
-fn pair_nerve(a: &Grid, b: &Grid) -> super::sentence::Nerve {
+fn word_of_versor(v: &Versor) -> super::alphabet::Word {
+    element::affine_of(v)
+        .and_then(|aff| {
+            (aff.len() >= 2 && aff[0].len() >= 2).then(|| {
+                [[aff[0][0].clone(), aff[0][1].clone()], [aff[1][0].clone(), aff[1][1].clone()]]
+            })
+        })
+        .and_then(|block| super::alphabet::spell(&block).map(|s| s.word))
+        .unwrap_or_else(super::alphabet::Word::identity)
+}
+
+fn spellable(v: &Versor) -> bool {
+    let Some(aff) = element::affine_of(v) else {
+        return false;
+    };
+    if aff.len() < 2 || aff[0].len() < 2 {
+        return false;
+    }
+    let block = [[aff[0][0].clone(), aff[0][1].clone()], [aff[1][0].clone(), aff[1][1].clone()]];
+    super::alphabet::spell(&block).is_some()
+}
+
+fn frame_chart(f: (usize, usize)) -> Invariant {
+    Invariant(vec![u64::MAX, f.0 as u64, f.1 as u64])
+}
+
+fn frame_border(f: (usize, usize)) -> Vec<(i64, i64, u8, u8)> {
+    let (h, w) = (f.0 as i64, f.1 as i64);
+    if h <= 0 || w <= 0 {
+        return Vec::new();
+    }
+    let mut chain = Vec::new();
+    for r in 0..h {
+        chain.push((r, 0, 0, 0));
+        if w > 1 {
+            chain.push((r, w - 1, 0, 0));
+        }
+    }
+    for c in 0..w {
+        chain.push((0, c, 0, 0));
+        if h > 1 {
+            chain.push((h - 1, c, 0, 0));
+        }
+    }
+    chain.sort_unstable();
+    chain.dedup();
+    chain
+}
+
+fn frame_germ(a: &Grid, b: &Grid) -> super::sentence::Germ {
+    let (fa, fb) = (frame_of(a), frame_of(b));
+    let chain = frame_border(fb);
+    let addr = element::from_residual(&chain).address();
+    super::sentence::Germ {
+        address: addr,
+        versor: element::identity_versor(),
+        word: super::alphabet::Word::identity(),
+        chain,
+        source: Some(frame_chart(fa)),
+        target: Some(frame_chart(fb)),
+        kind: super::peel::ShellKind::Frame,
+        shift: None,
+    }
+}
+
+struct Cand {
+    body: Body,
+    kind: super::peel::ShellKind,
+    parent: usize,
+}
+
+fn scene_cands(grid: &Grid, scale: Option<((usize, usize), (usize, usize))>) -> Vec<Cand> {
+    let mut out = Vec::new();
+    // index: bodies of this scene; shells are peel fibre, not extra vertices
+    for (p, b) in perceive(grid).into_iter().enumerate() {
+        out.push(Cand { body: b.clone(), kind: super::peel::ShellKind::Whole, parent: p });
+        for shell in super::peel::peel_body_scaled(&b.cells, scale) {
+            if shell.kind == super::peel::ShellKind::Whole || shell.cells.is_empty() || shell.cells == b.cells {
+                continue;
+            }
+            out.push(Cand { body: body_of(shell.cells), kind: shell.kind, parent: p });
+        }
+    }
+    out
+}
+
+fn pair_rank(ic: &Cand, oc: &Cand) -> Option<(u8, Carriage)> {
+    if oc.kind != super::peel::ShellKind::Whole {
+        return None;
+    }
+    let car = carriage(&ic.body, &oc.body)?;
+    if !spellable(&car.v) {
+        return None;
+    }
+    let exact = ic.body.moduli == oc.body.moduli;
+    let r = match (exact, ic.kind == super::peel::ShellKind::Whole) {
+        (true, true) => 0,
+        (true, false) => 1,
+        (false, true) => 2,
+        (false, false) => 3,
+    };
+    Some((r, car))
+}
+
+fn mark_parent(used: &mut [bool], cands: &[Cand], idx: usize) {
+    let p = cands[idx].parent;
+    for (k, c) in cands.iter().enumerate() {
+        if c.parent == p {
+            used[k] = true;
+        }
+    }
+}
+
+fn pair_nerve(a: &Grid, b: &Grid, scale: Option<((usize, usize), (usize, usize))>) -> super::sentence::Nerve {
     use super::sentence::{assemble, close};
-    let ins = perceive(a);
-    let outs = perceive(b);
+    let ins = scene_cands(a, scale);
+    let outs = scene_cands(b, scale);
     let mut used_in = vec![false; ins.len()];
-    let mut germs = Vec::new();
-    for ob in &outs {
-        let hit = ins.iter().enumerate().find(|(i, ib)| !used_in[*i] && ib.moduli == ob.moduli && carriage(ib, ob).is_some());
-        match hit {
-            Some((i, ib)) => {
-                used_in[i] = true;
-                if let Some(car) = carriage(ib, ob) {
-                    let word = element::affine_of(&car.v)
-                        .and_then(|aff| {
-                            (aff.len() >= 2 && aff[0].len() >= 2).then(|| {
-                                [[aff[0][0].clone(), aff[0][1].clone()], [aff[1][0].clone(), aff[1][1].clone()]]
-                            })
-                        })
-                        .and_then(|block| super::alphabet::spell(&block).map(|s| s.word))
-                        .unwrap_or_else(super::alphabet::Word::identity);
-                    germs.push(germ_of_body(Some(ib), Some(ob), car.v, word));
+    let mut used_out = vec![false; outs.len()];
+    let mut pairs: Vec<(usize, usize, Carriage)> = Vec::new();
+    let mut class = false;
+    // index: peel of this pair's bodies, one rank at a time; a body is one vertex
+    for want in 0u8..=3 {
+        let mut edges: Vec<(usize, usize, Carriage)> = Vec::new();
+        for (i, ic) in ins.iter().enumerate() {
+            if used_in[i] {
+                continue;
+            }
+            for (j, oc) in outs.iter().enumerate() {
+                if used_out[j] {
+                    continue;
+                }
+                if let Some((r, car)) = pair_rank(ic, oc) {
+                    if r == want {
+                        edges.push((i, j, car));
+                    }
                 }
             }
-            None => {
-                germs.push(germ_of_body(None, Some(ob), element::identity_versor(), super::alphabet::Word::identity()));
-            }
+        }
+        let mut din = vec![0u8; ins.len()];
+        let mut dout = vec![0u8; outs.len()];
+        for (i, j, _) in &edges {
+            din[*i] = din[*i].saturating_add(1);
+            dout[*j] = dout[*j].saturating_add(1);
+        }
+        if din.iter().any(|&d| d > 1) || dout.iter().any(|&d| d > 1) {
+            class = true;
+            break;
+        }
+        for (i, j, car) in edges {
+            mark_parent(&mut used_in, &ins, i);
+            mark_parent(&mut used_out, &outs, j);
+            pairs.push((i, j, car));
         }
     }
-    for (i, ib) in ins.iter().enumerate() {
-        if !used_in[i] {
-            germs.push(germ_of_body(Some(ib), None, element::identity_versor(), super::alphabet::Word::identity()));
+    if class {
+        let mut n = assemble(Vec::new(), Vec::new());
+        n.class = Some((super::alphabet::Rotor::identity(), 1));
+        return n;
+    }
+    let mut germs = vec![frame_germ(a, b)];
+    for (i, j, car) in pairs {
+        let kind = ins[i].kind;
+        let word = word_of_versor(&car.v);
+        germs.push(germ_of_body(
+            Some(&ins[i].body),
+            Some(&outs[j].body),
+            car.v,
+            word,
+            kind,
+        ));
+    }
+    // unmatched shells are not germs; unmatched wholes are created or erased
+    for (j, oc) in outs.iter().enumerate() {
+        if !used_out[j] && oc.kind == super::peel::ShellKind::Whole {
+            germs.push(germ_of_body(
+                None,
+                Some(&oc.body),
+                element::identity_versor(),
+                super::alphabet::Word::identity(),
+                super::peel::ShellKind::Whole,
+            ));
         }
     }
-    for body in ins.iter().chain(outs.iter()) {
-        for shell in super::peel::peel_body(&body.cells) {
-            if matches!(
-                shell.kind,
-                super::peel::ShellKind::Whole
-                    | super::peel::ShellKind::Cut
-                    | super::peel::ShellKind::Magnified
-                    | super::peel::ShellKind::Reduced
-                    | super::peel::ShellKind::Tiled
-                    | super::peel::ShellKind::Bordered
-            ) {
-                continue;
-            }
-            if shell.cells.is_empty() {
-                continue;
-            }
-            let sb = body_of(shell.cells);
-            let addr = element::from_residual(&sb.cells.iter().map(|&(r, c, h)| (r, c, h, h)).collect()).address();
-            germs.push(super::sentence::Germ {
-                address: addr,
-                versor: element::identity_versor(),
-                word: super::alphabet::Word::identity(),
-                chain: sb.cells.iter().map(|&(r, c, h)| (r, c, h, h)).collect(),
-                source: Some(sb.moduli.clone()),
-                target: Some(sb.moduli.clone()),
-            });
+    for (i, ic) in ins.iter().enumerate() {
+        if !used_in[i] && ic.kind == super::peel::ShellKind::Whole {
+            germs.push(germ_of_body(
+                Some(&ic.body),
+                None,
+                element::identity_versor(),
+                super::alphabet::Word::identity(),
+                super::peel::ShellKind::Whole,
+            ));
         }
     }
     let mut n = assemble(germs, Vec::new());
@@ -586,116 +728,255 @@ pub fn rule_replays_family(rule: &super::sentence::SentenceRule, family: &[(Grid
 }
 
 /// Extract the invariant cochain of a family: one nerve per pair, then
-/// coboundary_gauge. None when the nerves do not agree up to gauge.
+/// agree_up_to_gauge. None when the nerves do not agree up to gauge.
 pub fn extract_rule(family: &[(Grid, Grid)]) -> Option<super::sentence::SentenceRule> {
     if family.is_empty() {
         return None;
     }
-    let nerves: Vec<super::sentence::Nerve> = family.iter().map(|(a, b)| pair_nerve(a, b)).collect();
-    super::sentence::agree_up_to_gauge(&nerves)
+    let scale = family_ratio(family);
+    let nerves: Vec<super::sentence::Nerve> = family.iter().map(|(a, b)| pair_nerve(a, b, scale)).collect();
+    let mut rule = super::sentence::agree_up_to_gauge(&nerves)?;
+    if let Some(r) = scale {
+        rule.ratio = r;
+    }
+    Some(rule)
 }
 
-/// SPEAK A RULE onto a test input: peel the test, match bodies to rule
-/// germs by chart prefix, instantiate face words, emit generative germs.
-/// Several bodies on one germ is a section; one body on two germs is a class
-/// (the sentence is held — remainder is the whole input).
+fn ratio_rho(ratio: ((usize, usize), (usize, usize))) -> BigRational {
+    let ((hn, hd), (wn, wd)) = ratio;
+    if hd == 0 || wd == 0 {
+        return q(1);
+    }
+    if hn * wd == wn * hd {
+        BigRational::new(BigInt::from(hn), BigInt::from(hd.max(1)))
+    } else {
+        q(1)
+    }
+}
+
+fn realize_word(word: &super::alphabet::Word, rho: &BigRational, shift: &(BigRational, BigRational)) -> Versor {
+    element::conformal_of(
+        &super::alphabet::Spelling { word: word.clone(), rho: rho.clone() },
+        shift,
+    )
+    .unwrap_or_else(element::identity_versor)
+}
+
+fn germ_idx_key(i: usize) -> [u8; 32] {
+    let mut k = [0u8; 32];
+    k[..8].copy_from_slice(&(i as u64).to_le_bytes());
+    k
+}
+
+fn output_frame(fx: (usize, usize), ratio: ((usize, usize), (usize, usize))) -> (usize, usize) {
+    let ((hn, hd), (wn, wd)) = ratio;
+    let hd = hd.max(1);
+    let wd = wd.max(1);
+    if fx.0 == 0 || fx.1 == 0 || (fx.0 * hn) % hd != 0 || (fx.1 * wn) % wd != 0 {
+        return fx;
+    }
+    (fx.0 * hn / hd, fx.1 * wn / wd)
+}
+
+fn test_transport(
+    rule: &super::sentence::SentenceRule,
+    g: &super::sentence::Germ,
+    gi: usize,
+    test_c: &(BigRational, BigRational),
+    placed: &crate::network::nerve::Keyed<(BigRational, BigRational)>,
+) -> Versor {
+    let rho = ratio_rho(rule.ratio);
+    if let Some((dr, dc)) = g.shift.as_ref().or_else(|| rule.shifts.get(&super::sentence::germ_class_key(g))) {
+        return realize_word(&g.word, &rho, &(dr.clone(), dc.clone()));
+    }
+    let linear = realize_word(&g.word, &rho, &(q(0), q(0)));
+    let t_body = cga::translator(&test_c.0, &test_c.1);
+    let t_inv = cga::translator(&-&test_c.0, &-&test_c.1);
+    let placed_linear = t_body.geo(&linear).geo(&t_inv);
+    let frame_i = rule.nerve.germs.iter().position(|h| h.kind == super::peel::ShellKind::Frame);
+    let face = rule.nerve.faces.iter().find(|f| {
+        (f.i == gi || f.j == gi)
+            && (rule.nerve.germs.get(f.i).is_some_and(|h| h.kind == super::peel::ShellKind::Frame)
+                || rule.nerve.germs.get(f.j).is_some_and(|h| h.kind == super::peel::ShellKind::Frame))
+    });
+    let Some(f) = face else {
+        return placed_linear;
+    };
+    let anchor = if rule.nerve.germs.get(f.i).is_some_and(|h| h.kind == super::peel::ShellKind::Frame) {
+        f.i
+    } else {
+        f.j
+    };
+    let t_anchor = placed
+        .get(&germ_idx_key(anchor))
+        .cloned()
+        .or_else(|| frame_i.and_then(|i| placed.get(&germ_idx_key(i)).cloned()))
+        .unwrap_or((q(0), q(0)));
+    let face_v = realize_word(&f.g_ij, &q(1), &(q(0), q(0)));
+    cga::translator(&t_anchor.0, &t_anchor.1).geo(&face_v).geo(&placed_linear)
+}
+
+fn emit_carried(
+    body: &Body,
+    v: &Versor,
+    map: &[(u8, u8)],
+    fy: (usize, usize),
+    cells: &mut Vec<Cell3>,
+    remainder: &mut Vec<Cell3>,
+) {
+    for &(r, c, h) in &body.cells {
+        let hue = map.iter().find(|(f, _)| *f == h).map(|(_, t)| *t).unwrap_or(h);
+        if let Some(image) = element::carry_cell(v, r, c) {
+            for (i, j) in image {
+                if i >= 0 && j >= 0 && (i as usize) < fy.0 && (j as usize) < fy.1 {
+                    cells.push((i, j, hue));
+                }
+            }
+        } else {
+            remainder.push((r, c, h));
+        }
+    }
+}
+
+fn speak_created(
+    rule: &super::sentence::SentenceRule,
+    g: &super::sentence::Germ,
+    i: usize,
+    placed: &crate::network::nerve::Keyed<(BigRational, BigRational)>,
+    fy: (usize, usize),
+    cells: &mut Vec<Cell3>,
+) {
+    let rho = ratio_rho(rule.ratio);
+    let frame_i = rule.nerve.germs.iter().position(|h| h.kind == super::peel::ShellKind::Frame);
+    let face = rule.nerve.faces.iter().find(|f| f.i == i || f.j == i);
+    let anchor = face
+        .map(|f| if f.i == i { f.j } else { f.i })
+        .or(frame_i)
+        .unwrap_or(0);
+    let test_anchor = placed.get(&germ_idx_key(anchor)).cloned().unwrap_or((q(0), q(0)));
+    let train_anchor = {
+        let support = super::sentence::after_support(&rule.nerve.germs[anchor]);
+        if support.is_empty() {
+            (q(0), q(0))
+        } else {
+            let cells: Vec<Cell3> = support.iter().map(|&(r, c)| (r, c, 1)).collect();
+            body_of(cells).centroid
+        }
+    };
+    let face_word = face.map(|f| &f.g_ij).unwrap_or(&g.word);
+    let linear = realize_word(face_word, &rho, &(q(0), q(0)));
+    let t_test = cga::translator(&test_anchor.0, &test_anchor.1);
+    let t_train_inv = cga::translator(&-&train_anchor.0, &-&train_anchor.1);
+    let v = t_test.geo(&linear).geo(&t_train_inv);
+    for &(r, c, _, a) in &g.chain {
+        if a == 0 {
+            continue;
+        }
+        if let Some(image) = element::carry_cell(&v, r, c) {
+            for (ir, ic) in image {
+                if ir >= 0 && ic >= 0 && (ir as usize) < fy.0 && (ic as usize) < fy.1 {
+                    cells.push((ir, ic, a));
+                }
+            }
+        }
+    }
+}
+
+/// SPEAK A RULE onto a test input: match bodies to rule germs by chart,
+/// instantiate transports from faces and the word's linear block, never
+/// from a training pair's absolute versor. Several bodies on one germ is
+/// a section; one body on two germs is a class.
 pub fn speak_rule(rule: &super::sentence::SentenceRule, x: &Grid) -> Option<Speech> {
     let fx = frame_of(x);
+    let fy = output_frame(fx, rule.ratio);
     let mut atlas = super::stalk::Stalks::default();
-    for (i, (src, tgt)) in rule.charts.iter().enumerate() {
-        let mut addr = [0u8; 32];
-        addr[..8].copy_from_slice(&(i as u64).to_le_bytes());
-        if let Some(inv) = tgt.as_ref().or(src.as_ref()) {
+    // index: germs of this rule
+    for (i, g) in rule.nerve.germs.iter().enumerate() {
+        if g.kind == super::peel::ShellKind::Frame {
+            continue;
+        }
+        let mut addr = germ_idx_key(i);
+        if let Some(inv) = g.source.as_ref() {
+            atlas.admit(inv, addr);
+        } else if let Some(inv) = g.target.as_ref() {
+            addr[8] = 1;
             atlas.admit(inv, addr);
         }
     }
     let mut claimed: crate::network::nerve::Keyed<usize> = crate::network::nerve::Keyed::new();
+    let mut placed: crate::network::nerve::Keyed<(BigRational, BigRational)> = crate::network::nerve::Keyed::new();
+    if let Some(i) = rule.nerve.germs.iter().position(|g| g.kind == super::peel::ShellKind::Frame) {
+        placed.insert(germ_idx_key(i), scene_center(fy));
+    }
     let mut remainder: Vec<Cell3> = Vec::new();
     let mut cells: Vec<Cell3> = Vec::new();
-    let mut class = false;
+    let scale = Some(rule.ratio).filter(|r| *r != ((1, 1), (1, 1)));
     for body in perceive(x) {
-        let mut shells = super::peel::peel_body(&body.cells);
-        shells.insert(0, super::peel::Shell { kind: super::peel::ShellKind::Whole, cells: body.cells.clone() });
-        let mut matched = None;
-        for shell in &shells {
-            if shell.cells.is_empty() {
+        let mut hits: Vec<usize> = Vec::new();
+        let src_hits = atlas.fiber(&body.moduli);
+        for addr in src_hits {
+            let idx = u64::from_le_bytes(addr[..8].try_into().ok()?) as usize;
+            if !hits.contains(&idx) {
+                hits.push(idx);
+            }
+        }
+        if hits.is_empty() {
+            for shell in super::peel::peel_body_scaled(&body.cells, scale) {
+                if shell.cells.is_empty() {
+                    continue;
+                }
+                let sb = body_of(shell.cells);
+                let sh = atlas.fiber(&sb.moduli);
+                for addr in sh {
+                    let idx = u64::from_le_bytes(addr[..8].try_into().ok()?) as usize;
+                    if !hits.contains(&idx) {
+                        hits.push(idx);
+                    }
+                }
+            }
+        }
+        match hits.len() {
+            0 => {
+                remainder.extend(body.cells.iter().copied());
                 continue;
             }
-            let sb = body_of(shell.cells.clone());
-            let hits = atlas.fiber(&sb.moduli);
-            match hits.len() {
-                0 => continue,
-                1 => {
-                    matched = Some(hits[0]);
-                    break;
-                }
-                _ => {
-                    class = true;
-                    break;
-                }
-            }
+            1 => {}
+            _ => return None,
         }
-        if class {
-            remainder.extend(body.cells.iter().copied());
-            continue;
-        }
-        let Some(addr) = matched else {
-            remainder.extend(body.cells.iter().copied());
-            continue;
-        };
-        let idx = u64::from_le_bytes(addr[..8].try_into().ok()?) as usize;
+        let idx = hits[0];
+        let addr = germ_idx_key(idx);
         if claimed.contains(&addr) {
             // several bodies on one germ: a section — apply to each
+        } else {
+            claimed.insert(addr, idx);
         }
-        claimed.insert(addr, idx);
         let Some(g) = rule.nerve.germs.get(idx) else {
             remainder.extend(body.cells.iter().copied());
             continue;
         };
+        placed.insert(addr, body.centroid.clone());
         let map = g.target.as_ref().and_then(|t| rule.hue_maps.get(&t.key())).cloned().unwrap_or_default();
         if g.source.is_none() {
-            for &(r, c, _, a) in &g.chain {
-                if a != 0 {
-                    cells.push((r, c, a));
-                }
-            }
+            speak_created(rule, g, idx, &placed, fy, &mut cells);
             continue;
         }
-        for &(r, c, h) in &body.cells {
-            let hue = map.iter().find(|(f, _)| *f == h).map(|(_, t)| *t).unwrap_or(h);
-            if let Some(image) = element::carry_cell(&g.versor, r, c) {
-                for (i, j) in image {
-                    if i >= 0 && j >= 0 && (i as usize) < fx.0 && (j as usize) < fx.1 {
-                        cells.push((i, j, hue));
-                    }
-                }
-            } else {
-                remainder.push((r, c, h));
-            }
-        }
+        let v = test_transport(rule, g, idx, &body.centroid, &placed);
+        emit_carried(&body, &v, &map, fy, &mut cells, &mut remainder);
     }
+    // index: created germs of this rule
     for (i, g) in rule.nerve.germs.iter().enumerate() {
-        if g.source.is_some() {
+        if g.source.is_some() || g.kind == super::peel::ShellKind::Frame {
             continue;
         }
-        let mut addr = [0u8; 32];
-        addr[..8].copy_from_slice(&(i as u64).to_le_bytes());
-        if claimed.contains(&addr) {
+        if claimed.contains(&germ_idx_key(i)) {
             continue;
         }
-        for &(r, c, _, a) in &g.chain {
-            if a != 0 && r >= 0 && c >= 0 && (r as usize) < fx.0 && (c as usize) < fx.1 {
-                cells.push((r, c, a));
-            }
-        }
-    }
-    if class {
-        return None;
+        speak_created(rule, g, i, &placed, fy, &mut cells);
     }
     cells.sort_unstable();
     cells.dedup();
     remainder.sort_unstable();
-    Some(Speech { frame: fx, cells, remainder })
+    Some(Speech { frame: fy, cells, remainder })
 }
 
 /// Path one: keep every body's carriage as a germ, build the nerve from
@@ -743,6 +1024,8 @@ fn nerve_of(
             chain,
             source: Some(a.moduli.clone()),
             target: Some(b.moduli.clone()),
+            kind: super::peel::ShellKind::Whole,
+            shift: None,
         });
     }
     if germs.len() < 2 {
@@ -1065,10 +1348,26 @@ mod tests {
             })
             .collect();
         let c = comprehend(&family);
-        if let Some(rule) = extract_rule(&family) {
-            assert!(rule.nerve.germ_count() >= 1);
-            let _ = speak_rule(&rule, &grid(&["1100", "0000"]));
-        }
+        let rule = extract_rule(&family).expect("the family extracts a rule");
+        assert!(
+            rule.nerve.germ_count() <= family[0].0.len() + 2,
+            "germs near the body count, got {}",
+            rule.nerve.germ_count()
+        );
+        assert!(
+            rule.nerve.germs.iter().any(|g| g.kind == crate::transducer::peel::ShellKind::Frame),
+            "a frame germ is on the nerve"
+        );
+        assert!(
+            rule.nerve.faces.iter().any(|f| {
+                rule.nerve.germs.get(f.i).is_some_and(|g| g.kind == crate::transducer::peel::ShellKind::Frame)
+                    || rule.nerve.germs.get(f.j).is_some_and(|g| g.kind == crate::transducer::peel::ShellKind::Frame)
+            }),
+            "a face reaches the frame"
+        );
+        let spoken = speak_rule(&rule, &grid(&["1100", "0000"])).expect("the test is spoken");
+        assert!(spoken.remainder.is_empty(), "the test is reached in full: {:?}", spoken.remainder);
+        assert_eq!(spoken.grid(), grid(&["0022", "0000"]));
         let t = c.transport.expect("still a connection");
         assert_eq!(speak_total(&t, &grid(&["1100", "0000"])).map(|s| s.remainder.is_empty()), Some(true));
     }

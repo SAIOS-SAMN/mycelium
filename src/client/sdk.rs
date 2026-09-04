@@ -1055,8 +1055,22 @@ impl Entity {
         id: &[u8; 32],
         outputs: &[Grid],
     ) -> io::Result<(u8, [u64; 4])> {
+        self.submit_solve_rule(id, outputs, None)
+    }
+
+    /// Submit predicted outputs together with the sentence that spoke them.
+    pub fn submit_solve_rule(
+        &self,
+        id: &[u8; 32],
+        outputs: &[Grid],
+        rule: Option<&Element>,
+    ) -> io::Result<(u8, [u64; 4])> {
         let voice = self.session.kernel().voice();
-        let body = self.session.speak_keyed(id, dialogue::encode_solve(&voice, id, outputs))?;
+        let bytes = rule.map(|e| e.to_bytes());
+        let body = self.session.speak_keyed(
+            id,
+            dialogue::encode_solve_with_rule(&voice, id, outputs, bytes.as_deref()),
+        )?;
         Ok(dialogue::decode_solve_receipt(&body).unwrap_or((dialogue::SOLVE_NOTHING, [0; 4])))
     }
 

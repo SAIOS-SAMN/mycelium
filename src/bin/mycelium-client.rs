@@ -650,7 +650,8 @@ fn main() {
                 }
                 if reached && !tests.is_empty() && outs.iter().all(|o| o.is_some()) {
                     let outs: Vec<Vec<Vec<u8>>> = outs.into_iter().flatten().collect();
-                    if let Ok((code, _mu)) = entity.submit_solve(&tid, &outs) {
+                    let spoken = mycelium::transducer::sentence::as_element(&rule.nerve);
+                    if let Ok((code, _mu)) = entity.submit_solve_rule(&tid, &outs, spoken.as_ref()) {
                         projected += 1;
                         match code {
                             mycelium::anastome::dialogue::SOLVE_BOUNTY => {

@@ -356,7 +356,22 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
         return true;
     }
     if kind == dialogue::ACT_SOLVE {
-        let Some((svoice, tid, outputs)) = dialogue::decode_solve(&frame.body) else { return true };
+        let Some((svoice, tid, outputs, rule_bytes)) = dialogue::decode_solve(&frame.body) else { return true };
+        let rule_elem = rule_bytes.as_ref().and_then(|b| {
+            let mut p = 0usize;
+            mycelium::transducer::element::Element::from_bytes(b, &mut p)
+        });
+        let withheld = {
+            let reg = door.registry.lock().unwrap();
+            reg.withheld(&tid)
+        };
+        if let Some(rule) = rule_elem.as_ref() {
+            if !mycelium::cognition::Kernel::rule_matches_tests(rule, &withheld) {
+                let reply = Frame { lane: frame.lane, body: dialogue::encode_solve_receipt(dialogue::SOLVE_NOTHING, &[0; 4]) };
+                let _ = s.write_all(&reply.encode().unwrap_or_default());
+                return true;
+            }
+        }
         let (code, mu) = {
             let mut reg = door.registry.lock().unwrap();
             match reg.settle(&tid, &outputs) {
@@ -369,7 +384,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
                     drop(reg);
                     let paid = {
                         let mut k = door.kernel.lock().unwrap();
-                        k.pay_solve(&tid, svoice, tension)
+                        k.pay_solve(&tid, svoice, tension, rule_elem.as_ref(), &withheld)
                     };
                     let hear = {
                         let mut roots = door.roots.lock().unwrap();
@@ -395,7 +410,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
                     drop(reg);
                     let paid = {
                         let mut k = door.kernel.lock().unwrap();
-                        k.pay_solve(&tid, svoice, [0, 0, 1, 0])
+                        k.pay_solve(&tid, svoice, [0, 0, 1, 0], rule_elem.as_ref(), &withheld)
                     };
                     let hear = {
                         let mut roots = door.roots.lock().unwrap();

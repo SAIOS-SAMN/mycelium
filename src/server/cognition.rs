@@ -1450,7 +1450,7 @@ impl Kernel {
 
     /// List a connection on the docket if it is not already provisional.
     fn docket_connection(&mut self, word: &Element, ratifier: [u8; 32]) {
-        if !word.is_connection() {
+        if !word.is_connection() && !word.is_sentence() {
             return;
         }
         let addr = word.address();
@@ -2294,12 +2294,13 @@ impl Kernel {
         let mut budget = self.physics.stroke();
         let spoken_rotor = spoken.letters().map(|l| l.spelling.word.rotor());
         // index: link of the fetched peer
-        for cell in cx.link_of(&peer) {
-            if cell.degree() == 0 {
+        for key in cx.link_of(&peer) {
+            let Some((d, volume, vertices)) = cx.cell(&key).map(|c| (c.degree(), c.volume, c.vertices.clone())) else {
+                continue;
+            };
+            if d == 0 {
                 continue;
             }
-            let d = cell.degree();
-            let key = cell.key();
             if !budget.spend() {
                 let dkey = chart_simplex_key(&inv, &key);
                 self.unfilled.insert(dkey, (inv.clone(), key));
@@ -2316,23 +2317,21 @@ impl Kernel {
             };
             match outcome_fill {
                 crate::transducer::cech::Fill::Filled(gamma) => {
-                    if cell.volume.iter().any(|&x| x > 0) {
+                    if volume.iter().any(|&x| x > 0) {
                         filled = true;
                         fill_gamma = gamma;
-                        fill_addrs = cell
-                            .vertices
+                        fill_addrs = vertices
                             .iter()
                             .filter_map(|v| cx.sections.get(v).map(|s| s.addr))
                             .collect();
                         eprintln!(
                             "  court cell filled degree {d} {:02x}{:02x}… volume {:?}",
-                            key[0], key[1], cell.volume
+                            key[0], key[1], volume
                         );
                     }
                 }
                 crate::transducer::cech::Fill::Congruent(g, ell) => {
-                    let addrs: Vec<[u8; 32]> = cell
-                        .vertices
+                    let addrs: Vec<[u8; 32]> = vertices
                         .iter()
                         .filter_map(|v| cx.sections.get(v).map(|s| s.addr))
                         .collect();
@@ -2670,8 +2669,47 @@ impl Kernel {
         }
     }
 
+    /// Speak a submitted rule onto withheld tests and compare cells exactly.
+    pub fn rule_matches_tests(rule: &Element, tests: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)]) -> bool {
+        if tests.is_empty() {
+            return false;
+        }
+        let Some(n) = crate::transducer::sentence::from_element(rule) else {
+            return false;
+        };
+        let Some(sr) = crate::transducer::sentence::agree_up_to_gauge(std::slice::from_ref(&n)) else {
+            return false;
+        };
+        for (x, y) in tests {
+            let Some(s) = crate::transducer::family::speak_rule(&sr, x) else {
+                return false;
+            };
+            if s.grid() != *y {
+                return false;
+            }
+        }
+        true
+    }
+
     /// Pay a verified solve from the escrow of listings that task deflated.
-    pub fn pay_solve(&mut self, task: &[u8; 32], voice: [u8; 32], mu: [u64; 4]) -> [u64; 4] {
+    /// When a rule is supplied, the home speaks it on the withheld tests;
+    /// a full match binds the solve to those listings, draws their escrow,
+    /// and Offers the rule on the docket.
+    pub fn pay_solve(
+        &mut self,
+        task: &[u8; 32],
+        voice: [u8; 32],
+        mu: [u64; 4],
+        rule: Option<&Element>,
+        tests: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
+    ) -> [u64; 4] {
+        if let Some(rule) = rule {
+            if !Self::rule_matches_tests(rule, tests) {
+                return [0; 4];
+            }
+            self.docket_connection(rule, voice);
+            self.offered.insert(rule.address(), ());
+        }
         let listings: Vec<[u8; 32]> = self.task_listings.get(task).cloned().unwrap_or_default();
         let mut paid = [0u64; 4];
         let anchor = self.anchor();
@@ -3072,7 +3110,7 @@ impl Kernel {
             self.touch_at(i);
             // Presence is not finality: an unruled connection stays on the
             // docket until the court measures it.
-            if word.is_connection() && !self.ruled_contains(&addr) {
+            if (word.is_connection() || word.is_sentence()) && !self.ruled_contains(&addr) {
                 self.docket_connection(word, ratifier);
             }
             return Adoption::Known;
@@ -3081,8 +3119,9 @@ impl Kernel {
         // the docket with its own magnitude as the deflation it claims, so
         // the court rules it (inversion, remainder, torsion) and the mesh
         // pays it as a word, never as a copied pair. A residual word taught
-        // up is installed as before.
-        if word.is_connection() {
+        // up is installed as before. A sentence is the same: Offered on the
+        // docket so a second organ's replay installs it as language.
+        if word.is_connection() || word.is_sentence() {
             self.docket_connection(word, ratifier);
         }
         self.basis_push(word.clone(), ratifier);

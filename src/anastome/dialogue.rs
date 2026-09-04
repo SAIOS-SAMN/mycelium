@@ -818,8 +818,18 @@ pub fn decode_task_envelope(body: &[u8]) -> Option<TaskEnvelope> {
     Some((id, train, tests))
 }
 
-/// solve submission: `[ACT_SOLVE][voice 32][task_id 32][n u8][grid·n]`.
+/// solve submission: `[ACT_SOLVE][voice 32][task_id 32][n u8][grid·n]`
+/// and optionally `[RULE][len u32][element]` so the home speaks the rule.
 pub fn encode_solve(voice: &[u8; 32], id: &[u8; 32], outputs: &[Vec<Vec<u8>>]) -> Vec<u8> {
+    encode_solve_with_rule(voice, id, outputs, None)
+}
+
+pub fn encode_solve_with_rule(
+    voice: &[u8; 32],
+    id: &[u8; 32],
+    outputs: &[Vec<Vec<u8>>],
+    rule: Option<&[u8]>,
+) -> Vec<u8> {
     let mut out = vec![ACT_SOLVE];
     out.extend_from_slice(voice);
     out.extend_from_slice(id);
@@ -827,10 +837,15 @@ pub fn encode_solve(voice: &[u8; 32], id: &[u8; 32], outputs: &[Vec<Vec<u8>>]) -
     for g in outputs.iter().take(255) {
         push_grid(&mut out, g);
     }
+    if let Some(r) = rule {
+        out.extend_from_slice(b"RULE");
+        out.extend_from_slice(&(r.len() as u32).to_le_bytes());
+        out.extend_from_slice(r);
+    }
     out
 }
 
-pub fn decode_solve(body: &[u8]) -> Option<([u8; 32], [u8; 32], Vec<Vec<Vec<u8>>>)> {
+pub fn decode_solve(body: &[u8]) -> Option<([u8; 32], [u8; 32], Vec<Vec<Vec<u8>>>, Option<Vec<u8>>)> {
     if body.first() != Some(&ACT_SOLVE) {
         return None;
     }
@@ -843,7 +858,15 @@ pub fn decode_solve(body: &[u8]) -> Option<([u8; 32], [u8; 32], Vec<Vec<Vec<u8>>
     for _ in 0..n {
         outputs.push(read_grid(body, &mut p)?);
     }
-    Some((voice, id, outputs))
+    let rule = if body.get(p..p + 4) == Some(&b"RULE"[..]) {
+        p += 4;
+        let len = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+        p += 4;
+        Some(body.get(p..p + len)?.to_vec())
+    } else {
+        None
+    };
+    Some((voice, id, outputs, rule))
 }
 
 /// solve receipt: `[code u8][μ⃗ 32]` — code 2 = BOUNTY (first verified solve),

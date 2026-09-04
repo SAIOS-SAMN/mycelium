@@ -88,8 +88,9 @@ where
 }
 
 /// Perception shells of one body. Not letters: the seventeen stay fixed.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ShellKind {
+    #[default]
     Whole,
     Outline,
     Core,
@@ -100,20 +101,9 @@ pub enum ShellKind {
     Reduced,
     Tiled,
     Bordered,
+    /// The grid's own extent, not a body shell.
+    Frame,
 }
-
-const SHELL_ORDER: [ShellKind; 10] = [
-    ShellKind::Whole,
-    ShellKind::Outline,
-    ShellKind::Core,
-    ShellKind::Interior,
-    ShellKind::Adjacent,
-    ShellKind::Cut,
-    ShellKind::Magnified,
-    ShellKind::Reduced,
-    ShellKind::Tiled,
-    ShellKind::Bordered,
-];
 
 /// One shell of a body: its kind and its cells (row, col, hue).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -122,69 +112,162 @@ pub struct Shell {
     pub cells: Vec<(i64, i64, u8)>,
 }
 
-fn apply_kind(kind: ShellKind, cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
-    use crate::transducer::blade;
-    match kind {
-        ShellKind::Whole => cells.to_vec(),
-        ShellKind::Outline => blade::outline(cells),
-        ShellKind::Core => blade::core(cells),
-        ShellKind::Interior => blade::enclosed_interior(cells),
-        ShellKind::Adjacent => blade::adjacent_ring(cells),
-        ShellKind::Cut => blade::cut(cells).unwrap_or_default(),
-        ShellKind::Magnified => blade::magnified(cells, 2),
-        ShellKind::Reduced => blade::reduced(cells, 2).unwrap_or_default(),
-        ShellKind::Tiled => blade::tiled(cells, 2, 2),
-        ShellKind::Bordered => blade::bordered(cells, 0),
+impl ShellKind {
+    pub const FRAME: ShellKind = ShellKind::Frame;
+
+    pub fn as_u8(self) -> u8 {
+        match self {
+            ShellKind::Whole => 0,
+            ShellKind::Outline => 1,
+            ShellKind::Core => 2,
+            ShellKind::Interior => 3,
+            ShellKind::Adjacent => 4,
+            ShellKind::Cut => 5,
+            ShellKind::Magnified => 6,
+            ShellKind::Reduced => 7,
+            ShellKind::Tiled => 8,
+            ShellKind::Bordered => 9,
+            ShellKind::Frame => 10,
+        }
+    }
+
+    pub fn from_u8(v: u8) -> Option<Self> {
+        Some(match v {
+            0 => ShellKind::Whole,
+            1 => ShellKind::Outline,
+            2 => ShellKind::Core,
+            3 => ShellKind::Interior,
+            4 => ShellKind::Adjacent,
+            5 => ShellKind::Cut,
+            6 => ShellKind::Magnified,
+            7 => ShellKind::Reduced,
+            8 => ShellKind::Tiled,
+            9 => ShellKind::Bordered,
+            10 => ShellKind::Frame,
+            _ => return None,
+        })
     }
 }
 
-/// Residual of a body peel: the support plus the next kind index.
-type BodyArc = (Vec<(i64, i64, u8)>, usize);
-
-struct BodyKindStep;
-impl ShellStep for BodyKindStep {
-    type Residual = BodyArc;
+/// Residual of the outline peel: the content still riding inward.
+struct OutlineStep;
+impl ShellStep for OutlineStep {
+    type Residual = Vec<(i64, i64, u8)>;
     type Core = Shell;
-    fn shell(&self, residual: &BodyArc) -> Option<(Shell, BodyArc)> {
-        let (cells, i) = residual;
-        let kind = *SHELL_ORDER.get(*i)?;
-        let shell_cells = apply_kind(kind, cells);
-        Some((
-            Shell { kind, cells: shell_cells },
-            (cells.clone(), i + 1),
-        ))
+    fn shell(&self, residual: &Vec<(i64, i64, u8)>) -> Option<(Shell, Vec<(i64, i64, u8)>)> {
+        if residual.is_empty() {
+            return None;
+        }
+        let outline = crate::transducer::blade::outline(residual);
+        let core = crate::transducer::blade::core(residual);
+        if outline.is_empty() {
+            return None;
+        }
+        Some((Shell { kind: ShellKind::Outline, cells: outline }, core))
     }
 }
 
-struct KindGovernor(usize);
-impl ShrinkGovernor for KindGovernor {
-    type Residual = BodyArc;
-    fn read(&mut self, residual: &BodyArc) -> ShellMotion {
-        if residual.1 >= SHELL_ORDER.len() {
-            return ShellMotion::Closed;
-        }
-        if residual.1 > self.0 {
-            self.0 = residual.1;
-            return ShellMotion::Shrinking;
-        }
-        if residual.1 == 0 && self.0 == 0 {
-            return ShellMotion::Shrinking;
-        }
-        ShellMotion::Stalled
+struct CountGov(Option<usize>);
+impl ShrinkGovernor for CountGov {
+    type Residual = Vec<(i64, i64, u8)>;
+    fn read(&mut self, residual: &Vec<(i64, i64, u8)>) -> ShellMotion {
+        let n = residual.len();
+        let motion = match (n == 0, self.0) {
+            (true, _) => ShellMotion::Closed,
+            (false, Some(before)) if n < before => ShellMotion::Shrinking,
+            (false, None) => ShellMotion::Shrinking,
+            _ => ShellMotion::Stalled,
+        };
+        self.0 = Some(n);
+        motion
     }
 }
 
-/// Peel a body into its shells. Depth is the peel's own kind count.
+fn scale_factor(num: usize, den: usize) -> Option<(ShellKind, i64)> {
+    if den == 0 || num == den {
+        return None;
+    }
+    if num > den && num % den == 0 {
+        let k = (num / den) as i64;
+        (k > 1).then_some((ShellKind::Magnified, k))
+    } else if den > num && den % num == 0 {
+        let k = (den / num) as i64;
+        (k > 1).then_some((ShellKind::Reduced, k))
+    } else {
+        None
+    }
+}
+
+/// Peel a body: whole, then outline with the core as residual, then the
+/// interior the outline encloses, then the adjacent ring. Each shell is
+/// taken from the residual the last shell left; the governor reads shrink.
+/// Scale shells only when a frame ratio is supplied and is not one.
+/// Cut is not produced here: it is taken only with sites a face names.
 pub fn peel_body(cells: &[(i64, i64, u8)]) -> Vec<Shell> {
+    peel_body_scaled(cells, None)
+}
+
+/// `scale` is ((h_out, h_in), (w_out, w_in)).
+pub fn peel_body_scaled(
+    cells: &[(i64, i64, u8)],
+    scale: Option<((usize, usize), (usize, usize))>,
+) -> Vec<Shell> {
     if cells.is_empty() {
         return Vec::new();
     }
-    let nest = peel_nest((cells.to_vec(), 0usize), &BodyKindStep, &mut KindGovernor(0));
-    nest.cores()
-        .iter()
-        .filter(|s| !s.cells.is_empty())
-        .cloned()
-        .collect()
+    let mut out = vec![Shell { kind: ShellKind::Whole, cells: cells.to_vec() }];
+    let mut residual = cells.to_vec();
+    let mut gov = CountGov(Some(residual.len()));
+    if let Some((outline, core)) = OutlineStep.shell(&residual) {
+        match gov.read(&core) {
+            ShellMotion::Closed => {
+                if outline.cells != cells {
+                    out.push(outline);
+                }
+                residual = core;
+            }
+            ShellMotion::Shrinking => {
+                if outline.cells != cells {
+                    out.push(outline);
+                }
+                residual = core;
+                if !residual.is_empty() {
+                    out.push(Shell { kind: ShellKind::Core, cells: residual.clone() });
+                }
+            }
+            ShellMotion::Stalled => {}
+        }
+    }
+    let interior = crate::transducer::blade::enclosed_interior(&residual);
+    if !interior.is_empty() {
+        match gov.read(&interior) {
+            ShellMotion::Shrinking | ShellMotion::Closed => {
+                out.push(Shell { kind: ShellKind::Interior, cells: interior });
+            }
+            ShellMotion::Stalled => {}
+        }
+    }
+    let ring = crate::transducer::blade::adjacent_ring(&residual);
+    if !ring.is_empty() {
+        match gov.read(&ring) {
+            ShellMotion::Shrinking | ShellMotion::Closed | ShellMotion::Stalled => {
+                out.push(Shell { kind: ShellKind::Adjacent, cells: ring });
+            }
+        }
+    }
+    if let Some(((hn, hd), (wn, wd))) = scale {
+        if let Some((kind, k)) = scale_factor(hn, hd).or_else(|| scale_factor(wn, wd)) {
+            let scaled = match kind {
+                ShellKind::Magnified => crate::transducer::blade::magnified(cells, k),
+                ShellKind::Reduced => crate::transducer::blade::reduced(cells, k).unwrap_or_default(),
+                _ => Vec::new(),
+            };
+            if !scaled.is_empty() {
+                out.push(Shell { kind, cells: scaled });
+            }
+        }
+    }
+    out
 }
 
 #[cfg(test)]

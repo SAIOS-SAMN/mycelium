@@ -109,6 +109,13 @@ impl TaskRegistry {
         self.tasks.iter().find(|(t, _, _)| t == id).map(|(_, task, _)| task)
     }
 
+    /// Withheld test pairs (input, held output) the home speaks a rule onto.
+    pub fn withheld(&self, id: &[u8; 32]) -> Vec<(Grid, Grid)> {
+        self.task(id)
+            .map(|t| t.test.iter().filter(|(_, y)| !y.is_empty()).cloned().collect())
+            .unwrap_or_default()
+    }
+
     /// REGISTER a task (idempotent by content — re-feeding under a new file
     /// name registers nothing). Returns the id.
     pub fn register(&mut self, task: Task) -> [u8; 32] {
