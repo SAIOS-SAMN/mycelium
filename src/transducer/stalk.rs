@@ -40,6 +40,28 @@ type Cell = (i64, i64, u8, u8);
 pub struct Invariant(pub Vec<u64>);
 
 impl Invariant {
+    /// Drop the deepest axis: the coarser chart this one refines.
+    pub fn peel(&self) -> Invariant {
+        let mut axes = self.0.clone();
+        axes.pop();
+        Invariant(axes)
+    }
+
+    /// Every prefix of this chart, finest first, including the empty chart.
+    /// Chart-space distance is prefix depth, never a norm.
+    pub fn prefixes(&self) -> Vec<Invariant> {
+        let mut out = Vec::with_capacity(self.0.len() + 1);
+        let mut cur = self.clone();
+        loop {
+            out.push(cur.clone());
+            if cur.0.is_empty() {
+                break;
+            }
+            cur = cur.peel();
+        }
+        out
+    }
+
     /// A Keyed key for this chart: the little-endian axes hashed so a
     /// thought bag and a cover digest name the same plane without a map.
     pub fn key(&self) -> [u8; 32] {
@@ -286,6 +308,18 @@ impl Stalks {
     /// be this one. The versor decides on these alone.
     pub fn fiber(&self, inv: &Invariant) -> Vec<[u8; 32]> {
         self.root.fiber(&inv.0)
+    }
+
+    /// Peel `inv` to a coarser chart (drop the deepest axis).
+    pub fn peel(inv: &Invariant) -> Invariant {
+        inv.peel()
+    }
+
+    /// Members at prefix depth `d` of `inv`. A read on the trie; chart-space
+    /// neighbourhood is prefix depth, never a norm.
+    pub fn fiber_at_depth(&self, inv: &Invariant, d: usize) -> Vec<[u8; 32]> {
+        let n = d.min(inv.0.len());
+        self.root.fiber(&inv.0[..n])
     }
 
     /// The chart a held address sits on.
@@ -572,5 +606,8 @@ mod tests {
         cls[..8].copy_from_slice(&class_coord.to_le_bytes());
         assert_eq!(stalks.fiber(&Stalks::refine(&inv, zero)), vec![a.address()]);
         assert_eq!(stalks.fiber(&Stalks::refine(&inv, cls)), vec![b.address()]);
+        let peeled = Stalks::peel(&Stalks::refine(&inv, cls));
+        assert_eq!(peeled, inv, "peel drops the class axis");
+        assert_eq!(inv.prefixes().last().map(|p| p.0.is_empty()), Some(true));
     }
 }

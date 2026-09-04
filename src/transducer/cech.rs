@@ -200,9 +200,6 @@ impl Complex {
         }
         let key = cell_key(&vertices);
         self.remainder.remove(&key);
-        if !nonzero(&volume) {
-            return;
-        }
         let stored = if vertices[0] == a { g } else { g.inverse().unwrap_or_else(Rotor::identity) };
         self.remember(Cell {
             vertices,
@@ -427,6 +424,34 @@ impl Complex {
             }
         }
         None
+    }
+
+    /// Drop every cell that contains `vertex`. Used when bubbles merge.
+    pub fn drop_vertex(&mut self, vertex: &[u8; 32]) {
+        let Some(keys) = self.star.remove(vertex) else {
+            self.sections.remove(vertex);
+            return;
+        };
+        let mut drop: Vec<[u8; 32]> = Vec::new();
+        keys.for_each(|k, _| drop.push(*k));
+        for k in drop {
+            for layer in &mut self.degrees {
+                layer.remove(&k);
+            }
+        }
+        self.sections.remove(vertex);
+    }
+
+    pub fn classes(&self) -> Vec<(Rotor, usize)> {
+        let mut out = Vec::new();
+        for (d, layer) in self.degrees.iter().enumerate() {
+            layer.for_each(|_, c| {
+                if let Fill::Class(r) = &c.fill {
+                    out.push((r.clone(), d));
+                }
+            });
+        }
+        out
     }
 
     pub fn unfilled(&self) -> Vec<(usize, [u8; 32])> {
@@ -713,7 +738,10 @@ mod tests {
         let mut empty = Complex::new();
         empty.set_section(a, Section { addr: a, gamma: Rotor::identity() }, [0; 4]);
         empty.set_edge(a, b, Rotor::identity(), [0; 4]);
-        assert_eq!(empty.cell_count(), 0, "zero volume forms no cell");
+        assert!(
+            empty.degrees.get(2).map_or(true, |l| l.is_empty()),
+            "zero remainder volume forms no higher cell"
+        );
     }
 
     /// A coboundary 1-cochain fills; a leftover holonomy is the class.

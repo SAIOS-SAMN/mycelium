@@ -53,8 +53,18 @@ pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
         if let Some(reason) = crate::transducer::sentence::replay_nerve(spoken) {
             return Some(reason);
         }
-        // A non-coboundary coefficient at any degree with no carried class
-        // is false speech; a carried class is re-derived inside replay_nerve.
+        // A formed thought replays every fill on its tape.
+    }
+    if spoken.is_translation() {
+        match spoken.letters_rederive() {
+            None => return Some("translation has no letters — not a word of the alphabet"),
+            Some(false) => return Some("translation does not re-derive from its letters"),
+            Some(true) => {}
+        }
+        if spoken.solution().is_none() {
+            return Some("translation is not invertible");
+        }
+        return None;
     }
     match (chain.is_empty(), connection) {
         (true, false) => {

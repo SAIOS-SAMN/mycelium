@@ -1454,6 +1454,10 @@ pub const CONNECTION_TAG: u8 = 0x11;
 /// connection, then the germ addresses, faces and cycles. Distinct from
 /// CONNECTION_TAG so an opened-axis connection is not replayed as a sentence.
 pub const SENTENCE_TAG: u8 = 0x12;
+/// A translation: the gauge between two sections, not a motion of a body.
+/// The court replays it by inversion of the gauge; the syllabus teaches it
+/// by incidence. Same payload as a connection, then the two section addresses.
+pub const TRANSLATION_TAG: u8 = 0x13;
 
 /// The description of a connection: its spelling in the alphabet at its
 /// dilation, the placement, the gauge map, and the centered remainder.
@@ -1507,7 +1511,7 @@ impl Element {
         use crate::transducer::alphabet::{take_q, Spelling};
         let b = &self.word;
         let tag = b.first().copied()?;
-        if tag != CONNECTION_TAG && tag != SENTENCE_TAG {
+        if tag != CONNECTION_TAG && tag != SENTENCE_TAG && tag != TRANSLATION_TAG {
             return None;
         }
         let mut pos = 1usize;
@@ -1573,6 +1577,52 @@ impl Element {
     pub fn is_sentence(&self) -> bool {
         self.word.first().copied() == Some(SENTENCE_TAG)
     }
+
+    /// A translation: the gauge between two sections.
+    pub fn is_translation(&self) -> bool {
+        self.word.first().copied() == Some(TRANSLATION_TAG)
+    }
+
+    /// The two sections a translation gauges, if the tape carries them.
+    pub fn translation_sections(&self) -> Option<([u8; 32], [u8; 32])> {
+        if !self.is_translation() {
+            return None;
+        }
+        let b = self.description();
+        if b.len() < 64 {
+            return None;
+        }
+        let a: [u8; 32] = b[b.len() - 64..b.len() - 32].try_into().ok()?;
+        let c: [u8; 32] = b[b.len() - 32..].try_into().ok()?;
+        Some((a, c))
+    }
+}
+
+/// A gauge between two sections, spelled as a connection with identity
+/// gauge map and tagged so the court replays it as a translation.
+pub fn from_translation(
+    rotor: &crate::transducer::alphabet::Rotor,
+    a: [u8; 32],
+    b: [u8; 32],
+) -> Option<Element> {
+    let one = Q::one();
+    let zero = Q::zero();
+    let e0 = rotor.carry(&[one.clone(), zero.clone(), zero.clone(), zero.clone()])?;
+    let e1 = rotor.carry(&[zero.clone(), one.clone(), zero.clone(), zero.clone()])?;
+    let affine = vec![
+        vec![e0[0].clone(), e1[0].clone(), zero.clone()],
+        vec![e0[1].clone(), e1[1].clone(), zero.clone()],
+        vec![zero.clone(), zero.clone(), one],
+    ];
+    let mut e = from_connection(&affine, &[], &Vec::new(), [1, 0, 0, 0])?;
+    let mut d = e.description().to_vec();
+    if d.first() == Some(&CONNECTION_TAG) {
+        d[0] = TRANSLATION_TAG;
+    }
+    d.extend_from_slice(&a);
+    d.extend_from_slice(&b);
+    e.set_description(d);
+    Some(e)
 }
 
 /// The perceptual lane projection of a centered coboundary chain — the

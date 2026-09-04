@@ -2163,7 +2163,7 @@ impl Kernel {
                 let key = cell.key();
                 match cx.fill(&key) {
                     crate::transducer::cech::Fill::Filled(gamma) => {
-                        if d >= 2 && cell.volume.iter().any(|&x| x > 0) {
+                        if (d >= 2 || spoken.is_translation()) && cell.volume.iter().any(|&x| x > 0) {
                             filled = true;
                             fill_gamma = gamma;
                             fill_addrs = cell
@@ -2417,6 +2417,24 @@ impl Kernel {
 
     pub fn complexes(&self) -> &crate::network::nerve::Keyed<crate::transducer::cech::Complex> {
         &self.complexes
+    }
+
+    /// Ideology boundary on a chart: classes at every degree the mesh holds
+    /// there, including coarser prefixes, so a mind can be taught the frame
+    /// its bubble sits on.
+    pub fn classes_on(
+        &self,
+        inv: &crate::transducer::stalk::Invariant,
+    ) -> Vec<(crate::transducer::alphabet::Rotor, u8)> {
+        let mut out = Vec::new();
+        for p in inv.prefixes() {
+            if let Some(cx) = self.complexes.get(&p.key()) {
+                for (r, d) in cx.classes() {
+                    out.push((r, d as u8));
+                }
+            }
+        }
+        out
     }
 
     pub fn cochain_bytes(&self) -> usize {

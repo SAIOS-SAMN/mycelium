@@ -23,6 +23,7 @@ pub mod anchor;
 pub mod spectral;
 pub mod stalk;
 pub mod sentence;
+pub mod bubble;
 pub mod family;
 pub mod sheaf;
 /// THE ALPHABET (LAW VIII) and THE PEEL: the seventeen immutable Cayley

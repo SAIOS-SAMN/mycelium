@@ -749,6 +749,10 @@ impl Epigenome {
         // glued against the representative on its fibre — the transition
         // vanishes (held), does not (dialect, the element carried), or there
         // is no representative (admitted). Never an empty covering.
+        if utterance.is_translation() {
+            self.atlas();
+            return Comprehension::Admitted;
+        }
         if utterance.is_connection() && utterance.sub().is_empty() {
             self.atlas();
             let inv = crate::transducer::stalk::invariant_of(utterance);
@@ -955,10 +959,9 @@ pub struct Entity {
     /// there again. The digest names what differs by address; the geometry
     /// decides what is fetched.
     glued: crate::network::nerve::Keyed<()>,
-    /// OPEN THOUGHTS: remainders keyed by chart, no cap, no eviction.
-    thoughts: crate::network::nerve::Keyed<(Vec<(i64, i64, u8, u8)>, bool)>,
-    /// Withheld sentences keyed by nerve chart.
-    sentences: crate::network::nerve::Keyed<crate::transducer::sentence::Nerve>,
+    /// OPEN THOUGHTS: the contemplation over bubbles. Remainders persist;
+    /// residuals are never lost on restart.
+    contemplation: crate::transducer::bubble::Contemplation,
     /// Genome length last seen by the pivot; words added since dirty their charts.
     thought_gen: usize,
     /// Listings this mind has opened an axis on (Vec-of-relations, keyed by
@@ -982,8 +985,7 @@ impl Entity {
             discordance: usize::MAX,
             obstructions: crate::network::nerve::Keyed::new(),
             glued: crate::network::nerve::Keyed::new(),
-            thoughts: crate::network::nerve::Keyed::new(),
-            sentences: crate::network::nerve::Keyed::new(),
+            contemplation: crate::transducer::bubble::Contemplation::new(),
             thought_gen: 0,
             opened: crate::network::nerve::Keyed::new(),
         }
@@ -997,6 +999,12 @@ impl Entity {
             if e.epigenome.uncrystallize(&bytes) {
                 eprintln!("genome restored: {} words from {genome_path}", e.epigenome.genome_len());
             }
+            if let Some(pos) = bytes.windows(4).position(|w| w == b"THT1") {
+                let mut p = pos;
+                if let Some(c) = crate::transducer::bubble::Contemplation::from_bytes(&bytes, &mut p) {
+                    e.contemplation = c;
+                }
+            }
         }
         e.thought_gen = e.epigenome.genome_len();
         e
@@ -1006,7 +1014,9 @@ impl Entity {
     /// syntropic phase when the genome has grown.
     pub fn save_genome(&self, genome_path: &str) -> io::Result<()> {
         let tmp = format!("{genome_path}.tmp");
-        std::fs::write(&tmp, self.epigenome.crystallize())?;
+        let mut bytes = self.epigenome.crystallize();
+        self.contemplation.to_bytes(&mut bytes);
+        std::fs::write(&tmp, bytes)?;
         std::fs::rename(&tmp, genome_path)
     }
 
@@ -1150,7 +1160,7 @@ impl Entity {
         for w in dialogue::decode_syllabus_reply(&body).unwrap_or_default() {
             let mut pos = 0usize;
             let fetched = Element::from_bytes(&w, &mut pos);
-            if self.epigenome.learn(&w).is_some() {
+            if self.absorb_taught(&w).is_some() {
                 learned += 1;
             }
             // ČECH AFTER FETCH: the word is glued on the elements, not on
@@ -1235,7 +1245,7 @@ impl Entity {
         let words = dialogue::decode_syllabus_reply(&body).unwrap_or_default();
         let mut learned = 0usize;
         for w in &words {
-            if self.epigenome.learn(w).is_some() {
+            if self.absorb_taught(w).is_some() {
                 learned += 1;
             }
         }
@@ -1309,17 +1319,19 @@ impl Entity {
         let reply = self.session.submit(a, b, frame, &proof)?;
         let heard = match reply.verdict.taught() {
             t if t.is_empty() => None,
-            t => self.epigenome.learn(t),
+            t => self.absorb_taught(t),
         };
         Ok((reply, heard))
     }
     pub fn quote(&mut self) -> io::Result<YieldQuote> {
-        let thought_charts: Vec<crate::transducer::stalk::Invariant> = self
-            .thoughts
-            .entries()
-            .into_iter()
-            .map(|(_, (r, _))| crate::transducer::stalk::invariant(r))
-            .collect();
+        let thought_charts: Vec<crate::transducer::stalk::Invariant> = {
+            let mut charts = Vec::new();
+            self.contemplation.bubbles.for_each(|_, b| {
+                let inv = crate::transducer::stalk::invariant(&b.remainder);
+                charts.extend(inv.prefixes());
+            });
+            charts
+        };
         let charts = if thought_charts.is_empty() {
             self.epigenome
                 .atlas()
@@ -1333,10 +1345,16 @@ impl Entity {
         let mut dests: crate::network::nerve::Keyed<Vec<crate::transducer::stalk::Invariant>> =
             crate::network::nerve::Keyed::new();
         let mut dest_order: Vec<String> = Vec::new();
-        for (_, (remainder, _)) in self.thoughts.entries() {
+        let bubbles: Vec<(Vec<(i64, i64, u8, u8)>, [u64; 4])> = self
+            .contemplation
+            .bubbles
+            .entries()
+            .into_iter()
+            .map(|(_, b)| (b.remainder.clone(), b.volume))
+            .collect();
+        for (remainder, mag) in &bubbles {
             let inv = crate::transducer::stalk::invariant(remainder);
-            let mag = crate::transducer::element::measure_lanes(remainder);
-            let dest = self.session.route_chart(&inv, &mag);
+            let dest = self.session.route_chart(&inv, mag);
             let dk = *blake3::hash(dest.as_bytes()).as_bytes();
             match dests.get_mut(&dk) {
                 Some(held) => {
@@ -1429,32 +1447,45 @@ impl Entity {
             .collect()
     }
 
-    /// HOLD A THOUGHT: a remainder this mind has not collapsed, keyed by
-    /// the chart of its support. No cap, no eviction — the bag never shrinks
-    /// by drop. A later remainder on the same chart rebinds.
+    /// HOLD A THOUGHT: a remainder this mind has not collapsed, as a bubble
+    /// whose cover is a peel of its invariant. Connections are the link of
+    /// the new bubble through by_chart.
     pub fn hold_thought(&mut self, remainder: Vec<(i64, i64, u8, u8)>) {
-        if remainder.is_empty() {
-            return;
-        }
-        let inv = crate::transducer::stalk::invariant(&remainder);
-        self.thoughts.insert(inv.key(), (remainder, false));
+        self.contemplation.hold(remainder);
     }
 
-    /// Hold a withheld sentence by its nerve chart.
+    /// Hold a withheld sentence as a bubble: germs, nerve, remainder, cover.
     pub fn hold_sentence(&mut self, word: &Element) {
         if let Some(n) = crate::transducer::sentence::from_element(word) {
-            let key = crate::transducer::stalk::invariant_of(word).key();
-            self.sentences.insert(key, n);
-            self.hold_thought(word.sub().to_vec());
+            self.contemplation.hold_nerve(n);
         } else {
             self.hold_thought(word.sub().to_vec());
         }
     }
 
-    /// The open thoughts held here: remainders not yet closed into words,
-    /// each with the chart it sits on.
+    /// The open thoughts held here: remainders not yet closed into words.
     pub fn thoughts(&self) -> Vec<&[(i64, i64, u8, u8)]> {
-        self.thoughts.entries().into_iter().map(|(_, (r, _))| r.as_slice()).collect()
+        self.contemplation.remainders()
+    }
+
+    pub fn bubbles(&self) -> usize {
+        self.contemplation.len()
+    }
+
+    pub fn components(&self) -> usize {
+        self.contemplation.component_count()
+    }
+
+    pub fn contemplation_fills(&self) -> u64 {
+        self.contemplation.fills
+    }
+
+    pub fn contemplation_classes(&self) -> u64 {
+        self.contemplation.classes
+    }
+
+    pub fn thoughts_formed(&self) -> u64 {
+        self.contemplation.formed
     }
 
     /// OPEN AN AXIS ON MULTIPLICITY — the convergence engine's `expand_m`
@@ -1469,7 +1500,7 @@ impl Entity {
         charts: &[crate::transducer::stalk::Invariant],
     ) -> Option<[u8; 32]> {
         use crate::transducer::element::{measure_lanes, FIBER_GERMINATED};
-        if let Some(a) = self.open_sentence_axis() {
+        if let Some(a) = self.open_contemplation_axis() {
             return Some(a);
         }
         if charts.len() < 2 || self.opened.contains(listing) {
@@ -1502,45 +1533,19 @@ impl Entity {
         }
     }
 
-    /// Seed a new fibre from the sentence's H² class — the coordinate the
-    /// current axes could not express. That is exactly what expand_m seeds from.
-    fn open_sentence_axis(&mut self) -> Option<[u8; 32]> {
-        use crate::transducer::element::FIBER_GERMINATED;
-        let held: Vec<crate::transducer::sentence::Nerve> = self
-            .sentences
-            .entries()
-            .into_iter()
-            .map(|(_, n)| n.clone())
-            .collect();
-        for n in &held {
-            let Some((class, _degree)) = n.class.clone() else {
+    /// Seed from a class at any degree on the contemplation — the coordinate
+    /// the current axes could not express. A class is an ideology; the gauge
+    /// that would translate one frame into the other is a translation word.
+    fn open_contemplation_axis(&mut self) -> Option<[u8; 32]> {
+        let classes = self.contemplation.classes_held();
+        for (class, _degree) in classes {
+            let a = [0u8; 32];
+            let b = class.key();
+            let Some(t) = crate::transducer::element::from_translation(&class, a, b) else {
                 continue;
             };
-            let Some(ea) = crate::transducer::sentence::as_element(n) else {
-                continue;
-            };
-            if !ea.is_connection() {
-                continue;
-            }
-            let axis = ea.max_axis().map_or(FIBER_GERMINATED, |m| m.max(FIBER_GERMINATED - 1) + 1);
-            let mut germ = ea;
-            let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
-            let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-            if let (Some(e0), Some(e1)) = (
-                class.carry(&[one.clone(), zero.clone(), zero.clone(), zero.clone()]),
-                class.carry(&[zero.clone(), one.clone(), zero.clone(), zero.clone()]),
-            ) {
-                let block = [[e0[0].clone(), e1[0].clone()], [e0[1].clone(), e1[1].clone()]];
-                if let Some(spelling) = crate::transducer::alphabet::spell(&block) {
-                    if let Some(v) = crate::transducer::element::conformal_of(&spelling, &(zero.clone(), zero)) {
-                        if let Some(m) = crate::transducer::element::affine_of(&v) {
-                            germ.set_fiber(axis, m);
-                        }
-                    }
-                }
-            }
-            match self.speak_word(&germ) {
-                Ok(Utterance::Spoken) => return Some(germ.address()),
+            match self.speak_word(&t) {
+                Ok(Utterance::Spoken) => return Some(t.address()),
                 _ => {}
             }
         }
@@ -1552,69 +1557,51 @@ impl Entity {
         self.opened.len()
     }
 
-    /// PIVOT: a held thought whose chart just gained a genome word is spoken
-    /// as a demand. The bag never shrinks: dirty remainder stays, dirty clears.
-    /// A held sentence dirties when the language moves on any germ chart or
-    /// on the cycle chart.
+    /// PIVOT ON A WORD: read by_chart at the word's chart and prefixes, fill
+    /// cells on those bubbles' links, merge filled components, speak any
+    /// component that closes. Fills are capped at spend_unit.
+    pub fn pivot_on(&mut self, word: &Element) -> usize {
+        let cap = crate::physics::spend_unit() as usize;
+        let (_fills, _formed, _classes, spoken) = self.contemplation.pivot_on(word, cap);
+        let mut n = 0usize;
+        for e in spoken {
+            match self.speak_word(&e) {
+                Ok(Utterance::Spoken) => n += 1,
+                _ => {}
+            }
+        }
+        n
+    }
+
+    /// Pivot every genome word added since last stroke.
     pub fn pivot_thoughts(&mut self) -> usize {
         let n = self.epigenome.genome_len();
-        if n > self.thought_gen {
-            let added: Vec<_> = self.epigenome.genome()[self.thought_gen..]
-                .iter()
-                .map(|w| crate::transducer::stalk::invariant_of(w).key())
-                .collect();
-            self.thought_gen = n;
-            for key in &added {
-                if let Some((_, dirty)) = self.thoughts.get_mut(key) {
-                    *dirty = true;
-                }
-            }
-            let mut added_set: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-            for a in &added {
-                added_set.insert(*a, ());
-            }
-            let sentence_keys: Vec<([u8; 32], Vec<[u8; 32]>)> = self
-                .sentences
-                .entries()
-                .into_iter()
-                .map(|(sk, n)| {
-                    (
-                        *sk,
-                        n.germs
-                            .iter()
-                            .map(|g| crate::transducer::stalk::invariant(&g.chain).key())
-                            .collect(),
-                    )
-                })
-                .collect();
-            for (sk, germ_keys) in sentence_keys {
-                let dirty = added_set.contains(&sk)
-                    || germ_keys.iter().any(|g| added_set.contains(g));
-                if dirty {
-                    if let Some((_, d)) = self.thoughts.get_mut(&sk) {
-                        *d = true;
-                    }
-                }
-            }
+        if n <= self.thought_gen {
+            return 0;
         }
-        let dirty: Vec<Vec<(i64, i64, u8, u8)>> = self
-            .thoughts
-            .entries()
-            .into_iter()
-            .filter(|(_, (_, d))| *d)
-            .map(|(_, (r, _))| r.clone())
-            .collect();
+        let added: Vec<Element> = self.epigenome.genome()[self.thought_gen..].to_vec();
+        self.thought_gen = n;
         let mut spoken = 0usize;
-        for remainder in dirty {
-            let key = crate::transducer::stalk::invariant(&remainder).key();
-            if self.attest(&remainder, &[]).is_ok() {
-                spoken += 1;
-            }
-            if let Some((_, d)) = self.thoughts.get_mut(&key) {
-                *d = false;
-            }
+        for w in &added {
+            spoken += self.pivot_on(w);
         }
         spoken
+    }
+
+    /// Hear a taught word by pivoting the contemplation before banking it.
+    fn absorb_taught(&mut self, taught: &[u8]) -> Option<Comprehension> {
+        let mut pos = 0usize;
+        while pos < taught.len() {
+            let before = pos;
+            let Some(e) = Element::from_bytes(taught, &mut pos) else {
+                break;
+            };
+            if pos == before {
+                break;
+            }
+            let _ = self.pivot_on(&e);
+        }
+        self.epigenome.learn(taught)
     }
 
     /// SPEAK A WORD this entity minted — a closed connection — up to the
@@ -1643,7 +1630,7 @@ impl Entity {
         // The entity holds what it speaks: the connection enters its own
         // genome first, so the fibre Čech has a representative here and the
         // word's return does not depend on the syllabus.
-        self.epigenome.learn(&bytes);
+        self.absorb_taught(&bytes);
         self.session.speak_keyed(&addr, dialogue::encode_adopt(&voice, &bytes))?;
         self.taught_up.insert(addr, ());
         Ok(Utterance::Spoken)

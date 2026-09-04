@@ -615,6 +615,8 @@ pub struct Nerve {
     pub cycles: Vec<Cycle>,
     pub remainder: Vec<Cell>,
     pub class: Option<(Rotor, usize)>,
+    /// Chart prefixes the idea spans, so the court knows the cover.
+    pub cover: crate::network::nerve::Keyed<()>,
 }
 
 impl PartialEq for Nerve {
@@ -881,7 +883,7 @@ pub fn assemble(mut germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
     let complex = bind_complex(&germs, &faces);
     let cycles = project_cycles(&complex);
     let class = first_class(&complex);
-    Nerve { germs, complex, faces, cycles, remainder, class }
+    Nerve { germs, complex, faces, cycles, remainder, class, cover: crate::network::nerve::Keyed::new() }
 }
 
 /// Solve δγ = ω: a gauge per germ, integer-linear in letter exponents.
@@ -1097,6 +1099,8 @@ fn encode_nerve_tail(n: &Nerve, out: &mut Vec<u8>) {
             class.to_bytes(out);
         }
     }
+    out.extend_from_slice(&(n.cover.len() as u32).to_le_bytes());
+    n.cover.for_each(|k, _| out.extend_from_slice(k));
 }
 
 fn take_u32(b: &[u8], pos: &mut usize) -> Option<u32> {
@@ -1175,7 +1179,19 @@ fn decode_nerve_tail(b: &[u8], pos: &mut usize) -> Option<Nerve> {
         None
     };
     let complex = bind_complex(&germs, &faces);
-    Some(Nerve { germs, complex, faces, cycles, remainder, class })
+    let mut cover = crate::network::nerve::Keyed::new();
+    if *pos + 4 <= b.len() {
+        let nc = take_u32(b, pos).unwrap_or(0) as usize;
+        for _ in 0..nc.min(1 << 16) {
+            if let Some(k) = b.get(*pos..*pos + 32).and_then(|s| s.try_into().ok()) {
+                *pos += 32;
+                cover.insert(k, ());
+            } else {
+                break;
+            }
+        }
+    }
+    Some(Nerve { germs, complex, faces, cycles, remainder, class, cover })
 }
 
 /// A sentence Element: tagged tape, not an opened-axis connection.

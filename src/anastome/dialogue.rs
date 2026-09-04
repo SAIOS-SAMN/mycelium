@@ -75,6 +75,13 @@ pub fn decode_refine(body: &[u8]) -> Option<([u8; 32], [u8; 32], Vec<CiteWire>)>
 /// `[ACT_ADOPT][voice 32][element bytes]`. The reply acknowledges queueing
 /// only; verification and installation run on the server's deliberation
 /// worker (never on the request path).
+/// Word-tape tag for a translation (gauge between two sections). No new
+/// act: translations and formed thoughts travel as words. Same value as
+/// `element::TRANSLATION_TAG`.
+pub const TRANSLATION_TAG: u8 = 0x13;
+/// Genome-file section holding persisted thought bubbles.
+pub const THT1: &[u8; 4] = b"THT1";
+
 pub const ACT_ADOPT: u8 = 0x0E;
 
 pub fn encode_adopt(voice: &[u8; 32], element_bytes: &[u8]) -> Vec<u8> {
