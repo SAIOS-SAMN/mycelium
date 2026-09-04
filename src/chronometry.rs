@@ -122,6 +122,19 @@ pub struct TUniversal {
     pub origin_unix: u64,
 }
 
+fn unix_now() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
+impl Default for TUniversal {
+    fn default() -> Self {
+        TUniversal { origin_unix: unix_now() }
+    }
+}
+
 impl TUniversal {
     /// Load the persisted genesis origin, or inscribe it NOW (first boot of
     /// the universe on this state). The file holds one u64 LE — no timezone,
@@ -132,10 +145,7 @@ impl TUniversal {
                 return TUniversal { origin_unix: u64::from_le_bytes(raw) };
             }
         }
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_secs())
-            .unwrap_or(0);
+        let now = unix_now();
         let tmp = format!("{path}.tmp");
         if std::fs::write(&tmp, now.to_le_bytes()).is_ok() {
             let _ = std::fs::rename(&tmp, path);
@@ -146,11 +156,13 @@ impl TUniversal {
     /// Ticks since genesis — whole seconds, wrapped into the 48-bit stamp
     /// space (over 8.9 million years of universe life before wrap).
     pub fn ticks(&self) -> u64 {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_secs())
-            .unwrap_or(0);
-        now.saturating_sub(self.origin_unix) & 0xFFFF_FFFF_FFFF
+        self.ticks_at(unix_now())
+    }
+
+    /// Ticks at a given unix second — tests and the ledger stamp standing
+    /// work without reading the wall twice.
+    pub fn ticks_at(&self, unix: u64) -> u64 {
+        unix.saturating_sub(self.origin_unix) & 0xFFFF_FFFF_FFFF
     }
 
     /// The {S,G,T} triple of a tick count — the three timetable dimensions.

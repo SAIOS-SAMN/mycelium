@@ -15,7 +15,7 @@ replaces the content:
 
 | x402 | xSEPTUM |
 |---|---|
-| scalar amount in one currency | a four-lane magnitude `μ⃗ = [spatial, gauge, fibre, shell]`, never summed, compared by `economy::descends` |
+| scalar amount in one currency | a four-lane magnitude `μ⃗ = [spatial, gauge, temporal, holonomic]`, never summed, compared by `economy::descends` |
 | facilitator verifies a signature | the home hypha escrows on a signed Note and releases only after replay by two organs, exactly as words are installed |
 | off-chain balance in a token | `Treasury` balances earned by verified reduction and solves (`economy::balance_mu`) |
 | pay with money only | pay with money (a Note) or with work (a reduction attested on the listing that priced the request) |
@@ -33,7 +33,8 @@ except what the pore admits. Here the pore is replay.
 - **Witness**: any other hypha whose cover meets the listing's chart; the second organ.
 - **μ⃗**: `[u64; 4]` magnitude on the four lanes.
 - **Escrow**: `Treasury::escrow_award(addr, voices, mu, anchor)`; released by `release_award`, revoked or slashed by `revoke_award`, drawn by `draw_escrow`.
-- **K**: the home's step counter (`Kernel::k_step`). All expiries are in K, never wall clock.
+- **K**: the home's step counter (`Kernel::k_step`). Orders events inside one kernel (rank, settlement sequence, language snapshot).
+- **TUniversal**: the mesh clock every node stamps (`chronometry::TUniversal::ticks`). Anything compared across nodes, or that decides how long a carrier stands (Offer's `k`, challenge `ttl`, dialect supersession), is TUniversal. Lane 2 of μ⃗ is temporal extent in these ticks.
 - **Anchor**: `economy::Anchor`, the pricing anchor the treasury records with every entry.
 
 ## 3. Roles
@@ -81,8 +82,8 @@ named. `len16` is a u16 length prefix; `len32` a u32.
 ‖ home_vk 32              the home hypha's verifying key
 ‖ len16 home_addr         "host:port"
 ‖ mu 4×u64                price on four lanes, from economy::price at the home
-‖ k u64                   home K at pricing
-‖ ttl u64                 strokes: the Note must reach the home before K + ttl
+‖ k u64                   home TUniversal at pricing
+‖ ttl u64                 TUniversal ticks: the Note must reach the home before k + ttl
 ‖ nonce 32
 ‖ mode u8                 0 = resource (bytes delivered), 1 = work (reduction/solve on the listing)
 ‖ len32 request_digest    blake3 of the canonical request (§7.1)
@@ -106,7 +107,7 @@ the payee's task id.
 ```
 
 The home verifies `sig_payee` with the payee's voice key, `sig_payer` with
-the payer's, `k + ttl ≥ K`, the nonce unseen for this listing, and the
+the payer's, `k + ttl ≥ TUniversal`, the nonce unseen for this listing, and the
 payer's `balance_mu` covering `mu` on every occupied lane. Then
 `escrow_award(listing_key, [payer, payee], mu, anchor)`. The escrow entry
 is keyed by `listing_key`; a second Note for the same nonce is refused
@@ -181,8 +182,8 @@ PRICED ──Note verified──▶ ESCROWED ──Receipt mode 0, two sigs─�
    │                          │        │
    │                          │        └──Installed (witness replay)──▶ RELEASED
    │                          │        └──slash──▶ REVOKED(SLASHED)
-   │                          └──K > k + ttl with no receipt──▶ REVOKED(EXPIRED)
-   └──K > k + ttl with no Note──▶ dropped from the book
+   │                          └──TUniversal > k + ttl with no receipt──▶ REVOKED(EXPIRED)
+   └──TUniversal > k + ttl with no Note──▶ dropped from the book
 ```
 
 ### 6.1 Resource flow, HTTP binding
@@ -247,7 +248,7 @@ learning it: the reply is signed by the home and the payee returns it in
 | code | name | meaning |
 |---|---|---|
 | 1 | BAD_SIGNATURE | a signature does not verify |
-| 2 | EXPIRED | `K > k + ttl` |
+| 2 | EXPIRED | `TUniversal > k + ttl` |
 | 3 | DUPLICATE | nonce already used on this listing |
 | 4 | INSUFFICIENT_LANE(l) | balance or note short on lane `l` |
 | 5 | NOT_HOME | this hypha does not home the listing; body carries the home's address |

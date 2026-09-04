@@ -7,8 +7,8 @@
 //! Torsion is the obstruction reading: a demand that will not close is a PIVOT —
 //! a torsion charge on the lane it resisted, the demand for a new fiber.
 
-// The four lanes a germ carries content on — 𝒮 (spatial), 𝒢 (gauge), residual (a
-// germinated coboundary axis), 𝒽 (shell) — are read off the germ's exact per-lane
+// The four lanes a germ carries content on — 𝒮 (spatial), 𝒢 (gauge), 𝒯
+// (temporal), 𝒽 (holonomic/shell) — are read off the germ's exact per-lane
 // support by `Element::lanes()` (transducer/element.rs), not derived here.
 
 /// Per-lane kinematic pressure, torsion, and the SYNTROPIC/ENTROPIC metabolism.
@@ -322,7 +322,7 @@ mod tests {
         assert_eq!(p.metabolism_rate(), [0, 1, 0, 0]);
     }
 
-    /// A germinated pattern charges the residual lane — read off the germ's exact
+    /// A germinated pattern charges the gauge lane — read off the germ's exact
     /// per-lane support (`Element::lanes()`), the coordinate-exact carrier. (Post-
     /// excision every perceived change is a pattern until the mesh consolidates
     /// richer structure; the gauge/spatial lanes fill as those axes germinate.)
@@ -334,7 +334,7 @@ mod tests {
         // GAUGE content, carried alongside the residual defect — the lane
         // projection is measured from the chain, never funneled to one axis.
         let g = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
-        assert_eq!(g.lanes(), [false, true, false, false], "a recolour is gauge content; the fibre lane is empty until punctured");
+        assert_eq!(g.lanes(), [false, true, false, false], "a recolour is gauge content; temporal is empty until the listing stands");
     }
 
     #[test]

@@ -1372,7 +1372,10 @@ pub fn as_element(n: &Nerve) -> Option<Element> {
     let g0 = &n.germs[0];
     let affine = affine_of(&g0.versor)?;
     let sigma = element::assignment(&g0.chain);
-    let carried = element::measure_lanes(&n.remainder);
+    let mut carried = element::measure_lanes(&n.remainder);
+    // Scene-state span at mint: the germs of the sentence are the family's
+    // successive states; lane 2 is that extent, never a cell count.
+    carried[2] = carried[2].saturating_add(n.germs.len().saturating_sub(1) as u64);
     let mut e = from_connection(&affine, &sigma, &n.remainder, carried)?;
     for (k, g) in n.germs.iter().enumerate().skip(1) {
         let Some(a) = affine_of(&g.versor) else { continue };

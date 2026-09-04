@@ -1691,12 +1691,15 @@ pub fn from_translation(
 ///               vanishes (mass moved, scaled, or reshaped).
 ///   𝒢 gauge:    chromatic content — hue transitions on cells where the
 ///               support stands on both sides (recolour, palette orbit).
-///   𝒯 fibre:    the FIBRE VOLUME — sections and torsion cycles the word
-///               holds — measured on the element (`Element::magnitude`),
-///               never on the chain; 0 here.
-///   𝒽 shell:    boundary topology — the connected-component and
+///   𝒯 temporal: standing extent — TUniversal ticks a listing has stood,
+///               or the family's scene-state span at mint. The chain has
+///               none; 0 here. `Element::magnitude` and the kernel overlay
+///               the live T coordinate.
+///   𝒽 holonomic: boundary topology — the connected-component and
 ///               boundary-cochain deltas between the before-support and the
-///               after-support (merges, splits, enclosures).
+///               after-support (merges, splits, enclosures). Sections and
+///               torsion cycles the word holds are added on this lane by
+///               `Element::magnitude`.
 /// A recolour word is gauge-lane work; a move is spatial; a hole closing is
 /// shell. Without these projections the four-lane manifold degenerates to a
 /// scalar on 𝒯 and every gradient downstream flatlines.
@@ -1721,16 +1724,15 @@ pub fn measure_lanes(chain: &[(i64, i64, u8, u8)]) -> [u64; 4] {
     let sb = crate::transducer::spectral::signature(&before_pos, &[]);
     let sa = crate::transducer::spectral::signature(&after_pos, &[]);
     let shell = sb.components.abs_diff(sa.components) + sb.boundary.abs_diff(sa.boundary);
-    // The third lane is the FIBRE VOLUME — sections and torsion cycles the
-    // word carries — and is measured on the element, never on the chain:
-    // the chain's cell count was a sum of the spatial and gauge lanes.
+    // Lane 2 is temporal extent — TUniversal ticks or scene-state span —
+    // and is measured on the standing carrier or at mint, never on the chain.
     [spatial, gauge, 0, shell]
 }
 
 impl Element {
-    /// The four lanes this germ carries content on — 𝒮 spatial, 𝒢 gauge (a group
-    /// recolour), residual (a coboundary/new axis), 𝒽 shell — exactly where the
-    /// coordinate-exact magnitude is nonzero (never the lossy tally).
+    /// The four lanes this germ carries content on — 𝒮 spatial, 𝒢 gauge, 𝒯
+    /// temporal, 𝒽 holonomic — exactly where the coordinate-exact magnitude
+    /// is nonzero (never the lossy tally).
     pub fn lanes(&self) -> [bool; 4] {
         let m = self.magnitude();
         std::array::from_fn(|l| m[l] > 0)
@@ -1740,16 +1742,12 @@ impl Element {
     /// component), never summed, computed EXACTLY from the description at
     /// germination. A settled demand's residual magnitude is 0⃗; a real germ's is
     /// nonzero — the descent the POW++ gate reads.
-    /// The four-lane magnitude: spatial, gauge, and shell from the chain
-    /// (and what a connection carries), and the FIBRE VOLUME — sections and
-    /// torsion cycles this word holds — on the third lane, read from the
-    /// element itself so the lane is independent of the chain's sum.
+    /// Spatial, gauge, and shell from the chain (and what a connection
+    /// carries). Lane 2 is temporal extent at mint (scene-state span).
+    /// Lane 3 gains the holonomic volume — sections and torsion cycles.
     pub fn magnitude(&self) -> [u64; 4] {
         let mut m = self.mag;
-        // The fibre lane: the demand a listing projects onto the fibre (a
-        // body a held word carries by shape under a gauge it lacks) plus the
-        // volume a word already holds there.
-        m[2] = m[2].saturating_add((self.sections.len() + self.torsion.len()) as u64);
+        m[3] = m[3].saturating_add((self.sections.len() + self.torsion.len()) as u64);
         m
     }
 
@@ -2026,9 +2024,10 @@ mod tests {
         let germ = from_residual(&g);
         // A hue transition on a standing cell measures as GAUGE content
         // alongside the residual defect (the four-lane projection).
-        assert_eq!(germ.lanes(), [false, true, false, false], "a recolour is 𝒢 content; the fibre lane is empty until punctured");
+        assert_eq!(germ.lanes(), [false, true, false, false], "a recolour is 𝒢 content; temporal and holonomic are empty until standing or punctured");
         let mag = germ.magnitude();
-        assert!(mag[2] == 0 && mag[1] >= 1 && mag[0] == 0, "gauge only: no spatial, no fibre volume yet");
+        assert!(mag[2] == 0 && mag[1] >= 1 && mag[0] == 0, "gauge only: no spatial, no temporal extent yet");
+        assert_eq!(mag[3], 0, "holonomic volume is empty until sections or torsion");
         // A residual has no group inverse (its block is antisymmetric/singular);
         // its solution is the reverse coboundary (from_residual of b→a), not a
         // matrix inverse — the group solution() correctly declines.

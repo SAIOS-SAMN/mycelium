@@ -241,7 +241,7 @@ pub fn quote(
         )
     };
     let cohesion = crate::cognition::cohesion_over(&rank.closure);
-    Some((surface, priced, view.k_step, cohesion))
+    Some((surface, priced, view.tu, cohesion))
 }
 
 /// Idle consolidation, orchestrated off the request path: the cheap moves

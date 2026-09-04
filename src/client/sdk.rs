@@ -884,6 +884,8 @@ impl Epigenome {
     /// CRYSTALLIZE the genome for persistence — the permanent language only.
     /// The epigenome (expression, recollections, aperture) is deliberately
     /// ephemeral: dialect rebuilds each run; the genome carries continuity.
+    /// taught_up, glued, and recollections are never written: they rebuild
+    /// from the genome at boot.
     /// Format: `GEN1 | n u32 | (len u32 | element)…`.
     pub fn crystallize(&self) -> Vec<u8> {
         let mut out = Vec::with_capacity(4 + self.genome.len() * 64);
@@ -979,6 +981,7 @@ pub struct Entity {
     /// listing address on read): an axis is opened once per listing.
     opened: crate::network::nerve::Keyed<()>,
     physics: crate::physics::Physics,
+    tu: crate::chronometry::TUniversal,
 }
 
 impl Entity {
@@ -1001,7 +1004,16 @@ impl Entity {
             thought_gen: 0,
             opened: crate::network::nerve::Keyed::new(),
             physics: crate::physics::Physics::default(),
+            tu: crate::chronometry::TUniversal::default(),
         }
+    }
+
+    pub fn set_tuniversal(&mut self, tu: crate::chronometry::TUniversal) {
+        self.tu = tu;
+    }
+
+    fn now_tu(&self) -> u64 {
+        self.tu.ticks()
     }
 
     /// Open with CONTINUITY: restore the crystallized genome from `genome_path`
@@ -1567,7 +1579,7 @@ impl Entity {
         // The opened axis carries the listing's own measure on the lanes it
         // moved, and the charts it joined as fibre volume.
         let mut mag = measure_lanes(chain);
-        mag[2] = mag[2].saturating_add(charts.len() as u64);
+        mag[3] = mag[3].saturating_add(charts.len() as u64);
         germ.set_magnitude(mag);
         self.opened.insert(*listing, ());
         match self.speak_word(&germ) {
@@ -1617,8 +1629,10 @@ impl Entity {
                 }
             }
         }
+        self.contemplation.set_now(self.now_tu());
         let _ = self.contemplation.expand_all(&atlas, &rotors, &mut budget);
         let (_fills, _formed, _classes, spoken) = self.contemplation.pivot_on(word, &mut budget);
+        self.contemplation.retire_on_t(self.physics.reserve[2] as usize);
         // Bubble merges speak Rewrites; cavity bubbles re-enter on this chart.
         let mut n = 0usize;
         for e in spoken {

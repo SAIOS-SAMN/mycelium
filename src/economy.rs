@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! ECONOMY — THE DIMENSIONAL LEDGER (alpha Step 4). Every balance and every
-//! receipt is a polytonic μ⃗ 4-vector (𝒮, 𝒢, residual, 𝒽) — scalar amounts are
+//! receipt is a polytonic μ⃗ 4-vector (𝒮, 𝒢, 𝒯, 𝒽) — scalar amounts are
 //! BANNED (a scalar balance is a flattened ledger). Every entry is ANCHORED to
 //! the chronometric chain (K-step + head hash — the unforgeable temporal
 //! binding; Step 5's court audits these). The treasury is a QUOTING ENGINE:
@@ -18,8 +18,8 @@ use crate::transducer::element::Element;
 
 /// A germ's polytonic magnitude — per-lane support size (‖Δ‖'s |supp| component),
 /// never summed, computed EXACTLY from the germ's description. 𝒮 = motion support
-/// (shift/rotation/scale), 𝒢 = relabeled-hue count, residual = changed-cell count,
-/// 𝒽 reserved. A settled demand's residual magnitude is the zero vector; a real
+/// (shift/rotation/scale), 𝒢 = relabeled-hue count, 𝒯 = temporal extent,
+/// 𝒽 = holonomic volume. A settled demand's residual magnitude is the zero vector; a real
 /// germ's is nonzero — hence the descent.
 pub fn magnitude(g: &Element) -> [u64; 4] {
     g.magnitude()
@@ -476,7 +476,7 @@ impl Treasury {
     }
 
     /// The TORSE coin — structure condensed from disorder: the strongest yield,
-    /// paid on the residual lane to the bundle's discoverer, ∝ sections spanned
+    /// paid on the holonomic lane to the bundle's discoverer, ∝ sections spanned
     /// priced at the surface.
     pub fn settle_torse(&mut self, discoverer: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
         let bounded = self.award_bound(mu);
@@ -758,7 +758,7 @@ mod tests {
     }
 
     /// The dimensional ledger: consilience splits the PRICED μ⃗ per lane (nonzero
-    /// lanes never split to zero), and the torse coin books on the residual lane.
+    /// lanes never split to zero), and the torse coin books on the holonomic lane.
     #[test]
     fn consilience_and_torse_settle_as_vectors() {
         let mut t = Treasury::new();

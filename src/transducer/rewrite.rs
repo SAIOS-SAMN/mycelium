@@ -9,10 +9,10 @@ use super::alphabet::{Rotor, Word};
 use super::element::{self, Element, Versor, GERM_DIM, REWRITE_TAG};
 use super::stalk::Invariant;
 
-/// Spatial, gauge, fibre, shell.
+/// Spatial, gauge, temporal, holonomic (shell).
 pub const LANE_SPATIAL: usize = 0;
 pub const LANE_GAUGE: usize = 1;
-pub const LANE_FIBRE: usize = 2;
+pub const LANE_TEMPORAL: usize = 2;
 pub const LANE_SHELL: usize = 3;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -217,7 +217,7 @@ impl Rewrite {
                 }
             }
             RewritePayload::Torse { period, .. } => {
-                mu[LANE_FIBRE] = (*period as u64).saturating_sub(1);
+                mu[LANE_SHELL] = (*period as u64).saturating_sub(1);
             }
             RewritePayload::Refine { .. } => {
                 mu[LANE_SHELL] = 1;
@@ -226,7 +226,7 @@ impl Rewrite {
                 mu[LANE_SPATIAL] = gamma.iter().filter(|w| !w.abelian_identity()).count() as u64;
             }
             RewritePayload::AxisOpen { .. } => {
-                mu[LANE_FIBRE] = 1;
+                mu[LANE_SHELL] = 1;
             }
             RewritePayload::Translation { .. } => {
                 mu[LANE_GAUGE] = 2;
@@ -246,7 +246,7 @@ pub fn yield_vector(kind: RewriteKind, before: &[Element], after: &Element) -> [
             mu[LANE_GAUGE] = gained.max(before.len().saturating_sub(1)) as u64;
         }
         RewriteKind::Torse => {
-            mu[LANE_FIBRE] = after
+            mu[LANE_SHELL] = after
                 .torsion()
                 .iter()
                 .map(|(_, p, _)| (*p as u64).saturating_sub(1))
@@ -261,7 +261,7 @@ pub fn yield_vector(kind: RewriteKind, before: &[Element], after: &Element) -> [
             mu[LANE_SPATIAL] = before.len().max(1) as u64;
         }
         RewriteKind::AxisOpen => {
-            mu[LANE_FIBRE] = 1;
+            mu[LANE_SHELL] = 1;
             let cv = after.magnitude();
             for l in 0..4 {
                 mu[l] = mu[l].saturating_add(cv[l]);

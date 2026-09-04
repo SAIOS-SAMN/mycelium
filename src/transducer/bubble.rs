@@ -92,6 +92,8 @@ pub struct Bubble {
     pub dirty: bool,
     /// Last chart key visited by expand; the next stroke resumes here.
     pub cursor: [u8; 32],
+    /// TUniversal when this bubble's charts last moved.
+    pub moved_tu: u64,
 }
 
 impl Bubble {
@@ -111,11 +113,12 @@ impl Bubble {
     /// the cover; Congruent grows it with a torsion axis; Class writes the
     /// horizon and stops that branch.
     pub fn expand(&mut self, atlas: &Stalks, budget: &mut Budget) -> usize {
-        self.expand_with(atlas, &Keyed::new(), budget)
+        self.expand_with(atlas, &Keyed::new(), 0, budget)
     }
 
-    pub fn expand_with(&mut self, atlas: &Stalks, rotors: &Keyed<Rotor>, budget: &mut Budget) -> usize {
+    pub fn expand_with(&mut self, atlas: &Stalks, rotors: &Keyed<Rotor>, now: u64, budget: &mut Budget) -> usize {
         self.potential = element::measure_lanes(&self.remainder);
+        self.potential[2] = now.saturating_sub(self.moved_tu).max(1);
         if budget.remaining() == 0 || !self.potential.iter().any(|&x| x > 0) {
             return 0;
         }
@@ -162,9 +165,11 @@ impl Bubble {
             match cech::extend(&a, &b, &cell) {
                 Fill::Filled(_) => {
                     self.cover.insert(ck, ());
+                    self.moved_tu = now;
                 }
                 Fill::Congruent(g, ell) => {
                     self.cover.insert(ck, ());
+                    self.moved_tu = now;
                     self.nerve.file_congruent(self.key(), head, g, ell);
                 }
                 Fill::Class(r) => {
@@ -199,6 +204,8 @@ pub struct Contemplation {
     /// Bubbles retired to a cavity chart, address kept, remainder in THT1.
     cavity: Keyed<Vec<RemCell>>,
     pending_rewrites: Vec<Element>,
+    /// TUniversal the entity last stamped; T-room and potential[2] read it.
+    now_tu: u64,
 }
 
 impl Contemplation {
@@ -206,8 +213,42 @@ impl Contemplation {
         Contemplation::default()
     }
 
+    pub fn set_now(&mut self, tu: u64) {
+        self.now_tu = tu;
+    }
+
+    /// When T-room on the entity's reserve is exhausted, the bubble with
+    /// the largest T magnitude (ticks since its charts last moved) goes to
+    /// a cavity chart; pivot_on reads it back when its chart moves.
+    pub fn retire_on_t(&mut self, room: usize) {
+        if self.bubbles.len() <= room.max(1) {
+            return;
+        }
+        let now = self.now_tu;
+        let mut best: Option<([u8; 32], u64)> = None;
+        for (k, b) in self.bubbles.fiber(&ROOT) {
+            let t = now.saturating_sub(b.moved_tu).max(1);
+            match best {
+                Some((_, bt)) if t <= bt => {}
+                _ => best = Some((*k, t)),
+            }
+        }
+        let Some((k, _)) = best else {
+            return;
+        };
+        if let Some(b) = self.bubbles.remove(&k) {
+            self.retract_incidence(&k, &b);
+            self.cavity.insert(k, b.remainder);
+            self.dirty.remove(&k);
+        }
+    }
+
     pub fn len(&self) -> usize {
         self.bubbles.len()
+    }
+
+    pub fn cavity_len(&self) -> usize {
+        self.cavity.len()
     }
 
     pub fn remainders(&self) -> Vec<&[RemCell]> {
@@ -418,7 +459,8 @@ impl Contemplation {
         let key = remainder_addr(&remainder);
         let inv = stalk::invariant(&remainder);
         let cover = cover_of(&inv);
-        let volume = element::measure_lanes(&remainder);
+        let mut volume = element::measure_lanes(&remainder);
+        volume[2] = volume[2].max(1);
         let bubble = Bubble {
             remainder,
             germs: Vec::new(),
@@ -429,6 +471,7 @@ impl Contemplation {
             volume,
             dirty: true,
             cursor: [0; 32],
+            moved_tu: self.now_tu,
         };
         if let Some(old) = self.bubbles.get(&key).cloned() {
             self.retract_incidence(&key, &old);
@@ -471,6 +514,7 @@ impl Contemplation {
             volume,
             dirty: true,
             cursor: [0; 32],
+            moved_tu: 0,
         };
         if let Some(old) = self.bubbles.get(&key).cloned() {
             self.retract_incidence(&key, &old);
@@ -527,6 +571,7 @@ impl Contemplation {
             volume,
             dirty: false,
             cursor: [0; 32],
+            moved_tu: 0,
         };
         self.admit_incidence(key, &bubble);
         self.bubbles.insert(key, bubble);
@@ -627,7 +672,7 @@ impl Contemplation {
             from = k;
             self.expand_cursor = k;
             if let Some(b) = self.bubbles.get_mut(&k) {
-                spent += b.expand_with(atlas, rotors, budget);
+                spent += b.expand_with(atlas, rotors, self.now_tu, budget);
                 if !b.dirty {
                     self.dirty.remove(&k);
                 }
@@ -957,6 +1002,7 @@ impl Contemplation {
                 volume,
                 dirty,
                 cursor: [0; 32],
+            moved_tu: 0,
             };
             c.admit_incidence(key, &bubble);
             c.bubbles.insert(key, bubble);
@@ -1052,6 +1098,19 @@ mod tests {
         let keys: Vec<[u8; 32]> = c.bubbles.fiber(&ROOT).map(|(k, _)| *k).collect();
         assert_eq!(keys.len(), 1);
         assert!(c.bubbles.get(&keys[0]).unwrap().potential.iter().any(|&x| x > 0));
+    }
+
+    #[test]
+    fn t_room_moves_the_oldest_bubble_to_cavity() {
+        let mut c = Contemplation::new();
+        c.set_now(10);
+        c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
+        c.set_now(50);
+        c.hold(vec![(5, 5, 3, 4), (5, 6, 3, 4)]);
+        assert_eq!(c.len(), 2);
+        c.retire_on_t(1);
+        assert_eq!(c.len(), 1, "T-room of one keeps the younger bubble");
+        assert_eq!(c.cavity_len(), 1, "the older remainder is a cavity chart");
     }
 
     #[test]

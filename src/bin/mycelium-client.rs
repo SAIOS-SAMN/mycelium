@@ -271,6 +271,7 @@ fn main() {
     }
 
     let mut entity = Entity::open_persistent(&addr, Kernel::named(&name), &genome_path);
+    entity.set_tuniversal(tuniversal);
     for h in &hyphas {
         entity.add_hypha(h);
     }

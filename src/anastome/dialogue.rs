@@ -513,8 +513,9 @@ pub fn decode_cover(body: &[u8]) -> Option<([u8; 32], String, Vec<(u8, crate::tr
 }
 
 /// Offer: `[ACT_OFFER][addr 32][elen u32][elem][nv u32][voices][deflation 32][k 8][sig 64][inst_sig 64]`
-/// `sig` covers the Offer prefix; `inst_sig` is the home organ's signature
-/// over the Installed prefix, so a second vantage can emit Installed without
+/// `k` is TUniversal at first vantage, comparable across hyphas. `sig`
+/// covers the Offer prefix; `inst_sig` is the home organ's signature over
+/// the Installed prefix, so a second vantage can emit Installed without
 /// the home key.
 pub fn encode_offer(
     addr: &[u8; 32],
@@ -893,7 +894,7 @@ pub fn decode_solve_receipt(body: &[u8]) -> Option<(u8, [u64; 4])> {
 /// One centered coboundary cell `(row, col, before, after)`.
 pub type Cell = (i64, i64, u8, u8);
 
-fn push_chain(out: &mut Vec<u8>, chain: &[Cell]) {
+pub fn push_chain(out: &mut Vec<u8>, chain: &[Cell]) {
     out.extend_from_slice(&(chain.len() as u32).to_le_bytes());
     for (r, c, before, after) in chain {
         out.extend_from_slice(&r.to_le_bytes());
@@ -911,7 +912,7 @@ pub fn cell_wire_width() -> usize {
     probe.len() - 4
 }
 
-fn read_chain(b: &[u8], p: &mut usize) -> Option<Vec<Cell>> {
+pub fn read_chain(b: &[u8], p: &mut usize) -> Option<Vec<Cell>> {
     let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
     *p += 4;
     if n > b.len().saturating_sub(*p) / 18 {
@@ -1011,8 +1012,8 @@ pub fn decode_quote_request(body: &[u8]) -> Option<([u8; 32], Vec<crate::transdu
 pub type WorkItem = ([u8; 32], [u64; 4], Vec<Cell>, Vec<crate::transducer::stalk::Invariant>);
 
 /// `[ACT_QUOTE][surface 4×u64][K u64][n u8][item: addr 32 | μ⃗ 4×u64 | chain]…`
-/// — K is the judge's k-step at the quote: the temporal coordinate every
-/// listing quoted here is read at.
+/// — the u64 is TUniversal at the quote: the temporal coordinate every
+/// listing quoted here is read at. K-order stays on the docket request.
 /// The offset of the served count in a quote reply (act, surface, K).
 pub const QUOTE_COUNT_AT: usize = 1 + 32 + 8;
 pub fn encode_quote_reply(surface: &[u64; 4], k: u64, items: &[WorkItem]) -> Vec<u8> {
@@ -1125,8 +1126,9 @@ pub type Docket = ([u8; 32], Vec<u8>, Vec<[u8; 32]>, [u64; 4], [u64; 4], u64);
 /// utterance that settled it, and the magnitudes before and after as the
 /// hypha measured them. The court replays the utterance and measures for
 /// itself: two measurements of one deflation are the proof of convergence.
-/// The last field is the hypha's k-step of the settlement.
-pub type Settlement = ([u8; 32], Vec<Cell>, [u8; 32], Vec<CiteWire>, [u64; 4], [u64; 4], u64);
+/// The last two fields are the hypha's k-step (order inside one kernel)
+/// and the TUniversal stamp (ledger, cross-node).
+pub type Settlement = ([u8; 32], Vec<Cell>, [u8; 32], Vec<CiteWire>, [u64; 4], [u64; 4], u64, u64);
 
 pub fn encode_docket_reply(dockets: &[Docket]) -> Vec<u8> {
     encode_docket_reply_with(dockets, &[])
@@ -1153,7 +1155,7 @@ pub fn encode_docket_reply_paged(
     // provisional list never starves the court of what actually settled.
     let mut settled: Vec<Vec<u8>> = Vec::new();
     let mut settled_len = 8usize;
-    for (listing, chain, voice, cites, before, after, k) in settlements {
+    for (listing, chain, voice, cites, before, after, k, tu) in settlements {
         let mut item = Vec::new();
         item.extend_from_slice(listing);
         push_chain(&mut item, chain);
@@ -1162,6 +1164,7 @@ pub fn encode_docket_reply_paged(
         push_mu(&mut item, before);
         push_mu(&mut item, after);
         item.extend_from_slice(&k.to_le_bytes());
+        item.extend_from_slice(&tu.to_le_bytes());
         if settled_len + item.len() > budget {
             break;
         }
@@ -1229,7 +1232,11 @@ pub fn decode_settlements(body: &[u8]) -> Vec<Settlement> {
         let Some(after) = read_mu(body, &mut p) else { break };
         let Some(k) = body.get(p..p + 8).map(|b| u64::from_le_bytes(b.try_into().unwrap())) else { break };
         p += 8;
-        out.push((listing, chain, voice, cites, before, after, k));
+        let tu = body.get(p..p + 8).map(|b| u64::from_le_bytes(b.try_into().unwrap())).unwrap_or(0);
+        if body.get(p..p + 8).is_some() {
+            p += 8;
+        }
+        out.push((listing, chain, voice, cites, before, after, k, tu));
     }
     out
 }
@@ -1250,6 +1257,9 @@ pub fn decode_cavities(body: &[u8]) -> Vec<Vec<u8>> {
         let Some(_) = read_mu(body, &mut p) else { return Vec::new() };
         let Some(_) = read_mu(body, &mut p) else { return Vec::new() };
         p += 8;
+        if p + 8 <= body.len() {
+            p += 8;
+        }
     }
     let Some(n) = body.get(p..p + 4).map(|b| u32::from_le_bytes(b.try_into().unwrap()) as usize) else {
         return Vec::new();
@@ -1584,7 +1594,7 @@ mod tests {
         assert_eq!(it, items);
         // A settlement rides the docket after the dockets, with its utterance.
         let docket: Docket = (germ, vec![1, 2, 3], vec![voice], [1, 2, 3, 4], [0, 0, 7, 0], 41);
-        let settlement: Settlement = (germ, chain.clone(), voice, cites.clone(), [2, 0, 2, 0], [0, 0, 1, 0], 42);
+        let settlement: Settlement = (germ, chain.clone(), voice, cites.clone(), [2, 0, 2, 0], [0, 0, 1, 0], 42, 7);
         let body = encode_docket_reply_with(std::slice::from_ref(&docket), std::slice::from_ref(&settlement));
         assert_eq!(decode_docket_reply(&body).unwrap(), vec![docket.clone()]);
         assert_eq!(decode_settlements(&body), vec![settlement.clone()]);

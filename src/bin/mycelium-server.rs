@@ -614,7 +614,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         );
         let served = body.get(dialogue::QUOTE_COUNT_AT).copied().unwrap_or(0);
         eprintln!(
-            "  quote voice {:02x} → surface {surface:?}; {served}/{} clusters ({} bytes); K={k_step}; cohesion {cohesion:?}",
+            "  quote voice {:02x} → surface {surface:?}; {served}/{} clusters ({} bytes); TU={k_step}; cohesion {cohesion:?}",
             qvoice[0],
             items.len(),
             body.len()
@@ -848,7 +848,7 @@ fn main() {
     };
     eprintln!("TUniversal {} (origin {})", tuniversal.stamp(), tuniversal.origin_unix);
 
-    let kernel = Arc::new(Mutex::new(Kernel::new()));
+    let kernel = Arc::new(Mutex::new(Kernel::with_tuniversal(tuniversal)));
     {
         let k = Arc::clone(&kernel);
         let path = state_path.clone();
