@@ -3,7 +3,7 @@
 Status at f595b4e: balances, stake bond, escrow, per-lane pricing, and the
 ledger entries exist in `src/economy.rs`. Issuance as mint, stake for
 voices, transfer, genesis, and the audit invariant are specified here and
-not yet landed. Companion documents: `PRODUCT.md`, `ENGINEERING.md`,
+not yet landed. Companion documents: `MU-PRODUCT.md`, `MU-ENGINEERING.md`,
 `XSEPTUM.md`.
 
 ## 1. The unit
@@ -123,7 +123,7 @@ ratios the physics already reads:
 - accrual on T against standing extent;
 - slash against bond.
 
-They are studied in the simulator (`ENGINEERING.md` §9), never tuned on the
+They are studied in the simulator (`MU-ENGINEERING.md` §9), never tuned on the
 wire.
 
 ## 9. What is landed and what is not
@@ -137,4 +137,4 @@ Not landed: mint as issuance (release currently draws from the bond and
 pays nothing when the bond is empty), `price` returning zero when the bond
 is empty, stake and unstake for voices, the Note, voice keys, genesis,
 burn, `supply`, `audit`, T accrual on open demands, delegation. The
-landing order is in `ENGINEERING.md` §10.
+landing order is in `MU-ENGINEERING.md` §10.

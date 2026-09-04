@@ -1,7 +1,7 @@
 # Engineering — the system as built and as specified
 
 Status at f595b4e. Every section names what is landed and what is not.
-Companion documents: `ECONOMY.md`, `PRODUCT.md`, `XSEPTUM.md`,
+Companion documents: `MU-ECONOMY.md`, `MU-PRODUCT.md`, `XSEPTUM.md`,
 `ALPHABET.md`, `enumeration-audit.md`.
 
 ## 1. Two binaries
@@ -84,7 +84,7 @@ Inside every hypha (`server/cognition.rs`, `court/verdict.rs`):
 ## 6. Lifecycle
 
 A carrier lives in the hot set while it can still change a verdict and
-leaves by relocation to a cold section, never by deletion (`ECONOMY.md`
+leaves by relocation to a cold section, never by deletion (`MU-ECONOMY.md`
 §6 for the ledger side):
 
 | carrier | leaves when | cold section |

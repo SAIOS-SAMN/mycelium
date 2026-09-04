@@ -2,7 +2,7 @@
 
 Status at f595b4e: the market for work exists on every hypha; the products
 below are the surfaces that expose it. What is landed and what is specified
-is marked in §7. Companion documents: `ECONOMY.md`, `ENGINEERING.md`,
+is marked in §7. Companion documents: `MU-ECONOMY.md`, `MU-ENGINEERING.md`,
 `XSEPTUM.md`.
 
 ## 1. What is sold
@@ -112,5 +112,5 @@ stake for voices, the wallet verbs in the client.
 
 The first hundred families closed by rules the court replayed, and the
 first external buyer who paid for a solve and verified the root themselves.
-Every item in the build order in `ENGINEERING.md` §10 is aimed at those two
+Every item in the build order in `MU-ENGINEERING.md` §10 is aimed at those two
 events.
