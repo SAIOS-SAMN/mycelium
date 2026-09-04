@@ -1641,10 +1641,10 @@ impl Kernel {
     /// the rest now derives retires, and the voice whose word derived it
     /// earns the refine yield.
     fn refine_stratum(&mut self, new: &[u8; 32]) {
-        let Some(i) = self.basis_index.get(new).copied() else {
+        let Some(after) = self.word_at(new).cloned() else {
             return;
         };
-        let inv = crate::transducer::stalk::invariant_of(&self.basis[i]);
+        let inv = crate::transducer::stalk::invariant_of(&after);
         let members: Vec<[u8; 32]> = self
             .stalks
             .fiber(&inv)
@@ -1652,25 +1652,27 @@ impl Kernel {
             .copied()
             .filter(|a| a != new)
             .collect();
-        let bidder = self.discoverer_at(i);
+        let bidder = self.discoverer_of(new);
         for addr in members {
             let Some(j) = self.basis_index.get(&addr).copied() else {
                 continue;
             };
-            if !self.basis[j].sections().is_empty() || !self.basis[j].torsion().is_empty() {
+            let Some(held) = self.basis.get(j) else {
+                continue;
+            };
+            if !held.sections().is_empty() || !held.torsion().is_empty() {
                 continue;
             }
             if self.provisional.contains(&addr) {
                 continue;
             }
-            let candidate = (*self.basis[j]).clone();
+            let candidate = (**held).clone();
             if !matches!(self.reduce_excluding(&candidate, Some(j)), NormalForm::Decomposed(_)) {
                 continue;
             }
-            let inv = crate::transducer::stalk::invariant_of(&candidate);
+            let chart = crate::transducer::stalk::invariant_of(&candidate);
             let axis = addr[0] as u64;
-            let after = (*self.basis[i]).clone();
-            let payload = crate::transducer::rewrite::RewritePayload::Refine { chart: inv, axis };
+            let payload = crate::transducer::rewrite::RewritePayload::Refine { chart, axis };
             let _ = self.mint_rewrite(
                 crate::transducer::rewrite::RewriteKind::Refine,
                 &[candidate.clone()],
@@ -5991,6 +5993,36 @@ mod tests {
         assert_eq!(k.basis_len(), 1, "the redundant rule is consolidated away");
         k.optimize(); // the survivor is essential — nothing else derives it
         assert_eq!(k.basis_len(), 1, "an essential generator survives the probe");
+    }
+
+    /// The survivor of refine_stratum may sit at the last index. Removing an
+    /// earlier derivable sibling used to leave that index equal to len.
+    #[test]
+    fn refine_stratum_does_not_panic_when_the_survivor_is_last() {
+        use crate::transducer::element::from_residual_framed;
+        use crate::transducer::germinate::germinate;
+        let mut k = Kernel::new();
+        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+        let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
+        k.ingest(&a, &rot, [1; 32]);
+        assert_eq!(k.ingest(&a, &rot, [2; 32]), Outcome::GermPending);
+        k.glue_local();
+        let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
+        let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
+        k.basis_insert(
+            from_residual_framed(&germinate(&a_far, &rot_far).unwrap(), &(4, 4, 8, 8)),
+            [7; 32],
+        );
+        k.basis_insert(
+            from_residual_framed(&germinate(&a_far, &rot_far).unwrap(), &(3, 3, 6, 6)),
+            [8; 32],
+        );
+        assert_eq!(k.basis_len(), 3);
+        let survivor = k.basis()[2].address();
+        k.refine_stratum(&survivor);
+        assert!(k.word_at(&survivor).is_some(), "the last card stays keyed");
+        assert!(k.basis_len() >= 1);
+        assert!(k.basis_len() < 3, "at least one earlier duplicate retired");
     }
 
     /// THE REFINEMENT BID (0x09): a bidder claims a word the rest of the
