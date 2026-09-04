@@ -45,8 +45,11 @@ pub struct TaskRegistry {
     tasks: Vec<([u8; 32], Task, TaskState)>,
     /// Dispatch cursor (rotates so pull requests spread across the book).
     cursor: usize,
-    /// Cover-change cursor: a budgeted walk relocates and reintakes by home.
+    /// Cover-change cursor: a budgeted walk re-homes by the cover trie.
     cover_cursor: usize,
+    /// First-time intake cursor: walks the manifest once, then stops.
+    intake_cursor: usize,
+    intake_done: bool,
 }
 
 /// The boundary-root digest: identity from CONTENT — the train coboundaries
@@ -94,10 +97,35 @@ pub fn task_tension(task: &Task) -> [u64; 4] {
 
 impl TaskRegistry {
     pub fn new() -> Self {
-        TaskRegistry { tasks: Vec::new(), cursor: 0, cover_cursor: 0 }
+        TaskRegistry { tasks: Vec::new(), cursor: 0, cover_cursor: 0, intake_cursor: 0, intake_done: false }
     }
 
-    /// Next `n` tasks for a cover-change relocate/reintake stroke.
+    /// Next `n` tasks for first-time listing. Empty once the manifest has
+    /// been walked; cover changes re-home through [`next_cover_batch`].
+    pub fn next_intake_batch(&mut self, n: usize) -> Vec<([u8; 32], Task)> {
+        let len = self.tasks.len();
+        if self.intake_done || len == 0 || n == 0 {
+            return Vec::new();
+        }
+        let take = n.min(len.saturating_sub(self.intake_cursor));
+        let mut out = Vec::with_capacity(take);
+        for _ in 0..take {
+            let i = self.intake_cursor;
+            self.intake_cursor += 1;
+            let (id, task, _) = &self.tasks[i];
+            out.push((*id, task.clone()));
+        }
+        if self.intake_cursor >= len {
+            self.intake_done = true;
+        }
+        out
+    }
+
+    pub fn intake_done(&self) -> bool {
+        self.intake_done || self.tasks.is_empty()
+    }
+
+    /// Next `n` tasks for a cover-change re-home stroke.
     pub fn next_cover_batch(&mut self, n: usize) -> Vec<([u8; 32], Task)> {
         let len = self.tasks.len();
         if len == 0 || n == 0 {
@@ -204,6 +232,9 @@ impl TaskRegistry {
                 }
             }
         }
+        out.extend_from_slice(b"INT1");
+        out.extend_from_slice(&(self.intake_cursor as u32).to_le_bytes());
+        out.push(u8::from(self.intake_done));
         out
     }
 
@@ -239,6 +270,14 @@ impl TaskRegistry {
                     entry.2 = TaskState::Settled(count);
                     restored += 1;
                 }
+            }
+        }
+        if bytes.get(p..p + 4) == Some(b"INT1") {
+            if let Some(c) = bytes.get(p + 4..p + 8).map(|b| u32::from_le_bytes(b.try_into().unwrap()) as usize) {
+                self.intake_cursor = c.min(self.tasks.len());
+            }
+            if let Some(&d) = bytes.get(p + 8) {
+                self.intake_done = d != 0 || self.intake_cursor >= self.tasks.len();
             }
         }
         restored
@@ -342,5 +381,19 @@ mod tests {
         let right = vec![vec![vec![0u8, 0], vec![2, 2]]];
         assert!(matches!(reg.settle(&id, &right), SolveYield::Bounty(_)));
         assert!(reg.dispatch().is_none(), "a settled book dispatches nothing");
+    }
+
+    /// First-time intake walks the manifest once under a budget; further
+    /// calls are empty. Cover-change batches still wrap.
+    #[test]
+    fn intake_exhausts_the_manifest_once() {
+        let mut reg = TaskRegistry::new();
+        let id = reg.register(toy_task());
+        let first = reg.next_intake_batch(8);
+        assert_eq!(first.len(), 1);
+        assert_eq!(first[0].0, id);
+        assert!(reg.intake_done());
+        assert!(reg.next_intake_batch(8).is_empty(), "the manifest is exhausted");
+        assert_eq!(reg.next_cover_batch(1).len(), 1, "cover re-home still walks");
     }
 }

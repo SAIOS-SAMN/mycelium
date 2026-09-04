@@ -16,10 +16,12 @@ BASE = Path.home() / ".mycelium"
 SERVERS = ("a", "b", "c")
 CLIENTS = ("1", "2", "3", "4", "5")
 BINDS = {"a": "127.0.0.1:7500", "b": "127.0.0.1:7501", "c": "127.0.0.1:7502"}
-PEERS = "127.0.0.1:7500\n127.0.0.1:7501\n127.0.0.1:7502\n"
 BOOTSTRAP = "127.0.0.1:7500\n"
-BOND = (8, 8, 8, 8)
-ALLOC = (8, 8, 8, 8)
+# Per-lane bond (𝒮, 𝒢, 𝒯, 𝒽) — not one scalar broadcast to four lanes.
+BOND = (8, 8, 1, 8)
+ALLOC = (8, 8, 1, 8)
+LEDGERS = {"a": "hypha-a", "b": "hypha-b", "c": "hypha-c"}
+GENOMES = {"1": "client-a", "2": "client-b", "3": "client-c", "4": "worker-a", "5": "worker-b"}
 
 
 def mint_seed(path: Path) -> bytes:
@@ -55,11 +57,18 @@ def main() -> None:
         seed = mint_seed(home / "hypha.key")
         keys[name] = (seed, vk_hex(seed))
         (home / "bind").write_text(BINDS[name] + "\n")
-        (home / "peers").write_text(PEERS)
+        others = "".join(f"{BINDS[s]}\n" for s in SERVERS if s != name)
+        (home / "peers").write_text(others)
         if (STATE / "tuniversal").exists():
             shutil.copy2(STATE / "tuniversal", home / "tuniversal")
         if (STATE / "court.federation").exists():
             shutil.copy2(STATE / "court.federation", home / "court.federation")
+        src = STATE / f"{LEDGERS[name]}.ledger"
+        if src.exists():
+            shutil.copy2(src, home / "ledger")
+        reg = STATE / f"{LEDGERS[name]}.ledger.registry"
+        if reg.exists():
+            shutil.copy2(reg, home / "ledger.registry")
 
     voices = {}
     for name in CLIENTS:
@@ -71,6 +80,9 @@ def main() -> None:
         (home / "bootstrap").write_text(BOOTSTRAP)
         if (STATE / "tuniversal").exists():
             shutil.copy2(STATE / "tuniversal", home / "tuniversal")
+        genome = STATE / f"{GENOMES[name]}.genome"
+        if genome.exists():
+            shutil.copy2(genome, home / "genome")
 
     digest = corpus_hash(CORPUS)
     sig = SigningKey(keys["a"][0]).sign(digest).signature

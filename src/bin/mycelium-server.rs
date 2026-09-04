@@ -716,8 +716,58 @@ fn homes_here(mesh: &Mesh, kernel: &Mutex<Kernel>, inv: &mycelium::transducer::s
     home(&c, inv, mag, &r, &a, Some((&mesh.vk, &room, &mesh.bind))).0 == mesh.vk
 }
 
-/// Budgeted cover-change walk: relocate listings whose key no longer homes
-/// here, reintake those that now do.
+fn list_task(
+    kernel: &Mutex<Kernel>,
+    mesh: &Mesh,
+    tid: [u8; 32],
+    task: &mycelium::arc::Task,
+    rehome: bool,
+) {
+    for (a, b) in &task.train {
+        let Some((mut chain, _, frame)) = mycelium::arc::refine_delta(a, b) else {
+            continue;
+        };
+        chain.sort_unstable();
+        let residual = mycelium::transducer::element::from_residual_framed(&chain, &frame);
+        let inv = mycelium::transducer::stalk::invariant_of(&residual);
+        let addr = residual.address();
+        let here = homes_here(mesh, kernel, &inv, &residual.magnitude());
+        let mut k = match kernel.lock() {
+            Ok(g) => g,
+            Err(_) => continue,
+        };
+        match here {
+            true => {
+                if k.intake(&chain, &frame) {
+                    k.bind_listing_task(addr, tid);
+                }
+            }
+            false if rehome => match k.has_listing(&addr) {
+                true => k.relocate_listing(&addr),
+                false => {}
+            },
+            false => {}
+        }
+    }
+}
+
+/// First-time listing under a stroke budget until the manifest is exhausted.
+fn intake_corpus(
+    kernel: &Mutex<Kernel>,
+    mesh: &Mesh,
+    registry: &Mutex<mycelium::registry::TaskRegistry>,
+    budget: usize,
+) {
+    let batch = match registry.lock() {
+        Ok(mut r) => r.next_intake_batch(budget),
+        Err(_) => return,
+    };
+    for (tid, task) in batch {
+        list_task(kernel, mesh, tid, &task, false);
+    }
+}
+
+/// Cover-change walk: re-home listings whose key no longer (or now) homes here.
 fn relocate_corpus(
     kernel: &Mutex<Kernel>,
     mesh: &Mesh,
@@ -729,32 +779,19 @@ fn relocate_corpus(
         Err(_) => return,
     };
     for (tid, task) in batch {
-        for (a, b) in &task.train {
-            let Some((mut chain, _, frame)) = mycelium::arc::refine_delta(a, b) else {
-                continue;
-            };
-            chain.sort_unstable();
-            let residual = mycelium::transducer::element::from_residual_framed(&chain, &frame);
-            let inv = mycelium::transducer::stalk::invariant_of(&residual);
-            let addr = residual.address();
-            let here = homes_here(mesh, kernel, &inv, &residual.magnitude());
-            let mut k = match kernel.lock() {
-                Ok(g) => g,
-                Err(_) => continue,
-            };
-            match here {
-                true => {
-                    if k.intake(&chain, &frame) {
-                        k.bind_listing_task(addr, tid);
-                    }
-                }
-                false => match k.has_listing(&addr) {
-                    true => k.relocate_listing(&addr),
-                    false => {}
-                },
-            }
-        }
+        list_task(kernel, mesh, tid, &task, true);
     }
+}
+
+fn demand_cover_home(mesh: &Mesh, kernel: &Mutex<Kernel>, chain: &[(i64, i64, u8, u8)]) -> ([u8; 32], String) {
+    let residual = mycelium::transducer::element::from_residual(&chain.to_vec());
+    let inv = mycelium::transducer::stalk::invariant_of(&residual);
+    let mag = residual.magnitude();
+    let room = kernel.lock().map(|k| room64(k.lane_room())).unwrap_or([0; 4]);
+    let c = mesh.cover.lock().unwrap();
+    let r = mesh.rooms.lock().unwrap();
+    let a = mesh.addrs.lock().unwrap();
+    home(&c, &inv, &mag, &r, &a, Some((&mesh.vk, &room, &mesh.bind)))
 }
 
 fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
@@ -764,11 +801,17 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
     if serve_control(stream, &frame, door) {
         return;
     }
-    // A demand routed on the nerve is heard as the demand it carries; only
-    // a peer the router knows is heard, and it is never routed on.
+    // A demand the client spoke here is forwarded once, to the key's home
+    // on the cover trie. A frame that arrived as ACT_DEMAND_ROUTED is
+    // judged and never forwarded — the loop a→b→c→a was that unwrap
+    // becoming ACT_DEMAND and closest_excluding sending it on again.
+    let arrived_routed = frame.body.first() == Some(&dialogue::ACT_DEMAND_ROUTED);
     let frame = match frame.body.first() {
         Some(&k) if k == dialogue::ACT_DEMAND_ROUTED => match dialogue::decode_routed_demand(&frame.body) {
-            Some((origin, demand)) if door.router.lock().map(|r| r.knows(&origin)).unwrap_or(false) => {
+            Some((origin, demand))
+                if origin == mesh.vk
+                    || mesh.addrs.lock().map(|a| a.contains(&origin)).unwrap_or(false) =>
+            {
                 Frame { lane: frame.lane, body: demand.to_vec() }
             }
             _ => return,
@@ -866,11 +909,11 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         return;
     }
     let pbytes = if kind == dialogue::ACT_GOSSIP && rest.len() >= 32 { &rest[32..] } else { rest };
-    if kind == dialogue::ACT_DEMAND {
+    if kind == dialogue::ACT_DEMAND && !arrived_routed {
         if let Some((_, chain, _)) = dialogue::decode_demand(&frame.body) {
-            let key = mycelium::transducer::element::from_residual(&chain).address();
-            if let Some((_, addr)) = door.router.lock().ok().and_then(|r| r.closest_excluding(&key, &[*id])) {
-                let _ = door.nerve_tx.try_send((addr, dialogue::encode_routed_demand(id, &frame.body)));
+            let (home_vk, home_addr) = demand_cover_home(mesh, kernel, &chain);
+            if home_vk != mesh.vk && home_addr != mesh.bind && !home_addr.is_empty() {
+                let _ = door.nerve_tx.try_send((home_addr, dialogue::encode_routed_demand(id, &frame.body)));
             }
         }
     }
@@ -1013,7 +1056,7 @@ fn main() {
     let vk = hypha_key.vk_bytes();
     let id = vk;
     let tag = hypha_key.prefix();
-    let join_peers: Vec<String> = read_lines(&home.join("peers"))
+    let mut join_peers: Vec<String> = read_lines(&home.join("peers"))
         .into_iter()
         .filter(|p| !p.is_empty())
         .collect();
@@ -1084,6 +1127,7 @@ fn main() {
             (Some(listener), resolved)
         }
     };
+    join_peers.retain(|p| p != &addr);
 
     let mesh = Mesh {
         cover: Arc::new(Mutex::new(Cover::new())),
@@ -1148,44 +1192,18 @@ fn main() {
                 })
                 .unwrap_or_default();
             files.sort();
-            let mut listed = 0usize;
             let mut tasked = 0usize;
             for f in &files {
                 let Ok(text) = std::fs::read_to_string(f) else { continue };
                 let Some(task) = mycelium::arc::parse_task(&text) else { continue };
-                let tid = mycelium::registry::task_id(&task);
-                registry.lock().unwrap().register(task.clone());
+                registry.lock().unwrap().register(task);
                 tasked += 1;
-                for (a, b) in &task.train {
-                    if let Some((mut chain, _, frame)) = mycelium::arc::refine_delta(a, b) {
-                        chain.sort_unstable();
-                        let residual = mycelium::transducer::element::from_residual_framed(&chain, &frame);
-                        let inv = mycelium::transducer::stalk::invariant_of(&residual);
-                        match homes_here(&mesh, &kernel, &inv, &residual.magnitude()) {
-                            false => continue,
-                            true => {}
-                        }
-                        let key = mycelium::transducer::element::listing_key(&chain, &frame);
-                        if kernel.lock().unwrap().intake(&chain, &frame) {
-                            listed += 1;
-                            kernel.lock().unwrap().bind_listing_task(key, tid);
-                        }
-                    }
-                }
             }
-            let self_room = room64(kernel.lock().unwrap().lane_room());
-            kernel.lock().unwrap().unlist_foreign(|p| {
-                let inv = mycelium::transducer::stalk::invariant_of(p);
-                let c = mesh.cover.lock().unwrap();
-                let r = mesh.rooms.lock().unwrap();
-                let a = mesh.addrs.lock().unwrap();
-                mycelium::network::nerve::home(&c, &inv, &p.magnitude(), &r, &a, Some((&mesh.vk, &self_room, &mesh.bind))).0 == mesh.vk
-            });
             let restored = std::fs::read(format!("{state_path}.registry"))
                 .map(|b| registry.lock().unwrap().overlay(&b))
                 .unwrap_or(0);
             eprintln!(
-                "[{tag}] corpus registered: {tasked} tasks from {} ({} unsolved, {listed} home demands listed, {restored} settled states restored)",
+                "[{tag}] corpus registered: {tasked} tasks from {} ({} unsolved, {restored} settled states restored; intake continues under stroke budget)",
                 corpus_dir.display(),
                 registry.lock().unwrap().unsolved(),
             );
@@ -1380,13 +1398,20 @@ fn main() {
             let ratio = mycelium::physics::aperture_cycle() as u64;
             let mut wait = mycelium::physics::from_transport(mesh_rtt(&mesh), 1);
             let mut last_moved = Instant::now();
+            let mut last_cover: Option<[[u8; 32]; 4]> = None;
             loop {
                 std::thread::sleep(wait);
                 if let Ok(mut k) = kernel.lock() {
                     k.court_stroke();
                 }
+                let budget = mycelium::physics::expansion_unit() as usize;
+                intake_corpus(&kernel, &mesh, &registry, budget);
                 rebuild_own_cover(&kernel, &mesh);
-                relocate_corpus(&kernel, &mesh, &registry, 8);
+                let roots = mesh.cover.lock().ok().map(|c| c.roots());
+                if roots != last_cover {
+                    relocate_corpus(&kernel, &mesh, &registry, budget);
+                    last_cover = roots;
+                }
                 let mut dests: mycelium::network::nerve::Keyed<String> = mycelium::network::nerve::Keyed::new();
                 for p in &join {
                     if p != &mesh.bind {
