@@ -952,7 +952,7 @@ pub fn close(n: &mut Nerve) -> bool {
                     n.class = Some((r, d));
                     all_filled = false;
                 }
-                Fill::Open => {
+                Fill::Open | Fill::Already => {
                     all_filled = false;
                 }
             }
@@ -1117,7 +1117,7 @@ fn encode_nerve_tail(n: &Nerve, out: &mut Vec<u8>) {
             out.push(a);
         }
         f.g_ij.to_bytes(out);
-        out.push(f.spelled as u8);
+        out.push((f.spelled as u8) | f.shells.saturating_mul(2));
     }
     out.extend_from_slice(&(n.cycles.len() as u32).to_le_bytes());
     for c in &n.cycles {
@@ -1190,9 +1190,11 @@ fn decode_nerve_tail(b: &[u8], pos: &mut usize) -> Option<Nerve> {
             overlap.push(take_cell(b, pos)?);
         }
         let g_ij = Word::from_bytes(b, pos)?;
-        let spelled = *b.get(*pos)? != 0;
+        let packed = *b.get(*pos)?;
         *pos += 1;
-        faces.push(Face { i, j, overlap, g_ij, spelled, shells: 0 });
+        let spelled = packed & 1 != 0;
+        let shells = packed >> 1;
+        faces.push(Face { i, j, overlap, g_ij, spelled, shells });
     }
     let ncyc = take_u32(b, pos)? as usize;
     let mut cycles = Vec::with_capacity(ncyc.min(1024));
@@ -1318,12 +1320,19 @@ pub fn replay_nerve(e: &Element) -> Option<&'static str> {
         }
     }
     for f in &n.faces {
+        if f.i >= n.germs.len() || f.j >= n.germs.len() {
+            return Some("sentence face does not re-derive from its germs");
+        }
         let (w, spelled) = face_word(&n.germs[f.i], &n.germs[f.j]);
         if spelled != f.spelled {
             return Some("sentence face does not re-derive from its germs");
         }
         if spelled && !w.same_form(&f.g_ij) {
             return Some("sentence face g_ij does not re-derive from its germs");
+        }
+        let (shells, _) = contact(&after_support(&n.germs[f.i]), &after_support(&n.germs[f.j]));
+        if shells != f.shells {
+            return Some("sentence face shells do not re-derive from its germs");
         }
     }
     for c in &n.cycles {

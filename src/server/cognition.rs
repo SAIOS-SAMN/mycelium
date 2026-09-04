@@ -437,11 +437,7 @@ pub fn quote_incidence(
     for chart in charts {
         let chart_key = chart.key();
         let addrs: Vec<[u8; 32]> = if chart.0.is_empty() {
-            pending
-                .iter()
-                .map(|(p, _)| p.address())
-                .filter(|a| on_page.contains(a))
-                .collect()
+            listing_atlas.fiber_under(chart)
         } else {
             listing_atlas.fiber(chart)
         };
@@ -459,7 +455,9 @@ pub fn quote_incidence(
             for c in &open {
                 open_set.insert(c.key(), ());
             }
-            if !open_set.contains(&chart_key) {
+            // The empty chart is the root prefix: every listing is incident
+            // to it, so the first quote of an empty atlas reads the book.
+            if !chart.0.is_empty() && !open_set.contains(&chart_key) {
                 continue;
             }
             let open_len: usize = 1 + open.iter().map(|c| 1 + 8 * c.0.len().min(255)).sum::<usize>();
@@ -2034,7 +2032,7 @@ impl Kernel {
                         self.pending_refine.insert(inv.key(), (inv.clone(), class, degree));
                     }
                 }
-                (crate::transducer::cech::Fill::Open, _) => {}
+                (crate::transducer::cech::Fill::Open, _) | (crate::transducer::cech::Fill::Already, _) => {}
             }
         }
         let mut refine: Vec<(
@@ -2360,6 +2358,7 @@ impl Kernel {
                     let dkey = chart_simplex_key(&inv, &key);
                     self.unfilled.insert(dkey, (inv.clone(), key));
                 }
+                crate::transducer::cech::Fill::Already => {}
             }
         }
         self.complexes.insert(inv.key(), cx);
@@ -2634,6 +2633,16 @@ impl Kernel {
 
     pub fn ruled_have(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<[u8; 32]> {
         self.ruled.fiber(inv).to_vec()
+    }
+
+    /// Ruled addresses, coarsest chart first — the syllabus seed of an
+    /// empty atlas.
+    pub fn syllabus_seed(&self) -> Vec<[u8; 32]> {
+        let mut out = Vec::new();
+        for (_, members) in self.ruled.strata() {
+            out.extend(members);
+        }
+        out
     }
 
     pub fn fetch_have(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<[u8; 32]> {
@@ -4981,6 +4990,24 @@ mod tests {
         k.glue_local();
         assert_eq!(k.basis_len(), 1, "the basis grows from gluing");
         assert_eq!(k.ingest(&a, &rot, [3; 32]), Outcome::Decomposed(vec![0]), "reduces to the length-1 sentence");
+    }
+
+    /// An empty atlas is incident to the root prefix: the first quote
+    /// reads the book at depth zero.
+    #[test]
+    fn empty_atlas_is_incident_to_the_root_prefix() {
+        use crate::transducer::germinate::germinate;
+        let k = std::sync::Mutex::new(Kernel::new());
+        {
+            let mut g = k.lock().unwrap();
+            let a = vec![(0, 0, 1u8), (0, 1, 1)];
+            let b = vec![(0, 0, 2u8), (0, 1, 2)];
+            assert!(matches!(g.ingest(&a, &b, [1; 32]), Outcome::GermPending));
+            assert!(matches!(g.attest(&germinate(&a, &b).unwrap(), [1; 32]), Outcome::GermPending));
+        }
+        let (_, priced, _, _) =
+            crate::synthesis::quote(&k, [1u8; 32], &[]).expect("quote");
+        assert!(!priced.is_empty(), "an empty atlas reads the book at depth zero");
     }
 
     /// P7 — the germinated language survives restart: install two germs, snapshot,

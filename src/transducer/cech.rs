@@ -81,6 +81,9 @@ pub enum Fill {
     Filled(Rotor),
     Congruent(Rotor, u32),
     Class(Rotor),
+    /// A fill attempted on a cell that has already transitioned. Not stored
+    /// on the cell; the return of `fill` when there is no new state.
+    Already,
 }
 
 fn word_of_rotor(r: &Rotor) -> crate::transducer::alphabet::Word {
@@ -311,7 +314,7 @@ impl Complex {
             return Fill::Open;
         };
         if !matches!(cell.fill, Fill::Open) {
-            return cell.fill;
+            return Fill::Already;
         }
         let matches = cell.coefficient == *gamma
             || cell.coefficient.inverse().as_ref() == Some(gamma);
@@ -527,7 +530,7 @@ impl Complex {
             return Fill::Open;
         };
         if !matches!(cell.fill, Fill::Open) {
-            return cell.fill;
+            return Fill::Already;
         }
         if cell.degree() == 0 {
             let filled = Fill::Filled(Rotor::identity());
@@ -678,7 +681,7 @@ impl Complex {
                     out.extend_from_slice(&x.to_le_bytes());
                 }
                 match &c.fill {
-                    Fill::Open => out.push(0),
+                    Fill::Open | Fill::Already => out.push(0),
                     Fill::Filled(g) => {
                         out.push(1);
                         g.to_bytes(out);
@@ -1052,7 +1055,7 @@ mod tests {
         let first = c.fill(&key);
         assert!(matches!(first, Fill::Filled(_)));
         let second = c.fill(&key);
-        assert_eq!(first, second, "a filled cell is not filled again");
+        assert!(matches!(second, Fill::Already), "a second fill is not a transition");
         assert!(matches!(c.link(&a, 1)[0].fill, Fill::Filled(_)));
     }
 }

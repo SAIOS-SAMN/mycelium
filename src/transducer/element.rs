@@ -1085,7 +1085,30 @@ impl Element {
 
     /// Deserialize an element written by [`Element::to_bytes`], advancing `pos`.
     /// `None` on a malformed ledger (never a panic on disk corruption).
+    /// The previous GEN1 omits the fibre u16 on torsion and connection;
+    /// those residuals are read as [`FIBER_SPATIAL`] rather than lost.
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Element> {
+        let start = *pos;
+        let mut p_new = start;
+        let new = Self::from_bytes_layout(b, &mut p_new, true);
+        if new.is_some() && p_new == b.len() {
+            *pos = p_new;
+            return new;
+        }
+        let mut p_old = start;
+        let old = Self::from_bytes_layout(b, &mut p_old, false);
+        if old.is_some() && (new.is_none() || p_old == b.len()) {
+            *pos = p_old;
+            return old;
+        }
+        if new.is_some() {
+            *pos = p_new;
+            return new;
+        }
+        None
+    }
+
+    fn from_bytes_layout(b: &[u8], pos: &mut usize, with_fibre: bool) -> Option<Element> {
         let u32_at = |b: &[u8], p: &mut usize| -> Option<u32> {
             let v = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
             *p += 4;
@@ -1184,8 +1207,13 @@ impl Element {
                 sigma.push((f, t));
             }
             let l = u32_at(b, pos)?;
-            let fibre = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
-            *pos += 2;
+            let fibre = if with_fibre {
+                let f = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
+                *pos += 2;
+                f
+            } else {
+                FIBER_SPATIAL
+            };
             torsion.push((sigma, l, fibre));
         }
         // The anchor fiber tail (absent in pre-anchor serializations → ⊤).
@@ -1239,8 +1267,13 @@ impl Element {
                         legacy_versor(d4, tr, tc)?
                     }
                 };
-                let fibre = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
-                *pos += 2;
+                let fibre = if with_fibre {
+                    let f = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
+                    *pos += 2;
+                    f
+                } else {
+                    FIBER_SPATIAL
+                };
                 transitions.push((a, g, fibre));
             }
         }
@@ -2125,6 +2158,16 @@ mod tests {
         assert_eq!(pos, bytes.len());
         assert_eq!(back, t, "full equality including the torsion");
         assert!(back.matches_chain(&vec![(0, 0, 3, 1), (0, 1, 1, 2), (0, 2, 2, 3)]), "capacity survives restart");
+        // Previous GEN1: torsion is (σ, ℓ) with no fibre u16. The two bytes
+        // before the anchor and connection-count are the fibre index.
+        assert!(t.transitions().is_empty());
+        let fibre_at = bytes.len() - 2 - 1 - 4;
+        let mut old = bytes[..fibre_at].to_vec();
+        old.extend_from_slice(&bytes[fibre_at + 2..]);
+        let mut p_old = 0;
+        let migrated = Element::from_bytes(&old, &mut p_old).expect("previous GEN1");
+        assert_eq!(migrated.torsion().len(), 1, "a prior GEN1 is residuals, not lost");
+        assert_eq!(migrated.torsion()[0].2, FIBER_SPATIAL);
     }
 
     /// THE CANCELING TALLY IS NOT IDENTITY: L→bar's bidirectional hue swap cancels

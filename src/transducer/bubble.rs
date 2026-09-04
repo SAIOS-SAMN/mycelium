@@ -170,7 +170,7 @@ impl Bubble {
                 Fill::Class(r) => {
                     self.horizon.insert(ck, (r, child.0.len().min(255) as u8));
                 }
-                Fill::Open => {}
+                Fill::Open | Fill::Already => {}
             }
         });
         if let Some(k) = last {
@@ -376,6 +376,8 @@ impl Contemplation {
                     }
                     return;
                 }
+                Fill::Already | Fill::Open => {}
+                Fill::Filled(_) | Fill::Congruent(_, _) => {}
                 Fill::Class(r) => {
                     self.classes += 1;
                     let deg = cell.degree() as u8;
@@ -386,7 +388,6 @@ impl Contemplation {
                         }
                     }
                 }
-                _ => {}
             }
         }
     }
@@ -675,7 +676,7 @@ impl Contemplation {
                                 }
                             }
                         }
-                        Fill::Open => {}
+                        Fill::Open | Fill::Already => {}
                     }
             }
         }
@@ -826,11 +827,14 @@ impl Contemplation {
             let (germs, nerve) = if elen > 0 {
                 let mut ep = 0usize;
                 let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
-                let e = Element::from_bytes(&b[*pos..end], &mut ep)?;
+                let parsed = Element::from_bytes(&b[*pos..end], &mut ep);
                 *pos += elen;
-                sentence::from_element(&e)
-                    .map(|n| (n.germs, n.complex))
-                    .unwrap_or((Vec::new(), Complex::new()))
+                match parsed {
+                    Some(e) => sentence::from_element(&e)
+                        .map(|n| (n.germs, n.complex))
+                        .unwrap_or((Vec::new(), Complex::new())),
+                    None => (Vec::new(), Complex::new()),
+                }
             } else {
                 (Vec::new(), Complex::new())
             };

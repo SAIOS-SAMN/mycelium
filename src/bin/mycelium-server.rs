@@ -16,6 +16,11 @@ use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
+fn arm_deadline(s: &TcpStream, deadline: std::time::Duration) {
+    let _ = s.set_read_timeout(Some(deadline));
+    let _ = s.set_write_timeout(Some(deadline));
+}
+
 fn read_frame(s: &mut TcpStream) -> Option<Frame> {
     let mut head = [0u8; 5];
     s.read_exact(&mut head).ok()?;
@@ -55,7 +60,6 @@ fn persist(kernel: &Mutex<Kernel>, state_path: &str) {
 /// pool with its open socket: the reply is written by the judging worker.
 struct ReflexJob {
     stream: TcpStream,
-    frame: Frame,
 }
 
 /// Shared door state: the listener only accepts and try_sends; every act
@@ -75,7 +79,7 @@ struct Door {
     id: [u8; 32],
     bind: String,
     join_peers: Arc<Vec<String>>,
-    roots: Arc<Mutex<Keyed<Keyed<()>>>>,
+    roots: Arc<Mutex<Keyed<Keyed<u64>>>>,
     registry: Arc<Mutex<mycelium::registry::TaskRegistry>>,
     syllabus: Arc<Mutex<Syllabus>>,
     nerve_tx: std::sync::mpsc::SyncSender<(String, Vec<u8>)>,
@@ -93,6 +97,37 @@ struct Door {
 /// the family's key, other than this node and the voice it was heard from.
 /// Every node walks the same key to the same next hop, so a root crosses
 /// the nerve along one deterministic path and never as a broadcast.
+enum RootHear {
+    Known,
+    First,
+    Second,
+}
+
+/// Record a root by (task, solver) with its stamp. A solver already held
+/// for this task is silence; a new solver is spoken.
+fn note_root(roots: &mut Keyed<Keyed<u64>>, task: [u8; 32], solver: [u8; 32], stamp: u64) -> RootHear {
+    match roots.get_mut(&task) {
+        Some(v) => {
+            if v.contains(&solver) {
+                RootHear::Known
+            } else {
+                v.insert(solver, stamp);
+                if v.len() == 2 {
+                    RootHear::Second
+                } else {
+                    RootHear::First
+                }
+            }
+        }
+        None => {
+            let mut v = Keyed::new();
+            v.insert(solver, stamp);
+            roots.insert(task, v);
+            RootHear::First
+        }
+    }
+}
+
 fn speak_root(
     router: &Router,
     nerve: &std::sync::mpsc::SyncSender<(String, Vec<u8>)>,
@@ -245,45 +280,40 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
             let _ = s.write_all(&Frame { lane: frame.lane, body: Vec::new() }.encode().unwrap_or_default());
             return true;
         }
-        let _ = spoken_at;
-        let n = {
+        let hear = {
             let mut roots = door.roots.lock().unwrap();
-            if let Some(v) = roots.get_mut(&task) {
-                v.insert(solver, ());
-                v.len()
-            } else {
-                let mut v = Keyed::new();
-                v.insert(solver, ());
-                roots.insert(task, v);
-                1
-            }
+            note_root(&mut roots, task, solver, spoken_at)
         };
-        if n == 1 {
-            let prioritized = door.registry.lock().map(|mut r| r.prioritize(&task)).unwrap_or(false);
-            eprintln!(
-                "  ROOT heard from {:02x}: task {:02x}{:02x}… solved by voice {:02x}; {}",
-                from[0], task[0], task[1], solver[0],
-                if prioritized { "re-dispatched first here" } else { "not open on this book" }
-            );
-            speak_root(&door.router, &door.nerve_tx, &door.id, &task, &solver, Some(from), 0);
-        } else if n == 2 {
-            let voices: Vec<[u8; 32]> = {
-                let sy = door.syllabus.lock().unwrap();
-                sy.served.fiber(&mycelium::network::nerve::ROOT).map(|(v, _)| *v).collect()
-            };
-            if let Ok(mut sy) = door.syllabus.lock() {
-                for v in voices {
-                    sy.served.insert(v, 0);
-                }
+        match hear {
+            RootHear::Known => {}
+            RootHear::First => {
+                let prioritized = door.registry.lock().map(|mut r| r.prioritize(&task)).unwrap_or(false);
+                eprintln!(
+                    "  ROOT heard from {:02x}: task {:02x}{:02x}… solved by voice {:02x}; {}",
+                    from[0], task[0], task[1], solver[0],
+                    if prioritized { "re-dispatched first here" } else { "not open on this book" }
+                );
+                speak_root(&door.router, &door.nerve_tx, &door.id, &task, &solver, Some(from), spoken_at);
             }
-            eprintln!("  ROOT CONSILIENT task {:02x}{:02x}… two voices; syllabus rewound", task[0], task[1]);
-            speak_root(&door.router, &door.nerve_tx, &door.id, &task, &solver, Some(from), 0);
+            RootHear::Second => {
+                let voices: Vec<[u8; 32]> = {
+                    let sy = door.syllabus.lock().unwrap();
+                    sy.served.fiber(&mycelium::network::nerve::ROOT).map(|(v, _)| *v).collect()
+                };
+                if let Ok(mut sy) = door.syllabus.lock() {
+                    for v in voices {
+                        sy.served.insert(v, 0);
+                    }
+                }
+                eprintln!("  ROOT CONSILIENT task {:02x}{:02x}… two voices; syllabus rewound", task[0], task[1]);
+                speak_root(&door.router, &door.nerve_tx, &door.id, &task, &solver, Some(from), spoken_at);
+            }
         }
         let reply = {
             let roots = door.roots.lock().unwrap();
             dialogue::encode_root_reply(
                 roots.get(&task).and_then(|v| v.fiber(&mycelium::network::nerve::ROOT).next().map(|(k, _)| *k)),
-                0,
+                spoken_at,
             )
         };
         let _ = s.write_all(&Frame { lane: frame.lane, body: reply }.encode().unwrap_or_default());
@@ -341,26 +371,23 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
                         let mut k = door.kernel.lock().unwrap();
                         k.pay_solve(&tid, svoice, tension)
                     };
-                    let n = {
+                    let hear = {
                         let mut roots = door.roots.lock().unwrap();
-                        if let Some(v) = roots.get_mut(&tid) {
-                            v.insert(svoice, ());
-                            v.len()
-                        } else {
-                            let mut v = Keyed::new();
-                            v.insert(svoice, ());
-                            roots.insert(tid, v);
-                            1
-                        }
+                        note_root(&mut roots, tid, svoice, 0)
                     };
-                    eprintln!("  ROOT task {:02x}{:02x}… proven by voice {:02x}; spoken to its key's next hop", tid[0], tid[1], svoice[0]);
-                    speak_root(&door.router, &door.nerve_tx, &door.id, &tid, &svoice, None, 0);
-                    if n >= 2 {
+                    match hear {
+                        RootHear::Known => {}
+                        RootHear::First | RootHear::Second => {
+                            eprintln!("  ROOT task {:02x}{:02x}… proven by voice {:02x}; spoken to its key's next hop", tid[0], tid[1], svoice[0]);
+                            speak_root(&door.router, &door.nerve_tx, &door.id, &tid, &svoice, None, 0);
+                        }
+                    }
+                    if matches!(hear, RootHear::Second) {
                         let voices: Vec<[u8; 32]> = door.syllabus.lock().unwrap().served.fiber(&mycelium::network::nerve::ROOT).map(|(v, _)| *v).collect();
                         if let Ok(mut sy) = door.syllabus.lock() {
                             for v in voices { sy.served.insert(v, 0); }
                         }
-                        eprintln!("  ROOT CONSILIENT task {:02x}{:02x}… {n} voices; syllabus rewound", tid[0], tid[1]);
+                        eprintln!("  ROOT CONSILIENT task {:02x}{:02x}… two voices; syllabus rewound", tid[0], tid[1]);
                     }
                     (dialogue::SOLVE_BOUNTY, paid)
                 }
@@ -370,19 +397,11 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
                         let mut k = door.kernel.lock().unwrap();
                         k.pay_solve(&tid, svoice, [0, 0, 1, 0])
                     };
-                    let n = {
+                    let hear = {
                         let mut roots = door.roots.lock().unwrap();
-                        if let Some(v) = roots.get_mut(&tid) {
-                            v.insert(svoice, ());
-                            v.len()
-                        } else {
-                            let mut v = Keyed::new();
-                            v.insert(svoice, ());
-                            roots.insert(tid, v);
-                            1
-                        }
+                        note_root(&mut roots, tid, svoice, 0)
                     };
-                    if n == 2 {
+                    if matches!(hear, RootHear::Second) {
                         let voices: Vec<[u8; 32]> = door.syllabus.lock().unwrap().served.fiber(&mycelium::network::nerve::ROOT).map(|(v, _)| *v).collect();
                         if let Ok(mut sy) = door.syllabus.lock() {
                             for v in voices { sy.served.insert(v, 0); }
@@ -961,10 +980,24 @@ fn main() {
         at: Keyed::new(),
         served: Keyed::new(),
     }));
+    {
+        let seed = kernel.lock().unwrap().syllabus_seed();
+        let mut sy = syllabus.lock().unwrap();
+        // index: ruled strata, coarsest first
+        for addr in seed {
+            if !sy.at.contains(&addr) {
+                sy.at.insert(addr, ());
+                sy.order.push(addr);
+            }
+        }
+        if !sy.order.is_empty() {
+            eprintln!("  syllabus seeded: {} shallowest-first ruled words", sy.order.len());
+        }
+    }
     // PROVEN ROOTS heard on the nerve: (task, solver). A root is gossiped
     // once and re-dispatched here first; a voice that reproduces the solve
     // proves it shares the root.
-    let roots: Arc<Mutex<Keyed<Keyed<()>>>> = Arc::new(Mutex::new(Keyed::new()));
+    let roots: Arc<Mutex<Keyed<Keyed<u64>>>> = Arc::new(Mutex::new(Keyed::new()));
     // THE NERVE THREAD: every act this node speaks to a peer leaves through
     // a bounded channel drained here, so the door never dials. The bound is
     // the reserve ceiling; a full nerve drops the act, as a full reflex
@@ -999,11 +1032,18 @@ fn main() {
     // The roots this book already holds settled are announced to the nerve
     // at boot, so a family proven here is re-spoken on every peer's book.
     let settled = registry.lock().map(|r| r.settled_ids()).unwrap_or_default();
+    let boot_stamp = tuniversal.ticks();
     for t in &settled {
-        let mut v = mycelium::network::nerve::Keyed::new();
-        v.insert(id, ());
-        roots.lock().unwrap().insert(*t, v);
-        speak_root(&router, &nerve_tx, &nerve_id, t, &id, None, tuniversal.ticks());
+        let hear = {
+            let mut g = roots.lock().unwrap();
+            note_root(&mut g, *t, id, boot_stamp)
+        };
+        match hear {
+            RootHear::Known => {}
+            RootHear::First | RootHear::Second => {
+                speak_root(&router, &nerve_tx, &nerve_id, t, &id, None, boot_stamp);
+            }
+        }
     }
     if !settled.is_empty() {
         eprintln!("  roots announced: {} settled families, each to its key's next hop", settled.len());
@@ -1231,16 +1271,14 @@ fn main() {
             };
             match job {
                 Ok(job) => {
-                    let ReflexJob { mut stream, mut frame } = job;
+                    let ReflexJob { mut stream } = job;
                     loop {
+                        arm_deadline(&stream, mesh_deadline(&door.mesh));
+                        let Some(frame) = read_frame(&mut stream) else { break };
                         let kind = frame.body.first().copied().unwrap_or(0xff);
                         let t0 = std::time::Instant::now();
                         judge(&mut stream, frame, &door);
                         eprintln!("  reflex act {kind:02x} {} ms", t0.elapsed().as_millis());
-                        match read_frame(&mut stream) {
-                            Some(next) => frame = next,
-                            None => break,
-                        }
                     }
                 }
                 Err(_) => break,
@@ -1249,18 +1287,16 @@ fn main() {
     }
 
     for stream in listener.incoming() {
-        let Ok(mut s) = stream else { continue };
+        let Ok(s) = stream else { continue };
         let _ = s.set_nodelay(true);
-        let _ = s.set_read_timeout(Some(mesh_deadline(&mesh)));
-        let Some(frame) = read_frame(&mut s) else { continue };
-        let lane = frame.lane;
-        if let Err(e) = reflex_tx.try_send(ReflexJob { stream: s, frame }) {
+        arm_deadline(&s, mesh_deadline(&mesh));
+        if let Err(e) = reflex_tx.try_send(ReflexJob { stream: s }) {
             let job = match e {
                 std::sync::mpsc::TrySendError::Full(j) | std::sync::mpsc::TrySendError::Disconnected(j) => j,
             };
             let mut s = job.stream;
             let body = dialogue::encode_deferral(outcome_code(&Outcome::GermPending));
-            let _ = s.write_all(&Frame { lane, body }.encode().unwrap_or_default());
+            let _ = s.write_all(&Frame { lane: mycelium::network::wire::Stratum::Spatial, body }.encode().unwrap_or_default());
         }
     }
 }
