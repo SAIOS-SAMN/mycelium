@@ -632,11 +632,12 @@ fn main() {
                 for (addr, spoken, voices, deflation, kstep) in offers {
                     let elem = spoken.to_bytes();
                     let prefix = dialogue::offer_signed_prefix(&addr, &elem, &voices, &deflation, kstep);
-                    let sig = {
+                    let inst_pre = dialogue::installed_signed_prefix(&addr, &elem);
+                    let (sig, inst_sig) = {
                         use ed25519_dalek::Signer;
-                        sk.sign(&prefix).to_bytes()
+                        (sk.sign(&prefix).to_bytes(), sk.sign(&inst_pre).to_bytes())
                     };
-                    let body = dialogue::encode_offer(&addr, &elem, &voices, &deflation, kstep, &sig);
+                    let body = dialogue::encode_offer(&addr, &elem, &voices, &deflation, kstep, &sig, &inst_sig);
                     let chart = mycelium::transducer::stalk::invariant_of(&spoken);
                     let dests = {
                         let ov = overlap.lock().unwrap();
@@ -797,7 +798,7 @@ fn main() {
             continue;
         }
         if kind == dialogue::ACT_OFFER {
-            if let Some((addr, bytes, voices, deflation, kstep, sig)) = dialogue::decode_offer(&frame.body) {
+            if let Some((addr, bytes, voices, deflation, kstep, sig, inst_sig)) = dialogue::decode_offer(&frame.body) {
                 let prefix = dialogue::offer_signed_prefix(&addr, &bytes, &voices, &deflation, kstep);
                 let known = overlap.lock().map(|ov| ov.clone()).unwrap_or_default();
                 // Offer is the other organ's first vantage — never self.
@@ -807,12 +808,11 @@ fn main() {
                     let mut pos = 0usize;
                     if let Some(spoken) = mycelium::transducer::element::Element::from_bytes(&bytes, &mut pos) {
                         if let Ok(mut k) = kernel.lock() {
-                            if let Some(elem) = k.accept_offer(&addr, spoken, deflation) {
-                                let eb = elem.to_bytes();
-                                let pre = dialogue::installed_signed_prefix(&addr, &eb);
+                            if k.accept_offer(&addr, spoken, deflation).is_some() {
+                                let pre = dialogue::installed_signed_prefix(&addr, &bytes);
                                 use ed25519_dalek::Signer;
                                 let sig_peer = hypha_key.sk.sign(&pre).to_bytes();
-                                installed_body = Some(dialogue::encode_installed(&addr, &eb, &sig, &sig_peer));
+                                installed_body = Some(dialogue::encode_installed(&addr, &bytes, &inst_sig, &sig_peer));
                                 eprintln!("  court Installed {:02x}{:02x}… second vantage", addr[0], addr[1]);
                             }
                         }
@@ -856,6 +856,12 @@ fn main() {
                             }
                         }
                     }
+                } else {
+                    eprintln!(
+                        "  court Installed {:02x}{:02x}… signatures not two organs",
+                        addr[0],
+                        addr[1]
+                    );
                 }
                 let _ = s.write_all(&Frame { lane: frame.lane, body: Vec::new() }.encode().unwrap_or_default());
             }

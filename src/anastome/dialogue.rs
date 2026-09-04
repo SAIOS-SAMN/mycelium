@@ -402,7 +402,10 @@ pub fn decode_cover(body: &[u8]) -> Option<([u8; 32], String, Vec<(u8, crate::tr
     Some((vk, addr, charts))
 }
 
-/// Offer: `[ACT_OFFER][addr 32][elen u32][elem][nv u32][voices][deflation 32][k 8][sig 64]`
+/// Offer: `[ACT_OFFER][addr 32][elen u32][elem][nv u32][voices][deflation 32][k 8][sig 64][inst_sig 64]`
+/// `sig` covers the Offer prefix; `inst_sig` is the home organ's signature
+/// over the Installed prefix, so a second vantage can emit Installed without
+/// the home key.
 pub fn encode_offer(
     addr: &[u8; 32],
     elem: &[u8],
@@ -410,6 +413,7 @@ pub fn encode_offer(
     deflation: &[u64; 4],
     k: u64,
     sig: &[u8; 64],
+    inst_sig: &[u8; 64],
 ) -> Vec<u8> {
     let mut out = vec![ACT_OFFER];
     out.extend_from_slice(addr);
@@ -422,10 +426,11 @@ pub fn encode_offer(
     push_mu(&mut out, deflation);
     out.extend_from_slice(&k.to_le_bytes());
     out.extend_from_slice(sig);
+    out.extend_from_slice(inst_sig);
     out
 }
 
-pub fn decode_offer(body: &[u8]) -> Option<([u8; 32], Vec<u8>, Vec<[u8; 32]>, [u64; 4], u64, [u8; 64])> {
+pub fn decode_offer(body: &[u8]) -> Option<([u8; 32], Vec<u8>, Vec<[u8; 32]>, [u64; 4], u64, [u8; 64], [u8; 64])> {
     if body.first() != Some(&ACT_OFFER) {
         return None;
     }
@@ -445,7 +450,9 @@ pub fn decode_offer(body: &[u8]) -> Option<([u8; 32], Vec<u8>, Vec<[u8; 32]>, [u
     let k = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
     p += 8;
     let sig: [u8; 64] = body.get(p..p + 64)?.try_into().ok()?;
-    Some((addr, elem, voices, deflation, k, sig))
+    p += 64;
+    let inst_sig: [u8; 64] = body.get(p..p + 64)?.try_into().ok()?;
+    Some((addr, elem, voices, deflation, k, sig, inst_sig))
 }
 
 /// Installed: `[ACT_INSTALLED][addr 32][elen u32][elem][sig_home 64][sig_peer 64]`
