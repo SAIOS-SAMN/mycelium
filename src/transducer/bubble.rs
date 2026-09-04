@@ -196,6 +196,9 @@ pub struct Contemplation {
     pub torsion_merges: u64,
     pub classes: u64,
     pub formed: u64,
+    /// Bubbles retired to a cavity chart, address kept, remainder in THT1.
+    cavity: Keyed<Vec<RemCell>>,
+    pending_rewrites: Vec<Element>,
 }
 
 impl Contemplation {
@@ -376,6 +379,19 @@ impl Contemplation {
                         if let Some(b) = self.bubbles.get_mut(&nk) {
                             b.nerve.file_congruent(ends[0], ends[1], g, ell);
                         }
+                        let payload = crate::transducer::rewrite::RewritePayload::Torse {
+                            sigma: Vec::new(),
+                            period: ell,
+                        };
+                        if let Some(rw) = crate::transducer::rewrite::mint(
+                            crate::transducer::rewrite::RewriteKind::Torse,
+                            &vertices,
+                            nk,
+                            payload,
+                            [0, 0, (ell as u64).saturating_sub(1).max(1), 0],
+                        ) {
+                            self.pending_rewrites.push(rw);
+                        }
                     }
                     return;
                 }
@@ -474,10 +490,12 @@ impl Contemplation {
         let mut cover = Keyed::new();
         let mut nerve = Complex::new();
         let mut horizon: Keyed<(Rotor, u8)> = Keyed::new();
+        let mut old_rems: Vec<([u8; 32], Vec<RemCell>)> = Vec::new();
         for v in verts {
             let Some(b) = self.bubbles.get(v).cloned() else {
                 continue;
             };
+            old_rems.push((*v, b.remainder.clone()));
             self.retract_incidence(v, &b);
             remainder = union_rem(&remainder, &b.remainder);
             germs.extend(b.germs.clone());
@@ -514,6 +532,28 @@ impl Contemplation {
         self.bubbles.insert(key, bubble);
         self.dirty.insert(key, ());
         self.link_new(key);
+        if verts.len() >= 2 {
+            for v in verts {
+                if *v != key {
+                    if let Some(rem) = old_rems.iter().find(|(a, _)| a == v).map(|(_, r)| r.clone()) {
+                        self.cavity.insert(*v, rem);
+                    }
+                }
+            }
+            let payload = crate::transducer::rewrite::RewritePayload::Condense {
+                sections: vec![vec![]],
+                gauge: element::identity_versor(),
+            };
+            if let Some(rw) = crate::transducer::rewrite::mint(
+                crate::transducer::rewrite::RewriteKind::Condense,
+                verts,
+                key,
+                payload,
+                [0, verts.len().saturating_sub(1) as u64, 0, 0],
+            ) {
+                self.pending_rewrites.push(rw);
+            }
+        }
         Some(key)
     }
 
@@ -603,6 +643,15 @@ impl Contemplation {
     /// Returns (fills, formed, classes, spoken elements).
     pub fn pivot_on(&mut self, word: &Element, budget: &mut Budget) -> (u64, u64, u64, Vec<Element>) {
         let inv = stalk::invariant_of(word);
+        let prefixes: Vec<[u8; 32]> = inv.prefixes().iter().map(|p| p.key()).collect();
+        let cav: Vec<([u8; 32], Vec<RemCell>)> = self.cavity.fiber(&ROOT).map(|(k, r)| (*k, r.clone())).collect();
+        for (k, rem) in cav {
+            let cinv = stalk::invariant(&rem);
+            if cinv.prefixes().iter().any(|p| prefixes.iter().any(|q| q == &p.key())) {
+                self.cavity.remove(&k);
+                self.hold(rem);
+            }
+        }
         let mut keys = Keyed::new();
         for p in inv.prefixes() {
             for (id, _) in self.by_chart.link(&p.key()) {
@@ -613,6 +662,7 @@ impl Contemplation {
         let mut fills = 0u64;
         let mut new_classes = 0u64;
         let mut spoken: Vec<Element> = Vec::new();
+        spoken.extend(std::mem::take(&mut self.pending_rewrites));
         let bubble_keys: Vec<[u8; 32]> = keys.fiber(&ROOT).map(|(k, _)| *k).collect();
         // index: by_chart fiber at the word's chart and peels
         for bk in &bubble_keys {
@@ -808,6 +858,17 @@ impl Contemplation {
         out.extend_from_slice(&self.torsion_merges.to_le_bytes());
         out.extend_from_slice(&self.classes.to_le_bytes());
         out.extend_from_slice(&self.formed.to_le_bytes());
+        out.extend_from_slice(&(self.cavity.len() as u32).to_le_bytes());
+        crate::snapshot::persist(&self.cavity, |k, rem| {
+            out.extend_from_slice(k);
+            out.extend_from_slice(&(rem.len() as u32).to_le_bytes());
+            for &(r, c, hb, ha) in rem {
+                out.extend_from_slice(&r.to_le_bytes());
+                out.extend_from_slice(&c.to_le_bytes());
+                out.push(hb);
+                out.push(ha);
+            }
+        });
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Contemplation> {
@@ -912,6 +973,30 @@ impl Contemplation {
             *pos += 8;
             c.formed = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
             *pos += 8;
+        }
+        if *pos + 4 <= b.len() {
+            let nc = take_u32(b, pos).unwrap_or(0) as usize;
+            for _ in 0..nc.min(1 << 16) {
+                let k: [u8; 32] = match b.get(*pos..*pos + 32).and_then(|s| s.try_into().ok()) {
+                    Some(k) => k,
+                    None => break,
+                };
+                *pos += 32;
+                let nr = take_u32(b, pos).unwrap_or(0) as usize;
+                let mut rem = Vec::with_capacity(nr.min(1 << 16));
+                for _ in 0..nr.min(1 << 16) {
+                    let r = i64::from_le_bytes(b.get(*pos..*pos + 8).and_then(|s| s.try_into().ok()).unwrap_or([0; 8]));
+                    *pos += 8;
+                    let col = i64::from_le_bytes(b.get(*pos..*pos + 8).and_then(|s| s.try_into().ok()).unwrap_or([0; 8]));
+                    *pos += 8;
+                    let hb = *b.get(*pos).unwrap_or(&0);
+                    *pos += 1;
+                    let ha = *b.get(*pos).unwrap_or(&0);
+                    *pos += 1;
+                    rem.push((r, col, hb, ha));
+                }
+                c.cavity.insert(k, rem);
+            }
         }
         Some(c)
     }

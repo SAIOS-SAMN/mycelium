@@ -1619,6 +1619,7 @@ impl Entity {
         }
         let _ = self.contemplation.expand_all(&atlas, &rotors, &mut budget);
         let (_fills, _formed, _classes, spoken) = self.contemplation.pivot_on(word, &mut budget);
+        // Bubble merges speak Rewrites; cavity bubbles re-enter on this chart.
         let mut n = 0usize;
         for e in spoken {
             match self.speak_word(&e) {

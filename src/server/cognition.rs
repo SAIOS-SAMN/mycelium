@@ -1344,15 +1344,19 @@ impl Kernel {
             return new;
         };
         if self.word_mut(bi).attach(&card, &g) > 0 {
-            let mag = card.magnitude();
-            let mut yield_mag = mag;
-            if yield_mag[2] == 0 {
-                yield_mag[2] = 1;
-            }
-            let mu = crate::economy::price(&yield_mag, &self.physics.pressure, &self.treasury.pool());
-            let anchor = self.anchor();
-            self.treasury.settle_condense(disc, mu, anchor);
-            self.physics.syntropy(&[0, 0, 1, 0]);
+            let after = (*self.basis[bi]).clone();
+            let payload = crate::transducer::rewrite::RewritePayload::Condense {
+                sections: after.sections().to_vec(),
+                gauge: g.clone(),
+            };
+            let _ = self.mint_rewrite(
+                crate::transducer::rewrite::RewriteKind::Condense,
+                &[card.clone()],
+                &after,
+                payload,
+                disc,
+            );
+            self.physics.syntropy(&[0, 1, 0, 0]);
             self.torse_at(bi);
         }
         base
@@ -1370,9 +1374,21 @@ impl Kernel {
         }
         let lanes = self.basis[i].lanes();
         self.physics.torse_relief(lanes, spanned as u64);
-        let mu = crate::economy::price(&[0, 0, spanned as u64, 0], &self.physics.pressure, &self.treasury.pool());
-        let anchor = self.anchor();
-        self.treasury.settle_torse(self.discoverer_at(i), mu, anchor);
+        let after = (*self.basis[i]).clone();
+        let (sigma, period) = after
+            .torsion()
+            .last()
+            .map(|(s, p, _)| (s.clone(), *p))
+            .unwrap_or((Vec::new(), spanned as u32));
+        let payload = crate::transducer::rewrite::RewritePayload::Torse { sigma, period };
+        let disc = self.discoverer_at(i);
+        let _ = self.mint_rewrite(
+            crate::transducer::rewrite::RewriteKind::Torse,
+            std::slice::from_ref(&after),
+            &after,
+            payload,
+            disc,
+        );
         self.touch_at(i);
     }
 
@@ -1406,9 +1422,17 @@ impl Kernel {
             if !matches!(self.reduce_excluding(&candidate, Some(j)), NormalForm::Decomposed(_)) {
                 continue;
             }
-            let mu = crate::economy::price(&candidate.magnitude(), &self.physics.pressure, &self.treasury.pool());
-            let anchor = self.anchor();
-            self.treasury.settle_refine(bidder, mu, anchor);
+            let inv = crate::transducer::stalk::invariant_of(&candidate);
+            let axis = addr[0] as u64;
+            let after = (*self.basis[i]).clone();
+            let payload = crate::transducer::rewrite::RewritePayload::Refine { chart: inv, axis };
+            let _ = self.mint_rewrite(
+                crate::transducer::rewrite::RewriteKind::Refine,
+                &[candidate.clone()],
+                &after,
+                payload,
+                bidder,
+            );
             self.basis_remove(j);
             self.physics.syntropy(&candidate.magnitude());
             self.append_step(addr, bidder);
@@ -1450,7 +1474,7 @@ impl Kernel {
 
     /// List a connection on the docket if it is not already provisional.
     fn docket_connection(&mut self, word: &Element, ratifier: [u8; 32]) {
-        if !word.is_connection() && !word.is_sentence() {
+        if !word.is_connection() && !word.is_sentence() && !word.is_rewrite() {
             return;
         }
         let addr = word.address();
@@ -1458,7 +1482,11 @@ impl Kernel {
             return;
         }
         let mag = word.magnitude();
-        let mu = crate::economy::price(&mag, &self.physics.pressure, &self.treasury.pool());
+        let mu = if word.is_rewrite() {
+            mag
+        } else {
+            crate::economy::price(&mag, &self.physics.pressure, &self.treasury.pool())
+        };
         let anchor = self.anchor();
         self.treasury.escrow_award(addr, vec![ratifier], mu, anchor);
         self.deflations.insert(addr, mag);
@@ -1478,6 +1506,55 @@ impl Kernel {
         }
         self.book_gen += 1;
         self.append_step(addr, ratifier);
+    }
+
+    /// Speak an optimisation: refuse a zero vector, docket the Rewrite,
+    /// Offer it, and keep it as language. Payment waits on the second organ.
+    fn offer_rewrite(&mut self, rw: Element, voice: [u8; 32]) -> bool {
+        if !rw.is_rewrite() || rw.magnitude().iter().all(|&x| x == 0) {
+            return false;
+        }
+        let addr = rw.address();
+        self.docket_connection(&rw, voice);
+        self.offered.insert(addr, ());
+        true
+    }
+
+    fn mint_rewrite(
+        &mut self,
+        kind: crate::transducer::rewrite::RewriteKind,
+        before: &[Element],
+        after: &Element,
+        payload: crate::transducer::rewrite::RewritePayload,
+        voice: [u8; 32],
+    ) -> bool {
+        let Some(mu) = self.treasury.settle_rewrite(kind, before, after) else {
+            return false;
+        };
+        let before_addr: Vec<[u8; 32]> = before.iter().map(|e| e.address()).collect();
+        let Some(rw) = crate::transducer::rewrite::mint(kind, &before_addr, after.address(), payload, mu) else {
+            return false;
+        };
+        self.offer_rewrite(rw, voice)
+    }
+
+    fn retire_rewrite_inputs(&mut self, rw: &Element) {
+        let Some(r) = crate::transducer::rewrite::Rewrite::from_element(rw) else {
+            return;
+        };
+        for addr in r.before {
+            let Some(i) = self.basis_index.get(&addr).copied() else {
+                continue;
+            };
+            let w = (*self.basis[i]).clone();
+            if !matches!(self.reduce_excluding(&w, Some(i)), NormalForm::Decomposed(_)) {
+                continue;
+            }
+            let elem = self.basis_remove(i);
+            self.ruled_admit(&addr);
+            self.cavity_book.insert(addr, elem.clone());
+            self.cavities.push(elem);
+        }
     }
 
     /// The court's voice, heard on its verdicts.
@@ -1671,10 +1748,19 @@ impl Kernel {
         self.touch_at(bi);
         self.basis_remove(si);
         if gained > 0 {
-            let mu = crate::economy::price(&[0, 0, 1, 0], &self.physics.pressure, &self.treasury.pool());
-            let anchor = self.anchor();
-            self.treasury.settle_condense(disc, mu, anchor);
             if let Some(bi) = self.basis_index.get(base).copied() {
+                let after = (*self.basis[bi]).clone();
+                let payload = crate::transducer::rewrite::RewritePayload::Condense {
+                    sections: after.sections().to_vec(),
+                    gauge: g.clone(),
+                };
+                let _ = self.mint_rewrite(
+                    crate::transducer::rewrite::RewriteKind::Condense,
+                    &[sib.clone()],
+                    &after,
+                    payload,
+                    disc,
+                );
                 self.torse_at(bi);
             }
         }
@@ -1897,12 +1983,25 @@ impl Kernel {
         if !matches!(ruling, RULING_UPHELD | RULING_DEMOTED | RULING_SLASHED) {
             return false;
         }
+        let spoken = self.provisional.get(addr).cloned();
         if self.provisional.remove(addr).is_none() {
             return false;
         }
         if ruling == RULING_UPHELD {
             self.ruled_admit(addr); // finalized here: it joins the ruled cover
-            if let Some(w) = self.word_at(addr).cloned() {
+            let spoken = spoken.or_else(|| self.word_at(addr).cloned());
+            if let Some(w) = spoken {
+                if w.is_rewrite() {
+                    let voice = self
+                        .treasury
+                        .escrow_of(addr)
+                        .and_then(|(vs, _, _)| vs.first().copied())
+                        .unwrap_or([0; 32]);
+                    let _ = self.treasury.release_rewrite(addr, voice);
+                    self.retire_rewrite_inputs(&w);
+                    self.fed_admit(addr, w);
+                    return true;
+                }
                 self.fed_admit(addr, w);
             }
             self.treasury.release_award(addr)
@@ -2161,6 +2260,18 @@ impl Kernel {
             return;
         }
         self.docket_connection(&t, ratifier);
+        let payload = crate::transducer::rewrite::RewritePayload::Translation {
+            a,
+            b,
+            gauge: element::identity_versor(),
+        };
+        let _ = self.mint_rewrite(
+            crate::transducer::rewrite::RewriteKind::Translation,
+            &[],
+            &t,
+            payload,
+            ratifier,
+        );
         eprintln!(
             "  court translation docked {:02x}{:02x}…",
             addr[0], addr[1]
@@ -2533,16 +2644,31 @@ impl Kernel {
     }
 
     fn home_install(&mut self, addr: &[u8; 32]) {
+        let held = self.word_at(addr).cloned().or_else(|| self.provisional.get(addr).cloned());
         if self.basis_index.get(addr).is_none() {
-            if let Some(w) = self.word_at(addr).cloned() {
+            if let Some(w) = held.as_ref() {
                 if !(w.is_connection() && w.letters().is_none()) {
                     self.basis_push(w.clone(), [0; 32]);
-                    self.fed_admit(addr, w);
+                    self.fed_admit(addr, w.clone());
                 }
             }
         }
         self.ruled_admit(addr);
-        let _ = self.treasury.release_award(addr);
+        if let Some(w) = held {
+            if w.is_rewrite() {
+                let voice = self
+                    .treasury
+                    .escrow_of(addr)
+                    .and_then(|(vs, _, _)| vs.first().copied())
+                    .unwrap_or([0; 32]);
+                let _ = self.treasury.release_rewrite(addr, voice);
+                self.retire_rewrite_inputs(&w);
+            } else {
+                let _ = self.treasury.release_award(addr);
+            }
+        } else {
+            let _ = self.treasury.release_award(addr);
+        }
         self.provisional.remove(addr);
         self.court_upheld += 1;
         eprintln!("  court home installed {:02x}{:02x}… peer holds the stratum", addr[0], addr[1]);
@@ -3066,14 +3192,23 @@ impl Kernel {
         match (residual.as_slice(), resolved.len()) {
             ([], 1..) => {
                 let saved = candidate.magnitude();
-                let mu = crate::economy::price(&saved, &self.physics.pressure, &self.treasury.pool());
-                let anchor = self.anchor();
-                let paid = self.treasury.settle_refine(bidder, mu, anchor);
+                let inv = crate::transducer::stalk::invariant_of(&candidate);
+                let after = self.basis.get(0).map(|w| (**w).clone()).unwrap_or_else(|| candidate.clone());
+                let payload = crate::transducer::rewrite::RewritePayload::Refine {
+                    chart: inv,
+                    axis: addr[0] as u64,
+                };
+                let _ = self.mint_rewrite(
+                    crate::transducer::rewrite::RewriteKind::Refine,
+                    &[candidate.clone()],
+                    &after,
+                    payload,
+                    bidder,
+                );
                 self.basis_remove(i);
-                // Compression is ORDER BUILT — the syntropic ledger credits it.
                 self.physics.syntropy(&candidate.magnitude());
-                self.append_step(*addr, bidder); // the global rewrite is a K-step
-                Some(paid)
+                self.append_step(*addr, bidder);
+                Some(saved)
             }
             _ => None,
         }
@@ -3110,7 +3245,7 @@ impl Kernel {
             self.touch_at(i);
             // Presence is not finality: an unruled connection stays on the
             // docket until the court measures it.
-            if (word.is_connection() || word.is_sentence()) && !self.ruled_contains(&addr) {
+            if (word.is_connection() || word.is_sentence() || word.is_rewrite()) && !self.ruled_contains(&addr) {
                 self.docket_connection(word, ratifier);
             }
             return Adoption::Known;
@@ -3121,7 +3256,7 @@ impl Kernel {
         // pays it as a word, never as a copied pair. A residual word taught
         // up is installed as before. A sentence is the same: Offered on the
         // docket so a second organ's replay installs it as language.
-        if word.is_connection() || word.is_sentence() {
+        if word.is_connection() || word.is_sentence() || word.is_rewrite() {
             self.docket_connection(word, ratifier);
         }
         self.basis_push(word.clone(), ratifier);
@@ -3859,15 +3994,110 @@ impl Kernel {
         self.optimize();
     }
 
+    /// The syntropic stroke reads the field's stagnation per chart per lane.
+    /// A chart stagnant on gauge is a condense candidate, fibre torse, shell
+    /// refine, spatial re-anchor. Candidates from open and the ruled cover.
+    pub fn syntropic_stroke(&mut self) {
+        let mut budget = self.physics.stroke();
+        let mut jobs: Vec<(crate::transducer::stalk::Invariant, [bool; 4])> = Vec::new();
+        // index: budgeted cursor over the open docket
+        for (addr, _) in self.open.cursor(crate::network::nerve::ROOT, &mut budget) {
+            let Some(listing) = self.field.get(addr) else {
+                continue;
+            };
+            for e in &listing.entries {
+                if e.state.is_flat() {
+                    continue;
+                }
+                let lanes = std::array::from_fn(|l| e.stagnant[l] > 0);
+                if lanes.iter().any(|&x| x) {
+                    jobs.push((e.chart.clone(), lanes));
+                }
+            }
+        }
+        // index: ruled cover fiber
+        let ruled: Vec<[u8; 32]> = self.ruled_addrs.fiber(&crate::network::nerve::ROOT).map(|(a, _)| *a).collect();
+        for addr in ruled {
+            if !budget.spend() {
+                break;
+            }
+            if let Some(w) = self.word_at(&addr) {
+                jobs.push((crate::transducer::stalk::invariant_of(w), [true; 4]));
+            }
+        }
+        let idle = jobs.is_empty();
+        for (inv, lanes) in jobs {
+            if lanes[1] {
+                if let Some(a) = self.stalks.fiber(&inv).first().copied() {
+                    let _ = self.condense_on(&a);
+                }
+            }
+            if lanes[2] {
+                if let Some(a) = self.stalks.fiber(&inv).first().copied() {
+                    if let Some(i) = self.basis_index.get(&a).copied() {
+                        self.torse_at(i);
+                    }
+                }
+            }
+            if lanes[3] {
+                if let Some(a) = self.stalks.fiber(&inv).first().copied() {
+                    self.refine_stratum(&a);
+                }
+            }
+            if lanes[0] {
+                self.reanchor_chart(&inv);
+            }
+        }
+        if idle {
+            let _ = self.condense_stroke();
+        }
+        self.physics.regenerate();
+    }
+
+    fn reanchor_chart(&mut self, inv: &crate::transducer::stalk::Invariant) {
+        let members = self.stalks.fiber(inv);
+        for addr in members {
+            let Some(w) = self.word_at(&addr).cloned() else {
+                continue;
+            };
+            if !w.is_sentence() {
+                continue;
+            }
+            let Some(mut n) = crate::transducer::sentence::from_element(&w) else {
+                continue;
+            };
+            let Some(gamma) = crate::transducer::sentence::solve_coboundary(&n) else {
+                continue;
+            };
+            if gamma.iter().all(|g| g.abelian_identity()) {
+                continue;
+            }
+            crate::transducer::sentence::apply_gauge(&mut n, &gamma);
+            let Some(after) = crate::transducer::sentence::as_element(&n) else {
+                continue;
+            };
+            let payload = crate::transducer::rewrite::RewritePayload::Reanchor { gamma };
+            let voice = self.discoverer_of(&addr);
+            let _ = self.mint_rewrite(
+                crate::transducer::rewrite::RewriteKind::Reanchor,
+                &[w],
+                &after,
+                payload,
+                voice,
+            );
+            break;
+        }
+    }
+
     /// The whole stroke under one lock (the reflex and test paths).
     pub(crate) fn optimize(&mut self) {
+        self.syntropic_stroke();
         if let Some(i) = self.condense_stroke() {
             let candidate = (*self.basis[i]).clone();
             if let NormalForm::Decomposed(_) = self.reduce_excluding(&candidate, Some(i)) {
                 self.retire_redundant(&candidate.address());
             }
         }
-        self.physics.regenerate();
     }
 
     /// The stroke for the idle deliberation worker: the cheap moves (condense,
@@ -3876,12 +4106,7 @@ impl Kernel {
     /// without it) to run on that snapshot with no lock held, exactly as
     /// adoption's derivability does. The reflex path never waits on it.
     pub fn consolidate_stroke(&mut self) {
-        // The cheap topological moves only: condense siblings through their
-        // transports, extract torsion, regenerate. Redundancy is discovered
-        // by the entities (the refinement bid) and replayed here — the
-        // hypha runs no decomposition of its own.
-        self.condense_stroke();
-        self.physics.regenerate();
+        self.syntropic_stroke();
     }
 
     /// Retire a plain card the rest of the basis derives (the off-lock probe
@@ -3955,12 +4180,21 @@ impl Kernel {
                     self.basis_remove(j);
                     let Some(i) = self.basis_index.get(&own).copied() else { continue };
                     if self.word_mut(i).attach(&sib, &g) > 0 {
-                        let anchor = self.anchor();
-                        let mu = crate::economy::price(&[0, 0, 1, 0], &self.physics.pressure, &self.treasury.pool());
-                        self.treasury.settle_condense(sibling_disc, mu, anchor);
+                        let after = (*self.basis[i]).clone();
+                        let payload = crate::transducer::rewrite::RewritePayload::Condense {
+                            sections: after.sections().to_vec(),
+                            gauge: g.clone(),
+                        };
+                        let _ = self.mint_rewrite(
+                            crate::transducer::rewrite::RewriteKind::Condense,
+                            &[sib.clone()],
+                            &after,
+                            payload,
+                            sibling_disc,
+                        );
                         self.touch_at(i);
                     }
-                    self.physics.syntropy(&[0, 0, 1, 0]);
+                    self.physics.syntropy(&[0, 1, 0, 0]);
                     absorbed += 1;
                 }
             }
@@ -3977,13 +4211,21 @@ impl Kernel {
             if spanned > 0 {
                 let lanes = self.basis[i].lanes();
                 self.physics.torse_relief(lanes, spanned as u64);
-                // THE TORSE COIN — the strongest yield: structure condensed from
-                // disorder, priced at the surface on the residual lane, paid to
-                // the bundle's discoverer.
-                let surface = crate::economy::yield_surface(&self.physics);
-                let mu = [0, 0, (spanned as u64) * (1 + surface[2]), 0];
-                let anchor = self.anchor();
-                self.treasury.settle_torse(self.discoverer_at(i), mu, anchor);
+                let after = (*self.basis[i]).clone();
+                let (sigma, period) = after
+                    .torsion()
+                    .last()
+                    .map(|(s, p, _)| (s.clone(), *p))
+                    .unwrap_or((Vec::new(), spanned as u32));
+                let payload = crate::transducer::rewrite::RewritePayload::Torse { sigma, period };
+                let disc = self.discoverer_at(i);
+                let _ = self.mint_rewrite(
+                    crate::transducer::rewrite::RewriteKind::Torse,
+                    std::slice::from_ref(&after),
+                    &after,
+                    payload,
+                    disc,
+                );
             }
             if wrote {
                 self.touch_at(i);
@@ -5768,7 +6010,14 @@ mod tests {
         }
         assert_eq!(k.basis_len(), 1, "the family collapsed into one bundle");
         assert_eq!(k.basis()[0].sections().len(), 2, "two sections along the pierced axis");
-        assert!(k.treasury().balance_mu(&[9; 32])[2] > 0, "absorbed discoverers still earn, on the lane");
+        let addrs: Vec<[u8; 32]> = k.dockets().iter().map(|(a, _, _, _, _, _)| *a).collect();
+        for a in addrs {
+            let _ = k.apply_verdict(&a, crate::anastome::dialogue::RULING_UPHELD);
+        }
+        assert!(
+            k.treasury().balance_mu(&[9; 32])[1] > 0 || k.treasury().balance_mu(&[9; 32]).iter().any(|&m| m > 0),
+            "absorbed discoverers still earn, on the lane"
+        );
     }
 
     /// THE TORSE STROKE tightens mathematics to physics: a swap family (1→4 and

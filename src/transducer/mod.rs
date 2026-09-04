@@ -32,3 +32,4 @@ pub mod sheaf;
 /// conformal versors and the lattice isometries are realised from words.
 pub mod peel;
 pub mod alphabet;
+pub mod rewrite;

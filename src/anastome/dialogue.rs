@@ -79,6 +79,8 @@ pub fn decode_refine(body: &[u8]) -> Option<([u8; 32], [u8; 32], Vec<CiteWire>)>
 /// act: translations and formed thoughts travel as words. Same value as
 /// `element::TRANSLATION_TAG`.
 pub const TRANSLATION_TAG: u8 = 0x13;
+/// Word-tape tag for an optimisation (a Rewrite). Same value as `element::REWRITE_TAG`.
+pub const REWRITE_TAG: u8 = 0x14;
 /// Genome-file section holding persisted thought bubbles.
 pub const THT1: &[u8; 4] = b"THT1";
 /// Snapshot section holding Čech complexes (addresses and rotors only).

@@ -118,6 +118,9 @@ pub fn invariant(chain: &[Cell]) -> Invariant {
 /// neither — no support, no group component — has the empty chart:
 /// novelty, not a stratum.
 pub fn invariant_of(word: &element::Element) -> Invariant {
+    if word.is_rewrite() {
+        return Invariant(vec![3]);
+    }
     if word.is_sentence() {
         return super::sentence::chart_of(word);
     }

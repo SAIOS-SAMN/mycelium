@@ -1085,7 +1085,6 @@ fn main() {
             let work = match synth_rx.recv_timeout(mycelium::physics::transport_deadline(rtt_now)) {
                 Ok(w) => w,
                 Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
-                    mycelium::synthesis::consolidate(&kernel);
                     let live = kernel.lock().map(|k| k.volume()).unwrap_or_default();
                     if live != persisted && last_persist.elapsed() >= mycelium::physics::persist_dwell(rtt_now) {
                         persist(&kernel, &state_path);

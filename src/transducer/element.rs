@@ -1502,6 +1502,8 @@ pub const SENTENCE_TAG: u8 = 0x12;
 /// The court replays it by inversion of the gauge; the syllabus teaches it
 /// by incidence. Same payload as a connection, then the two section addresses.
 pub const TRANSLATION_TAG: u8 = 0x13;
+/// An optimisation: a Rewrite the court replays both ways.
+pub const REWRITE_TAG: u8 = 0x14;
 
 /// The description of a connection: its spelling in the alphabet at its
 /// dilation, the placement, the gauge map, and the centered remainder.
@@ -1625,6 +1627,19 @@ impl Element {
     /// A translation: the gauge between two sections.
     pub fn is_translation(&self) -> bool {
         self.word.first().copied() == Some(TRANSLATION_TAG)
+    }
+
+    /// An optimisation spoken as a word.
+    pub fn is_rewrite(&self) -> bool {
+        self.word.first().copied() == Some(REWRITE_TAG)
+    }
+
+    /// Mint a Rewrite: the address measures the tape.
+    pub fn from_rewrite_tape(word: Vec<u8>, mag: [u64; 4]) -> Element {
+        let mut e = Element::identity(GERM_DIM);
+        e.word = word;
+        e.mag = mag;
+        e
     }
 
     /// The two sections a translation gauges, if the tape carries them.

@@ -125,7 +125,7 @@ pub struct Entry {
 /// orients nothing rather than silently crediting.
 pub fn orientation(kind: &str) -> i8 {
     match kind {
-        "utility" | "consilience" | "recall" | "torse" | "condense" | "refine" | "assembly" | "solve" => 1,
+        "utility" | "consilience" | "recall" | "torse" | "condense" | "refine" | "assembly" | "solve" | "rewrite" => 1,
         "spend" | "fee" | "slash" => -1,
         _ => 0, // "stake", "finality", forward-compatible unknowns
     }
@@ -341,6 +341,33 @@ impl Treasury {
         self.pay("utility", who, mu, anchor)
     }
 
+    /// Yield of an optimisation, read on the carriers as a lane vector.
+    /// Zero on every lane is not work — refused, not paid zero.
+    pub fn settle_rewrite(
+        &self,
+        kind: crate::transducer::rewrite::RewriteKind,
+        before: &[crate::transducer::element::Element],
+        after: &crate::transducer::element::Element,
+    ) -> Option<[u64; 4]> {
+        let mu = crate::transducer::rewrite::yield_vector(kind, before, after);
+        if mu.iter().all(|&x| x == 0) {
+            None
+        } else {
+            Some(mu)
+        }
+    }
+
+    /// Release an escrowed Rewrite to its discoverer on the lane it moved.
+    pub fn release_rewrite(&mut self, addr: &[u8; 32], voice: [u8; 32]) -> [u64; 4] {
+        let Some((voices, mu, anchor)) = self.escrowed.remove(addr) else {
+            return [0; 4];
+        };
+        let who = voices.first().copied().unwrap_or(voice);
+        self.entries.push(Entry { kind: "rewrite", who, mu, k_step: anchor.0, receipt: anchor.1 });
+        self.credit(who, mu);
+        mu
+    }
+
     /// THE COMPRESSION YIELD (refinement bid, 0x09): a bidder proved an
     /// existing word derivable — the vocabulary shrank while holonomy held.
     /// Systemic entropy reduction is paid work. Float-bounded.
@@ -535,6 +562,7 @@ impl Treasury {
                 "solve" => 10,
                 "refine" => 11,
                 "condense" => 12,
+                "rewrite" => 13,
                 _ => 255,
             };
             out.push(tag);
@@ -617,6 +645,7 @@ impl Treasury {
                 10 => "solve",
                 11 => "refine",
                 12 => "condense",
+                13 => "rewrite",
                 _ => "unknown",
             };
             let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
