@@ -67,6 +67,13 @@ impl Sentence {
             false => replay(words, &self.cites, chain),
         }
     }
+
+    pub fn open_at<'a>(&self, word_at: &impl Fn(usize) -> Option<&'a Element>, chain: &[Cell]) -> Vec<Cell> {
+        match self.punctures.is_empty() {
+            true => self.residual.clone(),
+            false => replay_at(word_at, &self.cites, chain),
+        }
+    }
 }
 
 /// PUNCTURE the held words a sentence's carried bodies name: a carried body
@@ -206,9 +213,13 @@ pub fn cited_pattern(word: &Element, asg: usize) -> Option<Vec<Cell>> {
 /// cells. An empty residual is closure; a citation naming nothing held
 /// speaks nothing.
 pub fn replay(language: &[Element], cites: &[Cite], target: &[Cell]) -> Vec<Cell> {
+    replay_at(&|i| language.get(i), cites, target)
+}
+
+pub fn replay_at<'a>(word_at: &impl Fn(usize) -> Option<&'a Element>, cites: &[Cite], target: &[Cell]) -> Vec<Cell> {
     let ops: Vec<(Versor, Vec<Cell>)> = cites
         .iter()
-        .filter_map(|(i, v, asg)| Some((v.clone(), cited_pattern(language.get(*i)?, *asg)?)))
+        .filter_map(|(i, v, asg)| Some((v.clone(), cited_pattern(word_at(*i)?, *asg)?)))
         .collect();
     replay_operators(&ops, target)
 }
@@ -359,14 +370,14 @@ pub fn is_flat(cycle: &[Versor]) -> bool {
 /// moments and verify it by replay. Returns the citation and the stratum's
 /// multiplicity (the measurement, not a search width).
 pub fn locate<'a>(
-    words: &[Element],
+    words: &'a [Element],
     atlas: &Stalks,
     index_of: &impl Fn(&[u8; 32]) -> Option<usize>,
     shape_at: &impl Fn(usize) -> Option<&'a Shape>,
     piece: &[Cell],
     exclude: Option<usize>,
 ) -> (Option<Cite>, usize) {
-    let (cite, _, m) = locate_or_puncture(words, atlas, index_of, shape_at, piece, exclude);
+    let (cite, _, m) = locate_or_puncture_at(&|i| words.get(i), atlas, index_of, shape_at, piece, exclude);
     (cite, m)
 }
 
@@ -376,7 +387,18 @@ pub fn locate<'a>(
 /// citation is preferred; a puncture is returned only when no word speaks
 /// the body as held.
 pub fn locate_or_puncture<'a>(
-    words: &[Element],
+    words: &'a [Element],
+    atlas: &Stalks,
+    index_of: &impl Fn(&[u8; 32]) -> Option<usize>,
+    shape_at: &impl Fn(usize) -> Option<&'a Shape>,
+    piece: &[Cell],
+    exclude: Option<usize>,
+) -> (Option<Cite>, Option<(usize, Versor, Vec<Cell>)>, usize) {
+    locate_or_puncture_at(&|i| words.get(i), atlas, index_of, shape_at, piece, exclude)
+}
+
+pub fn locate_or_puncture_at<'a>(
+    word_at: &impl Fn(usize) -> Option<&'a Element>,
     atlas: &Stalks,
     index_of: &impl Fn(&[u8; 32]) -> Option<usize>,
     shape_at: &impl Fn(usize) -> Option<&'a Shape>,
@@ -385,43 +407,32 @@ pub fn locate_or_puncture<'a>(
 ) -> (Option<Cite>, Option<(usize, Versor, Vec<Cell>)>, usize) {
     let Some(shape) = element::shape_of_chain(piece) else { return (None, None, 0) };
     let want = profile(&element::assignment(piece));
-    // The stratum holds addresses; each is read into the relation by its key.
     let stratum: Vec<usize> = atlas.fiber(&stalk::invariant(piece)).iter().filter_map(|a| index_of(a)).collect();
-    // THE STRATUM NAMES ONE WORD, OR MULTIPLICITY IS THE MEASUREMENT. Two
-    // words on one chart is the coordinate set being too coarse — an axis
-    // to extend, never a list to test through. Zero is novelty.
-    // The chart is positions only (hues are fibre), so the stratum is first
-    // read by the body's gauge charge: one keyed read per member names the
-    // words that speak this charge at all. What remains is the multiplicity.
     let key = element::gauge_key(&element::assignment(piece));
     let stratum: Vec<usize> = stratum
         .into_iter()
         .filter(|&i| Some(i) != exclude)
-        .filter(|&i| words.get(i).is_some_and(|w| !w.assignments_by_profile(&key).is_empty()))
+        .filter(|&i| word_at(i).is_some_and(|w| !w.assignments_by_profile(&key).is_empty()))
         .collect();
     let m = stratum.len();
     let [i] = stratum.as_slice() else { return (None, None, m) };
     let i = *i;
-    let Some(word) = words.get(i) else { return (None, None, m) };
+    let Some(word) = word_at(i) else { return (None, None, m) };
     let Some(held) = shape_at(i) else { return (None, None, m) };
     let Some(to_word) = super::blade::versor_between(&shape, held) else { return (None, None, m) };
-    let Some(v) = to_word.versor_inverse() else { return (None, None, m) }; // the word carried onto the body
-    // One gauge: the assignment whose charge is the body's, read by the
-    // charge's key — never a walk of the word's gauge axis. Several with the
-    // same charge is multiplicity on the fibre.
+    let Some(v) = to_word.versor_inverse() else { return (None, None, m) };
     let _ = &want;
     let gauge: Vec<usize> = word.assignments_by_profile(&element::gauge_key(&element::assignment(piece)));
     match gauge.as_slice() {
         [asg] => {
             let cite: Cite = (i, v.clone(), *asg);
-            if replay(words, std::slice::from_ref(&cite), piece).is_empty() {
+            if replay_at(word_at, std::slice::from_ref(&cite), piece).is_empty() {
                 return (Some(cite), None, m);
             }
         }
         [] => {}
         _ => return (None, None, gauge.len()),
     }
-    // One pullback puncture, one replay, then stop.
     let pos = element::positions(word.sub());
     if let Some(asg) = element::pullback(&pos, piece, &v) {
         let mut body: Vec<Cell> = pos.iter().zip(&asg).map(|(&(r, c), &(b, a))| (r, c, b, a)).collect();
@@ -438,7 +449,7 @@ pub fn locate_or_puncture<'a>(
 /// consecutive cited bodies is their relative transport; the residual is
 /// what no word speaks. `exclude` keeps a word from citing itself.
 pub fn deconstruct<'a>(
-    words: &[Element],
+    words: &'a [Element],
     atlas: &Stalks,
     index_of: &impl Fn(&[u8; 32]) -> Option<usize>,
     shape_at: &impl Fn(usize) -> Option<&'a Shape>,
@@ -496,6 +507,566 @@ pub fn deconstruct<'a>(
         .filter_map(|w| Some(w[0].1.versor_inverse()?.geo(&w[1].1)))
         .collect();
     out
+}
+
+/// Deconstruct over a getter, so a language snapshot of `Arc<Element>`
+/// never flattens into a cloned slice.
+pub fn deconstruct_at<'a>(
+    word_at: &impl Fn(usize) -> Option<&'a Element>,
+    atlas: &Stalks,
+    index_of: &impl Fn(&[u8; 32]) -> Option<usize>,
+    shape_at: &impl Fn(usize) -> Option<&'a Shape>,
+    chain: &[Cell],
+    exclude: Option<usize>,
+) -> Sentence {
+    let mut out = Sentence::default();
+    if chain.is_empty() {
+        return out;
+    }
+    let bodies = pieces(chain);
+    if bodies.len() > 1 {
+        let (whole, _, m) = locate_or_puncture_at(word_at, atlas, index_of, shape_at, chain, exclude);
+        out.multiplicity = m;
+        if let Some(c) = whole {
+            out.cites.push(c);
+            return out;
+        }
+    }
+    for body in bodies {
+        let (c, p, m) = locate_or_puncture_at(word_at, atlas, index_of, shape_at, &body, exclude);
+        out.multiplicity = out.multiplicity.max(m);
+        match (c, p) {
+            (Some(c), _) => out.cites.push(c),
+            (None, Some(p)) => out.punctures.push(p),
+            (None, None) => {
+                let fibers = element::gauge_fibers(&body);
+                if fibers.len() <= 1 {
+                    out.residual.extend(body);
+                    continue;
+                }
+                for (_, fiber) in &fibers {
+                    for sub in pieces(fiber) {
+                        let (c, p, m) = locate_or_puncture_at(word_at, atlas, index_of, shape_at, &sub, exclude);
+                        out.multiplicity = out.multiplicity.max(m);
+                        match (c, p) {
+                            (Some(c), _) => out.cites.push(c),
+                            (None, Some(p)) => out.punctures.push(p),
+                            (None, None) => out.residual.extend(sub),
+                        }
+                    }
+                }
+            }
+        }
+    }
+    out.residual.sort_unstable();
+    out.connection = out
+        .cites
+        .windows(2)
+        .filter_map(|w| Some(w[0].1.versor_inverse()?.geo(&w[1].1)))
+        .collect();
+    out
+}
+
+// ── a sentence is a nerve of germs ──────────────────────────────────────────
+
+use super::alphabet::{self, Word};
+use super::element::{affine_of, from_connection, identity_versor, GERM_DIM};
+
+/// One germ of a sentence: a body the family carried, spelled.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Germ {
+    pub address: [u8; 32],
+    pub versor: Versor,
+    pub word: Word,
+    pub chain: Vec<Cell>,
+}
+
+/// A face of the nerve: two germs whose after-supports meet, with the
+/// relative word `g_ij = V_j V_i⁻¹` spelled, or a remainder face.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Face {
+    pub i: usize,
+    pub j: usize,
+    pub overlap: Vec<Cell>,
+    pub g_ij: Word,
+    /// False when the relative transport does not spell: a face with remainder.
+    pub spelled: bool,
+}
+
+/// An independent loop of the nerve, carrying its holonomy word.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Cycle {
+    pub germs: Vec<usize>,
+    pub holonomy: Word,
+}
+
+/// A sentence: a nerve of germs inside one thought. Its linguistics is the
+/// 1-cochain of relative words on that nerve. Not a list of citations.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct Nerve {
+    pub germs: Vec<Germ>,
+    pub faces: Vec<Face>,
+    pub cycles: Vec<Cycle>,
+    pub remainder: Vec<Cell>,
+}
+
+impl Nerve {
+    pub fn is_closed(&self) -> bool {
+        self.remainder.is_empty()
+            && self.faces.iter().all(|f| f.spelled)
+            && self.cycles.iter().all(|c| c.holonomy.abelian_identity())
+    }
+
+    pub fn germ_count(&self) -> usize {
+        self.germs.len()
+    }
+}
+
+/// After-support of a germ: the input positions carried by its versor.
+pub fn after_support(g: &Germ) -> Vec<(i64, i64)> {
+    let mut out = Vec::new();
+    for &(r, c, _, _) in &g.chain {
+        if let Some(image) = element::carry_cell(&g.versor, r, c) {
+            out.extend(image);
+        } else {
+            out.push((r, c));
+        }
+    }
+    out.sort_unstable();
+    out.dedup();
+    out
+}
+
+fn supports_meet(a: &[(i64, i64)], b: &[(i64, i64)]) -> bool {
+    if a.is_empty() || b.is_empty() {
+        return false;
+    }
+    if overlap_positions(a, b).next().is_some() {
+        return true;
+    }
+    if encloses(a, b) || encloses(b, a) {
+        return true;
+    }
+    adjacent(a, b)
+}
+
+fn overlap_positions<'a>(a: &'a [(i64, i64)], b: &'a [(i64, i64)]) -> impl Iterator<Item = (i64, i64)> + 'a {
+    a.iter().copied().filter(|p| b.binary_search(p).is_ok())
+}
+
+fn encloses(outer: &[(i64, i64)], inner: &[(i64, i64)]) -> bool {
+    !inner.is_empty() && inner.iter().all(|p| outer.binary_search(p).is_ok())
+}
+
+fn adjacent(a: &[(i64, i64)], b: &[(i64, i64)]) -> bool {
+    a.iter().any(|&(r, c)| {
+        [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)]
+            .iter()
+            .any(|p| b.binary_search(p).is_ok())
+    })
+}
+
+fn overlap_cells(a: &[(i64, i64)], b: &[(i64, i64)]) -> Vec<Cell> {
+    let mut u: Vec<Cell> = overlap_positions(a, b).map(|(r, c)| (r, c, 0, 0)).collect();
+    if u.is_empty() {
+        // Shared boundary: cells of a that are adjacent to b.
+        u = a
+            .iter()
+            .copied()
+            .filter(|&(r, c)| {
+                [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)]
+                    .iter()
+                    .any(|p| b.binary_search(p).is_ok())
+            })
+            .map(|(r, c)| (r, c, 0, 0))
+            .collect();
+    }
+    u.sort_unstable();
+    u.dedup();
+    u
+}
+
+fn spell_versor(v: &Versor) -> Option<Word> {
+    let a = affine_of(v)?;
+    if a.len() < 2 || a[0].len() < 2 {
+        return None;
+    }
+    let block = [[a[0][0].clone(), a[0][1].clone()], [a[1][0].clone(), a[1][1].clone()]];
+    Some(alphabet::spell(&block)?.word)
+}
+
+fn face_word(a: &Germ, b: &Germ) -> (Word, bool) {
+    let Some(inv) = a.versor.versor_inverse() else {
+        return (Word::identity(), false);
+    };
+    let g = b.versor.geo(&inv);
+    match spell_versor(&g) {
+        Some(w) => (w, true),
+        None => (Word::identity(), false),
+    }
+}
+
+/// Assemble a nerve from germs: faces from meeting after-supports, cycles
+/// from a spanning tree plus chords. Canonical germ order is by address.
+pub fn assemble(mut germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
+    germs.sort_by(|a, b| a.address.cmp(&b.address));
+    let mut faces = Vec::new();
+    for i in 0..germs.len() {
+        for j in i + 1..germs.len() {
+            let ai = after_support(&germs[i]);
+            let aj = after_support(&germs[j]);
+            if !supports_meet(&ai, &aj) {
+                continue;
+            }
+            let overlap = overlap_cells(&ai, &aj);
+            let (g_ij, spelled) = face_word(&germs[i], &germs[j]);
+            faces.push(Face { i, j, overlap, g_ij, spelled });
+        }
+    }
+    let cycles = independent_cycles(germs.len(), &faces);
+    Nerve { germs, faces, cycles, remainder }
+}
+
+fn independent_cycles(n: usize, faces: &[Face]) -> Vec<Cycle> {
+    if n == 0 {
+        return Vec::new();
+    }
+    let mut parent: Vec<usize> = (0..n).collect();
+    let find = |parent: &mut [usize], mut x: usize| {
+        while parent[x] != x {
+            parent[x] = parent[parent[x]];
+            x = parent[x];
+        }
+        x
+    };
+    let mut tree: Vec<bool> = vec![false; faces.len()];
+    for (k, f) in faces.iter().enumerate() {
+        let (a, b) = (find(&mut parent, f.i), find(&mut parent, f.j));
+        if a != b {
+            parent[a] = b;
+            tree[k] = true;
+        }
+    }
+    let mut adj: Vec<Vec<(usize, usize)>> = vec![Vec::new(); n];
+    for (k, f) in faces.iter().enumerate() {
+        if tree[k] {
+            adj[f.i].push((f.j, k));
+            adj[f.j].push((f.i, k));
+        }
+    }
+    let mut cycles = Vec::new();
+    for (k, f) in faces.iter().enumerate() {
+        if tree[k] {
+            continue;
+        }
+        // Path f.i ↝ f.j on the tree, then the chord.
+        let mut prev = vec![None; n];
+        let mut q = std::collections::VecDeque::new();
+        q.push_back(f.i);
+        prev[f.i] = Some(f.i);
+        while let Some(u) = q.pop_front() {
+            if u == f.j {
+                break;
+            }
+            for &(v, _) in &adj[u] {
+                if prev[v].is_none() {
+                    prev[v] = Some(u);
+                    q.push_back(v);
+                }
+            }
+        }
+        if prev[f.j].is_none() {
+            continue;
+        }
+        let mut nodes = vec![f.j];
+        let mut cur = f.j;
+        while cur != f.i {
+            cur = prev[cur].unwrap();
+            nodes.push(cur);
+        }
+        nodes.reverse();
+        let mut hol = Word::identity();
+        for w in nodes.windows(2) {
+            if let Some(face) = faces.iter().find(|x| (x.i == w[0] && x.j == w[1]) || (x.i == w[1] && x.j == w[0])) {
+                hol = if face.i == w[0] {
+                    hol.compose(&face.g_ij)
+                } else {
+                    hol.compose(&face.g_ij.inverse())
+                };
+            }
+        }
+        hol = hol.compose(&f.g_ij.inverse());
+        cycles.push(Cycle { germs: nodes, holonomy: hol });
+    }
+    cycles
+}
+
+/// Solve δγ = ω: a gauge per germ, integer-linear in letter exponents.
+/// On a forest every closed 1-cochain is exact; a chord that does not
+/// match the tree path is a withheld class.
+pub fn solve_coboundary(n: &Nerve) -> Option<Vec<Word>> {
+    let g = n.germs.len();
+    if g == 0 {
+        return Some(Vec::new());
+    }
+    let mut parent: Vec<usize> = (0..g).collect();
+    let find = |parent: &mut [usize], mut x: usize| {
+        while parent[x] != x {
+            parent[x] = parent[parent[x]];
+            x = parent[x];
+        }
+        x
+    };
+    let mut tree_faces: Vec<&Face> = Vec::new();
+    let mut chords: Vec<&Face> = Vec::new();
+    for f in &n.faces {
+        let (a, b) = (find(&mut parent, f.i), find(&mut parent, f.j));
+        if a != b {
+            parent[a] = b;
+            tree_faces.push(f);
+        } else {
+            chords.push(f);
+        }
+    }
+    let mut gamma: Vec<Word> = vec![Word::identity(); g];
+    let mut placed = vec![false; g];
+    placed[0] = true;
+    let mut progressed = true;
+    while progressed {
+        progressed = false;
+        for f in &tree_faces {
+            match (placed[f.i], placed[f.j]) {
+                (true, false) => {
+                    gamma[f.j] = f.g_ij.compose(&gamma[f.i]);
+                    placed[f.j] = true;
+                    progressed = true;
+                }
+                (false, true) => {
+                    gamma[f.i] = f.g_ij.inverse().compose(&gamma[f.j]);
+                    placed[f.i] = true;
+                    progressed = true;
+                }
+                _ => {}
+            }
+        }
+    }
+    for f in chords {
+        let expect = gamma[f.j].compose(&gamma[f.i].inverse());
+        if expect.exponents() != f.g_ij.exponents() {
+            return None;
+        }
+    }
+    Some(gamma)
+}
+
+/// Apply a gauge: each germ's tape is re-anchored by γ_i, then the nerve
+/// is reassembled so faces and cycles are the gauged 1-cochain.
+pub fn apply_gauge(n: &mut Nerve, gamma: &[Word]) {
+    let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+    let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+    for (i, g) in n.germs.iter_mut().enumerate() {
+        let Some(w) = gamma.get(i) else { continue };
+        if w.abelian_identity() {
+            continue;
+        }
+        g.word = w.compose(&g.word);
+        if let Some(v) = element::conformal_of(&alphabet::Spelling { word: g.word.clone(), rho: one.clone() }, &(zero.clone(), zero.clone())) {
+            g.versor = v;
+        }
+    }
+    *n = assemble(std::mem::take(&mut n.germs), std::mem::take(&mut n.remainder));
+}
+
+/// Close the sentence: trivial 2-cocycle and a gauge that kills the faces.
+/// No solution withholds the sentence (caller mints ω onto torsion).
+pub fn close(n: &mut Nerve) -> bool {
+    if n.cycles.iter().any(|c| !c.holonomy.abelian_identity()) {
+        return false;
+    }
+    let Some(gamma) = solve_coboundary(n) else {
+        return false;
+    };
+    if gamma.iter().any(|w| !w.abelian_identity()) {
+        apply_gauge(n, &gamma);
+    }
+    n.is_closed() || (n.faces.iter().all(|f| f.spelled) && n.cycles.iter().all(|c| c.holonomy.abelian_identity()))
+}
+
+fn embed_affine(a: &crate::core::engine::QMatrix) -> crate::core::engine::QMatrix {
+    use crate::core::matrix::identity;
+    let mut m = identity(GERM_DIM);
+    let n = a.len().min(3);
+    for r in 0..n {
+        for c in 0..a[r].len().min(3) {
+            m[r][c] = a[r][c].clone();
+        }
+    }
+    m
+}
+
+/// The sentence as one Element: first germ is the base connection; every
+/// further germ occupies a germinated axis; faces are transitions; a
+/// withheld cycle is torsion; the remainder is `sub`.
+pub fn as_element(n: &Nerve) -> Option<Element> {
+    if n.germs.is_empty() {
+        return None;
+    }
+    let g0 = &n.germs[0];
+    let affine = affine_of(&g0.versor)?;
+    let sigma = element::assignment(&g0.chain);
+    let carried = element::measure_lanes(&n.remainder);
+    let mut e = from_connection(&affine, &sigma, &n.remainder, carried)?;
+    for (k, g) in n.germs.iter().enumerate().skip(1) {
+        let Some(a) = affine_of(&g.versor) else { continue };
+        e.set_fiber(element::FIBER_GERMINATED + (k as u16 - 1), embed_affine(&a));
+    }
+    for f in &n.faces {
+        if !f.spelled {
+            continue;
+        }
+        let asg = element::assignment(&f.overlap);
+        if let Some(v) = element::conformal_of(
+            &alphabet::Spelling {
+                word: f.g_ij.clone(),
+                rho: num_rational::BigRational::from_integer(num_bigint::BigInt::from(1)),
+            },
+            &(num_rational::BigRational::from_integer(num_bigint::BigInt::from(0)), num_rational::BigRational::from_integer(num_bigint::BigInt::from(0))),
+        ) {
+            e.record_dislocation(asg, v);
+        }
+    }
+    if !n.is_closed() {
+        if let Some(c) = n.cycles.iter().find(|c| !c.holonomy.abelian_identity()) {
+            if let Some(ell) = c.holonomy.period(24) {
+                let sigma: Vec<(u8, u8)> = c.germs.windows(2).map(|w| (w[0] as u8, w[1] as u8)).collect();
+                e.record_torsion(sigma, ell);
+            }
+        }
+    }
+    Some(e)
+}
+
+/// A sentence Element: a connection with at least one germinated germ axis.
+pub fn is_sentence(e: &Element) -> bool {
+    e.is_sentence()
+}
+
+/// Read germs, faces and cycles back off a sentence Element.
+pub fn from_element(e: &Element) -> Option<Nerve> {
+    if !is_sentence(e) {
+        return None;
+    }
+    let letters = e.letters()?;
+    let mut germs = Vec::new();
+    let v0 = element::conformal_of(&letters.spelling, &letters.shift).unwrap_or_else(identity_versor);
+    germs.push(Germ {
+        address: e.address(),
+        versor: v0,
+        word: letters.spelling.word.clone(),
+        chain: e.sub().to_vec(),
+    });
+    for (k, axis) in e.opened_axes().into_iter().enumerate() {
+        let Some(m) = e.fiber(axis) else { continue };
+        if m.len() < 3 {
+            continue;
+        }
+        let affine = vec![
+            vec![m[0][0].clone(), m[0][1].clone(), m[0][2].clone()],
+            vec![m[1][0].clone(), m[1][1].clone(), m[1][2].clone()],
+            vec![m[2][0].clone(), m[2][1].clone(), m[2][2].clone()],
+        ];
+        let Some(block_word) = alphabet::spell(&[[m[0][0].clone(), m[0][1].clone()], [m[1][0].clone(), m[1][1].clone()]]) else {
+            continue;
+        };
+        let shift = (m[0][2].clone(), m[1][2].clone());
+        let v = element::conformal_of(&alphabet::Spelling { word: block_word.word.clone(), rho: block_word.rho.clone() }, &shift)
+            .unwrap_or_else(identity_versor);
+        let mut addr = e.address();
+        addr[31] = addr[31].wrapping_add(k as u8 + 1);
+        germs.push(Germ { address: addr, versor: v, word: block_word.word, chain: Vec::new() });
+        let _ = affine;
+    }
+    Some(assemble(germs, e.sub().to_vec()))
+}
+
+/// Replay a closed sentence onto a test grid: transports compose along a
+/// spanning tree of the nerve; cycle words are checked, not assumed.
+pub fn speak_along_tree(n: &Nerve, cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
+    let mut out = Vec::new();
+    for g in &n.germs {
+        for &(r, c, h) in cells {
+            if let Some(image) = element::carry_cell(&g.versor, r, c) {
+                for (i, j) in image {
+                    out.push((i, j, h));
+                }
+            }
+        }
+    }
+    out.sort_unstable();
+    out.dedup();
+    out
+}
+
+/// Blind replay of a sentence: re-derive every germ's block from its tape,
+/// every face g_ij from the two germs, δg on every triangle, and require
+/// stored torsion to close under `toroid::witness_stored`.
+pub fn replay_nerve(e: &Element) -> Option<&'static str> {
+    let n = from_element(e)?;
+    for g in &n.germs {
+        if spell_versor(&g.versor).as_ref() != Some(&g.word) && !g.word.abelian_identity() {
+            return Some("sentence germ does not re-derive from its letters");
+        }
+    }
+    for f in &n.faces {
+        let (w, spelled) = face_word(&n.germs[f.i], &n.germs[f.j]);
+        if spelled != f.spelled {
+            return Some("sentence face does not re-derive from its germs");
+        }
+        if spelled && w.exponents() != f.g_ij.exponents() {
+            return Some("sentence face g_ij does not re-derive from its germs");
+        }
+    }
+    for c in &n.cycles {
+        if !c.holonomy.abelian_identity() {
+            if c.holonomy.period(24).is_none() {
+                return Some("sentence cycle holonomy does not close under repetition");
+            }
+        }
+    }
+    for (stored, witness) in super::toroid::witness_stored(e) {
+        match witness {
+            super::toroid::HolonomicLoopWitness::Closed { period, .. } if period == stored => {}
+            super::toroid::HolonomicLoopWitness::Closed { .. } => {
+                return Some("sentence torsion period does not re-derive")
+            }
+            super::toroid::HolonomicLoopWitness::Open { .. } => {
+                return Some("sentence torsion cycle does not close")
+            }
+        }
+    }
+    None
+}
+
+/// Two sentences on the same nerve chart whose cochains differ by a
+/// coboundary δγ: the gauge that takes `a` onto `b`.
+pub fn coboundary_gauge(a: &Nerve, b: &Nerve) -> Option<Vec<Word>> {
+    if a.germs.len() != b.germs.len() || a.faces.len() != b.faces.len() {
+        return None;
+    }
+    let mut gamma = Vec::with_capacity(a.germs.len());
+    for (ga, gb) in a.germs.iter().zip(&b.germs) {
+        gamma.push(gb.word.compose(&ga.word.inverse()));
+    }
+    for (fa, fb) in a.faces.iter().zip(&b.faces) {
+        if fa.i != fb.i || fa.j != fb.j {
+            return None;
+        }
+        let expect = gamma[fa.j].compose(&fa.g_ij).compose(&gamma[fa.i].inverse());
+        if expect.exponents() != fb.g_ij.exponents() {
+            return None;
+        }
+    }
+    Some(gamma)
 }
 
 #[cfg(test)]
@@ -569,5 +1140,52 @@ mod tests {
         assert!(is_flat(&[t.clone(), t.versor_inverse().unwrap()]));
         assert!(!is_flat(&[t.clone(), element::translator_versor(0, 2)]));
         assert!(is_flat(&[]), "the empty loop is flat");
+    }
+
+    /// Two adjacent germs form a nerve with a face and no cycle; the
+    /// coboundary is exact on a tree.
+    #[test]
+    fn a_two_germ_nerve_is_a_tree_and_closes() {
+        let chain_a = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
+        let chain_b = vec![(0, 1, 1, 2), (0, 2, 1, 2)];
+        let ga = Germ {
+            address: from_residual(&chain_a).address(),
+            versor: identity_versor(),
+            word: Word::identity(),
+            chain: chain_a,
+        };
+        let gb = Germ {
+            address: from_residual(&chain_b).address(),
+            versor: identity_versor(),
+            word: Word::identity(),
+            chain: chain_b,
+        };
+        let mut n = assemble(vec![ga, gb], Vec::new());
+        assert_eq!(n.germs.len(), 2);
+        assert!(!n.faces.is_empty(), "adjacent after-supports meet");
+        assert!(n.cycles.is_empty(), "a tree has no independent cycle");
+        assert!(solve_coboundary(&n).is_some(), "a tree 1-cochain is exact");
+        assert!(close(&mut n));
+    }
+
+    /// A sentence Element is charted on leading axis 2, disjoint from
+    /// residual and connection charts.
+    #[test]
+    fn a_sentence_chart_leads_with_axis_two() {
+        fn q(v: i64) -> num_rational::BigRational {
+            num_rational::BigRational::from_integer(num_bigint::BigInt::from(v))
+        }
+        let affine = vec![
+            vec![q(1), q(0), q(2)],
+            vec![q(0), q(1), q(0)],
+            vec![q(0), q(0), q(1)],
+        ];
+        let mut e = crate::transducer::element::from_connection(&affine, &[], &Vec::new(), [1, 0, 0, 0]).expect("a translation spells");
+        let seed = e.fiber(element::FIBER_SPATIAL).cloned().expect("spatial fibre");
+        e.set_fiber(element::FIBER_GERMINATED, seed);
+        assert!(e.is_sentence());
+        let inv = stalk::invariant_of(&e);
+        assert_eq!(inv.0.first().copied(), Some(2), "leading axis 2");
+        assert!(inv.0.get(1).copied().unwrap_or(0) >= 2, "germ count");
     }
 }

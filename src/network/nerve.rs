@@ -393,12 +393,31 @@ pub fn occupied_lane(mag: &[u64; 4]) -> u8 {
     mag.iter().position(|&x| x > 0).unwrap_or(0) as u8
 }
 
-/// Home by incidence. Fiber at the deepest prefix of the word's lane; if
-/// that fiber is empty at every prefix the chart is novel and the home is
-/// the hypha with room on every lane the word moves. Identity order
-/// (`[u8;32]` min) breaks a remaining tie and nothing else does.
-/// `self_id` is this hypha's verifying key when the caller is a hypha;
-/// a client passes `None` and never homes to itself.
+/// Occupied lanes of a magnitude — every lane the word moves, not the first.
+pub fn occupied_lanes(mag: &[u64; 4]) -> Vec<u8> {
+    let v: Vec<u8> = (0..4u8).filter(|&l| mag[l as usize] > 0).collect();
+    if v.is_empty() {
+        vec![0]
+    } else {
+        v
+    }
+}
+
+fn addr_of(
+    id: &[u8; 32],
+    addrs: &Keyed<String>,
+    self_id: Option<(&[u8; 32], &[u64; 4], &str)>,
+) -> Option<String> {
+    if let Some((sid, _, saddr)) = self_id {
+        if id == sid {
+            return Some(saddr.to_string());
+        }
+    }
+    addrs.get(id).cloned()
+}
+
+/// Home by incidence: intersection of cover fibers on every occupied lane,
+/// then room on those same lanes, then identity order as the last tiebreak.
 pub fn home(
     cover: &Cover,
     inv: &crate::transducer::stalk::Invariant,
@@ -407,38 +426,26 @@ pub fn home(
     addrs: &Keyed<String>,
     self_id: Option<(&[u8; 32], &[u64; 4], &str)>,
 ) -> ([u8; 32], String) {
-    let lane = occupied_lane(mag);
-    let fiber = cover.fiber(lane, inv);
-    let mut pick: Option<[u8; 32]> = None;
-    for id in &fiber {
-        if let Some((sid, _, _)) = self_id {
+    let lanes = occupied_lanes(mag);
+    let fits = |room: &[u64; 4]| lanes.iter().all(|&l| mag[l as usize] == 0 || room[l as usize] > 0);
+    let room_of = |id: &[u8; 32]| -> Option<[u64; 4]> {
+        if let Some((sid, sroom, _)) = self_id {
             if id == sid {
-                pick = match pick {
-                    Some(p) if p < *id => Some(p),
-                    _ => Some(*id),
-                };
-                continue;
+                return Some(*sroom);
             }
         }
-        if addrs.get(id).is_some() {
-            pick = match pick {
-                Some(p) if p < *id => Some(p),
-                _ => Some(*id),
-            };
-        }
+        rooms.get(id).copied()
+    };
+    // Intersection of fibers across occupied lanes.
+    let mut fiber: Option<Vec<[u8; 32]>> = None;
+    for l in &lanes {
+        let f = cover.fiber(*l, inv);
+        fiber = Some(match fiber {
+            None => f,
+            Some(c) => c.into_iter().filter(|id| f.contains(id)).collect(),
+        });
     }
-    if let Some(id) = pick {
-        if let Some((sid, _, saddr)) = self_id {
-            if id == *sid {
-                return (id, saddr.to_string());
-            }
-        }
-        if let Some(a) = addrs.get(&id) {
-            return (id, a.clone());
-        }
-    }
-    // Novel chart: room on every occupied lane, then identity order.
-    let fits = |room: &[u64; 4]| (0..4).all(|l| mag[l] == 0 || room[l] > 0);
+    let fiber = fiber.unwrap_or_default();
     let mut best: Option<([u8; 32], String)> = None;
     let consider = |best: &mut Option<([u8; 32], String)>, id: [u8; 32], addr: String| {
         match best {
@@ -446,6 +453,19 @@ pub fn home(
             _ => *best = Some((id, addr)),
         }
     };
+    for id in &fiber {
+        if let Some(room) = room_of(id) {
+            if fits(&room) {
+                if let Some(a) = addr_of(id, addrs, self_id) {
+                    consider(&mut best, *id, a);
+                }
+            }
+        }
+    }
+    if let Some(hit) = best {
+        return hit;
+    }
+    // No covering hypha with room: novel (or the fiber is full), room then identity.
     if let Some((sid, sroom, saddr)) = self_id {
         if fits(sroom) {
             consider(&mut best, *sid, saddr.to_string());
@@ -511,6 +531,11 @@ mod cover_tests {
         rooms.insert(hi, [0, 3, 0, 0]);
         let (id, _) = home(&c, &inv(&[99]), &[0, 1, 0, 0], &rooms, &addrs, None);
         assert_eq!(id, hi, "novel home is the hypha with room on every moved lane");
+        // Both cover the chart; lo has no room on the occupied lane, hi does.
+        rooms.insert(lo, [8, 0, 8, 8]);
+        rooms.insert(hi, [0, 3, 0, 0]);
+        let (id, _) = home(&c, &inv(&[4]), &[0, 1, 0, 0], &rooms, &addrs, None);
+        assert_eq!(id, hi, "fiber ∩ room: covering without room loses to covering with room");
     }
 
     #[test]

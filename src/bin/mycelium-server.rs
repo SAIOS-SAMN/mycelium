@@ -88,10 +88,8 @@ fn speak_root(
 
 /// Speak one act to a peer on the nerve, bounded by the transport deadline;
 /// the reply, if any, is not needed. Silence is the peer's impedance.
-fn tell_peer(addr: &str, body: Vec<u8>) -> Option<Vec<u8>> {
-    let deadline = std::time::Duration::from_millis(
-        mycelium::physics::reserve_max() * (mycelium::physics::reserve_max() / mycelium::physics::spend_unit()).max(1),
-    );
+fn tell_peer(addr: &str, body: Vec<u8>, deadline: std::time::Duration) -> Option<(Vec<u8>, std::time::Duration)> {
+    let t0 = Instant::now();
     let sock = std::net::ToSocketAddrs::to_socket_addrs(&addr).ok().and_then(|mut a| a.next())?;
     let mut s = std::net::TcpStream::connect_timeout(&sock, deadline).ok()?;
     let _ = s.set_write_timeout(Some(deadline));
@@ -106,7 +104,7 @@ fn tell_peer(addr: &str, body: Vec<u8>) -> Option<Vec<u8>> {
     }
     let mut reply = vec![0u8; len];
     std::io::Read::read_exact(&mut s, &mut reply).ok()?;
-    Some(reply)
+    Some((reply, t0.elapsed()))
 }
 
 struct Mesh {
@@ -116,6 +114,8 @@ struct Mesh {
     vk: [u8; 32],
     sk: ed25519_dalek::SigningKey,
     bind: String,
+    rtt: Arc<Mutex<std::time::Duration>>,
+    last_roots: Arc<Mutex<Keyed<([[u8; 32]; 4], [u8; 32])>>>,
 }
 
 impl Clone for Mesh {
@@ -127,7 +127,24 @@ impl Clone for Mesh {
             vk: self.vk,
             sk: self.sk.clone(),
             bind: self.bind.clone(),
+            rtt: Arc::clone(&self.rtt),
+            last_roots: Arc::clone(&self.last_roots),
         }
+    }
+}
+
+fn mesh_deadline(mesh: &Mesh) -> std::time::Duration {
+    let rtt = mesh.rtt.lock().map(|t| *t).unwrap_or_default();
+    mycelium::physics::transport_deadline(rtt)
+}
+
+fn mesh_rtt(mesh: &Mesh) -> std::time::Duration {
+    mesh.rtt.lock().map(|t| *t).unwrap_or_default()
+}
+
+fn note_rtt(mesh: &Mesh, dt: std::time::Duration) {
+    if let Ok(mut t) = mesh.rtt.lock() {
+        *t = if dt.is_zero() { std::time::Duration::from_micros(1) } else { dt };
     }
 }
 
@@ -135,10 +152,10 @@ fn room64(r: [usize; 4]) -> [u64; 4] {
     std::array::from_fn(|i| r[i] as u64)
 }
 
-fn rebuild_own_cover(kernel: &Mutex<Kernel>, mesh: &Mesh) {
+fn rebuild_own_cover(kernel: &Mutex<Kernel>, mesh: &Mesh) -> (Vec<(u8, mycelium::transducer::stalk::Invariant)>, [u64; 4]) {
     let (charts, room) = match kernel.lock() {
         Ok(k) => (k.own_cover_charts(), room64(k.lane_room())),
-        Err(_) => return,
+        Err(_) => return (Vec::new(), [0; 4]),
     };
     if let Ok(mut c) = mesh.cover.lock() {
         c.retract_hypha(&mesh.vk);
@@ -152,12 +169,13 @@ fn rebuild_own_cover(kernel: &Mutex<Kernel>, mesh: &Mesh) {
     if let Ok(mut a) = mesh.addrs.lock() {
         a.insert(mesh.vk, mesh.bind.clone());
     }
+    (charts, room)
 }
 
 fn sign_cover_digest(kernel: &Mutex<Kernel>, mesh: &Mesh) -> Vec<u8> {
-    rebuild_own_cover(kernel, mesh);
-    let (charts, room, ruled_root) = match kernel.lock() {
-        Ok(k) => (k.own_cover_charts(), room64(k.lane_room()), k.ruled_root()),
+    let (charts, room) = rebuild_own_cover(kernel, mesh);
+    let ruled_root = match kernel.lock() {
+        Ok(k) => k.ruled_root(),
         Err(_) => return Vec::new(),
     };
     let cover_roots = mesh.cover.lock().map(|c| c.roots()).unwrap_or([[0u8; 32]; 4]);
@@ -228,7 +246,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, kernel: &Mutex<Kernel>, router: &
             &surface,
             k_step,
             &items,
-            mycelium::network::wire::BODY_BUDGET,
+            mycelium::network::wire::frame_budget(),
         );
         let served = body.get(dialogue::QUOTE_COUNT_AT).copied().unwrap_or(0);
         eprintln!(
@@ -258,10 +276,12 @@ fn judge(stream: &mut TcpStream, frame: Frame, kernel: &Mutex<Kernel>, router: &
     }
     if kind == dialogue::ACT_FETCH {
         let Some((fvoice, charts)) = dialogue::decode_fetch(&frame.body) else { return };
-        let mut budget = mycelium::network::wire::BODY_BUDGET - 64;
+        let mut budget = mycelium::network::wire::frame_budget().saturating_sub(64);
         let mut words: Vec<Vec<u8>> = Vec::new();
-        if let Ok(k) = kernel.lock() {
+        if let Ok(mut k) = kernel.lock() {
+            let mut have_all: Vec<[u8; 32]> = Vec::new();
             for (inv, have) in &charts {
+                have_all.extend_from_slice(have);
                 let page = k.serve_ruled(inv, have, budget);
                 budget = budget.saturating_sub(page.iter().map(|w| w.len() + 4).sum::<usize>());
                 words.extend(page);
@@ -269,6 +289,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, kernel: &Mutex<Kernel>, router: &
                     break;
                 }
             }
+            k.confirm_peer_holds_addrs(&have_all);
         }
         if !words.is_empty() {
             eprintln!(
@@ -465,11 +486,16 @@ fn main() {
         });
     }
     // Resume the learned language from disk (a corrupt ledger boots clean, no crash).
+    let mut pruned = false;
     if let Ok(bytes) = std::fs::read(&state_path) {
         let mut k = kernel.lock().unwrap();
         if k.restore(&bytes) {
             eprintln!("restored basis={} from {state_path}", k.basis_len());
+            pruned = true;
         }
+    }
+    if pruned {
+        persist(&kernel, &state_path);
     }
     let hypha_key = mycelium::court::identity::HyphaKey::load_or_mint(&format!("{state_path}.key"));
     eprintln!("hypha identity vk {:02x}{:02x}…", hypha_key.vk_bytes()[0], hypha_key.vk_bytes()[1]);
@@ -500,10 +526,14 @@ fn main() {
         vk: hypha_key.vk_bytes(),
         sk: hypha_key.sk.clone(),
         bind: addr.clone(),
+        rtt: Arc::new(Mutex::new(std::time::Duration::ZERO)),
+        last_roots: Arc::new(Mutex::new(Keyed::new())),
     };
     rebuild_own_cover(&kernel, &mesh);
+    let join_deadline = mesh_deadline(&mesh);
     for p in &join_peers {
-        if let Some(reply) = tell_peer(p, dialogue::encode_digests_request(&mesh.vk)) {
+        if let Some((reply, dt)) = tell_peer(p, dialogue::encode_digests_request(&mesh.vk), join_deadline) {
+            note_rtt(&mesh, dt);
             let _ = admit_peer_digest(&mesh, &reply);
         }
     }
@@ -544,8 +574,11 @@ fn main() {
                         continue;
                     }
                     here = true;
+                    let key = mycelium::transducer::element::listing_key(&chain, &frame);
+                    let tid = mycelium::registry::task_id(&task);
                     if kernel.lock().unwrap().intake(&chain, &frame) {
                         listed += 1;
+                        kernel.lock().unwrap().bind_listing_task(key, tid);
                     }
                 }
             }
@@ -595,23 +628,32 @@ fn main() {
     // the reserve ceiling; a full nerve drops the act, as a full reflex
     // pool defers a demand.
     let (nerve_tx, nerve_rx) = std::sync::mpsc::sync_channel::<(String, Vec<u8>)>(mycelium::physics::reserve_max() as usize);
-    std::thread::spawn(move || {
-        for (addr, body) in nerve_rx {
-            // Each dial's outcome is the peer's measured impedance: a root
-            // is delivered when the peer answers with its own clock.
-            match tell_peer(&addr, body) {
-                Some(reply) => match dialogue::decode_root_reply(&reply) {
-                    Some((held, at)) => eprintln!(
-                        "  nerve → {addr}: root delivered at {} ({})",
-                        mycelium::chronometry::TUniversal::stamp_of(at),
-                        if held.is_some() { "held there" } else { "new there" }
-                    ),
-                    None => eprintln!("  nerve → {addr}: answered {} bytes", reply.len()),
-                },
-                None => eprintln!("  nerve → {addr}: no answer"),
+    {
+        let rtt = Arc::clone(&mesh.rtt);
+        std::thread::spawn(move || {
+            for (addr, body) in nerve_rx {
+                let deadline = mycelium::physics::transport_deadline(
+                    rtt.lock().map(|t| *t).unwrap_or_default(),
+                );
+                match tell_peer(&addr, body, deadline) {
+                    Some((reply, dt)) => {
+                        if let Ok(mut t) = rtt.lock() {
+                            *t = if dt.is_zero() { std::time::Duration::from_micros(1) } else { dt };
+                        }
+                        match dialogue::decode_root_reply(&reply) {
+                            Some((held, at)) => eprintln!(
+                                "  nerve → {addr}: root delivered at {} ({})",
+                                mycelium::chronometry::TUniversal::stamp_of(at),
+                                if held.is_some() { "held there" } else { "new there" }
+                            ),
+                            None => eprintln!("  nerve → {addr}: answered {} bytes", reply.len()),
+                        }
+                    }
+                    None => eprintln!("  nerve → {addr}: no answer"),
+                }
             }
-        }
-    });
+        });
+    }
     // The roots this book already holds settled are announced to the nerve
     // at boot, so a family proven here is re-spoken on every peer's book.
     let settled = registry.lock().map(|r| r.settled_ids()).unwrap_or_default();
@@ -635,19 +677,19 @@ fn main() {
         let kernel = Arc::clone(&kernel);
         let tu = tuniversal;
         let state_path = state_path.clone();
+        let rtt = Arc::clone(&mesh.rtt);
         // Persistence is PACED: topological volume (cards, fibre, listings)
-        // and an absolute dwell. K is not a persist event.
+        // and a dwell of measured transports. K is not a persist event.
         let mut persisted = kernel.lock().map(|k| k.volume()).unwrap_or_default();
         let mut last_persist = Instant::now();
         std::thread::spawn(move || loop {
-            let work = match synth_rx.recv_timeout(std::time::Duration::from_millis(
-                mycelium::physics::reserve_max(),
-            )) {
+            let rtt_now = rtt.lock().map(|t| *t).unwrap_or_default();
+            let work = match synth_rx.recv_timeout(mycelium::physics::transport_deadline(rtt_now)) {
                 Ok(w) => w,
                 Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
                     mycelium::synthesis::consolidate(&kernel);
                     let live = kernel.lock().map(|k| k.volume()).unwrap_or_default();
-                    if live != persisted && last_persist.elapsed() >= mycelium::physics::PERSIST_DWELL {
+                    if live != persisted && last_persist.elapsed() >= mycelium::physics::persist_dwell(rtt_now) {
                         persist(&kernel, &state_path);
                         persisted = live;
                         last_persist = Instant::now();
@@ -671,7 +713,7 @@ fn main() {
                                 ratifier[0],
                             );
                         }
-                        if after != persisted && last_persist.elapsed() >= mycelium::physics::PERSIST_DWELL {
+                        if after != persisted && last_persist.elapsed() >= mycelium::physics::persist_dwell(rtt_now) {
                             persist(&kernel, &state_path);
                             persisted = after;
                             last_persist = Instant::now();
@@ -697,7 +739,7 @@ fn main() {
         let join = join_peers.clone();
         std::thread::spawn(move || {
             let ratio = (mycelium::physics::reserve_max() / mycelium::physics::spend_unit()).max(1);
-            let mut wait = std::time::Duration::from_millis(mycelium::physics::spend_unit());
+            let mut wait = mycelium::physics::from_transport(mesh_rtt(&mesh), 1);
             loop {
                 std::thread::sleep(wait);
                 if let Ok(mut k) = kernel.lock() {
@@ -714,37 +756,65 @@ fn main() {
                 }
                 dests.retain(|d| d != &mesh.bind);
                 if dests.is_empty() {
-                    wait = std::time::Duration::from_millis(mycelium::physics::spend_unit());
+                    wait = mycelium::physics::from_transport(mesh_rtt(&mesh), ratio);
                     continue;
                 }
                 let req = dialogue::encode_digests_request(&mesh.vk);
+                let deadline = mesh_deadline(&mesh);
+                let mut any_moved = false;
                 for d in dests {
-                    let t0 = Instant::now();
-                    match tell_peer(&d, req.clone()) {
-                        Some(reply) => {
-                            wait = t0.elapsed() * ratio as u32;
-                            if wait.is_zero() {
-                                wait = std::time::Duration::from_millis(mycelium::physics::spend_unit());
-                            }
+                    match tell_peer(&d, req.clone(), deadline) {
+                        Some((reply, dt)) => {
+                            note_rtt(&mesh, dt);
                             if !admit_peer_digest(&mesh, &reply) {
                                 continue;
                             }
+                            let Some((_, _, cover_roots, ruled_root, vk_peer, _, _)) =
+                                dialogue::decode_cover_digest(&reply)
+                            else {
+                                continue;
+                            };
+                            let now = (cover_roots, ruled_root);
+                            let unchanged = mesh
+                                .last_roots
+                                .lock()
+                                .ok()
+                                .and_then(|g| g.get(&vk_peer).copied())
+                                == Some(now);
+                            if let Ok(mut g) = mesh.last_roots.lock() {
+                                g.insert(vk_peer, now);
+                            }
                             let remote = dialogue::decode_digests_reply(&reply).unwrap_or_default();
+                            if let Ok(mut k) = kernel.lock() {
+                                k.confirm_peer_holds(&remote);
+                            }
+                            if unchanged {
+                                continue;
+                            }
+                            any_moved = true;
                             let local = kernel.lock().map(|k| k.ruled_digests()).unwrap_or_default();
                             let discord = mycelium::transducer::sheaf::discordant(&remote, &local);
                             if discord.is_empty() {
                                 continue;
                             }
-                            let charts: Vec<_> = discord.iter().map(|s| {
-                                let have = kernel.lock().map(|k| k.ruled_have(&s.inv)).unwrap_or_default();
-                                (s.inv.clone(), have)
-                            }).collect();
-                            let fetch = dialogue::encode_fetch(&mesh.vk, &charts, mycelium::network::wire::BODY_BUDGET);
-                            if let Some(page) = tell_peer(&d, fetch) {
-                                let vk_peer = dialogue::decode_cover_digest(&reply).map(|t| t.4).unwrap_or([0; 32]);
+                            let charts: Vec<_> = discord
+                                .iter()
+                                .map(|s| {
+                                    let have = kernel.lock().map(|k| k.fetch_have(&s.inv)).unwrap_or_default();
+                                    (s.inv.clone(), have)
+                                })
+                                .collect();
+                            let fetch = dialogue::encode_fetch(
+                                &mesh.vk,
+                                &charts,
+                                mycelium::network::wire::frame_budget(),
+                            );
+                            if let Some((page, dt2)) = tell_peer(&d, fetch, mesh_deadline(&mesh)) {
+                                note_rtt(&mesh, dt2);
                                 for w in dialogue::decode_syllabus_reply(&page).unwrap_or_default() {
                                     let mut p = 0usize;
-                                    if let Some(spoken) = mycelium::transducer::element::Element::from_bytes(&w, &mut p) {
+                                    if let Some(spoken) = mycelium::transducer::element::Element::from_bytes(&w, &mut p)
+                                    {
                                         if let Ok(mut k) = kernel.lock() {
                                             let g = k.glue_fetched(spoken, vk_peer, mesh.vk);
                                             match g {
@@ -766,9 +836,20 @@ fn main() {
                                 }
                             }
                         }
-                        None => {
-                            wait = std::time::Duration::from_millis(mycelium::physics::reserve_max() * ratio);
-                        }
+                        None => {}
+                    }
+                }
+                let rtt = mesh_rtt(&mesh);
+                if any_moved {
+                    wait = mycelium::physics::from_transport(rtt, 1);
+                } else {
+                    wait = wait.saturating_mul(ratio as u32);
+                    let cap = mycelium::physics::digest_ceiling(rtt);
+                    if wait > cap {
+                        wait = cap;
+                    }
+                    if wait.is_zero() {
+                        wait = mycelium::physics::from_transport(rtt, 1);
                     }
                 }
             }
@@ -927,8 +1008,7 @@ fn main() {
                             let _ = std::fs::rename(&tmp, format!("{state_path}.registry"));
                         }
                         let mut k = kernel.lock().unwrap();
-                        let anchor = k.anchor_pub();
-                        let paid = k.treasury_settle_solve(svoice, tension, anchor);
+                        let paid = k.pay_solve(&tid, svoice, tension);
                         drop(k);
                         let n = {
                             if let Some(v) = roots.get_mut(&tid) {
@@ -953,8 +1033,7 @@ fn main() {
                     }
                     mycelium::registry::SolveYield::VerifyFloor => {
                         let mut k = kernel.lock().unwrap();
-                        let anchor = k.anchor_pub();
-                        let paid = k.treasury_settle_solve(svoice, [0, 0, 1, 0], anchor);
+                        let paid = k.pay_solve(&tid, svoice, [0, 0, 1, 0]);
                         drop(k);
                         let n = {
                             if let Some(v) = roots.get_mut(&tid) {

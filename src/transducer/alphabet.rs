@@ -324,6 +324,60 @@ impl Word {
         Word(self.0.iter().rev().map(|&(id, inv)| (id, !inv)).collect())
     }
 
+    /// Concatenate tapes: `self` then `other` (last letter of `other` acts first).
+    pub fn compose(&self, other: &Word) -> Word {
+        let mut t = self.0.clone();
+        t.extend_from_slice(&other.0);
+        Word(t)
+    }
+
+    /// Abelianized letter exponents: the plane's commuting image. Inverse
+    /// letters count negative. The 2-cocycle equation is linear in these.
+    pub fn exponents(&self) -> [i64; CAYLEY_ALPHABET_LEN] {
+        let mut e = [0i64; CAYLEY_ALPHABET_LEN];
+        for &(id, inv) in &self.0 {
+            let i = id.raw() as usize;
+            e[i] += if inv { -1 } else { 1 };
+        }
+        e
+    }
+
+    /// Rebuild a tape from abelianized exponents (positive then inverse).
+    pub fn from_exponents(e: &[i64; CAYLEY_ALPHABET_LEN]) -> Word {
+        let mut w = Word::identity();
+        for (i, &n) in e.iter().enumerate() {
+            let Some(id) = LetterId::try_new(i as u8) else { continue };
+            let (n, inv) = if n >= 0 { (n, false) } else { (-n, true) };
+            for _ in 0..n {
+                w.push(id, inv);
+            }
+        }
+        w
+    }
+
+    /// The abelianized word is the identity tape.
+    pub fn abelian_identity(&self) -> bool {
+        self.exponents().iter().all(|&x| x == 0)
+    }
+
+    /// Smallest positive ℓ such that the word's rotor to the ℓ is identity.
+    /// None when it does not close under repetition within `bound`.
+    pub fn period(&self, bound: u32) -> Option<u32> {
+        if self.abelian_identity() {
+            return Some(1);
+        }
+        let id = Rotor::identity();
+        let r = self.rotor();
+        let mut acc = r.clone();
+        for ell in 1..=bound {
+            if acc == id {
+                return Some(ell);
+            }
+            acc = acc.geo(&r);
+        }
+        None
+    }
+
     /// The exact 4×4 matrix of the word on the chart, columns the images
     /// of `e0..e3`.
     pub fn matrix(&self) -> Option<[[Q; 4]; 4]> {

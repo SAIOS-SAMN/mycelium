@@ -5,9 +5,18 @@
 //! reversible, and refuses any body over the MTU budget (a frame is transport,
 //! never a place cognition reasons — the body is opaque bytes here).
 
-/// The MTU body budget: 768 KiB. A body exceeding it is refused (fragmentation
-/// is the caller's concern; the wire never silently truncates).
+/// The MTU body budget: the wire's hard cap. A body exceeding it is refused
+/// (fragmentation is the caller's concern; the wire never silently truncates).
 pub const BODY_BUDGET: usize = 768 * 1024;
+
+/// Bytes one nerve act may carry: one spend-unit of KiB, floored at a
+/// small frame and capped by the wire MTU — a ratio of the measured
+/// reserve, never a laptop-sized constant on the cognition path.
+pub fn frame_budget() -> usize {
+    (crate::physics::spend_unit() as usize)
+        .saturating_mul(1024)
+        .clamp(4096, BODY_BUDGET)
+}
 
 /// The four orthogonal polytonic lanes (𝒮 spatial, 𝒢 gauge, 𝒯 temporal,
 /// 𝒽 harmonic/shell). A frame rides exactly one — never summed across lanes.

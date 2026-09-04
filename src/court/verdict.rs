@@ -49,6 +49,11 @@ pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
             Some(true) => {}
         }
     }
+    if spoken.is_sentence() {
+        if let Some(reason) = crate::transducer::sentence::replay_nerve(spoken) {
+            return Some(reason);
+        }
+    }
     match (chain.is_empty(), connection) {
         (true, false) => {
             // An OPENED AXIS with no chain: the germinated fibres must be

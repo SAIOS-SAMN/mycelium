@@ -551,6 +551,18 @@ impl Element {
         }
     }
 
+    /// File a torsion cycle `(σ, ℓ)` on the fibre — a withheld sentence
+    /// class, or a condensed orbit. Duplicate generators are not stored twice.
+    pub fn record_torsion(&mut self, sigma: Vec<(u8, u8)>, period: u32) {
+        if period == 0 {
+            return;
+        }
+        if !self.torsion.iter().any(|(s, _)| s == &sigma) {
+            self.torsion.push((sigma, period));
+            self.profiles.take();
+        }
+    }
+
     /// The fiber's total spoken span — base + free sections + every torsion-orbit
     /// member (the volume metric; cycles count their full period).
     pub fn fiber_span(&self) -> usize {
@@ -1539,6 +1551,11 @@ impl Element {
         }) && (3..GERM_DIM).all(|c| (3..GERM_DIM).filter(|&r| m[r][c].is_one()).count() == 1);
         let no_mixing = (0..3).all(|r| (3..GERM_DIM).all(|c| m[r][c].is_zero())) && (3..GERM_DIM).all(|r| (0..3).all(|c| m[r][c].is_zero()));
         homogeneous && permutation && no_mixing
+    }
+
+    /// A sentence: a connection whose further germs occupy germinated axes.
+    pub fn is_sentence(&self) -> bool {
+        self.is_connection() && !self.opened_axes().is_empty()
     }
 }
 

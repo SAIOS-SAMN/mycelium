@@ -13,10 +13,11 @@ use crate::arc::Grid;
 use crate::cognition::{encode_percept, perceive};
 use crate::network::wire::{Frame, Stratum};
 use crate::transducer::element::Element;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::io::{self, Read, Write};
 use std::net::TcpStream;
+use std::time::{Duration, Instant};
 
 /// A kernel's stable mesh IDENTITY. The name deterministically fixes a 32-byte
 /// address (its "voice"/seat), so a kernel keeps the same identity across
@@ -106,6 +107,8 @@ pub struct Session {
     cover: RefCell<crate::network::nerve::Cover>,
     rooms: RefCell<crate::network::nerve::Keyed<[u64; 4]>>,
     addrs: RefCell<crate::network::nerve::Keyed<String>>,
+    /// Last measured round-trip; durations are this times a stroke count.
+    rtt: Cell<Duration>,
 }
 
 /// The transport aperture — the perceived state of the wire to the server
@@ -145,6 +148,7 @@ impl Session {
             cover: RefCell::new(crate::network::nerve::Cover::new()),
             rooms: RefCell::new(crate::network::nerve::Keyed::new()),
             addrs: RefCell::new(crate::network::nerve::Keyed::new()),
+            rtt: Cell::new(Duration::from_millis(1)),
         }
     }
 
@@ -242,6 +246,10 @@ impl Session {
     /// The measured impedance Z: consecutive failed exchanges.
     pub fn impedance(&self) -> u64 {
         self.resistance.borrow().values().copied().max().unwrap_or(0)
+    }
+
+    pub fn rtt(&self) -> Duration {
+        self.rtt.get()
     }
 
     fn z_at(&self, addr: &str) -> u64 {
@@ -397,14 +405,15 @@ impl Session {
     fn exchange_inner(&self, addr: &str, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         let frame = Frame { lane: Stratum::Spatial, body: act_body };
         let bytes = frame.encode().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "frame encode"))?;
-        let deadline = std::time::Duration::from_millis(
-            crate::physics::reserve_max()
-                * (crate::physics::reserve_max() / crate::physics::spend_unit()).max(1),
-        );
+        let deadline = crate::physics::transport_deadline(self.rtt.get());
+        let t0 = Instant::now();
         let mut pool = self.streams.borrow_mut();
         if let Some(s) = pool.get_mut(addr) {
             match Self::roundtrip(s, &bytes) {
-                Ok(body) => return Ok(body),
+                Ok(body) => {
+                    self.rtt.set(t0.elapsed().max(Duration::from_micros(1)));
+                    return Ok(body);
+                }
                 Err(_) => {
                     pool.remove(addr);
                 }
@@ -418,6 +427,7 @@ impl Session {
         s.set_write_timeout(Some(deadline))?;
         let _ = s.set_nodelay(true);
         let body = Self::roundtrip(&mut s, &bytes)?;
+        self.rtt.set(t0.elapsed().max(Duration::from_micros(1)));
         // Keep the socket. The hypha's reflex worker now reads further
         // frames on this connection; a one-shot reply still reconnects.
         pool.insert(addr.to_string(), s);
@@ -687,6 +697,35 @@ impl Epigenome {
     /// understanding into the epigenome — expression weights rise on the cited
     /// words, the sentence joins the recollections. The genome is untouched.
     pub fn comprehend(&mut self, utterance: &Element) -> Comprehension {
+        // A taught sentence is re-derived as a nerve: germs, faces, cycles.
+        // Understanding is re-deriving its cochain, not matching its bytes.
+        if utterance.is_sentence() {
+            let Some(n) = crate::transducer::sentence::from_element(utterance) else {
+                return Comprehension::Novel { residual_cells: utterance.sub().len() };
+            };
+            if let Some(reason) = crate::transducer::sentence::replay_nerve(utterance) {
+                let _ = reason;
+                return Comprehension::Novel { residual_cells: n.remainder.len().max(1) };
+            }
+            let mut understood = Vec::new();
+            for g in &n.germs {
+                self.atlas();
+                let inv = crate::transducer::stalk::invariant(&g.chain);
+                if let Some(i) = self.atlas.fiber(&inv).first().and_then(|a| self.index.get(a).copied()) {
+                    if let Some(x) = self.expression.get_mut(i) {
+                        *x += 1;
+                    }
+                    understood.push(i);
+                }
+            }
+            if n.is_closed() && !understood.is_empty() {
+                return Comprehension::Understood(understood);
+            }
+            if !n.cycles.iter().all(|c| c.holonomy.abelian_identity()) {
+                return Comprehension::Dialect(utterance.clone());
+            }
+            return Comprehension::Admitted;
+        }
         // HEAR g BY HOLDING IT: a connection has no chain to cover. It is
         // glued against the representative on its fibre — the transition
         // vanishes (held), does not (dialect, the element carried), or there
@@ -887,6 +926,8 @@ pub struct Entity {
     glued: Vec<crate::transducer::stalk::Invariant>,
     /// OPEN THOUGHTS: remainders keyed by chart, no cap, no eviction.
     thoughts: crate::network::nerve::Keyed<(Vec<(i64, i64, u8, u8)>, bool)>,
+    /// Withheld sentences keyed by nerve chart.
+    sentences: crate::network::nerve::Keyed<crate::transducer::sentence::Nerve>,
     /// Genome length last seen by the pivot; words added since dirty their charts.
     thought_gen: usize,
     /// Listings this mind has opened an axis on (Vec-of-relations, keyed by
@@ -911,6 +952,7 @@ impl Entity {
             obstructions: Vec::new(),
             glued: Vec::new(),
             thoughts: crate::network::nerve::Keyed::new(),
+            sentences: crate::network::nerve::Keyed::new(),
             thought_gen: 0,
             opened: Vec::new(),
         }
@@ -975,6 +1017,10 @@ impl Entity {
     /// The measured transport impedance Z (consecutive failed exchanges).
     pub fn impedance(&self) -> u64 {
         self.session.impedance()
+    }
+
+    pub fn transport_rtt(&self) -> std::time::Duration {
+        self.session.rtt()
     }
 
     /// SEEK REFINEMENT — the compression probe (0x09, one word per stroke):
@@ -1067,7 +1113,7 @@ impl Entity {
             .iter()
             .map(|d| (d.inv.clone(), sheaf::have(&atlas, &d.inv)))
             .collect();
-        let request = dialogue::encode_fetch(&voice, &charts, crate::network::wire::BODY_BUDGET);
+        let request = dialogue::encode_fetch(&voice, &charts, crate::network::wire::frame_budget());
         let mut learned = 0usize;
         let body = self.session.speak_keyed(&voice, request)?;
         for w in dialogue::decode_syllabus_reply(&body).unwrap_or_default() {
@@ -1141,7 +1187,7 @@ impl Entity {
                 }
                 let Some(word) = self.epigenome.word_at(&addr) else { continue };
                 let bytes = word.to_bytes();
-                if used + bytes.len() > crate::network::wire::BODY_BUDGET {
+                if used + bytes.len() > crate::network::wire::frame_budget() {
                     break 'strata;
                 }
                 used += bytes.len();
@@ -1255,25 +1301,55 @@ impl Entity {
         } else {
             thought_charts
         };
-        if let Some(inv) = charts.first() {
-            let mag = [1u64, 0, 0, 0];
-            let dest = self.session.route_chart(inv, &mag);
-            let body = self.session.exchange_at(
-                &dest,
-                dialogue::encode_quote_request_charts(&self.session.kernel().voice(), &charts),
-            )?;
-            let (surface, k, items) = dialogue::decode_quote_reply(&body)
-                .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
-            return Ok(YieldQuote {
-                surface,
-                k,
-                clusters: items
-                    .into_iter()
-                    .map(|(address, mu, chain, open)| Cluster { address, mu, chain, open })
-                    .collect(),
-            });
+        let mut dests: Vec<(String, Vec<crate::transducer::stalk::Invariant>)> = Vec::new();
+        for (_, (remainder, _)) in self.thoughts.entries() {
+            let inv = crate::transducer::stalk::invariant(remainder);
+            let mag = crate::transducer::element::measure_lanes(remainder);
+            let dest = self.session.route_chart(&inv, &mag);
+            match dests.iter_mut().find(|(d, _)| *d == dest) {
+                Some((_, held)) => {
+                    if !held.iter().any(|h| h == &inv) {
+                        held.push(inv);
+                    }
+                }
+                None => dests.push((dest, vec![inv])),
+            }
         }
-        self.session.quote(&charts)
+        if dests.is_empty() {
+            return self.session.quote(&charts);
+        }
+        let mut last_err = io::Error::new(io::ErrorKind::NotConnected, "no hypha");
+        let mut out: Option<YieldQuote> = None;
+        for (dest, invs) in dests {
+            let asked = if invs.is_empty() { charts.clone() } else { invs };
+            match self.session.exchange_at(
+                &dest,
+                dialogue::encode_quote_request_charts(&self.session.kernel().voice(), &asked),
+            ) {
+                Ok(body) => {
+                    let (surface, k, items) = dialogue::decode_quote_reply(&body)
+                        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
+                    let clusters: Vec<Cluster> = items
+                        .into_iter()
+                        .map(|(address, mu, chain, open)| Cluster { address, mu, chain, open })
+                        .collect();
+                    match &mut out {
+                        None => {
+                            out = Some(YieldQuote { surface, k, clusters });
+                        }
+                        Some(q) => {
+                            for c in clusters {
+                                if !q.clusters.iter().any(|h| h.address == c.address) {
+                                    q.clusters.push(c);
+                                }
+                            }
+                        }
+                    }
+                }
+                Err(e) => last_err = e,
+            }
+        }
+        out.ok_or(last_err)
     }
     /// This entity's voice read the judge's clock.
     pub fn at(&mut self, k: u64) {
@@ -1317,6 +1393,17 @@ impl Entity {
         self.thoughts.insert(inv.key(), (remainder, false));
     }
 
+    /// Hold a withheld sentence by its nerve chart.
+    pub fn hold_sentence(&mut self, word: &Element) {
+        if let Some(n) = crate::transducer::sentence::from_element(word) {
+            let key = crate::transducer::stalk::invariant_of(word).key();
+            self.sentences.insert(key, n);
+            self.hold_thought(word.sub().to_vec());
+        } else {
+            self.hold_thought(word.sub().to_vec());
+        }
+    }
+
     /// The open thoughts held here: remainders not yet closed into words,
     /// each with the chart it sits on.
     pub fn thoughts(&self) -> Vec<&[(i64, i64, u8, u8)]> {
@@ -1339,6 +1426,9 @@ impl Entity {
         charts: &[crate::transducer::stalk::Invariant],
     ) -> Option<[u8; 32]> {
         use crate::transducer::element::{measure_lanes, FIBER_GERMINATED};
+        if let Some(a) = self.open_sentence_axis() {
+            return Some(a);
+        }
         if charts.len() < 2 || self.opened.iter().any(|a| a == listing) {
             return None;
         }
@@ -1369,6 +1459,47 @@ impl Entity {
         }
     }
 
+    /// Two withheld sentences on the same germ set with different cycle
+    /// words: the difference is a new axis, spoken up.
+    fn open_sentence_axis(&mut self) -> Option<[u8; 32]> {
+        use crate::transducer::element::FIBER_GERMINATED;
+        let held: Vec<( [u8; 32], crate::transducer::sentence::Nerve )> = self
+            .sentences
+            .entries()
+            .into_iter()
+            .map(|(k, n)| (*k, n.clone()))
+            .collect();
+        for i in 0..held.len() {
+            for j in i + 1..held.len() {
+                let (na, nb) = (&held[i].1, &held[j].1);
+                let ga: Vec<[u8; 32]> = na.germs.iter().map(|g| g.address).collect();
+                let gb: Vec<[u8; 32]> = nb.germs.iter().map(|g| g.address).collect();
+                if ga != gb || ga.is_empty() {
+                    continue;
+                }
+                let ha: Vec<_> = na.cycles.iter().map(|c| c.holonomy.exponents()).collect();
+                let hb: Vec<_> = nb.cycles.iter().map(|c| c.holonomy.exponents()).collect();
+                if ha == hb {
+                    continue;
+                }
+                let Some(ea) = crate::transducer::sentence::as_element(na) else { continue };
+                if !ea.is_connection() {
+                    continue;
+                }
+                let axis = ea.max_axis().map_or(FIBER_GERMINATED, |m| m.max(FIBER_GERMINATED - 1) + 1);
+                let mut germ = ea;
+                if let Some(block) = germ.fiber(crate::transducer::element::FIBER_SPATIAL).cloned() {
+                    germ.set_fiber(axis, block);
+                }
+                match self.speak_word(&germ) {
+                    Ok(Utterance::Spoken) => return Some(germ.address()),
+                    _ => {}
+                }
+            }
+        }
+        None
+    }
+
     /// Listings this mind opened an axis on.
     pub fn axes_opened(&self) -> usize {
         self.opened.len()
@@ -1376,6 +1507,8 @@ impl Entity {
 
     /// PIVOT: a held thought whose chart just gained a genome word is spoken
     /// as a demand. The bag never shrinks: dirty remainder stays, dirty clears.
+    /// A held sentence dirties when the language moves on any germ chart or
+    /// on the cycle chart.
     pub fn pivot_thoughts(&mut self) -> usize {
         let n = self.epigenome.genome_len();
         if n > self.thought_gen {
@@ -1387,6 +1520,18 @@ impl Entity {
             for key in &added {
                 if let Some((_, dirty)) = self.thoughts.get_mut(key) {
                     *dirty = true;
+                }
+            }
+            for (sk, n) in self.sentences.entries() {
+                let germ_keys: Vec<[u8; 32]> = n
+                    .germs
+                    .iter()
+                    .map(|g| crate::transducer::stalk::invariant(&g.chain).key())
+                    .collect();
+                if added.iter().any(|a| germ_keys.contains(a) || a == sk) {
+                    if let Some((_, dirty)) = self.thoughts.get_mut(sk) {
+                        *dirty = true;
+                    }
                 }
             }
         }

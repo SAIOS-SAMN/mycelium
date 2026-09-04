@@ -308,6 +308,31 @@ impl Treasury {
     /// tension, not a share of the door pool. What the pool holds is
     /// debited; any remainder is issued so a verified solve is never 0⃗
     /// because a lane ran dry.
+    /// Draw a verified-solve payment from an escrowed listing award, so
+    /// reduction and solve share one ledger. Remaining escrow stays for
+    /// consilience release.
+    pub fn draw_escrow(&mut self, addr: &[u8; 32], voice: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+        let Some(i) = self.escrowed.iter().position(|(a, _, _, _)| a == addr) else {
+            return [0; 4];
+        };
+        let asked: [u64; 4] = std::array::from_fn(|l| if mu[l] == 0 { 0 } else { mu[l].max(1) });
+        let held = self.escrowed[i].2;
+        let take: [u64; 4] = std::array::from_fn(|l| asked[l].min(held[l]));
+        if take.iter().all(|&m| m == 0) {
+            return take;
+        }
+        for l in 0..4 {
+            self.escrowed[i].2[l] -= take[l];
+        }
+        self.entries.push(Entry { kind: "solve", who: voice, mu: take, k_step: anchor.0, receipt: anchor.1 });
+        take
+    }
+
+    #[cfg(test)]
+    pub fn escrowed_remaining(&self, addr: &[u8; 32]) -> [u64; 4] {
+        self.escrowed.iter().find(|(a, _, _, _)| a == addr).map(|(_, _, mu, _)| *mu).unwrap_or([0; 4])
+    }
+
     pub fn settle_solve(&mut self, voice: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
         let asked: [u64; 4] = std::array::from_fn(|l| if mu[l] == 0 { 0 } else { mu[l].max(1) });
         if asked.iter().all(|&m| m == 0) {
@@ -693,6 +718,20 @@ mod tests {
         );
         assert_eq!(t.entries().iter().filter(|e| e.kind == "solve").count(), 1);
         assert_eq!(paid, tension, "occupied lanes pay the registered tension, not a pool share");
+    }
+
+    /// A verified solve draws from the listing's escrow; remainder stays for
+    /// consilience so reduction and solve share one ledger.
+    #[test]
+    fn a_verified_solve_draws_from_the_listing_escrow() {
+        let mut t = Treasury::new();
+        t.enroll([1; 32], Tier::Founder, (0, [0; 32]));
+        let addr = [7u8; 32];
+        t.escrow_award(addr, vec![[1; 32], [2; 32]], [8, 0, 0, 0], (1, [3; 32]));
+        let take = t.draw_escrow(&addr, [9; 32], [3, 0, 0, 0], (2, [4; 32]));
+        assert_eq!(take, [3, 0, 0, 0]);
+        assert_eq!(t.escrowed_remaining(&addr), [5, 0, 0, 0], "remainder stays for consilience");
+        assert_eq!(t.entries().iter().filter(|e| e.kind == "solve").count(), 1);
     }
 
     /// A verified solve is base-money: an empty pool still books the tension.

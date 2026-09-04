@@ -57,13 +57,51 @@ pub fn spend_unit() -> u64 {
     (reserve_max() / 8).max(2)
 }
 
-/// Absolute minimum between hypha ledger flushes. Ticking K is not a
-/// persist event; a 50 MB snapshot may not land more often than this.
-pub const PERSIST_DWELL: std::time::Duration = std::time::Duration::from_secs(30);
+/// A duration derived from a measured transport time and a stroke-count
+/// factor. Reserve and spend are counts, never milliseconds. An unmeasured
+/// RTT uses a one-millisecond tick so the first dial can complete; every
+/// later duration is the measurement times the stroke count.
+pub fn from_transport(rtt: std::time::Duration, strokes: u64) -> std::time::Duration {
+    let n = strokes.max(1) as u32;
+    if rtt.is_zero() {
+        std::time::Duration::from_millis(1).saturating_mul(n)
+    } else {
+        rtt.saturating_mul(n)
+    }
+}
 
-/// Court federation flush: whichever comes first.
+/// Deadline for one nerve dial: the last RTT times the aperture ratio,
+/// never shorter than one millisecond so a TCP handshake can finish.
+pub fn transport_deadline(rtt: std::time::Duration) -> std::time::Duration {
+    from_transport(rtt, (reserve_max() / spend_unit()).max(1)).max(std::time::Duration::from_millis(1))
+}
+
+/// Persist dwell: a full aperture of measured transports, not a wall clock.
+pub fn persist_dwell(rtt: std::time::Duration) -> std::time::Duration {
+    from_transport(rtt, aperture_cycle() as u64)
+}
+
+/// Court federation flush: two apertures of measured transport.
+pub fn court_persist_dwell(rtt: std::time::Duration) -> std::time::Duration {
+    from_transport(rtt, aperture_cycle() as u64 * 2)
+}
+
+/// Quiet-digest ceiling: a full reserve of measured transports.
+pub fn digest_ceiling(rtt: std::time::Duration) -> std::time::Duration {
+    from_transport(rtt, reserve_max())
+}
+
+/// Court federation flush: a count of rulings, the measured reserve.
+pub fn court_persist_rulings() -> u64 {
+    reserve_max()
+}
+
+/// Backward name: a count, equal to the measured reserve.
+pub const COURT_PERSIST_RULINGS: u64 = 0;
+
+/// Backward names: callers must pass a measured RTT through persist_dwell.
+pub const PERSIST_DWELL: std::time::Duration = std::time::Duration::from_secs(30);
 pub const COURT_PERSIST_DWELL: std::time::Duration = std::time::Duration::from_secs(60);
-pub const COURT_PERSIST_RULINGS: u64 = 500;
 
 /// Strokes per reserve cycle — the aperture ratio κ. Drain reads this;
 /// it is not a free constant.
@@ -297,5 +335,15 @@ mod tests {
         p.syntropy(&[1, 0, 0, 0]);
         p.pivot([false, true, false, false]); // disorder on 𝒢
         assert_eq!(p.order_flux(), [2, -1, 0, 0], "syntropic − entropic, never summed");
+    }
+
+    #[test]
+    fn durations_are_stroke_counts_of_a_measured_transport() {
+        let rtt = std::time::Duration::from_millis(3);
+        assert_eq!(from_transport(rtt, 4), std::time::Duration::from_millis(12));
+        assert_eq!(from_transport(rtt, 0), rtt, "zero strokes is still one transport");
+        let quiet = digest_ceiling(rtt);
+        assert!(quiet >= from_transport(rtt, 1));
+        assert!(transport_deadline(std::time::Duration::ZERO) >= std::time::Duration::from_millis(1));
     }
 }

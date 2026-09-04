@@ -91,6 +91,9 @@ pub fn invariant(chain: &[Cell]) -> Invariant {
 /// neither — no support, no group component — has the empty chart:
 /// novelty, not a stratum.
 pub fn invariant_of(word: &element::Element) -> Invariant {
+    if word.is_sentence() {
+        return sentence_chart(word);
+    }
     if word.is_connection() {
         return connection_chart(word).unwrap_or_default();
     }
@@ -98,6 +101,39 @@ pub fn invariant_of(word: &element::Element) -> Invariant {
         return invariant(word.sub());
     }
     Invariant(Vec::new())
+}
+
+/// Chart of a sentence: leading axis 2 (disjoint from residual ≥1 and
+/// connection 0), then germ count, face count, cycle rank, then each germ's
+/// linear invariants in canonical order. Prefixes are planes.
+fn sentence_chart(word: &element::Element) -> Invariant {
+    let germs = 1u64 + word.opened_axes().len() as u64;
+    let faces = word.transitions().len() as u64;
+    let cycles = word.torsion().len() as u64;
+    let mut axes = vec![2u64, germs, faces, cycles];
+    if let Some(c) = connection_chart(word) {
+        if c.0.len() > 1 {
+            axes.extend_from_slice(&c.0[1..]);
+        }
+    }
+    let mut extra: Vec<Vec<u64>> = Vec::new();
+    for axis in word.opened_axes() {
+        let Some(m) = word.fiber(axis) else { continue };
+        if m.len() < 2 || m[0].len() < 2 {
+            continue;
+        }
+        let trace = &m[0][0] + &m[1][1];
+        let det = &m[0][0] * &m[1][1] - &m[0][1] * &m[1][0];
+        let mut row = Vec::new();
+        row.extend_from_slice(&super::blade::axes_of(&trace));
+        row.extend_from_slice(&super::blade::axes_of(&det));
+        extra.push(row);
+    }
+    extra.sort();
+    for row in extra {
+        axes.extend(row);
+    }
+    Invariant(axes)
 }
 
 fn connection_chart(word: &element::Element) -> Option<Invariant> {

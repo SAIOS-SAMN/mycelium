@@ -217,7 +217,7 @@ pub fn quote(
         view.gens,
         t0.elapsed().as_millis(),
     );
-    let budget = crate::network::wire::BODY_BUDGET - 34;
+    let budget = crate::network::wire::frame_budget() - 34;
     let (surface, priced) = {
         let g = k.lock().ok()?;
         crate::cognition::quote_incidence(
@@ -273,8 +273,8 @@ pub fn adopt(
     // Derivability on the snapshot: a word the language already composes
     // is not installed twice.
     let sub = word.substance();
-    let sentence = crate::transducer::sentence::deconstruct(
-        &language.words,
+    let sentence = crate::transducer::sentence::deconstruct_at(
+        &|i| language.get(i),
         &language.stalks,
         &|a| language.index.get(a).copied(),
         &|i| language.shape(i),

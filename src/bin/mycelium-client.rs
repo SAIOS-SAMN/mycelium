@@ -57,6 +57,46 @@ fn has(args: &[String], name: &str) -> bool {
 /// and an EMPTY chain — held in the epigenome and spoken up as the word.
 /// Nothing residual reaches the wire. Returns (spoken, held as thought,
 /// errors).
+/// Speak a closed multi-germ sentence as one Element; a withheld sentence
+/// is thought. Returns true when the sentence was uttered, so per-rule
+/// minting is skipped.
+fn speak_sentence(entity: &mut Entity, name: &str, n: &mycelium::transducer::sentence::Nerve) -> bool {
+    if n.germ_count() < 2 {
+        return false;
+    }
+    if !n.is_closed() {
+        entity.hold_thought(n.remainder.clone());
+        if let Some(word) = mycelium::transducer::sentence::as_element(n) {
+            entity.hold_sentence(&word);
+        }
+        eprintln!(
+            "[{name}] sentence withheld: {} germs, {} faces, {} cycles — held as thought",
+            n.germs.len(),
+            n.faces.len(),
+            n.cycles.len()
+        );
+        return false;
+    }
+    let Some(word) = mycelium::transducer::sentence::as_element(n) else {
+        return false;
+    };
+    match entity.speak_word(&word) {
+        Ok(mycelium::sdk::Utterance::Spoken) => {
+            eprintln!(
+                "[{name}] sentence spoken: {:02x}{:02x}… {} germs, {} faces, carried {:?}",
+                word.address()[0],
+                word.address()[1],
+                n.germs.len(),
+                n.faces.len(),
+                word.magnitude()
+            );
+            true
+        }
+        Ok(mycelium::sdk::Utterance::Already | mycelium::sdk::Utterance::Silent) => true,
+        Err(_) => false,
+    }
+}
+
 fn speak_connections(
     entity: &mut Entity,
     name: &str,
@@ -354,8 +394,11 @@ fn main() {
                             }
                         }
                         let tests: Vec<Vec<Vec<u8>>> = task.test.iter().map(|(x, _)| x.clone()).collect();
-                        let (_, _, e) = speak_connections(&mut entity, &name, &transport, &task.train, &tests);
-                        errors += e;
+                        let as_sentence = comprehended.sentence.as_ref().is_some_and(|n| speak_sentence(&mut entity, &name, n));
+                        if !as_sentence {
+                            let (_, _, e) = speak_connections(&mut entity, &name, &transport, &task.train, &tests);
+                            errors += e;
+                        }
                     }
                     // The family's pairs were already spoken as percepts
                     // by the feed; an uncomprehended family is on the book.
@@ -566,10 +609,13 @@ fn main() {
             );
             match comprehended.transport {
                 Some(transport) => {
-                    // THE MINT ON THE LIVE PATH: the comprehended connection
-                    // is spoken up as the word before any solve is projected.
-                    let (_, _, e) = speak_connections(&mut entity, &name, &transport, &train, &tests);
-                    errors += e;
+                    // THE MINT ON THE LIVE PATH: a multi-germ sentence is one
+                    // word; otherwise each class rule is a connection.
+                    let as_sentence = comprehended.sentence.as_ref().is_some_and(|n| speak_sentence(&mut entity, &name, n));
+                    if !as_sentence {
+                        let (_, _, e) = speak_connections(&mut entity, &name, &transport, &train, &tests);
+                        errors += e;
+                    }
                     let outs: Vec<Option<Vec<Vec<u8>>>> =
                         tests
                             .iter()
@@ -683,7 +729,7 @@ fn main() {
             eprintln!("[{name}] [{}] stroke laps ms {laps:?}", tuniversal.stamp());
             if entity.epigenome.genome_len() != last_genome || settles != last_settles {
                 if entity.epigenome.genome_len() != saved_genome
-                    && last_genome_save.elapsed() >= mycelium::physics::PERSIST_DWELL
+                    && last_genome_save.elapsed() >= mycelium::physics::persist_dwell(entity.transport_rtt())
                 {
                     let _ = entity.save_genome(&genome_path);
                     saved_genome = entity.epigenome.genome_len();
@@ -708,10 +754,10 @@ fn main() {
                 physics.relax();
                 // The dwell scales with the measured impedance: resistance on
                 // the wire is a longer breath, not a retry storm.
-                let dwell = (judge_load as u64)
+                let strokes = (judge_load as u64)
                     .max(reserve_max())
                     .saturating_mul(1 + entity.impedance());
-                std::thread::sleep(std::time::Duration::from_millis(dwell));
+                std::thread::sleep(mycelium::physics::from_transport(entity.transport_rtt(), strokes));
             }
         }
     }
