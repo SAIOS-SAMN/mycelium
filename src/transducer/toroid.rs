@@ -62,7 +62,7 @@ pub fn witness_thought(thought: &Element) -> Vec<HolonomicLoopWitness> {
     thought
         .torsion()
         .iter()
-        .map(|(sigma, l)| witness_cycle(thought, sigma, l.saturating_mul(2).max(4)))
+        .map(|(sigma, l, _)| witness_cycle(thought, sigma, l.saturating_mul(2).max(4)))
         .collect()
 }
 
@@ -75,7 +75,7 @@ pub fn witness_stored(thought: &Element) -> Vec<(u32, HolonomicLoopWitness)> {
     thought
         .torsion()
         .iter()
-        .map(|(sigma, l)| (*l, witness_cycle(thought, sigma, l.saturating_mul(2).max(4))))
+        .map(|(sigma, l, _)| (*l, witness_cycle(thought, sigma, l.saturating_mul(2).max(4))))
         .collect()
 }
 

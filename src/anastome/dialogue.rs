@@ -81,6 +81,8 @@ pub fn decode_refine(body: &[u8]) -> Option<([u8; 32], [u8; 32], Vec<CiteWire>)>
 pub const TRANSLATION_TAG: u8 = 0x13;
 /// Genome-file section holding persisted thought bubbles.
 pub const THT1: &[u8; 4] = b"THT1";
+/// Snapshot section holding Čech complexes (addresses and rotors only).
+pub const COC1: &[u8; 4] = b"COC1";
 
 pub const ACT_ADOPT: u8 = 0x0E;
 

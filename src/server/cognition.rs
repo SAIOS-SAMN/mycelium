@@ -901,7 +901,7 @@ impl Kernel {
                 })
         });
         let mut asgs: Vec<(Vec<(u8, u8)>, Vec<element::Versor>)> = Vec::new();
-        for (asg, g) in trans {
+        for (asg, g, _) in trans {
             match asgs.iter_mut().find(|(a, _)| a == &asg) {
                 Some((_, vs)) => vs.push(g),
                 None => asgs.push((asg, vec![g])),
@@ -932,13 +932,13 @@ impl Kernel {
             .map_or(element::FIBER_GERMINATED, |m| m.saturating_add(1));
         let Some(seed) = self.basis[i].fiber(element::FIBER_SPATIAL).cloned() else {
             let asg = element::assignment(self.basis[i].sub());
-            self.word_mut(i).record_dislocation(asg, fail.clone());
+            self.word_mut(i).record_dislocation(asg, fail.clone(), element::FIBER_SPATIAL);
             self.touch_at(i);
             return;
         };
         self.word_mut(i).set_fiber(axis, seed);
         let asg = element::assignment(self.basis[i].sub());
-        self.word_mut(i).record_dislocation(asg, fail.clone());
+        self.word_mut(i).record_dislocation(asg, fail.clone(), axis);
         self.touch_at(i);
         eprintln!(
             "  germinated fibre axis {axis} from a failed orbit on a Twisted chart"
@@ -1723,7 +1723,7 @@ impl Kernel {
                 let old = held.0.magnitude();
                 held.0.mag[2] = residual.len() as u64;
                 if let Some(v) = v_disloc {
-                    held.0.record_dislocation(element::assignment(&residual), v);
+                    held.0.record_dislocation(element::assignment(&residual), v, element::FIBER_SPATIAL);
                 }
                 Some((old, held.0.magnitude()))
             } else {
@@ -1950,15 +1950,35 @@ impl Kernel {
                     );
                     self.record_gamma(&addrs, &gamma);
                     self.pay_cell_volume(&inv, &addrs);
+                    if !gamma.is_identity() && addrs.len() >= 2 {
+                        self.mint_or_admit_translation(&gamma, addrs[0], addrs[1], addrs[0]);
+                    }
+                }
+                (crate::transducer::cech::Fill::Congruent(_g, _ell), addrs) => {
+                    eprintln!(
+                        "  court cell congruent {:02x}{:02x}… torsion filed",
+                        sim_key[0], sim_key[1]
+                    );
+                    self.file_torsion(&addrs, _ell);
+                    self.pay_cell_volume(&inv, &addrs);
+                    self.pay_torse(&addrs);
                 }
                 (crate::transducer::cech::Fill::Class(class), _) => {
                     eprintln!(
                         "  court cell class {:02x}{:02x}…",
                         sim_key[0], sim_key[1]
                     );
-                    self.mark_class(&inv, class, 2);
+                    let degree = self
+                        .complexes
+                        .get(&inv.key())
+                        .and_then(|c| c.class(&sim_key).map(|(_, d)| d as u8))
+                        .unwrap_or(2);
+                    self.mark_class(&inv, class.clone(), degree);
+                    if degree >= 3 {
+                        self.pending_refine.insert(inv.key(), (inv.clone(), class, degree));
+                    }
                 }
-                (crate::transducer::cech::Fill::Unfilled, _) => {}
+                (crate::transducer::cech::Fill::Open, _) => {}
             }
         }
         let rest = cap.saturating_sub(used);
@@ -2042,6 +2062,61 @@ impl Kernel {
         });
     }
 
+    fn pay_torse(&mut self, addrs: &[[u8; 32]]) {
+        let voice = addrs.first().copied().unwrap_or([0; 32]);
+        let mag = addrs
+            .first()
+            .and_then(|a| self.tension.get(a).copied())
+            .unwrap_or([0, 0, 1, 0]);
+        let _ = self.treasury.settle_torse(voice, mag, self.anchor());
+    }
+
+    fn file_torsion(&mut self, addrs: &[[u8; 32]], ell: u32) {
+        let Some(rep) = addrs.first() else {
+            return;
+        };
+        if let Some(i) = self.basis_index.get(rep).copied() {
+            let asg = element::assignment(self.basis[i].sub());
+            self.word_mut(i).record_torsion(asg, ell, element::FIBER_SPATIAL);
+            self.touch_at(i);
+        }
+    }
+
+    /// A gauge from Extended between two hyphas is a translation: minted
+    /// through from_connection with the identity gauge map, tagged, entered
+    /// on the docket, and admitted to the ruled cover on second replay.
+    fn mint_or_admit_translation(
+        &mut self,
+        gamma: &crate::transducer::alphabet::Rotor,
+        a: [u8; 32],
+        b: [u8; 32],
+        ratifier: [u8; 32],
+    ) {
+        let Some(t) = element::from_translation(gamma, a, b) else {
+            return;
+        };
+        let addr = t.address();
+        if self.ruled_contains(&addr) {
+            return;
+        }
+        if self.provisional.contains(&addr) {
+            self.ruled_admit(&addr);
+            self.fed_admit(&addr, t);
+            self.provisional.remove(&addr);
+            self.court_upheld += 1;
+            eprintln!(
+                "  court translation admitted {:02x}{:02x}… second replay",
+                addr[0], addr[1]
+            );
+            return;
+        }
+        self.docket_connection(&t, ratifier);
+        eprintln!(
+            "  court translation docked {:02x}{:02x}…",
+            addr[0], addr[1]
+        );
+    }
+
     /// Glue a word fetched from a peer whose cover meets ours on this chart.
     /// Vertices are covering hyphas. Degree 0 is the peer's section; degree 1
     /// edges to held sections; then coboundary_on_link climbs while volume
@@ -2088,11 +2163,19 @@ impl Kernel {
             .remove(&inv.key())
             .unwrap_or_else(crate::transducer::cech::Complex::new);
         let vol0 = self.volume_of_cell(&inv, &[peer]);
+        let peer_gamma = if spoken.is_translation() {
+            spoken
+                .letters()
+                .map(|l| l.spelling.word.rotor())
+                .unwrap_or_else(crate::transducer::alphabet::Rotor::identity)
+        } else {
+            crate::transducer::alphabet::Rotor::identity()
+        };
         cx.set_section(
             peer,
             crate::transducer::cech::Section {
                 addr,
-                gamma: crate::transducer::alphabet::Rotor::identity(),
+                gamma: peer_gamma,
             },
             vol0,
         );
@@ -2155,15 +2238,34 @@ impl Kernel {
         cx.coboundary_on_link(&peer, |vs| self.volume_of_cell(&inv, vs));
         let mut filled = false;
         let mut class_cell: Option<(crate::transducer::alphabet::Rotor, u8)> = None;
+        let mut congruent: Option<(crate::transducer::alphabet::Rotor, u32, Vec<[u8; 32]>)> = None;
         let mut fill_gamma = crate::transducer::alphabet::Rotor::identity();
         let mut fill_addrs: Vec<[u8; 32]> = Vec::new();
+        let cap = crate::physics::spend_unit() as usize;
+        let mut used = 0usize;
+        let spoken_rotor = spoken.letters().map(|l| l.spelling.word.rotor());
         let max_d = cx.degrees.len();
         for d in 1..max_d {
             for cell in cx.link(&peer, d) {
                 let key = cell.key();
-                match cx.fill(&key) {
+                if used >= cap {
+                    let dkey = chart_simplex_key(&inv, &key);
+                    self.unfilled.insert(dkey, (inv.clone(), key));
+                    continue;
+                }
+                used += 1;
+                let outcome_fill = if spoken.is_translation() {
+                    if let Some(g) = &spoken_rotor {
+                        cx.fill_by_gauge(&key, g)
+                    } else {
+                        cx.fill(&key)
+                    }
+                } else {
+                    cx.fill(&key)
+                };
+                match outcome_fill {
                     crate::transducer::cech::Fill::Filled(gamma) => {
-                        if (d >= 2 || spoken.is_translation()) && cell.volume.iter().any(|&x| x > 0) {
+                        if cell.volume.iter().any(|&x| x > 0) {
                             filled = true;
                             fill_gamma = gamma;
                             fill_addrs = cell
@@ -2177,17 +2279,31 @@ impl Kernel {
                             );
                         }
                     }
+                    crate::transducer::cech::Fill::Congruent(g, ell) => {
+                        let addrs: Vec<[u8; 32]> = cell
+                            .vertices
+                            .iter()
+                            .filter_map(|v| cx.sections.get(v).map(|s| s.addr))
+                            .collect();
+                        congruent = Some((g, ell, addrs));
+                        eprintln!(
+                            "  court cell congruent degree {d} {:02x}{:02x}…",
+                            key[0], key[1]
+                        );
+                    }
                     crate::transducer::cech::Fill::Class(class) => {
                         class_cell = Some((class.clone(), d as u8));
                         let dkey = chart_simplex_key(&inv, &key);
                         self.unfilled.insert(dkey, (inv.clone(), key));
-                        self.pending_refine.insert(inv.key(), (inv.clone(), class, d as u8));
+                        if d >= 3 {
+                            self.pending_refine.insert(inv.key(), (inv.clone(), class, d as u8));
+                        }
                         eprintln!(
                             "  court cell class degree {d} {:02x}{:02x}…",
                             key[0], key[1]
                         );
                     }
-                    crate::transducer::cech::Fill::Unfilled => {
+                    crate::transducer::cech::Fill::Open => {
                         let dkey = chart_simplex_key(&inv, &key);
                         self.unfilled.insert(dkey, (inv.clone(), key));
                     }
@@ -2198,11 +2314,19 @@ impl Kernel {
         if filled {
             self.record_gamma(&fill_addrs, &fill_gamma);
             self.pay_cell_volume(&inv, &fill_addrs);
+            if !fill_gamma.is_identity() && fill_addrs.len() >= 2 {
+                self.mint_or_admit_translation(&fill_gamma, fill_addrs[0], fill_addrs[1], peer);
+            }
+            outcome = Glue::Attached;
+        }
+        if let Some((_g, ell, addrs)) = congruent {
+            self.file_torsion(&addrs, ell);
+            self.pay_cell_volume(&inv, &addrs);
+            self.pay_torse(&addrs);
             outcome = Glue::Attached;
         }
         if let Some((class, degree)) = class_cell {
             self.mark_class(&inv, class.clone(), degree);
-            self.refine_chart(&inv, class, degree, Some(cover));
             outcome = Glue::Dialect;
         }
         match outcome {
@@ -2213,7 +2337,7 @@ impl Kernel {
                     self.basis_push(spoken.clone(), peer);
                 }
                 if let Some(i) = self.basis_index.get(&addr).copied() {
-                    self.word_mut(i).record_dislocation(asg, element::identity_versor());
+                    self.word_mut(i).record_dislocation(asg, element::identity_versor(), element::FIBER_SPATIAL);
                     self.touch_at(i);
                 }
                 self.ruled_admit(&addr);
@@ -2226,7 +2350,7 @@ impl Kernel {
                     if let Some(g) = crate::transducer::cech::transition(&rep, &spoken) {
                         if let Some(v) = crate::transducer::stalk::placement_of(&g) {
                             if let Some(i) = self.basis_index.get(&rep.address()).copied() {
-                                self.word_mut(i).record_dislocation(asg, v);
+                                self.word_mut(i).record_dislocation(asg, v, element::FIBER_SPATIAL);
                                 self.touch_at(i);
                             }
                         }
@@ -2248,7 +2372,7 @@ impl Kernel {
         for addr in addrs {
             if let Some(i) = self.basis_index.get(addr).copied() {
                 let asg = element::assignment(self.basis[i].sub());
-                self.word_mut(i).record_dislocation(asg, v.clone());
+                self.word_mut(i).record_dislocation(asg, v.clone(), element::FIBER_SPATIAL);
                 self.touch_at(i);
             }
         }

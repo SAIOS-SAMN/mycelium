@@ -112,7 +112,7 @@ pub struct Element {
     /// and a CLOSED cycle (σ^ℓ = id on its support) speaks orbit members never
     /// individually witnessed: capacity earned by exact structure. The fiber is
     /// thus ℤ^r ⊕ ⊕ᵢ ℤ/tᵢ — free sections ⊕ torsion cycles.
-    torsion: Vec<(Vec<(u8, u8)>, u32)>,
+    torsion: Vec<(Vec<(u8, u8)>, u32, u16)>,
     /// THE ANCHOR FIBER (Step 7) — γ = (π_anchor, Δ_substance): the recursive
     /// selection term restricting WHERE this word's substance applies on a
     /// scene. None = ⊤, the unconstrained carrier (pure topological actions,
@@ -125,7 +125,7 @@ pub struct Element {
     /// set of V reached for one assignment is its holonomy. Vec-of-relations;
     /// excluded from the address (a connection deepens the thought, it does
     /// not rename it).
-    transitions: Vec<(Vec<(u8, u8)>, Versor)>,
+    transitions: Vec<(Vec<(u8, u8)>, Versor, u16)>,
     /// The memoized address — a measurement of the base (word, dim, fibers),
     /// taken once and cleared wherever the base mutates. Never serialized.
     address: std::sync::OnceLock<[u8; 32]>,
@@ -544,32 +544,32 @@ impl Element {
     }
 
     /// The torsion cycles of the axis: `(generator σ, period ℓ)` each.
-    pub fn torsion(&self) -> &[(Vec<(u8, u8)>, u32)] {
+    pub fn torsion(&self) -> &[(Vec<(u8, u8)>, u32, u16)] {
         &self.torsion
     }
 
     /// The connection: every (assignment, g) under which a sibling was
     /// transported into this frame.
-    pub fn transitions(&self) -> &[(Vec<(u8, u8)>, Versor)] {
+    pub fn transitions(&self) -> &[(Vec<(u8, u8)>, Versor, u16)] {
         &self.transitions
     }
 
-    /// Record a dislocation versor on the fibre: (assignment, V) excluded
-    /// from the address. Duplicate (asg, V) pairs are not stored twice.
-    pub fn record_dislocation(&mut self, asg: Vec<(u8, u8)>, g: Versor) {
-        if !self.transitions.iter().any(|(a, h)| a == &asg && same_versor(h, &g)) {
-            self.transitions.push((asg, g));
+    /// Record a dislocation versor on the fibre: (assignment, V, fibre)
+    /// excluded from the address. Duplicate (asg, V, fibre) not stored twice.
+    pub fn record_dislocation(&mut self, asg: Vec<(u8, u8)>, g: Versor, fibre: u16) {
+        if !self.transitions.iter().any(|(a, h, f)| a == &asg && same_versor(h, &g) && *f == fibre) {
+            self.transitions.push((asg, g, fibre));
         }
     }
 
-    /// File a torsion cycle `(σ, ℓ)` on the fibre — a withheld sentence
-    /// class, or a condensed orbit. Duplicate generators are not stored twice.
-    pub fn record_torsion(&mut self, sigma: Vec<(u8, u8)>, period: u32) {
+    /// File a torsion cycle `(σ, ℓ)` on fibre `fibre`. Duplicate generators
+    /// on the same fibre are not stored twice.
+    pub fn record_torsion(&mut self, sigma: Vec<(u8, u8)>, period: u32, fibre: u16) {
         if period == 0 {
             return;
         }
-        if !self.torsion.iter().any(|(s, _)| s == &sigma) {
-            self.torsion.push((sigma, period));
+        if !self.torsion.iter().any(|(s, _, f)| s == &sigma && *f == fibre) {
+            self.torsion.push((sigma, period, fibre));
             self.profiles.take();
         }
     }
@@ -578,7 +578,7 @@ impl Element {
     /// member (the volume metric; cycles count their full period).
     pub fn fiber_span(&self) -> usize {
         1 + self.sections.len()
-            + self.torsion.iter().map(|(_, l)| (*l as usize).saturating_sub(1)).sum::<usize>()
+            + self.torsion.iter().map(|(_, l, _)| (*l as usize).saturating_sub(1)).sum::<usize>()
     }
 
     /// Every concrete rewrite chain this word can speak — the base chain plus
@@ -639,7 +639,7 @@ impl Element {
         let base = assignment(&self.sub);
         let mut out = vec![base.clone()];
         out.extend(self.sections.iter().cloned());
-        for (sigma, l) in &self.torsion {
+        for (sigma, l, _) in &self.torsion {
             let mut cur = base.clone();
             for _ in 1..*l {
                 match apply_hue_map(sigma, &cur) {
@@ -681,7 +681,7 @@ impl Element {
         if asg == base || self.sections.contains(&asg) {
             return true;
         }
-        for (sigma, l) in &self.torsion {
+        for (sigma, l, _) in &self.torsion {
             let mut cur = base.clone();
             for _ in 1..*l {
                 match apply_hue_map(sigma, &cur) {
@@ -743,7 +743,7 @@ impl Element {
                 for &i in spanned.iter().rev() {
                     self.sections.remove(i);
                 }
-                self.torsion.push((sigma, period));
+                self.torsion.push((sigma, period, FIBER_SPATIAL));
                 self.profiles.take();
                 return spanned.len();
             }
@@ -778,8 +778,8 @@ impl Element {
     pub fn attach(&mut self, sibling: &Element, g: &Versor) -> usize {
         let Some(asg) = pullback(&positions(&self.sub), &sibling.sub, g) else { return 0 };
         let gained = self.puncture(asg.clone()) as usize;
-        if !self.transitions.iter().any(|(a, h)| *a == asg && same_versor(h, g)) {
-            self.transitions.push((asg, g.clone()));
+        if !self.transitions.iter().any(|(a, h, _)| *a == asg && same_versor(h, g)) {
+            self.transitions.push((asg, g.clone(), FIBER_SPATIAL));
         }
         gained
     }
@@ -794,9 +794,9 @@ impl Element {
                 added += 1;
             }
         }
-        for (a, g) in &other.transitions {
-            if !self.transitions.iter().any(|(aa, gg)| aa == a && same_versor(gg, g)) {
-                self.transitions.push((a.clone(), g.clone()));
+        for (a, g, f) in &other.transitions {
+            if !self.transitions.iter().any(|(aa, gg, ff)| aa == a && same_versor(gg, g) && ff == f) {
+                self.transitions.push((a.clone(), g.clone(), *f));
             }
         }
         added
@@ -943,23 +943,25 @@ impl Element {
         }
         // The torsion cycles: (generator relations, period).
         out.extend_from_slice(&(self.torsion.len() as u32).to_le_bytes());
-        for (sigma, l) in &self.torsion {
+        for (sigma, l, fibre) in &self.torsion {
             out.extend_from_slice(&(sigma.len() as u32).to_le_bytes());
             for (f, t) in sigma {
                 out.push(*f);
                 out.push(*t);
             }
             out.extend_from_slice(&l.to_le_bytes());
+            out.extend_from_slice(&fibre.to_le_bytes());
         }
-        // The connection: (assignment, g) relations.
+        // The connection: (assignment, g, fibre) relations.
         out.extend_from_slice(&(self.transitions.len() as u32).to_le_bytes());
-        for (a, g) in &self.transitions {
+        for (a, g, fibre) in &self.transitions {
             out.extend_from_slice(&(a.len() as u32).to_le_bytes());
             for (b, f) in a {
                 out.push(*b);
                 out.push(*f);
             }
             g.to_bytes(&mut out);
+            out.extend_from_slice(&fibre.to_le_bytes());
         }
         out
     }
@@ -1047,13 +1049,14 @@ impl Element {
         }
         // The torsion cycles: (generator relations, period ℓ).
         out.extend_from_slice(&(self.torsion.len() as u32).to_le_bytes());
-        for (sigma, l) in &self.torsion {
+        for (sigma, l, fibre) in &self.torsion {
             out.extend_from_slice(&(sigma.len() as u32).to_le_bytes());
             for (f, t) in sigma {
                 out.push(*f);
                 out.push(*t);
             }
             out.extend_from_slice(&l.to_le_bytes());
+            out.extend_from_slice(&fibre.to_le_bytes());
         }
         // THE ANCHOR FIBER: [1][term] present, [0] the ⊤ carrier. Appended
         // last so pre-anchor bytes parse with an unconstrained anchor.
@@ -1068,13 +1071,14 @@ impl Element {
         // with an empty connection (the reader takes it from the remaining
         // bytes of a bounded element slice).
         out.extend_from_slice(&(self.transitions.len() as u32).to_le_bytes());
-        for (a, g) in &self.transitions {
+        for (a, g, fibre) in &self.transitions {
             out.extend_from_slice(&(a.len() as u32).to_le_bytes());
             for (b, f) in a {
                 out.push(*b);
                 out.push(*f);
             }
             g.to_bytes(&mut out);
+            out.extend_from_slice(&fibre.to_le_bytes());
         }
         out
     }
@@ -1177,7 +1181,9 @@ impl Element {
                 sigma.push((f, t));
             }
             let l = u32_at(b, pos)?;
-            torsion.push((sigma, l));
+            let fibre = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
+            *pos += 2;
+            torsion.push((sigma, l, fibre));
         }
         // The anchor fiber tail (absent in pre-anchor serializations → ⊤).
         let anchor = match b.get(*pos) {
@@ -1230,7 +1236,9 @@ impl Element {
                         legacy_versor(d4, tr, tc)?
                     }
                 };
-                transitions.push((a, g));
+                let fibre = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
+                *pos += 2;
+                transitions.push((a, g, fibre));
             }
         }
         Some(Element {

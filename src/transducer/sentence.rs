@@ -934,11 +934,15 @@ pub fn close(n: &mut Nerve) -> bool {
                 seen.insert(k, ());
                 match n.complex.fill(&k) {
                     Fill::Filled(_) => {}
+                    Fill::Congruent(r, _) => {
+                        n.class = Some((r, d));
+                        all_filled = false;
+                    }
                     Fill::Class(r) => {
                         n.class = Some((r, d));
                         all_filled = false;
                     }
-                    Fill::Unfilled => {
+                    Fill::Open => {
                         all_filled = false;
                     }
                 }
@@ -998,8 +1002,35 @@ pub fn as_element(n: &Nerve) -> Option<Element> {
             },
             &(num_rational::BigRational::from_integer(num_bigint::BigInt::from(0)), num_rational::BigRational::from_integer(num_bigint::BigInt::from(0))),
         ) {
-            e.record_dislocation(asg, v);
+            e.record_dislocation(asg, v, element::FIBER_SPATIAL);
         }
+    }
+    let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+    let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+    for layer in &n.complex.degrees {
+        layer.for_each(|_, cell| match &cell.fill {
+            Fill::Filled(gamma) if !gamma.is_identity() => {
+                let w = word_of_rotor(gamma);
+                if let Some(v) = element::conformal_of(&alphabet::Spelling { word: w, rho: one.clone() }, &(zero.clone(), zero.clone())) {
+                    let asg: Vec<(u8, u8)> = cell
+                        .vertices
+                        .windows(2)
+                        .map(|p| (germ_index(&p[0]) as u8, germ_index(&p[1]) as u8))
+                        .collect();
+                    e.record_dislocation(asg, v, element::FIBER_SPATIAL);
+                }
+            }
+            Fill::Congruent(g, ell) => {
+                let asg: Vec<(u8, u8)> = cell
+                    .vertices
+                    .windows(2)
+                    .map(|p| (germ_index(&p[0]) as u8, germ_index(&p[1]) as u8))
+                    .collect();
+                e.record_torsion(asg, *ell, element::FIBER_SPATIAL);
+                let _ = g;
+            }
+            _ => {}
+        });
     }
     if let Some((class, degree)) = &n.class {
         let sigma: Vec<(u8, u8)> = n
@@ -1021,15 +1052,15 @@ pub fn as_element(n: &Nerve) -> Option<Element> {
                 s
             })
             .unwrap_or_default();
-        e.record_torsion(sigma, 2);
+        e.record_torsion(sigma, 2, element::FIBER_SPATIAL);
     } else if !n.is_closed() {
         for c in &n.cycles {
             if c.holonomy.abelian_identity() {
                 continue;
             }
-            if let Some(ell) = c.holonomy.period() {
+            if let crate::transducer::alphabet::Order::Finite(ell) = c.holonomy.order() {
                 let sigma: Vec<(u8, u8)> = c.germs.windows(2).map(|w| (w[0] as u8, w[1] as u8)).collect();
-                e.record_torsion(sigma, ell);
+                e.record_torsion(sigma, ell, element::FIBER_SPATIAL);
             }
         }
     }
@@ -1284,8 +1315,29 @@ pub fn replay_nerve(e: &Element) -> Option<&'static str> {
         }
     }
     for c in &n.cycles {
-        if !c.holonomy.abelian_identity() && c.holonomy.period().is_none() {
-            return Some("sentence cycle holonomy does not close under repetition");
+        if !c.holonomy.abelian_identity() {
+            match c.holonomy.order() {
+                crate::transducer::alphabet::Order::Infinite if n.class.is_none() && e.torsion().is_empty() => {
+                    return Some("sentence has a non-coboundary coefficient with no class")
+                }
+                _ => {}
+            }
+        }
+    }
+    for (d, layer) in n.complex.degrees.iter().enumerate() {
+        let mut bad = false;
+        layer.for_each(|_, cell| {
+            if cell.coefficient.is_identity() || d == 0 {
+                return;
+            }
+            match &cell.fill {
+                Fill::Filled(_) | Fill::Congruent(_, _) | Fill::Class(_) => {}
+                Fill::Open if n.class.is_none() && e.torsion().is_empty() => bad = true,
+                Fill::Open => {}
+            }
+        });
+        if bad {
+            return Some("sentence has a non-coboundary coefficient with no class");
         }
     }
     let derived = bind_complex(&n.germs, &n.faces);

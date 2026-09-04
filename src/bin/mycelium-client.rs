@@ -750,7 +750,7 @@ fn main() {
                 last_genome = entity.epigenome.genome_len();
                 last_settles = settles;
                 eprintln!(
-                    "[{name}] [{}] K {k_step} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | refined {refined} learned {learned} | genome {} (peak expr {}) discordance {} obstructions {} bubbles {} components {} fills {} classes {} formed {} thoughts {} axes {}",
+                    "[{name}] [{}] K {k_step} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | SOLVES uniq {uniq_solved} verified {proj_solved}/{projected} | refined {refined} learned {learned} | genome {} (peak expr {}) discordance {} obstructions {} bubbles {} horizon {} potential {:?} fills {} torsion {} classes {} formed {} axes {}",
                     tuniversal.stamp(),
                     entity.impedance(),
                     entity.epigenome.genome_len(),
@@ -758,11 +758,12 @@ fn main() {
                     entity.discordance(),
                     entity.obstructions().len(),
                     entity.bubbles(),
-                    entity.components(),
+                    entity.horizon_cells(),
+                    entity.thought_potential(),
                     entity.contemplation_fills(),
+                    entity.torsion_merges(),
                     entity.contemplation_classes(),
                     entity.thoughts_formed(),
-                    entity.thoughts().len(),
                     entity.axes_opened(),
                 );
             }

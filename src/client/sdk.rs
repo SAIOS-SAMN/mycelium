@@ -847,7 +847,7 @@ impl Epigenome {
         // counted; a connection without letters is not a word of the
         // language this mind speaks.
         let n = e.sub().len();
-        let coherent = e.transitions().iter().all(|(a, g)| a.len() == n && crate::transducer::cga::is_versor(g).is_some())
+        let coherent = e.transitions().iter().all(|(a, g, _)| a.len() == n && crate::transducer::cga::is_versor(g).is_some())
             && e.sections().iter().all(|s| s.len() == n)
             && (!e.is_connection() || e.letters_rederive() == Some(true));
         if !coherent {
@@ -860,7 +860,7 @@ impl Epigenome {
         for &(_, _, before, after) in e.sub() {
             self.aperture.absorb_value_signal(before, after);
         }
-        for (_, l) in e.torsion() {
+        for (_, l, _) in e.torsion() {
             self.aperture.absorb_spatial_signal(*l);
         }
         let heard = self.comprehend(&e);
@@ -1328,7 +1328,11 @@ impl Entity {
             let mut charts = Vec::new();
             self.contemplation.bubbles.for_each(|_, b| {
                 let inv = crate::transducer::stalk::invariant(&b.remainder);
-                charts.extend(inv.prefixes());
+                for p in inv.prefixes() {
+                    if b.cover.contains(&p.key()) {
+                        charts.push(p);
+                    }
+                }
             });
             charts
         };
@@ -1488,6 +1492,18 @@ impl Entity {
         self.contemplation.formed
     }
 
+    pub fn horizon_cells(&self) -> usize {
+        self.contemplation.horizon_cells()
+    }
+
+    pub fn thought_potential(&self) -> [u64; 4] {
+        self.contemplation.potential()
+    }
+
+    pub fn torsion_merges(&self) -> u64 {
+        self.contemplation.torsion_merges
+    }
+
     /// OPEN AN AXIS ON MULTIPLICITY — the convergence engine's `expand_m`
     /// on this manifold. The sentence's H² class is the coordinate the
     /// current axes could not express; it is seeded first, never from zero.
@@ -1557,11 +1573,20 @@ impl Entity {
         self.opened.len()
     }
 
-    /// PIVOT ON A WORD: read by_chart at the word's chart and prefixes, fill
-    /// cells on those bubbles' links, merge filled components, speak any
-    /// component that closes. Fills are capped at spend_unit.
+    /// PIVOT ON A WORD: expand dirty bubbles, read by_chart at the word's
+    /// chart and prefixes, fill cells on those bubbles' links, merge filled
+    /// components, speak any component that closes. Fills and expansions
+    /// are capped at spend_unit.
     pub fn pivot_on(&mut self, word: &Element) -> usize {
         let cap = crate::physics::spend_unit() as usize;
+        let atlas = self.epigenome.atlas().clone();
+        let mut rotors = crate::network::nerve::Keyed::new();
+        for w in self.epigenome.genome() {
+            if let Some(r) = crate::transducer::cech::rotor_of(w) {
+                rotors.insert(w.address(), r);
+            }
+        }
+        let _ = self.contemplation.expand_all(&atlas, &rotors, cap);
         let (_fills, _formed, _classes, spoken) = self.contemplation.pivot_on(word, cap);
         let mut n = 0usize;
         for e in spoken {

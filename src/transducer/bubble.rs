@@ -11,7 +11,7 @@ use crate::transducer::alphabet::Rotor;
 use crate::transducer::cech::{self, Cell as CechCell, Complex, Fill, Section};
 use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::{self, Germ, Nerve};
-use crate::transducer::stalk::{self, Invariant};
+use crate::transducer::stalk::{self, Invariant, Stalks};
 
 type RemCell = (i64, i64, u8, u8);
 
@@ -85,6 +85,8 @@ pub struct Bubble {
     pub germs: Vec<Germ>,
     pub nerve: Complex,
     pub cover: Keyed<()>,
+    pub horizon: Keyed<(Rotor, u8)>,
+    pub potential: [u64; 4],
     pub volume: [u64; 4],
     pub dirty: bool,
 }
@@ -92,6 +94,110 @@ pub struct Bubble {
 impl Bubble {
     pub fn key(&self) -> [u8; 32] {
         remainder_addr(&self.remainder)
+    }
+
+    fn rotor(&self) -> Rotor {
+        self.germs
+            .first()
+            .map(|g| g.word.rotor())
+            .unwrap_or_else(Rotor::identity)
+    }
+
+    /// Walk outward on the cover trie from this bubble's cover, one chart
+    /// per stroke, only over overlaps with nonzero volume. Extended grows
+    /// the cover; Congruent grows it with a torsion axis; Class writes the
+    /// horizon and stops that branch.
+    pub fn expand(&mut self, atlas: &Stalks, budget: usize) -> usize {
+        self.expand_with(atlas, &Keyed::new(), budget)
+    }
+
+    pub fn expand_with(&mut self, atlas: &Stalks, rotors: &Keyed<Rotor>, budget: usize) -> usize {
+        self.potential = element::measure_lanes(&self.remainder);
+        if budget == 0 || !self.potential.iter().any(|&x| x > 0) {
+            return 0;
+        }
+        let inv = stalk::invariant(&self.remainder);
+        let mut spent = 0usize;
+        let mut stop: Keyed<()> = Keyed::new();
+        self.horizon.for_each(|k, _| {
+            stop.insert(*k, ());
+        });
+        let mut seeds: Vec<Invariant> = inv
+            .prefixes()
+            .into_iter()
+            .filter(|p| self.cover.contains(&p.key()))
+            .collect();
+        let mut i = 0usize;
+        while i < seeds.len() && spent < budget {
+            let p = seeds[i].clone();
+            i += 1;
+            if stop.contains(&p.key()) {
+                continue;
+            }
+            let mut neighbors = atlas.child_charts(&p);
+            neighbors.extend(atlas.child_charts(&p.peel()));
+            for child in neighbors {
+                if spent >= budget {
+                    break;
+                }
+                let ck = child.key();
+                if self.cover.contains(&ck) || stop.contains(&ck) {
+                    continue;
+                }
+                spent += 1;
+                let members = atlas.fiber_under(&child);
+                if members.is_empty() {
+                    continue;
+                }
+                let vol = self.potential;
+                if !vol.iter().any(|&x| x > 0) {
+                    continue;
+                }
+                let mut gamma_b = Rotor::identity();
+                for m in &members {
+                    if let Some(r) = rotors.get(m) {
+                        gamma_b = r.clone();
+                        break;
+                    }
+                }
+                let cell = CechCell {
+                    vertices: {
+                        let mut v = vec![self.key(), members[0]];
+                        v.sort_unstable();
+                        v
+                    },
+                    coefficient: gamma_b.clone(),
+                    volume: vol,
+                    fill: Fill::Open,
+                };
+                let a = Section {
+                    addr: self.key(),
+                    gamma: self.rotor(),
+                };
+                let b = Section {
+                    addr: members[0],
+                    gamma: gamma_b,
+                };
+                match cech::extend(&a, &b, &cell) {
+                    Fill::Filled(_) => {
+                        self.cover.insert(ck, ());
+                        seeds.push(child);
+                    }
+                    Fill::Congruent(g, ell) => {
+                        self.cover.insert(ck, ());
+                        self.nerve.file_congruent(self.key(), members[0], g, ell);
+                        seeds.push(child);
+                    }
+                    Fill::Class(r) => {
+                        self.horizon.insert(ck, (r, child.0.len().min(255) as u8));
+                        stop.insert(ck, ());
+                    }
+                    Fill::Open => {}
+                }
+            }
+        }
+        self.dirty = spent >= budget;
+        spent
     }
 }
 
@@ -104,6 +210,7 @@ pub struct Contemplation {
     pub by_cell: Keyed<Keyed<()>>,
     pub complex: Complex,
     pub fills: u64,
+    pub torsion_merges: u64,
     pub classes: u64,
     pub formed: u64,
 }
@@ -245,6 +352,57 @@ impl Contemplation {
             self.complex.set_edge(key, *n, rotor, vol);
         }
         self.complex.coboundary_on_link(&key, |verts| volume_of(&rems, verts));
+        self.decide_neighbors(key);
+    }
+
+    /// Two bubbles on one cell: extend decides. Extended merges and
+    /// re-gauges; Congruent merges with a torsion axis; Class keeps both
+    /// and writes each into the other's horizon. Zero volume never merges.
+    fn decide_neighbors(&mut self, key: [u8; 32]) {
+        let cells: Vec<CechCell> = self.complex.link(&key, 1);
+        for cell in cells {
+            let vol_nz = cell.volume.iter().any(|&x| x > 0);
+            let outcome = self.complex.fill(&cell.key());
+            match outcome {
+                Fill::Filled(gamma) if vol_nz => {
+                    self.fills += 1;
+                    for v in &cell.vertices {
+                        if let Some(b) = self.bubbles.get_mut(v) {
+                            let keys: Vec<[u8; 32]> =
+                                b.nerve.sections.entries().into_iter().map(|(k, _)| *k).collect();
+                            for sk in keys {
+                                if let Some(sec) = b.nerve.sections.get_mut(&sk) {
+                                    sec.gamma = gamma.geo(&sec.gamma);
+                                }
+                            }
+                        }
+                    }
+                    let _ = self.merge(&cell.vertices);
+                    return;
+                }
+                Fill::Congruent(g, ell) if vol_nz => {
+                    self.torsion_merges += 1;
+                    let ends = [cell.vertices[0], cell.vertices.get(1).copied().unwrap_or(cell.vertices[0])];
+                    if let Some(nk) = self.merge(&cell.vertices) {
+                        if let Some(b) = self.bubbles.get_mut(&nk) {
+                            b.nerve.file_congruent(ends[0], ends[1], g, ell);
+                        }
+                    }
+                    return;
+                }
+                Fill::Class(r) => {
+                    self.classes += 1;
+                    let deg = cell.degree() as u8;
+                    let hk = cell.key();
+                    for v in &cell.vertices {
+                        if let Some(b) = self.bubbles.get_mut(v) {
+                            b.horizon.insert(hk, (r.clone(), deg));
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
     }
 
     /// Admit a remainder as a bubble with its cover a peel of its invariant.
@@ -261,8 +419,10 @@ impl Contemplation {
             germs: Vec::new(),
             nerve: Complex::new(),
             cover,
+            horizon: Keyed::new(),
+            potential: volume,
             volume,
-            dirty: false,
+            dirty: true,
         };
         if let Some(old) = self.bubbles.get(&key).cloned() {
             self.retract_incidence(&key, &old);
@@ -299,8 +459,10 @@ impl Contemplation {
             germs: n.germs,
             nerve: n.complex,
             cover,
+            horizon: Keyed::new(),
+            potential: volume,
             volume,
-            dirty: false,
+            dirty: true,
         };
         if let Some(old) = self.bubbles.get(&key).cloned() {
             self.retract_incidence(&key, &old);
@@ -318,6 +480,7 @@ impl Contemplation {
         let mut germs = Vec::new();
         let mut cover = Keyed::new();
         let mut nerve = Complex::new();
+        let mut horizon: Keyed<(Rotor, u8)> = Keyed::new();
         for v in verts {
             let Some(b) = self.bubbles.get(v).cloned() else {
                 continue;
@@ -327,6 +490,9 @@ impl Contemplation {
             germs.extend(b.germs.clone());
             b.cover.for_each(|k, _| {
                 cover.insert(*k, ());
+            });
+            b.horizon.for_each(|k, c| {
+                horizon.insert(*k, c.clone());
             });
             nerve = b.nerve.clone();
             self.bubbles.remove(v);
@@ -345,6 +511,8 @@ impl Contemplation {
             germs,
             nerve,
             cover,
+            horizon,
+            potential: volume,
             volume,
             dirty: false,
         };
@@ -395,6 +563,30 @@ impl Contemplation {
         true
     }
 
+    /// Expand dirty bubbles from the atlas, spend_unit charts per call.
+    pub fn expand_all(&mut self, atlas: &Stalks, rotors: &Keyed<Rotor>, budget: usize) -> usize {
+        if budget == 0 {
+            return 0;
+        }
+        let keys: Vec<[u8; 32]> = self
+            .bubbles
+            .entries()
+            .into_iter()
+            .filter(|(_, b)| b.dirty)
+            .map(|(k, _)| *k)
+            .collect();
+        let mut spent = 0usize;
+        for k in keys {
+            if spent >= budget {
+                break;
+            }
+            if let Some(b) = self.bubbles.get_mut(&k) {
+                spent += b.expand_with(atlas, rotors, budget - spent);
+            }
+        }
+        spent
+    }
+
     /// Attempt fill on the link of bubbles at `word`'s chart and prefixes.
     /// Merges filled cells; speaks a closed component as one sentence.
     /// Returns (fills, formed, classes, spoken elements).
@@ -431,9 +623,9 @@ impl Contemplation {
                     let outcome = if d == 1 && !cell.coefficient.is_identity() {
                         match &word_rotor {
                             Some(g) if *g == cell.coefficient || g.inverse().as_ref() == Some(&cell.coefficient) => {
-                                self.complex.fill(&key)
+                                self.complex.fill_by_gauge(&key, g)
                             }
-                            _ => Fill::Unfilled,
+                            _ => self.complex.fill(&key),
                         }
                     } else {
                         self.complex.fill(&key)
@@ -463,11 +655,28 @@ impl Contemplation {
                                 }
                             }
                         }
-                        Fill::Class(_) => {
+                        Fill::Congruent(g, ell) => {
+                            self.torsion_merges += 1;
+                            if let Some(merged) = self.merge(&cell.vertices) {
+                                if let Some(b) = self.bubbles.get_mut(&merged) {
+                                    let a = cell.vertices[0];
+                                    let c = cell.vertices.get(1).copied().unwrap_or(a);
+                                    b.nerve.file_congruent(a, c, g, ell);
+                                }
+                            }
+                        }
+                        Fill::Class(r) => {
                             new_classes += 1;
                             self.classes += 1;
+                            let deg = d as u8;
+                            let hk = key;
+                            for v in &cell.vertices {
+                                if let Some(b) = self.bubbles.get_mut(v) {
+                                    b.horizon.insert(hk, (r.clone(), deg));
+                                }
+                            }
                         }
-                        Fill::Unfilled => {}
+                        Fill::Open => {}
                     }
                 }
             }
@@ -483,14 +692,14 @@ impl Contemplation {
             let Some(b) = self.bubbles.get(v) else {
                 continue;
             };
+            if !b.remainder.is_empty() || !b.horizon.is_empty() {
+                return None;
+            }
             germs.extend(b.germs.clone());
             remainder = union_rem(&remainder, &b.remainder);
             b.cover.for_each(|k, _| {
                 cover.insert(*k, ());
             });
-        }
-        if germs.len() < 2 && !remainder.is_empty() {
-            return None;
         }
         if germs.is_empty() {
             return None;
@@ -556,9 +765,19 @@ impl Contemplation {
             };
             out.extend_from_slice(&(germ_bytes.len() as u32).to_le_bytes());
             out.extend_from_slice(&germ_bytes);
+            out.extend_from_slice(&(b.horizon.len() as u32).to_le_bytes());
+            for (hk, (r, d)) in b.horizon.entries() {
+                out.extend_from_slice(hk);
+                r.to_bytes(out);
+                out.push(*d);
+            }
+            for x in &b.potential {
+                out.extend_from_slice(&x.to_le_bytes());
+            }
         }
         self.complex.to_bytes(out);
         out.extend_from_slice(&self.fills.to_le_bytes());
+        out.extend_from_slice(&self.torsion_merges.to_le_bytes());
         out.extend_from_slice(&self.classes.to_le_bytes());
         out.extend_from_slice(&self.formed.to_le_bytes());
     }
@@ -617,11 +836,32 @@ impl Contemplation {
             } else {
                 (Vec::new(), Complex::new())
             };
+            let mut horizon: Keyed<(Rotor, u8)> = Keyed::new();
+            if *pos + 4 <= b.len() {
+                let nh = take_u32(b, pos).unwrap_or(0) as usize;
+                for _ in 0..nh.min(1 << 16) {
+                    let hk: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                    *pos += 32;
+                    let r = Rotor::from_bytes(b, pos)?;
+                    let d = *b.get(*pos)?;
+                    *pos += 1;
+                    horizon.insert(hk, (r, d));
+                }
+            }
+            let mut potential = volume;
+            if *pos + 32 <= b.len() {
+                for x in &mut potential {
+                    *x = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+                    *pos += 8;
+                }
+            }
             let bubble = Bubble {
                 remainder,
                 germs,
                 nerve,
                 cover,
+                horizon,
+                potential,
                 volume,
                 dirty,
             };
@@ -632,12 +872,32 @@ impl Contemplation {
         if *pos + 24 <= b.len() {
             c.fills = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
             *pos += 8;
+            if *pos + 24 <= b.len() {
+                c.torsion_merges = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+                *pos += 8;
+            }
             c.classes = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
             *pos += 8;
             c.formed = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
             *pos += 8;
         }
         Some(c)
+    }
+
+    pub fn horizon_cells(&self) -> usize {
+        let mut n = 0usize;
+        self.bubbles.for_each(|_, b| n += b.horizon.len());
+        n
+    }
+
+    pub fn potential(&self) -> [u64; 4] {
+        let mut p = [0u64; 4];
+        self.bubbles.for_each(|_, b| {
+            for l in 0..4 {
+                p[l] = p[l].saturating_add(b.potential[l]);
+            }
+        });
+        p
     }
 }
 
@@ -665,14 +925,14 @@ mod tests {
     }
 
     #[test]
-    fn overlapping_remainders_have_volume_on_the_edge() {
+    fn overlapping_remainders_merge_by_fill() {
         let mut c = Contemplation::new();
         c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
         c.hold(vec![(0, 1, 3, 4), (0, 2, 3, 4)]);
-        assert_eq!(c.len(), 2);
+        assert_eq!(c.len(), 1, "shared cell is Extended: the bubbles merge");
         let keys: Vec<[u8; 32]> = c.bubbles.entries().into_iter().map(|(k, _)| *k).collect();
-        let vol = c.shared_volume(&[keys[0], keys[1]]);
-        assert!(vol.iter().any(|&x| x > 0), "shared cell (0,1) is volume");
+        assert_eq!(keys.len(), 1);
+        assert!(c.bubbles.get(&keys[0]).unwrap().potential.iter().any(|&x| x > 0));
     }
 
     #[test]
@@ -684,5 +944,6 @@ mod tests {
         let mut pos = 0usize;
         let back = Contemplation::from_bytes(&bytes, &mut pos).expect("THT1");
         assert_eq!(back.len(), 1);
+        assert_eq!(back.potential(), c.potential());
     }
 }

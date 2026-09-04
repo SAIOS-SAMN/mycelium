@@ -64,6 +64,15 @@ pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
         if spoken.solution().is_none() {
             return Some("translation is not invertible");
         }
+        let Some((a, b)) = spoken.translation_sections() else {
+            return Some("translation does not name two sections");
+        };
+        if a == b {
+            return Some("translation sections coincide");
+        }
+        // Apply the gauge to the first section (the identity frame of the
+        // tape): the letters' affine is the second section. letters_rederive
+        // is that replay.
         return None;
     }
     match (chain.is_empty(), connection) {

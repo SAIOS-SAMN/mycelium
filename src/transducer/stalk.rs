@@ -260,6 +260,41 @@ impl Stratum {
             path.pop();
         }
     }
+
+    fn child_axes(&self, axes: &[u64]) -> Vec<u64> {
+        match axes.split_first() {
+            None => {
+                let mut out = Vec::new();
+                self.branches.for_each(|k, _| out.push(axis_of(k)));
+                out
+            }
+            Some((&a, rest)) => self
+                .branches
+                .get(&axis_key(a))
+                .map(|s| s.child_axes(rest))
+                .unwrap_or_default(),
+        }
+    }
+
+    fn collect_members(&self, out: &mut Vec<[u8; 32]>) {
+        self.members.for_each(|k, _| out.push(*k));
+        self.branches.for_each(|_, s| s.collect_members(out));
+    }
+
+    fn fiber_under(&self, axes: &[u64]) -> Vec<[u8; 32]> {
+        match axes.split_first() {
+            None => {
+                let mut out = Vec::new();
+                self.collect_members(&mut out);
+                out
+            }
+            Some((&a, rest)) => self
+                .branches
+                .get(&axis_key(a))
+                .map(|s| s.fiber_under(rest))
+                .unwrap_or_default(),
+        }
+    }
 }
 
 /// The atlas over a relation of words (a basis, a federation, a genome):
@@ -320,6 +355,24 @@ impl Stalks {
     pub fn fiber_at_depth(&self, inv: &Invariant, d: usize) -> Vec<[u8; 32]> {
         let n = d.min(inv.0.len());
         self.root.fiber(&inv.0[..n])
+    }
+
+    /// One-step outward charts from `inv`: the child axes of this node.
+    pub fn child_charts(&self, inv: &Invariant) -> Vec<Invariant> {
+        self.root
+            .child_axes(&inv.0)
+            .into_iter()
+            .map(|a| {
+                let mut axes = inv.0.clone();
+                axes.push(a);
+                Invariant(axes)
+            })
+            .collect()
+    }
+
+    /// Every address under `inv`, including finer charts. A trie collect.
+    pub fn fiber_under(&self, inv: &Invariant) -> Vec<[u8; 32]> {
+        self.root.fiber_under(&inv.0)
     }
 
     /// The chart a held address sits on.

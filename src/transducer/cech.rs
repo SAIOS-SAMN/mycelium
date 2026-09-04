@@ -100,13 +100,54 @@ fn each_combination<T: Copy>(items: &[T], k: usize, mut f: impl FnMut(&[T])) {
     }
 }
 
-/// Fill of a cell: a gauge on its boundary makes the coefficient the
-/// identity, or the coefficient is the class at that degree.
+/// State of a cell: open work, a coboundary gauge, a finite-order congruence,
+/// or a class at this degree.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Fill {
-    Unfilled,
+    Open,
     Filled(Rotor),
+    Congruent(Rotor, u32),
     Class(Rotor),
+}
+
+fn word_of_rotor(r: &Rotor) -> crate::transducer::alphabet::Word {
+    use crate::transducer::alphabet::{spell, Word};
+    let one = crate::transducer::alphabet::Q::from_integer(num_bigint::BigInt::from(1));
+    let zero = crate::transducer::alphabet::Q::from_integer(num_bigint::BigInt::from(0));
+    let e0 = r.carry(&[one.clone(), zero.clone(), zero.clone(), zero.clone()]);
+    let e1 = r.carry(&[zero.clone(), one, zero.clone(), zero]);
+    if let (Some(a), Some(b)) = (e0, e1) {
+        let block = [[a[0].clone(), b[0].clone()], [a[1].clone(), b[1].clone()]];
+        if let Some(sp) = spell(&block) {
+            return sp.word;
+        }
+    }
+    Word::identity()
+}
+
+/// Transition between two sections on a cell: identity or coboundary is
+/// Extended, finite Word::order is Congruent, otherwise Class.
+pub fn extend(section_a: &Section, section_b: &Section, cell: &Cell) -> Fill {
+    let inv = section_a.gamma.inverse().unwrap_or_else(Rotor::identity);
+    let trans = section_b.gamma.geo(&inv);
+    if cell.degree() <= 1 {
+        let coeff_inv = cell.coefficient.inverse().unwrap_or_else(Rotor::identity);
+        let g = trans.geo(&coeff_inv);
+        if g.is_identity() {
+            return Fill::Filled(trans);
+        }
+        return match word_of_rotor(&g).order() {
+            crate::transducer::alphabet::Order::Finite(ell) => Fill::Congruent(g, ell),
+            crate::transducer::alphabet::Order::Infinite => Fill::Class(g),
+        };
+    }
+    if cell.coefficient.is_identity() {
+        return Fill::Filled(Rotor::identity());
+    }
+    match word_of_rotor(&cell.coefficient).order() {
+        crate::transducer::alphabet::Order::Finite(ell) => Fill::Congruent(cell.coefficient.clone(), ell),
+        crate::transducer::alphabet::Order::Infinite => Fill::Class(cell.coefficient.clone()),
+    }
 }
 
 /// One cell of the Čech complex. Keyed by the hash of its sorted vertices.
@@ -205,7 +246,21 @@ impl Complex {
             vertices,
             coefficient: stored,
             volume,
-            fill: Fill::Unfilled,
+            fill: Fill::Open,
+        });
+    }
+
+    /// File a finite-order congruence on an edge: the torsion axis of a merge.
+    pub fn file_congruent(&mut self, a: [u8; 32], b: [u8; 32], g: Rotor, ell: u32) {
+        let vertices = sorted_verts(vec![a, b]);
+        if vertices.len() != 2 {
+            return;
+        }
+        self.remember(Cell {
+            vertices,
+            coefficient: g.clone(),
+            volume: [1, 0, 0, 0],
+            fill: Fill::Congruent(g, ell),
         });
     }
 
@@ -240,6 +295,47 @@ impl Complex {
         } else {
             cell.coefficient.inverse()
         }
+    }
+
+    /// The link of `vertex`: every incident cell, all degrees. A peel of
+    /// the star; work per glue never leaves this set.
+    pub fn star(&self, vertex: &[u8; 32]) -> Vec<Cell> {
+        let mut out = Vec::new();
+        for d in 0..self.degrees.len() {
+            out.extend(self.link(vertex, d));
+        }
+        out
+    }
+
+    /// Spec name for the all-degree link of one vertex.
+    pub fn link_of(&self, vertex: &[u8; 32]) -> Vec<Cell> {
+        self.star(vertex)
+    }
+
+    /// Mark a cell Extended by a known gauge (a translation, a taught
+    /// coboundary). Degree-1 never tree-solves — that would always succeed.
+    pub fn fill_by_gauge(&mut self, key: &[u8; 32], gamma: &Rotor) -> Fill {
+        let Some(degree) = self.degrees.iter().position(|l| l.contains(key)) else {
+            return Fill::Open;
+        };
+        let Some(cell) = self.degrees[degree].get(key).cloned() else {
+            return Fill::Open;
+        };
+        let matches = cell.coefficient == *gamma
+            || cell.coefficient.inverse().as_ref() == Some(gamma);
+        if matches {
+            if cell.vertices.len() >= 2 {
+                if let Some(sec) = self.sections.get_mut(&cell.vertices[1]) {
+                    sec.gamma = gamma.clone();
+                }
+            }
+            let filled = Fill::Filled(gamma.clone());
+            if let Some(c) = self.degrees[degree].get_mut(key) {
+                c.fill = filled.clone();
+            }
+            return filled;
+        }
+        self.fill(key)
     }
 
     /// Cells of one degree that contain `vertex` — a peel of the star.
@@ -356,7 +452,7 @@ impl Complex {
                     vertices: verts,
                     coefficient,
                     volume,
-                    fill: Fill::Unfilled,
+                    fill: Fill::Open,
                 });
             });
             if pending.is_empty() {
@@ -368,15 +464,14 @@ impl Complex {
         }
     }
 
-    /// Solve the gauge equation on the cell's boundary. Identity coefficient
-    /// fills; otherwise the tree-plus-chord solver on the 1-skeleton; a
-    /// leftover coefficient is the class at this degree.
+    /// Fill a cell by extend: coboundary is Extended, finite order is
+    /// Congruent, otherwise Class.
     pub fn fill(&mut self, key: &[u8; 32]) -> Fill {
         let Some(degree) = self.degrees.iter().position(|l| l.contains(key)) else {
-            return Fill::Unfilled;
+            return Fill::Open;
         };
         let Some(cell) = self.degrees[degree].get(key).cloned() else {
-            return Fill::Unfilled;
+            return Fill::Open;
         };
         if cell.coefficient.is_identity() {
             let filled = Fill::Filled(Rotor::identity());
@@ -386,25 +481,38 @@ impl Complex {
             return filled;
         }
         let verts = &cell.vertices;
-        let mut edges: Vec<(usize, usize, Rotor)> = Vec::new();
-        for i in 0..verts.len() {
-            for j in i + 1..verts.len() {
-                if let Some(g) = self.edge(&verts[i], &verts[j]) {
-                    edges.push((i, j, g));
+        if cell.degree() >= 2 {
+            let mut edges: Vec<(usize, usize, Rotor)> = Vec::new();
+            for i in 0..verts.len() {
+                for j in i + 1..verts.len() {
+                    if let Some(g) = self.edge(&verts[i], &verts[j]) {
+                        edges.push((i, j, g));
+                    }
                 }
             }
-        }
-        let outcome = match solve_gauge(verts.len(), &edges) {
-            Some(gs) => {
+            if let Some(gs) = solve_gauge(verts.len(), &edges) {
                 for (v, g) in verts.iter().zip(gs.iter()) {
                     if let Some(sec) = self.sections.get_mut(v) {
                         sec.gamma = g.clone();
                     }
                 }
-                Fill::Filled(gs.get(1).cloned().unwrap_or_else(Rotor::identity))
+                let filled = Fill::Filled(gs.get(1).cloned().unwrap_or_else(Rotor::identity));
+                if let Some(c) = self.degrees[degree].get_mut(key) {
+                    c.fill = filled.clone();
+                }
+                return filled;
             }
-            None => Fill::Class(cell.coefficient.clone()),
-        };
+        }
+        let a = self
+            .sections
+            .get(&verts[0])
+            .cloned()
+            .unwrap_or(Section { addr: verts[0], gamma: Rotor::identity() });
+        let b = verts.get(1).and_then(|v| self.sections.get(v).cloned()).unwrap_or(Section {
+            addr: *verts.last().unwrap_or(&verts[0]),
+            gamma: Rotor::identity(),
+        });
+        let outcome = extend(&a, &b, &cell);
         if let Some(c) = self.degrees[degree].get_mut(key) {
             c.fill = outcome.clone();
         }
@@ -416,7 +524,7 @@ impl Complex {
             if let Some(c) = layer.get(key) {
                 return match &c.fill {
                     Fill::Class(r) => Some((r.clone(), d)),
-                    Fill::Unfilled if !c.coefficient.is_identity() && d >= 2 => {
+                    Fill::Open if !c.coefficient.is_identity() && d >= 2 => {
                         Some((c.coefficient.clone(), d))
                     }
                     _ => None,
@@ -458,7 +566,7 @@ impl Complex {
         let mut out = Vec::new();
         for (d, layer) in self.degrees.iter().enumerate() {
             layer.for_each(|k, c| {
-                if matches!(c.fill, Fill::Unfilled) && d >= 1 {
+                if matches!(c.fill, Fill::Open) && d >= 1 {
                     out.push((d, *k));
                 }
             });
@@ -500,7 +608,7 @@ impl Complex {
                     out.extend_from_slice(&x.to_le_bytes());
                 }
                 match &c.fill {
-                    Fill::Unfilled => out.push(0),
+                    Fill::Open => out.push(0),
                     Fill::Filled(g) => {
                         out.push(1);
                         g.to_bytes(out);
@@ -508,6 +616,11 @@ impl Complex {
                     Fill::Class(g) => {
                         out.push(2);
                         g.to_bytes(out);
+                    }
+                    Fill::Congruent(g, ell) => {
+                        out.push(3);
+                        g.to_bytes(out);
+                        out.extend_from_slice(&ell.to_le_bytes());
                     }
                 }
             }
@@ -558,7 +671,13 @@ impl Complex {
                 let fill = match tag {
                     1 => Fill::Filled(Rotor::from_bytes(b, pos)?),
                     2 => Fill::Class(Rotor::from_bytes(b, pos)?),
-                    _ => Fill::Unfilled,
+                    3 => {
+                        let g = Rotor::from_bytes(b, pos)?;
+                        let ell = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
+                        *pos += 4;
+                        Fill::Congruent(g, ell)
+                    }
+                    _ => Fill::Open,
                 };
                 c.remember(Cell {
                     vertices: sorted_verts(verts),
@@ -680,6 +799,11 @@ mod tests {
         crate::transducer::alphabet::Word::from_letters(&[(id, false), (id, false)]).rotor()
     }
 
+    fn pythag5() -> Rotor {
+        let id = crate::transducer::alphabet::LetterId::pythagorean_5((0, 1)).unwrap();
+        crate::transducer::alphabet::Word::from_letters(&[(id, false)]).rotor()
+    }
+
     /// A TRANSITION is antisymmetric: `g_XY ∘ g_YX = 1` (`g_YX = g_XY⁻¹`).
     #[test]
     fn a_transition_and_its_reverse_cancel() {
@@ -744,7 +868,8 @@ mod tests {
         );
     }
 
-    /// A coboundary 1-cochain fills; a leftover holonomy is the class.
+    /// A coboundary 1-cochain fills; a finite leftover is Congruent; an
+    /// infinite-order leftover (prime 5) is a Class.
     #[test]
     fn fill_is_gauge_or_class() {
         let mut c = Complex::new();
@@ -761,6 +886,12 @@ mod tests {
         assert_eq!(tri.len(), 1);
         let key = tri[0].key();
         assert!(matches!(c.fill(&key), Fill::Filled(_)));
+        c.set_edge(a, cc, Rotor::identity(), vol());
+        c.coboundary_on_link(&a, |_| vol());
+        let key = c.link(&a, 2)[0].key();
+        assert!(matches!(c.fill(&key), Fill::Congruent(_, _)));
+        c.set_edge(a, b, pythag5(), vol());
+        c.set_edge(b, cc, Rotor::identity(), vol());
         c.set_edge(a, cc, Rotor::identity(), vol());
         c.coboundary_on_link(&a, |_| vol());
         let key = c.link(&a, 2)[0].key();
@@ -787,12 +918,15 @@ mod tests {
         assert_eq!(tets.len(), 1, "the link of one vertex of K4 is one tetra");
         let key = tets[0].key();
         assert!(c.fill(&key) == Fill::Filled(Rotor::identity()) || c.class(&key).is_none());
-        c.set_edge(vs[0], vs[1], quarter(), vol());
+        c.set_edge(vs[0], vs[1], pythag5(), vol());
         c.set_edge(vs[2], vs[3], sheet(), vol());
         c.coboundary_on_link(&vs[0], |_| vol());
         let key = c.link(&vs[0], 3)[0].key();
-        let _ = c.fill(&key);
-        assert!(c.class(&key).is_some(), "an inconsistent 3-cell is a class");
+        let outcome = c.fill(&key);
+        assert!(
+            matches!(outcome, Fill::Class(_) | Fill::Congruent(_, _)) || c.class(&key).is_some(),
+            "an inconsistent 3-cell is a class or a finite congruence"
+        );
         assert!(c.byte_len() < 4096, "four covering vertices stay in kilobytes");
     }
 }
