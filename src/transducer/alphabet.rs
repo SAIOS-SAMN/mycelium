@@ -185,7 +185,10 @@ impl Rotor {
 
     /// The geometric product, Euclidean metric.
     pub fn geo(&self, o: &Rotor) -> Rotor {
+        #[cfg(test)]
+        crate::network::nerve::work::count_geo();
         let mut r = Rotor::zero();
+        // index: sixteen blade masks (fixed physical size)
         for i in 0..16 {
             if self.c[i].is_zero() {
                 continue;
@@ -322,17 +325,41 @@ pub fn letter_inverse(id: LetterId) -> Rotor {
 
 /// A WORD: an oriented tape of letters. `true` reads the letter backwards
 /// (its carried `Φ⁻¹`). The word's rotor is the product in tape order, so
-/// the LAST letter acts first on a vector.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct Word(Vec<(LetterId, bool)>);
+/// the LAST letter acts first on a vector. The rotor is memoised; equal
+/// words compare by tape, never by folding.
+#[derive(Debug)]
+pub struct Word(Vec<(LetterId, bool)>, std::sync::OnceLock<Rotor>);
+
+impl Default for Word {
+    fn default() -> Self {
+        Word(Vec::new(), std::sync::OnceLock::new())
+    }
+}
+
+impl Clone for Word {
+    fn clone(&self) -> Self {
+        let w = Word(self.0.clone(), std::sync::OnceLock::new());
+        if let Some(r) = self.1.get() {
+            let _ = w.1.set(r.clone());
+        }
+        w
+    }
+}
+
+impl PartialEq for Word {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+impl Eq for Word {}
 
 impl Word {
     pub fn identity() -> Word {
-        Word(Vec::new())
+        Word(Vec::new(), std::sync::OnceLock::new())
     }
 
     pub fn from_letters(tape: &[(LetterId, bool)]) -> Word {
-        Word(tape.to_vec())
+        Word(tape.to_vec(), std::sync::OnceLock::new())
     }
 
     pub fn letters(&self) -> &[(LetterId, bool)] {
@@ -349,25 +376,33 @@ impl Word {
 
     pub fn push(&mut self, id: LetterId, inverse: bool) {
         self.0.push((id, inverse));
+        self.1.take();
     }
 
-    /// The formed product `γ` of the tape.
+    /// The formed product `γ` of the tape, built once and memoised.
     pub fn rotor(&self) -> Rotor {
-        self.0.iter().fold(Rotor::identity(), |acc, &(id, inv)| {
-            acc.geo(&if inv { letter_inverse(id) } else { letter(id) })
-        })
+        self.1
+            .get_or_init(|| {
+                self.0.iter().fold(Rotor::identity(), |acc, &(id, inv)| {
+                    acc.geo(&if inv { letter_inverse(id) } else { letter(id) })
+                })
+            })
+            .clone()
     }
 
     /// The word read backwards: the inverse transport.
     pub fn inverse(&self) -> Word {
-        Word(self.0.iter().rev().map(|&(id, inv)| (id, !inv)).collect())
+        Word(
+            self.0.iter().rev().map(|&(id, inv)| (id, !inv)).collect(),
+            std::sync::OnceLock::new(),
+        )
     }
 
     /// Concatenate tapes: `self` then `other` (last letter of `other` acts first).
     pub fn compose(&self, other: &Word) -> Word {
         let mut t = self.0.clone();
         t.extend_from_slice(&other.0);
-        Word(t)
+        Word(t, std::sync::OnceLock::new())
     }
 
     /// Reduce the tape by the per-plane spelling peel so equal rotors have
@@ -507,7 +542,7 @@ impl Word {
             *pos += 1;
             tape.push((LetterId::try_new(byte & 0x7f)?, byte & 0x80 != 0));
         }
-        Some(Word(tape))
+        Some(Word(tape, std::sync::OnceLock::new()))
     }
 }
 

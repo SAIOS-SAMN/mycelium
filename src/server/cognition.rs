@@ -267,6 +267,7 @@ pub fn rank_over(
     composites: &[Composite],
     prior: &Rank,
     basis_gen: u64,
+    chart_listings: Option<&crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>>,
 ) -> Rank {
     let stalks = &language.stalks;
     use crate::core::engine::Q;
@@ -304,25 +305,42 @@ pub fn rank_over(
             None => crate::transducer::stalk::invariant_of(p),
         })
         .collect();
-    let closure: Vec<Option<usize>> = pending
-        .iter()
-        .enumerate()
-        .map(|(i, (p, _))| {
-            let held = prior_at[i].and_then(|j| {
-                let same_basis = prior.basis_gen == basis_gen;
-                let untouched = incremental && !moved.contains(&invariants[i].key());
-                (same_basis || untouched).then(|| prior.closure[j])
+    let locate = |p: &Element| {
+        crate::transducer::stalk::congruent_shaped(
+            stalks,
+            |a| language.index.get(a).and_then(|&i| language.shape(i)),
+            p.sub(),
+        )
+        .and_then(|(a, _)| language.index.get(&a).copied())
+    };
+    let closure: Vec<Option<usize>> = if incremental {
+        let mut closure: Vec<Option<usize>> = prior_at
+            .iter()
+            .map(|j| j.and_then(|j| prior.closure.get(j).copied().flatten()))
+            .collect();
+        if let Some(by_chart) = chart_listings {
+            // index: moved charts, then listing fiber under each
+            moved.for_each(|ck, _| {
+                if let Some(members) = by_chart.get(ck) {
+                    members.for_each(|addr, _| {
+                        if let Some(&i) = index.get(addr) {
+                            closure[i] = locate(&pending[i].0);
+                        }
+                    });
+                }
             });
-            held.unwrap_or_else(|| {
-                crate::transducer::stalk::congruent_shaped(
-                    stalks,
-                    |a| language.index.get(a).and_then(|&i| language.shape(i)),
-                    p.sub(),
-                )
-                .and_then(|(a, _)| language.index.get(&a).copied())
-            })
-        })
-        .collect();
+        } else {
+            // index: listings whose chart key is in the moved set
+            for (i, (p, _)) in pending.iter().enumerate() {
+                if moved.contains(&invariants[i].key()) {
+                    closure[i] = locate(p);
+                }
+            }
+        }
+        closure
+    } else {
+        pending.iter().map(|(p, _)| locate(p)).collect()
+    };
     let child_idx = composite_child_index(composites);
     let lineage: Vec<(u64, u64)> = pending
         .iter()
@@ -728,6 +746,12 @@ pub struct Kernel {
     /// Listings whose field has a non-Flat chart — the court's docket, written
     /// in write_field, read in key order.
     open: crate::network::nerve::Keyed<()>,
+    /// Keyed cursor into `open` for court_stroke.
+    open_cursor: [u8; 32],
+    /// This hypha's cover, admitted in write_field; own_cover_charts reads it.
+    own_cover: crate::network::nerve::Cover,
+    /// Listings keyed by chart, so rank_over's moved set is a fiber.
+    chart_listings: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// Ruled addresses beside the ruled cover trie.
     ruled_addrs: crate::network::nerve::Keyed<()>,
     /// Ruled cover root, maintained on admit/remove.
@@ -950,18 +974,20 @@ impl Kernel {
     /// to the cavity atlas; never removes from listing_atlas.
     fn drain_unreachable(&mut self) {
         let kappa = crate::physics::aperture_cycle();
-        let keys: Vec<[u8; 32]> = self
-            .field
-            .entries()
+        let cap = crate::physics::spend_unit() as usize;
+        let mut keys: Vec<[u8; 32]> = Vec::new();
+        // index: budgeted keyed cursor over the open docket
+        let _ = self.open.for_each_from(None, cap, |k, _| {
+            keys.push(*k);
+        });
+        let keys: Vec<[u8; 32]> = keys
             .into_iter()
-            .filter_map(|(k, listing)| {
-                if !self.on_page.contains(k) {
+            .filter_map(|k| {
+                if !self.on_page.contains(&k) {
                     return None;
                 }
-                let t = self.tension.get(k)?;
-                if !self.open.contains(k) {
-                    return None;
-                }
+                let listing = self.field.get(&k)?;
+                let t = self.tension.get(&k)?;
                 if listing.nonflat == 0 {
                     return None;
                 }
@@ -971,7 +997,7 @@ impl Kernel {
                     && !nonflat.is_empty()
                     && (0..4).all(|l| t[l] == 0 || nonflat.iter().all(|e| e.stagnant[l] >= kappa))
                 {
-                    Some(*k)
+                    Some(k)
                 } else {
                     None
                 }
@@ -1098,11 +1124,13 @@ impl Kernel {
             }
         }
         let mut stag = [0u32; 4];
+        // index: the four lanes
         for l in 0..4 {
             if before[l] > 0 && after[l] == before[l] {
                 stag[l] = 1;
             }
         }
+        let now_flat = state.is_flat();
         if let Some(e) = listing.entries.iter_mut().find(|e| e.chart == chart) {
             if !e.state.is_flat() {
                 stag = e.stagnant;
@@ -1120,7 +1148,6 @@ impl Kernel {
                 }
             }
             let was_flat = e.state.is_flat();
-            let now_flat = state.is_flat();
             e.state = state;
             e.remainder = remainder;
             e.stagnant = stag;
@@ -1144,6 +1171,32 @@ impl Kernel {
             self.open.insert(*addr, ());
         } else {
             self.open.remove(addr);
+        }
+        let mag = self.tension.get(addr).copied().unwrap_or(*after);
+        let lanes = crate::network::nerve::occupied_lanes(&mag);
+        // index: the four lanes
+        for lane in &lanes {
+            if now_flat {
+                self.own_cover.retract(*lane, &chart, addr);
+            } else {
+                self.own_cover.admit(*lane, &chart, *addr);
+            }
+        }
+        let ck = chart.key();
+        match self.chart_listings.get_mut(&ck) {
+            Some(m) => {
+                if now_flat {
+                    m.remove(addr);
+                } else {
+                    m.insert(*addr, ());
+                }
+            }
+            None if !now_flat => {
+                let mut m = crate::network::nerve::Keyed::new();
+                m.insert(*addr, ());
+                self.chart_listings.insert(ck, m);
+            }
+            None => {}
         }
         self.field.insert(*addr, listing);
         self.recompute_tension(addr);
@@ -1570,7 +1623,7 @@ impl Kernel {
         let gens = (self.basis_gen, self.book_gen);
         if (self.closure.0, self.closure.1) != gens {
             let language = self.language();
-            let measured = rank_over(&language, &self.pending, &self.composites, &self.closure.2, gens.0);
+            let measured = rank_over(&language, &self.pending, &self.composites, &self.closure.2, gens.0, Some(&self.chart_listings));
             self.closure = (gens.0, gens.1, std::sync::Arc::new(measured));
         }
         std::sync::Arc::clone(&self.closure.2)
@@ -1879,14 +1932,19 @@ impl Kernel {
     pub fn court_stroke(&mut self) {
         let cap = crate::physics::spend_unit() as usize;
         let mut used = 0usize;
-        let keys: Vec<[u8; 32]> = self
-            .open
-            .entries()
-            .into_iter()
-            .map(|(addr, _)| *addr)
-            .filter(|addr| !self.ruled_contains(addr) && self.deflation_of(addr).iter().any(|&x| x > 0))
-            .take(cap)
-            .collect();
+        let mut keys: Vec<[u8; 32]> = Vec::new();
+        let after = if self.open_cursor == [0u8; 32] {
+            None
+        } else {
+            Some(self.open_cursor)
+        };
+        // index: budgeted keyed cursor over the open docket
+        let last = self.open.for_each_from(after.as_ref(), cap, |addr, _| {
+            keys.push(*addr);
+        });
+        if let Some(k) = last {
+            self.open_cursor = k;
+        }
         for addr in keys {
             used += 1;
             let spoken = self
@@ -2244,69 +2302,71 @@ impl Kernel {
         let cap = crate::physics::spend_unit() as usize;
         let mut used = 0usize;
         let spoken_rotor = spoken.letters().map(|l| l.spelling.word.rotor());
-        let max_d = cx.degrees.len();
-        for d in 1..max_d {
-            for cell in cx.link(&peer, d) {
-                let key = cell.key();
-                if used >= cap {
-                    let dkey = chart_simplex_key(&inv, &key);
-                    self.unfilled.insert(dkey, (inv.clone(), key));
-                    continue;
-                }
-                used += 1;
-                let outcome_fill = if spoken.is_translation() {
-                    if let Some(g) = &spoken_rotor {
-                        cx.fill_by_gauge(&key, g)
-                    } else {
-                        cx.fill(&key)
-                    }
+        // index: link of the fetched peer
+        for cell in cx.link_of(&peer) {
+            if cell.degree() == 0 {
+                continue;
+            }
+            let d = cell.degree();
+            let key = cell.key();
+            if used >= cap {
+                let dkey = chart_simplex_key(&inv, &key);
+                self.unfilled.insert(dkey, (inv.clone(), key));
+                continue;
+            }
+            used += 1;
+            let outcome_fill = if spoken.is_translation() {
+                if let Some(g) = &spoken_rotor {
+                    cx.fill_by_gauge(&key, g)
                 } else {
                     cx.fill(&key)
-                };
-                match outcome_fill {
-                    crate::transducer::cech::Fill::Filled(gamma) => {
-                        if cell.volume.iter().any(|&x| x > 0) {
-                            filled = true;
-                            fill_gamma = gamma;
-                            fill_addrs = cell
-                                .vertices
-                                .iter()
-                                .filter_map(|v| cx.sections.get(v).map(|s| s.addr))
-                                .collect();
-                            eprintln!(
-                                "  court cell filled degree {d} {:02x}{:02x}… volume {:?}",
-                                key[0], key[1], cell.volume
-                            );
-                        }
-                    }
-                    crate::transducer::cech::Fill::Congruent(g, ell) => {
-                        let addrs: Vec<[u8; 32]> = cell
+                }
+            } else {
+                cx.fill(&key)
+            };
+            match outcome_fill {
+                crate::transducer::cech::Fill::Filled(gamma) => {
+                    if cell.volume.iter().any(|&x| x > 0) {
+                        filled = true;
+                        fill_gamma = gamma;
+                        fill_addrs = cell
                             .vertices
                             .iter()
                             .filter_map(|v| cx.sections.get(v).map(|s| s.addr))
                             .collect();
-                        congruent = Some((g, ell, addrs));
                         eprintln!(
-                            "  court cell congruent degree {d} {:02x}{:02x}…",
-                            key[0], key[1]
+                            "  court cell filled degree {d} {:02x}{:02x}… volume {:?}",
+                            key[0], key[1], cell.volume
                         );
                     }
-                    crate::transducer::cech::Fill::Class(class) => {
-                        class_cell = Some((class.clone(), d as u8));
-                        let dkey = chart_simplex_key(&inv, &key);
-                        self.unfilled.insert(dkey, (inv.clone(), key));
-                        if d >= 3 {
-                            self.pending_refine.insert(inv.key(), (inv.clone(), class, d as u8));
-                        }
-                        eprintln!(
-                            "  court cell class degree {d} {:02x}{:02x}…",
-                            key[0], key[1]
-                        );
+                }
+                crate::transducer::cech::Fill::Congruent(g, ell) => {
+                    let addrs: Vec<[u8; 32]> = cell
+                        .vertices
+                        .iter()
+                        .filter_map(|v| cx.sections.get(v).map(|s| s.addr))
+                        .collect();
+                    congruent = Some((g, ell, addrs));
+                    eprintln!(
+                        "  court cell congruent degree {d} {:02x}{:02x}…",
+                        key[0], key[1]
+                    );
+                }
+                crate::transducer::cech::Fill::Class(class) => {
+                    class_cell = Some((class.clone(), d as u8));
+                    let dkey = chart_simplex_key(&inv, &key);
+                    self.unfilled.insert(dkey, (inv.clone(), key));
+                    if d >= 3 {
+                        self.pending_refine.insert(inv.key(), (inv.clone(), class, d as u8));
                     }
-                    crate::transducer::cech::Fill::Open => {
-                        let dkey = chart_simplex_key(&inv, &key);
-                        self.unfilled.insert(dkey, (inv.clone(), key));
-                    }
+                    eprintln!(
+                        "  court cell class degree {d} {:02x}{:02x}…",
+                        key[0], key[1]
+                    );
+                }
+                crate::transducer::cech::Fill::Open => {
+                    let dkey = chart_simplex_key(&inv, &key);
+                    self.unfilled.insert(dkey, (inv.clone(), key));
                 }
             }
         }
@@ -2462,22 +2522,21 @@ impl Kernel {
     /// The home installs a word it ruled once a peer's ruled digest holds
     /// the same stratum (same root and count) — evidence the peer glued it.
     pub fn confirm_peer_holds(&mut self, remote: &[crate::transducer::sheaf::StratumDigest]) {
-        let local = crate::transducer::sheaf::digests(&self.ruled);
-        let mut ours: crate::network::nerve::Keyed<([u8; 32], u32)> = crate::network::nerve::Keyed::new();
-        for d in &local {
-            ours.insert(d.inv.key(), (d.root, d.count));
-        }
-        let mut theirs: crate::network::nerve::Keyed<([u8; 32], u32)> = crate::network::nerve::Keyed::new();
+        // index: the peer's digest charts; members from ruled fiber
         for d in remote {
-            theirs.insert(d.inv.key(), (d.root, d.count));
-        }
-        let pending: Vec<[u8; 32]> = self.provisional.entries().into_iter().map(|(a, _)| *a).collect();
-        for addr in pending {
-            let Some(w) = self.word_at(&addr) else { continue };
-            let k = crate::transducer::stalk::invariant_of(w).key();
-            if let (Some(o), Some(t)) = (ours.get(&k), theirs.get(&k)) {
-                if o.0 == t.0 && o.1 == t.1 {
-                    self.home_install(&addr);
+            let members = self.ruled.fiber(&d.inv);
+            let mut rows = members.clone();
+            rows.sort_unstable();
+            let mut h = blake3::Hasher::new();
+            for a in &rows {
+                h.update(a);
+            }
+            let root = *h.finalize().as_bytes();
+            if root == d.root && members.len() as u32 == d.count {
+                for addr in members {
+                    if self.provisional.contains(&addr) {
+                        self.home_install(&addr);
+                    }
                 }
             }
         }
@@ -2502,14 +2561,10 @@ impl Kernel {
     /// A peer's have-list naming a ruled provisional is the same evidence:
     /// the address is on their cover, so the home installs.
     pub fn confirm_peer_holds_addrs(&mut self, have: &[[u8; 32]]) {
-        let mut held: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        // index: the peer's have-list
         for h in have {
-            held.insert(*h, ());
-        }
-        let pending: Vec<[u8; 32]> = self.provisional.entries().into_iter().map(|(a, _)| *a).collect();
-        for addr in pending {
-            if self.ruled_contains(&addr) && held.contains(&addr) {
-                self.home_install(&addr);
+            if self.provisional.contains(h) && self.ruled_contains(h) {
+                self.home_install(h);
             }
         }
     }
@@ -2517,26 +2572,8 @@ impl Kernel {
     /// Charts this hypha covers: Twisted or Cavity listings, per occupied lane.
     /// Never the whole pending book — that clone was the last deploy's leak.
     pub fn own_cover_charts(&self) -> Vec<(u8, crate::transducer::stalk::Invariant)> {
-        let mut out = Vec::new();
-        for (addr, listing) in self.field.entries() {
-            let mag = self.tension.get(addr).copied().unwrap_or([0; 4]);
-            let lanes = crate::network::nerve::occupied_lanes(&mag);
-            for e in &listing.entries {
-                if matches!(
-                    e.state,
-                    crate::transducer::stalk::Closure::Twisted(_)
-                        | crate::transducer::stalk::Closure::Class(..)
-                        | crate::transducer::stalk::Closure::Cavity
-                ) {
-                    for lane in &lanes {
-                        out.push((*lane, e.chart.clone()));
-                    }
-                }
-            }
-        }
-        out.sort_by(|a, b| a.0.cmp(&b.0).then(a.1 .0.cmp(&b.1 .0)));
-        out.dedup();
-        out
+        // index: this hypha's own cover trie (signed digest payload)
+        self.own_cover.all_charts()
     }
 
     pub fn complexes(&self) -> &crate::network::nerve::Keyed<crate::transducer::cech::Complex> {
@@ -4393,17 +4430,34 @@ impl Kernel {
                     kernel.complexes.insert(key, c);
                 }
             }
+            // index: keyed field at restore (persistence snapshot, once)
             let field_keys: Vec<[u8; 32]> = kernel.field.entries().into_iter().map(|(k, _)| *k).collect();
             for addr in field_keys {
                 let Some(listing) = kernel.field.get(&addr).cloned() else { continue };
+                let mag = element::measure_lanes(&union_remainders(&listing.entries));
+                let lanes = crate::network::nerve::occupied_lanes(&mag);
                 for e in &listing.entries {
                     if !e.state.is_flat() {
                         kernel.listing_atlas.admit_also(&e.chart, addr);
+                        for lane in &lanes {
+                            kernel.own_cover.admit(*lane, &e.chart, addr);
+                        }
+                        let ck = e.chart.key();
+                        match kernel.chart_listings.get_mut(&ck) {
+                            Some(m) => {
+                                m.insert(addr, ());
+                            }
+                            None => {
+                                let mut m = crate::network::nerve::Keyed::new();
+                                m.insert(addr, ());
+                                kernel.chart_listings.insert(ck, m);
+                            }
+                        }
                     }
                 }
                 if listing.nonflat > 0 {
                     kernel.open.insert(addr, ());
-                    kernel.tension.insert(addr, element::measure_lanes(&union_remainders(&listing.entries)));
+                    kernel.tension.insert(addr, mag);
                 } else {
                     kernel.tension.insert(addr, [0; 4]);
                 }

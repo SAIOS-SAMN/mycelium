@@ -89,6 +89,8 @@ pub struct Bubble {
     pub potential: [u64; 4],
     pub volume: [u64; 4],
     pub dirty: bool,
+    /// Last chart key visited by expand; the next stroke resumes here.
+    pub cursor: [u8; 32],
 }
 
 impl Bubble {
@@ -117,84 +119,64 @@ impl Bubble {
             return 0;
         }
         let inv = stalk::invariant(&self.remainder);
+        let peel = inv.peel();
+        let after = if self.cursor == [0u8; 32] {
+            None
+        } else {
+            Some(self.cursor)
+        };
         let mut spent = 0usize;
-        let mut stop: Keyed<()> = Keyed::new();
-        self.horizon.for_each(|k, _| {
-            stop.insert(*k, ());
+        // index: budgeted sibling keys of one trie node (peel)
+        let last = atlas.each_child(&peel, after.as_ref(), budget, |child| {
+            if spent >= budget {
+                return;
+            }
+            let ck = child.key();
+            if self.cover.contains(&ck) || self.horizon.contains(&ck) {
+                return;
+            }
+            spent += 1;
+            // index: keyed fiber at this sibling chart
+            let members = atlas.fiber(&child);
+            let Some(&head) = members.first() else {
+                return;
+            };
+            let vol = self.potential;
+            let gamma_b = rotors.get(&head).cloned().unwrap_or_else(Rotor::identity);
+            let cell = CechCell {
+                vertices: {
+                    let mut v = vec![self.key(), head];
+                    v.sort_unstable();
+                    v
+                },
+                coefficient: gamma_b.clone(),
+                volume: vol,
+                fill: Fill::Open,
+            };
+            let a = Section {
+                addr: self.key(),
+                gamma: self.rotor(),
+            };
+            let b = Section {
+                addr: head,
+                gamma: gamma_b,
+            };
+            match cech::extend(&a, &b, &cell) {
+                Fill::Filled(_) => {
+                    self.cover.insert(ck, ());
+                }
+                Fill::Congruent(g, ell) => {
+                    self.cover.insert(ck, ());
+                    self.nerve.file_congruent(self.key(), head, g, ell);
+                }
+                Fill::Class(r) => {
+                    self.horizon.insert(ck, (r, child.0.len().min(255) as u8));
+                }
+                Fill::Open => {}
+            }
         });
-        let mut seeds: Vec<Invariant> = inv
-            .prefixes()
-            .into_iter()
-            .filter(|p| self.cover.contains(&p.key()))
-            .collect();
-        let mut i = 0usize;
-        while i < seeds.len() && spent < budget {
-            let p = seeds[i].clone();
-            i += 1;
-            if stop.contains(&p.key()) {
-                continue;
-            }
-            let mut neighbors = atlas.child_charts(&p);
-            neighbors.extend(atlas.child_charts(&p.peel()));
-            for child in neighbors {
-                if spent >= budget {
-                    break;
-                }
-                let ck = child.key();
-                if self.cover.contains(&ck) || stop.contains(&ck) {
-                    continue;
-                }
-                spent += 1;
-                let members = atlas.fiber_under(&child);
-                if members.is_empty() {
-                    continue;
-                }
-                let vol = self.potential;
-                if !vol.iter().any(|&x| x > 0) {
-                    continue;
-                }
-                let mut gamma_b = Rotor::identity();
-                for m in &members {
-                    if let Some(r) = rotors.get(m) {
-                        gamma_b = r.clone();
-                        break;
-                    }
-                }
-                let cell = CechCell {
-                    vertices: {
-                        let mut v = vec![self.key(), members[0]];
-                        v.sort_unstable();
-                        v
-                    },
-                    coefficient: gamma_b.clone(),
-                    volume: vol,
-                    fill: Fill::Open,
-                };
-                let a = Section {
-                    addr: self.key(),
-                    gamma: self.rotor(),
-                };
-                let b = Section {
-                    addr: members[0],
-                    gamma: gamma_b,
-                };
-                match cech::extend(&a, &b, &cell) {
-                    Fill::Filled(_) => {
-                        self.cover.insert(ck, ());
-                        seeds.push(child);
-                    }
-                    Fill::Congruent(g, ell) => {
-                        self.cover.insert(ck, ());
-                        self.nerve.file_congruent(self.key(), members[0], g, ell);
-                        seeds.push(child);
-                    }
-                    Fill::Class(r) => {
-                        self.horizon.insert(ck, (r, child.0.len().min(255) as u8));
-                        stop.insert(ck, ());
-                    }
-                    Fill::Open => {}
-                }
-            }
+        if let Some(k) = last {
+            self.cursor = k;
         }
         self.dirty = spent >= budget;
         spent
@@ -209,6 +191,9 @@ pub struct Contemplation {
     pub by_chart: Keyed<Keyed<()>>,
     pub by_cell: Keyed<Keyed<()>>,
     pub complex: Complex,
+    /// Bubbles whose cover still has work; written when dirty is set.
+    dirty: Keyed<()>,
+    expand_cursor: [u8; 32],
     pub fills: u64,
     pub torsion_merges: u64,
     pub classes: u64,
@@ -423,12 +408,14 @@ impl Contemplation {
             potential: volume,
             volume,
             dirty: true,
+            cursor: [0; 32],
         };
         if let Some(old) = self.bubbles.get(&key).cloned() {
             self.retract_incidence(&key, &old);
         }
         self.admit_incidence(key, &bubble);
         self.bubbles.insert(key, bubble);
+        self.dirty.insert(key, ());
         self.link_new(key);
     }
 
@@ -463,12 +450,14 @@ impl Contemplation {
             potential: volume,
             volume,
             dirty: true,
+            cursor: [0; 32],
         };
         if let Some(old) = self.bubbles.get(&key).cloned() {
             self.retract_incidence(&key, &old);
         }
         self.admit_incidence(key, &bubble);
         self.bubbles.insert(key, bubble);
+        self.dirty.insert(key, ());
         self.link_new(key);
     }
 
@@ -515,9 +504,11 @@ impl Contemplation {
             potential: volume,
             volume,
             dirty: false,
+            cursor: [0; 32],
         };
         self.admit_incidence(key, &bubble);
         self.bubbles.insert(key, bubble);
+        self.dirty.insert(key, ());
         self.link_new(key);
         Some(key)
     }
@@ -550,13 +541,15 @@ impl Contemplation {
         for v in verts {
             held.insert(*v, ());
         }
+        // index: vertices of this component; each cell from that vertex's link
         for v in verts {
-            for d in 1..self.complex.degrees.len() {
-                for cell in self.complex.link(v, d) {
-                    let all_in = cell.vertices.iter().all(|u| held.contains(u));
-                    if all_in && !matches!(cell.fill, Fill::Filled(_)) {
-                        return false;
-                    }
+            for cell in self.complex.link_of(v) {
+                if cell.degree() == 0 {
+                    continue;
+                }
+                let all_in = cell.vertices.iter().all(|u| held.contains(u));
+                if all_in && !matches!(cell.fill, Fill::Filled(_)) {
+                    return false;
                 }
             }
         }
@@ -568,13 +561,19 @@ impl Contemplation {
         if budget == 0 {
             return 0;
         }
-        let keys: Vec<[u8; 32]> = self
-            .bubbles
-            .entries()
-            .into_iter()
-            .filter(|(_, b)| b.dirty)
-            .map(|(k, _)| *k)
-            .collect();
+        let mut keys: Vec<[u8; 32]> = Vec::new();
+        let after = if self.expand_cursor == [0u8; 32] {
+            None
+        } else {
+            Some(self.expand_cursor)
+        };
+        // index: budgeted keyed cursor over dirty bubbles
+        let last = self.dirty.for_each_from(after.as_ref(), budget, |k, _| {
+            keys.push(*k);
+        });
+        if let Some(k) = last {
+            self.expand_cursor = k;
+        }
         let mut spent = 0usize;
         for k in keys {
             if spent >= budget {
@@ -582,6 +581,11 @@ impl Contemplation {
             }
             if let Some(b) = self.bubbles.get_mut(&k) {
                 spent += b.expand_with(atlas, rotors, budget - spent);
+                if !b.dirty {
+                    self.dirty.remove(&k);
+                }
+            } else {
+                self.dirty.remove(&k);
             }
         }
         spent
@@ -605,31 +609,32 @@ impl Contemplation {
         let mut new_classes = 0u64;
         let mut spoken: Vec<Element> = Vec::new();
         let bubble_keys: Vec<[u8; 32]> = keys.entries().into_iter().map(|(k, _)| *k).collect();
+        // index: by_chart fiber at the word's chart and peels
         for bk in &bubble_keys {
             if fills as usize >= cap {
                 break;
             }
-            let max_d = self.complex.degrees.len();
-            for d in 1..max_d {
+            // index: link of this bubble
+            let cells: Vec<CechCell> = self.complex.link_of(bk);
+            for cell in cells {
                 if fills as usize >= cap {
                     break;
                 }
-                let cells: Vec<CechCell> = self.complex.link(bk, d);
-                for cell in cells {
-                    if fills as usize >= cap {
-                        break;
-                    }
-                    let key = cell.key();
-                    let outcome = if d == 1 && !cell.coefficient.is_identity() {
-                        match &word_rotor {
-                            Some(g) if *g == cell.coefficient || g.inverse().as_ref() == Some(&cell.coefficient) => {
-                                self.complex.fill_by_gauge(&key, g)
-                            }
-                            _ => self.complex.fill(&key),
+                if cell.degree() == 0 {
+                    continue;
+                }
+                let key = cell.key();
+                let d = cell.degree();
+                let outcome = if d == 1 && !cell.coefficient.is_identity() {
+                    match &word_rotor {
+                        Some(g) if *g == cell.coefficient || g.inverse().as_ref() == Some(&cell.coefficient) => {
+                            self.complex.fill_by_gauge(&key, g)
                         }
-                    } else {
-                        self.complex.fill(&key)
-                    };
+                        _ => self.complex.fill(&key),
+                    }
+                } else {
+                    self.complex.fill(&key)
+                };
                     match outcome {
                         Fill::Filled(gamma) => {
                             fills += 1;
@@ -678,7 +683,6 @@ impl Contemplation {
                         }
                         Fill::Open => {}
                     }
-                }
             }
         }
         (fills, self.formed, new_classes, spoken)
@@ -864,6 +868,7 @@ impl Contemplation {
                 potential,
                 volume,
                 dirty,
+                cursor: [0; 32],
             };
             c.admit_incidence(key, &bubble);
             c.bubbles.insert(key, bubble);
@@ -945,5 +950,51 @@ mod tests {
         let back = Contemplation::from_bytes(&bytes, &mut pos).expect("THT1");
         assert_eq!(back.len(), 1);
         assert_eq!(back.potential(), c.potential());
+    }
+
+    /// Hold, expand, and the quote-chart peel of one thought do not grow
+    /// with N unrelated atlas words.
+    #[test]
+    fn work_of_one_thought_is_independent_of_n() {
+        use crate::network::nerve::work;
+        use crate::transducer::element::from_residual;
+        use crate::transducer::germinate::germinate;
+        let run = |n: usize| -> (u64, u64, u64) {
+            let mut atlas = Stalks::default();
+            for i in 2..n + 2 {
+                let before: Vec<(i64, i64, u8)> = (0..i as i64).map(|c| (0, c, 1u8)).collect();
+                let after: Vec<(i64, i64, u8)> = (0..i as i64).map(|c| (0, c, 2u8)).collect();
+                let w = from_residual(&germinate(&before, &after).unwrap());
+                atlas.admit(&stalk::invariant_of(&w), w.address());
+            }
+            let mut c = Contemplation::new();
+            work::reset();
+            c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
+            let hold = work::total();
+            work::reset();
+            let _ = c.expand_all(&atlas, &Keyed::new(), 4);
+            let expand = work::total();
+            work::reset();
+            let mut charts = 0usize;
+            c.bubbles.for_each(|_, b| {
+                let mut cur = stalk::invariant(&b.remainder);
+                loop {
+                    if b.cover.contains(&cur.key()) {
+                        charts += 1;
+                    }
+                    if cur.0.is_empty() {
+                        break;
+                    }
+                    cur = cur.peel();
+                }
+            });
+            let quote = work::total();
+            assert!(charts > 0);
+            (hold, expand, quote)
+        };
+        let a = run(32);
+        let b = run(128);
+        eprintln!("work thought N=32 {a:?} N=128 {b:?}");
+        assert_eq!(a, b, "4N differs by zero: {a:?} vs {b:?}");
     }
 }

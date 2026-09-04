@@ -276,6 +276,13 @@ impl Stratum {
         }
     }
 
+    fn branches_at(&self, axes: &[u64]) -> Option<&Keyed<Stratum>> {
+        match axes.split_first() {
+            None => Some(&self.branches),
+            Some((&a, rest)) => self.branches.get(&axis_key(a)).and_then(|s| s.branches_at(rest)),
+        }
+    }
+
     fn collect_members(&self, out: &mut Vec<[u8; 32]>) {
         self.members.for_each(|k, _| out.push(*k));
         self.branches.for_each(|_, s| s.collect_members(out));
@@ -368,6 +375,28 @@ impl Stalks {
                 Invariant(axes)
             })
             .collect()
+    }
+
+    /// Budgeted one-level children of `inv`, resumed from `after` (a child
+    /// invariant key). The last visited child key is returned as the cursor.
+    pub fn each_child(
+        &self,
+        inv: &Invariant,
+        after: Option<&[u8; 32]>,
+        budget: usize,
+        mut f: impl FnMut(Invariant),
+    ) -> Option<[u8; 32]> {
+        let branches = self.root.branches_at(&inv.0);
+        let Some(branches) = branches else {
+            return after.copied();
+        };
+        let last = branches.for_each_from(after, budget, |k, _| {
+            let a = axis_of(k);
+            let mut axes = inv.0.clone();
+            axes.push(a);
+            f(Invariant(axes));
+        });
+        last
     }
 
     /// Every address under `inv`, including finer charts. A trie collect.

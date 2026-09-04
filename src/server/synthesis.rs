@@ -208,6 +208,7 @@ pub fn quote(
                 &view.composites,
                 &view.prior,
                 view.gens.0,
+                None,
             );
             k.lock().ok()?.seal_closure(view.gens, measured)
         }

@@ -1326,26 +1326,23 @@ impl Entity {
     pub fn quote(&mut self) -> io::Result<YieldQuote> {
         let thought_charts: Vec<crate::transducer::stalk::Invariant> = {
             let mut charts = Vec::new();
+            // index: held bubbles; each cover is a peel of its invariant
             self.contemplation.bubbles.for_each(|_, b| {
                 let inv = crate::transducer::stalk::invariant(&b.remainder);
-                for p in inv.prefixes() {
-                    if b.cover.contains(&p.key()) {
-                        charts.push(p);
+                let mut cur = inv;
+                loop {
+                    if b.cover.contains(&cur.key()) {
+                        charts.push(cur.clone());
                     }
+                    if cur.0.is_empty() {
+                        break;
+                    }
+                    cur = cur.peel();
                 }
             });
             charts
         };
-        let charts = if thought_charts.is_empty() {
-            self.epigenome
-                .atlas()
-                .strata()
-                .into_iter()
-                .map(|(inv, _)| inv)
-                .collect()
-        } else {
-            thought_charts
-        };
+        let charts = thought_charts;
         let mut dests: crate::network::nerve::Keyed<Vec<crate::transducer::stalk::Invariant>> =
             crate::network::nerve::Keyed::new();
         let mut dest_order: Vec<String> = Vec::new();
@@ -1581,9 +1578,13 @@ impl Entity {
         let cap = crate::physics::spend_unit() as usize;
         let atlas = self.epigenome.atlas().clone();
         let mut rotors = crate::network::nerve::Keyed::new();
-        for w in self.epigenome.genome() {
-            if let Some(r) = crate::transducer::cech::rotor_of(w) {
-                rotors.insert(w.address(), r);
+        let inv = crate::transducer::stalk::invariant_of(word);
+        // index: atlas fiber at the peeled chart
+        for addr in atlas.fiber(&inv.peel()) {
+            if let Some(w) = self.epigenome.word_at(&addr) {
+                if let Some(r) = crate::transducer::cech::rotor_of(w) {
+                    rotors.insert(addr, r);
+                }
             }
         }
         let _ = self.contemplation.expand_all(&atlas, &rotors, cap);

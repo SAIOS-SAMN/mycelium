@@ -107,8 +107,45 @@ impl<V> Node<V> {
         match self {
             Node::Leaf(k, v) => f(k, v),
             Node::Branch { children, .. } => {
+                // index: the two children of a PATRICIA branch (fixed arity)
                 for c in children.iter().flatten() {
                     c.for_each(f);
+                }
+            }
+        }
+    }
+
+    fn for_each_from<F: FnMut(&[u8; 32], &V)>(
+        &self,
+        after: Option<&[u8; 32]>,
+        started: &mut bool,
+        left: &mut usize,
+        last: &mut Option<[u8; 32]>,
+        f: &mut F,
+    ) {
+        if *left == 0 {
+            return;
+        }
+        match self {
+            Node::Leaf(k, v) => {
+                if !*started {
+                    if after.map_or(true, |a| k > a) {
+                        *started = true;
+                    } else {
+                        return;
+                    }
+                }
+                f(k, v);
+                *last = Some(*k);
+                *left -= 1;
+            }
+            Node::Branch { children, .. } => {
+                // index: the two children of a PATRICIA branch (fixed arity)
+                for c in children.iter().flatten() {
+                    c.for_each_from(after, started, left, last, f);
+                    if *left == 0 {
+                        return;
+                    }
                 }
             }
         }
@@ -162,6 +199,49 @@ fn remove_at<V>(slot: &mut Option<Box<Node<V>>>, key: &[u8; 32]) -> Option<V> {
     removed
 }
 
+/// Work counters for the enumeration gate. Incremented in test builds on
+/// Keyed get/insert, Rotor::geo, and cech::extend.
+#[cfg(test)]
+pub mod work {
+    use std::cell::Cell;
+    thread_local! {
+        static GETS: Cell<u64> = const { Cell::new(0) };
+        static INSERTS: Cell<u64> = const { Cell::new(0) };
+        static GEOS: Cell<u64> = const { Cell::new(0) };
+        static EXTENDS: Cell<u64> = const { Cell::new(0) };
+    }
+    pub fn reset() {
+        GETS.with(|c| c.set(0));
+        INSERTS.with(|c| c.set(0));
+        GEOS.with(|c| c.set(0));
+        EXTENDS.with(|c| c.set(0));
+    }
+    pub fn snapshot() -> (u64, u64, u64, u64) {
+        (
+            GETS.with(|c| c.get()),
+            INSERTS.with(|c| c.get()),
+            GEOS.with(|c| c.get()),
+            EXTENDS.with(|c| c.get()),
+        )
+    }
+    pub fn total() -> u64 {
+        let (a, b, c, d) = snapshot();
+        a.saturating_add(b).saturating_add(c).saturating_add(d)
+    }
+    pub fn count_get() {
+        GETS.with(|c| c.set(c.get().saturating_add(1)));
+    }
+    pub fn count_insert() {
+        INSERTS.with(|c| c.set(c.get().saturating_add(1)));
+    }
+    pub fn count_geo() {
+        GEOS.with(|c| c.set(c.get().saturating_add(1)));
+    }
+    pub fn count_extend() {
+        EXTENDS.with(|c| c.set(c.get().saturating_add(1)));
+    }
+}
+
 impl<V> Keyed<V> {
     pub fn new() -> Self {
         Keyed::default()
@@ -170,6 +250,8 @@ impl<V> Keyed<V> {
     /// Bind `key` to `value`; a held key is rebound. Returns the value
     /// displaced, if any.
     pub fn insert(&mut self, key: [u8; 32], value: V) -> Option<V> {
+        #[cfg(test)]
+        work::count_insert();
         let Some(root) = self.root.as_deref() else {
             self.root = Some(Box::new(Node::Leaf(key, value)));
             self.n = 1;
@@ -187,6 +269,8 @@ impl<V> Keyed<V> {
     }
 
     pub fn get(&self, key: &[u8; 32]) -> Option<&V> {
+        #[cfg(test)]
+        work::count_get();
         self.root.as_deref()?.get(key)
     }
 
@@ -220,6 +304,27 @@ impl<V> Keyed<V> {
         if let Some(root) = self.root.as_deref() {
             root.for_each(&mut f);
         }
+    }
+
+    /// Budgeted walk in trie order from a keyed cursor: skip keys `<= after`,
+    /// visit at most `budget` entries, return the last key visited so the
+    /// next stroke resumes. `after = None` starts at the first key.
+    pub fn for_each_from<F: FnMut(&[u8; 32], &V)>(
+        &self,
+        after: Option<&[u8; 32]>,
+        budget: usize,
+        mut f: F,
+    ) -> Option<[u8; 32]> {
+        if budget == 0 {
+            return after.copied();
+        }
+        let mut started = after.is_none();
+        let mut left = budget;
+        let mut last = after.copied();
+        if let Some(root) = self.root.as_deref() {
+            root.for_each_from(after, &mut started, &mut left, &mut last, &mut f);
+        }
+        last
     }
 
     /// Every bound (key, value), in key order — a walk of the relation for
@@ -465,6 +570,18 @@ impl Cover {
     /// not the word count. Read, never chosen; the room vector is untouched.
     pub fn multiplicity(&self, lane: u8, inv: &crate::transducer::stalk::Invariant) -> usize {
         self.fiber(lane, inv).len()
+    }
+
+    /// Retract one hypha from one chart path.
+    pub fn retract(
+        &mut self,
+        lane: u8,
+        inv: &crate::transducer::stalk::Invariant,
+        hypha: &[u8; 32],
+    ) {
+        let lane = lane & 3;
+        self.lanes[lane as usize].retract_path(&inv.0, hypha);
+        self.refresh_root(lane);
     }
 
     /// Prefix split: one hypha leaves `old` and is admitted under `new`.

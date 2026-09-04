@@ -728,25 +728,14 @@ fn bind_complex(germs: &[Germ], faces: &[Face]) -> Complex {
 }
 
 fn first_class(c: &Complex) -> Option<(Rotor, usize)> {
+    // index: keyed unfilled cells of this nerve
     for (d, key) in c.unfilled() {
         if let Some(cl) = c.class(&key) {
             return Some(cl);
         }
         let _ = d;
     }
-    for (d, layer) in c.degrees.iter().enumerate().skip(2) {
-        let mut found = None;
-        layer.for_each(|k, cell| {
-            if found.is_none() && !cell.coefficient.is_identity() {
-                found = Some((cell.coefficient.clone(), d));
-            }
-            let _ = k;
-        });
-        if found.is_some() {
-            return found;
-        }
-    }
-    None
+    c.classes().into_iter().next()
 }
 
 /// After-support of a germ: the input positions carried by its versor.
@@ -845,17 +834,20 @@ pub fn assemble(mut germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
         }
     }
     let mut meet: Keyed<()> = Keyed::new();
-    at.for_each(|_, germs_here| {
+    // index: keyed fiber of the cell trie; pairs at a cell, peel to 4-neighbours
+    at.for_each(|k, germs_here| {
+        // index: germs on this cell (the fiber)
         for a in 0..germs_here.len() {
             for b in a + 1..germs_here.len() {
                 meet.insert(germ_pair_key(germs_here[a], germs_here[b]), ());
             }
         }
-    });
-    for (i, sup) in supports.iter().enumerate() {
-        for &(r, c) in sup {
-            for (dr, dc) in [(-1, 0), (1, 0), (0, -1), (0, 1)] {
-                if let Some(others) = at.get(&cell_key(r + dr, c + dc)) {
+        let r = i64::from_le_bytes(k[..8].try_into().unwrap_or([0; 8]));
+        let c = i64::from_le_bytes(k[8..16].try_into().unwrap_or([0; 8]));
+        // index: four adjacent cells (peel of the residual)
+        for (dr, dc) in [(-1, 0), (1, 0), (0, -1), (0, 1)] {
+            if let Some(others) = at.get(&cell_key(r + dr, c + dc)) {
+                for &i in germs_here {
                     for &j in others {
                         if j != i {
                             meet.insert(germ_pair_key(i, j), ());
@@ -864,7 +856,7 @@ pub fn assemble(mut germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
                 }
             }
         }
-    }
+    });
     let mut faces = Vec::new();
     let pairs: Vec<(usize, usize)> = meet
         .entries()
@@ -923,28 +915,32 @@ pub fn apply_gauge(n: &mut Nerve, gamma: &[Word]) {
 pub fn close(n: &mut Nerve) -> bool {
     let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     let mut all_filled = true;
+    // index: germs of this nerve (its vertices)
     for i in 0..n.germs.len() {
         n.complex.coboundary_on_link(&germ_vertex(i), |_| [1, 0, 0, 0]);
-        for d in 1..n.complex.degrees.len() {
-            for cell in n.complex.link(&germ_vertex(i), d) {
-                let k = cell.key();
-                if seen.contains(&k) {
-                    continue;
+        // index: link of this germ
+        for cell in n.complex.link_of(&germ_vertex(i)) {
+            if cell.degree() == 0 {
+                continue;
+            }
+            let k = cell.key();
+            if seen.contains(&k) {
+                continue;
+            }
+            seen.insert(k, ());
+            let d = cell.degree();
+            match n.complex.fill(&k) {
+                Fill::Filled(_) => {}
+                Fill::Congruent(r, _) => {
+                    n.class = Some((r, d));
+                    all_filled = false;
                 }
-                seen.insert(k, ());
-                match n.complex.fill(&k) {
-                    Fill::Filled(_) => {}
-                    Fill::Congruent(r, _) => {
-                        n.class = Some((r, d));
-                        all_filled = false;
-                    }
-                    Fill::Class(r) => {
-                        n.class = Some((r, d));
-                        all_filled = false;
-                    }
-                    Fill::Open => {
-                        all_filled = false;
-                    }
+                Fill::Class(r) => {
+                    n.class = Some((r, d));
+                    all_filled = false;
+                }
+                Fill::Open => {
+                    all_filled = false;
                 }
             }
         }
@@ -1007,6 +1003,7 @@ pub fn as_element(n: &Nerve) -> Option<Element> {
     }
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+    // index: keyed cells of this nerve (tape projection)
     for layer in &n.complex.degrees {
         layer.for_each(|_, cell| match &cell.fill {
             Fill::Filled(gamma) if !gamma.is_identity() => {
@@ -1324,20 +1321,15 @@ pub fn replay_nerve(e: &Element) -> Option<&'static str> {
             }
         }
     }
-    for (d, layer) in n.complex.degrees.iter().enumerate() {
-        let mut bad = false;
-        layer.for_each(|_, cell| {
-            if cell.coefficient.is_identity() || d == 0 {
-                return;
+    // index: keyed unfilled cells of this nerve
+    for (d, key) in n.complex.unfilled() {
+        if d == 0 {
+            continue;
+        }
+        if n.class.is_none() && e.torsion().is_empty() {
+            if n.complex.class(&key).is_none() {
+                return Some("sentence has a non-coboundary coefficient with no class");
             }
-            match &cell.fill {
-                Fill::Filled(_) | Fill::Congruent(_, _) | Fill::Class(_) => {}
-                Fill::Open if n.class.is_none() && e.torsion().is_empty() => bad = true,
-                Fill::Open => {}
-            }
-        });
-        if bad {
-            return Some("sentence has a non-coboundary coefficient with no class");
         }
     }
     let derived = bind_complex(&n.germs, &n.faces);
