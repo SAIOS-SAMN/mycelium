@@ -1538,12 +1538,13 @@ impl Kernel {
         if self.basis_index.get(addr).is_none() {
             self.basis_push(spoken.clone(), [0; 32]);
         }
-        self.offered.insert(*addr, ());
         Ok(spoken)
     }
 
     /// Run first vantage on every provisional not yet Offered. Returns the
-    /// words that passed (to be signed and Offered on the nerve).
+    /// words that passed (to be signed and Offered on the nerve). First
+    /// vantage itself is not an Offer — `offered` is marked only here, when
+    /// the stroke is ready to speak on the nerve.
     pub fn court_stroke(&mut self) -> Vec<([u8; 32], Element, Vec<[u8; 32]>, [u64; 4], u64)> {
         let keys: Vec<[u8; 32]> = self
             .provisional
@@ -1554,6 +1555,7 @@ impl Kernel {
         let mut out = Vec::new();
         for addr in keys {
             if let Ok(spoken) = self.court_first(&addr) {
+                self.offered.insert(addr, ());
                 let voices = self
                     .treasury
                     .escrowed_awards()
@@ -1570,7 +1572,8 @@ impl Kernel {
     }
 
     /// Second vantage: a peer's Offer, already signature-verified.
-    /// Replay through `rule`. Glue (Consilient / Admitted / Attached) → UPHELD + Installed payload.
+    /// Replay through `rule`. Glue (Consilient / Attached / Dialect / Admitted)
+    /// → UPHELD + Installed payload. Dialect is recorded, never punished.
     pub fn accept_offer(&mut self, addr: &[u8; 32], spoken: Element, deflation: [u64; 4]) -> Option<Element> {
         if let Some(reason) = crate::verdict::blind_replay(&spoken) {
             eprintln!("  court offer slash {:02x}{:02x}… {reason}", addr[0], addr[1]);
@@ -1585,15 +1588,12 @@ impl Kernel {
             Some(&deflation),
         );
         match outcome {
-            crate::verdict::Ruling::Dialect(_) => {
-                eprintln!("  court dialect on {:02x}{:02x}…", addr[0], addr[1]);
-                None
-            }
             crate::verdict::Ruling::Slashed(reason) => {
                 eprintln!("  court offer slash {:02x}{:02x}… {reason}", addr[0], addr[1]);
                 None
             }
-            crate::verdict::Ruling::Consilient(_)
+            crate::verdict::Ruling::Dialect(_)
+            | crate::verdict::Ruling::Consilient(_)
             | crate::verdict::Ruling::Admitted(_)
             | crate::verdict::Ruling::Attached { .. } => {
                 if self.basis_index.get(addr).is_none() {
@@ -1635,9 +1635,10 @@ impl Kernel {
         self.court_federation.push((*addr, spoken));
     }
 
-    /// Active cover: charts of open listings and of the ruled language, lane 0.
+    /// Active cover: the identity fibre (so Čech overlap is non-empty after
+    /// the first Cover), plus charts of open listings and of the ruled language.
     pub fn active_cover(&self) -> Vec<(u8, crate::transducer::stalk::Invariant)> {
-        let mut out = Vec::new();
+        let mut out = vec![(0, crate::transducer::stalk::invariant_of(&Element::identity(2)))];
         for (p, _) in &self.pending {
             out.push((0, crate::transducer::stalk::invariant_of(p)));
         }
@@ -4600,6 +4601,42 @@ mod tests {
             }
             o => panic!("expected Fragmented installs, got {o:?}"),
         }
+    }
+
+    /// Court organ: two-voice quorum is local dialect, not an Offer.
+    /// The stroke emits the Offer; a second kernel's replay is the
+    /// second vantage (Dialect/Admitted/Attached/Consilient all pass);
+    /// a third admits Installed only after replaying the word.
+    #[test]
+    fn court_organ_offer_then_installed_on_replay() {
+        let mut home = Kernel::new();
+        let mut peer = Kernel::new();
+        let mut third = Kernel::new();
+        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+        let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+        assert_eq!(home.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+        assert!(matches!(home.ingest(&a, &b, [2; 32]), Outcome::Installed(0)));
+        let addr = home.basis()[0].address();
+        assert!(!home.offered(&addr), "first vantage is not an Offer");
+        let offers = home.court_stroke();
+        assert_eq!(offers.len(), 1, "the stroke speaks the Offer");
+        assert!(home.offered(&addr));
+        assert!(home.court_stroke().is_empty(), "an Offer is spoken once");
+        let (addr, spoken, _, deflation, _) = offers.into_iter().next().unwrap();
+        assert!(deflation.iter().any(|&x| x > 0), "deflation rides the Offer");
+        let installed = peer.accept_offer(&addr, spoken.clone(), deflation);
+        assert!(installed.is_some(), "second vantage passes on replay");
+        assert!(peer.basis_len() >= 1, "the word is language on the second organ");
+        assert!(
+            third.accept_installed(&addr, spoken.clone()),
+            "third admits after replay"
+        );
+        let mut forged = spoken.clone();
+        forged.mag = [999, 0, 0, 0];
+        assert!(
+            !third.accept_installed(&addr, forged),
+            "never install on a word that fails replay"
+        );
     }
 
     /// The demand codec roundtrips.

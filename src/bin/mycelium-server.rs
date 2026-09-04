@@ -587,7 +587,8 @@ fn main() {
     let (reflex_tx, reflex_rx) = std::sync::mpsc::sync_channel::<ReflexJob>(cores);
     let reflex_rx = Arc::new(Mutex::new(reflex_rx));
     let router = Arc::new(router);
-    let overlap: Arc<Mutex<Vec<([u8; 32], String, [u8; 32])>>> = Arc::new(Mutex::new(Vec::new()));
+    let overlap: Arc<Mutex<Vec<([u8; 32], String, [u8; 32], Vec<(u8, mycelium::transducer::stalk::Invariant)>)>>> =
+        Arc::new(Mutex::new(Vec::new()));
     {
         let kernel = Arc::clone(&kernel);
         let nerve_tx = nerve_tx.clone();
@@ -601,9 +602,22 @@ fn main() {
         std::thread::spawn(move || {
             let sk = ed25519_dalek::SigningKey::from_bytes(&sk_bytes);
             loop {
-                std::thread::sleep(std::time::Duration::from_millis(
-                    mycelium::physics::reserve_max().max(50),
-                ));
+                std::thread::sleep(std::time::Duration::from_secs(2));
+                // Cover first: the peer must hold this vk before an Offer
+                // can verify. The nerve thread is FIFO, one dial at a time.
+                let charts = kernel.lock().map(|k| k.active_cover()).unwrap_or_default();
+                let cover = dialogue::encode_cover(&vk, &bind, &charts);
+                let mut cover_dests = join.clone();
+                if let Ok(ov) = overlap.lock() {
+                    for (_, a, _, _) in ov.iter() {
+                        if !cover_dests.contains(a) {
+                            cover_dests.push(a.clone());
+                        }
+                    }
+                }
+                for d in cover_dests {
+                    let _ = nerve_tx.try_send((d, cover.clone()));
+                }
                 let offers = match kernel.lock() {
                     Ok(mut k) => k.court_stroke(),
                     Err(_) => continue,
@@ -619,13 +633,24 @@ fn main() {
                     let chart = mycelium::transducer::stalk::invariant_of(&spoken);
                     let dests = {
                         let ov = overlap.lock().unwrap();
-                        let hits: Vec<String> = ov.iter().map(|(_, a, _)| a.clone()).collect();
-                        if hits.is_empty() {
-                            rendezvous(&*blake3::hash(&chart.0.iter().flat_map(|x| x.to_le_bytes()).collect::<Vec<_>>()).as_bytes(), &nerve_id, &router)
-                                .into_iter()
-                                .collect()
-                        } else {
+                        let hits: Vec<String> = ov
+                            .iter()
+                            .filter(|(_, _, _, chs)| chs.iter().any(|(_, inv)| inv == &chart))
+                            .map(|(_, a, _, _)| a.clone())
+                            .collect();
+                        if !hits.is_empty() {
                             hits
+                        } else if let Some(d) = rendezvous(
+                            &*blake3::hash(
+                                &chart.0.iter().flat_map(|x| x.to_le_bytes()).collect::<Vec<_>>(),
+                            )
+                            .as_bytes(),
+                            &nerve_id,
+                            &router,
+                        ) {
+                            vec![d]
+                        } else {
+                            join.clone()
                         }
                     };
                     for d in dests {
@@ -636,19 +661,6 @@ fn main() {
                         addr[0],
                         addr[1]
                     );
-                }
-                let charts = kernel.lock().map(|k| k.active_cover()).unwrap_or_default();
-                let cover = dialogue::encode_cover(&vk, &bind, &charts);
-                let mut dests = join.clone();
-                if let Ok(ov) = overlap.lock() {
-                    for (_, a, _) in ov.iter() {
-                        if !dests.contains(a) {
-                            dests.push(a.clone());
-                        }
-                    }
-                }
-                for d in dests {
-                    let _ = nerve_tx.try_send((d, cover.clone()));
                 }
             }
         });
@@ -743,14 +755,35 @@ fn main() {
 
         if kind == dialogue::ACT_COVER {
             if let Some((vk, from, charts)) = dialogue::decode_cover(&frame.body) {
-                let ours = kernel.lock().map(|k| k.active_cover()).unwrap_or_default();
-                let hit = charts.iter().any(|(_, inv)| ours.iter().any(|(_, o)| o == inv));
                 let pid = id_of(&from);
+                let mut forward: Vec<String> = Vec::new();
                 if let Ok(mut ov) = overlap.lock() {
-                    ov.retain(|(id, _, _)| *id != pid);
-                    if hit || ours.is_empty() {
-                        ov.push((pid, from.clone(), vk));
+                    let fresh = ov.iter().all(|(id, _, _, _)| *id != pid);
+                    ov.retain(|(id, _, _, _)| *id != pid);
+                    ov.push((pid, from.clone(), vk, charts));
+                    if fresh {
+                        eprintln!(
+                            "  cover from {:02x}{:02x}… {from} vk {:02x}{:02x}…",
+                            pid[0],
+                            pid[1],
+                            vk[0],
+                            vk[1]
+                        );
+                        for (_, a, _, _) in ov.iter() {
+                            if a != &from && !forward.contains(a) {
+                                forward.push(a.clone());
+                            }
+                        }
+                        for j in &join_peers {
+                            if j != &from && !forward.contains(j) {
+                                forward.push(j.clone());
+                            }
+                        }
                     }
+                }
+                let body = frame.body.clone();
+                for d in forward {
+                    let _ = nerve_tx.try_send((d, body.clone()));
                 }
                 let _ = s.write_all(&Frame { lane: frame.lane, body: Vec::new() }.encode().unwrap_or_default());
             }
@@ -760,7 +793,8 @@ fn main() {
             if let Some((addr, bytes, voices, deflation, kstep, sig)) = dialogue::decode_offer(&frame.body) {
                 let prefix = dialogue::offer_signed_prefix(&addr, &bytes, &voices, &deflation, kstep);
                 let known = overlap.lock().map(|ov| ov.clone()).unwrap_or_default();
-                let ok = known.iter().any(|(_, _, vk)| mycelium::court::identity::verify(vk, &prefix, &sig));
+                // Offer is the other organ's first vantage — never self.
+                let ok = known.iter().any(|(_, _, vk, _)| mycelium::court::identity::verify(vk, &prefix, &sig));
                 let mut installed_body = None;
                 if ok {
                     let mut pos = 0usize;
@@ -778,7 +812,13 @@ fn main() {
                     }
                 }
                 if let Some(body) = installed_body {
-                    let dests: Vec<String> = overlap.lock().map(|ov| ov.iter().map(|(_, a, _)| a.clone()).collect()).unwrap_or_default();
+                    let mut dests: Vec<String> = overlap
+                        .lock()
+                        .map(|ov| ov.iter().map(|(_, a, _, _)| a.clone()).collect())
+                        .unwrap_or_default();
+                    if dests.is_empty() {
+                        dests = join_peers.clone();
+                    }
                     for d in dests {
                         let _ = nerve_tx.try_send((d, body.clone()));
                     }
@@ -790,14 +830,17 @@ fn main() {
         if kind == dialogue::ACT_INSTALLED {
             if let Some((addr, bytes, sig_home, sig_peer)) = dialogue::decode_installed(&frame.body) {
                 let prefix = dialogue::installed_signed_prefix(&addr, &bytes);
-                let known = overlap.lock().map(|ov| ov.clone()).unwrap_or_default();
-                let nsig = known.iter().filter(|(_, _, vk)| {
-                    mycelium::court::identity::verify(vk, &prefix, &sig_home)
-                        || mycelium::court::identity::verify(vk, &prefix, &sig_peer)
-                }).count();
-                let self_ok = mycelium::court::identity::verify(&hypha_key.vk_bytes(), &prefix, &sig_home)
-                    || mycelium::court::identity::verify(&hypha_key.vk_bytes(), &prefix, &sig_peer);
-                if nsig + (self_ok as usize) >= 2 {
+                let mut vks = vec![hypha_key.vk_bytes()];
+                if let Ok(ov) = overlap.lock() {
+                    for (_, _, vk, _) in ov.iter() {
+                        if !vks.contains(vk) {
+                            vks.push(*vk);
+                        }
+                    }
+                }
+                let home_vk = vks.iter().find(|vk| mycelium::court::identity::verify(vk, &prefix, &sig_home)).copied();
+                let peer_vk = vks.iter().find(|vk| mycelium::court::identity::verify(vk, &prefix, &sig_peer)).copied();
+                if home_vk.is_some() && peer_vk.is_some() && home_vk != peer_vk {
                     let mut pos = 0usize;
                     if let Some(spoken) = mycelium::transducer::element::Element::from_bytes(&bytes, &mut pos) {
                         if let Ok(mut k) = kernel.lock() {
