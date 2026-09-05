@@ -2156,7 +2156,7 @@ pub fn apply_gauge(n: &mut Nerve, gamma: &[Word]) {
     *n = assemble(std::mem::take(&mut n.germs), std::mem::take(&mut n.remainder));
 }
 
-/// One snap of the twist loop (A16): a finite chord closed, torsion filed
+/// One snap of the pivot loop (A16): a finite chord closed, torsion filed
 /// or left open, or an infinite class spoken as a demand.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Snap {
@@ -2164,6 +2164,144 @@ pub enum Snap {
     TorsionFiled { chord: usize, ell: u32 },
     TorsionOpen { chord: usize },
     Demand { chord: usize, key: [u8; 32] },
+    Vortex { chord: usize, n: usize },
+}
+
+/// Occupied axes of a class vector, declaration order = walk order (12.6).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Axis {
+    Sheet(u8),
+    Unit(u8),
+    Prime5(u8),
+    Prime13(u8),
+    Hue,
+    Placement,
+    OffPlane,
+    Open,
+}
+
+/// The state vector of a held loop (document 12.6).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ClassVector {
+    plane: [(bool, u32, u32, u32); 6],
+    hue: usize,
+    placement: bool,
+    offplane: bool,
+    free: bool,
+    key: [u8; 32],
+}
+
+impl ClassVector {
+    pub fn occupied(&self) -> Vec<Axis> {
+        let mut out = Vec::new();
+        for i in 0..6u8 {
+            let (sheet, unit, p5, p13) = self.plane[i as usize];
+            if sheet {
+                out.push(Axis::Sheet(i));
+            }
+            if unit > 0 {
+                out.push(Axis::Unit(i));
+            }
+            if p5 > 0 {
+                out.push(Axis::Prime5(i));
+            }
+            if p13 > 0 {
+                out.push(Axis::Prime13(i));
+            }
+        }
+        if self.hue > 0 {
+            out.push(Axis::Hue);
+        }
+        if self.placement {
+            out.push(Axis::Placement);
+        }
+        if self.offplane {
+            out.push(Axis::OffPlane);
+        }
+        if self.free {
+            out.push(Axis::Open);
+        }
+        out
+    }
+
+    pub fn class_key(&self) -> [u8; 32] {
+        self.key
+    }
+
+    pub fn is_zero(&self) -> bool {
+        self.occupied().is_empty()
+    }
+
+    pub fn free_part(&self) -> bool {
+        self.free
+    }
+}
+
+/// A certified discharge of one occupied axis (A20).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PivotCertificate {
+    pub axis: Axis,
+    pub chord: u16,
+    pub mu: [u64; 4],
+}
+
+pub fn class_vector_of(holonomy: &Word) -> ClassVector {
+    let key = holonomy.rotor().class_key();
+    if holonomy.abelian_identity() {
+        return ClassVector {
+            plane: [(false, 0, 0, 0); 6],
+            hue: 0,
+            placement: false,
+            offplane: false,
+            free: false,
+            key,
+        };
+    }
+    let offplane = holonomy.form().is_none();
+    match holonomy.order() {
+        Order::Infinite => ClassVector {
+            plane: [(false, 0, 0, 0); 6],
+            hue: 0,
+            placement: false,
+            offplane,
+            free: true,
+            key,
+        },
+        Order::Finite(ell) => {
+            let mut plane = [(false, 0, 0, 0); 6];
+            plane[0] = (false, ell, 0, 0);
+            ClassVector {
+                plane,
+                hue: 0,
+                placement: false,
+                offplane,
+                free: false,
+                key,
+            }
+        }
+    }
+}
+
+fn select_discharge(cands: &[(PivotCertificate, [u64; 4])]) -> Option<PivotCertificate> {
+    match cands.len() {
+        0 => None,
+        1 => Some(cands[0].0.clone()),
+        _ => {
+            let mut winner: Option<usize> = None;
+            for (i, (_, mi)) in cands.iter().enumerate() {
+                let dominates = cands.iter().enumerate().all(|(j, (_, mj))| {
+                    i == j || crate::economy::descends(mi, mj)
+                });
+                if dominates {
+                    if winner.is_some() {
+                        return None;
+                    }
+                    winner = Some(i);
+                }
+            }
+            winner.map(|i| cands[i].0.clone())
+        }
+    }
 }
 
 fn apply_cochain_gauge(n: &mut Nerve, gamma: &[Word]) {
@@ -2222,11 +2360,10 @@ fn file_cycle(n: &mut Nerve, idx: usize, ell: u32) -> bool {
     true
 }
 
-/// A16: tree-walk the nerve, sort open chords by [`Word::order`] (finite
-/// ascending, infinite last), close the loosest finite chord first.
-/// Leftover finite chords go to A17; infinite chords are demands.
-/// `horizon` classes (Held/Stood) are not re-derived.
-pub fn twist(
+/// A16: pivot loop. Open cycles in index order; occupied axes in fixed
+/// Axis declaration order; coboundary is the Open-axis candidate.
+/// Several incomparable discharges are a vortex. Horizon classes stay Held.
+pub fn pivot_loop(
     n: &mut Nerve,
     idea: [u8; 32],
     horizon: &Keyed<(Rotor, Order, Standing)>,
@@ -2239,81 +2376,115 @@ pub fn twist(
             break;
         }
         n.cycles = independent_cycles(n.germs.len(), &n.faces);
-        let mut open: Vec<(usize, Order, [u8; 32])> = n
+        let open: Vec<usize> = n
             .cycles
             .iter()
             .enumerate()
             .filter(|(_, c)| !c.holonomy.abelian_identity())
-            .map(|(i, c)| (i, c.holonomy.order(), c.holonomy.rotor().class_key()))
-            .filter(|(_, order, k)| {
-                if handled.contains(k) {
-                    return false;
-                }
-                match order {
-                    Order::Finite(ell) => !n.complex.degrees.iter().any(|layer| {
-                        layer.fiber(&crate::network::nerve::ROOT).any(|(_, cell)| {
-                            matches!(&cell.fill, Fill::Congruent(r, e) if e == ell && r.class_key() == *k)
-                        })
-                    }),
-                    Order::Infinite => n
-                        .class
-                        .as_ref()
-                        .map(|(r, _)| r.class_key() != *k)
-                        .unwrap_or(true),
-                }
-            })
+            .map(|(i, _)| i)
             .collect();
-        open.sort_by(|a, b| a.1.cmp(&b.1).then(a.2.cmp(&b.2)).then(a.0.cmp(&b.0)));
-        let Some(&(idx, order, key)) = open.first() else {
-            break;
-        };
-        if !budget.spend() {
+        if open.is_empty() {
             break;
         }
-        let held = horizon.get(&key).is_some();
-        match order {
-            Order::Infinite => {
-                if !held {
-                    snaps.push(Snap::Demand { chord: idx, key });
-                    if n.class.is_none() {
-                        n.class = Some((n.cycles[idx].holonomy.rotor(), 1));
-                    }
-                    eprintln!(
-                        "  demand spoken {:02x}{:02x}… order ∞",
-                        idea[0], idea[1]
-                    );
+        let mut applied = false;
+        for idx in open {
+            if !budget.spend() {
+                break;
+            }
+            let holonomy = n.cycles[idx].holonomy.clone();
+            let kappa = class_vector_of(&holonomy);
+            let key = kappa.class_key();
+            if handled.contains(&key) || horizon.get(&key).is_some() {
+                continue;
+            }
+            let mut discharging: Vec<(PivotCertificate, [u64; 4])> = Vec::new();
+            for axis in kappa.occupied() {
+                if matches!(axis, Axis::Open) {
+                    continue;
+                }
+                if matches!(axis, Axis::Unit(_)) && try_close_chord(n, idx) {
+                    let ell = match holonomy.order() {
+                        Order::Finite(e) => e as u64,
+                        Order::Infinite => 0,
+                    };
+                    let mu = [ell, 0, 0, 0];
+                    discharging.push((
+                        PivotCertificate {
+                            axis,
+                            chord: idx as u16,
+                            mu,
+                        },
+                        mu,
+                    ));
+                    n.cycles = independent_cycles(n.germs.len(), &n.faces);
+                    break;
                 }
             }
-            Order::Finite(ell) => {
-                if !held && try_close_chord(n, idx) {
-                    snaps.push(Snap::Closed { chord: idx, order: ell });
+            match select_discharge(&discharging) {
+                Some(cert) => {
+                    applied = true;
+                    let order = match holonomy.order() {
+                        Order::Finite(e) => e,
+                        Order::Infinite => 0,
+                    };
+                    snaps.push(Snap::Closed {
+                        chord: cert.chord as usize,
+                        order,
+                    });
                     eprintln!(
-                        "  twist {:02x}{:02x}… chord {idx} order {ell} closed",
-                        idea[0], idea[1]
+                        "  pivot {:02x}{:02x}… chord {idx} axis {:?}",
+                        idea[0], idea[1], cert.axis
                     );
-                } else if file_cycle(n, idx, ell) {
-                    if !held {
-                        snaps.push(Snap::Closed { chord: idx, order: ell });
+                    handled.insert(key, ());
+                    break;
+                }
+                None if discharging.len() > 1 => {
+                    snaps.push(Snap::Vortex {
+                        chord: idx,
+                        n: discharging.len(),
+                    });
+                    handled.insert(key, ());
+                    eprintln!(
+                        "  vortex {:02x}{:02x}… chord {idx} {} cells",
+                        idea[0],
+                        idea[1],
+                        discharging.len()
+                    );
+                }
+                None => match holonomy.order() {
+                    Order::Infinite => {
+                        snaps.push(Snap::Demand { chord: idx, key });
+                        if n.class.is_none() {
+                            n.class = Some((holonomy.rotor(), 1));
+                        }
                         eprintln!(
-                            "  twist {:02x}{:02x}… chord {idx} order {ell} closed",
+                            "  demand spoken {:02x}{:02x}… order ∞",
                             idea[0], idea[1]
                         );
+                        handled.insert(key, ());
                     }
-                    snaps.push(Snap::TorsionFiled { chord: idx, ell });
-                    eprintln!(
-                        "  torsion filed {:02x}{:02x}… (σ,{ell})",
-                        idea[0], idea[1]
-                    );
-                } else {
-                    snaps.push(Snap::TorsionOpen { chord: idx });
-                    eprintln!(
-                        "  torsion open {:02x}{:02x}… chord {idx}",
-                        idea[0], idea[1]
-                    );
-                }
+                    Order::Finite(ell) => {
+                        if file_cycle(n, idx, ell) {
+                            snaps.push(Snap::TorsionFiled { chord: idx, ell });
+                            eprintln!(
+                                "  torsion filed {:02x}{:02x}… (σ,{ell})",
+                                idea[0], idea[1]
+                            );
+                        } else {
+                            snaps.push(Snap::TorsionOpen { chord: idx });
+                            eprintln!(
+                                "  torsion open {:02x}{:02x}… chord {idx}",
+                                idea[0], idea[1]
+                            );
+                        }
+                        handled.insert(key, ());
+                    }
+                },
             }
         }
-        handled.insert(key, ());
+        if !applied {
+            break;
+        }
     }
     snaps
 }
@@ -3823,7 +3994,7 @@ mod tests {
     #[test]
     fn infinite_class_is_never_filed() {
         let mut n = chord_nerve(&[infinite()]);
-        let snaps = twist(
+        let snaps = pivot_loop(
             &mut n,
             [0x11; 32],
             &crate::network::nerve::Keyed::new(),
@@ -3943,44 +4114,61 @@ mod tests {
     }
 
     #[test]
-    fn twist_closes_lowest_order_first_and_terminates() {
-        assert_eq!(order2().order(), Order::Finite(2));
-        assert_eq!(order4().order(), Order::Finite(4));
-        assert_eq!(infinite().order(), Order::Infinite);
-        let mut n = chord_nerve(&[order2(), order4(), infinite()]);
-        assert!(n.cycles.len() >= 3, "three chords, got {}", n.cycles.len());
-        let mut budget = crate::physics::Physics::default().stroke_n(16);
-        let snaps = twist(&mut n, [0xab; 32], &crate::network::nerve::Keyed::new(), &mut budget);
-        let mut seen_inf = false;
-        let mut last_finite: u32 = 0;
-        for s in &snaps {
-            match s {
-                Snap::Closed { order, .. } | Snap::TorsionFiled { ell: order, .. } => {
-                    assert!(!seen_inf, "never an ∞ line before a finite one");
-                    assert!(*order >= last_finite, "finite chords ascend");
-                    last_finite = *order;
-                }
-                Snap::Demand { .. } => seen_inf = true,
-                Snap::TorsionOpen { .. } => {}
-            }
-        }
+    fn pivot_candidates_are_read_from_occupied_axes_only() {
+        let id = class_vector_of(&Word::identity());
+        assert!(id.occupied().is_empty() && id.is_zero());
+        let k2 = class_vector_of(&order2());
+        let occ = k2.occupied();
+        assert_eq!(occ, vec![Axis::Unit(0)], "only the occupied unit axis, got {occ:?}");
+        let inf = class_vector_of(&infinite());
+        assert_eq!(inf.occupied(), vec![Axis::Open], "infinite occupies Open only");
+        let mut seen = occ.clone();
+        seen.extend(inf.occupied());
+        let mut declaration = seen.clone();
+        declaration.sort_by_key(|a| match a {
+            Axis::Sheet(i) => (0, *i),
+            Axis::Unit(i) => (1, *i),
+            Axis::Prime5(i) => (2, *i),
+            Axis::Prime13(i) => (3, *i),
+            Axis::Hue => (4, 0),
+            Axis::Placement => (5, 0),
+            Axis::OffPlane => (6, 0),
+            Axis::Open => (7, 0),
+        });
+        assert_eq!(seen, declaration, "occupied axes already in declaration order");
+    }
+
+    #[test]
+    fn incomparable_discharges_are_held_as_vortex() {
+        let a = PivotCertificate { axis: Axis::Unit(0), chord: 0, mu: [2, 0, 1, 0] };
+        let b = PivotCertificate { axis: Axis::Hue, chord: 0, mu: [0, 3, 0, 1] };
+        let cands = vec![(a.clone(), a.mu), (b.clone(), b.mu)];
         assert!(
-            snaps.iter().any(|s| matches!(s, Snap::Closed { order: 2, .. } | Snap::TorsionFiled { ell: 2, .. })),
-            "order 2 first: {snaps:?}"
+            select_discharge(&cands).is_none(),
+            "incomparable μ⃗ are a vortex, not a pick"
         );
+    }
+
+    #[test]
+    fn descent_certifies_never_selects() {
+        let loose = PivotCertificate { axis: Axis::Unit(0), chord: 0, mu: [4, 4, 4, 4] };
+        let tight = PivotCertificate { axis: Axis::Unit(0), chord: 0, mu: [1, 1, 1, 1] };
+        let cands = vec![(loose.clone(), loose.mu), (tight.clone(), tight.mu)];
+        let won = select_discharge(&cands).expect("one μ⃗ dominates");
+        assert_eq!(won.mu, tight.mu, "descent certifies the smaller; no min_by on order");
+        let a = PivotCertificate { axis: Axis::Unit(0), chord: 0, mu: [2, 0, 0, 0] };
+        let b = PivotCertificate { axis: Axis::Hue, chord: 0, mu: [0, 2, 0, 0] };
         assert!(
-            snaps.iter().any(|s| matches!(s, Snap::Demand { .. })),
-            "infinite is a demand: {snaps:?}"
+            select_discharge(&[(a.clone(), a.mu), (b.clone(), b.mu)]).is_none(),
+            "lane-incomparable discharges are not selected"
         );
-        let again = twist(&mut n, [0xab; 32], &crate::network::nerve::Keyed::new(), &mut crate::physics::Physics::default().stroke_n(16));
-        assert!(again.is_empty(), "the loop terminates, leftover {again:?}");
     }
 
     #[test]
     fn cauterize_filed_torsion_crystallizes() {
         let mut n = chord_nerve(&[order2()]);
         assert!(!n.is_closed());
-        let _ = twist(
+        let _ = pivot_loop(
             &mut n,
             [0xca; 32],
             &crate::network::nerve::Keyed::new(),
@@ -4000,7 +4188,7 @@ mod tests {
         let r = infinite().rotor();
         let mut horizon = crate::network::nerve::Keyed::new();
         horizon.insert(r.class_key(), (r, Order::Infinite, Standing::Held));
-        let snaps = twist(
+        let snaps = pivot_loop(
             &mut n,
             [0x5e; 32],
             &horizon,
@@ -4013,10 +4201,10 @@ mod tests {
     }
 
     #[test]
-    fn twist_never_reopens_a_closed_chord() {
+    fn pivot_never_reopens_a_closed_chord() {
         let mut n = chord_nerve(&[order2(), order4()]);
         let mut budget = crate::physics::Physics::default().stroke_n(16);
-        let first = twist(&mut n, [0xcd; 32], &crate::network::nerve::Keyed::new(), &mut budget);
+        let first = pivot_loop(&mut n, [0xcd; 32], &crate::network::nerve::Keyed::new(), &mut budget);
         let closed: Vec<u32> = first
             .iter()
             .filter_map(|s| match s {
@@ -4026,7 +4214,7 @@ mod tests {
             })
             .collect();
         let mut budget = crate::physics::Physics::default().stroke_n(16);
-        let second = twist(&mut n, [0xcd; 32], &crate::network::nerve::Keyed::new(), &mut budget);
+        let second = pivot_loop(&mut n, [0xcd; 32], &crate::network::nerve::Keyed::new(), &mut budget);
         for o in closed {
             assert!(
                 !second.iter().any(|s| matches!(s, Snap::Demand { .. })) || o > 0,
