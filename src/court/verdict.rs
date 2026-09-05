@@ -21,6 +21,9 @@ use crate::transducer::element::{self, Element, Versor};
 use crate::transducer::stalk::{self, Stalks};
 use crate::transducer::toroid::{self, HolonomicLoopWitness};
 
+/// Spoken torsion period does not re-derive against the mesh's class.
+pub const REFUSE_NOT_NATURAL: &'static str = "not natural";
+
 /// Deterministic re-derivation of a spoken word from its own evidence
 /// (the contradiction docket). Returns None when the word replays clean;
 /// Some(reason) when the speech was false. A residual word re-derives from

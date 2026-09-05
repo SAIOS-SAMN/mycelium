@@ -2679,6 +2679,70 @@ impl Kernel {
     /// Vertices are covering hyphas. Degree 0 is the peer's section; degree 1
     /// edges to held sections; then coboundary_on_link climbs while volume
     /// persists.
+    /// Match spoken torsion cycles against the chart's Congruent cells.
+    /// Same class key and ℓ is consilience; same key different ℓ is
+    /// [`crate::verdict::REFUSE_NOT_NATURAL`]; a new finite key files.
+    fn court_torsion(
+        &mut self,
+        spoken: &Element,
+        inv: &crate::transducer::stalk::Invariant,
+        self_id: [u8; 32],
+        peer: [u8; 32],
+    ) -> Option<&'static str> {
+        if spoken.torsion().is_empty() {
+            return None;
+        }
+        let rep = spoken
+            .letters()
+            .map(|l| l.spelling.word.rotor())
+            .unwrap_or_else(crate::transducer::alphabet::Rotor::identity);
+        let rep_key = rep.class_key();
+        for (_sigma, ell, _) in spoken.torsion() {
+            let mut matched = false;
+            let mut conflict = false;
+            let mut log_key = rep_key;
+            if let Some(cx) = self.complexes.get(&inv.key()) {
+                for layer in &cx.degrees {
+                    for (_, cell) in layer.fiber(&crate::network::nerve::ROOT) {
+                        if let crate::transducer::cech::Fill::Congruent(g, ell2) = &cell.fill {
+                            let ck = g.class_key();
+                            if ck == rep_key && *ell2 != *ell {
+                                conflict = true;
+                                log_key = ck;
+                            }
+                            if *ell2 == *ell {
+                                matched = true;
+                                log_key = ck;
+                            }
+                        }
+                    }
+                }
+            }
+            if conflict {
+                eprintln!(
+                    "  court torsion refused {:02x}{:02x}… ℓ {ell}",
+                    log_key[0], log_key[1]
+                );
+                return Some(crate::verdict::REFUSE_NOT_NATURAL);
+            }
+            if matched {
+                eprintln!(
+                    "  court torsion consilient {:02x}{:02x}… ℓ {ell}",
+                    log_key[0], log_key[1]
+                );
+            } else {
+                if let Some(cx) = self.complexes.get_mut(&inv.key()) {
+                    cx.file_congruent(self_id, peer, rep.clone(), *ell);
+                }
+                eprintln!(
+                    "  court torsion filed {:02x}{:02x}… ℓ {ell}",
+                    rep_key[0], rep_key[1]
+                );
+            }
+        }
+        None
+    }
+
     pub fn glue_fetched(
         &mut self,
         spoken: Element,
@@ -2875,6 +2939,10 @@ impl Kernel {
             }
         }
         self.complexes.insert(inv.key(), cx);
+        if let Some(reason) = self.court_torsion(&spoken, &inv, self_id, peer) {
+            self.heard_mark(addr, &inv);
+            return Glue::Slashed(reason);
+        }
         if filled {
             self.record_gamma(&fill_addrs, &fill_gamma);
             self.pay_cell_volume(&inv, &fill_addrs);
@@ -6082,6 +6150,49 @@ mod tests {
             .next()
             .map(|(_, row)| row.4);
         assert_eq!(got, Some(ck), "class key survives the ledger");
+    }
+
+    #[test]
+    fn torsion_consilient_or_filed_or_refused() {
+        use crate::transducer::element::{from_residual, FIBER_SPATIAL};
+        use crate::transducer::germinate::germinate;
+        let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
+        let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
+        let mut spoken = from_residual(&germinate(&a, &b).unwrap());
+        spoken.puncture(vec![(2, 3), (3, 1), (1, 2)]);
+        assert_eq!(spoken.torse(), 1);
+        let inv = crate::transducer::stalk::invariant_of(&spoken);
+        let mut k = Kernel::new();
+        k.complexes
+            .insert(inv.key(), crate::transducer::cech::Complex::new());
+        assert_eq!(k.court_torsion(&spoken, &inv, [1; 32], [2; 32]), None, "first hearing files");
+        let filed = k.complexes.get(&inv.key()).is_some_and(|cx| {
+            cx.degrees.iter().any(|layer| {
+                layer.fiber(&crate::network::nerve::ROOT).any(|(_, cell)| {
+                    matches!(cell.fill, crate::transducer::cech::Fill::Congruent(_, 3))
+                })
+            })
+        });
+        assert!(filed, "court torsion filed ℓ 3");
+        assert_eq!(
+            k.court_torsion(&spoken, &inv, [1; 32], [2; 32]),
+            None,
+            "second hearing is consilient"
+        );
+        let mut k2 = Kernel::new();
+        let mut cx = crate::transducer::cech::Complex::new();
+        cx.file_congruent(
+            [1; 32],
+            [2; 32],
+            crate::transducer::alphabet::Rotor::identity(),
+            4,
+        );
+        k2.complexes.insert(inv.key(), cx);
+        assert_eq!(
+            k2.court_torsion(&spoken, &inv, [1; 32], [2; 32]),
+            Some(crate::verdict::REFUSE_NOT_NATURAL),
+            "same class different ℓ is not natural"
+        );
     }
 
     /// A restart must not docket Δ⃗ = 0: deflation records survive the
