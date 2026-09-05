@@ -2342,10 +2342,27 @@ Input: `R: Rotor`, coefficients `c[0..16]` by blade mask.
 Equality: `R ≡ S` iff `canonical(R) = canonical(S)` coefficientwise, iff
 `R·S⁻¹` is a nonzero scalar of **either sign**. The sign is quotiented
 because the language is the action `R X R̃ / (R R̃)`, on which `−R` and `R`
-agree, and because §28.1 already identifies the quarter turn's fourth power
-with the identity. `Rotor::projective_eq` (alphabet.rs 268) requires a
-positive scalar today and must accept a negative one; `Rotor::normalised`
-(249) performs step 2 and must add step 3. Cost: 16 rational divisions.
+agree (`(λR) X (λR̃) / (λ² R R̃)` for any `λ ∈ ℚ×`), and because §28.1
+already identifies the quarter turn's fourth power with the identity.
+`Rotor::projective_eq` (alphabet.rs 268) requires a positive scalar today
+and must accept a negative one; `Rotor::normalised` (249) performs step 2
+and must add step 3. Cost: 16 rational divisions.
+
+**Structure.** A rotor is even: of the 16 blade masks only the scalar
+(mask `0`), the six bivectors (masks `3, 5, 6, 9, 10, 12`) and the
+pseudoscalar (mask `15`) may be nonzero, eight rational coordinates. A
+nonzero coefficient on an odd mask means the element is not a rotor; A1
+refuses it before step 1. The canonical byte form may equivalently be
+written as coprime integers over one positive common denominator,
+`R' = (1/D) Σ_A n_A e_A` with `gcd(n_0, …, n_7, D) = 1`, `D > 0`, and the
+pivot `n_k = D`; this is the same class representative as step 3 and
+either byte layout is acceptable provided every node uses the same one
+(`put_q` over the eight reduced rationals is the one in the tree).
+
+**Not adopted.** A word with no plane-closed geodesic is **not** the
+identity and is never keyed as `1`; it is a vertex whose only canonical
+form is this one. Any "identity fallback" for off-plane words forks the
+language at exactly the words that carry the most information.
 
 ### 59.2 A2 — Off-plane normal form
 
@@ -2355,9 +2372,17 @@ is A1. The **tape** kept for a vertex is the shortest one known, found so:
 
 1. **Run reduction.** Split the tape into maximal runs of letters on one
    slot plane (identity letters removed). Replace each run by its
-   per-plane canonical tape (A3 → `PlaneForm::to_word`). Adjacent runs on
-   one plane created by removals are merged and reduced again. Terminates:
-   each pass strictly shortens or leaves the tape unchanged.
+   per-plane canonical tape (A3 → `PlaneForm::to_word`). Then apply the
+   one commutation the alphabet's grammar gives (`relators()`, alphabet.rs
+   705: quarter turns order four, complementary planes commute, a sheet
+   conjugates a rotation to its inverse, primes infinite): letters on
+   **complementary** planes commute, and the complementary pairs are
+   exactly `(0,1)|(2,3)`, `(0,2)|(1,3)`, `(0,3)|(1,2)`; letters on planes
+   sharing an axis do not commute and are never reordered. Move a run
+   leftward past runs on its complementary plane until it meets a run on
+   its own plane, merge, reduce again. Terminates: each pass strictly
+   shortens the tape or leaves it unchanged, and the reordering is bounded
+   by the number of runs.
 2. **Budgeted descent** (`shorter_tape(word, budget)`): breadth-first over
    tapes from the identity in letter-index order, visited set a
    `Keyed<()>` of A1 keys, stopping when `budget.spend()` fails or a tape
@@ -2366,10 +2391,20 @@ is A1. The **tape** kept for a vertex is the shortest one known, found so:
 3. Output: the shorter of the two, or the input if neither shortened it.
 
 A tape produced here is a **retirement** (§3.8): it replaces a longer tape
-for the same vertex and is never claimed minimal. `Word::normal_form` (466)
-keeps its per-plane path for plane-closed words and calls step 1 for the
-rest; step 2 runs only in `retire` and in the court's replay of a
-`Rewrite` word.
+for the same vertex. It is the shortlex-minimal tape for the vertex only
+when the breadth-first search completed the whole depth at which it was
+found within the budget; otherwise it is a shorter tape and nothing more,
+and the log line says which (`retired {addr} shortlex` versus `retired
+{addr} shorter`). `Word::normal_form` (466) keeps its per-plane path for
+plane-closed words and calls step 1 for the rest; step 2 runs only in
+`retire` and in the court's replay of a `Rewrite` word.
+
+**Not adopted.** No complete rewriting system is assumed for the
+mixed-plane group: a relation of the shape `(g_i g_j)^{m} = 1` between
+letters on planes sharing an axis does not hold (the primes have infinite
+order and their products on adjacent planes generate a dense subgroup), so
+a Knuth–Bendix completion is not run and its termination is not claimed.
+The only relators are those of `relators()`.
 
 ### 59.3 A3 — Canonical plane form
 
@@ -2377,6 +2412,15 @@ rest; step 2 runs only in `retire` and in the court's replay of a
 `rem_euclid(4)`, with 3 written as −1) before returning. `PlaneForm`'s
 equality compares reduced forms only; `conjugacy_key` (750) and
 `sentence::chart_of` (1885) read the reduced form. No other change.
+
+**Orders.** Only the unit quarter turns have finite order: four
+projectively, so their exponents live in `{0, 1, 2, −1}`. The `(3,4,5)`
+and `(5,12,13)` letters have infinite order and their exponents are
+unreduced integers. The sheet parity is `Z/2`. A plane form is the whole
+vector `(parity, rot[0..17])` and equality is equality of that whole
+reduced vector; it is not a single `(plane, exponent)` pair, and a
+statement "every generator has finite order `N_Π`" is false for eleven of
+the seventeen letters.
 
 ### 59.4 A4 — Canonical conformal versor
 
@@ -2387,9 +2431,20 @@ Input: `V: Mv` (cga.rs 46), `Versor = Mv`.
    `c[i] < 0`. Output `V'` with `c'[i] = +1`.
 3. Equality: `Mv::projective_eq(a, b)` = `projective_ratio(a, b)` (330) is
    `Some(λ)` with `λ ≠ 0`, either sign, because the action is the
-   normalised sandwich.
+   normalised sandwich. The ratio is `λ = ⟨a b̃⟩₀ / ⟨b b̃⟩₀`, accepted only
+   when `a b̃` has **no** component outside grade 0 (the purity check the
+   function already performs); for a null `b` (`⟨b b̃⟩₀ = 0`) the test is
+   exact componentwise proportionality.
 4. `Mv::key()` = blake3 over the canonical coefficients; `to_bytes` on the
    wire may carry any scaling, the receiver canonicalises.
+
+**Algebra.** The conformal algebra in this tree is `Cl(3,1)` over the
+basis `{e1, e2, e+, e−}` with squares `(+,+,+,−)`, `e_o = ½(e− − e+)`,
+`e_∞ = e− + e+` (cga.rs header, masks `E1 = 1, E2 = 2, EP = 4, EM = 8`).
+It is the conformal model of the sensor **plane**. A statement written for
+`Spin(4,1)` or `Cl(4,1)` describes a conformal model of 3-space and does
+not bind here; the procedure above is the same in either signature, the
+masks are not.
 
 `Mv`'s derived structural `PartialEq` is removed; `Germ`, `Face`, `Nerve`
 equality use `projective_eq` for versors and A1 for rotors.
@@ -2399,8 +2454,19 @@ equality use `projective_eq` for versors and A1 for rotors.
 Input: cells `(r, c, before, after)`.
 
 1. `min_r`, `min_c` over the cells; translate every cell by `(−min_r, −min_c)`.
-2. Sort lexicographically on `(r, c, before, after)`; dedupe.
-3. Output the chain. Empty input → empty chain.
+2. Sort lexicographically on `(r, c, before, after)`; remove exact
+   duplicates.
+3. If two cells remain on one site `(r, c)` with different `(before,
+   after)`, refuse: the chain assigns two transitions to one cell and is
+   not a description of anything. A5 never sums, merges, or strips hues;
+   whether a cell with `before == after` belongs to a chain is decided by
+   the producer (`germinate`), not here.
+4. Output the chain. Empty input → empty chain.
+
+Cells are `(r, c, before, after) ∈ Z² × hue²`: the base is the sensor
+plane and the hues are fibre coordinates. There is no third spatial
+coordinate anywhere in a chain; a procedure written for `Z³` support sets
+with summed coefficients describes a different carrier.
 
 `from_residual` (element.rs 1580) already does 1–2; A5 is that code named
 and called from every place that hashes or compares cells:
@@ -2423,6 +2489,17 @@ line `[{tag}] chart refused: ratio exceeds axis`. Nothing saturates. The
 current `ratio_axes` (blade.rs 339) drops the sign and saturates to
 `u64::MAX`; it is replaced.
 
+**Order-preserving variant, not adopted today.** The two-limb encoding
+preserves equality, which is all the atlas trie (`CoverNode`, `Stalks`)
+reads: strata are prefixes, `peel` drops the last axis, no operation
+compares two axes by magnitude. Should a future operation need numeric
+order on an axis (`r₁ < r₂ ⇔ packed(r₁) < packed(r₂)`), the exact
+encoding is the Stern–Brocot path of the rational (left/right bits from
+the root, prefix-free, terminated), packed into as many limbs as it
+needs; it is still exact and still refuses when it exceeds the limb budget.
+A single-word encoding with 31-bit numerator and denominator halves the
+range for no gain and is not used.
+
 ### 59.7 A7 — Invariant refinement coordinate
 
 Input: a class rotor `R` (A1 canonical). Output: `Option<Vec<u64>>`, the
@@ -2438,6 +2515,15 @@ axes appended to a chart on refinement.
 `coordinate_of` returns `Vec<u64>`; `refine_chart` (cognition.rs 2947)
 passes A7's output and never `Rotor::coordinate()`, which is deleted along
 with `PlaneForm::coordinate()`.
+
+**Two different `(a, p)`.** In A7, `a` and `p` are the scalar and
+pseudoscalar parts of a class **rotor** (grade invariants under
+conjugation, §52.2). The area, boundary length and second-moment trace of
+a **body** are different quantities; they are already the body's moduli
+through `Harmonics::of` (components, holes, turns, isoperimetric,
+anisotropy, spread, quartic, gauge; ear.rs 48) and are packed by A6 in M4
+step 1. A refinement axis is computed from the class, never from the
+shape of the bodies that happened to carry it.
 
 ### 59.8 A8 — RMP1 migration
 
@@ -2458,11 +2544,15 @@ Runs once per store at load (`Kernel::restore` cognition.rs 5018,
    `dialect`, `taught_up`, `glued`, `obstructions`, `expressed_index`.
 4. Collision (two old keys → one new): `escrowed` sums μ⃗ lane-wise and
    unions voices (conservation); `provisional` keeps the earlier
-   `provisional_tu`; `ruled` keeps one member; `heard` unions; `deflations`
-   keeps the ruled entry's; `dialect` sums `uses`, keeps the later
-   `last_used_k`; genome `expression` sums; every other carrier keeps the
-   first. The log line `court remap {old}→{new} merged {carrier}` is
-   written per merge.
+   `provisional_tu`; `ruled` keeps one member and `court_federation` one
+   record (the earlier ruling stands, the later is logged as merged, never
+   re-adjudicated); `heard` unions; `deflations` keeps the ruled entry's;
+   `discoverers` keeps the discoverer with the earlier `standing_tu`;
+   `spoken` unions the voices per listing; `dialect` sums `uses`, keeps the
+   later `last_used_k`; genome `expression` sums; every other carrier keeps
+   the first. Provenance is therefore a union and value is conserved; no
+   merge mints, slashes, or re-rules. The log line `court remap
+   {old}→{new} merged {carrier}` is written per merge.
 5. Write the `RMP1` section `{count u32, (old [32], new [32])*}` after the
    carriers. `resolve_form`, `word_at`, the client `word_at` consult it for
    any miss. Count hits per aperture; when an aperture passes with zero
@@ -2474,10 +2564,20 @@ after.
 
 ### 59.9 A9 — Canonical selection serialisation
 
-`Sel` (anchor.rs 31): `Sel::to_bytes` writes one tag byte per variant in
-declaration order, then each field in declaration order with the encoders
-already used elsewhere (`i64` LE, `u8`, `put_q`). `verdict::sel_key` (374)
-= blake3 of that; the `format!("{s:?}")` form is deleted.
+`Sel` (anchor.rs 31) is a term algebra: `Hue(u8)`, `Comp(Sel, u8)`,
+`Delta(Sel)`, `Star(Sel)`, `Ext(Sel, u8)`, `Inter(Sel, Sel)`,
+`Minus(Sel, Sel)`, `Flood(Sel, Sel)`, `ArgExt(Sel, u8)`, in that
+declaration order. `Sel::to_bytes` writes the variant's tag byte
+(`0..=8` in that order), then its fields in declaration order: a `u8`
+argument as one byte, a `Sel` argument recursively. No length prefixes are
+needed because the grammar is prefix-free; no padding, no alignment, no
+variable-length integer encoding (the tree uses fixed little-endian
+integers everywhere and this keeps to it). `Inter` is not reordered: `A ∩
+B` and `B ∩ A` are distinct terms with one support, and the court's
+`derive_pi` looks for a common **term**, so canonicalising the algebra is
+a separate move (a normal form for `Sel`) that is not part of A9.
+`verdict::sel_key` (374) = blake3 of `to_bytes`; the `format!("{s:?}")`
+form is deleted.
 
 ### 59.10 A10 — Peer identity by verifying key
 
@@ -2490,15 +2590,36 @@ already used elsewhere (`i64` LE, `u8`, `put_q`). `verdict::sel_key` (374)
 3. Two socket strings with one `vk` are one peer; the later string replaces
    the earlier in `addrs`. `rendezvous`, `closest`, `home` read `vk` keys
    only; `pending_addrs` is never a routing target.
+4. Per-peer state is keyed by `vk`: the transport outbox, the measured RTT
+   deadline, in-flight leases (`t_leases`), and the quote receipt-chain
+   head. A second socket arriving for a `vk` that already has one joins
+   that state; the older socket is closed once its in-flight frames have
+   drained, and nothing is re-sent or re-leased.
+
+Trust is the ed25519 signature on the cover digest (`court::identity::sign`,
+`verify`, identity.rs 44, 77) and nothing else: there is no handshake
+protocol in this tree and none is introduced by A10. A digest whose
+signature does not verify under the claimed `vk` is dropped before any
+carrier is touched.
 
 ### 59.11 A11 — Rendezvous by listing key
 
-For a percept (server `judge`, mycelium-server.rs 1061): decode the chain
-and frame; A5; `key = element::listing_key(chain, frame)` (element.rs, the
-framed residual's address by M2); destination = `nerve::home(cover, inv,
-mag, …)` for `inv = invariant_of` the framed residual. `blake3(pbytes[32..])`
-is deleted. The same key is the listing id the book already uses, so the
-rendezvous and the docket agree.
+For a percept (server `judge`, mycelium-server.rs 1061):
+
+1. Decode the chain and the frame rationals `(h_in, w_in, h_out, w_out)`.
+2. A5 on the chain.
+3. `key = element::listing_key(chain, frame)`: the framed residual's
+   address by M2 (`from_residual_framed(..).address()`).
+4. `inv = invariant_of(framed residual)`: the **body chart** of M4 step 1
+   (harmonics through A6), and `mag` its measured lanes.
+5. Destination = `nerve::home(cover, inv, mag, rooms, addrs, self)` (788):
+   fiber intersection on the occupied lanes, then per-lane room, then
+   identity. The trie is traversed on the body chart's axes; a class axis
+   (A7) is never a routing coordinate, because a percept has no class yet.
+6. Forward once to the destination; if the destination is self, docket.
+
+`blake3(pbytes[32..])` is deleted. The same key is the listing id the book
+already uses, so the rendezvous and the docket agree by construction.
 
 ### 59.12 A12 — Comprehension by factorisation
 
@@ -2524,12 +2645,29 @@ relation `4·e_u = 0`):
 4. Verify: multiply the tape's rotors, A1-compare with `g`. Mismatch is a
    bug, not a refusal; assert in debug, refuse in release.
 
+**Smith normal form, equivalently.** With `S = U·G·V = diag(d_1..d_r,
+0..0)` over ℤ, membership of `r` is: `y = r·V` has `y_j ≡ 0 (mod d_j)` for
+`j ≤ r` and `y_j = 0` for `j > r`; the exponents are `x = (y_j / d_j)·U`.
+HNF and SNF decide the same lattice and the implementor may use either;
+HNF needs one transform and is the one bound above.
+
+**The plane remainder is canonical.** When membership fails on the plane,
+the HNF reduction leaves a residue vector `r_rem` that is **unique** (the
+reduced representative of `r` modulo the lattice under the HNF's row
+ordering). The remainder rotor `g_rem` is the plane element `(s_rem,
+r_rem)` with `s_rem = s` in the even case and `s_rem = 0` after the odd
+generator has been divided out, and it satisfies `g = f · g_rem` for the
+factor `f` the reduction found. `Comprehension` returns `Novel(g_rem)`
+with `f` recorded as the understood part. This is the exact boundary
+demand: the part of the word the mind's basis does not span, with no
+choice in it.
+
 **Off-plane case**: budgeted coset descent. States are A1 keys; from the
 identity, apply `b_i` and `b_i⁻¹` in index order; visited `Keyed<()>`;
 stop on `budget.spend()` failure or on reaching `g`'s key. The path is the
-factorisation. Failure returns `Novel(g)` with `g` unchanged; nothing is
-discarded and no partial factor is kept as a residual, because no metric
-says which partial is nearer.
+factorisation. Failure returns `Novel(g)` with `g` unchanged; off the
+plane no partial factor is kept as a residual, because there is no HNF and
+no metric to say which partial is nearer, so the whole word is the demand.
 
 Binding: `client/sdk.rs::Epigenome::comprehend` (856) for connections
 replaces the single-representative `transition` test with A12 over the
@@ -2544,6 +2682,46 @@ It is stated as the sequence of component calls, with its invariant, its
 binding, and its failure behaviour. Nothing in the codebase decides
 identity, address, chart, class, comprehension, or routing except through
 one of these seven.
+
+Composition hierarchy (arrows are "calls"; every path to a key passes
+through M1):
+
+```
+        A3 canonical plane form
+              │
+              ▼
+        per-plane geodesic tape
+              │
+              ▼
+        A2 run reduction (+ budgeted descent in retire)
+              │
+              ▼
+        A1 canonical rotor form ◄──── A4 canonical conformal versor
+              │
+              ▼
+   ┌──────────────────────────────┐
+   │   M1 VERTEX IDENTITY ORACLE  │
+   └──────────────────────────────┘
+        │              │               │
+        ▼              ▼               ▼
+   A5 chains       A6 axes         A12 factorisation
+        │              │               │
+        ▼              ▼               ▼
+   ┌──────────┐   ┌──────────────┐  ┌────────────────┐
+   │ M2 ADDR  │   │ M4 CHARTS    │  │ M6 COMPREHEND  │
+   └──────────┘   └──────────────┘  └────────────────┘
+        │              │  A7 ▲
+        │              ▼      │
+        │         ┌──────────────┐
+        │         │ M5 CLASSES   │
+        │         └──────────────┘
+        ├───────────────┬──────────────┐
+        ▼               ▼              ▼
+   ┌──────────┐   ┌──────────────┐  A8 → RMP1
+   │ M7 WIRE  │   │ M3 COLD BOOT │
+   │ A9 A10 A11│  └──────────────┘
+   └──────────┘
+```
 
 ### M1 — Vertex Identity Oracle
 
@@ -2690,8 +2868,13 @@ new.
 3. Connections: A12 over the fiber's basis. Success →
    `Comprehension::Understood(indices)` with the factorisation tape recorded
    as the expression; a class → `Dialect(g)` when the factorisation
-   succeeds up to a gauge that does not close; failure → `Novel`.
+   succeeds up to a gauge that does not close; failure on the plane →
+   `Novel(g_rem)` with the canonical HNF remainder as the demand and the
+   factor `f` counted as expression; failure off the plane → `Novel(g)`.
 4. Residual words: `locate` as today; the remainder is the novelty.
+5. The demand emitted for a `Novel` is exactly `g_rem` (or `g`), spoken as
+   a connection with no chain; the hypha dockets it as it dockets any
+   word. No mind ever emits "unknown": it emits the element it lacks.
 
 **Invariant.** A word the mind holds under any spelling is `Understood`;
 `genome.contains(address)` is never the test.
@@ -2722,6 +2905,33 @@ spelling is understood; a tampered tape is refused by re-derivation.
 **Binding.** `mycelium-server.rs::judge`, `serve_control`,
 `admit_peer_digest`; `sdk.rs::absorb_digest`, `add_peer`, `ask_peers`;
 `verdict::blind_replay`; `dialogue` decoders.
+
+### 60.8 Corrections to the relayed blueprint
+
+A blueprint for these algorithms was relayed on 2026-09-05. Its structure
+matches §59–§60 and the additions above are taken from it (even-grade
+support and the integer canonical form in A1, complementary-plane
+commutation in A2, the projective-ratio formula in A4, the order-preserving
+packing variant in A6, provenance union in A8, lease merge in A10, the
+routing steps in A11, SNF and the canonical remainder in A12, the
+composition diagram). The following statements in it are wrong for this
+tree and are **not** adopted; an implementor who follows them forks the
+language or builds against an algebra that is not here:
+
+| relayed statement | why not | ruling |
+|---|---|---|
+| off-plane words with no plane-closed geodesic "evaluate to `R = 1`" | they are vertices; keying them as identity merges every mixed-plane word into one | A1 keys them; §59.1 |
+| a complete rewriting system with relators `(g_i g_j)^{m} = 1`, Knuth–Bendix confluence, "unique minimal-length" tape | primes have infinite order; letters on planes sharing an axis generate a dense subgroup; no such relators, no termination claim | A2 step 2 is a budgeted retirement; shortlex only when the depth completed |
+| every plane generator has finite order `N_Π`, exponents mod `N_Π` | true only of the six unit turns (order 4); eleven letters are infinite order | A3 |
+| `PlaneForm` equality as one `(plane, exponent)` pair | a plane form is the whole 17-vector plus parity | A3 |
+| conformal versors in `Spin(4,1)`/`Cl(4,1)` | the tree's conformal algebra is `Cl(3,1)` over `{e1,e2,e+,e−}`, the plane's model | A4 |
+| chains as `Z³` support sets with summed coefficients and stripped zeros | cells are `(r,c,before,after)` in `Z² × hue²`; conflicting sites are refused, hues are never summed | A5 |
+| 31-bit numerator/denominator in one word; Stern–Brocot for total order | half the range for no gain; no operation needs axis order today | A6 keeps two exact limbs with refusal |
+| refinement axis from area, boundary length, second-moment trace `(a²/w, p²/w)` | those are body moduli (already `Harmonics`); the class axis uses the class rotor's scalar and pseudoscalar parts | A7 |
+| `Sel = (predicate, stratum, harmonic_bound)`, LEB128 | `Sel` is the term algebra of anchor.rs 31; fixed little-endian as everywhere else | A9 |
+| Noise handshake, `P¹(F_25519)` | there is no handshake; trust is the ed25519 signature on the cover digest | A10 |
+| rendezvous trie traversal by the A7 class axes | a percept has no class; routing is by the body chart of M4 step 1 | A11 |
+| exponent groups as a direct product of finite cyclic groups solved mod `N` | the plane group is `(Z/4 × Z^k) ⋊ Z/2`; HNF/SNF over ℤ with `4e_u` as a relator | A12 |
 
 ## 61. Binding summary for Part VII
 
