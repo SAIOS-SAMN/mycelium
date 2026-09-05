@@ -1739,15 +1739,9 @@ mod tests {
             f
         };
         let mut outer = Form::default();
-        let gi = outer
+        let _gi = outer
             .glue(&inner, [0xabu8; 32], Word::identity(), [1, 0, 0, 0])
             .expect("glue");
-        outer.faces.push(FormFace {
-            i: 0,
-            j: gi,
-            g_ij: Word::from_letters(&[(q, false)]),
-        });
-        outer.loops = Form::loops_of(&outer.faces, outer.vertices.len());
         assert!(outer.to_nerve().is_none(), "a glued form has no nerve");
         assert!(outer.remainder.is_empty(), "no remainder to hold()");
         let mut c = Contemplation::new();

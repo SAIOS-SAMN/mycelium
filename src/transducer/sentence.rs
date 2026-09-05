@@ -836,6 +836,9 @@ pub struct Form {
     /// Filed torsion cycles, keyed by class key. The form owns this
     /// carrier; the element reads it whole.
     pub torsion: Keyed<(Vec<(u8, u8)>, u32)>,
+    /// Cited form address → glued vertex index. Written by [`Form::glue`]
+    /// and rebuilt by the decoder from Glued vertices.
+    pub glued: Keyed<u16>,
 }
 
 impl Default for Form {
@@ -851,6 +854,7 @@ impl Default for Form {
             sections: Keyed::new(),
             certificates: Vec::new(),
             torsion: Keyed::new(),
+            glued: Keyed::new(),
         }
     }
 }
@@ -945,6 +949,7 @@ impl Form {
             sections: Keyed::new(),
             certificates: Vec::new(),
             torsion,
+            glued: Keyed::new(),
         }
     }
 
@@ -1085,24 +1090,86 @@ impl Form {
         if host > 0 && d >= host {
             return None;
         }
+        let chart = chart_of_form(s);
+        if chart.0.is_empty() {
+            return None;
+        }
         let idx = self.vertices.len() as u16;
         self.vertices.push(Vertex::Glued {
             address: s_addr,
-            chart: s
-                .vertices
-                .iter()
-                .find_map(|v| match v {
-                    Vertex::Word { class, .. } => Some(class.clone()),
-                    Vertex::Glued { chart, .. } => Some(chart.clone()),
-                    _ => None,
-                })
-                .unwrap_or_default(),
+            chart,
             magnitude,
             depth: d,
-            placement,
+            placement: placement.clone(),
         });
+        self.faces.push(FormFace {
+            i: 0,
+            j: idx,
+            g_ij: placement,
+        });
+        self.glued.insert(s_addr, idx);
+        self.loops = Self::loops_of(&self.faces, self.vertices.len());
         self.depth = self.depth_of();
         Some(idx)
+    }
+
+    /// Drop the named vertices (keyed by old index), drop faces that touched
+    /// them, remap surviving faces through the old-to-new map, rebuild loops.
+    pub fn retract_vertices(&mut self, drop: &Keyed<()>) {
+        let n = self.vertices.len();
+        if n == 0 {
+            return;
+        }
+        let mut keep = vec![true; n];
+        for i in 0..n {
+            if drop.contains(&vertex_ix_key(i as u16)) && i != 0 {
+                keep[i] = false;
+            }
+        }
+        let mut old_to_new: Vec<Option<u16>> = vec![None; n];
+        let mut new_verts = Vec::new();
+        for (i, v) in self.vertices.iter().enumerate() {
+            if keep[i] {
+                old_to_new[i] = Some(new_verts.len() as u16);
+                new_verts.push(v.clone());
+            }
+        }
+        let mut new_faces = Vec::new();
+        for f in &self.faces {
+            let Some(&Some(i)) = old_to_new.get(f.i as usize) else {
+                continue;
+            };
+            let Some(&Some(j)) = old_to_new.get(f.j as usize) else {
+                continue;
+            };
+            new_faces.push(FormFace {
+                i,
+                j,
+                g_ij: f.g_ij.clone(),
+            });
+        }
+        let mut glued = Keyed::new();
+        for (k, &old_i) in self.glued.fiber(&ROOT) {
+            if let Some(&Some(ni)) = old_to_new.get(old_i as usize) {
+                glued.insert(*k, ni);
+            }
+        }
+        let mut sections = Keyed::new();
+        for (k, ix) in self.sections.fiber(&ROOT) {
+            let mapped: Vec<u16> = ix
+                .iter()
+                .filter_map(|&i| old_to_new.get(i as usize).copied().flatten())
+                .collect();
+            if !mapped.is_empty() {
+                sections.insert(*k, mapped);
+            }
+        }
+        self.vertices = new_verts;
+        self.faces = new_faces;
+        self.glued = glued;
+        self.sections = sections;
+        self.loops = Self::loops_of(&self.faces, self.vertices.len());
+        self.depth = self.depth_of();
     }
 
     /// Replace every face `g_ij` by `γ_j · g_ij · γ_i⁻¹`. Holonomies of
@@ -1845,6 +1912,12 @@ fn germ_class_key(g: &Germ) -> Vec<u8> {
         }
     }
     row
+}
+
+pub fn vertex_ix_key(i: u16) -> [u8; 32] {
+    let mut k = [0u8; 32];
+    k[..2].copy_from_slice(&i.to_le_bytes());
+    k
 }
 
 pub fn form_vertex_key(f: &Form) -> [u8; 32] {
@@ -3546,6 +3619,12 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
             torsion.insert(k, (sigma, ell));
         }
     }
+    let mut glued = Keyed::new();
+    for (i, v) in vertices.iter().enumerate() {
+        if let Vertex::Glued { address, .. } = v {
+            glued.insert(*address, i as u16);
+        }
+    }
     Some(Form {
         vertices,
         faces,
@@ -3557,6 +3636,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         sections,
         certificates,
         torsion,
+        glued,
     })
 }
 
@@ -4181,11 +4261,6 @@ mod tests {
         });
         let unfolded = f.unfold(Measure::Occupied);
         f.faces.push(FormFace {
-            i: 0,
-            j: glued,
-            g_ij: Word::identity(),
-        });
-        f.faces.push(FormFace {
             i: 1,
             j: glued,
             g_ij: w.clone(),
@@ -4327,6 +4402,83 @@ mod tests {
             "a face that names a vertex outside the form refuses"
         );
         assert!(f.regauge(&[Word::identity()]).is_none(), "a short gauge refuses");
+    }
+
+    #[test]
+    fn glue_retract_remaps_faces_and_placement_refuses() {
+        let w = Word::from_letters(&[(alphabet::LetterId::quarter((0, 1)).unwrap(), false)]);
+        let mut host = Form::default();
+        host.vertices.push(Vertex::Word {
+            address: [1u8; 32],
+            word: w.clone(),
+            rho: q1(),
+            placement: (q0(), q0()),
+            gauge: Vec::new(),
+            class: stalk::Invariant::default(),
+            contact: None,
+        });
+        host.vertices.push(Vertex::Word {
+            address: [2u8; 32],
+            word: w.clone(),
+            rho: q1(),
+            placement: (q0(), q1()),
+            gauge: Vec::new(),
+            class: stalk::Invariant::default(),
+            contact: None,
+        });
+        host.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            g_ij: host.face_of(0, 1).expect("0-1"),
+        });
+        host.faces.push(FormFace {
+            i: 1,
+            j: 2,
+            g_ij: host.face_of(1, 2).expect("1-2"),
+        });
+        host.faces.push(FormFace {
+            i: 0,
+            j: 2,
+            g_ij: host.face_of(0, 2).expect("0-2"),
+        });
+        let inner = closed_word_form(w.clone(), None);
+        let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner");
+        let gi = host
+            .glue(&inner, inner_e.address(), w.clone(), [1, 0, 0, 0])
+            .expect("glue");
+        assert_eq!(host.glued.get(&inner_e.address()).copied(), Some(gi));
+        assert_eq!(
+            host.faces.last().map(|f| (f.i, f.j)),
+            Some((0, gi)),
+            "glue writes the Frame→Glued placement face"
+        );
+        let mut drop = Keyed::new();
+        drop.insert(vertex_ix_key(1), ());
+        host.retract_vertices(&drop);
+        assert_eq!(host.vertices.len(), 3, "Frame, remaining Word, Glued");
+        for face in &host.faces {
+            assert_eq!(
+                host.face_of(face.i, face.j).as_ref(),
+                Some(&face.g_ij),
+                "every surviving face re-derives"
+            );
+        }
+        let mut taped = host.clone();
+        let mag = [1u64, 0, 0, 0];
+        let clean = as_element_form(&taped, mag).expect("tape");
+        assert_eq!(crate::court::verdict::blind_replay(&clean), Some(crate::court::verdict::REFUSE_GLUED_UNRULED));
+        let resolve = |a: &[u8; 32]| (a == &inner_e.address()).then(|| inner.clone());
+        assert_eq!(crate::court::verdict::blind_replay_with(&clean, &resolve), None);
+        let Some(fi) = taped.faces.iter().position(|f| f.i == 0 && matches!(taped.vertices.get(f.j as usize), Some(Vertex::Glued { .. }))) else {
+            panic!("placement face");
+        };
+        taped.faces[fi].g_ij = Word::identity();
+        let bad = as_element_form(&taped, mag).expect("tampered placement");
+        assert_eq!(
+            crate::court::verdict::blind_replay_with(&bad, &resolve),
+            Some(crate::court::verdict::REFUSE_FACE),
+            "a tampered placement face refuses"
+        );
     }
 
     /// The bundle's agreed shift is meaning: two translations of one linear

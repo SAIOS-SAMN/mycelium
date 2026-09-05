@@ -825,7 +825,7 @@ mod tests {
     #[test]
     fn replay_form_refuses_unruled_glue_and_replays_resolved() {
         use crate::transducer::alphabet::Word;
-        use crate::transducer::sentence::{as_element_form, FormFace};
+        use crate::transducer::sentence::as_element_form;
         let inner = closed_turn_form();
         let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner tape");
         let inner_addr = inner_e.address();
@@ -833,12 +833,6 @@ mod tests {
         let gi = outer
             .glue(&inner, inner_addr, Word::identity(), [1, 0, 0, 0])
             .expect("a depth-0 host glues a closed form");
-        outer.faces.push(FormFace {
-            i: 0,
-            j: gi,
-            g_ij: outer.face_of(0, gi).expect("vertices"),
-        });
-        outer.loops = Form::loops_of(&outer.faces, outer.vertices.len());
         let outer_e = as_element_form(&outer, [1, 0, 0, 0]).expect("outer tape");
         assert_eq!(
             blind_replay(&outer_e),

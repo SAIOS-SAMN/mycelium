@@ -3097,15 +3097,9 @@ mod tests {
             f
         };
         let mut outer = Form::default();
-        let gi = outer
+        let _gi = outer
             .glue(&inner, missing_addr, Word::identity(), [1, 0, 0, 0])
             .expect("glue");
-        outer.faces.push(FormFace {
-            i: 0,
-            j: gi,
-            g_ij: outer.face_of(0, gi).expect("vertices"),
-        });
-        outer.loops = Form::loops_of(&outer.faces, outer.vertices.len());
         let e = as_element_form(&outer, [1, 0, 0, 0]).expect("v2 tape");
         let mut epi = Epigenome::new();
         match epi.comprehend(&e) {
@@ -3164,15 +3158,9 @@ mod tests {
             j: 1,
             g_ij: outer.face_of(0, 1).expect("vertices"),
         });
-        let gi = outer
+        let _gi = outer
             .glue(&inner, inner_addr, Word::identity(), [1, 0, 0, 0])
             .expect("glue");
-        outer.faces.push(FormFace {
-            i: 0,
-            j: gi,
-            g_ij: outer.face_of(0, gi).expect("vertices"),
-        });
-        outer.loops = Form::loops_of(&outer.faces, outer.vertices.len());
         assert_eq!(
             outer.overlap_face_of(&inner_addr),
             Some(1),
@@ -3275,15 +3263,9 @@ mod tests {
             f
         };
         let mut outer = Form::default();
-        let gi = outer
+        let _gi = outer
             .glue(&inner, missing_addr, Word::identity(), [1, 0, 0, 0])
             .expect("glue");
-        outer.faces.push(FormFace {
-            i: 0,
-            j: gi,
-            g_ij: outer.face_of(0, gi).expect("vertices"),
-        });
-        outer.loops = Form::loops_of(&outer.faces, outer.vertices.len());
         let e = as_element_form(&outer, [1, 0, 0, 0]).expect("v2 tape");
         let mut epi = Epigenome::new();
         assert!(matches!(

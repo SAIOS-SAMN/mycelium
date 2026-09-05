@@ -1044,6 +1044,7 @@ fn pair_form_uncached(
         sections: crate::network::nerve::Keyed::new(),
         certificates: Vec::new(),
         torsion: crate::network::nerve::Keyed::new(),
+        glued: crate::network::nerve::Keyed::new(),
     };
     let n = form.vertices.len();
     let frame = 0usize;
@@ -1736,6 +1737,7 @@ pub fn extract_rule_with(
         sections: crate::network::nerve::Keyed::new(),
         certificates: Vec::new(),
         torsion: crate::network::nerve::Keyed::new(),
+        glued: crate::network::nerve::Keyed::new(),
     };
     // 2. Faces named by the pair forms (star + cell overlap), kept iff M1-constant.
     let mut candidates: crate::network::nerve::Keyed<(End, End)> = crate::network::nerve::Keyed::new();
@@ -1811,12 +1813,14 @@ pub fn extract_rule_with(
             });
             if reproduces {
                 let _ = form.glue(&s, e.address(), placement.clone(), e.magnitude());
-                form.vertices.retain(|v| {
-                    matches!(
-                        v,
-                        Vertex::Frame | Vertex::Glued { .. } | Vertex::Unfolded { .. } | Vertex::Rebased { .. }
-                    ) || transport_class(v).as_ref() != Some(&tc)
-                });
+                let mut drop = crate::network::nerve::Keyed::new();
+                for (i, v) in form.vertices.iter().enumerate() {
+                    if matches!(v, Vertex::Word { .. }) && transport_class(v).as_ref() == Some(&tc)
+                    {
+                        drop.insert(super::sentence::vertex_ix_key(i as u16), ());
+                    }
+                }
+                form.retract_vertices(&drop);
             }
         }
     }
