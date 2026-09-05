@@ -146,7 +146,8 @@ Therefore, as a law of the specification:
 - **Identity is decided by re-derivation, never by bytes.** Two words are
   equal iff their rotors are projectively equal, with `λ ∈ ℚ×` of **either
   sign**, because the language is the action `R X R̃ / (R R̃)`, on which
-  `−R` and `R` agree, and because the unit exponent mod 4 already
+  `−R` and `R` agree (`(λR) X (λR̃) / (λ² R R̃)` for any `λ`), and because
+  the unit exponent mod 4 already
   identifies the quarter turn's fourth power (`(1+e)⁴ = −4`) with the
   identity. Two word forms are equal iff additionally their frame
   coordinates are equal as exact rationals; two forms iff they agree up to
@@ -328,8 +329,8 @@ no re-gauging removes, the chart is too coarse: the class of that word
 becomes a new axis of the chart and the two forms live on distinct refined
 charts. Invariant: the classes are preserved; the atlas gains a coordinate
 that is an invariant of the class (chapter 16.7), never a hash fragment.
-This is the only way dimension is born, and chapter 14.8 says when a class
-is entitled to it.
+This is `expand_m` on the atlas and the only way dimension is born; chapter
+14.8 says when a class is entitled to it.
 
 ### 3.8 Retirement by geodesic
 
@@ -656,8 +657,9 @@ performs this product with `Rotor::geo`.
    compared by `projective_eq`.
 4. If some `h_ab ≠ 1`, the form is not flat and no `γ` fixes it; the
    chord's `h_ab` is the loop's class. On the sensor plane the class is read
-   from the plane form of `h_ab`: torsion part `(s, u)`, free part
-   `(m5, m13)`.
+   from the plane form of `h_ab`: torsion part `(s, u)`
+   (`PlaneForm::torsion_part() -> (u8, u8)`), free part `(m5, m13)`
+   (`PlaneForm::free_part() -> (i64, i64)`), both new.
 
 No linear algebra over ℚ is needed on the sensor plane; the tree walk is
 the solver. Off the plane the same walk runs on `Rotor` values.
@@ -1367,9 +1369,10 @@ axis`. Nothing saturates; `ratio_axes` (blade.rs 339), which drops the sign
 and saturates to `u64::MAX`, is replaced. The two-limb encoding preserves
 equality, which is all the atlas trie reads (strata are prefixes, `peel`
 drops the last axis, nothing compares axes by magnitude). Should an
-operation ever need numeric order on an axis, the exact encoding is the
-Stern–Brocot path of the rational, prefix-free, in as many limbs as it
-needs, still refusing past the limb budget.
+operation ever need numeric order on an axis (`r₁ < r₂ ⇔ packed(r₁) <
+packed(r₂)`), the exact encoding is the Stern–Brocot path of the rational,
+prefix-free, in as many limbs as it needs, still refusing past the limb
+budget.
 
 ### 16.7 A7 — Invariant refinement coordinate
 
@@ -1498,8 +1501,9 @@ A3-reduced, with the unit-exponent coordinate carrying the relation
    through `U` give the integer combination of generators, hence of the
    `b_i` (each generator is a product of one or two basis words). Smith
    normal form `S = U·G·V = diag(d_1..d_r, 0..)` decides the same lattice
-   (`y = r·V`, `y_j ≡ 0 mod d_j` for `j ≤ r`, `y_j = 0` beyond) and may be
-   used instead.
+   (`y = r·V`, `y_j ≡ 0 mod d_j` for `j ≤ r`, `y_j = 0` beyond, exponents
+   `x = (y_j / d_j)·U`) and may be used instead; HNF needs one transform
+   and is the one bound.
 3. `s = 0`: succeed iff `r` is a member. `s = 1`: succeed iff some `b_i` with
    `s_i = 1` has `r − r_i` a member; the tape is `b_i` then the even
    combination; least such `i`.
@@ -1693,8 +1697,10 @@ then c; each server on the new build reads and remaps old tapes from old
 peers for as long as they run (chapter 33).
 
 **Invariant.** After M3, `word_at(addr)` succeeds for every address held in
-any carrier; `Treasury::supply` and every per-lane bond are unchanged; the
-ruled count is the count before minus the merges logged.
+any carrier; `Treasury::supply`, `bond_total`, and every per-lane bond are
+unchanged; the ruled count is the count before minus the merges logged.
+Trace: `court remap {n} entries merged {m}`, zero `word_at` misses over the
+ruled fibers.
 
 **Binding.** `Kernel::restore`, `Treasury::restore`,
 `Epigenome::uncrystallize`, `sentence::from_element`, the `RMP1` section in
@@ -1837,6 +1843,22 @@ given. The rule of this part: operations act on stored forms and their
 rotors; cells are touched only in `family::perceive` and in `speak_rule`'s
 final emission of output cells. Every identity in this part is a master
 algorithm of chapter 17.
+
+Every file name in Parts IV–VII is under `/opt/mycelium-v0.1.0/src/`:
+
+| short name | absolute path |
+|---|---|
+| `alphabet.rs`, `sentence.rs`, `element.rs`, `cech.rs`, `stalk.rs`, `blade.rs`, `bubble.rs`, `family.rs`, `cga.rs`, `peel.rs`, `anchor.rs`, `sheaf.rs`, `germinate.rs`, `rewrite.rs` | `/opt/mycelium-v0.1.0/src/transducer/<name>` |
+| `cognition.rs`, `registry.rs`, `synthesis.rs` | `/opt/mycelium-v0.1.0/src/server/<name>` |
+| `verdict.rs`, `identity.rs`, `ledger.rs` | `/opt/mycelium-v0.1.0/src/court/<name>` |
+| `nerve.rs`, `mesh.rs`, `wire.rs` | `/opt/mycelium-v0.1.0/src/network/<name>` |
+| `sdk.rs` | `/opt/mycelium-v0.1.0/src/client/sdk.rs` |
+| `dialogue.rs` | `/opt/mycelium-v0.1.0/src/anastome/dialogue.rs` |
+| `ear.rs` | `/opt/mycelium-v0.1.0/src/perception/ear.rs` |
+| `economy.rs`, `physics.rs`, `chronometry.rs` | `/opt/mycelium-v0.1.0/src/<name>` |
+| `cyclo.rs`, `scalar.rs`, `constants.rs` | `/opt/mycelium-v0.1.0/src/core/<name>` |
+| `mycelium-server.rs`, `mycelium-client.rs` | `/opt/mycelium-v0.1.0/src/bin/<name>` |
+| `voice/mod.rs` | `/opt/mycelium-v0.1.0/src/voice/mod.rs` |
 
 ## 18. The form types
 
@@ -2285,6 +2307,7 @@ Everything Parts III and IV change, in one table.
 ```
 alphabet.rs   Rotor::normalised (sign step), Rotor::projective_eq (either sign), Rotor::key (A1), Rotor::class_key (15.3),
               Rotor::coordinate DELETED, PlaneForm::coordinate DELETED, PlaneForm::conjugacy_key (15.2), PlaneForm eq on reduced,
+              PlaneForm::torsion_part() -> (u8,u8) NEW, PlaneForm::free_part() -> (i64,i64) NEW,
               Word::form (reduced), Word::normal_form (A2 step 1 off-plane), Word::key (= A1 key), Word::class_key (15.4),
               Word::{with_contact, contact, rebase} NEW, shorter_tape(word, budget) NEW, Contact NEW
 cga.rs        Mv::canonical NEW, Mv::projective_eq NEW, Mv::key NEW, derive(PartialEq) REMOVED
@@ -2407,7 +2430,8 @@ re-gauged copy coheres the mind learns the citer as spoken.
 ### 33.1 What changes
 
 `Element::address()` (element.rs 1026) hashed canonical description bytes
-until a29bba5, so a sentence re-serialised from v1 to v2 changed address and
+(`base_canonical()`) until a29bba5, so a sentence re-serialised from v1 to
+v2 changed address and
 two spellings of one word had two addresses. a29bba5 made the address a
 vertex key but landed without the migration below; stores written before it
 hold byte addresses in every carrier of A8 step 3, and a cold boot on them
@@ -2464,8 +2488,10 @@ pub const REFUSE_OVERLAP_CYCLIC: &str = "translation across a non-acyclic overla
 pub const REFUSE_NOT_NATURAL: &str = "class key changes under restriction";
 ```
 
-Speech replies carry `"citation pending"`, `"overlap goodness pending"`,
-and `"letter not in syllabus"` (chapter 37) as `Glue::Dialect` reasons.
+These are returned by `replay_form` and `blind_replay`, and by
+`Kernel::perceive_speech` in the speech reply. Speech replies also carry
+`"citation pending"`, `"overlap goodness pending"`, and `"letter not in
+syllabus"` (chapter 37) as `Glue::Dialect` reasons.
 
 ### 34.2 Server log lines, `mycelium-server.rs` and `cognition.rs`
 
@@ -2570,9 +2596,10 @@ e_ij`, projectively `1 − tan(θ/2) e_ij`. The quarter turn is `tan(π/4) =
 and 13. Every rotation the alphabet spells has rational `tan(θ/2)`, the
 group is closed under composition, and no irrational ever arises inside
 the language. The wall is at perception: a sensor whose symmetries include
-the eighth turn (`tan(π/8) = √2 − 1`, diagonal lattices), the sixth or
-twelfth (`1/√3`, `2 − √3`, hexagonal lattices), or any `n`-th turn with
-`n ∉ {1, 2, 4}` produces a plane block with irrational entries; `spell`
+the eighth turn (`tan(π/8) = √2 − 1`, diagonal lattices), the sixth
+(`tan(π/6) = 1/√3`) or twelfth (`tan(π/12) = 2 − √3`, hexagonal
+lattices), or any `n`-th turn with `n ∉ {1, 2, 4}` (`tan(π/n)` algebraic of
+degree above 1) produces a plane block with irrational entries; `spell`
 refuses it and the remainder carries the whole body. On ARC's ℤ² grids this
 never happens: `D4 ⋊ ℤ²` and rational dilations close every grid symmetry.
 The field wall is the wall of the next sensors, specified now so the
@@ -2683,10 +2710,10 @@ is unchanged in form with the torsion coordinate in `Z/N`.
 
 ### 37.5 F5 Opening a letter by demand
 
-A letter is never added by configuration. The germination path sees, for a
-body pair whose carriage exists over `ℚ(ζ)` but not in the current
-language, a plane block that `spell` refuses at step 3 with a torsion
-remainder `T`. The demand is `T` itself. The court replays `T`: if `T^n =
+A letter is never added by configuration. The germination path
+(`germination_demand`, chapter 25) sees, for a body pair whose carriage
+exists in `SO(2)(ℚ(ζ))` but not in the current language, a plane block that
+`spell` refuses at step 3 with a torsion remainder `T`. The demand is `T` itself. The court replays `T`: if `T^n =
 1` projectively for the least `n ≤ N_max` (a physics bound, the largest
 torsion order the sensor's resolution can distinguish, computed from the
 frame, never a constant), the court opens `τ_{n,ij}`, appends its relators,
@@ -2809,8 +2836,9 @@ named.
 `server::tests::a11_rendezvous_by_listing_key_not_bytes`;
 `sdk::tests::a12_plane_factorisation_by_hnf`, `a12_offplane_descent_or_novel`,
 `a12_plane_remainder_is_canonical`;
-`nerve::tests::meet_is_intersection_and_costs_shared_prefixes` (N vs 4N on
-the larger trie);
+`nerve::tests::meet_is_intersection_and_costs_shared_prefixes` (meet
+equals set intersection; `count_get` grows with the shared structure, N vs
+4N on the larger trie with the smaller fixed);
 `cech::tests::solve_gauge_between_reduces_to_solve_gauge_when_a_is_identity`;
 `cech::tests::components_root_is_least_key`;
 `element::tests::m2_two_spellings_one_address`, `m2_rescaled_versor_one_address`;
