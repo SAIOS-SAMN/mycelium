@@ -1575,6 +1575,8 @@ pub struct SentenceRule {
     )>,
     /// Classes present in some pairs only: class key → pair indices.
     pub sections: crate::network::nerve::Keyed<Vec<u16>>,
+    /// The rule as a form (chapter 18). Nerve remains until ch.30 step 6.
+    pub form: Form,
 }
 
 impl SentenceRule {
@@ -1918,10 +1920,11 @@ pub fn agree_up_to_gauge(nerves: &[Nerve]) -> Option<SentenceRule> {
         faces,
         holonomies: holo0,
         hue_maps,
-        nerve,
+        nerve: nerve.clone(),
         ratio: ratio_from_nerve(first),
         shifts,
         sections,
+        form: Form::from_nerve(&nerve),
     })
 }
 

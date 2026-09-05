@@ -1383,12 +1383,29 @@ impl Epigenome {
 }
 
 impl crate::transducer::family::Crystal for Epigenome {
-    fn on_class(&self, class: &crate::transducer::stalk::Invariant) -> Vec<(Element, Standing)> {
+    fn on_class(&self, class: &crate::transducer::stalk::Invariant) -> Vec<(Element, crate::transducer::sentence::Form)> {
         self.working_atlas()
             .fiber(class)
             .into_iter()
-            .filter_map(|(a, st)| self.working_word(&a).cloned().map(|e| (e, st)))
+            .filter_map(|(a, _st)| {
+                let e = self.working_word(&a)?.clone();
+                let f = if e.is_sentence() {
+                    crate::transducer::sentence::from_element_form(&e)?
+                } else {
+                    return None;
+                };
+                Some((e, f))
+            })
             .collect()
+    }
+
+    fn speak_form(
+        &self,
+        f: &crate::transducer::sentence::Form,
+        x: &crate::transducer::family::Grid,
+        placement: &crate::transducer::alphabet::Word,
+    ) -> Option<crate::transducer::family::Speech> {
+        crate::transducer::family::apply_form(f, x, placement)
     }
 }
 
@@ -2869,7 +2886,7 @@ mod tests {
         assert_eq!(epi.expression[0], 2, "uses ride with the promotion");
         let inv = crate::transducer::stalk::invariant_of(&e1);
         let on = epi.on_class(&inv);
-        assert!(on.iter().any(|(_, s)| *s == Standing::Ruled), "Crystal reads the working atlas as Ruled after promotion");
+        assert!(!on.is_empty(), "Crystal reads the working atlas after promotion");
     }
 
     /// A stood dialect word closes a remainder without waiting for the court.

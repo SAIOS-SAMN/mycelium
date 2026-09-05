@@ -33,10 +33,23 @@ use super::sentence::{Form, FormFace, Vertex};
 use super::stalk::{Invariant, Standing};
 use std::cell::{Cell, RefCell};
 
-/// Source of crystallized forms on a class. The standing of each form is
-/// a coordinate: Ruled genome, Stood dialect, never a boolean.
+/// Source of crystallized forms on a class. Standing is a coordinate on
+/// the working atlas, never a gate.
 pub trait Crystal {
-    fn on_class(&self, class: &Invariant) -> Vec<(Element, Standing)>;
+    fn on_class(&self, class: &Invariant) -> Vec<(Element, Form)>;
+    fn speak_form(&self, f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Option<Speech>;
+}
+
+/// A crystal that holds nothing. Glue is a no-op.
+pub struct NoCrystal;
+
+impl Crystal for NoCrystal {
+    fn on_class(&self, _class: &Invariant) -> Vec<(Element, Form)> {
+        Vec::new()
+    }
+    fn speak_form(&self, f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Option<Speech> {
+        apply_form(f, x, placement)
+    }
 }
 use num_bigint::BigInt;
 use num_rational::BigRational;
@@ -1041,6 +1054,520 @@ pub fn pair_form(
     form
 }
 
+/// End of an orbit (chapter 22). `steps` is instance, not the form.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum OrbitEnd {
+    Contact { cells: Vec<Cell3>, steps: u32 },
+    Torsion { steps: u32 },
+    LeftFrame { steps: u32 },
+    NoOrbit,
+}
+
+fn positions_of(cells: &[Cell3]) -> Vec<(i64, i64)> {
+    let mut p: Vec<(i64, i64)> = cells.iter().map(|&(r, c, _)| (r, c)).collect();
+    p.sort_unstable();
+    p.dedup();
+    p
+}
+
+fn ring_dist(cells: &[(i64, i64)], anchor: &[(i64, i64)]) -> Option<u32> {
+    if cells.is_empty() || anchor.is_empty() {
+        return None;
+    }
+    cells
+        .iter()
+        .map(|&(r, c)| {
+            anchor
+                .iter()
+                .map(|&(ar, ac)| ((r - ar).unsigned_abs() + (c - ac).unsigned_abs()) as u32)
+                .min()
+                .unwrap_or(u32::MAX)
+        })
+        .min()
+}
+
+fn apply_versor_cells(v: &Versor, cells: &[Cell3], frame: (usize, usize)) -> Vec<Cell3> {
+    let mut out = Vec::new();
+    for &(r, c, h) in cells {
+        if let Some(image) = element::carry_cell(v, r, c) {
+            for (ir, ic) in image {
+                if ir >= 0 && ic >= 0 && (ir as usize) < frame.0 && (ic as usize) < frame.1 {
+                    out.push((ir, ic, h));
+                } else {
+                    out.push((ir, ic, h));
+                }
+            }
+        }
+    }
+    out.sort_unstable();
+    out.dedup();
+    out
+}
+
+fn vertex_versor(v: &Vertex) -> Option<Versor> {
+    match v {
+        Vertex::Word {
+            word,
+            rho,
+            placement,
+            ..
+        } => {
+            let sp = super::alphabet::Spelling {
+                word: word.clone(),
+                rho: rho.clone(),
+            };
+            Some(element::conformal_of(&sp, placement).unwrap_or_else(element::identity_versor))
+        }
+        _ => None,
+    }
+}
+
+/// Apply a word until the image's ring distance to `anchor` equals the
+/// contact ring (or 0). Bound by the frame. `NoOrbit` when the first step
+/// does not move the distance.
+pub fn orbit(v: &Vertex, x_cells: &[Cell3], anchor: &[(i64, i64)], frame: (usize, usize)) -> OrbitEnd {
+    let Some(versor) = vertex_versor(v) else {
+        return OrbitEnd::NoOrbit;
+    };
+    let want = match v {
+        Vertex::Word { word, .. } => word.contact().map(|c| c.ring as u32).unwrap_or(0),
+        _ => 0,
+    };
+    let start = ring_dist(&positions_of(x_cells), anchor);
+    let next = apply_versor_cells(&versor, x_cells, frame);
+    let d1 = ring_dist(&positions_of(&next), anchor);
+    if d1 == start {
+        return OrbitEnd::NoOrbit;
+    }
+    let bound = (frame.0.saturating_add(frame.1)).max(1) as u32;
+    let mut cells = next;
+    let mut seen: Vec<Vec<Cell3>> = vec![x_cells.to_vec(), cells.clone()];
+    for step in 1..=bound {
+        let d = ring_dist(&positions_of(&cells), anchor);
+        let left = cells.iter().any(|&(r, c, _)| r < 0 || c < 0 || (r as usize) >= frame.0 || (c as usize) >= frame.1);
+        if left {
+            return OrbitEnd::LeftFrame { steps: step };
+        }
+        if d == Some(want) {
+            let inside: Vec<Cell3> = cells
+                .into_iter()
+                .filter(|&(r, c, _)| r >= 0 && c >= 0 && (r as usize) < frame.0 && (c as usize) < frame.1)
+                .collect();
+            return OrbitEnd::Contact { cells: inside, steps: step };
+        }
+        let nxt = apply_versor_cells(&versor, &cells, frame);
+        if nxt == cells || seen.iter().any(|s| *s == nxt) {
+            return OrbitEnd::Torsion { steps: step };
+        }
+        seen.push(nxt.clone());
+        cells = nxt;
+    }
+    OrbitEnd::LeftFrame { steps: bound }
+}
+
+fn cells_subset_of_grid(cells: &[Cell3], g: &Grid) -> bool {
+    cells.iter().all(|&(r, c, h)| {
+        g.get(r as usize)
+            .and_then(|row| row.get(c as usize))
+            .copied()
+            == Some(h)
+    })
+}
+
+fn grows_to_frame(a: &Grid, b: &Grid) -> bool {
+    let (fa, fb) = (frame_of(a), frame_of(b));
+    if fa != fb || fa.0 == 0 || fa.1 == 0 {
+        return false;
+    }
+    let ins: Vec<Cell3> = perceive(a).into_iter().flat_map(|b| b.cells).collect();
+    let outs: Vec<Cell3> = perceive(b).into_iter().flat_map(|b| b.cells).collect();
+    if ins.is_empty() || outs.len() <= ins.len() {
+        return false;
+    }
+    let target: Vec<(i64, i64)> = {
+        let mut t = positions_of(&outs);
+        t.sort_unstable();
+        t
+    };
+    let frame_n = fa.0 * fa.1;
+    if target.len() != frame_n {
+        return false;
+    }
+    let mut occ: Vec<(i64, i64, u8)> = ins.clone();
+    let hue = ins.first().map(|c| c.2).unwrap_or(1);
+    let mut guard = 0u32;
+    while occ.len() < frame_n && guard < frame_n as u32 {
+        guard += 1;
+        let ring = super::blade::adjacent_ring(&occ);
+        let mut grew = false;
+        for (r, c, _) in ring {
+            if r < 0 || c < 0 || (r as usize) >= fa.0 || (c as usize) >= fa.1 {
+                continue;
+            }
+            if occ.iter().any(|&(or, oc, _)| or == r && oc == c) {
+                continue;
+            }
+            occ.push((r, c, hue));
+            grew = true;
+        }
+        if !grew {
+            return false;
+        }
+    }
+    let mut got = positions_of(&occ);
+    got.sort_unstable();
+    got == target
+}
+
+/// Speak a form onto a grid: Word vertices carry matching bodies; Unfolded
+/// Occupied grows the adjacent ring to the frame.
+pub fn apply_form(f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Option<Speech> {
+    let fx = frame_of(x);
+    let fy = fx;
+    let bodies = perceive(x);
+    let mut cells: Vec<Cell3> = Vec::new();
+    let mut remainder: Vec<Cell3> = Vec::new();
+    let mut unfolded = false;
+    for v in &f.vertices {
+        match v {
+            Vertex::Word {
+                word,
+                rho,
+                placement: p,
+                gauge,
+                class,
+                ..
+            } => {
+                let w = placement.compose(word);
+                let sp = super::alphabet::Spelling {
+                    word: w,
+                    rho: rho.clone(),
+                };
+                let versor = element::conformal_of(&sp, p).unwrap_or_else(element::identity_versor);
+                let hits: Vec<&Body> = bodies
+                    .iter()
+                    .filter(|b| class.0.is_empty() || b.moduli == *class)
+                    .collect();
+                let use_bodies: Vec<&Body> = if hits.is_empty() {
+                    bodies.iter().collect()
+                } else {
+                    hits
+                };
+                for body in use_bodies {
+                    emit_carried(body, &versor, gauge, fy, &mut cells, &mut remainder);
+                }
+            }
+            Vertex::Unfolded {
+                measure: super::sentence::Measure::Occupied,
+            } => {
+                unfolded = true;
+            }
+            _ => {}
+        }
+    }
+    if unfolded {
+        let hue = cells.first().map(|c| c.2).or_else(|| {
+            bodies.first().and_then(|b| b.cells.first().map(|c| c.2))
+        }).unwrap_or(1);
+        if cells.is_empty() {
+            cells = bodies.iter().flat_map(|b| b.cells.iter().copied()).collect();
+        }
+        let need = fy.0.saturating_mul(fy.1);
+        let mut guard = 0u32;
+        while cells.len() < need && guard < need as u32 {
+            guard += 1;
+            let ring = super::blade::adjacent_ring(&cells);
+            let mut grew = false;
+            for (r, c, _) in ring {
+                if r < 0 || c < 0 || (r as usize) >= fy.0 || (c as usize) >= fy.1 {
+                    continue;
+                }
+                if cells.iter().any(|&(or, oc, _)| or == r && oc == c) {
+                    continue;
+                }
+                cells.push((r, c, hue));
+                grew = true;
+            }
+            if !grew {
+                break;
+            }
+        }
+    }
+    cells.sort_unstable();
+    cells.dedup();
+    Some(Speech { frame: fy, cells, remainder })
+}
+
+fn class_of_vertex(v: &Vertex) -> Option<Invariant> {
+    match v {
+        Vertex::Word { class, .. } if !class.0.is_empty() => Some(class.clone()),
+        Vertex::Glued { chart, .. } if !chart.0.is_empty() => Some(chart.clone()),
+        _ => None,
+    }
+}
+
+/// Seven moves on pair forms (chapter 21). `extract_rule` keeps the nerve path.
+pub fn extract_rule_with(
+    family: &[(Grid, Grid)],
+    crystal: &dyn Crystal,
+) -> Option<super::sentence::SentenceRule> {
+    if family.is_empty() {
+        return None;
+    }
+    let scale = family_ratio(family);
+    let pair_forms: Vec<Form> = family
+        .iter()
+        .map(|(a, b)| pair_form(a, b, scale))
+        .collect();
+    let mut class_rows: Vec<(Invariant, Vec<usize>)> = Vec::new();
+    for f in &pair_forms {
+        let mut local: Vec<(Invariant, usize)> = Vec::new();
+        for v in &f.vertices {
+            if let Some(c) = class_of_vertex(v) {
+                match local.iter_mut().find(|(k, _)| *k == c) {
+                    Some((_, n)) => *n += 1,
+                    None => local.push((c, 1)),
+                }
+            }
+        }
+        for (c, n) in local {
+            match class_rows.iter_mut().find(|(k, _)| *k == c) {
+                Some((_, counts)) => counts.push(n),
+                None => class_rows.push((c, vec![n])),
+            }
+        }
+    }
+    let n_pairs = pair_forms.len();
+    let mut sections: crate::network::nerve::Keyed<Vec<u16>> = crate::network::nerve::Keyed::new();
+    let mut rule_vertices = vec![frame_vertex()];
+    let first = &pair_forms[0];
+    for (class, counts) in &class_rows {
+        let present = counts.len() == n_pairs;
+        if present {
+            let min_c = counts.iter().copied().min().unwrap_or(0);
+            let extras: Vec<u16> = counts
+                .iter()
+                .enumerate()
+                .filter(|(_, &c)| c > min_c)
+                .map(|(i, _)| i as u16)
+                .collect();
+            if !extras.is_empty() {
+                sections.insert(class.key(), extras);
+            }
+            let mut copied = 0usize;
+            for v in &first.vertices {
+                if copied >= min_c {
+                    break;
+                }
+                if class_of_vertex(v).as_ref() == Some(class) {
+                    rule_vertices.push(v.clone());
+                    copied += 1;
+                }
+            }
+        } else {
+            let pairs: Vec<u16> = (0..n_pairs as u16)
+                .filter(|&i| {
+                    pair_forms[i as usize]
+                        .vertices
+                        .iter()
+                        .any(|v| class_of_vertex(v).as_ref() == Some(class))
+                })
+                .collect();
+            sections.insert(class.key(), pairs);
+            if let Some(v) = pair_forms
+                .iter()
+                .flat_map(|f| f.vertices.iter())
+                .find(|v| class_of_vertex(v).as_ref() == Some(class))
+            {
+                rule_vertices.push(v.clone());
+            }
+        }
+    }
+    let mut form = Form {
+        vertices: rule_vertices,
+        faces: Vec::new(),
+        loops: Vec::new(),
+        remainder: Vec::new(),
+        depth: 0,
+        hue_maps: crate::network::nerve::Keyed::new(),
+    };
+    let n = form.vertices.len();
+    let mut faces = Vec::new();
+    for j in 1..n {
+        faces.push((0u16, j as u16));
+    }
+    for i in 1..n {
+        for j in (i + 1)..n {
+            faces.push((i as u16, j as u16));
+        }
+    }
+    // 2. Face constancy: keep a face iff g_ij is one vertex in every pair.
+    for (i, j) in faces {
+        let mut held: Option<super::alphabet::Word> = None;
+        let mut ok = true;
+        for pf in &pair_forms {
+            let gi = match_vertex(&form.vertices[i as usize], pf);
+            let gj = match_vertex(&form.vertices[j as usize], pf);
+            let w = match (gi, gj) {
+                (Some(a), Some(b)) => pf.face_of(a, b),
+                _ => {
+                    ok = false;
+                    break;
+                }
+            };
+            match &held {
+                None => held = Some(w),
+                Some(h) if h != &w => {
+                    ok = false;
+                    break;
+                }
+                _ => {}
+            }
+        }
+        if ok {
+            if let Some(w) = held {
+                form.faces.push(FormFace { i, j, g_ij: w });
+            }
+        }
+    }
+    form.loops = Form::loops_of(&form.faces, n);
+    // 3. Glue held closed forms.
+    let classes: Vec<Invariant> = form
+        .vertices
+        .iter()
+        .filter_map(class_of_vertex)
+        .collect();
+    for class in classes {
+        for (e, s) in crystal.on_class(&class) {
+            if !s.is_closed() {
+                continue;
+            }
+            let placement = super::alphabet::Word::identity();
+            let reproduces = family.iter().all(|(x, y)| {
+                crystal
+                    .speak_form(&s, x, &placement)
+                    .is_some_and(|sp| cells_subset_of_grid(&sp.cells, y))
+            });
+            if reproduces {
+                let _ = form.glue(&s, e.address(), placement);
+                form.vertices.retain(|v| {
+                    matches!(v, Vertex::Frame | Vertex::Glued { .. } | Vertex::Unfolded { .. } | Vertex::Rebased { .. })
+                        || class_of_vertex(v).as_ref() != Some(&class)
+                });
+            }
+        }
+    }
+    // 4. Rebase: face(i,j) = w_i ∘ w_j ∘ w_i⁻¹ on every pair.
+    let nv = form.vertices.len();
+    for i in 0..nv {
+        for j in 0..nv {
+            if i == j {
+                continue;
+            }
+            let wi = form.vertices[i].word_in(&form);
+            let wj = form.vertices[j].word_in(&form);
+            let conj = wi.compose(&wj.compose(&wi.inverse())).normal_form();
+            if form.face_of(i as u16, j as u16) == conj && !wj.is_identity() && !wi.is_identity() {
+                form.rebase(i as u16, j as u16);
+            }
+        }
+    }
+    // 5. Unfold grow-to-frame.
+    if family.iter().all(|(a, b)| grows_to_frame(a, b)) {
+        form.unfold(super::sentence::Measure::Occupied);
+    }
+    // 6. Contact: a word whose first orbit step moves, stopping at a constant ring.
+    let nverts = form.vertices.len();
+    for vi in 0..nverts {
+        let skip = match form.vertices.get(vi) {
+            Some(Vertex::Word { word, .. }) => word.contact().is_some(),
+            _ => true,
+        };
+        if skip {
+            continue;
+        }
+        let probe = form.vertices[vi].clone();
+            let mut rings: Option<u8> = None;
+            let mut all = true;
+            for (x, y) in family {
+                let fx = frame_of(y);
+                let ins: Vec<Cell3> = perceive(x).into_iter().flat_map(|b| b.cells).collect();
+                let frame_anchor: Vec<(i64, i64)> = (0..fx.1 as i64).map(|c| (0, c)).chain(
+                    (0..fx.1 as i64).map(|c| (fx.0 as i64 - 1, c))
+                ).chain(
+                    (0..fx.0 as i64).map(|r| (r, 0))
+                ).chain(
+                    (0..fx.0 as i64).map(|r| (r, fx.1 as i64 - 1))
+                ).collect();
+                match orbit(&probe, &ins, &frame_anchor, fx) {
+                    OrbitEnd::Contact { steps, .. } if steps > 0 => {
+                        let outs: Vec<Cell3> = perceive(y).into_iter().flat_map(|b| b.cells).collect();
+                        let r = ring_dist(&positions_of(&outs), &frame_anchor).unwrap_or(0) as u8;
+                        match rings {
+                            None => rings = Some(r),
+                            Some(h) if h != r => all = false,
+                            _ => {}
+                        }
+                    }
+                    OrbitEnd::NoOrbit => {
+                        all = false;
+                    }
+                    _ => {}
+                }
+            }
+        if all {
+            if let Some(r) = rings {
+                if let Vertex::Word { word, .. } = &mut form.vertices[vi] {
+                    *word = word.clone().with_contact(super::alphabet::Contact { anchor: 0, ring: r });
+                }
+            }
+        }
+    }
+    // 7. Coherence.
+    if !form.coheres() {
+        // hold the form with its loops; do not drop
+    }
+    form.depth = form.depth_of();
+    form.loops = Form::loops_of(&form.faces, form.vertices.len());
+    let nerve = form.to_nerve().unwrap_or_default();
+    let ratio = scale.unwrap_or(((1, 1), (1, 1)));
+    Some(super::sentence::SentenceRule {
+        charts: nerve
+            .germs
+            .iter()
+            .map(|g| (g.source.clone(), g.target.clone()))
+            .collect(),
+        faces: nerve
+            .faces
+            .iter()
+            .map(|f| (f.i, f.j, f.g_ij.clone(), f.spelled))
+            .collect(),
+        holonomies: nerve.cycles.iter().map(|c| c.holonomy.clone()).collect(),
+        hue_maps: Vec::new(),
+        nerve,
+        ratio,
+        shifts: Vec::new(),
+        sections,
+        form,
+    })
+}
+
+fn match_vertex(v: &Vertex, pf: &Form) -> Option<u16> {
+    match v {
+        Vertex::Frame => pf
+            .vertices
+            .iter()
+            .position(|u| matches!(u, Vertex::Frame))
+            .map(|i| i as u16),
+        Vertex::Word { class, .. } => pf
+            .vertices
+            .iter()
+            .position(|u| class_of_vertex(u).as_ref() == Some(class))
+            .map(|i| i as u16),
+        _ => None,
+    }
+}
+
 /// Re-derive the family's rule and check it agrees with `rule`.
 pub fn rule_replays_family(rule: &super::sentence::SentenceRule, family: &[(Grid, Grid)]) -> bool {
     let Some(again) = extract_rule(family) else {
@@ -1323,6 +1850,15 @@ pub fn mint_sentence(rule: &super::sentence::SentenceRule, family: &[(Grid, Grid
 /// already-placed anchors agree. None only when two anchors conflict on
 /// the same output cells.
 pub fn speak_rule(rule: &super::sentence::SentenceRule, x: &Grid) -> Option<Speech> {
+    let form_speaks = rule.form.vertices.iter().any(|v| {
+        matches!(
+            v,
+            Vertex::Glued { .. } | Vertex::Rebased { .. } | Vertex::Unfolded { .. }
+        ) || matches!(v, Vertex::Word { word, .. } if word.contact().is_some())
+    });
+    if form_speaks {
+        return apply_form(&rule.form, x, &super::alphabet::Word::identity());
+    }
     let fx = frame_of(x);
     let fy = output_frame(fx, rule.ratio);
     let mut atlas = super::stalk::Stalks::default();
@@ -1677,6 +2213,176 @@ mod tests {
         assert_eq!(cell_reads(), n, "second call touches no cells");
         assert_eq!(f1.vertices.len(), f2.vertices.len());
         assert_eq!(f1.faces.len(), f2.faces.len());
+    }
+
+    fn squares(n: usize, hue: u8, cols: usize) -> Grid {
+        let mut g = vec![vec![0u8; cols]; 2];
+        for i in 0..n {
+            let c = i * 3;
+            if c + 1 < cols {
+                g[0][c] = hue;
+                g[0][c + 1] = hue;
+                g[1][c] = hue;
+                g[1][c + 1] = hue;
+            }
+        }
+        g
+    }
+
+    /// Counts 3, 4, 3 of one class: three rule vertices and one section.
+    #[test]
+    fn extract_rule_by_class_with_sections() {
+        let family = vec![
+            (squares(3, 1, 9), squares(3, 2, 9)),
+            (squares(4, 1, 12), squares(4, 2, 12)),
+            (squares(3, 1, 9), squares(3, 2, 9)),
+        ];
+        let rule = extract_rule_with(&family, &NoCrystal).expect("extracts");
+        let words = rule
+            .form
+            .vertices
+            .iter()
+            .filter(|v| matches!(v, Vertex::Word { .. }))
+            .count();
+        assert_eq!(words, 3, "min count is three vertices, got {words}");
+        assert!(
+            rule.section_count() > 0,
+            "the extra body in pair 1 is a section"
+        );
+    }
+
+    /// A held closed form glued as a vertex: depth 1, fewer Word vertices.
+    #[test]
+    fn extract_rule_glues_a_held_form() {
+        let family = vec![
+            (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
+            (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
+        ];
+        let flat = extract_rule_with(&family, &NoCrystal).expect("flat");
+        let flat_words = flat
+            .form
+            .vertices
+            .iter()
+            .filter(|v| matches!(v, Vertex::Word { .. }))
+            .count();
+        let held_form = pair_form(&family[0].0, &family[0].1, None);
+        assert!(held_form.is_closed(), "a pair form of a shift coheres");
+        let held_e = super::super::sentence::as_element_form(&held_form).expect("tape");
+        struct Held {
+            e: Element,
+            f: Form,
+        }
+        impl Crystal for Held {
+            fn on_class(&self, _class: &Invariant) -> Vec<(Element, Form)> {
+                vec![(self.e.clone(), self.f.clone())]
+            }
+            fn speak_form(
+                &self,
+                f: &Form,
+                x: &Grid,
+                placement: &crate::transducer::alphabet::Word,
+            ) -> Option<Speech> {
+                apply_form(f, x, placement)
+            }
+        }
+        let crystal = Held {
+            e: held_e,
+            f: held_form,
+        };
+        let rule = extract_rule_with(&family, &crystal).expect("glues");
+        assert_eq!(rule.form.depth_of(), 1, "gluing a depth-0 form is depth 1");
+        let glued = rule
+            .form
+            .vertices
+            .iter()
+            .filter(|v| matches!(v, Vertex::Glued { .. }))
+            .count();
+        assert_eq!(glued, 1, "one Glued vertex");
+        let words = rule
+            .form
+            .vertices
+            .iter()
+            .filter(|v| matches!(v, Vertex::Word { .. }))
+            .count();
+        assert!(
+            words < flat_words,
+            "glued form has fewer Word vertices than the flat rule ({words} < {flat_words})"
+        );
+    }
+
+    /// Grow-to-frame is Unfolded{{Occupied}}; the tape carries no step count.
+    #[test]
+    fn unfolding_grow_to_frame() {
+        let family = vec![
+            (grid(&["10", "00"]), grid(&["11", "11"])),
+            (grid(&["100", "000", "000"]), grid(&["111", "111", "111"])),
+        ];
+        let rule = extract_rule_with(&family, &NoCrystal).expect("unfolds");
+        assert!(
+            rule.form
+                .vertices
+                .iter()
+                .any(|v| matches!(v, Vertex::Unfolded { measure: crate::transducer::sentence::Measure::Occupied })),
+            "the rule is the form plus Unfolded Occupied, vertices {:?}",
+            rule.form.vertices.len()
+        );
+        let e = crate::transducer::sentence::as_element_form(&rule.form).expect("v2 tape");
+        let back = crate::transducer::sentence::from_element_form(&e).expect("round trip");
+        assert!(
+            back.vertices
+                .iter()
+                .any(|v| matches!(v, Vertex::Unfolded { measure: crate::transducer::sentence::Measure::Occupied })),
+            "no step count on the tape; Occupied is the measure"
+        );
+    }
+
+    /// Contact when the first step moves the ring; NoOrbit when it does not.
+    #[test]
+    fn orbit_contact_and_no_orbit() {
+        let zero = q(0);
+        let one = q(1);
+        let moving = Vertex::Word {
+            address: [1u8; 32],
+            word: crate::transducer::alphabet::Word::identity(),
+            rho: one.clone(),
+            placement: (zero.clone(), one.clone()),
+            gauge: Vec::new(),
+            class: Invariant::default(),
+        };
+        let still = Vertex::Word {
+            address: [2u8; 32],
+            word: crate::transducer::alphabet::Word::identity(),
+            rho: one,
+            placement: (zero.clone(), zero),
+            gauge: Vec::new(),
+            class: Invariant::default(),
+        };
+        let cells = vec![(0i64, 0i64, 1u8)];
+        let anchor = vec![(0i64, 3i64)];
+        let frame = (5usize, 5usize);
+        match orbit(&moving, &cells, &anchor, frame) {
+            OrbitEnd::Contact { steps, .. } => assert!(steps >= 1, "contact takes at least one step"),
+            other => panic!("expected Contact, got {other:?}"),
+        }
+        assert_eq!(
+            orbit(&still, &cells, &anchor, frame),
+            OrbitEnd::NoOrbit,
+            "a still word has no orbit"
+        );
+        let cword = crate::transducer::alphabet::Word::identity()
+            .with_contact(crate::transducer::alphabet::Contact { anchor: 0, ring: 0 });
+        let with_c = Vertex::Word {
+            address: [3u8; 32],
+            word: cword,
+            rho: q(1),
+            placement: (q(0), q(1)),
+            gauge: Vec::new(),
+            class: Invariant::default(),
+        };
+        match orbit(&with_c, &cells, &anchor, frame) {
+            OrbitEnd::Contact { .. } | OrbitEnd::LeftFrame { .. } | OrbitEnd::Torsion { .. } => {}
+            OrbitEnd::NoOrbit => panic!("contact word must orbit"),
+        }
     }
 
     /// A family that shifts every body two columns right and recolours
