@@ -1,795 +1,650 @@
-# Recursion — the language applied to itself
-
-Status: specification. Nothing in this document is landed. It depends on
-the current relay (rules by class multiplicity, the speech act, derived
-fibre at load) and extends the carriers in `MU-ENGINEERING.md` §2–§4.
-Companion documents: `ALPHABET.md`, `MU-ECONOMY.md`, `XSEPTUM.md`.
-
-## 0. Scope
-
-Recursion here means five things, each a mechanism, each with its own
-carrier, replay rule, bound, and trace:
-
-1. **Word-level**: a word applied to a word. Conjugation of one tape by
-   another as a first-class germ, so a rule can say "do to B what A did
-   to itself".
-2. **Sentence-level**: a ruled sentence admissible as a germ, so a rule's
-   tape names another sentence's address as a vertex and the nerve is a
-   nerve of nerves.
-3. **Unfolding**: a sentence whose output on one step is its input on the
-   next, cited by depth index, with a well-founded measure that stops it.
-4. **Iteration by contact**: a word applied to its own image until a named
-   face reaches ring zero.
-5. **Distributed replay**: the court replays a recursive sentence by
-   replaying its citations from whichever hypha's ruled cover holds them,
-   memoized by (address, family), fetched through the digest path.
-
-Everything else in this document, comprehension across gauges, economics,
-retirement, syllabus order, persistence, wire, bounds, is what those five
-require to be sound on a distributed mesh.
-
-## 1. Grades, extended
-
-| grade | before | now |
-|---|---|---|
-| letter | one of seventeen rotors | unchanged, never new |
-| word | tape, dilation, placement, gauge | plus optional contact condition (§5) and conjugation form (§2) |
-| sentence | words that cohere over a nerve of bodies | words, conjugations, cited sentences, and unfoldings that cohere over a nerve whose vertices are bodies or sentences (§3, §4) |
-| speech | transfer of cohering sentences | unchanged; a recursive sentence travels as one Element carrying addresses, never copies |
-| language | two-organ replay, taught | unchanged; citations must already be language on both organs |
-
-## 2. Word-level recursion: conjugation as a germ
-
-### 2.1 What it says
-
-The relative word between two bodies is already a word applied to a frame.
-Word-level recursion adds the transport of transports: given body A with
-word `a` and body B with word `b`, the germ `Conjugate { by: A, of: B }`
-speaks `a · b · a⁻¹` as B's word, "B moves the way A would move it". This is
-the letter-level form of "do to B what A did to itself".
-
-### 2.2 Carrier
-
-`Germ::Conjugate { by: u16, of: u16 }` referring to two other germs of the
-same nerve. Its word is derived, never stored: `word(by) · word(of) ·
-word(by)⁻¹`, in normal form. Its chart is the chart of `of`. Its magnitude
-is what it closes on the family beyond what `of` alone closes.
-
-### 2.3 Replay
-
-`blind_replay` derives the conjugate word from the two cited germs' tapes
-and checks it against the family exactly as any word; a conjugate whose
-derived word equals `word(of)` is redundant and refused.
-
-### 2.4 Bound
-
-A conjugation is one geometric product and one inverse, both exact; no
-iteration. The order of the conjugate word is decided by `Word::order` on
-the derived tape.
-
-## 3. Sentence-level recursion: cited germs
-
-### 3.1 Carrier
-
-`Germ` gains the kind `Cited { address, chart, magnitude, depth }`: a ruled
-sentence named by address. The chart is the cited sentence's chart (leading
-axis 2), the magnitude its lane vector at citation time, the depth its
-depth (§3.3). A face between a body germ and a cited germ, or between two
-cited germs, is a relative word exactly as between bodies; the cited
-sentence's frame germ is its placement handle.
-
-### 3.2 Address, never copy
-
-A citation carries only the address. The cited sentence's tape is resolved
-from the genome, the ruled cover, or a peer's ruled cover at comprehension
-and replay time. Speech that carries a copy of a cited sentence is refused
-as malformed.
-
-### 3.3 Depth and well-foundedness
-
-`Element.depth: u16`. A body-only sentence has depth 0; a sentence whose
-citations have maximum depth d has depth d+1. A citation must satisfy
-`cited.depth < self.depth`, checked at mint, at speech, and at replay.
-Addresses are fixed at mint, so a sentence cannot cite an address that did
-not exist when it was minted; self-citation and citation cycles cannot be
-written.
-
-### 3.4 Magnitude and descent
-
-A recursive sentence's magnitude on each lane is its own measured deflation
-on the family: the cells it closes beyond what its citations close when
-spoken in its placements. Descent is checked on that vector. A sentence
-whose citations already close the family with no remainder has zero
-deflation of its own and is refused as redundant; the citation is the word.
-
-### 3.5 Tape
-
-`SENTENCE_TAG` version 2: the body germ list as now, then
-`n_cited u16` and per citation `address 32 ‖ chart len16+axes ‖ magnitude
-4×u64 ‖ depth u16`, then `n_conjugate u16` with `(by u16, of u16)` pairs,
-then `n_unfold u16` (§4), then faces over the combined vertex list, bodies
-first, citations, conjugates, unfoldings after, then holonomies, hue maps,
-and contact conditions per word (§5).
-
-## 4. Unfolding: a rule that feeds itself
-
-### 4.1 What it says
-
-Grow, tile, spiral, cascade: the output of step k is the input of step k+1
-under the same rule. The rule is one sentence; the family's pairs are
-snapshots of its unfolding at different k, or one pair whose output is the
-fixpoint of the unfolding from its input.
-
-### 4.2 Carrier
-
-`Germ::Previous { steps: u16 }` cites the same sentence's own instance
-`steps` unfoldings earlier, by depth index rather than by address, since
-the instance has no address of its own. A sentence containing `Previous`
-is an unfolding; its `depth` is its citation depth as in §3.3, and its
-unfolding count ℓ is a coordinate of the instance, never on the tape.
-
-### 4.3 Measure and stop
-
-Every unfolding sentence names a strictly monotone measure on the frame
-that each step must move: occupied cells strictly increasing, or remainder
-strictly decreasing, or a named face's ring strictly decreasing. The
-unfolding stops when the measure cannot move, when the image equals the
-input (fixpoint), or when the image leaves the frame (remainder). The
-measure is a coordinate the tape names; its value per step is not.
-
-### 4.4 Replay
-
-Replay executes the unfolding from each pair's input until stop and checks
-the stop state against the output. Every pair must stop by the same
-criterion; the number of steps may differ per pair. A pair that does not
-stop within the frame's cell count is a remainder, never a timeout.
-
-## 5. Iteration by contact
-
-### 5.1 Orbit word
-
-A word may carry `contact: Option<(anchor: u16, ring: u8)>`. Its action:
-apply the word; measure the ring distance from the image to the anchor
-germ's support; if greater than `ring`, apply again; stop when the distance
-equals `ring` or the image leaves the frame. The number of applications ℓ
-is a coordinate of the instance.
-
-### 5.2 Closure and refusal
-
-An orbit word closes only if the image reaches contact within the frame.
-A word that does not change the ring distance is refused at mint as having
-no orbit. Leaving the frame is a remainder.
-
-### 5.3 Contact and torsion
-
-An orbit that returns to its start body within the frame is a torsion
-cycle `(σ, ℓ)` as now. Contact and torsion are the two ways an orbit ends:
-against another body, or against itself. A word may carry both a contact
-and a torsion; torsion wins when the orbit closes before contact.
-
-### 5.4 Replay
-
-Execute the orbit on each pair's input; check the stopping ring equals the
-tape's `ring` on every pair and the image equals the output body. Orbit
-length is bounded by the frame's diagonal in cells.
-
-## 6. Germination through recursion
-
-### 6.1 Ideas that cite
-
-An idea may germinate by attaching a ruled sentence as a `Cited` vertex
-when the sentence's chart meets the idea's cover and the relative word from
-the idea's anchor to the sentence's frame germ is constant across the
-family's pairs. The idea inherits the citation's closing power and
-germinates only the remainder.
-
-### 6.2 Ideas that conjugate and unfold
-
-An idea whose remainder is closed by `word(by) · word(of) · word(by)⁻¹` for
-two of its germs attaches a `Conjugate`; an idea whose pairs are snapshots
-of one rule at different steps attaches `Previous` with the measure that
-moved between them.
-
-### 6.3 Bundles
-
-A bundle across families (`MU-ENGINEERING.md` §7) is a depth-1 sentence
-whose cited germs are the families' sentences and whose faces are the
-constant relative words between them. A bundle's deflation is the work of
-relating what its citations already did.
-
-### 6.4 Superposition
-
-Two cited sentences describing one class with a non-identity transition
-between them are a 1-cell with that transition, as any two ideas: a fill
-re-gauges one into the other, a class records the dialect. Recursion adds
-no cell type.
-
-### 6.5 Shedding
-
-A cited idea does not shed while an idea that cites it is alive in the
-contemplation; when the last citer sheds or forms, the cited idea's shed
-clock resumes. Formed sentences are not ideas and are not subject to shed.
-
-## 7. Comprehension of recursive speech
-
-### 7.1 Resolution
-
-A mind hearing a recursive sentence resolves each citation by address: in
-its genome, or by asking the syllabus for that address by incidence. A
-sentence with a dangling citation is held in dialect as withheld until the
-citation arrives; it is never learned dangling.
-
-### 7.2 Across gauges
-
-A mind may hold the cited class as a different ruled sentence, a dialect
-variant with a non-identity transition `g` to the cited address. It
-comprehends the citing sentence by re-gauging: every face to the cited germ
-is conjugated by `g`, and the sentence is understood iff the re-gauged
-faces still cohere. If they do not, the pair (cited address, held variant)
-is a class on the citing sentence's chart, recorded, and the sentence is
-withheld. Two minds with equivalent but non-identical citations therefore
-hear one sentence.
-
-### 7.3 Depth order
-
-A mind cannot comprehend depth d before it holds every citation at depth
-below d. The syllabus teaches in depth order: a hypha never serves a citing
-sentence to a voice whose atlas lacks a citation, and serves the citation
-first.
-
-## 8. Speaking a recursive sentence onto a test
-
-Body germs as now; each `Cited` germ by speaking the cited sentence onto
-the test at the citing face's placement; each `Conjugate` by its derived
-word; each `Previous` by unfolding to stop; orbit words to contact.
-Unreached cells are the remainder; an empty remainder on every test is the
-solve, paid to the speaker of the citing sentence for its own deflation and
-to the speakers of the citations for theirs (§10).
-
-## 9. Court
-
-### 9.1 Replay of a recursive sentence
-
-1. Depth: every `Cited.depth < self.depth`; `Previous` and `Conjugate`
-   refer within the sentence.
-2. Existence: every cited address is on this hypha's ruled cover or on a
-   peer's signed ruled root; a citation of a dialect-only or provisional
-   address is refused, "citation not ruled".
-3. Fetch: citations not held are fetched from the peer whose ruled root
-   names them, by the existing digest and fetch path, replayed on arrival.
-4. Memo: replay of a citation on this family is memoized by
-   (address, family id) with its TUniversal stamp; a citer on the same
-   family reuses it. The memo sheds by T-room like every hot carrier.
-5. Replay: citations first (shallower), then conjugates, unfoldings, orbit
-   words, faces, holonomies, hue maps against the family from the registry.
-6. Descent: the sentence's own deflation is nonzero and strictly descends.
-
-### 9.2 Two organs
-
-A recursive sentence installs as any sentence: sectioned at home, replayed
-at a witness, installed on both, minted once at the home. The witness's
-replay includes steps 3 and 4, so a citation the witness lacks is fetched
-and replayed before the citer installs.
-
-### 9.3 A citation slashed later
-
-If a ruled sentence is later slashed, every ruled sentence citing it is
-re-docketed, not slashed: each is replayed without the citation, installs
-again if it still closes its family (its deflation now larger), or is
-withheld to dialect with its escrow returned. A slash never cascades by
-itself; it re-opens the docket.
-
-### 9.4 Dialect citations across hyphae
-
-Two hyphae may hold different ruled sentences on one class. A citer names
-one address; a hypha holding the other fetches the cited one and glues it
-as dialect with its transition, exactly as any two words on a chart. The
-citer then replays against the address it named. No citation is ever by
-class.
-
-## 10. Economics
-
-- **Mint is deflation on this family.** The citing sentence's speaker is
-  paid the deflation the relation added. Each cited sentence's speaker is
-  paid the deflation their sentence performed on this new family when
-  spoken in the citer's placement, re-verified at replay. That is the
-  citation payment: real work on a new family, not a royalty on the past.
-- **No mint for restatement.** A citer with zero own deflation is refused;
-  a citation that adds no deflation on the family pays nothing.
-- **Room follows depth.** A speaker's cited sentences count toward its room
-  on the lanes they moved, as bond earned by use rather than posted; room
-  is not currency and does not transfer.
-- **Escrow on recursive families.** A family's escrow is drawn by all
-  speakers in proportion to their verified deflation on it, citer and cited
-  alike, in one settlement.
-
-## 11. Retirement and shrinking
-
-- **Citation is a use.** `reduce_excluding` treats a ruled citation as a
-  use; a cited sentence cannot retire while a ruled citer exists.
-- **Shorter citer retires the longer.** When a ruled sentence B cites the
-  same classes as ruled sentence A and B's normal-form tape is a geodesic
-  strictly shorter than A's on the same family set, A is derivable from B
-  and retires to the cavity cover with its address kept; citers of A
-  resolve A through the cavity by address, and the syllabus teaches B.
-- **Cavity resolution.** A cited address in the cavity is resolvable for
-  replay and comprehension; it is not taught and not quoted.
-- **Cited-only survival.** A sentence with no family of its own that is
-  cited by a ruled sentence survives on the ruled cover as a citation
-  target; when its last citer retires, it retires with it.
-
-## 12. Persistence and wire
-
-- Genome (`GEN2`) and ledger (`MYC2`) store recursive sentences as tapes
-  with citation addresses; no cited tape is duplicated.
-- The ruled cover's digest strata gain a depth axis so a peer can fetch
-  "everything at depth d on chart c" and syllabus can serve in depth order.
-- `ACT_SPEECH` carries recursive sentences unchanged; the receiver resolves
-  citations. A speech whose citations are not all ruled on the receiver is
-  answered `Withheld(missing addresses)` and the sender learns which
-  citations to speak or wait for.
-- Cover digests include the maximum depth held, so `home` can place a
-  depth-d demand on a hypha that holds depth d−1.
-
-## 13. Bounds
-
-- Depth is bounded by ruled generations: depth d needs d ruled generations
-  below it. No constant.
-- Replay of a recursive sentence costs its own faces plus zero for memoized
-  citations on this family; the memo is one entry per (address, family).
-- Orbit and unfolding lengths are bounded by the frame; the criterion is
-  contact, fixpoint, measure exhaustion, or leaving the frame.
-- Citation fetch runs under the stroke Budget; a citation not reachable in
-  the stroke leaves the sentence withheld, never refused.
-- Cited magnitudes are read from the ruled cover, never recomputed.
-- The mind's contemplation depth equals the deepest idea citing an idea;
-  shedding applies from the leaves.
-
-## 14. Files
-
-- `/opt/mycelium-v0.1.0/src/transducer/sentence.rs`: `Germ::{Cited,
-  Conjugate, Previous}`, depth, tape v2, faces to cited frame germs,
-  unfolding measure, `speak_rule` instantiation of all four kinds.
-- `/opt/mycelium-v0.1.0/src/transducer/alphabet.rs`: `Word::contact`,
-  orbit execution, conjugation form, refusal of a word with no orbit.
-- `/opt/mycelium-v0.1.0/src/transducer/element.rs`: `depth`, orbit and
-  conjugate words on the tape, magnitude as own deflation.
-- `/opt/mycelium-v0.1.0/src/court/verdict.rs`: §9.1 steps; re-docket on
-  citation slash.
-- `/opt/mycelium-v0.1.0/src/server/cognition.rs`: citation fetch through
-  the digest path, replay memo by (address, family), citation as a use in
-  `reduce_excluding`, shorter-citer retirement, depth axis on digests,
-  proportional escrow draw.
-- `/opt/mycelium-v0.1.0/src/client/sdk.rs`,
-  `/opt/mycelium-v0.1.0/src/transducer/bubble.rs`: germination by citation,
-  conjugation, and unfolding; re-gauge at comprehension; withheld on
-  dangling citation; cited ideas do not shed while cited; bundles.
-- `/opt/mycelium-v0.1.0/src/transducer/family.rs`: `extract_rule` may
-  return rules with cited, conjugate, and unfolding germs when their
-  relative words or measures are constant across pairs.
-- `/opt/mycelium-v0.1.0/src/anastome/dialogue.rs`: `SENTENCE_TAG` v2;
-  `Withheld(missing)` reply on speech; depth in cover digests.
-- `/opt/mycelium-v0.1.0/src/economy.rs`: proportional settlement across
-  citer and cited speakers; room from cited use.
-
-## 15. Traces
-
-1. A family whose pairs each contain a previously ruled sentence as a
-   sub-scene yields a depth-1 rule with that sentence as a cited germ and
-   fewer body germs than a flat rule.
-2. A "move B the way A moved" family yields a `Conjugate` germ whose
-   derived word equals `a·b·a⁻¹` and is refused when it equals `b`.
-3. A "grow until the frame" family yields an unfolding with occupied cells
-   as the measure, stopping at the frame on every pair with different step
-   counts and no step count on the tape.
-4. A "move until contact" family closes on every pair with the same `ring`
-   and different ℓ per pair.
-5. A witness lacking a citation fetches it, replays it, memoizes it, and
-   installs the citer; a second citer on the same family reuses the memo.
-6. A sentence citing a dialect-only address is refused "citation not
-   ruled" and held.
-7. A mind holding a dialect variant of a citation comprehends the citer by
-   re-gauging; a variant that does not re-gauge records a class.
-8. A syllabus never serves depth d to a voice lacking depth d−1.
-9. Slashing a cited sentence re-dockets its citers; one re-installs with
-   larger deflation, one is withheld with escrow returned.
-10. A shorter citer retires the longer sentence to the cavity; its citers
-    still replay through the cavity address.
-11. Settlement of a recursive family pays the citer its own deflation and
-    the cited speaker the deflation its sentence performed on that family.
-12. Replay cost of a depth-2 sentence on a family already memoized for its
-    citations equals its own faces only.
+# Recursion — moves on crystallized forms
+
+Status: specification with a bound implementation. Nothing here is landed.
+Written against the tree at 2ebbc6e. It supersedes the earlier text of this
+file: the earlier Part II described passes over germ lists rebuilt from
+cells; this document describes moves on stored forms and binds those.
+Companion documents: `ALPHABET.md`, `MU-ENGINEERING.md`, `MU-ECONOMY.md`,
+`XSEPTUM.md`.
+
+Reading order: Part I builds the geometry from the letters up to
+recursion; Part II binds every move to a function at an absolute path.
+An implementor lands Part II one section per commit; the auditor reproduces
+each section's trace on cold boot.
 
 ---
 
-# Part II — Implementation
+# Part I — Geometry
 
-Bound to the tree at 3e0bb08. Every function named below exists at the
-path given unless marked **new**. Signatures are the ones to add or change;
-an implementor follows this part top to bottom and lands one section per
-commit with its trace value in the commit message. Rust, exact ℚ, `Keyed`
-tries, no `HashMap`, no scan of a carrier keyed elsewhere, every loop's
-index from a fiber, peel, link, or `Budget` cursor.
+## 1. The group and its graph
 
-## 16. Carriers
+### 1.1 Generators
 
-### 16.1 `/opt/mycelium-v0.1.0/src/transducer/sentence.rs`
+Seventeen letters (`ALPHABET.md`): the identity, six quarter turns on the
+six pair planes of the Euclidean chart `e0..e3`, six (3,4,5) rotors on the
+same planes, four (5,12,13) rotors on four of them. Each is an exact rotor
+in Cl(4,0) over ℚ with its inverse carried. They never change.
 
-Replace the struct `Germ` (line 583) with an enum and keep the current
-fields as its `Body` variant:
+### 1.2 Relators
 
-```rust
-pub enum Germ {
-    Body {
-        address: [u8; 32],
-        versor: Versor,
-        word: Word,
-        chain: Vec<Cell>,
-        source: Option<stalk::Invariant>,
-        target: Option<stalk::Invariant>,
-        kind: crate::transducer::peel::ShellKind,
-        shift: Option<(BigRational, BigRational)>,
-    },
-    Cited {
-        address: [u8; 32],          // address of a ruled sentence
-        chart: stalk::Invariant,    // its chart, leading axis 2
-        magnitude: [u64; 4],        // its lane vector at citation
-        depth: u16,                 // its Element.depth
-        placement: Word,            // relative word from its frame germ to this nerve's frame germ
-    },
-    Conjugate { by: u16, of: u16 },          // indices into this nerve's germs
-    Previous { steps: u16, measure: Measure }, // this sentence's own earlier instance
-}
+The letters satisfy a finite set of relations and no others:
 
-pub enum Measure { Occupied, Remainder, Ring { anchor: u16 } }
-```
+- a quarter turn has order four;
+- rotors on one plane commute;
+- a quarter turn on a plane containing a third axis conjugates a rotation
+  on the sensor plane into its inverse (the sheet);
+- the Pythagorean letters have infinite order;
+- letters on planes sharing no axis commute; letters on planes sharing one
+  axis obey the Cl(4,0) product, exact.
 
-Add on `Germ`:
+`alphabet::relators()` returns them. They are the grammar and they are
+taught once.
 
-```rust
-pub fn address(&self) -> [u8; 32];        // Body/Cited: stored; Conjugate/Previous: blake3 of (kind, indices)
-pub fn chart(&self) -> stalk::Invariant;  // Body: target.or(source); Cited: chart; Conjugate: chart of `of`; Previous: chart of the sentence
-pub fn word_in(&self, nerve: &Nerve) -> Word; // Body: word; Cited: placement; Conjugate: nerve.germs[by].word ∘ nerve.germs[of].word ∘ inverse; Previous: identity
-pub fn depth(&self) -> u16;               // Body 0; Cited: depth; Conjugate/Previous: 0
-pub fn is_body(&self) -> bool;
-```
+### 1.3 The Cayley graph
 
-`Face` (line 599) unchanged. `Nerve` (line 620) gains `pub depth: u16`
-computed by `Nerve::depth_of(&self) -> u16` = 1 + max over `Cited` germs,
-0 when none. `assemble(germs, remainder)` (line 939) builds faces for every
-pair of germs through `face_word`, which now takes the nerve to resolve
-`word_in`; it refuses (returns `Nerve` with `class` set) when any `Cited`
-germ's depth is not below the computed depth.
+The group `G` generated by the letters is a graph: every vertex is a group
+element, every edge is a letter. A **word** is a path; its **meaning** is
+the vertex it ends on. Two paths ending on one vertex mean the same thing.
+The **normal form** is the geodesic, the shortest path to the vertex,
+canonical because the relators are decidable: per plane, sheet parity,
+unit exponent mod 4, prime-5 and prime-13 exponents, planes in fixed order.
+Vertex equality is `Rotor::projective_eq`, never tape equality.
 
-### 16.2 `/opt/mycelium-v0.1.0/src/transducer/alphabet.rs`
+Per plane the group is virtually abelian, so the number of vertices within
+n letters grows polynomially. The language is dense and finite at every
+radius; that is why a mind can learn it and why a shorter path is always a
+strictly better description of the same meaning.
 
-`Word` (line 371) gains a contact condition carried beside the tape:
+### 1.4 The frame
+
+A vertex is a transport; a form needs a place to act. The **frame** is the
+sensor's plane with a dilation ρ ∈ ℚ, a placement (a rational translation),
+and a gauge (a permutation of hues). A **word form** is
+`(vertex, ρ, placement, gauge)`. Two word forms with equal vertices and
+different placements are the same word said at two places; placement is
+the coordinate the court quotients, as it always has (`stalk.rs`).
+
+## 2. Forms
+
+### 2.1 Word form
+
+`(tape in normal form, ρ, placement, gauge, contact?)`. Stored as the
+tape; the rotor and the 3×3 affine block are derived on demand, never
+stored, never hashed. `contact` (§3.5) is part of the form and of its key.
+
+### 2.2 Sentence form
+
+A sentence is a set of word forms placed relative to one another:
+
+- **vertices**: the word forms, plus one frame form for the scene;
+- **faces**: for each pair of vertices that the family relates, the
+  **relative word**, the path from one vertex's frame to the other's;
+- **holonomies**: for each independent loop of faces, the product of the
+  relative words around it.
+
+A sentence **coheres** when every holonomy is the identity vertex. A
+sentence form is **closed** when it coheres and its remainder is empty. A
+closed sentence form is a **crystallized form**: it can be stored, cited,
+and replayed from its tape alone.
+
+### 2.3 Germ, idea, thought, in this geometry
+
+- A **germ** is a form that has not closed: a vertex not reached, a face
+  not constant, a loop not identity, a remainder not empty.
+- An **idea** is a candidate closed form bred by a perception: the vertices
+  it would need and the faces it would need.
+- A **thought** is the superposition of candidate forms for one idea, held
+  as cells of a complex whose vertices are candidate word forms and whose
+  coefficients are the relative words between them.
+- **Germination** is the movement of that complex toward a closed form:
+  faces become constant, loops become identity, the remainder empties.
+
+Nothing in this document rebuilds a form from cells after perception.
+Perception produces word forms once; every later operation is a move on
+forms.
+
+## 3. Moves on forms
+
+Each move takes forms, returns a form, preserves the invariant named, and
+is replayed by the court from tapes.
+
+### 3.1 Composition
+
+`w · v`: path concatenation, normalised. Invariant: the vertex of the
+product is the product of the vertices. This is how faces are computed
+from two vertices' frames: `g_ij = w_j · w_i⁻¹`.
+
+### 3.2 Change of basepoint (conjugation)
+
+`w^a = a · w · a⁻¹`. Reading `w` from `a`'s frame. This is "do to B what A
+did to itself": B's form is A's word conjugated into B's frame. Invariant:
+`order(w^a) = order(w)`; the vertex changes, the class does not. It is one
+product and one inverse; no iteration.
+
+### 3.3 Gluing (citation)
+
+Given a closed sentence form `S` and a sentence form `T` under
+construction, gluing identifies `S`'s frame vertex with a vertex of `T` by
+one relative word, the **placement of the citation**. `S` then contributes
+its whole closed path system to `T` through that one edge. Invariant: `S`
+is not copied and not re-derived; `T` names `S` by address and by the
+placement word. `T`'s holonomies through `S` are `S`'s holonomies, which
+are identity because `S` is closed, composed with the placement and its
+inverse, which cancel. So gluing never breaks coherence; only the new faces
+of `T` can.
+
+### 3.4 Following a geodesic to a fixpoint (unfolding)
+
+A form applied to its own image: `x, w(x), w(w(x)), …`. The path is a
+geodesic in the group iterated on the frame. It stops at a **fixpoint**
+(the image equals the input), when a **measure** on the frame can no
+longer move strictly (occupied cells, remainder, or a named face's ring),
+or when the image leaves the frame. Invariant: the measure is strictly
+monotone per step, so the unfolding terminates on a finite frame. The step
+count is a coordinate of the instance, never of the form.
+
+### 3.5 Boundary contact (orbit)
+
+A word form with `contact(anchor, ring)`: apply the word until the image's
+ring distance to the anchor equals `ring`. The orbit ends against another
+body (contact), against itself (torsion, `(σ, ℓ)`), or leaving the frame
+(remainder). Invariant: the stopping ring is on the form; the length is
+not. A word whose first step does not move the distance has no orbit and
+is not a form.
+
+### 3.6 Re-gauging (change of trivialisation)
+
+Given a sentence form and one word `γ_i` per vertex, replace every face
+`g_ij` by `γ_j · g_ij · γ_i⁻¹`. Invariant: holonomies are conjugated,
+identity stays identity. Two sentence forms that differ by a re-gauging
+are one sentence in two gauges; this is how a mind comprehends a citation
+it holds under a different address, and how the court attaches a section.
+
+### 3.7 Refinement (opening an axis)
+
+When two closed forms on one chart have a non-identity relative word that
+no re-gauging removes, the chart is too coarse: the class of that word
+becomes a new axis of the chart and the two forms live on distinct refined
+charts. Invariant: the classes are preserved; the atlas gains a coordinate.
+This is `expand_m` on the atlas and it is the only way dimension is born.
+
+### 3.8 Retirement by geodesic
+
+Two crystallized forms with the same vertices on the same families: the
+one whose tapes are strictly shorter geodesics retires the other to the
+cavity, address kept, replay still possible through the address. Invariant:
+meaning is unchanged; the language shrinks toward geodesics.
+
+## 4. Recursion
+
+Recursion is §3 applied to crystallized forms as vertices of the next
+level.
+
+- **Depth 0**: a sentence whose vertices are word forms of bodies.
+- **Depth d+1**: a sentence at least one of whose vertices is a closed
+  sentence form of depth ≤ d, glued by §3.3.
+- **Unfolding** is §3.4 with the whole sentence form as the iterated word.
+- **Conjugation** is §3.2 with a vertex's word as basepoint for another's.
+- **Orbit** is §3.5 on any word form at any depth.
+
+Well-foundedness: a form may only glue a closed form whose depth is
+strictly less; addresses are fixed at crystallization, so a form cannot
+glue an address that did not exist when it closed. The cited set is
+finite and every element of it has already been replayed by two organs. A
+recursive form's own magnitude is its own deflation, what it closes beyond
+what its cited forms close at their placements; a form that adds nothing is
+the citation, not a form.
+
+## 5. Court
+
+The court replays a form from its tape:
+
+1. Every word form: derive the rotor from the tape, derive the affine,
+   compare vertices projectively.
+2. Every face: recompute `w_j · w_i⁻¹` from the vertices; compare with the
+   stored relative word by vertex.
+3. Every holonomy: multiply around the loop; must be identity.
+4. Every cited form: resolve the address to a crystallized form on this
+   hypha's ruled cover or fetch it from the peer whose signed root names it;
+   replay it first (it is shallower); memoize `(address, family)`.
+5. Every conjugate, unfolding, orbit: execute on the family as §3.2–§3.5;
+   refuse a conjugate equal to its base, an unfolding whose measure does
+   not move, an orbit that does not move.
+6. Descent on the form's own deflation.
+
+A cited form slashed later re-dockets its citers; each replays without it
+and re-installs with larger deflation or is withheld with escrow returned.
+Two hyphae holding different crystallized forms on one class glue them as
+dialect with their relative word; a citer names one address and replays
+against it.
+
+## 6. Comprehension
+
+A mind hearing a form deconstructs it into vertices and faces from the
+tape. For each cited address: held → glue; held under another address on
+the same chart → re-gauge by the relative word between them, replay, cohere
+or record a class; absent → withhold the form in dialect and ask the
+syllabus for the address by incidence. Depth order: a mind never receives
+depth d before it holds every cited form below d; the syllabus serves in
+depth order.
+
+## 7. Germination in the mind
+
+Ideas are candidate forms, vertices of the contemplation complex; the
+complex's coefficients are relative words; a fill is a re-gauging that
+makes a loop identity; a class is a loop no gauge closes. Germination by
+gluing: an idea whose remainder is closed by a held crystallized form at a
+constant placement across the family's pairs glues it and keeps only the
+remainder. Germination by conjugation and unfolding likewise. A cited idea
+does not shed while an idea gluing it lives. Bundles across families are
+depth-1 forms whose vertices are the families' crystallized forms.
+
+## 8. Economics, retirement, persistence, wire, bounds
+
+- **Mint** is the form's own deflation on the family, to its speaker; each
+  cited form's speaker is paid the deflation that form performs on this
+  family at the citer's placement, re-verified at replay. One settlement of
+  the family's escrow across all speakers. Restatement pays nothing.
+- **Room** accrues from cited use on the lanes moved; it is capacity, not
+  currency.
+- **Retirement**: citation is a use; a shorter geodesic citer retires the
+  longer form to the cavity; a cavity address resolves for replay and is
+  never taught.
+- **Persistence**: forms are tapes; `GEN2` and `MYC2` store tapes with
+  cited addresses and depth; memo and citation index are rebuilt at load.
+- **Wire**: speech carries forms with addresses, never copies; a receiver
+  missing a citation answers `Withheld(missing)`; digests carry maximum
+  depth so a depth-d demand homes where depth d−1 is held.
+- **Bounds**: depth by ruled generations; orbit and unfolding by the frame;
+  replay of a cited form once per `(address, family)`; fetch under the
+  stroke `Budget`; every read a fiber, peel, link, or cursor.
+
+---
+
+# Part II — Implementation on crystallized forms
+
+Bound to 2ebbc6e. Functions named without **new** exist at the path and
+line given. The rule of this part: operations act on stored forms and their
+rotors; cells are touched only in `family::perceive` and in `speak_rule`'s
+final emission of output cells.
+
+## 9. The form types
+
+### 9.1 `/opt/mycelium-v0.1.0/src/transducer/alphabet.rs`
+
+`Word` (line 371) is the word form's tape. Add:
 
 ```rust
 pub struct Contact { pub anchor: u16, pub ring: u8 }
 impl Word {
-    pub fn with_contact(self, c: Contact) -> Word;   // new
-    pub fn contact(&self) -> Option<&Contact>;       // new
-    pub fn conjugate_by(&self, by: &Word) -> Word;   // new: by ∘ self ∘ by⁻¹, normal form
+    pub fn with_contact(self, c: Contact) -> Word;          // new
+    pub fn contact(&self) -> Option<&Contact>;              // new
+    pub fn rebase(&self, by: &Word) -> Word;                // new: by·self·by⁻¹, normal form  (§3.2)
 }
 ```
 
-Tape (`Word::to_bytes`, line 592): after the letters, one byte `0` (no
-contact) or `1 ‖ anchor u16 ‖ ring u8`. `Word::from_bytes` (line 599)
-reads it. `Word::key` (line 427) includes the contact bytes.
+`to_bytes` (592) / `from_bytes` (599): after the letters, `0` or
+`1 ‖ anchor u16 ‖ ring u8`. `key` (427) includes it. `normal_form` (466),
+`geodesic` (436), `compose` (457), `inverse` (452), `order` (552),
+`rotor` (441) are the composition and normalisation of §3.1 and are used
+unchanged.
 
-### 16.3 `/opt/mycelium-v0.1.0/src/transducer/element.rs`
+### 9.2 `/opt/mycelium-v0.1.0/src/transducer/sentence.rs`
 
-`Element` (line 81) gains `depth: u16`, serialized in `GEN2` after `mag`
-(`to_bytes`, line 1035; `from_bytes`, line 1098; a `GEN2` payload without
-the depth byte pair reads as depth 0). `address()` (line 1026) does not
-include depth; `canonical()` (line 948) does, so two sentences that differ
-only by depth are distinct words.
-
-New tag constant beside `SENTENCE_TAG` (line 1701): the sentence tape
-version byte follows the tag; version `2` carries citations.
-
-### 16.4 `/opt/mycelium-v0.1.0/src/transducer/cech.rs`
-
-No new cell type. `Section` (line 156) is used for cited sentences as for
-words; `Complex::set_section` (line 211) admits a cited sentence's section
-under its address.
-
-### 16.5 `/opt/mycelium-v0.1.0/src/server/cognition.rs`
-
-New fields on `Kernel`:
+Replace `Germ` (line 583) by the form vertex:
 
 ```rust
-replay_memo: Keyed<Keyed<(bool, u64)>>,   // address → family id → (replayed ok, TUniversal)
-cited_by: Keyed<Keyed<()>>,               // cited address → set of citing ruled addresses
+pub enum Vertex {
+    Frame,                                              // the scene frame, one per sentence
+    Word {                                              // a word form of a body
+        address: [u8; 32],
+        word: Word,                                     // normal form, with contact if any
+        rho: BigRational,
+        placement: (BigRational, BigRational),
+        gauge: Vec<(u8, u8)>,
+        class: stalk::Invariant,                        // the body's chart (source or target)
+    },
+    Glued {                                             // a crystallized sentence form, by address  (§3.3)
+        address: [u8; 32],
+        chart: stalk::Invariant,
+        magnitude: [u64; 4],
+        depth: u16,
+        placement: Word,                                // relative word from its Frame to this Frame
+    },
+    Rebased { by: u16, of: u16 },                       // §3.2, indices into `vertices`
+    Unfolded { measure: Measure },                      // §3.4, the sentence iterated on itself
+}
+pub enum Measure { Occupied, Remainder, Ring { anchor: u16 } }
+
+pub struct Face { pub i: u16, pub j: u16, pub g_ij: Word }
+pub struct Loop { pub faces: Vec<u16>, pub holonomy: Word }
+
+pub struct Form {                                       // replaces Nerve as the stored object
+    pub vertices: Vec<Vertex>,
+    pub faces: Vec<Face>,
+    pub loops: Vec<Loop>,
+    pub remainder: Vec<Cell>,
+    pub depth: u16,
+    pub hue_maps: Keyed<Vec<(u8, u8)>>,                 // by class key
+}
 ```
 
-Both are epigenome: not in `snapshot` (line 4791), rebuilt from the ruled
-cover at `restore` (line 4996) by walking `SENTENCE_TAG` v2 tapes.
+`Nerve` (620), `Germ`, `Cycle` are removed; `Complex` on the sentence
+stays as the mind's thought carrier, not as part of the stored form.
 
-## 17. Tape: `SENTENCE_TAG` version 2
+On `Vertex`:
 
-Written by `as_element` (`sentence.rs` line 1362), read by `from_element`
-(line 1707) and `chart_of` (line 1680). Layout after the connection tape
-of germ 0 (unchanged):
+```rust
+pub fn word_in(&self, form: &Form) -> Word;   // Frame: identity; Word: word; Glued: placement; Rebased: vertices[by].word_in ∘ vertices[of].word_in ∘ inverse; Unfolded: identity
+pub fn class(&self) -> stalk::Invariant;
+pub fn depth(&self) -> u16;                    // Glued: depth; others 0
+```
+
+On `Form`:
+
+```rust
+pub fn face_of(&self, i: u16, j: u16) -> Word;        // vertices[j].word_in ∘ vertices[i].word_in⁻¹, normal form   (§3.1)
+pub fn coheres(&self) -> bool;                        // every loop holonomy projectively identity
+pub fn is_closed(&self) -> bool;                      // coheres && remainder.is_empty()
+pub fn depth_of(&self) -> u16;                        // 1 + max Glued depth, else 0
+pub fn regauge(&mut self, gamma: &[Word]);            // §3.6, one word per vertex
+pub fn glue(&mut self, s: &Form, s_addr: [u8;32], placement: Word) -> u16;  // §3.3, returns the new vertex index
+pub fn rebase(&mut self, by: u16, of: u16) -> u16;    // §3.2
+pub fn unfold(&mut self, measure: Measure) -> u16;    // §3.4
+pub fn loops_of(faces: &[Face], n: usize) -> Vec<Loop>; // spanning forest chords
+```
+
+`assemble` (939) is reduced to: given vertices and the face index pairs
+the family relates, compute faces by `face_of`, loops by `loops_of`,
+holonomies by composition. It never reads cells.
+
+### 9.3 `/opt/mycelium-v0.1.0/src/transducer/element.rs`
+
+`Element` (line 81) gains `depth: u16`, in `GEN2` after `mag` (`to_bytes`
+1035, `from_bytes` 1098). The sentence description bytes are the `Form`
+tape (§10). `is_sentence` (1674 in sentence.rs) unchanged.
+
+## 10. Tape: `SENTENCE_TAG` version 2
+
+Written by `sentence::as_element` (1362), read by `from_element` (1707):
 
 ```
-version u8 (=2)
-n_body u16, then per body germ: as version 1 (axis block, chain, hue map, kind, shift)
-n_cited u16, then per citation:
-    address 32 ‖ chart len16 + axes u64… ‖ magnitude 4×u64 ‖ depth u16 ‖ placement Word bytes
-n_conj u16, then per conjugate: by u16 ‖ of u16
-n_prev u16, then per unfolding: steps u16 ‖ measure u8 (0 occupied, 1 remainder, 2 ring) ‖ anchor u16 (ring only)
-n_faces u16, then per face over the combined index (bodies, cited, conj, prev): i u16 ‖ j u16 ‖ g_ij Word bytes ‖ spelled u8
-n_holonomy u16, then per cycle: Word bytes
+SENTENCE_TAG ‖ version u8 (=2)
+n_vertices u16, then per vertex:
+  kind u8: 0 Frame | 1 Word | 2 Glued | 3 Rebased | 4 Unfolded
+  Word:    address 32 ‖ Word bytes ‖ rho (put_q) ‖ placement (put_q, put_q) ‖ gauge len16 + pairs ‖ class len16 + axes u64…
+  Glued:   address 32 ‖ chart len16 + axes ‖ magnitude 4×u64 ‖ depth u16 ‖ placement Word bytes
+  Rebased: by u16 ‖ of u16
+  Unfolded: measure u8 (0 occupied, 1 remainder, 2 ring) ‖ anchor u16 (ring only)
+n_faces u16, then per face: i u16 ‖ j u16 ‖ g_ij Word bytes
+n_loops u16, then per loop: n u16 ‖ face indices u16… ‖ holonomy Word bytes
+n_hue u16, then per class: class key 32 ‖ len16 + pairs
+remainder len32 + germ bytes
 depth u16
 ```
 
-`from_element` reconstructs `Nerve.germs` in that order so face indices
-match. `is_sentence` (line 1674) is unchanged. `replay_nerve` (line 1746)
-runs on the reconstructed nerve.
+`as_element` derives nothing from cells: it serialises the `Form`.
+`from_element` reconstructs the `Form` and, for `Word` vertices, derives
+the rotor lazily through `Word::rotor` (441) and the affine through
+`element::conformal_of` (element.rs 239). A version-1 tape reads as a
+`Form` of `Word` vertices with faces recomputed by `face_of` and depth 0.
 
-## 18. Words: conjugation and contact
-
-`/opt/mycelium-v0.1.0/src/transducer/alphabet.rs`
-
-- `conjugate_by`: `by.compose(self).compose(&by.inverse()).normal_form()`.
-- Orbit execution is not in `alphabet.rs`; it needs cells. Add to
-  `/opt/mycelium-v0.1.0/src/transducer/family.rs`:
-
-```rust
-pub fn orbit(word: &Word, rho: &BigRational, body: &Body, anchor: &[(i64,i64)], frame: (usize,usize))
-    -> OrbitEnd
-pub enum OrbitEnd { Contact { cells: Vec<(i64,i64,u8)>, steps: u32 }, Torsion { steps: u32 }, LeftFrame { steps: u32 } }
-```
-
-Implementation: realise the word as a versor by
-`element::conformal_of(&Spelling{word, rho}, &shift)` (element.rs line 239);
-apply with `element::carry_cell` (line 346) to every cell of the body;
-measure the ring distance to `anchor` with the ring arithmetic already in
-`sentence.rs` (`contact`, about line 975, kept only for this purpose);
-repeat while distance > `ring`; stop conditions as §5. The step bound is
-`frame.0 + frame.1`. A word whose first application leaves the distance
-unchanged returns `LeftFrame{steps:0}` and `speak_rule`'s caller refuses it
-at mint.
-
-## 19. Rule extraction with recursion
+## 11. Perception produces word forms once
 
 `/opt/mycelium-v0.1.0/src/transducer/family.rs`
 
-`extract_rule(family)` (line 746) becomes:
+`perceive(grid)` (line 76) returns bodies. Add:
 
 ```rust
-pub fn extract_rule(family: &[(Grid, Grid)], held: &dyn CitationSource) -> Option<SentenceRule>
-pub trait CitationSource {
-    fn ruled_on(&self, chart: &stalk::Invariant) -> Vec<(Element)>;   // ruled sentences the mind holds on this chart
-    fn speak_cited(&self, e: &Element, x: &Grid, placement: &Versor) -> Option<Speech>;
-}
+pub fn word_form(a: &Body, b: &Body) -> Option<Vertex>   // new: carriage(a,b) (131) → spell → Vertex::Word with class = b.moduli
+pub fn frame_vertex() -> Vertex                           // new: Vertex::Frame
 ```
 
-`Epigenome` implements `CitationSource` over its genome; the hypha's
-`Kernel` implements it over the ruled cover for `rule_replays_family`.
+`pair_nerve` (about 590) becomes `pair_form(a: &Grid, b: &Grid, scale) -> Form`:
+vertices = `Frame` plus one `Word` per carried body plus body-only
+vertices for created and erased bodies (as `Word` with identity word and
+an empty source or target class); faces for every related pair through
+`Form::face_of`; loops through `loops_of`. Shells (`peel::peel_body_scaled`)
+remain pairing candidates and are never vertices. This is the only place
+cells become forms.
 
-Order inside `extract_rule`:
+## 12. Extraction as moves
 
-1. `pair_nerve` per pair as now (body germs, multiplicity by class).
-2. **Citation pass.** For each pair nerve and each ruled sentence `s` from
-   `held.ruled_on(chart)` for a chart present in the pair: speak `s` onto
-   the pair's input at every placement where its frame germ's relative word
-   to a body germ is constant across pairs; if the spoken cells match a
-   subset of the pair's output on every pair, replace those body germs by
-   one `Germ::Cited` with that placement. Constancy is the same
-   `agree_up_to_gauge` test (line 1096) run on the citation's placement
-   word.
-3. **Conjugation pass.** For germs `(i, j)` whose relative word across
-   pairs equals `word(i) ∘ word(j) ∘ word(i)⁻¹` on every pair, replace
-   `j`'s word by `Germ::Conjugate{by:i, of:j}`.
-4. **Unfolding pass.** If the pairs' outputs are reachable from their
-   inputs by k applications of one nerve for different k, with one measure
-   from `Measure` strictly monotone per step and the same stop criterion,
-   the rule is a single nerve plus `Germ::Previous{steps:1, measure}`.
-5. **Contact pass.** For a body germ whose per-pair translation differs but
-   whose ring distance to one anchor germ at the output is constant, its
-   word carries `Contact{anchor, ring}` and its translation leaves the
-   tape.
-6. `agree_up_to_gauge` on the resulting nerves, then `close`.
+`/opt/mycelium-v0.1.0/src/transducer/family.rs`
 
-Each pass reads only the pair nerves and the citation source's fiber at the
-chart; nothing enumerates the genome.
+```rust
+pub trait Crystal {                                       // new: source of crystallized forms
+    fn on_class(&self, class: &stalk::Invariant) -> Vec<(Element, Form)>;  // ruled/held closed forms whose chart meets the class
+    fn speak_form(&self, f: &Form, x: &Grid, placement: &Word) -> Option<Speech>;
+}
+pub fn extract_rule(family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Option<SentenceRule>
+```
 
-`speak_rule` (line 997): for `Cited`, `held.speak_cited(e, x, placement)`;
-for `Conjugate`, realise `word_in`; for `Previous`, unfold to stop; for a
-word with `Contact`, `orbit`. Remainder rules unchanged.
+`Epigenome` implements `Crystal` over its genome (`sdk.rs` 641); `Kernel`
+implements it over the ruled cover (`cognition.rs`, `word_at` 1757 with
+`ruled_contains`).
 
-`rule_replays_family` (line 737): same passes on the hypha with the ruled
-cover as `CitationSource`.
+Inside `extract_rule`, in order, each a move on the pair forms:
 
-## 20. Court
+1. **Correspondence by class.** Vertices across pairs are matched by
+   `class()`; a class in every pair is a rule vertex; a class in some
+   pairs is a section over those pairs (`SentenceRule.sections`, new
+   field `Keyed<Vec<u16>>` by class key). Counts are not compared.
+2. **Constancy of faces.** For each matched pair of vertices, `face_of` in
+   every pair; the face is a rule face iff all are one vertex
+   (`same_form`, alphabet.rs 537). Non-constant faces are dropped; the
+   vertices stay.
+3. **Gluing.** For each class present, `crystal.on_class(class)`; for each
+   crystallized form `s` returned, the placement word from `s`'s `Frame` to
+   the pair's `Frame` via the matched vertex; if `crystal.speak_form(s, x,
+   placement)` reproduces a subset of the pair's output on every pair, the
+   pair forms `glue(s, addr, placement)` and the reproduced vertices are
+   removed from the remainder. §3.3.
+4. **Rebasing.** For vertex pairs `(i, j)` where `face_of(i, j)` on every
+   pair equals `word_in(i) ∘ word_in(j) ∘ word_in(i)⁻¹`, replace `j` by
+   `Rebased{by: i, of: j}`. §3.2.
+5. **Unfolding.** If each pair's output is the input under k applications
+   of the same form with one `Measure` strictly monotone and one stop
+   criterion, the rule is the form plus `Unfolded{measure}`. §3.4.
+6. **Contact.** For a `Word` vertex whose placement differs per pair but
+   whose ring distance to one anchor vertex at the output is constant, its
+   word gains `Contact{anchor, ring}` and its placement leaves the form. §3.5.
+7. **Coherence.** `Form::coheres` on the rule; if false, `solve_coboundary`
+   (1268) gives γ and `regauge`; still false → the rule is held with the
+   offending loop.
+
+No pass reads cells; every comparison is `same_form` or `projective_eq`.
+
+`speak_rule(rule, x)` (997): `perceive(x)` once; match bodies to rule
+vertices by class through `Stalks::fiber` (stalk.rs 362), several bodies on
+one vertex is a section; `Word` vertices emit through `conformal_of` and
+`carry_cell` (element.rs 346) at the placement solved from the face to the
+anchor; `Glued` through `crystal.speak_form`; `Rebased` through
+`word_in`; `Unfolded` by iterating the form to stop; `Contact` words by
+`orbit` (§13). Remainder as now.
+
+`rule_replays_family` (737): the same seven moves with the ruled cover as
+`Crystal`; returns `Option<Vec<([u8;32], [u64;4])>>`, the per-speaker
+deflation vectors for §17.
+
+## 13. Orbit
+
+`/opt/mycelium-v0.1.0/src/transducer/family.rs`
+
+```rust
+pub fn orbit(v: &Vertex, x_cells: &[(i64,i64,u8)], anchor: &[(i64,i64)], frame: (usize,usize)) -> OrbitEnd
+pub enum OrbitEnd { Contact{cells, steps: u32}, Torsion{steps: u32}, LeftFrame{steps: u32}, NoOrbit }
+```
+
+Realise the word once through `conformal_of`; apply by `carry_cell`;
+ring distance by the ring arithmetic already in `sentence.rs` (the one
+remaining use of `adjacent_ring`); bound `frame.0 + frame.1`. `NoOrbit`
+when the first step leaves the distance unchanged; `extract_rule` refuses
+to mint a contact word that returns it.
+
+## 14. Court
 
 `/opt/mycelium-v0.1.0/src/court/verdict.rs`
 
-`blind_replay(spoken)` (line 31) gains, before the sentence arm, when
-`spoken.is_sentence()` and the tape version is 2:
+Before the existing sentence arm in `blind_replay` (31):
 
 ```rust
-pub fn replay_recursive(spoken: &Element, resolve: &dyn Fn(&[u8;32]) -> Option<Element>) -> Option<&'static str>
+pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8;32]) -> Option<Form>, family: Option<&[(Grid,Grid)]>) -> Option<&'static str>
 ```
 
-Steps, each returning a reason on failure:
-1. `"citation depth not below sentence depth"` when any `Cited.depth >= spoken.depth`.
-2. `"citation not ruled"` when `resolve(address)` is `None`.
-3. `"conjugate equals its base"` when a `Conjugate`'s derived word equals `word(of)`.
-4. `"unfolding measure does not move"` when a `Previous` measure is not strictly monotone on the family.
-5. `"orbit word has no orbit"` for a contact word whose first step leaves the distance unchanged.
-6. Then `replay_nerve` on the resolved nerve, then descent on `spoken.magnitude()`.
+1. `"glued form depth not below sentence depth"`.
+2. `"glued form not ruled"` when `resolve` is `None`.
+3. For each `Word` vertex: rotor from tape, affine, projective compare
+   against the vertex's own recomputed vertex (a tampered tape fails).
+4. For each face: `face_of(i, j)` recomputed, `same_form` with stored.
+5. For each loop: holonomy recomputed, projectively identity.
+6. `"rebased form equals its base"`; `"unfolding measure does not move"`;
+   `"orbit does not move"`, each by executing the move on `family` when
+   given, else by the form's own consistency.
+7. Descent on `spoken.magnitude()`.
 
-`rule(...)` (line 222) is unchanged; it receives the same `Element`.
+`rule(...)` (222) unchanged.
 
 `/opt/mycelium-v0.1.0/src/server/cognition.rs`
 
-- `resolve_cited(&self, addr) -> Option<Element>`: `word_at(addr)` (line
-  1757) if ruled (`ruled_contains`), else `None`. Provisional and dialect
-  addresses return `None` by construction.
-- `glue_fetched` (line 2647): before replay of a fetched sentence with
-  citations, for each citation not held call the existing digest/fetch path
-  for that address's chart (`fetch_have`, line 3169, and the server's fetch
-  through `serve_ruled`, line 3115); if the citation arrives, glue it first;
-  if not within the stroke's `Budget`, return `Glue::Dialect` with reason
-  `"citation pending"` and leave the citer on the docket.
-- `replay_memo`: `perceive_speech` (line 1785) and `glue_fetched` consult
-  `replay_memo[addr][family]` before `rule_replays_family`; write it after.
-  `retire_on_t`-style shedding by the T lifecycle already applied to
-  `heard`.
-- `cited_by`: `home_install` and the `Glue::Admitted` arm insert
-  `(cited, citer)` for every `Cited` germ of an installed sentence;
-  `reduce_excluding` treats `cited_by.get(addr).is_some_and(nonempty)` as a
-  use and refuses retirement.
-- Re-docket on slash: in `apply_verdict` (line 2327) on `RULING_SLASHED` of
-  an address with `cited_by` entries, each citer is moved from the ruled
-  cover back to `provisional` with `provisional_tu` now; the next
-  `court_stroke` (line 2394) replays it without the citation.
+- `resolve_form(&self, addr) -> Option<Form>` **new**: `word_at` (1757) if
+  `ruled_contains`, then `from_element`; provisional and dialect return
+  `None`; cavity returns `Some` (§18).
+- `glue_fetched` (2647): for each `Glued` vertex not resolvable, run the
+  digest/fetch path for its chart (`fetch_have` 3169, server `serve_ruled`
+  3115); glue what arrives first; otherwise `Glue::Dialect` with
+  `"citation pending"` and the citer stays docketed.
+- `replay_memo: Keyed<Keyed<(bool, u64)>>` **new**, consulted in
+  `perceive_speech` (1785) and `glue_fetched` before `rule_replays_family`;
+  shed by the T lifecycle as `heard` is.
+- `cited_by: Keyed<Keyed<()>>` **new**: written in `home_install` and the
+  `Admitted` arm for every `Glued` vertex; read by `reduce_excluding` as a
+  use.
+- `apply_verdict` (2327) on `RULING_SLASHED` of an address in `cited_by`:
+  each citer returns to `provisional` with `provisional_tu` now; next
+  `court_stroke` (2394) replays it without the citation.
+- Both new fields rebuilt at `restore` (4996) by walking ruled tapes;
+  never in `snapshot` (4791).
 
-## 21. Comprehension
+## 15. Comprehension
 
 `/opt/mycelium-v0.1.0/src/client/sdk.rs`
 
-`Epigenome::comprehend(&mut self, utterance)` (line 855), sentence arm:
-1. `from_element` → nerve. For each `Cited` germ: `self.word_at(address)`
-   (line 681). If absent, return `Comprehension::Withheld { missing: Vec<[u8;32]> }`
-   (new variant on the enum at line 549); `learn_one` (line 977) then holds
-   the sentence in `Dialect` with `withheld = true` and the missing list, and
-   `pull_syllabus` (line 1427) requests those addresses by incidence on their
-   charts.
-2. If present but on a different address with the same chart, compute
-   `g = cech::transition(held, cited)` (cech.rs line 20); if `g` is not
-   identity, conjugate every face involving that germ by `rotor_of(g)`
-   (line 40) and re-run `replay_nerve`; coherence → understood; failure →
-   `Comprehension::Dialect(g)` and a class recorded on the citing sentence's
-   chart through the contemplation.
-3. Depth order: `pull_syllabus` sorts served words by `depth` ascending and
-   learns in that order; `serve_ruled` (cognition.rs line 3115) serves in
-   depth order and never serves a citer whose citations the voice's atlas
-   lacks (the request carries the voice's charts; the server checks the
-   citation charts against them).
+- `Comprehension` (549) gains `Withheld { missing: Vec<[u8;32]> }`.
+- `Epigenome::comprehend` (855), sentence arm, on the `Form`:
+  1. each `Glued` address: `word_at` (681); absent → `Withheld`.
+  2. present under another address on the same chart: relative word
+     `g = cech::transition(held, cited)` (cech.rs 20) → `rotor_of` (40) →
+     `Word` via `alphabet` spelling → `Form::regauge` on the vertices
+     touching that glued vertex; `coheres` → understood; else
+     `Comprehension::Dialect(g)` and a class recorded through the
+     contemplation.
+- `learn_one` (977): a `Withheld` sentence enters `Dialect` (629) with
+  `withheld: true, missing`, never the genome; `pull_syllabus` (1427)
+  requests the missing addresses by incidence and learns served words in
+  ascending `depth`.
+- `serve_ruled` (cognition.rs 3115): serves in depth order and never a form
+  whose `Glued` charts the voice's atlas lacks.
 
-## 22. Germination
+## 16. Germination
 
 `/opt/mycelium-v0.1.0/src/transducer/bubble.rs`
 
-- `Contemplation::pivot_on(word, budget)` (line 712): when `word` is a
-  ruled sentence and an idea's cover meets its chart, attempt a citation:
-  the relative word from the idea's anchor to the sentence's frame germ
-  over the idea's family pairs; constant → the idea gains a `Cited` germ
-  and its remainder is re-measured minus what the citation speaks.
-- `Bubble` (line 84) gains `cites: Keyed<()>` (addresses it cites) and
-  `cited_by: Keyed<()>` (ideas citing it). `retire_on_t` (line 223) skips a
-  bubble with non-empty `cited_by`.
-- Bundles: `Contemplation::bundle(&mut self, class: &Invariant, budget)` **new**:
-  ideas on one class whose relative words are constant form one depth-1
-  nerve of `Cited` germs; it is held as an idea and spoken by
-  `Entity::speak` like any sentence.
+- `Contemplation::pivot_on(word, budget)` (712): when `word` is a
+  crystallized form and an idea's cover meets its chart, compute the
+  placement word from the idea's anchor vertex to the form's `Frame` across
+  the idea's pairs; constant → `idea.form.glue(...)`; remainder re-measured
+  as what the glued form does not speak.
+- `Bubble` (84) gains `glues: Keyed<()>` and `glued_by: Keyed<()>`;
+  `retire_on_t` (223) skips a bubble with non-empty `glued_by`.
+- `Contemplation::bundle(class, budget)` **new**: ideas on one class whose
+  relative words are constant form one depth-1 `Form` of `Glued` vertices,
+  held as an idea, spoken by `Entity::speak` (sdk.rs 1836).
 
-## 23. Speech and wire
+## 17. Wire and economics
 
 `/opt/mycelium-v0.1.0/src/anastome/dialogue.rs`
 
-- `ACT_SPEECH` (line 91) payload unchanged; a sentence with citations is
-  one element in `sentences`.
-- Reply codes (line 127): add `SPEECH_WITHHELD: u8 = 3`; `encode_speech_reply`
-  gains, after the codes, `n_missing u16 ‖ address 32…` so the sender learns
-  which citations to speak or wait for. `decode_speech_reply` returns
+- `SPEECH_WITHHELD: u8 = 3` beside line 127; `encode_speech_reply` (131)
+  appends `n_missing u16 ‖ address 32…`; `decode_speech_reply` (137) returns
   `(Vec<u8>, Vec<[u8;32]>)`.
-- Digests: `StratumDigest` (sheaf.rs line 21) gains `pub depth_max: u16`;
-  `sheaf::digests` (line 44) fills it from the stratum's members;
-  `encode_digests_reply`/`decode_digests_reply` (dialogue.rs lines 406, 417)
-  carry it. `encode_cover_digest` (line 451) carries the hypha's maximum
-  ruled depth after `room`.
-
-`/opt/mycelium-v0.1.0/src/bin/mycelium-server.rs`
-
-- In `judge`'s `ACT_SPEECH` handler: `perceive_speech` returns per-sentence
-  codes; when a code is `SPEECH_WITHHELD`, collect the missing addresses
-  from the kernel (`Kernel::missing_citations(&Element) -> Vec<[u8;32]>`
-  **new**) into the reply.
-- `admit_peer_digest` (line 385) records the peer's `depth_max`;
-  `nerve::home` (nerve.rs line 788) gains a parameter `depth: u16` and
-  excludes hyphae whose `depth_max + 1 < depth` from the fiber.
-
-## 24. Economics
+- `StratumDigest` (sheaf.rs 21) gains `depth_max: u16`; `sheaf::digests`
+  (44) fills it; `encode/decode_digests_reply` (406/417) carry it;
+  `encode_cover_digest` (451) carries the hypha's maximum ruled depth.
+- `/opt/mycelium-v0.1.0/src/bin/mycelium-server.rs`: `judge`'s `ACT_SPEECH`
+  handler collects `Kernel::missing_forms(&Element) -> Vec<[u8;32]>`
+  **new** into the reply; `admit_peer_digest` (385) records `depth_max`;
+  `nerve::home` (nerve.rs 788) gains `depth: u16` and excludes hyphae with
+  `depth_max + 1 < depth`.
 
 `/opt/mycelium-v0.1.0/src/economy.rs`
 
-- `settle_recursive(&mut self, family_escrow: &[u8;32], shares: &[( [u8;32], [u64;4] )], anchor) -> [u64;4]`
+- `settle_recursive(&mut self, escrow: &[u8;32], shares: &[([u8;32],[u64;4])], anchor) -> [u64;4]`
   **new**: draws the family's escrow proportionally to each speaker's
-  verified deflation vector and mints each share to its speaker through
-  `mint_claim` (line 289). Called from `Kernel::pay_solve` (cognition.rs
-  line 3220) and from `home_install` when the installed sentence has
-  citations; the shares are the citer's own deflation and each cited
-  sentence's deflation on this family as measured at replay
-  (`rule_replays_family` returns the per-germ deflation vector: change its
-  return type to `Option<Vec<([u8;32],[u64;4])>>`).
-- Room from cited use: `bond_of` (line 175) is unchanged; add
-  `use_credit(&self, who) -> [u64;4]` **new**, the sum of deflation vectors
-  of the speaker's ruled sentences that are cited by other ruled sentences,
-  read from `Kernel::cited_by`; `lane_room` (cognition.rs line 3455) adds
-  `use_credit` to `bond_of` before `lane_cover_room`.
+  verified deflation and mints each share via `mint_claim` (289). Called
+  from `Kernel::pay_solve` (cognition.rs 3220) and `home_install` when the
+  form has `Glued` vertices; shares from `rule_replays_family`.
+- `use_credit(&self, who) -> [u64;4]` **new**, from `Kernel::cited_by`;
+  `lane_room` (cognition.rs 3455) adds it to `bond_of` (175) before
+  `lane_cover_room`.
 
-## 25. Retirement
+## 18. Retirement
 
 `/opt/mycelium-v0.1.0/src/server/cognition.rs`
 
-- `reduce_excluding`: a citation is a use (§20).
-- `shorter_citer(&self, addr) -> Option<[u8;32]>` **new**: among ruled
-  sentences on the same classes (`ruled.fiber(chart)` per class), one whose
-  normal-form tape length is strictly less and whose `cited_by` covers the
-  same families. When found, `relocate_cavity(addr)` with the address kept
-  in `ruled_addrs`; `resolve_cited` reads the cavity (`cavity_book`) as a
-  valid citation target; `serve_ruled` never serves it.
-- A sentence with no family of its own (`listing_task` absent) and empty
-  `cited_by` after its last citer retires is relocated the same way on the
-  next `court_stroke`.
+- `reduce_excluding`: `cited_by` non-empty is a use.
+- `shorter_form(&self, addr) -> Option<[u8;32]>` **new**: a ruled form on
+  the same classes (`ruled.fiber` per class) with the same `cited_by`
+  families whose vertices' normal-form tapes are strictly shorter in total;
+  found → `relocate_cavity(addr)` with the address kept in `ruled_addrs`;
+  `resolve_form` reads `cavity_book`; `serve_ruled` never serves it.
+- A form with no family and empty `cited_by` after its last citer retires
+  relocates on the next `court_stroke`.
 
-## 26. Persistence
+## 19. Persistence
 
-- `GEN2` (`element.rs` `to_bytes`/`from_bytes`): depth after `mag`;
-  sentence tape v2 inside the description bytes. A v1 tape reads as depth 0
-  with no citations.
-- `MYC2` (`cognition.rs` `snapshot`/`restore`): ruled sentences as tapes;
-  `cited_by` and `replay_memo` rebuilt at restore, never written.
-- Genome (`sdk.rs` `crystallize`/`uncrystallize`, lines 1011/1024): same
-  `GEN2` elements; dialect and withheld sentences are never written.
+- `GEN2`: `depth` after `mag`; sentence tape v2 in the description; a v1
+  tape reads as depth 0 with `Word` vertices only.
+- `MYC2`: ruled forms as tapes; `cited_by`, `replay_memo` rebuilt at load.
+- Genome (`crystallize` 1011 / `uncrystallize` 1024): `GEN2`; dialect and
+  withheld forms never written.
 
-## 27. Tests (single foreground `cargo test --release`; N vs 4N counters apply)
+## 20. Tests (single foreground `cargo test --release`; N vs 4N counters apply)
 
-1. `sentence::tests::cited_germ_round_trips_tape_v2`: a nerve with one
-   `Cited`, one `Conjugate`, one `Previous`, and a contact word survives
-   `as_element`/`from_element` with faces intact.
-2. `sentence::tests::depth_is_one_plus_max_citation` and refusal of a
-   citation with equal depth.
-3. `alphabet::tests::conjugate_by_is_normal_form` and `contact_in_key`.
-4. `family::tests::orbit_stops_at_contact_and_refuses_no_orbit`.
-5. `family::tests::extract_rule_cites_a_held_sentence`: two families, the
-   second contains the first's scene; the rule is depth 1 with one `Cited`
-   germ and fewer body germs than the flat rule.
-6. `family::tests::unfolding_grow_to_frame`: three pairs at different steps
-   give one nerve with `Previous{Occupied}` and no step count on the tape.
-7. `verdict::tests::recursive_replay_refuses_unruled_citation`.
-8. `cognition::tests::witness_fetches_citation_before_install` and
-   `replay_memo_reused_on_second_citer`.
-9. `cognition::tests::slash_of_cited_redockets_citers`.
-10. `sdk::tests::comprehend_regauges_dialect_citation` and
-    `withheld_on_missing_citation_then_learns_in_depth_order`.
-11. `economy::tests::settle_recursive_pays_citer_and_cited_by_deflation`.
-12. `cognition::tests::shorter_citer_retires_longer_to_cavity_and_resolves`.
+1. `sentence::tests::form_tape_v2_round_trips` — Frame, Word, Glued, Rebased, Unfolded, contact word, faces, loops.
+2. `sentence::tests::depth_is_one_plus_max_glued` and refusal at equal depth.
+3. `alphabet::tests::rebase_is_normal_form_and_contact_in_key`.
+4. `family::tests::pair_form_reads_cells_once` — a second call with the same grids touches no cells (work counter).
+5. `family::tests::extract_rule_by_class_with_sections` — counts 3, 4, 3 across pairs give 3 vertices and one section.
+6. `family::tests::extract_rule_glues_a_held_form` — depth 1, one `Glued`, fewer `Word` vertices than the flat rule.
+7. `family::tests::unfolding_grow_to_frame` — one form, `Unfolded{Occupied}`, no step count on the tape.
+8. `family::tests::orbit_contact_and_no_orbit`.
+9. `verdict::tests::replay_form_refuses_unruled_glue`.
+10. `cognition::tests::witness_fetches_glued_form_before_install` and `replay_memo_reused`.
+11. `cognition::tests::slash_of_glued_redockets_citers`.
+12. `sdk::tests::comprehend_regauges_dialect_glue` and `withheld_then_depth_order`.
+13. `economy::tests::settle_recursive_pays_by_deflation`.
+14. `cognition::tests::shorter_form_retires_to_cavity_and_resolves`.
 
-## 28. Landing order
+## 21. Landing order and traces
 
-1. §16.1–16.3 carriers and tape v2 with tests 1–3 (no behaviour change
-   until §19).
-2. §18 orbit and conjugation with test 4.
-3. §19 extraction passes with tests 5–6; `speak_rule` for all kinds.
-4. §20 court with tests 7–9; §26 persistence.
-5. §21 comprehension and §23 wire with test 10.
-6. §22 germination and bundles.
-7. §24 economics with test 11; §25 retirement with test 12.
-8. Cold-boot traces §15, one per commit message.
+1. §9–§10 form types and tape, tests 1–3. Trace: a restored genome logs
+   `forms N (v2 K, v1 M)`.
+2. §11 perception to forms, test 4. Trace: `pair_form` work counter equal
+   at N and 4N bodies.
+3. §12–§13 extraction moves and orbit, tests 5–8. Trace: over 100 pulled
+   families, `rule` lines exceed `uncollapsed`; at least one `Glued`, one
+   `Unfolded`, one contact word logged.
+4. §14 court, tests 9–11, §19 persistence. Trace: a witness lacking a glued
+   form logs fetch, replay, then install.
+5. §15 comprehension and §17 wire, test 12. Trace: a mind holding a dialect
+   glue logs `regauged` and installs; a missing glue logs `withheld` then
+   learns in depth order.
+6. §16 germination and bundles. Trace: an idea logs `glued <addr>` and its
+   remainder shrinks by the glued form's cells.
+7. §17 economics and §18 retirement, tests 13–14. Trace: one settlement
+   with two speakers; a longer form relocated with its citers still
+   replaying through the cavity.
+
+Each commit carries its trace value. The auditor reproduces it on cold
+boot before the next section lands.
