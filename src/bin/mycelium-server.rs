@@ -7,6 +7,7 @@
 use mycelium::anastome::dialogue;
 use mycelium::cognition::{decode_percept, outcome_code, Kernel, Outcome};
 use mycelium::court::identity::{parse_hex32, parse_hex64, HyphaKey};
+use mycelium::network::mesh::{self, MeshRecord};
 use mycelium::network::nerve::{home, Cover, Keyed, Router};
 use mycelium::network::wire::Frame;
 use std::io::{Read, Write};
@@ -514,9 +515,14 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
             match reg.settle(&tid, &outputs) {
                 mycelium::registry::SolveYield::Bounty(tension) => {
                     let snap = reg.snapshot();
-                    let tmp = format!("{}.registry.tmp", door.state_path);
+                    let dir = std::path::Path::new(&door.state_path)
+                        .parent()
+                        .map(|p| p.join("corpora"))
+                        .unwrap_or_else(|| std::path::PathBuf::from("corpora"));
+                    let _ = std::fs::create_dir_all(&dir);
+                    let tmp = dir.join("registry.tmp");
                     if std::fs::write(&tmp, &snap).is_ok() {
-                        let _ = std::fs::rename(&tmp, format!("{}.registry", door.state_path));
+                        let _ = std::fs::rename(&tmp, dir.join("registry"));
                     }
                     drop(reg);
                     let paid = {
@@ -1093,14 +1099,10 @@ fn main() {
     let vk = hypha_key.vk_bytes();
     let id = vk;
     let tag = hypha_key.prefix();
-    let mut join_peers: Vec<String> = read_lines(&home.join("peers"))
-        .into_iter()
-        .filter(|p| !p.is_empty())
-        .collect();
+    let mut mesh_rec = mesh::load_or_migrate_hypha(&home, &hypha_key);
+    let mut join_peers: Vec<String> = mesh_rec.peers.clone();
 
-    let tuniversal = mycelium::chronometry::TUniversal::load_or_genesis(
-        home.join("tuniversal").to_str().unwrap_or("tuniversal"),
-    );
+    let tuniversal = mycelium::chronometry::TUniversal::from_origin(mesh_rec.origin_unix);
     eprintln!("[{tag}] TUniversal {} (origin {})", tuniversal.stamp(), tuniversal.origin_unix);
 
     let kernel = Arc::new(Mutex::new(Kernel::with_tuniversal(tuniversal)));
@@ -1123,7 +1125,10 @@ fn main() {
         }
     }
     eprintln!("[{tag}] hypha identity vk {}…", mycelium::court::identity::hex32(&vk));
-    let genesis = parse_genesis(&home.join("genesis"));
+    let genesis = Genesis {
+        hypha: mesh_rec.hypha.clone(),
+        voice: mesh_rec.voice.clone(),
+    };
     {
         let mut live: Vec<[u8; 32]> = genesis.hypha.iter().map(|(who, _)| *who).collect();
         live.extend(genesis.voice.iter().map(|(who, _)| *who));
@@ -1156,16 +1161,15 @@ fn main() {
         );
     }
 
-    let bind_path = home.join("bind");
-    let (early_listener, addr) = match read_lines(&bind_path).into_iter().next() {
-        Some(a) => (None, a),
-        None => {
-            let listener = TcpListener::bind("0.0.0.0:0").expect("bind");
-            let resolved = resolved_bind(listener.local_addr().expect("local_addr"));
-            let _ = std::fs::write(&bind_path, format!("{resolved}\n"));
-            eprintln!("[{tag}] wrote bind {resolved}");
-            (Some(listener), resolved)
-        }
+    let (early_listener, addr) = if !mesh_rec.bind.is_empty() {
+        (None, mesh_rec.bind.clone())
+    } else {
+        let listener = TcpListener::bind("0.0.0.0:0").expect("bind");
+        let resolved = resolved_bind(listener.local_addr().expect("local_addr"));
+        mesh_rec.bind = resolved.clone();
+        let _ = mesh_rec.save(&home, &hypha_key);
+        eprintln!("[{tag}] wrote bind {resolved}");
+        (Some(listener), resolved)
     };
     join_peers.retain(|p| p != &addr);
 
@@ -1239,7 +1243,8 @@ fn main() {
                 registry.lock().unwrap().register(task);
                 tasked += 1;
             }
-            let restored = std::fs::read(format!("{state_path}.registry"))
+            let restored = std::fs::read(home.join("corpora").join("registry"))
+                .or_else(|_| std::fs::read(format!("{state_path}.registry")))
                 .map(|b| registry.lock().unwrap().overlay(&b))
                 .unwrap_or(0);
             eprintln!(

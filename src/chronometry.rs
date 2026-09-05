@@ -139,6 +139,10 @@ impl TUniversal {
     /// Load the persisted genesis origin, or inscribe it NOW (first boot of
     /// the universe on this state). The file holds one u64 LE — no timezone,
     /// no locale, nothing mutable.
+    pub fn from_origin(origin_unix: u64) -> Self {
+        TUniversal { origin_unix }
+    }
+
     pub fn load_or_genesis(path: &str) -> Self {
         if let Ok(bytes) = std::fs::read(path) {
             if let Ok(raw) = <[u8; 8]>::try_from(bytes.as_slice()) {

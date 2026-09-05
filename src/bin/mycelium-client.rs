@@ -29,6 +29,8 @@ use mycelium::arc::{embed, grid_to_cells, parse_task};
 use mycelium::physics::{reserve_max, Physics};
 use mycelium::transducer::element::measure_lanes;
 use mycelium::transducer::germinate::germinate;
+use mycelium::court::identity::HyphaKey;
+use mycelium::network::mesh;
 use mycelium::sdk::{Comprehension, Entity, Kernel};
 use mycelium::voice::Voice;
 use std::path::{Path, PathBuf};
@@ -191,28 +193,20 @@ fn main() {
         }
     };
     let _ = std::fs::create_dir_all(&home);
-    let _ = std::fs::create_dir_all(home.join("feed"));
-    let voice = Voice::load_or_mint(home.join("voice.key").to_str().unwrap_or("voice.key"));
+    let key_path = home.join("voice.key");
+    let voice_key = HyphaKey::load_or_mint(key_path.to_str().unwrap_or("voice.key"));
+    let voice = Voice::from_identity(voice_key.vk_bytes());
     let tag = voice.name().to_string();
-    let vid = mycelium::court::identity::hex32(&voice.identity());
-    let named = home.join(format!("{vid}.genome"));
-    let legacy = home.join("genome");
-    if !named.exists() && legacy.exists() {
-        let _ = std::fs::copy(&legacy, &named);
-    }
-    let genome_path = named.to_string_lossy().into_owned();
+    let mesh_rec = mesh::load_or_migrate_voice(&home, &voice_key);
+    let genome_path = home.join("genome").to_string_lossy().into_owned();
     let thoughts_path = home.join("thoughts").to_string_lossy().into_owned();
-    let bootstrap = std::fs::read_to_string(home.join("bootstrap"))
-        .ok()
-        .and_then(|s| s.lines().map(|l| l.trim()).find(|l| !l.is_empty() && !l.starts_with('#')).map(String::from))
-        .unwrap_or_else(|| "127.0.0.1:7500".to_string());
-    let conductor = {
-        let p = home.join("conductor");
-        p.is_file().then(|| p.to_string_lossy().into_owned())
+    let bootstrap = if mesh_rec.bootstrap.is_empty() {
+        "127.0.0.1:7500".to_string()
+    } else {
+        mesh_rec.bootstrap.clone()
     };
-    let tuniversal = mycelium::chronometry::TUniversal::load_or_genesis(
-        home.join("tuniversal").to_str().unwrap_or("tuniversal"),
-    );
+    let conductor = None::<String>;
+    let tuniversal = mycelium::chronometry::TUniversal::from_origin(mesh_rec.origin_unix);
 
     let mut tasks = pending_feed(&home);
     let mut entity = Entity::open_persistent(

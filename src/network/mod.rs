@@ -10,3 +10,4 @@
 pub mod wire;
 pub mod consensus;
 pub mod nerve;
+pub mod mesh;
