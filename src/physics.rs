@@ -101,8 +101,11 @@ pub fn from_transport(rtt: std::time::Duration, strokes: u64) -> std::time::Dura
 
 /// Deadline for one nerve dial: the last RTT times the aperture ratio,
 /// never shorter than one millisecond so a TCP handshake can finish.
+/// A single slow reply cannot inflate the next deadline past one aperture
+/// of a one-second transport.
 pub fn transport_deadline(rtt: std::time::Duration) -> std::time::Duration {
-    from_transport(rtt, (reserve_max() / spend_unit()).max(1)).max(std::time::Duration::from_millis(1))
+    let unit = rtt.max(std::time::Duration::from_millis(1)).min(std::time::Duration::from_secs(1));
+    from_transport(unit, aperture_cycle() as u64).max(std::time::Duration::from_millis(1))
 }
 
 /// Persist dwell: a full aperture of measured transports, not a wall clock.
@@ -384,5 +387,12 @@ mod tests {
         let quiet = digest_ceiling(rtt);
         assert!(quiet >= from_transport(rtt, 1));
         assert!(transport_deadline(std::time::Duration::ZERO) >= std::time::Duration::from_millis(1));
+        let stalled = std::time::Duration::from_secs(600);
+        let d = transport_deadline(stalled);
+        let cap = persist_dwell(std::time::Duration::from_secs(1));
+        assert!(
+            d <= cap,
+            "a stall cannot inflate the deadline past one aperture, got {d:?} > {cap:?}"
+        );
     }
 }

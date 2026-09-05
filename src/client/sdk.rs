@@ -180,6 +180,29 @@ impl Session {
         self.refresh_covers();
     }
 
+    /// One peer per Budget spend so a stroke cannot stall on the whole nerve.
+    pub fn discover_budgeted(&mut self, budget: &mut crate::physics::Budget) {
+        if !budget.spend() {
+            return;
+        }
+        self.ask_peers(&self.addr.clone());
+        let known = self.peers();
+        if known.is_empty() {
+            return;
+        }
+        let i = self.peer_cursor() % known.len();
+        self.bump_cursor();
+        if budget.spend() {
+            self.ask_peers(&known[i]);
+        }
+        if budget.spend() {
+            let voice = self.kernel.voice;
+            if let Ok(body) = self.exchange_at(&known[i], dialogue::encode_digests_request(&voice)) {
+                self.absorb_digest(&body);
+            }
+        }
+    }
+
     fn ask_peers(&mut self, addr: &str) {
         let Ok(body) = self.exchange_at(addr, dialogue::encode_peers_request(&self.kernel.voice)) else {
             return;
@@ -314,14 +337,16 @@ impl Session {
     }
 
     fn rtt_ok(&self, addr: &str, dt: Duration) {
-        self.rtt.borrow_mut().insert(addr.to_string(), dt.max(Duration::from_micros(1)));
+        let sample = dt.max(Duration::from_micros(1)).min(Duration::from_secs(1));
+        self.rtt.borrow_mut().insert(addr.to_string(), sample);
     }
 
     fn rtt_timeout(&self, addr: &str) {
         let ratio = crate::physics::aperture_cycle().max(2);
         let mut m = self.rtt.borrow_mut();
         let cur = m.get(addr).copied().unwrap_or(Duration::from_millis(1));
-        m.insert(addr.to_string(), cur.saturating_mul(ratio));
+        let next = cur.saturating_mul(ratio).min(Duration::from_secs(1));
+        m.insert(addr.to_string(), next);
     }
 
     fn z_at(&self, addr: &str) -> u64 {
@@ -501,7 +526,20 @@ impl Session {
         out
     }
 
+    fn note_slow(tag: &str, act: u8, addr: &str, t0: Instant, deadline: Duration) {
+        let dt = t0.elapsed();
+        if dt > deadline {
+            eprintln!(
+                "[{tag}] exchange {act} to {addr} took {} ms deadline {} ms",
+                dt.as_millis(),
+                deadline.as_millis()
+            );
+        }
+    }
+
     fn exchange_inner(&self, addr: &str, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
+        let act = act_body.first().copied().unwrap_or(0);
+        let tag = self.kernel.name();
         let frame = Frame { lane: Stratum::Spatial, body: act_body };
         let bytes = frame.encode().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "frame encode"))?;
         let deadline = crate::physics::transport_deadline(self.rtt_of(addr));
@@ -510,12 +548,14 @@ impl Session {
         if let Some(s) = pool.get_mut(addr) {
             match Self::roundtrip(s, &bytes) {
                 Ok(body) => {
+                    Self::note_slow(tag, act, addr, t0, deadline);
                     self.rtt_ok(addr, t0.elapsed());
                     return Ok(body);
                 }
                 Err(e) => {
                     pool.remove(addr);
                     if e.kind() == io::ErrorKind::TimedOut || e.kind() == io::ErrorKind::WouldBlock {
+                        Self::note_slow(tag, act, addr, t0, deadline);
                         self.rtt_timeout(addr);
                     }
                 }
@@ -528,6 +568,7 @@ impl Session {
         let mut s = match TcpStream::connect_timeout(&sockaddr, deadline) {
             Ok(s) => s,
             Err(e) => {
+                Self::note_slow(tag, act, addr, t0, deadline);
                 self.rtt_timeout(addr);
                 return Err(e);
             }
@@ -538,10 +579,12 @@ impl Session {
         let body = match Self::roundtrip(&mut s, &bytes) {
             Ok(b) => b,
             Err(e) => {
+                Self::note_slow(tag, act, addr, t0, deadline);
                 self.rtt_timeout(addr);
                 return Err(e);
             }
         };
+        Self::note_slow(tag, act, addr, t0, deadline);
         self.rtt_ok(addr, t0.elapsed());
         Ok(body)
     }
@@ -1395,9 +1438,10 @@ impl Entity {
         self.session.add_peer(addr);
     }
 
-    /// Ask the bootstrap hypha for the rest of the nerve.
+    /// Ask the bootstrap hypha for the rest of the nerve, one peer per spend.
     pub fn discover(&mut self) {
-        self.session.discover();
+        let mut budget = self.physics.stroke();
+        self.session.discover_budgeted(&mut budget);
     }
 
     pub fn open(addr: &str, kernel: Kernel) -> Self {
