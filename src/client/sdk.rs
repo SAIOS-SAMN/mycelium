@@ -744,6 +744,7 @@ impl Epigenome {
         self.expressed_atlas.admit(&crate::transducer::stalk::invariant_of(&word), word.address());
         self.expressed_index.insert(word.address(), self.expressed.len());
         self.expressed_shapes.push(std::sync::OnceLock::new());
+        self.stand_dialect(word.clone(), 0);
         self.expressed.push(word);
         true
     }
@@ -1791,21 +1792,20 @@ impl Entity {
     }
 
     /// SPEAK a family's cohering sentences as one act. Refuses if two
-    /// sentences share a germ with a non-identity transition. Stood
-    /// sentences enter the dialect, never the genome.
+    /// sentences share a germ with a non-identity transition. Each uttered
+    /// word enters the dialect (epigenome handles); the genome is frozen.
     pub fn speak(&mut self, sentences: &[Element]) -> io::Result<Vec<u8>> {
         if sentences.is_empty() {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "no sentence"));
         }
         let voice = self.session.kernel().voice();
+        let k = self.session.voice().k();
         let bytes: Vec<Vec<u8>> = sentences.iter().map(|e| e.to_bytes()).collect();
         let body = dialogue::encode_speech(&voice, &[0u8; 32], self.now_tu(), &bytes);
         let reply = self.session.speak(body)?;
         let codes = dialogue::decode_speech_reply(&reply).unwrap_or_default();
-        for (i, e) in sentences.iter().enumerate() {
-            if codes.get(i).copied() == Some(dialogue::SPEECH_STOOD) {
-                self.epigenome.stand_dialect(e.clone(), self.now_tu());
-            }
+        for e in sentences {
+            self.epigenome.stand_dialect(e.clone(), k);
         }
         Ok(codes)
     }

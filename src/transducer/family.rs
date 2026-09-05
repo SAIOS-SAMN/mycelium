@@ -1043,24 +1043,37 @@ pub fn speak_rule(rule: &super::sentence::SentenceRule, x: &Grid) -> Option<Spee
                 }
             }
         }
-        let multi = hits.len() > 1;
-        let speak_idx: Vec<usize> = match hits.len() {
-            0 => {
-                remainder.extend(body.cells.iter().copied());
-                continue;
-            }
-            1 => hits,
-            _ => {
-                let agreeing: Vec<usize> = hits
-                    .iter()
-                    .copied()
-                    .filter(|&idx| section_agrees(rule, idx, &body.centroid, &placed))
-                    .collect();
-                if agreeing.is_empty() {
+        let speak_idx: Vec<usize> = {
+            let free: Vec<usize> = hits
+                .iter()
+                .copied()
+                .filter(|&idx| !claimed.contains(&germ_idx_key(idx)))
+                .collect();
+            match free.len() {
+                0 => {
                     remainder.extend(body.cells.iter().copied());
                     continue;
                 }
-                agreeing
+                1 => free,
+                _ => {
+                    let mut ranked = free;
+                    ranked.sort_by(|&a, &b| {
+                        let ca = support_centroid(&rule.nerve.germs[a]);
+                        let cb = support_centroid(&rule.nerve.germs[b]);
+                        let da = {
+                            let dr = &ca.0 - &body.centroid.0;
+                            let dc = &ca.1 - &body.centroid.1;
+                            &dr * &dr + &dc * &dc
+                        };
+                        let db = {
+                            let dr = &cb.0 - &body.centroid.0;
+                            let dc = &cb.1 - &body.centroid.1;
+                            &dr * &dr + &dc * &dc
+                        };
+                        da.cmp(&db)
+                    });
+                    vec![ranked[0]]
+                }
             }
         };
         let start = cells.len();
@@ -1080,16 +1093,7 @@ pub fn speak_rule(rule: &super::sentence::SentenceRule, x: &Grid) -> Option<Spee
                 speak_created(rule, g, idx, &placed, fy, &mut cells);
                 continue;
             }
-            let v = match multi {
-                false => test_transport(rule, g, idx, &body.centroid, &placed),
-                true => {
-                    let rho = ratio_rho(rule.ratio);
-                    let linear = realize_word(&g.word, &rho, &(q(0), q(0)));
-                    let t_body = cga::translator(&body.centroid.0, &body.centroid.1);
-                    let t_inv = cga::translator(&-&body.centroid.0, &-&body.centroid.1);
-                    t_body.geo(&linear).geo(&t_inv)
-                }
-            };
+            let v = test_transport(rule, g, idx, &body.centroid, &placed);
             emit_carried(&body, &v, &map, fy, &mut cells, &mut body_remainder);
         }
         if hue_conflict(&cells[start..]) || hue_conflict_against(&cells[..start], &cells[start..]) {

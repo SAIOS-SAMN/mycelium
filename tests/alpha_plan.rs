@@ -46,17 +46,29 @@ fn faces_by_constancy_three_squares() {
         .collect();
     let family = vec![(train_in.clone(), train_out.clone())];
     let rule = extract_rule(&family).expect("three squares extract");
+    let bodies = rule
+        .nerve
+        .germs
+        .iter()
+        .filter(|g| g.kind != mycelium::transducer::peel::ShellKind::Frame)
+        .count();
     assert!(
-        rule.nerve.germ_count() + rule.sections >= 3,
-        "three bodies as germs and sections, got {} germs {} sections",
+        bodies >= 3,
+        "three bodies remain distinct points, got {} germs {} sections",
         rule.nerve.germ_count(),
         rule.sections
     );
-    assert!(rule.nerve.faces.iter().all(|f| {
+    let same_class_faces = rule.nerve.faces.iter().filter(|f| {
         let gi = &rule.nerve.germs[f.i];
         let gj = &rule.nerve.germs[f.j];
-        f.g_ij == gj.word.compose(&gi.word.inverse()).normal_form() || f.g_ij.abelian_identity()
-    }));
+        gi.kind != mycelium::transducer::peel::ShellKind::Frame
+            && gj.kind != mycelium::transducer::peel::ShellKind::Frame
+    }).count();
+    assert!(
+        same_class_faces >= 2,
+        "relative versors between the squares, got {same_class_faces} body faces"
+    );
+    assert!(rule.nerve.is_sentence(), "three squares form a sentence");
     let spoken = speak_rule(&rule, &train_in).expect("spoken");
     assert!(spoken.remainder.is_empty() || spoken.cells.iter().any(|&(_, _, h)| h == 2));
     let _ = mint_sentence(&rule, &family);
@@ -88,6 +100,16 @@ fn speech_act_one_frame() {
 }
 
 #[test]
+fn a_single_recolour_is_a_one_morphism_sentence() {
+    let train_in = grid(&["1100", "0000"]);
+    let train_out = grid(&["2200", "0000"]);
+    let family = vec![(train_in, train_out)];
+    let rule = extract_rule(&family).expect("one body extracts");
+    assert!(rule.nerve.is_sentence(), "a single non-trivial morphism is a sentence");
+    assert!(rule.nerve.is_closed());
+}
+
+#[test]
 fn dialect_enters_on_stood_and_sheds() {
     let mut epi = Epigenome::new();
     let affine = affine_of(&identity_versor()).unwrap();
@@ -112,6 +134,14 @@ fn hypha_snapshot_is_myc2() {
     assert_eq!(&snap[..4], b"MYC2");
     let mut k2 = Kernel::new();
     assert!(k2.restore(&snap));
+}
+
+#[test]
+fn dialect_is_a_word_in_the_epigenome() {
+    let mut epi = Epigenome::new();
+    assert!(epi.express(&[(0, 0, 1u8, 2)]));
+    assert_eq!(epi.dialect_len(), 1, "an expressed word stands as dialect");
+    assert_eq!(epi.genome_len(), 0, "the genome stays frozen");
 }
 
 #[test]

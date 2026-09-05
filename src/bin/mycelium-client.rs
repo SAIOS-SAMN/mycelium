@@ -113,13 +113,13 @@ fn speak_sentence(entity: &mut Entity, tag: &str, n: &mycelium::transducer::sent
             format!("remainder {} cells", n.remainder.len())
         } else if n.class.is_some() {
             "H² class present".to_string()
-        } else if n.germ_count() < 2 {
-            "one germ is not a sentence".to_string()
+        } else if n.germ_count() == 1 {
+            "identity 1-morphism is not a sentence".to_string()
         } else {
             "not closed".to_string()
         }
     };
-    if !n.is_closed() || n.germ_count() < 2 {
+    if !n.is_sentence() {
         entity.hold_thought(n.remainder.clone());
         if let Some(word) = mycelium::transducer::sentence::as_element(n) {
             entity.hold_sentence(&word);
