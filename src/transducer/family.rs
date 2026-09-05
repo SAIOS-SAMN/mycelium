@@ -38,6 +38,8 @@ use std::cell::{Cell, RefCell};
 pub trait Crystal {
     fn on_class(&self, class: &Invariant) -> Vec<(Element, Form, Standing)>;
     fn speak_form(&self, f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Option<Speech>;
+    /// Keyed read of a crystallized form by address. No scan.
+    fn by_address(&self, addr: &[u8; 32]) -> Option<(Element, Form)>;
 }
 
 /// A crystal that holds nothing. Glue is a no-op.
@@ -48,7 +50,10 @@ impl Crystal for NoCrystal {
         Vec::new()
     }
     fn speak_form(&self, f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Option<Speech> {
-        apply_form(f, x, placement)
+        apply_form(f, x, placement, self)
+    }
+    fn by_address(&self, _addr: &[u8; 32]) -> Option<(Element, Form)> {
+        None
     }
 }
 use num_bigint::BigInt;
@@ -1283,9 +1288,14 @@ fn hue_from_neighbors(r: i64, c: i64, cells: &[Cell3]) -> Option<u8> {
     held
 }
 
-/// Speak a form onto a grid: Word vertices carry matching bodies; Unfolded
-/// Occupied grows the adjacent ring to the frame.
-pub fn apply_form(f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Option<Speech> {
+/// Speak a form onto a grid: each vertex kind emits; the class fiber
+/// names the bodies. An empty fiber is unspoken, never every body.
+pub fn apply_form(
+    f: &Form,
+    x: &Grid,
+    placement: &super::alphabet::Word,
+    crystal: &dyn Crystal,
+) -> Option<Speech> {
     let fx = frame_of(x);
     let fy = fx;
     let bodies = perceive(x);
@@ -1297,9 +1307,11 @@ pub fn apply_form(f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Opti
     }
     let mut cells: Vec<Cell3> = Vec::new();
     let mut remainder: Vec<Cell3> = Vec::new();
+    let mut unspoken: Vec<u16> = Vec::new();
     let mut unfolded = false;
-    for v in &f.vertices {
+    for (vi, v) in f.vertices.iter().enumerate() {
         match v {
+            Vertex::Frame => {}
             Vertex::Word {
                 word,
                 rho,
@@ -1314,28 +1326,28 @@ pub fn apply_form(f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Opti
                     rho: rho.clone(),
                 };
                 let versor = element::conformal_of(&sp, p).unwrap_or_else(element::identity_versor);
-                let n_words = f
-                    .vertices
-                    .iter()
-                    .filter(|x| matches!(x, Vertex::Word { .. }))
-                    .count();
-                let hits: Vec<usize> = if n_words <= 1 {
-                    (0..bodies.len()).collect()
-                } else {
-                    atlas
-                        .fiber(class)
-                        .into_iter()
-                        .filter_map(|addr| {
-                            let i = u64::from_le_bytes(addr[..8].try_into().ok()?) as usize;
-                            (i < bodies.len()).then_some(i)
-                        })
-                        .collect()
-                };
-                for i in hits {
+                let hits = atlas.fiber(class);
+                if hits.is_empty() {
+                    unspoken.push(vi as u16);
+                    continue;
+                }
+                for addr in hits {
+                    let i = u64::from_le_bytes(addr[..8].try_into().ok()?) as usize;
                     if let Some(body) = bodies.get(i) {
                         emit_carried(body, &versor, gauge, fy, &mut cells, &mut remainder);
                     }
                 }
+            }
+            Vertex::Glued {
+                address,
+                placement: q,
+                ..
+            } => {
+                let (_e, s) = crystal.by_address(address)?;
+                let composed = placement.compose(q);
+                let sp = crystal.speak_form(&s, x, &composed)?;
+                cells.extend(sp.cells);
+                remainder.extend(sp.remainder);
             }
             Vertex::Rebased { by, shift, .. } => {
                 if let Some(Vertex::Word {
@@ -1355,12 +1367,19 @@ pub fn apply_form(f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Opti
                     };
                     let versor =
                         element::conformal_of(&sp, &p).unwrap_or_else(element::identity_versor);
-                    for addr in atlas.fiber(class) {
+                    let hits = atlas.fiber(class);
+                    if hits.is_empty() {
+                        unspoken.push(vi as u16);
+                        continue;
+                    }
+                    for addr in hits {
                         let i = u64::from_le_bytes(addr[..8].try_into().ok()?) as usize;
                         if let Some(body) = bodies.get(i) {
                             emit_carried(body, &versor, gauge, fy, &mut cells, &mut remainder);
                         }
                     }
+                } else {
+                    unspoken.push(vi as u16);
                 }
             }
             Vertex::Unfolded {
@@ -1368,7 +1387,7 @@ pub fn apply_form(f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Opti
             } => {
                 unfolded = true;
             }
-            _ => {}
+            Vertex::Unfolded { .. } => {}
         }
     }
     if unfolded {
@@ -1404,7 +1423,12 @@ pub fn apply_form(f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Opti
     }
     cells.sort_unstable();
     cells.dedup();
-    Some(Speech { frame: fy, cells, remainder })
+    Some(Speech {
+        frame: fy,
+        cells,
+        remainder,
+        unspoken,
+    })
 }
 
 fn class_of_vertex(v: &Vertex) -> Option<Invariant> {
@@ -2092,7 +2116,12 @@ pub fn speak_rule(rule: &super::sentence::SentenceRule, x: &Grid) -> Option<Spee
         ) || matches!(v, Vertex::Word { contact: Some(_), .. })
     });
     if form_speaks {
-        return apply_form(&rule.form, x, &super::alphabet::Word::identity());
+        return apply_form(
+            &rule.form,
+            x,
+            &super::alphabet::Word::identity(),
+            &NoCrystal,
+        );
     }
     let fx = frame_of(x);
     let fy = output_frame(fx, rule.ratio);
@@ -2213,7 +2242,7 @@ pub fn speak_rule(rule: &super::sentence::SentenceRule, x: &Grid) -> Option<Spee
     cells.sort_unstable();
     cells.dedup();
     remainder.sort_unstable();
-    Some(Speech { frame: fy, cells, remainder })
+    Some(Speech { frame: fy, cells, remainder, unspoken: Vec::new() })
 }
 
 /// The residual between what was spoken and what was observed, as a chain
@@ -2302,6 +2331,8 @@ pub struct Speech {
     pub frame: (usize, usize),
     pub cells: Vec<Cell3>,
     pub remainder: Vec<Cell3>,
+    /// Vertex indices whose class fiber was empty on this grid.
+    pub unspoken: Vec<u16>,
 }
 
 impl Speech {
@@ -2410,7 +2441,7 @@ fn speak_with(t: &Transport, x: &Grid, total: bool) -> Option<Speech> {
         return None;
     }
     remainder.sort_unstable();
-    Some(Speech { frame: fy, cells, remainder })
+    Some(Speech { frame: fy, cells, remainder, unspoken: Vec::new() })
 }
 
 #[cfg(test)]
@@ -2604,8 +2635,13 @@ mod tests {
             }
             other => panic!("expected Rebased, got {other:?}"),
         }
-        let spoken = apply_form(&form, &x, &crate::transducer::alphabet::Word::identity())
-            .expect("rebased speaks");
+        let spoken = apply_form(
+            &form,
+            &x,
+            &crate::transducer::alphabet::Word::identity(),
+            &NoCrystal,
+        )
+        .expect("rebased speaks");
         assert!(
             !spoken.cells.is_empty(),
             "B's cells are spoken through the conjugated placement"
@@ -2643,7 +2679,14 @@ mod tests {
                 x: &Grid,
                 placement: &crate::transducer::alphabet::Word,
             ) -> Option<Speech> {
-                apply_form(f, x, placement)
+                apply_form(f, x, placement, self)
+            }
+            fn by_address(&self, addr: &[u8; 32]) -> Option<(Element, Form)> {
+                if addr == &self.e.address() {
+                    Some((self.e.clone(), self.f.clone()))
+                } else {
+                    None
+                }
             }
         }
         let crystal = Held {
@@ -2668,6 +2711,47 @@ mod tests {
         assert!(
             words < flat_words,
             "glued form has fewer Word vertices than the flat rule ({words} < {flat_words})"
+        );
+        let spoken = apply_form(
+            &rule.form,
+            &family[0].0,
+            &crate::transducer::alphabet::Word::identity(),
+            &crystal,
+        )
+        .expect("glued form speaks");
+        assert_eq!(
+            spoken.grid(),
+            family[0].1,
+            "spoken cells equal the target"
+        );
+    }
+
+    /// An empty class fiber speaks nothing for that vertex and lists it unspoken.
+    #[test]
+    fn empty_fiber_is_unspoken_not_every_body() {
+        let x = grid(&["1100", "0000"]);
+        let y = grid(&["0011", "0000"]);
+        let mut f = pair_form(&x, &y, None);
+        for v in &mut f.vertices {
+            if let Vertex::Word { class, .. } = v {
+                *class = Invariant(vec![0xEEEE_EEEE_EEEE_EEEE]);
+            }
+        }
+        let spoken = apply_form(
+            &f,
+            &x,
+            &crate::transducer::alphabet::Word::identity(),
+            &NoCrystal,
+        )
+        .expect("a miss is unspoken, not a refusal");
+        assert!(
+            spoken.cells.is_empty(),
+            "empty fiber speaks no cells, got {:?}",
+            spoken.cells
+        );
+        assert!(
+            !spoken.unspoken.is_empty(),
+            "the Word vertex is listed unspoken"
         );
     }
 

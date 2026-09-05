@@ -1411,7 +1411,16 @@ impl crate::transducer::family::Crystal for Epigenome {
         x: &crate::transducer::family::Grid,
         placement: &crate::transducer::alphabet::Word,
     ) -> Option<crate::transducer::family::Speech> {
-        crate::transducer::family::apply_form(f, x, placement)
+        crate::transducer::family::apply_form(f, x, placement, self)
+    }
+
+    fn by_address(
+        &self,
+        addr: &[u8; 32],
+    ) -> Option<(Element, crate::transducer::sentence::Form)> {
+        let e = self.working_word(addr)?.clone();
+        let f = crate::transducer::sentence::from_element_form(&e)?;
+        Some((e, f))
     }
 }
 

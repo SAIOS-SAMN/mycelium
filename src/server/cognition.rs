@@ -5718,6 +5718,45 @@ impl Kernel {
     }
 }
 
+impl crate::transducer::family::Crystal for Kernel {
+    fn on_class(
+        &self,
+        class: &crate::transducer::stalk::Invariant,
+    ) -> Vec<(
+        Element,
+        crate::transducer::sentence::Form,
+        crate::transducer::stalk::Standing,
+    )> {
+        self.ruled
+            .fiber(class)
+            .into_iter()
+            .filter_map(|addr| {
+                let e = self.word_at(&addr)?.clone();
+                let f = crate::transducer::sentence::from_element_form(&e)?;
+                Some((e, f, crate::transducer::stalk::Standing::Ruled))
+            })
+            .collect()
+    }
+
+    fn speak_form(
+        &self,
+        f: &crate::transducer::sentence::Form,
+        x: &crate::transducer::family::Grid,
+        placement: &crate::transducer::alphabet::Word,
+    ) -> Option<crate::transducer::family::Speech> {
+        crate::transducer::family::apply_form(f, x, placement, self)
+    }
+
+    fn by_address(
+        &self,
+        addr: &[u8; 32],
+    ) -> Option<(Element, crate::transducer::sentence::Form)> {
+        let e = self.word_at(addr)?.clone();
+        let f = crate::transducer::sentence::from_element_form(&e)?;
+        Some((e, f))
+    }
+}
+
 // The blind replay moved to `crate::verdict` (#162): verification is the
 // court's substrate, not the server kernel's.
 
