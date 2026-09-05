@@ -1157,3 +1157,444 @@ No probability: superposition is a set of cells, resolved by fill or class.
 No scoring: nothing is compared except by `projective_eq`, `same_form`,
 `is_identity`, and `descends`. If an implementation step needs anything not
 in this list, the step is wrong.
+
+---
+
+# Part V — Mayer–Vietoris: cohomology of a union from its pieces
+
+Part IV computes the cohomology of one form or one cover. The system never
+holds one: a hypha holds its own cover and receives a peer's; a form under
+construction glues a crystallized form; a mind holds two thoughts on
+overlapping cells. In every case the object of interest is a **union** of
+two pieces along an **overlap**, and the question is what the union's
+classes are, given the pieces' classes. Mayer–Vietoris answers that with a
+finite exact sequence whose maps are word products and whose exactness
+statements are each a finite check. This part states it, proves what the
+implementor must rely on, and binds it to the three places it runs.
+
+## 38. Setting: two subcomplexes and their overlap
+
+Let `X` be a finite cell complex as in §29 (a form, a Čech complex on one
+chart, or a thought's cell set) and let `A`, `B` be subcomplexes with
+`X = A ∪ B`. Their **overlap** is `A ∩ B`, the cells present in both. All
+three are complexes in their own right: a cell of `A ∩ B` has all its faces
+in `A ∩ B` because it has them in `A` and in `B`.
+
+Cochains restrict: a k-cochain on `X` gives one on `A` by reading it on
+`A`'s cells (`res_A`), likewise `res_B`, and a k-cochain on `A` gives one on
+`A ∩ B` (`res_{A∩B}`). Restriction commutes with δ because δ on a cell
+reads only that cell's faces, which lie in the same subcomplex.
+
+The overlap is computed, never enumerated: the vertex set of `A ∩ B` is the
+**meet** of the two vertex tries (§45, `Keyed::meet`), and the cells of the
+overlap are the cells of `A` whose vertex set lies in the meet, read
+through `Complex::link_of` from each meet vertex. No pair of vertices is
+ever visited that is not already a cell.
+
+## 39. The sequence
+
+### 39.1 Statement, abelian and twisted-abelian coefficients
+
+For the sensor-plane coefficient `P` of §28.1, cochains on `X` with values
+in the rotation part `R = Z/4 × Z × Z` twisted by the sheet parity form a
+**local system**: a sheet letter along a face acts on `R` by negation. For
+such coefficients the following sequence is exact:
+
+```
+0 → H⁰(X) →ρ H⁰(A) ⊕ H⁰(B) →Δ H⁰(A∩B) →∂ H¹(X) →ρ H¹(A) ⊕ H¹(B) →Δ H¹(A∩B) →∂ H²(X) →ρ H²(A) ⊕ H²(B) →Δ H²(A∩B) → …
+```
+
+with
+
+- `ρ(c) = (res_A c, res_B c)` — **restriction**;
+- `Δ(a, b) = res_{A∩B} a · (res_{A∩B} b)⁻¹` — **difference** (multiplicative,
+  pointwise on cells);
+- `∂` — the **connecting map**, §39.3.
+
+Exact means: at every group in the sequence, the kernel of the outgoing
+map equals the image of the incoming map. The sequence is the long exact
+sequence of the short exact sequence of cochain complexes
+
+```
+0 → C^k(X) →ρ C^k(A) ⊕ C^k(B) →Δ C^k(A∩B) → 0
+```
+
+whose exactness at the cochain level is elementary: `ρ` is injective
+because a cochain on `X` is determined by its values on `A` and `B`; the
+kernel of `Δ` is pairs that agree on the overlap, which is exactly one
+cochain on `X`; `Δ` is surjective because any cochain on `A ∩ B` extends
+by the identity to a cochain on `A` (and the identity on `B`), and their
+difference is the given one. Everything in the long exact sequence is a
+consequence of those three facts and δ commuting with restriction.
+
+### 39.2 Statement, rotor coefficients
+
+For the nonabelian coefficient `Rotor` of §28.2, `H¹` is a pointed set (the
+set of flat connections modulo gauge, with the trivial connection as
+basepoint) and `H²` is not defined as a group. What holds, and what the
+system uses, is the low-degree sequence:
+
+```
+1 → H⁰(X) →ρ H⁰(A) × H⁰(B) →Δ H⁰(A∩B) →∂ H¹(X) →ρ H¹(A) × H¹(B)
+```
+
+exact as **pointed sets** at every term, together with the **descent
+statement** in place of the next exactness:
+
+> a pair of classes `(a, b) ∈ H¹(A) × H¹(B)` is the restriction of a class
+> on `X` if and only if `res a` and `res b` are cohomologous on `A ∩ B`;
+> the classes on `X` restricting to `(a, b)` are in bijection with the set
+> of such cohomologies `θ` modulo the action of `H⁰(A) × H⁰(B)` by
+> `θ ↦ res(α_B) · θ · res(α_A)⁻¹`.
+
+Degree-2 classes on a cover are computed on the sensor plane in the
+twisted-abelian coefficient (§39.1), which is where `Complex::class` at
+degree 2 is read (§32.3); off the sensor plane a nontrivial δ² is a
+remainder and the cell does not form (§30.3). This is not a limitation
+introduced here; it is the existing rule of `cech.rs` (module comment,
+"a transition that does not realise as a rotor is a remainder").
+
+### 39.3 The connecting map, as products
+
+**Degree 0 → 1.** Given `θ ∈ H⁰(A∩B)`, a gauge on the overlap with
+`δ⁰θ · g = g` there. Extend `θ` to `A` by any 0-cochain `θ_A` equal to `θ`
+on the overlap and identity elsewhere, and extend by the identity on `B`
+(`θ_B = 1`). Then `δ⁰θ_A · g` and `δ⁰θ_B · g = g` agree on `A ∩ B`
+(because `θ` is an automorphism there), so they define one connection on
+`X`. Its class is `∂θ`. Concretely, `∂θ` differs from `g` only on faces of
+`A` with exactly one vertex in the overlap; on such a face `(i ∈ A∩B, j ∉
+B)`, the new value is `g_ij · θ_i⁻¹`, and on `(i ∉ B, j ∈ A∩B)` it is
+`θ_j · g_ij`. `∂θ` is trivial iff `θ = Δ(α, β)` for automorphisms `α` of
+`A` and `β` of `B`.
+
+**Degree 1 → 2.** Given a flat connection `h` on `A ∩ B` (a class in
+`H¹(A∩B)`). Extend to a 1-cochain `h_A` on `A` by the identity off the
+overlap, and `h_B = 1` on `B`. `δ¹h_A` vanishes on `A ∩ B` (where `h_A = h`
+is flat) and `δ¹h_B = 1`, so they agree on the overlap and define a
+2-cochain on `X`, which is a cocycle (`δ²δ¹ = 1`). Its class is `∂h`.
+Concretely, `∂h` is nonidentity only on loops of `A` that pass through the
+overlap and leave it; each such loop's value is the product of the `h`
+values on its overlap faces in loop order. `∂h` is trivial iff `h` is
+cohomologous on the overlap to `Δ(a, b)` for classes `a` on `A`, `b` on `B`.
+
+### 39.4 What exactness says at each term
+
+| term | kernel = image | in the system |
+|---|---|---|
+| `H⁰(X) → H⁰(A) ⊕ H⁰(B)` injective | a global automorphism is determined by its two restrictions | congruence of the whole is congruence of the parts |
+| at `H⁰(A) ⊕ H⁰(B)` | two automorphisms restricting equally on the overlap come from one on `X` | two hyphae's congruences that match on their shared charts are one congruence |
+| at `H⁰(A∩B)` | an overlap automorphism is a difference `α·β⁻¹` iff `∂θ = 1` | a gauge difference between two sections on the shared charts is harmless iff it extends to a re-gauging of one side; otherwise it **is** a dialect class on the union |
+| at `H¹(X)` | a class on `X` trivial on both `A` and `B` is `∂θ` for some overlap automorphism | a dialect between two hyphae that each cohere lives entirely on the overlap; the **translation word** is `θ` |
+| at `H¹(A) ⊕ H¹(B)` (descent) | classes on the pieces glue iff cohomologous on the overlap | two hyphae's dialect ledgers merge iff they agree on the shared charts up to gauge |
+| at `H¹(A∩B)` | an overlap class not of the form `Δ(a,b)` up to gauge produces `∂h ∈ H²(X)` | a disagreement on the shared charts that neither side's own classes explain forces **refinement** of the chart, and only along that overlap's loop |
+
+Each row is a theorem about finite products and a test (§46).
+
+## 40. Three consequences the implementation rests on
+
+### 40.1 The citation lemma (gluing along a face)
+
+Let `T` be a form under construction, `S` a crystallized (closed) form,
+and `T' = T ∪_f S` the form after `Form::glue` (§3.3), where the overlap is
+the single placement face `f` with its two vertices. The overlap is
+contractible: `H⁰(A∩B) = G` (the constants), `H¹(A∩B) = 1`. Because `S` is
+closed, its connection is pure gauge and `H⁰(S) = G` (every constant,
+conjugated by the trivialising gauge). Hence `Δ: H⁰(T) × H⁰(S) → G` is
+surjective, so `∂ = 1` on `H⁰(A∩B)`, so `ρ: H¹(T') → H¹(T) × H¹(S)` is
+injective; and `H¹(A∩B) = 1` makes it surjective. Therefore
+
+```
+H¹(T') ≅ H¹(T) × H¹(S) = H¹(T)          (S closed ⇒ H¹(S) trivial)
+```
+
+**Gluing a closed form neither adds nor removes a class.** This is the
+exact content of §3.3's "gluing never breaks coherence", of §4's
+well-foundedness (only closed forms are glued, `REFUSE_GLUED_UNRULED`),
+and of the memo in §14 and §35: the court's replay of `T'` may reuse `S`'s
+verdict verbatim, because nothing about `S` changes the classes of `T'`.
+If `S` were not closed the isomorphism would read `H¹(T) × H¹(S)` and the
+citer would inherit the cited form's classes; the refusal exists to make
+that impossible.
+
+### 40.2 Order independence on the mesh
+
+The cover of a chart by `N` hyphae is the union of `N` pieces. Computing
+its cohomology by `N − 1` pairwise Mayer–Vietoris steps in the order the
+covers arrive (their TUniversal order) yields the same `H⁰`, `H¹`, and
+degree-2 classes as any other order, because they are invariants of the
+union, not of the sequence of unions. This is why no consensus protocol is
+needed: every node that holds the same tapes computes the same classes in
+whatever order it heard them. It is a test (§46, `mv_order_independent`).
+
+### 40.3 Incremental ledger
+
+Because `H^k(X)` is determined by `H^k(A)`, `H^k(B)`, and the overlap
+terms, a hypha never recomputes the cohomology of its whole cover when a
+peer's section arrives. It computes: the meet (overlap vertices), the
+difference on the overlap, the connecting image, and the descent check.
+Cost is linear in the cells of the overlap, and the union is never
+materialised as a new complex; the pieces stay where they are and the
+union's classes are the pieces' classes plus the connecting images. This
+is the bound behind §8's "work per fetch is the link of one vertex".
+
+## 41. The computation, step by step
+
+Input: piece `A` (a `Complex` or `Form`), piece `B` (the same kind),
+already carrying their own flat connections `g_A`, `g_B` and their own
+classes. Output: the union's `H⁰` automorphisms that matter (whether the
+two sections are one), the union's new `H¹` classes with their translation
+words when they are `∂θ`, and any degree-2 class with the overlap loop that
+produced it.
+
+1. **Meet.** `M = meet(vertices(A), vertices(B))` by `Keyed::meet`. If `M`
+   is empty there is no overlap; the union is disjoint, `H^k(X) = H^k(A) ⊕
+   H^k(B)` for `k ≥ 1` and `H⁰(X) = H⁰(A) × H⁰(B)`, nothing to do.
+2. **Overlap cells.** For each `v ∈ M`, `link_of(v)` in `A` filtered to
+   cells whose vertices all lie in `M` (a keyed `contains` per vertex,
+   bounded by the cell's degree). This is `A ∩ B`.
+3. **Difference on 0-cells.** For each `v ∈ M`: `θ_v = γ^A_v · (γ^B_v)⁻¹`,
+   normal form. This is `Δ` on the sections.
+4. **Is `θ` an overlap automorphism?** Check `θ_j · h_ij · θ_i⁻¹ = h_ij`
+   on every overlap face, where `h` is the connection on the overlap (equal
+   from both sides by hypothesis; if not equal, go to step 7). If `θ` is
+   constant on each component of the overlap this is automatic.
+5. **Connecting image `∂θ`.** By §39.3: the faces of `A` with exactly one
+   vertex in `M`, reweighted by `θ` at that vertex. Run the tree-walk solver
+   (§32.2) on the union restricted to those faces plus `A`'s tree: if every
+   chord closes, `∂θ = 1` and the two sections are **one section** on the
+   union (consilient); the solver's `γ` is the re-gauging of `A` that
+   exhibits it. If a chord fails, `∂θ` is a nontrivial class: record it
+   with the chord's holonomy; the **translation word** is `θ` itself
+   (restricted to the overlap), spoken as a `TRANSLATION_TAG` element.
+6. **Descent.** For each class `a` recorded on `A` and `b` on `B` whose
+   supporting loops meet `M`: solve for `ϑ` on the overlap with
+   `b_ij = ϑ_j · a_ij · ϑ_i⁻¹` by the tree walk with the twisted step
+   `ϑ_j = b_ij · ϑ_i · a_ij⁻¹` (§45, `solve_gauge_between`). Success: the
+   two classes glue; the union carries one class. Failure: the pair does
+   not glue; go to step 7.
+7. **Connecting image `∂h`.** On the sensor plane (plane-form coefficient):
+   for the overlap 1-cocycle `h = res a · (res b)⁻¹` that failed step 6 (or
+   the mismatch found in step 4), compute `∂h` on each loop of `A` that
+   leaves the overlap as the product of `h` over its overlap faces. Any
+   nonidentity value is a degree-2 class of the union. Record it with the
+   overlap loop's key and refine the chart by `Stalks::refine(inv,
+   class_key)`. Off the sensor plane, mark the overlap faces as remainder
+   (`set_remainder_edge`) and stop; no class is invented.
+8. **Exactness self-check** (debug builds and the court's replay): the two
+   inclusions of §39.4 for the elements actually produced — the `θ` of step
+   3 must be a difference iff step 5 found `∂θ = 1`; the `h` of step 7 must
+   fail step 6 iff `∂h ≠ 1`. A violation is `REFUSE_MV_INEXACT` and is a
+   slash, because it can only arise from inconsistent tapes.
+
+Every step is `compose`, `inverse`, `normal_form`/`projective_eq`, a keyed
+read, or the tree walk. Step 2 is the only place the overlap's cells are
+touched, and each cell is touched once.
+
+## 42. Instance one: two hyphae on one chart
+
+`/opt/mycelium-v0.1.0/src/server/cognition.rs::glue_fetched` (2651) is
+this computation with `A` = the hypha's own complex on chart `inv`
+(`self.complexes` at `inv.key()`, sections for `self_id` and every hypha
+in `cover.fiber(lane, &inv)` that it already holds) and `B` = the peer's
+section for the same chart (one vertex, `peer`, with gamma from a
+`TRANSLATION_TAG` element when one is spoken). Today it builds edges from
+every held section to `peer` by `transition` and calls
+`coboundary_on_link(&peer)`; that is step 5 with the meet computed
+implicitly. The binding in §45 makes the steps explicit and adds the ones
+missing: the descent check (step 6) against the peer's own recorded classes
+when the peer's cover digest carries them, and the targeted refinement of
+step 7 in place of refining on any degree-2 cell.
+
+Rulings map onto the sequence exactly:
+
+| outcome of §41 | `Glue` / `Ruling` |
+|---|---|
+| step 5: `∂θ = 1`, `θ` trivial | `Consilient` — one section |
+| step 5: `∂θ = 1`, `θ` nontrivial with a placement (`placement_of(θ)` is `Some`) | `Attached` — same class, the transport `θ` recorded |
+| step 5: `∂θ ≠ 1` | `Dialect` — the class recorded in `cocycle_at`, `θ` offered as the translation |
+| step 6 fails, step 7 finds `∂h ≠ 1` | `Dialect` plus `court refine chart` on the overlap loop |
+| step 7 off the sensor plane | remainder edge; `Admitted` if the address is new, else no change |
+
+## 43. Instance two: a form glues a crystallized form
+
+`/opt/mycelium-v0.1.0/src/transducer/sentence.rs::Form::glue` (§9.2). The
+overlap is one face. By §40.1 there is nothing to compute for classes:
+`Form::glue` asserts `s.is_closed()` (already required) and copies no
+loops of `S`; the loops of `T'` are the loops of `T` plus the loops that
+pass through the new face, whose holonomy through `S` is the placement
+composed with its inverse (§3.3) and therefore identity. `replay_form` step
+5 (§14) checks those loops as it checks any loop. The memo (§14) is
+justified by §40.1 and needs no further condition.
+
+The only Mayer–Vietoris computation at this level is in comprehension
+(§15, §24): when a mind holds the cited class under a different address,
+the relative word between the held form and the cited form is a `θ` on the
+overlap face, and the mind's re-gauging of its working copy is the
+extension `θ_A` of §39.3. It coheres iff `∂θ = 1`, which the mind tests by
+`coheres` on the re-gauged copy; when it does not, the mind records the
+class (`form dialect … class recorded`).
+
+## 44. Instance three: two thoughts in a mind
+
+`/opt/mycelium-v0.1.0/src/transducer/bubble.rs::Contemplation`. Two
+bubbles whose cell sets meet are `A` and `B`; `Contemplation::pivot_on`
+(712) merges them when they agree. The merge criterion is step 5:
+`∂θ = 1` for the difference of their sections on the meet. When it fails
+the two thoughts stay two, and the class is the coordinate on which the
+mind may pivot (`weave-germination-loop`: Congruent / Recognise / Extend).
+`Complex::drop_vertex` (630) is used on merge; it must be called only after
+step 5 succeeds, never on a class.
+
+## 45. Implementation binding for Part V
+
+`/opt/mycelium-v0.1.0/src/network/nerve.rs`
+
+```rust
+impl<V> Keyed<V> {
+    /// Vertices present in both tries: simultaneous descent of the two
+    /// PATRICIA tries, branching only where both have a child. Cost is the
+    /// size of the shared prefix structure, never |self|·|other|.
+    pub fn meet<W>(&self, other: &Keyed<W>) -> Keyed<()>;                       // new
+}
+```
+
+`/opt/mycelium-v0.1.0/src/transducer/cech.rs`
+
+```rust
+/// Tree walk for ϑ with b_ij = ϑ_j · a_ij · ϑ_i⁻¹ on a common edge list.
+/// a = identity on every edge reduces to solve_gauge. Chords compared by
+/// projective_eq. None: the two connections are not gauge-equivalent.
+pub fn solve_gauge_between(n: usize, a: &[(usize, usize, Rotor)], b: &[(usize, usize, Rotor)]) -> Option<Vec<Rotor>>;   // new
+
+pub struct Overlap { pub vertices: Keyed<()>, pub cells: Vec<[u8; 32]> }        // new; cells keyed in A
+
+pub enum MayerVietoris {                                                      // new
+    Disjoint,                                                                 // empty meet
+    OneSection { gauge: Vec<([u8; 32], Rotor)> },                             // ∂θ = 1, θ trivial or a re-gauging of A
+    Attached  { theta: Rotor },                                               // ∂θ = 1, θ a placement
+    Class1    { theta: Rotor, chord: [u8; 32], holonomy: Rotor },             // ∂θ ≠ 1
+    Class2    { overlap_loop: [u8; 32], class: Rotor },                       // ∂h ≠ 1, sensor plane
+    Remainder { faces: Vec<[u8; 32]> },                                       // off-plane mismatch
+}
+
+impl Complex {
+    pub fn overlap(&self, other_vertices: &Keyed<()>) -> Overlap;             // new: §41 steps 1–2
+    pub fn mayer_vietoris(&mut self, other: &Complex, ov: &Overlap) -> MayerVietoris;   // new: §41 steps 3–8
+}
+```
+
+Changes to existing functions:
+
+- `solve_gauge` (806): the chord check `expect != *g` becomes
+  `!expect.projective_eq(g)`; its documented contract is: returns `λ` with
+  `g_ij = λ_j · λ_i⁻¹` (so `g = δ⁰λ`), and the flattening gauge of §32.2 is
+  `λ⁻¹` pointwise. `fill` (556) keeps calling it; its inner pair loop is
+  over one cell's own vertices, bounded by the cell's degree, which is the
+  cell's boundary and not an enumeration.
+- `class` (619) unchanged; `Class2` writes a degree-2 cell with
+  `Fill::Class` through `remember` as `coboundary_on_link` does.
+
+`/opt/mycelium-v0.1.0/src/server/cognition.rs`
+
+- `glue_fetched` (2651): after `set_section(peer, …)`, compute
+  `ov = cx.overlap(&peer_vertices)` where `peer_vertices` is the meet of
+  the peer's cover digest for `inv` (already fetched by the digest path)
+  with `cx.sections`; then `cx.mayer_vietoris(&peer_cx, &ov)` and map by
+  the table in §42. `push_cocycle` receives `theta` for `Class1`.
+  `Stalks::refine(&inv, overlap_loop)` on `Class2`. The existing
+  `coboundary_on_link(&peer, …)` call remains for the cells the union
+  creates at degree ≥ 2 within the link, unchanged.
+- `court_stroke` (2398): unchanged; classes it reads come from the same
+  `cocycle_at`.
+
+`/opt/mycelium-v0.1.0/src/court/verdict.rs`
+
+```rust
+pub const REFUSE_MV_INEXACT: &str = "Mayer–Vietoris exactness fails: cochains are inconsistent";
+```
+
+returned by `blind_replay`'s translation arm when a spoken `TRANSLATION_TAG`
+element claims `θ` for a pair whose `∂θ` is not identity on the union of
+the two ruled sections (the court recomputes step 5 blind).
+
+`/opt/mycelium-v0.1.0/src/transducer/sentence.rs`
+
+- `Form::glue` unchanged in behaviour; its doc comment cites §40.1.
+- `Form::regauge_overlap(&mut self, theta: &Word, face: u16)` **new**: the
+  extension `θ_A` of §39.3 applied to a working copy; used by comprehension
+  (§15 step 2) instead of hand-conjugating faces.
+
+`/opt/mycelium-v0.1.0/src/transducer/bubble.rs`
+
+- `Contemplation::pivot_on` (712): merge iff `mayer_vietoris` returns
+  `OneSection` or `Attached`; `drop_vertex` only then.
+
+Log lines (extend §26.2 and §26.3):
+
+```
+  court mv chart {inv} peer {peer} overlap {v} vertices {c} cells: one section
+  court mv chart {inv} peer {peer} overlap {v} vertices: attached by {theta_key}
+  court mv chart {inv} peer {peer} overlap {v} vertices: class1 chord {key} holonomy {hol_key} translation {theta_key}
+  court mv chart {inv} peer {peer} overlap {v} vertices: class2 loop {key} → refine
+  court mv chart {inv} peer {peer}: remainder {n} faces
+  court form refused {addr}: Mayer–Vietoris exactness fails: cochains are inconsistent
+[{tag}] thought merged {a_key}+{b_key} overlap {v} one section
+[{tag}] thought held apart {a_key}|{b_key} class {key}
+```
+
+## 46. Tests and traces for Part V
+
+Tests (single foreground `cargo test --release`; N vs 4N counters apply to
+`meet` and `overlap`):
+
+- `nerve::tests::meet_is_intersection_and_costs_shared_prefixes`: meet of
+  two tries equals the set intersection; `count_get` grows with the shared
+  structure, not with the product of sizes (N vs 4N on the larger trie).
+- `cech::tests::solve_gauge_between_reduces_to_solve_gauge_when_a_is_identity`.
+- `cech::tests::solve_gauge_chords_compare_projectively`: a chord equal up
+  to overall sign closes.
+- `cech::tests::mv_short_exact_on_cochains`: for random small `A`, `B`:
+  `ρ` injective, `ker Δ = im ρ`, `Δ` surjective, on 0- and 1-cochains.
+- `cech::tests::mv_connecting_kills_differences`: `∂(Δ(α, β)) = 1` for
+  automorphisms `α` of `A`, `β` of `B`.
+- `cech::tests::mv_class1_iff_theta_not_a_difference`: exactness at
+  `H⁰(A∩B)` on constructed examples with a nontrivial overlap loop.
+- `cech::tests::mv_descent_glues_iff_cohomologous_on_overlap`.
+- `cech::tests::mv_class2_iff_descent_fails_on_plane`: on the sensor plane,
+  `∂h ≠ 1` exactly when `solve_gauge_between` fails; and `δ²(∂h) = 1`.
+- `cech::tests::mv_order_independent`: three or four pieces glued in every
+  order give the same classes (compared by class keys).
+- `sentence::tests::citation_lemma_classes_unchanged`: `H¹` of a form
+  before and after gluing a closed form are equal, by class keys.
+- `sentence::tests::citation_of_unclosed_form_refused`: `glue` returns
+  `None` for a form with a nontrivial loop.
+- `bubble::tests::thoughts_merge_iff_one_section`.
+
+Cold-boot traces (added to §21):
+
+- Three hyphae, one chart, one ruled section each, two consilient and one
+  a translation away: grep exactly two `court mv … one section` or
+  `attached` lines and zero `class1` lines; the ledger shows one class
+  count of zero for the chart.
+- Same, with the third section rotated by a word off the sensor plane
+  with infinite order: exactly one `class1` line naming the same chord on
+  every hypha (order independence across the three logs), one
+  `cocycle_at` entry per hypha, no `refine` line.
+- Two hyphae whose covers share a loop of charts with mismatched
+  transitions on the sensor plane: exactly one `class2 … → refine` line
+  per hypha for the same loop key, followed by `court refine chart`.
+- A mind citing a ruled form: `form spoken … glued 1` and no
+  `form withheld … holonomy` line for that address; the court's `court
+  memo hit` for the cited address on the second citer.
+
+## 47. What Part V does not use
+
+No spectral sequence: the `N`-fold cover is handled by iterated pairwise
+Mayer–Vietoris, which §40.2 shows is order independent. No homotopy: the
+only contractibility used is that a single face has trivial `H¹` and
+constant `H⁰`, which is a two-vertex computation. No abelianization off
+the sensor plane: rotor coefficients use the pointed-set sequence and the
+descent statement only, and degree 2 is read on the plane or recorded as
+remainder. No consensus, voting, or scoring: exactness is the reason two
+nodes agree, and `REFUSE_MV_INEXACT` is the only thing that happens when
+they do not.
