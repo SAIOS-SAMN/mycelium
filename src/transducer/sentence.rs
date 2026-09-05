@@ -754,7 +754,14 @@ pub enum Vertex {
         depth: u16,
         placement: Word,
     },
-    Rebased { by: u16, of: u16 },
+    Rebased {
+        by: u16,
+        of: u16,
+        /// Relative placement t = p_j − p_i. The linear word is `by`'s;
+        /// apply_form realises t · w_by · t⁻¹ through conformal_of at
+        /// placement_by + shift.
+        shift: (num_rational::BigRational, num_rational::BigRational),
+    },
     Unfolded { measure: Measure },
 }
 
@@ -821,19 +828,11 @@ impl Vertex {
             Vertex::Frame | Vertex::Unfolded { .. } => Word::identity(),
             Vertex::Word { word, .. } => word.clone(),
             Vertex::Glued { placement, .. } => placement.clone(),
-            Vertex::Rebased { by, of } => {
-                let a = form
-                    .vertices
-                    .get(*by as usize)
-                    .map(|v| v.word_in(form))
-                    .unwrap_or_else(Word::identity);
-                let w = form
-                    .vertices
-                    .get(*of as usize)
-                    .map(|v| v.word_in(form))
-                    .unwrap_or_else(Word::identity);
-                a.compose(&w.compose(&a.inverse())).normal_form()
-            }
+            Vertex::Rebased { by, .. } => form
+                .vertices
+                .get(*by as usize)
+                .map(|v| v.word_in(form))
+                .unwrap_or_else(Word::identity),
         }
     }
 
@@ -1109,10 +1108,16 @@ impl Form {
         )
     }
 
-    pub fn rebase(&mut self, by: u16, of: u16) -> u16 {
-        let idx = self.vertices.len() as u16;
-        self.vertices.push(Vertex::Rebased { by, of });
-        idx
+    pub fn rebase(
+        &mut self,
+        by: u16,
+        of: u16,
+        shift: (num_rational::BigRational, num_rational::BigRational),
+    ) -> u16 {
+        if (of as usize) < self.vertices.len() {
+            self.vertices[of as usize] = Vertex::Rebased { by, of, shift };
+        }
+        of
     }
 
     pub fn unfold(&mut self, measure: Measure) -> u16 {
@@ -1773,10 +1778,12 @@ fn form_vertex_key(f: &Form) -> [u8; 32] {
                 buf.extend_from_slice(&placement.key());
                 buf.extend_from_slice(&depth.to_le_bytes());
             }
-            Vertex::Rebased { by, of } => {
+            Vertex::Rebased { by, of, shift } => {
                 buf.push(3);
                 buf.extend_from_slice(&by.to_le_bytes());
                 buf.extend_from_slice(&of.to_le_bytes());
+                alphabet::put_q(&mut buf, &shift.0);
+                alphabet::put_q(&mut buf, &shift.1);
             }
             Vertex::Unfolded { measure } => {
                 buf.push(4);
@@ -2492,10 +2499,12 @@ fn encode_form_v2(f: &Form, out: &mut Vec<u8>) {
                 out.extend_from_slice(&depth.to_le_bytes());
                 word_to_form_bytes(placement, None, out);
             }
-            Vertex::Rebased { by, of } => {
+            Vertex::Rebased { by, of, shift } => {
                 out.push(3);
                 out.extend_from_slice(&by.to_le_bytes());
                 out.extend_from_slice(&of.to_le_bytes());
+                alphabet::put_q(out, &shift.0);
+                alphabet::put_q(out, &shift.1);
             }
             Vertex::Unfolded { measure } => {
                 out.push(4);
@@ -2607,7 +2616,13 @@ fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
             3 => {
                 let by = take_u16(b, pos)?;
                 let of = take_u16(b, pos)?;
-                Vertex::Rebased { by, of }
+                let s0 = alphabet::take_q(b, pos)?;
+                let s1 = alphabet::take_q(b, pos)?;
+                Vertex::Rebased {
+                    by,
+                    of,
+                    shift: (s0, s1),
+                }
             }
             4 => {
                 let m = *b.get(*pos)?;
@@ -3283,7 +3298,12 @@ mod tests {
         let glued = f
             .glue(&inner, inner_addr, Word::identity(), [0, 0, 0, 1])
             .expect("glue depth 0 into depth 0");
-        let rebased = f.rebase(0, 1);
+        let rebased = f.vertices.len() as u16;
+        f.vertices.push(Vertex::Rebased {
+            by: 0,
+            of: 1,
+            shift: (q0(), q1()),
+        });
         let unfolded = f.unfold(Measure::Occupied);
         f.faces.push(FormFace {
             i: 0,
@@ -3298,7 +3318,10 @@ mod tests {
         f.loops = Form::loops_of(&f.faces, f.vertices.len());
         f.remainder = vec![(9, 9, 1, 0)];
         assert!(matches!(f.vertices[glued as usize], Vertex::Glued { .. }));
-        assert!(matches!(f.vertices[rebased as usize], Vertex::Rebased { by: 0, of: 1 }));
+        assert!(matches!(
+            f.vertices[rebased as usize],
+            Vertex::Rebased { by: 0, of: 1, .. }
+        ));
         assert!(matches!(
             f.vertices[unfolded as usize],
             Vertex::Unfolded {
@@ -3335,10 +3358,14 @@ mod tests {
             }
             _ => panic!("glued vertex"),
         }
-        assert_eq!(
-            back.vertices[rebased as usize],
-            Vertex::Rebased { by: 0, of: 1 }
-        );
+        match &back.vertices[rebased as usize] {
+            Vertex::Rebased { by, of, shift } => {
+                assert_eq!(*by, 0);
+                assert_eq!(*of, 1);
+                assert_eq!(shift, &(q0(), q1()));
+            }
+            _ => panic!("rebased vertex"),
+        }
         assert_eq!(
             back.vertices[unfolded as usize],
             Vertex::Unfolded {

@@ -1337,6 +1337,32 @@ pub fn apply_form(f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Opti
                     }
                 }
             }
+            Vertex::Rebased { by, shift, .. } => {
+                if let Some(Vertex::Word {
+                    word,
+                    rho,
+                    placement: p,
+                    gauge,
+                    class,
+                    ..
+                }) = f.vertices.get(*by as usize)
+                {
+                    let p = (p.0.clone() + shift.0.clone(), p.1.clone() + shift.1.clone());
+                    let w = placement.compose(word);
+                    let sp = super::alphabet::Spelling {
+                        word: w,
+                        rho: rho.clone(),
+                    };
+                    let versor =
+                        element::conformal_of(&sp, &p).unwrap_or_else(element::identity_versor);
+                    for addr in atlas.fiber(class) {
+                        let i = u64::from_le_bytes(addr[..8].try_into().ok()?) as usize;
+                        if let Some(body) = bodies.get(i) {
+                            emit_carried(body, &versor, gauge, fy, &mut cells, &mut remainder);
+                        }
+                    }
+                }
+            }
             Vertex::Unfolded {
                 measure: super::sentence::Measure::Occupied,
             } => {
@@ -1477,6 +1503,62 @@ fn face_word_between(pf: &Form, a: &End, b: &End) -> Option<super::alphabet::Wor
         }
     }
     held
+}
+
+fn translation_word(_shift: &(BigRational, BigRational)) -> super::alphabet::Word {
+    super::alphabet::Word::identity()
+}
+
+fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
+    let named: Vec<FormFace> = form.faces.clone();
+    for face in &named {
+        let (i, j) = (face.i as usize, face.j as usize);
+        if matches!(form.vertices.get(j), Some(Vertex::Rebased { .. })) {
+            continue;
+        }
+        let (Some(Vertex::Word {
+            word: wi,
+            placement: pi,
+            ..
+        }), Some(Vertex::Word { placement: pj, .. })) = (
+            form.vertices.get(i).cloned(),
+            form.vertices.get(j).cloned(),
+        ) else {
+            continue;
+        };
+        if wi.is_identity() {
+            continue;
+        }
+        let Some(tc_i) = transport_class(&form.vertices[i]) else {
+            continue;
+        };
+        let Some(tc_j) = transport_class(&form.vertices[j]) else {
+            continue;
+        };
+        let shift = (pj.0.clone() - pi.0.clone(), pj.1.clone() - pi.1.clone());
+        let constant = pair_forms.iter().all(|pf| {
+            match (word_place_of_class(pf, &tc_i), word_place_of_class(pf, &tc_j)) {
+                (Some((wa, pa)), Some((wb, pb))) => {
+                    let t = translation_word(&(pb.0 - pa.0, pb.1 - pa.1));
+                    wb == wa.rebase(&t)
+                }
+                _ => false,
+            }
+        });
+        if constant {
+            form.rebase(face.i, face.j, shift);
+        }
+    }
+}
+
+fn word_place_of_class(
+    pf: &Form,
+    tc: &TransportClass,
+) -> Option<(super::alphabet::Word, (BigRational, BigRational))> {
+    match match_vertex(pf, tc) {
+        Some(Vertex::Word { word, placement, .. }) => Some((word.clone(), placement.clone())),
+        _ => None,
+    }
 }
 
 fn placement_of_class(pair_forms: &[Form], class: &TransportClass) -> Option<super::alphabet::Word> {
@@ -1633,35 +1715,9 @@ pub fn extract_rule_with(
             }
         }
     }
-    // 4. Rebase along named faces, never the complete graph. Frame as
-    // conjugator is identity and is not a change of basepoint.
-    let named: Vec<FormFace> = form.faces.clone();
-    for f in &named {
-        let (i, j) = (f.i as usize, f.j as usize);
-        if matches!(form.vertices.get(i), Some(Vertex::Frame))
-            || matches!(form.vertices.get(j), Some(Vertex::Frame))
-        {
-            continue;
-        }
-        if matches!(form.vertices.get(j), Some(Vertex::Rebased { .. })) {
-            continue;
-        }
-        let wi = form.vertices[i].word_in(&form);
-        let wj = form.vertices[j].word_in(&form);
-        let conj = wi.compose(&wj.compose(&wi.inverse())).normal_form();
-        if f.g_ij == conj {
-            let of = j as u16;
-            let idx = form.rebase(f.i, of);
-            for ff in &mut form.faces {
-                if ff.i == of {
-                    ff.i = idx;
-                }
-                if ff.j == of {
-                    ff.j = idx;
-                }
-            }
-        }
-    }
+    // 4. Rebase: w_j = t · w_i · t⁻¹ with t the relative placement, on
+    // every pair. Named faces only; Frame is not a conjugator.
+    rebase_named_faces(&mut form, &pair_forms);
     // 5. Unfold grow-to-frame.
     if family.iter().all(|(a, b)| grows_to_frame(a, b)) {
         form.unfold(super::sentence::Measure::Occupied);
@@ -2497,6 +2553,62 @@ mod tests {
         assert!(
             rule.form.vertices.iter().any(|v| matches!(v, Vertex::Frame)),
             "the frame stays; the form is not frame-only"
+        );
+    }
+
+    /// B does A's rotation about B's own centre: one Rebased vertex, spoken
+    /// through t · w_A · t⁻¹ (same linear word, placement moved by shift).
+    #[test]
+    fn b_does_as_rotation_about_its_centre_is_rebased() {
+        let letter = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+        let rot = crate::transducer::alphabet::Word::from_letters(&[(letter, false)]);
+        let x = grid(&["110", "100"]);
+        let class = perceive(&x)[0].moduli.clone();
+        let mut pf = Form::default();
+        pf.vertices.push(Vertex::Word {
+            address: [1u8; 32],
+            word: rot.clone(),
+            rho: q(1),
+            placement: (q(0), q(0)),
+            gauge: vec![(1, 1)],
+            class: class.clone(),
+            contact: None,
+        });
+        pf.vertices.push(Vertex::Word {
+            address: [2u8; 32],
+            word: rot.clone(),
+            rho: q(1),
+            placement: (q(0), q(3)),
+            gauge: vec![(1, 2)],
+            class: class.clone(),
+            contact: None,
+        });
+        pf.faces.push(FormFace {
+            i: 1,
+            j: 2,
+            g_ij: rot.clone(),
+        });
+        let mut form = pf.clone();
+        rebase_named_faces(&mut form, std::slice::from_ref(&pf));
+        let n_re = form
+            .vertices
+            .iter()
+            .filter(|v| matches!(v, Vertex::Rebased { .. }))
+            .count();
+        assert_eq!(n_re, 1, "one Rebased; the w_i w_j w_i⁻¹ test is gone");
+        match &form.vertices[2] {
+            Vertex::Rebased { by, of, shift } => {
+                assert_eq!((*by, *of), (1, 2));
+                assert_eq!(shift, &(q(0), q(3)));
+                assert_eq!(form.vertices[2].word_in(&form), rot);
+            }
+            other => panic!("expected Rebased, got {other:?}"),
+        }
+        let spoken = apply_form(&form, &x, &crate::transducer::alphabet::Word::identity())
+            .expect("rebased speaks");
+        assert!(
+            !spoken.cells.is_empty(),
+            "B's cells are spoken through the conjugated placement"
         );
     }
 
