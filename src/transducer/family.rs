@@ -240,8 +240,31 @@ fn cell_pos_key(r: i64, c: i64) -> [u8; 32] {
     k
 }
 
-/// Faces the bundle names: star from the Frame, plus pairs that co-occupy
-/// a cell. The cell is the key; vertices of the form are not paired.
+fn support_occ(cells: &[(i64, i64)]) -> crate::network::nerve::Keyed<()> {
+    let mut occ = crate::network::nerve::Keyed::new();
+    for &(r, c) in cells {
+        occ.insert(cell_pos_key(r, c), ());
+    }
+    occ
+}
+
+/// After-supports overlap, or the adjacent_ring of one meets the other.
+fn supports_related(a: &[(i64, i64)], b: &[(i64, i64)]) -> bool {
+    if a.is_empty() || b.is_empty() {
+        return false;
+    }
+    let occ_b = support_occ(b);
+    if a.iter().any(|&(r, c)| occ_b.contains(&cell_pos_key(r, c))) {
+        return true;
+    }
+    let cells_a: Vec<(i64, i64, u8)> = a.iter().map(|&(r, c)| (r, c, 0)).collect();
+    super::blade::adjacent_ring(&cells_a)
+        .iter()
+        .any(|&(r, c, _)| occ_b.contains(&cell_pos_key(r, c)))
+}
+
+/// Faces the bundle names: star from the Frame, plus pairs whose
+/// after-supports overlap or sit at ring distance one. Not the clique.
 fn star_and_cell_faces(n: usize, frame: usize, supports: &[Vec<(i64, i64)>]) -> Vec<(u16, u16)> {
     let mut faces: Vec<(u16, u16)> = Vec::new();
     for j in 0..n {
@@ -255,41 +278,20 @@ fn star_and_cell_faces(n: usize, frame: usize, supports: &[Vec<(i64, i64)>]) -> 
         };
         faces.push((a, b));
     }
-    let mut occ: crate::network::nerve::Keyed<Vec<u16>> = crate::network::nerve::Keyed::new();
-    for (vi, supp) in supports.iter().enumerate() {
-        if vi == frame {
+    for i in 0..n {
+        if i == frame {
             continue;
         }
-        for &(r, c) in supp {
-            let k = cell_pos_key(r, c);
-            match occ.get_mut(&k) {
-                Some(v) => {
-                    let id = vi as u16;
-                    if !v.contains(&id) {
-                        v.push(id);
-                    }
-                }
-                None => {
-                    occ.insert(k, vec![vi as u16]);
-                }
+        for j in (i + 1)..n {
+            if j == frame {
+                continue;
             }
-        }
-    }
-    for (_k, verts) in occ.fiber(&crate::network::nerve::ROOT) {
-        if verts.len() < 2 {
-            continue;
-        }
-        // 2-faces of this cell's overlap, named by the cell.
-        for a in 0..verts.len() {
-            for b in (a + 1)..verts.len() {
-                let (i, j) = if verts[a] < verts[b] {
-                    (verts[a], verts[b])
-                } else {
-                    (verts[b], verts[a])
-                };
-                if !faces.iter().any(|&f| f == (i, j)) {
-                    faces.push((i, j));
-                }
+            if !supports_related(&supports[i], &supports[j]) {
+                continue;
+            }
+            let (a, b) = (i as u16, j as u16);
+            if !faces.iter().any(|&f| f == (a, b)) {
+                faces.push((a, b));
             }
         }
     }
@@ -2390,6 +2392,39 @@ mod tests {
         assert_eq!(cell_reads(), n, "second call touches no cells");
         assert_eq!(f1.vertices.len(), f2.vertices.len());
         assert_eq!(f1.faces.len(), f2.faces.len());
+    }
+
+    /// Three touching after-supports: two adjacency faces besides the
+    /// Frame star, and the 1-skeleton is not a tree.
+    #[test]
+    fn a_row_of_three_touching_bodies_has_two_adjacency_faces_and_a_loop() {
+        let supports = vec![
+            vec![],
+            vec![(0, 0), (0, 1)],
+            vec![(0, 2), (0, 3)],
+            vec![(0, 4), (0, 5)],
+        ];
+        let pairs = star_and_cell_faces(4, 0, &supports);
+        let adj: Vec<_> = pairs
+            .iter()
+            .copied()
+            .filter(|&(i, j)| i != 0 && j != 0)
+            .collect();
+        assert_eq!(adj.len(), 2, "two adjacency faces, got {adj:?} from {pairs:?}");
+        let faces: Vec<FormFace> = pairs
+            .iter()
+            .map(|&(i, j)| FormFace {
+                i,
+                j,
+                g_ij: crate::transducer::alphabet::Word::identity(),
+            })
+            .collect();
+        let loops = Form::loops_of(&faces, 4);
+        assert!(
+            !loops.is_empty(),
+            "the 1-skeleton is not a star tree; got {} loops",
+            loops.len()
+        );
     }
 
     fn squares(n: usize, hue: u8, cols: usize) -> Grid {

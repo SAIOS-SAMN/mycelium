@@ -1611,8 +1611,14 @@ pub fn assemble(mut germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
     for i in 0..n {
         for j in (i + 1)..n {
             let star = frame == Some(i) || frame == Some(j);
-            let adj = !overlap_cells(&supports[i], &supports[j]).is_empty();
-            if star || adj {
+            let overlap = !overlap_cells(&supports[i], &supports[j]).is_empty();
+            let ring = {
+                let cells: Vec<(i64, i64, u8)> =
+                    supports[i].iter().map(|&(r, c)| (r, c, 0)).collect();
+                let ring = super::blade::adjacent_ring(&cells);
+                ring.iter().any(|&(r, c, _)| supports[j].binary_search(&(r, c)).is_ok())
+            };
+            if star || overlap || ring {
                 emit_face(&germs, i, j, &mut faces);
             }
         }
@@ -3572,6 +3578,31 @@ mod tests {
             n.faces.len()
         );
         assert_eq!(n.faces.len(), 0, "a disjoint row is not a clique");
+        let touching = assemble(
+            vec![
+                frame(vec![(0, 0, 1, 2), (0, 1, 1, 2), (0, 2, 1, 2), (0, 3, 1, 2), (0, 4, 1, 2), (0, 5, 1, 2)]),
+                whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
+                whole(vec![(0, 2, 1, 2), (0, 3, 1, 2)]),
+                whole(vec![(0, 4, 1, 2), (0, 5, 1, 2)]),
+            ],
+            Vec::new(),
+        );
+        let frame_i = touching
+            .germs
+            .iter()
+            .position(|g| g.kind == ShellKind::Frame)
+            .expect("frame");
+        let adj = touching
+            .faces
+            .iter()
+            .filter(|f| f.i != frame_i && f.j != frame_i)
+            .count();
+        assert_eq!(adj, 2, "two adjacency faces on a touching row, got {adj}");
+        assert!(
+            !touching.cycles.is_empty(),
+            "the 1-skeleton is not a star tree; got {} cycles",
+            touching.cycles.len()
+        );
     }
 
     /// A sentence Element is charted on leading axis 2, disjoint from
