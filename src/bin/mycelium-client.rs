@@ -600,7 +600,12 @@ fn main() {
                 train.len(),
                 tests.len(),
                 match (rule, &comprehended.transport, comprehended.framed) {
-                    (Some(r), _, _) => format!("rule {} germs, {} faces", r.nerve.germ_count(), r.faces.len()),
+                    (Some(r), _, _) => format!(
+                        "rule {} germs, {} faces, sections {}",
+                        r.nerve.germ_count(),
+                        r.faces.len(),
+                        r.section_count()
+                    ),
                     (None, Some(t), _) => format!("comprehended ({} rules, {} created, {} removed)", t.rules.len(), t.created.len(), t.removed.len()),
                     (None, None, true) => format!("residual {} cells", comprehended.residual.len()),
                     (None, None, false) => "frames disagree".to_string(),

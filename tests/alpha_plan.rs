@@ -52,7 +52,7 @@ fn faces_by_constancy_three_squares() {
         .iter()
         .filter(|g| g.kind != mycelium::transducer::peel::ShellKind::Frame)
         .count();
-    assert_eq!(bodies, 3, "three bodies remain distinct points, got {} germs {} sections", rule.nerve.germ_count(), rule.sections);
+    assert_eq!(bodies, 3, "three bodies remain distinct points, got {} germs {} sections", rule.nerve.germ_count(), rule.section_count());
     let id = identity_versor();
     assert!(
         rule.nerve.faces.iter().filter(|f| {

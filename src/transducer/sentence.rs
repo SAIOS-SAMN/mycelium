@@ -1167,11 +1167,18 @@ pub struct SentenceRule {
         Word,
         (num_rational::BigRational, num_rational::BigRational),
     )>,
-    /// Classes present in some pairs only — sections, not a refusal.
-    pub sections: usize,
+    /// Classes present in some pairs only: class key → pair indices.
+    pub sections: crate::network::nerve::Keyed<Vec<u16>>,
 }
 
 impl SentenceRule {
+    pub fn section_count(&self) -> usize {
+        self.sections
+            .fiber(&crate::network::nerve::ROOT)
+            .map(|(_, v)| v.len())
+            .sum()
+    }
+
     /// Hue map of a target chart, by exact axes, never a digest.
     pub fn hue_for(&self, inv: &stalk::Invariant) -> Vec<(u8, u8)> {
         self.hue_maps
@@ -1322,13 +1329,28 @@ pub fn agree_up_to_gauge(nerves: &[Nerve]) -> Option<SentenceRule> {
             rule_groups.push(gi);
         }
     }
-    let mut section_n = 0usize;
+    let mut sections: crate::network::nerve::Keyed<Vec<u16>> = crate::network::nerve::Keyed::new();
+    let mut section_germs: Vec<Germ> = Vec::new();
     for (ni, n) in nerves.iter().enumerate() {
         for grp in &insts[ni] {
             let probe = &n.germs[grp[0]];
             let in_rule = group_match(&insts[0], &first.germs, probe).is_some_and(|gi| rule_groups.contains(&gi));
-            if !in_rule {
-                section_n = section_n.saturating_add(grp.len());
+            if in_rule {
+                continue;
+            }
+            let key = probe.word.class_key();
+            match sections.get_mut(&key) {
+                Some(v) => {
+                    if !v.contains(&(ni as u16)) {
+                        v.push(ni as u16);
+                    }
+                }
+                None => {
+                    sections.insert(key, vec![ni as u16]);
+                }
+            }
+            if !section_germs.iter().any(|g| same_stalk(g, probe)) {
+                section_germs.push(n.germs[grp[0]].clone());
             }
         }
     }
@@ -1340,10 +1362,23 @@ pub fn agree_up_to_gauge(nerves: &[Nerve]) -> Option<SentenceRule> {
             .map(|(ix, n)| group_match(ix, &n.germs, probe).map(|g| ix[g].len()).unwrap_or(0))
             .collect();
         let min_c = counts.iter().copied().min().unwrap_or(0);
-        let total: usize = counts.iter().sum();
-        section_n = section_n.saturating_add(total.saturating_sub(min_c.saturating_mul(n_pairs)));
+        for (pi, &c) in counts.iter().enumerate() {
+            if c > min_c {
+                let key = probe.word.class_key();
+                match sections.get_mut(&key) {
+                    Some(v) => {
+                        if !v.contains(&(pi as u16)) {
+                            v.push(pi as u16);
+                        }
+                    }
+                    None => {
+                        sections.insert(key, vec![pi as u16]);
+                    }
+                }
+            }
+        }
     }
-    if rule_groups.is_empty() {
+    if rule_groups.is_empty() && section_germs.is_empty() {
         return None;
     }
     let mut germs = Vec::new();
@@ -1362,6 +1397,7 @@ pub fn agree_up_to_gauge(nerves: &[Nerve]) -> Option<SentenceRule> {
             germs.push(first.germs[v0[t]].clone());
         }
     }
+    germs.extend(section_germs);
     if germs.is_empty() {
         return None;
     }
@@ -1479,7 +1515,7 @@ pub fn agree_up_to_gauge(nerves: &[Nerve]) -> Option<SentenceRule> {
         nerve,
         ratio: ratio_from_nerve(first),
         shifts,
-        sections: section_n,
+        sections,
     })
 }
 

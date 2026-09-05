@@ -1563,11 +1563,30 @@ mod tests {
         let spoken = speak_rule(&rule, &train_in).expect("the test is spoken");
         assert!(spoken.remainder.is_empty(), "all three squares are reached: {:?}", spoken.remainder);
         assert_eq!(spoken.grid(), train_out);
+        assert!(
+            rule.section_count() > 0 || rule.nerve.germ_count() >= 3,
+            "three squares are vertices or sections"
+        );
         let minted = mint_sentence(&rule, &family).expect("the family mints");
         let mu = minted.magnitude();
         assert!(mu[2] >= 1, "lane 2 carries the scene-state span");
         assert!(mu[1] >= 1, "recolour is gauge content, got {mu:?}");
         assert_ne!(mu, [0, 0, 0, 1], "mint is the unflattened 4-vector");
+    }
+
+    #[test]
+    fn a_class_in_some_pairs_is_a_section() {
+        let family = vec![
+            (grid(&["110022", "000000"]), grid(&["220022", "000000"])),
+            (grid(&["110000", "000000"]), grid(&["220000", "000000"])),
+        ];
+        let rule = extract_rule(&family).expect("frame plus a some-pair class");
+        assert!(
+            rule.section_count() > 0,
+            "a class present in some pairs is a section, got {} germs {} sections",
+            rule.nerve.germ_count(),
+            rule.section_count()
+        );
     }
 
     /// Correspondence across pairs is transport class (kind, word, hue),
