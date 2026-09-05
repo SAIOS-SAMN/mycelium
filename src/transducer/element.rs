@@ -1262,18 +1262,29 @@ impl Element {
         if self.fibers.iter().any(|(i, _)| *i == FIBER_SPATIAL) {
             return;
         }
-        let Some(a) = self.letters().and_then(|l| l.affine()) else {
+        let Some(letters) = self.letters() else {
             return;
         };
-        if a.len() != 3 {
+        let Some(a) = letters.affine() else {
             return;
-        }
-        let mut m = identity(self.dim.max(GERM_DIM));
+        };
+        let dim = self.dim.max(GERM_DIM);
+        let mut m = identity(dim);
         place_block(&mut m, 0, &a);
-        if !is_identity(&m) {
-            self.fibers.push((FIBER_SPATIAL, m));
-            self.fibers.sort_by_key(|(i, _)| *i);
+        for &(f, t) in &letters.sigma {
+            let i = 3 + f as usize;
+            let j = 3 + t as usize;
+            if i < dim && j < dim && f != t {
+                let mut c = 3;
+                while c < dim {
+                    m[i][c] = Q::zero();
+                    c += 1;
+                }
+                m[i][j] = Q::one();
+            }
         }
+        self.fibers.push((FIBER_SPATIAL, m));
+        self.fibers.sort_by_key(|(i, _)| *i);
     }
 
     fn from_bytes_layout(b: &[u8], pos: &mut usize, with_fibre: bool) -> Option<Element> {

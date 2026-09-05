@@ -111,9 +111,8 @@ pub const UNIT_BOND: [u64; 4] = [1, 1, 1, 1];
 #[derive(Debug, Default, Clone)]
 pub struct Treasury {
     entries: Vec<Entry>,
-    /// THE STAKE BOND — enrollment capital. `enroll` credits it;
-    /// `revoke_award(slash=true)` debits it; mint does not touch it.
-    escrow: [u64; 4],
+    /// Sum of live identity bonds. Escrowed awards are `escrowed`, never this.
+    bond_total: [u64; 4],
     /// Enrolled identities and their staked μ⃗, keyed by identity.
     stakes: crate::network::nerve::Keyed<[u64; 4]>,
     /// AWARDS IN ESCROW (Step 5): consilience settlements held unfinalized —
@@ -169,17 +168,44 @@ impl Treasury {
                 e[l] = e[l].saturating_add(mu[l]);
             }
         });
-        self.escrow = e;
+        self.bond_total = e;
+    }
+
+    /// Bond recorded for an identity, if enrolled. None is unbonded.
+    pub fn bond_of(&self, who: &[u8; 32]) -> Option<[u64; 4]> {
+        self.stakes.get(who).copied()
     }
 
     /// Bond recorded for an identity, if enrolled.
     pub fn stake_of(&self, who: &[u8; 32]) -> Option<[u64; 4]> {
-        self.stakes.get(who).copied()
+        self.bond_of(who)
     }
 
-    /// The stake bond, per lane.
-    pub fn pool(&self) -> [u64; 4] {
-        self.escrow
+    /// Sum of live stakes. Legacy entries are excluded.
+    pub fn bond_total(&self) -> [u64; 4] {
+        self.bond_total
+    }
+
+    /// Stakes whose identity is not in the live genesis become `legacy`
+    /// entries and leave `stakes` / `bond_total`.
+    pub fn bind_live(&mut self, live: &[[u8; 32]]) {
+        let mut drop: Vec<([u8; 32], [u64; 4])> = Vec::new();
+        crate::snapshot::persist(&self.stakes, |who, mu| {
+            if !live.iter().any(|id| id == who) {
+                drop.push((*who, *mu));
+            }
+        });
+        for (who, mu) in drop {
+            self.stakes.remove(&who);
+            self.entries.push(Entry {
+                kind: "legacy",
+                who,
+                mu,
+                k_step: 0,
+                receipt: [0; 32],
+            });
+        }
+        self.refresh_bond();
     }
 
     /// Sum of mint entries, per lane — issued supply.
@@ -490,7 +516,7 @@ impl Treasury {
     /// [receipt 32]…` — vector amounts and chronometric anchors survive restart.
     pub fn snapshot(&self) -> Vec<u8> {
         let mut out = Vec::new();
-        for p in &self.escrow {
+        for p in &self.bond_total {
             out.extend_from_slice(&p.to_le_bytes());
         }
         out.extend_from_slice(&(self.stakes.len() as u32).to_le_bytes());
@@ -540,8 +566,8 @@ impl Treasury {
 
     /// Reload a ledger written by [`Treasury::snapshot`]. `None` on corruption.
     pub fn restore(b: &[u8], pos: &mut usize) -> Option<Treasury> {
-        let mut escrow = [0u64; 4];
-        for p in &mut escrow {
+        let mut bond_total = [0u64; 4];
+        for p in &mut bond_total {
             *p = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
             *pos += 8;
         }
@@ -625,7 +651,7 @@ impl Treasury {
                 escrowed.insert(addr, (voices, mu, (k, r)));
             }
         }
-        let mut t = Treasury { entries, escrow, stakes, escrowed, balances: crate::network::nerve::Keyed::new() };
+        let mut t = Treasury { entries, bond_total, stakes, escrowed, balances: crate::network::nerve::Keyed::new() };
         t.refresh_bond();
         t.recompute_balances();
         Some(t)
@@ -724,13 +750,13 @@ mod tests {
         let mut t = Treasury::new();
         let addr = [7u8; 32];
         t.escrow_award(addr, vec![[1; 32], [2; 32]], [4, 0, 2, 0], (1, [9; 32]));
-        assert_eq!(t.pool(), [0; 4]);
+        assert_eq!(t.bond_total(), [0; 4]);
         let (voices, mu, anchor) = t.release_award(&addr).expect("claim");
         t.mint_claim(&voices, mu, anchor);
         assert_eq!(t.balance_mu(&[1; 32]), [2, 0, 1, 0]);
         assert_eq!(t.balance_mu(&[2; 32]), [2, 0, 1, 0]);
         assert_eq!(t.supply(), [4, 0, 2, 0]);
-        assert_eq!(t.pool(), [0; 4], "mint does not touch the stake bond");
+        assert_eq!(t.bond_total(), [0; 4], "mint does not touch the stake bond");
     }
 
     /// Supply after N installs equals the sum of their deflations per lane.
@@ -758,7 +784,7 @@ mod tests {
         let addr = [3u8; 32];
         t.escrow_award(addr, vec![[1; 32]], [8, 0, 0, 0], (1, [1; 32]));
         assert!(t.revoke_award(&addr, true));
-        assert_eq!(t.pool()[0], bond[0].saturating_sub(8));
+        assert_eq!(t.bond_of(&[1; 32]).unwrap()[0], bond[0].saturating_sub(8));
         assert_eq!(t.supply(), [0; 4]);
         assert_eq!(t.balance_mu(&[1; 32]), [0; 4]);
     }
@@ -773,7 +799,7 @@ mod tests {
         let snap = t.snapshot();
         let mut pos = 0;
         let back = Treasury::restore(&snap, &mut pos).expect("restore v3");
-        assert_eq!(back.pool(), t.pool(), "the escrow pool survives, per lane");
+        assert_eq!(back.bond_total(), t.bond_total(), "live bonds survive, per lane");
         assert_eq!(back.stakes(), t.stakes(), "stakes survive");
         assert_eq!(back.entries(), t.entries());
     }

@@ -1123,23 +1123,19 @@ fn main() {
         }
     }
     eprintln!("[{tag}] hypha identity vk {}…", mycelium::court::identity::hex32(&vk));
-    if !kernel.lock().unwrap().crt_imported() {
-        let fed_path = home.join("court.federation");
-        if let Some(s) = mycelium::court::ledger::CourtState::load(fed_path.to_str().unwrap_or("court.federation")) {
-            let n = s.federation.len();
-            kernel.lock().unwrap().import_crt(s);
-            eprintln!("[{tag}] imported court federation {n} words into CRT1");
-        }
-    }
     let genesis = parse_genesis(&home.join("genesis"));
     {
+        let mut live: Vec<[u8; 32]> = genesis.hypha.iter().map(|(who, _)| *who).collect();
+        live.extend(genesis.voice.iter().map(|(who, _)| *who));
         let mut k = kernel.lock().unwrap();
-        match k.treasury().stake_of(&vk) {
-            Some(held) => eprintln!("[{tag}] bond from ledger {held:?}; pool {:?}", k.treasury().pool()),
+        k.bind_live(&live);
+        k.bind_identity(vk);
+        match k.treasury().bond_of(&vk) {
+            Some(held) => eprintln!("[{tag}] bond from ledger {held:?}"),
             None => match genesis.hypha.iter().find(|(who, _)| *who == vk).map(|(_, b)| *b) {
                 Some(bond) => {
                     let staked = k.enroll(vk, bond);
-                    eprintln!("[{tag}] genesis bond {bond:?}; staked {staked:?}; pool {:?}", k.treasury().pool());
+                    eprintln!("[{tag}] genesis bond {bond:?}; staked {staked:?}");
                 }
                 None => eprintln!("[{tag}] unbonded; earn until a bond can stand"),
             },
@@ -1150,6 +1146,9 @@ fn main() {
                 eprintln!("[{tag}] genesis voice {:02x}{:02x}… allocated {paid:?}", who[0], who[1]);
             }
         }
+        let room = k.lane_room();
+        let bond = k.treasury().bond_of(&vk);
+        eprintln!("[{tag}] room {room:?} bond {bond:?}");
     }
 
     let bind_path = home.join("bind");

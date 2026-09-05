@@ -46,7 +46,12 @@ fn faces_by_constancy_three_squares() {
         .collect();
     let family = vec![(train_in.clone(), train_out.clone())];
     let rule = extract_rule(&family).expect("three squares extract");
-    assert!(rule.nerve.germ_count() >= 3, "at least three germs, got {}", rule.nerve.germ_count());
+    assert!(
+        rule.nerve.germ_count() + rule.sections >= 3,
+        "three bodies as germs and sections, got {} germs {} sections",
+        rule.nerve.germ_count(),
+        rule.sections
+    );
     assert!(rule.nerve.faces.iter().all(|f| {
         let gi = &rule.nerve.germs[f.i];
         let gj = &rule.nerve.germs[f.j];

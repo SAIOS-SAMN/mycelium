@@ -98,40 +98,59 @@ fn retire_feed(path: &Path) {
 /// Speak a closed multi-germ sentence as one Element; a withheld sentence
 /// is thought. Returns true when the sentence was uttered, so per-rule
 /// minting is skipped.
-fn speak_sentence(entity: &mut Entity, tag: &str, n: &mycelium::transducer::sentence::Nerve) -> bool {
-    if n.germ_count() < 2 {
-        return false;
-    }
-    if !n.is_closed() {
+fn speak_sentence(entity: &mut Entity, tag: &str, n: &mycelium::transducer::sentence::Nerve, family: &[u8; 32]) -> bool {
+    let fam = format!("{:02x}{:02x}…", family[0], family[1]);
+    let why_open = || {
+        if let Some((i, c)) = n.cycles.iter().enumerate().find(|(_, c)| !c.holonomy.abelian_identity()) {
+            format!(
+                "holonomy on cycle {i} = {:02x}{:02x}…",
+                c.holonomy.key()[0],
+                c.holonomy.key()[1]
+            )
+        } else if !n.remainder.is_empty() {
+            format!("remainder {} cells", n.remainder.len())
+        } else if n.class.is_some() {
+            "H² class present".to_string()
+        } else if n.germ_count() < 2 {
+            "one germ is not a sentence".to_string()
+        } else {
+            "not closed".to_string()
+        }
+    };
+    if !n.is_closed() || n.germ_count() < 2 {
         entity.hold_thought(n.remainder.clone());
         if let Some(word) = mycelium::transducer::sentence::as_element(n) {
             entity.hold_sentence(&word);
         }
-        eprintln!(
-            "[{tag}] sentence withheld: {} germs, {} faces, {} cycles — held as thought",
-            n.germs.len(),
-            n.faces.len(),
-            n.cycles.len()
-        );
+        eprintln!("[{tag}] sentence withheld: family {fam}, {}", why_open());
         return false;
     }
     let Some(word) = mycelium::transducer::sentence::as_element(n) else {
+        eprintln!("[{tag}] sentence withheld: family {fam}, not an element");
         return false;
     };
-    match entity.speak_word(&word) {
-        Ok(mycelium::sdk::Utterance::Spoken) => {
-            eprintln!(
-                "[{tag}] sentence formed: {:02x}{:02x}… {} germs, {} faces (constant relative words), carried {:?}",
-                word.address()[0],
-                word.address()[1],
-                n.germs.len(),
-                n.faces.len(),
-                word.magnitude()
-            );
-            true
+    match entity.speak(std::slice::from_ref(&word)) {
+        Ok(codes) => match codes.first().copied() {
+            Some(mycelium::anastome::dialogue::SPEECH_REFUSED) => {
+                eprintln!("[{tag}] sentence withheld: family {fam}, refused on the wire");
+                false
+            }
+            _ => {
+                eprintln!(
+                    "[{tag}] sentence formed: {:02x}{:02x}… {} germs, {} faces (constant relative words), carried {:?}",
+                    word.address()[0],
+                    word.address()[1],
+                    n.germs.len(),
+                    n.faces.len(),
+                    word.magnitude()
+                );
+                true
+            }
         }
-        Ok(mycelium::sdk::Utterance::Already | mycelium::sdk::Utterance::Silent) => true,
-        Err(_) => false,
+        Err(e) => {
+            eprintln!("[{tag}] sentence withheld: family {fam}, {e}");
+            false
+        }
     }
 }
 
@@ -175,7 +194,13 @@ fn main() {
     let _ = std::fs::create_dir_all(home.join("feed"));
     let voice = Voice::load_or_mint(home.join("voice.key").to_str().unwrap_or("voice.key"));
     let tag = voice.name().to_string();
-    let genome_path = home.join("genome").to_string_lossy().into_owned();
+    let vid = mycelium::court::identity::hex32(&voice.identity());
+    let named = home.join(format!("{vid}.genome"));
+    let legacy = home.join("genome");
+    if !named.exists() && legacy.exists() {
+        let _ = std::fs::copy(&legacy, &named);
+    }
+    let genome_path = named.to_string_lossy().into_owned();
     let thoughts_path = home.join("thoughts").to_string_lossy().into_owned();
     let bootstrap = std::fs::read_to_string(home.join("bootstrap"))
         .ok()
@@ -330,7 +355,8 @@ fn main() {
                             }
                         }
                     }
-                    let _ = speak_sentence(&mut entity, &tag, &rule.nerve);
+                    let fam = *blake3::hash(path.to_string_lossy().as_bytes()).as_bytes();
+                    let _ = speak_sentence(&mut entity, &tag, &rule.nerve, &fam);
                 }
                 retire_feed(path);
                 ti += 1;
@@ -546,7 +572,7 @@ fn main() {
             );
             if let Some(rule) = rule {
                 rules_extracted += 1;
-                let _ = speak_sentence(&mut entity, &tag, &rule.nerve);
+                let _ = speak_sentence(&mut entity, &tag, &rule.nerve, &tid);
                 let mut reached = true;
                 let mut outs: Vec<Option<Vec<Vec<u8>>>> = Vec::new();
                 for x in &tests {

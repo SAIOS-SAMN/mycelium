@@ -972,6 +972,8 @@ pub struct SentenceRule {
     pub ratio: ((usize, usize), (usize, usize)),
     /// Affine translation that agreed across pairs, keyed by germ class.
     pub shifts: crate::network::nerve::Keyed<(num_rational::BigRational, num_rational::BigRational)>,
+    /// Classes present in some pairs only — sections, not a refusal.
+    pub sections: usize,
 }
 
 fn chart_key(inv: &Option<stalk::Invariant>) -> [u8; 32] {
@@ -1037,6 +1039,41 @@ fn hue_signature(n: &Nerve) -> Vec<([u8; 32], Vec<(u8, u8)>)> {
     v
 }
 
+fn face_pair_key(a: &[u8; 32], b: &[u8; 32]) -> [u8; 32] {
+    let (lo, hi) = if a <= b { (a, b) } else { (b, a) };
+    let mut h = blake3::Hasher::new();
+    h.update(lo);
+    h.update(hi);
+    *h.finalize().as_bytes()
+}
+
+fn faces_keyed(n: &Nerve) -> crate::network::nerve::Keyed<(Word, bool)> {
+    let mut m = crate::network::nerve::Keyed::new();
+    for f in &n.faces {
+        let Some(gi) = n.germs.get(f.i) else { continue };
+        let Some(gj) = n.germs.get(f.j) else { continue };
+        let a = germ_class_key(gi);
+        let b = germ_class_key(gj);
+        let k = face_pair_key(&a, &b);
+        let w = if a <= b { f.g_ij.clone() } else { f.g_ij.inverse() };
+        if !m.contains(&k) {
+            m.insert(k, (w, f.spelled));
+        }
+    }
+    m
+}
+
+fn hues_keyed(n: &Nerve) -> crate::network::nerve::Keyed<Vec<(u8, u8)>> {
+    let mut m = crate::network::nerve::Keyed::new();
+    for g in &n.germs {
+        let k = germ_class_key(g);
+        if !m.contains(&k) {
+            m.insert(k, germ_hue_map(g));
+        }
+    }
+    m
+}
+
 fn holo_signature(n: &Nerve) -> Vec<Word> {
     let mut holonomies: Vec<Word> = n.cycles.iter().map(|c| c.holonomy.clone()).collect();
     holonomies.sort_by(|a, b| format!("{a:?}").cmp(&format!("{b:?}")));
@@ -1053,117 +1090,139 @@ fn affine_shift(v: &Versor) -> Option<(num_rational::BigRational, num_rational::
 
 
 
-/// Accept a rule when every pair's nerve has the same germs by
-/// (source chart, target chart, kind), the same faces and holonomies
-/// under that correspondence, and the same hue maps. Several germs of
-/// one class in a pair are a section.
+/// Correspondence across pairs is by (source chart, target chart, shell
+/// kind). A class in every pair is a germ of the rule; a class in some
+/// pairs is a section. Germ and face counts need not be equal.
 pub fn agree_up_to_gauge(nerves: &[Nerve]) -> Option<SentenceRule> {
     let first = nerves.first()?;
     if first.germs.is_empty() || first.class.is_some() {
         return None;
     }
-    let idx0 = index_by_class(first)?;
-    let faces0 = face_signature(first)?;
-    let holo0 = holo_signature(first);
-    let hues0 = hue_signature(first);
-    let keys: Vec<[u8; 32]> = first.germs.iter().map(germ_class_key).collect();
-    for n in nerves.iter().skip(1) {
+    let mut presence: crate::network::nerve::Keyed<u32> = crate::network::nerve::Keyed::new();
+    let mut indexes: Vec<crate::network::nerve::Keyed<usize>> = Vec::new();
+    let mut face_maps: Vec<crate::network::nerve::Keyed<(Word, bool)>> = Vec::new();
+    let mut hue_maps_n: Vec<crate::network::nerve::Keyed<Vec<(u8, u8)>>> = Vec::new();
+    let mut section_n = 0usize;
+    for n in nerves {
         if n.class.is_some() {
             return None;
         }
-        let idx = index_by_class(n)?;
-        if idx.len() != idx0.len() {
-            return None;
-        }
-        for k in &keys {
-            if !idx.contains(k) {
-                return None;
+        let ix = index_by_class(n)?;
+        crate::snapshot::persist(&ix, |k, _| {
+            let c = presence.get(k).copied().unwrap_or(0).saturating_add(1);
+            presence.insert(*k, c);
+        });
+        let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        for g in &n.germs {
+            let k = germ_class_key(g);
+            if seen.contains(&k) {
+                section_n += 1;
+            } else {
+                seen.insert(k, ());
             }
         }
-        let faces = face_signature(n)?;
-        if faces.len() != faces0.len() {
-            return None;
-        }
-        // index: faces of this pair under class correspondence
-        for (a, b) in faces.iter().zip(&faces0) {
-            if a.0 != b.0 || a.1 != b.1 || a.3 != b.3 || a.2 != b.2 {
-                return None;
+        face_maps.push(faces_keyed(n));
+        hue_maps_n.push(hues_keyed(n));
+        indexes.push(ix);
+    }
+    let n_pairs = nerves.len() as u32;
+    let mut rule_keys: Vec<[u8; 32]> = Vec::new();
+    crate::snapshot::persist(&presence, |k, c| {
+        if *c == n_pairs {
+            // Hue must be constant to stay a germ; otherwise it is a section.
+            let h0 = hue_maps_n[0].get(k);
+            let constant = hue_maps_n.iter().all(|hm| hm.get(k) == h0);
+            if constant {
+                rule_keys.push(*k);
+            } else {
+                section_n += 1;
             }
+        } else {
+            section_n += 1;
         }
-        if holo_signature(n) != holo0 || hue_signature(n) != hues0 {
-            return None;
-        }
+    });
+    if rule_keys.is_empty() {
+        return None;
+    }
+    rule_keys.sort();
+    let ix0 = &indexes[0];
+    let mut germs = Vec::new();
+    for k in &rule_keys {
+        let &i = ix0.get(k)?;
+        germs.push(first.germs[i].clone());
+    }
+    let mut nerve = assemble(germs, first.remainder.clone());
+    let mut at: crate::network::nerve::Keyed<usize> = crate::network::nerve::Keyed::new();
+    for (i, g) in nerve.germs.iter().enumerate() {
+        at.insert(germ_class_key(g), i);
     }
     let mut hue_maps = crate::network::nerve::Keyed::new();
-    for g in &first.germs {
+    for g in &nerve.germs {
         let key = chart_key(&g.target);
-        if key == [0u8; 32] {
-            continue;
+        if key != [0u8; 32] {
+            hue_maps.insert(key, germ_hue_map(g));
         }
-        hue_maps.insert(key, germ_hue_map(g));
     }
     let mut shifts = crate::network::nerve::Keyed::new();
-    if nerves.len() == 1 {
-        for g in &first.germs {
-            if let Some(d) = &g.shift {
-                shifts.insert(germ_class_key(g), d.clone());
-            }
-        }
-    } else {
-        for k in &keys {
-            let mut held = None;
-            let mut agree = true;
-            for n in nerves {
-                let Some(&i) = index_by_class(n).as_ref().and_then(|m| m.get(k)) else {
-                    agree = false;
-                    break;
-                };
-                let Some(d) = n.germs.get(i).and_then(|g| affine_shift(&g.versor)) else {
-                    agree = false;
-                    break;
-                };
-                match &held {
-                    None => held = Some(d),
-                    Some(h) if *h != d => {
-                        agree = false;
-                        break;
-                    }
-                    _ => {}
-                }
-            }
-            if agree {
-                if let Some(d) = held {
-                    shifts.insert(*k, d);
-                }
-            }
-        }
-    }
-    let mut rank = vec![0usize; first.germs.len()];
-    let mut order: Vec<usize> = (0..first.germs.len()).collect();
-    order.sort_by_key(|&i| germ_class_key(&first.germs[i]));
-    for (r, &i) in order.iter().enumerate() {
-        rank[i] = r;
-    }
-    let mut faces: Vec<(usize, usize, Word, bool)> = first
-        .faces
-        .iter()
-        .map(|f| {
-            let (a, b) = (rank[f.i], rank[f.j]);
-            let (i, j, w) = if a < b {
-                (a, b, f.g_ij.clone())
-            } else {
-                (b, a, f.g_ij.inverse())
+    for k in &rule_keys {
+        let mut held = None;
+        let mut agree = true;
+        for (n, ix) in nerves.iter().zip(indexes.iter()) {
+            let Some(&i) = ix.get(k) else {
+                agree = false;
+                break;
             };
-            (i, j, w, f.spelled)
-        })
-        .collect();
-    faces.sort_by_key(|f| (f.0, f.1));
-    let mut nerve = first.clone();
+            let Some(d) = n.germs.get(i).and_then(|g| affine_shift(&g.versor)) else {
+                agree = false;
+                break;
+            };
+            match &held {
+                None => held = Some(d),
+                Some(h) if *h != d => {
+                    agree = false;
+                    break;
+                }
+                _ => {}
+            }
+        }
+        if agree {
+            if let Some(d) = held {
+                shifts.insert(*k, d);
+            }
+        }
+    }
     for g in &mut nerve.germs {
         g.shift = shifts.get(&germ_class_key(g)).cloned();
     }
+    let mut faces: Vec<(usize, usize, Word, bool)> = Vec::new();
+    let fm0 = &face_maps[0];
+    for f in &first.faces {
+        let Some(gi) = first.germs.get(f.i) else { continue };
+        let Some(gj) = first.germs.get(f.j) else { continue };
+        let a = germ_class_key(gi);
+        let b = germ_class_key(gj);
+        let Some(&ni) = at.get(&a) else { continue };
+        let Some(&nj) = at.get(&b) else { continue };
+        let pk = face_pair_key(&a, &b);
+        let Some((w0, spelled0)) = fm0.get(&pk) else { continue };
+        let constant = face_maps.iter().all(|fm| match fm.get(&pk) {
+            Some((w, s)) => w == w0 && s == spelled0,
+            None => false,
+        });
+        if !constant {
+            continue;
+        }
+        let (i, j, w) = if ni < nj {
+            (ni, nj, f.g_ij.clone())
+        } else {
+            (nj, ni, f.g_ij.inverse())
+        };
+        faces.push((i, j, w, *spelled0));
+    }
+    faces.sort_by_key(|f| (f.0, f.1));
+    let holo0 = holo_signature(&nerve);
     Some(SentenceRule {
-        charts: first
+        charts: nerve
             .germs
             .iter()
             .map(|g| (g.source.clone(), g.target.clone()))
@@ -1174,6 +1233,7 @@ pub fn agree_up_to_gauge(nerves: &[Nerve]) -> Option<SentenceRule> {
         nerve,
         ratio: ratio_from_nerve(first),
         shifts,
+        sections: section_n,
     })
 }
 

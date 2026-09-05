@@ -799,6 +799,8 @@ pub struct Kernel {
     physics: crate::physics::Physics,
     /// The settlement ledger (POW++-gated bounties, consilience splits).
     treasury: crate::economy::Treasury,
+    /// This hypha's verifying key. Room reads `bond_of(identity)`.
+    identity: [u8; 32],
     /// Words installed on two-voice consilience but NOT yet court-final
     /// (Step 5): local dialect awaiting the admission docket, keyed by address.
     provisional: crate::network::nerve::Keyed<Element>,
@@ -874,7 +876,10 @@ fn footprint_key(addr: [u8; 32], fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) ->
 
 impl Kernel {
     pub fn new() -> Self {
-        Kernel::default()
+        let mut k = Kernel::default();
+        k.identity = [0x11; 32];
+        k.enroll([0x11; 32], crate::economy::UNIT_BOND);
+        k
     }
 
     /// Stamp standing work from a shared genesis origin.
@@ -2013,7 +2018,7 @@ impl Kernel {
             composites: std::sync::Arc::clone(&self.book.2),
             surface: crate::economy::yield_surface(&self.physics),
             pressure: self.physics.pressure,
-            pool: self.treasury.pool(),
+            pool: self.treasury.bond_of(&self.identity).unwrap_or([0; 4]),
             k_step: self.chain.next_step_index(),
             tu: now,
             standing_t: std::sync::Arc::new(standing_t),
@@ -2267,6 +2272,11 @@ impl Kernel {
 
     pub fn treasury(&self) -> &crate::economy::Treasury {
         &self.treasury
+    }
+
+    /// Restrict stakes to the live genesis identities.
+    pub fn bind_live(&mut self, live: &[[u8; 32]]) {
+        self.treasury.bind_live(live);
     }
 
     #[cfg(test)]
@@ -3438,16 +3448,20 @@ impl Kernel {
     /// minus occupancy. Lane 2 is standing-extent slots per unit T-bond;
     /// ticks never enter S, G, or H. An unbonded kernel (tests) uses one
     /// unit of bond so the host's reserve still grants cover.
+    pub fn bind_identity(&mut self, vk: [u8; 32]) {
+        self.identity = vk;
+    }
+
     pub fn lane_room(&self) -> [usize; 4] {
         if let Some(cap) = self.lane_cap {
             return std::array::from_fn(|l| cap[l].max(1).saturating_sub(self.occupancy[l] as usize));
         }
-        let bond = self.treasury.pool();
+        let Some(bond) = self.treasury.bond_of(&self.identity) else {
+            return [0; 4];
+        };
         let spend = crate::physics::expansion_unit();
-        let unbonded = bond.iter().all(|&x| x == 0);
         std::array::from_fn(|l| {
-            let b = if unbonded { 1 } else { bond[l] };
-            crate::network::nerve::lane_cover_room(b, self.physics.reserve[l], self.occupancy[l], spend) as usize
+            crate::network::nerve::lane_cover_room(bond[l], self.physics.reserve[l], self.occupancy[l], spend) as usize
         })
     }
 
@@ -6245,6 +6259,8 @@ mod tests {
     #[test]
     fn market_capacity_is_thermodynamic_and_eviction_is_by_tension() {
         let mut k = Kernel::new();
+        k.bind_identity([1; 32]);
+        k.enroll([1; 32], [8, 8, 1, 8]);
         let calm = k.lane_room();
         assert!(calm.iter().all(|&c| c > 0), "no lane is ever pinched to zero: {calm:?}");
         let s0 = calm[0];
@@ -7026,7 +7042,7 @@ mod tests {
             peer.glue_fetched(spoken, [1; 32], [2; 32], &mut cover),
             Glue::Admitted
         ));
-        let bond = home.treasury().pool();
+        let bond = home.treasury().bond_total();
         home.confirm_peer_holds(&peer.ruled_digests());
         assert!(home.basis_len() >= 1, "the home installs after the peer glues");
         assert!(home.provisional.is_empty(), "the docket clears on install");
@@ -7035,7 +7051,7 @@ mod tests {
             home.treasury().supply().iter().any(|&x| x > 0),
             "release mints the priced vector"
         );
-        assert_eq!(home.treasury().pool(), bond, "mint does not debit the stake bond");
+        assert_eq!(home.treasury().bond_total(), bond, "mint does not debit the stake bond");
     }
 
     /// The demand codec roundtrips.

@@ -169,8 +169,8 @@ impl Session {
     }
 
     /// DISCOVER the nerve: ask the dial hypha for the addresses it stands
-    /// among and place each by the same key the hyphas use (the hash of
-    /// its address). A hypha that does not answer leaves the seed alone.
+    /// among, then take a cover digest from every learned address so the
+    /// first quote already has the trie.
     pub fn discover(&mut self) {
         let Ok(body) = self.exchange_at(&self.addr.clone(), dialogue::encode_peers_request(&self.kernel.voice)) else { return };
         for a in dialogue::decode_peers_reply(&body).unwrap_or_default() {
@@ -179,6 +179,19 @@ impl Session {
                 self.router.insert(k, a.clone());
                 self.peers.insert(k, a);
             }
+        }
+        self.refresh_covers();
+    }
+
+    /// Digest every learned hypha and absorb its cover. A moved root replaces.
+    pub fn refresh_covers(&mut self) {
+        let addrs = self.peers();
+        let voice = self.kernel.voice;
+        for addr in addrs {
+            let Ok(body) = self.exchange_at(&addr, dialogue::encode_digests_request(&voice)) else {
+                continue;
+            };
+            self.absorb_digest(&body);
         }
     }
 
@@ -818,18 +831,20 @@ impl Epigenome {
             let Some(n) = crate::transducer::sentence::from_element(utterance) else {
                 return Comprehension::Novel { residual_cells: utterance.sub().len() };
             };
-            if let Some(reason) = crate::transducer::sentence::replay_nerve(utterance) {
-                let _ = reason;
+            if let Some(_reason) = crate::transducer::sentence::replay_nerve(utterance) {
                 return Comprehension::Novel { residual_cells: n.remainder.len().max(1) };
             }
+            let chart = n.germs.first().and_then(|g| g.target.clone().or(g.source.clone()));
             let mut understood = Vec::new();
-            for g in &n.germs {
-                let inv = crate::transducer::stalk::invariant(&g.chain);
-                if let Some(i) = self.atlas.fiber(&inv).first().and_then(|a| self.index.get(a).copied()) {
-                    if let Some(x) = self.expression.get_mut(i) {
-                        *x += 1;
+            if let Some(inv) = chart {
+                let fibre = self.atlas.fiber(&inv);
+                if let Some(a) = fibre.first() {
+                    if let Some(&i) = self.index.get(a) {
+                        if let Some(x) = self.expression.get_mut(i) {
+                            *x += 1;
+                        }
+                        understood.push(i);
                     }
-                    understood.push(i);
                 }
             }
             if n.is_closed() && !understood.is_empty() {
@@ -933,17 +948,8 @@ impl Epigenome {
 
     fn learn_one(&mut self, taught: &[u8], pos: &mut usize) -> Option<Comprehension> {
         let e = Element::from_bytes(taught, pos)?;
-        // A taught word is comprehended before it is held: every transport
-        // in its connection must be a versor, every section must span its
-        // support, and a connection must be SPELLED — its letters re-derive
-        // the motion it holds. A word that does not verify is refused and
-        // counted; a connection without letters is not a word of the
-        // language this mind speaks.
-        let n = e.sub().len();
-        let coherent = e.transitions().iter().all(|(a, g, _)| a.len() == n && crate::transducer::cga::is_versor(g).is_some())
-            && e.sections().iter().all(|s| s.len() == n)
-            && (!e.is_connection() || e.letters_rederive() == Some(true));
-        if !coherent {
+        let spelled = !e.is_connection() || e.letters_rederive() == Some(true);
+        if !spelled {
             self.refused += 1;
             return None;
         }
