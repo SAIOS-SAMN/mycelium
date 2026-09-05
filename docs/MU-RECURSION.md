@@ -900,10 +900,12 @@ identity            = (0, (0, 0, 0))
 
 `PlaneForm::compose`, `PlaneForm::inverse`, `PlaneForm::is_identity`
 (`/opt/mycelium-v0.1.0/src/transducer/alphabet.rs` lines 720, 735, 714)
-are this arithmetic and nothing else. The order of an element:
-`s = 1` → order 2 if `r = 0`, else 2·order(r) ... but for the coboundary
-computations below only `is_identity` and `order` (`Word::order`, line
-552) are needed; `order` is infinite iff `m5 ≠ 0` or `m13 ≠ 0`, else divides 4.
+are this arithmetic and nothing else. The order of an element follows from
+the product rule: `(1, r)² = (0, r − r) = identity`, so every element with
+`s = 1` has order 2 whatever `r` is; an element with `s = 0` has the order
+of `r`, which is infinite when `m5 ≠ 0` or `m13 ≠ 0` and otherwise divides
+4. `Word::order` (line 552) returns exactly this, and it is the only order
+computation the coboundary machinery needs.
 
 ### 28.2 On the full chart
 
@@ -1051,10 +1053,10 @@ already performs this product with `Rotor::geo`.
 
 1. Choose a spanning forest of the faces; root each tree at one vertex with
    `γ_root = 1`.
-2. Walk the tree: for a tree face `(i → j)` with `γ_i` known, set
-   `γ_j = g_ij⁻¹`... precisely, choose `γ_j` so that the re-gauged face is
-   identity: `γ_j = γ_i · g_ij⁻¹`... the sign convention follows §30.1:
-   `γ_j · g_ij · γ_i⁻¹ = 1  ⇒  γ_j = γ_i · g_ij⁻¹`.
+2. Walk the tree: for a tree face `(i → j)` with `γ_i` known, choose `γ_j`
+   so that the re-gauged face is identity. With the convention of §30.1,
+   `γ_j · g_ij · γ_i⁻¹ = 1` gives `γ_j = γ_i · g_ij⁻¹`. This is the only
+   sign convention in the document; code and tests use it unchanged.
 3. Every chord `(a, b)` now has re-gauged value `h_ab = γ_b · g_ab · γ_a⁻¹`,
    which equals the loop holonomy of the chord's cycle up to conjugation.
    `h_ab = 1` for every chord ⇔ `g` is a coboundary ⇔ the form is flat.
