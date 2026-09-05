@@ -99,10 +99,12 @@ pub fn from_transport(rtt: std::time::Duration, strokes: u64) -> std::time::Dura
     }
 }
 
-/// Deadline for one nerve dial: the last RTT times the aperture ratio,
-/// never shorter than one millisecond so a TCP handshake can finish.
-/// A single slow reply cannot inflate the next deadline past one aperture
-/// of a one-second transport.
+/// Deadline for one nerve dial: an aperture of the measured transport,
+/// never shorter than one millisecond so a TCP handshake can finish. The
+/// bound on a stall is not here: every carrier that raises an RTT on a
+/// timeout caps it at `persist_dwell` of the floor measured over the last
+/// aperture on that wire (client `Session::rtt_timeout`, server
+/// `note_rtt_timeout`), so the deadline is a ratio of what was measured.
 pub fn transport_deadline(rtt: std::time::Duration) -> std::time::Duration {
     persist_dwell(rtt.max(std::time::Duration::from_millis(1)))
 }

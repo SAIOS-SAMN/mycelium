@@ -909,15 +909,22 @@ impl Epigenome {
     }
 
     /// TUniversal span of the last aperture of strokes. One unit, measured.
-    fn aperture_tu(&self, now_tu: u64) -> u64 {
-        match self.stroke_tu.first() {
-            Some(&tu) => now_tu.saturating_sub(tu).max(1),
-            None => 1,
+    /// `None` until a whole aperture of strokes has been noted: an
+    /// unmeasured aperture is held, never guessed (rule 15), so nothing
+    /// sheds in the first aperture after boot.
+    fn aperture_tu(&self, now_tu: u64) -> Option<u64> {
+        let n = crate::physics::aperture_cycle().max(1) as usize;
+        if self.stroke_tu.len() < n {
+            return None;
         }
+        let first = *self.stroke_tu.first()?;
+        Some(now_tu.saturating_sub(first))
     }
 
     pub fn shed_except(&mut self, now_tu: u64, glued: &impl Fn(&[u8; 32]) -> bool) -> usize {
-        let aperture_tu = self.aperture_tu(now_tu);
+        let Some(aperture_tu) = self.aperture_tu(now_tu) else {
+            return 0;
+        };
         let drop: Vec<[u8; 32]> = self
             .dialect
             .fiber(&crate::network::nerve::ROOT)
@@ -3009,9 +3016,18 @@ mod tests {
             Vec::new(),
         ))
         .expect("e1");
+        let e2 = as_element(&assemble(
+            vec![
+                whole(vec![(0, 0, 1, 3), (0, 1, 1, 3)]),
+                whole(vec![(0, 4, 3, 5), (0, 5, 3, 5)]),
+            ],
+            Vec::new(),
+        ))
+        .expect("e2");
         let mut entity = Entity::open("127.0.0.1:1", Kernel::named("shed"));
-        entity.remember_spoken(&e1);
-        assert_eq!(entity.dialect_len(), 1);
+        entity.epigenome.stand_dialect_at(e1.clone(), 0, 0);
+        entity.epigenome.stand_dialect_at(e2.clone(), 0, 0);
+        assert_eq!(entity.dialect_len(), 2);
         let addr = e1.address();
         entity.hold_thought(vec![(9, 0, 1, 2)]);
         let idea = entity
@@ -3023,8 +3039,18 @@ mod tests {
             .expect("idea");
         entity.contemplation.mark_glue(&idea, addr);
         let aperture = crate::physics::aperture_cycle() as u64;
-        let n = entity.shed_at(1 + aperture + 1);
-        assert_eq!(entity.dialect_len(), 1, "glued dialect is not shed, dropped {n}");
+        // The first aperture after boot is unmeasured: nothing sheds while
+        // the stroke ring fills, however idle an entry is.
+        for tu in 1..aperture {
+            entity.shed_at(tu);
+            assert_eq!(entity.dialect_len(), 2, "an unmeasured aperture sheds nothing");
+        }
+        // The ring is full at this stroke: the aperture is measured, the
+        // idle unglued entry sheds, the glued one stands.
+        entity.shed_at(aperture + 1);
+        assert_eq!(entity.dialect_len(), 1, "the idle unglued entry sheds; the glued one stands");
+        assert!(entity.epigenome.working_word(&addr).is_some(), "the glued entry stands");
+        assert!(entity.epigenome.working_word(&e2.address()).is_none(), "the idle entry is gone");
         assert_eq!(entity.epigenome.genome_len(), 0, "genome is untouched by shed");
     }
 }

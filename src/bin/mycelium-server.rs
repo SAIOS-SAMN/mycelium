@@ -298,6 +298,9 @@ struct Mesh {
     sk: ed25519_dalek::SigningKey,
     bind: String,
     rtt: Arc<Mutex<Keyed<std::time::Duration>>>,
+    /// The last aperture of measured round trips per peer; its minimum is
+    /// the floor every timeout-raised RTT is capped against.
+    rtt_window: Arc<Mutex<Keyed<Vec<std::time::Duration>>>>,
     last_roots: Arc<Mutex<Keyed<([[u8; 32]; 4], [u8; 32])>>>,
 }
 
@@ -311,6 +314,7 @@ impl Clone for Mesh {
             sk: self.sk.clone(),
             bind: self.bind.clone(),
             rtt: Arc::clone(&self.rtt),
+            rtt_window: Arc::clone(&self.rtt_window),
             last_roots: Arc::clone(&self.last_roots),
         }
     }
@@ -340,17 +344,45 @@ fn peer_deadline(mesh: &Mesh, id: &[u8; 32]) -> std::time::Duration {
     mycelium::physics::transport_deadline(peer_rtt(mesh, id))
 }
 
+/// The floor of the last aperture of measured round trips to a peer: the
+/// one-millisecond tick until the wire has been measured.
+fn rtt_floor(mesh: &Mesh, id: &[u8; 32]) -> std::time::Duration {
+    mesh.rtt_window
+        .lock()
+        .ok()
+        .and_then(|w| w.get(id).and_then(|ring| ring.iter().copied().min()))
+        .unwrap_or(std::time::Duration::from_millis(1))
+}
+
+/// A measured round trip enters the peer's window (one aperture of
+/// strokes) and stands as its RTT, capped at an aperture of the window's
+/// floor so one slow reply cannot set the next deadline alone.
 fn note_rtt_ok(mesh: &Mesh, id: [u8; 32], dt: std::time::Duration) {
+    let sample = if dt.is_zero() { std::time::Duration::from_micros(1) } else { dt };
+    let n = mycelium::physics::aperture_cycle().max(1) as usize;
+    if let Ok(mut w) = mesh.rtt_window.lock() {
+        let mut ring = w.get(&id).cloned().unwrap_or_default();
+        ring.push(sample);
+        if ring.len() > n {
+            ring.remove(0);
+        }
+        w.insert(id, ring);
+    }
+    let cap = mycelium::physics::persist_dwell(rtt_floor(mesh, &id));
     if let Ok(mut m) = mesh.rtt.lock() {
-        m.insert(id, if dt.is_zero() { std::time::Duration::from_micros(1) } else { dt });
+        m.insert(id, sample.min(cap));
     }
 }
 
+/// A timeout raises the peer's RTT by the aperture ratio, capped at an
+/// aperture of the measured floor: a dead peer's deadline is a ratio of
+/// what its wire measured, never a wall clock and never unbounded.
 fn note_rtt_timeout(mesh: &Mesh, id: [u8; 32]) {
     let ratio = mycelium::physics::aperture_cycle().max(2);
+    let cap = mycelium::physics::persist_dwell(rtt_floor(mesh, &id));
     if let Ok(mut m) = mesh.rtt.lock() {
         let cur = m.get(&id).copied().unwrap_or(std::time::Duration::from_millis(1));
-        m.insert(id, cur.saturating_mul(ratio));
+        m.insert(id, cur.saturating_mul(ratio).min(cap));
     }
 }
 
@@ -1214,6 +1246,7 @@ fn main() {
         sk: hypha_key.sk.clone(),
         bind: addr.clone(),
         rtt: Arc::new(Mutex::new(Keyed::new())),
+        rtt_window: Arc::new(Mutex::new(Keyed::new())),
         last_roots: Arc::new(Mutex::new(Keyed::new())),
     };
     let router = Arc::new(Mutex::new(Router::new()));
@@ -1325,18 +1358,14 @@ fn main() {
     // pool defers a demand.
     let (nerve_tx, nerve_rx) = std::sync::mpsc::sync_channel::<(String, Vec<u8>)>(mycelium::physics::reserve_max() as usize);
     {
-        let rtt = Arc::clone(&mesh.rtt);
+        let mesh_nerve = mesh.clone();
         std::thread::spawn(move || {
             for (addr, body) in nerve_rx {
                 let id = id_of(&addr);
-                let deadline = mycelium::physics::transport_deadline(
-                    rtt.lock().ok().and_then(|m| m.get(&id).copied()).unwrap_or(std::time::Duration::from_millis(1)),
-                );
+                let deadline = peer_deadline(&mesh_nerve, &id);
                 match tell_peer(&addr, body, deadline) {
                     Some((reply, dt)) => {
-                        if let Ok(mut m) = rtt.lock() {
-                            m.insert(id, if dt.is_zero() { std::time::Duration::from_micros(1) } else { dt });
-                        }
+                        note_rtt_ok(&mesh_nerve, id, dt);
                         match dialogue::decode_root_reply(&reply) {
                             Some((held, at)) => eprintln!(
                                 "  nerve → {addr}: root delivered at {} ({})",
@@ -1347,11 +1376,7 @@ fn main() {
                         }
                     }
                     None => {
-                        let ratio = mycelium::physics::aperture_cycle().max(2);
-                        if let Ok(mut m) = rtt.lock() {
-                            let cur = m.get(&id).copied().unwrap_or(std::time::Duration::from_millis(1));
-                            m.insert(id, cur.saturating_mul(ratio));
-                        }
+                        note_rtt_timeout(&mesh_nerve, id);
                         eprintln!("  nerve → {addr}: no answer");
                     }
                 }

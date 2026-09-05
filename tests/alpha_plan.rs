@@ -130,14 +130,24 @@ fn dialect_enters_on_stood_and_sheds() {
     let addr = w.address();
     epi.stand_dialect(w, 1);
     assert_eq!(epi.dialect_len(), 1);
-    let n = epi.shed(1);
-    assert_eq!(n, 0, "fresh dialect is not shed");
     let aperture = mycelium::physics::aperture_cycle() as u64;
+    // The aperture is measured from the strokes noted; until a whole
+    // aperture of strokes stands, nothing sheds.
+    let n = epi.shed(1);
+    assert_eq!(n, 0, "an unmeasured aperture sheds nothing");
+    for tu in 1..=aperture {
+        epi.note_stroke(tu);
+    }
+    let n = epi.shed(aperture);
+    assert_eq!(n, 0, "fresh dialect is not shed");
     epi.touch(&addr, 1 + aperture);
     let n = epi.shed(1 + aperture);
     assert_eq!(n, 0, "a working-atlas use resets the TUniversal aperture");
+    for tu in (aperture + 1)..=(2 * aperture + 1) {
+        epi.note_stroke(tu);
+    }
     let n = epi.shed(1 + aperture + aperture + 1);
-    assert_eq!(n, 1);
+    assert_eq!(n, 1, "idle for more than the measured aperture sheds");
     assert_eq!(epi.dialect_len(), 0);
 }
 
