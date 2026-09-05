@@ -1504,7 +1504,12 @@ fn main() {
                     .fiber(&mycelium::network::nerve::ROOT)
                     .map(|(id, a)| (*id, a.clone()))
                     .collect();
+                let mut organ_budget = mycelium::physics::expansion_unit() as usize;
                 for (pid, d) in dest_list {
+                    if organ_budget == 0 {
+                        break;
+                    }
+                    organ_budget -= 1;
                     match tell_peer(&d, req.clone(), peer_deadline(&mesh, &pid)) {
                         Some((reply, dt)) => {
                             note_rtt_ok(&mesh, pid, dt);
@@ -1527,28 +1532,32 @@ fn main() {
                                 g.insert(vk_peer, now);
                             }
                             let remote = dialogue::decode_digests_reply(&reply).unwrap_or_default();
-                            let (local, charts) = {
+                            let charts = {
                                 let mut k = match kernel.lock() {
                                     Ok(g) => g,
                                     Err(_) => continue,
                                 };
                                 k.confirm_peer_holds(&remote, vk_peer);
-                                if unchanged {
-                                    continue;
-                                }
                                 let local = k.ruled_digests();
                                 let discord = mycelium::transducer::sheaf::discordant(&remote, &local);
                                 if discord.is_empty() {
-                                    continue;
+                                    local
+                                        .iter()
+                                        .map(|s| (s.inv.clone(), k.fetch_have(&s.inv)))
+                                        .collect::<Vec<_>>()
+                                } else {
+                                    discord
+                                        .iter()
+                                        .map(|s| (s.inv.clone(), k.fetch_have(&s.inv)))
+                                        .collect::<Vec<_>>()
                                 }
-                                let charts: Vec<_> = discord
-                                    .iter()
-                                    .map(|s| (s.inv.clone(), k.fetch_have(&s.inv)))
-                                    .collect();
-                                (local, charts)
                             };
-                            let _ = local;
-                            any_moved = true;
+                            if !unchanged {
+                                any_moved = true;
+                            }
+                            if charts.is_empty() {
+                                continue;
+                            }
                             let fetch = dialogue::encode_fetch(
                                 &mesh.vk,
                                 &charts,
@@ -1557,10 +1566,12 @@ fn main() {
                             match tell_peer(&d, fetch, peer_deadline(&mesh, &pid)) {
                                 Some((page, dt2)) => {
                                     note_rtt_ok(&mesh, pid, dt2);
+                                    let mut named: Vec<[u8; 32]> = Vec::new();
                                     for w in dialogue::decode_syllabus_reply(&page).unwrap_or_default() {
                                         let mut p = 0usize;
                                         if let Some(spoken) = mycelium::transducer::element::Element::from_bytes(&w, &mut p)
                                         {
+                                            named.push(spoken.address());
                                             if let Ok(mut k) = kernel.lock() {
                                                 let g = match mesh.cover.lock() {
                                                     Ok(mut c) => k.glue_fetched(spoken, vk_peer, mesh.vk, &mut c),
@@ -1581,6 +1592,11 @@ fn main() {
                                                     }
                                                 }
                                             }
+                                        }
+                                    }
+                                    if !named.is_empty() {
+                                        if let Ok(mut k) = kernel.lock() {
+                                            k.confirm_peer_holds_addrs(&named, vk_peer);
                                         }
                                     }
                                 }

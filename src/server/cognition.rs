@@ -7111,6 +7111,22 @@ mod tests {
         assert_eq!(home.treasury().bond_total(), bond, "mint does not debit the stake bond");
     }
 
+    /// A peer have-list that names a ruled provisional is the second organ:
+    /// the home installs without waiting for a digest-root match.
+    #[test]
+    fn home_installs_on_a_have_list_naming_a_ruled_provisional() {
+        let mut home = Kernel::new();
+        let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+        let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+        assert_eq!(home.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+        let addr = *home.provisional.fiber(&crate::network::nerve::ROOT).next().unwrap().0;
+        home.court_stroke();
+        assert!(home.provisional.contains(&addr), "still provisional until the second organ");
+        home.confirm_peer_holds_addrs(&[addr], [2; 32]);
+        assert!(home.basis_len() >= 1, "have-list of a ruled provisional installs");
+        assert!(home.provisional.is_empty(), "the docket clears on install");
+    }
+
     /// The demand codec roundtrips.
     #[test]
     fn the_demand_codec_roundtrips() {
