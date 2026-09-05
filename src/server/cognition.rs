@@ -3465,6 +3465,14 @@ impl Kernel {
         })
     }
 
+    pub fn occupancy(&self) -> [u64; 4] {
+        self.occupancy
+    }
+
+    pub fn reserve(&self) -> [u64; 4] {
+        self.physics.reserve
+    }
+
     /// Test helper: remaining listing room, from each lane's own bond and reserve.
     pub fn dynamic_lane_capacity(&self) -> [usize; 4] {
         let room = self.lane_room();

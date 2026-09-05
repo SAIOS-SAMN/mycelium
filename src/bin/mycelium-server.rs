@@ -1148,7 +1148,12 @@ fn main() {
         }
         let room = k.lane_room();
         let bond = k.treasury().bond_of(&vk);
-        eprintln!("[{tag}] room {room:?} bond {bond:?}");
+        let occ = k.occupancy();
+        let res = k.reserve();
+        let spend = mycelium::physics::expansion_unit();
+        eprintln!(
+            "[{tag}] room {room:?} = bond {bond:?} × (reserve {res:?} / spend {spend}) − occupancy {occ:?}"
+        );
     }
 
     let bind_path = home.join("bind");
