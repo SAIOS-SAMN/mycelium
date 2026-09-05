@@ -26,7 +26,7 @@
 //!
 //! Usage: mycelium-client --home DIR
 use mycelium::arc::{embed, grid_to_cells, parse_task};
-use mycelium::physics::{reserve_max, Physics};
+use mycelium::physics::Physics;
 use mycelium::transducer::element::measure_lanes;
 use mycelium::transducer::germinate::germinate;
 use mycelium::court::identity::HyphaKey;
@@ -731,11 +731,12 @@ fn main() {
             while physics.depleted() {
                 physics.regenerate();
                 physics.relax();
-                // The dwell scales with the measured impedance: resistance on
-                // the wire is a longer breath, not a retry storm.
-                let strokes = (judge_load as u64)
-                    .max(reserve_max())
-                    .saturating_mul(1 + entity.impedance());
+                // Impedance routes; it does not sleep. Dwell is at most one
+                // aperture_cycle of measured transport. High Z drops that
+                // hypha from open_rooms (route_chart) and the next stroke
+                // speaks to the next hypha.
+                let cycle = mycelium::physics::aperture_cycle() as u64;
+                let strokes = (judge_load as u64).max(1).min(cycle);
                 std::thread::sleep(mycelium::physics::from_transport(entity.transport_rtt(), strokes));
             }
         }

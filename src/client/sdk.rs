@@ -468,10 +468,18 @@ impl Session {
         // even when some acts pass.
         {
             let mut r = self.resistance.borrow_mut();
-            let z = r.entry(addr.to_string()).or_insert(0);
             match (&out, deferred) {
-                (Ok(_), false) => *z = z.saturating_sub(1),
-                _ => *z = z.saturating_add(1),
+                (Ok(_), false) => {
+                    // A success anywhere means the aperture is open: every
+                    // hypha's Z decays, and the working path is clear.
+                    for z in r.values_mut() {
+                        *z = z.saturating_sub(1);
+                    }
+                    r.insert(addr.to_string(), 0);
+                }
+                _ => {
+                    *r.entry(addr.to_string()).or_insert(0) += 1;
+                }
             }
         }
         if deferred {
@@ -2105,8 +2113,48 @@ mod tests {
             matches!(s.transport(), TransportAperture::Occluded { z } if z == cycle),
             "a full stroke-cycle of failures reads as occlusion"
         );
-        // The dwell factor the client applies is 1 + Z — derived, monotone.
-        assert_eq!(1 + s.impedance(), 1 + cycle);
+        // Dwell is bounded by one aperture; Z is a routing coordinate.
+        assert_eq!(s.impedance(), cycle);
+    }
+
+    /// A successful exchange with any hypha decays Z on every path, so a
+    /// parked voice unsticks when the next hypha answers.
+    #[test]
+    fn impedance_decays_on_any_successful_exchange() {
+        use crate::network::wire::{Frame, Stratum};
+        use std::io::{Read, Write};
+        use std::net::TcpListener;
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind");
+        let live = listener.local_addr().expect("addr").to_string();
+        let h = std::thread::spawn(move || {
+            let Ok((mut s, _)) = listener.accept() else { return };
+            let mut head = [0u8; 5];
+            if s.read_exact(&mut head).is_err() {
+                return;
+            }
+            let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
+            let mut body = vec![0u8; len.min(1 << 16)];
+            let _ = s.read_exact(&mut body);
+            let reply = Frame { lane: Stratum::Spatial, body: vec![0] }.encode().unwrap_or_default();
+            let _ = s.write_all(&reply);
+        });
+        let mut s = Session::open("127.0.0.1:1", Kernel::named("z-decay"));
+        let cycle = crate::physics::aperture_cycle() as u64;
+        for _ in 0..cycle {
+            let _ = s.speak(vec![0xFF]);
+        }
+        assert!(
+            matches!(s.transport(), TransportAperture::Occluded { .. }),
+            "the seed is occluded"
+        );
+        s.add_peer(&live);
+        let _ = s.speak_nerve(vec![0xFF]);
+        assert!(
+            s.impedance() < cycle,
+            "a success on the next hypha decays Z, got {}",
+            s.impedance()
+        );
+        let _ = h.join();
     }
 
 
