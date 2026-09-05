@@ -121,6 +121,8 @@ pub struct Session {
     /// Last measured round-trip per hypha address; a timeout raises it by
     /// the aperture ratio, a success sets it to the measured trip.
     rtt: RefCell<HashMap<String, Duration>>,
+    /// Last aperture of RTTs per address; the floor is the min of this window.
+    rtt_window: RefCell<HashMap<String, Vec<Duration>>>,
 }
 
 /// The transport aperture — the perceived state of the wire to the server
@@ -165,6 +167,7 @@ impl Session {
             rooms: RefCell::new(crate::network::nerve::Keyed::new()),
             addrs: RefCell::new(crate::network::nerve::Keyed::new()),
             rtt: RefCell::new(HashMap::new()),
+            rtt_window: RefCell::new(HashMap::new()),
         }
     }
 
@@ -337,15 +340,31 @@ impl Session {
     }
 
     fn rtt_ok(&self, addr: &str, dt: Duration) {
-        let sample = dt.max(Duration::from_micros(1)).min(Duration::from_secs(1));
-        self.rtt.borrow_mut().insert(addr.to_string(), sample);
+        let n = crate::physics::aperture_cycle().max(1) as usize;
+        let sample = dt.max(Duration::from_micros(1));
+        let mut windows = self.rtt_window.borrow_mut();
+        let w = windows.entry(addr.to_string()).or_default();
+        w.push(sample);
+        if w.len() > n {
+            w.remove(0);
+        }
+        let floor = w.iter().copied().min().unwrap_or(sample);
+        let cap = crate::physics::persist_dwell(floor);
+        self.rtt.borrow_mut().insert(addr.to_string(), sample.min(cap));
     }
 
     fn rtt_timeout(&self, addr: &str) {
         let ratio = crate::physics::aperture_cycle().max(2);
+        let floor = self
+            .rtt_window
+            .borrow()
+            .get(addr)
+            .and_then(|w| w.iter().copied().min())
+            .unwrap_or(Duration::from_millis(1));
+        let cap = crate::physics::persist_dwell(floor);
         let mut m = self.rtt.borrow_mut();
         let cur = m.get(addr).copied().unwrap_or(Duration::from_millis(1));
-        let next = cur.saturating_mul(ratio).min(Duration::from_secs(1));
+        let next = cur.saturating_mul(ratio).min(cap);
         m.insert(addr.to_string(), next);
     }
 
@@ -808,6 +827,8 @@ pub struct Epigenome {
     promoted: Vec<[u8; 32]>,
     /// Dialects dropped this process.
     shed_n: u64,
+    /// TUniversal at each of the last aperture_cycle strokes.
+    stroke_tu: Vec<u64>,
 }
 
 impl Epigenome {
@@ -879,12 +900,29 @@ impl Epigenome {
         self.shed_except(now_tu, &|_| false)
     }
 
+    fn note_stroke(&mut self, now_tu: u64) {
+        let n = crate::physics::aperture_cycle().max(1) as usize;
+        self.stroke_tu.push(now_tu);
+        if self.stroke_tu.len() > n {
+            self.stroke_tu.remove(0);
+        }
+    }
+
+    /// TUniversal span of the last aperture of strokes. One unit, measured.
+    fn aperture_tu(&self, now_tu: u64) -> u64 {
+        match self.stroke_tu.first() {
+            Some(&tu) => now_tu.saturating_sub(tu).max(1),
+            None => 1,
+        }
+    }
+
     pub fn shed_except(&mut self, now_tu: u64, glued: &impl Fn(&[u8; 32]) -> bool) -> usize {
-        let aperture = crate::physics::aperture_cycle() as u64;
+        self.note_stroke(now_tu);
+        let aperture_tu = self.aperture_tu(now_tu);
         let drop: Vec<[u8; 32]> = self
             .dialect
             .fiber(&crate::network::nerve::ROOT)
-            .filter(|(a, d)| now_tu.saturating_sub(d.last_used_tu) > aperture && !glued(a))
+            .filter(|(a, d)| now_tu.saturating_sub(d.last_used_tu) > aperture_tu && !glued(a))
             .map(|(a, _)| *a)
             .collect();
         let n = drop.len();
