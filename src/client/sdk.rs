@@ -630,8 +630,9 @@ impl Session {
 /// perception stack's overlay), never recall.
 #[derive(Clone, Debug)]
 pub enum Comprehension {
-    /// The utterance decomposed into a sentence of held words — understood.
-    Understood(Vec<usize>),
+    /// The utterance decomposed into held words — address and standing
+    /// from the working atlas. Never a sentinel index.
+    Understood(Vec<([u8; 32], Standing)>),
     /// Partially decomposed: the residual is the not-yet-understood part (a
     /// prospective for the mesh, not a failure of the ear).
     Novel { residual_cells: usize },
@@ -1279,15 +1280,13 @@ impl Epigenome {
             let mut understood = Vec::new();
             if let Some(inv) = chart {
                 let fibre = self.working_atlas().fiber(&inv);
-                if let Some((a, _st)) = fibre.first() {
+                if let Some((a, st)) = fibre.first() {
                     if let Some(&i) = self.index.get(a) {
                         if let Some(x) = self.expression.get_mut(i) {
                             *x += 1;
                         }
-                        understood.push(i);
-                    } else if self.dialect.contains(a) {
-                        understood.push(usize::MAX); // stood, not a genome index
                     }
+                    understood.push((*a, *st));
                 }
             }
             if n.is_closed() && !understood.is_empty() {
@@ -1327,17 +1326,21 @@ impl Epigenome {
         // understood arm; anything left over is the novelty, measured.
         match (located.residual.len(), located.punctures.len()) {
             (0, 0) => {
-                let sentence: Vec<usize> = located.cites.into_iter().map(|(i, _, _)| i).collect();
-                for &w in &sentence {
-                    if let Some(x) = self.expression.get_mut(w) {
+                let sentence: Vec<([u8; 32], Standing)> = located
+                    .cites
+                    .iter()
+                    .filter_map(|(i, _, _)| {
+                        let w = self.genome.get(*i)?;
+                        Some((w.address(), Standing::Ruled))
+                    })
+                    .collect();
+                for (i, _, _) in &located.cites {
+                    if let Some(x) = self.expression.get_mut(*i) {
                         *x += 1;
                     }
                 }
                 if !sentence.is_empty() {
-                    let addrs: Vec<[u8; 32]> = sentence
-                        .iter()
-                        .filter_map(|&i| self.genome.get(i).map(|w| w.address()))
-                        .collect();
+                    let addrs: Vec<[u8; 32]> = sentence.iter().map(|(a, _)| *a).collect();
                     let key = utterance.address();
                     match self.recollections.get_mut(&key) {
                         Some((_, n)) => *n += 1,
@@ -1372,17 +1375,17 @@ impl Epigenome {
                 if let Some(x) = self.expression.get_mut(i) {
                     *x += 1;
                 }
-                understood.push(i);
+                understood.push((address, Standing::Ruled));
                 continue;
             }
             if self.working_word(&address).is_some() {
-                understood.push(usize::MAX);
+                understood.push((address, Standing::Stood));
                 continue;
             }
             let held = Crystal::on_class(self, &chart)
                 .into_iter()
                 .find(|(e, _, _)| e.address() != address);
-            if let Some((held, _, _)) = held {
+            if let Some((held, _, st)) = held {
                 if let Some(cited) = self.working_word(&address) {
                     if let Some(g) = crate::transducer::cech::transition(&held, cited) {
                         if let Some(theta) = crate::transducer::cech::rotor_of(&g).map(|r| r.spelled_word())
@@ -1395,7 +1398,7 @@ impl Epigenome {
                     let _ = work.regauge_overlap(&theta, vi as u16);
                 }
                 if work.coheres() {
-                    understood.push(usize::MAX);
+                    understood.push((held.address(), st));
                     eprintln!(
                         "  form re-gauged {:02x}{:02x}…",
                         address[0], address[1]
@@ -3048,7 +3051,14 @@ mod tests {
         assert!(matches!(epi.learn(&word.to_bytes()), Some(Comprehension::Novel { .. })));
         assert_eq!(epi.genome_len(), 1);
         // The same utterance again — COMPREHENDED as the held word; expression rises.
-        assert_eq!(epi.comprehend(&word), Comprehension::Understood(vec![0]));
+        match epi.comprehend(&word) {
+            Comprehension::Understood(v) => {
+                assert_eq!(v.len(), 1);
+                assert_eq!(v[0].0, word.address());
+                assert_eq!(v[0].1, Standing::Ruled);
+            }
+            other => panic!("expected Understood with standing, got {other:?}"),
+        }
         assert_eq!(epi.peak_expression(), 1, "the dialect's recollection weight moved");
         // An unrelated utterance is heard as novel — a prospective, not a failure —
         // and the genome is untouched by hearing it.
