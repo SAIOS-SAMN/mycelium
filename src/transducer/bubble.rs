@@ -475,23 +475,6 @@ impl Contemplation {
         }
     }
 
-    fn shared_volume(&self, verts: &[[u8; 32]]) -> [u64; 4] {
-        if verts.is_empty() {
-            return [0; 4];
-        }
-        let Some(first) = self.bubbles.get(&verts[0]) else {
-            return [0; 4];
-        };
-        let mut acc = first.remainder.clone();
-        for v in &verts[1..] {
-            let Some(b) = self.bubbles.get(v) else {
-                return [0; 4];
-            };
-            acc = intersect(&acc, &b.remainder);
-        }
-        element::measure_lanes(&acc)
-    }
-
     fn rotor_between(&self, a: &[u8; 32], b: &[u8; 32]) -> Rotor {
         let (Some(ba), Some(bb)) = (self.bubbles.get(a), self.bubbles.get(b)) else {
             return Rotor::identity();
@@ -1199,6 +1182,15 @@ impl Contemplation {
             *pos += 4;
             Some(v)
         };
+        let take_count = |b: &[u8], pos: usize, n: usize, item: usize| -> Option<usize> {
+            if item == 0 {
+                return Some(n);
+            }
+            if n > b.len().saturating_sub(pos) / item {
+                return None;
+            }
+            Some(n)
+        };
         let n = take_u32(b, pos)? as usize;
         let mut c = Contemplation::new();
         for _ in 0..n.min(1 << 16) {
@@ -1279,14 +1271,17 @@ impl Contemplation {
             let mut vortex = Keyed::new();
             if b.get(*pos..*pos + 4) == Some(b"TOR1") {
                 *pos += 4;
-                let nt = take_u32(b, pos).unwrap_or(0) as usize;
-                for _ in 0..nt.min(1 << 16) {
+                // A count that does not fit remaining bytes is refused, never
+                // truncated: a σ longer than the stream would desync the tape.
+                let nt = take_count(b, *pos, take_u32(b, pos)? as usize, 38)?;
+                for _ in 0..nt {
                     let tk: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                     *pos += 32;
                     let ns = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?) as usize;
                     *pos += 2;
-                    let mut sigma = Vec::with_capacity(ns.min(64));
-                    for _ in 0..ns.min(64) {
+                    let ns = take_count(b, *pos, ns, 2)?;
+                    let mut sigma = Vec::with_capacity(ns);
+                    for _ in 0..ns {
                         let a = *b.get(*pos)?;
                         *pos += 1;
                         let cpair = *b.get(*pos)?;
@@ -1297,13 +1292,13 @@ impl Contemplation {
                     *pos += 4;
                     torsion.insert(tk, (sigma, ell));
                 }
-                let nc = take_u32(b, pos).unwrap_or(0) as usize;
-                for _ in 0..nc.min(1 << 16) {
+                let nc = take_count(b, *pos, take_u32(b, pos)? as usize, 32)?;
+                for _ in 0..nc {
                     let c = sentence::PivotCertificate::from_bytes(b, pos)?;
                     certificates.insert(c.key(), c);
                 }
-                let nv = take_u32(b, pos).unwrap_or(0) as usize;
-                for _ in 0..nv.min(1 << 16) {
+                let nv = take_count(b, *pos, take_u32(b, pos)? as usize, 32)?;
+                for _ in 0..nv {
                     let c = sentence::PivotCertificate::from_bytes(b, pos)?;
                     vortex.insert(c.key(), c);
                 }

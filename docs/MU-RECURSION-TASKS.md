@@ -4,8 +4,9 @@ Derived from `MU-RECURSION.md` chapter 41 (landing order) and the audits of
 2026-09-05. One task per commit; the commit message carries the task id, the
 test names, and the `test result` line of one foreground
 `cargo test --release`. The auditor reproduces the cold-boot trace before
-the next task lands. Status as of `main` after the bubble-carries-certificates pass.
-Previous: `227cddd` (items 1–7 wiring). Full suite at `227cddd`: lib 282, alpha_plan 13, g_cga 6.
+the next task lands. Status as of the certified-face / keyed-canonical-key pass on `0e6025b`.
+Previous: `0e6025b` (bubble owns torsion/certificates/vortex). Full suite at
+`0e6025b`: lib 284, alpha_plan 13, g_cga 6, 1 extra green.
 
 Legend: **done** verified on the tree; **partial** landed with a named gap;
 **open** not started. "DoD" is the definition of done. "Rule" cites the
@@ -38,7 +39,7 @@ coding-standards rule most likely to be broken while doing the task.
 | 1.3c | `apply_form` speaks `Glued` via `Crystal::by_address` + `speak_form`, `Rebased` via `word_in`; no all-bodies fallback; `Speech.unspoken` | 21 speak_rule, rule 2 | family.rs `apply_form`, `speak_rule`; `Crystal::{by_address,on_axis}` on `Epigenome` and `Kernel` | **done** (3f2fa43, abacf53) — `speak_rule` speaks the form; empty fiber is unspoken. Rebase extraction remains 1.3b | `empty_fiber_is_unspoken_not_every_body`; `extract_rule_glues_a_held_form` |
 | 1.3d | Unfold and contact as moves (present); contact anchor from the frame ring | 21 steps 5–6, 22 | family.rs `grows_to_frame`, `orbit`, step 6 | **done** (3eca3d5, 42423d2) | `unfolding_grow_to_frame`, `orbit_contact_and_no_orbit` |
 | 1.3e | Form magnitude measured by speaking over the bundle; `as_element_form(f, mag)`; zero → not spoken | 21, 26, rule 8 | family.rs `form_descent` (from cognition.rs `measured_replay_descent`); sentence.rs `as_element_form` | **open** | no `set_magnitude([0,0,0,1])`; a form with zero descent is withheld |
-| 1.4 | `replay_form` on the court; `blind_replay` dispatches on the version byte; `resolve_form`, `replay_memo`, `cited_by`, slash redockets citers | 23.1–23.2 | verdict.rs `replay_form`; cognition.rs | **partial** — replay, memo, redocket, `REFUSE_PIVOT_INEXACT` landed; `pivot_certificate_replays_or_refuses` in verdict tests | `replay_form_refuses_unruled_glue`, `pivot_certificate_replays_or_refuses` |
+| 1.4 | `replay_form` on the court; `blind_replay` dispatches on the version byte; `resolve_form`, `replay_memo`, `cited_by`, slash redockets citers | 23.1–23.2 | verdict.rs `replay_form`; cognition.rs | **partial** — certified faces re-derive (`face_of` on the after tape, then 23.7 un-pivot / apply / after key); positive `blind_replay` on the discharged nerve. Remaining 23.1 vertex/move checks and `resolve_form` still open | `replay_form_refuses_unruled_glue`, `pivot_certificate_replays_or_refuses`, `pivot_loop_discharges_held_word_and_vortices_a_pair` |
 | 1.5 | Working atlas: `working_atlas`, `Standing`, dialect `Stalks`, promotion, standing byte on the wire; `Crystal` over the working atlas | 24.1, 21 | sdk.rs `Epigenome::{working_atlas,working_fiber,touch,learn_one}`; dialogue.rs | **partial** (0b775fc, ee36a3c; standing byte on wire open) | working-atlas traces of chapter 40 |
 | 1.6 | `Comprehension::Withheld`, sentence arm with `regauge_overlap`, depth-ordered syllabus | 24.2 | sdk.rs `comprehend`, `pull_syllabus`; cognition.rs `serve_ruled` | **open** | `comprehend_regauges_dialect_glue`, `withheld_then_depth_order` |
 | 1.7 | Germination on forms: `pivot_on` glues crystallized forms at constant placement; `glues`/`glued_by`; `bundle` | 25 | bubble.rs | **partial** — wrap glues; bubble carries torsion/certificates/vortex into `as_element_form_of_nerve`; bundle open | `wrap_glues_crystallized_form`; form_thought cauterizes from `Nerve::torsion` |
@@ -105,8 +106,8 @@ Still cartesian when those files are next touched: `pair_scene`/`greedy_within`,
 
 | cut | contents | gate to start | what the soak reads |
 |---|---|---|---|
-| **A** (fleet in memory) | `804843d` in the running units: live nerve path with transport-class correspondence, bundle faces, mint by replay, working atlas, fan-out, impedance routing. Tree is ahead at `abacf53`; do not recut until asked | full suite green (it is); `state/`, ledgers, genomes wiped | `court refuse speech` histogram; `sentence formed` > `withheld`; cohesion `c` leaves 0; `promoted` lines; `mint none` lines; RSS flat |
-| **B** | Cut A + remaining 1.3b, 1.3e, 1.4, 1.9 court replay, 1.14 soak traces, 0.8. Already on the tree: 1.1b, 1.2, 1.3c, 1.9 loop/vortex, 1.13, 0.9, 0.10 | full suite green; the chapter 40 forms and torsion-bridge traces reproduced on cold boot | `form spoken … depth d glued n`, `pivot … discharged`, `vortex … held`, `court pivot certified`, `court memo hit`, one settlement with two speakers |
+| **A** (fleet in memory) | `804843d` in the running units: live nerve path with transport-class correspondence, bundle faces, mint by replay, working atlas, fan-out, impedance routing. Tree is ahead; do not recut until asked | full suite green (it is); `state/`, ledgers, genomes wiped | `court refuse speech` histogram; `sentence formed` > `withheld`; cohesion `c` leaves 0; `promoted` lines; `mint none` lines; RSS flat |
+| **B** | Cut A + remaining 1.3e, 1.4 remainder, 1.9 vortex collapse, 1.14 soak traces, 0.8. Recut from genesis: Cut A persisted `TaskRegistry` snapshots are unreachable under the M2 `task_id` (listing keys of each train pair plus the test-input chain address); overlay of a Cut A registry is a miss, not a restore | full suite green; the chapter 40 forms and torsion-bridge traces reproduced on cold boot | `form spoken … depth d glued n`, `pivot … discharged`, `vortex … held`, `court pivot certified`, `court memo hit`, one settlement with two speakers |
 | **C** | Cut B + Stage 2 (2.3–2.7), 0.4, 0.5, 0.6, 0.7 | as above plus the cohomology traces | `court goodness`, `court mv`, `class carried/discharged`, class keys equal on all hyphae |
 | **D** | Stage 4 | non-ARC corpus present | chapter 40 extension traces |
 

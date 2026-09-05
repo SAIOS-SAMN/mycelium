@@ -74,15 +74,12 @@ pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8; 32]) -> Option<Form>
             return Some(REFUSE_GLUED_FRAME_GAUGED);
         }
     }
-    let mut certified: Keyed<()> = Keyed::new();
-    for cert in &f.certificates {
-        let crate::transducer::sentence::PivotBy::Word { face, .. } = &cert.by;
-        certified.insert(face_idx_key(*face), ());
-    }
-    for (i, face) in f.faces.iter().enumerate() {
-        if certified.contains(&face_idx_key(i as u16)) {
-            continue;
-        }
+    // Chapter 23.1: every face, including a certified chord, re-derives
+    // from its vertices. A certificate names the move that closed it;
+    // it does not excuse the after-face from M1. Chapter 23.7 then
+    // un-pivots that same face, reads the before key, applies `by`,
+    // and reads the after key.
+    for face in &f.faces {
         if f.face_of(face.i, face.j) != face.g_ij {
             return Some(REFUSE_FACE);
         }
@@ -90,10 +87,32 @@ pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8; 32]) -> Option<Form>
     // Loops are derived, never trusted from the tape: re-walk the forest.
     let mut walked = f.clone();
     walked.loops = Form::loops_of(&f.faces, f.vertices.len());
-    if !walked.coheres() {
+    if !form_loops_replay(&walked) {
         return Some(REFUSE_LOOP);
     }
     replay_certificates(&walked)
+}
+
+/// Identity loops, or finite open loops filed on the form's torsion carrier.
+fn form_loops_replay(f: &Form) -> bool {
+    use crate::transducer::alphabet::Order;
+    use crate::transducer::sentence::ClassVector;
+    for lp in &f.loops {
+        if lp.holonomy.abelian_identity() {
+            continue;
+        }
+        match lp.holonomy.order() {
+            Order::Infinite => return false,
+            Order::Finite(ell) => {
+                let k = ClassVector::of_word(&lp.holonomy).class_key();
+                match f.torsion.get(&k) {
+                    Some((_, e)) if *e == ell => {}
+                    _ => return false,
+                }
+            }
+        }
+    }
+    true
 }
 
 fn face_idx_key(i: u16) -> [u8; 32] {

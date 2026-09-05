@@ -381,23 +381,6 @@ impl Complex {
         out
     }
 
-    fn neighbors(&self, vertex: &[u8; 32]) -> Vec<[u8; 32]> {
-        let mut out = Vec::new();
-        for k in self.link(vertex, 1) {
-            let Some(c) = self.cell(&k) else {
-                continue;
-            };
-            for u in &c.vertices {
-                if u != vertex {
-                    out.push(*u);
-                }
-            }
-        }
-        out.sort_unstable();
-        out.dedup();
-        out
-    }
-
     fn holonomy(&self, i: &[u8; 32], j: &[u8; 32], k: &[u8; 32]) -> Option<Rotor> {
         let g_ij = self.edge(i, j)?;
         let g_jk = self.edge(j, k)?;

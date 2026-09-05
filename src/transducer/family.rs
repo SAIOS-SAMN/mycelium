@@ -1186,23 +1186,25 @@ pub fn orbit(v: &Vertex, x_cells: &[Cell3], anchor: &[(i64, i64)], frame: (usize
     if d1 == start {
         return OrbitEnd::NoOrbit;
     }
-    let occupancy = |cs: &[Cell3]| -> crate::network::nerve::Keyed<u8> {
-        let mut o = crate::network::nerve::Keyed::new();
-        for &(r, c, h) in cs {
-            o.insert(cell_pos_key(r, c), h);
+    // Canonical form of a placed occupancy: sorted cells as bytes, then
+    // blake3. Position is meaning (orbit instance); this is not the
+    // translation-free residual address.
+    let state_key = |cs: &[Cell3]| -> [u8; 32] {
+        let mut cells = cs.to_vec();
+        cells.sort_unstable();
+        let mut buf = Vec::with_capacity(4 + cells.len().saturating_mul(17));
+        buf.extend_from_slice(&(cells.len() as u32).to_le_bytes());
+        for &(r, c, h) in &cells {
+            buf.extend_from_slice(&r.to_le_bytes());
+            buf.extend_from_slice(&c.to_le_bytes());
+            buf.push(h);
         }
-        o
-    };
-    let occupancy_eq = |a: &crate::network::nerve::Keyed<u8>, b: &crate::network::nerve::Keyed<u8>| -> bool {
-        a.fiber(&crate::network::nerve::ROOT)
-            .all(|(k, h)| b.get(k) == Some(h))
-            && b.fiber(&crate::network::nerve::ROOT)
-                .all(|(k, h)| a.get(k) == Some(h))
+        *blake3::hash(&buf).as_bytes()
     };
     let mut cells = next;
-    let mut seen: Vec<crate::network::nerve::Keyed<u8>> = Vec::new();
-    seen.push(occupancy(x_cells));
-    seen.push(occupancy(&cells));
+    let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    seen.insert(state_key(x_cells), ());
+    seen.insert(state_key(&cells), ());
     for step in 1..=bound {
         let d = ring_dist_peel(&positions_of(&cells), anchor, bound);
         let left = cells.iter().any(|&(r, c, _)| r < 0 || c < 0 || (r as usize) >= frame.0 || (c as usize) >= frame.1);
@@ -1217,11 +1219,11 @@ pub fn orbit(v: &Vertex, x_cells: &[Cell3], anchor: &[(i64, i64)], frame: (usize
             return OrbitEnd::Contact { cells: inside, steps: step };
         }
         let nxt = apply_versor_cells(&versor, &cells, frame);
-        let occ = occupancy(&nxt);
-        if nxt == cells || seen.iter().any(|s| occupancy_eq(s, &occ)) {
+        let nk = state_key(&nxt);
+        if nxt == cells || seen.contains(&nk) {
             return OrbitEnd::Torsion { steps: step };
         }
-        seen.push(occ);
+        seen.insert(nk, ());
         cells = nxt;
     }
     OrbitEnd::LeftFrame { steps: bound }

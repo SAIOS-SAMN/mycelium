@@ -877,34 +877,26 @@ fn loop_key(chart: &crate::transducer::stalk::Invariant, voice: &[u8; 32]) -> [u
     *h.finalize().as_bytes()
 }
 
-fn occ_points(fp: &[(i64, i64)]) -> crate::network::nerve::Keyed<()> {
-    let mut o = crate::network::nerve::Keyed::new();
-    for &(r, c) in fp {
-        o.insert(crate::transducer::family::cell_pos_key(r, c), ());
+/// Canonical key of one evidence row: address, sorted footprint, sorted scene.
+fn footprint_key(addr: [u8; 32], fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> [u8; 32] {
+    let mut points = fp.to_vec();
+    points.sort_unstable();
+    let mut cells = scene.to_vec();
+    cells.sort_unstable();
+    let mut buf = Vec::with_capacity(36 + points.len() * 16 + cells.len() * 17);
+    buf.extend_from_slice(&addr);
+    buf.extend_from_slice(&(points.len() as u32).to_le_bytes());
+    for &(r, c) in &points {
+        buf.extend_from_slice(&r.to_le_bytes());
+        buf.extend_from_slice(&c.to_le_bytes());
     }
-    o
-}
-
-fn occ_scene(scene: &[(i64, i64, u8)]) -> crate::network::nerve::Keyed<u8> {
-    let mut o = crate::network::nerve::Keyed::new();
-    for &(r, c, h) in scene {
-        o.insert(crate::transducer::family::cell_pos_key(r, c), h);
+    buf.extend_from_slice(&(cells.len() as u32).to_le_bytes());
+    for &(r, c, h) in &cells {
+        buf.extend_from_slice(&r.to_le_bytes());
+        buf.extend_from_slice(&c.to_le_bytes());
+        buf.push(h);
     }
-    o
-}
-
-fn occ_points_eq(a: &[(i64, i64)], b: &[(i64, i64)]) -> bool {
-    let (oa, ob) = (occ_points(a), occ_points(b));
-    oa.fiber(&crate::network::nerve::ROOT).all(|(k, _)| ob.contains(k))
-        && ob.fiber(&crate::network::nerve::ROOT).all(|(k, _)| oa.contains(k))
-}
-
-fn occ_scene_eq(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> bool {
-    let (oa, ob) = (occ_scene(a), occ_scene(b));
-    oa.fiber(&crate::network::nerve::ROOT)
-        .all(|(k, h)| ob.get(k) == Some(h))
-        && ob.fiber(&crate::network::nerve::ROOT)
-            .all(|(k, h)| oa.get(k) == Some(h))
+    *blake3::hash(&buf).as_bytes()
 }
 
 impl Kernel {
@@ -4235,12 +4227,11 @@ impl Kernel {
         if fp.is_empty() || self.anchor_evidence.len() >= 128 {
             return false;
         }
-        if self.anchor_evidence.iter().any(|(a, f, s)| {
-            a == &addr && occ_points_eq(f, &fp) && occ_scene_eq(s, &scene)
-        }) {
+        let key = footprint_key(addr, &fp, &scene);
+        if self.evidence_at.contains(&key) {
             return false;
         }
-        self.evidence_at.insert(addr, ());
+        self.evidence_at.insert(key, ());
         self.anchor_evidence.push((addr, fp, scene));
         true
     }
@@ -4441,9 +4432,7 @@ impl Kernel {
                 if let Some((scene, (or, oc))) = &ctx {
                     let fp: Vec<(i64, i64)> =
                         res.sub().iter().map(|(r, c, _, _)| (r + or, c + oc)).collect();
-                    if self.anchor_evidence.len() < 128 {
-                        self.anchor_evidence.push((res.address(), fp, scene.clone()));
-                    }
+                    let _ = self.deposit_evidence(res.address(), fp, scene.clone());
                 }
                 NormalForm::Irreducible(res)
             }
@@ -4463,9 +4452,9 @@ impl Kernel {
                         let fp = word_footprint_in(&self.basis[i], &chain, (*or, *oc));
                         if !fp.is_empty() {
                             let addr = self.basis[i].address();
-                            if !self.anchor_evidence.iter().any(|(a, f, s)| {
-                                a == &addr && occ_points_eq(f, &fp) && occ_scene_eq(s, scene)
-                            }) {
+                            let key = footprint_key(addr, &fp, scene);
+                            if !self.evidence_at.contains(&key) {
+                                self.evidence_at.insert(key, ());
                                 self.anchor_evidence.push((addr, fp, scene.clone()));
                             }
                         }
@@ -5003,7 +4992,6 @@ impl Kernel {
                     true => Vec::new(),
                     false => vec![fiber[self.optimize_cursor % fiber.len()]],
                 };
-                let mut absorbed = 0usize;
                 for sibling in pick {
                     let (Some(j), Some(i)) = (self.basis_index.get(&sibling).copied(), self.basis_index.get(&own).copied()) else { continue };
                     let Some(g) = element::transition(self.basis[j].sub(), self.basis[i].sub())
@@ -5030,7 +5018,6 @@ impl Kernel {
                         self.touch_at(i);
                     }
                     self.physics.syntropy(&[0, 1, 0, 0]);
-                    absorbed += 1;
                 }
             }
             // The cursor's word, found again by its key: a removal above may
@@ -5940,16 +5927,6 @@ fn frame_to_origin(cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
     cells.iter().map(|(r, c, h)| (r - min_r, c - min_c, *h)).collect()
 }
 
-/// Re-center a coboundary chain after peeling (min-corner → origin, sorted) — the
-/// same framing projection, applied to the remainder for the direct terminal.
-fn recenter(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64, u8, u8)> {
-    let min_r = chain.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
-    let min_c = chain.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
-    let mut out: Vec<_> = chain.iter().map(|(r, c, b, a)| (r - min_r, c - min_c, *b, *a)).collect();
-    out.sort_unstable();
-    out
-}
-
 /// The consilience address of a SECTION prospect: the carrying thought's stable
 /// base address ⊕ the assignment — so two kernels independently proposing the
 /// same axis extension meet at one receipt (wire identity, never reasoned on).
@@ -6468,7 +6445,7 @@ mod tests {
 
     #[test]
     fn torsion_consilient_or_filed_or_refused() {
-        use crate::transducer::element::{from_residual, FIBER_SPATIAL};
+        use crate::transducer::element::from_residual;
         use crate::transducer::germinate::germinate;
         let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
         let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
@@ -6605,7 +6582,6 @@ mod tests {
     /// leaves) is retired by the redundancy probe; an essential one survives it.
     #[test]
     fn the_syntropic_stroke_retires_a_redundant_generator() {
-        use crate::transducer::element::from_residual;
         use crate::transducer::germinate::germinate;
         let mut k = Kernel::new();
         let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];

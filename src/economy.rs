@@ -318,10 +318,6 @@ impl Treasury {
             .collect()
     }
 
-    fn pay(&mut self, _kind: &'static str, who: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        self.mint_to(who, mu, anchor)
-    }
-
     /// The POW++ GATE on a germ install: it admits iff the germ reduces the demand
     /// (`0⃗ ≺_DM magnitude`). NB: installing pays NOTHING here — a germ that only
     /// closes its own birth demand has proven nothing about the corpus. Reward

@@ -1121,12 +1121,6 @@ impl Epigenome {
         self.genome.iter().position(|w| w.same_vertex(e))
     }
 
-    /// The shape of word `i`, lifted on first use.
-    fn shape(&self, i: usize) -> Option<&crate::transducer::blade::Shape> {
-        let cell = self.shapes.get(i)?;
-        cell.get_or_init(|| crate::transducer::element::shape_of_chain(self.genome[i].sub())).as_ref()
-    }
-
     /// Deconstruct a chain over the working language: genome and dialect.
     /// A word this mind stood closes a remainder without waiting for the court.
     fn locate(&mut self, chain: &[(i64, i64, u8, u8)], exclude: Option<usize>) -> crate::transducer::sentence::Sentence {
@@ -1277,14 +1271,11 @@ impl Epigenome {
                         .iter()
                         .filter_map(|&i| self.genome.get(i).map(|w| w.address()))
                         .collect();
-                    let key = crate::transducer::sentence::vertex_address(utterance)
-                        .or_else(|| addrs.first().copied());
-                    if let Some(key) = key {
-                        match self.recollections.get_mut(&key) {
-                            Some((_, n)) => *n += 1,
-                            None => {
-                                self.recollections.insert(key, (addrs, 1));
-                            }
+                    let key = utterance.address();
+                    match self.recollections.get_mut(&key) {
+                        Some((_, n)) => *n += 1,
+                        None => {
+                            self.recollections.insert(key, (addrs, 1));
                         }
                     }
                 }

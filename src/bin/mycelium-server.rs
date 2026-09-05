@@ -7,7 +7,7 @@
 use mycelium::anastome::dialogue;
 use mycelium::cognition::{decode_percept, outcome_code, Kernel, Outcome};
 use mycelium::court::identity::{parse_hex32, parse_hex64, HyphaKey};
-use mycelium::network::mesh::{self, MeshRecord};
+use mycelium::network::mesh::{self};
 use mycelium::network::nerve::{home, Cover, Keyed, Router};
 use mycelium::network::wire::Frame;
 use std::io::{Read, Write};
@@ -60,39 +60,9 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
     Ok(PathBuf::from(home).join(".mycelium"))
 }
 
-fn read_lines(path: &Path) -> Vec<String> {
-    std::fs::read_to_string(path)
-        .map(|s| {
-            s.lines()
-                .map(|l| l.trim())
-                .filter(|l| !l.is_empty() && !l.starts_with('#'))
-                .map(String::from)
-                .collect()
-        })
-        .unwrap_or_default()
-}
-
 struct Genesis {
     hypha: Vec<([u8; 32], [u64; 4])>,
     voice: Vec<([u8; 32], [u64; 4])>,
-}
-
-fn parse_genesis(path: &Path) -> Genesis {
-    let mut g = Genesis { hypha: Vec::new(), voice: Vec::new() };
-    for line in read_lines(path) {
-        let mut it = line.split_whitespace();
-        let Some(kind) = it.next() else { continue };
-        let Some(hex) = it.next() else { continue };
-        let Some(vk) = parse_hex32(hex) else { continue };
-        let n = |s: Option<&str>| s.and_then(|x| x.parse().ok()).unwrap_or(0u64);
-        let bond = [n(it.next()), n(it.next()), n(it.next()), n(it.next())];
-        match kind {
-            "hypha" => g.hypha.push((vk, bond)),
-            "voice" => g.voice.push((vk, bond)),
-            _ => {}
-        }
-    }
-    g
 }
 
 fn corpus_hash(dir: &Path) -> Option<[u8; 32]> {

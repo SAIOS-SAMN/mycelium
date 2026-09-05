@@ -18,6 +18,7 @@
 //!   lifecycle Unsolved → Settled(n).
 
 use crate::arc::{refine_delta, Grid, Task};
+use crate::network::nerve::Keyed;
 
 /// The closed task lifecycle. Settled carries the settle count — the decay's
 /// exact denominator, never a boolean "done".
@@ -43,6 +44,9 @@ pub enum SolveYield {
 pub struct TaskRegistry {
     /// (task_id, the task, state) — append-only, content-addressed.
     tasks: Vec<([u8; 32], Task, TaskState)>,
+    /// Position of each id in `tasks`. Dispatch still walks the Vec;
+    /// lookup, overlay, and settle read here.
+    by_id: Keyed<usize>,
     /// Dispatch cursor (rotates so pull requests spread across the book).
     cursor: usize,
     /// Cover-change cursor: a budgeted walk re-homes by the cover trie.
@@ -54,6 +58,11 @@ pub struct TaskRegistry {
 
 /// The boundary-root digest: identity from CONTENT — the train coboundaries
 /// (refined, so frames are part of identity) and the test inputs.
+///
+/// Cut A persisted registries keyed the old digest; those ids are
+/// unreachable under this M2 form (listing keys of each train pair plus
+/// the test-input chain address). Cut B recuts from genesis — overlay of
+/// a Cut A snapshot is a miss, not a restore.
 pub fn task_id(task: &Task) -> [u8; 32] {
     let mut buf = Vec::new();
     for (a, b) in &task.train {
@@ -95,7 +104,14 @@ pub fn task_tension(task: &Task) -> [u64; 4] {
 
 impl TaskRegistry {
     pub fn new() -> Self {
-        TaskRegistry { tasks: Vec::new(), cursor: 0, cover_cursor: 0, intake_cursor: 0, intake_done: false }
+        TaskRegistry {
+            tasks: Vec::new(),
+            by_id: Keyed::new(),
+            cursor: 0,
+            cover_cursor: 0,
+            intake_cursor: 0,
+            intake_done: false,
+        }
     }
 
     /// Next `n` tasks for first-time listing. Empty once the manifest has
@@ -151,7 +167,9 @@ impl TaskRegistry {
     }
 
     pub fn task(&self, id: &[u8; 32]) -> Option<&Task> {
-        self.tasks.iter().find(|(t, _, _)| t == id).map(|(_, task, _)| task)
+        self.by_id
+            .get(id)
+            .and_then(|&i| self.tasks.get(i).map(|(_, task, _)| task))
     }
 
     /// Withheld test pairs (input, held output) the home speaks a rule onto.
@@ -165,8 +183,10 @@ impl TaskRegistry {
     /// name registers nothing). Returns the id.
     pub fn register(&mut self, task: Task) -> [u8; 32] {
         let id = task_id(&task);
-        if !self.tasks.iter().any(|(t, _, _)| *t == id) {
+        if !self.by_id.contains(&id) {
+            let i = self.tasks.len();
             self.tasks.push((id, task, TaskState::Unsolved));
+            self.by_id.insert(id, i);
         }
         id
     }
@@ -183,12 +203,12 @@ impl TaskRegistry {
     /// on this book is asked to reproduce it. False when the task is not
     /// registered or already settled here.
     pub fn prioritize(&mut self, id: &[u8; 32]) -> bool {
-        match self.tasks.iter().position(|(t, _, s)| t == id && *s == TaskState::Unsolved) {
-            Some(i) => {
+        match self.by_id.get(id) {
+            Some(&i) if self.tasks.get(i).is_some_and(|(_, _, s)| *s == TaskState::Unsolved) => {
                 self.cursor = i;
                 true
             }
-            None => false,
+            _ => false,
         }
     }
 
@@ -264,9 +284,13 @@ impl TaskRegistry {
             };
             p += 37;
             if settled == 1 {
-                if let Some(entry) = self.tasks.iter_mut().find(|(t, _, _)| t == id) {
-                    entry.2 = TaskState::Settled(count);
-                    restored += 1;
+                if let Ok(id) = <[u8; 32]>::try_from(id) {
+                    if let Some(&i) = self.by_id.get(&id) {
+                        if let Some(entry) = self.tasks.get_mut(i) {
+                            entry.2 = TaskState::Settled(count);
+                            restored += 1;
+                        }
+                    }
                 }
             }
         }
@@ -286,8 +310,11 @@ impl TaskRegistry {
     /// for its registered corpus). First verified solve → full bounty;
     /// replays → the verification floor; wrong or unknown → nothing.
     pub fn settle(&mut self, id: &[u8; 32], predictions: &[Grid]) -> SolveYield {
-        let Some(entry) = self.tasks.iter_mut().find(|(t, _, _)| t == id) else {
+        let Some(&i) = self.by_id.get(id) else {
             return SolveYield::Nothing; // no authoritative origin — rejected
+        };
+        let Some(entry) = self.tasks.get_mut(i) else {
+            return SolveYield::Nothing;
         };
         let expected: Vec<&Grid> =
             entry.1.test.iter().filter(|(_, y)| !y.is_empty()).map(|(_, y)| y).collect();

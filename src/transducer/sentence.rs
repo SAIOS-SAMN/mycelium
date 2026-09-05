@@ -903,8 +903,8 @@ impl Vertex {
 
 impl Form {
     pub fn from_nerve(n: &Nerve) -> Form {
-        let vertices: Vec<Vertex> = n.germs.iter().map(Vertex::from_germ).collect();
-        let faces: Vec<FormFace> = n
+        let mut vertices: Vec<Vertex> = n.germs.iter().map(Vertex::from_germ).collect();
+        let mut faces: Vec<FormFace> = n
             .faces
             .iter()
             .map(|f| FormFace {
@@ -913,6 +913,25 @@ impl Form {
                 g_ij: f.g_ij.clone(),
             })
             .collect();
+        let mut torsion = n.torsion.clone();
+        // Frame is vertex 0 by construction. Face order (and certificate
+        // face indices) stay; vertex indices and torsion σ pairs shift.
+        if !matches!(vertices.first(), Some(Vertex::Frame)) {
+            vertices.insert(0, Vertex::Frame);
+            for f in &mut faces {
+                f.i = f.i.saturating_add(1);
+                f.j = f.j.saturating_add(1);
+            }
+            let mut shifted = Keyed::new();
+            for (k, (sigma, ell)) in torsion.fiber(&ROOT) {
+                let sigma = sigma
+                    .iter()
+                    .map(|&(a, c)| (a.saturating_add(1), c.saturating_add(1)))
+                    .collect();
+                shifted.insert(*k, (sigma, *ell));
+            }
+            torsion = shifted;
+        }
         let loops = Form::loops_of(&faces, vertices.len());
         Form {
             vertices,
@@ -924,7 +943,7 @@ impl Form {
             ratio: ((1, 1), (1, 1)),
             sections: Keyed::new(),
             certificates: Vec::new(),
-            torsion: n.torsion.clone(),
+            torsion,
         }
     }
 
@@ -2698,8 +2717,17 @@ fn trial(
     mu: [u64; 4],
 ) -> Option<PivotCertificate> {
     let c = n.cycles.get(idx)?;
-    let PivotBy::Word { word, side, .. } = &cand.by;
-    let after_h = pivoted_face(&c.holonomy, word, *side);
+    let PivotBy::Word { face, word, side } = &cand.by;
+    // Write on the chord face and re-read that same path. Pivoting the
+    // stored holonomy is only valid when the walk traverses the chord
+    // forward; a backward chord would select the side that leaves the
+    // after-face off `face_of`.
+    let Some(held) = n.faces.get(*face as usize) else {
+        return None;
+    };
+    let mut faces = n.faces.clone();
+    faces[*face as usize].g_ij = pivoted_face(&held.g_ij, word, *side);
+    let after_h = cycle_holonomy(&faces, &c.germs, &c.faces).normal_form();
     let kappa_after = ClassVector::read(&after_h, kappa.placement.clone());
     if kappa_after.occupies(cand.axis) || !kappa.agrees_except(&kappa_after, cand.axis) {
         return None;
@@ -4717,10 +4745,18 @@ mod tests {
                     address,
                     versor: identity_versor(),
                     word: Word::identity(),
-                    chain: vec![(0, i as i64, 1, 2)],
+                    chain: if i == 0 {
+                        Vec::new()
+                    } else {
+                        vec![(0, i as i64, 1, 2)]
+                    },
                     source: None,
                     target: None,
-                    kind: ShellKind::Whole,
+                    kind: if i == 0 {
+                        ShellKind::Frame
+                    } else {
+                        ShellKind::Whole
+                    },
                     shift: None,
                 }
             })
@@ -4987,6 +5023,26 @@ mod tests {
         assert!(
             n.certificates.get(&certificate.key()).is_some(),
             "the nerve carries the discharge by key"
+        );
+        let e = as_element_form_of_nerve(&n).expect("the discharged nerve crystallizes");
+        assert!(
+            matches!(Form::from_nerve(&n).vertices.first(), Some(Vertex::Frame)),
+            "Frame is vertex 0 of the crystallized form"
+        );
+        assert_eq!(
+            crate::court::verdict::blind_replay(&e),
+            None,
+            "a certified discharge replays: every after-face is face_of, then the certificate"
+        );
+        let mut tampered = from_element_form(&e).expect("v2 tape");
+        let crate::transducer::sentence::PivotBy::Word { face, .. } = &tampered.certificates[0].by;
+        let fi = *face as usize;
+        tampered.faces[fi].g_ij = order2();
+        let bad = as_element_form_mag(&tampered, e.magnitude()).expect("tampered tape");
+        assert_eq!(
+            crate::court::verdict::blind_replay(&bad),
+            Some(crate::court::verdict::REFUSE_FACE),
+            "a word on a certified face that is not face_of of its vertices refuses"
         );
 
         let mut n = chord_nerve(&[q.clone()]);

@@ -2,7 +2,7 @@
 
 # Resume notes (continuity across sessions)
 
-Last update: 2026-09-05, `main` abacf53. Living task list:
+Last update: 2026-09-05, certified-face / keyed-canonical-key pass on `0e6025b`. Living task list:
 `docs/MU-RECURSION-TASKS.md`. Spec: `docs/MU-RECURSION.md`. Historical
 alpha landings: `docs/TRAJECTORY.md`.
 
@@ -29,8 +29,9 @@ c, then clients 1–5. Do not recut or soak unless asked.
   deleted; `speak_rule` speaks the form; Frame is vertex 0; torsion is
   `Keyed` by class key; tape refuses a count that does not fit.
 - Running units still hold Cut A (`804843d`) in memory. The tree is
-  ahead of that binary. Cut B waits on 1.3b, 1.3e, 1.4, 1.9 court
-  replay, 0.8.
+  ahead of that binary. Cut B waits on 1.3e, remaining 1.4, 1.9 vortex
+  collapse, 0.8. Cut B recuts from genesis: Cut A `TaskRegistry`
+  snapshots are unreachable under the M2 `task_id`.
 - `transducer/sentence.rs` is the sentence algebra: forms beside nerves
   until chapter 30 step 6. `transducer/family.rs` is the seven extraction
   moves on pair forms, spoken through `apply_form` and a `Crystal`.

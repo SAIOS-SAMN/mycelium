@@ -2247,7 +2247,6 @@ mod tests {
         assert!(old.transitions().is_empty(), "absent connection = none recorded");
     }
 
-    use super::*;
     use crate::transducer::germinate::germinate;
 
     fn qm(rows: &[&[i64]]) -> QMatrix {
