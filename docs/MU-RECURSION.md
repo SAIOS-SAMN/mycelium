@@ -67,6 +67,59 @@ These are not restated in each chapter; every chapter assumes them.
     neither dominates are held together as a superposition, the vortex,
     until a perception or a court replay collapses it.
 
+## Coding standards: the rules that stop the crud before it is written
+
+The laws above say what the engine is. These rules say how code that
+implements it must be written, so that a reviewer can refuse a change on
+sight and an implementor does not spend a cycle writing what the next audit
+removes. Every rule below was extracted from a defect that actually landed
+in this tree; the "looks like" column is the shape that landed, the "write
+instead" column is what replaced it. A change that contains a "looks like"
+shape is not reviewed further; it is returned.
+
+| # | rule | looks like (refused) | write instead |
+|---|---|---|---|
+| 1 | **A pair loop is allowed only over one cell's own vertices or one loop's own faces.** Iterating `i < j` over bodies, vertices, charts, hyphae, or peers is a correspondence search over a product the carrier already names. | `for i in 0..n { for j in i+1..n { if related(i, j) … } }`; `bodies_in.iter().find(…)` for every `bodies_out`; `for lane in 0..4 { for h in hyphae … }` where the lane is not a fixed physical size | build one keyed occupancy once, `Keyed<cell key → Vec<vertex>>`, read pairs out of cells holding two or more vertices, probe a ring cell into the same key; a cell's own vertices and a loop's own faces are its boundary and may be walked |
+| 2 | **A count is never a branch.** A decision that reads `len()`, `count()`, or `n <= k` is a boolean gate on a count, and the count is not a measurement of anything. | `if n_words <= 1 { all bodies }`; `if germs.len() >= 2 { true }`; `if counts.len() == n_pairs` as the whole test | the fiber decides: `atlas.fiber(class)` names the bodies a vertex speaks to and an empty fiber is remainder, never "everything"; presence is read from a keyed set, not from a length |
+| 3 | **Equality is `same_vertex`, `projective_eq`, or a class key.** `==` on `Element`, `Versor`, a tape, a `Word` outside M1, or a struct that contains one is byte identity and forks or merges meanings. | `old == g` on a versor; `self.word == other.word`; `#[derive(PartialEq)]` on a type holding rotors or chains; `address() == address()` as the test of sameness | `a.same_vertex(&b)`; `r.projective_eq(&s)` (either sign); `x.class_key() == y.class_key()` for classes; an address compare only where the address is the intended identity (a citation) |
+| 4 | **Nothing is chosen by a scalar.** No `min_by`, `max_by`, `sort_by` over candidates, no "lowest order first", no "closest", no threshold. | `chords.sort_by_key(order)` then take the first; `candidates.iter().min_by_key(cost)`; `if remainder.len() < best` | read the class vector, list its occupied axes in the fixed order (12.6), try each, keep every certified discharge, hold incomparable ones as a vortex; dominance on μ⃗ certifies after the fact and never selects |
+| 5 | **No literal durations, no counts as generations, no free constants.** A number that is not a letter exponent, a rational read from the data, a cell coordinate, or a physical size of a carrier is a constant someone will have to remove. | `Duration::from_secs(1)`; `gen = genome_len + dialect_len`; `depth.min(8)`; `ratio: ((1,1),(1,1))` as a placeholder; `m = 1024` | a ratio of measured transport (`from_transport(rtt_floor, aperture_cycle())`); a root of content (the stalk digest of the working atlas); the value the tape carries; refuse when the value is not there |
+| 6 | **Keys are canonical forms, never bytes or pointers.** A memo, an address, a class, or a cache keyed by a hash of a tape, a serialisation, a file path, or a pointer is identity by bytes in disguise. | `blake3(path)`; `blake3(pbytes[32..])`; `a_ptr == b_ptr`; `format!("{s:?}")` hashed; `Rotor::key` over unnormalised coefficients | M1 key of the canonical rotor; M2 address; `registry::task_id` for a listing; `Sel::to_bytes`; content equality for a memo; the class key for a class |
+| 7 | **Meaning is never demoted to "fibre" to make a key stable.** If two tapes that mean different things get one key, the key is wrong, whatever the comment says. | dropping the bundle's agreed shift or a contact from a sentence key because "placement is a fibre coordinate" | a body's absolute position is quotiented; a relative placement inside a sentence is a face and is identity; contact is on the form and in its key (chapter 1.5) |
+| 8 | **No shims with placeholders.** A wrapper that fills a field with a constant so a call compiles is a defect that will be soaked. | `sentence_rule_of` with `ratio: ((1,1),(1,1))` and empty sections; `set_magnitude([0,0,0,1])` | carry the field on the tape and read it; measure the magnitude by speaking the form over its bundle; if the value cannot be measured, the form is not spoken |
+| 9 | **Carriers are `Keyed` or `Vec` of relations.** `HashMap`, `BTreeMap`, `HashSet` do not appear in cognition; a flat map keyed by a digest collapses a dimension. | `HashMap<Key, Vec<Candidate>>` buckets; `std::collections::*` in a transducer or kernel file | `Keyed<V>` (PATRICIA, keyed by a canonical form), `Keyed<Keyed<()>>` for incidence, `Vec<(a, b, relation)>` for a relational field |
+| 10 | **Every loop spends a `Budget` or walks a boundary.** A loop whose bound is neither a `Budget` nor the size of one cell's boundary is unbounded work in disguise. | `while !done { … }`; `for peer in all_peers { exchange(peer) }` on one stroke | `while budget.spend() { … }`; a `Keyed::cursor(from, &mut budget)`; one peer per spend with a resume cursor |
+| 11 | **Exact or refused.** No float, no rounding, no saturation, no `unwrap_or(default)` that invents a value. | `ratio_axes` saturating to `u64::MAX`; `unwrap_or_else(identity)` on a versor that failed to invert | `Option`/refusal that propagates to a logged refusal string; an inexact square root refuses; an unspellable block is a remainder |
+| 12 | **Naturality over cloning.** When a carrier splits, restrict it; never clone it into both halves and rekey. | `complexes.insert(child_a, c.clone()); complexes.insert(child_b, c)`; `rekey_cocycles` without recomputation | `restrict` per child, `straddling` written as faces between children, each class recomputed and carried or discharged (15.5) |
+| 13 | **Verify the claim, not the outcome.** A test that asserts a count or a boolean proves nothing about how the result was reached; a test named after a theorem must exercise the move. | asserting `faces.len() <= 2·germs` and calling it "the adjacency rule"; testing `Word::rebase` and reporting "rebase works" when the extraction step never fires | N vs 4N work counters for cost claims; a trace of the move on a family that needs it (a `Rebased` vertex that speaks the test); a refusal test for every refusal string |
+| 14 | **The whole suite, every commit.** "Module green" is not green. | "family 14, sentence 18, sdk 12 green" while `server::cognition` has four red tests | one foreground `cargo test --release`, the `test result` line in the commit message, one item per commit with its trace value |
+| 15 | **When unsure, hold; never choose.** If two readings of the data are both consistent, the code keeps both as cells and lets a perception, a glue, or a ruling collapse them. | a tie-break by index, by size, by "first found" presented as a decision | a vortex (3.9); a section (chapter 21); a `Pending` (14.5); a `Novel(g_rem)` demand |
+
+**The review checklist**, applied to every diff before it is committed and
+again by the auditor, in this order: (a) any `i < j` loop not over a cell's
+or loop's own boundary; (b) any `len()`, `count()`, `is_empty()` that
+decides a branch rather than an emptiness of a fiber; (c) any `==`,
+`PartialEq`, or `derive(PartialEq)` on a type holding a rotor, versor,
+tape, or chain; (d) any `sort_by`, `min_by`, `max_by`, or comparison on a
+candidate set; (e) any literal number that is not a letter index, a blade
+mask, a fixed carrier size, or a wire tag; (f) any `blake3` over something
+that is not a canonical form or a transport identifier; (g) any
+`HashMap`/`BTreeMap`/`HashSet`; (h) any loop without `budget.spend()` or a
+boundary bound; (i) any `unwrap_or` that invents a value; (j) any `clone()`
+of a carrier into two places; (k) the `test result` line of the full suite.
+A diff that fails (a) through (j) is returned with the rule number; a diff
+without (k) is not reviewed.
+
+**How to write the move, not the search.** Ask what the carrier already
+names. Bodies name their cells: key the cells. Faces name their vertices:
+walk a face's two ends. A loop names its faces: walk them. A class vector
+names its occupied axes: try those. A chart names its fiber: read it. If
+the code you are about to write needs to look at everything to find the
+thing, the carrier is missing a key and that key is the first thing to
+write. If the code needs to pick one of several by a number, the doctrine
+says keep all of them. If the code needs a constant, the physics has a
+ratio you have not measured yet.
+
 ## Vocabulary, fixed
 
 letter → word (a tape; its meaning is a vertex of the Cayley graph) →
