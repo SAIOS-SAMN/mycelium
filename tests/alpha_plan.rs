@@ -96,6 +96,23 @@ fn speech_act_one_frame() {
 }
 
 #[test]
+fn perceive_speech_refuses_with_a_reason() {
+    let mut k = Kernel::new();
+    let mut bad = mycelium::transducer::element::from_residual(&vec![(0, 0, 1u8, 2)]);
+    bad.set_magnitude([99, 99, 99, 99]);
+    let codes = k.perceive_speech([9; 32], [0; 32], std::slice::from_ref(&bad));
+    assert_eq!(
+        codes,
+        vec![dialogue::SPEECH_REFUSED],
+        "an unframed chain is refused, not stood"
+    );
+    let affine = affine_of(&identity_versor()).unwrap();
+    let ok = from_connection(&affine, &[(1, 2), (2, 1)], &Vec::new(), [1, 1, 0, 0]).unwrap();
+    let codes = k.perceive_speech([9; 32], [0; 32], std::slice::from_ref(&ok));
+    assert_eq!(codes, vec![dialogue::SPEECH_STOOD], "a replay-clean word stands");
+}
+
+#[test]
 fn a_single_recolour_is_a_one_morphism_sentence() {
     let train_in = grid(&["1100", "0000"]);
     let train_out = grid(&["2200", "0000"]);

@@ -1818,6 +1818,8 @@ impl Kernel {
     }
 
     /// Perceive a family's speech: replay each sentence, docket what stands.
+    /// A false sentence is refused with the replay reason in the journal
+    /// (`court refuse speech {addr}: {reason}`) before the wire code.
     pub fn perceive_speech(&mut self, voice: [u8; 32], _task: [u8; 32], sentences: &[Element]) -> Vec<u8> {
         let mut codes = Vec::with_capacity(sentences.len());
         for s in sentences {
