@@ -962,10 +962,14 @@ fn germ_centroid_key(g: &Germ) -> (i64, i64) {
     (sr.saturating_mul(1_000_000) / n.max(1), sc.saturating_mul(1_000_000) / n.max(1))
 }
 
-/// Algebraic stalk of a germ: shell kind, source/target moduli as exact
-/// axes, conjugacy class of the word. Never a digest of those fields.
+/// Transport class of a germ: shell kind, conjugacy class of the word,
+/// and hue map. Moduli stay on the germ as a section coordinate, never a
+/// matching key. Frames match by kind alone (size is rule.ratio).
 pub fn same_stalk(a: &Germ, b: &Germ) -> bool {
-    a.kind == b.kind && a.source == b.source && a.target == b.target && a.word.same_class(&b.word)
+    if a.kind == ShellKind::Frame || b.kind == ShellKind::Frame {
+        return a.kind == b.kind;
+    }
+    a.kind == b.kind && a.word.same_class(&b.word) && germ_hue_map(a) == germ_hue_map(b)
 }
 
 fn group_stalks(germs: &[Germ]) -> Vec<Vec<usize>> {

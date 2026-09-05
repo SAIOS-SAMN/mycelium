@@ -1557,4 +1557,33 @@ mod tests {
         assert!(mu[1] >= 1, "recolour is gauge content, got {mu:?}");
         assert_ne!(mu, [0, 0, 0, 1], "mint is the unflattened 4-vector");
     }
+
+    /// Correspondence across pairs is transport class (kind, word, hue),
+    /// not body moduli. A square and a bar recoloured 1→2 are one class;
+    /// frames of different sizes match by kind.
+    #[test]
+    fn correspondence_is_transport_class_not_shape() {
+        let family = vec![
+            (grid(&["1100", "1100"]), grid(&["2200", "2200"])),
+            (grid(&["1110", "0000"]), grid(&["2220", "0000"])),
+        ];
+        let rule = extract_rule(&family).expect("different shapes, same recolour");
+        let bodies = rule
+            .nerve
+            .germs
+            .iter()
+            .filter(|g| g.kind != crate::transducer::peel::ShellKind::Frame)
+            .count();
+        assert!(bodies >= 1, "a body germ of the recolour class survives, got {}", rule.nerve.germ_count());
+        assert!(
+            rule.nerve.germs.iter().any(|g| g.kind == crate::transducer::peel::ShellKind::Frame),
+            "frames match by kind, not [MAX,h,w]"
+        );
+        assert!(
+            rule.nerve.germ_count() >= 2,
+            "frame + body, got {} germs {} faces",
+            rule.nerve.germ_count(),
+            rule.nerve.faces.len()
+        );
+    }
 }
