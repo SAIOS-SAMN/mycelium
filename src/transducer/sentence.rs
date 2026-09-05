@@ -1810,6 +1810,20 @@ fn form_vertex_key(f: &Form) -> [u8; 32] {
         buf.extend_from_slice(&face.j.to_le_bytes());
         buf.extend_from_slice(&face.g_ij.key());
     }
+    // The bundle's frame ratio and its sections are meaning (rule 7): two
+    // forms that speak the same words onto differently scaled frames, or
+    // that section different vertices, are two forms.
+    let ((hn, hd), (wn, wd)) = f.ratio;
+    for x in [hn, hd, wn, wd] {
+        buf.extend_from_slice(&(x as u64).to_le_bytes());
+    }
+    for (class, members) in f.sections.fiber(&crate::network::nerve::ROOT) {
+        buf.extend_from_slice(class);
+        buf.extend_from_slice(&(members.len() as u16).to_le_bytes());
+        for m in members {
+            buf.extend_from_slice(&m.to_le_bytes());
+        }
+    }
     *blake3::hash(&buf).as_bytes()
 }
 
@@ -2909,17 +2923,24 @@ fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         take_u16(b, pos),
         take_u16(b, pos),
     ) {
-        ratio = (
-            (hn as usize, hd.max(1) as usize),
-            (wn as usize, wd.max(1) as usize),
-        );
+        // A zero denominator is not a ratio; the tape is refused, never
+        // repaired (rule 11).
+        if hd == 0 || wd == 0 {
+            return None;
+        }
+        ratio = ((hn as usize, hd as usize), (wn as usize, wd as usize));
         if let Some(ns) = take_u16(b, pos) {
             for _ in 0..ns {
                 let k: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                 *pos += 32;
                 let nv = take_u16(b, pos)? as usize;
-                let mut ix = Vec::with_capacity(nv.min(256));
-                for _ in 0..nv.min(256) {
+                // The count is bounded by the bytes that remain, never by a
+                // constant that would silently truncate the section.
+                if nv > b.len().saturating_sub(*pos) / 2 {
+                    return None;
+                }
+                let mut ix = Vec::with_capacity(nv);
+                for _ in 0..nv {
                     ix.push(take_u16(b, pos)?);
                 }
                 sections.insert(k, ix);
@@ -3662,6 +3683,38 @@ mod tests {
         let eb = as_element_form(&b).expect("b");
         assert_ne!(ea.address(), eb.address(), "shift is not quotiented off the vertex");
         assert!(!ea.same_vertex(&eb));
+    }
+
+    /// The bundle's frame ratio and its sections are meaning: they are on
+    /// the form key and on the tape, and a tape with a zero denominator is
+    /// refused rather than repaired.
+    #[test]
+    fn ratio_and_sections_are_on_the_form_key() {
+        let letter = alphabet::LetterId::quarter((0, 1)).expect("quarter");
+        let w = Word::from_letters(&[(letter, false)]);
+        let a = closed_word_form(w.clone(), None);
+        let mut b = closed_word_form(w.clone(), None);
+        b.ratio = ((2, 1), (2, 1));
+        let mut c = closed_word_form(w, None);
+        c.sections.insert([7u8; 32], vec![1]);
+        let ea = as_element_form(&a).expect("a");
+        let eb = as_element_form(&b).expect("b");
+        let ec = as_element_form(&c).expect("c");
+        assert_ne!(ea.address(), eb.address(), "the frame ratio is on the key");
+        assert_ne!(ea.address(), ec.address(), "a section is on the key");
+        let back_b = from_element_form(&eb).expect("v2 tape");
+        assert_eq!(back_b.ratio, ((2, 1), (2, 1)));
+        let back_c = from_element_form(&ec).expect("v2 tape");
+        assert_eq!(back_c.sections.get(&[7u8; 32]), Some(&vec![1u16]));
+        // Zero the height denominator on the tape: ratio is the last ten
+        // bytes before the (empty) section count.
+        let mut bytes = ea.description().to_vec();
+        let n = bytes.len();
+        bytes[n - 8] = 0;
+        bytes[n - 7] = 0;
+        let mut broken = ea.clone();
+        broken.set_description(bytes);
+        assert!(from_element_form(&broken).is_none(), "a zero denominator refuses the tape");
     }
 
     /// Depth is one plus the deepest glued form; gluing at equal depth is refused.
