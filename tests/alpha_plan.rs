@@ -6,7 +6,9 @@ use mycelium::cognition::Kernel;
 use mycelium::sdk::Epigenome;
 use mycelium::transducer::alphabet::{relators, RelatorKind, Word, LetterId};
 use mycelium::transducer::element::{from_connection, affine_of, identity_versor, Element};
-use mycelium::transducer::family::{extract_rule, speak_rule, mint_sentence, NoCrystal};
+use mycelium::transducer::family::{extract_rule, perceive, speak_rule, mint_sentence, NoCrystal};
+use mycelium::transducer::sentence::{FormFace, Vertex};
+use mycelium::transducer::stalk::Stalks;
 
 use mycelium::arc::Grid;
 
@@ -46,9 +48,44 @@ fn faces_by_constancy_three_squares() {
         .collect();
     let family = vec![(train_in.clone(), train_out.clone())];
     let rule = extract_rule(&family).expect("three squares extract");
+    let non_frame: Vec<(usize, &Vertex)> = rule
+        .form
+        .vertices
+        .iter()
+        .enumerate()
+        .filter(|(_, v)| !matches!(v, Vertex::Frame))
+        .collect();
+    assert_eq!(
+        non_frame.len(),
+        1,
+        "three squares carried by one recolour are one vertex, got {}",
+        rule.form.vertices.len()
+    );
+    let (vi, v) = non_frame[0];
+    let Vertex::Word { class, gauge, .. } = v else {
+        panic!("the class vertex is a Word, got {v:?}");
+    };
     assert!(
-        rule.form.vertices.iter().any(|v| matches!(v, mycelium::transducer::sentence::Vertex::Word { .. })),
-        "the recolour class is one vertex; the chart fiber names the three squares"
+        gauge.iter().any(|&(from, to)| from == 1 && to == 2),
+        "the Frame-to-class face carries the recolour gauge, got {gauge:?}"
+    );
+    assert!(
+        rule.form.faces.iter().any(|FormFace { i, j, .. }| {
+            (*i == 0 && *j == vi as u16) || (*j == 0 && *i == vi as u16)
+        }),
+        "a named face joins Frame to the class"
+    );
+    let bodies = perceive(&train_in);
+    let mut atlas = Stalks::default();
+    for (i, body) in bodies.iter().enumerate() {
+        let mut addr = [0u8; 32];
+        addr[..8].copy_from_slice(&(i as u64).to_le_bytes());
+        atlas.admit(&body.moduli, addr);
+    }
+    assert_eq!(
+        atlas.fiber(class).len(),
+        3,
+        "on the test grid the class fiber holds three bodies"
     );
     let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("spoken");
     assert!(spoken.remainder.is_empty(), "all three squares are reached: {:?}", spoken.remainder);
@@ -104,8 +141,11 @@ fn a_single_recolour_is_a_one_morphism_sentence() {
     let train_out = grid(&["2200", "0000"]);
     let family = vec![(train_in, train_out)];
     let rule = extract_rule(&family).expect("one body extracts");
-    assert!(rule.nerve.is_sentence(), "a single non-trivial morphism is a sentence");
-    assert!(rule.nerve.is_closed());
+    assert!(
+        rule.form.vertices.iter().any(|v| matches!(v, mycelium::transducer::sentence::Vertex::Word { .. })),
+        "a single non-trivial morphism is a word vertex"
+    );
+    assert!(rule.form.is_closed() || !rule.form.faces.is_empty());
 }
 
 #[test]

@@ -241,6 +241,18 @@ impl<V> Keyed<V> {
         self.n == 0
     }
 
+    /// Keys present in both carriers. Cost is a walk of this fiber and a
+    /// contains-read of the other; never a product of the two.
+    pub fn meet(&self, other: &Keyed<V>) -> Keyed<()> {
+        let mut out = Keyed::new();
+        for (k, _) in self.fiber(&ROOT) {
+            if other.contains(k) {
+                out.insert(*k, ());
+            }
+        }
+        out
+    }
+
     /// Subtree under `prefix`. The empty prefix [`ROOT`] is this carrier's
     /// own fiber — valid when the Keyed is already scoped (one bubble's
     /// charts, one vertex's star, one chart's incidence).

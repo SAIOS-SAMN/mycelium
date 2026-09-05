@@ -661,6 +661,13 @@ pub struct Kernel {
     basis_index: std::sync::Arc<crate::network::nerve::Keyed<usize>>,
     /// A8: old stored address → M2 address. `word_at` consults on a miss.
     rmp1: crate::network::nerve::Keyed<[u8; 32]>,
+    /// Held words keyed by (chart, axis). Filled at `ruled.admit`, emptied
+    /// at cavity relocation and basis remove.
+    axis_index: crate::transducer::sentence::AxisIndex,
+    /// Court replay of A20 certificates: citer → (certificate key → (ok, K)).
+    replay_memo: crate::network::nerve::Keyed<crate::network::nerve::Keyed<(bool, u64)>>,
+    /// Cited form → citers. Slash of a cited form redockets each citer.
+    cited_by: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// THE BOOK SNAPSHOT — the open listings and composites as immutable
     /// shared values sealed at a book generation; a market view shares
     /// them by pointer and the book is copied only when it moved.
@@ -1803,7 +1810,9 @@ impl Kernel {
     fn ruled_admit(&mut self, addr: &[u8; 32]) {
         if let Some(w) = self.word_at(addr) {
             let inv = crate::transducer::stalk::invariant_of(w);
+            let words = crate::transducer::sentence::words_of_element(w);
             self.ruled.admit(&inv, *addr);
+            crate::transducer::sentence::admit_words(&mut self.axis_index, &inv, &words);
             self.ruled_addrs.insert(*addr, ());
             self.refresh_ruled_root();
         }
@@ -1955,6 +1964,9 @@ impl Kernel {
     /// Remove the word at `i` from the basis, its discoverer, and its stalk.
     fn basis_remove(&mut self, i: usize) -> Element {
         let addr = self.basis[i].address();
+        let inv = crate::transducer::stalk::invariant_of(&self.basis[i]);
+        let words = crate::transducer::sentence::words_of_element(&self.basis[i]);
+        crate::transducer::sentence::retract_words(&mut self.axis_index, &inv, &words);
         self.discoverers.remove(&addr);
         std::sync::Arc::make_mut(&mut self.stalks).remove(&addr);
         self.ruled.remove(&addr);
@@ -2416,6 +2428,7 @@ impl Kernel {
             let slash = ruling == RULING_SLASHED;
             let ok = self.treasury.revoke_award(addr, slash);
             if slash {
+                self.redocket_citers_of(addr);
                 // A slashed word leaves the language and is admitted as a
                 // cavity chart: the residual is a boundary, never garbage.
                 if let Some(w) = self.basis_index.get(addr).copied() {
@@ -2470,6 +2483,7 @@ impl Kernel {
             if let Some(reason) = crate::verdict::blind_replay_with(&spoken, &|a| self.resolve_form(a)) {
                 eprintln!("  court slash {:02x}{:02x}… {reason}", addr[0], addr[1]);
                 let _ = self.treasury.revoke_award(&addr, true);
+                self.redocket_citers_of(&addr);
                 self.relocate_cavity(&addr);
                 self.provisional.remove(&addr);
                 self.court_slashed += 1;
@@ -3226,7 +3240,71 @@ impl Kernel {
         self.provisional.remove(addr);
         self.court_upheld += 1;
         self.mark_persist();
+        if let Some(w) = self.word_at(addr).cloned() {
+            self.note_form_citations(addr, &w);
+        }
         eprintln!("  court home installed {:02x}{:02x}… peer holds the stratum", addr[0], addr[1]);
+    }
+
+    fn note_form_citations(&mut self, addr: &[u8; 32], w: &Element) {
+        use crate::transducer::sentence::{from_element_form, Vertex};
+        let Some(f) = from_element_form(w) else {
+            return;
+        };
+        for v in &f.vertices {
+            let Vertex::Glued { address, .. } = v else {
+                continue;
+            };
+            match self.cited_by.get_mut(address) {
+                Some(bucket) => {
+                    bucket.insert(*addr, ());
+                }
+                None => {
+                    let mut bucket = crate::network::nerve::Keyed::new();
+                    bucket.insert(*addr, ());
+                    self.cited_by.insert(*address, bucket);
+                }
+            }
+        }
+        for cert in &f.certificates {
+            let k = cert.key();
+            match self.replay_memo.get_mut(addr) {
+                Some(bucket) => {
+                    bucket.insert(k, (true, self.chain.head_k()));
+                }
+                None => {
+                    let mut bucket = crate::network::nerve::Keyed::new();
+                    bucket.insert(k, (true, self.chain.head_k()));
+                    self.replay_memo.insert(*addr, bucket);
+                }
+            }
+            eprintln!(
+                "  court pivot certified {:02x}{:02x}… loop {} axis {} {:02x}{:02x}→{:02x}{:02x}",
+                addr[0],
+                addr[1],
+                cert.chord,
+                cert.axis.label(),
+                cert.before[0],
+                cert.before[1],
+                cert.after[0],
+                cert.after[1]
+            );
+        }
+    }
+
+    fn redocket_citers_of(&mut self, cited: &[u8; 32]) {
+        let Some(bucket) = self.cited_by.remove(cited) else {
+            return;
+        };
+        let citers: Vec<[u8; 32]> = bucket
+            .fiber(&crate::network::nerve::ROOT)
+            .map(|(k, _)| *k)
+            .collect();
+        for c in citers {
+            if let Some(w) = self.word_at(&c).cloned() {
+                self.provisional.insert(c, w);
+            }
+        }
     }
 
     /// A peer's have-list naming a ruled provisional is the same evidence:
@@ -3510,6 +3588,7 @@ impl Kernel {
             self.stalks = std::sync::Arc::new(crate::transducer::stalk::Stalks::default());
             self.ruled = crate::transducer::stalk::Stalks::default();
             self.ruled_addrs = crate::network::nerve::Keyed::new();
+            self.axis_index = crate::transducer::sentence::AxisIndex::new();
             self.refresh_ruled_root();
             self.basis_gen += 1;
             self.retire_gen += 1;
@@ -3526,11 +3605,31 @@ impl Kernel {
         for w in &self.basis {
             self.ruled_addrs.insert(w.address(), ());
         }
+        self.refill_axis_index();
         self.refresh_ruled_root();
         self.basis_gen += 1;
         self.retire_gen += 1;
         self.language_rebuild();
         dropped
+    }
+
+    /// Restore fills the axis index through the same admits as `ruled_admit`.
+    fn refill_axis_index(&mut self) {
+        self.axis_index = crate::transducer::sentence::AxisIndex::new();
+        let held: Vec<(crate::transducer::stalk::Invariant, Vec<crate::transducer::alphabet::Word>)> = self
+            .basis
+            .iter()
+            .filter(|w| self.ruled_addrs.contains(&w.address()))
+            .map(|w| {
+                (
+                    crate::transducer::stalk::invariant_of(w),
+                    crate::transducer::sentence::words_of_element(w),
+                )
+            })
+            .collect();
+        for (inv, words) in held {
+            crate::transducer::sentence::admit_words(&mut self.axis_index, &inv, &words);
+        }
     }
 
     pub fn ruled_root(&self) -> [u8; 32] {
@@ -5707,6 +5806,7 @@ impl Kernel {
         if dropped > 0 {
             eprintln!("  pruned {dropped} leaked basis words; ruled cover remains");
         }
+        self.refill_axis_index();
         // A snapshot without DEF1 (or a zero record) re-measures from the
         // spoken word: presence on the docket is not Δ⃗ = 0.
         let zeros = [0u64; 4];
@@ -5786,17 +5886,7 @@ impl crate::transducer::family::Crystal for Kernel {
         chart: &crate::transducer::stalk::Invariant,
         axis: crate::transducer::sentence::Axis,
     ) -> Vec<crate::transducer::alphabet::Word> {
-        let mut index = crate::transducer::sentence::AxisIndex::new();
-        for addr in self.ruled.fiber(chart) {
-            if let Some(e) = self.word_at(&addr) {
-                crate::transducer::sentence::admit_words(
-                    &mut index,
-                    chart,
-                    &crate::transducer::sentence::words_of_element(e),
-                );
-            }
-        }
-        crate::transducer::sentence::on_axis_of(&index, chart, axis)
+        crate::transducer::sentence::on_axis_of(&self.axis_index, chart, axis)
     }
 }
 

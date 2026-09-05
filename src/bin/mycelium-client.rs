@@ -36,7 +36,7 @@ use mycelium::voice::Voice;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::time::Instant;
+
 
 fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
     args.windows(2).find(|w| w[0] == name).map(|w| w[1].as_str())
@@ -83,6 +83,57 @@ fn retire_feed(path: &Path) {
     let _ = std::fs::create_dir_all(&done);
     if let Some(name) = path.file_name() {
         let _ = std::fs::rename(path, done.join(name));
+    }
+}
+
+/// Corpus cursor: `next` is the next feed path. Pair index lives on the
+/// cursor so a depleted stroke resumes the same file.
+struct Feed {
+    home: PathBuf,
+    files: Vec<PathBuf>,
+    ti: usize,
+    pi: usize,
+    conductor: Option<String>,
+}
+
+impl Feed {
+    fn new(home: PathBuf, conductor: Option<String>) -> Self {
+        Self {
+            home,
+            files: Vec::new(),
+            ti: 0,
+            pi: 0,
+            conductor,
+        }
+    }
+
+    fn next(&mut self) -> Option<PathBuf> {
+        if self.ti >= self.files.len() {
+            self.files = pending_feed(&self.home);
+            if self.files.is_empty() {
+                return None;
+            }
+            if let Some(board) = &self.conductor {
+                let cursor = conductor_cursor(board) % self.files.len().max(1);
+                self.files.rotate_left(cursor);
+            }
+            self.ti = 0;
+            self.pi = 0;
+        }
+        self.files.get(self.ti).cloned()
+    }
+
+    fn pair_index(&self) -> usize {
+        self.pi
+    }
+
+    fn advance_pair(&mut self) {
+        self.pi += 1;
+    }
+
+    fn finish(&mut self) {
+        self.ti += 1;
+        self.pi = 0;
     }
 }
 /// The magnitude of a family, per lane: the sum over its pairs of the
@@ -223,7 +274,7 @@ fn main() {
     let conductor = None::<String>;
     let tuniversal = mycelium::chronometry::TUniversal::from_origin(mesh_rec.origin_unix);
 
-    let mut tasks = pending_feed(&home);
+    let mut feed = Feed::new(home.clone(), conductor);
     let mut entity = Entity::open_persistent(
         &bootstrap,
         Kernel::from_voice(voice.identity()),
@@ -232,40 +283,31 @@ fn main() {
     );
     entity.set_tuniversal(tuniversal);
     entity.discover();
+    let pending = pending_feed(&home);
     eprintln!(
         "[{tag}] mycelium-client → {bootstrap}; genome {} words{}",
         entity.epigenome.genome_len(),
-        if tasks.is_empty() {
+        if pending.is_empty() {
             String::new()
         } else {
-            format!("; feeding {} from {}/feed", tasks.len(), home.display())
+            format!("; feeding {} from {}/feed", pending.len(), home.display())
         },
     );
 
     let mut physics = Physics::default();
     let (mut fed, mut derived, mut witnessed, mut settles, mut errors) = (0u64, 0u64, 0u64, 0u64, 0u64);
-    // THE POUW SOLVE COUNTERS — projected = registry submissions tried;
-    // proj_solved = verified correct (bounty + floor); uniq_solved = FIRST
-    // verified solves (the only ones that count as new useful work).
+    // Stroke-line counters: each is read below. An accumulator nobody reads is dead.
     let (mut projected, mut proj_solved, mut uniq_solved) = (0u64, 0u64, 0u64);
-    let mut refined = 0u64; // accepted compression bids (0x09)
-    let mut learned = 0u64; // syllabus words received (0x0D)
-    let (mut rules_extracted, mut rules_held_class, mut tests_full, mut solves_paid) = (0u64, 0u64, 0u64, 0u64);
-    let (mut last_genome, mut last_settles) = (usize::MAX, u64::MAX);
-    let mut k_step = 0u64; // the judge's k-step last read: this voice's temporal coordinate
-    // The hypha's spoken receipts, not a local memo, decide which listings
-    // this voice has already worked; the quote page is already filtered.
-    // The feed walk: (task index within the cycle order, pair index within it).
-    let mut cycle: Vec<PathBuf> = Vec::new();
-    let (mut ti, mut pi) = (0usize, 0usize);
-    let mut feeding = !tasks.is_empty();
+    let mut refined = 0u64;
+    let mut learned = 0u64;
+    let mut solves_paid = 0u64;
+    let mut last_genome = usize::MAX;
+    let mut k_step = 0u64;
     let stop = Arc::new(AtomicBool::new(false));
     {
         let stop = Arc::clone(&stop);
         let _ = ctrlc::set_handler(move || stop.store(true, Ordering::SeqCst));
     }
-    let mut last_genome_save = Instant::now();
-    let mut saved_genome = entity.epigenome.genome_len();
     let mut extract_memo: mycelium::network::nerve::Keyed<(
         [u8; 32],
         Option<mycelium::transducer::sentence::SentenceRule>,
@@ -307,39 +349,21 @@ fn main() {
         // spends. A percept is a PROOF spoken over this genome: what the
         // genome reduces is cited, what it cannot is this voice's
         // irreducible claim; the sync converges the genome between strokes.
-        if !feeding {
-            tasks = pending_feed(&home);
-            feeding = !tasks.is_empty();
-        }
-        while feeding && !occluded && !physics.depleted() {
-            if ti >= cycle.len() {
-                tasks = pending_feed(&home);
-                cycle = tasks.clone();
-                if cycle.is_empty() {
-                    feeding = false;
-                    break;
-                }
-                if let Some(board) = &conductor {
-                    let cursor = conductor_cursor(board) % cycle.len().max(1);
-                    cycle.rotate_left(cursor);
-                }
-                ti = 0;
-                pi = 0;
+        while let Some(path) = feed.next() {
+            if occluded || physics.depleted() {
+                break;
             }
-            let Some(path) = cycle.get(ti) else { break };
-            let Ok(text) = std::fs::read_to_string(path) else {
-                retire_feed(path);
-                ti += 1;
-                pi = 0;
+            let Ok(text) = std::fs::read_to_string(&path) else {
+                retire_feed(&path);
+                feed.finish();
                 continue;
             };
             let Some(task) = parse_task(&text) else {
-                retire_feed(path);
-                ti += 1;
-                pi = 0;
+                retire_feed(&path);
+                feed.finish();
                 continue;
             };
-            let Some((input, output)) = task.train.get(pi) else {
+            let Some((input, output)) = task.train.get(feed.pair_index()) else {
                 // TASK BOUNDARY — the entity thinks before moving on: the
                 // family it just fed is comprehended as a connection, each
                 // test input is spoken through it and scored, and a family
@@ -378,12 +402,11 @@ fn main() {
                     }
                     let _ = speak_form(&mut entity, &tag, rule, &task.train, &fam);
                 }
-                retire_feed(path);
-                ti += 1;
-                pi = 0;
+                retire_feed(&path);
+                feed.finish();
                 continue;
             };
-            pi += 1;
+            feed.advance_pair();
             // THE EYE READS THROUGH ρ⁻¹ (sensor hardware, ruled): a
             // dimension-changing pair is spoken on the codomain complex — the
             // input pulled back along the exact frame map, the output native —
@@ -567,7 +590,7 @@ fn main() {
                     tuniversal.stamp(),
                     q.clusters.len(),
                 );
-                if !feeding && (q.clusters.iter().all(|c| c.chain.is_empty()) || q.clusters.is_empty()) {
+                if pending_feed(&home).is_empty() && (q.clusters.iter().all(|c| c.chain.is_empty()) || q.clusters.is_empty()) {
                     // MARKET CLEAR with nothing to feed — the idle signal:
                     // spend the stroke so the dwell paces the next ask.
                     physics.spend([true; 4]);
@@ -632,9 +655,9 @@ fn main() {
                 tests.len(),
                 match (rule, &comprehended.transport, comprehended.framed) {
                     (Some(r), _, _) => format!(
-                        "rule {} germs, {} faces, sections {}",
-                        r.nerve.germ_count(),
-                        r.faces.len(),
+                        "rule {} vertices, {} faces, sections {}",
+                        r.form.vertices.len(),
+                        r.form.faces.len(),
                         r.section_count()
                     ),
                     (None, Some(t), _) => format!("comprehended ({} rules, {} created, {} removed)", t.rules.len(), t.created.len(), t.removed.len()),
@@ -643,30 +666,22 @@ fn main() {
                 },
             );
             if let Some(rule) = rule {
-                rules_extracted += 1;
                 let _ = speak_form(&mut entity, &tag, rule, &train, &tid);
-                let mut reached = true;
-                let mut outs: Vec<Option<Vec<Vec<u8>>>> = Vec::new();
-                for x in &tests {
-                    match mycelium::transducer::family::speak_rule(rule, x, &entity.epigenome) {
-                        Some(s) if s.remainder.is_empty() => {
-                            tests_full += 1;
-                            outs.push(Some(s.grid()));
+                let outs: Option<Vec<mycelium::arc::Grid>> = tests
+                    .iter()
+                    .map(|x| {
+                        let spoken = mycelium::transducer::family::speak_rule(rule, x, &entity.epigenome);
+                        if let Some(s) = &spoken {
+                            if !s.remainder.is_empty() {
+                                entity.hold_thought(
+                                    s.remainder.iter().map(|&(r, c, h)| (r, c, h, h)).collect(),
+                                );
+                            }
                         }
-                        Some(s) => {
-                            reached = false;
-                            entity.hold_thought(s.remainder.iter().map(|&(r, c, h)| (r, c, h, h)).collect());
-                            outs.push(None);
-                        }
-                        None => {
-                            reached = false;
-                            rules_held_class += 1;
-                            outs.push(None);
-                        }
-                    }
-                }
-                if reached && !tests.is_empty() && outs.iter().all(|o| o.is_some()) {
-                    let outs: Vec<Vec<Vec<u8>>> = outs.into_iter().flatten().collect();
+                        spoken.filter(|s| s.remainder.is_empty()).map(|s| s.grid())
+                    })
+                    .collect();
+                if let Some(outs) = outs {
                     let spoken = mycelium::transducer::family::mint_sentence(rule, &train, &entity.epigenome);
                     if let Ok((code, _mu)) = entity.submit_solve_rule(&tid, &outs, spoken.as_ref()) {
                         projected += 1;
@@ -682,20 +697,27 @@ fn main() {
                     }
                 }
             } else {
-                let mut held = 0usize;
-                for (x, y) in &train {
-                    let (hi, wi) = (x.len(), x.first().map_or(0, |r| r.len()));
-                    let (ho, wo) = (y.len(), y.first().map_or(0, |r| r.len()));
-                    if hi == 0 || wi == 0 || ho == 0 || wo == 0 {
-                        continue;
-                    }
-                    let (a, b) = (grid_to_cells(&embed(x, ho, wo)), grid_to_cells(y));
-                    let Some(germ) = germinate(&a, &b) else { continue };
-                    entity.hold_thought(germ);
-                    held += 1;
-                }
-                if held > 0 {
-                    eprintln!("[{tag}] thought held: family {:02x}{:02x}… {held} pairs uncollapsed — not uttered", tid[0], tid[1]);
+                let held: Vec<_> = train
+                    .iter()
+                    .filter_map(|(x, y)| {
+                        let (hi, wi) = (x.len(), x.first().map_or(0, |r| r.len()));
+                        let (ho, wo) = (y.len(), y.first().map_or(0, |r| r.len()));
+                        if hi == 0 || wi == 0 || ho == 0 || wo == 0 {
+                            return None;
+                        }
+                        let (a, b) = (grid_to_cells(&embed(x, ho, wo)), grid_to_cells(y));
+                        let germ = germinate(&a, &b)?;
+                        entity.hold_thought(germ.clone());
+                        Some(germ)
+                    })
+                    .collect();
+                if let [_, ..] = held.as_slice() {
+                    eprintln!(
+                        "[{tag}] thought held: family {:02x}{:02x}… {} pairs uncollapsed — not uttered",
+                        tid[0],
+                        tid[1],
+                        held.len()
+                    );
                 }
             }
         }
@@ -771,13 +793,10 @@ fn main() {
             eprintln!("[{tag}] [{}] stroke laps ms {laps:?}", tuniversal.stamp());
             if entity.epigenome.genome_len() != last_genome {
                 let _ = entity.save_genome(&genome_path);
-                saved_genome = entity.epigenome.genome_len();
-                last_genome_save = Instant::now();
                 last_genome = entity.epigenome.genome_len();
             }
-            last_settles = settles;
             eprintln!(
-                "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | shed {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} discordance {} axes {}",
+                "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | shed {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} discordance {} axes {}",
                 tuniversal.stamp(),
                 entity.epigenome.genome_len(),
                 entity.dialect_len(),

@@ -1666,23 +1666,16 @@ pub fn assemble(germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
     }
 }
 
-/// The invariant cochain of a family: germ charts, face words, holonomies,
-/// and hue maps keyed by chart. Per-pair gauges are not on the tape.
+/// The invariant cochain of a family (chapter 31): the form, its sections,
+/// and the bundle frame ratio. Charts, faces and holonomies are derived
+/// from the form.
 #[derive(Debug, Clone)]
 pub struct SentenceRule {
-    pub charts: Vec<(Option<stalk::Invariant>, Option<stalk::Invariant>)>,
-    pub faces: Vec<(usize, usize, Word, bool)>,
-    pub holonomies: Vec<Word>,
-    pub hue_maps: Keyed<Vec<(u8, u8)>>,
-    pub nerve: Nerve,
+    pub form: Form,
+    /// Classes present in some pairs only: class key → pair indices.
+    pub sections: Keyed<Vec<u16>>,
     /// Family frame ratio ((h_out, h_in), (w_out, w_in)).
     pub ratio: ((usize, usize), (usize, usize)),
-    /// Affine translation that agreed across pairs, keyed by transport class.
-    pub shifts: Keyed<(num_rational::BigRational, num_rational::BigRational)>,
-    /// Classes present in some pairs only: class key → pair indices.
-    pub sections: crate::network::nerve::Keyed<Vec<u16>>,
-    /// The rule as a form (chapter 18). Nerve remains until ch.30 step 6.
-    pub form: Form,
 }
 
 impl SentenceRule {
@@ -1693,15 +1686,56 @@ impl SentenceRule {
             .sum()
     }
 
-    /// Hue map of a target chart, by exact axes, never a digest.
+    /// Hue map of a target chart. One Keyed from the form's Word vertices,
+    /// then a read; never a scan.
     pub fn hue_for(&self, inv: &stalk::Invariant) -> Vec<(u8, u8)> {
-        self.hue_maps.get(&inv.key()).cloned().unwrap_or_default()
+        if let Some(m) = self.form.hue_maps.get(&inv.key()) {
+            return m.clone();
+        }
+        let mut by: Keyed<Vec<(u8, u8)>> = Keyed::new();
+        for v in &self.form.vertices {
+            if let Vertex::Word { class, gauge, .. } = v {
+                let k = class.key();
+                if !by.contains(&k) {
+                    by.insert(k, gauge.clone());
+                }
+            }
+        }
+        by.get(&inv.key()).cloned().unwrap_or_default()
     }
 
-    /// Family-constant shift of this germ's stalk, by transport-class key.
-    pub fn shift_of(&self, g: &Germ) -> Option<(num_rational::BigRational, num_rational::BigRational)> {
-        self.shifts.get(&germ_transport_key(g)).cloned()
+    /// Placement of a transport class. One Keyed from the form's Word vertices
+    /// by transport-class key, then a read.
+    pub fn shift_of(&self, key: &[u8; 32]) -> Option<(num_rational::BigRational, num_rational::BigRational)> {
+        let mut by: Keyed<(num_rational::BigRational, num_rational::BigRational)> = Keyed::new();
+        for v in &self.form.vertices {
+            if let Vertex::Word {
+                word,
+                gauge,
+                placement,
+                ..
+            } = v
+            {
+                let k = vertex_transport_key(word, gauge);
+                if !by.contains(&k) {
+                    by.insert(k, placement.clone());
+                }
+            }
+        }
+        by.get(key).cloned()
     }
+}
+
+fn vertex_transport_key(word: &Word, gauge: &[(u8, u8)]) -> [u8; 32] {
+    let mut buf = Vec::new();
+    buf.push(ShellKind::Whole.as_u8());
+    buf.extend_from_slice(&word.class_key());
+    buf.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
+    for &(b, a) in gauge {
+        buf.push(b);
+        buf.push(a);
+    }
+    *blake3::hash(&buf).as_bytes()
 }
 
 fn germ_hue_map(g: &Germ) -> Vec<(u8, u8)> {
@@ -1717,66 +1751,25 @@ fn germ_hue_map(g: &Germ) -> Vec<(u8, u8)> {
     m
 }
 
-/// Chapter 30 adapter: a form as a `SentenceRule`. Nerve fields stand
-/// until the nerve retires; a form a nerve cannot carry leaves them empty.
-pub fn rule_of_form(form: Form) -> SentenceRule {
-    let nerve = form.to_nerve().unwrap_or_default();
-    let hue_maps = if form.hue_maps.is_empty() {
-        let mut m = Keyed::new();
+/// A form as a `SentenceRule` (chapter 31). Hue maps are filled from the
+/// form's own Word vertices when the form does not already carry them.
+pub fn rule_of_form(mut form: Form) -> SentenceRule {
+    if form.hue_maps.is_empty() {
         for v in &form.vertices {
             if let Vertex::Word { class, gauge, .. } = v {
                 let k = class.key();
-                if !m.contains(&k) {
-                    m.insert(k, gauge.clone());
+                if !form.hue_maps.contains(&k) {
+                    form.hue_maps.insert(k, gauge.clone());
                 }
             }
         }
-        m
-    } else {
-        form.hue_maps.clone()
-    };
-    let mut shifts = Keyed::new();
-    for v in &form.vertices {
-        if let Vertex::Word {
-            word,
-            gauge,
-            placement,
-            ..
-        } = v
-        {
-            let g = Germ {
-                address: [0u8; 32],
-                versor: element::identity_versor(),
-                word: word.clone(),
-                chain: gauge.iter().map(|&(b, a)| (0, 0, b, a)).collect(),
-                source: None,
-                target: None,
-                kind: ShellKind::Whole,
-                shift: Some(placement.clone()),
-            };
-            shifts.insert(germ_transport_key(&g), placement.clone());
-        }
     }
-    let ratio = form.ratio;
     let sections = form.sections.clone();
+    let ratio = form.ratio;
     SentenceRule {
-        charts: nerve
-            .germs
-            .iter()
-            .map(|g| (g.source.clone(), g.target.clone()))
-            .collect(),
-        faces: nerve
-            .faces
-            .iter()
-            .map(|f| (f.i, f.j, f.g_ij.clone(), f.spelled))
-            .collect(),
-        holonomies: nerve.cycles.iter().map(|c| c.holonomy.clone()).collect(),
-        hue_maps,
-        nerve,
-        ratio,
-        shifts,
-        sections,
         form,
+        sections,
+        ratio,
     }
 }
 
@@ -2034,6 +2027,19 @@ impl Axis {
             Axis::Placement => 5 << 3,
             Axis::OffPlane => 6 << 3,
             Axis::Open => 7 << 3,
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Axis::Sheet(_) => "sheet",
+            Axis::Unit(_) => "unit",
+            Axis::Prime5(_) => "prime5",
+            Axis::Prime13(_) => "prime13",
+            Axis::Hue => "hue",
+            Axis::Placement => "placement",
+            Axis::OffPlane => "offplane",
+            Axis::Open => "open",
         }
     }
 
@@ -2593,7 +2599,7 @@ fn candidates_for(n: &Nerve, c: &Cycle, kappa: &ClassVector, crystal: &dyn super
     let Some(chord) = c.chord() else {
         return Vec::new();
     };
-    let Some(face) = n.faces.get(chord) else {
+    let Some(_face) = n.faces.get(chord) else {
         return Vec::new();
     };
     let mut charts: Keyed<stalk::Invariant> = Keyed::new();
@@ -2609,7 +2615,13 @@ fn candidates_for(n: &Nerve, c: &Cycle, kappa: &ClassVector, crystal: &dyn super
         for (_, chart) in charts.fiber(&crate::network::nerve::ROOT) {
             for w in crystal.on_axis(chart, axis) {
                 for side in [Side::Right, Side::Left] {
-                    let k = pivoted_face(&face.g_ij, &w, side).key();
+                    let mut kb = Vec::with_capacity(33);
+                    kb.extend_from_slice(&w.key());
+                    kb.push(match side {
+                        Side::Left => 0,
+                        Side::Right => 1,
+                    });
+                    let k = *blake3::hash(&kb).as_bytes();
                     if seen.contains(&k) {
                         continue;
                     }
@@ -2685,14 +2697,9 @@ fn select_discharge(cands: &[(PivotCertificate, [u64; 4])]) -> Option<PivotCerti
     let Some((_, first)) = cands.first() else {
         return None;
     };
-    let mut min = *first;
-    for (_, m) in cands.iter().skip(1) {
-        for i in 0..4 {
-            if m[i] < min[i] {
-                min[i] = m[i];
-            }
-        }
-    }
+    let min: [u64; 4] = std::array::from_fn(|l| {
+        cands.iter().map(|(_, m)| m[l]).min().unwrap_or(first[l])
+    });
     let mut winner: Option<&PivotCertificate> = None;
     for (c, m) in cands {
         if *m == min {
@@ -4868,5 +4875,114 @@ mod tests {
                 "order {o} stayed closed or filed; second {second:?}"
             );
         }
+    }
+
+    struct Hold(Vec<Word>);
+    impl crate::transducer::family::Crystal for Hold {
+        fn on_class(
+            &self,
+            _class: &stalk::Invariant,
+        ) -> Vec<(
+            Element,
+            Form,
+            Standing,
+        )> {
+            Vec::new()
+        }
+        fn speak_form(
+            &self,
+            _f: &Form,
+            _x: &crate::transducer::family::Grid,
+            _p: &Word,
+        ) -> Option<crate::transducer::family::Speech> {
+            None
+        }
+        fn by_address(&self, _a: &[u8; 32]) -> Option<(Element, Form)> {
+            None
+        }
+        fn on_axis(&self, _chart: &stalk::Invariant, axis: Axis) -> Vec<Word> {
+            self.0
+                .iter()
+                .filter(|w| ClassVector::of_word(w).occupies(axis))
+                .cloned()
+                .collect()
+        }
+    }
+
+    #[test]
+    fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
+        let q = order4();
+        let qinv = q.inverse();
+        let mut n = chord_nerve(&[q.clone()]);
+        let snaps = pivot_loop(
+            &mut n,
+            [0x11; 32],
+            &Keyed::new(),
+            &Hold(vec![q.clone()]),
+            &mut crate::physics::Physics::default().stroke_n(16),
+        );
+        let Some(Snap::Discharged { certificate, .. }) = snaps.iter().find(|s| matches!(s, Snap::Discharged { .. })) else {
+            panic!("a crystal holding q discharges: {snaps:?}");
+        };
+        assert_eq!(certificate.before, q.rotor().class_key());
+        assert_eq!(certificate.after, CLOSED_KEY);
+        assert_eq!(certificate.rank_before.torsion, 1);
+        assert_eq!(certificate.rank_after.torsion, 0);
+
+        let mut n = chord_nerve(&[q.clone()]);
+        let snaps = pivot_loop(
+            &mut n,
+            [0x22; 32],
+            &Keyed::new(),
+            &Hold(vec![q.clone(), qinv]),
+            &mut crate::physics::Physics::default().stroke_n(16),
+        );
+        let Some(Snap::Vortex { held, .. }) = snaps.iter().find(|s| matches!(s, Snap::Vortex { .. })) else {
+            panic!("q and q⁻¹ are a vortex: {snaps:?}");
+        };
+        assert_eq!(held.len(), 2, "two certificates, got {held:?}");
+
+        let mut n = chord_nerve(&[q.clone()]);
+        let mut horizon = Keyed::new();
+        let r = q.rotor();
+        horizon.insert(r.class_key(), (r, q.order(), Standing::Held));
+        let snaps = pivot_loop(
+            &mut n,
+            [0x33; 32],
+            &horizon,
+            &crate::transducer::family::NoCrystal,
+            &mut crate::physics::Physics::default().stroke_n(16),
+        );
+        assert!(snaps.is_empty(), "a horizon holding q files silently: {snaps:?}");
+        assert!(
+            n.torsion.contains(&q.rotor().class_key()),
+            "filed torsion is keyed by the class"
+        );
+    }
+
+    #[test]
+    fn axis_index_admit_is_linear_on_axis_is_constant() {
+        use crate::network::nerve::work;
+        let inv = stalk::Invariant::default();
+        let w = order2();
+        let run = |n: usize| {
+            work::reset();
+            let mut index = AxisIndex::new();
+            for _ in 0..n {
+                admit_words(&mut index, &inv, std::slice::from_ref(&w));
+            }
+            let inserts = work::snapshot().1;
+            work::reset();
+            let _ = on_axis_of(&index, &inv, Axis::Sheet(0));
+            let gets = work::snapshot().0;
+            (inserts, gets)
+        };
+        let (i8, g8) = run(8);
+        let (i32n, g32) = run(32);
+        assert!(
+            i8 > 0 && i32n >= i8 && i32n <= i8.saturating_mul(5),
+            "4N admits cost ~4× N inserts: {i8} then {i32n}"
+        );
+        assert_eq!(g8, g32, "on_axis get cost is independent of N: {g8} vs {g32}");
     }
 }

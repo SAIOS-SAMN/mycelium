@@ -829,6 +829,9 @@ pub struct Epigenome {
     shed_n: u64,
     /// TUniversal at each of the last aperture_cycle strokes.
     stroke_tu: Vec<u64>,
+    /// Held words keyed by (chart, axis). Filled at atlas/dialect admit,
+    /// emptied at remove/shed/retire. `on_axis` is one fiber read.
+    axis_index: crate::transducer::sentence::AxisIndex,
 }
 
 impl Epigenome {
@@ -933,6 +936,11 @@ impl Epigenome {
             .collect();
         let n = drop.len();
         for a in &drop {
+            if let Some(d) = self.dialect.get(a) {
+                let inv = crate::transducer::stalk::invariant_of(&d.sentence);
+                let words = crate::transducer::sentence::words_of_element(&d.sentence);
+                crate::transducer::sentence::retract_words(&mut self.axis_index, &inv, &words);
+            }
             self.dialect_atlas.remove(a);
             self.dialect.remove(a);
         }
@@ -973,6 +981,7 @@ impl Epigenome {
         }
         let inv = crate::transducer::stalk::invariant_of(&sentence);
         self.dialect_atlas.admit(&inv, addr);
+        self.axis_admit(&sentence);
         let shape = crate::transducer::element::shape_of_chain(sentence.sub());
         self.dialect.insert(
             addr,
@@ -1021,6 +1030,24 @@ impl Epigenome {
 
     pub fn new() -> Self {
         Epigenome::default()
+    }
+
+    fn axis_admit(&mut self, e: &Element) {
+        let inv = crate::transducer::stalk::invariant_of(e);
+        crate::transducer::sentence::admit_words(
+            &mut self.axis_index,
+            &inv,
+            &crate::transducer::sentence::words_of_element(e),
+        );
+    }
+
+    fn axis_retract(&mut self, e: &Element) {
+        let inv = crate::transducer::stalk::invariant_of(e);
+        crate::transducer::sentence::retract_words(
+            &mut self.axis_index,
+            &inv,
+            &crate::transducer::sentence::words_of_element(e),
+        );
     }
     pub fn genome_len(&self) -> usize {
         self.genome.len()
@@ -1149,6 +1176,8 @@ impl Epigenome {
             return false;
         };
         let gone = self.genome[i].address();
+        let held = self.genome[i].clone();
+        self.axis_retract(&held);
         self.genome.remove(i);
         if i < self.expression.len() {
             self.expression.remove(i);
@@ -1320,6 +1349,11 @@ impl Epigenome {
         // dialect entry moves that entry into the genome, carrying its uses.
         if let Some(da) = self.same_vertex_in_dialect(&e) {
             let uses = self.dialect.get(&da).map(|d| d.uses).unwrap_or(1);
+            if let Some(d) = self.dialect.get(&da) {
+                let inv = crate::transducer::stalk::invariant_of(&d.sentence);
+                let words = crate::transducer::sentence::words_of_element(&d.sentence);
+                crate::transducer::sentence::retract_words(&mut self.axis_index, &inv, &words);
+            }
             self.dialect_atlas.remove(&da);
             self.dialect.remove(&da);
             if let Some(i) = self.same_vertex_in_genome(&e) {
@@ -1335,6 +1369,7 @@ impl Epigenome {
                 }
             } else {
                 self.atlas.admit(&crate::transducer::stalk::invariant_of(&e), e.address());
+                self.axis_admit(&e);
                 self.shapes.push(std::sync::OnceLock::new());
                 self.atlas_len = self.atlas_len.saturating_add(1);
                 self.index.insert(e.address(), self.genome.len());
@@ -1354,6 +1389,7 @@ impl Epigenome {
                     self.index.insert(addr, i);
                 } else {
                     self.atlas.admit(&crate::transducer::stalk::invariant_of(&e), e.address());
+                    self.axis_admit(&e);
                     self.shapes.push(std::sync::OnceLock::new());
                     self.atlas_len = self.atlas_len.saturating_add(1);
                     self.index.insert(e.address(), self.genome.len());
@@ -1427,9 +1463,15 @@ impl Epigenome {
         self.expression = vec![0; genome.len()];
         self.genome = genome;
         self.atlas = crate::transducer::stalk::Stalks::default();
+        self.axis_index = crate::transducer::sentence::AxisIndex::new();
         self.shapes.clear();
         for w in &self.genome {
             self.atlas.admit(&crate::transducer::stalk::invariant_of(w), w.address());
+            crate::transducer::sentence::admit_words(
+                &mut self.axis_index,
+                &crate::transducer::stalk::invariant_of(w),
+                &crate::transducer::sentence::words_of_element(w),
+            );
             self.shapes.push(std::sync::OnceLock::new());
         }
         self.atlas_len = self.genome.len();
@@ -1484,17 +1526,7 @@ impl crate::transducer::family::Crystal for Epigenome {
         chart: &crate::transducer::stalk::Invariant,
         axis: crate::transducer::sentence::Axis,
     ) -> Vec<crate::transducer::alphabet::Word> {
-        let mut index = crate::transducer::sentence::AxisIndex::new();
-        for (addr, _) in self.working_atlas().fiber(chart) {
-            if let Some(e) = self.working_word(&addr) {
-                crate::transducer::sentence::admit_words(
-                    &mut index,
-                    chart,
-                    &crate::transducer::sentence::words_of_element(e),
-                );
-            }
-        }
-        crate::transducer::sentence::on_axis_of(&index, chart, axis)
+        crate::transducer::sentence::on_axis_of(&self.axis_index, chart, axis)
     }
 }
 
@@ -2358,7 +2390,12 @@ impl Entity {
         let mut budget = self.physics.stroke();
         self.contemplation.set_now(self.now_tu());
         let rotors = crate::network::nerve::Keyed::new();
-        let _ = self.contemplation.expand_all(self.epigenome.atlas(), &rotors, &mut budget);
+        let _ = self.contemplation.expand_all(
+            self.epigenome.atlas(),
+            &rotors,
+            &self.epigenome,
+            &mut budget,
+        );
         self.contemplation.retire_on_t(self.physics.reserve[2] as usize);
     }
 
@@ -2367,7 +2404,8 @@ impl Entity {
     pub fn pivot_on(&mut self, word: &Element) -> usize {
         let mut budget = self.physics.stroke();
         self.contemplation.set_now(self.now_tu());
-        let (_fills, _formed, _classes, spoken) = self.contemplation.pivot_on(word, &mut budget);
+        let (_fills, _formed, _classes, spoken) =
+            self.contemplation.pivot_on(word, &self.epigenome, &mut budget);
         let mut n = 0usize;
         for e in spoken {
             match self.speak_word(&e) {

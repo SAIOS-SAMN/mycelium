@@ -11,6 +11,7 @@ use crate::physics::Budget;
 use crate::transducer::alphabet::{Order, Rotor};
 use crate::transducer::cech::{self, Cell as CechCell, Complex, Fill, Section};
 use crate::transducer::element::{self, Element};
+use crate::transducer::family::Crystal;
 use crate::transducer::sentence::{self, Germ, Nerve};
 use crate::transducer::stalk::{self, Invariant, Standing, Stalks};
 
@@ -132,11 +133,18 @@ impl Bubble {
     /// per stroke, only over overlaps with nonzero volume. Extended grows
     /// the cover; Congruent grows it with a torsion axis; Class writes the
     /// horizon and stops that branch.
-    pub fn expand(&mut self, atlas: &Stalks, budget: &mut Budget) -> usize {
-        self.expand_with(atlas, &Keyed::new(), 0, budget)
+    pub fn expand(&mut self, atlas: &Stalks, crystal: &dyn Crystal, budget: &mut Budget) -> usize {
+        self.expand_with(atlas, &Keyed::new(), 0, crystal, budget)
     }
 
-    pub fn expand_with(&mut self, atlas: &Stalks, rotors: &Keyed<Rotor>, now: u64, budget: &mut Budget) -> usize {
+    pub fn expand_with(
+        &mut self,
+        atlas: &Stalks,
+        rotors: &Keyed<Rotor>,
+        now: u64,
+        crystal: &dyn Crystal,
+        budget: &mut Budget,
+    ) -> usize {
         self.potential = element::measure_lanes(&self.remainder);
         self.potential[2] = now.saturating_sub(self.moved_tu).max(1);
         if budget.remaining() == 0 || !self.potential.iter().any(|&x| x > 0) {
@@ -207,13 +215,7 @@ impl Bubble {
             let mut n = sentence::assemble(self.germs.clone(), self.remainder.clone());
             n.cover = self.cover.clone();
             n.complex = self.nerve.clone();
-            let _ = sentence::pivot_loop(
-                &mut n,
-                self.key(),
-                &self.horizon,
-                &super::family::NoCrystal,
-                budget,
-            );
+            let _ = sentence::pivot_loop(&mut n, self.key(), &self.horizon, crystal, budget);
             self.germs = n.germs;
             self.remainder = n.remainder;
             self.nerve = n.complex;
@@ -816,7 +818,13 @@ impl Contemplation {
     }
 
     /// Expand dirty bubbles from the atlas, one Budget of charts per call.
-    pub fn expand_all(&mut self, atlas: &Stalks, rotors: &Keyed<Rotor>, budget: &mut Budget) -> usize {
+    pub fn expand_all(
+        &mut self,
+        atlas: &Stalks,
+        rotors: &Keyed<Rotor>,
+        crystal: &dyn Crystal,
+        budget: &mut Budget,
+    ) -> usize {
         let mut spent = 0usize;
         let mut from = self.expand_cursor;
         // index: budgeted keyed cursor over dirty bubbles; each expand spends the rest
@@ -834,7 +842,7 @@ impl Contemplation {
             from = k;
             self.expand_cursor = k;
             if let Some(b) = self.bubbles.get_mut(&k) {
-                spent += b.expand_with(atlas, rotors, self.now_tu, budget);
+                spent += b.expand_with(atlas, rotors, self.now_tu, crystal, budget);
                 if !b.dirty {
                     self.dirty.remove(&k);
                 }
@@ -848,7 +856,12 @@ impl Contemplation {
     /// Attempt fill on the link of bubbles at `word`'s chart and prefixes.
     /// Merges filled cells; speaks a closed component as one sentence.
     /// Returns (fills, formed, classes, spoken elements).
-    pub fn pivot_on(&mut self, word: &Element, budget: &mut Budget) -> (u64, u64, u64, Vec<Element>) {
+    pub fn pivot_on(
+        &mut self,
+        word: &Element,
+        crystal: &dyn Crystal,
+        budget: &mut Budget,
+    ) -> (u64, u64, u64, Vec<Element>) {
         let inv = stalk::invariant_of(word);
         let prefixes: Vec<[u8; 32]> = inv.prefixes().iter().map(|p| p.key()).collect();
         let cav: Vec<([u8; 32], Vec<RemCell>)> = self.cavity.fiber(&ROOT).map(|(k, r)| (*k, r.clone())).collect();
@@ -894,7 +907,7 @@ impl Contemplation {
             n.cover = b.cover.clone();
             n.complex = b.nerve.clone();
             let horizon = b.horizon.clone();
-            let _ = sentence::pivot_loop(&mut n, *bk, &horizon, &super::family::NoCrystal, budget);
+            let _ = sentence::pivot_loop(&mut n, *bk, &horizon, crystal, budget);
             if let Some(b) = self.bubbles.get_mut(bk) {
                 b.germs = n.germs;
                 b.remainder = n.remainder;
@@ -1364,10 +1377,10 @@ mod tests {
             out
         };
         let mut budget = crate::physics::Physics::default().stroke_n(64);
-        let _ = c.pivot_on(&word, &mut budget);
+        let _ = c.pivot_on(&word, &crate::transducer::family::NoCrystal, &mut budget);
         let before = snap(&c);
         let mut budget = crate::physics::Physics::default().stroke_n(64);
-        let _ = c.pivot_on(&word, &mut budget);
+        let _ = c.pivot_on(&word, &crate::transducer::family::NoCrystal, &mut budget);
         assert_eq!(snap(&c), before, "a second pivot with no new word leaves fills");
     }
 
@@ -1433,7 +1446,7 @@ mod tests {
         let mut word = Element::identity(3);
         word.record_torsion(vec![(1, 2)], 2, FIBER_SPATIAL);
         let mut budget = crate::physics::Physics::default().stroke_n(32);
-        let _ = c.pivot_on(&word, &mut budget);
+        let _ = c.pivot_on(&word, &crate::transducer::family::NoCrystal, &mut budget);
         assert!(
             c.glues_word(&word.address()),
             "a crystallized form is glued into the meeting idea"
@@ -1489,7 +1502,7 @@ mod tests {
             let hold = work::total();
             work::reset();
             let mut budget = crate::physics::Physics::default().stroke_n(4);
-            let _ = c.expand_all(&atlas, &Keyed::new(), &mut budget);
+            let _ = c.expand_all(&atlas, &Keyed::new(), &crate::transducer::family::NoCrystal, &mut budget);
             let expand = work::total();
             work::reset();
             let mut charts = 0usize;

@@ -32,6 +32,7 @@ pub const REFUSE_GLUED_FRAME_GAUGED: &str = "glued form frame is not identity";
 pub const REFUSE_FACE: &str = "face does not re-derive from its vertices";
 pub const REFUSE_LOOP: &str = "loop holonomy is not identity";
 pub const REFUSE_NO_DESCENT: &str = "no strict descent — the form closes nothing";
+pub const REFUSE_PIVOT_INEXACT: &str = "pivot certificate does not re-derive";
 
 /// Chapter 23.1: replay a crystallized form from its tape and the forms it
 /// cites. `resolve` is the hypha's ruled cover (a caller without one
@@ -83,6 +84,55 @@ pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8; 32]) -> Option<Form>
     walked.loops = Form::loops_of(&f.faces, f.vertices.len());
     if !walked.coheres() {
         return Some(REFUSE_LOOP);
+    }
+    replay_certificates(&walked)
+}
+
+fn face_idx_key(i: u16) -> [u8; 32] {
+    let mut k = [0u8; 32];
+    k[..2].copy_from_slice(&i.to_le_bytes());
+    k
+}
+
+/// A20: each certificate is the un-pivot of one chord face, re-walked.
+/// The loop's class key and rank before and after must match the tape.
+fn replay_certificates(f: &Form) -> Option<&'static str> {
+    use crate::transducer::sentence::{rank_of_holonomies, unpivoted_face, ClassVector, PivotBy};
+    let mut by_chord: Keyed<u16> = Keyed::new();
+    for (i, lp) in f.loops.iter().enumerate() {
+        if let Some(&ch) = lp.faces.last() {
+            by_chord.insert(face_idx_key(ch), i as u16);
+        }
+    }
+    for cert in &f.certificates {
+        let PivotBy::Word { face, word, side } = &cert.by;
+        let Some(&li) = by_chord.get(&face_idx_key(*face)) else {
+            return Some(REFUSE_PIVOT_INEXACT);
+        };
+        let mut pre = f.clone();
+        let Some(held) = pre.faces.get_mut(*face as usize) else {
+            return Some(REFUSE_PIVOT_INEXACT);
+        };
+        held.g_ij = unpivoted_face(&held.g_ij, word, *side);
+        pre.loops = Form::loops_of(&pre.faces, pre.vertices.len());
+        let Some(before_lp) = pre.loops.get(li as usize) else {
+            return Some(REFUSE_PIVOT_INEXACT);
+        };
+        if ClassVector::of_word(&before_lp.holonomy).class_key() != cert.before {
+            return Some(REFUSE_PIVOT_INEXACT);
+        }
+        let Some(after_lp) = f.loops.get(li as usize) else {
+            return Some(REFUSE_PIVOT_INEXACT);
+        };
+        let kappa_after = ClassVector::of_word(&after_lp.holonomy);
+        if kappa_after.class_key() != cert.after || kappa_after.occupies(cert.axis) {
+            return Some(REFUSE_PIVOT_INEXACT);
+        }
+        let rb = rank_of_holonomies(pre.loops.iter().map(|l| &l.holonomy));
+        let ra = rank_of_holonomies(f.loops.iter().map(|l| &l.holonomy));
+        if rb != cert.rank_before || ra != cert.rank_after {
+            return Some(REFUSE_PIVOT_INEXACT);
+        }
     }
     None
 }
