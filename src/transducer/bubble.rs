@@ -140,7 +140,7 @@ pub struct Bubble {
     /// Certified discharges this idea's crystallization rests on (A20).
     pub certificates: Keyed<PivotCertificate>,
     /// Incomparable discharges held as cells (25.1) until a glue or ruling.
-    /// Outer key is the certificate's after class.
+    /// Outer key is the after class; inner is the discharging word's M1 key.
     pub vortex: Keyed<Keyed<PivotCertificate>>,
     /// The form this idea is, when it cites, conjugates, or unfolds
     /// (chapter 30 step 2). `to_nerve` is None then; the form is the hold.
@@ -256,12 +256,16 @@ impl Bubble {
     }
 
     /// A glue or a syllabus class whose key equals one held certificate's
-    /// `after` applies that one; the others are not applied (dialect cells).
-    fn collapse_vortex(&mut self, class: &[u8; 32], by: &'static str) -> bool {
-        let Some(inner) = self.vortex.remove(class) else {
+    /// `after` applies the certificate keyed by that word's M1 key; the
+    /// others of the class are not applied (dialect cells).
+    fn collapse_vortex(&mut self, class: &[u8; 32], word: &[u8; 32], by: &'static str) -> bool {
+        let Some(mut inner) = self.vortex.remove(class) else {
             return false;
         };
-        let Some(win) = inner.fiber(&ROOT).next().map(|(_, c)| c.clone()) else {
+        let Some(win) = inner.remove(word) else {
+            if !inner.is_empty() {
+                self.vortex.insert(*class, inner);
+            }
             return false;
         };
         let mut n = sentence::assemble(self.germs.clone(), self.remainder.clone());
@@ -392,7 +396,11 @@ impl Contemplation {
                             (rec.representative.clone(), rec.order, Standing::Held),
                         );
                     }
-                    b.collapse_vortex(&rec.key, "ruling");
+                    b.collapse_vortex(
+                        &rec.key,
+                        &rec.representative.spelled_word().key(),
+                        "ruling",
+                    );
                 }
             }
         }
@@ -1060,7 +1068,7 @@ impl Contemplation {
             if let Some(b) = self.bubbles.get_mut(bk) {
                 b.take_pivot(n);
                 if let Some(r) = &word_rotor {
-                    b.collapse_vortex(&r.class_key(), "glue");
+                    b.collapse_vortex(&r.class_key(), &r.spelled_word().key(), "glue");
                 }
             }
         }
@@ -1450,7 +1458,10 @@ impl Contemplation {
                     let mut inner = Keyed::new();
                     for _ in 0..nc {
                         let c = sentence::PivotCertificate::from_bytes(b, pos)?;
-                        inner.insert(c.key(), c);
+                        let wk = match &c.by {
+                            crate::transducer::sentence::PivotBy::Word { word, .. } => word.key(),
+                        };
+                        inner.insert(wk, c);
                     }
                     vortex.insert(after, inner);
                 }
@@ -1866,11 +1877,17 @@ mod tests {
                 side: Side::Right,
             },
         };
+        let sheet = crate::transducer::alphabet::PlaneForm {
+            parity: true,
+            rot: [0; crate::transducer::alphabet::CAYLEY_ALPHABET_LEN],
+        }
+        .to_word();
+        assert_ne!(w.key(), sheet.key(), "two words, one after class");
         let other = PivotCertificate {
             chord: 0,
             axis: Axis::Hue,
             before: [2u8; 32],
-            after: [9u8; 32],
+            after,
             rank_before: Rank {
                 torsion: 1,
                 free: 0,
@@ -1880,7 +1897,7 @@ mod tests {
             mu: [0; 4],
             by: PivotBy::Word {
                 face: 0,
-                word: w,
+                word: sheet,
                 side: Side::Left,
             },
         };

@@ -687,7 +687,7 @@ pub struct Nerve {
     /// Certified discharges, keyed by the certificate (A20).
     pub certificates: Keyed<PivotCertificate>,
     /// Incomparable discharges of one loop, keyed by the after class then
-    /// the certificate (25.1): collapse reads the after class.
+    /// the discharging word's M1 key (25.1): collapse reads `(class, word)`.
     pub vortex: Keyed<Keyed<PivotCertificate>>,
 }
 
@@ -2788,10 +2788,13 @@ fn trial(
     })
 }
 
-/// Hold a vortex cell by its after class, then by the certificate key.
+/// Hold a vortex cell by its after class, then by the discharging word's
+/// M1 key. Collapse reads `(class, word)`.
 pub fn vortex_put(v: &mut Keyed<Keyed<PivotCertificate>>, c: PivotCertificate) {
     let after = c.after;
-    let k = c.key();
+    let k = match &c.by {
+        PivotBy::Word { word, .. } => word.key(),
+    };
     match v.get_mut(&after) {
         Some(inner) => {
             inner.insert(k, c);
