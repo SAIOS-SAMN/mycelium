@@ -168,7 +168,7 @@ fn speak_form(
     family: &[u8; 32],
 ) -> bool {
     use mycelium::transducer::alphabet::Rotor;
-    use mycelium::transducer::sentence::{as_element_form, as_element_form_mag, Vertex};
+    use mycelium::transducer::sentence::{as_element_form, Vertex};
     let fam = format!("{:02x}{:02x}…", family[0], family[1]);
     let form = &rule.form;
     // Why the form is withheld, in the order the court would refuse it.
@@ -186,11 +186,8 @@ fn speak_form(
         }
     };
     let mag = mycelium::transducer::family::form_descent(form, train, &entity.epigenome);
-    let Some(word) = as_element_form_mag(form, mag) else {
+    let Some(word) = as_element_form(form, mag) else {
         entity.hold_thought(form.remainder.clone());
-        if let Some(e) = as_element_form(form) {
-            entity.hold_sentence(&e);
-        }
         eprintln!("[{tag}] form withheld: family {fam} {}", why_open());
         return false;
     };

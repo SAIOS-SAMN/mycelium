@@ -2016,7 +2016,7 @@ pub fn mint_sentence(
 ) -> Option<element::Element> {
     let mut mag = form_descent(&rule.form, family, crystal);
     mag[2] = mag[2].max((family.len() as u64).saturating_sub(1).max(1));
-    super::sentence::as_element_form_mag(&rule.form, mag)
+    super::sentence::as_element_form(&rule.form, mag)
 }
 
 /// SPEAK A RULE onto a test input: match bodies to rule germs by chart,
@@ -2519,7 +2519,7 @@ mod tests {
             .count();
         let held_form = pair_form(&family[0].0, &family[0].1, None);
         assert!(held_form.is_closed(), "a pair form of a shift coheres");
-        let held_e = super::super::sentence::as_element_form(&held_form).expect("tape");
+        let held_e = super::super::sentence::as_element_form(&held_form, [1, 0, 0, 0]).expect("tape");
         struct Held {
             e: Element,
             f: Form,
@@ -2645,7 +2645,7 @@ mod tests {
             "the rule is the form plus Unfolded Occupied, vertices {:?}",
             rule.form.vertices.len()
         );
-        let e = crate::transducer::sentence::as_element_form(&rule.form).expect("v2 tape");
+        let e = crate::transducer::sentence::as_element_form(&rule.form, [1, 0, 0, 0]).expect("v2 tape");
         let back = crate::transducer::sentence::from_element_form(&e).expect("round trip");
         assert!(
             back.vertices
@@ -2888,7 +2888,7 @@ mod tests {
         assert_eq!(minted.description().get(1), Some(&2), "the minted word is the form's v2 tape");
         assert_eq!(
             minted.address(),
-            crate::transducer::sentence::as_element_form(&rule.form).expect("tape").address(),
+            crate::transducer::sentence::as_element_form(&rule.form, minted.magnitude()).expect("tape").address(),
             "the minted address is the form's address"
         );
         assert_eq!(
@@ -3003,7 +3003,7 @@ mod tests {
             rule.form.loops.iter().all(|c| c.holonomy.abelian_identity()),
             "holonomy of identity-word faces is the identity"
         );
-        let e = crate::transducer::sentence::as_element_form(&rule.form).expect("element");
+        let e = crate::transducer::sentence::as_element_form(&rule.form, [1, 0, 0, 0]).expect("element");
         assert!(
             crate::verdict::blind_replay(&e).is_none() || e.magnitude().iter().all(|&x| x == 0),
             "a form tape parses"

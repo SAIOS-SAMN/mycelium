@@ -698,9 +698,9 @@ mod tests {
     #[test]
     fn replay_form_refuses_unruled_glue_and_replays_resolved() {
         use crate::transducer::alphabet::Word;
-        use crate::transducer::sentence::{as_element_form, as_element_form_mag, FormFace};
+        use crate::transducer::sentence::{as_element_form, FormFace};
         let inner = closed_turn_form();
-        let inner_e = as_element_form_mag(&inner, [1, 0, 0, 0]).expect("inner tape");
+        let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner tape");
         let inner_addr = inner_e.address();
         let mut outer = Form::default();
         let gi = outer
@@ -712,7 +712,7 @@ mod tests {
             g_ij: outer.face_of(0, gi),
         });
         outer.loops = Form::loops_of(&outer.faces, outer.vertices.len());
-        let outer_e = as_element_form_mag(&outer, [1, 0, 0, 0]).expect("outer tape");
+        let outer_e = as_element_form(&outer, [1, 0, 0, 0]).expect("outer tape");
         assert_eq!(
             blind_replay(&outer_e),
             Some(REFUSE_GLUED_UNRULED),
@@ -722,16 +722,16 @@ mod tests {
         assert_eq!(blind_replay_with(&outer_e, &resolve), None, "a resolved citation replays");
         let mut bad = outer.clone();
         bad.faces[0].g_ij = inner.face_of(0, 1);
-        let bad_e = as_element_form_mag(&bad, [1, 0, 0, 0]).expect("tampered tape");
+        let bad_e = as_element_form(&bad, [1, 0, 0, 0]).expect("tampered tape");
         assert_eq!(blind_replay_with(&bad_e, &resolve), Some(REFUSE_FACE));
-        let mut flat = as_element_form(&outer).expect("tape");
+        let mut flat = as_element_form(&outer, [1, 0, 0, 0]).expect("tape");
         flat.set_magnitude([0; 4]);
         assert_eq!(blind_replay_with(&flat, &resolve), Some(REFUSE_NO_DESCENT));
         let mut cited_deeper = outer.clone();
         if let Vertex::Glued { depth, .. } = &mut cited_deeper.vertices[gi as usize] {
             *depth = 1;
         }
-        let deeper_e = as_element_form_mag(&cited_deeper, [1, 0, 0, 0]).expect("tape");
+        let deeper_e = as_element_form(&cited_deeper, [1, 0, 0, 0]).expect("tape");
         assert_eq!(blind_replay_with(&deeper_e, &resolve), Some(REFUSE_GLUED_DEPTH));
     }
 
@@ -750,10 +750,10 @@ mod tests {
     fn pivot_certificate_replays_or_refuses() {
         use crate::transducer::alphabet::Word;
         use crate::transducer::sentence::{
-            as_element_form_mag, PivotBy, PivotCertificate, Rank, Side, CLOSED_KEY,
+            as_element_form, PivotBy, PivotCertificate, Rank, Side, CLOSED_KEY,
         };
         let f = closed_turn_form();
-        let e = as_element_form_mag(&f, [1, 0, 0, 0]).expect("tape");
+        let e = as_element_form(&f, [1, 0, 0, 0]).expect("tape");
         assert_eq!(
             replay_form(&e, &|_| None),
             None,
@@ -778,7 +778,7 @@ mod tests {
                 side: Side::Left,
             },
         });
-        let bad_e = as_element_form_mag(&bad, [1, 0, 0, 0]).expect("tampered tape");
+        let bad_e = as_element_form(&bad, [1, 0, 0, 0]).expect("tampered tape");
         assert_eq!(
             replay_form(&bad_e, &|_| None),
             Some(REFUSE_PIVOT_INEXACT),

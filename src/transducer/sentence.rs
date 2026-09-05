@@ -3023,7 +3023,7 @@ pub fn as_element_form_of_nerve(n: &Nerve) -> Option<Element> {
         .map(|(_, c)| c.clone())
         .collect();
     form.torsion = n.torsion.clone();
-    let mut e = as_element_form_mag(&form, cochain_magnitude(n))?;
+    let mut e = as_element_form(&form, cochain_magnitude(n))?;
     e.adopt_torsion(&form.torsion);
     Some(e)
 }
@@ -3530,24 +3530,15 @@ fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
 }
 
 /// SENTENCE_TAG v2: the Form tape. v1 nerve tapes still go through [`as_element`].
-pub fn as_element_form(f: &Form) -> Option<Element> {
-    if f.vertices.is_empty() {
+/// `mag` is the descent the form measures over its bundle. Zero is not a word.
+pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
+    if f.vertices.is_empty() || mag.iter().all(|&x| x == 0) {
         return None;
     }
     let mut e = Element::identity(GERM_DIM);
     let mut word = vec![element::SENTENCE_TAG, 2];
     encode_form_v2(f, &mut word);
     e.set_description(word);
-    e.set_magnitude([0, 0, 0, 1]);
-    Some(e)
-}
-
-/// A form with no measured descent is not spoken.
-pub fn as_element_form_mag(f: &Form, mag: [u64; 4]) -> Option<Element> {
-    if mag.iter().all(|&x| x == 0) {
-        return None;
-    }
-    let mut e = as_element_form(f)?;
     e.set_magnitude(mag);
     Some(e)
 }
@@ -4108,7 +4099,8 @@ mod tests {
         let w = Word::from_letters(&[(q, false)]);
         let inner = closed_word_form(w.clone(), None);
         assert!(inner.is_closed(), "a tree of two vertices coheres");
-        let inner_e = as_element_form(&inner).expect("inner tape");
+        assert!(as_element_form(&inner, [0; 4]).is_none(), "zero descent is not spoken");
+        let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner tape");
         let inner_addr = inner_e.address();
 
         let mut f = closed_word_form(
@@ -4152,7 +4144,7 @@ mod tests {
             }
         ));
 
-        let e = as_element_form(&f).expect("v2 tape");
+        let e = as_element_form(&f, [1, 0, 0, 0]).expect("v2 tape");
         assert!(e.is_sentence());
         assert_eq!(e.description()[1], 2, "version 2");
         let back = from_element_form(&e).expect("decode v2");
@@ -4208,11 +4200,14 @@ mod tests {
         assert_eq!(back.faces[0].i, 0);
         assert_eq!(back.faces[0].j, 1);
         assert_eq!(back.faces[0].g_ij, f.faces[0].g_ij);
-        let e_plain = as_element_form(&closed_word_form(w.clone(), None)).expect("plain");
-        let e_contact = as_element_form(&closed_word_form(
-            w.clone(),
-            Some(alphabet::Contact { anchor: 0, ring: 2 }),
-        ))
+        let e_plain = as_element_form(&closed_word_form(w.clone(), None), [1, 0, 0, 0]).expect("plain");
+        let e_contact = as_element_form(
+            &closed_word_form(
+                w.clone(),
+                Some(alphabet::Contact { anchor: 0, ring: 2 }),
+            ),
+            [1, 0, 0, 0],
+        )
         .expect("contact");
         assert_ne!(
             e_plain.address(),
@@ -4239,8 +4234,8 @@ mod tests {
                 num_rational::BigRational::from_integer(num_bigint::BigInt::from(3)),
             );
         }
-        let ea = as_element_form(&a).expect("a");
-        let eb = as_element_form(&b).expect("b");
+        let ea = as_element_form(&a, [1, 0, 0, 0]).expect("a");
+        let eb = as_element_form(&b, [1, 0, 0, 0]).expect("b");
         assert_ne!(ea.address(), eb.address(), "shift is not quotiented off the vertex");
         assert!(!ea.same_vertex(&eb));
     }
@@ -4257,9 +4252,9 @@ mod tests {
         b.ratio = ((2, 1), (2, 1));
         let mut c = closed_word_form(w, None);
         c.sections.insert([7u8; 32], vec![1]);
-        let ea = as_element_form(&a).expect("a");
-        let eb = as_element_form(&b).expect("b");
-        let ec = as_element_form(&c).expect("c");
+        let ea = as_element_form(&a, [1, 0, 0, 0]).expect("a");
+        let eb = as_element_form(&b, [1, 0, 0, 0]).expect("b");
+        let ec = as_element_form(&c, [1, 0, 0, 0]).expect("c");
         assert_ne!(ea.address(), eb.address(), "the frame ratio is on the key");
         assert_ne!(ea.address(), ec.address(), "a section is on the key");
         let back_b = from_element_form(&eb).expect("v2 tape");
@@ -4945,7 +4940,7 @@ mod tests {
             panic!("the filed form has a torsion chord");
         };
         f.faces[ci].g_ij = order4();
-        let bad = as_element_form_mag(&f, mag).expect("tampered chord");
+        let bad = as_element_form(&f, mag).expect("tampered chord");
         assert_eq!(
             crate::court::verdict::blind_replay(&bad),
             Some(crate::court::verdict::REFUSE_FACE),
@@ -4953,7 +4948,7 @@ mod tests {
         );
         let mut gone = from_element_form(&e).expect("v2 tape");
         gone.torsion = Keyed::new();
-        let missing = as_element_form_mag(&gone, mag).expect("torsion stripped");
+        let missing = as_element_form(&gone, mag).expect("torsion stripped");
         assert_eq!(
             crate::court::verdict::blind_replay(&missing),
             Some(crate::court::verdict::REFUSE_LOOP),
@@ -5096,7 +5091,7 @@ mod tests {
         let crate::transducer::sentence::PivotBy::Word { face, .. } = &tampered.certificates[0].by;
         let fi = *face as usize;
         tampered.faces[fi].g_ij = q.clone();
-        let bad = as_element_form_mag(&tampered, e.magnitude()).expect("tampered tape");
+        let bad = as_element_form(&tampered, e.magnitude()).expect("tampered tape");
         assert_eq!(
             crate::court::verdict::blind_replay(&bad),
             Some(crate::court::verdict::REFUSE_FACE),

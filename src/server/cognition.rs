@@ -4890,7 +4890,7 @@ impl Kernel {
                     form.ratio = orig.ratio;
                     form.sections = orig.sections;
                 }
-                crate::transducer::sentence::as_element_form_mag(&form, w.magnitude())
+                crate::transducer::sentence::as_element_form(&form, w.magnitude())
             } else {
                 crate::transducer::sentence::as_element(&n)
             };
