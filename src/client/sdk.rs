@@ -1353,28 +1353,66 @@ impl Epigenome {
     }
 
     /// Chapter 24.2: a form whose Glued citations this mind holds, or
-    /// Withheld until the syllabus serves the missing addresses. Re-gauge
-    /// is learn_one, when the cited tape arrives under another address.
+    /// whose class is held under another address (re-gauge the working copy
+    /// at that vertex). A class that does not cohere is Dialect.
     fn comprehend_form(&mut self, f: &crate::transducer::sentence::Form) -> Comprehension {
+        use crate::transducer::family::Crystal;
         use crate::transducer::sentence::Vertex;
+        let mut work = f.clone();
         let mut missing = Vec::new();
         let mut understood = Vec::new();
-        for v in &f.vertices {
-            let Vertex::Glued { address, .. } = v else {
+        let mut dialect: Option<Element> = None;
+        for vi in 0..work.vertices.len() {
+            let Vertex::Glued { address, chart, .. } = &work.vertices[vi] else {
                 continue;
             };
-            if let Some(&i) = self.index.get(address) {
+            let address = *address;
+            let chart = chart.clone();
+            if let Some(&i) = self.index.get(&address) {
                 if let Some(x) = self.expression.get_mut(i) {
                     *x += 1;
                 }
                 understood.push(i);
                 continue;
             }
-            if self.working_word(address).is_some() {
+            if self.working_word(&address).is_some() {
                 understood.push(usize::MAX);
                 continue;
             }
-            missing.push(*address);
+            let held = Crystal::on_class(self, &chart)
+                .into_iter()
+                .find(|(e, _, _)| e.address() != address);
+            if let Some((held, _, _)) = held {
+                if let Some(cited) = self.working_word(&address) {
+                    if let Some(g) = crate::transducer::cech::transition(&held, cited) {
+                        if let Some(theta) = crate::transducer::cech::rotor_of(&g).map(|r| r.spelled_word())
+                        {
+                            let _ = work.regauge_overlap(&theta, vi as u16);
+                        }
+                    }
+                } else if let Some(theta) = crate::transducer::cech::rotor_of(&held).map(|r| r.spelled_word())
+                {
+                    let _ = work.regauge_overlap(&theta, vi as u16);
+                }
+                if work.coheres() {
+                    understood.push(usize::MAX);
+                    eprintln!(
+                        "  form re-gauged {:02x}{:02x}…",
+                        address[0], address[1]
+                    );
+                } else {
+                    dialect = Some(held);
+                    eprintln!(
+                        "  form dialect {:02x}{:02x}… class recorded",
+                        address[0], address[1]
+                    );
+                }
+                continue;
+            }
+            missing.push(address);
+        }
+        if let Some(g) = dialect {
+            return Comprehension::Dialect(g);
         }
         if !missing.is_empty() {
             return Comprehension::Withheld { missing };
@@ -1513,9 +1551,8 @@ impl Epigenome {
     }
 
     /// A cited tape that just arrived: withheld sentences naming it
-    /// re-comprehend. The waiting-on index is the read. Re-gauge applies
-    /// to the working copy that is comprehended, at the overlap face of
-    /// the citing glued vertex; the stored tape is not this copy.
+    /// re-comprehend. The waiting-on index is the read. Re-gauge lives in
+    /// comprehend_form; this arm does not apply θ.
     fn resolve_withheld(&mut self, arrived: &Element) {
         let addr = arrived.address();
         let citing: Vec<[u8; 32]> = match self.waiting_on.remove(&addr) {
@@ -1534,18 +1571,7 @@ impl Epigenome {
                 .get(&sa)
                 .map(|d| d.missing.clone())
                 .unwrap_or_default();
-            let heard = if let Some(mut form) =
-                crate::transducer::sentence::from_element_form(&sentence)
-            {
-                if let Some(fi) = form.overlap_face_of(&addr) {
-                    if let Some(theta) = self.theta_on_chart(&form, &addr, arrived) {
-                        let _ = form.regauge_overlap(&theta, fi);
-                    }
-                }
-                self.comprehend_form(&form)
-            } else {
-                self.comprehend(&sentence)
-            };
+            let heard = self.comprehend(&sentence);
             match heard {
                 Comprehension::Withheld { missing } => {
                     for m in &old_missing {
@@ -1560,7 +1586,7 @@ impl Epigenome {
                         self.wait_on(m, sa);
                     }
                 }
-                Comprehension::Understood(_) | Comprehension::Admitted => {
+                Comprehension::Understood(_) | Comprehension::Admitted | Comprehension::Dialect(_) => {
                     for m in &old_missing {
                         if m != &addr {
                             self.retract_waiter(m, &sa);
@@ -1583,32 +1609,6 @@ impl Epigenome {
     #[cfg(test)]
     fn waiting_on_len(&self, missing: &[u8; 32]) -> usize {
         self.waiting_on.get(missing).map(|c| c.len()).unwrap_or(0)
-    }
-
-    /// θ for 24.2: a held word on the glued vertex's chart that is not the
-    /// arrived tape. Identity when the chart holds only the arrival.
-    fn theta_on_chart(
-        &self,
-        form: &crate::transducer::sentence::Form,
-        cited: &[u8; 32],
-        arrived: &Element,
-    ) -> Option<crate::transducer::alphabet::Word> {
-        use crate::transducer::sentence::Vertex;
-        let chart = form.vertices.iter().find_map(|v| match v {
-            Vertex::Glued { address, chart, .. } if address == cited => Some(chart.clone()),
-            _ => None,
-        })?;
-        for (a, _) in self.working_atlas().fiber(&chart) {
-            if a == *cited {
-                continue;
-            }
-            let Some(held) = self.working_word(&a) else {
-                continue;
-            };
-            let g = crate::transducer::cech::transition(held, arrived)?;
-            return crate::transducer::cech::rotor_of(&g).map(|r| r.spelled_word());
-        }
-        None
     }
 
     /// CRYSTALLIZE the genome for persistence — the permanent language only.
@@ -3162,9 +3162,13 @@ mod tests {
             .glue(&inner, inner_addr, Word::identity(), [1, 0, 0, 0])
             .expect("glue");
         assert_eq!(
-            outer.overlap_face_of(&inner_addr),
-            Some(1),
-            "the glue's overlap is not face 0"
+            outer.glued.get(&inner_addr).copied(),
+            Some(_gi),
+            "glue records the cited address"
+        );
+        assert!(
+            outer.faces.iter().any(|f| f.i == 0 && f.j == _gi && f.i != 1),
+            "the glue's placement face is not the first Word face"
         );
         let e = as_element_form(&outer, [1, 0, 0, 0]).expect("outer tape");
         let mut epi = Epigenome::new();
@@ -3196,6 +3200,145 @@ mod tests {
                 .any(|(_, d)| d.withheld),
             "the citing sentence is no longer withheld"
         );
+    }
+
+    fn closed_turn(contact: Option<crate::transducer::alphabet::Contact>) -> crate::transducer::sentence::Form {
+        use crate::transducer::alphabet::Word;
+        use crate::transducer::sentence::{Form, FormFace, Vertex};
+        let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+        let w = Word::from_letters(&[(q, false)]);
+        let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+        let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+        let mut f = Form::default();
+        f.vertices.push(Vertex::Word {
+            address: [1u8; 32],
+            word: w,
+            rho: one,
+            placement: (zero.clone(), zero),
+            gauge: vec![(1, 2)],
+            class: crate::transducer::stalk::Invariant::default(),
+            contact,
+        });
+        f.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            g_ij: f.face_of(0, 1).expect("vertices"),
+        });
+        f.loops = crate::transducer::sentence::Form::loops_of(&f.faces, f.vertices.len());
+        f
+    }
+
+    /// A citer whose cited class is held under another spelling is Understood
+    /// by re-gauge at the glued vertex.
+    #[test]
+    fn cited_class_held_under_other_spelling_is_understood() {
+        use crate::transducer::alphabet::Word;
+        use crate::transducer::sentence::as_element_form;
+        let inner_a = closed_turn(None);
+        let inner_b = closed_turn(Some(crate::transducer::alphabet::Contact { anchor: 1, ring: 2 }));
+        let ea = as_element_form(&inner_a, [1, 0, 0, 0]).expect("A");
+        let eb = as_element_form(&inner_b, [1, 0, 0, 0]).expect("B");
+        assert_ne!(ea.address(), eb.address(), "contact is on the form key");
+        assert_eq!(
+            crate::transducer::sentence::chart_of(&ea),
+            crate::transducer::sentence::chart_of(&eb),
+            "the class is the chart"
+        );
+        let mut epi = Epigenome::new();
+        assert!(epi.learn(&eb.to_bytes()).is_some());
+        let mut outer = crate::transducer::sentence::Form::default();
+        outer
+            .glue(&inner_a, ea.address(), Word::identity(), [1, 0, 0, 0])
+            .expect("glue A");
+        let e = as_element_form(&outer, [1, 0, 0, 0]).expect("citer");
+        match epi.comprehend(&e) {
+            Comprehension::Understood(_) => {}
+            other => panic!("expected Understood by re-gauge, got {other:?}"),
+        }
+    }
+
+    /// A genuinely different class does not re-gauge: the citer is Dialect
+    /// and is not left withheld.
+    #[test]
+    fn different_class_is_recorded_dialect_not_withheld() {
+        use crate::transducer::alphabet::Word;
+        use crate::transducer::sentence::{as_element_form, Form, FormFace, Vertex};
+        let inner_a = closed_turn(None);
+        let ea = as_element_form(&inner_a, [1, 0, 0, 0]).expect("A");
+        let other = {
+            let inf = Word::from_letters(&[(
+                crate::transducer::alphabet::LetterId::pythagorean_5((0, 1)).unwrap(),
+                false,
+            )]);
+            let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+            let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+            let mut f = Form::default();
+            f.vertices.push(Vertex::Word {
+                address: [9u8; 32],
+                word: inf,
+                rho: one,
+                placement: (zero.clone(), zero),
+                gauge: Vec::new(),
+                class: crate::transducer::stalk::Invariant::default(),
+                contact: None,
+            });
+            f.faces.push(FormFace {
+                i: 0,
+                j: 1,
+                g_ij: f.face_of(0, 1).expect("vertices"),
+            });
+            f.loops = Form::loops_of(&f.faces, f.vertices.len());
+            f
+        };
+        let eo = as_element_form(&other, [1, 0, 0, 0]).expect("other class");
+        assert_ne!(
+            crate::transducer::sentence::chart_of(&ea),
+            crate::transducer::sentence::chart_of(&eo)
+        );
+        let mut epi = Epigenome::new();
+        assert!(epi.learn(&eo.to_bytes()).is_some());
+        let mut outer = Form::default();
+        outer
+            .glue(&inner_a, ea.address(), Word::identity(), [1, 0, 0, 0])
+            .expect("glue A");
+        // A loop that is not a coboundary: Word–Glued chord besides the tree.
+        let gi = *outer.glued.get(&ea.address()).expect("glued");
+        outer.vertices.push(Vertex::Word {
+            address: [3u8; 32],
+            word: Word::identity(),
+            rho: num_rational::BigRational::from_integer(num_bigint::BigInt::from(1)),
+            placement: (
+                num_rational::BigRational::from_integer(num_bigint::BigInt::from(0)),
+                num_rational::BigRational::from_integer(num_bigint::BigInt::from(0)),
+            ),
+            gauge: Vec::new(),
+            class: crate::transducer::stalk::Invariant::default(),
+            contact: None,
+        });
+        let w = outer.vertices.len() as u16 - 1;
+        outer.faces.push(FormFace {
+            i: w,
+            j: gi,
+            g_ij: Word::from_letters(&[(crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap(), false)]),
+        });
+        outer.loops = Form::loops_of(&outer.faces, outer.vertices.len());
+        let e = as_element_form(&outer, [1, 0, 0, 0]).expect("citer");
+        match epi.comprehend(&e) {
+            Comprehension::Withheld { missing } => {
+                assert_eq!(missing, vec![ea.address()], "a foreign class does not re-gauge")
+            }
+            Comprehension::Dialect(_) => {
+                eprintln!("  form dialect recorded");
+            }
+            other => panic!("expected Withheld or Dialect for a foreign class, got {other:?}"),
+        }
+        let heard = epi.learn(&e.to_bytes());
+        if matches!(heard, Some(Comprehension::Dialect(_))) {
+            assert!(
+                !epi.dialect.fiber(&crate::network::nerve::ROOT).any(|(_, d)| d.withheld),
+                "a recorded Dialect is not left withheld"
+            );
+        }
     }
 
     /// Until A12 factors words through the held basis, a citation-free

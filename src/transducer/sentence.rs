@@ -1187,28 +1187,16 @@ impl Form {
         Some(())
     }
 
-    /// The named face incident on a glued vertex: the overlap of that
-    /// citation, never `faces.first()`.
-    pub fn overlap_face_of(&self, address: &[u8; 32]) -> Option<u16> {
-        let vi = self.vertices.iter().position(|v| {
-            matches!(v, Vertex::Glued { address: a, .. } if a == address)
-        })?;
-        self.faces
-            .iter()
-            .position(|f| f.i as usize == vi || f.j as usize == vi)
-            .map(|i| i as u16)
-    }
-
-    /// The extension θ_A of 13.4: θ on one vertex of the overlap face,
-    /// then the usual tree gauge. The stored tape is not this working copy.
-    pub fn regauge_overlap(&mut self, theta: &Word, face: u16) -> Option<()> {
+    /// The extension θ_A of 13.4: θ at the glued vertex, then the usual
+    /// tree gauge. The stored tape is not this working copy.
+    pub fn regauge_overlap(&mut self, theta: &Word, vertex: u16) -> Option<()> {
         let n = self.vertices.len();
-        let mut gamma = vec![Word::identity(); n];
-        if let Some(f) = self.faces.get(face as usize) {
-            if (f.j as usize) < n {
-                gamma[f.j as usize] = theta.clone();
-            }
+        let vi = vertex as usize;
+        if vi >= n {
+            return None;
         }
+        let mut gamma = vec![Word::identity(); n];
+        gamma[vi] = theta.clone();
         self.regauge(&gamma)
     }
 
