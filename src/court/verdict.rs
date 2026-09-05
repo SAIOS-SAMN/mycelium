@@ -56,6 +56,9 @@ pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
         return crate::transducer::rewrite::replay(spoken);
     }
     if spoken.is_sentence() {
+        if spoken.description().get(1).copied() == Some(2) {
+            return crate::transducer::sentence::replay_form(spoken);
+        }
         if let Some(reason) = crate::transducer::sentence::replay_nerve(spoken) {
             return Some(reason);
         }

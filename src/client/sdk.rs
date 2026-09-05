@@ -816,6 +816,18 @@ impl Epigenome {
         self.index.get(addr).and_then(|&i| self.genome.get(i))
     }
 
+    /// Working-atlas root: blake3 of sorted stratum roots of genome ∪ dialect.
+    pub fn atlas_root(&self) -> [u8; 32] {
+        let mut rows = crate::transducer::sheaf::digests(&self.atlas);
+        rows.extend(crate::transducer::sheaf::digests(&self.dialect_atlas));
+        rows.sort_by(|a, b| a.root.cmp(&b.root).then_with(|| a.inv.key().cmp(&b.inv.key())));
+        let mut h = blake3::Hasher::new();
+        for r in &rows {
+            h.update(&r.root);
+        }
+        *h.finalize().as_bytes()
+    }
+
     /// The genome index of an address, read from the key.
     pub fn index_of(&self, addr: &[u8; 32]) -> Option<usize> {
         self.index.get(addr).copied()

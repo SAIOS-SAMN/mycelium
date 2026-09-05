@@ -256,7 +256,7 @@ fn main() {
     let mut last_genome_save = Instant::now();
     let mut saved_genome = entity.epigenome.genome_len();
     let mut extract_memo: mycelium::network::nerve::Keyed<(
-        usize,
+        [u8; 32],
         Option<mycelium::transducer::sentence::SentenceRule>,
     )> = mycelium::network::nerve::Keyed::new();
 
@@ -340,8 +340,8 @@ fn main() {
                 physics.spend(Physics::lanes_of(&mag)); // thought is priced on the lanes it occupies
                 // The rule's nerve is the sentence: constant relative words,
                 // not pair-0 geometry. No calculator fallback.
-                let fam = *blake3::hash(path.to_string_lossy().as_bytes()).as_bytes();
-                let gen = entity.epigenome.genome_len() + entity.dialect_len();
+                let fam = mycelium::registry::task_id(&task);
+                let gen = entity.epigenome.atlas_root();
                 let mut extract_budget = physics.stroke();
                 let extracted = mycelium::transducer::family::extract_rule_cached(
                     &mut extract_memo,
@@ -349,6 +349,7 @@ fn main() {
                     &task.train,
                     gen,
                     &mut extract_budget,
+                    &entity.epigenome,
                 );
                 if let Some(rule) = extracted.as_ref().or(comprehended.rule.as_ref()) {
                     for (x, y) in &task.test {
@@ -600,7 +601,7 @@ fn main() {
             let mag = family_magnitude(&train);
             physics.bump(&mag);
             physics.spend(Physics::lanes_of(&mag)); // thought is priced on the lanes it occupies
-            let gen = entity.epigenome.genome_len() + entity.dialect_len();
+            let gen = entity.epigenome.atlas_root();
             let mut extract_budget = physics.stroke();
             let extracted = mycelium::transducer::family::extract_rule_cached(
                 &mut extract_memo,
@@ -608,6 +609,7 @@ fn main() {
                 &train,
                 gen,
                 &mut extract_budget,
+                &entity.epigenome,
             );
             let rule = extracted.as_ref().or(comprehended.rule.as_ref());
             eprintln!(

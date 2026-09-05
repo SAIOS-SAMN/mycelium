@@ -790,6 +790,8 @@ pub struct Form {
     pub remainder: Vec<Cell>,
     pub depth: u16,
     pub hue_maps: Keyed<Vec<(u8, u8)>>,
+    pub ratio: ((usize, usize), (usize, usize)),
+    pub sections: Keyed<Vec<u16>>,
 }
 
 impl Default for Form {
@@ -801,6 +803,8 @@ impl Default for Form {
             remainder: Vec::new(),
             depth: 0,
             hue_maps: Keyed::new(),
+            ratio: ((1, 1), (1, 1)),
+            sections: Keyed::new(),
         }
     }
 }
@@ -877,6 +881,8 @@ impl Form {
             remainder: n.remainder.clone(),
             depth: 0,
             hue_maps: Keyed::new(),
+            ratio: ((1, 1), (1, 1)),
+            sections: Keyed::new(),
         }
     }
 
@@ -2722,6 +2728,24 @@ fn encode_form_v2(f: &Form, out: &mut Vec<u8>) {
     }
     out.extend_from_slice(&f.depth.to_le_bytes());
     out.extend_from_slice(&0u16.to_le_bytes());
+    let ((hn, hd), (wn, wd)) = f.ratio;
+    out.extend_from_slice(&(hn as u16).to_le_bytes());
+    out.extend_from_slice(&(hd as u16).to_le_bytes());
+    out.extend_from_slice(&(wn as u16).to_le_bytes());
+    out.extend_from_slice(&(wd as u16).to_le_bytes());
+    let sec: Vec<([u8; 32], Vec<u16>)> = f
+        .sections
+        .fiber(&crate::network::nerve::ROOT)
+        .map(|(k, v)| (*k, v.clone()))
+        .collect();
+    out.extend_from_slice(&(sec.len() as u16).to_le_bytes());
+    for (k, ix) in sec {
+        out.extend_from_slice(&k);
+        out.extend_from_slice(&(ix.len() as u16).to_le_bytes());
+        for i in ix {
+            out.extend_from_slice(&i.to_le_bytes());
+        }
+    }
 }
 
 fn take_u16(b: &[u8], pos: &mut usize) -> Option<u16> {
@@ -2877,6 +2901,31 @@ fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
             }
         }
     }
+    let mut ratio = ((1usize, 1usize), (1usize, 1usize));
+    let mut sections = Keyed::new();
+    if let (Some(hn), Some(hd), Some(wn), Some(wd)) = (
+        take_u16(b, pos),
+        take_u16(b, pos),
+        take_u16(b, pos),
+        take_u16(b, pos),
+    ) {
+        ratio = (
+            (hn as usize, hd.max(1) as usize),
+            (wn as usize, wd.max(1) as usize),
+        );
+        if let Some(ns) = take_u16(b, pos) {
+            for _ in 0..ns {
+                let k: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                *pos += 32;
+                let nv = take_u16(b, pos)? as usize;
+                let mut ix = Vec::with_capacity(nv.min(256));
+                for _ in 0..nv.min(256) {
+                    ix.push(take_u16(b, pos)?);
+                }
+                sections.insert(k, ix);
+            }
+        }
+    }
     Some(Form {
         vertices,
         faces,
@@ -2884,6 +2933,8 @@ fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         remainder,
         depth,
         hue_maps,
+        ratio,
+        sections,
     })
 }
 
@@ -2897,6 +2948,16 @@ pub fn as_element_form(f: &Form) -> Option<Element> {
     encode_form_v2(f, &mut word);
     e.set_description(word);
     e.set_magnitude([0, 0, 0, 1]);
+    Some(e)
+}
+
+/// A form with no measured descent is not spoken.
+pub fn as_element_form_mag(f: &Form, mag: [u64; 4]) -> Option<Element> {
+    if mag.iter().all(|&x| x == 0) {
+        return None;
+    }
+    let mut e = as_element_form(f)?;
+    e.set_magnitude(mag);
     Some(e)
 }
 
@@ -3300,6 +3361,26 @@ pub fn speak_along_tree(n: &Nerve, cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u
 /// Blind replay of a sentence: re-derive every germ's block from its tape,
 /// every face g_ij from the two germs, δg on every triangle, and require
 /// stored torsion to close under `toroid::witness_stored`.
+pub fn replay_form(e: &Element) -> Option<&'static str> {
+    let f = from_element_form(e)?;
+    for face in &f.faces {
+        if f.face_of(face.i, face.j) != face.g_ij {
+            return Some("sentence face does not re-derive");
+        }
+    }
+    if !f.coheres() {
+        return Some("sentence loop is not projectively identity");
+    }
+    for v in &f.vertices {
+        if let Vertex::Glued { depth, .. } = v {
+            if *depth > f.depth {
+                return Some("glued depth exceeds the form");
+            }
+        }
+    }
+    None
+}
+
 pub fn replay_nerve(e: &Element) -> Option<&'static str> {
     let mut n = from_element(e)?;
     for g in &n.germs {

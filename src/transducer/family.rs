@@ -1098,6 +1098,8 @@ fn pair_form_uncached(
         remainder: Vec::new(),
         depth: 0,
         hue_maps: crate::network::nerve::Keyed::new(),
+        ratio: ((1, 1), (1, 1)),
+        sections: crate::network::nerve::Keyed::new(),
     };
     let n = form.vertices.len();
     let frame = 0usize;
@@ -1702,6 +1704,8 @@ pub fn extract_rule_with(
         remainder: Vec::new(),
         depth: 0,
         hue_maps: crate::network::nerve::Keyed::new(),
+        ratio: ((1, 1), (1, 1)),
+        sections: crate::network::nerve::Keyed::new(),
     };
     // 2. Faces named by the pair forms (star + cell overlap), kept iff M1-constant.
     let mut candidates: Vec<(End, End)> = Vec::new();
@@ -1848,8 +1852,10 @@ pub fn extract_rule_with(
     }
     form.depth = form.depth_of();
     form.loops = Form::loops_of(&form.faces, form.vertices.len());
+    form.ratio = scale.unwrap_or(((1, 1), (1, 1)));
+    form.sections = sections.clone();
     let nerve = form.to_nerve().unwrap_or_default();
-    let ratio = scale.unwrap_or(((1, 1), (1, 1)));
+    let ratio = form.ratio;
     Some(super::sentence::SentenceRule {
         charts: nerve
             .germs
@@ -1886,23 +1892,47 @@ pub fn rule_replays_family(rule: &super::sentence::SentenceRule, family: &[(Grid
 /// Extract, memoized by family id and working-atlas generation. A hit
 /// spends nothing; a miss spends one Budget and stores the rule.
 pub fn extract_rule_cached(
-    cache: &mut crate::network::nerve::Keyed<(usize, Option<super::sentence::SentenceRule>)>,
+    cache: &mut crate::network::nerve::Keyed<([u8; 32], Option<super::sentence::SentenceRule>)>,
     fam: &[u8; 32],
     family: &[(Grid, Grid)],
-    atlas_gen: usize,
+    atlas_root: [u8; 32],
     budget: &mut crate::physics::Budget,
+    crystal: &dyn Crystal,
 ) -> Option<super::sentence::SentenceRule> {
     if let Some((g, rule)) = cache.get(fam) {
-        if *g == atlas_gen {
+        if *g == atlas_root {
             return rule.clone();
         }
     }
     if !budget.spend() {
         return cache.get(fam).and_then(|(_, r)| r.clone());
     }
-    let rule = extract_rule(family);
-    cache.insert(*fam, (atlas_gen, rule.clone()));
+    let rule = extract_rule_with(family, crystal);
+    cache.insert(*fam, (atlas_root, rule.clone()));
     rule
+}
+
+/// Descent a form measures by speaking every train pair.
+pub fn form_descent(form: &Form, family: &[(Grid, Grid)]) -> [u64; 4] {
+    if family.is_empty() {
+        return [0; 4];
+    }
+    let mut pay = [0u64; 4];
+    for (x, y) in family {
+        let Some(s) = apply_form(form, x, &super::alphabet::Word::identity(), &NoCrystal) else {
+            return [0; 4];
+        };
+        if s.grid() != *y {
+            return [0; 4];
+        }
+        if let Some((chain, _, _)) = crate::arc::refine_delta(x, y) {
+            let lanes = element::measure_lanes(&chain);
+            for i in 0..4 {
+                pay[i] = pay[i].saturating_add(lanes[i]);
+            }
+        }
+    }
+    pay
 }
 
 /// Extract the invariant cochain of a family: one nerve per pair, then
@@ -3091,12 +3121,12 @@ mod tests {
         let fam = [7u8; 32];
         let mut cache = crate::network::nerve::Keyed::new();
         let mut budget = crate::physics::Physics::default().stroke_n(8);
-        let a = extract_rule_cached(&mut cache, &fam, &family, 1, &mut budget);
+        let a = extract_rule_cached(&mut cache, &fam, &family, [1u8; 32], &mut budget, &NoCrystal);
         let left = budget.remaining();
-        let b = extract_rule_cached(&mut cache, &fam, &family, 1, &mut budget);
+        let b = extract_rule_cached(&mut cache, &fam, &family, [1u8; 32], &mut budget, &NoCrystal);
         assert_eq!(a.is_some(), b.is_some());
         assert_eq!(budget.remaining(), left, "a cache hit spends nothing");
-        let _ = extract_rule_cached(&mut cache, &fam, &family, 2, &mut budget);
+        let _ = extract_rule_cached(&mut cache, &fam, &family, [2u8; 32], &mut budget, &NoCrystal);
         assert!(budget.remaining() < left, "a new atlas generation re-extracts");
     }
 

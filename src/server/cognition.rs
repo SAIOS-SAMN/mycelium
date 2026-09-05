@@ -5771,6 +5771,8 @@ fn sentence_rule_of(form: &Element) -> Option<crate::transducer::sentence::Sente
         });
         if form_speaks || form.description().get(1) == Some(&2) {
             let nerve = f.to_nerve().unwrap_or_default();
+            let ratio = f.ratio;
+            let sections = f.sections.clone();
             return Some(SentenceRule {
                 charts: nerve
                     .germs
@@ -5785,9 +5787,9 @@ fn sentence_rule_of(form: &Element) -> Option<crate::transducer::sentence::Sente
                 holonomies: nerve.cycles.iter().map(|c| c.holonomy.clone()).collect(),
                 hue_maps: Vec::new(),
                 nerve,
-                ratio: ((1, 1), (1, 1)),
+                ratio,
                 shifts: Vec::new(),
-                sections: crate::network::nerve::Keyed::new(),
+                sections,
                 form: f,
             });
         }
@@ -5799,28 +5801,10 @@ fn sentence_rule_of(form: &Element) -> Option<crate::transducer::sentence::Sente
 /// Descent a rule measures by speaking every train pair. Any miss is zero:
 /// association with a listing is not a mint.
 fn measured_replay_descent(form: &Element, family: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)]) -> [u64; 4] {
-    if family.is_empty() {
-        return [0; 4];
+    if let Some(f) = crate::transducer::sentence::from_element_form(form) {
+        return crate::transducer::family::form_descent(&f, family);
     }
-    let Some(sr) = sentence_rule_of(form) else {
-        return [0; 4];
-    };
-    let mut pay = [0u64; 4];
-    for (x, y) in family {
-        let Some(s) = crate::transducer::family::speak_rule(&sr, x) else {
-            return [0; 4];
-        };
-        if s.grid() != *y {
-            return [0; 4];
-        }
-        if let Some((chain, _, _)) = crate::arc::refine_delta(x, y) {
-            let lanes = element::measure_lanes(&chain);
-            for i in 0..4 {
-                pay[i] = pay[i].saturating_add(lanes[i]);
-            }
-        }
-    }
-    pay
+    [0; 4]
 }
 
 /// The SUBSTRATE's canonical framing projection (hypha-side, per the transposition
