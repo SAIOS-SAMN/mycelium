@@ -821,6 +821,15 @@ impl Contemplation {
         let mut spoken: Vec<Element> = Vec::new();
         spoken.extend(std::mem::take(&mut self.pending_rewrites));
         let bubble_keys: Vec<[u8; 32]> = keys.fiber(&ROOT).map(|(k, _)| *k).collect();
+        if word.sub().is_empty() && !word.torsion().is_empty() {
+            let addr = word.address();
+            for bk in &bubble_keys {
+                self.mark_glue(bk, addr);
+                if let Some(b) = self.bubbles.get_mut(&addr) {
+                    b.glued_by.insert(*bk, ());
+                }
+            }
+        }
         for bk in &bubble_keys {
             if budget.remaining() == 0 {
                 break;
@@ -1322,6 +1331,22 @@ mod tests {
         let back = Contemplation::from_bytes(&bytes, &mut pos).expect("THT2");
         assert_eq!(back.len(), 1);
         assert_eq!(back.potential(), c.potential());
+    }
+
+    #[test]
+    fn wrap_glues_crystallized_form() {
+        use crate::transducer::element::{Element, FIBER_SPATIAL};
+        let mut c = Contemplation::new();
+        let rem = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
+        c.hold(rem);
+        let mut word = Element::identity(3);
+        word.record_torsion(vec![(1, 2)], 2, FIBER_SPATIAL);
+        let mut budget = crate::physics::Physics::default().stroke_n(32);
+        let _ = c.pivot_on(&word, &mut budget);
+        assert!(
+            c.glues_word(&word.address()),
+            "a crystallized form is glued into the meeting idea"
+        );
     }
 
     #[test]
