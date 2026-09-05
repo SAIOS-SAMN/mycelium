@@ -900,7 +900,7 @@ impl Epigenome {
         self.shed_except(now_tu, &|_| false)
     }
 
-    fn note_stroke(&mut self, now_tu: u64) {
+    pub fn note_stroke(&mut self, now_tu: u64) {
         let n = crate::physics::aperture_cycle().max(1) as usize;
         self.stroke_tu.push(now_tu);
         if self.stroke_tu.len() > n {
@@ -917,7 +917,6 @@ impl Epigenome {
     }
 
     pub fn shed_except(&mut self, now_tu: u64, glued: &impl Fn(&[u8; 32]) -> bool) -> usize {
-        self.note_stroke(now_tu);
         let aperture_tu = self.aperture_tu(now_tu);
         let drop: Vec<[u8; 32]> = self
             .dialect
@@ -2506,6 +2505,7 @@ impl Entity {
     }
 
     pub fn shed_at(&mut self, now_tu: u64) -> usize {
+        self.epigenome.note_stroke(now_tu);
         let glued = |a: &[u8; 32]| self.contemplation.glues_word(a);
         let n = self.epigenome.shed_except(now_tu, &glued);
         n.saturating_add(self.contemplation.shed_unglued())
