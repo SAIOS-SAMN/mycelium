@@ -3225,6 +3225,68 @@ impl Kernel {
         n
     }
 
+    /// Class records on `inv` (and prefixes), or on every chart when `inv` is empty.
+    pub fn class_records(
+        &self,
+        inv: &crate::transducer::stalk::Invariant,
+    ) -> Vec<crate::anastome::dialogue::ClassPage> {
+        let mut out = Vec::new();
+        let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        let push = |out: &mut Vec<crate::anastome::dialogue::ClassPage>,
+                    seen: &mut crate::network::nerve::Keyed<()>,
+                    r: &crate::transducer::alphabet::Rotor,
+                    order: u32| {
+            let k = r.class_key();
+            if seen.contains(&k) {
+                return;
+            }
+            seen.insert(k, ());
+            let mut rotor = Vec::new();
+            r.to_bytes(&mut rotor);
+            out.push(crate::anastome::dialogue::ClassPage {
+                key: k,
+                order,
+                rotor,
+            });
+        };
+        if inv.0.is_empty() {
+            for (_, cx) in self.complexes.fiber(&crate::network::nerve::ROOT) {
+                for layer in &cx.degrees {
+                    for (_, cell) in layer.fiber(&crate::network::nerve::ROOT) {
+                        match &cell.fill {
+                            crate::transducer::cech::Fill::Congruent(r, ell) => {
+                                push(&mut out, &mut seen, r, *ell)
+                            }
+                            crate::transducer::cech::Fill::Class(r) => {
+                                push(&mut out, &mut seen, r, 0)
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        } else {
+            for p in inv.prefixes() {
+                if let Some(cx) = self.complexes.get(&p.key()) {
+                    for layer in &cx.degrees {
+                        for (_, cell) in layer.fiber(&crate::network::nerve::ROOT) {
+                            match &cell.fill {
+                                crate::transducer::cech::Fill::Congruent(r, ell) => {
+                                    push(&mut out, &mut seen, r, *ell)
+                                }
+                                crate::transducer::cech::Fill::Class(r) => {
+                                    push(&mut out, &mut seen, r, 0)
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        out
+    }
+
     pub fn serve_ruled(
         &self,
         inv: &crate::transducer::stalk::Invariant,

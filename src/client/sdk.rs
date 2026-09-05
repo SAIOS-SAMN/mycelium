@@ -1654,6 +1654,7 @@ impl Entity {
                 }
             }
         }
+        self.absorb_class_page(&body, voice);
         // THE OTHER DIRECTION OF THE SHEAF: in a discordant stratum this
         // genome may hold what the hypha lacks (a basis that regressed, a
         // word learned from another judge). Those words are taught up for
@@ -1684,6 +1685,29 @@ impl Entity {
         Ok(learned + taught)
     }
 
+    fn absorb_class_page(&mut self, body: &[u8], from: [u8; 32]) {
+        let pages = dialogue::decode_class_records(body);
+        let mut recs = Vec::new();
+        for p in pages {
+            let mut pos = 0usize;
+            let Some(r) = crate::transducer::alphabet::Rotor::from_bytes(&p.rotor, &mut pos) else {
+                continue;
+            };
+            recs.push(crate::transducer::bubble::ClassRecord {
+                key: p.key,
+                order: crate::transducer::alphabet::Order::from_u32(p.order),
+                representative: r,
+            });
+        }
+        let n = self.contemplation.seed_horizon(&recs);
+        if n > 0 {
+            eprintln!(
+                "  horizon {n} seeded from {:02x}{:02x}",
+                from[0], from[1]
+            );
+        }
+    }
+
     pub fn pull_syllabus(&mut self) -> io::Result<usize> {
         let voice = self.session.kernel().voice();
         let empty = self.epigenome.genome_len() == 0 || self.epigenome.atlas_is_empty();
@@ -1711,6 +1735,7 @@ impl Entity {
                         learned += 1;
                     }
                 }
+                self.absorb_class_page(&body, voice);
             }
             return Ok(learned);
         }
@@ -1722,6 +1747,7 @@ impl Entity {
                 learned += 1;
             }
         }
+        self.absorb_class_page(&body, voice);
         Ok(learned)
     }
 

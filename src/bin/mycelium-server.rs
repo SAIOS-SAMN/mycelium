@@ -647,6 +647,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
             }
             (*sy.served.get(&svoice).unwrap(), sy.order.clone())
         };
+        let mut classes: Vec<dialogue::ClassPage> = Vec::new();
         let words: Vec<Vec<u8>> = {
             let k = door.kernel.lock().unwrap();
             let free: u64 = k.physics().reserve.iter().sum();
@@ -661,6 +662,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
                 }
                 next += 1;
             }
+            classes = k.class_records(&mycelium::transducer::stalk::Invariant::default());
             drop(k);
             if let Ok(mut sy) = door.syllabus.lock() {
                 sy.served.insert(svoice, next);
@@ -680,7 +682,9 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
                 }
             }
         }
-        let reply = Frame { lane: frame.lane, body: dialogue::encode_syllabus_reply(&words) };
+        let mut body = dialogue::encode_syllabus_reply(&words);
+        dialogue::append_class_records(&mut body, &classes);
+        let reply = Frame { lane: frame.lane, body };
         let _ = s.write_all(&reply.encode().unwrap_or_default());
         return true;
     }
@@ -920,6 +924,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         let Some((fvoice, charts)) = dialogue::decode_fetch(&frame.body) else { return };
         let mut budget = mycelium::network::wire::frame_budget().saturating_sub(64);
         let mut words: Vec<Vec<u8>> = Vec::new();
+        let mut classes: Vec<dialogue::ClassPage> = Vec::new();
         if let Ok(mut k) = kernel.lock() {
             let mut have_all: Vec<[u8; 32]> = Vec::new();
             for (inv, have) in &charts {
@@ -927,6 +932,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
                 let page = k.serve_ruled(inv, have, budget);
                 budget = budget.saturating_sub(page.iter().map(|w| w.len() + 4).sum::<usize>());
                 words.extend(page);
+                classes.extend(k.class_records(inv));
                 if budget == 0 {
                     break;
                 }
@@ -941,7 +947,9 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
                 charts.len()
             );
         }
-        let reply = Frame { lane: frame.lane, body: dialogue::encode_syllabus_reply(&words) };
+        let mut body = dialogue::encode_syllabus_reply(&words);
+        dialogue::append_class_records(&mut body, &classes);
+        let reply = Frame { lane: frame.lane, body };
         let _ = stream.write_all(&reply.encode().unwrap_or_default());
         return;
     }

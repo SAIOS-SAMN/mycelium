@@ -237,6 +237,8 @@ pub struct Contemplation {
     pending_rewrites: Vec<Element>,
     /// TUniversal the entity last stamped; T-room and potential[2] read it.
     now_tu: u64,
+    /// Mesh-seeded classes, keyed by class key, Standing::Held. Not persisted.
+    seeded: Keyed<(Rotor, Order, Standing)>,
 }
 
 impl Contemplation {
@@ -287,6 +289,43 @@ impl Contemplation {
         self.bubbles
             .fiber(&ROOT)
             .any(|(_, b)| b.glues.contains(addr))
+    }
+
+    /// Admit syllabus class records as Held. Copies into every live bubble.
+    pub fn seed_horizon(&mut self, records: &[ClassRecord]) -> usize {
+        let mut n = 0usize;
+        for rec in records {
+            if self.seeded.contains(&rec.key) {
+                continue;
+            }
+            self.seeded.insert(
+                rec.key,
+                (rec.representative.clone(), rec.order, Standing::Held),
+            );
+            n += 1;
+        }
+        let keys: Vec<[u8; 32]> = self.bubbles.fiber(&ROOT).map(|(k, _)| *k).collect();
+        for k in keys {
+            if let Some(b) = self.bubbles.get_mut(&k) {
+                for rec in records {
+                    if !b.horizon.contains(&rec.key) {
+                        b.horizon.insert(
+                            rec.key,
+                            (rec.representative.clone(), rec.order, Standing::Held),
+                        );
+                    }
+                }
+            }
+        }
+        n
+    }
+
+    fn paint_seeded(&self, horizon: &mut Keyed<(Rotor, Order, Standing)>) {
+        for (k, v) in self.seeded.fiber(&ROOT) {
+            if !horizon.contains(k) {
+                horizon.insert(*k, v.clone());
+            }
+        }
     }
 
     /// Record that idea `bubble` glued crystallized form `word`.
@@ -567,12 +606,14 @@ impl Contemplation {
         let cover = cover_of(&inv);
         let mut volume = element::measure_lanes(&remainder);
         volume[2] = volume[2].max(1);
+        let mut horizon = Keyed::new();
+        self.paint_seeded(&mut horizon);
         let bubble = Bubble {
             remainder,
             germs: Vec::new(),
             nerve: Complex::new(),
             cover,
-            horizon: Keyed::new(),
+            horizon,
             potential: volume,
             volume,
             dirty: true,
@@ -612,12 +653,14 @@ impl Contemplation {
             cover.insert(*k, ());
         }
         let volume = element::measure_lanes(&remainder);
+        let mut horizon = Keyed::new();
+        self.paint_seeded(&mut horizon);
         let bubble = Bubble {
             remainder,
             germs: n.germs,
             nerve: n.complex,
             cover,
-            horizon: Keyed::new(),
+            horizon,
             potential: volume,
             volume,
             dirty: true,
@@ -662,6 +705,7 @@ impl Contemplation {
             nerve = b.nerve.clone();
             self.bubbles.remove(v);
         }
+        self.paint_seeded(&mut horizon);
         if remainder.is_empty() && germs.is_empty() {
             return None;
         }
@@ -1331,6 +1375,47 @@ mod tests {
         let back = Contemplation::from_bytes(&bytes, &mut pos).expect("THT2");
         assert_eq!(back.len(), 1);
         assert_eq!(back.potential(), c.potential());
+    }
+
+    #[test]
+    fn horizon_seeded_class_is_not_rederived() {
+        use crate::transducer::alphabet::{LetterId, Word};
+        let mut c = Contemplation::new();
+        let q = LetterId::quarter((0, 1)).unwrap();
+        let r = Word::from_letters(&[(q, false)]).rotor();
+        let rec = ClassRecord {
+            key: r.class_key(),
+            order: r.word_order(),
+            representative: r.clone(),
+        };
+        assert_eq!(c.seed_horizon(&[rec.clone()]), 1);
+        c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
+        let b = c.bubbles.fiber(&ROOT).next().map(|(_, b)| b).expect("bubble");
+        let (_, _, st) = b.horizon.get(&rec.key).expect("seeded");
+        assert_eq!(*st, Standing::Held);
+    }
+
+    #[test]
+    fn restart_refills_horizon_from_syllabus() {
+        use crate::transducer::alphabet::{LetterId, Word};
+        let mut c = Contemplation::new();
+        assert_eq!(c.horizon_cells(), 0);
+        let q = LetterId::quarter((0, 1)).unwrap();
+        let r = Word::from_letters(&[(q, false)]).rotor();
+        let rec = ClassRecord {
+            key: r.class_key(),
+            order: r.word_order(),
+            representative: r,
+        };
+        let n = c.seed_horizon(std::slice::from_ref(&rec));
+        assert_eq!(n, 1, "empty mind refills from the page");
+        c.hold(vec![(5, 5, 3, 4)]);
+        assert!(
+            c.bubbles
+                .fiber(&ROOT)
+                .any(|(_, b)| b.horizon.contains(&rec.key)),
+            "a later idea inherits the seeded class"
+        );
     }
 
     #[test]

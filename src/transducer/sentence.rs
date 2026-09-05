@@ -2829,6 +2829,24 @@ mod tests {
     }
 
     #[test]
+    fn horizon_seeded_infinite_is_not_demanded() {
+        let mut n = chord_nerve(&[infinite()]);
+        let r = infinite().rotor();
+        let mut horizon = crate::network::nerve::Keyed::new();
+        horizon.insert(r.class_key(), (r, Order::Infinite, Standing::Held));
+        let snaps = twist(
+            &mut n,
+            [0x5e; 32],
+            &horizon,
+            &mut crate::physics::Physics::default().stroke_n(8),
+        );
+        assert!(
+            !snaps.iter().any(|s| matches!(s, Snap::Demand { .. })),
+            "a held infinite class is not spoken again: {snaps:?}"
+        );
+    }
+
+    #[test]
     fn twist_never_reopens_a_closed_chord() {
         let mut n = chord_nerve(&[order2(), order4()]);
         let mut budget = crate::physics::Physics::default().stroke_n(16);

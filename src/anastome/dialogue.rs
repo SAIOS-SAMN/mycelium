@@ -817,6 +817,65 @@ pub fn decode_syllabus_reply(body: &[u8]) -> Option<Vec<Vec<u8>>> {
     Some(words)
 }
 
+/// One class record on a syllabus page: key, order (0 = infinite), rotor bytes.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ClassPage {
+    pub key: [u8; 32],
+    pub order: u32,
+    pub rotor: Vec<u8>,
+}
+
+pub fn append_class_records(out: &mut Vec<u8>, records: &[ClassPage]) {
+    out.extend_from_slice(&(records.len().min(u16::MAX as usize) as u16).to_le_bytes());
+    for r in records {
+        out.extend_from_slice(&r.key);
+        out.extend_from_slice(&r.order.to_le_bytes());
+        out.extend_from_slice(&(r.rotor.len() as u32).to_le_bytes());
+        out.extend_from_slice(&r.rotor);
+    }
+}
+
+pub fn decode_class_records(body: &[u8]) -> Vec<ClassPage> {
+    let Some(words) = decode_syllabus_reply(body) else {
+        return Vec::new();
+    };
+    let mut p = 1usize;
+    for w in &words {
+        p = p.saturating_add(4).saturating_add(w.len());
+    }
+    if p + 2 > body.len() {
+        return Vec::new();
+    }
+    let n = u16::from_le_bytes(body[p..p + 2].try_into().unwrap_or([0, 0])) as usize;
+    p += 2;
+    let mut out = Vec::new();
+    for _ in 0..n.min(1024) {
+        if p + 40 > body.len() {
+            break;
+        }
+        let Some(key) = body.get(p..p + 32).and_then(|s| s.try_into().ok()) else {
+            break;
+        };
+        p += 32;
+        let Some(order) = body.get(p..p + 4).and_then(|s| s.try_into().ok()).map(u32::from_le_bytes) else {
+            break;
+        };
+        p += 4;
+        let Some(rlen) = body.get(p..p + 4).and_then(|s| s.try_into().ok()).map(u32::from_le_bytes) else {
+            break;
+        };
+        p += 4;
+        let rlen = rlen as usize;
+        if p + rlen > body.len() {
+            break;
+        }
+        let rotor = body[p..p + rlen].to_vec();
+        p += rlen;
+        out.push(ClassPage { key, order, rotor });
+    }
+    out
+}
+
 fn push_grid(out: &mut Vec<u8>, g: &[Vec<u8>]) {
     out.extend_from_slice(&(g.len() as u16).to_le_bytes());
     out.extend_from_slice(&(g.first().map_or(0, |r| r.len()) as u16).to_le_bytes());
