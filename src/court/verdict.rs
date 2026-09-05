@@ -95,6 +95,7 @@ pub fn replay_form_with(
     // Loops are derived, never trusted from the tape: re-walk the forest.
     let mut walked = f.clone();
     walked.loops = Form::loops_of(&f.faces, f.vertices.len());
+    let by_chord = chord_loops(&walked);
     // Chapter 23.1 step 4: a face equals face_of(i, j), or it is the
     // Kruskal chord of a loop whose holonomy is what the chord carries
     // (tree faces of that loop are face_of). Filing of that class is
@@ -104,14 +105,14 @@ pub fn replay_form_with(
         if f.face_of(face.i, face.j) == face.g_ij {
             continue;
         }
-        if !torsion_chord_carries(&walked, i, face) {
+        if !torsion_chord_carries(&walked, &by_chord, i, face) {
             return Some(REFUSE_FACE);
         }
     }
     if !form_loops_replay(&walked) {
         return Some(REFUSE_LOOP);
     }
-    replay_certificates(&walked)
+    replay_certificates(&walked, &by_chord)
 }
 
 /// Chapter 23.1 steps 3 and 6: each Word vertex re-derives its rotor (M1)
@@ -135,9 +136,6 @@ fn vertex_tape_and_moves(
                 contact,
                 ..
             } => {
-                if !word.same_form(&word.normal_form()) {
-                    return Some(REFUSE_VERTEX_TAPE);
-                }
                 let sp = Spelling {
                     word: word.clone(),
                     rho: rho.clone(),
@@ -184,14 +182,28 @@ fn vertex_tape_and_moves(
     None
 }
 
+fn chord_loops(f: &Form) -> Keyed<u16> {
+    let mut by_chord = Keyed::new();
+    for (i, lp) in f.loops.iter().enumerate() {
+        if let Some(&ch) = lp.faces.last() {
+            by_chord.insert(face_idx_key(ch), i as u16);
+        }
+    }
+    by_chord
+}
+
 /// The face is the last face of a non-identity loop, every other face of
 /// that loop is `face_of`, and the loop holonomy is the chord's word.
-fn torsion_chord_carries(f: &Form, face_idx: usize, face: &crate::transducer::sentence::FormFace) -> bool {
-    let Some(lp) = f
-        .loops
-        .iter()
-        .find(|lp| lp.faces.last() == Some(&(face_idx as u16)))
-    else {
+fn torsion_chord_carries(
+    f: &Form,
+    by_chord: &Keyed<u16>,
+    face_idx: usize,
+    face: &crate::transducer::sentence::FormFace,
+) -> bool {
+    let Some(&li) = by_chord.get(&face_idx_key(face_idx as u16)) else {
+        return false;
+    };
+    let Some(lp) = f.loops.get(li as usize) else {
         return false;
     };
     if lp.holonomy.abelian_identity() {
@@ -238,14 +250,8 @@ fn face_idx_key(i: u16) -> [u8; 32] {
 
 /// A20: each certificate is the un-pivot of one chord face, re-walked.
 /// The loop's class key and rank before and after must match the tape.
-fn replay_certificates(f: &Form) -> Option<&'static str> {
+fn replay_certificates(f: &Form, by_chord: &Keyed<u16>) -> Option<&'static str> {
     use crate::transducer::sentence::{rank_of_holonomies, unpivoted_face, ClassVector, PivotBy};
-    let mut by_chord: Keyed<u16> = Keyed::new();
-    for (i, lp) in f.loops.iter().enumerate() {
-        if let Some(&ch) = lp.faces.last() {
-            by_chord.insert(face_idx_key(ch), i as u16);
-        }
-    }
     for cert in &f.certificates {
         let PivotBy::Word { face, word, side } = &cert.by;
         let Some(&li) = by_chord.get(&face_idx_key(*face)) else {

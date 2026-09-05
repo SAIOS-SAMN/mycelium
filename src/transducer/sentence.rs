@@ -686,8 +686,9 @@ pub struct Nerve {
     pub torsion: Keyed<(Vec<(u8, u8)>, u32)>,
     /// Certified discharges, keyed by the certificate (A20).
     pub certificates: Keyed<PivotCertificate>,
-    /// Incomparable discharges of one loop, keyed the same way (25.1).
-    pub vortex: Keyed<PivotCertificate>,
+    /// Incomparable discharges of one loop, keyed by the after class then
+    /// the certificate (25.1): collapse reads the after class.
+    pub vortex: Keyed<Keyed<PivotCertificate>>,
 }
 
 impl PartialEq for Nerve {
@@ -2748,7 +2749,7 @@ fn trial(
                 after_g.inverse()
             }
         } else {
-            face_step(&n.faces, fi, win[0], win[1]).unwrap_or_else(Word::identity)
+            face_step(&n.faces, fi, win[0], win[1])?
         };
         w = w.compose(&step);
     }
@@ -2773,6 +2774,22 @@ fn trial(
         mu,
         by: cand.by.clone(),
     })
+}
+
+/// Hold a vortex cell by its after class, then by the certificate key.
+pub fn vortex_put(v: &mut Keyed<Keyed<PivotCertificate>>, c: PivotCertificate) {
+    let after = c.after;
+    let k = c.key();
+    match v.get_mut(&after) {
+        Some(inner) => {
+            inner.insert(k, c);
+        }
+        None => {
+            let mut inner = Keyed::new();
+            inner.insert(k, c);
+            v.insert(after, inner);
+        }
+    }
 }
 
 /// Apply a certified pivot: write the word onto the chord face and re-walk.
@@ -2972,7 +2989,7 @@ pub fn pivot_loop(
                     );
                     let mut held = Vec::new();
                     for (c, _) in discharging {
-                        n.vortex.insert(c.key(), c.clone());
+                        vortex_put(&mut n.vortex, c.clone());
                         held.push(c);
                     }
                     snaps.push(Snap::Vortex {
@@ -3036,9 +3053,7 @@ pub fn as_element_form_of_nerve(n: &Nerve) -> Option<Element> {
         .map(|(_, c)| c.clone())
         .collect();
     form.torsion = n.torsion.clone();
-    let mut e = as_element_form(&form, cochain_magnitude(n))?;
-    e.adopt_torsion(&form.torsion);
-    Some(e)
+    as_element_form(&form, cochain_magnitude(n))
 }
 
 /// Close the sentence: fill up the degrees on each germ's link. A class

@@ -48,6 +48,20 @@ fn absorb_keyed<V: Clone>(dst: &mut Keyed<V>, src: &Keyed<V>) {
     }
 }
 
+fn absorb_vortex(
+    dst: &mut Keyed<Keyed<sentence::PivotCertificate>>,
+    src: &Keyed<Keyed<sentence::PivotCertificate>>,
+) {
+    for (after, inner) in src.fiber(&ROOT) {
+        match dst.get_mut(after) {
+            Some(d) => absorb_keyed(d, inner),
+            None => {
+                dst.insert(*after, inner.clone());
+            }
+        }
+    }
+}
+
 fn cover_of(inv: &Invariant) -> Keyed<()> {
     let mut c = Keyed::new();
     for p in inv.prefixes() {
@@ -126,7 +140,8 @@ pub struct Bubble {
     /// Certified discharges this idea's crystallization rests on (A20).
     pub certificates: Keyed<PivotCertificate>,
     /// Incomparable discharges held as cells (25.1) until a glue or ruling.
-    pub vortex: Keyed<PivotCertificate>,
+    /// Outer key is the certificate's after class.
+    pub vortex: Keyed<Keyed<PivotCertificate>>,
 }
 
 impl Bubble {
@@ -240,14 +255,10 @@ impl Bubble {
     /// A glue or a syllabus class whose key equals one held certificate's
     /// `after` applies that one; the others are not applied (dialect cells).
     fn collapse_vortex(&mut self, class: &[u8; 32], by: &'static str) -> bool {
-        let mut win = None;
-        for (_, c) in self.vortex.fiber(&ROOT) {
-            if c.after == *class {
-                win = Some(c.clone());
-                break;
-            }
-        }
-        let Some(win) = win else {
+        let Some(inner) = self.vortex.remove(class) else {
+            return false;
+        };
+        let Some(win) = inner.fiber(&ROOT).next().map(|(_, c)| c.clone()) else {
             return false;
         };
         let mut n = sentence::assemble(self.germs.clone(), self.remainder.clone());
@@ -769,7 +780,7 @@ impl Contemplation {
             absorb_keyed(&mut horizon, &b.horizon);
             absorb_keyed(&mut torsion, &b.torsion);
             absorb_keyed(&mut certificates, &b.certificates);
-            absorb_keyed(&mut vortex, &b.vortex);
+            absorb_vortex(&mut vortex, &b.vortex);
             nerve = b.nerve.clone();
             self.bubbles.remove(v);
         }
@@ -1098,7 +1109,7 @@ impl Contemplation {
             absorb_keyed(&mut cover, &b.cover);
             absorb_keyed(&mut torsion, &b.torsion);
             absorb_keyed(&mut certificates, &b.certificates);
-            absorb_keyed(&mut vortex, &b.vortex);
+            absorb_vortex(&mut vortex, &b.vortex);
         }
         if germs.is_empty() {
             return None;
@@ -1194,8 +1205,12 @@ impl Contemplation {
                 c.to_bytes(out);
             });
             out.extend_from_slice(&(b.vortex.len() as u32).to_le_bytes());
-            crate::snapshot::persist(&b.vortex, |_, c| {
-                c.to_bytes(out);
+            crate::snapshot::persist(&b.vortex, |after, inner| {
+                out.extend_from_slice(after);
+                out.extend_from_slice(&(inner.len() as u32).to_le_bytes());
+                crate::snapshot::persist(inner, |_, c| {
+                    c.to_bytes(out);
+                });
             });
         });
         self.complex.to_bytes(out);
@@ -1347,8 +1362,15 @@ impl Contemplation {
                 }
                 let nv = take_count(b, *pos, take_u32(b, pos)? as usize, 32)?;
                 for _ in 0..nv {
-                    let c = sentence::PivotCertificate::from_bytes(b, pos)?;
-                    vortex.insert(c.key(), c);
+                    let after: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                    *pos += 32;
+                    let nc = take_count(b, *pos, take_u32(b, pos)? as usize, 32)?;
+                    let mut inner = Keyed::new();
+                    for _ in 0..nc {
+                        let c = sentence::PivotCertificate::from_bytes(b, pos)?;
+                        inner.insert(c.key(), c);
+                    }
+                    vortex.insert(after, inner);
                 }
             }
             let bubble = Bubble {
@@ -1708,8 +1730,8 @@ mod tests {
         let k = c.bubbles.fiber(&ROOT).next().map(|(k, _)| *k).expect("bubble");
         let hit_key = hit.key();
         if let Some(b) = c.bubbles.get_mut(&k) {
-            b.vortex.insert(hit_key, hit);
-            b.vortex.insert(other.key(), other);
+            sentence::vortex_put(&mut b.vortex, hit);
+            sentence::vortex_put(&mut b.vortex, other);
         }
         let rec = ClassRecord {
             key: after,

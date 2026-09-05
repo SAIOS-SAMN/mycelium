@@ -6,7 +6,7 @@
 //! carriers; a zero vector is not work.
 
 use super::alphabet::{Rotor, Word};
-use super::element::{self, Element, Versor, GERM_DIM, REWRITE_TAG};
+use super::element::{Element, Versor, GERM_DIM, REWRITE_TAG};
 use super::stalk::Invariant;
 
 /// Spatial, gauge, temporal, holonomic (shell).
@@ -376,7 +376,7 @@ mod tests {
         let after = [7u8; 32];
         let payload = RewritePayload::Condense {
             sections: vec![vec![(1, 4)]],
-            gauge: element::identity_versor(),
+            gauge: crate::transducer::element::identity_versor(),
         };
         let e = mint(RewriteKind::Condense, &[[1u8; 32], [2u8; 32]], after, payload, [0, 1, 0, 0]).expect("work");
         assert!(e.is_rewrite());
@@ -392,7 +392,7 @@ mod tests {
             RewriteKind::Condense,
             &[[1u8; 32]],
             [2u8; 32],
-            RewritePayload::Condense { sections: vec![], gauge: element::identity_versor() },
+            RewritePayload::Condense { sections: vec![], gauge: crate::transducer::element::identity_versor() },
             [0; 4],
         )
         .is_none());

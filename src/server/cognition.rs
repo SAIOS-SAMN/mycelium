@@ -5421,7 +5421,7 @@ impl Kernel {
                 for _ in 0..n {
                     let step = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                     *pos += 8;
-                    let mut field = |p: &mut usize| -> Option<[u8; 32]> {
+                    let field = |p: &mut usize| -> Option<[u8; 32]> {
                         let f: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
                         *p += 32;
                         Some(f)

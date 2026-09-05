@@ -654,8 +654,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
             }
             (*sy.served.get(&svoice).unwrap(), sy.order.clone())
         };
-        let mut classes: Vec<dialogue::ClassPage> = Vec::new();
-        let words: Vec<Vec<u8>> = {
+        let (words, classes): (Vec<Vec<u8>>, Vec<dialogue::ClassPage>) = {
             let k = door.kernel.lock().unwrap();
             let free: u64 = k.physics().reserve.iter().sum();
             let depth = (1 + (free as usize * 7) / (4 * mycelium::physics::reserve_max() as usize)).min(8);
@@ -669,12 +668,12 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
                 }
                 next += 1;
             }
-            classes = k.class_records(&mycelium::transducer::stalk::Invariant::default());
+            let classes = k.class_records(&mycelium::transducer::stalk::Invariant::default());
             drop(k);
             if let Ok(mut sy) = door.syllabus.lock() {
                 sy.served.insert(svoice, next);
             }
-            out
+            (out, classes)
         };
         if !missed.is_empty() {
             let mut sy = door.syllabus.lock().unwrap();
