@@ -983,8 +983,7 @@ impl Form {
                         word: word.clone(),
                         rho: rho.clone(),
                     };
-                    let versor = element::conformal_of(&spelling, placement)
-                        .unwrap_or_else(element::identity_versor);
+                    let versor = element::conformal_of(&spelling, placement)?;
                     germs.push(Germ {
                         address: *address,
                         versor,
@@ -1033,18 +1032,10 @@ impl Form {
         })
     }
 
-    pub fn face_of(&self, i: u16, j: u16) -> Word {
-        let a = self
-            .vertices
-            .get(i as usize)
-            .map(|v| v.word_in(self))
-            .unwrap_or_else(Word::identity);
-        let b = self
-            .vertices
-            .get(j as usize)
-            .map(|v| v.word_in(self))
-            .unwrap_or_else(Word::identity);
-        b.compose(&a.inverse()).normal_form()
+    pub fn face_of(&self, i: u16, j: u16) -> Option<Word> {
+        let a = self.vertices.get(i as usize)?.word_in(self);
+        let b = self.vertices.get(j as usize)?.word_in(self);
+        Some(b.compose(&a.inverse()).normal_form())
     }
 
     pub fn delta1(&self) -> Vec<(u16, Word)> {
@@ -1118,14 +1109,12 @@ impl Form {
     /// identity stay identity.
     pub fn regauge(&mut self, gamma: &[Word]) {
         for f in &mut self.faces {
-            let gi = gamma
-                .get(f.i as usize)
-                .cloned()
-                .unwrap_or_else(Word::identity);
-            let gj = gamma
-                .get(f.j as usize)
-                .cloned()
-                .unwrap_or_else(Word::identity);
+            let Some(gi) = gamma.get(f.i as usize) else {
+                continue;
+            };
+            let Some(gj) = gamma.get(f.j as usize) else {
+                continue;
+            };
             f.g_ij = gj.compose(&f.g_ij.compose(&gi.inverse())).normal_form();
         }
         self.loops = Self::loops_of(&self.faces, self.vertices.len());
@@ -1199,12 +1188,11 @@ impl Form {
                 }
             }
         }
-        Some(
-            gamma
-                .into_iter()
-                .map(|g| g.unwrap_or_else(Word::identity))
-                .collect(),
-        )
+        let mut out = Vec::with_capacity(n);
+        for g in gamma {
+            out.push(g?);
+        }
+        Some(out)
     }
 
     /// Replace vertex `of` by `by` read in `of`'s frame (3.2). `of`'s own
@@ -4289,6 +4277,48 @@ mod tests {
         assert_eq!(w, w, "M1 is the rotor; contact is not a letter");
     }
 
+    #[test]
+    fn face_of_a_missing_vertex_is_none() {
+        let f = Form::default();
+        assert!(
+            f.face_of(0, 5).is_none(),
+            "a missing vertex is not the identity word"
+        );
+        assert!(f.face_of(0, 0).is_some(), "the frame is present");
+    }
+
+    #[test]
+    fn solve_coboundary_does_not_invent_identity_on_an_unreached_vertex() {
+        let mut f = Form::default();
+        f.vertices.push(Vertex::Word {
+            address: [1u8; 32],
+            word: Word::identity(),
+            rho: q1(),
+            placement: (q0(), q0()),
+            gauge: Vec::new(),
+            class: stalk::Invariant::default(),
+            contact: None,
+        });
+        f.vertices.push(Vertex::Word {
+            address: [2u8; 32],
+            word: Word::identity(),
+            rho: q1(),
+            placement: (q0(), q0()),
+            gauge: Vec::new(),
+            class: stalk::Invariant::default(),
+            contact: None,
+        });
+        f.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            g_ij: Word::identity(),
+        });
+        assert!(
+            f.solve_coboundary().is_none(),
+            "vertex 2 is off the tree; identity is not a gauge"
+        );
+    }
+
     /// The bundle's agreed shift is meaning: two translations of one linear
     /// block are two vertices.
     #[test]
@@ -5015,7 +5045,7 @@ mod tests {
         let Some(ci) = f
             .faces
             .iter()
-            .position(|face| f.face_of(face.i, face.j) != face.g_ij)
+            .position(|face| f.face_of(face.i, face.j).as_ref() != Some(&face.g_ij))
         else {
             panic!("the filed form has a torsion chord");
         };

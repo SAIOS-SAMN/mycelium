@@ -102,7 +102,7 @@ pub fn replay_form_with(
     // the loop check; a missing torsion entry is REFUSE_LOOP, a chord
     // that does not carry the holonomy is REFUSE_FACE.
     for (i, face) in f.faces.iter().enumerate() {
-        if f.face_of(face.i, face.j) == face.g_ij {
+        if f.face_of(face.i, face.j).as_ref() == Some(&face.g_ij) {
             continue;
         }
         if !torsion_chord_carries(&walked, &by_chord, i, face) {
@@ -213,7 +213,7 @@ fn torsion_chord_carries(
         let Some(tf) = f.faces.get(fi as usize) else {
             return false;
         };
-        if f.face_of(tf.i, tf.j) != tf.g_ij {
+        if f.face_of(tf.i, tf.j).as_ref() != Some(&tf.g_ij) {
             return false;
         }
     }
@@ -812,7 +812,7 @@ mod tests {
         f.faces.push(FormFace {
             i: 0,
             j: 1,
-            g_ij: f.face_of(0, 1),
+            g_ij: f.face_of(0, 1).expect("vertices"),
         });
         f.loops = Form::loops_of(&f.faces, f.vertices.len());
         assert!(f.is_closed(), "the star form coheres");
@@ -836,7 +836,7 @@ mod tests {
         outer.faces.push(FormFace {
             i: 0,
             j: gi,
-            g_ij: outer.face_of(0, gi),
+            g_ij: outer.face_of(0, gi).expect("vertices"),
         });
         outer.loops = Form::loops_of(&outer.faces, outer.vertices.len());
         let outer_e = as_element_form(&outer, [1, 0, 0, 0]).expect("outer tape");
@@ -848,7 +848,7 @@ mod tests {
         let resolve = |a: &[u8; 32]| (a == &inner_addr).then(|| inner.clone());
         assert_eq!(blind_replay_with(&outer_e, &resolve), None, "a resolved citation replays");
         let mut bad = outer.clone();
-        bad.faces[0].g_ij = inner.face_of(0, 1);
+        bad.faces[0].g_ij = inner.face_of(0, 1).expect("vertices");
         let bad_e = as_element_form(&bad, [1, 0, 0, 0]).expect("tampered tape");
         assert_eq!(blind_replay_with(&bad_e, &resolve), Some(REFUSE_FACE));
         let mut flat = as_element_form(&outer, [1, 0, 0, 0]).expect("tape");
@@ -959,7 +959,7 @@ mod tests {
         re.faces.push(FormFace {
             i: 0,
             j: 1,
-            g_ij: re.face_of(0, 1),
+            g_ij: re.face_of(0, 1).expect("vertices"),
         });
         re.loops = Form::loops_of(&re.faces, re.vertices.len());
         let re_e = as_element_form(&re, [1, 0, 0, 0]).expect("rebased tape");
@@ -997,7 +997,7 @@ mod tests {
         orb.faces.push(FormFace {
             i: 0,
             j: 1,
-            g_ij: orb.face_of(0, 1),
+            g_ij: orb.face_of(0, 1).expect("vertices"),
         });
         orb.loops = Form::loops_of(&orb.faces, orb.vertices.len());
         let orb_e = as_element_form(&orb, [1, 0, 0, 0]).expect("orbit tape");

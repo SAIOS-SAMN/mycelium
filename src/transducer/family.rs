@@ -98,7 +98,13 @@ fn body_of(comp: Vec<Cell3>) -> Body {
     pos.sort_unstable();
     let shape = blade::shape_of(&pos);
     let moduli = Invariant(blade::moduli(&shape.blade));
-    let centroid = shape.blade.centroid().map(|(x, y)| (x + qn(1, 2), y + qn(1, 2))).unwrap_or((q(0), q(0)));
+    let centroid = match shape.blade.centroid() {
+        Some((x, y)) => (x + qn(1, 2), y + qn(1, 2)),
+        None => match pos.first() {
+            Some(&(r, c)) => (q(r), q(c)),
+            None => (q(0), q(0)),
+        },
+    };
     let mut cells = comp;
     cells.sort_unstable();
     Body { cells, shape, moduli, centroid }
@@ -579,8 +585,6 @@ struct Pairing {
 struct Scene {
     bodies_in: Vec<Body>,
     bodies_out: Vec<Body>,
-    frame_in: (usize, usize),
-    frame_out: (usize, usize),
     center_in: (BigRational, BigRational),
     center_out: (BigRational, BigRational),
 }
@@ -600,8 +604,6 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
             Scene {
                 bodies_in: perceive(a),
                 bodies_out: perceive(b),
-                frame_in,
-                frame_out,
                 center_in: scene_center(frame_in),
                 center_out: scene_center(frame_out),
             }
@@ -1046,11 +1048,10 @@ fn pair_form_uncached(
     let n = form.vertices.len();
     let frame = 0usize;
     for (i, j) in star_and_cell_faces(n, Some(frame), &supports) {
-        form.faces.push(FormFace {
-            i,
-            j,
-            g_ij: form.face_of(i, j),
-        });
+        let Some(g) = form.face_of(i, j) else {
+            continue;
+        };
+        form.faces.push(FormFace { i, j, g_ij: g });
     }
     form.loops = Form::loops_of(&form.faces, n);
     form
@@ -2439,7 +2440,7 @@ mod tests {
         pf.faces.push(FormFace {
             i: 1,
             j: 2,
-            g_ij: pf.face_of(1, 2),
+            g_ij: pf.face_of(1, 2).expect("pair vertices"),
         });
         let mut form = pf.clone();
         let tc_a = transport_class(&pf.vertices[1]).expect("A has a transport class");

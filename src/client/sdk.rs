@@ -851,9 +851,22 @@ pub struct Epigenome {
     /// Held words keyed by (chart, axis). Filled at atlas/dialect admit,
     /// emptied at remove/shed/retire. `on_axis` is one fiber read.
     axis_index: crate::transducer::sentence::AxisIndex,
+    /// Genome index by the M1 key of the canonical form (connections).
+    vertex_index: crate::network::nerve::Keyed<usize>,
+    /// Dialect address by the M1 key of the canonical form.
+    dialect_vertex: crate::network::nerve::Keyed<[u8; 32]>,
     /// Missing cited address → citing dialect sentences. Filled when
     /// Withheld is banked; resolve_withheld reads this, never the dialect.
     waiting_on: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
+}
+
+fn m1_key(e: &Element) -> [u8; 32] {
+    if e.is_sentence() {
+        return e.address();
+    }
+    e.letters()
+        .map(|l| l.spelling.word.key())
+        .unwrap_or_else(|| e.address())
 }
 
 impl Epigenome {
@@ -882,8 +895,10 @@ impl Epigenome {
     /// Re-key the genome after a removal shifted positions.
     fn reindex(&mut self) {
         self.index = crate::network::nerve::Keyed::new();
+        self.vertex_index = crate::network::nerve::Keyed::new();
         for (i, w) in self.genome.iter().enumerate() {
             self.index.insert(w.address(), i);
+            self.vertex_index.insert(m1_key(w), i);
         }
     }
 
@@ -988,7 +1003,7 @@ impl Epigenome {
     }
 
     fn drop_dialect(&mut self, da: &[u8; 32]) {
-        let (inv, words, missing) = match self.dialect.get(da) {
+        let (inv, words, missing, mk) = match self.dialect.get(da) {
             Some(d) => (
                 crate::transducer::stalk::invariant_of(&d.sentence),
                 crate::transducer::sentence::words_of_element(&d.sentence),
@@ -997,6 +1012,7 @@ impl Epigenome {
                 } else {
                     Vec::new()
                 },
+                m1_key(&d.sentence),
             ),
             None => {
                 self.dialect_atlas.remove(da);
@@ -1008,6 +1024,7 @@ impl Epigenome {
         for m in &missing {
             self.retract_waiter(m, da);
         }
+        self.dialect_vertex.remove(&mk);
         self.dialect_atlas.remove(da);
         self.dialect.remove(da);
     }
@@ -1017,7 +1034,7 @@ impl Epigenome {
     }
 
     pub fn stand_dialect_at(&mut self, sentence: Element, k: u64, now_tu: u64) -> Option<[u8; 32]> {
-        if let Some(i) = self.genome.iter().position(|w| w.same_vertex(&sentence)) {
+        if let Some(i) = self.same_vertex_in_genome(&sentence) {
             if let Some(x) = self.expression.get_mut(i) {
                 *x = x.saturating_add(1);
             }
@@ -1030,12 +1047,7 @@ impl Epigenome {
             d.uses = d.uses.saturating_add(1);
             return Some(addr);
         }
-        if let Some(existing) = self
-            .dialect
-            .fiber(&crate::network::nerve::ROOT)
-            .find(|(_, d)| d.sentence.same_vertex(&sentence))
-            .map(|(a, _)| *a)
-        {
+        if let Some(existing) = self.same_vertex_in_dialect(&sentence) {
             if let Some(d) = self.dialect.get_mut(&existing) {
                 d.last_used_k = k;
                 d.last_used_tu = now_tu;
@@ -1047,6 +1059,7 @@ impl Epigenome {
         self.dialect_atlas.admit(&inv, addr);
         self.axis_admit(&sentence);
         let shape = crate::transducer::element::shape_of_chain(sentence.sub());
+        let mk = m1_key(&sentence);
         self.dialect.insert(
             addr,
             Dialect {
@@ -1059,6 +1072,7 @@ impl Epigenome {
                 missing: Vec::new(),
             },
         );
+        self.dialect_vertex.insert(mk, addr);
         Some(addr)
     }
 
@@ -1178,14 +1192,17 @@ impl Epigenome {
     }
 
     fn same_vertex_in_dialect(&self, e: &Element) -> Option<[u8; 32]> {
-        self.dialect
-            .fiber(&crate::network::nerve::ROOT)
-            .find(|(_, d)| d.sentence.same_vertex(e))
-            .map(|(a, _)| *a)
+        if self.dialect.contains(&e.address()) {
+            return Some(e.address());
+        }
+        self.dialect_vertex.get(&m1_key(e)).copied()
     }
 
     fn same_vertex_in_genome(&self, e: &Element) -> Option<usize> {
-        self.genome.iter().position(|w| w.same_vertex(e))
+        if let Some(&i) = self.index.get(&e.address()) {
+            return Some(i);
+        }
+        self.vertex_index.get(&m1_key(e)).copied()
     }
 
     /// Deconstruct a chain over the working language: genome and dialect.
@@ -1484,10 +1501,12 @@ impl Epigenome {
             if let Some(i) = self.same_vertex_in_genome(&e) {
                 let _ = self.genome[i].merge_fibre(&e);
                 self.index.insert(addr, i);
+                self.vertex_index.insert(m1_key(&e), i);
                 if let Some(x) = self.expression.get_mut(i) {
                     *x = x.saturating_add(uses);
                 }
             } else if let Some(i) = self.index.get(&addr).copied() {
+                self.vertex_index.insert(m1_key(&e), i);
                 self.genome[i] = e;
                 if let Some(x) = self.expression.get_mut(i) {
                     *x = x.saturating_add(uses);
@@ -1497,7 +1516,9 @@ impl Epigenome {
                 self.axis_admit(&e);
                 self.shapes.push(std::sync::OnceLock::new());
                 self.atlas_len = self.atlas_len.saturating_add(1);
-                self.index.insert(e.address(), self.genome.len());
+                let i = self.genome.len();
+                self.index.insert(e.address(), i);
+                self.vertex_index.insert(m1_key(&e), i);
                 self.genome.push(e);
                 self.expression.push(uses);
             }
@@ -1506,19 +1527,25 @@ impl Epigenome {
         }
         let arrived = e.clone();
         match self.index.get(&addr).copied() {
-            Some(i) => self.genome[i] = e, // the taught form may carry new sections — refresh
+            Some(i) => {
+                self.vertex_index.insert(m1_key(&e), i);
+                self.genome[i] = e;
+            }
             None => {
                 // Same vertex, different tape: merge into the held word.
                 // Comprehension is factorization, not a digest lookup.
                 if let Some(i) = self.same_vertex_in_genome(&e) {
                     let _ = self.genome[i].merge_fibre(&e);
                     self.index.insert(addr, i);
+                    self.vertex_index.insert(m1_key(&e), i);
                 } else {
                     self.atlas.admit(&crate::transducer::stalk::invariant_of(&e), e.address());
                     self.axis_admit(&e);
                     self.shapes.push(std::sync::OnceLock::new());
                     self.atlas_len = self.atlas_len.saturating_add(1);
-                    self.index.insert(e.address(), self.genome.len());
+                    let i = self.genome.len();
+                    self.index.insert(e.address(), i);
+                    self.vertex_index.insert(m1_key(&e), i);
                     self.genome.push(e);
                     self.expression.push(0);
                 }
@@ -3105,7 +3132,7 @@ mod tests {
             f.faces.push(FormFace {
                 i: 0,
                 j: 1,
-                g_ij: f.face_of(0, 1),
+                g_ij: f.face_of(0, 1).expect("vertices"),
             });
             f.loops = Form::loops_of(&f.faces, f.vertices.len());
             f
@@ -3117,7 +3144,7 @@ mod tests {
         outer.faces.push(FormFace {
             i: 0,
             j: gi,
-            g_ij: outer.face_of(0, gi),
+            g_ij: outer.face_of(0, gi).expect("vertices"),
         });
         outer.loops = Form::loops_of(&outer.faces, outer.vertices.len());
         let e = as_element_form(&outer, [1, 0, 0, 0]).expect("v2 tape");
@@ -3164,7 +3191,7 @@ mod tests {
             f.faces.push(FormFace {
                 i: 0,
                 j: 1,
-                g_ij: f.face_of(0, 1),
+                g_ij: f.face_of(0, 1).expect("vertices"),
             });
             f.loops = Form::loops_of(&f.faces, f.vertices.len());
             f
@@ -3176,7 +3203,7 @@ mod tests {
         outer.faces.push(FormFace {
             i: 0,
             j: 1,
-            g_ij: outer.face_of(0, 1),
+            g_ij: outer.face_of(0, 1).expect("vertices"),
         });
         let gi = outer
             .glue(&inner, inner_addr, Word::identity(), [1, 0, 0, 0])
@@ -3184,7 +3211,7 @@ mod tests {
         outer.faces.push(FormFace {
             i: 0,
             j: gi,
-            g_ij: outer.face_of(0, gi),
+            g_ij: outer.face_of(0, gi).expect("vertices"),
         });
         outer.loops = Form::loops_of(&outer.faces, outer.vertices.len());
         assert_eq!(
@@ -3247,7 +3274,7 @@ mod tests {
         f.faces.push(FormFace {
             i: 0,
             j: 1,
-            g_ij: f.face_of(0, 1),
+            g_ij: f.face_of(0, 1).expect("vertices"),
         });
         f.loops = Form::loops_of(&f.faces, f.vertices.len());
         assert!(f.is_closed(), "a tree of two vertices coheres");
@@ -3283,7 +3310,7 @@ mod tests {
             f.faces.push(FormFace {
                 i: 0,
                 j: 1,
-                g_ij: f.face_of(0, 1),
+                g_ij: f.face_of(0, 1).expect("vertices"),
             });
             f.loops = Form::loops_of(&f.faces, f.vertices.len());
             f
@@ -3295,7 +3322,7 @@ mod tests {
         outer.faces.push(FormFace {
             i: 0,
             j: gi,
-            g_ij: outer.face_of(0, gi),
+            g_ij: outer.face_of(0, gi).expect("vertices"),
         });
         outer.loops = Form::loops_of(&outer.faces, outer.vertices.len());
         let e = as_element_form(&outer, [1, 0, 0, 0]).expect("v2 tape");

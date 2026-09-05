@@ -843,12 +843,12 @@ impl Contemplation {
         let mut certificates = Keyed::new();
         let mut vortex = Keyed::new();
         let mut form = None;
-        let mut old_rems: Vec<([u8; 32], Vec<RemCell>)> = Vec::new();
+        let mut old_rems: Keyed<Vec<RemCell>> = Keyed::new();
         for v in verts {
             let Some(b) = self.bubbles.get(v).cloned() else {
                 continue;
             };
-            old_rems.push((*v, b.remainder.clone()));
+            old_rems.insert(*v, b.remainder.clone());
             self.retract_incidence(v, &b);
             remainder = union_rem(&remainder, &b.remainder);
             germs.extend(b.germs.clone());
@@ -898,8 +898,8 @@ impl Contemplation {
         if verts.len() >= 2 {
             for v in verts {
                 if *v != key {
-                    if let Some(rem) = old_rems.iter().find(|(a, _)| a == v).map(|(_, r)| r.clone()) {
-                        self.cavity.insert(*v, rem);
+                    if let Some(rem) = old_rems.get(v) {
+                        self.cavity.insert(*v, rem.clone());
                     }
                 }
             }
@@ -1344,14 +1344,14 @@ impl Contemplation {
             }
             Some(n)
         };
-        let n = take_u32(b, pos)? as usize;
+        let n = take_count(b, *pos, take_u32(b, pos)? as usize, 32)?;
         let mut c = Contemplation::new();
-        for _ in 0..n.min(1 << 16) {
+        for _ in 0..n {
             let key: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
             *pos += 32;
-            let nr = take_u32(b, pos)? as usize;
-            let mut remainder = Vec::with_capacity(nr.min(1 << 16));
-            for _ in 0..nr.min(1 << 16) {
+            let nr = take_count(b, *pos, take_u32(b, pos)? as usize, 18)?;
+            let mut remainder = Vec::with_capacity(nr);
+            for _ in 0..nr {
                 let r = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                 *pos += 8;
                 let col = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
@@ -1362,9 +1362,9 @@ impl Contemplation {
                 *pos += 1;
                 remainder.push((r, col, hb, ha));
             }
-            let nc = take_u32(b, pos)? as usize;
+            let nc = take_count(b, *pos, take_u32(b, pos)? as usize, 32)?;
             let mut cover = Keyed::new();
-            for _ in 0..nc.min(1 << 16) {
+            for _ in 0..nc {
                 let ck: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                 *pos += 32;
                 cover.insert(ck, ());
@@ -1393,8 +1393,8 @@ impl Contemplation {
             };
             let mut horizon: Keyed<(Rotor, Order, Standing)> = Keyed::new();
             if *pos + 4 <= b.len() {
-                let nh = take_u32(b, pos).unwrap_or(0) as usize;
-                for _ in 0..nh.min(1 << 16) {
+                let nh = take_count(b, *pos, take_u32(b, pos).unwrap_or(0) as usize, 32)?;
+                for _ in 0..nh {
                     let hk: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                     *pos += 32;
                     let r = Rotor::from_bytes(b, pos)?;
@@ -1515,23 +1515,20 @@ impl Contemplation {
             *pos += 8;
         }
         if *pos + 4 <= b.len() {
-            let nc = take_u32(b, pos).unwrap_or(0) as usize;
-            for _ in 0..nc.min(1 << 16) {
-                let k: [u8; 32] = match b.get(*pos..*pos + 32).and_then(|s| s.try_into().ok()) {
-                    Some(k) => k,
-                    None => break,
-                };
+            let nc = take_count(b, *pos, take_u32(b, pos).unwrap_or(0) as usize, 32)?;
+            for _ in 0..nc {
+                let k: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                 *pos += 32;
-                let nr = take_u32(b, pos).unwrap_or(0) as usize;
-                let mut rem = Vec::with_capacity(nr.min(1 << 16));
-                for _ in 0..nr.min(1 << 16) {
-                    let r = i64::from_le_bytes(b.get(*pos..*pos + 8).and_then(|s| s.try_into().ok()).unwrap_or([0; 8]));
+                let nr = take_count(b, *pos, take_u32(b, pos)? as usize, 18)?;
+                let mut rem = Vec::with_capacity(nr);
+                for _ in 0..nr {
+                    let r = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                     *pos += 8;
-                    let col = i64::from_le_bytes(b.get(*pos..*pos + 8).and_then(|s| s.try_into().ok()).unwrap_or([0; 8]));
+                    let col = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                     *pos += 8;
-                    let hb = *b.get(*pos).unwrap_or(&0);
+                    let hb = *b.get(*pos)?;
                     *pos += 1;
-                    let ha = *b.get(*pos).unwrap_or(&0);
+                    let ha = *b.get(*pos)?;
                     *pos += 1;
                     rem.push((r, col, hb, ha));
                 }
@@ -1736,7 +1733,7 @@ mod tests {
             f.faces.push(FormFace {
                 i: 0,
                 j: 1,
-                g_ij: f.face_of(0, 1),
+                g_ij: f.face_of(0, 1).expect("vertices"),
             });
             f.loops = Form::loops_of(&f.faces, f.vertices.len());
             f

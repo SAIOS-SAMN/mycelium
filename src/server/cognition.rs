@@ -1057,18 +1057,6 @@ impl Kernel {
         }
     }
 
-    fn drop_cocycles_on(&mut self, chart: &crate::transducer::stalk::Invariant) {
-        let ck = chart.key();
-        let Some(rows) = self.cocycle_by_chart.remove(&ck) else {
-            return;
-        };
-        for (key, _) in rows.fiber(&crate::network::nerve::ROOT) {
-            if let Some((v, tu, _, _, _)) = self.cocycle_at.remove(key) {
-                self.dialect_chain.push((*key, v, tu));
-            }
-        }
-    }
-
     fn rekey_cocycles(
         &mut self,
         old: &crate::transducer::stalk::Invariant,
@@ -3866,22 +3854,6 @@ impl Kernel {
     fn fits_book(&self, mag: &[u64; 4]) -> bool {
         let room = self.lane_room();
         (0..4).all(|l| mag[l] == 0 || room[l] > 0)
-    }
-
-    fn market_occupancy(&self) -> usize {
-        let mut children_listed = 0usize;
-        let mut parents_open = 0usize;
-        for (_, children, _) in &self.composites {
-            let listed = children
-                .iter()
-                .filter(|(a, done)| !done && self.book_index.contains(a))
-                .count();
-            if listed > 0 {
-                parents_open += 1;
-                children_listed += listed;
-            }
-        }
-        self.pending.len() - children_listed + parents_open
     }
 
     /// D12 — charge the congestion door and decide deferral: fee[l] =
