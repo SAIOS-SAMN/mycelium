@@ -29,8 +29,12 @@ pub const REFUSE_FORM_TAPE: &str = "form does not parse from its tape";
 pub const REFUSE_GLUED_DEPTH: &str = "glued form depth not below sentence depth";
 pub const REFUSE_GLUED_UNRULED: &str = "glued form not ruled";
 pub const REFUSE_GLUED_FRAME_GAUGED: &str = "glued form frame is not identity";
+pub const REFUSE_VERTEX_TAPE: &str = "vertex does not re-derive from its tape";
 pub const REFUSE_FACE: &str = "face does not re-derive from its vertices";
 pub const REFUSE_LOOP: &str = "loop holonomy is not identity";
+pub const REFUSE_REBASE_TRIVIAL: &str = "rebased form equals its base";
+pub const REFUSE_UNFOLD_STILL: &str = "unfolding measure does not move";
+pub const REFUSE_ORBIT_STILL: &str = "orbit does not move";
 pub const REFUSE_NO_DESCENT: &str = "no strict descent — the form closes nothing";
 pub const REFUSE_PIVOT_INEXACT: &str = "pivot certificate does not re-derive";
 
@@ -44,6 +48,16 @@ pub const REFUSE_PIVOT_INEXACT: &str = "pivot certificate does not re-derive";
 /// recomputed spanning forest is projectively identity or filed finite
 /// torsion. Descent is checked by the caller on the element.
 pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8; 32]) -> Option<Form>) -> Option<&'static str> {
+    replay_form_with(spoken, resolve, None)
+}
+
+/// Chapter 23.1 with the bound family, so rebase/unfold/orbit execute on
+/// the trains when the kernel has them (step 6).
+pub fn replay_form_with(
+    spoken: &Element,
+    resolve: &dyn Fn(&[u8; 32]) -> Option<Form>,
+    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+) -> Option<&'static str> {
     let Some(f) = sentence::from_element_form(spoken) else {
         return Some(REFUSE_FORM_TAPE);
     };
@@ -75,6 +89,9 @@ pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8; 32]) -> Option<Form>
             return Some(REFUSE_GLUED_FRAME_GAUGED);
         }
     }
+    if let Some(reason) = vertex_tape_and_moves(&f, family) {
+        return Some(reason);
+    }
     // Loops are derived, never trusted from the tape: re-walk the forest.
     let mut walked = f.clone();
     walked.loops = Form::loops_of(&f.faces, f.vertices.len());
@@ -95,6 +112,76 @@ pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8; 32]) -> Option<Form>
         return Some(REFUSE_LOOP);
     }
     replay_certificates(&walked)
+}
+
+/// Chapter 23.1 steps 3 and 6: each Word vertex re-derives its rotor (M1)
+/// and its affine; a Rebased whose word is the identity equals its base;
+/// an Unfolded Remainder with nothing left does not move; an orbit whose
+/// word is identity does not move. With a family, unfold and orbit execute
+/// on the trains.
+fn vertex_tape_and_moves(
+    f: &Form,
+    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+) -> Option<&'static str> {
+    use crate::transducer::alphabet::Spelling;
+    use crate::transducer::family::{self, OrbitEnd};
+    use crate::transducer::sentence::Measure;
+    for v in &f.vertices {
+        match v {
+            Vertex::Word {
+                word,
+                rho,
+                placement,
+                contact,
+                ..
+            } => {
+                if !word.same_form(&word.normal_form()) {
+                    return Some(REFUSE_VERTEX_TAPE);
+                }
+                let sp = Spelling {
+                    word: word.clone(),
+                    rho: rho.clone(),
+                };
+                if element::conformal_of(&sp, placement).is_none() {
+                    return Some(REFUSE_VERTEX_TAPE);
+                }
+                if contact.is_some() {
+                    if word.is_identity() {
+                        return Some(REFUSE_ORBIT_STILL);
+                    }
+                    if let Some(fam) = family {
+                        for (x, _) in fam {
+                            let cells: Vec<_> = family::perceive(x).into_iter().flat_map(|b| b.cells).collect();
+                            let frame = (x.len(), x.first().map(|r| r.len()).unwrap_or(0));
+                            let anchor: Vec<(i64, i64)> = cells.iter().map(|&(r, c, _)| (r, c)).collect();
+                            if matches!(family::orbit(v, &cells, &anchor, frame), OrbitEnd::NoOrbit) {
+                                return Some(REFUSE_ORBIT_STILL);
+                            }
+                        }
+                    }
+                }
+            }
+            Vertex::Rebased { .. } => {
+                if v.word_in(f).is_identity() {
+                    return Some(REFUSE_REBASE_TRIVIAL);
+                }
+            }
+            Vertex::Unfolded { measure: Measure::Remainder } if f.remainder.is_empty() => {
+                return Some(REFUSE_UNFOLD_STILL);
+            }
+            Vertex::Unfolded { measure: Measure::Occupied } => {
+                if let Some(fam) = family {
+                    for (x, y) in fam {
+                        if x == y {
+                            return Some(REFUSE_UNFOLD_STILL);
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    None
 }
 
 /// The face is the last face of a non-identity loop, every other face of
@@ -216,6 +303,15 @@ pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
     blind_replay_with(spoken, &|_| None)
 }
 
+/// `blind_replay_with` plus the bound family for chapter 23.1 step 6.
+pub fn blind_replay_on(
+    spoken: &Element,
+    resolve: &dyn Fn(&[u8; 32]) -> Option<Form>,
+    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+) -> Option<&'static str> {
+    blind_replay_on_inner(spoken, resolve, family)
+}
+
 /// Deterministic re-derivation of a spoken word from its own evidence
 /// (the contradiction docket). Returns None when the word replays clean;
 /// Some(reason) when the speech was false. A residual word re-derives from
@@ -224,6 +320,14 @@ pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
 /// with its remainder chain re-deriving as any germ's; every torsion cycle
 /// is walked; and the install must strictly descend (0⃗ ≺_DM μ⃗).
 pub fn blind_replay_with(spoken: &Element, resolve: &dyn Fn(&[u8; 32]) -> Option<Form>) -> Option<&'static str> {
+    blind_replay_on_inner(spoken, resolve, None)
+}
+
+fn blind_replay_on_inner(
+    spoken: &Element,
+    resolve: &dyn Fn(&[u8; 32]) -> Option<Form>,
+    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+) -> Option<&'static str> {
     let chain = spoken.sub();
     // A CONNECTION is a word with two components: the group component (an
     // invertible motion and gauge on the spatial fibre) and the remainder
@@ -251,7 +355,7 @@ pub fn blind_replay_with(spoken: &Element, resolve: &dyn Fn(&[u8; 32]) -> Option
         // The version byte selects the replayer: a v2 tape is a form and
         // is replayed through the cover; a v1 tape is a nerve.
         if spoken.description().get(1).copied() == Some(2) {
-            if let Some(reason) = replay_form(spoken, resolve) {
+            if let Some(reason) = replay_form_with(spoken, resolve, family) {
                 return Some(reason);
             }
             if !crate::economy::descends(&[0; 4], &spoken.magnitude()) {
@@ -800,6 +904,101 @@ mod tests {
             replay_form(&bad_e, &|_| None),
             Some(REFUSE_PIVOT_INEXACT),
             "a certificate that does not re-derive refuses the form"
+        );
+    }
+
+    /// Chapter 23.1 steps 3 and 6: a Word whose affine does not spell
+    /// refuses the tape; a Rebased whose word is identity equals its base;
+    /// an Unfolded Remainder with nothing left does not move; an identity
+    /// orbit does not move.
+    #[test]
+    fn vertex_tape_and_moves_replay_or_refuse() {
+        use crate::transducer::alphabet::Word;
+        use crate::transducer::sentence::{as_element_form, FormFace, Measure};
+        let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+        let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+        let f = closed_turn_form();
+        let e = as_element_form(&f, [1, 0, 0, 0]).expect("tape");
+        assert_eq!(replay_form(&e, &|_| None), None, "a closed word vertex re-derives");
+
+        let mut rho0 = f.clone();
+        if let Vertex::Word { rho, .. } = &mut rho0.vertices[1] {
+            *rho = zero.clone();
+        }
+        let bad_e = as_element_form(&rho0, [1, 0, 0, 0]).expect("rho 0 tape");
+        assert_eq!(
+            replay_form(&bad_e, &|_| None),
+            Some(REFUSE_VERTEX_TAPE),
+            "a word whose affine does not spell refuses the tape"
+        );
+
+        let mut re = Form::default();
+        re.vertices.push(Vertex::Word {
+            address: [2u8; 32],
+            word: Word::identity(),
+            rho: one.clone(),
+            placement: (zero.clone(), zero.clone()),
+            gauge: Vec::new(),
+            class: stalk::Invariant::default(),
+            contact: None,
+        });
+        re.vertices.push(Vertex::Rebased {
+            by: 1,
+            of: 2,
+            shift: (zero.clone(), zero.clone()),
+            rho: one.clone(),
+            gauge: Vec::new(),
+            class: stalk::Invariant::default(),
+        });
+        re.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            g_ij: re.face_of(0, 1),
+        });
+        re.loops = Form::loops_of(&re.faces, re.vertices.len());
+        let re_e = as_element_form(&re, [1, 0, 0, 0]).expect("rebased tape");
+        assert_eq!(
+            replay_form(&re_e, &|_| None),
+            Some(REFUSE_REBASE_TRIVIAL),
+            "rebasing onto the identity equals the base"
+        );
+
+        let mut un = Form::default();
+        un.unfold(Measure::Remainder);
+        un.faces.push(FormFace {
+            i: 0,
+            j: 0,
+            g_ij: Word::identity(),
+        });
+        un.loops = Form::loops_of(&un.faces, un.vertices.len());
+        let un_e = as_element_form(&un, [1, 0, 0, 0]).expect("unfold tape");
+        assert_eq!(
+            replay_form(&un_e, &|_| None),
+            Some(REFUSE_UNFOLD_STILL),
+            "an empty remainder does not unfold"
+        );
+
+        let mut orb = Form::default();
+        orb.vertices.push(Vertex::Word {
+            address: [3u8; 32],
+            word: Word::identity(),
+            rho: one,
+            placement: (zero.clone(), zero),
+            gauge: Vec::new(),
+            class: stalk::Invariant::default(),
+            contact: Some(crate::transducer::alphabet::Contact { anchor: 0, ring: 1 }),
+        });
+        orb.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            g_ij: orb.face_of(0, 1),
+        });
+        orb.loops = Form::loops_of(&orb.faces, orb.vertices.len());
+        let orb_e = as_element_form(&orb, [1, 0, 0, 0]).expect("orbit tape");
+        assert_eq!(
+            replay_form(&orb_e, &|_| None),
+            Some(REFUSE_ORBIT_STILL),
+            "an identity word does not orbit"
         );
     }
 

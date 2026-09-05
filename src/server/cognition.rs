@@ -1862,8 +1862,13 @@ impl Kernel {
     /// can mint only measured descent.
     pub fn perceive_speech(&mut self, voice: [u8; 32], task: [u8; 32], sentences: &[Element]) -> Vec<u8> {
         let mut codes = Vec::with_capacity(sentences.len());
+        let family = self.task_family.get(&task).cloned();
         for s in sentences {
-            if let Some(reason) = crate::court::verdict::blind_replay_with(s, &|a| self.resolve_form(a)) {
+            if let Some(reason) = crate::court::verdict::blind_replay_on(
+                s,
+                &|a| self.resolve_form(a),
+                family.as_deref(),
+            ) {
                 let a = s.address();
                 eprintln!("  court refuse speech {:02x}{:02x}…: {reason}", a[0], a[1]);
                 codes.push(crate::anastome::dialogue::SPEECH_REFUSED);
