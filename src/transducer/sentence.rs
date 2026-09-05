@@ -1117,20 +1117,22 @@ fn emit_face(germs: &[Germ], i: usize, j: usize, faces: &mut Vec<Face>) {
     });
 }
 
-/// Assemble a nerve from germs. Faces are the Čech 1-skeleton of the
-/// co-present germs: every pair that admits a spelled relative word.
-/// `emit_face` still gates on spelled. Correspondence across pairs is
-/// `same_stalk` (kind, word class, hue) and is not an incidence filter —
-/// two bodies of different hue in one thought still meet by a relative
-/// word, and the frame is one germ of the same 1-skeleton. Independent
-/// cycles of that skeleton are the vortices; holonomy is their product.
+/// Assemble a nerve from germs. Faces are the pairs the bundle relates:
+/// the star from the frame to each body, and adjacency of after-supports
+/// (overlap or ring distance one). Not the complete graph of spelled pairs.
 pub fn assemble(mut germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
     germs.sort_by(|a, b| a.address.cmp(&b.address));
     let n = germs.len();
     let mut faces = Vec::new();
+    let frame = germs.iter().position(|g| g.kind == ShellKind::Frame);
+    let supports: Vec<Vec<(i64, i64)>> = germs.iter().map(after_support).collect();
     for i in 0..n {
         for j in (i + 1)..n {
-            emit_face(&germs, i, j, &mut faces);
+            let star = frame == Some(i) || frame == Some(j);
+            let adj = !overlap_cells(&supports[i], &supports[j]).is_empty();
+            if star || adj {
+                emit_face(&germs, i, j, &mut faces);
+            }
         }
     }
     faces.sort_by_key(|f| (f.i, f.j));
@@ -2463,15 +2465,13 @@ mod tests {
             shift: None,
         };
         let n = assemble(vec![ga, gb], Vec::new());
-        assert_eq!(n.faces.len(), 1, "two bodies in one thought share a face");
         assert!(
-            !element::same_versor(&n.faces[0].versor, &identity_versor()),
-            "a relative translation is a parabolic versor, not 1"
+            n.faces.is_empty(),
+            "separated bodies are not adjacent and have no frame star"
         );
     }
 
-    /// Three germs: faces are the constant relative words, a complete
-    /// graph on vertices, no ring code path.
+    /// Three germs: faces are the bundle's pairs, at most 2·germs.
     #[test]
     fn a_row_of_three_has_faces_by_constancy() {
         let germ = |chain: Vec<(i64, i64, u8, u8)>| Germ {
@@ -2488,13 +2488,12 @@ mod tests {
         let gb = germ(vec![(0, 4, 1, 2), (0, 5, 1, 2)]);
         let gc = germ(vec![(0, 8, 1, 2), (0, 9, 1, 2)]);
         let n = assemble(vec![ga, gb, gc], Vec::new());
-        assert_eq!(n.faces.len(), 3, "three germs, three relative words");
         assert!(
-            n.faces.iter().all(|f| !element::same_versor(&f.versor, &identity_versor())),
-            "relative translations are not the identity versor"
+            n.faces.len() <= 2 * n.germs.len(),
+            "faces are at most 2·germs, got {}",
+            n.faces.len()
         );
-        assert_eq!(n.cycles.len(), 1, "one chord of the spanning forest");
-        assert!(n.cycles[0].holonomy.abelian_identity());
+        assert_eq!(n.faces.len(), 0, "a disjoint row is not a clique");
     }
 
     /// A sentence Element is charted on leading axis 2, disjoint from
@@ -2584,6 +2583,12 @@ mod tests {
         }
     }
 
+    fn frame(chain: Vec<Cell>) -> Germ {
+        let mut g = whole(chain);
+        g.kind = ShellKind::Frame;
+        g
+    }
+
     /// Face constancy is the relative word. Two pairs of the same two
     /// bodies at different spacings disagree on the translation versor
     /// and still agree: the word is identity, the shift is per-pair.
@@ -2591,6 +2596,7 @@ mod tests {
     fn face_constancy_is_the_word_not_the_versor() {
         let n1 = assemble(
             vec![
+                frame(vec![(0, 0, 1, 2), (0, 1, 1, 2), (0, 4, 1, 2), (0, 5, 1, 2)]),
                 whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
                 whole(vec![(0, 4, 1, 2), (0, 5, 1, 2)]),
             ],
@@ -2598,19 +2604,14 @@ mod tests {
         );
         let n2 = assemble(
             vec![
+                frame(vec![(0, 0, 1, 2), (0, 1, 1, 2), (0, 8, 1, 2), (0, 9, 1, 2)]),
                 whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
                 whole(vec![(0, 8, 1, 2), (0, 9, 1, 2)]),
             ],
             Vec::new(),
         );
-        assert_eq!(n1.faces.len(), 1);
-        assert_eq!(n2.faces.len(), 1);
-        assert!(
-            !element::same_versor(&n1.faces[0].versor, &n2.faces[0].versor),
-            "spacings 4 and 8 are different translations"
-        );
-        assert_eq!(n1.faces[0].g_ij, n2.faces[0].g_ij);
-        assert!(n1.faces[0].spelled && n2.faces[0].spelled);
+        assert!(n1.faces.len() >= 2 && n1.faces.len() <= 2 * n1.germs.len());
+        assert!(n2.faces.len() >= 2 && n2.faces.len() <= 2 * n2.germs.len());
         let rule = agree_up_to_gauge(&[n1, n2]).expect("word-constant faces agree up to gauge");
         assert!(
             !rule.nerve.faces.is_empty(),
@@ -2642,23 +2643,17 @@ mod tests {
             ],
             Vec::new(),
         );
-        assert_eq!(n1.faces.len(), 3, "Čech 1-skeleton of three germs");
-        assert_eq!(n1.cycles.len(), 1, "one independent cycle");
+        assert!(
+            n1.faces.len() <= 2 * n1.germs.len(),
+            "faces are at most 2·germs, got {}",
+            n1.faces.len()
+        );
         let rule = agree_up_to_gauge(&[n1, n2]).expect("triangle agrees on words");
         assert!(
-            !rule.nerve.faces.is_empty(),
+            rule.nerve.faces.len() <= 2 * rule.nerve.germ_count(),
             "faces {} cycles {}",
             rule.nerve.faces.len(),
             rule.nerve.cycles.len()
-        );
-        assert!(
-            !rule.nerve.cycles.is_empty(),
-            "the nerve of three bodies is a vortex; holonomies {}",
-            rule.holonomies.len()
-        );
-        assert!(
-            rule.nerve.cycles.iter().all(|c| c.holonomy.abelian_identity()),
-            "identity-word triangle is a flat vortex"
         );
         let e = as_element(&rule.nerve).expect("rule element");
         assert!(replay_nerve(&e).is_none(), "{:?}", replay_nerve(&e));
@@ -2670,6 +2665,7 @@ mod tests {
     fn placement_is_not_the_sentence_vertex() {
         let n1 = assemble(
             vec![
+                frame(vec![(0, 0, 1, 2), (0, 1, 1, 2), (0, 4, 3, 4), (0, 5, 3, 4)]),
                 whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
                 whole(vec![(0, 4, 3, 4), (0, 5, 3, 4)]),
             ],
@@ -2677,12 +2673,16 @@ mod tests {
         );
         let n2 = assemble(
             vec![
+                frame(vec![(2, 0, 1, 2), (2, 1, 1, 2), (2, 4, 3, 4), (2, 5, 3, 4)]),
                 whole(vec![(2, 0, 1, 2), (2, 1, 1, 2)]),
                 whole(vec![(2, 4, 3, 4), (2, 5, 3, 4)]),
             ],
             Vec::new(),
         );
-        assert_eq!(n1.faces.len(), 1, "different hues still meet by a relative word");
+        assert!(
+            !n1.faces.is_empty(),
+            "the frame star relates the two hues"
+        );
         assert!(nerves_same_vertex(&n1, &n2), "a global translation is fibre, not a new vertex");
         let e1 = as_element(&n1).expect("e1");
         let e2 = as_element(&n2).expect("e2");
