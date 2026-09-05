@@ -135,6 +135,9 @@ pub struct Element {
     /// body could be spoken with. Memoized; cleared wherever the fibre
     /// mutates. Never serialized.
     profiles: std::sync::OnceLock<Vec<([u8; 32], Vec<usize>)>>,
+    /// Decoded sentence Form, memoized from the description tape. Cleared
+    /// wherever the tape mutates. Never serialized.
+    form: std::sync::OnceLock<Option<crate::transducer::sentence::Form>>,
 }
 
 /// THE GAUGE PROFILE of an assignment: its transition classes with their
@@ -480,6 +483,7 @@ impl Element {
             transitions: Vec::new(),
             address: std::sync::OnceLock::new(),
             profiles: std::sync::OnceLock::new(),
+            form: std::sync::OnceLock::new(),
             anchor: None,
         }
     }
@@ -562,10 +566,18 @@ impl Element {
         &self.word
     }
 
-    /// Replace the description tape and drop the memoized address.
+    /// Replace the description tape and drop the memoized address and form.
     pub fn set_description(&mut self, word: Vec<u8>) {
         self.word = word;
         self.address.take();
+        self.form.take();
+    }
+
+    /// The sentence Form this word carries, decoded once from the tape.
+    pub fn form(&self) -> Option<&crate::transducer::sentence::Form> {
+        self.form
+            .get_or_init(|| crate::transducer::sentence::from_element_form(self))
+            .as_ref()
     }
 
     /// The free sections along the punctured axis (cycles live in `torsion`).
@@ -606,9 +618,9 @@ impl Element {
 
     /// Take a form's (or nerve's) torsion carrier whole. The element's
     /// torsion is that carrier, not a second list re-recorded cycle by cycle.
-    pub fn adopt_torsion(&mut self, torsion: &crate::network::nerve::Keyed<(Vec<(u8, u8)>, u32)>) {
+    pub fn adopt_torsion(&mut self, torsion: &crate::network::nerve::Keyed<(Vec<(u8, u8)>, u32, u16)>) {
         self.torsion.clear();
-        for (_, (sigma, ell)) in torsion.fiber(&crate::network::nerve::ROOT) {
+        for (_, (sigma, ell, _)) in torsion.fiber(&crate::network::nerve::ROOT) {
             if *ell > 0 {
                 self.torsion.push((sigma.clone(), *ell, FIBER_SPATIAL));
             }
@@ -1351,6 +1363,7 @@ impl Element {
             transitions,
             address: std::sync::OnceLock::new(),
             profiles: std::sync::OnceLock::new(),
+            form: std::sync::OnceLock::new(),
             anchor,
         };
         e.derive_spatial();
@@ -1567,6 +1580,7 @@ impl Element {
             transitions,
             address: std::sync::OnceLock::new(),
             profiles: std::sync::OnceLock::new(),
+            form: std::sync::OnceLock::new(),
         })
     }
 }
@@ -1676,6 +1690,7 @@ pub fn from_residual(g: &ResidualGerm) -> Element {
     let mut e = Element::identity(GERM_DIM).with_fiber(FIBER_SPATIAL, m);
     e.word = residual_word(&centered);
     e.address.take();
+    e.form.take();
     e.mag = measure_lanes(&centered);
     e.sub = centered;
     e
@@ -1967,6 +1982,8 @@ impl Element {
         let mut e = Element::identity(GERM_DIM);
         e.word = word;
         e.mag = mag;
+        e.address.take();
+        e.form.take();
         e
     }
 
@@ -2108,6 +2125,7 @@ impl Element {
         let mut out = self.clone();
         out.word = Vec::new(); // the substance is translation-invariant, not the exact word
         out.address.take();
+        out.form.take();
         for (i, m) in out.fibers.iter_mut() {
             if *i == FIBER_SPATIAL && m.len() == GERM_DIM {
                 m[0][2] = Q::zero(); // zero the spatial translation column

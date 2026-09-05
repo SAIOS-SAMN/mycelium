@@ -1479,7 +1479,7 @@ impl Epigenome {
         }
         let ft = crate::transducer::sentence::form_torsion(&e);
         if !ft.is_empty() {
-            for (_, (_, l)) in ft.fiber(&crate::network::nerve::ROOT) {
+            for (_, (_, l, _)) in ft.fiber(&crate::network::nerve::ROOT) {
                 self.aperture.absorb_spatial_signal(*l);
             }
         } else {

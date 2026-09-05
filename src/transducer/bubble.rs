@@ -137,8 +137,8 @@ pub struct Bubble {
     pub glues: Keyed<()>,
     /// Ideas that glued this bubble; a non-empty set is not shed.
     pub glued_by: Keyed<()>,
-    /// Filed torsion `(σ, ℓ)` keyed by class, written from `pivot_loop`.
-    pub torsion: Keyed<(Vec<(u8, u8)>, u32)>,
+    /// Filed torsion `(σ, ℓ, chord)` keyed by class, written from `pivot_loop`.
+    pub torsion: Keyed<(Vec<(u8, u8)>, u32, u16)>,
     /// Certified discharges this idea's crystallization rests on (A20).
     pub certificates: Keyed<PivotCertificate>,
     /// Incomparable discharges held as cells (25.1) until a glue or ruling.
@@ -1273,7 +1273,7 @@ impl Contemplation {
             }
             out.extend_from_slice(b"TOR1");
             out.extend_from_slice(&(b.torsion.len() as u32).to_le_bytes());
-            crate::snapshot::persist(&b.torsion, |tk, (sigma, ell)| {
+            crate::snapshot::persist(&b.torsion, |tk, (sigma, ell, chord)| {
                 out.extend_from_slice(tk);
                 out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
                 for &(a, c) in sigma {
@@ -1281,6 +1281,7 @@ impl Contemplation {
                     out.push(c);
                 }
                 out.extend_from_slice(&ell.to_le_bytes());
+                out.extend_from_slice(&chord.to_le_bytes());
             });
             out.extend_from_slice(&(b.certificates.len() as u32).to_le_bytes());
             crate::snapshot::persist(&b.certificates, |_, c| {
@@ -1428,7 +1429,7 @@ impl Contemplation {
                 *pos += 4;
                 // A count that does not fit remaining bytes is refused, never
                 // truncated: a σ longer than the stream would desync the tape.
-                let nt = take_count(b, *pos, take_u32(b, pos)? as usize, 38)?;
+                let nt = take_count(b, *pos, take_u32(b, pos)? as usize, 40)?;
                 for _ in 0..nt {
                     let tk: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                     *pos += 32;
@@ -1445,7 +1446,9 @@ impl Contemplation {
                     }
                     let ell = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
                     *pos += 4;
-                    torsion.insert(tk, (sigma, ell));
+                    let chord = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
+                    *pos += 2;
+                    torsion.insert(tk, (sigma, ell, chord));
                 }
                 let nc = take_count(b, *pos, take_u32(b, pos)? as usize, 32)?;
                 for _ in 0..nc {

@@ -233,7 +233,7 @@ fn form_loops_replay(f: &Form) -> bool {
             Order::Finite(ell) => {
                 let k = ClassVector::of_word(&lp.holonomy).class_key();
                 match f.torsion.get(&k) {
-                    Some((_, e)) if *e == ell => {}
+                    Some((_, e, _)) if *e == ell => {}
                     _ => return false,
                 }
             }

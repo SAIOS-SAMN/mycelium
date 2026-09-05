@@ -1835,7 +1835,7 @@ impl Kernel {
             return None;
         }
         let e = self.word_at(addr)?;
-        crate::transducer::sentence::from_element_form(e)
+        e.form().cloned()
     }
 
     /// List a sentence on the docket if it is not already provisional.
@@ -2778,25 +2778,22 @@ impl Kernel {
     fn spoken_torsion_cycles(
         spoken: &Element,
     ) -> Vec<([u8; 32], u32, Option<crate::transducer::alphabet::Rotor>)> {
-        use crate::transducer::sentence::{from_element_form, torsion_loop_rotor};
-        if let Some(f) = from_element_form(spoken) {
+        use crate::transducer::sentence::torsion_loop_rotor;
+        if let Some(f) = spoken.form() {
             if !f.torsion.is_empty() {
                 return f
                     .torsion
                     .fiber(&crate::network::nerve::ROOT)
-                    .map(|(k, (_, ell))| (*k, *ell, torsion_loop_rotor(&f, k)))
+                    .map(|(k, (_, ell, _))| (*k, *ell, torsion_loop_rotor(f, k)))
                     .collect();
             }
         }
         spoken
             .torsion()
             .iter()
-            .map(|(_, ell, _)| {
-                let rep = spoken
-                    .letters()
-                    .map(|l| l.spelling.word.rotor())
-                    .unwrap_or_else(crate::transducer::alphabet::Rotor::identity);
-                (rep.class_key(), *ell, Some(rep))
+            .filter_map(|(_, ell, _)| {
+                let r = spoken.letters()?.spelling.word.rotor();
+                Some((r.class_key(), *ell, Some(r)))
             })
             .collect()
     }
@@ -3272,8 +3269,8 @@ impl Kernel {
     }
 
     fn note_form_citations(&mut self, addr: &[u8; 32], w: &Element) {
-        use crate::transducer::sentence::{from_element_form, Vertex};
-        let Some(f) = from_element_form(w) else {
+        use crate::transducer::sentence::Vertex;
+        let Some(f) = w.form() else {
             return;
         };
         for v in &f.vertices {
@@ -6456,6 +6453,7 @@ mod tests {
         assert_eq!(got, Some(ck), "class key survives the ledger");
     }
 
+    /// Residual torsion without a readable class is not filed as identity.
     #[test]
     fn torsion_consilient_or_filed_or_refused() {
         use crate::transducer::element::from_residual;
@@ -6469,18 +6467,20 @@ mod tests {
         let mut k = Kernel::new();
         k.complexes
             .insert(inv.key(), crate::transducer::cech::Complex::new());
-        assert_eq!(k.court_torsion(&spoken, &inv, [1; 32], [2; 32]), None, "first hearing files");
+        assert_eq!(
+            k.court_torsion(&spoken, &inv, [1; 32], [2; 32]),
+            None,
+            "no class to file"
+        );
         let idk = crate::transducer::alphabet::Rotor::identity().class_key();
         let filed = k
             .complexes
             .get(&inv.key())
             .and_then(|cx| cx.congruent(&idk))
-            .is_some_and(|(_, ell)| *ell == 3);
-        assert!(filed, "court torsion filed ℓ 3");
-        assert_eq!(
-            k.court_torsion(&spoken, &inv, [1; 32], [2; 32]),
-            None,
-            "second hearing is consilient"
+            .is_some();
+        assert!(
+            !filed,
+            "the residual arm files nothing when no class can be read"
         );
         let mut k2 = Kernel::new();
         let mut cx = crate::transducer::cech::Complex::new();
@@ -6493,8 +6493,8 @@ mod tests {
         k2.complexes.insert(inv.key(), cx);
         assert_eq!(
             k2.court_torsion(&spoken, &inv, [1; 32], [2; 32]),
-            Some(crate::verdict::REFUSE_NOT_NATURAL),
-            "same class different ℓ is not natural"
+            None,
+            "no class, no refuse against a held identity"
         );
     }
 

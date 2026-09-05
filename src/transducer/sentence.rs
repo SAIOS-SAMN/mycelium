@@ -680,10 +680,11 @@ pub struct Nerve {
     pub class: Option<(Rotor, usize)>,
     /// Chart prefixes the idea spans, so the court knows the cover.
     pub cover: crate::network::nerve::Keyed<()>,
-    /// The torsion cycles filed on this nerve, `(σ, ℓ)` each, keyed by the
-    /// class key of the holonomy (A17). Filing writes the key; cauterize
-    /// reads `contains`. σ is the loop's consecutive germ pairs.
-    pub torsion: Keyed<(Vec<(u8, u8)>, u32)>,
+    /// The torsion cycles filed on this nerve, `(σ, ℓ, chord)` each, keyed
+    /// by the class key of the holonomy (A17). Filing writes the key and
+    /// the chord face index; cauterize reads `contains`. σ is the loop's
+    /// consecutive germ pairs.
+    pub torsion: Keyed<(Vec<(u8, u8)>, u32, u16)>,
     /// Certified discharges, keyed by the certificate (A20).
     pub certificates: Keyed<PivotCertificate>,
     /// Incomparable discharges of one loop, keyed by the after class then
@@ -724,7 +725,7 @@ impl Nerve {
                 Order::Finite(ell) => {
                     let k = c.holonomy.rotor().class_key();
                     match self.torsion.get(&k) {
-                        Some((_, e)) if *e == ell => {}
+                        Some((_, e, _)) if *e == ell => {}
                         _ => return false,
                     }
                 }
@@ -833,9 +834,9 @@ pub struct Form {
     /// The certified pivots this form's crystallization rests on (A20).
     /// Evidence, replayed by the court; never part of the address.
     pub certificates: Vec<PivotCertificate>,
-    /// Filed torsion cycles, keyed by class key. The form owns this
-    /// carrier; the element reads it whole.
-    pub torsion: Keyed<(Vec<(u8, u8)>, u32)>,
+    /// Filed torsion cycles, keyed by class key: `(σ, ℓ, chord face)`.
+    /// The form owns this carrier; the element reads it whole.
+    pub torsion: Keyed<(Vec<(u8, u8)>, u32, u16)>,
     /// Cited form address → glued vertex index. Written by [`Form::glue`]
     /// and rebuilt by the decoder from Glued vertices.
     pub glued: Keyed<u16>,
@@ -928,12 +929,12 @@ impl Form {
                 f.j = f.j.saturating_add(1);
             }
             let mut shifted = Keyed::new();
-            for (k, (sigma, ell)) in torsion.fiber(&ROOT) {
+            for (k, (sigma, ell, chord)) in torsion.fiber(&ROOT) {
                 let sigma = sigma
                     .iter()
                     .map(|&(a, c)| (a.saturating_add(1), c.saturating_add(1)))
                     .collect();
-                shifted.insert(*k, (sigma, *ell));
+                shifted.insert(*k, (sigma, *ell, *chord));
             }
             torsion = shifted;
         }
@@ -1134,14 +1135,16 @@ impl Form {
                 new_verts.push(v.clone());
             }
         }
+        let mut face_old_to_new: Vec<Option<u16>> = vec![None; self.faces.len()];
         let mut new_faces = Vec::new();
-        for f in &self.faces {
+        for (fi, f) in self.faces.iter().enumerate() {
             let Some(&Some(i)) = old_to_new.get(f.i as usize) else {
                 continue;
             };
             let Some(&Some(j)) = old_to_new.get(f.j as usize) else {
                 continue;
             };
+            face_old_to_new[fi] = Some(new_faces.len() as u16);
             new_faces.push(FormFace {
                 i,
                 j,
@@ -1164,10 +1167,28 @@ impl Form {
                 sections.insert(*k, mapped);
             }
         }
+        let mut torsion = Keyed::new();
+        for (k, (sigma, ell, chord)) in self.torsion.fiber(&ROOT) {
+            let Some(&Some(nc)) = face_old_to_new.get(*chord as usize) else {
+                continue;
+            };
+            let mapped: Vec<(u8, u8)> = sigma
+                .iter()
+                .filter_map(|&(a, c)| {
+                    let i = old_to_new.get(a as usize).copied().flatten()?;
+                    let j = old_to_new.get(c as usize).copied().flatten()?;
+                    Some((i as u8, j as u8))
+                })
+                .collect();
+            if mapped.len() == sigma.len() {
+                torsion.insert(*k, (mapped, *ell, nc));
+            }
+        }
         self.vertices = new_verts;
         self.faces = new_faces;
         self.glued = glued;
         self.sections = sections;
+        self.torsion = torsion;
         self.loops = Self::loops_of(&self.faces, self.vertices.len());
         self.depth = self.depth_of();
     }
@@ -2944,10 +2965,13 @@ fn file_cycle(n: &mut Nerve, idx: usize, ell: u32) -> bool {
         .windows(2)
         .map(|p| (p[0] as u8, p[1] as u8))
         .collect();
+    let Some(chord) = c.chord() else {
+        return false;
+    };
     let rotor = c.holonomy.rotor();
     let class = rotor.class_key();
     n.complex.file_congruent(germ_vertex(a), germ_vertex(b), rotor, ell);
-    n.torsion.insert(class, (sigma, ell));
+    n.torsion.insert(class, (sigma, ell, chord as u16));
     true
 }
 
@@ -3408,7 +3432,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) {
         }
     }
     out.extend_from_slice(&(f.torsion.len() as u16).to_le_bytes());
-    for (k, (sigma, ell)) in f.torsion.fiber(&crate::network::nerve::ROOT) {
+    for (k, (sigma, ell, chord)) in f.torsion.fiber(&crate::network::nerve::ROOT) {
         out.extend_from_slice(k);
         out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
         for &(a, b) in sigma {
@@ -3416,6 +3440,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) {
             out.push(b);
         }
         out.extend_from_slice(&ell.to_le_bytes());
+        out.extend_from_slice(&chord.to_le_bytes());
     }
 }
 
@@ -3606,7 +3631,8 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                 *pos += 2;
             }
             let ell = take_u32(b, pos)?;
-            torsion.insert(k, (sigma, ell));
+            let chord = take_u16(b, pos)?;
+            torsion.insert(k, (sigma, ell, chord));
         }
     }
     let mut glued = Keyed::new();
@@ -3663,15 +3689,15 @@ pub fn from_element_form(e: &Element) -> Option<Form> {
 /// Filed torsion on a sentence tape: `Form.torsion`, keyed by class.
 /// Empty when the word is not a sentence, or when the tape is v1 and the
 /// cycles live only on the element's residual section.
-pub fn form_torsion(e: &Element) -> Keyed<(Vec<(u8, u8)>, u32)> {
-    from_element_form(e).map(|f| f.torsion).unwrap_or_default()
+pub fn form_torsion(e: &Element) -> Keyed<(Vec<(u8, u8)>, u32, u16)> {
+    e.form().map(|f| f.torsion.clone()).unwrap_or_default()
 }
 
 /// Whether a spoken word carries a torsion cycle: the form first, then
 /// the residual element's section so a v1 tape that adopted torsion still
 /// reads as a bundle.
 pub fn carries_torsion(e: &Element) -> bool {
-    if let Some(f) = from_element_form(e) {
+    if let Some(f) = e.form() {
         if !f.torsion.is_empty() {
             return true;
         }
@@ -3679,14 +3705,11 @@ pub fn carries_torsion(e: &Element) -> bool {
     !e.torsion().is_empty()
 }
 
-/// The rotor a filed torsion cycle names: the loop whose holonomy has
-/// this class key. None when the form holds no such loop — the court
-/// does not invent an identity representative.
+/// The rotor a filed torsion cycle names: the chord face stored on the
+/// class key. None when that face is missing — never an identity rotor.
 pub fn torsion_loop_rotor(f: &Form, class: &[u8; 32]) -> Option<Rotor> {
-    f.loops.iter().find_map(|lp| {
-        let r = lp.holonomy.rotor();
-        (r.class_key() == *class).then_some(r)
-    })
+    let &(_, _, chord) = f.torsion.get(class)?;
+    f.faces.get(chord as usize).map(|face| face.g_ij.rotor())
 }
 
 /// The sentence as one Element: first germ is the base connection; every
@@ -5186,6 +5209,22 @@ mod tests {
         assert!(
             carries_torsion(&e),
             "the form carries the filed cycle"
+        );
+        let keyed = from_element_form(&e).expect("v2 tape");
+        let (class, (_, _, chord)) = keyed
+            .torsion
+            .fiber(&crate::network::nerve::ROOT)
+            .next()
+            .map(|(k, v)| (*k, v.clone()))
+            .expect("filed class");
+        assert_eq!(
+            torsion_loop_rotor(&keyed, &class).map(|r| r.class_key()),
+            Some(class),
+            "the chord face is the keyed representative"
+        );
+        assert!(
+            keyed.faces.get(chord as usize).is_some(),
+            "the carrier stores a live chord face"
         );
         assert_eq!(
             crate::court::verdict::blind_replay(&e),
