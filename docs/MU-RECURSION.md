@@ -1935,8 +1935,8 @@ representatives (`cocycle_at` entries keyed by hypha pair). Required:
 
 ```rust
 impl PlaneForm { pub fn conjugacy_key(&self) -> [u8; 32]; }            // new, §52.1
-impl Rotor     { pub fn weight(&self) -> Option<Q>;                     // exists (private today): make pub
-                 pub fn class_key(&self) -> [u8; 32]; }                 // new, §52.2
+impl Rotor     { pub fn weight(&self) -> Option<Q>;                     // exists (line 237), unchanged
+                 pub fn class_key(&self) -> [u8; 32]; }                 // new, §52.2; None weight → key of zero rotor, never a class
 impl Word      { pub fn class_key(&self) -> [u8; 32]; }                 // §36, redefined = self.form().conjugacy_key()
 ```
 
