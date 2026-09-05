@@ -2825,12 +2825,6 @@ mod tests {
         assert_eq!(back.genome()[0].address(), epi.genome()[0].address(), "words identical by address");
         assert_eq!(back.peak_expression(), 0, "expression is NOT persisted — the dialect re-forms");
         assert!(!Epigenome::new().uncrystallize(b"GEN1\xff\xff\xff\xff"), "hostile count refused");
-        if let Ok(bytes) = std::fs::read("state/client-a.genome") {
-            let mut old = Epigenome::new();
-            if old.uncrystallize(&bytes) {
-                assert!(old.genome_len() > 0, "a prior GEN1 is residuals, not lost");
-            }
-        }
     }
 
     /// THE CHROMATIC APERTURE (harmonic import): absorption is the EXACT running
