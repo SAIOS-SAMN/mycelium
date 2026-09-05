@@ -3587,6 +3587,35 @@ pub fn from_element_form(e: &Element) -> Option<Form> {
     Some(Form::from_nerve(&n))
 }
 
+/// Filed torsion on a sentence tape: `Form.torsion`, keyed by class.
+/// Empty when the word is not a sentence, or when the tape is v1 and the
+/// cycles live only on the element's residual section.
+pub fn form_torsion(e: &Element) -> Keyed<(Vec<(u8, u8)>, u32)> {
+    from_element_form(e).map(|f| f.torsion).unwrap_or_default()
+}
+
+/// Whether a spoken word carries a torsion cycle: the form first, then
+/// the residual element's section so a v1 tape that adopted torsion still
+/// reads as a bundle.
+pub fn carries_torsion(e: &Element) -> bool {
+    if let Some(f) = from_element_form(e) {
+        if !f.torsion.is_empty() {
+            return true;
+        }
+    }
+    !e.torsion().is_empty()
+}
+
+/// The rotor a filed torsion cycle names: the loop whose holonomy has
+/// this class key. None when the form holds no such loop — the court
+/// does not invent an identity representative.
+pub fn torsion_loop_rotor(f: &Form, class: &[u8; 32]) -> Option<Rotor> {
+    f.loops.iter().find_map(|lp| {
+        let r = lp.holonomy.rotor();
+        (r.class_key() == *class).then_some(r)
+    })
+}
+
 /// The sentence as one Element: first germ is the base connection; every
 /// further germ occupies a germinated axis; faces are transitions; a
 /// withheld cycle is torsion; the remainder is `sub`.
@@ -4009,7 +4038,7 @@ pub fn replay_nerve(e: &Element) -> Option<&'static str> {
                 match n.complex.fill(&k) {
                     Fill::Filled(_) | Fill::Already => {}
                     Fill::Congruent(_, _) | Fill::Class(_) => {
-                        if n.class.is_none() && e.torsion().is_empty() {
+                        if n.class.is_none() && n.torsion.is_empty() && e.torsion().is_empty() {
                             return Some("sentence has a non-coboundary coefficient with no class");
                         }
                     }
@@ -4021,7 +4050,7 @@ pub fn replay_nerve(e: &Element) -> Option<&'static str> {
     for c in &n.cycles {
         if !c.holonomy.abelian_identity() {
             match c.holonomy.order() {
-                crate::transducer::alphabet::Order::Infinite if n.class.is_none() && e.torsion().is_empty() => {
+                crate::transducer::alphabet::Order::Infinite if n.class.is_none() && n.torsion.is_empty() && e.torsion().is_empty() => {
                     return Some("sentence has a non-coboundary coefficient with no class")
                 }
                 _ => {}
@@ -4033,7 +4062,7 @@ pub fn replay_nerve(e: &Element) -> Option<&'static str> {
         if d == 0 {
             continue;
         }
-        if n.class.is_none() && e.torsion().is_empty() {
+        if n.class.is_none() && n.torsion.is_empty() && e.torsion().is_empty() {
             if n.complex.class(&key).is_none() {
                 return Some("sentence has a non-coboundary coefficient with no class");
             }
@@ -4953,6 +4982,14 @@ mod tests {
         );
         assert!(n.is_cauterized(), "filed finite torsion with empty remainder cauterizes");
         let e = as_element_form_of_nerve(&n).expect("the filed nerve crystallizes");
+        assert!(
+            e.torsion().is_empty(),
+            "v2 does not fill the element torsion section"
+        );
+        assert!(
+            carries_torsion(&e),
+            "the form carries the filed cycle"
+        );
         assert_eq!(
             crate::court::verdict::blind_replay(&e),
             None,

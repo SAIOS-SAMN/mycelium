@@ -169,6 +169,9 @@ pub struct Complex {
     pub sections: Keyed<Section>,
     star: Keyed<Keyed<()>>,
     remainder: Keyed<()>,
+    /// Congruent fills keyed by the rotor's class key (15.4). Court torsion
+    /// reads this; remember and fill write it.
+    congruent: Keyed<(Rotor, u32)>,
 }
 
 impl Complex {
@@ -201,7 +204,19 @@ impl Complex {
                 }
             }
         }
+        self.index_congruent(&cell.fill);
         self.degrees[degree].insert(key, cell);
+    }
+
+    fn index_congruent(&mut self, fill: &Fill) {
+        if let Fill::Congruent(g, ell) = fill {
+            self.congruent.insert(g.class_key(), (g.clone(), *ell));
+        }
+    }
+
+    /// The Congruent cell whose rotor has this class key, if the chart holds one.
+    pub fn congruent(&self, class: &[u8; 32]) -> Option<&(Rotor, u32)> {
+        self.congruent.get(class)
     }
 
     fn store_coeff(g: Rotor) -> Rotor {
@@ -593,6 +608,7 @@ impl Complex {
             gamma: Rotor::identity(),
         });
         let outcome = extend(&a, &b, &cell);
+        self.index_congruent(&outcome);
         if let Some(c) = self.degrees[degree].get_mut(key) {
             c.fill = outcome.clone();
         }
@@ -984,6 +1000,18 @@ mod tests {
         c.coboundary_on_link(&a, |_| vol());
         let key = c.link(&a, 2)[0];
         assert!(matches!(c.fill(&key), Fill::Class(_)));
+    }
+
+    /// file_congruent writes the class-key index; court torsion reads it.
+    #[test]
+    fn congruent_is_read_by_class_key() {
+        let mut c = Complex::new();
+        let q = quarter();
+        let ck = q.class_key();
+        c.file_congruent(v(1), v(2), q.clone(), 4);
+        let got = c.congruent(&ck).expect("Congruent cell by class key");
+        assert_eq!(got.1, 4);
+        assert!(c.congruent(&Rotor::identity().class_key()).is_none());
     }
 
     /// Four vertices with a coboundary 1-cochain have δh = 1; a rotation on

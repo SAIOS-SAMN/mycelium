@@ -1391,8 +1391,15 @@ impl Epigenome {
         for &(_, _, before, after) in e.sub() {
             self.aperture.absorb_value_signal(before, after);
         }
-        for (_, l, _) in e.torsion() {
-            self.aperture.absorb_spatial_signal(*l);
+        let ft = crate::transducer::sentence::form_torsion(&e);
+        if !ft.is_empty() {
+            for (_, (_, l)) in ft.fiber(&crate::network::nerve::ROOT) {
+                self.aperture.absorb_spatial_signal(*l);
+            }
+        } else {
+            for (_, l, _) in e.torsion() {
+                self.aperture.absorb_spatial_signal(*l);
+            }
         }
         let heard = self.comprehend(&e);
         let addr = e.address();

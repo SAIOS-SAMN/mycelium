@@ -958,7 +958,7 @@ impl Contemplation {
         let mut spoken: Vec<Element> = Vec::new();
         spoken.extend(std::mem::take(&mut self.pending_rewrites));
         let bubble_keys: Vec<[u8; 32]> = keys.fiber(&ROOT).map(|(k, _)| *k).collect();
-        if word.sub().is_empty() && !word.torsion().is_empty() {
+        if word.sub().is_empty() && crate::transducer::sentence::carries_torsion(word) {
             let addr = word.address();
             for bk in &bubble_keys {
                 self.mark_glue(bk, addr);

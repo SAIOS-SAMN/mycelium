@@ -1667,8 +1667,8 @@ impl Kernel {
         let (Some(ni), Some(si)) = (self.basis_index.get(&new).copied(), self.basis_index.get(&sib).copied()) else {
             return new;
         };
-        let new_card = self.basis[ni].sections().is_empty() && self.basis[ni].torsion().is_empty();
-        let sib_card = self.basis[si].sections().is_empty() && self.basis[si].torsion().is_empty();
+        let new_card = self.basis[ni].sections().is_empty() && !crate::transducer::sentence::carries_torsion(&self.basis[ni]);
+        let sib_card = self.basis[si].sections().is_empty() && !crate::transducer::sentence::carries_torsion(&self.basis[si]);
         let (base, absorbed) = if new_card && !sib_card { (sib, new) } else { (new, sib) };
         let (Some(bi), Some(ai)) = (self.basis_index.get(&base).copied(), self.basis_index.get(&absorbed).copied()) else {
             return new;
@@ -1754,7 +1754,7 @@ impl Kernel {
             let Some(held) = self.basis.get(j) else {
                 continue;
             };
-            if !held.sections().is_empty() || !held.torsion().is_empty() {
+            if !held.sections().is_empty() || crate::transducer::sentence::carries_torsion(held) {
                 continue;
             }
             if self.provisional.contains(&addr) {
@@ -2737,6 +2737,8 @@ impl Kernel {
     /// Match spoken torsion cycles against the chart's Congruent cells.
     /// Same class key and ℓ is consilience; same key different ℓ is
     /// [`crate::verdict::REFUSE_NOT_NATURAL`]; a new finite key files.
+    /// A v2 form reads `Form.torsion` (keyed by the filed loop's class);
+    /// a residual word still reads the element's cycles.
     fn court_torsion(
         &mut self,
         spoken: &Element,
@@ -2744,58 +2746,71 @@ impl Kernel {
         self_id: [u8; 32],
         peer: [u8; 32],
     ) -> Option<&'static str> {
-        if spoken.torsion().is_empty() {
+        let cycles = Self::spoken_torsion_cycles(spoken);
+        if cycles.is_empty() {
             return None;
         }
-        let rep = spoken
-            .letters()
-            .map(|l| l.spelling.word.rotor())
-            .unwrap_or_else(crate::transducer::alphabet::Rotor::identity);
-        let rep_key = rep.class_key();
-        for (_sigma, ell, _) in spoken.torsion() {
-            let mut matched = false;
-            let mut conflict = false;
-            let mut log_key = rep_key;
-            if let Some(cx) = self.complexes.get(&inv.key()) {
-                for layer in &cx.degrees {
-                    for (_, cell) in layer.fiber(&crate::network::nerve::ROOT) {
-                        if let crate::transducer::cech::Fill::Congruent(g, ell2) = &cell.fill {
-                            let ck = g.class_key();
-                            if ck == rep_key && *ell2 != *ell {
-                                conflict = true;
-                                log_key = ck;
-                            }
-                            if *ell2 == *ell {
-                                matched = true;
-                                log_key = ck;
-                            }
+        for (class, ell, rep) in cycles {
+            let held = self
+                .complexes
+                .get(&inv.key())
+                .and_then(|cx| cx.congruent(&class).map(|(_, ell2)| *ell2));
+            match held {
+                Some(ell2) if ell2 != ell => {
+                    eprintln!(
+                        "  court torsion refused {:02x}{:02x}… ℓ {ell}",
+                        class[0], class[1]
+                    );
+                    return Some(crate::verdict::REFUSE_NOT_NATURAL);
+                }
+                Some(_) => {
+                    eprintln!(
+                        "  court torsion consilient {:02x}{:02x}… ℓ {ell}",
+                        class[0], class[1]
+                    );
+                }
+                None => {
+                    if let Some(rep) = rep {
+                        if let Some(cx) = self.complexes.get_mut(&inv.key()) {
+                            cx.file_congruent(self_id, peer, rep, ell);
                         }
                     }
+                    eprintln!(
+                        "  court torsion filed {:02x}{:02x}… ℓ {ell}",
+                        class[0], class[1]
+                    );
                 }
-            }
-            if conflict {
-                eprintln!(
-                    "  court torsion refused {:02x}{:02x}… ℓ {ell}",
-                    log_key[0], log_key[1]
-                );
-                return Some(crate::verdict::REFUSE_NOT_NATURAL);
-            }
-            if matched {
-                eprintln!(
-                    "  court torsion consilient {:02x}{:02x}… ℓ {ell}",
-                    log_key[0], log_key[1]
-                );
-            } else {
-                if let Some(cx) = self.complexes.get_mut(&inv.key()) {
-                    cx.file_congruent(self_id, peer, rep.clone(), *ell);
-                }
-                eprintln!(
-                    "  court torsion filed {:02x}{:02x}… ℓ {ell}",
-                    rep_key[0], rep_key[1]
-                );
             }
         }
         None
+    }
+
+    /// Torsion cycles a spoken word names: class key, period, representative
+    /// rotor of the filed loop. Residual germs keep the element's section.
+    fn spoken_torsion_cycles(
+        spoken: &Element,
+    ) -> Vec<([u8; 32], u32, Option<crate::transducer::alphabet::Rotor>)> {
+        use crate::transducer::sentence::{from_element_form, torsion_loop_rotor};
+        if let Some(f) = from_element_form(spoken) {
+            if !f.torsion.is_empty() {
+                return f
+                    .torsion
+                    .fiber(&crate::network::nerve::ROOT)
+                    .map(|(k, (_, ell))| (*k, *ell, torsion_loop_rotor(&f, k)))
+                    .collect();
+            }
+        }
+        spoken
+            .torsion()
+            .iter()
+            .map(|(_, ell, _)| {
+                let rep = spoken
+                    .letters()
+                    .map(|l| l.spelling.word.rotor())
+                    .unwrap_or_else(crate::transducer::alphabet::Rotor::identity);
+                (rep.class_key(), *ell, Some(rep))
+            })
+            .collect()
     }
 
     pub fn glue_fetched(
@@ -3972,7 +3987,7 @@ impl Kernel {
         // Never a BUNDLE — its sections/cycles carry family volume no other
         // word speaks.
         let candidate = (*self.basis[i]).clone();
-        if !candidate.sections().is_empty() || !candidate.torsion().is_empty() {
+        if !candidate.sections().is_empty() || crate::transducer::sentence::carries_torsion(&candidate) {
             return None;
         }
         // THE REPLAY rules: the bidder's sentence, spoken by other words,
@@ -4951,7 +4966,7 @@ impl Kernel {
     /// may have gone, or gained a fibre, while the probe ran.
     pub fn retire_redundant(&mut self, addr: &[u8; 32]) -> usize {
         let Some(i) = self.basis_index.get(addr).copied() else { return 0 };
-        if !self.basis[i].sections().is_empty() || !self.basis[i].torsion().is_empty() {
+        if !self.basis[i].sections().is_empty() || crate::transducer::sentence::carries_torsion(&self.basis[i]) {
             return 0;
         }
         let mag = self.basis[i].magnitude();
@@ -4998,7 +5013,7 @@ impl Kernel {
                         self.basis_index
                             .get(a)
                             .and_then(|&j| self.basis.get(j))
-                            .is_some_and(|w| w.sections().is_empty() && w.torsion().is_empty())
+                            .is_some_and(|w| w.sections().is_empty() && !crate::transducer::sentence::carries_torsion(w))
                     })
                     .collect();
                 // One versor solved per stroke: the stroke's cursor also picks
@@ -5068,7 +5083,7 @@ impl Kernel {
             if wrote {
                 self.touch_at(i);
             }
-            if self.basis[i].sections().is_empty() && self.basis[i].torsion().is_empty() {
+            if self.basis[i].sections().is_empty() && !crate::transducer::sentence::carries_torsion(&self.basis[i]) {
                 return Some(i);
             }
         }
@@ -5133,7 +5148,17 @@ impl Kernel {
     /// The torsion cycles held across the basis — how much of the language has
     /// condensed from enumeration into group presentation.
     pub fn torsion_total(&self) -> usize {
-        self.basis.iter().map(|t| t.torsion().len()).sum()
+        self.basis
+            .iter()
+            .map(|t| {
+                let n = crate::transducer::sentence::form_torsion(t).len();
+                if n > 0 {
+                    n
+                } else {
+                    t.torsion().len()
+                }
+            })
+            .sum()
     }
 
     /// The mesh's algebraic clock — the next K-step index (chronometry import).
@@ -6473,13 +6498,12 @@ mod tests {
         k.complexes
             .insert(inv.key(), crate::transducer::cech::Complex::new());
         assert_eq!(k.court_torsion(&spoken, &inv, [1; 32], [2; 32]), None, "first hearing files");
-        let filed = k.complexes.get(&inv.key()).is_some_and(|cx| {
-            cx.degrees.iter().any(|layer| {
-                layer.fiber(&crate::network::nerve::ROOT).any(|(_, cell)| {
-                    matches!(cell.fill, crate::transducer::cech::Fill::Congruent(_, 3))
-                })
-            })
-        });
+        let idk = crate::transducer::alphabet::Rotor::identity().class_key();
+        let filed = k
+            .complexes
+            .get(&inv.key())
+            .and_then(|cx| cx.congruent(&idk))
+            .is_some_and(|(_, ell)| *ell == 3);
         assert!(filed, "court torsion filed ℓ 3");
         assert_eq!(
             k.court_torsion(&spoken, &inv, [1; 32], [2; 32]),
@@ -6494,6 +6518,139 @@ mod tests {
             crate::transducer::alphabet::Rotor::identity(),
             4,
         );
+        k2.complexes.insert(inv.key(), cx);
+        assert_eq!(
+            k2.court_torsion(&spoken, &inv, [1; 32], [2; 32]),
+            Some(crate::verdict::REFUSE_NOT_NATURAL),
+            "same class different ℓ is not natural"
+        );
+    }
+
+    fn filed_v2_form() -> (Element, crate::transducer::stalk::Invariant, [u8; 32]) {
+        use crate::transducer::alphabet::{PlaneForm, Word, CAYLEY_ALPHABET_LEN};
+        use crate::transducer::element::identity_versor;
+        use crate::transducer::peel::ShellKind;
+        use crate::transducer::sentence::{
+            as_element_form_of_nerve, form_torsion, pivot_loop, Face, Germ, Nerve,
+        };
+        let order2 = PlaneForm {
+            parity: true,
+            rot: [0; CAYLEY_ALPHABET_LEN],
+        }
+        .to_word();
+        let n = 2usize;
+        let germs: Vec<Germ> = (0..n)
+            .map(|i| {
+                let mut address = [0u8; 32];
+                address[0] = (i as u8).saturating_add(1);
+                Germ {
+                    address,
+                    versor: identity_versor(),
+                    word: Word::identity(),
+                    chain: if i == 0 {
+                        Vec::new()
+                    } else {
+                        vec![(0, i as i64, 1, 2)]
+                    },
+                    source: None,
+                    target: None,
+                    kind: if i == 0 {
+                        ShellKind::Frame
+                    } else {
+                        ShellKind::Whole
+                    },
+                    shift: None,
+                }
+            })
+            .collect();
+        let faces = vec![
+            Face {
+                i: 0,
+                j: 1,
+                overlap: Vec::new(),
+                g_ij: Word::identity(),
+                versor: identity_versor(),
+                spelled: true,
+            },
+            Face {
+                i: 0,
+                j: 1,
+                overlap: Vec::new(),
+                g_ij: order2,
+                versor: identity_versor(),
+                spelled: true,
+            },
+        ];
+        let mut nerve = Nerve {
+            germs,
+            complex: crate::transducer::cech::Complex::new(),
+            faces,
+            cycles: Vec::new(),
+            remainder: Vec::new(),
+            class: None,
+            cover: crate::network::nerve::Keyed::new(),
+            torsion: crate::network::nerve::Keyed::new(),
+            certificates: crate::network::nerve::Keyed::new(),
+            vortex: crate::network::nerve::Keyed::new(),
+        };
+        let _ = pivot_loop(
+            &mut nerve,
+            [0xca; 32],
+            &crate::network::nerve::Keyed::new(),
+            &crate::transducer::family::NoCrystal,
+            &mut crate::physics::Physics::default().stroke_n(8),
+        );
+        assert!(nerve.is_cauterized(), "filed finite torsion cauterizes");
+        let e = as_element_form_of_nerve(&nerve).expect("v2 tape");
+        let inv = crate::transducer::stalk::invariant_of(&e);
+        let class = form_torsion(&e)
+            .fiber(&crate::network::nerve::ROOT)
+            .next()
+            .map(|(k, _)| *k)
+            .expect("the form files a class");
+        (e, inv, class)
+    }
+
+    /// Chapter 23.7 on a v2 form: the court reads Form.torsion by the
+    /// filed loop's class key, never the element's empty section.
+    #[test]
+    fn court_torsion_on_v2_form_is_consilient_or_filed_or_refused() {
+        use crate::transducer::sentence::{carries_torsion, from_element_form, torsion_loop_rotor};
+        let (spoken, inv, class) = filed_v2_form();
+        assert!(
+            spoken.torsion().is_empty(),
+            "v2 does not fill the element torsion section"
+        );
+        assert!(carries_torsion(&spoken), "the form carries the filed cycle");
+        assert_ne!(
+            class,
+            crate::transducer::alphabet::Rotor::identity().class_key(),
+            "the class is the loop's, not the identity"
+        );
+        let mut k = Kernel::new();
+        k.complexes
+            .insert(inv.key(), crate::transducer::cech::Complex::new());
+        assert_eq!(
+            k.court_torsion(&spoken, &inv, [1; 32], [2; 32]),
+            None,
+            "first hearing files"
+        );
+        let filed = k
+            .complexes
+            .get(&inv.key())
+            .and_then(|cx| cx.congruent(&class))
+            .is_some();
+        assert!(filed, "court torsion filed by the loop's class key");
+        assert_eq!(
+            k.court_torsion(&spoken, &inv, [1; 32], [2; 32]),
+            None,
+            "second hearing is consilient"
+        );
+        let f = from_element_form(&spoken).expect("v2 form");
+        let rep = torsion_loop_rotor(&f, &class).expect("the loop names the class");
+        let mut k2 = Kernel::new();
+        let mut cx = crate::transducer::cech::Complex::new();
+        cx.file_congruent([1; 32], [2; 32], rep, 99);
         k2.complexes.insert(inv.key(), cx);
         assert_eq!(
             k2.court_torsion(&spoken, &inv, [1; 32], [2; 32]),
