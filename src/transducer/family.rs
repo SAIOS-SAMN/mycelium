@@ -75,6 +75,18 @@ fn q(v: i64) -> BigRational {
 fn qn(n: i64, d: i64) -> BigRational {
     BigRational::new(BigInt::from(n), BigInt::from(d))
 }
+
+/// Exact mean of the body's cell centres. Never the first cell.
+fn cells_centroid(pos: &[(i64, i64)]) -> (BigRational, BigRational) {
+    let n = pos.len();
+    if n == 0 {
+        return (q(0), q(0));
+    }
+    let nq = q(n as i64);
+    let sr = pos.iter().fold(q(0), |acc, &(r, _)| acc + q(r));
+    let sc = pos.iter().fold(q(0), |acc, &(_, c)| acc + q(c));
+    (sr / &nq + qn(1, 2), sc / &nq + qn(1, 2))
+}
 fn gcd(a: usize, b: usize) -> usize {
     if b == 0 {
         a
@@ -100,10 +112,7 @@ fn body_of(comp: Vec<Cell3>) -> Body {
     let moduli = Invariant(blade::moduli(&shape.blade));
     let centroid = match shape.blade.centroid() {
         Some((x, y)) => (x + qn(1, 2), y + qn(1, 2)),
-        None => match pos.first() {
-            Some(&(r, c)) => (q(r), q(c)),
-            None => (q(0), q(0)),
-        },
+        None => cells_centroid(&pos),
     };
     let mut cells = comp;
     cells.sort_unstable();
@@ -1664,10 +1673,12 @@ pub fn extract_rule_with(
     if family.is_empty() {
         return None;
     }
-    let scale = family_ratio(family);
+    let Some(scale) = family_ratio(family) else {
+        return None;
+    };
     let pair_forms: Vec<Form> = family
         .iter()
-        .map(|(a, b)| pair_form(a, b, scale))
+        .map(|(a, b)| pair_form(a, b, Some(scale)))
         .collect();
     let n_pairs = pair_forms.len();
     // 1. Correspondence by transport class (kind, word class, gauge).
@@ -1885,7 +1896,7 @@ pub fn extract_rule_with(
     }
     form.depth = form.depth_of();
     form.loops = Form::loops_of(&form.faces, form.vertices.len());
-    form.ratio = scale.unwrap_or(((1, 1), (1, 1)));
+    form.ratio = scale;
     form.sections = sections.clone();
     form.hue_maps = hue_maps_of_form(&form);
     Some(super::sentence::rule_of_form(form))
@@ -2369,6 +2380,23 @@ mod tests {
         assert!(
             some.section_count() > 0,
             "a class present in some pairs is a section"
+        );
+    }
+
+    /// An unmeasured scale is not the identity ratio.
+    #[test]
+    fn extract_rule_refuses_unmeasured_scale() {
+        let family = vec![
+            (grid(&["11"]), grid(&["11"])),
+            (grid(&["11"]), grid(&["1111"])),
+        ];
+        assert!(
+            family_ratio(&family).is_none(),
+            "two pairs with different frame ratios have no scale"
+        );
+        assert!(
+            extract_rule_with(&family, &NoCrystal).is_none(),
+            "extract_rule_with returns None when the scale is not measured"
         );
     }
 

@@ -1396,7 +1396,7 @@ impl Contemplation {
             };
             let mut horizon: Keyed<(Rotor, Order, Standing)> = Keyed::new();
             if *pos + 4 <= b.len() {
-                let nh = take_count(b, *pos, take_u32(b, pos).unwrap_or(0) as usize, 32)?;
+                let nh = take_count(b, *pos, take_u32(b, pos)? as usize, 32)?;
                 for _ in 0..nh {
                     let hk: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                     *pos += 32;
@@ -1520,7 +1520,7 @@ impl Contemplation {
             *pos += 8;
         }
         if *pos + 4 <= b.len() {
-            let nc = take_count(b, *pos, take_u32(b, pos).unwrap_or(0) as usize, 32)?;
+            let nc = take_count(b, *pos, take_u32(b, pos)? as usize, 32)?;
             for _ in 0..nc {
                 let k: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                 *pos += 32;

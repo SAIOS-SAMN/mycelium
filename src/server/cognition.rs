@@ -2362,6 +2362,7 @@ impl Kernel {
 
     /// Crate-internal: the deliberative arm (synthesis::contemplate) spends
     /// the reserve through here — thought is metabolically real.
+    #[cfg(test)]
     pub(crate) fn physics_mut(&mut self) -> &mut crate::physics::Physics {
         &mut self.physics
     }

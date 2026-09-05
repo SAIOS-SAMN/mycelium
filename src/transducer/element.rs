@@ -1101,12 +1101,12 @@ impl Element {
             }
             return out;
         }
-        if let Some(L) = self.letters() {
-            out.extend_from_slice(&L.spelling.word.key());
-            put_q(&mut out, &L.spelling.rho);
-            put_q(&mut out, &L.shift.0);
-            put_q(&mut out, &L.shift.1);
-            let mut sigma = L.sigma.clone();
+        if let Some(letters) = self.letters() {
+            out.extend_from_slice(&letters.spelling.word.key());
+            put_q(&mut out, &letters.spelling.rho);
+            put_q(&mut out, &letters.shift.0);
+            put_q(&mut out, &letters.shift.1);
+            let mut sigma = letters.sigma.clone();
             sigma.sort_unstable();
             out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
             for (f, t) in sigma {
@@ -2432,10 +2432,10 @@ mod tests {
         let long = crate::transducer::alphabet::Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
         assert_eq!(long.key(), crate::transducer::alphabet::Word::identity().key());
         let mut alt = w.clone();
-        if let Some(L) = alt.letters() {
-            let spelling = crate::transducer::alphabet::Spelling { word: long, rho: L.spelling.rho };
+        if let Some(letters) = alt.letters() {
+            let spelling = crate::transducer::alphabet::Spelling { word: long, rho: letters.spelling.rho };
             let rem = alt.sub().to_vec();
-            alt.word = connection_word(&spelling, &L.shift, &L.sigma, &rem);
+            alt.word = connection_word(&spelling, &letters.shift, &letters.sigma, &rem);
             alt.address.take();
             assert_eq!(alt.address(), w.address(), "q^4 and 1 are one vertex; the tape is not the address");
             assert!(alt.same_vertex(&w), "q^4 and 1 are one vertex; equality is the rotor, not a digest");
@@ -2622,14 +2622,14 @@ mod tests {
         ];
         let place = from_connection(&shifted, &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0]).expect("shift");
         let mut dilated = swap.clone();
-        if let Some(L) = dilated.letters() {
+        if let Some(letters) = dilated.letters() {
             let two = Q::from(BigInt::from(2));
             let spelling = crate::transducer::alphabet::Spelling {
-                word: L.spelling.word,
+                word: letters.spelling.word,
                 rho: two,
             };
             let rem = dilated.sub().to_vec();
-            dilated.word = connection_word(&spelling, &L.shift, &L.sigma, &rem);
+            dilated.word = connection_word(&spelling, &letters.shift, &letters.sigma, &rem);
             dilated.address.take();
         }
         assert!(!swap.same_vertex(&dilated), "ρ is identity");
@@ -2647,10 +2647,10 @@ mod tests {
         let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap();
         let long = crate::transducer::alphabet::Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
         let mut alt = w.clone();
-        if let Some(L) = alt.letters() {
-            let spelling = crate::transducer::alphabet::Spelling { word: long, rho: L.spelling.rho };
+        if let Some(letters) = alt.letters() {
+            let spelling = crate::transducer::alphabet::Spelling { word: long, rho: letters.spelling.rho };
             let rem = alt.sub().to_vec();
-            alt.word = connection_word(&spelling, &L.shift, &L.sigma, &rem);
+            alt.word = connection_word(&spelling, &letters.shift, &letters.sigma, &rem);
             alt.address.take();
             assert_eq!(alt.address(), w.address());
             assert!(alt.same_vertex(&w));
