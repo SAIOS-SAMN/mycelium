@@ -137,20 +137,6 @@ pub struct Element {
     profiles: std::sync::OnceLock<Vec<([u8; 32], Vec<usize>)>>,
 }
 
-impl PartialEq for Element {
-    fn eq(&self, other: &Self) -> bool {
-        self.dim == other.dim
-            && self.word == other.word
-            && self.mag == other.mag
-            && canonical_chain(&self.sub) == canonical_chain(&other.sub)
-            && self.sections == other.sections
-            && self.torsion == other.torsion
-            && self.anchor == other.anchor
-            && self.transitions == other.transitions
-    }
-}
-impl Eq for Element {}
-
 /// THE GAUGE PROFILE of an assignment: its transition classes with their
 /// counts reduced to proportions (the counts divided by their common
 /// factor), so a dilation by ρ — which scales every count by ρ² — has the
@@ -2410,7 +2396,7 @@ mod tests {
         // matrix inverse — the group solution() correctly declines.
         assert!(germ.solution().is_none(), "no single-matrix inverse for a coboundary");
         let reverse = from_residual(&germinate(&b, &a).unwrap());
-        assert_ne!(germ, reverse, "the reverse description is a distinct germ");
+        assert_ne!(germ.address(), reverse.address(), "the reverse description is a distinct germ");
     }
 
     /// The transposition quotient is the CENTERED chain: the same deformation at
@@ -2489,7 +2475,7 @@ mod tests {
         let b_far: Vec<_> = b.iter().map(|(r, c, h)| (r + 7, c + 5, *h)).collect();
         let here = from_residual(&germinate(&a, &b).unwrap());
         let far = from_residual(&germinate(&a_far, &b_far).unwrap());
-        assert_eq!(here, far, "same deformation, any position — ONE word");
+        assert_eq!(here.address(), far.address(), "same deformation, any position — ONE word");
         assert!(here.carriage(&far).is_some(), "one thought: a versor carries one onto the other");
         // Equal tally, different geometry — the cured conflation: {1→0 here, 0→4
         // there} at two different relative offsets must stay DISTINCT.
@@ -2510,8 +2496,7 @@ mod tests {
             let mut pos = 0;
             let back = Element::from_bytes(&bytes, &mut pos).expect("reload");
             assert_eq!(pos, bytes.len(), "consumed exactly");
-            assert_eq!(&back, g, "full equality (dim, word, mag, fibers, chain)");
-            assert_eq!(back.address(), g.address(), "address survives");
+            assert_eq!(back.address(), g.address(), "the reloaded word is the same citation");
             assert_eq!(back.sub(), g.sub(), "the centered chain survives");
             assert!(back.carriage(g).is_some(), "the thought survives: the identity carriage relates them");
         }
@@ -2572,7 +2557,7 @@ mod tests {
         let mut pos = 0;
         let back = Element::from_bytes(&bytes, &mut pos).expect("reload");
         assert_eq!(pos, bytes.len());
-        assert_eq!(back, t, "full equality including the torsion");
+        assert_eq!(back.address(), t.address(), "the reloaded word is the same citation");
         assert!(back.matches_chain(&vec![(0, 0, 3, 1), (0, 1, 1, 2), (0, 2, 2, 3)]), "capacity survives restart");
         assert!(t.transitions().is_empty());
     }

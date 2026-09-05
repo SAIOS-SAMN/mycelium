@@ -628,7 +628,7 @@ impl Session {
 /// cohesion → converse → COMPREHENSION): the received utterance DECOMPOSED over
 /// the local genome toward understanding. Never re-cognition (that is the
 /// perception stack's overlay), never recall.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub enum Comprehension {
     /// The utterance decomposed into a sentence of held words — understood.
     Understood(Vec<usize>),
@@ -645,6 +645,19 @@ pub enum Comprehension {
     /// admitted as new geometry.
     Admitted,
 }
+
+impl PartialEq for Comprehension {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Comprehension::Understood(a), Comprehension::Understood(b)) => a == b,
+            (Comprehension::Novel { residual_cells: a }, Comprehension::Novel { residual_cells: b }) => a == b,
+            (Comprehension::Held, Comprehension::Held) | (Comprehension::Admitted, Comprehension::Admitted) => true,
+            (Comprehension::Dialect(a), Comprehension::Dialect(b)) => a.same_vertex(b),
+            _ => false,
+        }
+    }
+}
+impl Eq for Comprehension {}
 
 /// GENOME + EPIGENOME — carried from the CE entity design (core/ccl.rs: the
 /// State Record is the "H¹ representative"/"genome"; DOWN is "gene expression").

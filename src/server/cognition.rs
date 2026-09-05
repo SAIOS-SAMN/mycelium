@@ -57,11 +57,22 @@ pub enum Glue {
 /// a canonical sentence (fully decomposed; indices into the language the
 /// reduction ran over) or an irreducible residual (a critical pair to complete
 /// by germination).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub enum NormalForm {
     Decomposed(Vec<usize>),
     Irreducible(Element),
 }
+
+impl PartialEq for NormalForm {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (NormalForm::Decomposed(a), NormalForm::Decomposed(b)) => a == b,
+            (NormalForm::Irreducible(a), NormalForm::Irreducible(b)) => a.same_vertex(b),
+            _ => false,
+        }
+    }
+}
+impl Eq for NormalForm {}
 
 /// A germ ready for reduction: the element and its anchor context (the framed
 /// input body and the offset of the centered chain within it).
@@ -572,7 +583,7 @@ pub fn germinate_bodies(
             None => germs.push((Element::identity(element::GERM_DIM), None)),
         }
     }
-    if germs.iter().all(|(g, _)| *g == germs[0].0) {
+    if germs.iter().all(|(g, _)| g.same_vertex(&germs[0].0)) {
         germs.truncate(1);
     }
     Some((germs, composites))

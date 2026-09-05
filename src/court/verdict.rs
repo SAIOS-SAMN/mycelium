@@ -372,7 +372,7 @@ pub fn blind_replay_with(spoken: &Element, resolve: &dyn Fn(&[u8; 32]) -> Option
 /// The deterministic outcome of ruling one candidate word — every arm
 /// names what the mathematics found; callers match these states
 /// exhaustively rather than branching on booleans or out-parameters.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub enum Ruling {
     /// The word does not replay from its own evidence (or does not parse):
     /// false speech, the failed axis named.
@@ -397,6 +397,23 @@ pub enum Ruling {
     /// element rides the arm — admission IS the match, never a flag.
     Admitted(Element),
 }
+
+impl PartialEq for Ruling {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Ruling::Slashed(a), Ruling::Slashed(b)) => a == b,
+            (Ruling::Consilient(a), Ruling::Consilient(b))
+            | (Ruling::Dialect(a), Ruling::Dialect(b))
+            | (Ruling::Admitted(a), Ruling::Admitted(b)) => a.same_vertex(b),
+            (
+                Ruling::Attached { base: b1, g: g1 },
+                Ruling::Attached { base: b2, g: g2 },
+            ) => b1 == b2 && element::same_versor(g1, g2),
+            _ => false,
+        }
+    }
+}
+impl Eq for Ruling {}
 
 impl Ruling {
     /// The wire ruling byte this outcome seals and speaks.

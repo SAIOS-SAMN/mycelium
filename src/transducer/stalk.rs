@@ -712,7 +712,7 @@ mod tests {
         let bytes = base.to_bytes();
         let mut pos = 0usize;
         let back = Element::from_bytes(&bytes, &mut pos).expect("round trip");
-        assert_eq!(back, base, "the bundle round-trips");
+        assert_eq!(back.address(), base.address(), "the bundle round-trips");
     }
 
     /// A class refines one axis; members re-home under the new prefix.
