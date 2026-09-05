@@ -1611,14 +1611,8 @@ pub fn assemble(mut germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
     for i in 0..n {
         for j in (i + 1)..n {
             let star = frame == Some(i) || frame == Some(j);
-            let overlap = !overlap_cells(&supports[i], &supports[j]).is_empty();
-            let ring = {
-                let cells: Vec<(i64, i64, u8)> =
-                    supports[i].iter().map(|&(r, c)| (r, c, 0)).collect();
-                let ring = super::blade::adjacent_ring(&cells);
-                ring.iter().any(|&(r, c, _)| supports[j].binary_search(&(r, c)).is_ok())
-            };
-            if star || overlap || ring {
+            let adj = !overlap_cells(&supports[i], &supports[j]).is_empty();
+            if star || adj {
                 emit_face(&germs, i, j, &mut faces);
             }
         }
