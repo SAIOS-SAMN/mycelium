@@ -779,6 +779,10 @@ pub struct Kernel {
     listing_task: crate::network::nerve::Keyed<[u8; 32]>,
     /// Reverse: task → listings bound to it.
     task_listings: crate::network::nerve::Keyed<Vec<[u8; 32]>>,
+    /// Train pairs of a bound task. Install mints only what a rule speaks.
+    task_family: crate::network::nerve::Keyed<Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>>,
+    /// Sentence address → task, from perceive_speech. Replay reads the family.
+    speech_task: crate::network::nerve::Keyed<[u8; 32]>,
     /// THE SETTLEMENTS awaiting the court: (listing, its chain, the voice,
     /// the utterance, magnitude before, magnitude after). The court replays
     /// the utterance and measures the deflation itself — proof of
@@ -1817,7 +1821,9 @@ impl Kernel {
     /// Perceive a family's speech: replay each sentence, docket what stands.
     /// A false sentence is refused with the replay reason in the journal
     /// (`court refuse speech {addr}: {reason}`) before the wire code.
-    pub fn perceive_speech(&mut self, voice: [u8; 32], _task: [u8; 32], sentences: &[Element]) -> Vec<u8> {
+    /// `task` binds the stood sentence to that family's trains so install
+    /// can mint only measured descent.
+    pub fn perceive_speech(&mut self, voice: [u8; 32], task: [u8; 32], sentences: &[Element]) -> Vec<u8> {
         let mut codes = Vec::with_capacity(sentences.len());
         for s in sentences {
             if let Some(reason) = crate::court::verdict::blind_replay(s) {
@@ -1827,6 +1833,9 @@ impl Kernel {
                 continue;
             }
             self.docket_sentence(s, voice);
+            if task != [0; 32] {
+                self.speech_task.insert(s.address(), task);
+            }
             codes.push(crate::anastome::dialogue::SPEECH_STOOD);
         }
         codes
@@ -3139,36 +3148,28 @@ impl Kernel {
         }
     }
 
-    /// Deflation a form may mint: only when it closes a book listing
-    /// (`listing_task` / `book_index`) with a measured descent. A speech
-    /// restatement that describes nothing pays nothing.
+    /// Deflation a form may mint: the descent speaking it measures on the
+    /// bound family's trains, or the listing's own magnitude when the word
+    /// *is* that listing. Association with a listing (recorded deflation,
+    /// sibling trains, whole magnitude at zero) is not a mint.
     fn verified_install_deflation(&self, addr: &[u8; 32], form: &Element) -> [u64; 4] {
-        let claimed: Vec<[u8; 32]> = if let Some(task) = self.listing_task.get(addr) {
-            self.task_listings.get(task).cloned().unwrap_or_default()
-        } else if self.book_index.contains(addr) {
-            vec![*addr]
-        } else {
-            Vec::new()
-        };
-        if claimed.is_empty() {
-            let _ = form;
+        if form.is_sentence() {
+            let task = self
+                .speech_task
+                .get(addr)
+                .or_else(|| self.listing_task.get(addr))
+                .copied();
+            if let Some(task) = task {
+                if let Some(family) = self.task_family.get(&task) {
+                    return measured_replay_descent(form, family);
+                }
+            }
             return [0; 4];
         }
-        let mut pay = [0u64; 4];
-        for listing in &claimed {
-            let d = self.deflation_of(listing);
-            let d = if d.iter().any(|&x| x > 0) {
-                d
-            } else {
-                self.book_elem(listing)
-                    .map(|e| e.magnitude())
-                    .unwrap_or([0; 4])
-            };
-            for i in 0..4 {
-                pay[i] = pay[i].saturating_add(d[i]);
-            }
+        if self.book_index.contains(addr) {
+            return self.book_elem(addr).map(|e| e.magnitude()).unwrap_or([0; 4]);
         }
-        pay
+        [0; 4]
     }
 
     fn home_install(&mut self, addr: &[u8; 32]) {
@@ -3410,26 +3411,24 @@ impl Kernel {
         }
     }
 
+    /// The trains a rule must speak to mint at install. Empty trains are ignored.
+    pub fn bind_task_family(&mut self, task: [u8; 32], train: Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>) {
+        if !train.is_empty() {
+            self.task_family.insert(task, train);
+        }
+    }
+
     /// Speak a submitted rule onto withheld tests and compare cells exactly.
     pub fn rule_matches_tests(rule: &Element, tests: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)]) -> bool {
         if tests.is_empty() {
             return false;
         }
-        let Some(n) = crate::transducer::sentence::from_element(rule) else {
+        let Some(sr) = sentence_rule_of(rule) else {
             return false;
         };
-        let Some(sr) = crate::transducer::sentence::agree_up_to_gauge(std::slice::from_ref(&n)) else {
-            return false;
-        };
-        for (x, y) in tests {
-            let Some(s) = crate::transducer::family::speak_rule(&sr, x) else {
-                return false;
-            };
-            if s.grid() != *y {
-                return false;
-            }
-        }
-        true
+        tests.iter().all(|(x, y)| {
+            crate::transducer::family::speak_rule(&sr, x).is_some_and(|s| s.grid() == *y)
+        })
     }
 
     /// Pay a verified solve from the escrow of listings that task deflated.
@@ -5722,6 +5721,69 @@ impl Kernel {
 // The blind replay moved to `crate::verdict` (#162): verification is the
 // court's substrate, not the server kernel's.
 
+fn sentence_rule_of(form: &Element) -> Option<crate::transducer::sentence::SentenceRule> {
+    use crate::transducer::sentence::{from_element, from_element_form, agree_up_to_gauge, SentenceRule, Vertex};
+    if let Some(f) = from_element_form(form) {
+        let form_speaks = f.vertices.iter().any(|v| {
+            matches!(
+                v,
+                Vertex::Glued { .. } | Vertex::Rebased { .. } | Vertex::Unfolded { .. }
+            ) || matches!(v, Vertex::Word { contact: Some(_), .. })
+        });
+        if form_speaks || form.description().get(1) == Some(&2) {
+            let nerve = f.to_nerve().unwrap_or_default();
+            return Some(SentenceRule {
+                charts: nerve
+                    .germs
+                    .iter()
+                    .map(|g| (g.source.clone(), g.target.clone()))
+                    .collect(),
+                faces: nerve
+                    .faces
+                    .iter()
+                    .map(|fc| (fc.i, fc.j, fc.g_ij.clone(), fc.spelled))
+                    .collect(),
+                holonomies: nerve.cycles.iter().map(|c| c.holonomy.clone()).collect(),
+                hue_maps: Vec::new(),
+                nerve,
+                ratio: ((1, 1), (1, 1)),
+                shifts: Vec::new(),
+                sections: crate::network::nerve::Keyed::new(),
+                form: f,
+            });
+        }
+    }
+    let n = from_element(form)?;
+    agree_up_to_gauge(std::slice::from_ref(&n))
+}
+
+/// Descent a rule measures by speaking every train pair. Any miss is zero:
+/// association with a listing is not a mint.
+fn measured_replay_descent(form: &Element, family: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)]) -> [u64; 4] {
+    if family.is_empty() {
+        return [0; 4];
+    }
+    let Some(sr) = sentence_rule_of(form) else {
+        return [0; 4];
+    };
+    let mut pay = [0u64; 4];
+    for (x, y) in family {
+        let Some(s) = crate::transducer::family::speak_rule(&sr, x) else {
+            return [0; 4];
+        };
+        if s.grid() != *y {
+            return [0; 4];
+        }
+        if let Some((chain, _, _)) = crate::arc::refine_delta(x, y) {
+            let lanes = element::measure_lanes(&chain);
+            for i in 0..4 {
+                pay[i] = pay[i].saturating_add(lanes[i]);
+            }
+        }
+    }
+    pay
+}
+
 /// The SUBSTRATE's canonical framing projection (hypha-side, per the transposition
 /// ruling): a scene translated so its min-corner sits at the origin. Position is
 /// the sensor's coordinate embedding, not cognition — the engine deduces the
@@ -7401,6 +7463,85 @@ mod tests {
             k.treasury().supply(),
             [0; 4],
             "a restatement that closes nothing pays nothing"
+        );
+    }
+
+    fn digits(rows: &[&str]) -> Vec<Vec<u8>> {
+        rows.iter()
+            .map(|r| r.bytes().map(|b| b - b'0').collect())
+            .collect()
+    }
+
+    /// Binding a listing to a task does not mint: the form must speak the trains.
+    #[test]
+    fn association_with_a_listing_does_not_mint() {
+        let mut k = Kernel::new();
+        let family = vec![(
+            digits(&["1100", "0000"]),
+            digits(&["0011", "0000"]),
+        )];
+        let (chain, _, frame) = crate::arc::refine_delta(&family[0].0, &family[0].1).expect("coboundary");
+        assert!(k.intake(&chain, &frame), "the listing stands");
+        let listing = k.pending.last().expect("listed").0.address();
+        let task = [7u8; 32];
+        k.bind_listing_task(listing, task);
+        k.bind_task_family(task, family);
+        let affine = crate::transducer::element::affine_of(&crate::transducer::element::identity_versor()).unwrap();
+        let w = crate::transducer::element::from_connection(
+            &affine,
+            &[(1, 2), (2, 1)],
+            &Vec::new(),
+            [4, 4, 4, 4],
+        )
+        .unwrap();
+        let addr = w.address();
+        assert_ne!(addr, listing, "the restatement is not the listing");
+        let codes = k.perceive_speech([1; 32], task, std::slice::from_ref(&w));
+        assert_eq!(codes, vec![crate::anastome::dialogue::SPEECH_STOOD]);
+        k.bind_listing_task(addr, task);
+        k.rule_all_provisionals();
+        k.confirm_peer_holds_addrs(&[addr], [2; 32]);
+        assert_eq!(
+            k.treasury().supply(),
+            [0; 4],
+            "a bound listing is not a mint without replay"
+        );
+    }
+
+    /// A rule that speaks every train pair mints the coboundary it closed.
+    #[test]
+    fn a_rule_that_speaks_the_family_mints_measured_descent() {
+        let family = vec![
+            (digits(&["1100", "0000"]), digits(&["0022", "0000"])),
+            (digits(&["0000", "1100"]), digits(&["0000", "0022"])),
+        ];
+        let rule = crate::transducer::family::extract_rule(&family).expect("extract");
+        let spoken = crate::transducer::family::mint_sentence(&rule, &family).expect("mint");
+        assert!(spoken.is_sentence());
+        let mut expect = [0u64; 4];
+        for (x, y) in &family {
+            let (chain, _, _) = crate::arc::refine_delta(x, y).expect("coboundary");
+            let lanes = crate::transducer::element::measure_lanes(&chain);
+            for i in 0..4 {
+                expect[i] = expect[i].saturating_add(lanes[i]);
+            }
+        }
+        assert!(expect.iter().any(|&x| x > 0), "the family has descent");
+        let mut k = Kernel::new();
+        let task = crate::registry::task_id(&crate::arc::Task {
+            train: family.clone(),
+            test: Vec::new(),
+        });
+        k.bind_task_family(task, family);
+        let addr = spoken.address();
+        let codes = k.perceive_speech([1; 32], task, std::slice::from_ref(&spoken));
+        assert_eq!(codes, vec![crate::anastome::dialogue::SPEECH_STOOD]);
+        k.rule_all_provisionals();
+        k.confirm_peer_holds_addrs(&[addr], [2; 32]);
+        assert_eq!(
+            k.treasury().supply(),
+            expect,
+            "mint is the measured coboundary, not a bound listing's magnitude"
         );
     }
 

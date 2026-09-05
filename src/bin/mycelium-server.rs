@@ -747,6 +747,9 @@ fn list_task(
     task: &mycelium::arc::Task,
     rehome: bool,
 ) {
+    if let Ok(mut k) = kernel.lock() {
+        k.bind_task_family(tid, task.train.clone());
+    }
     for (a, b) in &task.train {
         let Some((mut chain, _, frame)) = mycelium::arc::refine_delta(a, b) else {
             continue;
