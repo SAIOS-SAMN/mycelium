@@ -143,7 +143,7 @@ pub fn probe(
     listed.sort_unstable();
     if residual == listed {
         let (mut on, mut off) = (0usize, 0usize);
-        for (_, v, _, body) in cites {
+        for (_, _, v, _, body) in cites {
             for &(r, c, _, _) in body {
                 match crate::transducer::element::carry_center(v, r, c) {
                     Some(p) => {
@@ -161,10 +161,10 @@ pub fn probe(
             "  nothing: listing {} cells, {} cites, carried cells on {on} off {off}, first body {:?}",
             listed.len(),
             cites.len(),
-            cites.first().map(|(_, _, _, b)| b.len()),
+            cites.first().map(|(_, _, _, _, b)| b.len()),
         );
     }
-    let section = cites.iter().any(|(_, _, asg, _)| *asg == u32::MAX);
+    let section = cites.iter().any(|(_, _, _, asg, _)| *asg == u32::MAX);
     let Ok(mut g) = k.lock() else { return (PROBE_NOTHING, [0; 4], [0; 4]) };
     // The court replays the settlement on the chains it is handed, so the
     // measure spoken here is the chain's own, not the listing's fibre.

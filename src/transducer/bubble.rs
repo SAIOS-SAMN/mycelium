@@ -94,6 +94,10 @@ pub struct Bubble {
     pub cursor: [u8; 32],
     /// TUniversal when this bubble's charts last moved.
     pub moved_tu: u64,
+    /// Addresses this idea glued (crystallized forms it rests on).
+    pub glues: Keyed<()>,
+    /// Ideas that glued this bubble; a non-empty set is not shed.
+    pub glued_by: Keyed<()>,
 }
 
 impl Bubble {
@@ -227,6 +231,9 @@ impl Contemplation {
         let now = self.now_tu;
         let mut best: Option<([u8; 32], u64)> = None;
         for (k, b) in self.bubbles.fiber(&ROOT) {
+            if b.glued_by.len() > 0 {
+                continue;
+            }
             let t = now.saturating_sub(b.moved_tu).max(1);
             match best {
                 Some((_, bt)) if t <= bt => {}
@@ -245,6 +252,39 @@ impl Contemplation {
 
     pub fn len(&self) -> usize {
         self.bubbles.len()
+    }
+
+    /// True when a live idea glued this address (a dialect entry so marked
+    /// is not shed).
+    pub fn glues_word(&self, addr: &[u8; 32]) -> bool {
+        self.bubbles
+            .fiber(&ROOT)
+            .any(|(_, b)| b.glues.contains(addr))
+    }
+
+    /// Record that idea `bubble` glued crystallized form `word`.
+    pub fn mark_glue(&mut self, bubble: &[u8; 32], word: [u8; 32]) {
+        if let Some(b) = self.bubbles.get_mut(bubble) {
+            b.glues.insert(word, ());
+        }
+    }
+
+    /// Shed ideas no live glue holds. Returns how many bubbles left.
+    pub fn shed_unglued(&mut self) -> usize {
+        let drop: Vec<[u8; 32]> = self
+            .bubbles
+            .fiber(&ROOT)
+            .filter(|(_, b)| b.glued_by.len() == 0 && b.glues.len() == 0 && !b.dirty)
+            .map(|(k, _)| *k)
+            .collect();
+        let n = drop.len();
+        for k in &drop {
+            if let Some(b) = self.bubbles.remove(k) {
+                self.retract_incidence(k, &b);
+                self.dirty.remove(k);
+            }
+        }
+        n
     }
 
     /// Per-lane congruent mass on each chart: ideas that share a class.
@@ -510,6 +550,8 @@ impl Contemplation {
             dirty: true,
             cursor: [0; 32],
             moved_tu: self.now_tu,
+            glues: Keyed::new(),
+            glued_by: Keyed::new(),
         };
         if let Some(old) = self.bubbles.get(&key).cloned() {
             self.retract_incidence(&key, &old);
@@ -553,6 +595,8 @@ impl Contemplation {
             dirty: true,
             cursor: [0; 32],
             moved_tu: 0,
+            glues: Keyed::new(),
+            glued_by: Keyed::new(),
         };
         if let Some(old) = self.bubbles.get(&key).cloned() {
             self.retract_incidence(&key, &old);
@@ -610,6 +654,8 @@ impl Contemplation {
             dirty: false,
             cursor: [0; 32],
             moved_tu: 0,
+            glues: Keyed::new(),
+            glued_by: Keyed::new(),
         };
         self.admit_incidence(key, &bubble);
         self.bubbles.insert(key, bubble);
@@ -1040,7 +1086,9 @@ impl Contemplation {
                 volume,
                 dirty,
                 cursor: [0; 32],
-            moved_tu: 0,
+                moved_tu: 0,
+                glues: Keyed::new(),
+                glued_by: Keyed::new(),
             };
             c.admit_incidence(key, &bubble);
             c.bubbles.insert(key, bubble);

@@ -88,7 +88,7 @@ pub fn puncture_from(
     cites: &[crate::anastome::dialogue::CiteWire],
 ) -> usize {
     let mut deepened = 0usize;
-    for (addr, _, _, body) in cites {
+    for (addr, _, _, _, body) in cites {
         let Some(i) = index_of(addr) else { continue };
         let mut pos = element::positions(words[i].sub());
         pos.sort_unstable();
@@ -348,7 +348,7 @@ pub fn verify(language: &[Element], cites: &[Cite], target: &[Cell]) -> Vec<Cell
 /// of any word fetched. The hearer's lexicon is consulted only afterward,
 /// to name what was verified.
 pub fn verify_utterance(cites: &[crate::anastome::dialogue::CiteWire], target: &[Cell]) -> Vec<Cell> {
-    let ops: Vec<(Versor, Vec<Cell>)> = cites.iter().map(|(_, v, _, body)| (v.clone(), body.clone())).collect();
+    let ops: Vec<(Versor, Vec<Cell>)> = cites.iter().map(|(_, _, v, _, body)| (v.clone(), body.clone())).collect();
     let mut out = replay_operators(&ops, target);
     out.extend(seam_defect_operators(&ops, target));
     out.sort_unstable();
@@ -407,9 +407,21 @@ pub fn locate_or_puncture_at<'a>(
     piece: &[Cell],
     exclude: Option<usize>,
 ) -> (Option<Cite>, Option<(usize, Versor, Vec<Cell>)>, usize) {
+    locate_or_puncture_on(word_at, &|inv| atlas.fiber(inv), index_of, shape_at, piece, exclude)
+}
+
+/// Locate against an arbitrary fiber — the working atlas, not only the genome.
+pub fn locate_or_puncture_on<'a>(
+    word_at: &impl Fn(usize) -> Option<&'a Element>,
+    fiber_of: &impl Fn(&stalk::Invariant) -> Vec<[u8; 32]>,
+    index_of: &impl Fn(&[u8; 32]) -> Option<usize>,
+    shape_at: &impl Fn(usize) -> Option<&'a Shape>,
+    piece: &[Cell],
+    exclude: Option<usize>,
+) -> (Option<Cite>, Option<(usize, Versor, Vec<Cell>)>, usize) {
     let Some(shape) = element::shape_of_chain(piece) else { return (None, None, 0) };
     let want = profile(&element::assignment(piece));
-    let stratum: Vec<usize> = atlas.fiber(&stalk::invariant(piece)).iter().filter_map(|a| index_of(a)).collect();
+    let stratum: Vec<usize> = fiber_of(&stalk::invariant(piece)).iter().filter_map(|a| index_of(a)).collect();
     let key = element::gauge_key(&element::assignment(piece));
     let stratum: Vec<usize> = stratum
         .into_iter()
@@ -521,13 +533,25 @@ pub fn deconstruct_at<'a>(
     chain: &[Cell],
     exclude: Option<usize>,
 ) -> Sentence {
+    deconstruct_on(word_at, &|inv| atlas.fiber(inv), index_of, shape_at, chain, exclude)
+}
+
+/// Deconstruct over a fiber the caller names — genome, dialect, or both.
+pub fn deconstruct_on<'a>(
+    word_at: &impl Fn(usize) -> Option<&'a Element>,
+    fiber_of: &impl Fn(&stalk::Invariant) -> Vec<[u8; 32]>,
+    index_of: &impl Fn(&[u8; 32]) -> Option<usize>,
+    shape_at: &impl Fn(usize) -> Option<&'a Shape>,
+    chain: &[Cell],
+    exclude: Option<usize>,
+) -> Sentence {
     let mut out = Sentence::default();
     if chain.is_empty() {
         return out;
     }
     let bodies = pieces(chain);
     if bodies.len() > 1 {
-        let (whole, _, m) = locate_or_puncture_at(word_at, atlas, index_of, shape_at, chain, exclude);
+        let (whole, _, m) = locate_or_puncture_on(word_at, fiber_of, index_of, shape_at, chain, exclude);
         out.multiplicity = m;
         if let Some(c) = whole {
             out.cites.push(c);
@@ -535,7 +559,7 @@ pub fn deconstruct_at<'a>(
         }
     }
     for body in bodies {
-        let (c, p, m) = locate_or_puncture_at(word_at, atlas, index_of, shape_at, &body, exclude);
+        let (c, p, m) = locate_or_puncture_on(word_at, fiber_of, index_of, shape_at, &body, exclude);
         out.multiplicity = out.multiplicity.max(m);
         match (c, p) {
             (Some(c), _) => out.cites.push(c),
@@ -548,7 +572,7 @@ pub fn deconstruct_at<'a>(
                 }
                 for (_, fiber) in &fibers {
                     for sub in pieces(fiber) {
-                        let (c, p, m) = locate_or_puncture_at(word_at, atlas, index_of, shape_at, &sub, exclude);
+                        let (c, p, m) = locate_or_puncture_on(word_at, fiber_of, index_of, shape_at, &sub, exclude);
                         out.multiplicity = out.multiplicity.max(m);
                         match (c, p) {
                             (Some(c), _) => out.cites.push(c),

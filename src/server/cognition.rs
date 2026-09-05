@@ -2168,7 +2168,7 @@ impl Kernel {
         let mag = listing.magnitude();
         let mut charts_at: crate::network::nerve::Keyed<crate::transducer::stalk::Invariant> =
             crate::network::nerve::Keyed::new();
-        for (_, _, _, body) in cites {
+        for (_, _, _, _, body) in cites {
             let inv = crate::transducer::stalk::invariant(body);
             charts_at.insert(inv.key(), inv);
         }
@@ -2179,14 +2179,14 @@ impl Kernel {
         if charts.is_empty() {
             charts.push(crate::transducer::stalk::invariant(listing.sub()));
         }
-        let cite_g = cites.first().map(|(_, g, _, _)| g.clone()).unwrap_or_else(element::identity_versor);
+        let cite_g = cites.first().map(|(_, _, g, _, _)| g.clone()).unwrap_or_else(element::identity_versor);
         if let [] = residual.as_slice() {
             let paid = if section || listing.is_connection() {
                 self.treasury.settle_subsidy(voice, crate::economy::price(&before, &self.physics.pressure), anchor)
             } else {
                 [0; 4]
             };
-            for (addr, _, _, _) in cites {
+            for (addr, _, _, _, _) in cites {
                 if let Some(i) = self.basis_index.get(addr).copied() {
                     let mag = self.basis[i].magnitude();
                     self.treasury.settle_use(voice, self.discoverer_at(i), mag, anchor);
@@ -3672,7 +3672,7 @@ impl Kernel {
         // duplicate card at another index is exactly what a bid names).
         let resolved: Vec<Cite> = cites
             .iter()
-            .filter_map(|(a, g, asg, _)| {
+            .filter_map(|(a, _st, g, asg, _)| {
                 self.basis_index.get(a).copied().filter(|j| *j != i).map(|j| (j, g.clone(), *asg as usize))
             })
             .collect();
@@ -5897,7 +5897,7 @@ pub fn resolve_cites(
 ) -> Vec<Cite> {
     cites
         .iter()
-        .filter_map(|(addr, g, asg, _)| {
+        .filter_map(|(addr, _st, g, asg, _)| {
             let i = language.at(addr)?;
             // The gauge coordinate is read from the target, never trusted
             // as an index into this copy of the word.
@@ -5930,7 +5930,7 @@ pub fn reduce_proven(
         ([], true) => NormalForm::Decomposed(resolved.iter().map(|(i, _, _)| *i).collect()),
         ([], false) => {
             let named: Vec<[u8; 32]> = resolved.iter().map(|(i, _, _)| language.words[*i].address()).collect();
-            let missing = cites.iter().find(|(a, _, _, _)| !named.contains(a)).map(|(_, _, _, body)| body.clone()).unwrap_or_default();
+            let missing = cites.iter().find(|(a, _, _, _, _)| !named.contains(a)).map(|(_, _, _, _, body)| body.clone()).unwrap_or_default();
             NormalForm::Irreducible(element::from_residual_framed(&missing, frame))
         }
         ([_, ..], _) => NormalForm::Irreducible(element::from_residual_framed(&residual, frame)),
@@ -6225,12 +6225,12 @@ mod tests {
         let derivable = k.basis[0].address(); // its duplicate speaks it
         // The bidder's sentence: the duplicate, cited at the identity.
         let body = |w: &Element| crate::transducer::sentence::cited_pattern(w, 0).unwrap();
-        let sentence = vec![(k.basis[1].address(), element::identity_versor(), 0u32, body(&k.basis[1]))];
+        let sentence = vec![(k.basis[1].address(), 0u8, element::identity_versor(), 0u32, body(&k.basis[1]))];
         let paid = k.try_refine(&derivable, [5; 32], &sentence);
         assert!(paid.is_some(), "the derivable word is a confirmed compression bid");
         assert_eq!(k.basis_len(), 1, "the vocabulary compressed");
         let essential = k.basis[0].address();
-        let self_cite = vec![(essential, element::identity_versor(), 0u32, body(&k.basis[0]))];
+        let self_cite = vec![(essential, 0u8, element::identity_versor(), 0u32, body(&k.basis[0]))];
         assert!(k.try_refine(&essential, [5; 32], &self_cite).is_none(), "an essential word is refused");
         assert_eq!(k.basis_len(), 1, "refusal mutates nothing");
         assert!(k.try_refine(&[3; 32], [5; 32], &sentence).is_none(), "an unknown address is refused");
@@ -6240,7 +6240,7 @@ mod tests {
         k.basis_insert(from_residual(&germinate(&a, &rot).unwrap()), [1; 32]);
         let addr = k.basis[1].address();
         k.provisional.insert(addr, (*k.basis[1]).clone());
-        let sentence = vec![(k.basis[0].address(), element::identity_versor(), 0u32, body(&k.basis[0]))];
+        let sentence = vec![(k.basis[0].address(), 0u8, element::identity_versor(), 0u32, body(&k.basis[0]))];
         assert!(k.try_refine(&addr, [5; 32], &sentence).is_none(), "provisional words are refused");
         assert_eq!(k.basis_len(), 2);
     }
@@ -6549,7 +6549,7 @@ mod tests {
         };
         let (ca, cb) = perceive(&a, &b);
         let frame = frame_of(&a, &b);
-        let proof = vec![vec![(word, element::identity_versor(), 0u32, body)]];
+        let proof = vec![vec![(word, 0u8, element::identity_versor(), 0u32, body)]];
         let out = crate::synthesis::adjudicate(&k, &ca, &cb, [3; 32], &frame, &proof);
         assert!(matches!(out, Outcome::Decomposed(ref w) if w == &vec![0]), "{out:?}");
         let out = crate::synthesis::adjudicate(&k, &ca, &cb, [3; 32], &frame, &[]);

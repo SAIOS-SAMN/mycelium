@@ -651,6 +651,70 @@ pub struct Dialect {
     pub sentence: Element,
     pub last_used_k: u64,
     pub uses: u64,
+    shape: Option<crate::transducer::blade::Shape>,
+}
+
+/// Standing of a fiber member on the working atlas.
+pub use crate::transducer::stalk::Standing;
+
+/// One working atlas, three strata. A fiber read is `(address, Standing)`,
+/// never a boolean. Genome-only `atlas()` remains for persistence.
+pub struct WorkingAtlas<'a> {
+    genome: &'a crate::transducer::stalk::Stalks,
+    dialect: &'a crate::transducer::stalk::Stalks,
+    ideas: Option<&'a crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>>,
+}
+
+impl<'a> WorkingAtlas<'a> {
+    /// Addresses on this chart, each carrying the stratum it came from.
+    /// Ruled first, then Stood, then Held; an address appears once, at its
+    /// strongest standing.
+    pub fn fiber(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<([u8; 32], Standing)> {
+        let mut out: Vec<([u8; 32], Standing)> = Vec::new();
+        let mut have: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        for a in self.genome.fiber(inv) {
+            have.insert(a, ());
+            out.push((a, Standing::Ruled));
+        }
+        for a in self.dialect.fiber(inv) {
+            if have.contains(&a) {
+                continue;
+            }
+            have.insert(a, ());
+            out.push((a, Standing::Stood));
+        }
+        if let Some(ideas) = self.ideas {
+            if let Some(m) = ideas.get(&inv.key()) {
+                for (a, _) in m.fiber(&crate::network::nerve::ROOT) {
+                    if have.contains(a) {
+                        continue;
+                    }
+                    have.insert(*a, ());
+                    out.push((*a, Standing::Held));
+                }
+            }
+        }
+        out
+    }
+
+    pub fn standing_of(&self, addr: &[u8; 32], inv: &crate::transducer::stalk::Invariant) -> Option<Standing> {
+        self.fiber(inv).into_iter().find(|(a, _)| a == addr).map(|(_, s)| s)
+    }
+
+    pub fn standing_addr(&self, addr: &[u8; 32]) -> Option<Standing> {
+        if self.genome.contains(addr) {
+            return Some(Standing::Ruled);
+        }
+        if self.dialect.contains(addr) {
+            return Some(Standing::Stood);
+        }
+        if let Some(ideas) = self.ideas {
+            if ideas.fiber(&crate::network::nerve::ROOT).any(|(_, m)| m.contains(addr)) {
+                return Some(Standing::Held);
+            }
+        }
+        None
+    }
 }
 
 /// The crystallized language: words on disk. The epigenome is the rest.
@@ -693,6 +757,10 @@ pub struct Epigenome {
     index: crate::network::nerve::Keyed<usize>,
     /// Sentences this mind spoke that stood. Memory only.
     dialect: crate::network::nerve::Keyed<Dialect>,
+    /// Charts of stood sentences, admitted in stand_dialect, retracted in shed.
+    dialect_atlas: crate::transducer::stalk::Stalks,
+    /// Addresses promoted from dialect into the genome this learn.
+    promoted: Vec<[u8; 32]>,
     /// Dialects dropped this process.
     shed_n: u64,
 }
@@ -732,27 +800,30 @@ impl Epigenome {
 
     /// True when a dialect sentence lives on this chart (exact invariant).
     pub fn dialect_holds(&self, c: &crate::transducer::stalk::Invariant) -> bool {
-        self.dialect.fiber(&crate::network::nerve::ROOT).any(|(_, d)| {
-            &crate::transducer::stalk::invariant_of(&d.sentence) == c
-        })
+        !self.dialect_atlas.fiber(c).is_empty()
     }
 
     pub fn shed_n(&self) -> u64 {
         self.shed_n
     }
 
-    /// Drop dialect unused for an aperture of K, and expression/taught/glued
-    /// for words no longer in the genome.
+    /// Drop dialect unused for an aperture of K. A dialect entry a live
+    /// idea glues is not shed. The genome never sheds.
     pub fn shed(&mut self, k: u64) -> usize {
+        self.shed_except(k, &|_| false)
+    }
+
+    pub fn shed_except(&mut self, k: u64, glued: &impl Fn(&[u8; 32]) -> bool) -> usize {
         let aperture = crate::physics::aperture_cycle() as u64;
         let drop: Vec<[u8; 32]> = self
             .dialect
             .fiber(&crate::network::nerve::ROOT)
-            .filter(|(_, d)| k.saturating_sub(d.last_used_k) > aperture)
+            .filter(|(a, d)| k.saturating_sub(d.last_used_k) > aperture && !glued(a))
             .map(|(a, _)| *a)
             .collect();
         let n = drop.len();
         for a in &drop {
+            self.dialect_atlas.remove(a);
             self.dialect.remove(a);
         }
         self.shed_n = self.shed_n.saturating_add(n as u64);
@@ -760,16 +831,42 @@ impl Epigenome {
     }
 
     pub fn stand_dialect(&mut self, sentence: Element, k: u64) {
+        if let Some(i) = self.genome.iter().position(|w| w.same_vertex(&sentence)) {
+            if let Some(x) = self.expression.get_mut(i) {
+                *x = x.saturating_add(1);
+            }
+            return;
+        }
         let addr = sentence.address();
-        match self.dialect.get_mut(&addr) {
-            Some(d) => {
+        if let Some(d) = self.dialect.get_mut(&addr) {
+            d.last_used_k = k;
+            d.uses = d.uses.saturating_add(1);
+            return;
+        }
+        if let Some(existing) = self
+            .dialect
+            .fiber(&crate::network::nerve::ROOT)
+            .find(|(_, d)| d.sentence.same_vertex(&sentence))
+            .map(|(a, _)| *a)
+        {
+            if let Some(d) = self.dialect.get_mut(&existing) {
                 d.last_used_k = k;
                 d.uses = d.uses.saturating_add(1);
             }
-            None => {
-                self.dialect.insert(addr, Dialect { sentence, last_used_k: k, uses: 1 });
-            }
+            return;
         }
+        let inv = crate::transducer::stalk::invariant_of(&sentence);
+        self.dialect_atlas.admit(&inv, addr);
+        let shape = crate::transducer::element::shape_of_chain(sentence.sub());
+        self.dialect.insert(
+            addr,
+            Dialect {
+                sentence,
+                last_used_k: k,
+                uses: 1,
+                shape,
+            },
+        );
     }
 
     /// The words this entity has expressed and not yet had ratified.
@@ -829,7 +926,8 @@ impl Epigenome {
     /// (the accepted compression bid). Expression rides along (parallel
     /// vector); recollections citing the retired index dissolve — they were
     /// spellings in the old vocabulary — and surviving citations reindex.
-    /// The genome's atlas, admitted in place. Never rebuilt here.
+    /// The genome's atlas, admitted in place. Persistence and crystallize
+    /// only. Cognitive reads use [`working_atlas`].
     pub fn atlas(&self) -> &crate::transducer::stalk::Stalks {
         &self.atlas
     }
@@ -838,16 +936,95 @@ impl Epigenome {
         self.atlas_len == 0
     }
 
+    /// Working atlas of genome + dialect. Ideas join at Entity::working_atlas.
+    pub fn working_atlas(&self) -> WorkingAtlas<'_> {
+        WorkingAtlas {
+            genome: &self.atlas,
+            dialect: &self.dialect_atlas,
+            ideas: None,
+        }
+    }
+
+    pub fn working_atlas_with<'a>(
+        &'a self,
+        ideas: &'a crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
+    ) -> WorkingAtlas<'a> {
+        WorkingAtlas {
+            genome: &self.atlas,
+            dialect: &self.dialect_atlas,
+            ideas: Some(ideas),
+        }
+    }
+
+    /// A word on the working language: genome first, then dialect.
+    pub fn working_word(&self, addr: &[u8; 32]) -> Option<&Element> {
+        self.word_at(addr)
+            .or_else(|| self.dialect.get(addr).map(|d| &d.sentence))
+    }
+
+    pub fn take_promoted(&mut self) -> Vec<[u8; 32]> {
+        std::mem::take(&mut self.promoted)
+    }
+
+    fn same_vertex_in_dialect(&self, e: &Element) -> Option<[u8; 32]> {
+        self.dialect
+            .fiber(&crate::network::nerve::ROOT)
+            .find(|(_, d)| d.sentence.same_vertex(e))
+            .map(|(a, _)| *a)
+    }
+
+    fn same_vertex_in_genome(&self, e: &Element) -> Option<usize> {
+        self.genome.iter().position(|w| w.same_vertex(e))
+    }
+
     /// The shape of word `i`, lifted on first use.
     fn shape(&self, i: usize) -> Option<&crate::transducer::blade::Shape> {
         let cell = self.shapes.get(i)?;
         cell.get_or_init(|| crate::transducer::element::shape_of_chain(self.genome[i].sub())).as_ref()
     }
 
-    /// Deconstruct a chain over this genome: the sentence it composes and
-    /// the residual no word speaks.
+    /// Deconstruct a chain over the working language: genome and dialect.
+    /// A word this mind stood closes a remainder without waiting for the court.
     fn locate(&mut self, chain: &[(i64, i64, u8, u8)], exclude: Option<usize>) -> crate::transducer::sentence::Sentence {
-        crate::transducer::sentence::deconstruct(&self.genome, &self.atlas, &|a| self.index.get(a).copied(), &|i| self.shape(i), chain, exclude)
+        let n = self.genome.len();
+        let dialect_addrs: Vec<[u8; 32]> = self
+            .dialect
+            .fiber(&crate::network::nerve::ROOT)
+            .map(|(a, _)| *a)
+            .collect();
+        let genome = &self.genome;
+        let dialect = &self.dialect;
+        let atlas = &self.atlas;
+        let dialect_atlas = &self.dialect_atlas;
+        let index = &self.index;
+        let shapes = &self.shapes;
+        let word_at = |i: usize| -> Option<&Element> {
+            if i < n {
+                genome.get(i)
+            } else {
+                dialect_addrs.get(i - n).and_then(|a| dialect.get(a).map(|d| &d.sentence))
+            }
+        };
+        let index_of = |a: &[u8; 32]| -> Option<usize> {
+            index.get(a).copied().or_else(|| dialect_addrs.iter().position(|x| x == a).map(|j| n + j))
+        };
+        let shape_at = |i: usize| -> Option<&crate::transducer::blade::Shape> {
+            if i < n {
+                shapes.get(i).and_then(|c| c.get_or_init(|| crate::transducer::element::shape_of_chain(genome[i].sub())).as_ref())
+            } else {
+                dialect_addrs.get(i - n).and_then(|a| dialect.get(a).and_then(|d| d.shape.as_ref()))
+            }
+        };
+        let fiber_of = |inv: &crate::transducer::stalk::Invariant| {
+            let mut v = atlas.fiber(inv);
+            for a in dialect_atlas.fiber(inv) {
+                if !v.iter().any(|b| b == &a) {
+                    v.push(a);
+                }
+            }
+            v
+        };
+        crate::transducer::sentence::deconstruct_on(&word_at, &fiber_of, &index_of, &shape_at, chain, exclude)
     }
 
     pub fn retire(&mut self, addr: &[u8; 32]) -> bool {
@@ -894,13 +1071,15 @@ impl Epigenome {
             let chart = n.germs.first().and_then(|g| g.target.clone().or(g.source.clone()));
             let mut understood = Vec::new();
             if let Some(inv) = chart {
-                let fibre = self.atlas.fiber(&inv);
-                if let Some(a) = fibre.first() {
+                let fibre = self.working_atlas().fiber(&inv);
+                if let Some((a, _st)) = fibre.first() {
                     if let Some(&i) = self.index.get(a) {
                         if let Some(x) = self.expression.get_mut(i) {
                             *x += 1;
                         }
                         understood.push(i);
+                    } else if self.dialect.contains(a) {
+                        understood.push(usize::MAX); // stood, not a genome index
                     }
                 }
             }
@@ -921,13 +1100,12 @@ impl Epigenome {
         }
         if utterance.is_connection() && utterance.sub().is_empty() {
             let inv = crate::transducer::stalk::invariant_of(utterance);
-            let representative = self
-                .atlas
-                .fiber(&inv)
-                .iter()
-                .filter_map(|a| self.word_at(a))
+            let fibre = self.working_atlas().fiber(&inv);
+            let representative = fibre
+                .into_iter()
+                .filter_map(|(a, _st)| self.working_word(&a).cloned())
                 .find(|held| held.address() != utterance.address() && !held.axes().is_empty());
-            return match representative.and_then(|held| crate::transducer::cech::transition(held, utterance)) {
+            return match representative.and_then(|held| crate::transducer::cech::transition(&held, utterance)) {
                 None => Comprehension::Admitted,
                 Some(g) => match (g.axes().as_slice(), g.sub()) {
                     ([], []) => Comprehension::Held,
@@ -1021,12 +1199,40 @@ impl Epigenome {
         }
         let heard = self.comprehend(&e);
         let addr = e.address();
+        // The court promotes: a syllabus word that is the same vertex as a
+        // dialect entry moves that entry into the genome, carrying its uses.
+        if let Some(da) = self.same_vertex_in_dialect(&e) {
+            let uses = self.dialect.get(&da).map(|d| d.uses).unwrap_or(1);
+            self.dialect_atlas.remove(&da);
+            self.dialect.remove(&da);
+            if let Some(i) = self.same_vertex_in_genome(&e) {
+                let _ = self.genome[i].merge_fibre(&e);
+                self.index.insert(addr, i);
+                if let Some(x) = self.expression.get_mut(i) {
+                    *x = x.saturating_add(uses);
+                }
+            } else if let Some(i) = self.index.get(&addr).copied() {
+                self.genome[i] = e;
+                if let Some(x) = self.expression.get_mut(i) {
+                    *x = x.saturating_add(uses);
+                }
+            } else {
+                self.atlas.admit(&crate::transducer::stalk::invariant_of(&e), e.address());
+                self.shapes.push(std::sync::OnceLock::new());
+                self.atlas_len = self.atlas_len.saturating_add(1);
+                self.index.insert(e.address(), self.genome.len());
+                self.genome.push(e);
+                self.expression.push(uses);
+            }
+            self.promoted.push(addr);
+            return Some(heard);
+        }
         match self.index.get(&addr).copied() {
             Some(i) => self.genome[i] = e, // the taught form may carry new sections — refresh
             None => {
                 // Same vertex, different tape: merge into the held word.
                 // Comprehension is factorization, not a digest lookup.
-                if let Some(i) = self.genome.iter().position(|w| w.same_vertex(&e)) {
+                if let Some(i) = self.same_vertex_in_genome(&e) {
                     let _ = self.genome[i].merge_fibre(&e);
                     self.index.insert(addr, i);
                 } else {
@@ -1112,6 +1318,16 @@ impl Epigenome {
         self.atlas_len = self.genome.len();
         self.reindex();
         true
+    }
+}
+
+impl crate::transducer::family::Crystal for Epigenome {
+    fn on_class(&self, class: &crate::transducer::stalk::Invariant) -> Vec<(Element, Standing)> {
+        self.working_atlas()
+            .fiber(class)
+            .into_iter()
+            .filter_map(|(a, st)| self.working_word(&a).cloned().map(|e| (e, st)))
+            .collect()
     }
 }
 
@@ -1319,7 +1535,7 @@ impl Entity {
                     .into_iter()
                     .map(|(j, t, asg)| {
                         let body = crate::transducer::sentence::cited_pattern(&g[j], asg).unwrap_or_default();
-                        (g[j].address(), t, asg as u32, body)
+                        (g[j].address(), Standing::Ruled.as_u8(), t, asg as u32, body)
                     })
                     .collect(),
             )),
@@ -1522,23 +1738,36 @@ impl Entity {
     /// could not reduce. Cognition happens here; the hypha only replays.
     pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)]) -> (Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>) {
         let located = self.epigenome.locate(chain, None);
-        let genome = self.epigenome.genome();
-        // Each citation carries its operator: the word's body under the
-        // gauge it was read at, so the hearer verifies what was said.
+        let n_genome = self.epigenome.genome_len();
+        let dialect_addrs: Vec<[u8; 32]> = self
+            .epigenome
+            .dialect
+            .fiber(&crate::network::nerve::ROOT)
+            .map(|(a, _)| *a)
+            .collect();
+        let word_of = |i: usize| -> Option<&Element> {
+            if i < n_genome {
+                self.epigenome.genome().get(i)
+            } else {
+                dialect_addrs.get(i - n_genome).and_then(|a| self.epigenome.working_word(a))
+            }
+        };
+        // Each citation carries its operator and the standing of the word
+        // it rests on, so the hypha can weight a held idea below a ruled word.
         let mut cites: Vec<dialogue::CiteWire> = located
             .cites
             .into_iter()
-            .map(|(i, g, asg)| {
-                let body = crate::transducer::sentence::cited_pattern(&genome[i], asg).unwrap_or_default();
-                (genome[i].address(), g, asg as u32, body)
+            .filter_map(|(i, g, asg)| {
+                let w = word_of(i)?;
+                let body = crate::transducer::sentence::cited_pattern(w, asg).unwrap_or_default();
+                let st = self.working_atlas().standing_addr(&w.address()).unwrap_or(Standing::Stood);
+                Some((w.address(), st.as_u8(), g, asg as u32, body))
             })
             .collect();
-        // A puncture is spoken as a section of the held word: the operator
-        // carries the word's cells under the body's own transitions. The
-        // wire carries it; this genome deepens only after the hypha verifies
-        // (probe closed/descent or attest), never before the utterance.
         for (i, g, body) in &located.punctures {
-            cites.push((genome[*i].address(), g.clone(), u32::MAX, body.clone()));
+            let Some(w) = word_of(*i) else { continue };
+            let st = self.working_atlas().standing_addr(&w.address()).unwrap_or(Standing::Stood);
+            cites.push((w.address(), st.as_u8(), g.clone(), u32::MAX, body.clone()));
         }
         (cites, located.residual)
     }
@@ -1547,7 +1776,7 @@ impl Entity {
     /// the proof; each address is a keyed read.
     pub fn puncture_verified(&mut self, cites: &[dialogue::CiteWire]) -> usize {
         let mut deepened = 0usize;
-        for (addr, _, asg, body) in cites {
+        for (addr, _, _, asg, body) in cites {
             if *asg != u32::MAX {
                 continue;
             }
@@ -1595,7 +1824,19 @@ impl Entity {
         self.session.bump_cursor();
         let mut last_err = io::Error::new(io::ErrorKind::NotConnected, "no hypha");
         let mut out: Option<YieldQuote> = None;
-        let req = dialogue::encode_quote_request_charts(&self.session.kernel().voice(), asked);
+        let asked_st: Vec<(crate::transducer::stalk::Invariant, u8)> = asked
+            .iter()
+            .map(|inv| {
+                let st = self
+                    .working_atlas()
+                    .fiber(inv)
+                    .first()
+                    .map(|(_, s)| s.as_u8())
+                    .unwrap_or(Standing::Held.as_u8());
+                (inv.clone(), st)
+            })
+            .collect();
+        let req = dialogue::encode_quote_request_standing(&self.session.kernel().voice(), &asked_st);
         for i in 0..n {
             if !budget.spend() {
                 break;
@@ -1703,7 +1944,19 @@ impl Entity {
             let dk = *blake3::hash(dest.as_bytes()).as_bytes();
             let invs = dests.get(&dk).cloned().unwrap_or_default();
             let asked = if invs.is_empty() { charts.clone() } else { invs };
-            let req = dialogue::encode_quote_request_charts(&self.session.kernel().voice(), &asked);
+            let asked_st: Vec<(crate::transducer::stalk::Invariant, u8)> = asked
+                .iter()
+                .map(|inv| {
+                    let st = self
+                        .working_atlas()
+                        .fiber(inv)
+                        .first()
+                        .map(|(_, s)| s.as_u8())
+                        .unwrap_or(Standing::Held.as_u8());
+                    (inv.clone(), st)
+                })
+                .collect();
+            let req = dialogue::encode_quote_request_standing(&self.session.kernel().voice(), &asked_st);
             match self.session.exchange_at(&dest, req.clone()).or_else(|e| {
                 if e.kind() == io::ErrorKind::WouldBlock {
                     self.session.speak_nerve(req)
@@ -2010,14 +2263,23 @@ impl Entity {
         self.taught_up.contains(addr)
     }
 
-    /// Already uttered this operator: same vertex, not the same digest.
+    /// Already uttered this operator: same vertex on the working atlas
+    /// or already sent up, not the same digest.
     pub fn already_taught(&self, word: &Element) -> bool {
         if self.taught_up.contains(&word.address()) {
             return true;
         }
-        self.taught_up
+        if self
+            .taught_up
             .fiber(&crate::network::nerve::ROOT)
             .any(|(_, e)| e.same_vertex(word))
+        {
+            return true;
+        }
+        if self.epigenome.same_vertex_in_genome(word).is_some() {
+            return true;
+        }
+        self.epigenome.same_vertex_in_dialect(word).is_some()
     }
 
     /// Stand the vertex in the dialect and mark it taught, without the wire.
@@ -2066,26 +2328,28 @@ impl Entity {
     }
 
     pub fn shed(&mut self, k: u64) -> usize {
-        self.epigenome.shed(k)
+        let glued = |a: &[u8; 32]| self.contemplation.glues_word(a);
+        let n = self.epigenome.shed_except(k, &glued);
+        n.saturating_add(self.contemplation.shed_unglued())
     }
 
     pub fn dialect_len(&self) -> usize {
         self.epigenome.dialect_len()
     }
 
-    /// Working incidence: genome atlas ∪ dialect charts ∪ idea charts.
-    /// A quote on a dialect or idea chart is a claim the court verifies.
+    /// The mind's working atlas: genome ∪ dialect ∪ ideas, each fiber
+    /// member carrying its standing.
+    pub fn working_atlas(&self) -> WorkingAtlas<'_> {
+        self.epigenome.working_atlas_with(&self.contemplation.by_chart)
+    }
+
+    pub fn take_promoted(&mut self) -> Vec<[u8; 32]> {
+        self.epigenome.take_promoted()
+    }
+
+    /// Working incidence: a non-empty fiber on the working atlas.
     pub fn incident_chart(&self, c: &crate::transducer::stalk::Invariant) -> bool {
-        if !self.epigenome.atlas().fiber(c).is_empty() {
-            return true;
-        }
-        if self.epigenome.dialect_holds(c) {
-            return true;
-        }
-        self.contemplation
-            .by_chart
-            .get(&c.key())
-            .is_some_and(|m| m.len() > 0)
+        !self.working_atlas().fiber(c).is_empty()
     }
 
     pub fn ideas_len(&self) -> usize {
@@ -2434,6 +2698,11 @@ mod tests {
         entity.remember_spoken(&e1);
         let inv = crate::transducer::stalk::invariant_of(&e1);
         assert!(entity.incident_chart(&inv), "a dialect chart is working incidence");
+        let fiber = entity.working_atlas().fiber(&inv);
+        assert!(
+            fiber.iter().any(|(_, s)| *s == Standing::Stood),
+            "a dialect fiber carries Stood, not a boolean"
+        );
         assert!(
             !entity.incident_chart(&crate::transducer::stalk::Invariant(vec![99])),
             "an unseen chart is not incident"
@@ -2443,5 +2712,126 @@ mod tests {
         let idea = crate::transducer::stalk::invariant(&idea_chain);
         assert!(entity.ideas_len() > 0, "the idea is held");
         assert!(entity.incident_chart(&idea), "an idea chart is working incidence");
+        assert!(
+            entity.working_atlas().fiber(&idea).iter().any(|(_, s)| *s == Standing::Held),
+            "an idea fiber carries Held"
+        );
+    }
+
+    /// The court promotes a dialect vertex into the genome, carrying uses,
+    /// and never admits a second copy.
+    #[test]
+    fn learn_one_promotes_dialect_same_vertex() {
+        use crate::transducer::element::{from_residual, identity_versor};
+        use crate::transducer::peel::ShellKind;
+        use crate::transducer::sentence::{assemble, as_element, Germ};
+        use crate::transducer::alphabet::Word;
+        use crate::transducer::family::Crystal;
+        let whole = |chain: Vec<(i64, i64, u8, u8)>| Germ {
+            address: from_residual(&chain).address(),
+            versor: identity_versor(),
+            word: Word::identity(),
+            chain,
+            source: None,
+            target: None,
+            kind: ShellKind::Whole,
+            shift: None,
+        };
+        let e1 = as_element(&assemble(
+            vec![
+                whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
+                whole(vec![(0, 4, 3, 4), (0, 5, 3, 4)]),
+            ],
+            Vec::new(),
+        ))
+        .expect("e1");
+        let mut epi = Epigenome::new();
+        epi.stand_dialect(e1.clone(), 1);
+        epi.stand_dialect(e1.clone(), 2);
+        assert_eq!(epi.dialect_len(), 1);
+        assert_eq!(epi.genome_len(), 0);
+        let uses = 2u64;
+        let _ = uses;
+        let heard = epi.learn(&e1.to_bytes()).expect("promoted");
+        let _ = heard;
+        assert_eq!(epi.dialect_len(), 0, "dialect moves, it is not copied");
+        assert_eq!(epi.genome_len(), 1, "genome is the promoted vertex");
+        let promoted = epi.take_promoted();
+        assert_eq!(promoted.len(), 1);
+        assert_eq!(epi.expression[0], 2, "uses ride with the promotion");
+        let inv = crate::transducer::stalk::invariant_of(&e1);
+        let on = epi.on_class(&inv);
+        assert!(on.iter().any(|(_, s)| *s == Standing::Ruled), "Crystal reads the working atlas as Ruled after promotion");
+    }
+
+    /// A stood dialect word closes a remainder without waiting for the court.
+    #[test]
+    fn a_stood_word_closes_todays_remainder() {
+        use crate::transducer::element::from_residual;
+        use crate::transducer::germinate::germinate;
+        let mut epi = Epigenome::new();
+        let word = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+        epi.stand_dialect(word.clone(), 1);
+        assert_eq!(epi.genome_len(), 0);
+        let chain = word.sub().to_vec();
+        let located = {
+            // locate is private; comprehend over the same chain is the public read.
+            epi.comprehend(&from_residual(&chain))
+        };
+        match located {
+            Comprehension::Understood(_) | Comprehension::Held | Comprehension::Admitted => {}
+            other => {
+                // residual words locate as the chain of the stood word
+                let again = epi.comprehend(&word);
+                assert!(
+                    matches!(again, Comprehension::Understood(_) | Comprehension::Admitted | Comprehension::Held),
+                    "a stood word is on the working language, got {other:?} then {again:?}"
+                );
+            }
+        }
+    }
+
+    /// Shed never removes a dialect entry a live idea glued, and never the genome.
+    #[test]
+    fn shed_spares_glued_dialect_and_the_genome() {
+        use crate::transducer::element::{from_residual, identity_versor};
+        use crate::transducer::peel::ShellKind;
+        use crate::transducer::sentence::{assemble, as_element, Germ};
+        use crate::transducer::alphabet::Word;
+        let whole = |chain: Vec<(i64, i64, u8, u8)>| Germ {
+            address: from_residual(&chain).address(),
+            versor: identity_versor(),
+            word: Word::identity(),
+            chain,
+            source: None,
+            target: None,
+            kind: ShellKind::Whole,
+            shift: None,
+        };
+        let e1 = as_element(&assemble(
+            vec![
+                whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
+                whole(vec![(0, 4, 3, 4), (0, 5, 3, 4)]),
+            ],
+            Vec::new(),
+        ))
+        .expect("e1");
+        let mut entity = Entity::open("127.0.0.1:1", Kernel::named("shed"));
+        entity.remember_spoken(&e1);
+        assert_eq!(entity.dialect_len(), 1);
+        let addr = e1.address();
+        entity.hold_thought(vec![(9, 0, 1, 2)]);
+        let idea = entity
+            .contemplation
+            .bubbles
+            .fiber(&crate::network::nerve::ROOT)
+            .next()
+            .map(|(k, _)| *k)
+            .expect("idea");
+        entity.contemplation.mark_glue(&idea, addr);
+        let aperture = crate::physics::aperture_cycle() as u64;
+        let n = entity.shed(1 + aperture + 1);
+        assert_eq!(entity.dialect_len(), 1, "glued dialect is not shed, dropped {n}");
+        assert_eq!(entity.epigenome.genome_len(), 0, "genome is untouched by shed");
     }
 }

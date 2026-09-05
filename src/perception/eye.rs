@@ -19,6 +19,6 @@ pub fn perceive_voice(
 ) -> Vec<(Shape, crate::transducer::element::Versor)> {
     cites
         .iter()
-        .filter_map(|(_, v, _, body)| Some((crate::transducer::element::shape_of_chain(body)?, v.clone())))
+        .filter_map(|(_, _, v, _, body)| Some((crate::transducer::element::shape_of_chain(body)?, v.clone())))
         .collect()
 }

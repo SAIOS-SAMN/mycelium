@@ -36,6 +36,33 @@ use crate::physics::Budget;
 /// A chain cell: (row, col, hue before, hue after).
 type Cell = (i64, i64, u8, u8);
 
+/// Standing of a word on the working atlas: a coordinate, never a gate.
+/// Ruled weights above Stood, Stood above Held.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Standing {
+    /// Court-ratified, persisted in the genome.
+    Ruled = 0,
+    /// Spoken and stood by this mind, dialect, memory only.
+    Stood = 1,
+    /// An idea this mind is holding, not yet a word.
+    Held = 2,
+}
+
+impl Standing {
+    pub fn as_u8(self) -> u8 {
+        self as u8
+    }
+
+    pub fn from_u8(v: u8) -> Option<Self> {
+        match v {
+            0 => Some(Standing::Ruled),
+            1 => Some(Standing::Stood),
+            2 => Some(Standing::Held),
+            _ => None,
+        }
+    }
+}
+
 /// The moduli of a support, in axis order.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Invariant(pub Vec<u64>);
@@ -428,6 +455,11 @@ impl Stalks {
         if let Some(inv) = self.charts.remove(addr) {
             self.root.remove(&inv.0, addr);
         }
+    }
+
+    /// Whether this address is charted here.
+    pub fn contains(&self, addr: &[u8; 32]) -> bool {
+        self.charts.contains(addr)
     }
 
     pub fn clear(&mut self) {

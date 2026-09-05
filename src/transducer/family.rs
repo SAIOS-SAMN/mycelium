@@ -28,8 +28,14 @@
 
 use super::blade::{self, Shape};
 use super::cga;
-use super::element::{self, Versor};
-use super::stalk::Invariant;
+use super::element::{self, Element, Versor};
+use super::stalk::{Invariant, Standing};
+
+/// Source of crystallized forms on a class. The standing of each form is
+/// a coordinate: Ruled genome, Stood dialect, never a boolean.
+pub trait Crystal {
+    fn on_class(&self, class: &Invariant) -> Vec<(Element, Standing)>;
+}
 use num_bigint::BigInt;
 use num_rational::BigRational;
 

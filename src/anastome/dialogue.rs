@@ -91,12 +91,25 @@ pub const ACT_ADOPT: u8 = 0x0E;
 pub const ACT_SPEECH: u8 = 0x16;
 
 pub fn encode_speech(voice: &[u8; 32], task: &[u8; 32], tu: u64, sentences: &[Vec<u8>]) -> Vec<u8> {
+    encode_speech_standing(voice, task, tu, sentences, &[])
+}
+
+/// Each sentence carries the standing of the word it rests on (one byte
+/// beside the record). Empty `standing` is Stood for every sentence.
+pub fn encode_speech_standing(
+    voice: &[u8; 32],
+    task: &[u8; 32],
+    tu: u64,
+    sentences: &[Vec<u8>],
+    standing: &[u8],
+) -> Vec<u8> {
     let mut out = vec![ACT_SPEECH];
     out.extend_from_slice(voice);
     out.extend_from_slice(task);
     out.extend_from_slice(&tu.to_le_bytes());
     out.extend_from_slice(&(sentences.len() as u32).to_le_bytes());
-    for s in sentences {
+    for (i, s) in sentences.iter().enumerate() {
+        out.push(standing.get(i).copied().unwrap_or(crate::transducer::stalk::Standing::Stood.as_u8()));
         out.extend_from_slice(&(s.len() as u32).to_le_bytes());
         out.extend_from_slice(s);
     }
@@ -104,6 +117,11 @@ pub fn encode_speech(voice: &[u8; 32], task: &[u8; 32], tu: u64, sentences: &[Ve
 }
 
 pub fn decode_speech(body: &[u8]) -> Option<([u8; 32], [u8; 32], u64, Vec<Vec<u8>>)> {
+    let (voice, task, tu, sentences, _) = decode_speech_standing(body)?;
+    Some((voice, task, tu, sentences))
+}
+
+pub fn decode_speech_standing(body: &[u8]) -> Option<([u8; 32], [u8; 32], u64, Vec<Vec<u8>>, Vec<u8>)> {
     if body.first() != Some(&ACT_SPEECH) || body.len() < 77 {
         return None;
     }
@@ -113,14 +131,18 @@ pub fn decode_speech(body: &[u8]) -> Option<([u8; 32], [u8; 32], u64, Vec<Vec<u8
     let n = u32::from_le_bytes(body.get(73..77)?.try_into().ok()?) as usize;
     let mut pos = 77usize;
     let mut sentences = Vec::with_capacity(n.min(64));
+    let mut standing = Vec::with_capacity(n.min(64));
     for _ in 0..n {
+        let st = *body.get(pos)?;
+        pos += 1;
         let len = u32::from_le_bytes(body.get(pos..pos + 4)?.try_into().ok()?) as usize;
         pos += 4;
         let s = body.get(pos..pos + len)?.to_vec();
         pos += len;
+        standing.push(st);
         sentences.push(s);
     }
-    Some((voice, task, tu, sentences))
+    Some((voice, task, tu, sentences, standing))
 }
 
 /// Per-sentence: 0 Stood, 1 Dialect, 2 Refused.
@@ -300,19 +322,18 @@ pub fn decode_root_reply(body: &[u8]) -> Option<(Option<[u8; 32]>, u64)> {
     Some(((solver != [0; 32]).then_some(solver), ticks))
 }
 
-/// A citation on the wire: (word address, transport, gauge coordinate).
-/// A CITATION ON THE WIRE carries its operator: the word's address as a
-/// hint for the hearer's lexicon, the versor, the gauge coordinate as the
-/// speaker held it, and the body itself — the word's cells under that
-/// gauge, (row, col, before, after) in the word's own frame. The hearer
-/// verifies the operator it received; it never fetches a copy of the word
-/// to verify against.
-pub type CiteWire = ([u8; 32], crate::transducer::element::Versor, u32, Vec<Cell>);
+/// A citation on the wire: (word address, standing, transport, gauge, body).
+/// Standing is one byte beside the address (`Standing::as_u8`): Ruled, Stood,
+/// or Held — a coordinate, so the hypha can weight a held idea below a
+/// ruled word. The versor and the body are the operator; the hearer
+/// verifies them and never fetches a copy of the word to verify against.
+pub type CiteWire = ([u8; 32], u8, crate::transducer::element::Versor, u32, Vec<Cell>);
 
 pub fn push_cites(out: &mut Vec<u8>, cites: &[CiteWire]) {
     out.extend_from_slice(&(cites.len() as u32).to_le_bytes());
-    for (addr, g, asg, body) in cites {
+    for (addr, standing, g, asg, body) in cites {
         out.extend_from_slice(addr);
+        out.push(*standing);
         g.to_bytes(out);
         out.extend_from_slice(&asg.to_le_bytes());
         push_chain(out, body);
@@ -322,18 +343,20 @@ pub fn push_cites(out: &mut Vec<u8>, cites: &[CiteWire]) {
 pub fn read_cites(b: &[u8], p: &mut usize) -> Option<Vec<CiteWire>> {
     let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
     *p += 4;
-    if n > b.len().saturating_sub(*p) / 40 {
-        return None; // untrusted count: address, versor, coordinate, body per citation
+    if n > b.len().saturating_sub(*p) / 41 {
+        return None; // untrusted count: address, standing, versor, coordinate, body
     }
     let mut out = Vec::with_capacity(n);
     for _ in 0..n {
         let addr: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
         *p += 32;
+        let standing = *b.get(*p)?;
+        *p += 1;
         let g = crate::transducer::element::Versor::from_bytes(b, p)?;
         let asg = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
         *p += 4;
         let body = read_chain(b, p)?;
-        out.push((addr, g, asg, body));
+        out.push((addr, standing, g, asg, body));
     }
     Some(out)
 }
@@ -1040,6 +1063,22 @@ pub fn encode_quote_request_charts(
     out.push(charts.len().min(255) as u8);
     for inv in charts.iter().take(255) {
         push_invariant(&mut out, inv);
+        out.push(0); // Ruled unless the caller uses encode_quote_request_standing
+    }
+    out
+}
+
+/// Quote request with the standing of each chart the mind rests on.
+pub fn encode_quote_request_standing(
+    voice: &[u8; 32],
+    charts: &[(crate::transducer::stalk::Invariant, u8)],
+) -> Vec<u8> {
+    let mut out = vec![ACT_QUOTE];
+    out.extend_from_slice(voice);
+    out.push(charts.len().min(255) as u8);
+    for (inv, st) in charts.iter().take(255) {
+        push_invariant(&mut out, inv);
+        out.push(*st);
     }
     out
 }
@@ -1057,6 +1096,8 @@ pub fn decode_quote_request(body: &[u8]) -> Option<([u8; 32], Vec<crate::transdu
     let mut charts = Vec::with_capacity(n);
     for _ in 0..n {
         charts.push(read_invariant(body, &mut p)?);
+        let _standing = *body.get(p)?;
+        p += 1;
     }
     Some((voice, charts))
 }
@@ -1636,7 +1677,13 @@ mod tests {
     fn the_five_acts_round_trip() {
         let chain = vec![(0i64, 0i64, 1u8, 4u8), (2, 3, 0, 7)];
         let (voice, germ) = ([9u8; 32], [7u8; 32]);
-        let cites = vec![([3u8; 32], crate::transducer::element::translator_versor(1, -1), 1u32, chain.clone())];
+        let cites = vec![(
+            [3u8; 32],
+            0u8,
+            crate::transducer::element::translator_versor(1, -1),
+            1u32,
+            chain.clone(),
+        )];
         let (v, c, k) = decode_demand(&encode_demand(&voice, &chain, &cites)).unwrap();
         assert_eq!(k, cites, "the citations ride the demand");
         assert_eq!((v, c), (voice, chain.clone()));

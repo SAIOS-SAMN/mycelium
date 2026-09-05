@@ -405,22 +405,6 @@ fn main() {
         // impedance is already perceived); the answer is patience, not
         // repetition.
         lap("feed");
-        // Syllabus while the genome (or its atlas) is empty: every stroke
-        // under the Budget, not only the depletion arm, and not a timer.
-        if !occluded
-            && !physics.depleted()
-            && (entity.epigenome.genome_len() == 0 || entity.epigenome.atlas_is_empty())
-        {
-            if let Ok(n) = entity.pull_syllabus() {
-                if n > 0 {
-                    learned += n as u64;
-                    eprintln!(
-                        "[{tag}] SYLLABUS +{n} ratified words (genome {})",
-                        entity.epigenome.genome_len(),
-                    );
-                }
-            }
-        }
         match entity.quote() {
             Ok(q) => {
                 // An empty WouldBlock is impedance, not a clock: do not
@@ -431,18 +415,31 @@ fn main() {
                     entity.at(q.k);
                 }
                 let (mut n_closed, mut n_descent, mut n_nothing, mut n_settled, mut n_silent, mut n_attested, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32, 0u32, 0u32);
+                let (mut n_closing, mut n_stood, mut n_held) = (0u32, 0u32, 0u32);
                 for cluster in &q.clusters {
                     if cluster.chain.is_empty() {
                         continue;
                     }
-                    // Incidence: genome atlas ∪ dialect charts ∪ idea charts.
-                    // A quote on a dialect or idea chart is a claim the court
-                    // verifies as any other. Several may close; none is ranked.
+                    // Incidence: working atlas fiber, each chart with its standing.
                     if !cluster.open.is_empty() {
                         let closing: Vec<mycelium::transducer::stalk::Invariant> = cluster
                             .open
                             .iter()
-                            .filter(|c| entity.incident_chart(c))
+                            .filter(|c| {
+                                let f = entity.working_atlas().fiber(c);
+                                if f.is_empty() {
+                                    return false;
+                                }
+                                n_closing += 1;
+                                for (_, st) in &f {
+                                    match st {
+                                        mycelium::sdk::Standing::Stood => n_stood += 1,
+                                        mycelium::sdk::Standing::Held => n_held += 1,
+                                        mycelium::sdk::Standing::Ruled => {}
+                                    }
+                                }
+                                true
+                            })
                             .cloned()
                             .collect();
                         if closing.is_empty() {
@@ -540,6 +537,10 @@ fn main() {
                     }
                 }
                 eprintln!(
+                    "[{tag}] [{}] quote closing {n_closing} charts stood {n_stood} held {n_held}",
+                    tuniversal.stamp(),
+                );
+                eprintln!(
                     "[{tag}] [{}] quote {} clusters: closed {n_closed} descent {n_descent} nothing {n_nothing} settled {n_settled} silent {n_silent} attested {n_attested} err {n_err}",
                     tuniversal.stamp(),
                     q.clusters.len(),
@@ -558,6 +559,25 @@ fn main() {
         }
 
         lap("quote");
+        // Syllabus after quote so a voice can close dialect/idea charts
+        // before its first SYLLABUS line. Under the Budget, not a timer.
+        if !occluded
+            && !physics.depleted()
+            && (entity.epigenome.genome_len() == 0 || entity.epigenome.atlas_is_empty())
+        {
+            if let Ok(n) = entity.pull_syllabus() {
+                for a in entity.take_promoted() {
+                    eprintln!("[{tag}] promoted {:02x}{:02x}…", a[0], a[1]);
+                }
+                if n > 0 {
+                    learned += n as u64;
+                    eprintln!(
+                        "[{tag}] SYLLABUS +{n} ratified words (genome {})",
+                        entity.epigenome.genome_len(),
+                    );
+                }
+            }
+        }
         // ── PULL REGISTERED WORK (PoUW): one signed envelope per stroke from
         // the hypha's authoritative registry — study the family, think the
         // tests through, submit. The REGISTRY rules bounty vs floor
@@ -663,6 +683,9 @@ fn main() {
                     eprintln!("[{tag}] pivot: {pivoted} held thoughts spoken as demands on charts the language now holds");
                 }
                 if let Ok(n) = entity.pull_syllabus() {
+                    for a in entity.take_promoted() {
+                        eprintln!("[{tag}] promoted {:02x}{:02x}…", a[0], a[1]);
+                    }
                     if n > 0 {
                         learned += n as u64;
                         eprintln!(
