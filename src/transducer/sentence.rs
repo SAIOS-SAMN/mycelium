@@ -684,6 +684,10 @@ pub struct Nerve {
     /// class key of the holonomy (A17). Filing writes the key; cauterize
     /// reads `contains`. σ is the loop's consecutive germ pairs.
     pub torsion: Keyed<(Vec<(u8, u8)>, u32)>,
+    /// Certified discharges, keyed by the certificate (A20).
+    pub certificates: Keyed<PivotCertificate>,
+    /// Incomparable discharges of one loop, keyed the same way (25.1).
+    pub vortex: Keyed<PivotCertificate>,
 }
 
 impl PartialEq for Nerve {
@@ -899,19 +903,13 @@ impl Vertex {
 
 impl Form {
     pub fn from_nerve(n: &Nerve) -> Form {
-        let mut vertices: Vec<Vertex> = n.germs.iter().map(Vertex::from_germ).collect();
-        let mut shift = 0u16;
-        // Frame is vertex 0 by construction. Prepend only when index 0 is not.
-        if !matches!(vertices.first(), Some(Vertex::Frame)) {
-            vertices.insert(0, Vertex::Frame);
-            shift = 1;
-        }
+        let vertices: Vec<Vertex> = n.germs.iter().map(Vertex::from_germ).collect();
         let faces: Vec<FormFace> = n
             .faces
             .iter()
             .map(|f| FormFace {
-                i: (f.i as u16).saturating_add(shift),
-                j: (f.j as u16).saturating_add(shift),
+                i: f.i as u16,
+                j: f.j as u16,
                 g_ij: f.g_ij.clone(),
             })
             .collect();
@@ -1004,6 +1002,14 @@ impl Form {
             class: None,
             cover: Keyed::new(),
             torsion: self.torsion.clone(),
+            certificates: {
+                let mut k = Keyed::new();
+                for c in &self.certificates {
+                    k.insert(c.key(), c.clone());
+                }
+                k
+            },
+            vortex: Keyed::new(),
         })
     }
 
@@ -1663,6 +1669,8 @@ pub fn assemble(germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
         class,
         cover: Keyed::new(),
         torsion: Keyed::new(),
+        certificates: Keyed::new(),
+        vortex: Keyed::new(),
     }
 }
 
@@ -2392,7 +2400,19 @@ pub struct PivotCertificate {
 impl PivotCertificate {
     pub fn key(&self) -> [u8; 32] {
         let mut buf = Vec::new();
-        self.to_bytes(&mut buf);
+        buf.extend_from_slice(&self.chord.to_le_bytes());
+        buf.push(self.axis.to_byte());
+        buf.extend_from_slice(&self.before);
+        buf.extend_from_slice(&self.after);
+        self.rank_before.to_bytes(&mut buf);
+        self.rank_after.to_bytes(&mut buf);
+        let PivotBy::Word { face, word, side } = &self.by;
+        buf.extend_from_slice(&face.to_le_bytes());
+        buf.push(match side {
+            Side::Left => 0,
+            Side::Right => 1,
+        });
+        buf.extend_from_slice(&word.key());
         *blake3::hash(&buf).as_bytes()
     }
 
@@ -2510,19 +2530,14 @@ pub fn class_vector_of(n: &Nerve, idx: usize) -> Option<ClassVector> {
     Some(ClassVector::read(&c.holonomy, loop_translation(n, c)))
 }
 
-/// The axis index of a crystal (12.6, A16 step 3): held words keyed by
-/// (chart, axis) and, inside the bucket, by M1 key. Filled when a word is
-/// admitted to the working atlas or the ruled cover, emptied when it is
-/// shed or retired, and read as one fiber per occupied axis. Nothing here
-/// is scanned.
-pub type AxisIndex = Keyed<Keyed<Word>>;
+/// The axis index of a crystal (12.6, A16 step 3): chart → axis slot → M1
+/// word. Nested keyed reads, never a hash of the pair.
+pub type AxisIndex = Keyed<Keyed<Keyed<Word>>>;
 
-/// Composite key of two identities: the chart and the axis.
-pub fn axis_key(chart: &stalk::Invariant, axis: Axis) -> [u8; 32] {
-    let mut buf = Vec::with_capacity(33);
-    buf.extend_from_slice(&chart.key());
-    buf.push(axis.to_byte());
-    *blake3::hash(&buf).as_bytes()
+fn axis_slot(axis: Axis) -> [u8; 32] {
+    let mut k = [0u8; 32];
+    k[0] = axis.to_byte();
+    k
 }
 
 /// The words a form speaks: its Word vertices'.
@@ -2548,17 +2563,27 @@ pub fn words_of_element(e: &Element) -> Vec<Word> {
 /// Admit words to the axis index under every coordinate their class vector
 /// occupies on `chart`.
 pub fn admit_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[Word]) {
+    let ck = chart.key();
     for w in words {
         for axis in ClassVector::of_word(w).coordinates() {
-            let k = axis_key(chart, axis);
-            match index.get_mut(&k) {
-                Some(bucket) => {
-                    bucket.insert(w.key(), w.clone());
-                }
+            let ak = axis_slot(axis);
+            match index.get_mut(&ck) {
+                Some(mid) => match mid.get_mut(&ak) {
+                    Some(bucket) => {
+                        bucket.insert(w.key(), w.clone());
+                    }
+                    None => {
+                        let mut bucket = Keyed::new();
+                        bucket.insert(w.key(), w.clone());
+                        mid.insert(ak, bucket);
+                    }
+                },
                 None => {
                     let mut bucket = Keyed::new();
                     bucket.insert(w.key(), w.clone());
-                    index.insert(k, bucket);
+                    let mut mid = Keyed::new();
+                    mid.insert(ak, bucket);
+                    index.insert(ck, mid);
                 }
             }
         }
@@ -2567,9 +2592,13 @@ pub fn admit_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[Wor
 
 /// Retract words from the axis index (shed, retire).
 pub fn retract_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[Word]) {
+    let ck = chart.key();
+    let Some(mid) = index.get_mut(&ck) else {
+        return;
+    };
     for w in words {
         for axis in ClassVector::of_word(w).coordinates() {
-            if let Some(bucket) = index.get_mut(&axis_key(chart, axis)) {
+            if let Some(bucket) = mid.get_mut(&axis_slot(axis)) {
                 bucket.remove(&w.key());
             }
         }
@@ -2579,7 +2608,8 @@ pub fn retract_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[W
 /// The fiber of the axis index at (chart, axis).
 pub fn on_axis_of(index: &AxisIndex, chart: &stalk::Invariant, axis: Axis) -> Vec<Word> {
     index
-        .get(&axis_key(chart, axis))
+        .get(&chart.key())
+        .and_then(|mid| mid.get(&axis_slot(axis)))
         .map(|bucket| bucket.fiber(&crate::network::nerve::ROOT).map(|(_, w)| w.clone()).collect())
         .unwrap_or_default()
 }
@@ -2609,23 +2639,35 @@ fn candidates_for(n: &Nerve, c: &Cycle, kappa: &ClassVector, crystal: &dyn super
             charts.insert(chart.key(), chart);
         }
     }
-    let mut seen: Keyed<()> = Keyed::new();
+    fn side_slot(side: Side) -> [u8; 32] {
+        let mut k = [0u8; 32];
+        k[0] = match side {
+            Side::Left => 0,
+            Side::Right => 1,
+        };
+        k
+    }
+    let mut seen: Keyed<Keyed<()>> = Keyed::new();
     let mut out = Vec::new();
     for axis in kappa.coordinates() {
         for (_, chart) in charts.fiber(&crate::network::nerve::ROOT) {
             for w in crystal.on_axis(chart, axis) {
                 for side in [Side::Right, Side::Left] {
-                    let mut kb = Vec::with_capacity(33);
-                    kb.extend_from_slice(&w.key());
-                    kb.push(match side {
-                        Side::Left => 0,
-                        Side::Right => 1,
-                    });
-                    let k = *blake3::hash(&kb).as_bytes();
-                    if seen.contains(&k) {
+                    let wk = w.key();
+                    let sk = side_slot(side);
+                    if seen.get(&wk).is_some_and(|s| s.contains(&sk)) {
                         continue;
                     }
-                    seen.insert(k, ());
+                    match seen.get_mut(&wk) {
+                        Some(sides) => {
+                            sides.insert(sk, ());
+                        }
+                        None => {
+                            let mut sides = Keyed::new();
+                            sides.insert(sk, ());
+                            seen.insert(wk, sides);
+                        }
+                    }
                     out.push(Candidate {
                         axis,
                         by: PivotBy::Word {
@@ -2859,6 +2901,7 @@ pub fn pivot_loop(
                         "  pivot {:02x}{:02x}… loop {idx} axis {:?} discharged {:02x}{:02x}…→{:02x}{:02x}…",
                         idea[0], idea[1], cert.axis, cert.before[0], cert.before[1], cert.after[0], cert.after[1]
                     );
+                    n.certificates.insert(cert.key(), cert.clone());
                     snaps.push(Snap::Discharged {
                         chord: idx,
                         certificate: cert,
@@ -2874,9 +2917,14 @@ pub fn pivot_loop(
                         idea[1],
                         discharging.len()
                     );
+                    let mut held = Vec::new();
+                    for (c, _) in discharging {
+                        n.vortex.insert(c.key(), c.clone());
+                        held.push(c);
+                    }
                     snaps.push(Snap::Vortex {
                         chord: idx,
-                        held: discharging.into_iter().map(|(c, _)| c).collect(),
+                        held,
                     });
                     handled.insert(key, ());
                 }
@@ -2927,9 +2975,13 @@ pub fn pivot_loop(
 /// filed (`Nerve::torsion`, written at filing) are recorded on the element
 /// as for any word. Face indices are the nerve's (from_nerve keeps face
 /// order), so certificates carry over as they are.
-pub fn as_element_form_of_nerve(n: &Nerve, certificates: &[PivotCertificate]) -> Option<Element> {
+pub fn as_element_form_of_nerve(n: &Nerve) -> Option<Element> {
     let mut form = Form::from_nerve(n);
-    form.certificates = certificates.to_vec();
+    form.certificates = n
+        .certificates
+        .fiber(&crate::network::nerve::ROOT)
+        .map(|(_, c)| c.clone())
+        .collect();
     form.torsion = n.torsion.clone();
     let mut e = as_element_form_mag(&form, cochain_magnitude(n))?;
     e.adopt_torsion(&form.torsion);
@@ -2940,7 +2992,7 @@ pub fn as_element_form_of_nerve(n: &Nerve, certificates: &[PivotCertificate]) ->
 /// at any degree stays as torsion and the sentence is thought.
 pub fn close(n: &mut Nerve) -> bool {
     let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    let mut all_filled = true;
+    let mut open: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     let supports: Vec<Vec<(i64, i64)>> = n.germs.iter().map(after_support).collect();
     // index: germs of this nerve (its vertices)
     for i in 0..n.germs.len() {
@@ -2961,20 +3013,20 @@ pub fn close(n: &mut Nerve) -> bool {
                 Fill::Filled(_) => {}
                 Fill::Congruent(r, _) => {
                     n.class = Some((r, d));
-                    all_filled = false;
+                    open.insert(k, ());
                 }
                 Fill::Class(r) => {
                     n.class = Some((r, d));
-                    all_filled = false;
+                    open.insert(k, ());
                 }
                 Fill::Open | Fill::Already => {
-                    all_filled = false;
+                    open.insert(k, ());
                 }
             }
         }
     }
     n.cycles = independent_cycles(n.germs.len(), &n.faces);
-    if !all_filled || n.class.is_some() {
+    if !open.is_empty() || n.class.is_some() {
         return false;
     }
     let Some(gamma) = solve_coboundary(n) else {
@@ -3730,6 +3782,8 @@ fn decode_nerve_tail(b: &[u8], pos: &mut usize) -> Option<Nerve> {
         class,
         cover,
         torsion: Keyed::new(),
+        certificates: Keyed::new(),
+        vortex: Keyed::new(),
     })
 }
 
@@ -4710,6 +4764,8 @@ mod tests {
             class: None,
             cover: crate::network::nerve::Keyed::new(),
             torsion: crate::network::nerve::Keyed::new(),
+            certificates: crate::network::nerve::Keyed::new(),
+            vortex: crate::network::nerve::Keyed::new(),
         }
     }
 
@@ -4928,6 +4984,10 @@ mod tests {
         assert_eq!(certificate.after, CLOSED_KEY);
         assert_eq!(certificate.rank_before.torsion, 1);
         assert_eq!(certificate.rank_after.torsion, 0);
+        assert!(
+            n.certificates.get(&certificate.key()).is_some(),
+            "the nerve carries the discharge by key"
+        );
 
         let mut n = chord_nerve(&[q.clone()]);
         let snaps = pivot_loop(

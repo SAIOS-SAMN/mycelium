@@ -117,10 +117,12 @@ struct PairFormMemo {
 }
 
 /// Grid cells visited by [`perceive`] since the last reset.
+#[cfg(test)]
 pub fn cell_reads() -> u64 {
     CELL_READS.with(|c| c.get())
 }
 
+#[cfg(test)]
 fn reset_cell_reads() {
     CELL_READS.with(|c| c.set(0));
 }
@@ -292,10 +294,12 @@ fn note_face_work() {
     FACE_WORK.with(|c| c.set(c.get().saturating_add(1)));
 }
 
+#[cfg(test)]
 fn reset_face_work() {
     FACE_WORK.with(|c| c.set(0));
 }
 
+#[cfg(test)]
 fn face_work() -> u64 {
     FACE_WORK.with(|c| c.get())
 }
@@ -669,30 +673,25 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
         let mut readings: Vec<(usize, Versor)> = Vec::new();
         let mut sigma: Option<HueMap> = None;
         let mut shift: Option<(BigRational, BigRational)> = None;
-        // The gauge map and the displacement are read once for the class.
-        let mut gauge_ok = true;
         for pr in &members {
             let s = &scenes[pr.pair];
             let (a, b) = (&s.bodies_in[pr.input], &s.bodies_out[pr.output]);
             let d = (&b.centroid.0 - &a.centroid.0, &b.centroid.1 - &a.centroid.1);
             let incoming = hue_map_from_pairs(&pr.carriage.sigma);
-            sigma = match &sigma {
+            sigma = match sigma {
                 None => Some(incoming),
-                Some(held) => match merge_sigma(held, &incoming) {
-                    Some(m) => Some(m),
-                    None => {
-                        gauge_ok = false;
-                        break;
-                    }
-                },
+                Some(held) => merge_sigma(&held, &incoming),
             };
+            if sigma.is_none() {
+                break;
+            }
             if shift.is_none() {
                 shift = Some(d);
             }
         }
-        if !gauge_ok {
+        let Some(sigma) = sigma else {
             continue;
-        }
+        };
         for reading in 0..READINGS {
             let mut agreed: Option<Versor> = None;
             let mut ok = true;
@@ -726,7 +725,7 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
                 readings,
                 anchor,
                 shift: shift.unwrap_or((q(0), q(0))),
-                sigma: hue_map_pairs(&sigma.unwrap_or([None; PALETTE])),
+                sigma: hue_map_pairs(&sigma),
             });
         }
     }
@@ -1187,21 +1186,23 @@ pub fn orbit(v: &Vertex, x_cells: &[Cell3], anchor: &[(i64, i64)], frame: (usize
     if d1 == start {
         return OrbitEnd::NoOrbit;
     }
-    let mut cells = next;
-    let state_key = |cs: &[Cell3]| -> [u8; 32] {
-        let mut cells = cs.to_vec();
-        cells.sort_unstable();
-        let mut buf = Vec::with_capacity(cells.len().saturating_mul(17));
-        for &(r, c, h) in &cells {
-            buf.extend_from_slice(&r.to_le_bytes());
-            buf.extend_from_slice(&c.to_le_bytes());
-            buf.push(h);
+    let occupancy = |cs: &[Cell3]| -> crate::network::nerve::Keyed<u8> {
+        let mut o = crate::network::nerve::Keyed::new();
+        for &(r, c, h) in cs {
+            o.insert(cell_pos_key(r, c), h);
         }
-        *blake3::hash(&buf).as_bytes()
+        o
     };
-    let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    seen.insert(state_key(x_cells), ());
-    seen.insert(state_key(&cells), ());
+    let occupancy_eq = |a: &crate::network::nerve::Keyed<u8>, b: &crate::network::nerve::Keyed<u8>| -> bool {
+        a.fiber(&crate::network::nerve::ROOT)
+            .all(|(k, h)| b.get(k) == Some(h))
+            && b.fiber(&crate::network::nerve::ROOT)
+                .all(|(k, h)| a.get(k) == Some(h))
+    };
+    let mut cells = next;
+    let mut seen: Vec<crate::network::nerve::Keyed<u8>> = Vec::new();
+    seen.push(occupancy(x_cells));
+    seen.push(occupancy(&cells));
     for step in 1..=bound {
         let d = ring_dist_peel(&positions_of(&cells), anchor, bound);
         let left = cells.iter().any(|&(r, c, _)| r < 0 || c < 0 || (r as usize) >= frame.0 || (c as usize) >= frame.1);
@@ -1216,11 +1217,11 @@ pub fn orbit(v: &Vertex, x_cells: &[Cell3], anchor: &[(i64, i64)], frame: (usize
             return OrbitEnd::Contact { cells: inside, steps: step };
         }
         let nxt = apply_versor_cells(&versor, &cells, frame);
-        let nk = state_key(&nxt);
-        if nxt == cells || seen.contains(&nk) {
+        let occ = occupancy(&nxt);
+        if nxt == cells || seen.iter().any(|s| occupancy_eq(s, &occ)) {
             return OrbitEnd::Torsion { steps: step };
         }
-        seen.insert(nk, ());
+        seen.push(occ);
         cells = nxt;
     }
     OrbitEnd::LeftFrame { steps: bound }

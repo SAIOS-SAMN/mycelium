@@ -12,7 +12,7 @@ use crate::transducer::alphabet::{Order, Rotor};
 use crate::transducer::cech::{self, Cell as CechCell, Complex, Fill, Section};
 use crate::transducer::element::{self, Element};
 use crate::transducer::family::Crystal;
-use crate::transducer::sentence::{self, Germ, Nerve};
+use crate::transducer::sentence::{self, Germ, Nerve, PivotCertificate};
 use crate::transducer::stalk::{self, Invariant, Standing, Stalks};
 
 /// One class the mesh or a mind holds on a chart: key, order, representative.
@@ -40,6 +40,12 @@ fn rem_cell_key(r: i64, c: i64) -> [u8; 32] {
 
 fn remainder_addr(remainder: &[RemCell]) -> [u8; 32] {
     element::from_residual(&remainder.to_vec()).address()
+}
+
+fn absorb_keyed<V: Clone>(dst: &mut Keyed<V>, src: &Keyed<V>) {
+    for (k, v) in src.fiber(&ROOT) {
+        dst.insert(*k, v.clone());
+    }
 }
 
 fn cover_of(inv: &Invariant) -> Keyed<()> {
@@ -115,6 +121,12 @@ pub struct Bubble {
     pub glues: Keyed<()>,
     /// Ideas that glued this bubble; a non-empty set is not shed.
     pub glued_by: Keyed<()>,
+    /// Filed torsion `(σ, ℓ)` keyed by class, written from `pivot_loop`.
+    pub torsion: Keyed<(Vec<(u8, u8)>, u32)>,
+    /// Certified discharges this idea's crystallization rests on (A20).
+    pub certificates: Keyed<PivotCertificate>,
+    /// Incomparable discharges held as cells (25.1) until a glue or ruling.
+    pub vortex: Keyed<PivotCertificate>,
 }
 
 impl Bubble {
@@ -215,13 +227,25 @@ impl Bubble {
             let mut n = sentence::assemble(self.germs.clone(), self.remainder.clone());
             n.cover = self.cover.clone();
             n.complex = self.nerve.clone();
+            n.torsion = self.torsion.clone();
+            n.certificates = self.certificates.clone();
+            n.vortex = self.vortex.clone();
             let _ = sentence::pivot_loop(&mut n, self.key(), &self.horizon, crystal, budget);
-            self.germs = n.germs;
-            self.remainder = n.remainder;
-            self.nerve = n.complex;
+            self.take_pivot(n);
         }
         self.dirty = spent > 0 && budget.remaining() == 0;
         spent
+    }
+
+    /// The nerve after a pivot is this idea. Torsion, certificates and
+    /// vortex are the nerve's own keyed carriers.
+    fn take_pivot(&mut self, n: Nerve) {
+        self.germs = n.germs;
+        self.remainder = n.remainder;
+        self.nerve = n.complex;
+        self.torsion = n.torsion;
+        self.certificates = n.certificates;
+        self.vortex = n.vortex;
     }
 }
 
@@ -629,6 +653,9 @@ impl Contemplation {
             moved_tu: self.now_tu,
             glues: Keyed::new(),
             glued_by: Keyed::new(),
+            torsion: Keyed::new(),
+            certificates: Keyed::new(),
+            vortex: Keyed::new(),
         };
         if let Some(old) = self.bubbles.get(&key).cloned() {
             self.retract_incidence(&key, &old);
@@ -676,6 +703,9 @@ impl Contemplation {
             moved_tu: 0,
             glues: Keyed::new(),
             glued_by: Keyed::new(),
+            torsion: n.torsion,
+            certificates: n.certificates,
+            vortex: n.vortex,
         };
         if let Some(old) = self.bubbles.get(&key).cloned() {
             self.retract_incidence(&key, &old);
@@ -695,6 +725,9 @@ impl Contemplation {
         let mut cover = Keyed::new();
         let mut nerve = Complex::new();
         let mut horizon: Keyed<(Rotor, Order, Standing)> = Keyed::new();
+        let mut torsion = Keyed::new();
+        let mut certificates = Keyed::new();
+        let mut vortex = Keyed::new();
         let mut old_rems: Vec<([u8; 32], Vec<RemCell>)> = Vec::new();
         for v in verts {
             let Some(b) = self.bubbles.get(v).cloned() else {
@@ -704,12 +737,11 @@ impl Contemplation {
             self.retract_incidence(v, &b);
             remainder = union_rem(&remainder, &b.remainder);
             germs.extend(b.germs.clone());
-            for (k, _) in b.cover.fiber(&ROOT) {
-                cover.insert(*k, ());
-            }
-            for (k, c) in b.horizon.fiber(&ROOT) {
-                horizon.insert(*k, c.clone());
-            }
+            absorb_keyed(&mut cover, &b.cover);
+            absorb_keyed(&mut horizon, &b.horizon);
+            absorb_keyed(&mut torsion, &b.torsion);
+            absorb_keyed(&mut certificates, &b.certificates);
+            absorb_keyed(&mut vortex, &b.vortex);
             nerve = b.nerve.clone();
             self.bubbles.remove(v);
         }
@@ -736,6 +768,9 @@ impl Contemplation {
             moved_tu: 0,
             glues: Keyed::new(),
             glued_by: Keyed::new(),
+            torsion,
+            certificates,
+            vortex,
         };
         self.admit_incidence(key, &bubble);
         self.bubbles.insert(key, bubble);
@@ -906,12 +941,13 @@ impl Contemplation {
             let mut n = sentence::assemble(b.germs.clone(), b.remainder.clone());
             n.cover = b.cover.clone();
             n.complex = b.nerve.clone();
+            n.torsion = b.torsion.clone();
+            n.certificates = b.certificates.clone();
+            n.vortex = b.vortex.clone();
             let horizon = b.horizon.clone();
             let _ = sentence::pivot_loop(&mut n, *bk, &horizon, crystal, budget);
             if let Some(b) = self.bubbles.get_mut(bk) {
-                b.germs = n.germs;
-                b.remainder = n.remainder;
-                b.nerve = n.complex;
+                b.take_pivot(n);
             }
         }
         // index: by_chart fiber at the word's chart and peels
@@ -1016,7 +1052,9 @@ impl Contemplation {
         let mut germs = Vec::new();
         let mut remainder = Vec::new();
         let mut cover = Keyed::new();
-        let mut filed: Vec<( [u8; 32], [u8; 32], Rotor, u32 )> = Vec::new();
+        let mut torsion = Keyed::new();
+        let mut certificates = Keyed::new();
+        let mut vortex = Keyed::new();
         for v in verts {
             let Some(b) = self.bubbles.get(v) else {
                 continue;
@@ -1026,34 +1064,26 @@ impl Contemplation {
             }
             germs.extend(b.germs.clone());
             remainder = union_rem(&remainder, &b.remainder);
-            for (k, _) in b.cover.fiber(&ROOT) {
-                cover.insert(*k, ());
-            }
-            for layer in &b.nerve.degrees {
-                for (_, cell) in layer.fiber(&ROOT) {
-                    if let Fill::Congruent(g, ell) = &cell.fill {
-                        if cell.vertices.len() >= 2 {
-                            filed.push((cell.vertices[0], cell.vertices[1], g.clone(), *ell));
-                        }
-                    }
-                }
-            }
+            absorb_keyed(&mut cover, &b.cover);
+            absorb_keyed(&mut torsion, &b.torsion);
+            absorb_keyed(&mut certificates, &b.certificates);
+            absorb_keyed(&mut vortex, &b.vortex);
         }
         if germs.is_empty() {
             return None;
         }
         let mut n = sentence::assemble(germs, remainder);
         n.cover = cover;
-        for (a, c, g, ell) in filed {
-            n.complex.file_congruent(a, c, g, ell);
-        }
+        n.torsion = torsion;
+        n.certificates = certificates;
+        n.vortex = vortex;
         if !n.is_closed() {
             let _ = sentence::close(&mut n);
         }
         if !n.is_cauterized() {
             return None;
         }
-        sentence::as_element(&n)
+        sentence::as_element_form_of_nerve(&n)
     }
 
     /// Classes on the contemplation, any degree.
@@ -1117,6 +1147,25 @@ impl Contemplation {
             for x in &b.potential {
                 out.extend_from_slice(&x.to_le_bytes());
             }
+            out.extend_from_slice(b"TOR1");
+            out.extend_from_slice(&(b.torsion.len() as u32).to_le_bytes());
+            crate::snapshot::persist(&b.torsion, |tk, (sigma, ell)| {
+                out.extend_from_slice(tk);
+                out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
+                for &(a, c) in sigma {
+                    out.push(a);
+                    out.push(c);
+                }
+                out.extend_from_slice(&ell.to_le_bytes());
+            });
+            out.extend_from_slice(&(b.certificates.len() as u32).to_le_bytes());
+            crate::snapshot::persist(&b.certificates, |_, c| {
+                c.to_bytes(out);
+            });
+            out.extend_from_slice(&(b.vortex.len() as u32).to_le_bytes());
+            crate::snapshot::persist(&b.vortex, |_, c| {
+                c.to_bytes(out);
+            });
         });
         self.complex.to_bytes(out);
         out.extend_from_slice(&self.fills.to_le_bytes());
@@ -1225,6 +1274,40 @@ impl Contemplation {
                     *pos += 8;
                 }
             }
+            let mut torsion = Keyed::new();
+            let mut certificates = Keyed::new();
+            let mut vortex = Keyed::new();
+            if b.get(*pos..*pos + 4) == Some(b"TOR1") {
+                *pos += 4;
+                let nt = take_u32(b, pos).unwrap_or(0) as usize;
+                for _ in 0..nt.min(1 << 16) {
+                    let tk: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                    *pos += 32;
+                    let ns = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?) as usize;
+                    *pos += 2;
+                    let mut sigma = Vec::with_capacity(ns.min(64));
+                    for _ in 0..ns.min(64) {
+                        let a = *b.get(*pos)?;
+                        *pos += 1;
+                        let cpair = *b.get(*pos)?;
+                        *pos += 1;
+                        sigma.push((a, cpair));
+                    }
+                    let ell = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
+                    *pos += 4;
+                    torsion.insert(tk, (sigma, ell));
+                }
+                let nc = take_u32(b, pos).unwrap_or(0) as usize;
+                for _ in 0..nc.min(1 << 16) {
+                    let c = sentence::PivotCertificate::from_bytes(b, pos)?;
+                    certificates.insert(c.key(), c);
+                }
+                let nv = take_u32(b, pos).unwrap_or(0) as usize;
+                for _ in 0..nv.min(1 << 16) {
+                    let c = sentence::PivotCertificate::from_bytes(b, pos)?;
+                    vortex.insert(c.key(), c);
+                }
+            }
             let bubble = Bubble {
                 remainder,
                 germs,
@@ -1238,6 +1321,9 @@ impl Contemplation {
                 moved_tu: 0,
                 glues: Keyed::new(),
                 glued_by: Keyed::new(),
+                torsion,
+                certificates,
+                vortex,
             };
             c.admit_incidence(key, &bubble);
             c.bubbles.insert(key, bubble);

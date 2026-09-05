@@ -92,6 +92,52 @@ impl<V> Node<V> {
         }
     }
 
+    fn representative(&self) -> [u8; 32] {
+        match self {
+            Node::Leaf(k, _) => *k,
+            Node::Branch { children, .. } => children
+                .iter()
+                .find_map(|c| c.as_deref().map(|n| n.representative()))
+                .unwrap_or([0; 32]),
+        }
+    }
+}
+
+fn meet_nodes<V, W>(a: Option<&Node<V>>, b: Option<&Node<W>>, out: &mut Keyed<()>) {
+    match (a, b) {
+        (None, _) | (_, None) => {}
+        (Some(Node::Leaf(k, _)), Some(Node::Leaf(k2, _))) => {
+            if k == k2 {
+                out.insert(*k, ());
+            }
+        }
+        (Some(leaf @ Node::Leaf(k, _)), Some(Node::Branch { bit, children })) => {
+            meet_nodes(Some(leaf), children[key_bit(k, *bit)].as_deref(), out);
+        }
+        (Some(Node::Branch { bit, children }), Some(leaf @ Node::Leaf(k, _))) => {
+            meet_nodes(children[key_bit(k, *bit)].as_deref(), Some(leaf), out);
+        }
+        (
+            Some(na @ Node::Branch { bit: ba, children: ca }),
+            Some(nb @ Node::Branch { bit: bb, children: cb }),
+        ) => {
+            let ra = na.representative();
+            let rb = nb.representative();
+            if let Some(d) = first_difference(&ra, &rb) {
+                if d < (*ba).min(*bb) {
+                    return;
+                }
+            }
+            if ba == bb {
+                meet_nodes(ca[0].as_deref(), cb[0].as_deref(), out);
+                meet_nodes(ca[1].as_deref(), cb[1].as_deref(), out);
+            } else if ba < bb {
+                meet_nodes(ca[key_bit(&rb, *ba)].as_deref(), Some(nb), out);
+            } else {
+                meet_nodes(Some(na), cb[key_bit(&ra, *bb)].as_deref(), out);
+            }
+        }
+    }
 }
 
 /// Insert into the subtree at `slot`, splitting at bit `d` (the first bit
@@ -241,15 +287,12 @@ impl<V> Keyed<V> {
         self.n == 0
     }
 
-    /// Keys present in both carriers. Cost is a walk of this fiber and a
-    /// contains-read of the other; never a product of the two.
-    pub fn meet(&self, other: &Keyed<V>) -> Keyed<()> {
+    /// Keys present in both carriers. Simultaneous PATRICIA descent (A13):
+    /// subtrees that share no prefix are pruned; cost is the shared
+    /// structure, never a product of the two fibers.
+    pub fn meet<W>(&self, other: &Keyed<W>) -> Keyed<()> {
         let mut out = Keyed::new();
-        for (k, _) in self.fiber(&ROOT) {
-            if other.contains(k) {
-                out.insert(*k, ());
-            }
-        }
+        meet_nodes(self.root.as_deref(), other.root.as_deref(), &mut out);
         out
     }
 
@@ -490,6 +533,46 @@ mod keyed_tests {
         assert_eq!(k.len(), 1);
         assert_eq!(k.fiber(&ROOT).count(), 1);
         assert_eq!(k.get(&c), Some(&3));
+    }
+
+    #[test]
+    fn meet_is_intersection_and_costs_shared_prefixes() {
+        use super::work;
+        let key = |n: u8| {
+            let mut k = [0u8; 32];
+            k[0] = n;
+            k
+        };
+        let mut a: Keyed<u8> = Keyed::new();
+        let mut b: Keyed<u8> = Keyed::new();
+        a.insert(key(1), 1);
+        a.insert(key(2), 2);
+        a.insert(key(3), 3);
+        b.insert(key(2), 20);
+        b.insert(key(3), 30);
+        b.insert(key(4), 40);
+        let m = a.meet(&b);
+        assert!(m.contains(&key(2)) && m.contains(&key(3)));
+        assert!(!m.contains(&key(1)) && !m.contains(&key(4)));
+        let run = |n: usize| {
+            work::reset();
+            let mut big: Keyed<u8> = Keyed::new();
+            let mut small: Keyed<u8> = Keyed::new();
+            small.insert(key(1), 1);
+            small.insert(key(2), 2);
+            for i in 0..n {
+                let mut k = [0u8; 32];
+                k[0] = 10;
+                k[1] = i as u8;
+                big.insert(k, 1);
+            }
+            big.insert(key(1), 1);
+            let _ = big.meet(&small);
+            work::total()
+        };
+        let w = run(8);
+        let w4 = run(32);
+        assert!(w > 0 && w4 <= w.saturating_mul(8), "meet cost follows shared prefixes, not |A|×|B|: {w} then {w4}");
     }
 }
 

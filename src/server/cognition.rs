@@ -877,20 +877,34 @@ fn loop_key(chart: &crate::transducer::stalk::Invariant, voice: &[u8; 32]) -> [u
     *h.finalize().as_bytes()
 }
 
-fn footprint_key(addr: [u8; 32], fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> [u8; 32] {
-    let mut h = blake3::Hasher::new();
-    h.update(&addr);
-    for (r, c) in fp {
-        h.update(&r.to_le_bytes());
-        h.update(&c.to_le_bytes());
+fn occ_points(fp: &[(i64, i64)]) -> crate::network::nerve::Keyed<()> {
+    let mut o = crate::network::nerve::Keyed::new();
+    for &(r, c) in fp {
+        o.insert(crate::transducer::family::cell_pos_key(r, c), ());
     }
-    h.update(&[0xff]);
-    for (r, c, hue) in scene {
-        h.update(&r.to_le_bytes());
-        h.update(&c.to_le_bytes());
-        h.update(&[*hue]);
+    o
+}
+
+fn occ_scene(scene: &[(i64, i64, u8)]) -> crate::network::nerve::Keyed<u8> {
+    let mut o = crate::network::nerve::Keyed::new();
+    for &(r, c, h) in scene {
+        o.insert(crate::transducer::family::cell_pos_key(r, c), h);
     }
-    *h.finalize().as_bytes()
+    o
+}
+
+fn occ_points_eq(a: &[(i64, i64)], b: &[(i64, i64)]) -> bool {
+    let (oa, ob) = (occ_points(a), occ_points(b));
+    oa.fiber(&crate::network::nerve::ROOT).all(|(k, _)| ob.contains(k))
+        && ob.fiber(&crate::network::nerve::ROOT).all(|(k, _)| oa.contains(k))
+}
+
+fn occ_scene_eq(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> bool {
+    let (oa, ob) = (occ_scene(a), occ_scene(b));
+    oa.fiber(&crate::network::nerve::ROOT)
+        .all(|(k, h)| ob.get(k) == Some(h))
+        && ob.fiber(&crate::network::nerve::ROOT)
+            .all(|(k, h)| oa.get(k) == Some(h))
 }
 
 impl Kernel {
@@ -3616,17 +3630,18 @@ impl Kernel {
     /// Restore fills the axis index through the same admits as `ruled_admit`.
     fn refill_axis_index(&mut self) {
         self.axis_index = crate::transducer::sentence::AxisIndex::new();
-        let held: Vec<(crate::transducer::stalk::Invariant, Vec<crate::transducer::alphabet::Word>)> = self
-            .basis
-            .iter()
-            .filter(|w| self.ruled_addrs.contains(&w.address()))
-            .map(|w| {
-                (
-                    crate::transducer::stalk::invariant_of(w),
-                    crate::transducer::sentence::words_of_element(w),
-                )
-            })
-            .collect();
+        let strata = self.ruled.strata();
+        let mut held = Vec::new();
+        for (inv, addrs) in strata {
+            for addr in addrs {
+                if let Some(w) = self.word_at(&addr) {
+                    held.push((
+                        inv.clone(),
+                        crate::transducer::sentence::words_of_element(w),
+                    ));
+                }
+            }
+        }
         for (inv, words) in held {
             crate::transducer::sentence::admit_words(&mut self.axis_index, &inv, &words);
         }
@@ -4220,11 +4235,12 @@ impl Kernel {
         if fp.is_empty() || self.anchor_evidence.len() >= 128 {
             return false;
         }
-        let key = footprint_key(addr, &fp, &scene);
-        if self.evidence_at.contains(&key) {
+        if self.anchor_evidence.iter().any(|(a, f, s)| {
+            a == &addr && occ_points_eq(f, &fp) && occ_scene_eq(s, &scene)
+        }) {
             return false;
         }
-        self.evidence_at.insert(key, ());
+        self.evidence_at.insert(addr, ());
         self.anchor_evidence.push((addr, fp, scene));
         true
     }
@@ -4447,9 +4463,9 @@ impl Kernel {
                         let fp = word_footprint_in(&self.basis[i], &chain, (*or, *oc));
                         if !fp.is_empty() {
                             let addr = self.basis[i].address();
-                            let key = footprint_key(addr, &fp, scene);
-                            if !self.evidence_at.contains(&key) {
-                                self.evidence_at.insert(key, ());
+                            if !self.anchor_evidence.iter().any(|(a, f, s)| {
+                                a == &addr && occ_points_eq(f, &fp) && occ_scene_eq(s, scene)
+                            }) {
                                 self.anchor_evidence.push((addr, fp, scene.clone()));
                             }
                         }

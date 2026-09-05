@@ -141,11 +141,23 @@ fn a_single_recolour_is_a_one_morphism_sentence() {
     let train_out = grid(&["2200", "0000"]);
     let family = vec![(train_in, train_out)];
     let rule = extract_rule(&family).expect("one body extracts");
-    assert!(
-        rule.form.vertices.iter().any(|v| matches!(v, mycelium::transducer::sentence::Vertex::Word { .. })),
-        "a single non-trivial morphism is a word vertex"
-    );
-    assert!(rule.form.is_closed() || !rule.form.faces.is_empty());
+    let words: Vec<_> = rule
+        .form
+        .vertices
+        .iter()
+        .filter(|v| matches!(v, mycelium::transducer::sentence::Vertex::Word { .. }))
+        .collect();
+    assert_eq!(words.len(), 1, "one recolour is one Word vertex");
+    match words[0] {
+        mycelium::transducer::sentence::Vertex::Word { gauge, .. } => {
+            assert!(
+                gauge.iter().any(|&(from, to)| from == 1 && to == 2),
+                "the morphism carries the 1→2 gauge, got {gauge:?}"
+            );
+        }
+        _ => unreachable!(),
+    }
+    assert!(rule.form.is_closed(), "a single non-trivial morphism is a closed sentence");
 }
 
 #[test]

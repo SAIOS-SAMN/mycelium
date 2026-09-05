@@ -58,22 +58,20 @@ pub fn task_id(task: &Task) -> [u8; 32] {
     let mut buf = Vec::new();
     for (a, b) in &task.train {
         if let Some((chain, _, frame)) = refine_delta(a, b) {
-            buf.extend_from_slice(&(frame.0 as u32).to_le_bytes());
-            buf.extend_from_slice(&(frame.2 as u32).to_le_bytes());
-            for (r, c, x, y) in chain {
-                buf.extend_from_slice(&r.to_le_bytes());
-                buf.extend_from_slice(&c.to_le_bytes());
-                buf.push(x);
-                buf.push(y);
-            }
+            buf.extend_from_slice(&crate::transducer::element::listing_key(&chain, &frame));
         }
     }
     for (x, _) in &task.test {
-        for row in x {
-            buf.extend_from_slice(row);
-            buf.push(0xFF); // row separator — shape is identity too
-        }
-        buf.push(0xFE);
+        let chain: Vec<(i64, i64, u8, u8)> = x
+            .iter()
+            .enumerate()
+            .flat_map(|(r, row)| {
+                row.iter().enumerate().filter_map(move |(c, &h)| {
+                    (h != 0).then_some((r as i64, c as i64, h, h))
+                })
+            })
+            .collect();
+        buf.extend_from_slice(&crate::transducer::element::from_residual(&chain).address());
     }
     *blake3::hash(&buf).as_bytes()
 }

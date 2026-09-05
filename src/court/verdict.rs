@@ -74,7 +74,15 @@ pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8; 32]) -> Option<Form>
             return Some(REFUSE_GLUED_FRAME_GAUGED);
         }
     }
-    for face in &f.faces {
+    let mut certified: Keyed<()> = Keyed::new();
+    for cert in &f.certificates {
+        let crate::transducer::sentence::PivotBy::Word { face, .. } = &cert.by;
+        certified.insert(face_idx_key(*face), ());
+    }
+    for (i, face) in f.faces.iter().enumerate() {
+        if certified.contains(&face_idx_key(i as u16)) {
+            continue;
+        }
         if f.face_of(face.i, face.j) != face.g_ij {
             return Some(REFUSE_FACE);
         }
@@ -685,6 +693,48 @@ mod tests {
         s.to_bytes(&mut buf);
         assert_eq!(sel_key(&s), *blake3::hash(&buf).as_bytes());
         assert_ne!(sel_key(&s), *blake3::hash(format!("{s:?}").as_bytes()).as_bytes());
+    }
+
+    /// A20: a certificate that does not un-pivot to the tape's before/after
+    /// refuses the form whole; a form with no certificates still replays.
+    #[test]
+    fn pivot_certificate_replays_or_refuses() {
+        use crate::transducer::alphabet::Word;
+        use crate::transducer::sentence::{
+            as_element_form_mag, PivotBy, PivotCertificate, Rank, Side, CLOSED_KEY,
+        };
+        let f = closed_turn_form();
+        let e = as_element_form_mag(&f, [1, 0, 0, 0]).expect("tape");
+        assert_eq!(
+            replay_form(&e, &|_| None),
+            None,
+            "a closed form with no certificates replays"
+        );
+        let mut bad = f.clone();
+        bad.certificates.push(PivotCertificate {
+            chord: 0,
+            axis: crate::transducer::sentence::Axis::Unit(0),
+            before: [1u8; 32],
+            after: CLOSED_KEY,
+            rank_before: Rank {
+                torsion: 1,
+                free: 0,
+                axes: 0,
+            },
+            rank_after: Rank::default(),
+            mu: [0; 4],
+            by: PivotBy::Word {
+                face: 0,
+                word: Word::identity(),
+                side: Side::Left,
+            },
+        });
+        let bad_e = as_element_form_mag(&bad, [1, 0, 0, 0]).expect("tampered tape");
+        assert_eq!(
+            replay_form(&bad_e, &|_| None),
+            Some(REFUSE_PIVOT_INEXACT),
+            "a certificate that does not re-derive refuses the form"
+        );
     }
 
     /// The two-docket ruling over a federation is an exhaustive state map:

@@ -1273,20 +1273,18 @@ impl Epigenome {
                     }
                 }
                 if !sentence.is_empty() {
-                    let mut addrs: Vec<[u8; 32]> = sentence
+                    let addrs: Vec<[u8; 32]> = sentence
                         .iter()
                         .filter_map(|&i| self.genome.get(i).map(|w| w.address()))
                         .collect();
-                    addrs.sort_unstable();
-                    let mut h = blake3::Hasher::new();
-                    for a in &addrs {
-                        h.update(a);
-                    }
-                    let key = *h.finalize().as_bytes();
-                    match self.recollections.get_mut(&key) {
-                        Some((_, n)) => *n += 1,
-                        None => {
-                            self.recollections.insert(key, (addrs, 1));
+                    let key = crate::transducer::sentence::vertex_address(utterance)
+                        .or_else(|| addrs.first().copied());
+                    if let Some(key) = key {
+                        match self.recollections.get_mut(&key) {
+                            Some((_, n)) => *n += 1,
+                            None => {
+                                self.recollections.insert(key, (addrs, 1));
+                            }
                         }
                     }
                 }

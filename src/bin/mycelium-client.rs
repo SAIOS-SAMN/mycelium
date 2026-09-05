@@ -135,6 +135,10 @@ impl Feed {
         self.ti += 1;
         self.pi = 0;
     }
+
+    fn exhausted(&self) -> bool {
+        self.ti >= self.files.len()
+    }
 }
 /// The magnitude of a family, per lane: the sum over its pairs of the
 /// coboundary's lane magnitudes — what thinking it through is priced on.
@@ -590,7 +594,7 @@ fn main() {
                     tuniversal.stamp(),
                     q.clusters.len(),
                 );
-                if pending_feed(&home).is_empty() && (q.clusters.iter().all(|c| c.chain.is_empty()) || q.clusters.is_empty()) {
+                if feed.exhausted() && (q.clusters.iter().all(|c| c.chain.is_empty()) || q.clusters.is_empty()) {
                     // MARKET CLEAR with nothing to feed — the idle signal:
                     // spend the stroke so the dwell paces the next ask.
                     physics.spend([true; 4]);
