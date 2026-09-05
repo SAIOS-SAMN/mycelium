@@ -435,19 +435,16 @@ fn main() {
                     if cluster.chain.is_empty() {
                         continue;
                     }
-                    // Incidence: only speak on charts this genome holds.
-                    // Several may close; none is ranked. If none, hold the
-                    // listing as thought keyed by chart.
+                    // Incidence: genome atlas ∪ dialect charts ∪ idea charts.
+                    // A quote on a dialect or idea chart is a claim the court
+                    // verifies as any other. Several may close; none is ranked.
                     if !cluster.open.is_empty() {
-                        let closing: Vec<mycelium::transducer::stalk::Invariant> = {
-                            let atlas = entity.epigenome.atlas();
-                            cluster
-                                .open
-                                .iter()
-                                .filter(|c| !atlas.fiber(c).is_empty())
-                                .cloned()
-                                .collect()
-                        };
+                        let closing: Vec<mycelium::transducer::stalk::Invariant> = cluster
+                            .open
+                            .iter()
+                            .filter(|c| entity.incident_chart(c))
+                            .cloned()
+                            .collect();
                         if closing.is_empty() {
                             entity.hold_thought(cluster.chain.clone());
                             n_silent += 1;

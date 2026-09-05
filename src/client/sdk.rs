@@ -709,6 +709,13 @@ impl Epigenome {
         self.dialect.len()
     }
 
+    /// True when a dialect sentence lives on this chart (exact invariant).
+    pub fn dialect_holds(&self, c: &crate::transducer::stalk::Invariant) -> bool {
+        self.dialect.fiber(&crate::network::nerve::ROOT).any(|(_, d)| {
+            &crate::transducer::stalk::invariant_of(&d.sentence) == c
+        })
+    }
+
     pub fn shed_n(&self) -> u64 {
         self.shed_n
     }
@@ -1957,6 +1964,21 @@ impl Entity {
         self.epigenome.dialect_len()
     }
 
+    /// Working incidence: genome atlas ∪ dialect charts ∪ idea charts.
+    /// A quote on a dialect or idea chart is a claim the court verifies.
+    pub fn incident_chart(&self, c: &crate::transducer::stalk::Invariant) -> bool {
+        if !self.epigenome.atlas().fiber(c).is_empty() {
+            return true;
+        }
+        if self.epigenome.dialect_holds(c) {
+            return true;
+        }
+        self.contemplation
+            .by_chart
+            .get(&c.key())
+            .is_some_and(|m| m.len() > 0)
+    }
+
     pub fn ideas_len(&self) -> usize {
         self.contemplation.len()
     }
@@ -2207,5 +2229,49 @@ mod tests {
         let codes = entity.speak(std::slice::from_ref(&e2)).expect("no wire on a known vertex");
         assert_eq!(codes, vec![dialogue::SPEECH_STOOD]);
         assert_eq!(entity.dialect_len(), 1, "stood once in the dialect");
+    }
+
+    /// Quote incidence is the working atlas: genome ∪ dialect ∪ ideas.
+    #[test]
+    fn quote_incidence_is_the_working_atlas() {
+        use crate::transducer::element::{from_residual, identity_versor};
+        use crate::transducer::peel::ShellKind;
+        use crate::transducer::sentence::{assemble, as_element, Germ};
+        use crate::transducer::alphabet::Word;
+        let whole = |chain: Vec<(i64, i64, u8, u8)>| Germ {
+            address: from_residual(&chain).address(),
+            versor: identity_versor(),
+            word: Word::identity(),
+            chain,
+            source: None,
+            target: None,
+            kind: ShellKind::Whole,
+            shift: None,
+        };
+        let e1 = as_element(&assemble(
+            vec![
+                whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
+                whole(vec![(0, 4, 3, 4), (0, 5, 3, 4)]),
+            ],
+            Vec::new(),
+        ))
+        .expect("e1");
+        let mut entity = Entity::open("127.0.0.1:1", Kernel::named("atlas"));
+        assert!(
+            !entity.incident_chart(&crate::transducer::stalk::invariant_of(&e1)),
+            "empty genome and dialect are not incident"
+        );
+        entity.remember_spoken(&e1);
+        let inv = crate::transducer::stalk::invariant_of(&e1);
+        assert!(entity.incident_chart(&inv), "a dialect chart is working incidence");
+        assert!(
+            !entity.incident_chart(&crate::transducer::stalk::Invariant(vec![99])),
+            "an unseen chart is not incident"
+        );
+        let idea_chain = vec![(3, 0, 5, 6), (3, 1, 5, 6)];
+        entity.hold_thought(idea_chain.clone());
+        let idea = crate::transducer::stalk::invariant(&idea_chain);
+        assert!(entity.ideas_len() > 0, "the idea is held");
+        assert!(entity.incident_chart(&idea), "an idea chart is working incidence");
     }
 }
