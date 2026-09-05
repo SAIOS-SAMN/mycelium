@@ -229,10 +229,23 @@ impl Session {
         }
         let (_, dest) = home(&cover, inv, mag, &open_rooms, &addrs, None);
         if dest.is_empty() {
-            self.addr.clone()
+            // Empty cover: XOR-closest known hypha to the chart key, not the seed.
+            self.router
+                .closest(&inv.key())
+                .map(|(_, a)| a)
+                .unwrap_or_else(|| self.addr.clone())
         } else {
             dest
         }
+    }
+
+    fn peer_cursor(&self) -> usize {
+        self.strokes.get() as usize
+    }
+
+    fn bump_cursor(&self) {
+        let n = self.strokes.get();
+        self.strokes.set(n.wrapping_add(1));
     }
 
     fn absorb_digest(&self, body: &[u8]) {
@@ -1457,6 +1470,34 @@ impl Entity {
 
     pub fn pull_syllabus(&mut self) -> io::Result<usize> {
         let voice = self.session.kernel().voice();
+        let empty = self.epigenome.genome_len() == 0 || self.epigenome.atlas_is_empty();
+        if empty {
+            let peers = self.session.peers();
+            if peers.is_empty() {
+                return Ok(0);
+            }
+            let mut budget = self.physics.stroke();
+            let n = peers.len();
+            let start = self.session.peer_cursor() % n;
+            self.session.bump_cursor();
+            let mut learned = 0usize;
+            let req = dialogue::encode_syllabus_request(&voice);
+            for i in 0..n {
+                if !budget.spend() {
+                    break;
+                }
+                let addr = &peers[(start + i) % n];
+                let Ok(body) = self.session.exchange_at(addr, req.clone()) else {
+                    continue;
+                };
+                for w in dialogue::decode_syllabus_reply(&body).unwrap_or_default() {
+                    if self.absorb_taught(&w).is_some() {
+                        learned += 1;
+                    }
+                }
+            }
+            return Ok(learned);
+        }
         let body = self.session.speak_keyed(&voice, dialogue::encode_syllabus_request(&voice))?;
         let words = dialogue::decode_syllabus_reply(&body).unwrap_or_default();
         let mut learned = 0usize;
@@ -1539,6 +1580,66 @@ impl Entity {
         };
         Ok((reply, heard))
     }
+
+    /// Visit every known hypha by a keyed cursor under the stroke Budget.
+    /// Used while the genome is empty so the first syllabus/quote is a fan-out,
+    /// not a seed pin.
+    fn quote_all_hyphae(&mut self, asked: &[crate::transducer::stalk::Invariant]) -> io::Result<YieldQuote> {
+        let peers = self.session.peers();
+        if peers.is_empty() {
+            return self.session.quote(asked);
+        }
+        let mut budget = self.physics.stroke();
+        let n = peers.len();
+        let start = self.session.peer_cursor() % n;
+        self.session.bump_cursor();
+        let mut last_err = io::Error::new(io::ErrorKind::NotConnected, "no hypha");
+        let mut out: Option<YieldQuote> = None;
+        let req = dialogue::encode_quote_request_charts(&self.session.kernel().voice(), asked);
+        for i in 0..n {
+            if !budget.spend() {
+                break;
+            }
+            let addr = &peers[(start + i) % n];
+            match self.session.exchange_at(addr, req.clone()) {
+                Ok(body) => {
+                    let (surface, k, items) = dialogue::decode_quote_reply(&body)
+                        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
+                    let clusters: Vec<Cluster> = items
+                        .into_iter()
+                        .map(|(address, mu, chain, open)| Cluster { address, mu, chain, open })
+                        .collect();
+                    match &mut out {
+                        None => out = Some(YieldQuote { surface, k, clusters }),
+                        Some(q) => {
+                            let mut have: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+                            for h in &q.clusters {
+                                have.insert(h.address, ());
+                            }
+                            for c in clusters {
+                                if have.contains(&c.address) {
+                                    continue;
+                                }
+                                have.insert(c.address, ());
+                                q.clusters.push(c);
+                            }
+                        }
+                    }
+                }
+                Err(e) => last_err = e,
+            }
+        }
+        match out {
+            Some(q) => Ok(q),
+            None if last_err.kind() == io::ErrorKind::WouldBlock => Ok(YieldQuote {
+                surface: [0; 4],
+                k: 0,
+                clusters: Vec::new(),
+            }),
+            None => Err(last_err),
+        }
+    }
+
     pub fn quote(&mut self) -> io::Result<YieldQuote> {
         let thought_charts: Vec<crate::transducer::stalk::Invariant> = {
             let mut charts = Vec::new();
@@ -1594,7 +1695,7 @@ impl Entity {
             } else {
                 charts.as_slice()
             };
-            return self.session.quote(asked);
+            return self.quote_all_hyphae(asked);
         }
         let mut last_err = io::Error::new(io::ErrorKind::NotConnected, "no hypha");
         let mut out: Option<YieldQuote> = None;
@@ -2155,6 +2256,27 @@ mod tests {
             s.impedance()
         );
         let _ = h.join();
+    }
+
+    /// An empty cover routes by XOR-closest chart key over known hyphae,
+    /// not the bootstrap seed.
+    #[test]
+    fn empty_cover_routes_by_chart_key_over_known_hyphae() {
+        let mut s = Session::open("127.0.0.1:7500", Kernel::named("fan"));
+        s.add_peer("127.0.0.1:7501");
+        s.add_peer("127.0.0.1:7502");
+        let seed = "127.0.0.1:7500";
+        let mut saw_other = false;
+        for i in 0..64u64 {
+            let inv = crate::transducer::stalk::Invariant(vec![i, i.wrapping_mul(3), 2]);
+            let dest = s.route_chart(&inv, &[1, 0, 0, 0]);
+            let closest = s.route(&inv.key());
+            assert_eq!(dest, closest, "empty cover is router.closest(chart key)");
+            if dest != seed {
+                saw_other = true;
+            }
+        }
+        assert!(saw_other, "chart keys fan out across the known hyphae, not only the seed");
     }
 
 
