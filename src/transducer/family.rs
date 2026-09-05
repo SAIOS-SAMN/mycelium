@@ -1399,37 +1399,44 @@ pub fn apply_form(
                 cells.extend(sp.cells);
                 remainder.extend(sp.remainder);
             }
-            Vertex::Rebased { by, shift, .. } => {
-                if let Some(Vertex::Word {
+            Vertex::Rebased {
+                by,
+                shift,
+                rho,
+                gauge,
+                class,
+                ..
+            } => {
+                // `by`'s word at `by`'s placement moved by the shift; the
+                // bodies, hue map and dilation are the rebased vertex's own.
+                let Some(Vertex::Word {
                     word,
-                    rho,
                     placement: p,
-                    gauge,
-                    class,
                     ..
                 }) = f.vertices.get(*by as usize)
-                {
-                    let p = (p.0.clone() + shift.0.clone(), p.1.clone() + shift.1.clone());
-                    let w = placement.compose(word);
-                    let sp = super::alphabet::Spelling {
-                        word: w,
-                        rho: rho.clone(),
-                    };
-                    let versor =
-                        element::conformal_of(&sp, &p).unwrap_or_else(element::identity_versor);
-                    let hits = atlas.fiber(class);
-                    if hits.is_empty() {
-                        unspoken.push(vi as u16);
-                        continue;
-                    }
-                    for addr in hits {
-                        let i = u64::from_le_bytes(addr[..8].try_into().ok()?) as usize;
-                        if let Some(body) = bodies.get(i) {
-                            emit_carried(body, &versor, gauge, fy, &mut cells, &mut remainder);
-                        }
-                    }
-                } else {
+                else {
                     unspoken.push(vi as u16);
+                    continue;
+                };
+                let p = (p.0.clone() + shift.0.clone(), p.1.clone() + shift.1.clone());
+                let sp = super::alphabet::Spelling {
+                    word: placement.compose(word),
+                    rho: rho.clone(),
+                };
+                let Some(versor) = element::conformal_of(&sp, &p) else {
+                    unspoken.push(vi as u16);
+                    continue;
+                };
+                let hits = atlas.fiber(class);
+                if hits.is_empty() {
+                    unspoken.push(vi as u16);
+                    continue;
+                }
+                for addr in hits {
+                    let i = u64::from_le_bytes(addr[..8].try_into().ok()?) as usize;
+                    if let Some(body) = bodies.get(i) {
+                        emit_carried(body, &versor, gauge, fy, &mut cells, &mut remainder);
+                    }
                 }
             }
             Vertex::Unfolded {
@@ -1579,10 +1586,12 @@ fn face_word_between(pf: &Form, a: &End, b: &End) -> Option<super::alphabet::Wor
     held
 }
 
-fn translation_word(_shift: &(BigRational, BigRational)) -> super::alphabet::Word {
-    super::alphabet::Word::identity()
-}
-
+/// Step 4 of chapter 21: along each named face (i, j) with `w_i` not the
+/// identity, `j` is `i` read in `j`'s frame when, on every pair of the
+/// bundle, the two bodies carry one linear word and differ only by their
+/// relative placement `t = p_j − p_i`. Conjugation by a translation keeps
+/// the linear block and moves the centre, so `t · w_i · t⁻¹` is realised
+/// by `apply_form` as `w_i` at `p_i + t`; nothing is spelled for `t`.
 fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
     let named: Vec<FormFace> = form.faces.clone();
     for face in &named {
@@ -1613,8 +1622,8 @@ fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
         let constant = pair_forms.iter().all(|pf| {
             match (word_place_of_class(pf, &tc_i), word_place_of_class(pf, &tc_j)) {
                 (Some((wa, pa)), Some((wb, pb))) => {
-                    let t = translation_word(&(pb.0 - pa.0, pb.1 - pa.1));
-                    wb == wa.rebase(&t)
+                    // One linear word (M1), the same relative placement.
+                    wb == wa && (pb.0 - pa.0, pb.1 - pa.1) == shift
                 }
                 _ => false,
             }
@@ -2686,39 +2695,58 @@ mod tests {
         );
     }
 
-    /// B does A's rotation about B's own centre: one Rebased vertex, spoken
-    /// through t · w_A · t⁻¹ (same linear word, placement moved by shift).
+    /// B does A's rotation about B's own centre: one Rebased vertex whose
+    /// word is A's and whose body, hue map and dilation stay B's. B is a
+    /// different shape from A and recolours differently, so speaking B
+    /// through A's class or A's gauge would be visible.
     #[test]
     fn b_does_as_rotation_about_its_centre_is_rebased() {
         let letter = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
         let rot = crate::transducer::alphabet::Word::from_letters(&[(letter, false)]);
-        let x = grid(&["110", "100"]);
-        let class = perceive(&x)[0].moduli.clone();
+        // A is the single hue-1 cell; B is the hue-3 bar, another shape.
+        // A placement of (3, 3) keeps both images inside the frame for
+        // either orientation of the quarter turn (cells map to
+        // (c, −r−1) + p or (−c−1, r) + p).
+        let x = grid(&["330000", "000000", "001000", "000000", "000000", "000000"]);
+        let bodies = perceive(&x);
+        let a = bodies
+            .iter()
+            .find(|b| b.cells.iter().any(|c| c.2 == 1))
+            .expect("body A");
+        let b = bodies
+            .iter()
+            .find(|b| b.cells.iter().any(|c| c.2 == 3))
+            .expect("body B");
+        assert_ne!(a.moduli, b.moduli, "two shapes, two charts");
+        // Form::default() carries the Frame at index 0.
         let mut pf = Form::default();
         pf.vertices.push(Vertex::Word {
             address: [1u8; 32],
             word: rot.clone(),
             rho: q(1),
-            placement: (q(0), q(0)),
+            placement: (q(3), q(3)),
             gauge: vec![(1, 1)],
-            class: class.clone(),
+            class: a.moduli.clone(),
             contact: None,
         });
         pf.vertices.push(Vertex::Word {
             address: [2u8; 32],
             word: rot.clone(),
             rho: q(1),
-            placement: (q(0), q(3)),
-            gauge: vec![(1, 2)],
-            class: class.clone(),
+            placement: (q(3), q(3)),
+            gauge: vec![(3, 5)],
+            class: b.moduli.clone(),
             contact: None,
         });
         pf.faces.push(FormFace {
             i: 1,
             j: 2,
-            g_ij: rot.clone(),
+            g_ij: pf.face_of(1, 2),
         });
         let mut form = pf.clone();
+        let tc_a = transport_class(&pf.vertices[1]).expect("A has a transport class");
+        let tc_b = transport_class(&pf.vertices[2]).expect("B has a transport class");
+        assert!(tc_a != tc_b, "A and B are two transport classes: they recolour differently");
         rebase_named_faces(&mut form, std::slice::from_ref(&pf));
         let n_re = form
             .vertices
@@ -2727,13 +2755,37 @@ mod tests {
             .count();
         assert_eq!(n_re, 1, "one Rebased; the w_i w_j w_i⁻¹ test is gone");
         match &form.vertices[2] {
-            Vertex::Rebased { by, of, shift } => {
+            Vertex::Rebased {
+                by,
+                of,
+                shift,
+                rho,
+                gauge,
+                class,
+            } => {
                 assert_eq!((*by, *of), (1, 2));
-                assert_eq!(shift, &(q(0), q(3)));
-                assert_eq!(form.vertices[2].word_in(&form), rot);
+                assert_eq!(shift, &(q(0), q(0)));
+                assert_eq!(rho, &q(1));
+                assert_eq!(gauge, &vec![(3, 5)], "B keeps its own hue map");
+                assert_eq!(class, &b.moduli, "B keeps its own chart");
+                assert_eq!(form.vertices[2].word_in(&form), rot, "the word is A's");
             }
             other => panic!("expected Rebased, got {other:?}"),
         }
+        // The pair form itself, with B still a Word carrying A's word at
+        // B's placement, is what the rebased form must speak.
+        let reference = apply_form(
+            &pf,
+            &x,
+            &crate::transducer::alphabet::Word::identity(),
+            &NoCrystal,
+        )
+        .expect("the pair form speaks");
+        assert!(
+            reference.cells.iter().any(|c| c.2 == 5),
+            "B is spoken in frame in its own colour, got {:?}",
+            reference.cells
+        );
         let spoken = apply_form(
             &form,
             &x,
@@ -2741,9 +2793,15 @@ mod tests {
             &NoCrystal,
         )
         .expect("rebased speaks");
+        assert!(spoken.unspoken.is_empty(), "both classes have a body on this grid");
+        assert_eq!(
+            spoken.cells, reference.cells,
+            "the rebased form speaks B's body with B's colours at B's placement"
+        );
         assert!(
-            !spoken.cells.is_empty(),
-            "B's cells are spoken through the conjugated placement"
+            spoken.cells.iter().all(|c| c.2 != 3),
+            "B is never spoken through A's hue map, got {:?}",
+            spoken.cells
         );
     }
 

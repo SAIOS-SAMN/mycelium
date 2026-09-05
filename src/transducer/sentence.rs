@@ -754,13 +754,21 @@ pub enum Vertex {
         depth: u16,
         placement: Word,
     },
+    /// Vertex `of` read in its own frame as `by`'s word (3.2): the linear
+    /// word is `by`'s, realised at `placement_by + shift`; the body it
+    /// speaks to, its hue map and its dilation stay `of`'s own, so a
+    /// rebased body keeps its shape, its colours and its scale.
     Rebased {
         by: u16,
         of: u16,
-        /// Relative placement t = p_j − p_i. The linear word is `by`'s;
-        /// apply_form realises t · w_by · t⁻¹ through conformal_of at
-        /// placement_by + shift.
+        /// Relative placement t = p_of − p_by.
         shift: (num_rational::BigRational, num_rational::BigRational),
+        /// `of`'s dilation.
+        rho: num_rational::BigRational,
+        /// `of`'s hue map, spoken on `of`'s bodies.
+        gauge: Vec<(u8, u8)>,
+        /// `of`'s chart: the section coordinate naming the bodies it speaks to.
+        class: stalk::Invariant,
     },
     Unfolded { measure: Measure },
 }
@@ -842,9 +850,9 @@ impl Vertex {
 
     pub fn class(&self) -> stalk::Invariant {
         match self {
-            Vertex::Word { class, .. } => class.clone(),
+            Vertex::Word { class, .. } | Vertex::Rebased { class, .. } => class.clone(),
             Vertex::Glued { chart, .. } => chart.clone(),
-            _ => stalk::Invariant::default(),
+            Vertex::Frame | Vertex::Unfolded { .. } => stalk::Invariant::default(),
         }
     }
 
@@ -1114,15 +1122,33 @@ impl Form {
         )
     }
 
+    /// Replace vertex `of` by `by` read in `of`'s frame (3.2). `of`'s own
+    /// dilation, hue map and chart are kept on the Rebased vertex; only
+    /// its word is now `by`'s. A vertex that is not a `Word` is left as it
+    /// is, and `of` is returned either way.
     pub fn rebase(
         &mut self,
         by: u16,
         of: u16,
         shift: (num_rational::BigRational, num_rational::BigRational),
     ) -> u16 {
-        if (of as usize) < self.vertices.len() {
-            self.vertices[of as usize] = Vertex::Rebased { by, of, shift };
-        }
+        let Some(Vertex::Word {
+            rho,
+            gauge,
+            class,
+            ..
+        }) = self.vertices.get(of as usize).cloned()
+        else {
+            return of;
+        };
+        self.vertices[of as usize] = Vertex::Rebased {
+            by,
+            of,
+            shift,
+            rho,
+            gauge,
+            class,
+        };
         of
     }
 
@@ -1784,12 +1810,27 @@ fn form_vertex_key(f: &Form) -> [u8; 32] {
                 buf.extend_from_slice(&placement.key());
                 buf.extend_from_slice(&depth.to_le_bytes());
             }
-            Vertex::Rebased { by, of, shift } => {
+            Vertex::Rebased {
+                by,
+                of,
+                shift,
+                rho,
+                gauge,
+                ..
+            } => {
                 buf.push(3);
                 buf.extend_from_slice(&by.to_le_bytes());
                 buf.extend_from_slice(&of.to_le_bytes());
                 alphabet::put_q(&mut buf, &shift.0);
                 alphabet::put_q(&mut buf, &shift.1);
+                alphabet::put_q(&mut buf, rho);
+                let mut g = gauge.clone();
+                g.sort_unstable();
+                buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
+                for (a, b) in g {
+                    buf.push(a);
+                    buf.push(b);
+                }
             }
             Vertex::Unfolded { measure } => {
                 buf.push(4);
@@ -2690,12 +2731,26 @@ fn encode_form_v2(f: &Form, out: &mut Vec<u8>) {
                 out.extend_from_slice(&depth.to_le_bytes());
                 word_to_form_bytes(placement, None, out);
             }
-            Vertex::Rebased { by, of, shift } => {
+            Vertex::Rebased {
+                by,
+                of,
+                shift,
+                rho,
+                gauge,
+                class,
+            } => {
                 out.push(3);
                 out.extend_from_slice(&by.to_le_bytes());
                 out.extend_from_slice(&of.to_le_bytes());
                 alphabet::put_q(out, &shift.0);
                 alphabet::put_q(out, &shift.1);
+                alphabet::put_q(out, rho);
+                out.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
+                for &(a, b) in gauge {
+                    out.push(a);
+                    out.push(b);
+                }
+                put_inv(class, out);
             }
             Vertex::Unfolded { measure } => {
                 out.push(4);
@@ -2827,10 +2882,24 @@ fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                 let of = take_u16(b, pos)?;
                 let s0 = alphabet::take_q(b, pos)?;
                 let s1 = alphabet::take_q(b, pos)?;
+                let rho = alphabet::take_q(b, pos)?;
+                let ng = take_u16(b, pos)? as usize;
+                if ng > b.len().saturating_sub(*pos) / 2 {
+                    return None;
+                }
+                let mut gauge = Vec::with_capacity(ng);
+                for _ in 0..ng {
+                    gauge.push((*b.get(*pos)?, *b.get(*pos + 1)?));
+                    *pos += 2;
+                }
+                let class = take_inv(b, pos)?;
                 Vertex::Rebased {
                     by,
                     of,
                     shift: (s0, s1),
+                    rho,
+                    gauge,
+                    class,
                 }
             }
             4 => {
@@ -3576,6 +3645,9 @@ mod tests {
             by: 0,
             of: 1,
             shift: (q0(), q1()),
+            rho: q1(),
+            gauge: vec![(1, 2)],
+            class: stalk::Invariant(vec![3, 5]),
         });
         let unfolded = f.unfold(Measure::Occupied);
         f.faces.push(FormFace {
@@ -3632,10 +3704,20 @@ mod tests {
             _ => panic!("glued vertex"),
         }
         match &back.vertices[rebased as usize] {
-            Vertex::Rebased { by, of, shift } => {
+            Vertex::Rebased {
+                by,
+                of,
+                shift,
+                rho,
+                gauge,
+                class,
+            } => {
                 assert_eq!(*by, 0);
                 assert_eq!(*of, 1);
                 assert_eq!(shift, &(q0(), q1()));
+                assert_eq!(rho, &q1());
+                assert_eq!(gauge, &vec![(1, 2)]);
+                assert_eq!(class, &stalk::Invariant(vec![3, 5]));
             }
             _ => panic!("rebased vertex"),
         }
