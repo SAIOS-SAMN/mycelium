@@ -131,6 +131,10 @@ fn speak_sentence(entity: &mut Entity, tag: &str, n: &mycelium::transducer::sent
         eprintln!("[{tag}] sentence withheld: family {fam}, not an element");
         return false;
     };
+    if entity.already_taught(&word) {
+        entity.remember_spoken(&word);
+        return true;
+    }
     match entity.speak(std::slice::from_ref(&word)) {
         Ok(codes) => match codes.first().copied() {
             Some(mycelium::anastome::dialogue::SPEECH_REFUSED) => {

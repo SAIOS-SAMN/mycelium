@@ -1849,18 +1849,43 @@ impl Entity {
     /// SPEAK a family's cohering sentences as one act. Refuses if two
     /// sentences share a germ with a non-identity transition. Each uttered
     /// word enters the dialect (epigenome handles); the genome is frozen.
+    /// A vertex already on `taught_up` stands in the dialect and does not
+    /// go on the wire.
     pub fn speak(&mut self, sentences: &[Element]) -> io::Result<Vec<u8>> {
         if sentences.is_empty() {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "no sentence"));
         }
-        let voice = self.session.kernel().voice();
         let k = self.session.voice().k();
-        let bytes: Vec<Vec<u8>> = sentences.iter().map(|e| e.to_bytes()).collect();
+        let mut fresh: Vec<&Element> = Vec::new();
+        let mut codes = vec![dialogue::SPEECH_STOOD; sentences.len()];
+        for (i, e) in sentences.iter().enumerate() {
+            if self.already_taught(e) {
+                self.epigenome.stand_dialect(e.clone(), k);
+                continue;
+            }
+            fresh.push(e);
+            codes[i] = 0xff; // filled from the wire below
+        }
+        if fresh.is_empty() {
+            return Ok(codes);
+        }
+        let voice = self.session.kernel().voice();
+        let bytes: Vec<Vec<u8>> = fresh.iter().map(|e| e.to_bytes()).collect();
         let body = dialogue::encode_speech(&voice, &[0u8; 32], self.now_tu(), &bytes);
         let reply = self.session.speak_nerve(body)?;
-        let codes = dialogue::decode_speech_reply(&reply).unwrap_or_default();
-        for e in sentences {
+        let got = dialogue::decode_speech_reply(&reply).unwrap_or_default();
+        let mut gi = 0usize;
+        for (i, e) in sentences.iter().enumerate() {
+            if codes[i] != 0xff {
+                continue;
+            }
+            let c = got.get(gi).copied().unwrap_or(dialogue::SPEECH_STOOD);
+            gi += 1;
+            codes[i] = c;
             self.epigenome.stand_dialect(e.clone(), k);
+            if c != dialogue::SPEECH_REFUSED {
+                self.taught_up.insert(e.address(), e.clone());
+            }
         }
         Ok(codes)
     }
@@ -1870,13 +1895,20 @@ impl Entity {
     }
 
     /// Already uttered this operator: same vertex, not the same digest.
-    fn already_taught(&self, word: &Element) -> bool {
+    pub fn already_taught(&self, word: &Element) -> bool {
         if self.taught_up.contains(&word.address()) {
             return true;
         }
         self.taught_up
             .fiber(&crate::network::nerve::ROOT)
             .any(|(_, e)| e.same_vertex(word))
+    }
+
+    /// Stand the vertex in the dialect and mark it taught, without the wire.
+    pub fn remember_spoken(&mut self, word: &Element) {
+        let k = self.session.voice().k();
+        self.epigenome.stand_dialect(word.clone(), k);
+        self.taught_up.insert(word.address(), word.clone());
     }
 
     /// SPEAK A WORD as a one-sentence family. The word enters the dialect
@@ -2131,5 +2163,49 @@ mod tests {
         }
         assert_eq!(decode_verdict(&[1, 0, 0, 0, 0, 0, 0]), Verdict::Decomposed { taught: vec![] });
         assert_eq!(decode_verdict(&[2, 0, 0, 0, 0, 0, 0]), Verdict::GermPending);
+    }
+
+    /// A vertex already spoken stands in the dialect and does not go on
+    /// the wire, even when the second utterance is a translated embedding.
+    #[test]
+    fn the_same_vertex_is_spoken_once() {
+        use crate::transducer::element::{from_residual, identity_versor};
+        use crate::transducer::peel::ShellKind;
+        use crate::transducer::sentence::{assemble, as_element, Germ};
+        use crate::transducer::alphabet::Word;
+        let whole = |chain: Vec<(i64, i64, u8, u8)>| Germ {
+            address: from_residual(&chain).address(),
+            versor: identity_versor(),
+            word: Word::identity(),
+            chain,
+            source: None,
+            target: None,
+            kind: ShellKind::Whole,
+            shift: None,
+        };
+        let e1 = as_element(&assemble(
+            vec![
+                whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
+                whole(vec![(0, 4, 3, 4), (0, 5, 3, 4)]),
+            ],
+            Vec::new(),
+        ))
+        .expect("e1");
+        let e2 = as_element(&assemble(
+            vec![
+                whole(vec![(2, 0, 1, 2), (2, 1, 1, 2)]),
+                whole(vec![(2, 4, 3, 4), (2, 5, 3, 4)]),
+            ],
+            Vec::new(),
+        ))
+        .expect("e2");
+        assert!(e1.same_vertex(&e2), "placement is fibre");
+        let mut entity = Entity::open("127.0.0.1:1", Kernel::named("once"));
+        assert!(!entity.already_taught(&e1));
+        entity.remember_spoken(&e1);
+        assert!(entity.already_taught(&e2), "same vertex is already taught");
+        let codes = entity.speak(std::slice::from_ref(&e2)).expect("no wire on a known vertex");
+        assert_eq!(codes, vec![dialogue::SPEECH_STOOD]);
+        assert_eq!(entity.dialect_len(), 1, "stood once in the dialect");
     }
 }
