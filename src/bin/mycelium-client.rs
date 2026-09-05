@@ -573,7 +573,7 @@ fn main() {
                                     settles += 1;
                                 }
                                 if let t @ [_, ..] = reply.verdict.taught() {
-                                    entity.epigenome.learn(t);
+                                    let _ = entity.absorb_taught(t);
                                 }
                                 judge_load = reply.load();
                             }

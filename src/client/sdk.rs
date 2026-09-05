@@ -1382,17 +1382,20 @@ impl Epigenome {
         if !missing.is_empty() {
             return Comprehension::Withheld { missing };
         }
-        if !understood.is_empty() || f.is_closed() {
+        if !understood.is_empty() {
             return Comprehension::Understood(understood);
         }
+        let vk = crate::transducer::sentence::form_vertex_key(f);
+        eprintln!("  form admitted {:02x}{:02x}…", vk[0], vk[1]);
         Comprehension::Admitted
     }
 
     /// LEARN — the mesh expressed a word down (`teach`): comprehend it against
     /// what is already held, then bank it in the genome if it is new (by base
     /// address). Inheritance, not local invention: only taught words enter.
+    /// Tests without a voice; a live mind uses [`learn_at`] with K and tu.
     pub fn learn(&mut self, taught: &[u8]) -> Option<Comprehension> {
-        self.learn_at(taught, 1, 1)
+        self.learn_at(taught, 0, 0)
     }
 
     pub fn learn_at(&mut self, taught: &[u8], k: u64, now_tu: u64) -> Option<Comprehension> {
@@ -2669,7 +2672,8 @@ impl Entity {
     }
 
     /// Hear a taught word by pivoting the contemplation before banking it.
-    fn absorb_taught(&mut self, taught: &[u8]) -> Option<Comprehension> {
+    /// k is the voice's K (law 9), tu is TUniversal; they are not one clock.
+    pub fn absorb_taught(&mut self, taught: &[u8]) -> Option<Comprehension> {
         let mut pos = 0usize;
         while pos < taught.len() {
             let before = pos;
@@ -2681,7 +2685,8 @@ impl Entity {
             }
             let _ = self.pivot_on(&e);
         }
-        self.epigenome.learn_at(taught, self.now_tu().max(1), self.now_tu().max(1))
+        self.epigenome
+            .learn_at(taught, self.session.voice().k(), self.now_tu())
     }
 
     /// SPEAK a family's cohering sentences as one act. Refuses if two
@@ -3217,6 +3222,96 @@ mod tests {
                 .any(|(_, d)| d.withheld),
             "the citing sentence is no longer withheld"
         );
+    }
+
+    /// Until A12 factors words through the held basis, a citation-free
+    /// closed form is Admitted, not Understood by nothing.
+    #[test]
+    fn citation_free_closed_form_is_admitted() {
+        use crate::transducer::alphabet::Word;
+        use crate::transducer::sentence::{as_element_form, Form, FormFace, Vertex};
+        let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+        let w = Word::from_letters(&[(q, false)]);
+        let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+        let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+        let mut f = Form::default();
+        f.vertices.push(Vertex::Word {
+            address: [1u8; 32],
+            word: w,
+            rho: one,
+            placement: (zero.clone(), zero),
+            gauge: vec![(1, 2)],
+            class: crate::transducer::stalk::Invariant::default(),
+            contact: None,
+        });
+        f.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            g_ij: f.face_of(0, 1),
+        });
+        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        assert!(f.is_closed(), "a tree of two vertices coheres");
+        let e = as_element_form(&f, [1, 0, 0, 0]).expect("v2 tape");
+        let mut epi = Epigenome::new();
+        assert!(
+            matches!(epi.comprehend(&e), Comprehension::Admitted),
+            "no held citations, not Understood(vec![])"
+        );
+    }
+
+    /// learn_at stamps the voice's K and TUniversal, not an idle (1, 1).
+    #[test]
+    fn learn_at_stamps_voice_k_and_tuniversal() {
+        use crate::transducer::alphabet::Word;
+        use crate::transducer::sentence::{as_element_form, Form, FormFace, Vertex};
+        let missing_addr = [0xabu8; 32];
+        let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+        let w = Word::from_letters(&[(q, false)]);
+        let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+        let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+        let inner = {
+            let mut f = Form::default();
+            f.vertices.push(Vertex::Word {
+                address: [1u8; 32],
+                word: w,
+                rho: one,
+                placement: (zero.clone(), zero),
+                gauge: vec![(1, 2)],
+                class: crate::transducer::stalk::Invariant::default(),
+                contact: None,
+            });
+            f.faces.push(FormFace {
+                i: 0,
+                j: 1,
+                g_ij: f.face_of(0, 1),
+            });
+            f.loops = Form::loops_of(&f.faces, f.vertices.len());
+            f
+        };
+        let mut outer = Form::default();
+        let gi = outer
+            .glue(&inner, missing_addr, Word::identity(), [1, 0, 0, 0])
+            .expect("glue");
+        outer.faces.push(FormFace {
+            i: 0,
+            j: gi,
+            g_ij: outer.face_of(0, gi),
+        });
+        outer.loops = Form::loops_of(&outer.faces, outer.vertices.len());
+        let e = as_element_form(&outer, [1, 0, 0, 0]).expect("v2 tape");
+        let mut epi = Epigenome::new();
+        assert!(matches!(
+            epi.learn_at(&e.to_bytes(), 7, 11),
+            Some(Comprehension::Withheld { .. })
+        ));
+        let d = epi
+            .dialect
+            .fiber(&crate::network::nerve::ROOT)
+            .next()
+            .map(|(_, d)| d)
+            .expect("withheld dialect");
+        assert_eq!(d.last_used_k, 7, "k is the voice's K");
+        assert_eq!(d.last_used_tu, 11, "tu is TUniversal");
     }
 
     /// THE CHROMATIC APERTURE (harmonic import): absorption is the EXACT running
