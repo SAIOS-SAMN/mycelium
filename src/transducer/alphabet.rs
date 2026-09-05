@@ -466,18 +466,20 @@ pub struct Contact {
 /// A WORD: an oriented tape of letters. `true` reads the letter backwards
 /// (its carried `Φ⁻¹`). The stored tape is the geodesic normal form.
 /// Equal words compare by rotor projective equality, never by a tape or a digest.
+/// Contact, ρ, placement, and gauge live on the word *form* (`Vertex::Word`),
+/// never in this equality.
 #[derive(Debug)]
-pub struct Word(Vec<(LetterId, bool)>, std::sync::OnceLock<Rotor>, Option<Contact>);
+pub struct Word(Vec<(LetterId, bool)>, std::sync::OnceLock<Rotor>);
 
 impl Default for Word {
     fn default() -> Self {
-        Word(Vec::new(), std::sync::OnceLock::new(), None)
+        Word(Vec::new(), std::sync::OnceLock::new())
     }
 }
 
 impl Clone for Word {
     fn clone(&self) -> Self {
-        let w = Word(self.0.clone(), std::sync::OnceLock::new(), self.2);
+        let w = Word(self.0.clone(), std::sync::OnceLock::new());
         if let Some(r) = self.1.get() {
             let _ = w.1.set(r.clone());
         }
@@ -488,18 +490,14 @@ impl Clone for Word {
 impl PartialEq for Word {
     fn eq(&self, other: &Self) -> bool {
         // M1: vertex equality is A1 of the rotor (λ ∈ ℚ×, either sign).
-        // q^4 = −4 and 1 are one vertex; mixed-plane spellings of one
-        // rotor are one vertex even when the geodesic tape is not unique.
-        // Contact is a form coordinate: same vertex, different contact, is
-        // a different word form and a different key.
-        self.rotor().projective_eq(&other.rotor()) && self.2 == other.2
+        self.rotor().projective_eq(&other.rotor())
     }
 }
 impl Eq for Word {}
 
 impl Word {
     fn raw(tape: Vec<(LetterId, bool)>) -> Word {
-        Word(tape, std::sync::OnceLock::new(), None)
+        Word(tape, std::sync::OnceLock::new())
     }
 
     pub fn identity() -> Word {
@@ -528,46 +526,19 @@ impl Word {
     }
 
     /// M1 key: A1 of the rotor, never a hash of a spoken or geodesic tape.
-    /// Mixed-plane spellings of one rotor share this key. Contact, when
-    /// present, is part of the word form and of this key.
+    /// Mixed-plane spellings of one rotor share this key. Contact is not here.
     pub fn key(&self) -> [u8; 32] {
-        let rk = self.rotor().key();
-        match self.2 {
-            None => rk,
-            Some(c) => {
-                let mut buf = Vec::with_capacity(36);
-                buf.extend_from_slice(&rk);
-                buf.push(1);
-                buf.extend_from_slice(&c.anchor.to_le_bytes());
-                buf.push(c.ring);
-                *blake3::hash(&buf).as_bytes()
-            }
-        }
+        self.rotor().key()
     }
 
-    /// Orbit contact, if this word form stops against a ring.
-    pub fn contact(&self) -> Option<&Contact> {
-        self.2.as_ref()
-    }
-
-    /// The same letters with a contact. The rotor is unchanged; the key is not.
-    pub fn with_contact(mut self, c: Contact) -> Word {
-        self.2 = Some(c);
-        self
-    }
-
-    /// Group identity: the rotor is projectively 1. Contact is not this test.
+    /// Group identity: the rotor is projectively 1.
     pub fn is_identity(&self) -> bool {
         self.rotor().projective_eq(&Rotor::identity())
     }
 
-    /// `by · self · by⁻¹`, then the normal form. Contact rides with the word.
+    /// `by · self · by⁻¹`, then the normal form.
     pub fn rebase(&self, by: &Word) -> Word {
-        let w = by.compose(&self.compose(&by.inverse())).normal_form();
-        match self.2 {
-            Some(c) => w.with_contact(c),
-            None => w,
-        }
+        by.compose(&self.compose(&by.inverse())).normal_form()
     }
 
     /// Same conjugacy class: plane conjugacy representative, or rotor
@@ -1566,8 +1537,8 @@ pub fn spell_images(row_image: (i64, i64), col_image: (i64, i64)) -> Option<Spel
 mod tests {
     use super::*;
 
-    /// Rebase is conjugation then the normal form; contact is in the key,
-    /// never in the rotor.
+    /// Rebase is conjugation then the normal form. Contact is not a letter
+    /// and is not in the M1 key.
     #[test]
     fn rebase_is_normal_form_and_contact_in_key() {
         let q = LetterId::quarter((0, 1)).expect("sensor quarter");
@@ -1577,18 +1548,8 @@ mod tests {
         assert_eq!(r, r.normal_form(), "rebase stores the normal form");
         let want = by.compose(&w.compose(&by.inverse())).normal_form();
         assert!(r.rotor().projective_eq(&want.rotor()), "rebase is conjugation");
-        let a = w.clone().with_contact(Contact { anchor: 0, ring: 1 });
-        let b = w.clone().with_contact(Contact { anchor: 0, ring: 2 });
-        assert_ne!(a.key(), w.key(), "contact enters the key");
-        assert_ne!(a.key(), b.key(), "distinct rings are distinct keys");
-        assert_eq!(
-            a.key(),
-            w.clone().with_contact(Contact { anchor: 0, ring: 1 }).key()
-        );
-        assert!(a.rotor().projective_eq(&w.rotor()), "contact is not a letter");
-        let ra = a.rebase(&by);
-        assert_eq!(ra.contact().map(|c| (c.anchor, c.ring)), Some((0, 1)));
-        assert_eq!(ra, ra.normal_form().with_contact(*ra.contact().unwrap()));
+        assert_eq!(w.key(), w.rotor().key(), "M1 key is the rotor key");
+        assert_eq!(r.key(), r.normal_form().key());
     }
 
     /// LAW VIII: seventeen letters, each a versor with its carried inverse

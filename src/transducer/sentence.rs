@@ -744,6 +744,8 @@ pub enum Vertex {
         placement: (num_rational::BigRational, num_rational::BigRational),
         gauge: Vec<(u8, u8)>,
         class: stalk::Invariant,
+        /// Stop ring. A form coordinate with ρ, placement, gauge; not M1.
+        contact: Option<alphabet::Contact>,
     },
     Glued {
         address: [u8; 32],
@@ -810,6 +812,7 @@ impl Vertex {
             placement: g.shift.clone().unwrap_or((zero.clone(), zero)),
             gauge: germ_hue_map(g),
             class: g.target.clone().or(g.source.clone()).unwrap_or_default(),
+            contact: None,
         }
     }
 
@@ -997,7 +1000,10 @@ impl Form {
             .unwrap_or(0)
     }
 
-    pub fn glue(&mut self, s: &Form, s_addr: [u8; 32], placement: Word) -> Option<u16> {
+    /// A new form (depth 0, no citations) may glue any closed form; its
+    /// depth becomes `1 + d`. A form that already cites may only glue a
+    /// strictly shallower closed form.
+    pub fn glue(&mut self, s: &Form, s_addr: [u8; 32], placement: Word, magnitude: [u64; 4]) -> Option<u16> {
         if !s.is_closed() {
             return None;
         }
@@ -1008,7 +1014,8 @@ impl Form {
             return None;
         }
         let d = s.depth_of();
-        if d >= self.depth_of() && self.depth_of() > 0 {
+        let host = self.depth_of();
+        if host > 0 && d >= host {
             return None;
         }
         let idx = self.vertices.len() as u16;
@@ -1023,12 +1030,83 @@ impl Form {
                     _ => None,
                 })
                 .unwrap_or_default(),
-            magnitude: [0; 4],
+            magnitude,
             depth: d,
             placement,
         });
         self.depth = self.depth_of();
         Some(idx)
+    }
+
+    /// Replace every face `g_ij` by `γ_j · g_ij · γ_i⁻¹`. Holonomies of
+    /// identity stay identity.
+    pub fn regauge(&mut self, gamma: &[Word]) {
+        for f in &mut self.faces {
+            let gi = gamma
+                .get(f.i as usize)
+                .cloned()
+                .unwrap_or_else(Word::identity);
+            let gj = gamma
+                .get(f.j as usize)
+                .cloned()
+                .unwrap_or_else(Word::identity);
+            f.g_ij = gj.compose(&f.g_ij.compose(&gi.inverse())).normal_form();
+        }
+        self.loops = Self::loops_of(&self.faces, self.vertices.len());
+    }
+
+    /// Tree walk (12.2): γ at the Frame is identity; γ_j = γ_i · g_ij⁻¹
+    /// along a spanning forest of the named faces.
+    pub fn solve_coboundary(&self) -> Option<Vec<Word>> {
+        let n = self.vertices.len();
+        if n == 0 {
+            return None;
+        }
+        let root = self
+            .vertices
+            .iter()
+            .position(|v| matches!(v, Vertex::Frame))
+            .unwrap_or(0);
+        let mut gamma: Vec<Option<Word>> = vec![None; n];
+        gamma[root] = Some(Word::identity());
+        let mut adj: Vec<Vec<(usize, usize, bool)>> = vec![Vec::new(); n];
+        for (fi, f) in self.faces.iter().enumerate() {
+            let (i, j) = (f.i as usize, f.j as usize);
+            if i >= n || j >= n {
+                continue;
+            }
+            adj[i].push((j, fi, true));
+            adj[j].push((i, fi, false));
+        }
+        let mut q = vec![root];
+        let mut qi = 0usize;
+        while qi < q.len() {
+            let u = q[qi];
+            qi += 1;
+            let gu = gamma[u].clone()?;
+            for &(v, fi, u_is_i) in &adj[u] {
+                let f = &self.faces[fi];
+                let gv = if u_is_i {
+                    gu.compose(&f.g_ij.inverse()).normal_form()
+                } else {
+                    gu.compose(&f.g_ij).normal_form()
+                };
+                match &gamma[v] {
+                    None => {
+                        gamma[v] = Some(gv);
+                        q.push(v);
+                    }
+                    Some(held) if held != &gv => {}
+                    _ => {}
+                }
+            }
+        }
+        Some(
+            gamma
+                .into_iter()
+                .map(|g| g.unwrap_or_else(Word::identity))
+                .collect(),
+        )
     }
 
     pub fn rebase(&mut self, by: u16, of: u16) -> u16 {
@@ -2237,9 +2315,9 @@ pub fn cochain_magnitude(n: &Nerve) -> [u64; 4] {
     mag
 }
 
-fn word_to_form_bytes(w: &Word, out: &mut Vec<u8>) {
+fn word_to_form_bytes(w: &Word, contact: Option<alphabet::Contact>, out: &mut Vec<u8>) {
     w.to_bytes(out);
-    match w.contact() {
+    match contact {
         None => out.push(0),
         Some(c) => {
             out.push(1);
@@ -2249,12 +2327,12 @@ fn word_to_form_bytes(w: &Word, out: &mut Vec<u8>) {
     }
 }
 
-fn word_from_form_bytes(b: &[u8], pos: &mut usize) -> Option<Word> {
+fn word_from_form_bytes(b: &[u8], pos: &mut usize) -> Option<(Word, Option<alphabet::Contact>)> {
     let w = Word::from_bytes(b, pos)?;
     let tag = *b.get(*pos)?;
     *pos += 1;
     if tag == 0 {
-        return Some(w);
+        return Some((w, None));
     }
     if tag != 1 {
         return None;
@@ -2263,7 +2341,7 @@ fn word_from_form_bytes(b: &[u8], pos: &mut usize) -> Option<Word> {
     *pos += 2;
     let ring = *b.get(*pos)?;
     *pos += 1;
-    Some(w.with_contact(alphabet::Contact { anchor, ring }))
+    Some((w, Some(alphabet::Contact { anchor, ring })))
 }
 
 fn put_inv(inv: &stalk::Invariant, out: &mut Vec<u8>) {
@@ -2297,10 +2375,11 @@ fn encode_form_v2(f: &Form, out: &mut Vec<u8>) {
                 placement,
                 gauge,
                 class,
+                contact,
             } => {
                 out.push(1);
                 out.extend_from_slice(address);
-                word_to_form_bytes(word, out);
+                word_to_form_bytes(word, *contact, out);
                 alphabet::put_q(out, rho);
                 alphabet::put_q(out, &placement.0);
                 alphabet::put_q(out, &placement.1);
@@ -2325,7 +2404,7 @@ fn encode_form_v2(f: &Form, out: &mut Vec<u8>) {
                     out.extend_from_slice(&m.to_le_bytes());
                 }
                 out.extend_from_slice(&depth.to_le_bytes());
-                word_to_form_bytes(placement, out);
+                word_to_form_bytes(placement, None, out);
             }
             Vertex::Rebased { by, of } => {
                 out.push(3);
@@ -2349,7 +2428,7 @@ fn encode_form_v2(f: &Form, out: &mut Vec<u8>) {
     for face in &f.faces {
         out.extend_from_slice(&face.i.to_le_bytes());
         out.extend_from_slice(&face.j.to_le_bytes());
-        word_to_form_bytes(&face.g_ij, out);
+        word_to_form_bytes(&face.g_ij, None, out);
     }
     out.extend_from_slice(&(f.loops.len() as u16).to_le_bytes());
     for lp in &f.loops {
@@ -2357,7 +2436,7 @@ fn encode_form_v2(f: &Form, out: &mut Vec<u8>) {
         for &i in &lp.faces {
             out.extend_from_slice(&i.to_le_bytes());
         }
-        word_to_form_bytes(&lp.holonomy, out);
+        word_to_form_bytes(&lp.holonomy, None, out);
     }
     out.extend_from_slice(&(f.hue_maps.len() as u16).to_le_bytes());
     for (k, pairs) in f.hue_maps.fiber(&crate::network::nerve::ROOT) {
@@ -2399,7 +2478,7 @@ fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
             1 => {
                 let address: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                 *pos += 32;
-                let word = word_from_form_bytes(b, pos)?;
+                let (word, contact) = word_from_form_bytes(b, pos)?;
                 let rho = alphabet::take_q(b, pos)?;
                 let p0 = alphabet::take_q(b, pos)?;
                 let p1 = alphabet::take_q(b, pos)?;
@@ -2417,6 +2496,7 @@ fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                     placement: (p0, p1),
                     gauge,
                     class,
+                    contact,
                 }
             }
             2 => {
@@ -2429,7 +2509,7 @@ fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                     *pos += 8;
                 }
                 let depth = take_u16(b, pos)?;
-                let placement = word_from_form_bytes(b, pos)?;
+                let (placement, _) = word_from_form_bytes(b, pos)?;
                 Vertex::Glued {
                     address,
                     chart,
@@ -2466,7 +2546,7 @@ fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
     for _ in 0..nf.min(4096) {
         let i = take_u16(b, pos)?;
         let j = take_u16(b, pos)?;
-        let g_ij = word_from_form_bytes(b, pos)?;
+        let (g_ij, _) = word_from_form_bytes(b, pos)?;
         faces.push(FormFace { i, j, g_ij });
     }
     let nl = take_u16(b, pos)? as usize;
@@ -2477,7 +2557,7 @@ fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         for _ in 0..n.min(4096) {
             fs.push(take_u16(b, pos)?);
         }
-        let holonomy = word_from_form_bytes(b, pos)?;
+        let (holonomy, _) = word_from_form_bytes(b, pos)?;
         loops.push(Loop {
             faces: fs,
             holonomy,
@@ -3079,10 +3159,6 @@ mod tests {
     }
 
     fn closed_word_form(word: Word, contact: Option<alphabet::Contact>) -> Form {
-        let word = match contact {
-            Some(c) => word.with_contact(c),
-            None => word,
-        };
         let mut f = Form::default();
         f.vertices.push(Vertex::Word {
             address: [7u8; 32],
@@ -3091,6 +3167,7 @@ mod tests {
             placement: (q0(), q1()),
             gauge: vec![(1, 2)],
             class: stalk::Invariant(vec![3, 5]),
+            contact,
         });
         f.faces.push(FormFace {
             i: 0,
@@ -3118,7 +3195,7 @@ mod tests {
             Some(alphabet::Contact { anchor: 1, ring: 2 }),
         );
         let glued = f
-            .glue(&inner, inner_addr, Word::identity())
+            .glue(&inner, inner_addr, Word::identity(), [0, 0, 0, 1])
             .expect("glue depth 0 into depth 0");
         let rebased = f.rebase(0, 1);
         let unfolded = f.unfold(Measure::Occupied);
@@ -3154,11 +3231,12 @@ mod tests {
         assert_eq!(back.depth, f.depth);
         match (&f.vertices[1], &back.vertices[1]) {
             (
-                Vertex::Word { word: a, gauge: ga, class: ca, .. },
-                Vertex::Word { word: b, gauge: gb, class: cb, .. },
+                Vertex::Word { word: a, gauge: ga, class: ca, contact: ca_c, .. },
+                Vertex::Word { word: b, gauge: gb, class: cb, contact: cb_c, .. },
             ) => {
-                assert_eq!(a.contact().map(|c| (c.anchor, c.ring)), Some((1, 2)));
-                assert_eq!(a, b);
+                assert_eq!(ca_c.map(|c| (c.anchor, c.ring)), Some((1, 2)));
+                assert_eq!(cb_c.map(|c| (c.anchor, c.ring)), Some((1, 2)));
+                assert_eq!(a, b, "M1 is the rotor, contact is beside it");
                 assert_eq!(ga, gb);
                 assert_eq!(ca, cb);
             }
@@ -3183,7 +3261,7 @@ mod tests {
         );
         assert_eq!(back.faces[0].i, 0);
         assert_eq!(back.faces[0].j, 1);
-        assert_eq!(back.faces[0].g_ij.contact().map(|c| c.ring), Some(2));
+        assert_eq!(back.faces[0].g_ij, f.faces[0].g_ij);
     }
 
     /// Depth is one plus the deepest glued form; gluing at equal depth is refused.
@@ -3195,24 +3273,24 @@ mod tests {
         assert_eq!(inner.depth_of(), 0);
         let mut outer = Form::default();
         let a0 = [1u8; 32];
-        outer.glue(&inner, a0, Word::identity()).expect("glue into empty host");
+        outer.glue(&inner, a0, Word::identity(), [0, 0, 0, 1]).expect("glue into empty host");
         assert_eq!(outer.depth_of(), 1);
         assert_eq!(outer.depth, 1);
         let mut wrap = Form::default();
-        wrap.glue(&outer, [2u8; 32], Word::identity()).expect("glue depth 1 into depth 0");
+        wrap.glue(&outer, [2u8; 32], Word::identity(), [0, 0, 0, 1]).expect("glue depth 1 into depth 0");
         assert_eq!(wrap.depth_of(), 2);
         let outer_copy = outer.clone();
         assert!(
-            outer.glue(&outer_copy, [3u8; 32], Word::identity()).is_none(),
+            outer.glue(&outer_copy, [3u8; 32], Word::identity(), [0, 0, 0, 1]).is_none(),
             "equal depth is refused"
         );
         assert!(
-            outer.glue(&wrap, [4u8; 32], Word::identity()).is_none(),
+            outer.glue(&wrap, [4u8; 32], Word::identity(), [0, 0, 0, 1]).is_none(),
             "deeper form is refused"
         );
         let mut again = Form::default();
-        again.glue(&inner, a0, Word::identity()).unwrap();
-        again.glue(&inner, [5u8; 32], Word::identity()).expect("another depth-0 glue");
+        again.glue(&inner, a0, Word::identity(), [0, 0, 0, 1]).unwrap();
+        again.glue(&inner, [5u8; 32], Word::identity(), [0, 0, 0, 1]).expect("another depth-0 glue");
         assert_eq!(again.depth_of(), 1, "max glued depth, not a count");
     }
 
