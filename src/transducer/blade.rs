@@ -334,19 +334,12 @@ pub fn topology(cells: &[(i64, i64)]) -> (u64, u64) {
     (b0 as u64, (b0 - chi).max(0) as u64)
 }
 
-/// A rational as two saturated u64 coordinates (numerator, denominator) on
-/// the base; the coordinates narrow, the transport decides.
-fn ratio_axes(x: &BigRational) -> [u64; 2] {
-    let sat = |b: &BigInt| -> u64 {
-        let (_, bytes) = b.to_bytes_le();
-        if bytes.len() > 8 {
-            return u64::MAX;
-        }
-        let mut buf = [0u8; 8];
-        buf[..bytes.len()].copy_from_slice(&bytes);
-        u64::from_le_bytes(buf)
-    };
-    [sat(x.numer()), sat(x.denom())]
+/// A6: two's-complement numerator and positive denominator. Refuses when
+/// either limb overflows; nothing saturates, the sign is kept.
+fn ratio_axes(x: &BigRational) -> Option<[u64; 2]> {
+    let n: i64 = x.numer().try_into().ok()?;
+    let d: u64 = x.denom().try_into().ok()?;
+    Some([n as u64, d])
 }
 
 /// The boundary's length: the count of unit edges with the support on
@@ -356,16 +349,15 @@ pub fn boundary_length(cells: &[(i64, i64)]) -> usize {
     h.len() + v.len()
 }
 
-/// A rational as two saturated coordinates on the base (public for the
-/// ear, which lays the harmonics out as axes).
-pub fn axes_of(x: &BigRational) -> [u64; 2] {
+/// A rational as two exact axis limbs, or none when the ratio exceeds ℤ₆₄.
+pub fn axes_of(x: &BigRational) -> Option<[u64; 2]> {
     ratio_axes(x)
 }
 
-/// THE MODULI of a body — its coordinates on the base: the ear's
-/// harmonics laid out as axes. See [`crate::perception::ear::Harmonics`].
+/// THE MODULI of a body — its coordinates on the base. Empty on A6
+/// refusal: novelty, never a saturated MAX axis.
 pub fn moduli(b: &Blade) -> Vec<u64> {
-    crate::perception::ear::Harmonics::of(b).axes()
+    crate::perception::ear::Harmonics::of(b).axes().unwrap_or_default()
 }
 
 /// A body as the carrier a transport is solved on and verified against.
@@ -862,6 +854,16 @@ mod tests {
         let l4: Vec<(i64, i64)> = vec![(0, 0), (1, 0), (2, 0), (2, 1)];
         let s4: Vec<(i64, i64)> = vec![(0, 1), (0, 2), (1, 0), (1, 1)];
         assert_ne!(moduli(&shape_of(&l4).blade), moduli(&shape_of(&s4).blade));
+    }
+
+    #[test]
+    fn a6_refuses_overflow_keeps_sign() {
+        let neg = BigRational::new(BigInt::from(-3), BigInt::from(7));
+        let p = axes_of(&neg).expect("fits");
+        assert_eq!(p[0], (-3i64) as u64, "sign is two's complement, not dropped");
+        assert_eq!(p[1], 7);
+        let huge = BigRational::new(BigInt::from(1) << 80, BigInt::from(1));
+        assert!(axes_of(&huge).is_none(), "overflow refuses, never saturates to MAX");
     }
 
     fn cells(v: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {

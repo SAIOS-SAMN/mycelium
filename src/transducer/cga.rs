@@ -31,7 +31,7 @@
 
 use num_bigint::BigInt;
 use num_rational::BigRational;
-use num_traits::{One, Zero};
+use num_traits::{One, Signed, Zero};
 
 /// Basis-vector masks over `{e1, e2, e+, e-}`.
 pub const E1: usize = 0b0001;
@@ -42,10 +42,18 @@ pub const EM: usize = 0b1000; // e-  (square −1)
 pub const PSEUDO: usize = 0b1111;
 
 /// An exact multivector of `Cl(3,1)`: 16 blade coefficients over ℚ.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// Equality is projective (`λ ∈ ℚ×`); coefficient identity is [`Mv::canonical`].
+#[derive(Debug, Clone)]
 pub struct Mv {
     c: [BigRational; 16],
 }
+
+impl PartialEq for Mv {
+    fn eq(&self, other: &Self) -> bool {
+        self.projective_eq(other)
+    }
+}
+impl Eq for Mv {}
 
 fn zero() -> BigRational {
     BigRational::zero()
@@ -113,6 +121,29 @@ impl Mv {
 
     pub fn is_zero(&self) -> bool {
         self.c.iter().all(|x| x.is_zero())
+    }
+
+    /// A4: divide by |first nonzero|, negate so that coefficient is +1.
+    pub fn canonical(&self) -> Option<Mv> {
+        let i = (0..16).find(|&i| !self.c[i].is_zero())?;
+        let mut r = self.scale(&(one() / self.c[i].abs()));
+        if r.c[i].is_negative() {
+            r = r.scale(&-one());
+        }
+        Some(r)
+    }
+
+    /// `a = λ b` for `λ ∈ ℚ×` of either sign.
+    pub fn projective_eq(&self, other: &Mv) -> bool {
+        projective_ratio(self, other).is_some_and(|l| !l.is_zero())
+    }
+
+    /// Transport identifier of the canonical coefficients.
+    pub fn key(&self) -> [u8; 32] {
+        let n = self.canonical().unwrap_or_else(Mv::zero);
+        let mut buf = Vec::new();
+        n.to_bytes(&mut buf);
+        *blake3::hash(&buf).as_bytes()
     }
 
     pub fn add(&self, o: &Self) -> Self {
@@ -444,5 +475,15 @@ mod tests {
         composed.to_bytes(&mut bytes);
         let mut pos = 0usize;
         assert_eq!(Mv::from_bytes(&bytes, &mut pos), Some(composed));
+    }
+
+    #[test]
+    fn a4_projective_eq_either_sign_and_key() {
+        let t = translator(&q(2, 1), &q(0, 1));
+        assert!(t.projective_eq(&t.scale(&q(-3, 2))));
+        assert_eq!(t.canonical().unwrap().key(), t.scale(&q(-3, 2)).canonical().unwrap().key());
+        assert_eq!(t, t.scale(&q(5, 1)), "PartialEq is projective");
+        let u = translator(&q(3, 1), &q(0, 1));
+        assert_ne!(t.key(), u.key());
     }
 }

@@ -63,8 +63,8 @@ impl Invariant {
         out
     }
 
-    /// A Keyed key for this chart: the little-endian axes hashed so a
-    /// thought bag and a cover digest name the same plane without a map.
+    /// Transport identifier of the axes. Chart identity is [`PartialEq`]
+    /// on the exact rationals, never this digest.
     pub fn key(&self) -> [u8; 32] {
         let mut h = blake3::Hasher::new();
         for a in &self.0 {
@@ -141,8 +141,8 @@ fn connection_chart(word: &element::Element) -> Option<Invariant> {
     let trace = &m[0][0] + &m[1][1];
     let det = &m[0][0] * &m[1][1] - &m[0][1] * &m[1][0];
     let mut axes = vec![0u64];
-    axes.extend_from_slice(&super::blade::axes_of(&trace));
-    axes.extend_from_slice(&super::blade::axes_of(&det));
+    axes.extend_from_slice(&super::blade::axes_of(&trace)?);
+    axes.extend_from_slice(&super::blade::axes_of(&det)?);
     // The gauge permutation's cycle type, read as the one 1 per hue row —
     // a row without it is not a permutation, and the chart is refused.
     let n = element::GERM_DIM - 3;
@@ -451,22 +451,26 @@ impl Stalks {
         out
     }
 
-    /// Append one axis: the class key as a new coordinate of the chart.
+    /// Append class-key bytes as one axis (rewrite peel invert). Prefer
+    /// [`refine_axes`] for A7.
     pub fn refine(inv: &Invariant, class_key: [u8; 32]) -> Invariant {
         let coordinate = u64::from_le_bytes(class_key[..8].try_into().unwrap());
-        let mut axes = inv.0.clone();
-        axes.push(coordinate);
-        Invariant(axes)
+        Self::refine_axes(inv, &[coordinate])
+    }
+
+    /// Append exact axes (A7). Never a hash fragment.
+    pub fn refine_axes(inv: &Invariant, axes: &[u64]) -> Invariant {
+        let mut out = inv.0.clone();
+        out.extend_from_slice(axes);
+        Invariant(out)
     }
 
     /// Re-admit members of `inv` under the refined chart, splitting the
-    /// stratum by the new coordinate. Prefix only: other charts are untouched.
-    pub fn split_stratum(&mut self, inv: &Invariant, mut coordinate_of: impl FnMut(&[u8; 32]) -> u64) {
+    /// stratum by the new axes. Prefix only: other charts are untouched.
+    pub fn split_stratum(&mut self, inv: &Invariant, mut coordinate_of: impl FnMut(&[u8; 32]) -> Vec<u64>) {
         let members = self.fiber(inv);
         for addr in members {
-            let mut key = [0u8; 32];
-            key[..8].copy_from_slice(&coordinate_of(&addr).to_le_bytes());
-            let next = Self::refine(inv, key);
+            let next = Self::refine_axes(inv, &coordinate_of(&addr));
             self.root.remove(&inv.0, &addr);
             self.root.admit(&next.0, addr);
             self.charts.insert(addr, next);
@@ -690,19 +694,15 @@ mod tests {
         let class_coord = 7u64;
         stalks.split_stratum(&inv, |addr| {
             if *addr == a.address() {
-                0
+                vec![0]
             } else {
-                class_coord
+                vec![class_coord]
             }
         });
         assert!(stalks.fiber(&inv).is_empty(), "the coarse chart is empty after the split");
-        let mut zero = [0u8; 32];
-        zero[..8].copy_from_slice(&0u64.to_le_bytes());
-        let mut cls = [0u8; 32];
-        cls[..8].copy_from_slice(&class_coord.to_le_bytes());
-        assert_eq!(stalks.fiber(&Stalks::refine(&inv, zero)), vec![a.address()]);
-        assert_eq!(stalks.fiber(&Stalks::refine(&inv, cls)), vec![b.address()]);
-        let peeled = Stalks::peel(&Stalks::refine(&inv, cls));
+        assert_eq!(stalks.fiber(&Stalks::refine_axes(&inv, &[0])), vec![a.address()]);
+        assert_eq!(stalks.fiber(&Stalks::refine_axes(&inv, &[class_coord])), vec![b.address()]);
+        let peeled = Stalks::peel(&Stalks::refine_axes(&inv, &[class_coord]));
         assert_eq!(peeled, inv, "peel drops the class axis");
         assert_eq!(inv.prefixes().last().map(|p| p.0.is_empty()), Some(true));
     }

@@ -996,12 +996,19 @@ impl Epigenome {
         match self.index.get(&addr).copied() {
             Some(i) => self.genome[i] = e, // the taught form may carry new sections — refresh
             None => {
-                self.atlas.admit(&crate::transducer::stalk::invariant_of(&e), e.address());
-                self.shapes.push(std::sync::OnceLock::new());
-                self.atlas_len = self.atlas_len.saturating_add(1);
-                self.index.insert(e.address(), self.genome.len());
-                self.genome.push(e);
-                self.expression.push(0);
+                // Same vertex, different tape: merge into the held word.
+                // Comprehension is factorization, not a digest lookup.
+                if let Some(i) = self.genome.iter().position(|w| w.same_vertex(&e)) {
+                    let _ = self.genome[i].merge_fibre(&e);
+                    self.index.insert(addr, i);
+                } else {
+                    self.atlas.admit(&crate::transducer::stalk::invariant_of(&e), e.address());
+                    self.shapes.push(std::sync::OnceLock::new());
+                    self.atlas_len = self.atlas_len.saturating_add(1);
+                    self.index.insert(e.address(), self.genome.len());
+                    self.genome.push(e);
+                    self.expression.push(0);
+                }
             }
         }
         Some(heard)
@@ -1090,8 +1097,9 @@ pub struct Entity {
     /// per stroke, so the compression search is metabolic, never a sweep.
     refine_cursor: usize,
     /// Words this voice has spoken up for adoption: said once, the judge
-    /// decided (installed, derivable, or refused).
-    taught_up: crate::network::nerve::Keyed<()>,
+    /// decided (installed, derivable, or refused). Keyed by transport
+    /// address; membership is vertex equality, never the digest alone.
+    taught_up: crate::network::nerve::Keyed<Element>,
     /// The discordance measured at the last sync (strata whose roots differ
     /// from the hypha's); zero is a glued genome — the condition under which
     /// this entity speaks proofs. Unmeasured: the open thought's boundary
@@ -1411,17 +1419,20 @@ impl Entity {
         let mut used = 0usize;
         'strata: for (_, held) in &charts {
             for &addr in held {
-                if self.taught_up.contains(&addr) {
+                if self.already_taught_addr(&addr) {
                     continue; // spoken for adoption once; the judge decided
                 }
                 let Some(word) = self.epigenome.word_at(&addr) else { continue };
+                if self.already_taught(word) {
+                    continue;
+                }
                 let bytes = word.to_bytes();
                 if used + bytes.len() > crate::network::wire::frame_budget() {
                     break 'strata;
                 }
                 used += bytes.len();
                 if self.session.speak_keyed(&addr, dialogue::encode_adopt(&voice, &bytes)).is_ok() {
-                    self.taught_up.insert(addr, ());
+                    self.taught_up.insert(addr, word.clone());
                     taught += 1;
                 }
             }
@@ -1854,6 +1865,20 @@ impl Entity {
         Ok(codes)
     }
 
+    fn already_taught_addr(&self, addr: &[u8; 32]) -> bool {
+        self.taught_up.contains(addr)
+    }
+
+    /// Already uttered this operator: same vertex, not the same digest.
+    fn already_taught(&self, word: &Element) -> bool {
+        if self.taught_up.contains(&word.address()) {
+            return true;
+        }
+        self.taught_up
+            .fiber(&crate::network::nerve::ROOT)
+            .any(|(_, e)| e.same_vertex(word))
+    }
+
     /// SPEAK A WORD as a one-sentence family. The word enters the dialect
     /// when it stands; the genome receives it only from the syllabus.
     pub fn speak_word(&mut self, word: &Element) -> io::Result<Utterance> {
@@ -1870,12 +1895,12 @@ impl Entity {
         }
         let voice = self.session.kernel().voice();
         let addr = word.address();
-        if self.taught_up.contains(&addr) {
+        if self.already_taught(word) {
             return Ok(Utterance::Already);
         }
         let bytes = word.to_bytes();
         let codes = self.speak(std::slice::from_ref(word))?;
-        self.taught_up.insert(addr, ());
+        self.taught_up.insert(addr, word.clone());
         let _ = (voice, bytes);
         match codes.first().copied() {
             Some(dialogue::SPEECH_STOOD) | None => Ok(Utterance::Spoken),

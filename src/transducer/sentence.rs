@@ -962,27 +962,39 @@ fn germ_centroid_key(g: &Germ) -> (i64, i64) {
     (sr.saturating_mul(1_000_000) / n.max(1), sc.saturating_mul(1_000_000) / n.max(1))
 }
 
-/// Instances of each modulus class, ordered in the configuration space
-/// by centroid. The class is the stalk; the instances stay distinct points.
-fn instances_of(n: &Nerve) -> crate::network::nerve::Keyed<Vec<usize>> {
-    let mut m: crate::network::nerve::Keyed<Vec<usize>> = crate::network::nerve::Keyed::new();
-    for (i, g) in n.germs.iter().enumerate() {
-        let k = germ_class_key(g);
-        match m.get_mut(&k) {
-            Some(v) => v.push(i),
-            None => {
-                m.insert(k, vec![i]);
-            }
+/// Algebraic stalk of a germ: shell kind, source/target moduli as exact
+/// axes, conjugacy class of the word. Never a digest of those fields.
+pub fn same_stalk(a: &Germ, b: &Germ) -> bool {
+    a.kind == b.kind && a.source == b.source && a.target == b.target && a.word.same_class(&b.word)
+}
+
+fn group_stalks(germs: &[Germ]) -> Vec<Vec<usize>> {
+    let mut groups: Vec<Vec<usize>> = Vec::new();
+    for (i, g) in germs.iter().enumerate() {
+        match groups.iter_mut().find(|grp| same_stalk(&germs[grp[0]], g)) {
+            Some(grp) => grp.push(i),
+            None => groups.push(vec![i]),
         }
     }
-    let mut keys = Vec::new();
-    crate::snapshot::persist(&m, |k, _| keys.push(*k));
-    for k in keys {
-        if let Some(v) = m.get_mut(&k) {
-            v.sort_by_key(|&i| germ_centroid_key(&n.germs[i]));
-        }
+    groups
+}
+
+fn group_match(inst: &[Vec<usize>], germs: &[Germ], probe: &Germ) -> Option<usize> {
+    inst.iter().position(|g| same_stalk(&germs[g[0]], probe))
+}
+
+fn ordinal(inst: &[Vec<usize>], i: usize) -> Option<usize> {
+    inst.iter().find_map(|v| v.iter().position(|&x| x == i))
+}
+
+/// Instances of each stalk, ordered in the configuration space by
+/// centroid. The class is the stalk; the instances stay distinct points.
+fn instances_of(n: &Nerve) -> Vec<Vec<usize>> {
+    let mut groups = group_stalks(&n.germs);
+    for g in &mut groups {
+        g.sort_by_key(|&i| germ_centroid_key(&n.germs[i]));
     }
-    m
+    groups
 }
 
 /// Relative connection between two bodies: the CGA versor
@@ -1033,31 +1045,19 @@ fn emit_face(germs: &[Germ], i: usize, j: usize, faces: &mut Vec<Face>) {
 }
 
 /// Assemble a nerve from germs. Faces are the pairwise relative versors
-/// inside one modulus class, and the star from the frame germ to each
-/// body. Not a cartesian product across classes.
+/// inside one stalk (kind + moduli + conjugacy class), and the star from
+/// the frame germ to each body. Not a cartesian product across classes,
+/// and not a digest bucket.
 pub fn assemble(mut germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
     germs.sort_by(|a, b| a.address.cmp(&b.address));
     let n = germs.len();
-    let mut groups: crate::network::nerve::Keyed<Vec<usize>> = crate::network::nerve::Keyed::new();
-    for i in 0..n {
-        let k = germ_class_key(&germs[i]);
-        match groups.get_mut(&k) {
-            Some(v) => v.push(i),
-            None => {
-                groups.insert(k, vec![i]);
-            }
-        }
-    }
-    let mut class_keys = Vec::new();
-    crate::snapshot::persist(&groups, |k, _| class_keys.push(*k));
+    let mut groups = group_stalks(&germs);
     let mut faces = Vec::new();
-    for k in &class_keys {
-        if let Some(v) = groups.get_mut(k) {
-            v.sort_by_key(|&i| germ_centroid_key(&germs[i]));
-            for a in 0..v.len() {
-                for b in (a + 1)..v.len() {
-                    emit_face(&germs, v[a], v[b], &mut faces);
-                }
+    for v in &mut groups {
+        v.sort_by_key(|&i| germ_centroid_key(&germs[i]));
+        for a in 0..v.len() {
+            for b in (a + 1)..v.len() {
+                emit_face(&germs, v[a], v[b], &mut faces);
             }
         }
     }
@@ -1090,18 +1090,39 @@ pub struct SentenceRule {
     pub charts: Vec<(Option<stalk::Invariant>, Option<stalk::Invariant>)>,
     pub faces: Vec<(usize, usize, Word, bool)>,
     pub holonomies: Vec<Word>,
-    pub hue_maps: crate::network::nerve::Keyed<Vec<(u8, u8)>>,
+    pub hue_maps: Vec<(stalk::Invariant, Vec<(u8, u8)>)>,
     pub nerve: Nerve,
     /// Family frame ratio ((h_out, h_in), (w_out, w_in)).
     pub ratio: ((usize, usize), (usize, usize)),
-    /// Affine translation that agreed across pairs, keyed by germ class.
-    pub shifts: crate::network::nerve::Keyed<(num_rational::BigRational, num_rational::BigRational)>,
+    /// Affine translation that agreed across pairs, one per stalk.
+    pub shifts: Vec<(
+        super::peel::ShellKind,
+        Option<stalk::Invariant>,
+        Option<stalk::Invariant>,
+        Word,
+        (num_rational::BigRational, num_rational::BigRational),
+    )>,
     /// Classes present in some pairs only — sections, not a refusal.
     pub sections: usize,
 }
 
-fn chart_key(inv: &Option<stalk::Invariant>) -> [u8; 32] {
-    inv.as_ref().map(|i| i.key()).unwrap_or([0u8; 32])
+impl SentenceRule {
+    /// Hue map of a target chart, by exact axes, never a digest.
+    pub fn hue_for(&self, inv: &stalk::Invariant) -> Vec<(u8, u8)> {
+        self.hue_maps
+            .iter()
+            .find(|(i, _)| i == inv)
+            .map(|(_, m)| m.clone())
+            .unwrap_or_default()
+    }
+
+    /// Family-constant shift of this germ's stalk, by algebraic class.
+    pub fn shift_of(&self, g: &Germ) -> Option<(num_rational::BigRational, num_rational::BigRational)> {
+        self.shifts
+            .iter()
+            .find(|(k, s, t, w, _)| *k == g.kind && *s == g.source && *t == g.target && w.same_class(&g.word))
+            .map(|(_, _, _, _, d)| d.clone())
+    }
 }
 
 fn germ_hue_map(g: &Germ) -> Vec<(u8, u8)> {
@@ -1115,29 +1136,7 @@ fn germ_hue_map(g: &Germ) -> Vec<(u8, u8)> {
     m
 }
 
-/// Identify a germ across pairs: conjugation class of its word and the
-/// source/target moduli as exact axes, never a digest of a spoken tape.
-pub fn germ_class_key(g: &Germ) -> [u8; 32] {
-    let mut buf = Vec::new();
-    buf.extend_from_slice(&g.word.class_key());
-    write_inv_axes(&g.source, &mut buf);
-    write_inv_axes(&g.target, &mut buf);
-    buf.push(g.kind.as_u8());
-    *blake3::hash(&buf).as_bytes()
-}
 
-fn write_inv_axes(inv: &Option<stalk::Invariant>, buf: &mut Vec<u8>) {
-    match inv {
-        None => buf.push(0),
-        Some(i) => {
-            buf.push(1);
-            buf.push(i.0.len().min(255) as u8);
-            for a in i.0.iter().take(255) {
-                buf.extend_from_slice(&a.to_le_bytes());
-            }
-        }
-    }
-}
 
 /// Vertex key of a sentence: geodesic keys of its germs in order and the
 /// normal forms of its faces, never the serialised tape.
@@ -1145,80 +1144,15 @@ pub fn vertex_address(e: &Element) -> Option<[u8; 32]> {
     let n = from_element(e)?;
     let mut buf = Vec::new();
     for g in &n.germs {
-        buf.extend_from_slice(&g.word.geodesic().key());
-        g.versor.to_bytes(&mut buf);
+        buf.extend_from_slice(&g.word.key());
+        g.versor.canonical().unwrap_or_else(element::identity_versor).to_bytes(&mut buf);
         buf.push(g.kind.as_u8());
     }
     for f in &n.faces {
-        buf.extend_from_slice(&f.g_ij.geodesic().key());
-        f.versor.to_bytes(&mut buf);
+        buf.extend_from_slice(&f.g_ij.key());
+        f.versor.canonical().unwrap_or_else(element::identity_versor).to_bytes(&mut buf);
     }
     Some(*blake3::hash(&buf).as_bytes())
-}
-
-fn class_ordinal(inst: &crate::network::nerve::Keyed<Vec<usize>>, k: &[u8; 32], i: usize) -> Option<usize> {
-    inst.get(k)?.iter().position(|&x| x == i)
-}
-
-fn face_signature(n: &Nerve) -> Option<Vec<( [u8; 32], [u8; 32], Word, bool)>> {
-    let mut faces: Vec<([u8; 32], [u8; 32], Word, bool)> = Vec::new();
-    for f in &n.faces {
-        let gi = n.germs.get(f.i)?;
-        let gj = n.germs.get(f.j)?;
-        let (mut a, mut b, mut w) = (germ_class_key(gi), germ_class_key(gj), f.g_ij.clone());
-        if a > b {
-            std::mem::swap(&mut a, &mut b);
-            w = w.inverse();
-        }
-        faces.push((a, b, w, f.spelled));
-    }
-    faces.sort_by(|x, y| (x.0, x.1, x.3).cmp(&(y.0, y.1, y.3)));
-    Some(faces)
-}
-
-fn hue_signature(n: &Nerve) -> Vec<([u8; 32], Vec<(u8, u8)>)> {
-    let mut v: Vec<([u8; 32], Vec<(u8, u8)>)> = n
-        .germs
-        .iter()
-        .map(|g| (germ_class_key(g), germ_hue_map(g)))
-        .collect();
-    v.sort_by(|a, b| a.0.cmp(&b.0));
-    v
-}
-
-fn face_pair_key(a: &[u8; 32], b: &[u8; 32]) -> [u8; 32] {
-    let (lo, hi) = if a <= b { (a, b) } else { (b, a) };
-    let mut h = blake3::Hasher::new();
-    h.update(lo);
-    h.update(hi);
-    *h.finalize().as_bytes()
-}
-
-fn faces_keyed(n: &Nerve) -> crate::network::nerve::Keyed<(Word, bool)> {
-    let mut m = crate::network::nerve::Keyed::new();
-    for f in &n.faces {
-        let Some(gi) = n.germs.get(f.i) else { continue };
-        let Some(gj) = n.germs.get(f.j) else { continue };
-        let a = germ_class_key(gi);
-        let b = germ_class_key(gj);
-        let k = face_pair_key(&a, &b);
-        let w = if a <= b { f.g_ij.clone() } else { f.g_ij.inverse() };
-        if !m.contains(&k) {
-            m.insert(k, (w, f.spelled));
-        }
-    }
-    m
-}
-
-fn hues_keyed(n: &Nerve) -> crate::network::nerve::Keyed<Vec<(u8, u8)>> {
-    let mut m = crate::network::nerve::Keyed::new();
-    for g in &n.germs {
-        let k = germ_class_key(g);
-        if !m.contains(&k) {
-            m.insert(k, germ_hue_map(g));
-        }
-    }
-    m
 }
 
 fn holo_signature(n: &Nerve) -> Vec<Word> {
@@ -1237,10 +1171,10 @@ fn affine_shift(v: &Versor) -> Option<(num_rational::BigRational, num_rational::
 
 
 
-/// Correspondence across pairs is by (source chart, target chart, shell
-/// kind). The class is the stalk; every instance of that class remains a
-/// vertex. Extra instances (count past the family minimum) are sections.
-/// Hue that does not agree across pairs is a section, not a refusal.
+/// Correspondence across pairs is by algebraic stalk (kind, moduli, word
+/// conjugacy class). The class is the stalk; every instance of that class
+/// remains a vertex. Extra instances (count past the family minimum) are
+/// sections. Hue that does not agree across pairs is a section, not a refusal.
 pub fn agree_up_to_gauge(nerves: &[Nerve]) -> Option<SentenceRule> {
     let first = nerves.first()?;
     if first.germs.is_empty() || first.class.is_some() {
@@ -1251,57 +1185,64 @@ pub fn agree_up_to_gauge(nerves: &[Nerve]) -> Option<SentenceRule> {
             return None;
         }
     }
-    let insts: Vec<crate::network::nerve::Keyed<Vec<usize>>> = nerves.iter().map(instances_of).collect();
-    let mut presence: crate::network::nerve::Keyed<u32> = crate::network::nerve::Keyed::new();
-    for inst in &insts {
-        crate::snapshot::persist(inst, |k, _| {
-            let c = presence.get(k).copied().unwrap_or(0).saturating_add(1);
-            presence.insert(*k, c);
-        });
-    }
-    let n_pairs = nerves.len() as u32;
-    let hue_of = |n: &Nerve, inst: &crate::network::nerve::Keyed<Vec<usize>>, k: &[u8; 32]| -> Option<Vec<(u8, u8)>> {
-        let &i = inst.get(k)?.first()?;
+    let insts: Vec<Vec<Vec<usize>>> = nerves.iter().map(instances_of).collect();
+    let n_pairs = nerves.len();
+    let hue_of = |n: &Nerve, inst: &[Vec<usize>], probe: &Germ| -> Option<Vec<(u8, u8)>> {
+        let g = group_match(inst, &n.germs, probe)?;
+        let &i = inst[g].first()?;
         Some(germ_hue_map(n.germs.get(i)?))
     };
-    let mut rule_keys: Vec<[u8; 32]> = Vec::new();
-    crate::snapshot::persist(&presence, |k, c| {
-        if *c != n_pairs {
-            return;
+    let mut rule_groups: Vec<usize> = Vec::new();
+    for (gi, grp) in insts[0].iter().enumerate() {
+        let probe = &first.germs[grp[0]];
+        let present = nerves
+            .iter()
+            .zip(insts.iter())
+            .all(|(n, ix)| group_match(ix, &n.germs, probe).is_some());
+        if !present {
+            continue;
         }
-        let h0 = hue_of(first, &insts[0], k);
+        let h0 = hue_of(first, &insts[0], probe);
         let constant = nerves
             .iter()
             .zip(insts.iter())
-            .all(|(n, ix)| hue_of(n, ix, k) == h0);
+            .all(|(n, ix)| hue_of(n, ix, probe) == h0);
         if constant {
-            rule_keys.push(*k);
+            rule_groups.push(gi);
         }
-    });
+    }
     let mut section_n = 0usize;
-    crate::snapshot::persist(&presence, |k, c| {
+    for (ni, n) in nerves.iter().enumerate() {
+        for grp in &insts[ni] {
+            let probe = &n.germs[grp[0]];
+            let in_rule = group_match(&insts[0], &first.germs, probe).is_some_and(|gi| rule_groups.contains(&gi));
+            if !in_rule {
+                section_n = section_n.saturating_add(grp.len());
+            }
+        }
+    }
+    for &gi in &rule_groups {
+        let probe = &first.germs[insts[0][gi][0]];
         let counts: Vec<usize> = insts
             .iter()
-            .map(|ix| ix.get(k).map(|v| v.len()).unwrap_or(0))
+            .zip(nerves.iter())
+            .map(|(ix, n)| group_match(ix, &n.germs, probe).map(|g| ix[g].len()).unwrap_or(0))
             .collect();
-        let total: usize = counts.iter().sum();
         let min_c = counts.iter().copied().min().unwrap_or(0);
-        if *c != n_pairs || !rule_keys.iter().any(|r| r == k) {
-            section_n = section_n.saturating_add(total);
-        } else {
-            section_n = section_n.saturating_add(total.saturating_sub(min_c.saturating_mul(nerves.len())));
-        }
-    });
-    if rule_keys.is_empty() {
+        let total: usize = counts.iter().sum();
+        section_n = section_n.saturating_add(total.saturating_sub(min_c.saturating_mul(n_pairs)));
+    }
+    if rule_groups.is_empty() {
         return None;
     }
-    rule_keys.sort();
     let mut germs = Vec::new();
-    for k in &rule_keys {
-        let v0 = insts[0].get(k)?;
+    for &gi in &rule_groups {
+        let v0 = &insts[0][gi];
+        let probe = &first.germs[v0[0]];
         let min_c = insts
             .iter()
-            .map(|ix| ix.get(k).map(|v| v.len()).unwrap_or(0))
+            .zip(nerves.iter())
+            .map(|(ix, n)| group_match(ix, &n.germs, probe).map(|g| ix[g].len()).unwrap_or(0))
             .min()?;
         if min_c == 0 {
             continue;
@@ -1315,29 +1256,35 @@ pub fn agree_up_to_gauge(nerves: &[Nerve]) -> Option<SentenceRule> {
     }
     let mut nerve = assemble(germs, first.remainder.clone());
     let nerve_inst = instances_of(&nerve);
-    let mut hue_maps = crate::network::nerve::Keyed::new();
+    let mut hue_maps: Vec<(stalk::Invariant, Vec<(u8, u8)>)> = Vec::new();
     for g in &nerve.germs {
-        let key = chart_key(&g.target);
-        if key != [0u8; 32] {
-            hue_maps.insert(key, germ_hue_map(g));
+        if let Some(t) = g.target.clone() {
+            if !hue_maps.iter().any(|(i, _)| i == &t) {
+                hue_maps.push((t, germ_hue_map(g)));
+            }
         }
     }
     let mut per_shift: Vec<Option<(num_rational::BigRational, num_rational::BigRational)>> =
         vec![None; nerve.germs.len()];
-    let mut shifts = crate::network::nerve::Keyed::new();
+    let mut shifts: Vec<(
+        super::peel::ShellKind,
+        Option<stalk::Invariant>,
+        Option<stalk::Invariant>,
+        Word,
+        (num_rational::BigRational, num_rational::BigRational),
+    )> = Vec::new();
     for (i, g) in nerve.germs.iter().enumerate() {
-        let k = germ_class_key(g);
-        let Some(t) = class_ordinal(&nerve_inst, &k, i) else {
+        let Some(t) = ordinal(&nerve_inst, i) else {
             continue;
         };
         let mut held = None;
         let mut agree = true;
         for (n, ix) in nerves.iter().zip(insts.iter()) {
-            let Some(v) = ix.get(&k) else {
+            let Some(gj) = group_match(ix, &n.germs, g) else {
                 agree = false;
                 break;
             };
-            let Some(&j) = v.get(t) else {
+            let Some(&j) = ix[gj].get(t) else {
                 agree = false;
                 break;
             };
@@ -1357,14 +1304,10 @@ pub fn agree_up_to_gauge(nerves: &[Nerve]) -> Option<SentenceRule> {
         if agree {
             per_shift[i] = held.clone();
             if let Some(d) = held {
-                match shifts.get(&k) {
-                    None => {
-                        shifts.insert(k, d);
-                    }
-                    Some(h) if *h != d => {
-                        shifts.remove(&k);
-                    }
-                    _ => {}
+                if !shifts.iter().any(|(k, s, t, w, _)| {
+                    *k == g.kind && *s == g.source && *t == g.target && w.same_class(&g.word)
+                }) {
+                    shifts.push((g.kind, g.source.clone(), g.target.clone(), g.word.clone(), d));
                 }
             }
         }
@@ -1379,19 +1322,23 @@ pub fn agree_up_to_gauge(nerves: &[Nerve]) -> Option<SentenceRule> {
         let Some(gj) = nerve.germs.get(f.j) else {
             return false;
         };
-        let ka = germ_class_key(gi);
-        let kb = germ_class_key(gj);
-        let Some(ta) = class_ordinal(&nerve_inst, &ka, f.i) else {
+        let Some(ta) = ordinal(&nerve_inst, f.i) else {
             return false;
         };
-        let Some(tb) = class_ordinal(&nerve_inst, &kb, f.j) else {
+        let Some(tb) = ordinal(&nerve_inst, f.j) else {
             return false;
         };
         nerves.iter().zip(insts.iter()).all(|(n, ix)| {
-            let Some(va) = ix.get(&ka).and_then(|v| v.get(ta)).and_then(|&j| n.germs.get(j)) else {
+            let Some(ga) = group_match(ix, &n.germs, gi) else {
                 return false;
             };
-            let Some(vb) = ix.get(&kb).and_then(|v| v.get(tb)).and_then(|&j| n.germs.get(j)) else {
+            let Some(gb) = group_match(ix, &n.germs, gj) else {
+                return false;
+            };
+            let Some(va) = ix[ga].get(ta).and_then(|&j| n.germs.get(j)) else {
+                return false;
+            };
+            let Some(vb) = ix[gb].get(tb).and_then(|&j| n.germs.get(j)) else {
                 return false;
             };
             let (w, v, s) = relative_face(va, vb);
@@ -1789,7 +1736,7 @@ fn decode_nerve_tail(b: &[u8], pos: &mut usize) -> Option<Nerve> {
     let ng = take_u32(b, pos)? as usize;
     let mut germs = Vec::with_capacity(ng.min(1024));
     for _ in 0..ng.min(1024) {
-        let address: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+        let _stored: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
         *pos += 32;
         let versor = Versor::from_bytes(b, pos)?;
         let word = Word::from_bytes(b, pos)?;
@@ -1814,6 +1761,8 @@ fn decode_nerve_tail(b: &[u8], pos: &mut usize) -> Option<Nerve> {
                 Some((r, c))
             }
         };
+        let chain = element::canonical_chain(&chain).unwrap_or(chain);
+        let address = element::from_residual(&chain).address();
         germs.push(Germ { address, versor, word, chain, source, target, kind, shift });
     }
     let nf = take_u32(b, pos)? as usize;
@@ -1895,7 +1844,7 @@ pub fn chart_of(e: &Element) -> crate::transducer::stalk::Invariant {
         for g in &n.germs {
             extra.push(g.word.form().map(|f| {
                 let mut row = vec![f.parity as u64];
-                row.extend(f.rot.iter().map(|&x| x.unsigned_abs()));
+                row.extend(f.rot.iter().map(|&x| x as u64));
                 row
             }).unwrap_or_default());
         }

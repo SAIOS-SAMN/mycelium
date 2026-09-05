@@ -69,18 +69,18 @@ impl Harmonics {
         }
     }
 
-    /// The harmonics laid out as the atlas's axes (each ratio as its
-    /// numerator and denominator), in the order the strata refine by.
-    pub fn axes(&self) -> Vec<u64> {
+    /// The harmonics laid out as the atlas's axes. None if any ratio
+    /// exceeds the axis (A6 refusal).
+    pub fn axes(&self) -> Option<Vec<u64>> {
         let mut axes = vec![self.components, self.holes, self.turns];
-        axes.extend(blade::axes_of(&self.isoperimetric));
-        axes.extend(blade::axes_of(&self.anisotropy));
-        axes.extend(blade::axes_of(&self.spread));
-        axes.extend(blade::axes_of(&self.quartic));
+        axes.extend(blade::axes_of(&self.isoperimetric)?);
+        axes.extend(blade::axes_of(&self.anisotropy)?);
+        axes.extend(blade::axes_of(&self.spread)?);
+        axes.extend(blade::axes_of(&self.quartic)?);
         for f in &self.gauge {
-            axes.extend(blade::axes_of(f));
+            axes.extend(blade::axes_of(f)?);
         }
-        axes
+        Some(axes)
     }
 }
 
@@ -105,6 +105,6 @@ mod tests {
         assert_eq!(a, b);
         assert_eq!(a.components, 1);
         assert_eq!(a.turns, 6);
-        assert_eq!(a.axes(), crate::transducer::stalk::invariant(&l).0);
+        assert_eq!(a.axes().unwrap_or_default(), crate::transducer::stalk::invariant(&l).0);
     }
 }

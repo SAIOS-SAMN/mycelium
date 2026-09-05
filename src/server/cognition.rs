@@ -659,6 +659,8 @@ pub struct Kernel {
     /// Each basis word reached by its address (index-aligned with `basis`;
     /// rebuilt on the rare removal).
     basis_index: std::sync::Arc<crate::network::nerve::Keyed<usize>>,
+    /// A8: old stored address → M2 address. `word_at` consults on a miss.
+    rmp1: crate::network::nerve::Keyed<[u8; 32]>,
     /// THE BOOK SNAPSHOT — the open listings and composites as immutable
     /// shared values sealed at a book generation; a market view shares
     /// them by pointer and the book is copied only when it moved.
@@ -1007,7 +1009,7 @@ impl Kernel {
                 self.dialect_chain.push((key, g, tu));
                 return;
             }
-            if old == g {
+            if element::same_versor(&old, &g) {
                 return;
             }
             self.dialect_chain.push((key, old, old_tu));
@@ -1762,13 +1764,37 @@ impl Kernel {
         self.basis_index = std::sync::Arc::new(index);
     }
 
-    /// The word at an address, read by its coordinate.
+    /// The word at an address, read by its coordinate. A8: a miss consults
+    /// the restore remap so a pre-a29bba5 key still names the vertex.
     pub fn word_at(&self, addr: &[u8; 32]) -> Option<&Element> {
-        self.basis_index
-            .get(addr)
-            .and_then(|&i| self.basis.get(i).map(|w| w.as_ref()))
-            .or_else(|| self.cavity_book.get(addr))
-            .or_else(|| self.provisional.get(addr))
+        let lookup = |a: &[u8; 32]| {
+            self.basis_index
+                .get(a)
+                .and_then(|&i| self.basis.get(i).map(|w| w.as_ref()))
+                .or_else(|| self.cavity_book.get(a))
+                .or_else(|| self.provisional.get(a))
+        };
+        lookup(addr).or_else(|| self.rmp1.get(addr).and_then(|n| lookup(n)))
+    }
+
+    fn remap_restored_addresses(&mut self) {
+        let mut remap = crate::network::nerve::Keyed::new();
+        let rehome = |store: &mut crate::network::nerve::Keyed<Element>, remap: &mut crate::network::nerve::Keyed<[u8; 32]>| {
+            let entries: Vec<_> = store.fiber(&crate::network::nerve::ROOT).map(|(k, v)| (*k, v.clone())).collect();
+            *store = crate::network::nerve::Keyed::new();
+            for (old, spoken) in entries {
+                let new = spoken.address();
+                if old != new {
+                    remap.insert(old, new);
+                }
+                if store.get(&new).is_none() {
+                    store.insert(new, spoken);
+                }
+            }
+        };
+        rehome(&mut self.provisional, &mut remap);
+        rehome(&mut self.cavity_book, &mut remap);
+        self.rmp1 = remap;
     }
 
     /// A word the court finalized here joins the ruled cover (keyed admit).
@@ -2944,20 +2970,17 @@ impl Kernel {
         _degree: u8,
         mut cover: Option<&mut crate::network::nerve::Cover>,
     ) {
-        let class_key = class.key();
-        let coord = class.coordinate();
+        let axes = class.class_axes().unwrap_or_else(|| vec![0]);
         let cx = self.complexes.get(&inv.key()).cloned();
-        let coord_of = |addr: &[u8; 32]| -> u64 {
+        let coord_of = |addr: &[u8; 32]| -> Vec<u64> {
             if let Some(c) = &cx {
-                let mut side = 0u64;
                 for (_, sec) in c.sections.fiber(&crate::network::nerve::ROOT) {
                     if sec.addr == *addr && !sec.gamma.is_identity() {
-                        side = coord;
+                        return axes.clone();
                     }
                 }
-                return side;
             }
-            0
+            vec![0]
         };
         let before: Vec<[u8; 32]> = self.listing_atlas.fiber(inv);
         let before_mag: Vec<([u8; 32], [u64; 4])> = before
@@ -2974,11 +2997,15 @@ impl Kernel {
                     let side = cx
                         .as_ref()
                         .and_then(|c| c.sections.get(&h))
-                        .map(|sec| if sec.gamma.is_identity() { 0 } else { coord })
-                        .unwrap_or(0);
-                    let mut key = [0u8; 32];
-                    key[..8].copy_from_slice(&side.to_le_bytes());
-                    let new = crate::transducer::stalk::Stalks::refine(inv, key);
+                        .map(|sec| {
+                            if sec.gamma.is_identity() {
+                                vec![0]
+                            } else {
+                                axes.clone()
+                            }
+                        })
+                        .unwrap_or_else(|| vec![0]);
+                    let new = crate::transducer::stalk::Stalks::refine_axes(inv, &side);
                     cover.rehome(lane, inv, &new, h);
                 }
             }
@@ -2990,8 +3017,8 @@ impl Kernel {
             }
         }
         if let Some(c) = self.complexes.remove(&inv.key()) {
-            let a = crate::transducer::stalk::Stalks::refine(inv, [0u8; 32]);
-            let b = crate::transducer::stalk::Stalks::refine(inv, class_key);
+            let a = crate::transducer::stalk::Stalks::refine_axes(inv, &[0]);
+            let b = crate::transducer::stalk::Stalks::refine_axes(inv, &axes);
             self.rekey_cocycles(inv, &a, &b);
             self.complexes.insert(a.key(), c.clone());
             self.complexes.insert(b.key(), c);
@@ -5431,6 +5458,7 @@ impl Kernel {
             self.basis_clear();
             return false;
         }
+        self.remap_restored_addresses();
         self.occupancy = [0; 4];
         self.t_leases = crate::network::nerve::Keyed::new();
         self.lane_listings = Default::default();
@@ -5524,11 +5552,13 @@ fn recenter(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64, u8, u8)> {
 /// base address ⊕ the assignment — so two kernels independently proposing the
 /// same axis extension meet at one receipt (wire identity, never reasoned on).
 fn section_address(thought: &[u8; 32], asg: &[(u8, u8)]) -> [u8; 32] {
-    let mut buf = Vec::with_capacity(32 + asg.len() * 2);
+    let mut sigma = asg.to_vec();
+    sigma.sort_unstable();
+    let mut buf = Vec::with_capacity(32 + sigma.len() * 2);
     buf.extend_from_slice(thought);
-    for (b, a) in asg {
-        buf.push(*b);
-        buf.push(*a);
+    for (b, a) in sigma {
+        buf.push(b);
+        buf.push(a);
     }
     *blake3::hash(&buf).as_bytes()
 }
@@ -5633,14 +5663,7 @@ pub fn cover(
 /// The parent puzzle id — the content address of the WHOLE coboundary
 /// (intrinsic authenticity: a digest cannot be forged).
 fn composite_parent_id(rg: &[(i64, i64, u8, u8)]) -> [u8; 32] {
-    let mut buf = Vec::with_capacity(rg.len() * 18);
-    for (r, c, b, a) in rg {
-        buf.extend_from_slice(&r.to_le_bytes());
-        buf.extend_from_slice(&c.to_le_bytes());
-        buf.push(*b);
-        buf.push(*a);
-    }
-    *blake3::hash(&buf).as_bytes()
+    element::from_residual(&rg.to_vec()).address()
 }
 
 /// A word's witnessed placements inside a demand chain (union of translated

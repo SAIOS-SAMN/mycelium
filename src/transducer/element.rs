@@ -142,7 +142,7 @@ impl PartialEq for Element {
         self.dim == other.dim
             && self.word == other.word
             && self.mag == other.mag
-            && self.sub == other.sub
+            && canonical_chain(&self.sub) == canonical_chain(&other.sub)
             && self.sections == other.sections
             && self.torsion == other.torsion
             && self.anchor == other.anchor
@@ -861,6 +861,47 @@ impl Element {
         self.sub.is_empty() && other.sub.is_empty() && self.realize() == other.realize()
     }
 
+    /// Same vertex of the Cayley graph: the same transport, independent of
+    /// spelling. Two connections agree when their rotors are projectively
+    /// equal, ρ agrees, and the gauge agrees; placement is the fibre
+    /// coordinate, not identity. `g₁ ∘ g₂⁻¹ = 1` on the group, never
+    /// `address() == address()`.
+    pub fn same_vertex(&self, other: &Element) -> bool {
+        if self.is_sentence() && other.is_sentence() {
+            return match (
+                crate::transducer::sentence::from_element(self),
+                crate::transducer::sentence::from_element(other),
+            ) {
+                (Some(a), Some(b)) => {
+                    a.germs.len() == b.germs.len()
+                        && a.germs.iter().zip(b.germs.iter()).all(|(x, y)| {
+                            x.kind == y.kind && x.word == y.word
+                        })
+                        && a.faces.len() == b.faces.len()
+                        && a.faces
+                            .iter()
+                            .zip(b.faces.iter())
+                            .all(|(f, g)| same_versor(&f.versor, &g.versor))
+                }
+                _ => false,
+            };
+        }
+        match (self.letters(), other.letters()) {
+            (Some(a), Some(b)) => {
+                a.spelling.word == b.spelling.word
+                    && a.spelling.rho == b.spelling.rho
+                    && {
+                        let mut sa = a.sigma.clone();
+                        let mut sb = b.sigma.clone();
+                        sa.sort_unstable();
+                        sb.sort_unstable();
+                        sa == sb
+                    }
+            }
+            _ => self.same_action(other),
+        }
+    }
+
     /// COMPOSE — the per-axis group product `self` then `other`. Shared axes
     /// multiply (matrix ·); disjoint axes are carried. Associative (the group law).
     pub fn compose(&self, other: &Element) -> Element {
@@ -1053,7 +1094,7 @@ impl Element {
             return out;
         }
         if let Some(L) = self.letters() {
-            out.extend_from_slice(&L.spelling.word.geodesic().key());
+            out.extend_from_slice(&L.spelling.word.key());
             put_q(&mut out, &L.spelling.rho);
             put_q(&mut out, &L.shift.0);
             put_q(&mut out, &L.shift.1);
@@ -1065,8 +1106,9 @@ impl Element {
                 out.push(t);
             }
         }
-        out.extend_from_slice(&(self.sub.len() as u32).to_le_bytes());
-        for (r, c, b, a) in &self.sub {
+        let chain = canonical_chain(&self.sub).unwrap_or_else(|| self.sub.clone());
+        out.extend_from_slice(&(chain.len() as u32).to_le_bytes());
+        for (r, c, b, a) in &chain {
             out.extend_from_slice(&r.to_le_bytes());
             out.extend_from_slice(&c.to_le_bytes());
             out.push(*b);
@@ -1577,13 +1619,36 @@ fn place_block(dst: &mut QMatrix, off: usize, block: &QMatrix) {
 /// relative offsets between changed cells) is preserved exactly: equal-tally,
 /// different-geometry residuals stay distinct. The word/identity IS the centered
 /// chain; the antisymmetric hue tally is kept only as the δ-algebra lens.
+/// A5: translate min-corner to origin, sort, dedup. None when two
+/// distinct transitions occupy one site.
+pub fn canonical_chain(cells: &[(i64, i64, u8, u8)]) -> Option<Vec<(i64, i64, u8, u8)>> {
+    if cells.is_empty() {
+        return Some(Vec::new());
+    }
+    let min_r = cells.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
+    let min_c = cells.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
+    let mut out: Vec<(i64, i64, u8, u8)> = cells
+        .iter()
+        .map(|(r, c, b, a)| (r - min_r, c - min_c, *b, *a))
+        .collect();
+    out.sort_unstable();
+    out.dedup();
+    for w in out.windows(2) {
+        if w[0].0 == w[1].0 && w[0].1 == w[1].1 && (w[0].2, w[0].3) != (w[1].2, w[1].3) {
+            return None;
+        }
+    }
+    Some(out)
+}
+
 pub fn from_residual(g: &ResidualGerm) -> Element {
-    // The substrate framing projection: min-corner of the changed set → origin.
-    let min_r = g.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
-    let min_c = g.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
-    let mut centered: ResidualGerm =
-        g.iter().map(|(r, c, before, after)| (r - min_r, c - min_c, *before, *after)).collect();
-    centered.sort_unstable();
+    let centered: ResidualGerm = canonical_chain(g).unwrap_or_else(|| {
+        let min_r = g.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
+        let min_c = g.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
+        let mut c: ResidualGerm = g.iter().map(|(r, col, b, a)| (r - min_r, col - min_c, *b, *a)).collect();
+        c.sort_unstable();
+        c
+    });
 
     // The δ-lens: the position-free antisymmetric hue-transition tally (a
     // projection — algebra only, never identity/substance).
@@ -1845,7 +1910,7 @@ impl Element {
     /// transport. `None` when there are no letters.
     pub fn letters_rederive(&self) -> Option<bool> {
         let letters = self.letters()?;
-        Some(letters.spelling.word.rotor().projective_eq(&letters.spelling.word.geodesic().rotor()))
+        Some(letters.spelling.word.matrix()? == letters.spelling.word.geodesic().matrix()?)
     }
 
     /// The axes opened above the four strata: the germinated fibres.
@@ -2328,6 +2393,7 @@ mod tests {
             alt.word = connection_word(&spelling, &L.shift, &L.sigma, &rem);
             alt.address.take();
             assert_eq!(alt.address(), w.address(), "q^4 and 1 are one vertex; the tape is not the address");
+            assert!(alt.same_vertex(&w), "q^4 and 1 are one vertex; equality is the rotor, not a digest");
         }
         assert!(w.magnitude()[0] >= 5 && w.magnitude()[1] >= 2, "carried volume rides on the lanes");
         let closed = from_connection(&affine, &[(1, 2), (2, 1)], &Vec::new(), [5, 2, 0, 0]).expect("spells");
@@ -2485,6 +2551,34 @@ mod tests {
         assert_eq!(both.axes(), vec![FIBER_SPATIAL, FIBER_GERMINATED], "both axes present");
         assert_eq!(both.fiber(FIBER_SPATIAL), spatial.fiber(FIBER_SPATIAL), "spatial axis intact");
         assert_eq!(both.max_axis(), Some(FIBER_GERMINATED));
-        assert_ne!(both.address(), spatial.address());
+        assert!(!both.same_action(&spatial), "a germinated axis is a new generator, not a new digest");
+    }
+
+    #[test]
+    fn a5_chain_canonical_idempotent_and_translation_free() {
+        let a = vec![(3, 4, 1u8, 2u8), (3, 5, 1, 2)];
+        let b = vec![(0, 1, 1u8, 2u8), (0, 0, 1, 2)];
+        let ca = canonical_chain(&a).unwrap();
+        let cb = canonical_chain(&b).unwrap();
+        assert_eq!(ca, cb);
+        assert_eq!(canonical_chain(&ca).unwrap(), ca);
+        assert_eq!(from_residual(&a).address(), from_residual(&b).address());
+    }
+
+    #[test]
+    fn m2_two_spellings_one_address() {
+        let affine = affine_of(&identity_versor()).expect("affine");
+        let w = from_connection(&affine, &[(1, 2), (2, 1)], &Vec::new(), [5, 2, 0, 0]).expect("spells");
+        let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap();
+        let long = crate::transducer::alphabet::Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
+        let mut alt = w.clone();
+        if let Some(L) = alt.letters() {
+            let spelling = crate::transducer::alphabet::Spelling { word: long, rho: L.spelling.rho };
+            let rem = alt.sub().to_vec();
+            alt.word = connection_word(&spelling, &L.shift, &L.sigma, &rem);
+            alt.address.take();
+            assert_eq!(alt.address(), w.address());
+            assert!(alt.same_vertex(&w));
+        }
     }
 }

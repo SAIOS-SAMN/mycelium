@@ -129,7 +129,8 @@ pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
                     }
                 }
                 true => {
-                    if rederived.sub() != spoken.sub() {
+                    let spoken_c = element::canonical_chain(chain).unwrap_or_else(|| chain.to_vec());
+                    if rederived.sub() != spoken_c.as_slice() {
                         return Some("remainder does not re-derive from the chain");
                     }
                     if [0, 1, 3].iter().any(|&l| spoken.magnitude()[l] < rederived.magnitude()[l]) {
@@ -372,7 +373,9 @@ fn symmetric_difference(a: &[(i64, i64, u8, u8)], b: &[(i64, i64, u8, u8)]) -> V
 /// common to every evidence's carrying set (the intersection move — one
 /// evidence never binds; the caller holds families of at least two).
 fn sel_key(s: &Sel) -> [u8; 32] {
-    *blake3::hash(format!("{s:?}").as_bytes()).as_bytes()
+    let mut buf = Vec::new();
+    s.to_bytes(&mut buf);
+    *blake3::hash(&buf).as_bytes()
 }
 
 pub fn derive_pi(family: &[(Vec<(i64, i64)>, Vec<(i64, i64, u8)>)]) -> Option<Sel> {
@@ -432,6 +435,15 @@ mod tests {
         );
         assert_eq!(ruling, Ruling::Slashed("unparseable word"));
         assert_eq!(ruling.code(), dialogue::RULING_SLASHED);
+    }
+
+    #[test]
+    fn a9_sel_key_stable_under_debug_change() {
+        let s = Sel::Hue(3);
+        let mut buf = Vec::new();
+        s.to_bytes(&mut buf);
+        assert_eq!(sel_key(&s), *blake3::hash(&buf).as_bytes());
+        assert_ne!(sel_key(&s), *blake3::hash(format!("{s:?}").as_bytes()).as_bytes());
     }
 
     /// The two-docket ruling over a federation is an exhaustive state map:

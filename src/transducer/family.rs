@@ -307,6 +307,7 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
     let mut unmatched_inputs: Vec<(usize, usize)> = Vec::new();
     for (p, s) in scenes.iter().enumerate() {
         let mut used = vec![false; s.bodies_in.len()];
+        let mut used_out = vec![false; s.bodies_out.len()];
         for (j, ob) in s.bodies_out.iter().enumerate() {
             let best: Option<(usize, Carriage)> = s
                 .bodies_in
@@ -314,9 +315,27 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
                 .enumerate()
                 .filter(|(i, ab)| !used[*i] && ab.moduli == ob.moduli)
                 .find_map(|(i, ab)| carriage(ab, ob).map(|car| (i, car)));
+            if let Some((i, car)) = best {
+                used[i] = true;
+                used_out[j] = true;
+                pairings.push(Pairing { pair: p, input: i, output: j, carriage: car });
+            }
+        }
+        // Leftover: ∃V even when the chart axes disagree.
+        for (j, ob) in s.bodies_out.iter().enumerate() {
+            if used_out[j] {
+                continue;
+            }
+            let best: Option<(usize, Carriage)> = s
+                .bodies_in
+                .iter()
+                .enumerate()
+                .filter(|(i, _)| !used[*i])
+                .find_map(|(i, ab)| carriage(ab, ob).map(|car| (i, car)));
             match best {
                 Some((i, car)) => {
                     used[i] = true;
+                    used_out[j] = true;
                     pairings.push(Pairing { pair: p, input: i, output: j, carriage: car });
                 }
                 None => created_by_pair[p].push(ob.cells.clone()),
@@ -531,17 +550,6 @@ fn word_of_versor(v: &Versor) -> super::alphabet::Word {
         .unwrap_or_else(super::alphabet::Word::identity)
 }
 
-fn spellable(v: &Versor) -> bool {
-    let Some(aff) = element::affine_of(v) else {
-        return false;
-    };
-    if aff.len() < 2 || aff[0].len() < 2 {
-        return false;
-    }
-    let block = [[aff[0][0].clone(), aff[0][1].clone()], [aff[1][0].clone(), aff[1][1].clone()]];
-    super::alphabet::spell(&block).is_some()
-}
-
 fn frame_chart(f: (usize, usize)) -> Invariant {
     Invariant(vec![u64::MAX, f.0 as u64, f.1 as u64])
 }
@@ -616,10 +624,9 @@ fn pair_rank(ic: &Cand, oc: &Cand) -> Option<(u8, Carriage)> {
     if oc.kind != super::peel::ShellKind::Whole {
         return None;
     }
+    // Match is ∃V ∈ Spin(4,1)(ℚ) carrying the shape: carriage / versor_between.
+    // The linear block need not spell — a parabolic translation is a versor.
     let car = carriage(&ic.body, &oc.body)?;
-    if !spellable(&car.v) {
-        return None;
-    }
     let exact = ic.body.moduli == oc.body.moduli;
     let r = match (exact, ic.kind == super::peel::ShellKind::Whole) {
         (true, true) => 0,
@@ -639,38 +646,22 @@ fn mark_parent(used: &mut [bool], cands: &[Cand], idx: usize) {
     }
 }
 
-fn bucket_cands(cands: &[Cand], used: Option<&[bool]>) -> crate::network::nerve::Keyed<Vec<usize>> {
-    let mut m: crate::network::nerve::Keyed<Vec<usize>> = crate::network::nerve::Keyed::new();
+/// Partition candidates by exact chart axes (`Invariant` equality), never
+/// a digest of those axes. A hash of moduli isolates congruent bodies
+/// whose packing or orientation differs; the axes themselves are the chart.
+fn group_by_chart(cands: &[Cand], used: Option<&[bool]>, peel: bool) -> Vec<(Invariant, Vec<usize>)> {
+    let mut groups: Vec<(Invariant, Vec<usize>)> = Vec::new();
     for (i, c) in cands.iter().enumerate() {
         if used.is_some_and(|u| u[i]) {
             continue;
         }
-        let k = c.body.moduli.key();
-        match m.get_mut(&k) {
-            Some(v) => v.push(i),
-            None => {
-                m.insert(k, vec![i]);
-            }
+        let inv = if peel { c.body.moduli.peel() } else { c.body.moduli.clone() };
+        match groups.iter_mut().find(|(m, _)| *m == inv) {
+            Some((_, v)) => v.push(i),
+            None => groups.push((inv, vec![i])),
         }
     }
-    m
-}
-
-fn bucket_peeled(cands: &[Cand], used: &[bool]) -> crate::network::nerve::Keyed<Vec<usize>> {
-    let mut m: crate::network::nerve::Keyed<Vec<usize>> = crate::network::nerve::Keyed::new();
-    for (i, c) in cands.iter().enumerate() {
-        if used[i] {
-            continue;
-        }
-        let k = c.body.moduli.peel().key();
-        match m.get_mut(&k) {
-            Some(v) => v.push(i),
-            None => {
-                m.insert(k, vec![i]);
-            }
-        }
-    }
-    m
+    groups
 }
 
 fn greedy_within(
@@ -713,26 +704,21 @@ fn greedy_within(
     }
 }
 
-fn pair_buckets(
+fn pair_groups(
     ins: &[Cand],
     outs: &[Cand],
-    in_b: &crate::network::nerve::Keyed<Vec<usize>>,
-    out_b: &crate::network::nerve::Keyed<Vec<usize>>,
+    in_g: &[(Invariant, Vec<usize>)],
+    out_g: &[(Invariant, Vec<usize>)],
     used_in: &mut [bool],
     used_out: &mut [bool],
     pairs: &mut Vec<(usize, usize, Carriage)>,
     want: u8,
 ) {
-    let mut keys = Vec::new();
-    crate::snapshot::persist(in_b, |k, _| keys.push(*k));
-    for k in keys {
-        let Some(ii) = in_b.get(&k).cloned() else {
+    for (inv, ii) in in_g {
+        let Some((_, oo)) = out_g.iter().find(|(m, _)| m == inv) else {
             continue;
         };
-        let Some(oo) = out_b.get(&k).cloned() else {
-            continue;
-        };
-        greedy_within(ins, outs, &ii, &oo, used_in, used_out, pairs, want);
+        greedy_within(ins, outs, ii, oo, used_in, used_out, pairs, want);
     }
 }
 
@@ -743,15 +729,32 @@ fn pair_nerve(a: &Grid, b: &Grid, scale: Option<((usize, usize), (usize, usize))
     let mut used_in = vec![false; ins.len()];
     let mut used_out = vec![false; outs.len()];
     let mut pairs: Vec<(usize, usize, Carriage)> = Vec::new();
-    let in_b = bucket_cands(&ins, None);
-    let out_b = bucket_cands(&outs, None);
+    let in_exact = group_by_chart(&ins, None, false);
+    let out_exact = group_by_chart(&outs, None, false);
     for want in 0u8..=1 {
-        pair_buckets(&ins, &outs, &in_b, &out_b, &mut used_in, &mut used_out, &mut pairs, want);
+        pair_groups(&ins, &outs, &in_exact, &out_exact, &mut used_in, &mut used_out, &mut pairs, want);
     }
-    let in_p = bucket_peeled(&ins, &used_in);
-    let out_p = bucket_peeled(&outs, &used_out);
+    let in_peel = group_by_chart(&ins, Some(&used_in), true);
+    let out_peel = group_by_chart(&outs, Some(&used_out), true);
     for want in 2u8..=3 {
-        pair_buckets(&ins, &outs, &in_p, &out_p, &mut used_in, &mut used_out, &mut pairs, want);
+        pair_groups(&ins, &outs, &in_peel, &out_peel, &mut used_in, &mut used_out, &mut pairs, want);
+    }
+    // Leftover wholes: ∃V even when the chart axes disagree. Not a
+    // cartesian of peel shells — unused wholes only.
+    let ii: Vec<usize> = ins
+        .iter()
+        .enumerate()
+        .filter(|(i, c)| !used_in[*i] && c.kind == super::peel::ShellKind::Whole)
+        .map(|(i, _)| i)
+        .collect();
+    let oo: Vec<usize> = outs
+        .iter()
+        .enumerate()
+        .filter(|(i, c)| !used_out[*i] && c.kind == super::peel::ShellKind::Whole)
+        .map(|(i, _)| i)
+        .collect();
+    for want in 2u8..=3 {
+        greedy_within(&ins, &outs, &ii, &oo, &mut used_in, &mut used_out, &mut pairs, want);
     }
     let mut germs = vec![frame_germ(a, b)];
     for (i, j, car) in pairs {
@@ -860,8 +863,8 @@ fn test_transport(
     placed: &crate::network::nerve::Keyed<(BigRational, BigRational)>,
 ) -> Versor {
     let rho = ratio_rho(rule.ratio);
-    if let Some((dr, dc)) = g.shift.as_ref().or_else(|| rule.shifts.get(&super::sentence::germ_class_key(g))) {
-        return realize_word(&g.word, &rho, &(dr.clone(), dc.clone()));
+    if let Some((dr, dc)) = g.shift.clone().or_else(|| rule.shift_of(g)) {
+        return realize_word(&g.word, &rho, &(dr, dc));
     }
     let linear = realize_word(&g.word, &rho, &(q(0), q(0)));
     let t_body = cga::translator(&test_c.0, &test_c.1);
@@ -1146,7 +1149,7 @@ pub fn speak_rule(rule: &super::sentence::SentenceRule, x: &Grid) -> Option<Spee
                 continue;
             };
             placed.insert(addr, body.centroid.clone());
-            let map = g.target.as_ref().and_then(|t| rule.hue_maps.get(&t.key())).cloned().unwrap_or_default();
+            let map = g.target.as_ref().map(|t| rule.hue_for(t)).unwrap_or_default();
             if g.source.is_none() {
                 speak_created(rule, g, idx, &placed, fy, &mut cells);
                 continue;
@@ -1508,6 +1511,24 @@ mod tests {
         assert_eq!(spoken.grid(), grid(&["0022", "0000"]));
         let t = c.transport.expect("still a connection");
         assert_eq!(speak_total(&t, &grid(&["1100", "0000"])).map(|s| s.remainder.is_empty()), Some(true));
+    }
+
+    /// Pairing is ∃V on the shapes, not a digest of the moduli axes.
+    #[test]
+    fn pairing_is_carriage_not_a_moduli_digest() {
+        let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
+        let rule = extract_rule(&family).expect("a translated bar extracts");
+        let bodies = rule
+            .nerve
+            .germs
+            .iter()
+            .filter(|g| g.kind != crate::transducer::peel::ShellKind::Frame)
+            .count();
+        assert_eq!(bodies, 1, "one body is one germ under ∃V, got {}", rule.nerve.germ_count());
+        let a = perceive(&family[0].0);
+        let b = perceive(&family[0].1);
+        assert_eq!(a[0].moduli, b[0].moduli, "the chart is exact axes, not a hash");
+        assert!(carriage(&a[0], &b[0]).is_some(), "a versor carries the bar");
     }
 
     /// Three identical squares in one family are a section: the test

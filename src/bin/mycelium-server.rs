@@ -1062,7 +1062,13 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         && pbytes.len() > 32
         && matches!(out, Outcome::GermPending | Outcome::Fragmented(_))
     {
-        let key = *blake3::hash(&pbytes[32..]).as_bytes(); // demand address, voice-free
+        let Some((_, a_bodies, b_bodies, extent, _)) = decode_percept(pbytes) else {
+            return;
+        };
+        let fa: Vec<(i64, i64, u8)> = a_bodies.into_iter().flatten().collect();
+        let fb: Vec<(i64, i64, u8)> = b_bodies.into_iter().flatten().collect();
+        let chain = mycelium::transducer::germinate::germinate(&fa, &fb).unwrap_or_default();
+        let key = mycelium::transducer::element::listing_key(&chain, &extent);
         let dest = door.router.lock().ok().and_then(|r| rendezvous(&key, id, &r));
         if let Some(dest) = dest {
             let mut g = vec![0x01u8];

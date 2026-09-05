@@ -57,6 +57,13 @@ fn qn(n: i64, d: i64) -> Q {
     Q::new(BigInt::from(n), BigInt::from(d))
 }
 
+/// A6: two's-complement numerator and positive denominator, or refuse.
+fn pack_axis(x: &Q) -> Option<[u64; 2]> {
+    let n: i64 = x.numer().try_into().ok()?;
+    let d: u64 = x.denom().try_into().ok()?;
+    Some([n as u64, d])
+}
+
 /// Opaque letter identifier. Range `0..17` at the constructor; a wire
 /// identifier only — the letter's content is its rotor.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -243,18 +250,32 @@ impl Rotor {
         Some(s)
     }
 
-    /// Projective representative: divide by the absolute value of the first
-    /// nonzero coefficient so two rotors that differ by a positive scalar
-    /// store the same tape. Sign of that coefficient is kept, so −Φ stays −Φ.
+    /// Even-grade: only scalar, bivectors and pseudoscalar. An odd blade
+    /// means the element is not a rotor.
+    fn is_even(&self) -> bool {
+        (0..16).all(|i| (i as u32).count_ones() % 2 == 0 || self.c[i].is_zero())
+    }
+
+    /// Canonical rotor (A1): divide by |first nonzero|, then negate so that
+    /// coefficient is +1. −Φ and Φ are one vertex (the sandwich). Zero is
+    /// not a vertex and stays zero.
     pub fn normalised(&self) -> Rotor {
+        if !self.is_even() {
+            return self.clone();
+        }
         let Some(i) = (0..16).find(|&i| !self.c[i].is_zero()) else {
             return Rotor::zero();
         };
         let a = self.c[i].abs();
-        if a.is_one() {
-            return self.clone();
+        let mut r = if a.is_one() {
+            self.clone()
+        } else {
+            self.scale(&(Q::one() / a))
+        };
+        if r.c[i].is_negative() {
+            r = r.scale(&-Q::one());
         }
-        self.scale(&(Q::one() / a))
+        r
     }
 
     /// Coefficient identity: the normal-form constructor's check, never
@@ -263,36 +284,51 @@ impl Rotor {
         self.c == other.c
     }
 
-    /// True when `self ∘ other⁻¹` is a positive scalar (the same transport
-    /// at a different weight). Non-versors compare by normalised coefficients.
+    /// True when `self ∘ other⁻¹` is a nonzero scalar of either sign
+    /// (`λ ∈ ℚ×`). The action is `R X R̃ / (R R̃)`, on which −R and R agree.
     pub fn projective_eq(&self, other: &Rotor) -> bool {
         match other.inverse() {
             Some(inv) => {
                 let p = self.geo(&inv);
-                p.c[0].is_positive() && (1..16).all(|i| p.c[i].is_zero())
+                !p.c[0].is_zero() && (1..16).all(|i| p.c[i].is_zero())
             }
             None => self.normalised().coeffs_eq(&other.normalised()),
         }
     }
 
-    /// Conjugation-and-scale invariant of a rotor: `(a²/w, p²/w, sign a,
-    /// sign p)` with `a` the scalar, `p` the pseudoscalar, `w = ΦΦ̃`.
-    pub fn class_key(&self) -> [u8; 32] {
+    /// Conjugation-and-scale invariants `(a²/w, p²/w, sign a, sign p)` —
+    /// exact rationals, never a digest. `a` the scalar, `p` the
+    /// pseudoscalar, `w = ΦΦ̃`.
+    pub fn class_invariants(&self) -> (Q, Q, u8, u8) {
         let w = self.weight().unwrap_or_else(Q::one);
         let a = self.c[0].clone();
         let p = self.c[15].clone();
-        let mut buf = Vec::new();
         if w.is_zero() {
-            put_q(&mut buf, &Q::zero());
-            put_q(&mut buf, &Q::zero());
-            buf.push(0);
-            buf.push(0);
+            (Q::zero(), Q::zero(), 0, 0)
         } else {
-            put_q(&mut buf, &(&(&a * &a) / &w));
-            put_q(&mut buf, &(&(&p * &p) / &w));
-            buf.push(u8::from(a.is_negative()));
-            buf.push(u8::from(p.is_negative()));
+            (
+                &(&a * &a) / &w,
+                &(&p * &p) / &w,
+                u8::from(a.is_negative()),
+                u8::from(p.is_negative()),
+            )
         }
+    }
+
+    /// Same conjugacy-and-scale class: the invariants agree as rationals.
+    pub fn class_eq(&self, other: &Rotor) -> bool {
+        self.class_invariants() == other.class_invariants()
+    }
+
+    /// Transport identifier of [`class_invariants`]. Identity of class is
+    /// [`class_eq`], never this digest.
+    pub fn class_key(&self) -> [u8; 32] {
+        let (x, y, sa, sp) = self.class_invariants();
+        let mut buf = Vec::new();
+        put_q(&mut buf, &x);
+        put_q(&mut buf, &y);
+        buf.push(sa);
+        buf.push(sp);
         *blake3::hash(&buf).as_bytes()
     }
 
@@ -330,17 +366,31 @@ impl Rotor {
         }
     }
 
+    /// A1 key: blake3 of the canonical coefficients. Identity is
+    /// [`projective_eq`], never this digest compared as meaning.
     pub fn key(&self) -> [u8; 32] {
-        let mut h = blake3::Hasher::new();
+        let n = self.normalised();
         let mut buf = Vec::new();
-        self.to_bytes(&mut buf);
-        h.update(&buf);
-        *h.finalize().as_bytes()
+        n.to_bytes(&mut buf);
+        *blake3::hash(&buf).as_bytes()
     }
 
-    /// First eight bytes of the key as an atlas axis.
-    pub fn coordinate(&self) -> u64 {
-        u64::from_le_bytes(self.key()[..8].try_into().unwrap())
+    /// Refinement axes of this class rotor (A7): conjugacy invariants packed
+    /// exactly, never a hash fragment.
+    pub fn class_axes(&self) -> Option<Vec<u64>> {
+        let n = self.normalised();
+        let w = n.weight().unwrap_or_else(Q::one);
+        let a = n.c[0].clone();
+        let p = n.c[15].clone();
+        let mut axes = vec![2u64, u64::from(a.is_negative()), u64::from(p.is_negative())];
+        if w.is_zero() {
+            return Some(axes);
+        }
+        let a2 = pack_axis(&(&(&a * &a) / &w))?;
+        let p2 = pack_axis(&(&(&p * &p) / &w))?;
+        axes.extend_from_slice(&a2);
+        axes.extend_from_slice(&p2);
+        Some(axes)
     }
 
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
@@ -387,7 +437,7 @@ pub fn letter_inverse(id: LetterId) -> Rotor {
 
 /// A WORD: an oriented tape of letters. `true` reads the letter backwards
 /// (its carried `Φ⁻¹`). The stored tape is the geodesic normal form.
-/// Equal words compare by vertex ([`Word::key`]), never by a raw tape.
+/// Equal words compare by rotor projective equality, never by a tape or a digest.
 #[derive(Debug)]
 pub struct Word(Vec<(LetterId, bool)>, std::sync::OnceLock<Rotor>);
 
@@ -409,7 +459,10 @@ impl Clone for Word {
 
 impl PartialEq for Word {
     fn eq(&self, other: &Self) -> bool {
-        self.key() == other.key()
+        // M1: vertex equality is A1 of the rotor (λ ∈ ℚ×, either sign).
+        // q^4 = −4 and 1 are one vertex; mixed-plane spellings of one
+        // rotor are one vertex even when the geodesic tape is not unique.
+        self.rotor().projective_eq(&other.rotor())
     }
 }
 impl Eq for Word {}
@@ -444,15 +497,24 @@ impl Word {
         self.1.take();
     }
 
-    /// Vertex key: BLAKE3 of the geodesic normal form, never of a spoken tape.
+    /// M1 key: A1 of the rotor, never a hash of a spoken or geodesic tape.
+    /// Mixed-plane spellings of one rotor share this key.
     pub fn key(&self) -> [u8; 32] {
-        let n = self.geodesic();
-        let mut buf = Vec::with_capacity(2 + n.0.len());
-        n.to_bytes(&mut buf);
-        *blake3::hash(&buf).as_bytes()
+        self.rotor().key()
     }
 
-    /// Conjugation class of the plane form, or of the rotor off the plane.
+    /// Same conjugacy class: plane conjugacy representative, or rotor
+    /// class invariants off the plane. Never a digest comparison.
+    pub fn same_class(&self, other: &Word) -> bool {
+        match (self.form(), other.form()) {
+            (Some(a), Some(b)) => a.conjugacy_eq(&b),
+            (None, None) => self.rotor().class_eq(&other.rotor()),
+            _ => false,
+        }
+    }
+
+    /// Transport identifier of the conjugacy class. Class identity is
+    /// [`same_class`], never this digest.
     pub fn class_key(&self) -> [u8; 32] {
         match self.form() {
             Some(f) => f.conjugacy_key(),
@@ -489,46 +551,13 @@ impl Word {
         Word::raw(t)
     }
 
-    /// Reduce the tape by the per-plane spelling peel so equal rotors have
-    /// equal tapes on the wire. Per plane: sheet parity, unit exponent
-    /// mod 4, prime-5 and prime-13 exponents; planes in slot order.
+    /// Plane-closed: A3 tape. Off-plane: A2 run reduction. The key is A1
+    /// of the rotor either way; a mixed-plane word is never keyed as 1.
     pub fn normal_form(&self) -> Word {
-        if let Some(mut f) = self.form() {
-            reduce_unit_exponents(&mut f);
+        if let Some(f) = self.form() {
             return f.to_word();
         }
-        let Some(m) = self.matrix() else {
-            return self.clone();
-        };
-        let mut out = Word::identity();
-        for &(i, j) in &SLOT_PLANES_SIX {
-            let (ii, jj) = (i as usize, j as usize);
-            let closed = (0..4).all(|row| {
-                row == ii || row == jj || (m[row][ii].is_zero() && m[row][jj].is_zero())
-            });
-            if !closed {
-                continue;
-            }
-            let block = [
-                [m[ii][ii].clone(), m[ii][jj].clone()],
-                [m[jj][ii].clone(), m[jj][jj].clone()],
-            ];
-            if let Some(sp) = spell(&block) {
-                let mut piece = sp.word;
-                if let Some(mut f) = piece.form() {
-                    reduce_unit_exponents(&mut f);
-                    piece = f.to_word();
-                }
-                let mut t = out.0.clone();
-                t.extend_from_slice(&piece.0);
-                out = Word::raw(t);
-            }
-        }
-        if out.is_empty() {
-            self.clone()
-        } else {
-            out
-        }
+        run_reduce(self.letters())
     }
 
     /// The plane group is rotations ⋊ sheet parity, not a commuting tape.
@@ -558,15 +587,17 @@ impl Word {
         for &(id, inv) in sp.word.letters() {
             rot[id.raw() as usize] += if inv { -1 } else { 1 };
         }
-        Some(PlaneForm { parity, rot })
+        let mut f = PlaneForm { parity, rot };
+        reduce_unit_exponents(&mut f);
+        Some(f)
     }
 
-    /// Two words are the same plane element: same sheet parity and the
-    /// same rotation, never a commuting exponent sum.
+    /// Two words are the same plane element: reduced forms, or A1 of the
+    /// rotor off the plane. Never tape equality.
     pub fn same_form(&self, other: &Word) -> bool {
         match (self.form(), other.form()) {
             (Some(a), Some(b)) => a == b,
-            (None, None) => self.0 == other.0,
+            (None, None) => self.rotor().projective_eq(&other.rotor()),
             _ => false,
         }
     }
@@ -647,6 +678,100 @@ fn reduce_unit_exponents(f: &mut PlaneForm) {
         }
         f.rot[i as usize] = n;
     }
+}
+
+fn complementary(a: (u8, u8), b: (u8, u8)) -> bool {
+    matches!(
+        (a, b),
+        ((0, 1), (2, 3))
+            | ((2, 3), (0, 1))
+            | ((0, 2), (1, 3))
+            | ((1, 3), (0, 2))
+            | ((0, 3), (1, 2))
+            | ((1, 2), (0, 3))
+    )
+}
+
+fn plane_nf(w: &Word) -> Word {
+    match w.form() {
+        Some(f) => f.to_word(),
+        None => w.clone(),
+    }
+}
+
+/// A2 step 1: split into per-plane runs, reduce each, commute complementary
+/// planes until a same-plane merge, never rewrite as the identity.
+fn run_reduce(tape: &[(LetterId, bool)]) -> Word {
+    let tape: Vec<(LetterId, bool)> = tape.iter().copied().filter(|(id, _)| id.raw() != 0).collect();
+    if tape.is_empty() {
+        return Word::identity();
+    }
+    let mut runs: Vec<Word> = Vec::new();
+    let mut cur: Vec<(LetterId, bool)> = Vec::new();
+    let mut cur_plane: Option<(u8, u8)> = None;
+    for &ltr in &tape {
+        let p = plane_of(ltr.0);
+        if cur.is_empty() || p == cur_plane {
+            cur.push(ltr);
+            cur_plane = p;
+        } else {
+            runs.push(plane_nf(&Word::from_letters(&cur)));
+            cur = vec![ltr];
+            cur_plane = p;
+        }
+    }
+    if !cur.is_empty() {
+        runs.push(plane_nf(&Word::from_letters(&cur)));
+    }
+    runs.retain(|w| !w.is_empty());
+    loop {
+        let n = runs.len();
+        let mut merged = false;
+        let mut i = 1usize;
+        while i < runs.len() {
+            let pi = runs[i].letters().first().and_then(|(id, _)| plane_of(*id));
+            let Some(pi) = pi else {
+                i += 1;
+                continue;
+            };
+            let mut j = i;
+            let mut gap_ok = true;
+            while j > 0 {
+                j -= 1;
+                let pj = runs[j].letters().first().and_then(|(id, _)| plane_of(*id));
+                let Some(pj) = pj else {
+                    gap_ok = false;
+                    break;
+                };
+                if pj == pi {
+                    break;
+                }
+                if !complementary(pj, pi) {
+                    gap_ok = false;
+                    break;
+                }
+                if j == 0 && pj != pi {
+                    gap_ok = false;
+                }
+            }
+            if gap_ok && j < i && runs[j].letters().first().and_then(|(id, _)| plane_of(*id)) == Some(pi) {
+                let piece = runs.remove(i);
+                let joined = runs[j].compose(&piece);
+                runs[j] = plane_nf(&joined);
+                if runs[j].is_empty() {
+                    runs.remove(j);
+                }
+                merged = true;
+                break;
+            }
+            i += 1;
+        }
+        if !merged || runs.len() >= n {
+            break;
+        }
+        runs.retain(|w| !w.is_empty());
+    }
+    runs.into_iter().fold(Word::identity(), |a, b| a.compose(&b))
 }
 
 /// A relation of the Cayley group: a tape that multiplies to the identity,
@@ -744,27 +869,39 @@ impl PlaneForm {
         !self.parity && self.rot.iter().all(|&x| x == 0)
     }
 
-    /// Canonical conjugacy representative, then its digest. Even sheet:
-    /// `{r, −r}` with the first nonzero component positive. Odd sheet:
-    /// each exponent mod 2 in `{0,1}`.
-    pub fn conjugacy_key(&self) -> [u8; 32] {
-        let mut buf = Vec::with_capacity(1 + 8 * CAYLEY_ALPHABET_LEN);
+    /// Canonical conjugacy representative. Even sheet: `{r, −r}` with the
+    /// first nonzero component positive. Odd sheet: each exponent mod 2
+    /// in `{0,1}`. Compared as coefficients, never hashed.
+    pub fn conjugacy_rep(&self) -> PlaneForm {
         if self.parity {
-            buf.push(1);
-            for &n in &self.rot {
-                buf.extend_from_slice(&(n.rem_euclid(2)).to_le_bytes());
+            let mut rot = [0i64; CAYLEY_ALPHABET_LEN];
+            for (i, &n) in self.rot.iter().enumerate() {
+                rot[i] = n.rem_euclid(2);
             }
+            PlaneForm { parity: true, rot }
         } else {
-            buf.push(0);
             let neg: [i64; CAYLEY_ALPHABET_LEN] = std::array::from_fn(|i| -self.rot[i]);
             let pick_neg = match self.rot.iter().zip(neg.iter()).find(|(&a, &b)| a != b) {
                 Some((&a, _)) => a < 0,
                 None => false,
             };
-            let r = if pick_neg { &neg } else { &self.rot };
-            for &n in r {
-                buf.extend_from_slice(&n.to_le_bytes());
-            }
+            PlaneForm { parity: false, rot: if pick_neg { neg } else { self.rot } }
+        }
+    }
+
+    /// Same conjugacy class: the representatives agree as coefficients.
+    pub fn conjugacy_eq(&self, other: &PlaneForm) -> bool {
+        self.conjugacy_rep() == other.conjugacy_rep()
+    }
+
+    /// Transport identifier of [`conjugacy_rep`]. Class identity is
+    /// [`conjugacy_eq`], never this digest.
+    pub fn conjugacy_key(&self) -> [u8; 32] {
+        let r = self.conjugacy_rep();
+        let mut buf = Vec::with_capacity(1 + 8 * CAYLEY_ALPHABET_LEN);
+        buf.push(r.parity as u8);
+        for &n in &r.rot {
+            buf.extend_from_slice(&n.to_le_bytes());
         }
         *blake3::hash(&buf).as_bytes()
     }
@@ -853,10 +990,6 @@ impl PlaneForm {
             h.update(&n.to_le_bytes());
         }
         *h.finalize().as_bytes()
-    }
-
-    pub fn coordinate(&self) -> u64 {
-        u64::from_le_bytes(self.key()[..8].try_into().unwrap())
     }
 
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
@@ -1342,7 +1475,9 @@ mod tests {
             assert_eq!(phi.geo(&letter_inverse(id)), Rotor::identity(), "letter {} carries its inverse", id.raw());
             let scaled = phi.scale(&qn(3, 2));
             assert!(phi.projective_eq(&scaled), "a positive weight is the same transport");
+            assert!(phi.projective_eq(&phi.scale(&qn(-3, 2))), "a negative weight is the same transport");
             assert_eq!(phi.normalised(), scaled.normalised());
+            assert_eq!(phi.normalised(), phi.scale(&qn(-1, 1)).normalised());
         }
     }
 
@@ -1457,11 +1592,14 @@ mod tests {
         let q = LetterId::quarter((0, 1)).unwrap();
         let r = Word::from_letters(&[(q, false)]).form().unwrap();
         let inv = r.inverse();
+        assert!(r.conjugacy_eq(&inv), "r and -r are one even class");
         assert_eq!(r.conjugacy_key(), inv.conjugacy_key(), "r and -r are one even class");
         let sheet = PlaneForm { parity: true, rot: [0; CAYLEY_ALPHABET_LEN] };
         let odd = r.compose(&sheet);
         let odd2 = inv.compose(&sheet);
+        assert!(odd.conjugacy_eq(&odd2), "odd class is r mod 2");
         assert_eq!(odd.conjugacy_key(), odd2.conjugacy_key(), "odd class is r mod 2");
+        assert!(!r.conjugacy_eq(&odd), "sheet splits the class");
         assert_ne!(r.conjugacy_key(), odd.conjugacy_key(), "sheet splits the class");
     }
 
@@ -1486,8 +1624,9 @@ mod tests {
         let q = LetterId::quarter((0, 1)).unwrap();
         let a = Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
         let b = Word::identity();
-        assert_eq!(a.key(), b.key(), "q^4 and 1 are one vertex");
-        assert_eq!(a, b);
+        assert!(a.rotor().projective_eq(&b.rotor()), "q^4 and 1 are one rotor under ℚ×");
+        assert_eq!(a, b, "vertex equality is A1, not a digest of either tape");
+        assert_eq!(a.key(), b.key(), "q^4 and 1 are one A1 key");
         let long = Word::raw(vec![(q, false), (q, false), (q, false), (q, false), (q, false)]);
         let geo = long.geodesic();
         assert_eq!(geo.len(), 1, "five quarters geodesic to one");
@@ -1501,5 +1640,19 @@ mod tests {
         assert!(g.iter().any(|r| r.kind == RelatorKind::SheetConjugate));
         assert!(g.iter().any(|r| r.kind == RelatorKind::PrimeInfinite));
         assert!(g.iter().any(|r| r.kind == RelatorKind::QuarterOrderFour && r.word.geodesic().is_empty()));
+    }
+
+    #[test]
+    fn a1_canonical_is_projective_either_sign() {
+        let q = LetterId::quarter((0, 1)).unwrap();
+        let r = Word::from_letters(&[(q, false)]).rotor();
+        let q4 = Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
+        assert_eq!(q4.key(), Word::identity().key(), "q^4 and 1 share an A1 key");
+        assert_eq!(r.normalised().key(), r.scale(&qn(-5, 2)).normalised().key());
+        assert!(r.projective_eq(&r.scale(&qn(-1, 1))));
+        let next = Word::from_letters(&[(q, false), (q, false)]).rotor();
+        assert_ne!(r.key(), next.key(), "R and R·q are distinct vertices");
+        let f = Word::from_letters(&[(q, false), (q, false), (q, false)]).form().unwrap();
+        assert_eq!(f.rot[q.raw() as usize], -1, "A3 writes three quarters as −1");
     }
 }
