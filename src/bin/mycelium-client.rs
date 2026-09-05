@@ -426,7 +426,7 @@ fn main() {
                             .open
                             .iter()
                             .filter(|c| {
-                                let f = entity.working_atlas().fiber(c);
+                                let f = entity.working_fiber(c);
                                 if f.is_empty() {
                                     return false;
                                 }
@@ -667,7 +667,7 @@ fn main() {
         // ── SYNTROPIC PHASE — crystallize, voice change, regenerate.
         if physics.depleted() {
             lap("task");
-            let shed = entity.shed(k_step);
+            let shed = entity.shed();
             if shed > 0 {
                 eprintln!("[{tag}] shed {shed} dialect");
             }

@@ -127,12 +127,16 @@ fn dialect_enters_on_stood_and_sheds() {
     let mut epi = Epigenome::new();
     let affine = affine_of(&identity_versor()).unwrap();
     let w = from_connection(&affine, &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0]).unwrap();
+    let addr = w.address();
     epi.stand_dialect(w, 1);
     assert_eq!(epi.dialect_len(), 1);
     let n = epi.shed(1);
     assert_eq!(n, 0, "fresh dialect is not shed");
     let aperture = mycelium::physics::aperture_cycle() as u64;
-    let n = epi.shed(1 + aperture + 1);
+    epi.touch(&addr, 1 + aperture);
+    let n = epi.shed(1 + aperture);
+    assert_eq!(n, 0, "a working-atlas use resets the TUniversal aperture");
+    let n = epi.shed(1 + aperture + aperture + 1);
     assert_eq!(n, 1);
     assert_eq!(epi.dialect_len(), 0);
 }

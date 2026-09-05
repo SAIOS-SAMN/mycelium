@@ -650,6 +650,8 @@ impl Aperture {
 pub struct Dialect {
     pub sentence: Element,
     pub last_used_k: u64,
+    /// TUniversal of last working-atlas read or stand.
+    pub last_used_tu: u64,
     pub uses: u64,
     shape: Option<crate::transducer::blade::Shape>,
 }
@@ -807,18 +809,27 @@ impl Epigenome {
         self.shed_n
     }
 
-    /// Drop dialect unused for an aperture of K. A dialect entry a live
-    /// idea glues is not shed. The genome never sheds.
-    pub fn shed(&mut self, k: u64) -> usize {
-        self.shed_except(k, &|_| false)
+    /// A working-atlas read of a stood word is a use.
+    pub fn touch(&mut self, addr: &[u8; 32], now_tu: u64) {
+        if let Some(d) = self.dialect.get_mut(addr) {
+            d.last_used_tu = now_tu;
+            d.last_used_k = d.last_used_k.max(1);
+            d.uses = d.uses.saturating_add(1);
+        }
     }
 
-    pub fn shed_except(&mut self, k: u64, glued: &impl Fn(&[u8; 32]) -> bool) -> usize {
+    /// Drop dialect unused for an aperture of TUniversal. A dialect entry a live
+    /// idea glues is not shed. The genome never sheds.
+    pub fn shed(&mut self, now_tu: u64) -> usize {
+        self.shed_except(now_tu, &|_| false)
+    }
+
+    pub fn shed_except(&mut self, now_tu: u64, glued: &impl Fn(&[u8; 32]) -> bool) -> usize {
         let aperture = crate::physics::aperture_cycle() as u64;
         let drop: Vec<[u8; 32]> = self
             .dialect
             .fiber(&crate::network::nerve::ROOT)
-            .filter(|(a, d)| k.saturating_sub(d.last_used_k) > aperture && !glued(a))
+            .filter(|(a, d)| now_tu.saturating_sub(d.last_used_tu) > aperture && !glued(a))
             .map(|(a, _)| *a)
             .collect();
         let n = drop.len();
@@ -831,6 +842,10 @@ impl Epigenome {
     }
 
     pub fn stand_dialect(&mut self, sentence: Element, k: u64) {
+        self.stand_dialect_at(sentence, k, k);
+    }
+
+    pub fn stand_dialect_at(&mut self, sentence: Element, k: u64, now_tu: u64) {
         if let Some(i) = self.genome.iter().position(|w| w.same_vertex(&sentence)) {
             if let Some(x) = self.expression.get_mut(i) {
                 *x = x.saturating_add(1);
@@ -840,6 +855,7 @@ impl Epigenome {
         let addr = sentence.address();
         if let Some(d) = self.dialect.get_mut(&addr) {
             d.last_used_k = k;
+            d.last_used_tu = now_tu;
             d.uses = d.uses.saturating_add(1);
             return;
         }
@@ -851,6 +867,7 @@ impl Epigenome {
         {
             if let Some(d) = self.dialect.get_mut(&existing) {
                 d.last_used_k = k;
+                d.last_used_tu = now_tu;
                 d.uses = d.uses.saturating_add(1);
             }
             return;
@@ -863,6 +880,7 @@ impl Epigenome {
             Dialect {
                 sentence,
                 last_used_k: k,
+                last_used_tu: now_tu,
                 uses: 1,
                 shape,
             },
@@ -1406,7 +1424,7 @@ impl Entity {
         self.tu = tu;
     }
 
-    fn now_tu(&self) -> u64 {
+    pub fn now_tu(&self) -> u64 {
         self.tu.ticks()
     }
 
@@ -1667,8 +1685,8 @@ impl Entity {
                 if self.already_taught_addr(&addr) {
                     continue; // spoken for adoption once; the judge decided
                 }
-                let Some(word) = self.epigenome.word_at(&addr) else { continue };
-                if self.already_taught(word) {
+                let Some(word) = self.epigenome.word_at(&addr).cloned() else { continue };
+                if self.already_taught(&word) {
                     continue;
                 }
                 let bytes = word.to_bytes();
@@ -2255,7 +2273,7 @@ impl Entity {
         let mut codes = vec![dialogue::SPEECH_STOOD; sentences.len()];
         for (i, e) in sentences.iter().enumerate() {
             if self.already_taught(e) {
-                self.epigenome.stand_dialect(e.clone(), k);
+                self.epigenome.stand_dialect_at(e.clone(), k, self.now_tu());
                 continue;
             }
             fresh.push(e);
@@ -2277,7 +2295,7 @@ impl Entity {
             let c = got.get(gi).copied().unwrap_or(dialogue::SPEECH_STOOD);
             gi += 1;
             codes[i] = c;
-            self.epigenome.stand_dialect(e.clone(), k);
+            self.epigenome.stand_dialect_at(e.clone(), k, self.now_tu());
             if c != dialogue::SPEECH_REFUSED {
                 self.taught_up.insert(e.address(), e.clone());
             }
@@ -2290,8 +2308,8 @@ impl Entity {
     }
 
     /// Already uttered this operator: same vertex on the working atlas
-    /// or already sent up, not the same digest.
-    pub fn already_taught(&self, word: &Element) -> bool {
+    /// or already sent up, not the same digest. A dialect hit is a use.
+    pub fn already_taught(&mut self, word: &Element) -> bool {
         if self.taught_up.contains(&word.address()) {
             return true;
         }
@@ -2305,13 +2323,17 @@ impl Entity {
         if self.epigenome.same_vertex_in_genome(word).is_some() {
             return true;
         }
-        self.epigenome.same_vertex_in_dialect(word).is_some()
+        if let Some(a) = self.epigenome.same_vertex_in_dialect(word) {
+            self.epigenome.touch(&a, self.now_tu());
+            return true;
+        }
+        false
     }
 
     /// Stand the vertex in the dialect and mark it taught, without the wire.
     pub fn remember_spoken(&mut self, word: &Element) {
         let k = self.session.voice().k();
-        self.epigenome.stand_dialect(word.clone(), k);
+        self.epigenome.stand_dialect_at(word.clone(), k, self.now_tu());
         self.taught_up.insert(word.address(), word.clone());
     }
 
@@ -2353,9 +2375,13 @@ impl Entity {
         }
     }
 
-    pub fn shed(&mut self, k: u64) -> usize {
+    pub fn shed(&mut self) -> usize {
+        self.shed_at(self.now_tu())
+    }
+
+    pub fn shed_at(&mut self, now_tu: u64) -> usize {
         let glued = |a: &[u8; 32]| self.contemplation.glues_word(a);
-        let n = self.epigenome.shed_except(k, &glued);
+        let n = self.epigenome.shed_except(now_tu, &glued);
         n.saturating_add(self.contemplation.shed_unglued())
     }
 
@@ -2367,6 +2393,18 @@ impl Entity {
     /// member carrying its standing.
     pub fn working_atlas(&self) -> WorkingAtlas<'_> {
         self.epigenome.working_atlas_with(&self.contemplation.by_chart)
+    }
+
+    /// Fiber of the working atlas; a Stood hit updates last_used_tu.
+    pub fn working_fiber(&mut self, c: &crate::transducer::stalk::Invariant) -> Vec<([u8; 32], Standing)> {
+        let f = self.working_atlas().fiber(c);
+        let tu = self.now_tu();
+        for (a, st) in &f {
+            if *st == Standing::Stood {
+                self.epigenome.touch(a, tu);
+            }
+        }
+        f
     }
 
     pub fn take_promoted(&mut self) -> Vec<[u8; 32]> {
@@ -2856,7 +2894,7 @@ mod tests {
             .expect("idea");
         entity.contemplation.mark_glue(&idea, addr);
         let aperture = crate::physics::aperture_cycle() as u64;
-        let n = entity.shed(1 + aperture + 1);
+        let n = entity.shed_at(1 + aperture + 1);
         assert_eq!(entity.dialect_len(), 1, "glued dialect is not shed, dropped {n}");
         assert_eq!(entity.epigenome.genome_len(), 0, "genome is untouched by shed");
     }
