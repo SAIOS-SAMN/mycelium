@@ -34,6 +34,9 @@ pub enum Outcome {
     /// An irreducible residual that reached quorum and adjoined as a new generator
     /// (Knuth–Bendix completion — the alphabet grows).
     Installed(usize),
+    /// A family member punctured as a section of held word `ti`. Not an install,
+    /// and it does not mint.
+    Sectioned(usize),
     /// The scene had no single motor; it fragmented into per-body sub-demands,
     /// each reduced independently and recomposed (the large-corpus path).
     Fragmented(Vec<Outcome>),
@@ -762,6 +765,8 @@ pub struct Kernel {
     /// Measured transport in milliseconds. Standing T is ticks (seconds)
     /// over this unit. Zero means one second (one transport).
     transport_ms: u64,
+    /// Set on home_install, glue Admitted, mint, and slash.
+    persist_due: bool,
     /// Test lane capacity override; production reads dynamic_lane_capacity.
     lane_cap: Option<[usize; 4]>,
     /// TUniversal at first vantage of a standing carrier (listing or docket).
@@ -913,7 +918,19 @@ impl Kernel {
             .unwrap_or(now);
         let ticks = now.saturating_sub(tu).max(1);
         let ms = ticks.saturating_mul(1000);
-        (ms / self.transport_ms()).max(1)
+        let transports = (ms / self.transport_ms()).max(1);
+        let breath = crate::physics::aperture_cycle() as u64;
+        (transports / breath.max(1)).max(1)
+    }
+
+    fn mark_persist(&mut self) {
+        self.persist_due = true;
+    }
+
+    pub fn take_persist(&mut self) -> bool {
+        let due = self.persist_due;
+        self.persist_due = false;
+        due
     }
 
     fn standing_mag(&self, addr: &[u8; 32], base: &[u64; 4]) -> [u64; 4] {
@@ -2320,6 +2337,7 @@ impl Kernel {
                     self.retire_rewrite_inputs(&w);
                     self.fed_admit(addr, w);
                     self.unlist(addr, false);
+                    self.mark_persist();
                     return true;
                 }
                 self.fed_admit(addr, w);
@@ -2328,6 +2346,7 @@ impl Kernel {
                 self.treasury.mint_claim(&voices, mu, anchor);
             }
             self.unlist(addr, false);
+            self.mark_persist();
             true
         } else {
             let slash = ruling == RULING_SLASHED;
@@ -2351,6 +2370,7 @@ impl Kernel {
                     self.cavity_book.insert(*addr, elem.clone());
                     self.cavities.push(elem);
                 }
+                self.mark_persist();
             }
             ok
         }
@@ -2846,6 +2866,7 @@ impl Kernel {
                 self.unlist(&addr, false);
                 self.provisional.remove(&addr);
                 self.court_upheld += 1;
+                self.mark_persist();
             }
             Glue::Attached => {
                 if let Some(rep) = held_rep {
@@ -3029,6 +3050,7 @@ impl Kernel {
         self.unlist(addr, false);
         self.provisional.remove(addr);
         self.court_upheld += 1;
+        self.mark_persist();
         eprintln!("  court home installed {:02x}{:02x}… peer holds the stratum", addr[0], addr[1]);
     }
 
@@ -4103,26 +4125,12 @@ impl Kernel {
                     if quorum && self.physics.can_expand(lanes) {
                         self.word_mut(ti).puncture(asg);
                         self.touch_at(ti);
-                        let mu = crate::economy::price(&residual.magnitude(), &self.physics.pressure);
-                        let anchor = self.anchor();
-                        // PROVISIONAL (Step 5): the award escrows until the
-                        // court's finality verdict — unfinalized speech earns
-                        // nothing; the puncture itself is local dialect.
-                        self.treasury.escrow_award(saddr, self.admission.voices_of(&saddr), mu, anchor);
-                        self.record_deflation(saddr, listing, residual.magnitude());
-                        let k_now = self.k_step();
-                        self.provisional_k.insert(saddr, k_now);
-                        self.provisional.insert(saddr, residual.clone());
-                        self.provisional_tu.insert(saddr, self.now_tu());
-                        self.stamp_standing(saddr);
                         self.physics.relieve(&mag);
-                        self.physics.syntropy(&mag); // volume built through the axis
-                        // A puncture deepens a held word: order built, no
-                        // reserve spent — the fiber is the cheaper direction.
+                        self.physics.syntropy(&mag);
                         self.unlist(&residual.address(), false);
-                        self.append_step(saddr, voice); // the puncture is a K-step too
-                        self.complete_composite_child(&gaddr, voice); // lineage
-                        return Outcome::Installed(ti); // installed AS A SECTION of thought ti
+                        self.append_step(saddr, voice);
+                        self.complete_composite_child(&gaddr, voice);
+                        return Outcome::Sectioned(ti);
                     }
                     self.physics.bump(&mag);
                     return Outcome::GermPending;
@@ -5887,6 +5895,7 @@ pub fn outcome_code(o: &Outcome) -> u8 {
         Outcome::Decomposed(_) => 1,
         Outcome::GermPending => 2,
         Outcome::Installed(_) => 3,
+        Outcome::Sectioned(_) => 6,
         Outcome::Fragmented(_) => 5,
         Outcome::Pivot => 4,
     }
@@ -6029,7 +6038,7 @@ mod tests {
             k.ingest(&a, &b, [1; 32]);
             match k.ingest(&a, &b, [2; 32]) {
                 Outcome::GermPending => k.glue_local(),
-                Outcome::Installed(_) => {}
+                Outcome::Installed(_) | Outcome::Sectioned(_) => {}
                 o => panic!("germ {n}: {o:?}"),
             }
         }
@@ -6056,7 +6065,7 @@ mod tests {
         // A further voice arrives after another stroke: the deferred germ completes.
         match k.ingest(&a, &gb, [3; 32]) {
             Outcome::GermPending => k.glue_local(),
-            Outcome::Installed(_) => {}
+            Outcome::Installed(_) | Outcome::Sectioned(_) => {}
             o => panic!("deferral complete: {o:?}"),
         }
     }
@@ -6178,7 +6187,7 @@ mod tests {
             k.ingest(a, b, [1; 32]);
             match k.ingest(a, b, [2; 32]) {
                 Outcome::GermPending => k.glue_local(),
-                Outcome::Installed(_) => {}
+                Outcome::Installed(_) | Outcome::Sectioned(_) => {}
                 o => panic!("expected settle or puncture, got {o:?}"),
             }
         };
@@ -6673,7 +6682,7 @@ mod tests {
         let b2 = vec![(0, 0, 7), (0, 1, 1), (1, 0, 1)];
         assert_eq!(k.ingest(&a, &b2, [1; 32]), Outcome::GermPending, "the axis prospect pends");
         assert_eq!(k.basis_len(), 1, "no sibling card");
-        assert!(matches!(k.ingest(&a, &b2, [2; 32]), Outcome::Installed(0)), "the axis PIERCES thought 0");
+        assert!(matches!(k.ingest(&a, &b2, [2; 32]), Outcome::Sectioned(0)), "the axis PIERCES thought 0");
         assert_eq!(k.basis_len(), 1, "count unchanged — growth was +axis");
         assert_eq!(k.basis()[0].sections().len(), 1, "the thought gained a section (volume)");
         // The bundle speaks the family: both members now decompose to the ONE word.
@@ -6739,7 +6748,7 @@ mod tests {
         k.ingest(&fwd, &rev, [1; 32]); // (0,0): 4→1 — the swap sibling
         match k.ingest(&fwd, &rev, [2; 32]) {
             Outcome::GermPending => k.glue_local(),
-            Outcome::Installed(_) => {}
+            Outcome::Installed(_) | Outcome::Sectioned(_) => {}
             o => panic!("{o:?}"),
         }
         assert_eq!(k.basis()[0].sections().len(), 1);
@@ -6771,7 +6780,7 @@ mod tests {
         // …so under 3.5 it PUNCTURES P's axis (Installed(0) as a section).
         match k.ingest(&a2, &b2, [2; 32]) {
             Outcome::GermPending => k.glue_local(),
-            Outcome::Installed(_) => {}
+            Outcome::Installed(_) | Outcome::Sectioned(_) => {}
             o => panic!("{o:?}"),
         }
         assert_eq!(k.basis_len(), 1, "the single-cell family is ONE bundle");

@@ -467,9 +467,10 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
     }
     remainder.sort_unstable();
     remainder.dedup();
-    out.sentence = nerve_of(&scenes, &pairings, remainder.clone());
     out.residual = remainder;
     out.transport = Some(transport);
+    out.rule = extract_rule(family);
+    out.sentence = out.rule.as_ref().map(|r| r.nerve.clone());
     out
 }
 
@@ -1110,65 +1111,6 @@ pub fn speak_rule(rule: &super::sentence::SentenceRule, x: &Grid) -> Option<Spee
     cells.dedup();
     remainder.sort_unstable();
     Some(Speech { frame: fy, cells, remainder })
-}
-
-/// Path one: keep every body's carriage as a germ, build the nerve from
-/// after-supports. A body that does not spell stays in the remainder.
-fn nerve_of(
-    scenes: &[Scene],
-    pairings: &[Pairing],
-    mut remainder: Vec<(i64, i64, u8, u8)>,
-) -> Option<super::sentence::Nerve> {
-    use super::sentence::{assemble, close, Germ};
-    let mut germs = Vec::new();
-    for pr in pairings.iter().filter(|p| p.pair == 0) {
-        let s = &scenes[pr.pair];
-        let (a, b) = (&s.bodies_in[pr.input], &s.bodies_out[pr.output]);
-        let unspelled = || a.cells.iter().map(|&(r, c, h)| (r, c, h, h));
-        let Some(aff) = element::affine_of(&pr.carriage.v) else {
-            remainder.extend(unspelled());
-            continue;
-        };
-        if aff.len() < 2 || aff[0].len() < 2 {
-            remainder.extend(unspelled());
-            continue;
-        }
-        let block = [[aff[0][0].clone(), aff[0][1].clone()], [aff[1][0].clone(), aff[1][1].clone()]];
-        let Some(spelling) = super::alphabet::spell(&block) else {
-            remainder.extend(unspelled());
-            continue;
-        };
-        let mut chain: Vec<(i64, i64, u8, u8)> = a
-            .cells
-            .iter()
-            .filter_map(|&(r, c, h)| {
-                let p = element::carry_center(&pr.carriage.v, r, c)?;
-                let (tr, tc) = element::cell_of(&p);
-                let h2 = b.cells.binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc))).ok().map(|i| b.cells[i].2)?;
-                Some((r, c, h, h2))
-            })
-            .collect();
-        chain.sort_unstable();
-        let addr = element::from_residual(&chain).address();
-        germs.push(Germ {
-            address: addr,
-            versor: pr.carriage.v.clone(),
-            word: spelling.word,
-            chain,
-            source: Some(a.moduli.clone()),
-            target: Some(b.moduli.clone()),
-            kind: super::peel::ShellKind::Whole,
-            shift: None,
-        });
-    }
-    if germs.len() < 2 {
-        return None;
-    }
-    remainder.sort_unstable();
-    remainder.dedup();
-    let mut n = assemble(germs, remainder);
-    let _ = close(&mut n);
-    Some(n)
 }
 
 /// The residual between what was spoken and what was observed, as a chain

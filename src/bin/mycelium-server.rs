@@ -160,6 +160,13 @@ fn persist(kernel: &Mutex<Kernel>, state_path: &str) {
     }
 }
 
+fn persist_if_due(kernel: &Mutex<Kernel>, state_path: &str) {
+    let due = kernel.lock().ok().is_some_and(|mut k| k.take_persist());
+    if due {
+        persist(kernel, state_path);
+    }
+}
+
 /// A percept, gossip, or demand frame handed from the listener to the reflex
 /// pool with its open socket: the reply is written by the judging worker.
 struct ReflexJob {
@@ -843,7 +850,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
                 );
             }
         }
-        persist(kernel, &door.state_path);
+        persist_if_due(kernel, &door.state_path);
         let body = dialogue::encode_speech_reply(&codes);
         let reply = Frame { lane: frame.lane, body };
         let _ = stream.write_all(&reply.encode().unwrap_or_default());
@@ -1003,6 +1010,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         Outcome::Decomposed(word) => format!("valid: decomposed → sentence {word:?} ({} generators)", word.len()),
         Outcome::GermPending => "valid: germ pending (one voice)".to_string(),
         Outcome::Installed(i) => format!("valid: GERM INSTALLED #{i}"),
+        Outcome::Sectioned(i) => format!("valid: section of #{i}"),
         Outcome::Fragmented(parts) => format!("valid: fragmented ({} bodies)", parts.len()),
         Outcome::Pivot => "invalid: pivot (degenerate — nothing to reduce)".to_string(),
     };
@@ -1015,6 +1023,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         "  {src} percept voice {:02x} → {label}; basis={} vol={}; metabolism {flux:?}; reserve {reserve:?}",
         voice[0], basis.0, basis.1
     );
+    persist_if_due(kernel, &door.state_path);
     // Reply: outcome | metabolism/pressure(4) | taught (len16 | bytes) | settle?
     let mut body = vec![outcome_code(&out)];
     for f in flux {
@@ -1103,7 +1112,6 @@ fn main() {
             std::process::exit(0);
         });
     }
-    let mut pruned = false;
     if let Ok(bytes) = std::fs::read(&state_path) {
         let mut k = kernel.lock().unwrap();
         if k.restore(&bytes) {
@@ -1112,11 +1120,7 @@ fn main() {
                 k.basis_len(),
                 k.treasury_entry_count()
             );
-            pruned = true;
         }
-    }
-    if pruned {
-        persist(&kernel, &state_path);
     }
     eprintln!("[{tag}] hypha identity vk {}…", mycelium::court::identity::hex32(&vk));
     if !kernel.lock().unwrap().crt_imported() {
@@ -1383,11 +1387,9 @@ fn main() {
                                 ratifier[0],
                             );
                         }
-                        if after != persisted {
-                            persist(&kernel, &state_path);
-                            persisted = after;
-                            last_persist = Instant::now();
-                        }
+                        persist_if_due(&kernel, &state_path);
+                        persisted = after;
+                        last_persist = Instant::now();
                     }
                 }
             }
@@ -1422,6 +1424,7 @@ fn main() {
         let join = join_peers.clone();
         let registry = Arc::clone(&registry);
         let router = Arc::clone(&router);
+        let state_path = state_path.clone();
         std::thread::spawn(move || {
             let ratio = mycelium::physics::aperture_cycle() as u64;
             let mut wait = mycelium::physics::from_transport(mesh_rtt(&mesh), 1);
@@ -1437,6 +1440,7 @@ fn main() {
                         k.set_transport_ms(ms.max(1000));
                     }
                 }
+                persist_if_due(&kernel, &state_path);
                 let budget = mycelium::physics::expansion_unit() as usize;
                 intake_corpus(&kernel, &mesh, &registry, budget);
                 rebuild_own_cover(&kernel, &mesh);

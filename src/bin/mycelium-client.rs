@@ -135,116 +135,6 @@ fn speak_sentence(entity: &mut Entity, tag: &str, n: &mycelium::transducer::sent
     }
 }
 
-fn speak_connections(
-    entity: &mut Entity,
-    tag: &str,
-    transport: &mycelium::transducer::family::Transport,
-    train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
-    tests: &[Vec<Vec<u8>>],
-) -> (u64, u64, u64) {
-    let mut carried = [0u64; 4];
-    let mut remainder: Vec<(i64, i64, u8, u8)> = Vec::new();
-    // THE CLOSE-TEST IS APPLY g: the replay goes through the connection as
-    // the total map its word carries (a hue outside the family's palette
-    // rides as itself — the identity section, the gauge puncture the
-    // remainder asked for). What is left unspoken is not a hue without an
-    // image but a body the connection does not reach.
-    for (a, b) in train {
-        let Some(speech) = mycelium::transducer::family::speak_total(transport, a) else {
-            continue;
-        };
-        carried[0] = carried[0].saturating_add(speech.cells.len() as u64);
-        if let [_, ..] = speech.remainder.as_slice() {
-            // Isolate the unreached body: germinate its support against the
-            // matching output cells and attest as demand (empty cites). Do
-            // not drop the scene and do not block the closed sub-morphism.
-            let a_cells: Vec<(i64, i64, u8)> = speech.remainder.iter().map(|&(r, c, h)| (r, c, h)).collect();
-            let b_cells = grid_to_cells(b);
-            let mut y: Vec<(i64, i64, u8)> = Vec::new();
-            let (mut i, mut j) = (0usize, 0usize);
-            let mut aa = a_cells.clone();
-            aa.sort_unstable();
-            let mut bb = b_cells;
-            bb.sort_unstable();
-            while i < aa.len() && j < bb.len() {
-                match (aa[i].0, aa[i].1).cmp(&(bb[j].0, bb[j].1)) {
-                    std::cmp::Ordering::Less => i += 1,
-                    std::cmp::Ordering::Greater => j += 1,
-                    std::cmp::Ordering::Equal => {
-                        y.push(bb[j]);
-                        i += 1;
-                        j += 1;
-                    }
-                }
-            }
-            if let Some(g) = germinate(&aa, &y) {
-                remainder.extend(g.iter().copied());
-                let _ = entity.attest(&g, &[]);
-            } else {
-                remainder.extend(aa.iter().map(|&(r, c, h)| (r, c, 0, h)));
-            }
-        }
-    }
-    for x in tests {
-        let Some(speech) = mycelium::transducer::family::speak_total(transport, x) else {
-            continue;
-        };
-        carried[0] = carried[0].saturating_add(speech.cells.len() as u64);
-        // Withheld y: the unreached body is thought, not a germ. Do not
-        // invent a coboundary and do not attest.
-        if let [_, ..] = speech.remainder.as_slice() {
-            entity.hold_thought(speech.remainder.iter().map(|&(r, c, h)| (r, c, h, h)).collect());
-        }
-    }
-    remainder.sort_unstable();
-    remainder.dedup();
-    if let [_, ..] = remainder.as_slice() {
-        entity.hold_thought(remainder.clone());
-        eprintln!("[{tag}] thought held: {} rules leave {} cells unspoken — partial g still uttered", transport.rules.len(), remainder.len());
-    }
-    let (mut spoken, mut errors) = (0u64, 0u64);
-    for rule in &transport.rules {
-        let Some((_, u)) = rule
-            .readings
-            .iter()
-            .find(|(r, _)| *r == rule.anchor)
-            .or(rule.readings.first())
-        else {
-            continue;
-        };
-        let Some(affine) = mycelium::transducer::element::affine_of(u) else {
-            eprintln!("[{tag}] connection not affine: a rule's versor has no affine block — held, not uttered");
-            errors += 1;
-            continue;
-        };
-        let gauge = rule.sigma.iter().filter(|(f, t)| f != t).count() as u64;
-        let mut mag = carried;
-        mag[1] = mag[1].saturating_add(gauge);
-        // The motion is spelled in the alphabet at the mint; a motion the
-        // seventeen letters cannot spell is not a word — it stands as
-        // thought, never uttered.
-        let Some(word) = mycelium::transducer::element::from_connection(&affine, &rule.sigma, &Vec::new(), mag) else {
-            eprintln!("[{tag}] connection not in the alphabet: the motion has no spelling — held, not uttered");
-            errors += 1;
-            continue;
-        };
-        match entity.speak_word(&word) {
-            Ok(mycelium::sdk::Utterance::Spoken) => {
-                spoken += 1;
-                eprintln!(
-                    "[{tag}] connection spoken: {:02x}{:02x}… closed, carried {:?}",
-                    word.address()[0],
-                    word.address()[1],
-                    word.magnitude()
-                );
-            }
-            Ok(mycelium::sdk::Utterance::Already | mycelium::sdk::Utterance::Silent) => {}
-            Err(_) => errors += 1,
-        }
-    }
-    (spoken, 0, errors)
-}
-
 fn family_magnitude(train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)]) -> [u64; 4] {
     let mut mag = [0u64; 4];
     for (x, y) in train {
@@ -421,34 +311,26 @@ fn main() {
                 let mag = family_magnitude(&task.train);
                 physics.bump(&mag);
                 physics.spend(Physics::lanes_of(&mag)); // thought is priced on the lanes it occupies
-                match comprehended.transport {
-                    Some(transport) => {
-                        // Score each held answer through the connection, then
-                        // mint the connection as the word (one helper, the
-                        // same mint as the live task path).
-                        for (x, y) in &task.test {
-                            if y.is_empty() {
-                                continue; // withheld output: nothing to score against
-                            }
-                            if let Some(speech) = mycelium::transducer::family::speak_total(&transport, x) {
-                                if let [] = speech.remainder.as_slice() {
-                                    projected += 1;
-                                    if speech.grid() == *y {
-                                        proj_solved += 1;
-                                    }
+                // The rule's nerve is the sentence: constant relative words,
+                // not pair-0 geometry. No calculator fallback.
+                if let Some(rule) = mycelium::transducer::family::extract_rule(&task.train)
+                    .as_ref()
+                    .or(comprehended.rule.as_ref())
+                {
+                    for (x, y) in &task.test {
+                        if y.is_empty() {
+                            continue;
+                        }
+                        if let Some(speech) = mycelium::transducer::family::speak_rule(rule, x) {
+                            if speech.remainder.is_empty() {
+                                projected += 1;
+                                if speech.grid() == *y {
+                                    proj_solved += 1;
                                 }
                             }
                         }
-                        let tests: Vec<Vec<Vec<u8>>> = task.test.iter().map(|(x, _)| x.clone()).collect();
-                        let as_sentence = comprehended.sentence.as_ref().is_some_and(|n| speak_sentence(&mut entity, &tag, n));
-                        if !as_sentence {
-                            let (_, _, e) = speak_connections(&mut entity, &tag, &transport, &task.train, &tests);
-                            errors += e;
-                        }
                     }
-                    // The family's pairs were already spoken as percepts
-                    // by the feed; an uncomprehended family is on the book.
-                    None => {}
+                    let _ = speak_sentence(&mut entity, &tag, &rule.nerve);
                 }
                 retire_feed(path);
                 ti += 1;
@@ -664,9 +546,7 @@ fn main() {
             );
             if let Some(rule) = rule {
                 rules_extracted += 1;
-                if let Some(n) = &comprehended.sentence {
-                    let _ = speak_sentence(&mut entity, &tag, n);
-                }
+                let _ = speak_sentence(&mut entity, &tag, &rule.nerve);
                 let mut reached = true;
                 let mut outs: Vec<Option<Vec<Vec<u8>>>> = Vec::new();
                 for x in &tests {
@@ -691,36 +571,6 @@ fn main() {
                     let outs: Vec<Vec<Vec<u8>>> = outs.into_iter().flatten().collect();
                     let spoken = mycelium::transducer::family::mint_sentence(rule, &train);
                     if let Ok((code, _mu)) = entity.submit_solve_rule(&tid, &outs, spoken.as_ref()) {
-                        projected += 1;
-                        match code {
-                            mycelium::anastome::dialogue::SOLVE_BOUNTY => {
-                                proj_solved += 1;
-                                uniq_solved += 1;
-                                solves_paid += 1;
-                            }
-                            mycelium::anastome::dialogue::SOLVE_FLOOR => proj_solved += 1,
-                            _ => {}
-                        }
-                    }
-                }
-            } else if let Some(transport) = comprehended.transport.as_ref() {
-                let as_sentence = comprehended.sentence.as_ref().is_some_and(|n| speak_sentence(&mut entity, &tag, n));
-                if !as_sentence {
-                    let (_, _, e) = speak_connections(&mut entity, &tag, transport, &train, &tests);
-                    errors += e;
-                }
-                let outs: Vec<Option<Vec<Vec<u8>>>> = tests
-                    .iter()
-                    .map(|x| {
-                        mycelium::transducer::family::speak_total(transport, x).and_then(|s| match s.remainder.as_slice() {
-                            [] => Some(s.grid()),
-                            _ => None,
-                        })
-                    })
-                    .collect();
-                if !tests.is_empty() && outs.iter().all(|o| o.is_some()) {
-                    let outs: Vec<Vec<Vec<u8>>> = outs.into_iter().flatten().collect();
-                    if let Ok((code, _mu)) = entity.submit_solve(&tid, &outs) {
                         projected += 1;
                         match code {
                             mycelium::anastome::dialogue::SOLVE_BOUNTY => {
@@ -763,8 +613,9 @@ fn main() {
             // Syllabus and sheaf sync live on the depletion dwell so the
             // door serves quotes and percepts on the hot stroke.
             {
-                // THE PIVOT: a held thought whose chart the language moved on
-                // becomes a demand on the book; the bag is not a queue.
+                // THE PIVOT: expand dirty ideas once this phase, then pivot
+                // new words on their charts only.
+                entity.expand_ideas();
                 let pivoted = entity.pivot_thoughts();
                 if pivoted > 0 {
                     eprintln!("[{tag}] pivot: {pivoted} held thoughts spoken as demands on charts the language now holds");

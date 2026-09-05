@@ -53,18 +53,10 @@ pub fn yield_surface(p: &crate::physics::Physics) -> [u64; 4] {
     })
 }
 
-/// PRICE IS THE WORD AGAINST THE BOOK: on each lane `mag[l]² / max(surface[l], mag[l])`,
-/// rounded up, at least 1 on a lane the word moves. The stake bond never
-/// enters pricing.
-pub fn price(mag: &[u64; 4], surface: &[u64; 4]) -> [u64; 4] {
-    std::array::from_fn(|l| {
-        if mag[l] == 0 {
-            return 0;
-        }
-        let book = surface[l].max(mag[l]) as u128;
-        let p = (mag[l] as u128 * mag[l] as u128 + book - 1) / book;
-        p.max(1) as u64
-    })
+/// PRICE IS THE MAGNITUDE ON THE LANE: a verified word is worth what it
+/// deflated. The surface paces pressure, it does not scale the mint.
+pub fn price(mag: &[u64; 4], _surface: &[u64; 4]) -> [u64; 4] {
+    *mag
 }
 
 /// The chronometric anchor of a ledger entry: (K-step, chain head hash).

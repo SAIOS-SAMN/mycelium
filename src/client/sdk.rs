@@ -61,6 +61,8 @@ pub enum Verdict {
     GermPending,
     /// An irreducible residual that reached consilience and adjoined (KB completion).
     Installed { taught: Vec<u8> },
+    /// A section of a held word. Not an install.
+    Sectioned,
     /// The scene fragmented into per-body sub-demands.
     Fragmented,
     /// A degenerate demand — nothing to reduce.
@@ -75,6 +77,7 @@ impl Verdict {
             Verdict::Decomposed { .. } => "decomposed",
             Verdict::GermPending => "germ-pending",
             Verdict::Installed { .. } => "installed",
+            Verdict::Sectioned => "section",
             Verdict::Fragmented => "fragmented",
             Verdict::Pivot => "pivot",
             Verdict::Unknown(_) => "unknown",
@@ -448,11 +451,15 @@ impl Session {
                     self.rtt_ok(addr, t0.elapsed());
                     return Ok(body);
                 }
-                Err(_) => {
+                Err(e) => {
                     pool.remove(addr);
+                    if e.kind() == io::ErrorKind::TimedOut || e.kind() == io::ErrorKind::WouldBlock {
+                        self.rtt_timeout(addr);
+                    }
                 }
             }
         }
+        let deadline = crate::physics::transport_deadline(self.rtt_of(addr));
         let sockaddr = std::net::ToSocketAddrs::to_socket_addrs(&addr)?
             .next()
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "unresolvable address"))?;
@@ -474,9 +481,6 @@ impl Session {
             }
         };
         self.rtt_ok(addr, t0.elapsed());
-        // Keep the socket. The hypha's reflex worker now reads further
-        // frames on this connection; a one-shot reply still reconnects.
-        pool.insert(addr.to_string(), s);
         Ok(body)
     }
 
@@ -1724,28 +1728,21 @@ impl Entity {
         self.opened.len()
     }
 
-    /// PIVOT ON A WORD: expand dirty bubbles, read by_chart at the word's
-    /// chart and prefixes, fill cells on those bubbles' links, merge filled
-    /// components, speak any component that closes. Fills and expansions
-    /// are capped by one stroke Budget.
+    /// Expand dirty ideas once per syntropic phase. The atlas is borrowed.
+    pub fn expand_ideas(&mut self) {
+        let mut budget = self.physics.stroke();
+        self.contemplation.set_now(self.now_tu());
+        let rotors = crate::network::nerve::Keyed::new();
+        let _ = self.contemplation.expand_all(self.epigenome.atlas(), &rotors, &mut budget);
+        self.contemplation.retire_on_t(self.physics.reserve[2] as usize);
+    }
+
+    /// PIVOT ON A WORD: read by_chart at the word's chart and peels, fill
+    /// those ideas under one stroke Budget. The atlas is borrowed, never cloned.
     pub fn pivot_on(&mut self, word: &Element) -> usize {
         let mut budget = self.physics.stroke();
-        let atlas = self.epigenome.atlas().clone();
-        let mut rotors = crate::network::nerve::Keyed::new();
-        let inv = crate::transducer::stalk::invariant_of(word);
-        // index: atlas fiber at the peeled chart
-        for addr in atlas.fiber(&inv.peel()) {
-            if let Some(w) = self.epigenome.word_at(&addr) {
-                if let Some(r) = crate::transducer::cech::rotor_of(w) {
-                    rotors.insert(addr, r);
-                }
-            }
-        }
         self.contemplation.set_now(self.now_tu());
-        let _ = self.contemplation.expand_all(&atlas, &rotors, &mut budget);
         let (_fills, _formed, _classes, spoken) = self.contemplation.pivot_on(word, &mut budget);
-        self.contemplation.retire_on_t(self.physics.reserve[2] as usize);
-        // Bubble merges speak Rewrites; cavity bubbles re-enter on this chart.
         let mut n = 0usize;
         for e in spoken {
             match self.speak_word(&e) {
@@ -1945,6 +1942,7 @@ fn decode_verdict(body: &[u8]) -> Verdict {
         Some(1) => Verdict::Decomposed { taught },
         Some(2) => Verdict::GermPending,
         Some(3) => Verdict::Installed { taught },
+        Some(6) => Verdict::Sectioned,
         Some(4) => Verdict::Pivot,
         Some(5) => Verdict::Fragmented,
         Some(&c) => Verdict::Unknown(c),
