@@ -360,19 +360,11 @@ fn blind_replay_on_inner(
     if spoken.is_sentence() {
         // The version byte selects the replayer: a v2 tape is a form and
         // is replayed through the cover; a v1 tape is a nerve.
-        if spoken.description().get(1).copied() == Some(2) {
-            if let Some(reason) = replay_form_with(spoken, resolve, family) {
-                return Some(reason);
-            }
-            if !crate::economy::descends(&[0; 4], &spoken.magnitude()) {
-                return Some(REFUSE_NO_DESCENT);
-            }
-            // Form torsion is the class-keyed carrier replayed above
-            // (23.1 step 5 / 23.7). Hue-cycle witness is for residual words.
-            return None;
-        }
-        if let Some(reason) = crate::transducer::sentence::replay_nerve(spoken) {
+        if let Some(reason) = replay_form_with(spoken, resolve, family) {
             return Some(reason);
+        }
+        if !crate::economy::descends(&[0; 4], &spoken.magnitude()) {
+            return Some(REFUSE_NO_DESCENT);
         }
         return None;
     }

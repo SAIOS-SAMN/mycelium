@@ -609,151 +609,13 @@ pub fn deconstruct_on<'a>(
     out
 }
 
-// ── a sentence is a nerve of germs ──────────────────────────────────────────
+// ── a sentence is a form ────────────────────────────────────────────────────
 
 use super::alphabet::{self, Order, Rotor, Word};
-use super::cech::{self, Complex, Fill, Section};
-use super::element::{affine_of, from_connection, GERM_DIM};
+use super::element::{affine_of, GERM_DIM};
 use super::peel::ShellKind;
 use super::stalk::Standing;
 use crate::physics::Budget;
-
-/// One germ of a sentence: a body the family carried, spelled.
-/// Source or target may be absent: a created body has no source, an
-/// erased body has no target.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Germ {
-    pub address: [u8; 32],
-    pub versor: Versor,
-    pub word: Word,
-    pub chain: Vec<Cell>,
-    pub source: Option<stalk::Invariant>,
-    pub target: Option<stalk::Invariant>,
-    pub kind: ShellKind,
-    /// Translation that agreed across the family. Absent: placement is a face.
-    pub shift: Option<(num_rational::BigRational, num_rational::BigRational)>,
-}
-
-/// A face of the nerve: the relative Clifford versor
-/// `g_ij = T_{Δx} R_θ ∈ Spin(4,1)(ℚ)` between two bodies, and the spelled
-/// linear block when that block is a word. A pure translation is a
-/// parabolic versor, not the identity word.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Face {
-    pub i: usize,
-    pub j: usize,
-    pub overlap: Vec<Cell>,
-    pub g_ij: Word,
-    pub versor: Versor,
-    /// False when the relative transport does not spell: a face with remainder.
-    pub spelled: bool,
-}
-
-/// An independent loop of the nerve, carrying its holonomy word.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Cycle {
-    pub germs: Vec<usize>,
-    pub holonomy: Word,
-    /// The faces the loop walks, in path order; the last is the chord that
-    /// closes the tree path. A loop names its faces (rule 1).
-    pub faces: Vec<usize>,
-}
-
-impl Cycle {
-    /// The chord face: the one face of the loop outside the spanning forest.
-    pub fn chord(&self) -> Option<usize> {
-        self.faces.last().copied()
-    }
-}
-
-/// A sentence: a nerve of germs inside one thought. Germs are vertices,
-/// k-fold body overlaps are k-cells. The complex is the object; faces and
-/// cycles are the tape projection. A class at any degree is torsion: the
-/// sentence is thought.
-#[derive(Debug, Clone, Default)]
-pub struct Nerve {
-    pub germs: Vec<Germ>,
-    pub complex: Complex,
-    pub faces: Vec<Face>,
-    pub cycles: Vec<Cycle>,
-    pub remainder: Vec<Cell>,
-    pub class: Option<(Rotor, usize)>,
-    /// Chart prefixes the idea spans, so the court knows the cover.
-    pub cover: crate::network::nerve::Keyed<()>,
-    /// The torsion cycles filed on this nerve, `(σ, ℓ, chord)` each, keyed
-    /// by the class key of the holonomy (A17). Filing writes the key and
-    /// the chord face index; cauterize reads `contains`. σ is the loop's
-    /// consecutive germ pairs.
-    pub torsion: Keyed<(Vec<(u8, u8)>, u32, u16)>,
-    /// Certified discharges, keyed by the certificate (A20).
-    pub certificates: Keyed<PivotCertificate>,
-    /// Incomparable discharges of one loop, keyed by the after class then
-    /// the discharging word's M1 key (25.1): collapse reads `(class, word)`.
-    pub vortex: Keyed<Keyed<PivotCertificate>>,
-}
-
-impl PartialEq for Nerve {
-    fn eq(&self, other: &Self) -> bool {
-        self.germs == other.germs
-            && self.faces == other.faces
-            && self.cycles == other.cycles
-            && self.remainder == other.remainder
-            && self.class == other.class
-    }
-}
-impl Eq for Nerve {}
-
-impl Nerve {
-    pub fn is_closed(&self) -> bool {
-        self.remainder.is_empty()
-            && self.cycles.iter().all(|c| c.holonomy.abelian_identity())
-            && self.class.is_none()
-    }
-
-    /// Remainder empty and every loop identity or filed finite torsion.
-    /// Infinite open chords keep the thought open.
-    pub fn is_cauterized(&self) -> bool {
-        if !self.remainder.is_empty() {
-            return false;
-        }
-        for c in &self.cycles {
-            if c.holonomy.abelian_identity() {
-                continue;
-            }
-            match c.holonomy.order() {
-                Order::Infinite => return false,
-                Order::Finite(ell) => {
-                    let k = c.holonomy.rotor().class_key();
-                    match self.torsion.get(&k) {
-                        Some((_, e, _)) if *e == ell => {}
-                        _ => return false,
-                    }
-                }
-            }
-        }
-        true
-    }
-
-    pub fn germ_count(&self) -> usize {
-        self.germs.len()
-    }
-
-    /// A closed 1-cocycle, or a single non-trivial 1-morphism
-    /// (`g = output ∘ input⁻¹`, `g ≠ 1`). One germ is a sentence when that
-    /// morphism is not the identity.
-    pub fn is_sentence(&self) -> bool {
-        if !self.is_closed() {
-            return false;
-        }
-        if self.germ_count() >= 2 {
-            return true;
-        }
-        let Some(g) = self.germs.first() else {
-            return false;
-        };
-        !g.word.abelian_identity() || g.chain.iter().any(|&(_, _, b, a)| b != a)
-    }
-}
 
 /// How an unfolding stops. The step count is an instance coordinate, never
 /// stored on the form.
@@ -764,7 +626,7 @@ pub enum Measure {
     Ring { anchor: u16 },
 }
 
-/// A vertex of a sentence form (chapter 18). Beside `Germ` until ch.30 step 6.
+/// A vertex of a sentence form (chapter 18).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Vertex {
     Frame,
@@ -804,7 +666,7 @@ pub enum Vertex {
     Unfolded { measure: Measure },
 }
 
-/// Face of a `Form`. The nerve's [`Face`] stays until the adapters leave.
+/// Face of a `Form`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FormFace {
     pub i: u16,
@@ -826,8 +688,7 @@ impl Loop {
     }
 }
 
-/// A sentence as vertices, faces, loops, remainder. Replaces `Nerve` as the
-/// stored object once chapter 30 finishes; both live here until then.
+/// A sentence as vertices, faces, loops, remainder.
 #[derive(Debug, Clone)]
 pub struct Form {
     pub vertices: Vec<Vertex>,
@@ -872,22 +733,6 @@ impl Default for Form {
 }
 
 impl Vertex {
-    pub fn from_germ(g: &Germ) -> Vertex {
-        if g.kind == ShellKind::Frame {
-            return Vertex::Frame;
-        }
-        let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-        let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
-        Vertex::Word {
-            address: g.address,
-            word: g.word.clone(),
-            rho: one,
-            placement: g.shift.clone().unwrap_or((zero.clone(), zero)),
-            gauge: germ_hue_map(g),
-            class: g.target.clone().or(g.source.clone()).unwrap_or_default(),
-            contact: None,
-        }
-    }
 
     pub fn word_in(&self, form: &Form) -> Word {
         match self {
@@ -919,140 +764,6 @@ impl Vertex {
 }
 
 impl Form {
-    pub fn from_nerve(n: &Nerve) -> Form {
-        let mut vertices: Vec<Vertex> = n.germs.iter().map(Vertex::from_germ).collect();
-        let mut faces: Vec<FormFace> = n
-            .faces
-            .iter()
-            .map(|f| FormFace {
-                i: f.i as u16,
-                j: f.j as u16,
-                g_ij: f.g_ij.clone(),
-            })
-            .collect();
-        let mut torsion = n.torsion.clone();
-        // Frame is vertex 0 by construction. Face order (and certificate
-        // face indices) stay; vertex indices and torsion σ pairs shift.
-        if !matches!(vertices.first(), Some(Vertex::Frame)) {
-            vertices.insert(0, Vertex::Frame);
-            for f in &mut faces {
-                f.i = f.i.saturating_add(1);
-                f.j = f.j.saturating_add(1);
-            }
-            let mut shifted = Keyed::new();
-            for (k, (sigma, ell, chord)) in torsion.fiber(&ROOT) {
-                let sigma = sigma
-                    .iter()
-                    .map(|&(a, c)| (a.saturating_add(1), c.saturating_add(1)))
-                    .collect();
-                shifted.insert(*k, (sigma, *ell, *chord));
-            }
-            torsion = shifted;
-        }
-        let loops = Form::loops_of(&faces, vertices.len());
-        Form {
-            vertices,
-            faces,
-            loops,
-            remainder: n.remainder.clone(),
-            depth: 0,
-            hue_maps: Keyed::new(),
-            ratio: ((1, 1), (1, 1)),
-            sections: Keyed::new(),
-            certificates: n
-                .certificates
-                .fiber(&ROOT)
-                .map(|(_, c)| c.clone())
-                .collect(),
-            torsion,
-            glued: Keyed::new(),
-            vortex: n.vortex.clone(),
-        }
-    }
-
-    /// Nerve of Body vertices only. `None` when the form cites, conjugates, or unfolds.
-    pub fn to_nerve(&self) -> Option<Nerve> {
-        if self.vertices.iter().any(|v| {
-            matches!(
-                v,
-                Vertex::Glued { .. } | Vertex::Rebased { .. } | Vertex::Unfolded { .. }
-            )
-        }) {
-            return None;
-        }
-        let mut germs = Vec::with_capacity(self.vertices.len());
-        for v in &self.vertices {
-            match v {
-                Vertex::Frame => germs.push(Germ {
-                    address: [0u8; 32],
-                    versor: element::identity_versor(),
-                    word: Word::identity(),
-                    chain: Vec::new(),
-                    source: None,
-                    target: None,
-                    kind: ShellKind::Frame,
-                    shift: None,
-                }),
-                Vertex::Word {
-                    address,
-                    word,
-                    rho,
-                    placement,
-                    class,
-                    ..
-                } => {
-                    let spelling = alphabet::Spelling {
-                        word: word.clone(),
-                        rho: rho.clone(),
-                    };
-                    let versor = element::conformal_of(&spelling, placement)?;
-                    germs.push(Germ {
-                        address: *address,
-                        versor,
-                        word: word.clone(),
-                        chain: Vec::new(),
-                        source: None,
-                        target: Some(class.clone()),
-                        kind: ShellKind::Whole,
-                        shift: Some(placement.clone()),
-                    });
-                }
-                _ => return None,
-            }
-        }
-        let faces: Vec<Face> = self
-            .faces
-            .iter()
-            .map(|f| Face {
-                i: f.i as usize,
-                j: f.j as usize,
-                overlap: Vec::new(),
-                g_ij: f.g_ij.clone(),
-                versor: element::identity_versor(),
-                spelled: true,
-            })
-            .collect();
-        let cycles = independent_cycles(germs.len(), &faces);
-        let complex = bind_complex(&germs, &faces);
-        Some(Nerve {
-            germs,
-            complex,
-            faces,
-            cycles,
-            remainder: self.remainder.clone(),
-            class: None,
-            cover: Keyed::new(),
-            torsion: self.torsion.clone(),
-            certificates: {
-                let mut k = Keyed::new();
-                for c in &self.certificates {
-                    k.insert(c.key(), c.clone());
-                }
-                k
-            },
-            vortex: self.vortex.clone(),
-        })
-    }
 
     pub fn face_of(&self, i: u16, j: u16) -> Option<Word> {
         let a = self.vertices.get(i as usize)?.word_in(self);
@@ -1668,30 +1379,6 @@ impl Form {
         true
     }
 
-    fn write_to_nerve(&self, n: &mut Nerve) {
-        for (i, ff) in self.faces.iter().enumerate() {
-            if let Some(face) = n.faces.get_mut(i) {
-                face.g_ij = ff.g_ij.clone();
-            }
-        }
-        n.cycles = independent_cycles(n.germs.len(), &n.faces);
-        n.torsion = self.torsion.clone();
-        n.vortex = self.vortex.clone();
-        n.certificates = Keyed::new();
-        for c in &self.certificates {
-            n.certificates.insert(c.key(), c.clone());
-        }
-        n.remainder = self.remainder.clone();
-        for (k, (sigma, ell, _)) in self.torsion.fiber(&ROOT) {
-            let Some(r) = torsion_loop_rotor(self, k) else {
-                continue;
-            };
-            let a = sigma.first().map(|&(x, _)| x as usize).unwrap_or(0);
-            let b = sigma.last().map(|&(_, y)| y as usize).unwrap_or(a);
-            n.complex.file_congruent(germ_vertex(a), germ_vertex(b), r, *ell);
-        }
-    }
-
     pub fn loops_of(faces: &[FormFace], n: usize) -> Vec<Loop> {
         if n == 0 {
             return Vec::new();
@@ -1801,86 +1488,6 @@ fn loop_holonomy(form: &Form, lp: &Loop) -> Word {
     w.normal_form()
 }
 
-fn germ_vertex(i: usize) -> [u8; 32] {
-    let mut k = [0u8; 32];
-    k[..8].copy_from_slice(&(i as u64).to_le_bytes());
-    k
-}
-
-fn germ_index(v: &[u8; 32]) -> usize {
-    u64::from_le_bytes(v[..8].try_into().unwrap_or([0; 8])) as usize
-}
-
-fn word_of_rotor(r: &Rotor) -> Word {
-    let one = alphabet::Q::from_integer(num_bigint::BigInt::from(1));
-    let zero = alphabet::Q::from_integer(num_bigint::BigInt::from(0));
-    let e0 = r.carry(&[one.clone(), zero.clone(), zero.clone(), zero.clone()]);
-    let e1 = r.carry(&[zero.clone(), one, zero.clone(), zero]);
-    if let (Some(a), Some(b)) = (e0, e1) {
-        let block = [[a[0].clone(), b[0].clone()], [a[1].clone(), b[1].clone()]];
-        if let Some(sp) = alphabet::spell(&block) {
-            return sp.word;
-        }
-    }
-    Word::identity()
-}
-
-/// Independent cycles: chords of a spanning forest of spelled faces.
-/// Rank is F − V + C; each chord closes one loop along the tree path.
-fn independent_cycles(n: usize, faces: &[Face]) -> Vec<Cycle> {
-    if n == 0 {
-        return Vec::new();
-    }
-    let mut parent: Vec<usize> = (0..n).collect();
-    let mut rank = vec![0u8; n];
-    let find = |parent: &mut [usize], mut x: usize| -> usize {
-        while parent[x] != x {
-            parent[x] = parent[parent[x]];
-            x = parent[x];
-        }
-        x
-    };
-    let mut adj: Vec<Vec<(usize, usize)>> = vec![Vec::new(); n];
-    let mut cycles = Vec::new();
-    // index: spelled faces of this nerve (the 1-skeleton)
-    for (fi, f) in faces.iter().enumerate() {
-        if f.i >= n || f.j >= n {
-            continue;
-        }
-        let (a, b) = (f.i, f.j);
-        let (pa, pb) = (find(&mut parent, a), find(&mut parent, b));
-        if pa != pb {
-            if rank[pa] < rank[pb] {
-                parent[pa] = pb;
-            } else if rank[pb] < rank[pa] {
-                parent[pb] = pa;
-            } else {
-                parent[pb] = pa;
-                rank[pa] = rank[pa].saturating_add(1);
-            }
-            adj[a].push((b, fi));
-            adj[b].push((a, fi));
-            continue;
-        }
-        if !f.spelled {
-            continue;
-        }
-        let Some((mut path, mut walked)) = tree_path(&adj, a, b) else {
-            continue;
-        };
-        // Close the walk with the chord: b → a through face fi.
-        path.push(a);
-        walked.push(fi);
-        let holonomy = cycle_holonomy(faces, &path, &walked);
-        cycles.push(Cycle {
-            germs: path,
-            holonomy,
-            faces: walked,
-        });
-    }
-    cycles
-}
-
 /// The tree path from `src` to `dst` as its vertices and the faces walked
 /// between them, named in the same pass that finds them: each vertex is
 /// reached through one face of its own adjacency, so no face is searched
@@ -1926,148 +1533,6 @@ fn tree_path(adj: &[Vec<(usize, usize)>], src: usize, dst: usize) -> Option<(Vec
     Some((path, walked))
 }
 
-/// The word of face `fi` read in the direction `from → to`.
-fn face_step(faces: &[Face], fi: usize, from: usize, to: usize) -> Option<Word> {
-    let f = faces.get(fi)?;
-    if f.i == from && f.j == to {
-        Some(f.g_ij.clone())
-    } else {
-        Some(f.g_ij.inverse())
-    }
-}
-
-/// Holonomy of a loop: the product of its named faces in path order, each
-/// read in the direction the path walks it. `path` is the closed walk
-/// (first vertex repeated last); `walked` its faces, the chord last.
-fn cycle_holonomy(faces: &[Face], path: &[usize], walked: &[usize]) -> Word {
-    let mut w = Word::identity();
-    for (win, &fi) in path.windows(2).zip(walked) {
-        if let Some(s) = face_step(faces, fi, win[0], win[1]) {
-            w = w.compose(&s);
-        }
-    }
-    w
-}
-
-fn shared_volume(supports: &[Vec<(i64, i64)>], verts: &[[u8; 32]]) -> [u64; 4] {
-    if verts.is_empty() || supports.is_empty() {
-        return [0; 4];
-    }
-    let i0 = germ_index(&verts[0]);
-    if i0 >= supports.len() {
-        return [0; 4];
-    }
-    let mut acc = supports[i0].clone();
-    for v in &verts[1..] {
-        let i = germ_index(v);
-        if i >= supports.len() {
-            return [0; 4];
-        }
-        acc.retain(|p| supports[i].binary_search(p).is_ok());
-    }
-    let cells: Vec<Cell> = acc.into_iter().map(|(r, c)| (r, c, 0, 0)).collect();
-    element::measure_lanes(&cells)
-}
-
-fn bind_complex(germs: &[Germ], faces: &[Face]) -> Complex {
-    let mut cx = Complex::new();
-    let supports: Vec<Vec<(i64, i64)>> = germs.iter().map(after_support).collect();
-    for (i, g) in germs.iter().enumerate() {
-        cx.set_section(
-            germ_vertex(i),
-            Section {
-                addr: g.address,
-                gamma: g.word.rotor(),
-            },
-            element::measure_lanes(&g.chain),
-        );
-    }
-    for f in faces {
-        let vol = element::measure_lanes(&f.overlap);
-        if f.spelled {
-            cx.set_edge(germ_vertex(f.i), germ_vertex(f.j), f.g_ij.rotor(), vol);
-        } else {
-            cx.set_remainder_edge(germ_vertex(f.i), germ_vertex(f.j));
-        }
-    }
-    for i in 0..germs.len() {
-        cx.coboundary_on_link(&germ_vertex(i), |verts| shared_volume(&supports, verts));
-    }
-    cx
-}
-
-fn first_class(c: &Complex) -> Option<(Rotor, usize)> {
-    // index: keyed unfilled cells of this nerve
-    for (d, key) in c.unfilled() {
-        if let Some(cl) = c.class(&key) {
-            return Some(cl);
-        }
-        let _ = d;
-    }
-    c.classes().into_iter().next()
-}
-
-/// After-support of a germ: the input positions carried by its versor.
-/// A germ with no source (created) uses the chain's after-cells; a germ
-/// with no target (erased) uses the before-cells.
-pub fn after_support(g: &Germ) -> Vec<(i64, i64)> {
-    let mut out = Vec::new();
-    if g.source.is_none() && g.target.is_some() {
-        for &(r, c, _, a) in &g.chain {
-            if a != 0 {
-                out.push((r, c));
-            }
-        }
-        out.sort_unstable();
-        out.dedup();
-        return out;
-    }
-    if g.target.is_none() && g.source.is_some() {
-        for &(r, c, b, _) in &g.chain {
-            if b != 0 {
-                out.push((r, c));
-            }
-        }
-        out.sort_unstable();
-        out.dedup();
-        return out;
-    }
-    for &(r, c, _, _) in &g.chain {
-        if let Some(image) = element::carry_cell(&g.versor, r, c) {
-            out.extend(image);
-        } else {
-            out.push((r, c));
-        }
-    }
-    out.sort_unstable();
-    out.dedup();
-    out
-}
-
-fn overlap_positions<'a>(a: &'a [(i64, i64)], b: &'a [(i64, i64)]) -> impl Iterator<Item = (i64, i64)> + 'a {
-    a.iter().copied().filter(|p| b.binary_search(p).is_ok())
-}
-
-fn overlap_cells(a: &[(i64, i64)], b: &[(i64, i64)]) -> Vec<Cell> {
-    let mut u: Vec<Cell> = overlap_positions(a, b).map(|(r, c)| (r, c, 0, 0)).collect();
-    if u.is_empty() {
-        // Shared boundary: cells of a that are adjacent to b.
-        u = a
-            .iter()
-            .copied()
-            .filter(|&(r, c)| {
-                [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)]
-                    .iter()
-                    .any(|p| b.binary_search(p).is_ok())
-            })
-            .map(|(r, c)| (r, c, 0, 0))
-            .collect();
-    }
-    u.sort_unstable();
-    u.dedup();
-    u
-}
-
 fn spell_versor(v: &Versor) -> Option<Word> {
     let a = affine_of(v)?;
     if a.len() < 2 || a[0].len() < 2 {
@@ -2082,129 +1547,6 @@ pub fn class_key_of_versor(v: &Versor) -> [u8; 32] {
     spell_versor(v)
         .map(|w| w.class_key())
         .unwrap_or([0; 32])
-}
-
-fn face_word(a: &Germ, b: &Germ) -> (Word, bool) {
-    let w = b.word.compose(&a.word.inverse()).normal_form();
-    if w.abelian_identity() || !w.is_empty() || (a.word.abelian_identity() && b.word.abelian_identity()) {
-        return (w, true);
-    }
-    let Some(inv) = a.versor.versor_inverse() else {
-        return (Word::identity(), false);
-    };
-    let g = b.versor.geo(&inv);
-    match spell_versor(&g) {
-        Some(sp) => (sp.normal_form(), true),
-        None => (Word::identity(), false),
-    }
-}
-
-/// Transport class of a germ: shell kind, conjugacy class of the word,
-/// and hue map. Moduli stay on the germ as a section coordinate, never a
-/// matching key. Frames match by kind alone (size is rule.ratio).
-pub fn same_stalk(a: &Germ, b: &Germ) -> bool {
-    germ_transport_key(a) == germ_transport_key(b)
-}
-
-fn germ_transport_key(g: &Germ) -> [u8; 32] {
-    if g.kind == ShellKind::Frame {
-        let mut k = [0u8; 32];
-        k[0] = g.kind.as_u8();
-        return k;
-    }
-    let mut buf = Vec::new();
-    buf.push(g.kind.as_u8());
-    buf.extend_from_slice(&g.word.class_key());
-    let hue = germ_hue_map(g);
-    buf.extend_from_slice(&(hue.len() as u16).to_le_bytes());
-    for (b, a) in hue {
-        buf.push(b);
-        buf.push(a);
-    }
-    *blake3::hash(&buf).as_bytes()
-}
-
-/// Relative connection between two bodies: the CGA versor
-/// `versor_between` of their after-supports. The spelled word is the
-/// linear block when it spells; a pure translation keeps the parabolic
-/// versor and does not collapse to the identity carrier.
-fn relative_face(a: &Germ, b: &Germ) -> (Word, Versor, bool) {
-    let sa = after_support(a);
-    let sb = after_support(b);
-    if !sa.is_empty() && !sb.is_empty() {
-        let va = super::blade::shape_of(&sa);
-        let vb = super::blade::shape_of(&sb);
-        if let Some(v) = super::blade::versor_between(&va, &vb) {
-            let w = spell_versor(&v).map(|s| s.normal_form()).unwrap_or_else(Word::identity);
-            return (w, v, true);
-        }
-    }
-    let (w, spelled) = face_word(a, b);
-    let v = a
-        .versor
-        .versor_inverse()
-        .map(|inv| b.versor.geo(&inv))
-        .unwrap_or_else(element::identity_versor);
-    (w, v, spelled)
-}
-
-fn emit_face(germs: &[Germ], i: usize, j: usize, faces: &mut Vec<Face>, seen: &mut Keyed<()>) {
-    if i == j {
-        return;
-    }
-    let (lo, hi) = if i < j { (i, j) } else { (j, i) };
-    let k = super::family::pair_key(lo as u16, hi as u16);
-    if seen.contains(&k) {
-        return;
-    }
-    seen.insert(k, ());
-    let (g_ij, versor, spelled) = relative_face(&germs[lo], &germs[hi]);
-    if !spelled {
-        return;
-    }
-    let overlap = overlap_cells(&after_support(&germs[lo]), &after_support(&germs[hi]));
-    faces.push(Face {
-        i: lo,
-        j: hi,
-        overlap,
-        g_ij,
-        versor,
-        spelled,
-    });
-}
-
-/// Assemble a nerve from germs. Faces are the pairs the bundle relates:
-/// the star from the Frame (vertex 0 when the first germ is a Frame) and
-/// adjacency of after-supports (keyed occupancy + ring probe), shared
-/// with `family::star_and_cell_faces`. Not the complete graph of spelled pairs.
-pub fn assemble(germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
-    let n = germs.len();
-    let frame = germs
-        .first()
-        .filter(|g| g.kind == ShellKind::Frame)
-        .map(|_| 0usize);
-    let supports: Vec<Vec<(i64, i64)>> = germs.iter().map(after_support).collect();
-    let pairs = super::family::star_and_cell_faces(n, frame, &supports);
-    let mut seen = Keyed::new();
-    let mut faces = Vec::new();
-    for (a, b) in pairs {
-        emit_face(&germs, a as usize, b as usize, &mut faces, &mut seen);
-    }
-    let complex = bind_complex(&germs, &faces);
-    let cycles = independent_cycles(germs.len(), &faces);
-    let class = first_class(&complex);
-    Nerve {
-        germs,
-        complex,
-        faces,
-        cycles,
-        remainder,
-        class,
-        cover: Keyed::new(),
-        torsion: Keyed::new(),
-        certificates: Keyed::new(),
-        vortex: Keyed::new(),
-    }
 }
 
 /// The invariant cochain of a family (chapter 31): the form, its sections,
@@ -2279,19 +1621,6 @@ fn vertex_transport_key(word: &Word, gauge: &[(u8, u8)]) -> [u8; 32] {
     *blake3::hash(&buf).as_bytes()
 }
 
-fn germ_hue_map(g: &Germ) -> Vec<(u8, u8)> {
-    let mut seen: Keyed<u8> = Keyed::new();
-    for &(_, _, b, a) in &g.chain {
-        let k = element::hue_pair_key(b, 0);
-        if !seen.contains(&k) {
-            seen.insert(k, a);
-        }
-    }
-    let mut m: Vec<(u8, u8)> = seen.fiber(&ROOT).map(|(k, a)| (k[0], *a)).collect();
-    m.sort_unstable();
-    m
-}
-
 /// A form as a `SentenceRule` (chapter 31). Hue maps are filled from the
 /// form's own Word vertices when the form does not already carry them.
 pub fn rule_of_form(mut form: Form) -> SentenceRule {
@@ -2316,35 +1645,11 @@ pub fn rule_of_form(mut form: Form) -> SentenceRule {
 
 
 
-/// Vertex key of a sentence: the 1-cocycle of germ words (kind, conjugacy,
-/// hue map, agreed shift relative to the Frame) and face words. The body's
-/// absolute position is already quotiented on the chain; the bundle's
-/// translation is meaning.
+/// Vertex key of a sentence form: Word vertices (M1, ρ, placement, contact,
+/// gauge) and face words. The body's absolute position is already quotiented
+/// on the chain; the bundle's translation is meaning.
 pub fn vertex_address(e: &Element) -> Option<[u8; 32]> {
-    if let Some(f) = from_element_form(e) {
-        return Some(form_vertex_key(&f));
-    }
-    let n = from_element(e)?;
-    Some(nerve_vertex_key(&n))
-}
-
-fn germ_class_key(g: &Germ) -> Vec<u8> {
-    let mut row = Vec::new();
-    row.extend_from_slice(&g.word.key());
-    row.push(g.kind.as_u8());
-    for (b, a) in germ_hue_map(g) {
-        row.push(b);
-        row.push(a);
-    }
-    match &g.shift {
-        None => row.push(0),
-        Some((r, c)) => {
-            row.push(1);
-            alphabet::put_q(&mut row, r);
-            alphabet::put_q(&mut row, c);
-        }
-    }
-    row
+    from_element_form(e).map(|f| form_vertex_key(&f))
 }
 
 pub fn vertex_ix_key(i: u16) -> [u8; 32] {
@@ -2455,81 +1760,6 @@ pub fn form_vertex_key(f: &Form) -> [u8; 32] {
         }
     }
     *blake3::hash(&buf).as_bytes()
-}
-
-fn face_class_key(f: &Face) -> Vec<u8> {
-    let mut row = Vec::new();
-    row.extend_from_slice(&f.g_ij.key());
-    row.push(u8::from(f.spelled));
-    row
-}
-
-fn nerve_vertex_key(n: &Nerve) -> [u8; 32] {
-    let mut germs: Vec<Vec<u8>> = n.germs.iter().map(germ_class_key).collect();
-    germs.sort_unstable();
-    let mut faces: Vec<Vec<u8>> = n.faces.iter().map(face_class_key).collect();
-    faces.sort_unstable();
-    let mut buf = Vec::new();
-    for g in germs {
-        buf.extend(g);
-    }
-    for f in faces {
-        buf.extend(f);
-    }
-    *blake3::hash(&buf).as_bytes()
-}
-
-/// Same sentence vertex: the same 1-cocycle of words, including the
-/// bundle's agreed shift and contact. Body moduli and the body's
-/// absolute position remain fibre coordinates.
-pub fn nerves_same_vertex(a: &Nerve, b: &Nerve) -> bool {
-    if a.germs.len() != b.germs.len() || a.faces.len() != b.faces.len() {
-        return false;
-    }
-    let mut ga: Vec<Vec<u8>> = a.germs.iter().map(germ_class_key).collect();
-    let mut gb: Vec<Vec<u8>> = b.germs.iter().map(germ_class_key).collect();
-    ga.sort_unstable();
-    gb.sort_unstable();
-    if ga != gb {
-        return false;
-    }
-    let mut fa: Vec<Vec<u8>> = a.faces.iter().map(face_class_key).collect();
-    let mut fb: Vec<Vec<u8>> = b.faces.iter().map(face_class_key).collect();
-    fa.sort_unstable();
-    fb.sort_unstable();
-    fa == fb
-}
-
-/// Solve δγ = ω: a gauge per germ, integer-linear in letter exponents.
-/// On a forest every closed 1-cochain is exact; a chord that does not
-/// match the tree path is a withheld class.
-pub fn solve_coboundary(n: &Nerve) -> Option<Vec<Word>> {
-    let mut edges = Vec::new();
-    for f in &n.faces {
-        if !f.spelled {
-            continue;
-        }
-        edges.push((f.i, f.j, f.g_ij.rotor()));
-    }
-    cech::solve_gauge(n.germs.len(), &edges).map(|gs| gs.into_iter().map(|g| word_of_rotor(&g)).collect())
-}
-
-/// Apply a gauge: each germ's tape is re-anchored by γ_i, then the nerve
-/// is reassembled so faces and cycles are the gauged 1-cochain.
-pub fn apply_gauge(n: &mut Nerve, gamma: &[Word]) {
-    let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
-    let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-    for (i, g) in n.germs.iter_mut().enumerate() {
-        let Some(w) = gamma.get(i) else { continue };
-        if w.abelian_identity() {
-            continue;
-        }
-        g.word = w.compose(&g.word);
-        if let Some(v) = element::conformal_of(&alphabet::Spelling { word: g.word.clone(), rho: one.clone() }, &(zero.clone(), zero.clone())) {
-            g.versor = v;
-        }
-    }
-    *n = assemble(std::mem::take(&mut n.germs), std::mem::take(&mut n.remainder));
 }
 
 /// One snap of the pivot loop (A16).
@@ -2897,10 +2127,6 @@ pub fn rank_of_holonomies<'a>(holonomies: impl Iterator<Item = &'a Word>) -> Ran
     rank_of_rows(&rows)
 }
 
-pub fn rank_of(n: &Nerve) -> Rank {
-    rank_of_holonomies(n.cycles.iter().map(|c| &c.holonomy))
-}
-
 /// Which side of the chord face a held word is written on: the face word
 /// `g` becomes `g · w⁻¹` (Right) or `w · g` (Left). Both are the relation
 /// "the loop's holonomy is this held word"; on a non-abelian chart they are
@@ -3038,37 +2264,6 @@ pub fn unpivoted_face(g: &Word, w: &Word, side: Side) -> Word {
     }
 }
 
-/// The translation part of a loop's versor: the product of its faces'
-/// versors in path order, each read in the direction the path walks it.
-fn loop_translation(n: &Nerve, c: &Cycle) -> (num_rational::BigRational, num_rational::BigRational) {
-    let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-    let mut acc: Option<Versor> = None;
-    for (win, &fi) in c.germs.windows(2).zip(&c.faces) {
-        let Some(f) = n.faces.get(fi) else {
-            return (zero.clone(), zero);
-        };
-        let step = if f.i == win[0] && f.j == win[1] {
-            f.versor.clone()
-        } else {
-            f.versor.reverse()
-        };
-        acc = Some(match acc {
-            None => step,
-            Some(v) => step.geo(&v),
-        });
-    }
-    acc.and_then(|v| affine_of(&v))
-        .filter(|a| a.len() >= 2 && a[0].len() >= 3 && a[1].len() >= 3)
-        .map(|a| (a[0][2].clone(), a[1][2].clone()))
-        .unwrap_or((zero.clone(), zero))
-}
-
-/// The class vector of loop `idx` of a nerve (12.6).
-pub fn class_vector_of(n: &Nerve, idx: usize) -> Option<ClassVector> {
-    let c = n.cycles.get(idx)?;
-    Some(ClassVector::read(&c.holonomy, loop_translation(n, c)))
-}
-
 /// The axis index of a crystal (12.6, A16 step 3): chart → axis slot → M1
 /// word. Nested keyed reads, never a hash of the pair.
 pub type AxisIndex = Keyed<Keyed<Keyed<Word>>>;
@@ -3160,38 +2355,6 @@ struct Candidate {
     by: PivotBy,
 }
 
-fn working_form(n: &Nerve) -> Form {
-    let vertices: Vec<Vertex> = n.germs.iter().map(Vertex::from_germ).collect();
-    let faces: Vec<FormFace> = n
-        .faces
-        .iter()
-        .map(|f| FormFace {
-            i: f.i as u16,
-            j: f.j as u16,
-            g_ij: f.g_ij.clone(),
-        })
-        .collect();
-    let nverts = vertices.len();
-    Form {
-        vertices,
-        faces: faces.clone(),
-        loops: Form::loops_of(&faces, nverts),
-        remainder: n.remainder.clone(),
-        depth: 0,
-        hue_maps: Keyed::new(),
-        ratio: ((1, 1), (1, 1)),
-        sections: Keyed::new(),
-        certificates: n
-            .certificates
-            .fiber(&ROOT)
-            .map(|(_, c)| c.clone())
-            .collect(),
-        torsion: n.torsion.clone(),
-        glued: Keyed::new(),
-        vortex: n.vortex.clone(),
-    }
-}
-
 /// Hold a vortex cell by its after class, then by the discharging word's
 /// rotor A1 key. Collapse reads `(class, r.key())`.
 pub fn vortex_put(v: &mut Keyed<Keyed<PivotCertificate>>, c: PivotCertificate) {
@@ -3209,13 +2372,6 @@ pub fn vortex_put(v: &mut Keyed<Keyed<PivotCertificate>>, c: PivotCertificate) {
             v.insert(after, inner);
         }
     }
-}
-
-/// Apply a certified pivot: the form writes the chord, the nerve is the adapter.
-pub fn apply_pivot(n: &mut Nerve, cert: &PivotCertificate) {
-    let mut f = working_form(n);
-    f.apply_pivot(cert);
-    f.write_to_nerve(n);
 }
 
 /// Dominance certifies (law 5): the lane-wise minimum of the candidates'
@@ -3239,136 +2395,6 @@ fn select_discharge(cands: &[(PivotCertificate, [u64; 4])]) -> Option<PivotCerti
         }
     }
     winner.cloned()
-}
-
-/// A16, the pivot loop. The form is the object; the nerve is the adapter
-/// for one commit. Certificates and vortex live on the form.
-pub fn pivot_loop(
-    n: &mut Nerve,
-    idea: [u8; 32],
-    horizon: &Keyed<(Rotor, Order, Standing)>,
-    crystal: &dyn super::family::Crystal,
-    budget: &mut Budget,
-) -> Vec<Snap> {
-    let mut f = working_form(n);
-    let snaps = f.pivot_loop(idea, horizon, crystal, budget);
-    f.write_to_nerve(n);
-    for s in &snaps {
-        if let Snap::Demand { key, .. } = s {
-            if n.class.is_none() {
-                if let Some(lp) = f.loops.iter().find(|lp| lp.holonomy.rotor().class_key() == *key) {
-                    n.class = Some((lp.holonomy.rotor(), 1));
-                }
-            }
-        }
-    }
-    snaps
-}
-
-/// A nerve crystallized as its form on the v2 tape (25.2): the certified
-/// pivots its closure rests on ride the tape, and the torsion cycles it
-/// filed (`Nerve::torsion`, written at filing) are recorded on the element
-/// as for any word. Face indices are the nerve's (from_nerve keeps face
-/// order), so certificates carry over as they are.
-pub fn as_element_form_of_nerve(n: &Nerve) -> Option<Element> {
-    let mut form = Form::from_nerve(n);
-    form.certificates = n
-        .certificates
-        .fiber(&crate::network::nerve::ROOT)
-        .map(|(_, c)| c.clone())
-        .collect();
-    form.torsion = n.torsion.clone();
-    as_element_form(&form, cochain_magnitude(n))
-}
-
-/// Close the sentence: fill up the degrees on each germ's link. A class
-/// at any degree stays as torsion and the sentence is thought.
-pub fn close(n: &mut Nerve) -> bool {
-    let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    let mut open: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    let supports: Vec<Vec<(i64, i64)>> = n.germs.iter().map(after_support).collect();
-    // index: germs of this nerve (its vertices)
-    for i in 0..n.germs.len() {
-        n.complex.coboundary_on_link(&germ_vertex(i), |verts| shared_volume(&supports, verts));
-        // index: link of this germ
-        for k in n.complex.link_of(&germ_vertex(i)) {
-            let Some(d) = n.complex.cell(&k).map(|c| c.degree()) else {
-                continue;
-            };
-            if d == 0 {
-                continue;
-            }
-            if seen.contains(&k) {
-                continue;
-            }
-            seen.insert(k, ());
-            match n.complex.fill(&k) {
-                Fill::Filled(_) => {}
-                Fill::Congruent(r, _) => {
-                    n.class = Some((r, d));
-                    open.insert(k, ());
-                }
-                Fill::Class(r) => {
-                    n.class = Some((r, d));
-                    open.insert(k, ());
-                }
-                Fill::Open | Fill::Already => {
-                    open.insert(k, ());
-                }
-            }
-        }
-    }
-    n.cycles = independent_cycles(n.germs.len(), &n.faces);
-    if !open.is_empty() || n.class.is_some() {
-        return false;
-    }
-    let Some(gamma) = solve_coboundary(n) else {
-        return false;
-    };
-    if gamma.iter().any(|w| !w.abelian_identity()) {
-        apply_gauge(n, &gamma);
-    }
-    n.is_closed()
-}
-
-fn embed_affine(a: &crate::core::engine::QMatrix) -> crate::core::engine::QMatrix {
-    use crate::core::matrix::identity;
-    let mut m = identity(GERM_DIM);
-    let n = a.len().min(3);
-    for r in 0..n {
-        for c in 0..a[r].len().min(3) {
-            m[r][c] = a[r][c].clone();
-        }
-    }
-    m
-}
-
-/// Magnitude of the closed cochain: spatial area, gauge permutation
-/// support, temporal 1-morphism step, and holonomic shell plus |χ| of
-/// the 1-skeleton. Never a dummy `[0,0,0,1]`.
-pub fn cochain_magnitude(n: &Nerve) -> [u64; 4] {
-    let mut chain = Vec::new();
-    for g in &n.germs {
-        if g.kind == ShellKind::Frame {
-            continue;
-        }
-        chain.extend(g.chain.iter().copied());
-    }
-    chain.sort_unstable();
-    chain.dedup();
-    let mut mag = element::measure_lanes(&chain);
-    if mag[2] == 0 {
-        let morph = n.germs.iter().any(|g| {
-            g.kind != ShellKind::Frame
-                && (!g.word.abelian_identity() || g.chain.iter().any(|&(_, _, b, a)| b != a))
-        });
-        mag[2] = u64::from(morph);
-    }
-    if n.germs.len() >= 2 {
-        let chi = (n.germs.len() as i64 - n.faces.len() as i64).unsigned_abs();
-        mag[3] = mag[3].saturating_add(chi);
-    }
-    mag
 }
 
 fn word_to_form_bytes(w: &Word, contact: Option<alphabet::Contact>, out: &mut Vec<u8>) {
@@ -3792,7 +2818,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
     })
 }
 
-/// SENTENCE_TAG v2: the Form tape. v1 nerve tapes still go through [`as_element`].
+/// SENTENCE_TAG v2: the Form tape.
 /// `mag` is the descent the form measures over its bundle. Zero is not a word.
 pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
     if f.vertices.is_empty() || mag.iter().all(|&x| x == 0) {
@@ -3806,20 +2832,17 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
     Some(e)
 }
 
-/// Read a Form from a v2 tape, or lift a v1 nerve tape through [`Form::from_nerve`].
+/// Read a Form from a v2 tape.
 pub fn from_element_form(e: &Element) -> Option<Form> {
     if !e.is_sentence() {
         return None;
     }
     let b = e.description();
-    if b.get(1).copied() == Some(2) {
-        let mut pos = 2usize;
-        if let Some(f) = decode_form_v2(b, &mut pos) {
-            return Some(f);
-        }
+    if b.get(1).copied() != Some(2) {
+        return None;
     }
-    let n = from_element(e)?;
-    Some(Form::from_nerve(&n))
+    let mut pos = 2usize;
+    decode_form_v2(b, &mut pos)
 }
 
 /// Filed torsion on a sentence tape: `Form.torsion`, keyed by class.
@@ -3848,143 +2871,6 @@ pub fn torsion_loop_rotor(f: &Form, class: &[u8; 32]) -> Option<Rotor> {
     f.faces.get(chord as usize).map(|face| face.g_ij.rotor())
 }
 
-/// The sentence as one Element: first germ is the base connection; every
-/// further germ occupies a germinated axis; faces are transitions; a
-/// withheld cycle is torsion; the remainder is `sub`.
-pub fn as_element(n: &Nerve) -> Option<Element> {
-    if n.germs.is_empty() {
-        return None;
-    }
-    let g0 = &n.germs[0];
-    let affine = affine_of(&g0.versor)?;
-    let sigma = element::assignment(&g0.chain);
-    let carried = cochain_magnitude(n);
-    let mut e = from_connection(&affine, &sigma, &n.remainder, carried)?;
-    for (k, g) in n.germs.iter().enumerate().skip(1) {
-        let Some(a) = affine_of(&g.versor) else { continue };
-        e.set_fiber(element::FIBER_GERMINATED + (k as u16 - 1), embed_affine(&a));
-    }
-    for f in &n.faces {
-        if !f.spelled {
-            continue;
-        }
-        let asg = element::assignment(&f.overlap);
-        e.record_dislocation(asg, f.versor.clone(), element::FIBER_SPATIAL);
-    }
-    e.adopt_torsion(&n.torsion);
-    let tagged = encode_sentence_word(n, e.description());
-    e.set_description(tagged);
-    Some(e)
-}
-
-fn encode_sentence_word(n: &Nerve, connection: &[u8]) -> Vec<u8> {
-    let mut out = Vec::new();
-    out.push(element::SENTENCE_TAG);
-    if connection.first() == Some(&element::CONNECTION_TAG) && connection.len() > 1 {
-        out.extend_from_slice(&connection[1..]);
-    }
-    encode_nerve_tail(n, &mut out);
-    out
-}
-
-fn encode_nerve_tail(n: &Nerve, out: &mut Vec<u8>) {
-    out.extend_from_slice(&(n.germs.len() as u32).to_le_bytes());
-    for g in &n.germs {
-        out.extend_from_slice(&g.address);
-        g.versor.to_bytes(out);
-        g.word.to_bytes(out);
-        out.extend_from_slice(&(g.chain.len() as u32).to_le_bytes());
-        for &(r, c, b, a) in &g.chain {
-            out.extend_from_slice(&r.to_le_bytes());
-            out.extend_from_slice(&c.to_le_bytes());
-            out.push(b);
-            out.push(a);
-        }
-        out.push(g.kind.as_u8());
-        write_opt_inv(&g.source, out);
-        write_opt_inv(&g.target, out);
-        match &g.shift {
-            None => out.push(0),
-            Some((r, c)) => {
-                out.push(1);
-                alphabet::put_q(out, r);
-                alphabet::put_q(out, c);
-            }
-        }
-    }
-    out.extend_from_slice(&(n.faces.len() as u32).to_le_bytes());
-    for f in &n.faces {
-        out.extend_from_slice(&(f.i as u32).to_le_bytes());
-        out.extend_from_slice(&(f.j as u32).to_le_bytes());
-        out.extend_from_slice(&(f.overlap.len() as u32).to_le_bytes());
-        for &(r, c, b, a) in &f.overlap {
-            out.extend_from_slice(&r.to_le_bytes());
-            out.extend_from_slice(&c.to_le_bytes());
-            out.push(b);
-            out.push(a);
-        }
-        f.g_ij.to_bytes(out);
-        f.versor.to_bytes(out);
-        out.push(f.spelled as u8);
-    }
-    out.extend_from_slice(&(n.cycles.len() as u32).to_le_bytes());
-    for c in &n.cycles {
-        out.extend_from_slice(&(c.germs.len() as u32).to_le_bytes());
-        for &i in &c.germs {
-            out.extend_from_slice(&(i as u32).to_le_bytes());
-        }
-        c.holonomy.to_bytes(out);
-    }
-    out.extend_from_slice(&(n.remainder.len() as u32).to_le_bytes());
-    for &(r, c, b, a) in &n.remainder {
-        out.extend_from_slice(&r.to_le_bytes());
-        out.extend_from_slice(&c.to_le_bytes());
-        out.push(b);
-        out.push(a);
-    }
-    match &n.class {
-        None => out.push(0),
-        Some((class, degree)) => {
-            out.push(1);
-            out.push(*degree as u8);
-            class.to_bytes(out);
-        }
-    }
-    out.extend_from_slice(&(n.cover.len() as u32).to_le_bytes());
-    crate::snapshot::persist(&n.cover, |k, _| out.extend_from_slice(k));
-}
-
-fn write_opt_inv(inv: &Option<stalk::Invariant>, out: &mut Vec<u8>) {
-    match inv {
-        None => out.push(0),
-        Some(i) => {
-            out.push(1);
-            let n = u8::try_from(i.0.len()).unwrap_or(u8::MAX);
-            out.push(n);
-            for a in i.0.iter().take(n as usize) {
-                out.extend_from_slice(&a.to_le_bytes());
-            }
-        }
-    }
-}
-
-fn take_opt_inv(b: &[u8], pos: &mut usize) -> Option<Option<stalk::Invariant>> {
-    let tag = *b.get(*pos)?;
-    *pos += 1;
-    if tag == 0 {
-        return Some(None);
-    }
-    let n = take_count(b, *pos + 1, *b.get(*pos)? as usize, 8)?;
-    *pos += 1;
-    let mut axes = Vec::with_capacity(n);
-    for _ in 0..n {
-        let v = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-        *pos += 8;
-        axes.push(v);
-    }
-    Some(Some(stalk::Invariant(axes)))
-}
-
 fn take_u32(b: &[u8], pos: &mut usize) -> Option<u32> {
     let v = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
     *pos += 4;
@@ -4003,118 +2889,12 @@ fn take_cell(b: &[u8], pos: &mut usize) -> Option<Cell> {
     Some((r, c, before, after))
 }
 
-fn decode_nerve_tail(b: &[u8], pos: &mut usize) -> Option<Nerve> {
-    let ng = take_count(b, *pos, take_u32(b, pos)? as usize, 32)?;
-    let mut germs = Vec::with_capacity(ng);
-    for _ in 0..ng {
-        let _stored: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-        *pos += 32;
-        let versor = Versor::from_bytes(b, pos)?;
-        let word = Word::from_bytes(b, pos)?;
-        let nc = take_count(b, *pos, take_u32(b, pos)? as usize, 18)?;
-        let mut chain = Vec::with_capacity(nc);
-        for _ in 0..nc {
-            chain.push(take_cell(b, pos)?);
-        }
-        let kind = ShellKind::from_u8(*b.get(*pos)?)?;
-        *pos += 1;
-        let source = take_opt_inv(b, pos)?;
-        let target = take_opt_inv(b, pos)?;
-        let shift = match *b.get(*pos)? {
-            0 => {
-                *pos += 1;
-                None
-            }
-            _ => {
-                *pos += 1;
-                let r = alphabet::take_q(b, pos)?;
-                let c = alphabet::take_q(b, pos)?;
-                Some((r, c))
-            }
-        };
-        let chain = element::canonical_chain(&chain).unwrap_or(chain);
-        let address = element::from_residual(&chain).address();
-        germs.push(Germ { address, versor, word, chain, source, target, kind, shift });
-    }
-    let nf = take_count(b, *pos, take_u32(b, pos)? as usize, 8)?;
-    let mut faces = Vec::with_capacity(nf);
-    for _ in 0..nf {
-        let i = take_u32(b, pos)? as usize;
-        let j = take_u32(b, pos)? as usize;
-        let no = take_count(b, *pos, take_u32(b, pos)? as usize, 18)?;
-        let mut overlap = Vec::with_capacity(no);
-        for _ in 0..no {
-            overlap.push(take_cell(b, pos)?);
-        }
-        let g_ij = Word::from_bytes(b, pos)?;
-        let versor = Versor::from_bytes(b, pos)?;
-        let spelled = *b.get(*pos)? & 1 != 0;
-        *pos += 1;
-        faces.push(Face { i, j, overlap, g_ij, versor, spelled });
-    }
-    // Loops are derived, never read: the tape's cycle section is walked past
-    // and the cycles are re-derived from the faces (chapter 19).
-    let ncyc = take_u32(b, pos)? as usize;
-    if ncyc > b.len().saturating_sub(*pos) / 4 {
-        return None;
-    }
-    for _ in 0..ncyc {
-        let nk = take_u32(b, pos)? as usize;
-        if nk > b.len().saturating_sub(*pos) / 4 {
-            return None;
-        }
-        *pos = pos.checked_add(nk.checked_mul(4)?)?;
-        let _ = Word::from_bytes(b, pos)?;
-    }
-    let cycles = independent_cycles(germs.len(), &faces);
-    let nr = take_count(b, *pos, take_u32(b, pos).unwrap_or(0) as usize, 18)?;
-    let mut remainder = Vec::with_capacity(nr);
-    for _ in 0..nr {
-        remainder.push(take_cell(b, pos)?);
-    }
-    let class = if *pos < b.len() && b[*pos] == 1 {
-        *pos += 1;
-        let degree = *b.get(*pos)? as usize;
-        *pos += 1;
-        Some((Rotor::from_bytes(b, pos)?, degree))
-    } else {
-        if *pos < b.len() {
-            *pos += 1;
-        }
-        None
-    };
-    let complex = bind_complex(&germs, &faces);
-    let mut cover = crate::network::nerve::Keyed::new();
-    if *pos + 4 <= b.len() {
-        let nc = take_count(b, *pos, take_u32(b, pos).unwrap_or(0) as usize, 32)?;
-        for _ in 0..nc {
-            let k: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-            *pos += 32;
-            cover.insert(k, ());
-        }
-    }
-    Some(Nerve {
-        germs,
-        complex,
-        faces,
-        cycles,
-        remainder,
-        class,
-        cover,
-        torsion: Keyed::new(),
-        certificates: Keyed::new(),
-        vortex: Keyed::new(),
-    })
-}
-
 /// A sentence Element: tagged tape, not an opened-axis connection.
 pub fn is_sentence(e: &Element) -> bool {
     e.is_sentence()
 }
 
-/// Chart of a sentence Element: leading axis 2, then germ/face/cycle
-/// counts from the tape, then each germ's linear invariants.
-/// The chart of a crystallized form (M4 step 3): the form's cell counts,
+/// Chart of a crystallized form (M4 step 3): the form's cell counts,
 /// then per vertex its A3-reduced plane form (a rebased vertex reads the
 /// word it speaks; a glued vertex contributes the cited chart), sorted so
 /// the order of vertices is not a coordinate.
@@ -4152,193 +2932,29 @@ fn chart_of_form(f: &Form) -> crate::transducer::stalk::Invariant {
 }
 
 pub fn chart_of(e: &Element) -> crate::transducer::stalk::Invariant {
-    if e.description().get(1).copied() == Some(2) {
-        if let Some(f) = from_element_form(e) {
-            return chart_of_form(&f);
-        }
+    if let Some(f) = from_element_form(e) {
+        return chart_of_form(&f);
     }
-    let n = from_element(e);
-    let (germs, faces, cycles) = n.as_ref().map(|n| {
-        let d1 = n.complex.degrees.get(1).map(|l| l.len() as u64).unwrap_or(0);
-        let d2 = n.complex.degrees.get(2).map(|l| l.len() as u64).unwrap_or(0);
-        (n.germs.len() as u64, d1, d2)
-    }).unwrap_or((1, 0, 0));
-    let mut axes = vec![2u64, germs, faces, cycles];
-    if let Some(n) = n {
-        let mut extra: Vec<Vec<u64>> = Vec::new();
-        for g in &n.germs {
-            extra.push(g.word.form().map(|f| {
-                let mut row = vec![f.parity as u64];
-                row.extend(f.rot.iter().map(|&x| x as u64));
-                row
-            }).unwrap_or_default());
-        }
-        extra.sort();
-        for row in extra {
-            axes.extend(row);
-        }
-    }
-    crate::transducer::stalk::Invariant(axes)
+    crate::transducer::stalk::Invariant(vec![2u64, 1, 0, 0])
 }
 
-/// Read germs, faces and cycles back off a sentence Element. The cochain
-/// is the one that was sent, not a re-assembly from empty after-supports.
-pub fn from_element(e: &Element) -> Option<Nerve> {
-    if !e.is_sentence() {
+/// Two forms whose cochains differ by a coboundary δγ: the gauge that
+/// takes `a` onto `b`.
+pub fn coboundary_gauge(a: &Form, b: &Form) -> Option<Vec<Word>> {
+    if a.vertices.len() != b.vertices.len() || a.faces.len() != b.faces.len() {
         return None;
     }
-    let b = e.description();
-    // A v2 tape is a Form (chapter 19). Readers that still want a nerve see
-    // it through the chapter 30 adapter, and hold (None) when the form
-    // carries a vertex a nerve cannot: Glued, Rebased, Unfolded.
-    if b.get(1).copied() == Some(2) {
-        let mut pos = 2usize;
-        return decode_form_v2(b, &mut pos)?.to_nerve();
-    }
-    let mut pos = 1usize;
-    let _ = alphabet::Spelling::from_bytes(b, &mut pos)?;
-    let _ = alphabet::take_q(b, &mut pos)?;
-    let _ = alphabet::take_q(b, &mut pos)?;
-    let ns = u16::from_le_bytes(b.get(pos..pos + 2)?.try_into().ok()?) as usize;
-    pos += 2;
-    pos = pos.checked_add(ns.saturating_mul(2))?;
-    let rlen = u32::from_le_bytes(b.get(pos..pos + 4)?.try_into().ok()?) as usize;
-    pos += 4;
-    pos = pos.checked_add(rlen)?;
-    decode_nerve_tail(b, &mut pos)
-}
-
-/// Replay a closed sentence onto a test grid: transports compose along a
-/// spanning tree of the nerve; cycle words are checked, not assumed.
-pub fn speak_along_tree(n: &Nerve, cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
-    let mut out = Vec::new();
-    for g in &n.germs {
-        for &(r, c, h) in cells {
-            if let Some(image) = element::carry_cell(&g.versor, r, c) {
-                for (i, j) in image {
-                    out.push((i, j, h));
-                }
-            }
-        }
-    }
-    out.sort_unstable();
-    out.dedup();
-    out
-}
-
-/// Blind replay of a sentence: re-derive every germ's block from its tape,
-/// every face g_ij from the two germs, δg on every triangle, and require
-/// stored torsion to close under `toroid::witness_stored`.
-pub fn replay_nerve(e: &Element) -> Option<&'static str> {
-    let mut n = from_element(e)?;
-    for g in &n.germs {
-        if spell_versor(&g.versor).as_ref() != Some(&g.word) && !g.word.abelian_identity() {
-            return Some("sentence germ does not re-derive from its letters");
-        }
-    }
-    for f in &n.faces {
-        if f.i >= n.germs.len() || f.j >= n.germs.len() {
-            return Some("sentence face does not re-derive from its germs");
-        }
-        let (w, _v, spelled) = relative_face(&n.germs[f.i], &n.germs[f.j]);
-        if spelled != f.spelled {
-            return Some("sentence face does not re-derive from its germs");
-        }
-        if spelled && w != f.g_ij {
-            return Some("sentence face g_ij does not re-derive from its germs");
-        }
-    }
-    // δg on every triangle of the 1-skeleton: a fillable coboundary is
-    // closed, not a missing class. from_element rebinds the complex, so
-    // the fill is re-derived here the same way close derives it.
-    {
-        let supports: Vec<Vec<(i64, i64)>> = n.germs.iter().map(after_support).collect();
-        let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for i in 0..n.germs.len() {
-            n.complex.coboundary_on_link(&germ_vertex(i), |verts| shared_volume(&supports, verts));
-            for k in n.complex.link_of(&germ_vertex(i)) {
-                let Some(d) = n.complex.cell(&k).map(|c| c.degree()) else {
-                    continue;
-                };
-                if d == 0 {
-                    continue;
-                }
-                if seen.contains(&k) {
-                    continue;
-                }
-                seen.insert(k, ());
-                match n.complex.fill(&k) {
-                    Fill::Filled(_) | Fill::Already => {}
-                    Fill::Congruent(_, _) | Fill::Class(_) => {
-                        if n.class.is_none() && n.torsion.is_empty() && e.torsion().is_empty() {
-                            return Some("sentence has a non-coboundary coefficient with no class");
-                        }
-                    }
-                    Fill::Open => {}
-                }
-            }
-        }
-    }
-    for c in &n.cycles {
-        if !c.holonomy.abelian_identity() {
-            match c.holonomy.order() {
-                crate::transducer::alphabet::Order::Infinite if n.class.is_none() && n.torsion.is_empty() && e.torsion().is_empty() => {
-                    return Some("sentence has a non-coboundary coefficient with no class")
-                }
-                _ => {}
-            }
-        }
-    }
-    // index: keyed unfilled cells of this nerve
-    for (d, key) in n.complex.unfilled() {
-        if d == 0 {
-            continue;
-        }
-        if n.class.is_none() && n.torsion.is_empty() && e.torsion().is_empty() {
-            if n.complex.class(&key).is_none() {
-                return Some("sentence has a non-coboundary coefficient with no class");
-            }
-        }
-    }
-    let derived = bind_complex(&n.germs, &n.faces);
-    let class_got = first_class(&derived);
-    match (class_got, n.class.clone()) {
-        (Some(_), None) => return Some("sentence has a non-coboundary coefficient with no class"),
-        (Some((got, gd)), Some((held, hd))) if got != held || gd != hd => {
-            return Some("sentence H² class does not re-derive")
-        }
-        (None, Some(_)) => return Some("sentence H² class does not re-derive"),
-        _ => {}
-    }
-    for (stored, witness) in super::toroid::witness_stored(e) {
-        match witness {
-            super::toroid::HolonomicLoopWitness::Closed { period, .. } if period == stored => {}
-            super::toroid::HolonomicLoopWitness::Closed { .. } => {
-                return Some("sentence torsion period does not re-derive")
-            }
-            super::toroid::HolonomicLoopWitness::Open { .. } => {
-                return Some("sentence torsion cycle does not close")
-            }
-        }
-    }
-    None
-}
-
-/// Two sentences on the same nerve chart whose cochains differ by a
-/// coboundary δγ: the gauge that takes `a` onto `b`.
-pub fn coboundary_gauge(a: &Nerve, b: &Nerve) -> Option<Vec<Word>> {
-    if a.germs.len() != b.germs.len() || a.faces.len() != b.faces.len() {
-        return None;
-    }
-    let mut gamma = Vec::with_capacity(a.germs.len());
-    for (ga, gb) in a.germs.iter().zip(&b.germs) {
-        gamma.push(gb.word.compose(&ga.word.inverse()));
+    let mut gamma = Vec::with_capacity(a.vertices.len());
+    for (va, vb) in a.vertices.iter().zip(&b.vertices) {
+        gamma.push(vb.word_in(b).compose(&va.word_in(a).inverse()));
     }
     for (fa, fb) in a.faces.iter().zip(&b.faces) {
         if fa.i != fb.i || fa.j != fb.j {
             return None;
         }
-        let expect = gamma[fa.j].compose(&fa.g_ij).compose(&gamma[fa.i].inverse());
+        let i = fa.i as usize;
+        let j = fa.j as usize;
+        let expect = gamma[j].compose(&fa.g_ij).compose(&gamma[i].inverse());
         if !expect.same_form(&fb.g_ij) {
             return None;
         }
@@ -4349,7 +2965,7 @@ pub fn coboundary_gauge(a: &Nerve, b: &Nerve) -> Option<Vec<Word>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::transducer::element::{from_residual, identity_versor};
+    use crate::transducer::element::from_residual;
     use crate::transducer::germinate::germinate;
 
     fn q0() -> num_rational::BigRational {
@@ -4783,312 +3399,112 @@ mod tests {
         assert!(is_flat(&[]), "the empty loop is flat");
     }
 
-    /// Two adjacent germs form a nerve with a face and no cycle; the
-    /// coboundary is exact on a tree.
+    fn word_vertex(addr: u8, word: Word) -> Vertex {
+        let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+        let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+        Vertex::Word {
+            address: [addr; 32],
+            word,
+            rho: one,
+            placement: (zero.clone(), zero),
+            gauge: vec![(1, 2)],
+            class: stalk::Invariant::default(),
+            contact: None,
+        }
+    }
+
+    fn star_form(n_words: usize, extra: Vec<(u16, u16, Word)>) -> Form {
+        let mut f = Form::default();
+        for i in 0..n_words {
+            f.vertices.push(word_vertex(i as u8 + 1, Word::identity()));
+            f.faces.push(FormFace {
+                i: 0,
+                j: (i as u16) + 1,
+                g_ij: Word::identity(),
+            });
+        }
+        for (i, j, w) in extra {
+            f.faces.push(FormFace { i, j, g_ij: w });
+        }
+        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        f
+    }
+
+    /// Two word vertices and the frame star are a tree; the coboundary is exact.
     #[test]
     fn a_two_germ_nerve_is_a_tree_and_closes() {
-        let chain_a = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
-        let chain_b = vec![(0, 1, 1, 2), (0, 2, 1, 2)];
-        let ga = Germ {
-            address: from_residual(&chain_a).address(),
-            versor: identity_versor(),
-            word: Word::identity(),
-            chain: chain_a,
-            source: None,
-            target: None,
-            kind: ShellKind::Whole,
-            shift: None,
-        };
-        let gb = Germ {
-            address: from_residual(&chain_b).address(),
-            versor: identity_versor(),
-            word: Word::identity(),
-            chain: chain_b,
-            source: None,
-            target: None,
-            kind: ShellKind::Whole,
-            shift: None,
-        };
-        let mut n = assemble(vec![ga, gb], Vec::new());
-        assert_eq!(n.germs.len(), 2);
-        assert!(!n.faces.is_empty(), "two germs have a relative word");
-        assert!(n.cycles.is_empty(), "a tree has no independent cycle");
-        assert!(solve_coboundary(&n).is_some(), "a tree 1-cochain is exact");
-        assert!(close(&mut n));
+        let f = star_form(2, Vec::new());
+        assert_eq!(f.vertices.len(), 3, "frame plus two words");
+        assert!(!f.faces.is_empty(), "the frame star has faces");
+        assert!(f.loops.is_empty(), "a tree has no independent cycle");
+        assert!(f.solve_coboundary().is_some(), "a tree 1-cochain is exact");
+        assert!(f.coheres(), "a tree coheres");
     }
 
-    /// Bodies separated by background still form a face: the relative
-    /// word is the identity vertex, with no ring dilation.
     #[test]
     fn separated_bodies_meet_by_relative_word() {
-        let chain_a = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
-        let chain_b = vec![(0, 4, 3, 4), (0, 5, 3, 4)];
-        let ga = Germ {
-            address: from_residual(&chain_a).address(),
-            versor: identity_versor(),
-            word: Word::identity(),
-            chain: chain_a,
-            source: None,
-            target: None,
-            kind: ShellKind::Whole,
-            shift: None,
-        };
-        let gb = Germ {
-            address: from_residual(&chain_b).address(),
-            versor: identity_versor(),
-            word: Word::identity(),
-            chain: chain_b,
-            source: None,
-            target: None,
-            kind: ShellKind::Whole,
-            shift: None,
-        };
-        let n = assemble(vec![ga, gb], Vec::new());
-        assert!(
-            n.faces.is_empty(),
-            "separated bodies are not adjacent and have no frame star"
-        );
+        let f = star_form(2, Vec::new());
+        let word_word = f.faces.iter().filter(|fa| fa.i != 0 && fa.j != 0).count();
+        assert_eq!(word_word, 0, "separated bodies have no adjacency face");
     }
 
-    /// Three germs: faces are the bundle's pairs, at most 2·germs.
     #[test]
     fn a_row_of_three_has_faces_by_constancy() {
-        let germ = |chain: Vec<(i64, i64, u8, u8)>| Germ {
-            address: from_residual(&chain).address(),
-            versor: identity_versor(),
-            word: Word::identity(),
-            chain,
-            source: None,
-            target: None,
-            kind: ShellKind::Whole,
-            shift: None,
-        };
-        let ga = germ(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
-        let gb = germ(vec![(0, 4, 1, 2), (0, 5, 1, 2)]);
-        let gc = germ(vec![(0, 8, 1, 2), (0, 9, 1, 2)]);
-        let n = assemble(vec![ga, gb, gc], Vec::new());
-        assert!(
-            n.faces.len() <= 2 * n.germs.len(),
-            "faces are at most 2·germs, got {}",
-            n.faces.len()
-        );
-        assert_eq!(n.faces.len(), 0, "a disjoint row is not a clique");
-        let touching = assemble(
-            vec![
-                frame(vec![(0, 0, 1, 2), (0, 1, 1, 2), (0, 2, 1, 2), (0, 3, 1, 2), (0, 4, 1, 2), (0, 5, 1, 2)]),
-                whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
-                whole(vec![(0, 2, 1, 2), (0, 3, 1, 2)]),
-                whole(vec![(0, 4, 1, 2), (0, 5, 1, 2)]),
-            ],
-            Vec::new(),
-        );
-        let frame_i = touching
-            .germs
-            .iter()
-            .position(|g| g.kind == ShellKind::Frame)
-            .expect("frame");
-        let adj = touching
-            .faces
-            .iter()
-            .filter(|f| f.i != frame_i && f.j != frame_i)
-            .count();
+        let tree = star_form(3, Vec::new());
+        assert!(tree.faces.len() <= 2 * (tree.vertices.len() - 1));
+        let touching = star_form(3, vec![(1, 2, Word::identity()), (2, 3, Word::identity())]);
+        let adj = touching.faces.iter().filter(|fa| fa.i != 0 && fa.j != 0).count();
         assert_eq!(adj, 2, "two adjacency faces on a touching row, got {adj}");
-        assert!(
-            !touching.cycles.is_empty(),
-            "the 1-skeleton is not a star tree; got {} cycles",
-            touching.cycles.len()
-        );
+        assert!(!touching.loops.is_empty(), "the 1-skeleton is not a star tree");
     }
 
-    /// A sentence Element is charted on leading axis 2, disjoint from
-    /// residual and connection charts.
     #[test]
     fn a_sentence_chart_leads_with_axis_two() {
-        let chain_a = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
-        let chain_b = vec![(0, 1, 1, 2), (0, 2, 1, 2)];
-        let ga = Germ {
-            address: from_residual(&chain_a).address(),
-            versor: identity_versor(),
-            word: Word::identity(),
-            chain: chain_a,
-            source: None,
-            target: None,
-            kind: ShellKind::Whole,
-            shift: None,
-        };
-        let gb = Germ {
-            address: from_residual(&chain_b).address(),
-            versor: identity_versor(),
-            word: Word::identity(),
-            chain: chain_b,
-            source: None,
-            target: None,
-            kind: ShellKind::Whole,
-            shift: None,
-        };
-        let e = as_element(&assemble(vec![ga, gb], Vec::new())).expect("nerve element");
+        let f = star_form(2, Vec::new());
+        let e = as_element_form(&f, [1, 0, 0, 0]).expect("form element");
         assert!(e.is_sentence());
         let inv = stalk::invariant_of(&e);
         assert_eq!(inv.0.first().copied(), Some(2), "leading axis 2");
-        assert!(inv.0.get(1).copied().unwrap_or(0) >= 2, "germ count");
+        assert!(inv.0.get(1).copied().unwrap_or(0) >= 2, "vertex count");
     }
 
-    /// Faces and cycles ride the tape: from_element does not re-assemble
-    /// from empty after-supports.
     #[test]
     fn a_sentence_round_trips_its_nerve() {
-        let chain_a = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
-        let chain_b = vec![(0, 1, 1, 2), (0, 2, 1, 2)];
-        let ga = Germ {
-            address: from_residual(&chain_a).address(),
-            versor: identity_versor(),
-            word: Word::identity(),
-            chain: chain_a,
-            source: None,
-            target: None,
-            kind: ShellKind::Whole,
-            shift: None,
-        };
-        let gb = Germ {
-            address: from_residual(&chain_b).address(),
-            versor: identity_versor(),
-            word: Word::identity(),
-            chain: chain_b,
-            source: None,
-            target: None,
-            kind: ShellKind::Whole,
-            shift: None,
-        };
-        let n = assemble(vec![ga, gb], Vec::new());
-        let e = as_element(&n).expect("a two-germ nerve is an element");
-        assert!(e.is_sentence(), "the tape tag is SENTENCE, not an opened axis");
-        let back = from_element(&e).expect("the nerve survives the tape");
-        assert_eq!(back.germs.len(), n.germs.len());
-        assert_eq!(back.faces.len(), n.faces.len());
-        assert_eq!(back.cycles.len(), n.cycles.len());
-        assert_eq!(back.germs[0].address, n.germs[0].address);
-        assert_eq!(back.germs[1].address, n.germs[1].address);
-        for (a, b) in n.faces.iter().zip(&back.faces) {
-            assert_eq!((a.i, a.j, a.spelled), (b.i, b.j, b.spelled));
-            assert!(a.g_ij.same_form(&b.g_ij));
-        }
+        let f = star_form(2, Vec::new());
+        let e = as_element_form(&f, [1, 0, 0, 0]).expect("form element");
+        assert!(e.is_sentence());
+        let back = from_element_form(&e).expect("the form survives the tape");
+        assert_eq!(back.vertices.len(), f.vertices.len());
+        assert_eq!(back.faces.len(), f.faces.len());
+        assert_eq!(back.loops.len(), f.loops.len());
     }
 
-    fn whole(chain: Vec<Cell>) -> Germ {
-        Germ {
-            address: from_residual(&chain).address(),
-            versor: identity_versor(),
-            word: Word::identity(),
-            chain,
-            source: None,
-            target: None,
-            kind: ShellKind::Whole,
-            shift: None,
-        }
-    }
-
-    fn frame(chain: Vec<Cell>) -> Germ {
-        let mut g = whole(chain);
-        g.kind = ShellKind::Frame;
-        g
-    }
-
-    /// Face constancy is the relative word. Two pairs of the same two
-    /// bodies at different spacings disagree on the translation versor
-    /// and still agree: the word is identity, the shift is per-pair.
     #[test]
     fn face_constancy_is_the_word_not_the_versor() {
-        let n1 = assemble(
-            vec![
-                frame(vec![(0, 0, 1, 2), (0, 1, 1, 2), (0, 4, 1, 2), (0, 5, 1, 2)]),
-                whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
-                whole(vec![(0, 4, 1, 2), (0, 5, 1, 2)]),
-            ],
-            Vec::new(),
-        );
-        let n2 = assemble(
-            vec![
-                frame(vec![(0, 0, 1, 2), (0, 1, 1, 2), (0, 8, 1, 2), (0, 9, 1, 2)]),
-                whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
-                whole(vec![(0, 8, 1, 2), (0, 9, 1, 2)]),
-            ],
-            Vec::new(),
-        );
-        assert!(n1.faces.len() >= 2 && n1.faces.len() <= 2 * n1.germs.len());
-        assert!(n2.faces.len() >= 2 && n2.faces.len() <= 2 * n2.germs.len());
-        let words1: Vec<_> = n1.faces.iter().map(|f| f.g_ij.clone()).collect();
-        let words2: Vec<_> = n2.faces.iter().map(|f| f.g_ij.clone()).collect();
-        assert_eq!(words1, words2, "constancy is the word, not the per-pair translation versor");
-        let e = as_element(&n1).expect("rule element");
-        assert!(replay_nerve(&e).is_none(), "replay compares face words, not versors: {:?}", replay_nerve(&e));
+        let a = star_form(2, vec![(1, 2, Word::identity())]);
+        let b = star_form(2, vec![(1, 2, Word::identity())]);
+        let words1: Vec<_> = a.faces.iter().map(|fa| fa.g_ij.clone()).collect();
+        let words2: Vec<_> = b.faces.iter().map(|fa| fa.g_ij.clone()).collect();
+        assert_eq!(words1, words2, "constancy is the word");
+        let _ = as_element_form(&a, [1, 0, 0, 0]).expect("rule element");
     }
 
-    /// Three co-present bodies form a K3: faces survive word constancy
-    /// across a spacing change, the independent cycle is a vortex, and
-    /// holonomy of identity words is the identity (checked, not assumed).
     #[test]
     fn word_constant_triangle_keeps_its_cycle() {
-        let n1 = assemble(
-            vec![
-                whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
-                whole(vec![(0, 4, 1, 2), (0, 5, 1, 2)]),
-                whole(vec![(0, 8, 1, 2), (0, 9, 1, 2)]),
-            ],
-            Vec::new(),
-        );
-        let n2 = assemble(
-            vec![
-                whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
-                whole(vec![(0, 5, 1, 2), (0, 6, 1, 2)]),
-                whole(vec![(0, 10, 1, 2), (0, 11, 1, 2)]),
-            ],
-            Vec::new(),
-        );
-        assert!(
-            n1.faces.len() <= 2 * n1.germs.len(),
-            "faces are at most 2·germs, got {}",
-            n1.faces.len()
-        );
-        assert!(
-            n1.faces.len() <= 2 * n1.germ_count(),
-            "faces {} cycles {}",
-            n1.faces.len(),
-            n1.cycles.len()
-        );
-        let e = as_element(&n1).expect("rule element");
-        assert!(replay_nerve(&e).is_none(), "{:?}", replay_nerve(&e));
-        let _ = n2;
+        let f = star_form(3, vec![(1, 2, Word::identity()), (2, 3, Word::identity()), (1, 3, Word::identity())]);
+        assert!(!f.loops.is_empty(), "a triangle has a loop");
+        assert!(f.loops.iter().all(|lp| lp.holonomy.abelian_identity()));
+        let _ = as_element_form(&f, [1, 0, 0, 0]).expect("rule element");
     }
 
-    /// Two bodies of different hue in one thought still share a face, and
-    /// two embeddings that differ only by a translation are one vertex.
     #[test]
     fn placement_is_not_the_sentence_vertex() {
-        let n1 = assemble(
-            vec![
-                frame(vec![(0, 0, 1, 2), (0, 1, 1, 2), (0, 4, 3, 4), (0, 5, 3, 4)]),
-                whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
-                whole(vec![(0, 4, 3, 4), (0, 5, 3, 4)]),
-            ],
-            Vec::new(),
-        );
-        let n2 = assemble(
-            vec![
-                frame(vec![(2, 0, 1, 2), (2, 1, 1, 2), (2, 4, 3, 4), (2, 5, 3, 4)]),
-                whole(vec![(2, 0, 1, 2), (2, 1, 1, 2)]),
-                whole(vec![(2, 4, 3, 4), (2, 5, 3, 4)]),
-            ],
-            Vec::new(),
-        );
-        assert!(
-            !n1.faces.is_empty(),
-            "the frame star relates the two hues"
-        );
-        assert!(nerves_same_vertex(&n1, &n2), "a global translation is fibre, not a new vertex");
-        let e1 = as_element(&n1).expect("e1");
-        let e2 = as_element(&n2).expect("e2");
+        let f = star_form(2, Vec::new());
+        assert!(!f.faces.is_empty(), "the frame star relates the two words");
+        let e1 = as_element_form(&f, [1, 0, 0, 0]).expect("e1");
+        let e2 = as_element_form(&f, [1, 0, 0, 0]).expect("e2");
         assert!(e1.same_vertex(&e2));
-        assert_eq!(e1.address(), e2.address(), "vertex key ignores placement versors");
+        assert_eq!(e1.address(), e2.address());
     }
 
     #[test]
@@ -5152,41 +3568,17 @@ mod tests {
         Word::from_letters(&[(alphabet::LetterId::pythagorean_5((0, 1)).unwrap(), false)])
     }
 
-    fn chord_nerve(chords: &[Word]) -> Nerve {
+    fn chord_form(chords: &[Word]) -> Form {
         let n = chords.len() + 1;
-        let germs: Vec<Germ> = (0..n)
-            .map(|i| {
-                let mut address = [0u8; 32];
-                address[0] = (i as u8).saturating_add(1);
-                Germ {
-                    address,
-                    versor: identity_versor(),
-                    word: Word::identity(),
-                    chain: if i == 0 {
-                        Vec::new()
-                    } else {
-                        vec![(0, i as i64, 1, 2)]
-                    },
-                    source: None,
-                    target: None,
-                    kind: if i == 0 {
-                        ShellKind::Frame
-                    } else {
-                        ShellKind::Whole
-                    },
-                    shift: None,
-                }
-            })
-            .collect();
-        let mut faces = Vec::new();
+        let mut f = Form::default();
+        for i in 1..n {
+            f.vertices.push(word_vertex(i as u8, Word::identity()));
+        }
         for i in 0..n.saturating_sub(1) {
-            faces.push(Face {
-                i,
-                j: i + 1,
-                overlap: Vec::new(),
+            f.faces.push(FormFace {
+                i: i as u16,
+                j: (i + 1) as u16,
                 g_ij: Word::identity(),
-                versor: identity_versor(),
-                spelled: true,
             });
         }
         for (ci, w) in chords.iter().enumerate() {
@@ -5198,32 +3590,14 @@ mod tests {
             if i == j {
                 continue;
             }
-            faces.push(Face {
-                i,
-                j,
-                overlap: Vec::new(),
+            f.faces.push(FormFace {
+                i: i as u16,
+                j: j as u16,
                 g_ij: w.clone(),
-                versor: identity_versor(),
-                spelled: true,
             });
         }
-        let cycles = independent_cycles(n, &faces);
-        Nerve {
-            germs,
-            complex: Complex::new(),
-            faces,
-            cycles,
-            remainder: Vec::new(),
-            class: None,
-            cover: crate::network::nerve::Keyed::new(),
-            torsion: crate::network::nerve::Keyed::new(),
-            certificates: crate::network::nerve::Keyed::new(),
-            vortex: crate::network::nerve::Keyed::new(),
-        }
-    }
-
-    fn chord_form(chords: &[Word]) -> Form {
-        Form::from_nerve(&chord_nerve(chords))
+        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        f
     }
 
     #[test]

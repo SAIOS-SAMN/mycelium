@@ -577,9 +577,8 @@ pub struct Comprehended {
     /// disagree has no single connection to read; its pairs are spoken as
     /// percepts carrying their frames, for the court to relate.
     pub framed: bool,
-    /// The family's sentence: one germ per carried body, faces on meeting
-    /// supports. Absent when every body merged into a single class rule.
-    pub sentence: Option<super::sentence::Nerve>,
+    /// The family's sentence form, when the pairs compose one.
+    pub sentence: Option<super::sentence::Form>,
     /// Cross-pair invariant cochain, when every pair's nerve agrees up to gauge.
     pub rule: Option<super::sentence::SentenceRule>,
 }

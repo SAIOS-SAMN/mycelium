@@ -1264,38 +1264,13 @@ impl Epigenome {
     /// understanding into the epigenome — expression weights rise on the cited
     /// words, the sentence joins the recollections. The genome is untouched.
     pub fn comprehend(&mut self, utterance: &Element) -> Comprehension {
-        // A taught sentence is re-derived as a nerve: germs, faces, cycles.
+        // A taught sentence is re-derived as a form: vertices, faces, loops.
         // Understanding is re-deriving its cochain, not matching its bytes.
         if utterance.is_sentence() {
             if let Some(f) = crate::transducer::sentence::from_element_form(utterance) {
                 return self.comprehend_form(&f);
             }
-            let Some(n) = crate::transducer::sentence::from_element(utterance) else {
-                return Comprehension::Novel { residual_cells: utterance.sub().len() };
-            };
-            if let Some(_reason) = crate::transducer::sentence::replay_nerve(utterance) {
-                return Comprehension::Novel { residual_cells: n.remainder.len().max(1) };
-            }
-            let chart = n.germs.first().and_then(|g| g.target.clone().or(g.source.clone()));
-            let mut understood = Vec::new();
-            if let Some(inv) = chart {
-                let fibre = self.working_atlas().fiber(&inv);
-                if let Some((a, st)) = fibre.first() {
-                    if let Some(&i) = self.index.get(a) {
-                        if let Some(x) = self.expression.get_mut(i) {
-                            *x += 1;
-                        }
-                    }
-                    understood.push((*a, *st));
-                }
-            }
-            if n.is_closed() && !understood.is_empty() {
-                return Comprehension::Understood(understood);
-            }
-            if !n.cycles.iter().all(|c| c.holonomy.abelian_identity()) {
-                return Comprehension::Dialect(utterance.clone());
-            }
-            return Comprehension::Admitted;
+            return Comprehension::Novel { residual_cells: utterance.sub().len() };
         }
         // HEAR g BY HOLDING IT: a connection has no chain to cover. It is
         // glued against the representative on its fibre — the transition
@@ -2497,12 +2472,10 @@ impl Entity {
         self.contemplation.hold_form(f);
     }
 
-    /// Hold a withheld sentence as a bubble: germs, nerve, remainder, cover.
+    /// Hold a withheld sentence as a bubble: form, remainder, cover.
     pub fn hold_sentence(&mut self, word: &Element) {
         if let Some(f) = crate::transducer::sentence::from_element_form(word) {
             self.hold_form(&f);
-        } else if let Some(n) = crate::transducer::sentence::from_element(word) {
-            self.contemplation.hold_nerve(n);
         } else {
             self.hold_thought(word.sub().to_vec());
         }
@@ -3465,41 +3438,39 @@ mod tests {
         assert_eq!(decode_verdict(&[2, 0, 0, 0, 0, 0, 0]), Verdict::GermPending);
     }
 
+    fn two_body_sentence(gauges: [&[(u8, u8)]; 2]) -> crate::transducer::element::Element {
+        use crate::transducer::alphabet::Word;
+        use crate::transducer::sentence::{as_element_form, Form, FormFace, Vertex};
+        let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+        let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+        let mut f = Form::default();
+        for (i, g) in gauges.iter().enumerate() {
+            f.vertices.push(Vertex::Word {
+                address: [i as u8 + 1; 32],
+                word: Word::identity(),
+                rho: one.clone(),
+                placement: (zero.clone(), zero.clone()),
+                gauge: g.to_vec(),
+                class: crate::transducer::stalk::Invariant::default(),
+                contact: None,
+            });
+            f.faces.push(FormFace {
+                i: 0,
+                j: (i as u16) + 1,
+                g_ij: Word::identity(),
+            });
+        }
+        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        as_element_form(&f, [1, 0, 0, 0]).expect("v2 sentence")
+    }
+
     /// A vertex already spoken stands in the dialect and does not go on
     /// the wire, even when the second utterance is a translated embedding.
     #[test]
     fn the_same_vertex_is_spoken_once() {
-        use crate::transducer::element::{from_residual, identity_versor};
-        use crate::transducer::peel::ShellKind;
-        use crate::transducer::sentence::{assemble, as_element, Germ};
-        use crate::transducer::alphabet::Word;
-        let whole = |chain: Vec<(i64, i64, u8, u8)>| Germ {
-            address: from_residual(&chain).address(),
-            versor: identity_versor(),
-            word: Word::identity(),
-            chain,
-            source: None,
-            target: None,
-            kind: ShellKind::Whole,
-            shift: None,
-        };
-        let e1 = as_element(&assemble(
-            vec![
-                whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
-                whole(vec![(0, 4, 3, 4), (0, 5, 3, 4)]),
-            ],
-            Vec::new(),
-        ))
-        .expect("e1");
-        let e2 = as_element(&assemble(
-            vec![
-                whole(vec![(2, 0, 1, 2), (2, 1, 1, 2)]),
-                whole(vec![(2, 4, 3, 4), (2, 5, 3, 4)]),
-            ],
-            Vec::new(),
-        ))
-        .expect("e2");
-        assert!(e1.same_vertex(&e2), "placement is fibre");
+        let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
+        let e2 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
+        assert!(e1.same_vertex(&e2), "two tapes of one form are one vertex");
         let mut entity = Entity::open("127.0.0.1:1", Kernel::named("once"));
         assert!(!entity.already_taught(&e1));
         entity.remember_spoken(&e1);
@@ -3512,28 +3483,7 @@ mod tests {
     /// Quote incidence is the working atlas: genome ∪ dialect ∪ ideas.
     #[test]
     fn quote_incidence_is_the_working_atlas() {
-        use crate::transducer::element::{from_residual, identity_versor};
-        use crate::transducer::peel::ShellKind;
-        use crate::transducer::sentence::{assemble, as_element, Germ};
-        use crate::transducer::alphabet::Word;
-        let whole = |chain: Vec<(i64, i64, u8, u8)>| Germ {
-            address: from_residual(&chain).address(),
-            versor: identity_versor(),
-            word: Word::identity(),
-            chain,
-            source: None,
-            target: None,
-            kind: ShellKind::Whole,
-            shift: None,
-        };
-        let e1 = as_element(&assemble(
-            vec![
-                whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
-                whole(vec![(0, 4, 3, 4), (0, 5, 3, 4)]),
-            ],
-            Vec::new(),
-        ))
-        .expect("e1");
+        let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
         let mut entity = Entity::open("127.0.0.1:1", Kernel::named("atlas"));
         assert!(
             !entity.incident_chart(&crate::transducer::stalk::invariant_of(&e1)),
@@ -3566,29 +3516,8 @@ mod tests {
     /// and never admits a second copy.
     #[test]
     fn learn_one_promotes_dialect_same_vertex() {
-        use crate::transducer::element::{from_residual, identity_versor};
-        use crate::transducer::peel::ShellKind;
-        use crate::transducer::sentence::{assemble, as_element, Germ};
-        use crate::transducer::alphabet::Word;
         use crate::transducer::family::Crystal;
-        let whole = |chain: Vec<(i64, i64, u8, u8)>| Germ {
-            address: from_residual(&chain).address(),
-            versor: identity_versor(),
-            word: Word::identity(),
-            chain,
-            source: None,
-            target: None,
-            kind: ShellKind::Whole,
-            shift: None,
-        };
-        let e1 = as_element(&assemble(
-            vec![
-                whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
-                whole(vec![(0, 4, 3, 4), (0, 5, 3, 4)]),
-            ],
-            Vec::new(),
-        ))
-        .expect("e1");
+        let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
         let mut epi = Epigenome::new();
         epi.stand_dialect_at(e1.clone(), 1, 1);
         epi.stand_dialect_at(e1.clone(), 2, 2);
@@ -3641,36 +3570,8 @@ mod tests {
     /// Shed never removes a dialect entry a live idea glued, and never the genome.
     #[test]
     fn shed_spares_glued_dialect_and_the_genome() {
-        use crate::transducer::element::{from_residual, identity_versor};
-        use crate::transducer::peel::ShellKind;
-        use crate::transducer::sentence::{assemble, as_element, Germ};
-        use crate::transducer::alphabet::Word;
-        let whole = |chain: Vec<(i64, i64, u8, u8)>| Germ {
-            address: from_residual(&chain).address(),
-            versor: identity_versor(),
-            word: Word::identity(),
-            chain,
-            source: None,
-            target: None,
-            kind: ShellKind::Whole,
-            shift: None,
-        };
-        let e1 = as_element(&assemble(
-            vec![
-                whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
-                whole(vec![(0, 4, 3, 4), (0, 5, 3, 4)]),
-            ],
-            Vec::new(),
-        ))
-        .expect("e1");
-        let e2 = as_element(&assemble(
-            vec![
-                whole(vec![(0, 0, 1, 3), (0, 1, 1, 3)]),
-                whole(vec![(0, 4, 3, 5), (0, 5, 3, 5)]),
-            ],
-            Vec::new(),
-        ))
-        .expect("e2");
+        let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
+        let e2 = two_body_sentence([&[(1, 3), (1, 3)], &[(3, 5), (3, 5)]]);
         let mut entity = Entity::open("127.0.0.1:1", Kernel::named("shed"));
         entity.epigenome.stand_dialect_at(e1.clone(), 0, 0);
         entity.epigenome.stand_dialect_at(e2.clone(), 0, 0);

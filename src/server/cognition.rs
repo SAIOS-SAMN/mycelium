@@ -1622,10 +1622,10 @@ impl Kernel {
         if word.is_sentence() {
             let inv = crate::transducer::stalk::invariant_of(&word);
             let members: Vec<[u8; 32]> = self.stalks.fiber(&inv).iter().copied().filter(|a| a != addr).collect();
-            if let Some(na) = crate::transducer::sentence::from_element(&word) {
+            if let Some(na) = crate::transducer::sentence::from_element_form(&word) {
                 for sib in members {
                     let Some(other) = self.word_at(&sib).cloned() else { continue };
-                    let Some(nb) = crate::transducer::sentence::from_element(&other) else { continue };
+                    let Some(nb) = crate::transducer::sentence::from_element_form(&other) else { continue };
                     if crate::transducer::sentence::coboundary_gauge(&na, &nb).is_some() {
                         return self.absorb_pair(*addr, sib);
                     }
@@ -2819,8 +2819,14 @@ impl Kernel {
         let inv = crate::transducer::stalk::invariant_of(&spoken);
         let asg = element::assignment(spoken.sub());
         if spoken.is_sentence() {
-            if let Some(n) = crate::transducer::sentence::from_element(&spoken) {
-                let missing = n.germs.iter().any(|g| g.address != addr && self.word_at(&g.address).is_none());
+            if let Some(f) = spoken.form() {
+                let missing = f.vertices.iter().any(|v| match v {
+                    crate::transducer::sentence::Vertex::Glued { address, .. }
+                    | crate::transducer::sentence::Vertex::Word { address, .. } => {
+                        *address != addr && self.word_at(address).is_none()
+                    }
+                    _ => false,
+                });
                 if missing {
                     self.heard_mark(addr, &inv);
                     return Glue::Dialect;
@@ -4872,29 +4878,17 @@ impl Kernel {
             if !w.is_sentence() {
                 continue;
             }
-            let Some(mut n) = crate::transducer::sentence::from_element(&w) else {
+            let Some(mut form) = crate::transducer::sentence::from_element_form(&w) else {
                 continue;
             };
-            let Some(gamma) = crate::transducer::sentence::solve_coboundary(&n) else {
+            let Some(gamma) = form.solve_coboundary() else {
                 continue;
             };
             if gamma.iter().all(|g| g.abelian_identity()) {
                 continue;
             }
-            crate::transducer::sentence::apply_gauge(&mut n, &gamma);
-            // A re-gauged form is a new form with a new address (chapter
-            // 32); it stays on the tape version it was spoken on, carrying
-            // its frame ratio and sections.
-            let after = if w.description().get(1).copied() == Some(2) {
-                let mut form = crate::transducer::sentence::Form::from_nerve(&n);
-                if let Some(orig) = crate::transducer::sentence::from_element_form(&w) {
-                    form.ratio = orig.ratio;
-                    form.sections = orig.sections;
-                }
-                crate::transducer::sentence::as_element_form(&form, w.magnitude())
-            } else {
-                crate::transducer::sentence::as_element(&n)
-            };
+            let _ = form.regauge(&gamma);
+            let after = crate::transducer::sentence::as_element_form(&form, w.magnitude());
             let Some(after) = after else {
                 continue;
             };
@@ -5908,12 +5902,8 @@ impl crate::transducer::family::Crystal for Kernel {
 // court's substrate, not the server kernel's.
 
 fn sentence_rule_of(form: &Element) -> Option<crate::transducer::sentence::SentenceRule> {
-    use crate::transducer::sentence::{from_element, from_element_form, rule_of_form};
-    if let Some(f) = from_element_form(form) {
-        return Some(rule_of_form(f));
-    }
-    let n = from_element(form)?;
-    Some(rule_of_form(crate::transducer::sentence::Form::from_nerve(&n)))
+    use crate::transducer::sentence::{from_element_form, rule_of_form};
+    Some(rule_of_form(from_element_form(form)?))
 }
 
 impl Kernel {
@@ -6501,80 +6491,43 @@ mod tests {
 
     fn filed_v2_form() -> (Element, crate::transducer::stalk::Invariant, [u8; 32]) {
         use crate::transducer::alphabet::{PlaneForm, Word, CAYLEY_ALPHABET_LEN};
-        use crate::transducer::element::identity_versor;
-        use crate::transducer::peel::ShellKind;
-        use crate::transducer::sentence::{
-            as_element_form_of_nerve, form_torsion, pivot_loop, Face, Germ, Nerve,
-        };
+        use crate::transducer::sentence::{as_element_form, form_torsion, Form, FormFace, Vertex};
         let order2 = PlaneForm {
             parity: true,
             rot: [0; CAYLEY_ALPHABET_LEN],
         }
         .to_word();
-        let n = 2usize;
-        let germs: Vec<Germ> = (0..n)
-            .map(|i| {
-                let mut address = [0u8; 32];
-                address[0] = (i as u8).saturating_add(1);
-                Germ {
-                    address,
-                    versor: identity_versor(),
-                    word: Word::identity(),
-                    chain: if i == 0 {
-                        Vec::new()
-                    } else {
-                        vec![(0, i as i64, 1, 2)]
-                    },
-                    source: None,
-                    target: None,
-                    kind: if i == 0 {
-                        ShellKind::Frame
-                    } else {
-                        ShellKind::Whole
-                    },
-                    shift: None,
-                }
-            })
-            .collect();
-        let faces = vec![
-            Face {
-                i: 0,
-                j: 1,
-                overlap: Vec::new(),
-                g_ij: Word::identity(),
-                versor: identity_versor(),
-                spelled: true,
-            },
-            Face {
-                i: 0,
-                j: 1,
-                overlap: Vec::new(),
-                g_ij: order2,
-                versor: identity_versor(),
-                spelled: true,
-            },
-        ];
-        let mut nerve = Nerve {
-            germs,
-            complex: crate::transducer::cech::Complex::new(),
-            faces,
-            cycles: Vec::new(),
-            remainder: Vec::new(),
-            class: None,
-            cover: crate::network::nerve::Keyed::new(),
-            torsion: crate::network::nerve::Keyed::new(),
-            certificates: crate::network::nerve::Keyed::new(),
-            vortex: crate::network::nerve::Keyed::new(),
-        };
-        let _ = pivot_loop(
-            &mut nerve,
+        let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+        let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+        let mut f = Form::default();
+        f.vertices.push(Vertex::Word {
+            address: [2u8; 32],
+            word: Word::identity(),
+            rho: one,
+            placement: (zero.clone(), zero),
+            gauge: vec![(1, 2)],
+            class: crate::transducer::stalk::Invariant::default(),
+            contact: None,
+        });
+        f.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            g_ij: Word::identity(),
+        });
+        f.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            g_ij: order2,
+        });
+        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        let _ = f.pivot_loop(
             [0xca; 32],
             &crate::network::nerve::Keyed::new(),
             &crate::transducer::family::NoCrystal,
             &mut crate::physics::Physics::default().stroke_n(8),
         );
-        assert!(nerve.is_cauterized(), "filed finite torsion cauterizes");
-        let e = as_element_form_of_nerve(&nerve).expect("v2 tape");
+        assert!(f.is_cauterized(), "filed finite torsion cauterizes");
+        let e = as_element_form(&f, [1, 0, 0, 0]).expect("v2 tape");
         let inv = crate::transducer::stalk::invariant_of(&e);
         let class = form_torsion(&e)
             .fiber(&crate::network::nerve::ROOT)

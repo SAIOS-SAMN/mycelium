@@ -1087,20 +1087,20 @@ mod tests {
         eprintln!("work fetched-vertex N=32 {a} N=128 {b}");
         assert_eq!(a, b, "4N differs by zero: {a} vs {b}");
         assert!(a > 0, "the operation does work");
-        // assemble a scene of thirty bodies: shell cliques would explode
-        // here; isolated extras on the same complex must not grow the work.
-        let thirty = crate::transducer::sentence::assemble(thirty_body_germs(30), Vec::new());
+        // thirty isolated bodies: shell cliques would explode here;
+        // isolated extras on the same complex must not grow the work.
+        let mut thirty = Complex::new();
+        for i in 0..30u64 {
+            let mut x = [0u8; 32];
+            x[..8].copy_from_slice(&i.to_le_bytes());
+            thirty.set_section(x, Section { addr: x, gamma: Rotor::identity() }, vol());
+        }
         assert!(
-            thirty.germs.len() <= 31,
-            "a body is one vertex, got {}",
-            thirty.germs.len()
-        );
-        assert!(
-            thirty.complex.degrees.get(3).map_or(true, |l| l.is_empty()),
+            thirty.degrees.get(3).map_or(true, |l| l.is_empty()),
             "thirty disjoint bodies form no 3-cell"
         );
         let run_scene = |n: u64| -> u64 {
-            let mut c = thirty.complex.clone();
+            let mut c = thirty.clone();
             for i in 0..n {
                 let mut x = [0u8; 32];
                 x[..8].copy_from_slice(&(2000 + i).to_le_bytes());
@@ -1116,29 +1116,6 @@ mod tests {
         let t = run_scene(128);
         eprintln!("work assemble-thirty extras N=32 {s} N=128 {t}");
         assert_eq!(s, t, "4N differs by zero on the assembled scene: {s} vs {t}");
-    }
-
-    fn thirty_body_germs(n: usize) -> Vec<crate::transducer::sentence::Germ> {
-        use crate::transducer::element::{from_residual, identity_versor};
-        use crate::transducer::peel::ShellKind;
-        use crate::transducer::sentence::Germ;
-        let mut out = Vec::with_capacity(n);
-        for i in 0..n {
-            let r = (i % 6) as i64;
-            let c = (i / 6) as i64;
-            let chain = vec![(r, c, 1, 1)];
-            out.push(Germ {
-                address: from_residual(&chain).address(),
-                versor: identity_versor(),
-                word: crate::transducer::alphabet::Word::identity(),
-                chain,
-                source: None,
-                target: None,
-                kind: ShellKind::Whole,
-                shift: None,
-            });
-        }
-        out
     }
 
     #[test]
