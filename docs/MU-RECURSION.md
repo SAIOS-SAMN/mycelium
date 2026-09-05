@@ -2567,7 +2567,9 @@ pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8;32]) -> Option<Form>,
 3. Each `Word` vertex: rotor from tape, affine, M1 compare against the
    vertex's own recomputed vertex (`REFUSE_VERTEX_TAPE`).
 4. Each face: `face_of(i, j)` recomputed, M1 compare with stored
-   (`REFUSE_FACE`).
+   (`REFUSE_FACE`); or the face is the chord of a loop whose class key
+   is filed on torsion with the filed order, in which case the loop's
+   holonomy is what the chord carries.
 5. Each loop: holonomy recomputed, projectively identity (`REFUSE_LOOP`).
 6. `REFUSE_REBASE_TRIVIAL`, `REFUSE_UNFOLD_STILL`, `REFUSE_ORBIT_STILL`, by
    executing the move on `family` when given, else by the form's own

@@ -39,9 +39,10 @@ pub const REFUSE_PIVOT_INEXACT: &str = "pivot certificate does not re-derive";
 /// resolves nothing, and every citation refuses): each cited form must be
 /// ruled, closed, at the depth the tape claims and strictly below the
 /// citer's, with an identity frame (chapter 32); every face re-derives from
-/// its two vertices by M1; every loop of the recomputed spanning forest is
-/// projectively identity. Torsion and descent are checked by the caller
-/// on the element, as for every word.
+/// its two vertices by M1, or is the chord of a loop whose holonomy it
+/// carries and whose class is filed on torsion; every loop of the
+/// recomputed spanning forest is projectively identity or filed finite
+/// torsion. Descent is checked by the caller on the element.
 pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8; 32]) -> Option<Form>) -> Option<&'static str> {
     let Some(f) = sentence::from_element_form(spoken) else {
         return Some(REFUSE_FORM_TAPE);
@@ -74,23 +75,50 @@ pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8; 32]) -> Option<Form>
             return Some(REFUSE_GLUED_FRAME_GAUGED);
         }
     }
-    // Chapter 23.1: every face, including a certified chord, re-derives
-    // from its vertices. A certificate names the move that closed it;
-    // it does not excuse the after-face from M1. Chapter 23.7 then
-    // un-pivots that same face, reads the before key, applies `by`,
-    // and reads the after key.
-    for face in &f.faces {
-        if f.face_of(face.i, face.j) != face.g_ij {
-            return Some(REFUSE_FACE);
-        }
-    }
     // Loops are derived, never trusted from the tape: re-walk the forest.
     let mut walked = f.clone();
     walked.loops = Form::loops_of(&f.faces, f.vertices.len());
+    // Chapter 23.1 step 4: a face equals face_of(i, j), or it is the
+    // Kruskal chord of a loop whose holonomy is what the chord carries
+    // (tree faces of that loop are face_of). Filing of that class is
+    // the loop check; a missing torsion entry is REFUSE_LOOP, a chord
+    // that does not carry the holonomy is REFUSE_FACE.
+    for (i, face) in f.faces.iter().enumerate() {
+        if f.face_of(face.i, face.j) == face.g_ij {
+            continue;
+        }
+        if !torsion_chord_carries(&walked, i, face) {
+            return Some(REFUSE_FACE);
+        }
+    }
     if !form_loops_replay(&walked) {
         return Some(REFUSE_LOOP);
     }
     replay_certificates(&walked)
+}
+
+/// The face is the last face of a non-identity loop, every other face of
+/// that loop is `face_of`, and the loop holonomy is the chord's word.
+fn torsion_chord_carries(f: &Form, face_idx: usize, face: &crate::transducer::sentence::FormFace) -> bool {
+    let Some(lp) = f
+        .loops
+        .iter()
+        .find(|lp| lp.faces.last() == Some(&(face_idx as u16)))
+    else {
+        return false;
+    };
+    if lp.holonomy.abelian_identity() {
+        return false;
+    }
+    for &fi in lp.faces.iter().rev().skip(1) {
+        let Some(tf) = f.faces.get(fi as usize) else {
+            return false;
+        };
+        if f.face_of(tf.i, tf.j) != tf.g_ij {
+            return false;
+        }
+    }
+    lp.holonomy.same_form(&face.g_ij)
 }
 
 /// Identity loops, or finite open loops filed on the form's torsion carrier.
@@ -229,7 +257,9 @@ pub fn blind_replay_with(spoken: &Element, resolve: &dyn Fn(&[u8; 32]) -> Option
             if !crate::economy::descends(&[0; 4], &spoken.magnitude()) {
                 return Some(REFUSE_NO_DESCENT);
             }
-            return witness_torsion(spoken);
+            // Form torsion is the class-keyed carrier replayed above
+            // (23.1 step 5 / 23.7). Hue-cycle witness is for residual words.
+            return None;
         }
         if let Some(reason) = crate::transducer::sentence::replay_nerve(spoken) {
             return Some(reason);

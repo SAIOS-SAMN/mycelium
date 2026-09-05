@@ -2725,9 +2725,21 @@ fn trial(
     let Some(held) = n.faces.get(*face as usize) else {
         return None;
     };
-    let mut faces = n.faces.clone();
-    faces[*face as usize].g_ij = pivoted_face(&held.g_ij, word, *side);
-    let after_h = cycle_holonomy(&faces, &c.germs, &c.faces).normal_form();
+    let after_g = pivoted_face(&held.g_ij, word, *side);
+    let mut w = Word::identity();
+    for (win, &fi) in c.germs.windows(2).zip(&c.faces) {
+        let step = if fi == *face as usize {
+            if held.i == win[0] && held.j == win[1] {
+                after_g.clone()
+            } else {
+                after_g.inverse()
+            }
+        } else {
+            face_step(&n.faces, fi, win[0], win[1]).unwrap_or_else(Word::identity)
+        };
+        w = w.compose(&step);
+    }
+    let after_h = w.normal_form();
     let kappa_after = ClassVector::read(&after_h, kappa.placement.clone());
     if kappa_after.occupies(cand.axis) || !kappa.agrees_except(&kappa_after, cand.axis) {
         return None;
@@ -4903,6 +4915,52 @@ mod tests {
         );
     }
 
+    /// Chapter 23.1 step 4: a filed torsion chord replays; a chord that is
+    /// not the holonomy refuses the face; a missing torsion entry refuses
+    /// the loop.
+    #[test]
+    fn filed_torsion_chord_replays_or_refuses() {
+        let mut n = chord_nerve(&[order2()]);
+        let _ = pivot_loop(
+            &mut n,
+            [0xca; 32],
+            &crate::network::nerve::Keyed::new(),
+            &crate::transducer::family::NoCrystal,
+            &mut crate::physics::Physics::default().stroke_n(8),
+        );
+        assert!(n.is_cauterized(), "filed finite torsion with empty remainder cauterizes");
+        let e = as_element_form_of_nerve(&n).expect("the filed nerve crystallizes");
+        assert_eq!(
+            crate::court::verdict::blind_replay(&e),
+            None,
+            "a filed torsion chord replays: the chord carries the holonomy"
+        );
+        let mut f = from_element_form(&e).expect("v2 tape");
+        let mag = e.magnitude();
+        let Some(ci) = f
+            .faces
+            .iter()
+            .position(|face| f.face_of(face.i, face.j) != face.g_ij)
+        else {
+            panic!("the filed form has a torsion chord");
+        };
+        f.faces[ci].g_ij = order4();
+        let bad = as_element_form_mag(&f, mag).expect("tampered chord");
+        assert_eq!(
+            crate::court::verdict::blind_replay(&bad),
+            Some(crate::court::verdict::REFUSE_FACE),
+            "a chord that does not carry the loop holonomy refuses the face"
+        );
+        let mut gone = from_element_form(&e).expect("v2 tape");
+        gone.torsion = Keyed::new();
+        let missing = as_element_form_mag(&gone, mag).expect("torsion stripped");
+        assert_eq!(
+            crate::court::verdict::blind_replay(&missing),
+            Some(crate::court::verdict::REFUSE_LOOP),
+            "a filed chord without its torsion entry refuses the loop"
+        );
+    }
+
     #[test]
     fn horizon_seeded_infinite_is_not_demanded() {
         let mut n = chord_nerve(&[infinite()]);
@@ -5037,7 +5095,7 @@ mod tests {
         let mut tampered = from_element_form(&e).expect("v2 tape");
         let crate::transducer::sentence::PivotBy::Word { face, .. } = &tampered.certificates[0].by;
         let fi = *face as usize;
-        tampered.faces[fi].g_ij = order2();
+        tampered.faces[fi].g_ij = q.clone();
         let bad = as_element_form_mag(&tampered, e.magnitude()).expect("tampered tape");
         assert_eq!(
             crate::court::verdict::blind_replay(&bad),
