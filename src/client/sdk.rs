@@ -851,6 +851,9 @@ pub struct Epigenome {
     /// Held words keyed by (chart, axis). Filled at atlas/dialect admit,
     /// emptied at remove/shed/retire. `on_axis` is one fiber read.
     axis_index: crate::transducer::sentence::AxisIndex,
+    /// Missing cited address → citing dialect sentences. Filled when
+    /// Withheld is banked; resolve_withheld reads this, never the dialect.
+    waiting_on: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
 }
 
 impl Epigenome {
@@ -955,16 +958,58 @@ impl Epigenome {
             .collect();
         let n = drop.len();
         for a in &drop {
-            if let Some(d) = self.dialect.get(a) {
-                let inv = crate::transducer::stalk::invariant_of(&d.sentence);
-                let words = crate::transducer::sentence::words_of_element(&d.sentence);
-                crate::transducer::sentence::retract_words(&mut self.axis_index, &inv, &words);
-            }
-            self.dialect_atlas.remove(a);
-            self.dialect.remove(a);
+            self.drop_dialect(a);
         }
         self.shed_n = self.shed_n.saturating_add(n as u64);
         n
+    }
+
+    fn wait_on(&mut self, missing: &[u8; 32], citer: [u8; 32]) {
+        if let Some(citers) = self.waiting_on.get_mut(missing) {
+            citers.insert(citer, ());
+            return;
+        }
+        let mut citers = crate::network::nerve::Keyed::new();
+        citers.insert(citer, ());
+        self.waiting_on.insert(*missing, citers);
+    }
+
+    fn retract_waiter(&mut self, missing: &[u8; 32], citer: &[u8; 32]) {
+        let empty = match self.waiting_on.get_mut(missing) {
+            Some(citers) => {
+                citers.remove(citer);
+                citers.is_empty()
+            }
+            None => return,
+        };
+        if empty {
+            self.waiting_on.remove(missing);
+        }
+    }
+
+    fn drop_dialect(&mut self, da: &[u8; 32]) {
+        let (inv, words, missing) = match self.dialect.get(da) {
+            Some(d) => (
+                crate::transducer::stalk::invariant_of(&d.sentence),
+                crate::transducer::sentence::words_of_element(&d.sentence),
+                if d.withheld {
+                    d.missing.clone()
+                } else {
+                    Vec::new()
+                },
+            ),
+            None => {
+                self.dialect_atlas.remove(da);
+                self.dialect.remove(da);
+                return;
+            }
+        };
+        crate::transducer::sentence::retract_words(&mut self.axis_index, &inv, &words);
+        for m in &missing {
+            self.retract_waiter(m, da);
+        }
+        self.dialect_atlas.remove(da);
+        self.dialect.remove(da);
     }
 
     pub fn stand_dialect(&mut self, sentence: Element, k: u64) {
@@ -1406,10 +1451,25 @@ impl Epigenome {
         if let Comprehension::Withheld { missing } = &heard {
             let missing = missing.clone();
             if let Some(da) = self.stand_dialect_at(e, k, now_tu) {
+                let old = self
+                    .dialect
+                    .get(&da)
+                    .map(|d| d.missing.clone())
+                    .unwrap_or_default();
+                for m in &old {
+                    self.retract_waiter(m, &da);
+                }
                 if let Some(d) = self.dialect.get_mut(&da) {
                     d.withheld = true;
-                    d.missing = missing;
+                    d.missing = missing.clone();
                 }
+                for m in &missing {
+                    self.wait_on(m, da);
+                }
+                eprintln!(
+                    "  form withheld waiting {:02x}{:02x}…",
+                    da[0], da[1]
+                );
             }
             return Some(heard);
         }
@@ -1417,13 +1477,7 @@ impl Epigenome {
         // dialect entry moves that entry into the genome, carrying its uses.
         if let Some(da) = self.same_vertex_in_dialect(&e) {
             let uses = self.dialect.get(&da).map(|d| d.uses).unwrap_or(1);
-            if let Some(d) = self.dialect.get(&da) {
-                let inv = crate::transducer::stalk::invariant_of(&d.sentence);
-                let words = crate::transducer::sentence::words_of_element(&d.sentence);
-                crate::transducer::sentence::retract_words(&mut self.axis_index, &inv, &words);
-            }
-            self.dialect_atlas.remove(&da);
-            self.dialect.remove(&da);
+            self.drop_dialect(&da);
             if let Some(i) = self.same_vertex_in_genome(&e) {
                 let _ = self.genome[i].merge_fibre(&e);
                 self.index.insert(addr, i);
@@ -1472,51 +1526,102 @@ impl Epigenome {
     }
 
     /// A cited tape that just arrived: withheld sentences naming it
-    /// re-comprehend. same_vertex under another address is the held form;
-    /// transition then regauge_overlap is that arm, not a first-found fibre.
+    /// re-comprehend. The waiting-on index is the read. Re-gauge applies
+    /// to the working copy that is comprehended, at the overlap face of
+    /// the citing glued vertex; the stored tape is not this copy.
     fn resolve_withheld(&mut self, arrived: &Element) {
         let addr = arrived.address();
-        let citing: Vec<[u8; 32]> = self
-            .dialect
-            .fiber(&crate::network::nerve::ROOT)
-            .filter(|(_, d)| d.withheld && d.missing.iter().any(|m| m == &addr))
-            .map(|(a, _)| *a)
-            .collect();
+        let citing: Vec<[u8; 32]> = match self.waiting_on.remove(&addr) {
+            Some(citers) => citers
+                .fiber(&crate::network::nerve::ROOT)
+                .map(|(k, _)| *k)
+                .collect(),
+            None => return,
+        };
         for sa in citing {
             let Some(sentence) = self.dialect.get(&sa).map(|d| d.sentence.clone()) else {
                 continue;
             };
-            if let Some(held_i) = self.same_vertex_in_genome(arrived) {
-                let held = self.genome[held_i].clone();
-                if held.address() != addr {
-                    if let (Some(mut form), Some(g)) = (
-                        crate::transducer::sentence::from_element_form(&sentence),
-                        crate::transducer::cech::transition(&held, arrived),
-                    ) {
-                        if let Some(theta) = crate::transducer::cech::rotor_of(&g).map(|r| r.spelled_word())
-                        {
-                            if let Some(fi) = form.faces.first().map(|_| 0u16) {
-                                form.regauge_overlap(&theta, fi);
-                            }
-                        }
+            let old_missing = self
+                .dialect
+                .get(&sa)
+                .map(|d| d.missing.clone())
+                .unwrap_or_default();
+            let heard = if let Some(mut form) =
+                crate::transducer::sentence::from_element_form(&sentence)
+            {
+                if let Some(fi) = form.overlap_face_of(&addr) {
+                    if let Some(theta) = self.theta_on_chart(&form, &addr, arrived) {
+                        form.regauge_overlap(&theta, fi);
                     }
                 }
-            }
-            match self.comprehend(&sentence) {
+                self.comprehend_form(&form)
+            } else {
+                self.comprehend(&sentence)
+            };
+            match heard {
                 Comprehension::Withheld { missing } => {
+                    for m in &old_missing {
+                        if m != &addr {
+                            self.retract_waiter(m, &sa);
+                        }
+                    }
                     if let Some(d) = self.dialect.get_mut(&sa) {
-                        d.missing = missing;
+                        d.missing = missing.clone();
+                    }
+                    for m in &missing {
+                        self.wait_on(m, sa);
                     }
                 }
                 Comprehension::Understood(_) | Comprehension::Admitted => {
+                    for m in &old_missing {
+                        if m != &addr {
+                            self.retract_waiter(m, &sa);
+                        }
+                    }
                     if let Some(d) = self.dialect.get_mut(&sa) {
                         d.withheld = false;
                         d.missing.clear();
                     }
+                    eprintln!(
+                        "  form withheld resolved {:02x}{:02x}…",
+                        sa[0], sa[1]
+                    );
                 }
                 _ => {}
             }
         }
+    }
+
+    #[cfg(test)]
+    fn waiting_on_len(&self, missing: &[u8; 32]) -> usize {
+        self.waiting_on.get(missing).map(|c| c.len()).unwrap_or(0)
+    }
+
+    /// θ for 24.2: a held word on the glued vertex's chart that is not the
+    /// arrived tape. Identity when the chart holds only the arrival.
+    fn theta_on_chart(
+        &self,
+        form: &crate::transducer::sentence::Form,
+        cited: &[u8; 32],
+        arrived: &Element,
+    ) -> Option<crate::transducer::alphabet::Word> {
+        use crate::transducer::sentence::Vertex;
+        let chart = form.vertices.iter().find_map(|v| match v {
+            Vertex::Glued { address, chart, .. } if address == cited => Some(chart.clone()),
+            _ => None,
+        })?;
+        for (a, _) in self.working_atlas().fiber(&chart) {
+            if a == *cited {
+                continue;
+            }
+            let Some(held) = self.working_word(&a) else {
+                continue;
+            };
+            let g = crate::transducer::cech::transition(held, arrived)?;
+            return crate::transducer::cech::rotor_of(&g).map(|r| r.spelled_word());
+        }
+        None
     }
 
     /// CRYSTALLIZE the genome for persistence — the permanent language only.
@@ -3026,6 +3131,91 @@ mod tests {
         assert!(
             epi.dialect.fiber(&crate::network::nerve::ROOT).any(|(_, d)| d.withheld),
             "the dialect holds the withheld sentence"
+        );
+    }
+
+    /// Waiting-on is keyed by the missing address; the overlap face of the
+    /// glued vertex is the re-gauge site, never face 0.
+    #[test]
+    fn withheld_waiting_on_resolves_at_the_overlap_face() {
+        use crate::transducer::alphabet::Word;
+        use crate::transducer::sentence::{as_element_form, Form, FormFace, Vertex};
+        let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+        let w = Word::from_letters(&[(q, false)]);
+        let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+        let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+        let word_vertex = |addr: [u8; 32]| Vertex::Word {
+            address: addr,
+            word: w.clone(),
+            rho: one.clone(),
+            placement: (zero.clone(), zero.clone()),
+            gauge: vec![(1, 2)],
+            class: crate::transducer::stalk::Invariant::default(),
+            contact: None,
+        };
+        let inner = {
+            let mut f = Form::default();
+            f.vertices.push(word_vertex([1u8; 32]));
+            f.faces.push(FormFace {
+                i: 0,
+                j: 1,
+                g_ij: f.face_of(0, 1),
+            });
+            f.loops = Form::loops_of(&f.faces, f.vertices.len());
+            f
+        };
+        let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner tape");
+        let inner_addr = inner_e.address();
+        let mut outer = Form::default();
+        outer.vertices.push(word_vertex([2u8; 32]));
+        outer.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            g_ij: outer.face_of(0, 1),
+        });
+        let gi = outer
+            .glue(&inner, inner_addr, Word::identity(), [1, 0, 0, 0])
+            .expect("glue");
+        outer.faces.push(FormFace {
+            i: 0,
+            j: gi,
+            g_ij: outer.face_of(0, gi),
+        });
+        outer.loops = Form::loops_of(&outer.faces, outer.vertices.len());
+        assert_eq!(
+            outer.overlap_face_of(&inner_addr),
+            Some(1),
+            "the glue's overlap is not face 0"
+        );
+        let e = as_element_form(&outer, [1, 0, 0, 0]).expect("outer tape");
+        let mut epi = Epigenome::new();
+        assert!(
+            matches!(epi.learn(&e.to_bytes()), Some(Comprehension::Withheld { .. })),
+            "learn banks the withheld sentence"
+        );
+        assert_eq!(
+            epi.waiting_on_len(&inner_addr),
+            1,
+            "waiting-on is keyed by the missing address"
+        );
+        assert_eq!(epi.genome_len(), 0, "withheld does not enter the genome");
+        assert!(
+            matches!(
+                epi.learn(&inner_e.to_bytes()),
+                Some(Comprehension::Understood(_) | Comprehension::Admitted)
+            ),
+            "the cited form is learned"
+        );
+        assert_eq!(
+            epi.waiting_on_len(&inner_addr),
+            0,
+            "the arrival consumes the waiting-on index"
+        );
+        assert!(
+            !epi.dialect
+                .fiber(&crate::network::nerve::ROOT)
+                .any(|(_, d)| d.withheld),
+            "the citing sentence is no longer withheld"
         );
     }
 
