@@ -1539,7 +1539,7 @@ impl Epigenome {
             {
                 if let Some(fi) = form.overlap_face_of(&addr) {
                     if let Some(theta) = self.theta_on_chart(&form, &addr, arrived) {
-                        form.regauge_overlap(&theta, fi);
+                        let _ = form.regauge_overlap(&theta, fi);
                     }
                 }
                 self.comprehend_form(&form)

@@ -1106,18 +1106,18 @@ impl Form {
     }
 
     /// Replace every face `g_ij` by `γ_j · g_ij · γ_i⁻¹`. Holonomies of
-    /// identity stay identity.
-    pub fn regauge(&mut self, gamma: &[Word]) {
+    /// identity stay identity. The gauge's length is the vertex count.
+    pub fn regauge(&mut self, gamma: &[Word]) -> Option<()> {
+        if gamma.len() != self.vertices.len() {
+            return None;
+        }
         for f in &mut self.faces {
-            let Some(gi) = gamma.get(f.i as usize) else {
-                continue;
-            };
-            let Some(gj) = gamma.get(f.j as usize) else {
-                continue;
-            };
+            let gi = gamma.get(f.i as usize)?;
+            let gj = gamma.get(f.j as usize)?;
             f.g_ij = gj.compose(&f.g_ij.compose(&gi.inverse())).normal_form();
         }
         self.loops = Self::loops_of(&self.faces, self.vertices.len());
+        Some(())
     }
 
     /// The named face incident on a glued vertex: the overlap of that
@@ -1134,7 +1134,7 @@ impl Form {
 
     /// The extension θ_A of 13.4: θ on one vertex of the overlap face,
     /// then the usual tree gauge. The stored tape is not this working copy.
-    pub fn regauge_overlap(&mut self, theta: &Word, face: u16) {
+    pub fn regauge_overlap(&mut self, theta: &Word, face: u16) -> Option<()> {
         let n = self.vertices.len();
         let mut gamma = vec![Word::identity(); n];
         if let Some(f) = self.faces.get(face as usize) {
@@ -1142,57 +1142,57 @@ impl Form {
                 gamma[f.j as usize] = theta.clone();
             }
         }
-        self.regauge(&gamma);
+        self.regauge(&gamma)
     }
 
-    /// Tree walk (12.2): γ at the Frame is identity; γ_j = γ_i · g_ij⁻¹
-    /// along a spanning forest of the named faces.
+    /// Spanning forest (12.2): each component is rooted at its least vertex
+    /// index with γ = 1; γ_j = γ_i · g_ij⁻¹ along tree edges. None only when
+    /// a face names a vertex outside the form.
     pub fn solve_coboundary(&self) -> Option<Vec<Word>> {
         let n = self.vertices.len();
         if n == 0 {
             return None;
         }
-        // Frame is vertex 0 by construction.
-        let root = 0usize;
-        let mut gamma: Vec<Option<Word>> = vec![None; n];
-        gamma[root] = Some(Word::identity());
         let mut adj: Vec<Vec<(usize, usize, bool)>> = vec![Vec::new(); n];
         for (fi, f) in self.faces.iter().enumerate() {
             let (i, j) = (f.i as usize, f.j as usize);
             if i >= n || j >= n {
-                continue;
+                return None;
             }
             adj[i].push((j, fi, true));
             adj[j].push((i, fi, false));
         }
-        let mut q = vec![root];
-        let mut qi = 0usize;
-        while qi < q.len() {
-            let u = q[qi];
-            qi += 1;
-            let gu = gamma[u].clone()?;
-            for &(v, fi, u_is_i) in &adj[u] {
-                let f = &self.faces[fi];
-                let gv = if u_is_i {
-                    gu.compose(&f.g_ij.inverse()).normal_form()
-                } else {
-                    gu.compose(&f.g_ij).normal_form()
-                };
-                match &gamma[v] {
-                    None => {
-                        gamma[v] = Some(gv);
-                        q.push(v);
+        let mut gamma: Vec<Option<Word>> = vec![None; n];
+        for root in 0..n {
+            if gamma[root].is_some() {
+                continue;
+            }
+            gamma[root] = Some(Word::identity());
+            let mut q = vec![root];
+            let mut qi = 0usize;
+            while qi < q.len() {
+                let u = q[qi];
+                qi += 1;
+                let gu = gamma[u].as_ref()?.clone();
+                for &(v, fi, u_is_i) in &adj[u] {
+                    let f = &self.faces[fi];
+                    let gv = if u_is_i {
+                        gu.compose(&f.g_ij.inverse()).normal_form()
+                    } else {
+                        gu.compose(&f.g_ij).normal_form()
+                    };
+                    match &gamma[v] {
+                        None => {
+                            gamma[v] = Some(gv);
+                            q.push(v);
+                        }
+                        Some(held) if held != &gv => {}
+                        _ => {}
                     }
-                    Some(held) if held != &gv => {}
-                    _ => {}
                 }
             }
         }
-        let mut out = Vec::with_capacity(n);
-        for g in gamma {
-            out.push(g?);
-        }
-        Some(out)
+        Some(gamma.into_iter().map(|g| g.expect("each vertex roots a tree")).collect())
     }
 
     /// Replace vertex `of` by `by` read in `of`'s frame (3.2). `of`'s own
@@ -4288,7 +4288,7 @@ mod tests {
     }
 
     #[test]
-    fn solve_coboundary_does_not_invent_identity_on_an_unreached_vertex() {
+    fn solve_coboundary_is_a_spanning_forest() {
         let mut f = Form::default();
         f.vertices.push(Vertex::Word {
             address: [1u8; 32],
@@ -4313,10 +4313,20 @@ mod tests {
             j: 1,
             g_ij: Word::identity(),
         });
+        let gamma = f.solve_coboundary().expect("an isolated vertex roots its own tree");
+        assert_eq!(gamma.len(), 3);
+        assert!(gamma[0].is_identity(), "the least index of a component is γ = 1");
+        assert!(gamma[2].is_identity(), "vertex 2 is its own root");
+        f.faces.push(FormFace {
+            i: 0,
+            j: 9,
+            g_ij: Word::identity(),
+        });
         assert!(
             f.solve_coboundary().is_none(),
-            "vertex 2 is off the tree; identity is not a gauge"
+            "a face that names a vertex outside the form refuses"
         );
+        assert!(f.regauge(&[Word::identity()]).is_none(), "a short gauge refuses");
     }
 
     /// The bundle's agreed shift is meaning: two translations of one linear

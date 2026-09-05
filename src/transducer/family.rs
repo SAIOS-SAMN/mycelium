@@ -1876,7 +1876,7 @@ pub fn extract_rule_with(
     // 7. Coherence: tree gauge, else hold the loops.
     if !form.coheres() {
         if let Some(gamma) = form.solve_coboundary() {
-            form.regauge(&gamma);
+            let _ = form.regauge(&gamma);
         }
     }
     form.depth = form.depth_of();
