@@ -1603,3 +1603,486 @@ descent statement only, and degree 2 is read on the plane or recorded as
 remainder. No consensus, voting, or scoring: exactness is the reason two
 nodes agree, and `REFUSE_MV_INEXACT` is the only thing that happens when
 they do not.
+
+---
+
+# Part VI — Leray acyclicity and naturality
+
+Part V computes the classes of a union from its pieces. Part VI answers
+the two questions that decide whether those classes mean anything:
+
+1. **Leray.** The Čech complex of `cech.rs` has the hyphae as vertices.
+   Its classes are classes *of that cover*. When are they classes of the
+   language itself, independent of which hyphae hold which charts?
+2. **Naturality.** The system constantly changes the objects the classes
+   live on: a hypha joins or leaves a chart, a chart is refined, a form is
+   re-gauged, a mind pulls a hypha's language into its own copy. When do
+   classes carry across those changes, and how is a carried class checked?
+
+Both answers are finite. Leray's condition is decided by a meet, a
+component count, and the tree walk of §32.2. Naturality is a set of
+commutation identities between word products, each of which is a test.
+
+## 48. What Leray's theorem says here
+
+### 48.1 Two cohomologies
+
+Fix a chart `inv` and a lane. The **base** is the language over `inv`: the
+ruled forms on `inv` and its neighbouring charts, with the faces between
+them, as a cell complex with the local system of §39.1 (sensor plane) or
+the rotor coefficient (§39.2). Its cohomology `H^k(base)` is a property of
+the tapes alone.
+
+The **cover** is `𝒰 = {U_X : X a hypha}`, where `U_X` is the region of the
+base that hypha `X` holds ruled sections over (its ruled cover, `Cover`
+fibers on the lane). Its **nerve** is the Čech complex of `cech.rs`:
+vertices `X`, a k-cell for each `k+1` hyphae whose regions meet with
+volume, coefficient the transition between their sections. Its cohomology
+`H^k(N(𝒰); sections)` is what `Complex::class` and `cocycle_at` record.
+
+### 48.2 The theorem, finite form
+
+> If every finite intersection `U_{X₀} ∩ … ∩ U_{X_k}` is **acyclic** for the
+> coefficient system (§49), then `H^k(N(𝒰); sections) ≅ H^k(base)` for every
+> `k`, and the isomorphism is induced by restricting a global cochain to
+> each hypha's region.
+
+Proof, which is the only one the implementor needs because it is the
+algorithm: induction on the number of hyphae. One hypha: its region is
+acyclic, so both sides are the coefficient's constants in degree 0 and
+trivial above. Adding hypha `X_N`: Part V's sequence for `A = U_{X₁} ∪ … ∪
+U_{X_{N−1}}` and `B = U_{X_N}`; the overlap `A ∩ B = ⋃_i (U_{X_i} ∩ U_{X_N})`
+is a union of acyclic sets whose own nerve is the **link** of `X_N` in
+`N(𝒰)`, and by the induction hypothesis applied to that smaller cover its
+cohomology is the link's Čech cohomology. The two Mayer–Vietoris sequences
+(base and nerve) then agree term by term, and the five lemma (a diagram
+chase over finite groups and pointed sets) gives the isomorphism. This is
+exactly the climb `Complex::coboundary_on_link` performs when a vertex is
+added: the theorem says that climb computes the base's classes if and only
+if every overlap it climbs over is acyclic.
+
+### 48.3 The contrapositive, which is the operational content
+
+When an overlap is **not** acyclic, the nerve's classes can differ from the
+base's in either direction:
+
+- a **disconnected** overlap (`H⁰(U_X ∩ U_Y)` larger than the constants)
+  makes the nerve's edge `(X, Y)` carry one coefficient where the base has
+  several independent ones; a dialect on one component is hidden by
+  consilience on another, or a consilience is reported as dialect because
+  two components were compared as one;
+- a **cyclic** overlap (`H¹(U_X ∩ U_Y) ≠ 1`, a loop of charts inside the
+  shared region whose holonomy is not identity within `X`'s own language)
+  puts a class of `X`'s own into the edge `(X, Y)`: the nerve reports a
+  cross-hypha dialect that is in fact an intra-hypha one, and its value
+  depends on which spanning tree the tree walk chose.
+
+Such classes are artefacts of the cover. They must never enter
+`cocycle_at`, never mint, never refine the base. §50 removes them by making
+the cover good, and only then does Part V run.
+
+## 49. Acyclicity, decided
+
+### 49.1 The overlap as a complex
+
+For hyphae `X`, `Y` on lane `l`:
+
+- `M = meet(charts_l(X), charts_l(Y))`, the charts both hold ruled
+  sections on (`Keyed::meet`, §45; `charts_l(X)` is the keyed set of
+  charts `X` holds on lane `l`, §55).
+- For each hypha `Z ∈ {X, Y}` and each chart `c ∈ M`, `Z`'s representative
+  section on `c`: the address `rep_Z(c)` and word `w_Z(c)` that
+  `glue_fetched` already selects (`self_rep`, the first ruled address on
+  `inv` with a held word) and stores as `Section{addr, gamma}`.
+- For each ruled form `F` of `Z` with vertices `v₁` on chart `c₁ ∈ M` and
+  `v₂` on chart `c₂ ∈ M`, `c₁ ≠ c₂`, the **induced chart face**
+  `τ_F = p₂⁻¹ · f₁₂ · p₁`, where `f₁₂ = F.face_of(v₁, v₂)` and `p_i` is the
+  placement relating `v_i`'s word to `w_Z(c_i)` (`Ruling::Attached`'s `g`,
+  identity when `v_i` is the representative itself). Two forms between the
+  same charts are two faces; the overlap's chart graph is a multigraph.
+
+`U_X ∩ U_Y` is this chart graph with `Z`'s induced faces, one copy per
+hypha. It is a subcomplex of the base by construction.
+
+### 49.2 The three conditions
+
+The overlap is acyclic for the coefficient system iff
+
+- **(A0) connected**: the chart graph on `M` has one component. Components
+  are found by keyed union-find over the induced faces (a `Keyed<[u8;32]>`
+  parent map on chart keys), cost linear in faces.
+- **(A1) flat within each hypha**: for `Z ∈ {X, Y}`, the tree walk of §32.2
+  on `Z`'s induced faces over `M` closes every chord: every loop of charts
+  inside the shared region has identity holonomy in `Z`'s own language.
+  Equivalently `H¹(U_X ∩ U_Y; Z's sections) = 1`.
+- **(A2) no independent curvature within a hypha**: vacuous. Within one
+  hypha every 2-cochain on the overlap is `δ¹` of that hypha's own
+  connection, so `δ²` of it is identity by §30.4. Degree-2 classes arise
+  only across hyphae (§30.3), which the nerve handles, not the overlap.
+
+(A0) and (A1) are decided with the two operations already specified, and
+their cost is the size of the overlap. Both are checked by each hypha for
+itself on its own tapes; for the peer's side, the hypha checks (A1) on the
+tapes it has fetched (`fetch_have`, `serve_ruled`) and treats an
+unfetched region as not yet known to be good (§50.3).
+
+## 50. Making the cover good
+
+### 50.1 (A0) fails: cells per component
+
+A disconnected overlap is handled as Leray requires, by treating each
+component as its own overlap. The nerve's edge `(X, Y)` becomes one edge
+per component, keyed by `(sorted {X, Y}, component_key)` where
+`component_key` is the least chart key in the component (canonical, from
+the meet, no choice). Every operation of Part V runs per component:
+difference, connecting image, descent. A degree-`k` cell of the nerve is
+likewise keyed by its component of the `k+1`-fold overlap. This is the
+Čech complex of the cover **by components**, whose overlaps are connected
+by construction, and it is the standard resolution of the disconnected
+case.
+
+### 50.2 (A1) fails: refine the cover, never the base
+
+A cyclic overlap means hypha `Z` holds, over the shared region, two ruled
+forms between the same charts that are not gauge-related, or a loop of
+charts with non-identity holonomy: an **intra-hypha dialect** on that
+region. Refining the base (`refine_chart`) does not help: the base's
+topology is unchanged and the overlap region is the same region. What must
+shrink is the cover element, and Leray's remedy is to make the overlap
+smaller until it is acyclic.
+
+Deterministic rule: let the failing chord in `Z`'s tree walk join charts
+`c, c'`. The chart of the pair that `Z` is **not** the home of
+(`nerve::home`, 788, which is total and deterministic) is retracted from
+`Z`'s ruled cover for that lane (`Cover::retract`, 687); `Z`'s sections on
+that chart become attached copies (`Ruling::Attached` to the home's
+section), not Čech sections. If `Z` is the home of both, the chart with
+the greater key is retracted and rehomed to `Y` (`Cover::rehome`, 700).
+Retracting one chart of a chord cuts that loop; the check is rerun and the
+rule reapplied until (A1) holds, which terminates because each step removes
+a chart from a finite set. The intra-hypha class itself is `Z`'s own
+dialect: it is recorded under `cocycle_at` with `a = b = Z` **only after**
+`push_cocycle` is amended to accept `a == b` for this case (it currently
+returns early), and `Z`'s court resolves it as any dialect (a translation
+word, or a base refinement on `Z`'s own good cover).
+
+### 50.3 Order of operations, amending §41
+
+Part V's computation gains a step 0 and its step 7 is split:
+
+- **step 0, goodness**: compute `M`, components (§50.1), and (A1) for both
+  hyphae on every component. While the peer's tapes for a component are
+  not fetched, the component is `Pending` and no class is recorded for it;
+  the glue returns `Glue::Dialect` with reason `"overlap goodness pending"`
+  and the address stays docketed, as a missing citation does (§14).
+- steps 1–6 run per good component.
+- **step 7a**: a degree-2 class on a good component is a class of the
+  language: record it and refine the **base** (`refine_chart`) along the
+  overlap loop, as Part V says.
+- **step 7b**: a degree-2 class found before goodness was established is an
+  artefact: discard it (it was never recorded), make the cover good by
+  §50.1–§50.2, and recompute.
+
+This is the only place in the specification where a computed class is
+discarded, and it is discarded because it is not a class of anything: it
+is a property of a spanning tree.
+
+## 51. Naturality: the maps and what commutes
+
+A **map of data** `φ` is one of the following. Each induces a map `φ*` on
+cochains defined by reading the cochain through `φ`, and each satisfies
+`φ* δ = δ φ*` because δ is a product over a cell's faces and `φ` sends a
+cell's faces to the image cell's faces. Hence each induces a map on `H^k`,
+and each makes the Mayer–Vietoris ladder commute, connecting map included.
+
+| map | induced on cochains | commutation to test |
+|---|---|---|
+| **inclusion** `A ⊆ A'` of complexes (a form into its citer, a hypha's region into a larger union) | restriction `res` | `res δ = δ res`; `res ∂ = ∂ res` on the ladder for `(A,B) ⊆ (A',B')` |
+| **re-gauging** by `γ` (§30.1) | `g ↦ δ⁰γ · g`, `ω ↦ γ·ω·γ⁻¹` on loops | `δ¹(δ⁰γ·g) = γ·δ¹g·γ⁻¹`; MV outcomes (§45 `MayerVietoris`) unchanged up to conjugation of `theta` and `holonomy` |
+| **change of basepoint** (§3.2) | conjugation of every loop value at the new basepoint by the tree path | class keys (§52) unchanged |
+| **refinement of the cover** (admit / retract / rehome of a hypha; splitting by components) | the refinement map `r : N(𝒱) → N(𝒰)` sending each finer cell to the coarser cell containing it; `r*` reads the coarse coefficient on the fine cell | for good covers `r*` is an isomorphism on `H^k` (§48.2); class keys unchanged; `cocycle_at` representatives change, invariants do not |
+| **refinement of the base** (`refine_chart`: a chart splits into children by a coordinate) | restriction of sections and faces to each child, along the inclusion of the child's forms | each class on the parent is **carried** (same key on the child whose forms support the loop) or **discharged** (the loop's vertices fall into different children; the class becomes a face between children) — §53 |
+| **pullback to a mind** (`Epigenome::comprehend`, `learn`) | the mind's copy of a ruled form and its faces | the mind's `coheres`, `regauge_overlap` agree with the court's `replay_form` on the same tapes; the memo (§14) relies on it |
+
+The commutation identities are finite products and are tests (§56). A
+violation is not a class; it is inconsistent data, refused as
+`REFUSE_NOT_NATURAL`.
+
+## 52. Invariant class keys
+
+Naturality is only checkable if a class has a key that does not depend on
+the representative. Under every map of §51 a loop's holonomy changes by
+conjugation and by positive scaling; the key must be invariant under both.
+
+### 52.1 Sensor plane: conjugacy in the plane form
+
+With `(s, r)` as in §28.1 and `r` the letter-exponent vector
+(`PlaneForm.rot`, `PlaneForm.parity`; the `(u, m5, m13)` of §28.1 are its
+per-plane sums), conjugation acts as:
+
+```
+(0, r') · (0, r) · (0, r')⁻¹  =  (0, r)
+(1, r'') · (0, r) · (1, r'')⁻¹ =  (0, −r)
+(0, r') · (1, r) · (0, r')⁻¹  =  (1, r + 2r')
+(1, r'') · (1, r) · (1, r'')⁻¹ =  (1, 2r'' − r)
+```
+
+(using `(1, r)⁻¹ = (1, r)`, §28.1). Therefore:
+
+- for `s = 0` the conjugacy class is `{r, −r}`; canonical representative:
+  the one of `r`, `−r` whose first nonzero component is positive; `u` is
+  taken in `Z/4` with `−u ≡ 4 − u`;
+- for `s = 1` the conjugacy class is `r mod 2` componentwise; canonical
+  representative: each component reduced to `{0, 1}`.
+
+`PlaneForm::conjugacy_key() -> [u8; 32]` **new** hashes `(s, canonical r)`.
+Two plane forms have equal `conjugacy_key` iff they are conjugate, by the
+four lines above.
+
+### 52.2 Full chart: conjugacy invariants of a rotor
+
+For a rotor `R` with coefficients `c[0..16]` by blade mask
+(`Rotor::coeff`, mask `0` the scalar, mask `15` the pseudoscalar
+`e0e1e2e3`) and weight `w = R R̃` (a positive rational, `Rotor::weight`):
+
+- the scalar part `a = c[0]` is invariant under conjugation by any
+  invertible element (`⟨R X R⁻¹⟩₀ = ⟨X⟩₀`);
+- the pseudoscalar part `p = c[15]` is invariant under conjugation by
+  rotors, because `e0e1e2e3` is central in the even subalgebra of Cl(4,0);
+- both scale linearly with `R`, so `a²/w`, `p²/w`, `sign(a)`, `sign(p)`
+  are invariant under conjugation and positive scaling.
+
+These four are a complete invariant: the even subalgebra splits by the
+central idempotents `(1 ± e0e1e2e3)/2` into two quaternion algebras, the
+rotor's two components have scalar parts `(a ± p)`, and a conjugacy class
+in each factor is determined by its scalar part relative to its weight.
+
+`Rotor::class_key() -> [u8; 32]` **new** hashes `(a²/w, p²/w, sign a,
+sign p)` as exact rationals and two signs. It is used off the sensor plane
+and agrees with `conjugacy_key` on the plane (a test).
+
+### 52.3 Key of a class
+
+A degree-1 class is a loop with a holonomy. Its **class key** is the hash
+of the loop's canonical cell key (sorted vertex keys, as `cell_key` does)
+and the holonomy's `conjugacy_key` (plane) or `class_key` (rotor). A
+degree-2 class is keyed by its 3-cell's key and its coefficient's
+`class_key`. This replaces §36's `Word::class_key = key of the normal
+form`, which is not conjugation-invariant; `Word::class_key` is defined as
+the plane `conjugacy_key` of its plane form.
+
+Equal keys are necessary for two classes to be the same; sufficiency for a
+single loop follows from §52.1–§52.2, and for a system of loops the exact
+test remains `solve_gauge_between` (simultaneous conjugation, §45).
+
+## 53. Naturality under refinement of the base
+
+`/opt/mycelium-v0.1.0/src/server/cognition.rs::refine_chart` today
+clones the chart's `Complex` into both children and rekeys `cocycle_at`
+entries from the parent to the two children (`rekey_cocycles`). Both are
+naturality violations: a class is asserted on a child whose forms may not
+support its loop, and a class is asserted with a coefficient that was
+never recomputed on the child's cells.
+
+Required behaviour:
+
+1. After `split_stratum` has assigned every ruled address on `inv` to a
+   child, **restrict** the complex: for each child, the sections whose
+   `addr` fell into that child, and the cells all of whose vertices'
+   sections did. Cells straddling children are neither; they become faces
+   between the children's sections (the axis that was opened) and are
+   written as degree-1 cells on the parent's *successor* complex over the
+   pair of children. Nothing is cloned.
+2. For each recorded class on `inv` (each `cocycle_at` entry and each
+   `Fill::Class` cell): recompute its loop on the child that holds all of
+   its vertices. If one child holds them all, recompute the holonomy from
+   the same tapes; its `class_key` must equal the parent's; write the
+   entry under the child (`court class carried`). If the loop's vertices
+   are split across children, the loop no longer exists as a loop; the
+   class is **discharged** (`court class discharged by refinement`) and its
+   holonomy becomes the face between the children's sections it separated.
+   That the refining coordinate was the class key guarantees at least the
+   refining class is discharged; a class that is neither carried nor
+   discharged with equal key is `REFUSE_NOT_NATURAL` and the refinement is
+   rolled back (the split is not committed; `basis_gen` not incremented).
+3. Deflation bookkeeping (`split_deflation`) is unchanged.
+
+## 54. Naturality under change of cover
+
+When a hypha is admitted to or retracted from a chart (`Cover::admit`,
+`retract`, `rehome`), the nerve changes by a vertex and its link. For a
+good cover, §48.2 says the base's classes do not change; therefore the set
+of class keys recorded for the chart must not change either, only their
+representatives (`cocycle_at` entries keyed by hypha pair). Required:
+
+- `cocycle_at` values carry the invariant `class_key` beside the
+  representative versor; the ledger (MYC2) persists the key with the
+  representative.
+- On a cover change, for each class key on the chart, a representative
+  must still exist among the remaining pairs; when the retracted hypha was
+  one side of the only representative, the class is re-represented on
+  another pair of the same component by the tree walk (its key is
+  unchanged), or, if no other pair spans the loop, the class was a
+  property of that hypha's presence and the cover was not good: §50
+  applies retroactively (`court class orphaned` and the goodness check
+  rerun).
+- Admitting a hypha whose region makes an overlap non-acyclic triggers
+  §50 before any class is recorded.
+
+## 55. Implementation binding for Part VI
+
+`/opt/mycelium-v0.1.0/src/transducer/alphabet.rs`
+
+```rust
+impl PlaneForm { pub fn conjugacy_key(&self) -> [u8; 32]; }            // new, §52.1
+impl Rotor     { pub fn weight(&self) -> Option<Q>;                     // exists (private today): make pub
+                 pub fn class_key(&self) -> [u8; 32]; }                 // new, §52.2
+impl Word      { pub fn class_key(&self) -> [u8; 32]; }                 // §36, redefined = self.form().conjugacy_key()
+```
+
+`/opt/mycelium-v0.1.0/src/network/nerve.rs`
+
+```rust
+impl Cover {
+    /// Charts one hypha holds on one lane, as a keyed set (from `held`).
+    pub fn charts_of(&self, lane: u8, hypha: &[u8; 32]) -> Keyed<()>;    // new
+}
+```
+
+`/opt/mycelium-v0.1.0/src/transducer/cech.rs`
+
+```rust
+pub struct ChartGraph {                                                  // new, §49.1
+    pub charts: Keyed<()>,                                               // M
+    pub faces: Vec<([u8; 32], [u8; 32], Rotor)>,                          // induced chart faces τ_F of one hypha
+}
+pub enum Goodness {                                                      // new, §49.2
+    Good { component: [u8; 32] },
+    Disconnected { components: Vec<[u8; 32]> },                          // least chart key per component
+    Cyclic { hypha: [u8; 32], chord: ([u8; 32], [u8; 32]), holonomy: Rotor },
+    Pending { component: [u8; 32] },                                     // peer tapes not fetched
+}
+pub fn goodness(x: &ChartGraph, y: &ChartGraph) -> Vec<Goodness>;        // new: meet, union-find, tree walk per hypha, per component
+fn cell_key(verts: &[[u8; 32]], component: Option<&[u8; 32]>) -> [u8; 32];   // component appended when Some (§50.1)
+impl Complex {
+    pub fn set_edge_in(&mut self, a: [u8; 32], b: [u8; 32], component: [u8; 32], g: Rotor, volume: [u64; 4]);   // new
+    pub fn restrict(&self, sections_in: &Keyed<()>) -> Complex;          // new, §53 step 1
+    pub fn straddling(&self, left: &Keyed<()>, right: &Keyed<()>) -> Vec<[u8; 32]>;   // new: cells with vertices on both sides
+}
+```
+
+`/opt/mycelium-v0.1.0/src/server/cognition.rs`
+
+- `cocycle_at: Keyed<(Versor, u64, [u8;32], [u8;32])>` (754) gains a fifth
+  field, the `class_key`; `snapshot`/`restore` (4962, 5332) and the MYC2
+  ledger record it.
+- `push_cocycle` (990): accept `a == b` for intra-hypha classes (§50.2);
+  compare by `class_key` before `old == g`.
+- `glue_fetched` (2651): step 0 of §50.3 before `set_edge`; edges via
+  `set_edge_in` with the component; `Pending` → `Glue::Dialect` with reason
+  `"overlap goodness pending"`; `Cyclic` → §50.2 on the cover passed in,
+  then rerun; degree-2 classes recorded only from good components.
+- `refine_chart` (§53): replace the two `c.clone()` inserts with
+  `restrict` per child and `straddling` written as degree-1 cells between
+  the children; replace `rekey_cocycles` by recompute-and-carry or
+  discharge; roll back on `REFUSE_NOT_NATURAL`.
+- `apply_verdict` / cover changes (§54): on `retract`/`rehome`, re-represent
+  or orphan each class key on the chart.
+
+`/opt/mycelium-v0.1.0/src/court/verdict.rs`
+
+```rust
+pub const REFUSE_OVERLAP_CYCLIC: &str = "translation across a non-acyclic overlap";
+pub const REFUSE_NOT_NATURAL: &str = "class key changes under restriction";
+```
+
+`REFUSE_OVERLAP_CYCLIC` is returned by `blind_replay`'s translation arm
+when the two ruled sections a translation relates lie on an overlap whose
+fetched tapes fail (A1) for either hypha: the translation may be right, but
+it is not yet a statement about the language, and the court does not rule
+on artefacts. `REFUSE_NOT_NATURAL` is returned by the base-refinement
+path (§53 step 2) and by the court when a spoken class's key differs from
+its recomputation on the cited tapes.
+
+Log lines (extend §26.2):
+
+```
+  court goodness chart {inv} peer {peer}: good component {ckey} charts {n}
+  court goodness chart {inv} peer {peer}: {k} components
+  court goodness chart {inv} peer {peer}: cyclic in {hypha} chord {c}-{c'} holonomy {hkey}
+  court goodness chart {inv} peer {peer}: pending component {ckey}
+  court cover retract {hypha} chart {c} (acyclicity) rehome {home}
+  court class carried {class_key} {inv} → {child}
+  court class discharged by refinement {class_key} {inv} → face {child_a}|{child_b}
+  court class orphaned {class_key} {inv} after retract {hypha}
+  court form refused {addr}: translation across a non-acyclic overlap
+  court form refused {addr}: class key changes under restriction
+```
+
+## 56. Tests and traces for Part VI
+
+Tests (single foreground `cargo test --release`):
+
+- `alphabet::tests::plane_conjugacy_four_lines`: the four conjugation
+  formulas of §52.1 on random plane forms.
+- `alphabet::tests::conjugacy_key_iff_conjugate`: equal keys exactly for
+  conjugate plane forms, including `s = 1` pairs differing by `2r'`.
+- `alphabet::tests::rotor_class_key_invariant`: `class_key(R) ==
+  class_key(S R S⁻¹) == class_key(λR)` for rotors `S` built from letters
+  and positive rational `λ`; and `class_key` agrees with `conjugacy_key`
+  for rotors of sensor-plane words.
+- `cech::tests::goodness_connected_flat_is_good`.
+- `cech::tests::goodness_two_components_split_edges`: a disconnected
+  overlap yields two `set_edge_in` cells; a dialect on one component does
+  not touch the other's fill.
+- `cech::tests::goodness_cyclic_reports_chord`: an intra-hypha loop with
+  non-identity holonomy is reported with the failing chord and never
+  written as a cross-hypha class.
+- `cech::tests::leray_classes_independent_of_cover`: the same base
+  language distributed over 2, 3, and 4 hyphae with good overlaps gives the
+  same set of class keys.
+- `cech::tests::leray_artefact_disappears_when_cover_made_good`: a class
+  that appears on a cyclic overlap is absent after §50.2's retraction.
+- `cech::tests::naturality_restriction_commutes_with_delta`.
+- `cech::tests::naturality_mv_ladder_commutes`: for `(A,B) ⊆ (A',B')`,
+  `res ∘ ∂ = ∂ ∘ res` on constructed examples; and MV outcomes under
+  re-gauging differ only by conjugation (equal class keys).
+- `cognition::tests::refine_carries_or_discharges_every_class`: after
+  `refine_chart`, every parent class key appears as carried on exactly one
+  child or as discharged with a face between children; no key is lost; no
+  complex is cloned (cell counts of children sum to the parent's minus
+  straddling cells).
+- `cognition::tests::refine_rolls_back_on_not_natural`: a tampered
+  `cocycle_at` value causes rollback, `basis_gen` unchanged.
+- `cognition::tests::retract_rerepresents_or_orphans`.
+- `verdict::tests::translation_across_cyclic_overlap_refused`.
+
+Cold-boot traces (added to §21):
+
+- Three hyphae, one chart, connected good overlaps, one section each:
+  `court goodness … good component` on every pair, then the traces of §46
+  unchanged.
+- Two hyphae whose shared region has two components with a dialect on one:
+  `court goodness … 2 components`, one `class1` line naming that
+  component's key, and `one section` for the other; the ledger shows one
+  class.
+- One hypha holding two non-gauge-related ruled forms between two shared
+  charts: `court goodness … cyclic in {hypha}`, `court cover retract …
+  rehome …`, then `good component`; no `class1` line for the pair; one
+  intra-hypha `cocycle_at` entry with `a == b`.
+- A base refinement on a chart carrying two classes, one on the refining
+  axis: exactly one `court class discharged by refinement` and one `court
+  class carried`, cell counts as in the test.
+- A hypha retracted from a chart it shared with two others: every class key
+  on the chart appears in a `carried`-equivalent representative or a
+  `court class orphaned` line followed by a goodness rerun.
+
+## 57. What Part VI does not use
+
+No spectral sequence: Leray's theorem is stated and proved for finite good
+covers by Mayer–Vietoris induction along the link, which is the existing
+climb. No homotopy equivalence beyond acyclicity itself, which is decided
+by a component count and a tree walk. No metric on classes: a class key is
+an exact hash of conjugation invariants that are rationals and signs. No
+approximation of "good enough" covers: an overlap is good or the cover is
+changed until it is, and every retraction is decided by `home`.
