@@ -595,10 +595,13 @@ pub fn deconstruct_on<'a>(
 
 // ── a sentence is a nerve of germs ──────────────────────────────────────────
 
-use super::alphabet::{self, Rotor, Word};
+use super::alphabet::{self, Order, Rotor, Word};
 use super::cech::{self, Complex, Fill, Section};
 use super::element::{affine_of, from_connection, GERM_DIM};
 use super::peel::ShellKind;
+use super::stalk::Standing;
+use crate::network::nerve::Keyed;
+use crate::physics::Budget;
 
 /// One germ of a sentence: a body the family carried, spelled.
 /// Source or target may be absent: a created body has no source, an
@@ -821,11 +824,18 @@ fn cycle_holonomy(faces: &[Face], adj: &[Vec<(usize, usize)>], path: &[usize], c
         }
     }
     if let (Some(&last), Some(&first)) = (path.last(), path.first()) {
-        if last != first {
-            if chord.i == last && chord.j == first {
-                w = w.compose(&chord.g_ij);
-            } else {
-                w = w.compose(&chord.g_ij.inverse());
+        let dst = if last == first {
+            path.get(path.len().saturating_sub(2)).copied()
+        } else {
+            Some(last)
+        };
+        if let Some(dst) = dst {
+            if dst != first {
+                if chord.i == dst && chord.j == first {
+                    w = w.compose(&chord.g_ij);
+                } else {
+                    w = w.compose(&chord.g_ij.inverse());
+                }
             }
         }
     }
@@ -1500,6 +1510,168 @@ pub fn apply_gauge(n: &mut Nerve, gamma: &[Word]) {
         }
     }
     *n = assemble(std::mem::take(&mut n.germs), std::mem::take(&mut n.remainder));
+}
+
+/// One snap of the twist loop (A16): a finite chord closed, torsion filed
+/// or left open, or an infinite class spoken as a demand.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Snap {
+    Closed { chord: usize, order: u32 },
+    TorsionFiled { chord: usize, ell: u32 },
+    TorsionOpen { chord: usize },
+    Demand { chord: usize, key: [u8; 32] },
+}
+
+fn apply_cochain_gauge(n: &mut Nerve, gamma: &[Word]) {
+    for f in &mut n.faces {
+        if f.i >= gamma.len() || f.j >= gamma.len() {
+            continue;
+        }
+        f.g_ij = gamma[f.j]
+            .compose(&f.g_ij)
+            .compose(&gamma[f.i].inverse())
+            .normal_form();
+    }
+    n.cycles = independent_cycles(n.germs.len(), &n.faces);
+}
+
+fn try_close_chord(n: &mut Nerve, idx: usize) -> bool {
+    let mut edges = Vec::new();
+    for f in &n.faces {
+        if !f.spelled {
+            continue;
+        }
+        edges.push((f.i, f.j, f.g_ij.rotor()));
+    }
+    let Some(gs) = cech::solve_gauge(n.germs.len(), &edges) else {
+        return false;
+    };
+    let words: Vec<Word> = gs.iter().map(|g| g.spelled_word()).collect();
+    let target = n.cycles.get(idx).map(|c| c.holonomy.rotor().class_key());
+    apply_cochain_gauge(n, &words);
+    match target {
+        Some(key) => !n
+            .cycles
+            .iter()
+            .any(|c| c.holonomy.rotor().class_key() == key && !c.holonomy.abelian_identity()),
+        None => true,
+    }
+}
+
+fn file_cycle(n: &mut Nerve, idx: usize, ell: u32) -> bool {
+    if ell == 0 {
+        return false;
+    }
+    let Some(c) = n.cycles.get(idx) else {
+        return false;
+    };
+    let Some(&a) = c.germs.first() else {
+        return false;
+    };
+    let b = c
+        .germs
+        .get(c.germs.len().saturating_sub(2))
+        .copied()
+        .unwrap_or(a);
+    n.complex
+        .file_congruent(germ_vertex(a), germ_vertex(b), c.holonomy.rotor(), ell);
+    true
+}
+
+/// A16: tree-walk the nerve, sort open chords by [`Word::order`] (finite
+/// ascending, infinite last), close the loosest finite chord first.
+/// Leftover finite chords go to A17; infinite chords are demands.
+/// `horizon` classes (Held/Stood) are not re-derived.
+pub fn twist(
+    n: &mut Nerve,
+    idea: [u8; 32],
+    horizon: &Keyed<(Rotor, Order, Standing)>,
+    budget: &mut Budget,
+) -> Vec<Snap> {
+    let mut snaps = Vec::new();
+    let mut handled: Keyed<()> = Keyed::new();
+    loop {
+        if budget.remaining() == 0 {
+            break;
+        }
+        n.cycles = independent_cycles(n.germs.len(), &n.faces);
+        let mut open: Vec<(usize, Order, [u8; 32])> = n
+            .cycles
+            .iter()
+            .enumerate()
+            .filter(|(_, c)| !c.holonomy.abelian_identity())
+            .map(|(i, c)| (i, c.holonomy.order(), c.holonomy.rotor().class_key()))
+            .filter(|(_, order, k)| {
+                if handled.contains(k) {
+                    return false;
+                }
+                match order {
+                    Order::Finite(ell) => !n.complex.degrees.iter().any(|layer| {
+                        layer.fiber(&crate::network::nerve::ROOT).any(|(_, cell)| {
+                            matches!(&cell.fill, Fill::Congruent(r, e) if e == ell && r.class_key() == *k)
+                        })
+                    }),
+                    Order::Infinite => n
+                        .class
+                        .as_ref()
+                        .map(|(r, _)| r.class_key() != *k)
+                        .unwrap_or(true),
+                }
+            })
+            .collect();
+        open.sort_by(|a, b| a.1.cmp(&b.1).then(a.2.cmp(&b.2)).then(a.0.cmp(&b.0)));
+        let Some(&(idx, order, key)) = open.first() else {
+            break;
+        };
+        if !budget.spend() {
+            break;
+        }
+        let held = horizon.get(&key).is_some();
+        match order {
+            Order::Infinite => {
+                if !held {
+                    snaps.push(Snap::Demand { chord: idx, key });
+                    if n.class.is_none() {
+                        n.class = Some((n.cycles[idx].holonomy.rotor(), 1));
+                    }
+                    eprintln!(
+                        "  demand spoken {:02x}{:02x}… order ∞",
+                        idea[0], idea[1]
+                    );
+                }
+            }
+            Order::Finite(ell) => {
+                if !held && try_close_chord(n, idx) {
+                    snaps.push(Snap::Closed { chord: idx, order: ell });
+                    eprintln!(
+                        "  twist {:02x}{:02x}… chord {idx} order {ell} closed",
+                        idea[0], idea[1]
+                    );
+                } else if file_cycle(n, idx, ell) {
+                    if !held {
+                        snaps.push(Snap::Closed { chord: idx, order: ell });
+                        eprintln!(
+                            "  twist {:02x}{:02x}… chord {idx} order {ell} closed",
+                            idea[0], idea[1]
+                        );
+                    }
+                    snaps.push(Snap::TorsionFiled { chord: idx, ell });
+                    eprintln!(
+                        "  torsion filed {:02x}{:02x}… (σ,{ell})",
+                        idea[0], idea[1]
+                    );
+                } else {
+                    snaps.push(Snap::TorsionOpen { chord: idx });
+                    eprintln!(
+                        "  torsion open {:02x}{:02x}… chord {idx}",
+                        idea[0], idea[1]
+                    );
+                }
+            }
+        }
+        handled.insert(key, ());
+    }
+    snaps
 }
 
 /// Close the sentence: fill up the degrees on each germ's link. A class
@@ -2448,5 +2620,149 @@ mod tests {
         let e2 = as_element(&n2).expect("e2");
         assert!(e1.same_vertex(&e2));
         assert_eq!(e1.address(), e2.address(), "vertex key ignores placement versors");
+    }
+
+    fn order2() -> Word {
+        alphabet::PlaneForm {
+            parity: true,
+            rot: [0; alphabet::CAYLEY_ALPHABET_LEN],
+        }
+        .to_word()
+    }
+
+    fn order4() -> Word {
+        Word::from_letters(&[(alphabet::LetterId::quarter((0, 1)).unwrap(), false)])
+    }
+
+    fn infinite() -> Word {
+        Word::from_letters(&[(alphabet::LetterId::pythagorean_5((0, 1)).unwrap(), false)])
+    }
+
+    fn chord_nerve(chords: &[Word]) -> Nerve {
+        let n = chords.len() + 1;
+        let germs: Vec<Germ> = (0..n)
+            .map(|i| {
+                let mut address = [0u8; 32];
+                address[0] = (i as u8).saturating_add(1);
+                Germ {
+                    address,
+                    versor: identity_versor(),
+                    word: Word::identity(),
+                    chain: vec![(0, i as i64, 1, 2)],
+                    source: None,
+                    target: None,
+                    kind: ShellKind::Whole,
+                    shift: None,
+                }
+            })
+            .collect();
+        let mut faces = Vec::new();
+        for i in 0..n.saturating_sub(1) {
+            faces.push(Face {
+                i,
+                j: i + 1,
+                overlap: Vec::new(),
+                g_ij: Word::identity(),
+                versor: identity_versor(),
+                spelled: true,
+            });
+        }
+        for (ci, w) in chords.iter().enumerate() {
+            let (i, j) = match ci {
+                0 => (0, 2.min(n - 1)),
+                1 => (1.min(n - 1), 3.min(n - 1)),
+                _ => (0, (ci + 1).min(n - 1)),
+            };
+            if i == j {
+                continue;
+            }
+            faces.push(Face {
+                i,
+                j,
+                overlap: Vec::new(),
+                g_ij: w.clone(),
+                versor: identity_versor(),
+                spelled: true,
+            });
+        }
+        let cycles = independent_cycles(n, &faces);
+        Nerve {
+            germs,
+            complex: Complex::new(),
+            faces,
+            cycles,
+            remainder: Vec::new(),
+            class: None,
+            cover: crate::network::nerve::Keyed::new(),
+        }
+    }
+
+    #[test]
+    fn twist_closes_lowest_order_first_and_terminates() {
+        assert_eq!(order2().order(), Order::Finite(2));
+        assert_eq!(order4().order(), Order::Finite(4));
+        assert_eq!(infinite().order(), Order::Infinite);
+        let mut n = chord_nerve(&[order2(), order4(), infinite()]);
+        assert!(n.cycles.len() >= 3, "three chords, got {}", n.cycles.len());
+        let mut budget = crate::physics::Physics::default().stroke_n(16);
+        let snaps = twist(&mut n, [0xab; 32], &crate::network::nerve::Keyed::new(), &mut budget);
+        let mut seen_inf = false;
+        let mut last_finite: u32 = 0;
+        for s in &snaps {
+            match s {
+                Snap::Closed { order, .. } | Snap::TorsionFiled { ell: order, .. } => {
+                    assert!(!seen_inf, "never an ∞ line before a finite one");
+                    assert!(*order >= last_finite, "finite chords ascend");
+                    last_finite = *order;
+                }
+                Snap::Demand { .. } => seen_inf = true,
+                Snap::TorsionOpen { .. } => {}
+            }
+        }
+        assert!(
+            snaps.iter().any(|s| matches!(s, Snap::Closed { order: 2, .. } | Snap::TorsionFiled { ell: 2, .. })),
+            "order 2 first: {snaps:?}"
+        );
+        assert!(
+            snaps.iter().any(|s| matches!(s, Snap::Demand { .. })),
+            "infinite is a demand: {snaps:?}"
+        );
+        let again = twist(&mut n, [0xab; 32], &crate::network::nerve::Keyed::new(), &mut crate::physics::Physics::default().stroke_n(16));
+        assert!(again.is_empty(), "the loop terminates, leftover {again:?}");
+    }
+
+    #[test]
+    fn twist_never_reopens_a_closed_chord() {
+        let mut n = chord_nerve(&[order2(), order4()]);
+        let mut budget = crate::physics::Physics::default().stroke_n(16);
+        let first = twist(&mut n, [0xcd; 32], &crate::network::nerve::Keyed::new(), &mut budget);
+        let closed: Vec<u32> = first
+            .iter()
+            .filter_map(|s| match s {
+                Snap::Closed { order, .. } => Some(*order),
+                Snap::TorsionFiled { ell, .. } => Some(*ell),
+                _ => None,
+            })
+            .collect();
+        let mut budget = crate::physics::Physics::default().stroke_n(16);
+        let second = twist(&mut n, [0xcd; 32], &crate::network::nerve::Keyed::new(), &mut budget);
+        for o in closed {
+            assert!(
+                !second.iter().any(|s| matches!(s, Snap::Demand { .. })) || o > 0,
+                "a closed finite chord is not demanded"
+            );
+            let still = n.cycles.iter().any(|c| {
+                !c.holonomy.abelian_identity() && matches!(c.holonomy.order(), Order::Finite(ell) if ell == o)
+            });
+            let filed = n.complex.degrees.iter().any(|layer| {
+                layer.fiber(&crate::network::nerve::ROOT).any(|(_, cell)| {
+                    matches!(cell.fill, Fill::Congruent(_, ell) if ell == o)
+                })
+            });
+            assert!(
+                !still || filed,
+                "order {o} stayed closed or filed; second {second:?}"
+            );
+        }
     }
 }

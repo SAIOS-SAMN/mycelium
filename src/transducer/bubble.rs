@@ -203,6 +203,15 @@ impl Bubble {
         if let Some(k) = last {
             self.cursor = k;
         }
+        if !self.germs.is_empty() && budget.remaining() > 0 {
+            let mut n = sentence::assemble(self.germs.clone(), self.remainder.clone());
+            n.cover = self.cover.clone();
+            n.complex = self.nerve.clone();
+            let _ = sentence::twist(&mut n, self.key(), &self.horizon, budget);
+            self.germs = n.germs;
+            self.remainder = n.remainder;
+            self.nerve = n.complex;
+        }
         self.dirty = spent > 0 && budget.remaining() == 0;
         spent
     }
@@ -812,6 +821,27 @@ impl Contemplation {
         let mut spoken: Vec<Element> = Vec::new();
         spoken.extend(std::mem::take(&mut self.pending_rewrites));
         let bubble_keys: Vec<[u8; 32]> = keys.fiber(&ROOT).map(|(k, _)| *k).collect();
+        for bk in &bubble_keys {
+            if budget.remaining() == 0 {
+                break;
+            }
+            let Some(b) = self.bubbles.get(bk) else {
+                continue;
+            };
+            if b.germs.is_empty() {
+                continue;
+            }
+            let mut n = sentence::assemble(b.germs.clone(), b.remainder.clone());
+            n.cover = b.cover.clone();
+            n.complex = b.nerve.clone();
+            let horizon = b.horizon.clone();
+            let _ = sentence::twist(&mut n, *bk, &horizon, budget);
+            if let Some(b) = self.bubbles.get_mut(bk) {
+                b.germs = n.germs;
+                b.remainder = n.remainder;
+                b.nerve = n.complex;
+            }
+        }
         // index: by_chart fiber at the word's chart and peels
         for bk in &bubble_keys {
             if budget.remaining() == 0 {
