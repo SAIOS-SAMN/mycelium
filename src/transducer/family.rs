@@ -1347,7 +1347,7 @@ pub fn apply_form(
     crystal: &dyn Crystal,
 ) -> Option<Speech> {
     let fx = frame_of(x);
-    let fy = fx;
+    let fy = output_frame(fx, f.ratio);
     let bodies = perceive(x);
     let mut atlas = super::stalk::Stalks::default();
     for (i, body) in bodies.iter().enumerate() {
@@ -1921,14 +1921,16 @@ pub fn extract_rule_cached(
     rule
 }
 
-/// Descent a form measures by speaking every train pair.
-pub fn form_descent(form: &Form, family: &[(Grid, Grid)]) -> [u64; 4] {
+/// Descent a form measures by speaking every train pair through the
+/// crystal that resolves its cited forms. A form that misses any pair, or
+/// cites a form the crystal does not hold, measures zero and is not spoken.
+pub fn form_descent(form: &Form, family: &[(Grid, Grid)], crystal: &dyn Crystal) -> [u64; 4] {
     if family.is_empty() {
         return [0; 4];
     }
     let mut pay = [0u64; 4];
     for (x, y) in family {
-        let Some(s) = apply_form(form, x, &super::alphabet::Word::identity(), &NoCrystal) else {
+        let Some(s) = apply_form(form, x, &super::alphabet::Word::identity(), crystal) else {
             return [0; 4];
         };
         if s.grid() != *y {
@@ -1985,11 +1987,12 @@ fn germ_idx_key(i: usize) -> [u8; 32] {
     k
 }
 
+/// The output frame of a scaled bundle. A ratio that does not divide the
+/// input frame exactly, or that is not a ratio at all, leaves the frame
+/// where it is; nothing is rounded.
 fn output_frame(fx: (usize, usize), ratio: ((usize, usize), (usize, usize))) -> (usize, usize) {
     let ((hn, hd), (wn, wd)) = ratio;
-    let hd = hd.max(1);
-    let wd = wd.max(1);
-    if fx.0 == 0 || fx.1 == 0 || (fx.0 * hn) % hd != 0 || (fx.1 * wn) % wd != 0 {
+    if hd == 0 || wd == 0 || fx.0 == 0 || fx.1 == 0 || (fx.0 * hn) % hd != 0 || (fx.1 * wn) % wd != 0 {
         return fx;
     }
     (fx.0 * hn / hd, fx.1 * wn / wd)
@@ -2195,7 +2198,7 @@ pub fn mint_sentence(rule: &super::sentence::SentenceRule, family: &[(Grid, Grid
 /// a section; one body on two germs is a section whose face words to
 /// already-placed anchors agree. None only when two anchors conflict on
 /// the same output cells.
-pub fn speak_rule(rule: &super::sentence::SentenceRule, x: &Grid) -> Option<Speech> {
+pub fn speak_rule(rule: &super::sentence::SentenceRule, x: &Grid, crystal: &dyn Crystal) -> Option<Speech> {
     let form_speaks = rule.form.vertices.iter().any(|v| {
         matches!(
             v,
@@ -2203,12 +2206,7 @@ pub fn speak_rule(rule: &super::sentence::SentenceRule, x: &Grid) -> Option<Spee
         ) || matches!(v, Vertex::Word { contact: Some(_), .. })
     });
     if form_speaks {
-        return apply_form(
-            &rule.form,
-            x,
-            &super::alphabet::Word::identity(),
-            &NoCrystal,
-        );
+        return apply_form(&rule.form, x, &super::alphabet::Word::identity(), crystal);
     }
     let fx = frame_of(x);
     let fy = output_frame(fx, rule.ratio);
@@ -2881,6 +2879,16 @@ mod tests {
             family[0].1,
             "spoken cells equal the target"
         );
+        assert_ne!(
+            form_descent(&rule.form, &family, &crystal),
+            [0; 4],
+            "the glued form measures its descent through the crystal that holds its citation"
+        );
+        assert_eq!(
+            form_descent(&rule.form, &family, &NoCrystal),
+            [0; 4],
+            "without the cited form nothing is measured, so nothing is minted"
+        );
     }
 
     /// An empty class fiber speaks nothing for that vertex and lists it unspoken.
@@ -3117,7 +3125,7 @@ mod tests {
             rule.nerve.faces.len(),
             rule.nerve.cycles.len()
         );
-        let spoken = speak_rule(&rule, &grid(&["1100", "0000"])).expect("the test is spoken");
+        let spoken = speak_rule(&rule, &grid(&["1100", "0000"]), &NoCrystal).expect("the test is spoken");
         assert!(spoken.remainder.is_empty(), "the test is reached in full: {:?}", spoken.remainder);
         assert_eq!(spoken.grid(), grid(&["0022", "0000"]));
         let t = c.transport.expect("still a connection");
@@ -3159,7 +3167,7 @@ mod tests {
             .collect();
         let family = vec![(train_in.clone(), train_out.clone())];
         let rule = extract_rule(&family).expect("three squares extract as a section");
-        let spoken = speak_rule(&rule, &train_in).expect("the test is spoken");
+        let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("the test is spoken");
         assert!(spoken.remainder.is_empty(), "all three squares are reached: {:?}", spoken.remainder);
         assert_eq!(spoken.grid(), train_out);
         assert!(

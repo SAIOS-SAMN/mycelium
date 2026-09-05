@@ -547,7 +547,12 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
             reg.withheld(&tid)
         };
         if let Some(rule) = rule_elem.as_ref() {
-            if !mycelium::cognition::Kernel::rule_matches_tests(rule, &withheld) {
+            // The rule's cited forms resolve through this hypha's ruled cover.
+            let matches = match door.kernel.lock() {
+                Ok(k) => k.rule_matches_tests(rule, &withheld),
+                Err(_) => false,
+            };
+            if !matches {
                 let reply = Frame { lane: frame.lane, body: dialogue::encode_solve_receipt(dialogue::SOLVE_NOTHING, &[0; 4]) };
                 let _ = s.write_all(&reply.encode().unwrap_or_default());
                 return true;

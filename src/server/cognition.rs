@@ -3161,7 +3161,7 @@ impl Kernel {
                 .copied();
             if let Some(task) = task {
                 if let Some(family) = self.task_family.get(&task) {
-                    return measured_replay_descent(form, family);
+                    return self.measured_replay_descent(form, family);
                 }
             }
             return [0; 4];
@@ -3419,7 +3419,8 @@ impl Kernel {
     }
 
     /// Speak a submitted rule onto withheld tests and compare cells exactly.
-    pub fn rule_matches_tests(rule: &Element, tests: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)]) -> bool {
+    /// The rule's cited forms resolve through this kernel's ruled cover.
+    pub fn rule_matches_tests(&self, rule: &Element, tests: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)]) -> bool {
         if tests.is_empty() {
             return false;
         }
@@ -3427,7 +3428,7 @@ impl Kernel {
             return false;
         };
         tests.iter().all(|(x, y)| {
-            crate::transducer::family::speak_rule(&sr, x).is_some_and(|s| s.grid() == *y)
+            crate::transducer::family::speak_rule(&sr, x, self).is_some_and(|s| s.grid() == *y)
         })
     }
 
@@ -3444,7 +3445,7 @@ impl Kernel {
         tests: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
     ) -> [u64; 4] {
         if let Some(rule) = rule {
-            if !Self::rule_matches_tests(rule, tests) {
+            if !self.rule_matches_tests(rule, tests) {
                 return [0; 4];
             }
             self.docket_connection(rule, voice);
@@ -5798,13 +5799,16 @@ fn sentence_rule_of(form: &Element) -> Option<crate::transducer::sentence::Sente
     agree_up_to_gauge(std::slice::from_ref(&n))
 }
 
-/// Descent a rule measures by speaking every train pair. Any miss is zero:
-/// association with a listing is not a mint.
-fn measured_replay_descent(form: &Element, family: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)]) -> [u64; 4] {
-    if let Some(f) = crate::transducer::sentence::from_element_form(form) {
-        return crate::transducer::family::form_descent(&f, family);
+impl Kernel {
+    /// Descent a rule measures by speaking every train pair, its cited
+    /// forms resolved through this kernel's ruled cover. Any miss is zero:
+    /// association with a listing is not a mint.
+    fn measured_replay_descent(&self, form: &Element, family: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)]) -> [u64; 4] {
+        if let Some(f) = crate::transducer::sentence::from_element_form(form) {
+            return crate::transducer::family::form_descent(&f, family, self);
+        }
+        [0; 4]
     }
-    [0; 4]
 }
 
 /// The SUBSTRATE's canonical framing projection (hypha-side, per the transposition

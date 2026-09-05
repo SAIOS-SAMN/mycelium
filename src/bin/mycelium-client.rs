@@ -356,7 +356,7 @@ fn main() {
                         if y.is_empty() {
                             continue;
                         }
-                        if let Some(speech) = mycelium::transducer::family::speak_rule(rule, x) {
+                        if let Some(speech) = mycelium::transducer::family::speak_rule(rule, x, &entity.epigenome) {
                             if speech.remainder.is_empty() {
                                 projected += 1;
                                 if speech.grid() == *y {
@@ -637,7 +637,7 @@ fn main() {
                 let mut reached = true;
                 let mut outs: Vec<Option<Vec<Vec<u8>>>> = Vec::new();
                 for x in &tests {
-                    match mycelium::transducer::family::speak_rule(rule, x) {
+                    match mycelium::transducer::family::speak_rule(rule, x, &entity.epigenome) {
                         Some(s) if s.remainder.is_empty() => {
                             tests_full += 1;
                             outs.push(Some(s.grid()));
