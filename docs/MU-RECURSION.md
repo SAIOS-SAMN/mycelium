@@ -133,11 +133,20 @@ Therefore, as a law of the specification:
   exactness costs nothing because no carrier keys on them.
 
 Where byte-exactness appears in cognition today it is a fault to remove,
-not a convention to preserve: `push_cocycle`'s `old == g` on a versor,
-`solve_gauge`'s chord `!=` (§45), address-by-serialisation (§25.1), and
-any `Keyed` whose key is a digest of a tape rather than of a normal form.
-The enumeration gate's sibling is this: a key that is not a normal form is
-a flattened dimension in disguise.
+not a convention to preserve. The audit of 2026-09-05 found it in:
+`push_cocycle`'s `old == g` on a structurally compared versor;
+`Rotor::key` and `Rotor::coordinate` over unnormalised coefficients used as
+class key and refinement axis; `Word::normal_form` returning the spoken
+tape for mixed-plane words, so `Word::key` and `Word::eq` fall back to
+spelling; `same_form`'s tape-equality arm; `PlaneForm` equality on
+unreduced exponents; `Element::eq` on tape bytes; `vertex_address` writing
+raw versor bytes; `composite_parent_id` and `section_address` over
+uncanonicalised cells; `ratio_axes` dropping signs and saturating; `sel_key`
+over a Debug string; the percept rendezvous over frame bytes; and every
+store restored under stored byte addresses after the address rule changed.
+Part VII gives the procedures that replace each. The enumeration gate's
+sibling is this: a key that is not a normal form is a flattened dimension
+in disguise.
 
 ## 2. Forms
 
@@ -1600,10 +1609,12 @@ impl Complex {
 
 Changes to existing functions:
 
-- `solve_gauge` (806): the chord check `expect != *g` becomes
-  `!expect.projective_eq(g)`; its documented contract is: returns `λ` with
-  `g_ij = λ_j · λ_i⁻¹` (so `g = δ⁰λ`), and the flattening gauge of §32.2 is
-  `λ⁻¹` pointwise. `fill` (556) keeps calling it; its inner pair loop is
+- `solve_gauge` (806): the chord check `expect != *g` is already
+  projective, because `Rotor`'s `PartialEq` (alphabet.rs 140) is
+  `projective_eq`; it inherits the either-sign rule of A1 (§59.1) when that
+  lands and needs no change of its own. Its documented contract is:
+  returns `λ` with `g_ij = λ_j · λ_i⁻¹` (so `g = δ⁰λ`), and the flattening
+  gauge of §32.2 is `λ⁻¹` pointwise. `fill` (556) keeps calling it; its inner pair loop is
   over one cell's own vertices, bounded by the cell's degree, which is the
   cell's boundary and not an enumeration.
 - `class` (619) unchanged; `Class2` writes a degree-2 cell with
@@ -2242,18 +2253,22 @@ an exact hash of conjugation invariants that are rationals and signs. No
 approximation of "good enough" covers: an overlap is good or the cover is
 changed until it is, and every retraction is decided by `home`.
 
-## 58. Landing order for Parts IV–VI
+## 58. Landing order for Parts IV–VII
 
 The counterpart of §21. One item per commit, the trace value in the
 message, reproduced on cold boot by the auditor before the next lands; no
 soak clock until every trace here passes.
 
-1. **§1.5 and §25.1, vertex addresses.** `Element::address()` over the
-   vertex key; `MYC2`/`GEN2` loaders build and apply `RMP1`. Everything
-   below keys on addresses, so this lands first. Trace: two tapes of one
-   word spelled differently log one address on every node; a restored
-   ledger logs the count of merged entries and `RMP1` hits fall to zero
-   within an aperture.
+0. **Part VII identity, before anything else.** In this order, each its
+   own commit: M1 (A1, A3, A4, A2 step 1), M2 (A5 and the address
+   composition), M3 (A8, since a29bba5 changed the address rule without
+   it, no cutover onto existing state before this lands), M4 (A6, A7),
+   M5, M7 (A9, A10, A11), M6 (A12). Traces are those of §62. Every class
+   key and address in items 1–7 assumes M1–M5.
+1. **§1.5 and §25.1, vertex addresses.** Subsumed by M2 and M3 above; the
+   trace stands: two tapes of one word spelled differently log one address
+   on every node; a restored ledger logs the count of merged entries and
+   `RMP1` hits fall to zero within an aperture.
 2. **§28–§30, §45 (solver), the coboundary.** `PlaneForm` semidirect
    arithmetic and order rule; `Form::delta1`, `Complex::delta2`;
    `solve_gauge` chords by `projective_eq` with the `λ⁻¹` convention
@@ -2298,3 +2313,471 @@ item 7: the amendments Parts IV–VI make to §36, §41, and §25.1 are folded
 into those sections, superseded statements deleted, and the document
 committed once as a single closed form; the auditor's greps in §26–§27,
 §46, and §56 are rerun against the consolidated text.
+
+---
+
+# Part VII — Algorithms
+
+Parts I–VI name operations that Parts II–VI bind to functions. Twelve of
+those operations were named but not given as procedures, and the audit of
+identity in the codebase (2026-09-05) showed each of them decided by bytes
+somewhere. This part gives each as a finite procedure with inputs, output,
+refusal, cost, and binding, then §60 states the seven master algorithms
+that compose them into the complete operations the system runs.
+
+## 59. Component algorithms
+
+Every procedure below is exact over ℚ and ℤ, terminates by a bound that is
+a count of its own inputs or a `Budget`, and refuses rather than rounds.
+
+### 59.1 A1 — Canonical rotor form
+
+Input: `R: Rotor`, coefficients `c[0..16]` by blade mask.
+
+1. If every `c[i]` is zero, refuse (not a versor; never a vertex).
+2. `i` = least mask with `c[i] ≠ 0`. `a = |c[i]|`. `R' = R / a`, so `c'[i] = ±1`.
+3. If `c'[i] = −1`, `R' = −R'`. Now `c'[i] = +1`.
+4. Output `R'` and `key = blake3(put_q(c'[0]) ‖ … ‖ put_q(c'[15]))`.
+
+Equality: `R ≡ S` iff `canonical(R) = canonical(S)` coefficientwise, iff
+`R·S⁻¹` is a nonzero scalar of **either sign**. The sign is quotiented
+because the language is the action `R X R̃ / (R R̃)`, on which `−R` and `R`
+agree, and because §28.1 already identifies the quarter turn's fourth power
+with the identity. `Rotor::projective_eq` (alphabet.rs 268) requires a
+positive scalar today and must accept a negative one; `Rotor::normalised`
+(249) performs step 2 and must add step 3. Cost: 16 rational divisions.
+
+### 59.2 A2 — Off-plane normal form
+
+The mixed-plane group generated by the letters is not known to have a
+terminating rewriting system; no completion is run. Identity off the plane
+is A1. The **tape** kept for a vertex is the shortest one known, found so:
+
+1. **Run reduction.** Split the tape into maximal runs of letters on one
+   slot plane (identity letters removed). Replace each run by its
+   per-plane canonical tape (A3 → `PlaneForm::to_word`). Adjacent runs on
+   one plane created by removals are merged and reduced again. Terminates:
+   each pass strictly shortens or leaves the tape unchanged.
+2. **Budgeted descent** (`shorter_tape(word, budget)`): breadth-first over
+   tapes from the identity in letter-index order, visited set a
+   `Keyed<()>` of A1 keys, stopping when `budget.spend()` fails or a tape
+   with the target's A1 key is found at a length below the current one.
+   Deterministic: the same budget yields the same tape on every node.
+3. Output: the shorter of the two, or the input if neither shortened it.
+
+A tape produced here is a **retirement** (§3.8): it replaces a longer tape
+for the same vertex and is never claimed minimal. `Word::normal_form` (466)
+keeps its per-plane path for plane-closed words and calls step 1 for the
+rest; step 2 runs only in `retire` and in the court's replay of a
+`Rewrite` word.
+
+### 59.3 A3 — Canonical plane form
+
+`Word::form()` reduces unit exponents (`reduce_unit_exponents`, 642:
+`rem_euclid(4)`, with 3 written as −1) before returning. `PlaneForm`'s
+equality compares reduced forms only; `conjugacy_key` (750) and
+`sentence::chart_of` (1885) read the reduced form. No other change.
+
+### 59.4 A4 — Canonical conformal versor
+
+Input: `V: Mv` (cga.rs 46), `Versor = Mv`.
+
+1. If all coefficients are zero, refuse.
+2. `i` = least mask with nonzero coefficient; divide by `|c[i]|`; negate if
+   `c[i] < 0`. Output `V'` with `c'[i] = +1`.
+3. Equality: `Mv::projective_eq(a, b)` = `projective_ratio(a, b)` (330) is
+   `Some(λ)` with `λ ≠ 0`, either sign, because the action is the
+   normalised sandwich.
+4. `Mv::key()` = blake3 over the canonical coefficients; `to_bytes` on the
+   wire may carry any scaling, the receiver canonicalises.
+
+`Mv`'s derived structural `PartialEq` is removed; `Germ`, `Face`, `Nerve`
+equality use `projective_eq` for versors and A1 for rotors.
+
+### 59.5 A5 — Chain canonicalisation
+
+Input: cells `(r, c, before, after)`.
+
+1. `min_r`, `min_c` over the cells; translate every cell by `(−min_r, −min_c)`.
+2. Sort lexicographically on `(r, c, before, after)`; dedupe.
+3. Output the chain. Empty input → empty chain.
+
+`from_residual` (element.rs 1580) already does 1–2; A5 is that code named
+and called from every place that hashes or compares cells:
+`composite_parent_id`, `footprint_key`, `section_address`'s assignment
+(sorted), `blind_replay`'s chain compare (spoken chain canonicalised before
+`rederived.sub() != spoken.sub()`).
+
+### 59.6 A6 — Exact axis packing
+
+Input: `x ∈ ℚ` reduced, denominator positive. Output: `Option<[u64; 2]>`.
+
+1. If `numer(x)` is outside `[−2⁶³, 2⁶³ − 1]`, refuse (`None`).
+2. If `denom(x) > 2⁶⁴ − 1`, refuse.
+3. Output `[numer as i64 as u64 (two's complement), denom as u64]`.
+
+Refusal propagates: `Harmonics::axes() -> Option<Vec<u64>>`;
+`blade::moduli` and `stalk::invariant` return the **empty** `Invariant` on
+refusal, which is novelty (§49 of stalk.rs's own comment), with the log
+line `[{tag}] chart refused: ratio exceeds axis`. Nothing saturates. The
+current `ratio_axes` (blade.rs 339) drops the sign and saturates to
+`u64::MAX`; it is replaced.
+
+### 59.7 A7 — Invariant refinement coordinate
+
+Input: a class rotor `R` (A1 canonical). Output: `Option<Vec<u64>>`, the
+axes appended to a chart on refinement.
+
+- If `R` has a plane form `(s, r)` (A3 reduced): `[1, s, r_1, …, r_k]`
+  with each exponent as two's-complement `u64`, `r` the conjugacy
+  representative of §52.1.
+- Else: `w = R R̃`, `a = c[0]`, `p = c[15]`;
+  `[2, sign(a), sign(p)] ‖ A6(a²/w) ‖ A6(p²/w)`; refuse if A6 refuses.
+
+`Stalks::refine(inv, axes: &[u64])` appends all axes; `split_stratum`'s
+`coordinate_of` returns `Vec<u64>`; `refine_chart` (cognition.rs 2947)
+passes A7's output and never `Rotor::coordinate()`, which is deleted along
+with `PlaneForm::coordinate()`.
+
+### 59.8 A8 — RMP1 migration
+
+Runs once per store at load (`Kernel::restore` cognition.rs 5018,
+`Treasury::restore` economy.rs 568, `Epigenome::uncrystallize` sdk.rs
+1025) and once per tape that arrives from a peer on the old build.
+
+1. For every stored tape `T` with stored address `a_old`: `a_new =
+   address(T)` by M2. If `a_old ≠ a_new`, `remap.insert(a_old, a_new)`.
+2. For every sentence tape: for each germ, `address = from_residual(A5(chain)).address()`;
+   the stored germ address is ignored. `from_element` (sentence.rs 1792)
+   does this always, not only during migration.
+3. Rebuild every address-keyed carrier by inserting each entry under
+   `remap.get(k).unwrap_or(k)`. Carriers: `provisional`, `provisional_k`,
+   `provisional_tu`, `ruled_addrs`, `ruled` strata members, `cavity_book`,
+   `heard`, `listing_task`, `task_listings` values, `deflations`,
+   `court_fed_index`, `cited_by`, `replay_memo`, `escrowed`, client `index`,
+   `dialect`, `taught_up`, `glued`, `obstructions`, `expressed_index`.
+4. Collision (two old keys → one new): `escrowed` sums μ⃗ lane-wise and
+   unions voices (conservation); `provisional` keeps the earlier
+   `provisional_tu`; `ruled` keeps one member; `heard` unions; `deflations`
+   keeps the ruled entry's; `dialect` sums `uses`, keeps the later
+   `last_used_k`; genome `expression` sums; every other carrier keeps the
+   first. The log line `court remap {old}→{new} merged {carrier}` is
+   written per merge.
+5. Write the `RMP1` section `{count u32, (old [32], new [32])*}` after the
+   carriers. `resolve_form`, `word_at`, the client `word_at` consult it for
+   any miss. Count hits per aperture; when an aperture passes with zero
+   hits, drop the section on the next snapshot (`court remap retired`).
+
+Trace: `court remap {n} entries merged {m}`; ruled fibers resolve with zero
+`word_at` misses; `Treasury::supply` and `bond_total` unchanged before and
+after.
+
+### 59.9 A9 — Canonical selection serialisation
+
+`Sel` (anchor.rs 31): `Sel::to_bytes` writes one tag byte per variant in
+declaration order, then each field in declaration order with the encoders
+already used elsewhere (`i64` LE, `u8`, `put_q`). `verdict::sel_key` (374)
+= blake3 of that; the `format!("{s:?}")` form is deleted.
+
+### 59.10 A10 — Peer identity by verifying key
+
+1. `Router` and `Session::peers` are keyed by the hypha's verifying key `vk`.
+2. A socket string learned without a `vk` (ACT_PEERS reply, `--peers`,
+   bootstrap) enters `pending_addrs: Keyed<String>` keyed by
+   `blake3(addr)`; it is asked for its cover digest; on the signed digest
+   (`admit_peer_digest`, `absorb_digest`) the entry moves to `vk` and the
+   pending entry is removed.
+3. Two socket strings with one `vk` are one peer; the later string replaces
+   the earlier in `addrs`. `rendezvous`, `closest`, `home` read `vk` keys
+   only; `pending_addrs` is never a routing target.
+
+### 59.11 A11 — Rendezvous by listing key
+
+For a percept (server `judge`, mycelium-server.rs 1061): decode the chain
+and frame; A5; `key = element::listing_key(chain, frame)` (element.rs, the
+framed residual's address by M2); destination = `nerve::home(cover, inv,
+mag, …)` for `inv = invariant_of` the framed residual. `blake3(pbytes[32..])`
+is deleted. The same key is the listing id the book already uses, so the
+rendezvous and the docket agree.
+
+### 59.12 A12 — Comprehension by factorisation
+
+Input: incoming rotor `g` (A1), basis `B = {b_1..b_n}` = rotors of the
+held words on the chart's fiber, `budget`. Output: exponents/tape `g =
+b_{i1}^{±1} ⋯ b_{im}^{±1}` verified by A1 equality, or `Novel(g)`.
+
+**Plane case** (every `b_i` and `g` have plane forms `(s_i, r_i)`, `(s, r)`,
+A3 reduced, `r ∈ Z^k` with the unit-exponent coordinate carrying the
+relation `4·e_u = 0`):
+
+1. Even lattice generators: `{r_i : s_i = 0} ∪ {r_i − r_j : s_i = s_j = 1}
+   ∪ {4·e_u}`. Form the integer matrix `G` of these rows.
+2. Hermite normal form of `G` with its unimodular transform `U`
+   (`U·G = H`), exact over ℤ. Membership `r ∈ rowspace_Z(G)`: reduce `r`
+   against `H` row by row; member iff the remainder is zero. The
+   coefficients of the reduction pulled back through `U` give the integer
+   combination of generators, hence of the `b_i` (each generator is a
+   product of one or two basis words).
+3. If `s = 0`: succeed iff `r` is a member. If `s = 1`: succeed iff some
+   `b_i` with `s_i = 1` has `r − r_i` a member; the tape is `b_i` followed
+   by the even combination. Choose the least `i`.
+4. Verify: multiply the tape's rotors, A1-compare with `g`. Mismatch is a
+   bug, not a refusal; assert in debug, refuse in release.
+
+**Off-plane case**: budgeted coset descent. States are A1 keys; from the
+identity, apply `b_i` and `b_i⁻¹` in index order; visited `Keyed<()>`;
+stop on `budget.spend()` failure or on reaching `g`'s key. The path is the
+factorisation. Failure returns `Novel(g)` with `g` unchanged; nothing is
+discarded and no partial factor is kept as a residual, because no metric
+says which partial is nearer.
+
+Binding: `client/sdk.rs::Epigenome::comprehend` (856) for connections
+replaces the single-representative `transition` test with A12 over the
+fiber's basis; `server/cognition.rs::reduce_excluding` keeps its
+decomposition for chains and calls A12 for connections. Cost: HNF is
+polynomial in `n·k`; the descent is the budget.
+
+## 60. Master algorithms
+
+Each master algorithm is the complete operation the system actually runs.
+It is stated as the sequence of component calls, with its invariant, its
+binding, and its failure behaviour. Nothing in the codebase decides
+identity, address, chart, class, comprehension, or routing except through
+one of these seven.
+
+### M1 — Vertex Identity Oracle
+
+**Purpose.** Decide whether two things mean the same, and produce the one
+key that names a meaning. Every `key`, `eq`, and `address` in the tree
+reduces to this.
+
+**Input.** A `Word`, `Rotor`, or `Mv`. **Output.** Canonical form and key,
+or refusal.
+
+**Procedure.**
+1. If the input is a `Word`: compute its rotor (`Word::rotor`, memoised).
+2. If the rotor has a plane form: A3 (reduce) → the canonical per-plane
+   tape is the normal form; key = A1 of the rotor (the plane form's own key
+   is equal, but A1 is the one used everywhere so plane and off-plane words
+   share one keyspace).
+3. Else: A2 step 1 (run reduction) for the tape; key = A1.
+4. If the input is an `Mv`: A4.
+5. Equality is key equality; `projective_eq` with either sign is the same
+   test computed without hashing.
+
+**Invariant.** Two inputs with equal action on the sensor have equal keys;
+two inputs with different actions have different keys, because A1 and A4
+are injective on projective classes and exact.
+
+**Binding.** `Word::key`, `Word::eq`, `Word::same_form`, `Rotor::key`,
+`Rotor::projective_eq` (sign rule), `Rotor::normalised` (sign step),
+`Mv::key`, `Mv::projective_eq`; `Element::eq` becomes: same M1 key of the
+letters, equal `ρ`, `shift`, `sigma`, and A5-equal chain; or `PartialEq`
+is removed from `Element` and `same_vertex` is called by name.
+
+**Failure.** A zero rotor or versor is refused and is never a vertex.
+
+### M2 — Address Derivation
+
+**Purpose.** The address of a word form or sentence form, independent of
+spelling, serialisation, and scaling.
+
+**Procedure.**
+1. Non-sentence word: M1 key of the letters' word ‖ `put_q(ρ)` ‖
+   `put_q(shift.0)` ‖ `put_q(shift.1)` ‖ sorted `sigma` ‖ A5 chain, as
+   `form_key_bytes` (element.rs 1039) does, with the `geodesic().key()`
+   there replaced by the M1 key so mixed-plane words are covered.
+2. Rewrite word: unchanged (`before` addresses, `after` address, kind,
+   claimed), all addresses being M2 outputs.
+3. Sentence form: for each germ in order, M1 key of its word ‖ A4 canonical
+   versor ‖ kind byte; for each face, M1 key of `g_ij` ‖ A4 canonical
+   versor. `vertex_address` (sentence.rs 1144) writes raw versor bytes
+   today; it writes A4 outputs. Loops are never written.
+4. blake3 over the bytes.
+
+**Invariant.** Address equality ⇔ the same vertex at the same frame with
+the same canonical chain; a tape version change never changes an address.
+
+**Binding.** `Element::address` (1026), `sentence::vertex_address`,
+`element::listing_key`, `composite_parent_id` and `section_address`
+(cognition.rs 5635, 5526) rewritten to call `from_residual(A5(..)).address()`
+and to sort the assignment.
+
+### M3 — Cold-Boot Migration
+
+**Purpose.** Bring every store written under byte addresses onto M2
+addresses once, with conservation, and make the new address rule the only
+one thereafter.
+
+**Procedure.** M2 over every stored tape → A8 steps 1–5 → the carrier
+rebuild → the reconciliation traces of §25.3 and A8. Servers before
+clients, a then b then c; each server on the new build reads and remaps
+old tapes from old peers for as long as they run.
+
+**Invariant.** After M3, `word_at(addr)` succeeds for every address held
+in any carrier; `Treasury::supply` and every per-lane bond are unchanged;
+the count of ruled entries is the count before minus the merges logged.
+
+**Binding.** `Kernel::restore`, `Treasury::restore`,
+`Epigenome::uncrystallize`, `sentence::from_element`, plus the `RMP1`
+section in `snapshot` and `crystallize`.
+
+**Failure.** A tape that does not re-derive (`blind_replay` refuses it) is
+not remapped; it is logged `court remap refused {old}: {reason}` and
+dropped from the carriers, its escrow released to its payers.
+
+### M4 — Chart Coordinates
+
+**Purpose.** Produce the `Invariant` that places a body, connection,
+sentence, or class on the atlas, exactly and identically on every node.
+
+**Procedure.**
+1. Body: `Harmonics::of` (ear.rs 48) → each ratio through A6 → the axes
+   vector, or the empty `Invariant` on any refusal.
+2. Connection: `connection_chart` (stalk.rs 136): trace and determinant
+   through A6, then the gauge permutation's cycle type; refusal → empty.
+3. Sentence: `chart_of` (sentence.rs 1885) over A3-reduced plane forms of
+   the germs (conjugacy representatives, not raw exponents).
+4. Class: A7.
+5. Refinement: `Stalks::refine(inv, axes)` appends A7's axes;
+   `split_stratum` places each member by `coordinate_of` returning those
+   axes for members on the class's side and `[0]` otherwise.
+
+**Invariant.** Two bodies congruent under the harmonics' symmetry have one
+chart; two with different exact invariants have different charts; no chart
+coordinate is a hash fragment.
+
+**Binding.** `blade::axes_of`, `Harmonics::axes`, `stalk::invariant`,
+`connection_chart`, `chart_of`, `Stalks::refine`, `split_stratum`,
+`Kernel::refine_chart`.
+
+### M5 — Class Ledger Identity
+
+**Purpose.** Record, compare, carry, and refine dialect classes so that the
+same class has one key on every hypha and one axis when it refines.
+
+**Procedure.**
+1. A holonomy or transition arrives as a rotor or versor; M1 canonicalises.
+2. Class key = `Word::class_key` / `Rotor::class_key` /
+   `PlaneForm::conjugacy_key` (§52) of the canonical form.
+3. `push_cocycle` (cognition.rs 990): compare the incoming to the held by
+   `projective_eq` (either sign) first, then by class key; equal → no
+   entry; a new representative of a held class → replace the
+   representative, keep the key; a new key → a new entry. `a == b`
+   accepted for intra-hypha classes (§50.2).
+4. Refinement: M4 step 5 with A7.
+5. Under refinement of the base or change of cover: §53–§54, comparing
+   class keys.
+
+**Invariant.** `cocycle_at` holds at most one entry per (chart, pair,
+class key); the refinement axis of a class is a function of its
+conjugacy invariants only.
+
+**Binding.** `push_cocycle`, `cocycle_key`, `refine_chart`, `mark_class`,
+`pending_refine` values carrying the class key beside the rotor.
+
+### M6 — Comprehension
+
+**Purpose.** Decide whether a mind already speaks an incoming word, by
+factoring it through what it holds, and otherwise measure exactly what is
+new.
+
+**Procedure.**
+1. M1 on the incoming word; M4 for its chart; the fiber over that chart is
+   the basis.
+2. Sentence forms: §15 (re-derive as a form, `coheres`, `regauge_overlap`
+   against held forms of the cited class).
+3. Connections: A12 over the fiber's basis. Success →
+   `Comprehension::Understood(indices)` with the factorisation tape recorded
+   as the expression; a class → `Dialect(g)` when the factorisation
+   succeeds up to a gauge that does not close; failure → `Novel`.
+4. Residual words: `locate` as today; the remainder is the novelty.
+
+**Invariant.** A word the mind holds under any spelling is `Understood`;
+`genome.contains(address)` is never the test.
+
+**Binding.** `Epigenome::comprehend` (sdk.rs 856), `learn_one` (977, which
+keeps its address dedupe as a fast path after M1, never instead of it),
+`Kernel::reduce_excluding`.
+
+### M7 — Wire Identity
+
+**Purpose.** Take bytes off the wire and turn them into identities the
+system may act on, with nothing decided on the bytes themselves.
+
+**Procedure.**
+1. Decode the frame; verify signatures where present.
+2. Chains: A5. Words: M1. Forms: M2 for the address.
+3. Routing: A11 for percepts; ACT_DEMAND by cover-trie `home` as today.
+4. Verification: `blind_replay` re-derives and compares by M1/M2/A5, never
+   by `to_bytes`.
+5. Admission of peers: A10.
+6. Digests (cover roots, ruled roots, fetch lists) are computed over M2
+   addresses and chart axes, and are used only to decide what to fetch and
+   whom to trust, never what a word means.
+
+**Invariant.** A peer on any build that speaks a correct tape in any
+spelling is understood; a tampered tape is refused by re-derivation.
+
+**Binding.** `mycelium-server.rs::judge`, `serve_control`,
+`admit_peer_digest`; `sdk.rs::absorb_digest`, `add_peer`, `ask_peers`;
+`verdict::blind_replay`; `dialogue` decoders.
+
+## 61. Binding summary for Part VII
+
+```
+alphabet.rs   Rotor::normalised (sign step), Rotor::projective_eq (either sign), Rotor::key (canonical),
+              Rotor::coordinate DELETED, PlaneForm::coordinate DELETED, Word::form (reduced),
+              Word::normal_form (A2 step 1 off-plane), Word::key (= rotor A1 key), shorter_tape(word, budget) NEW
+cga.rs        Mv::canonical NEW, Mv::projective_eq NEW, Mv::key NEW, derive(PartialEq) REMOVED
+element.rs    canonical_chain(&[Cell]) -> Vec<Cell> NEW (A5), Element::same_vertex NEW, PartialEq REMOVED,
+              form_key_bytes uses M1 key
+sentence.rs   vertex_address writes Mv::canonical; from_element recomputes germ addresses; chart_of on reduced forms
+blade.rs      axes_of -> Option<[u64;2]> (A6); moduli -> Option<Vec<u64>>
+ear.rs        Harmonics::axes -> Option<Vec<u64>>
+stalk.rs      invariant/invariant_of: empty on refusal; Stalks::refine(inv, &[u64]); split_stratum coordinate_of -> Vec<u64>
+anchor.rs     Sel::to_bytes NEW
+verdict.rs    sel_key over Sel::to_bytes; blind_replay canonicalises the spoken chain
+cognition.rs  restore: A8; composite_parent_id/section_address via M2; refine_chart via A7; push_cocycle per M5;
+              reduce_excluding calls A12 for connections; RMP1 in snapshot
+economy.rs    Treasury::restore: A8 collision rule; RMP1 applied to escrowed
+sdk.rs        uncrystallize: A8; comprehend: A12; peers keyed by vk with pending_addrs (A10)
+mycelium-server.rs  judge: A11; id_of only for pending_addrs; Router keyed by vk
+nerve.rs      Router::insert(vk, addr); no hash(addr) keys outside pending_addrs
+```
+
+## 62. Tests and traces for Part VII
+
+Tests (single foreground `cargo test --release`):
+
+- `alphabet::tests::a1_canonical_is_projective_either_sign`: `q⁴`, `1`,
+  `−R`, `λR` share a key; `R` and `R·q` do not.
+- `alphabet::tests::a2_run_reduction_shortens_and_preserves_key`.
+- `alphabet::tests::a2_descent_is_deterministic_under_budget`.
+- `alphabet::tests::a3_form_is_reduced_and_eq_on_reduced`.
+- `cga::tests::a4_projective_eq_either_sign_and_key`.
+- `element::tests::a5_chain_canonical_idempotent_and_translation_free`.
+- `blade::tests::a6_refuses_overflow_keeps_sign`.
+- `stalk::tests::a7_class_axes_are_invariants_not_hash`.
+- `cognition::tests::a8_migration_conserves_supply_and_resolves_all`.
+- `verdict::tests::a9_sel_key_stable_under_debug_change`.
+- `sdk::tests::a10_two_sockets_one_vk_one_peer`.
+- `server::tests::a11_rendezvous_by_listing_key_not_bytes`.
+- `sdk::tests::a12_plane_factorisation_by_hnf`, `a12_offplane_descent_or_novel`.
+- `element::tests::m2_two_spellings_one_address`, `m2_rescaled_versor_one_address`.
+- `sdk::tests::m6_held_under_other_spelling_is_understood`.
+
+Cold-boot traces (added to §21 and §58):
+
+- Restore a ledger and genome written before a29bba5: `court remap {n}
+  entries merged {m}`, zero `word_at` misses over ruled fibers, supply and
+  bonds equal before and after, `court remap retired` within one aperture
+  of zero hits.
+- Two minds speak one rule with different spellings and rescaled versors:
+  one address on all three servers, one `court form installed`, one mint.
+- A mind holding a word under another spelling receives it: `form
+  regauged … and understood` or `Understood`, never `Admitted`.
+- A body whose quartic ratio exceeds the axis: `chart refused: ratio
+  exceeds axis`, no `MAX` axis in any cover digest.
+- One dialect between two hyphae: equal class key and equal refinement
+  axes in all three logs.
