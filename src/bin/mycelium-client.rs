@@ -405,6 +405,22 @@ fn main() {
         // impedance is already perceived); the answer is patience, not
         // repetition.
         lap("feed");
+        // Syllabus while the genome (or its atlas) is empty: every stroke
+        // under the Budget, not only the depletion arm, and not a timer.
+        if !occluded
+            && !physics.depleted()
+            && (entity.epigenome.genome_len() == 0 || entity.epigenome.atlas_is_empty())
+        {
+            if let Ok(n) = entity.pull_syllabus() {
+                if n > 0 {
+                    learned += n as u64;
+                    eprintln!(
+                        "[{tag}] SYLLABUS +{n} ratified words (genome {})",
+                        entity.epigenome.genome_len(),
+                    );
+                }
+            }
+        }
         match entity.quote() {
             Ok(q) => {
                 // An empty WouldBlock is impedance, not a clock: do not

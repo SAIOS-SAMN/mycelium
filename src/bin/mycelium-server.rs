@@ -183,6 +183,17 @@ struct Syllabus {
     served: Keyed<usize>,
 }
 
+/// Push newly ruled addresses into the served stream. Court_stroke admits
+/// onto the ruled cover; this is the teaching organ that drip feeds them.
+fn syllabus_admit(sy: &mut Syllabus, addrs: impl IntoIterator<Item = [u8; 32]>) {
+    for addr in addrs {
+        if !sy.at.contains(&addr) {
+            sy.at.insert(addr, ());
+            sy.order.push(addr);
+        }
+    }
+}
+
 #[derive(Clone)]
 struct Door {
     kernel: Arc<Mutex<Kernel>>,
@@ -603,10 +614,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
             .map(|word| {
                 let addr = word.address();
                 if let Ok(mut sy) = door.syllabus.lock() {
-                    if !sy.at.contains(&addr) {
-                        sy.at.insert(addr, ());
-                        sy.order.push(addr);
-                    }
+                    syllabus_admit(&mut sy, [addr]);
                 }
                 door.synth_tx.try_send(mycelium::synthesis::Deliberation::Adopt(ratifier, word)).is_ok()
             })
@@ -630,8 +638,10 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
     if kind == dialogue::ACT_SYLLABUS {
         let Some(svoice) = dialogue::decode_syllabus_request(&frame.body) else { return true };
         let mut missed: Vec<[u8; 32]> = Vec::new();
+        let seed = door.kernel.lock().ok().map(|k| k.syllabus_seed()).unwrap_or_default();
         let (cursor, order) = {
             let mut sy = door.syllabus.lock().unwrap();
+            syllabus_admit(&mut sy, seed);
             if sy.served.get(&svoice).is_none() {
                 sy.served.insert(svoice, 0);
             }
@@ -708,10 +718,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
         let held = door.kernel.lock().map(|k| k.word_at(&addr).is_some()).unwrap_or(false);
         if held && matches!(ruling, dialogue::RULING_UPHELD | dialogue::RULING_REBIND | dialogue::RULING_ATTACHED) {
             if let Ok(mut sy) = door.syllabus.lock() {
-                if !sy.at.contains(&addr) {
-                    sy.at.insert(addr, ());
-                    sy.order.push(addr);
-                }
+                syllabus_admit(&mut sy, [addr]);
             }
         }
         let reply = Frame { lane: frame.lane, body: vec![applied as u8] };
@@ -1292,12 +1299,7 @@ fn main() {
         let seed = kernel.lock().unwrap().syllabus_seed();
         let mut sy = syllabus.lock().unwrap();
         // index: ruled strata, coarsest first
-        for addr in seed {
-            if !sy.at.contains(&addr) {
-                sy.at.insert(addr, ());
-                sy.order.push(addr);
-            }
-        }
+        syllabus_admit(&mut sy, seed);
         if !sy.order.is_empty() {
             eprintln!("  syllabus seeded: {} shallowest-first ruled words", sy.order.len());
         }
@@ -1449,6 +1451,7 @@ fn main() {
         let registry = Arc::clone(&registry);
         let router = Arc::clone(&router);
         let state_path = state_path.clone();
+        let syllabus = Arc::clone(&syllabus);
         std::thread::spawn(move || {
             let ratio = mycelium::physics::aperture_cycle() as u64;
             let mut wait = mycelium::physics::from_transport(mesh_rtt(&mesh), 1);
@@ -1458,10 +1461,15 @@ fn main() {
                 std::thread::sleep(wait);
                 if let Ok(mut k) = kernel.lock() {
                     k.court_stroke();
+                    let seed = k.syllabus_seed();
                     let rtt = mesh_rtt(&mesh);
                     let ms = rtt.as_millis() as u64;
                     if ms > 1 {
                         k.set_transport_ms(ms.max(1000));
+                    }
+                    drop(k);
+                    if let Ok(mut sy) = syllabus.lock() {
+                        syllabus_admit(&mut sy, seed);
                     }
                 }
                 persist_if_due(&kernel, &state_path);
@@ -1634,6 +1642,26 @@ fn main() {
             let body = dialogue::encode_deferral(outcome_code(&Outcome::GermPending));
             let _ = s.write_all(&Frame { lane: mycelium::network::wire::Stratum::Spatial, body }.encode().unwrap_or_default());
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn court_seed_enters_syllabus_order_once() {
+        let mut sy = Syllabus {
+            order: Vec::new(),
+            at: Keyed::new(),
+            served: Keyed::new(),
+        };
+        let a = [1u8; 32];
+        let b = [2u8; 32];
+        syllabus_admit(&mut sy, [a, b]);
+        syllabus_admit(&mut sy, [a]);
+        assert_eq!(sy.order, vec![a, b], "a ruled address is taught once, in order");
+        assert!(sy.at.contains(&a) && sy.at.contains(&b));
     }
 }
 
