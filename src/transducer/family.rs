@@ -29,7 +29,9 @@
 use super::blade::{self, Shape};
 use super::cga;
 use super::element::{self, Element, Versor};
+use super::sentence::{Form, FormFace, Vertex};
 use super::stalk::{Invariant, Standing};
+use std::cell::{Cell, RefCell};
 
 /// Source of crystallized forms on a class. The standing of each form is
 /// a coordinate: Ruled genome, Stood dialect, never a boolean.
@@ -77,18 +79,149 @@ fn body_of(comp: Vec<Cell3>) -> Body {
     Body { cells, shape, moduli, centroid }
 }
 
+thread_local! {
+    static CELL_READS: Cell<u64> = Cell::new(0);
+    static PAIR_FORM_MEMO: RefCell<Option<PairFormMemo>> = RefCell::new(None);
+}
+
+struct PairFormMemo {
+    a_ptr: usize,
+    a_len: usize,
+    b_ptr: usize,
+    b_len: usize,
+    scale: Option<((usize, usize), (usize, usize))>,
+    form: Form,
+}
+
+/// Grid cells visited by [`perceive`] since the last reset.
+pub fn cell_reads() -> u64 {
+    CELL_READS.with(|c| c.get())
+}
+
+fn reset_cell_reads() {
+    CELL_READS.with(|c| c.set(0));
+}
+
+fn note_cell_read() {
+    CELL_READS.with(|c| c.set(c.get().saturating_add(1)));
+}
+
 /// Perceive a scene: its bodies (connected components of the non-background
 /// cells; hue 0 is the background the eye does not see).
 pub fn perceive(grid: &Grid) -> Vec<Body> {
     let mut cells: Vec<Cell3> = Vec::new();
     for (r, row) in grid.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
+            note_cell_read();
             if h != 0 {
                 cells.push((r as i64, c as i64, h));
             }
         }
     }
     blade::components(&cells).into_iter().map(body_of).collect()
+}
+
+/// The scene frame as a form vertex.
+pub fn frame_vertex() -> Vertex {
+    Vertex::Frame
+}
+
+fn spelling_of_versor(v: &Versor) -> super::alphabet::Spelling {
+    element::affine_of(v)
+        .and_then(|aff| {
+            (aff.len() >= 2 && aff[0].len() >= 2).then(|| {
+                [[aff[0][0].clone(), aff[0][1].clone()], [aff[1][0].clone(), aff[1][1].clone()]]
+            })
+        })
+        .and_then(|block| super::alphabet::spell(&block))
+        .unwrap_or_else(|| super::alphabet::Spelling {
+            word: super::alphabet::Word::identity(),
+            rho: q(1),
+        })
+}
+
+fn versor_shift(v: &Versor) -> (BigRational, BigRational) {
+    element::affine_of(v)
+        .and_then(|a| {
+            (a.len() >= 2 && a[0].len() >= 3 && a[1].len() >= 3)
+                .then(|| (a[0][2].clone(), a[1][2].clone()))
+        })
+        .unwrap_or_else(|| (q(0), q(0)))
+}
+
+fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Vec<(i64, i64, u8, u8)> {
+    let mut chain = Vec::new();
+    match (a, b) {
+        (Some(src), Some(dst)) => {
+            for &(r, c, h) in &src.cells {
+                let h2 = element::carry_center(v, r, c)
+                    .and_then(|p| {
+                        let (tr, tc) = element::cell_of(&p);
+                        dst.cells
+                            .binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc)))
+                            .ok()
+                            .map(|i| dst.cells[i].2)
+                    })
+                    .unwrap_or(h);
+                chain.push((r, c, h, h2));
+            }
+        }
+        (None, Some(dst)) => {
+            for &(r, c, h) in &dst.cells {
+                chain.push((r, c, 0, h));
+            }
+        }
+        (Some(src), None) => {
+            for &(r, c, h) in &src.cells {
+                chain.push((r, c, h, 0));
+            }
+        }
+        (None, None) => {}
+    }
+    chain.sort_unstable();
+    chain
+}
+
+/// Carriage of two bodies spelled as a word form. Class is the target's chart.
+pub fn word_form(a: &Body, b: &Body) -> Option<Vertex> {
+    let car = carriage(a, b)?;
+    let sp = spelling_of_versor(&car.v);
+    let chain = chain_of(Some(a), Some(b), &car.v);
+    Some(Vertex::Word {
+        address: element::from_residual(&chain).address(),
+        word: sp.word,
+        rho: sp.rho,
+        placement: versor_shift(&car.v),
+        gauge: car.sigma,
+        class: b.moduli.clone(),
+    })
+}
+
+fn body_only_vertex(body: &Body, created: bool) -> Vertex {
+    let chain: Vec<(i64, i64, u8, u8)> = body
+        .cells
+        .iter()
+        .map(|&(r, c, h)| if created { (r, c, 0, h) } else { (r, c, h, 0) })
+        .collect();
+    Vertex::Word {
+        address: element::from_residual(&chain).address(),
+        word: super::alphabet::Word::identity(),
+        rho: q(1),
+        placement: (q(0), q(0)),
+        gauge: Vec::new(),
+        class: body.moduli.clone(),
+    }
+}
+
+fn support_of(body: &Body) -> Vec<(i64, i64)> {
+    let mut s: Vec<(i64, i64)> = body.cells.iter().map(|&(r, c, _)| (r, c)).collect();
+    s.sort_unstable();
+    s.dedup();
+    s
+}
+
+fn supports_overlap(a: &[(i64, i64)], b: &[(i64, i64)]) -> bool {
+    a.iter().any(|p| b.binary_search(p).is_ok())
 }
 
 fn frame_of(g: &Grid) -> (usize, usize) {
@@ -728,8 +861,11 @@ fn pair_groups(
     }
 }
 
-fn pair_nerve(a: &Grid, b: &Grid, scale: Option<((usize, usize), (usize, usize))>) -> super::sentence::Nerve {
-    use super::sentence::{assemble, close};
+fn pair_scene(
+    a: &Grid,
+    b: &Grid,
+    scale: Option<((usize, usize), (usize, usize))>,
+) -> (Vec<Cand>, Vec<Cand>, Vec<(usize, usize, Carriage)>, Vec<bool>, Vec<bool>) {
     let ins = scene_cands(a, scale);
     let outs = scene_cands(b, scale);
     let mut used_in = vec![false; ins.len()];
@@ -762,6 +898,12 @@ fn pair_nerve(a: &Grid, b: &Grid, scale: Option<((usize, usize), (usize, usize))
     for want in 2u8..=3 {
         greedy_within(&ins, &outs, &ii, &oo, &mut used_in, &mut used_out, &mut pairs, want);
     }
+    (ins, outs, pairs, used_in, used_out)
+}
+
+fn pair_nerve(a: &Grid, b: &Grid, scale: Option<((usize, usize), (usize, usize))>) -> super::sentence::Nerve {
+    use super::sentence::{assemble, close};
+    let (ins, outs, pairs, used_in, used_out) = pair_scene(a, b, scale);
     let mut germs = vec![frame_germ(a, b)];
     for (i, j, car) in pairs {
         let kind = ins[i].kind;
@@ -800,6 +942,103 @@ fn pair_nerve(a: &Grid, b: &Grid, scale: Option<((usize, usize), (usize, usize))
     let mut n = assemble(germs, Vec::new());
     let _ = close(&mut n);
     n
+}
+
+fn pair_form_uncached(
+    a: &Grid,
+    b: &Grid,
+    scale: Option<((usize, usize), (usize, usize))>,
+) -> Form {
+    let (ins, outs, pairs, used_in, used_out) = pair_scene(a, b, scale);
+    let mut vertices = vec![frame_vertex()];
+    let mut supports: Vec<Vec<(i64, i64)>> = vec![Vec::new()];
+    for (i, j, _car) in &pairs {
+        if let Some(v) = word_form(&ins[*i].body, &outs[*j].body) {
+            vertices.push(v);
+            supports.push(support_of(&outs[*j].body));
+        }
+    }
+    for (j, oc) in outs.iter().enumerate() {
+        if !used_out[j] && oc.kind == super::peel::ShellKind::Whole {
+            vertices.push(body_only_vertex(&oc.body, true));
+            supports.push(support_of(&oc.body));
+        }
+    }
+    for (i, ic) in ins.iter().enumerate() {
+        if !used_in[i] && ic.kind == super::peel::ShellKind::Whole {
+            vertices.push(body_only_vertex(&ic.body, false));
+            supports.push(support_of(&ic.body));
+        }
+    }
+    let mut form = Form {
+        vertices,
+        faces: Vec::new(),
+        loops: Vec::new(),
+        remainder: Vec::new(),
+        depth: 0,
+        hue_maps: crate::network::nerve::Keyed::new(),
+    };
+    let n = form.vertices.len();
+    for j in 1..n {
+        form.faces.push(FormFace {
+            i: 0,
+            j: j as u16,
+            g_ij: form.face_of(0, j as u16),
+        });
+    }
+    for i in 1..n {
+        for j in (i + 1)..n {
+            if supports_overlap(&supports[i], &supports[j]) {
+                form.faces.push(FormFace {
+                    i: i as u16,
+                    j: j as u16,
+                    g_ij: form.face_of(i as u16, j as u16),
+                });
+            }
+        }
+    }
+    form.loops = Form::loops_of(&form.faces, n);
+    form
+}
+
+/// Perception of one pair as a form. Cells are read once; a second call on
+/// the same grids spends none. Shells pair and are never vertices.
+pub fn pair_form(
+    a: &Grid,
+    b: &Grid,
+    scale: Option<((usize, usize), (usize, usize))>,
+) -> Form {
+    let a_ptr = a.as_ptr() as usize;
+    let b_ptr = b.as_ptr() as usize;
+    let hit = PAIR_FORM_MEMO.with(|m| {
+        m.borrow().as_ref().and_then(|held| {
+            if held.a_ptr == a_ptr
+                && held.a_len == a.len()
+                && held.b_ptr == b_ptr
+                && held.b_len == b.len()
+                && held.scale == scale
+            {
+                Some(held.form.clone())
+            } else {
+                None
+            }
+        })
+    });
+    if let Some(f) = hit {
+        return f;
+    }
+    let form = pair_form_uncached(a, b, scale);
+    PAIR_FORM_MEMO.with(|m| {
+        *m.borrow_mut() = Some(PairFormMemo {
+            a_ptr,
+            a_len: a.len(),
+            b_ptr,
+            b_len: b.len(),
+            scale,
+            form: form.clone(),
+        });
+    });
+    form
 }
 
 /// Re-derive the family's rule and check it agrees with `rule`.
@@ -1409,6 +1648,35 @@ mod tests {
 
     fn grid(rows: &[&str]) -> Grid {
         rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
+    }
+
+    /// Perception writes the form once. A second call on the same grids
+    /// does not touch a cell.
+    #[test]
+    fn pair_form_reads_cells_once() {
+        let a = grid(&["1100", "0000"]);
+        let b = grid(&["0011", "0000"]);
+        reset_cell_reads();
+        let f1 = pair_form(&a, &b, None);
+        let n = cell_reads();
+        assert!(n > 0, "first call reads the grids, got {n}");
+        assert!(
+            f1.vertices.iter().any(|v| matches!(v, Vertex::Frame)),
+            "every pair form has a frame"
+        );
+        assert!(
+            f1.vertices.len() >= 2,
+            "frame plus at least one body, got {}",
+            f1.vertices.len()
+        );
+        assert!(
+            f1.vertices.iter().any(|v| matches!(v, Vertex::Word { .. })),
+            "a carried body is a word vertex"
+        );
+        let f2 = pair_form(&a, &b, None);
+        assert_eq!(cell_reads(), n, "second call touches no cells");
+        assert_eq!(f1.vertices.len(), f2.vertices.len());
+        assert_eq!(f1.faces.len(), f2.faces.len());
     }
 
     /// A family that shifts every body two columns right and recolours
