@@ -810,6 +810,28 @@ pub fn rule_replays_family(rule: &super::sentence::SentenceRule, family: &[(Grid
     again.charts == rule.charts && again.faces == rule.faces && again.holonomies == rule.holonomies
 }
 
+/// Extract, memoized by family id and working-atlas generation. A hit
+/// spends nothing; a miss spends one Budget and stores the rule.
+pub fn extract_rule_cached(
+    cache: &mut crate::network::nerve::Keyed<(usize, Option<super::sentence::SentenceRule>)>,
+    fam: &[u8; 32],
+    family: &[(Grid, Grid)],
+    atlas_gen: usize,
+    budget: &mut crate::physics::Budget,
+) -> Option<super::sentence::SentenceRule> {
+    if let Some((g, rule)) = cache.get(fam) {
+        if *g == atlas_gen {
+            return rule.clone();
+        }
+    }
+    if !budget.spend() {
+        return cache.get(fam).and_then(|(_, r)| r.clone());
+    }
+    let rule = extract_rule(family);
+    cache.insert(*fam, (atlas_gen, rule.clone()));
+    rule
+}
+
 /// Extract the invariant cochain of a family: one nerve per pair, then
 /// agree_up_to_gauge. None when the nerves do not agree up to gauge.
 pub fn extract_rule(family: &[(Grid, Grid)]) -> Option<super::sentence::SentenceRule> {
@@ -1572,6 +1594,21 @@ mod tests {
         assert!(mu[2] >= 1, "lane 2 carries the scene-state span");
         assert!(mu[1] >= 1, "recolour is gauge content, got {mu:?}");
         assert_ne!(mu, [0, 0, 0, 1], "mint is the unflattened 4-vector");
+    }
+
+    #[test]
+    fn extract_rule_cached_spends_once_per_generation() {
+        let family = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];
+        let fam = [7u8; 32];
+        let mut cache = crate::network::nerve::Keyed::new();
+        let mut budget = crate::physics::Physics::default().stroke_n(8);
+        let a = extract_rule_cached(&mut cache, &fam, &family, 1, &mut budget);
+        let left = budget.remaining();
+        let b = extract_rule_cached(&mut cache, &fam, &family, 1, &mut budget);
+        assert_eq!(a.is_some(), b.is_some());
+        assert_eq!(budget.remaining(), left, "a cache hit spends nothing");
+        let _ = extract_rule_cached(&mut cache, &fam, &family, 2, &mut budget);
+        assert!(budget.remaining() < left, "a new atlas generation re-extracts");
     }
 
     #[test]

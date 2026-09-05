@@ -255,6 +255,10 @@ fn main() {
     }
     let mut last_genome_save = Instant::now();
     let mut saved_genome = entity.epigenome.genome_len();
+    let mut extract_memo: mycelium::network::nerve::Keyed<(
+        usize,
+        Option<mycelium::transducer::sentence::SentenceRule>,
+    )> = mycelium::network::nerve::Keyed::new();
 
     loop {
         if stop.load(Ordering::SeqCst) {
@@ -336,10 +340,17 @@ fn main() {
                 physics.spend(Physics::lanes_of(&mag)); // thought is priced on the lanes it occupies
                 // The rule's nerve is the sentence: constant relative words,
                 // not pair-0 geometry. No calculator fallback.
-                if let Some(rule) = mycelium::transducer::family::extract_rule(&task.train)
-                    .as_ref()
-                    .or(comprehended.rule.as_ref())
-                {
+                let fam = *blake3::hash(path.to_string_lossy().as_bytes()).as_bytes();
+                let gen = entity.epigenome.genome_len() + entity.dialect_len();
+                let mut extract_budget = physics.stroke();
+                let extracted = mycelium::transducer::family::extract_rule_cached(
+                    &mut extract_memo,
+                    &fam,
+                    &task.train,
+                    gen,
+                    &mut extract_budget,
+                );
+                if let Some(rule) = extracted.as_ref().or(comprehended.rule.as_ref()) {
                     for (x, y) in &task.test {
                         if y.is_empty() {
                             continue;
@@ -353,7 +364,6 @@ fn main() {
                             }
                         }
                     }
-                    let fam = *blake3::hash(path.to_string_lossy().as_bytes()).as_bytes();
                     let _ = speak_sentence(&mut entity, &tag, &rule.nerve, &fam);
                 }
                 retire_feed(path);
@@ -590,7 +600,15 @@ fn main() {
             let mag = family_magnitude(&train);
             physics.bump(&mag);
             physics.spend(Physics::lanes_of(&mag)); // thought is priced on the lanes it occupies
-            let extracted = mycelium::transducer::family::extract_rule(&train);
+            let gen = entity.epigenome.genome_len() + entity.dialect_len();
+            let mut extract_budget = physics.stroke();
+            let extracted = mycelium::transducer::family::extract_rule_cached(
+                &mut extract_memo,
+                &tid,
+                &train,
+                gen,
+                &mut extract_budget,
+            );
             let rule = extracted.as_ref().or(comprehended.rule.as_ref());
             eprintln!(
                 "[{tag}] [{}] family {:02x}{:02x}… {} pairs, {} tests: {}",
