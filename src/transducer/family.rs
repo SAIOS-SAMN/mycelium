@@ -1054,6 +1054,7 @@ fn pair_form_uncached(
         certificates: Vec::new(),
         torsion: crate::network::nerve::Keyed::new(),
         glued: crate::network::nerve::Keyed::new(),
+        vortex: crate::network::nerve::Keyed::new(),
     };
     let n = form.vertices.len();
     let frame = 0usize;
@@ -1749,6 +1750,7 @@ pub fn extract_rule_with(
         certificates: Vec::new(),
         torsion: crate::network::nerve::Keyed::new(),
         glued: crate::network::nerve::Keyed::new(),
+        vortex: crate::network::nerve::Keyed::new(),
     };
     // 2. Faces named by the pair forms (star + cell overlap), kept iff M1-constant.
     let mut candidates: crate::network::nerve::Keyed<(End, End)> = crate::network::nerve::Keyed::new();

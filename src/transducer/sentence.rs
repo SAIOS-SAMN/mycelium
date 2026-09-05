@@ -819,6 +819,13 @@ pub struct Loop {
     pub holonomy: Word,
 }
 
+impl Loop {
+    /// The chord face: the one face of the loop outside the spanning forest.
+    pub fn chord(&self) -> Option<usize> {
+        self.faces.last().copied().map(|i| i as usize)
+    }
+}
+
 /// A sentence as vertices, faces, loops, remainder. Replaces `Nerve` as the
 /// stored object once chapter 30 finishes; both live here until then.
 #[derive(Debug, Clone)]
@@ -840,6 +847,9 @@ pub struct Form {
     /// Cited form address → glued vertex index. Written by [`Form::glue`]
     /// and rebuilt by the decoder from Glued vertices.
     pub glued: Keyed<u16>,
+    /// Incomparable discharges held as cells until a glue or ruling.
+    /// Outer key is the after class; inner is the discharging rotor A1 key.
+    pub vortex: Keyed<Keyed<PivotCertificate>>,
 }
 
 impl Default for Form {
@@ -856,6 +866,7 @@ impl Default for Form {
             certificates: Vec::new(),
             torsion: Keyed::new(),
             glued: Keyed::new(),
+            vortex: Keyed::new(),
         }
     }
 }
@@ -948,9 +959,14 @@ impl Form {
             hue_maps: Keyed::new(),
             ratio: ((1, 1), (1, 1)),
             sections: Keyed::new(),
-            certificates: Vec::new(),
+            certificates: n
+                .certificates
+                .fiber(&ROOT)
+                .map(|(_, c)| c.clone())
+                .collect(),
             torsion,
             glued: Keyed::new(),
+            vortex: n.vortex.clone(),
         }
     }
 
@@ -1034,7 +1050,7 @@ impl Form {
                 }
                 k
             },
-            vortex: Keyed::new(),
+            vortex: self.vortex.clone(),
         })
     }
 
@@ -1307,6 +1323,375 @@ impl Form {
         idx
     }
 
+    /// Remainder empty and every loop identity or filed finite torsion.
+    pub fn is_cauterized(&self) -> bool {
+        if !self.remainder.is_empty() {
+            return false;
+        }
+        for lp in &self.loops {
+            if lp.holonomy.abelian_identity() {
+                continue;
+            }
+            match lp.holonomy.order() {
+                Order::Infinite => return false,
+                Order::Finite(ell) => {
+                    let k = lp.holonomy.rotor().class_key();
+                    match self.torsion.get(&k) {
+                        Some((_, e, _)) if *e == ell => {}
+                        _ => return false,
+                    }
+                }
+            }
+        }
+        true
+    }
+
+    /// A18 over this form's loops.
+    pub fn rank(&self) -> Rank {
+        rank_of_holonomies(self.loops.iter().map(|lp| &lp.holonomy))
+    }
+
+    /// The class vector of loop `idx` (12.6).
+    pub fn class_vector(&self, idx: usize) -> Option<ClassVector> {
+        let lp = self.loops.get(idx)?;
+        let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+        Some(ClassVector::read(&lp.holonomy, (zero.clone(), zero)))
+    }
+
+    /// Write a certified word onto the chord face and re-walk.
+    pub fn apply_pivot(&mut self, cert: &PivotCertificate) {
+        let PivotBy::Word { face, word, side } = &cert.by;
+        if let Some(f) = self.faces.get_mut(*face as usize) {
+            f.g_ij = pivoted_face(&f.g_ij, word, *side);
+        }
+        self.loops = Self::loops_of(&self.faces, self.vertices.len());
+    }
+
+    /// A16 on the form. Certificates and vortex live here.
+    pub fn pivot_loop(
+        &mut self,
+        idea: [u8; 32],
+        horizon: &Keyed<(Rotor, Order, Standing)>,
+        crystal: &dyn super::family::Crystal,
+        budget: &mut Budget,
+    ) -> Vec<Snap> {
+        let mut snaps = Vec::new();
+        let mut handled: Keyed<()> = Keyed::new();
+        loop {
+            if budget.remaining() == 0 {
+                break;
+            }
+            self.loops = Self::loops_of(&self.faces, self.vertices.len());
+            let open: Vec<usize> = self
+                .loops
+                .iter()
+                .enumerate()
+                .filter(|(_, lp)| !lp.holonomy.abelian_identity())
+                .map(|(i, _)| i)
+                .collect();
+            if open.is_empty() {
+                break;
+            }
+            let rows: Vec<LoopRow> = self.loops.iter().map(|lp| loop_row(&lp.holonomy)).collect();
+            let rank_before = rank_of_rows(&rows);
+            let mu = element::measure_lanes(&self.remainder);
+            let mut applied = false;
+            for idx in open {
+                if !budget.spend() {
+                    break;
+                }
+                let Some(kappa) = self.class_vector(idx) else {
+                    continue;
+                };
+                let key = kappa.class_key();
+                if handled.contains(&key) {
+                    continue;
+                }
+                let held = horizon.get(&key).is_some();
+                let order = self.loops[idx].holonomy.order();
+                if self.try_close_chord(idx) {
+                    let ell = match order {
+                        Order::Finite(e) => e,
+                        Order::Infinite => 0,
+                    };
+                    snaps.push(Snap::Closed { chord: idx, order: ell });
+                    eprintln!(
+                        "  pivot {:02x}{:02x}… loop {idx} closed by the tree gauge",
+                        idea[0], idea[1]
+                    );
+                    handled.insert(key, ());
+                    applied = true;
+                    break;
+                }
+                let cands = self.candidates_for(idx, &kappa, crystal);
+                let mut discharging: Vec<(PivotCertificate, [u64; 4])> = Vec::new();
+                for cand in &cands {
+                    if !budget.spend() {
+                        break;
+                    }
+                    if let Some(cert) = self.trial(idx, cand, &kappa, &rows, rank_before, mu) {
+                        discharging.push((cert, mu));
+                    } else {
+                        eprintln!(
+                            "  pivot {:02x}{:02x}… loop {idx} axis {:?} no discharge",
+                            idea[0], idea[1], cand.axis
+                        );
+                    }
+                }
+                match select_discharge(&discharging) {
+                    Some(cert) => {
+                        self.apply_pivot(&cert);
+                        eprintln!(
+                            "  pivot {:02x}{:02x}… loop {idx} axis {:?} discharged {:02x}{:02x}…→{:02x}{:02x}…",
+                            idea[0], idea[1], cert.axis, cert.before[0], cert.before[1], cert.after[0], cert.after[1]
+                        );
+                        let ck = cert.key();
+                        if !self.certificates.iter().any(|c| c.key() == ck) {
+                            self.certificates.push(cert.clone());
+                        }
+                        snaps.push(Snap::Discharged {
+                            chord: idx,
+                            certificate: cert,
+                        });
+                        handled.insert(key, ());
+                        applied = true;
+                        break;
+                    }
+                    None if !discharging.is_empty() => {
+                        eprintln!(
+                            "  vortex {:02x}{:02x}… loop {idx} {} candidates held",
+                            idea[0],
+                            idea[1],
+                            discharging.len()
+                        );
+                        let mut held_certs = Vec::new();
+                        for (c, _) in discharging {
+                            vortex_put(&mut self.vortex, c.clone());
+                            held_certs.push(c);
+                        }
+                        snaps.push(Snap::Vortex {
+                            chord: idx,
+                            held: held_certs,
+                        });
+                        handled.insert(key, ());
+                    }
+                    None => match order {
+                        Order::Infinite => {
+                            if !held {
+                                snaps.push(Snap::Demand { chord: idx, key });
+                                eprintln!(
+                                    "  demand spoken {:02x}{:02x}… order ∞",
+                                    idea[0], idea[1]
+                                );
+                            }
+                            handled.insert(key, ());
+                        }
+                        Order::Finite(ell) => {
+                            if self.file_loop(idx, ell) {
+                                if !held {
+                                    snaps.push(Snap::TorsionFiled { chord: idx, ell });
+                                    eprintln!(
+                                        "  torsion filed {:02x}{:02x}… (σ,{ell})",
+                                        idea[0], idea[1]
+                                    );
+                                }
+                            } else {
+                                snaps.push(Snap::TorsionOpen { chord: idx });
+                                eprintln!(
+                                    "  torsion open {:02x}{:02x}… chord {idx}",
+                                    idea[0], idea[1]
+                                );
+                            }
+                            handled.insert(key, ());
+                        }
+                    },
+                }
+            }
+            if !applied {
+                break;
+            }
+        }
+        snaps
+    }
+
+    fn try_close_chord(&mut self, idx: usize) -> bool {
+        let Some(gamma) = self.solve_coboundary() else {
+            return false;
+        };
+        let _ = self.regauge(&gamma);
+        match self.loops.get(idx) {
+            Some(lp) => lp.holonomy.abelian_identity(),
+            None => true,
+        }
+    }
+
+    fn candidates_for(
+        &self,
+        idx: usize,
+        kappa: &ClassVector,
+        crystal: &dyn super::family::Crystal,
+    ) -> Vec<Candidate> {
+        let Some(lp) = self.loops.get(idx) else {
+            return Vec::new();
+        };
+        let Some(chord) = lp.chord() else {
+            return Vec::new();
+        };
+        if self.faces.get(chord).is_none() {
+            return Vec::new();
+        }
+        let mut charts: Keyed<stalk::Invariant> = Keyed::new();
+        for &fi in &lp.faces {
+            let Some(f) = self.faces.get(fi as usize) else {
+                continue;
+            };
+            for vi in [f.i, f.j] {
+                if let Some(v) = self.vertices.get(vi as usize) {
+                    let chart = v.class();
+                    charts.insert(chart.key(), chart);
+                }
+            }
+        }
+        fn side_slot(side: Side) -> [u8; 32] {
+            let mut k = [0u8; 32];
+            k[0] = match side {
+                Side::Left => 0,
+                Side::Right => 1,
+            };
+            k
+        }
+        let mut seen: Keyed<Keyed<()>> = Keyed::new();
+        let mut out = Vec::new();
+        for axis in kappa.coordinates() {
+            for (_, chart) in charts.fiber(&ROOT) {
+                for w in crystal.on_axis(chart, axis) {
+                    for side in [Side::Right, Side::Left] {
+                        let wk = w.key();
+                        let sk = side_slot(side);
+                        if seen.get(&wk).is_some_and(|s| s.contains(&sk)) {
+                            continue;
+                        }
+                        match seen.get_mut(&wk) {
+                            Some(sides) => {
+                                sides.insert(sk, ());
+                            }
+                            None => {
+                                let mut sides = Keyed::new();
+                                sides.insert(sk, ());
+                                seen.insert(wk, sides);
+                            }
+                        }
+                        out.push(Candidate {
+                            axis,
+                            by: PivotBy::Word {
+                                face: chord as u16,
+                                word: w.clone(),
+                                side,
+                            },
+                        });
+                    }
+                }
+            }
+        }
+        out
+    }
+
+    fn trial(
+        &self,
+        idx: usize,
+        cand: &Candidate,
+        kappa: &ClassVector,
+        rows: &[LoopRow],
+        rank_before: Rank,
+        mu: [u64; 4],
+    ) -> Option<PivotCertificate> {
+        let lp = self.loops.get(idx)?;
+        let PivotBy::Word { face, word, side } = &cand.by;
+        let held = self.faces.get(*face as usize)?;
+        let after_g = pivoted_face(&held.g_ij, word, *side);
+        let verts = loop_verts(self, lp)?;
+        let mut w = Word::identity();
+        for (win, &fi) in verts.windows(2).zip(&lp.faces) {
+            let step = if fi as usize == *face as usize {
+                if held.i as usize == win[0] && held.j as usize == win[1] {
+                    after_g.clone()
+                } else {
+                    after_g.inverse()
+                }
+            } else {
+                form_face_step(&self.faces, fi as usize, win[0], win[1])?
+            };
+            w = w.compose(&step);
+        }
+        let after_h = w.normal_form();
+        let kappa_after = ClassVector::read(&after_h, kappa.placement.clone());
+        if kappa_after.occupies(cand.axis) || !kappa.agrees_except(&kappa_after, cand.axis) {
+            return None;
+        }
+        let mut after_rows = rows.to_vec();
+        *after_rows.get_mut(idx)? = loop_row(&after_h);
+        let rank_after = rank_of_rows(&after_rows);
+        if !Rank::admits(rank_before, rank_after) {
+            return None;
+        }
+        Some(PivotCertificate {
+            chord: idx as u16,
+            axis: cand.axis,
+            before: kappa.class_key(),
+            after: kappa_after.class_key(),
+            rank_before,
+            rank_after,
+            mu,
+            by: cand.by.clone(),
+        })
+    }
+
+    fn file_loop(&mut self, idx: usize, ell: u32) -> bool {
+        if ell == 0 {
+            return false;
+        }
+        let Some(lp) = self.loops.get(idx) else {
+            return false;
+        };
+        let Some(chord) = lp.chord() else {
+            return false;
+        };
+        let Some(verts) = loop_verts(self, lp) else {
+            return false;
+        };
+        let sigma: Vec<(u8, u8)> = verts
+            .windows(2)
+            .map(|p| (p[0] as u8, p[1] as u8))
+            .collect();
+        let class = lp.holonomy.rotor().class_key();
+        self.torsion.insert(class, (sigma, ell, chord as u16));
+        true
+    }
+
+    fn write_to_nerve(&self, n: &mut Nerve) {
+        for (i, ff) in self.faces.iter().enumerate() {
+            if let Some(face) = n.faces.get_mut(i) {
+                face.g_ij = ff.g_ij.clone();
+            }
+        }
+        n.cycles = independent_cycles(n.germs.len(), &n.faces);
+        n.torsion = self.torsion.clone();
+        n.vortex = self.vortex.clone();
+        n.certificates = Keyed::new();
+        for c in &self.certificates {
+            n.certificates.insert(c.key(), c.clone());
+        }
+        n.remainder = self.remainder.clone();
+        for (k, (sigma, ell, _)) in self.torsion.fiber(&ROOT) {
+            let Some(r) = torsion_loop_rotor(self, k) else {
+                continue;
+            };
+            let a = sigma.first().map(|&(x, _)| x as usize).unwrap_or(0);
+            let b = sigma.last().map(|&(_, y)| y as usize).unwrap_or(a);
+            n.complex.file_congruent(germ_vertex(a), germ_vertex(b), r, *ell);
+        }
+    }
+
     pub fn loops_of(faces: &[FormFace], n: usize) -> Vec<Loop> {
         if n == 0 {
             return Vec::new();
@@ -1355,6 +1740,45 @@ fn form_face_step(faces: &[FormFace], fi: usize, from: usize, to: usize) -> Opti
     } else {
         Some(f.g_ij.inverse())
     }
+}
+
+fn loop_verts(form: &Form, lp: &Loop) -> Option<Vec<usize>> {
+    let fs: Vec<(usize, usize)> = lp
+        .faces
+        .iter()
+        .map(|&i| {
+            let f = form.faces.get(i as usize)?;
+            Some((f.i as usize, f.j as usize))
+        })
+        .collect::<Option<Vec<_>>>()?;
+    if fs.is_empty() {
+        return Some(Vec::new());
+    }
+    if fs.len() == 1 {
+        let (i, j) = fs[0];
+        return Some(vec![i, j, i]);
+    }
+    let (a, b) = fs[0];
+    let (c, d) = fs[1];
+    let (start, mut cur) = if b == c || b == d {
+        (a, b)
+    } else if a == c || a == d {
+        (b, a)
+    } else {
+        return None;
+    };
+    let mut verts = vec![start, cur];
+    for &(i, j) in &fs[1..] {
+        if i == cur {
+            cur = j;
+        } else if j == cur {
+            cur = i;
+        } else {
+            return None;
+        }
+        verts.push(cur);
+    }
+    Some(verts)
 }
 
 fn form_named_holonomy(faces: &[FormFace], path: &[usize], walked: &[usize]) -> Word {
@@ -2736,126 +3160,36 @@ struct Candidate {
     by: PivotBy,
 }
 
-/// A16 step 3: for each occupied coordinate of the loop, in the fixed
-/// order, the held words on the loop's own charts that occupy it, read as
-/// one fiber of the crystal's axis index; each word on either side of the
-/// chord. A germ without a chart reads the root stratum.
-fn candidates_for(n: &Nerve, c: &Cycle, kappa: &ClassVector, crystal: &dyn super::family::Crystal) -> Vec<Candidate> {
-    let Some(chord) = c.chord() else {
-        return Vec::new();
-    };
-    let Some(_face) = n.faces.get(chord) else {
-        return Vec::new();
-    };
-    let mut charts: Keyed<stalk::Invariant> = Keyed::new();
-    for &gi in &c.germs {
-        if let Some(g) = n.germs.get(gi) {
-            let chart = g.target.clone().or_else(|| g.source.clone()).unwrap_or_default();
-            charts.insert(chart.key(), chart);
-        }
+fn working_form(n: &Nerve) -> Form {
+    let vertices: Vec<Vertex> = n.germs.iter().map(Vertex::from_germ).collect();
+    let faces: Vec<FormFace> = n
+        .faces
+        .iter()
+        .map(|f| FormFace {
+            i: f.i as u16,
+            j: f.j as u16,
+            g_ij: f.g_ij.clone(),
+        })
+        .collect();
+    let nverts = vertices.len();
+    Form {
+        vertices,
+        faces: faces.clone(),
+        loops: Form::loops_of(&faces, nverts),
+        remainder: n.remainder.clone(),
+        depth: 0,
+        hue_maps: Keyed::new(),
+        ratio: ((1, 1), (1, 1)),
+        sections: Keyed::new(),
+        certificates: n
+            .certificates
+            .fiber(&ROOT)
+            .map(|(_, c)| c.clone())
+            .collect(),
+        torsion: n.torsion.clone(),
+        glued: Keyed::new(),
+        vortex: n.vortex.clone(),
     }
-    fn side_slot(side: Side) -> [u8; 32] {
-        let mut k = [0u8; 32];
-        k[0] = match side {
-            Side::Left => 0,
-            Side::Right => 1,
-        };
-        k
-    }
-    let mut seen: Keyed<Keyed<()>> = Keyed::new();
-    let mut out = Vec::new();
-    for axis in kappa.coordinates() {
-        for (_, chart) in charts.fiber(&crate::network::nerve::ROOT) {
-            for w in crystal.on_axis(chart, axis) {
-                for side in [Side::Right, Side::Left] {
-                    let wk = w.key();
-                    let sk = side_slot(side);
-                    if seen.get(&wk).is_some_and(|s| s.contains(&sk)) {
-                        continue;
-                    }
-                    match seen.get_mut(&wk) {
-                        Some(sides) => {
-                            sides.insert(sk, ());
-                        }
-                        None => {
-                            let mut sides = Keyed::new();
-                            sides.insert(sk, ());
-                            seen.insert(wk, sides);
-                        }
-                    }
-                    out.push(Candidate {
-                        axis,
-                        by: PivotBy::Word {
-                            face: chord as u16,
-                            word: w.clone(),
-                            side,
-                        },
-                    });
-                }
-            }
-        }
-    }
-    out
-}
-
-/// The trial of one candidate (A16 step 4). Only the chord face changes, so
-/// the loop's holonomy after the move is exactly the old holonomy with the
-/// word written on; its vector is re-read, and the rank re-read with that
-/// one loop's row swapped. The candidate discharges iff the axis's
-/// coordinate is zero, no other coordinate moved, and rank is admissible.
-fn trial(
-    n: &Nerve,
-    idx: usize,
-    cand: &Candidate,
-    kappa: &ClassVector,
-    rows: &[LoopRow],
-    rank_before: Rank,
-    mu: [u64; 4],
-) -> Option<PivotCertificate> {
-    let c = n.cycles.get(idx)?;
-    let PivotBy::Word { face, word, side } = &cand.by;
-    // Write on the chord face and re-read that same path. Pivoting the
-    // stored holonomy is only valid when the walk traverses the chord
-    // forward; a backward chord would select the side that leaves the
-    // after-face off `face_of`.
-    let Some(held) = n.faces.get(*face as usize) else {
-        return None;
-    };
-    let after_g = pivoted_face(&held.g_ij, word, *side);
-    let mut w = Word::identity();
-    for (win, &fi) in c.germs.windows(2).zip(&c.faces) {
-        let step = if fi == *face as usize {
-            if held.i == win[0] && held.j == win[1] {
-                after_g.clone()
-            } else {
-                after_g.inverse()
-            }
-        } else {
-            face_step(&n.faces, fi, win[0], win[1])?
-        };
-        w = w.compose(&step);
-    }
-    let after_h = w.normal_form();
-    let kappa_after = ClassVector::read(&after_h, kappa.placement.clone());
-    if kappa_after.occupies(cand.axis) || !kappa.agrees_except(&kappa_after, cand.axis) {
-        return None;
-    }
-    let mut after_rows = rows.to_vec();
-    *after_rows.get_mut(idx)? = loop_row(&after_h);
-    let rank_after = rank_of_rows(&after_rows);
-    if !Rank::admits(rank_before, rank_after) {
-        return None;
-    }
-    Some(PivotCertificate {
-        chord: idx as u16,
-        axis: cand.axis,
-        before: kappa.class_key(),
-        after: kappa_after.class_key(),
-        rank_before,
-        rank_after,
-        mu,
-        by: cand.by.clone(),
-    })
 }
 
 /// Hold a vortex cell by its after class, then by the discharging word's
@@ -2877,13 +3211,11 @@ pub fn vortex_put(v: &mut Keyed<Keyed<PivotCertificate>>, c: PivotCertificate) {
     }
 }
 
-/// Apply a certified pivot: write the word onto the chord face and re-walk.
+/// Apply a certified pivot: the form writes the chord, the nerve is the adapter.
 pub fn apply_pivot(n: &mut Nerve, cert: &PivotCertificate) {
-    let PivotBy::Word { face, word, side } = &cert.by;
-    if let Some(f) = n.faces.get_mut(*face as usize) {
-        f.g_ij = pivoted_face(&f.g_ij, word, *side);
-    }
-    n.cycles = independent_cycles(n.germs.len(), &n.faces);
+    let mut f = working_form(n);
+    f.apply_pivot(cert);
+    f.write_to_nerve(n);
 }
 
 /// Dominance certifies (law 5): the lane-wise minimum of the candidates'
@@ -2909,81 +3241,8 @@ fn select_discharge(cands: &[(PivotCertificate, [u64; 4])]) -> Option<PivotCerti
     winner.cloned()
 }
 
-fn apply_cochain_gauge(n: &mut Nerve, gamma: &[Word]) {
-    for f in &mut n.faces {
-        if f.i >= gamma.len() || f.j >= gamma.len() {
-            continue;
-        }
-        f.g_ij = gamma[f.j]
-            .compose(&f.g_ij)
-            .compose(&gamma[f.i].inverse())
-            .normal_form();
-    }
-    n.cycles = independent_cycles(n.germs.len(), &n.faces);
-}
-
-fn try_close_chord(n: &mut Nerve, idx: usize) -> bool {
-    let mut edges = Vec::new();
-    for f in &n.faces {
-        if !f.spelled {
-            continue;
-        }
-        edges.push((f.i, f.j, f.g_ij.rotor()));
-    }
-    let Some(gs) = cech::solve_gauge(n.germs.len(), &edges) else {
-        return false;
-    };
-    let Some(words): Option<Vec<Word>> = gs.iter().map(|g| g.spelled_word()).collect() else {
-        return false;
-    };
-    apply_cochain_gauge(n, &words);
-    // A gauge keeps loop indices aligned; the chord is this loop.
-    match n.cycles.get(idx) {
-        Some(c) => c.holonomy.abelian_identity(),
-        None => true,
-    }
-}
-
-fn file_cycle(n: &mut Nerve, idx: usize, ell: u32) -> bool {
-    if ell == 0 {
-        return false;
-    }
-    let Some(c) = n.cycles.get(idx) else {
-        return false;
-    };
-    let Some(&a) = c.germs.first() else {
-        return false;
-    };
-    let b = c
-        .germs
-        .get(c.germs.len().saturating_sub(2))
-        .copied()
-        .unwrap_or(a);
-    // σ: the loop's own consecutive germ pairs, written as it is filed.
-    let sigma: Vec<(u8, u8)> = c
-        .germs
-        .windows(2)
-        .map(|p| (p[0] as u8, p[1] as u8))
-        .collect();
-    let Some(chord) = c.chord() else {
-        return false;
-    };
-    let rotor = c.holonomy.rotor();
-    let class = rotor.class_key();
-    n.complex.file_congruent(germ_vertex(a), germ_vertex(b), rotor, ell);
-    n.torsion.insert(class, (sigma, ell, chord as u16));
-    true
-}
-
-/// A16, the pivot loop. For every open loop, in index order: the tree gauge
-/// first (a trivial class closes by re-gauging, T2, never rank); then the
-/// pivots the loop's class vector names, read as one axis-index fiber per
-/// occupied coordinate from the crystal (the working atlas), each tried
-/// exactly; every discharge is certified (A20); several discharges with no
-/// dominant μ⃗ are a vortex held as cells; a loop nothing discharges is
-/// filed as torsion when finite and spoken as a demand when free. A class
-/// the horizon already holds is filed silently and never demanded again.
-/// No candidate is ordered by a scalar and nothing is searched for.
+/// A16, the pivot loop. The form is the object; the nerve is the adapter
+/// for one commit. Certificates and vortex live on the form.
 pub fn pivot_loop(
     n: &mut Nerve,
     idea: [u8; 32],
@@ -2991,140 +3250,16 @@ pub fn pivot_loop(
     crystal: &dyn super::family::Crystal,
     budget: &mut Budget,
 ) -> Vec<Snap> {
-    let mut snaps = Vec::new();
-    let mut handled: Keyed<()> = Keyed::new();
-    loop {
-        if budget.remaining() == 0 {
-            break;
-        }
-        n.cycles = independent_cycles(n.germs.len(), &n.faces);
-        let open: Vec<usize> = n
-            .cycles
-            .iter()
-            .enumerate()
-            .filter(|(_, c)| !c.holonomy.abelian_identity())
-            .map(|(i, _)| i)
-            .collect();
-        if open.is_empty() {
-            break;
-        }
-        let rows: Vec<LoopRow> = n.cycles.iter().map(|c| loop_row(&c.holonomy)).collect();
-        let rank_before = rank_of_rows(&rows);
-        let mu = element::measure_lanes(&n.remainder);
-        let mut applied = false;
-        for idx in open {
-            if !budget.spend() {
-                break;
-            }
-            let Some(kappa) = class_vector_of(n, idx) else {
-                continue;
-            };
-            let key = kappa.class_key();
-            if handled.contains(&key) {
-                continue;
-            }
-            let held = horizon.get(&key).is_some();
-            let order = n.cycles[idx].holonomy.order();
-            if try_close_chord(n, idx) {
-                let ell = match order {
-                    Order::Finite(e) => e,
-                    Order::Infinite => 0,
-                };
-                snaps.push(Snap::Closed { chord: idx, order: ell });
-                eprintln!(
-                    "  pivot {:02x}{:02x}… loop {idx} closed by the tree gauge",
-                    idea[0], idea[1]
-                );
-                handled.insert(key, ());
-                applied = true;
-                break;
-            }
-            let cands = candidates_for(n, &n.cycles[idx], &kappa, crystal);
-            let mut discharging: Vec<(PivotCertificate, [u64; 4])> = Vec::new();
-            for cand in &cands {
-                if !budget.spend() {
-                    break;
-                }
-                if let Some(cert) = trial(n, idx, cand, &kappa, &rows, rank_before, mu) {
-                    discharging.push((cert, mu));
-                } else {
-                    eprintln!(
-                        "  pivot {:02x}{:02x}… loop {idx} axis {:?} no discharge",
-                        idea[0], idea[1], cand.axis
-                    );
+    let mut f = working_form(n);
+    let snaps = f.pivot_loop(idea, horizon, crystal, budget);
+    f.write_to_nerve(n);
+    for s in &snaps {
+        if let Snap::Demand { key, .. } = s {
+            if n.class.is_none() {
+                if let Some(lp) = f.loops.iter().find(|lp| lp.holonomy.rotor().class_key() == *key) {
+                    n.class = Some((lp.holonomy.rotor(), 1));
                 }
             }
-            match select_discharge(&discharging) {
-                Some(cert) => {
-                    apply_pivot(n, &cert);
-                    eprintln!(
-                        "  pivot {:02x}{:02x}… loop {idx} axis {:?} discharged {:02x}{:02x}…→{:02x}{:02x}…",
-                        idea[0], idea[1], cert.axis, cert.before[0], cert.before[1], cert.after[0], cert.after[1]
-                    );
-                    n.certificates.insert(cert.key(), cert.clone());
-                    snaps.push(Snap::Discharged {
-                        chord: idx,
-                        certificate: cert,
-                    });
-                    handled.insert(key, ());
-                    applied = true;
-                    break;
-                }
-                None if !discharging.is_empty() => {
-                    eprintln!(
-                        "  vortex {:02x}{:02x}… loop {idx} {} candidates held",
-                        idea[0],
-                        idea[1],
-                        discharging.len()
-                    );
-                    let mut held = Vec::new();
-                    for (c, _) in discharging {
-                        vortex_put(&mut n.vortex, c.clone());
-                        held.push(c);
-                    }
-                    snaps.push(Snap::Vortex {
-                        chord: idx,
-                        held,
-                    });
-                    handled.insert(key, ());
-                }
-                None => match order {
-                    Order::Infinite => {
-                        if !held {
-                            snaps.push(Snap::Demand { chord: idx, key });
-                            if n.class.is_none() {
-                                n.class = Some((n.cycles[idx].holonomy.rotor(), 1));
-                            }
-                            eprintln!(
-                                "  demand spoken {:02x}{:02x}… order ∞",
-                                idea[0], idea[1]
-                            );
-                        }
-                        handled.insert(key, ());
-                    }
-                    Order::Finite(ell) => {
-                        if file_cycle(n, idx, ell) {
-                            if !held {
-                                snaps.push(Snap::TorsionFiled { chord: idx, ell });
-                                eprintln!(
-                                    "  torsion filed {:02x}{:02x}… (σ,{ell})",
-                                    idea[0], idea[1]
-                                );
-                            }
-                        } else {
-                            snaps.push(Snap::TorsionOpen { chord: idx });
-                            eprintln!(
-                                "  torsion open {:02x}{:02x}… chord {idx}",
-                                idea[0], idea[1]
-                            );
-                        }
-                        handled.insert(key, ());
-                    }
-                },
-            }
-        }
-        if !applied {
-            break;
         }
     }
     snaps
@@ -3653,6 +3788,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         certificates,
         torsion,
         glued,
+        vortex: Keyed::new(),
     })
 }
 
@@ -4957,9 +5093,8 @@ mod tests {
 
     #[test]
     fn infinite_class_is_never_filed() {
-        let mut n = chord_nerve(&[infinite()]);
-        let snaps = pivot_loop(
-            &mut n,
+        let mut f = chord_form(&[infinite()]);
+        let snaps = f.pivot_loop(
             [0x11; 32],
             &crate::network::nerve::Keyed::new(),
             &crate::transducer::family::NoCrystal,
@@ -4973,12 +5108,10 @@ mod tests {
             !snaps.iter().any(|s| matches!(s, Snap::TorsionFiled { .. })),
             "infinite is never filed: {snaps:?}"
         );
-        if let Some(e) = as_element(&n) {
-            assert!(
-                e.torsion().is_empty(),
-                "an infinite class is never a large-ℓ torsion cycle"
-            );
-        }
+        assert!(
+            f.torsion.is_empty(),
+            "an infinite class is never a large-ℓ torsion cycle"
+        );
     }
 
     #[test]
@@ -5089,6 +5222,10 @@ mod tests {
         }
     }
 
+    fn chord_form(chords: &[Word]) -> Form {
+        Form::from_nerve(&chord_nerve(chords))
+    }
+
     #[test]
     fn pivot_candidates_are_read_from_occupied_axes_only() {
         let id = ClassVector::of_word(&Word::identity());
@@ -5170,19 +5307,18 @@ mod tests {
 
     #[test]
     fn cauterize_filed_torsion_crystallizes() {
-        let mut n = chord_nerve(&[order2()]);
-        assert!(!n.is_closed());
-        let _ = pivot_loop(
-            &mut n,
+        let mut f = chord_form(&[order2()]);
+        assert!(!f.is_closed());
+        let _ = f.pivot_loop(
             [0xca; 32],
             &crate::network::nerve::Keyed::new(),
             &crate::transducer::family::NoCrystal,
             &mut crate::physics::Physics::default().stroke_n(8),
         );
-        assert!(n.is_cauterized(), "filed finite torsion with empty remainder cauterizes");
-        let e = as_element(&n).expect("crystallized form");
+        assert!(f.is_cauterized(), "filed finite torsion with empty remainder cauterizes");
+        let e = as_element_form(&f, [1, 0, 0, 0]).expect("crystallized form");
         assert!(
-            !e.torsion().is_empty(),
+            carries_torsion(&e),
             "the tape carries the filed cycle"
         );
     }
@@ -5192,16 +5328,15 @@ mod tests {
     /// the loop.
     #[test]
     fn filed_torsion_chord_replays_or_refuses() {
-        let mut n = chord_nerve(&[order2()]);
-        let _ = pivot_loop(
-            &mut n,
+        let mut f0 = chord_form(&[order2()]);
+        let _ = f0.pivot_loop(
             [0xca; 32],
             &crate::network::nerve::Keyed::new(),
             &crate::transducer::family::NoCrystal,
             &mut crate::physics::Physics::default().stroke_n(8),
         );
-        assert!(n.is_cauterized(), "filed finite torsion with empty remainder cauterizes");
-        let e = as_element_form_of_nerve(&n).expect("the filed nerve crystallizes");
+        assert!(f0.is_cauterized(), "filed finite torsion with empty remainder cauterizes");
+        let e = as_element_form(&f0, [1, 0, 0, 0]).expect("the filed form crystallizes");
         assert!(
             e.torsion().is_empty(),
             "v2 does not fill the element torsion section"
@@ -5259,12 +5394,11 @@ mod tests {
 
     #[test]
     fn horizon_seeded_infinite_is_not_demanded() {
-        let mut n = chord_nerve(&[infinite()]);
+        let mut f = chord_form(&[infinite()]);
         let r = infinite().rotor();
         let mut horizon = crate::network::nerve::Keyed::new();
         horizon.insert(r.class_key(), (r, Order::Infinite, Standing::Held));
-        let snaps = pivot_loop(
-            &mut n,
+        let snaps = f.pivot_loop(
             [0x5e; 32],
             &horizon,
             &crate::transducer::family::NoCrystal,
@@ -5278,10 +5412,9 @@ mod tests {
 
     #[test]
     fn pivot_never_reopens_a_closed_chord() {
-        let mut n = chord_nerve(&[order2(), order4()]);
+        let mut f = chord_form(&[order2(), order4()]);
         let mut budget = crate::physics::Physics::default().stroke_n(16);
-        let first = pivot_loop(
-            &mut n,
+        let first = f.pivot_loop(
             [0xcd; 32],
             &crate::network::nerve::Keyed::new(),
             &crate::transducer::family::NoCrystal,
@@ -5296,8 +5429,7 @@ mod tests {
             })
             .collect();
         let mut budget = crate::physics::Physics::default().stroke_n(16);
-        let second = pivot_loop(
-            &mut n,
+        let second = f.pivot_loop(
             [0xcd; 32],
             &crate::network::nerve::Keyed::new(),
             &crate::transducer::family::NoCrystal,
@@ -5308,14 +5440,10 @@ mod tests {
                 !second.iter().any(|s| matches!(s, Snap::Demand { .. })) || o > 0,
                 "a closed finite chord is not demanded"
             );
-            let still = n.cycles.iter().any(|c| {
-                !c.holonomy.abelian_identity() && matches!(c.holonomy.order(), Order::Finite(ell) if ell == o)
+            let still = f.loops.iter().any(|lp| {
+                !lp.holonomy.abelian_identity() && matches!(lp.holonomy.order(), Order::Finite(ell) if ell == o)
             });
-            let filed = n.complex.degrees.iter().any(|layer| {
-                layer.fiber(&crate::network::nerve::ROOT).any(|(_, cell)| {
-                    matches!(cell.fill, Fill::Congruent(_, ell) if ell == o)
-                })
-            });
+            let filed = f.torsion.fiber(&crate::network::nerve::ROOT).any(|(_, (_, ell, _))| *ell == o);
             assert!(
                 !still || filed,
                 "order {o} stayed closed or filed; second {second:?}"
@@ -5359,9 +5487,8 @@ mod tests {
     fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
         let q = order4();
         let qinv = q.inverse();
-        let mut n = chord_nerve(&[q.clone()]);
-        let snaps = pivot_loop(
-            &mut n,
+        let mut f = chord_form(&[q.clone()]);
+        let snaps = f.pivot_loop(
             [0x11; 32],
             &Keyed::new(),
             &Hold(vec![q.clone()]),
@@ -5375,12 +5502,12 @@ mod tests {
         assert_eq!(certificate.rank_before.torsion, 1);
         assert_eq!(certificate.rank_after.torsion, 0);
         assert!(
-            n.certificates.get(&certificate.key()).is_some(),
-            "the nerve carries the discharge by key"
+            f.certificates.iter().any(|c| c.key() == certificate.key()),
+            "the form carries the discharge by key"
         );
-        let e = as_element_form_of_nerve(&n).expect("the discharged nerve crystallizes");
+        let e = as_element_form(&f, [1, 0, 0, 0]).expect("the discharged form crystallizes");
         assert!(
-            matches!(Form::from_nerve(&n).vertices.first(), Some(Vertex::Frame)),
+            matches!(f.vertices.first(), Some(Vertex::Frame)),
             "Frame is vertex 0 of the crystallized form"
         );
         assert_eq!(
@@ -5399,9 +5526,8 @@ mod tests {
             "a word on a certified face that is not face_of of its vertices refuses"
         );
 
-        let mut n = chord_nerve(&[q.clone()]);
-        let snaps = pivot_loop(
-            &mut n,
+        let mut f = chord_form(&[q.clone()]);
+        let snaps = f.pivot_loop(
             [0x22; 32],
             &Keyed::new(),
             &Hold(vec![q.clone(), qinv]),
@@ -5411,13 +5537,13 @@ mod tests {
             panic!("q and q⁻¹ are a vortex: {snaps:?}");
         };
         assert_eq!(held.len(), 2, "two certificates, got {held:?}");
+        assert!(!f.vortex.is_empty(), "the form holds the vortex cells");
 
-        let mut n = chord_nerve(&[q.clone()]);
+        let mut f = chord_form(&[q.clone()]);
         let mut horizon = Keyed::new();
         let r = q.rotor();
         horizon.insert(r.class_key(), (r, q.order(), Standing::Held));
-        let snaps = pivot_loop(
-            &mut n,
+        let snaps = f.pivot_loop(
             [0x33; 32],
             &horizon,
             &crate::transducer::family::NoCrystal,
@@ -5425,7 +5551,7 @@ mod tests {
         );
         assert!(snaps.is_empty(), "a horizon holding q files silently: {snaps:?}");
         assert!(
-            n.torsion.contains(&q.rotor().class_key()),
+            f.torsion.contains(&q.rotor().class_key()),
             "filed torsion is keyed by the class"
         );
     }
