@@ -3142,6 +3142,38 @@ impl Kernel {
         }
     }
 
+    /// Deflation a form may mint: only when it closes a book listing
+    /// (`listing_task` / `book_index`) with a measured descent. A speech
+    /// restatement that describes nothing pays nothing.
+    fn verified_install_deflation(&self, addr: &[u8; 32], form: &Element) -> [u64; 4] {
+        let claimed: Vec<[u8; 32]> = if let Some(task) = self.listing_task.get(addr) {
+            self.task_listings.get(task).cloned().unwrap_or_default()
+        } else if self.book_index.contains(addr) {
+            vec![*addr]
+        } else {
+            Vec::new()
+        };
+        if claimed.is_empty() {
+            let _ = form;
+            return [0; 4];
+        }
+        let mut pay = [0u64; 4];
+        for listing in &claimed {
+            let d = self.deflation_of(listing);
+            let d = if d.iter().any(|&x| x > 0) {
+                d
+            } else {
+                self.book_elem(listing)
+                    .map(|e| e.magnitude())
+                    .unwrap_or([0; 4])
+            };
+            for i in 0..4 {
+                pay[i] = pay[i].saturating_add(d[i]);
+            }
+        }
+        pay
+    }
+
     fn home_install(&mut self, addr: &[u8; 32]) {
         let held = self.word_at(addr).cloned().or_else(|| self.provisional.get(addr).cloned());
         if self.basis_index.get(addr).is_none() {
@@ -3162,11 +3194,24 @@ impl Kernel {
                     .unwrap_or([0; 32]);
                 let _ = self.treasury.release_rewrite(addr, voice);
                 self.retire_rewrite_inputs(&w);
-            } else if let Some((voices, mu, anchor)) = self.treasury.release_award(addr) {
-                self.treasury.mint_claim(&voices, mu, anchor);
+            } else {
+                let pay = self.verified_install_deflation(addr, &w);
+                if pay.iter().all(|&x| x == 0) {
+                    let _ = self.treasury.revoke_award(addr, false);
+                    eprintln!(
+                        "  court form installed {:02x}{:02x}… mint none (closes nothing)",
+                        addr[0], addr[1]
+                    );
+                } else if let Some((voices, _, anchor)) = self.treasury.release_award(addr) {
+                    self.treasury.mint_claim(&voices, pay, anchor);
+                }
             }
-        } else if let Some((voices, mu, anchor)) = self.treasury.release_award(addr) {
-            self.treasury.mint_claim(&voices, mu, anchor);
+        } else {
+            let _ = self.treasury.revoke_award(addr, false);
+            eprintln!(
+                "  court form installed {:02x}{:02x}… mint none (closes nothing)",
+                addr[0], addr[1]
+            );
         }
         self.unlist(addr, false);
         self.provisional.remove(addr);
@@ -7334,6 +7379,32 @@ mod tests {
         home.confirm_peer_holds_addrs(&[addr], [2; 32]);
         assert!(home.basis_len() >= 1, "have-list of a ruled provisional installs");
         assert!(home.provisional.is_empty(), "the docket clears on install");
+    }
+
+    /// A stood sentence that closes no listing returns its escrow and mints nothing.
+    #[test]
+    fn speech_that_closes_nothing_mints_none() {
+        let mut k = Kernel::new();
+        let affine = crate::transducer::element::affine_of(&crate::transducer::element::identity_versor()).unwrap();
+        let w = crate::transducer::element::from_connection(
+            &affine,
+            &[(1, 2), (2, 1)],
+            &Vec::new(),
+            [1, 1, 0, 0],
+        )
+        .unwrap();
+        let addr = w.address();
+        let codes = k.perceive_speech([1; 32], [0; 32], std::slice::from_ref(&w));
+        assert_eq!(codes, vec![crate::anastome::dialogue::SPEECH_STOOD]);
+        assert!(k.treasury().escrow_of(&addr).is_some());
+        k.rule_all_provisionals();
+        k.confirm_peer_holds_addrs(&[addr], [2; 32]);
+        assert!(k.treasury().escrow_of(&addr).is_none(), "escrow returned");
+        assert_eq!(
+            k.treasury().supply(),
+            [0; 4],
+            "a restatement that closes nothing pays nothing"
+        );
     }
 
     /// The demand codec roundtrips.
