@@ -1146,9 +1146,6 @@ impl Kernel {
 
     fn occupy(&mut self, addr: [u8; 32], mag: &[u64; 4], add: bool) {
         for l in 0..4 {
-            if l == 2 {
-                continue;
-            }
             if mag[l] > 0 {
                 if add {
                     self.occupancy[l] = self.occupancy[l].saturating_add(1);

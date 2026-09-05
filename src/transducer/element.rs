@@ -1095,6 +1095,19 @@ impl Element {
                 out.push(f);
                 out.push(t);
             }
+        } else if let Some(m) = self.fibers.iter().find(|(i, _)| *i == FIBER_SPATIAL).map(|(_, m)| m) {
+            // Residual with a non-identity frame fibre: ρ is meaning, not a
+            // listing coordinate. Translation is already quotiented in the chain.
+            if m.len() >= 2 && m[0].len() >= 2 {
+                let id = m[0][0].is_one() && m[1][1].is_one() && m[0][1].is_zero() && m[1][0].is_zero();
+                if !id {
+                    for r in 0..2 {
+                        for c in 0..2 {
+                            put_q(&mut out, &m[r][c]);
+                        }
+                    }
+                }
+            }
         }
         let chain = canonical_chain(&self.sub).unwrap_or_else(|| self.sub.clone());
         out.extend_from_slice(&(chain.len() as u32).to_le_bytes());
