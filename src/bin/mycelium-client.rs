@@ -429,7 +429,9 @@ fn main() {
                     }
                     match heard {
                         Some(Comprehension::Understood(_)) | Some(Comprehension::Held) | Some(Comprehension::Admitted) => derived += 1,
-                        Some(Comprehension::Novel { .. }) | Some(Comprehension::Dialect(_)) => witnessed += 1,
+                        Some(Comprehension::Novel { .. })
+                        | Some(Comprehension::Dialect(_))
+                        | Some(Comprehension::Withheld { .. }) => witnessed += 1,
                         None => {}
                     }
                     // The percept's own magnitude, per lane, is the pressure

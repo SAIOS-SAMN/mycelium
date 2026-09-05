@@ -1130,6 +1130,19 @@ impl Form {
         self.loops = Self::loops_of(&self.faces, self.vertices.len());
     }
 
+    /// The extension θ_A of 13.4: θ on one vertex of the overlap face,
+    /// then the usual tree gauge. The stored tape is not this working copy.
+    pub fn regauge_overlap(&mut self, theta: &Word, face: u16) {
+        let n = self.vertices.len();
+        let mut gamma = vec![Word::identity(); n];
+        if let Some(f) = self.faces.get(face as usize) {
+            if (f.j as usize) < n {
+                gamma[f.j as usize] = theta.clone();
+            }
+        }
+        self.regauge(&gamma);
+    }
+
     /// Tree walk (12.2): γ at the Frame is identity; γ_j = γ_i · g_ij⁻¹
     /// along a spanning forest of the named faces.
     pub fn solve_coboundary(&self) -> Option<Vec<Word>> {
