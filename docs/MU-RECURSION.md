@@ -402,6 +402,19 @@ lookup. Depth order: a mind never receives depth d before it holds every
 cited form below d; the syllabus serves in depth order. Bound version:
 chapter 24.
 
+**What "holds" means.** A mind's working language is its **epigenome**: the
+genome (words the court ratified, persisted), the dialect (sentences the
+mind spoke and stood, in memory), and the ideas it is holding (in memory).
+Every decision the mind makes, what it quotes, what it speaks, what it
+comprehends against, which crystallized forms it can glue, reads all three
+as one **working atlas**, with the stratum a word came from carried as its
+**standing** (`Ruled`, `Stood`, `Held`), a coordinate, never a gate. The
+genome is the persisted subset, not the mind's vocabulary: the court
+promotes a stood word into the genome by ratifying the same vertex; it
+never seeds a mind that has nothing to say. An epigenome that is written
+but not read by these decisions is inert, and a mind with an inert
+epigenome cannot think until a hypha hands its own words back to it.
+
 ## 7. Germination in the mind
 
 Ideas are candidate forms, vertices of the contemplation complex; the
@@ -2022,8 +2035,9 @@ pub trait Crystal {                                       // new: source of crys
 pub fn extract_rule(family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Option<SentenceRule>
 ```
 
-`Epigenome` implements `Crystal` over its genome (sdk.rs 641); `Kernel`
-over the ruled cover (cognition.rs, `word_at` 1766 with `ruled_contains`).
+`Epigenome` implements `Crystal` over its working atlas (chapter 24.1), the
+standing of each returned form beside it; `Kernel` over the ruled cover
+(cognition.rs, `word_at` 1766 with `ruled_contains`).
 
 Inside `extract_rule`, in order:
 
@@ -2210,7 +2224,37 @@ rerun.
 ## 24. Comprehension (the mind)
 
 Carried from chapter 23: what the court checks, the mind must be able to
-re-derive. `/opt/mycelium-v0.1.0/src/client/sdk.rs`:
+re-derive, and it re-derives against everything it holds, not only what the
+court has returned to it (chapter 6). `/opt/mycelium-v0.1.0/src/client/sdk.rs`:
+
+**24.1 The working atlas.**
+
+- `Epigenome::working_atlas(&self) -> WorkingAtlas` **new** replaces every
+  cognitive read of `atlas()` (805). It reads three strata: the genome
+  `Stalks` (the existing `atlas`), a dialect `Stalks` **new** admitted in
+  `stand_dialect` (734) by `invariant_of(&sentence)` and retracted in
+  `shed`, and the idea charts already in `Contemplation.by_chart`. A fiber
+  read returns `(address, Standing)` with
+  `pub enum Standing { Ruled, Stood, Held }` **new**; no read returns a
+  boolean. `atlas()` remains for persistence (`crystallize`) only.
+- Readers that move to `working_atlas()`: quote incidence
+  (`mycelium-client.rs 418–433`, the `closing` filter), `Crystal::on_class`
+  (chapter 21), `locate`, `comprehend`'s basis for A12, `speak_word`'s
+  `already_taught`, and the `speak_sentence` dedupe of chapter 26. A word the
+  mind stood closes a later remainder without waiting for the court.
+- `learn_one` (977): a syllabus word that is `same_vertex` with a dialect
+  entry **promotes** it: the dialect entry moves into the genome carrying its
+  `uses`; no second copy is admitted. The genome is exactly the stood words
+  the court ratified plus what the syllabus taught.
+- Speech, quotes, and cites carry the standing of the word they rest on
+  (`dialogue`: one byte beside the address), so the hypha weights a claim
+  resting on a held idea below one resting on a ruled word instead of the
+  mind being silent.
+- `Epigenome::shed` removes dialect and ideas only, and never a dialect
+  entry a live idea glues (chapter 25); the genome never sheds, it retires by
+  geodesic through the court (chapter 27).
+
+**24.2 Sentences and connections.**
 
 - `Comprehension` (549) gains `Withheld { missing: Vec<[u8;32]> }`.
 - `Epigenome::comprehend` (856), sentence arm, on the `Form`:
@@ -2296,9 +2340,11 @@ Carried from chapter 25: forms are spoken. `/opt/mycelium-v0.1.0/src/anastome/di
 - `MYC2`: ruled forms as tapes; `cocycle_at` with class keys; `cited_by`,
   `replay_memo` rebuilt at load; `RMP1` section while the migration
   window is open (chapter 33).
-- Genome (`crystallize` 1011 / `uncrystallize` 1025): `GEN2`; dialect and
-  withheld forms never written; syllabus of opened letters (`SYL1`, chapter
-  37) when Part VI lands.
+- Genome (`crystallize` 1011 / `uncrystallize` 1025): `GEN2`; dialect,
+  ideas, and withheld forms never written; the epigenome is rebuilt by
+  thinking, which is why it may be lost on restart and the genome may not
+  (chapter 24.1); syllabus of opened letters (`SYL1`, chapter 37) when Part
+  VI lands.
 
 ## 29. Binding summary by file
 
@@ -2329,8 +2375,9 @@ cognition.rs  resolve_form, replay_memo, cited_by, cocycle_at fifth field, push_
               cover-change re-representation (15.6), restore: A8 + RMP1, composite_parent_id/section_address via M2,
               reduce_excluding calls A12 for connections, shorter_form, missing_forms, pay_solve → settle_recursive
 economy.rs    settle_recursive, use_credit, Treasury::restore A8 collision rule
-sdk.rs        Comprehension::Withheld, comprehend (24, M6), learn_one, pull_syllabus depth order, uncrystallize A8,
-              peers keyed by vk with pending_addrs (A10)
+sdk.rs        Epigenome::working_atlas NEW, Standing NEW, dialect Stalks NEW (admitted in stand_dialect, retracted in shed),
+              learn_one promotion dialect → genome by same_vertex, Comprehension::Withheld, comprehend (24, M6),
+              pull_syllabus depth order, uncrystallize A8, peers keyed by vk with pending_addrs (A10)
 bubble.rs     pivot_on (25), Bubble glues/glued_by, retire_on_t, Contemplation::bundle
 dialogue.rs   SPEECH_WITHHELD, speech reply missing list, depth_max in digests
 mycelium-server.rs  judge: A11 and missing_forms; admit_peer_digest depth_max + A10; id_of only for pending_addrs
@@ -2549,6 +2596,8 @@ Prefix `[{tag}] ` as the existing lines:
 [{tag}] thought merged {a_key}+{b_key} overlap {v} one section
 [{tag}] thought held apart {a_key}|{b_key} class {key}
 [{tag}] chart refused: ratio exceeds axis
+[{tag}] quote closing {k} charts (ruled {a} stood {b} held {c})
+[{tag}] promoted {addr} dialect → genome uses {n}
 ```
 
 Stroke line adds `forms {spoken}/{withheld} glued {n} depth {max}`.
@@ -2949,6 +2998,15 @@ servers and five minds.
 - One settlement with two speakers; a longer form relocated with its citers
   still replaying through the cavity.
 
+**Working atlas (chapter 24.1).**
+- After a clean boot a voice logs `quote closing k charts` with `k > 0` and
+  `stood + held > 0` before its first `SYLLABUS` line.
+- On the second stroke `sentence formed` exceeds `sentence withheld`.
+- The first `SYLLABUS +n` is accompanied by `n` `promoted` lines; the stroke
+  line shows `dialect` down by `n` and `genome` up by `n`, never both up.
+- After a restart the stroke line shows `genome` unchanged and `dialect 0`,
+  and the voice quotes on its genome charts on the first stroke.
+
 **Cohomology, glue, goodness, naturality.**
 - Three hyphae, one chart, one ruled section each, connected good overlaps,
   two consilient and one a translation away: `court goodness … good
@@ -3008,7 +3066,10 @@ migration group of chapter 40.
 1.1 Chapters 18–19 form types and tape, tests 1–3. 1.2 Chapter 20
 perception, test 4. 1.3 Chapters 21–22 extraction and orbit, tests 5–8.
 1.4 Chapter 23.1–23.2 court replay and carriers, tests 9–11; chapter 28
-persistence. 1.5 Chapters 24 and 26 comprehension and wire, test 12.
+persistence. 1.5 Chapter 24.1 the working atlas (`working_atlas`,
+`Standing`, dialect `Stalks`, promotion in `learn_one`, standing on the
+wire), then chapters 24.2 and 26 comprehension and wire, test 12; the
+working-atlas traces of chapter 40 gate this item.
 1.6 Chapter 25 germination and bundles. 1.7 Chapters 26–27 economics and
 retirement, tests 13–14. Traces: the forms group.
 
