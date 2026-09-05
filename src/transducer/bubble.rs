@@ -944,11 +944,12 @@ impl Contemplation {
         let mut germs = Vec::new();
         let mut remainder = Vec::new();
         let mut cover = Keyed::new();
+        let mut filed: Vec<( [u8; 32], [u8; 32], Rotor, u32 )> = Vec::new();
         for v in verts {
             let Some(b) = self.bubbles.get(v) else {
                 continue;
             };
-            if !b.remainder.is_empty() || !b.horizon.is_empty() {
+            if !b.remainder.is_empty() {
                 return None;
             }
             germs.extend(b.germs.clone());
@@ -956,16 +957,28 @@ impl Contemplation {
             for (k, _) in b.cover.fiber(&ROOT) {
                 cover.insert(*k, ());
             }
+            for layer in &b.nerve.degrees {
+                for (_, cell) in layer.fiber(&ROOT) {
+                    if let Fill::Congruent(g, ell) = &cell.fill {
+                        if cell.vertices.len() >= 2 {
+                            filed.push((cell.vertices[0], cell.vertices[1], g.clone(), *ell));
+                        }
+                    }
+                }
+            }
         }
         if germs.is_empty() {
             return None;
         }
         let mut n = sentence::assemble(germs, remainder);
         n.cover = cover;
+        for (a, c, g, ell) in filed {
+            n.complex.file_congruent(a, c, g, ell);
+        }
         if !n.is_closed() {
             let _ = sentence::close(&mut n);
         }
-        if !n.is_closed() {
+        if !n.is_cauterized() {
             return None;
         }
         sentence::as_element(&n)

@@ -675,6 +675,34 @@ impl Nerve {
             && self.class.is_none()
     }
 
+    /// Remainder empty and every loop identity or filed finite torsion.
+    /// Infinite open chords keep the thought open.
+    pub fn is_cauterized(&self) -> bool {
+        if !self.remainder.is_empty() {
+            return false;
+        }
+        for c in &self.cycles {
+            if c.holonomy.abelian_identity() {
+                continue;
+            }
+            match c.holonomy.order() {
+                Order::Infinite => return false,
+                Order::Finite(ell) => {
+                    let k = c.holonomy.rotor().class_key();
+                    let filed = self.complex.degrees.iter().any(|layer| {
+                        layer.fiber(&crate::network::nerve::ROOT).any(|(_, cell)| {
+                            matches!(&cell.fill, Fill::Congruent(r, e) if *e == ell && r.class_key() == k)
+                        })
+                    });
+                    if !filed {
+                        return false;
+                    }
+                }
+            }
+        }
+        true
+    }
+
     pub fn germ_count(&self) -> usize {
         self.germs.len()
     }
@@ -2780,6 +2808,24 @@ mod tests {
         );
         let again = twist(&mut n, [0xab; 32], &crate::network::nerve::Keyed::new(), &mut crate::physics::Physics::default().stroke_n(16));
         assert!(again.is_empty(), "the loop terminates, leftover {again:?}");
+    }
+
+    #[test]
+    fn cauterize_filed_torsion_crystallizes() {
+        let mut n = chord_nerve(&[order2()]);
+        assert!(!n.is_closed());
+        let _ = twist(
+            &mut n,
+            [0xca; 32],
+            &crate::network::nerve::Keyed::new(),
+            &mut crate::physics::Physics::default().stroke_n(8),
+        );
+        assert!(n.is_cauterized(), "filed finite torsion with empty remainder cauterizes");
+        let e = as_element(&n).expect("crystallized form");
+        assert!(
+            !e.torsion().is_empty(),
+            "the tape carries the filed cycle"
+        );
     }
 
     #[test]
