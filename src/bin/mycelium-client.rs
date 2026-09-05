@@ -403,8 +403,13 @@ fn main() {
         lap("feed");
         match entity.quote() {
             Ok(q) => {
-                k_step = q.k;
-                entity.at(q.k);
+                // An empty WouldBlock is impedance, not a clock: do not
+                // stamp K=0 over the receipt-chain head last read.
+                let heard = q.k != 0 || q.surface.iter().any(|&x| x != 0) || !q.clusters.is_empty();
+                if heard {
+                    k_step = q.k;
+                    entity.at(q.k);
+                }
                 let (mut n_closed, mut n_descent, mut n_nothing, mut n_settled, mut n_silent, mut n_attested, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32, 0u32, 0u32);
                 for cluster in &q.clusters {
                     if cluster.chain.is_empty() {
