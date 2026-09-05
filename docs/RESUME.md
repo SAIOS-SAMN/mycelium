@@ -2,59 +2,48 @@
 
 # Resume notes (continuity across sessions)
 
-Last update: TUniversal 00:00:00:00:7B (genesis origin 1788326481),
-commit after 6f67e9c. Task list: docs/TRAJECTORY.md (rebuild the session
-task tracker from its "Open" section at the start of a new session).
+Last update: 2026-09-05, `main` abacf53. Living task list:
+`docs/MU-RECURSION-TASKS.md`. Spec: `docs/MU-RECURSION.md`. Historical
+alpha landings: `docs/TRAJECTORY.md`.
 
 ## Boot check
 
 ```
 cd /opt/mycelium-v0.1.0
-scripts/tu now                              # universal stamp; never use earth-time --since
-systemctl --user list-units 'mycelium-v010-*' --no-legend
-cargo test --release 2>&1 | grep -E "test result|FAILED"   # one foreground command; 206 expected
+scripts/tu now
+systemctl --user list-units 'mycelium-server@*' 'mycelium-client@*' --no-legend
+cargo test --release 2>&1 | grep -E "test result|FAILED"
+# expected at abacf53: lib 280, alpha_plan 13, g_cga 6
 ```
 
-Fleet units: hypha-a (7500, training corpus), hypha-b (7501, evaluation
-corpus), hypha-c (7502, no corpus), court, client-a, client-b, worker-a,
-worker-b, worker-c (worker-c retargeted to 7500). sod and net are stopped
-and disabled by ruling.
+Fleet: `mycelium-server@{a,b,c}` on `:7500/:7501/:7502` and
+`mycelium-client@{1..5}`. Homes `~/.mycelium/{a,b,c,1..5}`. ExecStart
+`--home %h/.mycelium/%i`. cwd `/opt/mycelium-v0.1.0`. Do not pkill weave;
+use `systemctl --user`. Overlay apply `g`. Cutover order a, then b, then
+c, then clients 1–5. Do not recut or soak unless asked.
 
 ## State at handoff
 
-- Nine units active on the 2026-09-02 evening commits (comprehension as
-  deconstruction). Three binaries only.
-- The shell is the body's moments: centroid, inertia, the fourth moment,
-  topology; orientation from the moment harmonics; the transport between
-  two bodies is a quotient of their moments verified on both supports.
-  No corner or vertex of the sample enters the algebra.
-- `transducer/sentence.rs` is the one algebra in two directions:
-  deconstruct (comprehend) and replay with seams and holonomy (verify).
-  Entity, hypha, and court call it. `client/thinking.rs` only names it.
-- `transducer/family.rs` comprehends a training family as a connection
-  and speaks a test by rendering transported bodies; the residual is the
-  family's demand. The lattice study, dialect, anchors, and projection
-  are gone from the entity; contemplation and beam search are gone from
-  the hypha.
-- The entity concludes a listing by deconstruction, settles it with one
-  probe, attests an unclaimed residual once (expressed words dedupe),
-  and refuses taught words that do not verify.
-- The layout: `perception/` (eye, ear, touch, congruence) is how every
-  kernel perceives scenes and other voices; `thought/` is its mathematics
-  over its own dialect, with the five strokes named; `voice/` is how it
-  speaks. Entity, hypha, and court use the same organs over epigenome,
-  basis, and federation. The transducer modules remain the algebra these
-  organs are built from.
-- The market is live: the measured rank is served and continued, the
-  citation carries its operator, the probe lists what a sentence left.
-- Unique verified solves: 3 standing, 0 since the entities were rebuilt.
+- Tree `abacf53`: keyed reads replace cartesian scans on the sentence
+  object; `extract_rule` is `extract_rule_with`; `agree_up_to_gauge` is
+  deleted; `speak_rule` speaks the form; Frame is vertex 0; torsion is
+  `Keyed` by class key; tape refuses a count that does not fit.
+- Running units still hold Cut A (`804843d`) in memory. The tree is
+  ahead of that binary. Cut B waits on 1.3b, 1.3e, 1.4, 1.9 court
+  replay, 0.8.
+- `transducer/sentence.rs` is the sentence algebra: forms beside nerves
+  until chapter 30 step 6. `transducer/family.rs` is the seven extraction
+  moves on pair forms, spoken through `apply_form` and a `Crystal`.
+- Coding law: `read(C, q) := C|_{key(q)}`; a loop is one cell's boundary
+  or a `Budget`; no `X × Y`; no count-as-branch; no scalar choice.
 
 ## Immediate next actions
 
-1. TRAJECTORY item 1 (serve the measured rank; incremental rank by
-   strata), then item 2 (consensus on family residuals), then item 3
-   (persist K per hypha).
-2. Read the residual magnitudes per family as the solve gradient.
+1. 1.3b rebase extraction (`w_j = t · w_i · t⁻¹` as a `Rebased` vertex
+   that speaks the test).
+2. 1.3e measured magnitude (`form_descent`; drop dummy `[0,0,0,1]`).
+3. 1.4 court `replay_form` and certificate replay.
+4. Cut B only when asked, after those are suite-green.
 
 ## Standing operational rules
 

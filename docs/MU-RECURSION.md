@@ -2455,18 +2455,23 @@ disguise and a reallocation makes it name a different pair.
 Carried from chapter 20: pair forms. Extraction is seven moves on them.
 
 ```rust
-pub trait Crystal {                                       // new: source of crystallized forms
-    fn on_class(&self, class: &stalk::Invariant) -> Vec<(Element, Form)>;  // ruled/held closed forms whose chart meets the class
+pub trait Crystal {                                       // source of crystallized forms
+    fn on_class(&self, class: &stalk::Invariant) -> Vec<(Element, Form, Standing)>;
     fn speak_form(&self, f: &Form, x: &Grid, placement: &Word) -> Option<Speech>;
+    fn by_address(&self, addr: &[u8; 32]) -> Option<(Element, Form)>;  // keyed read, no scan
+    fn on_axis(&self, chart: &Invariant, axis: Axis) -> Vec<Word>;     // A16 step 3 fiber
 }
-pub fn extract_rule(family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Option<SentenceRule>
+pub fn extract_rule_with(family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Option<SentenceRule>
+pub fn extract_rule(family: &[(Grid, Grid)]) -> Option<SentenceRule> // NoCrystal wrapper of extract_rule_with
 ```
 
 `Epigenome` implements `Crystal` over its working atlas (chapter 24.1), the
 standing of each returned form beside it; `Kernel` over the ruled cover
-(cognition.rs, `word_at` 1766 with `ruled_contains`).
+(`word_at` with `ruled_contains`). The nerve extractor `agree_up_to_gauge`
+is deleted (abacf53); correspondence is keyed transport class on pair
+forms, never nerves × groups × counts.
 
-Inside `extract_rule`, in order:
+Inside `extract_rule_with`, in order:
 
 1. **Correspondence by transport class.** Vertices across pairs are matched
    by their **transport class**: kind, the conjugacy class of the word
@@ -2961,7 +2966,9 @@ residual and are **not** this `Germ`; they are not renamed.
    `hold_form(&mut self, f: Form)`; `Bubble.nerve: Complex` is unchanged.
 3. `family.rs`: `pair_nerve` → `pair_form`; `extract_rule` on `Form`s;
    `SentenceRule` per chapter 31; `speak_rule`, `rule_replays_family`,
-   `mint_sentence` (981) on `Form`.
+   `mint_sentence` (981) on `Form`. **Landed** (`abacf53`): `extract_rule`
+   is `extract_rule_with`; `speak_rule` speaks the form; `agree_up_to_gauge`
+   is gone. Nerve fields on `SentenceRule` remain until step 6.
 4. `mycelium-client.rs`: `speak_sentence(entity, tag, &Form)`.
 5. Remaining `.germs`/`.cycles` reads in `cognition.rs`, `sdk.rs`,
    `cech.rs` become `Form` reads (`vertices`, `loops`).
@@ -2987,7 +2994,10 @@ pub struct SentenceRule {
 Removed: `charts`, `faces`, `holonomies` (derived), `hue_maps` (on
 `Form`), `shifts` (placements live on `Vertex::Word`), `sections: usize`
 (replaced by the keyed map). The eight consumers in `family.rs` read
-through `rule.form`.
+through `rule.form`. Until 1.15 the live `SentenceRule` still carries
+nerve adapters (`charts`, `faces`, `holonomies`, `nerve`); `hue_maps` and
+`shifts` are already `Keyed` by chart key and transport-class key
+(`abacf53`).
 
 ## 32. Placement and gauge of a glued form
 
@@ -3497,8 +3507,11 @@ cloned; children's cell counts sum to the parent's minus straddling);
 2. `sentence::tests::depth_is_one_plus_max_glued` and refusal at equal depth.
 3. `alphabet::tests::rebase_is_normal_form_and_contact_in_key`.
 4. `family::tests::pair_form_reads_cells_once` (second call touches no cells; work counter).
-5. `family::tests::extract_rule_by_class_with_sections` (counts 3, 4, 3 give 3 vertices and one section).
+4b. `family::tests::face_work_is_linear_in_occupied_cells` (occupancy + ring, not n²).
+4c. `sentence::tests::ratio_and_sections_are_on_the_form_key` (ratio, sections, torsion on the tape; zero denominator refused).
+5. `family::tests::extract_rule_by_class_with_sections` (a class in some pairs is a section).
 6. `family::tests::extract_rule_glues_a_held_form` (depth 1, one `Glued`, fewer `Word` vertices than the flat rule).
+6b. `family::tests::empty_fiber_is_unspoken_not_every_body`.
 7. `family::tests::unfolding_grow_to_frame` (one form, `Unfolded{Occupied}`, no step count on the tape).
 8. `family::tests::orbit_contact_and_no_orbit`.
 9. `verdict::tests::replay_form_refuses_unruled_glue`.

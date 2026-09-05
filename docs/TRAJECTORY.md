@@ -2,10 +2,10 @@
 
 # Trajectory and task list
 
-Tracking file for the alpha sequence. Updated at each landing; the
-commit log is the authority on what shipped, this file on what is
-open and in what order. Alpha metric: unique verified solves on the
-registered corpus (currently 3 of 1,120).
+Tracking file for the alpha sequence through the nerve-path era. The
+living MU-RECURSION landing list is `docs/MU-RECURSION-TASKS.md` (status
+as of `main` abacf53). The commit log is the authority on what shipped.
+Alpha metric: unique verified solves on the registered corpus (currently 3 of 1,120).
 
 ## Landed (chronological)
 
