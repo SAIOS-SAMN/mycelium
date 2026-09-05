@@ -64,6 +64,53 @@ and a gauge (a permutation of hues). A **word form** is
 different placements are the same word said at two places; placement is
 the coordinate the court quotients, as it always has (`stalk.rs`).
 
+### 1.5 Ruling: byte-exactness is not identity
+
+A tape is a path in the Cayley graph; the meaning is the vertex it reaches.
+Two tapes that reach one vertex are one word, whatever letters they spell
+it with and whatever frame layout carried them. Comparing bytes, or keys of
+bytes, to decide whether two things are the same **forks equal vertices**:
+the same word spelled twice becomes two addresses, two ledger entries, two
+citations, two escrows, and the language splits along spelling instead of
+along meaning. That is the one failure this architecture cannot absorb,
+because every later move (gluing by address, class keys, the memo, the
+court's replay) trusts the address to name a vertex.
+
+Therefore, as a law of the specification:
+
+- **Identity is decided by re-derivation, never by bytes.** Two words are
+  equal iff their rotors are projectively equal (`Rotor::projective_eq`);
+  two word forms iff additionally their frame coordinates are equal as
+  exact rationals; two forms iff they agree up to gauge (§3.6, §32.2).
+- **Keys are computed from normal forms, never from tapes as spoken or as
+  serialised.** `Element::address()` is the key of the word's geodesic
+  normal form (`Word::normal_form`, §1.3) together with the frame
+  coordinates `(ρ, placement, gauge)` written as canonical exact rationals,
+  and, for a sentence form, the keys of its vertices in vertex order and
+  the normal forms of its faces. It is **not** the hash of the
+  serialisation (`base_canonical()`, element.rs 1026, is replaced).
+  Consequently a change of tape version, wire frame, or spelling never
+  changes an address, and no re-addressing map is ever needed beyond the
+  one-time migration in §25.1.
+- **Class keys are conjugation invariants** (§52), never keys of a
+  representative.
+- **Digests of bytes are transport identifiers only**: cover digests,
+  fetch digests, signatures, and receipt chains name *what was sent*, so a
+  receiver can ask for it and verify who sent it. They are never read as
+  identity of meaning, never used as a key into a cognition carrier, and
+  never compared to decide consilience, dialect, or citation. The receiver
+  decodes, re-derives, normalises, and keys.
+- **Exact strings in this document are for traces**, not for cognition:
+  refusal reasons and log lines are grepped by the auditor, and their
+  exactness costs nothing because no carrier keys on them.
+
+Where byte-exactness appears in cognition today it is a fault to remove,
+not a convention to preserve: `push_cocycle`'s `old == g` on a versor,
+`solve_gauge`'s chord `!=` (§45), address-by-serialisation (§25.1), and
+any `Keyed` whose key is a digest of a tape rather than of a normal form.
+The enumeration gate's sibling is this: a key that is not a normal form is
+a flattened dimension in disguise.
+
 ## 2. Forms
 
 ### 2.1 Word form
@@ -747,30 +794,37 @@ re-gauged copy coheres the mind learns the citer as spoken.
 
 ### 25.1 Addresses
 
-`Element::address()` (element.rs 1026) measures the canonical description
-bytes. A sentence re-serialised from v1 to v2 has different bytes and
-therefore a different address. Keyed carriers that hold sentence addresses:
-`ruled_addrs`, `ruled` strata members, `court_federation` and
-`court_fed_index`, `cited_by`, `listing_task`, `escrowed`, `heard`,
-`replay_memo`, the client `index`, `Dialect`, `taught_up`, `glued`. A
-silent re-address would strand escrow and break every citation, so:
+`Element::address()` (element.rs 1026) today hashes the canonical
+description bytes, so a sentence re-serialised from v1 to v2 changes
+address, and two spellings of one word have two addresses. By §1.5 the
+address becomes the **vertex key**: the key of the geodesic normal form of
+the word, the frame coordinates as canonical exact rationals, and for a
+sentence form the vertex keys in vertex order with the normal forms of its
+faces. Tape version, wire frame, and spelling then have no bearing on the
+address, and this section describes the single migration from byte
+addresses to vertex addresses, after which no re-addressing ever recurs.
 
-- `Element::address()` for a sentence with a v1 description is computed
-  over the **v2 re-serialisation** of that description, deterministically,
-  at load. v1 and v2 tapes of one form therefore have one address, and the
-  address stored beside a v1 tape in an old ledger or genome is stale by
-  exactly one deterministic map.
-- `MYC2` and `GEN2` loaders build `remap: Keyed<[u8;32]>` old → new for
-  every v1 sentence they read, apply it to every keyed carrier above, and
-  write the ledger/genome back in v2 with a `RMP1` section holding the map.
+Keyed carriers that hold addresses: `ruled_addrs`, `ruled` strata members,
+`court_federation` and `court_fed_index`, `cited_by`, `listing_task`,
+`escrowed`, `heard`, `replay_memo`, the client `index`, `Dialect`,
+`taught_up`, `glued`. A silent re-address would strand escrow and break
+every citation, so:
+
+- `MYC2` and `GEN2` loaders compute, for every tape they read, the old
+  byte address and the new vertex address, build `remap: Keyed<[u8;32]>`
+  old → new, apply it to every keyed carrier above, and write the
+  ledger/genome back with a `RMP1` section holding the map. Two old tapes
+  that map to one vertex address are one entry after the map; their
+  escrows and citations merge (the fork §1.5 describes, healed once).
   `RMP1` is consulted by `resolve_form`, `word_at`, and the client's
   `word_at` for any address not found directly, and is dropped from the
   snapshot once no `RMP1` lookup has hit for an aperture of strokes.
-- Speech and fetch on the wire during the window: a v1 sentence received is
-  re-serialised to v2 before `address()`; a peer still on v1 that fetches a
-  v2 tape receives v2 and must be on a build that reads it, so servers are
-  cut over before clients, a then b then c, and each server on the new build
-  reads v1 from the old ones for as long as they run.
+- On the wire during the window a received tape of either version is
+  decoded, normalised, and keyed by vertex before any carrier is touched;
+  a peer on the old build that fetches a tape receives whatever version it
+  can read, so servers are cut over before clients, a then b then c, and
+  each server on the new build serves v1 to old peers for as long as they
+  run. Address agreement across builds is checked by the trace in §25.3.
 
 ### 25.2 Order of cutover
 
