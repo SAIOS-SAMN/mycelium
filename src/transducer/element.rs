@@ -439,20 +439,43 @@ pub fn assignment(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
     chain.iter().map(|(_, _, b, a)| (*b, *a)).collect()
 }
 
+/// Canonical key of one hue pair. The pair is the chart coordinate; the
+/// 32-byte form is the PATRICIA key, never a scan handle.
+pub fn hue_pair_key(before: u8, after: u8) -> [u8; 32] {
+    let mut k = [0u8; 32];
+    k[0] = before;
+    k[1] = after;
+    k
+}
+
+/// Canonical key of a whole assignment (the exact list of pairs).
+pub fn assignment_key(asg: &[(u8, u8)]) -> [u8; 32] {
+    let mut buf = Vec::with_capacity(asg.len() * 2);
+    for &(b, a) in asg {
+        buf.push(b);
+        buf.push(a);
+    }
+    *blake3::hash(&buf).as_bytes()
+}
+
 /// THE GAUGE FIBERS of a chain: the chain opened along its fiber
-/// coordinate, one sub-chain per transition class, in class order. The
-/// carrier reads its own coordinate; nothing scans cells against a test.
+/// coordinate, one sub-chain per transition class. Indexed by the pair
+/// key; the fiber walk yields the classes in key order.
 pub fn gauge_fibers(chain: &[(i64, i64, u8, u8)]) -> Vec<((u8, u8), Vec<(i64, i64, u8, u8)>)> {
-    let mut out: Vec<((u8, u8), Vec<(i64, i64, u8, u8)>)> = Vec::new();
+    let mut idx: crate::network::nerve::Keyed<Vec<(i64, i64, u8, u8)>> =
+        crate::network::nerve::Keyed::new();
     for &cell in chain {
-        let class = (cell.2, cell.3);
-        match out.iter_mut().find(|(k, _)| *k == class) {
-            Some((_, fiber)) => fiber.push(cell),
-            None => out.push((class, vec![cell])),
+        let k = hue_pair_key(cell.2, cell.3);
+        match idx.get_mut(&k) {
+            Some(fiber) => fiber.push(cell),
+            None => {
+                idx.insert(k, vec![cell]);
+            }
         }
     }
-    out.sort_by_key(|(k, _)| *k);
-    out
+    idx.fiber(&crate::network::nerve::ROOT)
+        .map(|(k, fiber)| ((k[0], k[1]), fiber.clone()))
+        .collect()
 }
 
 impl Element {
@@ -593,6 +616,18 @@ impl Element {
             self.torsion.push((sigma, period, fibre));
             self.profiles.take();
         }
+    }
+
+    /// Take a form's (or nerve's) torsion carrier whole. The element's
+    /// torsion is that carrier, not a second list re-recorded cycle by cycle.
+    pub fn adopt_torsion(&mut self, torsion: &crate::network::nerve::Keyed<(Vec<(u8, u8)>, u32)>) {
+        self.torsion.clear();
+        for (_, (sigma, ell)) in torsion.fiber(&crate::network::nerve::ROOT) {
+            if *ell > 0 {
+                self.torsion.push((sigma.clone(), *ell, FIBER_SPATIAL));
+            }
+        }
+        self.profiles.take();
     }
 
     /// The fiber's total spoken span — base + free sections + every torsion-orbit

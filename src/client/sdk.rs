@@ -1478,6 +1478,24 @@ impl crate::transducer::family::Crystal for Epigenome {
         let f = crate::transducer::sentence::from_element_form(&e)?;
         Some((e, f))
     }
+
+    fn on_axis(
+        &self,
+        chart: &crate::transducer::stalk::Invariant,
+        axis: crate::transducer::sentence::Axis,
+    ) -> Vec<crate::transducer::alphabet::Word> {
+        let mut index = crate::transducer::sentence::AxisIndex::new();
+        for (addr, _) in self.working_atlas().fiber(chart) {
+            if let Some(e) = self.working_word(&addr) {
+                crate::transducer::sentence::admit_words(
+                    &mut index,
+                    chart,
+                    &crate::transducer::sentence::words_of_element(e),
+                );
+            }
+        }
+        crate::transducer::sentence::on_axis_of(&index, chart, axis)
+    }
 }
 
 /// THE ENTITY — a kernel identity with its genome/epigenome, conversing through

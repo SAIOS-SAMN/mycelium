@@ -40,6 +40,10 @@ pub trait Crystal {
     fn speak_form(&self, f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Option<Speech>;
     /// Keyed read of a crystallized form by address. No scan.
     fn by_address(&self, addr: &[u8; 32]) -> Option<(Element, Form)>;
+    /// Held words on `chart` whose class vector occupies `axis` (12.6): the
+    /// vocabulary a pivot may write onto a loop on that chart. One keyed read
+    /// of the axis index the crystal filled when the word was admitted.
+    fn on_axis(&self, chart: &Invariant, axis: super::sentence::Axis) -> Vec<super::alphabet::Word>;
 }
 
 /// A crystal that holds nothing. Glue is a no-op.
@@ -54,6 +58,9 @@ impl Crystal for NoCrystal {
     }
     fn by_address(&self, _addr: &[u8; 32]) -> Option<(Element, Form)> {
         None
+    }
+    fn on_axis(&self, _chart: &Invariant, _axis: super::sentence::Axis) -> Vec<super::alphabet::Word> {
+        Vec::new()
     }
 }
 use num_bigint::BigInt;
@@ -198,17 +205,35 @@ fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Vec<(i64, i64, u8
     chain
 }
 
+fn hue_map_of_chain(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
+    let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    for &(_, _, b, a) in chain {
+        seen.insert(super::element::hue_pair_key(b, a), ());
+    }
+    let mut m: Vec<(u8, u8)> = seen
+        .fiber(&crate::network::nerve::ROOT)
+        .map(|(k, _)| (k[0], k[1]))
+        .collect();
+    m.sort_unstable();
+    m
+}
+
 /// Carriage of two bodies spelled as a word form. Class is the target's chart.
 pub fn word_form(a: &Body, b: &Body) -> Option<Vertex> {
     let car = carriage(a, b)?;
     let sp = spelling_of_versor(&car.v);
     let chain = chain_of(Some(a), Some(b), &car.v);
+    let gauge = if car.sigma.is_empty() {
+        hue_map_of_chain(&chain)
+    } else {
+        car.sigma
+    };
     Some(Vertex::Word {
         address: element::from_residual(&chain).address(),
         word: sp.word,
         rho: sp.rho,
         placement: versor_shift(&car.v),
-        gauge: car.sigma,
+        gauge,
         class: b.moduli.clone(),
         contact: None,
     })
@@ -225,7 +250,7 @@ fn body_only_vertex(body: &Body, created: bool) -> Vertex {
         word: super::alphabet::Word::identity(),
         rho: q(1),
         placement: (q(0), q(0)),
-        gauge: Vec::new(),
+        gauge: hue_map_of_chain(&chain),
         class: body.moduli.clone(),
         contact: None,
     }
@@ -238,14 +263,14 @@ fn support_of(body: &Body) -> Vec<(i64, i64)> {
     s
 }
 
-fn cell_pos_key(r: i64, c: i64) -> [u8; 32] {
+pub(crate) fn cell_pos_key(r: i64, c: i64) -> [u8; 32] {
     let mut k = [0u8; 32];
     k[..8].copy_from_slice(&r.to_le_bytes());
     k[8..16].copy_from_slice(&c.to_le_bytes());
     k
 }
 
-fn pair_key(a: u16, b: u16) -> [u8; 32] {
+pub(crate) fn pair_key(a: u16, b: u16) -> [u8; 32] {
     let (lo, hi) = if a <= b { (a, b) } else { (b, a) };
     let mut k = [0u8; 32];
     k[..2].copy_from_slice(&lo.to_le_bytes());
@@ -253,7 +278,7 @@ fn pair_key(a: u16, b: u16) -> [u8; 32] {
     k
 }
 
-fn decode_pair_key(k: &[u8; 32]) -> (u16, u16) {
+pub(crate) fn decode_pair_key(k: &[u8; 32]) -> (u16, u16) {
     let lo = u16::from_le_bytes(k[..2].try_into().unwrap_or([0, 0]));
     let hi = u16::from_le_bytes(k[2..4].try_into().unwrap_or([0, 0]));
     (lo, hi)
@@ -275,25 +300,27 @@ fn face_work() -> u64 {
     FACE_WORK.with(|c| c.get())
 }
 
-/// Faces the bundle names: star from the Frame, plus pairs whose
-/// after-supports overlap or sit at ring distance one. Occupancy is
-/// keyed by cell; cost is occupied + ring cells, never n².
-fn star_and_cell_faces(n: usize, frame: usize, supports: &[Vec<(i64, i64)>]) -> Vec<(u16, u16)> {
-    let mut faces: Vec<(u16, u16)> = Vec::new();
-    for j in 0..n {
-        if j == frame {
-            continue;
+/// Faces the bundle names: star from the Frame (when the form carries one),
+/// plus pairs whose after-supports overlap or sit at ring distance one.
+/// Occupancy is keyed by cell; related pairs are a Keyed set. Cost is
+/// occupied + ring cells, never n².
+pub(crate) fn star_and_cell_faces(
+    n: usize,
+    frame: Option<usize>,
+    supports: &[Vec<(i64, i64)>],
+) -> Vec<(u16, u16)> {
+    let mut related: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    if let Some(frame) = frame {
+        for j in 0..n {
+            if j == frame {
+                continue;
+            }
+            related.insert(pair_key(frame as u16, j as u16), ());
         }
-        let (a, b) = if frame < j {
-            (frame as u16, j as u16)
-        } else {
-            (j as u16, frame as u16)
-        };
-        faces.push((a, b));
     }
     let mut occ: crate::network::nerve::Keyed<Vec<u16>> = crate::network::nerve::Keyed::new();
     for (vi, supp) in supports.iter().enumerate() {
-        if vi == frame {
+        if Some(vi) == frame {
             continue;
         }
         let id = vi as u16;
@@ -312,7 +339,6 @@ fn star_and_cell_faces(n: usize, frame: usize, supports: &[Vec<(i64, i64)>]) -> 
             }
         }
     }
-    let mut related: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     for (_k, verts) in occ.fiber(&crate::network::nerve::ROOT) {
         if verts.len() < 2 {
             continue;
@@ -325,7 +351,7 @@ fn star_and_cell_faces(n: usize, frame: usize, supports: &[Vec<(i64, i64)>]) -> 
         }
     }
     for (vi, supp) in supports.iter().enumerate() {
-        if vi == frame {
+        if Some(vi) == frame {
             continue;
         }
         let v = vi as u16;
@@ -342,13 +368,10 @@ fn star_and_cell_faces(n: usize, frame: usize, supports: &[Vec<(i64, i64)>]) -> 
             }
         }
     }
-    for (k, _) in related.fiber(&crate::network::nerve::ROOT) {
-        let (a, b) = decode_pair_key(k);
-        if !faces.iter().any(|&f| f == (a, b)) {
-            faces.push((a, b));
-        }
-    }
-    faces
+    related
+        .fiber(&crate::network::nerve::ROOT)
+        .map(|(k, _)| decode_pair_key(k))
+        .collect()
 }
 
 fn frame_of(g: &Grid) -> (usize, usize) {
@@ -396,22 +419,26 @@ pub struct Carriage {
 /// cell by cell — functional, or refused.
 pub fn carriage(a: &Body, b: &Body) -> Option<Carriage> {
     let v = blade::versor_between(&a.shape, &b.shape)?;
-    let mut sigma: Vec<(u8, u8)> = Vec::new();
+    let mut sigma: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
     for &(r, c, h) in &a.cells {
         let p = element::carry_center(&v, r, c)?;
         let (tr, tc) = element::cell_of(&p);
         let h2 = b.cells.binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc))).ok().map(|i| b.cells[i].2)?;
-        match sigma.iter().find(|(f, _)| *f == h) {
-            Some((_, t)) => {
-                if *t != h2 {
-                    return None;
-                }
+        let k = super::element::hue_pair_key(h, 0);
+        match sigma.get(&k) {
+            Some(t) if *t != h2 => return None,
+            Some(_) => {}
+            None => {
+                sigma.insert(k, h2);
             }
-            None => sigma.push((h, h2)),
         }
     }
-    sigma.sort_unstable();
-    Some(Carriage { v, sigma })
+    let mut out: Vec<(u8, u8)> = sigma
+        .fiber(&crate::network::nerve::ROOT)
+        .map(|(k, t)| (k[0], *t))
+        .collect();
+    out.sort_unstable();
+    Some(Carriage { v, sigma: out })
 }
 
 /// Merge two gauge maps: consistent on their shared hues, or refused.
@@ -1100,10 +1127,12 @@ fn pair_form_uncached(
         hue_maps: crate::network::nerve::Keyed::new(),
         ratio: ((1, 1), (1, 1)),
         sections: crate::network::nerve::Keyed::new(),
+        certificates: Vec::new(),
+        torsion: crate::network::nerve::Keyed::new(),
     };
     let n = form.vertices.len();
     let frame = 0usize;
-    for (i, j) in star_and_cell_faces(n, frame, &supports) {
+    for (i, j) in star_and_cell_faces(n, Some(frame), &supports) {
         form.faces.push(FormFace {
             i,
             j,
@@ -1672,39 +1701,60 @@ pub fn extract_rule_with(
         .collect();
     let n_pairs = pair_forms.len();
     // 1. Correspondence by transport class (kind, word class, gauge).
-    // Moduli stay a section coordinate. Presence, never counts.
-    let mut class_pairs: Vec<(TransportClass, Vec<u16>)> = Vec::new();
+    // Moduli stay a section coordinate. Presence is a keyed set of pair
+    // indices, never a scan of groups and never a count-as-branch.
+    let mut class_pairs: crate::network::nerve::Keyed<Vec<u16>> = crate::network::nerve::Keyed::new();
+    let mut class_of: crate::network::nerve::Keyed<TransportClass> = crate::network::nerve::Keyed::new();
     for (pi, f) in pair_forms.iter().enumerate() {
-        let mut seen: Vec<TransportClass> = Vec::new();
+        let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         for v in &f.vertices {
             let Some(c) = transport_class(v) else {
                 continue;
             };
-            if seen.iter().any(|k| k == &c) {
+            let k = c.key();
+            if seen.contains(&k) {
                 continue;
             }
-            seen.push(c.clone());
-            match class_pairs.iter_mut().find(|(k, _)| k == &c) {
-                Some((_, ps)) => ps.push(pi as u16),
-                None => class_pairs.push((c, vec![pi as u16])),
+            seen.insert(k, ());
+            match class_pairs.get_mut(&k) {
+                Some(ps) => ps.push(pi as u16),
+                None => {
+                    class_pairs.insert(k, vec![pi as u16]);
+                    class_of.insert(k, c);
+                }
             }
         }
     }
+    let mut all_pairs: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    for i in 0..n_pairs {
+        all_pairs.insert(pair_idx_key(i as u16), ());
+    }
     let mut sections: crate::network::nerve::Keyed<Vec<u16>> = crate::network::nerve::Keyed::new();
     let mut rule_vertices = vec![frame_vertex()];
-    for (class, pairs) in &class_pairs {
+    for (k, pairs) in class_pairs.fiber(&crate::network::nerve::ROOT) {
+        let Some(class) = class_of.get(k) else {
+            continue;
+        };
+        let Some(&pi) = pairs.first() else {
+            continue;
+        };
         let Some(v) = pair_forms
-            .iter()
-            .find_map(|f| one_vertex_of_class(f, class).cloned())
+            .get(pi as usize)
+            .and_then(|f| one_vertex_of_class(f, class).cloned())
         else {
             continue;
         };
-        if pairs.len() == n_pairs {
-            rule_vertices.push(v);
-        } else {
-            sections.insert(class.key(), pairs.clone());
-            rule_vertices.push(v);
+        let mut have: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        for &p in pairs {
+            have.insert(pair_idx_key(p), ());
         }
+        let section = all_pairs
+            .fiber(&crate::network::nerve::ROOT)
+            .any(|(pk, _)| !have.contains(pk));
+        if section {
+            sections.insert(*k, pairs.clone());
+        }
+        rule_vertices.push(v);
     }
     let mut form = Form {
         vertices: rule_vertices,
@@ -1715,9 +1765,11 @@ pub fn extract_rule_with(
         hue_maps: crate::network::nerve::Keyed::new(),
         ratio: ((1, 1), (1, 1)),
         sections: crate::network::nerve::Keyed::new(),
+        certificates: Vec::new(),
+        torsion: crate::network::nerve::Keyed::new(),
     };
     // 2. Faces named by the pair forms (star + cell overlap), kept iff M1-constant.
-    let mut candidates: Vec<(End, End)> = Vec::new();
+    let mut candidates: crate::network::nerve::Keyed<(End, End)> = crate::network::nerve::Keyed::new();
     if let Some(pf0) = pair_forms.first() {
         for f in &pf0.faces {
             let Some(va) = pf0.vertices.get(f.i as usize) else {
@@ -1732,12 +1784,11 @@ pub fn extract_rule_with(
             let Some(eb) = end_of(vb) else {
                 continue;
             };
-            if !candidates.iter().any(|(a, b)| a == &ea && b == &eb || a == &eb && b == &ea) {
-                candidates.push((ea, eb));
-            }
+            candidates.insert(ends_pair_key(&ea, &eb), (ea, eb));
         }
     }
-    for (ea, eb) in candidates {
+    let ends = index_ends(&form);
+    for (_, (ea, eb)) in candidates.fiber(&crate::network::nerve::ROOT) {
         let mut held: Option<super::alphabet::Word> = None;
         let mut constant = true;
         for pf in &pair_forms {
@@ -1762,8 +1813,8 @@ pub fn extract_rule_with(
         let Some(w) = held else {
             continue;
         };
-        let i = index_of_end(&form, &ea);
-        let j = index_of_end(&form, &eb);
+        let i = ends.get(&end_key(ea)).copied();
+        let j = ends.get(&end_key(eb)).copied();
         if let (Some(i), Some(j)) = (i, j) {
             form.faces.push(FormFace { i, j, g_ij: w });
         }
@@ -1863,35 +1914,63 @@ pub fn extract_rule_with(
     form.loops = Form::loops_of(&form.faces, form.vertices.len());
     form.ratio = scale.unwrap_or(((1, 1), (1, 1)));
     form.sections = sections.clone();
-    // Chapter 30 adapter: the nerve fields of SentenceRule stand until
-    // chapter 31 retires them. A form a nerve cannot carry (Glued, Rebased,
-    // Unfolded) leaves them empty; speak_rule then speaks through the form
-    // and nothing reads the empty nerve. The wire carries the form.
-    let nerve = form.to_nerve().unwrap_or_default();
-    let ratio = form.ratio;
-    Some(super::sentence::SentenceRule {
-        charts: nerve
-            .germs
-            .iter()
-            .map(|g| (g.source.clone(), g.target.clone()))
-            .collect(),
-        faces: nerve
-            .faces
-            .iter()
-            .map(|f| (f.i, f.j, f.g_ij.clone(), f.spelled))
-            .collect(),
-        holonomies: nerve.cycles.iter().map(|c| c.holonomy.clone()).collect(),
-        hue_maps: Vec::new(),
-        nerve,
-        ratio,
-        shifts: Vec::new(),
-        sections,
-        form,
-    })
+    form.hue_maps = hue_maps_of_form(&form);
+    Some(super::sentence::rule_of_form(form))
 }
 
-fn index_of_end(form: &Form, e: &End) -> Option<u16> {
-    form.vertices.iter().position(|v| end_of(v).as_ref() == Some(e)).map(|i| i as u16)
+fn pair_idx_key(i: u16) -> [u8; 32] {
+    let mut k = [0u8; 32];
+    k[..2].copy_from_slice(&i.to_le_bytes());
+    k
+}
+
+fn end_key(e: &End) -> [u8; 32] {
+    match e {
+        End::Frame => {
+            let mut k = [0u8; 32];
+            k[31] = 0xff;
+            k
+        }
+        End::Class(c) => c.key(),
+    }
+}
+
+fn ends_pair_key(a: &End, b: &End) -> [u8; 32] {
+    let (ka, kb) = (end_key(a), end_key(b));
+    let (lo, hi) = if ka <= kb { (ka, kb) } else { (kb, ka) };
+    let mut buf = [0u8; 64];
+    buf[..32].copy_from_slice(&lo);
+    buf[32..].copy_from_slice(&hi);
+    *blake3::hash(&buf).as_bytes()
+}
+
+fn index_ends(form: &Form) -> crate::network::nerve::Keyed<u16> {
+    let mut idx = crate::network::nerve::Keyed::new();
+    for (i, v) in form.vertices.iter().enumerate() {
+        if let Some(e) = end_of(v) {
+            let k = end_key(&e);
+            if !idx.contains(&k) {
+                idx.insert(k, i as u16);
+            }
+        }
+    }
+    idx
+}
+
+fn hue_maps_of_form(form: &Form) -> crate::network::nerve::Keyed<Vec<(u8, u8)>> {
+    if !form.hue_maps.is_empty() {
+        return form.hue_maps.clone();
+    }
+    let mut m = crate::network::nerve::Keyed::new();
+    for v in &form.vertices {
+        if let Vertex::Word { class, gauge, .. } = v {
+            let k = class.key();
+            if !m.contains(&k) {
+                m.insert(k, gauge.clone());
+            }
+        }
+    }
+    m
 }
 
 /// Re-derive the family's rule and check it agrees with `rule`.
@@ -1950,19 +2029,10 @@ pub fn form_descent(form: &Form, family: &[(Grid, Grid)], crystal: &dyn Crystal)
     pay
 }
 
-/// Extract the invariant cochain of a family: one nerve per pair, then
-/// agree_up_to_gauge. None when the nerves do not agree up to gauge.
+/// Extract the invariant cochain of a family. The live path is the form
+/// engine (`extract_rule_with`); the nerve extractor is retired.
 pub fn extract_rule(family: &[(Grid, Grid)]) -> Option<super::sentence::SentenceRule> {
-    if family.is_empty() {
-        return None;
-    }
-    let scale = family_ratio(family);
-    let nerves: Vec<super::sentence::Nerve> = family.iter().map(|(a, b)| pair_nerve(a, b, scale)).collect();
-    let mut rule = super::sentence::agree_up_to_gauge(&nerves)?;
-    if let Some(r) = scale {
-        rule.ratio = r;
-    }
-    Some(rule)
+    extract_rule_with(family, &NoCrystal)
 }
 
 fn ratio_rho(ratio: ((usize, usize), (usize, usize))) -> BigRational {
@@ -2017,22 +2087,21 @@ fn test_transport(
     let t_body = cga::translator(&test_c.0, &test_c.1);
     let t_inv = cga::translator(&-&test_c.0, &-&test_c.1);
     let placed_linear = t_body.geo(&linear).geo(&t_inv);
-    let frame_i = rule.nerve.germs.iter().position(|h| h.kind == super::peel::ShellKind::Frame);
-    let face = rule.nerve.faces.iter().find(|f| {
-        (f.i == gi || f.j == gi)
-            && (rule.nerve.germs.get(f.i).is_some_and(|h| h.kind == super::peel::ShellKind::Frame)
-                || rule.nerve.germs.get(f.j).is_some_and(|h| h.kind == super::peel::ShellKind::Frame))
-    });
-    let Some(f) = face else {
+    // Frame is vertex 0 by construction. The star face of this germ is the
+    // named face that meets 0; the nerve's own faces are its boundary.
+    let frame_i = rule
+        .nerve
+        .germs
+        .first()
+        .filter(|h| h.kind == super::peel::ShellKind::Frame)
+        .map(|_| 0usize);
+    let Some(f) = rule.nerve.faces.iter().find(|f| {
+        frame_i.is_some() && ((f.i == 0 && f.j == gi) || (f.j == 0 && f.i == gi))
+    }) else {
         return placed_linear;
     };
-    let anchor = if rule.nerve.germs.get(f.i).is_some_and(|h| h.kind == super::peel::ShellKind::Frame) {
-        f.i
-    } else {
-        f.j
-    };
     let t_anchor = placed
-        .get(&germ_idx_key(anchor))
+        .get(&germ_idx_key(0))
         .cloned()
         .or_else(|| frame_i.and_then(|i| placed.get(&germ_idx_key(i)).cloned()))
         .unwrap_or((q(0), q(0)));
@@ -2209,13 +2278,9 @@ pub fn mint_sentence(
 /// already-placed anchors agree. None only when two anchors conflict on
 /// the same output cells.
 pub fn speak_rule(rule: &super::sentence::SentenceRule, x: &Grid, crystal: &dyn Crystal) -> Option<Speech> {
-    let form_speaks = rule.form.vertices.iter().any(|v| {
-        matches!(
-            v,
-            Vertex::Glued { .. } | Vertex::Rebased { .. } | Vertex::Unfolded { .. }
-        ) || matches!(v, Vertex::Word { contact: Some(_), .. })
-    });
-    if form_speaks {
+    // The live extractor is the form engine. Speak the form whenever it
+    // names vertices; the nerve path is the v1 fallback only.
+    if rule.form.vertices.iter().any(|v| !matches!(v, Vertex::Frame)) {
         return apply_form(&rule.form, x, &super::alphabet::Word::identity(), crystal);
     }
     let fx = frame_of(x);
@@ -2586,7 +2651,7 @@ mod tests {
             vec![(0, 2), (0, 3)],
             vec![(0, 4), (0, 5)],
         ];
-        let pairs = star_and_cell_faces(4, 0, &supports);
+        let pairs = star_and_cell_faces(4, Some(0), &supports);
         let adj: Vec<_> = pairs
             .iter()
             .copied()
@@ -2618,7 +2683,7 @@ mod tests {
             for i in 0..n {
                 supports.push(vec![(0, (i as i64) * 3)]);
             }
-            let _ = star_and_cell_faces(n + 1, 0, &supports);
+            let _ = star_and_cell_faces(n + 1, Some(0), &supports);
             face_work()
         };
         let w = run(8);
@@ -2852,6 +2917,15 @@ mod tests {
                 } else {
                     None
                 }
+            }
+            fn on_axis(
+                &self,
+                _chart: &Invariant,
+                axis: crate::transducer::sentence::Axis,
+            ) -> Vec<crate::transducer::alphabet::Word> {
+                let mut index = crate::transducer::sentence::AxisIndex::new();
+                crate::transducer::sentence::admit_words(&mut index, &Invariant::default(), &crate::transducer::sentence::words_of_form(&self.f));
+                crate::transducer::sentence::on_axis_of(&index, &Invariant::default(), axis)
             }
         }
         let crystal = Held {
@@ -3181,8 +3255,8 @@ mod tests {
         assert!(spoken.remainder.is_empty(), "all three squares are reached: {:?}", spoken.remainder);
         assert_eq!(spoken.grid(), train_out);
         assert!(
-            rule.section_count() > 0 || rule.nerve.germ_count() >= 3,
-            "three squares are vertices or sections"
+            rule.form.vertices.iter().any(|v| matches!(v, Vertex::Word { .. })),
+            "the recolour class is one vertex; the chart fiber names the three squares"
         );
         let minted = mint_sentence(&rule, &family, &NoCrystal).expect("the family mints");
         let mu = minted.magnitude();
@@ -3281,26 +3355,30 @@ mod tests {
             (grid(&["000000", "110022"]), grid(&["000000", "001122"])),
         ];
         let rule = extract_rule(&family).expect("two bodies extract");
-        let bodies = rule
-            .nerve
-            .germs
+        let words = rule
+            .form
+            .vertices
             .iter()
-            .filter(|g| g.kind != crate::transducer::peel::ShellKind::Frame)
+            .filter(|v| matches!(v, Vertex::Word { .. }))
             .count();
-        assert!(bodies >= 2, "two body germs, got {} germs", rule.nerve.germ_count());
         assert!(
-            !rule.nerve.faces.is_empty(),
-            "faces survive word constancy, got 0 with {} germs",
-            rule.nerve.germ_count()
+            words >= 2,
+            "two hue classes are two word vertices, got {} vertices",
+            rule.form.vertices.len()
         );
         assert!(
-            !rule.nerve.cycles.is_empty(),
-            "frame + two bodies is a vortex; faces {} cycles {}",
-            rule.nerve.faces.len(),
-            rule.nerve.cycles.len()
+            !rule.form.faces.is_empty(),
+            "faces survive word constancy, got 0 with {} vertices",
+            rule.form.vertices.len()
         );
         assert!(
-            rule.nerve.cycles.iter().all(|c| c.holonomy.abelian_identity()),
+            !rule.form.loops.is_empty(),
+            "frame + two bodies is a vortex; faces {} loops {}",
+            rule.form.faces.len(),
+            rule.form.loops.len()
+        );
+        assert!(
+            rule.form.loops.iter().all(|c| c.holonomy.abelian_identity()),
             "holonomy of identity-word faces is the identity"
         );
         let e = crate::transducer::sentence::as_element(&rule.nerve).expect("element");

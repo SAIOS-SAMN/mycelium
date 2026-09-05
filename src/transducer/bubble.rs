@@ -207,7 +207,13 @@ impl Bubble {
             let mut n = sentence::assemble(self.germs.clone(), self.remainder.clone());
             n.cover = self.cover.clone();
             n.complex = self.nerve.clone();
-            let _ = sentence::pivot_loop(&mut n, self.key(), &self.horizon, budget);
+            let _ = sentence::pivot_loop(
+                &mut n,
+                self.key(),
+                &self.horizon,
+                &super::family::NoCrystal,
+                budget,
+            );
             self.germs = n.germs;
             self.remainder = n.remainder;
             self.nerve = n.complex;
@@ -888,7 +894,7 @@ impl Contemplation {
             n.cover = b.cover.clone();
             n.complex = b.nerve.clone();
             let horizon = b.horizon.clone();
-            let _ = sentence::pivot_loop(&mut n, *bk, &horizon, budget);
+            let _ = sentence::pivot_loop(&mut n, *bk, &horizon, &super::family::NoCrystal, budget);
             if let Some(b) = self.bubbles.get_mut(bk) {
                 b.germs = n.germs;
                 b.remainder = n.remainder;

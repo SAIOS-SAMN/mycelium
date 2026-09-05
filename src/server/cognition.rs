@@ -5780,49 +5780,36 @@ impl crate::transducer::family::Crystal for Kernel {
         let f = crate::transducer::sentence::from_element_form(&e)?;
         Some((e, f))
     }
+
+    fn on_axis(
+        &self,
+        chart: &crate::transducer::stalk::Invariant,
+        axis: crate::transducer::sentence::Axis,
+    ) -> Vec<crate::transducer::alphabet::Word> {
+        let mut index = crate::transducer::sentence::AxisIndex::new();
+        for addr in self.ruled.fiber(chart) {
+            if let Some(e) = self.word_at(&addr) {
+                crate::transducer::sentence::admit_words(
+                    &mut index,
+                    chart,
+                    &crate::transducer::sentence::words_of_element(e),
+                );
+            }
+        }
+        crate::transducer::sentence::on_axis_of(&index, chart, axis)
+    }
 }
 
 // The blind replay moved to `crate::verdict` (#162): verification is the
 // court's substrate, not the server kernel's.
 
 fn sentence_rule_of(form: &Element) -> Option<crate::transducer::sentence::SentenceRule> {
-    use crate::transducer::sentence::{from_element, from_element_form, agree_up_to_gauge, SentenceRule, Vertex};
+    use crate::transducer::sentence::{from_element, from_element_form, rule_of_form};
     if let Some(f) = from_element_form(form) {
-        let form_speaks = f.vertices.iter().any(|v| {
-            matches!(
-                v,
-                Vertex::Glued { .. } | Vertex::Rebased { .. } | Vertex::Unfolded { .. }
-            ) || matches!(v, Vertex::Word { contact: Some(_), .. })
-        });
-        if form_speaks || form.description().get(1) == Some(&2) {
-            // Chapter 30 adapter (see family::extract_rule_with): empty for
-            // a form a nerve cannot carry; speak_rule speaks the form then.
-            let nerve = f.to_nerve().unwrap_or_default();
-            let ratio = f.ratio;
-            let sections = f.sections.clone();
-            return Some(SentenceRule {
-                charts: nerve
-                    .germs
-                    .iter()
-                    .map(|g| (g.source.clone(), g.target.clone()))
-                    .collect(),
-                faces: nerve
-                    .faces
-                    .iter()
-                    .map(|fc| (fc.i, fc.j, fc.g_ij.clone(), fc.spelled))
-                    .collect(),
-                holonomies: nerve.cycles.iter().map(|c| c.holonomy.clone()).collect(),
-                hue_maps: Vec::new(),
-                nerve,
-                ratio,
-                shifts: Vec::new(),
-                sections,
-                form: f,
-            });
-        }
+        return Some(rule_of_form(f));
     }
     let n = from_element(form)?;
-    agree_up_to_gauge(std::slice::from_ref(&n))
+    Some(rule_of_form(crate::transducer::sentence::Form::from_nerve(&n)))
 }
 
 impl Kernel {

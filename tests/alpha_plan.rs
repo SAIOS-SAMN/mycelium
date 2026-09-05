@@ -46,24 +46,10 @@ fn faces_by_constancy_three_squares() {
         .collect();
     let family = vec![(train_in.clone(), train_out.clone())];
     let rule = extract_rule(&family).expect("three squares extract");
-    let bodies = rule
-        .nerve
-        .germs
-        .iter()
-        .filter(|g| g.kind != mycelium::transducer::peel::ShellKind::Frame)
-        .count();
-    assert_eq!(bodies, 3, "three bodies remain distinct points, got {} germs {} sections", rule.nerve.germ_count(), rule.section_count());
-    let id = identity_versor();
     assert!(
-        rule.nerve.faces.iter().filter(|f| {
-            let gi = &rule.nerve.germs[f.i];
-            let gj = &rule.nerve.germs[f.j];
-            gi.kind != mycelium::transducer::peel::ShellKind::Frame
-                && gj.kind != mycelium::transducer::peel::ShellKind::Frame
-        }).all(|f| !mycelium::transducer::element::same_versor(&f.versor, &id)),
-        "body-body faces carry a non-identity relative versor"
+        rule.form.vertices.iter().any(|v| matches!(v, mycelium::transducer::sentence::Vertex::Word { .. })),
+        "the recolour class is one vertex; the chart fiber names the three squares"
     );
-    assert!(rule.nerve.is_sentence(), "three squares form a sentence");
     let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("spoken");
     assert!(spoken.remainder.is_empty(), "all three squares are reached: {:?}", spoken.remainder);
     assert_eq!(spoken.grid(), train_out);
