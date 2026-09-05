@@ -8,11 +8,25 @@
 
 use crate::network::nerve::{Keyed, ROOT};
 use crate::physics::Budget;
-use crate::transducer::alphabet::Rotor;
+use crate::transducer::alphabet::{Order, Rotor};
 use crate::transducer::cech::{self, Cell as CechCell, Complex, Fill, Section};
 use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::{self, Germ, Nerve};
-use crate::transducer::stalk::{self, Invariant, Stalks};
+use crate::transducer::stalk::{self, Invariant, Standing, Stalks};
+
+/// One class the mesh or a mind holds on a chart: key, order, representative.
+#[derive(Clone, Debug)]
+pub struct ClassRecord {
+    pub key: [u8; 32],
+    pub order: Order,
+    pub representative: Rotor,
+}
+
+fn horizon_put(h: &mut Keyed<(Rotor, Order, Standing)>, r: Rotor, standing: Standing) {
+    let key = r.class_key();
+    let order = r.word_order();
+    h.insert(key, (r, order, standing));
+}
 
 type RemCell = (i64, i64, u8, u8);
 
@@ -86,7 +100,9 @@ pub struct Bubble {
     pub germs: Vec<Germ>,
     pub nerve: Complex,
     pub cover: Keyed<()>,
-    pub horizon: Keyed<(Rotor, u8)>,
+    /// Classes this idea has met, keyed by [`Rotor::class_key`]. Standing is
+    /// the coordinate, never a boolean.
+    pub horizon: Keyed<(Rotor, Order, Standing)>,
     pub potential: [u64; 4],
     pub volume: [u64; 4],
     pub dirty: bool,
@@ -137,7 +153,7 @@ impl Bubble {
         // index: budgeted sibling keys of one trie node (peel)
         let last = atlas.each_child(&peel, after.as_ref(), budget, |child| {
             let ck = child.key();
-            if self.cover.contains(&ck) || self.horizon.contains(&ck) {
+            if self.cover.contains(&ck) {
                 return;
             }
             spent += 1;
@@ -177,7 +193,9 @@ impl Bubble {
                     self.nerve.file_congruent(self.key(), head, g, ell);
                 }
                 Fill::Class(r) => {
-                    self.horizon.insert(ck, (r, child.0.len().min(255) as u8));
+                    if !self.horizon.contains(&r.class_key()) {
+                        horizon_put(&mut self.horizon, r, Standing::Held);
+                    }
                 }
                 Fill::Open | Fill::Already => {}
             }
@@ -518,10 +536,11 @@ impl Contemplation {
                 Fill::Filled(_) | Fill::Congruent(_, _) => {}
                 Fill::Class(r) => {
                     self.classes += 1;
-                    let deg = vertices.len().saturating_sub(1) as u8;
                     for v in &vertices {
                         if let Some(b) = self.bubbles.get_mut(v) {
-                            b.horizon.insert(ck, (r.clone(), deg));
+                            if !b.horizon.contains(&r.class_key()) {
+                                horizon_put(&mut b.horizon, r.clone(), Standing::Held);
+                            }
                         }
                     }
                 }
@@ -615,7 +634,7 @@ impl Contemplation {
         let mut germs = Vec::new();
         let mut cover = Keyed::new();
         let mut nerve = Complex::new();
-        let mut horizon: Keyed<(Rotor, u8)> = Keyed::new();
+        let mut horizon: Keyed<(Rotor, Order, Standing)> = Keyed::new();
         let mut old_rems: Vec<([u8; 32], Vec<RemCell>)> = Vec::new();
         for v in verts {
             let Some(b) = self.bubbles.get(v).cloned() else {
@@ -876,11 +895,11 @@ impl Contemplation {
                         Fill::Class(r) => {
                             new_classes += 1;
                             self.classes += 1;
-                            let deg = d as u8;
-                            let hk = key;
                             for v in &vertices {
                                 if let Some(b) = self.bubbles.get_mut(v) {
-                                    b.horizon.insert(hk, (r.clone(), deg));
+                                    if !b.horizon.contains(&r.class_key()) {
+                                        horizon_put(&mut b.horizon, r.clone(), Standing::Held);
+                                    }
                                 }
                             }
                         }
@@ -944,9 +963,10 @@ impl Contemplation {
     }
 
     pub const THT1: &'static [u8; 4] = b"THT1";
+    pub const THT2: &'static [u8; 4] = b"THT2";
 
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(Self::THT1);
+        out.extend_from_slice(Self::THT2);
         out.extend_from_slice(&(self.bubbles.len() as u32).to_le_bytes());
         crate::snapshot::persist(&self.bubbles, |k, b| {
             out.extend_from_slice(k);
@@ -973,10 +993,11 @@ impl Contemplation {
             out.extend_from_slice(&(germ_bytes.len() as u32).to_le_bytes());
             out.extend_from_slice(&germ_bytes);
             out.extend_from_slice(&(b.horizon.len() as u32).to_le_bytes());
-            crate::snapshot::persist(&b.horizon, |hk, (r, d)| {
+            crate::snapshot::persist(&b.horizon, |hk, (r, order, standing)| {
                 out.extend_from_slice(hk);
                 r.to_bytes(out);
-                out.push(*d);
+                out.extend_from_slice(&order.to_u32().to_le_bytes());
+                out.push(standing.as_u8());
             });
             for x in &b.potential {
                 out.extend_from_slice(&x.to_le_bytes());
@@ -1001,9 +1022,13 @@ impl Contemplation {
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Contemplation> {
-        if b.get(*pos..*pos + 4) != Some(&Self::THT1[..]) {
+        let v2 = if b.get(*pos..*pos + 4) == Some(&Self::THT2[..]) {
+            true
+        } else if b.get(*pos..*pos + 4) == Some(&Self::THT1[..]) {
+            false
+        } else {
             return None;
-        }
+        };
         *pos += 4;
         let take_u32 = |b: &[u8], pos: &mut usize| -> Option<u32> {
             let v = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
@@ -1057,16 +1082,25 @@ impl Contemplation {
             } else {
                 (Vec::new(), Complex::new())
             };
-            let mut horizon: Keyed<(Rotor, u8)> = Keyed::new();
+            let mut horizon: Keyed<(Rotor, Order, Standing)> = Keyed::new();
             if *pos + 4 <= b.len() {
                 let nh = take_u32(b, pos).unwrap_or(0) as usize;
                 for _ in 0..nh.min(1 << 16) {
                     let hk: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                     *pos += 32;
                     let r = Rotor::from_bytes(b, pos)?;
-                    let d = *b.get(*pos)?;
-                    *pos += 1;
-                    horizon.insert(hk, (r, d));
+                    if v2 {
+                        let ell = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
+                        *pos += 4;
+                        let st = Standing::from_u8(*b.get(*pos)?).unwrap_or(Standing::Held);
+                        *pos += 1;
+                        horizon.insert(hk, (r, Order::from_u32(ell), st));
+                    } else {
+                        let _d = *b.get(*pos)?;
+                        *pos += 1;
+                        let order = r.word_order();
+                        horizon.insert(r.class_key(), (r, order, Standing::Held));
+                    }
                 }
             }
             let mut potential = volume;
@@ -1242,9 +1276,37 @@ mod tests {
         let mut bytes = Vec::new();
         c.to_bytes(&mut bytes);
         let mut pos = 0usize;
-        let back = Contemplation::from_bytes(&bytes, &mut pos).expect("THT1");
+        let back = Contemplation::from_bytes(&bytes, &mut pos).expect("THT2");
         assert_eq!(back.len(), 1);
         assert_eq!(back.potential(), c.potential());
+    }
+
+    #[test]
+    fn horizon_is_keyed_by_class_key_and_round_trips() {
+        use crate::transducer::alphabet::{LetterId, Word};
+        let mut c = Contemplation::new();
+        c.hold(vec![(0, 0, 1, 2), (1, 0, 1, 2)]);
+        let q = LetterId::quarter((0, 1)).unwrap();
+        let r = Word::from_letters(&[(q, false)]).rotor();
+        let ck = r.class_key();
+        let key = {
+            let (k, _) = c.bubbles.fiber(&ROOT).next().expect("bubble");
+            *k
+        };
+        if let Some(b) = c.bubbles.get_mut(&key) {
+            horizon_put(&mut b.horizon, r.clone(), Standing::Held);
+        }
+        assert!(c.bubbles.get(&key).unwrap().horizon.contains(&ck));
+        let mut bytes = Vec::new();
+        c.to_bytes(&mut bytes);
+        assert_eq!(&bytes[..4], Contemplation::THT2);
+        let mut pos = 0usize;
+        let back = Contemplation::from_bytes(&bytes, &mut pos).expect("THT2");
+        let hb = back.bubbles.get(&key).expect("restored");
+        let (got, order, st) = hb.horizon.get(&ck).expect("class key");
+        assert_eq!(got.class_key(), ck);
+        assert_eq!(*order, r.word_order());
+        assert_eq!(*st, Standing::Held);
     }
 
     /// Hold, expand, and the quote-chart peel of one thought do not grow

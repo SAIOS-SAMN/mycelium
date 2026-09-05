@@ -406,6 +406,26 @@ impl Rotor {
         }
         Some(Rotor { c })
     }
+
+    /// The plane word this rotor spells, or the identity when it does not.
+    pub fn spelled_word(&self) -> Word {
+        let one = Q::from_integer(BigInt::from(1));
+        let zero = Q::from_integer(BigInt::from(0));
+        let e0 = self.carry(&[one.clone(), zero.clone(), zero.clone(), zero.clone()]);
+        let e1 = self.carry(&[zero.clone(), one, zero.clone(), zero]);
+        if let (Some(a), Some(b)) = (e0, e1) {
+            let block = [[a[0].clone(), b[0].clone()], [a[1].clone(), b[1].clone()]];
+            if let Some(sp) = spell(&block) {
+                return sp.word;
+            }
+        }
+        Word::identity()
+    }
+
+    /// [`Word::order`] of [`Self::spelled_word`].
+    pub fn word_order(&self) -> Order {
+        self.spelled_word().order()
+    }
 }
 
 /// The rotor `Φ` of a letter.
@@ -1012,11 +1032,47 @@ impl PlaneForm {
 }
 
 /// Order of a word's normal form: finite unit/sheet, or infinite when a
-/// prime-5 or prime-13 exponent stands.
+/// prime-5 or prime-13 exponent stands. Finite sorts before Infinite;
+/// among finite, smaller ℓ first. Wire: 0 = infinite, else ℓ.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Order {
     Finite(u32),
     Infinite,
+}
+
+impl PartialOrd for Order {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Order {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match (self, other) {
+            (Order::Finite(a), Order::Finite(b)) => a.cmp(b),
+            (Order::Finite(_), Order::Infinite) => std::cmp::Ordering::Less,
+            (Order::Infinite, Order::Finite(_)) => std::cmp::Ordering::Greater,
+            (Order::Infinite, Order::Infinite) => std::cmp::Ordering::Equal,
+        }
+    }
+}
+
+impl Order {
+    /// Wire encoding: 0 = infinite, else the finite period.
+    pub fn to_u32(self) -> u32 {
+        match self {
+            Order::Finite(ell) => ell,
+            Order::Infinite => 0,
+        }
+    }
+
+    pub fn from_u32(v: u32) -> Self {
+        if v == 0 {
+            Order::Infinite
+        } else {
+            Order::Finite(v)
+        }
+    }
 }
 
 fn unit_order(f: &PlaneForm) -> Option<u32> {

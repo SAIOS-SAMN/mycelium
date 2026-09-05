@@ -960,6 +960,13 @@ fn spell_versor(v: &Versor) -> Option<Word> {
     Some(alphabet::spell(&block)?.word)
 }
 
+/// Transport class of a conformal versor: the spelled word's class key.
+pub fn class_key_of_versor(v: &Versor) -> [u8; 32] {
+    spell_versor(v)
+        .map(|w| w.class_key())
+        .unwrap_or([0; 32])
+}
+
 fn face_word(a: &Germ, b: &Germ) -> (Word, bool) {
     let w = b.word.compose(&a.word.inverse()).normal_form();
     if w.abelian_identity() || !w.is_empty() || (a.word.abelian_identity() && b.word.abelian_identity()) {

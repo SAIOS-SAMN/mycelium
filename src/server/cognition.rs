@@ -751,9 +751,9 @@ pub struct Kernel {
     /// fetch). Dropped when confirm_peer_holds sees that root move.
     heard: crate::network::nerve::Keyed<([u8; 32], [u8; 32])>,
     /// Current dialect transition per (chart, hypha pair): one versor, the
-    /// TUniversal stamp it stood at. A newer stamp supersedes; the chain
-    /// keeps the old.
-    cocycle_at: crate::network::nerve::Keyed<(element::Versor, u64, [u8; 32], [u8; 32])>,
+    /// TUniversal stamp it stood at, the two hyphae, and the transport
+    /// class key. A newer stamp supersedes; the chain keeps the old.
+    cocycle_at: crate::network::nerve::Keyed<(element::Versor, u64, [u8; 32], [u8; 32], [u8; 32])>,
     /// Chart key → dialect row keys, so a fill or a refinement removes the row.
     cocycle_by_chart: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// Every transition that ever stood between two hyphas on a chart.
@@ -998,13 +998,14 @@ impl Kernel {
         a: [u8; 32],
         b: [u8; 32],
         g: element::Versor,
+        class_key: [u8; 32],
     ) {
         if a == b {
             return;
         }
         let key = Self::cocycle_key(chart, &a, &b);
         let tu = self.now_tu();
-        if let Some((old, old_tu, _, _)) = self.cocycle_at.get(&key).cloned() {
+        if let Some((old, old_tu, _, _, _)) = self.cocycle_at.get(&key).cloned() {
             if tu < old_tu {
                 self.dialect_chain.push((key, g, tu));
                 return;
@@ -1014,7 +1015,7 @@ impl Kernel {
             }
             self.dialect_chain.push((key, old, old_tu));
         }
-        self.cocycle_at.insert(key, (g, tu, a, b));
+        self.cocycle_at.insert(key, (g, tu, a, b, class_key));
         let ck = chart.key();
         match self.cocycle_by_chart.get_mut(&ck) {
             Some(m) => {
@@ -1034,7 +1035,7 @@ impl Kernel {
             return;
         };
         for (key, _) in rows.fiber(&crate::network::nerve::ROOT) {
-            if let Some((v, tu, _, _)) = self.cocycle_at.remove(key) {
+            if let Some((v, tu, _, _, _)) = self.cocycle_at.remove(key) {
                 self.dialect_chain.push((*key, v, tu));
             }
         }
@@ -1050,16 +1051,16 @@ impl Kernel {
         let Some(rows) = self.cocycle_by_chart.remove(&ck) else {
             return;
         };
-        let mut saved: Vec<(element::Versor, u64, [u8; 32], [u8; 32])> = Vec::new();
+        let mut saved: Vec<(element::Versor, u64, [u8; 32], [u8; 32], [u8; 32])> = Vec::new();
         for (key, _) in rows.fiber(&crate::network::nerve::ROOT) {
             if let Some(row) = self.cocycle_at.remove(key) {
                 self.dialect_chain.push((*key, row.0.clone(), row.1));
                 saved.push(row);
             }
         }
-        for (g, _, a, b) in saved {
-            self.push_cocycle(new_a, a, b, g.clone());
-            self.push_cocycle(new_b, a, b, g);
+        for (g, _, a, b, ck) in saved {
+            self.push_cocycle(new_a, a, b, g.clone(), ck);
+            self.push_cocycle(new_b, a, b, g, ck);
         }
     }
 
@@ -2495,7 +2496,7 @@ impl Kernel {
                     if !gamma.is_identity() && addrs.len() >= 2 {
                         self.mint_or_admit_translation(&gamma, addrs[0], addrs[1], addrs[0]);
                         let key = Self::cocycle_key(&inv, &addrs[0], &addrs[1]);
-                        if let Some((v, tu, _, _)) = self.cocycle_at.remove(&key) {
+                        if let Some((v, tu, _, _, _)) = self.cocycle_at.remove(&key) {
                             self.dialect_chain.push((key, v, tu));
                         }
                         if let Some(m) = self.cocycle_by_chart.get_mut(&inv.key()) {
@@ -2769,9 +2770,10 @@ impl Kernel {
                 }
                 Some(g) => {
                     outcome = Glue::Dialect;
-                    if let Some(v) = crate::transducer::cech::rotor_of(&g).and_then(|r| rotor_versor(&r))
-                    {
-                        self.push_cocycle(&inv, self_id, peer, v);
+                    if let Some(r) = crate::transducer::cech::rotor_of(&g) {
+                        if let Some(v) = rotor_versor(&r) {
+                            self.push_cocycle(&inv, self_id, peer, v, r.class_key());
+                        }
                     }
                 }
             }
@@ -5013,13 +5015,14 @@ impl Kernel {
                 }
             }
         });
-        out.extend_from_slice(b"CYC1");
+        out.extend_from_slice(b"CYC2");
         out.extend_from_slice(&(self.cocycle_at.len() as u32).to_le_bytes());
-        crate::snapshot::persist(&self.cocycle_at, |key, (v, tu, a, b)| {
+        crate::snapshot::persist(&self.cocycle_at, |key, (v, tu, a, b, ck)| {
             out.extend_from_slice(key);
             out.extend_from_slice(a);
             out.extend_from_slice(b);
             out.extend_from_slice(&tu.to_le_bytes());
+            out.extend_from_slice(ck);
             v.to_bytes(&mut out);
         });
         out.extend_from_slice(&(self.dialect_chain.len() as u32).to_le_bytes());
@@ -5371,7 +5374,8 @@ impl Kernel {
                     kernel.field_cold.insert(addr, ListingField { entries, nonflat });
                 }
             }
-            if b.get(*pos..*pos + 4) == Some(b"CYC1") {
+            let cyc2 = b.get(*pos..*pos + 4) == Some(b"CYC2");
+            if cyc2 || b.get(*pos..*pos + 4) == Some(b"CYC1") {
                 *pos += 4;
                 let n = read_u32(b, pos)? as usize;
                 for _ in 0..n.min(1 << 16) {
@@ -5383,12 +5387,18 @@ impl Kernel {
                     *pos += 32;
                     let tu = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                     *pos += 8;
+                    let ck_stored: Option<[u8; 32]> = if cyc2 {
+                        let k: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                        *pos += 32;
+                        Some(k)
+                    } else {
+                        None
+                    };
                     let v = element::Versor::from_bytes(b, pos)?;
-                    kernel.cocycle_at.insert(key, (v, tu, a, bp));
-                    let mut h = blake3::Hasher::new();
-                    h.update(&key);
-                    let ck = *h.finalize().as_bytes();
-                    let _ = ck;
+                    let class_key = ck_stored.unwrap_or_else(|| {
+                        crate::transducer::sentence::class_key_of_versor(&v)
+                    });
+                    kernel.cocycle_at.insert(key, (v, tu, a, bp, class_key));
                     // Chart index is rebuilt on next glue; hot row is enough.
                 }
                 let nc = read_u32(b, pos)? as usize;
@@ -6048,6 +6058,30 @@ mod tests {
         assert_eq!(booted.ingest(&a, &rot, [9; 32]), Outcome::Decomposed(vec![0]), "rotation reduces");
         assert_eq!(booted.ingest(&a, &bar, [9; 32]), Outcome::Decomposed(vec![1]), "residual reduces");
         assert_eq!(booted.basis_len(), 2, "no re-germination");
+    }
+
+    /// CYC2 writes the transport class key beside the versor; a restore
+    /// reads the same key, never a hash of the row.
+    #[test]
+    fn myc2_round_trips_cocycle_class_key() {
+        let mut k = Kernel::new();
+        let inv = crate::transducer::stalk::Invariant(vec![1]);
+        let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap();
+        let w = crate::transducer::alphabet::Word::from_letters(&[(q, false)]);
+        let r = w.rotor();
+        let v = rotor_versor(&r).expect("versor");
+        let ck = r.class_key();
+        k.push_cocycle(&inv, [1; 32], [2; 32], v, ck);
+        let snap = k.snapshot();
+        assert!(snap.windows(4).any(|w| w == b"CYC2"), "ledger speaks CYC2");
+        let mut booted = Kernel::new();
+        assert!(booted.restore(&snap), "clean restore");
+        let got = booted
+            .cocycle_at
+            .fiber(&crate::network::nerve::ROOT)
+            .next()
+            .map(|(_, row)| row.4);
+        assert_eq!(got, Some(ck), "class key survives the ledger");
     }
 
     /// A restart must not docket Δ⃗ = 0: deflation records survive the
