@@ -1502,6 +1502,34 @@ fn embed_affine(a: &crate::core::engine::QMatrix) -> crate::core::engine::QMatri
     m
 }
 
+/// Magnitude of the closed cochain: spatial area, gauge permutation
+/// support, temporal 1-morphism step, and holonomic shell plus |χ| of
+/// the 1-skeleton. Never a dummy `[0,0,0,1]`.
+pub fn cochain_magnitude(n: &Nerve) -> [u64; 4] {
+    let mut chain = Vec::new();
+    for g in &n.germs {
+        if g.kind == ShellKind::Frame {
+            continue;
+        }
+        chain.extend(g.chain.iter().copied());
+    }
+    chain.sort_unstable();
+    chain.dedup();
+    let mut mag = element::measure_lanes(&chain);
+    if mag[2] == 0 {
+        let morph = n.germs.iter().any(|g| {
+            g.kind != ShellKind::Frame
+                && (!g.word.abelian_identity() || g.chain.iter().any(|&(_, _, b, a)| b != a))
+        });
+        mag[2] = u64::from(morph);
+    }
+    if n.germs.len() >= 2 {
+        let chi = (n.germs.len() as i64 - n.faces.len() as i64).unsigned_abs();
+        mag[3] = mag[3].saturating_add(chi);
+    }
+    mag
+}
+
 /// The sentence as one Element: first germ is the base connection; every
 /// further germ occupies a germinated axis; faces are transitions; a
 /// withheld cycle is torsion; the remainder is `sub`.
@@ -1512,10 +1540,7 @@ pub fn as_element(n: &Nerve) -> Option<Element> {
     let g0 = &n.germs[0];
     let affine = affine_of(&g0.versor)?;
     let sigma = element::assignment(&g0.chain);
-    let mut carried = element::measure_lanes(&n.remainder);
-    // Scene-state span at mint: the germs of the sentence are the family's
-    // successive states; lane 2 is that extent, never a cell count.
-    carried[2] = carried[2].saturating_add(n.germs.len().saturating_sub(1) as u64);
+    let carried = cochain_magnitude(n);
     let mut e = from_connection(&affine, &sigma, &n.remainder, carried)?;
     for (k, g) in n.germs.iter().enumerate().skip(1) {
         let Some(a) = affine_of(&g.versor) else { continue };

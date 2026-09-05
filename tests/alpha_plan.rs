@@ -134,6 +134,7 @@ fn hypha_snapshot_is_myc2() {
     assert_eq!(&snap[..4], b"MYC2");
     let mut k2 = Kernel::new();
     assert!(k2.restore(&snap));
+    assert_eq!(k2.occupancy(), [0, 0, 0, 0], "cold listings exert zero occupancy");
 }
 
 #[test]

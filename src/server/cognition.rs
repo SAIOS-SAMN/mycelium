@@ -819,7 +819,8 @@ pub struct Kernel {
     ruled_addrs: crate::network::nerve::Keyed<()>,
     /// Ruled cover root, maintained on admit/remove.
     ruled_root: [u8; 32],
-    /// Per-lane listing occupancy, updated in book_list/unlist.
+    /// Per-lane occupancy of in-flight execution leases, not the book
+    /// row count. Cold listings exert zero occupancy.
     occupancy: [u64; 4],
     /// Per-lane magnitude sum of the open book, updated on list/unlist.
     pressure_sum: [u64; 4],
@@ -2581,7 +2582,7 @@ impl Kernel {
         let mag = addrs
             .first()
             .and_then(|a| self.tension.get(a).copied())
-            .unwrap_or([0, 0, 0, 1]);
+            .unwrap_or([0; 4]);
         let _ = self.treasury.settle_torse(voice, mag, self.anchor());
     }
 
@@ -5199,7 +5200,6 @@ impl Kernel {
                     kernel.book_index.insert(addr, kernel.pending.len());
                     kernel.on_page.insert(addr, ());
                     kernel.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), addr);
-                    kernel.occupy(addr, &elem.magnitude(), true);
                     kernel.pending.push((elem, k));
                 }
             }
@@ -5413,14 +5413,12 @@ impl Kernel {
             self.basis_clear();
             return false;
         }
+        self.occupancy = [0; 4];
+        self.lane_listings = Default::default();
         let pending_addrs: Vec<[u8; 32]> = self.pending.iter().map(|(e, _)| e.address()).collect();
         for addr in pending_addrs {
             if self.standing_tu.get(&addr).is_none() {
                 self.standing_tu.insert(addr, self.now_tu());
-            }
-            if !self.lane_listings[2].contains(&addr) {
-                self.occupancy[2] = self.occupancy[2].saturating_add(1);
-                self.lane_listings[2].insert(addr, ());
             }
         }
         let prov: Vec<[u8; 32]> = self.provisional.fiber(&crate::network::nerve::ROOT).map(|(a, _)| *a).collect();
@@ -5429,10 +5427,6 @@ impl Kernel {
                 self.provisional_tu.insert(addr, self.now_tu());
             }
             self.stamp_standing(addr);
-            if !self.lane_listings[2].contains(&addr) {
-                self.occupancy[2] = self.occupancy[2].saturating_add(1);
-                self.lane_listings[2].insert(addr, ());
-            }
         }
         // Ruled cover is the lettered federation, not the leaked basis.
         self.ruled = crate::transducer::stalk::Stalks::over_elements(

@@ -977,13 +977,11 @@ fn section_agrees(
     true
 }
 
-/// Mint the family's sentence: lane 2 is the scene-state span.
+/// Mint the family's sentence: μ⃗ = [S, G, T, H] of the closed cochain.
 pub fn mint_sentence(rule: &super::sentence::SentenceRule, family: &[(Grid, Grid)]) -> Option<element::Element> {
     let mut e = super::sentence::as_element(&rule.nerve)?;
-    let extra = (e.sections().len() + e.torsion().len()) as u64;
-    let mut mag = e.magnitude();
-    mag[3] = mag[3].saturating_sub(extra);
-    mag[2] = (family.len() as u64).saturating_sub(1).max(1);
+    let mut mag = super::sentence::cochain_magnitude(&rule.nerve);
+    mag[2] = mag[2].max((family.len() as u64).saturating_sub(1).max(1));
     e.set_magnitude(mag);
     Some(e)
 }
@@ -1472,6 +1470,9 @@ mod tests {
         assert!(spoken.remainder.is_empty(), "all three squares are reached: {:?}", spoken.remainder);
         assert_eq!(spoken.grid(), train_out);
         let minted = mint_sentence(&rule, &family).expect("the family mints");
-        assert!(minted.magnitude()[2] >= 1, "lane 2 carries the scene-state span");
+        let mu = minted.magnitude();
+        assert!(mu[2] >= 1, "lane 2 carries the scene-state span");
+        assert!(mu[1] >= 1, "recolour is gauge content, got {mu:?}");
+        assert_ne!(mu, [0, 0, 0, 1], "mint is the unflattened 4-vector");
     }
 }
