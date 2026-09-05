@@ -1859,7 +1859,7 @@ fn germ_class_key(g: &Germ) -> Vec<u8> {
     row
 }
 
-fn form_vertex_key(f: &Form) -> [u8; 32] {
+pub fn form_vertex_key(f: &Form) -> [u8; 32] {
     let mut buf = Vec::new();
     buf.extend_from_slice(&(f.vertices.len() as u32).to_le_bytes());
     for v in &f.vertices {
@@ -3223,7 +3223,7 @@ fn take_inv(b: &[u8], pos: &mut usize) -> Option<stalk::Invariant> {
     Some(stalk::Invariant(axes))
 }
 
-fn encode_form_v2(f: &Form, out: &mut Vec<u8>) {
+pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) {
     out.extend_from_slice(&(f.vertices.len() as u16).to_le_bytes());
     for v in &f.vertices {
         match v {
@@ -3371,7 +3371,7 @@ fn take_u16(b: &[u8], pos: &mut usize) -> Option<u16> {
     Some(v)
 }
 
-fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
+pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
     let nv = take_count(b, *pos, take_u16(b, pos)? as usize, 1)?;
     if nv == 0 {
         return None;
