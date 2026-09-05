@@ -1697,9 +1697,13 @@ fn germ_hue_map(g: &Germ) -> Vec<(u8, u8)> {
 
 
 /// Vertex key of a sentence: the 1-cocycle of germ words (kind, conjugacy,
-/// hue map) and face words, never the serialised tape and never a placement
-/// versor. Translation is a fibre coordinate, already on `shift`.
+/// hue map, agreed shift relative to the Frame) and face words. The body's
+/// absolute position is already quotiented on the chain; the bundle's
+/// translation is meaning.
 pub fn vertex_address(e: &Element) -> Option<[u8; 32]> {
+    if let Some(f) = from_element_form(e) {
+        return Some(form_vertex_key(&f));
+    }
     let n = from_element(e)?;
     Some(nerve_vertex_key(&n))
 }
@@ -1712,7 +1716,88 @@ fn germ_class_key(g: &Germ) -> Vec<u8> {
         row.push(b);
         row.push(a);
     }
+    match &g.shift {
+        None => row.push(0),
+        Some((r, c)) => {
+            row.push(1);
+            alphabet::put_q(&mut row, r);
+            alphabet::put_q(&mut row, c);
+        }
+    }
     row
+}
+
+fn form_vertex_key(f: &Form) -> [u8; 32] {
+    let mut buf = Vec::new();
+    buf.extend_from_slice(&(f.vertices.len() as u32).to_le_bytes());
+    for v in &f.vertices {
+        match v {
+            Vertex::Frame => buf.push(0),
+            Vertex::Word {
+                word,
+                rho,
+                placement,
+                gauge,
+                contact,
+                ..
+            } => {
+                buf.push(1);
+                buf.extend_from_slice(&word.key());
+                alphabet::put_q(&mut buf, rho);
+                alphabet::put_q(&mut buf, &placement.0);
+                alphabet::put_q(&mut buf, &placement.1);
+                match contact {
+                    None => buf.push(0),
+                    Some(c) => {
+                        buf.push(1);
+                        buf.extend_from_slice(&c.anchor.to_le_bytes());
+                        buf.push(c.ring);
+                    }
+                }
+                let mut g = gauge.clone();
+                g.sort_unstable();
+                buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
+                for (a, b) in g {
+                    buf.push(a);
+                    buf.push(b);
+                }
+            }
+            Vertex::Glued {
+                address,
+                placement,
+                depth,
+                ..
+            } => {
+                buf.push(2);
+                buf.extend_from_slice(address);
+                buf.extend_from_slice(&placement.key());
+                buf.extend_from_slice(&depth.to_le_bytes());
+            }
+            Vertex::Rebased { by, of } => {
+                buf.push(3);
+                buf.extend_from_slice(&by.to_le_bytes());
+                buf.extend_from_slice(&of.to_le_bytes());
+            }
+            Vertex::Unfolded { measure } => {
+                buf.push(4);
+                match measure {
+                    Measure::Occupied => buf.push(0),
+                    Measure::Remainder => buf.push(1),
+                    Measure::Ring { anchor } => {
+                        buf.push(2);
+                        buf.extend_from_slice(&anchor.to_le_bytes());
+                    }
+                }
+            }
+        }
+    }
+    buf.extend_from_slice(&(f.faces.len() as u32).to_le_bytes());
+    for face in &f.faces {
+        buf.extend_from_slice(&face.i.to_le_bytes());
+        buf.extend_from_slice(&face.j.to_le_bytes());
+        buf.extend_from_slice(&face.g_ij.key());
+    }
+    *blake3::hash(&buf).as_bytes()
 }
 
 fn face_class_key(f: &Face) -> Vec<u8> {
@@ -1737,8 +1822,9 @@ fn nerve_vertex_key(n: &Nerve) -> [u8; 32] {
     *blake3::hash(&buf).as_bytes()
 }
 
-/// Same sentence vertex: the same 1-cocycle of words. Placement versors
-/// and body moduli are fibre coordinates, not identity.
+/// Same sentence vertex: the same 1-cocycle of words, including the
+/// bundle's agreed shift and contact. Body moduli and the body's
+/// absolute position remain fibre coordinates.
 pub fn nerves_same_vertex(a: &Nerve, b: &Nerve) -> bool {
     if a.germs.len() != b.germs.len() || a.faces.len() != b.faces.len() {
         return false;
@@ -3262,6 +3348,41 @@ mod tests {
         assert_eq!(back.faces[0].i, 0);
         assert_eq!(back.faces[0].j, 1);
         assert_eq!(back.faces[0].g_ij, f.faces[0].g_ij);
+        let e_plain = as_element_form(&closed_word_form(w.clone(), None)).expect("plain");
+        let e_contact = as_element_form(&closed_word_form(
+            w.clone(),
+            Some(alphabet::Contact { anchor: 0, ring: 2 }),
+        ))
+        .expect("contact");
+        assert_ne!(
+            e_plain.address(),
+            e_contact.address(),
+            "contact is on the form key"
+        );
+        assert_eq!(w, w, "M1 is the rotor; contact is not a letter");
+    }
+
+    /// The bundle's agreed shift is meaning: two translations of one linear
+    /// block are two vertices.
+    #[test]
+    fn two_shifts_are_two_addresses() {
+        let letter = alphabet::LetterId::quarter((0, 1)).expect("quarter");
+        let w = Word::from_letters(&[(letter, false)]);
+        let mut a = closed_word_form(w.clone(), None);
+        let mut b = closed_word_form(w, None);
+        if let Vertex::Word { placement, .. } = &mut a.vertices[1] {
+            *placement = (q0(), q1());
+        }
+        if let Vertex::Word { placement, .. } = &mut b.vertices[1] {
+            *placement = (
+                q0(),
+                num_rational::BigRational::from_integer(num_bigint::BigInt::from(3)),
+            );
+        }
+        let ea = as_element_form(&a).expect("a");
+        let eb = as_element_form(&b).expect("b");
+        assert_ne!(ea.address(), eb.address(), "shift is not quotiented off the vertex");
+        assert!(!ea.same_vertex(&eb));
     }
 
     /// Depth is one plus the deepest glued form; gluing at equal depth is refused.

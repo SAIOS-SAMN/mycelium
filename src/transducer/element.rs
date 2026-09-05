@@ -868,13 +868,7 @@ impl Element {
     /// `address() == address()`.
     pub fn same_vertex(&self, other: &Element) -> bool {
         if self.is_sentence() && other.is_sentence() {
-            return match (
-                crate::transducer::sentence::from_element(self),
-                crate::transducer::sentence::from_element(other),
-            ) {
-                (Some(a), Some(b)) => crate::transducer::sentence::nerves_same_vertex(&a, &b),
-                _ => false,
-            };
+            return self.address() == other.address();
         }
         match (self.letters(), other.letters()) {
             (Some(a), Some(b)) => {
@@ -1052,8 +1046,9 @@ impl Element {
     }
 
     /// Vertex key of the word form: geodesic normal form plus frame
-    /// coordinates as exact rationals. A sentence is keyed by its germ
-    /// words and face words; placement versors are fibre, not identity.
+    /// coordinates as exact rationals. A sentence is keyed by its form
+    /// (M1, ρ, agreed shift relative to the Frame, contact, gauge, faces).
+    /// The body's absolute position is already quotiented on the chain.
     pub fn address(&self) -> [u8; 32] {
         *self.address.get_or_init(|| {
             if self.is_sentence() {
