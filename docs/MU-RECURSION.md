@@ -9,7 +9,7 @@ which every statement stands where it applies. Companion documents:
 
 ## How to read this document
 
-Eight parts, forty-three chapters, each chapter self-contained enough to
+Eight parts, forty-four chapters, each chapter self-contained enough to
 implement and each opening with what it carries from the one before.
 
 | part | what it settles | who reads it first |
@@ -20,7 +20,7 @@ implement and each opening with what it carries from the one before.
 | IV Implementation on forms | every move bound to a function at an absolute path and line | the implementor |
 | V Migration and exact strings | how the tree changes without stopping the fleet; the literal refusal reasons and log lines | the implementor and the auditor |
 | VI Extensions | the two walls and how they come down without changing what a word is | later |
-| VII Verification and landing | every test, every cold-boot trace, one landing order | the auditor |
+| VII Verification and landing | every test, every cold-boot trace, one landing order, and the theorems the engine proves by running | the auditor |
 | VIII Boundaries | what is deliberately absent; relayed statements not adopted | everyone, once |
 
 ## The laws this document is written under
@@ -1597,9 +1597,109 @@ the descent step of 13.9.
   lists. Components are the charts in `M` that are their own root; path
   halving makes `find` amortised logarithmic in `|M|`.
 
+### 16.16 A16 — The twist loop (torsion-ordered gauge closure)
+
+Input: an idea's form `F` (vertices, faces, loops), `budget`. Output: `F`
+re-gauged so that every chord whose class is trivial is closed, the
+remaining chords classified as torsion or free, and a log of the snaps.
+
+1. Tree walk (12.2) on `F`'s faces; collect the open chords with their
+   re-gauged holonomies `h_ab`.
+2. For each open chord compute `Word::order(h_ab)` (552): `Finite(ℓ)` or
+   `Infinite`. Sort chords by `(order, chord key)`, finite ascending,
+   infinite last. This is a sort of a `Vec` of the chords the tree walk
+   already produced, never a search.
+3. Take the first finite chord. Solve for the gauge on its loop that closes
+   it (`solve_gauge_between` with the target identity on that loop, 16.14).
+   If it closes, apply the gauge to `F` (`Form::regauge`), log
+   `twist {idea} chord {i} order {ℓ} closed`, and go to 1. By T2 (chapter
+   42) closing it can only conjugate the other chords; none opens.
+4. If the first finite chord does not close, it is torsion: hand it to A17.
+   Continue with the next finite chord.
+5. Infinite chords are free classes: hand each to M6 step 5 as a demand.
+6. Stop when no finite chord is open, or when `budget.spend()` fails; the
+   next stroke resumes from the sorted list, which is recomputed from the
+   current `F`.
+
+Termination: each pass through step 3 strictly reduces the number of open
+finite chords, and step 4 never reopens one, so the loop makes at most
+(number of chords) snaps. Cost per pass is one tree walk. Binding:
+`Contemplation::pivot_on` (bubble.rs 712) and `expand_with` (84) call
+`twist(&mut Form, &mut Budget) -> Vec<Snap>` **new** in sentence.rs.
+
+### 16.17 A17 — Torsion filing and witness
+
+Input: a chord with finite-order holonomy `h` (`order ℓ`) on a form `F`
+whose loop A16 could not close. Output: a torsion cycle `(σ, ℓ)` on `F`, or
+a refusal.
+
+1. Read the torsion part of `h` on the plane (`PlaneForm::torsion_part`,
+   12.2): `σ` the sheet parity and unit turns; the free part must be zero,
+   else the chord is not torsion and goes to M6 as a demand.
+2. Walk the loop's fibre from its base assignment at most `ℓ` steps
+   (`toroid::witness_stored`): the walk returns at exactly step `ℓ` →
+   `HolonomicLoopWitness::Closed{period: ℓ}`; it returns earlier or later,
+   or not within `ℓ` → `Open`.
+3. `Closed` at `ℓ`: `Element::record_torsion(σ, ℓ, fibre)` writes the cycle
+   onto `F`'s tape (the `torsion` section `as_element` already serialises),
+   log `torsion filed {idea} (σ,ℓ)`. `Open` or another period: the chord
+   stays open; `F` cannot crystallize; log `torsion open {idea} chord {i}`.
+4. The court replays every filed cycle by the same walk (`blind_replay`,
+   `replay_nerve`): `"torsion cycle does not close"`, `"torsion period does
+   not re-derive"` are the refusals.
+
+A filed cycle is a memory: it records exactly the twist the language holds
+on that loop without forcing it to identity. An infinite-order class is
+never filed with a large period; it is a demand.
+
+### 16.18 A18 — Rank accounting (the dimension audit)
+
+Dimensional capacity is measured, not assumed. For a form `F` after the
+tree walk:
+
+- `torsion_rank(F)` = the number of open chords with finite order;
+- `free_rank(F)` = the ℤ-rank of the lattice spanned by the free parts of
+  the open chords' plane forms (Hermite normal form over ℤ, 16.12 step 2);
+  off the plane, the number of open chords with infinite order;
+- `axes(F)` = the number of chart axes opened by discharge (15.5).
+
+For a chart's Čech complex: `Congruent` cells, `Class` cells by degree, and
+axes of the chart's `Invariant` beyond its body harmonics.
+
+`rank(F) = (torsion_rank, free_rank, axes)`, a vector, never summed.
+`Form::rank(&self) -> Rank` **new**, `Complex::rank(&self) -> Rank`
+**new**. In debug builds every move of chapter 3 and every court operation
+asserts the rank law that applies to it (chapter 42, R1–R6); in release the
+court refuses with `REFUSE_RANK_LOST` when a spoken form's rank is below
+what its own tape re-derives. A18 is the only place a count appears in
+cognition, and it is read, never acted on: no threshold, no score.
+
+### 16.19 A19 — Class ledger exchange
+
+Input: a chart `c` a mind quotes on; the hypha's classes on `c`. Output:
+the mind's `horizon` seeded with the mesh's torsion, and the hypha's ledger
+fed with the mind's.
+
+1. The syllabus page for `c` (`serve_ruled`, chapter 26) carries, beside
+   ruled words, one class record per class the hypha holds on `c`:
+   `key [32] ‖ order (0 = infinite, else ℓ u32) ‖ representative Rotor bytes`
+   from `cocycle_at` (degree 1) and the `Congruent`/`Class` cells of the
+   chart's complex.
+2. The mind admits each record into `Contemplation.horizon` under
+   `Standing::Held` keyed by the class key (`seed_horizon(chart, records)`
+   **new**); a held class is never re-derived as a dialect: A16 recognises
+   a chord whose class key is in `horizon` and files it as `Held` torsion
+   (finite) or skips the demand (infinite, already in the docket).
+3. The mind's own filed torsion travels on its spoken form's torsion
+   section; its free classes travel as demands. The court files them (M8,
+   chapter 23.7) under the same keys.
+4. On the mind's restart the horizon is empty; step 1 refills it on the
+   first quote of each chart. The epigenome is rebuilt by thinking; its
+   torsion is rebuilt from the mesh.
+
 ## 17. Master algorithms
 
-Carried from chapter 16: fifteen procedures. Each master algorithm below is
+Carried from chapter 16: nineteen procedures. Each master algorithm below is
 the complete operation the system runs, stated as the sequence of component
 calls with its invariant, binding, and failure behaviour.
 
@@ -1846,6 +1946,47 @@ have equal keys on every hypha; the union is never materialised.
 
 **Binding.** `Kernel::glue_fetched`, `court_stroke`, `refine_chart`,
 `apply_verdict` (chapter 23).
+
+### 17.9 M9 — Torsion Bridge
+
+**Purpose.** Connect the mind's contemplation to the court's ledger through
+the one thing both file identically, torsion, so that thinking persists in
+the mesh rather than on the mind's disk, and two minds never re-derive a
+class the mesh already holds.
+
+**Procedure.**
+1. Per idea per stroke: A16 (twist), A17 (file what does not snap), M6 step
+   5 for free classes.
+2. Cauterize: when every loop is identity or filed torsion and the remainder
+   is empty, crystallize (`as_element` with the torsion section, M2 address,
+   dialect `Stood`, spoken once by the chapter 26 dedupe). No re-gauge
+   touches a crystallized form; a later gauge is a new form.
+3. Wrap: the next idea on a meeting chart glues the crystallized form as a
+   `Glued` vertex (chapter 25); by T6 the wrap adds no class, so only its new
+   faces are twisted.
+4. Court side (chapter 23.7): the spoken form's torsion cycles are matched
+   by class key against the chart's `Congruent` cells; agreement is
+   consilience of torsion, a mismatch on one key is `REFUSE_NOT_NATURAL`, a
+   new finite key files a `Congruent` cell, an infinite class enters
+   `cocycle_at`.
+5. A19 both ways on every quote and every syllabus page.
+6. Standing: torsion from the hypha is `Held`; torsion the mind filed is
+   `Stood`; torsion discharged by a ratified translation is `Ruled` and
+   leaves both ledgers together (15.5).
+7. A18 asserts the rank laws at every step.
+
+**Invariant.** A class key present in any voice's `horizon` is present on
+the chart's hypha, and conversely after one aperture; a mind's filed
+torsion is on the mesh before the mind's next stroke.
+
+**Economics.** Filing torsion pays nothing (a partial closure); the
+remainder's descent mints; a translation that discharges a filed class is
+paid through `mint_or_admit_translation`; a free class that a later word
+closes pays that word's speaker.
+
+**Binding.** `Contemplation::{pivot_on, expand_with, seed_horizon}`,
+`sentence::twist`, `Element::record_torsion`, `toroid::witness_stored`,
+`Kernel::glue_fetched` torsion arm, `serve_ruled`, `dialogue` class record.
 
 ---
 
@@ -2221,6 +2362,24 @@ On `Cover::retract` / `rehome` (including 14.8's retraction) and on
 pair of the same component by the tree walk, or orphaned with a goodness
 rerun.
 
+### 23.7 Torsion on the court side (M9 step 4)
+
+In `glue_fetched`, after `blind_replay` has witnessed every torsion cycle of
+the spoken form (A17 step 4): for each cycle `(σ, ℓ)` compute its class key
+(15.4) and read the chart's complex: a `Fill::Congruent(g, ℓ')` cell with the
+same key and `ℓ' = ℓ` is torsion consilience (`court torsion consilient
+{key} ℓ {ℓ}`); the same key with `ℓ' ≠ ℓ` is `REFUSE_NOT_NATURAL` (the
+mind's period does not re-derive against the mesh's); no cell with that key
+files one through `file_congruent` (cech.rs 242) with the spoken
+representative (`court torsion filed {key} ℓ {ℓ}`). Free classes spoken as
+demands are docketed as any word and, when the court's own tree walk finds
+them as `Fill::Class`, enter `cocycle_at` under their key (M5). The court
+never twists: it replays and files.
+
+`serve_ruled` (3148) and the `ACT_SYLLABUS` reply (mycelium-server.rs 630,
+920) append the chart's class records (A19 step 1). `Kernel::rank`
+(A18) is asserted in debug on every glue and on every refinement.
+
 ## 24. Comprehension (the mind)
 
 Carried from chapter 23: what the court checks, the mind must be able to
@@ -2246,6 +2405,9 @@ court has returned to it (chapter 6). `/opt/mycelium-v0.1.0/src/client/sdk.rs`:
   entry **promotes** it: the dialect entry moves into the genome carrying its
   `uses`; no second copy is admitted. The genome is exactly the stood words
   the court ratified plus what the syllabus taught.
+- Classes arriving with a syllabus page (A19) enter `Contemplation.horizon`
+  as `Held` by class key (`seed_horizon`); a chord whose key is held is
+  filed as held torsion or, if infinite, not spoken again as a demand.
 - Speech, quotes, and cites carry the standing of the word they rest on
   (`dialogue`: one byte beside the address), so the hypha weights a claim
   resting on a held idea below one resting on a ruled word instead of the
@@ -2276,8 +2438,30 @@ court has returned to it (chapter 6). `/opt/mycelium-v0.1.0/src/client/sdk.rs`:
 
 ## 25. Germination and thoughts
 
-Carried from chapter 24: comprehension re-gauges. Germination glues.
-`/opt/mycelium-v0.1.0/src/transducer/bubble.rs`:
+Carried from chapter 24: comprehension re-gauges. Germination twists, files,
+cauterizes, and wraps (M9). `/opt/mycelium-v0.1.0/src/transducer/bubble.rs`:
+
+**25.1 The twist loop in the contemplation.** Each stroke, for each dirty
+idea under the stroke `Budget`: `sentence::twist(&mut idea.form, budget)`
+(A16). Snaps are logged in order; A18's rank is asserted equal before and
+after each snap (R2). A chord A16 hands to A17 is filed on the idea's form
+or left open with `torsion open`; a free chord is spoken as `Novel(g_rem)`
+through M6 step 5 unless its key is `Held` in `horizon`.
+
+**25.2 Cauterize.** An idea whose form `is_closed()` after filing (every
+loop identity or filed torsion, remainder empty) crystallizes: `as_element`
+writes the tape with its torsion section; M2 fixes the address; the form
+enters the dialect as `Stood` (`stand_dialect`) and is spoken once. The
+idea's bubble is retired from the contemplation (`retire_on_t` skips it
+only while `glued_by` is non-empty).
+
+**25.3 Wrap.** `Contemplation::bundle` and `pivot_on` glue crystallized
+forms into ideas on meeting charts as `Glued` vertices; the glued form's
+loops are not re-twisted (T6). Depth grows by one per wrap.
+
+**25.4 Horizon.** `Bubble.horizon: Keyed<(Rotor, u8)>` (89) becomes
+`Keyed<(Rotor, Order, Standing)>` keyed by class key; `seed_horizon` (A19)
+fills it from syllabus pages; A16 consults it before filing or demanding.
 
 - `Contemplation::pivot_on(word, budget)` (712): when `word` is a
   crystallized form and an idea's cover meets its chart, compute the
@@ -2302,6 +2486,11 @@ Carried from chapter 25: forms are spoken. `/opt/mycelium-v0.1.0/src/anastome/di
 - `StratumDigest` (sheaf.rs 21) gains `depth_max: u16`; `sheaf::digests`
   (44) fills it; `encode/decode_digests_reply` (406/417) carry it;
   `encode_cover_digest` (451) carries the hypha's maximum ruled depth.
+- `encode_syllabus_reply` / `decode_syllabus_reply` (754) gain a trailing
+  class section: `n_classes u16`, then per class `key [32] ‖ order u32 (0 =
+  infinite) ‖ representative Rotor bytes` (A19 step 1). Speech, quote, and
+  cite frames carry one standing byte beside each address (`0 Ruled, 1
+  Stood, 2 Held`, chapter 24.1).
 - `/opt/mycelium-v0.1.0/src/bin/mycelium-server.rs`: `judge`'s `ACT_SPEECH`
   handler collects `Kernel::missing_forms(&Element) -> Vec<[u8;32]>`
   **new** into the reply; `admit_peer_digest` (385) records `depth_max` and
@@ -2345,6 +2534,13 @@ Carried from chapter 25: forms are spoken. `/opt/mycelium-v0.1.0/src/anastome/di
   thinking, which is why it may be lost on restart and the genome may not
   (chapter 24.1); syllabus of opened letters (`SYL1`, chapter 37) when Part
   VI lands.
+- **Persistence by torsion (M9).** A mind's classes persist on the mesh, not
+  on the mind: filed torsion travels on the spoken form's torsion section
+  into the chart's `Congruent` cells, free classes into `cocycle_at`, both in
+  `MYC2` with their class keys. A restarted mind refills its `horizon` from
+  the chart's class records on its first quote (A19 step 4). Nothing the
+  mind thought is lost to the mesh; what the mind itself keeps across a
+  restart is exactly the genome.
 
 ## 29. Binding summary by file
 
@@ -2378,8 +2574,12 @@ economy.rs    settle_recursive, use_credit, Treasury::restore A8 collision rule
 sdk.rs        Epigenome::working_atlas NEW, Standing NEW, dialect Stalks NEW (admitted in stand_dialect, retracted in shed),
               learn_one promotion dialect → genome by same_vertex, Comprehension::Withheld, comprehend (24, M6),
               pull_syllabus depth order, uncrystallize A8, peers keyed by vk with pending_addrs (A10)
-bubble.rs     pivot_on (25), Bubble glues/glued_by, retire_on_t, Contemplation::bundle
-dialogue.rs   SPEECH_WITHHELD, speech reply missing list, depth_max in digests
+bubble.rs     pivot_on and expand_with call sentence::twist (A16), Bubble glues/glued_by, retire_on_t, Contemplation::bundle,
+              horizon: Keyed<(Rotor, Order, Standing)> by class key, Contemplation::seed_horizon NEW (A19)
+sentence.rs   twist(&mut Form, &mut Budget) -> Vec<Snap> NEW (A16), Form::rank NEW (A18); cech.rs Complex::rank NEW
+element.rs    record_torsion as A17's filing call; toroid.rs witness_stored as A17's witness
+cognition.rs  glue_fetched torsion arm (23.7), serve_ruled class records (A19), Kernel::rank debug assertions
+dialogue.rs   SPEECH_WITHHELD, speech reply missing list, depth_max in digests, syllabus class section, standing byte
 mycelium-server.rs  judge: A11 and missing_forms; admit_peer_digest depth_max + A10; id_of only for pending_addrs
 mycelium-client.rs  speak_sentence(entity, tag, &Form); family id by registry::task_id
 ```
@@ -2533,6 +2733,7 @@ pub const REFUSE_NO_DESCENT: &str = "no strict descent — the form closes nothi
 pub const REFUSE_MV_INEXACT: &str = "Mayer–Vietoris exactness fails: cochains are inconsistent";
 pub const REFUSE_OVERLAP_CYCLIC: &str = "translation across a non-acyclic overlap";
 pub const REFUSE_NOT_NATURAL: &str = "class key changes under restriction";
+pub const REFUSE_RANK_LOST: &str = "form rank below what its tape re-derives";
 ```
 
 These are returned by `replay_form` and `blind_replay`, and by
@@ -2574,6 +2775,9 @@ Prefix `  court ` as the existing court lines; addresses as
   court remap refused {old}: {reason}
   court remap retired
   court letter opened τ_{n,(i,j)} conductor {4n} id {k}
+  court torsion consilient {key} ℓ {ℓ}
+  court torsion filed {key} ℓ {ℓ}
+  court form refused {addr}: form rank below what its tape re-derives
 ```
 
 ### 34.3 Client log lines, `mycelium-client.rs` and `sdk.rs`
@@ -2598,6 +2802,12 @@ Prefix `[{tag}] ` as the existing lines:
 [{tag}] chart refused: ratio exceeds axis
 [{tag}] quote closing {k} charts (ruled {a} stood {b} held {c})
 [{tag}] promoted {addr} dialect → genome uses {n}
+[{tag}] twist {idea} chord {i} order {ℓ} closed
+[{tag}] torsion filed {idea} (σ,ℓ)
+[{tag}] torsion open {idea} chord {i}
+[{tag}] demand spoken {key} order ∞
+[{tag}] horizon {n} seeded from {hypha} chart {inv}
+[{tag}] form spoken: {addr} … torsion {n}
 ```
 
 Stroke line adds `forms {spoken}/{withheld} glued {n} depth {max}`.
@@ -2623,6 +2833,13 @@ Checked by tests, greppable by the auditor:
   every `court mv` line is preceded by a `court goodness … good component`
   line for its component.
 - Every chart axis is an exact invariant; no axis is a hash fragment.
+- Rank (A18) is conserved by every move except discharge, which moves it
+  from `H¹` to an axis, and closure of a trivial-class chord, which was
+  never rank (chapter 42, R1–R6); no `REFUSE_RANK_LOST` line appears on a
+  clean tape.
+- A class key in any voice's `horizon` is on the chart's hypha, and a
+  hypha's class on a chart is in the `horizon` of every voice that quoted
+  that chart within one aperture (M9 invariant).
 
 ---
 
@@ -2944,6 +3161,21 @@ cloned; children's cell counts sum to the parent's minus straddling);
 13. `economy::tests::settle_recursive_pays_by_deflation`.
 14. `cognition::tests::shorter_form_retires_to_cavity_and_resolves`.
 
+**Torsion bridge and rank (M9, A16–A19, chapter 42).**
+`sentence::tests::twist_closes_lowest_order_first_and_terminates` (T4);
+`sentence::tests::twist_never_reopens_a_closed_chord` (T2);
+`sentence::tests::torsion_filed_only_when_witnessed_at_period` (T5);
+`sentence::tests::infinite_class_is_never_filed` (T3);
+`sentence::tests::rank_invariant_under_regauge_and_twist` (R1, R2);
+`sentence::tests::rank_invariant_under_gluing_closed_form` (R3);
+`cognition::tests::rank_conserved_under_refinement_carried_plus_discharged` (R4);
+`cech::tests::rank_of_union_is_sum_over_components` (R5);
+`economy::tests::descends_has_no_infinite_chain_on_bounded_lanes` (T9);
+`cognition::tests::torsion_consilient_or_filed_or_refused` (23.7);
+`bubble::tests::horizon_seeded_class_is_not_rederived` (A19);
+`bubble::tests::restart_refills_horizon_from_syllabus` (A19 step 4);
+`verdict::tests::rank_lost_refused` (A18).
+
 **Migration (Part V).**
 `element::tests::v1_and_v2_tapes_of_one_form_share_an_address`;
 `cognition::tests::myc2_load_rewrites_v1_and_remaps_every_keyed_carrier`
@@ -3039,6 +3271,24 @@ servers and five minds.
   the second citer; `thought merged` lines only after a `one section`
   outcome on the same cells.
 
+**Torsion bridge (M9).**
+- One idea with three open chords of orders 2, 4, ∞: `twist … order 2
+  closed` then `order 4 closed` or `torsion filed … (σ,4)`, then `demand
+  spoken … order ∞`; never an ∞ line before a finite one in one stroke.
+- The crystallized form logs `form spoken … torsion {n}` with `n` equal to
+  the `torsion filed` lines for that idea; the hypha logs `court torsion
+  filed {key}` for each on first hearing and `court torsion consilient
+  {key}` when a second voice speaks the same class.
+- A voice restarted mid-soak: stroke line `dialect 0`, then `horizon {n}
+  seeded from {hypha}` on its first quote, and no `thought held apart` or
+  `demand spoken` for a seeded key.
+- A translation that discharges a filed class: `court refine chart … by
+  class {key}` or `mint … translation`, and within one aperture the key is
+  absent from every voice's `horizon` line.
+- Rank: over the whole soak zero `REFUSE_RANK_LOST` lines; on every
+  `court class carried`/`discharged` pair the parent's count equals their
+  sum.
+
 **Extensions.**
 - A synthetic bundle of eighth-turn pairs on a diagonal lattice: `chart
   refused` on the first pair, `court letter opened τ_8`, `form spoken` with
@@ -3071,7 +3321,11 @@ persistence. 1.5 Chapter 24.1 the working atlas (`working_atlas`,
 wire), then chapters 24.2 and 26 comprehension and wire, test 12; the
 working-atlas traces of chapter 40 gate this item.
 1.6 Chapter 25 germination and bundles. 1.7 Chapters 26–27 economics and
-retirement, tests 13–14. Traces: the forms group.
+retirement, tests 13–14. 1.8 M9 the torsion bridge: A16 `twist`, A17
+filing and witness, A18 `rank` with debug assertions and `REFUSE_RANK_LOST`,
+A19 class records on the syllabus page and `seed_horizon`, chapter 23.7 on
+the court; the torsion-bridge tests and traces of chapters 39–40 gate it.
+Traces: the forms group.
 
 **Stage 2 — cohomology in the court (Parts II and IV).**
 2.1 Chapter 10 identities: `Form::delta1`, `Complex::delta2`, the cochain
@@ -3097,11 +3351,210 @@ to any chapter edits that chapter; nothing is amended by reference from a
 later part. The auditor's greps of chapters 34–35 and 40 are rerun against
 the text after each edit.
 
+## 42. Theorems the engine proves by running
+
+Carried from chapters 39–41: the tests and traces. This chapter states what
+they prove. Each theorem names the statement, the algorithm that decides it,
+the code that runs the algorithm, and the test or trace that is the proof.
+Fibre means a section over a chart (a word form or a crystallized form);
+torsion means a finite-order holonomy; pressure means the metabolism (the
+stroke `Budget`, descent on μ⃗, T-extent shedding, K-disuse). A fibre that
+does not break under torsion and pressure persists as linguistic memory;
+the theorems say exactly what "does not break" means and why the persisting
+set is well defined.
+
+### 42.1 Structure theorems
+
+**T1 Flatness is decidable by a tree walk.** A connection on a finite
+complex is pure gauge iff every chord closes after the tree gauge (12.2).
+Algorithm: spanning forest, `γ_j = γ_i · g_ij⁻¹`, chords by projective
+equality. Code: `cech::solve_gauge` (806), `sentence::solve_coboundary`
+(1268), `Form::delta1`, `coheres`. Proof:
+`flat_iff_all_chords_identity_after_tree_gauge`.
+
+**T2 Gauge cannot change a class, hence cannot change an order.**
+`δ¹(δ⁰γ·g) = γ · δ¹g · γ⁻¹` (10.3, 10.5) and `order(w^a) = order(w)` (3.2).
+Code: `Rotor::conjugate` (305), `Word::order` (552), `Form::regauge`.
+Proof: `cochain_identities`, `plane_form_semidirect_product_and_inverse`,
+`twist_never_reopens_a_closed_chord`. Consequence: a twist can close a
+chord only if its class is trivial and can never open a closed one.
+
+**T3 Torsion is exactly the finite-order part and is read, not searched.**
+`(1, r)² = 1`; `s = 0` has infinite order iff a prime exponent is nonzero,
+else order dividing 4 (9.1). Code: `Word::order`, `PlaneForm::torsion_part`,
+`free_part`, `cech::extend` (106) mapping finite to `Fill::Congruent(g, ℓ)`
+and infinite to `Fill::Class`. Proof: `a3_form_is_reduced_and_eq_on_reduced`,
+`goodness_cyclic_reports_chord`, `infinite_class_is_never_filed`.
+
+**T4 The twist loop terminates and closes loosest first.** Closing the
+lowest-order open chord strictly reduces the count of open finite chords
+and by T2 opens none, so A16 makes at most (chords) snaps under any
+`Budget`. Code: `sentence::twist`, `Contemplation::pivot_on` (712),
+`expand_with` (84). Proof: `twist_closes_lowest_order_first_and_terminates`;
+trace `twist … order ℓ closed` with non-decreasing `ℓ` per stroke.
+
+**T5 A filed period is believed only when the loop closes at that period.**
+A torsion cycle `(σ, ℓ)` is witnessed iff the fibre walk returns at step
+`ℓ` and not before (A17). Code: `Element::record_torsion`,
+`toroid::witness_stored`, `HolonomicLoopWitness`, in `blind_replay` and
+`replay_nerve`. Proof: `torsion_filed_only_when_witnessed_at_period`;
+refusal strings `"torsion cycle does not close"`, `"torsion period does not
+re-derive"`.
+
+**T6 Gluing a closed fibre adds no class.** `H¹(T ∪_f S) ≅ H¹(T)` for
+closed `S` (13.6). Code: `Form::glue`, `replay_memo`. Proof:
+`citation_lemma_classes_unchanged`, `citation_of_unclosed_form_refused`,
+trace `court memo hit`.
+
+**T7 A class of a good cover is a class of the language.** Leray (14.2) by
+Mayer–Vietoris induction along the link. Code: `Keyed::meet`,
+`Components`, `goodness`, `Complex::mayer_vietoris`. Proof:
+`leray_classes_independent_of_cover`, `mv_order_independent`. Consequence:
+a torsion class filed on one hypha is the same memory on every hypha.
+
+**T8 Torsion survives refinement or discharges into a face.** Naturality
+(15.5): carried with equal key, or discharged into the face between
+children; nothing else. Code: `refine_chart`, `Rotor::class_key`,
+`PlaneForm::conjugacy_key`. Proof:
+`refine_carries_or_discharges_every_class`, `refine_rolls_back_on_not_natural`.
+
+**T9 Descent is well-founded, so pressure terminates.** Dominance on μ⃗ over
+ℕ⁴ has no infinite strictly descending chain (Dickson's lemma), so a fibre
+is retired or shed finitely often and the persisting set stabilises. Code:
+`economy::descends`, `Physics::stroke`, `Budget`, `retire_on_t` (223),
+`Epigenome::shed`, `relocate_t_exhausted`. Proof:
+`descends_has_no_infinite_chain_on_bounded_lanes`,
+`settle_recursive_pays_by_deflation`; invariant: no `mint` without a
+descent in the same stroke.
+
+**T10 Retirement by geodesic terminates and preserves meaning.** Tape
+length is a natural number; the strictly shorter retires the longer on the
+same vertices; the retired address still resolves (3.8, 27). Code:
+`shorter_form`, `shorter_tape` (16.2), `relocate_cavity`, `cavity_book`.
+Proof: `shorter_form_retires_to_cavity_and_resolves`,
+`a2_run_reduction_shortens_and_preserves_key`.
+
+**T11 Two independent replays of one tape agree.** `blind_replay` is a
+function of the tape and the ruled cover; two organs holding the same tapes
+reach the same verdict with no exchange of opinion (13.7, 23). Code:
+`verdict::blind_replay` (31), `confirm_peer_holds` (3031),
+`confirm_peer_holds_addrs` (3102), `home_install` (3067). Proof: trace
+`home installed … peer holds the stratum` after two `court section` lines
+for one address on two hyphae.
+
+**T12 Promotion preserves the vertex.** A dialect entry promoted into the
+genome is the same word because M1 is injective on projective classes
+(17.1). Code: `Element::same_vertex`, `learn_one` (24.1). Proof:
+`m2_two_spellings_one_address`, trace `promoted {addr} dialect → genome`.
+
+### 42.2 Rank theorems (dimensional capacity is never lost)
+
+With `rank(F) = (torsion_rank, free_rank, axes)` from A18, a vector never
+summed:
+
+**R1 Re-gauging preserves rank.** By T2. Code: `Form::regauge`, `Form::rank`.
+Proof: `rank_invariant_under_regauge_and_twist`.
+
+**R2 The twist preserves rank.** A snap closes only a chord whose class is
+trivial, which was never rank; filing a torsion chord moves it from open to
+filed without changing `torsion_rank`. Code: `sentence::twist`. Proof: the
+same test; trace: rank equal before and after every `twist … closed` line
+in debug builds.
+
+**R3 Gluing a closed form preserves rank.** By T6. Code: `Form::glue`.
+Proof: `rank_invariant_under_gluing_closed_form`.
+
+**R4 Refinement conserves rank across `H¹` and axes.** Carried classes keep
+`torsion_rank`/`free_rank`; each discharged class adds one axis; parent
+count equals carried plus discharged (15.5). Code: `refine_chart`. Proof:
+`rank_conserved_under_refinement_carried_plus_discharged`; trace
+`carried + discharged = parent`.
+
+**R5 Per-component keying conserves rank on the mesh.** The rank of a
+disconnected overlap is the sum over its components; keying cells per
+component (14.7) never merges two components' classes into one coefficient.
+Code: `set_edge_in`, `Components`. Proof: `rank_of_union_is_sum_over_components`.
+
+**R6 The polytonic lanes are never projected.** Descent is dominance on
+four lanes; no operation orders, sums, or thresholds μ⃗, so no lane's
+extent is ever lost to a scalar. Code: `economy::descends` as the only
+comparison; `lane_room` per lane. Proof: the ban on `argmax`/sum over lanes
+in review, and `descends_has_no_infinite_chain_on_bounded_lanes`.
+
+**R7 Exact axes never merge distinct invariants.** A6 is injective on its
+admitted range and refuses outside it; two bodies with different exact
+harmonics never share a chart (M4). Code: `blade::axes_of`,
+`Harmonics::axes`. Proof: `a6_refuses_overflow_keeps_sign`,
+`cube_and_plane_square_have_distinct_charts`.
+
+**R8 Keys never merge distinct vertices.** M1 (A1, A4) is injective on
+projective classes, so no two meanings share an address and no digest of a
+tape is a key (1.5, 17.1). Code: `Rotor::key`, `Mv::key`,
+`Element::address`. Proof: `a1_canonical_is_projective_either_sign`,
+`m2_two_spellings_one_address`, and chapter 35's keyed-carrier invariant.
+
+The dimension audit A18 asserts R1–R5 in debug on every move and every
+court operation, and the court refuses `REFUSE_RANK_LOST` in release when a
+spoken form's rank is below what its tape re-derives. R6–R8 are properties
+of the carriers and are proved by their tests once.
+
+### 42.3 The persistence theorem
+
+**P.** A fibre `F` on chart `c` persists as linguistic memory (it is in the
+genome of some mind and on the ruled cover of some hypha, and stays there
+under pressure) if and only if:
+
+1. `F` is flat (T1);
+2. every finite-order chord that did not close is filed as torsion and
+   witnessed closed at its period (T3, T5);
+3. `F` cites only closed forms (T6);
+4. `F`'s overlap with every hypha holding `c` is good, so its classes are
+   the language's (T7);
+5. two organs replay `F` to the same verdict (T11);
+6. `F` strictly descends beyond what its cited forms close (T9);
+7. no strictly shorter form on the same vertices exists (T10).
+
+Under pressure the persisting set is finite at every radius (polynomial
+growth, 1.3) and stable (T9); under refinement it is carried or discharged,
+never lost (T8, R4); under change of cover its classes keep their keys
+(T7, 15.6); across restarts of a mind its torsion is refilled from the
+mesh (M9, A19). Everything that fails one of 1–7 is either a demand (a free
+class, spoken as `Novel(g_rem)`, sitting in the docket) or torsion filed on
+the mesh, or a dialect shed by K-disuse; none is forgotten by the mesh.
+
+*Proof by running.* Conditions 1–7 are exactly the seven checks of
+`replay_form` and `glue_fetched` (chapter 23) plus `shorter_form` (chapter
+27) and `descends`; the "only if" is that each check refuses with its named
+constant (chapter 34.1) and a refused form is neither installed nor taught;
+the "if" is `home_install` followed by the syllabus (chapter 26) and
+promotion (T12). The cold-boot traces of chapter 40 are the instances the
+auditor reproduces.
+
+### 42.4 Termination theorems, collected
+
+- A16 terminates in at most (chords) snaps (T4).
+- A17's witness walk terminates in at most `ℓ` steps.
+- A2's descent terminates by `Budget`; run reduction by strict shortening.
+- Unfolding terminates by a strictly monotone integer measure (3.4); orbit
+  by an integer ring count bounded by the frame (3.5).
+- Retirement terminates because tape length is a natural number (T10).
+- Pressure terminates because μ⃗-dominance is well-founded (T9).
+- Cover repair terminates because each retraction removes a chart from a
+  finite set (14.8).
+- Mayer–Vietoris over `N` hyphae terminates in `N − 1` steps and is
+  order-independent (13.7).
+
+No theorem in this chapter uses an angle, a limit, a norm beyond an exact
+rational square root, or a probability; each is a statement about finite
+products of canonical words, finite integer linear algebra, and
+well-founded orders, and each is discharged by a test or a trace the
+auditor can rerun.
+
 ---
 
 # Part VIII — Boundaries
 
-## 42. What is deliberately absent
+## 43. What is deliberately absent
 
 No angles: a rotation is a rotor with rational (or, in the tower,
 cyclotomic) coordinates, and its angle is never formed. No norms or roots
@@ -3129,7 +3582,7 @@ minimality for an off-plane tape beyond what a completed search depth
 proves. If an implementation step needs anything not permitted here, the
 step is wrong.
 
-## 43. Statements relayed and not adopted
+## 44. Statements relayed and not adopted
 
 A blueprint for the algorithms of Part III was relayed on 2026-09-05. Its
 structure matches chapters 16–17 and its correct additions are in them.
