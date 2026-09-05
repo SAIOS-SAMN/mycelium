@@ -92,6 +92,34 @@ Therefore, as a law of the specification:
   Consequently a change of tape version, wire frame, or spelling never
   changes an address, and no re-addressing map is ever needed beyond the
   one-time migration in §25.1.
+
+  The vertex key is `blake3` over exactly these fields in this order; every
+  field is canonical, so two equal meanings produce one byte string without
+  any byte of the spoken tape entering:
+
+  1. the tape of `Word::normal_form()` (466): the per-plane spelling peel
+     with planes in slot order, one tape per group element; the unit
+     exponent is taken mod 4, which identifies `R` with `−R`, so the key
+     is projective as `projective_eq` is. Letter indices `0..17` as `u8`,
+     preceded by the length as `u32` little-endian.
+  2. `ρ` as a reduced fraction: numerator sign byte (`0`/`1`), numerator
+     magnitude as little-endian bytes with `u32` length, denominator
+     (positive) likewise. Every rational in this list is written this way.
+  3. placement: two rationals.
+  4. gauge: the hue permutation in one-line notation as `u8`s with `u32`
+     length; the identity is written with length `0`.
+  5. for a sentence form only (a closed one; forms under construction have
+     no address, §4): `depth` as `u16`; vertex count as `u32`; per vertex
+     in vertex order its kind byte (`Frame 0`, `Word 1`, `Glued 2`,
+     `Rebased 3`, `Unfolded 4`) and its own vertex key (a `Glued` vertex
+     contributes the cited form's address and the normal form of its
+     placement word; `Rebased` its two indices as `u16`; `Unfolded` its
+     measure byte and anchor); face count as `u32`; per face `i`, `j` as
+     `u16` and the face's normal-form tape as in item 1. Loops and
+     holonomies are derived and never keyed.
+
+  A reader that receives a tape decodes it, computes this key, and uses
+  nothing else as identity.
 - **Class keys are conjugation invariants** (§52), never keys of a
   representative.
 - **Digests of bytes are transport identifiers only**: cover digests,
@@ -1510,12 +1538,40 @@ step 5 succeeds, never on a class.
 
 ```rust
 impl<V> Keyed<V> {
-    /// Vertices present in both tries: simultaneous descent of the two
-    /// PATRICIA tries, branching only where both have a child. Cost is the
-    /// size of the shared prefix structure, never |self|·|other|.
+    /// Keys present in both tries. Cost is the shared prefix structure,
+    /// never |self|·|other|.
     pub fn meet<W>(&self, other: &Keyed<W>) -> Keyed<()>;                       // new
 }
 ```
+
+`meet` is a simultaneous descent of the two PATRICIA tries (`Node::Leaf(key,
+_)`, `Node::Branch { bit, children }`, `key_bit`, `first_difference`,
+`held_key`, nerve.rs 21–75). It uses one fact about the trie: every key in
+the subtree of a `Branch { bit }` agrees on all bits before `bit`. Define
+`meet(a, b)` on two nodes, emitting into the result:
+
+1. `(Leaf(k, _), Leaf(k', _))`: emit `k` iff `k == k'`.
+2. `(Leaf(k, _), Branch { bit, children })`: recurse on `(a, children[key_bit(k, bit)])`;
+   a leaf meets a branch only along its own path. Symmetric for `(Branch, Leaf)`.
+3. `(Branch { bit_a, ch_a }, Branch { bit_b, ch_b })`: take representatives
+   `r_a = a.held_key(ROOT)`, `r_b = b.held_key(ROOT)` (any leaf of each
+   subtree). If `first_difference(r_a, r_b)` is `Some(d)` with
+   `d < min(bit_a, bit_b)`, the subtrees disagree on a bit both agree on
+   internally: emit nothing. Otherwise:
+   - `bit_a == bit_b`: recurse on `(ch_a[0], ch_b[0])` and `(ch_a[1], ch_b[1])`;
+   - `bit_a < bit_b`: all of `b`'s keys agree at `bit_a`; recurse on
+     `(ch_a[key_bit(r_b, bit_a)], b)`;
+   - `bit_a > bit_b`: symmetric, recurse on `(a, ch_b[key_bit(r_a, bit_b)])`.
+4. `meet` on the two roots; an empty trie meets anything in nothing.
+
+Soundness: a key is emitted only from an exact leaf pair. Completeness: a
+key held by both follows the same side at every branch in both tries, and
+the representative's bit equals the key's bit at any branch below the
+subtree's agreed prefix. Cost: every call consumes a node of one trie that
+no other call visits, and the prune in step 3 stops any pair of subtrees
+that share no prefix, so the work is the shared prefix structure plus one
+`held_key` (O(bits)) per branch pair. The N vs 4N counter test on the
+larger trie holds with the smaller fixed (§46).
 
 `/opt/mycelium-v0.1.0/src/transducer/cech.rs`
 
@@ -1763,8 +1819,21 @@ hypha. It is a subcomplex of the base by construction.
 The overlap is acyclic for the coefficient system iff
 
 - **(A0) connected**: the chart graph on `M` has one component. Components
-  are found by keyed union-find over the induced faces (a `Keyed<[u8;32]>`
-  parent map on chart keys), cost linear in faces.
+  are found by a keyed union-find over the induced faces, `Components {
+  parent: Keyed<[u8; 32]> }` on chart keys:
+  - `find(k)`: follow `parent.get` until a key is its own parent, halving
+    the path on the way back (`parent.insert(k, grandparent)`); a key with
+    no entry is its own root.
+  - `union(a, b)`: `ra = find(a)`, `rb = find(b)`; if equal, nothing;
+    otherwise the **lesser key becomes the root**: `parent.insert(max(ra,
+    rb), min(ra, rb))`. Union by key order, not by rank, so the root of a
+    component is its least chart key with no second pass; that root is the
+    `component_key` of §50.1.
+  - Run `union` once per induced face of either hypha (a face relates two
+    charts of `M`; faces are read once, from the forms' `Face` lists, never
+    from a pair loop over charts). The number of components is the number
+    of charts in `M` that are their own root after the run; path halving
+    makes each `find` amortised logarithmic in `|M|`.
 - **(A1) flat within each hypha**: for `Z ∈ {X, Y}`, the tree walk of §32.2
   on `Z`'s induced faces over `M` closes every chord: every loop of charts
   inside the shared region has identity holonomy in `Z`'s own language.
@@ -1779,6 +1848,38 @@ their cost is the size of the overlap. Both are checked by each hypha for
 itself on its own tapes; for the peer's side, the hypha checks (A1) on the
 tapes it has fetched (`fetch_have`, `serve_ruled`) and treats an
 unfetched region as not yet known to be good (§50.3).
+
+### 49.3 k-fold overlaps
+
+Leray's condition is on every finite intersection, not only pairs. For a
+k-cell of the nerve with vertices `X₀ … X_k` (sorted, as `cell_key`
+stores them), the overlap is `M_I = charts(X₀) ∩ … ∩ charts(X_k)`, computed
+as the fold of `meet` over the cell's own vertex list in that order (meet
+is associative and commutative, so the result is the set intersection
+whatever the order; the vertex list is the cell's boundary, not an
+enumeration). Two facts reduce the check:
+
+- **(A1) is inherited.** `M_I ⊆ M_{X_i X_j}` for every pair in the cell,
+  and the restriction of a flat connection to a subcomplex is flat: every
+  loop of the subcomplex is a loop of the larger complex and keeps its
+  identity holonomy (restriction commutes with δ, §51). So if (A1) holds on
+  every edge of the cell it holds on the cell, and no tree walk is rerun
+  above degree 1.
+- **(A0) is not inherited.** An intersection of connected sets need not be
+  connected. So the component count of §49.2 is rerun on `M_I` with the
+  induced faces of any one hypha of the cell (all hyphae induce the same
+  chart adjacency on a good pairwise cover, since their faces agree up to
+  gauge on the shared region), and the k-cell is keyed per component as
+  in §50.1.
+
+Where it runs: `Complex::coboundary_on_link` (466) creates a cell of
+degree `k` when the volume of the `k+1`-fold overlap is nonzero. Before the
+cell's coefficient is read, it computes `M_I` and its components, and
+creates one cell per component with `set_edge_in`'s analogue at degree `k`
+(`remember` with the component in the key). A component whose peer tapes
+are not fetched is `Pending` and forms no cell; the climb stops there for
+that component and resumes when the fetch lands, as it does today when
+volume is zero.
 
 ## 50. Making the cover good
 
@@ -2140,3 +2241,60 @@ by a component count and a tree walk. No metric on classes: a class key is
 an exact hash of conjugation invariants that are rationals and signs. No
 approximation of "good enough" covers: an overlap is good or the cover is
 changed until it is, and every retraction is decided by `home`.
+
+## 58. Landing order for Parts IV–VI
+
+The counterpart of §21. One item per commit, the trace value in the
+message, reproduced on cold boot by the auditor before the next lands; no
+soak clock until every trace here passes.
+
+1. **§1.5 and §25.1, vertex addresses.** `Element::address()` over the
+   vertex key; `MYC2`/`GEN2` loaders build and apply `RMP1`. Everything
+   below keys on addresses, so this lands first. Trace: two tapes of one
+   word spelled differently log one address on every node; a restored
+   ledger logs the count of merged entries and `RMP1` hits fall to zero
+   within an aperture.
+2. **§28–§30, §45 (solver), the coboundary.** `PlaneForm` semidirect
+   arithmetic and order rule; `Form::delta1`, `Complex::delta2`;
+   `solve_gauge` chords by `projective_eq` with the `λ⁻¹` convention
+   documented; the cochain identity tests. Trace:
+   `regauge_then_delta1_is_conjugate` and `bianchi_holds…` green; the fill
+   counter on a chart with `±R` transitions no longer reopens.
+3. **§52, invariant class keys.** `PlaneForm::conjugacy_key`,
+   `Rotor::class_key`, `Word::class_key` redefined; `cocycle_at` fifth
+   field with snapshot/restore and ledger; `push_cocycle` compares by class
+   key and accepts `a == b`. Trace: one dialect between two hyphae yields
+   the same class key in all three servers' logs; a re-gauged replay of the
+   same dialect yields the same key.
+4. **§38–§45, Mayer–Vietoris.** `Keyed::meet`, `solve_gauge_between`,
+   `Overlap`, `MayerVietoris`, `Complex::overlap`/`mayer_vietoris`;
+   `glue_fetched` mapped by the §42 table; `Form::regauge_overlap`;
+   `Contemplation::pivot_on` merges only on one section. Trace: the count
+   of `court mv … one section` plus `attached` lines equals the count of
+   consilient and attached installs; `mv_order_independent` green; the
+   meet's N vs 4N counter test green.
+5. **§49–§50, goodness.** `Cover::charts_of`, `ChartGraph`, `Components`,
+   `goodness`, per-component cell keys (`set_edge_in`, degree-k analogue in
+   `coboundary_on_link`), cover retraction by `home` on cyclic overlaps,
+   step 0 in `glue_fetched`, `REFUSE_OVERLAP_CYCLIC`. Trace: every
+   `court mv` line is preceded by a `court goodness … good component` line
+   for its component; the cyclic-overlap cold-boot trace of §56 shows
+   retract, rehome, then good, and no `class1` line for that pair.
+6. **§53–§54, naturality under refinement and cover change.**
+   `refine_chart` restricts per child and carries or discharges each class
+   with rollback on `REFUSE_NOT_NATURAL`; retract/rehome re-represent or
+   orphan. Trace: after one refinement, `carried` plus `discharged` lines
+   equal the parent's class count, and the children's cell counts sum to
+   the parent's minus straddling cells; `refine_rolls_back_on_not_natural`
+   green.
+7. **§40.1, §43–§44, the citation lemma in use.** `Form::glue` refuses
+   unclosed forms; the court memo relies on §40.1; mind and bubble
+   instances. Trace: `court memo hit` on the second citer of a ruled form
+   with no replay of the cited address; `thought merged` lines only after a
+   `one section` outcome on the same cells.
+
+Consolidation (§1.5's own discipline applied to this document) follows
+item 7: the amendments Parts IV–VI make to §36, §41, and §25.1 are folded
+into those sections, superseded statements deleted, and the document
+committed once as a single closed form; the auditor's greps in §26–§27,
+§46, and §56 are rerun against the consolidated text.
