@@ -245,31 +245,39 @@ fn cell_pos_key(r: i64, c: i64) -> [u8; 32] {
     k
 }
 
-fn support_occ(cells: &[(i64, i64)]) -> crate::network::nerve::Keyed<()> {
-    let mut occ = crate::network::nerve::Keyed::new();
-    for &(r, c) in cells {
-        occ.insert(cell_pos_key(r, c), ());
-    }
-    occ
+fn pair_key(a: u16, b: u16) -> [u8; 32] {
+    let (lo, hi) = if a <= b { (a, b) } else { (b, a) };
+    let mut k = [0u8; 32];
+    k[..2].copy_from_slice(&lo.to_le_bytes());
+    k[2..4].copy_from_slice(&hi.to_le_bytes());
+    k
 }
 
-/// After-supports overlap, or the adjacent_ring of one meets the other.
-fn supports_related(a: &[(i64, i64)], b: &[(i64, i64)]) -> bool {
-    if a.is_empty() || b.is_empty() {
-        return false;
-    }
-    let occ_b = support_occ(b);
-    if a.iter().any(|&(r, c)| occ_b.contains(&cell_pos_key(r, c))) {
-        return true;
-    }
-    let cells_a: Vec<(i64, i64, u8)> = a.iter().map(|&(r, c)| (r, c, 0)).collect();
-    super::blade::adjacent_ring(&cells_a)
-        .iter()
-        .any(|&(r, c, _)| occ_b.contains(&cell_pos_key(r, c)))
+fn decode_pair_key(k: &[u8; 32]) -> (u16, u16) {
+    let lo = u16::from_le_bytes(k[..2].try_into().unwrap_or([0, 0]));
+    let hi = u16::from_le_bytes(k[2..4].try_into().unwrap_or([0, 0]));
+    (lo, hi)
+}
+
+thread_local! {
+    static FACE_WORK: Cell<u64> = const { Cell::new(0) };
+}
+
+fn note_face_work() {
+    FACE_WORK.with(|c| c.set(c.get().saturating_add(1)));
+}
+
+fn reset_face_work() {
+    FACE_WORK.with(|c| c.set(0));
+}
+
+fn face_work() -> u64 {
+    FACE_WORK.with(|c| c.get())
 }
 
 /// Faces the bundle names: star from the Frame, plus pairs whose
-/// after-supports overlap or sit at ring distance one. Not the clique.
+/// after-supports overlap or sit at ring distance one. Occupancy is
+/// keyed by cell; cost is occupied + ring cells, never n².
 fn star_and_cell_faces(n: usize, frame: usize, supports: &[Vec<(i64, i64)>]) -> Vec<(u16, u16)> {
     let mut faces: Vec<(u16, u16)> = Vec::new();
     for j in 0..n {
@@ -283,21 +291,61 @@ fn star_and_cell_faces(n: usize, frame: usize, supports: &[Vec<(i64, i64)>]) -> 
         };
         faces.push((a, b));
     }
-    for i in 0..n {
-        if i == frame {
+    let mut occ: crate::network::nerve::Keyed<Vec<u16>> = crate::network::nerve::Keyed::new();
+    for (vi, supp) in supports.iter().enumerate() {
+        if vi == frame {
             continue;
         }
-        for j in (i + 1)..n {
-            if j == frame {
+        let id = vi as u16;
+        for &(r, c) in supp {
+            note_face_work();
+            let k = cell_pos_key(r, c);
+            match occ.get_mut(&k) {
+                Some(v) => {
+                    if !v.contains(&id) {
+                        v.push(id);
+                    }
+                }
+                None => {
+                    occ.insert(k, vec![id]);
+                }
+            }
+        }
+    }
+    let mut related: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    for (_k, verts) in occ.fiber(&crate::network::nerve::ROOT) {
+        if verts.len() < 2 {
+            continue;
+        }
+        // Unordered pairs of this cell's own vertices, bounded by the cell.
+        for a in 0..verts.len() {
+            for b in (a + 1)..verts.len() {
+                related.insert(pair_key(verts[a], verts[b]), ());
+            }
+        }
+    }
+    for (vi, supp) in supports.iter().enumerate() {
+        if vi == frame {
+            continue;
+        }
+        let v = vi as u16;
+        let cells: Vec<(i64, i64, u8)> = supp.iter().map(|&(r, c)| (r, c, 0)).collect();
+        for (r, c, _) in super::blade::adjacent_ring(&cells) {
+            note_face_work();
+            let Some(others) = occ.get(&cell_pos_key(r, c)) else {
                 continue;
+            };
+            for &u in others {
+                if u != v {
+                    related.insert(pair_key(v, u), ());
+                }
             }
-            if !supports_related(&supports[i], &supports[j]) {
-                continue;
-            }
-            let (a, b) = (i as u16, j as u16);
-            if !faces.iter().any(|&f| f == (a, b)) {
-                faces.push((a, b));
-            }
+        }
+    }
+    for (k, _) in related.fiber(&crate::network::nerve::ROOT) {
+        let (a, b) = decode_pair_key(k);
+        if !faces.iter().any(|&f| f == (a, b)) {
+            faces.push((a, b));
         }
     }
     faces
@@ -2511,6 +2559,27 @@ mod tests {
             !loops.is_empty(),
             "the 1-skeleton is not a star tree; got {} loops",
             loops.len()
+        );
+    }
+
+    /// Occupancy + ring probes scale with cells, not with n².
+    #[test]
+    fn face_work_is_linear_in_occupied_cells() {
+        let run = |n: usize| -> u64 {
+            reset_face_work();
+            let mut supports = vec![Vec::new()];
+            for i in 0..n {
+                supports.push(vec![(0, (i as i64) * 3)]);
+            }
+            let _ = star_and_cell_faces(n + 1, 0, &supports);
+            face_work()
+        };
+        let w = run(8);
+        let w4 = run(32);
+        assert!(w > 0 && w4 > w, "work grows with bodies, got {w} then {w4}");
+        assert!(
+            w4 <= w.saturating_mul(5),
+            "4N work is ~4× N, not n²: {w} vs {w4}"
         );
     }
 
