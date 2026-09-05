@@ -1020,11 +1020,59 @@ impl Element {
         out
     }
 
-    /// The element's canonical ADDRESS — a digest of its BASE form (sections
-    /// excluded: a pierced axis deepens the thought's volume without changing
-    /// which word it is). Wire/cache identity; never a reasoning operand.
+    /// Vertex key of the word form: geodesic normal form plus frame
+    /// coordinates as exact rationals. A sentence is keyed by its vertex
+    /// keys and face normal forms. Never a digest of the spoken tape.
     pub fn address(&self) -> [u8; 32] {
-        *self.address.get_or_init(|| *blake3::hash(&self.base_canonical()).as_bytes())
+        *self.address.get_or_init(|| {
+            if self.is_sentence() {
+                if let Some(k) = crate::transducer::sentence::vertex_address(self) {
+                    return k;
+                }
+            }
+            *blake3::hash(&self.form_key_bytes()).as_bytes()
+        })
+    }
+
+    /// Meaning of a non-sentence word: geodesic + (ρ, placement, gauge) +
+    /// the centered remainder chain. The raw description bytes are not here.
+    fn form_key_bytes(&self) -> Vec<u8> {
+        use crate::transducer::alphabet::put_q;
+        let mut out = Vec::new();
+        if let Some(rw) = crate::transducer::rewrite::Rewrite::from_element(self) {
+            out.push(REWRITE_TAG);
+            out.push(rw.kind as u8);
+            out.extend_from_slice(&(rw.before.len() as u16).to_le_bytes());
+            for a in &rw.before {
+                out.extend_from_slice(a);
+            }
+            out.extend_from_slice(&rw.after);
+            for m in &rw.claimed {
+                out.extend_from_slice(&m.to_le_bytes());
+            }
+            return out;
+        }
+        if let Some(L) = self.letters() {
+            out.extend_from_slice(&L.spelling.word.geodesic().key());
+            put_q(&mut out, &L.spelling.rho);
+            put_q(&mut out, &L.shift.0);
+            put_q(&mut out, &L.shift.1);
+            let mut sigma = L.sigma.clone();
+            sigma.sort_unstable();
+            out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
+            for (f, t) in sigma {
+                out.push(f);
+                out.push(t);
+            }
+        }
+        out.extend_from_slice(&(self.sub.len() as u32).to_le_bytes());
+        for (r, c, b, a) in &self.sub {
+            out.extend_from_slice(&r.to_le_bytes());
+            out.extend_from_slice(&c.to_le_bytes());
+            out.push(*b);
+            out.push(*a);
+        }
+        out
     }
 
     /// GEN2: tapes only. Magic `0xA2`, then dim, word, mag, chain, sections,
@@ -1708,7 +1756,7 @@ pub const REWRITE_TAG: u8 = 0x14;
 
 /// The description of a connection: its spelling in the alphabet at its
 /// dilation, the placement, the gauge map, and the centered remainder.
-fn connection_word(
+pub(crate) fn connection_word(
     spelling: &crate::transducer::alphabet::Spelling,
     shift: &(Q, Q),
     sigma: &[(u8, u8)],
@@ -2270,6 +2318,17 @@ mod tests {
         assert!(w.solution().is_some(), "the group component inverts");
         assert_eq!(w.sub(), remainder.as_slice(), "the remainder is the chain");
         assert_ne!(w.address(), from_residual(&remainder).address(), "the connection is not the bare residual");
+        let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap();
+        let long = crate::transducer::alphabet::Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
+        assert_eq!(long.key(), crate::transducer::alphabet::Word::identity().key());
+        let mut alt = w.clone();
+        if let Some(L) = alt.letters() {
+            let spelling = crate::transducer::alphabet::Spelling { word: long, rho: L.spelling.rho };
+            let rem = alt.sub().to_vec();
+            alt.word = connection_word(&spelling, &L.shift, &L.sigma, &rem);
+            alt.address.take();
+            assert_eq!(alt.address(), w.address(), "q^4 and 1 are one vertex; the tape is not the address");
+        }
         assert!(w.magnitude()[0] >= 5 && w.magnitude()[1] >= 2, "carried volume rides on the lanes");
         let closed = from_connection(&affine, &[(1, 2), (2, 1)], &Vec::new(), [5, 2, 0, 0]).expect("spells");
         assert!(closed.is_connection() && closed.sub().is_empty(), "an empty remainder is a closed connection");

@@ -1115,13 +1115,45 @@ fn germ_hue_map(g: &Germ) -> Vec<(u8, u8)> {
     m
 }
 
-/// Identify a germ across pairs: source chart, target chart, shell kind.
+/// Identify a germ across pairs: conjugation class of its word and the
+/// source/target moduli as exact axes, never a digest of a spoken tape.
 pub fn germ_class_key(g: &Germ) -> [u8; 32] {
-    let mut h = blake3::Hasher::new();
-    h.update(&chart_key(&g.source));
-    h.update(&chart_key(&g.target));
-    h.update(&[g.kind.as_u8()]);
-    *h.finalize().as_bytes()
+    let mut buf = Vec::new();
+    buf.extend_from_slice(&g.word.class_key());
+    write_inv_axes(&g.source, &mut buf);
+    write_inv_axes(&g.target, &mut buf);
+    buf.push(g.kind.as_u8());
+    *blake3::hash(&buf).as_bytes()
+}
+
+fn write_inv_axes(inv: &Option<stalk::Invariant>, buf: &mut Vec<u8>) {
+    match inv {
+        None => buf.push(0),
+        Some(i) => {
+            buf.push(1);
+            buf.push(i.0.len().min(255) as u8);
+            for a in i.0.iter().take(255) {
+                buf.extend_from_slice(&a.to_le_bytes());
+            }
+        }
+    }
+}
+
+/// Vertex key of a sentence: geodesic keys of its germs in order and the
+/// normal forms of its faces, never the serialised tape.
+pub fn vertex_address(e: &Element) -> Option<[u8; 32]> {
+    let n = from_element(e)?;
+    let mut buf = Vec::new();
+    for g in &n.germs {
+        buf.extend_from_slice(&g.word.geodesic().key());
+        g.versor.to_bytes(&mut buf);
+        buf.push(g.kind.as_u8());
+    }
+    for f in &n.faces {
+        buf.extend_from_slice(&f.g_ij.geodesic().key());
+        f.versor.to_bytes(&mut buf);
+    }
+    Some(*blake3::hash(&buf).as_bytes())
 }
 
 fn class_ordinal(inst: &crate::network::nerve::Keyed<Vec<usize>>, k: &[u8; 32], i: usize) -> Option<usize> {

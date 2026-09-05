@@ -275,6 +275,27 @@ impl Rotor {
         }
     }
 
+    /// Conjugation-and-scale invariant of a rotor: `(a²/w, p²/w, sign a,
+    /// sign p)` with `a` the scalar, `p` the pseudoscalar, `w = ΦΦ̃`.
+    pub fn class_key(&self) -> [u8; 32] {
+        let w = self.weight().unwrap_or_else(Q::one);
+        let a = self.c[0].clone();
+        let p = self.c[15].clone();
+        let mut buf = Vec::new();
+        if w.is_zero() {
+            put_q(&mut buf, &Q::zero());
+            put_q(&mut buf, &Q::zero());
+            buf.push(0);
+            buf.push(0);
+        } else {
+            put_q(&mut buf, &(&(&a * &a) / &w));
+            put_q(&mut buf, &(&(&p * &p) / &w));
+            buf.push(u8::from(a.is_negative()));
+            buf.push(u8::from(p.is_negative()));
+        }
+        *blake3::hash(&buf).as_bytes()
+    }
+
     /// The exact inverse `Φ̃ / (Φ Φ̃)`.
     pub fn inverse(&self) -> Option<Rotor> {
         let w = self.weight()?;
@@ -423,12 +444,20 @@ impl Word {
         self.1.take();
     }
 
-    /// Vertex key: BLAKE3 of the geodesic normal form.
+    /// Vertex key: BLAKE3 of the geodesic normal form, never of a spoken tape.
     pub fn key(&self) -> [u8; 32] {
         let n = self.geodesic();
         let mut buf = Vec::with_capacity(2 + n.0.len());
         n.to_bytes(&mut buf);
         *blake3::hash(&buf).as_bytes()
+    }
+
+    /// Conjugation class of the plane form, or of the rotor off the plane.
+    pub fn class_key(&self) -> [u8; 32] {
+        match self.form() {
+            Some(f) => f.conjugacy_key(),
+            None => self.rotor().class_key(),
+        }
     }
 
     /// Shortest tape for this vertex: unit exponents mod 4, primes as
@@ -713,6 +742,31 @@ impl PlaneForm {
 
     pub fn is_identity(&self) -> bool {
         !self.parity && self.rot.iter().all(|&x| x == 0)
+    }
+
+    /// Canonical conjugacy representative, then its digest. Even sheet:
+    /// `{r, −r}` with the first nonzero component positive. Odd sheet:
+    /// each exponent mod 2 in `{0,1}`.
+    pub fn conjugacy_key(&self) -> [u8; 32] {
+        let mut buf = Vec::with_capacity(1 + 8 * CAYLEY_ALPHABET_LEN);
+        if self.parity {
+            buf.push(1);
+            for &n in &self.rot {
+                buf.extend_from_slice(&(n.rem_euclid(2)).to_le_bytes());
+            }
+        } else {
+            buf.push(0);
+            let neg: [i64; CAYLEY_ALPHABET_LEN] = std::array::from_fn(|i| -self.rot[i]);
+            let pick_neg = match self.rot.iter().zip(neg.iter()).find(|(&a, &b)| a != b) {
+                Some((&a, _)) => a < 0,
+                None => false,
+            };
+            let r = if pick_neg { &neg } else { &self.rot };
+            for &n in r {
+                buf.extend_from_slice(&n.to_le_bytes());
+            }
+        }
+        *blake3::hash(&buf).as_bytes()
     }
 
     /// Plane-group product: rotations ⋊ sheet parity. A trailing sheet
@@ -1381,6 +1435,48 @@ mod tests {
         assert!(r.geo(&r.inverse().unwrap()).is_identity());
         let n = w.compose(&w.inverse()).normal_form();
         assert!(n.rotor().is_identity(), "normal form of a cancelling tape is 1");
+    }
+
+    /// §52.1: conjugacy key is invariant on the four conjugation lines.
+    #[test]
+    fn plane_conjugacy_four_lines() {
+        let q = LetterId::quarter((0, 1)).unwrap();
+        let r = Word::from_letters(&[(q, false), (q, false)]).form().unwrap();
+        let r2 = Word::from_letters(&[(q, false)]).form().unwrap();
+        let sheet = PlaneForm { parity: true, rot: [0; CAYLEY_ALPHABET_LEN] };
+        let conj = |g: &PlaneForm, x: &PlaneForm| g.compose(&x.compose(&g.inverse()));
+        assert_eq!(conj(&r2, &r).conjugacy_key(), r.conjugacy_key(), "(0,r') even");
+        assert_eq!(conj(&sheet, &r).conjugacy_key(), r.conjugacy_key(), "(1,r'') even class of r and -r");
+        let odd = r.compose(&sheet);
+        assert_eq!(conj(&r2, &odd).conjugacy_key(), odd.conjugacy_key(), "(0,r') odd");
+        assert_eq!(conj(&sheet, &odd).conjugacy_key(), odd.conjugacy_key(), "(1,r'') odd");
+    }
+
+    #[test]
+    fn conjugacy_key_iff_conjugate() {
+        let q = LetterId::quarter((0, 1)).unwrap();
+        let r = Word::from_letters(&[(q, false)]).form().unwrap();
+        let inv = r.inverse();
+        assert_eq!(r.conjugacy_key(), inv.conjugacy_key(), "r and -r are one even class");
+        let sheet = PlaneForm { parity: true, rot: [0; CAYLEY_ALPHABET_LEN] };
+        let odd = r.compose(&sheet);
+        let odd2 = inv.compose(&sheet);
+        assert_eq!(odd.conjugacy_key(), odd2.conjugacy_key(), "odd class is r mod 2");
+        assert_ne!(r.conjugacy_key(), odd.conjugacy_key(), "sheet splits the class");
+    }
+
+    #[test]
+    fn rotor_class_key_invariant() {
+        let q = LetterId::quarter((0, 1)).unwrap();
+        let w = Word::from_letters(&[(q, false)]);
+        let r = w.rotor();
+        let s = Word::from_letters(&[(LetterId::quarter((0, 2)).unwrap(), false)]).rotor();
+        let conj = s.geo(&r).geo(&s.inverse().unwrap());
+        assert_eq!(r.class_key(), conj.class_key());
+        let scaled = r.scale(&qn(3, 2));
+        assert_eq!(r.class_key(), scaled.class_key());
+        let f = w.form().unwrap();
+        assert_eq!(w.class_key(), f.conjugacy_key());
     }
 
     /// Two tapes of one vertex have one key; a tape and its geodesic
