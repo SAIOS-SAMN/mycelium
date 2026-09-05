@@ -2273,7 +2273,7 @@ pub enum Vertex {
         rho: BigRational,
         placement: (BigRational, BigRational),
         gauge: Vec<(u8, u8)>,
-        class: stalk::Invariant,                        // the body's chart (source or target)
+        class: stalk::Invariant,                        // the body's chart (source or target): a section coordinate, never the correspondence key (chapter 21 step 1)
     },
     Glued {                                             // a crystallized sentence form, by address  (3.3)
         address: [u8; 32],
@@ -2392,7 +2392,10 @@ empty source or target class); faces for every related pair through
 `face_of`; loops through `loops_of`. Shells (`peel::peel_body_scaled`)
 remain pairing candidates and are never vertices. Candidates are bucketed by
 `moduli.key()` over exact axes (A6) as an index only; the decider is that a
-carriage exists, never the bucket.
+carriage exists, never the bucket. "Cells read once" is a memo keyed by the
+pair's content, the framed listing key of `(a, b)` (`element::listing_key`,
+M2), never by the grids' pointers or lengths: a pointer is a byte identity in
+disguise and a reallocation makes it name a different pair.
 
 ## 21. Extraction as moves
 
@@ -2412,22 +2415,43 @@ standing of each returned form beside it; `Kernel` over the ruled cover
 
 Inside `extract_rule`, in order:
 
-1. **Correspondence by class.** Vertices across pairs are matched by
-   `class()`; a class in every pair is a rule vertex; a class in some
-   pairs is a section over those pairs (`SentenceRule.sections`, a
-   `Keyed<Vec<u16>>` by class key). Counts are never compared.
-2. **Constancy of faces.** For each matched pair of vertices, `face_of` in
-   every pair; the face is a rule face iff all are one vertex (M1
-   equality). Non-constant faces are dropped; the vertices stay.
+1. **Correspondence by transport class.** Vertices across pairs are matched
+   by their **transport class**: kind, the conjugacy class of the word
+   (`Word::class_key`), and the hue map; the `Frame` matches by kind alone.
+   The body's chart (`class` on `Vertex::Word`, its moduli) is a **section
+   coordinate** carried on the vertex and never a matching key: two bodies
+   of different shapes carried by one transport correspond, two bodies of
+   one shape carried by different transports do not. A transport class in
+   every pair is a rule vertex; a class in some pairs is a section over
+   those pairs (`SentenceRule.sections`, a `Keyed<Vec<u16>>` by transport
+   class key). Counts are never compared. Matching by moduli was the fault
+   that left three quarters of ARC families frame-only (a73d444 corrected it
+   in `same_stalk`); the form engine matches the same way.
+2. **Constancy of faces.** Faces are the pairs the bundle relates, never the
+   complete graph: the star from the `Frame` to each vertex, and vertices
+   whose after-supports overlap or sit at ring distance one (chapter 20). For
+   each such pair, `face_of` in every pair of the bundle; the face is a rule
+   face iff all are one vertex (M1 equality). Non-constant faces are
+   dropped; the vertices stay. A face for every pair of vertices carries no
+   information beyond the vertices and makes every loop identity by
+   construction, so torsion has nowhere to appear.
 3. **Gluing.** For each class present, `crystal.on_class(class)`; for each
    crystallized `s`, the placement word from `s`'s `Frame` to the pair's
    `Frame` via the matched vertex; if `crystal.speak_form(s, x, placement)`
    reproduces a subset of the pair's output on every pair, the pair forms
    `glue(s, addr, placement)` and the reproduced vertices leave the
    remainder (3.3, 13.6).
-4. **Rebasing.** For vertex pairs `(i, j)` where `face_of(i, j)` on every
-   pair equals `word_in(i) ∘ word_in(j) ∘ word_in(i)⁻¹`, replace `j` by
-   `Rebased{by: i, of: j}` (3.2).
+4. **Rebasing.** "Do to B what A did to itself": vertex `j` is `i` read in
+   `j`'s frame when `w_j = t · w_i · t⁻¹` with `t` the relative placement
+   from `i`'s body to `j`'s body (the translation part of the carriage
+   between them, `versor_shift` of `face_of(i, j)`'s versor), on every pair
+   of the bundle and with `w_i` not the identity. Then replace `j` by
+   `Rebased{by: i, of: j}` (3.2), whose `word_in` is exactly `t · w_i ·
+   t⁻¹`. The criterion is **not** `face_of(i, j) = w_i · w_j · w_i⁻¹`: since
+   `face_of(i, j) = w_j · w_i⁻¹`, that equation reduces to `w_i = 1` and
+   never fires on a non-trivial word; an earlier version of this document
+   stated it that way and 3eca3d5 implemented it as written, so rebase never
+   triggers there.
 5. **Unfolding.** If each pair's output is the input under `k` applications
    of one form with one `Measure` strictly monotone and one stop criterion,
    the rule is the form plus `Unfolded{measure}` (3.4).
