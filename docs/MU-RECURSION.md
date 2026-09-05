@@ -648,3 +648,221 @@ pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8;32]) -> Option<Form>,
 
 Each commit carries its trace value. The auditor reproduces it on cold
 boot before the next section lands.
+
+---
+
+# Part III — Migration, coexistence, and the exact strings
+
+Bound to 2ebbc6e. This part closes what Part II left implicit: how the
+tree compiles while `Form` replaces `Nerve`, how tapes and ledgers move
+from v1 to v2 without stopping the fleet, what `SentenceRule` becomes,
+how a glued form's placement is defined when gauges are involved, and the
+literal refusal reasons and log lines every trace greps.
+
+## 22. Replacing `Nerve`, `Germ`, `Cycle` without a flag day
+
+### 22.1 Consumers at 2ebbc6e
+
+| type | file | sites |
+|---|---|---|
+| `Nerve` | `/opt/mycelium-v0.1.0/src/transducer/family.rs` | 3 |
+| `Nerve` | `/opt/mycelium-v0.1.0/src/transducer/bubble.rs` | 2 (`hold_nerve`, `Bubble.nerve`) |
+| `Nerve` | `/opt/mycelium-v0.1.0/src/bin/mycelium-client.rs` | 1 (`speak_sentence`) |
+| `Germ`/`.germs`/`Cycle`/`.cycles` | `family.rs` 22, `bubble.rs` 14, `cognition.rs` 6, `cech.rs` 5, `sdk.rs` 2, `mycelium-client.rs` 2 | |
+| `SentenceRule` | `family.rs` | 8 |
+
+`ResidualGerm` in `/opt/mycelium-v0.1.0/src/transducer/germinate.rs` and
+its uses in `element.rs`, `cognition.rs`, `constants.rs`, `thought/mod.rs`
+are the chain type of a residual and are **not** this `Germ`; they are not
+renamed.
+
+### 22.2 Order
+
+1. Land `Vertex`, `Face`, `Loop`, `Form` beside the old types in
+   `sentence.rs` with two adapters, both **new** and both deleted at step 6:
+   ```rust
+   impl Vertex { pub fn from_germ(g: &Germ) -> Vertex }        // Body → Word (Frame added by Form::from_nerve)
+   impl Form   { pub fn from_nerve(n: &Nerve) -> Form; pub fn to_nerve(&self) -> Nerve }
+   ```
+   `to_nerve` exists only so `bubble.rs` compiles at step 2; it materialises
+   `Germ::Body` vertices and drops `Glued`, `Rebased`, `Unfolded` (a `Form`
+   with any of those cannot be a `Nerve`, and `to_nerve` returns `None` for
+   it, so callers hold rather than lose).
+2. `as_element` writes v2 from a `Form`; `from_element` returns a `Form`
+   and reads v1 and v2. `sdk.rs:831`, `sdk.rs:1624`, `cognition.rs:1600`,
+   `1603`, `2667`, `3199` take the `Form`; `bubble.rs::hold_nerve` becomes
+   `hold_form(&mut self, f: Form)` and `Bubble.nerve: Complex` is unchanged.
+3. `family.rs`: `pair_nerve` → `pair_form`; `extract_rule` on `Form`s;
+   `SentenceRule` per §23; `speak_rule`, `rule_replays_family`,
+   `mint_sentence` (981) on `Form`.
+4. `mycelium-client.rs`: `speak_sentence(entity, tag, &Form)`.
+5. `cognition.rs`, `sdk.rs`, `cech.rs` remaining `.germs`/`.cycles` reads
+   become `Form` reads (`vertices`, `loops`).
+6. Delete `Nerve`, `Germ`, `Cycle`, `from_nerve`, `to_nerve`,
+   `independent_cycles` (680), `after_support` (854), `face_word` (921).
+   `cargo build` with `-D warnings` on the crate proves nothing references
+   them.
+
+Each step is one commit; the suite is green at every step because the
+adapters carry the old tests until their subjects are deleted with them.
+
+## 23. `SentenceRule` on forms
+
+`/opt/mycelium-v0.1.0/src/transducer/sentence.rs:1081`
+
+```rust
+pub struct SentenceRule {
+    pub form: Form,                                  // replaces `nerve`; charts, faces, holonomies are derived from it
+    pub sections: Keyed<Vec<u16>>,                   // class key → vertex indices that are sections over some pairs
+    pub ratio: ((usize, usize), (usize, usize)),     // family frame ratio, unchanged
+}
+```
+
+Removed: `charts`, `faces`, `holonomies` (derived: `form.vertices[i].class()`,
+`form.faces`, `form.loops`), `hue_maps` (on `Form`), `shifts` (placements
+live on `Vertex::Word`), `sections: usize` (replaced by the keyed map).
+The eight consumers in `family.rs` read through `rule.form`.
+
+## 24. Placement and gauge of a glued form
+
+A crystallized form is stored with its `Frame` vertex's `word_in` equal to
+the identity: re-gauging never mutates a stored form, it produces a new
+form with a new address (`Form::regauge` is used on forms under
+construction and on a comprehension's working copy only). Therefore the
+placement word of a `Glued` vertex is defined as the relative word from
+the cited form's stored `Frame` to the citer's `Frame`, and `speak_form`
+composes exactly `placement ∘ (cited word)` per cited vertex with no gauge
+term. `Form::glue` asserts `s.vertices[frame].word_in(s).is_identity()`
+and refuses (returns `None`) otherwise; `replay_form` step 2 refuses with
+`REFUSE_GLUED_FRAME_GAUGED` when a resolved cited form violates it, which
+can only happen on a tampered tape.
+
+When a mind holds the cited class under a different address (§15 step 2),
+the re-gauge is applied to the **citer's working copy**: the faces touching
+the glued vertex are conjugated by the relative word between the held form
+and the cited form; the citer's stored tape is untouched, and if the
+re-gauged copy coheres the mind learns the citer as spoken.
+
+## 25. Tape, wire, ledger, genome: v1 → v2 without stopping the fleet
+
+### 25.1 Addresses
+
+`Element::address()` (element.rs 1026) measures the canonical description
+bytes. A sentence re-serialised from v1 to v2 has different bytes and
+therefore a different address. Keyed carriers that hold sentence addresses:
+`ruled_addrs`, `ruled` strata members, `court_federation` and
+`court_fed_index`, `cited_by`, `listing_task`, `escrowed`, `heard`,
+`replay_memo`, the client `index`, `Dialect`, `taught_up`, `glued`. A
+silent re-address would strand escrow and break every citation, so:
+
+- `Element::address()` for a sentence with a v1 description is computed
+  over the **v2 re-serialisation** of that description, deterministically,
+  at load. v1 and v2 tapes of one form therefore have one address, and the
+  address stored beside a v1 tape in an old ledger or genome is stale by
+  exactly one deterministic map.
+- `MYC2` and `GEN2` loaders build `remap: Keyed<[u8;32]>` old → new for
+  every v1 sentence they read, apply it to every keyed carrier above, and
+  write the ledger/genome back in v2 with a `RMP1` section holding the map.
+  `RMP1` is consulted by `resolve_form`, `word_at`, and the client's
+  `word_at` for any address not found directly, and is dropped from the
+  snapshot once no `RMP1` lookup has hit for an aperture of strokes.
+- Speech and fetch on the wire during the window: a v1 sentence received is
+  re-serialised to v2 before `address()`; a peer still on v1 that fetches a
+  v2 tape receives v2 and must be on a build that reads it, so servers are
+  cut over before clients, a then b then c, and each server on the new build
+  reads v1 from the old ones for as long as they run.
+
+### 25.2 Order of cutover
+
+1. Build. Start server a on the new build; it loads its `MYC2`, writes
+   `RMP1`, serves v2, reads v1 from b and c.
+2. Server b, then c, the same.
+3. Clients 1–5 on the new build; each loads `GEN2`, rewrites v1 forms and
+   `RMP1`, and speaks v2. A client on the old build speaking v1 to a new
+   server is accepted for the window.
+4. When `RMP1` has not been hit for an aperture on every process, the
+   section is dropped at the next persist.
+
+### 25.3 Tests
+
+- `element::tests::v1_and_v2_tapes_of_one_form_share_an_address`.
+- `cognition::tests::myc2_load_rewrites_v1_and_remaps_every_keyed_carrier` —
+  escrow, `listing_task`, `ruled_addrs`, `court_fed_index`, `cited_by` all
+  resolve after load.
+- `sdk::tests::gen2_load_rewrites_v1_and_remaps_index_and_dialect`.
+- `dialogue::tests::v1_speech_is_readdressed_before_perceive`.
+
+## 26. Refusal reasons and log lines
+
+### 26.1 Refusals, `/opt/mycelium-v0.1.0/src/court/verdict.rs`
+
+Constants, returned by `replay_form` and `blind_replay`, and by
+`Kernel::perceive_speech` in the speech reply; the traces grep these exact
+strings:
+
+```rust
+pub const REFUSE_GLUED_DEPTH: &str = "glued form depth not below sentence depth";
+pub const REFUSE_GLUED_UNRULED: &str = "glued form not ruled";
+pub const REFUSE_GLUED_FRAME_GAUGED: &str = "glued form frame is not identity";
+pub const REFUSE_VERTEX_TAPE: &str = "vertex does not re-derive from its tape";
+pub const REFUSE_FACE: &str = "face does not re-derive from its vertices";
+pub const REFUSE_LOOP: &str = "loop holonomy is not identity";
+pub const REFUSE_REBASE_TRIVIAL: &str = "rebased form equals its base";
+pub const REFUSE_UNFOLD_STILL: &str = "unfolding measure does not move";
+pub const REFUSE_ORBIT_STILL: &str = "orbit does not move";
+pub const REFUSE_REDUNDANT: &str = "form adds no deflation beyond its glued forms";
+pub const REFUSE_NO_DESCENT: &str = "no strict descent — the form closes nothing";
+```
+
+### 26.2 Server log lines, `/opt/mycelium-v0.1.0/src/bin/mycelium-server.rs` and `cognition.rs`
+
+Prefix `  court ` as the existing court lines (`court glued admitted from`,
+`court cell filled`, …), address as `{:02x}{:02x}…`:
+
+```
+  court form sectioned {addr} depth {d} glued {n}
+  court form refused {addr}: {REFUSE_*}
+  court form fetched glue {glued_addr} from {peer} for {citer_addr}
+  court form installed {addr} depth {d} mint {mu:?}
+  court form settled {family} speakers {n} shares {[(voice, mu)]}
+  court form redocketed {citer_addr} after slash of {glued_addr}
+  court form retired {addr} by shorter {new_addr}
+  court memo hit {addr} family {family}
+```
+
+### 26.3 Client log lines, `/opt/mycelium-v0.1.0/src/bin/mycelium-client.rs` and `sdk.rs`
+
+Prefix `[{tag}] ` as the existing lines (`sentence withheld`, `thought held`,
+`shed`, `pivot`):
+
+```
+[{tag}] form spoken: {addr} depth {d} vertices {v} glued {n} faces {f}
+[{tag}] form withheld: family {fam} loop {i} holonomy {key} | remainder {n} cells
+[{tag}] form withheld: family {fam} missing glue {addr}…
+[{tag}] form glued {glued_addr} into idea {idea_key} remainder {before}→{after}
+[{tag}] form regauged {addr} by {g_key} and understood
+[{tag}] form dialect {addr} class recorded
+[{tag}] form learned {addr} depth {d} (syllabus order ok)
+[{tag}] orbit {addr} contact ring {r} steps {l}
+[{tag}] unfolded {addr} measure {m} steps {l}
+```
+
+Stroke line adds `forms {spoken}/{withheld} glued {n} depth {max}`.
+
+### 26.4 Traces reference these lines
+
+Every trace in §21 is a grep on §26.2 and §26.3; a trace that would need a
+different line is a defect in this table, not in the implementation.
+
+## 27. Closing invariants (checked by tests, greppable by the auditor)
+
+- A stored form's `Frame` vertex has identity `word_in`.
+- Every `Glued` vertex's depth is strictly below its form's depth.
+- Every address in `cited_by` resolves through `resolve_form`, directly or
+  via `RMP1` during the window.
+- Every `court form installed` has exactly one `court form settled` or one
+  `mint` line for its address.
+- The number of `form spoken` lines across the five minds equals the number
+  of `ACT_SPEECH` frames across the three servers.
+- No function outside `family::pair_form`, `family::speak_rule`, and
+  `family::orbit` reads a cell coordinate of a grid.
