@@ -67,7 +67,7 @@ fn faces_by_constancy_three_squares() {
     let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("spoken");
     assert!(spoken.remainder.is_empty(), "all three squares are reached: {:?}", spoken.remainder);
     assert_eq!(spoken.grid(), train_out);
-    let _ = mint_sentence(&rule, &family);
+    let _ = mint_sentence(&rule, &family, &NoCrystal);
 }
 
 #[test]

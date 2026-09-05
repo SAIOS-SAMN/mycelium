@@ -100,35 +100,43 @@ fn retire_feed(path: &Path) {
 /// Speak a closed multi-germ sentence as one Element; a withheld sentence
 /// is thought. Returns true when the sentence was uttered, so per-rule
 /// minting is skipped.
-fn speak_sentence(entity: &mut Entity, tag: &str, n: &mycelium::transducer::sentence::Nerve, family: &[u8; 32]) -> bool {
+/// Speak a rule as its crystallized form (chapter 30 step 4): the v2 tape
+/// carrying the descent the form measures over the bundle through the
+/// voice's working atlas. A form with a held loop, a remainder, or no
+/// measured descent is withheld and held as thought; the wire never sees
+/// a nerve.
+fn speak_form(
+    entity: &mut Entity,
+    tag: &str,
+    rule: &mycelium::transducer::sentence::SentenceRule,
+    train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
+    family: &[u8; 32],
+) -> bool {
+    use mycelium::transducer::alphabet::Rotor;
+    use mycelium::transducer::sentence::{as_element_form, as_element_form_mag, Vertex};
     let fam = format!("{:02x}{:02x}…", family[0], family[1]);
+    let form = &rule.form;
+    // Why the form is withheld, in the order the court would refuse it.
     let why_open = || {
-        if let Some((i, c)) = n.cycles.iter().enumerate().find(|(_, c)| !c.holonomy.abelian_identity()) {
-            format!(
-                "holonomy on cycle {i} = {:02x}{:02x}…",
-                c.holonomy.key()[0],
-                c.holonomy.key()[1]
-            )
-        } else if !n.remainder.is_empty() {
-            format!("remainder {} cells", n.remainder.len())
-        } else if n.class.is_some() {
-            "H² class present".to_string()
-        } else if n.germ_count() == 1 {
-            "identity 1-morphism is not a sentence".to_string()
+        let held = form
+            .delta1()
+            .into_iter()
+            .find(|(_, w)| !w.rotor().projective_eq(&Rotor::identity()));
+        if let Some((i, w)) = held {
+            format!("loop {i} holonomy {:02x}{:02x}…", w.key()[0], w.key()[1])
+        } else if !form.remainder.is_empty() {
+            format!("remainder {} cells", form.remainder.len())
         } else {
-            "not closed".to_string()
+            "no measured descent".to_string()
         }
     };
-    if !n.is_sentence() {
-        entity.hold_thought(n.remainder.clone());
-        if let Some(word) = mycelium::transducer::sentence::as_element(n) {
-            entity.hold_sentence(&word);
+    let mag = mycelium::transducer::family::form_descent(form, train, &entity.epigenome);
+    let Some(word) = as_element_form_mag(form, mag) else {
+        entity.hold_thought(form.remainder.clone());
+        if let Some(e) = as_element_form(form) {
+            entity.hold_sentence(&e);
         }
-        eprintln!("[{tag}] sentence withheld: family {fam}, {}", why_open());
-        return false;
-    }
-    let Some(word) = mycelium::transducer::sentence::as_element(n) else {
-        eprintln!("[{tag}] sentence withheld: family {fam}, not an element");
+        eprintln!("[{tag}] form withheld: family {fam} {}", why_open());
         return false;
     };
     if entity.already_taught(&word) {
@@ -138,23 +146,26 @@ fn speak_sentence(entity: &mut Entity, tag: &str, n: &mycelium::transducer::sent
     match entity.speak(std::slice::from_ref(&word)) {
         Ok(codes) => match codes.first().copied() {
             Some(mycelium::anastome::dialogue::SPEECH_REFUSED) => {
-                eprintln!("[{tag}] sentence withheld: family {fam}, refused on the wire");
+                eprintln!("[{tag}] form withheld: family {fam} refused on the wire");
                 false
             }
             _ => {
+                let glued = form.vertices.iter().filter(|v| matches!(v, Vertex::Glued { .. })).count();
                 eprintln!(
-                    "[{tag}] sentence formed: {:02x}{:02x}… {} germs, {} faces (constant relative words), carried {:?}",
+                    "[{tag}] form spoken: {:02x}{:02x}… depth {} vertices {} glued {} faces {} carried {:?}",
                     word.address()[0],
                     word.address()[1],
-                    n.germs.len(),
-                    n.faces.len(),
+                    form.depth,
+                    form.vertices.len(),
+                    glued,
+                    form.faces.len(),
                     word.magnitude()
                 );
                 true
             }
         }
         Err(e) => {
-            eprintln!("[{tag}] sentence withheld: family {fam}, {e}");
+            eprintln!("[{tag}] form withheld: family {fam} {e}");
             false
         }
     }
@@ -365,7 +376,7 @@ fn main() {
                             }
                         }
                     }
-                    let _ = speak_sentence(&mut entity, &tag, &rule.nerve, &fam);
+                    let _ = speak_form(&mut entity, &tag, rule, &task.train, &fam);
                 }
                 retire_feed(path);
                 ti += 1;
@@ -633,7 +644,7 @@ fn main() {
             );
             if let Some(rule) = rule {
                 rules_extracted += 1;
-                let _ = speak_sentence(&mut entity, &tag, &rule.nerve, &tid);
+                let _ = speak_form(&mut entity, &tag, rule, &train, &tid);
                 let mut reached = true;
                 let mut outs: Vec<Option<Vec<Vec<u8>>>> = Vec::new();
                 for x in &tests {
@@ -656,7 +667,7 @@ fn main() {
                 }
                 if reached && !tests.is_empty() && outs.iter().all(|o| o.is_some()) {
                     let outs: Vec<Vec<Vec<u8>>> = outs.into_iter().flatten().collect();
-                    let spoken = mycelium::transducer::family::mint_sentence(rule, &train);
+                    let spoken = mycelium::transducer::family::mint_sentence(rule, &train, &entity.epigenome);
                     if let Ok((code, _mu)) = entity.submit_solve_rule(&tid, &outs, spoken.as_ref()) {
                         projected += 1;
                         match code {

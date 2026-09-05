@@ -1863,6 +1863,10 @@ pub fn extract_rule_with(
     form.loops = Form::loops_of(&form.faces, form.vertices.len());
     form.ratio = scale.unwrap_or(((1, 1), (1, 1)));
     form.sections = sections.clone();
+    // Chapter 30 adapter: the nerve fields of SentenceRule stand until
+    // chapter 31 retires them. A form a nerve cannot carry (Glued, Rebased,
+    // Unfolded) leaves them empty; speak_rule then speaks through the form
+    // and nothing reads the empty nerve. The wire carries the form.
     let nerve = form.to_nerve().unwrap_or_default();
     let ratio = form.ratio;
     Some(super::sentence::SentenceRule {
@@ -2184,12 +2188,18 @@ fn section_agrees(
 }
 
 /// Mint the family's sentence: μ⃗ = [S, G, T, H] of the closed cochain.
-pub fn mint_sentence(rule: &super::sentence::SentenceRule, family: &[(Grid, Grid)]) -> Option<element::Element> {
-    let mut e = super::sentence::as_element(&rule.nerve)?;
-    let mut mag = super::sentence::cochain_magnitude(&rule.nerve);
+/// The rule as the word a voice speaks and submits: the form's v2 tape
+/// carrying the descent it measures over the bundle through the crystal
+/// that resolves its citations. Lane 𝒯 is the scene-state span the bundle
+/// stood over. A form with no measured descent is not a word.
+pub fn mint_sentence(
+    rule: &super::sentence::SentenceRule,
+    family: &[(Grid, Grid)],
+    crystal: &dyn Crystal,
+) -> Option<element::Element> {
+    let mut mag = form_descent(&rule.form, family, crystal);
     mag[2] = mag[2].max((family.len() as u64).saturating_sub(1).max(1));
-    e.set_magnitude(mag);
-    Some(e)
+    super::sentence::as_element_form_mag(&rule.form, mag)
 }
 
 /// SPEAK A RULE onto a test input: match bodies to rule germs by chart,
@@ -3174,11 +3184,33 @@ mod tests {
             rule.section_count() > 0 || rule.nerve.germ_count() >= 3,
             "three squares are vertices or sections"
         );
-        let minted = mint_sentence(&rule, &family).expect("the family mints");
+        let minted = mint_sentence(&rule, &family, &NoCrystal).expect("the family mints");
         let mu = minted.magnitude();
         assert!(mu[2] >= 1, "lane 2 carries the scene-state span");
         assert!(mu[1] >= 1, "recolour is gauge content, got {mu:?}");
         assert_ne!(mu, [0, 0, 0, 1], "mint is the unflattened 4-vector");
+        assert_eq!(minted.description().get(1), Some(&2), "the minted word is the form's v2 tape");
+        assert_eq!(
+            minted.address(),
+            crate::transducer::sentence::as_element_form(&rule.form).expect("tape").address(),
+            "the minted address is the form's address"
+        );
+        assert_eq!(
+            crate::verdict::blind_replay(&minted),
+            None,
+            "the court replays the minted form from its tape"
+        );
+        // The hypha reads the form back from the tape and measures the same
+        // descent the voice measured.
+        let back = crate::transducer::sentence::from_element_form(&minted).expect("v2 form");
+        assert_eq!(back.vertices, rule.form.vertices, "vertices survive the tape");
+        assert_eq!(back.faces, rule.form.faces, "faces survive the tape");
+        assert_eq!(back.ratio, rule.form.ratio);
+        assert_eq!(
+            form_descent(&back, &family, &NoCrystal),
+            form_descent(&rule.form, &family, &NoCrystal),
+            "the descent re-measures from the tape"
+        );
     }
 
     #[test]

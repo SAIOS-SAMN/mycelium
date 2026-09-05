@@ -4777,7 +4777,20 @@ impl Kernel {
                 continue;
             }
             crate::transducer::sentence::apply_gauge(&mut n, &gamma);
-            let Some(after) = crate::transducer::sentence::as_element(&n) else {
+            // A re-gauged form is a new form with a new address (chapter
+            // 32); it stays on the tape version it was spoken on, carrying
+            // its frame ratio and sections.
+            let after = if w.description().get(1).copied() == Some(2) {
+                let mut form = crate::transducer::sentence::Form::from_nerve(&n);
+                if let Some(orig) = crate::transducer::sentence::from_element_form(&w) {
+                    form.ratio = orig.ratio;
+                    form.sections = orig.sections;
+                }
+                crate::transducer::sentence::as_element_form_mag(&form, w.magnitude())
+            } else {
+                crate::transducer::sentence::as_element(&n)
+            };
+            let Some(after) = after else {
                 continue;
             };
             let payload = crate::transducer::rewrite::RewritePayload::Reanchor { gamma };
@@ -5782,6 +5795,8 @@ fn sentence_rule_of(form: &Element) -> Option<crate::transducer::sentence::Sente
             ) || matches!(v, Vertex::Word { contact: Some(_), .. })
         });
         if form_speaks || form.description().get(1) == Some(&2) {
+            // Chapter 30 adapter (see family::extract_rule_with): empty for
+            // a form a nerve cannot carry; speak_rule speaks the form then.
             let nerve = f.to_nerve().unwrap_or_default();
             let ratio = f.ratio;
             let sections = f.sections.clone();
@@ -7554,7 +7569,7 @@ mod tests {
             (digits(&["0000", "1100"]), digits(&["0000", "0022"])),
         ];
         let rule = crate::transducer::family::extract_rule(&family).expect("extract");
-        let spoken = crate::transducer::family::mint_sentence(&rule, &family).expect("mint");
+        let spoken = crate::transducer::family::mint_sentence(&rule, &family, &crate::transducer::family::NoCrystal).expect("mint");
         assert!(spoken.is_sentence());
         let mut expect = [0u64; 4];
         for (x, y) in &family {
@@ -7565,6 +7580,12 @@ mod tests {
             }
         }
         assert!(expect.iter().any(|&x| x > 0), "the family has descent");
+        let decoded = crate::transducer::sentence::from_element_form(&spoken).expect("v2 form");
+        assert_eq!(
+            crate::transducer::family::form_descent(&decoded, &family, &crate::transducer::family::NoCrystal),
+            expect,
+            "the form read back from its tape measures the family's descent"
+        );
         let mut k = Kernel::new();
         let task = crate::registry::task_id(&crate::arc::Task {
             train: family.clone(),

@@ -521,7 +521,14 @@ impl Element {
     pub fn is_identity(&self) -> bool {
         // A residual with a canceling hue tally (a bidirectional swap) has empty
         // FIBERS but a real chain — the chain decides; the tally never does.
-        self.fibers.is_empty() && self.sub.is_empty()
+        // A word with a description tape (a sentence form, a rewrite, a
+        // translation) is never the identity: its meaning is on the tape,
+        // not in a fibre, and a closed form has no chain by construction.
+        self.fibers.is_empty()
+            && self.sub.is_empty()
+            && !self.is_sentence()
+            && !self.is_rewrite()
+            && !self.is_translation()
     }
 
     /// The centered coboundary chain (empty for pure-algebra elements).
