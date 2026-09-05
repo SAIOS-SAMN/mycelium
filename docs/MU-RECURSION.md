@@ -2991,3 +2991,314 @@ Cold-boot traces (added to §21 and §58):
   exceeds axis`, no `MAX` axis in any cover digest.
 - One dialect between two hyphae: equal class key and equal refinement
   axes in all three logs.
+
+---
+
+# Part VIII — Breaking the two walls
+
+Two limits are built into the carriers, not into the doctrine. The scalar
+field is ℚ, so the only rotations the letters can spell are those whose
+tangent of the half-angle is rational. The base is the sensor plane, so
+anything that lives on a third spatial axis, on the index of a frame, or in
+the relation between frames is pushed into a fibre or left as remainder.
+This part specifies both upgrades as language extensions: nothing in Parts
+I–VII changes, the 17 letters remain the immutable base (Law VIII), exact
+arithmetic remains exact, and each upgrade is opened only where a demand
+asks for it.
+
+## 63. Where the walls bite, exactly
+
+### 63.1 The field wall
+
+A rotation by `θ` in the plane `e_i e_j` is the rotor `cos(θ/2) −
+sin(θ/2) e_ij`, projectively `1 − tan(θ/2) e_ij`. The quarter turn is
+`tan(π/4) = 1`, which is why `1 + e_ij` is a letter over ℚ. The `(3,4,5)`
+and `(5,12,13)` letters are the rational points of the circle at the
+primes 5 and 13. Every rotation the alphabet spells has rational
+`tan(θ/2)`; the group they generate is closed under composition, so no
+irrational ever arises **inside** the language. The wall is at
+perception: a sensor whose symmetries include
+
+- the eighth turn, `tan(π/8) = √2 − 1` (octagonal, diagonal-lattice data),
+- the sixth turn, `tan(π/6) = 1/√3`, and the twelfth, `tan(π/12) = 2 − √3`
+  (hexagonal lattices),
+- any `n`-th turn with `n ∉ {1, 2, 4}`, `tan(π/n)` algebraic of degree
+  `> 1`,
+
+produces a plane block whose entries are not rational, `spell` refuses it,
+and the word is never closed: the remainder carries the whole body. On
+ARC's ℤ² grids this never happens, because `D4 ⋊ ℤ²` and rational
+dilations close every grid symmetry; the field wall is the wall of the
+**next sensors**, not of the first corpus. It is specified now so the
+carriers are not rebuilt then.
+
+### 63.2 The projection wall
+
+Cells are `(r, c, before, after)`. A body is a set of plane cells; a
+family is a list of `(input, output)` pairs each perceived on its own
+plane; the relation between the two grids of a pair is the carriage, and
+the relation between pairs is the sentence's faces. Three things therefore
+have no coordinate on the base and land only as remainder or as a fibre
+tag: a third spatial axis (stacking, occlusion depth, volumetric corpora);
+the frame index (which example, which time step) as a coordinate the
+geometry can act on; and transformations that move structure **across**
+frames rather than within one. The alphabet already acts on four axes and
+six planes; three of the six planes touch the fourth axis and are unused
+by perception. The upgrade is to let perception write on them.
+
+## 64. Upgrade F — the field tower
+
+### 64.1 F1 Exact cyclotomic arithmetic
+
+`/opt/mycelium-v0.1.0/src/core/cyclo.rs` **new**.
+
+```rust
+/// An element of ℚ(ζ_m): a polynomial in ζ of degree < φ(m), reduced
+/// modulo the m-th cyclotomic polynomial Φ_m. Coefficients exact ℚ.
+pub struct Cyclo { m: u32, c: Vec<Q> }          // c.len() == phi(m)
+pub fn phi(m: u32) -> usize;                       // Euler's totient, exact
+pub fn cyclotomic_poly(m: u32) -> Vec<Q>;          // Φ_m by exact division: (x^m − 1) / ∏_{d|m, d<m} Φ_d
+impl Cyclo {
+    pub fn rational(m: u32, q: Q) -> Cyclo;        // the constant q at conductor m
+    pub fn zeta(m: u32) -> Cyclo;                  // ζ_m itself
+    pub fn add / sub / mul(&self, o: &Cyclo) -> Cyclo;   // polynomial arithmetic, reduced mod Φ_m
+    pub fn inverse(&self) -> Option<Cyclo>;        // extended Euclid in ℚ[x] against Φ_m; None iff zero
+    pub fn conj(&self) -> Cyclo;                   // ζ ↦ ζ^{m−1}: complex conjugation
+    pub fn is_real(&self) -> bool;                 // self == conj(self)
+    pub fn norm(&self) -> Q;                       // ∏_{k coprime to m} σ_k(self), σ_k: ζ ↦ ζ^k; a rational
+    pub fn lift(&self, m2: u32) -> Option<Cyclo>;  // ℚ(ζ_m) → ℚ(ζ_{m2}) when m | m2, ζ ↦ ζ^{m2/m}, reduced
+    pub fn is_zero / is_one(&self) -> bool;        // exact, on the reduced vector
+}
+```
+
+Representation is canonical: `Φ_m` is the minimal polynomial of `ζ_m`, so
+the reduced coefficient vector of an element is unique and equality is
+coefficientwise equality. No ordering of the field is defined and none is
+needed: A1's sign step is replaced, at conductor `m > 1`, by "the pivot
+coefficient's first nonzero rational coordinate is `+1`", which is a
+canonical choice without positivity; projective equality is already
+either-sign (§59.1). Mixed operations lift both operands to
+`lcm(m₁, m₂)`. Cost: multiplication is `O(φ(m)²)` rational products; the
+conductor is therefore a cost, and §64.2 makes it one.
+
+The scalar type of the algebra becomes
+
+```rust
+pub enum Scalar { Rat(Q), Cyc(Cyclo) }             // core/scalar.rs new
+```
+
+with arithmetic that stays in `Rat` while both operands are rational and
+promotes otherwise; `Rotor`, `Mv`, `PlaneForm`'s block, `spell`'s input
+block, and the frame rationals accept `Scalar`. A `Rat` and a `Cyc` that is
+a rational constant are equal. Every existing test runs unchanged with all
+scalars in `Rat`.
+
+### 64.2 F2 The conductor is a grade
+
+The **conductor** of a word is the least `m` such that every coefficient of
+its rotor lies in `ℚ(ζ_m)`: `1` for every word of Parts I–VII. It is
+exact, canonical, and computable as the lcm of the conductors of the word's
+letters (each extension letter carries its own). The conductor enters the
+magnitude as a coordinate of the S lane's cost, never as a fifth lane: a
+description at conductor `m` costs `φ(m)` times the arithmetic of one at
+conductor `1`, and `descends` (§POW++, `mu_descends`) prefers, among two
+descriptions that close the same remainder, the lower conductor. So the
+tower is climbed only when ℚ cannot close, and a word that ℚ can close is
+never spoken at a higher conductor.
+
+### 64.3 F3 Extension letters
+
+For each `n ∈ {3, 5, 6, 8, 10, 12, …}` that a demand opens (§64.5) and
+each of the six planes, the letter
+
+```
+τ_{n,ij} = 1 − tan(π/n) · e_ij        (projective), coefficients in ℚ(ζ_{4n})
+```
+
+is the `n`-th turn. Its conductor is `4n` (the least `m` with `tan(π/n) ∈
+ℚ(ζ_m)` divides `4n`; using `4n` uniformly is canonical and costs at most
+a constant factor). The quarter turn is the case `n = 4` and is already a
+base letter; `n ∈ {1, 2}` add nothing. Relators, appended to `relators()`
+(alphabet.rs 705) at open time and never edited afterwards:
+
+- `τ_{n,ij}^n = 1` projectively (order `n`, torsion);
+- letters on complementary planes commute (as for the 17);
+- a sheet letter conjugates `τ_{n,ij}` to its inverse (as for the unit
+  turn);
+- `τ_{n,ij}^{n/4} = q_ij` when `4 | n` (the new letter refines the quarter
+  turn; the tape `q` retires to `τ^{n/4}` only if shorter, which it is not,
+  so `q` stays the geodesic and `τ` is used only for exponents not
+  divisible by `n/4`).
+
+The letters are added to the **extension stratum** of the alphabet, not to
+the 17: `Alphabet { base: [Letter; 17], ext: Vec<ExtLetter> }` with
+`ExtLetter { n: u32, plane: (u8, u8), conductor: u32 }`. A tape's letter ids
+above 16 index `ext`; the ids are assigned in open order and persisted in
+the genome's syllabus, so every node that has learned the letter agrees on
+its id, and a node that has not refuses the tape as `"letter not in
+syllabus"` and asks for the syllabus (the existing teach path).
+
+### 64.4 F4 Spelling in the tower
+
+The plane form gains, per plane, a torsion coordinate in `Z/N` with `N =
+lcm(4, n_1, n_2, …)` over the opened `n` on that plane, replacing the unit
+exponent in `Z/4`; the free coordinates (prime exponents) are unchanged.
+`spell` over a block with `Scalar` entries:
+
+1. Weight `w = ρ²` of the block (a real element of the field). Free
+   exponents: `v_5(norm(w)) / (2·φ(m))` and `v_13(norm(w)) / (2·φ(m))`, the
+   field norm dividing out the degree exactly as the ℚ peel reads `v_5(w)/2`
+   (the norm of a rational is its `φ(m)`-th power). Refuse if the division
+   is not exact.
+2. Divide the free part out (compose with the inverse prime rotors).
+3. The remainder is a torsion rotor of order dividing `N`: match it,
+   exactly, against the `N` candidates `τ^k`, `k ∈ Z/N`, on that plane by
+   A1 equality (the list is finite, ordered by `k`, computed once per `N`
+   and memoised). Refuse if none matches: the block is not in the language
+   at this tower level, and the remainder stands.
+4. Sheet parity as before.
+
+`PlaneForm::to_word` writes the torsion coordinate as the shortest tape in
+the letters available on the plane (`q` for multiples of `N/4`, `τ` for
+the rest, a fixed rule per `N`). `conjugacy_key` (§52.1) is unchanged in
+form: `s = 0` classes are `±r`, `s = 1` classes are `r mod 2`, with the
+torsion coordinate taken in `Z/N`.
+
+### 64.5 F5 Opening a letter by demand
+
+A letter is never added by configuration. The germination path
+(`germination_demand`, §16) sees, for a body pair whose carriage exists in
+`SO(2)(ℚ(ζ))` but not in the current language, a plane block that `spell`
+refuses at step 3 with a torsion remainder `T`. The demand is `T` itself.
+The court replays `T`: if `T^n = 1` projectively for the least `n ≤ N_max`
+(a physics bound, the largest torsion order the sensor's resolution can
+distinguish, computed from the frame, never a constant), the court opens
+`τ_{n,ij}`, appends its relators, assigns its id, and speaks the syllabus
+with the new letter. Two organs replay the opening as they replay any
+sentence. Trace: `court letter opened τ_{n,(i,j)} conductor {4n} id {k}`.
+
+### 64.6 F6 Binding and tests
+
+- `core/cyclo.rs`, `core/scalar.rs` new; `alphabet.rs`: `Rotor<Scalar>`,
+  `Alphabet { base, ext }`, `ExtLetter`, `relators()` appending, `spell`
+  steps 1–4, `PlaneForm` torsion in `Z/N`; `element.rs`: `Letters` carries
+  the conductor; `economy.rs`: conductor factor in the S-lane cost; genome
+  syllabus section `SYL1` listing opened letters `(n, plane, id)`.
+- Tests: `cyclo::tests::phi_and_cyclotomic_poly_exact` (Φ_8 = x⁴ + 1,
+  Φ_12 = x⁴ − x² + 1); `cyclo::tests::inverse_and_norm` (`norm(ζ_8) = 1`,
+  `norm(1 + ζ_8)` rational); `alphabet::tests::eighth_turn_has_order_eight`
+  (`τ_{8}^8 ≡ 1`, `τ_8^2 ≡ q`); `alphabet::tests::spell_tower_reads_free_and_torsion`;
+  `alphabet::tests::conductor_is_lcm_and_descends_prefers_lower`;
+  `family::tests::octagonal_pair_opens_letter_and_closes`.
+- Cold-boot trace: a synthetic family of eighth-turn pairs on a diagonal
+  lattice: `chart refused` on the first pair, `court letter opened τ_8`,
+  then `form spoken` with conductor 32 on the second, and a ℚ family after
+  it still spoken at conductor 1.
+
+## 65. Upgrade B — the base promotion
+
+### 65.1 B1 Cells with four base coordinates
+
+```rust
+pub type Cell = (i64, i64, i64, i64, u8, u8);     // (r, c, z, t, before, after)
+```
+
+`z` is the third spatial axis: a layer index from stacking or occlusion
+order in plane corpora, the depth coordinate in volumetric ones. `t` is
+the frame coordinate: the example index within a family, the step within
+a sequence. Neither is the T lane of μ⃗, which remains the temporal
+**extent** of standing (a cost), not a coordinate of the description. A
+plane cell is `(r, c, 0, 0, before, after)`. A5 canonicalisation
+translates all four coordinates to their minima and sorts on the
+six-tuple.
+
+Tape and address: the chain bytes of M2 and of `GEN2` are unchanged when
+every `z` and `t` is zero, so no plane address moves; a chain with a
+nonzero `z` or `t` is written with a leading dimension byte (`0xD3` for
+`z` only, `0xD4` for both) before its cells, each cell carrying the extra
+coordinates. `from_bytes` accepts both. The vertex key of a plane word is
+therefore identical before and after B1; no migration.
+
+### 65.2 B2 Harmonics in dimension up to four
+
+`Harmonics::of` generalises to the cubical complex of the support in
+`d ∈ {2, 3, 4}` dimensions: components (0-cells connectivity), holes and
+cavities (Betti numbers of the cubical complex, exact integer linear
+algebra over ℤ, no approximation), turns (boundary faces of each
+dimension), and the moment invariants (isoperimetric, anisotropy, spread,
+quartic) formed from the exact moment tensors of the support up to fourth
+order, normalised by cell count, each a rational and each through A6. The
+axes vector is prefixed by `d`, so plane charts and volumetric charts never
+share a stratum. `peel_body_scaled` (§peel.rs) generalises shells to
+faces, edges, and corners of the `d`-cube complex.
+
+### 65.3 B3 The alphabet already acts on the fourth axis
+
+The six planes are `(0,1)` the sensor plane, `(0,2)`, `(1,2)` the sheet
+planes to the third axis, and `(0,3)`, `(1,3)`, `(2,3)` to the fourth. Under
+B1 the third axis is `z` and the fourth is `t`. A rotor on a `(·,3)` plane
+is a transport that mixes a spatial axis with the frame coordinate: a word
+that says "what is at `(r, c)` in frame `t` is at `(r', c')` in frame
+`t+1`". The `(3,4,5)` and `(5,12,13)` letters on those planes are the
+rational shears and scalings across frames. No letter is added; perception
+starts writing cells with `t ≠ 0`, and `spell` receives 4×4 blocks that are
+closed on the `(·,3)` planes.
+
+### 65.4 B4 The sentence across frames
+
+A family's pairs become one chain with `t` running over the examples: the
+input bodies at even `t`, their outputs at `t+1`, or the sequence's steps
+in order. The carriage between a body and its image is a rotor whose
+`(·,3)` components carry the frame step; the faces of the sentence form
+are, as now, the relative words between vertices; the loops are now loops
+in the frame direction as well, and their holonomy being identity is the
+statement that the rule is the same rule at every frame. Nothing in
+`Form`, `coheres`, `close`, `replay_form`, or the court changes; the
+vertices' words simply have components on three more planes.
+
+### 65.5 B5 The conformal model climbs with the base
+
+`cga.rs` is `Cl(3,1)`, the conformal model of the plane (brick 1 of the
+volumetric plan). B1 with `z` needs `Cl(4,1)` (points, spheres, planes as
+blades; `e_o`, `e_∞` as now); with `t` as a fourth base axis, `Cl(5,1)`.
+The implementation is the same exact multivector algebra over a larger
+mask: `Mv` becomes `Mv<const N: usize>` or carries its dimension, the
+blade masks widen, `projective_ratio`, `conj`, `norm2`, `to_bytes`,
+`canonical` are unchanged in form. A4 is unchanged. Brick 2 (`Cl(4,1)`
+with sphere blades) is the first to land, because occlusion and stacking
+in plane corpora already need `z`.
+
+### 65.6 B6 Binding and tests
+
+- `element.rs`: `Cell` widened, `positions`, `measure_lanes`,
+  `from_residual` (A5 on six-tuples), chain bytes with dimension byte;
+  `blade.rs`, `ear.rs`: `d`-dimensional moments and Betti numbers,
+  `Harmonics::axes` prefixed by `d`; `peel.rs`: `d`-cube shells;
+  `family.rs`: `perceive` over frames writes `t`; `stalk.rs`: `invariant`
+  on `d`-cells; `cga.rs`: dimension-generic `Mv`.
+- Tests: `element::tests::plane_cell_bytes_unchanged_under_b1` (every
+  existing address equal); `ear::tests::cube_and_plane_square_have_distinct_charts`;
+  `ear::tests::betti_numbers_exact_on_a_hollow_cube`;
+  `family::tests::two_frame_shift_is_a_word_on_plane_0_3`;
+  `sentence::tests::rule_constant_across_frames_has_identity_holonomy_in_t`;
+  `cga::tests::cl41_sphere_blade_projective_canonical`.
+- Cold-boot trace: an ARC family perceived as one chain over `t`: `form
+  spoken` with faces on `(0,3)`/`(1,3)`, and the same family perceived as
+  pairs gives the same rule address (the frame rotor factors out under
+  M1). A stacked-objects task: `z` layers separated, one word per layer,
+  no remainder where occlusion previously left one.
+
+## 66. Landing order and what does not change
+
+Both upgrades land after §58 item 0 (identity) and before the soak clock
+starts on any non-ARC corpus. Order: B1 (cells, bytes, no address moves) →
+B2 → B3/B4 (perception over `t`) → B5 brick 2 → F1 → F2 → F3/F4 → F5.
+Each item one commit with its trace; §21's rule stands.
+
+What does not change: the 17 letters and their relators; exact ℚ as the
+scalar for every ARC word (the tower is never climbed unless a remainder
+demands it, and `descends` prefers conductor 1); the T lane as extent, not
+coordinate; the court's two-organ replay, which now replays field elements
+and four-coordinate cells with the same code paths; the ban on floats,
+angles, limits, and scores. The walls come down by adding coordinates the
+geometry already knows how to act on, not by changing what a word is.
