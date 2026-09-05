@@ -2838,11 +2838,11 @@ fn trial(
 }
 
 /// Hold a vortex cell by its after class, then by the discharging word's
-/// M1 key. Collapse reads `(class, word)`.
+/// rotor A1 key. Collapse reads `(class, r.key())`.
 pub fn vortex_put(v: &mut Keyed<Keyed<PivotCertificate>>, c: PivotCertificate) {
     let after = c.after;
     let k = match &c.by {
-        PivotBy::Word { word, .. } => word.key(),
+        PivotBy::Word { word, .. } => word.rotor().key(),
     };
     match v.get_mut(&after) {
         Some(inner) => {
@@ -2912,7 +2912,9 @@ fn try_close_chord(n: &mut Nerve, idx: usize) -> bool {
     let Some(gs) = cech::solve_gauge(n.germs.len(), &edges) else {
         return false;
     };
-    let words: Vec<Word> = gs.iter().map(|g| g.spelled_word()).collect();
+    let Some(words): Option<Vec<Word>> = gs.iter().map(|g| g.spelled_word()).collect() else {
+        return false;
+    };
     apply_cochain_gauge(n, &words);
     // A gauge keeps loop indices aligned; the chord is this loop.
     match n.cycles.get(idx) {

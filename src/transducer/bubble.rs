@@ -24,8 +24,10 @@ pub struct ClassRecord {
 }
 
 fn horizon_put(h: &mut Keyed<(Rotor, Order, Standing)>, r: Rotor, standing: Standing) {
+    let Some(order) = r.word_order() else {
+        return;
+    };
     let key = r.class_key();
-    let order = r.word_order();
     h.insert(key, (r, order, standing));
 }
 
@@ -256,7 +258,7 @@ impl Bubble {
     }
 
     /// A glue or a syllabus class whose key equals one held certificate's
-    /// `after` applies the certificate keyed by that word's M1 key; the
+    /// `after` applies the certificate keyed by that rotor's A1 key; the
     /// others of the class are not applied (dialect cells).
     fn collapse_vortex(&mut self, class: &[u8; 32], word: &[u8; 32], by: &'static str) -> bool {
         let Some(mut inner) = self.vortex.remove(class) else {
@@ -398,7 +400,7 @@ impl Contemplation {
                     }
                     b.collapse_vortex(
                         &rec.key,
-                        &rec.representative.spelled_word().key(),
+                        &rec.representative.key(),
                         "ruling",
                     );
                 }
@@ -1068,7 +1070,7 @@ impl Contemplation {
             if let Some(b) = self.bubbles.get_mut(bk) {
                 b.take_pivot(n);
                 if let Some(r) = &word_rotor {
-                    b.collapse_vortex(&r.class_key(), &r.spelled_word().key(), "glue");
+                    b.collapse_vortex(&r.class_key(), &r.key(), "glue");
                 }
             }
         }
@@ -1407,7 +1409,7 @@ impl Contemplation {
                     } else {
                         let _d = *b.get(*pos)?;
                         *pos += 1;
-                        let order = r.word_order();
+                        let order = r.word_order()?;
                         horizon.insert(r.class_key(), (r, order, Standing::Held));
                     }
                 }
@@ -1660,7 +1662,7 @@ mod tests {
         let r = Word::from_letters(&[(q, false)]).rotor();
         let rec = ClassRecord {
             key: r.class_key(),
-            order: r.word_order(),
+            order: r.word_order().expect("quarter spells"),
             representative: r.clone(),
         };
         assert_eq!(c.seed_horizon(&[rec.clone()]), 1);
@@ -1679,7 +1681,7 @@ mod tests {
         let r = Word::from_letters(&[(q, false)]).rotor();
         let rec = ClassRecord {
             key: r.class_key(),
-            order: r.word_order(),
+            order: r.word_order().expect("quarter spells"),
             representative: r,
         };
         let n = c.seed_horizon(std::slice::from_ref(&rec));
@@ -1787,7 +1789,7 @@ mod tests {
         let hb = back.bubbles.get(&key).expect("restored");
         let (got, order, st) = hb.horizon.get(&ck).expect("class key");
         assert_eq!(got.class_key(), ck);
-        assert_eq!(*order, r.word_order());
+        assert_eq!(*order, r.word_order().expect("quarter spells"));
         assert_eq!(*st, Standing::Held);
     }
 
@@ -1900,7 +1902,7 @@ mod tests {
         }
         let rec = ClassRecord {
             key: after,
-            order: r.word_order(),
+            order: r.word_order().expect("quarter spells"),
             representative: r,
         };
         assert_eq!(c.seed_horizon(&[rec]), 1);

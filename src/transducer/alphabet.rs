@@ -407,24 +407,20 @@ impl Rotor {
         Some(Rotor { c })
     }
 
-    /// The plane word this rotor spells, or the identity when it does not.
-    pub fn spelled_word(&self) -> Word {
+    /// The plane word this rotor spells. None when it does not — never identity.
+    pub fn spelled_word(&self) -> Option<Word> {
         let one = Q::from_integer(BigInt::from(1));
         let zero = Q::from_integer(BigInt::from(0));
         let e0 = self.carry(&[one.clone(), zero.clone(), zero.clone(), zero.clone()]);
         let e1 = self.carry(&[zero.clone(), one, zero.clone(), zero]);
-        if let (Some(a), Some(b)) = (e0, e1) {
-            let block = [[a[0].clone(), b[0].clone()], [a[1].clone(), b[1].clone()]];
-            if let Some(sp) = spell(&block) {
-                return sp.word;
-            }
-        }
-        Word::identity()
+        let (a, b) = (e0?, e1?);
+        let block = [[a[0].clone(), b[0].clone()], [a[1].clone(), b[1].clone()]];
+        Some(spell(&block)?.word)
     }
 
-    /// [`Word::order`] of [`Self::spelled_word`].
-    pub fn word_order(&self) -> Order {
-        self.spelled_word().order()
+    /// [`Word::order`] of [`Self::spelled_word`]. None when the rotor does not spell.
+    pub fn word_order(&self) -> Option<Order> {
+        self.spelled_word().map(|w| w.order())
     }
 }
 
@@ -1550,6 +1546,19 @@ mod tests {
         assert!(r.rotor().projective_eq(&want.rotor()), "rebase is conjugation");
         assert_eq!(w.key(), w.rotor().key(), "M1 key is the rotor key");
         assert_eq!(r.key(), r.normal_form().key());
+    }
+
+    /// An unspellable rotor does not invent the identity word. A letter's
+    /// spelling carries the same A1 key as the rotor itself.
+    #[test]
+    fn spelled_word_is_none_when_the_rotor_does_not_spell() {
+        assert!(Rotor::zero().spelled_word().is_none());
+        assert!(Rotor::zero().word_order().is_none());
+        let q = LetterId::quarter((0, 1)).expect("sensor quarter");
+        let r = letter(q);
+        let w = r.spelled_word().expect("quarter spells");
+        assert_eq!(w.key(), r.key());
+        assert_eq!(r.word_order().expect("quarter has order"), w.order());
     }
 
     /// LAW VIII: seventeen letters, each a versor with its carried inverse

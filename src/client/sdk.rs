@@ -1388,12 +1388,12 @@ impl Epigenome {
             if let Some((held, _, st)) = held {
                 if let Some(cited) = self.working_word(&address) {
                     if let Some(g) = crate::transducer::cech::transition(&held, cited) {
-                        if let Some(theta) = crate::transducer::cech::rotor_of(&g).map(|r| r.spelled_word())
+                        if let Some(theta) = crate::transducer::cech::rotor_of(&g).and_then(|r| r.spelled_word())
                         {
                             let _ = work.regauge_overlap(&theta, vi as u16);
                         }
                     }
-                } else if let Some(theta) = crate::transducer::cech::rotor_of(&held).map(|r| r.spelled_word())
+                } else if let Some(theta) = crate::transducer::cech::rotor_of(&held).and_then(|r| r.spelled_word())
                 {
                     let _ = work.regauge_overlap(&theta, vi as u16);
                 }
