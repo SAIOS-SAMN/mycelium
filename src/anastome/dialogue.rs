@@ -1066,8 +1066,8 @@ pub fn decode_quote_request(body: &[u8]) -> Option<([u8; 32], Vec<crate::transdu
 pub type WorkItem = ([u8; 32], [u64; 4], Vec<Cell>, Vec<crate::transducer::stalk::Invariant>);
 
 /// `[ACT_QUOTE][surface 4×u64][K u64][n u8][item: addr 32 | μ⃗ 4×u64 | chain]…`
-/// — the u64 is TUniversal at the quote: the temporal coordinate every
-/// listing quoted here is read at. K-order stays on the docket request.
+/// — the u64 is receipt-chain head K (verified consensus depth). TUniversal
+/// is not this field.
 /// The offset of the served count in a quote reply (act, surface, K).
 pub const QUOTE_COUNT_AT: usize = 1 + 32 + 8;
 pub fn encode_quote_reply(surface: &[u64; 4], k: u64, items: &[WorkItem]) -> Vec<u8> {
@@ -1644,7 +1644,7 @@ mod tests {
         let items = vec![(germ, [1u64, 2, 30, 4], chain.clone(), Vec::new())];
         let (s, k, it) = decode_quote_reply(&encode_quote_reply(&[5, 0, 9, 0], 4208, &items)).unwrap();
         assert_eq!(s, [5, 0, 9, 0]);
-        assert_eq!(k, 4208, "the judge's k-step rides the quote");
+        assert_eq!(k, 4208, "receipt-chain head K rides the quote, not TUniversal");
         assert_eq!(it, items);
         // A settlement rides the docket after the dockets, with its utterance.
         let docket: Docket = (germ, vec![1, 2, 3], vec![voice], [1, 2, 3, 4], [0, 0, 7, 0], 41);

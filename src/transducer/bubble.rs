@@ -278,6 +278,21 @@ impl Contemplation {
         self.bubbles.fiber(&ROOT).map(|(_, b)| b.remainder.as_slice()).collect()
     }
 
+    /// Unreduced boundary cochain norm of open thoughts: L1 of the
+    /// four-lane measure of the held remainders. An unmeasured space is
+    /// an open thought (∂g ≠ 0), not infinite discordance.
+    pub fn boundary_norm(&self) -> usize {
+        let mut acc: Vec<RemCell> = Vec::new();
+        for r in self.remainders() {
+            acc.extend(r.iter().copied());
+        }
+        acc.sort_unstable();
+        acc.dedup();
+        element::measure_lanes(&acc)
+            .iter()
+            .fold(0usize, |s, &x| s.saturating_add(x as usize))
+    }
+
     fn retract_incidence(&mut self, key: &[u8; 32], b: &Bubble) {
         let charts: Vec<[u8; 32]> = b.cover.fiber(&ROOT).map(|(k, _)| *k).collect();
         for ck in charts {
@@ -1092,6 +1107,15 @@ impl Contemplation {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn unmeasured_space_is_a_finite_boundary_norm() {
+        let mut c = Contemplation::new();
+        assert_eq!(c.boundary_norm(), 0, "no thought is zero, not MAX");
+        c.hold(vec![(0, 0, 1, 2)]);
+        let n = c.boundary_norm();
+        assert!(n > 0 && n < usize::MAX, "∂g ≠ 0 is a finite cochain, got {n}");
+    }
 
     #[test]
     fn two_bubbles_on_one_chart_share_an_edge_not_a_triangle() {

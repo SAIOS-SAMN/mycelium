@@ -118,7 +118,9 @@ pub struct MarketView {
     pub pressure: [u64; 4],
     pub pool: [u64; 4],
     pub k_step: u64,
-    /// TUniversal at this view — the quote's temporal coordinate.
+    /// Receipt-chain head K — verified consensus depth packed on Quote.
+    pub head_k: u64,
+    /// TUniversal at this view — local ticks, never packed as K.
     pub tu: u64,
     /// Standing extent per listing, in transports.
     pub standing_t: std::sync::Arc<crate::network::nerve::Keyed<u64>>,
@@ -2020,6 +2022,7 @@ impl Kernel {
             pressure: self.physics.pressure,
             pool: self.treasury.bond_of(&self.identity).unwrap_or([0; 4]),
             k_step: self.chain.next_step_index(),
+            head_k: self.chain.head_k(),
             tu: now,
             standing_t: std::sync::Arc::new(standing_t),
             reserve: self.physics.reserve,

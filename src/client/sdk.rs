@@ -1066,8 +1066,10 @@ pub struct Entity {
     taught_up: crate::network::nerve::Keyed<()>,
     /// The discordance measured at the last sync (strata whose roots differ
     /// from the hypha's); zero is a glued genome — the condition under which
-    /// this entity speaks proofs.
+    /// this entity speaks proofs. Unmeasured: the open thought's boundary
+    /// cochain norm, never usize::MAX.
     discordance: usize,
+    discordance_measured: bool,
     /// ČECH AFTER FETCH: the obstructions measured on the fibre when a
     /// fetched word met the words already held there — (the fetched
     /// word's address, the transition that did not vanish). The digest
@@ -1108,7 +1110,8 @@ impl Entity {
             epigenome: Epigenome::new(),
             refine_cursor: 0,
             taught_up: crate::network::nerve::Keyed::new(),
-            discordance: usize::MAX,
+            discordance: 0,
+            discordance_measured: false,
             obstructions: crate::network::nerve::Keyed::new(),
             glued: crate::network::nerve::Keyed::new(),
             contemplation: crate::transducer::bubble::Contemplation::new(),
@@ -1306,6 +1309,7 @@ impl Entity {
             .cloned()
             .collect();
         self.discordance = strata.len();
+        self.discordance_measured = true;
         // One exchange per contact: every discordant chart with this
         // genome's have-list, the request and the reply each filled to the
         // carrier. A wide discordance converges over contacts.
@@ -1841,7 +1845,11 @@ impl Entity {
     }
 
     pub fn discordance(&self) -> usize {
-        self.discordance
+        if self.discordance_measured {
+            self.discordance
+        } else {
+            self.contemplation.boundary_norm()
+        }
     }
 
     pub fn shed(&mut self, k: u64) -> usize {

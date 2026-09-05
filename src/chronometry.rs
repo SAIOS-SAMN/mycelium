@@ -55,6 +55,12 @@ impl ReceiptChain {
         self.receipts.last().map_or([0u8; 32], |r| r.chain_hash)
     }
 
+    /// The head receipt's step index — verified consensus depth. Zero
+    /// before genesis. Not TUniversal.
+    pub fn head_k(&self) -> u64 {
+        self.receipts.last().map_or(0, |r| r.step_index)
+    }
+
     /// Append the next receipt — K advances monotonically, the link is sealed.
     pub fn append(&mut self, delta_fingerprint: [u8; 32], operator_hash: [u8; 32]) -> &KStepReceipt {
         let step_index = self.next_step_index();
@@ -224,6 +230,8 @@ mod tests {
         c.append([2; 32], [9; 32]);
         let r = c.append([3; 32], [8; 32]);
         assert_eq!(r.step_index, 2, "K is the algebraic clock");
+        assert_eq!(c.head_k(), 2, "head_k is the last receipt, not TUniversal");
+        assert_eq!(c.next_step_index(), 3, "next is one past the head");
         assert!(c.verify_chain_integrity());
         // Tamper: flip one byte of the middle receipt's fingerprint.
         let mut t = c.clone();
