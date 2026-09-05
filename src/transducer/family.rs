@@ -1506,6 +1506,12 @@ mod tests {
         });
         let shifted = rule.nerve.germs.iter().any(|g| g.shift.is_some());
         assert!(frame_face || shifted, "placement is a frame face or a family-constant shift");
+        assert!(
+            !rule.nerve.faces.is_empty(),
+            "constancy is the word, not the per-pair translation versor; faces {} cycles {} shifted {shifted}",
+            rule.nerve.faces.len(),
+            rule.nerve.cycles.len()
+        );
         let spoken = speak_rule(&rule, &grid(&["1100", "0000"])).expect("the test is spoken");
         assert!(spoken.remainder.is_empty(), "the test is reached in full: {:?}", spoken.remainder);
         assert_eq!(spoken.grid(), grid(&["0022", "0000"]));
@@ -1584,6 +1590,45 @@ mod tests {
             "frame + body, got {} germs {} faces",
             rule.nerve.germ_count(),
             rule.nerve.faces.len()
+        );
+    }
+
+    /// Two hues in one thought: Čech 1-skeleton has the cross-hue face,
+    /// a frame-and-two-bodies triangle is a vortex, holonomy is checked.
+    #[test]
+    fn two_hues_form_a_cycle_the_word_not_the_versor() {
+        let family = vec![
+            (grid(&["110022", "000000"]), grid(&["001122", "000000"])),
+            (grid(&["000000", "110022"]), grid(&["000000", "001122"])),
+        ];
+        let rule = extract_rule(&family).expect("two bodies extract");
+        let bodies = rule
+            .nerve
+            .germs
+            .iter()
+            .filter(|g| g.kind != crate::transducer::peel::ShellKind::Frame)
+            .count();
+        assert!(bodies >= 2, "two body germs, got {} germs", rule.nerve.germ_count());
+        assert!(
+            !rule.nerve.faces.is_empty(),
+            "faces survive word constancy, got 0 with {} germs",
+            rule.nerve.germ_count()
+        );
+        assert!(
+            !rule.nerve.cycles.is_empty(),
+            "frame + two bodies is a vortex; faces {} cycles {}",
+            rule.nerve.faces.len(),
+            rule.nerve.cycles.len()
+        );
+        assert!(
+            rule.nerve.cycles.iter().all(|c| c.holonomy.abelian_identity()),
+            "holonomy of identity-word faces is the identity"
+        );
+        let e = crate::transducer::sentence::as_element(&rule.nerve).expect("element");
+        assert!(
+            crate::transducer::sentence::replay_nerve(&e).is_none(),
+            "{:?}",
+            crate::transducer::sentence::replay_nerve(&e)
         );
     }
 }

@@ -1048,28 +1048,20 @@ fn emit_face(germs: &[Germ], i: usize, j: usize, faces: &mut Vec<Face>) {
     });
 }
 
-/// Assemble a nerve from germs. Faces are the pairwise relative versors
-/// inside one stalk (kind + moduli + conjugacy class), and the star from
-/// the frame germ to each body. Not a cartesian product across classes,
-/// and not a digest bucket.
+/// Assemble a nerve from germs. Faces are the Čech 1-skeleton of the
+/// co-present germs: every pair that admits a spelled relative word.
+/// `emit_face` still gates on spelled. Correspondence across pairs is
+/// `same_stalk` (kind, word class, hue) and is not an incidence filter —
+/// two bodies of different hue in one thought still meet by a relative
+/// word, and the frame is one germ of the same 1-skeleton. Independent
+/// cycles of that skeleton are the vortices; holonomy is their product.
 pub fn assemble(mut germs: Vec<Germ>, remainder: Vec<Cell>) -> Nerve {
     germs.sort_by(|a, b| a.address.cmp(&b.address));
     let n = germs.len();
-    let mut groups = group_stalks(&germs);
     let mut faces = Vec::new();
-    for v in &mut groups {
-        v.sort_by_key(|&i| germ_centroid_key(&germs[i]));
-        for a in 0..v.len() {
-            for b in (a + 1)..v.len() {
-                emit_face(&germs, v[a], v[b], &mut faces);
-            }
-        }
-    }
-    if let Some(fi) = germs.iter().position(|g| g.kind == ShellKind::Frame) {
-        for i in 0..n {
-            if i != fi {
-                emit_face(&germs, fi, i, &mut faces);
-            }
+    for i in 0..n {
+        for j in (i + 1)..n {
+            emit_face(&germs, i, j, &mut faces);
         }
     }
     faces.sort_by_key(|f| (f.i, f.j));
@@ -1142,21 +1134,65 @@ fn germ_hue_map(g: &Germ) -> Vec<(u8, u8)> {
 
 
 
-/// Vertex key of a sentence: geodesic keys of its germs in order and the
-/// normal forms of its faces, never the serialised tape.
+/// Vertex key of a sentence: the 1-cocycle of germ words (kind, conjugacy,
+/// hue map) and face words, never the serialised tape and never a placement
+/// versor. Translation is a fibre coordinate, already on `shift`.
 pub fn vertex_address(e: &Element) -> Option<[u8; 32]> {
     let n = from_element(e)?;
+    Some(nerve_vertex_key(&n))
+}
+
+fn germ_class_key(g: &Germ) -> Vec<u8> {
+    let mut row = Vec::new();
+    row.extend_from_slice(&g.word.key());
+    row.push(g.kind.as_u8());
+    for (b, a) in germ_hue_map(g) {
+        row.push(b);
+        row.push(a);
+    }
+    row
+}
+
+fn face_class_key(f: &Face) -> Vec<u8> {
+    let mut row = Vec::new();
+    row.extend_from_slice(&f.g_ij.key());
+    row.push(u8::from(f.spelled));
+    row
+}
+
+fn nerve_vertex_key(n: &Nerve) -> [u8; 32] {
+    let mut germs: Vec<Vec<u8>> = n.germs.iter().map(germ_class_key).collect();
+    germs.sort_unstable();
+    let mut faces: Vec<Vec<u8>> = n.faces.iter().map(face_class_key).collect();
+    faces.sort_unstable();
     let mut buf = Vec::new();
-    for g in &n.germs {
-        buf.extend_from_slice(&g.word.key());
-        g.versor.canonical().unwrap_or_else(element::identity_versor).to_bytes(&mut buf);
-        buf.push(g.kind.as_u8());
+    for g in germs {
+        buf.extend(g);
     }
-    for f in &n.faces {
-        buf.extend_from_slice(&f.g_ij.key());
-        f.versor.canonical().unwrap_or_else(element::identity_versor).to_bytes(&mut buf);
+    for f in faces {
+        buf.extend(f);
     }
-    Some(*blake3::hash(&buf).as_bytes())
+    *blake3::hash(&buf).as_bytes()
+}
+
+/// Same sentence vertex: the same 1-cocycle of words. Placement versors
+/// and body moduli are fibre coordinates, not identity.
+pub fn nerves_same_vertex(a: &Nerve, b: &Nerve) -> bool {
+    if a.germs.len() != b.germs.len() || a.faces.len() != b.faces.len() {
+        return false;
+    }
+    let mut ga: Vec<Vec<u8>> = a.germs.iter().map(germ_class_key).collect();
+    let mut gb: Vec<Vec<u8>> = b.germs.iter().map(germ_class_key).collect();
+    ga.sort_unstable();
+    gb.sort_unstable();
+    if ga != gb {
+        return false;
+    }
+    let mut fa: Vec<Vec<u8>> = a.faces.iter().map(face_class_key).collect();
+    let mut fb: Vec<Vec<u8>> = b.faces.iter().map(face_class_key).collect();
+    fa.sort_unstable();
+    fb.sort_unstable();
+    fa == fb
 }
 
 fn holo_signature(n: &Nerve) -> Vec<Word> {
@@ -1175,10 +1211,12 @@ fn affine_shift(v: &Versor) -> Option<(num_rational::BigRational, num_rational::
 
 
 
-/// Correspondence across pairs is by algebraic stalk (kind, moduli, word
-/// conjugacy class). The class is the stalk; every instance of that class
-/// remains a vertex. Extra instances (count past the family minimum) are
-/// sections. Hue that does not agree across pairs is a section, not a refusal.
+/// Correspondence across pairs is by transport class (`same_stalk`: kind,
+/// word conjugacy, hue map). Moduli stay a section coordinate. The class
+/// is the stalk; every instance of that class remains a vertex. Extra
+/// instances (count past the family minimum) are sections. Faces of the
+/// assembled nerve are kept when the relative *word* is constant; the
+/// translation versor is the per-pair shift, already on `per_shift`.
 pub fn agree_up_to_gauge(nerves: &[Nerve]) -> Option<SentenceRule> {
     let first = nerves.first()?;
     if first.germs.is_empty() || first.class.is_some() {
@@ -1345,13 +1383,15 @@ pub fn agree_up_to_gauge(nerves: &[Nerve]) -> Option<SentenceRule> {
             let Some(vb) = ix[gb].get(tb).and_then(|&j| n.germs.get(j)) else {
                 return false;
             };
-            let (w, v, s) = relative_face(va, vb);
-            w == f.g_ij && s == f.spelled && element::same_versor(&v, &f.versor)
+            let (w, _v, s) = relative_face(va, vb);
+            w == f.g_ij && s == f.spelled
         })
     });
     nerve.complex = bind_complex(&nerve.germs, &nerve.faces);
     nerve.cycles = independent_cycles(nerve.germs.len(), &nerve.faces);
-    nerve.class = first_class(&nerve.complex);
+    // Fill coboundaries of the word-constant 1-skeleton: a vortex that
+    // closes is a coboundary, not a missing class. Remaining class is torsion.
+    let _ = close(&mut nerve);
     let faces: Vec<(usize, usize, Word, bool)> = nerve
         .faces
         .iter()
@@ -1902,7 +1942,7 @@ pub fn speak_along_tree(n: &Nerve, cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u
 /// every face g_ij from the two germs, δg on every triangle, and require
 /// stored torsion to close under `toroid::witness_stored`.
 pub fn replay_nerve(e: &Element) -> Option<&'static str> {
-    let n = from_element(e)?;
+    let mut n = from_element(e)?;
     for g in &n.germs {
         if spell_versor(&g.versor).as_ref() != Some(&g.word) && !g.word.abelian_identity() {
             return Some("sentence germ does not re-derive from its letters");
@@ -1912,12 +1952,43 @@ pub fn replay_nerve(e: &Element) -> Option<&'static str> {
         if f.i >= n.germs.len() || f.j >= n.germs.len() {
             return Some("sentence face does not re-derive from its germs");
         }
-        let (w, v, spelled) = relative_face(&n.germs[f.i], &n.germs[f.j]);
+        let (w, _v, spelled) = relative_face(&n.germs[f.i], &n.germs[f.j]);
         if spelled != f.spelled {
             return Some("sentence face does not re-derive from its germs");
         }
-        if spelled && (w != f.g_ij || !element::same_versor(&v, &f.versor)) {
+        if spelled && w != f.g_ij {
             return Some("sentence face g_ij does not re-derive from its germs");
+        }
+    }
+    // δg on every triangle of the 1-skeleton: a fillable coboundary is
+    // closed, not a missing class. from_element rebinds the complex, so
+    // the fill is re-derived here the same way close derives it.
+    {
+        let supports: Vec<Vec<(i64, i64)>> = n.germs.iter().map(after_support).collect();
+        let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        for i in 0..n.germs.len() {
+            n.complex.coboundary_on_link(&germ_vertex(i), |verts| shared_volume(&supports, verts));
+            for k in n.complex.link_of(&germ_vertex(i)) {
+                let Some(d) = n.complex.cell(&k).map(|c| c.degree()) else {
+                    continue;
+                };
+                if d == 0 {
+                    continue;
+                }
+                if seen.contains(&k) {
+                    continue;
+                }
+                seen.insert(k, ());
+                match n.complex.fill(&k) {
+                    Fill::Filled(_) | Fill::Already => {}
+                    Fill::Congruent(_, _) | Fill::Class(_) => {
+                        if n.class.is_none() && e.torsion().is_empty() {
+                            return Some("sentence has a non-coboundary coefficient with no class");
+                        }
+                    }
+                    Fill::Open => {}
+                }
+            }
         }
     }
     for c in &n.cycles {
@@ -2227,5 +2298,124 @@ mod tests {
             assert_eq!((a.i, a.j, a.spelled), (b.i, b.j, b.spelled));
             assert!(a.g_ij.same_form(&b.g_ij));
         }
+    }
+
+    fn whole(chain: Vec<Cell>) -> Germ {
+        Germ {
+            address: from_residual(&chain).address(),
+            versor: identity_versor(),
+            word: Word::identity(),
+            chain,
+            source: None,
+            target: None,
+            kind: ShellKind::Whole,
+            shift: None,
+        }
+    }
+
+    /// Face constancy is the relative word. Two pairs of the same two
+    /// bodies at different spacings disagree on the translation versor
+    /// and still agree: the word is identity, the shift is per-pair.
+    #[test]
+    fn face_constancy_is_the_word_not_the_versor() {
+        let n1 = assemble(
+            vec![
+                whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
+                whole(vec![(0, 4, 1, 2), (0, 5, 1, 2)]),
+            ],
+            Vec::new(),
+        );
+        let n2 = assemble(
+            vec![
+                whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
+                whole(vec![(0, 8, 1, 2), (0, 9, 1, 2)]),
+            ],
+            Vec::new(),
+        );
+        assert_eq!(n1.faces.len(), 1);
+        assert_eq!(n2.faces.len(), 1);
+        assert!(
+            !element::same_versor(&n1.faces[0].versor, &n2.faces[0].versor),
+            "spacings 4 and 8 are different translations"
+        );
+        assert_eq!(n1.faces[0].g_ij, n2.faces[0].g_ij);
+        assert!(n1.faces[0].spelled && n2.faces[0].spelled);
+        let rule = agree_up_to_gauge(&[n1, n2]).expect("word-constant faces agree up to gauge");
+        assert!(
+            !rule.nerve.faces.is_empty(),
+            "constancy is the word, not the per-pair translation versor; faces {}",
+            rule.nerve.faces.len()
+        );
+        let e = as_element(&rule.nerve).expect("rule element");
+        assert!(replay_nerve(&e).is_none(), "replay compares face words, not versors: {:?}", replay_nerve(&e));
+    }
+
+    /// Three co-present bodies form a K3: faces survive word constancy
+    /// across a spacing change, the independent cycle is a vortex, and
+    /// holonomy of identity words is the identity (checked, not assumed).
+    #[test]
+    fn word_constant_triangle_keeps_its_cycle() {
+        let n1 = assemble(
+            vec![
+                whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
+                whole(vec![(0, 4, 1, 2), (0, 5, 1, 2)]),
+                whole(vec![(0, 8, 1, 2), (0, 9, 1, 2)]),
+            ],
+            Vec::new(),
+        );
+        let n2 = assemble(
+            vec![
+                whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
+                whole(vec![(0, 5, 1, 2), (0, 6, 1, 2)]),
+                whole(vec![(0, 10, 1, 2), (0, 11, 1, 2)]),
+            ],
+            Vec::new(),
+        );
+        assert_eq!(n1.faces.len(), 3, "Čech 1-skeleton of three germs");
+        assert_eq!(n1.cycles.len(), 1, "one independent cycle");
+        let rule = agree_up_to_gauge(&[n1, n2]).expect("triangle agrees on words");
+        assert!(
+            !rule.nerve.faces.is_empty(),
+            "faces {} cycles {}",
+            rule.nerve.faces.len(),
+            rule.nerve.cycles.len()
+        );
+        assert!(
+            !rule.nerve.cycles.is_empty(),
+            "the nerve of three bodies is a vortex; holonomies {}",
+            rule.holonomies.len()
+        );
+        assert!(
+            rule.nerve.cycles.iter().all(|c| c.holonomy.abelian_identity()),
+            "identity-word triangle is a flat vortex"
+        );
+        let e = as_element(&rule.nerve).expect("rule element");
+        assert!(replay_nerve(&e).is_none(), "{:?}", replay_nerve(&e));
+    }
+
+    /// Two bodies of different hue in one thought still share a face, and
+    /// two embeddings that differ only by a translation are one vertex.
+    #[test]
+    fn placement_is_not_the_sentence_vertex() {
+        let n1 = assemble(
+            vec![
+                whole(vec![(0, 0, 1, 2), (0, 1, 1, 2)]),
+                whole(vec![(0, 4, 3, 4), (0, 5, 3, 4)]),
+            ],
+            Vec::new(),
+        );
+        let n2 = assemble(
+            vec![
+                whole(vec![(2, 0, 1, 2), (2, 1, 1, 2)]),
+                whole(vec![(2, 4, 3, 4), (2, 5, 3, 4)]),
+            ],
+            Vec::new(),
+        );
+        assert_eq!(n1.faces.len(), 1, "different hues still meet by a relative word");
+        assert!(nerves_same_vertex(&n1, &n2), "a global translation is fibre, not a new vertex");
+        let e1 = as_element(&n1).expect("e1");
+        let e2 = as_element(&n2).expect("e2");
+        assert!(e1.same_vertex(&e2));
+        assert_eq!(e1.address(), e2.address(), "vertex key ignores placement versors");
     }
 }

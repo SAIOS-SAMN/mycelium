@@ -872,17 +872,7 @@ impl Element {
                 crate::transducer::sentence::from_element(self),
                 crate::transducer::sentence::from_element(other),
             ) {
-                (Some(a), Some(b)) => {
-                    a.germs.len() == b.germs.len()
-                        && a.germs.iter().zip(b.germs.iter()).all(|(x, y)| {
-                            x.kind == y.kind && x.word == y.word
-                        })
-                        && a.faces.len() == b.faces.len()
-                        && a.faces
-                            .iter()
-                            .zip(b.faces.iter())
-                            .all(|(f, g)| same_versor(&f.versor, &g.versor))
-                }
+                (Some(a), Some(b)) => crate::transducer::sentence::nerves_same_vertex(&a, &b),
                 _ => false,
             };
         }
@@ -1062,8 +1052,8 @@ impl Element {
     }
 
     /// Vertex key of the word form: geodesic normal form plus frame
-    /// coordinates as exact rationals. A sentence is keyed by its vertex
-    /// keys and face normal forms. Never a digest of the spoken tape.
+    /// coordinates as exact rationals. A sentence is keyed by its germ
+    /// words and face words; placement versors are fibre, not identity.
     pub fn address(&self) -> [u8; 32] {
         *self.address.get_or_init(|| {
             if self.is_sentence() {
