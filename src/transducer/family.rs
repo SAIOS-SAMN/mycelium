@@ -1312,8 +1312,24 @@ pub fn apply_form(f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Opti
                     rho: rho.clone(),
                 };
                 let versor = element::conformal_of(&sp, p).unwrap_or_else(element::identity_versor);
-                for addr in atlas.fiber(class) {
-                    let i = u64::from_le_bytes(addr[..8].try_into().ok()?) as usize;
+                let n_words = f
+                    .vertices
+                    .iter()
+                    .filter(|x| matches!(x, Vertex::Word { .. }))
+                    .count();
+                let hits: Vec<usize> = if n_words <= 1 {
+                    (0..bodies.len()).collect()
+                } else {
+                    atlas
+                        .fiber(class)
+                        .into_iter()
+                        .filter_map(|addr| {
+                            let i = u64::from_le_bytes(addr[..8].try_into().ok()?) as usize;
+                            (i < bodies.len()).then_some(i)
+                        })
+                        .collect()
+                };
+                for i in hits {
                     if let Some(body) = bodies.get(i) {
                         emit_carried(body, &versor, gauge, fy, &mut cells, &mut remainder);
                     }
@@ -1371,23 +1387,67 @@ fn class_of_vertex(v: &Vertex) -> Option<Invariant> {
     }
 }
 
+/// Correspondence class of a vertex: kind, conjugacy of the word, hue map.
+/// The body's moduli stay on the vertex as a section coordinate, never a
+/// matching key. Frame matches by kind alone and is not a class.
+#[derive(Clone, PartialEq, Eq)]
+struct TransportClass {
+    kind: super::peel::ShellKind,
+    word_class: [u8; 32],
+    gauge: Vec<(u8, u8)>,
+}
+
+impl TransportClass {
+    fn key(&self) -> [u8; 32] {
+        let mut buf = Vec::new();
+        buf.push(self.kind.as_u8());
+        buf.extend_from_slice(&self.word_class);
+        buf.extend_from_slice(&(self.gauge.len() as u16).to_le_bytes());
+        for &(a, b) in &self.gauge {
+            buf.push(a);
+            buf.push(b);
+        }
+        *blake3::hash(&buf).as_bytes()
+    }
+}
+
+fn transport_class(v: &Vertex) -> Option<TransportClass> {
+    match v {
+        Vertex::Word { word, gauge, .. } => {
+            let mut g = gauge.clone();
+            g.sort_unstable();
+            Some(TransportClass {
+                kind: super::peel::ShellKind::Whole,
+                word_class: word.class_key(),
+                gauge: g,
+            })
+        }
+        _ => None,
+    }
+}
+
 #[derive(Clone, PartialEq, Eq)]
 enum End {
     Frame,
-    Class(Invariant),
+    Class(TransportClass),
 }
 
 fn end_of(v: &Vertex) -> Option<End> {
     match v {
         Vertex::Frame => Some(End::Frame),
-        Vertex::Word { class, .. } => Some(End::Class(class.clone())),
-        Vertex::Glued { chart, .. } => Some(End::Class(chart.clone())),
+        Vertex::Word { .. } => Some(End::Class(transport_class(v)?)),
         _ => None,
     }
 }
 
-fn one_vertex_of_class<'a>(f: &'a Form, class: &Invariant) -> Option<&'a Vertex> {
-    f.vertices.iter().find(|v| class_of_vertex(v).as_ref() == Some(class))
+fn one_vertex_of_class<'a>(f: &'a Form, class: &TransportClass) -> Option<&'a Vertex> {
+    match_vertex(f, class)
+}
+
+fn match_vertex<'a>(f: &'a Form, class: &TransportClass) -> Option<&'a Vertex> {
+    f.vertices
+        .iter()
+        .find(|v| transport_class(v).as_ref() == Some(class))
 }
 
 /// The unique relative word between two ends on a pair form, read from
@@ -1417,7 +1477,7 @@ fn face_word_between(pf: &Form, a: &End, b: &End) -> Option<super::alphabet::Wor
     held
 }
 
-fn placement_of_class(pair_forms: &[Form], class: &Invariant) -> Option<super::alphabet::Word> {
+fn placement_of_class(pair_forms: &[Form], class: &TransportClass) -> Option<super::alphabet::Word> {
     let mut held: Option<super::alphabet::Word> = None;
     for pf in pair_forms {
         let w = face_word_between(pf, &End::Frame, &End::Class(class.clone()))?;
@@ -1444,12 +1504,13 @@ pub fn extract_rule_with(
         .map(|(a, b)| pair_form(a, b, scale))
         .collect();
     let n_pairs = pair_forms.len();
-    // 1. Correspondence by class. Presence, never counts.
-    let mut class_pairs: Vec<(Invariant, Vec<u16>)> = Vec::new();
+    // 1. Correspondence by transport class (kind, word class, gauge).
+    // Moduli stay a section coordinate. Presence, never counts.
+    let mut class_pairs: Vec<(TransportClass, Vec<u16>)> = Vec::new();
     for (pi, f) in pair_forms.iter().enumerate() {
-        let mut seen: Vec<Invariant> = Vec::new();
+        let mut seen: Vec<TransportClass> = Vec::new();
         for v in &f.vertices {
-            let Some(c) = class_of_vertex(v) else {
+            let Some(c) = transport_class(v) else {
                 continue;
             };
             if seen.iter().any(|k| k == &c) {
@@ -1540,12 +1601,17 @@ pub fn extract_rule_with(
     }
     form.loops = Form::loops_of(&form.faces, form.vertices.len());
     // 3. Glue: placement is the relative word Frame → class, constant across the bundle.
-    let classes: Vec<Invariant> = form.vertices.iter().filter_map(class_of_vertex).collect();
-    for class in classes {
-        let Some(placement) = placement_of_class(&pair_forms, &class) else {
+    // Crystal is indexed by the section coordinate (moduli); correspondence is transport class.
+    let glued_classes: Vec<(TransportClass, Invariant)> = form
+        .vertices
+        .iter()
+        .filter_map(|v| Some((transport_class(v)?, class_of_vertex(v)?)))
+        .collect();
+    for (tc, moduli) in glued_classes {
+        let Some(placement) = placement_of_class(&pair_forms, &tc) else {
             continue;
         };
-        for (e, s, _st) in crystal.on_class(&class) {
+        for (e, s, _st) in crystal.on_class(&moduli) {
             if !s.is_closed() {
                 continue;
             }
@@ -1560,7 +1626,7 @@ pub fn extract_rule_with(
                     matches!(
                         v,
                         Vertex::Frame | Vertex::Glued { .. } | Vertex::Unfolded { .. } | Vertex::Rebased { .. }
-                    ) || class_of_vertex(v).as_ref() != Some(&class)
+                    ) || transport_class(v).as_ref() != Some(&tc)
                 });
             }
         }
@@ -1601,16 +1667,18 @@ pub fn extract_rule_with(
     // 6. Contact: placement differs across pairs, peel ring to Frame is one value.
     let nverts = form.vertices.len();
     for vi in 0..nverts {
-        let Some(Vertex::Word { class, contact: None, placement, .. }) = form.vertices.get(vi) else {
+        let Some(tc) = transport_class(&form.vertices[vi]) else {
             continue;
         };
-        let class = class.clone();
+        let Some(Vertex::Word { contact: None, placement, .. }) = form.vertices.get(vi) else {
+            continue;
+        };
         let home = placement.clone();
         let mut rings: Option<u8> = None;
         let mut place_varies = false;
         let mut ring_one = true;
         for (pf, (_x, y)) in pair_forms.iter().zip(family.iter()) {
-            if let Some(Vertex::Word { placement: p, .. }) = one_vertex_of_class(pf, &class) {
+            if let Some(Vertex::Word { placement: p, .. }) = match_vertex(pf, &tc) {
                 if p != &home {
                     place_varies = true;
                 }
@@ -2355,14 +2423,45 @@ mod tests {
             .filter(|v| matches!(v, Vertex::Word { .. }))
             .count();
         assert_eq!(words, 1, "presence, not min count; got {words} Word vertices");
+        // A recolour in only the first pair is a different transport from the
+        // shift that appears in both: the recolour is a some-pair section.
         let mixed = vec![
-            (grid(&["11011", "11000"]), grid(&["22022", "22000"])),
-            (grid(&["11000", "00000"]), grid(&["22000", "00000"])),
+            (
+                grid(&["1100", "0000", "1100", "1100"]),
+                grid(&["0011", "0000", "2200", "2200"]),
+            ),
+            (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
         ];
         let some = extract_rule_with(&mixed, &NoCrystal).expect("sectioned");
         assert!(
             some.section_count() > 0,
             "a class present in some pairs is a section"
+        );
+    }
+
+    /// Two pairs whose bodies differ in shape but share the carriage are
+    /// one rule vertex. Matching by moduli would split them and leave a
+    /// frame-only form.
+    #[test]
+    fn different_shapes_with_one_carriage_are_one_vertex() {
+        let family = vec![
+            (grid(&["1100"]), grid(&["0011"])),
+            (grid(&["111000"]), grid(&["000111"])),
+        ];
+        let rule = extract_rule_with(&family, &NoCrystal).expect("extracts");
+        let words = rule
+            .form
+            .vertices
+            .iter()
+            .filter(|v| matches!(v, Vertex::Word { .. }))
+            .count();
+        assert_eq!(
+            words, 1,
+            "one carriage is one vertex; moduli are a section coordinate, got {words}"
+        );
+        assert!(
+            rule.form.vertices.iter().any(|v| matches!(v, Vertex::Frame)),
+            "the frame stays; the form is not frame-only"
         );
     }
 
