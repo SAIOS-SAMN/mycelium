@@ -1356,8 +1356,13 @@ produced it.
    normal form. This is `Δ` on the sections.
 4. **Is `θ` an overlap automorphism?** Check `θ_j · h_ij · θ_i⁻¹ = h_ij`
    on every overlap face, where `h` is the connection on the overlap (equal
-   from both sides by hypothesis; if not equal, go to step 7). If `θ` is
-   constant on each component of the overlap this is automatic.
+   from both sides by hypothesis; if not equal, go to step 7). In the
+   twisted-abelian coefficient (§39.1) the condition is `δ⁰θ = 1` alone,
+   independent of `h`: `θ` is constant on each component of the overlap up
+   to the sheet twist. In the rotor coefficient it is the conjugation check
+   as written, and a constant `θ` passes only when it commutes with every
+   overlap face; `H⁰` there is the centraliser of the overlap's holonomy
+   group, not the constants.
 5. **Connecting image `∂θ`.** By §39.3: the faces of `A` with exactly one
    vertex in `M`, reweighted by `θ` at that vertex. Run the tree-walk solver
    (§32.2) on the union restricted to those faces plus `A`'s tree: if every
