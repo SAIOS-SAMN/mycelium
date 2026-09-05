@@ -724,6 +724,410 @@ impl Nerve {
     }
 }
 
+/// How an unfolding stops. The step count is an instance coordinate, never
+/// stored on the form.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Measure {
+    Occupied,
+    Remainder,
+    Ring { anchor: u16 },
+}
+
+/// A vertex of a sentence form (chapter 18). Beside `Germ` until ch.30 step 6.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Vertex {
+    Frame,
+    Word {
+        address: [u8; 32],
+        word: Word,
+        rho: num_rational::BigRational,
+        placement: (num_rational::BigRational, num_rational::BigRational),
+        gauge: Vec<(u8, u8)>,
+        class: stalk::Invariant,
+    },
+    Glued {
+        address: [u8; 32],
+        chart: stalk::Invariant,
+        magnitude: [u64; 4],
+        depth: u16,
+        placement: Word,
+    },
+    Rebased { by: u16, of: u16 },
+    Unfolded { measure: Measure },
+}
+
+/// Face of a `Form`. The nerve's [`Face`] stays until the adapters leave.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FormFace {
+    pub i: u16,
+    pub j: u16,
+    pub g_ij: Word,
+}
+
+/// Independent loop of a form: face indices and their holonomy.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Loop {
+    pub faces: Vec<u16>,
+    pub holonomy: Word,
+}
+
+/// A sentence as vertices, faces, loops, remainder. Replaces `Nerve` as the
+/// stored object once chapter 30 finishes; both live here until then.
+#[derive(Debug, Clone)]
+pub struct Form {
+    pub vertices: Vec<Vertex>,
+    pub faces: Vec<FormFace>,
+    pub loops: Vec<Loop>,
+    pub remainder: Vec<Cell>,
+    pub depth: u16,
+    pub hue_maps: Keyed<Vec<(u8, u8)>>,
+}
+
+impl Default for Form {
+    fn default() -> Self {
+        Form {
+            vertices: vec![Vertex::Frame],
+            faces: Vec::new(),
+            loops: Vec::new(),
+            remainder: Vec::new(),
+            depth: 0,
+            hue_maps: Keyed::new(),
+        }
+    }
+}
+
+impl Vertex {
+    pub fn from_germ(g: &Germ) -> Vertex {
+        if g.kind == ShellKind::Frame {
+            return Vertex::Frame;
+        }
+        let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+        let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+        Vertex::Word {
+            address: g.address,
+            word: g.word.clone(),
+            rho: one,
+            placement: g.shift.clone().unwrap_or((zero.clone(), zero)),
+            gauge: germ_hue_map(g),
+            class: g.target.clone().or(g.source.clone()).unwrap_or_default(),
+        }
+    }
+
+    pub fn word_in(&self, form: &Form) -> Word {
+        match self {
+            Vertex::Frame | Vertex::Unfolded { .. } => Word::identity(),
+            Vertex::Word { word, .. } => word.clone(),
+            Vertex::Glued { placement, .. } => placement.clone(),
+            Vertex::Rebased { by, of } => {
+                let a = form
+                    .vertices
+                    .get(*by as usize)
+                    .map(|v| v.word_in(form))
+                    .unwrap_or_else(Word::identity);
+                let w = form
+                    .vertices
+                    .get(*of as usize)
+                    .map(|v| v.word_in(form))
+                    .unwrap_or_else(Word::identity);
+                a.compose(&w.compose(&a.inverse())).normal_form()
+            }
+        }
+    }
+
+    pub fn class(&self) -> stalk::Invariant {
+        match self {
+            Vertex::Word { class, .. } => class.clone(),
+            Vertex::Glued { chart, .. } => chart.clone(),
+            _ => stalk::Invariant::default(),
+        }
+    }
+
+    pub fn depth(&self) -> u16 {
+        match self {
+            Vertex::Glued { depth, .. } => *depth,
+            _ => 0,
+        }
+    }
+}
+
+impl Form {
+    pub fn from_nerve(n: &Nerve) -> Form {
+        let mut vertices: Vec<Vertex> = n.germs.iter().map(Vertex::from_germ).collect();
+        let mut shift = 0u16;
+        if !vertices.iter().any(|v| matches!(v, Vertex::Frame)) {
+            vertices.insert(0, Vertex::Frame);
+            shift = 1;
+        }
+        let faces: Vec<FormFace> = n
+            .faces
+            .iter()
+            .map(|f| FormFace {
+                i: (f.i as u16).saturating_add(shift),
+                j: (f.j as u16).saturating_add(shift),
+                g_ij: f.g_ij.clone(),
+            })
+            .collect();
+        let loops = Form::loops_of(&faces, vertices.len());
+        Form {
+            vertices,
+            faces,
+            loops,
+            remainder: n.remainder.clone(),
+            depth: 0,
+            hue_maps: Keyed::new(),
+        }
+    }
+
+    /// Nerve of Body vertices only. `None` when the form cites, conjugates, or unfolds.
+    pub fn to_nerve(&self) -> Option<Nerve> {
+        if self.vertices.iter().any(|v| {
+            matches!(
+                v,
+                Vertex::Glued { .. } | Vertex::Rebased { .. } | Vertex::Unfolded { .. }
+            )
+        }) {
+            return None;
+        }
+        let mut germs = Vec::with_capacity(self.vertices.len());
+        for v in &self.vertices {
+            match v {
+                Vertex::Frame => germs.push(Germ {
+                    address: [0u8; 32],
+                    versor: element::identity_versor(),
+                    word: Word::identity(),
+                    chain: Vec::new(),
+                    source: None,
+                    target: None,
+                    kind: ShellKind::Frame,
+                    shift: None,
+                }),
+                Vertex::Word {
+                    address,
+                    word,
+                    rho,
+                    placement,
+                    class,
+                    ..
+                } => {
+                    let spelling = alphabet::Spelling {
+                        word: word.clone(),
+                        rho: rho.clone(),
+                    };
+                    let versor = element::conformal_of(&spelling, placement)
+                        .unwrap_or_else(element::identity_versor);
+                    germs.push(Germ {
+                        address: *address,
+                        versor,
+                        word: word.clone(),
+                        chain: Vec::new(),
+                        source: None,
+                        target: Some(class.clone()),
+                        kind: ShellKind::Whole,
+                        shift: Some(placement.clone()),
+                    });
+                }
+                _ => return None,
+            }
+        }
+        let faces: Vec<Face> = self
+            .faces
+            .iter()
+            .map(|f| Face {
+                i: f.i as usize,
+                j: f.j as usize,
+                overlap: Vec::new(),
+                g_ij: f.g_ij.clone(),
+                versor: element::identity_versor(),
+                spelled: true,
+            })
+            .collect();
+        let cycles = independent_cycles(germs.len(), &faces);
+        let complex = bind_complex(&germs, &faces);
+        Some(Nerve {
+            germs,
+            complex,
+            faces,
+            cycles,
+            remainder: self.remainder.clone(),
+            class: None,
+            cover: Keyed::new(),
+        })
+    }
+
+    pub fn face_of(&self, i: u16, j: u16) -> Word {
+        let a = self
+            .vertices
+            .get(i as usize)
+            .map(|v| v.word_in(self))
+            .unwrap_or_else(Word::identity);
+        let b = self
+            .vertices
+            .get(j as usize)
+            .map(|v| v.word_in(self))
+            .unwrap_or_else(Word::identity);
+        b.compose(&a.inverse()).normal_form()
+    }
+
+    pub fn delta1(&self) -> Vec<(u16, Word)> {
+        self.loops
+            .iter()
+            .enumerate()
+            .map(|(i, lp)| (i as u16, loop_holonomy(self, lp)))
+            .collect()
+    }
+
+    pub fn coheres(&self) -> bool {
+        self.delta1()
+            .into_iter()
+            .all(|(_, w)| w.rotor().projective_eq(&Rotor::identity()))
+    }
+
+    pub fn is_closed(&self) -> bool {
+        self.coheres() && self.remainder.is_empty()
+    }
+
+    pub fn depth_of(&self) -> u16 {
+        self.vertices
+            .iter()
+            .filter_map(|v| match v {
+                Vertex::Glued { depth, .. } => Some(depth.saturating_add(1)),
+                _ => None,
+            })
+            .max()
+            .unwrap_or(0)
+    }
+
+    pub fn glue(&mut self, s: &Form, s_addr: [u8; 32], placement: Word) -> Option<u16> {
+        if !s.is_closed() {
+            return None;
+        }
+        let Some(fi) = s.vertices.iter().position(|v| matches!(v, Vertex::Frame)) else {
+            return None;
+        };
+        if !s.vertices[fi].word_in(s).is_identity() {
+            return None;
+        }
+        let d = s.depth_of();
+        if d >= self.depth_of() && self.depth_of() > 0 {
+            return None;
+        }
+        let idx = self.vertices.len() as u16;
+        self.vertices.push(Vertex::Glued {
+            address: s_addr,
+            chart: s
+                .vertices
+                .iter()
+                .find_map(|v| match v {
+                    Vertex::Word { class, .. } => Some(class.clone()),
+                    Vertex::Glued { chart, .. } => Some(chart.clone()),
+                    _ => None,
+                })
+                .unwrap_or_default(),
+            magnitude: [0; 4],
+            depth: d,
+            placement,
+        });
+        self.depth = self.depth_of();
+        Some(idx)
+    }
+
+    pub fn rebase(&mut self, by: u16, of: u16) -> u16 {
+        let idx = self.vertices.len() as u16;
+        self.vertices.push(Vertex::Rebased { by, of });
+        idx
+    }
+
+    pub fn unfold(&mut self, measure: Measure) -> u16 {
+        let idx = self.vertices.len() as u16;
+        self.vertices.push(Vertex::Unfolded { measure });
+        idx
+    }
+
+    pub fn loops_of(faces: &[FormFace], n: usize) -> Vec<Loop> {
+        if n == 0 {
+            return Vec::new();
+        }
+        let mut parent: Vec<usize> = (0..n).collect();
+        let find = |parent: &mut [usize], mut x: usize| -> usize {
+            while parent[x] != x {
+                parent[x] = parent[parent[x]];
+                x = parent[x];
+            }
+            x
+        };
+        let mut adj: Vec<Vec<(usize, usize)>> = vec![Vec::new(); n];
+        let mut loops = Vec::new();
+        for (fi, f) in faces.iter().enumerate() {
+            let (a, b) = (f.i as usize, f.j as usize);
+            if a >= n || b >= n {
+                continue;
+            }
+            let (pa, pb) = (find(&mut parent, a), find(&mut parent, b));
+            if pa != pb {
+                parent[pa] = pb;
+                adj[a].push((b, fi));
+                adj[b].push((a, fi));
+                continue;
+            }
+            let Some(path) = tree_path(&adj, a, b) else {
+                continue;
+            };
+            let mut face_ix: Vec<u16> = Vec::new();
+            for w in path.windows(2) {
+                if let Some(&(_, efi)) = adj[w[0]].iter().find(|&&(v, _)| v == w[1]) {
+                    face_ix.push(efi as u16);
+                }
+            }
+            face_ix.push(fi as u16);
+            let holonomy = form_cycle_holonomy(faces, &adj, &path, f);
+            loops.push(Loop {
+                faces: face_ix,
+                holonomy,
+            });
+        }
+        loops
+    }
+}
+
+fn form_cycle_holonomy(
+    faces: &[FormFace],
+    adj: &[Vec<(usize, usize)>],
+    path: &[usize],
+    chord: &FormFace,
+) -> Word {
+    let mut w = Word::identity();
+    for pair in path.windows(2) {
+        let (a, b) = (pair[0], pair[1]);
+        let Some(&(_, fi)) = adj[a].iter().find(|&&(v, _)| v == b) else {
+            continue;
+        };
+        let f = &faces[fi];
+        if f.i as usize == a && f.j as usize == b {
+            w = w.compose(&f.g_ij);
+        } else {
+            w = w.compose(&f.g_ij.inverse());
+        }
+    }
+    if chord.i as usize == path.last().copied().unwrap_or(chord.i as usize)
+        && chord.j as usize == path.first().copied().unwrap_or(chord.j as usize)
+    {
+        w = w.compose(&chord.g_ij);
+    } else {
+        w = w.compose(&chord.g_ij.inverse());
+    }
+    w.normal_form()
+}
+
+fn loop_holonomy(form: &Form, lp: &Loop) -> Word {
+    let mut w = Word::identity();
+    for &fi in &lp.faces {
+        if let Some(f) = form.faces.get(fi as usize) {
+            w = w.compose(&f.g_ij);
+        }
+    }
+    w.normal_form()
+}
+
 fn germ_vertex(i: usize) -> [u8; 32] {
     let mut k = [0u8; 32];
     k[..8].copy_from_slice(&(i as u64).to_le_bytes());
@@ -1830,6 +2234,333 @@ pub fn cochain_magnitude(n: &Nerve) -> [u64; 4] {
     mag
 }
 
+fn word_to_form_bytes(w: &Word, out: &mut Vec<u8>) {
+    w.to_bytes(out);
+    match w.contact() {
+        None => out.push(0),
+        Some(c) => {
+            out.push(1);
+            out.extend_from_slice(&c.anchor.to_le_bytes());
+            out.push(c.ring);
+        }
+    }
+}
+
+fn word_from_form_bytes(b: &[u8], pos: &mut usize) -> Option<Word> {
+    let w = Word::from_bytes(b, pos)?;
+    let tag = *b.get(*pos)?;
+    *pos += 1;
+    if tag == 0 {
+        return Some(w);
+    }
+    if tag != 1 {
+        return None;
+    }
+    let anchor = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
+    *pos += 2;
+    let ring = *b.get(*pos)?;
+    *pos += 1;
+    Some(w.with_contact(alphabet::Contact { anchor, ring }))
+}
+
+fn put_inv(inv: &stalk::Invariant, out: &mut Vec<u8>) {
+    out.extend_from_slice(&(inv.0.len().min(u16::MAX as usize) as u16).to_le_bytes());
+    for a in inv.0.iter().take(u16::MAX as usize) {
+        out.extend_from_slice(&a.to_le_bytes());
+    }
+}
+
+fn take_inv(b: &[u8], pos: &mut usize) -> Option<stalk::Invariant> {
+    let n = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?) as usize;
+    *pos += 2;
+    let mut axes = Vec::with_capacity(n.min(256));
+    for _ in 0..n.min(256) {
+        let v = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+        *pos += 8;
+        axes.push(v);
+    }
+    Some(stalk::Invariant(axes))
+}
+
+fn encode_form_v2(f: &Form, out: &mut Vec<u8>) {
+    out.extend_from_slice(&(f.vertices.len() as u16).to_le_bytes());
+    for v in &f.vertices {
+        match v {
+            Vertex::Frame => out.push(0),
+            Vertex::Word {
+                address,
+                word,
+                rho,
+                placement,
+                gauge,
+                class,
+            } => {
+                out.push(1);
+                out.extend_from_slice(address);
+                word_to_form_bytes(word, out);
+                alphabet::put_q(out, rho);
+                alphabet::put_q(out, &placement.0);
+                alphabet::put_q(out, &placement.1);
+                out.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
+                for &(a, b) in gauge {
+                    out.push(a);
+                    out.push(b);
+                }
+                put_inv(class, out);
+            }
+            Vertex::Glued {
+                address,
+                chart,
+                magnitude,
+                depth,
+                placement,
+            } => {
+                out.push(2);
+                out.extend_from_slice(address);
+                put_inv(chart, out);
+                for m in magnitude {
+                    out.extend_from_slice(&m.to_le_bytes());
+                }
+                out.extend_from_slice(&depth.to_le_bytes());
+                word_to_form_bytes(placement, out);
+            }
+            Vertex::Rebased { by, of } => {
+                out.push(3);
+                out.extend_from_slice(&by.to_le_bytes());
+                out.extend_from_slice(&of.to_le_bytes());
+            }
+            Vertex::Unfolded { measure } => {
+                out.push(4);
+                match measure {
+                    Measure::Occupied => out.push(0),
+                    Measure::Remainder => out.push(1),
+                    Measure::Ring { anchor } => {
+                        out.push(2);
+                        out.extend_from_slice(&anchor.to_le_bytes());
+                    }
+                }
+            }
+        }
+    }
+    out.extend_from_slice(&(f.faces.len() as u16).to_le_bytes());
+    for face in &f.faces {
+        out.extend_from_slice(&face.i.to_le_bytes());
+        out.extend_from_slice(&face.j.to_le_bytes());
+        word_to_form_bytes(&face.g_ij, out);
+    }
+    out.extend_from_slice(&(f.loops.len() as u16).to_le_bytes());
+    for lp in &f.loops {
+        out.extend_from_slice(&(lp.faces.len() as u16).to_le_bytes());
+        for &i in &lp.faces {
+            out.extend_from_slice(&i.to_le_bytes());
+        }
+        word_to_form_bytes(&lp.holonomy, out);
+    }
+    out.extend_from_slice(&(f.hue_maps.len() as u16).to_le_bytes());
+    for (k, pairs) in f.hue_maps.fiber(&crate::network::nerve::ROOT) {
+        out.extend_from_slice(k);
+        out.extend_from_slice(&(pairs.len() as u16).to_le_bytes());
+        for &(a, b) in pairs {
+            out.push(a);
+            out.push(b);
+        }
+    }
+    out.extend_from_slice(&(f.remainder.len() as u32).to_le_bytes());
+    for &(r, c, before, after) in &f.remainder {
+        out.extend_from_slice(&r.to_le_bytes());
+        out.extend_from_slice(&c.to_le_bytes());
+        out.push(before);
+        out.push(after);
+    }
+    out.extend_from_slice(&f.depth.to_le_bytes());
+    out.extend_from_slice(&0u16.to_le_bytes());
+}
+
+fn take_u16(b: &[u8], pos: &mut usize) -> Option<u16> {
+    let v = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
+    *pos += 2;
+    Some(v)
+}
+
+fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
+    let nv = take_u16(b, pos)? as usize;
+    if nv == 0 || nv > 4096 {
+        return None;
+    }
+    let mut vertices = Vec::with_capacity(nv);
+    for _ in 0..nv {
+        let kind = *b.get(*pos)?;
+        *pos += 1;
+        let v = match kind {
+            0 => Vertex::Frame,
+            1 => {
+                let address: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                *pos += 32;
+                let word = word_from_form_bytes(b, pos)?;
+                let rho = alphabet::take_q(b, pos)?;
+                let p0 = alphabet::take_q(b, pos)?;
+                let p1 = alphabet::take_q(b, pos)?;
+                let ng = take_u16(b, pos)? as usize;
+                let mut gauge = Vec::with_capacity(ng.min(256));
+                for _ in 0..ng.min(256) {
+                    gauge.push((*b.get(*pos)?, *b.get(*pos + 1)?));
+                    *pos += 2;
+                }
+                let class = take_inv(b, pos)?;
+                Vertex::Word {
+                    address,
+                    word,
+                    rho,
+                    placement: (p0, p1),
+                    gauge,
+                    class,
+                }
+            }
+            2 => {
+                let address: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                *pos += 32;
+                let chart = take_inv(b, pos)?;
+                let mut magnitude = [0u64; 4];
+                for m in &mut magnitude {
+                    *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+                    *pos += 8;
+                }
+                let depth = take_u16(b, pos)?;
+                let placement = word_from_form_bytes(b, pos)?;
+                Vertex::Glued {
+                    address,
+                    chart,
+                    magnitude,
+                    depth,
+                    placement,
+                }
+            }
+            3 => {
+                let by = take_u16(b, pos)?;
+                let of = take_u16(b, pos)?;
+                Vertex::Rebased { by, of }
+            }
+            4 => {
+                let m = *b.get(*pos)?;
+                *pos += 1;
+                let measure = match m {
+                    0 => Measure::Occupied,
+                    1 => Measure::Remainder,
+                    2 => {
+                        let anchor = take_u16(b, pos)?;
+                        Measure::Ring { anchor }
+                    }
+                    _ => return None,
+                };
+                Vertex::Unfolded { measure }
+            }
+            _ => return None,
+        };
+        vertices.push(v);
+    }
+    let nf = take_u16(b, pos)? as usize;
+    let mut faces = Vec::with_capacity(nf.min(4096));
+    for _ in 0..nf.min(4096) {
+        let i = take_u16(b, pos)?;
+        let j = take_u16(b, pos)?;
+        let g_ij = word_from_form_bytes(b, pos)?;
+        faces.push(FormFace { i, j, g_ij });
+    }
+    let nl = take_u16(b, pos)? as usize;
+    let mut loops = Vec::with_capacity(nl.min(4096));
+    for _ in 0..nl.min(4096) {
+        let n = take_u16(b, pos)? as usize;
+        let mut fs = Vec::with_capacity(n.min(4096));
+        for _ in 0..n.min(4096) {
+            fs.push(take_u16(b, pos)?);
+        }
+        let holonomy = word_from_form_bytes(b, pos)?;
+        loops.push(Loop {
+            faces: fs,
+            holonomy,
+        });
+    }
+    let nh = take_u16(b, pos).unwrap_or(0) as usize;
+    let mut hue_maps = Keyed::new();
+    for _ in 0..nh.min(4096) {
+        let k: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+        *pos += 32;
+        let np = take_u16(b, pos)? as usize;
+        let mut pairs = Vec::with_capacity(np.min(256));
+        for _ in 0..np.min(256) {
+            pairs.push((*b.get(*pos)?, *b.get(*pos + 1)?));
+            *pos += 2;
+        }
+        hue_maps.insert(k, pairs);
+    }
+    let nr = take_u32(b, pos).unwrap_or(0) as usize;
+    let mut remainder = Vec::with_capacity(nr.min(1 << 16));
+    for _ in 0..nr.min(1 << 16) {
+        remainder.push(take_cell(b, pos)?);
+    }
+    let depth = take_u16(b, pos).unwrap_or(0);
+    let ncert = take_u16(b, pos).unwrap_or(0);
+    for _ in 0..ncert {
+        let _ = take_u16(b, pos)?;
+        *pos = pos.checked_add(1)?;
+        *pos = pos.checked_add(32)?;
+        *pos = pos.checked_add(32)?;
+        *pos = pos.checked_add(12)?;
+        *pos = pos.checked_add(12)?;
+        let kind = *b.get(*pos)?;
+        *pos += 1;
+        match kind {
+            3 => {
+                *pos = pos.checked_add(32)?;
+                let _ = word_from_form_bytes(b, pos)?;
+            }
+            4 => {
+                let _ = take_inv(b, pos)?;
+            }
+            _ => {
+                let _ = word_from_form_bytes(b, pos)?;
+            }
+        }
+    }
+    Some(Form {
+        vertices,
+        faces,
+        loops,
+        remainder,
+        depth,
+        hue_maps,
+    })
+}
+
+/// SENTENCE_TAG v2: the Form tape. v1 nerve tapes still go through [`as_element`].
+pub fn as_element_form(f: &Form) -> Option<Element> {
+    if f.vertices.is_empty() {
+        return None;
+    }
+    let mut e = Element::identity(GERM_DIM);
+    let mut word = vec![element::SENTENCE_TAG, 2];
+    encode_form_v2(f, &mut word);
+    e.set_description(word);
+    e.set_magnitude([0, 0, 0, 1]);
+    Some(e)
+}
+
+/// Read a Form from a v2 tape, or lift a v1 nerve tape through [`Form::from_nerve`].
+pub fn from_element_form(e: &Element) -> Option<Form> {
+    if !e.is_sentence() {
+        return None;
+    }
+    let b = e.description();
+    if b.get(1).copied() == Some(2) {
+        let mut pos = 2usize;
+        if let Some(f) = decode_form_v2(b, &mut pos) {
+            return Some(f);
+        }
+    }
+    let n = from_element(e)?;
+    Some(Form::from_nerve(&n))
+}
+
 /// The sentence as one Element: first germ is the base connection; every
 /// further germ occupies a germinated axis; faces are transitions; a
 /// withheld cycle is torsion; the remainder is `sub`.
@@ -2336,6 +3067,151 @@ mod tests {
     use super::*;
     use crate::transducer::element::{from_residual, identity_versor};
     use crate::transducer::germinate::germinate;
+
+    fn q0() -> num_rational::BigRational {
+        num_rational::BigRational::from_integer(num_bigint::BigInt::from(0))
+    }
+    fn q1() -> num_rational::BigRational {
+        num_rational::BigRational::from_integer(num_bigint::BigInt::from(1))
+    }
+
+    fn closed_word_form(word: Word, contact: Option<alphabet::Contact>) -> Form {
+        let word = match contact {
+            Some(c) => word.with_contact(c),
+            None => word,
+        };
+        let mut f = Form::default();
+        f.vertices.push(Vertex::Word {
+            address: [7u8; 32],
+            word: word.clone(),
+            rho: q1(),
+            placement: (q0(), q1()),
+            gauge: vec![(1, 2)],
+            class: stalk::Invariant(vec![3, 5]),
+        });
+        f.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            g_ij: word.clone(),
+        });
+        f.remainder.clear();
+        f.depth = f.depth_of();
+        f
+    }
+
+    /// SENTENCE_TAG v2 round-trips Frame, Word (with contact), Glued,
+    /// Rebased, Unfolded, faces, and loops.
+    #[test]
+    fn form_tape_v2_round_trips() {
+        let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
+        let w = Word::from_letters(&[(q, false)]);
+        let inner = closed_word_form(w.clone(), None);
+        assert!(inner.is_closed(), "a tree of two vertices coheres");
+        let inner_e = as_element_form(&inner).expect("inner tape");
+        let inner_addr = inner_e.address();
+
+        let mut f = closed_word_form(
+            w.clone(),
+            Some(alphabet::Contact { anchor: 1, ring: 2 }),
+        );
+        let glued = f
+            .glue(&inner, inner_addr, Word::identity())
+            .expect("glue depth 0 into depth 0");
+        let rebased = f.rebase(0, 1);
+        let unfolded = f.unfold(Measure::Occupied);
+        f.faces.push(FormFace {
+            i: 0,
+            j: glued,
+            g_ij: Word::identity(),
+        });
+        f.faces.push(FormFace {
+            i: 1,
+            j: glued,
+            g_ij: w.clone(),
+        });
+        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        f.remainder = vec![(9, 9, 1, 0)];
+        assert!(matches!(f.vertices[glued as usize], Vertex::Glued { .. }));
+        assert!(matches!(f.vertices[rebased as usize], Vertex::Rebased { by: 0, of: 1 }));
+        assert!(matches!(
+            f.vertices[unfolded as usize],
+            Vertex::Unfolded {
+                measure: Measure::Occupied
+            }
+        ));
+
+        let e = as_element_form(&f).expect("v2 tape");
+        assert!(e.is_sentence());
+        assert_eq!(e.description()[1], 2, "version 2");
+        let back = from_element_form(&e).expect("decode v2");
+        assert_eq!(back.vertices.len(), f.vertices.len());
+        assert_eq!(back.faces.len(), f.faces.len());
+        assert_eq!(back.loops.len(), f.loops.len());
+        assert_eq!(back.remainder, f.remainder);
+        assert_eq!(back.depth, f.depth);
+        match (&f.vertices[1], &back.vertices[1]) {
+            (
+                Vertex::Word { word: a, gauge: ga, class: ca, .. },
+                Vertex::Word { word: b, gauge: gb, class: cb, .. },
+            ) => {
+                assert_eq!(a.contact().map(|c| (c.anchor, c.ring)), Some((1, 2)));
+                assert_eq!(a, b);
+                assert_eq!(ga, gb);
+                assert_eq!(ca, cb);
+            }
+            _ => panic!("word vertex"),
+        }
+        match (&f.vertices[glued as usize], &back.vertices[glued as usize]) {
+            (Vertex::Glued { address: a, depth: da, .. }, Vertex::Glued { address: b, depth: db, .. }) => {
+                assert_eq!(a, b);
+                assert_eq!(da, db);
+            }
+            _ => panic!("glued vertex"),
+        }
+        assert_eq!(
+            back.vertices[rebased as usize],
+            Vertex::Rebased { by: 0, of: 1 }
+        );
+        assert_eq!(
+            back.vertices[unfolded as usize],
+            Vertex::Unfolded {
+                measure: Measure::Occupied
+            }
+        );
+        assert_eq!(back.faces[0].i, 0);
+        assert_eq!(back.faces[0].j, 1);
+        assert_eq!(back.faces[0].g_ij.contact().map(|c| c.ring), Some(2));
+    }
+
+    /// Depth is one plus the deepest glued form; gluing at equal depth is refused.
+    #[test]
+    fn depth_is_one_plus_max_glued() {
+        let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
+        let w = Word::from_letters(&[(q, false)]);
+        let inner = closed_word_form(w.clone(), None);
+        assert_eq!(inner.depth_of(), 0);
+        let mut outer = Form::default();
+        let a0 = [1u8; 32];
+        outer.glue(&inner, a0, Word::identity()).expect("glue into empty host");
+        assert_eq!(outer.depth_of(), 1);
+        assert_eq!(outer.depth, 1);
+        let mut wrap = Form::default();
+        wrap.glue(&outer, [2u8; 32], Word::identity()).expect("glue depth 1 into depth 0");
+        assert_eq!(wrap.depth_of(), 2);
+        let outer_copy = outer.clone();
+        assert!(
+            outer.glue(&outer_copy, [3u8; 32], Word::identity()).is_none(),
+            "equal depth is refused"
+        );
+        assert!(
+            outer.glue(&wrap, [4u8; 32], Word::identity()).is_none(),
+            "deeper form is refused"
+        );
+        let mut again = Form::default();
+        again.glue(&inner, a0, Word::identity()).unwrap();
+        again.glue(&inner, [5u8; 32], Word::identity()).expect("another depth-0 glue");
+        assert_eq!(again.depth_of(), 1, "max glued depth, not a count");
+    }
 
     /// A language of a bar and a dot deconstructs a rotated, translated,
     /// and dilated bar through its moduli with a verified transport, speaks
