@@ -639,6 +639,103 @@ fn mark_parent(used: &mut [bool], cands: &[Cand], idx: usize) {
     }
 }
 
+fn bucket_cands(cands: &[Cand], used: Option<&[bool]>) -> crate::network::nerve::Keyed<Vec<usize>> {
+    let mut m: crate::network::nerve::Keyed<Vec<usize>> = crate::network::nerve::Keyed::new();
+    for (i, c) in cands.iter().enumerate() {
+        if used.is_some_and(|u| u[i]) {
+            continue;
+        }
+        let k = c.body.moduli.key();
+        match m.get_mut(&k) {
+            Some(v) => v.push(i),
+            None => {
+                m.insert(k, vec![i]);
+            }
+        }
+    }
+    m
+}
+
+fn bucket_peeled(cands: &[Cand], used: &[bool]) -> crate::network::nerve::Keyed<Vec<usize>> {
+    let mut m: crate::network::nerve::Keyed<Vec<usize>> = crate::network::nerve::Keyed::new();
+    for (i, c) in cands.iter().enumerate() {
+        if used[i] {
+            continue;
+        }
+        let k = c.body.moduli.peel().key();
+        match m.get_mut(&k) {
+            Some(v) => v.push(i),
+            None => {
+                m.insert(k, vec![i]);
+            }
+        }
+    }
+    m
+}
+
+fn greedy_within(
+    ins: &[Cand],
+    outs: &[Cand],
+    ii: &[usize],
+    oo: &[usize],
+    used_in: &mut [bool],
+    used_out: &mut [bool],
+    pairs: &mut Vec<(usize, usize, Carriage)>,
+    want: u8,
+) {
+    for &i in ii {
+        if used_in[i] {
+            continue;
+        }
+        let mut best: Option<(usize, BigRational, Carriage)> = None;
+        for &j in oo {
+            if used_out[j] {
+                continue;
+            }
+            let Some((r, car)) = pair_rank(&ins[i], &outs[j]) else {
+                continue;
+            };
+            if r != want {
+                continue;
+            }
+            let d = centroid_dist2(&ins[i].body, &outs[j].body);
+            match &best {
+                None => best = Some((j, d, car)),
+                Some((_, bd, _)) if d < *bd => best = Some((j, d, car)),
+                _ => {}
+            }
+        }
+        if let Some((j, _, car)) = best {
+            mark_parent(used_in, ins, i);
+            mark_parent(used_out, outs, j);
+            pairs.push((i, j, car));
+        }
+    }
+}
+
+fn pair_buckets(
+    ins: &[Cand],
+    outs: &[Cand],
+    in_b: &crate::network::nerve::Keyed<Vec<usize>>,
+    out_b: &crate::network::nerve::Keyed<Vec<usize>>,
+    used_in: &mut [bool],
+    used_out: &mut [bool],
+    pairs: &mut Vec<(usize, usize, Carriage)>,
+    want: u8,
+) {
+    let mut keys = Vec::new();
+    crate::snapshot::persist(in_b, |k, _| keys.push(*k));
+    for k in keys {
+        let Some(ii) = in_b.get(&k).cloned() else {
+            continue;
+        };
+        let Some(oo) = out_b.get(&k).cloned() else {
+            continue;
+        };
+        greedy_within(ins, outs, &ii, &oo, used_in, used_out, pairs, want);
+    }
+}
+
 fn pair_nerve(a: &Grid, b: &Grid, scale: Option<((usize, usize), (usize, usize))>) -> super::sentence::Nerve {
     use super::sentence::{assemble, close};
     let ins = scene_cands(a, scale);
@@ -646,52 +743,15 @@ fn pair_nerve(a: &Grid, b: &Grid, scale: Option<((usize, usize), (usize, usize))
     let mut used_in = vec![false; ins.len()];
     let mut used_out = vec![false; outs.len()];
     let mut pairs: Vec<(usize, usize, Carriage)> = Vec::new();
-    // index: peel of this pair's bodies, one rank at a time; a body is one vertex
-    for want in 0u8..=3 {
-        let mut edges: Vec<(usize, usize, Carriage)> = Vec::new();
-        for (i, ic) in ins.iter().enumerate() {
-            if used_in[i] {
-                continue;
-            }
-            for (j, oc) in outs.iter().enumerate() {
-                if used_out[j] {
-                    continue;
-                }
-                if let Some((r, car)) = pair_rank(ic, oc) {
-                    if r == want {
-                        edges.push((i, j, car));
-                    }
-                }
-            }
-        }
-        let mut din = vec![0u8; ins.len()];
-        let mut dout = vec![0u8; outs.len()];
-        for (i, j, _) in &edges {
-            din[*i] = din[*i].saturating_add(1);
-            dout[*j] = dout[*j].saturating_add(1);
-        }
-        if din.iter().any(|&d| d > 1) || dout.iter().any(|&d| d > 1) {
-            // Multiplicity is a section: greedy nearest matching, not a class.
-            edges.sort_by(|a, b| {
-                let da = centroid_dist2(&ins[a.0].body, &outs[a.1].body);
-                let db = centroid_dist2(&ins[b.0].body, &outs[b.1].body);
-                da.cmp(&db)
-            });
-            for (i, j, car) in edges {
-                if used_in[i] || used_out[j] {
-                    continue;
-                }
-                mark_parent(&mut used_in, &ins, i);
-                mark_parent(&mut used_out, &outs, j);
-                pairs.push((i, j, car));
-            }
-            continue;
-        }
-        for (i, j, car) in edges {
-            mark_parent(&mut used_in, &ins, i);
-            mark_parent(&mut used_out, &outs, j);
-            pairs.push((i, j, car));
-        }
+    let in_b = bucket_cands(&ins, None);
+    let out_b = bucket_cands(&outs, None);
+    for want in 0u8..=1 {
+        pair_buckets(&ins, &outs, &in_b, &out_b, &mut used_in, &mut used_out, &mut pairs, want);
+    }
+    let in_p = bucket_peeled(&ins, &used_in);
+    let out_p = bucket_peeled(&outs, &used_out);
+    for want in 2u8..=3 {
+        pair_buckets(&ins, &outs, &in_p, &out_p, &mut used_in, &mut used_out, &mut pairs, want);
     }
     let mut germs = vec![frame_germ(a, b)];
     for (i, j, car) in pairs {
@@ -826,7 +886,7 @@ fn test_transport(
         .cloned()
         .or_else(|| frame_i.and_then(|i| placed.get(&germ_idx_key(i)).cloned()))
         .unwrap_or((q(0), q(0)));
-    let face_v = realize_word(&f.g_ij, &q(1), &(q(0), q(0)));
+    let face_v = f.versor.clone();
     cga::translator(&t_anchor.0, &t_anchor.1).geo(&face_v).geo(&placed_linear)
 }
 
@@ -1426,22 +1486,23 @@ mod tests {
             .collect();
         let c = comprehend(&family);
         let rule = extract_rule(&family).expect("the family extracts a rule");
-        assert!(
-            rule.nerve.germ_count() <= family[0].0.len() + 2,
-            "germs near the body count, got {}",
-            rule.nerve.germ_count()
-        );
+        let bodies = rule
+            .nerve
+            .germs
+            .iter()
+            .filter(|g| g.kind != crate::transducer::peel::ShellKind::Frame)
+            .count();
+        assert_eq!(bodies, 1, "one body is one germ, got {}", rule.nerve.germ_count());
         assert!(
             rule.nerve.germs.iter().any(|g| g.kind == crate::transducer::peel::ShellKind::Frame),
             "a frame germ is on the nerve"
         );
-        assert!(
-            rule.nerve.faces.iter().any(|f| {
-                rule.nerve.germs.get(f.i).is_some_and(|g| g.kind == crate::transducer::peel::ShellKind::Frame)
-                    || rule.nerve.germs.get(f.j).is_some_and(|g| g.kind == crate::transducer::peel::ShellKind::Frame)
-            }),
-            "a face reaches the frame"
-        );
+        let frame_face = rule.nerve.faces.iter().any(|f| {
+            rule.nerve.germs.get(f.i).is_some_and(|g| g.kind == crate::transducer::peel::ShellKind::Frame)
+                || rule.nerve.germs.get(f.j).is_some_and(|g| g.kind == crate::transducer::peel::ShellKind::Frame)
+        });
+        let shifted = rule.nerve.germs.iter().any(|g| g.shift.is_some());
+        assert!(frame_face || shifted, "placement is a frame face or a family-constant shift");
         let spoken = speak_rule(&rule, &grid(&["1100", "0000"])).expect("the test is spoken");
         assert!(spoken.remainder.is_empty(), "the test is reached in full: {:?}", spoken.remainder);
         assert_eq!(spoken.grid(), grid(&["0022", "0000"]));

@@ -820,8 +820,11 @@ pub struct Kernel {
     /// Ruled cover root, maintained on admit/remove.
     ruled_root: [u8; 32],
     /// Per-lane occupancy of in-flight execution leases, not the book
-    /// row count. Cold listings exert zero occupancy.
+    /// row count. Cold listings exert zero occupancy. Lane 2 is quote
+    /// leases keyed in `t_leases`.
     occupancy: [u64; 4],
+    /// Voices that currently hold a T-lease (ACT_QUOTE checkout).
+    t_leases: crate::network::nerve::Keyed<()>,
     /// Per-lane magnitude sum of the open book, updated on list/unlist.
     pressure_sum: [u64; 4],
     /// Listings standing on each lane, for eviction candidates.
@@ -1140,6 +1143,9 @@ impl Kernel {
 
     fn occupy(&mut self, addr: [u8; 32], mag: &[u64; 4], add: bool) {
         for l in 0..4 {
+            if l == 2 {
+                continue;
+            }
             if mag[l] > 0 {
                 if add {
                     self.occupancy[l] = self.occupancy[l].saturating_add(1);
@@ -1821,11 +1827,7 @@ impl Kernel {
         self.provisional.insert(addr, word.clone());
         self.stamp_standing(addr);
         self.provisional_tu.insert(addr, self.now_tu());
-        let tmag = self.standing_mag(&addr, &mag);
-        if tmag[2] > 0 && !self.lane_listings[2].contains(&addr) {
-            self.occupancy[2] = self.occupancy[2].saturating_add(1);
-            self.lane_listings[2].insert(addr, ());
-        }
+        self.mark_persist();
         let inv = crate::transducer::stalk::invariant_of(word);
         if self.field.get(&addr).is_none() {
             self.write_field(
@@ -3471,6 +3473,22 @@ impl Kernel {
 
     pub fn occupancy(&self) -> [u64; 4] {
         self.occupancy
+    }
+
+    /// Checkout a T-lease for a quoting voice. One lease per voice.
+    pub fn grant_t_lease(&mut self, voice: [u8; 32]) {
+        if self.t_leases.contains(&voice) {
+            return;
+        }
+        self.t_leases.insert(voice, ());
+        self.occupancy[2] = self.occupancy[2].saturating_add(1);
+    }
+
+    /// Return a T-lease when the voice's quoted work settles or expires.
+    pub fn release_t_lease(&mut self, voice: [u8; 32]) {
+        if self.t_leases.remove(&voice).is_some() {
+            self.occupancy[2] = self.occupancy[2].saturating_sub(1);
+        }
     }
 
     pub fn reserve(&self) -> [u64; 4] {
@@ -5414,6 +5432,7 @@ impl Kernel {
             return false;
         }
         self.occupancy = [0; 4];
+        self.t_leases = crate::network::nerve::Keyed::new();
         self.lane_listings = Default::default();
         let pending_addrs: Vec<[u8; 32]> = self.pending.iter().map(|(e, _)| e.address()).collect();
         for addr in pending_addrs {

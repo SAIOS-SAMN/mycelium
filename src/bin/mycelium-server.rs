@@ -856,7 +856,6 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
                 );
             }
         }
-        persist_if_due(kernel, &door.state_path);
         let body = dialogue::encode_speech_reply(&codes);
         let reply = Frame { lane: frame.lane, body };
         let _ = stream.write_all(&reply.encode().unwrap_or_default());
@@ -880,6 +879,11 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
             mycelium::network::wire::frame_budget(),
         );
         let served = body.get(dialogue::QUOTE_COUNT_AT).copied().unwrap_or(0);
+        if served > 0 {
+            if let Ok(mut k) = kernel.lock() {
+                k.grant_t_lease(qvoice);
+            }
+        }
         eprintln!(
             "  quote voice {:02x} → surface {surface:?}; {served}/{} clusters ({} bytes); K={k_step}; cohesion {cohesion:?}",
             qvoice[0],
@@ -939,6 +943,11 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
     if kind == dialogue::ACT_PROBE {
         let Some((pvoice, target, cites)) = dialogue::decode_probe(&frame.body) else { return };
         let (code, paid, remaining) = mycelium::synthesis::probe(kernel, pvoice, &target, &cites);
+        if matches!(code, dialogue::PROBE_CLOSED | dialogue::PROBE_DESCENT | dialogue::PROBE_SETTLED) {
+            if let Ok(mut k) = kernel.lock() {
+                k.release_t_lease(pvoice);
+            }
+        }
         if code != dialogue::PROBE_NOTHING {
             eprintln!(
                 "  probe voice {:02x} on {:02x}{:02x}… code {code} paid {paid:?} remaining {remaining:?}",

@@ -592,15 +592,17 @@ pub struct Germ {
     pub shift: Option<(num_rational::BigRational, num_rational::BigRational)>,
 }
 
-/// A face of the nerve: the relative word `g_ij = word_j ∘ word_i⁻¹` in
-/// normal form. A face exists when that vertex is well-defined; overlap
-/// is the shared support if any, never a contact search.
+/// A face of the nerve: the relative Clifford versor
+/// `g_ij = T_{Δx} R_θ ∈ Spin(4,1)(ℚ)` between two bodies, and the spelled
+/// linear block when that block is a word. A pure translation is a
+/// parabolic versor, not the identity word.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Face {
     pub i: usize,
     pub j: usize,
     pub overlap: Vec<Cell>,
     pub g_ij: Word,
+    pub versor: Versor,
     /// False when the relative transport does not spell: a face with remainder.
     pub spelled: bool,
 }
@@ -983,23 +985,28 @@ fn instances_of(n: &Nerve) -> crate::network::nerve::Keyed<Vec<usize>> {
     m
 }
 
-/// Relative connection between two bodies: `g_ij = versor_between`
-/// of their after-supports. A pure translation that does not spell is
-/// still a 1-simplex (the edge exists; the word is 1).
-fn relative_face(a: &Germ, b: &Germ) -> (Word, bool) {
+/// Relative connection between two bodies: the CGA versor
+/// `versor_between` of their after-supports. The spelled word is the
+/// linear block when it spells; a pure translation keeps the parabolic
+/// versor and does not collapse to the identity carrier.
+fn relative_face(a: &Germ, b: &Germ) -> (Word, Versor, bool) {
     let sa = after_support(a);
     let sb = after_support(b);
     if !sa.is_empty() && !sb.is_empty() {
         let va = super::blade::shape_of(&sa);
         let vb = super::blade::shape_of(&sb);
         if let Some(v) = super::blade::versor_between(&va, &vb) {
-            return match spell_versor(&v) {
-                Some(w) => (w.normal_form(), true),
-                None => (Word::identity(), true),
-            };
+            let w = spell_versor(&v).map(|s| s.normal_form()).unwrap_or_else(Word::identity);
+            return (w, v, true);
         }
     }
-    face_word(a, b)
+    let (w, spelled) = face_word(a, b);
+    let v = a
+        .versor
+        .versor_inverse()
+        .map(|inv| b.versor.geo(&inv))
+        .unwrap_or_else(element::identity_versor);
+    (w, v, spelled)
 }
 
 fn emit_face(germs: &[Germ], i: usize, j: usize, faces: &mut Vec<Face>) {
@@ -1010,7 +1017,7 @@ fn emit_face(germs: &[Germ], i: usize, j: usize, faces: &mut Vec<Face>) {
     if faces.iter().any(|f| f.i == lo && f.j == hi) {
         return;
     }
-    let (g_ij, spelled) = relative_face(&germs[lo], &germs[hi]);
+    let (g_ij, versor, spelled) = relative_face(&germs[lo], &germs[hi]);
     if !spelled {
         return;
     }
@@ -1020,6 +1027,7 @@ fn emit_face(germs: &[Germ], i: usize, j: usize, faces: &mut Vec<Face>) {
         j: hi,
         overlap,
         g_ij,
+        versor,
         spelled,
     });
 }
@@ -1354,8 +1362,8 @@ pub fn agree_up_to_gauge(nerves: &[Nerve]) -> Option<SentenceRule> {
             let Some(vb) = ix.get(&kb).and_then(|v| v.get(tb)).and_then(|&j| n.germs.get(j)) else {
                 return false;
             };
-            let (w, s) = relative_face(va, vb);
-            w == f.g_ij && s == f.spelled
+            let (w, v, s) = relative_face(va, vb);
+            w == f.g_ij && s == f.spelled && element::same_versor(&v, &f.versor)
         })
     });
     nerve.complex = bind_complex(&nerve.germs, &nerve.faces);
@@ -1551,15 +1559,7 @@ pub fn as_element(n: &Nerve) -> Option<Element> {
             continue;
         }
         let asg = element::assignment(&f.overlap);
-        if let Some(v) = element::conformal_of(
-            &alphabet::Spelling {
-                word: f.g_ij.clone(),
-                rho: num_rational::BigRational::from_integer(num_bigint::BigInt::from(1)),
-            },
-            &(num_rational::BigRational::from_integer(num_bigint::BigInt::from(0)), num_rational::BigRational::from_integer(num_bigint::BigInt::from(0))),
-        ) {
-            e.record_dislocation(asg, v, element::FIBER_SPATIAL);
-        }
+        e.record_dislocation(asg, f.versor.clone(), element::FIBER_SPATIAL);
     }
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
@@ -1675,6 +1675,7 @@ fn encode_nerve_tail(n: &Nerve, out: &mut Vec<u8>) {
             out.push(a);
         }
         f.g_ij.to_bytes(out);
+        f.versor.to_bytes(out);
         out.push(f.spelled as u8);
     }
     out.extend_from_slice(&(n.cycles.len() as u32).to_le_bytes());
@@ -1794,9 +1795,10 @@ fn decode_nerve_tail(b: &[u8], pos: &mut usize) -> Option<Nerve> {
             overlap.push(take_cell(b, pos)?);
         }
         let g_ij = Word::from_bytes(b, pos)?;
+        let versor = Versor::from_bytes(b, pos)?;
         let spelled = *b.get(*pos)? & 1 != 0;
         *pos += 1;
-        faces.push(Face { i, j, overlap, g_ij, spelled });
+        faces.push(Face { i, j, overlap, g_ij, versor, spelled });
     }
     let ncyc = take_u32(b, pos)? as usize;
     let mut cycles = Vec::with_capacity(ncyc.min(1024));
@@ -1925,11 +1927,11 @@ pub fn replay_nerve(e: &Element) -> Option<&'static str> {
         if f.i >= n.germs.len() || f.j >= n.germs.len() {
             return Some("sentence face does not re-derive from its germs");
         }
-        let (w, spelled) = face_word(&n.germs[f.i], &n.germs[f.j]);
+        let (w, v, spelled) = relative_face(&n.germs[f.i], &n.germs[f.j]);
         if spelled != f.spelled {
             return Some("sentence face does not re-derive from its germs");
         }
-        if spelled && w != f.g_ij {
+        if spelled && (w != f.g_ij || !element::same_versor(&v, &f.versor)) {
             return Some("sentence face g_ij does not re-derive from its germs");
         }
     }
@@ -2135,7 +2137,10 @@ mod tests {
         };
         let n = assemble(vec![ga, gb], Vec::new());
         assert_eq!(n.faces.len(), 1, "two bodies in one thought share a face");
-        assert!(n.faces[0].g_ij.abelian_identity(), "identity relative word");
+        assert!(
+            !element::same_versor(&n.faces[0].versor, &identity_versor()),
+            "a relative translation is a parabolic versor, not 1"
+        );
     }
 
     /// Three germs: faces are the constant relative words, a complete
@@ -2157,7 +2162,10 @@ mod tests {
         let gc = germ(vec![(0, 8, 1, 2), (0, 9, 1, 2)]);
         let n = assemble(vec![ga, gb, gc], Vec::new());
         assert_eq!(n.faces.len(), 3, "three germs, three relative words");
-        assert!(n.faces.iter().all(|f| f.g_ij.abelian_identity()), "identity relative words");
+        assert!(
+            n.faces.iter().all(|f| !element::same_versor(&f.versor, &identity_versor())),
+            "relative translations are not the identity versor"
+        );
         assert_eq!(n.cycles.len(), 1, "one chord of the spanning forest");
         assert!(n.cycles[0].holonomy.abelian_identity());
     }

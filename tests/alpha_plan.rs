@@ -52,25 +52,21 @@ fn faces_by_constancy_three_squares() {
         .iter()
         .filter(|g| g.kind != mycelium::transducer::peel::ShellKind::Frame)
         .count();
+    assert_eq!(bodies, 3, "three bodies remain distinct points, got {} germs {} sections", rule.nerve.germ_count(), rule.sections);
+    let id = identity_versor();
     assert!(
-        bodies >= 3,
-        "three bodies remain distinct points, got {} germs {} sections",
-        rule.nerve.germ_count(),
-        rule.sections
-    );
-    let same_class_faces = rule.nerve.faces.iter().filter(|f| {
-        let gi = &rule.nerve.germs[f.i];
-        let gj = &rule.nerve.germs[f.j];
-        gi.kind != mycelium::transducer::peel::ShellKind::Frame
-            && gj.kind != mycelium::transducer::peel::ShellKind::Frame
-    }).count();
-    assert!(
-        same_class_faces >= 2,
-        "relative versors between the squares, got {same_class_faces} body faces"
+        rule.nerve.faces.iter().filter(|f| {
+            let gi = &rule.nerve.germs[f.i];
+            let gj = &rule.nerve.germs[f.j];
+            gi.kind != mycelium::transducer::peel::ShellKind::Frame
+                && gj.kind != mycelium::transducer::peel::ShellKind::Frame
+        }).all(|f| !mycelium::transducer::element::same_versor(&f.versor, &id)),
+        "body-body faces carry a non-identity relative versor"
     );
     assert!(rule.nerve.is_sentence(), "three squares form a sentence");
     let spoken = speak_rule(&rule, &train_in).expect("spoken");
-    assert!(spoken.remainder.is_empty() || spoken.cells.iter().any(|&(_, _, h)| h == 2));
+    assert!(spoken.remainder.is_empty(), "all three squares are reached: {:?}", spoken.remainder);
+    assert_eq!(spoken.grid(), train_out);
     let _ = mint_sentence(&rule, &family);
 }
 
@@ -79,10 +75,10 @@ fn speak_rule_recolours_or_conflicts() {
     let train_in = grid(&["1100", "0000"]);
     let train_out = grid(&["2200", "0000"]);
     let family = vec![(train_in.clone(), train_out.clone())];
-    if let Some(rule) = extract_rule(&family) {
-        let spoken = speak_rule(&rule, &train_in);
-        assert!(spoken.is_some());
-    }
+    let rule = extract_rule(&family).expect("one square extracts");
+    let spoken = speak_rule(&rule, &train_in).expect("spoken");
+    assert!(spoken.remainder.is_empty(), "the square is reached: {:?}", spoken.remainder);
+    assert_eq!(spoken.grid(), train_out);
 }
 
 #[test]
