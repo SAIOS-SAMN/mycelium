@@ -851,22 +851,9 @@ pub struct Epigenome {
     /// Held words keyed by (chart, axis). Filled at atlas/dialect admit,
     /// emptied at remove/shed/retire. `on_axis` is one fiber read.
     axis_index: crate::transducer::sentence::AxisIndex,
-    /// Genome index by the M1 key of the canonical form (connections).
-    vertex_index: crate::network::nerve::Keyed<usize>,
-    /// Dialect address by the M1 key of the canonical form.
-    dialect_vertex: crate::network::nerve::Keyed<[u8; 32]>,
     /// Missing cited address → citing dialect sentences. Filled when
     /// Withheld is banked; resolve_withheld reads this, never the dialect.
     waiting_on: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
-}
-
-fn m1_key(e: &Element) -> [u8; 32] {
-    if e.is_sentence() {
-        return e.address();
-    }
-    e.letters()
-        .map(|l| l.spelling.word.key())
-        .unwrap_or_else(|| e.address())
 }
 
 impl Epigenome {
@@ -895,10 +882,8 @@ impl Epigenome {
     /// Re-key the genome after a removal shifted positions.
     fn reindex(&mut self) {
         self.index = crate::network::nerve::Keyed::new();
-        self.vertex_index = crate::network::nerve::Keyed::new();
         for (i, w) in self.genome.iter().enumerate() {
             self.index.insert(w.address(), i);
-            self.vertex_index.insert(m1_key(w), i);
         }
     }
 
@@ -1002,7 +987,7 @@ impl Epigenome {
     }
 
     fn drop_dialect(&mut self, da: &[u8; 32]) {
-        let (inv, words, missing, mk) = match self.dialect.get(da) {
+        let (inv, words, missing) = match self.dialect.get(da) {
             Some(d) => (
                 crate::transducer::stalk::invariant_of(&d.sentence),
                 crate::transducer::sentence::words_of_element(&d.sentence),
@@ -1011,7 +996,6 @@ impl Epigenome {
                 } else {
                     Vec::new()
                 },
-                m1_key(&d.sentence),
             ),
             None => {
                 self.dialect_atlas.remove(da);
@@ -1023,7 +1007,6 @@ impl Epigenome {
         for m in &missing {
             self.retract_waiter(m, da);
         }
-        self.dialect_vertex.remove(&mk);
         self.dialect_atlas.remove(da);
         self.dialect.remove(da);
     }
@@ -1054,7 +1037,6 @@ impl Epigenome {
         self.dialect_atlas.admit(&inv, addr);
         self.axis_admit(&sentence);
         let shape = crate::transducer::element::shape_of_chain(sentence.sub());
-        let mk = m1_key(&sentence);
         self.dialect.insert(
             addr,
             Dialect {
@@ -1067,7 +1049,6 @@ impl Epigenome {
                 missing: Vec::new(),
             },
         );
-        self.dialect_vertex.insert(mk, addr);
         eprintln!(
             "  dialect stood {:02x}{:02x}… k {k} tu {now_tu}",
             addr[0], addr[1]
@@ -1192,17 +1173,16 @@ impl Epigenome {
     }
 
     fn same_vertex_in_dialect(&self, e: &Element) -> Option<[u8; 32]> {
-        if self.dialect.contains(&e.address()) {
-            return Some(e.address());
-        }
-        self.dialect_vertex.get(&m1_key(e)).copied()
+        let addr = e.address();
+        let d = self.dialect.get(&addr)?;
+        debug_assert!(d.sentence.same_vertex(e));
+        Some(addr)
     }
 
     fn same_vertex_in_genome(&self, e: &Element) -> Option<usize> {
-        if let Some(&i) = self.index.get(&e.address()) {
-            return Some(i);
-        }
-        self.vertex_index.get(&m1_key(e)).copied()
+        let i = self.index.get(&e.address()).copied()?;
+        debug_assert!(self.genome.get(i).is_some_and(|w| w.same_vertex(e)));
+        Some(i)
     }
 
     /// Deconstruct a chain over the working language: genome and dialect.
@@ -1500,14 +1480,6 @@ impl Epigenome {
             self.drop_dialect(&da);
             if let Some(i) = self.same_vertex_in_genome(&e) {
                 let _ = self.genome[i].merge_fibre(&e);
-                self.index.insert(addr, i);
-                self.vertex_index.insert(m1_key(&e), i);
-                if let Some(x) = self.expression.get_mut(i) {
-                    *x = x.saturating_add(uses);
-                }
-            } else if let Some(i) = self.index.get(&addr).copied() {
-                self.vertex_index.insert(m1_key(&e), i);
-                self.genome[i] = e;
                 if let Some(x) = self.expression.get_mut(i) {
                     *x = x.saturating_add(uses);
                 }
@@ -1516,9 +1488,7 @@ impl Epigenome {
                 self.axis_admit(&e);
                 self.shapes.push(std::sync::OnceLock::new());
                 self.atlas_len = self.atlas_len.saturating_add(1);
-                let i = self.genome.len();
-                self.index.insert(e.address(), i);
-                self.vertex_index.insert(m1_key(&e), i);
+                self.index.insert(e.address(), self.genome.len());
                 self.genome.push(e);
                 self.expression.push(uses);
             }
@@ -1527,28 +1497,15 @@ impl Epigenome {
         }
         let arrived = e.clone();
         match self.index.get(&addr).copied() {
-            Some(i) => {
-                self.vertex_index.insert(m1_key(&e), i);
-                self.genome[i] = e;
-            }
+            Some(i) => self.genome[i] = e,
             None => {
-                // Same vertex, different tape: merge into the held word.
-                // Comprehension is factorization, not a digest lookup.
-                if let Some(i) = self.same_vertex_in_genome(&e) {
-                    let _ = self.genome[i].merge_fibre(&e);
-                    self.index.insert(addr, i);
-                    self.vertex_index.insert(m1_key(&e), i);
-                } else {
-                    self.atlas.admit(&crate::transducer::stalk::invariant_of(&e), e.address());
-                    self.axis_admit(&e);
-                    self.shapes.push(std::sync::OnceLock::new());
-                    self.atlas_len = self.atlas_len.saturating_add(1);
-                    let i = self.genome.len();
-                    self.index.insert(e.address(), i);
-                    self.vertex_index.insert(m1_key(&e), i);
-                    self.genome.push(e);
-                    self.expression.push(0);
-                }
+                self.atlas.admit(&crate::transducer::stalk::invariant_of(&e), e.address());
+                self.axis_admit(&e);
+                self.shapes.push(std::sync::OnceLock::new());
+                self.atlas_len = self.atlas_len.saturating_add(1);
+                self.index.insert(e.address(), self.genome.len());
+                self.genome.push(e);
+                self.expression.push(0);
             }
         }
         self.resolve_withheld(&arrived);
@@ -3607,6 +3564,52 @@ mod tests {
         assert!(entity.epigenome.working_word(&addr).is_some(), "the glued entry stands");
         assert!(entity.epigenome.working_word(&e2.address()).is_none(), "the idle entry is gone");
         assert_eq!(entity.epigenome.genome_len(), 0, "genome is untouched by shed");
+    }
+
+    /// Equal rotor, different ρ / σ / shift: three genome entries. Two
+    /// spellings of one vertex still merge.
+    #[test]
+    fn rho_sigma_shift_are_three_vertices_two_spellings_merge() {
+        use crate::transducer::element::{affine_of, from_connection, identity_versor};
+        use num_bigint::BigInt;
+        let qn = |n: i64| crate::core::engine::Q::from(BigInt::from(n));
+        let id = affine_of(&identity_versor()).expect("affine");
+        let swap = from_connection(&id, &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0]).expect("swap");
+        let cycle = from_connection(&id, &[(1, 2), (2, 3), (3, 1)], &Vec::new(), [1, 0, 0, 0]).expect("cycle");
+        let shifted = vec![
+            vec![qn(1), qn(0), qn(5)],
+            vec![qn(0), qn(1), qn(0)],
+            vec![qn(0), qn(0), qn(1)],
+        ];
+        let place = from_connection(&shifted, &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0]).expect("shift");
+        let mut epi = Epigenome::new();
+        assert!(epi.learn(&swap.to_bytes()).is_some());
+        assert!(epi.learn(&cycle.to_bytes()).is_some());
+        assert!(epi.learn(&place.to_bytes()).is_some());
+        assert_eq!(epi.genome_len(), 3, "ρ/σ/shift are three vertices");
+        let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap();
+        let long = crate::transducer::alphabet::Word::from_letters(&[
+            (q, false),
+            (q, false),
+            (q, false),
+            (q, false),
+        ]);
+        let mut alt = swap.clone();
+        let letters = alt.letters().expect("connection");
+        let spelling = crate::transducer::alphabet::Spelling {
+            word: long,
+            rho: letters.spelling.rho,
+        };
+        let rem = alt.sub().to_vec();
+        alt.set_description(crate::transducer::element::connection_word(
+            &spelling,
+            &letters.shift,
+            &letters.sigma,
+            &rem,
+        ));
+        assert_eq!(alt.address(), swap.address(), "two spellings, one address");
+        assert!(epi.learn(&alt.to_bytes()).is_some());
+        assert_eq!(epi.genome_len(), 3, "a second tape of the same address does not mint");
     }
 
     /// An expressed word stands at the voice's K and TUniversal, so a shed

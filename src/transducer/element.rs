@@ -889,29 +889,12 @@ impl Element {
         self.sub.is_empty() && other.sub.is_empty() && self.realize() == other.realize()
     }
 
-    /// Same vertex of the Cayley graph: the same transport, independent of
-    /// spelling. Two connections agree when their rotors are projectively
-    /// equal, ρ agrees, and the gauge agrees; placement is the fibre
-    /// coordinate, not identity. `g₁ ∘ g₂⁻¹ = 1` on the group, never
-    /// `address() == address()`.
+    /// Same vertex of the Cayley graph: the M2 address, which is geodesic,
+    /// ρ, shift, gauge, and the A5 chain. Two spellings of one vertex have
+    /// one address; a different dilation, hue map, or placement is another
+    /// vertex.
     pub fn same_vertex(&self, other: &Element) -> bool {
-        if self.is_sentence() && other.is_sentence() {
-            return self.address() == other.address();
-        }
-        match (self.letters(), other.letters()) {
-            (Some(a), Some(b)) => {
-                a.spelling.word == b.spelling.word
-                    && a.spelling.rho == b.spelling.rho
-                    && {
-                        let mut sa = a.sigma.clone();
-                        let mut sb = b.sigma.clone();
-                        sa.sort_unstable();
-                        sb.sort_unstable();
-                        sa == sb
-                    }
-            }
-            _ => self.same_action(other),
-        }
+        self.address() == other.address()
     }
 
     /// COMPOSE — the per-axis group product `self` then `other`. Shared axes
@@ -2606,6 +2589,37 @@ mod tests {
         assert_eq!(ca, cb);
         assert_eq!(canonical_chain(&ca).unwrap(), ca);
         assert_eq!(from_residual(&a).address(), from_residual(&b).address());
+    }
+
+    #[test]
+    fn same_vertex_is_address_rho_sigma_and_shift() {
+        let id = affine_of(&identity_versor()).expect("affine");
+        let swap = from_connection(&id, &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0]).expect("swap");
+        let cycle = from_connection(&id, &[(1, 2), (2, 3), (3, 1)], &Vec::new(), [1, 0, 0, 0]).expect("cycle");
+        let qn = |n: i64| Q::from(BigInt::from(n));
+        let shifted = vec![
+            vec![qn(1), qn(0), qn(5)],
+            vec![qn(0), qn(1), qn(0)],
+            vec![qn(0), qn(0), qn(1)],
+        ];
+        let place = from_connection(&shifted, &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0]).expect("shift");
+        let mut dilated = swap.clone();
+        if let Some(L) = dilated.letters() {
+            let two = Q::from(BigInt::from(2));
+            let spelling = crate::transducer::alphabet::Spelling {
+                word: L.spelling.word,
+                rho: two,
+            };
+            let rem = dilated.sub().to_vec();
+            dilated.word = connection_word(&spelling, &L.shift, &L.sigma, &rem);
+            dilated.address.take();
+        }
+        assert!(!swap.same_vertex(&dilated), "ρ is identity");
+        assert!(!swap.same_vertex(&cycle), "σ is identity");
+        assert!(!swap.same_vertex(&place), "shift is identity");
+        assert_ne!(swap.address(), dilated.address());
+        assert_ne!(swap.address(), cycle.address());
+        assert_ne!(swap.address(), place.address());
     }
 
     #[test]
