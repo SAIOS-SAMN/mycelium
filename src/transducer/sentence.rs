@@ -3385,7 +3385,49 @@ pub fn is_sentence(e: &Element) -> bool {
 
 /// Chart of a sentence Element: leading axis 2, then germ/face/cycle
 /// counts from the tape, then each germ's linear invariants.
+/// The chart of a crystallized form (M4 step 3): the form's cell counts,
+/// then per vertex its A3-reduced plane form (a rebased vertex reads the
+/// word it speaks; a glued vertex contributes the cited chart), sorted so
+/// the order of vertices is not a coordinate.
+fn chart_of_form(f: &Form) -> crate::transducer::stalk::Invariant {
+    let mut axes = vec![
+        2u64,
+        f.vertices.len() as u64,
+        f.faces.len() as u64,
+        f.loops.len() as u64,
+    ];
+    let mut rows: Vec<Vec<u64>> = Vec::new();
+    for v in &f.vertices {
+        match v {
+            Vertex::Word { .. } | Vertex::Rebased { .. } => {
+                let row = v.word_in(f).form().map(|pf| {
+                    let mut row = vec![1u64, pf.parity as u64];
+                    row.extend(pf.rot.iter().map(|&x| x as u64));
+                    row
+                });
+                rows.push(row.unwrap_or_default());
+            }
+            Vertex::Glued { chart, .. } => {
+                let mut row = vec![3u64];
+                row.extend_from_slice(&chart.0);
+                rows.push(row);
+            }
+            Vertex::Frame | Vertex::Unfolded { .. } => {}
+        }
+    }
+    rows.sort();
+    for row in rows {
+        axes.extend(row);
+    }
+    crate::transducer::stalk::Invariant(axes)
+}
+
 pub fn chart_of(e: &Element) -> crate::transducer::stalk::Invariant {
+    if e.description().get(1).copied() == Some(2) {
+        if let Some(f) = from_element_form(e) {
+            return chart_of_form(&f);
+        }
+    }
     let n = from_element(e);
     let (germs, faces, cycles) = n.as_ref().map(|n| {
         let d1 = n.complex.degrees.get(1).map(|l| l.len() as u64).unwrap_or(0);
@@ -3417,6 +3459,13 @@ pub fn from_element(e: &Element) -> Option<Nerve> {
         return None;
     }
     let b = e.description();
+    // A v2 tape is a Form (chapter 19). Readers that still want a nerve see
+    // it through the chapter 30 adapter, and hold (None) when the form
+    // carries a vertex a nerve cannot: Glued, Rebased, Unfolded.
+    if b.get(1).copied() == Some(2) {
+        let mut pos = 2usize;
+        return decode_form_v2(b, &mut pos)?.to_nerve();
+    }
     let mut pos = 1usize;
     let _ = alphabet::Spelling::from_bytes(b, &mut pos)?;
     let _ = alphabet::take_q(b, &mut pos)?;
@@ -3451,26 +3500,6 @@ pub fn speak_along_tree(n: &Nerve, cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u
 /// Blind replay of a sentence: re-derive every germ's block from its tape,
 /// every face g_ij from the two germs, δg on every triangle, and require
 /// stored torsion to close under `toroid::witness_stored`.
-pub fn replay_form(e: &Element) -> Option<&'static str> {
-    let f = from_element_form(e)?;
-    for face in &f.faces {
-        if f.face_of(face.i, face.j) != face.g_ij {
-            return Some("sentence face does not re-derive");
-        }
-    }
-    if !f.coheres() {
-        return Some("sentence loop is not projectively identity");
-    }
-    for v in &f.vertices {
-        if let Vertex::Glued { depth, .. } = v {
-            if *depth > f.depth {
-                return Some("glued depth exceeds the form");
-            }
-        }
-    }
-    None
-}
-
 pub fn replay_nerve(e: &Element) -> Option<&'static str> {
     let mut n = from_element(e)?;
     for g in &n.germs {

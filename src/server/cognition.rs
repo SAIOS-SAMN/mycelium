@@ -1813,6 +1813,17 @@ impl Kernel {
         self.ruled_addrs.contains(addr)
     }
 
+    /// A crystallized form this hypha has ruled, or retired to the cavity,
+    /// read as a `Form` for the court's replay of a citer. Provisional and
+    /// heard words resolve to nothing: a citation stands only on a ruling.
+    pub fn resolve_form(&self, addr: &[u8; 32]) -> Option<crate::transducer::sentence::Form> {
+        if !self.ruled_contains(addr) && !self.cavity_book.contains(addr) {
+            return None;
+        }
+        let e = self.word_at(addr)?;
+        crate::transducer::sentence::from_element_form(e)
+    }
+
     /// List a sentence on the docket if it is not already provisional.
     fn docket_sentence(&mut self, word: &Element, ratifier: [u8; 32]) {
         self.docket_connection(word, ratifier);
@@ -1826,7 +1837,7 @@ impl Kernel {
     pub fn perceive_speech(&mut self, voice: [u8; 32], task: [u8; 32], sentences: &[Element]) -> Vec<u8> {
         let mut codes = Vec::with_capacity(sentences.len());
         for s in sentences {
-            if let Some(reason) = crate::court::verdict::blind_replay(s) {
+            if let Some(reason) = crate::court::verdict::blind_replay_with(s, &|a| self.resolve_form(a)) {
                 let a = s.address();
                 eprintln!("  court refuse speech {:02x}{:02x}…: {reason}", a[0], a[1]);
                 codes.push(crate::anastome::dialogue::SPEECH_REFUSED);
@@ -2456,7 +2467,7 @@ impl Kernel {
             let Some(spoken) = spoken else {
                 continue;
             };
-            if let Some(reason) = crate::verdict::blind_replay(&spoken) {
+            if let Some(reason) = crate::verdict::blind_replay_with(&spoken, &|a| self.resolve_form(a)) {
                 eprintln!("  court slash {:02x}{:02x}… {reason}", addr[0], addr[1]);
                 let _ = self.treasury.revoke_award(&addr, true);
                 self.relocate_cavity(&addr);
@@ -2762,7 +2773,7 @@ impl Kernel {
         if self.heard.contains(&addr) {
             return Glue::Dialect;
         }
-        if let Some(reason) = crate::verdict::blind_replay(&spoken) {
+        if let Some(reason) = crate::verdict::blind_replay_with(&spoken, &|a| self.resolve_form(a)) {
             eprintln!("  court glue slash {:02x}{:02x}… {reason}", addr[0], addr[1]);
             let inv = crate::transducer::stalk::invariant_of(&spoken);
             self.heard_mark(addr, &inv);

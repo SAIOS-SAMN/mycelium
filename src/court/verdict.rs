@@ -18,11 +18,98 @@ use crate::network::nerve::Keyed;
 use crate::transducer::anchor::{derive_carrying_all, Sel};
 use crate::transducer::cech;
 use crate::transducer::element::{self, Element, Versor};
+use crate::transducer::sentence::{self, Form, Vertex};
 use crate::transducer::stalk::{self, Stalks};
 use crate::transducer::toroid::{self, HolonomicLoopWitness};
 
 /// Spoken torsion period does not re-derive against the mesh's class.
 pub const REFUSE_NOT_NATURAL: &'static str = "not natural";
+/// Refusals of a crystallized form's replay (chapter 34.1).
+pub const REFUSE_FORM_TAPE: &str = "form does not parse from its tape";
+pub const REFUSE_GLUED_DEPTH: &str = "glued form depth not below sentence depth";
+pub const REFUSE_GLUED_UNRULED: &str = "glued form not ruled";
+pub const REFUSE_GLUED_FRAME_GAUGED: &str = "glued form frame is not identity";
+pub const REFUSE_FACE: &str = "face does not re-derive from its vertices";
+pub const REFUSE_LOOP: &str = "loop holonomy is not identity";
+pub const REFUSE_NO_DESCENT: &str = "no strict descent — the form closes nothing";
+
+/// Chapter 23.1: replay a crystallized form from its tape and the forms it
+/// cites. `resolve` is the hypha's ruled cover (a caller without one
+/// resolves nothing, and every citation refuses): each cited form must be
+/// ruled, closed, at the depth the tape claims and strictly below the
+/// citer's, with an identity frame (chapter 32); every face re-derives from
+/// its two vertices by M1; every loop of the recomputed spanning forest is
+/// projectively identity. Torsion and descent are checked by the caller
+/// on the element, as for every word.
+pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8; 32]) -> Option<Form>) -> Option<&'static str> {
+    let Some(f) = sentence::from_element_form(spoken) else {
+        return Some(REFUSE_FORM_TAPE);
+    };
+    if f.depth != f.depth_of() {
+        return Some(REFUSE_GLUED_DEPTH);
+    }
+    for v in &f.vertices {
+        let Vertex::Glued { address, depth, .. } = v else {
+            continue;
+        };
+        if *depth >= f.depth {
+            return Some(REFUSE_GLUED_DEPTH);
+        }
+        let Some(cited) = resolve(address) else {
+            return Some(REFUSE_GLUED_UNRULED);
+        };
+        if !cited.is_closed() {
+            return Some(REFUSE_GLUED_UNRULED);
+        }
+        if cited.depth_of() != *depth {
+            return Some(REFUSE_GLUED_DEPTH);
+        }
+        let frame_is_identity = cited
+            .vertices
+            .iter()
+            .find(|v| matches!(v, Vertex::Frame))
+            .is_some_and(|fr| fr.word_in(&cited).is_identity());
+        if !frame_is_identity {
+            return Some(REFUSE_GLUED_FRAME_GAUGED);
+        }
+    }
+    for face in &f.faces {
+        if f.face_of(face.i, face.j) != face.g_ij {
+            return Some(REFUSE_FACE);
+        }
+    }
+    // Loops are derived, never trusted from the tape: re-walk the forest.
+    let mut walked = f.clone();
+    walked.loops = Form::loops_of(&f.faces, f.vertices.len());
+    if !walked.coheres() {
+        return Some(REFUSE_LOOP);
+    }
+    None
+}
+
+/// Every torsion cycle the word speaks is walked from its base assignment.
+/// A period is believed only as a witnessed closed loop; an open walk names
+/// the anholonomity the label was filing over, and a closure at another
+/// period is a winding the word misspoke. Replay was Δ = 0 on the chain;
+/// this is ∮ dX = 0 on the fibre.
+fn witness_torsion(spoken: &Element) -> Option<&'static str> {
+    for (stored, witness) in toroid::witness_stored(spoken) {
+        match witness {
+            HolonomicLoopWitness::Closed { period, .. } if period == stored => {}
+            HolonomicLoopWitness::Closed { .. } => return Some("torsion period does not re-derive — the winding was misspoken"),
+            HolonomicLoopWitness::Open { .. } => return Some("torsion cycle does not close — the period was a filing"),
+        }
+    }
+    None
+}
+
+/// `blind_replay` with no cover behind it: a crystallized form that cites
+/// another refuses as unruled, because nothing here can resolve the
+/// citation. Hyphae replay through `blind_replay_with` and their ruled
+/// cover.
+pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
+    blind_replay_with(spoken, &|_| None)
+}
 
 /// Deterministic re-derivation of a spoken word from its own evidence
 /// (the contradiction docket). Returns None when the word replays clean;
@@ -31,7 +118,7 @@ pub const REFUSE_NOT_NATURAL: &'static str = "not natural";
 /// framed); a CONNECTION re-derives by inversion of its group component,
 /// with its remainder chain re-deriving as any germ's; every torsion cycle
 /// is walked; and the install must strictly descend (0⃗ ≺_DM μ⃗).
-pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
+pub fn blind_replay_with(spoken: &Element, resolve: &dyn Fn(&[u8; 32]) -> Option<Form>) -> Option<&'static str> {
     let chain = spoken.sub();
     // A CONNECTION is a word with two components: the group component (an
     // invertible motion and gauge on the spatial fibre) and the remainder
@@ -56,8 +143,16 @@ pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
         return crate::transducer::rewrite::replay(spoken);
     }
     if spoken.is_sentence() {
+        // The version byte selects the replayer: a v2 tape is a form and
+        // is replayed through the cover; a v1 tape is a nerve.
         if spoken.description().get(1).copied() == Some(2) {
-            return crate::transducer::sentence::replay_form(spoken);
+            if let Some(reason) = replay_form(spoken, resolve) {
+                return Some(reason);
+            }
+            if !crate::economy::descends(&[0; 4], &spoken.magnitude()) {
+                return Some(REFUSE_NO_DESCENT);
+            }
+            return witness_torsion(spoken);
         }
         if let Some(reason) = crate::transducer::sentence::replay_nerve(spoken) {
             return Some(reason);
@@ -164,20 +259,7 @@ pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
     if !crate::economy::descends(&[0; 4], &spoken.magnitude()) {
         return Some("no strict descent — the germ closes nothing");
     }
-    // THE LOOP CHECK on the germinated axis: every torsion cycle the word
-    // speaks is walked from its base assignment. A period is believed only
-    // as a witnessed closed loop; an open walk names the anholonomity the
-    // label was filing over, and a closure at another period is a winding
-    // the word misspoke. Replay was Δ = 0 on the chain; this is ∮ dX = 0 on
-    // the fibre.
-    for (stored, witness) in toroid::witness_stored(spoken) {
-        match witness {
-            HolonomicLoopWitness::Closed { period, .. } if period == stored => {}
-            HolonomicLoopWitness::Closed { .. } => return Some("torsion period does not re-derive — the winding was misspoken"),
-            HolonomicLoopWitness::Open { .. } => return Some("torsion cycle does not close — the period was a filing"),
-        }
-    }
-    None
+    witness_torsion(spoken)
 }
 
 /// The deterministic outcome of ruling one candidate word — every arm
@@ -473,6 +555,77 @@ mod tests {
         let served = Element::from_bytes(&bytes, &mut pos).expect("wire round trip");
         assert_eq!(pos, bytes.len());
         assert!(blind_replay(&served).is_none(), "the served copy replays on the peer");
+    }
+
+    /// A closed depth-0 form: Frame, one quarter-turn word, the star face.
+    fn closed_turn_form() -> Form {
+        use crate::transducer::alphabet::{LetterId, Word};
+        use crate::transducer::sentence::FormFace;
+        let q = LetterId::quarter((0, 1)).expect("quarter");
+        let w = Word::from_letters(&[(q, false)]);
+        let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+        let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+        let mut f = Form::default();
+        f.vertices.push(Vertex::Word {
+            address: [1u8; 32],
+            word: w,
+            rho: one,
+            placement: (zero.clone(), zero),
+            gauge: vec![(1, 2)],
+            class: stalk::Invariant(vec![7]),
+            contact: None,
+        });
+        f.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            g_ij: f.face_of(0, 1),
+        });
+        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        assert!(f.is_closed(), "the star form coheres");
+        f
+    }
+
+    /// Chapter 23.1: a citer replays only when its cited form resolves on
+    /// the cover; without a cover the citation refuses; a tampered face and
+    /// a zero descent refuse by name; a v2 tape is never accepted unparsed.
+    #[test]
+    fn replay_form_refuses_unruled_glue_and_replays_resolved() {
+        use crate::transducer::alphabet::Word;
+        use crate::transducer::sentence::{as_element_form, as_element_form_mag, FormFace};
+        let inner = closed_turn_form();
+        let inner_e = as_element_form_mag(&inner, [1, 0, 0, 0]).expect("inner tape");
+        let inner_addr = inner_e.address();
+        let mut outer = Form::default();
+        let gi = outer
+            .glue(&inner, inner_addr, Word::identity(), [1, 0, 0, 0])
+            .expect("a depth-0 host glues a closed form");
+        outer.faces.push(FormFace {
+            i: 0,
+            j: gi,
+            g_ij: outer.face_of(0, gi),
+        });
+        outer.loops = Form::loops_of(&outer.faces, outer.vertices.len());
+        let outer_e = as_element_form_mag(&outer, [1, 0, 0, 0]).expect("outer tape");
+        assert_eq!(
+            blind_replay(&outer_e),
+            Some(REFUSE_GLUED_UNRULED),
+            "with no cover behind it the citation refuses"
+        );
+        let resolve = |a: &[u8; 32]| (a == &inner_addr).then(|| inner.clone());
+        assert_eq!(blind_replay_with(&outer_e, &resolve), None, "a resolved citation replays");
+        let mut bad = outer.clone();
+        bad.faces[0].g_ij = inner.face_of(0, 1);
+        let bad_e = as_element_form_mag(&bad, [1, 0, 0, 0]).expect("tampered tape");
+        assert_eq!(blind_replay_with(&bad_e, &resolve), Some(REFUSE_FACE));
+        let mut flat = as_element_form(&outer).expect("tape");
+        flat.set_magnitude([0; 4]);
+        assert_eq!(blind_replay_with(&flat, &resolve), Some(REFUSE_NO_DESCENT));
+        let mut cited_deeper = outer.clone();
+        if let Vertex::Glued { depth, .. } = &mut cited_deeper.vertices[gi as usize] {
+            *depth = 1;
+        }
+        let deeper_e = as_element_form_mag(&cited_deeper, [1, 0, 0, 0]).expect("tape");
+        assert_eq!(blind_replay_with(&deeper_e, &resolve), Some(REFUSE_GLUED_DEPTH));
     }
 
     #[test]
