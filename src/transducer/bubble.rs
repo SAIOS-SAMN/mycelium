@@ -44,6 +44,61 @@ fn remainder_addr(remainder: &[RemCell]) -> [u8; 32] {
     element::from_residual(&remainder.to_vec()).address()
 }
 
+/// The idea's key: the form's vertex key, or the remainder address.
+/// Never the zero default.
+fn idea_key(f: &Form) -> [u8; 32] {
+    if f.remainder.is_empty() {
+        sentence::form_vertex_key(f)
+    } else {
+        remainder_addr(&f.remainder)
+    }
+}
+
+fn form_mag(f: &Form) -> [u64; 4] {
+    let mut m = element::measure_lanes(&f.remainder);
+    for v in &f.vertices {
+        if let Vertex::Glued { magnitude, .. } = v {
+            for i in 0..4 {
+                m[i] = m[i].saturating_add(magnitude[i]);
+            }
+        }
+    }
+    m
+}
+
+/// 13.12: two forms are one section when a coboundary on their join coheres.
+fn form_one_section(a: &Form, b: &Form) -> bool {
+    if idea_key(a) == idea_key(b) {
+        return true;
+    }
+    let mut f = a.clone();
+    let off = f.vertices.len() as u16;
+    if off == 0 {
+        return b.coheres();
+    }
+    for v in b.vertices.iter().skip(1) {
+        f.vertices.push(v.clone());
+    }
+    for face in &b.faces {
+        let i = if face.i == 0 { 0 } else { face.i.saturating_add(off.saturating_sub(1)) };
+        let j = if face.j == 0 { 0 } else { face.j.saturating_add(off.saturating_sub(1)) };
+        f.faces.push(sentence::FormFace {
+            i,
+            j,
+            g_ij: face.g_ij.clone(),
+        });
+    }
+    f.remainder = union_rem(&a.remainder, &b.remainder);
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    match f.solve_coboundary() {
+        Some(gamma) => {
+            let _ = f.regauge(&gamma);
+            f.coheres()
+        }
+        None => false,
+    }
+}
+
 fn absorb_keyed<V: Clone>(dst: &mut Keyed<V>, src: &Keyed<V>) {
     for (k, v) in src.fiber(&ROOT) {
         dst.insert(*k, v.clone());
@@ -151,7 +206,10 @@ pub struct Bubble {
 
 impl Bubble {
     pub fn key(&self) -> [u8; 32] {
-        remainder_addr(&self.remainder)
+        match &self.form {
+            Some(f) => idea_key(f),
+            None => remainder_addr(&self.remainder),
+        }
     }
 
     fn rotor(&self) -> Rotor {
@@ -243,15 +301,21 @@ impl Bubble {
         if let Some(k) = last {
             self.cursor = k;
         }
-        if !self.germs.is_empty() && budget.remaining() > 0 {
-            let mut n = sentence::assemble(self.germs.clone(), self.remainder.clone());
-            n.cover = self.cover.clone();
-            n.complex = self.nerve.clone();
-            n.torsion = self.torsion.clone();
-            n.certificates = self.certificates.clone();
-            n.vortex = self.vortex.clone();
-            let _ = sentence::pivot_loop(&mut n, self.key(), &self.horizon, crystal, budget);
-            self.take_pivot(n);
+        if budget.remaining() > 0 {
+            if let Some(mut form) = self.form.clone() {
+                let key = self.key();
+                let _ = form.pivot_loop(key, &self.horizon, crystal, budget);
+                self.take_form(form);
+            } else if !self.germs.is_empty() {
+                let mut n = sentence::assemble(self.germs.clone(), self.remainder.clone());
+                n.cover = self.cover.clone();
+                n.complex = self.nerve.clone();
+                n.torsion = self.torsion.clone();
+                n.certificates = self.certificates.clone();
+                n.vortex = self.vortex.clone();
+                let _ = sentence::pivot_loop(&mut n, self.key(), &self.horizon, crystal, budget);
+                self.take_pivot(n);
+            }
         }
         self.dirty = spent > 0 && budget.remaining() == 0;
         spent
@@ -298,6 +362,27 @@ impl Bubble {
         self.torsion = n.torsion;
         self.certificates = n.certificates;
         self.vortex = n.vortex;
+        let mut assembled = sentence::assemble(self.germs.clone(), self.remainder.clone());
+        assembled.torsion = self.torsion.clone();
+        assembled.certificates = self.certificates.clone();
+        assembled.vortex = self.vortex.clone();
+        self.form = Some(Form::from_nerve(&assembled));
+    }
+
+    fn take_form(&mut self, f: Form) {
+        self.remainder = f.remainder.clone();
+        self.torsion = f.torsion.clone();
+        let mut certs = Keyed::new();
+        for c in &f.certificates {
+            certs.insert(c.key(), c.clone());
+        }
+        self.certificates = certs;
+        self.vortex = f.vortex.clone();
+        if let Some(n) = f.to_nerve() {
+            self.germs = n.germs;
+            self.nerve = n.complex;
+        }
+        self.form = Some(f);
     }
 }
 
@@ -668,25 +753,15 @@ impl Contemplation {
         }
     }
 
-    /// Hold a form as an idea (chapter 30 step 2): the nerve of its Word
-    /// vertices, or the form itself when it cites, conjugates, or unfolds.
+    /// Hold a form as an idea (chapter 30 step 5): the form is the carrier.
     pub fn hold_form(&mut self, f: &Form) {
-        if let Some(n) = f.to_nerve() {
-            let key = if n.remainder.is_empty() {
-                n.germs.first().map(|g| g.address).unwrap_or([0; 32])
-            } else {
-                remainder_addr(&n.remainder)
-            };
-            self.hold_nerve(n);
-            if let Some(b) = self.bubbles.get_mut(&key) {
-                b.form = Some(f.clone());
-            }
+        if f.vertices.len() <= 1 && f.remainder.is_empty() && f.faces.is_empty() {
             return;
         }
-        let key = if f.remainder.is_empty() {
-            sentence::form_vertex_key(f)
-        } else {
-            remainder_addr(&f.remainder)
+        let key = idea_key(f);
+        let (germs, nerve) = match f.to_nerve() {
+            Some(n) => (n.germs, n.complex),
+            None => (Vec::new(), Complex::new()),
         };
         let mut cover = cover_of(&stalk::invariant(&f.remainder));
         let mut glues = Keyed::new();
@@ -702,13 +777,17 @@ impl Contemplation {
                 _ => {}
             }
         }
-        let volume = element::measure_lanes(&f.remainder);
+        let volume = form_mag(f);
         let mut horizon = Keyed::new();
         self.paint_seeded(&mut horizon);
+        let mut certs = Keyed::new();
+        for c in &f.certificates {
+            certs.insert(c.key(), c.clone());
+        }
         let bubble = Bubble {
             remainder: f.remainder.clone(),
-            germs: Vec::new(),
-            nerve: Complex::new(),
+            germs,
+            nerve,
             cover,
             horizon,
             potential: volume,
@@ -719,14 +798,8 @@ impl Contemplation {
             glues,
             glued_by: Keyed::new(),
             torsion: f.torsion.clone(),
-            certificates: {
-                let mut k = Keyed::new();
-                for c in &f.certificates {
-                    k.insert(c.key(), c.clone());
-                }
-                k
-            },
-            vortex: Keyed::new(),
+            certificates: certs,
+            vortex: f.vortex.clone(),
             form: Some(f.clone()),
         };
         if let Some(old) = self.bubbles.get(&key).cloned() {
@@ -737,7 +810,7 @@ impl Contemplation {
         self.dirty.insert(key, ());
         self.link_new(key);
         eprintln!(
-            "  form held {:02x}{:02x}… glued",
+            "  form held {:02x}{:02x}…",
             key[0], key[1]
         );
     }
@@ -781,60 +854,32 @@ impl Contemplation {
         self.link_new(key);
     }
 
-    /// Admit a withheld sentence as a bubble: germs, nerve, remainder, cover
-    /// from every germ chart and the remainder peel.
+    /// Admit a withheld sentence as a bubble: the form of the nerve.
     pub fn hold_nerve(&mut self, n: Nerve) {
-        let remainder = n.remainder.clone();
-        if remainder.is_empty() && n.germs.is_empty() {
+        if n.remainder.is_empty() && n.germs.is_empty() {
             return;
         }
-        let key = if remainder.is_empty() {
-            n.germs.first().map(|g| g.address).unwrap_or([0; 32])
-        } else {
-            remainder_addr(&remainder)
-        };
-        let mut cover = cover_of(&stalk::invariant(&remainder));
-        for g in &n.germs {
-            for (k, _) in cover_of(&stalk::invariant(&g.chain)).fiber(&ROOT) {
-                cover.insert(*k, ());
-            }
-        }
-        for (k, _) in n.cover.fiber(&ROOT) {
-            cover.insert(*k, ());
-        }
-        let volume = element::measure_lanes(&remainder);
-        let mut horizon = Keyed::new();
-        self.paint_seeded(&mut horizon);
-        let bubble = Bubble {
-            remainder,
-            germs: n.germs,
-            nerve: n.complex,
-            cover,
-            horizon,
-            potential: volume,
-            volume,
-            dirty: true,
-            cursor: [0; 32],
-            moved_tu: 0,
-            glues: Keyed::new(),
-            glued_by: Keyed::new(),
-            torsion: n.torsion,
-            certificates: n.certificates,
-            vortex: n.vortex,
-            form: None,
-        };
-        if let Some(old) = self.bubbles.get(&key).cloned() {
-            self.retract_incidence(&key, &old);
-        }
-        self.admit_incidence(key, &bubble);
-        self.bubbles.insert(key, bubble);
-        self.dirty.insert(key, ());
-        self.link_new(key);
+        self.hold_form(&Form::from_nerve(&n));
     }
 
     fn merge(&mut self, verts: &[[u8; 32]]) -> Option<[u8; 32]> {
         if verts.len() < 2 {
             return verts.first().copied();
+        }
+        let forms: Vec<Form> = verts
+            .iter()
+            .filter_map(|v| self.bubbles.get(v).and_then(|b| b.form.clone()))
+            .collect();
+        if forms.len() >= 2 {
+            for w in forms.windows(2) {
+                if !form_one_section(&w[0], &w[1]) {
+                    eprintln!(
+                        "  thought merge refused {:02x}{:02x}… not one section",
+                        verts[0][0], verts[0][1]
+                    );
+                    return verts.first().copied();
+                }
+            }
         }
         let mut remainder = Vec::new();
         let mut germs = Vec::new();
@@ -866,14 +911,17 @@ impl Contemplation {
             self.bubbles.remove(v);
         }
         self.paint_seeded(&mut horizon);
-        if remainder.is_empty() && germs.is_empty() {
+        if remainder.is_empty() && germs.is_empty() && form.is_none() {
             return None;
         }
-        let volume = element::measure_lanes(&remainder);
-        let key = if remainder.is_empty() {
-            germs.first().map(|g| g.address).unwrap_or(verts[0])
-        } else {
-            remainder_addr(&remainder)
+        let volume = match &form {
+            Some(f) => form_mag(f),
+            None => element::measure_lanes(&remainder),
+        };
+        let key = match &form {
+            Some(f) => idea_key(f),
+            None if remainder.is_empty() => germs.first().map(|g| g.address).unwrap_or(verts[0]),
+            None => remainder_addr(&remainder),
         };
         let bubble = Bubble {
             remainder,
@@ -1056,21 +1104,28 @@ impl Contemplation {
             let Some(b) = self.bubbles.get(bk) else {
                 continue;
             };
-            if b.germs.is_empty() {
-                continue;
-            }
-            let mut n = sentence::assemble(b.germs.clone(), b.remainder.clone());
-            n.cover = b.cover.clone();
-            n.complex = b.nerve.clone();
-            n.torsion = b.torsion.clone();
-            n.certificates = b.certificates.clone();
-            n.vortex = b.vortex.clone();
             let horizon = b.horizon.clone();
-            let _ = sentence::pivot_loop(&mut n, *bk, &horizon, crystal, budget);
-            if let Some(b) = self.bubbles.get_mut(bk) {
-                b.take_pivot(n);
-                if let Some(r) = &word_rotor {
-                    b.collapse_vortex(&r.class_key(), &r.key(), "glue");
+            if let Some(mut form) = b.form.clone() {
+                let _ = form.pivot_loop(*bk, &horizon, crystal, budget);
+                if let Some(b) = self.bubbles.get_mut(bk) {
+                    b.take_form(form);
+                    if let Some(r) = &word_rotor {
+                        b.collapse_vortex(&r.class_key(), &r.key(), "glue");
+                    }
+                }
+            } else if !b.germs.is_empty() {
+                let mut n = sentence::assemble(b.germs.clone(), b.remainder.clone());
+                n.cover = b.cover.clone();
+                n.complex = b.nerve.clone();
+                n.torsion = b.torsion.clone();
+                n.certificates = b.certificates.clone();
+                n.vortex = b.vortex.clone();
+                let _ = sentence::pivot_loop(&mut n, *bk, &horizon, crystal, budget);
+                if let Some(b) = self.bubbles.get_mut(bk) {
+                    b.take_pivot(n);
+                    if let Some(r) = &word_rotor {
+                        b.collapse_vortex(&r.class_key(), &r.key(), "glue");
+                    }
                 }
             }
         }
@@ -1173,41 +1228,25 @@ impl Contemplation {
     }
 
     fn form_thought(&self, verts: &[[u8; 32]]) -> Option<Element> {
-        let mut germs = Vec::new();
-        let mut remainder = Vec::new();
-        let mut cover = Keyed::new();
-        let mut torsion = Keyed::new();
-        let mut certificates = Keyed::new();
-        let mut vortex = Keyed::new();
+        let mut forms = Vec::new();
         for v in verts {
-            let Some(b) = self.bubbles.get(v) else {
-                continue;
-            };
+            let b = self.bubbles.get(v)?;
             if !b.remainder.is_empty() {
                 return None;
             }
-            germs.extend(b.germs.clone());
-            remainder = union_rem(&remainder, &b.remainder);
-            absorb_keyed(&mut cover, &b.cover);
-            absorb_keyed(&mut torsion, &b.torsion);
-            absorb_keyed(&mut certificates, &b.certificates);
-            absorb_vortex(&mut vortex, &b.vortex);
+            forms.push(b.form.as_ref()?);
         }
-        if germs.is_empty() {
+        let Some(&f) = forms.first() else {
+            return None;
+        };
+        if !f.is_cauterized() {
             return None;
         }
-        let mut n = sentence::assemble(germs, remainder);
-        n.cover = cover;
-        n.torsion = torsion;
-        n.certificates = certificates;
-        n.vortex = vortex;
-        if !n.is_closed() {
-            let _ = sentence::close(&mut n);
-        }
-        if !n.is_cauterized() {
+        let mag = form_mag(f);
+        if mag.iter().all(|&x| x == 0) {
             return None;
         }
-        sentence::as_element_form_of_nerve(&n)
+        sentence::as_element_form(f, mag)
     }
 
     /// Classes on the contemplation, any degree.
@@ -1766,6 +1805,95 @@ mod tests {
         let mut pos = 0usize;
         let back = Contemplation::from_bytes(&bytes, &mut pos).expect("FRM1");
         assert_eq!(back.bubbles.len(), 1, "the glued form survives the tape");
+
+        let mut open = Form::default();
+        open.vertices.push(Vertex::Word {
+            address: [2u8; 32],
+            word: w.clone(),
+            rho: one,
+            placement: (zero.clone(), zero),
+            gauge: vec![(1, 2)],
+            class: crate::transducer::stalk::Invariant::default(),
+            contact: None,
+        });
+        open.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            g_ij: Word::identity(),
+        });
+        open.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            g_ij: w.clone(),
+        });
+        open.loops = Form::loops_of(&open.faces, open.vertices.len());
+        assert!(
+            open.loops.iter().any(|lp| !lp.holonomy.abelian_identity()),
+            "the held form has an open loop"
+        );
+        let mut c2 = Contemplation::new();
+        c2.hold_form(&open);
+        let k = c2.bubbles.fiber(&ROOT).next().map(|(k, _)| *k).expect("held");
+        assert_eq!(k, super::idea_key(&open), "hold, merge and Bubble::key share idea_key");
+        struct HoldQ(Word);
+        impl crate::transducer::family::Crystal for HoldQ {
+            fn on_class(
+                &self,
+                _c: &crate::transducer::stalk::Invariant,
+            ) -> Vec<(
+                crate::transducer::element::Element,
+                Form,
+                crate::transducer::stalk::Standing,
+            )> {
+                Vec::new()
+            }
+            fn speak_form(
+                &self,
+                _f: &Form,
+                _x: &crate::transducer::family::Grid,
+                _p: &Word,
+            ) -> Option<crate::transducer::family::Speech> {
+                None
+            }
+            fn by_address(&self, _a: &[u8; 32]) -> Option<(crate::transducer::element::Element, Form)> {
+                None
+            }
+            fn on_axis(
+                &self,
+                _c: &crate::transducer::stalk::Invariant,
+                axis: crate::transducer::sentence::Axis,
+            ) -> Vec<Word> {
+                let v = crate::transducer::sentence::ClassVector::of_word(&self.0);
+                if v.occupies(axis) {
+                    vec![self.0.clone()]
+                } else {
+                    Vec::new()
+                }
+            }
+        }
+        let mut budget = crate::physics::Physics::default().stroke_n(16);
+        if let Some(b) = c2.bubbles.get_mut(&k) {
+            let atlas = Stalks::default();
+            let _ = b.expand_with(&atlas, &Keyed::new(), 0, &HoldQ(w.clone()), &mut budget);
+        }
+        let b = c2.bubbles.get(&k).expect("still held");
+        let form = b.form.as_ref().expect("form carrier");
+        let discharged = !form.certificates.is_empty();
+        let filed = !form.torsion.is_empty();
+        assert!(
+            discharged || filed,
+            "the held form discharges or files, certificates {} torsion {}",
+            form.certificates.len(),
+            form.torsion.len()
+        );
+        let mag = super::form_mag(form);
+        if mag.iter().any(|&x| x > 0) && form.is_cauterized() {
+            let e = sentence::as_element_form(form, mag).expect("spoken tape");
+            assert!(
+                crate::transducer::sentence::carries_torsion(&e) || !form.certificates.is_empty(),
+                "the spoken tape carries the certificate or the filed cycle"
+            );
+        }
     }
 
     #[test]
