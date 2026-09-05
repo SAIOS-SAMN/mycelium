@@ -168,11 +168,22 @@ impl Session {
         }
     }
 
-    /// DISCOVER the nerve: ask the dial hypha for the addresses it stands
-    /// among, then take a cover digest from every learned address so the
-    /// first quote already has the trie.
+    /// DISCOVER the nerve: ask every learned hypha for the addresses it
+    /// stands among, then take a cover digest from every learned address
+    /// so the first quote already has the trie.
     pub fn discover(&mut self) {
-        let Ok(body) = self.exchange_at(&self.addr.clone(), dialogue::encode_peers_request(&self.kernel.voice)) else { return };
+        self.ask_peers(&self.addr.clone());
+        let known = self.peers();
+        for a in known {
+            self.ask_peers(&a);
+        }
+        self.refresh_covers();
+    }
+
+    fn ask_peers(&mut self, addr: &str) {
+        let Ok(body) = self.exchange_at(addr, dialogue::encode_peers_request(&self.kernel.voice)) else {
+            return;
+        };
         for a in dialogue::decode_peers_reply(&body).unwrap_or_default() {
             let k = *blake3::hash(a.as_bytes()).as_bytes();
             if !self.peers.contains(&k) {
@@ -180,7 +191,6 @@ impl Session {
                 self.peers.insert(k, a);
             }
         }
-        self.refresh_covers();
     }
 
     /// Digest every learned hypha and absorb its cover. A moved root replaces.
@@ -370,6 +380,36 @@ impl Session {
     /// open-demand market's top clusters, each carrying its chain so this kernel
     /// can actually attempt the reduction.
     pub fn quote(&self, charts: &[crate::transducer::stalk::Invariant]) -> io::Result<YieldQuote> {
+        match self.speak_nerve(dialogue::encode_quote_request_charts(&self.kernel.voice, charts)) {
+            Ok(body) => {
+                let (surface, k, items) = dialogue::decode_quote_reply(&body)
+                    .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
+                Ok(YieldQuote {
+                    surface,
+                    k,
+                    clusters: items
+                        .into_iter()
+                        .map(|(address, mu, chain, open)| Cluster {
+                            address,
+                            mu,
+                            chain,
+                            open,
+                        })
+                        .collect(),
+                })
+            }
+            Err(e) if e.kind() == io::ErrorKind::WouldBlock => Ok(YieldQuote {
+                surface: [0; 4],
+                k: 0,
+                clusters: Vec::new(),
+            }),
+            Err(e) => Err(e),
+        }
+    }
+
+    /// Speak an unkeyed act on the nerve: every learned hypha, starting at
+    /// the stroke. A full reflex pool is impedance, not a failed quote.
+    pub fn speak_nerve(&self, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         let n = self.strokes.get();
         self.strokes.set(n.wrapping_add(1));
         let mut last_err = io::Error::new(io::ErrorKind::NotConnected, "no hypha");
@@ -377,34 +417,22 @@ impl Session {
         let start = (n as usize) % peer_list.len().max(1);
         let npeers = peer_list.len().max(1);
         let any_open = (0..npeers).any(|i| !self.occluded_at(&peer_list[(start + i) % npeers]));
-        for i in 0..npeers {
-            let addr = peer_list[(start + i) % npeers].clone();
-            if any_open && self.occluded_at(&addr) {
-                continue;
-            }
-            match self.exchange_at(
-                &addr,
-                dialogue::encode_quote_request_charts(&self.kernel.voice, charts),
-            ) {
-                Ok(body) => {
-                    let (surface, k, items) = dialogue::decode_quote_reply(&body)
-                        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
-                    return Ok(YieldQuote {
-                        surface,
-                        k,
-                        clusters: items
-                            .into_iter()
-                            .map(|(address, mu, chain, open)| Cluster {
-                                address,
-                                mu,
-                                chain,
-                                open,
-                            })
-                            .collect(),
-                    });
+        let mut pass = 0u8;
+        while pass < 2 {
+            for i in 0..npeers {
+                let addr = peer_list[(start + i) % npeers].clone();
+                if any_open && self.occluded_at(&addr) {
+                    continue;
                 }
-                Err(e) => last_err = e,
+                match self.exchange_at(&addr, act_body.clone()) {
+                    Ok(body) => return Ok(body),
+                    Err(e) => last_err = e,
+                }
             }
+            if last_err.kind() != io::ErrorKind::WouldBlock {
+                break;
+            }
+            pass += 1;
         }
         Err(last_err)
     }
@@ -1548,10 +1576,14 @@ impl Entity {
             let dk = *blake3::hash(dest.as_bytes()).as_bytes();
             let invs = dests.get(&dk).cloned().unwrap_or_default();
             let asked = if invs.is_empty() { charts.clone() } else { invs };
-            match self.session.exchange_at(
-                &dest,
-                dialogue::encode_quote_request_charts(&self.session.kernel().voice(), &asked),
-            ) {
+            let req = dialogue::encode_quote_request_charts(&self.session.kernel().voice(), &asked);
+            match self.session.exchange_at(&dest, req.clone()).or_else(|e| {
+                if e.kind() == io::ErrorKind::WouldBlock {
+                    self.session.speak_nerve(req)
+                } else {
+                    Err(e)
+                }
+            }) {
                 Ok(body) => {
                     let (surface, k, items) = dialogue::decode_quote_reply(&body)
                         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
@@ -1581,7 +1613,15 @@ impl Entity {
                 Err(e) => last_err = e,
             }
         }
-        out.ok_or(last_err)
+        match out {
+            Some(q) => Ok(q),
+            None if last_err.kind() == io::ErrorKind::WouldBlock => Ok(YieldQuote {
+                surface: [0; 4],
+                k: 0,
+                clusters: Vec::new(),
+            }),
+            None => Err(last_err),
+        }
     }
     /// This entity's voice read the judge's clock.
     pub fn at(&mut self, k: u64) {
@@ -1806,7 +1846,7 @@ impl Entity {
         let k = self.session.voice().k();
         let bytes: Vec<Vec<u8>> = sentences.iter().map(|e| e.to_bytes()).collect();
         let body = dialogue::encode_speech(&voice, &[0u8; 32], self.now_tu(), &bytes);
-        let reply = self.session.speak(body)?;
+        let reply = self.session.speak_nerve(body)?;
         let codes = dialogue::decode_speech_reply(&reply).unwrap_or_default();
         for e in sentences {
             self.epigenome.stand_dialect(e.clone(), k);
