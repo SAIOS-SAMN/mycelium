@@ -644,6 +644,18 @@ impl Contemplation {
         }
     }
 
+    /// Hold a form as an idea (chapter 30 step 2): the nerve of its Word
+    /// vertices, or the remainder if the form cites.
+    pub fn hold_form(&mut self, f: &crate::transducer::sentence::Form) {
+        if let Some(n) = f.to_nerve() {
+            self.hold_nerve(n);
+            return;
+        }
+        if !f.remainder.is_empty() {
+            self.hold(f.remainder.clone());
+        }
+    }
+
     /// Admit a remainder as a bubble with its cover a peel of its invariant.
     pub fn hold(&mut self, remainder: Vec<RemCell>) {
         if remainder.is_empty() {

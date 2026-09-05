@@ -968,22 +968,22 @@ impl Epigenome {
     }
 
     pub fn stand_dialect(&mut self, sentence: Element, k: u64) {
-        self.stand_dialect_at(sentence, k, k);
+        let _ = self.stand_dialect_at(sentence, k, k);
     }
 
-    pub fn stand_dialect_at(&mut self, sentence: Element, k: u64, now_tu: u64) {
+    pub fn stand_dialect_at(&mut self, sentence: Element, k: u64, now_tu: u64) -> Option<[u8; 32]> {
         if let Some(i) = self.genome.iter().position(|w| w.same_vertex(&sentence)) {
             if let Some(x) = self.expression.get_mut(i) {
                 *x = x.saturating_add(1);
             }
-            return;
+            return None;
         }
         let addr = sentence.address();
         if let Some(d) = self.dialect.get_mut(&addr) {
             d.last_used_k = k;
             d.last_used_tu = now_tu;
             d.uses = d.uses.saturating_add(1);
-            return;
+            return Some(addr);
         }
         if let Some(existing) = self
             .dialect
@@ -996,7 +996,7 @@ impl Epigenome {
                 d.last_used_tu = now_tu;
                 d.uses = d.uses.saturating_add(1);
             }
-            return;
+            return Some(existing);
         }
         let inv = crate::transducer::stalk::invariant_of(&sentence);
         self.dialect_atlas.admit(&inv, addr);
@@ -1014,6 +1014,7 @@ impl Epigenome {
                 missing: Vec::new(),
             },
         );
+        Some(addr)
     }
 
     /// The words this entity has expressed and not yet had ratified.
@@ -1224,7 +1225,7 @@ impl Epigenome {
         // Understanding is re-deriving its cochain, not matching its bytes.
         if utterance.is_sentence() {
             if let Some(f) = crate::transducer::sentence::from_element_form(utterance) {
-                return self.comprehend_form(&f, utterance);
+                return self.comprehend_form(&f);
             }
             let Some(n) = crate::transducer::sentence::from_element(utterance) else {
                 return Comprehension::Novel { residual_cells: utterance.sub().len() };
@@ -1310,19 +1311,14 @@ impl Epigenome {
     }
 
     /// Chapter 24.2: a form whose Glued citations this mind holds, or
-    /// Withheld for the missing addresses, or a re-gauge on the overlap
-    /// when the class is present under another address.
-    fn comprehend_form(
-        &mut self,
-        f: &crate::transducer::sentence::Form,
-        utterance: &Element,
-    ) -> Comprehension {
+    /// Withheld until the syllabus serves the missing addresses. Re-gauge
+    /// is learn_one, when the cited tape arrives under another address.
+    fn comprehend_form(&mut self, f: &crate::transducer::sentence::Form) -> Comprehension {
         use crate::transducer::sentence::Vertex;
         let mut missing = Vec::new();
-        let mut working = f.clone();
         let mut understood = Vec::new();
-        for (vi, v) in f.vertices.iter().enumerate() {
-            let Vertex::Glued { address, chart, .. } = v else {
+        for v in &f.vertices {
+            let Vertex::Glued { address, .. } = v else {
                 continue;
             };
             if let Some(&i) = self.index.get(address) {
@@ -1336,36 +1332,13 @@ impl Epigenome {
                 understood.push(usize::MAX);
                 continue;
             }
-            let fibre = self.working_atlas().fiber(chart);
-            let alt = fibre.into_iter().find(|(a, _)| a != address);
-            if let Some((ha, _)) = alt {
-                if let Some(held) = self.working_word(&ha).cloned() {
-                    let theta = crate::transducer::cech::rotor_of(&held)
-                        .map(|r| r.spelled_word())
-                        .unwrap_or_else(crate::transducer::alphabet::Word::identity);
-                    if let Some(fi) = f
-                        .faces
-                        .iter()
-                        .position(|fc| fc.i as usize == vi || fc.j as usize == vi)
-                    {
-                        working.regauge_overlap(&theta, fi as u16);
-                    }
-                    if working.coheres() {
-                        understood.push(usize::MAX);
-                        continue;
-                    }
-                    return Comprehension::Dialect(held);
-                }
-            }
             missing.push(*address);
         }
         if !missing.is_empty() {
             return Comprehension::Withheld { missing };
         }
-        if working.coheres() || f.vertices.iter().all(|v| !matches!(v, Vertex::Glued { .. })) {
-            if !understood.is_empty() || f.is_closed() {
-                return Comprehension::Understood(understood);
-            }
+        if !understood.is_empty() || f.is_closed() {
+            return Comprehension::Understood(understood);
         }
         Comprehension::Admitted
     }
@@ -1374,6 +1347,10 @@ impl Epigenome {
     /// what is already held, then bank it in the genome if it is new (by base
     /// address). Inheritance, not local invention: only taught words enter.
     pub fn learn(&mut self, taught: &[u8]) -> Option<Comprehension> {
+        self.learn_at(taught, 1, 1)
+    }
+
+    pub fn learn_at(&mut self, taught: &[u8], k: u64, now_tu: u64) -> Option<Comprehension> {
         // The syllabus may carry several words back to back (every anchored
         // citation of a sentence): each is learned in turn; the first
         // comprehension is returned.
@@ -1381,7 +1358,7 @@ impl Epigenome {
         let mut first: Option<Comprehension> = None;
         while pos < taught.len() {
             let before = pos;
-            let heard = self.learn_one(taught, &mut pos);
+            let heard = self.learn_one(taught, &mut pos, k, now_tu);
             if pos == before {
                 break;
             }
@@ -1401,7 +1378,7 @@ impl Epigenome {
         first
     }
 
-    fn learn_one(&mut self, taught: &[u8], pos: &mut usize) -> Option<Comprehension> {
+    fn learn_one(&mut self, taught: &[u8], pos: &mut usize, k: u64, now_tu: u64) -> Option<Comprehension> {
         let e = Element::from_bytes(taught, pos)?;
         let spelled = !e.is_connection() || e.letters_rederive() == Some(true);
         if !spelled {
@@ -1420,20 +1397,13 @@ impl Epigenome {
         let heard = self.comprehend(&e);
         let addr = e.address();
         if let Comprehension::Withheld { missing } = &heard {
-            let inv = crate::transducer::stalk::invariant_of(&e);
-            self.dialect_atlas.admit(&inv, addr);
-            self.dialect.insert(
-                addr,
-                Dialect {
-                    sentence: e,
-                    last_used_k: 0,
-                    last_used_tu: 0,
-                    uses: 1,
-                    shape: crate::transducer::element::shape_of_chain(&[]),
-                    withheld: true,
-                    missing: missing.clone(),
-                },
-            );
+            let missing = missing.clone();
+            if let Some(da) = self.stand_dialect_at(e, k, now_tu) {
+                if let Some(d) = self.dialect.get_mut(&da) {
+                    d.withheld = true;
+                    d.missing = missing;
+                }
+            }
             return Some(heard);
         }
         // The court promotes: a syllabus word that is the same vertex as a
@@ -1470,6 +1440,7 @@ impl Epigenome {
             self.promoted.push(addr);
             return Some(heard);
         }
+        let arrived = e.clone();
         match self.index.get(&addr).copied() {
             Some(i) => self.genome[i] = e, // the taught form may carry new sections — refresh
             None => {
@@ -1489,7 +1460,56 @@ impl Epigenome {
                 }
             }
         }
+        self.resolve_withheld(&arrived);
         Some(heard)
+    }
+
+    /// A cited tape that just arrived: withheld sentences naming it
+    /// re-comprehend. same_vertex under another address is the held form;
+    /// transition then regauge_overlap is that arm, not a first-found fibre.
+    fn resolve_withheld(&mut self, arrived: &Element) {
+        let addr = arrived.address();
+        let citing: Vec<[u8; 32]> = self
+            .dialect
+            .fiber(&crate::network::nerve::ROOT)
+            .filter(|(_, d)| d.withheld && d.missing.iter().any(|m| m == &addr))
+            .map(|(a, _)| *a)
+            .collect();
+        for sa in citing {
+            let Some(sentence) = self.dialect.get(&sa).map(|d| d.sentence.clone()) else {
+                continue;
+            };
+            if let Some(held_i) = self.same_vertex_in_genome(arrived) {
+                let held = self.genome[held_i].clone();
+                if held.address() != addr {
+                    if let (Some(mut form), Some(g)) = (
+                        crate::transducer::sentence::from_element_form(&sentence),
+                        crate::transducer::cech::transition(&held, arrived),
+                    ) {
+                        if let Some(theta) = crate::transducer::cech::rotor_of(&g).map(|r| r.spelled_word())
+                        {
+                            if let Some(fi) = form.faces.first().map(|_| 0u16) {
+                                form.regauge_overlap(&theta, fi);
+                            }
+                        }
+                    }
+                }
+            }
+            match self.comprehend(&sentence) {
+                Comprehension::Withheld { missing } => {
+                    if let Some(d) = self.dialect.get_mut(&sa) {
+                        d.missing = missing;
+                    }
+                }
+                Comprehension::Understood(_) | Comprehension::Admitted => {
+                    if let Some(d) = self.dialect.get_mut(&sa) {
+                        d.withheld = false;
+                        d.missing.clear();
+                    }
+                }
+                _ => {}
+            }
+        }
     }
 
     /// CRYSTALLIZE the genome for persistence — the permanent language only.
@@ -2368,9 +2388,16 @@ impl Entity {
         self.contemplation.hold(remainder);
     }
 
+    /// Hold a withheld form so the pivot loop sees it next stroke (ch. 30.2).
+    pub fn hold_form(&mut self, f: &crate::transducer::sentence::Form) {
+        self.contemplation.hold_form(f);
+    }
+
     /// Hold a withheld sentence as a bubble: germs, nerve, remainder, cover.
     pub fn hold_sentence(&mut self, word: &Element) {
-        if let Some(n) = crate::transducer::sentence::from_element(word) {
+        if let Some(f) = crate::transducer::sentence::from_element_form(word) {
+            self.hold_form(&f);
+        } else if let Some(n) = crate::transducer::sentence::from_element(word) {
             self.contemplation.hold_nerve(n);
         } else {
             self.hold_thought(word.sub().to_vec());
@@ -2542,7 +2569,7 @@ impl Entity {
             }
             let _ = self.pivot_on(&e);
         }
-        self.epigenome.learn(taught)
+        self.epigenome.learn_at(taught, self.now_tu().max(1), self.now_tu().max(1))
     }
 
     /// SPEAK a family's cohering sentences as one act. Refuses if two

@@ -187,7 +187,7 @@ fn speak_form(
     };
     let mag = mycelium::transducer::family::form_descent(form, train, &entity.epigenome);
     let Some(word) = as_element_form(form, mag) else {
-        entity.hold_thought(form.remainder.clone());
+        entity.hold_form(form);
         eprintln!("[{tag}] form withheld: family {fam} {}", why_open());
         return false;
     };
