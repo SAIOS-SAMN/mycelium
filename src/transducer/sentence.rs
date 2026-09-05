@@ -2763,7 +2763,7 @@ fn trial(
 }
 
 /// Apply a certified pivot: write the word onto the chord face and re-walk.
-fn apply_pivot(n: &mut Nerve, cert: &PivotCertificate) {
+pub fn apply_pivot(n: &mut Nerve, cert: &PivotCertificate) {
     let PivotBy::Word { face, word, side } = &cert.by;
     if let Some(f) = n.faces.get_mut(*face as usize) {
         f.g_ij = pivoted_face(&f.g_ij, word, *side);

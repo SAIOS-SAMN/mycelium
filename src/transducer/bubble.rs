@@ -237,6 +237,38 @@ impl Bubble {
         spent
     }
 
+    /// A glue or a syllabus class whose key equals one held certificate's
+    /// `after` applies that one; the others are not applied (dialect cells).
+    fn collapse_vortex(&mut self, class: &[u8; 32], by: &'static str) -> bool {
+        let mut win = None;
+        for (_, c) in self.vortex.fiber(&ROOT) {
+            if c.after == *class {
+                win = Some(c.clone());
+                break;
+            }
+        }
+        let Some(win) = win else {
+            return false;
+        };
+        let mut n = sentence::assemble(self.germs.clone(), self.remainder.clone());
+        n.cover = self.cover.clone();
+        n.complex = self.nerve.clone();
+        n.torsion = self.torsion.clone();
+        n.certificates = self.certificates.clone();
+        n.vortex = self.vortex.clone();
+        sentence::apply_pivot(&mut n, &win);
+        n.certificates.insert(win.key(), win.clone());
+        n.vortex = Keyed::new();
+        let axis = win.axis;
+        eprintln!(
+            "  vortex {:02x}{:02x}… collapsed by {by} to axis {axis:?}",
+            self.key()[0],
+            self.key()[1]
+        );
+        self.take_pivot(n);
+        true
+    }
+
     /// The nerve after a pivot is this idea. Torsion, certificates and
     /// vortex are the nerve's own keyed carriers.
     fn take_pivot(&mut self, n: Nerve) {
@@ -346,6 +378,7 @@ impl Contemplation {
                             (rec.representative.clone(), rec.order, Standing::Held),
                         );
                     }
+                    b.collapse_vortex(&rec.key, "ruling");
                 }
             }
         }
@@ -931,6 +964,9 @@ impl Contemplation {
             let _ = sentence::pivot_loop(&mut n, *bk, &horizon, crystal, budget);
             if let Some(b) = self.bubbles.get_mut(bk) {
                 b.take_pivot(n);
+                if let Some(r) = &word_rotor {
+                    b.collapse_vortex(&r.class_key(), "glue");
+                }
             }
         }
         // index: by_chart fiber at the word's chart and peels
@@ -1607,5 +1643,73 @@ mod tests {
         let b = run(128);
         eprintln!("work thought N=32 {a:?} N=128 {b:?}");
         assert_eq!(a, b, "4N differs by zero: {a:?} vs {b:?}");
+    }
+
+    /// 25.1: a syllabus class whose key is one held certificate's `after`
+    /// applies that one; the other vortex cell is not applied.
+    #[test]
+    fn vortex_collapses_by_glue_or_ruling() {
+        use crate::transducer::alphabet::{LetterId, Word};
+        use crate::transducer::sentence::{Axis, PivotBy, PivotCertificate, Rank, Side};
+        let mut c = Contemplation::new();
+        c.hold(vec![(0, 0, 1, 2)]);
+        let q = LetterId::quarter((0, 1)).unwrap();
+        let w = Word::from_letters(&[(q, false)]);
+        let r = w.rotor();
+        let after = r.class_key();
+        let hit = PivotCertificate {
+            chord: 0,
+            axis: Axis::Unit(0),
+            before: [1u8; 32],
+            after,
+            rank_before: Rank {
+                torsion: 1,
+                free: 0,
+                axes: 0,
+            },
+            rank_after: Rank::default(),
+            mu: [0; 4],
+            by: PivotBy::Word {
+                face: 0,
+                word: w.clone(),
+                side: Side::Right,
+            },
+        };
+        let other = PivotCertificate {
+            chord: 0,
+            axis: Axis::Hue,
+            before: [2u8; 32],
+            after: [9u8; 32],
+            rank_before: Rank {
+                torsion: 1,
+                free: 0,
+                axes: 0,
+            },
+            rank_after: Rank::default(),
+            mu: [0; 4],
+            by: PivotBy::Word {
+                face: 0,
+                word: w,
+                side: Side::Left,
+            },
+        };
+        let k = c.bubbles.fiber(&ROOT).next().map(|(k, _)| *k).expect("bubble");
+        let hit_key = hit.key();
+        if let Some(b) = c.bubbles.get_mut(&k) {
+            b.vortex.insert(hit_key, hit);
+            b.vortex.insert(other.key(), other);
+        }
+        let rec = ClassRecord {
+            key: after,
+            order: r.word_order(),
+            representative: r,
+        };
+        assert_eq!(c.seed_horizon(&[rec]), 1);
+        let b = c.bubbles.get(&k).expect("bubble");
+        assert_eq!(b.vortex.len(), 0, "the vortex collapsed");
+        assert!(
+            b.certificates.get(&hit_key).is_some(),
+            "the matching certificate was applied"
+        );
     }
 }
