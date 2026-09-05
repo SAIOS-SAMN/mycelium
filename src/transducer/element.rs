@@ -2068,6 +2068,25 @@ impl Element {
         m
     }
 
+    /// The lanes the chain itself carries, before the sections and torsion
+    /// cycles the word gained after it was spoken are counted. This is what
+    /// re-derives from the chain; a word deepened by `attach` or
+    /// `merge_fibre` keeps this fixed while `magnitude` grows on lane 3.
+    pub fn base_magnitude(&self) -> [u64; 4] {
+        self.mag
+    }
+
+    /// The base magnitude on the lanes a chain names: 𝒮 spatial, 𝒢 gauge,
+    /// 𝒽 shell. Lane 𝒯 is temporal extent, measured on the standing
+    /// carrier and never on the chain (`measure_lanes` writes it zero), so
+    /// it is quotiented here by the same law. This is the vector the court
+    /// compares with `from_residual(chain).base_magnitude()`, as one
+    /// equality, never lane by lane.
+    pub fn chain_magnitude(&self) -> [u64; 4] {
+        let [spatial, gauge, _, shell] = self.mag;
+        [spatial, gauge, 0, shell]
+    }
+
     /// THE TRANSPOSITION QUOTIENT — factor out the translation (the ℤ² orbit) so
     /// the element becomes its position-independent SUBSTANCE
     /// (dilation·rotation·gauge·residual). Two transposition-equivalent demands

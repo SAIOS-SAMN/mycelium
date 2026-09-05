@@ -130,7 +130,13 @@ pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
                     if rederived.address() != spoken.address() {
                         return Some("address does not re-derive from the chain");
                     }
-                    if [0, 1, 3].iter().any(|&l| rederived.magnitude()[l] != spoken.magnitude()[l]) {
+                    // One vector equality on the lanes the chain names.
+                    // Sections and torsion a held word gained after it was
+                    // ruled (`attach`, `merge_fibre`) live on the word and
+                    // are counted by `magnitude`, never re-derived from the
+                    // chain; reading them here slashed every deepened word
+                    // a peer served.
+                    if rederived.base_magnitude() != spoken.chain_magnitude() {
                         return Some("magnitude does not re-derive from the chain");
                     }
                 }
@@ -139,7 +145,13 @@ pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
                     if rederived.sub() != spoken_c.as_slice() {
                         return Some("remainder does not re-derive from the chain");
                     }
-                    if [0, 1, 3].iter().any(|&l| spoken.magnitude()[l] < rederived.magnitude()[l]) {
+                    // The connection carries at least its remainder's own
+                    // measure: equal, or the remainder strictly descends
+                    // from it on the lanes the chain names. Dominance is the
+                    // one lane comparison (law 5); no lane is visited by index.
+                    let remainder = rederived.base_magnitude();
+                    let carried = spoken.chain_magnitude();
+                    if !(remainder == carried || crate::economy::descends(&remainder, &carried)) {
                         return Some("magnitude below the remainder's own measure");
                     }
                     if spoken.solution().is_none() {
@@ -441,6 +453,26 @@ mod tests {
         );
         assert_eq!(ruling, Ruling::Slashed("unparseable word"));
         assert_eq!(ruling.code(), dialogue::RULING_SLASHED);
+    }
+
+    /// A ruled word deepened by a section (`attach`/`merge_fibre` on a
+    /// hypha) still replays on every peer: the chain lanes are compared
+    /// against the word's base magnitude, and the section is counted on the
+    /// word, never re-derived from the chain.
+    #[test]
+    fn deepened_word_replays_on_a_peer() {
+        let mut w = clean_word();
+        assert!(blind_replay(&w).is_none());
+        let base = w.base_magnitude();
+        assert!(w.puncture(vec![(1, 3), (1, 3)]), "a fresh section punctures");
+        assert_eq!(w.base_magnitude(), base, "the chain's lanes do not move");
+        assert_eq!(w.magnitude()[3], base[3] + 1, "the section is counted on the word");
+        assert!(blind_replay(&w).is_none(), "the deepened word replays at home");
+        let bytes = w.to_bytes();
+        let mut pos = 0usize;
+        let served = Element::from_bytes(&bytes, &mut pos).expect("wire round trip");
+        assert_eq!(pos, bytes.len());
+        assert!(blind_replay(&served).is_none(), "the served copy replays on the peer");
     }
 
     #[test]
