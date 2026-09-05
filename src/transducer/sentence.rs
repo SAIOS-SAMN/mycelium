@@ -1805,12 +1805,14 @@ pub fn as_element(n: &Nerve) -> Option<Element> {
                     }
                 }
                 Fill::Congruent(g, ell) => {
-                    let asg: Vec<(u8, u8)> = cell
-                        .vertices
-                        .windows(2)
-                        .map(|p| (germ_index(&p[0]) as u8, germ_index(&p[1]) as u8))
-                        .collect();
-                    e.record_torsion(asg, *ell, element::FIBER_SPATIAL);
+                    if *ell > 0 && !matches!(g.word_order(), Order::Infinite) {
+                        let asg: Vec<(u8, u8)> = cell
+                            .vertices
+                            .windows(2)
+                            .map(|p| (germ_index(&p[0]) as u8, germ_index(&p[1]) as u8))
+                            .collect();
+                        e.record_torsion(asg, *ell, element::FIBER_SPATIAL);
+                    }
                     let _ = g;
                 }
                 _ => {}
@@ -1837,7 +1839,9 @@ pub fn as_element(n: &Nerve) -> Option<Element> {
                 s
             })
             .unwrap_or_default();
-        e.record_torsion(sigma, 2, element::FIBER_SPATIAL);
+        if let Order::Finite(ell) = word_of_rotor(class).order() {
+            e.record_torsion(sigma, ell, element::FIBER_SPATIAL);
+        }
     } else if !n.is_closed() {
         for c in &n.cycles {
             if c.holonomy.abelian_identity() {
@@ -2620,6 +2624,53 @@ mod tests {
         let e2 = as_element(&n2).expect("e2");
         assert!(e1.same_vertex(&e2));
         assert_eq!(e1.address(), e2.address(), "vertex key ignores placement versors");
+    }
+
+    #[test]
+    fn infinite_class_is_never_filed() {
+        let mut n = chord_nerve(&[infinite()]);
+        let snaps = twist(
+            &mut n,
+            [0x11; 32],
+            &crate::network::nerve::Keyed::new(),
+            &mut crate::physics::Physics::default().stroke_n(8),
+        );
+        assert!(
+            snaps.iter().any(|s| matches!(s, Snap::Demand { .. })),
+            "infinite is demanded: {snaps:?}"
+        );
+        assert!(
+            !snaps.iter().any(|s| matches!(s, Snap::TorsionFiled { .. })),
+            "infinite is never filed: {snaps:?}"
+        );
+        if let Some(e) = as_element(&n) {
+            assert!(
+                e.torsion().is_empty(),
+                "an infinite class is never a large-ℓ torsion cycle"
+            );
+        }
+    }
+
+    #[test]
+    fn torsion_filed_only_when_witnessed_at_period() {
+        let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
+        let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
+        let mut t = from_residual(&crate::transducer::germinate::germinate(&a, &b).unwrap());
+        t.puncture(vec![(2, 3), (3, 1), (1, 2)]);
+        assert_eq!(t.torse(), 1, "the hue cycle is one torsion generator");
+        let ws = crate::transducer::toroid::witness_stored(&t);
+        assert!(
+            ws.iter().any(|(ell, w)| *ell == 3
+                && matches!(w, crate::transducer::toroid::HolonomicLoopWitness::Closed { period: 3, .. })),
+            "period 3 is witnessed closed: {ws:?}"
+        );
+        t.record_torsion(vec![(1, 9)], 8, crate::transducer::element::FIBER_SPATIAL);
+        let ws = crate::transducer::toroid::witness_stored(&t);
+        assert!(
+            ws.iter().any(|(ell, w)| *ell == 8
+                && matches!(w, crate::transducer::toroid::HolonomicLoopWitness::Open { .. })),
+            "an unclosed walk is not believed: {ws:?}"
+        );
     }
 
     fn order2() -> Word {
