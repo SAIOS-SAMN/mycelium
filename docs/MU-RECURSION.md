@@ -16,7 +16,7 @@ implement and each opening with what it carries from the one before.
 |---|---|---|
 | I Geometry | what a word, a form, a move, a recursion **is** | everyone |
 | II Cohomology | why the moves are sound: cochains, Mayer–Vietoris, Leray, naturality | the auditor; the implementor of the court |
-| III Identity and algorithms | the twelve procedures and seven master algorithms every key, address, chart, class, comprehension, and route passes through | the implementor, before writing any code |
+| III Identity and algorithms | the component procedures and master algorithms every key, address, chart, class, comprehension, pivot, and route passes through | the implementor, before writing any code |
 | IV Implementation on forms | every move bound to a function at an absolute path and line | the implementor |
 | V Migration and exact strings | how the tree changes without stopping the fleet; the literal refusal reasons and log lines | the implementor and the auditor |
 | VI Extensions | the two walls and how they come down without changing what a word is | later |
@@ -57,6 +57,15 @@ These are not restated in each chapter; every chapter assumes them.
 9. **Two clocks.** K orders events inside one kernel; TUniversal orders
    anything cross-node or standing. Lane T of μ⃗ is temporal extent, a
    cost, never a coordinate.
+10. **Direction is a pivot, never a gradient.** A held loop is discharged
+    by a move on one of the axes its class vector occupies (chapters 3.9,
+    12.6, 16.16). The candidate moves are read from the class vector in a
+    fixed order, each is tried exactly, and every one that discharges with
+    rank conserved is kept. Descent on μ⃗ and the rank audit **certify** a
+    pivot after it is made; they never choose among pivots, and no scalar
+    ever orders the candidates. Two candidates that both discharge and
+    neither dominates are held together as a superposition, the vortex,
+    until a perception or a court replay collapses it.
 
 ## Vocabulary, fixed
 
@@ -67,6 +76,11 @@ a sender to a receiver) → perception (receiving) → comprehension
 **germ** is an unclosed form; an **idea** is a candidate closed form bred by
 a perception; a **thought** is the superposition of candidate forms through
 which ideas germinate; **germination** is the movement toward closure. A
+**held loop** is a loop of an idea whose holonomy no gauge removes; its
+**class vector** is the exact record of what would have to change for it to
+close; a **pivot** is a move on one axis of that vector; a **vortex** is a
+held loop together with the candidate pivots that could discharge it, held
+as cells of the thought until one of them does. A
 **dialect** is spoken and stood (memory, in the epigenome); a **language**
 is replayed by two organs and taught (on disk, in the genome). What was
 once called a family is a **bundle**: a base rule with sections per pair and
@@ -257,9 +271,14 @@ and replayed from its tape alone.
   it would need and the faces it would need.
 - A **thought** is the superposition of candidate forms for one idea, held
   as cells of a complex whose vertices are candidate word forms and whose
-  coefficients are the relative words between them.
+  coefficients are the relative words between them, together with, for each
+  loop that will not close, the candidate pivots that could discharge it
+  (3.9). A held loop with its candidate pivots is a **vortex**.
 - **Germination** is the movement of that complex toward a closed form:
-  faces become constant, loops become identity, the remainder empties.
+  faces become constant, loops become identity or are discharged by a
+  pivot, the remainder empties. Nothing in germination chooses a direction
+  by a measure; a pivot is tried because the class vector occupies its axis,
+  and it is kept because it discharged with rank conserved (12.6, 16.16).
 
 Nothing in this document rebuilds a form from cells after perception.
 Perception produces word forms once (chapter 20); every later operation is
@@ -341,6 +360,46 @@ unchanged; the language shrinks toward geodesics. Off the plane a shorter
 tape is found by budgeted descent (chapter 16.2) and is a retirement, not a
 minimality claim.
 
+### 3.9 Pivot (discharge of a held loop)
+
+A loop whose holonomy `h` no re-gauging removes is **held**. Its **class
+vector** (12.6) is the canonical conjugacy representative of `h` read
+coordinate by coordinate: per plane the sheet parity, the unit turns, the
+prime exponents; the hue gauge's cycle type; the placement residue; off the
+plane the rotor's grade invariants. The nonzero coordinates are the axes
+the class **occupies**, and there is no direction that is not one of them.
+
+A **pivot** is one of the moves 3.1–3.8 applied to the held loop, labelled
+by the axis it acts on. Each move acts on a known summand of the class
+vector and on nothing else:
+
+| pivot | axis it can zero | what it is |
+|---|---|---|
+| re-gauge (3.6), rebase (3.2) | none: they conjugate (10.3) | the check that the loop is genuinely held |
+| glue a held closed form (3.3) whose word equals the loop's residue | the whole vector, by making the loop a boundary | citation |
+| a translation word | the placement residue | a face the bundle was missing |
+| a hue word | the gauge cycle type | a recolouring the bundle was missing |
+| open a chart axis (3.7) | the loop itself, by cutting it into a face between children | refinement, last because it adds dimension |
+| retire by geodesic (3.8) | none: same vertex, shorter tape | length only |
+| a Rewrite word (multi-lane) | several coordinates at once, as its lanes name | optimisation across axes |
+
+A pivot **discharges** a coordinate when the class vector after the move is
+zero there and no other coordinate has risen; it discharges the loop when
+the vector is zero everywhere or the loop has ceased to be a loop (15.5).
+The trial of a pivot is one move and one re-walk (12.2), and its result is
+read, never estimated. Invariant: the rank of the form (16.18) is conserved
+by every pivot except discharge into an axis, which moves it, and closure of
+a trivial-class chord, which was never rank.
+
+The candidate pivots of a held loop are read from its class vector in the
+fixed order of 12.6, tried under the stroke `Budget`, and every one that
+discharges with rank conserved is kept as a cell of the thought with its
+**certificate** (16.20). When two candidates discharge and neither
+dominates the other on μ⃗, the mind keeps both; choosing would be a score.
+Descent certifies a pivot after it is made and never selects it. A
+coordinate no listed pivot discharges is filed as torsion if finite (16.17)
+and spoken as a demand if infinite (17.6 step 5).
+
 ## 4. Recursion
 
 Carried from chapter 3: gluing puts a closed form inside another as one
@@ -419,14 +478,20 @@ epigenome cannot think until a hypha hands its own words back to it.
 
 Ideas are candidate forms, vertices of the contemplation complex; the
 complex's coefficients are relative words; a fill is a re-gauging that
-makes a loop identity; a class is a loop no gauge closes. Germination by
-gluing: an idea whose remainder is closed by a held crystallized form at a
-constant placement across the bundle's pairs glues it and keeps only the
-remainder. Germination by conjugation and unfolding likewise. A cited idea
-does not shed while an idea gluing it lives. Bundles across families are
-depth-1 forms whose vertices are the families' crystallized forms. Two
-thoughts merge only when Mayer–Vietoris says they are one section (chapter
-13.12). Bound version: chapter 25.
+makes a loop identity; a class is a loop no gauge closes, and a class with
+its candidate pivots is a vortex (3.9). Germination is the pivot loop
+(16.16) run on every held loop of every dirty idea under the stroke
+`Budget`: read the class vector, list the occupied axes in the fixed order,
+try each listed pivot once, keep every discharge with its certificate, file
+what stays finite as torsion, speak what stays infinite as a demand. No
+step of it orders the candidates by a measure. Germination by gluing: an
+idea whose remainder is closed by a held crystallized form at a constant
+placement across the bundle's pairs glues it and keeps only the remainder.
+Germination by conjugation and unfolding likewise. A cited idea does not
+shed while an idea gluing it lives. Bundles across families are depth-1
+forms whose vertices are the families' crystallized forms. Two thoughts
+merge only when Mayer–Vietoris says they are one section (chapter 13.12).
+Bound version: chapter 25.
 
 ## 8. Economics, retirement, persistence, wire, bounds
 
@@ -623,6 +688,7 @@ For a form:
 | re-gauging (3.6) | the action of `δ⁰γ` |
 | refinement (3.7) | when `H²` of a good cover is nonzero, subdivide the base so the class becomes a face between children |
 | retirement (3.8) | choose the shortest known representative in a class |
+| pivot (3.9) | a move on one summand of a held loop's class vector; discharge is the summand becoming zero with no other rising, or the loop becoming a boundary or a face; certified by rank and dominance, never selected by them |
 | coherence (`coheres`) | `δ¹g = 1` |
 | closure (`close`) | find `γ` with `δ⁰γ · g` flat and remainder empty |
 | consilience (court) | two organs' sections have `g_XY = 1` on their overlap |
@@ -633,7 +699,7 @@ For a form:
 | class | where | meaning | action |
 |---|---|---|---|
 | `H⁰` element | inside a thought: the residual's symmetry | the part of a perception the language already accounts for up to the group | it is the congruence; the remainder that matters is what is not in it |
-| `H¹` on one form | a loop with non-identity holonomy after the tree gauge | the bundle's rule has an obstruction no gauge removes | the form is withheld; the class is the coordinate for refinement |
+| `H¹` on one form | a loop with non-identity holonomy after the tree gauge | the bundle's rule has an obstruction no gauge removes | the loop is held with its class vector (12.6); its occupied axes are its candidate pivots (3.9); refinement is the last of them |
 | `H¹` between two sections on a cover | `g_XY ≠ 1` on an overlap | dialect between two hyphae or two minds | recorded; a translation word is the coboundary that would close it |
 | `H²` on a cover | `δ²ω ≠ 1` on a 3-cell | four views cannot be made consistent at once | the chart refines by the class's invariant axis, once the cover is good |
 | torsion part `(s, u)` | finite order | a discrete twist: orientation or quarter turns | files as a torsion cycle `(σ, ℓ)`, `ℓ | 4` or `2` |
@@ -713,6 +779,75 @@ memoized replay (chapter 23) is the observation that a class of a
 sub-complex does not change when the sub-complex is included elsewhere; it
 is computed once per (address, bundle) and reused. Chapter 13.6 sharpens
 this: gluing a closed form changes no class at all.
+
+### 12.6 The state vector of a held loop (the physics)
+
+Carried from 12.2–12.3: a chord that does not close has a holonomy `h` and
+a class. This section fixes the exact quantities a mind and a court measure
+on that loop, because every pivot (3.9) is chosen by reading them and
+certified by re-reading them. Every quantity is a canonical word, an
+integer, or a lane count; none is a number that could be larger or smaller
+than another except by exact dominance.
+
+**The class vector `κ(ℓ)`.** For the canonical conjugacy representative of
+`h` (15.2 on the plane, 15.3 off it):
+
+| coordinate | carrier | values | the pivot that can zero it |
+|---|---|---|---|
+| sheet parity `s_p`, per slot plane `p` | `PlaneForm.parity` per plane | `Z/2` | a sheet word on that plane, or opening an axis |
+| unit turns `u_p`, per plane | `PlaneForm.rot` unit entries, reduced (A3) | `Z/4` | a quarter-turn word on that plane |
+| prime exponents `(m5_p, m13_p)`, per plane | `PlaneForm.rot` prime entries | `Z × Z` | a prime word on that plane; if none is held, only a demand |
+| hue cycle type | the gauge permutation's cycle type (`connection_chart`) | a partition | a hue word |
+| placement residue | the translation part of the loop's versor after the tree gauge | `(ℚ, ℚ)` | a translation word |
+| off-plane invariants | `(a²/w, p²/w, sign a, sign p)` of the rotor (15.3) | exact rationals and signs | glue of a held form with that class, else a demand |
+
+A coordinate is **occupied** when it is nonzero. The **occupied axes** of
+`ℓ` are the set of occupied coordinates; they are the only candidate
+directions a pivot can take, and a coordinate that is zero is never visited.
+`Form::class_vector(&self, loop: u16) -> ClassVector` **new** (sentence.rs)
+reads it in one tree walk; `ClassVector::occupied(&self) -> Vec<Axis>`
+lists the occupied axes in the **fixed order**: slot plane `(0,1)` through
+`(2,3)`, within a plane sheet, unit, prime-5, prime-13; then hue; then
+placement; then off-plane; then, as the last axis always, opening a chart
+axis. The order is fixed so that two minds holding the same loop list the
+same candidates in the same order; it is not a preference.
+
+**Pressure `μ⃗(ℓ)`.** The four lanes of the remainder the loop leaves open:
+S the cells it fails to speak, G the hue transitions it fails to carry, T
+the extent it has been held (TUniversal), H the shells it spans. This is
+the metabolism's view of the loop and is read for two purposes only:
+`descends` certifies that a pivot did not raise any lane (dominance, law
+5), and the T lane decides shedding (chapter 25). It never orders
+candidates.
+
+**Rank `rank(F)`.** A18's `(torsion_rank, free_rank, axes)` of the whole
+form, read before and after every pivot. A pivot is admissible only if it
+leaves rank equal, or moves exactly one unit from `torsion_rank` or
+`free_rank` into `axes` (discharge into a face, 15.5).
+
+**Discharge, exactly.** A pivot on axis `x` discharges `x` when
+`κ_x(ℓ) = 0` after the move and `κ_y` is unchanged for every `y ≠ x` (a
+coordinate may fall to zero but never rise; T2 guarantees conjugating
+moves change nothing). It discharges the loop when `κ(ℓ) = 0` or the loop
+is no longer a loop. **Direction** is therefore a label, the axis `x`,
+never a slope: there is no quantity whose decrease says "this way".
+
+**Alignment across minds and hyphae.** Three facts make every node compute
+the same pivots without an agreement protocol: the class vector is
+canonical (A1, A3, 15.2–15.3), so two minds holding one loop hold one
+vector; the candidate list is a function of that vector in the fixed order,
+so they list the same candidates in the same order; and a pivot's outcome
+is a certificate (16.20) that is content-addressed and replays on the court
+by applying the labelled move to the resolved form and re-reading the
+vector. Two minds that discharge a loop produce the same certificate, and
+the hypha installs it once.
+
+**The vortex.** When two candidates both discharge and neither dominates
+the other on `μ⃗(ℓ)`, the mind keeps both as cells of the thought with their
+certificates. The superposition collapses when a later perception makes one
+of them a face of a spoken form, or a court replay makes one a ruled
+citation and the other a dialect class. Choosing between them by any scalar
+would be a score, which law 1 forbids.
 
 ## 13. Mayer–Vietoris: the cohomology of a union from its pieces
 
@@ -1597,35 +1732,80 @@ the descent step of 13.9.
   lists. Components are the charts in `M` that are their own root; path
   halving makes `find` amortised logarithmic in `|M|`.
 
-### 16.16 A16 — The twist loop (torsion-ordered gauge closure)
+### 16.16 A16 — The pivot loop (multi-axial discharge of held loops)
 
-Input: an idea's form `F` (vertices, faces, loops), `budget`. Output: `F`
-re-gauged so that every chord whose class is trivial is closed, the
-remaining chords classified as torsion or free, and a log of the snaps.
+Input: an idea's form `F` (vertices, faces, loops), the mind's working atlas
+(chapter 24.1) as the source of held words and forms, the `horizon`
+(16.19), `budget`. Output: `F` with every loop either closed, discharged by
+a certified pivot, filed as torsion, or spoken as a demand; the certificates
+(16.20) of every discharge; the cells of every vortex still open.
 
-1. Tree walk (12.2) on `F`'s faces; collect the open chords with their
-   re-gauged holonomies `h_ab`.
-2. For each open chord compute `Word::order(h_ab)` (552): `Finite(ℓ)` or
-   `Infinite`. Sort chords by `(order, chord key)`, finite ascending,
-   infinite last. This is a sort of a `Vec` of the chords the tree walk
-   already produced, never a search.
-3. Take the first finite chord. Solve for the gauge on its loop that closes
-   it (`solve_gauge_between` with the target identity on that loop, 16.14).
-   If it closes, apply the gauge to `F` (`Form::regauge`), log
-   `twist {idea} chord {i} order {ℓ} closed`, and go to 1. By T2 (chapter
-   42) closing it can only conjugate the other chords; none opens.
-4. If the first finite chord does not close, it is torsion: hand it to A17.
-   Continue with the next finite chord.
-5. Infinite chords are free classes: hand each to M6 step 5 as a demand.
-6. Stop when no finite chord is open, or when `budget.spend()` fails; the
-   next stroke resumes from the sorted list, which is recomputed from the
-   current `F`.
+This procedure replaces any ordering of chords by a scalar. It never sorts
+by order, magnitude, or cost; it reads a vector and tries the moves that
+vector names.
 
-Termination: each pass through step 3 strictly reduces the number of open
-finite chords, and step 4 never reopens one, so the loop makes at most
-(number of chords) snaps. Cost per pass is one tree walk. Binding:
+1. **Tree walk** (12.2) on `F`'s faces. Chords whose re-gauged holonomy is
+   identity are closed; apply the solver's gauge (`Form::regauge`). Chords
+   that remain are **held loops**.
+2. **Class vector.** For each held loop `ℓ` read `κ(ℓ) =
+   F.class_vector(ℓ)` (12.6) and its occupied axes in the fixed order
+   (`ClassVector::occupied`). If a coordinate's class key is `Held` in the
+   `horizon`, the mesh already holds that class: mark it `Held` and do not
+   demand it again; it is still a candidate for discharge by a held form.
+3. **Candidate pivots.** For each occupied axis `x` of `ℓ`, in the fixed
+   order, the candidates are exactly the moves of the 3.9 table that can
+   zero `x`, instantiated from what the mind holds:
+   - for a plane coordinate: the held words on the loop's charts whose plane
+     form has that coordinate nonzero (read through `working_atlas` fibers,
+     never by scanning the genome), each as a gauge word on the loop's
+     vertices;
+   - for the hue cycle type: the held hue words with that cycle type;
+   - for the placement residue: the translation word equal to the residue;
+   - for the off-plane invariants: the held closed forms whose class key
+     equals the loop's (`Crystal::on_class` over the working atlas), each as
+     a glue at the placement that makes the loop a boundary;
+   - for the last axis: opening a chart axis on the loop's class (3.7),
+     admitted only if no earlier axis discharged (14.8 says when a class is
+     entitled to it).
+   The candidate list is a `Vec` built from keyed reads; no axis is
+   enumerated, only the occupied ones are visited, and each is visited once
+   per stroke.
+4. **Trial.** For each candidate in list order, under `budget.spend()`: copy
+   `F`'s working state, apply the move, re-walk (12.2), read `κ'(ℓ)` and
+   `rank'`. The candidate **discharges** iff `κ'_x(ℓ) = 0`, `κ'_y = κ_y` for
+   every `y ≠ x` (no coordinate rose), and `rank'` equals `rank` or moves
+   exactly one unit into `axes` (12.6). A candidate that fails is dropped
+   with `pivot {idea} loop {ℓ} axis {x} no discharge`; nothing is scored.
+5. **Keep.** Every discharging candidate is kept as a cell of the thought
+   with its certificate (16.20) and logged `pivot {idea} loop {ℓ} axis {x}
+   discharged {key}→{key'}`. If exactly one candidate discharges the whole
+   loop, apply it to `F`. If several discharge and one dominates the rest on
+   `μ⃗(ℓ)` (12.6, `descends` on all four lanes), apply that one; dominance
+   here certifies, it does not rank, and a candidate that discharges but
+   raises a lane was already dropped in step 4. If several discharge and
+   none dominates, apply none: the loop is a **vortex**, its cells stay in
+   the thought (`vortex {idea} loop {ℓ} {n} candidates held`), and it
+   collapses when a later perception, a glue, or a court replay makes one
+   candidate a face of a spoken form (25.1).
+6. **File or demand.** A held loop with no discharging candidate: if
+   `κ(ℓ)` has zero free part and finite order, hand it to A17 (torsion); if
+   it has a nonzero free part, speak the canonical remainder as a demand
+   (17.6 step 5) unless its key is `Held`.
+7. **Iterate.** A discharge changes `F`; go to 1. Stop when every loop is
+   closed, discharged, filed, or a vortex, or when the `Budget` is spent;
+   the next stroke recomputes from the current `F`.
+
+Termination (T4): each application in step 5 strictly reduces the number
+of occupied coordinates over all held loops and, by T2, raises none; the
+candidate list of a loop is finite (at most the occupied axes times the
+held words on them); so the loop makes at most (occupied coordinates)
+applications and (candidates) trials per application, all under `Budget`.
+Cost per trial is one move and one tree walk. Binding:
 `Contemplation::pivot_on` (bubble.rs 712) and `expand_with` (84) call
-`twist(&mut Form, &mut Budget) -> Vec<Snap>` **new** in sentence.rs.
+`Form::pivot_loop(&mut self, atlas: &WorkingAtlas, horizon: &Horizon,
+budget: &mut Budget) -> Vec<PivotCertificate>` **new** in sentence.rs;
+`Form::class_vector`, `ClassVector::occupied`, `Form::rank` (A18) are its
+reads.
 
 ### 16.17 A17 — Torsion filing and witness
 
@@ -1697,9 +1877,47 @@ fed with the mind's.
    first quote of each chart. The epigenome is rebuilt by thinking; its
    torsion is rebuilt from the mesh.
 
+### 16.20 A20 — Pivot certificate
+
+A pivot is never asserted; it is certified, and the certificate is what
+travels and what the court replays.
+
+```rust
+pub struct PivotCertificate {                          // new, sentence.rs
+    pub loop_: u16,                                    // the held loop's index in the form
+    pub axis: Axis,                                    // the occupied coordinate the pivot acted on (12.6 order)
+    pub before: [u8; 32],                              // class key of κ(ℓ) before (15.4)
+    pub after: [u8; 32],                               // class key after; the zero key when the loop closed
+    pub rank_before: Rank,                             // A18
+    pub rank_after: Rank,
+    pub by: PivotBy,                                   // Gauge(Word) | Translation(Word) | Hue(Word) | Glue{ addr, placement: Word } | OpenAxis(Vec<u64>) | Rewrite(addr)
+}
+```
+
+1. **Key.** `blake3` over `loop_ ‖ axis ‖ before ‖ after ‖ rank_before ‖
+   rank_after ‖ M1 key of the word or the M2 address in `by``. Two minds that
+   discharge one loop by one move produce one key; the certificate is
+   content-addressed like any form.
+2. **Tape.** Certificates are a trailing section of the crystallized form's
+   tape (chapter 19), one per discharge that the form's crystallization
+   depended on. They are not a separate act on the wire.
+3. **Replay.** The court, holding the resolved form, applies `by` to the
+   loop, re-walks, reads `κ'` and `rank'`, and requires `class_key(κ') =
+   after`, `rank' = rank_after`, and the discharge condition of 12.6. Any
+   mismatch is `REFUSE_PIVOT_INEXACT`. A certificate whose `before` does not
+   match the court's own reading of the form before the move is refused the
+   same way: the mind and the court must see one vector.
+4. **Standing.** A certificate carries the standing of the word or form in
+   `by` (chapter 24.1): a discharge through a `Held` idea stands below one
+   through a `Ruled` form, and the hypha weights the claim accordingly
+   without silencing it.
+5. **Economics.** A certificate mints nothing by itself. It is the evidence
+   for the descent the crystallized form performs; the form's mint (chapter
+   26) requires its certificates to replay.
+
 ## 17. Master algorithms
 
-Carried from chapter 16: nineteen procedures. Each master algorithm below is
+Carried from chapter 16: twenty procedures. Each master algorithm below is
 the complete operation the system runs, stated as the sequence of component
 calls with its invariant, binding, and failure behaviour.
 
@@ -1955,15 +2173,17 @@ the mesh rather than on the mind's disk, and two minds never re-derive a
 class the mesh already holds.
 
 **Procedure.**
-1. Per idea per stroke: A16 (twist), A17 (file what does not snap), M6 step
-   5 for free classes.
+1. Per idea per stroke: A16 (the pivot loop: read the class vector, try the
+   moves its occupied axes name, keep every certified discharge, hold a
+   vortex when discharges are incomparable), A17 (file what stays finite),
+   M6 step 5 for what stays free. No step orders candidates by a measure.
 2. Cauterize: when every loop is identity or filed torsion and the remainder
    is empty, crystallize (`as_element` with the torsion section, M2 address,
    dialect `Stood`, spoken once by the chapter 26 dedupe). No re-gauge
    touches a crystallized form; a later gauge is a new form.
 3. Wrap: the next idea on a meeting chart glues the crystallized form as a
    `Glued` vertex (chapter 25); by T6 the wrap adds no class, so only its new
-   faces are twisted.
+   faces are pivoted.
 4. Court side (chapter 23.7): the spoken form's torsion cycles are matched
    by class key against the chart's `Congruent` cells; agreement is
    consilience of torsion, a mismatch on one key is `REFUSE_NOT_NATURAL`, a
@@ -1973,11 +2193,13 @@ class the mesh already holds.
 6. Standing: torsion from the hypha is `Held`; torsion the mind filed is
    `Stood`; torsion discharged by a ratified translation is `Ruled` and
    leaves both ledgers together (15.5).
-7. A18 asserts the rank laws at every step.
+7. A18 asserts the rank laws at every step; every discharge carries its
+   A20 certificate, and the court replays the certificates with the form.
 
 **Invariant.** A class key present in any voice's `horizon` is present on
 the chart's hypha, and conversely after one aperture; a mind's filed
-torsion is on the mesh before the mind's next stroke.
+torsion is on the mesh before the mind's next stroke; every pivot the
+language stands on has a certificate that replays on two organs.
 
 **Economics.** Filing torsion pays nothing (a partial closure); the
 remainder's descent mints; a translation that discharges a filed class is
@@ -1985,8 +2207,9 @@ paid through `mint_or_admit_translation`; a free class that a later word
 closes pays that word's speaker.
 
 **Binding.** `Contemplation::{pivot_on, expand_with, seed_horizon}`,
-`sentence::twist`, `Element::record_torsion`, `toroid::witness_stored`,
-`Kernel::glue_fetched` torsion arm, `serve_ruled`, `dialogue` class record.
+`Form::pivot_loop`, `Form::class_vector`, `PivotCertificate`,
+`Element::record_torsion`, `toroid::witness_stored`, `Kernel::glue_fetched`
+torsion and certificate arms, `serve_ruled`, `dialogue` class record.
 
 ---
 
@@ -2098,7 +2321,13 @@ impl Form {
     pub fn rebase(&mut self, by: u16, of: u16) -> u16;    // 3.2
     pub fn unfold(&mut self, measure: Measure) -> u16;    // 3.4
     pub fn loops_of(faces: &[Face], n: usize) -> Vec<Loop>; // spanning forest chords
+    pub fn class_vector(&self, loop_: u16) -> ClassVector; // 12.6, one tree walk
+    pub fn rank(&self) -> Rank;                            // A18
+    pub fn pivot_loop(&mut self, atlas: &WorkingAtlas, horizon: &Horizon, budget: &mut Budget) -> Vec<PivotCertificate>;  // A16
 }
+pub struct ClassVector { /* per plane (s, u, m5, m13), hue cycle type, placement residue, off-plane invariants; 12.6 */ }
+impl ClassVector { pub fn occupied(&self) -> Vec<Axis>; pub fn class_key(&self) -> [u8; 32]; pub fn is_zero(&self) -> bool; }
+pub enum Axis { Sheet(u8), Unit(u8), Prime5(u8), Prime13(u8), Hue, Placement, OffPlane, Open }   // fixed order = declaration order
 ```
 
 `assemble` (939) reduces to: given vertices and the face index pairs the
@@ -2132,6 +2361,7 @@ n_loops u16, then per loop: n u16 ‖ face indices u16… ‖ holonomy Word byte
 n_hue u16, then per class: class key 32 ‖ len16 + pairs
 remainder len32 + germ bytes
 depth u16
+n_certificates u16, then per certificate (A20): loop u16 ‖ axis u8 ‖ before 32 ‖ after 32 ‖ rank_before 3×u32 ‖ rank_after 3×u32 ‖ by: kind u8 (0 gauge, 1 translation, 2 hue, 3 glue, 4 open axis, 5 rewrite) ‖ Word bytes | address 32 + placement Word bytes | len16 + axes u64…
 ```
 
 `as_element` serialises the `Form` and derives nothing from cells.
@@ -2374,7 +2604,17 @@ files one through `file_congruent` (cech.rs 242) with the spoken
 representative (`court torsion filed {key} ℓ {ℓ}`). Free classes spoken as
 demands are docketed as any word and, when the court's own tree walk finds
 them as `Fill::Class`, enter `cocycle_at` under their key (M5). The court
-never twists: it replays and files.
+never pivots: it replays and files.
+
+**Certificates.** For each `PivotCertificate` on the spoken form's tape
+(A20), the court, holding the resolved form before the move, reads the
+loop's class vector and requires its key to equal `before`; applies `by`;
+re-walks; requires `class_key(κ') = after`, `rank' = rank_after`, and the
+discharge condition of 12.6. Success logs `court pivot certified {addr}
+loop {i} axis {label} {before}→{after}`; any mismatch is
+`REFUSE_PIVOT_INEXACT` and the form is refused whole, because a
+crystallization that rests on a pivot that does not replay rests on
+nothing. A form with no certificates is replayed as before.
 
 `serve_ruled` (3148) and the `ACT_SYLLABUS` reply (mycelium-server.rs 630,
 920) append the chart's class records (A19 step 1). `Kernel::rank`
@@ -2438,15 +2678,28 @@ court has returned to it (chapter 6). `/opt/mycelium-v0.1.0/src/client/sdk.rs`:
 
 ## 25. Germination and thoughts
 
-Carried from chapter 24: comprehension re-gauges. Germination twists, files,
+Carried from chapter 24: comprehension re-gauges. Germination pivots, files,
 cauterizes, and wraps (M9). `/opt/mycelium-v0.1.0/src/transducer/bubble.rs`:
 
-**25.1 The twist loop in the contemplation.** Each stroke, for each dirty
-idea under the stroke `Budget`: `sentence::twist(&mut idea.form, budget)`
-(A16). Snaps are logged in order; A18's rank is asserted equal before and
-after each snap (R2). A chord A16 hands to A17 is filed on the idea's form
+**25.1 The pivot loop in the contemplation.** Each stroke, for each dirty
+idea under the stroke `Budget`:
+`idea.form.pivot_loop(&entity.working_atlas(), &self.horizon, budget)`
+(A16). Every discharge is logged with its certificate; A18's rank is
+asserted before and after each applied pivot (R2). A loop whose discharging
+candidates are incomparable stays a vortex: its candidate cells remain in
+`Bubble.nerve` (the thought complex), each carrying its certificate, and
+the idea is not `dirty`-cleared. A vortex collapses when: a later
+perception adds a face that one candidate predicted (that candidate is
+applied, the others become dialect cells); a held form arrives through the
+syllabus or a glue whose class key equals one candidate's `after` (that
+candidate is applied); or the court, replaying a spoken form that used one
+candidate, rules it (the mind learns the ruling through the working atlas
+and applies the same). A chord A16 hands to A17 is filed on the idea's form
 or left open with `torsion open`; a free chord is spoken as `Novel(g_rem)`
-through M6 step 5 unless its key is `Held` in `horizon`.
+through M6 step 5 unless its key is `Held` in `horizon`. Nothing in this
+loop orders candidates by a scalar; the fixed axis order of 12.6 is the
+order of trial, not a preference, and a candidate is applied only because
+it discharged and dominated, or because it was the only one.
 
 **25.2 Cauterize.** An idea whose form `is_closed()` after filing (every
 loop identity or filed torsion, remainder empty) crystallizes: `as_element`
@@ -2457,7 +2710,7 @@ only while `glued_by` is non-empty).
 
 **25.3 Wrap.** `Contemplation::bundle` and `pivot_on` glue crystallized
 forms into ideas on meeting charts as `Glued` vertices; the glued form's
-loops are not re-twisted (T6). Depth grows by one per wrap.
+loops are not re-pivoted (T6). Depth grows by one per wrap.
 
 **25.4 Horizon.** `Bubble.horizon: Keyed<(Rotor, u8)>` (89) becomes
 `Keyed<(Rotor, Order, Standing)>` keyed by class key; `seed_horizon` (A19)
@@ -2491,6 +2744,10 @@ Carried from chapter 25: forms are spoken. `/opt/mycelium-v0.1.0/src/anastome/di
   infinite) ‖ representative Rotor bytes` (A19 step 1). Speech, quote, and
   cite frames carry one standing byte beside each address (`0 Ruled, 1
   Stood, 2 Held`, chapter 24.1).
+- Pivot certificates (A20) travel inside the crystallized form's tape
+  (chapter 19) and nowhere else; there is no certificate act. A hypha's
+  mint for a form (chapter 26, economics) requires every certificate on its
+  tape to replay (23.7).
 - `/opt/mycelium-v0.1.0/src/bin/mycelium-server.rs`: `judge`'s `ACT_SPEECH`
   handler collects `Kernel::missing_forms(&Element) -> Vec<[u8;32]>`
   **new** into the reply; `admit_peer_digest` (385) records `depth_max` and
@@ -2574,9 +2831,11 @@ economy.rs    settle_recursive, use_credit, Treasury::restore A8 collision rule
 sdk.rs        Epigenome::working_atlas NEW, Standing NEW, dialect Stalks NEW (admitted in stand_dialect, retracted in shed),
               learn_one promotion dialect → genome by same_vertex, Comprehension::Withheld, comprehend (24, M6),
               pull_syllabus depth order, uncrystallize A8, peers keyed by vk with pending_addrs (A10)
-bubble.rs     pivot_on and expand_with call sentence::twist (A16), Bubble glues/glued_by, retire_on_t, Contemplation::bundle,
+bubble.rs     pivot_on and expand_with call Form::pivot_loop (A16), vortex cells kept in Bubble.nerve with certificates (25.1),
+              Bubble glues/glued_by, retire_on_t, Contemplation::bundle,
               horizon: Keyed<(Rotor, Order, Standing)> by class key, Contemplation::seed_horizon NEW (A19)
-sentence.rs   twist(&mut Form, &mut Budget) -> Vec<Snap> NEW (A16), Form::rank NEW (A18); cech.rs Complex::rank NEW
+sentence.rs   Form::class_vector NEW, ClassVector/Axis NEW (12.6), Form::pivot_loop NEW (A16), PivotCertificate NEW (A20) with tape section (19),
+              Form::rank NEW (A18); cech.rs Complex::rank NEW
 element.rs    record_torsion as A17's filing call; toroid.rs witness_stored as A17's witness
 cognition.rs  glue_fetched torsion arm (23.7), serve_ruled class records (A19), Kernel::rank debug assertions
 dialogue.rs   SPEECH_WITHHELD, speech reply missing list, depth_max in digests, syllabus class section, standing byte
@@ -2734,6 +2993,7 @@ pub const REFUSE_MV_INEXACT: &str = "Mayer–Vietoris exactness fails: cochains 
 pub const REFUSE_OVERLAP_CYCLIC: &str = "translation across a non-acyclic overlap";
 pub const REFUSE_NOT_NATURAL: &str = "class key changes under restriction";
 pub const REFUSE_RANK_LOST: &str = "form rank below what its tape re-derives";
+pub const REFUSE_PIVOT_INEXACT: &str = "pivot certificate does not replay";
 ```
 
 These are returned by `replay_form` and `blind_replay`, and by
@@ -2778,6 +3038,8 @@ Prefix `  court ` as the existing court lines; addresses as
   court torsion consilient {key} ℓ {ℓ}
   court torsion filed {key} ℓ {ℓ}
   court form refused {addr}: form rank below what its tape re-derives
+  court pivot certified {addr} loop {i} axis {label} {before}→{after}
+  court form refused {addr}: pivot certificate does not replay
 ```
 
 ### 34.3 Client log lines, `mycelium-client.rs` and `sdk.rs`
@@ -2802,7 +3064,10 @@ Prefix `[{tag}] ` as the existing lines:
 [{tag}] chart refused: ratio exceeds axis
 [{tag}] quote closing {k} charts (ruled {a} stood {b} held {c})
 [{tag}] promoted {addr} dialect → genome uses {n}
-[{tag}] twist {idea} chord {i} order {ℓ} closed
+[{tag}] pivot {idea} loop {i} axis {label} discharged {before}→{after}
+[{tag}] pivot {idea} loop {i} axis {label} no discharge
+[{tag}] vortex {idea} loop {i} {n} candidates held
+[{tag}] vortex {idea} loop {i} collapsed by {perception|glue|ruling} to axis {label}
 [{tag}] torsion filed {idea} (σ,ℓ)
 [{tag}] torsion open {idea} chord {i}
 [{tag}] demand spoken {key} order ∞
@@ -2840,6 +3105,11 @@ Checked by tests, greppable by the auditor:
 - A class key in any voice's `horizon` is on the chart's hypha, and a
   hypha's class on a chart is in the `horizon` of every voice that quoted
   that chart within one aperture (M9 invariant).
+- No pivot is selected by a measure: every `pivot … discharged` line names
+  an axis the loop's class vector occupied, every applied pivot has a
+  certificate that replays on the court, and a `vortex … held` line is never
+  followed by an applied pivot on that loop without a `collapsed by` line
+  naming the perception, glue, or ruling that collapsed it (law 10).
 
 ---
 
@@ -3161,12 +3431,20 @@ cloned; children's cell counts sum to the parent's minus straddling);
 13. `economy::tests::settle_recursive_pays_by_deflation`.
 14. `cognition::tests::shorter_form_retires_to_cavity_and_resolves`.
 
-**Torsion bridge and rank (M9, A16–A19, chapter 42).**
-`sentence::tests::twist_closes_lowest_order_first_and_terminates` (T4);
-`sentence::tests::twist_never_reopens_a_closed_chord` (T2);
+**Torsion bridge, pivots, and rank (M9, A16–A20, chapter 42).**
+`sentence::tests::class_vector_is_canonical_and_occupied_axes_fixed_order` (12.6);
+`sentence::tests::pivot_candidates_are_read_from_occupied_axes_only` (A16 step 3: a zero coordinate is never visited);
+`sentence::tests::pivot_discharges_only_its_axis_and_raises_none` (12.6 discharge condition);
+`sentence::tests::pivot_loop_terminates_in_occupied_coordinates` (T4);
+`sentence::tests::pivot_never_reopens_a_closed_chord` (T2);
+`sentence::tests::incomparable_discharges_are_held_as_vortex` (A16 step 5: two discharging candidates, neither dominating, both kept, none applied);
+`sentence::tests::vortex_collapses_by_perception_glue_or_ruling` (25.1);
+`sentence::tests::descent_certifies_never_selects` (T13: the applied pivot is a function of the class vector and the held words, unchanged when μ⃗ of the remainder is permuted across lanes);
+`sentence::tests::certificate_key_equal_across_two_minds` (A20 step 1);
+`verdict::tests::pivot_certificate_replays_or_refuses` (23.7, `REFUSE_PIVOT_INEXACT`);
 `sentence::tests::torsion_filed_only_when_witnessed_at_period` (T5);
 `sentence::tests::infinite_class_is_never_filed` (T3);
-`sentence::tests::rank_invariant_under_regauge_and_twist` (R1, R2);
+`sentence::tests::rank_invariant_under_regauge_and_pivot` (R1, R2);
 `sentence::tests::rank_invariant_under_gluing_closed_form` (R3);
 `cognition::tests::rank_conserved_under_refinement_carried_plus_discharged` (R4);
 `cech::tests::rank_of_union_is_sum_over_components` (R5);
@@ -3272,9 +3550,21 @@ servers and five minds.
   outcome on the same cells.
 
 **Torsion bridge (M9).**
-- One idea with three open chords of orders 2, 4, ∞: `twist … order 2
-  closed` then `order 4 closed` or `torsion filed … (σ,4)`, then `demand
-  spoken … order ∞`; never an ∞ line before a finite one in one stroke.
+- One idea with one held loop whose class vector occupies a unit turn on
+  the sensor plane and a placement residue, with the mind holding a
+  quarter-turn word and the translation: two `pivot … discharged` lines
+  naming axes `Unit(0)` and `Placement`, in that order, neither dominating
+  → one `vortex … 2 candidates held` line and no applied pivot on that loop
+  in that stroke; on the next perception that adds the translation face,
+  `vortex … collapsed by perception to axis Placement`, then `form spoken …
+  torsion 0` with two certificates on the tape, and the hypha's `court pivot
+  certified` twice for that address.
+- One idea with a held loop whose only occupied axis is an infinite prime
+  exponent the mind has no word for: no `pivot … discharged` line, one
+  `demand spoken … order ∞`; the loop never files as torsion.
+- One idea with a held loop of finite order no held word discharges:
+  `pivot … no discharge` for each occupied axis, then `torsion filed …
+  (σ,ℓ)`, then `form spoken … torsion 1`.
 - The crystallized form logs `form spoken … torsion {n}` with `n` equal to
   the `torsion filed` lines for that idea; the hypha logs `court torsion
   filed {key}` for each on first hearing and `court torsion consilient
@@ -3321,10 +3611,14 @@ persistence. 1.5 Chapter 24.1 the working atlas (`working_atlas`,
 wire), then chapters 24.2 and 26 comprehension and wire, test 12; the
 working-atlas traces of chapter 40 gate this item.
 1.6 Chapter 25 germination and bundles. 1.7 Chapters 26–27 economics and
-retirement, tests 13–14. 1.8 M9 the torsion bridge: A16 `twist`, A17
-filing and witness, A18 `rank` with debug assertions and `REFUSE_RANK_LOST`,
-A19 class records on the syllabus page and `seed_horizon`, chapter 23.7 on
-the court; the torsion-bridge tests and traces of chapters 39–40 gate it.
+retirement, tests 13–14. 1.8 M9 the torsion bridge: `Form::class_vector`
+and `ClassVector::occupied` (12.6), A16 `pivot_loop` with vortex cells in
+the thought, A20 `PivotCertificate` with its tape section and court replay
+(23.7, `REFUSE_PIVOT_INEXACT`), A17 filing and witness, A18 `rank` with
+debug assertions and `REFUSE_RANK_LOST`, A19 class records on the syllabus
+page and `seed_horizon`; the torsion-bridge and pivot tests and traces of
+chapters 39–40 gate it. Any existing greedy that orders chords by torsion
+order is removed in this item; it is retired doctrine (chapter 43).
 Traces: the forms group.
 
 **Stage 2 — cohomology in the court (Parts II and IV).**
@@ -3376,8 +3670,11 @@ equality. Code: `cech::solve_gauge` (806), `sentence::solve_coboundary`
 `δ¹(δ⁰γ·g) = γ · δ¹g · γ⁻¹` (10.3, 10.5) and `order(w^a) = order(w)` (3.2).
 Code: `Rotor::conjugate` (305), `Word::order` (552), `Form::regauge`.
 Proof: `cochain_identities`, `plane_form_semidirect_product_and_inverse`,
-`twist_never_reopens_a_closed_chord`. Consequence: a twist can close a
-chord only if its class is trivial and can never open a closed one.
+`pivot_never_reopens_a_closed_chord`. Consequence: a conjugating pivot
+(re-gauge, rebase) can close a chord only if its class is trivial and can
+never open a closed one; only a pivot that adds a face, a word, or an axis
+can change a class vector, and it changes exactly the coordinate it acts
+on.
 
 **T3 Torsion is exactly the finite-order part and is read, not searched.**
 `(1, r)² = 1`; `s = 0` has infinite order iff a prime exponent is nonzero,
@@ -3386,12 +3683,17 @@ else order dividing 4 (9.1). Code: `Word::order`, `PlaneForm::torsion_part`,
 and infinite to `Fill::Class`. Proof: `a3_form_is_reduced_and_eq_on_reduced`,
 `goodness_cyclic_reports_chord`, `infinite_class_is_never_filed`.
 
-**T4 The twist loop terminates and closes loosest first.** Closing the
-lowest-order open chord strictly reduces the count of open finite chords
-and by T2 opens none, so A16 makes at most (chords) snaps under any
-`Budget`. Code: `sentence::twist`, `Contemplation::pivot_on` (712),
-`expand_with` (84). Proof: `twist_closes_lowest_order_first_and_terminates`;
-trace `twist … order ℓ closed` with non-decreasing `ℓ` per stroke.
+**T4 The pivot loop terminates.** Every applied pivot zeroes one occupied
+coordinate of one held loop and by T2 raises none, so the total number of
+occupied coordinates over all held loops strictly decreases with each
+application; the candidate list of a loop is finite (its occupied axes times
+the held words on them); therefore A16 makes at most (occupied coordinates)
+applications and finitely many trials per application, all under `Budget`.
+Code: `Form::pivot_loop`, `Form::class_vector`, `Contemplation::pivot_on`
+(712), `expand_with` (84). Proof:
+`pivot_loop_terminates_in_occupied_coordinates`; trace: the count of
+`pivot … discharged` lines for an idea never exceeds the occupied
+coordinates of its first class vectors in that stroke.
 
 **T5 A filed period is believed only when the loop closes at that period.**
 A torsion cycle `(σ, ℓ)` is witnessed iff the fibre walk returns at step
@@ -3447,19 +3749,50 @@ genome is the same word because M1 is injective on projective classes
 (17.1). Code: `Element::same_vertex`, `learn_one` (24.1). Proof:
 `m2_two_spellings_one_address`, trace `promoted {addr} dialect → genome`.
 
+**T13 Descent certifies and never selects.** The candidate list of a held
+loop is a function of its class vector and the held words on its charts
+(12.6, A16 step 3), and the applied pivot is a function of which candidates
+discharge with rank conserved and of dominance among them; `μ⃗(ℓ)` enters
+only as the dominance test after discharge. Therefore permuting the lanes
+of the remainder's `μ⃗`, or scaling all of them, changes neither the
+candidate list nor which candidate is applied, and two minds with the same
+vector and the same held words apply the same pivot or hold the same
+vortex. Code: `Form::pivot_loop`, `economy::descends`. Proof:
+`descent_certifies_never_selects`, `certificate_key_equal_across_two_minds`;
+trace: identical `pivot … discharged` sequences for one loop on two voices
+holding the same words.
+
+**T14 A pivot changes exactly its axis.** For each move of the 3.9 table
+and each coordinate of the class vector, the move either leaves the
+coordinate unchanged or zeroes it, and it zeroes only the coordinate it is
+labelled with: a gauge or hue word on plane `p` acts on `(s_p, u_p, m5_p,
+m13_p)` or on the hue cycle type by the group law of 9.1 and leaves every
+other plane's coordinates and the placement fixed; a translation word acts
+on the placement residue alone; a glue of a closed form makes the loop a
+boundary and zeroes the whole vector (T6); opening an axis removes the loop
+(15.5). Code: `Form::class_vector` before and after each move. Proof:
+`pivot_discharges_only_its_axis_and_raises_none`; the debug assertion of
+A18 on every trial.
+
 ### 42.2 Rank theorems (dimensional capacity is never lost)
 
 With `rank(F) = (torsion_rank, free_rank, axes)` from A18, a vector never
 summed:
 
 **R1 Re-gauging preserves rank.** By T2. Code: `Form::regauge`, `Form::rank`.
-Proof: `rank_invariant_under_regauge_and_twist`.
+Proof: `rank_invariant_under_regauge_and_pivot`.
 
-**R2 The twist preserves rank.** A snap closes only a chord whose class is
-trivial, which was never rank; filing a torsion chord moves it from open to
-filed without changing `torsion_rank`. Code: `sentence::twist`. Proof: the
-same test; trace: rank equal before and after every `twist … closed` line
-in debug builds.
+**R2 The pivot loop preserves rank except by discharge into an axis.** A
+conjugating pivot closes only a chord whose class is trivial, which was
+never rank; a word or glue pivot that discharges a coordinate removes a
+class that the form's own faces now express, so `torsion_rank` or
+`free_rank` falls by exactly what the new face carries and the form's total
+information is unchanged (the coordinate became a face); an axis-opening
+pivot moves one unit from `H¹` into `axes` (R4); filing torsion moves a
+chord from open to filed without changing `torsion_rank`. Any other change
+is refused in the trial (A16 step 4). Code: `Form::pivot_loop`, `Form::rank`.
+Proof: the same test; trace: rank equal, or moved by exactly one unit into
+`axes`, before and after every `pivot … discharged` line in debug builds.
 
 **R3 Gluing a closed form preserves rank.** By T6. Code: `Form::glue`.
 Proof: `rank_invariant_under_gluing_closed_form`.
@@ -3512,7 +3845,9 @@ under pressure) if and only if:
    the language's (T7);
 5. two organs replay `F` to the same verdict (T11);
 6. `F` strictly descends beyond what its cited forms close (T9);
-7. no strictly shorter form on the same vertices exists (T10).
+7. no strictly shorter form on the same vertices exists (T10);
+8. every pivot `F`'s crystallization rests on has a certificate that replays
+   on the court (A20, T13, T14), and none of them was selected by a measure.
 
 Under pressure the persisting set is finite at every radius (polynomial
 growth, 1.3) and stable (T9); under refinement it is carried or discharged,
@@ -3532,7 +3867,9 @@ auditor reproduces.
 
 ### 42.4 Termination theorems, collected
 
-- A16 terminates in at most (chords) snaps (T4).
+- A16 terminates in at most (occupied coordinates) applications and
+  finitely many trials each (T4); a vortex is not a loop of A16, it is a
+  held state that only an external event collapses (25.1).
 - A17's witness walk terminates in at most `ℓ` steps.
 - A2's descent terminates by `Budget`; run reduction by strict shortening.
 - Unfolding terminates by a strictly monotone integer measure (3.4); orbit
@@ -3579,8 +3916,15 @@ between nodes: exactness is the reason two nodes agree, and
 byte identity anywhere in cognition (chapter 1.5). No complete rewriting
 system for the mixed-plane group, no Knuth–Bendix run, no claim of
 minimality for an off-plane tape beyond what a completed search depth
-proves. If an implementation step needs anything not permitted here, the
-step is wrong.
+proves. No gradient and no greedy: a held loop is never closed by picking
+the chord with the lowest torsion order, the smallest remainder, or any
+other scalar first; that rule, once written into an earlier version of this
+document as the "twist loop, loosest first", is retired, and the pivot loop
+of 16.16 that replaces it reads the class vector, tries the moves its
+occupied axes name in a fixed order that is not a preference, keeps every
+certified discharge, and holds incomparable discharges as a vortex rather
+than choosing (law 10). If an implementation step needs anything not
+permitted here, the step is wrong.
 
 ## 44. Statements relayed and not adopted
 
