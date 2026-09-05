@@ -866,3 +866,292 @@ different line is a defect in this table, not in the implementation.
   of `ACT_SPEECH` frames across the three servers.
 - No function outside `family::pair_form`, `family::speak_rule`, and
   `family::orbit` reads a cell coordinate of a grid.
+
+---
+
+# Part IV — Cohomology, exact and finite
+
+Everything in Parts I–III is a statement about cochains on a form and their
+coboundaries. This part makes that explicit so the implementor computes
+one thing everywhere: products of normal-form words around cells. There is
+no angle, no limit, no derivative anywhere; every quantity is a letter
+exponent, a rational, or a cell coordinate.
+
+## 28. The coefficient group, written down
+
+### 28.1 On one plane
+
+The letters on the sensor plane generate the group `P` with elements
+written in **plane form** `(s, u, m5, m13)`:
+
+- `s ∈ Z/2`: sheet parity, whether an odd number of sheet letters (the
+  quarter turn on a plane containing the third axis) has been applied;
+- `u ∈ Z/4`: net quarter turns on the sensor plane;
+- `m5, m13 ∈ Z`: net exponents of the (3,4,5) and (5,12,13) letters.
+
+The sheet acts on the rotation part by inversion, so the product is the
+semidirect one:
+
+```
+(s1, r1) · (s2, r2) = (s1 + s2 mod 2,  r1 + (−1)^{s1} r2)      where r = (u, m5, m13), u mod 4
+(s, r)⁻¹            = (s,  −(−1)^{s} r)
+identity            = (0, (0, 0, 0))
+```
+
+`PlaneForm::compose`, `PlaneForm::inverse`, `PlaneForm::is_identity`
+(`/opt/mycelium-v0.1.0/src/transducer/alphabet.rs` lines 720, 735, 714)
+are this arithmetic and nothing else. The order of an element:
+`s = 1` → order 2 if `r = 0`, else 2·order(r) ... but for the coboundary
+computations below only `is_identity` and `order` (`Word::order`, line
+552) are needed; `order` is infinite iff `m5 ≠ 0` or `m13 ≠ 0`, else divides 4.
+
+### 28.2 On the full chart
+
+Across the six planes the group is not abelian and the plane form does not
+suffice; the coefficient is the rotor itself, `Rotor` in Cl(4,0) over ℚ,
+with `geo` as product, `inverse` (line 279), `projective_eq` (268) as
+equality, `conjugate` (305). Every cochain identity below is checked with
+those four functions. The plane form is used only where the spec says
+"abelianized": solving for a gauge on the sensor plane.
+
+## 29. Cells and cochains of a form
+
+A form (`Form`, §9.2) is a finite cell complex:
+
+| dimension | cell | count |
+|---|---|---|
+| 0 | a vertex `v` | `vertices.len()` |
+| 1 | a face `(i, j)` | `faces.len()` |
+| 2 | a loop `ℓ` (a chord of the spanning forest with its tree path) | `loops.len()` = faces − vertices + components |
+| 3 | a triple of loops sharing faces, i.e. a 3-cell of the Čech complex when the form is glued into a mesh cover | as `Complex` degree 3 |
+
+A **k-cochain** is an assignment of a group element to every k-cell:
+
+- `C⁰`: one word per vertex, `γ: v ↦ γ_v`. This is a gauge.
+- `C¹`: one word per face, `g: (i,j) ↦ g_ij`, with `g_ji = g_ij⁻¹`. This is
+  the connection; the form's `faces` are a 1-cochain.
+- `C²`: one word per loop, `ω: ℓ ↦ ω_ℓ`. The form's `loops` holonomies are
+  a 2-cochain.
+- `C³`: one word per 3-cell, defined only on the Čech complex of a cover.
+
+Cochains are stored as normal-form words (`Word::normal_form`, 466) and
+compared by `same_form` (537) or `Rotor::projective_eq`.
+
+## 30. The coboundary, as products
+
+All three coboundaries are written as products of words around a cell, in
+the orientation the cell's faces carry. The court checks them with
+`compose`, `inverse`, `is_identity`.
+
+### 30.1 δ⁰: gauge acting on a connection
+
+For a gauge `γ ∈ C⁰` and connection `g ∈ C¹`:
+
+```
+(δ⁰γ · g)_ij  =  γ_j · g_ij · γ_i⁻¹
+```
+
+This is `Form::regauge` (§9.2). Two connections differing by a `δ⁰γ` are
+the same connection in two gauges. A connection is **pure gauge** when
+`g = δ⁰γ · 1`, i.e. `g_ij = γ_j · γ_i⁻¹` for some γ.
+
+### 30.2 δ¹: curvature of a connection
+
+For a loop `ℓ = (v₀ → v₁ → … → v_k → v₀)` with faces in that orientation:
+
+```
+(δ¹g)_ℓ  =  g_{v_k v_0} · … · g_{v_1 v_2} · g_{v_0 v_1}
+```
+
+This is the holonomy, `Loop.holonomy`. `δ¹g = 1` on every loop is the
+**flatness** condition, `Form::coheres`. Under a gauge, holonomy conjugates:
+`(δ¹(δ⁰γ·g))_ℓ = γ_{v_0} · (δ¹g)_ℓ · γ_{v_0}⁻¹`, so flatness is
+gauge-invariant, which is why re-gauging never breaks coherence (§3.6).
+
+### 30.3 δ²: consistency of curvatures
+
+On a 3-cell with faces `ℓ₀, ℓ₁, ℓ₂, ℓ₃` (four loops bounding it, each
+transported to a common basepoint by the tree path `t_i` to the 3-cell's
+basepoint):
+
+```
+(δ²ω)  =  ∏_{i=0..3} ( t_i · ω_{ℓ_i} · t_i⁻¹ )^{(−1)^i}
+```
+
+`δ²ω = 1` is the **Bianchi identity**; it holds automatically for
+`ω = δ¹g`, which is the statement `δ²δ¹ = 0`. It fails only when the four
+holonomies were assigned independently, which happens across a mesh cover
+where four hyphae hold four sections of one class: that is the Čech
+3-cell of `cech.rs`, and its failure is a twisted class (§32.3).
+
+### 30.4 The identities the implementor tests
+
+```
+δ¹(δ⁰γ · g) = γ · δ¹g · γ⁻¹    (gauge covariance of curvature)
+δ²(δ¹g) = 1                       (Bianchi)
+δ⁰(γ' · γ) = δ⁰γ' · δ⁰γ           (gauges compose)
+```
+
+Each is a finite product of normal-form words and is a unit test
+(`alphabet::tests::cochain_identities`).
+
+## 31. Cocycles, coboundaries, classes
+
+- A k-cochain `c` is a **cocycle** when `δc = 1` on every (k+1)-cell.
+- It is a **coboundary** when `c = δb` for some (k−1)-cochain `b`.
+- Two cocycles are **cohomologous** when they differ by a coboundary.
+- The **class** of a cocycle is its cohomology class; the k-th cohomology
+  `H^k` is cocycles modulo coboundaries.
+
+For a form:
+
+- `H⁰`: gauges `γ` with `δ⁰γ · g = g`, i.e. `γ_j g_ij γ_i⁻¹ = g_ij` on every
+  face. These are the **automorphisms** of the connection, the symmetry the
+  asymmetric reduction leaves behind: the residual inside a thought is an
+  `H⁰` element, which is why a residual is congruence and not noise (§2.3).
+- `H¹`: flat connections modulo gauge: a flat `g` is a coboundary
+  (`g = δ⁰γ`, pure gauge, the sentence is trivially closed) or it carries a
+  class, the **dialect class**: the holonomy pattern no re-gauging removes.
+  On a form under construction, a non-identity `δ¹g` is not yet a class; it
+  is a failure to be a cocycle, and `close` tries to make it one.
+- `H²`: classes of curvature assignments modulo those that come from a
+  connection; nonzero only on a mesh cover, the **twisted class** that
+  forces a chart to refine.
+
+### 31.1 What the spec's moves are, in these terms
+
+| move | cochain statement |
+|---|---|
+| composition (§3.1) | product in the coefficient group |
+| change of basepoint (§3.2) | conjugation of a 1-cochain value by a 0-cochain value at one vertex |
+| gluing (§3.3) | pushforward of a flat connection along an inclusion of complexes through one new face; flatness of the glued piece is preserved because its holonomies are identity |
+| unfolding (§3.4) | iteration of a 1-cocycle along a path that returns to the same vertex class; termination by a monotone integer measure |
+| contact (§3.5) | evaluation of a 1-cochain along a path until the path meets a boundary 0-cell |
+| re-gauging (§3.6) | the action of `δ⁰γ` |
+| refinement (§3.7) | when `H²` of the cover is nonzero, subdivide the cover so the class vanishes on the refinement |
+| retirement (§3.8) | choose the geodesic representative in a cohomology class |
+| coherence (`coheres`) | `δ¹g = 1` |
+| closure (`close`) | find `γ` with `δ⁰γ · g` flat and remainder empty |
+| consilience (court) | two organs' sections have `g_XY = 1` on their overlap |
+| dialect (court) | `g_XY ≠ 1`, its class recorded |
+
+## 32. Computing: the three operations
+
+### 32.1 Apply δ
+
+Given a `Form`, compute `δ¹g` on every loop by `Form::loops_of` and
+`Word::compose` around the chord and its tree path. Cost: one product per
+face in each loop. Given a `Complex` on a mesh cover, compute `δ²ω` on each
+3-cell in its link by `Complex::coboundary_on_link` (`cech.rs` 466), which
+already performs this product with `Rotor::geo`.
+
+### 32.2 Solve δ⁰γ · g = flat
+
+`sentence::solve_coboundary` (1268) → `cech::solve_gauge` (806):
+
+1. Choose a spanning forest of the faces; root each tree at one vertex with
+   `γ_root = 1`.
+2. Walk the tree: for a tree face `(i → j)` with `γ_i` known, set
+   `γ_j = g_ij⁻¹`... precisely, choose `γ_j` so that the re-gauged face is
+   identity: `γ_j = γ_i · g_ij⁻¹`... the sign convention follows §30.1:
+   `γ_j · g_ij · γ_i⁻¹ = 1  ⇒  γ_j = γ_i · g_ij⁻¹`.
+3. Every chord `(a, b)` now has re-gauged value `h_ab = γ_b · g_ab · γ_a⁻¹`,
+   which equals the loop holonomy of the chord's cycle up to conjugation.
+   `h_ab = 1` for every chord ⇔ `g` is a coboundary ⇔ the form is flat.
+4. If some `h_ab ≠ 1`, the form is not flat and `γ` cannot fix it (gauge
+   cannot change a holonomy's class); the chord's `h_ab` is recorded as the
+   loop's class. On the sensor plane the class is read exactly from the
+   plane form of `h_ab`: `(s, u, m5, m13)`; its **torsion part** is `(s, u)`
+   (finite, order dividing 4 or 2) and its **free part** is `(m5, m13)`.
+
+No linear algebra over ℚ is needed for the sensor plane; the tree walk is
+the solver. Off the sensor plane the same walk runs on `Rotor` values.
+
+### 32.3 Record a class
+
+When step 4 finds `h ≠ 1`: the pair (loop, `h` in normal form) is the
+class. On a form it is written to `Form.loops[ℓ].holonomy` and the form is
+held (§6). On a mesh cover it is written to `cocycle_at` (`cognition.rs`)
+keyed by (chart, ordered hypha pair), superseded by TUniversal (§8 of
+`MU-ENGINEERING.md`). A nonzero `δ²ω` on a 3-cell is written as a class of
+degree 2 and triggers `Stalks::refine` (`stalk.rs` 455) with the class key
+as the new axis.
+
+## 33. Where the classes live, and what they mean
+
+| class | where | meaning | what the system does |
+|---|---|---|---|
+| `H⁰` element (automorphism) | inside a thought: the residual's symmetry | the part of a perception the language already accounts for up to the group | it is the congruence class; the remainder that matters is what is not in it |
+| `H¹` class on one form | a loop with non-identity holonomy after the tree gauge | the family's rule has an obstruction no gauge removes | the form is withheld; the class is the coordinate for refinement |
+| `H¹` class between two sections on a cover | `g_XY ≠ 1` on an overlap | dialect between two hyphae or two minds | recorded; a translation word is the coboundary that would close it |
+| `H²` class on a cover | `δ²ω ≠ 1` on a 3-cell | four views cannot be made consistent at once | the chart refines by the class key |
+| torsion part `(s, u)` | finite order | a discrete twist, orientation or quarter turns | files as a torsion cycle `(σ, ℓ)` with `ℓ | 4` or `2` |
+| free part `(m5, m13)` | infinite order | a genuine scale-rotation the language has not spelled | remains a class; a new word on that chart is needed, never a longer orbit |
+
+## 34. Cohomology of the language on the mesh
+
+The ruled covers of the hyphae form an open cover of chart space; sections
+are the crystallized forms each hypha holds on a chart. The Čech complex
+(`cech.rs::Complex`) of that cover has:
+
+- 0-cochains: one form per hypha per chart (its section);
+- 1-cochains: the transition `g_XY = cech::transition` (line 20) between
+  two hyphae's sections;
+- 2-cochains: holonomy around three hyphae, `cech::holonomy` (27);
+- 3-cochains: `δ²` of those, computed in `coboundary_on_link`.
+
+`H⁰` of this complex is the **language**: forms that are one section over
+every hypha covering their chart. `H¹` is the **dialect ledger**. `H²`
+forces **refinement**. Nothing about consensus enters: a class is a fact
+about products of words, computed identically on every node that holds the
+same tapes.
+
+## 35. Recursion in cohomological terms
+
+A glued form (§3.3) is the pushforward of a flat connection into a bigger
+complex through one face; the inclusion is a chain map, so flatness pushes
+forward and `H¹` classes of the glued form are classes of the citer unless
+the citer's own faces trivialise them by a re-gauging that the smaller form
+could not perform. Depth is the length of the chain of inclusions. The
+memoized replay (§14) is the observation that a cohomology class of a
+sub-complex does not change when the sub-complex is included elsewhere; it
+is computed once per (address, family) and reused.
+
+## 36. Implementation binding for Part IV
+
+- `/opt/mycelium-v0.1.0/src/transducer/alphabet.rs`: `PlaneForm` is the
+  abelianized coefficient with the semidirect product of §28.1; add
+  `PlaneForm::torsion_part() -> (u8, u8)` and `free_part() -> (i64, i64)`
+  **new**; add `Word::class_key(&self) -> [u8;32]` **new** = key of the
+  normal form, used wherever a class is recorded.
+- `/opt/mycelium-v0.1.0/src/transducer/sentence.rs`: `Form::delta1(&self)
+  -> Vec<(u16, Word)>` **new** (holonomy per loop), `Form::coheres` =
+  `delta1` all identity; `solve_coboundary` documented as §32.2 with the
+  sign convention of §30.1 fixed in code and in one test
+  (`sentence::tests::regauge_then_delta1_is_conjugate`).
+- `/opt/mycelium-v0.1.0/src/transducer/cech.rs`: `Complex::delta2(&self,
+  cell: &[u8;32]) -> Option<Rotor>` **new**, the product of §30.3 on one
+  3-cell; `coboundary_on_link` uses it; `Complex::class` (619) returns the
+  class with its degree, unchanged.
+- `/opt/mycelium-v0.1.0/src/server/cognition.rs`: `cocycle_at` entries carry
+  the class key from `Word::class_key`; refinement on a degree-2 class calls
+  `Stalks::refine(inv, class_key)`.
+- Tests: `alphabet::tests::plane_form_semidirect_product_and_inverse`,
+  `alphabet::tests::cochain_identities` (§30.4),
+  `sentence::tests::flat_iff_all_chords_identity_after_tree_gauge`,
+  `cech::tests::bianchi_holds_for_curvature_of_a_connection`,
+  `cech::tests::independent_holonomies_can_fail_bianchi_and_refine`.
+- Log lines (extend §26): `[{tag}] form class loop {i} torsion {(s,u)} free {(m5,m13)}`,
+  `  court class degree {k} chart {inv} key {class_key}`,
+  `  court refine chart {inv} by class {class_key}`.
+
+## 37. What is deliberately absent
+
+No angles: a rotation is a rotor with rational components, its "angle" is
+never formed. No norms or roots beyond `rational_sqrt`, which refuses when
+not exact. No limits, series, or derivatives: unfolding terminates by an
+integer measure, orbit by an integer ring count, replay by finite products.
+No probability: superposition is a set of cells, resolved by fill or class.
+No scoring: nothing is compared except by `projective_eq`, `same_form`,
+`is_identity`, and `descends`. If an implementation step needs anything not
+in this list, the step is wrong.
