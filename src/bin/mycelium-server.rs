@@ -924,7 +924,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
                     break;
                 }
             }
-            k.confirm_peer_holds_addrs(&have_all);
+            k.confirm_peer_holds_addrs(&have_all, fvoice);
         }
         if !words.is_empty() {
             eprintln!(
@@ -1524,7 +1524,7 @@ fn main() {
                                     Ok(g) => g,
                                     Err(_) => continue,
                                 };
-                                k.confirm_peer_holds(&remote);
+                                k.confirm_peer_holds(&remote, vk_peer);
                                 if unchanged {
                                     continue;
                                 }

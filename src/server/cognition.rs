@@ -1820,7 +1820,9 @@ impl Kernel {
     pub fn perceive_speech(&mut self, voice: [u8; 32], _task: [u8; 32], sentences: &[Element]) -> Vec<u8> {
         let mut codes = Vec::with_capacity(sentences.len());
         for s in sentences {
-            if let Some(_reason) = crate::court::verdict::blind_replay(s) {
+            if let Some(reason) = crate::court::verdict::blind_replay(s) {
+                let a = s.address();
+                eprintln!("  court refuse speech {:02x}{:02x}…: {reason}", a[0], a[1]);
                 codes.push(crate::anastome::dialogue::SPEECH_REFUSED);
                 continue;
             }
@@ -3028,7 +3030,7 @@ impl Kernel {
 
     /// The home installs a word it ruled once a peer's ruled digest holds
     /// the same stratum (same root and count) — evidence the peer glued it.
-    pub fn confirm_peer_holds(&mut self, remote: &[crate::transducer::sheaf::StratumDigest]) {
+    pub fn confirm_peer_holds(&mut self, remote: &[crate::transducer::sheaf::StratumDigest], peer: [u8; 32]) {
         // index: the peer's digest charts; members from ruled fiber
         for d in remote {
             let members = self.ruled.fiber(&d.inv);
@@ -3042,6 +3044,10 @@ impl Kernel {
             if root == d.root && members.len() as u32 == d.count {
                 for addr in members {
                     if self.provisional.contains(&addr) {
+                        eprintln!(
+                            "  court peer holds {:02x}{:02x}… from {:02x}{:02x}…",
+                            addr[0], addr[1], peer[0], peer[1]
+                        );
                         self.home_install(&addr);
                     }
                 }
@@ -3099,10 +3105,14 @@ impl Kernel {
 
     /// A peer's have-list naming a ruled provisional is the same evidence:
     /// the address is on their cover, so the home installs.
-    pub fn confirm_peer_holds_addrs(&mut self, have: &[[u8; 32]]) {
+    pub fn confirm_peer_holds_addrs(&mut self, have: &[[u8; 32]], peer: [u8; 32]) {
         // index: the peer's have-list
         for h in have {
             if self.provisional.contains(h) && self.ruled_contains(h) {
+                eprintln!(
+                    "  court peer holds {:02x}{:02x}… from {:02x}{:02x}…",
+                    h[0], h[1], peer[0], peer[1]
+                );
                 self.home_install(h);
             }
         }
@@ -7062,7 +7072,7 @@ mod tests {
         let mut cover = crate::network::nerve::Cover::new();
         assert!(matches!(peer.glue_fetched(spoken, [1; 32], [2; 32], &mut cover), Glue::Admitted));
         assert!(peer.basis_len() >= 1);
-        home.confirm_peer_holds(&peer.ruled_digests());
+        home.confirm_peer_holds(&peer.ruled_digests(), [2; 32]);
         assert!(home.basis_len() >= 1, "the home's own word is language once a peer holds the stratum");
         assert!(home.provisional.is_empty(), "the provisional leaves the home");
     }
@@ -7090,7 +7100,7 @@ mod tests {
             Glue::Admitted
         ));
         let bond = home.treasury().bond_total();
-        home.confirm_peer_holds(&peer.ruled_digests());
+        home.confirm_peer_holds(&peer.ruled_digests(), [2; 32]);
         assert!(home.basis_len() >= 1, "the home installs after the peer glues");
         assert!(home.provisional.is_empty(), "the docket clears on install");
         assert!(home.treasury().escrow_of(&addr).is_none(), "the claim is released");
@@ -7205,7 +7215,7 @@ mod tests {
             inv,
             count: 0,
             root: moved,
-        }]);
+        }], [2; 32]);
         assert_eq!(k.heard_len(), 0, "a moved stratum root drops heard");
     }
 }
