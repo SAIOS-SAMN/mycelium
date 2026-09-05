@@ -166,7 +166,7 @@ fn dialect_enters_on_stood_and_sheds() {
     let affine = affine_of(&identity_versor()).unwrap();
     let w = from_connection(&affine, &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0]).unwrap();
     let addr = w.address();
-    epi.stand_dialect(w, 1);
+    epi.stand_dialect_at(w, 1, 1);
     assert_eq!(epi.dialect_len(), 1);
     let aperture = mycelium::physics::aperture_cycle() as u64;
     // The aperture is measured from the strokes noted; until a whole
@@ -205,7 +205,7 @@ fn hypha_snapshot_is_myc2() {
 #[test]
 fn dialect_is_a_word_in_the_epigenome() {
     let mut epi = Epigenome::new();
-    assert!(epi.express(&[(0, 0, 1u8, 2)]));
+    assert!(epi.express(&[(0, 0, 1u8, 2)], 1, 1));
     assert_eq!(epi.dialect_len(), 1, "an expressed word stands as dialect");
     assert_eq!(epi.genome_len(), 0, "the genome stays frozen");
 }
@@ -218,7 +218,7 @@ fn genome_unchanged_by_dialect() {
     assert_eq!(&frozen[..4], b"GEN2");
     let affine = affine_of(&identity_versor()).unwrap();
     let w = from_connection(&affine, &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0]).unwrap();
-    epi.stand_dialect(w, 3);
+    epi.stand_dialect_at(w, 3, 3);
     assert_eq!(epi.genome_len(), n0, "dialect is not the genome");
 }
 

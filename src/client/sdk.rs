@@ -840,7 +840,7 @@ pub struct Epigenome {
     index: crate::network::nerve::Keyed<usize>,
     /// Sentences this mind spoke that stood. Memory only.
     dialect: crate::network::nerve::Keyed<Dialect>,
-    /// Charts of stood sentences, admitted in stand_dialect, retracted in shed.
+    /// Charts of stood sentences, admitted in stand_dialect_at, retracted in shed.
     dialect_atlas: crate::transducer::stalk::Stalks,
     /// Addresses promoted from dialect into the genome this learn.
     promoted: Vec<[u8; 32]>,
@@ -929,7 +929,6 @@ impl Epigenome {
     pub fn touch(&mut self, addr: &[u8; 32], now_tu: u64) {
         if let Some(d) = self.dialect.get_mut(addr) {
             d.last_used_tu = now_tu;
-            d.last_used_k = d.last_used_k.max(1);
             d.uses = d.uses.saturating_add(1);
         }
     }
@@ -1029,10 +1028,6 @@ impl Epigenome {
         self.dialect.remove(da);
     }
 
-    pub fn stand_dialect(&mut self, sentence: Element, k: u64) {
-        let _ = self.stand_dialect_at(sentence, k, k);
-    }
-
     pub fn stand_dialect_at(&mut self, sentence: Element, k: u64, now_tu: u64) -> Option<[u8; 32]> {
         if let Some(i) = self.same_vertex_in_genome(&sentence) {
             if let Some(x) = self.expression.get_mut(i) {
@@ -1073,6 +1068,10 @@ impl Epigenome {
             },
         );
         self.dialect_vertex.insert(mk, addr);
+        eprintln!(
+            "  dialect stood {:02x}{:02x}… k {k} tu {now_tu}",
+            addr[0], addr[1]
+        );
         Some(addr)
     }
 
@@ -1084,7 +1083,8 @@ impl Epigenome {
     /// EXPRESS a residual: germinate it as this entity's own word. Returns
     /// false when the expressed vocabulary already speaks it (the same body
     /// under a transport) — a claim already made, not to be made again.
-    pub fn express(&mut self, residual: &[(i64, i64, u8, u8)]) -> bool {
+    /// `k` is the voice's K (law 9); `now_tu` is TUniversal.
+    pub fn express(&mut self, residual: &[(i64, i64, u8, u8)], k: u64, now_tu: u64) -> bool {
         if let [] = residual {
             return false;
         }
@@ -1104,7 +1104,7 @@ impl Epigenome {
         self.expressed_atlas.admit(&crate::transducer::stalk::invariant_of(&word), word.address());
         self.expressed_index.insert(word.address(), self.expressed.len());
         self.expressed_shapes.push(std::sync::OnceLock::new());
-        self.stand_dialect(word.clone(), 0);
+        self.stand_dialect_at(word.clone(), k, now_tu);
         self.expressed.push(word);
         true
     }
@@ -2506,7 +2506,9 @@ impl Entity {
         chain: &[(i64, i64, u8, u8)],
     ) -> (Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>, bool) {
         let (cites, residual) = self.cite(chain);
-        let familiar = !self.epigenome.express(&residual);
+        let familiar = !self
+            .epigenome
+            .express(&residual, self.session.voice().k(), self.now_tu());
         (cites, residual, familiar)
     }
     pub fn probe(&self, target: &[u8; 32], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4], [u64; 4])> {
@@ -3496,8 +3498,8 @@ mod tests {
         ))
         .expect("e1");
         let mut epi = Epigenome::new();
-        epi.stand_dialect(e1.clone(), 1);
-        epi.stand_dialect(e1.clone(), 2);
+        epi.stand_dialect_at(e1.clone(), 1, 1);
+        epi.stand_dialect_at(e1.clone(), 2, 2);
         assert_eq!(epi.dialect_len(), 1);
         assert_eq!(epi.genome_len(), 0);
         let uses = 2u64;
@@ -3524,7 +3526,7 @@ mod tests {
         use crate::transducer::germinate::germinate;
         let mut epi = Epigenome::new();
         let word = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
-        epi.stand_dialect(word.clone(), 1);
+        epi.stand_dialect_at(word.clone(), 1, 1);
         assert_eq!(epi.genome_len(), 0);
         let chain = word.sub().to_vec();
         let located = {
@@ -3605,5 +3607,28 @@ mod tests {
         assert!(entity.epigenome.working_word(&addr).is_some(), "the glued entry stands");
         assert!(entity.epigenome.working_word(&e2.address()).is_none(), "the idle entry is gone");
         assert_eq!(entity.epigenome.genome_len(), 0, "genome is untouched by shed");
+    }
+
+    /// An expressed word stands at the voice's K and TUniversal, so a shed
+    /// inside the aperture does not drop the mind's own speech.
+    #[test]
+    fn expressed_word_survives_shed_within_the_aperture() {
+        use crate::transducer::element::from_residual;
+        let mut epi = Epigenome::new();
+        let residual = [(0i64, 0i64, 1u8, 2u8)];
+        assert!(epi.express(&residual, 7, 10), "the residual is claimed");
+        let addr = from_residual(&residual.to_vec()).address();
+        let d = epi.dialect.get(&addr).expect("stood");
+        assert_eq!(d.last_used_k, 7, "k is the voice's K");
+        assert_eq!(d.last_used_tu, 10, "tu is TUniversal");
+        let aperture = crate::physics::aperture_cycle() as u64;
+        let now = 10 + aperture - 1;
+        for tu in 10..=now {
+            epi.note_stroke(tu);
+        }
+        let n = epi.shed(now);
+        assert_eq!(n, 0, "expressed within the aperture stands");
+        assert_eq!(epi.dialect_len(), 1);
+        assert!(epi.working_word(&addr).is_some());
     }
 }
