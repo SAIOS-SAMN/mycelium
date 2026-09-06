@@ -1062,6 +1062,53 @@ impl Form {
         rank_of_holonomies(self.loops.iter().map(|lp| &lp.holonomy))
     }
 
+    /// Pressure μ⃗(ℓ) of one held loop, read from that loop's own vertices
+    /// (12.6): S the remainder cells those vertices fail to speak, G the
+    /// hue transitions they fail to carry, T the extent held on a glued
+    /// vertex's clock, H the shells the loop spans.
+    pub fn loop_mu(&self, idx: usize) -> [u64; 4] {
+        let Some(lp) = self.loops.get(idx) else {
+            return [0; 4];
+        };
+        let verts = loop_verts(self, lp).unwrap_or_default();
+        let mut gauges: Vec<(u8, u8)> = Vec::new();
+        let mut t = 0u64;
+        let mut h = 0u64;
+        for &vi in &verts {
+            match self.vertices.get(vi) {
+                Some(Vertex::Word { gauge, .. } | Vertex::Rebased { gauge, .. }) => {
+                    gauges.extend(gauge.iter().copied());
+                }
+                Some(Vertex::Glued {
+                    magnitude, depth, ..
+                }) => {
+                    t = t.saturating_add(magnitude[2]);
+                    h = h.max((*depth as u64).saturating_add(1));
+                }
+                _ => {}
+            }
+        }
+        gauges.sort_unstable();
+        gauges.dedup();
+        let mut s = 0u64;
+        let mut g = 0u64;
+        for &(_, _, b, a) in &self.remainder {
+            match (b != 0, a != 0) {
+                (true, true) if b != a => {
+                    if !gauges.iter().any(|&p| p == (b, a)) {
+                        g += 1;
+                    }
+                }
+                (true, false) | (false, true) => s += 1,
+                _ => {}
+            }
+        }
+        if h == 0 {
+            h = element::measure_lanes(&self.remainder)[3];
+        }
+        [s, g, t, h]
+    }
+
     /// The class vector of loop `idx` (12.6).
     pub fn class_vector(&self, idx: usize) -> Option<ClassVector> {
         let lp = self.loops.get(idx)?;
@@ -1105,7 +1152,6 @@ impl Form {
             }
             let rows: Vec<LoopRow> = self.loops.iter().map(|lp| loop_row(&lp.holonomy)).collect();
             let rank_before = rank_of_rows(&rows);
-            let mu = element::measure_lanes(&self.remainder);
             let mut applied = false;
             for idx in open {
                 if !budget.spend() {
@@ -1120,7 +1166,12 @@ impl Form {
                 }
                 let held = horizon.get(&key).is_some();
                 let order = self.loops[idx].holonomy.order();
+                let mu = self.loop_mu(idx);
                 if self.try_close_chord(idx) {
+                    debug_assert!(
+                        Rank::admits(rank_before, self.rank()),
+                        "A18: a tree-gauge close does not lose rank"
+                    );
                     let ell = match order {
                         Order::Finite(e) => e,
                         Order::Infinite => 0,
@@ -1134,6 +1185,11 @@ impl Form {
                     applied = true;
                     break;
                 }
+                debug_assert_eq!(
+                    self.rank(),
+                    rank_before,
+                    "A18: a failed tree gauge is rank-invariant"
+                );
                 let cands = self.candidates_for(idx, &kappa, crystal);
                 let mut discharging: Vec<(PivotCertificate, [u64; 4])> = Vec::new();
                 for cand in &cands {
@@ -1151,7 +1207,13 @@ impl Form {
                 }
                 match select_discharge(&discharging) {
                     Some(cert) => {
+                        debug_assert_eq!(cert.rank_before, rank_before);
                         self.apply_pivot(&cert);
+                        debug_assert!(
+                            Rank::admits(rank_before, self.rank()),
+                            "A18: an applied pivot does not lose rank"
+                        );
+                        debug_assert_eq!(self.rank(), cert.rank_after);
                         eprintln!(
                             "  pivot {:02x}{:02x}… loop {idx} axis {:?} discharged {:02x}{:02x}…→{:02x}{:02x}…",
                             idea[0], idea[1], cert.axis, cert.before[0], cert.before[1], cert.after[0], cert.after[1]
@@ -3677,6 +3739,35 @@ mod tests {
             select_discharge(&[(a.clone(), a.mu), (b.clone(), b.mu)]).is_none(),
             "lane-incomparable discharges are not selected"
         );
+
+        let q = order4();
+        let mut f = chord_form(&[q.clone()]);
+        f.remainder = vec![(0, 0, 1, 2), (1, 0, 1, 0)];
+        assert_eq!(
+            f.loop_mu(0)[0],
+            1,
+            "S is the remainder cell the loop's vertices fail to speak"
+        );
+        assert_eq!(
+            f.loop_mu(0)[1],
+            0,
+            "G is not the form remainder: the loop vertices already carry 1→2"
+        );
+        let snaps = f.pivot_loop(
+            [0xde; 32],
+            &Keyed::new(),
+            &Hold(vec![q.clone()]),
+            &mut crate::physics::Physics::default().stroke_n(16),
+        );
+        assert!(
+            snaps.iter().any(|s| matches!(s, Snap::Discharged { .. })),
+            "the dominating candidate is applied: {snaps:?}"
+        );
+        assert!(
+            !snaps.iter().any(|s| matches!(s, Snap::Vortex { .. })),
+            "one μ⃗ dominates, so no vortex line: {snaps:?}"
+        );
+        assert!(f.vortex.is_empty(), "the form does not hold a vortex cell");
     }
 
     #[test]

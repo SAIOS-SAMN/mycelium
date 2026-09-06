@@ -36,6 +36,7 @@ pub const REFUSE_REBASE_TRIVIAL: &str = "rebased form equals its base";
 pub const REFUSE_UNFOLD_STILL: &str = "unfolding measure does not move";
 pub const REFUSE_ORBIT_STILL: &str = "orbit does not move";
 pub const REFUSE_NO_DESCENT: &str = "no strict descent — the form closes nothing";
+pub const REFUSE_RANK_LOST: &str = "form rank below what its tape re-derives";
 pub const REFUSE_PIVOT_INEXACT: &str = "pivot certificate does not re-derive";
 
 /// Chapter 23.1: replay a crystallized form from its tape and the forms it
@@ -93,6 +94,7 @@ pub fn replay_form_with(
         return Some(reason);
     }
     // Loops are derived, never trusted from the tape: re-walk the forest.
+    let taped_rank = f.rank();
     let mut walked = f.clone();
     walked.loops = Form::loops_of(&f.faces, f.vertices.len());
     let by_chord = chord_loops(&walked);
@@ -111,6 +113,13 @@ pub fn replay_form_with(
     }
     if !form_loops_replay(&walked) {
         return Some(REFUSE_LOOP);
+    }
+    let derived = walked.rank();
+    if taped_rank.torsion < derived.torsion
+        || taped_rank.free < derived.free
+        || taped_rank.axes < derived.axes
+    {
+        return Some(REFUSE_RANK_LOST);
     }
     replay_certificates(&walked, &by_chord)
 }
@@ -896,6 +905,62 @@ mod tests {
             replay_form(&bad_e, &|_| None),
             Some(REFUSE_PIVOT_INEXACT),
             "a certificate that does not re-derive refuses the form"
+        );
+    }
+
+    /// A18: the tape's stored loops may not claim a rank below the forest
+    /// the faces re-derive.
+    #[test]
+    fn rank_lost_refused() {
+        use crate::transducer::alphabet::Word;
+        use crate::transducer::sentence::{as_element_form, FormFace};
+        let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+        let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+        let sheet = crate::transducer::alphabet::PlaneForm {
+            parity: true,
+            rot: [0; crate::transducer::alphabet::CAYLEY_ALPHABET_LEN],
+        }
+        .to_word();
+        let mut f = Form::default();
+        f.vertices.push(Vertex::Word {
+            address: [1u8; 32],
+            word: Word::identity(),
+            rho: one,
+            placement: (zero.clone(), zero),
+            gauge: vec![(1, 2)],
+            class: stalk::Invariant::default(),
+            contact: None,
+        });
+        f.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            g_ij: Word::identity(),
+        });
+        f.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            g_ij: sheet,
+        });
+        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        let _ = f.pivot_loop(
+            [0x18; 32],
+            &crate::network::nerve::Keyed::new(),
+            &crate::transducer::family::NoCrystal,
+            &mut crate::physics::Physics::default().stroke_n(8),
+        );
+        assert!(
+            !f.torsion.is_empty(),
+            "finite holonomy files when no word discharges"
+        );
+        let e = as_element_form(&f, [1, 0, 0, 0]).expect("filed tape");
+        assert_eq!(replay_form(&e, &|_| None), None, "filed torsion replays");
+        let mut gone = crate::transducer::sentence::from_element_form(&e).expect("v2");
+        gone.loops.clear();
+        let bad = as_element_form(&gone, [1, 0, 0, 0]).expect("loops stripped");
+        assert_eq!(
+            replay_form(&bad, &|_| None),
+            Some(REFUSE_RANK_LOST),
+            "stored loops below the re-derived forest refuse"
         );
     }
 
