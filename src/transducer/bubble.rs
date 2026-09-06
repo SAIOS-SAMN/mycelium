@@ -44,14 +44,9 @@ fn remainder_addr(remainder: &[RemCell]) -> [u8; 32] {
     element::from_residual(&remainder.to_vec()).address()
 }
 
-/// The idea's key: the form's vertex key, or the remainder address.
-/// Never the zero default.
+/// The idea's key: the form's vertex key. Remainder is cargo, not the name.
 fn idea_key(f: &Form) -> [u8; 32] {
-    if f.remainder.is_empty() {
-        sentence::form_vertex_key(f)
-    } else {
-        remainder_addr(&f.remainder)
-    }
+    sentence::form_vertex_key(f)
 }
 
 fn form_mag(f: &Form) -> [u64; 4] {
@@ -202,6 +197,8 @@ pub struct Bubble {
     pub form: Option<Form>,
     /// Pairs the idea germinated from; trial speaks over them for μ⃗.
     pub bundle: Option<Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>>,
+    /// Per-pair remainder chains, keyed by pair index. `remainder` is their union.
+    pub remainders: Keyed<Vec<RemCell>>,
 }
 
 impl Bubble {
@@ -721,12 +718,29 @@ impl Contemplation {
     }
 
     /// Hold a form as an idea (chapter 30 step 5): the form is the carrier.
-    pub fn hold_form(&mut self, f: &Form) {
-        if f.vertices.len() <= 1 && f.remainder.is_empty() && f.faces.is_empty() {
+    /// The train is the germinating bundle; remainders are per-pair residual
+    /// chains. idea_key is the form's vertex key.
+    pub fn hold_form(
+        &mut self,
+        f: &Form,
+        train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
+        remainders: &[Vec<RemCell>],
+    ) {
+        if f.vertices.len() <= 1
+            && f.faces.is_empty()
+            && f.remainder.is_empty()
+            && remainders.iter().all(|r| r.is_empty())
+        {
             return;
         }
         let key = idea_key(f);
-        let mut cover = cover_of(&stalk::invariant(&f.remainder));
+        let mut rem_keyed: Keyed<Vec<RemCell>> = Keyed::new();
+        let mut union = f.remainder.clone();
+        for (i, r) in remainders.iter().enumerate() {
+            rem_keyed.insert(crate::transducer::family::pair_idx_key(i as u16), r.clone());
+            union.extend_from_slice(r);
+        }
+        let mut cover = cover_of(&stalk::invariant(&union));
         let mut glues = Keyed::new();
         for v in &f.vertices {
             match v {
@@ -740,12 +754,21 @@ impl Contemplation {
                 _ => {}
             }
         }
-        let volume = form_mag(f);
+        let mut volume = form_mag(f);
+        let extra = element::measure_lanes(&union);
+        for i in 0..4 {
+            volume[i] = volume[i].max(extra[i]);
+        }
         let mut horizon = Keyed::new();
         self.paint_seeded(&mut horizon);
         let certs = f.certificates.clone();
+        let bundle = if train.is_empty() {
+            None
+        } else {
+            Some(train.to_vec())
+        };
         let bubble = Bubble {
-            remainder: f.remainder.clone(),
+            remainder: union,
             nerve: Complex::new(),
             cover,
             horizon,
@@ -760,7 +783,8 @@ impl Contemplation {
             certificates: certs,
             vortex: f.vortex.clone(),
             form: Some(f.clone()),
-            bundle: None,
+            bundle,
+            remainders: rem_keyed,
         };
         if let Some(old) = self.bubbles.get(&key).cloned() {
             self.retract_incidence(&key, &old);
@@ -804,6 +828,7 @@ impl Contemplation {
             vortex: Keyed::new(),
             form: None,
             bundle: None,
+            remainders: Keyed::new(),
         };
         if let Some(old) = self.bubbles.get(&key).cloned() {
             self.retract_incidence(&key, &old);
@@ -841,6 +866,8 @@ impl Contemplation {
         let mut certificates = Keyed::new();
         let mut vortex = Keyed::new();
         let mut form = None;
+        let mut bundle = None;
+        let mut remainders: Keyed<Vec<RemCell>> = Keyed::new();
         let mut old_rems: Keyed<Vec<RemCell>> = Keyed::new();
         for v in verts {
             let Some(b) = self.bubbles.get(v).cloned() else {
@@ -854,8 +881,12 @@ impl Contemplation {
             absorb_keyed(&mut torsion, &b.torsion);
             absorb_keyed(&mut certificates, &b.certificates);
             absorb_vortex(&mut vortex, &b.vortex);
+            absorb_keyed(&mut remainders, &b.remainders);
             if form.is_none() {
                 form = b.form.clone();
+            }
+            if bundle.is_none() {
+                bundle = b.bundle.clone();
             }
             nerve = b.nerve.clone();
             self.bubbles.remove(v);
@@ -888,7 +919,8 @@ impl Contemplation {
             certificates,
             vortex,
             form,
-            bundle: None,
+            bundle,
+            remainders,
         };
         self.admit_incidence(key, &bubble);
         self.bubbles.insert(key, bubble);
@@ -1454,6 +1486,7 @@ impl Contemplation {
                 vortex,
                 form,
                 bundle: None,
+                remainders: Keyed::new(),
             };
             c.admit_incidence(key, &bubble);
             c.bubbles.insert(key, bubble);
@@ -1696,7 +1729,7 @@ mod tests {
             .expect("glue");
         assert!(outer.remainder.is_empty(), "no remainder to hold()");
         let mut c = Contemplation::new();
-        c.hold_form(&outer);
+        c.hold_form(&outer, &[], &[]);
         assert_eq!(c.bubbles.len(), 1, "the glued form is an idea");
         let b = c.bubbles.fiber(&ROOT).next().map(|(_, b)| b).expect("held");
         assert!(
@@ -1749,7 +1782,7 @@ mod tests {
             "the held form has an open loop"
         );
         let mut c2 = Contemplation::new();
-        c2.hold_form(&open);
+        c2.hold_form(&open, &[], &[]);
         let k = c2.bubbles.fiber(&ROOT).next().map(|(k, _)| *k).expect("held");
         assert_eq!(k, super::idea_key(&open), "hold, merge and Bubble::key share idea_key");
         struct HoldQ(Word);
@@ -1811,6 +1844,48 @@ mod tests {
                 "the spoken tape carries the certificate or the filed cycle"
             );
         }
+    }
+
+    #[test]
+    fn hold_form_carries_bundle_and_remainder() {
+        use crate::transducer::alphabet::Word;
+        use crate::transducer::family::pair_idx_key;
+        use crate::transducer::sentence::{Form, FormFace, Vertex};
+        let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+        let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+        let mut f = Form::default();
+        f.vertices.push(Vertex::Word {
+            address: [9u8; 32],
+            word: Word::identity(),
+            rho: one,
+            placement: (zero.clone(), zero),
+            gauge: vec![(1, 2)],
+            class: crate::transducer::stalk::Invariant::default(),
+            contact: None,
+        });
+        f.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            transport: f.face_of(0, 1).expect("star"),
+        });
+        let train = vec![(vec![vec![1u8]], vec![vec![2u8]])];
+        let rem = vec![vec![(0i64, 0i64, 1u8, 2u8)]];
+        let mut c = Contemplation::new();
+        c.hold_form(&f, &train, &rem);
+        assert_eq!(c.bubbles.len(), 1);
+        let (k, b) = c.bubbles.fiber(&ROOT).next().expect("held");
+        assert_eq!(*k, super::idea_key(&f), "idea_key stays the form's vertex key");
+        assert!(
+            b.bundle.as_ref().is_some_and(|t| t.len() == 1),
+            "the idea carries the train"
+        );
+        let cells = b.remainders.get(&pair_idx_key(0)).expect("pair remainder");
+        assert_eq!(cells.len(), 1, "remainder is keyed by pair");
+        assert_eq!(b.remainder.len(), 1, "union remainder is the pair chain");
+        assert_eq!(
+            b.volume,
+            crate::transducer::element::measure_lanes(&b.remainder)
+        );
     }
 
     #[test]

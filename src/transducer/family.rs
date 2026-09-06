@@ -1924,7 +1924,7 @@ pub fn extract_rule_with(
     Some(super::sentence::rule_of_form(form))
 }
 
-fn pair_idx_key(i: u16) -> [u8; 32] {
+pub(crate) fn pair_idx_key(i: u16) -> [u8; 32] {
     let mut k = [0u8; 32];
     k[..2].copy_from_slice(&i.to_le_bytes());
     k

@@ -2463,14 +2463,19 @@ impl Entity {
     }
 
     /// Hold a withheld form so the pivot loop sees it next stroke (ch. 30.2).
-    pub fn hold_form(&mut self, f: &crate::transducer::sentence::Form) {
-        self.contemplation.hold_form(f);
+    pub fn hold_form(
+        &mut self,
+        f: &crate::transducer::sentence::Form,
+        train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
+        remainders: &[Vec<(i64, i64, u8, u8)>],
+    ) {
+        self.contemplation.hold_form(f, train, remainders);
     }
 
     /// Hold a withheld sentence as a bubble: form, remainder, cover.
     pub fn hold_sentence(&mut self, word: &Element) {
         if let Some(f) = crate::transducer::sentence::from_element_form(word) {
-            self.hold_form(&f);
+            self.hold_form(&f, &[], &[]);
         } else {
             self.hold_thought(word.sub().to_vec());
         }
