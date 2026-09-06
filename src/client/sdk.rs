@@ -1154,8 +1154,9 @@ impl Epigenome {
         &self.atlas
     }
 
+    /// Empty when the working language has no genome word and no dialect word.
     pub fn atlas_is_empty(&self) -> bool {
-        self.atlas_len == 0
+        self.atlas_len == 0 && self.dialect.is_empty()
     }
 
     /// Working atlas of genome + dialect. Ideas join at Entity::working_atlas.
@@ -1201,15 +1202,38 @@ impl Epigenome {
         Some(i)
     }
 
-    /// Deconstruct a chain over the working language: genome and dialect.
-    /// A word this mind stood closes a remainder without waiting for the court.
-    fn locate(&mut self, chain: &[(i64, i64, u8, u8)], exclude: Option<usize>) -> crate::transducer::sentence::Sentence {
+    /// Deconstruct a chain over the working language: genome, dialect, and
+    /// extra words (ideas). A word this mind stood closes a remainder
+    /// without waiting for the court.
+    fn locate(
+        &mut self,
+        chain: &[(i64, i64, u8, u8)],
+        exclude: Option<usize>,
+    ) -> crate::transducer::sentence::Sentence {
+        self.locate_on(chain, exclude, &[])
+    }
+
+    fn locate_on(
+        &mut self,
+        chain: &[(i64, i64, u8, u8)],
+        exclude: Option<usize>,
+        extra: &[Element],
+    ) -> crate::transducer::sentence::Sentence {
         let n = self.genome.len();
         let dialect_addrs: Vec<[u8; 32]> = self
             .dialect
             .fiber(&crate::network::nerve::ROOT)
             .map(|(a, _)| *a)
             .collect();
+        let n_d = dialect_addrs.len();
+        let extra_shapes: Vec<Option<crate::transducer::blade::Shape>> = extra
+            .iter()
+            .map(|w| crate::transducer::element::shape_of_chain(w.sub()))
+            .collect();
+        let mut extra_atlas = crate::transducer::stalk::Stalks::default();
+        for w in extra {
+            extra_atlas.admit(&crate::transducer::stalk::invariant_of(w), w.address());
+        }
         let genome = &self.genome;
         let dialect = &self.dialect;
         let atlas = &self.atlas;
@@ -1219,23 +1243,38 @@ impl Epigenome {
         let word_at = |i: usize| -> Option<&Element> {
             if i < n {
                 genome.get(i)
-            } else {
+            } else if i < n + n_d {
                 dialect_addrs.get(i - n).and_then(|a| dialect.get(a).map(|d| &d.sentence))
+            } else {
+                extra.get(i - n - n_d)
             }
         };
         let index_of = |a: &[u8; 32]| -> Option<usize> {
-            index.get(a).copied().or_else(|| dialect_addrs.iter().position(|x| x == a).map(|j| n + j))
+            index.get(a).copied().or_else(|| {
+                dialect_addrs
+                    .iter()
+                    .position(|x| x == a)
+                    .map(|j| n + j)
+                    .or_else(|| extra.iter().position(|w| &w.address() == a).map(|j| n + n_d + j))
+            })
         };
         let shape_at = |i: usize| -> Option<&crate::transducer::blade::Shape> {
             if i < n {
                 shapes.get(i).and_then(|c| c.get_or_init(|| crate::transducer::element::shape_of_chain(genome[i].sub())).as_ref())
-            } else {
+            } else if i < n + n_d {
                 dialect_addrs.get(i - n).and_then(|a| dialect.get(a).and_then(|d| d.shape.as_ref()))
+            } else {
+                extra_shapes.get(i - n - n_d).and_then(|s| s.as_ref())
             }
         };
         let fiber_of = |inv: &crate::transducer::stalk::Invariant| {
             let mut v = atlas.fiber(inv);
             for a in dialect_atlas.fiber(inv) {
+                if !v.iter().any(|b| b == &a) {
+                    v.push(a);
+                }
+            }
+            for a in extra_atlas.fiber(inv) {
                 if !v.iter().any(|b| b == &a) {
                     v.push(a);
                 }
@@ -2167,8 +2206,36 @@ impl Entity {
     /// CITE: this kernel's reduction of a chain over its own genome — the
     /// citations (address, transport, gauge coordinate) and the residual it
     /// could not reduce. Cognition happens here; the hypha only replays.
+    fn idea_words(&self) -> Vec<Element> {
+        let mut out = Vec::new();
+        for (_, b) in self.contemplation.bubbles.fiber(&crate::network::nerve::ROOT) {
+            if let Some(f) = &b.form {
+                if let Some(e) = crate::transducer::sentence::as_element_form(f, b.volume) {
+                    out.push(e);
+                }
+            }
+            for (_, r) in b.remainders.fiber(&crate::network::nerve::ROOT) {
+                if !r.is_empty() {
+                    out.push(crate::transducer::element::from_residual(r));
+                }
+            }
+            if !b.remainder.is_empty() && b.remainders.is_empty() {
+                out.push(crate::transducer::element::from_residual(&b.remainder));
+            }
+        }
+        out
+    }
+
     pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)]) -> (Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>) {
-        let located = self.epigenome.locate(chain, None);
+        // A remainder is not a citation of itself: deconstruction reads
+        // other words on the working atlas, never the chain under locate.
+        let self_addr = crate::transducer::element::from_residual(&chain.to_vec()).address();
+        let extras: Vec<Element> = self
+            .idea_words()
+            .into_iter()
+            .filter(|w| w.address() != self_addr)
+            .collect();
+        let located = self.epigenome.locate_on(chain, None, &extras);
         let n_genome = self.epigenome.genome_len();
         let dialect_addrs: Vec<[u8; 32]> = self
             .epigenome
@@ -2176,29 +2243,39 @@ impl Entity {
             .fiber(&crate::network::nerve::ROOT)
             .map(|(a, _)| *a)
             .collect();
+        let n_d = dialect_addrs.len();
         let word_of = |i: usize| -> Option<&Element> {
             if i < n_genome {
                 self.epigenome.genome().get(i)
-            } else {
+            } else if i < n_genome + n_d {
                 dialect_addrs.get(i - n_genome).and_then(|a| self.epigenome.working_word(a))
+            } else {
+                extras.get(i - n_genome - n_d)
             }
         };
-        // Each citation carries its operator and the standing of the word
-        // it rests on, so the hypha can weight a held idea below a ruled word.
+        // Standing is a coordinate on the cited word (Ruled, Stood, Held),
+        // never a weight multiplied into μ⃗.
+        let standing_of = |i: usize| -> Standing {
+            if i < n_genome {
+                Standing::Ruled
+            } else if i < n_genome + n_d {
+                Standing::Stood
+            } else {
+                Standing::Held
+            }
+        };
         let mut cites: Vec<dialogue::CiteWire> = located
             .cites
             .into_iter()
             .filter_map(|(i, g, asg)| {
                 let w = word_of(i)?;
                 let body = crate::transducer::sentence::cited_pattern(w, asg).unwrap_or_default();
-                let st = self.working_atlas().standing_addr(&w.address()).unwrap_or(Standing::Stood);
-                Some((w.address(), st.as_u8(), g, asg as u32, body))
+                Some((w.address(), standing_of(i).as_u8(), g, asg as u32, body))
             })
             .collect();
         for (i, g, body) in &located.punctures {
             let Some(w) = word_of(*i) else { continue };
-            let st = self.working_atlas().standing_addr(&w.address()).unwrap_or(Standing::Stood);
-            cites.push((w.address(), st.as_u8(), g.clone(), u32::MAX, body.clone()));
+            cites.push((w.address(), standing_of(*i).as_u8(), g.clone(), u32::MAX, body.clone()));
         }
         (cites, located.residual)
     }
@@ -2357,12 +2434,12 @@ impl Entity {
                 }
             }
         }
-        if dests.is_empty() || self.epigenome.atlas_is_empty() {
+        if dests.is_empty() || self.atlas_is_empty() {
             // An empty atlas is incident to the root prefix: the first
             // quote reads the book at depth zero, so a mind need not
             // already hold a word to learn one.
             let root = [crate::transducer::stalk::Invariant(Vec::new())];
-            let asked = if charts.is_empty() || self.epigenome.atlas_is_empty() {
+            let asked = if charts.is_empty() || self.atlas_is_empty() {
                 root.as_slice()
             } else {
                 charts.as_slice()
@@ -2852,6 +2929,11 @@ impl Entity {
     /// member carrying its standing.
     pub fn working_atlas(&self) -> WorkingAtlas<'_> {
         self.epigenome.working_atlas_with(&self.contemplation.by_chart)
+    }
+
+    /// Empty when genome, dialect and ideas are all empty.
+    pub fn atlas_is_empty(&self) -> bool {
+        self.epigenome.atlas_is_empty() && self.contemplation.len() == 0
     }
 
     /// Counts on the working atlas: ruled (genome), stood (dialect), held (ideas).
@@ -3534,6 +3616,38 @@ mod tests {
         assert_eq!(ruled, 0, "genome empty");
         assert!(stood >= 1, "a dialect word is stood");
         assert!(held >= 1, "an idea is held");
+    }
+
+    /// A stood residual word is cited by the next chain it deflates, and a
+    /// held remainder is cited with standing Held — never as covering itself.
+    #[test]
+    fn cite_reads_stood_and_held_words() {
+        let residual = vec![(0i64, 0i64, 1u8, 2u8)];
+        let next = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 3, 4)];
+        let mut entity = Entity::open("127.0.0.1:1", Kernel::named("cite-stood"));
+        assert!(
+            entity.epigenome.express(&residual, 1, 1),
+            "the residual stands in the dialect"
+        );
+        let (cites, _rem) = entity.cite(&next);
+        assert!(
+            cites.iter().any(|(_, st, _, _, _)| *st == Standing::Stood.as_u8()),
+            "the stood residual is cited with standing Stood, got {cites:?}"
+        );
+
+        let mut held = Entity::open("127.0.0.1:1", Kernel::named("cite-held"));
+        held.hold_thought(residual.clone());
+        let (self_cites, self_rem) = held.cite(&residual);
+        assert!(
+            self_cites.is_empty(),
+            "a remainder is not a citation of itself, got {self_cites:?}"
+        );
+        assert_eq!(self_rem, residual, "the remainder stays the residual");
+        let (cites, _rem) = held.cite(&next);
+        assert!(
+            cites.iter().any(|(_, st, _, _, _)| *st == Standing::Held.as_u8()),
+            "the held remainder is cited with standing Held, got {cites:?}"
+        );
     }
 
     /// A withheld two-pair family with one closing pair stands in the
