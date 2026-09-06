@@ -1170,7 +1170,8 @@ impl Form {
                     continue;
                 };
                 let key = kappa.class_key();
-                if handled.contains(&key) {
+                let loop_k = vertex_ix_key(idx as u16);
+                if handled.contains(&loop_k) {
                     continue;
                 }
                 let held = horizon.get(&key).is_some();
@@ -1190,7 +1191,7 @@ impl Form {
                         "  pivot {:02x}{:02x}… loop {idx} closed by the tree gauge",
                         idea[0], idea[1]
                     );
-                    handled.insert(key, ());
+                    handled.insert(loop_k, ());
                     applied = true;
                     break;
                 }
@@ -1245,7 +1246,7 @@ impl Form {
                             chord: idx,
                             certificate: cert,
                         });
-                        handled.insert(key, ());
+                        handled.insert(loop_k, ());
                         applied = true;
                         break;
                     }
@@ -1274,7 +1275,7 @@ impl Form {
                             chord: idx,
                             held: held_certs,
                         });
-                        handled.insert(key, ());
+                        handled.insert(loop_k, ());
                     }
                     None => match order {
                         Order::Infinite => {
@@ -1285,7 +1286,7 @@ impl Form {
                                     idea[0], idea[1]
                                 );
                             }
-                            handled.insert(key, ());
+                            handled.insert(loop_k, ());
                         }
                         Order::Finite(ell) => {
                             if self.file_loop(idx, ell) {
@@ -1303,7 +1304,7 @@ impl Form {
                                     idea[0], idea[1]
                                 );
                             }
-                            handled.insert(key, ());
+                            handled.insert(loop_k, ());
                         }
                     },
                 }
@@ -1311,6 +1312,7 @@ impl Form {
             if !applied {
                 break;
             }
+            handled = Keyed::new();
         }
         snaps
     }
@@ -4044,6 +4046,69 @@ mod tests {
             !snaps.iter().any(|s| matches!(s, Snap::Demand { .. })),
             "a held infinite class is not spoken again: {snaps:?}"
         );
+    }
+
+    #[test]
+    fn two_loops_of_one_class_are_both_filed_or_discharged() {
+        let w = order2();
+        fn two_chords(w: &Word) -> Form {
+            let mut f = Form::default();
+            f.vertices.push(word_vertex(1, Word::identity()));
+            f.vertices.push(word_vertex(2, Word::identity()));
+            f.faces.push(FormFace {
+                i: 0,
+                j: 1,
+                g_ij: Word::identity(),
+            });
+            f.faces.push(FormFace {
+                i: 0,
+                j: 1,
+                g_ij: w.clone(),
+            });
+            f.faces.push(FormFace {
+                i: 0,
+                j: 2,
+                g_ij: Word::identity(),
+            });
+            f.faces.push(FormFace {
+                i: 0,
+                j: 2,
+                g_ij: w.clone(),
+            });
+            f.loops = Form::loops_of(&f.faces, f.vertices.len());
+            f
+        }
+        let mut f = two_chords(&w);
+        assert_eq!(f.loops.len(), 2, "two independent chords");
+        let snaps = f.pivot_loop(
+            [0xa3; 32],
+            &Keyed::new(),
+            &crate::transducer::family::NoCrystal,
+            &mut crate::physics::Physics::default().stroke_n(16),
+            &[],
+            0,
+        );
+        let filed = snaps
+            .iter()
+            .filter(|s| matches!(s, Snap::TorsionFiled { .. }))
+            .count();
+        assert_eq!(filed, 2, "both loops of one class file: {snaps:?}");
+
+        let q = order4();
+        let mut f = two_chords(&q);
+        let snaps = f.pivot_loop(
+            [0xa3; 32],
+            &Keyed::new(),
+            &Hold(vec![q.clone()]),
+            &mut crate::physics::Physics::default().stroke_n(32),
+            &[],
+            0,
+        );
+        let disc = snaps
+            .iter()
+            .filter(|s| matches!(s, Snap::Discharged { .. }))
+            .count();
+        assert_eq!(disc, 2, "both loops discharge: {snaps:?}");
     }
 
     #[test]
