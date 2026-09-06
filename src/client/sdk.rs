@@ -419,7 +419,10 @@ impl Session {
         let inv = crate::transducer::stalk::invariant(chain);
         let mag = crate::transducer::element::measure_lanes(chain);
         let dest = self.route_chart(&inv, &mag);
-        let body = self.exchange_at(&dest, dialogue::encode_demand(&self.kernel.voice, chain, cites))?;
+        let body = self.exchange_at(
+            &dest,
+            dialogue::encode_demand_at(&self.kernel.voice, self.voice.k(), chain, cites),
+        )?;
         let _ = key;
         Ok(decode_reply(&body))
     }

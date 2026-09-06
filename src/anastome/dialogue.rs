@@ -1083,18 +1083,29 @@ fn read_mu(b: &[u8], p: &mut usize) -> Option<[u64; 4]> {
 
 // ── demand: an unsolved coboundary challenge ─────────────────────────────────
 
-/// `[ACT_DEMAND][voice 32][chain][cites]` — the speaker's own reduction of
-/// the chain over its genome rides as citations; an empty citation list
-/// attests the chain irreducible for this voice.
+/// `[ACT_DEMAND][voice 32][chain][cites][K u64]` — the speaker's own
+/// reduction of the chain over its genome rides as citations; an empty
+/// citation list attests the chain irreducible for this voice. K is the
+/// voice's receipt index (23.8); a frame that omits it reads as K = 0.
 pub fn encode_demand(voice: &[u8; 32], chain: &[Cell], cites: &[CiteWire]) -> Vec<u8> {
+    encode_demand_at(voice, 0, chain, cites)
+}
+
+pub fn encode_demand_at(voice: &[u8; 32], k: u64, chain: &[Cell], cites: &[CiteWire]) -> Vec<u8> {
     let mut out = vec![ACT_DEMAND];
     out.extend_from_slice(voice);
     push_chain(&mut out, chain);
     push_cites(&mut out, cites);
+    out.extend_from_slice(&k.to_le_bytes());
     out
 }
 
 pub fn decode_demand(body: &[u8]) -> Option<([u8; 32], Vec<Cell>, Vec<CiteWire>)> {
+    let (voice, chain, cites, _) = decode_demand_at(body)?;
+    Some((voice, chain, cites))
+}
+
+pub fn decode_demand_at(body: &[u8]) -> Option<([u8; 32], Vec<Cell>, Vec<CiteWire>, u64)> {
     if body.first() != Some(&ACT_DEMAND) {
         return None;
     }
@@ -1102,7 +1113,12 @@ pub fn decode_demand(body: &[u8]) -> Option<([u8; 32], Vec<Cell>, Vec<CiteWire>)
     let mut p = 33usize;
     let chain = read_chain(body, &mut p)?;
     let cites = read_cites(body, &mut p).unwrap_or_default();
-    Some((voice, chain, cites))
+    let k = body
+        .get(p..p + 8)
+        .and_then(|b| b.try_into().ok())
+        .map(u64::from_le_bytes)
+        .unwrap_or(0);
+    Some((voice, chain, cites, k))
 }
 
 // ── quote: the yield question and the quoted surface ─────────────────────────
@@ -1759,6 +1775,9 @@ mod tests {
         let (v, c, k) = decode_demand(&encode_demand(&voice, &chain, &cites)).unwrap();
         assert_eq!(k, cites, "the citations ride the demand");
         assert_eq!((v, c), (voice, chain.clone()));
+        let (v2, c2, cites2, k_voice) =
+            decode_demand_at(&encode_demand_at(&voice, 7, &chain, &cites)).unwrap();
+        assert_eq!((v2, c2, cites2, k_voice), (voice, chain.clone(), cites.clone(), 7));
         assert_eq!(decode_quote_request(&encode_quote_request(&voice)).unwrap(), (voice, Vec::new()));
         let items = vec![(germ, [1u64, 2, 30, 4], chain.clone(), Vec::new())];
         let (h, s, k, it) = decode_quote_reply(&encode_quote_reply(3, &[5, 0, 9, 0], 4208, &items)).unwrap();

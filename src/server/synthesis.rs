@@ -101,18 +101,27 @@ pub fn attest(
     chain: &[(i64, i64, u8, u8)],
     voice: [u8; 32],
     cites: &[crate::anastome::dialogue::CiteWire],
+    k_voice: u64,
 ) -> crate::cognition::Outcome {
-    use crate::cognition::Outcome;
+    use crate::cognition::{NormalForm, Outcome};
     let Ok(mut g) = k.lock() else { return Outcome::GermPending };
+    let germ = (crate::transducer::element::from_residual(&chain.to_vec()), None);
+    let listing = germ.0.address();
+    if let Some(out) = g.answer_if_duplicate(&voice, &listing, k_voice) {
+        return out;
+    }
     let Some((language, _budget)) = g.reflex_open(voice) else { return Outcome::GermPending };
     drop(g);
     let frame = (0usize, 0usize, 0usize, 0usize); // a chain carries no frame: the planar word
-    let germ = (crate::transducer::element::from_residual(&chain.to_vec()), None);
-    let listing = germ.0.address();
     let reduction = crate::cognition::reduce_proven(&language, germ, cites, &frame, listing);
+    let residual = match &reduction.form {
+        NormalForm::Decomposed(_) => 0,
+        NormalForm::Irreducible(r) => r.sub().len(),
+    };
     let Ok(mut g) = k.lock() else { return Outcome::GermPending };
     g.puncture_from(cites);
-    g.commit_all(vec![reduction], voice)
+    let out = g.commit_all(vec![reduction], voice);
+    g.record_utterance(voice, listing, k_voice, cites.len(), residual, chain.len(), out)
 }
 
 /// THE PROBE, off the lock: the sentence replays over the language snapshot

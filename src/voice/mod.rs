@@ -85,7 +85,7 @@ impl Voice {
     /// A DEMAND: a residual with this voice's citations (empty: irreducible
     /// for this voice).
     pub fn demand(&self, chain: &[(i64, i64, u8, u8)], cites: &[CiteWire]) -> Vec<u8> {
-        dialogue::encode_demand(&self.identity, chain, cites)
+        dialogue::encode_demand_at(&self.identity, self.k, chain, cites)
     }
 
     /// A QUOTE request: "what is the highest-yield work?"

@@ -994,8 +994,8 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
     }
     let (out, voice) = if kind == dialogue::ACT_DEMAND {
         // A spoken coboundary with the speaker's own reduction — replayed.
-        let Some((dvoice, chain, cites)) = dialogue::decode_demand(&frame.body) else { return };
-        (mycelium::synthesis::attest(kernel, &chain, dvoice, &cites), dvoice)
+        let Some((dvoice, chain, cites, k_voice)) = dialogue::decode_demand_at(&frame.body) else { return };
+        (mycelium::synthesis::attest(kernel, &chain, dvoice, &cites, k_voice), dvoice)
     } else {
         // The client PERCEIVED and REDUCED; the JUDGE replays the proof.
         let Some((pvoice, a_bodies, b_bodies, frame, proof)) = decode_percept(pbytes) else { return };

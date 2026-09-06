@@ -733,6 +733,10 @@ pub struct Kernel {
     retire_gen: u64,
     /// THE RECEIPTS OF SPEECH: listing → voices that have spoken on it.
     spoken: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
+    /// Idempotence of an utterance: address → voice → K → the reply last given.
+    /// The receipt is (vk, M2 address, K); a second frame with the same
+    /// triple is answered from here, never re-docketed or re-charged.
+    utterances: crate::network::nerve::Keyed<crate::network::nerve::Keyed<crate::network::nerve::Keyed<Outcome>>>,
     /// THE QUOTE FRONTIER: remainder-of-g and unreached-moduli demands
     /// (empty-cites attest). Percept-pair coboundary tapes stay on the
     /// book for consilience but are not served on a quote page.
@@ -892,6 +896,13 @@ fn chart_simplex_key(inv: &crate::transducer::stalk::Invariant, sim: &[u8; 32]) 
     h.update(&inv.key());
     h.update(sim);
     *h.finalize().as_bytes()
+}
+
+/// Canonical 32-byte encoding of a voice's K: the index itself, not a hash.
+fn utterance_k_key(k: u64) -> [u8; 32] {
+    let mut key = [0u8; 32];
+    key[..8].copy_from_slice(&k.to_le_bytes());
+    key
 }
 
 fn loop_key(chart: &crate::transducer::stalk::Invariant, voice: &[u8; 32]) -> [u8; 32] {
@@ -5083,15 +5094,79 @@ impl Kernel {
     /// spoken `demand` act. The projective reduction runs first (a stale quote
     /// DECOMPOSES instead of double-minting); a genuine irreducible joins the
     /// admission as this voice's attestation — consilience through conversation.
+    /// The local path has no voice K on the call: K = 0, same as a demand
+    /// frame that omits it. A later K is `attest_at`.
     pub fn attest(&mut self, chain: &[(i64, i64, u8, u8)], voice: [u8; 32]) -> Outcome {
+        self.attest_at(chain, voice, &[], 0)
+    }
+
+    /// Demand with the speaker's citations and the voice's K. Same (vk,
+    /// address, K) is answered from the docket; a later K is a use.
+    pub fn attest_at(
+        &mut self,
+        chain: &[(i64, i64, u8, u8)],
+        voice: [u8; 32],
+        cites: &[crate::anastome::dialogue::CiteWire],
+        k: u64,
+    ) -> Outcome {
+        let germ = (element::from_residual(&chain.to_vec()), None);
+        let listing = germ.0.address();
+        if let Some(out) = self.answer_if_duplicate(&voice, &listing, k) {
+            return out;
+        }
         let Some((language, _budget)) = self.reflex_open(voice) else {
             return Outcome::GermPending;
         };
-        let germ = (element::from_residual(&chain.to_vec()), None);
-        let listing = germ.0.address();
         let frame = (0usize, 0usize, 0usize, 0usize);
-        let reduction = reduce_proven(&language, germ, &[], &frame, listing);
-        self.commit_all(vec![reduction], voice)
+        let reduction = reduce_proven(&language, germ, cites, &frame, listing);
+        let residual = match &reduction.form {
+            NormalForm::Decomposed(_) => 0,
+            NormalForm::Irreducible(r) => r.sub().len(),
+        };
+        let out = self.commit_all(vec![reduction], voice);
+        self.record_utterance(voice, listing, k, cites.len(), residual, chain.len(), out)
+    }
+
+    /// A repeated (vk, address, K) is the reply last given, if any.
+    pub fn answer_if_duplicate(&self, voice: &[u8; 32], addr: &[u8; 32], k: u64) -> Option<Outcome> {
+        let out = self.utterance_of(voice, addr, k)?.clone();
+        eprintln!(
+            "  court attest duplicate {:02x}{:02x}… voice {:02x}{:02x}… K {k}",
+            addr[0], addr[1], voice[0], voice[1]
+        );
+        Some(out)
+    }
+
+    fn utterance_of(&self, voice: &[u8; 32], addr: &[u8; 32], k: u64) -> Option<&Outcome> {
+        self.utterances.get(addr)?.get(voice)?.get(&utterance_k_key(k))
+    }
+
+    fn remember_utterance(&mut self, voice: [u8; 32], addr: [u8; 32], k: u64, out: Outcome) {
+        let kk = utterance_k_key(k);
+        let mut by_v = self.utterances.remove(&addr).unwrap_or_default();
+        let mut by_k = by_v.remove(&voice).unwrap_or_default();
+        by_k.insert(kk, out);
+        by_v.insert(voice, by_k);
+        self.utterances.insert(addr, by_v);
+    }
+
+    /// Seal the utterance receipt and log the first hearing.
+    pub fn record_utterance(
+        &mut self,
+        voice: [u8; 32],
+        addr: [u8; 32],
+        k: u64,
+        cites: usize,
+        residual: usize,
+        chain_len: usize,
+        out: Outcome,
+    ) -> Outcome {
+        eprintln!(
+            "  court attest {:02x}{:02x}… voice {:02x}{:02x}… K {k} cites {cites} residual {residual} of {chain_len}",
+            addr[0], addr[1], voice[0], voice[1]
+        );
+        self.remember_utterance(voice, addr, k, out.clone());
+        out
     }
 
     /// Words taught on a decomposed sentence: each cited word the docket
@@ -7944,6 +8019,33 @@ mod tests {
             n += 1;
         }
         assert_eq!(n, 2, "two anchored words in one sentence both taught");
+    }
+
+    /// A repeated (vk, address, K) is answered from the docket: same reply,
+    /// no re-docket, no re-charge. A later K is a use; another voice is
+    /// consilience.
+    #[test]
+    fn repeated_demand_is_answered_not_redocketed() {
+        let mut k = Kernel::new();
+        let a = vec![(0, 0, 1u8)];
+        let b = vec![(0, 0, 2u8)];
+        let chain = germinate(&a, &b).unwrap();
+        let first = k.attest(&chain, [1; 32]);
+        assert_eq!(first, Outcome::GermPending, "one voice lists, does not install");
+        let n = k.pending.len();
+        assert_eq!(n, 1, "the first hearing dockets the residual");
+        let pressure = k.physics().pressure;
+        let occupancy = k.occupancy();
+        let second = k.attest(&chain, [1; 32]);
+        assert_eq!(second, first, "the docket answers the same receipt");
+        assert_eq!(k.pending.len(), n, "nothing re-docketed");
+        assert_eq!(k.physics().pressure, pressure, "nothing re-charged");
+        assert_eq!(k.occupancy(), occupancy, "room is not drawn again");
+        let used = k.attest_at(&chain, [1; 32], &[], 1);
+        assert_eq!(used, Outcome::GermPending, "a later K is a use, not a duplicate");
+        assert_eq!(k.pending.len(), n, "a use of a listed address does not re-docket");
+        let other = k.attest(&chain, [2; 32]);
+        assert_eq!(other, Outcome::GermPending, "another voice is consilience, not a duplicate");
     }
 
     /// The demand codec roundtrips.
