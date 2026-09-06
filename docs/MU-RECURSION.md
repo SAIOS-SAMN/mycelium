@@ -120,7 +120,18 @@ These are not restated in each chapter; every chapter assumes them.
     `speak_rule`, and `orbit`, where a cell is read or written. Fluid
     physics carried in squares is squares of fluid: looking for a square
     inside a circle is a search for two different objects (chapters 1.4,
-    1.7, 16.4).
+    1.7, 16.4). **No matrix carries an action.** A matrix is a linear
+    representation on a fixed set of squared coordinates: it holds only
+    what that frame can hold, its product forgets the blade structure of
+    what it represents, and a new axis is a larger matrix rather than a
+    new grade. That is flattening and rigidity in one object, and it is
+    why an action re-derived through a matrix loses coordinates the class
+    vector, the pivots and the connecting maps need. Every action in this
+    engine is an element of an exact algebra composed by its own product:
+    a rotor or versor by the geometric product, a gauge by permutation
+    composition; a matrix appears only as the exact integer arithmetic of
+    a rank (A18, `core::zlinalg`) and as the sensor-plane block a rotor
+    projects to (A3), never as the carrier of an element (18.3).
 12. **Every dimension is a proof.** A letter is an axiom. A word is a
     proof: a path whose vertex is the theorem it reaches. A crystallized
     form is a gemstone: each of its loops is a theorem, proved by the
@@ -152,6 +163,7 @@ shape is not reviewed further; it is returned.
 | 7 | **Meaning is never demoted to "fibre" to make a key stable.** If two tapes that mean different things get one key, the key is wrong, whatever the comment says. | dropping the bundle's agreed shift or a contact from a sentence key because "placement is a fibre coordinate" | a body's absolute position is quotiented; a relative placement inside a sentence is a face and is identity; contact is on the form and in its key (chapter 1.5) |
 | 8 | **No shims with placeholders.** A wrapper that fills a field with a constant so a call compiles is a defect that will be soaked. | `sentence_rule_of` with `ratio: ((1,1),(1,1))` and empty sections; `set_magnitude([0,0,0,1])` | carry the field on the tape and read it; measure the magnitude by speaking the form over its bundle; if the value cannot be measured, the form is not spoken |
 | 9 | **Carriers are `Keyed` or `Vec` of relations.** `HashMap`, `BTreeMap`, `HashSet` do not appear in cognition; a flat map keyed by a digest collapses a dimension, and a `Keyed` trie keyed by a digest is a `HashMap` in disguise. | `HashMap<Key, Vec<Candidate>>` buckets; `std::collections::*` in a transducer or kernel file; `Keyed<[u8; 32]>` over `blake3(...)` | `Keyed<V>` (PATRICIA over the canonical coordinate bytes of A21, so `fiber(prefix)` reads a stratum), `Keyed<Keyed<()>>` for incidence, `Vec<(a, b, relation)>` for a relational field |
+| 16 | **An action is an algebra element, never a matrix.** A `QMatrix` fibre, an affine block, a matrix product as composition, or matrix equality as identity is a linear representation on squared coordinates: it flattens the blades it represents and adds a frame's rigidity (law 11). | `fibers: Vec<(u16, QMatrix)>`; `realize()`; `same_action = realize() == realize()`; `affine_of(versor)`; `Letters::affine`; `Element::identity(GERM_DIM)` | one versor per element (`carriage · linear_versor(word)`), a hue permutation, an extent, shell coordinates; `geo` for composition, `inverse` that refuses, `projective_eq` for identity; a matrix only in `core::zlinalg` for a rank and in A3's sensor-plane block |
 | 10 | **Every loop spends a `Budget` or walks a boundary.** A loop whose bound is neither a `Budget` nor the size of one cell's boundary is unbounded work in disguise. | `while !done { … }`; `for peer in all_peers { exchange(peer) }` on one stroke | `while budget.spend() { … }`; a `Keyed::cursor(from, &mut budget)`; one peer per spend with a resume cursor |
 | 11 | **Exact or refused.** No float, no rounding, no saturation, no `unwrap_or(default)` that invents a value. | `ratio_axes` saturating to `u64::MAX`; `unwrap_or_else(identity)` on a versor that failed to invert | `Option`/refusal that propagates to a logged refusal string; an inexact square root refuses; an unspellable block is a remainder |
 | 12 | **Naturality over cloning.** When a carrier splits, restrict it; never clone it into both halves and rekey. | `complexes.insert(child_a, c.clone()); complexes.insert(child_b, c)`; `rekey_cocycles` without recomputation | `restrict` per child, `straddling` written as faces between children, each class recomputed and carried or discharged (15.5) |
@@ -180,8 +192,10 @@ operation it names, without a typed arm naming the absence; (m) any
 projection or shadow carried as the primary object with the object itself
 as a fallback: a plane form consulted before the rotor, a coordinate pair
 before the versor, a digest before the coordinates, a count before the
-fiber. A diff that fails (a) through (j), (l) or (m) is returned with the
-rule number; a diff without (k) is not reviewed.
+fiber; (n) any `QMatrix`, affine block, or matrix product used to carry,
+compose, or compare an action, outside `core::zlinalg` and A3's
+sensor-plane block. A diff that fails (a) through (j), (l), (m) or (n) is
+returned with the rule number; a diff without (k) is not reviewed.
 
 **Why the rules on keys and coordinates are absolute.** Chapter 1.7 is
 the standing explanation: a proof is arithmetic on coordinates, a digest
@@ -2841,6 +2855,29 @@ walk of 12.2 with its documented sign convention;
 (chapter 19). `is_sentence` unchanged. `PartialEq` is removed in favour of
 `same_vertex` (M1); `address()` is M2.
 
+**The action is a versor, never a matrix.** `Element` at e2511ff still
+carries the Δ core's representation: `fibers: Vec<(u16, QMatrix)>` with
+`FIBER_SPATIAL` a `GERM_DIM × GERM_DIM` rational matrix holding a 3×3
+affine block plus a hue permutation block, `realize()` as a matrix
+product, `compose` and `inverse` as matrix arithmetic, `same_action` as
+matrix equality, and `derive_spatial` rebuilding the matrix from the tape
+through `Letters::affine`. That matrix is the squared shadow of the word's
+action (law 11), it is where a rotation is lost between tape and action,
+and matrix equality is identity by representation (rule 3). The carrier
+is `Element { tape, action, sub, mag }` with `action` the exact structures
+of the four strata: the S stratum one versor `V = carriage ·
+linear_versor(word)` (16.4), the G stratum the hue permutation, the T
+stratum an extent in receipts, the H stratum the shell coordinates.
+`compose` is the geometric product on S and permutation composition on
+G; `inverse` is the versor inverse and refuses when it does not exist;
+`same_action` is `projective_eq` on the versor and equality of the
+permutation; a cell is carried by the sandwich `V p Ṽ` and read at the
+sensor boundary only (`cell_of`). Chart invariants (A6, A7) are read from
+the rotor and the versor, never from matrix entries; Čech transitions,
+obstructions, glue blocks and germinated axes are versors. `QMatrix`,
+`core::engine::{Delta, Operator}` and `core::matrix` leave cognition; the
+exact integer rank of A18 stays in `core::zlinalg`. Landing item 0.14.
+
 ## 19. Tape: `SENTENCE_TAG` version 4
 
 Carried from chapter 18: the `Form`. Written by `sentence::as_element_form`
@@ -3837,6 +3874,10 @@ Checked by tests, greppable by the auditor:
 - Every coordinate a form stores re-derives from the form's own words and
   faces (law 12); a coordinate that does not is filed as a section
   coordinate and never enters a key, a class vector, or a certificate.
+- No `QMatrix`, affine block, or matrix product carries, composes, or
+  compares an action anywhere in `transducer/`, `server/`, `client/`, or
+  `court/`; `core::zlinalg` holds the only matrix arithmetic, for ranks,
+  and A3's sensor-plane block is read from a rotor and never stored.
 - `cocycle_at` holds at most one entry per (chart, pair, class key), and
   every `court mv` line is preceded by a `court goodness … good component`
   line for its component.
@@ -4826,6 +4867,101 @@ auditor can rerun.
 
 ---
 
+### 42.5 Transport, class, discharge, vortex, refraction
+
+Added 2026-09-06 for the refraction row (next set after Cut B+1). Each is
+a theorem the engine proves by running; the test names are the proofs.
+
+**T19 Transports form a groupoid, not a product group.** A transport
+`Γ_ij = Transport { word, carriage, gauge }` carries the word form at
+vertex `i` to the one at `j`. Composition `Γ_jk ∘ Γ_ij = Γ_ik` multiplies
+the words, composes the carriages by the geometric product through the
+word's conjugation (`face_of`), and composes the gauges as permutations on
+the union of hues with absence as identity; it is associative, `Γ_ii` is
+the identity, and `Γ_ji = Transport::inverse(Γ_ij)`, which refuses off the
+plane. No component composes on its own: `(V, W, γ)` taken as a product
+group is not the transport. The holonomy of a loop is the composite around
+it, and its class (15.4) is invariant under change of basepoint (3.2) and
+re-gauging (3.6). Code: `Transport::{compose, inverse, refract}`,
+`Form::face_of`, `Form::delta1`. Proof: `transport_composition_is_associative`,
+`transport_inverse_is_the_reverse_face`, `holonomy_class_is_basepoint_invariant`.
+
+**T20 The class vector is a complete conjugacy record.** `κ(ℓ)` is the
+list: the holonomy rotor's conjugacy invariants (15.3) first; the six
+plane blocks `(o_p, u_p, m5_p, m13_p)` when the plane form exists (A3),
+as the sensor section; the hue cycle type, a partition; the translator
+and dilator residues of the loop's carriage; nothing else. Two loops have
+equal `κ` iff their holonomies are conjugate under the moves of 15.1, `κ`
+commutes with restriction and refinement, and `κ = 0` iff the loop is
+closed: holonomy projectively identity, carriage identity, gauge identity.
+No direct sum of plane groups and no `Z^{|𝒢|}` appears; the coordinates are
+invariants, not group elements. Code: `ClassVector::read`, `key`,
+`is_zero`, `Word::class_key`. Proof: `class_vector_is_conjugation_invariant`,
+`rotor_class_is_read_before_the_plane_form`, `zero_class_vector_iff_closed`.
+
+**T21 Discharge is certified exactly.** A trial on an occupied axis `x`
+is certified iff (i) `κ_x' = 0`; (ii) `κ_y' = κ_y` for every `y ≠ x`,
+unchanged, since `≤` is undefined on `Z/4` or a partition; (iii) `rank'`
+equals `rank` or moves exactly one unit from torsion, free or off-plane
+into axes (A18); (iv) `μ⃗' ⪯ μ⃗` lane-wise on every pair of the bundle, no
+lane rises, strictness not required. Every clause is decided exactly and
+replays on the court from the certificate (A20). T14 is the corollary
+that a move changes exactly its axis. Code: `pivot_loop`, `Rank::admits`,
+`economy::descends`, `PivotCertificate`. Proof:
+`pivot_discharges_only_its_axis_and_raises_none`,
+`pivot_certificate_replays_or_refuses`, `rank_lost_refused`.
+
+**T22 The vortex is two certified discharges neither of which dominates.**
+If two trials on one loop are both certified by T21 and their measured
+`μ⃗` are incomparable or equal, the loop is a vortex: both are held as cells
+of the thought with their certificates, no scalar selects, and the vortex
+collapses only when a perception adds a face one candidate predicted, a
+glued or taught form's class equals one candidate's `after`, or a court
+ruling installs one. A trial that does not discharge is not applied and is
+not a vortex; a remainder the mind did not reduce is a thought (24.3), not
+a vortex; nothing searches and nothing terminates a search. Code:
+`select_discharge`, `Discharge::Vortex`, `Contemplation` cells. Proof:
+`pivot_loop_discharges_held_word_and_vortices_a_pair`,
+`vortex_collapses_by_glue_or_ruling`, `equal_mu_neither_dominates`.
+
+**T23 The quotient carries the refraction.** For a trial transport `Γ` on
+a pair `(I, O)` with `R = residual_of(Γ·I, O)`, the element deposited in
+the contemplation, uttered, and docketed is `Refraction { pair, remainder:
+R, transport: Γ }`, never `R` alone. `Transport::inverse(Γ).refract` reads
+`R` in `I`'s frame with the closed part identity, and the next trial acts
+on that; the court, given `(R, Γ)` and `I`, re-derives `Γ·I` and `R`
+exactly and rules graded descent on them. Without `Γ` the remainder
+re-enters at the identity frame as a new scene, the faces already walked
+are re-derived, and no partial closure can be replayed. Code:
+`Refraction`, `Transport::refract`, `hold_form`, `speak_form`,
+`replay_form_with`. Proof: `refraction_is_rebase_regauge_and_carriage`,
+`refraction_replays_as_its_three_moves`,
+`remainder_travels_with_its_transport`.
+
+**T24 Degree-2 obstructions are read from refractions.** For three
+overlapping charts with transports `Γ_ij, Γ_jk, Γ_ki` read from faces or
+from refractions, `(δΓ)_ijk = Γ_ij ∘ Γ_jk ∘ Γ_ki` (10.4). If it is
+projectively identity the three sections glue (13.5, one section or
+attached); otherwise its class key is a degree-2 class recorded under its
+key (12.3, 15.4) and the cover is refined, never the base (14.8), and
+nothing resolves it by choice. If remainders travel without `Γ`, every
+`Γ_ij` on a remainder is the identity, `(δΓ)_ijk ≡ 1`, and `Ȟ²` is
+unobservable: the engine cannot distinguish a missing section from an
+obstruction. Code: `Complex::delta2`, `cocycle_at`, `refine_chart`. Proof:
+`delta2_of_refractions_is_the_triple_product`,
+`nontrivial_delta2_files_a_class2`.
+
+**T25 Metabolic termination is polytonic.** Every certified descent lowers
+`μ⃗` in the product order on `ℕ⁴`, which is well-founded, so every minted
+chain is finite; every trial spends a `Budget` on the lanes it occupies,
+so every stroke terminates; a stroke whose outcome is zero on every lane
+spends the tick. A vortex and a held thought are states, not
+non-termination. No clause compares lanes with each other or with a
+constant. Code: `Physics::stroke`, `Budget::spend`, `descends`,
+`StrokeOutcome::dormant`. Proof: `descends_is_well_founded`, the
+enumeration gate (every loop spends or walks a boundary),
+`stroke_terminates_on_zero_outcome`.
+
 # Part VIII — Boundaries
 
 ## 43. What is deliberately absent
@@ -4837,6 +4973,15 @@ on purpose: refractive indices and wavelengths in nanometres, Padé
 saturation, super- and sub-harmonic wavelength series, a "sheet" as a
 two-dimensional object, and recognition by fingerprint-to-handle lookup,
 which is the fault of 1.7 by its own name.
+
+Absent by law 11, and removed by item 0.14: a matrix as the carrier of an
+element's action. The Δ core's `Element` with `QMatrix` fibres, `realize`
+as a matrix product, `compose` and `inverse` as matrix arithmetic,
+`same_action` as matrix equality, and any affine block re-derived from a
+tape are the same flattening at the level of the action that digests were
+at the level of the key: a fixed frame of squared coordinates standing in
+for the algebra. Matrices remain only as the exact integer arithmetic of
+a rank (A18) and as the sensor-plane projection of a rotor (A3).
 
 No angles: a rotation is a rotor with rational (or, in the tower,
 cyclotomic) coordinates, and its angle is never formed. No norms or roots

@@ -119,7 +119,11 @@ through a sealed trait. `build.rs` fails the build on `.entries()`,
 `MU-RECURSION.md` law 2 and A21: no hash of any mathematical structure),
 and on a `(BigRational, BigRational)` or `(i64, i64)` field or parameter
 named `placement`, `shift`, or `residue` outside `family::pair_form`,
-`family::speak_rule`, and `family::orbit` (the squaring gate, law 11).
+`family::speak_rule`, and `family::orbit` (the squaring gate, law 11), and
+on `QMatrix`, `core::engine::{Delta, Operator}`, or `core::matrix` in
+`src/transducer`, `src/server`, `src/client`, and `src/court` (the matrix
+gate, law 11 and rule 16; `core::zlinalg` is the one matrix arithmetic,
+for ranks).
 Work-counter tests assert that one fetched vertex, one held thought, one
 expansion, one quote, and one thirty-body assembly cost the same at N and
 4N.
