@@ -1567,6 +1567,11 @@ impl Kernel {
         &self.book_index
     }
 
+    /// Book generation: the height the quote and demand replies carry.
+    pub fn book_height(&self) -> u64 {
+        self.book_gen
+    }
+
     /// Open (non-flat) charts of a listing, or its base chart if unprobed.
     pub fn open_charts(&self, addr: &[u8; 32]) -> Vec<crate::transducer::stalk::Invariant> {
         let listing = self
@@ -6406,7 +6411,7 @@ mod tests {
             assert!(matches!(g.ingest(&a, &b, [1; 32]), Outcome::GermPending));
             assert!(matches!(g.attest(&germinate(&a, &b).unwrap(), [1; 32]), Outcome::GermPending));
         }
-        let (_, priced, _, _) =
+        let (_, priced, _, _, _) =
             crate::synthesis::quote(&k, [1u8; 32], &[]).expect("quote");
         assert!(!priced.is_empty(), "an empty atlas reads the book at depth zero");
     }

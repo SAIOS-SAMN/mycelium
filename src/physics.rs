@@ -298,6 +298,13 @@ impl Physics {
         (0..4).all(|l| !lanes[l] || self.reserve[l] >= expand_floor())
     }
 
+    /// Per-lane dwell in strokes from the last reply's pressure, for the
+    /// lanes the loop needs to expand next. A lane not wanted does not
+    /// dwell, even if it is the most-pressured.
+    pub fn dwell(&self, pressure: &[u64; 4], want: [bool; 4]) -> [u64; 4] {
+        std::array::from_fn(|l| if want[l] { pressure[l] } else { 0 })
+    }
+
     /// THE METABOLISM RATE — per-lane serving cadence, proportional to pressure.
     /// Polytonic: each lane's rate is its own pressure, never one ranking across
     /// lanes. This is what paces the hypha's serving and the client's demand.
@@ -311,6 +318,46 @@ impl Physics {
     /// entropic/syntropic metabolism (#34), reported hypha→client each exchange.
     pub fn order_flux(&self) -> [i64; 4] {
         std::array::from_fn(|l| self.syntropic[l] as i64 - self.torsion[l] as i64)
+    }
+}
+
+/// One stroke's outcome: six modes, each a μ⃗ on the four lanes. Lane-wise
+/// sums across modes are allowed; nothing is summed or compared across lanes.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct StrokeOutcome {
+    pub fed: [u64; 4],
+    pub pivoted: [u64; 4],
+    pub stood: [u64; 4],
+    pub uttered: [u64; 4],
+    pub closed: [u64; 4],
+    pub learned: [u64; 4],
+}
+
+impl StrokeOutcome {
+    pub fn add(dst: &mut [u64; 4], src: &[u64; 4]) {
+        for i in 0..4 {
+            dst[i] = dst[i].saturating_add(src[i]);
+        }
+    }
+
+    /// Lane-wise sum across modes.
+    pub fn total(&self) -> [u64; 4] {
+        let mut t = [0u64; 4];
+        for m in [&self.fed, &self.pivoted, &self.stood, &self.uttered, &self.closed, &self.learned] {
+            Self::add(&mut t, m);
+        }
+        t
+    }
+
+    /// Dormant iff every mode is the zero vector; no threshold other than zero.
+    pub fn dormant(&self) -> bool {
+        let z = [0u64; 4];
+        self.fed == z
+            && self.pivoted == z
+            && self.stood == z
+            && self.uttered == z
+            && self.closed == z
+            && self.learned == z
     }
 }
 
@@ -378,6 +425,37 @@ mod tests {
         p.syntropy(&[1, 0, 0, 0]);
         p.pivot([false, true, false, false]); // disorder on 𝒢
         assert_eq!(p.order_flux(), [2, -1, 0, 0], "syntropic − entropic, never summed");
+    }
+
+    /// Pressure on G dwells G and keeps expanding on S, T, H.
+    #[test]
+    fn pressure_on_one_lane_dwells_that_lane_only() {
+        let mut p = Physics::default();
+        let g = [false, true, false, false];
+        while p.can_expand(g) {
+            p.spend(g);
+        }
+        assert!(!p.can_expand(g), "G is spent");
+        assert!(p.can_expand([true, false, false, false]), "S still expands");
+        assert!(p.can_expand([false, false, true, false]), "T still expands");
+        assert!(p.can_expand([false, false, false, true]), "H still expands");
+        let pressure = [0u64, 7, 0, 0];
+        let sth = [true, false, true, true];
+        assert_eq!(
+            p.dwell(&pressure, sth),
+            [0, 0, 0, 0],
+            "expanding S, T, H does not dwell for G"
+        );
+        assert_eq!(
+            p.dwell(&pressure, g),
+            [0, 7, 0, 0],
+            "a stroke that needs G dwells G's pressure only"
+        );
+        let mut outcome = StrokeOutcome::default();
+        outcome.pivoted = [0, 3, 0, 0];
+        assert!(!outcome.dormant());
+        assert_eq!(Physics::lanes_of(&outcome.total()), g);
+        assert!(StrokeOutcome::default().dormant());
     }
 
     #[test]

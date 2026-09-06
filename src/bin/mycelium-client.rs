@@ -26,7 +26,7 @@
 //!
 //! Usage: mycelium-client --home DIR
 use mycelium::arc::{embed, grid_to_cells, parse_task};
-use mycelium::physics::Physics;
+use mycelium::physics::{Physics, StrokeOutcome};
 use mycelium::transducer::element::measure_lanes;
 use mycelium::transducer::germinate::germinate;
 use mycelium::court::identity::HyphaKey;
@@ -322,6 +322,14 @@ fn main() {
         [u8; 32],
         Option<mycelium::transducer::sentence::SentenceRule>,
     )> = mycelium::network::nerve::Keyed::new();
+    let mut last_lang = (usize::MAX, usize::MAX, usize::MAX);
+    let mut last_height = 0u64;
+    let mut last_quoted_height = 0u64;
+    let mut last_pressure = [0u64; 4];
+    let mut dwell_remaining = [0u64; 4];
+    let mut stroke_n = 0u64;
+    let mut last_logged_n = 0u64;
+    let mut last_logged_k = u64::MAX;
 
     loop {
         if stop.load(Ordering::SeqCst) {
@@ -329,7 +337,11 @@ fn main() {
             let _ = entity.save_thoughts(&thoughts_path);
             break;
         }
-        let mut judge_load = 0u8;
+        stroke_n = stroke_n.saturating_add(1);
+        for l in 0..4 {
+            dwell_remaining[l] = dwell_remaining[l].saturating_sub(1);
+        }
+        let mut outcome = StrokeOutcome::default();
         // Stroke phase laps — one reading across every axis of the stroke.
         let mut laps: Vec<(&'static str, u128)> = Vec::new();
         let mut t_last = std::time::Instant::now();
@@ -345,11 +357,8 @@ fn main() {
         // resistance paces speech instead of throwing blind errors.
         let occluded =
             matches!(entity.transport(), mycelium::sdk::TransportAperture::Occluded { .. });
-        if occluded {
-            physics.spend([true; 4]); // the obstructed stroke is still a stroke
-            // Sync waits for the depletion dwell: every-stroke digest/fetch
-            // saturates the door and starves quote and percept.
-        }
+        // Occlusion is inward work; the tick at the end of a dormant stroke
+        // spends all four lanes. Do not spend here.
 
         // THE ENTITY'S REDUCTION BUDGET — from its own metabolism: the beam
         // is one expansion's worth of branches, the depth one reserve of
@@ -360,7 +369,7 @@ fn main() {
         // genome reduces is cited, what it cannot is this voice's
         // irreducible claim; the sync converges the genome between strokes.
         while let Some(path) = feed.next() {
-            if occluded || physics.depleted() {
+            if occluded {
                 break;
             }
             let Ok(text) = std::fs::read_to_string(&path) else {
@@ -381,8 +390,11 @@ fn main() {
                 // this voice's demand.
                 let comprehended = mycelium::transducer::family::comprehend(&task.train);
                 let mag = family_magnitude(&task.train);
+                if !physics.can_expand(Physics::lanes_of(&mag)) {
+                    break;
+                }
                 physics.bump(&mag);
-                physics.spend(Physics::lanes_of(&mag)); // thought is priced on the lanes it occupies
+                StrokeOutcome::add(&mut outcome.fed, &mag);
                 // The rule's nerve is the sentence: constant relative words,
                 // not pair-0 geometry. No calculator fallback.
                 let fam = mycelium::registry::task_id(&task);
@@ -430,6 +442,10 @@ fn main() {
             if a.is_empty() || b.is_empty() {
                 continue;
             }
+            let mag = germinate(&a, &b).map(|g| measure_lanes(&g)).unwrap_or([0; 4]);
+            if !physics.can_expand(Physics::lanes_of(&mag)) {
+                break;
+            }
             match entity.submit(&a, &b, &(hi, wi, ho, wo)) {
                 Ok((reply, heard)) => {
                     fed += 1;
@@ -443,16 +459,14 @@ fn main() {
                         | Some(Comprehension::Withheld { .. }) => witnessed += 1,
                         None => {}
                     }
-                    // The percept's own magnitude, per lane, is the pressure
-                    // this stroke adds and the lanes it spends along.
-                    let mag = germinate(&a, &b).map(|g| measure_lanes(&g)).unwrap_or([0; 4]);
                     physics.bump(&mag);
-                    physics.spend(Physics::lanes_of(&mag));
-                    judge_load = reply.load();
+                    StrokeOutcome::add(&mut outcome.fed, &mag);
+                    last_pressure = reply.pressure;
+                    last_height = reply.height;
+                    dwell_remaining = reply.pressure;
                 }
                 Err(_) => {
                     errors += 1;
-                    physics.spend([true; 4]);
                 }
             }
         }
@@ -462,6 +476,11 @@ fn main() {
         // impedance is already perceived); the answer is patience, not
         // repetition.
         lap("feed");
+        let lang = entity.atlas_standing_counts();
+        let dwell_elapsed = (0..4).any(|l| last_pressure[l] > 0 && dwell_remaining[l] == 0);
+        let ask_quote = !occluded
+            && (lang != last_lang || last_height > last_quoted_height || dwell_elapsed);
+        if ask_quote {
         match entity.quote() {
             Ok(q) => {
                 // An empty WouldBlock is impedance, not a clock: do not
@@ -471,6 +490,13 @@ fn main() {
                     k_step = q.k;
                     entity.at(q.k);
                 }
+                last_lang = lang;
+                last_quoted_height = q.height;
+                if q.height > last_height {
+                    last_height = q.height;
+                }
+                last_pressure = q.surface;
+                dwell_remaining = q.surface;
                 let (mut n_closed, mut n_descent, mut n_nothing, mut n_settled, mut n_silent, mut n_attested, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32, 0u32, 0u32);
                 let (mut n_closing, mut n_ruled_hit, mut n_stood, mut n_held) = (0u32, 0u32, 0u32, 0u32);
                 for cluster in &q.clusters {
@@ -533,7 +559,7 @@ fn main() {
                         continue;
                     }
                     let mag = measure_lanes(&cluster.chain);
-                    physics.spend(Physics::lanes_of(&mag)); // the stroke spoken is metabolically real
+                    StrokeOutcome::add(&mut outcome.uttered, &mag);
                     if !cites.is_empty() {
                         match entity.probe(&cluster.address, &cites) {
                             Ok((code, _paid, _remaining)) => match code {
@@ -541,6 +567,7 @@ fn main() {
                                     derived += 1;
                                     n_closed += 1;
                                     physics.bump(&mag);
+                                    StrokeOutcome::add(&mut outcome.closed, &mag);
                                     let _ = entity.puncture_verified(&cites);
                                 }
                                 mycelium::anastome::dialogue::PROBE_DESCENT => {
@@ -574,7 +601,9 @@ fn main() {
                                 if let t @ [_, ..] = reply.verdict.taught() {
                                     let _ = entity.absorb_taught(t);
                                 }
-                                judge_load = reply.load();
+                                last_pressure = reply.pressure;
+                                last_height = reply.height;
+                                dwell_remaining = reply.pressure;
                             }
                             Err(_) => {
                                 errors += 1;
@@ -597,17 +626,14 @@ fn main() {
                     tuniversal.stamp(),
                     q.clusters.len(),
                 );
-                if feed.exhausted() && (q.clusters.iter().all(|c| c.chain.is_empty()) || q.clusters.is_empty()) {
-                    // MARKET CLEAR with nothing to feed — the idle signal:
-                    // spend the stroke so the dwell paces the next ask.
-                    physics.spend([true; 4]);
-                }
+                // MARKET CLEAR: a dormant outcome spends the tick at the
+                // end of the stroke, not here.
             }
             Err(e) => {
                 errors += 1;
                 eprintln!("[{tag}] [{}] quote err: {e}", tuniversal.stamp());
-                physics.spend([true; 4]); // an unreachable judge earns a full dwell
             }
+        }
         }
 
         lap("quote");
@@ -640,8 +666,10 @@ fn main() {
             // residual is the demand it raises.
             let comprehended = mycelium::transducer::family::comprehend(&train);
             let mag = family_magnitude(&train);
-            physics.bump(&mag);
-            physics.spend(Physics::lanes_of(&mag)); // thought is priced on the lanes it occupies
+            if physics.can_expand(Physics::lanes_of(&mag)) {
+                physics.bump(&mag);
+                StrokeOutcome::add(&mut outcome.fed, &mag);
+            }
             let gen = entity.epigenome.atlas_root();
             let mut extract_budget = physics.stroke();
             let extracted = mycelium::transducer::family::extract_rule_cached(
@@ -742,7 +770,8 @@ fn main() {
             {
                 // THE PIVOT: expand dirty ideas once this phase, then pivot
                 // new words on their charts only.
-                entity.expand_ideas();
+                let pivoted_mu = entity.expand_ideas();
+                StrokeOutcome::add(&mut outcome.pivoted, &pivoted_mu);
                 let pivoted = entity.pivot_thoughts();
                 if pivoted > 0 {
                     eprintln!("[{tag}] pivot: {pivoted} held thoughts spoken as demands on charts the language now holds");
@@ -797,33 +826,53 @@ fn main() {
                 }
             }
             lap("refine");
-            eprintln!("[{tag}] [{}] stroke laps ms {laps:?}", tuniversal.stamp());
             if entity.epigenome.genome_len() != last_genome {
                 let _ = entity.save_genome(&genome_path);
                 last_genome = entity.epigenome.genome_len();
             }
+            physics.regenerate();
+            physics.relax();
+        }
+        if outcome.dormant() {
+            physics.spend([true; 4]); // the tick, not work
+        } else {
+            physics.spend(Physics::lanes_of(&outcome.total()));
+        }
+        let cycle = mycelium::physics::aperture_cycle() as u64;
+        if last_logged_k == u64::MAX || k_step != last_logged_k || stroke_n.saturating_sub(last_logged_n) >= cycle {
             let (atlas_ruled, atlas_stood, atlas_held) = entity.atlas_standing_counts();
-            eprintln!(
-                "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | atlas ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | shed {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} discordance {} axes {}",
-                tuniversal.stamp(),
-                entity.epigenome.genome_len(),
-                entity.dialect_len(),
-                entity.ideas_len(),
-                entity.shed_n(),
-                entity.impedance(),
-                entity.discordance(),
-                entity.axes_opened(),
-            );
-            while physics.depleted() {
-                physics.regenerate();
-                physics.relax();
-                // Impedance routes; it does not sleep. Dwell is at most one
-                // aperture_cycle of measured transport. High Z drops that
-                // hypha from open_rooms (route_chart) and the next stroke
-                // speaks to the next hypha.
-                let cycle = mycelium::physics::aperture_cycle() as u64;
-                let strokes = (judge_load as u64).max(1).min(cycle);
-                std::thread::sleep(mycelium::physics::from_transport(entity.transport_rtt(), strokes));
+            if outcome.dormant() {
+                eprintln!(
+                    "[{tag}] [{}] stroke idle: dwell {dwell_remaining:?} K {k_step} | genome {} | dialect {} | ideas {} | atlas ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | feed {}",
+                    tuniversal.stamp(),
+                    entity.epigenome.genome_len(),
+                    entity.dialect_len(),
+                    entity.ideas_len(),
+                    if feed.exhausted() { "clear" } else { "held" },
+                );
+            } else {
+                eprintln!("[{tag}] [{}] stroke laps ms {laps:?}", tuniversal.stamp());
+                eprintln!(
+                    "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | atlas ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | shed {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} discordance {} axes {}",
+                    tuniversal.stamp(),
+                    entity.epigenome.genome_len(),
+                    entity.dialect_len(),
+                    entity.ideas_len(),
+                    entity.shed_n(),
+                    entity.impedance(),
+                    entity.discordance(),
+                    entity.axes_opened(),
+                );
+            }
+            last_logged_k = k_step;
+            last_logged_n = stroke_n;
+        }
+        let want = Physics::lanes_of(&outcome.total());
+        let wait = std::array::from_fn(|l| want[l] && !physics.can_expand(std::array::from_fn(|i| i == l)));
+        let dwell = physics.dwell(&last_pressure, wait);
+        for l in 0..4 {
+            if dwell[l] > 0 {
+                std::thread::sleep(mycelium::physics::from_transport(entity.transport_rtt(), dwell[l]));
             }
         }
     }

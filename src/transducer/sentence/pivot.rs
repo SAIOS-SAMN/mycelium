@@ -30,6 +30,38 @@ pub enum Snap {
     Demand { chord: usize, key: [u8; 32] },
 }
 
+impl Snap {
+    /// Lane measure of an A16 snap. Discharged and Vortex read the
+    /// certificate μ⃗ (before − after); TorsionFiled has no bundle μ⃗.
+    pub fn lanes(&self) -> [u64; 4] {
+        match self {
+            Snap::Discharged { certificate, .. } => mu_deflation(&certificate.mu),
+            Snap::Vortex { held, .. } => {
+                let mut s = [0u64; 4];
+                for c in held {
+                    let m = mu_deflation(&c.mu);
+                    for i in 0..4 {
+                        s[i] = s[i].saturating_add(m[i]);
+                    }
+                }
+                s
+            }
+            Snap::TorsionFiled { .. } | Snap::Unmeasured { .. } | Snap::Closed { .. } | Snap::TorsionOpen { .. } | Snap::Demand { .. } => {
+                [0; 4]
+            }
+        }
+    }
+}
+
+fn mu_deflation(mu: &super::form::Mu) -> [u64; 4] {
+    match mu {
+        super::form::Mu::Measured { before, after } => {
+            std::array::from_fn(|i| before[i].saturating_sub(after[i]))
+        }
+        super::form::Mu::Unmeasured => [0; 4],
+    }
+}
+
 /// The three outcomes of selecting among certified discharges.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Discharge {

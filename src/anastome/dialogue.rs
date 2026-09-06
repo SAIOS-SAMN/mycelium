@@ -1165,32 +1165,43 @@ pub fn decode_quote_request(body: &[u8]) -> Option<([u8; 32], Vec<crate::transdu
 /// and the open (non-flat) charts of its coherence field.
 pub type WorkItem = ([u8; 32], [u64; 4], Vec<Cell>, Vec<crate::transducer::stalk::Invariant>);
 
-/// `[ACT_QUOTE][surface 4×u64][K u64][n u8][item: addr 32 | μ⃗ 4×u64 | chain]…`
-/// — the u64 is receipt-chain head K (verified consensus depth). TUniversal
-/// is not this field.
-/// The offset of the served count in a quote reply (act, surface, K).
-pub const QUOTE_COUNT_AT: usize = 1 + 32 + 8;
-pub fn encode_quote_reply(surface: &[u64; 4], k: u64, items: &[WorkItem]) -> Vec<u8> {
-    encode_quote_reply_within(surface, k, items, usize::MAX)
+/// `[ACT_QUOTE][height u64][surface 4×u64][K u64][n u8][item: addr 32 | μ⃗ 4×u64 | chain]…`
+/// — height is the book generation; the u64 K is receipt-chain head
+/// (verified consensus depth). TUniversal is not this field.
+/// The offset of the served count in a quote reply (act, height, surface, K).
+pub const QUOTE_COUNT_AT: usize = 1 + 8 + 32 + 8;
+pub fn encode_quote_reply(height: u64, surface: &[u64; 4], k: u64, items: &[WorkItem]) -> Vec<u8> {
+    encode_quote_reply_within(height, surface, k, items, usize::MAX)
+}
+
+/// Demand/percept reply: `[code][height u64][pressure 4×u64][taught_len u16][taught…]`.
+pub fn encode_outcome_reply(code: u8, height: u64, pressure: &[u64; 4], taught: &[u8]) -> Vec<u8> {
+    let mut body = vec![code];
+    body.extend_from_slice(&height.to_le_bytes());
+    push_mu(&mut body, pressure);
+    body.extend_from_slice(&(taught.len() as u16).to_le_bytes());
+    body.extend_from_slice(taught);
+    body
 }
 
 /// The deferral a full judge answers every act with: the pending outcome
 /// and four zero lanes, nothing taught. For a percept or a demand it is a
 /// verdict; for any other act it is impedance.
 pub fn encode_deferral(code: u8) -> Vec<u8> {
-    vec![code, 0, 0, 0, 0, 0, 0]
+    encode_outcome_reply(code, 0, &[0; 4], &[])
 }
 
 pub fn is_deferral(body: &[u8], code: u8) -> bool {
-    body.len() == 7 && body[0] == code && body[1..].iter().all(|&x| x == 0)
+    body.first() == Some(&code) && body.len() == 1 + 8 + 32 + 2 && body[1..].iter().all(|&x| x == 0)
 }
 
 /// The quote reply filled up to `budget` bytes: items ride in rank order
 /// until the next would not fit. The frame budget decides what a contact
 /// can carry; a wide book is served across contacts, never as a frame the
 /// wire refuses.
-pub fn encode_quote_reply_within(surface: &[u64; 4], k: u64, items: &[WorkItem], budget: usize) -> Vec<u8> {
+pub fn encode_quote_reply_within(height: u64, surface: &[u64; 4], k: u64, items: &[WorkItem], budget: usize) -> Vec<u8> {
     let mut out = vec![ACT_QUOTE];
+    out.extend_from_slice(&height.to_le_bytes());
     push_mu(&mut out, surface);
     out.extend_from_slice(&k.to_le_bytes());
     let count_at = out.len();
@@ -1215,11 +1226,13 @@ pub fn encode_quote_reply_within(surface: &[u64; 4], k: u64, items: &[WorkItem],
     out
 }
 
-pub fn decode_quote_reply(body: &[u8]) -> Option<([u64; 4], u64, Vec<WorkItem>)> {
+pub fn decode_quote_reply(body: &[u8]) -> Option<(u64, [u64; 4], u64, Vec<WorkItem>)> {
     if body.first() != Some(&ACT_QUOTE) {
         return None;
     }
     let mut p = 1usize;
+    let height = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
+    p += 8;
     let surface = read_mu(body, &mut p)?;
     let k = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
     p += 8;
@@ -1239,7 +1252,7 @@ pub fn decode_quote_reply(body: &[u8]) -> Option<([u64; 4], u64, Vec<WorkItem>)>
         }
         items.push((addr, mu, chain, open));
     }
-    Some((surface, k, items))
+    Some((height, surface, k, items))
 }
 
 // ── teach: canonical element transmission ────────────────────────────────────
@@ -1748,7 +1761,8 @@ mod tests {
         assert_eq!((v, c), (voice, chain.clone()));
         assert_eq!(decode_quote_request(&encode_quote_request(&voice)).unwrap(), (voice, Vec::new()));
         let items = vec![(germ, [1u64, 2, 30, 4], chain.clone(), Vec::new())];
-        let (s, k, it) = decode_quote_reply(&encode_quote_reply(&[5, 0, 9, 0], 4208, &items)).unwrap();
+        let (h, s, k, it) = decode_quote_reply(&encode_quote_reply(3, &[5, 0, 9, 0], 4208, &items)).unwrap();
+        assert_eq!(h, 3, "book height rides the quote");
         assert_eq!(s, [5, 0, 9, 0]);
         assert_eq!(k, 4208, "receipt-chain head K rides the quote, not TUniversal");
         assert_eq!(it, items);

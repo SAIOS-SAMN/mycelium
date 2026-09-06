@@ -883,7 +883,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
     }
     if kind == dialogue::ACT_QUOTE {
         let Some((qvoice, charts)) = dialogue::decode_quote_request(&frame.body) else { return };
-        let Some((surface, priced, k_step, cohesion)) = mycelium::synthesis::quote(kernel, qvoice, &charts) else {
+        let Some((surface, priced, k_step, cohesion, height)) = mycelium::synthesis::quote(kernel, qvoice, &charts) else {
             return;
         };
         let items: Vec<dialogue::WorkItem> = priced
@@ -893,6 +893,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         // The frame budget bounds what one contact carries: items ride in
         // rank order until the next would not fit.
         let body = dialogue::encode_quote_reply_within(
+            height,
             &surface,
             k_step,
             &items,
@@ -1007,7 +1008,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
     // word — express it down so the entity's genome inherits it); SETTLE:
     // the consilience receipt (parties + the μ⃗ award priced at the surface).
     // A brief lock: reads only.
-    let (basis, flux, reserve, taught, settle) = {
+    let (basis, flux, reserve, taught, settle, height) = {
         let k = kernel.lock().unwrap();
         let (taught, settle) = match &out {
             Outcome::Installed(i) => match k.basis().get(*i) {
@@ -1043,6 +1044,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
             k.physics().reserve,
             taught,
             settle,
+            k.book_height(),
         )
     };
     let label = match &out {
@@ -1063,13 +1065,8 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         voice[0], basis.0, basis.1
     );
     persist_if_due(kernel, &door.state_path);
-    // Reply: outcome | metabolism/pressure(4) | taught (len16 | bytes) | settle?
-    let mut body = vec![outcome_code(&out)];
-    for f in flux {
-        body.push(f.min(255) as u8); // per-lane pressure, saturated to a byte
-    }
-    body.extend_from_slice(&(taught.len() as u16).to_le_bytes());
-    body.extend_from_slice(&taught);
+    // Reply: outcome | height u64 | pressure 4×u64 | taught (len16 | bytes) | settle?
+    let mut body = dialogue::encode_outcome_reply(outcome_code(&out), height, &flux, &taught);
     if let Some((germ, voices, mu)) = &settle {
         body.extend_from_slice(&dialogue::encode_settle(germ, voices, mu));
     }

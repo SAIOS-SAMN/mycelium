@@ -439,9 +439,10 @@ impl Session {
     pub fn quote(&self, charts: &[crate::transducer::stalk::Invariant]) -> io::Result<YieldQuote> {
         match self.speak_nerve(dialogue::encode_quote_request_charts(&self.kernel.voice, charts)) {
             Ok(body) => {
-                let (surface, k, items) = dialogue::decode_quote_reply(&body)
+                let (height, surface, k, items) = dialogue::decode_quote_reply(&body)
                     .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
                 Ok(YieldQuote {
+                    height,
                     surface,
                     k,
                     clusters: items
@@ -456,6 +457,7 @@ impl Session {
                 })
             }
             Err(e) if e.kind() == io::ErrorKind::WouldBlock => Ok(YieldQuote {
+                height: 0,
                 surface: [0; 4],
                 k: 0,
                 clusters: Vec::new(),
@@ -2352,14 +2354,14 @@ impl Entity {
             let addr = &peers[(start + i) % n];
             match self.session.exchange_at(addr, req.clone()) {
                 Ok(body) => {
-                    let (surface, k, items) = dialogue::decode_quote_reply(&body)
+                    let (height, surface, k, items) = dialogue::decode_quote_reply(&body)
                         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
                     let clusters: Vec<Cluster> = items
                         .into_iter()
                         .map(|(address, mu, chain, open)| Cluster { address, mu, chain, open })
                         .collect();
                     match &mut out {
-                        None => out = Some(YieldQuote { surface, k, clusters }),
+                        None => out = Some(YieldQuote { height, surface, k, clusters }),
                         Some(q) => {
                             let mut have: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
                             for h in &q.clusters {
@@ -2381,6 +2383,7 @@ impl Entity {
         match out {
             Some(q) => Ok(q),
             None if last_err.kind() == io::ErrorKind::WouldBlock => Ok(YieldQuote {
+                height: 0,
                 surface: [0; 4],
                 k: 0,
                 clusters: Vec::new(),
@@ -2473,7 +2476,7 @@ impl Entity {
                 }
             }) {
                 Ok(body) => {
-                    let (surface, k, items) = dialogue::decode_quote_reply(&body)
+                    let (height, surface, k, items) = dialogue::decode_quote_reply(&body)
                         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
                     let clusters: Vec<Cluster> = items
                         .into_iter()
@@ -2481,7 +2484,7 @@ impl Entity {
                         .collect();
                     match &mut out {
                         None => {
-                            out = Some(YieldQuote { surface, k, clusters });
+                            out = Some(YieldQuote { height, surface, k, clusters });
                         }
                         Some(q) => {
                             let mut have: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
@@ -2504,6 +2507,7 @@ impl Entity {
         match out {
             Some(q) => Ok(q),
             None if last_err.kind() == io::ErrorKind::WouldBlock => Ok(YieldQuote {
+                height: 0,
                 surface: [0; 4],
                 k: 0,
                 clusters: Vec::new(),
@@ -2747,18 +2751,20 @@ impl Entity {
         self.opened.len()
     }
 
-    /// Expand dirty ideas once per syntropic phase. The atlas is borrowed.
-    pub fn expand_ideas(&mut self) {
+    /// Expand dirty ideas once per syntropic phase. Returns the lane
+    /// measure of A16 snaps (Discharged, Vortex, TorsionFiled).
+    pub fn expand_ideas(&mut self) -> [u64; 4] {
         let mut budget = self.physics.stroke();
         self.contemplation.set_now(self.now_tu());
         let rotors = crate::network::nerve::Keyed::new();
-        let _ = self.contemplation.expand_all(
+        let (_spent, pivoted) = self.contemplation.expand_all(
             self.epigenome.atlas(),
             &rotors,
             &self.epigenome,
             &mut budget,
         );
         self.contemplation.retire_on_t(self.physics.reserve[2] as usize);
+        pivoted
     }
 
     /// PIVOT ON A WORD: read by_chart at the word's chart and peels, fill
@@ -3025,6 +3031,8 @@ pub enum Utterance {
 /// clusters (address, priced μ⃗, and the chain itself — real, attemptable work).
 #[derive(Clone, Debug)]
 pub struct YieldQuote {
+    /// Book generation at this quote.
+    pub height: u64,
     pub surface: [u64; 4],
     /// The judge's k-step at the quote — the temporal coordinate of the
     /// book this quote reads.
@@ -3052,45 +3060,54 @@ pub struct SettleReceipt {
 }
 
 fn decode_reply(body: &[u8]) -> Reply {
-    // Trailing settle receipt (after the taught section), if present.
+    // `[code][height u64][pressure 4×u64][taught_len u16][taught…][settle?]`
     let settle = {
-        let tl = body.get(5..7).map(|b| u16::from_le_bytes([b[0], b[1]]) as usize).unwrap_or(0);
-        body.get(7 + tl..)
+        let tl = body.get(41..43).map(|b| u16::from_le_bytes([b[0], b[1]]) as usize).unwrap_or(0);
+        body.get(43 + tl..)
             .and_then(dialogue::decode_settle)
             .map(|(germ, voices, mu)| SettleReceipt { germ, voices, mu })
     };
-    Reply { verdict: decode_verdict(body), metabolism: decode_metabolism(body), settle }
+    Reply {
+        verdict: decode_verdict(body),
+        height: decode_height(body),
+        pressure: decode_pressure(body),
+        settle,
+    }
 }
 
-/// A hypha's answer: the verdict plus the per-lane METABOLISM (pressure) — the
-/// backpressure signal a kernel throttles its intake against so the mesh is not
-/// brute-forced (the syntropic/entropic metabolism as governor, never a scalar).
+/// A hypha's answer: the verdict, the book height, and the per-lane
+/// pressure as four exact u64 lanes — never a max, never a saturated byte.
 #[derive(Clone, Debug)]
 pub struct Reply {
     pub verdict: Verdict,
-    pub metabolism: [u8; 4],
+    pub height: u64,
+    pub pressure: [u64; 4],
     /// The settle receipt when this exchange completed a consilience install.
     pub settle: Option<SettleReceipt>,
 }
 
-impl Reply {
-    /// The most-pressured lane — the polytonic backpressure a kernel paces on
-    /// (Liebig: the bottleneck lane governs intake).
-    pub fn load(&self) -> u8 {
-        self.metabolism.iter().copied().max().unwrap_or(0)
-    }
+fn decode_height(body: &[u8]) -> u64 {
+    body.get(1..9)
+        .and_then(|b| b.try_into().ok())
+        .map(u64::from_le_bytes)
+        .unwrap_or(0)
 }
 
-/// The per-lane pressure bytes from a reply (`body[1..5]`).
-fn decode_metabolism(body: &[u8]) -> [u8; 4] {
-    std::array::from_fn(|i| body.get(1 + i).copied().unwrap_or(0))
+fn decode_pressure(body: &[u8]) -> [u64; 4] {
+    std::array::from_fn(|i| {
+        let o = 9 + i * 8;
+        body.get(o..o + 8)
+            .and_then(|b| b.try_into().ok())
+            .map(u64::from_le_bytes)
+            .unwrap_or(0)
+    })
 }
 
-/// Decode a hypha reply: `[code][metabolism 4][taught_len u16][taught…]`.
+/// Decode a hypha reply: `[code][height u64][pressure 4×u64][taught_len u16][taught…]`.
 fn decode_verdict(body: &[u8]) -> Verdict {
     let taught = {
-        let tl = body.get(5..7).map(|b| u16::from_le_bytes([b[0], b[1]]) as usize).unwrap_or(0);
-        body.get(7..7 + tl).map(<[u8]>::to_vec).unwrap_or_default()
+        let tl = body.get(41..43).map(|b| u16::from_le_bytes([b[0], b[1]]) as usize).unwrap_or(0);
+        body.get(43..43 + tl).map(<[u8]>::to_vec).unwrap_or_default()
     };
     match body.first() {
         Some(1) => Verdict::Decomposed { taught },
@@ -3563,14 +3580,19 @@ mod tests {
 
     #[test]
     fn verdicts_decode_from_the_wire_reply() {
-        // code 3 (installed), metabolism 4 bytes, taught len 2, taught [0xAB,0xCD].
-        let body = vec![3u8, 0, 0, 0, 0, 2, 0, 0xAB, 0xCD];
+        // code 3 (installed), height 0, pressure zero, taught len 2, taught [0xAB,0xCD].
+        let mut body = vec![3u8];
+        body.extend_from_slice(&0u64.to_le_bytes());
+        body.extend_from_slice(&[0u8; 32]);
+        body.extend_from_slice(&2u16.to_le_bytes());
+        body.extend_from_slice(&[0xAB, 0xCD]);
         match decode_verdict(&body) {
             Verdict::Installed { taught } => assert_eq!(taught, vec![0xAB, 0xCD]),
             v => panic!("expected Installed, got {v:?}"),
         }
-        assert_eq!(decode_verdict(&[1, 0, 0, 0, 0, 0, 0]), Verdict::Decomposed { taught: vec![] });
-        assert_eq!(decode_verdict(&[2, 0, 0, 0, 0, 0, 0]), Verdict::GermPending);
+        let empty = dialogue::encode_outcome_reply(1, 0, &[0; 4], &[]);
+        assert_eq!(decode_verdict(&empty), Verdict::Decomposed { taught: vec![] });
+        assert_eq!(decode_verdict(&dialogue::encode_outcome_reply(2, 0, &[0; 4], &[])), Verdict::GermPending);
     }
 
     fn two_body_sentence(gauges: [&[(u8, u8)]; 2]) -> crate::transducer::element::Element {

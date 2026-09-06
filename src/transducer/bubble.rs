@@ -226,7 +226,7 @@ impl Bubble {
     /// the cover; Congruent grows it with a torsion axis; Class writes the
     /// horizon and stops that branch.
     pub fn expand(&mut self, atlas: &Stalks, crystal: &dyn Crystal, budget: &mut Budget) -> usize {
-        self.expand_with(atlas, &Keyed::new(), 0, crystal, budget)
+        self.expand_with(atlas, &Keyed::new(), 0, crystal, budget).0
     }
 
     pub fn expand_with(
@@ -236,11 +236,11 @@ impl Bubble {
         now: u64,
         crystal: &dyn Crystal,
         budget: &mut Budget,
-    ) -> usize {
+    ) -> (usize, [u64; 4]) {
         self.potential = element::measure_lanes(&self.remainder);
         self.potential[2] = now.saturating_sub(self.moved_tu).max(1);
         if budget.remaining() == 0 || !self.potential.iter().any(|&x| x > 0) {
-            return 0;
+            return (0, [0; 4]);
         }
         let inv = stalk::invariant(&self.remainder);
         let peel = inv.peel();
@@ -303,11 +303,12 @@ impl Bubble {
         if let Some(k) = last {
             self.cursor = k;
         }
+        let mut pivoted = [0u64; 4];
         if budget.remaining() > 0 {
             if let Some(mut form) = self.form.clone() {
                 let key = self.key();
                 let t = now.saturating_sub(self.moved_tu);
-                let _ = form.pivot_loop(
+                let snaps = form.pivot_loop(
                     key,
                     &self.horizon,
                     crystal,
@@ -315,11 +316,17 @@ impl Bubble {
                     self.bundle.as_deref(),
                     t,
                 );
+                for s in &snaps {
+                    let m = s.lanes();
+                    for i in 0..4 {
+                        pivoted[i] = pivoted[i].saturating_add(m[i]);
+                    }
+                }
                 self.take_form(form);
             }
         }
         self.dirty = spent > 0 && budget.remaining() == 0;
-        spent
+        (spent, pivoted)
     }
 
     /// A glue or a syllabus class whose key equals one held certificate's
@@ -1009,8 +1016,9 @@ impl Contemplation {
         rotors: &Keyed<Rotor>,
         crystal: &dyn Crystal,
         budget: &mut Budget,
-    ) -> usize {
+    ) -> (usize, [u64; 4]) {
         let mut spent = 0usize;
+        let mut pivoted = [0u64; 4];
         let mut from = self.expand_cursor;
         // index: budgeted keyed cursor over dirty bubbles; each expand spends the rest
         while budget.remaining() > 0 {
@@ -1027,7 +1035,11 @@ impl Contemplation {
             from = k;
             self.expand_cursor = k;
             if let Some(b) = self.bubbles.get_mut(&k) {
-                spent += b.expand_with(atlas, rotors, self.now_tu, crystal, budget);
+                let (s, p) = b.expand_with(atlas, rotors, self.now_tu, crystal, budget);
+                spent += s;
+                for i in 0..4 {
+                    pivoted[i] = pivoted[i].saturating_add(p[i]);
+                }
                 if !b.dirty {
                     self.dirty.remove(&k);
                 }
@@ -1035,7 +1047,7 @@ impl Contemplation {
                 self.dirty.remove(&k);
             }
         }
-        spent
+        (spent, pivoted)
     }
 
     /// Attempt fill on the link of bubbles at `word`'s chart and prefixes.

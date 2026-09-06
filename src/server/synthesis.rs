@@ -195,6 +195,7 @@ pub fn quote(
     )>,
     u64,
     crate::cohesion::CohesionWitness,
+    u64,
 )> {
     let view = k.lock().ok()?.market_open();
     let t0 = std::time::Instant::now();
@@ -242,7 +243,7 @@ pub fn quote(
         )
     };
     let cohesion = crate::cognition::cohesion_over(&rank.closure);
-    Some((surface, priced, view.head_k, cohesion))
+    Some((surface, priced, view.head_k, cohesion, view.gens.1))
 }
 
 /// Idle consolidation, orchestrated off the request path: the cheap moves
