@@ -1770,14 +1770,15 @@ pub fn extract_rule_with(
         by_rebased: crate::network::nerve::Keyed::new(),
         by_unfolded: crate::network::nerve::Keyed::new(),
     };
-    // 2. Faces named by the pair forms (star + cell overlap), kept iff M1-constant.
+    // 2. Faces named by the pair forms (star + cell overlap). Constancy is
+    // over the pairs where both ends exist; a missing end is not a violation.
     let mut candidates: crate::network::nerve::Keyed<(End, End)> = crate::network::nerve::Keyed::new();
-    if let Some(pf0) = pair_forms.first() {
-        for f in &pf0.faces {
-            let Some(va) = pf0.vertices.get(f.i as usize) else {
+    for pf in &pair_forms {
+        for f in &pf.faces {
+            let Some(va) = pf.vertices.get(f.i as usize) else {
                 continue;
             };
-            let Some(vb) = pf0.vertices.get(f.j as usize) else {
+            let Some(vb) = pf.vertices.get(f.j as usize) else {
                 continue;
             };
             let Some(ea) = end_of(va) else {
@@ -1795,10 +1796,7 @@ pub fn extract_rule_with(
         let mut constant = true;
         for pf in &pair_forms {
             match face_word_between(pf, &ea, &eb) {
-                None => {
-                    constant = false;
-                    break;
-                }
+                None => {}
                 Some(w) => match &held {
                     None => held = Some(w),
                     Some(h) if h != &w => {
@@ -3017,6 +3015,47 @@ mod tests {
         assert_eq!(budget.remaining(), left, "a cache hit spends nothing");
         let _ = extract_rule_cached(&mut cache, &fam, &family, [2u8; 32], &mut budget, &NoCrystal);
         assert!(budget.remaining() < left, "a new atlas generation re-extracts");
+    }
+
+    /// A class present in one of two pairs keeps its star face: a missing
+    /// end on the other pair is not a constancy violation.
+    #[test]
+    fn a_class_present_in_one_of_two_pairs_keeps_its_star_face() {
+        let family = vec![
+            (grid(&["1100", "1000", "0000"]), grid(&["0011", "0001", "0000"])),
+            (grid(&["1100", "0000", "0000"]), grid(&["2200", "0000", "0000"])),
+        ];
+        let rule = extract_rule(&family).expect("section class");
+        assert!(
+            rule.section_count() > 0,
+            "a some-pair class exists, got {} vertices",
+            rule.form.vertices.len()
+        );
+        let mut section_star = 0usize;
+        for (i, v) in rule.form.vertices.iter().enumerate() {
+            let Some(tc) = transport_class(v) else {
+                continue;
+            };
+            if rule.sections.get(&tc.key()).is_none() {
+                continue;
+            }
+            let ii = i as u16;
+            if rule
+                .form
+                .faces
+                .iter()
+                .any(|f| (f.i == 0 && f.j == ii) || (f.j == 0 && f.i == ii))
+            {
+                section_star += 1;
+            }
+        }
+        assert!(
+            section_star > 0,
+            "a class present in one of two pairs keeps its star face, got {} faces {} sections {} vertices",
+            rule.form.faces.len(),
+            rule.section_count(),
+            rule.form.vertices.len()
+        );
     }
 
     #[test]
