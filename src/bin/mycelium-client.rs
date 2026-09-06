@@ -190,6 +190,12 @@ fn speak_form(
     if remainders.iter().any(|r| !r.is_empty()) {
         entity.hold_form(form, train, &remainders);
         eprintln!("[{tag}] form withheld: family {fam} remainder {n_rem} cells");
+        for r in &remainders {
+            if r.is_empty() {
+                continue;
+            }
+            let _ = entity.attest(r, &[]);
+        }
         return false;
     }
     let Some(word) = as_element_form(form, mag) else {

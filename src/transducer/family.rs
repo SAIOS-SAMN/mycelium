@@ -3058,6 +3058,32 @@ mod tests {
         );
     }
 
+    /// A withheld remainder is a listing chain: from_residual reads it,
+    /// so the residual path can mint against the book.
+    #[test]
+    fn withheld_remainder_chains_are_listing_shaped() {
+        let family = vec![
+            (grid(&["1"]), grid(&["2"])),
+            (grid(&["10"]), grid(&["23"])),
+        ];
+        let rule = extract_rule(&[(grid(&["1"]), grid(&["2"]))]).expect("recolour");
+        let (_pay, rems) = form_descent(&rule.form, &family, &NoCrystal);
+        let listings: Vec<&Vec<(i64, i64, u8, u8)>> =
+            rems.iter().filter(|r| !r.is_empty()).collect();
+        assert!(
+            !listings.is_empty(),
+            "a withheld form leaves at least one remainder chain"
+        );
+        for r in listings {
+            let e = element::from_residual(r);
+            assert_eq!(
+                e.sub().len(),
+                r.len(),
+                "the remainder is a listing chain the residual path speaks"
+            );
+        }
+    }
+
     #[test]
     fn extract_rule_cached_spends_once_per_generation() {
         let family = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];
