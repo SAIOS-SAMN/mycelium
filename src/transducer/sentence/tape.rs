@@ -82,8 +82,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
             Vertex::Word {
                 address,
                 word,
-                rho,
-                placement,
+                carriage,
                 gauge,
                 class,
                 contact,
@@ -91,9 +90,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
                 out.push(1);
                 crate::transducer::a21::put_addr(out, address);
                 word_to_form_bytes(word, *contact, out);
-                alphabet::put_q(out, rho);
-                alphabet::put_q(out, &placement.0);
-                alphabet::put_q(out, &placement.1);
+                carriage.to_bytes(out);
                 out.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
                 for &(a, b) in gauge {
                     out.push(a);
@@ -120,17 +117,14 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
             Vertex::Rebased {
                 by,
                 of,
-                shift,
-                rho,
+                carriage,
                 gauge,
                 class,
             } => {
                 out.push(3);
                 out.extend_from_slice(&by.to_le_bytes());
                 out.extend_from_slice(&of.to_le_bytes());
-                alphabet::put_q(out, &shift.0);
-                alphabet::put_q(out, &shift.1);
-                alphabet::put_q(out, rho);
+                carriage.to_bytes(out);
                 out.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
                 for &(a, b) in gauge {
                     out.push(a);
@@ -156,8 +150,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
         out.extend_from_slice(&face.i.to_le_bytes());
         out.extend_from_slice(&face.j.to_le_bytes());
         word_to_form_bytes(&face.transport.word, None, out);
-        alphabet::put_q(out, &face.transport.shift.0);
-        alphabet::put_q(out, &face.transport.shift.1);
+        face.transport.carriage.to_bytes(out);
         out.extend_from_slice(&(face.transport.gauge.len() as u16).to_le_bytes());
         for &(a, b) in &face.transport.gauge {
             out.push(a);
@@ -176,6 +169,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
         }
         out.extend_from_slice(&lp.chord.to_le_bytes());
         word_to_form_bytes(&lp.holonomy, None, out);
+        lp.carriage.to_bytes(out);
     }
     out.extend_from_slice(&(f.remainder.len() as u32).to_le_bytes());
     for &(r, c, before, after) in &f.remainder {
@@ -241,9 +235,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
             1 => {
                 let address = crate::transducer::a21::take_addr(b, pos)?;
                 let (word, contact) = word_from_form_bytes(b, pos)?;
-                let rho = alphabet::take_q(b, pos)?;
-                let p0 = alphabet::take_q(b, pos)?;
-                let p1 = alphabet::take_q(b, pos)?;
+                let carriage = element::Versor::from_bytes(b, pos)?;
                 let ng = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
                 let mut gauge = Vec::with_capacity(ng);
                 for _ in 0..ng {
@@ -254,8 +246,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                 Vertex::Word {
                     address,
                     word,
-                    rho,
-                    placement: (p0, p1),
+                    carriage,
                     gauge,
                     class,
                     contact,
@@ -282,9 +273,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
             3 => {
                 let by = take_u16(b, pos)?;
                 let of = take_u16(b, pos)?;
-                let s0 = alphabet::take_q(b, pos)?;
-                let s1 = alphabet::take_q(b, pos)?;
-                let rho = alphabet::take_q(b, pos)?;
+                let carriage = element::Versor::from_bytes(b, pos)?;
                 let ng = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
                 let mut gauge = Vec::with_capacity(ng);
                 for _ in 0..ng {
@@ -295,8 +284,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                 Vertex::Rebased {
                     by,
                     of,
-                    shift: (s0, s1),
-                    rho,
+                    carriage,
                     gauge,
                     class,
                 }
@@ -325,8 +313,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         let i = take_u16(b, pos)?;
         let j = take_u16(b, pos)?;
         let (word, _) = word_from_form_bytes(b, pos)?;
-        let s0 = alphabet::take_q(b, pos)?;
-        let s1 = alphabet::take_q(b, pos)?;
+        let carriage = element::Versor::from_bytes(b, pos)?;
         let ng = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
         let mut gauge = Vec::with_capacity(ng);
         for _ in 0..ng {
@@ -338,7 +325,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
             j,
             transport: Transport {
                 word,
-                shift: (s0, s1),
+                carriage,
                 gauge,
             },
         });
@@ -361,11 +348,13 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         }
         let chord = take_u16(b, pos)?;
         let (holonomy, _) = word_from_form_bytes(b, pos)?;
+        let carriage = element::Versor::from_bytes(b, pos)?;
         loops.push(Loop {
             vertices: vs,
             faces: fs,
             chord,
             holonomy,
+            carriage,
         });
     }
     let nr = take_count(b, *pos, take_u32(b, pos)? as usize, 18)?;
@@ -434,7 +423,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         vortex: Keyed::new(),
         by_address: Keyed::new(),
         star: Keyed::new(),
-        placements: Keyed::new(),
+        carriages: Keyed::new(),
         by_rebased: Keyed::new(),
         by_unfolded: Keyed::new(),
     };

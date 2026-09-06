@@ -1,17 +1,18 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 
-//! Face transport: word, shift, and hue map, and the gauge algebra.
+//! Face transport: word, carriage versor, and hue map, and the gauge algebra.
 
 use super::form::{Form, Vertex};
 use crate::network::nerve::{Keyed, ROOT};
 use crate::transducer::alphabet::Word;
+use crate::transducer::element::{self, Versor};
 
-/// Face transport: the relative word, translation and hue map from vertex
+/// Face transport: the relative word, carriage versor and hue map from vertex
 /// `i` to vertex `j`. The same three coordinates `transport_class` keys on.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Transport {
     pub word: Word,
-    pub shift: (num_rational::BigRational, num_rational::BigRational),
+    pub carriage: Versor,
     pub gauge: Vec<(u8, u8)>,
 }
 
@@ -19,27 +20,101 @@ impl Transport {
     pub fn from_word(word: Word) -> Transport {
         Transport {
             word,
-            shift: q2_zero(),
+            carriage: element::identity_versor(),
             gauge: Vec::new(),
         }
     }
 
     pub fn inverse(&self) -> Option<Transport> {
         let word = self.word.inverse();
-        let mapped = apply_linear(&word, &self.shift)?;
+        let carriage = self.carriage.versor_inverse()?;
         Some(Transport {
             word,
-            shift: (-mapped.0, -mapped.1),
+            carriage,
             gauge: gauge_invert(&self.gauge),
         })
     }
+
+    /// Move `form` into this transport's frame (3.10): rebase by word (3.2),
+    /// regauge (3.6), compose every carriage. `None` off the plane.
+    pub fn refract(&self, form: &Form) -> Option<Form> {
+        form.refract(self)
+    }
 }
 
-pub(crate) fn q2_zero() -> (num_rational::BigRational, num_rational::BigRational) {
-    let z = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-    (z.clone(), z)
+impl Form {
+    /// The one function that moves a form between frames (3.10).
+    pub fn refract(&self, gamma: &Transport) -> Option<Form> {
+        if gamma.word.form().is_none() {
+            return None;
+        }
+        let mut f = self.clone();
+        f.rebase_by_word(&gamma.word);
+        f.regauge_listing(&gamma.gauge);
+        f.compose_carriages(&gamma.carriage);
+        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        f.reindex();
+        let mut addr = crate::transducer::a21::Address::new(Vec::new());
+        for v in &self.vertices {
+            if let Vertex::Word { address, .. } = v {
+                addr = address.clone();
+                break;
+            }
+        }
+        let frame = gamma.word.key();
+        let hx = |a: &crate::transducer::a21::Address| {
+            a.as_bytes().iter().map(|b| format!("{b:02x}")).collect::<String>()
+        };
+        eprintln!("refracted {} into {} by Γ", hx(&addr), hx(&frame));
+        Some(f)
+    }
+
+    pub(crate) fn rebase_by_word(&mut self, by: &Word) {
+        for v in &mut self.vertices {
+            match v {
+                Vertex::Word { word, .. } => *word = word.rebase(by),
+                Vertex::Glued { placement, .. } => *placement = placement.rebase(by),
+                _ => {}
+            }
+        }
+        for face in &mut self.faces {
+            face.transport.word = face.transport.word.rebase(by);
+        }
+    }
+
+    pub(crate) fn regauge_listing(&mut self, g: &[(u8, u8)]) {
+        for v in &mut self.vertices {
+            match v {
+                Vertex::Word { gauge, .. } | Vertex::Rebased { gauge, .. } => {
+                    *gauge = compose_gauge(g, gauge);
+                }
+                _ => {}
+            }
+        }
+        for face in &mut self.faces {
+            face.transport.gauge = compose_gauge(g, &face.transport.gauge);
+        }
+    }
+
+    pub(crate) fn compose_carriages(&mut self, c: &Versor) {
+        for v in &mut self.vertices {
+            match v {
+                Vertex::Word { carriage, .. } | Vertex::Rebased { carriage, .. } => {
+                    *carriage = c.geo(carriage);
+                }
+                _ => {}
+            }
+        }
+        for face in &mut self.faces {
+            face.transport.carriage = c.geo(&face.transport.carriage);
+        }
+        for lp in &mut self.loops {
+            lp.carriage = c.geo(&lp.carriage);
+        }
+    }
 }
 
+#[cfg(test)]
 pub(crate) fn apply_linear(
     word: &Word,
     t: &(num_rational::BigRational, num_rational::BigRational),
@@ -122,21 +197,17 @@ pub(crate) fn relative_gauge(from: &[(u8, u8)], to: &[(u8, u8)]) -> Vec<(u8, u8)
     out
 }
 
-pub(crate) fn vertex_translation(
-    v: &Vertex,
-    form: &Form,
-) -> Option<(num_rational::BigRational, num_rational::BigRational)> {
+pub(crate) fn vertex_carriage(v: &Vertex, form: &Form) -> Option<Versor> {
     match v {
-        Vertex::Word { placement, .. } => Some(placement.clone()),
-        Vertex::Rebased { by, shift, .. } => match form.vertices.get(*by as usize) {
-            Some(Vertex::Word { placement, .. }) => Some((
-                placement.0.clone() + &shift.0,
-                placement.1.clone() + &shift.1,
-            )),
-            Some(Vertex::Frame) => Some(shift.clone()),
+        Vertex::Word { carriage, .. } => Some(carriage.clone()),
+        Vertex::Rebased { by, carriage, .. } => match form.vertices.get(*by as usize) {
+            Some(Vertex::Word { carriage: c, .. }) => Some(carriage.geo(c)),
+            Some(Vertex::Frame) => Some(carriage.clone()),
             _ => None,
         },
-        Vertex::Frame | Vertex::Glued { .. } | Vertex::Unfolded { .. } => Some(q2_zero()),
+        Vertex::Frame | Vertex::Glued { .. } | Vertex::Unfolded { .. } => {
+            Some(element::identity_versor())
+        }
     }
 }
 

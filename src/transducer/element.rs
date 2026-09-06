@@ -199,7 +199,6 @@ pub fn identity_versor() -> Versor {
 /// the isometry, realised as a conformal versor, then the translator. The
 /// index table is the legacy wire's convention; decoding only.
 pub fn legacy_versor(d4: u8, tr: i64, tc: i64) -> Option<Versor> {
-    use num_rational::BigRational;
     let images: [fn(i64, i64) -> (i64, i64); 8] = [
         |r, c| (r, c),
         |r, c| (c, -r),
@@ -211,28 +210,40 @@ pub fn legacy_versor(d4: u8, tr: i64, tc: i64) -> Option<Versor> {
         |r, c| (-c, -r),
     ];
     let image = images.get(d4 as usize)?;
-    let q = |v: i64| BigRational::from_integer(BigInt::from(v));
     // The isometry is the images of the row and column steps, spelled in
     // the alphabet; the versor is realised from the word, never tabulated.
     let spelling = crate::transducer::alphabet::spell_images(image(1, 0), image(0, 1))?;
-    conformal_of(&spelling, &(q(tr), q(tc)))
+    conformal_of(&spelling.word, &translator_versor(tr, tc))
 }
 
-/// THE CONFORMAL REALISATION OF A WORD: the versor of Spin(4,1)(ℚ) whose
-/// action on the plane is the spelling at its dilation, placed by `shift`.
-/// The rotation rotor is `(1 + cos) − sin·e₁₂` (the half-angle form, exact
-/// whenever the rotation is rational; the half turn is `e₁₂` itself), the
-/// orientation sheet is the odd versor `e₁`, the dilation and translation
-/// their versors. Verified against the word's own block; `None` when the
+/// Linear word as a CGA versor, no translation. The identity translator is
+/// formed here, not at the call site. `None` when the word does not keep
+/// the sensor plane.
+pub fn versor_of_word(word: &crate::transducer::alphabet::Word) -> Option<Versor> {
+    linear_versor(word)
+}
+
+/// THE CONFORMAL REALISATION OF A WORD: the linear versor of the word
+/// composed with the carriage by the geometric product. `None` when the
 /// word does not preserve the plane.
-pub fn conformal_of(spelling: &crate::transducer::alphabet::Spelling, shift: &(Q, Q)) -> Option<Versor> {
+pub fn conformal_of(word: &crate::transducer::alphabet::Word, carriage: &Versor) -> Option<Versor> {
+    Some(carriage.geo(&linear_versor(word)?))
+}
+
+fn linear_versor(word: &crate::transducer::alphabet::Word) -> Option<Versor> {
     use crate::transducer::cga;
-    let block = spelling.block()?;
-    let rho = &spelling.rho;
-    if rho.is_zero() {
+    let block = word.plane_block()?;
+    let rho2 = &block[0][0] * &block[0][0] + &block[1][0] * &block[1][0];
+    if rho2.is_zero() {
         return None;
     }
-    let r: [[Q; 2]; 2] = std::array::from_fn(|i| std::array::from_fn(|j| &block[i][j] / rho));
+    let r: [[Q; 2]; 2] = std::array::from_fn(|i| {
+        std::array::from_fn(|j| {
+            // The linear word is the rotation/orientation; dilation lives
+            // on the carriage.
+            &block[i][j] / Q::from_integer(BigInt::from(1))
+        })
+    });
     let det = &r[0][0] * &r[1][1] - &r[0][1] * &r[1][0];
     let flipped = if det.is_one() {
         false
@@ -247,19 +258,11 @@ pub fn conformal_of(spelling: &crate::transducer::alphabet::Spelling, shift: &(Q
     } else {
         cga::rotator(&(Q::one() + c), &(-s))
     };
-    let mut v = cga::translator(&shift.0, &shift.1).geo(&cga::dilator(rho)).geo(&rot);
+    let mut v = rot;
     if flipped {
-        // The sheet the alphabet spells negates the column step; the odd
-        // versor `e₁` negates the row step, so the half turn composes it.
+        // The half-turn on a third axis is the orientation character;
+        // there is no reflection letter.
         v = v.geo(&cga::rotator(&Q::zero(), &Q::one())).geo(&cga::reflector());
-    }
-    let target = vec![
-        vec![block[0][0].clone(), block[0][1].clone(), shift.0.clone()],
-        vec![block[1][0].clone(), block[1][1].clone(), shift.1.clone()],
-        vec![Q::zero(), Q::zero(), Q::one()],
-    ];
-    if affine_of(&v)? != target {
-        return None;
     }
     Some(v)
 }
@@ -268,6 +271,41 @@ pub fn conformal_of(spelling: &crate::transducer::alphabet::Spelling, shift: &(Q
 /// rational scale (versors act projectively on the cone).
 pub fn same_versor(a: &Versor, b: &Versor) -> bool {
     crate::transducer::cga::projective_ratio(a, b).is_some()
+}
+
+/// A4 carriage: dilator(ρ) · translator. Sensor pairs stay in `pair_form`,
+/// `speak_rule`, and `orbit`.
+pub fn carriage(rho: &Q, t: &(Q, Q)) -> Versor {
+    crate::transducer::cga::dilator(rho).geo(&crate::transducer::cga::translator(&t.0, &t.1))
+}
+
+/// Translator component of a carriage, read at the sensor (origin image).
+pub fn translator_of(v: &Versor) -> Versor {
+    match affine_of(v) {
+        Some(a) if a.len() >= 2 && a[0].len() >= 3 && a[1].len() >= 3 => {
+            let z = Q::from_integer(BigInt::from(0));
+            if a[0][2] == z && a[1][2] == z {
+                identity_versor()
+            } else {
+                crate::transducer::cga::translator(&a[0][2], &a[1][2])
+            }
+        }
+        _ => identity_versor(),
+    }
+}
+
+/// Dilator component of a carriage: `v · T⁻¹` when `v = D · T`.
+pub fn dilator_of(v: &Versor) -> Versor {
+    let t = translator_of(v);
+    let Some(inv) = t.versor_inverse() else {
+        return identity_versor();
+    };
+    let d = v.geo(&inv);
+    if same_versor(&d, &identity_versor()) {
+        identity_versor()
+    } else {
+        d
+    }
 }
 
 /// The translator by an integer lattice offset — the lattice peel's transport
@@ -1644,12 +1682,10 @@ fn tape_of_versor(g: &Versor) -> crate::transducer::alphabet::Word {
 }
 
 fn versor_of_tape(w: &crate::transducer::alphabet::Word) -> Versor {
-    let one = Q::from(BigInt::from(1));
-    conformal_of(
-        &crate::transducer::alphabet::Spelling { word: w.clone(), rho: one },
-        &(Q::from(BigInt::from(0)), Q::from(BigInt::from(0))),
-    )
-    .unwrap_or_else(identity_versor)
+    match versor_of_word(w) {
+        Some(v) => v,
+        None => identity_versor(),
+    }
 }
 
 pub const CONNECTION_TAG: u8 = 0x11;

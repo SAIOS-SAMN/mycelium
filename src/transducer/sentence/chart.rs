@@ -5,8 +5,8 @@
 use super::form::*;
 use super::transport::*;
 use crate::network::nerve::{Keyed, ROOT};
-use crate::transducer::alphabet::{self, Word};
-use crate::transducer::element::Element;
+use crate::transducer::alphabet::Word;
+use crate::transducer::element::{self, Element, Versor};
 use crate::transducer::stalk;
 use super::tape::from_element_form;
 
@@ -137,10 +137,12 @@ impl Form {
             let word = gj
                 .compose(&f.transport.word.compose(&gi.inverse()))
                 .normal_form();
-            let shift = apply_linear(gj, &f.transport.shift)?;
+            let gv = element::versor_of_word(gj)?;
+            let inv = gv.versor_inverse()?;
+            let carriage = gv.geo(&f.transport.carriage).geo(&inv);
             next.push(Transport {
                 word,
-                shift,
+                carriage,
                 gauge: f.transport.gauge.clone(),
             });
         }
@@ -209,13 +211,12 @@ impl Form {
         &mut self,
         by: u16,
         of: u16,
-        shift: (num_rational::BigRational, num_rational::BigRational),
+        carriage: Versor,
     ) -> Option<u16> {
         if (by as usize) >= self.vertices.len() {
             return None;
         }
         let Vertex::Word {
-            rho,
             gauge,
             class,
             ..
@@ -226,8 +227,7 @@ impl Form {
         self.vertices[of as usize] = Vertex::Rebased {
             by,
             of,
-            shift,
-            rho,
+            carriage,
             gauge,
             class,
         };
@@ -267,9 +267,9 @@ impl SentenceRule {
         }
     }
 
-    /// Placement of a transport class, read from the form's placements.
-    pub fn shift_of(&self, key: &[u8]) -> Option<(num_rational::BigRational, num_rational::BigRational)> {
-        self.form.placements.get(key).cloned()
+    /// Carriage of a transport class, read from the form's carriages.
+    pub fn carriage_of(&self, key: &[u8]) -> Option<Versor> {
+        self.form.carriages.get(key).cloned()
     }
 }
 
@@ -288,9 +288,9 @@ pub fn rule_of_form(mut form: Form) -> SentenceRule {
 
 
 
-/// Vertex key of a sentence form: Word vertices (M1, ρ, placement, contact,
+/// Vertex key of a sentence form: Word vertices (M1, carriage, contact,
 /// gauge) and face words. The body's absolute position is already quotiented
-/// on the chain; the bundle's translation is meaning.
+/// on the chain; the bundle's carriage is meaning.
 pub fn vertex_address(e: &Element) -> Option<crate::transducer::a21::Address> {
     from_element_form(e).map(|f| form_vertex_key(&f))
 }
@@ -302,17 +302,14 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::a21::Address {
             Vertex::Frame => buf.push(0),
             Vertex::Word {
                 word,
-                rho,
-                placement,
+                carriage,
                 gauge,
                 contact,
                 ..
             } => {
                 buf.push(1);
                 crate::transducer::a21::put_bytes(&mut buf, &word.key());
-                alphabet::put_q(&mut buf, rho);
-                alphabet::put_q(&mut buf, &placement.0);
-                alphabet::put_q(&mut buf, &placement.1);
+                carriage.to_bytes(&mut buf);
                 match contact {
                     None => buf.push(0),
                     Some(c) => {
@@ -343,17 +340,14 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::a21::Address {
             Vertex::Rebased {
                 by,
                 of,
-                shift,
-                rho,
+                carriage,
                 gauge,
                 ..
             } => {
                 buf.push(3);
                 buf.extend_from_slice(&by.to_le_bytes());
                 buf.extend_from_slice(&of.to_le_bytes());
-                alphabet::put_q(&mut buf, &shift.0);
-                alphabet::put_q(&mut buf, &shift.1);
-                alphabet::put_q(&mut buf, rho);
+                carriage.to_bytes(&mut buf);
                 let mut g = gauge.clone();
                 g.sort_unstable();
                 buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
@@ -380,8 +374,12 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::a21::Address {
         buf.extend_from_slice(&face.i.to_le_bytes());
         buf.extend_from_slice(&face.j.to_le_bytes());
         crate::transducer::a21::put_bytes(&mut buf, &face.transport.word.key());
-        alphabet::put_q(&mut buf, &face.transport.shift.0);
-        alphabet::put_q(&mut buf, &face.transport.shift.1);
+        match face.transport.carriage.key() {
+            Some(k) => {
+                let _ = crate::transducer::a21::put_addr(&mut buf, k);
+            }
+            None => {}
+        }
         let mut g = face.transport.gauge.clone();
         g.sort_unstable();
         buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
@@ -422,7 +420,7 @@ pub(crate) fn chart_of_form(f: &Form) -> Option<crate::transducer::stalk::Invari
         match v {
             Vertex::Word { .. } | Vertex::Rebased { .. } => {
                 let pf = v.word_in(f)?.form()?;
-                let mut row = vec![1u64, pf.parity as u64];
+                let mut row = vec![1u64, pf.orientation as u64];
                 row.extend(pf.rot.iter().map(|&x| x as u64));
                 rows.push(row);
             }

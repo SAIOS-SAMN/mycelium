@@ -60,8 +60,7 @@ mod tests {
         f.vertices.push(Vertex::Word {
             address: crate::transducer::a21::Address::new(Vec::new()),
             word: word.clone(),
-            rho: q1(),
-            placement: (q0(), q1()),
+            carriage: element::carriage(&q1(), &(q0(), q1())),
             gauge: vec![(1, 2)],
             class: stalk::Invariant(vec![3, 5]),
             contact,
@@ -104,8 +103,7 @@ mod tests {
         f.vertices.push(Vertex::Rebased {
             by: 0,
             of: 1,
-            shift: (q0(), q1()),
-            rho: q1(),
+            carriage: element::carriage(&q1(), &(q0(), q1())),
             gauge: vec![(1, 2)],
             class: stalk::Invariant(vec![3, 5]),
         });
@@ -158,15 +156,16 @@ mod tests {
             Vertex::Rebased {
                 by,
                 of,
-                shift,
-                rho,
+                carriage,
                 gauge,
                 class,
             } => {
                 assert_eq!(*by, 0);
                 assert_eq!(*of, 1);
-                assert_eq!(shift, &(q0(), q1()));
-                assert_eq!(rho, &q1());
+                assert!(element::same_versor(
+                    carriage,
+                    &element::carriage(&q1(), &(q0(), q1()))
+                ));
                 assert_eq!(gauge, &vec![(1, 2)]);
                 assert_eq!(class, &stalk::Invariant(vec![3, 5]));
             }
@@ -240,18 +239,19 @@ mod tests {
             fa.transport.gauge.clear();
         }
         let chord = f.loops[0].chord as usize;
-        f.faces[chord].transport.shift = (q1(), q0());
+        f.faces[chord].transport.carriage = element::carriage(&q1(), &(q1(), q0()));
         f.loops = Form::loops_of(&f.faces, f.vertices.len());
         let kappa = f.class_vector(0).expect("loop");
         assert!(
             kappa.occupies(Axis::Placement),
             "a nonzero composed shift occupies Placement"
         );
-        assert_ne!(
-            kappa.placement,
-            (q0(), q0()),
-            "the residue is the composed translation, got {:?}",
-            kappa.placement
+        assert!(
+            !element::same_versor(
+                &element::translator_of(&kappa.carriage),
+                &element::identity_versor()
+            ),
+            "the residue is the translator of the holonomy versor"
         );
         let snaps = f.pivot_loop(
             [0xa4; 32],
@@ -309,7 +309,7 @@ mod tests {
         let b = CycleType::of(&[(3, 4), (4, 3)]);
         assert_eq!(a, b, "cycle type is sorted lengths, not the listing");
         assert_eq!(a, CycleType::Type(vec![2]));
-        let z = (q0(), q0());
+        let z = element::identity_versor();
         let ka = ClassVector::read(&Word::identity(), z.clone(), a);
         let kb = ClassVector::read(&Word::identity(), z, b);
         assert!(ka.occupies(Axis::Hue) && kb.occupies(Axis::Hue));
@@ -340,8 +340,7 @@ mod tests {
         a.vertices.push(Vertex::Rebased {
             by: 0,
             of: 1,
-            shift: (q0(), q1()),
-            rho: q1(),
+            carriage: element::carriage(&q1(), &(q0(), q1())),
             gauge: Vec::new(),
             class: stalk::Invariant::default(),
         });
@@ -368,8 +367,7 @@ mod tests {
         b.vertices.push(Vertex::Rebased {
             by: 0,
             of: 2,
-            shift: (q0(), q1()),
-            rho: q1(),
+            carriage: element::carriage(&q1(), &(q0(), q1())),
             gauge: Vec::new(),
             class: stalk::Invariant::default(),
         });
@@ -386,8 +384,7 @@ mod tests {
         f.vertices.push(Vertex::Word {
             address: form_addr(1),
             word: Word::identity(),
-            rho: q1(),
-            placement: (q0(), q0()),
+            carriage: element::carriage(&q1(), &(q0(), q0())),
             gauge: Vec::new(),
             class: stalk::Invariant::default(),
             contact: None,
@@ -395,8 +392,7 @@ mod tests {
         f.vertices.push(Vertex::Word {
             address: form_addr(2),
             word: Word::identity(),
-            rho: q1(),
-            placement: (q0(), q0()),
+            carriage: element::carriage(&q1(), &(q0(), q0())),
             gauge: Vec::new(),
             class: stalk::Invariant::default(),
             contact: None,
@@ -421,8 +417,7 @@ mod tests {
         host.vertices.push(Vertex::Word {
             address: form_addr(1),
             word: w.clone(),
-            rho: q1(),
-            placement: (q0(), q0()),
+            carriage: element::carriage(&q1(), &(q0(), q0())),
             gauge: Vec::new(),
             class: stalk::Invariant::default(),
             contact: None,
@@ -430,8 +425,7 @@ mod tests {
         host.vertices.push(Vertex::Word {
             address: form_addr(2),
             word: w.clone(),
-            rho: q1(),
-            placement: (q0(), q1()),
+            carriage: element::carriage(&q1(), &(q0(), q1())),
             gauge: Vec::new(),
             class: stalk::Invariant::default(),
             contact: None,
@@ -487,13 +481,16 @@ mod tests {
         let w = Word::from_letters(&[(letter, false)]);
         let mut a = closed_word_form(w.clone(), None);
         let mut b = closed_word_form(w, None);
-        if let Vertex::Word { placement, .. } = &mut a.vertices[1] {
-            *placement = (q0(), q1());
+        if let Vertex::Word { carriage, .. } = &mut a.vertices[1] {
+            *carriage = element::carriage(&q1(), &(q0(), q1()));
         }
-        if let Vertex::Word { placement, .. } = &mut b.vertices[1] {
-            *placement = (
-                q0(),
-                num_rational::BigRational::from_integer(num_bigint::BigInt::from(3)),
+        if let Vertex::Word { carriage, .. } = &mut b.vertices[1] {
+            *carriage = element::carriage(
+                &q1(),
+                &(
+                    q0(),
+                    num_rational::BigRational::from_integer(num_bigint::BigInt::from(3)),
+                ),
             );
         }
         let ea = as_element_form(&a, [1, 0, 0, 0]).expect("a");
@@ -679,8 +676,7 @@ mod tests {
         Vertex::Word {
             address: form_addr(addr),
             word,
-            rho: one,
-            placement: (zero.clone(), zero),
+            carriage: element::carriage(&one, &(zero.clone(), zero)),
             gauge: vec![(1, 2)],
             class: stalk::Invariant::default(),
             contact: None,
@@ -833,7 +829,7 @@ mod tests {
 
     fn order2() -> Word {
         alphabet::PlaneForm {
-            parity: true,
+            orientation: true,
             rot: [0; alphabet::CAYLEY_ALPHABET_LEN],
         }
         .to_word()
@@ -908,7 +904,7 @@ mod tests {
         assert!(id.occupied().is_empty() && id.is_zero());
         let k2 = ClassVector::of_word(&order2());
         let occ = k2.coordinates();
-        assert_eq!(occ, vec![Axis::Sheet(0)], "sheet parity occupies Sheet(0), got {occ:?}");
+        assert_eq!(occ, vec![Axis::Orientation(0)], "sheet parity occupies Sheet(0), got {occ:?}");
         let inf = ClassVector::of_word(&infinite());
         assert!(
             inf.free_part(),
@@ -918,14 +914,15 @@ mod tests {
         seen.extend(inf.coordinates());
         let mut declaration = seen.clone();
         declaration.sort_by_key(|a| match a {
-            Axis::Sheet(i) => (0, *i),
+            Axis::Orientation(i) => (0, *i),
             Axis::Unit(i) => (1, *i),
             Axis::Prime5(i) => (2, *i),
             Axis::Prime13(i) => (3, *i),
             Axis::Hue => (4, 0),
             Axis::Placement => (5, 0),
-            Axis::OffPlane => (6, 0),
-            Axis::Open => (7, 0),
+            Axis::Dilation => (6, 0),
+            Axis::OffPlane => (7, 0),
+            Axis::Open => (8, 0),
         });
         assert_eq!(seen, declaration, "occupied axes already in declaration order");
     }
@@ -1027,8 +1024,7 @@ mod tests {
         spoken.vertices.push(Vertex::Word {
             address: form_addr(1),
             word: q.clone(),
-            rho: q1(),
-            placement: (q1() + q1() + q1(), q1() + q1() + q1()),
+            carriage: element::carriage(&q1(), &(q1() + q1() + q1(), q1() + q1() + q1())),
             gauge: vec![(1, 1)],
             class: class.clone(),
             contact: None,
@@ -1049,13 +1045,13 @@ mod tests {
         if let Vertex::Word {
             class: c,
             gauge,
-            placement,
+            carriage,
             ..
         } = &mut f.vertices[1]
         {
             *c = class;
             *gauge = vec![(1, 1)];
-            *placement = (q1() + q1() + q1(), q1() + q1() + q1());
+            *carriage = element::carriage(&q1(), &(q1() + q1() + q1(), q1() + q1() + q1()));
         }
         let bundle = vec![(x, y)];
         let snaps = f.pivot_loop(
@@ -1086,7 +1082,7 @@ mod tests {
 
     #[test]
     fn cauterize_filed_torsion_crystallizes() {
-        let mut f = chord_form(&[order2()]);
+        let mut f = chord_form(&[order4()]);
         assert!(!f.is_closed());
         let _ = f.pivot_loop(
             [0xca; 32],
@@ -1109,7 +1105,7 @@ mod tests {
     /// the loop.
     #[test]
     fn filed_torsion_chord_replays_or_refuses() {
-        let mut f0 = chord_form(&[order2()]);
+        let mut f0 = chord_form(&[order4()]);
         let _ = f0.pivot_loop(
             [0xca; 32],
             &crate::network::nerve::Keyed::new(),
@@ -1158,12 +1154,12 @@ mod tests {
         else {
             panic!("the filed form has a torsion chord");
         };
-        f.faces[ci].transport.word = order4();
+        f.faces[ci].transport.word = order2();
         let bad = as_element_form(&f, mag).expect("tampered chord");
         assert_eq!(
             crate::court::verdict::blind_replay(&bad),
-            Some(crate::court::verdict::REFUSE_FACE),
-            "a chord that does not carry the loop holonomy refuses the face"
+            Some(crate::court::verdict::REFUSE_LOOP),
+            "a chord whose holonomy is not the filed class refuses the loop"
         );
         let mut gone = from_element_form(&e).expect("v2 tape");
         gone.torsion = Keyed::new();
@@ -1197,7 +1193,7 @@ mod tests {
 
     #[test]
     fn two_loops_of_one_class_are_both_filed_or_discharged() {
-        let w = order2();
+        let w = order4();
         fn two_chords(w: &Word) -> Form {
             chord_form(&[w.clone(), w.clone()])
         }
@@ -1394,8 +1390,8 @@ mod tests {
         let bad = as_element_form(&tampered, e.magnitude()).expect("tampered tape");
         assert_eq!(
             crate::court::verdict::blind_replay(&bad),
-            Some(crate::court::verdict::REFUSE_FACE),
-            "a word on a certified face that is not face_of of its vertices refuses"
+            Some(crate::court::verdict::REFUSE_LOOP),
+            "tampering a certified face re-opens an unfiled loop"
         );
 
         let mut f = chord_form(&[q.clone()]);
@@ -1445,7 +1441,7 @@ mod tests {
             }
             let inserts = work::snapshot().1;
             work::reset();
-            let _ = on_axis_of(&index, &inv, Axis::Sheet(0));
+            let _ = on_axis_of(&index, &inv, Axis::Orientation(0));
             let gets = work::snapshot().0;
             (inserts, gets)
         };
@@ -1580,15 +1576,18 @@ mod tests {
             apply_linear(&w, &t).is_none(),
             "an off-plane word does not act as the identity on a translation"
         );
+        let tr = Transport {
+            word: w.clone(),
+            carriage: element::identity_versor(),
+            gauge: Vec::new(),
+        };
         assert!(
-            Transport {
-                word: w,
-                shift: t,
-                gauge: Vec::new(),
-            }
-            .inverse()
-            .is_none(),
-            "Transport::inverse refuses an off-plane word"
+            tr.inverse().is_some(),
+            "an off-plane holonomy is a rotor like any other: inverse is the carriage inverse"
+        );
+        assert!(
+            tr.refract(&Form::default()).is_none(),
+            "refraction refuses a word that moves the sensor plane"
         );
     }
 
@@ -1604,8 +1603,7 @@ mod tests {
         let empty = |addr: u8| Vertex::Word {
             address: form_addr(addr),
             word: Word::identity(),
-            rho: q1(),
-            placement: (q0(), q0()),
+            carriage: element::carriage(&q1(), &(q0(), q0())),
             gauge: Vec::new(),
             class: stalk::Invariant::default(),
             contact: None,
@@ -1655,5 +1653,287 @@ mod tests {
             None,
             "the court reads projective identity"
         );
+    }
+
+    #[test]
+    fn rotor_class_is_read_before_the_plane_form() {
+        let w = order4();
+        let rk = w.rotor().class_key().expect("quarter is a versor");
+        assert_eq!(
+            w.class_key(),
+            rk,
+            "Word::class_key is the rotor conjugacy, not the plane form"
+        );
+        let cv = ClassVector::of_word(&w);
+        let kb = cv.class_key();
+        assert!(
+            kb.as_bytes().starts_with(rk.as_bytes()),
+            "a prefix of the class vector is the rotor's conjugacy stratum"
+        );
+        assert!(cv.occupies(Axis::Unit(0)));
+        assert!(!cv.occupies(Axis::OffPlane), "a plane word is not an off-plane fallback");
+        let other = order2();
+        assert!(
+            !w.same_class(&other),
+            "distinct rotor classes are distinct even when both have a plane form"
+        );
+    }
+
+    #[test]
+    fn a_word_that_moves_the_sensor_plane_is_not_an_exception() {
+        let w = Word::from_letters(&[(alphabet::LetterId::quarter((0, 2)).unwrap(), false)]);
+        assert!(w.form().is_none());
+        assert!(w.plane_block().is_none());
+        let cv = ClassVector::of_word(&w);
+        assert!(
+            cv.occupies(Axis::OffPlane),
+            "an off-plane holonomy occupies OffPlane as a rotor, got {:?}",
+            cv.coordinates()
+        );
+        assert!(
+            !cv.occupies(Axis::Orientation(0))
+                && !cv.occupies(Axis::Unit(0))
+                && !cv.occupies(Axis::Prime5(0)),
+            "plane blocks are zero, not a fallback identity"
+        );
+        assert_eq!(w.class_key(), w.rotor().class_or_rotor_key());
+        assert!(w.same_form(&w), "missing plane form is not an exception when rotors agree");
+    }
+
+    #[test]
+    fn orientation_is_the_third_axis_half_turn() {
+        let s = alphabet::PlaneForm::sheet_word();
+        assert_eq!(s.len(), 2, "the 1.2 relator is two quarter turns, S = q²");
+        let f = s.form().expect("the half-turn keeps the sensor plane");
+        assert!(f.orientation, "det/ρ² = −1 is the orientation character");
+        let cv = ClassVector::of_word(&s);
+        assert_eq!(
+            cv.coordinates(),
+            vec![Axis::Orientation(0)],
+            "orientation occupies Orientation(0), never a stored flag, got {:?}",
+            cv.coordinates()
+        );
+        let q = order4();
+        let conj = s.compose(&q).compose(&s).compose(&q.inverse());
+        assert!(
+            !conj.form().expect("plane").is_identity(),
+            "S R S⁻¹ = R⁻¹, not the commuting identity"
+        );
+    }
+
+    #[test]
+    fn refraction_is_rebase_regauge_and_carriage() {
+        let mut f = Form::default();
+        f.vertices.push(word_vertex(1, order4()));
+        f.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            transport: f.face_of(0, 1).expect("star"),
+        });
+        f.reindex();
+        let gamma = Transport {
+            word: order4(),
+            carriage: element::carriage(&q1(), &(q1(), q0())),
+            gauge: vec![(1, 3)],
+        };
+        let out = gamma.refract(&f).expect("on the plane");
+        let Vertex::Word { word: old_word, carriage: old_c, gauge: old_g, .. } = &f.vertices[1] else {
+            panic!("word vertex");
+        };
+        let Vertex::Word { word, carriage, gauge, .. } = &out.vertices[1] else {
+            panic!("word vertex");
+        };
+        assert_eq!(word, &old_word.rebase(&gamma.word));
+        assert!(element::same_versor(carriage, &gamma.carriage.geo(old_c)));
+        assert_eq!(gauge, &compose_gauge(&gamma.gauge, old_g));
+        let off = Transport {
+            word: Word::from_letters(&[(alphabet::LetterId::quarter((0, 2)).unwrap(), false)]),
+            carriage: element::identity_versor(),
+            gauge: Vec::new(),
+        };
+        assert!(off.refract(&f).is_none(), "None off the plane");
+    }
+
+    #[test]
+    fn refraction_replays_as_its_three_moves() {
+        let mut f = Form::default();
+        f.vertices.push(word_vertex(1, order4()));
+        f.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            transport: f.face_of(0, 1).expect("star"),
+        });
+        f.reindex();
+        let gamma = Transport {
+            word: order2(),
+            carriage: element::carriage(&q1(), &(q0(), q1())),
+            gauge: vec![(2, 5)],
+        };
+        let via = gamma.refract(&f).expect("Γ");
+        let mut by_hand = f.clone();
+        by_hand.rebase_by_word(&gamma.word);
+        by_hand.regauge_listing(&gamma.gauge);
+        by_hand.compose_carriages(&gamma.carriage);
+        by_hand.loops = Form::loops_of(&by_hand.faces, by_hand.vertices.len());
+        by_hand.reindex();
+        assert_eq!(via.vertices.len(), by_hand.vertices.len());
+        for (a, b) in via.vertices.iter().zip(&by_hand.vertices) {
+            match (a, b) {
+                (
+                    Vertex::Word { word: wa, carriage: ca, gauge: ga, .. },
+                    Vertex::Word { word: wb, carriage: cb, gauge: gb, .. },
+                ) => {
+                    assert_eq!(wa, wb);
+                    assert!(element::same_versor(ca, cb));
+                    assert_eq!(ga, gb);
+                }
+                (Vertex::Frame, Vertex::Frame) => {}
+                _ => panic!("replayed vertices differ"),
+            }
+        }
+    }
+
+    #[test]
+    fn a_loop_residue_is_the_translator_of_its_holonomy_versor() {
+        let mut f = chord_form(&[Word::identity()]);
+        for fa in &mut f.faces {
+            fa.transport.gauge.clear();
+        }
+        let chord = f.loops[0].chord as usize;
+        f.faces[chord].transport.carriage = element::carriage(&q1(), &(q1(), q0()));
+        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        let kappa = f.class_vector(0).expect("loop");
+        assert!(kappa.occupies(Axis::Placement));
+        let t = element::translator_of(&kappa.carriage);
+        assert!(
+            !element::same_versor(&t, &element::identity_versor()),
+            "the residue is the translator, not a pair"
+        );
+        assert!(!kappa.occupies(Axis::Dilation));
+    }
+
+    #[test]
+    fn rebase_conjugates_by_a_versor_never_subtracts() {
+        let mut f = Form::default();
+        f.vertices.push(word_vertex(1, order4()));
+        if let Vertex::Word { carriage, .. } = &mut f.vertices[1] {
+            *carriage = element::carriage(&q1(), &(q1(), q0()));
+        }
+        f.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            transport: f.face_of(0, 1).expect("star"),
+        });
+        let by = f.face_of(0, 1).expect("relative");
+        assert!(
+            !element::same_versor(&by.carriage, &element::identity_versor())
+                || f.vertices.get(1).is_some(),
+            "face_of composes carriages by the geometric product"
+        );
+        let of = f
+            .rebase(0, 1, element::carriage(&q1(), &(q0(), q1())))
+            .expect("rebase");
+        assert!(matches!(f.vertices[of as usize], Vertex::Rebased { .. }));
+        let t = f.face_of(0, of).expect("rebased face");
+        let _ = t.carriage;
+    }
+
+    #[test]
+    fn no_coordinate_pair_outside_the_sensor() {
+        let src = include_str!("form.rs");
+        assert!(
+            !src.contains("placement: (num_rational")
+                && !src.contains("shift: (num_rational"),
+            "sentence form does not carry a coordinate pair"
+        );
+        let tr = include_str!("transport.rs");
+        assert!(
+            !tr.contains("pub shift:") && !tr.contains("pub placement:"),
+            "Transport carries a carriage, not a pair"
+        );
+        let cl = include_str!("class.rs");
+        assert!(
+            !cl.contains("placement: (num_rational"),
+            "the class vector residue is a versor"
+        );
+    }
+
+    #[test]
+    fn pivot_discharges_only_its_axis_and_raises_none() {
+        // T14: Placement.
+        let mut f = chord_form(&[Word::identity()]);
+        for fa in &mut f.faces {
+            fa.transport.gauge.clear();
+        }
+        let chord = f.loops[0].chord as usize;
+        f.faces[chord].transport.carriage = element::carriage(&q1(), &(q1(), q0()));
+        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        let before = f.class_vector(0).expect("loop");
+        assert!(before.occupies(Axis::Placement));
+        let _ = f.pivot_loop(
+            [0xb4; 32],
+            &Keyed::new(),
+            &crate::transducer::family::NoCrystal,
+            &mut crate::physics::Physics::default().stroke_n(8),
+            None,
+            0,
+        );
+        let after = f.class_vector(0).expect("loop remains");
+        assert!(!after.occupies(Axis::Placement), "Placement zeroes");
+        assert!(
+            before.agrees_except(&after, Axis::Placement),
+            "no other coordinate moved"
+        );
+
+        // T14: Orientation.
+        let mut f = chord_form(&[order2()]);
+        for fa in &mut f.faces {
+            fa.transport.gauge.clear();
+        }
+        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        let before = f.class_vector(0).expect("ori");
+        assert!(before.occupies(Axis::Orientation(0)), "got {:?}", before.coordinates());
+        let _ = f.pivot_loop(
+            [0xb5; 32],
+            &Keyed::new(),
+            &crate::transducer::family::NoCrystal,
+            &mut crate::physics::Physics::default().stroke_n(8),
+            None,
+            0,
+        );
+        let after = f.class_vector(0).expect("ori after");
+        assert!(
+            !after.occupies(Axis::Orientation(0)),
+            "Orientation zeroes, got {:?}",
+            after.coordinates()
+        );
+        assert!(before.agrees_except(&after, Axis::Orientation(0)));
+
+        // T14: Dilation.
+        let mut f = chord_form(&[Word::identity()]);
+        for fa in &mut f.faces {
+            fa.transport.gauge.clear();
+        }
+        let chord = f.loops[0].chord as usize;
+        let two = num_rational::BigRational::from_integer(num_bigint::BigInt::from(2));
+        f.faces[chord].transport.carriage = element::carriage(&two, &(q0(), q0()));
+        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        let before = f.class_vector(0).expect("dil");
+        assert!(
+            before.occupies(Axis::Dilation),
+            "a dilator residue occupies Dilation, got {:?}",
+            before.coordinates()
+        );
+        let _ = f.pivot_loop(
+            [0xb6; 32],
+            &Keyed::new(),
+            &crate::transducer::family::NoCrystal,
+            &mut crate::physics::Physics::default().stroke_n(8),
+            None,
+            0,
+        );
+        let after = f.class_vector(0).expect("dil after");
+        assert!(!after.occupies(Axis::Dilation), "Dilation zeroes, got {:?}", after.coordinates());
+        assert!(before.agrees_except(&after, Axis::Dilation));
     }
 }

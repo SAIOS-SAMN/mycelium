@@ -3305,8 +3305,7 @@ mod tests {
             f.vertices.push(Vertex::Word {
                 address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 1]),
                 word: w.clone(),
-                rho: one,
-                placement: (zero.clone(), zero),
+                carriage: crate::transducer::element::carriage(&one, &(zero.clone(), zero)),
                 gauge: vec![(1, 2)],
                 class: crate::transducer::stalk::Invariant::default(),
                 contact: None,
@@ -3351,8 +3350,7 @@ mod tests {
         let word_vertex = |addr: crate::transducer::a21::Address| Vertex::Word {
             address: addr,
             word: w.clone(),
-            rho: one.clone(),
-            placement: (zero.clone(), zero.clone()),
+            carriage: crate::transducer::element::carriage(&one.clone(), &(zero.clone(), zero.clone())),
             gauge: vec![(1, 2)],
             class: crate::transducer::stalk::Invariant::default(),
             contact: None,
@@ -3424,8 +3422,7 @@ mod tests {
         f.vertices.push(Vertex::Word {
             address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 1]),
             word: w,
-            rho: one,
-            placement: (zero.clone(), zero),
+            carriage: crate::transducer::element::carriage(&one, &(zero.clone(), zero)),
             gauge: vec![(1, 2)],
             class: crate::transducer::stalk::Invariant::default(),
             contact,
@@ -3486,8 +3483,7 @@ mod tests {
             f.vertices.push(Vertex::Word {
                 address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 9]),
                 word: inf,
-                rho: one,
-                placement: (zero.clone(), zero),
+                carriage: crate::transducer::element::carriage(&one, &(zero.clone(), zero)),
                 gauge: Vec::new(),
                 class: crate::transducer::stalk::Invariant::default(),
                 contact: None,
@@ -3530,8 +3526,7 @@ mod tests {
         f.vertices.push(Vertex::Word {
             address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 1]),
             word: w,
-            rho: one,
-            placement: (zero.clone(), zero),
+            carriage: crate::transducer::element::carriage(&one, &(zero.clone(), zero)),
             gauge: vec![(1, 2)],
             class: crate::transducer::stalk::Invariant::default(),
             contact: None,
@@ -3562,8 +3557,7 @@ mod tests {
             f.vertices.push(Vertex::Word {
                 address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 1]),
                 word: w,
-                rho: one,
-                placement: (zero.clone(), zero),
+                carriage: crate::transducer::element::carriage(&one, &(zero.clone(), zero)),
                 gauge: vec![(1, 2)],
                 class: crate::transducer::stalk::Invariant::default(),
                 contact: None,
@@ -3637,8 +3631,7 @@ mod tests {
             f.vertices.push(Vertex::Word {
                 address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, i as u8 + 1]),
                 word: Word::identity(),
-                rho: one.clone(),
-                placement: (zero.clone(), zero.clone()),
+                carriage: crate::transducer::element::carriage(&one.clone(), &(zero.clone(), zero.clone())),
                 gauge: g.to_vec(),
                 class: crate::transducer::stalk::Invariant::default(),
                 contact: None,

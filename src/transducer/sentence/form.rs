@@ -4,12 +4,10 @@
 
 use super::chain::Cell;
 use super::class::{Axis, Rank};
-use super::transport::{
-    apply_linear, relative_gauge, vertex_gauge, vertex_translation, Transport,
-};
+use super::transport::{relative_gauge, vertex_gauge, Transport};
 use crate::network::nerve::{Keyed, ROOT};
 use crate::transducer::alphabet::{self, Order, Rotor, Word};
-use crate::transducer::element::{affine_of, Versor};
+use crate::transducer::element::{self, affine_of, Versor};
 use crate::transducer::peel::ShellKind;
 use crate::transducer::stalk;
 
@@ -29,11 +27,10 @@ pub enum Vertex {
     Word {
         address: crate::transducer::a21::Address,
         word: Word,
-        rho: num_rational::BigRational,
-        placement: (num_rational::BigRational, num_rational::BigRational),
+        carriage: Versor,
         gauge: Vec<(u8, u8)>,
         class: stalk::Invariant,
-        /// Stop ring. A form coordinate with ρ, placement, gauge; not M1.
+        /// Stop ring. A form coordinate with the carriage and gauge; not M1.
         contact: Option<alphabet::Contact>,
     },
     Glued {
@@ -50,10 +47,8 @@ pub enum Vertex {
     Rebased {
         by: u16,
         of: u16,
-        /// Relative placement t = p_of − p_by.
-        shift: (num_rational::BigRational, num_rational::BigRational),
-        /// `of`'s dilation.
-        rho: num_rational::BigRational,
+        /// Relative carriage t = C_of · C_by⁻¹.
+        carriage: Versor,
         /// `of`'s hue map, spoken on `of`'s bodies.
         gauge: Vec<(u8, u8)>,
         /// `of`'s chart: the section coordinate naming the bodies it speaks to.
@@ -88,6 +83,7 @@ pub struct Loop {
     pub faces: Vec<u16>,
     pub chord: u16,
     pub holonomy: Word,
+    pub carriage: Versor,
 }
 
 /// A sentence as vertices, faces, loops, remainder.
@@ -117,8 +113,8 @@ pub struct Form {
     pub by_address: Keyed<u16>,
     /// Vertex index key → Frame face index. Star incidence, one face per vertex.
     pub star: Keyed<u16>,
-    /// Word vertex address → placement, filled at construction.
-    pub placements: Keyed<(num_rational::BigRational, num_rational::BigRational)>,
+    /// Word vertex address → carriage, filled at construction.
+    pub carriages: Keyed<Versor>,
     /// Rebased vertex keyed by the `of` Word address.
     pub by_rebased: Keyed<u16>,
     /// Unfolded vertex keyed by its measure key.
@@ -142,7 +138,7 @@ impl Default for Form {
             vortex: Keyed::new(),
             by_address: Keyed::new(),
             star: Keyed::new(),
-            placements: Keyed::new(),
+            carriages: Keyed::new(),
             by_rebased: Keyed::new(),
             by_unfolded: Keyed::new(),
         }
@@ -150,19 +146,16 @@ impl Default for Form {
 }
 
 impl Form {
-    /// Fill by_address, star, placements (by transport-class key) and
+    /// Fill by_address, star, carriages (by transport-class key) and
     /// hue_maps from the vertices and faces. Two gauges on one word class
-    /// are two hue sections, each kept. Two placements on one transport
-    /// class stay two sections: that class is refused as one placement.
+    /// are two hue sections, each kept. Two carriages on one transport
+    /// class stay two sections: that class is refused as one carriage.
     pub fn reindex(&mut self) {
         let mut by_address = Keyed::new();
         let mut by_rebased = Keyed::new();
         let mut by_unfolded = Keyed::new();
         let mut hue_maps = std::mem::take(&mut self.hue_maps);
-        let mut places: Keyed<(
-            num_rational::BigRational,
-            num_rational::BigRational,
-        )> = Keyed::new();
+        let mut places: Keyed<Versor> = Keyed::new();
         let mut place_conflict: Keyed<()> = Keyed::new();
         let mut star = Keyed::new();
         for (i, v) in self.vertices.iter().enumerate() {
@@ -170,7 +163,7 @@ impl Form {
                 Vertex::Word {
                     address,
                     word,
-                    placement,
+                    carriage,
                     gauge,
                     class: _,
                     ..
@@ -180,9 +173,9 @@ impl Form {
                     let tk = vertex_transport_key(word, gauge);
                     match places.get(&tk) {
                         None => {
-                            places.insert(tk, placement.clone());
+                            places.insert(tk, carriage.clone());
                         }
-                        Some(held) if held != placement => {
+                        Some(held) if !element::same_versor(held, carriage) => {
                             place_conflict.insert(tk, ());
                         }
                         _ => {}
@@ -199,10 +192,10 @@ impl Form {
                 _ => {}
             }
         }
-        let mut placements = Keyed::new();
+        let mut carriages = Keyed::new();
         for (k, p) in places.fiber(ROOT) {
             if !place_conflict.contains(&k) {
-                placements.insert(&k, p.clone());
+                carriages.insert(&k, p.clone());
             }
         }
         for (fi, f) in self.faces.iter().enumerate() {
@@ -216,7 +209,7 @@ impl Form {
         self.by_rebased = by_rebased;
         self.by_unfolded = by_unfolded;
         self.star = star;
-        self.placements = placements;
+        self.carriages = carriages;
         self.hue_maps = hue_maps;
     }
 }
@@ -256,12 +249,14 @@ impl Form {
         let wa = va.word_in(self)?;
         let wb = vb.word_in(self)?;
         let word = wb.compose(&wa.inverse()).normal_form();
-        let ta = vertex_translation(va, self)?;
-        let tb = vertex_translation(vb, self)?;
-        let mapped = apply_linear(&word, &ta)?;
-        let shift = (tb.0 - mapped.0, tb.1 - mapped.1);
+        let ca = super::transport::vertex_carriage(va, self)?;
+        let cb = super::transport::vertex_carriage(vb, self)?;
+        let wv = element::versor_of_word(&word)?;
+        let inv = wv.versor_inverse()?;
+        let conjugated = wv.geo(&ca).geo(&inv);
+        let carriage = cb.geo(&conjugated.versor_inverse()?);
         let gauge = relative_gauge(&vertex_gauge(va), &vertex_gauge(vb));
-        Some(Transport { word, shift, gauge })
+        Some(Transport { word, carriage, gauge })
     }
 
     pub fn delta1(&self) -> Vec<(u16, Word)> {
@@ -467,10 +462,10 @@ pub enum PivotBy {
     /// A held word written onto the chord face `face` as the relation the
     /// bundle was missing on that loop.
     Word { face: u16, word: Word, side: Side },
-    /// The translation residue, subtracted from the chord shift (A4).
+    /// The translator residue of the holonomy carriage (A4).
     Placement {
         face: u16,
-        shift: (num_rational::BigRational, num_rational::BigRational),
+        translator: Versor,
     },
     /// The hue cycle type, composed as inverse onto the chord gauge (A4).
     Hue { face: u16, gauge: Vec<(u8, u8)> },
@@ -488,10 +483,14 @@ impl PivotBy {
     pub(crate) fn move_key(&self) -> Vec<u8> {
         match self {
             PivotBy::Word { word, .. } => word.rotor().key().into_vec(),
-            PivotBy::Placement { shift, .. } => {
+            PivotBy::Placement { translator, .. } => {
                 let mut buf = vec![1u8];
-                alphabet::put_q(&mut buf, &shift.0);
-                alphabet::put_q(&mut buf, &shift.1);
+                match translator.key() {
+                    Some(k) => {
+                        let _ = crate::transducer::a21::put_addr(&mut buf, k);
+                    }
+                    None => {}
+                }
                 buf
             }
             PivotBy::Hue { gauge, .. } => {
@@ -549,11 +548,10 @@ impl PivotCertificate {
                 });
                 crate::transducer::a21::put_bytes(&mut buf, &word.key());
             }
-            PivotBy::Placement { face, shift } => {
+            PivotBy::Placement { face, translator } => {
                 buf.push(1);
                 buf.extend_from_slice(&face.to_le_bytes());
-                alphabet::put_q(&mut buf, &shift.0);
-                alphabet::put_q(&mut buf, &shift.1);
+                translator.to_bytes(&mut buf);
             }
             PivotBy::Hue { face, gauge } => {
                 buf.push(2);
@@ -594,11 +592,10 @@ impl PivotCertificate {
                 });
                 word.to_bytes(out);
             }
-            PivotBy::Placement { face, shift } => {
+            PivotBy::Placement { face, translator } => {
                 out.push(1);
                 out.extend_from_slice(&face.to_le_bytes());
-                alphabet::put_q(out, &shift.0);
-                alphabet::put_q(out, &shift.1);
+                translator.to_bytes(out);
             }
             PivotBy::Hue { face, gauge } => {
                 out.push(2);
@@ -651,12 +648,8 @@ impl PivotCertificate {
             }
             1 => {
                 let face = take_u16(b, pos)?;
-                let s0 = alphabet::take_q(b, pos)?;
-                let s1 = alphabet::take_q(b, pos)?;
-                PivotBy::Placement {
-                    face,
-                    shift: (s0, s1),
-                }
+                let translator = Versor::from_bytes(b, pos)?;
+                PivotBy::Placement { face, translator }
             }
             2 => {
                 let face = take_u16(b, pos)?;

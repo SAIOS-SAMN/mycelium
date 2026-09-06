@@ -180,15 +180,6 @@ fn spelling_of_versor(v: &Versor) -> super::alphabet::Spelling {
         })
 }
 
-fn versor_shift(v: &Versor) -> (BigRational, BigRational) {
-    element::affine_of(v)
-        .and_then(|a| {
-            (a.len() >= 2 && a[0].len() >= 3 && a[1].len() >= 3)
-                .then(|| (a[0][2].clone(), a[1][2].clone()))
-        })
-        .unwrap_or_else(|| (q(0), q(0)))
-}
-
 fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Vec<(i64, i64, u8, u8)> {
     let mut chain = Vec::new();
     match (a, b) {
@@ -248,8 +239,7 @@ pub fn word_form(a: &Body, b: &Body) -> Option<Vertex> {
     Some(Vertex::Word {
         address: element::from_residual(&chain).address(),
         word: sp.word,
-        rho: sp.rho,
-        placement: versor_shift(&car.v),
+        carriage: car.v,
         gauge,
         class: b.moduli.clone(),
         contact: None,
@@ -265,8 +255,7 @@ fn body_only_vertex(body: &Body, created: bool) -> Vertex {
     Vertex::Word {
         address: element::from_residual(&chain).address(),
         word: super::alphabet::Word::identity(),
-        rho: q(1),
-        placement: (q(0), q(0)),
+        carriage: element::identity_versor(),
         gauge: hue_map_of_chain(&chain),
         class: body.moduli.clone(),
         contact: None,
@@ -1056,7 +1045,7 @@ fn pair_form_uncached(
         vortex: crate::network::nerve::Keyed::new(),
         by_address: crate::network::nerve::Keyed::new(),
         star: crate::network::nerve::Keyed::new(),
-        placements: crate::network::nerve::Keyed::new(),
+        carriages: crate::network::nerve::Keyed::new(),
         by_rebased: crate::network::nerve::Keyed::new(),
         by_unfolded: crate::network::nerve::Keyed::new(),
     };
@@ -1169,18 +1158,7 @@ fn apply_versor_cells(v: &Versor, cells: &[Cell3], frame: (usize, usize)) -> Vec
 
 fn vertex_versor(v: &Vertex) -> Option<Versor> {
     match v {
-        Vertex::Word {
-            word,
-            rho,
-            placement,
-            ..
-        } => {
-            let sp = super::alphabet::Spelling {
-                word: word.clone(),
-                rho: rho.clone(),
-            };
-            Some(element::conformal_of(&sp, placement).unwrap_or_else(element::identity_versor))
-        }
+        Vertex::Word { word, carriage, .. } => element::conformal_of(word, carriage),
         _ => None,
     }
 }
@@ -1373,18 +1351,13 @@ pub fn apply_form(
             Vertex::Frame => {}
             Vertex::Word {
                 word,
-                rho,
-                placement: p,
+                carriage,
                 gauge,
                 class,
                 ..
             } => {
                 let w = placement.compose(word);
-                let sp = super::alphabet::Spelling {
-                    word: w,
-                    rho: rho.clone(),
-                };
-                let Some(versor) = element::conformal_of(&sp, p) else {
+                let Some(versor) = element::conformal_of(&w, carriage) else {
                     unspoken.push(vi as u16);
                     continue;
                 };
@@ -1416,29 +1389,19 @@ pub fn apply_form(
             }
             Vertex::Rebased {
                 by,
-                shift,
-                rho,
+                carriage,
                 gauge,
                 class,
                 ..
             } => {
-                // `by`'s word at `by`'s placement moved by the shift; the
-                // bodies, hue map and dilation are the rebased vertex's own.
-                let Some(Vertex::Word {
-                    word,
-                    placement: p,
-                    ..
-                }) = f.vertices.get(*by as usize)
-                else {
+                // `by`'s word, carriage composed with the relative carriage;
+                // the bodies and hue map are the rebased vertex's own.
+                let Some(Vertex::Word { word, carriage: c, .. }) = f.vertices.get(*by as usize) else {
                     unspoken.push(vi as u16);
                     continue;
                 };
-                let p = (p.0.clone() + shift.0.clone(), p.1.clone() + shift.1.clone());
-                let sp = super::alphabet::Spelling {
-                    word: placement.compose(word),
-                    rho: rho.clone(),
-                };
-                let Some(versor) = element::conformal_of(&sp, &p) else {
+                let composed = carriage.geo(c);
+                let Some(versor) = element::conformal_of(&placement.compose(word), &composed) else {
                     unspoken.push(vi as u16);
                     continue;
                 };
@@ -1611,9 +1574,9 @@ fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
         }
         let (Some(Vertex::Word {
             word: wi,
-            placement: pi,
+            carriage: ci,
             ..
-        }), Some(Vertex::Word { placement: pj, .. })) = (
+        }), Some(Vertex::Word { carriage: cj, .. })) = (
             form.vertices.get(i).cloned(),
             form.vertices.get(j).cloned(),
         ) else {
@@ -1628,18 +1591,23 @@ fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
         let Some(tc_j) = transport_class(&form.vertices[j]) else {
             continue;
         };
-        let shift = (pj.0.clone() - pi.0.clone(), pj.1.clone() - pi.1.clone());
+        let Some(inv) = ci.versor_inverse() else {
+            continue;
+        };
+        let relative = cj.geo(&inv);
         let constant = pair_forms.iter().all(|pf| {
             match (word_place_of_class(pf, &tc_i), word_place_of_class(pf, &tc_j)) {
-                (Some((wa, pa)), Some((wb, pb))) => {
-                    // One linear word (M1), the same relative placement.
-                    wb == wa && (pb.0 - pa.0, pb.1 - pa.1) == shift
+                (Some((wa, ca)), Some((wb, cb))) => {
+                    match ca.versor_inverse() {
+                        Some(ainv) => wb == wa && element::same_versor(&cb.geo(&ainv), &relative),
+                        None => false,
+                    }
                 }
                 _ => false,
             }
         });
         if constant {
-            let _ = form.rebase(face.i, face.j, shift);
+            let _ = form.rebase(face.i, face.j, relative);
         }
     }
     form.reindex();
@@ -1657,9 +1625,9 @@ fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
 fn word_place_of_class(
     pf: &Form,
     tc: &TransportClass,
-) -> Option<(super::alphabet::Word, (BigRational, BigRational))> {
+) -> Option<(super::alphabet::Word, Versor)> {
     match match_vertex(pf, tc) {
-        Some(Vertex::Word { word, placement, .. }) => Some((word.clone(), placement.clone())),
+        Some(Vertex::Word { word, carriage, .. }) => Some((word.clone(), carriage.clone())),
         _ => None,
     }
 }
@@ -1772,7 +1740,7 @@ pub fn extract_rule_with(
         vortex: crate::network::nerve::Keyed::new(),
         by_address: crate::network::nerve::Keyed::new(),
         star: crate::network::nerve::Keyed::new(),
-        placements: crate::network::nerve::Keyed::new(),
+        carriages: crate::network::nerve::Keyed::new(),
         by_rebased: crate::network::nerve::Keyed::new(),
         by_unfolded: crate::network::nerve::Keyed::new(),
     };
@@ -1876,16 +1844,16 @@ pub fn extract_rule_with(
         let Some(tc) = transport_class(&form.vertices[vi]) else {
             continue;
         };
-        let Some(Vertex::Word { contact: None, placement, .. }) = form.vertices.get(vi) else {
+        let Some(Vertex::Word { contact: None, carriage, .. }) = form.vertices.get(vi) else {
             continue;
         };
-        let home = placement.clone();
+        let home = carriage.clone();
         let mut rings: Option<u8> = None;
         let mut place_varies = false;
         let mut ring_one = true;
         for (pf, (_x, y)) in pair_forms.iter().zip(family.iter()) {
-            if let Some(Vertex::Word { placement: p, .. }) = match_vertex(pf, &tc) {
-                if p != &home {
+            if let Some(Vertex::Word { carriage: p, .. }) = match_vertex(pf, &tc) {
+                if !element::same_versor(p, &home) {
                     place_varies = true;
                 }
             }
@@ -1909,9 +1877,9 @@ pub fn extract_rule_with(
         }
         if place_varies && ring_one {
             if let Some(r) = rings {
-                if let Vertex::Word { contact, placement, .. } = &mut form.vertices[vi] {
+                if let Vertex::Word { contact, carriage, .. } = &mut form.vertices[vi] {
                     *contact = Some(super::alphabet::Contact { anchor: 0, ring: r });
-                    *placement = (q(0), q(0));
+                    *carriage = element::identity_versor();
                 }
             }
         }
@@ -2523,8 +2491,7 @@ mod tests {
         pf.vertices.push(Vertex::Word {
             address: crate::transducer::a21::Address::from(vec![1]),
             word: rot.clone(),
-            rho: q(1),
-            placement: (q(3), q(3)),
+            carriage: element::carriage(&q(1), &(q(3), q(3))),
             gauge: vec![(1, 1)],
             class: a.moduli.clone(),
             contact: None,
@@ -2532,8 +2499,7 @@ mod tests {
         pf.vertices.push(Vertex::Word {
             address: crate::transducer::a21::Address::from(vec![2]),
             word: rot.clone(),
-            rho: q(1),
-            placement: (q(3), q(3)),
+            carriage: element::carriage(&q(1), &(q(3), q(3))),
             gauge: vec![(3, 5)],
             class: b.moduli.clone(),
             contact: None,
@@ -2564,14 +2530,16 @@ mod tests {
             Vertex::Rebased {
                 by,
                 of,
-                shift,
-                rho,
+                carriage,
                 gauge,
                 class,
             } => {
                 assert_eq!((*by, *of), (1, 2));
-                assert_eq!(shift, &(q(0), q(0)));
-                assert_eq!(rho, &q(1));
+                assert!(
+                    element::same_versor(carriage, &element::identity_versor())
+                        || element::same_versor(carriage, &element::carriage(&q(1), &(q(0), q(0)))),
+                    "relative carriage is the identity translator"
+                );
                 assert_eq!(gauge, &vec![(3, 5)], "B keeps its own hue map");
                 assert_eq!(class, &b.moduli, "B keeps its own chart");
                 assert_eq!(form.vertices[2].word_in(&form), Some(rot), "the word is A's");
@@ -2721,9 +2689,11 @@ mod tests {
         let mut f = Form::default();
         f.vertices.push(Vertex::Word {
             address: crate::transducer::a21::Address::from(vec![1]),
-            word: crate::transducer::alphabet::Word::identity(),
-            rho: q(0),
-            placement: (q(0), q(0)),
+            word: crate::transducer::alphabet::Word::from_letters(&[(
+                crate::transducer::alphabet::LetterId::quarter((0, 2)).expect("off-plane"),
+                false,
+            )]),
+            carriage: element::identity_versor(),
             gauge: Vec::new(),
             class,
             contact: None,
@@ -2737,7 +2707,7 @@ mod tests {
         .expect("speech");
         assert!(
             spoken.unspoken.contains(&1),
-            "rho 0 does not spell; the vertex is unspoken, got {:?}",
+            "an off-plane word does not spell on the sensor; the vertex is unspoken, got {:?}",
             spoken.unspoken
         );
         assert!(
@@ -2810,8 +2780,7 @@ mod tests {
         let moving = Vertex::Word {
             address: crate::transducer::a21::Address::from(vec![1]),
             word: crate::transducer::alphabet::Word::identity(),
-            rho: one.clone(),
-            placement: (zero.clone(), one.clone()),
+            carriage: element::carriage(&one.clone(), &(zero.clone(), one.clone())),
             gauge: Vec::new(),
             class: Invariant::default(),
             contact: None,
@@ -2819,8 +2788,7 @@ mod tests {
         let still = Vertex::Word {
             address: crate::transducer::a21::Address::from(vec![2]),
             word: crate::transducer::alphabet::Word::identity(),
-            rho: one,
-            placement: (zero.clone(), zero),
+            carriage: element::carriage(&one, &(zero.clone(), zero)),
             gauge: Vec::new(),
             class: Invariant::default(),
             contact: None,
@@ -2840,8 +2808,7 @@ mod tests {
         let with_c = Vertex::Word {
             address: crate::transducer::a21::Address::from(vec![3]),
             word: crate::transducer::alphabet::Word::identity(),
-            rho: q(1),
-            placement: (q(0), q(1)),
+            carriage: element::carriage(&q(1), &(q(0), q(1))),
             gauge: Vec::new(),
             class: Invariant::default(),
             contact: Some(crate::transducer::alphabet::Contact { anchor: 0, ring: 0 }),
@@ -2970,7 +2937,12 @@ mod tests {
             "a frame vertex is on the form"
         );
         let frame_face = rule.form.faces.iter().any(|f| f.i == 0 || f.j == 0);
-        let shifted = rule.form.vertices.iter().any(|v| matches!(v, Vertex::Word { placement, .. } if *placement != (q(0), q(0))));
+        let shifted = rule.form.vertices.iter().any(|v| match v {
+            Vertex::Word { carriage, .. } => {
+                !element::same_versor(carriage, &element::identity_versor())
+            }
+            _ => false,
+        });
         assert!(frame_face || shifted, "placement is a frame face or a family-constant shift");
         assert!(
             !rule.form.faces.is_empty(),

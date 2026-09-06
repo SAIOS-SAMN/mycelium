@@ -157,23 +157,17 @@ fn vertex_tape_and_moves(
     f: &Form,
     family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
 ) -> Option<&'static str> {
-    use crate::transducer::alphabet::Spelling;
     use crate::transducer::family::{self, OrbitEnd};
     use crate::transducer::sentence::Measure;
     for v in &f.vertices {
         match v {
             Vertex::Word {
                 word,
-                rho,
-                placement,
+                carriage,
                 contact,
                 ..
             } => {
-                let sp = Spelling {
-                    word: word.clone(),
-                    rho: rho.clone(),
-                };
-                if element::conformal_of(&sp, placement).is_none() {
+                if element::conformal_of(word, carriage).is_none() {
                     return Some(REFUSE_VERTEX_TAPE);
                 }
                 if contact.is_some() {
@@ -252,6 +246,7 @@ fn torsion_chord_carries(
         }
     }
     lp.holonomy.same_form(&face.transport.word)
+        || lp.holonomy.same_form(&face.transport.word.inverse())
 }
 
 /// Identity loops, or finite open loops filed on the form's torsion carrier.
@@ -843,8 +838,7 @@ mod tests {
         f.vertices.push(Vertex::Word {
             address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 1]),
             word: w,
-            rho: one,
-            placement: (zero.clone(), zero),
+            carriage: element::carriage(&one, &(zero.clone(), zero)),
             gauge: vec![(1, 2)],
             class: stalk::Invariant(vec![7]),
             contact: None,
@@ -955,17 +949,13 @@ mod tests {
         use crate::transducer::sentence::{as_element_form, FormFace};
         let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
         let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-        let sheet = crate::transducer::alphabet::PlaneForm {
-            parity: true,
-            rot: [0; crate::transducer::alphabet::CAYLEY_ALPHABET_LEN],
-        }
-        .to_word();
+        let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+        let sheet = Word::from_letters(&[(q, false)]);
         let mut f = Form::default();
         f.vertices.push(Vertex::Word {
             address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 1]),
             word: Word::identity(),
-            rho: one.clone(),
-            placement: (zero.clone(), zero.clone()),
+            carriage: element::carriage(&one.clone(), &(zero.clone(), zero.clone())),
             gauge: vec![(1, 2)],
             class: stalk::Invariant::default(),
             contact: None,
@@ -973,8 +963,7 @@ mod tests {
         f.vertices.push(Vertex::Word {
             address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 2]),
             word: Word::identity(),
-            rho: one,
-            placement: (zero.clone(), zero),
+            carriage: element::carriage(&one, &(zero.clone(), zero)),
             gauge: vec![(1, 2)],
             class: stalk::Invariant::default(),
             contact: None,
@@ -1030,22 +1019,22 @@ mod tests {
         assert_eq!(replay_form(&e, &|_| None), None, "a closed word vertex re-derives");
 
         let mut rho0 = f.clone();
-        if let Vertex::Word { rho, .. } = &mut rho0.vertices[1] {
-            *rho = zero.clone();
+        if let Vertex::Word { word, .. } = &mut rho0.vertices[1] {
+            let q02 = crate::transducer::alphabet::LetterId::quarter((0, 2)).expect("off-plane");
+            *word = Word::from_letters(&[(q02, false)]);
         }
-        let bad_e = as_element_form(&rho0, [1, 0, 0, 0]).expect("rho 0 tape");
+        let bad_e = as_element_form(&rho0, [1, 0, 0, 0]).expect("off-plane tape");
         assert_eq!(
             replay_form(&bad_e, &|_| None),
             Some(REFUSE_VERTEX_TAPE),
-            "a word whose affine does not spell refuses the tape"
+            "a word that does not keep the sensor plane refuses the tape"
         );
 
         let mut re = Form::default();
         re.vertices.push(Vertex::Word {
             address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 2]),
             word: Word::identity(),
-            rho: one.clone(),
-            placement: (zero.clone(), zero.clone()),
+            carriage: element::carriage(&one.clone(), &(zero.clone(), zero.clone())),
             gauge: Vec::new(),
             class: stalk::Invariant::default(),
             contact: None,
@@ -1053,8 +1042,7 @@ mod tests {
         re.vertices.push(Vertex::Rebased {
             by: 1,
             of: 2,
-            shift: (zero.clone(), zero.clone()),
-            rho: one.clone(),
+            carriage: element::carriage(&one.clone(), &(zero.clone(), zero.clone())),
             gauge: Vec::new(),
             class: stalk::Invariant::default(),
         });
@@ -1082,8 +1070,7 @@ mod tests {
         orb.vertices.push(Vertex::Word {
             address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 3]),
             word: Word::identity(),
-            rho: one,
-            placement: (zero.clone(), zero),
+            carriage: element::carriage(&one, &(zero.clone(), zero)),
             gauge: Vec::new(),
             class: stalk::Invariant::default(),
             contact: Some(crate::transducer::alphabet::Contact { anchor: 0, ring: 1 }),

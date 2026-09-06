@@ -21,6 +21,7 @@ pub fn run() -> Result<(), String> {
         walk(&root.join(d), d, &mut hits)?;
     }
     lint_blake3(&root, &mut hits)?;
+    lint_squaring(&root, &mut hits)?;
     if hits.is_empty() {
         return Ok(());
     }
@@ -125,6 +126,77 @@ fn lint_blake3(root: &Path, hits: &mut Vec<String>) -> Result<(), String> {
     }
     walk_blake3(&root.join("court").join("verdict.rs"), hits)?;
     walk_blake3(&root.join("court").join("ledger.rs"), hits)?;
+    Ok(())
+}
+
+/// Coordinate pairs named placement/shift/residue live only in pair_form,
+/// speak_rule, and orbit (law 11). The sentence types carry A4 versors.
+fn lint_squaring(root: &Path, hits: &mut Vec<String>) -> Result<(), String> {
+    walk_squaring(&root.join("transducer").join("sentence"), hits)
+}
+
+fn walk_squaring(path: &Path, hits: &mut Vec<String>) -> Result<(), String> {
+    if path.is_file() {
+        if path.extension().and_then(|s| s.to_str()) != Some("rs") {
+            return Ok(());
+        }
+        let src = fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+        let mut in_test = false;
+        let mut pending_test = false;
+        let mut depth = 0i32;
+        for (i, line) in src.lines().enumerate() {
+            let t = line.trim();
+            if t.contains("#[cfg(test)]") {
+                pending_test = true;
+            }
+            let opens = line.chars().filter(|&c| c == '{').count() as i32;
+            let closes = line.chars().filter(|&c| c == '}').count() as i32;
+            if pending_test && opens > 0 {
+                in_test = true;
+                pending_test = false;
+                depth = opens - closes;
+                if depth <= 0 {
+                    in_test = false;
+                }
+                continue;
+            }
+            if in_test {
+                depth += opens - closes;
+                if depth <= 0 {
+                    in_test = false;
+                }
+                continue;
+            }
+            if t.starts_with("//") {
+                continue;
+            }
+            let named = t.contains("placement:") || t.contains("shift:") || t.contains("residue:");
+            let pair = t.contains("(num_rational")
+                || t.contains("(Q,")
+                || t.contains("(i64, i64)")
+                || t.contains("BigRational, num_rational")
+                || t.contains("BigRational, BigRational");
+            if named && pair {
+                hits.push(format!(
+                    "{}:{}: coordinate pair named placement/shift/residue outside pair_form/speak_rule/orbit",
+                    path.display(),
+                    i + 1
+                ));
+            }
+        }
+        return Ok(());
+    }
+    if !path.is_dir() {
+        return Ok(());
+    }
+    let rd = match fs::read_dir(path) {
+        Ok(rd) => rd,
+        Err(_) => return Ok(()),
+    };
+    for ent in rd {
+        let ent = ent.map_err(|e| e.to_string())?;
+        walk_squaring(&ent.path(), hits)?;
+    }
     Ok(())
 }
 

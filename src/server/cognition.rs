@@ -213,7 +213,7 @@ fn rotor_versor(g: &crate::transducer::alphabet::Rotor) -> Option<element::Verso
     let e1 = g.carry(&[zero.clone(), one.clone(), zero.clone(), zero.clone()])?;
     let block = [[e0[0].clone(), e1[0].clone()], [e0[1].clone(), e1[1].clone()]];
     let spelling = crate::transducer::alphabet::spell(&block)?;
-    crate::transducer::element::conformal_of(&spelling, &(zero.clone(), zero))
+    crate::transducer::element::conformal_of(&spelling.word, &crate::transducer::element::identity_versor())
 }
 
 fn union_remainders(entries: &[FieldEntry]) -> Vec<(i64, i64, u8, u8)> {
@@ -6563,21 +6563,16 @@ mod tests {
     }
 
     fn filed_v2_form() -> (Element, crate::transducer::stalk::Invariant, Address) {
-        use crate::transducer::alphabet::{PlaneForm, Word, CAYLEY_ALPHABET_LEN};
+        use crate::transducer::alphabet::{LetterId, Word};
         use crate::transducer::sentence::{as_element_form, form_torsion, Form, FormFace, Vertex};
-        let order2 = PlaneForm {
-            parity: true,
-            rot: [0; CAYLEY_ALPHABET_LEN],
-        }
-        .to_word();
+        let order4 = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
         let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
         let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
         let mut f = Form::default();
         f.vertices.push(Vertex::Word {
             address: Address::from_bytes([2u8; 32]),
             word: Word::identity(),
-            rho: one.clone(),
-            placement: (zero.clone(), zero.clone()),
+            carriage: element::carriage(&one.clone(), &(zero.clone(), zero.clone())),
             gauge: vec![(1, 2)],
             class: crate::transducer::stalk::Invariant::default(),
             contact: None,
@@ -6585,8 +6580,7 @@ mod tests {
         f.vertices.push(Vertex::Word {
             address: Address::from_bytes([3u8; 32]),
             word: Word::identity(),
-            rho: one,
-            placement: (zero.clone(), zero),
+            carriage: element::carriage(&one, &(zero.clone(), zero)),
             gauge: vec![(1, 2)],
             class: crate::transducer::stalk::Invariant::default(),
             contact: None,
@@ -6601,7 +6595,7 @@ mod tests {
             j: 2,
             transport: f.face_of(0, 2).expect("star 2"),
         });
-        f.faces.push(FormFace::new(1, 2, order2));
+        f.faces.push(FormFace::new(1, 2, order4));
         f.loops = Form::loops_of(&f.faces, f.vertices.len());
         let _ = f.pivot_loop(
             [0xca; 32],

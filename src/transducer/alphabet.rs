@@ -557,24 +557,21 @@ impl Word {
         by.compose(&self.compose(&by.inverse())).normal_form()
     }
 
-    /// Same conjugacy class: plane conjugacy representative, or rotor
-    /// class invariants off the plane. Never a digest comparison.
+    /// Same conjugacy class: rotor invariants first (15.3). The plane form
+    /// is a sensor section, not the identity of the class.
     pub fn same_class(&self, other: &Word) -> bool {
-        match (self.form(), other.form()) {
-            (Some(a), Some(b)) => a.conjugacy_eq(&b),
-            (None, None) => self.rotor().class_eq(&other.rotor()),
-            _ => false,
+        match (self.rotor().class_invariants(), other.rotor().class_invariants()) {
+            (Some(a), Some(b)) => a == b,
+            _ => self.rotor().projective_eq(&other.rotor()),
         }
     }
 
-    /// Conjugacy coordinates written out. Class identity is [`same_class`].
+    /// Conjugacy coordinates written out. Rotor class first; the plane
+    /// form is not the key.
     pub fn class_key(&self) -> crate::transducer::a21::Address {
-        match self.form() {
-            Some(f) => f.conjugacy_key(),
-            None => match self.rotor().class_key() {
-                Some(k) => k,
-                None => self.rotor().key(),
-            },
+        match self.rotor().class_key() {
+            Some(k) => k,
+            None => self.rotor().key(),
         }
     }
 
@@ -616,7 +613,7 @@ impl Word {
         run_reduce(self.letters())
     }
 
-    /// The plane group is rotations ⋊ sheet parity, not a commuting tape.
+    /// The plane group is rotations ⋊ orientation, not a commuting tape.
     /// `None` when the word does not preserve the sensor plane.
     pub fn form(&self) -> Option<PlaneForm> {
         let b = self.plane_block()?;
@@ -626,7 +623,7 @@ impl Word {
             return None;
         }
         let ori = det / &rho2;
-        let parity = if ori.is_one() {
+        let orientation = if ori.is_one() {
             false
         } else if (-&ori).is_one() {
             true
@@ -634,7 +631,7 @@ impl Word {
             return None;
         };
         let mut r = b;
-        if parity {
+        if orientation {
             r[0][1] = -&r[0][1];
             r[1][1] = -&r[1][1];
         }
@@ -643,18 +640,20 @@ impl Word {
         for &(id, inv) in sp.word.letters() {
             rot[id.raw() as usize] += if inv { -1 } else { 1 };
         }
-        let mut f = PlaneForm { parity, rot };
+        let mut f = PlaneForm { orientation, rot };
         reduce_unit_exponents(&mut f);
         Some(f)
     }
 
-    /// Two words are the same plane element: reduced forms, or A1 of the
-    /// rotor off the plane. Never tape equality.
+    /// Two words are the same vertex: rotor first. A missing plane form is
+    /// not an exception when the rotors agree.
     pub fn same_form(&self, other: &Word) -> bool {
+        if !self.rotor().projective_eq(&other.rotor()) {
+            return false;
+        }
         match (self.form(), other.form()) {
             (Some(a), Some(b)) => a == b,
-            (None, None) => self.rotor().projective_eq(&other.rotor()),
-            _ => false,
+            _ => true,
         }
     }
 
@@ -664,7 +663,7 @@ impl Word {
     }
 
     /// Order of the normal form: Infinite when any prime-5 or prime-13
-    /// exponent is nonzero, else the order of the unit part under sheet parity.
+    /// exponent is nonzero, else the order of the unit part under orientation.
     pub fn order(&self) -> Order {
         let n = self.normal_form();
         for &(id, _) in n.letters() {
@@ -900,19 +899,19 @@ pub fn relators() -> [Relator; RELATOR_N] {
     out
 }
 
-/// The plane group element a word represents: sheet parity and the
+/// The plane group element a word represents: orientation and the
 /// rotation in (e0, e1). Rotation exponents are those of the unflipped
-/// spelling; a sheet conjugates a rotation to its inverse, so this is
+/// spelling; a half-turn conjugates a rotation to its inverse, so this is
 /// not the commuting sum of the tape.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PlaneForm {
-    pub parity: bool,
+    pub orientation: bool,
     pub rot: [i64; CAYLEY_ALPHABET_LEN],
 }
 
 impl Default for PlaneForm {
     fn default() -> Self {
-        PlaneForm { parity: false, rot: [0; CAYLEY_ALPHABET_LEN] }
+        PlaneForm { orientation: false, rot: [0; CAYLEY_ALPHABET_LEN] }
     }
 }
 
@@ -922,12 +921,12 @@ impl PlaneForm {
     }
 
     pub fn is_identity(&self) -> bool {
-        !self.parity && self.rot.iter().all(|&x| x == 0)
+        !self.orientation && self.rot.iter().all(|&x| x == 0)
     }
 
     /// Occupied plane coordinates in 12.6 slot order: per slot plane,
-    /// (sheet on the sensor plane, unit in Z/4, prime-5, prime-13).
-    /// Read from the conjugacy representative; the sheet lives on slot 0.
+    /// (orientation on the sensor plane, unit in Z/4, prime-5, prime-13).
+    /// Read from the conjugacy representative; orientation lives on slot 0.
     pub fn coordinates(&self) -> [(bool, u32, i64, i64); 6] {
         let rep = self.conjugacy_rep();
         let mut plane = [(false, 0u32, 0i64, 0i64); 6];
@@ -935,7 +934,7 @@ impl PlaneForm {
             let unit = rep.rot[1 + p].rem_euclid(4) as u32;
             let m5 = rep.rot[7 + p];
             let m13 = rep.rot.get(13 + p).copied().filter(|_| p < 4).unwrap_or(0);
-            *slot = (rep.parity && p == 0, unit, m5, m13);
+            *slot = (rep.orientation && p == 0, unit, m5, m13);
         }
         plane
     }
@@ -944,19 +943,19 @@ impl PlaneForm {
     /// first nonzero component positive. Odd sheet: each exponent mod 2
     /// in `{0,1}`. Compared as coefficients, never hashed.
     pub fn conjugacy_rep(&self) -> PlaneForm {
-        if self.parity {
+        if self.orientation {
             let mut rot = [0i64; CAYLEY_ALPHABET_LEN];
             for (i, &n) in self.rot.iter().enumerate() {
                 rot[i] = n.rem_euclid(2);
             }
-            PlaneForm { parity: true, rot }
+            PlaneForm { orientation: true, rot }
         } else {
             let neg: [i64; CAYLEY_ALPHABET_LEN] = std::array::from_fn(|i| -self.rot[i]);
             let pick_neg = match self.rot.iter().zip(neg.iter()).find(|(&a, &b)| a != b) {
                 Some((&a, _)) => a < 0,
                 None => false,
             };
-            PlaneForm { parity: false, rot: if pick_neg { neg } else { self.rot } }
+            PlaneForm { orientation: false, rot: if pick_neg { neg } else { self.rot } }
         }
     }
 
@@ -968,19 +967,19 @@ impl PlaneForm {
     /// Conjugacy representative written out. Class identity is [`conjugacy_eq`].
     pub fn conjugacy_key(&self) -> crate::transducer::a21::Address {
         let r = self.conjugacy_rep();
-        let mut buf = vec![crate::transducer::a21::TAG_PLANE, r.parity as u8];
+        let mut buf = vec![crate::transducer::a21::TAG_PLANE, r.orientation as u8];
         for &n in &r.rot {
             buf.extend_from_slice(&n.to_le_bytes());
         }
         crate::transducer::a21::Address::new(buf)
     }
 
-    /// Plane-group product: rotations ⋊ sheet parity. A trailing sheet
+    /// Plane-group product: rotations ⋊ orientation. A trailing half-turn
     /// conjugates the leading rotation to its inverse.
     pub fn compose(&self, other: &PlaneForm) -> PlaneForm {
-        let parity = self.parity ^ other.parity;
+        let orientation = self.orientation ^ other.orientation;
         let mut rot = [0i64; CAYLEY_ALPHABET_LEN];
-        if other.parity {
+        if other.orientation {
             for i in 0..CAYLEY_ALPHABET_LEN {
                 rot[i] = -self.rot[i] + other.rot[i];
             }
@@ -989,49 +988,50 @@ impl PlaneForm {
                 rot[i] = self.rot[i] + other.rot[i];
             }
         }
-        PlaneForm { parity, rot }
+        PlaneForm { orientation, rot }
     }
 
     pub fn inverse(&self) -> PlaneForm {
-        if self.parity {
+        if self.orientation {
             *self
         } else {
             let mut rot = [0i64; CAYLEY_ALPHABET_LEN];
             for i in 0..CAYLEY_ALPHABET_LEN {
                 rot[i] = -self.rot[i];
             }
-            PlaneForm { parity: false, rot }
+            PlaneForm { orientation: false, rot }
         }
     }
 
-    /// The sheet acting on exponents: `S R S⁻¹ = R⁻¹`.
+    /// The half-turn acting on exponents: `S R S⁻¹ = R⁻¹`.
     pub fn conjugate_by(&self, by: &PlaneForm) -> PlaneForm {
-        if !by.parity {
+        if !by.orientation {
             *self
-        } else if self.parity {
+        } else if self.orientation {
             let mut rot = [0i64; CAYLEY_ALPHABET_LEN];
             for i in 0..CAYLEY_ALPHABET_LEN {
                 rot[i] = -self.rot[i];
             }
-            PlaneForm { parity: true, rot }
+            PlaneForm { orientation: true, rot }
         } else {
             let mut rot = [0i64; CAYLEY_ALPHABET_LEN];
             for i in 0..CAYLEY_ALPHABET_LEN {
                 rot[i] = -self.rot[i];
             }
-            PlaneForm { parity: false, rot }
+            PlaneForm { orientation: false, rot }
         }
     }
 
     /// Half-turn on (e1,e2): the column flip of the sensor plane, two
-    /// quarter-turns, the sheet letter of the plane group.
-    fn sheet_word() -> Word {
+    /// quarter-turns. The orientation letter of the plane group; there is
+    /// no reflection letter.
+    pub fn sheet_word() -> Word {
         let id = LetterId::quarter((1, 2)).expect("plane (1,2) is a letter");
         Word::raw(vec![(id, false), (id, false)])
     }
 
     pub fn to_word(&self) -> Word {
-        let mut w = if self.parity {
+        let mut w = if self.orientation {
             Self::sheet_word()
         } else {
             Word::identity()
@@ -1053,7 +1053,7 @@ impl PlaneForm {
     }
 
     pub fn key(&self) -> crate::transducer::a21::Address {
-        let mut buf = vec![crate::transducer::a21::TAG_PLANE, self.parity as u8];
+        let mut buf = vec![crate::transducer::a21::TAG_PLANE, self.orientation as u8];
         for &n in &self.rot {
             buf.extend_from_slice(&n.to_le_bytes());
         }
@@ -1061,21 +1061,21 @@ impl PlaneForm {
     }
 
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
-        out.push(self.parity as u8);
+        out.push(self.orientation as u8);
         for &n in &self.rot {
             out.extend_from_slice(&n.to_le_bytes());
         }
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<PlaneForm> {
-        let parity = *b.get(*pos)? != 0;
+        let orientation = *b.get(*pos)? != 0;
         *pos += 1;
         let mut rot = [0i64; CAYLEY_ALPHABET_LEN];
         for n in &mut rot {
             *n = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
             *pos += 8;
         }
-        Some(PlaneForm { parity, rot })
+        Some(PlaneForm { orientation, rot })
     }
 }
 
@@ -1127,7 +1127,7 @@ fn unit_order(f: &PlaneForm) -> Option<u32> {
     if f.is_identity() {
         return Some(1);
     }
-    if f.parity && f.rot.iter().all(|&x| x == 0) {
+    if f.orientation && f.rot.iter().all(|&x| x == 0) {
         return Some(2);
     }
     let q01 = LetterId::quarter((0, 1)).map(|id| id.raw() as usize);
@@ -1146,7 +1146,7 @@ fn unit_order(f: &PlaneForm) -> Option<u32> {
     }
     let q = q01.map(|i| f.rot[i]).unwrap_or(0).rem_euclid(4) as u32;
     let rot = if q == 0 { 1 } else { 4 / gcd_u32(q, 4) };
-    if f.parity {
+    if f.orientation {
         Some(if rot % 2 == 0 { rot } else { rot * 2 })
     } else {
         Some(rot)
@@ -1690,7 +1690,7 @@ mod tests {
     fn plane_form_is_the_coefficient_group() {
         let q = LetterId::quarter((0, 1)).unwrap();
         let rot = Word::from_letters(&[(q, false)]).form().unwrap();
-        let sheet = PlaneForm { parity: true, rot: [0; CAYLEY_ALPHABET_LEN] };
+        let sheet = PlaneForm { orientation: true, rot: [0; CAYLEY_ALPHABET_LEN] };
         assert!(rot.compose(&rot.inverse()).is_identity());
         assert!(sheet.compose(&sheet).is_identity(), "a sheet has order 2");
         let conj = rot.conjugate_by(&sheet);
@@ -1710,7 +1710,7 @@ mod tests {
         let q = LetterId::quarter((0, 1)).unwrap();
         let r = Word::from_letters(&[(q, false), (q, false)]).form().unwrap();
         let r2 = Word::from_letters(&[(q, false)]).form().unwrap();
-        let sheet = PlaneForm { parity: true, rot: [0; CAYLEY_ALPHABET_LEN] };
+        let sheet = PlaneForm { orientation: true, rot: [0; CAYLEY_ALPHABET_LEN] };
         let conj = |g: &PlaneForm, x: &PlaneForm| g.compose(&x.compose(&g.inverse()));
         assert_eq!(conj(&r2, &r).conjugacy_key(), r.conjugacy_key(), "(0,r') even");
         assert_eq!(conj(&sheet, &r).conjugacy_key(), r.conjugacy_key(), "(1,r'') even class of r and -r");
@@ -1726,7 +1726,7 @@ mod tests {
         let inv = r.inverse();
         assert!(r.conjugacy_eq(&inv), "r and -r are one even class");
         assert_eq!(r.conjugacy_key(), inv.conjugacy_key(), "r and -r are one even class");
-        let sheet = PlaneForm { parity: true, rot: [0; CAYLEY_ALPHABET_LEN] };
+        let sheet = PlaneForm { orientation: true, rot: [0; CAYLEY_ALPHABET_LEN] };
         let odd = r.compose(&sheet);
         let odd2 = inv.compose(&sheet);
         assert!(odd.conjugacy_eq(&odd2), "odd class is r mod 2");
@@ -1746,7 +1746,12 @@ mod tests {
         let scaled = r.scale(&qn(3, 2));
         assert_eq!(r.class_key(), scaled.class_key());
         let f = w.form().unwrap();
-        assert_eq!(w.class_key(), f.conjugacy_key());
+        assert_eq!(
+            w.class_key(),
+            r.class_key().unwrap(),
+            "Word::class_key is the rotor conjugacy (15.3), not the plane section"
+        );
+        assert_eq!(f.conjugacy_key(), f.conjugacy_rep().conjugacy_key());
     }
 
     /// Two tapes of one vertex have one key; a tape and its geodesic

@@ -1748,8 +1748,7 @@ mod tests {
             f.vertices.push(Vertex::Word {
                 address: crate::transducer::a21::Address::from(vec![1]),
                 word: w.clone(),
-                rho: one.clone(),
-                placement: (zero.clone(), zero.clone()),
+                carriage: element::carriage(&one.clone(), &(zero.clone(), zero.clone())),
                 gauge: vec![(1, 2)],
                 class: crate::transducer::stalk::Invariant::default(),
                 contact: None,
@@ -1785,8 +1784,7 @@ mod tests {
         open.vertices.push(Vertex::Word {
             address: crate::transducer::a21::Address::from(vec![2]),
             word: Word::identity(),
-            rho: one.clone(),
-            placement: (zero.clone(), zero.clone()),
+            carriage: element::carriage(&one.clone(), &(zero.clone(), zero.clone())),
             gauge: vec![(1, 2)],
             class: crate::transducer::stalk::Invariant::default(),
             contact: None,
@@ -1794,8 +1792,7 @@ mod tests {
         open.vertices.push(Vertex::Word {
             address: crate::transducer::a21::Address::from(vec![3]),
             word: Word::identity(),
-            rho: one,
-            placement: (zero.clone(), zero),
+            carriage: element::carriage(&one, &(zero.clone(), zero)),
             gauge: vec![(1, 2)],
             class: crate::transducer::stalk::Invariant::default(),
             contact: None,
@@ -1892,8 +1889,7 @@ mod tests {
         f.vertices.push(Vertex::Word {
             address: crate::transducer::a21::Address::from(vec![9]),
             word: Word::identity(),
-            rho: one,
-            placement: (zero.clone(), zero),
+            carriage: element::carriage(&one, &(zero.clone(), zero)),
             gauge: vec![(1, 2)],
             class: crate::transducer::stalk::Invariant::default(),
             contact: None,
@@ -2034,7 +2030,7 @@ mod tests {
             },
         };
         let sheet = crate::transducer::alphabet::PlaneForm {
-            parity: true,
+            orientation: true,
             rot: [0; crate::transducer::alphabet::CAYLEY_ALPHABET_LEN],
         }
         .to_word();

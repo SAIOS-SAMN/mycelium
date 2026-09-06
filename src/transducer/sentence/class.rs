@@ -6,16 +6,18 @@ use super::transport::{gauge_image, gauge_keyed, hue_key};
 use crate::core::zlinalg::z_rank;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::{self, Word};
+use crate::transducer::element::{self, Versor};
 
 /// declaration order is the walk order and is not a preference.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Axis {
-    Sheet(u8),
+    Orientation(u8),
     Unit(u8),
     Prime5(u8),
     Prime13(u8),
     Hue,
     Placement,
+    Dilation,
     OffPlane,
     Open,
 }
@@ -24,25 +26,27 @@ impl Axis {
     /// One tape byte: the kind in the high bits, the slot plane in the low.
     pub(crate) fn to_byte(self) -> u8 {
         match self {
-            Axis::Sheet(p) => p,
+            Axis::Orientation(p) => p,
             Axis::Unit(p) => (1 << 3) | p,
             Axis::Prime5(p) => (2 << 3) | p,
             Axis::Prime13(p) => (3 << 3) | p,
             Axis::Hue => 4 << 3,
             Axis::Placement => 5 << 3,
-            Axis::OffPlane => 6 << 3,
-            Axis::Open => 7 << 3,
+            Axis::Dilation => 6 << 3,
+            Axis::OffPlane => 7 << 3,
+            Axis::Open => 8 << 3,
         }
     }
 
     pub fn label(self) -> &'static str {
         match self {
-            Axis::Sheet(_) => "sheet",
+            Axis::Orientation(_) => "orientation",
             Axis::Unit(_) => "unit",
             Axis::Prime5(_) => "prime5",
             Axis::Prime13(_) => "prime13",
             Axis::Hue => "hue",
             Axis::Placement => "placement",
+            Axis::Dilation => "dilation",
             Axis::OffPlane => "offplane",
             Axis::Open => "open",
         }
@@ -51,14 +55,15 @@ impl Axis {
     pub(crate) fn from_byte(b: u8) -> Option<Axis> {
         let p = b & 7;
         match (b >> 3, p) {
-            (0, p) if p < 6 => Some(Axis::Sheet(p)),
+            (0, p) if p < 6 => Some(Axis::Orientation(p)),
             (1, p) if p < 6 => Some(Axis::Unit(p)),
             (2, p) if p < 6 => Some(Axis::Prime5(p)),
             (3, p) if p < 6 => Some(Axis::Prime13(p)),
             (4, 0) => Some(Axis::Hue),
             (5, 0) => Some(Axis::Placement),
-            (6, 0) => Some(Axis::OffPlane),
-            (7, 0) => Some(Axis::Open),
+            (6, 0) => Some(Axis::Dilation),
+            (7, 0) => Some(Axis::OffPlane),
+            (8, 0) => Some(Axis::Open),
             _ => None,
         }
     }
@@ -108,23 +113,21 @@ impl Rank {
     }
 }
 
-/// The state vector of a held loop (12.6), read from the canonical conjugacy
-/// representative of its holonomy's plane form (15.2) and from the
-/// translation part of its versor. Every coordinate is an exact integer or
-/// rational; an axis is occupied when its coordinate is nonzero, and a pivot
-/// is tried only on an occupied axis. The hue cycle type is not on a nerve's
-/// faces and is read on the form (chapter 30).
+/// The state vector of a held loop (12.6). Rotor conjugacy invariants (15.3)
+/// are read for every holonomy first; the six plane blocks are the sensor
+/// section, present only when `Word::form()` exists. Placement and dilation
+/// residues are the translator and dilator of the holonomy carriage, never
+/// a pair of rationals.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClassVector {
-    /// Per slot plane, in `SLOT_PLANES_SIX` order: sheet parity, unit turns
-    /// in Z/4, prime-5 and prime-13 exponents in Z.
-    plane: [(bool, u32, i64, i64); 6],
-    /// Translation part of the loop's versor after the tree gauge.
-    pub(crate) placement: (num_rational::BigRational, num_rational::BigRational),
+    /// Sensor-chart section: `None` when the holonomy moves the plane.
+    plane: Option<[(bool, u32, i64, i64); 6]>,
+    /// Holonomy carriage after the tree gauge (A4).
+    pub(crate) carriage: Versor,
     /// Composed gauge around the loop (A4).
     pub(crate) hue: CycleType,
-    /// Off-plane conjugacy invariants `(a²/w, p²/w, sign a, sign p)`.
-    /// Zeros when the holonomy has a plane form.
+    /// Rotor conjugacy invariants `(a²/w, p²/w, sign a, sign p)` (15.3).
+    /// Always read; identity is the zero vector.
     offplane: (
         num_rational::BigRational,
         num_rational::BigRational,
@@ -210,36 +213,30 @@ fn cycle_lengths(listing: &[(u8, u8)]) -> Vec<u8> {
 }
 
 impl ClassVector {
-    /// The vector of a holonomy word alone (no versor: zero residue).
+    /// The vector of a holonomy word alone (identity carriage).
     pub fn of_word(h: &Word) -> ClassVector {
-        let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-        Self::read(h, (zero.clone(), zero), CycleType::Identity)
+        Self::read(h, element::identity_versor(), CycleType::Identity)
     }
 
-    pub(crate) fn read(
-        h: &Word,
-        placement: (num_rational::BigRational, num_rational::BigRational),
-        hue: CycleType,
-    ) -> ClassVector {
-        let z = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+    pub(crate) fn read(h: &Word, carriage: Versor, hue: CycleType) -> ClassVector {
+        let z = Self::zero_q();
         let off0 = (z.clone(), z, 0, 0);
-        let (plane, offplane) = if h.is_identity() {
-            ([(false, 0, 0, 0); 6], off0)
+        let offplane = if h.is_identity() {
+            off0
         } else {
-            match h.form() {
-                Some(pf) => (pf.coordinates(), off0),
-                None => (
-                    [(false, 0, 0, 0); 6],
-                    match h.rotor().class_invariants() {
-                        Some(inv) => inv,
-                        None => off0,
-                    },
-                ),
+            match h.rotor().class_invariants() {
+                Some(inv) => inv,
+                None => off0,
             }
+        };
+        let plane = if h.is_identity() {
+            Some([(false, 0, 0, 0); 6])
+        } else {
+            h.form().map(|pf| pf.coordinates())
         };
         ClassVector {
             plane,
-            placement,
+            carriage,
             hue,
             offplane,
         }
@@ -249,34 +246,43 @@ impl ClassVector {
         num_rational::BigRational::from_integer(num_bigint::BigInt::from(0))
     }
 
+    fn plane_slot(&self, p: u8) -> Option<(bool, u32, i64, i64)> {
+        self.plane.and_then(|pl| pl.get(p as usize).copied())
+    }
+
     /// The closed class: every coordinate is zero.
     pub fn zero() -> ClassVector {
-        let z = Self::zero_q();
         ClassVector {
-            plane: [(false, 0, 0, 0); 6],
-            placement: (z.clone(), z),
+            plane: Some([(false, 0, 0, 0); 6]),
+            carriage: element::identity_versor(),
             hue: CycleType::Identity,
             offplane: (Self::zero_q(), Self::zero_q(), 0, 0),
         }
     }
 
-    /// Coordinates written out in 12.6 axis order: six planes, off-plane
-    /// invariants, hue cycle type, placement. Closed is the zero key.
+    /// Coordinates written out in 12.6 axis order. Rotor conjugacy first so
+    /// a prefix of the key is the rotor's conjugacy stratum. Closed is the
+    /// zero key.
     pub fn class_key(&self) -> crate::transducer::a21::Address {
         let mut buf = vec![crate::transducer::a21::TAG_CLASS];
-        for &(sheet, unit, m5, m13) in &self.plane {
-            buf.push(u8::from(sheet));
-            buf.extend_from_slice(&unit.to_le_bytes());
-            buf.extend_from_slice(&m5.to_le_bytes());
-            buf.extend_from_slice(&m13.to_le_bytes());
-        }
         alphabet::put_q(&mut buf, &self.offplane.0);
         alphabet::put_q(&mut buf, &self.offplane.1);
         buf.push(self.offplane.2);
         buf.push(self.offplane.3);
+        match self.plane {
+            None => buf.push(0),
+            Some(pl) => {
+                buf.push(1);
+                for &(orientation, unit, m5, m13) in &pl {
+                    buf.push(u8::from(orientation));
+                    buf.extend_from_slice(&unit.to_le_bytes());
+                    buf.extend_from_slice(&m5.to_le_bytes());
+                    buf.extend_from_slice(&m13.to_le_bytes());
+                }
+            }
+        }
         self.hue.to_bytes(&mut buf);
-        alphabet::put_q(&mut buf, &self.placement.0);
-        alphabet::put_q(&mut buf, &self.placement.1);
+        self.carriage.to_bytes(&mut buf);
         crate::transducer::a21::Address::new(buf)
     }
 
@@ -285,58 +291,63 @@ impl ClassVector {
             return None;
         }
         let mut p = 1usize;
-        let mut plane = [(false, 0u32, 0i64, 0i64); 6];
-        for slot in &mut plane {
-            let sheet = *k.get(p)? != 0;
-            p += 1;
-            let unit = u32::from_le_bytes(k.get(p..p + 4)?.try_into().ok()?);
-            p += 4;
-            let m5 = i64::from_le_bytes(k.get(p..p + 8)?.try_into().ok()?);
-            p += 8;
-            let m13 = i64::from_le_bytes(k.get(p..p + 8)?.try_into().ok()?);
-            p += 8;
-            *slot = (sheet, unit, m5, m13);
-        }
         let x = alphabet::take_q(k, &mut p)?;
         let y = alphabet::take_q(k, &mut p)?;
         let sa = *k.get(p)?;
         p += 1;
         let sp = *k.get(p)?;
         p += 1;
+        let plane = match *k.get(p)? {
+            0 => {
+                p += 1;
+                None
+            }
+            1 => {
+                p += 1;
+                let mut pl = [(false, 0u32, 0i64, 0i64); 6];
+                for slot in &mut pl {
+                    let orientation = *k.get(p)? != 0;
+                    p += 1;
+                    let unit = u32::from_le_bytes(k.get(p..p + 4)?.try_into().ok()?);
+                    p += 4;
+                    let m5 = i64::from_le_bytes(k.get(p..p + 8)?.try_into().ok()?);
+                    p += 8;
+                    let m13 = i64::from_le_bytes(k.get(p..p + 8)?.try_into().ok()?);
+                    p += 8;
+                    *slot = (orientation, unit, m5, m13);
+                }
+                Some(pl)
+            }
+            _ => return None,
+        };
         let hue = CycleType::from_bytes(k, &mut p)?;
-        let p0 = alphabet::take_q(k, &mut p)?;
-        let p1 = alphabet::take_q(k, &mut p)?;
+        let carriage = Versor::from_bytes(k, &mut p)?;
         Some(ClassVector {
             plane,
-            placement: (p0, p1),
+            carriage,
             hue,
             offplane: (x, y, sa, sp),
         })
     }
 
-
-
     /// The coordinate an axis names, as "nonzero". `Open` is never a
     /// coordinate: it is the last move, admitted when no coordinate's own
-    /// pivot discharged.
+    /// pivot discharged. Off-plane is occupied when the holonomy has no
+    /// plane section, not as a fallback from a missing form.
     pub fn occupies(&self, axis: Axis) -> bool {
         match axis {
-            Axis::Sheet(p) => self.plane.get(p as usize).is_some_and(|s| s.0),
-            Axis::Unit(p) => self.plane.get(p as usize).is_some_and(|s| s.1 != 0),
-            Axis::Prime5(p) => self.plane.get(p as usize).is_some_and(|s| s.2 != 0),
-            Axis::Prime13(p) => self.plane.get(p as usize).is_some_and(|s| s.3 != 0),
+            Axis::Orientation(p) => self.plane_slot(p).is_some_and(|s| s.0),
+            Axis::Unit(p) => self.plane_slot(p).is_some_and(|s| s.1 != 0),
+            Axis::Prime5(p) => self.plane_slot(p).is_some_and(|s| s.2 != 0),
+            Axis::Prime13(p) => self.plane_slot(p).is_some_and(|s| s.3 != 0),
             Axis::Hue => !matches!(self.hue, CycleType::Identity),
             Axis::Placement => {
-                let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-                self.placement.0 != zero || self.placement.1 != zero
+                !element::same_versor(&element::translator_of(&self.carriage), &element::identity_versor())
             }
-            Axis::OffPlane => {
-                let z = Self::zero_q();
-                self.offplane.0 != z
-                    || self.offplane.1 != z
-                    || self.offplane.2 != 0
-                    || self.offplane.3 != 0
+            Axis::Dilation => {
+                !element::same_versor(&element::dilator_of(&self.carriage), &element::identity_versor())
             }
+            Axis::OffPlane => self.plane.is_none(),
             Axis::Open => false,
         }
     }
@@ -345,13 +356,18 @@ impl ClassVector {
     pub fn coordinates(&self) -> Vec<Axis> {
         let mut out = Vec::new();
         for p in 0..6u8 {
-            for axis in [Axis::Sheet(p), Axis::Unit(p), Axis::Prime5(p), Axis::Prime13(p)] {
+            for axis in [
+                Axis::Orientation(p),
+                Axis::Unit(p),
+                Axis::Prime5(p),
+                Axis::Prime13(p),
+            ] {
                 if self.occupies(axis) {
                     out.push(axis);
                 }
             }
         }
-        for axis in [Axis::Hue, Axis::Placement, Axis::OffPlane] {
+        for axis in [Axis::Hue, Axis::Placement, Axis::Dilation, Axis::OffPlane] {
             if self.occupies(axis) {
                 out.push(axis);
             }
@@ -376,10 +392,13 @@ impl ClassVector {
         let mut b = other.clone();
         a.clear(axis);
         b.clear(axis);
-        a.plane == b.plane
-            && a.placement == b.placement
+        let plane_ok = a.plane == b.plane;
+        let off_ok = a.offplane == b.offplane
+            || (!a.occupies(Axis::OffPlane) && !b.occupies(Axis::OffPlane));
+        plane_ok
+            && element::same_versor(&a.carriage, &b.carriage)
             && a.hue == b.hue
-            && a.offplane == b.offplane
+            && off_ok
     }
 
     fn offplane_zero() -> (
@@ -393,31 +412,44 @@ impl ClassVector {
 
     fn clear(&mut self, axis: Axis) {
         match axis {
-            Axis::Sheet(p) => {
-                if let Some(s) = self.plane.get_mut(p as usize) {
-                    s.0 = false;
+            Axis::Orientation(p) => {
+                if let Some(pl) = self.plane.as_mut() {
+                    if let Some(s) = pl.get_mut(p as usize) {
+                        s.0 = false;
+                    }
                 }
             }
             Axis::Unit(p) => {
-                if let Some(s) = self.plane.get_mut(p as usize) {
-                    s.1 = 0;
+                if let Some(pl) = self.plane.as_mut() {
+                    if let Some(s) = pl.get_mut(p as usize) {
+                        s.1 = 0;
+                    }
                 }
             }
             Axis::Prime5(p) => {
-                if let Some(s) = self.plane.get_mut(p as usize) {
-                    s.2 = 0;
+                if let Some(pl) = self.plane.as_mut() {
+                    if let Some(s) = pl.get_mut(p as usize) {
+                        s.2 = 0;
+                    }
                 }
             }
             Axis::Prime13(p) => {
-                if let Some(s) = self.plane.get_mut(p as usize) {
-                    s.3 = 0;
+                if let Some(pl) = self.plane.as_mut() {
+                    if let Some(s) = pl.get_mut(p as usize) {
+                        s.3 = 0;
+                    }
                 }
             }
             Axis::Placement => {
-                let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-                self.placement = (zero.clone(), zero);
+                self.carriage = element::dilator_of(&self.carriage);
             }
-            Axis::OffPlane => self.offplane = Self::offplane_zero(),
+            Axis::Dilation => {
+                self.carriage = element::translator_of(&self.carriage);
+            }
+            Axis::OffPlane => {
+                self.offplane = Self::offplane_zero();
+                self.plane = Some([(false, 0, 0, 0); 6]);
+            }
             Axis::Hue => self.hue = CycleType::Identity,
             Axis::Open => {}
         }
@@ -425,13 +457,16 @@ impl ClassVector {
 
     /// No coordinate is occupied: the key is the zero key.
     pub fn is_zero(&self) -> bool {
-        self.class_key() == ClassVector::zero().class_key()
+        self.occupied().is_empty()
     }
 
     /// The free part: a prime exponent, or an off-plane class (infinite
     /// order). A loop with a free part is a demand, never filed torsion.
     pub fn free_part(&self) -> bool {
-        self.occupies(Axis::OffPlane) || self.plane.iter().any(|s| s.2 != 0 || s.3 != 0)
+        self.occupies(Axis::OffPlane)
+            || self
+                .plane
+                .is_some_and(|pl| pl.iter().any(|s| s.2 != 0 || s.3 != 0))
     }
 }
 

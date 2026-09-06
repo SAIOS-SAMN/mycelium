@@ -459,9 +459,9 @@ pub fn versor_between(a: &Shape, b: &Shape) -> Option<Mv> {
     // alphabet realised as conformal versors — the quarter letter on the
     // sensor's plane, its square, and the half turn through the third axis
     // (the plane's flip). Nothing here is tabulated.
-    use crate::transducer::alphabet::{LetterId, Spelling, Word, PLANE_COL, PLANE_ROW};
+    use crate::transducer::alphabet::{LetterId, Word, PLANE_COL, PLANE_ROW};
     let realise = |tape: &[(LetterId, bool)]| -> Option<Mv> {
-        crate::transducer::element::conformal_of(&Spelling { word: Word::from_letters(tape), rho: q(1) }, &(q(0), q(0)))
+        crate::transducer::element::versor_of_word(&Word::from_letters(tape))
     };
     let quarter = realise(&[(LetterId::quarter((PLANE_ROW, PLANE_COL))?, false)])?;
     let half_turn = quarter.geo(&quarter);

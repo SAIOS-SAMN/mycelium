@@ -9,7 +9,7 @@ use super::transport::*;
 use crate::network::nerve::{Keyed, ROOT};
 use crate::physics::Budget;
 use crate::transducer::alphabet::{Order, Rotor, Word};
-use crate::transducer::element::Element;
+use crate::transducer::element::{self, Element};
 use crate::transducer::family::Crystal;
 use crate::transducer::stalk::{self, Standing};
 
@@ -105,7 +105,7 @@ impl Form {
         let t = loop_transport(self, lp)?;
         Some(ClassVector::read(
             &lp.holonomy,
-            t.shift,
+            t.carriage,
             CycleType::of(&t.gauge),
         ))
     }
@@ -396,7 +396,26 @@ impl Form {
                         axis,
                         by: PivotBy::Placement {
                             face: chord as u16,
-                            shift: kappa.placement.clone(),
+                            translator: element::translator_of(&kappa.carriage),
+                        },
+                    });
+                }
+                Axis::Dilation => {
+                    out.push(Candidate {
+                        axis,
+                        by: PivotBy::Placement {
+                            face: chord as u16,
+                            translator: element::dilator_of(&kappa.carriage),
+                        },
+                    });
+                }
+                Axis::Orientation(_) => {
+                    out.push(Candidate {
+                        axis,
+                        by: PivotBy::Word {
+                            face: chord as u16,
+                            word: crate::transducer::alphabet::PlaneForm::sheet_word(),
+                            side: Side::Right,
                         },
                     });
                 }
@@ -555,11 +574,25 @@ impl Form {
             path.push(a);
             walked.push(fi);
             let holonomy = form_named_holonomy(faces, &path, &walked);
+            let mut carriage = element::identity_versor();
+            for (win, &wfi) in path.windows(2).zip(&walked) {
+                let ff = &faces[wfi];
+                let step = if ff.i as usize == win[0] && ff.j as usize == win[1] {
+                    ff.transport.carriage.clone()
+                } else {
+                    match ff.transport.carriage.versor_inverse() {
+                        Some(inv) => inv,
+                        None => element::identity_versor(),
+                    }
+                };
+                carriage = step.geo(&carriage);
+            }
             loops.push(Loop {
                 vertices: path.into_iter().map(|x| x as u16).collect(),
                 faces: walked.into_iter().map(|x| x as u16).collect(),
                 chord: fi as u16,
                 holonomy,
+                carriage,
             });
         }
         loops
@@ -568,7 +601,7 @@ impl Form {
 
 pub(crate) fn loop_transport(form: &Form, lp: &Loop) -> Option<Transport> {
     let mut acc_word = Word::identity();
-    let mut acc_shift = q2_zero();
+    let mut acc_carriage = element::identity_versor();
     let mut acc_gauge = Vec::new();
     for (win, &fi) in lp.vertices.windows(2).zip(&lp.faces) {
         let f = form.faces.get(fi as usize)?;
@@ -577,14 +610,13 @@ pub(crate) fn loop_transport(form: &Form, lp: &Loop) -> Option<Transport> {
         } else {
             f.transport.inverse()?
         };
-        let mapped = apply_linear(&step.word, &acc_shift)?;
-        acc_shift = (mapped.0 + &step.shift.0, mapped.1 + &step.shift.1);
+        acc_carriage = step.carriage.geo(&acc_carriage);
         acc_word = step.word.compose(&acc_word);
         acc_gauge = compose_gauge(&step.gauge, &acc_gauge);
     }
     Some(Transport {
         word: acc_word.normal_form(),
-        shift: acc_shift,
+        carriage: acc_carriage,
         gauge: acc_gauge,
     })
 }
@@ -596,12 +628,9 @@ pub(crate) fn apply_by(faces: &mut [FormFace], by: &PivotBy) {
                 f.transport.word = pivoted_face(&f.transport.word, word, *side);
             }
         }
-        PivotBy::Placement { face, shift } => {
+        PivotBy::Placement { face, translator } => {
             if let Some(f) = faces.get_mut(*face as usize) {
-                f.transport.shift = (
-                    &f.transport.shift.0 + &shift.0,
-                    &f.transport.shift.1 + &shift.1,
-                );
+                f.transport.carriage = translator.geo(&f.transport.carriage);
             }
         }
         PivotBy::Hue { face, gauge } => {
@@ -619,12 +648,11 @@ pub(crate) fn unapply_by(faces: &mut [FormFace], by: &PivotBy) {
                 f.transport.word = unpivoted_face(&f.transport.word, word, *side);
             }
         }
-        PivotBy::Placement { face, shift } => {
+        PivotBy::Placement { face, translator } => {
             if let Some(f) = faces.get_mut(*face as usize) {
-                f.transport.shift = (
-                    &f.transport.shift.0 - &shift.0,
-                    &f.transport.shift.1 - &shift.1,
-                );
+                if let Some(inv) = translator.versor_inverse() {
+                    f.transport.carriage = inv.geo(&f.transport.carriage);
+                }
             }
         }
         PivotBy::Hue { face, gauge } => {
