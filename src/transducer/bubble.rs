@@ -1420,9 +1420,7 @@ impl Contemplation {
                     let mut inner = Keyed::new();
                     for _ in 0..nc {
                         let c = sentence::PivotCertificate::from_bytes(b, pos)?;
-                        let wk = match &c.by {
-                            crate::transducer::sentence::PivotBy::Word { word, .. } => word.key(),
-                        };
+                        let wk = c.key();
                         inner.insert(wk, c);
                     }
                     vortex.insert(after, inner);

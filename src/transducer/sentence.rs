@@ -737,6 +737,29 @@ fn gauge_image(g: &Keyed<u8>, h: u8) -> u8 {
     }
 }
 
+/// `second ∘ first` on the union of listed hues; a hue absent from a map
+/// is fixed by that map. The listing holds non-fixed points only.
+fn compose_gauge(second: &[(u8, u8)], first: &[(u8, u8)]) -> Vec<(u8, u8)> {
+    let a = gauge_keyed(first);
+    let b = gauge_keyed(second);
+    let mut hues: Keyed<()> = Keyed::new();
+    for &(x, y) in first.iter().chain(second.iter()) {
+        hues.insert(hue_key(x), ());
+        hues.insert(hue_key(y), ());
+    }
+    let mut out = Vec::new();
+    for (k, _) in hues.fiber(&ROOT) {
+        let h = k[0];
+        let image = gauge_image(&b, gauge_image(&a, h));
+        if image != h {
+            out.push((h, image));
+        }
+    }
+    out.sort_unstable();
+    out.dedup();
+    out
+}
+
 fn relative_gauge(from: &[(u8, u8)], to: &[(u8, u8)]) -> Vec<(u8, u8)> {
     let fm = gauge_keyed(from);
     let tm = gauge_keyed(to);
@@ -1248,20 +1271,22 @@ impl Form {
     }
 
     /// The class vector of loop `idx` (12.6): plane coordinates from the
-    /// oriented holonomy. Placement and hue live on the chord Transport
-    /// and are read once those coordinates have a carrier (A4).
+    /// oriented holonomy; placement and hue from the affine and gauge
+    /// composed around `lp.vertices` (A4).
     pub fn class_vector(&self, idx: usize) -> Option<ClassVector> {
         let lp = self.loops.get(idx)?;
-        Some(ClassVector::of_word(&lp.holonomy))
+        let t = loop_transport(self, lp)?;
+        Some(ClassVector::read(
+            &lp.holonomy,
+            t.shift,
+            CycleType::of(&t.gauge),
+        ))
     }
 
-    /// Write a certified word onto the chord face's transport and re-walk.
+    /// Write a certified move onto the chord face's transport and re-walk.
     /// Vertices are not written.
     pub fn apply_pivot(&mut self, cert: &PivotCertificate) {
-        let PivotBy::Word { face, word, side } = &cert.by;
-        if let Some(f) = self.faces.get_mut(*face as usize) {
-            f.transport.word = pivoted_face(&f.transport.word, word, *side);
-        }
+        apply_by(&mut self.faces, &cert.by);
         self.loops = Self::loops_of(&self.faces, self.vertices.len());
         self.reindex();
     }
@@ -1347,7 +1372,7 @@ impl Form {
                 .loops
                 .iter()
                 .enumerate()
-                .filter(|(_, lp)| !lp.holonomy.abelian_identity())
+                .filter(|(i, _)| self.class_vector(*i).is_some_and(|k| !k.is_zero()))
                 .map(|(i, _)| i)
                 .collect();
             if open.is_empty() {
@@ -1527,6 +1552,31 @@ impl Form {
         let mut seen: Keyed<Keyed<()>> = Keyed::new();
         let mut out = Vec::new();
         for axis in kappa.coordinates() {
+            match axis {
+                Axis::Placement => {
+                    out.push(Candidate {
+                        axis,
+                        by: PivotBy::Placement {
+                            face: chord as u16,
+                            shift: kappa.placement.clone(),
+                        },
+                    });
+                    continue;
+                }
+                Axis::Hue => {
+                    out.push(Candidate {
+                        axis,
+                        by: PivotBy::Hue {
+                            face: chord as u16,
+                            gauge: kappa.hue.listing().to_vec(),
+                        },
+                    });
+                }
+                _ => {}
+            }
+            if matches!(axis, Axis::Placement) {
+                continue;
+            }
             for (_, chart) in charts.fiber(&ROOT) {
                 for w in crystal.on_axis(chart, axis) {
                     for side in [Side::Right, Side::Left] {
@@ -1563,39 +1613,20 @@ impl Form {
         t_extent: u64,
         mu_before: Option<[u64; 4]>,
     ) -> Option<PivotCertificate> {
-        let lp = self.loops.get(idx)?;
-        let PivotBy::Word { face, word, side } = &cand.by;
-        let held = self.faces.get(*face as usize)?;
-        let after_g = pivoted_face(&held.transport.word, word, *side);
-        let mut w = Word::identity();
-        for (win, &fi) in lp.vertices.windows(2).zip(&lp.faces) {
-            let step = if fi as usize == *face as usize {
-                if held.i == win[0] && held.j == win[1] {
-                    after_g.clone()
-                } else {
-                    after_g.inverse()
-                }
-            } else {
-                form_face_step(&self.faces, fi as usize, win[0] as usize, win[1] as usize)?
-            };
-            w = w.compose(&step);
-        }
-        let after_h = w.normal_form();
-        let kappa_after = ClassVector::read(&after_h, kappa.placement.clone());
+        let mut trial_form = self.clone();
+        apply_by(&mut trial_form.faces, &cand.by);
+        trial_form.loops = Form::loops_of(&trial_form.faces, trial_form.vertices.len());
+        let kappa_after = trial_form.class_vector(idx)?;
         if kappa_after.occupies(cand.axis) || !kappa.agrees_except(&kappa_after, cand.axis) {
             return None;
         }
+        let after_h = trial_form.loops.get(idx)?.holonomy.clone();
         let mut after_rows = rows.to_vec();
         *after_rows.get_mut(idx)? = loop_row(&after_h);
         let rank_after = rank_of_rows(&after_rows);
         if !Rank::admits(rank_before, rank_after) {
             return None;
         }
-        let mut trial_form = self.clone();
-        if let Some(f) = trial_form.faces.get_mut(*face as usize) {
-            f.transport.word = after_g;
-        }
-        trial_form.loops = Form::loops_of(&trial_form.faces, trial_form.vertices.len());
         let mu_after = match mu_before {
             Some(_) => match bundle {
                 None => [0; 4],
@@ -1690,6 +1721,75 @@ impl Form {
             });
         }
         loops
+    }
+}
+
+fn loop_transport(form: &Form, lp: &Loop) -> Option<Transport> {
+    let mut acc_word = Word::identity();
+    let mut acc_shift = q2_zero();
+    let mut acc_gauge = Vec::new();
+    for (win, &fi) in lp.vertices.windows(2).zip(&lp.faces) {
+        let f = form.faces.get(fi as usize)?;
+        let step = if f.i == win[0] && f.j == win[1] {
+            f.transport.clone()
+        } else {
+            f.transport.inverse()?
+        };
+        let mapped = apply_linear(&step.word, &acc_shift)?;
+        acc_shift = (mapped.0 + &step.shift.0, mapped.1 + &step.shift.1);
+        acc_word = step.word.compose(&acc_word);
+        acc_gauge = compose_gauge(&step.gauge, &acc_gauge);
+    }
+    Some(Transport {
+        word: acc_word.normal_form(),
+        shift: acc_shift,
+        gauge: acc_gauge,
+    })
+}
+
+fn apply_by(faces: &mut [FormFace], by: &PivotBy) {
+    match by {
+        PivotBy::Word { face, word, side } => {
+            if let Some(f) = faces.get_mut(*face as usize) {
+                f.transport.word = pivoted_face(&f.transport.word, word, *side);
+            }
+        }
+        PivotBy::Placement { face, shift } => {
+            if let Some(f) = faces.get_mut(*face as usize) {
+                f.transport.shift = (
+                    &f.transport.shift.0 + &shift.0,
+                    &f.transport.shift.1 + &shift.1,
+                );
+            }
+        }
+        PivotBy::Hue { face, gauge } => {
+            if let Some(f) = faces.get_mut(*face as usize) {
+                f.transport.gauge = compose_gauge(&f.transport.gauge, gauge);
+            }
+        }
+    }
+}
+
+pub(crate) fn unapply_by(faces: &mut [FormFace], by: &PivotBy) {
+    match by {
+        PivotBy::Word { face, word, side } => {
+            if let Some(f) = faces.get_mut(*face as usize) {
+                f.transport.word = unpivoted_face(&f.transport.word, word, *side);
+            }
+        }
+        PivotBy::Placement { face, shift } => {
+            if let Some(f) = faces.get_mut(*face as usize) {
+                f.transport.shift = (
+                    &f.transport.shift.0 - &shift.0,
+                    &f.transport.shift.1 - &shift.1,
+                );
+            }
+        }
+        PivotBy::Hue { face, gauge } => {
+            if let Some(f) = faces.get_mut(*face as usize) {
+                f.transport.gauge = compose_gauge(&f.transport.gauge, &gauge_invert(gauge));
+            }
+        }
     }
 }
 
@@ -2082,6 +2182,8 @@ pub struct ClassVector {
     plane: [(bool, u32, i64, i64); 6],
     /// Translation part of the loop's versor after the tree gauge.
     placement: (num_rational::BigRational, num_rational::BigRational),
+    /// Composed gauge around the loop (A4).
+    hue: CycleType,
     /// The holonomy has no plane form: the class is the rotor's invariants.
     offplane: bool,
     key: [u8; 32],
@@ -2090,18 +2192,47 @@ pub struct ClassVector {
 /// The class key of a closed loop: the identity's, written as zero (A20).
 pub const CLOSED_KEY: [u8; 32] = [0u8; 32];
 
+/// The hue cycle type of a loop: the composed gauge around its vertices.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum CycleType {
+    Identity,
+    Listed(Vec<(u8, u8)>),
+}
+
+impl CycleType {
+    fn of(g: &[(u8, u8)]) -> CycleType {
+        if g.is_empty() {
+            CycleType::Identity
+        } else {
+            CycleType::Listed(g.to_vec())
+        }
+    }
+
+    fn listing(&self) -> &[(u8, u8)] {
+        match self {
+            CycleType::Identity => &[],
+            CycleType::Listed(g) => g,
+        }
+    }
+}
+
 impl ClassVector {
     /// The vector of a holonomy word alone (no versor: zero residue).
     pub fn of_word(h: &Word) -> ClassVector {
         let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-        Self::read(h, (zero.clone(), zero))
+        Self::read(h, (zero.clone(), zero), CycleType::Identity)
     }
 
-    fn read(h: &Word, placement: (num_rational::BigRational, num_rational::BigRational)) -> ClassVector {
+    fn read(
+        h: &Word,
+        placement: (num_rational::BigRational, num_rational::BigRational),
+        hue: CycleType,
+    ) -> ClassVector {
         if h.abelian_identity() {
             return ClassVector {
                 plane: [(false, 0, 0, 0); 6],
                 placement,
+                hue,
                 offplane: false,
                 key: CLOSED_KEY,
             };
@@ -2114,6 +2245,7 @@ impl ClassVector {
         ClassVector {
             plane,
             placement,
+            hue,
             offplane,
             key,
         }
@@ -2128,7 +2260,7 @@ impl ClassVector {
             Axis::Unit(p) => self.plane.get(p as usize).is_some_and(|s| s.1 != 0),
             Axis::Prime5(p) => self.plane.get(p as usize).is_some_and(|s| s.2 != 0),
             Axis::Prime13(p) => self.plane.get(p as usize).is_some_and(|s| s.3 != 0),
-            Axis::Hue => false,
+            Axis::Hue => !matches!(self.hue, CycleType::Identity),
             Axis::Placement => {
                 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
                 self.placement.0 != zero || self.placement.1 != zero
@@ -2173,7 +2305,10 @@ impl ClassVector {
         let mut b = other.clone();
         a.clear(axis);
         b.clear(axis);
-        a.plane == b.plane && a.placement == b.placement && a.offplane == b.offplane
+        a.plane == b.plane
+            && a.placement == b.placement
+            && a.hue == b.hue
+            && a.offplane == b.offplane
     }
 
     fn clear(&mut self, axis: Axis) {
@@ -2203,7 +2338,8 @@ impl ClassVector {
                 self.placement = (zero.clone(), zero);
             }
             Axis::OffPlane => self.offplane = false,
-            Axis::Hue | Axis::Open => {}
+            Axis::Hue => self.hue = CycleType::Identity,
+            Axis::Open => {}
         }
     }
 
@@ -2336,6 +2472,43 @@ pub enum PivotBy {
     /// A held word written onto the chord face `face` as the relation the
     /// bundle was missing on that loop.
     Word { face: u16, word: Word, side: Side },
+    /// The translation residue, subtracted from the chord shift (A4).
+    Placement {
+        face: u16,
+        shift: (num_rational::BigRational, num_rational::BigRational),
+    },
+    /// The hue cycle type, composed as inverse onto the chord gauge (A4).
+    Hue { face: u16, gauge: Vec<(u8, u8)> },
+}
+
+impl PivotBy {
+    pub(crate) fn face(&self) -> u16 {
+        match self {
+            PivotBy::Word { face, .. }
+            | PivotBy::Placement { face, .. }
+            | PivotBy::Hue { face, .. } => *face,
+        }
+    }
+
+    fn move_key(&self) -> [u8; 32] {
+        match self {
+            PivotBy::Word { word, .. } => word.rotor().key(),
+            PivotBy::Placement { shift, .. } => {
+                let mut buf = Vec::new();
+                alphabet::put_q(&mut buf, &shift.0);
+                alphabet::put_q(&mut buf, &shift.1);
+                *blake3::hash(&buf).as_bytes()
+            }
+            PivotBy::Hue { gauge, .. } => {
+                let mut buf = Vec::new();
+                for &(a, b) in gauge {
+                    buf.push(a);
+                    buf.push(b);
+                }
+                *blake3::hash(&buf).as_bytes()
+            }
+        }
+    }
 }
 
 /// A certified discharge of one occupied axis (A20). Content-addressed:
@@ -2366,13 +2539,31 @@ impl PivotCertificate {
         buf.extend_from_slice(&self.after);
         self.rank_before.to_bytes(&mut buf);
         self.rank_after.to_bytes(&mut buf);
-        let PivotBy::Word { face, word, side } = &self.by;
-        buf.extend_from_slice(&face.to_le_bytes());
-        buf.push(match side {
-            Side::Left => 0,
-            Side::Right => 1,
-        });
-        buf.extend_from_slice(&word.key());
+        match &self.by {
+            PivotBy::Word { face, word, side } => {
+                buf.extend_from_slice(&face.to_le_bytes());
+                buf.push(match side {
+                    Side::Left => 0,
+                    Side::Right => 1,
+                });
+                buf.extend_from_slice(&word.key());
+            }
+            PivotBy::Placement { face, shift } => {
+                buf.push(1);
+                buf.extend_from_slice(&face.to_le_bytes());
+                alphabet::put_q(&mut buf, &shift.0);
+                alphabet::put_q(&mut buf, &shift.1);
+            }
+            PivotBy::Hue { face, gauge } => {
+                buf.push(2);
+                buf.extend_from_slice(&face.to_le_bytes());
+                buf.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
+                for &(a, b) in gauge {
+                    buf.push(a);
+                    buf.push(b);
+                }
+            }
+        }
         *blake3::hash(&buf).as_bytes()
     }
 
@@ -2395,6 +2586,21 @@ impl PivotCertificate {
                     Side::Right => 1,
                 });
                 word.to_bytes(out);
+            }
+            PivotBy::Placement { face, shift } => {
+                out.push(1);
+                out.extend_from_slice(&face.to_le_bytes());
+                alphabet::put_q(out, &shift.0);
+                alphabet::put_q(out, &shift.1);
+            }
+            PivotBy::Hue { face, gauge } => {
+                out.push(2);
+                out.extend_from_slice(&face.to_le_bytes());
+                out.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
+                for &(a, b) in gauge {
+                    out.push(a);
+                    out.push(b);
+                }
             }
         }
     }
@@ -2428,6 +2634,25 @@ impl PivotCertificate {
                 *pos += 1;
                 let word = Word::from_bytes(b, pos)?;
                 PivotBy::Word { face, word, side }
+            }
+            1 => {
+                let face = take_u16(b, pos)?;
+                let s0 = alphabet::take_q(b, pos)?;
+                let s1 = alphabet::take_q(b, pos)?;
+                PivotBy::Placement {
+                    face,
+                    shift: (s0, s1),
+                }
+            }
+            2 => {
+                let face = take_u16(b, pos)?;
+                let ng = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
+                let mut gauge = Vec::with_capacity(ng);
+                for _ in 0..ng {
+                    gauge.push((*b.get(*pos)?, *b.get(*pos + 1)?));
+                    *pos += 2;
+                }
+                PivotBy::Hue { face, gauge }
             }
             _ => return None,
         };
@@ -2543,9 +2768,7 @@ struct Candidate {
 /// rotor A1 key. Collapse reads `(class, r.key())`.
 pub fn vortex_put(v: &mut Keyed<Keyed<PivotCertificate>>, c: PivotCertificate) {
     let after = c.after;
-    let k = match &c.by {
-        PivotBy::Word { word, .. } => word.rotor().key(),
-    };
+    let k = c.by.move_key();
     v.nested_insert(after, k, c);
 }
 
@@ -3212,29 +3435,6 @@ mod tests {
         num_rational::BigRational::from_integer(num_bigint::BigInt::from(1))
     }
 
-    /// `second ∘ first` on the union of listed hues; a hue absent from a map
-    /// is fixed by that map. The listing holds non-fixed points only.
-    fn compose_gauge(second: &[(u8, u8)], first: &[(u8, u8)]) -> Vec<(u8, u8)> {
-        let a = gauge_keyed(first);
-        let b = gauge_keyed(second);
-        let mut hues: Keyed<()> = Keyed::new();
-        for &(x, y) in first.iter().chain(second.iter()) {
-            hues.insert(hue_key(x), ());
-            hues.insert(hue_key(y), ());
-        }
-        let mut out = Vec::new();
-        for (k, _) in hues.fiber(&ROOT) {
-            let h = k[0];
-            let image = gauge_image(&b, gauge_image(&a, h));
-            if image != h {
-                out.push((h, image));
-            }
-        }
-        out.sort_unstable();
-        out.dedup();
-        out
-    }
-
     fn closed_word_form(word: Word, contact: Option<alphabet::Contact>) -> Form {
         let mut f = Form::default();
         f.vertices.push(Vertex::Word {
@@ -3406,6 +3606,76 @@ mod tests {
             from_element_form(&old).is_none(),
             "a v2 tape is refused"
         );
+    }
+
+    #[test]
+    fn placement_residue_is_the_affine_translation() {
+        let mut f = chord_form(&[Word::identity()]);
+        for fa in &mut f.faces {
+            fa.transport.gauge.clear();
+        }
+        let chord = f.loops[0].chord as usize;
+        f.faces[chord].transport.shift = (q1(), q0());
+        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        let kappa = f.class_vector(0).expect("loop");
+        assert!(
+            kappa.occupies(Axis::Placement),
+            "a nonzero composed shift occupies Placement"
+        );
+        assert_ne!(
+            kappa.placement,
+            (q0(), q0()),
+            "the residue is the composed translation, got {:?}",
+            kappa.placement
+        );
+        let snaps = f.pivot_loop(
+            [0xa4; 32],
+            &Keyed::new(),
+            &crate::transducer::family::NoCrystal,
+            &mut crate::physics::Physics::default().stroke_n(8),
+            None,
+            0,
+        );
+        assert!(
+            snaps.iter().any(|s| matches!(s, Snap::Discharged { certificate, .. } if certificate.axis == Axis::Placement)),
+            "the residue discharges on Placement: {snaps:?}"
+        );
+        let after = f.class_vector(0).expect("loop remains");
+        assert!(
+            !after.occupies(Axis::Placement),
+            "Placement is zero after the pivot"
+        );
+    }
+
+    #[test]
+    fn hue_cycle_type_composes_around_the_loop() {
+        let mut f = chord_form(&[Word::identity()]);
+        for fa in &mut f.faces {
+            fa.transport.gauge.clear();
+        }
+        let chord = f.loops[0].chord as usize;
+        f.faces[chord].transport.gauge = vec![(3, 4), (4, 3)];
+        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        let kappa = f.class_vector(0).expect("loop");
+        assert!(
+            kappa.occupies(Axis::Hue),
+            "a non-identity composed gauge occupies Hue, got {:?}",
+            kappa.hue
+        );
+        let snaps = f.pivot_loop(
+            [0xa5; 32],
+            &Keyed::new(),
+            &crate::transducer::family::NoCrystal,
+            &mut crate::physics::Physics::default().stroke_n(8),
+            None,
+            0,
+        );
+        assert!(
+            snaps.iter().any(|s| matches!(s, Snap::Discharged { certificate, .. } if certificate.axis == Axis::Hue)),
+            "the cycle type discharges on Hue: {snaps:?}"
+        );
+        let after = f.class_vector(0).expect("loop remains");
+        assert!(!after.occupies(Axis::Hue), "Hue is identity after the pivot");
     }
 
     #[test]
@@ -4403,14 +4673,14 @@ mod tests {
             "a certified discharge replays: every after-face is face_of, then the certificate"
         );
         let mut tampered = from_element_form(&e).expect("v2 tape");
-        let crate::transducer::sentence::PivotBy::Word { face, .. } = &tampered
+        let fi = tampered
             .certificates
             .fiber(&crate::network::nerve::ROOT)
             .next()
             .expect("one certificate")
             .1
-            .by;
-        let fi = *face as usize;
+            .by
+            .face() as usize;
         tampered.faces[fi].transport.word = q.clone();
         let bad = as_element_form(&tampered, e.magnitude()).expect("tampered tape");
         assert_eq!(

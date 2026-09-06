@@ -261,28 +261,24 @@ fn face_idx_key(i: u16) -> [u8; 32] {
 /// A20: each certificate is the un-pivot of one chord face, re-walked.
 /// The loop's class key and rank before and after must match the tape.
 fn replay_certificates(f: &Form, by_chord: &Keyed<u16>) -> Option<&'static str> {
-    use crate::transducer::sentence::{rank_of_holonomies, unpivoted_face, ClassVector, PivotBy};
+    use crate::transducer::sentence::{rank_of_holonomies, unapply_by};
     for (_, cert) in f.certificates.fiber(&crate::network::nerve::ROOT) {
-        let PivotBy::Word { face, word, side } = &cert.by;
-        let Some(&li) = by_chord.get(&face_idx_key(*face)) else {
+        let face = cert.by.face();
+        let Some(&li) = by_chord.get(&face_idx_key(face)) else {
             return Some(REFUSE_PIVOT_INEXACT);
         };
         let mut pre = f.clone();
-        let Some(held) = pre.faces.get_mut(*face as usize) else {
-            return Some(REFUSE_PIVOT_INEXACT);
-        };
-        held.transport.word = unpivoted_face(&held.transport.word, word, *side);
+        unapply_by(&mut pre.faces, &cert.by);
         pre.loops = Form::loops_of(&pre.faces, pre.vertices.len());
-        let Some(before_lp) = pre.loops.get(li as usize) else {
+        let Some(kappa_before) = pre.class_vector(li as usize) else {
             return Some(REFUSE_PIVOT_INEXACT);
         };
-        if ClassVector::of_word(&before_lp.holonomy).class_key() != cert.before {
+        if kappa_before.class_key() != cert.before {
             return Some(REFUSE_PIVOT_INEXACT);
         }
-        let Some(after_lp) = f.loops.get(li as usize) else {
+        let Some(kappa_after) = f.class_vector(li as usize) else {
             return Some(REFUSE_PIVOT_INEXACT);
         };
-        let kappa_after = ClassVector::of_word(&after_lp.holonomy);
         if kappa_after.class_key() != cert.after || kappa_after.occupies(cert.axis) {
             return Some(REFUSE_PIVOT_INEXACT);
         }
