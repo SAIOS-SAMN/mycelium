@@ -481,6 +481,8 @@ fn main() {
         let ask_quote = !occluded
             && (lang != last_lang || last_height > last_quoted_height || dwell_elapsed);
         if ask_quote {
+        let lang_state = if lang != last_lang { "changed" } else { "same" };
+        eprintln!("[{tag}] quote asked: language {lang_state} book {last_height}");
         match entity.quote() {
             Ok(q) => {
                 // An empty WouldBlock is impedance, not a clock: do not
@@ -519,8 +521,23 @@ fn main() {
                     );
                     if residual == cluster.chain {
                         n_silent += 1;
+                        eprintln!(
+                            "[{tag}] listing {:02x}{:02x}… held: no held word deflates it",
+                            cluster.address[0], cluster.address[1]
+                        );
                         continue;
                     }
+                    let expressed = mycelium::transducer::element::from_residual(&residual);
+                    eprintln!(
+                        "[{tag}] listing {:02x}{:02x}… reduced by {} cites: residual {} of {}, expressed {:02x}{:02x}…",
+                        cluster.address[0],
+                        cluster.address[1],
+                        cites.len(),
+                        residual.len(),
+                        cluster.chain.len(),
+                        expressed.address()[0],
+                        expressed.address()[1]
+                    );
                     n_closing += cites.len() as u32;
                     for (_, st, _, _, _) in &cites {
                         match mycelium::sdk::Standing::from_u8(*st) {
@@ -864,6 +881,10 @@ fn main() {
                     entity.axes_opened(),
                 );
             }
+            eprintln!(
+                "[{tag}] stroke outcome fed {:?} pivoted {:?} stood {:?} uttered {:?} closed {:?} learned {:?}",
+                outcome.fed, outcome.pivoted, outcome.stood, outcome.uttered, outcome.closed, outcome.learned
+            );
             last_logged_k = k_step;
             last_logged_n = stroke_n;
         }

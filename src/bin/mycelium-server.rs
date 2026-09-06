@@ -654,27 +654,39 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
             }
             (*sy.served.get(&svoice).unwrap(), sy.order.clone())
         };
-        let (words, classes): (Vec<Vec<u8>>, Vec<dialogue::ClassPage>) = {
+        let (words, classes, k_now, height, served_addrs): (Vec<Vec<u8>>, Vec<dialogue::ClassPage>, u64, u64, Vec<[u8; 32]>) = {
             let k = door.kernel.lock().unwrap();
             let free: u64 = k.physics().reserve.iter().sum();
             let depth = (1 + (free as usize * 7) / (4 * mycelium::physics::reserve_max() as usize)).min(8);
             let mut out = Vec::new();
+            let mut served_addrs = Vec::new();
             let mut next = cursor;
             while next < order.len() && out.len() < depth {
                 let addr = order[next];
                 match k.word_at(&addr) {
-                    Some(w) => out.push(w.to_bytes()),
+                    Some(w) => {
+                        served_addrs.push(addr);
+                        out.push(w.to_bytes());
+                    }
                     None => missed.push(addr),
                 }
                 next += 1;
             }
             let classes = k.class_records(&mycelium::transducer::stalk::Invariant::default());
+            let k_now = k.k_step();
+            let height = k.book_height();
             drop(k);
             if let Ok(mut sy) = door.syllabus.lock() {
                 sy.served.insert(svoice, next);
             }
-            (out, classes)
+            (out, classes, k_now, height, served_addrs)
         };
+        for addr in &served_addrs {
+            eprintln!(
+                "  court syllabus {:02x}{:02x}… to {:02x}{:02x}… receipt K {k_now} h {height}",
+                addr[0], addr[1], svoice[0], svoice[1]
+            );
+        }
         if !missed.is_empty() {
             let mut sy = door.syllabus.lock().unwrap();
             let ahead = *sy.served.get(&svoice).unwrap_or(&0);
@@ -905,6 +917,10 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
                 k.grant_t_lease(qvoice);
             }
         }
+        eprintln!(
+            "  court book height {height} frontier {served} for {:02x}{:02x}…",
+            qvoice[0], qvoice[1]
+        );
         eprintln!(
             "  quote voice {:02x} → surface {surface:?}; {served}/{} clusters ({} bytes); K={k_step}; cohesion {cohesion:?}",
             qvoice[0],

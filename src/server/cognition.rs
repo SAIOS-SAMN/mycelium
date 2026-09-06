@@ -3893,6 +3893,19 @@ impl Kernel {
         (0..4).all(|l| (room[l] as u64) >= mag[l])
     }
 
+    /// One line per short lane: room is never compared across lanes.
+    fn log_room_refused(&self, voice: &[u8; 32], need: &[u64; 4]) {
+        let room = self.lane_room();
+        for l in 0..4 {
+            if need[l] > 0 && (room[l] as u64) < need[l] {
+                eprintln!(
+                    "  court room refused voice {:02x}{:02x}… lane {l} draw {} room {}",
+                    voice[0], voice[1], need[l], room[l]
+                );
+            }
+        }
+    }
+
     /// D12 — charge the congestion door and decide deferral: fee[l] =
     /// reserve_deficit[l]/8 (0 on a calm mesh, up to 4 at an empty lane); the
     /// speaker pays what their balance holds; a zero payment on a FULLY
@@ -4247,12 +4260,7 @@ impl Kernel {
         }
         // Every lane the residual moves must have room; none is chosen.
         if !self.fits_book(&residual.magnitude()) {
-            eprintln!(
-                "  court room refused {:02x}{:02x}… {}",
-                addr[0],
-                addr[1],
-                crate::verdict::REFUSE_ROOM
-            );
+            self.log_room_refused(&self.identity, &residual.magnitude());
             return false;
         }
         let k_now = self.k_step();
@@ -4673,12 +4681,7 @@ impl Kernel {
                             self.relocate_t_exhausted();
                         }
                         if !self.fits_book(&need) {
-                            eprintln!(
-                                "  court room refused {:02x}{:02x}… {}",
-                                addr[0],
-                                addr[1],
-                                crate::verdict::REFUSE_ROOM
-                            );
+                            self.log_room_refused(&voice, &need);
                         } else {
                             self.book_list(residual.clone(), k_now);
                             self.docket_connection(&residual, voice);
