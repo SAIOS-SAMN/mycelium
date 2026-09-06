@@ -118,7 +118,7 @@ impl ClassVector {
         placement: (num_rational::BigRational, num_rational::BigRational),
         hue: CycleType,
     ) -> ClassVector {
-        if h.abelian_identity() {
+        if h.is_identity() {
             return ClassVector {
                 plane: [(false, 0, 0, 0); 6],
                 placement,
@@ -271,7 +271,7 @@ pub enum LoopRow {
 }
 
 pub fn loop_row(h: &Word) -> LoopRow {
-    if h.abelian_identity() {
+    if h.is_identity() {
         return LoopRow::Closed;
     }
     match free_row(h) {
@@ -363,11 +363,11 @@ impl Form {
                 .iter()
                 .enumerate()
                 .filter_map(|(i, lp)| {
-                    let open_holo = !lp.holonomy.abelian_identity();
+                    let open_holo = !lp.holonomy.is_identity();
                     let open_chord = self
                         .faces
                         .get(lp.chord as usize)
-                        .is_some_and(|f| !f.transport.word.abelian_identity());
+                        .is_some_and(|f| !f.transport.word.is_identity());
                     if open_holo || open_chord {
                         Some((i, lp.holonomy.order()))
                     } else {
@@ -397,7 +397,7 @@ impl Form {
                 if self
                     .loops
                     .get(*idx)
-                    .is_some_and(|lp| lp.holonomy.abelian_identity())
+                    .is_some_and(|lp| lp.holonomy.is_identity())
                 {
                     snaps.push(Snap::Closed {
                         chord: *idx,

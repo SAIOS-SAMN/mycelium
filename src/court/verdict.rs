@@ -213,7 +213,7 @@ fn torsion_chord_carries(
     let Some(lp) = f.loops.get(li as usize) else {
         return false;
     };
-    if lp.holonomy.abelian_identity() {
+    if lp.holonomy.is_identity() {
         return false;
     }
     for &fi in &lp.faces {
@@ -235,7 +235,7 @@ fn form_loops_replay(f: &Form) -> bool {
     use crate::transducer::alphabet::Order;
     use crate::transducer::sentence::ClassVector;
     for lp in &f.loops {
-        if lp.holonomy.abelian_identity() {
+        if lp.holonomy.is_identity() {
             continue;
         }
         match lp.holonomy.order() {

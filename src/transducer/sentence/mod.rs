@@ -717,7 +717,7 @@ mod tests {
     fn word_constant_triangle_keeps_its_cycle() {
         let f = star_form(3, vec![(1, 2, Word::identity()), (2, 3, Word::identity()), (1, 3, Word::identity())]);
         assert!(!f.loops.is_empty(), "a triangle has a loop");
-        assert!(f.loops.iter().all(|lp| lp.holonomy.abelian_identity()));
+        assert!(f.loops.iter().all(|lp| lp.holonomy.is_identity()));
         let _ = as_element_form(&f, [1, 0, 0, 0]).expect("rule element");
     }
 
@@ -1157,7 +1157,7 @@ mod tests {
             "a coboundary chord closes by the tree gauge: {cob_snaps:?}"
         );
         assert!(
-            cob.loops.iter().all(|lp| lp.holonomy.abelian_identity()),
+            cob.loops.iter().all(|lp| lp.holonomy.is_identity()),
             "T2: the closed chord stays closed"
         );
         let again = cob.pivot_loop(
@@ -1209,7 +1209,7 @@ mod tests {
                 "a closed finite chord is not demanded"
             );
             let still = f.loops.iter().any(|lp| {
-                !lp.holonomy.abelian_identity() && matches!(lp.holonomy.order(), Order::Finite(ell) if ell == o)
+                !lp.holonomy.is_identity() && matches!(lp.holonomy.order(), Order::Finite(ell) if ell == o)
             });
             let filed = f.torsion.fiber(&crate::network::nerve::ROOT).any(|(_, (_, ell, _))| *ell == o);
             assert!(
@@ -1493,6 +1493,71 @@ mod tests {
             .inverse()
             .is_none(),
             "Transport::inverse refuses an off-plane word"
+        );
+    }
+
+    /// A1: a (0,2) quarter to the fourth power is projectively identity and
+    /// closed to coheres, pivot_loop, is_cauterized, and the court. The
+    /// sensor-plane abelianisation does not see it.
+    #[test]
+    fn offplane_quarter_to_the_fourth_is_closed_to_all_four_readers() {
+        let q = alphabet::LetterId::quarter((0, 2)).expect("quarter");
+        let w = Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
+        assert!(w.is_identity(), "Φ⁴ is projectively 1");
+        let mut f = Form::default();
+        let empty = |addr: u8| Vertex::Word {
+            address: [addr; 32],
+            word: Word::identity(),
+            rho: q1(),
+            placement: (q0(), q0()),
+            gauge: Vec::new(),
+            class: stalk::Invariant::default(),
+            contact: None,
+        };
+        f.vertices.push(empty(1));
+        f.vertices.push(empty(2));
+        f.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            transport: f.face_of(0, 1).expect("star 1"),
+        });
+        f.faces.push(FormFace {
+            i: 0,
+            j: 2,
+            transport: f.face_of(0, 2).expect("star 2"),
+        });
+        f.faces.push(FormFace::new(1, 2, w));
+        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        f.reindex();
+        assert!(f.coheres(), "coheres reads projective identity");
+        assert!(
+            f.is_cauterized(),
+            "is_cauterized reads projective identity"
+        );
+        assert!(
+            f.loops.iter().all(|lp| lp.holonomy.is_identity()),
+            "the chord holonomy is A1 identity"
+        );
+        let snaps = f.pivot_loop(
+            [0xa1; 32],
+            &Keyed::new(),
+            &crate::transducer::family::NoCrystal,
+            &mut crate::physics::Physics::default().stroke_n(8),
+            None,
+            0,
+        );
+        assert!(
+            !snaps.iter().any(|s| matches!(
+                s,
+                Snap::Demand { .. } | Snap::TorsionOpen { .. } | Snap::TorsionFiled { .. }
+            )),
+            "pivot_loop does not demand a projective identity: {snaps:?}"
+        );
+        let e = as_element_form(&f, [1, 0, 0, 0]).expect("the identity chord crystallizes");
+        assert_eq!(
+            crate::court::verdict::blind_replay(&e),
+            None,
+            "the court reads projective identity"
         );
     }
 }

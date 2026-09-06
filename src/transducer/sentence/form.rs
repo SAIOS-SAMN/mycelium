@@ -427,7 +427,7 @@ impl Form {
             return false;
         }
         for lp in &self.loops {
-            if lp.holonomy.abelian_identity() {
+            if lp.holonomy.is_identity() {
                 continue;
             }
             match lp.holonomy.order() {
