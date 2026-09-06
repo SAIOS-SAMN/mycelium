@@ -29,7 +29,7 @@
 use super::blade::{self, Shape};
 use super::cga;
 use super::element::{self, Element, Versor};
-use super::sentence::{CellKind, Form, FormFace, Vertex};
+use super::sentence::{Form, FormFace, Vertex};
 use super::stalk::{Invariant, Standing};
 use std::cell::{Cell, RefCell};
 
@@ -2099,37 +2099,44 @@ pub(crate) fn residual_of(spoken: Option<&Grid>, observed: &Grid) -> Vec<(i64, i
 }
 
 /// Pressure of a form spoken over its germinating bundle (A1, 12.6):
-/// S and G from the residual chain, H the peel depth of unspoken bodies,
-/// T the extent held, passed in. None when there is no bundle to measure.
+/// per pair, `measure_lanes` of that pair's own residual; over the bundle,
+/// the lane-wise sum (the pairs are disjoint scenes). T is the extent
+/// held, passed in. None when there is no bundle to measure.
 pub fn bundle_pressure(
     form: &Form,
     bundle: &[(Grid, Grid)],
     crystal: &dyn Crystal,
     t_extent: u64,
-) -> Option<[u64; 4]> {
+) -> Option<(Vec<[u64; 4]>, [u64; 4])> {
     if bundle.is_empty() {
         return None;
     }
-    let mut chain: Vec<(i64, i64, u8, u8)> = Vec::new();
-    let mut peel_h = 0u64;
+    let mut pairs = Vec::with_capacity(bundle.len());
+    let mut sum = [0u64; 4];
     for (x, y) in bundle {
         let spoken = apply_form(form, x, &super::alphabet::Word::identity(), crystal);
         let grid = spoken.as_ref().map(|s| s.grid());
         let residual = residual_of(grid.as_ref(), y);
-        let bodies: Vec<(i64, i64, u8)> = residual
-            .iter()
-            .filter_map(|&(r, c, b, a)| match CellKind::of(b, a) {
-                CellKind::Created | CellKind::Recoloured => Some((r, c, a)),
-                CellKind::Erased | CellKind::Unchanged => None,
-            })
-            .collect();
-        peel_h = peel_h.max(super::peel::peel_body(&bodies).len() as u64);
-        chain.extend(residual);
+        let m = element::measure_lanes(&residual);
+        for l in 0..4 {
+            sum[l] = sum[l].saturating_add(m[l]);
+        }
+        pairs.push(m);
     }
-    let mut m = element::measure_lanes(&chain);
-    m[2] = t_extent;
-    m[3] = peel_h;
-    Some(m)
+    sum[2] = t_extent;
+    Some((pairs, sum))
+}
+
+/// A candidate is refused if it raises any lane on any pair, even when the
+/// summed μ⃗ descends. Equal or `descends` on every pair.
+pub(crate) fn pairs_descend(before: &[[u64; 4]], after: &[[u64; 4]]) -> bool {
+    if before.len() != after.len() {
+        return false;
+    }
+    before
+        .iter()
+        .zip(after)
+        .all(|(b, a)| *a == *b || crate::economy::descends(a, b))
 }
 
 /// The image of a hue under a gauge map: the hue the family showed is
@@ -3092,6 +3099,45 @@ mod tests {
         assert!(
             crate::verdict::blind_replay(&e).is_none() || e.magnitude().iter().all(|&x| x == 0),
             "a form tape parses"
+        );
+    }
+
+    #[test]
+    fn bundle_pressure_is_additive_and_refuses_a_raise_on_one_pair() {
+        let x = grid(&["1"]);
+        let y = grid(&["2"]);
+        let f = Form::default();
+        let bundle = [(x.clone(), y.clone()), (x.clone(), y.clone())];
+        let (pairs, sum) = bundle_pressure(&f, &bundle, &NoCrystal, 0).expect("two pairs");
+        assert_eq!(pairs.len(), 2);
+        assert_eq!(
+            sum[0],
+            pairs[0][0] + pairs[1][0],
+            "S is the sum of the pair residuals, got {sum:?} from {pairs:?}"
+        );
+        let spoken = apply_form(&f, &x, &crate::transducer::alphabet::Word::identity(), &NoCrystal);
+        let g = spoken.as_ref().map(|s| s.grid());
+        let r1 = residual_of(g.as_ref(), &y);
+        let mut cat = r1.clone();
+        cat.extend(r1);
+        let merged = element::measure_lanes(&cat);
+        assert_ne!(
+            sum[3], merged[3],
+            "H of a concatenated chain at shared coordinates is a merge, sum {sum:?} merged {merged:?}"
+        );
+        let pair_one_down = [1u64, 0, 0, 2];
+        let pair_two_raise = [0u64, 0, 0, 3];
+        let before_pairs = [[3u64, 0, 0, 5], [0, 0, 0, 1]];
+        let after_pairs = [pair_one_down, pair_two_raise];
+        let before_sum = [3u64, 0, 0, 6];
+        let after_sum = [1u64, 0, 0, 5];
+        assert!(
+            crate::economy::descends(&after_sum, &before_sum),
+            "the summed μ⃗ descends"
+        );
+        assert!(
+            !pairs_descend(&before_pairs, &after_pairs),
+            "a raise on pair two is refused even though the sum descends"
         );
     }
 }

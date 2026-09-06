@@ -182,7 +182,7 @@ impl Form {
                 );
                 break;
             };
-            let mu_before: Option<[u64; 4]> = match bundle {
+            let mu_before: Option<(Vec<[u64; 4]>, [u64; 4])> = match bundle {
                 None => None,
                 Some(b) => crate::transducer::family::bundle_pressure(self, b, crystal, t_extent),
             };
@@ -216,7 +216,7 @@ impl Form {
                         crystal,
                         bundle,
                         t_extent,
-                        mu_before,
+                        mu_before.clone(),
                     ) {
                         discharging.push(cert);
                     } else {
@@ -416,7 +416,7 @@ impl Form {
         crystal: &dyn Crystal,
         bundle: Option<&[(Vec<Vec<u8>>, Vec<Vec<u8>>)]>,
         t_extent: u64,
-        mu_before: Option<[u64; 4]>,
+        mu_before: Option<(Vec<[u64; 4]>, [u64; 4])>,
     ) -> Option<PivotCertificate> {
         let mut trial_form = self.clone();
         apply_by(&mut trial_form.faces, &cand.by);
@@ -434,13 +434,16 @@ impl Form {
         }
         let mu = match mu_before {
             None => Mu::Unmeasured,
-            Some(before) => {
-                let after = crate::transducer::family::bundle_pressure(
+            Some((pairs_before, before)) => {
+                let (pairs_after, after) = crate::transducer::family::bundle_pressure(
                     &trial_form,
                     bundle?,
                     crystal,
                     t_extent,
                 )?;
+                if !crate::transducer::family::pairs_descend(&pairs_before, &pairs_after) {
+                    return None;
+                }
                 if !(after == before || crate::economy::descends(&after, &before)) {
                     return None;
                 }
