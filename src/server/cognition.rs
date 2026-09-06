@@ -4884,7 +4884,7 @@ impl Kernel {
             let Some(gamma) = form.solve_coboundary() else {
                 continue;
             };
-            if gamma.iter().all(|g| g.abelian_identity()) {
+            if gamma.iter().all(|g| g.is_identity()) {
                 continue;
             }
             let _ = form.regauge(&gamma);

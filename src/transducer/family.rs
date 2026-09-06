@@ -3085,7 +3085,7 @@ mod tests {
             rule.form.loops.len()
         );
         assert!(
-            rule.form.loops.iter().all(|c| c.holonomy.abelian_identity()),
+            rule.form.loops.iter().all(|c| c.holonomy.is_identity()),
             "holonomy of identity-word faces is the identity"
         );
         let e = crate::transducer::sentence::as_element_form(&rule.form, [1, 0, 0, 0]).expect("element");

@@ -271,8 +271,8 @@ impl Form {
         let wa = va.word_in(self)?;
         let wb = vb.word_in(self)?;
         let word = wb.compose(&wa.inverse()).normal_form();
-        let ta = vertex_translation(va, self);
-        let tb = vertex_translation(vb, self);
+        let ta = vertex_translation(va, self)?;
+        let tb = vertex_translation(vb, self)?;
         let mapped = apply_linear(&word, &ta)?;
         let shift = (tb.0 - mapped.0, tb.1 - mapped.1);
         let gauge = relative_gauge(&vertex_gauge(va), &vertex_gauge(vb));

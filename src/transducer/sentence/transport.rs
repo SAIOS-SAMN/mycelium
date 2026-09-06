@@ -127,16 +127,18 @@ pub(crate) fn relative_gauge(from: &[(u8, u8)], to: &[(u8, u8)]) -> Vec<(u8, u8)
 pub(crate) fn vertex_translation(
     v: &Vertex,
     form: &Form,
-) -> (num_rational::BigRational, num_rational::BigRational) {
+) -> Option<(num_rational::BigRational, num_rational::BigRational)> {
     match v {
-        Vertex::Word { placement, .. } => placement.clone(),
+        Vertex::Word { placement, .. } => Some(placement.clone()),
         Vertex::Rebased { by, shift, .. } => match form.vertices.get(*by as usize) {
-            Some(Vertex::Word { placement, .. }) => {
-                (placement.0.clone() + &shift.0, placement.1.clone() + &shift.1)
-            }
-            _ => shift.clone(),
+            Some(Vertex::Word { placement, .. }) => Some((
+                placement.0.clone() + &shift.0,
+                placement.1.clone() + &shift.1,
+            )),
+            Some(Vertex::Frame) => Some(shift.clone()),
+            _ => None,
         },
-        _ => q2_zero(),
+        Vertex::Frame | Vertex::Glued { .. } | Vertex::Unfolded { .. } => Some(q2_zero()),
     }
 }
 

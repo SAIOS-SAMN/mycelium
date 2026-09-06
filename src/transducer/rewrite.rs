@@ -223,7 +223,7 @@ impl Rewrite {
                 mu[LANE_SHELL] = 1;
             }
             RewritePayload::Reanchor { gamma } => {
-                mu[LANE_SPATIAL] = gamma.iter().filter(|w| !w.abelian_identity()).count() as u64;
+                mu[LANE_SPATIAL] = gamma.iter().filter(|w| !w.is_identity()).count() as u64;
             }
             RewritePayload::AxisOpen { .. } => {
                 mu[LANE_SHELL] = 1;
@@ -324,10 +324,10 @@ pub fn replay(e: &Element) -> Option<&'static str> {
         }
         RewritePayload::Reanchor { gamma } => {
             for w in gamma {
-                if w.inverse().compose(w).abelian_identity() || w.compose(&w.inverse()).abelian_identity() {
+                if w.inverse().compose(w).is_identity() || w.compose(&w.inverse()).is_identity() {
                     continue;
                 }
-                if !w.abelian_identity() && w.inverse().letters().is_empty() && !w.letters().is_empty() {
+                if !w.is_identity() && w.inverse().letters().is_empty() && !w.letters().is_empty() {
                     return Some("re-anchor gauge does not invert");
                 }
             }

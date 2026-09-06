@@ -122,6 +122,10 @@ impl Form {
                 }
             }
             let Some(rank_before_gauge) = self.rank() else {
+                eprintln!(
+                    "  pivot {:02x}{:02x}… held, rank overflow",
+                    idea[0], idea[1]
+                );
                 break;
             };
             match self.solve_coboundary() {
@@ -172,6 +176,10 @@ impl Form {
             }
             let rows: Vec<LoopRow> = self.loops.iter().map(|lp| loop_row(&lp.holonomy)).collect();
             let Some(rank_before) = rank_of_rows(&rows) else {
+                eprintln!(
+                    "  pivot {:02x}{:02x}… held, rank overflow",
+                    idea[0], idea[1]
+                );
                 break;
             };
             let mu_before: Option<[u64; 4]> = match bundle {
@@ -186,14 +194,12 @@ impl Form {
                 let Some(kappa) = self.class_vector(idx) else {
                     continue;
                 };
-                let key = kappa.class_key();
                 let loop_k = vertex_ix_key(idx as u16);
                 if handled.contains(&loop_k) {
                     continue;
                 }
-                let held = horizon
-                    .get(&self.loops[idx].holonomy.rotor().class_key())
-                    .is_some();
+                let rotor_key = self.loops[idx].holonomy.rotor().class_key();
+                let held = horizon.get(&rotor_key).is_some();
                 let order = self.loops[idx].holonomy.order();
                 let cands = self.candidates_for(idx, &kappa, crystal);
                 let mut discharging: Vec<PivotCertificate> = Vec::new();
@@ -275,7 +281,10 @@ impl Form {
                     Discharge::NoneDischarged => match order {
                         Order::Infinite => {
                             if !held {
-                                snaps.push(Snap::Demand { chord: idx, key });
+                                snaps.push(Snap::Demand {
+                                    chord: idx,
+                                    key: rotor_key,
+                                });
                                 eprintln!(
                                     "  demand spoken {:02x}{:02x}… order ∞",
                                     idea[0], idea[1]
@@ -707,9 +716,6 @@ pub fn vortex_put(v: &mut Keyed<Keyed<PivotCertificate>>, c: PivotCertificate) {
 /// discharge. Several that match, or none that match (incomparable lanes),
 /// are a vortex. No pairwise pass.
 pub(crate) fn select_discharge(cands: &[PivotCertificate]) -> Discharge {
-    if cands.is_empty() {
-        return Discharge::NoneDischarged;
-    }
     let measured: Vec<[u64; 4]> = cands
         .iter()
         .filter_map(|c| match c.mu {
@@ -717,18 +723,17 @@ pub(crate) fn select_discharge(cands: &[PivotCertificate]) -> Discharge {
             Mu::Unmeasured => None,
         })
         .collect();
-    if measured.is_empty() {
-        return if cands.len() == 1 {
-            Discharge::One(cands[0].clone())
-        } else {
-            Discharge::Vortex(cands.to_vec())
-        };
-    }
-    if measured.len() != cands.len() {
-        return Discharge::Vortex(cands.to_vec());
-    }
-    match crate::economy::dominant(&measured) {
-        Some(i) => Discharge::One(cands[i].clone()),
-        None => Discharge::Vortex(cands.to_vec()),
+    debug_assert!(
+        measured.is_empty() || measured.len() == cands.len(),
+        "μ⃗ is measured once per loop"
+    );
+    match (measured.as_slice(), cands) {
+        ([], []) => Discharge::NoneDischarged,
+        ([], [c]) => Discharge::One(c.clone()),
+        ([], _) => Discharge::Vortex(cands.to_vec()),
+        (vals, _) => match crate::economy::dominant(vals) {
+            Some(i) => Discharge::One(cands[i].clone()),
+            None => Discharge::Vortex(cands.to_vec()),
+        },
     }
 }

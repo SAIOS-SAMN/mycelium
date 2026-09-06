@@ -786,9 +786,10 @@ mod tests {
             None,
             0,
         );
+        let want = infinite().rotor().class_key();
         assert!(
-            snaps.iter().any(|s| matches!(s, Snap::Demand { .. })),
-            "infinite is demanded: {snaps:?}"
+            snaps.iter().any(|s| matches!(s, Snap::Demand { key, .. } if *key == want)),
+            "a demand names the rotor class: {snaps:?}"
         );
         assert!(
             !snaps.iter().any(|s| matches!(s, Snap::TorsionFiled { .. })),

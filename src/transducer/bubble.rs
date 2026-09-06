@@ -1745,7 +1745,7 @@ mod tests {
         open.faces.push(FormFace::new(1, 2, w.clone()));
         open.loops = Form::loops_of(&open.faces, open.vertices.len());
         assert!(
-            open.loops.iter().any(|lp| !lp.holonomy.abelian_identity()),
+            open.loops.iter().any(|lp| !lp.holonomy.is_identity()),
             "the held form has an open loop"
         );
         let mut c2 = Contemplation::new();
