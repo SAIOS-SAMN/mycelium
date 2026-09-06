@@ -1386,7 +1386,10 @@ pub fn apply_form(
                     word: w,
                     rho: rho.clone(),
                 };
-                let versor = element::conformal_of(&sp, p).unwrap_or_else(element::identity_versor);
+                let Some(versor) = element::conformal_of(&sp, p) else {
+                    unspoken.push(vi as u16);
+                    continue;
+                };
                 let hits = atlas.fiber(class);
                 if hits.is_empty() {
                     unspoken.push(vi as u16);
@@ -2704,6 +2707,45 @@ mod tests {
             form_descent(&rule.form, &family, &NoCrystal).0,
             [0; 4],
             "without the cited form nothing is measured, so nothing is minted"
+        );
+    }
+
+    /// An unspellable vertex is unspoken: conformal_of None is not replaced
+    /// by an invented identity versor.
+    #[test]
+    fn unspellable_vertex_is_unspoken() {
+        let x = grid(&["1100", "0000"]);
+        let bodies = perceive(&x);
+        let class = bodies
+            .first()
+            .map(|b| b.moduli.clone())
+            .expect("a body");
+        let mut f = Form::default();
+        f.vertices.push(Vertex::Word {
+            address: [1u8; 32],
+            word: crate::transducer::alphabet::Word::identity(),
+            rho: q(0),
+            placement: (q(0), q(0)),
+            gauge: Vec::new(),
+            class,
+            contact: None,
+        });
+        let spoken = apply_form(
+            &f,
+            &x,
+            &crate::transducer::alphabet::Word::identity(),
+            &NoCrystal,
+        )
+        .expect("speech");
+        assert!(
+            spoken.unspoken.contains(&1),
+            "rho 0 does not spell; the vertex is unspoken, got {:?}",
+            spoken.unspoken
+        );
+        assert!(
+            spoken.cells.is_empty(),
+            "an invented identity versor would have carried the body, got {:?}",
+            spoken.cells
         );
     }
 
