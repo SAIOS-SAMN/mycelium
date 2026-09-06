@@ -188,14 +188,11 @@ fn speak_form(
     let (mag, remainders) = mycelium::transducer::family::form_descent(form, train, &entity.epigenome);
     let n_rem: usize = remainders.iter().map(|r| r.len()).sum();
     if remainders.iter().any(|r| !r.is_empty()) {
-        entity.hold_form(form, train, &remainders);
-        eprintln!("[{tag}] form withheld: family {fam} remainder {n_rem} cells");
-        for r in &remainders {
-            if r.is_empty() {
-                continue;
-            }
-            let _ = entity.attest(r, &[]);
-        }
+        let n_pairs = remainders.iter().filter(|r| !r.is_empty()).count();
+        entity.withhold_form(form, train, &remainders, mag);
+        eprintln!(
+            "[{tag}] form withheld: family {fam} remainder {n_rem} cells over {n_pairs} pairs"
+        );
         return false;
     }
     let Some(word) = as_element_form(form, mag) else {

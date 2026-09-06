@@ -1057,6 +1057,21 @@ impl Epigenome {
         Some(addr)
     }
 
+    /// Stand a withheld form in the dialect (24.2, 24.3): `withheld: true`,
+    /// never the genome.
+    pub fn stand_dialect_withheld(
+        &mut self,
+        sentence: Element,
+        k: u64,
+        now_tu: u64,
+    ) -> Option<[u8; 32]> {
+        let addr = self.stand_dialect_at(sentence, k, now_tu)?;
+        if let Some(d) = self.dialect.get_mut(&addr) {
+            d.withheld = true;
+        }
+        Some(addr)
+    }
+
     /// The words this entity has expressed and not yet had ratified.
     pub fn expressed_len(&self) -> usize {
         self.expressed.len()
@@ -2472,6 +2487,57 @@ impl Entity {
         self.contemplation.hold_form(f, train, remainders);
     }
 
+    /// Stand a withheld form, hold it as an idea, conclude each remainder,
+    /// and utter each residual word once with its cites (24.3).
+    pub fn withhold_form(
+        &mut self,
+        f: &crate::transducer::sentence::Form,
+        train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
+        remainders: &[Vec<(i64, i64, u8, u8)>],
+        mag: [u64; 4],
+    ) {
+        let k = self.session.voice().k();
+        let tu = self.now_tu();
+        if let Some(word) = crate::transducer::sentence::as_element_form(f, mag) {
+            self.epigenome.stand_dialect_withheld(word, k, tu);
+        }
+        self.hold_form(f, train, remainders);
+        for (i, r) in remainders.iter().enumerate() {
+            if r.is_empty() {
+                continue;
+            }
+            let (cites, residual, _) = self.conclude(r);
+            if residual.is_empty() {
+                continue;
+            }
+            let word = crate::transducer::element::from_residual(&residual);
+            let addr = word.address();
+            eprintln!(
+                "  remainder expressed {:02x}{:02x}… pair {i} cells {} cites {}",
+                addr[0],
+                addr[1],
+                residual.len(),
+                cites.len()
+            );
+            self.taught_up.insert(addr, word.clone());
+            let mu = crate::transducer::element::measure_lanes(&residual);
+            eprintln!(
+                "  uttered {:02x}{:02x}… standing Stood K {k} lanes {mu:?}",
+                addr[0], addr[1]
+            );
+            let _ = self.attest(&residual, &cites);
+        }
+    }
+
+    /// Addresses this mind has uttered (receipt: address at this K).
+    pub fn uttered_n(&self) -> usize {
+        self.taught_up.len()
+    }
+
+    pub fn uttered(&self, addr: &[u8; 32]) -> bool {
+        self.taught_up.contains(addr)
+    }
+
     /// Hold a withheld sentence as a bubble: form, remainder, cover.
     pub fn hold_sentence(&mut self, word: &Element) {
         if let Some(f) = crate::transducer::sentence::from_element_form(word) {
@@ -3468,6 +3534,34 @@ mod tests {
         assert_eq!(ruled, 0, "genome empty");
         assert!(stood >= 1, "a dialect word is stood");
         assert!(held >= 1, "an idea is held");
+    }
+
+    /// A withheld two-pair family with one closing pair stands in the
+    /// dialect and utters one residual word per non-empty remainder.
+    #[test]
+    fn withheld_form_stands_and_expresses_its_remainders() {
+        use crate::transducer::family::{extract_rule, form_descent, NoCrystal};
+        let family = vec![
+            (vec![vec![1u8]], vec![vec![2u8]]),
+            (vec![vec![1u8, 0]], vec![vec![2u8, 3]]),
+        ];
+        let rule = extract_rule(&family).expect("rule");
+        let (mag, rems) = form_descent(&rule.form, &family, &NoCrystal);
+        let n_res = rems.iter().filter(|r| !r.is_empty()).count();
+        assert!(n_res >= 1, "one pair leaves a remainder, got {rems:?}");
+        let mut entity = Entity::open("127.0.0.1:1", Kernel::named("withhold"));
+        entity.withhold_form(&rule.form, &family, &rems, mag);
+        assert!(
+            entity.dialect_len() >= 1,
+            "the withheld form or its residual stands, dialect {}",
+            entity.dialect_len()
+        );
+        assert_eq!(
+            entity.uttered_n(),
+            n_res,
+            "one utterance per residual, taught_up {}",
+            entity.uttered_n()
+        );
     }
 
     /// The court promotes a dialect vertex into the genome, carrying uses,
