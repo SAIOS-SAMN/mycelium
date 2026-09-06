@@ -292,6 +292,24 @@ mod tests {
     }
 
     #[test]
+    fn conjugate_hue_permutations_are_one_cycle_type() {
+        let a = CycleType::of(&[(1, 2), (2, 1)]);
+        let b = CycleType::of(&[(3, 4), (4, 3)]);
+        assert_eq!(a, b, "cycle type is sorted lengths, not the listing");
+        assert_eq!(a, CycleType::Type(vec![2]));
+        let z = (q0(), q0());
+        let ka = ClassVector::read(&Word::identity(), z.clone(), a);
+        let kb = ClassVector::read(&Word::identity(), z, b);
+        assert!(ka.occupies(Axis::Hue) && kb.occupies(Axis::Hue));
+        assert_eq!(
+            ka.class_key(),
+            kb.class_key(),
+            "(1 2) and (3 4) are one Hue coordinate"
+        );
+        assert_ne!(ka.class_key(), CLOSED_KEY, "a hue cycle is not closed");
+    }
+
+    #[test]
     fn coboundary_gauge_matches_by_address() {
         let q = Word::from_letters(&[(alphabet::LetterId::quarter((0, 1)).unwrap(), false)]);
         let mut a = Form::default();
@@ -1267,7 +1285,7 @@ mod tests {
         let Some(Snap::Discharged { certificate, .. }) = snaps.iter().find(|s| matches!(s, Snap::Discharged { .. })) else {
             panic!("a crystal holding q discharges: {snaps:?}");
         };
-        assert_eq!(certificate.before, q.rotor().class_key());
+        assert_eq!(certificate.before, ClassVector::of_word(&q).class_key());
         assert_eq!(certificate.after, CLOSED_KEY);
         assert_eq!(certificate.rank_before.torsion, 1);
         assert_eq!(certificate.rank_after.torsion, 0);

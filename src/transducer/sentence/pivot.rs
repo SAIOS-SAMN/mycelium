@@ -6,7 +6,7 @@ use super::form::*;
 use crate::core::zlinalg::z_rank;
 use crate::network::nerve::{Keyed, ROOT};
 use crate::physics::Budget;
-use crate::transducer::alphabet::{Order, Rotor, Word};
+use crate::transducer::alphabet::{self, Order, Rotor, Word};
 use crate::transducer::element::Element;
 use super::tape::from_element_form;
 use crate::transducer::family::Crystal;
@@ -82,28 +82,69 @@ pub struct ClassVector {
 /// The class key of a closed loop: the identity's, written as zero (A20).
 pub const CLOSED_KEY: [u8; 32] = [0u8; 32];
 
-/// The hue cycle type of a loop: the composed gauge around its vertices.
+/// The hue cycle type of a loop: sorted cycle lengths of the composed
+/// permutation around its vertices. The listing itself lives on
+/// `PivotBy::Hue`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum CycleType {
     Identity,
-    Listed(Vec<(u8, u8)>),
+    Type(Vec<u8>),
 }
 
 impl CycleType {
     pub(crate) fn of(g: &[(u8, u8)]) -> CycleType {
-        if g.is_empty() {
+        let mut lengths = cycle_lengths(g);
+        lengths.sort_unstable();
+        if lengths.is_empty() {
             CycleType::Identity
         } else {
-            CycleType::Listed(g.to_vec())
+            CycleType::Type(lengths)
         }
     }
 
-    pub(crate) fn listing(&self) -> &[(u8, u8)] {
+    fn to_bytes(&self, buf: &mut Vec<u8>) {
         match self {
-            CycleType::Identity => &[],
-            CycleType::Listed(g) => g,
+            CycleType::Identity => buf.push(0),
+            CycleType::Type(lens) => {
+                buf.push(lens.len() as u8);
+                buf.extend_from_slice(lens);
+            }
         }
     }
+}
+
+/// Cycle lengths greater than 1 of a hue listing. Absence is identity, so
+/// a cycle is the orbit under the listed map until it returns.
+fn cycle_lengths(listing: &[(u8, u8)]) -> Vec<u8> {
+    let keyed = gauge_keyed(listing);
+    let mut seen: Keyed<()> = Keyed::new();
+    let mut lengths = Vec::new();
+    for &(start, _) in listing {
+        if seen.contains(&hue_key(start)) {
+            continue;
+        }
+        let mut len = 0u8;
+        let mut h = start;
+        loop {
+            if seen.contains(&hue_key(h)) {
+                break;
+            }
+            seen.insert(hue_key(h), ());
+            len = len.saturating_add(1);
+            let next = gauge_image(&keyed, h);
+            if next == h {
+                break;
+            }
+            h = next;
+            if h == start {
+                if len > 1 {
+                    lengths.push(len);
+                }
+                break;
+            }
+        }
+    }
+    lengths
 }
 
 impl ClassVector {
@@ -118,27 +159,37 @@ impl ClassVector {
         placement: (num_rational::BigRational, num_rational::BigRational),
         hue: CycleType,
     ) -> ClassVector {
-        if h.is_identity() {
-            return ClassVector {
-                plane: [(false, 0, 0, 0); 6],
-                placement,
-                hue,
-                offplane: false,
-                key: CLOSED_KEY,
-            };
-        }
-        let key = h.rotor().class_key();
-        let (plane, offplane) = match h.form() {
-            Some(pf) => (pf.coordinates(), false),
-            None => ([(false, 0, 0, 0); 6], true),
+        let (plane, offplane) = if h.is_identity() {
+            ([(false, 0, 0, 0); 6], false)
+        } else {
+            match h.form() {
+                Some(pf) => (pf.coordinates(), false),
+                None => ([(false, 0, 0, 0); 6], true),
+            }
         };
-        ClassVector {
+        let mut cv = ClassVector {
             plane,
             placement,
             hue,
             offplane,
-            key,
+            key: CLOSED_KEY,
+        };
+        cv.key = cv.compute_key(h);
+        cv
+    }
+
+    /// `blake3(rotor conjugacy key ‖ cycle type ‖ put_q placement)`.
+    /// `CLOSED_KEY` iff every coordinate is zero.
+    fn compute_key(&self, h: &Word) -> [u8; 32] {
+        if self.coordinates().is_empty() {
+            return CLOSED_KEY;
         }
+        let mut buf = Vec::new();
+        buf.extend_from_slice(&h.rotor().class_key());
+        self.hue.to_bytes(&mut buf);
+        alphabet::put_q(&mut buf, &self.placement.0);
+        alphabet::put_q(&mut buf, &self.placement.1);
+        *blake3::hash(&buf).as_bytes()
     }
 
     /// The coordinate an axis names, as "nonzero". `Open` is never a
@@ -358,23 +409,16 @@ impl Form {
                 break;
             }
             self.loops = Self::loops_of(&self.faces, self.vertices.len());
-            let pending: Vec<(usize, Order)> = self
-                .loops
-                .iter()
-                .enumerate()
-                .filter_map(|(i, lp)| {
-                    let open_holo = !lp.holonomy.is_identity();
-                    let open_chord = self
-                        .faces
-                        .get(lp.chord as usize)
-                        .is_some_and(|f| !f.transport.word.is_identity());
-                    if open_holo || open_chord {
-                        Some((i, lp.holonomy.order()))
-                    } else {
-                        None
-                    }
-                })
-                .collect();
+            let mut pending: Keyed<Order> = Keyed::new();
+            for lp in &self.loops {
+                if self
+                    .faces
+                    .get(lp.chord as usize)
+                    .is_some_and(|f| !f.transport.word.is_identity())
+                {
+                    pending.insert(vertex_ix_key(lp.chord), lp.holonomy.order());
+                }
+            }
             let rank_before_gauge = self.rank();
             match self.solve_coboundary() {
                 Some(gamma) => {
@@ -393,15 +437,18 @@ impl Form {
                 self.rank(),
                 "R1: re-gauging preserves rank"
             );
-            for (idx, order) in &pending {
+            for (idx, lp) in self.loops.iter().enumerate() {
+                let Some(&order) = pending.get(&vertex_ix_key(lp.chord)) else {
+                    continue;
+                };
                 if self
-                    .loops
-                    .get(*idx)
-                    .is_some_and(|lp| lp.holonomy.is_identity())
+                    .faces
+                    .get(lp.chord as usize)
+                    .is_some_and(|f| f.transport.word.is_identity())
                 {
                     snaps.push(Snap::Closed {
-                        chord: *idx,
-                        order: *order,
+                        chord: idx,
+                        order,
                     });
                     eprintln!(
                         "  pivot {:02x}{:02x}… loop {idx} closed by the tree gauge",
@@ -438,7 +485,9 @@ impl Form {
                 if handled.contains(&loop_k) {
                     continue;
                 }
-                let held = horizon.get(&key).is_some();
+                let held = horizon
+                    .get(&self.loops[idx].holonomy.rotor().class_key())
+                    .is_some();
                 let order = self.loops[idx].holonomy.order();
                 let cands = self.candidates_for(idx, &kappa, crystal);
                 let mut discharging: Vec<PivotCertificate> = Vec::new();
@@ -605,11 +654,14 @@ impl Form {
                     continue;
                 }
                 Axis::Hue => {
+                    let gauge = loop_transport(self, lp)
+                        .map(|t| t.gauge)
+                        .unwrap_or_default();
                     out.push(Candidate {
                         axis,
                         by: PivotBy::Hue {
                             face: chord as u16,
-                            gauge: kappa.hue.listing().to_vec(),
+                            gauge,
                         },
                     });
                 }

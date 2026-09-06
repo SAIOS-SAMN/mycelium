@@ -233,7 +233,6 @@ fn torsion_chord_carries(
 /// Identity loops, or finite open loops filed on the form's torsion carrier.
 fn form_loops_replay(f: &Form) -> bool {
     use crate::transducer::alphabet::Order;
-    use crate::transducer::sentence::ClassVector;
     for lp in &f.loops {
         if lp.holonomy.is_identity() {
             continue;
@@ -241,7 +240,7 @@ fn form_loops_replay(f: &Form) -> bool {
         match lp.holonomy.order() {
             Order::Infinite => return false,
             Order::Finite(ell) => {
-                let k = ClassVector::of_word(&lp.holonomy).class_key();
+                let k = lp.holonomy.rotor().class_key();
                 match f.torsion.get(&k) {
                     Some((_, e, _)) if *e == ell => {}
                     _ => return false,
