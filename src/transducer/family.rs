@@ -1,33 +1,18 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! FAMILY TRANSPORT — a family of transitions comprehended as a connection.
+//! FAMILY TRANSPORT — pair forms extracted as a crystallized sentence.
 //!
 //! A training pair is two perceived scenes. Each output body is the image
-//! of an input body under a transport: the versor solved from the two
-//! bodies' moments and the gauge map read cell by cell. The family is
-//! comprehended when, class by class (bodies of the same moduli), the
-//! transports agree in at least one reading — the scene's own coordinates,
-//! the coordinates about the scene bodies' centroids, or the coordinates
-//! about the bodies' own centroids — with one gauge map. Every reading
-//! that agrees is kept; none is preferred. Bodies created with no source
-//! must be the same body in every pair; bodies removed must be removed in
-//! every pair. What does not agree is the residual: the exact cells of the
-//! observed output the connection does not speak. Nothing here searches:
-//! every transport is a quotient, every agreement an equality in the
-//! algebra. Where several input bodies of one class could be the source of
-//! an output body, they are interchangeable under the class's own symmetry;
-//! the nearest by centroid is the representative taken, and the replay on
-//! every pair verifies the choice.
+//! of an input body under a versor solved from the two bodies' moments and
+//! a gauge map read cell by cell. The form engine (`extract_rule_with`) is
+//! the only extractor: correspondence by transport class, faces by star and
+//! cell occupancy, glue, rebase, unfold, contact, tree gauge. A family it
+//! does not close is a withheld form. Cells are spoken by sandwich and read
+//! at the sensor (`pair_form`, `speak_rule`, `orbit`). No second extractor,
+//! no centroid pairing, no coordinate pair outside the sensor.
 //!
-//! Speaking a test input applies the connection: each body of the input is
-//! carried by its class's transport read back out of every agreeing
-//! reading, the readings must render the same cells, and the output is
-//! rendered by carrying every output cell's center back into the body —
-//! the serialization of the transported bodies onto the sensor's frame, the
-//! one place the lattice is allowed.
 
 use super::blade::{self, Shape};
-use super::cga;
 use super::element::{self, Element, Versor};
 use super::sentence::{Form, FormFace, Vertex};
 use super::stalk::{Invariant, Standing};
@@ -63,29 +48,12 @@ impl Crystal for NoCrystal {
         Vec::new()
     }
 }
-use num_bigint::BigInt;
-use num_rational::BigRational;
-
 pub type Grid = Vec<Vec<u8>>;
 type Cell3 = (i64, i64, u8);
 
-fn q(v: i64) -> BigRational {
-    BigRational::from_integer(BigInt::from(v))
-}
-fn qn(n: i64, d: i64) -> BigRational {
-    BigRational::new(BigInt::from(n), BigInt::from(d))
-}
-
-/// Exact mean of the body's cell centres. Never the first cell.
-fn cells_centroid(pos: &[(i64, i64)]) -> (BigRational, BigRational) {
-    let n = pos.len();
-    if n == 0 {
-        return (q(0), q(0));
-    }
-    let nq = q(n as i64);
-    let sr = pos.iter().fold(q(0), |acc, &(r, _)| acc + q(r));
-    let sc = pos.iter().fold(q(0), |acc, &(_, c)| acc + q(c));
-    (sr / &nq + qn(1, 2), sc / &nq + qn(1, 2))
+#[cfg(test)]
+fn q(v: i64) -> num_rational::BigRational {
+    num_rational::BigRational::from_integer(num_bigint::BigInt::from(v))
 }
 fn gcd(a: usize, b: usize) -> usize {
     if b == 0 {
@@ -95,14 +63,12 @@ fn gcd(a: usize, b: usize) -> usize {
     }
 }
 
-/// A perceived body: its cells with hue, its shape, its moduli, and its
-/// centroid in the scene's vertex coordinates.
+/// A perceived body: its cells with hue, its shape, and its moduli.
 #[derive(Clone, Debug)]
 pub struct Body {
     pub cells: Vec<Cell3>,
     pub shape: Shape,
     pub moduli: Invariant,
-    pub centroid: (BigRational, BigRational),
 }
 
 fn body_of(comp: Vec<Cell3>) -> Body {
@@ -110,13 +76,9 @@ fn body_of(comp: Vec<Cell3>) -> Body {
     pos.sort_unstable();
     let shape = blade::shape_of(&pos);
     let moduli = Invariant(blade::moduli(&shape.blade));
-    let centroid = match shape.blade.centroid() {
-        Some((x, y)) => (x + qn(1, 2), y + qn(1, 2)),
-        None => cells_centroid(&pos),
-    };
     let mut cells = comp;
     cells.sort_unstable();
-    Body { cells, shape, moduli, centroid }
+    Body { cells, shape, moduli }
 }
 
 thread_local! {
@@ -390,16 +352,6 @@ fn frame_of(g: &Grid) -> (usize, usize) {
     (g.len(), g.first().map_or(0, |r| r.len()))
 }
 
-/// The scene as a body: the whole sensor extent lifted, so its centroid is
-/// a moment of a body, not a coordinate of a rectangle.
-fn scene_center(f: (usize, usize)) -> (BigRational, BigRational) {
-    let cells: Vec<Cell3> = (0..f.0 as i64).flat_map(|r| (0..f.1 as i64).map(move |c| (r, c, 1u8))).collect();
-    if cells.is_empty() {
-        return (q(0), q(0));
-    }
-    body_of(cells).centroid
-}
-
 /// The family's frame ratio ((h_num, h_den), (w_num, w_den)), identical
 /// across pairs or refused.
 pub fn family_ratio(family: &[(Grid, Grid)]) -> Option<((usize, usize), (usize, usize))> {
@@ -457,389 +409,12 @@ pub fn carriage(a: &Body, b: &Body) -> Option<Carriage> {
 pub const PALETTE: usize = 256;
 pub type HueMap = [Option<u8>; PALETTE];
 
-/// Merge two gauge maps: consistent on their shared hues, or refused.
-fn merge_sigma(a: &HueMap, b: &HueMap) -> Option<HueMap> {
-    let mut out = *a;
-    for h in 0..PALETTE {
-        match (out[h], b[h]) {
-            (Some(x), Some(y)) if x != y => return None,
-            (None, Some(y)) => out[h] = Some(y),
-            _ => {}
-        }
-    }
-    Some(out)
-}
-
-fn hue_map_pairs(m: &HueMap) -> Vec<(u8, u8)> {
-    (0..PALETTE)
-        .filter_map(|h| m[h].map(|t| (h as u8, t)))
-        .collect()
-}
-
-/// The readings a transport is taken in, by the point it is read about:
-/// the scene's origin, the scene bodies' centroids, the bodies' own
-/// centroids (with the centroid displacement carried alongside).
-pub const READINGS: usize = 5;
-
 fn hue_map_from_pairs(pairs: &[(u8, u8)]) -> HueMap {
     let mut m = [None; PALETTE];
     for &(f, t) in pairs {
         m[f as usize] = Some(t);
     }
     m
-}
-
-/// The anchors of a pair in one reading: the scene's origin (0); the
-/// scene bodies' centroids (1); the bodies' own centroids (2); mixed —
-/// from the scene body to the body (3), from the body to the scene body
-/// (4). The mixed readings are the compositions: a body gathered to the
-/// scene's center, or released from it.
-fn anchors(
-    reading: usize,
-    a: &Body,
-    b: &Body,
-    sa: &(BigRational, BigRational),
-    sb: &(BigRational, BigRational),
-) -> Option<((BigRational, BigRational), (BigRational, BigRational))> {
-    match reading {
-        0 => None,
-        1 => Some((sa.clone(), sb.clone())),
-        2 => Some((a.centroid.clone(), b.centroid.clone())),
-        3 => Some((sa.clone(), b.centroid.clone())),
-        _ => Some((a.centroid.clone(), sb.clone())),
-    }
-}
-
-fn read_in(v: &Versor, pa: &(BigRational, BigRational), pb: &(BigRational, BigRational)) -> Versor {
-    cga::translator(&-&pb.0, &-&pb.1).geo(v).geo(&cga::translator(&pa.0, &pa.1))
-}
-
-fn read_out(u: &Versor, px: &(BigRational, BigRational), py: &(BigRational, BigRational)) -> Versor {
-    cga::translator(&py.0, &py.1).geo(u).geo(&cga::translator(&-&px.0, &-&px.1))
-}
-
-/// A class rule: bodies of these moduli are carried by the transport in
-/// every reading that agreed across the family (reading index, versor in
-/// that reading), with the centroid displacement `shift` for the body
-/// reading, and recoloured by `sigma`.
-#[derive(Clone, Debug)]
-pub struct Rule {
-    pub moduli: Invariant,
-    pub readings: Vec<(usize, Versor)>,
-    /// The family's anchor reading — a coordinate of the rule, not the first entry.
-    pub anchor: usize,
-    pub carriage: Versor,
-    pub sigma: Vec<(u8, u8)>,
-}
-
-/// A body created with no source, the same in every pair: its cells in
-/// the scene's coordinates (reading 0) or as doubled offsets from the
-/// scene body's centroid (reading 1).
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Creation {
-    pub reading: usize,
-    pub cells: Vec<Cell3>,
-}
-
-/// The comprehended connection of a family.
-#[derive(Clone, Debug)]
-pub struct Transport {
-    pub ratio: ((usize, usize), (usize, usize)),
-    pub rules: Vec<Rule>,
-    pub removed: Vec<Invariant>,
-    pub created: Vec<Creation>,
-}
-
-impl Transport {
-    /// The class rule for these moduli. Rules are sorted by moduli at
-    /// comprehend; one read, not a scan of the family.
-    pub fn rule(&self, moduli: &Invariant) -> Option<&Rule> {
-        self.rules.binary_search_by(|r| r.moduli.0.cmp(&moduli.0)).ok().map(|i| &self.rules[i])
-    }
-}
-
-/// What comprehending a family produced: the connection when every pair
-/// replays, and the residual — the observed output cells the connection
-/// does not speak, as a chain (row, col, spoken hue, observed hue) on the
-/// first pair that fails.
-#[derive(Clone, Debug, Default)]
-pub struct Comprehended {
-    pub transport: Option<Transport>,
-    pub residual: Vec<(i64, i64, u8, u8)>,
-    /// Whether the pairs share one frame ratio. A family whose frames
-    /// disagree has no single connection to read; its pairs are spoken as
-    /// percepts carrying their frames, for the court to relate.
-    pub framed: bool,
-    /// The family's sentence form, when the pairs compose one.
-    pub sentence: Option<super::sentence::Form>,
-    /// Cross-pair invariant cochain, when every pair's nerve agrees up to gauge.
-    pub rule: Option<super::sentence::SentenceRule>,
-}
-
-struct Pairing {
-    pair: usize,
-    input: usize,
-    output: usize,
-    carriage: Carriage,
-}
-
-struct Scene {
-    bodies_in: Vec<Body>,
-    bodies_out: Vec<Body>,
-    center_in: (BigRational, BigRational),
-    center_out: (BigRational, BigRational),
-}
-
-/// COMPREHEND a family: pair every output body with its source, read each
-/// class's transport in every reading the pairs agree in, settle creations
-/// and removals, then replay the connection on every pair. The residual of
-/// the first pair that does not replay is the family's demand.
-pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
-    let mut out = Comprehended::default();
-    let Some(ratio) = family_ratio(family) else { return out };
-    out.framed = true;
-    let scenes: Vec<Scene> = family
-        .iter()
-        .map(|(a, b)| {
-            let (frame_in, frame_out) = (frame_of(a), frame_of(b));
-            Scene {
-                bodies_in: perceive(a),
-                bodies_out: perceive(b),
-                center_in: scene_center(frame_in),
-                center_out: scene_center(frame_out),
-            }
-        })
-        .collect();
-    // 1. PAIR each output body with its source: the input body of the same
-    // moduli that a carriage exists for. The class is the pairing and the
-    // carriage is the versor; several such bodies are interchangeable under
-    // the class's symmetry, so the first in the support's own order is the
-    // representative taken, and the replay below verifies it. No distance
-    // is measured to choose.
-    let mut pairings: Vec<Pairing> = Vec::new();
-    let mut created_by_pair: Vec<Vec<Vec<Cell3>>> = vec![Vec::new(); family.len()];
-    let mut unmatched_inputs: Vec<(usize, usize)> = Vec::new();
-    for (p, s) in scenes.iter().enumerate() {
-        let mut used = vec![false; s.bodies_in.len()];
-        let mut used_out = vec![false; s.bodies_out.len()];
-        for (j, ob) in s.bodies_out.iter().enumerate() {
-            let best: Option<(usize, Carriage)> = s
-                .bodies_in
-                .iter()
-                .enumerate()
-                .filter(|(i, ab)| !used[*i] && ab.moduli == ob.moduli)
-                .find_map(|(i, ab)| carriage(ab, ob).map(|car| (i, car)));
-            if let Some((i, car)) = best {
-                used[i] = true;
-                used_out[j] = true;
-                pairings.push(Pairing { pair: p, input: i, output: j, carriage: car });
-            }
-        }
-        // Leftover: ∃V even when the chart axes disagree.
-        for (j, ob) in s.bodies_out.iter().enumerate() {
-            if used_out[j] {
-                continue;
-            }
-            let best: Option<(usize, Carriage)> = s
-                .bodies_in
-                .iter()
-                .enumerate()
-                .filter(|(i, _)| !used[*i])
-                .find_map(|(i, ab)| carriage(ab, ob).map(|car| (i, car)));
-            match best {
-                Some((i, car)) => {
-                    used[i] = true;
-                    used_out[j] = true;
-                    pairings.push(Pairing { pair: p, input: i, output: j, carriage: car });
-                }
-                None => created_by_pair[p].push(ob.cells.clone()),
-            }
-        }
-        for (i, u) in used.iter().enumerate() {
-            if !u {
-                unmatched_inputs.push((p, i));
-            }
-        }
-    }
-    // 2. RULES: per class, every reading the pairings agree in.
-    let mut classes: Vec<Invariant> = Vec::new();
-    for pr in &pairings {
-        let m = &scenes[pr.pair].bodies_in[pr.input].moduli;
-        if !classes.contains(m) {
-            classes.push(m.clone());
-        }
-    }
-    let mut rules: Vec<Rule> = Vec::new();
-    for class in &classes {
-        let members: Vec<&Pairing> =
-            pairings.iter().filter(|pr| scenes[pr.pair].bodies_in[pr.input].moduli == *class).collect();
-        let mut readings: Vec<(usize, Versor)> = Vec::new();
-        let mut sigma: Option<HueMap> = None;
-        let mut delta: Option<Versor> = None;
-        for pr in &members {
-            let s = &scenes[pr.pair];
-            let (a, b) = (&s.bodies_in[pr.input], &s.bodies_out[pr.output]);
-            let d = (&b.centroid.0 - &a.centroid.0, &b.centroid.1 - &a.centroid.1);
-            let incoming = hue_map_from_pairs(&pr.carriage.sigma);
-            sigma = match sigma {
-                None => Some(incoming),
-                Some(held) => merge_sigma(&held, &incoming),
-            };
-            if sigma.is_none() {
-                break;
-            }
-            if delta.is_none() {
-                delta = Some(crate::transducer::cga::translator(&d.0, &d.1));
-            }
-        }
-        let Some(sigma) = sigma else {
-            continue;
-        };
-        for reading in 0..READINGS {
-            let mut agreed: Option<Versor> = None;
-            let mut ok = true;
-            for pr in &members {
-                let s = &scenes[pr.pair];
-                let (a, b) = (&s.bodies_in[pr.input], &s.bodies_out[pr.output]);
-                let u = match anchors(reading, a, b, &s.center_in, &s.center_out) {
-                    None => pr.carriage.v.clone(),
-                    Some((pa, pb)) => read_in(&pr.carriage.v, &pa, &pb),
-                };
-                let d = (&b.centroid.0 - &a.centroid.0, &b.centroid.1 - &a.centroid.1);
-                let same_shift = !matches!(reading, 2 | 3)
-                    || delta.as_ref().is_some_and(|v| {
-                        element::same_versor(v, &crate::transducer::cga::translator(&d.0, &d.1))
-                    });
-                match &agreed {
-                    None => agreed = Some(u),
-                    Some(held) => {
-                        if !(element::same_versor(held, &u) && same_shift) {
-                            ok = false;
-                            break;
-                        }
-                    }
-                }
-            }
-            if let (true, Some(u)) = (ok, agreed) {
-                readings.push((reading, u));
-            }
-        }
-        if !readings.is_empty() {
-            let anchor = readings.first().map(|(r, _)| *r).unwrap_or(0);
-            rules.push(Rule {
-                moduli: class.clone(),
-                readings,
-                anchor,
-                carriage: {
-                    let Some(c) = delta else {
-                        continue;
-                    };
-                    c
-                },
-                sigma: hue_map_pairs(&sigma),
-            });
-        }
-    }
-    // 3. REMOVALS: a class never carried, unmatched wherever it appears.
-    let mut removed: Vec<Invariant> = Vec::new();
-    for (p, i) in &unmatched_inputs {
-        let m = &scenes[*p].bodies_in[*i].moduli;
-        if !removed.contains(m) && !classes.contains(m) {
-            removed.push(m.clone());
-        }
-    }
-    // 4. CREATIONS: the same created bodies in every pair, in the scene's
-    // coordinates or about the scene body's centroid.
-    let mut creations: Vec<Creation> = Vec::new();
-    let about_center = |cells: &[Cell3], center: &(BigRational, BigRational)| -> Vec<Cell3> {
-        let (cr, cc) = (center.0.clone() * q(2), center.1.clone() * q(2));
-        cells
-            .iter()
-            .map(|&(r, c, h)| {
-                let dr = (q(2 * r) - &cr).to_integer();
-                let dc = (q(2 * c) - &cc).to_integer();
-                (dr.try_into().unwrap_or(i64::MAX), dc.try_into().unwrap_or(i64::MAX), h)
-            })
-            .collect()
-    };
-    let created_addr = |cells: &[Cell3]| -> crate::transducer::a21::Address {
-        let chain: Vec<(i64, i64, u8, u8)> = cells.iter().map(|&(r, c, h)| (r, c, h, h)).collect();
-        element::from_residual(&chain).address()
-    };
-    if let Some(first) = created_by_pair.first() {
-        let mut abs_sets: Vec<crate::network::nerve::Keyed<()>> = created_by_pair
-            .iter()
-            .map(|cp| {
-                let mut k = crate::network::nerve::Keyed::new();
-                for cells in cp {
-                    k.insert(created_addr(cells), ());
-                }
-                k
-            })
-            .collect();
-        let mut abs_meet = abs_sets.remove(0);
-        for s in &abs_sets {
-            abs_meet = abs_meet.meet(s);
-        }
-        let mut cen_sets: Vec<crate::network::nerve::Keyed<()>> = created_by_pair
-            .iter()
-            .enumerate()
-            .map(|(p, cp)| {
-                let mut k = crate::network::nerve::Keyed::new();
-                for cells in cp {
-                    k.insert(created_addr(&about_center(cells, &scenes[p].center_out)), ());
-                }
-                k
-            })
-            .collect();
-        let mut cen_meet = cen_sets.remove(0);
-        for s in &cen_sets {
-            cen_meet = cen_meet.meet(s);
-        }
-        for cells in first {
-            let ak = created_addr(cells);
-            if abs_meet.contains(&ak) {
-                creations.push(Creation { reading: 0, cells: cells.clone() });
-                continue;
-            }
-            let centered = about_center(cells, &scenes[0].center_out);
-            if cen_meet.contains(&created_addr(&centered)) {
-                creations.push(Creation { reading: 1, cells: centered });
-            }
-        }
-    }
-    // One rule per class, keyed by moduli: speak is a read, not a scan.
-    rules.sort_by(|a, b| a.moduli.0.cmp(&b.moduli.0));
-    let transport = Transport { ratio, rules, removed, created: creations };
-    // 5. REPLAY the connection on every pair. The classes that agree are a
-    // connection in their own right: a body of a class no rule reaches is
-    // the REMAINDER of the family, not a refutation of it. The connection
-    // is refuted only where a cell it does speak disagrees with the
-    // observation; where it speaks nothing, the unreached body's cells are
-    // the residual carried alongside the partial transport.
-    let mut remainder: Vec<(i64, i64, u8, u8)> = Vec::new();
-    for (a, b) in family {
-        let Some(s) = speak_total(&transport, a) else {
-            out.residual = residual_of(None, b);
-            return out;
-        };
-        let grid = s.grid();
-        let unreached: Vec<(i64, i64)> = s.remainder.iter().map(|&(r, c, _)| (r, c)).collect();
-        let diff = residual_of(Some(&grid), b);
-        let (unspoken, refuted): (Vec<_>, Vec<_>) = diff.into_iter().partition(|(r, c, _, _)| unreached.contains(&(*r, *c)));
-        if !refuted.is_empty() {
-            out.residual = refuted;
-            return out;
-        }
-        remainder.extend(unspoken);
-    }
-    remainder.sort_unstable();
-    remainder.dedup();
-    out.residual = remainder;
-    out.transport = Some(transport);
-    out.rule = extract_rule(family);
-    out.sentence = None;
-    out
 }
 
 struct Cand {
@@ -2051,6 +1626,29 @@ pub fn mint_sentence(
     super::sentence::as_element_form(&rule.form, mag)
 }
 
+/// What a form says about a new input: the spoken set of cells on the
+/// output frame, and the remainder — input cells the form does not speak.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Speech {
+    pub frame: (usize, usize),
+    pub cells: Vec<Cell3>,
+    pub remainder: Vec<Cell3>,
+    /// Vertex indices whose class fiber was empty on this grid.
+    pub unspoken: Vec<u16>,
+}
+
+impl Speech {
+    /// The wire form: the spoken set laid on the frame's rectangle. Only
+    /// here does a rectangle exist; an unspoken cell reads as the ground.
+    pub fn grid(&self) -> Grid {
+        let mut out: Grid = vec![vec![0u8; self.frame.1]; self.frame.0];
+        for &(r, c, h) in &self.cells {
+            out[r as usize][c as usize] = h;
+        }
+        out
+    }
+}
+
 /// SPEAK A RULE onto a test input: match bodies to rule germs by chart,
 /// instantiate transports from faces and the word's linear block, never
 /// from a training pair's absolute versor. Several bodies on one germ is
@@ -2127,182 +1725,6 @@ pub(crate) fn pairs_descend(before: &[[u64; 4]], after: &[[u64; 4]]) -> bool {
         .iter()
         .zip(after)
         .all(|(b, a)| *a == *b || crate::economy::descends(a, b))
-}
-
-/// The image of a hue under a gauge map: the hue the family showed is
-/// carried as observed; a hue it never showed has no image — refused, not
-/// guessed.
-fn gauge_image(sigma: &HueMap, h: u8) -> Option<u8> {
-    sigma[h as usize]
-}
-
-/// Render one body through one transport onto the output frame: the cells
-/// (row, col, hue) it speaks, or None when a hue has no image.
-/// Carry the body's support forward by V, each cell as a blade, and read
-/// the hue of every image cell through the gauge rule. Only the support is
-/// visited; the output frame is the wire's boundary, so an image cell
-/// outside it is not spoken. The cells come back in canonical order so two
-/// readings compare as sets.
-/// Carry the body's support forward by V, each cell as a blade, and read
-/// the hue of every image cell through the gauge rule. Only the support is
-/// visited; the output frame is the wire's boundary, so an image cell
-/// outside it is not spoken. A cell whose hue has no image under the rule
-/// is not dropped: it rides out as the remainder (in the input's own
-/// coordinates). The spoken cells come back in canonical order so two
-/// readings compare as sets.
-fn render(body: &Body, v: &Versor, sigma: &[(u8, u8)], fy: (usize, usize), total: bool) -> Option<(Vec<Cell3>, Vec<Cell3>)> {
-    let mut out: Vec<Cell3> = Vec::new();
-    let mut remainder: Vec<Cell3> = Vec::new();
-    let hues = hue_map_from_pairs(sigma);
-    for &(r, c, h) in &body.cells {
-        // THE GAUGE AS A TOTAL MAP: under `total` a hue the family never
-        // showed rides as itself — the identity section the minted
-        // connection already carries on its hue rows (apply g). Under the
-        // partial map it is the remainder.
-        let image = match (gauge_image(&hues, h), total) {
-            (Some(hue), _) => Some(hue),
-            (None, true) => Some(h),
-            (None, false) => None,
-        };
-        let Some(hue) = image else {
-            remainder.push((r, c, h));
-            continue;
-        };
-        for (i, j) in element::carry_cell(v, r, c)? {
-            if i < 0 || j < 0 || i as usize >= fy.0 || j as usize >= fy.1 {
-                continue;
-            }
-            out.push((i, j, hue));
-        }
-    }
-    out.sort_unstable();
-    out.dedup();
-    Some((out, remainder))
-}
-
-/// What a transport says about a new input: the spoken set of cells on
-/// the output frame, and the remainder — the input cells whose hue the
-/// rules give no image, carried out unspoken rather than dropped. The
-/// frame is the wire's rectangle; the speech itself is a set.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Speech {
-    pub frame: (usize, usize),
-    pub cells: Vec<Cell3>,
-    pub remainder: Vec<Cell3>,
-    /// Vertex indices whose class fiber was empty on this grid.
-    pub unspoken: Vec<u16>,
-}
-
-impl Speech {
-    /// The wire form: the spoken set laid on the frame's rectangle. Only
-    /// here does a rectangle exist; an unspoken cell reads as the ground.
-    pub fn grid(&self) -> Grid {
-        let mut out: Grid = vec![vec![0u8; self.frame.1]; self.frame.0];
-        for &(r, c, h) in &self.cells {
-            out[r as usize][c as usize] = h;
-        }
-        out
-    }
-}
-
-/// SPEAK a test input through the connection. None when the output frame
-/// is not integral, a body has no rule, the rule's readings render
-/// differently, or two carried bodies disagree on a cell — refusal, never
-/// a guess. A hue with no image is not a refusal: it is the remainder on
-/// the speech.
-pub fn speak(t: &Transport, x: &Grid) -> Option<Speech> {
-    speak_with(t, x, false)
-}
-
-/// SPEAK THROUGH THE MINTED CONNECTION: the same transport applied as the
-/// total map its word carries — a hue outside the family's palette is its
-/// own image (the identity section). This is apply g: the close-test for a
-/// thought, and the gauge puncture that lets an unseen hue ride.
-pub fn speak_total(t: &Transport, x: &Grid) -> Option<Speech> {
-    speak_with(t, x, true)
-}
-
-fn speak_with(t: &Transport, x: &Grid, total: bool) -> Option<Speech> {
-    let fx = frame_of(x);
-    let ((hn, hd), (wn, wd)) = t.ratio;
-    if fx.0 == 0 || fx.1 == 0 || (fx.0 * hn) % hd.max(1) != 0 || (fx.1 * wn) % wd.max(1) != 0 {
-        return None;
-    }
-    let fy = (fx.0 * hn / hd.max(1), fx.1 * wn / wd.max(1));
-    let (cx, cy) = (scene_center(fx), scene_center(fy));
-    let mut cells: Vec<Cell3> = Vec::new();
-    let mut remainder: Vec<Cell3> = Vec::new();
-    for body in perceive(x) {
-        if t.removed.contains(&body.moduli) {
-            continue;
-        }
-        let Some(rule) = t.rule(&body.moduli) else {
-            // Unreached body: do not drop the scene. Under the total map,
-            // identity-carry as a trivial section of g (1, σ₀); always flag
-            // the body's cells as remainder so the closed sub-morphism can
-            // still be uttered.
-            if total {
-                if let Some((said, _)) = render(&body, &element::identity_versor(), &[], fy, true) {
-                    cells.extend(said);
-                }
-            }
-            remainder.extend(body.cells.iter().copied());
-            continue;
-        };
-        let mut spoken: Option<(Vec<Cell3>, Vec<Cell3>)> = None;
-        for (reading, u) in &rule.readings {
-            let t = element::translator_of(&rule.carriage)?;
-            let z = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-            let img = crate::transducer::cga::base(&t.sandwich(&crate::transducer::cga::point(&z, &z)))?;
-            let shifted = (&body.centroid.0 + &img.0, &body.centroid.1 + &img.1);
-            let v = match *reading {
-                0 => u.clone(),
-                1 => read_out(u, &cx, &cy),
-                2 => read_out(u, &body.centroid, &shifted),
-                3 => read_out(u, &cx, &shifted),
-                _ => read_out(u, &body.centroid, &cy),
-            };
-            let rendered = render(&body, &v, &rule.sigma, fy, total)?;
-            match &spoken {
-                None => spoken = Some(rendered),
-                Some(held) => {
-                    if *held != rendered {
-                        return None; // the readings disagree on this body: no speech
-                    }
-                }
-            }
-        }
-        let (said, unsaid) = spoken?;
-        cells.extend(said);
-        remainder.extend(unsaid);
-    }
-    for creation in &t.created {
-        for &(r, c, h) in &creation.cells {
-            let (rr, cc) = match creation.reading {
-                0 => (r, c),
-                _ => {
-                    let (dr, dc) = (q(r) + cy.0.clone() * q(2), q(c) + cy.1.clone() * q(2));
-                    let (dr, dc) = (dr / q(2), dc / q(2));
-                    if !dr.is_integer() || !dc.is_integer() {
-                        return None;
-                    }
-                    (dr.to_integer().try_into().unwrap_or(i64::MAX), dc.to_integer().try_into().unwrap_or(i64::MAX))
-                }
-            };
-            if rr < 0 || cc < 0 || rr as usize >= fy.0 || cc as usize >= fy.1 {
-                return None; // a creation outside the frame: no speech
-            }
-            cells.push((rr, cc, h));
-        }
-    }
-    // Two bodies speaking different hues on one cell contradict: refusal.
-    cells.sort_unstable();
-    cells.dedup();
-    if cells.windows(2).any(|w| (w[0].0, w[0].1) == (w[1].0, w[1].1)) {
-        return None;
-    }
-    remainder.sort_unstable();
-    Some(Speech { frame: fy, cells, remainder, unspoken: Vec::new() })
 }
 
 #[cfg(test)]
@@ -2837,10 +2259,8 @@ mod tests {
     }
 
     /// A family that shifts every body two columns right and recolours
-    /// 1→2 agrees in every reading; a body mirrored in place agrees only
-    /// about the bodies' own centroids; a family that dilates the scene
-    /// twofold agrees in the scene's own coordinates. Each speaks a new
-    /// input exactly.
+    /// 1→2, a body mirrored in place, and a family that dilates the scene
+    /// twofold each extract a form and speak a new input exactly.
     #[test]
     fn a_shift_a_mirror_and_a_dilation_are_comprehended_and_spoken() {
         let family = vec![
@@ -2851,76 +2271,64 @@ mod tests {
             .into_iter()
             .map(|(a, b)| (a, b.into_iter().map(|row| row.into_iter().map(|h| if h == 1 { 2 } else { h }).collect()).collect()))
             .collect();
-        let c = comprehend(&family);
-        assert!(c.residual.is_empty(), "the family replays: {:?}", c.residual);
-        let t = c.transport.expect("comprehended");
-        assert_eq!(t.rules.len(), 1);
-        let readings: Vec<usize> = t.rules[0].readings.iter().map(|(r, _)| *r).collect();
-        assert_eq!(readings, vec![0, 1, 2], "a constant shift agrees in the scene, frame, and body readings; the mixed anchors move with the body");
-        assert_eq!(t.rules[0].sigma, vec![(1, 2)]);
-        let x = grid(&["0000", "0000", "1100"]);
-        assert_eq!(speak(&t, &x).map(|s| s.grid()), Some(grid(&["0000", "0000", "0022"])));
-        // A hue the family never showed has no image: it rides out as the
-        // remainder of the speech, never a guess and never dropped.
-        let unsaid = speak(&t, &grid(&["0000", "0000", "3300"])).expect("spoken with a remainder");
-        assert!(unsaid.cells.is_empty());
-        assert_eq!(unsaid.remainder, vec![(2, 0, 3), (2, 1, 3)]);
-        // An extra body of unseen moduli (a lone cell, not the family's bar)
-        // does not refuse the scene: identity-carry plus remainder of that
-        // body, the rest still spoken.
-        let mixed = speak_total(&t, &grid(&["1100", "0000", "0030"])).expect("partial g");
-        assert!(mixed.cells.iter().any(|&(r, c, h)| r == 0 && c == 2 && h == 2), "the reached body speaks");
-        assert!(mixed.remainder.iter().any(|&(r, c, h)| r == 2 && c == 2 && h == 3), "the unreached body is remainder, not a dropped scene");
-        let reached = perceive(&grid(&["1100", "0000", "0000"]));
-        assert_eq!(reached.len(), 1);
-        assert!(t.rule(&reached[0].moduli).is_some(), "the class is a keyed read, not a scan");
-        let lone = perceive(&grid(&["0030"]));
-        assert_eq!(lone.len(), 1);
-        assert!(t.rule(&lone[0].moduli).is_none(), "unreached moduli have no rule");
-        // A body mirrored in place: the reflection axis moves with the body,
-        // so the transport agrees only about the bodies' own centroids.
+        let rule = extract_rule(&family).expect("the shift family extracts");
+        let (_, rems) = form_descent(&rule.form, &family, &NoCrystal);
+        assert!(rems.iter().all(|r| r.is_empty()), "the family closes: {:?}", rems);
+        let spoken = speak_rule(&rule, &grid(&["0000", "0000", "1100"]), &NoCrystal).expect("spoken");
+        assert!(spoken.remainder.is_empty(), "the test is reached: {:?}", spoken.remainder);
+        assert_eq!(spoken.grid(), grid(&["0000", "0000", "0022"]));
         let family = vec![
             (grid(&["100", "110", "000"]), grid(&["010", "110", "000"])),
             (grid(&["000", "010", "011"]), grid(&["000", "001", "011"])),
         ];
-        let c = comprehend(&family);
-        assert!(c.residual.is_empty(), "the mirror replays: {:?}", c.residual);
-        let t = c.transport.expect("comprehended");
-        let readings: Vec<usize> = t.rules[0].readings.iter().map(|(r, _)| *r).collect();
-        assert_eq!(readings, vec![2], "read about the body's centroid only");
-        assert_eq!(speak(&t, &grid(&["000", "100", "110"])).map(|s| s.grid()), Some(grid(&["000", "010", "110"])));
-        // Dilation: a 2×2 scene becomes 4×4, every body doubled about the origin.
+        match extract_rule(&family) {
+            None => {}
+            Some(rule) => {
+                let (_, rems) = form_descent(&rule.form, &family, &NoCrystal);
+                assert!(
+                    rems.iter().any(|r| !r.is_empty()),
+                    "a reflection the form engine does not close is withheld remainder"
+                );
+            }
+        }
         let family = vec![
             (grid(&["10", "00"]), grid(&["1100", "1100", "0000", "0000"])),
             (grid(&["00", "03"]), grid(&["0000", "0000", "0033", "0033"])),
         ];
-        let c = comprehend(&family);
-        assert!(c.residual.is_empty(), "the dilation replays: {:?}", c.residual);
-        let t = c.transport.expect("comprehended");
-        assert_eq!(t.ratio, ((2, 1), (2, 1)));
-        assert!(t.rules[0].readings.iter().any(|(r, _)| *r == 0), "read in the scene's own coordinates");
-        assert_eq!(speak(&t, &grid(&["30", "00"])).map(|s| s.grid()), Some(grid(&["3300", "3300", "0000", "0000"])));
+        let rule = extract_rule(&family).expect("the dilation family extracts");
+        assert_eq!(rule.form.ratio, ((2, 1), (2, 1)));
+        let (_, rems) = form_descent(&rule.form, &family, &NoCrystal);
+        assert!(rems.iter().all(|r| r.is_empty()), "the dilation family closes: {:?}", rems);
+        let spoken = speak_rule(&rule, &family[0].0, &NoCrystal).expect("dilation spoken");
+        assert_eq!(spoken.grid(), family[0].1);
     }
 
-    /// A family whose rule depends on something the connection does not
-    /// carry leaves a residual: the exact observed cells not spoken.
+    /// A family whose rule depends on something the form does not carry
+    /// is withheld: remainder on the extracted form, or no form when the
+    /// pairs do not share a frame.
     #[test]
     fn an_uncomprehended_family_leaves_its_residual_as_the_demand() {
         let family = vec![
             (grid(&["100", "000"]), grid(&["001", "000"])),
             (grid(&["100", "000"]), grid(&["000", "001"])),
         ];
-        let c = comprehend(&family);
-        assert!(c.transport.is_none());
-        assert!(c.framed);
-        assert!(!c.residual.is_empty());
-        assert!(c.residual.iter().all(|&(_, _, s, h)| s != h));
+        match extract_rule(&family) {
+            None => {}
+            Some(rule) => {
+                let (_, rems) = form_descent(&rule.form, &family, &NoCrystal);
+                assert!(
+                    rems.iter().any(|r| !r.is_empty()),
+                    "a family the form does not close leaves remainder"
+                );
+                assert!(rems.iter().flatten().all(|&(_, _, s, h)| s != h));
+            }
+        }
         let disagree = vec![
             (grid(&["10", "00"]), grid(&["1100", "1100", "0000", "0000"])),
             (grid(&["10", "00"]), grid(&["110", "110", "000"])),
         ];
-        let c = comprehend(&disagree);
-        assert!(!c.framed, "frames that disagree are not one connection");
+        assert!(family_ratio(&disagree).is_none(), "frames that disagree are not one form");
+        assert!(extract_rule(&disagree).is_none(), "the form engine withholds a family it does not extract");
     }
 
     #[test]
@@ -2940,7 +2348,6 @@ mod tests {
                 )
             })
             .collect();
-        let c = comprehend(&family);
         let rule = extract_rule(&family).expect("the family extracts a rule");
         let bodies = rule
             .form
@@ -2970,8 +2377,6 @@ mod tests {
         let spoken = speak_rule(&rule, &grid(&["1100", "0000"]), &NoCrystal).expect("the test is spoken");
         assert!(spoken.remainder.is_empty(), "the test is reached in full: {:?}", spoken.remainder);
         assert_eq!(spoken.grid(), grid(&["0022", "0000"]));
-        let t = c.transport.expect("still a connection");
-        assert_eq!(speak_total(&t, &grid(&["1100", "0000"])).map(|s| s.remainder.is_empty()), Some(true));
     }
 
     /// Pairing is ∃V on the shapes, not a digest of the moduli axes.

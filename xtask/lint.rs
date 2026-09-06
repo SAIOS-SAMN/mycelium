@@ -201,8 +201,10 @@ fn walk_qmatrix(path: &Path, hits: &mut Vec<String>) -> Result<(), String> {
     Ok(())
 }
 
-/// Coordinate pairs named placement/shift/residue live only in pair_form,
-/// speak_rule, and orbit (law 11).
+/// Any (BigRational, BigRational) or (Q, Q) lives only in pair_form,
+/// speak_rule, orbit, and the sensor read-outs cell_of, carry_center,
+/// carriage(rho, t). The conformal model (cga::base) and the blade's
+/// moment/carry are the sensor itself (law 11).
 fn lint_squaring(root: &Path, hits: &mut Vec<String>) -> Result<(), String> {
     for d in ["transducer", "server", "client", "court"] {
         walk_squaring(&root.join(d), hits)?;
@@ -223,7 +225,7 @@ fn walk_squaring(path: &Path, hits: &mut Vec<String>) -> Result<(), String> {
         let mut allowed_fn = false;
         for (i, line) in src.lines().enumerate() {
             let t = line.trim();
-            if t.contains("#[cfg(test)]") {
+            if !in_test && t.contains("#[cfg(test)]") {
                 pending_test = true;
             }
             let opens = line.chars().filter(|&c| c == '{').count() as i32;
@@ -232,16 +234,28 @@ fn walk_squaring(path: &Path, hits: &mut Vec<String>) -> Result<(), String> {
                 || t.contains("fn pair_form_uncached")
                 || t.contains("fn speak_rule")
                 || t.contains("fn orbit(")
+                || t.contains("fn cell_of")
+                || t.contains("fn carry_center")
+                || t.contains("fn carry_cell")
+                || t.contains("fn carriage(")
+                || t.contains("fn base(")
+                || t.contains("fn centroid(")
+                || t.contains("fn carry(")
+                || t.contains("fn rotor_between")
+                || t.contains("fn half_rotor")
+                || t.contains("fn rotor_pair")
             {
                 allowed_fn = true;
                 fn_depth = 0;
             }
-            if pending_test && opens > 0 {
-                in_test = true;
-                pending_test = false;
-                depth = opens - closes;
-                if depth <= 0 {
-                    in_test = false;
+            if pending_test {
+                if opens > 0 {
+                    in_test = true;
+                    pending_test = false;
+                    depth = opens - closes;
+                    if depth <= 0 {
+                        in_test = false;
+                    }
                 }
                 continue;
             }
@@ -262,15 +276,15 @@ fn walk_squaring(path: &Path, hits: &mut Vec<String>) -> Result<(), String> {
             if t.starts_with("//") {
                 continue;
             }
-            let named = t.contains("placement:") || t.contains("shift:") || t.contains("residue:");
-            let pair = t.contains("(num_rational")
-                || t.contains("(Q,")
-                || t.contains("(i64, i64)")
+            let pair = t.contains("(Q, Q)")
+                || t.contains("(Q,Q)")
+                || t.contains("&(Q, Q)")
+                || t.contains("BigRational, BigRational")
                 || t.contains("BigRational, num_rational")
-                || t.contains("BigRational, BigRational");
-            if named && pair {
+                || t.contains("num_rational::BigRational, num_rational::BigRational");
+            if pair {
                 hits.push(format!(
-                    "{}:{}: coordinate pair named placement/shift/residue outside pair_form/speak_rule/orbit",
+                    "{}:{}: (Q, Q) outside pair_form/speak_rule/orbit/cell_of/carry_center/carriage",
                     path.display(),
                     i + 1
                 ));

@@ -3188,7 +3188,9 @@ impl Kernel {
             }
         }
         for (addr, mag) in before_mag {
-            let after = self.tension.get(&addr).copied().unwrap_or(mag);
+            let Some(after) = self.tension.get(&addr).copied() else {
+                continue; // Unmeasured: no tension is not zero deflation
+            };
             if let Some(d) = crate::economy::split_deflation(&mag, &after) {
                 self.deflations.insert(addr, d);
             }
@@ -5313,13 +5315,26 @@ impl Kernel {
         // restart does not docket Δ⃗ = 0 and feed the court a slash list.
         out.extend_from_slice(b"DEF1");
         out.extend_from_slice(&(self.deflations.len() as u32).to_le_bytes());
+        // DEF1 record: addr ‖ μ⃗[4] ‖ tag u8
+        //   tag 0 = K and height absent (never written as 0)
+        //   tag 1 = K u64 ‖ tu u64
+        // Restore refuses any other tag (a missing K is not clock-zero).
         crate::snapshot::persist(&self.deflations, |addr, mag| {
             put_addr(&mut out, addr);
             for m in mag {
                 out.extend_from_slice(&m.to_le_bytes());
             }
-            out.extend_from_slice(&self.provisional_k.get(addr).copied().unwrap_or(0).to_le_bytes());
-            out.extend_from_slice(&self.provisional_tu.get(addr).copied().unwrap_or(0).to_le_bytes());
+            match (
+                self.provisional_k.get(addr).copied(),
+                self.provisional_tu.get(addr).copied(),
+            ) {
+                (Some(k), Some(tu)) => {
+                    out.push(1);
+                    out.extend_from_slice(&k.to_le_bytes());
+                    out.extend_from_slice(&tu.to_le_bytes());
+                }
+                _ => out.push(0),
+            }
         });
         // Coherence field beside DEF1: which angles each thought has been
         // probed through. A restart must not forget the field.
@@ -5569,7 +5584,7 @@ impl Kernel {
             if b.get(*pos..*pos + 4) == Some(b"DEF1") {
                 *pos += 4;
                 let n = read_u32(b, pos)? as usize;
-                // len16 + addr + μ⃗ + k + tu; refuse a count that cannot fit.
+                // addr ‖ μ⃗[4] ‖ tag u8 [‖ K u64 ‖ tu u64]; refuse a count that cannot fit.
                 if n > b.len().saturating_sub(*pos) / 50 {
                     return None;
                 }
@@ -5580,14 +5595,24 @@ impl Kernel {
                         *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                         *pos += 8;
                     }
-                    let k = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                    *pos += 8;
-                    let tu = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                    *pos += 8;
-                    kernel.deflations.insert(&addr, mag);
-                    kernel.provisional_k.insert(&addr, k);
-                    kernel.provisional_tu.insert(&addr, tu);
-                    kernel.standing_tu.insert(&addr, tu);
+                    let tag = *b.get(*pos)?;
+                    *pos += 1;
+                    match tag {
+                        0 => {
+                            kernel.deflations.insert(&addr, mag);
+                        }
+                        1 => {
+                            let k = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+                            *pos += 8;
+                            let tu = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+                            *pos += 8;
+                            kernel.deflations.insert(&addr, mag);
+                            kernel.provisional_k.insert(&addr, k);
+                            kernel.provisional_tu.insert(&addr, tu);
+                            kernel.standing_tu.insert(&addr, tu);
+                        }
+                        _ => return None,
+                    }
                 }
             }
             if b.get(*pos..*pos + 4) == Some(b"FLD1") {

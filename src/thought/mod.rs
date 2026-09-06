@@ -6,8 +6,8 @@
 //! kernel does with them in the bundle over its own language: it
 //! deconstructs a body into the words that compose it (comprehension, the
 //! adjoint of speech), composes words into sentences with their
-//! connection, replays and verifies what other voices said, comprehends a
-//! family as a transport, and germinates what no word carries. The five
+//! connection, replays and verifies what other voices said, extracts a
+//! family as a form, and germinates what no word carries. The five
 //! motions of thought are named in [`strokes`]: ascend, descend, expand,
 //! contract, puncture.
 //!
@@ -15,7 +15,7 @@
 //! kernel's voice (`crate::voice`).
 
 pub use crate::transducer::element::{self, Element, Versor};
-pub use crate::transducer::family::{self, comprehend as comprehend_family, speak as speak_family, Transport};
+pub use crate::transducer::family::{self, speak_rule as speak_family};
 pub use crate::transducer::germinate;
 pub use crate::transducer::sentence::{
     self, deconstruct, is_flat, holonomy, replay, replay_operators, verify, verify_utterance, Cite, Sentence,
@@ -33,10 +33,14 @@ pub mod strokes {
         Harmonics::of(body)
     }
 
-    /// DESCEND: a comprehended transport is realized on a new scene — the
+    /// DESCEND: a crystallized form is realized on a new scene — the
     /// bodies carried and rendered onto the sensor's frame, or refused.
-    pub fn descend(transport: &crate::transducer::family::Transport, scene: &crate::transducer::family::Grid) -> Option<crate::transducer::family::Speech> {
-        crate::transducer::family::speak(transport, scene)
+    pub fn descend(
+        rule: &crate::transducer::sentence::SentenceRule,
+        scene: &crate::transducer::family::Grid,
+        crystal: &dyn crate::transducer::family::Crystal,
+    ) -> Option<crate::transducer::family::Speech> {
+        crate::transducer::family::speak_rule(rule, scene, crystal)
     }
 
     /// EXPAND: a new axis opens — what no word carries germinates as the

@@ -1848,7 +1848,7 @@ mod tests {
         }
         assert!(
             hits.is_empty(),
-            "coordinate pair named placement/shift/residue outside pair_form/speak_rule/orbit:\n{}",
+            "(Q, Q) outside pair_form/speak_rule/orbit/cell_of/carry_center/carriage:\n{}",
             hits.join("\n")
         );
     }
@@ -1868,7 +1868,7 @@ mod tests {
             let mut allowed_fn = false;
             for (i, line) in src.lines().enumerate() {
                 let t = line.trim();
-                if t.contains("#[cfg(test)]") {
+                if !in_test && t.contains("#[cfg(test)]") {
                     pending_test = true;
                 }
                 let opens = line.chars().filter(|&c| c == '{').count() as i32;
@@ -1877,14 +1877,29 @@ mod tests {
                     || t.contains("fn pair_form_uncached")
                     || t.contains("fn speak_rule")
                     || t.contains("fn orbit(")
+                    || t.contains("fn cell_of")
+                    || t.contains("fn carry_center")
+                    || t.contains("fn carry_cell")
+                    || t.contains("fn carriage(")
+                    || t.contains("fn base(")
+                    || t.contains("fn centroid(")
+                    || t.contains("fn carry(")
+                    || t.contains("fn rotor_between")
+                    || t.contains("fn half_rotor")
+                    || t.contains("fn rotor_pair")
                 {
                     allowed_fn = true;
                     fn_depth = 0;
                 }
-                if pending_test && opens > 0 {
-                    in_test = true;
-                    pending_test = false;
-                    depth = opens - closes;
+                if pending_test {
+                    if opens > 0 {
+                        in_test = true;
+                        pending_test = false;
+                        depth = opens - closes;
+                        if depth <= 0 {
+                            in_test = false;
+                        }
+                    }
                     continue;
                 }
                 if in_test {
@@ -1904,12 +1919,12 @@ mod tests {
                 if t.starts_with("//") {
                     continue;
                 }
-                let named = t.contains("placement:") || t.contains("shift:") || t.contains("residue:");
-                let pair = t.contains("(num_rational")
-                    || t.contains("(Q,")
-                    || t.contains("(i64, i64)")
-                    || t.contains("BigRational, BigRational");
-                if named && pair {
+                let pair = t.contains("(Q, Q)")
+                    || t.contains("(Q,Q)")
+                    || t.contains("&(Q, Q)")
+                    || t.contains("BigRational, BigRational")
+                    || t.contains("num_rational::BigRational, num_rational::BigRational");
+                if pair {
                     hits.push(format!("{}:{}", path.display(), i + 1));
                 }
             }

@@ -232,6 +232,25 @@ fn speak_form(
     }
 }
 
+/// A family the form engine does not extract is a withheld form. Each
+/// pair is its own form; U1 stands it. W13 does not utter beyond that.
+fn withhold_unextracted(
+    entity: &mut Entity,
+    tag: &str,
+    train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
+    family: &[u8],
+) {
+    let fam = format!("{:02x}{:02x}…", family[0], family[1]);
+    let scale = mycelium::transducer::family::family_ratio(train);
+    for (a, b) in train {
+        let f = mycelium::transducer::family::pair_form(a, b, scale);
+        let pair = vec![(a.clone(), b.clone())];
+        let (mag, rem) = mycelium::transducer::family::form_descent(&f, &pair, &entity.epigenome);
+        entity.withhold_form(&f, &pair, &rem, mag);
+    }
+    eprintln!("[{tag}] form withheld: family {fam} extract refused");
+}
+
 fn family_magnitude(train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)]) -> [u64; 4] {
     let mut mag = [0u64; 4];
     for (x, y) in train {
@@ -383,20 +402,14 @@ fn main() {
                 continue;
             };
             let Some((input, output)) = task.train.get(feed.pair_index()) else {
-                // TASK BOUNDARY — the entity thinks before moving on: the
-                // family it just fed is comprehended as a connection, each
-                // test input is spoken through it and scored, and a family
-                // the connection does not speak raises its residual as
-                // this voice's demand.
-                let comprehended = mycelium::transducer::family::comprehend(&task.train);
+                // TASK BOUNDARY — the form engine is the only extractor.
+                // A family it does not close is a withheld form (U1 stands it).
                 let mag = family_magnitude(&task.train);
                 if !physics.can_expand(Physics::lanes_of(&mag)) {
                     break;
                 }
                 physics.bump(&mag);
                 StrokeOutcome::add(&mut outcome.fed, &mag);
-                // The rule's nerve is the sentence: constant relative words,
-                // not pair-0 geometry. No calculator fallback.
                 let fam = mycelium::registry::task_id(&task);
                 let gen = entity.epigenome.atlas_root();
                 let mut extract_budget = physics.stroke();
@@ -408,7 +421,7 @@ fn main() {
                     &mut extract_budget,
                     &entity.epigenome,
                 );
-                if let Some(rule) = extracted.as_ref().or(comprehended.rule.as_ref()) {
+                if let Some(rule) = extracted.as_ref() {
                     for (x, y) in &task.test {
                         if y.is_empty() {
                             continue;
@@ -423,6 +436,8 @@ fn main() {
                         }
                     }
                     let _ = speak_form(&mut entity, &tag, rule, &task.train, &fam);
+                } else {
+                    withhold_unextracted(&mut entity, &tag, &task.train, &fam);
                 }
                 retire_feed(&path);
                 feed.finish();
@@ -681,10 +696,8 @@ fn main() {
         // tests through, submit. The REGISTRY rules bounty vs floor
         // (anti-replay yield collapse); unique solves count ONLY on BOUNTY.
         if let Ok(Some((tid, train, tests))) = entity.pull_task() {
-            // The family is comprehended as a connection in the entity's own
-            // algebra; every test is spoken through it, or the family's
-            // residual is the demand it raises.
-            let comprehended = mycelium::transducer::family::comprehend(&train);
+            // The form engine is the only extractor. A family it does not
+            // close is a withheld form; U1 stands it. No second extractor.
             let mag = family_magnitude(&train);
             if physics.can_expand(Physics::lanes_of(&mag)) {
                 physics.bump(&mag);
@@ -700,7 +713,6 @@ fn main() {
                 &mut extract_budget,
                 &entity.epigenome,
             );
-            let rule = extracted.as_ref().or(comprehended.rule.as_ref());
             eprintln!(
                 "[{tag}] [{}] family {:02x}{:02x}… {} pairs, {} tests: {}",
                 tuniversal.stamp(),
@@ -708,19 +720,17 @@ fn main() {
                 tid[1],
                 train.len(),
                 tests.len(),
-                match (rule, &comprehended.transport, comprehended.framed) {
-                    (Some(r), _, _) => format!(
+                match extracted.as_ref() {
+                    Some(r) => format!(
                         "rule {} vertices, {} faces, sections {}",
                         r.form.vertices.len(),
                         r.form.faces.len(),
                         r.section_count()
                     ),
-                    (None, Some(t), _) => format!("comprehended ({} rules, {} created, {} removed)", t.rules.len(), t.created.len(), t.removed.len()),
-                    (None, None, true) => format!("residual {} cells", comprehended.residual.len()),
-                    (None, None, false) => "frames disagree".to_string(),
+                    None => "extract withheld".to_string(),
                 },
             );
-            if let Some(rule) = rule {
+            if let Some(rule) = extracted.as_ref() {
                 let _ = speak_form(&mut entity, &tag, rule, &train, &tid);
                 let outs: Option<Vec<mycelium::arc::Grid>> = tests
                     .iter()
@@ -752,28 +762,7 @@ fn main() {
                     }
                 }
             } else {
-                let held: Vec<_> = train
-                    .iter()
-                    .filter_map(|(x, y)| {
-                        let (hi, wi) = (x.len(), x.first().map_or(0, |r| r.len()));
-                        let (ho, wo) = (y.len(), y.first().map_or(0, |r| r.len()));
-                        if hi == 0 || wi == 0 || ho == 0 || wo == 0 {
-                            return None;
-                        }
-                        let (a, b) = (grid_to_cells(&embed(x, ho, wo)), grid_to_cells(y));
-                        let germ = germinate(&a, &b)?;
-                        entity.hold_thought(germ.clone());
-                        Some(germ)
-                    })
-                    .collect();
-                if let [_, ..] = held.as_slice() {
-                    eprintln!(
-                        "[{tag}] thought held: family {:02x}{:02x}… {} pairs uncollapsed — not uttered",
-                        tid[0],
-                        tid[1],
-                        held.len()
-                    );
-                }
+                withhold_unextracted(&mut entity, &tag, &train, &tid);
             }
         }
 

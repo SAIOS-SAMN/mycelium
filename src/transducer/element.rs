@@ -1057,8 +1057,18 @@ impl Element {
         Some(out)
     }
 
-    /// Group inverse — an alias for [`Element::solution`].
+    /// Inverse: versor inverse when the action is a versor; the reverse
+    /// coboundary chain when the substance is a residual germ. `None` when
+    /// a versor is not invertible.
     pub fn inverse(&self) -> Option<Element> {
+        if !self.sub.is_empty() && self.versor().is_none() && self.action.germinated.is_empty() {
+            let rev: ResidualGerm = self
+                .sub
+                .iter()
+                .map(|&(r, c, b, a)| (r, c, a, b))
+                .collect();
+            return Some(from_residual(&rev));
+        }
         self.solution()
     }
 
@@ -1954,6 +1964,20 @@ mod tests {
         let mut e = Element::identity();
         e.action.spatial = Some(Versor::zero());
         assert!(e.solution().is_none(), "a non-versor has no inverse");
+        assert!(e.inverse().is_none(), "a non-versor has no inverse");
+    }
+
+    #[test]
+    fn reverse_germ_is_the_inverse_chain() {
+        let a = [(0, 0, 1u8), (0, 1, 2), (1, 0, 3)];
+        let b = [(0, 0, 1u8), (0, 1, 9), (1, 0, 3)];
+        let g = from_residual(&germinate(&a, &b).unwrap());
+        assert!(g.solution().is_none(), "a residual has no versor inverse");
+        let inv = g.inverse().expect("the reverse chain exists");
+        let want: Vec<_> = g.sub().iter().map(|&(r, c, b, a)| (r, c, a, b)).collect();
+        assert_eq!(inv.sub(), want.as_slice(), "inverse swaps before/after on the chain");
+        let again = inv.inverse().expect("reverse of reverse");
+        assert_eq!(again.sub(), g.sub(), "inverse ∘ inverse is the chain");
     }
 
     #[test]
