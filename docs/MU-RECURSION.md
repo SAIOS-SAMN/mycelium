@@ -236,7 +236,14 @@ a perception; a **thought** is the superposition of candidate forms through
 which ideas germinate; **germination** is the movement toward closure. A
 **held loop** is a loop of an idea whose holonomy no gauge removes; its
 **class vector** is the exact record of what would have to change for it to
-close; a **pivot** is a move on one axis of that vector; a **vortex** is a
+close; a **pivot** is a move on one axis of that vector, and the pivot is
+the only motion in this engine; **descent** names only the lane-wise
+comparison of μ⃗ that certifies a pivot or a mint after it is made
+(`descends`), never a direction and never a slope, and in chapter 13 the
+word keeps its sheaf-theoretic sense of gluing across an overlap; a
+**deflation** is what a word or form closes, measured on μ⃗; a
+**shortening** is A2's budgeted retirement of a tape, which moves nothing;
+a **vortex** is a
 held loop together with the candidate pivots that could discharge it, held
 as cells of the thought until one of them does. A
 **dialect** is spoken and stood (memory, in the epigenome); a **language**
@@ -660,7 +667,7 @@ Two crystallized forms with the same vertices on the same bundles: the one
 whose tapes are strictly shorter retires the other to the cavity, address
 kept, replay still possible through the address. Invariant: meaning is
 unchanged; the language shrinks toward geodesics. Off the plane a shorter
-tape is found by budgeted descent (chapter 16.2) and is a retirement, not a
+tape is found by budgeted shortening (chapter 16.2) and is a retirement, not a
 minimality claim.
 
 ### 3.9 Pivot (discharge of a held loop)
@@ -1291,7 +1298,9 @@ not defined as a group. What holds and what the system uses:
 ```
 
 exact as **pointed sets** at every term, plus the **descent statement** in
-place of the next exactness:
+place of the next exactness (descent here in the sheaf-theoretic sense,
+sections on the pieces glue iff they agree on the overlap; it is not the
+lane-wise comparison of μ⃗ that `descends` names, and it is not a motion):
 
 > `(a, b) ∈ H¹(A) × H¹(B)` is the restriction of a class on `X` iff `res a`
 > and `res b` are cohomologous on `A ∩ B`; the classes on `X` restricting to
@@ -1839,7 +1848,7 @@ known:
    axis are never reordered. Terminates: each pass strictly shortens the
    tape or leaves it unchanged, and reordering is bounded by the number of
    runs.
-2. **Budgeted descent** (`shorter_tape(word, budget)`): breadth-first over
+2. **Budgeted shortening** (`shorter_tape(word, budget)`): breadth-first over
    tapes from the identity in letter-index order, visited set a `Keyed<()>`
    of A1 keys, stopping when `budget.spend()` fails or a tape with the
    target's A1 key is found at a length below the current one. Deterministic
@@ -2084,7 +2093,7 @@ A3-reduced, with the unit-exponent coordinate carrying the relation
    found. Output `Novel(g_rem)` with `f` recorded as the understood part:
    the exact boundary demand, with no choice in it.
 
-**Off-plane case**: budgeted coset descent. States are A1 keys; from the
+**Off-plane case**: budgeted coset shortening. States are A1 keys; from the
 identity apply `b_i` and `b_i⁻¹` in index order; visited `Keyed<()>`; stop
 on `budget.spend()` failure or on reaching `g`'s key. The path is the
 factorisation. Failure returns `Novel(g)` with `g` unchanged: off the plane
@@ -2094,13 +2103,13 @@ word is the demand.
 Binding: `Epigenome::comprehend` (sdk.rs 856) for connections replaces the
 single-representative `transition` test with A12 over the fiber's basis;
 `Kernel::reduce_excluding` keeps its decomposition for chains and calls
-A12 for connections. Cost: HNF polynomial in `n·k`; the descent is the
+A12 for connections. Cost: HNF polynomial in `n·k`; the shortening is the
 budget.
 
 ### 16.13 A13 — Meet of two keyed tries
 
 `Keyed::meet<W>(&self, other: &Keyed<W>) -> Keyed<()>` (nerve.rs): keys
-present in both. A simultaneous descent of the two PATRICIA tries
+present in both. A simultaneous walk down the two PATRICIA tries
 (`Node::Leaf(key, _)`, `Node::Branch { bit, children }`, `key_bit`,
 `first_difference`, `held_key`, nerve.rs 21–75), using one fact: every key
 in the subtree of a `Branch { bit }` agrees on all bits before `bit`.
@@ -2339,7 +2348,7 @@ pub struct PivotCertificate {                          // sentence/pivot.rs
    through a `Ruled` form, and the hypha weights the claim accordingly
    without silencing it.
 5. **Economics.** A certificate mints nothing by itself. It is the evidence
-   for the descent the crystallized form performs; the form's mint (chapter
+   for the deflation the crystallized form performs; the form's mint (chapter
    26) requires its certificates to replay.
 
 ### 16.21 A21 — Structured keys (no digest on content)
@@ -2412,7 +2421,7 @@ through M1):
         per-plane geodesic tape
               │
               ▼
-        A2 run reduction (+ budgeted descent in retire)
+        A2 run reduction (+ budgeted shortening in retire)
               │
               ▼
         A1 canonical rotor form ◄──── A4 canonical conformal versor
@@ -2690,7 +2699,7 @@ torsion is on the mesh before the mind's next stroke; every pivot the
 language stands on has a certificate that replays on two organs.
 
 **Economics.** Filing torsion pays nothing (a partial closure); the
-remainder's descent mints; a translation that discharges a filed class is
+remainder's deflation mints; a translation that discharges a filed class is
 paid through `mint_or_admit_translation`; a free class that a later word
 closes pays that word's speaker.
 
@@ -3230,7 +3239,7 @@ a question, and the court's whole behaviour on an act is fixed here.
   thinking on the voice's behalf, and its book then fills with words no
   mind stood.
 - **Replay resolves through the court's genome.** `replay_form_with`
-  hands the descent measure the kernel as its `Crystal` (the kernel
+  hands the deflation measure the kernel as its `Crystal` (the kernel
   implements it), never `NoCrystal`: a form whose `Glued` vertex cites a
   ruled word replays its deflation through that word. `NoCrystal` is
   admissible only for a tape with no `Glued` vertex.
@@ -4849,7 +4858,7 @@ auditor reproduces.
   finitely many trials each (T4); a vortex is not a loop of A16, it is a
   held state that only an external event collapses (25.1).
 - A17's witness walk terminates in at most `ℓ` steps.
-- A2's descent terminates by `Budget`; run reduction by strict shortening.
+- A2's shortening terminates by `Budget`; run reduction by strict shortening.
 - Unfolding terminates by a strictly monotone integer measure (3.4); orbit
   by an integer ring count bounded by the frame (3.5).
 - Retirement terminates because tape length is a natural number (T10).
@@ -4951,7 +4960,7 @@ obstruction. Code: `Complex::delta2`, `cocycle_at`, `refine_chart`. Proof:
 `delta2_of_refractions_is_the_triple_product`,
 `nontrivial_delta2_files_a_class2`.
 
-**T25 Metabolic termination is polytonic.** Every certified descent lowers
+**T25 Metabolic termination is polytonic.** Every minted deflation lowers
 `μ⃗` in the product order on `ℕ⁴`, which is well-founded, so every minted
 chain is finite; every trial spends a `Budget` on the lanes it occupies,
 so every stroke terminates; a stroke whose outcome is zero on every lane
@@ -5119,7 +5128,7 @@ position in time is a coordinate it carries, not a stamp read off a wall.
 
 The **frontier** of a receipt `r` is the keyed map `F(r): vk ↦ greatest K
 of vk's receipts reachable from r through prev and parents`, computed by a
-keyed descent that visits each reached receipt once
+keyed walk that visits each reached receipt once
 (`ReceiptChain::frontier(&self, budget)` **new**). `e ≺ e'` iff `F(e) ≤
 F(e')` componentwise and `F(e) ≠ F(e')` (`precedes` **new**). Two receipts
 neither of which precedes the other are **concurrent**, and concurrency is
