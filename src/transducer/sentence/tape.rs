@@ -477,7 +477,10 @@ pub fn from_element_form(e: &Element) -> Option<Form> {
 /// Empty when the word is not a sentence, or when the tape is v1 and the
 /// cycles live only on the element's residual section.
 pub fn form_torsion(e: &Element) -> Keyed<(Vec<(u8, u8)>, u32, u16)> {
-    e.form().map(|f| f.torsion.clone()).unwrap_or_default()
+    match e.form() {
+        Some(f) => f.torsion.clone(),
+        None => Keyed::new(),
+    }
 }
 
 /// Whether a spoken word carries a torsion cycle: the form first, then

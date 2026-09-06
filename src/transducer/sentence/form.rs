@@ -298,14 +298,13 @@ impl Form {
     }
 
     pub fn depth_of(&self) -> u16 {
-        self.vertices
-            .iter()
-            .filter_map(|v| match v {
-                Vertex::Glued { depth, .. } => Some(depth.saturating_add(1)),
-                _ => None,
-            })
-            .max()
-            .unwrap_or(0)
+        let mut d = 0u16;
+        for v in &self.vertices {
+            if let Vertex::Glued { depth, .. } = v {
+                d = d.max(depth.saturating_add(1));
+            }
+        }
+        d
     }
 
     pub fn is_cauterized(&self) -> bool {

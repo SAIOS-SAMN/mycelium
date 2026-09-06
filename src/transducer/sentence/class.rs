@@ -350,7 +350,10 @@ fn free_row(h: &Word) -> Option<[i64; 12]> {
     let mut row = [0i64; 12];
     for p in 0..6 {
         row[2 * p] = rep.rot[7 + p];
-        row[2 * p + 1] = rep.rot.get(13 + p).copied().filter(|_| p < 4).unwrap_or(0);
+        row[2 * p + 1] = match (p < 4, rep.rot.get(13 + p)) {
+            (true, Some(&n)) => n,
+            _ => 0,
+        };
     }
     Some(row)
 }

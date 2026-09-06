@@ -261,11 +261,10 @@ impl SentenceRule {
     /// Hue map of a target chart. One Keyed from the form's Word vertices,
     /// then a read; never a scan.
     pub fn hue_for(&self, inv: &stalk::Invariant) -> Vec<(u8, u8)> {
-        self.form
-            .hue_maps
-            .get(&inv.key())
-            .cloned()
-            .unwrap_or_default()
+        match self.form.hue_maps.get(&inv.key()) {
+            Some(g) => g.clone(),
+            None => Vec::new(),
+        }
     }
 
     /// Placement of a transport class, read from the form's placements.

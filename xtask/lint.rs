@@ -92,6 +92,13 @@ fn lint_file(path: &Path, hits: &mut Vec<String>, allow_spend: bool) -> Result<(
         if !allow_spend {
             check("spend_unit()");
         }
+        if path.components().any(|c| c.as_os_str() == "sentence") {
+            check(".position(");
+            check(".find(");
+            check(".find_map(");
+            check("Vec<bool>");
+            check("unwrap_or");
+        }
     }
     Ok(())
 }

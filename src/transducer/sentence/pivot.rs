@@ -359,14 +359,14 @@ impl Form {
                     });
                 }
                 Axis::Hue => {
-                    let gauge = loop_transport(self, lp)
-                        .map(|t| t.gauge)
-                        .unwrap_or_default();
+                    let Some(t) = loop_transport(self, lp) else {
+                        continue;
+                    };
                     out.push(Candidate {
                         axis,
                         by: PivotBy::Hue {
                             face: chord as u16,
-                            gauge,
+                            gauge: t.gauge,
                         },
                     });
                 }
@@ -630,9 +630,15 @@ pub fn words_of_form(f: &Form) -> Vec<Word> {
 /// connection's letters.
 pub fn words_of_element(e: &Element) -> Vec<Word> {
     if e.is_sentence() {
-        return from_element_form(e).map(|f| words_of_form(&f)).unwrap_or_default();
+        return match from_element_form(e) {
+            Some(f) => words_of_form(&f),
+            None => Vec::new(),
+        };
     }
-    e.letters().map(|l| vec![l.spelling.word]).unwrap_or_default()
+    match e.letters() {
+        Some(l) => vec![l.spelling.word],
+        None => Vec::new(),
+    }
 }
 
 /// Admit words to the axis index under every coordinate their class vector
@@ -669,11 +675,16 @@ pub fn retract_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[W
 
 /// The fiber of the axis index at (chart, axis).
 pub fn on_axis_of(index: &AxisIndex, chart: &stalk::Invariant, axis: Axis) -> Vec<Word> {
-    index
+    match index
         .get(&chart.key())
         .and_then(|mid| mid.get(&axis_slot(axis)))
-        .map(|bucket| bucket.fiber(&crate::network::nerve::ROOT).map(|(_, w)| w.clone()).collect())
-        .unwrap_or_default()
+    {
+        Some(bucket) => bucket
+            .fiber(&crate::network::nerve::ROOT)
+            .map(|(_, w)| w.clone())
+            .collect(),
+        None => Vec::new(),
+    }
 }
 
 /// One candidate pivot: a held word that occupies the axis, written on the
