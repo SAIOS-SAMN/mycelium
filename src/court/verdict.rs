@@ -85,11 +85,10 @@ pub fn replay_form_with(
         if cited.depth_of() != *depth {
             return Some(REFUSE_GLUED_DEPTH);
         }
-        let frame_is_identity = cited
-            .vertices
-            .iter()
-            .find(|v| matches!(v, Vertex::Frame))
-            .is_some_and(|fr| fr.word_in(&cited).is_some_and(|w| w.is_identity()));
+        let frame_is_identity = match cited.vertices.first() {
+            Some(fr @ Vertex::Frame) => fr.word_in(&cited).is_some_and(|w| w.is_identity()),
+            _ => false,
+        };
         if !frame_is_identity {
             return Some(REFUSE_GLUED_FRAME_GAUGED);
         }
@@ -761,13 +760,16 @@ pub fn derive_pi(family: &[(Vec<(i64, i64)>, Vec<(i64, i64, u8)>)]) -> Option<Se
             k
         })
         .collect();
-    first
+    let mut common: Vec<Sel> = first
         .iter()
-        .find(|t| {
+        .filter(|t| {
             let key = sel_key(t);
             rest_tries.iter().all(|s| s.contains(&key))
         })
         .cloned()
+        .collect();
+    common.sort_by_key(sel_key);
+    common.into_iter().next()
 }
 
 #[cfg(test)]

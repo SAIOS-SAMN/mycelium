@@ -442,7 +442,10 @@ fn main() {
             if a.is_empty() || b.is_empty() {
                 continue;
             }
-            let mag = germinate(&a, &b).map(|g| measure_lanes(&g)).unwrap_or([0; 4]);
+            let Some(g) = germinate(&a, &b) else {
+                continue;
+            };
+            let mag = measure_lanes(&g);
             if !physics.can_expand(Physics::lanes_of(&mag)) {
                 break;
             }

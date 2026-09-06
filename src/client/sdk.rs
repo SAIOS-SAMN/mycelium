@@ -1360,16 +1360,31 @@ impl Epigenome {
         if utterance.is_connection() && utterance.sub().is_empty() {
             let inv = crate::transducer::stalk::invariant_of(utterance);
             let fibre = self.working_atlas().fiber(&inv);
-            let representative = fibre
-                .into_iter()
-                .filter_map(|(a, _st)| self.working_word(&a).cloned())
-                .find(|held| held.address() != utterance.address() && !held.axes().is_empty());
-            return match representative.and_then(|held| crate::transducer::cech::transition(&held, utterance)) {
+            let mut dialect: Option<(crate::transducer::a21::Address, Element)> = None;
+            for (a, _) in fibre {
+                let Some(held) = self.working_word(&a).cloned() else {
+                    continue;
+                };
+                if held.address() == utterance.address() || held.axes().is_empty() {
+                    continue;
+                }
+                match crate::transducer::cech::transition(&held, utterance) {
+                    None => {}
+                    Some(g) => match (g.axes().as_slice(), g.sub()) {
+                        ([], []) => return Comprehension::Held,
+                        _ => match &dialect {
+                            None => dialect = Some((held.address(), g)),
+                            Some((addr, _)) if held.address() < *addr => {
+                                dialect = Some((held.address(), g));
+                            }
+                            _ => {}
+                        },
+                    },
+                }
+            }
+            return match dialect {
                 None => Comprehension::Admitted,
-                Some(g) => match (g.axes().as_slice(), g.sub()) {
-                    ([], []) => Comprehension::Held,
-                    _ => Comprehension::Dialect(g),
-                },
+                Some((_, g)) => Comprehension::Dialect(g),
             };
         }
         // Located through the atlas and the versor, never searched. A taught
@@ -2096,12 +2111,30 @@ impl Entity {
             // held word on the fibre with a group view that is not the
             // fetched word itself. Siblings are interchangeable under the
             // class's symmetry; the transition to one of them is the glue.
-            let representative = fibre
-                .iter()
-                .filter_map(|a| self.epigenome.word_at(a))
-                .find(|held| held.address() != fetched.address() && !held.axes().is_empty());
-            let Some(held) = representative else { continue };
-            let Some(g) = crate::transducer::cech::transition(held, &fetched) else { continue };
+            let mut held_g: Option<(&Element, crate::transducer::element::Element)> = None;
+            for a in &fibre {
+                let Some(held) = self.epigenome.word_at(a) else {
+                    continue;
+                };
+                if held.address() == fetched.address() || held.axes().is_empty() {
+                    continue;
+                }
+                let Some(g) = crate::transducer::cech::transition(held, &fetched) else {
+                    continue;
+                };
+                match (g.axes().as_slice(), g.sub()) {
+                    ([], []) => {
+                        held_g = Some((held, g));
+                        break;
+                    }
+                    _ => match &held_g {
+                        None => held_g = Some((held, g)),
+                        Some((h, _)) if held.address() < h.address() => held_g = Some((held, g)),
+                        _ => {}
+                    },
+                }
+            }
+            let Some((held, g)) = held_g else { continue };
             match (g.axes().as_slice(), g.sub()) {
                 ([], []) => {
                     self.glued.insert(inv.key(), ());

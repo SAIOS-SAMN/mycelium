@@ -320,15 +320,32 @@ pub fn decode_root(body: &[u8]) -> Option<([u8; 32], Address, [u8; 32], u64)> {
 }
 
 pub fn encode_root_reply(solver: Option<[u8; 32]>, ticks: u64) -> Vec<u8> {
-    let mut out = solver.unwrap_or([0; 32]).to_vec();
+    let mut out = Vec::new();
+    match solver {
+        None => out.push(0),
+        Some(s) => {
+            out.push(1);
+            out.extend_from_slice(&s);
+        }
+    }
     out.extend_from_slice(&ticks.to_le_bytes());
     out
 }
 
 pub fn decode_root_reply(body: &[u8]) -> Option<(Option<[u8; 32]>, u64)> {
-    let solver: [u8; 32] = body.get(0..32)?.try_into().ok()?;
-    let ticks = u64::from_le_bytes(body.get(32..40)?.try_into().ok()?);
-    Some(((solver != [0; 32]).then_some(solver), ticks))
+    let tag = *body.first()?;
+    let mut p = 1usize;
+    let solver = match tag {
+        0 => None,
+        1 => {
+            let s: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
+            p += 32;
+            Some(s)
+        }
+        _ => return None,
+    };
+    let ticks = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
+    Some((solver, ticks))
 }
 
 /// A citation on the wire: (word address, standing, transport, gauge, body).
@@ -1089,7 +1106,7 @@ fn read_mu(b: &[u8], p: &mut usize) -> Option<[u64; 4]> {
 /// `[ACT_DEMAND][voice 32][chain][cites][K u64]` — the speaker's own
 /// reduction of the chain over its genome rides as citations; an empty
 /// citation list attests the chain irreducible for this voice. K is the
-/// voice's receipt index (23.8); a frame that omits it reads as K = 0.
+/// voice's receipt index (23.8); a frame that omits it is refused.
 pub fn encode_demand(voice: &[u8; 32], chain: &[Cell], cites: &[CiteWire]) -> Vec<u8> {
     encode_demand_at(voice, 0, chain, cites)
 }
@@ -1116,11 +1133,7 @@ pub fn decode_demand_at(body: &[u8]) -> Option<([u8; 32], Vec<Cell>, Vec<CiteWir
     let mut p = 33usize;
     let chain = read_chain(body, &mut p)?;
     let cites = read_cites(body, &mut p).unwrap_or_default();
-    let k = body
-        .get(p..p + 8)
-        .and_then(|b| b.try_into().ok())
-        .map(u64::from_le_bytes)
-        .unwrap_or(0);
+    let k = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
     Some((voice, chain, cites, k))
 }
 
@@ -1294,8 +1307,8 @@ pub fn decode_docket_request(body: &[u8]) -> Option<([u8; 32], u64, u64)> {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
-    let since = body.get(33..41).map(|b| u64::from_le_bytes(b.try_into().unwrap())).unwrap_or(0);
-    let ticks = body.get(41..49).map(|b| u64::from_le_bytes(b.try_into().unwrap())).unwrap_or(0);
+    let since = u64::from_le_bytes(body.get(33..41)?.try_into().ok()?);
+    let ticks = u64::from_le_bytes(body.get(41..49)?.try_into().ok()?);
     Some((voice, since, ticks))
 }
 
@@ -1416,10 +1429,8 @@ pub fn decode_settlements(body: &[u8]) -> Vec<Settlement> {
         let Some(after) = read_mu(body, &mut p) else { break };
         let Some(k) = body.get(p..p + 8).map(|b| u64::from_le_bytes(b.try_into().unwrap())) else { break };
         p += 8;
-        let tu = body.get(p..p + 8).map(|b| u64::from_le_bytes(b.try_into().unwrap())).unwrap_or(0);
-        if body.get(p..p + 8).is_some() {
-            p += 8;
-        }
+        let Some(tu) = body.get(p..p + 8).map(|b| u64::from_le_bytes(b.try_into().unwrap())) else { break };
+        p += 8;
         out.push((listing, chain, voice, cites, before, after, k, tu));
     }
     out
@@ -1813,5 +1824,13 @@ mod tests {
         assert_eq!(decode_teach(&encode_teach(&[0xAB, 0xCD])).unwrap(), vec![0xAB, 0xCD]);
         let (g2, vs, mu) = decode_settle(&encode_settle(&listing, &[voice, solver], &[0, 0, 12, 0])).unwrap();
         assert_eq!((g2, vs, mu), (listing, vec![voice, solver], [0, 0, 12, 0]));
+        let (held, at) = decode_root_reply(&encode_root_reply(Some(solver), 9)).unwrap();
+        assert_eq!((held, at), (Some(solver), 9));
+        let (none, at0) = decode_root_reply(&encode_root_reply(None, 3)).unwrap();
+        assert_eq!((none, at0), (None, 3));
+        assert!(
+            decode_root_reply(&[1u8]).is_none(),
+            "a truncated solver is refused, never a zero voice"
+        );
     }
 }

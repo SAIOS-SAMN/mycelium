@@ -219,16 +219,13 @@ impl Bubble {
         }
     }
 
-    fn rotor(&self) -> Rotor {
-        self.form
-            .as_ref()
-            .and_then(|f| {
-                f.vertices.iter().find_map(|v| match v {
-                    Vertex::Word { word, .. } => Some(word.rotor()),
-                    _ => None,
-                })
+    fn rotor(&self) -> Option<Rotor> {
+        self.form.as_ref().and_then(|f| {
+            f.vertices.iter().find_map(|v| match v {
+                Vertex::Word { word, .. } => Some(word.rotor()),
+                _ => None,
             })
-            .unwrap_or_else(Rotor::identity)
+        })
     }
 
     /// Walk outward on the cover trie from this bubble's cover, one chart
@@ -287,9 +284,12 @@ impl Bubble {
                 volume: vol,
                 fill: Fill::Open,
             };
+            let Some(gamma) = self.rotor() else {
+                return;
+            };
             let a = Section {
                 addr: self.key(),
-                gamma: self.rotor(),
+                gamma,
             };
             let b = Section {
                 addr: crate::transducer::a21::Address::from(head.clone()),
@@ -614,13 +614,12 @@ impl Contemplation {
         }
     }
 
-    fn rotor_between(&self, a: &[u8], b: &[u8]) -> Rotor {
-        let (Some(ba), Some(bb)) = (self.bubbles.get(a), self.bubbles.get(b)) else {
-            return Rotor::identity();
-        };
-        let ra = ba.rotor();
-        let rb = bb.rotor();
-        rb.geo(&ra.inverse().unwrap_or_else(Rotor::identity))
+    fn rotor_between(&self, a: &[u8], b: &[u8]) -> Option<Rotor> {
+        let ba = self.bubbles.get(a)?;
+        let bb = self.bubbles.get(b)?;
+        let ra = ba.rotor()?;
+        let rb = bb.rotor()?;
+        Some(rb.geo(&ra.inverse()?))
     }
 
     /// Link of one new bubble: edges to bubbles sharing a chart (by_chart
@@ -661,9 +660,18 @@ impl Contemplation {
             if let Some(b) = self.bubbles.get(n) {
                 rems.insert(n, b.remainder.clone());
             }
-            let rotor = self.rotor_between(&key, n);
             let vol = volume_of(&rems, &[key.as_slice(), n.as_slice()]);
-            self.complex.set_edge(&key, n, rotor, vol);
+            match self.rotor_between(&key, n) {
+                Some(rotor) => self.complex.set_edge(&key, n, rotor, vol),
+                None => {
+                    let both_remainder = self.bubbles.get(&key).is_some_and(|b| b.form.is_none())
+                        && self.bubbles.get(n).is_some_and(|b| b.form.is_none());
+                    if both_remainder && vol.iter().any(|&x| x > 0) {
+                        let _ = self.merge(&[key.clone(), n.clone()]);
+                        break;
+                    }
+                }
+            }
         }
         self.complex.coboundary_on_link(&key, |verts| volume_of(&rems, verts));
         self.decide_neighbors(&key);

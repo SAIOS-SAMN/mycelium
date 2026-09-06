@@ -232,6 +232,7 @@ pub fn quote(
         t0.elapsed().as_millis(),
     );
     let budget = crate::network::wire::frame_budget() - 34;
+    let pool = view.pool.as_ref()?;
     let (surface, priced) = {
         let g = k.lock().ok()?;
         crate::cognition::quote_incidence(
@@ -242,7 +243,7 @@ pub fn quote(
             g.on_page(),
             charts,
             &view.surface,
-            &view.pool,
+            pool,
             &view.pressure,
             &view.composites,
             budget,

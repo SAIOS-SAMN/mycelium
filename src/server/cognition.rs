@@ -128,7 +128,7 @@ pub struct MarketView {
     /// The open book's tension per lane — the denominator every price is a
     /// share of.
     pub pressure: [u64; 4],
-    pub pool: [u64; 4],
+    pub pool: Option<[u64; 4]>,
     pub k_step: u64,
     /// Receipt-chain head K — verified consensus depth packed on Quote.
     pub head_k: u64,
@@ -1166,12 +1166,12 @@ impl Kernel {
         self.basis.len()
     }
 
-    fn discoverer_of(&self, addr: &[u8]) -> [u8; 32] {
-        self.discoverers.get(addr).copied().unwrap_or([0; 32])
+    fn discoverer_of(&self, addr: &[u8]) -> Option<[u8; 32]> {
+        self.discoverers.get(addr).copied()
     }
 
-    fn discoverer_at(&self, i: usize) -> [u8; 32] {
-        self.basis.get(i).map(|w| self.discoverer_of(&w.address())).unwrap_or([0; 32])
+    fn discoverer_at(&self, i: usize) -> Option<[u8; 32]> {
+        self.basis.get(i).and_then(|w| self.discoverer_of(&w.address()))
     }
 
     fn word_mut(&mut self, i: usize) -> &mut Element {
@@ -1271,16 +1271,24 @@ impl Kernel {
                         )
                 })
         });
-        let mut asgs: Vec<(Vec<(u8, u8)>, Vec<element::Versor>)> = Vec::new();
+        let mut asgs: crate::network::nerve::Keyed<Vec<element::Versor>> =
+            crate::network::nerve::Keyed::new();
         for (asg, g, _) in trans {
-            match asgs.iter_mut().find(|(a, _)| a == &asg) {
-                Some((_, vs)) => vs.push(g),
-                None => asgs.push((asg, vec![g])),
+            let mut k = Vec::with_capacity(asg.len() * 2);
+            for &(a, b) in &asg {
+                k.push(a);
+                k.push(b);
+            }
+            match asgs.get_mut(&k) {
+                Some(vs) => vs.push(g),
+                None => {
+                    asgs.insert(k, vec![g]);
+                }
             }
         }
         let mut germinate: Option<element::Versor> = None;
         let mut torse = false;
-        for (_, vs) in asgs {
+        for (_, vs) in asgs.fiber(crate::network::nerve::ROOT) {
             if versors_close(&vs) {
                 torse = true;
             } else if twisted {
@@ -1443,14 +1451,19 @@ impl Kernel {
                 .get(addr)
                 .filter(|f| f.nonflat > 0)
                 .map(|f| element::measure_lanes(&union_remainders(&f.entries)))
-                .unwrap_or([0; 4])
         } else {
             self.book_elem(addr)
                 .map(|p| p.magnitude())
                 .or_else(|| self.cavity_book.get(addr).map(|e| e.magnitude()))
-                .unwrap_or([0; 4])
         };
-        self.tension.insert(&addr, t);
+        match t {
+            Some(t) => {
+                self.tension.insert(&addr, t);
+            }
+            None => {
+                self.tension.remove(addr);
+            }
+        }
     }
 
     fn write_field(
@@ -1489,7 +1502,16 @@ impl Kernel {
             }
         }
         let now_flat = state.is_flat();
-        if let Some(e) = listing.entries.iter_mut().find(|e| e.chart == chart) {
+        let idxs: Vec<usize> = listing
+            .entries
+            .iter()
+            .enumerate()
+            .filter(|(_, e)| e.chart == chart)
+            .map(|(i, _)| i)
+            .collect();
+        if !idxs.is_empty() {
+            for i in idxs {
+                let e = &mut listing.entries[i];
             if !e.state.is_flat() {
                 stag = e.stagnant;
             }
@@ -1506,13 +1528,14 @@ impl Kernel {
                 }
             }
             let was_flat = e.state.is_flat();
-            e.state = state;
-            e.remainder = remainder;
+            e.state = state.clone();
+            e.remainder = remainder.clone();
             e.stagnant = stag;
             if was_flat && !now_flat {
                 listing.nonflat = listing.nonflat.saturating_add(1);
             } else if !was_flat && now_flat {
                 listing.nonflat = listing.nonflat.saturating_sub(1);
+            }
             }
         } else {
             if !state.is_flat() {
@@ -1571,7 +1594,11 @@ impl Kernel {
                 if f.nonflat == 0 {
                     return None;
                 }
-                f.entries.iter().find(|e| !e.state.is_flat()).map(|e| &e.chart)
+                f.entries
+                    .iter()
+                    .filter(|e| !e.state.is_flat())
+                    .min_by_key(|e| e.chart.key())
+                    .map(|e| &e.chart)
             })
     }
 
@@ -1695,7 +1722,9 @@ impl Kernel {
             return new;
         };
         let card = (*self.basis[ai]).clone();
-        let disc = self.discoverer_at(ai);
+        let Some(disc) = self.discoverer_at(ai) else {
+            return new;
+        };
         self.basis_remove(ai);
         let Some(bi) = self.basis_index.get(&base).copied() else {
             return new;
@@ -1738,14 +1767,15 @@ impl Kernel {
             .map(|(s, p, _)| (s.clone(), *p))
             .unwrap_or((Vec::new(), spanned as u32));
         let payload = crate::transducer::rewrite::RewritePayload::Torse { sigma, period };
-        let disc = self.discoverer_at(i);
-        let _ = self.mint_rewrite(
-            crate::transducer::rewrite::RewriteKind::Torse,
-            std::slice::from_ref(&after),
-            &after,
-            payload,
-            disc,
-        );
+        if let Some(disc) = self.discoverer_at(i) {
+            let _ = self.mint_rewrite(
+                crate::transducer::rewrite::RewriteKind::Torse,
+                std::slice::from_ref(&after),
+                &after,
+                payload,
+                disc,
+            );
+        }
         self.touch_at(i);
     }
 
@@ -1764,7 +1794,9 @@ impl Kernel {
             .cloned()
             .filter(|a| a.as_slice() != new)
             .collect();
-        let bidder = self.discoverer_of(new);
+        let Some(bidder) = self.discoverer_of(new) else {
+            return;
+        };
         for addr in members {
             let Some(j) = self.basis_index.get(&addr).copied() else {
                 continue;
@@ -2102,7 +2134,7 @@ impl Kernel {
             composites: std::sync::Arc::clone(&self.book.2),
             surface: crate::economy::yield_surface(&self.physics),
             pressure: self.physics.pressure,
-            pool: self.treasury.bond_of(&self.identity).unwrap_or([0; 4]),
+            pool: self.treasury.bond_of(&self.identity),
             k_step: self.chain.next_step_index(),
             head_k: self.chain.head_k(),
             tu: now,
@@ -2165,7 +2197,9 @@ impl Kernel {
         if element::pullback(&element::positions(self.basis[bi].sub()), sib.sub(), g).is_none() {
             return 0;
         }
-        let disc = self.discoverer_at(si);
+        let Some(disc) = self.discoverer_at(si) else {
+            return 0;
+        };
         let gained = self.word_mut(bi).attach(&sib, g);
         self.touch_at(bi);
         self.basis_remove(si);
@@ -2240,7 +2274,9 @@ impl Kernel {
             for (addr, _, _, _, _) in cites {
                 if let Some(i) = self.basis_index.get(addr).copied() {
                     let mag = self.basis[i].magnitude();
-                    self.treasury.settle_use(voice, self.discoverer_at(i), mag, anchor);
+                    if let Some(disc) = self.discoverer_at(i) {
+                        self.treasury.settle_use(voice, disc, mag, anchor);
+                    }
                 }
             }
             for chart in charts {
@@ -2394,7 +2430,7 @@ impl Kernel {
                 let (voices, mu, _) = self.treasury.escrow_of(&addr)?;
                 // A word whose deflation is unmeasured is not served: the
                 // court rules what was measured, never a fabricated zero.
-                let deflation = self.deflation_of(&addr);
+                let deflation = self.deflation_of(&addr)?;
                 if deflation.iter().all(|&x| x == 0) {
                     return None;
                 }
@@ -3098,7 +3134,9 @@ impl Kernel {
     ) {
         let members: Vec<Vec<u8>> = self.listing_atlas.fiber(inv);
         for addr in members {
-            let mag = self.tension.get(&addr).copied().unwrap_or([0; 4]);
+            let Some(mag) = self.tension.get(&addr).copied() else {
+                continue;
+            };
             self.write_field(
                 &addr,
                 inv.clone(),
@@ -3232,8 +3270,8 @@ impl Kernel {
             }
             return [0; 4];
         }
-        if self.book_index.contains(addr) {
-            return self.book_elem(addr).map(|e| e.magnitude()).unwrap_or([0; 4]);
+        if let Some(e) = self.book_elem(addr) {
+            return e.magnitude();
         }
         [0; 4]
     }
@@ -3622,10 +3660,11 @@ impl Kernel {
             seen.insert(&addr, ());
             if let Some(&i) = self.basis_index.get(addr) {
                 nb.push(std::sync::Arc::clone(&self.basis[i]));
-                nd.insert(&addr, self.discoverer_of(addr));
+                if let Some(d) = self.discoverer_of(addr) {
+                    nd.insert(&addr, d);
+                }
             } else {
                 nb.push(std::sync::Arc::new(elem.clone()));
-                nd.insert(&addr, [0; 32]);
             }
         }
         if seen.is_empty() {
@@ -3928,7 +3967,9 @@ impl Kernel {
         voices.insert(voice, ());
         for (a, _) in &children {
             if let Some(i) = self.basis_index.get(a).copied() {
-                voices.insert(self.discoverer_at(i), ());
+                if let Some(d) = self.discoverer_at(i) {
+                    voices.insert(d, ());
+                }
             }
         }
         let voices: Vec<Vec<u8>> = voices.fiber(crate::network::nerve::ROOT).map(|(k, _)| k).collect();
@@ -4196,8 +4237,8 @@ impl Kernel {
     }
 
     /// The deflation a provisional word's install measured on the book.
-    pub fn deflation_of(&self, addr: &[u8]) -> [u64; 4] {
-        self.deflations.get(addr).copied().unwrap_or([0; 4])
+    pub fn deflation_of(&self, addr: &[u8]) -> Option<[u64; 4]> {
+        self.deflations.get(addr).copied()
     }
 
     /// Measure and record what installing `addr` settles on the book: the
@@ -4504,7 +4545,9 @@ impl Kernel {
                     // PoUW circulation: the demander pays each cited word's
                     // discoverer the structure exercised, from earned balance.
                     let mag = self.basis[i].magnitude();
-                    self.treasury.settle_use(voice, self.discoverer_at(i), mag, anchor);
+                    if let Some(disc) = self.discoverer_at(i) {
+                        self.treasury.settle_use(voice, disc, mag, anchor);
+                    }
                 }
                 self.physics.syntropy(&mag); // a spanned sentence builds order
                 self.complete_composite_child(&gaddr, voice); // lineage: a solved tile
@@ -4889,7 +4932,9 @@ impl Kernel {
                 continue;
             };
             let payload = crate::transducer::rewrite::RewritePayload::Reanchor { gamma };
-            let voice = self.discoverer_of(&addr);
+            let Some(voice) = self.discoverer_of(&addr) else {
+                continue;
+            };
             let _ = self.mint_rewrite(
                 crate::transducer::rewrite::RewriteKind::Reanchor,
                 &[w],
@@ -4990,7 +5035,9 @@ impl Kernel {
                         continue;
                     };
                     let sib = (*self.basis[j]).clone();
-                    let sibling_disc = self.discoverer_at(j);
+                    let Some(sibling_disc) = self.discoverer_at(j) else {
+                        continue;
+                    };
                     self.basis_remove(j);
                     let Some(i) = self.basis_index.get(&own).copied() else { continue };
                     if self.word_mut(i).attach(&sib, &g) > 0 {
@@ -5031,14 +5078,15 @@ impl Kernel {
                     .map(|(s, p, _)| (s.clone(), *p))
                     .unwrap_or((Vec::new(), spanned as u32));
                 let payload = crate::transducer::rewrite::RewritePayload::Torse { sigma, period };
-                let disc = self.discoverer_at(i);
-                let _ = self.mint_rewrite(
-                    crate::transducer::rewrite::RewriteKind::Torse,
-                    std::slice::from_ref(&after),
-                    &after,
-                    payload,
-                    disc,
-                );
+                if let Some(disc) = self.discoverer_at(i) {
+                    let _ = self.mint_rewrite(
+                        crate::transducer::rewrite::RewriteKind::Torse,
+                        std::slice::from_ref(&after),
+                        &after,
+                        payload,
+                        disc,
+                    );
+                }
             }
             if wrote {
                 self.touch_at(i);
@@ -5222,9 +5270,13 @@ impl Kernel {
     pub fn snapshot(&self) -> Vec<u8> {
         let mut out = Vec::new();
         out.extend_from_slice(b"MYC3");
-        out.extend_from_slice(&(self.basis.len() as u32).to_le_bytes());
-        for g in &self.basis {
-            let who = self.discoverer_of(&g.address());
+        let items: Vec<_> = self
+            .basis
+            .iter()
+            .filter_map(|g| self.discoverer_of(&g.address()).map(|who| (g, who)))
+            .collect();
+        out.extend_from_slice(&(items.len() as u32).to_le_bytes());
+        for (g, who) in items {
             let eb = g.to_bytes();
             out.extend_from_slice(&(eb.len() as u32).to_le_bytes());
             out.extend_from_slice(&eb);

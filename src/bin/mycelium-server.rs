@@ -765,7 +765,10 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
 }
 
 fn homes_here(mesh: &Mesh, kernel: &Mutex<Kernel>, inv: &mycelium::transducer::stalk::Invariant, mag: &[u64; 4]) -> bool {
-    let room = kernel.lock().map(|k| room64(k.lane_room())).unwrap_or([0; 4]);
+    let room = match kernel.lock() {
+        Ok(k) => room64(k.lane_room()),
+        Err(_) => return false,
+    };
     let c = mesh.cover.lock().unwrap();
     let r = mesh.rooms.lock().unwrap();
     let a = mesh.addrs.lock().unwrap();
@@ -847,11 +850,16 @@ fn demand_cover_home(mesh: &Mesh, kernel: &Mutex<Kernel>, chain: &[(i64, i64, u8
     let residual = mycelium::transducer::element::from_residual(&chain.to_vec());
     let inv = mycelium::transducer::stalk::invariant_of(&residual);
     let mag = residual.magnitude();
-    let room = kernel.lock().map(|k| room64(k.lane_room())).unwrap_or([0; 4]);
+    let locked = kernel.lock();
+    let room = match locked.as_ref() {
+        Ok(k) => Some(room64(k.lane_room())),
+        Err(_) => None,
+    };
+    let self_id = room.as_ref().map(|room| (&mesh.vk, room, mesh.bind.as_str()));
     let c = mesh.cover.lock().unwrap();
     let r = mesh.rooms.lock().unwrap();
     let a = mesh.addrs.lock().unwrap();
-    home(&c, &inv, &mag, &r, &a, Some((&mesh.vk, &room, &mesh.bind)))
+    home(&c, &inv, &mag, &r, &a, self_id)
 }
 
 fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
