@@ -2043,7 +2043,7 @@ pub fn extract_rule(family: &[(Grid, Grid)]) -> Option<super::sentence::Sentence
 
 
 /// Mint the family's sentence: μ⃗ = [S, G, T, H] of the closed cochain.
-/// The rule as the word a voice speaks and submits: the form's v2 tape
+/// The rule as the word a voice speaks and submits: the form's v3 tape
 /// carrying the descent it measures over the bundle through the crystal
 /// that resolves its citations. Lane 𝒯 is the scene-state span the bundle
 /// stood over. A form with no measured descent is not a word.
@@ -2966,7 +2966,7 @@ mod tests {
         assert!(mu[2] >= 1, "lane 2 carries the scene-state span");
         assert!(mu[1] >= 1, "recolour is gauge content, got {mu:?}");
         assert_ne!(mu, [0, 0, 0, 1], "mint is the unflattened 4-vector");
-        assert_eq!(minted.description().get(1), Some(&2), "the minted word is the form's v2 tape");
+        assert_eq!(minted.description().get(1), Some(&3), "the minted word is the form's v3 tape");
         assert_eq!(
             minted.address(),
             crate::transducer::sentence::as_element_form(&rule.form, minted.magnitude()).expect("tape").address(),

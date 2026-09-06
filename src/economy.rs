@@ -31,6 +31,26 @@ pub fn descends(after: &[u64; 4], before: &[u64; 4]) -> bool {
     after.iter().zip(before).all(|(a, b)| a <= b) && after.iter().zip(before).any(|(a, b)| a < b)
 }
 
+/// The unique index of the vector that equals the lane-wise minimum, if
+/// there is exactly one. Several that match, or none (incomparable lanes),
+/// are not dominant.
+pub fn dominant(vals: &[[u64; 4]]) -> Option<usize> {
+    let first = vals.first()?;
+    let min: [u64; 4] = std::array::from_fn(|l| {
+        vals.iter().map(|v| v[l]).min().unwrap_or(first[l])
+    });
+    let mut found = None;
+    for (i, v) in vals.iter().enumerate() {
+        if *v == min {
+            if found.is_some() {
+                return None;
+            }
+            found = Some(i);
+        }
+    }
+    found
+}
+
 /// A refinement is measured as deflation on the split strata. No new price.
 pub fn split_deflation(before: &[u64; 4], after: &[u64; 4]) -> Option<[u64; 4]> {
     if !descends(after, before) {

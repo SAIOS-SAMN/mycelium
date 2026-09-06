@@ -594,6 +594,7 @@ use super::alphabet::{self, Order, Rotor, Word};
 use super::element::{affine_of, GERM_DIM};
 use super::peel::ShellKind;
 use super::stalk::Standing;
+use crate::core::zlinalg::z_rank;
 use crate::physics::Budget;
 
 /// How an unfolding stops. The step count is an instance coordinate, never
@@ -1004,7 +1005,7 @@ impl Form {
         if host > 0 && d >= host {
             return None;
         }
-        let chart = chart_of_form(s);
+        let chart = chart_of_form(s)?;
         if chart.0.is_empty() {
             return None;
         }
@@ -2106,22 +2107,9 @@ impl ClassVector {
             };
         }
         let key = h.rotor().class_key();
-        let mut plane = [(false, 0u32, 0i64, 0i64); 6];
-        let offplane = match h.form() {
-            Some(pf) => {
-                // Slot layout of the seventeen letters: quarter turns 1..=6,
-                // (3,4,5) rotors 7..=12, (5,12,13) rotors 13..=16 on the
-                // first four planes; the sheet is the sensor plane's parity.
-                let rep = pf.conjugacy_rep();
-                for (p, slot) in plane.iter_mut().enumerate() {
-                    let unit = rep.rot[1 + p].rem_euclid(4) as u32;
-                    let m5 = rep.rot[7 + p];
-                    let m13 = rep.rot.get(13 + p).copied().filter(|_| p < 4).unwrap_or(0);
-                    *slot = (rep.parity && p == 0, unit, m5, m13);
-                }
-                false
-            }
-            None => true,
+        let (plane, offplane) = match h.form() {
+            Some(pf) => (pf.coordinates(), false),
+            None => ([(false, 0, 0, 0); 6], true),
         };
         ClassVector {
             plane,
@@ -2283,33 +2271,6 @@ fn free_row(h: &Word) -> Option<[i64; 12]> {
         row[2 * p + 1] = rep.rot.get(13 + p).copied().filter(|_| p < 4).unwrap_or(0);
     }
     Some(row)
-}
-
-/// Rank of the lattice spanned by integer rows: fraction-free Gaussian
-/// elimination (Bareiss) over i128, exact.
-fn z_rank(rows: &[[i64; 12]]) -> u32 {
-    let mut m: Vec<[i128; 12]> = rows
-        .iter()
-        .map(|r| std::array::from_fn(|i| r[i] as i128))
-        .collect();
-    let mut rank = 0usize;
-    let mut prev = 1i128;
-    for col in 0..12 {
-        let Some(piv) = (rank..m.len()).find(|&r| m[r][col] != 0) else {
-            continue;
-        };
-        m.swap(rank, piv);
-        let p = m[rank][col];
-        for r in (rank + 1)..m.len() {
-            let f = m[r][col];
-            for c in 0..12 {
-                m[r][c] = (m[r][c] * p - m[rank][c] * f) / prev;
-            }
-        }
-        prev = p;
-        rank += 1;
-    }
-    rank as u32
 }
 
 /// What one loop contributes to rank (A18): read once per loop, so a trial
@@ -2593,23 +2554,12 @@ pub fn vortex_put(v: &mut Keyed<Keyed<PivotCertificate>>, c: PivotCertificate) {
 /// discharge. Several that match, or none that match (incomparable lanes),
 /// are a vortex. No pairwise pass.
 fn select_discharge(cands: &[PivotCertificate]) -> Discharge {
-    let Some(first) = cands.first() else {
+    if cands.is_empty() {
         return Discharge::NoneDischarged;
-    };
-    let min: [u64; 4] = std::array::from_fn(|l| {
-        cands.iter().map(|c| c.mu_after[l]).min().unwrap_or(first.mu_after[l])
-    });
-    let mut winner: Option<&PivotCertificate> = None;
-    for c in cands {
-        if c.mu_after == min {
-            if winner.is_some() {
-                return Discharge::Vortex(cands.to_vec());
-            }
-            winner = Some(c);
-        }
     }
-    match winner {
-        Some(c) => Discharge::One(c.clone()),
+    let vals: Vec<[u64; 4]> = cands.iter().map(|c| c.mu_after).collect();
+    match crate::economy::dominant(&vals) {
+        Some(i) => Discharge::One(cands[i].clone()),
         None => Discharge::Vortex(cands.to_vec()),
     }
 }
@@ -2783,15 +2733,6 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
         out.extend_from_slice(&lp.chord.to_le_bytes());
         word_to_form_bytes(&lp.holonomy, None, out);
     }
-    out.extend_from_slice(&(f.hue_maps.len() as u16).to_le_bytes());
-    for (k, pairs) in f.hue_maps.fiber(&crate::network::nerve::ROOT) {
-        out.extend_from_slice(k);
-        out.extend_from_slice(&(pairs.len() as u16).to_le_bytes());
-        for &(a, b) in pairs {
-            out.push(a);
-            out.push(b);
-        }
-    }
     out.extend_from_slice(&(f.remainder.len() as u32).to_le_bytes());
     for &(r, c, before, after) in &f.remainder {
         out.extend_from_slice(&r.to_le_bytes());
@@ -2964,6 +2905,9 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
     let mut loops = Vec::with_capacity(nl);
     for _ in 0..nl {
         let nv = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
+        if nv == 0 {
+            return None;
+        }
         let mut vs = Vec::with_capacity(nv);
         for _ in 0..nv {
             vs.push(take_u16(b, pos)?);
@@ -2982,72 +2926,52 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
             holonomy,
         });
     }
-    let nh = take_count(b, *pos, take_u16(b, pos).unwrap_or(0) as usize, 32)?;
-    for _ in 0..nh {
-        let _: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-        *pos += 32;
-        let np = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
-        *pos = pos.checked_add(np.checked_mul(2)?)?;
-        if *pos > b.len() {
-            return None;
-        }
-    }
-    let nr = take_count(b, *pos, take_u32(b, pos).unwrap_or(0) as usize, 18)?;
+    let nr = take_count(b, *pos, take_u32(b, pos)? as usize, 18)?;
     let mut remainder = Vec::with_capacity(nr);
     for _ in 0..nr {
         remainder.push(take_cell(b, pos)?);
     }
-    let depth = take_u16(b, pos).unwrap_or(0);
-    let ncert = take_count(b, *pos, take_u16(b, pos).unwrap_or(0) as usize, 2)?;
+    let depth = take_u16(b, pos)?;
+    let ncert = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
     let mut certificates = Keyed::new();
     for _ in 0..ncert {
         let c = PivotCertificate::from_bytes(b, pos)?;
         certificates.insert(c.key(), c);
     }
-    let mut ratio = ((1usize, 1usize), (1usize, 1usize));
-    let mut sections = Keyed::new();
-    if let (Some(hn), Some(hd), Some(wn), Some(wd)) = (
-        take_u16(b, pos),
-        take_u16(b, pos),
-        take_u16(b, pos),
-        take_u16(b, pos),
-    ) {
-        // A zero denominator is not a ratio; the tape is refused, never
-        // repaired (rule 11).
-        if hd == 0 || wd == 0 {
-            return None;
-        }
-        ratio = ((hn as usize, hd as usize), (wn as usize, wd as usize));
-        if let Some(ns) = take_u16(b, pos) {
-            let ns = take_count(b, *pos, ns as usize, 32)?;
-            for _ in 0..ns {
-                let k: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-                *pos += 32;
-                let nv = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
-                let mut ix = Vec::with_capacity(nv);
-                for _ in 0..nv {
-                    ix.push(take_u16(b, pos)?);
-                }
-                sections.insert(k, ix);
-            }
-        }
+    let hn = take_u16(b, pos)?;
+    let hd = take_u16(b, pos)?;
+    let wn = take_u16(b, pos)?;
+    let wd = take_u16(b, pos)?;
+    if hd == 0 || wd == 0 {
+        return None;
     }
-    let mut torsion = Keyed::new();
-    if *pos < b.len() {
-        let nt = take_count(b, *pos, take_u16(b, pos)? as usize, 32)?;
-        for _ in 0..nt {
-            let k: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-            *pos += 32;
-            let ns = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
-            let mut sigma = Vec::with_capacity(ns);
-            for _ in 0..ns {
-                sigma.push((*b.get(*pos)?, *b.get(*pos + 1)?));
-                *pos += 2;
-            }
-            let ell = take_u32(b, pos)?;
-            let chord = take_u16(b, pos)?;
-            torsion.insert(k, (sigma, ell, chord));
+    let ratio = ((hn as usize, hd as usize), (wn as usize, wd as usize));
+    let ns = take_count(b, *pos, take_u16(b, pos)? as usize, 32)?;
+    let mut sections = Keyed::new();
+    for _ in 0..ns {
+        let k: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+        *pos += 32;
+        let nv = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
+        let mut ix = Vec::with_capacity(nv);
+        for _ in 0..nv {
+            ix.push(take_u16(b, pos)?);
         }
+        sections.insert(k, ix);
+    }
+    let nt = take_count(b, *pos, take_u16(b, pos)? as usize, 32)?;
+    let mut torsion = Keyed::new();
+    for _ in 0..nt {
+        let k: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+        *pos += 32;
+        let nsig = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
+        let mut sigma = Vec::with_capacity(nsig);
+        for _ in 0..nsig {
+            sigma.push((*b.get(*pos)?, *b.get(*pos + 1)?));
+            *pos += 2;
+        }
+        let ell = take_u32(b, pos)?;
+        let chord = take_u16(b, pos)?;
+        torsion.insert(k, (sigma, ell, chord));
     }
     let mut glued = Keyed::new();
     for (i, v) in vertices.iter().enumerate() {
@@ -3076,27 +3000,27 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
     Some(form)
 }
 
-/// SENTENCE_TAG v2: the Form tape.
+/// SENTENCE_TAG v3: the Form tape. Hue maps are derived from vertices.
 /// `mag` is the descent the form measures over its bundle. Zero is not a word.
 pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
     if f.vertices.is_empty() || mag.iter().all(|&x| x == 0) {
         return None;
     }
     let mut e = Element::identity(GERM_DIM);
-    let mut word = vec![element::SENTENCE_TAG, 2];
+    let mut word = vec![element::SENTENCE_TAG, 3];
     encode_form_v2(f, &mut word)?;
     e.set_description(word);
     e.set_magnitude(mag);
     Some(e)
 }
 
-/// Read a Form from a v2 tape.
+/// Read a Form from a v3 tape. A v2 tape is refused.
 pub fn from_element_form(e: &Element) -> Option<Form> {
     if !e.is_sentence() {
         return None;
     }
     let b = e.description();
-    if b.get(1).copied() != Some(2) {
+    if b.get(1).copied() != Some(3) {
         return None;
     }
     let mut pos = 2usize;
@@ -3155,8 +3079,8 @@ pub fn is_sentence(e: &Element) -> bool {
 /// Chart of a crystallized form (M4 step 3): the form's cell counts,
 /// then per vertex its A3-reduced plane form (a rebased vertex reads the
 /// word it speaks; a glued vertex contributes the cited chart), sorted so
-/// the order of vertices is not a coordinate.
-fn chart_of_form(f: &Form) -> crate::transducer::stalk::Invariant {
+/// the order of vertices is not a coordinate. None when a word is off-plane.
+fn chart_of_form(f: &Form) -> Option<crate::transducer::stalk::Invariant> {
     let mut axes = vec![
         2u64,
         f.vertices.len() as u64,
@@ -3167,12 +3091,10 @@ fn chart_of_form(f: &Form) -> crate::transducer::stalk::Invariant {
     for v in &f.vertices {
         match v {
             Vertex::Word { .. } | Vertex::Rebased { .. } => {
-                let row = v.word_in(f).and_then(|w| w.form()).map(|pf| {
-                    let mut row = vec![1u64, pf.parity as u64];
-                    row.extend(pf.rot.iter().map(|&x| x as u64));
-                    row
-                });
-                rows.push(row.unwrap_or_default());
+                let pf = v.word_in(f)?.form()?;
+                let mut row = vec![1u64, pf.parity as u64];
+                row.extend(pf.rot.iter().map(|&x| x as u64));
+                rows.push(row);
             }
             Vertex::Glued { chart, .. } => {
                 let mut row = vec![3u64];
@@ -3186,35 +3108,90 @@ fn chart_of_form(f: &Form) -> crate::transducer::stalk::Invariant {
     for row in rows {
         axes.extend(row);
     }
-    crate::transducer::stalk::Invariant(axes)
+    Some(crate::transducer::stalk::Invariant(axes))
 }
 
-pub fn chart_of(e: &Element) -> crate::transducer::stalk::Invariant {
-    if let Some(f) = from_element_form(e) {
-        return chart_of_form(&f);
+/// Chart of a sentence element. None when the tape does not decode or a
+/// vertex is off-plane. Never `[2,1,0,0]`.
+pub fn chart_of(e: &Element) -> Option<crate::transducer::stalk::Invariant> {
+    chart_of_form(&from_element_form(e)?)
+}
+
+fn vertex_match_key(form: &Form, i: u16) -> Option<[u8; 32]> {
+    match form.vertices.get(i as usize)? {
+        Vertex::Frame => Some(vertex_ix_key(0)),
+        Vertex::Word { address, .. } | Vertex::Glued { address, .. } => Some(*address),
+        Vertex::Rebased { of, .. } => match form.vertices.get(*of as usize) {
+            Some(Vertex::Word { address, .. }) => Some(*address),
+            _ => None,
+        },
+        Vertex::Unfolded { measure } => {
+            let mut k = [0u8; 32];
+            k[0] = 4;
+            match measure {
+                Measure::Occupied => k[1] = 0,
+                Measure::Remainder => k[1] = 1,
+                Measure::Ring { anchor } => {
+                    k[1] = 2;
+                    k[2..4].copy_from_slice(&anchor.to_le_bytes());
+                }
+            }
+            Some(k)
+        }
     }
-    crate::transducer::stalk::Invariant(vec![2u64, 1, 0, 0])
+}
+
+fn ends_key(a: &[u8; 32], b: &[u8; 32]) -> [u8; 32] {
+    let mut buf = [0u8; 64];
+    buf[..32].copy_from_slice(a);
+    buf[32..].copy_from_slice(b);
+    *blake3::hash(&buf).as_bytes()
 }
 
 /// Two forms whose cochains differ by a coboundary δγ: the gauge that
-/// takes `a` onto `b`.
+/// takes `a` onto `b`. Word and Glued vertices match by address, not index.
 pub fn coboundary_gauge(a: &Form, b: &Form) -> Option<Vec<Word>> {
-    if a.vertices.len() != b.vertices.len() || a.faces.len() != b.faces.len() {
+    if a.faces.len() != b.faces.len() {
         return None;
     }
     let mut gamma = Vec::with_capacity(a.vertices.len());
-    for (va, vb) in a.vertices.iter().zip(&b.vertices) {
+    for va in &a.vertices {
+        let vb = match va {
+            Vertex::Frame => b.vertices.first().filter(|v| matches!(v, Vertex::Frame))?,
+            Vertex::Word { address, .. } => {
+                let j = *b.by_address.get(address)?;
+                b.vertices.get(j as usize)?
+            }
+            Vertex::Glued { address, .. } => {
+                let j = *b.glued.get(address)?;
+                b.vertices.get(j as usize)?
+            }
+            Vertex::Rebased { of, .. } => {
+                let Vertex::Word { address, .. } = a.vertices.get(*of as usize)? else {
+                    return None;
+                };
+                let j = *b.by_address.get(address)?;
+                b.vertices.iter().find(|v| matches!(v, Vertex::Rebased { of: o, .. } if *o == j))?
+            }
+            Vertex::Unfolded { measure } => b.vertices.iter().find(|v| {
+                matches!(v, Vertex::Unfolded { measure: m } if m == measure)
+            })?,
+        };
         gamma.push(vb.word_in(b)?.compose(&va.word_in(a)?.inverse()));
     }
-    for (fa, fb) in a.faces.iter().zip(&b.faces) {
-        if fa.i != fb.i || fa.j != fb.j {
-            return None;
-        }
-        let i = fa.i as usize;
-        let j = fa.j as usize;
-        let expect = gamma[j]
+    let mut b_by_ends: Keyed<&FormFace> = Keyed::new();
+    for fb in &b.faces {
+        let i = vertex_match_key(b, fb.i)?;
+        let j = vertex_match_key(b, fb.j)?;
+        b_by_ends.insert(ends_key(&i, &j), fb);
+    }
+    for fa in &a.faces {
+        let i = vertex_match_key(a, fa.i)?;
+        let j = vertex_match_key(a, fa.j)?;
+        let fb = b_by_ends.get(&ends_key(&i, &j))?;
+        let expect = gamma[fa.j as usize]
             .compose(&fa.transport.word)
-            .compose(&gamma[i].inverse());
+            .compose(&gamma[fa.i as usize].inverse());
         if !expect.same_form(&fb.transport.word) {
             return None;
         }
@@ -3279,7 +3256,7 @@ mod tests {
         f
     }
 
-    /// SENTENCE_TAG v2 round-trips Frame, Word (with contact), Glued,
+    /// SENTENCE_TAG v3 round-trips Frame, Word (with contact), Glued,
     /// Rebased, Unfolded, faces, and loops.
     #[test]
     fn form_tape_v2_round_trips() {
@@ -3323,10 +3300,10 @@ mod tests {
             }
         ));
 
-        let e = as_element_form(&f, [1, 0, 0, 0]).expect("v2 tape");
+        let e = as_element_form(&f, [1, 0, 0, 0]).expect("v3 tape");
         assert!(e.is_sentence());
-        assert_eq!(e.description()[1], 2, "version 2");
-        let back = from_element_form(&e).expect("decode v2");
+        assert_eq!(e.description()[1], 3, "version 3");
+        let back = from_element_form(&e).expect("decode v3");
         assert_eq!(back.vertices.len(), f.vertices.len());
         assert_eq!(back.faces.len(), f.faces.len());
         assert_eq!(back.loops.len(), f.loops.len());
@@ -3404,6 +3381,68 @@ mod tests {
             "a missing vertex is not the identity word"
         );
         assert!(f.face_of(0, 0).is_some(), "the frame is present");
+    }
+
+    #[test]
+    fn tape_v3_refuses_short_or_partial() {
+        let f = closed_word_form(Word::identity(), None);
+        let e = as_element_form(&f, [1, 0, 0, 0]).expect("v3");
+        assert_eq!(e.description()[1], 3);
+        let mut short = e.description().to_vec();
+        short.pop();
+        let mut truncated = Element::identity(GERM_DIM);
+        truncated.set_description(short);
+        truncated.set_magnitude([1, 0, 0, 0]);
+        assert!(
+            from_element_form(&truncated).is_none(),
+            "a short v3 tape is refused"
+        );
+        let mut v2 = e.description().to_vec();
+        v2[1] = 2;
+        let mut old = Element::identity(GERM_DIM);
+        old.set_description(v2);
+        old.set_magnitude([1, 0, 0, 0]);
+        assert!(
+            from_element_form(&old).is_none(),
+            "a v2 tape is refused"
+        );
+    }
+
+    #[test]
+    fn coboundary_gauge_matches_by_address() {
+        let q = Word::from_letters(&[(alphabet::LetterId::quarter((0, 1)).unwrap(), false)]);
+        let mut a = Form::default();
+        a.vertices.push(word_vertex(1, q.clone()));
+        a.vertices.push(word_vertex(2, Word::identity()));
+        a.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            transport: a.face_of(0, 1).expect("a star 1"),
+        });
+        a.faces.push(FormFace {
+            i: 0,
+            j: 2,
+            transport: a.face_of(0, 2).expect("a star 2"),
+        });
+        a.reindex();
+        let mut b = Form::default();
+        b.vertices.push(word_vertex(2, Word::identity()));
+        b.vertices.push(word_vertex(1, q.clone()));
+        b.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            transport: b.face_of(0, 1).expect("b star 1"),
+        });
+        b.faces.push(FormFace {
+            i: 0,
+            j: 2,
+            transport: b.face_of(0, 2).expect("b star 2"),
+        });
+        b.reindex();
+        assert!(
+            coboundary_gauge(&a, &b).is_some(),
+            "the same words in a different vertex order are one coboundary"
+        );
     }
 
     #[test]

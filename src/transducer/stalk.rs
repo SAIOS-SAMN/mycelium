@@ -149,7 +149,7 @@ pub fn invariant_of(word: &element::Element) -> Invariant {
         return Invariant(vec![3]);
     }
     if word.is_sentence() {
-        return super::sentence::chart_of(word);
+        return super::sentence::chart_of(word).unwrap_or_default();
     }
     if word.is_connection() {
         return connection_chart(word).unwrap_or_default();

@@ -903,6 +903,21 @@ impl PlaneForm {
         !self.parity && self.rot.iter().all(|&x| x == 0)
     }
 
+    /// Occupied plane coordinates in 12.6 slot order: per slot plane,
+    /// (sheet on the sensor plane, unit in Z/4, prime-5, prime-13).
+    /// Read from the conjugacy representative; the sheet lives on slot 0.
+    pub fn coordinates(&self) -> [(bool, u32, i64, i64); 6] {
+        let rep = self.conjugacy_rep();
+        let mut plane = [(false, 0u32, 0i64, 0i64); 6];
+        for (p, slot) in plane.iter_mut().enumerate() {
+            let unit = rep.rot[1 + p].rem_euclid(4) as u32;
+            let m5 = rep.rot[7 + p];
+            let m13 = rep.rot.get(13 + p).copied().filter(|_| p < 4).unwrap_or(0);
+            *slot = (rep.parity && p == 0, unit, m5, m13);
+        }
+        plane
+    }
+
     /// Canonical conjugacy representative. Even sheet: `{r, −r}` with the
     /// first nonzero component positive. Odd sheet: each exponent mod 2
     /// in `{0,1}`. Compared as coefficients, never hashed.

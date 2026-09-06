@@ -368,8 +368,8 @@ fn blind_replay_on_inner(
         return crate::transducer::rewrite::replay(spoken);
     }
     if spoken.is_sentence() {
-        // The version byte selects the replayer: a v2 tape is a form and
-        // is replayed through the cover; a v1 tape is a nerve.
+        // The version byte selects the replayer: a v3 tape is a form and
+        // is replayed through the cover; a v2 tape is refused.
         if let Some(reason) = replay_form_with(spoken, resolve, family) {
             return Some(reason);
         }

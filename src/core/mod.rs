@@ -17,5 +17,6 @@ pub mod rcf;
 pub mod constants;
 pub mod engine;
 pub mod matrix;
+pub mod zlinalg;
 pub mod ccl;
 pub mod laws;
