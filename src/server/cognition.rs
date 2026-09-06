@@ -248,11 +248,11 @@ fn open_charts_of(
 /// The lineage coordinate of a listing: its parent's (resolved, total,
 /// ribbon volume), found by the listing's own address in the composites
 /// relation. (0, 0, 0) when it has no parent.
-fn composite_child_index(composites: &[Composite]) -> crate::network::nerve::Keyed<usize> {
+fn composite_child_index(composites: &[Composite]) -> crate::network::nerve::Keyed<(usize, usize)> {
     let mut idx = crate::network::nerve::Keyed::new();
     for (i, (_, children, _)) in composites.iter().enumerate() {
-        for (a, _) in children {
-            idx.insert(a, i);
+        for (j, (a, _)) in children.iter().enumerate() {
+            idx.insert(a, (i, j));
         }
     }
     idx
@@ -266,9 +266,9 @@ fn lineage_of(addr: &[u8], composites: &[Composite]) -> (u64, u64, u64) {
 fn lineage_at(
     addr: &[u8],
     composites: &[Composite],
-    idx: &crate::network::nerve::Keyed<usize>,
+    idx: &crate::network::nerve::Keyed<(usize, usize)>,
 ) -> (u64, u64, u64) {
-    let Some(&i) = idx.get(addr) else {
+    let Some(&(i, _)) = idx.get(addr) else {
         return (0, 0, 0);
     };
     let Some((_, children, ribbon)) = composites.get(i) else {
@@ -2387,7 +2387,7 @@ impl Kernel {
         self.provisional
             .fiber(crate::network::nerve::ROOT)
             .filter_map(|(addr, spoken)| {
-                let k = self.provisional_k.get(&addr).copied().unwrap_or(0);
+                let k = self.provisional_k.get(&addr).copied()?;
                 if k <= since_k && since_k > 0 {
                     return None;
                 }
@@ -2424,11 +2424,13 @@ impl Kernel {
             let spoken = spoken.or_else(|| self.word_at(addr).cloned());
             if let Some(w) = spoken {
                 if w.is_rewrite() {
-                    let voice = self
+                    let Some(voice) = self
                         .treasury
                         .escrow_of(addr)
                         .and_then(|(vs, _, _)| vs.first().copied())
-                        .unwrap_or([0; 32]);
+                    else {
+                        return false;
+                    };
                     let _ = self.treasury.release_rewrite(addr, voice);
                     self.retire_rewrite_inputs(&w);
                     self.fed_admit(addr, w);
@@ -2654,10 +2656,12 @@ impl Kernel {
     fn pay_cell_volume<A: AsRef<[u8]>>(&mut self, inv: &crate::transducer::stalk::Invariant, addrs: &[A]) {
         let held = self.listings_on(inv, addrs);
         let vol = self.volume_of_cell(inv, addrs);
-        let voice = addrs
+        let Some(voice) = addrs
             .first()
             .and_then(|a| <[u8; 32]>::try_from(a.as_ref()).ok())
-            .unwrap_or([0; 32]);
+        else {
+            return;
+        };
         let anchor = self.anchor();
         for (a, _) in held.fiber(crate::network::nerve::ROOT) {
             let _ = self.treasury.draw_escrow(&a, voice, vol, anchor);
@@ -2665,14 +2669,18 @@ impl Kernel {
     }
 
     fn pay_torse<A: AsRef<[u8]>>(&mut self, addrs: &[A]) {
-        let voice = addrs
+        let Some(voice) = addrs
             .first()
             .and_then(|a| <[u8; 32]>::try_from(a.as_ref()).ok())
-            .unwrap_or([0; 32]);
-        let mag = addrs
+        else {
+            return;
+        };
+        let Some(mag) = addrs
             .first()
             .and_then(|a| self.tension.get(a.as_ref()).copied())
-            .unwrap_or([0; 4]);
+        else {
+            return;
+        };
         let _ = self.treasury.settle_torse(voice, mag, self.anchor());
     }
 
@@ -2717,8 +2725,8 @@ impl Kernel {
         }
         self.docket_connection(&t, ratifier);
         let payload = crate::transducer::rewrite::RewritePayload::Translation {
-            a: <[u8; 32]>::try_from(a.as_bytes()).unwrap_or([0; 32]),
-            b: <[u8; 32]>::try_from(b.as_bytes()).unwrap_or([0; 32]),
+            a: a.clone(),
+            b: b.clone(),
             gauge: element::identity_versor(),
         };
         let _ = self.mint_rewrite(
@@ -2882,28 +2890,7 @@ impl Kernel {
             },
             vol0,
         );
-        let self_rep = cx.sections.get(self_id.as_slice()).map(|s| s.addr.clone()).or_else(|| {
-            self.ruled
-                .fiber(&inv)
-                .into_iter()
-                .find(|a| a.as_slice() != addr.as_bytes() && self.word_at(a).is_some())
-                .map(Address::from)
-        });
-        if let Some(rep_addr) = self_rep.clone() {
-            let vol_s = self.volume_of_cell(&inv, &[self_id]);
-            cx.set_section(
-                self_id.to_vec(),
-                crate::transducer::cech::Section {
-                    addr: rep_addr,
-                    gamma: cx
-                        .sections
-                        .get(&self_id)
-                        .map(|s| s.gamma.clone())
-                        .unwrap_or_else(crate::transducer::alphabet::Rotor::identity),
-                },
-                vol_s,
-            );
-        }
+        let self_rep = cx.sections.get(self_id.as_slice()).map(|s| s.addr.clone());
         let mut outcome = Glue::Admitted;
         let held_rep = self_rep.and_then(|a| self.word_at(&a).cloned());
         if let Some(rep) = &held_rep {
@@ -3145,7 +3132,7 @@ impl Kernel {
         let before: Vec<Vec<u8>> = self.listing_atlas.fiber(inv);
         let before_mag: Vec<(Vec<u8>, [u64; 4])> = before
             .iter()
-            .map(|a| (a.clone(), self.tension.get(a).copied().unwrap_or([0; 4])))
+            .filter_map(|a| self.tension.get(a).copied().map(|t| (a.clone(), t)))
             .collect();
         self.ruled.split_stratum(inv, coord_of);
         std::sync::Arc::make_mut(&mut self.stalks).split_stratum(inv, coord_of);
@@ -3264,11 +3251,13 @@ impl Kernel {
         self.ruled_admit(addr);
         if let Some(w) = held {
             if w.is_rewrite() {
-                let voice = self
+                let Some(voice) = self
                     .treasury
                     .escrow_of(addr)
                     .and_then(|(vs, _, _)| vs.first().copied())
-                    .unwrap_or([0; 32]);
+                else {
+                    return;
+                };
                 let _ = self.treasury.release_rewrite(addr, voice);
                 self.retire_rewrite_inputs(&w);
             } else {
@@ -3916,16 +3905,23 @@ impl Kernel {
     /// the completing voice and the children's discoverers: distributed
     /// reassembly pays MORE than the sum of its parts.
     fn complete_composite_child(&mut self, child: &[u8], voice: [u8; 32]) {
-        let mut ready: Option<usize> = None;
-        for (ci, (_, children, _)) in self.composites.iter_mut().enumerate() {
-            if let Some(entry) = children.iter_mut().find(|(a, done)| a.as_bytes() == child && !*done) {
-                entry.1 = true;
-                if children.iter().all(|(_, d)| *d) {
-                    ready = Some(ci);
-                }
-                break;
+        let idx = composite_child_index(&self.composites);
+        let Some(&(ci, ji)) = idx.get(child) else {
+            return;
+        };
+        let ready = {
+            let Some((_, children, _)) = self.composites.get_mut(ci) else {
+                return;
+            };
+            let Some((_, done)) = children.get_mut(ji) else {
+                return;
+            };
+            if *done {
+                return;
             }
-        }
+            *done = true;
+            children.iter().all(|(_, d)| *d).then_some(ci)
+        };
         let Some(ci) = ready else { return };
         let (parent, children, strip) = self.composites.remove(ci);
         let mut voices: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
@@ -4214,7 +4210,11 @@ impl Kernel {
         // stood here (or was evicted) deflated at least its own measure —
         // never a fabricated zero for the court to slash.
         let on = |addr: &Address| self.book_elem(addr.as_bytes()).map(|p| p.magnitude());
-        let deflation = on(&listing).or_else(|| on(&word)).unwrap_or(own);
+        let Some(deflation) = on(&listing).or_else(|| on(&word)).or_else(|| {
+            own.iter().any(|&x| x > 0).then_some(own)
+        }) else {
+            return;
+        };
         self.deflations.insert(word, deflation);
     }
 
@@ -5877,16 +5877,15 @@ impl Kernel {
         self.refill_axis_index();
         // A snapshot without DEF1 (or a zero record) re-measures from the
         // spoken word: presence on the docket is not Δ⃗ = 0.
-        let zeros = [0u64; 4];
         let need: Vec<(Address, [u64; 4])> = self
             .provisional
             .fiber(crate::network::nerve::ROOT)
             .filter_map(|(addr, spoken)| {
-                let held = self.deflations.get(&addr).copied().unwrap_or(zeros);
-                if held.iter().any(|&x| x > 0) {
+                if self.deflations.get(&addr).is_some_and(|d| d.iter().any(|&x| x > 0)) {
                     return None;
                 }
-                Some((Address::from(addr.clone()), self.book_elem(&addr).map(|p| p.magnitude()).unwrap_or_else(|| spoken.magnitude())))
+                let mag = self.book_elem(&addr).map(|p| p.magnitude()).unwrap_or_else(|| spoken.magnitude());
+                mag.iter().any(|&x| x > 0).then(|| (Address::from(addr.clone()), mag))
             })
             .collect();
         for (addr, mag) in need {
@@ -5901,7 +5900,9 @@ impl Kernel {
             .filter(|w| w.is_connection())
             .map(|w| (**w).clone())
             .collect();
-        let ratifier = self.discoverers.fiber(crate::network::nerve::ROOT).next().and_then(|(w, _)| <[u8; 32]>::try_from(w.as_slice()).ok()).unwrap_or([0; 32]);
+        let Some((_, &ratifier)) = self.discoverers.fiber(crate::network::nerve::ROOT).next() else {
+            return true;
+        };
         for w in held {
             if !self.ruled_contains(&w.address()) {
                 self.docket_connection(&w, ratifier);
@@ -7649,10 +7650,13 @@ mod tests {
         let dropped = k.prune_basis_to_ruled();
         assert_eq!(dropped, 1, "the leaked card leaves");
         assert_eq!(k.basis_len(), kept, "the ruled cover remains");
+        k.leak_unruled(crate::transducer::element::from_residual(
+            &germinate(&[(8, 0, 2), (8, 1, 2)], &[(8, 0, 5), (8, 1, 5)]).unwrap(),
+        ));
         let snap = k.snapshot();
         let mut booted = Kernel::new();
         assert!(booted.restore(&snap));
-        assert_eq!(booted.basis_len(), kept, "a pruned snapshot restores the ruled language");
+        assert_eq!(booted.basis_len(), kept, "restore skips the leaked basis and rebuilds from the federation");
     }
 
     /// An append shares the prior word's Arc; it does not clone the basis.

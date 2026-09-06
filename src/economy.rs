@@ -324,7 +324,9 @@ impl Treasury {
             return false;
         };
         if slash {
-            let who = voices.first().copied().unwrap_or([0; 32]);
+            let Some(&who) = voices.first() else {
+                return true;
+            };
             if let Some(&held) = self.stakes.get(&who) {
                 let next: [u64; 4] = std::array::from_fn(|l| held[l].saturating_sub(mu[l]));
                 self.stakes.insert(who, next);
@@ -459,7 +461,9 @@ impl Treasury {
         let n = voices.len() as u64;
         let share: [u64; 4] = std::array::from_fn(|l| if mu[l] == 0 { 0 } else { (mu[l] / n).max(1) });
         for v in voices {
-            let who = <[u8; 32]>::try_from(v.as_ref()).unwrap_or([0; 32]);
+            let Ok(who) = <[u8; 32]>::try_from(v.as_ref()) else {
+                continue;
+            };
             self.mint_to(who, share, anchor);
         }
     }

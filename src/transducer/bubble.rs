@@ -274,7 +274,9 @@ impl Bubble {
                 return;
             };
             let vol = self.potential;
-            let gamma_b = rotors.get(head.as_slice()).cloned().unwrap_or_else(Rotor::identity);
+            let Some(gamma_b) = rotors.get(head.as_slice()).cloned() else {
+                return;
+            };
             let cell = CechCell {
                 vertices: {
                     let mut v = vec![self.key().into_vec(), head.clone()];
@@ -1434,7 +1436,7 @@ impl Contemplation {
                     let r = Rotor::from_bytes(b, pos)?;
                     let ell = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
                     *pos += 4;
-                    let st = Standing::from_u8(*b.get(*pos)?).unwrap_or(Standing::Held);
+                    let st = Standing::from_u8(*b.get(*pos)?)?;
                     *pos += 1;
                     horizon.insert(hk, (r, Order::from_u32(ell), st));
                 }

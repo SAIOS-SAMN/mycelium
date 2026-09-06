@@ -46,7 +46,7 @@ pub enum RewritePayload {
     Refine { chart: Invariant, axis: u64 },
     Reanchor { gamma: Vec<Word> },
     AxisOpen { class: Rotor, degree: u8 },
-    Translation { a: [u8; 32], b: [u8; 32], gauge: Versor },
+    Translation { a: crate::transducer::a21::Address, b: crate::transducer::a21::Address, gauge: Versor },
 }
 
 #[derive(Debug, Clone)]
@@ -107,8 +107,8 @@ impl Rewrite {
                 class.to_bytes(&mut out);
             }
             RewritePayload::Translation { a, b, gauge } => {
-                out.extend_from_slice(a);
-                out.extend_from_slice(b);
+                crate::transducer::a21::put_addr(&mut out, a);
+                crate::transducer::a21::put_addr(&mut out, b);
                 gauge.to_bytes(&mut out);
             }
         }
@@ -188,10 +188,8 @@ impl Rewrite {
                 RewritePayload::AxisOpen { class, degree }
             }
             RewriteKind::Translation => {
-                let a: [u8; 32] = b.get(pos..pos + 32)?.try_into().ok()?;
-                pos += 32;
-                let baddr: [u8; 32] = b.get(pos..pos + 32)?.try_into().ok()?;
-                pos += 32;
+                let a = crate::transducer::a21::take_addr(b, &mut pos)?;
+                let baddr = crate::transducer::a21::take_addr(b, &mut pos)?;
                 let gauge = Versor::from_bytes(b, &mut pos)?;
                 RewritePayload::Translation { a, b: baddr, gauge }
             }

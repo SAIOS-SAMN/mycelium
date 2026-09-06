@@ -2,9 +2,10 @@
 //
 //! CONSENSUS — the two-voice germ-admission gate (anastomosis). A germinated
 //! motor installs to the shared basis only when QUORUM distinct independent
-//! voices have derived the SAME germ (consilience). State is a Vec of relations
-//! (germ → the distinct voices that raised it), never a digest-keyed map: the
-//! admission is a decision on the retained relation, not a bucket dereference.
+//! voices have derived the SAME germ (consilience). State is a keyed relation
+//! (germ → the distinct voices that raised it).
+
+use crate::network::nerve::{Keyed, ROOT};
 
 /// Two independent mouths must meet for a germ to install (the anastomosis law).
 pub const QUORUM: usize = 2;
@@ -19,15 +20,15 @@ pub struct Receipt {
 }
 
 /// The admission ledger: for each germ, the distinct voices that have attested
-/// it. Vec-of-relations (Law II) — no map in the admission path.
+/// it. Keyed by germ, voices keyed by vk — no first-found scan.
 #[derive(Debug, Default, Clone)]
 pub struct Admission {
-    seen: Vec<(crate::transducer::a21::Address, Vec<[u8; 32]>)>,
+    seen: Keyed<Keyed<()>>,
 }
 
 impl Admission {
     pub fn new() -> Self {
-        Admission { seen: Vec::new() }
+        Admission { seen: Keyed::new() }
     }
 
     /// Record a receipt. Returns `true` at the MOMENT the germ reaches QUORUM
@@ -35,34 +36,37 @@ impl Admission {
     /// receipt after (idempotent: a germ admits once). Duplicate voices for the
     /// same germ do not count twice.
     pub fn record(&mut self, r: Receipt) -> bool {
-        let slot = match self.seen.iter_mut().find(|(g, _)| *g == r.germ) {
-            Some(s) => s,
-            None => {
-                self.seen.push((r.germ.clone(), Vec::new()));
-                self.seen.last_mut().unwrap()
+        if let Some(voices) = self.seen.get_mut(r.germ.as_bytes()) {
+            if voices.contains(&r.voice) {
+                return false;
             }
-        };
-        if slot.1.contains(&r.voice) {
-            return false; // same voice, no new consilience
+            voices.insert(r.voice, ());
+            return voices.len() == QUORUM;
         }
-        let before = slot.1.len();
-        slot.1.push(r.voice);
-        before + 1 == QUORUM // the crossing event, exactly once
+        let mut voices = Keyed::new();
+        voices.insert(r.voice, ());
+        self.seen.insert(r.germ.as_bytes(), voices);
+        false
     }
 
     /// Is this germ admitted (has it reached quorum)?
     pub fn admitted(&self, germ: &[u8]) -> bool {
-        self.seen.iter().any(|(g, v)| g.as_bytes() == germ && v.len() >= QUORUM)
+        self.seen.get(germ).is_some_and(|v| v.len() >= QUORUM)
     }
 
     /// Distinct voices on record for a germ.
     pub fn voices(&self, germ: &[u8]) -> usize {
-        self.seen.iter().find(|(g, _)| g.as_bytes() == germ).map_or(0, |(_, v)| v.len())
+        self.seen.get(germ).map(|v| v.len()).unwrap_or(0)
     }
 
     /// The distinct voices that attested a germ (for the consilience split).
     pub fn voices_of(&self, germ: &[u8]) -> Vec<[u8; 32]> {
-        self.seen.iter().find(|(g, _)| g.as_bytes() == germ).map_or_else(Vec::new, |(_, v)| v.clone())
+        let Some(v) = self.seen.get(germ) else {
+            return Vec::new();
+        };
+        v.fiber(ROOT)
+            .filter_map(|(k, _)| <[u8; 32]>::try_from(k.as_slice()).ok())
+            .collect()
     }
 }
 

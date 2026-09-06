@@ -72,14 +72,13 @@ fn corpus_hash(dir: &Path) -> Option<[u8; 32]> {
         .filter(|p| p.extension().is_some_and(|x| x == "json"))
         .collect();
     files.sort();
-    let mut h = blake3::Hasher::new();
+    let mut chunks: Vec<Vec<u8>> = Vec::new();
     for f in &files {
         let rel = f.strip_prefix(dir).unwrap_or(f.as_path());
-        h.update(rel.to_string_lossy().as_bytes());
-        let bytes = std::fs::read(f).ok()?;
-        h.update(&bytes);
+        chunks.push(rel.to_string_lossy().as_bytes().to_vec());
+        chunks.push(std::fs::read(f).ok()?);
     }
-    Some(*h.finalize().as_bytes())
+    Some(mycelium::network::wire::integrity_hash(chunks.iter().map(|c| c.as_slice())))
 }
 
 fn parse_manifest(path: &Path) -> Option<(PathBuf, [u8; 32], [u8; 64])> {
@@ -234,11 +233,7 @@ fn speak_root(
 ) {
     let mut exclude = vec![*self_id];
     exclude.extend(heard_from);
-    let hop = if let Ok(id) = <[u8; 32]>::try_from(task) {
-        router.closest_excluding(&id, &exclude)
-    } else {
-        router.closest_excluding(self_id, &exclude)
-    };
+    let hop = router.closest_excluding(task, &exclude);
     if let Some((_, addr)) = hop {
         // Never dialed from the door: queued for the nerve thread, dropped
         // when the nerve is full — the mesh's own impedance.
@@ -323,12 +318,11 @@ fn peer_deadline(mesh: &Mesh, id: &[u8]) -> std::time::Duration {
 
 /// The floor of the last aperture of measured round trips to a peer: the
 /// one-millisecond tick until the wire has been measured.
-fn rtt_floor(mesh: &Mesh, id: &[u8]) -> std::time::Duration {
+fn rtt_floor(mesh: &Mesh, id: &[u8]) -> Option<std::time::Duration> {
     mesh.rtt_window
         .lock()
         .ok()
         .and_then(|w| w.get(id).and_then(|ring| ring.iter().copied().min()))
-        .unwrap_or(std::time::Duration::from_millis(1))
 }
 
 /// A measured round trip enters the peer's window (one aperture of
@@ -346,7 +340,9 @@ fn note_rtt_ok(mesh: &Mesh, id: impl AsRef<[u8]>, dt: std::time::Duration) {
         }
         w.insert(id, ring);
     }
-    let cap = mycelium::physics::persist_dwell(rtt_floor(mesh, id));
+    let cap = rtt_floor(mesh, id)
+        .map(mycelium::physics::persist_dwell)
+        .unwrap_or_else(|| mycelium::physics::persist_dwell(sample));
     if let Ok(mut m) = mesh.rtt.lock() {
         m.insert(id, sample.min(cap));
     }
@@ -358,9 +354,14 @@ fn note_rtt_ok(mesh: &Mesh, id: impl AsRef<[u8]>, dt: std::time::Duration) {
 fn note_rtt_timeout(mesh: &Mesh, id: impl AsRef<[u8]>) {
     let id = id.as_ref();
     let ratio = mycelium::physics::aperture_cycle().max(2);
-    let cap = mycelium::physics::persist_dwell(rtt_floor(mesh, id));
+    let Some(floor) = rtt_floor(mesh, id) else {
+        return;
+    };
+    let cap = mycelium::physics::persist_dwell(floor);
     if let Ok(mut m) = mesh.rtt.lock() {
-        let cur = m.get(id).copied().unwrap_or(std::time::Duration::from_millis(1));
+        let Some(cur) = m.get(id).copied() else {
+            return;
+        };
         m.insert(id, cur.saturating_mul(ratio).min(cap));
     }
 }
@@ -1121,14 +1122,13 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
     }
 }
 
-/// The RENDEZVOUS for a content key: XOR-closest peer only when the key is a
-/// 32-byte hypha vk. A listing is not hashed into XOR space.
+/// The RENDEZVOUS for a content key: XOR-closest known hypha to the key's
+/// bits. A listing is not hashed; its Address walks the trie.
 fn rendezvous(key: &[u8], self_id: &[u8; 32], router: &Router) -> Option<String> {
-    let Ok(key) = <[u8; 32]>::try_from(key) else {
-        return None;
+    let dist = |idb: &[u8]| -> [u8; 32] {
+        std::array::from_fn(|i| idb.get(i).copied().unwrap_or(0) ^ key.get(i).copied().unwrap_or(0))
     };
-    let dist = |idb: &[u8; 32]| -> [u8; 32] { std::array::from_fn(|i| idb[i] ^ key[i]) };
-    match router.closest(&key) {
+    match router.closest(key) {
         Some((pid, addr)) if dist(&pid) < dist(self_id) => Some(addr),
         _ => None,
     }

@@ -295,10 +295,10 @@ pub(crate) fn pair_key(a: u16, b: u16) -> [u8; 32] {
     k
 }
 
-pub(crate) fn decode_pair_key(k: &[u8]) -> (u16, u16) {
-    let lo = u16::from_le_bytes(k.get(..2).and_then(|s| s.try_into().ok()).unwrap_or([0, 0]));
-    let hi = u16::from_le_bytes(k.get(2..4).and_then(|s| s.try_into().ok()).unwrap_or([0, 0]));
-    (lo, hi)
+pub(crate) fn decode_pair_key(k: &[u8]) -> Option<(u16, u16)> {
+    let lo = u16::from_le_bytes(k.get(..2)?.try_into().ok()?);
+    let hi = u16::from_le_bytes(k.get(2..4)?.try_into().ok()?);
+    Some((lo, hi))
 }
 
 thread_local! {
@@ -389,7 +389,7 @@ pub(crate) fn star_and_cell_faces(
     }
     related
         .fiber(crate::network::nerve::ROOT)
-        .map(|(k, _)| decode_pair_key(&k))
+        .filter_map(|(k, _)| decode_pair_key(&k))
         .collect()
 }
 

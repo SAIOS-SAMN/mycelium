@@ -572,6 +572,30 @@ impl Ruling {
     }
 }
 
+/// The unique other word on the spoken chart's fiber. Multiplicity keeps
+/// every sibling (returns None) rather than picking one.
+fn unique_other_on_fiber(
+    stalks: &Stalks,
+    index: &Keyed<usize>,
+    federation: &[(crate::transducer::a21::Address, Element)],
+    spoken: &Element,
+    skip: &[u8],
+) -> Option<usize> {
+    let mut named = None;
+    for a in stalks.fiber(&stalk::invariant_of(spoken)) {
+        let Some(&i) = index.get(&a) else {
+            continue;
+        };
+        if federation[i].0.as_bytes() == skip || federation[i].1.axes().is_empty() {
+            continue;
+        }
+        if named.replace(i).is_some() {
+            return None;
+        }
+    }
+    named
+}
+
 /// The two-docket ruling for one candidate word against the federated
 /// basis — a pure map over the current state; the caller applies
 /// [`Ruling::Admitted`] itself. `stalks` is the federation's stalk space
@@ -624,12 +648,7 @@ pub fn rule(
                 _ => cech::transition(held, spoken),
             };
             let group_view = group_view.map(|g| {
-                let third = stalks
-                    .fiber(&stalk::invariant_of(spoken))
-                    .iter()
-                    .filter_map(|a| index.get(a).copied())
-                    .find(|&i| federation[i].0.as_bytes() != addr && !federation[i].1.axes().is_empty());
-                match third {
+                match unique_other_on_fiber(stalks, index, federation, spoken, addr) {
                     Some(i) => {
                         let z = &federation[i].1;
                         match (cech::transition(spoken, z), cech::transition(z, held)) {
@@ -674,11 +693,7 @@ pub fn rule(
             // on the arm, and an empty fibre admits new geometry. Never an
             // empty-support Attached.
             if spoken.is_connection() {
-                let representative = stalks
-                    .fiber(&stalk::invariant_of(spoken))
-                    .iter()
-                    .filter_map(|a| index.get(a).copied())
-                    .find(|&i| federation[i].0.as_bytes() != addr && !federation[i].1.axes().is_empty());
+                let representative = unique_other_on_fiber(stalks, index, federation, spoken, addr);
                 return match representative.map(|i| (i, cech::transition(&federation[i].1, spoken))) {
                     None | Some((_, None)) => Ruling::Admitted(spoken.clone()),
                     Some((base, Some(g))) => match (g.axes().as_slice(), g.sub()) {

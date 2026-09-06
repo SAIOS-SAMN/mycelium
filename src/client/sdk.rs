@@ -107,7 +107,7 @@ pub struct Session {
     /// placed by the same XOR router the hyphas use, so an act carrying a
     /// key (a listing, a task, a word) is spoken to that key's home and a
     /// stranger there is the second voice. The dial address is the seed.
-    router: crate::network::nerve::Router,
+    router: RefCell<crate::network::nerve::Router>,
     /// Peer addresses keyed by the contact string's bytes.
     peers: crate::network::nerve::Keyed<String>,
     /// The quote's stroke: quotes walk the nerve in turn, one hypha per
@@ -149,13 +149,14 @@ impl Session {
     /// Point a kernel at a hypha address (e.g. `"127.0.0.1:7500"`).
     pub fn open(addr: &str, kernel: Kernel) -> Self {
         let voice = crate::voice::Voice::from_identity(kernel.voice());
-        let router = crate::network::nerve::Router::new();
+        let mut router = crate::network::nerve::Router::new();
+        router.insert(kernel.voice(), addr.to_string());
         Session {
             addr: addr.to_string(),
             kernel,
             voice,
             resistance: RefCell::new(std::collections::HashMap::new()),
-            router,
+            router: RefCell::new(router),
             peers: {
                 let mut p = crate::network::nerve::Keyed::new();
                 p.insert(addr.as_bytes(), addr.to_string());
@@ -229,15 +230,10 @@ impl Session {
         }
     }
 
-    /// The hypha a key lives on: longest-common-prefix on the cover trie,
-    /// the seed when nothing else is known. Same read as the hypha.
-    /// XOR descent is only for a 32-byte verifying key; a listing is not an XOR id.
-    pub fn route(&self, key: &[u8]) -> String {
-        if let Ok(id) = <[u8; 32]>::try_from(key) {
-            self.router.closest(&id).map(|(_, a)| a).unwrap_or_else(|| self.addr.clone())
-        } else {
-            self.addr.clone()
-        }
+    /// The hypha a key lives on: XOR-closest known contact to the key's
+    /// bits. None when the nerve holds no contact (unmeasured).
+    pub fn route(&self, key: &[u8]) -> Option<String> {
+        self.router.borrow().closest(key).map(|(_, a)| a)
     }
 
     /// Home a word by its chart and magnitude. Occluded edges drop out of
@@ -259,7 +255,7 @@ impl Session {
         let (_, dest) = home(&cover, inv, mag, &open_rooms, &addrs, None);
         if dest.is_empty() {
             // Empty cover: XOR-closest known hypha to the chart key, not the seed.
-            self.route(inv.key().as_bytes())
+            self.route(inv.key().as_bytes()).unwrap_or_default()
         } else {
             dest
         }
@@ -289,7 +285,8 @@ impl Session {
             self.cover.borrow_mut().admit(*lane, inv, vk);
         }
         self.rooms.borrow_mut().insert(vk, room);
-        self.addrs.borrow_mut().insert(vk, addr);
+        self.addrs.borrow_mut().insert(vk, addr.clone());
+        self.router.borrow_mut().insert(vk, addr);
     }
 
     /// The hyphas this entity knows.
@@ -304,9 +301,18 @@ impl Session {
         self.peers.insert(addr.as_bytes(), addr.to_string());
     }
 
+    /// A known hypha: contact string on the socket table, verifying key on
+    /// the XOR nerve. Empty-cover routing is closest(chart key) among vks.
+    pub fn know_hypha(&mut self, addr: &str, vk: [u8; 32]) {
+        self.add_peer(addr);
+        self.router.borrow_mut().insert(vk, addr.to_string());
+    }
+
     /// Speak an act carrying a key to that key's home.
     pub fn speak_keyed(&self, key: &[u8], act_body: Vec<u8>) -> io::Result<Vec<u8>> {
-        let addr = self.route(key);
+        let Some(addr) = self.route(key) else {
+            return Err(io::Error::new(io::ErrorKind::NotConnected, "unmeasured route"));
+        };
         self.exchange_at(&addr, act_body)
     }
 
@@ -785,7 +791,20 @@ impl<'a> WorkingAtlas<'a> {
     }
 
     pub fn standing_of(&self, addr: &[u8], inv: &crate::transducer::stalk::Invariant) -> Option<Standing> {
-        self.fiber(inv).into_iter().find(|(a, _)| a == addr).map(|(_, s)| s)
+        if self.genome.chart_of(addr) == Some(inv) {
+            return Some(Standing::Ruled);
+        }
+        if self.dialect.chart_of(addr) == Some(inv) {
+            return Some(Standing::Stood);
+        }
+        if self
+            .ideas
+            .and_then(|m| m.get(inv.key().as_bytes()))
+            .is_some_and(|inner| inner.contains(addr))
+        {
+            return Some(Standing::Held);
+        }
+        None
     }
 
     pub fn standing_addr(&self, addr: &[u8]) -> Option<Standing> {
@@ -1230,6 +1249,13 @@ impl Epigenome {
             .map(|(a, _)| a)
             .collect();
         let n_d = dialect_addrs.len();
+        let mut loc: crate::network::nerve::Keyed<usize> = crate::network::nerve::Keyed::new();
+        for (j, a) in dialect_addrs.iter().enumerate() {
+            loc.insert(a, n + j);
+        }
+        for (j, w) in extra.iter().enumerate() {
+            loc.insert(w.address(), n + n_d + j);
+        }
         let extra_shapes: Vec<Option<crate::transducer::blade::Shape>> = extra
             .iter()
             .map(|w| crate::transducer::element::shape_of_chain(w.sub()))
@@ -1254,13 +1280,7 @@ impl Epigenome {
             }
         };
         let index_of = |a: &[u8]| -> Option<usize> {
-            index.get(a).copied().or_else(|| {
-                dialect_addrs
-                    .iter()
-                    .position(|x| x.as_slice() == a)
-                    .map(|j| n + j)
-                    .or_else(|| extra.iter().position(|w| w.address().as_bytes() == a).map(|j| n + n_d + j))
-            })
+            index.get(a).copied().or_else(|| loc.get(a).copied())
         };
         let shape_at = |i: usize| -> Option<&crate::transducer::blade::Shape> {
             if i < n {
@@ -1406,24 +1426,11 @@ impl Epigenome {
                 if let Some(x) = self.expression.get_mut(i) {
                     *x += 1;
                 }
-                let st = self
-                    .working_atlas()
-                    .fiber(&chart)
-                    .into_iter()
-                    .find(|(a, _)| a.as_slice() == address.as_bytes())
-                    .map(|(_, s)| s)
-                    .unwrap_or(Standing::Ruled);
-                understood.push((address.clone().into_vec(), st));
+                understood.push((address.clone().into_vec(), Standing::Ruled));
                 continue;
             }
             if self.working_word(&address).is_some() {
-                let Some(st) = self
-                    .working_atlas()
-                    .fiber(&chart)
-                    .into_iter()
-                    .find(|(a, _)| a.as_slice() == address.as_bytes())
-                    .map(|(_, s)| s)
-                else {
+                let Some(st) = self.working_atlas().standing_of(&address, &chart) else {
                     missing.push(address.clone().into_vec());
                     continue;
                 };
@@ -1835,6 +1842,8 @@ pub struct Entity {
     /// Listings this mind has opened an axis on (Vec-of-relations, keyed by
     /// listing address on read): an axis is opened once per listing.
     opened: crate::network::nerve::Keyed<()>,
+    /// Ideas keyed by address: a cite is a read, never a walk of bubbles.
+    ideas: crate::network::nerve::Keyed<Element>,
     physics: crate::physics::Physics,
     tu: crate::chronometry::TUniversal,
 }
@@ -1865,6 +1874,7 @@ impl Entity {
             contemplation: crate::transducer::bubble::Contemplation::new(),
             thought_gen: 0,
             opened: crate::network::nerve::Keyed::new(),
+            ideas: crate::network::nerve::Keyed::new(),
             physics: crate::physics::Physics::default(),
             tu: crate::chronometry::TUniversal::default(),
         }
@@ -2233,24 +2243,8 @@ impl Entity {
     /// CITE: this kernel's reduction of a chain over its own genome — the
     /// citations (address, transport, gauge coordinate) and the residual it
     /// could not reduce. Cognition happens here; the hypha only replays.
-    fn idea_words(&self) -> Vec<Element> {
-        let mut out = Vec::new();
-        for (_, b) in self.contemplation.bubbles.fiber(crate::network::nerve::ROOT) {
-            if let Some(f) = &b.form {
-                if let Some(e) = crate::transducer::sentence::as_element_form(f, b.volume) {
-                    out.push(e);
-                }
-            }
-            for (_, r) in b.remainders.fiber(crate::network::nerve::ROOT) {
-                if !r.is_empty() {
-                    out.push(crate::transducer::element::from_residual(r));
-                }
-            }
-            if !b.remainder.is_empty() && b.remainders.is_empty() {
-                out.push(crate::transducer::element::from_residual(&b.remainder));
-            }
-        }
-        out
+    fn idea_word(&self, addr: &[u8]) -> Option<Element> {
+        self.ideas.get(addr).cloned()
     }
 
     pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)]) -> (Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>) {
@@ -2258,9 +2252,9 @@ impl Entity {
         // other words on the working atlas, never the chain under locate.
         let self_addr = crate::transducer::element::from_residual(&chain.to_vec()).address();
         let extras: Vec<Element> = self
-            .idea_words()
-            .into_iter()
-            .filter(|w| w.address() != self_addr)
+            .ideas
+            .fiber(crate::network::nerve::ROOT)
+            .filter_map(|(a, e)| (a.as_slice() != self_addr.as_bytes()).then(|| e.clone()))
             .collect();
         let located = self.epigenome.locate_on(chain, None, &extras);
         let n_genome = self.epigenome.genome_len();
@@ -2585,7 +2579,7 @@ impl Entity {
         self.epigenome
             .working_word(addr)
             .cloned()
-            .or_else(|| self.idea_words().into_iter().find(|w| w.address().as_bytes() == addr))
+            .or_else(|| self.idea_word(addr))
     }
     pub fn probe(&self, target: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4], [u64; 4])> {
         self.session.probe(target, cites)
@@ -2605,7 +2599,9 @@ impl Entity {
     /// whose cover is a peel of its invariant. Connections are the link of
     /// the new bubble through by_chart.
     pub fn hold_thought(&mut self, remainder: Vec<(i64, i64, u8, u8)>) {
-        self.contemplation.hold(remainder);
+        self.contemplation.hold(remainder.clone());
+        let e = crate::transducer::element::from_residual(&remainder);
+        self.ideas.insert(e.address(), e);
     }
 
     /// Hold a withheld form so the pivot loop sees it next stroke (ch. 30.2).
@@ -2616,6 +2612,16 @@ impl Entity {
         remainders: &[Vec<(i64, i64, u8, u8)>],
     ) {
         self.contemplation.hold_form(f, train, remainders);
+        if let Some(e) = crate::transducer::sentence::as_element_form(f, [0; 4]) {
+            self.ideas.insert(e.address(), e);
+        }
+        for r in remainders {
+            if r.is_empty() {
+                continue;
+            }
+            let e = crate::transducer::element::from_residual(r);
+            self.ideas.insert(e.address(), e);
+        }
     }
 
     /// Stand a withheld form, hold it as an idea, conclude each remainder,
@@ -3218,19 +3224,20 @@ mod tests {
     #[test]
     fn empty_cover_routes_by_chart_key_over_known_hyphae() {
         let mut s = Session::open("127.0.0.1:7500", Kernel::named("fan"));
-        s.add_peer("127.0.0.1:7501");
-        s.add_peer("127.0.0.1:7502");
+        s.know_hypha("127.0.0.1:7501", Kernel::named("p1").voice());
+        s.know_hypha("127.0.0.1:7502", Kernel::named("p2").voice());
         let seed = "127.0.0.1:7500";
-        let inv = crate::transducer::stalk::Invariant(vec![1, 3, 2]);
-        let dest = s.route_chart(&inv, &[1, 0, 0, 0]);
-        let closest = s.route(inv.key().as_bytes());
-        assert_eq!(dest, closest, "empty cover and listing route agree");
-        assert_eq!(dest, seed, "a listing is not hashed into XOR space; the seed is the home");
-        let peers = s.peers();
-        assert!(peers.iter().any(|p| p == "127.0.0.1:7501"));
-        assert!(peers.iter().any(|p| p == "127.0.0.1:7502"));
-        let vk = Kernel::named("fan").voice();
-        assert_eq!(s.route(&vk), seed, "a 32-byte vk with an empty XOR router is the seed");
+        let mut saw_other = false;
+        for i in 0..64u64 {
+            let inv = crate::transducer::stalk::Invariant(vec![i, i.wrapping_mul(3), 2]);
+            let dest = s.route_chart(&inv, &[1, 0, 0, 0]);
+            let closest = s.route(inv.key().as_bytes()).expect("known hyphae");
+            assert_eq!(dest, closest, "empty cover is router.closest(chart key)");
+            if dest != seed {
+                saw_other = true;
+            }
+        }
+        assert!(saw_other, "chart keys fan out across the known hyphae, not only the seed");
     }
 
 

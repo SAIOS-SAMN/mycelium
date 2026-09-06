@@ -9,6 +9,19 @@
 /// (fragmentation is the caller's concern; the wire never silently truncates).
 pub const BODY_BUDGET: usize = 768 * 1024;
 
+/// Frame-integrity digest of served bytes (corpus files, signed manifests).
+/// Not a key of mathematical structure.
+pub fn integrity_hash<'a, I>(chunks: I) -> [u8; 32]
+where
+    I: IntoIterator<Item = &'a [u8]>,
+{
+    let mut h = blake3::Hasher::new();
+    for c in chunks {
+        h.update(c);
+    }
+    *h.finalize().as_bytes()
+}
+
 /// Bytes one nerve act may carry: one spend-unit of KiB, floored at a
 /// small frame and capped by the wire MTU — a ratio of the measured
 /// reserve, never a laptop-sized constant on the cognition path.

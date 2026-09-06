@@ -11,6 +11,7 @@ fn main() {
     println!("cargo:rerun-if-changed=src/client");
     println!("cargo:rerun-if-changed=src/transducer");
     println!("cargo:rerun-if-changed=src/network");
+    println!("cargo:rerun-if-changed=src/bin");
     println!("cargo:rerun-if-changed=xtask/lint.rs");
     if let Err(e) = lint::run() {
         eprintln!("{e}");

@@ -315,7 +315,7 @@ pub fn decode_root(body: &[u8]) -> Option<([u8; 32], Address, [u8; 32], u64)> {
     let task = take_addr(body, &mut p)?;
     let solver: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
     p += 32;
-    let ticks = body.get(p..p + 8).and_then(|b| b.try_into().ok()).map(u64::from_le_bytes).unwrap_or(0);
+    let ticks = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
     Some((voice, task, solver, ticks))
 }
 

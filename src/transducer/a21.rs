@@ -256,7 +256,7 @@ mod tests {
         // this test names the same directories so a regression is a
         // failed test, not only a failed lint.
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
-        let dirs = ["server", "client", "transducer", "anastome", "voice", "thought"];
+        let dirs = ["server", "client", "transducer", "anastome", "voice", "thought", "bin"];
         let mut hits = Vec::new();
         for d in dirs {
             walk_blake3(&root.join(d), &mut hits);

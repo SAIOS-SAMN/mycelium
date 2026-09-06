@@ -118,6 +118,7 @@ fn lint_blake3(root: &Path, hits: &mut Vec<String>) -> Result<(), String> {
         "thought",
         "perception",
         "economy.rs",
+        "bin",
     ];
     for d in deny {
         walk_blake3(&root.join(d), hits)?;

@@ -107,10 +107,14 @@ fn word_of_rotor(r: &Rotor) -> crate::transducer::alphabet::Word {
 pub fn extend(section_a: &Section, section_b: &Section, cell: &Cell) -> Fill {
     #[cfg(test)]
     crate::network::nerve::work::count_extend();
-    let inv = section_a.gamma.inverse().unwrap_or_else(Rotor::identity);
+    let Some(inv) = section_a.gamma.inverse() else {
+        return Fill::Open;
+    };
     let trans = section_b.gamma.geo(&inv);
     if cell.degree() <= 1 {
-        let coeff_inv = cell.coefficient.inverse().unwrap_or_else(Rotor::identity);
+        let Some(coeff_inv) = cell.coefficient.inverse() else {
+            return Fill::Open;
+        };
         let g = trans.geo(&coeff_inv);
         if g.is_identity() {
             return Fill::Filled(trans);
@@ -250,7 +254,14 @@ impl Complex {
         }
         let key = cell_key(&vertices);
         self.remainder.remove(&key);
-        let stored = if vertices[0].as_slice() == a { g } else { g.inverse().unwrap_or_else(Rotor::identity) };
+        let stored = if vertices[0].as_slice() == a {
+            g
+        } else {
+            let Some(inv) = g.inverse() else {
+                return;
+            };
+            inv
+        };
         self.remember(Cell {
             vertices,
             coefficient: Self::store_coeff(stored),
@@ -597,22 +608,22 @@ impl Complex {
                         sec.gamma = g.clone();
                     }
                 }
-                let filled = Fill::Filled(gs.get(1).cloned().unwrap_or_else(Rotor::identity));
+                let Some(g1) = gs.get(1).cloned() else {
+                    return Fill::Open;
+                };
+                let filled = Fill::Filled(g1);
                 if let Some(c) = self.degrees[degree].get_mut(key) {
                     c.fill = filled.clone();
                 }
                 return filled;
             }
         }
-        let a = self
-            .sections
-            .get(&verts[0])
-            .cloned()
-            .unwrap_or(Section { addr: crate::transducer::a21::Address::from(verts[0].clone()), gamma: Rotor::identity() });
-        let b = verts.get(1).and_then(|v| self.sections.get(v).cloned()).unwrap_or(Section {
-            addr: crate::transducer::a21::Address::from(verts.last().cloned().unwrap_or_else(|| verts[0].clone())),
-            gamma: Rotor::identity(),
-        });
+        let Some(a) = self.sections.get(&verts[0]).cloned() else {
+            return Fill::Open;
+        };
+        let Some(b) = verts.get(1).and_then(|v| self.sections.get(v).cloned()) else {
+            return Fill::Open;
+        };
         let outcome = extend(&a, &b, &cell);
         self.index_congruent(&outcome);
         if let Some(c) = self.degrees[degree].get_mut(key) {
