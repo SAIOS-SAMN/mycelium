@@ -2533,6 +2533,32 @@ impl Entity {
             .express(&residual, self.session.voice().k(), self.now_tu());
         (cites, residual, familiar)
     }
+
+    /// A served listing: cite over the working atlas. Residual strictly
+    /// below the chain on a lane is expressed; residual that does not
+    /// descend is held as thought and never expressed.
+    pub fn conclude_listing(
+        &mut self,
+        chain: &[(i64, i64, u8, u8)],
+    ) -> (Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>, bool) {
+        let (cites, residual) = self.cite(chain);
+        if !residual_descends(&residual, chain) {
+            self.hold_thought(chain.to_vec());
+            return (cites, chain.to_vec(), false);
+        }
+        let familiar = !self
+            .epigenome
+            .express(&residual, self.session.voice().k(), self.now_tu());
+        (cites, residual, familiar)
+    }
+
+    /// The word a cite rests on: genome, dialect, or idea.
+    pub fn cited_word(&self, addr: &[u8; 32]) -> Option<Element> {
+        self.epigenome
+            .working_word(addr)
+            .cloned()
+            .or_else(|| self.idea_words().into_iter().find(|w| &w.address() == addr))
+    }
     pub fn probe(&self, target: &[u8; 32], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4], [u64; 4])> {
         self.session.probe(target, cites)
     }
@@ -2661,31 +2687,24 @@ impl Entity {
         self.contemplation.torsion_merges
     }
 
-    /// OPEN AN AXIS ON MULTIPLICITY — the convergence engine's `expand_m`
-    /// on this manifold. The sentence's H² class is the coordinate the
-    /// current axes could not express; it is seeded first, never from zero.
-    /// A listing that closes on several charts without a class still seeds
-    /// from the transition on the overlap. Once per listing.
+    /// OPEN AN AXIS ON MULTIPLICITY — several held words deflated one
+    /// listing; the glue between them is the new coordinate. Never on
+    /// failure (a listing no held word deflates is a thought, not an axis).
     pub fn open_axis(
         &mut self,
         listing: &[u8; 32],
         chain: &[(i64, i64, u8, u8)],
-        charts: &[crate::transducer::stalk::Invariant],
+        words: &[Element],
     ) -> Option<[u8; 32]> {
         use crate::transducer::element::{measure_lanes, FIBER_GERMINATED};
         if let Some(a) = self.open_contemplation_axis() {
             return Some(a);
         }
-        if charts.len() < 2 || self.opened.contains(listing) {
+        if words.len() < 2 || self.opened.contains(listing) {
             return None;
         }
-        let representatives: Vec<Element> = {
-            let atlas = self.epigenome.atlas();
-            let heads: Vec<[u8; 32]> = charts.iter().filter_map(|c| atlas.fiber(c).first().copied()).collect();
-            heads.iter().filter_map(|a| self.epigenome.word_at(a).cloned()).collect()
-        };
-        let [base, other, ..] = representatives.as_slice() else { return None };
-        // The glue between the two charts on this listing.
+        let [base, other, ..] = words else { return None };
+        // The glue between the two words that deflated this listing.
         let glue = crate::transducer::cech::transition(base, other)?;
         let block = glue.fiber(crate::transducer::element::FIBER_SPATIAL)?.clone();
         if !base.is_connection() {
@@ -2694,10 +2713,8 @@ impl Entity {
         let axis = base.max_axis().map_or(FIBER_GERMINATED, |m| m.max(FIBER_GERMINATED - 1) + 1);
         let mut germ = base.clone();
         germ.set_fiber(axis, block);
-        // The opened axis carries the listing's own measure on the lanes it
-        // moved, and the charts it joined as fibre volume.
         let mut mag = measure_lanes(chain);
-        mag[3] = mag[3].saturating_add(charts.len() as u64);
+        mag[3] = mag[3].saturating_add(words.len() as u64);
         germ.set_magnitude(mag);
         self.opened.insert(*listing, ());
         match self.speak_word(&germ) {
@@ -2973,6 +2990,23 @@ impl Entity {
     pub fn shed_n(&self) -> u64 {
         self.epigenome.shed_n()
     }
+}
+
+/// Residual strictly below the chain on a lane, and never a raise on any
+/// lane. Equal measures do not descend: the mind did not reduce.
+fn residual_descends(residual: &[(i64, i64, u8, u8)], chain: &[(i64, i64, u8, u8)]) -> bool {
+    let r = crate::transducer::element::measure_lanes(residual);
+    let c = crate::transducer::element::measure_lanes(chain);
+    let mut below = false;
+    for i in 0..4 {
+        if r[i] > c[i] {
+            return false;
+        }
+        if r[i] < c[i] {
+            below = true;
+        }
+    }
+    below
 }
 
 /// What `speak_word` did with a closed mint. Only [`Utterance::Spoken`]
@@ -3647,6 +3681,43 @@ mod tests {
         assert!(
             cites.iter().any(|(_, st, _, _, _)| *st == Standing::Held.as_u8()),
             "the held remainder is cited with standing Held, got {cites:?}"
+        );
+    }
+
+    /// A listing is expressed only when a held word deflates it.
+    #[test]
+    fn listing_is_expressed_only_when_a_held_word_deflates_it() {
+        let prefix = vec![(0i64, 0i64, 1u8, 2u8)];
+        let listing = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 3, 4)];
+
+        let mut bare = Entity::open("127.0.0.1:1", Kernel::named("listing-bare"));
+        let (cites, residual, _) = bare.conclude_listing(&listing);
+        assert!(cites.is_empty(), "nothing deflates an unseen listing, got {cites:?}");
+        assert_eq!(residual, listing, "equal residual is the chain");
+        assert_eq!(
+            bare.dialect_len(),
+            0,
+            "the unreduced listing is never expressed"
+        );
+        assert!(bare.ideas_len() >= 1, "it is held as thought");
+
+        let mut held = Entity::open("127.0.0.1:1", Kernel::named("listing-held"));
+        held.hold_thought(prefix);
+        let (cites, residual, _) = held.conclude_listing(&listing);
+        assert!(
+            cites.iter().any(|(_, st, _, _, _)| *st == Standing::Held.as_u8()),
+            "a held word deflates the listing, got {cites:?}"
+        );
+        let r = crate::transducer::element::measure_lanes(&residual);
+        let c = crate::transducer::element::measure_lanes(&listing);
+        assert!(
+            (0..4).any(|i| r[i] < c[i]) && (0..4).all(|i| r[i] <= c[i]),
+            "residual strictly below the chain on a lane, residual {r:?} chain {c:?}"
+        );
+        assert!(
+            held.dialect_len() >= 1,
+            "the residual is expressed, dialect {}",
+            held.dialect_len()
         );
     }
 

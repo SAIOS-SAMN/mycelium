@@ -477,58 +477,11 @@ fn main() {
                     if cluster.chain.is_empty() {
                         continue;
                     }
-                    // Incidence: working atlas with ideas (working_atlas_with
-                    // of contemplation.by_chart), each chart with its standing.
-                    if !cluster.open.is_empty() {
-                        let closing: Vec<mycelium::transducer::stalk::Invariant> = cluster
-                            .open
-                            .iter()
-                            .filter(|c| {
-                                if entity.working_atlas().fiber(c).is_empty() {
-                                    return false;
-                                }
-                                let f = entity.working_fiber(c);
-                                if f.is_empty() {
-                                    return false;
-                                }
-                                n_closing += 1;
-                                for (_, st) in &f {
-                                    match st {
-                                        mycelium::sdk::Standing::Stood => n_stood += 1,
-                                        mycelium::sdk::Standing::Held => n_held += 1,
-                                        mycelium::sdk::Standing::Ruled => n_ruled_hit += 1,
-                                    }
-                                }
-                                true
-                            })
-                            .cloned()
-                            .collect();
-                        if closing.is_empty() {
-                            entity.hold_thought(cluster.chain.clone());
-                            n_silent += 1;
-                            continue;
-                        }
-                        // MULTIPLICITY: several charts close at once. No
-                        // best angle — the glue between them is a new
-                        // coordinate, opened as an axis and spoken up.
-                        if closing.len() >= 2 {
-                            if let Some(a) = entity.open_axis(&cluster.address, &cluster.chain, &closing) {
-                                eprintln!(
-                                    "[{tag}] axis opened on {:02x}{:02x}…: {} charts closed at once, glue spoken as {:02x}{:02x}…",
-                                    cluster.address[0],
-                                    cluster.address[1],
-                                    closing.len(),
-                                    a[0],
-                                    a[1]
-                                );
-                            }
-                        }
-                    }
-                    // THINK, then CONVERSE. The hypha's quote already skipped
-                    // listings this voice has spoken on (keyed receipts).
-                    // The page is new work; do not mask it locally.
+                    // THINK, then CONVERSE. Incidence is deconstruction:
+                    // every served listing is concluded. Chart keys route;
+                    // they never decide comprehension.
                     let t0 = std::time::Instant::now();
-                    let (cites, residual, familiar) = entity.conclude(&cluster.chain);
+                    let (cites, residual, familiar) = entity.conclude_listing(&cluster.chain);
                     eprintln!(
                         "[{tag}] [{}] cluster {} cells: concluded in {} ms -> {} cites, {} residual{}",
                         tuniversal.stamp(),
@@ -538,6 +491,39 @@ fn main() {
                         residual.len(),
                         if familiar { " (familiar)" } else { "" },
                     );
+                    if residual == cluster.chain {
+                        n_silent += 1;
+                        continue;
+                    }
+                    n_closing += cites.len() as u32;
+                    for (_, st, _, _, _) in &cites {
+                        match mycelium::sdk::Standing::from_u8(*st) {
+                            Some(mycelium::sdk::Standing::Stood) => n_stood += 1,
+                            Some(mycelium::sdk::Standing::Held) => n_held += 1,
+                            Some(mycelium::sdk::Standing::Ruled) => n_ruled_hit += 1,
+                            None => {}
+                        }
+                    }
+                    // MULTIPLICITY: several held words deflated one listing.
+                    // The glue between them is a new coordinate, never a
+                    // failure axis.
+                    let held: Vec<_> = cites
+                        .iter()
+                        .filter(|(_, st, _, _, _)| *st == mycelium::sdk::Standing::Held.as_u8())
+                        .filter_map(|(addr, _, _, _, _)| entity.cited_word(addr))
+                        .collect();
+                    if held.len() >= 2 {
+                        if let Some(a) = entity.open_axis(&cluster.address, &cluster.chain, &held) {
+                            eprintln!(
+                                "[{tag}] axis opened on {:02x}{:02x}…: {} held words deflated, glue spoken as {:02x}{:02x}…",
+                                cluster.address[0],
+                                cluster.address[1],
+                                held.len(),
+                                a[0],
+                                a[1]
+                            );
+                        }
+                    }
                     // Two utterances at most: the sentence settles the
                     // listing; a residual not yet claimed is attested once
                     // as this voice's irreducible claim. Puncture cites
@@ -599,7 +585,7 @@ fn main() {
                 }
                 let (atlas_ruled, atlas_stood, atlas_held) = entity.atlas_standing_counts();
                 eprintln!(
-                    "[{tag}] [{}] quote closing {n_closing} charts (ruled {n_ruled_hit} stood {n_stood} held {n_held})",
+                    "[{tag}] [{}] quote closing {n_closing} by deflation (ruled {n_ruled_hit} stood {n_stood} held {n_held})",
                     tuniversal.stamp(),
                 );
                 eprintln!(
