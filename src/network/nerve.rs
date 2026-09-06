@@ -346,6 +346,19 @@ impl<V> Keyed<V> {
     }
 }
 
+impl<V> Keyed<Keyed<V>> {
+    /// Insert at `(a, b)` without rebuilding the inner trie when `a` is held.
+    pub fn nested_insert(&mut self, a: [u8; 32], b: [u8; 32], value: V) {
+        if let Some(inner) = self.get_mut(&a) {
+            inner.insert(b, value);
+            return;
+        }
+        let mut inner = Keyed::new();
+        inner.insert(b, value);
+        self.insert(a, inner);
+    }
+}
+
 /// The empty prefix: the root fiber of a keyed that is already a fiber.
 pub const ROOT: [u8; 32] = [0u8; 32];
 

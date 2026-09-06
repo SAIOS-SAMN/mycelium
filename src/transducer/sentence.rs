@@ -1239,7 +1239,7 @@ impl Form {
                 }
             }
         }
-        Some(gamma.into_iter().map(|g| g.expect("each vertex roots a tree")).collect())
+        gamma.into_iter().collect()
     }
 
     /// Replace vertex `of` by `by` read in `of`'s frame (3.2). `of`'s own
@@ -1347,6 +1347,10 @@ impl Form {
                 break;
             }
             self.loops = Self::loops_of(&self.faces, self.vertices.len());
+            if let Some(gamma) = self.solve_coboundary() {
+                let _ = self.regauge(&gamma);
+            }
+            self.loops = Self::loops_of(&self.faces, self.vertices.len());
             let open: Vec<usize> = self
                 .loops
                 .iter()
@@ -1359,6 +1363,13 @@ impl Form {
             }
             let rows: Vec<LoopRow> = self.loops.iter().map(|lp| loop_row(&lp.holonomy)).collect();
             let rank_before = rank_of_rows(&rows);
+            let mu_before = match bundle {
+                None => [0; 4],
+                Some(b) => match super::family::bundle_pressure(self, b, crystal, t_extent) {
+                    Some(m) => m,
+                    None => [0; 4],
+                },
+            };
             let mut applied = false;
             for idx in open {
                 if !budget.spend() {
@@ -1374,25 +1385,6 @@ impl Form {
                 }
                 let held = horizon.get(&key).is_some();
                 let order = self.loops[idx].holonomy.order();
-                if self.try_close_chord(idx) {
-                    debug_assert!(
-                        Rank::admits(rank_before, self.rank()),
-                        "A18: a tree-gauge close does not lose rank"
-                    );
-                    snaps.push(Snap::Closed { chord: idx, order });
-                    eprintln!(
-                        "  pivot {:02x}{:02x}… loop {idx} closed by the tree gauge",
-                        idea[0], idea[1]
-                    );
-                    handled.insert(loop_k, ());
-                    applied = true;
-                    break;
-                }
-                debug_assert_eq!(
-                    self.rank(),
-                    rank_before,
-                    "A18: a failed tree gauge is rank-invariant"
-                );
                 let cands = self.candidates_for(idx, &kappa, crystal);
                 let mut discharging: Vec<PivotCertificate> = Vec::new();
                 for cand in &cands {
@@ -1406,9 +1398,9 @@ impl Form {
                         &rows,
                         rank_before,
                         crystal,
-                        budget,
                         bundle,
                         t_extent,
+                        mu_before,
                     ) {
                         discharging.push(cert);
                     } else {
@@ -1510,17 +1502,6 @@ impl Form {
         snaps
     }
 
-    fn try_close_chord(&mut self, idx: usize) -> bool {
-        let Some(gamma) = self.solve_coboundary() else {
-            return false;
-        };
-        let _ = self.regauge(&gamma);
-        match self.loops.get(idx) {
-            Some(lp) => lp.holonomy.abelian_identity(),
-            None => true,
-        }
-    }
-
     fn candidates_for(
         &self,
         idx: usize,
@@ -1565,16 +1546,7 @@ impl Form {
                         if seen.get(&wk).is_some_and(|s| s.contains(&sk)) {
                             continue;
                         }
-                        match seen.get_mut(&wk) {
-                            Some(sides) => {
-                                sides.insert(sk, ());
-                            }
-                            None => {
-                                let mut sides = Keyed::new();
-                                sides.insert(sk, ());
-                                seen.insert(wk, sides);
-                            }
-                        }
+                        seen.nested_insert(wk, sk, ());
                         out.push(Candidate {
                             axis,
                             by: PivotBy::Word {
@@ -1598,9 +1570,9 @@ impl Form {
         rows: &[LoopRow],
         rank_before: Rank,
         crystal: &dyn super::family::Crystal,
-        budget: &mut Budget,
         bundle: Option<&[(Vec<Vec<u8>>, Vec<Vec<u8>>)]>,
         t_extent: u64,
+        mu_before: [u64; 4],
     ) -> Option<PivotCertificate> {
         let lp = self.loops.get(idx)?;
         let PivotBy::Word { face, word, side } = &cand.by;
@@ -1630,15 +1602,6 @@ impl Form {
         if !Rank::admits(rank_before, rank_after) {
             return None;
         }
-        let mu_before = match bundle {
-            None => [0; 4],
-            Some(b) => {
-                if !budget.spend() {
-                    return None;
-                }
-                super::family::bundle_pressure(self, b, crystal, t_extent)?
-            }
-        };
         let mut trial_form = self.clone();
         if let Some(f) = trial_form.faces.get_mut(*face as usize) {
             f.transport.word = after_g;
@@ -1648,7 +1611,7 @@ impl Form {
             None => [0; 4],
             Some(b) => super::family::bundle_pressure(&trial_form, b, crystal, t_extent)?,
         };
-        if mu_after.iter().zip(&mu_before).any(|(a, b)| a > b) {
+        if !(mu_after == mu_before || crate::economy::descends(&mu_after, &mu_before)) {
             return None;
         }
         Some(PivotCertificate {
@@ -2581,24 +2544,11 @@ pub fn admit_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[Wor
     for w in words {
         for axis in ClassVector::of_word(w).coordinates() {
             let ak = axis_slot(axis);
-            match index.get_mut(&ck) {
-                Some(mid) => match mid.get_mut(&ak) {
-                    Some(bucket) => {
-                        bucket.insert(w.key(), w.clone());
-                    }
-                    None => {
-                        let mut bucket = Keyed::new();
-                        bucket.insert(w.key(), w.clone());
-                        mid.insert(ak, bucket);
-                    }
-                },
-                None => {
-                    let mut bucket = Keyed::new();
-                    bucket.insert(w.key(), w.clone());
-                    let mut mid = Keyed::new();
-                    mid.insert(ak, bucket);
-                    index.insert(ck, mid);
-                }
+            if index.get(&ck).is_none() {
+                index.insert(ck, Keyed::new());
+            }
+            if let Some(mid) = index.get_mut(&ck) {
+                mid.nested_insert(ak, w.key(), w.clone());
             }
         }
     }
@@ -2642,16 +2592,7 @@ pub fn vortex_put(v: &mut Keyed<Keyed<PivotCertificate>>, c: PivotCertificate) {
     let k = match &c.by {
         PivotBy::Word { word, .. } => word.rotor().key(),
     };
-    match v.get_mut(&after) {
-        Some(inner) => {
-            inner.insert(k, c);
-        }
-        None => {
-            let mut inner = Keyed::new();
-            inner.insert(k, c);
-            v.insert(after, inner);
-        }
-    }
+    v.nested_insert(after, k, c);
 }
 
 /// Dominance certifies (law 5): the lane-wise minimum of the candidates'
