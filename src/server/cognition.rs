@@ -623,6 +623,19 @@ pub fn reduce_germ(
     (normal_form(language, sub.sub(), None), Vec::new())
 }
 
+/// Cited words taught back: anchored ones only. Length of the sentence
+/// does not decide.
+pub fn taught_anchored_words<'a, I>(words: I) -> Vec<u8>
+where
+    I: IntoIterator<Item = &'a Element>,
+{
+    let mut taught = Vec::new();
+    for g in words.into_iter().filter(|g| g.anchor().is_some()) {
+        taught.extend_from_slice(&g.to_bytes());
+    }
+    taught
+}
+
 /// Reduce every germ over the snapshot — pure, off the lock.
 pub fn reduce_all(
     language: &std::sync::Arc<Language>,
@@ -5092,15 +5105,20 @@ impl Kernel {
     /// DECOMPOSES instead of double-minting); a genuine irreducible joins the
     /// admission as this voice's attestation — consilience through conversation.
     pub fn attest(&mut self, chain: &[(i64, i64, u8, u8)], voice: [u8; 32]) -> Outcome {
-        let Some((language, budget)) = self.reflex_open(voice) else {
+        let Some((language, _budget)) = self.reflex_open(voice) else {
             return Outcome::GermPending;
         };
         let germ = (element::from_residual(&chain.to_vec()), None);
-        let mut reductions = reduce_all(&language, budget, vec![germ]);
-        for r in &mut reductions {
-            r.frontier = true;
-        }
-        self.commit_all(reductions, voice)
+        let listing = germ.0.address();
+        let frame = (0usize, 0usize, 0usize, 0usize);
+        let reduction = reduce_proven(&language, germ, &[], &frame, listing);
+        self.commit_all(vec![reduction], voice)
+    }
+
+    /// Words taught on a decomposed sentence: each cited word the docket
+    /// holds anchored. Sentence length does not decide.
+    pub fn taught_anchored(&self, word: &[usize]) -> Vec<u8> {
+        taught_anchored_words(word.iter().filter_map(|&i| self.basis.get(i).map(|e| e.as_ref())))
     }
 
     /// The consilience voices on record for a germ — the settle receipt's parties.
@@ -7886,6 +7904,35 @@ mod tests {
             vec![crate::anastome::dialogue::SPEECH_STOOD],
             "glued descent replays through the court genome, not NoCrystal"
         );
+    }
+
+    /// Teaching is decided by the docket's anchoring of the cited word,
+    /// never by sentence length.
+    #[test]
+    fn teaching_is_by_anchoring_not_length() {
+        use crate::transducer::anchor::Sel;
+        use crate::transducer::element::from_residual;
+        let unanchored = from_residual(&vec![(0i64, 0i64, 1u8, 2u8)]);
+        assert!(
+            taught_anchored_words(std::iter::once(&unanchored)).is_empty(),
+            "one unanchored word teaches nothing"
+        );
+        let a = from_residual(&vec![(0i64, 0i64, 1u8, 2u8)]).with_anchor(Sel::Hue(1));
+        let b = from_residual(&vec![(1i64, 0i64, 3u8, 4u8)]).with_anchor(Sel::Hue(3));
+        let taught = taught_anchored_words([&a, &b]);
+        let mut pos = 0usize;
+        let mut n = 0usize;
+        while pos < taught.len() {
+            let before = pos;
+            if Element::from_bytes(&taught, &mut pos).is_none() {
+                break;
+            }
+            if pos == before {
+                break;
+            }
+            n += 1;
+        }
+        assert_eq!(n, 2, "two anchored words in one sentence both taught");
     }
 
     /// The demand codec roundtrips.

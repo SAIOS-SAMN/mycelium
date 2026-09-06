@@ -1004,10 +1004,8 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
             pvoice,
         )
     };
-    // TEACH: on install AND on a single-word sentence (the demand IS a held
-    // word — express it down so the entity's genome inherits it); SETTLE:
-    // the consilience receipt (parties + the μ⃗ award priced at the surface).
-    // A brief lock: reads only.
+    // TEACH by the docket's standing of the cited word (anchored → taught),
+    // never by sentence length. SETTLE: the consilience receipt.
     let (basis, flux, reserve, taught, settle, height) = {
         let k = kernel.lock().unwrap();
         let (taught, settle) = match &out {
@@ -1015,27 +1013,11 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
                 Some(g) => {
                     let addr = g.address();
                     let mu = mycelium::economy::price(&g.magnitude(), &k.physics().pressure);
-                    // Teach the FULL lossless form (to_bytes) — the entity's
-                    // genome must reconstruct the exact element, sections and all.
                     (g.to_bytes(), Some((addr, k.voices_of(&addr), mu)))
                 }
-                None => (Vec::new(), None), // retired while the reply formed
+                None => (Vec::new(), None),
             },
-            Outcome::Decomposed(word) if word.len() == 1 => {
-                (k.basis().get(word[0]).map(|g| g.to_bytes()).unwrap_or_default(), None)
-            }
-            // RE-TEACH ON REBIND: any sentence citing a court-ANCHORED word
-            // teaches those words' full γ = (π, Δ) forms — Epigenome::learn
-            // refreshes by address, so the refined anchors propagate to every
-            // speaking genome. Every anchored citation is taught, back to
-            // back; none is ranked above another.
-            Outcome::Decomposed(word) => {
-                let mut taught = Vec::new();
-                for g in word.iter().filter_map(|&i| k.basis().get(i)).filter(|g| g.anchor().is_some()) {
-                    taught.extend_from_slice(&g.to_bytes());
-                }
-                (taught, None)
-            }
+            Outcome::Decomposed(word) => (k.taught_anchored(word), None),
             _ => (Vec::new(), None),
         };
         (
