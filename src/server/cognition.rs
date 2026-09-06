@@ -146,14 +146,11 @@ pub struct MarketView {
 }
 
 /// THE RANK OF THE BOOK — a sealed carrier: for each listing its base point
-/// in the language (closure) or none (coverage), and the book's order by
-/// homological curvature, κ⃗ = μ⃗ / |supp| per lane, lifted by the lineage
-/// fraction (resolved / total children of its parent). The order is
-/// surface-free, so it holds across strokes; a quote takes its head.
+/// in the language (closure) or none (coverage). There is no scalar order
+/// over the book; quotes are incidence on charts (quote_incidence).
 #[derive(Debug, Clone, Default)]
 pub struct Rank {
     pub closure: Vec<Option<usize>>,
-    pub order: Vec<usize>,
     /// Per listing, the lineage fraction as (resolved, total) — (0, 0) when
     /// the listing has no parent.
     pub lineage: Vec<(u64, u64)>,
@@ -284,9 +281,6 @@ pub fn rank_over(
     chart_listings: Option<&crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>>,
 ) -> Rank {
     let stalks = &language.stalks;
-    use crate::core::engine::Q;
-    use num_bigint::BigInt;
-    use num_traits::{One, Zero};
     // A listing's base point moves only when a word lands in its own
     // stratum. At the same basis generation every prior closure is reused
     // by the listing's address. When the basis grew with no retirement,
@@ -376,27 +370,8 @@ pub fn rank_over(
             (r, t)
         })
         .collect();
-    // κ⃗ lifted by the lineage fraction; the key is the strongest lane, exact.
-    let mut keyed: Vec<(Q, Address, usize)> = pending
-        .iter()
-        .enumerate()
-        .map(|(i, (p, _))| {
-            let supp = BigInt::from(p.sub().len().max(1) as u64);
-            let (r, t) = lineage[i];
-            let lift = Q::one() + Q::new(BigInt::from(r), BigInt::from(t.max(1)));
-            let key = p
-                .magnitude()
-                .iter()
-                .map(|&m| Q::new(BigInt::from(m), supp.clone()) * lift.clone())
-                .max()
-                .unwrap_or_else(Q::zero);
-            (key, p.address(), i)
-        })
-        .collect();
-    keyed.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)));
     Rank {
         closure,
-        order: keyed.into_iter().map(|(_, _, i)| i).collect(),
         lineage,
         addresses,
         invariants,
@@ -8142,6 +8117,61 @@ mod tests {
             hot,
             "idle strokes do not grow the hot set"
         );
+    }
+
+    /// Quotes are incidence on charts. Permuting the pending list does not
+    /// change the quoted addresses; Rank carries no scalar order.
+    #[test]
+    fn the_book_has_no_order() {
+        let e1 = element::from_residual(&vec![(0, 0, 1, 2)]);
+        let e2 = element::from_residual(&vec![(1, 0, 1, 3)]);
+        let e3 = element::from_residual(&vec![(2, 0, 1, 4)]);
+        let pending_a = vec![(e1.clone(), 0u64), (e2.clone(), 0), (e3.clone(), 0)];
+        let pending_b = vec![(e3.clone(), 0), (e1.clone(), 0), (e2.clone(), 0)];
+        let atlas = crate::transducer::stalk::Stalks::over_elements(pending_a.iter().map(|(e, _)| e));
+        let index = |p: &[(Element, u64)]| {
+            let mut k = crate::network::nerve::Keyed::new();
+            for (i, (e, _)) in p.iter().enumerate() {
+                k.insert(e.address(), i);
+            }
+            k
+        };
+        let field = crate::network::nerve::Keyed::new();
+        let mut on_page = crate::network::nerve::Keyed::new();
+        for (e, _) in &pending_a {
+            on_page.insert(e.address(), ());
+        }
+        let spoken = crate::network::nerve::Keyed::new();
+        let standing = crate::network::nerve::Keyed::new();
+        let quote = |p: &[(Element, u64)]| {
+            quote_incidence(
+                p,
+                &index(p),
+                &atlas,
+                &field,
+                &on_page,
+                &[],
+                &[0; 4],
+                &[1, 1, 1, 1],
+                &[0; 4],
+                &[],
+                10_000,
+                &spoken,
+                &[0; 32],
+                &standing,
+            )
+        };
+        let (_, pa) = quote(&pending_a);
+        let (_, pb) = quote(&pending_b);
+        let addrs = |p: &[(Element, [u64; 4], Vec<crate::transducer::stalk::Invariant>)]| {
+            p.iter().map(|(e, _, _)| e.address()).collect::<Vec<_>>()
+        };
+        assert_eq!(
+            addrs(&pa),
+            addrs(&pb),
+            "quote is atlas incidence, equal under any permutation of pending"
+        );
+        assert!(!pa.is_empty(), "the book is served");
     }
 
     /// heard drops when the peer's stratum root moves.

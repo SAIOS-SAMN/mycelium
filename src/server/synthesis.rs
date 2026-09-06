@@ -223,9 +223,8 @@ pub fn quote(
         }
     };
     eprintln!(
-        "  rank: book {} listings, order {}, closed {}, sealed {sealed}, gens {:?}",
+        "  rank: book {} listings, closed {}, sealed {sealed}, gens {:?}",
         view.pending.len(),
-        rank.order.len(),
         rank.closure.iter().filter(|c| c.is_some()).count(),
         view.gens,
     );
