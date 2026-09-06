@@ -114,6 +114,14 @@ fn absorb_vortex(
     }
 }
 
+fn rem_cells_of(b: &Bubble) -> Vec<RemCell> {
+    let mut out = b.remainder.clone();
+    for (_, r) in b.remainders.fiber(&ROOT) {
+        out.extend_from_slice(r);
+    }
+    out
+}
+
 fn cover_of(inv: &Invariant) -> Keyed<()> {
     let mut c = Keyed::new();
     for p in inv.prefixes() {
@@ -563,7 +571,7 @@ impl Contemplation {
                 m.remove(key);
             }
         }
-        for &(r, c, _, _) in &b.remainder {
+        for (r, c, _, _) in rem_cells_of(b) {
             let ck = rem_cell_key(r, c);
             if let Some(m) = self.by_cell.get_mut(&ck) {
                 m.remove(key);
@@ -585,7 +593,7 @@ impl Contemplation {
                 }
             }
         }
-        for &(r, c, _, _) in &b.remainder {
+        for (r, c, _, _) in rem_cells_of(b) {
             let ck = rem_cell_key(r, c);
             match self.by_cell.get_mut(&ck) {
                 Some(m) => {
@@ -742,12 +750,26 @@ impl Contemplation {
         }
         let key = idea_key(f);
         let mut rem_keyed: Keyed<Vec<RemCell>> = Keyed::new();
-        let mut union = f.remainder.clone();
+        let mut volume = [0u64; 4];
+        let mut cover = Keyed::new();
         for (i, r) in remainders.iter().enumerate() {
             rem_keyed.insert(crate::transducer::family::pair_idx_key(i as u16), r.clone());
-            union.extend_from_slice(r);
+            if r.is_empty() {
+                continue;
+            }
+            let m = element::measure_lanes(r);
+            for l in 0..4 {
+                volume[l] = volume[l].saturating_add(m[l]);
+            }
+            for (ck, _) in cover_of(&stalk::invariant(r)).fiber(&ROOT) {
+                cover.insert(*ck, ());
+            }
         }
-        let mut cover = cover_of(&stalk::invariant(&union));
+        if !f.remainder.is_empty() {
+            for (ck, _) in cover_of(&stalk::invariant(&f.remainder)).fiber(&ROOT) {
+                cover.insert(*ck, ());
+            }
+        }
         let mut glues = Keyed::new();
         for v in &f.vertices {
             match v {
@@ -761,11 +783,6 @@ impl Contemplation {
                 _ => {}
             }
         }
-        let mut volume = form_mag(f);
-        let extra = element::measure_lanes(&union);
-        for i in 0..4 {
-            volume[i] = volume[i].max(extra[i]);
-        }
         let mut horizon = Keyed::new();
         self.paint_seeded(&mut horizon);
         let certs = f.certificates.clone();
@@ -775,7 +792,7 @@ impl Contemplation {
             Some(train.to_vec())
         };
         let bubble = Bubble {
-            remainder: union,
+            remainder: f.remainder.clone(),
             nerve: Complex::new(),
             cover,
             horizon,
@@ -1893,10 +1910,14 @@ mod tests {
         );
         let cells = b.remainders.get(&pair_idx_key(0)).expect("pair remainder");
         assert_eq!(cells.len(), 1, "remainder is keyed by pair");
-        assert_eq!(b.remainder.len(), 1, "union remainder is the pair chain");
+        assert!(
+            b.remainder.is_empty(),
+            "Bubble.remainder is the form's own remainder, not concatenated pairs"
+        );
         assert_eq!(
             b.volume,
-            crate::transducer::element::measure_lanes(&b.remainder)
+            crate::transducer::element::measure_lanes(cells),
+            "volume is the lane-wise sum of per-pair remainder measures"
         );
     }
 
