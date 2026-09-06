@@ -3066,11 +3066,7 @@ mod tests {
                 class: crate::transducer::stalk::Invariant::default(),
                 contact: None,
             });
-            f.faces.push(FormFace {
-                i: 0,
-                j: 1,
-                g_ij: f.face_of(0, 1).expect("vertices"),
-            });
+            f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), });
             f.loops = Form::loops_of(&f.faces, f.vertices.len());
             f
         };
@@ -3119,11 +3115,7 @@ mod tests {
         let inner = {
             let mut f = Form::default();
             f.vertices.push(word_vertex([1u8; 32]));
-            f.faces.push(FormFace {
-                i: 0,
-                j: 1,
-                g_ij: f.face_of(0, 1).expect("vertices"),
-            });
+            f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), });
             f.loops = Form::loops_of(&f.faces, f.vertices.len());
             f
         };
@@ -3131,11 +3123,7 @@ mod tests {
         let inner_addr = inner_e.address();
         let mut outer = Form::default();
         outer.vertices.push(word_vertex([2u8; 32]));
-        outer.faces.push(FormFace {
-            i: 0,
-            j: 1,
-            g_ij: outer.face_of(0, 1).expect("vertices"),
-        });
+        outer.faces.push(FormFace { i: 0, j: 1, transport: outer.face_of(0, 1).expect("vertices"), });
         let _gi = outer
             .glue(&inner, inner_addr, Word::identity(), [1, 0, 0, 0])
             .expect("glue");
@@ -3197,11 +3185,7 @@ mod tests {
             class: crate::transducer::stalk::Invariant::default(),
             contact,
         });
-        f.faces.push(FormFace {
-            i: 0,
-            j: 1,
-            g_ij: f.face_of(0, 1).expect("vertices"),
-        });
+        f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), });
         f.loops = crate::transducer::sentence::Form::loops_of(&f.faces, f.vertices.len());
         f
     }
@@ -3263,11 +3247,7 @@ mod tests {
                 class: crate::transducer::stalk::Invariant::default(),
                 contact: None,
             });
-            f.faces.push(FormFace {
-                i: 0,
-                j: 1,
-                g_ij: f.face_of(0, 1).expect("vertices"),
-            });
+            f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), });
             f.loops = Form::loops_of(&f.faces, f.vertices.len());
             f
         };
@@ -3311,11 +3291,7 @@ mod tests {
             class: crate::transducer::stalk::Invariant::default(),
             contact: None,
         });
-        f.faces.push(FormFace {
-            i: 0,
-            j: 1,
-            g_ij: f.face_of(0, 1).expect("vertices"),
-        });
+        f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), });
         f.loops = Form::loops_of(&f.faces, f.vertices.len());
         assert!(f.is_closed(), "a tree of two vertices coheres");
         let e = as_element_form(&f, [1, 0, 0, 0]).expect("v2 tape");
@@ -3347,11 +3323,7 @@ mod tests {
                 class: crate::transducer::stalk::Invariant::default(),
                 contact: None,
             });
-            f.faces.push(FormFace {
-                i: 0,
-                j: 1,
-                g_ij: f.face_of(0, 1).expect("vertices"),
-            });
+            f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), });
             f.loops = Form::loops_of(&f.faces, f.vertices.len());
             f
         };
@@ -3421,10 +3393,11 @@ mod tests {
                 class: crate::transducer::stalk::Invariant::default(),
                 contact: None,
             });
+            let j = (i as u16) + 1;
             f.faces.push(FormFace {
                 i: 0,
-                j: (i as u16) + 1,
-                g_ij: Word::identity(),
+                j,
+                transport: f.face_of(0, j).expect("star"),
             });
         }
         f.loops = Form::loops_of(&f.faces, f.vertices.len());

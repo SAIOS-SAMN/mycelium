@@ -85,7 +85,7 @@ fn form_one_section(a: &Form, b: &Form) -> bool {
         f.faces.push(sentence::FormFace {
             i,
             j,
-            g_ij: face.g_ij.clone(),
+            transport: face.transport.clone(),
         });
     }
     f.remainder = union_rem(&a.remainder, &b.remainder);
@@ -1689,11 +1689,7 @@ mod tests {
                 class: crate::transducer::stalk::Invariant::default(),
                 contact: None,
             });
-            f.faces.push(FormFace {
-                i: 0,
-                j: 1,
-                g_ij: f.face_of(0, 1).expect("vertices"),
-            });
+            f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), });
             f.loops = Form::loops_of(&f.faces, f.vertices.len());
             f
         };
@@ -1723,7 +1719,16 @@ mod tests {
         let mut open = Form::default();
         open.vertices.push(Vertex::Word {
             address: [2u8; 32],
-            word: w.clone(),
+            word: Word::identity(),
+            rho: one.clone(),
+            placement: (zero.clone(), zero.clone()),
+            gauge: vec![(1, 2)],
+            class: crate::transducer::stalk::Invariant::default(),
+            contact: None,
+        });
+        open.vertices.push(Vertex::Word {
+            address: [3u8; 32],
+            word: Word::identity(),
             rho: one,
             placement: (zero.clone(), zero),
             gauge: vec![(1, 2)],
@@ -1733,13 +1738,14 @@ mod tests {
         open.faces.push(FormFace {
             i: 0,
             j: 1,
-            g_ij: Word::identity(),
+            transport: open.face_of(0, 1).expect("star 1"),
         });
         open.faces.push(FormFace {
             i: 0,
-            j: 1,
-            g_ij: w.clone(),
+            j: 2,
+            transport: open.face_of(0, 2).expect("star 2"),
         });
+        open.faces.push(FormFace::new(1, 2, w.clone()));
         open.loops = Form::loops_of(&open.faces, open.vertices.len());
         assert!(
             open.loops.iter().any(|lp| !lp.holonomy.abelian_identity()),

@@ -104,7 +104,7 @@ pub fn replay_form_with(
     // the loop check; a missing torsion entry is REFUSE_LOOP, a chord
     // that does not carry the holonomy is REFUSE_FACE.
     for (i, face) in f.faces.iter().enumerate() {
-        if f.face_of(face.i, face.j).as_ref() == Some(&face.g_ij) {
+        if f.face_of(face.i, face.j).as_ref() == Some(&face.transport) {
             continue;
         }
         if !torsion_chord_carries(&walked, &by_chord, i, face) {
@@ -194,9 +194,7 @@ fn vertex_tape_and_moves(
 fn chord_loops(f: &Form) -> Keyed<u16> {
     let mut by_chord = Keyed::new();
     for (i, lp) in f.loops.iter().enumerate() {
-        if let Some(&ch) = lp.faces.last() {
-            by_chord.insert(face_idx_key(ch), i as u16);
-        }
+        by_chord.insert(face_idx_key(lp.chord), i as u16);
     }
     by_chord
 }
@@ -218,15 +216,18 @@ fn torsion_chord_carries(
     if lp.holonomy.abelian_identity() {
         return false;
     }
-    for &fi in lp.faces.iter().rev().skip(1) {
+    for &fi in &lp.faces {
+        if fi == lp.chord {
+            continue;
+        }
         let Some(tf) = f.faces.get(fi as usize) else {
             return false;
         };
-        if f.face_of(tf.i, tf.j).as_ref() != Some(&tf.g_ij) {
+        if f.face_of(tf.i, tf.j).as_ref() != Some(&tf.transport) {
             return false;
         }
     }
-    lp.holonomy.same_form(&face.g_ij)
+    lp.holonomy.same_form(&face.transport.word)
 }
 
 /// Identity loops, or finite open loops filed on the form's torsion carrier.
@@ -270,7 +271,7 @@ fn replay_certificates(f: &Form, by_chord: &Keyed<u16>) -> Option<&'static str> 
         let Some(held) = pre.faces.get_mut(*face as usize) else {
             return Some(REFUSE_PIVOT_INEXACT);
         };
-        held.g_ij = unpivoted_face(&held.g_ij, word, *side);
+        held.transport.word = unpivoted_face(&held.transport.word, word, *side);
         pre.loops = Form::loops_of(&pre.faces, pre.vertices.len());
         let Some(before_lp) = pre.loops.get(li as usize) else {
             return Some(REFUSE_PIVOT_INEXACT);
@@ -810,11 +811,7 @@ mod tests {
             class: stalk::Invariant(vec![7]),
             contact: None,
         });
-        f.faces.push(FormFace {
-            i: 0,
-            j: 1,
-            g_ij: f.face_of(0, 1).expect("vertices"),
-        });
+        f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), });
         f.loops = Form::loops_of(&f.faces, f.vertices.len());
         assert!(f.is_closed(), "the star form coheres");
         f
@@ -843,7 +840,7 @@ mod tests {
         let resolve = |a: &[u8; 32]| (a == &inner_addr).then(|| inner.clone());
         assert_eq!(blind_replay_with(&outer_e, &resolve), None, "a resolved citation replays");
         let mut bad = outer.clone();
-        bad.faces[0].g_ij = inner.face_of(0, 1).expect("vertices");
+        bad.faces[0].transport = inner.face_of(0, 1).expect("vertices");
         let bad_e = as_element_form(&bad, [1, 0, 0, 0]).expect("tampered tape");
         assert_eq!(blind_replay_with(&bad_e, &resolve), Some(REFUSE_FACE));
         let mut flat = as_element_form(&outer, [1, 0, 0, 0]).expect("tape");
@@ -926,6 +923,15 @@ mod tests {
         f.vertices.push(Vertex::Word {
             address: [1u8; 32],
             word: Word::identity(),
+            rho: one.clone(),
+            placement: (zero.clone(), zero.clone()),
+            gauge: vec![(1, 2)],
+            class: stalk::Invariant::default(),
+            contact: None,
+        });
+        f.vertices.push(Vertex::Word {
+            address: [2u8; 32],
+            word: Word::identity(),
             rho: one,
             placement: (zero.clone(), zero),
             gauge: vec![(1, 2)],
@@ -935,13 +941,14 @@ mod tests {
         f.faces.push(FormFace {
             i: 0,
             j: 1,
-            g_ij: Word::identity(),
+            transport: f.face_of(0, 1).expect("star 1"),
         });
         f.faces.push(FormFace {
             i: 0,
-            j: 1,
-            g_ij: sheet,
+            j: 2,
+            transport: f.face_of(0, 2).expect("star 2"),
         });
+        f.faces.push(FormFace::new(1, 2, sheet));
         f.loops = Form::loops_of(&f.faces, f.vertices.len());
         let _ = f.pivot_loop(
             [0x18; 32],
@@ -1010,11 +1017,7 @@ mod tests {
             gauge: Vec::new(),
             class: stalk::Invariant::default(),
         });
-        re.faces.push(FormFace {
-            i: 0,
-            j: 1,
-            g_ij: re.face_of(0, 1).expect("vertices"),
-        });
+        re.faces.push(FormFace { i: 0, j: 1, transport: re.face_of(0, 1).expect("vertices"), });
         re.loops = Form::loops_of(&re.faces, re.vertices.len());
         let re_e = as_element_form(&re, [1, 0, 0, 0]).expect("rebased tape");
         assert_eq!(
@@ -1025,11 +1028,7 @@ mod tests {
 
         let mut un = Form::default();
         un.unfold(Measure::Remainder);
-        un.faces.push(FormFace {
-            i: 0,
-            j: 0,
-            g_ij: Word::identity(),
-        });
+        un.faces.push(FormFace::new(0, 0, Word::identity(),));
         un.loops = Form::loops_of(&un.faces, un.vertices.len());
         let un_e = as_element_form(&un, [1, 0, 0, 0]).expect("unfold tape");
         assert_eq!(
@@ -1048,11 +1047,7 @@ mod tests {
             class: stalk::Invariant::default(),
             contact: Some(crate::transducer::alphabet::Contact { anchor: 0, ring: 1 }),
         });
-        orb.faces.push(FormFace {
-            i: 0,
-            j: 1,
-            g_ij: orb.face_of(0, 1).expect("vertices"),
-        });
+        orb.faces.push(FormFace { i: 0, j: 1, transport: orb.face_of(0, 1).expect("vertices"), });
         orb.loops = Form::loops_of(&orb.faces, orb.vertices.len());
         let orb_e = as_element_form(&orb, [1, 0, 0, 0]).expect("orbit tape");
         assert_eq!(

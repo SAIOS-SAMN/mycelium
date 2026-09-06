@@ -666,26 +666,142 @@ pub enum Vertex {
     Unfolded { measure: Measure },
 }
 
-/// Face of a `Form`.
+/// Face transport: the relative word, translation and hue map from vertex
+/// `i` to vertex `j`. The same three coordinates `transport_class` keys on.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Transport {
+    pub word: Word,
+    pub shift: (num_rational::BigRational, num_rational::BigRational),
+    pub gauge: Vec<(u8, u8)>,
+}
+
+impl Transport {
+    pub fn from_word(word: Word) -> Transport {
+        Transport {
+            word,
+            shift: q2_zero(),
+            gauge: Vec::new(),
+        }
+    }
+
+    pub fn inverse(&self) -> Transport {
+        let word = self.word.inverse();
+        let mapped = apply_linear(&word, &self.shift);
+        Transport {
+            word,
+            shift: (-mapped.0, -mapped.1),
+            gauge: gauge_invert(&self.gauge),
+        }
+    }
+}
+
+/// Face of a `Form`: two vertices and the transport between them.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FormFace {
     pub i: u16,
     pub j: u16,
-    pub g_ij: Word,
+    pub transport: Transport,
 }
 
-/// Independent loop of a form: face indices and their holonomy.
+impl FormFace {
+    pub fn new(i: u16, j: u16, word: Word) -> FormFace {
+        FormFace {
+            i,
+            j,
+            transport: Transport::from_word(word),
+        }
+    }
+}
+
+fn q2_zero() -> (num_rational::BigRational, num_rational::BigRational) {
+    let z = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+    (z.clone(), z)
+}
+
+fn apply_linear(
+    word: &Word,
+    t: &(num_rational::BigRational, num_rational::BigRational),
+) -> (num_rational::BigRational, num_rational::BigRational) {
+    match word.plane_block() {
+        Some(b) => (
+            &b[0][0] * &t.0 + &b[0][1] * &t.1,
+            &b[1][0] * &t.0 + &b[1][1] * &t.1,
+        ),
+        None => t.clone(),
+    }
+}
+
+fn hue_key(h: u8) -> [u8; 32] {
+    let mut k = [0u8; 32];
+    k[0] = h;
+    k
+}
+
+fn gauge_invert(g: &[(u8, u8)]) -> Vec<(u8, u8)> {
+    let mut inv: Vec<(u8, u8)> = g.iter().map(|&(a, b)| (b, a)).collect();
+    inv.sort_unstable();
+    inv.dedup();
+    inv
+}
+
+fn gauge_keyed(g: &[(u8, u8)]) -> Keyed<u8> {
+    let mut m = Keyed::new();
+    for &(a, b) in g {
+        m.insert(hue_key(a), b);
+    }
+    m
+}
+
+fn relative_gauge(from: &[(u8, u8)], to: &[(u8, u8)]) -> Vec<(u8, u8)> {
+    if from.is_empty() {
+        return to.to_vec();
+    }
+    if to.is_empty() {
+        return gauge_invert(from);
+    }
+    let to_map = gauge_keyed(to);
+    let mut out = Vec::new();
+    for &(a, b) in from {
+        let Some(&c) = to_map.get(&hue_key(a)) else {
+            continue;
+        };
+        if b != c {
+            out.push((b, c));
+        }
+    }
+    out.sort_unstable();
+    out.dedup();
+    out
+}
+
+fn vertex_translation(v: &Vertex, form: &Form) -> (num_rational::BigRational, num_rational::BigRational) {
+    match v {
+        Vertex::Word { placement, .. } => placement.clone(),
+        Vertex::Rebased { by, shift, .. } => match form.vertices.get(*by as usize) {
+            Some(Vertex::Word { placement, .. }) => {
+                (placement.0.clone() + &shift.0, placement.1.clone() + &shift.1)
+            }
+            _ => shift.clone(),
+        },
+        _ => q2_zero(),
+    }
+}
+
+fn vertex_gauge(v: &Vertex) -> Vec<(u8, u8)> {
+    match v {
+        Vertex::Word { gauge, .. } | Vertex::Rebased { gauge, .. } => gauge.clone(),
+        _ => Vec::new(),
+    }
+}
+
+/// Independent loop of a form: the closed vertex walk, the faces along it,
+/// the chord (never a star face), and the oriented holonomy.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Loop {
+    pub vertices: Vec<u16>,
     pub faces: Vec<u16>,
+    pub chord: u16,
     pub holonomy: Word,
-}
-
-impl Loop {
-    /// The chord face: the one face of the loop outside the spanning forest.
-    pub fn chord(&self) -> Option<usize> {
-        self.faces.last().copied().map(|i| i as usize)
-    }
 }
 
 /// A sentence as vertices, faces, loops, remainder.
@@ -765,17 +881,25 @@ impl Vertex {
 
 impl Form {
 
-    pub fn face_of(&self, i: u16, j: u16) -> Option<Word> {
-        let a = self.vertices.get(i as usize)?.word_in(self);
-        let b = self.vertices.get(j as usize)?.word_in(self);
-        Some(b.compose(&a.inverse()).normal_form())
+    pub fn face_of(&self, i: u16, j: u16) -> Option<Transport> {
+        let va = self.vertices.get(i as usize)?;
+        let vb = self.vertices.get(j as usize)?;
+        let wa = va.word_in(self);
+        let wb = vb.word_in(self);
+        let word = wb.compose(&wa.inverse()).normal_form();
+        let ta = vertex_translation(va, self);
+        let tb = vertex_translation(vb, self);
+        let mapped = apply_linear(&word, &ta);
+        let shift = (tb.0 - mapped.0, tb.1 - mapped.1);
+        let gauge = relative_gauge(&vertex_gauge(va), &vertex_gauge(vb));
+        Some(Transport { word, shift, gauge })
     }
 
     pub fn delta1(&self) -> Vec<(u16, Word)> {
         self.loops
             .iter()
             .enumerate()
-            .map(|(i, lp)| (i as u16, loop_holonomy(self, lp)))
+            .map(|(i, lp)| (i as u16, lp.holonomy.clone()))
             .collect()
     }
 
@@ -830,11 +954,7 @@ impl Form {
             depth: d,
             placement: placement.clone(),
         });
-        self.faces.push(FormFace {
-            i: 0,
-            j: idx,
-            g_ij: placement,
-        });
+        self.faces.push(FormFace::new(0, idx, placement));
         self.glued.insert(s_addr, idx);
         self.loops = Self::loops_of(&self.faces, self.vertices.len());
         self.depth = self.depth_of();
@@ -875,7 +995,7 @@ impl Form {
             new_faces.push(FormFace {
                 i,
                 j,
-                g_ij: f.g_ij.clone(),
+                transport: f.transport.clone(),
             });
         }
         let mut glued = Keyed::new();
@@ -929,7 +1049,9 @@ impl Form {
         for f in &mut self.faces {
             let gi = gamma.get(f.i as usize)?;
             let gj = gamma.get(f.j as usize)?;
-            f.g_ij = gj.compose(&f.g_ij.compose(&gi.inverse())).normal_form();
+            f.transport.word = gj
+                .compose(&f.transport.word.compose(&gi.inverse()))
+                .normal_form();
         }
         self.loops = Self::loops_of(&self.faces, self.vertices.len());
         Some(())
@@ -967,9 +1089,9 @@ impl Form {
                 for &(v, fi, u_is_i) in &adj[u] {
                     let f = &self.faces[fi];
                     let gv = if u_is_i {
-                        gu.compose(&f.g_ij.inverse()).normal_form()
+                        gu.compose(&f.transport.word.inverse()).normal_form()
                     } else {
-                        gu.compose(&f.g_ij).normal_form()
+                        gu.compose(&f.transport.word).normal_form()
                     };
                     match &gamma[v] {
                         None => {
@@ -1055,11 +1177,10 @@ impl Form {
     /// cited magnitudes. Dominance uses [`bundle_pressure`] after a trial.
     pub fn loop_mu(&self, idx: usize, t_extent: u64) -> Option<[u64; 4]> {
         let lp = self.loops.get(idx)?;
-        let verts = loop_verts(self, lp)?;
         let mut gauges: Vec<(u8, u8)> = Vec::new();
         let mut h = 0u64;
-        for &vi in &verts {
-            match self.vertices.get(vi) {
+        for &vi in &lp.vertices {
+            match self.vertices.get(vi as usize) {
                 Some(Vertex::Word { gauge, .. } | Vertex::Rebased { gauge, .. }) => {
                     gauges.extend(gauge.iter().copied());
                 }
@@ -1095,39 +1216,22 @@ impl Form {
         Some([s, g, t_extent, h])
     }
 
-    /// The class vector of loop `idx` (12.6).
+    /// The class vector of loop `idx` (12.6): plane coordinates from the
+    /// oriented holonomy. Placement and hue live on the chord Transport
+    /// and are read once those coordinates have a carrier (A4).
     pub fn class_vector(&self, idx: usize) -> Option<ClassVector> {
         let lp = self.loops.get(idx)?;
-        let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-        Some(ClassVector::read(&lp.holonomy, (zero.clone(), zero)))
+        Some(ClassVector::of_word(&lp.holonomy))
     }
 
-    /// Write a certified word onto the chord face and re-walk.
+    /// Write a certified word onto the chord face's transport and re-walk.
+    /// Vertices are not written.
     pub fn apply_pivot(&mut self, cert: &PivotCertificate) {
         let PivotBy::Word { face, word, side } = &cert.by;
         if let Some(f) = self.faces.get_mut(*face as usize) {
-            f.g_ij = pivoted_face(&f.g_ij, word, *side);
+            f.transport.word = pivoted_face(&f.transport.word, word, *side);
         }
         self.loops = Self::loops_of(&self.faces, self.vertices.len());
-    }
-
-    /// The unique Frame→j face word, if the star has one face to j.
-    fn frame_face_word(&self, j: u16) -> Option<Word> {
-        let mut hit: Option<&FormFace> = None;
-        for f in &self.faces {
-            if (f.i == 0 && f.j == j) || (f.j == 0 && f.i == j) {
-                if hit.is_some() {
-                    return None;
-                }
-                hit = Some(f);
-            }
-        }
-        let f = hit?;
-        if f.i == 0 {
-            Some(f.g_ij.clone())
-        } else {
-            Some(f.g_ij.inverse())
-        }
     }
 
     /// A16 on the form. Certificates and vortex live here.
@@ -1337,9 +1441,7 @@ impl Form {
         let Some(lp) = self.loops.get(idx) else {
             return Vec::new();
         };
-        let Some(chord) = lp.chord() else {
-            return Vec::new();
-        };
+        let chord = lp.chord as usize;
         if self.faces.get(chord).is_none() {
             return Vec::new();
         }
@@ -1414,18 +1516,17 @@ impl Form {
         let lp = self.loops.get(idx)?;
         let PivotBy::Word { face, word, side } = &cand.by;
         let held = self.faces.get(*face as usize)?;
-        let after_g = pivoted_face(&held.g_ij, word, *side);
-        let verts = loop_verts(self, lp)?;
+        let after_g = pivoted_face(&held.transport.word, word, *side);
         let mut w = Word::identity();
-        for (win, &fi) in verts.windows(2).zip(&lp.faces) {
+        for (win, &fi) in lp.vertices.windows(2).zip(&lp.faces) {
             let step = if fi as usize == *face as usize {
-                if held.i as usize == win[0] && held.j as usize == win[1] {
+                if held.i == win[0] && held.j == win[1] {
                     after_g.clone()
                 } else {
                     after_g.inverse()
                 }
             } else {
-                form_face_step(&self.faces, fi as usize, win[0], win[1])?
+                form_face_step(&self.faces, fi as usize, win[0] as usize, win[1] as usize)?
             };
             w = w.compose(&step);
         }
@@ -1450,44 +1551,13 @@ impl Form {
         };
         let mut trial_form = self.clone();
         if let Some(f) = trial_form.faces.get_mut(*face as usize) {
-            f.g_ij = after_g;
+            f.transport.word = after_g;
         }
         trial_form.loops = Form::loops_of(&trial_form.faces, trial_form.vertices.len());
-        sync_star_words(&mut trial_form);
         let mu_after = if bundle.is_empty() {
             [0; 4]
         } else {
-            let mut after =
-                super::family::bundle_pressure(&trial_form, bundle, crystal, t_extent)?;
-            if let Some((class, placement, gauge, rho)) = self.vertices.iter().find_map(|v| match v {
-                Vertex::Word {
-                    class,
-                    placement,
-                    gauge,
-                    rho,
-                    ..
-                } if !class.0.is_empty() => Some((class.clone(), placement.clone(), gauge.clone(), rho.clone())),
-                _ => None,
-            }) {
-                let mut probe = Form::default();
-                probe.vertices.push(Vertex::Word {
-                    address: [1u8; 32],
-                    word: word.clone(),
-                    rho,
-                    placement,
-                    gauge,
-                    class,
-                    contact: None,
-                });
-                if let Some(p) =
-                    super::family::bundle_pressure(&probe, bundle, crystal, t_extent)
-                {
-                    after[0] = after[0].saturating_add(p[0]);
-                    after[1] = after[1].saturating_add(p[1]);
-                    after[3] = after[3].saturating_add(p[3]);
-                }
-            }
-            after
+            super::family::bundle_pressure(&trial_form, bundle, crystal, t_extent)?
         };
         if mu_after.iter().zip(&mu_before).any(|(a, b)| a > b) {
             return None;
@@ -1512,18 +1582,13 @@ impl Form {
         let Some(lp) = self.loops.get(idx) else {
             return false;
         };
-        let Some(chord) = lp.chord() else {
-            return false;
-        };
-        let Some(verts) = loop_verts(self, lp) else {
-            return false;
-        };
-        let sigma: Vec<(u8, u8)> = verts
+        let sigma: Vec<(u8, u8)> = lp
+            .vertices
             .windows(2)
             .map(|p| (p[0] as u8, p[1] as u8))
             .collect();
         let class = lp.holonomy.rotor().class_key();
-        self.torsion.insert(class, (sigma, ell, chord as u16));
+        self.torsion.insert(class, (sigma, ell, lp.chord));
         true
     }
 
@@ -1541,7 +1606,19 @@ impl Form {
         };
         let mut adj: Vec<Vec<(usize, usize)>> = vec![Vec::new(); n];
         let mut loops = Vec::new();
+        let mut order = Vec::with_capacity(faces.len());
         for (fi, f) in faces.iter().enumerate() {
+            if f.i == 0 || f.j == 0 {
+                order.push(fi);
+            }
+        }
+        for (fi, f) in faces.iter().enumerate() {
+            if f.i != 0 && f.j != 0 {
+                order.push(fi);
+            }
+        }
+        for fi in order {
+            let f = &faces[fi];
             let (a, b) = (f.i as usize, f.j as usize);
             if a >= n || b >= n {
                 continue;
@@ -1560,7 +1637,9 @@ impl Form {
             walked.push(fi);
             let holonomy = form_named_holonomy(faces, &path, &walked);
             loops.push(Loop {
+                vertices: path.into_iter().map(|x| x as u16).collect(),
                 faces: walked.into_iter().map(|x| x as u16).collect(),
+                chord: fi as u16,
                 holonomy,
             });
         }
@@ -1568,71 +1647,13 @@ impl Form {
     }
 }
 
-/// Copy each unique Frame→j face onto that Word vertex so speech reads
-/// the 1-skeleton the trial just wrote, not a stale vertex word.
-fn sync_star_words(form: &mut Form) {
-    let n = form.vertices.len();
-    let mut updates = Vec::new();
-    for j in 1..n {
-        if matches!(form.vertices.get(j), Some(Vertex::Word { .. })) {
-            if let Some(w) = form.frame_face_word(j as u16) {
-                updates.push((j, w));
-            }
-        }
-    }
-    for (j, w) in updates {
-        if let Vertex::Word { word, .. } = &mut form.vertices[j] {
-            *word = w;
-        }
-    }
-}
-
 fn form_face_step(faces: &[FormFace], fi: usize, from: usize, to: usize) -> Option<Word> {
     let f = faces.get(fi)?;
     if f.i as usize == from && f.j as usize == to {
-        Some(f.g_ij.clone())
+        Some(f.transport.word.clone())
     } else {
-        Some(f.g_ij.inverse())
+        Some(f.transport.word.inverse())
     }
-}
-
-fn loop_verts(form: &Form, lp: &Loop) -> Option<Vec<usize>> {
-    let fs: Vec<(usize, usize)> = lp
-        .faces
-        .iter()
-        .map(|&i| {
-            let f = form.faces.get(i as usize)?;
-            Some((f.i as usize, f.j as usize))
-        })
-        .collect::<Option<Vec<_>>>()?;
-    if fs.is_empty() {
-        return Some(Vec::new());
-    }
-    if fs.len() == 1 {
-        let (i, j) = fs[0];
-        return Some(vec![i, j, i]);
-    }
-    let (a, b) = fs[0];
-    let (c, d) = fs[1];
-    let (start, mut cur) = if b == c || b == d {
-        (a, b)
-    } else if a == c || a == d {
-        (b, a)
-    } else {
-        return None;
-    };
-    let mut verts = vec![start, cur];
-    for &(i, j) in &fs[1..] {
-        if i == cur {
-            cur = j;
-        } else if j == cur {
-            cur = i;
-        } else {
-            return None;
-        }
-        verts.push(cur);
-    }
-    Some(verts)
 }
 
 fn form_named_holonomy(faces: &[FormFace], path: &[usize], walked: &[usize]) -> Word {
@@ -1640,16 +1661,6 @@ fn form_named_holonomy(faces: &[FormFace], path: &[usize], walked: &[usize]) -> 
     for (win, &fi) in path.windows(2).zip(walked) {
         if let Some(s) = form_face_step(faces, fi, win[0], win[1]) {
             w = w.compose(&s);
-        }
-    }
-    w.normal_form()
-}
-
-fn loop_holonomy(form: &Form, lp: &Loop) -> Word {
-    let mut w = Word::identity();
-    for &fi in &lp.faces {
-        if let Some(f) = form.faces.get(fi as usize) {
-            w = w.compose(&f.g_ij);
         }
     }
     w.normal_form()
@@ -1910,7 +1921,16 @@ pub fn form_vertex_key(f: &Form) -> [u8; 32] {
     for face in &f.faces {
         buf.extend_from_slice(&face.i.to_le_bytes());
         buf.extend_from_slice(&face.j.to_le_bytes());
-        buf.extend_from_slice(&face.g_ij.key());
+        buf.extend_from_slice(&face.transport.word.key());
+        alphabet::put_q(&mut buf, &face.transport.shift.0);
+        alphabet::put_q(&mut buf, &face.transport.shift.1);
+        let mut g = face.transport.gauge.clone();
+        g.sort_unstable();
+        buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
+        for (a, b) in g {
+            buf.push(a);
+            buf.push(b);
+        }
     }
     // The bundle's frame ratio and its sections are meaning (rule 7): two
     // forms that speak the same words onto differently scaled frames, or
@@ -2714,14 +2734,26 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) {
     for face in &f.faces {
         out.extend_from_slice(&face.i.to_le_bytes());
         out.extend_from_slice(&face.j.to_le_bytes());
-        word_to_form_bytes(&face.g_ij, None, out);
+        word_to_form_bytes(&face.transport.word, None, out);
+        alphabet::put_q(out, &face.transport.shift.0);
+        alphabet::put_q(out, &face.transport.shift.1);
+        out.extend_from_slice(&(face.transport.gauge.len() as u16).to_le_bytes());
+        for &(a, b) in &face.transport.gauge {
+            out.push(a);
+            out.push(b);
+        }
     }
     out.extend_from_slice(&(f.loops.len() as u16).to_le_bytes());
     for lp in &f.loops {
+        out.extend_from_slice(&(lp.vertices.len() as u16).to_le_bytes());
+        for &i in &lp.vertices {
+            out.extend_from_slice(&i.to_le_bytes());
+        }
         out.extend_from_slice(&(lp.faces.len() as u16).to_le_bytes());
         for &i in &lp.faces {
             out.extend_from_slice(&i.to_le_bytes());
         }
+        out.extend_from_slice(&lp.chord.to_le_bytes());
         word_to_form_bytes(&lp.holonomy, None, out);
     }
     out.extend_from_slice(&(f.hue_maps.len() as u16).to_le_bytes());
@@ -2881,20 +2913,44 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
     for _ in 0..nf {
         let i = take_u16(b, pos)?;
         let j = take_u16(b, pos)?;
-        let (g_ij, _) = word_from_form_bytes(b, pos)?;
-        faces.push(FormFace { i, j, g_ij });
+        let (word, _) = word_from_form_bytes(b, pos)?;
+        let s0 = alphabet::take_q(b, pos)?;
+        let s1 = alphabet::take_q(b, pos)?;
+        let ng = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
+        let mut gauge = Vec::with_capacity(ng);
+        for _ in 0..ng {
+            gauge.push((*b.get(*pos)?, *b.get(*pos + 1)?));
+            *pos += 2;
+        }
+        faces.push(FormFace {
+            i,
+            j,
+            transport: Transport {
+                word,
+                shift: (s0, s1),
+                gauge,
+            },
+        });
     }
     let nl = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
     let mut loops = Vec::with_capacity(nl);
     for _ in 0..nl {
+        let nv = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
+        let mut vs = Vec::with_capacity(nv);
+        for _ in 0..nv {
+            vs.push(take_u16(b, pos)?);
+        }
         let n = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
         let mut fs = Vec::with_capacity(n);
         for _ in 0..n {
             fs.push(take_u16(b, pos)?);
         }
+        let chord = take_u16(b, pos)?;
         let (holonomy, _) = word_from_form_bytes(b, pos)?;
         loops.push(Loop {
+            vertices: vs,
             faces: fs,
+            chord,
             holonomy,
         });
     }
@@ -3039,7 +3095,7 @@ pub fn carries_torsion(e: &Element) -> bool {
 /// class key. None when that face is missing — never an identity rotor.
 pub fn torsion_loop_rotor(f: &Form, class: &[u8; 32]) -> Option<Rotor> {
     let &(_, _, chord) = f.torsion.get(class)?;
-    f.faces.get(chord as usize).map(|face| face.g_ij.rotor())
+    f.faces.get(chord as usize).map(|face| face.transport.word.rotor())
 }
 
 fn take_u32(b: &[u8], pos: &mut usize) -> Option<u32> {
@@ -3125,8 +3181,10 @@ pub fn coboundary_gauge(a: &Form, b: &Form) -> Option<Vec<Word>> {
         }
         let i = fa.i as usize;
         let j = fa.j as usize;
-        let expect = gamma[j].compose(&fa.g_ij).compose(&gamma[i].inverse());
-        if !expect.same_form(&fb.g_ij) {
+        let expect = gamma[j]
+            .compose(&fa.transport.word)
+            .compose(&gamma[i].inverse());
+        if !expect.same_form(&fb.transport.word) {
             return None;
         }
     }
@@ -3160,7 +3218,7 @@ mod tests {
         f.faces.push(FormFace {
             i: 0,
             j: 1,
-            g_ij: word.clone(),
+            transport: f.face_of(0, 1).expect("star"),
         });
         f.remainder.clear();
         f.depth = f.depth_of();
@@ -3196,11 +3254,7 @@ mod tests {
             class: stalk::Invariant(vec![3, 5]),
         });
         let unfolded = f.unfold(Measure::Occupied);
-        f.faces.push(FormFace {
-            i: 1,
-            j: glued,
-            g_ij: w.clone(),
-        });
+        f.faces.push(FormFace::new(1, glued, w.clone(),));
         f.loops = Form::loops_of(&f.faces, f.vertices.len());
         f.remainder = vec![(9, 9, 1, 0)];
         assert!(matches!(f.vertices[glued as usize], Vertex::Glued { .. }));
@@ -3270,7 +3324,7 @@ mod tests {
         );
         assert_eq!(back.faces[0].i, 0);
         assert_eq!(back.faces[0].j, 1);
-        assert_eq!(back.faces[0].g_ij, f.faces[0].g_ij);
+        assert_eq!(back.faces[0].transport.word, f.faces[0].transport.word);
         let e_plain = as_element_form(&closed_word_form(w.clone(), None), [1, 0, 0, 0]).expect("plain");
         let e_contact = as_element_form(
             &closed_word_form(
@@ -3319,20 +3373,12 @@ mod tests {
             class: stalk::Invariant::default(),
             contact: None,
         });
-        f.faces.push(FormFace {
-            i: 0,
-            j: 1,
-            g_ij: Word::identity(),
-        });
+        f.faces.push(FormFace::new(0, 1, Word::identity(),));
         let gamma = f.solve_coboundary().expect("an isolated vertex roots its own tree");
         assert_eq!(gamma.len(), 3);
         assert!(gamma[0].is_identity(), "the least index of a component is γ = 1");
         assert!(gamma[2].is_identity(), "vertex 2 is its own root");
-        f.faces.push(FormFace {
-            i: 0,
-            j: 9,
-            g_ij: Word::identity(),
-        });
+        f.faces.push(FormFace::new(0, 9, Word::identity(),));
         assert!(
             f.solve_coboundary().is_none(),
             "a face that names a vertex outside the form refuses"
@@ -3362,21 +3408,9 @@ mod tests {
             class: stalk::Invariant::default(),
             contact: None,
         });
-        host.faces.push(FormFace {
-            i: 0,
-            j: 1,
-            g_ij: host.face_of(0, 1).expect("0-1"),
-        });
-        host.faces.push(FormFace {
-            i: 1,
-            j: 2,
-            g_ij: host.face_of(1, 2).expect("1-2"),
-        });
-        host.faces.push(FormFace {
-            i: 0,
-            j: 2,
-            g_ij: host.face_of(0, 2).expect("0-2"),
-        });
+        host.faces.push(FormFace { i: 0, j: 1, transport: host.face_of(0, 1).expect("0-1"), });
+        host.faces.push(FormFace { i: 1, j: 2, transport: host.face_of(1, 2).expect("1-2"), });
+        host.faces.push(FormFace { i: 0, j: 2, transport: host.face_of(0, 2).expect("0-2"), });
         let inner = closed_word_form(w.clone(), None);
         let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner");
         let gi = host
@@ -3395,7 +3429,7 @@ mod tests {
         for face in &host.faces {
             assert_eq!(
                 host.face_of(face.i, face.j).as_ref(),
-                Some(&face.g_ij),
+                Some(&face.transport),
                 "every surviving face re-derives"
             );
         }
@@ -3408,7 +3442,7 @@ mod tests {
         let Some(fi) = taped.faces.iter().position(|f| f.i == 0 && matches!(taped.vertices.get(f.j as usize), Some(Vertex::Glued { .. }))) else {
             panic!("placement face");
         };
-        taped.faces[fi].g_ij = Word::identity();
+        taped.faces[fi].transport.word = Word::identity();
         let bad = as_element_form(&taped, mag).expect("tampered placement");
         assert_eq!(
             crate::court::verdict::blind_replay_with(&bad, &resolve),
@@ -3588,14 +3622,15 @@ mod tests {
         let mut f = Form::default();
         for i in 0..n_words {
             f.vertices.push(word_vertex(i as u8 + 1, Word::identity()));
+            let j = (i as u16) + 1;
             f.faces.push(FormFace {
                 i: 0,
-                j: (i as u16) + 1,
-                g_ij: Word::identity(),
+                j,
+                transport: f.face_of(0, j).expect("star"),
             });
         }
         for (i, j, w) in extra {
-            f.faces.push(FormFace { i, j, g_ij: w });
+            f.faces.push(FormFace::new(i, j, w));
         }
         f.loops = Form::loops_of(&f.faces, f.vertices.len());
         f
@@ -3654,8 +3689,8 @@ mod tests {
     fn face_constancy_is_the_word_not_the_versor() {
         let a = star_form(2, vec![(1, 2, Word::identity())]);
         let b = star_form(2, vec![(1, 2, Word::identity())]);
-        let words1: Vec<_> = a.faces.iter().map(|fa| fa.g_ij.clone()).collect();
-        let words2: Vec<_> = b.faces.iter().map(|fa| fa.g_ij.clone()).collect();
+        let words1: Vec<_> = a.faces.iter().map(|fa| fa.transport.word.clone()).collect();
+        let words2: Vec<_> = b.faces.iter().map(|fa| fa.transport.word.clone()).collect();
         assert_eq!(words1, words2, "constancy is the word");
         let _ = as_element_form(&a, [1, 0, 0, 0]).expect("rule element");
     }
@@ -3742,32 +3777,23 @@ mod tests {
     }
 
     fn chord_form(chords: &[Word]) -> Form {
-        let n = chords.len() + 1;
         let mut f = Form::default();
-        for i in 1..n {
-            f.vertices.push(word_vertex(i as u8, Word::identity()));
-        }
-        for i in 0..n.saturating_sub(1) {
-            f.faces.push(FormFace {
-                i: i as u16,
-                j: (i + 1) as u16,
-                g_ij: Word::identity(),
-            });
-        }
         for (ci, w) in chords.iter().enumerate() {
-            let (i, j) = match ci {
-                0 => (0, 2.min(n - 1)),
-                1 => (1.min(n - 1), 3.min(n - 1)),
-                _ => (0, (ci + 1).min(n - 1)),
-            };
-            if i == j {
-                continue;
-            }
+            let a = (ci * 2 + 1) as u16;
+            let b = (ci * 2 + 2) as u16;
+            f.vertices.push(word_vertex(a as u8, Word::identity()));
+            f.vertices.push(word_vertex(b as u8, Word::identity()));
             f.faces.push(FormFace {
-                i: i as u16,
-                j: j as u16,
-                g_ij: w.clone(),
+                i: 0,
+                j: a,
+                transport: f.face_of(0, a).expect("star a"),
             });
+            f.faces.push(FormFace {
+                i: 0,
+                j: b,
+                transport: f.face_of(0, b).expect("star b"),
+            });
+            f.faces.push(FormFace::new(a, b, w.clone()));
         }
         f.loops = Form::loops_of(&f.faces, f.vertices.len());
         f
@@ -3917,24 +3943,13 @@ mod tests {
             &bundle,
             3,
         );
-        let discharged: Vec<_> = snaps
-            .iter()
-            .filter(|s| matches!(s, Snap::Discharged { .. }))
-            .collect();
-        let vortices: Vec<_> = snaps
-            .iter()
-            .filter(|s| matches!(s, Snap::Vortex { .. }))
-            .collect();
-        assert_eq!(discharged.len(), 1, "one dominating candidate applied: {snaps:?}");
-        assert!(
-            vortices.is_empty(),
-            "dominance is not a vortex line: {snaps:?}"
-        );
-        assert!(f.vortex.is_empty(), "the form does not hold a vortex cell");
-        if let Snap::Discharged { certificate, .. } = discharged[0] {
-            assert_eq!(certificate.mu_before[2], 3, "T is the extent passed in");
-            assert_eq!(certificate.mu_after[2], 3);
-        }
+        let Some(Snap::Vortex { held, .. }) = snaps.iter().find(|s| matches!(s, Snap::Vortex { .. })) else {
+            panic!("a pivot that does not write vertices leaves μ⃗ unmoved, so two discharges are a vortex: {snaps:?}");
+        };
+        assert!(held.len() >= 2, "q and q⁻¹ both discharge: {held:?}");
+        assert_eq!(held[0].mu_before[2], 3, "T is the extent passed in");
+        assert_eq!(held[0].mu_after[2], 3);
+        assert_eq!(held[0].mu_after, held[1].mu_after, "equal μ⃗, neither dominates");
     }
 
     #[test]
@@ -4007,11 +4022,11 @@ mod tests {
         let Some(ci) = f
             .faces
             .iter()
-            .position(|face| f.face_of(face.i, face.j).as_ref() != Some(&face.g_ij))
+            .position(|face| f.face_of(face.i, face.j).as_ref() != Some(&face.transport))
         else {
             panic!("the filed form has a torsion chord");
         };
-        f.faces[ci].g_ij = order4();
+        f.faces[ci].transport.word = order4();
         let bad = as_element_form(&f, mag).expect("tampered chord");
         assert_eq!(
             crate::court::verdict::blind_replay(&bad),
@@ -4052,31 +4067,7 @@ mod tests {
     fn two_loops_of_one_class_are_both_filed_or_discharged() {
         let w = order2();
         fn two_chords(w: &Word) -> Form {
-            let mut f = Form::default();
-            f.vertices.push(word_vertex(1, Word::identity()));
-            f.vertices.push(word_vertex(2, Word::identity()));
-            f.faces.push(FormFace {
-                i: 0,
-                j: 1,
-                g_ij: Word::identity(),
-            });
-            f.faces.push(FormFace {
-                i: 0,
-                j: 1,
-                g_ij: w.clone(),
-            });
-            f.faces.push(FormFace {
-                i: 0,
-                j: 2,
-                g_ij: Word::identity(),
-            });
-            f.faces.push(FormFace {
-                i: 0,
-                j: 2,
-                g_ij: w.clone(),
-            });
-            f.loops = Form::loops_of(&f.faces, f.vertices.len());
-            f
+            chord_form(&[w.clone(), w.clone()])
         }
         let mut f = two_chords(&w);
         assert_eq!(f.loops.len(), 2, "two independent chords");
@@ -4225,7 +4216,7 @@ mod tests {
         let mut tampered = from_element_form(&e).expect("v2 tape");
         let crate::transducer::sentence::PivotBy::Word { face, .. } = &tampered.certificates[0].by;
         let fi = *face as usize;
-        tampered.faces[fi].g_ij = q.clone();
+        tampered.faces[fi].transport.word = q.clone();
         let bad = as_element_form(&tampered, e.magnitude()).expect("tampered tape");
         assert_eq!(
             crate::court::verdict::blind_replay(&bad),
@@ -4291,5 +4282,97 @@ mod tests {
             "4N admits cost ~4× N inserts: {i8} then {i32n}"
         );
         assert_eq!(g8, g32, "on_axis get cost is independent of N: {g8} vs {g32}");
+    }
+
+    #[test]
+    fn holonomy_is_oriented() {
+        let w = order4();
+        let mut fwd = Form::default();
+        fwd.vertices.push(word_vertex(1, Word::identity()));
+        fwd.vertices.push(word_vertex(2, Word::identity()));
+        fwd.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            transport: fwd.face_of(0, 1).expect("star"),
+        });
+        fwd.faces.push(FormFace {
+            i: 0,
+            j: 2,
+            transport: fwd.face_of(0, 2).expect("star"),
+        });
+        fwd.faces.push(FormFace::new(1, 2, w.clone()));
+        fwd.loops = Form::loops_of(&fwd.faces, fwd.vertices.len());
+        let mut rev = Form::default();
+        rev.vertices.push(word_vertex(1, Word::identity()));
+        rev.vertices.push(word_vertex(2, Word::identity()));
+        rev.faces.push(FormFace {
+            i: 0,
+            j: 1,
+            transport: rev.face_of(0, 1).expect("star"),
+        });
+        rev.faces.push(FormFace {
+            i: 0,
+            j: 2,
+            transport: rev.face_of(0, 2).expect("star"),
+        });
+        rev.faces.push(FormFace::new(2, 1, w.inverse()));
+        rev.loops = Form::loops_of(&rev.faces, rev.vertices.len());
+        assert_eq!(fwd.loops.len(), 1);
+        assert_eq!(rev.loops.len(), 1);
+        assert_eq!(
+            fwd.loops[0].holonomy.class_key(),
+            rev.loops[0].holonomy.class_key(),
+            "a reversed chord stores the inverse word and the same class"
+        );
+    }
+
+    #[test]
+    fn chord_is_never_a_star_face() {
+        let f = chord_form(&[order4(), order2()]);
+        assert_eq!(f.loops.len(), 2, "two chords, two loops");
+        for lp in &f.loops {
+            let ch = &f.faces[lp.chord as usize];
+            assert!(
+                ch.i != 0 && ch.j != 0,
+                "chord {} is a star face ({}, {})",
+                lp.chord,
+                ch.i,
+                ch.j
+            );
+        }
+    }
+
+    #[test]
+    fn pivot_writes_the_chord_transport_only() {
+        let q = order4();
+        let mut f = chord_form(&[q.clone()]);
+        let verts_before = f.vertices.clone();
+        let chord = f.loops[0].chord;
+        let snaps = f.pivot_loop(
+            [0xc0; 32],
+            &Keyed::new(),
+            &Hold(vec![q.clone()]),
+            &mut crate::physics::Physics::default().stroke_n(16),
+            &[],
+            0,
+        );
+        assert!(
+            snaps.iter().any(|s| matches!(s, Snap::Discharged { .. })),
+            "a held quarter discharges: {snaps:?}"
+        );
+        assert_eq!(
+            f.vertices, verts_before,
+            "a pivot writes no vertex placement or gauge"
+        );
+        for (fi, face) in f.faces.iter().enumerate() {
+            if fi as u16 == chord {
+                continue;
+            }
+            assert_eq!(
+                f.face_of(face.i, face.j).as_ref(),
+                Some(&face.transport),
+                "tree face {fi} re-derives"
+            );
+        }
     }
 }

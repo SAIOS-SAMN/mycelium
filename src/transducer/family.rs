@@ -1061,7 +1061,7 @@ fn pair_form_uncached(
         let Some(g) = form.face_of(i, j) else {
             continue;
         };
-        form.faces.push(FormFace { i, j, g_ij: g });
+        form.faces.push(FormFace { i, j, transport: g });
     }
     form.loops = Form::loops_of(&form.faces, n);
     form
@@ -1576,9 +1576,9 @@ fn face_word_between(pf: &Form, a: &End, b: &End) -> Option<super::alphabet::Wor
         let ea = end_of(pf.vertices.get(f.i as usize)?)?;
         let eb = end_of(pf.vertices.get(f.j as usize)?)?;
         let (w, ok) = if &ea == a && &eb == b {
-            (f.g_ij.clone(), true)
+            (f.transport.word.clone(), true)
         } else if &ea == b && &eb == a {
-            (f.g_ij.inverse(), true)
+            (f.transport.word.inverse(), true)
         } else {
             (super::alphabet::Word::identity(), false)
         };
@@ -1638,6 +1638,15 @@ fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
         });
         if constant {
             form.rebase(face.i, face.j, shift);
+        }
+    }
+    for fi in 0..form.faces.len() {
+        let (i, j) = (form.faces[fi].i, form.faces[fi].j);
+        if i != 0 && j != 0 {
+            continue;
+        }
+        if let Some(t) = form.face_of(i, j) {
+            form.faces[fi].transport = t;
         }
     }
 }
@@ -1799,7 +1808,10 @@ pub fn extract_rule_with(
         let i = ends.get(&end_key(ea)).copied();
         let j = ends.get(&end_key(eb)).copied();
         if let (Some(i), Some(j)) = (i, j) {
-            form.faces.push(FormFace { i, j, g_ij: w });
+            match form.face_of(i, j) {
+                Some(t) => form.faces.push(FormFace { i, j, transport: t }),
+                None => form.faces.push(FormFace::new(i, j, w)),
+            }
         }
     }
     form.loops = Form::loops_of(&form.faces, form.vertices.len());
@@ -2333,11 +2345,7 @@ mod tests {
         assert_eq!(adj.len(), 2, "two adjacency faces, got {adj:?} from {pairs:?}");
         let faces: Vec<FormFace> = pairs
             .iter()
-            .map(|&(i, j)| FormFace {
-                i,
-                j,
-                g_ij: crate::transducer::alphabet::Word::identity(),
-            })
+            .map(|&(i, j)| FormFace::new(i, j, crate::transducer::alphabet::Word::identity()))
             .collect();
         let loops = Form::loops_of(&faces, 4);
         assert!(
@@ -2501,11 +2509,7 @@ mod tests {
             class: b.moduli.clone(),
             contact: None,
         });
-        pf.faces.push(FormFace {
-            i: 1,
-            j: 2,
-            g_ij: pf.face_of(1, 2).expect("pair vertices"),
-        });
+        pf.faces.push(FormFace { i: 1, j: 2, transport: pf.face_of(1, 2).expect("pair vertices"), });
         let mut form = pf.clone();
         let tc_a = transport_class(&pf.vertices[1]).expect("A has a transport class");
         let tc_b = transport_class(&pf.vertices[2]).expect("B has a transport class");

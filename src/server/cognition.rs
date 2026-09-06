@@ -6503,6 +6503,15 @@ mod tests {
         f.vertices.push(Vertex::Word {
             address: [2u8; 32],
             word: Word::identity(),
+            rho: one.clone(),
+            placement: (zero.clone(), zero.clone()),
+            gauge: vec![(1, 2)],
+            class: crate::transducer::stalk::Invariant::default(),
+            contact: None,
+        });
+        f.vertices.push(Vertex::Word {
+            address: [3u8; 32],
+            word: Word::identity(),
             rho: one,
             placement: (zero.clone(), zero),
             gauge: vec![(1, 2)],
@@ -6512,13 +6521,14 @@ mod tests {
         f.faces.push(FormFace {
             i: 0,
             j: 1,
-            g_ij: Word::identity(),
+            transport: f.face_of(0, 1).expect("star 1"),
         });
         f.faces.push(FormFace {
             i: 0,
-            j: 1,
-            g_ij: order2,
+            j: 2,
+            transport: f.face_of(0, 2).expect("star 2"),
         });
+        f.faces.push(FormFace::new(1, 2, order2));
         f.loops = Form::loops_of(&f.faces, f.vertices.len());
         let _ = f.pivot_loop(
             [0xca; 32],
