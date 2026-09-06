@@ -51,6 +51,36 @@ impl Crystal for NoCrystal {
 pub type Grid = Vec<Vec<u8>>;
 type Cell3 = (i64, i64, u8);
 
+/// A cell scene as a grid, origin at the scene's min-corner. The sensor
+/// embedding of one scene; not a ranking over candidates.
+pub fn cells_to_grid(cells: &[(i64, i64, u8)]) -> Grid {
+    let Some(&(r0, c0, _)) = cells.first() else {
+        return vec![vec![0]];
+    };
+    let (mut min_r, mut min_c, mut max_r, mut max_c) = (r0, c0, r0, c0);
+    for &(r, c, _) in cells {
+        if r < min_r {
+            min_r = r;
+        }
+        if c < min_c {
+            min_c = c;
+        }
+        if r > max_r {
+            max_r = r;
+        }
+        if c > max_c {
+            max_c = c;
+        }
+    }
+    let h = (max_r - min_r + 1) as usize;
+    let w = (max_c - min_c + 1) as usize;
+    let mut g = vec![vec![0u8; w]; h];
+    for &(r, c, hue) in cells {
+        g[(r - min_r) as usize][(c - min_c) as usize] = hue;
+    }
+    g
+}
+
 #[cfg(test)]
 fn q(v: i64) -> num_rational::BigRational {
     num_rational::BigRational::from_integer(num_bigint::BigInt::from(v))

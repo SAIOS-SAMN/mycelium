@@ -70,26 +70,20 @@ pub fn adjudicate(
     use crate::cognition::Outcome;
     let Ok(mut g) = k.lock() else { return Outcome::GermPending };
     let Some((language, _budget)) = g.reflex_open(voice) else { return Outcome::GermPending };
-    drop(g);
-    let Some((germs, composites)) = crate::cognition::germinate_bodies(ca, cb, frame) else {
-        return k.lock().map(|mut g| g.pivot()).unwrap_or(Outcome::Pivot);
+    let Some(germs) = crate::cognition::percept_elements(ca, cb, frame, &*g) else {
+        return g.pivot();
     };
-    if proof.len() != germs.len() {
-        return Outcome::GermPending; // unproven: deferred, never reduced here
-    }
-    // The listing a percept settles is the pair's whole coboundary as the
-    // corpus intake listed it; every germ of the percept reads its
-    // deflation there.
-    let listing = crate::transducer::germinate::germinate(&ca.concat(), &cb.concat())
-        .map(|g| crate::transducer::element::from_residual_framed(&g, frame).address())
-        .unwrap_or_default();
+    drop(g);
+    let listing = germs[0].address();
     let reductions: Vec<_> = germs
         .into_iter()
-        .zip(proof)
-        .map(|(germ, cites)| crate::cognition::reduce_proven(&language, germ, cites, frame, listing.clone()))
+        .enumerate()
+        .map(|(i, germ)| {
+            let cites = proof.get(i).map(Vec::as_slice).unwrap_or(&[]);
+            crate::cognition::reduce_proven(&language, germ, cites, frame, listing.clone())
+        })
         .collect();
     let Ok(mut g) = k.lock() else { return Outcome::GermPending };
-    g.register_composites(composites);
     g.commit_all(reductions, voice)
 }
 
@@ -105,8 +99,8 @@ pub fn attest(
 ) -> crate::cognition::Outcome {
     use crate::cognition::{NormalForm, Outcome};
     let Ok(mut g) = k.lock() else { return Outcome::GermPending };
-    let germ = (crate::transducer::element::from_residual(&chain.to_vec()), None);
-    let listing = germ.0.address();
+    let germ = crate::transducer::element::from_residual(&chain.to_vec());
+    let listing = germ.address();
     if let Some(out) = g.answer_if_duplicate(&voice, &listing, k_voice) {
         return out;
     }
@@ -214,7 +208,6 @@ pub fn quote(
             let measured = crate::cognition::rank_over(
                 &view.language,
                 &view.pending,
-                &view.composites,
                 &view.prior,
                 view.gens.0,
                 None,
@@ -242,7 +235,6 @@ pub fn quote(
             &view.surface,
             pool,
             &view.pressure,
-            &view.composites,
             budget,
             g.spoken(),
             &voice,
