@@ -2788,6 +2788,15 @@ impl Entity {
         self.epigenome.working_atlas_with(&self.contemplation.by_chart)
     }
 
+    /// Counts on the working atlas: ruled (genome), stood (dialect), held (ideas).
+    pub fn atlas_standing_counts(&self) -> (usize, usize, usize) {
+        (
+            self.epigenome.genome_len(),
+            self.dialect_len(),
+            self.ideas_len(),
+        )
+    }
+
     /// Fiber of the working atlas; a Stood hit updates last_used_tu.
     pub fn working_fiber(&mut self, c: &crate::transducer::stalk::Invariant) -> Vec<([u8; 32], Standing)> {
         let f = self.working_atlas().fiber(c);
@@ -3455,6 +3464,10 @@ mod tests {
             entity.working_atlas().fiber(&idea).iter().any(|(_, s)| *s == Standing::Held),
             "an idea fiber carries Held"
         );
+        let (ruled, stood, held) = entity.atlas_standing_counts();
+        assert_eq!(ruled, 0, "genome empty");
+        assert!(stood >= 1, "a dialect word is stood");
+        assert!(held >= 1, "an idea is held");
     }
 
     /// The court promotes a dialect vertex into the genome, carrying uses,

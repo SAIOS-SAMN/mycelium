@@ -475,17 +475,21 @@ fn main() {
                     entity.at(q.k);
                 }
                 let (mut n_closed, mut n_descent, mut n_nothing, mut n_settled, mut n_silent, mut n_attested, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32, 0u32, 0u32);
-                let (mut n_closing, mut n_stood, mut n_held) = (0u32, 0u32, 0u32);
+                let (mut n_closing, mut n_ruled_hit, mut n_stood, mut n_held) = (0u32, 0u32, 0u32, 0u32);
                 for cluster in &q.clusters {
                     if cluster.chain.is_empty() {
                         continue;
                     }
-                    // Incidence: working atlas fiber, each chart with its standing.
+                    // Incidence: working atlas with ideas (working_atlas_with
+                    // of contemplation.by_chart), each chart with its standing.
                     if !cluster.open.is_empty() {
                         let closing: Vec<mycelium::transducer::stalk::Invariant> = cluster
                             .open
                             .iter()
                             .filter(|c| {
+                                if entity.working_atlas().fiber(c).is_empty() {
+                                    return false;
+                                }
                                 let f = entity.working_fiber(c);
                                 if f.is_empty() {
                                     return false;
@@ -495,7 +499,7 @@ fn main() {
                                     match st {
                                         mycelium::sdk::Standing::Stood => n_stood += 1,
                                         mycelium::sdk::Standing::Held => n_held += 1,
-                                        mycelium::sdk::Standing::Ruled => {}
+                                        mycelium::sdk::Standing::Ruled => n_ruled_hit += 1,
                                     }
                                 }
                                 true
@@ -596,8 +600,13 @@ fn main() {
                         }
                     }
                 }
+                let (atlas_ruled, atlas_stood, atlas_held) = entity.atlas_standing_counts();
                 eprintln!(
-                    "[{tag}] [{}] quote closing {n_closing} charts stood {n_stood} held {n_held}",
+                    "[{tag}] [{}] quote closing {n_closing} charts (ruled {n_ruled_hit} stood {n_stood} held {n_held})",
+                    tuniversal.stamp(),
+                );
+                eprintln!(
+                    "[{tag}] [{}] atlas ruled {atlas_ruled} stood {atlas_stood} held {atlas_held}",
                     tuniversal.stamp(),
                 );
                 eprintln!(
@@ -810,8 +819,9 @@ fn main() {
                 let _ = entity.save_genome(&genome_path);
                 last_genome = entity.epigenome.genome_len();
             }
+            let (atlas_ruled, atlas_stood, atlas_held) = entity.atlas_standing_counts();
             eprintln!(
-                "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | shed {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} discordance {} axes {}",
+                "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | atlas ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | shed {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} discordance {} axes {}",
                 tuniversal.stamp(),
                 entity.epigenome.genome_len(),
                 entity.dialect_len(),
