@@ -333,7 +333,7 @@ pub fn loop_row(h: &Word) -> LoopRow {
 }
 
 /// A18 over the rows of a nerve's cycles or a form's loops.
-pub fn rank_of_rows(rows: &[LoopRow]) -> Rank {
+pub fn rank_of_rows(rows: &[LoopRow]) -> Option<Rank> {
     let mut torsion = 0u32;
     let mut offplane = 0u32;
     let mut free: Vec<[i64; 12]> = Vec::new();
@@ -345,21 +345,21 @@ pub fn rank_of_rows(rows: &[LoopRow]) -> Rank {
             LoopRow::OffPlane => offplane += 1,
         }
     }
-    Rank {
+    Some(Rank {
         torsion,
-        free: z_rank(&free).saturating_add(offplane),
+        free: z_rank(&free)?.saturating_add(offplane),
         axes: 0,
-    }
+    })
 }
 
-pub fn rank_of_holonomies<'a>(holonomies: impl Iterator<Item = &'a Word>) -> Rank {
+pub fn rank_of_holonomies<'a>(holonomies: impl Iterator<Item = &'a Word>) -> Option<Rank> {
     let rows: Vec<LoopRow> = holonomies.map(loop_row).collect();
     rank_of_rows(&rows)
 }
 
 impl Form {
     /// A18 over this form's loops.
-    pub fn rank(&self) -> Rank {
+    pub fn rank(&self) -> Option<Rank> {
         rank_of_holonomies(self.loops.iter().map(|lp| &lp.holonomy))
     }
 
@@ -419,7 +419,9 @@ impl Form {
                     pending.insert(vertex_ix_key(lp.chord), lp.holonomy.order());
                 }
             }
-            let rank_before_gauge = self.rank();
+            let Some(rank_before_gauge) = self.rank() else {
+                break;
+            };
             match self.solve_coboundary() {
                 Some(gamma) => {
                     if self.regauge(&gamma).is_none() {
@@ -433,7 +435,7 @@ impl Form {
                 None => {}
             }
             debug_assert_eq!(
-                rank_before_gauge,
+                Some(rank_before_gauge),
                 self.rank(),
                 "R1: re-gauging preserves rank"
             );
@@ -467,7 +469,9 @@ impl Form {
                 break;
             }
             let rows: Vec<LoopRow> = self.loops.iter().map(|lp| loop_row(&lp.holonomy)).collect();
-            let rank_before = rank_of_rows(&rows);
+            let Some(rank_before) = rank_of_rows(&rows) else {
+                break;
+            };
             let mu_before: Option<[u64; 4]> = match bundle {
                 None => None,
                 Some(b) => crate::transducer::family::bundle_pressure(self, b, crystal, t_extent),
@@ -519,10 +523,10 @@ impl Form {
                         debug_assert_eq!(cert.rank_before, rank_before);
                         self.apply_pivot(&cert);
                         debug_assert!(
-                            Rank::admits(rank_before, self.rank()),
+                            self.rank().is_some_and(|r| Rank::admits(rank_before, r)),
                             "A18: an applied pivot does not lose rank"
                         );
-                        debug_assert_eq!(self.rank(), cert.rank_after);
+                        debug_assert_eq!(self.rank(), Some(cert.rank_after));
                         eprintln!(
                             "  pivot {:02x}{:02x}… loop {idx} axis {:?} discharged {:02x}{:02x}…→{:02x}{:02x}…",
                             idea[0], idea[1], cert.axis, cert.before[0], cert.before[1], cert.after[0], cert.after[1]
@@ -651,7 +655,6 @@ impl Form {
                             shift: kappa.placement.clone(),
                         },
                     });
-                    continue;
                 }
                 Axis::Hue => {
                     let gauge = loop_transport(self, lp)
@@ -665,28 +668,26 @@ impl Form {
                         },
                     });
                 }
-                _ => {}
-            }
-            if matches!(axis, Axis::Placement) {
-                continue;
-            }
-            for (_, chart) in charts.fiber(&ROOT) {
-                for w in crystal.on_axis(chart, axis) {
-                    for side in [Side::Right, Side::Left] {
-                        let wk = w.key();
-                        let sk = side_slot(side);
-                        if seen.get(&wk).is_some_and(|s| s.contains(&sk)) {
-                            continue;
+                _ => {
+                    for (_, chart) in charts.fiber(&ROOT) {
+                        for w in crystal.on_axis(chart, axis) {
+                            for side in [Side::Right, Side::Left] {
+                                let wk = w.key();
+                                let sk = side_slot(side);
+                                if seen.get(&wk).is_some_and(|s| s.contains(&sk)) {
+                                    continue;
+                                }
+                                seen.nested_insert(wk, sk, ());
+                                out.push(Candidate {
+                                    axis,
+                                    by: PivotBy::Word {
+                                        face: chord as u16,
+                                        word: w.clone(),
+                                        side,
+                                    },
+                                });
+                            }
                         }
-                        seen.nested_insert(wk, sk, ());
-                        out.push(Candidate {
-                            axis,
-                            by: PivotBy::Word {
-                                face: chord as u16,
-                                word: w.clone(),
-                                side,
-                            },
-                        });
                     }
                 }
             }
@@ -716,22 +717,25 @@ impl Form {
         let after_h = trial_form.loops.get(idx)?.holonomy.clone();
         let mut after_rows = rows.to_vec();
         *after_rows.get_mut(idx)? = loop_row(&after_h);
-        let rank_after = rank_of_rows(&after_rows);
+        let rank_after = rank_of_rows(&after_rows)?;
         if !Rank::admits(rank_before, rank_after) {
             return None;
         }
-        let mu_after = match mu_before {
-            Some(_) => match bundle {
-                None => [0; 4],
-                Some(b) => crate::transducer::family::bundle_pressure(&trial_form, b, crystal, t_extent)?,
-            },
-            None => [0; 4],
-        };
-        if let Some(before) = mu_before {
-            if !(mu_after == before || crate::economy::descends(&mu_after, &before)) {
-                return None;
+        let mu = match mu_before {
+            None => Mu::Unmeasured,
+            Some(before) => {
+                let after = crate::transducer::family::bundle_pressure(
+                    &trial_form,
+                    bundle?,
+                    crystal,
+                    t_extent,
+                )?;
+                if !(after == before || crate::economy::descends(&after, &before)) {
+                    return None;
+                }
+                Mu::Measured { before, after }
             }
-        }
+        };
         Some(PivotCertificate {
             chord: idx as u16,
             axis: cand.axis,
@@ -739,8 +743,7 @@ impl Form {
             after: kappa_after.class_key(),
             rank_before,
             rank_after,
-            mu_before: mu_before.unwrap_or([0; 4]),
-            mu_after,
+            mu,
             by: cand.by.clone(),
         })
     }
@@ -994,8 +997,24 @@ pub(crate) fn select_discharge(cands: &[PivotCertificate]) -> Discharge {
     if cands.is_empty() {
         return Discharge::NoneDischarged;
     }
-    let vals: Vec<[u64; 4]> = cands.iter().map(|c| c.mu_after).collect();
-    match crate::economy::dominant(&vals) {
+    let measured: Vec<[u64; 4]> = cands
+        .iter()
+        .filter_map(|c| match c.mu {
+            Mu::Measured { after, .. } => Some(after),
+            Mu::Unmeasured => None,
+        })
+        .collect();
+    if measured.is_empty() {
+        return if cands.len() == 1 {
+            Discharge::One(cands[0].clone())
+        } else {
+            Discharge::Vortex(cands.to_vec())
+        };
+    }
+    if measured.len() != cands.len() {
+        return Discharge::Vortex(cands.to_vec());
+    }
+    match crate::economy::dominant(&measured) {
         Some(i) => Discharge::One(cands[i].clone()),
         None => Discharge::Vortex(cands.to_vec()),
     }

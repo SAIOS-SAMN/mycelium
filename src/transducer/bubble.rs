@@ -1911,8 +1911,7 @@ mod tests {
                 axes: 0,
             },
             rank_after: Rank::default(),
-            mu_before: [0; 4],
-            mu_after: [0; 4],
+            mu: crate::transducer::sentence::Mu::Unmeasured,
             by: PivotBy::Word {
                 face: 0,
                 word: w.clone(),
@@ -1936,8 +1935,7 @@ mod tests {
                 axes: 0,
             },
             rank_after: Rank::default(),
-            mu_before: [0; 4],
-            mu_after: [0; 4],
+            mu: crate::transducer::sentence::Mu::Unmeasured,
             by: PivotBy::Word {
                 face: 0,
                 word: sheet,

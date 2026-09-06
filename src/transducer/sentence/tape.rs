@@ -438,6 +438,8 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         by_address: Keyed::new(),
         star: Keyed::new(),
         placements: Keyed::new(),
+        by_rebased: Keyed::new(),
+        by_unfolded: Keyed::new(),
     };
     form.reindex();
     Some(form)

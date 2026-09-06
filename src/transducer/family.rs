@@ -1057,6 +1057,8 @@ fn pair_form_uncached(
         by_address: crate::network::nerve::Keyed::new(),
         star: crate::network::nerve::Keyed::new(),
         placements: crate::network::nerve::Keyed::new(),
+        by_rebased: crate::network::nerve::Keyed::new(),
+        by_unfolded: crate::network::nerve::Keyed::new(),
     };
     let n = form.vertices.len();
     let frame = 0usize;
@@ -1767,6 +1769,8 @@ pub fn extract_rule_with(
         by_address: crate::network::nerve::Keyed::new(),
         star: crate::network::nerve::Keyed::new(),
         placements: crate::network::nerve::Keyed::new(),
+        by_rebased: crate::network::nerve::Keyed::new(),
+        by_unfolded: crate::network::nerve::Keyed::new(),
     };
     // 2. Faces named by the pair forms (star + cell overlap), kept iff M1-constant.
     let mut candidates: crate::network::nerve::Keyed<(End, End)> = crate::network::nerve::Keyed::new();

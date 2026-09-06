@@ -325,6 +325,17 @@ mod tests {
             j: 2,
             transport: a.face_of(0, 2).expect("a star 2"),
         });
+        a.vertices.push(Vertex::Rebased {
+            by: 0,
+            of: 1,
+            shift: (q0(), q1()),
+            rho: q1(),
+            gauge: Vec::new(),
+            class: stalk::Invariant::default(),
+        });
+        a.vertices.push(Vertex::Unfolded {
+            measure: Measure::Occupied,
+        });
         a.reindex();
         let mut b = Form::default();
         b.vertices.push(word_vertex(2, Word::identity()));
@@ -338,6 +349,17 @@ mod tests {
             i: 0,
             j: 2,
             transport: b.face_of(0, 2).expect("b star 2"),
+        });
+        b.vertices.push(Vertex::Unfolded {
+            measure: Measure::Occupied,
+        });
+        b.vertices.push(Vertex::Rebased {
+            by: 0,
+            of: 2,
+            shift: (q0(), q1()),
+            rho: q1(),
+            gauge: Vec::new(),
+            class: stalk::Invariant::default(),
         });
         b.reindex();
         assert!(
@@ -893,8 +915,10 @@ mod tests {
                 free: 0,
                 axes: 0,
             },
-            mu_before: [0; 4],
-            mu_after: mu,
+            mu: Mu::Measured {
+                before: [0; 4],
+                after: mu,
+            },
             by: PivotBy::Word {
                 face: 0,
                 word: Word::identity(),
@@ -924,14 +948,23 @@ mod tests {
         let Discharge::One(won) = select_discharge(&[loose.clone(), tight.clone()]) else {
             panic!("one μ⃗ dominates");
         };
-        assert_eq!(won.mu_after, tight.mu_after, "the lane-wise minimum is the discharge");
+        assert_eq!(won.mu, tight.mu, "the lane-wise minimum is the discharge");
         fn perm(m: [u64; 4]) -> [u64; 4] {
             [m[2], m[1], m[0], m[3]]
         }
+        fn perm_mu(mu: Mu) -> Mu {
+            match mu {
+                Mu::Measured { before, after } => Mu::Measured {
+                    before,
+                    after: perm(after),
+                },
+                Mu::Unmeasured => Mu::Unmeasured,
+            }
+        }
         let mut lp = loose.clone();
         let mut tp = tight.clone();
-        lp.mu_after = perm(lp.mu_after);
-        tp.mu_after = perm(tp.mu_after);
+        lp.mu = perm_mu(lp.mu);
+        tp.mu = perm_mu(tp.mu);
         let Discharge::One(won_p) = select_discharge(&[lp, tp]) else {
             panic!("permuted lanes keep the winner");
         };
@@ -1004,9 +1037,18 @@ mod tests {
             panic!("a pivot that does not write vertices leaves μ⃗ unmoved, so two discharges are a vortex: {snaps:?}");
         };
         assert!(held.len() >= 2, "q and q⁻¹ both discharge: {held:?}");
-        assert_eq!(held[0].mu_before[2], 3, "T is the extent passed in");
-        assert_eq!(held[0].mu_after[2], 3);
-        assert_eq!(held[0].mu_after, held[1].mu_after, "equal μ⃗, neither dominates");
+        let (mu0, mu1) = match (&held[0].mu, &held[1].mu) {
+            (
+                Mu::Measured { before: b0, after: a0 },
+                Mu::Measured { after: a1, .. },
+            ) => {
+                assert_eq!(b0[2], 3, "T is the extent passed in");
+                assert_eq!(a0[2], 3);
+                (*a0, *a1)
+            }
+            _ => panic!("a measured vortex carries μ⃗, got {:?}", held[0].mu),
+        };
+        assert_eq!(mu0, mu1, "equal μ⃗, neither dominates");
     }
 
     #[test]

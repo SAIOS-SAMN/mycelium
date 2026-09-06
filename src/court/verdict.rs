@@ -94,7 +94,9 @@ pub fn replay_form_with(
         return Some(reason);
     }
     // Loops are derived, never trusted from the tape: re-walk the forest.
-    let taped_rank = f.rank();
+    let Some(taped_rank) = f.rank() else {
+        return Some(REFUSE_RANK_LOST);
+    };
     let mut walked = f.clone();
     walked.loops = Form::loops_of(&f.faces, f.vertices.len());
     let by_chord = chord_loops(&walked);
@@ -114,7 +116,9 @@ pub fn replay_form_with(
     if !form_loops_replay(&walked) {
         return Some(REFUSE_LOOP);
     }
-    let derived = walked.rank();
+    let Some(derived) = walked.rank() else {
+        return Some(REFUSE_RANK_LOST);
+    };
     if taped_rank.torsion < derived.torsion
         || taped_rank.free < derived.free
         || taped_rank.axes < derived.axes
@@ -281,8 +285,12 @@ fn replay_certificates(f: &Form, by_chord: &Keyed<u16>) -> Option<&'static str> 
         if kappa_after.class_key() != cert.after || kappa_after.occupies(cert.axis) {
             return Some(REFUSE_PIVOT_INEXACT);
         }
-        let rb = rank_of_holonomies(pre.loops.iter().map(|l| &l.holonomy));
-        let ra = rank_of_holonomies(f.loops.iter().map(|l| &l.holonomy));
+        let Some(rb) = rank_of_holonomies(pre.loops.iter().map(|l| &l.holonomy)) else {
+            return Some(REFUSE_PIVOT_INEXACT);
+        };
+        let Some(ra) = rank_of_holonomies(f.loops.iter().map(|l| &l.holonomy)) else {
+            return Some(REFUSE_PIVOT_INEXACT);
+        };
         if rb != cert.rank_before || ra != cert.rank_after {
             return Some(REFUSE_PIVOT_INEXACT);
         }
@@ -885,8 +893,7 @@ mod tests {
                 axes: 0,
             },
             rank_after: Rank::default(),
-            mu_before: [0; 4],
-            mu_after: [0; 4],
+            mu: crate::transducer::sentence::Mu::Unmeasured,
             by: PivotBy::Word {
                 face: 0,
                 word: Word::identity(),

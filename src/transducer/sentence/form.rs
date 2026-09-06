@@ -253,6 +253,10 @@ pub struct Form {
     pub star: Keyed<u16>,
     /// Word vertex address → placement, filled at construction.
     pub placements: Keyed<(num_rational::BigRational, num_rational::BigRational)>,
+    /// Rebased vertex keyed by the `of` Word address.
+    pub by_rebased: Keyed<u16>,
+    /// Unfolded vertex keyed by its measure key.
+    pub by_unfolded: Keyed<u16>,
 }
 
 impl Default for Form {
@@ -273,6 +277,8 @@ impl Default for Form {
             by_address: Keyed::new(),
             star: Keyed::new(),
             placements: Keyed::new(),
+            by_rebased: Keyed::new(),
+            by_unfolded: Keyed::new(),
         }
     }
 }
@@ -283,6 +289,8 @@ impl Form {
     /// on one class are two sections: that class is refused as one map.
     pub fn reindex(&mut self) {
         let mut by_address = Keyed::new();
+        let mut by_rebased = Keyed::new();
+        let mut by_unfolded = Keyed::new();
         let mut hues: Keyed<Vec<(u8, u8)>> = Keyed::new();
         let mut hue_conflict: Keyed<()> = Keyed::new();
         let mut places: Keyed<(
@@ -292,36 +300,46 @@ impl Form {
         let mut place_conflict: Keyed<()> = Keyed::new();
         let mut star = Keyed::new();
         for (i, v) in self.vertices.iter().enumerate() {
-            if let Vertex::Word {
-                address,
-                word,
-                placement,
-                gauge,
-                class,
-                ..
-            } = v
-            {
-                by_address.insert(*address, i as u16);
-                let ck = class.key();
-                match hues.get(&ck) {
-                    None => {
-                        hues.insert(ck, gauge.clone());
+            match v {
+                Vertex::Word {
+                    address,
+                    word,
+                    placement,
+                    gauge,
+                    class,
+                    ..
+                } => {
+                    by_address.insert(*address, i as u16);
+                    let ck = class.key();
+                    match hues.get(&ck) {
+                        None => {
+                            hues.insert(ck, gauge.clone());
+                        }
+                        Some(held) if held != gauge => {
+                            hue_conflict.insert(ck, ());
+                        }
+                        _ => {}
                     }
-                    Some(held) if held != gauge => {
-                        hue_conflict.insert(ck, ());
+                    let tk = vertex_transport_key(word, gauge);
+                    match places.get(&tk) {
+                        None => {
+                            places.insert(tk, placement.clone());
+                        }
+                        Some(held) if held != placement => {
+                            place_conflict.insert(tk, ());
+                        }
+                        _ => {}
                     }
-                    _ => {}
                 }
-                let tk = vertex_transport_key(word, gauge);
-                match places.get(&tk) {
-                    None => {
-                        places.insert(tk, placement.clone());
+                Vertex::Rebased { of, .. } => {
+                    if let Some(Vertex::Word { address, .. }) = self.vertices.get(*of as usize) {
+                        by_rebased.insert(*address, i as u16);
                     }
-                    Some(held) if held != placement => {
-                        place_conflict.insert(tk, ());
-                    }
-                    _ => {}
                 }
+                Vertex::Unfolded { measure } => {
+                    by_unfolded.insert(unfolded_key(measure), i as u16);
+                }
+                _ => {}
             }
         }
         let mut hue_maps = Keyed::new();
@@ -344,6 +362,8 @@ impl Form {
             }
         }
         self.by_address = by_address;
+        self.by_rebased = by_rebased;
+        self.by_unfolded = by_unfolded;
         self.star = star;
         self.placements = placements;
         self.hue_maps = hue_maps;
@@ -527,6 +547,20 @@ pub fn vertex_ix_key(i: u16) -> [u8; 32] {
     k
 }
 
+pub(crate) fn unfolded_key(measure: &Measure) -> [u8; 32] {
+    let mut k = [0u8; 32];
+    k[0] = 4;
+    match measure {
+        Measure::Occupied => k[1] = 0,
+        Measure::Remainder => k[1] = 1,
+        Measure::Ring { anchor } => {
+            k[1] = 2;
+            k[2..4].copy_from_slice(&anchor.to_le_bytes());
+        }
+    }
+    k
+}
+
 pub(crate) fn vertex_transport_key(word: &Word, gauge: &[(u8, u8)]) -> [u8; 32] {
     let mut buf = Vec::new();
     buf.push(ShellKind::Whole.as_u8());
@@ -707,6 +741,13 @@ impl PivotBy {
     }
 }
 
+/// μ⃗ on a certificate: measured over the bundle, or unmeasured.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Mu {
+    Measured { before: [u64; 4], after: [u64; 4] },
+    Unmeasured,
+}
+
 /// A certified discharge of one occupied axis (A20). Content-addressed:
 /// two minds that discharge one loop by one move produce one key.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -719,10 +760,8 @@ pub struct PivotCertificate {
     pub after: [u8; 32],
     pub rank_before: Rank,
     pub rank_after: Rank,
-    /// μ⃗ of the form over the bundle before the move.
-    pub mu_before: [u64; 4],
-    /// μ⃗ after the trial move; `select_discharge` reads this.
-    pub mu_after: [u64; 4],
+    /// μ⃗ of the form over the bundle before and after the move.
+    pub mu: Mu,
     pub by: PivotBy,
 }
 
@@ -770,8 +809,14 @@ impl PivotCertificate {
         out.extend_from_slice(&self.after);
         self.rank_before.to_bytes(out);
         self.rank_after.to_bytes(out);
-        for m in self.mu_before.iter().chain(&self.mu_after) {
-            out.extend_from_slice(&m.to_le_bytes());
+        match &self.mu {
+            Mu::Unmeasured => out.push(0),
+            Mu::Measured { before, after } => {
+                out.push(1);
+                for m in before.iter().chain(after) {
+                    out.extend_from_slice(&m.to_le_bytes());
+                }
+            }
         }
         match &self.by {
             PivotBy::Word { face, word, side } => {
@@ -811,12 +856,21 @@ impl PivotCertificate {
         *pos += 32;
         let rank_before = Rank::from_bytes(b, pos)?;
         let rank_after = Rank::from_bytes(b, pos)?;
-        let mut mu_before = [0u64; 4];
-        let mut mu_after = [0u64; 4];
-        for m in mu_before.iter_mut().chain(&mut mu_after) {
-            *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-            *pos += 8;
-        }
+        let mu_tag = *b.get(*pos)?;
+        *pos += 1;
+        let mu = match mu_tag {
+            0 => Mu::Unmeasured,
+            1 => {
+                let mut before = [0u64; 4];
+                let mut after = [0u64; 4];
+                for m in before.iter_mut().chain(&mut after) {
+                    *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+                    *pos += 8;
+                }
+                Mu::Measured { before, after }
+            }
+            _ => return None,
+        };
         let kind = *b.get(*pos)?;
         *pos += 1;
         let by = match kind {
@@ -859,8 +913,7 @@ impl PivotCertificate {
             after,
             rank_before,
             rank_after,
-            mu_before,
-            mu_after,
+            mu,
             by,
         })
     }

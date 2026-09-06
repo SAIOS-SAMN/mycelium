@@ -3,8 +3,9 @@
 //! Exact integer linear algebra: lattice rank by fraction-free elimination.
 
 /// Rank of the lattice spanned by integer rows: fraction-free Gaussian
-/// elimination (Bareiss) over i128, exact.
-pub fn z_rank<const N: usize>(rows: &[[i64; N]]) -> u32 {
+/// elimination (Bareiss) over i128, exact. `None` when a multiply, subtract
+/// or divide overflows; the caller refuses.
+pub fn z_rank<const N: usize>(rows: &[[i64; N]]) -> Option<u32> {
     let mut m: Vec<[i128; N]> = rows
         .iter()
         .map(|r| std::array::from_fn(|i| r[i] as i128))
@@ -20,11 +21,14 @@ pub fn z_rank<const N: usize>(rows: &[[i64; N]]) -> u32 {
         for r in (rank + 1)..m.len() {
             let f = m[r][col];
             for c in 0..N {
-                m[r][c] = (m[r][c] * p - m[rank][c] * f) / prev;
+                let left = m[r][c].checked_mul(p)?;
+                let right = m[rank][c].checked_mul(f)?;
+                let diff = left.checked_sub(right)?;
+                m[r][c] = diff.checked_div(prev)?;
             }
         }
         prev = p;
         rank += 1;
     }
-    rank as u32
+    Some(rank as u32)
 }

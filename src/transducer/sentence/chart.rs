@@ -455,19 +455,7 @@ pub(crate) fn vertex_match_key(form: &Form, i: u16) -> Option<[u8; 32]> {
             Some(Vertex::Word { address, .. }) => Some(*address),
             _ => None,
         },
-        Vertex::Unfolded { measure } => {
-            let mut k = [0u8; 32];
-            k[0] = 4;
-            match measure {
-                Measure::Occupied => k[1] = 0,
-                Measure::Remainder => k[1] = 1,
-                Measure::Ring { anchor } => {
-                    k[1] = 2;
-                    k[2..4].copy_from_slice(&anchor.to_le_bytes());
-                }
-            }
-            Some(k)
-        }
+        Vertex::Unfolded { measure } => Some(unfolded_key(measure)),
     }
 }
 
@@ -481,9 +469,6 @@ pub(crate) fn ends_key(a: &[u8; 32], b: &[u8; 32]) -> [u8; 32] {
 /// Two forms whose cochains differ by a coboundary δγ: the gauge that
 /// takes `a` onto `b`. Word and Glued vertices match by address, not index.
 pub fn coboundary_gauge(a: &Form, b: &Form) -> Option<Vec<Word>> {
-    if a.faces.len() != b.faces.len() {
-        return None;
-    }
     let mut gamma = Vec::with_capacity(a.vertices.len());
     for va in &a.vertices {
         let vb = match va {
@@ -500,14 +485,21 @@ pub fn coboundary_gauge(a: &Form, b: &Form) -> Option<Vec<Word>> {
                 let Vertex::Word { address, .. } = a.vertices.get(*of as usize)? else {
                     return None;
                 };
-                let j = *b.by_address.get(address)?;
-                b.vertices.iter().find(|v| matches!(v, Vertex::Rebased { of: o, .. } if *o == j))?
+                let j = *b.by_rebased.get(address)?;
+                b.vertices.get(j as usize)?
             }
-            Vertex::Unfolded { measure } => b.vertices.iter().find(|v| {
-                matches!(v, Vertex::Unfolded { measure: m } if m == measure)
-            })?,
+            Vertex::Unfolded { measure } => {
+                let j = *b.by_unfolded.get(&unfolded_key(measure))?;
+                b.vertices.get(j as usize)?
+            }
         };
         gamma.push(vb.word_in(b)?.compose(&va.word_in(a)?.inverse()));
+    }
+    let mut a_by_ends: Keyed<&FormFace> = Keyed::new();
+    for fa in &a.faces {
+        let i = vertex_match_key(a, fa.i)?;
+        let j = vertex_match_key(a, fa.j)?;
+        a_by_ends.insert(ends_key(&i, &j), fa);
     }
     let mut b_by_ends: Keyed<&FormFace> = Keyed::new();
     for fb in &b.faces {
@@ -525,6 +517,11 @@ pub fn coboundary_gauge(a: &Form, b: &Form) -> Option<Vec<Word>> {
         if !expect.same_form(&fb.transport.word) {
             return None;
         }
+    }
+    for fb in &b.faces {
+        let i = vertex_match_key(b, fb.i)?;
+        let j = vertex_match_key(b, fb.j)?;
+        let _fa = a_by_ends.get(&ends_key(&i, &j))?;
     }
     Some(gamma)
 }
