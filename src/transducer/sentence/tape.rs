@@ -4,6 +4,7 @@
 
 use super::chain::Cell;
 use super::form::*;
+use super::transport::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::{self, Rotor, Word};
 use crate::transducer::element::{self, Element, GERM_DIM};

@@ -21,12 +21,16 @@
 
 pub mod chain;
 pub mod form;
+pub mod transport;
+pub mod class;
 pub mod pivot;
 pub mod tape;
 pub mod chart;
 
 pub use chain::*;
 pub use form::*;
+pub use transport::*;
+pub use class::*;
 pub use pivot::*;
 pub use tape::*;
 pub use chart::*;

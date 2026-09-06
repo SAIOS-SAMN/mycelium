@@ -3,6 +3,10 @@
 //! Sentence form: vertices, faces, loops, and the tree gauge.
 
 use super::chain::Cell;
+use super::class::{Axis, Rank};
+use super::transport::{
+    apply_linear, relative_gauge, vertex_gauge, vertex_translation, Transport,
+};
 use crate::network::nerve::{Keyed, ROOT};
 use crate::transducer::alphabet::{self, Order, Rotor, Word};
 use crate::transducer::element::{affine_of, Versor};
@@ -58,35 +62,6 @@ pub enum Vertex {
     Unfolded { measure: Measure },
 }
 
-/// Face transport: the relative word, translation and hue map from vertex
-/// `i` to vertex `j`. The same three coordinates `transport_class` keys on.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Transport {
-    pub word: Word,
-    pub shift: (num_rational::BigRational, num_rational::BigRational),
-    pub gauge: Vec<(u8, u8)>,
-}
-
-impl Transport {
-    pub fn from_word(word: Word) -> Transport {
-        Transport {
-            word,
-            shift: q2_zero(),
-            gauge: Vec::new(),
-        }
-    }
-
-    pub fn inverse(&self) -> Option<Transport> {
-        let word = self.word.inverse();
-        let mapped = apply_linear(&word, &self.shift)?;
-        Some(Transport {
-            word,
-            shift: (-mapped.0, -mapped.1),
-            gauge: gauge_invert(&self.gauge),
-        })
-    }
-}
-
 /// Face of a `Form`: two vertices and the transport between them.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FormFace {
@@ -102,115 +77,6 @@ impl FormFace {
             j,
             transport: Transport::from_word(word),
         }
-    }
-}
-
-pub(crate) fn q2_zero() -> (num_rational::BigRational, num_rational::BigRational) {
-    let z = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-    (z.clone(), z)
-}
-
-pub(crate) fn apply_linear(
-    word: &Word,
-    t: &(num_rational::BigRational, num_rational::BigRational),
-) -> Option<(num_rational::BigRational, num_rational::BigRational)> {
-    let b = word.plane_block()?;
-    Some((
-        &b[0][0] * &t.0 + &b[0][1] * &t.1,
-        &b[1][0] * &t.0 + &b[1][1] * &t.1,
-    ))
-}
-
-pub(crate) fn hue_key(h: u8) -> [u8; 32] {
-    let mut k = [0u8; 32];
-    k[0] = h;
-    k
-}
-
-pub(crate) fn gauge_invert(g: &[(u8, u8)]) -> Vec<(u8, u8)> {
-    let mut inv: Vec<(u8, u8)> = g.iter().map(|&(a, b)| (b, a)).collect();
-    inv.sort_unstable();
-    inv.dedup();
-    inv
-}
-
-pub(crate) fn gauge_keyed(g: &[(u8, u8)]) -> Keyed<u8> {
-    let mut m = Keyed::new();
-    for &(a, b) in g {
-        m.insert(hue_key(a), b);
-    }
-    m
-}
-
-pub(crate) fn gauge_image(g: &Keyed<u8>, h: u8) -> u8 {
-    match g.get(&hue_key(h)) {
-        Some(&x) => x,
-        None => h,
-    }
-}
-
-/// `second ∘ first` on the union of listed hues; a hue absent from a map
-/// is fixed by that map. The listing holds non-fixed points only.
-pub(crate) fn compose_gauge(second: &[(u8, u8)], first: &[(u8, u8)]) -> Vec<(u8, u8)> {
-    let a = gauge_keyed(first);
-    let b = gauge_keyed(second);
-    let mut hues: Keyed<()> = Keyed::new();
-    for &(x, y) in first.iter().chain(second.iter()) {
-        hues.insert(hue_key(x), ());
-        hues.insert(hue_key(y), ());
-    }
-    let mut out = Vec::new();
-    for (k, _) in hues.fiber(&ROOT) {
-        let h = k[0];
-        let image = gauge_image(&b, gauge_image(&a, h));
-        if image != h {
-            out.push((h, image));
-        }
-    }
-    out.sort_unstable();
-    out.dedup();
-    out
-}
-
-pub(crate) fn relative_gauge(from: &[(u8, u8)], to: &[(u8, u8)]) -> Vec<(u8, u8)> {
-    let fm = gauge_keyed(from);
-    let tm = gauge_keyed(to);
-    let mut hues: Keyed<()> = Keyed::new();
-    for &(x, y) in from.iter().chain(to.iter()) {
-        hues.insert(hue_key(x), ());
-        hues.insert(hue_key(y), ());
-    }
-    let mut out = Vec::new();
-    for (k, _) in hues.fiber(&ROOT) {
-        let h = k[0];
-        let b = gauge_image(&fm, h);
-        let c = gauge_image(&tm, h);
-        if b != c {
-            out.push((b, c));
-        }
-    }
-    out.sort_unstable();
-    out.dedup();
-    out
-}
-
-fn vertex_translation(v: &Vertex, form: &Form) -> (num_rational::BigRational, num_rational::BigRational) {
-    match v {
-        Vertex::Word { placement, .. } => placement.clone(),
-        Vertex::Rebased { by, shift, .. } => match form.vertices.get(*by as usize) {
-            Some(Vertex::Word { placement, .. }) => {
-                (placement.0.clone() + &shift.0, placement.1.clone() + &shift.1)
-            }
-            _ => shift.clone(),
-        },
-        _ => q2_zero(),
-    }
-}
-
-fn vertex_gauge(v: &Vertex) -> Vec<(u8, u8)> {
-    match v {
-        Vertex::Word { gauge, .. } | Vertex::Rebased { gauge, .. } => gauge.clone(),
-        _ => Vec::new(),
     }
 }
 
@@ -588,102 +454,6 @@ pub(crate) fn take_count(b: &[u8], pos: usize, n: usize, item: usize) -> Option<
         return None;
     }
     Some(n)
-}
-
-/// declaration order is the walk order and is not a preference.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Axis {
-    Sheet(u8),
-    Unit(u8),
-    Prime5(u8),
-    Prime13(u8),
-    Hue,
-    Placement,
-    OffPlane,
-    Open,
-}
-
-impl Axis {
-    /// One tape byte: the kind in the high bits, the slot plane in the low.
-    pub(crate) fn to_byte(self) -> u8 {
-        match self {
-            Axis::Sheet(p) => p,
-            Axis::Unit(p) => (1 << 3) | p,
-            Axis::Prime5(p) => (2 << 3) | p,
-            Axis::Prime13(p) => (3 << 3) | p,
-            Axis::Hue => 4 << 3,
-            Axis::Placement => 5 << 3,
-            Axis::OffPlane => 6 << 3,
-            Axis::Open => 7 << 3,
-        }
-    }
-
-    pub fn label(self) -> &'static str {
-        match self {
-            Axis::Sheet(_) => "sheet",
-            Axis::Unit(_) => "unit",
-            Axis::Prime5(_) => "prime5",
-            Axis::Prime13(_) => "prime13",
-            Axis::Hue => "hue",
-            Axis::Placement => "placement",
-            Axis::OffPlane => "offplane",
-            Axis::Open => "open",
-        }
-    }
-
-    pub(crate) fn from_byte(b: u8) -> Option<Axis> {
-        let p = b & 7;
-        match (b >> 3, p) {
-            (0, p) if p < 6 => Some(Axis::Sheet(p)),
-            (1, p) if p < 6 => Some(Axis::Unit(p)),
-            (2, p) if p < 6 => Some(Axis::Prime5(p)),
-            (3, p) if p < 6 => Some(Axis::Prime13(p)),
-            (4, 0) => Some(Axis::Hue),
-            (5, 0) => Some(Axis::Placement),
-            (6, 0) => Some(Axis::OffPlane),
-            (7, 0) => Some(Axis::Open),
-            _ => None,
-        }
-    }
-}
-
-/// A18: the dimension audit of a nerve or form, a vector never summed.
-/// `torsion` counts the open finite-order loops; `free` is the ℤ-rank of
-/// the free parts of the open plane loops plus the open off-plane loops;
-/// `axes` the chart axes opened by discharge (none on a nerve, whose atlas
-/// is the contemplation's).
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
-pub struct Rank {
-    pub torsion: u32,
-    pub free: u32,
-    pub axes: u32,
-}
-
-impl Rank {
-    /// A pivot is admissible when it leaves rank equal or lowers `torsion`
-    /// or `free` while `axes` does not fall (12.6, R2).
-    pub fn admits(before: Rank, after: Rank) -> bool {
-        after.torsion <= before.torsion && after.free <= before.free && after.axes >= before.axes
-    }
-
-    pub(crate) fn to_bytes(self, out: &mut Vec<u8>) {
-        out.extend_from_slice(&self.torsion.to_le_bytes());
-        out.extend_from_slice(&self.free.to_le_bytes());
-        out.extend_from_slice(&self.axes.to_le_bytes());
-    }
-
-    pub(crate) fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Rank> {
-        let mut f = [0u32; 3];
-        for x in &mut f {
-            *x = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
-            *pos += 4;
-        }
-        Some(Rank {
-            torsion: f[0],
-            free: f[1],
-            axes: f[2],
-        })
-    }
 }
 
 /// Which side of the chord face a held word is written on: the face word

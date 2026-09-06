@@ -3,6 +3,7 @@
 //! Charts, coboundary, glue, and the form key.
 
 use super::form::*;
+use super::transport::*;
 use crate::network::nerve::{Keyed, ROOT};
 use crate::transducer::alphabet::{self, Word};
 use crate::transducer::element::Element;
