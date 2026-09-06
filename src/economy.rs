@@ -35,10 +35,12 @@ pub fn descends(after: &[u64; 4], before: &[u64; 4]) -> bool {
 /// there is exactly one. Several that match, or none (incomparable lanes),
 /// are not dominant.
 pub fn dominant(vals: &[[u64; 4]]) -> Option<usize> {
-    let first = vals.first()?;
-    let min: [u64; 4] = std::array::from_fn(|l| {
-        vals.iter().map(|v| v[l]).min().unwrap_or(first[l])
-    });
+    let min: [u64; 4] = [
+        vals.iter().map(|v| v[0]).min()?,
+        vals.iter().map(|v| v[1]).min()?,
+        vals.iter().map(|v| v[2]).min()?,
+        vals.iter().map(|v| v[3]).min()?,
+    ];
     let mut found = None;
     for (i, v) in vals.iter().enumerate() {
         if *v == min {
