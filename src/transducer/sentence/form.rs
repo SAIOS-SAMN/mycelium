@@ -151,14 +151,14 @@ impl Default for Form {
 
 impl Form {
     /// Fill by_address, star, placements (by transport-class key) and
-    /// hue_maps from the vertices and faces. Two gauges or two placements
-    /// on one class are two sections: that class is refused as one map.
+    /// hue_maps from the vertices and faces. Two gauges on one word class
+    /// are two hue sections, each kept. Two placements on one transport
+    /// class stay two sections: that class is refused as one placement.
     pub fn reindex(&mut self) {
         let mut by_address = Keyed::new();
         let mut by_rebased = Keyed::new();
         let mut by_unfolded = Keyed::new();
-        let mut hues: Keyed<Vec<(u8, u8)>> = Keyed::new();
-        let mut hue_conflict: Keyed<()> = Keyed::new();
+        let mut hue_maps = std::mem::take(&mut self.hue_maps);
         let mut places: Keyed<(
             num_rational::BigRational,
             num_rational::BigRational,
@@ -172,20 +172,11 @@ impl Form {
                     word,
                     placement,
                     gauge,
-                    class,
+                    class: _,
                     ..
                 } => {
                     by_address.insert(*address, i as u16);
-                    let ck = class.key();
-                    match hues.get(&ck) {
-                        None => {
-                            hues.insert(ck, gauge.clone());
-                        }
-                        Some(held) if held != gauge => {
-                            hue_conflict.insert(ck, ());
-                        }
-                        _ => {}
-                    }
+                    hue_maps.insert(hue_section_key(word, gauge), gauge.clone());
                     let tk = vertex_transport_key(word, gauge);
                     match places.get(&tk) {
                         None => {
@@ -206,12 +197,6 @@ impl Form {
                     by_unfolded.insert(unfolded_key(measure), i as u16);
                 }
                 _ => {}
-            }
-        }
-        let mut hue_maps = Keyed::new();
-        for (k, g) in hues.fiber(&ROOT) {
-            if !hue_conflict.contains(k) {
-                hue_maps.insert(*k, g.clone());
             }
         }
         let mut placements = Keyed::new();
@@ -424,6 +409,19 @@ pub(crate) fn unfolded_key(measure: &Measure) -> [u8; 32] {
         }
     }
     k
+}
+
+/// Hue map as a section coordinate: word conjugacy and the map, never a
+/// matching key for correspondence (chapter 21 step 1).
+pub(crate) fn hue_section_key(word: &Word, gauge: &[(u8, u8)]) -> [u8; 32] {
+    let mut buf = Vec::new();
+    buf.extend_from_slice(&word.class_key());
+    buf.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
+    for &(a, b) in gauge {
+        buf.push(a);
+        buf.push(b);
+    }
+    *blake3::hash(&buf).as_bytes()
 }
 
 pub(crate) fn vertex_transport_key(word: &Word, gauge: &[(u8, u8)]) -> [u8; 32] {

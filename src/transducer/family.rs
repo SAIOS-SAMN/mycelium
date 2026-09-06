@@ -1510,14 +1510,14 @@ fn class_of_vertex(v: &Vertex) -> Option<Invariant> {
     }
 }
 
-/// Correspondence class of a vertex: kind, conjugacy of the word, hue map.
-/// The body's moduli stay on the vertex as a section coordinate, never a
-/// matching key. Frame matches by kind alone and is not a class.
-#[derive(Clone, PartialEq, Eq)]
+/// Correspondence class of a vertex: kind and conjugacy of the word.
+/// The hue map is a section coordinate on `Form.hue_maps`, never a matching
+/// key. The body's moduli stay on the vertex as a section coordinate.
+/// Frame matches by kind alone and is not a class.
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct TransportClass {
     kind: super::peel::ShellKind,
     word_class: [u8; 32],
-    gauge: Vec<(u8, u8)>,
 }
 
 impl TransportClass {
@@ -1525,26 +1525,16 @@ impl TransportClass {
         let mut buf = Vec::new();
         buf.push(self.kind.as_u8());
         buf.extend_from_slice(&self.word_class);
-        buf.extend_from_slice(&(self.gauge.len() as u16).to_le_bytes());
-        for &(a, b) in &self.gauge {
-            buf.push(a);
-            buf.push(b);
-        }
         *blake3::hash(&buf).as_bytes()
     }
 }
 
 fn transport_class(v: &Vertex) -> Option<TransportClass> {
     match v {
-        Vertex::Word { word, gauge, .. } => {
-            let mut g = gauge.clone();
-            g.sort_unstable();
-            Some(TransportClass {
-                kind: super::peel::ShellKind::Whole,
-                word_class: word.class_key(),
-                gauge: g,
-            })
-        }
+        Vertex::Word { word, .. } => Some(TransportClass {
+            kind: super::peel::ShellKind::Whole,
+            word_class: word.class_key(),
+        }),
         _ => None,
     }
 }
@@ -1697,11 +1687,13 @@ pub fn extract_rule_with(
         .map(|(a, b)| pair_form(a, b, Some(scale)))
         .collect();
     let n_pairs = pair_forms.len();
-    // 1. Correspondence by transport class (kind, word class, gauge).
-    // Moduli stay a section coordinate. Presence is a keyed set of pair
-    // indices, never a scan of groups and never a count-as-branch.
+    // 1. Correspondence by transport class (kind, word class).
+    // The hue map is a section on Form.hue_maps. Moduli stay a section
+    // coordinate. Presence is a keyed set of pair indices, never a scan
+    // of groups and never a count-as-branch.
     let mut class_pairs: crate::network::nerve::Keyed<Vec<u16>> = crate::network::nerve::Keyed::new();
     let mut class_of: crate::network::nerve::Keyed<TransportClass> = crate::network::nerve::Keyed::new();
+    let mut hue_maps: crate::network::nerve::Keyed<Vec<(u8, u8)>> = crate::network::nerve::Keyed::new();
     for (pi, f) in pair_forms.iter().enumerate() {
         let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         for v in &f.vertices {
@@ -1709,6 +1701,12 @@ pub fn extract_rule_with(
                 continue;
             };
             let k = c.key();
+            if let Vertex::Word { word, gauge, .. } = v {
+                let hk = super::sentence::hue_section_key(word, gauge);
+                if !hue_maps.contains(&hk) {
+                    hue_maps.insert(hk, gauge.clone());
+                }
+            }
             if seen.contains(&k) {
                 continue;
             }
@@ -1759,7 +1757,7 @@ pub fn extract_rule_with(
         loops: Vec::new(),
         remainder: Vec::new(),
         depth: 0,
-        hue_maps: crate::network::nerve::Keyed::new(),
+        hue_maps,
         ratio: ((1, 1), (1, 1)),
         sections: crate::network::nerve::Keyed::new(),
         certificates: crate::network::nerve::Keyed::new(),
@@ -1968,13 +1966,10 @@ fn index_ends(form: &Form) -> crate::network::nerve::Keyed<u16> {
 }
 
 fn hue_maps_of_form(form: &Form) -> crate::network::nerve::Keyed<Vec<(u8, u8)>> {
-    if !form.hue_maps.is_empty() {
-        return form.hue_maps.clone();
-    }
-    let mut m = crate::network::nerve::Keyed::new();
+    let mut m = form.hue_maps.clone();
     for v in &form.vertices {
-        if let Vertex::Word { class, gauge, .. } = v {
-            let k = class.key();
+        if let Vertex::Word { word, gauge, .. } = v {
+            let k = super::sentence::hue_section_key(word, gauge);
             if !m.contains(&k) {
                 m.insert(k, gauge.clone());
             }
@@ -2430,14 +2425,12 @@ mod tests {
             .filter(|v| matches!(v, Vertex::Word { .. }))
             .count();
         assert_eq!(words, 1, "presence, not min count; got {words} Word vertices");
-        // A recolour in only the first pair is a different transport from the
-        // shift that appears in both: the recolour is a some-pair section.
+        // A reflection in only the first pair is a different word from the
+        // recolour that appears in the second: the reflection is a some-pair
+        // section. Hue is not a matching key, so a recolour-only split is not.
         let mixed = vec![
-            (
-                grid(&["1100", "0000", "1100", "1100"]),
-                grid(&["0011", "0000", "2200", "2200"]),
-            ),
-            (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
+            (grid(&["1100", "1000", "0000"]), grid(&["0011", "0001", "0000"])),
+            (grid(&["1100", "0000", "0000"]), grid(&["2200", "0000", "0000"])),
         ];
         let some = extract_rule_with(&mixed, &NoCrystal).expect("sectioned");
         assert!(
@@ -2536,7 +2529,17 @@ mod tests {
         let mut form = pf.clone();
         let tc_a = transport_class(&pf.vertices[1]).expect("A has a transport class");
         let tc_b = transport_class(&pf.vertices[2]).expect("B has a transport class");
-        assert!(tc_a != tc_b, "A and B are two transport classes: they recolour differently");
+        assert_eq!(
+            tc_a, tc_b,
+            "A and B share a transport class: the same word, two hue sections"
+        );
+        pf.reindex();
+        assert_eq!(
+            pf.hue_maps.len(),
+            2,
+            "two hue sections on one word class, got {}",
+            pf.hue_maps.len()
+        );
         rebase_named_faces(&mut form, std::slice::from_ref(&pf));
         let n_re = form
             .vertices
@@ -3019,8 +3022,8 @@ mod tests {
     #[test]
     fn a_class_in_some_pairs_is_a_section() {
         let family = vec![
-            (grid(&["110022", "000000"]), grid(&["220022", "000000"])),
-            (grid(&["110000", "000000"]), grid(&["220000", "000000"])),
+            (grid(&["1100", "1000", "0000"]), grid(&["0011", "0001", "0000"])),
+            (grid(&["1100", "0000", "0000"]), grid(&["2200", "0000", "0000"])),
         ];
         let rule = extract_rule(&family).expect("frame plus a some-pair class");
         assert!(
@@ -3031,9 +3034,9 @@ mod tests {
         );
     }
 
-    /// Correspondence across pairs is transport class (kind, word, hue),
-    /// not body moduli. A square and a bar recoloured 1→2 are one class;
-    /// frames of different sizes match by kind.
+    /// Correspondence across pairs is transport class (kind, word),
+    /// not body moduli and not the hue map. A square and a bar recoloured
+    /// 1→2 are one class; frames of different sizes match by kind.
     #[test]
     fn correspondence_is_transport_class_not_shape() {
         let family = vec![
@@ -3060,8 +3063,42 @@ mod tests {
         );
     }
 
-    /// Two hues in one thought: Čech 1-skeleton has the cross-hue face,
-    /// a frame-and-two-bodies triangle is a vortex, holonomy is checked.
+    /// Two pairs that recolour differently share one rule vertex; the hue
+    /// maps are two sections, not two classes.
+    #[test]
+    fn two_pairs_that_recolour_differently_share_one_rule_vertex() {
+        let family = vec![
+            (grid(&["1100", "0000"]), grid(&["2200", "0000"])),
+            (grid(&["1100", "0000"]), grid(&["3300", "0000"])),
+        ];
+        let rule = extract_rule(&family).expect("one recolour class");
+        let words: Vec<&Vertex> = rule
+            .form
+            .vertices
+            .iter()
+            .filter(|v| matches!(v, Vertex::Word { .. }))
+            .collect();
+        assert_eq!(
+            words.len(),
+            1,
+            "one rule vertex for one word class, got {} vertices {} faces {:?}",
+            rule.form.vertices.len(),
+            rule.form.faces.len(),
+            words.iter().map(|v| match v {
+                Vertex::Word { gauge, .. } => gauge.clone(),
+                _ => Vec::new(),
+            }).collect::<Vec<_>>()
+        );
+        let hues = rule.form.hue_maps.len();
+        assert_eq!(
+            hues, 2,
+            "two hue sections, got {hues} maps on {} vertices",
+            rule.form.vertices.len()
+        );
+    }
+
+    /// Two hues of one linear word are one transport class; the maps are
+    /// hue sections, not two vertices. A vortex needs two words, not two hues.
     #[test]
     fn two_hues_form_a_cycle_the_word_not_the_versor() {
         let family = vec![
@@ -3075,21 +3112,15 @@ mod tests {
             .iter()
             .filter(|v| matches!(v, Vertex::Word { .. }))
             .count();
-        assert!(
-            words >= 2,
-            "two hue classes are two word vertices, got {} vertices",
+        assert_eq!(
+            words, 1,
+            "two hues of one word class are one vertex, got {words} words, {} vertices",
             rule.form.vertices.len()
         );
         assert!(
-            !rule.form.faces.is_empty(),
-            "faces survive word constancy, got 0 with {} vertices",
-            rule.form.vertices.len()
-        );
-        assert!(
-            !rule.form.loops.is_empty(),
-            "frame + two bodies is a vortex; faces {} loops {}",
-            rule.form.faces.len(),
-            rule.form.loops.len()
+            rule.form.hue_maps.len() >= 2,
+            "two hue sections, got {}",
+            rule.form.hue_maps.len()
         );
         assert!(
             rule.form.loops.iter().all(|c| c.holonomy.is_identity()),
