@@ -1493,6 +1493,37 @@ impl Epigenome {
 
     fn learn_one(&mut self, taught: &[u8], pos: &mut usize, k: u64, now_tu: u64) -> Option<Comprehension> {
         let e = Element::from_bytes(taught, pos)?;
+        let addr = e.address();
+        let resolve = |a: &[u8; 32]| {
+            self.working_word(a)
+                .and_then(|w| crate::transducer::sentence::from_element_form(w))
+        };
+        match crate::verdict::blind_replay_with(&e, &resolve) {
+            Some(crate::verdict::REFUSE_GLUED_UNRULED)
+            | Some(crate::verdict::REFUSE_GLUED_DEPTH) => {}
+            Some(reason) => {
+                eprintln!(
+                    "  syllabus refused {:02x}{:02x}…: {reason}",
+                    addr[0], addr[1]
+                );
+                self.refused += 1;
+                return None;
+            }
+            None => {
+                if let Some(f) = crate::transducer::sentence::from_element_form(&e) {
+                    if f.rank().is_none() {
+                        eprintln!(
+                            "  syllabus refused {:02x}{:02x}…: {}",
+                            addr[0],
+                            addr[1],
+                            crate::verdict::REFUSE_RANK_LOST
+                        );
+                        self.refused += 1;
+                        return None;
+                    }
+                }
+            }
+        }
         let spelled = !e.is_connection() || e.letters_rederive() == Some(true);
         if !spelled {
             self.refused += 1;
@@ -1515,7 +1546,6 @@ impl Epigenome {
             }
         }
         let heard = self.comprehend(&e);
-        let addr = e.address();
         if let Comprehension::Withheld { missing } = &heard {
             let missing = missing.clone();
             if let Some(da) = self.stand_dialect_at(e, k, now_tu) {
@@ -3798,6 +3828,29 @@ mod tests {
         assert!(
             on.iter().any(|(_, _, st)| *st == Standing::Ruled),
             "Crystal carries standing as a coordinate after promotion"
+        );
+    }
+
+    /// A taught word that fails replay is refused, not learned.
+    #[test]
+    fn taught_word_that_fails_replay_is_refused_not_learned() {
+        use crate::transducer::element::from_residual;
+        use crate::transducer::germinate::germinate;
+        let honest = from_residual(
+            &germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap(),
+        );
+        let mut fat = honest.clone();
+        fat.set_magnitude([999, 0, 0, 0]);
+        let mut entity = Entity::open("127.0.0.1:1", Kernel::named("syllabus-refuse"));
+        assert!(
+            entity.absorb_taught(&fat.to_bytes()).is_none(),
+            "a word that fails replay is not learned"
+        );
+        assert_eq!(entity.epigenome.genome_len(), 0, "genome stays empty");
+        assert_eq!(entity.dialect_len(), 0, "dialect stays empty");
+        assert!(
+            entity.absorb_taught(&honest.to_bytes()).is_some(),
+            "an honest derivation is learned"
         );
     }
 
