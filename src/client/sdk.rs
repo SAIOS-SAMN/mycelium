@@ -2959,7 +2959,9 @@ impl Entity {
         self.epigenome.atlas_is_empty() && self.contemplation.len() == 0
     }
 
-    /// Counts on the working atlas: ruled (genome), stood (dialect), held (ideas).
+    /// Word counts per stratum on the working atlas: ruled (genome words),
+    /// stood (dialect words), held (idea words). The atlas ruled/stood/held
+    /// log line is these word counts, never chart counts.
     pub fn atlas_standing_counts(&self) -> (usize, usize, usize) {
         (
             self.epigenome.genome_len(),

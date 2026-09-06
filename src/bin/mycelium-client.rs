@@ -618,7 +618,7 @@ fn main() {
                     tuniversal.stamp(),
                 );
                 eprintln!(
-                    "[{tag}] [{}] atlas ruled {atlas_ruled} stood {atlas_stood} held {atlas_held}",
+                    "[{tag}] [{}] atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held}",
                     tuniversal.stamp(),
                 );
                 eprintln!(
@@ -843,7 +843,7 @@ fn main() {
             let (atlas_ruled, atlas_stood, atlas_held) = entity.atlas_standing_counts();
             if outcome.dormant() {
                 eprintln!(
-                    "[{tag}] [{}] stroke idle: dwell {dwell_remaining:?} K {k_step} | genome {} | dialect {} | ideas {} | atlas ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | feed {}",
+                    "[{tag}] [{}] stroke idle: dwell {dwell_remaining:?} K {k_step} | genome {} | dialect {} | ideas {} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | feed {}",
                     tuniversal.stamp(),
                     entity.epigenome.genome_len(),
                     entity.dialect_len(),
@@ -853,7 +853,7 @@ fn main() {
             } else {
                 eprintln!("[{tag}] [{}] stroke laps ms {laps:?}", tuniversal.stamp());
                 eprintln!(
-                    "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | atlas ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | shed {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} discordance {} axes {}",
+                    "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | shed {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} discordance {} axes {}",
                     tuniversal.stamp(),
                     entity.epigenome.genome_len(),
                     entity.dialect_len(),
