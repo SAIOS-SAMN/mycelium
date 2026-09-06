@@ -1265,11 +1265,12 @@ impl Contemplation {
             });
             match &b.form {
                 Some(f) => {
-                    out.extend_from_slice(b"FRM1");
                     let mut fb = Vec::new();
-                    sentence::encode_form_v2(f, &mut fb);
-                    out.extend_from_slice(&(fb.len() as u32).to_le_bytes());
-                    out.extend_from_slice(&fb);
+                    if sentence::encode_form_v2(f, &mut fb).is_some() {
+                        out.extend_from_slice(b"FRM1");
+                        out.extend_from_slice(&(fb.len() as u32).to_le_bytes());
+                        out.extend_from_slice(&fb);
+                    }
                 }
                 None => {}
             }

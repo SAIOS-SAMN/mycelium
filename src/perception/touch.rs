@@ -8,5 +8,5 @@
 //! inside them; thought decides what carries what.
 
 pub use crate::transducer::blade::{topology, turns};
-pub use crate::transducer::element::gauge_fibers;
+pub use crate::transducer::element::{gauge_fibers, GaugeFibers};
 pub use crate::transducer::sentence::{pieces, seam_defect, seam_defect_operators};

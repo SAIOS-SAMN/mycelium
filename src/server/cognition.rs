@@ -6282,9 +6282,14 @@ pub fn resolve_cites(
             // The gauge coordinate is read from the target, never trusted
             // as an index into this copy of the word.
             let agreeing = crate::transducer::sentence::gauge_of(&language.words[i], g, target);
+            let n = agreeing.len();
             let mut it = agreeing.fiber(&crate::network::nerve::ROOT);
             let (_, &gauge) = it.next()?;
             if it.next().is_some() {
+                eprintln!(
+                    "  court cite gauge ambiguous {:02x}{:02x}… {n}",
+                    addr[0], addr[1]
+                );
                 return None;
             }
             Some((i, g.clone(), gauge))

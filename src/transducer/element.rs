@@ -447,10 +447,16 @@ pub fn assignment_key(asg: &[(u8, u8)]) -> [u8; 32] {
     *blake3::hash(&buf).as_bytes()
 }
 
+/// One transition class, or several keyed by the pair.
+pub enum GaugeFibers {
+    One((u8, u8), Vec<(i64, i64, u8, u8)>),
+    Many(crate::network::nerve::Keyed<Vec<(i64, i64, u8, u8)>>),
+}
+
 /// THE GAUGE FIBERS of a chain: the chain opened along its fiber
 /// coordinate, one sub-chain per transition class. Indexed by the pair
-/// key; the fiber walk yields the classes in key order.
-pub fn gauge_fibers(chain: &[(i64, i64, u8, u8)]) -> Vec<((u8, u8), Vec<(i64, i64, u8, u8)>)> {
+/// key. One class is `One`; two or more, or none, is `Many`.
+pub fn gauge_fibers(chain: &[(i64, i64, u8, u8)]) -> GaugeFibers {
     let mut idx: crate::network::nerve::Keyed<Vec<(i64, i64, u8, u8)>> =
         crate::network::nerve::Keyed::new();
     for &cell in chain {
@@ -462,9 +468,21 @@ pub fn gauge_fibers(chain: &[(i64, i64, u8, u8)]) -> Vec<((u8, u8), Vec<(i64, i6
             }
         }
     }
-    idx.fiber(&crate::network::nerve::ROOT)
-        .map(|(k, fiber)| ((k[0], k[1]), fiber.clone()))
-        .collect()
+    let mut first = None;
+    let mut many = false;
+    for (k, fiber) in idx.fiber(&crate::network::nerve::ROOT) {
+        match first {
+            None => first = Some(((k[0], k[1]), fiber.clone())),
+            Some(_) => {
+                many = true;
+                break;
+            }
+        }
+    }
+    match (many, first) {
+        (false, Some((class, cells))) => GaugeFibers::One(class, cells),
+        _ => GaugeFibers::Many(idx),
+    }
 }
 
 impl Element {

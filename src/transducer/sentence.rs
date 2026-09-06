@@ -307,7 +307,7 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[Cell]) -> Keyed<usize> {
             }
         });
         if ok {
-            agreeing.insert(index_key(k), k);
+            agreeing.insert(element::assignment_key(assignment), k);
         }
     }
     agreeing
@@ -482,31 +482,11 @@ pub fn locate_or_puncture_on<'a>(
     (None, None, m)
 }
 
-/// A body's gauge classes, indexed by hue-pair chart, each opened into
-/// its own connected pieces. None when the body is a single class — a
-/// stalk, cited or residual, never opened further. The index is built
-/// once from the body's cells; locate then reads each fiber.
-fn open_by_chart(body: &[Cell]) -> Vec<Vec<Cell>> {
-    let fibers = element::gauge_fibers(body);
-    let mut idx: Keyed<Vec<Vec<Cell>>> = Keyed::new();
-    for (class, fiber) in fibers {
-        idx.insert(element::hue_pair_key(class.0, class.1), pieces(&fiber));
+fn body_key(body: &[Cell]) -> Option<[u8; 32]> {
+    if body.is_empty() {
+        return None;
     }
-    let mut out = Vec::new();
-    for (_, subs) in idx.fiber(&ROOT) {
-        out.extend(subs.clone());
-    }
-    if out.is_empty() {
-        out.push(body.to_vec());
-    }
-    out
-}
-
-fn body_key(body: &[Cell]) -> [u8; 32] {
-    match body.first() {
-        Some(c) => cell_at_key(c.0, c.1),
-        None => [0u8; 32],
-    }
+    Some(element::from_residual(&body.to_vec()).address())
 }
 
 fn place_located<'a>(
@@ -519,20 +499,27 @@ fn place_located<'a>(
     shape_at: &impl Fn(usize) -> Option<&'a Shape>,
     exclude: Option<usize>,
 ) {
-    out.multiplicity.insert(body_key(body), located.2);
+    if let Some(k) = body_key(body) {
+        out.multiplicity.insert(k, located.2);
+    }
     match located {
         (Some(c), _, _) => out.cites.push(c),
         (None, Some(p), _) => out.punctures.push(p),
-        (None, None, _) => {
-            for sub in open_by_chart(body) {
-                if sub.as_slice() == body {
-                    out.residual.extend(sub);
-                    continue;
-                }
-                let loc = locate_or_puncture_on(word_at, fiber_of, index_of, shape_at, &sub, exclude);
-                place_located(out, loc, &sub, word_at, fiber_of, index_of, shape_at, exclude);
+        (None, None, _) => match element::gauge_fibers(body) {
+            element::GaugeFibers::One(_, cells) => {
+                out.residual.extend(cells);
             }
-        }
+            element::GaugeFibers::Many(idx) => {
+                for (_, fiber) in idx.fiber(&ROOT) {
+                    for sub in pieces(fiber) {
+                        let loc = locate_or_puncture_on(
+                            word_at, fiber_of, index_of, shape_at, &sub, exclude,
+                        );
+                        place_located(out, loc, &sub, word_at, fiber_of, index_of, shape_at, exclude);
+                    }
+                }
+            }
+        },
     }
 }
 
@@ -578,19 +565,19 @@ pub fn deconstruct_on<'a>(
         return out;
     }
     let whole = locate_or_puncture_on(word_at, fiber_of, index_of, shape_at, chain, exclude);
-    if whole.0.is_some() {
-        place_located(&mut out, whole, chain, word_at, fiber_of, index_of, shape_at, exclude);
-        out.residual.sort_unstable();
-        out.connection = out
-            .cites
-            .windows(2)
-            .filter_map(|w| Some(w[0].1.versor_inverse()?.geo(&w[1].1)))
-            .collect();
-        return out;
+    if let Some(k) = body_key(chain) {
+        out.multiplicity.insert(k, whole.2);
     }
-    for body in pieces(chain) {
-        let loc = locate_or_puncture_on(word_at, fiber_of, index_of, shape_at, &body, exclude);
-        place_located(&mut out, loc, &body, word_at, fiber_of, index_of, shape_at, exclude);
+    match whole.0 {
+        Some(_) => {
+            place_located(&mut out, whole, chain, word_at, fiber_of, index_of, shape_at, exclude);
+        }
+        None => {
+            for body in pieces(chain) {
+                let loc = locate_or_puncture_on(word_at, fiber_of, index_of, shape_at, &body, exclude);
+                place_located(&mut out, loc, &body, word_at, fiber_of, index_of, shape_at, exclude);
+            }
+        }
     }
     out.residual.sort_unstable();
     out.connection = out
@@ -747,30 +734,6 @@ fn gauge_image(g: &Keyed<u8>, h: u8) -> u8 {
         Some(&x) => x,
         None => h,
     }
-}
-
-/// `second ∘ first` on the union of listed hues; a hue absent from a map
-/// is fixed by that map. The listing holds non-fixed points only.
-#[cfg(test)]
-fn compose_gauge(second: &[(u8, u8)], first: &[(u8, u8)]) -> Vec<(u8, u8)> {
-    let a = gauge_keyed(first);
-    let b = gauge_keyed(second);
-    let mut hues: Keyed<()> = Keyed::new();
-    for &(x, y) in first.iter().chain(second.iter()) {
-        hues.insert(hue_key(x), ());
-        hues.insert(hue_key(y), ());
-    }
-    let mut out = Vec::new();
-    for (k, _) in hues.fiber(&ROOT) {
-        let h = k[0];
-        let image = gauge_image(&b, gauge_image(&a, h));
-        if image != h {
-            out.push((h, image));
-        }
-    }
-    out.sort_unstable();
-    out.dedup();
-    out
 }
 
 fn relative_gauge(from: &[(u8, u8)], to: &[(u8, u8)]) -> Vec<(u8, u8)> {
@@ -948,20 +911,6 @@ impl Form {
         self.star = star;
         self.placements = placements;
         self.hue_maps = hue_maps;
-    }
-
-    pub fn push_vertex(&mut self, v: Vertex) -> u16 {
-        let i = self.vertices.len() as u16;
-        self.vertices.push(v);
-        self.reindex();
-        i
-    }
-
-    pub fn push_face(&mut self, f: FormFace) -> u16 {
-        let i = self.faces.len() as u16;
-        self.faces.push(f);
-        self.reindex();
-        i
     }
 }
 
@@ -1153,17 +1102,28 @@ impl Form {
 
     /// Replace every face `g_ij` by `γ_j · g_ij · γ_i⁻¹`. Holonomies of
     /// identity stay identity. The gauge's length is the vertex count.
+    /// Every new transport is computed first; a form whose gauge cannot
+    /// be applied is left unchanged.
     pub fn regauge(&mut self, gamma: &[Word]) -> Option<()> {
         if gamma.len() != self.vertices.len() {
             return None;
         }
-        for f in &mut self.faces {
+        let mut next = Vec::with_capacity(self.faces.len());
+        for f in &self.faces {
             let gi = gamma.get(f.i as usize)?;
             let gj = gamma.get(f.j as usize)?;
-            f.transport.word = gj
+            let word = gj
                 .compose(&f.transport.word.compose(&gi.inverse()))
                 .normal_form();
-            f.transport.shift = apply_linear(gj, &f.transport.shift)?;
+            let shift = apply_linear(gj, &f.transport.shift)?;
+            next.push(Transport {
+                word,
+                shift,
+                gauge: f.transport.gauge.clone(),
+            });
+        }
+        for (f, t) in self.faces.iter_mut().zip(next) {
+            f.transport = t;
         }
         self.loops = Self::loops_of(&self.faces, self.vertices.len());
         Some(())
@@ -1317,6 +1277,13 @@ impl Form {
         bundle: Option<&[(Vec<Vec<u8>>, Vec<Vec<u8>>)]>,
         t_extent: u64,
     ) -> Vec<Snap> {
+        debug_assert!(
+            self.vertices.iter().enumerate().all(|(i, v)| match v {
+                Vertex::Word { address, .. } => self.by_address.get(address) == Some(&(i as u16)),
+                _ => true,
+            }),
+            "by_address holds every Word vertex"
+        );
         let mut snaps = Vec::new();
         let mut handled: Keyed<()> = Keyed::new();
         loop {
@@ -1324,10 +1291,57 @@ impl Form {
                 break;
             }
             self.loops = Self::loops_of(&self.faces, self.vertices.len());
-            if let Some(gamma) = self.solve_coboundary() {
-                let _ = self.regauge(&gamma);
+            let pending: Vec<(usize, Order)> = self
+                .loops
+                .iter()
+                .enumerate()
+                .filter_map(|(i, lp)| {
+                    let open_holo = !lp.holonomy.abelian_identity();
+                    let open_chord = self
+                        .faces
+                        .get(lp.chord as usize)
+                        .is_some_and(|f| !f.transport.word.abelian_identity());
+                    if open_holo || open_chord {
+                        Some((i, lp.holonomy.order()))
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            let rank_before_gauge = self.rank();
+            match self.solve_coboundary() {
+                Some(gamma) => {
+                    if self.regauge(&gamma).is_none() {
+                        eprintln!(
+                            "  pivot {:02x}{:02x}… held, tree gauge cannot be applied",
+                            idea[0], idea[1]
+                        );
+                        break;
+                    }
+                }
+                None => {}
             }
-            self.loops = Self::loops_of(&self.faces, self.vertices.len());
+            debug_assert_eq!(
+                rank_before_gauge,
+                self.rank(),
+                "R1: re-gauging preserves rank"
+            );
+            for (idx, order) in &pending {
+                if self
+                    .loops
+                    .get(*idx)
+                    .is_some_and(|lp| lp.holonomy.abelian_identity())
+                {
+                    snaps.push(Snap::Closed {
+                        chord: *idx,
+                        order: *order,
+                    });
+                    eprintln!(
+                        "  pivot {:02x}{:02x}… loop {idx} closed by the tree gauge",
+                        idea[0], idea[1]
+                    );
+                }
+            }
             let open: Vec<usize> = self
                 .loops
                 .iter()
@@ -1340,12 +1354,9 @@ impl Form {
             }
             let rows: Vec<LoopRow> = self.loops.iter().map(|lp| loop_row(&lp.holonomy)).collect();
             let rank_before = rank_of_rows(&rows);
-            let mu_before = match bundle {
-                None => [0; 4],
-                Some(b) => match super::family::bundle_pressure(self, b, crystal, t_extent) {
-                    Some(m) => m,
-                    None => [0; 4],
-                },
+            let mu_before: Option<[u64; 4]> = match bundle {
+                None => None,
+                Some(b) => super::family::bundle_pressure(self, b, crystal, t_extent),
             };
             let mut applied = false;
             for idx in open {
@@ -1414,7 +1425,7 @@ impl Form {
                         for c in &held_certs {
                             vortex_put(&mut self.vortex, c.clone());
                         }
-                        if bundle.is_some() {
+                        if mu_before.is_some() {
                             eprintln!(
                                 "  vortex {:02x}{:02x}… loop {idx} {} candidates held",
                                 idea[0],
@@ -1549,7 +1560,7 @@ impl Form {
         crystal: &dyn super::family::Crystal,
         bundle: Option<&[(Vec<Vec<u8>>, Vec<Vec<u8>>)]>,
         t_extent: u64,
-        mu_before: [u64; 4],
+        mu_before: Option<[u64; 4]>,
     ) -> Option<PivotCertificate> {
         let lp = self.loops.get(idx)?;
         let PivotBy::Word { face, word, side } = &cand.by;
@@ -1584,12 +1595,17 @@ impl Form {
             f.transport.word = after_g;
         }
         trial_form.loops = Form::loops_of(&trial_form.faces, trial_form.vertices.len());
-        let mu_after = match bundle {
+        let mu_after = match mu_before {
+            Some(_) => match bundle {
+                None => [0; 4],
+                Some(b) => super::family::bundle_pressure(&trial_form, b, crystal, t_extent)?,
+            },
             None => [0; 4],
-            Some(b) => super::family::bundle_pressure(&trial_form, b, crystal, t_extent)?,
         };
-        if !(mu_after == mu_before || crate::economy::descends(&mu_after, &mu_before)) {
-            return None;
+        if let Some(before) = mu_before {
+            if !(mu_after == before || crate::economy::descends(&mu_after, &before)) {
+                return None;
+            }
         }
         Some(PivotCertificate {
             chord: idx as u16,
@@ -1598,7 +1614,7 @@ impl Form {
             after: kappa_after.class_key(),
             rank_before,
             rank_after,
-            mu_before,
+            mu_before: mu_before.unwrap_or([0; 4]),
             mu_after,
             by: cand.by.clone(),
         })
@@ -2643,12 +2659,13 @@ fn take_count(b: &[u8], pos: usize, n: usize, item: usize) -> Option<usize> {
     Some(n)
 }
 
-fn put_inv(inv: &stalk::Invariant, out: &mut Vec<u8>) {
-    let n = u16::try_from(inv.0.len()).unwrap_or(u16::MAX);
+fn put_inv(inv: &stalk::Invariant, out: &mut Vec<u8>) -> Option<()> {
+    let n = u16::try_from(inv.0.len()).ok()?;
     out.extend_from_slice(&n.to_le_bytes());
-    for a in inv.0.iter().take(n as usize) {
+    for a in &inv.0 {
         out.extend_from_slice(&a.to_le_bytes());
     }
+    Some(())
 }
 
 fn take_inv(b: &[u8], pos: &mut usize) -> Option<stalk::Invariant> {
@@ -2663,7 +2680,7 @@ fn take_inv(b: &[u8], pos: &mut usize) -> Option<stalk::Invariant> {
     Some(stalk::Invariant(axes))
 }
 
-pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) {
+pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
     out.extend_from_slice(&(f.vertices.len() as u16).to_le_bytes());
     for v in &f.vertices {
         match v {
@@ -2688,7 +2705,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) {
                     out.push(a);
                     out.push(b);
                 }
-                put_inv(class, out);
+                put_inv(class, out)?;
             }
             Vertex::Glued {
                 address,
@@ -2699,7 +2716,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) {
             } => {
                 out.push(2);
                 out.extend_from_slice(address);
-                put_inv(chart, out);
+                put_inv(chart, out)?;
                 for m in magnitude {
                     out.extend_from_slice(&m.to_le_bytes());
                 }
@@ -2725,7 +2742,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) {
                     out.push(a);
                     out.push(b);
                 }
-                put_inv(class, out);
+                put_inv(class, out)?;
             }
             Vertex::Unfolded { measure } => {
                 out.push(4);
@@ -2816,6 +2833,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) {
         out.extend_from_slice(&ell.to_le_bytes());
         out.extend_from_slice(&chord.to_le_bytes());
     }
+    Some(())
 }
 
 fn take_u16(b: &[u8], pos: &mut usize) -> Option<u16> {
@@ -2965,17 +2983,14 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         });
     }
     let nh = take_count(b, *pos, take_u16(b, pos).unwrap_or(0) as usize, 32)?;
-    let mut hue_maps = Keyed::new();
     for _ in 0..nh {
-        let k: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+        let _: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
         *pos += 32;
         let np = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
-        let mut pairs = Vec::with_capacity(np);
-        for _ in 0..np {
-            pairs.push((*b.get(*pos)?, *b.get(*pos + 1)?));
-            *pos += 2;
+        *pos = pos.checked_add(np.checked_mul(2)?)?;
+        if *pos > b.len() {
+            return None;
         }
-        hue_maps.insert(k, pairs);
     }
     let nr = take_count(b, *pos, take_u32(b, pos).unwrap_or(0) as usize, 18)?;
     let mut remainder = Vec::with_capacity(nr);
@@ -3046,7 +3061,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         loops,
         remainder,
         depth,
-        hue_maps,
+        hue_maps: Keyed::new(),
         ratio,
         sections,
         certificates,
@@ -3069,7 +3084,7 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
     }
     let mut e = Element::identity(GERM_DIM);
     let mut word = vec![element::SENTENCE_TAG, 2];
-    encode_form_v2(f, &mut word);
+    encode_form_v2(f, &mut word)?;
     e.set_description(word);
     e.set_magnitude(mag);
     Some(e)
@@ -3218,6 +3233,29 @@ mod tests {
     }
     fn q1() -> num_rational::BigRational {
         num_rational::BigRational::from_integer(num_bigint::BigInt::from(1))
+    }
+
+    /// `second ∘ first` on the union of listed hues; a hue absent from a map
+    /// is fixed by that map. The listing holds non-fixed points only.
+    fn compose_gauge(second: &[(u8, u8)], first: &[(u8, u8)]) -> Vec<(u8, u8)> {
+        let a = gauge_keyed(first);
+        let b = gauge_keyed(second);
+        let mut hues: Keyed<()> = Keyed::new();
+        for &(x, y) in first.iter().chain(second.iter()) {
+            hues.insert(hue_key(x), ());
+            hues.insert(hue_key(y), ());
+        }
+        let mut out = Vec::new();
+        for (k, _) in hues.fiber(&ROOT) {
+            let h = k[0];
+            let image = gauge_image(&b, gauge_image(&a, h));
+            if image != h {
+                out.push((h, image));
+            }
+        }
+        out.sort_unstable();
+        out.dedup();
+        out
     }
 
     fn closed_word_form(word: Word, contact: Option<alphabet::Contact>) -> Form {
@@ -3596,8 +3634,8 @@ mod tests {
         assert_eq!(s.cites.len(), 2);
         assert_eq!(
             s.multiplicity.len(),
-            3,
-            "bar, dot and residual each have a width, never one maximum"
+            4,
+            "the chain and each of bar, dot, residual have a width, never one maximum"
         );
         assert_eq!(s.connection.len(), 1, "one relative transport between two cited bodies");
         assert_eq!(s.residual, vec![(9, 9, 5, 6), (9, 10, 5, 6), (10, 9, 5, 6)]);
@@ -3622,15 +3660,20 @@ mod tests {
         let mixed = vec![(0, 0, 1, 2), (0, 1, 1, 2), (4, 4, 3, 4)];
         let s = deconstruct(&words, &atlas, &index_of, &shape_at, &mixed, None);
         assert_eq!(s.cites.len(), 2);
-        assert_eq!(s.multiplicity.len(), 2, "two bodies, two keys");
+        assert_eq!(
+            s.multiplicity.len(),
+            3,
+            "the chain and each cited body have a width"
+        );
         let widths: Vec<usize> = s
             .multiplicity
             .fiber(&ROOT)
             .map(|(_, w)| *w)
             .collect();
-        assert!(
-            widths.iter().all(|&w| w >= 1),
-            "each body keeps its own stratum width: {widths:?}"
+        assert_eq!(
+            widths.iter().filter(|&&w| w >= 1).count(),
+            2,
+            "each cited body keeps its own stratum width; the chain records 0 when it is not a word: {widths:?}"
         );
     }
 
@@ -3685,6 +3728,7 @@ mod tests {
             f.faces.push(FormFace::new(i, j, w));
         }
         f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        f.reindex();
         f
     }
 
@@ -3848,6 +3892,20 @@ mod tests {
             f.faces.push(FormFace::new(a, b, w.clone()));
         }
         f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        f.reindex();
+        f
+    }
+
+    fn coboundary_chord_form() -> Form {
+        let r = order4();
+        let mut f = Form::default();
+        f.vertices.push(word_vertex(1, Word::identity()));
+        f.vertices.push(word_vertex(2, Word::identity()));
+        f.faces.push(FormFace::new(0, 1, r.clone()));
+        f.faces.push(FormFace::new(0, 2, Word::identity()));
+        f.faces.push(FormFace::new(1, 2, r.inverse()));
+        f.loops = Form::loops_of(&f.faces, f.vertices.len());
+        f.reindex();
         f
     }
 
@@ -4163,6 +4221,36 @@ mod tests {
 
     #[test]
     fn pivot_never_reopens_a_closed_chord() {
+        let mut cob = coboundary_chord_form();
+        let cob_snaps = cob.pivot_loop(
+            [0xcd; 32],
+            &crate::network::nerve::Keyed::new(),
+            &crate::transducer::family::NoCrystal,
+            &mut crate::physics::Physics::default().stroke_n(8),
+            None,
+            0,
+        );
+        assert!(
+            cob_snaps.iter().any(|s| matches!(s, Snap::Closed { .. })),
+            "a coboundary chord closes by the tree gauge: {cob_snaps:?}"
+        );
+        assert!(
+            cob.loops.iter().all(|lp| lp.holonomy.abelian_identity()),
+            "T2: the closed chord stays closed"
+        );
+        let again = cob.pivot_loop(
+            [0xcd; 32],
+            &crate::network::nerve::Keyed::new(),
+            &crate::transducer::family::NoCrystal,
+            &mut crate::physics::Physics::default().stroke_n(8),
+            None,
+            0,
+        );
+        assert!(
+            !again.iter().any(|s| matches!(s, Snap::Demand { .. })),
+            "T2: a closed chord is not demanded: {again:?}"
+        );
+
         let mut f = chord_form(&[order2(), order4()]);
         let mut budget = crate::physics::Physics::default().stroke_n(16);
         let first = f.pivot_loop(
