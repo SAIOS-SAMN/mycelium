@@ -132,9 +132,7 @@ pub struct MarketView {
     pub k_step: u64,
     /// Receipt-chain head K — verified consensus depth packed on Quote.
     pub head_k: u64,
-    /// TUniversal at this view — local ticks, never packed as K.
-    pub tu: u64,
-    /// Standing extent per listing, in transports.
+    /// Standing extent per listing, in heights.
     pub standing_t: std::sync::Arc<crate::network::nerve::Keyed<u64>>,
     pub reserve: [u64; 4],
     /// The (basis, book) generations this view was taken at.
@@ -791,19 +789,14 @@ pub struct Kernel {
     field_cold: crate::network::nerve::Keyed<ListingField>,
     /// Settlements the court has read; the SET1 section holds them.
     settlements_cold: Vec<crate::anastome::dialogue::Settlement>,
-    /// TUniversal genesis this hypha stamps standing work from.
-    tu: crate::chronometry::TUniversal,
-    /// Test clock: when set, now_tu returns this tick count.
-    clock: Option<u64>,
-    /// Measured transport in milliseconds. Standing T is ticks (seconds)
-    /// over this unit. Zero means one second (one transport).
-    transport_ms: u64,
+    /// Test height: when set, height() returns this instead of the chain head.
+    height_override: Option<u64>,
     /// Set on home_install, glue Admitted, mint, and slash.
     persist_due: bool,
     /// Test lane capacity override; production reads dynamic_lane_capacity.
     lane_cap: Option<[usize; 4]>,
-    /// TUniversal at first vantage of a standing carrier (listing or docket).
-    standing_tu: crate::network::nerve::Keyed<u64>,
+    /// Height at first vantage of a standing carrier (listing or docket).
+    standing_h: crate::network::nerve::Keyed<u64>,
     /// Listing address → corpus task id, so a verified solve pays the same escrow.
     listing_task: crate::network::nerve::Keyed<crate::transducer::a21::Address>,
     /// Reverse: task → listings bound to it.
@@ -827,8 +820,8 @@ pub struct Kernel {
     /// The k-step at which each provisional word was installed — the
     /// coordinate a court's "since" is read against (order inside one kernel).
     provisional_k: crate::network::nerve::Keyed<u64>,
-    /// TUniversal at first vantage of each provisional — standing duration.
-    provisional_tu: crate::network::nerve::Keyed<u64>,
+    /// Height at first vantage of each provisional — standing extent.
+    provisional_h: crate::network::nerve::Keyed<u64>,
     /// Round-robin cursor for syntropic optimization — which generator to test for
     /// redundancy next (bounds consolidation to one reduce per depleted step).
     optimize_cursor: usize,
@@ -934,50 +927,28 @@ impl Kernel {
         k
     }
 
-    /// Stamp standing work from a shared genesis origin.
-    pub fn with_tuniversal(tu: crate::chronometry::TUniversal) -> Self {
-        let mut k = Kernel::default();
-        k.tu = tu;
-        k
+    pub fn height(&self) -> u64 {
+        self.height_override.unwrap_or_else(|| self.chain.head_height())
     }
 
-    pub fn now_tu(&self) -> u64 {
-        self.clock.unwrap_or_else(|| self.tu.ticks())
-    }
-
-    pub fn set_clock(&mut self, ticks: u64) {
-        self.clock = Some(ticks);
+    pub fn set_height(&mut self, h: u64) {
+        self.height_override = Some(h);
     }
 
     pub fn set_lane_cap(&mut self, cap: [usize; 4]) {
         self.lane_cap = Some(cap);
     }
 
-    /// Measured transport in milliseconds. Standing T is TU ticks (seconds)
-    /// converted to transports: (ticks × 1000) / transport_ms.
-    pub fn set_transport_ms(&mut self, ms: u64) {
-        self.transport_ms = ms.max(1);
-    }
-
-    fn transport_ms(&self) -> u64 {
-        match self.transport_ms {
-            0 => 1000,
-            n => n,
-        }
-    }
-
     fn t_extent(&self, addr: &[u8], now: u64) -> u64 {
-        let tu = self
-            .provisional_tu
+        let Some(then) = self
+            .provisional_h
             .get(addr)
             .copied()
-            .or_else(|| self.standing_tu.get(addr).copied())
-            .unwrap_or(now);
-        let ticks = now.saturating_sub(tu).max(1);
-        let ms = ticks.saturating_mul(1000);
-        let transports = (ms / self.transport_ms()).max(1);
-        let breath = crate::physics::aperture_cycle() as u64;
-        (transports / breath.max(1)).max(1)
+            .or_else(|| self.standing_h.get(addr).copied())
+        else {
+            return 0;
+        };
+        now.saturating_sub(then)
     }
 
     fn mark_persist(&mut self) {
@@ -992,18 +963,18 @@ impl Kernel {
 
     fn standing_mag(&self, addr: &[u8], base: &[u64; 4]) -> [u64; 4] {
         let mut m = *base;
-        m[2] = self.t_extent(addr, self.now_tu());
+        m[2] = self.t_extent(addr, self.height());
         m
     }
 
     fn stamp_standing(&mut self, addr: impl AsRef<[u8]>) {
         let addr = addr.as_ref();
-        let tu = self.now_tu();
-        if self.standing_tu.get(&addr).is_none() {
-            self.standing_tu.insert(addr, tu);
+        let h = self.height();
+        if self.standing_h.get(&addr).is_none() {
+            self.standing_h.insert(addr, h);
         }
-        if self.provisional.contains(&addr) && self.provisional_tu.get(&addr).is_none() {
-            self.provisional_tu.insert(addr, tu);
+        if self.provisional.contains(&addr) && self.provisional_h.get(&addr).is_none() {
+            self.provisional_h.insert(addr, h);
         }
     }
 
@@ -1049,7 +1020,7 @@ impl Kernel {
             return;
         }
         let key = Self::cocycle_key(chart, &a, &b);
-        let tu = self.now_tu();
+        let tu = self.height();
         if let Some((old, old_tu, _, _, _)) = self.cocycle_at.get(&key).cloned() {
             if tu < old_tu {
                 self.dialect_chain.push((key.clone(), g, tu));
@@ -1105,15 +1076,14 @@ impl Kernel {
     }
 
     /// Relocate the largest-T standing carriers on a saturated temporal lane.
+    /// T-room is standing extent in heights, never a stored occupancy floor.
     fn relocate_t_exhausted(&mut self) {
-        let room = self.lane_room();
-        if room[2] > 0 {
-            return;
-        }
-        let now = self.now_tu();
+        let now = self.height();
+        let mut tot = 0u64;
         let mut best: Option<(Vec<u8>, u64)> = None;
         let mut consider = |addr: Vec<u8>| {
             let t = self.t_extent(&addr, now);
+            tot = tot.saturating_add(t);
             match best {
                 Some((_, bt)) if t <= bt => {}
                 _ => best = Some((addr, t)),
@@ -1124,6 +1094,13 @@ impl Kernel {
         }
         for (addr, _) in self.provisional.fiber(crate::network::nerve::ROOT) {
             consider(addr);
+        }
+        let cap = self
+            .lane_cap
+            .map(|c| c[2] as u64)
+            .unwrap_or_else(|| tot.saturating_add(self.lane_room()[2] as u64));
+        if tot < cap {
+            return;
         }
         let Some((addr, t)) = best else {
             return;
@@ -1148,13 +1125,13 @@ impl Kernel {
         }
         self.provisional.remove(addr);
         self.provisional_k.remove(addr);
-        self.provisional_tu.remove(addr);
+        self.provisional_h.remove(addr);
         self.offered.remove(addr);
         if self.lane_listings[2].contains(addr) {
             self.occupancy[2] = self.occupancy[2].saturating_sub(1);
             self.lane_listings[2].remove(addr);
         }
-        self.standing_tu.remove(addr);
+        self.standing_h.remove(addr);
     }
 
     pub fn basis_len(&self) -> usize {
@@ -1926,7 +1903,7 @@ impl Kernel {
         self.provisional_k.insert(&addr, k_now);
         self.provisional.insert(&addr, word.clone());
         self.stamp_standing(&addr);
-        self.provisional_tu.insert(&addr, self.now_tu());
+        self.provisional_h.insert(&addr, self.height());
         self.mark_persist();
         let inv = crate::transducer::stalk::invariant_of(word);
         if self.field.get(&addr).is_none() {
@@ -2114,7 +2091,7 @@ impl Kernel {
                 std::sync::Arc::new(self.composites.clone()),
             );
         }
-        let now = self.now_tu();
+        let now = self.height();
         let mut standing_t = crate::network::nerve::Keyed::new();
         for (elem, _) in &self.pending {
             standing_t.insert(elem.address(), self.t_extent(&elem.address(), now));
@@ -2129,7 +2106,6 @@ impl Kernel {
             pool: self.treasury.bond_of(&self.identity),
             k_step: self.chain.next_step_index(),
             head_k: self.chain.head_k(),
-            tu: now,
             standing_t: std::sync::Arc::new(standing_t),
             reserve: self.physics.reserve,
             gens,
@@ -4133,7 +4109,7 @@ impl Kernel {
     /// record and verifiable end to end.
     fn append_step(&mut self, addr: impl AsRef<[u8]>, voice: [u8; 32]) {
         let op = crate::chronometry::operator_hash(&voice, &self.court_head);
-        self.chain.append(addr.as_ref(), op);
+        self.chain.append(addr.as_ref(), op, Vec::new());
     }
 
     /// A voice spoke on a listing in its current state.
@@ -4186,7 +4162,7 @@ impl Kernel {
     ) {
         // Settlements are receipts: they stay until the court hears them, never drop.
         let k = self.k_step();
-        let tu = self.now_tu();
+        let tu = self.height();
         self.settlements.push((listing, chain, voice, cites.to_vec(), before, after, k, tu));
         let floor = self.k_step().saturating_sub(crate::physics::reserve_max());
         while self.settlements.first().map(|s| s.6 < floor && s.6 + 1 < self.k_step()).unwrap_or(false) {
@@ -4220,7 +4196,7 @@ impl Kernel {
     /// the language already speaks adds nothing; a settlement removes
     /// exactly what it settled.
     fn remeasure_pressure(&mut self) {
-        let now = self.now_tu();
+        let now = self.height();
         let mut p = self.pressure_sum;
         p[2] = 0;
         for (elem, _) in &self.pending {
@@ -4608,7 +4584,7 @@ impl Kernel {
                     let k_now = self.k_step();
                     self.provisional_k.insert(&addr, k_now);
                     self.provisional.insert(&addr, residual.clone());
-                    self.provisional_tu.insert(&addr, self.now_tu());
+                    self.provisional_h.insert(&addr, self.height());
                     self.stamp_standing(&addr);
                     self.physics.relieve(&mag);
                     self.physics.syntropy(&mag); // a completed rule is order built
@@ -4693,9 +4669,7 @@ impl Kernel {
                     if !self.book_index.contains(&addr) {
                         let k_now = self.k_step();
                         let need = residual.magnitude();
-                        if self.lane_room()[2] == 0 {
-                            self.relocate_t_exhausted();
-                        }
+                        self.relocate_t_exhausted();
                         if !self.fits_book(&need) {
                             self.log_room_refused(&voice, &need);
                         } else {
@@ -5107,7 +5081,7 @@ impl Kernel {
                 continue;
             }
             let mut mag = p.magnitude();
-            mag[2] = self.t_extent(&p.address(), self.now_tu());
+            mag[2] = self.t_extent(&p.address(), self.height());
             let mu = crate::economy::price(&mag, &self.physics.pressure);
             priced.push((p.clone(), mu));
         }
@@ -5288,11 +5262,7 @@ impl Kernel {
         let receipts = self.chain.receipts();
         out.extend_from_slice(&(receipts.len() as u32).to_le_bytes());
         for r in receipts {
-            out.extend_from_slice(&r.step_index.to_le_bytes());
-            put_addr(&mut out, &r.delta);
-            out.extend_from_slice(&r.operator_hash);
-            out.extend_from_slice(&r.prev_receipt_hash);
-            out.extend_from_slice(&r.chain_hash);
+            r.write(&mut out);
         }
         // THE RANK section: each listing's closure and moduli as last
         // measured, so a boot continues the measurement instead of walking
@@ -5326,7 +5296,7 @@ impl Kernel {
             }
             match (
                 self.provisional_k.get(addr).copied(),
-                self.provisional_tu.get(addr).copied(),
+                self.provisional_h.get(addr).copied(),
             ) {
                 (Some(k), Some(tu)) => {
                     out.push(1);
@@ -5530,22 +5500,7 @@ impl Kernel {
                 }
                 let mut receipts = Vec::with_capacity(n);
                 for _ in 0..n {
-                    let step = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                    *pos += 8;
-                    let field = |p: &mut usize| -> Option<[u8; 32]> {
-                        let f: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
-                        *p += 32;
-                        Some(f)
-                    };
-                    let delta = crate::transducer::a21::take_addr(b, pos)?.into_vec();
-                    let (op, prev, hash) = (field(pos)?, field(pos)?, field(pos)?);
-                    receipts.push(crate::chronometry::KStepReceipt {
-                        step_index: step,
-                        delta,
-                        operator_hash: op,
-                        prev_receipt_hash: prev,
-                        chain_hash: hash,
-                    });
+                    receipts.push(crate::chronometry::KStepReceipt::read(b, pos)?);
                 }
                 kernel.court_head = head;
                 kernel.chain = crate::chronometry::ReceiptChain::from_receipts(receipts)?;
@@ -5608,8 +5563,8 @@ impl Kernel {
                             *pos += 8;
                             kernel.deflations.insert(&addr, mag);
                             kernel.provisional_k.insert(&addr, k);
-                            kernel.provisional_tu.insert(&addr, tu);
-                            kernel.standing_tu.insert(&addr, tu);
+                            kernel.provisional_h.insert(&addr, tu);
+                            kernel.standing_h.insert(&addr, tu);
                         }
                         _ => return None,
                     }
@@ -5913,14 +5868,14 @@ impl Kernel {
         self.lane_listings = Default::default();
         let pending_addrs: Vec<Address> = self.pending.iter().map(|(e, _)| e.address()).collect();
         for addr in pending_addrs {
-            if self.standing_tu.get(&addr).is_none() {
-                self.standing_tu.insert(addr, self.now_tu());
+            if self.standing_h.get(&addr).is_none() {
+                self.standing_h.insert(addr, self.height());
             }
         }
         let prov: Vec<Vec<u8>> = self.provisional.fiber(crate::network::nerve::ROOT).map(|(a, _)| a).collect();
         for addr in prov {
-            if self.provisional_tu.get(&addr).is_none() {
-                self.provisional_tu.insert(&addr, self.now_tu());
+            if self.provisional_h.get(&addr).is_none() {
+                self.provisional_h.insert(&addr, self.height());
             }
             self.stamp_standing(&addr);
         }
@@ -8105,8 +8060,8 @@ mod tests {
         let mut hb = Kernel::new();
         ha.set_lane_cap([64, 64, 1, 64]);
         hb.set_lane_cap([64, 64, 1, 64]);
-        ha.set_clock(10);
-        hb.set_clock(10);
+        ha.set_height(10);
+        hb.set_height(10);
         let first_a = list(&mut ha, false);
         let first_b = list(&mut hb, false);
         assert_eq!(first_a, first_b);
@@ -8115,8 +8070,8 @@ mod tests {
             ha.append_step(&[1; 32], [2; 32]);
         }
         assert!(ha.k_step() > hb.k_step());
-        ha.set_clock(40);
-        hb.set_clock(40);
+        ha.set_height(40);
+        hb.set_height(40);
         let _ = list(&mut ha, true);
         let _ = list(&mut hb, true);
         assert!(
@@ -8129,11 +8084,38 @@ mod tests {
         );
     }
 
+    /// Standing T is a height difference on the home chain; a witness
+    /// re-derives it from the receipts (T16).
+    #[test]
+    fn extent_replays_from_the_home_chain() {
+        let mut k = Kernel::new();
+        k.set_height(4);
+        let a = vec![(0, 0, 1), (0, 1, 1)];
+        let b = vec![(0, 0, 2), (0, 1, 2)];
+        k.ingest(&a, &b, [1; 32]);
+        let addr = k.pending.last().expect("listed").0.address();
+        assert_eq!(k.t_extent(addr.as_bytes(), 4), 0, "extent is zero at first vantage");
+        k.set_height(11);
+        assert_eq!(
+            k.t_extent(addr.as_bytes(), 11),
+            7,
+            "extent is h_now − h_install on the home chain"
+        );
+        let mut k2 = Kernel::new();
+        k2.set_height(11);
+        k2.standing_h.insert(&addr, 4);
+        assert_eq!(
+            k2.t_extent(addr.as_bytes(), 11),
+            7,
+            "a witness re-derives the same extent from the recorded height"
+        );
+    }
+
     /// Extra court strokes of a fixed corpus do not grow the hot set.
     #[test]
     fn hot_set_does_not_grow_with_idle_strokes() {
         let mut k = Kernel::new();
-        k.set_clock(5);
+        k.set_height(5);
         let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
         let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
         k.ingest(&a, &b, [1; 32]);

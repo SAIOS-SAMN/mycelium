@@ -14,11 +14,10 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use std::time::Instant;
 
-fn arm_deadline(s: &TcpStream, deadline: std::time::Duration) {
-    let _ = s.set_read_timeout(Some(deadline));
-    let _ = s.set_write_timeout(Some(deadline));
+fn arm_deadline(s: &TcpStream) {
+    let _ = s.set_read_timeout(None);
+    let _ = s.set_write_timeout(None);
 }
 
 fn read_frame(s: &mut TcpStream) -> Option<Frame> {
@@ -243,12 +242,9 @@ fn speak_root(
 
 /// Speak one act to a peer on the nerve, bounded by the transport deadline;
 /// the reply, if any, is not needed. Silence is the peer's impedance.
-fn tell_peer(addr: &str, body: Vec<u8>, deadline: std::time::Duration) -> Option<(Vec<u8>, std::time::Duration)> {
-    let t0 = Instant::now();
-    let sock = std::net::ToSocketAddrs::to_socket_addrs(&addr).ok().and_then(|mut a| a.next())?;
-    let mut s = std::net::TcpStream::connect_timeout(&sock, deadline).ok()?;
-    let _ = s.set_write_timeout(Some(deadline));
-    let _ = s.set_read_timeout(Some(deadline));
+fn tell_peer(addr: &str, body: Vec<u8>) -> Option<(Vec<u8>, u64)> {
+    let mut s = std::net::TcpStream::connect(addr).ok()?;
+    let _ = s.set_nodelay(true);
     let frame = Frame { lane: mycelium::network::wire::Stratum::Spatial, body };
     s.write_all(&frame.encode()?).ok()?;
     let mut head = [0u8; 5];
@@ -259,7 +255,7 @@ fn tell_peer(addr: &str, body: Vec<u8>, deadline: std::time::Duration) -> Option
     }
     let mut reply = vec![0u8; len];
     std::io::Read::read_exact(&mut s, &mut reply).ok()?;
-    Some((reply, t0.elapsed()))
+    Some((reply, 1))
 }
 
 struct Mesh {
@@ -269,10 +265,9 @@ struct Mesh {
     vk: [u8; 32],
     sk: ed25519_dalek::SigningKey,
     bind: String,
-    rtt: Arc<Mutex<Keyed<std::time::Duration>>>,
-    /// The last aperture of measured round trips per peer; its minimum is
-    /// the floor every timeout-raised RTT is capped against.
-    rtt_window: Arc<Mutex<Keyed<Vec<std::time::Duration>>>>,
+    rtt: Arc<Mutex<Keyed<u64>>>,
+    /// The last aperture of measured round trips per peer, in strokes.
+    rtt_window: Arc<Mutex<Keyed<Vec<u64>>>>,
     last_roots: Arc<Mutex<Keyed<([[u8; 32]; 4], [u8; 32])>>>,
 }
 
@@ -292,45 +287,17 @@ impl Clone for Mesh {
     }
 }
 
-fn mesh_deadline(mesh: &Mesh) -> std::time::Duration {
-    mycelium::physics::transport_deadline(mesh_rtt(mesh))
-}
-
-fn mesh_rtt(mesh: &Mesh) -> std::time::Duration {
-    mesh.rtt
-        .lock()
-        .ok()
-        .and_then(|m| m.fiber(&mycelium::network::nerve::ROOT).map(|(_, d)| *d).max())
-        .unwrap_or(std::time::Duration::from_millis(1))
-}
-
-fn peer_rtt(mesh: &Mesh, id: &[u8]) -> std::time::Duration {
-    mesh.rtt
-        .lock()
-        .ok()
-        .and_then(|m| m.get(id).copied())
-        .unwrap_or(std::time::Duration::from_millis(1))
-}
-
-fn peer_deadline(mesh: &Mesh, id: &[u8]) -> std::time::Duration {
-    mycelium::physics::transport_deadline(peer_rtt(mesh, id))
-}
-
-/// The floor of the last aperture of measured round trips to a peer: the
-/// one-millisecond tick until the wire has been measured.
-fn rtt_floor(mesh: &Mesh, id: &[u8]) -> Option<std::time::Duration> {
+/// The floor of the last aperture of measured round trips to a peer.
+fn rtt_floor(mesh: &Mesh, id: &[u8]) -> Option<u64> {
     mesh.rtt_window
         .lock()
         .ok()
         .and_then(|w| w.get(id).and_then(|ring| ring.iter().copied().min()))
 }
 
-/// A measured round trip enters the peer's window (one aperture of
-/// strokes) and stands as its RTT, capped at an aperture of the window's
-/// floor so one slow reply cannot set the next deadline alone.
-fn note_rtt_ok(mesh: &Mesh, id: impl AsRef<[u8]>, dt: std::time::Duration) {
+/// A measured round trip in strokes enters the peer's window.
+fn note_rtt_ok(mesh: &Mesh, id: impl AsRef<[u8]>, sample: u64) {
     let id = id.as_ref();
-    let sample = if dt.is_zero() { std::time::Duration::from_micros(1) } else { dt };
     let n = mycelium::physics::aperture_cycle().max(1) as usize;
     if let Ok(mut w) = mesh.rtt_window.lock() {
         let mut ring = w.get(id).cloned().unwrap_or_default();
@@ -362,7 +329,7 @@ fn note_rtt_timeout(mesh: &Mesh, id: impl AsRef<[u8]>) {
         let Some(cur) = m.get(id).copied() else {
             return;
         };
-        m.insert(id, cur.saturating_mul(ratio).min(cap));
+        m.insert(id, cur.saturating_mul(ratio as u64).min(cap));
     }
 }
 
@@ -1161,10 +1128,15 @@ fn main() {
     let mut mesh_rec = mesh::load_or_migrate_hypha(&home, &hypha_key);
     let mut join_peers: Vec<String> = mesh_rec.peers.clone();
 
-    let tuniversal = mycelium::chronometry::TUniversal::from_origin(mesh_rec.origin_unix);
-    eprintln!("[{tag}] TUniversal {} (origin {})", tuniversal.stamp(), tuniversal.origin_unix);
+    let height = mycelium::chronometry::Height::default();
+    eprintln!(
+        "[{tag}] genesis {:02x}{:02x}… epoch {}",
+        mesh_rec.genesis[0],
+        mesh_rec.genesis[1],
+        mesh_rec.epoch
+    );
 
-    let kernel = Arc::new(Mutex::new(Kernel::with_tuniversal(tuniversal)));
+    let kernel = Arc::new(Mutex::new(Kernel::new()));
     {
         let k = Arc::clone(&kernel);
         let path = state_path.clone();
@@ -1252,7 +1224,7 @@ fn main() {
         if p == &addr {
             continue;
         }
-        match tell_peer(p, dialogue::encode_digests_request(&mesh.vk), peer_deadline(&mesh, p.as_bytes())) {
+        match tell_peer(p, dialogue::encode_digests_request(&mesh.vk)) {
             Some((reply, dt)) => {
                 note_rtt_ok(&mesh, p.as_bytes(), dt);
                 let _ = admit_peer_digest(&mesh, &reply, &router);
@@ -1354,8 +1326,7 @@ fn main() {
         let mesh_nerve = mesh.clone();
         std::thread::spawn(move || {
             for (addr, body) in nerve_rx {
-                let deadline = peer_deadline(&mesh_nerve, addr.as_bytes());
-                match tell_peer(&addr, body, deadline) {
+                match tell_peer(&addr, body) {
                     Some((reply, dt)) => {
                         note_rtt_ok(&mesh_nerve, addr.as_bytes(), dt);
                         match dialogue::decode_root_reply(&reply) {
@@ -1378,7 +1349,7 @@ fn main() {
     // The roots this book already holds settled are announced to the nerve
     // at boot, so a family proven here is re-spoken on every peer's book.
     let settled = registry.lock().map(|r| r.settled_ids()).unwrap_or_default();
-    let boot_stamp = tuniversal.ticks();
+    let boot_stamp = 0u64;
     for t in &settled {
         let hear = {
             let mut g = roots.lock().unwrap();
@@ -1404,27 +1375,12 @@ fn main() {
     );
     {
         let kernel = Arc::clone(&kernel);
-        let tu = tuniversal;
+        let tu = height;
         let state_path = state_path.clone();
-        let rtt = Arc::clone(&mesh.rtt);
-        // Persistence is PACED: topological volume (cards, fibre, listings)
-        // and a dwell of measured transports. K is not a persist event.
-        let mut persisted = kernel.lock().map(|k| k.volume()).unwrap_or_default();
-        let mut last_persist = Instant::now();
         std::thread::spawn(move || loop {
-            let rtt_now = rtt
-                .lock()
-                .ok()
-                .and_then(|m| m.fiber(&mycelium::network::nerve::ROOT).map(|(_, d)| *d).max())
-                .unwrap_or(std::time::Duration::from_millis(1));
-            let work = match synth_rx.recv_timeout(mycelium::physics::transport_deadline(rtt_now)) {
+            let work = match synth_rx.recv() {
                 Ok(w) => w,
-                Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
-                    let live = kernel.lock().map(|k| k.volume()).unwrap_or_default();
-                    let _ = (live, persisted, last_persist, rtt_now);
-                    continue;
-                }
-                Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
+                Err(_) => break,
             };
             {
                 match work {
@@ -1442,8 +1398,6 @@ fn main() {
                             );
                         }
                         persist_if_due(&kernel, &state_path);
-                        persisted = after;
-                        last_persist = Instant::now();
                     }
                 }
             }
@@ -1481,20 +1435,12 @@ fn main() {
         let state_path = state_path.clone();
         let syllabus = Arc::clone(&syllabus);
         std::thread::spawn(move || {
-            let ratio = mycelium::physics::aperture_cycle() as u64;
-            let mut wait = mycelium::physics::from_transport(mesh_rtt(&mesh), 1);
-            let mut last_moved = Instant::now();
             let mut last_cover: Option<[[u8; 32]; 4]> = None;
             loop {
-                std::thread::sleep(wait);
+                std::thread::yield_now();
                 if let Ok(mut k) = kernel.lock() {
                     k.court_stroke();
                     let seed = k.syllabus_seed();
-                    let rtt = mesh_rtt(&mesh);
-                    let ms = rtt.as_millis() as u64;
-                    if ms > 1 {
-                        k.set_transport_ms(ms.max(1000));
-                    }
                     drop(k);
                     if let Ok(mut sy) = syllabus.lock() {
                         syllabus_admit(&mut sy, seed);
@@ -1523,7 +1469,6 @@ fn main() {
                     }
                 }
                 if dests.is_empty() {
-                    wait = mycelium::physics::from_transport(mesh_rtt(&mesh), ratio);
                     continue;
                 }
                 let req = dialogue::encode_digests_request(&mesh.vk);
@@ -1538,7 +1483,7 @@ fn main() {
                         break;
                     }
                     organ_budget -= 1;
-                    match tell_peer(&d, req.clone(), peer_deadline(&mesh, &pid)) {
+                    match tell_peer(&d, req.clone()) {
                         Some((reply, dt)) => {
                             note_rtt_ok(&mesh, &pid, dt);
                             if !admit_peer_digest(&mesh, &reply, &router) {
@@ -1591,7 +1536,7 @@ fn main() {
                                 &charts,
                                 mycelium::network::wire::frame_budget(),
                             );
-                            match tell_peer(&d, fetch, peer_deadline(&mesh, &pid)) {
+                            match tell_peer(&d, fetch) {
                                 Some((page, dt2)) => {
                                     note_rtt_ok(&mesh, &pid, dt2);
                                     let mut named: Vec<mycelium::transducer::a21::Address> = Vec::new();
@@ -1634,16 +1579,7 @@ fn main() {
                         None => note_rtt_timeout(&mesh, pid),
                     }
                 }
-                let rtt = mesh_rtt(&mesh);
-                if any_moved {
-                    last_moved = Instant::now();
-                    wait = mycelium::physics::from_transport(rtt, 1);
-                } else {
-                    wait = last_moved
-                        .elapsed()
-                        .saturating_mul(ratio as u32)
-                        .max(mycelium::physics::from_transport(rtt, 1));
-                }
+                let _ = any_moved;
             }
         });
     }
@@ -1661,7 +1597,7 @@ fn main() {
                     // One act, then the worker returns — keep-alive must not
                     // hold a reflex slot for the client's stroke. The
                     // transport deadline bounds the wait for that one frame.
-                    arm_deadline(&stream, mesh_deadline(&door.mesh));
+                    arm_deadline(&stream);
                     if let Some(frame) = read_frame(&mut stream) {
                         let kind = frame.body.first().copied().unwrap_or(0xff);
                         let t0 = std::time::Instant::now();
@@ -1677,7 +1613,7 @@ fn main() {
     for stream in listener.incoming() {
         let Ok(s) = stream else { continue };
         let _ = s.set_nodelay(true);
-        arm_deadline(&s, mesh_deadline(&mesh));
+        arm_deadline(&s);
         if let Err(e) = reflex_tx.try_send(ReflexJob { stream: s }) {
             let job = match e {
                 std::sync::mpsc::TrySendError::Full(j) | std::sync::mpsc::TrySendError::Disconnected(j) => j,

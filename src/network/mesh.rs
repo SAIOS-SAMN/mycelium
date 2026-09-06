@@ -17,7 +17,8 @@ pub struct MeshRecord {
     pub bootstrap: String,
     pub hypha: Vec<([u8; 32], [u64; 4])>,
     pub voice: Vec<([u8; 32], [u64; 4])>,
-    pub origin_unix: u64,
+    pub genesis: [u8; 32],
+    pub epoch: u32,
 }
 
 fn put_str(out: &mut Vec<u8>, s: &str) {
@@ -71,7 +72,8 @@ impl MeshRecord {
         for (who, bond) in self.voice.iter().take(255) {
             put_bond(&mut out, who, bond);
         }
-        out.extend_from_slice(&self.origin_unix.to_le_bytes());
+        out.extend_from_slice(&self.genesis);
+        out.extend_from_slice(&self.epoch.to_le_bytes());
         out
     }
 
@@ -102,8 +104,10 @@ impl MeshRecord {
         for _ in 0..nv {
             voice.push(take_bond(b, &mut p)?);
         }
-        let origin_unix = u64::from_le_bytes(b.get(p..p + 8)?.try_into().ok()?);
-        p += 8;
+        let genesis: [u8; 32] = b.get(p..p + 32)?.try_into().ok()?;
+        p += 32;
+        let epoch = u32::from_le_bytes(b.get(p..p + 4)?.try_into().ok()?);
+        p += 4;
         Some((
             MeshRecord {
                 kind,
@@ -112,7 +116,8 @@ impl MeshRecord {
                 bootstrap,
                 hypha,
                 voice,
-                origin_unix,
+                genesis,
+                epoch,
             },
             p,
         ))
@@ -186,18 +191,6 @@ fn parse_genesis_text(path: &Path) -> (Vec<([u8; 32], [u64; 4])>, Vec<([u8; 32],
     (hypha, voice)
 }
 
-fn origin_of(home: &Path) -> u64 {
-    if let Ok(bytes) = std::fs::read(home.join("tuniversal")) {
-        if let Ok(raw) = <[u8; 8]>::try_from(bytes.as_slice()) {
-            return u64::from_le_bytes(raw);
-        }
-    }
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0)
-}
-
 fn drop_loose(home: &Path, names: &[&str]) {
     for n in names {
         let p = home.join(n);
@@ -234,7 +227,8 @@ pub fn load_or_migrate_hypha(home: &Path, key: &HyphaKey) -> MeshRecord {
         bootstrap: String::new(),
         hypha,
         voice,
-        origin_unix: origin_of(home),
+        genesis: [0u8; 32],
+        epoch: 0,
     };
     let _ = rec.save(home, key);
     drop_loose(
@@ -268,7 +262,8 @@ pub fn load_or_migrate_voice(home: &Path, key: &HyphaKey) -> MeshRecord {
         bootstrap,
         hypha: Vec::new(),
         voice: Vec::new(),
-        origin_unix: origin_of(home),
+        genesis: [0u8; 32],
+        epoch: 0,
     };
     let _ = rec.save(home, key);
     drop_loose(home, &["bootstrap", "tuniversal", "thoughts", "feed", "conductor"]);
@@ -309,13 +304,15 @@ mod tests {
             bootstrap: String::new(),
             hypha: vec![([1; 32], [8, 8, 1, 8])],
             voice: vec![([2; 32], [8, 8, 1, 8])],
-            origin_unix: 1788326481,
+            genesis: [7; 32],
+            epoch: 2,
         };
         let bytes = rec.signed_bytes(&key);
         let back = MeshRecord::open(&bytes, &key.vk_bytes()).expect("verify");
         assert_eq!(back.bind, rec.bind);
         assert_eq!(back.peers, rec.peers);
         assert_eq!(back.hypha[0].1, [8, 8, 1, 8]);
-        assert_eq!(back.origin_unix, rec.origin_unix);
+        assert_eq!(back.genesis, rec.genesis);
+        assert_eq!(back.epoch, rec.epoch);
     }
 }

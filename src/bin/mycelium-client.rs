@@ -301,7 +301,7 @@ fn main() {
         mesh_rec.bootstrap.clone()
     };
     let conductor = None::<String>;
-    let tuniversal = mycelium::chronometry::TUniversal::from_origin(mesh_rec.origin_unix);
+    let height = mycelium::chronometry::Height::default();
 
     let mut feed = Feed::new(home.clone(), conductor);
     let mut entity = Entity::open_persistent(
@@ -310,7 +310,7 @@ fn main() {
         &genome_path,
         &thoughts_path,
     );
-    entity.set_tuniversal(tuniversal);
+    entity.set_height(height);
     entity.discover();
     let pending = pending_feed(&home);
     eprintln!(
@@ -530,7 +530,7 @@ fn main() {
                     let (cites, residual, familiar) = entity.conclude_listing(&cluster.chain);
                     eprintln!(
                         "[{tag}] [{}] cluster {} cells: concluded in {} ms -> {} cites, {} residual{}",
-                        tuniversal.stamp(),
+                        mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                         cluster.chain.len(),
                         t0.elapsed().as_millis(),
                         cites.len(),
@@ -650,15 +650,15 @@ fn main() {
                 let (atlas_ruled, atlas_stood, atlas_held) = entity.atlas_standing_counts();
                 eprintln!(
                     "[{tag}] [{}] quote closing {n_closing} by deflation (ruled {n_ruled_hit} stood {n_stood} held {n_held})",
-                    tuniversal.stamp(),
+                    mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                 );
                 eprintln!(
                     "[{tag}] [{}] atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held}",
-                    tuniversal.stamp(),
+                    mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                 );
                 eprintln!(
                     "[{tag}] [{}] quote {} clusters: closed {n_closed} descent {n_descent} nothing {n_nothing} settled {n_settled} silent {n_silent} attested {n_attested} err {n_err}",
-                    tuniversal.stamp(),
+                    mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                     q.clusters.len(),
                 );
                 // MARKET CLEAR: a dormant outcome spends the tick at the
@@ -666,7 +666,7 @@ fn main() {
             }
             Err(e) => {
                 errors += 1;
-                eprintln!("[{tag}] [{}] quote err: {e}", tuniversal.stamp());
+                eprintln!("[{tag}] [{}] quote err: {e}", mycelium::chronometry::Height::stamp_of(entity.now_tu()));
             }
         }
         }
@@ -715,7 +715,7 @@ fn main() {
             );
             eprintln!(
                 "[{tag}] [{}] family {:02x}{:02x}… {} pairs, {} tests: {}",
-                tuniversal.stamp(),
+                mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                 tid[0],
                 tid[1],
                 train.len(),
@@ -853,17 +853,17 @@ fn main() {
             if outcome.dormant() {
                 eprintln!(
                     "[{tag}] [{}] stroke idle: dwell {dwell_remaining:?} K {k_step} | genome {} | dialect {} | ideas {} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | feed {}",
-                    tuniversal.stamp(),
+                    mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                     entity.epigenome.genome_len(),
                     entity.dialect_len(),
                     entity.ideas_len(),
                     if feed.exhausted() { "clear" } else { "held" },
                 );
             } else {
-                eprintln!("[{tag}] [{}] stroke laps ms {laps:?}", tuniversal.stamp());
+                eprintln!("[{tag}] [{}] stroke laps ms {laps:?}", mycelium::chronometry::Height::stamp_of(entity.now_tu()));
                 eprintln!(
                     "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | shed {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} discordance {} axes {}",
-                    tuniversal.stamp(),
+                    mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                     entity.epigenome.genome_len(),
                     entity.dialect_len(),
                     entity.ideas_len(),
@@ -882,11 +882,6 @@ fn main() {
         }
         let want = Physics::lanes_of(&outcome.total());
         let wait = std::array::from_fn(|l| want[l] && !physics.can_expand(std::array::from_fn(|i| i == l)));
-        let dwell = physics.dwell(&last_pressure, wait);
-        for l in 0..4 {
-            if dwell[l] > 0 {
-                std::thread::sleep(mycelium::physics::from_transport(entity.transport_rtt(), dwell[l]));
-            }
-        }
+        dwell_remaining = physics.dwell(&last_pressure, wait);
     }
 }

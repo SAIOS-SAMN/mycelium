@@ -34,22 +34,12 @@ fn read_u32(b: &[u8], p: &mut usize) -> Option<usize> {
     *p += 4;
     Some(v)
 }
-fn read_32(b: &[u8], p: &mut usize) -> Option<[u8; 32]> {
-    let v: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
-    *p += 32;
-    Some(v)
-}
-
 impl CourtState {
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut out = Vec::new();
         push_u32(&mut out, self.chain.receipts().len());
         for r in self.chain.receipts() {
-            out.extend_from_slice(&r.step_index.to_le_bytes());
-            let _ = crate::transducer::a21::put_addr(&mut out, &r.delta);
-            out.extend_from_slice(&r.operator_hash);
-            out.extend_from_slice(&r.prev_receipt_hash);
-            out.extend_from_slice(&r.chain_hash);
+            r.write(&mut out);
         }
         push_u32(&mut out, self.federation.len());
         for (addr, elem) in &self.federation {
@@ -87,15 +77,7 @@ impl CourtState {
         let n = read_u32(b, &mut p)?;
         let mut receipts = Vec::with_capacity(n.min(1 << 20));
         for _ in 0..n {
-            let step_index = u64::from_le_bytes(b.get(p..p + 8)?.try_into().ok()?);
-            p += 8;
-            receipts.push(KStepReceipt {
-                step_index,
-                delta: crate::transducer::a21::take_addr(b, &mut p)?.into_vec(),
-                operator_hash: read_32(b, &mut p)?,
-                prev_receipt_hash: read_32(b, &mut p)?,
-                chain_hash: read_32(b, &mut p)?,
-            });
+            receipts.push(KStepReceipt::read(b, &mut p)?);
         }
         let chain = ReceiptChain::from_receipts(receipts)?;
         let n = read_u32(b, &mut p)?;
@@ -187,7 +169,7 @@ mod tests {
         let mut chain = ReceiptChain::default();
         let mut op = [0u8; 32];
         op[0] = crate::anastome::dialogue::RULING_UPHELD;
-        chain.append(&addr, op);
+        chain.append(&addr, op, Vec::new()).expect("genesis receipt");
         let state = CourtState {
             chain,
             federation: vec![(addr.clone(), word)],

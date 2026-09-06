@@ -40,20 +40,7 @@ def put_bond(vk: bytes, bond: tuple[int, int, int, int]) -> bytes:
     return out
 
 
-def origin_of(home: Path) -> int:
-    p = home / "tuniversal"
-    if p.exists() and p.stat().st_size == 8:
-        return struct.unpack("<Q", p.read_bytes())[0]
-    mesh = home / "mesh"
-    if mesh.exists() and len(mesh.read_bytes()) >= 12:
-        # last 8 of prefix sit before 64-byte sig; origin is 8 bytes before sig
-        b = mesh.read_bytes()
-        if b[:4] == b"MSH1" and len(b) >= 72:
-            return struct.unpack("<Q", b[-72:-64])[0]
-    return 1788326481
-
-
-def encode(kind: int, bind: str, peers: list[str], bootstrap: str, hypha: list[tuple[bytes, tuple]], voice: list[tuple[bytes, tuple]], origin: int) -> bytes:
+def encode(kind: int, bind: str, peers: list[str], bootstrap: str, hypha: list[tuple[bytes, tuple]], voice: list[tuple[bytes, tuple]], genesis: bytes, epoch: int) -> bytes:
     out = b"MSH1" + bytes([kind]) + put_str(bind)
     out += bytes([len(peers)])
     for p in peers:
@@ -65,7 +52,8 @@ def encode(kind: int, bind: str, peers: list[str], bootstrap: str, hypha: list[t
     out += bytes([len(voice)])
     for vk, bond in voice:
         out += put_bond(vk, bond)
-    out += struct.pack("<Q", origin)
+    out += genesis
+    out += struct.pack("<I", epoch)
     return out
 
 
@@ -80,15 +68,16 @@ def main() -> None:
         voice_keys[name] = (seed, bytes.fromhex(vk_hex(seed)))
     hypha = [(hypha_keys[n][1], BOND) for n in SERVERS]
     voice = [(voice_keys[n][1], BOND) for n in CLIENTS]
-    origin = origin_of(BASE / "a")
+    genesis = bytes(32)
+    epoch = 0
     for name in SERVERS:
         peers = [BINDS[s] for s in SERVERS if s != name]
-        body = encode(HYPHA, BINDS[name], peers, "", hypha, voice, origin)
+        body = encode(HYPHA, BINDS[name], peers, "", hypha, voice, genesis, epoch)
         sig = SigningKey(hypha_keys[name][0]).sign(body).signature
         (BASE / name / "mesh").write_bytes(body + sig)
         print(f"  server {name} bind {BINDS[name]} vk {vk_hex(hypha_keys[name][0])[:4]}…")
     for name in CLIENTS:
-        body = encode(VOICE, "", [], BOOTSTRAP[name], hypha, voice, origin)
+        body = encode(VOICE, "", [], BOOTSTRAP[name], hypha, voice, genesis, epoch)
         sig = SigningKey(voice_keys[name][0]).sign(body).signature
         (BASE / name / "mesh").write_bytes(body + sig)
         print(f"  client {name} bootstrap {BOOTSTRAP[name]} vk {vk_hex(voice_keys[name][0])[:4]}…")

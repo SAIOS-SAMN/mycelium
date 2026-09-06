@@ -86,41 +86,30 @@ impl Budget {
     }
 }
 
-/// A duration derived from a measured transport time and a stroke-count
-/// factor. Reserve and spend are counts, never milliseconds. An unmeasured
-/// RTT uses a one-millisecond tick so the first dial can complete; every
-/// later duration is the measurement times the stroke count.
-pub fn from_transport(rtt: std::time::Duration, strokes: u64) -> std::time::Duration {
-    let n = strokes.max(1) as u32;
-    if rtt.is_zero() {
-        std::time::Duration::from_millis(1).saturating_mul(n)
-    } else {
-        rtt.saturating_mul(n)
-    }
+/// A duration in strokes: measured round-trip strokes times a stroke-count
+/// factor. Unmeasured RTT is not passed here.
+pub fn from_transport(rtt: u64, strokes: u64) -> u64 {
+    rtt.saturating_mul(strokes.max(1))
 }
 
-/// Deadline for one nerve dial: an aperture of the measured transport,
-/// never shorter than one millisecond so a TCP handshake can finish. The
-/// bound on a stall is not here: every carrier that raises an RTT on a
-/// timeout caps it at `persist_dwell` of the floor measured over the last
-/// aperture on that wire (client `Session::rtt_timeout`, server
-/// `note_rtt_timeout`), so the deadline is a ratio of what was measured.
-pub fn transport_deadline(rtt: std::time::Duration) -> std::time::Duration {
-    persist_dwell(rtt.max(std::time::Duration::from_millis(1)))
+/// Deadline for one nerve dial, in strokes: an aperture of the measured
+/// transport. Unmeasured RTT has no deadline.
+pub fn transport_deadline(rtt: u64) -> u64 {
+    persist_dwell(rtt)
 }
 
-/// Persist dwell: a full aperture of measured transports, not a wall clock.
-pub fn persist_dwell(rtt: std::time::Duration) -> std::time::Duration {
+/// Persist dwell: a full aperture of measured transports, in strokes.
+pub fn persist_dwell(rtt: u64) -> u64 {
     from_transport(rtt, aperture_cycle() as u64)
 }
 
-/// Court federation flush: two apertures of measured transport.
-pub fn court_persist_dwell(rtt: std::time::Duration) -> std::time::Duration {
+/// Court federation flush: two apertures of measured transport, in strokes.
+pub fn court_persist_dwell(rtt: u64) -> u64 {
     from_transport(rtt, aperture_cycle() as u64 * 2)
 }
 
-/// Quiet-digest ceiling: a full reserve of measured transports.
-pub fn digest_ceiling(rtt: std::time::Duration) -> std::time::Duration {
+/// Quiet-digest ceiling: a full reserve of measured transports, in strokes.
+pub fn digest_ceiling(rtt: u64) -> u64 {
     from_transport(rtt, reserve_max())
 }
 
@@ -459,19 +448,13 @@ mod tests {
     }
 
     #[test]
-    fn durations_are_stroke_counts_of_a_measured_transport() {
-        let rtt = std::time::Duration::from_millis(3);
-        assert_eq!(from_transport(rtt, 4), std::time::Duration::from_millis(12));
-        assert_eq!(from_transport(rtt, 0), rtt, "zero strokes is still one transport");
-        let quiet = digest_ceiling(rtt);
-        assert!(quiet >= from_transport(rtt, 1));
-        assert!(transport_deadline(std::time::Duration::ZERO) >= std::time::Duration::from_millis(1));
-        let stalled = std::time::Duration::from_millis(600);
-        let d = transport_deadline(stalled);
-        assert_eq!(
-            d,
-            persist_dwell(stalled),
-            "the deadline is an aperture of the measured transport"
-        );
+    fn rtt_is_counted_in_strokes() {
+        assert_eq!(from_transport(3, 4), 12, "measured rtt × strokes");
+        assert_eq!(from_transport(3, 0), 3, "zero strokes is still one transport");
+        assert_eq!(from_transport(0, 4), 0, "a same-stroke reply is zero, not a floor");
+        let quiet = digest_ceiling(3);
+        assert!(quiet >= from_transport(3, 1));
+        let d = transport_deadline(5);
+        assert_eq!(d, persist_dwell(5), "the deadline is an aperture of the measured transport");
     }
 }

@@ -207,7 +207,6 @@ pub fn quote(
     u64,
 )> {
     let view = k.lock().ok()?.market_open();
-    let t0 = std::time::Instant::now();
     let sealed = view.closure.is_some();
     let rank = match view.closure {
         Some(c) => c,
@@ -224,12 +223,11 @@ pub fn quote(
         }
     };
     eprintln!(
-        "  rank: book {} listings, order {}, closed {}, sealed {sealed}, gens {:?}, {} ms",
+        "  rank: book {} listings, order {}, closed {}, sealed {sealed}, gens {:?}",
         view.pending.len(),
         rank.order.len(),
         rank.closure.iter().filter(|c| c.is_some()).count(),
         view.gens,
-        t0.elapsed().as_millis(),
     );
     let budget = crate::network::wire::frame_budget() - 34;
     let pool = view.pool.as_ref()?;

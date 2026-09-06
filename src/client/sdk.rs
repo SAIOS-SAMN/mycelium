@@ -17,7 +17,6 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::io::{self, Read, Write};
 use std::net::TcpStream;
-use std::time::{Duration, Instant};
 
 /// A kernel's stable mesh IDENTITY. The name deterministically fixes a 32-byte
 /// address (its "voice"/seat), so a kernel keeps the same identity across
@@ -121,9 +120,9 @@ pub struct Session {
     addrs: RefCell<crate::network::nerve::Keyed<String>>,
     /// Last measured round-trip per hypha address; a timeout raises it by
     /// the aperture ratio, a success sets it to the measured trip.
-    rtt: RefCell<HashMap<String, Duration>>,
-    /// Last aperture of RTTs per address; the floor is the min of this window.
-    rtt_window: RefCell<HashMap<String, Vec<Duration>>>,
+    rtt: RefCell<HashMap<String, u64>>,
+    /// Last aperture of RTTs per address, in strokes; the floor is the min of this window.
+    rtt_window: RefCell<HashMap<String, Vec<u64>>>,
 }
 
 /// The transport aperture — the perceived state of the wire to the server
@@ -335,17 +334,16 @@ impl Session {
         self.resistance.borrow().values().copied().max().unwrap_or(0)
     }
 
-    pub fn rtt(&self) -> Duration {
+    pub fn rtt(&self) -> Option<u64> {
         self.rtt_of(&self.addr)
     }
 
-    fn rtt_of(&self, addr: &str) -> Duration {
-        self.rtt.borrow().get(addr).copied().unwrap_or(Duration::from_millis(1))
+    fn rtt_of(&self, addr: &str) -> Option<u64> {
+        self.rtt.borrow().get(addr).copied()
     }
 
-    fn rtt_ok(&self, addr: &str, dt: Duration) {
+    fn rtt_ok(&self, addr: &str, sample: u64) {
         let n = crate::physics::aperture_cycle().max(1) as usize;
-        let sample = dt.max(Duration::from_micros(1));
         let mut windows = self.rtt_window.borrow_mut();
         let w = windows.entry(addr.to_string()).or_default();
         w.push(sample);
@@ -358,18 +356,20 @@ impl Session {
     }
 
     fn rtt_timeout(&self, addr: &str) {
-        let ratio = crate::physics::aperture_cycle().max(2);
-        let floor = self
+        let Some(floor) = self
             .rtt_window
             .borrow()
             .get(addr)
             .and_then(|w| w.iter().copied().min())
-            .unwrap_or(Duration::from_millis(1));
+        else {
+            return;
+        };
+        let ratio = crate::physics::aperture_cycle().max(2) as u64;
         let cap = crate::physics::persist_dwell(floor);
         let mut m = self.rtt.borrow_mut();
-        let cur = m.get(addr).copied().unwrap_or(Duration::from_millis(1));
-        let next = cur.saturating_mul(ratio).min(cap);
-        m.insert(addr.to_string(), next);
+        if let Some(cur) = m.get(addr).copied() {
+            m.insert(addr.to_string(), cur.saturating_mul(ratio).min(cap));
+        }
     }
 
     fn z_at(&self, addr: &str) -> u64 {
@@ -554,66 +554,40 @@ impl Session {
         out
     }
 
-    fn note_slow(tag: &str, act: u8, addr: &str, t0: Instant, deadline: Duration) {
-        let dt = t0.elapsed();
-        if dt > deadline {
-            eprintln!(
-                "[{tag}] exchange {act} to {addr} took {} ms deadline {} ms",
-                dt.as_millis(),
-                deadline.as_millis()
-            );
-        }
-    }
-
     fn exchange_inner(&self, addr: &str, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
-        let act = act_body.first().copied().unwrap_or(0);
-        let tag = self.kernel.name();
         let frame = Frame { lane: Stratum::Spatial, body: act_body };
         let bytes = frame.encode().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "frame encode"))?;
-        let deadline = crate::physics::transport_deadline(self.rtt_of(addr));
-        let t0 = Instant::now();
         let mut pool = self.streams.borrow_mut();
         if let Some(s) = pool.get_mut(addr) {
             match Self::roundtrip(s, &bytes) {
                 Ok(body) => {
-                    Self::note_slow(tag, act, addr, t0, deadline);
-                    self.rtt_ok(addr, t0.elapsed());
+                    self.rtt_ok(addr, 1);
                     return Ok(body);
                 }
                 Err(e) => {
                     pool.remove(addr);
                     if e.kind() == io::ErrorKind::TimedOut || e.kind() == io::ErrorKind::WouldBlock {
-                        Self::note_slow(tag, act, addr, t0, deadline);
                         self.rtt_timeout(addr);
                     }
                 }
             }
         }
-        let deadline = crate::physics::transport_deadline(self.rtt_of(addr));
-        let sockaddr = std::net::ToSocketAddrs::to_socket_addrs(&addr)?
-            .next()
-            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "unresolvable address"))?;
-        let mut s = match TcpStream::connect_timeout(&sockaddr, deadline) {
+        let mut s = match TcpStream::connect(addr) {
             Ok(s) => s,
             Err(e) => {
-                Self::note_slow(tag, act, addr, t0, deadline);
                 self.rtt_timeout(addr);
                 return Err(e);
             }
         };
-        s.set_read_timeout(Some(deadline))?;
-        s.set_write_timeout(Some(deadline))?;
         let _ = s.set_nodelay(true);
         let body = match Self::roundtrip(&mut s, &bytes) {
             Ok(b) => b,
             Err(e) => {
-                Self::note_slow(tag, act, addr, t0, deadline);
                 self.rtt_timeout(addr);
                 return Err(e);
             }
         };
-        Self::note_slow(tag, act, addr, t0, deadline);
-        self.rtt_ok(addr, t0.elapsed());
+        self.rtt_ok(addr, 1);
         Ok(body)
     }
 
@@ -1860,7 +1834,7 @@ pub struct Entity {
     /// Ideas keyed by address: a cite is a read, never a walk of bubbles.
     ideas: crate::network::nerve::Keyed<Element>,
     physics: crate::physics::Physics,
-    tu: crate::chronometry::TUniversal,
+    height: crate::chronometry::Height,
 }
 
 impl Entity {
@@ -1891,16 +1865,16 @@ impl Entity {
             opened: crate::network::nerve::Keyed::new(),
             ideas: crate::network::nerve::Keyed::new(),
             physics: crate::physics::Physics::default(),
-            tu: crate::chronometry::TUniversal::default(),
+            height: crate::chronometry::Height::default(),
         }
     }
 
-    pub fn set_tuniversal(&mut self, tu: crate::chronometry::TUniversal) {
-        self.tu = tu;
+    pub fn set_height(&mut self, h: crate::chronometry::Height) {
+        self.height = h;
     }
 
     pub fn now_tu(&self) -> u64 {
-        self.tu.ticks()
+        self.height.get()
     }
 
     /// Open with CONTINUITY: restore the crystallized genome from `genome_path`
@@ -1992,7 +1966,7 @@ impl Entity {
         self.session.impedance()
     }
 
-    pub fn transport_rtt(&self) -> std::time::Duration {
+    pub fn transport_rtt(&self) -> Option<u64> {
         self.session.rtt()
     }
 
