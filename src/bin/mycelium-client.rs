@@ -185,7 +185,12 @@ fn speak_form(
             "no measured descent".to_string()
         }
     };
-    let mag = mycelium::transducer::family::form_descent(form, train, &entity.epigenome);
+    let (mag, remainders) = mycelium::transducer::family::form_descent(form, train, &entity.epigenome);
+    if remainders.iter().any(|r| !r.is_empty()) {
+        entity.hold_form(form);
+        eprintln!("[{tag}] form withheld: family {fam} {}", why_open());
+        return false;
+    }
     let Some(word) = as_element_form(form, mag) else {
         entity.hold_form(form);
         eprintln!("[{tag}] form withheld: family {fam} {}", why_open());

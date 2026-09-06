@@ -126,6 +126,16 @@ pub fn replay_form_with(
     {
         return Some(REFUSE_RANK_LOST);
     }
+    if let Some(fam) = family {
+        let (pay, rems) = crate::transducer::family::form_descent(
+            &walked,
+            fam,
+            &crate::transducer::family::NoCrystal,
+        );
+        if rems.iter().any(|r| !r.is_empty()) || !crate::economy::descends(&[0; 4], &pay) {
+            return Some(REFUSE_NO_DESCENT);
+        }
+    }
     replay_certificates(&walked, &by_chord)
 }
 

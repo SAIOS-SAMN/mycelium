@@ -2008,28 +2008,39 @@ pub fn extract_rule_cached(
 }
 
 /// Descent a form measures by speaking every train pair through the
-/// crystal that resolves its cited forms. A form that misses any pair, or
-/// cites a form the crystal does not hold, measures zero and is not spoken.
-pub fn form_descent(form: &Form, family: &[(Grid, Grid)], crystal: &dyn Crystal) -> [u64; 4] {
+/// crystal that resolves its cited forms. Per pair: deflation is
+/// `measure_lanes(delta(x, y)) − measure_lanes(delta(spoken, y))`, accepted
+/// only if the spoken residual descends on that pair, else the pair
+/// contributes zero. Summed over pairs. The per-pair `residual_of(spoken, y)`
+/// chains sit beside the sum. A form is spoken only when every remainder
+/// is empty; `REFUSE_NO_DESCENT` means the form closes nothing.
+pub fn form_descent(
+    form: &Form,
+    family: &[(Grid, Grid)],
+    crystal: &dyn Crystal,
+) -> ([u64; 4], Vec<Vec<(i64, i64, u8, u8)>>) {
     if family.is_empty() {
-        return [0; 4];
+        return ([0; 4], Vec::new());
     }
     let mut pay = [0u64; 4];
+    let mut remainders = Vec::with_capacity(family.len());
     for (x, y) in family {
-        let Some(s) = apply_form(form, x, &super::alphabet::Word::identity(), crystal) else {
-            return [0; 4];
-        };
-        if s.grid() != *y {
-            return [0; 4];
-        }
-        if let Some((chain, _, _)) = crate::arc::refine_delta(x, y) {
-            let lanes = element::measure_lanes(&chain);
+        let before_chain = crate::arc::refine_delta(x, y)
+            .map(|(c, _, _)| c)
+            .unwrap_or_else(|| residual_of(Some(x), y));
+        let spoken = apply_form(form, x, &super::alphabet::Word::identity(), crystal);
+        let grid = spoken.as_ref().map(|s| s.grid());
+        let after_chain = residual_of(grid.as_ref(), y);
+        let before_mu = element::measure_lanes(&before_chain);
+        let after_mu = element::measure_lanes(&after_chain);
+        if crate::economy::descends(&after_mu, &before_mu) {
             for i in 0..4 {
-                pay[i] = pay[i].saturating_add(lanes[i]);
+                pay[i] = pay[i].saturating_add(before_mu[i].saturating_sub(after_mu[i]));
             }
         }
+        remainders.push(after_chain);
     }
-    pay
+    (pay, remainders)
 }
 
 /// Extract the invariant cochain of a family. The live path is the form
@@ -2049,7 +2060,10 @@ pub fn mint_sentence(
     family: &[(Grid, Grid)],
     crystal: &dyn Crystal,
 ) -> Option<element::Element> {
-    let mut mag = form_descent(&rule.form, family, crystal);
+    let (mut mag, remainders) = form_descent(&rule.form, family, crystal);
+    if remainders.iter().any(|r| !r.is_empty()) {
+        return None;
+    }
     mag[2] = mag[2].max((family.len() as u64).saturating_sub(1).max(1));
     super::sentence::as_element_form(&rule.form, mag)
 }
@@ -2682,12 +2696,12 @@ mod tests {
             "spoken cells equal the target"
         );
         assert_ne!(
-            form_descent(&rule.form, &family, &crystal),
+            form_descent(&rule.form, &family, &crystal).0,
             [0; 4],
             "the glued form measures its descent through the crystal that holds its citation"
         );
         assert_eq!(
-            form_descent(&rule.form, &family, &NoCrystal),
+            form_descent(&rule.form, &family, &NoCrystal).0,
             [0; 4],
             "without the cited form nothing is measured, so nothing is minted"
         );
@@ -2999,6 +3013,48 @@ mod tests {
             form_descent(&back, &family, &NoCrystal),
             form_descent(&rule.form, &family, &NoCrystal),
             "the descent re-measures from the tape"
+        );
+    }
+
+    /// Deflation is per-pair measure_lanes(delta(x,y)) − measure_lanes(delta(spoken,y)),
+    /// accepted only if that pair descends. A raise or a miss on one pair
+    /// does not zero the others; a form is spoken only when every remainder
+    /// is empty.
+    #[test]
+    fn form_descent_measures_deflation_per_pair() {
+        let x = grid(&["1"]);
+        let y = grid(&["2"]);
+        let family_exact = vec![(x.clone(), y.clone())];
+        let rule = extract_rule(&family_exact).expect("recolour");
+        let (pay, rems) = form_descent(&rule.form, &family_exact, &NoCrystal);
+        assert!(
+            rems.iter().all(|r| r.is_empty()),
+            "an exact speak leaves empty remainders, got {rems:?}"
+        );
+        assert_ne!(pay, [0; 4], "exact speak measures the closed delta");
+        let before = element::measure_lanes(
+            &crate::arc::refine_delta(&x, &y)
+                .expect("delta")
+                .0,
+        );
+        assert_eq!(pay, before, "deflation of an empty remainder is the closed delta");
+        let x2 = grid(&["10"]);
+        let y2 = grid(&["23"]);
+        let family = vec![(x, y), (x2, y2)];
+        let (pay2, rems2) = form_descent(&rule.form, &family, &NoCrystal);
+        assert!(rems2[0].is_empty(), "pair one closes");
+        assert!(
+            !rems2[1].is_empty(),
+            "pair two leaves a remainder, got {:?}",
+            rems2[1]
+        );
+        assert_ne!(
+            pay2, [0; 4],
+            "a miss on pair two does not zero pair one's deflation"
+        );
+        assert!(
+            mint_sentence(&rule, &family, &NoCrystal).is_none(),
+            "a form is spoken only when every remainder is empty"
         );
     }
 

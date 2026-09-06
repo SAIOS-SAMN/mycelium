@@ -5922,7 +5922,7 @@ impl Kernel {
     /// association with a listing is not a mint.
     fn measured_replay_descent(&self, form: &Element, family: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)]) -> [u64; 4] {
         if let Some(f) = crate::transducer::sentence::from_element_form(form) {
-            return crate::transducer::family::form_descent(&f, family, self);
+            return crate::transducer::family::form_descent(&f, family, self).0;
         }
         [0; 4]
     }
@@ -7782,7 +7782,7 @@ mod tests {
         assert!(expect.iter().any(|&x| x > 0), "the family has descent");
         let decoded = crate::transducer::sentence::from_element_form(&spoken).expect("v2 form");
         assert_eq!(
-            crate::transducer::family::form_descent(&decoded, &family, &crate::transducer::family::NoCrystal),
+            crate::transducer::family::form_descent(&decoded, &family, &crate::transducer::family::NoCrystal).0,
             expect,
             "the form read back from its tape measures the family's descent"
         );
