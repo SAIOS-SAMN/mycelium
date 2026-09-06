@@ -66,31 +66,35 @@ impl Axis {
 
 /// A18: the dimension audit of a nerve or form, a vector never summed.
 /// `torsion` counts the open finite-order loops; `free` is the ℤ-rank of
-/// the free parts of the open plane loops plus the open off-plane loops;
-/// `axes` the chart axes opened by discharge (none on a nerve, whose atlas
-/// is the contemplation's).
+/// the plane free parts alone; `offplane` is the number of distinct open
+/// off-plane rotor classes; `axes` the chart axes opened by discharge.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub struct Rank {
     pub torsion: u32,
     pub free: u32,
+    pub offplane: u32,
     pub axes: u32,
 }
 
 impl Rank {
-    /// A pivot is admissible when it leaves rank equal or lowers `torsion`
-    /// or `free` while `axes` does not fall (12.6, R2).
+    /// A pivot is admissible when it leaves rank equal or lowers `torsion`,
+    /// `free` or `offplane` while `axes` does not fall (12.6, R2).
     pub fn admits(before: Rank, after: Rank) -> bool {
-        after.torsion <= before.torsion && after.free <= before.free && after.axes >= before.axes
+        after.torsion <= before.torsion
+            && after.free <= before.free
+            && after.offplane <= before.offplane
+            && after.axes >= before.axes
     }
 
     pub(crate) fn to_bytes(self, out: &mut Vec<u8>) {
         out.extend_from_slice(&self.torsion.to_le_bytes());
         out.extend_from_slice(&self.free.to_le_bytes());
+        out.extend_from_slice(&self.offplane.to_le_bytes());
         out.extend_from_slice(&self.axes.to_le_bytes());
     }
 
     pub(crate) fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Rank> {
-        let mut f = [0u32; 3];
+        let mut f = [0u32; 4];
         for x in &mut f {
             *x = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
             *pos += 4;
@@ -98,7 +102,8 @@ impl Rank {
         Some(Rank {
             torsion: f[0],
             free: f[1],
-            axes: f[2],
+            offplane: f[2],
+            axes: f[3],
         })
     }
 }
@@ -366,7 +371,7 @@ pub enum LoopRow {
     Closed,
     Torsion,
     Free([i64; 12]),
-    OffPlane,
+    OffPlane([u8; 32]),
 }
 
 pub fn loop_row(h: &Word) -> LoopRow {
@@ -376,26 +381,29 @@ pub fn loop_row(h: &Word) -> LoopRow {
     match free_row(h) {
         Some(row) if row == [0i64; 12] => LoopRow::Torsion,
         Some(row) => LoopRow::Free(row),
-        None => LoopRow::OffPlane,
+        None => LoopRow::OffPlane(h.rotor().class_key()),
     }
 }
 
 /// A18 over the rows of a nerve's cycles or a form's loops.
 pub fn rank_of_rows(rows: &[LoopRow]) -> Option<Rank> {
     let mut torsion = 0u32;
-    let mut offplane = 0u32;
+    let mut offplane: Keyed<()> = Keyed::new();
     let mut free: Vec<[i64; 12]> = Vec::new();
     for r in rows {
         match r {
             LoopRow::Closed => {}
             LoopRow::Torsion => torsion += 1,
             LoopRow::Free(row) => free.push(*row),
-            LoopRow::OffPlane => offplane += 1,
+            LoopRow::OffPlane(k) => {
+                offplane.insert(*k, ());
+            }
         }
     }
     Some(Rank {
         torsion,
-        free: z_rank(&free)?.saturating_add(offplane),
+        free: z_rank(&free)?,
+        offplane: offplane.len() as u32,
         axes: 0,
     })
 }

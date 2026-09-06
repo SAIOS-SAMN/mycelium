@@ -1908,6 +1908,7 @@ mod tests {
             rank_before: Rank {
                 torsion: 1,
                 free: 0,
+                offplane: 0,
                 axes: 0,
             },
             rank_after: Rank::default(),
@@ -1932,6 +1933,7 @@ mod tests {
             rank_before: Rank {
                 torsion: 1,
                 free: 0,
+                offplane: 0,
                 axes: 0,
             },
             rank_after: Rank::default(),

@@ -121,6 +121,7 @@ pub fn replay_form_with(
     };
     if taped_rank.torsion < derived.torsion
         || taped_rank.free < derived.free
+        || taped_rank.offplane < derived.offplane
         || taped_rank.axes < derived.axes
     {
         return Some(REFUSE_RANK_LOST);
@@ -890,6 +891,7 @@ mod tests {
             rank_before: Rank {
                 torsion: 1,
                 free: 0,
+                offplane: 0,
                 axes: 0,
             },
             rank_after: Rank::default(),

@@ -863,6 +863,24 @@ mod tests {
         f
     }
 
+    #[test]
+    fn rank_offplane_is_its_own_lane() {
+        let w = Word::from_letters(&[(alphabet::LetterId::quarter((0, 2)).unwrap(), false)]);
+        assert!(w.plane_block().is_none(), "a (0,2) quarter is off the sensor plane");
+        let two = chord_form(&[w.clone(), w.clone()]);
+        let r = two.rank().expect("rank");
+        assert_eq!(r.offplane, 1, "two chords of one off-plane class count once, got {r:?}");
+        assert_eq!(r.free, 0, "plane free rank is empty, got {r:?}");
+        assert_ne!(r.offplane, 2, "the old per-chord count is not a coordinate");
+        assert_ne!(r.free, 2, "the old folded sum is not free");
+        let mixed = chord_form(&[infinite(), w]);
+        let r = mixed.rank().expect("rank");
+        assert_eq!(r.free, 1, "one plane free chord, got {r:?}");
+        assert_eq!(r.offplane, 1, "one off-plane class, got {r:?}");
+        assert_ne!(r.free, 2, "no component equals the old sum");
+        assert_ne!(r.offplane, 2, "no component equals the old sum");
+    }
+
     fn coboundary_chord_form() -> Form {
         let r = order4();
         let mut f = Form::default();
@@ -913,11 +931,13 @@ mod tests {
             rank_before: Rank {
                 torsion: 0,
                 free: 0,
+                offplane: 0,
                 axes: 0,
             },
             rank_after: Rank {
                 torsion: 0,
                 free: 0,
+                offplane: 0,
                 axes: 0,
             },
             mu: Mu::Measured {
