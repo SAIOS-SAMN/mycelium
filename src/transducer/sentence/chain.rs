@@ -496,10 +496,11 @@ fn place_located<'a>(
         (Some(c), _, _) => out.cites.push(c),
         (None, Some(p), _) => out.punctures.push(p),
         (None, None, _) => match element::gauge_fibers(body) {
-            element::GaugeFibers::One(_, cells) => {
+            None => {}
+            Some(element::GaugeFibers::One(_, cells)) => {
                 out.residual.extend(cells);
             }
-            element::GaugeFibers::Many(idx) => {
+            Some(element::GaugeFibers::Many(idx)) => {
                 for (_, fiber) in idx.fiber(&ROOT) {
                     for sub in pieces(fiber) {
                         let loc = locate_or_puncture_on(

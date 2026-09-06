@@ -455,8 +455,11 @@ pub enum GaugeFibers {
 
 /// THE GAUGE FIBERS of a chain: the chain opened along its fiber
 /// coordinate, one sub-chain per transition class. Indexed by the pair
-/// key. One class is `One`; two or more, or none, is `Many`.
-pub fn gauge_fibers(chain: &[(i64, i64, u8, u8)]) -> GaugeFibers {
+/// key. One class is `One`; two or more is `Many`. Empty is `None`.
+pub fn gauge_fibers(chain: &[(i64, i64, u8, u8)]) -> Option<GaugeFibers> {
+    if chain.is_empty() {
+        return None;
+    }
     let mut idx: crate::network::nerve::Keyed<Vec<(i64, i64, u8, u8)>> =
         crate::network::nerve::Keyed::new();
     for &cell in chain {
@@ -480,8 +483,8 @@ pub fn gauge_fibers(chain: &[(i64, i64, u8, u8)]) -> GaugeFibers {
         }
     }
     match (many, first) {
-        (false, Some((class, cells))) => GaugeFibers::One(class, cells),
-        _ => GaugeFibers::Many(idx),
+        (false, Some((class, cells))) => Some(GaugeFibers::One(class, cells)),
+        _ => Some(GaugeFibers::Many(idx)),
     }
 }
 
