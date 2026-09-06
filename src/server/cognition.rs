@@ -1175,12 +1175,14 @@ impl Kernel {
 
     fn occupy(&mut self, addr: [u8; 32], mag: &[u64; 4], add: bool) {
         for l in 0..4 {
-            if mag[l] > 0 {
-                if add {
-                    self.occupancy[l] = self.occupancy[l].saturating_add(1);
+            if add {
+                self.occupancy[l] = self.occupancy[l].saturating_add(mag[l]);
+                if mag[l] > 0 {
                     self.lane_listings[l].insert(addr, ());
-                } else {
-                    self.occupancy[l] = self.occupancy[l].saturating_sub(1);
+                }
+            } else {
+                self.occupancy[l] = self.occupancy[l].saturating_sub(mag[l]);
+                if mag[l] > 0 {
                     self.lane_listings[l].remove(&addr);
                 }
             }
@@ -3873,10 +3875,11 @@ impl Kernel {
         std::array::from_fn(|l| room[l].saturating_add(self.occupancy[l] as usize).max(1))
     }
 
-    /// Does a residual fit the book on every lane it moves?
+    /// Does a residual fit the book on every lane it moves? Room must
+    /// cover the draw; a lane short of the chain's μ⃗ refuses.
     fn fits_book(&self, mag: &[u64; 4]) -> bool {
         let room = self.lane_room();
-        (0..4).all(|l| mag[l] == 0 || room[l] > 0)
+        (0..4).all(|l| (room[l] as u64) >= mag[l])
     }
 
     /// D12 — charge the congestion door and decide deferral: fee[l] =
@@ -4233,7 +4236,13 @@ impl Kernel {
         }
         // Every lane the residual moves must have room; none is chosen.
         if !self.fits_book(&residual.magnitude()) {
-            return false; // the thermodynamic book is full on a lane it needs; corpus can wait
+            eprintln!(
+                "  court room refused {:02x}{:02x}… {}",
+                addr[0],
+                addr[1],
+                crate::verdict::REFUSE_ROOM
+            );
+            return false;
         }
         let k_now = self.k_step();
         self.stamp_standing(addr);
@@ -4647,48 +4656,18 @@ impl Kernel {
                         self.quote_frontier.insert(addr, ());
                     }
                     if !self.book_index.contains(&addr) {
-                        // Every lane the residual moves must have room; no
-                        // lane is chosen. When one it needs is full, the
-                        // weakest listing standing on a full lane it needs
-                        // may yield its place.
                         let k_now = self.k_step();
-                        let mut need = residual.magnitude();
-                        need[2] = need[2].max(1);
+                        let need = residual.magnitude();
                         if self.lane_room()[2] == 0 {
                             self.relocate_t_exhausted();
                         }
-                        let room = self.lane_room();
-                        let saturated: Vec<usize> = (0..4).filter(|&l| l != 2 && need[l] > 0 && room[l] == 0).collect();
                         if !self.fits_book(&need) {
-                            let new_a = action_potential(
-                                &crate::economy::price(&residual.magnitude(), &self.physics.pressure),
-                                0,
+                            eprintln!(
+                                "  court room refused {:02x}{:02x}… {}",
+                                addr[0],
+                                addr[1],
+                                crate::verdict::REFUSE_ROOM
                             );
-                            let mut cands: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-                            for &l in &saturated {
-                                for (a, _) in self.lane_listings[l].fiber(&crate::network::nerve::ROOT) {
-                                    cands.insert(*a, ());
-                                }
-                            }
-                            let weakest = cands.fiber(&crate::network::nerve::ROOT).filter_map(|(addr, _)| {
-                                let &i = self.book_index.get(addr)?;
-                                let (p, lk) = self.pending.get(i)?;
-                                let a = action_potential(
-                                    &crate::economy::price(&p.magnitude(), &self.physics.pressure),
-                                    k_now.saturating_sub(*lk),
-                                );
-                                Some((i, a))
-                            }).min_by_key(|(_, a)| *a);
-                            match weakest {
-                                Some((i, a)) if a < new_a => {
-                                    let evicted = self.pending[i].0.address();
-                                    self.unlist(&evicted, false);
-                                    self.book_list(residual.clone(), k_now);
-                                    self.docket_connection(&residual, voice);
-                                    self.offered.insert(addr, ());
-                                }
-                                _ => {} // the newcomer IS the weakest — unlisted
-                            }
                         } else {
                             self.book_list(residual.clone(), k_now);
                             self.docket_connection(&residual, voice);
@@ -6121,6 +6100,7 @@ fn word_footprint_in(
 /// metabolism contract, not a new knob). Exact integer arithmetic; higher =
 /// hotter = kept. The market sheds argmin 𝒜 — its coldest stale residual —
 /// never its oldest.
+#[cfg(test)]
 fn action_potential(mu_quoted: &[u64; 4], dwell_k: u64) -> u128 {
     let l1: u128 = mu_quoted.iter().map(|&m| m as u128).sum();
     let r = crate::physics::reserve_max() as u128;
@@ -6899,6 +6879,37 @@ mod tests {
         k.glue_local();
         assert_eq!(k.voices_of(&k.basis()[0].address()).len(), 2, "the settle parties");
         assert!(k.quote(4).1.is_empty(), "the market cleared");
+    }
+
+    /// A docket draws the chain's μ⃗ from lane_room; a short lane refuses
+    /// and nothing is listed. A bonded voice with cover is not refused.
+    #[test]
+    fn docket_draws_room_and_refuses_when_short() {
+        let a = vec![(0, 0, 1u8)];
+        let b = vec![(0, 0, 2u8)];
+        let c = vec![(1, 0, 3u8)];
+        let d = vec![(1, 0, 4u8)];
+        let mut short = Kernel::new();
+        short.set_lane_cap([8, 1, 8, 8]);
+        let _ = short.ingest(&a, &b, [1; 32]);
+        assert_eq!(short.pending.len(), 1, "the first draw covers");
+        let _ = short.ingest(&c, &d, [1; 32]);
+        assert_eq!(
+            short.pending.len(),
+            1,
+            "a lane that does not cover the draw refuses, nothing further docketed"
+        );
+
+        let mut bonded = Kernel::new();
+        bonded.bind_identity([1; 32]);
+        bonded.enroll([1; 32], crate::economy::UNIT_BOND);
+        let _ = bonded.ingest(&a, &b, [1; 32]);
+        let _ = bonded.ingest(&c, &d, [1; 32]);
+        assert!(
+            bonded.pending.len() >= 2,
+            "a bonded voice covers both draws, pending {}",
+            bonded.pending.len()
+        );
     }
 
     /// Room is per-lane from bond and reserve; ticks on T do not steal
