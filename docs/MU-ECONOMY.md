@@ -30,9 +30,10 @@ the mesh did.
 | supply | the mesh | genesis plus mint minus burn, per lane |
 
 Every change to a carrier is a ledger entry with a kind, the party, the
-lane vector, the K-step, and the receipt. Entry kinds: `genesis`, `mint`,
-`stake`, `unstake`, `transfer`, `escrow`, `release`, `revoke`, `slash`,
-`burn`. Nothing else moves μ.
+lane vector, the K-step and height of the receipt that wrote it, and the
+receipt. Entry kinds: `genesis`, `mint`, `stake`, `unstake`, `transfer`,
+`escrow`, `release`, `revoke`, `slash`, `burn`. Nothing else moves μ. No
+entry carries a clock reading (`MU-RECURSION.md` chapter 45).
 
 ## 3. Issuance
 
@@ -74,6 +75,16 @@ the bond of the hypha that signed it, and a word that fails replay debits
 the voice that spoke it. A bond is never slashed for being outvoted,
 because nothing is voted.
 
+Proven equivocation, two signed receipts from one key at one K with
+different content (`MU-RECURSION.md` 47.4), forfeits the signer's whole bond
+on all four lanes as one `burn` entry naming the proof; nothing is
+redistributed and no replay is run. A duplicate issuance found when
+partitions rejoin is burned the same way. Burn reduces supply by the same
+vector, so §6 holds through it. A second organ for an install or a release
+must hold bond outside the home's delegation closure and room covering the
+escrow on every occupied lane (`MU-RECURSION.md` 47.3); identities are free,
+room is not.
+
 ## 5. Pricing and payment
 
 A listing is priced by `economy::price` against the book's pressure on each
@@ -81,12 +92,14 @@ lane; the pool is a bond, not a price basis. A requester escrows the price;
 a claimant's word or solve enters the docket; release on the second organ's
 replay pays the escrow to the claimant and mints the deflation. Hyphae are
 paid the pool share priced into every listing they home, and accrual on the
-temporal lane of demands they keep open.
+temporal lane of demands they keep open, counted in heights of the home's
+receipt ledger (`MU-RECURSION.md` 45.4), never in clock time.
 
 Transfer is the xSEPTUM Note: signed by payer and payee, escrowed at the
 listing's home, released on two-organ replay. A voice's balance is homed at
 the hypha the cover trie homes its key to; a transfer is final when the
-home and a witness hold the same section. Double spend is impossible for
+home and a witness hold the same section and both have signed the release
+(`MU-RECURSION.md` 47.3). Double spend is impossible for
 the same reason a double install is: the second vantage sees the first.
 
 ## 6. The invariant
@@ -136,5 +149,8 @@ lifecycle that returns escrow when a docket entry relocates.
 Not landed: mint as issuance (release currently draws from the bond and
 pays nothing when the bond is empty), `price` returning zero when the bond
 is empty, stake and unstake for voices, the Note, voice keys, genesis,
-burn, `supply`, `audit`, T accrual on open demands, delegation. The
+burn, `supply`, `audit`, T accrual on open demands, delegation. Also not
+landed: the equivocation burn, receipt-indexed Notes, two-signature
+releases, FROST voice groups and manifests, and heights in place of ticks
+(`MU-RECURSION.md` Part IX). The
 landing order is in `MU-ENGINEERING.md` §10.

@@ -75,9 +75,12 @@ Inside every hypha (`server/cognition.rs`, `court/verdict.rs`):
 - `physics.rs`: reserve per lane calibrated per host; `Budget` is a linear
   token minted only by `Physics::stroke` and consumed by every cursor and
   expansion; no duration is derived from a reserve count.
-- K orders events inside one kernel. TUniversal is the mesh clock; anything
-  compared across nodes or that decides how long a carrier stands is
-  TUniversal, and lane 2 of μ⃗ is temporal extent in those ticks.
+- K is a kernel's own receipt index and orders events inside that kernel.
+  TUniversal is the height of the mesh receipt ledger, read from receipts;
+  it measures how long a carrier has stood at one home and never orders two
+  events across nodes. No kernel reads a wall clock, a unix clock, or a
+  timer; every duration is a count of strokes or heights (`MU-RECURSION.md`
+  Part IX). Lane 2 of μ⃗ is temporal extent in heights.
 - Lanes: S spatial, G gauge, T temporal, H holonomic. Sections and torsion
   are holonomic content on lane 3.
 
@@ -107,9 +110,19 @@ Snapshot sections: `MYC1`, `KCH1`, `RNK1`, `DEF1`, `FLD1`, `BOK1`, `CAV1`,
 `len`, and four ways to obtain more than one entry: `fiber(prefix)`,
 `peel(key)`, `link(key)`, `cursor(from, budget)`. Persistence iterates
 through a sealed trait. `build.rs` fails the build on `.entries()`,
-`.for_each(`, and `spend_unit()` in cognition directories. Work-counter
-tests assert that one fetched vertex, one held thought, one expansion, one
-quote, and one thirty-body assembly cost the same at N and 4N.
+`.for_each(`, and `spend_unit()` in cognition directories, and on
+`SystemTime`, `Instant`, and `Duration` in `src/server`, `src/client`,
+`src/court`, `src/transducer`, `src/economy.rs`, and `src/physics.rs`
+(the clock gate, `MU-RECURSION.md` 45.4). The same gate fails the build on
+`blake3` anywhere outside `src/network`, `src/court/identity.rs`,
+`src/chronometry.rs`, and the persistence loaders (the digest gate,
+`MU-RECURSION.md` law 2 and A21: no hash of any mathematical structure),
+and on a `(BigRational, BigRational)` or `(i64, i64)` field or parameter
+named `placement`, `shift`, or `residue` outside `family::pair_form`,
+`family::speak_rule`, and `family::orbit` (the squaring gate, law 11).
+Work-counter tests assert that one fetched vertex, one held thought, one
+expansion, one quote, and one thirty-body assembly cost the same at N and
+4N.
 
 ## 8. Persistence and continuity
 

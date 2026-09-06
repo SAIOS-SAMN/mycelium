@@ -3,7 +3,9 @@
 Status: specification, not yet implemented. Replaces the HTTP 402 / x402
 handshake for anything that pays or is paid through a hypha. Written
 against the tree at de52e47; every referenced function exists there unless
-marked "new".
+marked "new". Time, identity, receipts, and the adversary model follow
+`MU-RECURSION.md` Part IX (chapters 45–49, written at 5865bd0); where this
+text and that part differ, that part governs.
 
 ## 1. What it replaces and what it keeps
 
@@ -16,7 +18,7 @@ replaces the content:
 | x402 | xSEPTUM |
 |---|---|
 | scalar amount in one currency | a four-lane magnitude `μ⃗ = [spatial, gauge, temporal, holonomic]`, never summed, compared by `economy::descends` |
-| facilitator verifies a signature | the home hypha escrows on a signed Note and releases only after replay by two organs, exactly as words are installed |
+| facilitator verifies a signature | the home hypha escrows on a signed Note and releases only after replay by two organs, each signing the release (MU-RECURSION 47.3), exactly as words are installed |
 | off-chain balance in a token | `Treasury` balances earned by verified reduction and solves (`economy::balance_mu`) |
 | pay with money only | pay with money (a Note) or with work (a reduction attested on the listing that priced the request) |
 | receipt is a transaction id | receipt is the listing's address on a signed ruled root of the home hypha, verifiable by any node by replay |
@@ -26,15 +28,17 @@ except what the pore admits. Here the pore is replay.
 
 ## 2. Terms
 
-- **Voice**: a 32-byte identity of a client kernel (`Session::kernel().voice()`), with an ed25519 key (new, §8).
+- **Voice**: a 32-byte identity of a client kernel (`Session::kernel().voice()`), a FROST group key over Ed25519 (new, §8; MU-RECURSION 46.1).
 - **Hypha**: a server; identity is its ed25519 verifying key (`court::identity::HyphaKey`).
 - **Listing key**: `listing_key(chain, frame)`, the framed residual address of a demand; every priced request is a listing at exactly one home hypha.
 - **Home**: the hypha the cover trie homes the listing to (`nerve::home`).
 - **Witness**: any other hypha whose cover meets the listing's chart; the second organ.
 - **μ⃗**: `[u64; 4]` magnitude on the four lanes.
 - **Escrow**: `Treasury::escrow_award(addr, voices, mu, anchor)`; released by `release_award`, revoked or slashed by `revoke_award`, drawn by `draw_escrow`.
-- **K**: the home's step counter (`Kernel::k_step`). Orders events inside one kernel (rank, settlement sequence, language snapshot).
-- **TUniversal**: the mesh clock every node stamps (`chronometry::TUniversal::ticks`). Anything compared across nodes, or that decides how long a carrier stands (Offer's `k`, challenge `ttl`, dialect supersession), is TUniversal. Lane 2 of μ⃗ is temporal extent in these ticks.
+- **K**: a kernel's own receipt index (`Kernel::k_step`; `Session::voice().k()` for a voice). Orders events inside one kernel. No kernel reads a clock (MU-RECURSION 45).
+- **TUniversal**: the height of the mesh receipt ledger (MU-RECURSION 45.2), read from receipts. It measures how long a carrier has stood at one home and never orders two events across nodes. Lane 2 of μ⃗ is temporal extent in heights.
+- **Receipt prefix**: the bytes every signature covers (MU-RECURSION 47.1): genesis, epoch, previous receipt hash, K, height, chart, payload address.
+- **Λ(chart)**: the aperture of a chart in admitted receipts, `from_transport(rtt_floor, aperture_cycle())` measured in strokes; never a constant.
 - **Anchor**: `economy::Anchor`, the pricing anchor the treasury records with every entry.
 
 ## 3. Roles
@@ -42,7 +46,7 @@ except what the pore admits. Here the pore is replay.
 - **Payer**: the voice that wants a resource or a result. Pays by Note or by Work.
 - **Payee**: the voice that serves the resource or claims the result. Usually a service running the client SDK.
 - **Home**: escrow holder, first organ.
-- **Witness**: second organ; supplies the replay that releases escrow.
+- **Witness**: second organ; supplies the replay and the second signature that release escrow. Its bond lies outside the home's delegation closure and its room covers the escrow on every occupied lane (MU-RECURSION 47.3).
 
 Any node may be payer and payee in different exchanges. Hyphas are never
 payees; they are paid by the pool share already priced into `economy::price`.
@@ -69,6 +73,7 @@ before landing, 0x20–0x22 are taken by COVER/OFFER/INSTALLED):
 | 0x32 | SEPTUM_RECEIPT | payee → home, countersigned by payer for resource deliveries |
 | 0x33 | SEPTUM_RELEASE | home → payer and payee |
 | 0x34 | SEPTUM_REVOKE | home → payer and payee |
+| 0x35 | SEPTUM_EQUIVOCATION | any node → home (MU-RECURSION 47.4) |
 
 All integers little-endian. All signatures ed25519 over the exact prefix
 named. `len16` is a u16 length prefix; `len32` a u32.
@@ -77,41 +82,48 @@ named. `len16` is a u16 length prefix; `len32` a u32.
 
 ```
 0x30 ‖ version u8 (=1)
+‖ prefix                  the payee's receipt prefix (MU-RECURSION 47.1): genesis, epoch, prev_payee, K_payee, height, chart, request address
 ‖ listing_key 32          the demand this request is priced as
 ‖ payee_voice 32
 ‖ home_vk 32              the home hypha's verifying key
 ‖ len16 home_addr         "host:port"
 ‖ mu 4×u64                price on four lanes, from economy::price at the home
-‖ k u64                   home TUniversal at pricing
-‖ ttl u64                 TUniversal ticks: the Note must reach the home before k + ttl
-‖ nonce 32
+‖ k_home u64              the home's K at pricing
+‖ h_home u64              the home's height at pricing
+‖ lambda u64              Λ(chart): receipts the home may admit before the Note arrives, from measured transport, never a constant
 ‖ mode u8                 0 = resource (bytes delivered), 1 = work (reduction/solve on the listing)
 ‖ len32 request_digest    blake3 of the canonical request (§7.1)
 ‖ sig_payee 64            over everything before it
 ```
 
-The payee obtains `listing_key`, `mu`, `k`, `home_vk`, `home_addr` from the
-home with an ordinary `ACT_QUOTE`-style read (new `Kernel::price_request`),
-which lists the request as a demand with `bind_listing_task` binding it to
-the payee's task id.
+There is no nonce and no clock field. The payee obtains `listing_key`,
+`mu`, `k_home`, `h_home`, `lambda`, `home_vk`, `home_addr` from the home with
+an ordinary `ACT_QUOTE`-style read (new `Kernel::price_request`), which lists
+the request as a demand with `bind_listing_task` binding it to the payee's
+task id.
 
 ### 5.2 NOTE (0x31)
 
 ```
 0x31 ‖ version u8
-‖ challenge_prefix        the CHALLENGE bytes through nonce (not the digest, not the signature)
+‖ prefix                  the payer's receipt prefix: genesis, epoch, prev_payer, K_payer, height, chart, challenge address
+‖ challenge_prefix        the CHALLENGE bytes through request_digest (not the signature)
 ‖ payer_voice 32
 ‖ mu 4×u64                what the payer escrows; must satisfy descends(price, mu) or equality
 ‖ sig_payee 64            copied from the challenge
 ‖ sig_payer 64            over everything before it
 ```
 
-The home verifies `sig_payee` with the payee's voice key, `sig_payer` with
-the payer's, `k + ttl ≥ TUniversal`, the nonce unseen for this listing, and the
-payer's `balance_mu` covering `mu` on every occupied lane. Then
-`escrow_award(listing_key, [payer, payee], mu, anchor)`. The escrow entry
-is keyed by `listing_key`; a second Note for the same nonce is refused
-`DUPLICATE`.
+The home admits both prefixes by MU-RECURSION 47.2 (genesis and epoch,
+signature, K against the known head), verifies `sig_payee` with the payee's
+key and `sig_payer` with the payer's, checks that its own K has not passed
+`k_home + lambda`, and checks the payer's `balance_mu` covering `mu` on
+every occupied lane. Then `escrow_award(listing_key, [payer, payee], mu,
+anchor)` and a receipt citing both prefixes as parents. The escrow entry is
+keyed by `(listing_key, payer, K_payer)`. A second Note identical to one
+already admitted at `K_payer` is a duplicate frame and is ignored
+(`DUPLICATE`); a different Note at the same `(payer, K_payer)` is an
+equivocation proof (§5.5) and burns the payer's bond.
 
 Reply: `RELEASE`-shaped acknowledgement with state `ESCROWED`, or a
 refusal code (§9).
@@ -121,7 +133,7 @@ refusal code (§9).
 Mode 0, resource:
 
 ```
-0x32 ‖ version u8 ‖ listing_key 32 ‖ nonce 32
+0x32 ‖ version u8 ‖ listing_key 32 ‖ k_payer u64
 ‖ len32 delivery_digest   blake3 of the delivered bytes
 ‖ sig_payee 64            over the fields above
 ‖ sig_payer 64            over the fields above (countersignature)
@@ -134,7 +146,7 @@ replays only the signatures and the escrow state, then releases.
 Mode 1, work:
 
 ```
-0x32 ‖ version u8 ‖ listing_key 32 ‖ nonce 32
+0x32 ‖ version u8 ‖ listing_key 32 ‖ k_payer u64
 ‖ mode 1
 ‖ len32 element_bytes     the word or sentence that settles the listing (Element::to_bytes)
 ‖ sig_payee 64
@@ -150,30 +162,49 @@ revoked to the payer.
 ### 5.4 RELEASE (0x33) and REVOKE (0x34)
 
 ```
-0x33 ‖ version u8 ‖ listing_key 32 ‖ nonce 32
+0x33 ‖ version u8 ‖ listing_key 32 ‖ k_payer u64
 ‖ paid 4×u64              drawn to the payee
 ‖ remainder 4×u64         returned to the payer (mode 1 may leave a remainder for consilience)
 ‖ ruled_root 32           the home's signed ruled root after settlement
-‖ k u64
-‖ sig_home 64
+‖ k_home u64
+‖ h_home u64
+‖ sig_home 64             over the home's receipt prefix and the fields above
+‖ sig_witness 64          the second organ (MU-RECURSION 47.3): bond outside the home's delegation closure, room covering `paid` on every occupied lane
 ```
 
 ```
-0x34 ‖ version u8 ‖ listing_key 32 ‖ nonce 32
+0x34 ‖ version u8 ‖ listing_key 32 ‖ k_payer u64
 ‖ reason u8               §9
 ‖ returned 4×u64
 ‖ slashed 4×u64           nonzero only on a failed replay
-‖ k u64
+‖ k_home u64
+‖ h_home u64
 ‖ sig_home 64
 ```
 
 The `ruled_root` is the receipt. Anyone holding the home's verifying key
 verifies the release; anyone holding a digest of that root can fetch the
-listing's stratum and replay it.
+listing's stratum and replay it. A revocation needs one organ: refusing
+needs no second vantage, installing does.
+
+### 5.5 EQUIVOCATION (0x35)
+
+```
+0x35 ‖ version u8
+‖ len32 receipt_a         a signed receipt prefix with its signature
+‖ len32 receipt_b         another under the same key at the same K with a different chain hash
+```
+
+The home verifies both signatures under the common key, equal K, unequal
+hashes, and burns the signer's bond on all four lanes with one `burn` entry
+naming the proof (MU-RECURSION 47.4, MU-ECONOMY §4). Nothing is replayed.
+Reply: a `RELEASE`-shaped acknowledgement with state `BURNED`, or
+`BAD_SIGNATURE`, or `NOT_EQUIVOCATION` when the two receipts do not share
+key and K or do not differ.
 
 ## 6. State machine
 
-Per `(listing_key, nonce)` at the home:
+Per `(listing_key, payer, K_payer)` at the home:
 
 ```
 PRICED ──Note verified──▶ ESCROWED ──Receipt mode 0, two sigs──▶ RELEASED
@@ -182,8 +213,8 @@ PRICED ──Note verified──▶ ESCROWED ──Receipt mode 0, two sigs─�
    │                          │        │
    │                          │        └──Installed (witness replay)──▶ RELEASED
    │                          │        └──slash──▶ REVOKED(SLASHED)
-   │                          └──TUniversal > k + ttl with no receipt──▶ REVOKED(EXPIRED)
-   └──TUniversal > k + ttl with no Note──▶ dropped from the book
+   │                          └──K_home > k_home + Λ with no receipt──▶ REVOKED(EXPIRED)
+   └──K_home > k_home + Λ with no Note──▶ dropped from the book
 ```
 
 ### 6.1 Resource flow, HTTP binding
@@ -234,27 +265,40 @@ learning it: the reply is signed by the home and the payee returns it in
 
 ## 8. Identity
 
-- Hyphas: `HyphaKey::load_or_mint`, existing.
-- Voices: new `client::identity::VoiceKey`, an ed25519 key persisted beside
-  the genome (`<kernel>.key`, 0600). The voice id becomes the verifying key
-  bytes so a signature names its voice with no registry.
-- Signatures over prefixes only; never over encodings that contain
-  signatures.
-- Nonces are 32 random bytes; the home keeps `seen: Keyed<()>` per listing
-  and drops it with the listing.
+- Hyphas: `HyphaKey::load_or_mint`, existing; a FROST group key
+  (MU-RECURSION 46.1) when the hypha has more than one operator, the wire
+  unchanged.
+- Voices: new `client::identity::VoiceGroup`, a FROST group key over
+  Ed25519 (RFC 9591, the `frost-ed25519` crate), shares held by the mind's
+  eyes and persisted beside the genome (`<kernel>.shares`, 0600). The voice
+  id is the group verifying key, so a signature names its voice with no
+  registry. Per-chart keys are independent keys certified by a manifest
+  receipt (MU-RECURSION 46.2), never tweaks of the group key.
+- Signatures over the receipt prefix of MU-RECURSION 47.1 followed by the
+  act's fields only; never over encodings that contain signatures.
+- There are no nonces. Replay protection is the payer's receipt index: a
+  Note is `(payer, K_payer)`, spent once; two different Notes at one
+  `K_payer` are an equivocation proof (§5.5).
 
 ## 9. Refusal codes
 
 | code | name | meaning |
 |---|---|---|
 | 1 | BAD_SIGNATURE | a signature does not verify |
-| 2 | EXPIRED | `TUniversal > k + ttl` |
-| 3 | DUPLICATE | nonce already used on this listing |
+| 2 | EXPIRED | the home's K passed `k_home + Λ` |
+| 3 | DUPLICATE | an identical Note at a `K_payer` already spent; a different one is EQUIVOCATION |
 | 4 | INSUFFICIENT_LANE(l) | balance or note short on lane `l` |
 | 5 | NOT_HOME | this hypha does not home the listing; body carries the home's address |
 | 6 | NO_LISTING | the listing key is unknown or dropped |
 | 7 | REPLAY_FAILED | mode 1 word failed `blind_replay`; slashed |
-| 8 | NO_WITNESS | no overlap organ replayed within `ttl`; escrow returned |
+| 8 | NO_WITNESS | no overlap organ replayed and signed within `Λ`; escrow returned |
+| 9 | EQUIVOCATION | two signed receipts, one key, one K, two hashes; bond burned (MU-RECURSION 47.4) |
+| 10 | ORIGIN | the prefix names another genesis or epoch (MU-RECURSION 45.5) |
+| 11 | WITNESS_DEPENDENT | the witness's bond lies inside the home's delegation closure |
+| 12 | WITNESS_ROOM | the witness's room does not cover the escrow on an occupied lane |
+| 13 | MANIFEST | the signing key is not in the signer's active manifest (MU-RECURSION 46.2) |
+| 14 | RECEIPT_GAP | the signer's K skips the known head; back-filled before anything acts (MU-RECURSION 47.2) |
+| 15 | NOT_EQUIVOCATION | the two receipts of a 0x35 do not share key and K, or do not differ |
 
 Codes are typed variants in code, never bare integers in cognition.
 
@@ -262,17 +306,21 @@ Codes are typed variants in code, never bare integers in cognition.
 
 New:
 
-- `src/anastome/dialogue.rs`: acts 0x30–0x34, `encode_*`/`decode_*`,
-  `challenge_signed_prefix`, `note_signed_prefix`, `receipt_signed_prefix`,
-  `release_signed_prefix`.
-- `src/client/identity.rs`: `VoiceKey`.
+- `src/anastome/dialogue.rs`: acts 0x30–0x35, `encode_*`/`decode_*`; every
+  signed prefix is the receipt prefix of MU-RECURSION 47.1 followed by the
+  act's fields (`challenge_signed_prefix`, `note_signed_prefix`,
+  `receipt_signed_prefix`, `release_signed_prefix`).
+- `src/client/identity.rs`: `VoiceGroup` (FROST, RFC 9591) and the manifest
+  receipt.
 - `src/economy.rs`: `Septum` ledger kind entries ("septum-escrow",
   "septum-release", "septum-revoke") on the existing `Entry`; no new
   balances.
-- `src/server/septum.rs`: the state machine keyed by `(listing_key, nonce)`
-  in a `Keyed<Septum>`; `price_request`, `accept_note`, `accept_receipt`,
-  `expire(K)` called from the court stroke under its budget.
-- `src/bin/mycelium-server.rs`: handlers for the five acts in `judge`.
+- `src/server/septum.rs`: the state machine keyed by `(listing_key, payer,
+  K_payer)` in a `Keyed<Septum>`; `price_request`, `accept_note`,
+  `accept_receipt`, `accept_equivocation`, `expire(K)` called from the court
+  stroke under its budget; `witness_sign` for the second signature of a
+  release.
+- `src/bin/mycelium-server.rs`: handlers for the six acts in `judge`.
 - `src/client/sdk.rs`: `Session::septum_note`, `septum_receipt`,
   `septum_release`.
 - `src/bin/mycelium-septum.rs`: the HTTP adapter. Listens on a local port,
@@ -288,19 +336,22 @@ Existing, reused unchanged: `escrow_award`, `release_award`, `revoke_award`,
 ## 11. Tests to write before the first soak
 
 - Note with a short lane is refused with the lane named; never partially escrowed.
-- Expiry is by K: advancing wall clock releases nothing; advancing K past `k + ttl` revokes.
+- Expiry is by the home's K: there is no wall clock to advance; admitting `Λ` receipts past `k_home` revokes, and a home that admits nothing expires nothing.
 - Resource receipt with one signature is refused; with two distinct voices releases exactly `mu`.
 - Work receipt that fails replay slashes the payee and returns the escrow.
-- Work receipt that replays at home but no witness replays within `ttl` returns the escrow with `NO_WITNESS`.
+- Work receipt that replays at home but no witness replays and signs within `Λ` admitted receipts returns the escrow with `NO_WITNESS`.
 - A relayed Note altered by the payee fails `BAD_SIGNATURE`.
-- Duplicate nonce refused after release and after revoke.
+- An identical Note at a spent `K_payer` is ignored after release and after revoke; a different Note at that `K_payer` burns the payer's bond with exactly one `burn` entry and `Treasury::audit` holds.
+- A release with one signature, with a witness inside the home's delegation closure, or with witness room short on an occupied lane is refused with the code named and nothing is drawn.
+- A Note whose prefix names another genesis or epoch is refused ORIGIN before any carrier is touched (a carrier-touch counter at zero).
+- A Note whose `K_payer` skips the payer's known head is docketed RECEIPT_GAP and escrows nothing until the gap is back-filled.
 - `price` output is honoured: a payee-quoted `mu` above the pool share is refused at pricing.
 
 ## 12. What the wire must show
 
 An HTTP client receiving a `402` with a four-lane price, a Note escrowed at
 the listing's home, bytes served, a receipt with two signatures, a release
-carrying the home's signed ruled root, and the payee's balance moved on
+carrying the home's signed ruled root and the witness's signature, and the payee's balance moved on
 exactly the lanes the price occupied. For the work mode: the same release
 appearing as an Installed on two hyphas' ruled covers, so payment and
 language are one event.
