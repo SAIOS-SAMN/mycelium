@@ -29,7 +29,7 @@
 use super::blade::{self, Shape};
 use super::cga;
 use super::element::{self, Element, Versor};
-use super::sentence::{Form, FormFace, Vertex};
+use super::sentence::{CellKind, Form, FormFace, Vertex};
 use super::stalk::{Invariant, Standing};
 use std::cell::{Cell, RefCell};
 
@@ -1067,6 +1067,7 @@ fn pair_form_uncached(
         form.faces.push(FormFace { i, j, transport: g });
     }
     form.loops = Form::loops_of(&form.faces, n);
+    form.reindex();
     form
 }
 
@@ -1643,13 +1644,14 @@ fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
             let _ = form.rebase(face.i, face.j, shift);
         }
     }
-    for fi in 0..form.faces.len() {
-        let (i, j) = (form.faces[fi].i, form.faces[fi].j);
-        if i != 0 && j != 0 {
+    form.reindex();
+    for (_, &fi) in form.star.fiber(&crate::network::nerve::ROOT) {
+        let Some(face) = form.faces.get(fi as usize) else {
             continue;
-        }
+        };
+        let (i, j) = (face.i, face.j);
         if let Some(t) = form.face_of(i, j) {
-            form.faces[fi].transport = t;
+            form.faces[fi as usize].transport = t;
         }
     }
 }
@@ -1808,19 +1810,20 @@ pub fn extract_rule_with(
         if !constant {
             continue;
         }
-        let Some(w) = held else {
+        if held.is_none() {
             continue;
-        };
+        }
         let i = ends.get(&end_key(ea)).copied();
         let j = ends.get(&end_key(eb)).copied();
         if let (Some(i), Some(j)) = (i, j) {
-            match form.face_of(i, j) {
-                Some(t) => form.faces.push(FormFace { i, j, transport: t }),
-                None => form.faces.push(FormFace::new(i, j, w)),
-            }
+            let Some(t) = form.face_of(i, j) else {
+                continue;
+            };
+            form.faces.push(FormFace { i, j, transport: t });
         }
     }
     form.loops = Form::loops_of(&form.faces, form.vertices.len());
+    form.reindex();
     // 3. Glue: placement is the relative word Frame → class, constant across the bundle.
     // Crystal is indexed by the section coordinate (moduli); correspondence is transport class.
     let glued_classes: Vec<(TransportClass, Invariant)> = form
@@ -2111,7 +2114,10 @@ pub fn bundle_pressure(
         let residual = residual_of(grid.as_ref(), y);
         let bodies: Vec<(i64, i64, u8)> = residual
             .iter()
-            .filter_map(|&(r, c, _, a)| (a != 0).then_some((r, c, a)))
+            .filter_map(|&(r, c, b, a)| match CellKind::of(b, a) {
+                CellKind::Created | CellKind::Recoloured => Some((r, c, a)),
+                CellKind::Erased | CellKind::Unchanged => None,
+            })
             .collect();
         peel_h = peel_h.max(super::peel::peel_body(&bodies).len() as u64);
         chain.extend(residual);

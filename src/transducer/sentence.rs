@@ -127,7 +127,7 @@ pub fn pieces(chain: &[Cell]) -> Vec<Vec<Cell>> {
     let owner = components(cells.len(), &incidence(&cells));
     let mut by: Keyed<Vec<Cell>> = Keyed::new();
     for (i, cell) in cells.into_iter().enumerate() {
-        let k = vertex_ix_key(owner[i] as u16);
+        let k = index_key(owner[i]);
         match by.get_mut(&k) {
             Some(v) => v.push(cell),
             None => {
@@ -699,14 +699,14 @@ impl Transport {
         }
     }
 
-    pub fn inverse(&self) -> Transport {
+    pub fn inverse(&self) -> Option<Transport> {
         let word = self.word.inverse();
-        let mapped = apply_linear(&word, &self.shift);
-        Transport {
+        let mapped = apply_linear(&word, &self.shift)?;
+        Some(Transport {
             word,
             shift: (-mapped.0, -mapped.1),
             gauge: gauge_invert(&self.gauge),
-        }
+        })
     }
 }
 
@@ -736,14 +736,12 @@ fn q2_zero() -> (num_rational::BigRational, num_rational::BigRational) {
 fn apply_linear(
     word: &Word,
     t: &(num_rational::BigRational, num_rational::BigRational),
-) -> (num_rational::BigRational, num_rational::BigRational) {
-    match word.plane_block() {
-        Some(b) => (
-            &b[0][0] * &t.0 + &b[0][1] * &t.1,
-            &b[1][0] * &t.0 + &b[1][1] * &t.1,
-        ),
-        None => t.clone(),
-    }
+) -> Option<(num_rational::BigRational, num_rational::BigRational)> {
+    let b = word.plane_block()?;
+    Some((
+        &b[0][0] * &t.0 + &b[0][1] * &t.1,
+        &b[1][0] * &t.0 + &b[1][1] * &t.1,
+    ))
 }
 
 fn hue_key(h: u8) -> [u8; 32] {
@@ -767,19 +765,50 @@ fn gauge_keyed(g: &[(u8, u8)]) -> Keyed<u8> {
     m
 }
 
-fn relative_gauge(from: &[(u8, u8)], to: &[(u8, u8)]) -> Vec<(u8, u8)> {
-    if from.is_empty() {
-        return to.to_vec();
+fn gauge_image(g: &Keyed<u8>, h: u8) -> u8 {
+    match g.get(&hue_key(h)) {
+        Some(&x) => x,
+        None => h,
     }
-    if to.is_empty() {
-        return gauge_invert(from);
+}
+
+/// `second ∘ first` on the union of listed hues; a hue absent from a map
+/// is fixed by that map. The listing holds non-fixed points only.
+#[cfg(test)]
+fn compose_gauge(second: &[(u8, u8)], first: &[(u8, u8)]) -> Vec<(u8, u8)> {
+    let a = gauge_keyed(first);
+    let b = gauge_keyed(second);
+    let mut hues: Keyed<()> = Keyed::new();
+    for &(x, y) in first.iter().chain(second.iter()) {
+        hues.insert(hue_key(x), ());
+        hues.insert(hue_key(y), ());
     }
-    let to_map = gauge_keyed(to);
     let mut out = Vec::new();
-    for &(a, b) in from {
-        let Some(&c) = to_map.get(&hue_key(a)) else {
-            continue;
-        };
+    for (k, _) in hues.fiber(&ROOT) {
+        let h = k[0];
+        let image = gauge_image(&b, gauge_image(&a, h));
+        if image != h {
+            out.push((h, image));
+        }
+    }
+    out.sort_unstable();
+    out.dedup();
+    out
+}
+
+fn relative_gauge(from: &[(u8, u8)], to: &[(u8, u8)]) -> Vec<(u8, u8)> {
+    let fm = gauge_keyed(from);
+    let tm = gauge_keyed(to);
+    let mut hues: Keyed<()> = Keyed::new();
+    for &(x, y) in from.iter().chain(to.iter()) {
+        hues.insert(hue_key(x), ());
+        hues.insert(hue_key(y), ());
+    }
+    let mut out = Vec::new();
+    for (k, _) in hues.fiber(&ROOT) {
+        let h = k[0];
+        let b = gauge_image(&fm, h);
+        let c = gauge_image(&tm, h);
         if b != c {
             out.push((b, c));
         }
@@ -873,16 +902,23 @@ impl Default for Form {
 }
 
 impl Form {
-    /// Fill by_address, star, placements, and hue_maps from the vertices
-    /// and faces the form already names.
+    /// Fill by_address, star, placements (by transport-class key) and
+    /// hue_maps from the vertices and faces. Two gauges or two placements
+    /// on one class are two sections: that class is refused as one map.
     pub fn reindex(&mut self) {
         let mut by_address = Keyed::new();
-        let mut placements = Keyed::new();
+        let mut hues: Keyed<Vec<(u8, u8)>> = Keyed::new();
+        let mut hue_conflict: Keyed<()> = Keyed::new();
+        let mut places: Keyed<(
+            num_rational::BigRational,
+            num_rational::BigRational,
+        )> = Keyed::new();
+        let mut place_conflict: Keyed<()> = Keyed::new();
         let mut star = Keyed::new();
-        let mut hues = Keyed::new();
         for (i, v) in self.vertices.iter().enumerate() {
             if let Vertex::Word {
                 address,
+                word,
                 placement,
                 gauge,
                 class,
@@ -890,11 +926,38 @@ impl Form {
             } = v
             {
                 by_address.insert(*address, i as u16);
-                placements.insert(*address, placement.clone());
-                let k = class.key();
-                if !hues.contains(&k) {
-                    hues.insert(k, gauge.clone());
+                let ck = class.key();
+                match hues.get(&ck) {
+                    None => {
+                        hues.insert(ck, gauge.clone());
+                    }
+                    Some(held) if held != gauge => {
+                        hue_conflict.insert(ck, ());
+                    }
+                    _ => {}
                 }
+                let tk = vertex_transport_key(word, gauge);
+                match places.get(&tk) {
+                    None => {
+                        places.insert(tk, placement.clone());
+                    }
+                    Some(held) if held != placement => {
+                        place_conflict.insert(tk, ());
+                    }
+                    _ => {}
+                }
+            }
+        }
+        let mut hue_maps = Keyed::new();
+        for (k, g) in hues.fiber(&ROOT) {
+            if !hue_conflict.contains(k) {
+                hue_maps.insert(*k, g.clone());
+            }
+        }
+        let mut placements = Keyed::new();
+        for (k, p) in places.fiber(&ROOT) {
+            if !place_conflict.contains(k) {
+                placements.insert(*k, p.clone());
             }
         }
         for (fi, f) in self.faces.iter().enumerate() {
@@ -907,9 +970,21 @@ impl Form {
         self.by_address = by_address;
         self.star = star;
         self.placements = placements;
-        if self.hue_maps.is_empty() {
-            self.hue_maps = hues;
-        }
+        self.hue_maps = hue_maps;
+    }
+
+    pub fn push_vertex(&mut self, v: Vertex) -> u16 {
+        let i = self.vertices.len() as u16;
+        self.vertices.push(v);
+        self.reindex();
+        i
+    }
+
+    pub fn push_face(&mut self, f: FormFace) -> u16 {
+        let i = self.faces.len() as u16;
+        self.faces.push(f);
+        self.reindex();
+        i
     }
 }
 
@@ -950,7 +1025,7 @@ impl Form {
         let word = wb.compose(&wa.inverse()).normal_form();
         let ta = vertex_translation(va, self);
         let tb = vertex_translation(vb, self);
-        let mapped = apply_linear(&word, &ta);
+        let mapped = apply_linear(&word, &ta)?;
         let shift = (tb.0 - mapped.0, tb.1 - mapped.1);
         let gauge = relative_gauge(&vertex_gauge(va), &vertex_gauge(vb));
         Some(Transport { word, shift, gauge })
@@ -1111,6 +1186,7 @@ impl Form {
             f.transport.word = gj
                 .compose(&f.transport.word.compose(&gi.inverse()))
                 .normal_form();
+            f.transport.shift = apply_linear(gj, &f.transport.shift)?;
         }
         self.loops = Self::loops_of(&self.faces, self.vertices.len());
         Some(())
@@ -1766,25 +1842,9 @@ impl SentenceRule {
             .unwrap_or_default()
     }
 
-    /// Placement of a transport class. One Keyed from the form's Word vertices
-    /// by transport-class key, then a read.
+    /// Placement of a transport class, read from the form's placements.
     pub fn shift_of(&self, key: &[u8; 32]) -> Option<(num_rational::BigRational, num_rational::BigRational)> {
-        let mut by: Keyed<(num_rational::BigRational, num_rational::BigRational)> = Keyed::new();
-        for v in &self.form.vertices {
-            if let Vertex::Word {
-                word,
-                gauge,
-                placement,
-                ..
-            } = v
-            {
-                let k = vertex_transport_key(word, gauge);
-                if !by.contains(&k) {
-                    by.insert(k, placement.clone());
-                }
-            }
-        }
-        by.get(key).cloned()
+        self.form.placements.get(key).cloned()
     }
 }
 
@@ -1803,16 +1863,7 @@ fn vertex_transport_key(word: &Word, gauge: &[(u8, u8)]) -> [u8; 32] {
 /// A form as a `SentenceRule` (chapter 31). Hue maps are filled from the
 /// form's own Word vertices when the form does not already carry them.
 pub fn rule_of_form(mut form: Form) -> SentenceRule {
-    if form.hue_maps.is_empty() {
-        for v in &form.vertices {
-            if let Vertex::Word { class, gauge, .. } = v {
-                let k = class.key();
-                if !form.hue_maps.contains(&k) {
-                    form.hue_maps.insert(k, gauge.clone());
-                }
-            }
-        }
-    }
+    form.reindex();
     let sections = form.sections.clone();
     let ratio = form.ratio;
     SentenceRule {
@@ -1834,6 +1885,12 @@ pub fn vertex_address(e: &Element) -> Option<[u8; 32]> {
 pub fn vertex_ix_key(i: u16) -> [u8; 32] {
     let mut k = [0u8; 32];
     k[..2].copy_from_slice(&i.to_le_bytes());
+    k
+}
+
+fn index_key(i: usize) -> [u8; 32] {
+    let mut k = [0u8; 32];
+    k[..8].copy_from_slice(&(i as u64).to_le_bytes());
     k
 }
 
@@ -1976,20 +2033,6 @@ pub enum Discharge {
     NoneDischarged,
 }
 
-/// Sorted cycle lengths of a composed gauge permutation. Empty is identity.
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
-pub struct CycleType(pub Vec<u8>);
-
-impl CycleType {
-    pub fn identity() -> CycleType {
-        CycleType(Vec::new())
-    }
-
-    pub fn occupies(&self) -> bool {
-        self.0.iter().any(|&n| n >= 2)
-    }
-}
-
 /// A remainder cell's kind, read from the two hues. Hue 0 is void.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CellKind {
@@ -2082,8 +2125,6 @@ pub struct ClassVector {
     plane: [(bool, u32, i64, i64); 6],
     /// Translation part of the loop's versor after the tree gauge.
     placement: (num_rational::BigRational, num_rational::BigRational),
-    /// Hue cycle type of the composed gauge permutation around the loop.
-    hue: CycleType,
     /// The holonomy has no plane form: the class is the rotor's invariants.
     offplane: bool,
     key: [u8; 32],
@@ -2104,7 +2145,6 @@ impl ClassVector {
             return ClassVector {
                 plane: [(false, 0, 0, 0); 6],
                 placement,
-                hue: CycleType::identity(),
                 offplane: false,
                 key: CLOSED_KEY,
             };
@@ -2130,7 +2170,6 @@ impl ClassVector {
         ClassVector {
             plane,
             placement,
-            hue: CycleType::identity(),
             offplane,
             key,
         }
@@ -2145,7 +2184,7 @@ impl ClassVector {
             Axis::Unit(p) => self.plane.get(p as usize).is_some_and(|s| s.1 != 0),
             Axis::Prime5(p) => self.plane.get(p as usize).is_some_and(|s| s.2 != 0),
             Axis::Prime13(p) => self.plane.get(p as usize).is_some_and(|s| s.3 != 0),
-            Axis::Hue => self.hue.occupies(),
+            Axis::Hue => false,
             Axis::Placement => {
                 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
                 self.placement.0 != zero || self.placement.1 != zero
@@ -2190,10 +2229,7 @@ impl ClassVector {
         let mut b = other.clone();
         a.clear(axis);
         b.clear(axis);
-        a.plane == b.plane
-            && a.placement == b.placement
-            && a.hue == b.hue
-            && a.offplane == b.offplane
+        a.plane == b.plane && a.placement == b.placement && a.offplane == b.offplane
     }
 
     fn clear(&mut self, axis: Axis) {
@@ -2223,8 +2259,7 @@ impl ClassVector {
                 self.placement = (zero.clone(), zero);
             }
             Axis::OffPlane => self.offplane = false,
-            Axis::Hue => self.hue = CycleType::identity(),
-            Axis::Open => {}
+            Axis::Hue | Axis::Open => {}
         }
     }
 
@@ -3926,6 +3961,10 @@ mod tests {
         );
     }
 
+    /// Descent certifies after a trial; it never ranks candidates. A chord
+    /// write changes no vertex, so speech and μ⃗ are unmoved: two words that
+    /// both discharge tie and are a vortex. Per-candidate μ⃗ moves only when
+    /// a candidate changes what the form speaks (a glue pivot).
     #[test]
     fn descent_certifies_never_selects() {
         let loose = cert(Axis::Unit(0), [4, 4, 4, 4]);
@@ -4449,5 +4488,47 @@ mod tests {
                 "tree face {fi} re-derives"
             );
         }
+    }
+
+    #[test]
+    fn relative_gauge_composite_fixes_what_neither_fixes() {
+        let t = vec![(1u8, 2), (2, 1)];
+        assert!(
+            compose_gauge(&t, &t).is_empty(),
+            "two (1 2) transpositions compose to the identity"
+        );
+        let a = vec![(1u8, 2)];
+        let b = vec![(2u8, 1)];
+        let c = compose_gauge(&b, &a);
+        assert!(
+            c.iter().all(|&(h, k)| h != 1 || k != 1),
+            "composite listing omits fixed points, got {c:?}"
+        );
+        assert_eq!(
+            gauge_image(&gauge_keyed(&c), 1),
+            1,
+            "1→2 then 2→1 fixes 1, which neither map lists as fixed"
+        );
+    }
+
+    #[test]
+    fn offplane_word_refuses_to_act_on_a_translation() {
+        let w = Word::from_letters(&[(alphabet::LetterId::quarter((0, 2)).unwrap(), false)]);
+        assert!(w.plane_block().is_none(), "a (0,2) quarter leaves the sensor plane");
+        let t = (q1(), q0());
+        assert!(
+            apply_linear(&w, &t).is_none(),
+            "an off-plane word does not act as the identity on a translation"
+        );
+        assert!(
+            Transport {
+                word: w,
+                shift: t,
+                gauge: Vec::new(),
+            }
+            .inverse()
+            .is_none(),
+            "Transport::inverse refuses an off-plane word"
+        );
     }
 }

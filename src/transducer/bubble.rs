@@ -201,7 +201,7 @@ pub struct Bubble {
     /// The form this idea is (chapter 30 step 6).
     pub form: Option<Form>,
     /// Pairs the idea germinated from; trial speaks over them for μ⃗.
-    pub bundle: Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>,
+    pub bundle: Option<Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>>,
 }
 
 impl Bubble {
@@ -310,8 +310,14 @@ impl Bubble {
             if let Some(mut form) = self.form.clone() {
                 let key = self.key();
                 let t = now.saturating_sub(self.moved_tu);
-                let bundle = (!self.bundle.is_empty()).then_some(self.bundle.as_slice());
-                let _ = form.pivot_loop(key, &self.horizon, crystal, budget, bundle, t);
+                let _ = form.pivot_loop(
+                    key,
+                    &self.horizon,
+                    crystal,
+                    budget,
+                    self.bundle.as_deref(),
+                    t,
+                );
                 self.take_form(form);
             }
         }
@@ -754,7 +760,7 @@ impl Contemplation {
             certificates: certs,
             vortex: f.vortex.clone(),
             form: Some(f.clone()),
-            bundle: Vec::new(),
+            bundle: None,
         };
         if let Some(old) = self.bubbles.get(&key).cloned() {
             self.retract_incidence(&key, &old);
@@ -797,7 +803,7 @@ impl Contemplation {
             certificates: Keyed::new(),
             vortex: Keyed::new(),
             form: None,
-            bundle: Vec::new(),
+            bundle: None,
         };
         if let Some(old) = self.bubbles.get(&key).cloned() {
             self.retract_incidence(&key, &old);
@@ -882,7 +888,7 @@ impl Contemplation {
             certificates,
             vortex,
             form,
-            bundle: Vec::new(),
+            bundle: None,
         };
         self.admit_incidence(key, &bubble);
         self.bubbles.insert(key, bubble);
@@ -1051,8 +1057,7 @@ impl Contemplation {
             let bundle = b.bundle.clone();
             let t = self.now_tu.saturating_sub(b.moved_tu);
             if let Some(mut form) = b.form.clone() {
-                let bundle = (!bundle.is_empty()).then_some(bundle.as_slice());
-                let _ = form.pivot_loop(*bk, &horizon, crystal, budget, bundle, t);
+                let _ = form.pivot_loop(*bk, &horizon, crystal, budget, bundle.as_deref(), t);
                 if let Some(b) = self.bubbles.get_mut(bk) {
                     b.take_form(form);
                     if let Some(r) = &word_rotor {
@@ -1449,7 +1454,7 @@ impl Contemplation {
                 certificates,
                 vortex,
                 form,
-                bundle: Vec::new(),
+                bundle: None,
             };
             c.admit_incidence(key, &bubble);
             c.bubbles.insert(key, bubble);

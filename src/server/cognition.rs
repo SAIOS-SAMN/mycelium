@@ -5702,7 +5702,16 @@ impl Kernel {
                     let v = element::Versor::from_bytes(b, pos)?;
                     let class_key = match ck_stored {
                         Some(k) => k,
-                        None => crate::transducer::sentence::class_key_of_versor(&v)?,
+                        None => match crate::transducer::sentence::class_key_of_versor(&v) {
+                            Some(k) => k,
+                            None => {
+                                eprintln!(
+                                    "  court cocycle row refused {:02x}{:02x}… no class key",
+                                    key[0], key[1]
+                                );
+                                continue;
+                            }
+                        },
                     };
                     kernel.cocycle_at.insert(key, (v, tu, a, bp, class_key));
                     // Chart index is rebuilt on next glue; hot row is enough.
