@@ -310,7 +310,8 @@ impl Bubble {
             if let Some(mut form) = self.form.clone() {
                 let key = self.key();
                 let t = now.saturating_sub(self.moved_tu);
-                let _ = form.pivot_loop(key, &self.horizon, crystal, budget, &self.bundle, t);
+                let bundle = (!self.bundle.is_empty()).then_some(self.bundle.as_slice());
+                let _ = form.pivot_loop(key, &self.horizon, crystal, budget, bundle, t);
                 self.take_form(form);
             }
         }
@@ -333,9 +334,7 @@ impl Bubble {
         };
         if let Some(mut f) = self.form.clone() {
             f.apply_pivot(&win);
-            if !f.certificates.iter().any(|c| c.key() == win.key()) {
-                f.certificates.push(win.clone());
-            }
+            f.certificates.insert(win.key(), win.clone());
             f.vortex = Keyed::new();
             self.take_form(f);
         } else {
@@ -354,11 +353,7 @@ impl Bubble {
     fn take_form(&mut self, f: Form) {
         self.remainder = f.remainder.clone();
         self.torsion = f.torsion.clone();
-        let mut certs = Keyed::new();
-        for c in &f.certificates {
-            certs.insert(c.key(), c.clone());
-        }
-        self.certificates = certs;
+        self.certificates = f.certificates.clone();
         self.vortex = f.vortex.clone();
         self.form = Some(f);
     }
@@ -742,10 +737,7 @@ impl Contemplation {
         let volume = form_mag(f);
         let mut horizon = Keyed::new();
         self.paint_seeded(&mut horizon);
-        let mut certs = Keyed::new();
-        for c in &f.certificates {
-            certs.insert(c.key(), c.clone());
-        }
+        let certs = f.certificates.clone();
         let bubble = Bubble {
             remainder: f.remainder.clone(),
             nerve: Complex::new(),
@@ -1059,7 +1051,8 @@ impl Contemplation {
             let bundle = b.bundle.clone();
             let t = self.now_tu.saturating_sub(b.moved_tu);
             if let Some(mut form) = b.form.clone() {
-                let _ = form.pivot_loop(*bk, &horizon, crystal, budget, &bundle, t);
+                let bundle = (!bundle.is_empty()).then_some(bundle.as_slice());
+                let _ = form.pivot_loop(*bk, &horizon, crystal, budget, bundle, t);
                 if let Some(b) = self.bubbles.get_mut(bk) {
                     b.take_form(form);
                     if let Some(r) = &word_rotor {

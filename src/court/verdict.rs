@@ -262,7 +262,7 @@ fn face_idx_key(i: u16) -> [u8; 32] {
 /// The loop's class key and rank before and after must match the tape.
 fn replay_certificates(f: &Form, by_chord: &Keyed<u16>) -> Option<&'static str> {
     use crate::transducer::sentence::{rank_of_holonomies, unpivoted_face, ClassVector, PivotBy};
-    for cert in &f.certificates {
+    for (_, cert) in f.certificates.fiber(&crate::network::nerve::ROOT) {
         let PivotBy::Word { face, word, side } = &cert.by;
         let Some(&li) = by_chord.get(&face_idx_key(*face)) else {
             return Some(REFUSE_PIVOT_INEXACT);
@@ -879,7 +879,7 @@ mod tests {
             "a closed form with no certificates replays"
         );
         let mut bad = f.clone();
-        bad.certificates.push(PivotCertificate {
+        let bogus = PivotCertificate {
             chord: 0,
             axis: crate::transducer::sentence::Axis::Unit(0),
             before: [1u8; 32],
@@ -897,7 +897,8 @@ mod tests {
                 word: Word::identity(),
                 side: Side::Left,
             },
-        });
+        };
+        bad.certificates.insert(bogus.key(), bogus);
         let bad_e = as_element_form(&bad, [1, 0, 0, 0]).expect("tampered tape");
         assert_eq!(
             replay_form(&bad_e, &|_| None),
@@ -955,7 +956,7 @@ mod tests {
             &crate::network::nerve::Keyed::new(),
             &crate::transducer::family::NoCrystal,
             &mut crate::physics::Physics::default().stroke_n(8),
-            &[],
+            None,
             0,
         );
         assert!(

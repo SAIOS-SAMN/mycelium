@@ -3295,7 +3295,7 @@ impl Kernel {
                 }
             }
         }
-        for cert in &f.certificates {
+        for (_, cert) in f.certificates.fiber(&crate::network::nerve::ROOT) {
             let k = cert.key();
             match self.replay_memo.get_mut(addr) {
                 Some(bucket) => {
@@ -6535,7 +6535,7 @@ mod tests {
             &crate::network::nerve::Keyed::new(),
             &crate::transducer::family::NoCrystal,
             &mut crate::physics::Physics::default().stroke_n(8),
-            &[],
+            None,
             0,
         );
         assert!(f.is_cauterized(), "filed finite torsion cauterizes");
