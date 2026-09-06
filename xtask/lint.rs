@@ -22,6 +22,7 @@ pub fn run() -> Result<(), String> {
     }
     lint_blake3(&root, &mut hits)?;
     lint_squaring(&root, &mut hits)?;
+    lint_qmatrix(&root, &mut hits)?;
     if hits.is_empty() {
         return Ok(());
     }
@@ -129,13 +130,16 @@ fn lint_blake3(root: &Path, hits: &mut Vec<String>) -> Result<(), String> {
     Ok(())
 }
 
-/// Coordinate pairs named placement/shift/residue live only in pair_form,
-/// speak_rule, and orbit (law 11). The sentence types carry A4 versors.
-fn lint_squaring(root: &Path, hits: &mut Vec<String>) -> Result<(), String> {
-    walk_squaring(&root.join("transducer").join("sentence"), hits)
+/// The Element's action is a versor. QMatrix, Delta, Operator, and
+/// core::matrix do not enter cognition.
+fn lint_qmatrix(root: &Path, hits: &mut Vec<String>) -> Result<(), String> {
+    for d in ["transducer", "server", "client", "court"] {
+        walk_qmatrix(&root.join(d), hits)?;
+    }
+    Ok(())
 }
 
-fn walk_squaring(path: &Path, hits: &mut Vec<String>) -> Result<(), String> {
+fn walk_qmatrix(path: &Path, hits: &mut Vec<String>) -> Result<(), String> {
     if path.is_file() {
         if path.extension().and_then(|s| s.to_str()) != Some("rs") {
             return Ok(());
@@ -155,6 +159,87 @@ fn walk_squaring(path: &Path, hits: &mut Vec<String>) -> Result<(), String> {
                 in_test = true;
                 pending_test = false;
                 depth = opens - closes;
+                continue;
+            }
+            if in_test {
+                depth += opens - closes;
+                if depth <= 0 {
+                    in_test = false;
+                }
+                continue;
+            }
+            if t.starts_with("//") {
+                continue;
+            }
+            for pat in [
+                "QMatrix",
+                "core::engine::Delta",
+                "core::engine::Operator",
+                "core::matrix::",
+                "use crate::core::matrix",
+                "use crate::core::engine::{Delta",
+                "use crate::core::engine::{Operator",
+            ] {
+                if line.contains(pat) {
+                    hits.push(format!("{}:{}: {pat} in cognition", path.display(), i + 1));
+                }
+            }
+        }
+        return Ok(());
+    }
+    if !path.is_dir() {
+        return Ok(());
+    }
+    let rd = match fs::read_dir(path) {
+        Ok(rd) => rd,
+        Err(_) => return Ok(()),
+    };
+    for ent in rd {
+        let ent = ent.map_err(|e| e.to_string())?;
+        walk_qmatrix(&ent.path(), hits)?;
+    }
+    Ok(())
+}
+
+/// Coordinate pairs named placement/shift/residue live only in pair_form,
+/// speak_rule, and orbit (law 11).
+fn lint_squaring(root: &Path, hits: &mut Vec<String>) -> Result<(), String> {
+    for d in ["transducer", "server", "client", "court"] {
+        walk_squaring(&root.join(d), hits)?;
+    }
+    Ok(())
+}
+
+fn walk_squaring(path: &Path, hits: &mut Vec<String>) -> Result<(), String> {
+    if path.is_file() {
+        if path.extension().and_then(|s| s.to_str()) != Some("rs") {
+            return Ok(());
+        }
+        let src = fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+        let mut in_test = false;
+        let mut pending_test = false;
+        let mut depth = 0i32;
+        let mut fn_depth = 0i32;
+        let mut allowed_fn = false;
+        for (i, line) in src.lines().enumerate() {
+            let t = line.trim();
+            if t.contains("#[cfg(test)]") {
+                pending_test = true;
+            }
+            let opens = line.chars().filter(|&c| c == '{').count() as i32;
+            let closes = line.chars().filter(|&c| c == '}').count() as i32;
+            if t.contains("fn pair_form")
+                || t.contains("fn pair_form_uncached")
+                || t.contains("fn speak_rule")
+                || t.contains("fn orbit(")
+            {
+                allowed_fn = true;
+                fn_depth = 0;
+            }
+            if pending_test && opens > 0 {
+                in_test = true;
+                pending_test = false;
+                depth = opens - closes;
                 if depth <= 0 {
                     in_test = false;
                 }
@@ -164,6 +249,13 @@ fn walk_squaring(path: &Path, hits: &mut Vec<String>) -> Result<(), String> {
                 depth += opens - closes;
                 if depth <= 0 {
                     in_test = false;
+                }
+                continue;
+            }
+            if allowed_fn {
+                fn_depth += opens - closes;
+                if fn_depth <= 0 {
+                    allowed_fn = false;
                 }
                 continue;
             }

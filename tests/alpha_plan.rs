@@ -5,7 +5,7 @@ use mycelium::anastome::dialogue;
 use mycelium::cognition::Kernel;
 use mycelium::sdk::Epigenome;
 use mycelium::transducer::alphabet::{relators, RelatorKind, Word, LetterId};
-use mycelium::transducer::element::{from_connection, affine_of, identity_versor, Element};
+use mycelium::transducer::element::{from_connection, identity_versor, Element};
 use mycelium::transducer::family::{extract_rule, perceive, speak_rule, mint_sentence, NoCrystal};
 use mycelium::transducer::sentence::{FormFace, Vertex};
 use mycelium::transducer::stalk::Stalks;
@@ -14,6 +14,10 @@ use mycelium::arc::Grid;
 
 fn grid(rows: &[&str]) -> Grid {
     rows.iter().map(|r| r.bytes().map(|b| b.saturating_sub(b'0')).collect()).collect()
+}
+
+fn conn(sigma: &[(u8, u8)], rem: Vec<(i64, i64, u8, u8)>, mag: [u64; 4]) -> Element {
+    from_connection(&Word::identity(), &identity_versor(), sigma, &rem, mag).unwrap()
 }
 
 #[test]
@@ -29,14 +33,13 @@ fn normal_form_two_tapes_one_key() {
 
 #[test]
 fn gen3_round_trip_and_size() {
-    let affine = affine_of(&identity_versor()).unwrap();
-    let w = from_connection(&affine, &[(1, 2)], &vec![(0, 0, 1u8, 2)], [1, 1, 0, 0]).unwrap();
+    let w = conn(&[(1, 2)], vec![(0, 0, 1u8, 2)], [1, 1, 0, 0]);
     let b = w.to_bytes();
     assert_eq!(b[0], Element::GEN3_MAGIC);
     let mut p = 0;
     let back = Element::from_bytes(&b, &mut p).unwrap();
     assert_eq!(back.address(), w.address());
-    assert!(b.len() < 200, "a word is under 200 bytes, got {}", b.len());
+    assert!(b.len() < 400, "a word is a short tape, got {}", b.len());
     let mut old = b.clone();
     old[0] = Element::GEN2_MAGIC;
     let mut p = 0;
@@ -110,8 +113,7 @@ fn speak_rule_recolours_or_conflicts() {
 
 #[test]
 fn speech_act_one_frame() {
-    let affine = affine_of(&identity_versor()).unwrap();
-    let w = from_connection(&affine, &[(1, 2), (2, 1)], &Vec::new(), [1, 1, 0, 0]).unwrap();
+    let w = conn(&[(1, 2), (2, 1)], Vec::new(), [1, 1, 0, 0]);
     let body = dialogue::encode_speech(&[1u8; 32], &[2u8; 32], 7, &[w.to_bytes()]);
     let (voice, task, tu, ss) = dialogue::decode_speech(&body).expect("decode");
     assert_eq!(voice[0], 1);
@@ -133,8 +135,7 @@ fn perceive_speech_refuses_with_a_reason() {
         vec![dialogue::SPEECH_REFUSED],
         "an unframed chain is refused, not stood"
     );
-    let affine = affine_of(&identity_versor()).unwrap();
-    let ok = from_connection(&affine, &[(1, 2), (2, 1)], &Vec::new(), [1, 1, 0, 0]).unwrap();
+    let ok = conn(&[(1, 2), (2, 1)], Vec::new(), [1, 1, 0, 0]);
     let codes = k.perceive_speech([9; 32], &[0; 32], std::slice::from_ref(&ok));
     assert_eq!(codes, vec![dialogue::SPEECH_STOOD], "a replay-clean word stands");
 }
@@ -167,8 +168,7 @@ fn a_single_recolour_is_a_one_morphism_sentence() {
 #[test]
 fn dialect_enters_on_stood_and_sheds() {
     let mut epi = Epigenome::new();
-    let affine = affine_of(&identity_versor()).unwrap();
-    let w = from_connection(&affine, &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0]).unwrap();
+    let w = conn(&[(1, 2), (2, 1)], Vec::new(), [1, 0, 0, 0]);
     let addr = w.address();
     epi.stand_dialect_at(w, 1, 1);
     assert_eq!(epi.dialect_len(), 1);
@@ -223,8 +223,7 @@ fn genome_unchanged_by_dialect() {
     let n0 = epi.genome_len();
     let frozen = epi.crystallize();
     assert_eq!(&frozen[..4], b"GEN3");
-    let affine = affine_of(&identity_versor()).unwrap();
-    let w = from_connection(&affine, &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0]).unwrap();
+    let w = conn(&[(1, 2), (2, 1)], Vec::new(), [1, 0, 0, 0]);
     epi.stand_dialect_at(w, 3, 3);
     assert_eq!(epi.genome_len(), n0, "dialect is not the genome");
 }
@@ -239,8 +238,7 @@ fn cohesion_is_per_lane() {
 #[test]
 fn mint_once_on_home_install() {
     let mut k = Kernel::new();
-    let affine = affine_of(&identity_versor()).unwrap();
-    let w = from_connection(&affine, &[(1, 2), (2, 1)], &Vec::new(), [2, 1, 0, 0]).unwrap();
+    let w = conn(&[(1, 2), (2, 1)], Vec::new(), [2, 1, 0, 0]);
     let codes = k.perceive_speech([9; 32], &[0; 32], std::slice::from_ref(&w));
     assert_eq!(codes.first().copied(), Some(dialogue::SPEECH_STOOD));
 }

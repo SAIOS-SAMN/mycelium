@@ -2763,7 +2763,7 @@ impl Entity {
         chain: &[(i64, i64, u8, u8)],
         words: &[Element],
     ) -> Option<crate::transducer::a21::Address> {
-        use crate::transducer::element::{measure_lanes, FIBER_GERMINATED};
+        use crate::transducer::element::measure_lanes;
         if let Some(a) = self.open_contemplation_axis() {
             return Some(a);
         }
@@ -2773,13 +2773,12 @@ impl Entity {
         let [base, other, ..] = words else { return None };
         // The glue between the two words that deflated this listing.
         let glue = crate::transducer::cech::transition(base, other)?;
-        let block = glue.fiber(crate::transducer::element::FIBER_SPATIAL)?.clone();
+        let v = glue.versor()?;
         if !base.is_connection() {
             return None; // the axis stands on a spoken motion, never on a bare residual
         }
-        let axis = base.max_axis().map_or(FIBER_GERMINATED, |m| m.max(FIBER_GERMINATED - 1) + 1);
         let mut germ = base.clone();
-        germ.set_fiber(axis, block);
+        germ.open_axis(v);
         let mut mag = measure_lanes(chain);
         mag[3] = mag[3].saturating_add(words.len() as u64);
         germ.set_magnitude(mag);
@@ -3946,18 +3945,11 @@ mod tests {
     /// spellings of one vertex still merge.
     #[test]
     fn rho_sigma_shift_are_three_vertices_two_spellings_merge() {
-        use crate::transducer::element::{affine_of, from_connection, identity_versor};
-        use num_bigint::BigInt;
-        let qn = |n: i64| crate::core::engine::Q::from(BigInt::from(n));
-        let id = affine_of(&identity_versor()).expect("affine");
-        let swap = from_connection(&id, &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0]).expect("swap");
-        let cycle = from_connection(&id, &[(1, 2), (2, 3), (3, 1)], &Vec::new(), [1, 0, 0, 0]).expect("cycle");
-        let shifted = vec![
-            vec![qn(1), qn(0), qn(5)],
-            vec![qn(0), qn(1), qn(0)],
-            vec![qn(0), qn(0), qn(1)],
-        ];
-        let place = from_connection(&shifted, &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0]).expect("shift");
+        use crate::transducer::element::{from_connection, identity_versor, translator_versor};
+        let id = crate::transducer::alphabet::Word::identity();
+        let swap = from_connection(&id, &identity_versor(), &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0]).expect("swap");
+        let cycle = from_connection(&id, &identity_versor(), &[(1, 2), (2, 3), (3, 1)], &Vec::new(), [1, 0, 0, 0]).expect("cycle");
+        let place = from_connection(&id, &translator_versor(5, 0), &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0]).expect("shift");
         let mut epi = Epigenome::new();
         assert!(epi.learn(&swap.to_bytes()).is_some());
         assert!(epi.learn(&cycle.to_bytes()).is_some());
@@ -3972,14 +3964,11 @@ mod tests {
         ]);
         let mut alt = swap.clone();
         let letters = alt.letters().expect("connection");
-        let spelling = crate::transducer::alphabet::Spelling {
-            word: long,
-            rho: letters.spelling.rho,
-        };
+        let spelling = crate::transducer::alphabet::Spelling { word: long };
         let rem = alt.sub().to_vec();
         alt.set_description(crate::transducer::element::connection_word(
             &spelling,
-            &letters.shift,
+            &letters.carriage,
             &letters.sigma,
             &rem,
         ));

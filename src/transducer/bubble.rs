@@ -1732,7 +1732,7 @@ mod tests {
         let mut c = Contemplation::new();
         let rem = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
         c.hold(rem);
-        let mut word = Element::identity(3);
+        let mut word = Element::identity();
         word.record_torsion(vec![(1, 2)], 2, FIBER_SPATIAL);
         let mut budget = crate::physics::Physics::default().stroke_n(32);
         let _ = c.pivot_on(&word, &crate::transducer::family::NoCrystal, &mut budget);
@@ -1854,7 +1854,7 @@ mod tests {
                 axis: crate::transducer::sentence::Axis,
             ) -> Vec<Word> {
                 let v = crate::transducer::sentence::ClassVector::of_word(&self.0);
-                if v.occupies(axis) {
+                if v.is_some_and(|v| v.occupies(axis)) {
                     vec![self.0.clone()]
                 } else {
                     Vec::new()

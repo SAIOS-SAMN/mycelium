@@ -103,11 +103,11 @@ impl Form {
     pub fn class_vector(&self, idx: usize) -> Option<ClassVector> {
         let lp = self.loops.get(idx)?;
         let t = loop_transport(self, lp)?;
-        Some(ClassVector::read(
+        ClassVector::read(
             &lp.holonomy,
             t.carriage,
             CycleType::of(&t.gauge),
-        ))
+        )
     }
 
     /// Write a certified move onto the chord face's transport and re-walk.
@@ -392,20 +392,26 @@ impl Form {
         for axis in kappa.coordinates() {
             match axis {
                 Axis::Placement => {
+                    let Some(translator) = element::translator_of(&kappa.carriage) else {
+                        continue;
+                    };
                     out.push(Candidate {
                         axis,
                         by: PivotBy::Placement {
                             face: chord as u16,
-                            translator: element::translator_of(&kappa.carriage),
+                            translator,
                         },
                     });
                 }
                 Axis::Dilation => {
+                    let Some(translator) = element::dilator_of(&kappa.carriage) else {
+                        continue;
+                    };
                     out.push(Candidate {
                         axis,
                         by: PivotBy::Placement {
                             face: chord as u16,
-                            translator: element::dilator_of(&kappa.carriage),
+                            translator,
                         },
                     });
                 }
@@ -717,7 +723,10 @@ pub fn words_of_element(e: &Element) -> Vec<Word> {
 pub fn admit_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[Word]) {
     let ck = chart.key();
     for w in words {
-        for axis in ClassVector::of_word(w).coordinates() {
+        let Some(cv) = ClassVector::of_word(w) else {
+            continue;
+        };
+        for axis in cv.coordinates() {
             let ak = axis_slot(axis);
             if index.get(ck.as_bytes()).is_none() {
                 index.insert(ck.clone(), Keyed::new());
@@ -736,7 +745,10 @@ pub fn retract_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[W
         return;
     };
     for w in words {
-        for axis in ClassVector::of_word(w).coordinates() {
+        let Some(cv) = ClassVector::of_word(w) else {
+            continue;
+        };
+        for axis in cv.coordinates() {
             if let Some(bucket) = mid.get_mut(&axis_slot(axis)) {
                 bucket.remove(&w.key());
             }

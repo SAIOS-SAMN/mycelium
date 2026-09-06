@@ -427,14 +427,9 @@ fn blind_replay_on_inner(
             if spoken.solution().is_none() {
                 return Some("opened axis is not invertible");
             }
-            for axis in axes {
-                let Some(m) = spoken.fiber(axis) else { continue };
-                if m.len() < 3 {
-                    return Some("opened axis has no planar block");
-                }
-                let block = [[m[0][0].clone(), m[0][1].clone()], [m[1][0].clone(), m[1][1].clone()]];
-                if crate::transducer::alphabet::spell(&block).is_none() {
-                    return Some("opened axis does not spell in the alphabet");
+            for (_, v) in spoken.germinated() {
+                if v.versor_inverse().is_none() {
+                    return Some("opened axis is not invertible");
                 }
             }
         }
@@ -654,14 +649,15 @@ pub fn rule(
                 }
             });
             let mut obstruction = match diff.as_slice() {
-                [] => Element::identity(spoken.dim()),
+                [] => Element::identity(),
                 _ => element::from_residual(&diff),
             };
             if let Some(h) = group_view {
-                for a in h.axes() {
-                    if let Some(m) = h.fiber(a) {
-                        obstruction.set_fiber(a, m.clone());
-                    }
+                if let Some(v) = h.versor() {
+                    obstruction.open_axis(v);
+                }
+                for (_, v) in h.germinated() {
+                    obstruction.open_axis(v.clone());
                 }
             }
             // δg = 0 read on the element itself: no axis and no chain is
@@ -919,7 +915,7 @@ mod tests {
             chord: 0,
             axis: crate::transducer::sentence::Axis::Unit(0),
             before: crate::transducer::a21::Address::from_bytes(&[1u8]),
-            after: ClassVector::of_word(&Word::identity()).class_key(),
+            after: ClassVector::of_word(&Word::identity()).expect("identity is a versor").class_key(),
             rank_before: Rank {
                 torsion: 1,
                 free: 0,

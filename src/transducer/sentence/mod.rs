@@ -41,7 +41,7 @@ mod tests {
     use crate::network::nerve::{Keyed, ROOT};
     use crate::transducer::alphabet::{self, Order, Word};
     use crate::transducer::blade::Shape;
-    use crate::transducer::element::{self, Element, from_residual, GERM_DIM};
+    use crate::transducer::element::{self, Element, from_residual};
     use crate::transducer::germinate::germinate;
     use crate::transducer::stalk::{self, Standing, Stalks};
 
@@ -214,7 +214,7 @@ mod tests {
         assert_eq!(e.description()[1], 4);
         let mut short = e.description().to_vec();
         short.pop();
-        let mut truncated = Element::identity(GERM_DIM);
+        let mut truncated = Element::identity();
         truncated.set_description(short);
         truncated.set_magnitude([1, 0, 0, 0]);
         assert!(
@@ -223,7 +223,7 @@ mod tests {
         );
         let mut v2 = e.description().to_vec();
         v2[1] = 2;
-        let mut old = Element::identity(GERM_DIM);
+        let mut old = Element::identity();
         old.set_description(v2);
         old.set_magnitude([1, 0, 0, 0]);
         assert!(
@@ -247,10 +247,8 @@ mod tests {
             "a nonzero composed shift occupies Placement"
         );
         assert!(
-            !element::same_versor(
-                &element::translator_of(&kappa.carriage),
-                &element::identity_versor()
-            ),
+            element::translator_of(&kappa.carriage)
+                .is_some_and(|t| !element::same_versor(&t, &element::identity_versor())),
             "the residue is the translator of the holonomy versor"
         );
         let snaps = f.pivot_loop(
@@ -310,8 +308,8 @@ mod tests {
         assert_eq!(a, b, "cycle type is sorted lengths, not the listing");
         assert_eq!(a, CycleType::Type(vec![2]));
         let z = element::identity_versor();
-        let ka = ClassVector::read(&Word::identity(), z.clone(), a);
-        let kb = ClassVector::read(&Word::identity(), z, b);
+        let ka = ClassVector::read(&Word::identity(), z.clone(), a).expect("identity");
+        let kb = ClassVector::read(&Word::identity(), z, b).expect("identity");
         assert!(ka.occupies(Axis::Hue) && kb.occupies(Axis::Hue));
         assert_eq!(
             ka.class_key(),
@@ -900,12 +898,12 @@ mod tests {
 
     #[test]
     fn pivot_candidates_are_read_from_occupied_axes_only() {
-        let id = ClassVector::of_word(&Word::identity());
+        let id = ClassVector::of_word(&Word::identity()).expect("identity");
         assert!(id.occupied().is_empty() && id.is_zero());
-        let k2 = ClassVector::of_word(&order2());
+        let k2 = ClassVector::of_word(&order2()).expect("order2");
         let occ = k2.coordinates();
         assert_eq!(occ, vec![Axis::Orientation(0)], "sheet parity occupies Sheet(0), got {occ:?}");
-        let inf = ClassVector::of_word(&infinite());
+        let inf = ClassVector::of_word(&infinite()).expect("infinite");
         assert!(
             inf.free_part(),
             "a pythagorean-5 holonomy is free"
@@ -931,8 +929,8 @@ mod tests {
         PivotCertificate {
             chord: 0,
             axis,
-            before: Word::identity().class_key(),
-            after: Word::identity().class_key(),
+            before: Word::identity().class_key().expect("identity"),
+            after: Word::identity().class_key().expect("identity"),
             rank_before: Rank {
                 torsion: 0,
                 free: 0,
@@ -1334,7 +1332,7 @@ mod tests {
         fn on_axis(&self, _chart: &stalk::Invariant, axis: Axis) -> Vec<Word> {
             self.0
                 .iter()
-                .filter(|w| ClassVector::of_word(w).occupies(axis))
+                .filter(|w| ClassVector::of_word(w).is_some_and(|cv| cv.occupies(axis)))
                 .cloned()
                 .collect()
         }
@@ -1356,10 +1354,13 @@ mod tests {
         let Some(Snap::Discharged { certificate, .. }) = snaps.iter().find(|s| matches!(s, Snap::Discharged { .. })) else {
             panic!("a crystal holding q discharges: {snaps:?}");
         };
-        assert_eq!(certificate.before, ClassVector::of_word(&q).class_key());
+        assert_eq!(
+            certificate.before,
+            ClassVector::of_word(&q).expect("q").class_key()
+        );
         assert_eq!(
             certificate.after,
-            ClassVector::of_word(&Word::identity()).class_key()
+            ClassVector::of_word(&Word::identity()).expect("identity").class_key()
         );
         assert_eq!(certificate.rank_before.torsion, 1);
         assert_eq!(certificate.rank_after.torsion, 0);
@@ -1661,10 +1662,10 @@ mod tests {
         let rk = w.rotor().class_key().expect("quarter is a versor");
         assert_eq!(
             w.class_key(),
-            rk,
+            Some(rk.clone()),
             "Word::class_key is the rotor conjugacy, not the plane form"
         );
-        let cv = ClassVector::of_word(&w);
+        let cv = ClassVector::of_word(&w).expect("quarter");
         let kb = cv.class_key();
         assert!(
             kb.as_bytes().starts_with(rk.as_bytes()),
@@ -1684,7 +1685,7 @@ mod tests {
         let w = Word::from_letters(&[(alphabet::LetterId::quarter((0, 2)).unwrap(), false)]);
         assert!(w.form().is_none());
         assert!(w.plane_block().is_none());
-        let cv = ClassVector::of_word(&w);
+        let cv = ClassVector::of_word(&w).expect("off-plane quarter is a versor");
         assert!(
             cv.occupies(Axis::OffPlane),
             "an off-plane holonomy occupies OffPlane as a rotor, got {:?}",
@@ -1696,7 +1697,7 @@ mod tests {
                 && !cv.occupies(Axis::Prime5(0)),
             "plane blocks are zero, not a fallback identity"
         );
-        assert_eq!(w.class_key(), w.rotor().class_or_rotor_key());
+        assert_eq!(w.class_key(), w.rotor().class_key());
         assert!(w.same_form(&w), "missing plane form is not an exception when rotors agree");
     }
 
@@ -1706,7 +1707,7 @@ mod tests {
         assert_eq!(s.len(), 2, "the 1.2 relator is two quarter turns, S = q²");
         let f = s.form().expect("the half-turn keeps the sensor plane");
         assert!(f.orientation, "det/ρ² = −1 is the orientation character");
-        let cv = ClassVector::of_word(&s);
+        let cv = ClassVector::of_word(&s).expect("half-turn");
         assert_eq!(
             cv.coordinates(),
             vec![Axis::Orientation(0)],
@@ -1804,7 +1805,7 @@ mod tests {
         f.loops = Form::loops_of(&f.faces, f.vertices.len());
         let kappa = f.class_vector(0).expect("loop");
         assert!(kappa.occupies(Axis::Placement));
-        let t = element::translator_of(&kappa.carriage);
+        let t = element::translator_of(&kappa.carriage).expect("translator");
         assert!(
             !element::same_versor(&t, &element::identity_versor()),
             "the residue is the translator, not a pair"
@@ -1840,22 +1841,96 @@ mod tests {
 
     #[test]
     fn no_coordinate_pair_outside_the_sensor() {
-        let src = include_str!("form.rs");
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut hits = Vec::new();
+        for d in ["transducer", "server", "client", "court"] {
+            walk_named_pairs(&root.join(d), &mut hits);
+        }
         assert!(
-            !src.contains("placement: (num_rational")
-                && !src.contains("shift: (num_rational"),
-            "sentence form does not carry a coordinate pair"
+            hits.is_empty(),
+            "coordinate pair named placement/shift/residue outside pair_form/speak_rule/orbit:\n{}",
+            hits.join("\n")
         );
-        let tr = include_str!("transport.rs");
-        assert!(
-            !tr.contains("pub shift:") && !tr.contains("pub placement:"),
-            "Transport carries a carriage, not a pair"
-        );
-        let cl = include_str!("class.rs");
-        assert!(
-            !cl.contains("placement: (num_rational"),
-            "the class vector residue is a versor"
-        );
+    }
+
+    fn walk_named_pairs(path: &std::path::Path, hits: &mut Vec<String>) {
+        if path.is_file() {
+            if path.extension().and_then(|s| s.to_str()) != Some("rs") {
+                return;
+            }
+            let Ok(src) = std::fs::read_to_string(path) else {
+                return;
+            };
+            let mut in_test = false;
+            let mut pending_test = false;
+            let mut depth = 0i32;
+            let mut fn_depth = 0i32;
+            let mut allowed_fn = false;
+            for (i, line) in src.lines().enumerate() {
+                let t = line.trim();
+                if t.contains("#[cfg(test)]") {
+                    pending_test = true;
+                }
+                let opens = line.chars().filter(|&c| c == '{').count() as i32;
+                let closes = line.chars().filter(|&c| c == '}').count() as i32;
+                if t.contains("fn pair_form")
+                    || t.contains("fn pair_form_uncached")
+                    || t.contains("fn speak_rule")
+                    || t.contains("fn orbit(")
+                {
+                    allowed_fn = true;
+                    fn_depth = 0;
+                }
+                if pending_test && opens > 0 {
+                    in_test = true;
+                    pending_test = false;
+                    depth = opens - closes;
+                    continue;
+                }
+                if in_test {
+                    depth += opens - closes;
+                    if depth <= 0 {
+                        in_test = false;
+                    }
+                    continue;
+                }
+                if allowed_fn {
+                    fn_depth += opens - closes;
+                    if fn_depth <= 0 {
+                        allowed_fn = false;
+                    }
+                    continue;
+                }
+                if t.starts_with("//") {
+                    continue;
+                }
+                let named = t.contains("placement:") || t.contains("shift:") || t.contains("residue:");
+                let pair = t.contains("(num_rational")
+                    || t.contains("(Q,")
+                    || t.contains("(i64, i64)")
+                    || t.contains("BigRational, BigRational");
+                if named && pair {
+                    hits.push(format!("{}:{}", path.display(), i + 1));
+                }
+            }
+            return;
+        }
+        if let Ok(rd) = std::fs::read_dir(path) {
+            for ent in rd.flatten() {
+                walk_named_pairs(&ent.path(), hits);
+            }
+        }
+    }
+
+    #[test]
+    fn a_non_versor_holonomy_is_refused_not_zero_class() {
+        let w = Word::formed(alphabet::Rotor::zero());
+        assert!(w.class_key().is_none(), "a non-versor is never a class");
+        assert!(ClassVector::of_word(&w).is_none());
+        assert!(ClassVector::read(&w, element::identity_versor(), CycleType::Identity).is_none());
+        let rk = alphabet::Rotor::zero().key();
+        assert_eq!(rk.tag(), Some(crate::transducer::a21::TAG_ROTOR));
+        assert_ne!(w.class_key(), Some(rk), "Word::class_key does not fall back to TAG_ROTOR");
     }
 
     #[test]

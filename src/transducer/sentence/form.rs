@@ -7,7 +7,7 @@ use super::class::{Axis, Rank};
 use super::transport::{relative_gauge, vertex_gauge, Transport};
 use crate::network::nerve::{Keyed, ROOT};
 use crate::transducer::alphabet::{self, Order, Rotor, Word};
-use crate::transducer::element::{self, affine_of, Versor};
+use crate::transducer::element::{self, Versor};
 use crate::transducer::peel::ShellKind;
 use crate::transducer::stalk;
 
@@ -169,8 +169,10 @@ impl Form {
                     ..
                 } => {
                     by_address.insert(address, i as u16);
-                    hue_maps.insert(hue_section_key(word, gauge), gauge.clone());
-                    let tk = vertex_transport_key(word, gauge);
+                    if let Some(hk) = hue_section_key(word, gauge) {
+                        hue_maps.insert(hk, gauge.clone());
+                    }
+                    if let Some(tk) = vertex_transport_key(word, gauge) {
                     match places.get(&tk) {
                         None => {
                             places.insert(tk, carriage.clone());
@@ -179,6 +181,7 @@ impl Form {
                             place_conflict.insert(tk, ());
                         }
                         _ => {}
+                    }
                     }
                 }
                 Vertex::Rebased { of, .. } => {
@@ -373,17 +376,17 @@ pub(crate) fn tree_path(adj: &[Vec<(usize, usize)>], src: usize, dst: usize) -> 
 }
 
 pub(crate) fn spell_versor(v: &Versor) -> Option<Word> {
-    let a = affine_of(v)?;
-    if a.len() < 2 || a[0].len() < 2 {
-        return None;
+    let id = alphabet::Word::identity();
+    let held = element::conformal_of(&id, &element::identity_versor())?;
+    if element::same_versor(&held, v) {
+        return Some(id);
     }
-    let block = [[a[0][0].clone(), a[0][1].clone()], [a[1][0].clone(), a[1][1].clone()]];
-    Some(alphabet::spell(&block)?.word)
+    None
 }
 
 /// Transport class of a conformal versor: the spelled word's class key.
 pub fn class_key_of_versor(v: &Versor) -> Option<crate::transducer::a21::Address> {
-    Some(spell_versor(v)?.class_key())
+    spell_versor(v)?.class_key()
 }
 
 pub fn vertex_ix_key(i: u16) -> Vec<u8> {
@@ -407,26 +410,26 @@ pub(crate) fn unfolded_key(measure: &Measure) -> Vec<u8> {
 
 /// Hue map as a section coordinate: word conjugacy and the map, never a
 /// matching key for correspondence (chapter 21 step 1).
-pub(crate) fn hue_section_key(word: &Word, gauge: &[(u8, u8)]) -> crate::transducer::a21::Address {
+pub(crate) fn hue_section_key(word: &Word, gauge: &[(u8, u8)]) -> Option<crate::transducer::a21::Address> {
     let mut buf = vec![crate::transducer::a21::TAG_HUE];
-    crate::transducer::a21::put_bytes(&mut buf, word.class_key().as_bytes());
+    crate::transducer::a21::put_bytes(&mut buf, word.class_key()?.as_bytes());
     buf.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
     for &(a, b) in gauge {
         buf.push(a);
         buf.push(b);
     }
-    crate::transducer::a21::Address::new(buf)
+    Some(crate::transducer::a21::Address::new(buf))
 }
 
-pub(crate) fn vertex_transport_key(word: &Word, gauge: &[(u8, u8)]) -> crate::transducer::a21::Address {
+pub(crate) fn vertex_transport_key(word: &Word, gauge: &[(u8, u8)]) -> Option<crate::transducer::a21::Address> {
     let mut buf = vec![crate::transducer::a21::TAG_WORD, ShellKind::Whole.as_u8()];
-    crate::transducer::a21::put_bytes(&mut buf, word.class_key().as_bytes());
+    crate::transducer::a21::put_bytes(&mut buf, word.class_key()?.as_bytes());
     buf.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
     for &(b, a) in gauge {
         buf.push(b);
         buf.push(a);
     }
-    crate::transducer::a21::Address::new(buf)
+    Some(crate::transducer::a21::Address::new(buf))
 }
 
 pub(crate) fn take_u16(b: &[u8], pos: &mut usize) -> Option<u16> {

@@ -161,26 +161,16 @@ pub fn invariant_of(word: &element::Element) -> Invariant {
 }
 
 fn connection_chart(word: &element::Element) -> Option<Invariant> {
-    let m = word.fiber(element::FIBER_SPATIAL)?;
-    if m.len() != element::GERM_DIM {
-        return None;
-    }
-    let trace = &m[0][0] + &m[1][1];
-    let det = &m[0][0] * &m[1][1] - &m[0][1] * &m[1][0];
+    let letters = word.letters()?;
     let mut axes = vec![0u64];
-    axes.extend_from_slice(&super::blade::axes_of(&trace)?);
-    axes.extend_from_slice(&super::blade::axes_of(&det)?);
-    // The gauge permutation's cycle type, read as the one 1 per hue row —
-    // a row without it is not a permutation, and the chart is refused.
-    let n = element::GERM_DIM - 3;
-    let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
-    let mut image = Vec::with_capacity(n);
-    for r in 0..n {
-        image.push((0..n).find(|&c| m[3 + r][3 + c] == one)?);
+    axes.extend(letters.spelling.word.rotor().class_axes()?);
+    let mut image: [u8; 10] = std::array::from_fn(|i| i as u8);
+    for &(f, t) in &letters.sigma {
+        image[f as usize] = t;
     }
-    let mut seen = vec![false; n];
+    let mut seen = [false; 10];
     let mut cycles: Vec<u64> = Vec::new();
-    for start in 0..n {
+    for start in 0..10 {
         if seen[start] {
             continue;
         }
@@ -188,7 +178,10 @@ fn connection_chart(word: &element::Element) -> Option<Invariant> {
         while !seen[i] {
             seen[i] = true;
             len += 1;
-            i = image[i];
+            i = image[i] as usize;
+            if i >= 10 {
+                return None;
+            }
         }
         if len > 1 {
             cycles.push(len);
@@ -526,27 +519,20 @@ pub fn placement_of(g: &element::Element) -> Option<Versor> {
     if !g.sub().is_empty() {
         return None;
     }
-    let m = g.fiber(element::FIBER_SPATIAL)?;
-    if m.len() != element::GERM_DIM {
+    if let Some(letters) = g.letters() {
+        if !letters.spelling.word.is_identity() || !letters.sigma.is_empty() {
+            return None;
+        }
+    } else if !g.gauge().is_empty() || !g.germinated().is_empty() {
         return None;
     }
-    let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
-    let linear_identity = m[0][0] == one && m[1][1] == one && m[0][1].is_zero_q() && m[1][0].is_zero_q();
-    let gauge_identity = (3..element::GERM_DIM).all(|r| m[r][r] == one);
-    let other_axes = g.axes().iter().any(|&a| a != element::FIBER_SPATIAL);
-    if !linear_identity || !gauge_identity || other_axes {
+    let v = g.versor()?;
+    let t = element::translator_of(&v)?;
+    let d = element::dilator_of(&v)?;
+    if !element::same_versor(&d, &element::identity_versor()) {
         return None;
     }
-    Some(super::cga::translator(&m[0][2], &m[1][2]))
-}
-
-trait ZeroQ {
-    fn is_zero_q(&self) -> bool;
-}
-impl ZeroQ for num_rational::BigRational {
-    fn is_zero_q(&self) -> bool {
-        num_traits::Zero::is_zero(self)
-    }
+    Some(t)
 }
 
 /// CONGRUENCE on elements: the held word that is `spoken`'s base point,
@@ -612,6 +598,22 @@ mod tests {
 
     fn chain(cells: &[(i64, i64)]) -> Vec<Cell> {
         cells.iter().map(|&(r, c)| (r, c, 0u8, 1u8)).collect()
+    }
+
+    #[test]
+    fn chart_axes_read_from_the_rotor_not_a_matrix() {
+        let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+        let rot = crate::transducer::alphabet::Word::from_letters(&[(q, false)]);
+        let w = from_connection(&rot, &identity_versor(), &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0])
+            .expect("connection");
+        let inv = invariant_of(&w);
+        assert!(!inv.0.is_empty(), "a connection has a chart");
+        let src = include_str!("stalk.rs");
+        let prod = src.split("#[cfg(test)]").next().expect("prod");
+        assert!(
+            !prod.contains("word.fiber(") && !prod.contains("GERM_DIM"),
+            "chart axes are read from the rotor, not a matrix"
+        );
     }
 
     #[test]
@@ -701,13 +703,9 @@ mod tests {
     /// residual charts and connection charts are disjoint families.
     #[test]
     fn a_connection_is_charted_on_its_fibres_not_on_an_empty_chain() {
-        let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
-        let shift = |dr: i64, dc: i64| -> Vec<Vec<num_rational::BigRational>> {
-            vec![vec![q(1), q(0), q(dr)], vec![q(0), q(1), q(dc)], vec![q(0), q(0), q(1)]]
-        };
-        let a = from_connection(&shift(0, 2), &[(1, 2), (2, 1)], &Vec::new(), [4, 2, 0, 0]).expect("spells");
-        let b = from_connection(&shift(5, -3), &[(1, 2), (2, 1)], &Vec::new(), [4, 2, 0, 0]).expect("spells");
-        let c = from_connection(&shift(0, 2), &[(1, 2), (2, 3), (3, 1)], &Vec::new(), [4, 2, 0, 0]).expect("spells");
+        let a = from_connection(&crate::transducer::alphabet::Word::identity(), &element::translator_versor(0, 2), &[(1, 2), (2, 1)], &Vec::new(), [4, 2, 0, 0]).expect("spells");
+        let b = from_connection(&crate::transducer::alphabet::Word::identity(), &element::translator_versor(5, -3), &[(1, 2), (2, 1)], &Vec::new(), [4, 2, 0, 0]).expect("spells");
+        let c = from_connection(&crate::transducer::alphabet::Word::identity(), &element::translator_versor(0, 2), &[(1, 2), (2, 3), (3, 1)], &Vec::new(), [4, 2, 0, 0]).expect("spells");
         assert!(!invariant_of(&a).0.is_empty(), "a connection never lands on the empty chart");
         assert_eq!(invariant_of(&a), invariant_of(&b), "two identical motions at different origins share the chart");
         assert_ne!(invariant_of(&a), invariant_of(&c), "a different cycle type is a different chart");

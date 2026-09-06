@@ -41,15 +41,7 @@ pub fn rotor_of(g: &Element) -> Option<Rotor> {
     if let Some(letters) = g.letters() {
         return Some(letters.spelling.word.rotor());
     }
-    let m = g.fiber(crate::transducer::element::FIBER_SPATIAL)?;
-    if m.len() < 2 || m[0].len() < 2 {
-        return None;
-    }
-    let block = [
-        [m[0][0].clone(), m[0][1].clone()],
-        [m[1][0].clone(), m[1][1].clone()],
-    ];
-    Some(crate::transducer::alphabet::spell(&block)?.word.rotor())
+    None
 }
 
 fn nonzero(v: &[u64; 4]) -> bool {
@@ -881,20 +873,15 @@ pub fn solve_gauge(n: usize, edges: &[(usize, usize, Rotor)]) -> Option<Vec<Roto
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::engine::Q;
-    use crate::transducer::element::FIBER_SPATIAL;
-    use num_bigint::BigInt;
-
     fn motion(dc: i64) -> Element {
-        let q = |v: i64| Q::from(BigInt::from(v));
-        Element::identity(3).with_fiber(
-            FIBER_SPATIAL,
-            vec![
-                vec![q(1), q(0), q(0)],
-                vec![q(0), q(1), q(dc)],
-                vec![q(0), q(0), q(1)],
-            ],
+        crate::transducer::element::from_connection(
+            &crate::transducer::alphabet::Word::identity(),
+            &crate::transducer::element::translator_versor(0, dc),
+            &[],
+            &Vec::new(),
+            [1, 0, 0, 0],
         )
+        .expect("translator spells")
     }
 
     fn v(n: u8) -> crate::transducer::a21::Address {

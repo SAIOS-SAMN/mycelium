@@ -6,7 +6,7 @@
 //! carriers; a zero vector is not work.
 
 use super::alphabet::{Rotor, Word};
-use super::element::{Element, Versor, GERM_DIM, REWRITE_TAG};
+use super::element::{Element, Versor, REWRITE_TAG};
 use super::stalk::Invariant;
 
 /// Spatial, gauge, temporal, holonomic (shell).
@@ -341,7 +341,6 @@ pub fn replay(e: &Element) -> Option<&'static str> {
             }
         }
     }
-    let _ = GERM_DIM;
     None
 }
 

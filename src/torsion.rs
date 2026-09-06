@@ -16,7 +16,7 @@
 
 use crate::core::engine::{Delta, Q};
 use num_bigint::BigInt;
-use num_traits::{Signed, Zero};
+use num_traits::{One, Signed, Zero};
 
 /// The Einstein-Cartan torsion residue of a Δ field — three axes, no collapse.
 #[derive(Debug, Clone, PartialEq)]
@@ -36,6 +36,23 @@ pub struct TorsionResidue {
 
 fn l1(v: &[Q]) -> Q {
     v.iter().fold(Q::zero(), |s, x| s + x.abs())
+}
+
+/// Torsion residue of a coboundary chain. The Δ field is built here, not
+/// in cognition.
+pub fn residue_of_chain(chain: &[(i64, i64, u8, u8)]) -> TorsionResidue {
+    let maxhue = chain.iter().flat_map(|(_, _, b, a)| [*b, *a]).max().unwrap_or(0) as usize;
+    let n = maxhue + 1;
+    let mut delta = Delta::zero(n, 1);
+    for (_, _, before, after) in chain {
+        let (a, b) = (*before as usize, *after as usize);
+        if a == b {
+            continue;
+        }
+        delta.entries[a][b][0] += Q::one();
+        delta.entries[b][a][0] -= Q::one();
+    }
+    extract_torsion_residue(&delta, 8, 8, None)
 }
 
 /// Extract the torsion residue of a Δ field (budgeted per axis).

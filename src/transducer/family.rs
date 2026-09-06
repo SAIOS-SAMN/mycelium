@@ -166,18 +166,19 @@ pub fn frame_vertex() -> Vertex {
     Vertex::Frame
 }
 
-fn spelling_of_versor(v: &Versor) -> super::alphabet::Spelling {
-    element::affine_of(v)
-        .and_then(|aff| {
-            (aff.len() >= 2 && aff[0].len() >= 2).then(|| {
-                [[aff[0][0].clone(), aff[0][1].clone()], [aff[1][0].clone(), aff[1][1].clone()]]
-            })
-        })
-        .and_then(|block| super::alphabet::spell(&block))
-        .unwrap_or_else(|| super::alphabet::Spelling {
-            word: super::alphabet::Word::identity(),
-            rho: q(1),
-        })
+fn spelling_of_versor(v: &Versor) -> Option<super::alphabet::Spelling> {
+    let qn = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
+    let at = |r, c| {
+        crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&qn(r), &qn(c))))
+    };
+    let o = at(0, 0)?;
+    let er = at(1, 0)?;
+    let ec = at(0, 1)?;
+    let block = [
+        [&er.0 - &o.0, &ec.0 - &o.0],
+        [&er.1 - &o.1, &ec.1 - &o.1],
+    ];
+    super::alphabet::spell(&block)
 }
 
 fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Vec<(i64, i64, u8, u8)> {
@@ -229,7 +230,10 @@ fn hue_map_of_chain(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
 /// Carriage of two bodies spelled as a word form. Class is the target's chart.
 pub fn word_form(a: &Body, b: &Body) -> Option<Vertex> {
     let car = carriage(a, b)?;
-    let sp = spelling_of_versor(&car.v);
+    let sp = spelling_of_versor(&car.v)?;
+    let t = element::translator_of(&car.v)?;
+    let d = element::dilator_of(&car.v)?;
+    let carriage = d.geo(&t);
     let chain = chain_of(Some(a), Some(b), &car.v);
     let gauge = if car.sigma.is_empty() {
         hue_map_of_chain(&chain)
@@ -239,7 +243,7 @@ pub fn word_form(a: &Body, b: &Body) -> Option<Vertex> {
     Some(Vertex::Word {
         address: element::from_residual(&chain).address(),
         word: sp.word,
-        carriage: car.v,
+        carriage,
         gauge,
         class: b.moduli.clone(),
         contact: None,
@@ -524,7 +528,7 @@ pub struct Rule {
     pub readings: Vec<(usize, Versor)>,
     /// The family's anchor reading — a coordinate of the rule, not the first entry.
     pub anchor: usize,
-    pub shift: (BigRational, BigRational),
+    pub carriage: Versor,
     pub sigma: Vec<(u8, u8)>,
 }
 
@@ -671,7 +675,7 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
             pairings.iter().filter(|pr| scenes[pr.pair].bodies_in[pr.input].moduli == *class).collect();
         let mut readings: Vec<(usize, Versor)> = Vec::new();
         let mut sigma: Option<HueMap> = None;
-        let mut shift: Option<(BigRational, BigRational)> = None;
+        let mut delta: Option<Versor> = None;
         for pr in &members {
             let s = &scenes[pr.pair];
             let (a, b) = (&s.bodies_in[pr.input], &s.bodies_out[pr.output]);
@@ -684,8 +688,8 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
             if sigma.is_none() {
                 break;
             }
-            if shift.is_none() {
-                shift = Some(d);
+            if delta.is_none() {
+                delta = Some(crate::transducer::cga::translator(&d.0, &d.1));
             }
         }
         let Some(sigma) = sigma else {
@@ -702,7 +706,10 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
                     Some((pa, pb)) => read_in(&pr.carriage.v, &pa, &pb),
                 };
                 let d = (&b.centroid.0 - &a.centroid.0, &b.centroid.1 - &a.centroid.1);
-                let same_shift = !matches!(reading, 2 | 3) || shift.as_ref() == Some(&d);
+                let same_shift = !matches!(reading, 2 | 3)
+                    || delta.as_ref().is_some_and(|v| {
+                        element::same_versor(v, &crate::transducer::cga::translator(&d.0, &d.1))
+                    });
                 match &agreed {
                     None => agreed = Some(u),
                     Some(held) => {
@@ -723,7 +730,12 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
                 moduli: class.clone(),
                 readings,
                 anchor,
-                shift: shift.unwrap_or((q(0), q(0))),
+                carriage: {
+                    let Some(c) = delta else {
+                        continue;
+                    };
+                    c
+                },
                 sigma: hue_map_pairs(&sigma),
             });
         }
@@ -1502,7 +1514,7 @@ fn transport_class(v: &Vertex) -> Option<TransportClass> {
     match v {
         Vertex::Word { word, .. } => Some(TransportClass {
             kind: super::peel::ShellKind::Whole,
-            word_class: word.class_key().into_vec(),
+            word_class: word.class_key()?.into_vec(),
         }),
         _ => None,
     }
@@ -1676,9 +1688,10 @@ pub fn extract_rule_with(
             };
             let k = c.key();
             if let Vertex::Word { word, gauge, .. } = v {
-                let hk = super::sentence::hue_section_key(word, gauge);
-                if !hue_maps.contains(&hk) {
-                    hue_maps.insert(hk, gauge.clone());
+                if let Some(hk) = super::sentence::hue_section_key(word, gauge) {
+                    if !hue_maps.contains(&hk) {
+                        hue_maps.insert(hk, gauge.clone());
+                    }
                 }
             }
             if seen.contains(&k) {
@@ -1937,9 +1950,10 @@ fn hue_maps_of_form(form: &Form) -> crate::network::nerve::Keyed<Vec<(u8, u8)>> 
     let mut m = form.hue_maps.clone();
     for v in &form.vertices {
         if let Vertex::Word { word, gauge, .. } = v {
-            let k = super::sentence::hue_section_key(word, gauge);
-            if !m.contains(&k) {
-                m.insert(k, gauge.clone());
+            if let Some(k) = super::sentence::hue_section_key(word, gauge) {
+                if !m.contains(&k) {
+                    m.insert(k, gauge.clone());
+                }
             }
         }
     }
@@ -2237,7 +2251,10 @@ fn speak_with(t: &Transport, x: &Grid, total: bool) -> Option<Speech> {
         };
         let mut spoken: Option<(Vec<Cell3>, Vec<Cell3>)> = None;
         for (reading, u) in &rule.readings {
-            let shifted = (&body.centroid.0 + &rule.shift.0, &body.centroid.1 + &rule.shift.1);
+            let t = element::translator_of(&rule.carriage)?;
+            let z = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+            let img = crate::transducer::cga::base(&t.sandwich(&crate::transducer::cga::point(&z, &z)))?;
+            let shifted = (&body.centroid.0 + &img.0, &body.centroid.1 + &img.1);
             let v = match *reading {
                 0 => u.clone(),
                 1 => read_out(u, &cx, &cy),

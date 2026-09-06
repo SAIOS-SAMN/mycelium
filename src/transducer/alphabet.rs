@@ -524,6 +524,13 @@ impl Word {
         Word::raw(tape.to_vec())
     }
 
+    #[cfg(test)]
+    pub(crate) fn formed(r: Rotor) -> Word {
+        let w = Word::raw(Vec::new());
+        let _ = w.1.set(r);
+        w
+    }
+
     pub fn letters(&self) -> &[(LetterId, bool)] {
         &self.0
     }
@@ -562,17 +569,15 @@ impl Word {
     pub fn same_class(&self, other: &Word) -> bool {
         match (self.rotor().class_invariants(), other.rotor().class_invariants()) {
             (Some(a), Some(b)) => a == b,
-            _ => self.rotor().projective_eq(&other.rotor()),
+            _ => false,
         }
     }
 
     /// Conjugacy coordinates written out. Rotor class first; the plane
-    /// form is not the key.
-    pub fn class_key(&self) -> crate::transducer::a21::Address {
-        match self.rotor().class_key() {
-            Some(k) => k,
-            None => self.rotor().key(),
-        }
+    /// form is not the key. None when the rotor is not a versor: a
+    /// non-versor is never a class.
+    pub fn class_key(&self) -> Option<crate::transducer::a21::Address> {
+        self.rotor().class_key()
     }
 
     /// Shortest tape for this vertex: unit exponents mod 4, primes as
@@ -1162,30 +1167,27 @@ fn gcd_u32(mut a: u32, mut b: u32) -> u32 {
     a.max(1)
 }
 
-/// A SPELLING: a rational similarity of the plane reduced to the alphabet —
-/// the word and the exact dilation `ρ` it is read at.
+/// A SPELLING: the alphabet word of a similarity. Dilation lives on the
+/// carriage, once; it is not a second coordinate here.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Spelling {
     pub word: Word,
-    pub rho: Q,
 }
 
 impl Spelling {
-    /// The 2×2 block the spelling speaks: `ρ` times the word's plane action.
+    /// The 2×2 block the word speaks (rotation and orientation). ρ is not
+    /// here.
     pub fn block(&self) -> Option<[[Q; 2]; 2]> {
-        let b = self.word.plane_block()?;
-        Some(std::array::from_fn(|r| std::array::from_fn(|c| &b[r][c] * &self.rho)))
+        self.word.plane_block()
     }
 
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
         self.word.to_bytes(out);
-        put_q(out, &self.rho);
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Spelling> {
         let word = Word::from_bytes(b, pos)?;
-        let rho = take_q(b, pos)?;
-        Some(Spelling { word, rho })
+        Some(Spelling { word })
     }
 }
 
@@ -1492,11 +1494,17 @@ pub fn spell(block: &[[Q; 2]; 2]) -> Option<Spelling> {
                     word.push(id, inv);
                 }
             }
-            let sp = Spelling { word, rho };
-            // The algebra verifies its own spelling: the word's block must
-            // be the block that was spelled.
-            if sp.block()? != *block {
-                return None;
+            let sp = Spelling { word };
+            let b = sp.block()?;
+            // The word is the rotation; ρ is peeled for the caller to put
+            // on the carriage. The spelled linear block times ρ is the
+            // sensor block.
+            for r in 0..2 {
+                for c in 0..2 {
+                    if &b[r][c] * &rho != block[r][c] {
+                        return None;
+                    }
+                }
             }
             Some(sp)
         }
@@ -1648,13 +1656,11 @@ mod tests {
     fn pythagorean_words_dilations_and_honest_remainders() {
         let l5 = spell(&[[qn(-7, 25), qn(-24, 25)], [qn(24, 25), qn(-7, 25)]]).expect("(3,4,5)² spells");
         assert_eq!(l5.word.len(), 1);
-        assert_eq!(l5.rho, q(1));
         let l5_inv = spell(&[[qn(-7, 25), qn(24, 25)], [qn(-24, 25), qn(-7, 25)]]).expect("inverse spells");
         assert_eq!(l5_inv.word.letters()[0].0, l5.word.letters()[0].0);
         assert_ne!(l5_inv.word.letters()[0].1, l5.word.letters()[0].1);
         let scaled = spell(&[[qn(-21, 25), qn(-72, 25)], [qn(72, 25), qn(-21, 25)]]).expect("ρ = 3");
-        assert_eq!(scaled.rho, q(3));
-        assert_eq!(scaled.word, l5.word);
+        assert_eq!(scaled.word, l5.word, "ρ is peeled for the carriage; the word is the rotation");
         // (3,4,5) itself is a half letter under the sandwich: not a word.
         let (nest, _) = spell_peel(&[[qn(3, 5), qn(-4, 5)], [qn(4, 5), qn(3, 5)]]).expect("a similarity");
         assert!(matches!(nest, PeelNest::Standing { .. }));
@@ -1748,7 +1754,7 @@ mod tests {
         let f = w.form().unwrap();
         assert_eq!(
             w.class_key(),
-            r.class_key().unwrap(),
+            r.class_key(),
             "Word::class_key is the rotor conjugacy (15.3), not the plane section"
         );
         assert_eq!(f.conjugacy_key(), f.conjugacy_rep().conjugacy_key());

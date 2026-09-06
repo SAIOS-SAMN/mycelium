@@ -7,7 +7,7 @@ use super::form::*;
 use super::transport::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::{self, Rotor, Word};
-use crate::transducer::element::{self, Element, GERM_DIM};
+use crate::transducer::element::{self, Element};
 use crate::transducer::stalk;
 
 fn word_to_form_bytes(w: &Word, contact: Option<alphabet::Contact>, out: &mut Vec<u8>) {
@@ -438,7 +438,7 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
     if f.vertices.is_empty() || mag.iter().all(|&x| x == 0) {
         return None;
     }
-    let mut e = Element::identity(GERM_DIM);
+    let mut e = Element::identity();
     let mut word = vec![element::SENTENCE_TAG, 4];
     encode_form_v2(f, &mut word)?;
     e.set_description(word);

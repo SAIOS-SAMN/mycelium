@@ -207,13 +207,8 @@ fn versors_close(vs: &[element::Versor]) -> bool {
 }
 
 fn rotor_versor(g: &crate::transducer::alphabet::Rotor) -> Option<element::Versor> {
-    let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
-    let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-    let e0 = g.carry(&[one.clone(), zero.clone(), zero.clone(), zero.clone()])?;
-    let e1 = g.carry(&[zero.clone(), one.clone(), zero.clone(), zero.clone()])?;
-    let block = [[e0[0].clone(), e1[0].clone()], [e0[1].clone(), e1[1].clone()]];
-    let spelling = crate::transducer::alphabet::spell(&block)?;
-    crate::transducer::element::conformal_of(&spelling.word, &crate::transducer::element::identity_versor())
+    let word = g.spelled_word()?;
+    crate::transducer::element::conformal_of(&word, &crate::transducer::element::identity_versor())
 }
 
 fn union_remainders(entries: &[FieldEntry]) -> Vec<(i64, i64, u8, u8)> {
@@ -581,7 +576,7 @@ pub fn germinate_bodies(
                 let off_c = rg.iter().map(|(_, c, _, _)| *c).min().unwrap_or(0);
                 germs.push((element::from_residual_framed(&rg, frame), Some((fa, (off_r, off_c)))));
             }
-            None => germs.push((Element::identity(element::GERM_DIM), None)),
+            None => germs.push((Element::identity(), None)),
         }
     }
     if germs.iter().all(|(g, _)| g.same_vertex(&germs[0].0)) {
@@ -1306,16 +1301,13 @@ impl Kernel {
     }
 
     fn germinate_fibre(&mut self, i: usize, fail: &element::Versor) {
-        let axis = self.basis[i]
-            .max_axis()
-            .map_or(element::FIBER_GERMINATED, |m| m.saturating_add(1));
-        let Some(seed) = self.basis[i].fiber(element::FIBER_SPATIAL).cloned() else {
+        let Some(seed) = self.basis[i].versor() else {
             let asg = element::assignment(self.basis[i].sub());
             self.word_mut(i).record_dislocation(asg, fail.clone(), element::FIBER_SPATIAL);
             self.touch_at(i);
             return;
         };
-        self.word_mut(i).set_fiber(axis, seed);
+        let axis = self.word_mut(i).open_axis(seed);
         let asg = element::assignment(self.basis[i].sub());
         self.word_mut(i).record_dislocation(asg, fail.clone(), axis);
         self.touch_at(i);
@@ -3748,7 +3740,7 @@ impl Kernel {
     /// Active cover: the identity fibre (so Čech overlap is non-empty after
     /// the first Cover), plus charts of open listings and of the ruled language.
     pub fn active_cover(&self) -> Vec<(u8, crate::transducer::stalk::Invariant)> {
-        let mut out = vec![(0, crate::transducer::stalk::invariant_of(&Element::identity(2)))];
+        let mut out = vec![(0, crate::transducer::stalk::invariant_of(&Element::identity()))];
         for (inv, _) in self.listing_atlas.strata() {
             out.push((0, inv));
         }
@@ -4652,12 +4644,7 @@ impl Kernel {
                     let witnesses = crate::transducer::toroid::witness_thought(&residual);
                     let k = match witnesses.is_empty() {
                         true => {
-                            let residue = crate::torsion::extract_torsion_residue(
-                                &element::germ_delta(&residual.sub().to_vec()),
-                                8,
-                                8,
-                                None,
-                            );
+                            let residue = crate::torsion::residue_of_chain(residual.sub());
                             crate::torsion::required_k_steps(&residue)
                         }
                         false => witnesses
@@ -7644,16 +7631,15 @@ mod tests {
     #[test]
     fn adopt_reaches_the_docket_and_stroke_skips_ruled() {
         use crate::transducer::element::from_connection;
-        fn q(v: i64) -> num_rational::BigRational {
-            num_rational::BigRational::from_integer(num_bigint::BigInt::from(v))
-        }
         fn conn(shift: i64) -> Element {
-            let affine = vec![
-                vec![q(1), q(0), q(shift)],
-                vec![q(0), q(1), q(0)],
-                vec![q(0), q(0), q(1)],
-            ];
-            from_connection(&affine, &[], &Vec::new(), [1, 0, 0, 0]).expect("spells")
+            from_connection(
+                &crate::transducer::alphabet::Word::identity(),
+                &crate::transducer::element::translator_versor(shift, 0),
+                &[],
+                &Vec::new(),
+                [1, 0, 0, 0],
+            )
+            .expect("spells")
         }
         let mut k = Kernel::new();
         let cap = crate::physics::Physics::default().stroke().remaining();
@@ -7827,9 +7813,9 @@ mod tests {
     #[test]
     fn speech_that_closes_nothing_mints_none() {
         let mut k = Kernel::new();
-        let affine = crate::transducer::element::affine_of(&crate::transducer::element::identity_versor()).unwrap();
         let w = crate::transducer::element::from_connection(
-            &affine,
+            &crate::transducer::alphabet::Word::identity(),
+            &crate::transducer::element::identity_versor(),
             &[(1, 2), (2, 1)],
             &Vec::new(),
             [1, 1, 0, 0],
@@ -7869,9 +7855,9 @@ mod tests {
         let task = [7u8; 32];
         k.bind_listing_task(&listing, task);
         k.bind_task_family(task, family);
-        let affine = crate::transducer::element::affine_of(&crate::transducer::element::identity_versor()).unwrap();
         let w = crate::transducer::element::from_connection(
-            &affine,
+            &crate::transducer::alphabet::Word::identity(),
+            &crate::transducer::element::identity_versor(),
             &[(1, 2), (2, 1)],
             &Vec::new(),
             [4, 4, 4, 4],

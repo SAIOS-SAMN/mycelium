@@ -46,7 +46,7 @@ mod tests {
         for banned in ["rotation", "recolour", "translate", "reflect"] {
             assert!(!s.to_lowercase().contains(banned), "no solver vocabulary: {s}");
         }
-        let ident = Element::identity(crate::transducer::element::GERM_DIM);
+        let ident = Element::identity();
         assert!(describe(&ident, Audience::Operator).contains("transposition"));
     }
 }

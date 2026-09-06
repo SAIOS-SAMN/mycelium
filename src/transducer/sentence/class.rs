@@ -214,32 +214,27 @@ fn cycle_lengths(listing: &[(u8, u8)]) -> Vec<u8> {
 
 impl ClassVector {
     /// The vector of a holonomy word alone (identity carriage).
-    pub fn of_word(h: &Word) -> ClassVector {
+    pub fn of_word(h: &Word) -> Option<ClassVector> {
         Self::read(h, element::identity_versor(), CycleType::Identity)
     }
 
-    pub(crate) fn read(h: &Word, carriage: Versor, hue: CycleType) -> ClassVector {
-        let z = Self::zero_q();
-        let off0 = (z.clone(), z, 0, 0);
+    pub(crate) fn read(h: &Word, carriage: Versor, hue: CycleType) -> Option<ClassVector> {
         let offplane = if h.is_identity() {
-            off0
+            (Self::zero_q(), Self::zero_q(), 0, 0)
         } else {
-            match h.rotor().class_invariants() {
-                Some(inv) => inv,
-                None => off0,
-            }
+            h.rotor().class_invariants()?
         };
         let plane = if h.is_identity() {
             Some([(false, 0, 0, 0); 6])
         } else {
             h.form().map(|pf| pf.coordinates())
         };
-        ClassVector {
+        Some(ClassVector {
             plane,
             carriage,
             hue,
             offplane,
-        }
+        })
     }
 
     fn zero_q() -> num_rational::BigRational {
@@ -341,12 +336,10 @@ impl ClassVector {
             Axis::Prime5(p) => self.plane_slot(p).is_some_and(|s| s.2 != 0),
             Axis::Prime13(p) => self.plane_slot(p).is_some_and(|s| s.3 != 0),
             Axis::Hue => !matches!(self.hue, CycleType::Identity),
-            Axis::Placement => {
-                !element::same_versor(&element::translator_of(&self.carriage), &element::identity_versor())
-            }
-            Axis::Dilation => {
-                !element::same_versor(&element::dilator_of(&self.carriage), &element::identity_versor())
-            }
+            Axis::Placement => element::translator_of(&self.carriage)
+                .is_some_and(|t| !element::same_versor(&t, &element::identity_versor())),
+            Axis::Dilation => element::dilator_of(&self.carriage)
+                .is_some_and(|d| !element::same_versor(&d, &element::identity_versor())),
             Axis::OffPlane => self.plane.is_none(),
             Axis::Open => false,
         }
@@ -441,10 +434,14 @@ impl ClassVector {
                 }
             }
             Axis::Placement => {
-                self.carriage = element::dilator_of(&self.carriage);
+                if let Some(d) = element::dilator_of(&self.carriage) {
+                    self.carriage = d;
+                }
             }
             Axis::Dilation => {
-                self.carriage = element::translator_of(&self.carriage);
+                if let Some(t) = element::translator_of(&self.carriage) {
+                    self.carriage = t;
+                }
             }
             Axis::OffPlane => {
                 self.offplane = Self::offplane_zero();
