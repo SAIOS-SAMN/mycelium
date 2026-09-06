@@ -935,19 +935,6 @@ impl Form {
         Some(())
     }
 
-    /// The extension θ_A of 13.4: θ at the glued vertex, then the usual
-    /// tree gauge. The stored tape is not this working copy.
-    pub fn regauge_overlap(&mut self, theta: &Word, vertex: u16) -> Option<()> {
-        let n = self.vertices.len();
-        let vi = vertex as usize;
-        if vi >= n {
-            return None;
-        }
-        let mut gamma = vec![Word::identity(); n];
-        gamma[vi] = theta.clone();
-        self.regauge(&gamma)
-    }
-
     /// Spanning forest (12.2): each component is rooted at its least vertex
     /// index with γ = 1; γ_j = γ_i · g_ij⁻¹ along tree edges. None only when
     /// a face names a vertex outside the form.
