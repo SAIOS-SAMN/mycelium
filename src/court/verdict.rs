@@ -49,15 +49,18 @@ pub const REFUSE_PIVOT_INEXACT: &str = "pivot certificate does not re-derive";
 /// recomputed spanning forest is projectively identity or filed finite
 /// torsion. Descent is checked by the caller on the element.
 pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8; 32]) -> Option<Form>) -> Option<&'static str> {
-    replay_form_with(spoken, resolve, None)
+    replay_form_with(spoken, resolve, None, &crate::transducer::family::NoCrystal)
 }
 
 /// Chapter 23.1 with the bound family, so rebase/unfold/orbit execute on
-/// the trains when the kernel has them (step 6).
+/// the trains when the kernel has them (step 6). Descent is measured
+/// through `crystal` (the court's genome). `NoCrystal` is only for a tape
+/// with no Glued vertex.
 pub fn replay_form_with(
     spoken: &Element,
     resolve: &dyn Fn(&[u8; 32]) -> Option<Form>,
     family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    crystal: &dyn crate::transducer::family::Crystal,
 ) -> Option<&'static str> {
     let Some(f) = sentence::from_element_form(spoken) else {
         return Some(REFUSE_FORM_TAPE);
@@ -127,11 +130,16 @@ pub fn replay_form_with(
         return Some(REFUSE_RANK_LOST);
     }
     if let Some(fam) = family {
-        let (pay, rems) = crate::transducer::family::form_descent(
-            &walked,
-            fam,
-            &crate::transducer::family::NoCrystal,
-        );
+        let glued = walked
+            .vertices
+            .iter()
+            .any(|v| matches!(v, Vertex::Glued { .. }));
+        let descent_crystal: &dyn crate::transducer::family::Crystal = if glued {
+            crystal
+        } else {
+            &crate::transducer::family::NoCrystal
+        };
+        let (pay, rems) = crate::transducer::family::form_descent(&walked, fam, descent_crystal);
         if rems.iter().any(|r| !r.is_empty()) || !crate::economy::descends(&[0; 4], &pay) {
             return Some(REFUSE_NO_DESCENT);
         }
@@ -338,8 +346,9 @@ pub fn blind_replay_on(
     spoken: &Element,
     resolve: &dyn Fn(&[u8; 32]) -> Option<Form>,
     family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    crystal: &dyn crate::transducer::family::Crystal,
 ) -> Option<&'static str> {
-    blind_replay_on_inner(spoken, resolve, family)
+    blind_replay_on_inner(spoken, resolve, family, crystal)
 }
 
 /// Deterministic re-derivation of a spoken word from its own evidence
@@ -350,13 +359,14 @@ pub fn blind_replay_on(
 /// with its remainder chain re-deriving as any germ's; every torsion cycle
 /// is walked; and the install must strictly descend (0⃗ ≺_DM μ⃗).
 pub fn blind_replay_with(spoken: &Element, resolve: &dyn Fn(&[u8; 32]) -> Option<Form>) -> Option<&'static str> {
-    blind_replay_on_inner(spoken, resolve, None)
+    blind_replay_on_inner(spoken, resolve, None, &crate::transducer::family::NoCrystal)
 }
 
 fn blind_replay_on_inner(
     spoken: &Element,
     resolve: &dyn Fn(&[u8; 32]) -> Option<Form>,
     family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    crystal: &dyn crate::transducer::family::Crystal,
 ) -> Option<&'static str> {
     let chain = spoken.sub();
     // A CONNECTION is a word with two components: the group component (an
@@ -384,7 +394,7 @@ fn blind_replay_on_inner(
     if spoken.is_sentence() {
         // The version byte selects the replayer: a v3 tape is a form and
         // is replayed through the cover; a v2 tape is refused.
-        if let Some(reason) = replay_form_with(spoken, resolve, family) {
+        if let Some(reason) = replay_form_with(spoken, resolve, family, crystal) {
             return Some(reason);
         }
         if !crate::economy::descends(&[0; 4], &spoken.magnitude()) {
