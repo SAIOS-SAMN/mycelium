@@ -2048,7 +2048,7 @@ pub fn speak_rule(rule: &super::sentence::SentenceRule, x: &Grid, crystal: &dyn 
 
 /// The residual between what was spoken and what was observed, as a chain
 /// (row, col, spoken hue, observed hue) over every cell that differs.
-fn residual_of(spoken: Option<&Grid>, observed: &Grid) -> Vec<(i64, i64, u8, u8)> {
+pub(crate) fn residual_of(spoken: Option<&Grid>, observed: &Grid) -> Vec<(i64, i64, u8, u8)> {
     let mut out = Vec::new();
     for (r, row) in observed.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
@@ -2071,6 +2071,37 @@ fn residual_of(spoken: Option<&Grid>, observed: &Grid) -> Vec<(i64, i64, u8, u8)
     out.sort_unstable();
     out.dedup();
     out
+}
+
+/// Pressure of a form spoken over its germinating bundle (A1, 12.6):
+/// S and G from the residual chain, H the peel depth of unspoken bodies,
+/// T the extent held, passed in. None when there is no bundle to measure.
+pub fn bundle_pressure(
+    form: &Form,
+    bundle: &[(Grid, Grid)],
+    crystal: &dyn Crystal,
+    t_extent: u64,
+) -> Option<[u64; 4]> {
+    if bundle.is_empty() {
+        return None;
+    }
+    let mut chain: Vec<(i64, i64, u8, u8)> = Vec::new();
+    let mut peel_h = 0u64;
+    for (x, y) in bundle {
+        let spoken = apply_form(form, x, &super::alphabet::Word::identity(), crystal);
+        let grid = spoken.as_ref().map(|s| s.grid());
+        let residual = residual_of(grid.as_ref(), y);
+        let bodies: Vec<(i64, i64, u8)> = residual
+            .iter()
+            .filter_map(|&(r, c, _, a)| (a != 0).then_some((r, c, a)))
+            .collect();
+        peel_h = peel_h.max(super::peel::peel_body(&bodies).len() as u64);
+        chain.extend(residual);
+    }
+    let mut m = element::measure_lanes(&chain);
+    m[2] = t_extent;
+    m[3] = peel_h;
+    Some(m)
 }
 
 /// The image of a hue under a gauge map: the hue the family showed is

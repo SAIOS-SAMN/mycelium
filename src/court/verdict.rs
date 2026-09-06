@@ -893,7 +893,8 @@ mod tests {
                 axes: 0,
             },
             rank_after: Rank::default(),
-            mu: [0; 4],
+            mu_before: [0; 4],
+            mu_after: [0; 4],
             by: PivotBy::Word {
                 face: 0,
                 word: Word::identity(),
@@ -947,6 +948,8 @@ mod tests {
             &crate::network::nerve::Keyed::new(),
             &crate::transducer::family::NoCrystal,
             &mut crate::physics::Physics::default().stroke_n(8),
+            &[],
+            0,
         );
         assert!(
             !f.torsion.is_empty(),

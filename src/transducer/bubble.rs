@@ -200,6 +200,8 @@ pub struct Bubble {
     pub vortex: Keyed<Keyed<PivotCertificate>>,
     /// The form this idea is (chapter 30 step 6).
     pub form: Option<Form>,
+    /// Pairs the idea germinated from; trial speaks over them for μ⃗.
+    pub bundle: Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>,
 }
 
 impl Bubble {
@@ -307,7 +309,8 @@ impl Bubble {
         if budget.remaining() > 0 {
             if let Some(mut form) = self.form.clone() {
                 let key = self.key();
-                let _ = form.pivot_loop(key, &self.horizon, crystal, budget);
+                let t = now.saturating_sub(self.moved_tu);
+                let _ = form.pivot_loop(key, &self.horizon, crystal, budget, &self.bundle, t);
                 self.take_form(form);
             }
         }
@@ -759,6 +762,7 @@ impl Contemplation {
             certificates: certs,
             vortex: f.vortex.clone(),
             form: Some(f.clone()),
+            bundle: Vec::new(),
         };
         if let Some(old) = self.bubbles.get(&key).cloned() {
             self.retract_incidence(&key, &old);
@@ -801,6 +805,7 @@ impl Contemplation {
             certificates: Keyed::new(),
             vortex: Keyed::new(),
             form: None,
+            bundle: Vec::new(),
         };
         if let Some(old) = self.bubbles.get(&key).cloned() {
             self.retract_incidence(&key, &old);
@@ -885,6 +890,7 @@ impl Contemplation {
             certificates,
             vortex,
             form,
+            bundle: Vec::new(),
         };
         self.admit_incidence(key, &bubble);
         self.bubbles.insert(key, bubble);
@@ -1050,8 +1056,10 @@ impl Contemplation {
                 continue;
             };
             let horizon = b.horizon.clone();
+            let bundle = b.bundle.clone();
+            let t = self.now_tu.saturating_sub(b.moved_tu);
             if let Some(mut form) = b.form.clone() {
-                let _ = form.pivot_loop(*bk, &horizon, crystal, budget);
+                let _ = form.pivot_loop(*bk, &horizon, crystal, budget, &bundle, t);
                 if let Some(b) = self.bubbles.get_mut(bk) {
                     b.take_form(form);
                     if let Some(r) = &word_rotor {
@@ -1448,6 +1456,7 @@ impl Contemplation {
                 certificates,
                 vortex,
                 form,
+                bundle: Vec::new(),
             };
             c.admit_incidence(key, &bubble);
             c.bubbles.insert(key, bubble);
@@ -1899,7 +1908,8 @@ mod tests {
                 axes: 0,
             },
             rank_after: Rank::default(),
-            mu: [0; 4],
+            mu_before: [0; 4],
+            mu_after: [0; 4],
             by: PivotBy::Word {
                 face: 0,
                 word: w.clone(),
@@ -1923,7 +1933,8 @@ mod tests {
                 axes: 0,
             },
             rank_after: Rank::default(),
-            mu: [0; 4],
+            mu_before: [0; 4],
+            mu_after: [0; 4],
             by: PivotBy::Word {
                 face: 0,
                 word: sheet,

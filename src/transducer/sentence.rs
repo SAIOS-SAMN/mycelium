@@ -1062,27 +1062,21 @@ impl Form {
         rank_of_holonomies(self.loops.iter().map(|lp| &lp.holonomy))
     }
 
-    /// Pressure μ⃗(ℓ) of one held loop, read from that loop's own vertices
-    /// (12.6): S the remainder cells those vertices fail to speak, G the
-    /// hue transitions they fail to carry, T the extent held on a glued
-    /// vertex's clock, H the shells the loop spans.
-    pub fn loop_mu(&self, idx: usize) -> [u64; 4] {
-        let Some(lp) = self.loops.get(idx) else {
-            return [0; 4];
-        };
-        let verts = loop_verts(self, lp).unwrap_or_default();
+    /// Pressure of one held loop from its vertices and remainder.
+    /// None when the loop is malformed (a face names a missing vertex).
+    /// T is the extent the loop has been held, passed in; never a sum of
+    /// cited magnitudes. Dominance uses [`bundle_pressure`] after a trial.
+    pub fn loop_mu(&self, idx: usize, t_extent: u64) -> Option<[u64; 4]> {
+        let lp = self.loops.get(idx)?;
+        let verts = loop_verts(self, lp)?;
         let mut gauges: Vec<(u8, u8)> = Vec::new();
-        let mut t = 0u64;
         let mut h = 0u64;
         for &vi in &verts {
             match self.vertices.get(vi) {
                 Some(Vertex::Word { gauge, .. } | Vertex::Rebased { gauge, .. }) => {
                     gauges.extend(gauge.iter().copied());
                 }
-                Some(Vertex::Glued {
-                    magnitude, depth, ..
-                }) => {
-                    t = t.saturating_add(magnitude[2]);
+                Some(Vertex::Glued { depth, .. }) => {
                     h = h.max((*depth as u64).saturating_add(1));
                 }
                 _ => {}
@@ -1104,9 +1098,14 @@ impl Form {
             }
         }
         if h == 0 {
-            h = element::measure_lanes(&self.remainder)[3];
+            let bodies: Vec<(i64, i64, u8)> = self
+                .remainder
+                .iter()
+                .filter_map(|&(r, c, _, a)| (a != 0).then_some((r, c, a)))
+                .collect();
+            h = super::peel::peel_body(&bodies).len() as u64;
         }
-        [s, g, t, h]
+        Some([s, g, t_extent, h])
     }
 
     /// The class vector of loop `idx` (12.6).
@@ -1125,13 +1124,36 @@ impl Form {
         self.loops = Self::loops_of(&self.faces, self.vertices.len());
     }
 
+    /// The unique Frame→j face word, if the star has one face to j.
+    fn frame_face_word(&self, j: u16) -> Option<Word> {
+        let mut hit: Option<&FormFace> = None;
+        for f in &self.faces {
+            if (f.i == 0 && f.j == j) || (f.j == 0 && f.i == j) {
+                if hit.is_some() {
+                    return None;
+                }
+                hit = Some(f);
+            }
+        }
+        let f = hit?;
+        if f.i == 0 {
+            Some(f.g_ij.clone())
+        } else {
+            Some(f.g_ij.inverse())
+        }
+    }
+
     /// A16 on the form. Certificates and vortex live here.
+    /// `bundle` is the pairs the idea germinated from; `t_extent` is how
+    /// long the loop has been held on the bubble's clock.
     pub fn pivot_loop(
         &mut self,
         idea: [u8; 32],
         horizon: &Keyed<(Rotor, Order, Standing)>,
         crystal: &dyn super::family::Crystal,
         budget: &mut Budget,
+        bundle: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
+        t_extent: u64,
     ) -> Vec<Snap> {
         let mut snaps = Vec::new();
         let mut handled: Keyed<()> = Keyed::new();
@@ -1166,7 +1188,7 @@ impl Form {
                 }
                 let held = horizon.get(&key).is_some();
                 let order = self.loops[idx].holonomy.order();
-                let mu = self.loop_mu(idx);
+                let measured = !bundle.is_empty();
                 if self.try_close_chord(idx) {
                     debug_assert!(
                         Rank::admits(rank_before, self.rank()),
@@ -1191,13 +1213,23 @@ impl Form {
                     "A18: a failed tree gauge is rank-invariant"
                 );
                 let cands = self.candidates_for(idx, &kappa, crystal);
-                let mut discharging: Vec<(PivotCertificate, [u64; 4])> = Vec::new();
+                let mut discharging: Vec<PivotCertificate> = Vec::new();
                 for cand in &cands {
                     if !budget.spend() {
                         break;
                     }
-                    if let Some(cert) = self.trial(idx, cand, &kappa, &rows, rank_before, mu) {
-                        discharging.push((cert, mu));
+                    if let Some(cert) = self.trial(
+                        idx,
+                        cand,
+                        &kappa,
+                        &rows,
+                        rank_before,
+                        crystal,
+                        budget,
+                        bundle,
+                        t_extent,
+                    ) {
+                        discharging.push(cert);
                     } else {
                         eprintln!(
                             "  pivot {:02x}{:02x}… loop {idx} axis {:?} no discharge",
@@ -1231,14 +1263,23 @@ impl Form {
                         break;
                     }
                     None if !discharging.is_empty() => {
-                        eprintln!(
-                            "  vortex {:02x}{:02x}… loop {idx} {} candidates held",
-                            idea[0],
-                            idea[1],
-                            discharging.len()
-                        );
+                        if measured {
+                            eprintln!(
+                                "  vortex {:02x}{:02x}… loop {idx} {} candidates held",
+                                idea[0],
+                                idea[1],
+                                discharging.len()
+                            );
+                        } else {
+                            eprintln!(
+                                "  vortex {:02x}{:02x}… loop {idx} {} candidates unmeasured",
+                                idea[0],
+                                idea[1],
+                                discharging.len()
+                            );
+                        }
                         let mut held_certs = Vec::new();
-                        for (c, _) in discharging {
+                        for c in discharging {
                             vortex_put(&mut self.vortex, c.clone());
                             held_certs.push(c);
                         }
@@ -1376,7 +1417,10 @@ impl Form {
         kappa: &ClassVector,
         rows: &[LoopRow],
         rank_before: Rank,
-        mu: [u64; 4],
+        crystal: &dyn super::family::Crystal,
+        budget: &mut Budget,
+        bundle: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
+        t_extent: u64,
     ) -> Option<PivotCertificate> {
         let lp = self.loops.get(idx)?;
         let PivotBy::Word { face, word, side } = &cand.by;
@@ -1407,6 +1451,58 @@ impl Form {
         if !Rank::admits(rank_before, rank_after) {
             return None;
         }
+        let mu_before = if bundle.is_empty() {
+            [0; 4]
+        } else {
+            if !budget.spend() {
+                return None;
+            }
+            super::family::bundle_pressure(self, bundle, crystal, t_extent)?
+        };
+        let mut trial_form = self.clone();
+        if let Some(f) = trial_form.faces.get_mut(*face as usize) {
+            f.g_ij = after_g;
+        }
+        trial_form.loops = Form::loops_of(&trial_form.faces, trial_form.vertices.len());
+        sync_star_words(&mut trial_form);
+        let mu_after = if bundle.is_empty() {
+            [0; 4]
+        } else {
+            let mut after =
+                super::family::bundle_pressure(&trial_form, bundle, crystal, t_extent)?;
+            if let Some((class, placement, gauge, rho)) = self.vertices.iter().find_map(|v| match v {
+                Vertex::Word {
+                    class,
+                    placement,
+                    gauge,
+                    rho,
+                    ..
+                } if !class.0.is_empty() => Some((class.clone(), placement.clone(), gauge.clone(), rho.clone())),
+                _ => None,
+            }) {
+                let mut probe = Form::default();
+                probe.vertices.push(Vertex::Word {
+                    address: [1u8; 32],
+                    word: word.clone(),
+                    rho,
+                    placement,
+                    gauge,
+                    class,
+                    contact: None,
+                });
+                if let Some(p) =
+                    super::family::bundle_pressure(&probe, bundle, crystal, t_extent)
+                {
+                    after[0] = after[0].saturating_add(p[0]);
+                    after[1] = after[1].saturating_add(p[1]);
+                    after[3] = after[3].saturating_add(p[3]);
+                }
+            }
+            after
+        };
+        if mu_after.iter().zip(&mu_before).any(|(a, b)| a > b) {
+            return None;
+        }
         Some(PivotCertificate {
             chord: idx as u16,
             axis: cand.axis,
@@ -1414,7 +1510,8 @@ impl Form {
             after: kappa_after.class_key(),
             rank_before,
             rank_after,
-            mu,
+            mu_before,
+            mu_after,
             by: cand.by.clone(),
         })
     }
@@ -1479,6 +1576,25 @@ impl Form {
             });
         }
         loops
+    }
+}
+
+/// Copy each unique Frame→j face onto that Word vertex so speech reads
+/// the 1-skeleton the trial just wrote, not a stale vertex word.
+fn sync_star_words(form: &mut Form) {
+    let n = form.vertices.len();
+    let mut updates = Vec::new();
+    for j in 1..n {
+        if matches!(form.vertices.get(j), Some(Vertex::Word { .. })) {
+            if let Some(w) = form.frame_face_word(j as u16) {
+                updates.push((j, w));
+            }
+        }
+    }
+    for (j, w) in updates {
+        if let Vertex::Word { word, .. } = &mut form.vertices[j] {
+            *word = w;
+        }
     }
 }
 
@@ -2219,8 +2335,10 @@ pub struct PivotCertificate {
     pub after: [u8; 32],
     pub rank_before: Rank,
     pub rank_after: Rank,
-    /// μ⃗(ℓ): the remainder the loop leaves open, the dominance test only.
-    pub mu: [u64; 4],
+    /// μ⃗ of the form over the bundle before the move.
+    pub mu_before: [u64; 4],
+    /// μ⃗ after the trial move; `select_discharge` reads this.
+    pub mu_after: [u64; 4],
     pub by: PivotBy,
 }
 
@@ -2250,7 +2368,7 @@ impl PivotCertificate {
         out.extend_from_slice(&self.after);
         self.rank_before.to_bytes(out);
         self.rank_after.to_bytes(out);
-        for m in &self.mu {
+        for m in self.mu_before.iter().chain(&self.mu_after) {
             out.extend_from_slice(&m.to_le_bytes());
         }
         match &self.by {
@@ -2276,8 +2394,9 @@ impl PivotCertificate {
         *pos += 32;
         let rank_before = Rank::from_bytes(b, pos)?;
         let rank_after = Rank::from_bytes(b, pos)?;
-        let mut mu = [0u64; 4];
-        for m in &mut mu {
+        let mut mu_before = [0u64; 4];
+        let mut mu_after = [0u64; 4];
+        for m in mu_before.iter_mut().chain(&mut mu_after) {
             *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
             *pos += 8;
         }
@@ -2304,7 +2423,8 @@ impl PivotCertificate {
             after,
             rank_before,
             rank_after,
-            mu,
+            mu_before,
+            mu_after,
             by,
         })
     }
@@ -2440,16 +2560,16 @@ pub fn vortex_put(v: &mut Keyed<Keyed<PivotCertificate>>, c: PivotCertificate) {
 /// μ⃗ is computed once; a candidate whose μ⃗ equals that minimum is the
 /// discharge. Several that match, or none that match (incomparable lanes),
 /// are a vortex. No pairwise pass.
-fn select_discharge(cands: &[(PivotCertificate, [u64; 4])]) -> Option<PivotCertificate> {
-    let Some((_, first)) = cands.first() else {
+fn select_discharge(cands: &[PivotCertificate]) -> Option<PivotCertificate> {
+    let Some(first) = cands.first() else {
         return None;
     };
     let min: [u64; 4] = std::array::from_fn(|l| {
-        cands.iter().map(|(_, m)| m[l]).min().unwrap_or(first[l])
+        cands.iter().map(|c| c.mu_after[l]).min().unwrap_or(first.mu_after[l])
     });
     let mut winner: Option<&PivotCertificate> = None;
-    for (c, m) in cands {
-        if *m == min {
+    for c in cands {
+        if c.mu_after == min {
             if winner.is_some() {
                 return None;
             }
@@ -3577,6 +3697,8 @@ mod tests {
             &crate::network::nerve::Keyed::new(),
             &crate::transducer::family::NoCrystal,
             &mut crate::physics::Physics::default().stroke_n(8),
+            &[],
+            0,
         );
         assert!(
             snaps.iter().any(|s| matches!(s, Snap::Demand { .. })),
@@ -3706,7 +3828,8 @@ mod tests {
                 free: 0,
                 axes: 0,
             },
-            mu,
+            mu_before: [0; 4],
+            mu_after: mu,
             by: PivotBy::Word {
                 face: 0,
                 word: Word::identity(),
@@ -3719,9 +3842,8 @@ mod tests {
     fn incomparable_discharges_are_held_as_vortex() {
         let a = cert(Axis::Unit(0), [2, 0, 1, 0]);
         let b = cert(Axis::Hue, [0, 3, 0, 1]);
-        let cands = vec![(a.clone(), a.mu), (b.clone(), b.mu)];
         assert!(
-            select_discharge(&cands).is_none(),
+            select_discharge(&[a, b]).is_none(),
             "incomparable μ⃗ are a vortex, not a pick"
         );
     }
@@ -3730,44 +3852,100 @@ mod tests {
     fn descent_certifies_never_selects() {
         let loose = cert(Axis::Unit(0), [4, 4, 4, 4]);
         let tight = cert(Axis::Unit(0), [1, 1, 1, 1]);
-        let cands = vec![(loose.clone(), loose.mu), (tight.clone(), tight.mu)];
-        let won = select_discharge(&cands).expect("one μ⃗ dominates");
-        assert_eq!(won.mu, tight.mu, "the lane-wise minimum is the discharge");
+        let won = select_discharge(&[loose.clone(), tight.clone()]).expect("one μ⃗ dominates");
+        assert_eq!(won.mu_after, tight.mu_after, "the lane-wise minimum is the discharge");
+        fn perm(m: [u64; 4]) -> [u64; 4] {
+            [m[2], m[1], m[0], m[3]]
+        }
+        let mut lp = loose.clone();
+        let mut tp = tight.clone();
+        lp.mu_after = perm(lp.mu_after);
+        tp.mu_after = perm(tp.mu_after);
+        let won_p = select_discharge(&[lp, tp]).expect("permuted lanes keep the winner");
+        assert_eq!(won_p.axis, tight.axis, "the same pivot after a lane permutation");
         let a = cert(Axis::Unit(0), [2, 0, 0, 0]);
         let b = cert(Axis::Hue, [0, 2, 0, 0]);
         assert!(
-            select_discharge(&[(a.clone(), a.mu), (b.clone(), b.mu)]).is_none(),
-            "lane-incomparable discharges are not selected"
+            select_discharge(&[a, b]).is_none(),
+            "two incomparable discharges are a vortex"
         );
 
+        assert!(Form::default().loop_mu(0, 0).is_none(), "a missing loop refuses");
         let q = order4();
+        let qinv = q.inverse();
+        let x: Vec<Vec<u8>> = vec![
+            vec![0, 0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0, 0],
+            vec![0, 0, 1, 0, 0, 0],
+            vec![0, 0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0, 0],
+        ];
+        let bodies = crate::transducer::family::perceive(&x);
+        assert!(!bodies.is_empty(), "the bar is a body");
+        let class = bodies[0].moduli.clone();
+        assert!(!class.0.is_empty(), "the body has a chart");
+        let mut spoken = Form::default();
+        spoken.vertices.push(Vertex::Word {
+            address: [1u8; 32],
+            word: q.clone(),
+            rho: q1(),
+            placement: (q1() + q1() + q1(), q1() + q1() + q1()),
+            gauge: vec![(1, 1)],
+            class: class.clone(),
+            contact: None,
+        });
+        let y = crate::transducer::family::apply_form(
+            &spoken,
+            &x,
+            &Word::identity(),
+            &crate::transducer::family::NoCrystal,
+        )
+        .map(|s| s.grid())
+        .expect("q speaks the bar");
+        assert!(
+            y.iter().flatten().any(|&h| h != 0),
+            "the spoken image is not the empty frame"
+        );
         let mut f = chord_form(&[q.clone()]);
-        f.remainder = vec![(0, 0, 1, 2), (1, 0, 1, 0)];
-        assert_eq!(
-            f.loop_mu(0)[0],
-            1,
-            "S is the remainder cell the loop's vertices fail to speak"
-        );
-        assert_eq!(
-            f.loop_mu(0)[1],
-            0,
-            "G is not the form remainder: the loop vertices already carry 1→2"
-        );
+        if let Vertex::Word {
+            class: c,
+            gauge,
+            placement,
+            ..
+        } = &mut f.vertices[1]
+        {
+            *c = class;
+            *gauge = vec![(1, 1)];
+            *placement = (q1() + q1() + q1(), q1() + q1() + q1());
+        }
+        let bundle = vec![(x, y)];
         let snaps = f.pivot_loop(
             [0xde; 32],
             &Keyed::new(),
-            &Hold(vec![q.clone()]),
-            &mut crate::physics::Physics::default().stroke_n(16),
+            &Hold(vec![q.clone(), qinv]),
+            &mut crate::physics::Physics::default().stroke_n(32),
+            &bundle,
+            3,
         );
+        let discharged: Vec<_> = snaps
+            .iter()
+            .filter(|s| matches!(s, Snap::Discharged { .. }))
+            .collect();
+        let vortices: Vec<_> = snaps
+            .iter()
+            .filter(|s| matches!(s, Snap::Vortex { .. }))
+            .collect();
+        assert_eq!(discharged.len(), 1, "one dominating candidate applied: {snaps:?}");
         assert!(
-            snaps.iter().any(|s| matches!(s, Snap::Discharged { .. })),
-            "the dominating candidate is applied: {snaps:?}"
-        );
-        assert!(
-            !snaps.iter().any(|s| matches!(s, Snap::Vortex { .. })),
-            "one μ⃗ dominates, so no vortex line: {snaps:?}"
+            vortices.is_empty(),
+            "dominance is not a vortex line: {snaps:?}"
         );
         assert!(f.vortex.is_empty(), "the form does not hold a vortex cell");
+        if let Snap::Discharged { certificate, .. } = discharged[0] {
+            assert_eq!(certificate.mu_before[2], 3, "T is the extent passed in");
+            assert_eq!(certificate.mu_after[2], 3);
+        }
     }
 
     #[test]
@@ -3779,6 +3957,8 @@ mod tests {
             &crate::network::nerve::Keyed::new(),
             &crate::transducer::family::NoCrystal,
             &mut crate::physics::Physics::default().stroke_n(8),
+            &[],
+            0,
         );
         assert!(f.is_cauterized(), "filed finite torsion with empty remainder cauterizes");
         let e = as_element_form(&f, [1, 0, 0, 0]).expect("crystallized form");
@@ -3799,6 +3979,8 @@ mod tests {
             &crate::network::nerve::Keyed::new(),
             &crate::transducer::family::NoCrystal,
             &mut crate::physics::Physics::default().stroke_n(8),
+            &[],
+            0,
         );
         assert!(f0.is_cauterized(), "filed finite torsion with empty remainder cauterizes");
         let e = as_element_form(&f0, [1, 0, 0, 0]).expect("the filed form crystallizes");
@@ -3868,6 +4050,8 @@ mod tests {
             &horizon,
             &crate::transducer::family::NoCrystal,
             &mut crate::physics::Physics::default().stroke_n(8),
+            &[],
+            0,
         );
         assert!(
             !snaps.iter().any(|s| matches!(s, Snap::Demand { .. })),
@@ -3884,6 +4068,8 @@ mod tests {
             &crate::network::nerve::Keyed::new(),
             &crate::transducer::family::NoCrystal,
             &mut budget,
+            &[],
+            0,
         );
         let closed: Vec<u32> = first
             .iter()
@@ -3899,6 +4085,8 @@ mod tests {
             &crate::network::nerve::Keyed::new(),
             &crate::transducer::family::NoCrystal,
             &mut budget,
+            &[],
+            0,
         );
         for o in closed {
             assert!(
@@ -3958,6 +4146,8 @@ mod tests {
             &Keyed::new(),
             &Hold(vec![q.clone()]),
             &mut crate::physics::Physics::default().stroke_n(16),
+            &[],
+            0,
         );
         let Some(Snap::Discharged { certificate, .. }) = snaps.iter().find(|s| matches!(s, Snap::Discharged { .. })) else {
             panic!("a crystal holding q discharges: {snaps:?}");
@@ -3997,6 +4187,8 @@ mod tests {
             &Keyed::new(),
             &Hold(vec![q.clone(), qinv]),
             &mut crate::physics::Physics::default().stroke_n(16),
+            &[],
+            0,
         );
         let Some(Snap::Vortex { held, .. }) = snaps.iter().find(|s| matches!(s, Snap::Vortex { .. })) else {
             panic!("q and q⁻¹ are a vortex: {snaps:?}");
@@ -4013,6 +4205,8 @@ mod tests {
             &horizon,
             &crate::transducer::family::NoCrystal,
             &mut crate::physics::Physics::default().stroke_n(16),
+            &[],
+            0,
         );
         assert!(snaps.is_empty(), "a horizon holding q files silently: {snaps:?}");
         assert!(

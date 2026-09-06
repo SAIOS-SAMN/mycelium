@@ -6525,6 +6525,8 @@ mod tests {
             &crate::network::nerve::Keyed::new(),
             &crate::transducer::family::NoCrystal,
             &mut crate::physics::Physics::default().stroke_n(8),
+            &[],
+            0,
         );
         assert!(f.is_cauterized(), "filed finite torsion cauterizes");
         let e = as_element_form(&f, [1, 0, 0, 0]).expect("v2 tape");
