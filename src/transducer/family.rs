@@ -2063,11 +2063,10 @@ pub fn mint_sentence(
     family: &[(Grid, Grid)],
     crystal: &dyn Crystal,
 ) -> Option<element::Element> {
-    let (mut mag, remainders) = form_descent(&rule.form, family, crystal);
+    let (mag, remainders) = form_descent(&rule.form, family, crystal);
     if remainders.iter().any(|r| !r.is_empty()) {
         return None;
     }
-    mag[2] = mag[2].max((family.len() as u64).saturating_sub(1).max(1));
     super::sentence::as_element_form(&rule.form, mag)
 }
 
@@ -3031,9 +3030,8 @@ mod tests {
         );
         let minted = mint_sentence(&rule, &family, &NoCrystal).expect("the family mints");
         let mu = minted.magnitude();
-        assert!(mu[2] >= 1, "lane 2 carries the scene-state span");
         assert!(mu[1] >= 1, "recolour is gauge content, got {mu:?}");
-        assert_ne!(mu, [0, 0, 0, 1], "mint is the unflattened 4-vector");
+        assert!(mu.iter().any(|&x| x > 0), "T is form_descent, never a floor on the lane");
         assert_eq!(minted.description().get(1), Some(&3), "the minted word is the form's v3 tape");
         assert_eq!(
             minted.address(),
