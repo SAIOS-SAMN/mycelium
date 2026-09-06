@@ -125,20 +125,17 @@ pub fn pieces(chain: &[Cell]) -> Vec<Vec<Cell>> {
     cells.sort_unstable();
     cells.dedup();
     let owner = components(cells.len(), &incidence(&cells));
-    // Group by component root: one ordering, consecutive runs are the
-    // pieces — no bucket is searched for.
-    let mut keyed: Vec<(usize, Cell)> = cells.into_iter().enumerate().map(|(i, c)| (owner[i], c)).collect();
-    keyed.sort_unstable();
-    let mut out: Vec<Vec<Cell>> = Vec::new();
-    let mut last: Option<usize> = None;
-    for (root, cell) in keyed {
-        if last != Some(root) {
-            out.push(Vec::new());
-            last = Some(root);
+    let mut by: Keyed<Vec<Cell>> = Keyed::new();
+    for (i, cell) in cells.into_iter().enumerate() {
+        let k = vertex_ix_key(owner[i] as u16);
+        match by.get_mut(&k) {
+            Some(v) => v.push(cell),
+            None => {
+                by.insert(k, vec![cell]);
+            }
         }
-        out.last_mut().unwrap().push(cell);
     }
-    out
+    by.fiber(&ROOT).map(|(_, v)| v.clone()).collect()
 }
 
 /// THE INCIDENCE of a support: its 1-skeleton, the pairs of cells sharing
@@ -234,33 +231,40 @@ pub fn replay_at<'a>(word_at: &impl Fn(usize) -> Option<&'a Element>, cites: &[C
 /// THE REPLAY OF OPERATORS: each operator is a body (the word's cells in
 /// its own frame) with the versor that carries it; nothing is fetched. The
 /// utterance is verified as it was spoken.
+fn cell_at_key(r: i64, c: i64) -> [u8; 32] {
+    let mut k = [0u8; 32];
+    k[..8].copy_from_slice(&r.to_le_bytes());
+    k[8..16].copy_from_slice(&c.to_le_bytes());
+    k
+}
+
 pub fn replay_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Vec<Cell> {
-    let mut sorted_target = target.to_vec();
-    sorted_target.sort_unstable();
-    let mut spoken = vec![false; sorted_target.len()];
+    let mut at: Keyed<Cell> = Keyed::new();
+    for &cell in target {
+        at.insert(cell_at_key(cell.0, cell.1), cell);
+    }
+    let mut spoken: Keyed<()> = Keyed::new();
     let mut over: Vec<Cell> = Vec::new();
-    // APPLY g, never hunt the scene: each operator carries its own cells
-    // forward (each cell as a blade, exact under dilation), and every image
-    // cell is one keyed read of the target. A hit with the same transition
-    // is spoken; an image cell the target lacks is over-explained. Linear
-    // in the proof, never the scene times the word.
     for (v, pat) in ops {
         for &(wr, wc, wb, wa) in pat {
             let Some(image) = element::carry_cell(v, wr, wc) else { continue };
             for (tr, tc) in image {
-                match sorted_target.binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc))) {
-                    Ok(k) => {
-                        if (sorted_target[k].2, sorted_target[k].3) == (wb, wa) {
-                            spoken[k] = true;
-                        }
+                let k = cell_at_key(tr, tc);
+                match at.get(&k) {
+                    Some(t) if (t.2, t.3) == (wb, wa) => {
+                        spoken.insert(k, ());
                     }
-                    Err(_) => over.push((tr, tc, wb, wa)),
+                    Some(_) => {}
+                    None => over.push((tr, tc, wb, wa)),
                 }
             }
         }
     }
-    let mut residual: Vec<Cell> =
-        sorted_target.iter().zip(&spoken).filter(|(_, s)| !**s).map(|(t, _)| *t).collect();
+    let mut residual: Vec<Cell> = at
+        .fiber(&ROOT)
+        .filter(|(k, _)| !spoken.contains(k))
+        .map(|(_, t)| *t)
+        .collect();
     residual.extend(over);
     residual.sort_unstable();
     residual.dedup();
@@ -320,23 +324,34 @@ pub fn seam_defect(language: &[Element], cites: &[Cite], target: &[Cell]) -> Vec
 }
 
 pub fn seam_defect_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Vec<Cell> {
-    let mut sorted_target = target.to_vec();
-    sorted_target.sort_unstable();
-    let mut spoken: Vec<Keyed<()>> = (0..sorted_target.len()).map(|_| Keyed::new()).collect();
+    let mut first: Keyed<(u8, u8)> = Keyed::new();
+    let mut conflict: Keyed<()> = Keyed::new();
+    let mut at: Keyed<Cell> = Keyed::new();
+    for &cell in target {
+        at.insert(cell_at_key(cell.0, cell.1), cell);
+    }
     for (v, pat) in ops {
         for &(wr, wc, wb, wa) in pat {
             let Some(p) = element::carry_center(v, wr, wc) else { continue };
             let (tr, tc) = element::cell_of(&p);
-            if let Ok(k) = sorted_target.binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc))) {
-                spoken[k].insert(element::hue_pair_key(wb, wa), ());
+            let k = cell_at_key(tr, tc);
+            if at.get(&k).is_none() {
+                continue;
+            }
+            match first.get(&k) {
+                None => {
+                    first.insert(k, (wb, wa));
+                }
+                Some(&(hb, ha)) if (hb, ha) != (wb, wa) => {
+                    conflict.insert(k, ());
+                }
+                _ => {}
             }
         }
     }
-    sorted_target
-        .iter()
-        .zip(&spoken)
-        .filter(|(_, s)| s.len() > 1)
-        .map(|(t, _)| *t)
+    at.fiber(&ROOT)
+        .filter(|(k, _)| conflict.contains(k))
+        .map(|(_, t)| *t)
         .collect()
 }
 
@@ -900,16 +915,12 @@ impl Form {
 
 impl Vertex {
 
-    pub fn word_in(&self, form: &Form) -> Word {
+    pub fn word_in(&self, form: &Form) -> Option<Word> {
         match self {
-            Vertex::Frame | Vertex::Unfolded { .. } => Word::identity(),
-            Vertex::Word { word, .. } => word.clone(),
-            Vertex::Glued { placement, .. } => placement.clone(),
-            Vertex::Rebased { by, .. } => form
-                .vertices
-                .get(*by as usize)
-                .map(|v| v.word_in(form))
-                .unwrap_or_else(Word::identity),
+            Vertex::Frame | Vertex::Unfolded { .. } => Some(Word::identity()),
+            Vertex::Word { word, .. } => Some(word.clone()),
+            Vertex::Glued { placement, .. } => Some(placement.clone()),
+            Vertex::Rebased { by, .. } => form.vertices.get(*by as usize)?.word_in(form),
         }
     }
 
@@ -934,8 +945,8 @@ impl Form {
     pub fn face_of(&self, i: u16, j: u16) -> Option<Transport> {
         let va = self.vertices.get(i as usize)?;
         let vb = self.vertices.get(j as usize)?;
-        let wa = va.word_in(self);
-        let wb = vb.word_in(self);
+        let wa = va.word_in(self)?;
+        let wb = vb.word_in(self)?;
         let word = wb.compose(&wa.inverse()).normal_form();
         let ta = vertex_translation(va, self);
         let tb = vertex_translation(vb, self);
@@ -984,7 +995,7 @@ impl Form {
         if !matches!(s.vertices.first(), Some(Vertex::Frame)) {
             return None;
         }
-        if !s.vertices[0].word_in(s).is_identity() {
+        if !s.vertices[0].word_in(s).is_some_and(|w| w.is_identity()) {
             return None;
         }
         let d = s.depth_of();
@@ -1019,19 +1030,14 @@ impl Form {
         if n == 0 {
             return;
         }
-        let mut keep = vec![true; n];
-        for i in 0..n {
-            if drop.contains(&vertex_ix_key(i as u16)) && i != 0 {
-                keep[i] = false;
-            }
-        }
         let mut old_to_new: Vec<Option<u16>> = vec![None; n];
         let mut new_verts = Vec::new();
         for (i, v) in self.vertices.iter().enumerate() {
-            if keep[i] {
-                old_to_new[i] = Some(new_verts.len() as u16);
-                new_verts.push(v.clone());
+            if i != 0 && drop.contains(&vertex_ix_key(i as u16)) {
+                continue;
             }
+            old_to_new[i] = Some(new_verts.len() as u16);
+            new_verts.push(v.clone());
         }
         let mut face_old_to_new: Vec<Option<u16>> = vec![None; self.faces.len()];
         let mut new_faces = Vec::new();
@@ -1070,17 +1076,18 @@ impl Form {
             let Some(&Some(nc)) = face_old_to_new.get(*chord as usize) else {
                 continue;
             };
-            let mapped: Vec<(u8, u8)> = sigma
+            let Some(mapped) = sigma
                 .iter()
-                .filter_map(|&(a, c)| {
+                .map(|&(a, c)| {
                     let i = old_to_new.get(a as usize).copied().flatten()?;
                     let j = old_to_new.get(c as usize).copied().flatten()?;
                     Some((i as u8, j as u8))
                 })
-                .collect();
-            if mapped.len() == sigma.len() {
-                torsion.insert(*k, (mapped, *ell, nc));
-            }
+                .collect::<Option<Vec<_>>>()
+            else {
+                continue;
+            };
+            torsion.insert(*k, (mapped, *ell, nc));
         }
         self.vertices = new_verts;
         self.faces = new_faces;
@@ -1168,15 +1175,18 @@ impl Form {
         by: u16,
         of: u16,
         shift: (num_rational::BigRational, num_rational::BigRational),
-    ) -> u16 {
-        let Some(Vertex::Word {
+    ) -> Option<u16> {
+        if (by as usize) >= self.vertices.len() {
+            return None;
+        }
+        let Vertex::Word {
             rho,
             gauge,
             class,
             ..
-        }) = self.vertices.get(of as usize).cloned()
+        } = self.vertices.get(of as usize).cloned()?
         else {
-            return of;
+            return None;
         };
         self.vertices[of as usize] = Vertex::Rebased {
             by,
@@ -1186,7 +1196,7 @@ impl Form {
             gauge,
             class,
         };
-        of
+        Some(of)
     }
 
     pub fn unfold(&mut self, measure: Measure) -> u16 {
@@ -1221,51 +1231,6 @@ impl Form {
     /// A18 over this form's loops.
     pub fn rank(&self) -> Rank {
         rank_of_holonomies(self.loops.iter().map(|lp| &lp.holonomy))
-    }
-
-    /// Pressure of one held loop from its vertices and remainder.
-    /// None when the loop is malformed (a face names a missing vertex).
-    /// T is the extent the loop has been held, passed in; never a sum of
-    /// cited magnitudes. Dominance uses [`bundle_pressure`] after a trial.
-    pub fn loop_mu(&self, idx: usize, t_extent: u64) -> Option<[u64; 4]> {
-        let lp = self.loops.get(idx)?;
-        let mut gauges: Vec<(u8, u8)> = Vec::new();
-        let mut h = 0u64;
-        for &vi in &lp.vertices {
-            match self.vertices.get(vi as usize) {
-                Some(Vertex::Word { gauge, .. } | Vertex::Rebased { gauge, .. }) => {
-                    gauges.extend(gauge.iter().copied());
-                }
-                Some(Vertex::Glued { depth, .. }) => {
-                    h = h.max((*depth as u64).saturating_add(1));
-                }
-                _ => {}
-            }
-        }
-        gauges.sort_unstable();
-        gauges.dedup();
-        let mut s = 0u64;
-        let mut g = 0u64;
-        for &(_, _, b, a) in &self.remainder {
-            match CellKind::of(b, a) {
-                CellKind::Recoloured => {
-                    if !gauges.iter().any(|&p| p == (b, a)) {
-                        g += 1;
-                    }
-                }
-                CellKind::Created | CellKind::Erased => s += 1,
-                CellKind::Unchanged => {}
-            }
-        }
-        if h == 0 {
-            let bodies: Vec<(i64, i64, u8)> = self
-                .remainder
-                .iter()
-                .filter_map(|&(r, c, _, a)| (a != 0).then_some((r, c, a)))
-                .collect();
-            h = super::peel::peel_body(&bodies).len() as u64;
-        }
-        Some([s, g, t_extent, h])
     }
 
     /// The class vector of loop `idx` (12.6): plane coordinates from the
@@ -1723,9 +1688,8 @@ fn tree_path(adj: &[Vec<(usize, usize)>], src: usize, dst: usize) -> Option<(Vec
         return Some((vec![src], Vec::new()));
     }
     let mut prev: Vec<Option<(usize, usize)>> = vec![None; adj.len()];
-    let mut seen = vec![false; adj.len()];
+    prev[src] = Some((src, 0));
     let mut q = vec![src];
-    seen[src] = true;
     let mut qi = 0usize;
     while qi < q.len() {
         let u = q[qi];
@@ -1734,15 +1698,14 @@ fn tree_path(adj: &[Vec<(usize, usize)>], src: usize, dst: usize) -> Option<(Vec
             break;
         }
         for &(v, fi) in &adj[u] {
-            if seen[v] {
+            if prev[v].is_some() {
                 continue;
             }
-            seen[v] = true;
             prev[v] = Some((u, fi));
             q.push(v);
         }
     }
-    if !seen[dst] {
+    if prev[dst].is_none() {
         return None;
     }
     let mut path = vec![dst];
@@ -1769,10 +1732,8 @@ fn spell_versor(v: &Versor) -> Option<Word> {
 }
 
 /// Transport class of a conformal versor: the spelled word's class key.
-pub fn class_key_of_versor(v: &Versor) -> [u8; 32] {
-    spell_versor(v)
-        .map(|w| w.class_key())
-        .unwrap_or([0; 32])
+pub fn class_key_of_versor(v: &Versor) -> Option<[u8; 32]> {
+    Some(spell_versor(v)?.class_key())
 }
 
 /// The invariant cochain of a family (chapter 31): the form, its sections,
@@ -1798,19 +1759,11 @@ impl SentenceRule {
     /// Hue map of a target chart. One Keyed from the form's Word vertices,
     /// then a read; never a scan.
     pub fn hue_for(&self, inv: &stalk::Invariant) -> Vec<(u8, u8)> {
-        if let Some(m) = self.form.hue_maps.get(&inv.key()) {
-            return m.clone();
-        }
-        let mut by: Keyed<Vec<(u8, u8)>> = Keyed::new();
-        for v in &self.form.vertices {
-            if let Vertex::Word { class, gauge, .. } = v {
-                let k = class.key();
-                if !by.contains(&k) {
-                    by.insert(k, gauge.clone());
-                }
-            }
-        }
-        by.get(&inv.key()).cloned().unwrap_or_default()
+        self.form
+            .hue_maps
+            .get(&inv.key())
+            .cloned()
+            .unwrap_or_default()
     }
 
     /// Placement of a transport class. One Keyed from the form's Word vertices
@@ -3246,7 +3199,7 @@ fn chart_of_form(f: &Form) -> crate::transducer::stalk::Invariant {
     for v in &f.vertices {
         match v {
             Vertex::Word { .. } | Vertex::Rebased { .. } => {
-                let row = v.word_in(f).form().map(|pf| {
+                let row = v.word_in(f).and_then(|w| w.form()).map(|pf| {
                     let mut row = vec![1u64, pf.parity as u64];
                     row.extend(pf.rot.iter().map(|&x| x as u64));
                     row
@@ -3283,7 +3236,7 @@ pub fn coboundary_gauge(a: &Form, b: &Form) -> Option<Vec<Word>> {
     }
     let mut gamma = Vec::with_capacity(a.vertices.len());
     for (va, vb) in a.vertices.iter().zip(&b.vertices) {
-        gamma.push(vb.word_in(b).compose(&va.word_in(a).inverse()));
+        gamma.push(vb.word_in(b)?.compose(&va.word_in(a)?.inverse()));
     }
     for (fa, fb) in a.faces.iter().zip(&b.faces) {
         if fa.i != fb.i || fa.j != fb.j {
@@ -3999,7 +3952,6 @@ mod tests {
             "two incomparable discharges are a vortex"
         );
 
-        assert!(Form::default().loop_mu(0, 0).is_none(), "a missing loop refuses");
         let q = order4();
         let qinv = q.inverse();
         let x: Vec<Vec<u8>> = vec![

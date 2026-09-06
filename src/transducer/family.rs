@@ -1640,7 +1640,7 @@ fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
             }
         });
         if constant {
-            form.rebase(face.i, face.j, shift);
+            let _ = form.rebase(face.i, face.j, shift);
         }
     }
     for fi in 0..form.faces.len() {
@@ -2541,7 +2541,7 @@ mod tests {
                 assert_eq!(rho, &q(1));
                 assert_eq!(gauge, &vec![(3, 5)], "B keeps its own hue map");
                 assert_eq!(class, &b.moduli, "B keeps its own chart");
-                assert_eq!(form.vertices[2].word_in(&form), rot, "the word is A's");
+                assert_eq!(form.vertices[2].word_in(&form), Some(rot), "the word is A's");
             }
             other => panic!("expected Rebased, got {other:?}"),
         }

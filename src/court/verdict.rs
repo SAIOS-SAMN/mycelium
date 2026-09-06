@@ -85,7 +85,7 @@ pub fn replay_form_with(
             .vertices
             .iter()
             .find(|v| matches!(v, Vertex::Frame))
-            .is_some_and(|fr| fr.word_in(&cited).is_identity());
+            .is_some_and(|fr| fr.word_in(&cited).is_some_and(|w| w.is_identity()));
         if !frame_is_identity {
             return Some(REFUSE_GLUED_FRAME_GAUGED);
         }
@@ -169,7 +169,7 @@ fn vertex_tape_and_moves(
                 }
             }
             Vertex::Rebased { .. } => {
-                if v.word_in(f).is_identity() {
+                if v.word_in(f).is_some_and(|w| w.is_identity()) {
                     return Some(REFUSE_REBASE_TRIVIAL);
                 }
             }

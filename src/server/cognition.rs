@@ -5700,9 +5700,10 @@ impl Kernel {
                         None
                     };
                     let v = element::Versor::from_bytes(b, pos)?;
-                    let class_key = ck_stored.unwrap_or_else(|| {
-                        crate::transducer::sentence::class_key_of_versor(&v)
-                    });
+                    let class_key = match ck_stored {
+                        Some(k) => k,
+                        None => crate::transducer::sentence::class_key_of_versor(&v)?,
+                    };
                     kernel.cocycle_at.insert(key, (v, tu, a, bp, class_key));
                     // Chart index is rebuilt on next glue; hot row is enough.
                 }
