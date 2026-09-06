@@ -37,7 +37,7 @@ pub type Cite = (usize, Versor, usize);
 /// What deconstruction produced: the citations in body order, the
 /// connection between consecutive cited bodies (the relative transport
 /// `Vᵢ⁻¹ Vⱼ`), the residual no word speaks, and the widest stratum read.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default)]
 pub struct Sentence {
     pub cites: Vec<Cite>,
     /// PUNCTURES: bodies a held word carries by shape under a gauge the
@@ -47,9 +47,8 @@ pub struct Sentence {
     pub punctures: Vec<(usize, Versor, Vec<Cell>)>,
     pub connection: Vec<Versor>,
     pub residual: Vec<Cell>,
-    /// 1 when every stratum read named one word; more is the measurement
-    /// that the moduli want another axis (never a list to test through).
-    pub multiplicity: usize,
+    /// Stratum width per body key, never a maximum over bodies.
+    pub multiplicity: Keyed<usize>,
 }
 
 impl Sentence {
@@ -277,38 +276,41 @@ pub fn replay_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Vec<Cel
 /// stable coordinate across copies of the word (a copy that gained a
 /// section orders them differently); the target's own transitions are.
 /// None when no assignment agrees.
-pub fn gauge_of(word: &Element, v: &Versor, target: &[Cell]) -> Option<usize> {
-    let mut sorted_target = target.to_vec();
-    sorted_target.sort_unstable();
-    // The charge the target speaks where the word lands: the word's cells
-    // carried forward by V, each a keyed read of the target. That charge's
-    // key names the word's candidate assignments in one read; each is
-    // confirmed by one forward replay. 0 / 1 / many is the measurement.
+pub fn gauge_of(word: &Element, v: &Versor, target: &[Cell]) -> Keyed<usize> {
+    let mut at: Keyed<Cell> = Keyed::new();
+    for &cell in target {
+        at.insert(cell_at_key(cell.0, cell.1), cell);
+    }
     let pos = element::positions(word.sub());
     let landed: Vec<(u8, u8)> = pos
         .iter()
         .filter_map(|&(wr, wc)| {
             let p = element::carry_center(v, wr, wc)?;
             let (tr, tc) = element::cell_of(&p);
-            let k = sorted_target.binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc))).ok()?;
-            Some((sorted_target[k].2, sorted_target[k].3))
+            let t = at.get(&cell_at_key(tr, tc))?;
+            Some((t.2, t.3))
         })
         .collect();
+    let mut agreeing = Keyed::new();
     if landed.is_empty() {
-        return None;
+        return agreeing;
     }
     let held = word.assignments();
-    word.assignments_by_profile(&element::gauge_key(&landed)).into_iter().find(|&k| {
-        let Some(assignment) = held.get(k) else { return false };
-        pos.iter().zip(assignment).all(|(&(wr, wc), &(wb, wa))| {
+    for k in word.assignments_by_profile(&element::gauge_key(&landed)) {
+        let Some(assignment) = held.get(k) else { continue };
+        let ok = pos.iter().zip(assignment).all(|(&(wr, wc), &(wb, wa))| {
             let Some(p) = element::carry_center(v, wr, wc) else { return true };
             let (tr, tc) = element::cell_of(&p);
-            match sorted_target.binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc))) {
-                Ok(j) => (sorted_target[j].2, sorted_target[j].3) == (wb, wa),
-                Err(_) => true,
+            match at.get(&cell_at_key(tr, tc)) {
+                Some(t) => (t.2, t.3) == (wb, wa),
+                None => true,
             }
-        })
-    })
+        });
+        if ok {
+            agreeing.insert(index_key(k), k);
+        }
+    }
+    agreeing
 }
 
 /// THE SEAM CONDITION — the cocycle on overlaps. Where two citations carry
@@ -443,7 +445,6 @@ pub fn locate_or_puncture_on<'a>(
     exclude: Option<usize>,
 ) -> (Option<Cite>, Option<(usize, Versor, Vec<Cell>)>, usize) {
     let Some(shape) = element::shape_of_chain(piece) else { return (None, None, 0) };
-    let want = profile(&element::assignment(piece));
     let stratum: Vec<usize> = fiber_of(&stalk::invariant(piece)).iter().filter_map(|a| index_of(a)).collect();
     let key = element::gauge_key(&element::assignment(piece));
     let stratum: Vec<usize> = stratum
@@ -458,17 +459,17 @@ pub fn locate_or_puncture_on<'a>(
     let Some(held) = shape_at(i) else { return (None, None, m) };
     let Some(to_word) = super::blade::versor_between(&shape, held) else { return (None, None, m) };
     let Some(v) = to_word.versor_inverse() else { return (None, None, m) };
-    let _ = &want;
-    let gauge: Vec<usize> = word.assignments_by_profile(&element::gauge_key(&element::assignment(piece)));
-    match gauge.as_slice() {
-        [asg] => {
-            let cite: Cite = (i, v.clone(), *asg);
+    let agreeing = gauge_of(word, &v, piece);
+    let mut asgs = agreeing.fiber(&ROOT);
+    if let Some((_, &asg)) = asgs.next() {
+        if asgs.next().is_none() {
+            let cite: Cite = (i, v.clone(), asg);
             if replay_at(word_at, std::slice::from_ref(&cite), piece).is_empty() {
                 return (Some(cite), None, m);
             }
+        } else {
+            return (None, None, agreeing.len());
         }
-        [] => {}
-        _ => return (None, None, gauge.len()),
     }
     let pos = element::positions(word.sub());
     if let Some(asg) = element::pullback(&pos, piece, &v) {
@@ -485,11 +486,8 @@ pub fn locate_or_puncture_on<'a>(
 /// its own connected pieces. None when the body is a single class — a
 /// stalk, cited or residual, never opened further. The index is built
 /// once from the body's cells; locate then reads each fiber.
-fn open_by_chart(body: &[Cell]) -> Option<Vec<Vec<Cell>>> {
+fn open_by_chart(body: &[Cell]) -> Vec<Vec<Cell>> {
     let fibers = element::gauge_fibers(body);
-    if fibers.len() <= 1 {
-        return None;
-    }
     let mut idx: Keyed<Vec<Vec<Cell>>> = Keyed::new();
     for (class, fiber) in fibers {
         idx.insert(element::hue_pair_key(class.0, class.1), pieces(&fiber));
@@ -498,7 +496,44 @@ fn open_by_chart(body: &[Cell]) -> Option<Vec<Vec<Cell>>> {
     for (_, subs) in idx.fiber(&ROOT) {
         out.extend(subs.clone());
     }
-    Some(out)
+    if out.is_empty() {
+        out.push(body.to_vec());
+    }
+    out
+}
+
+fn body_key(body: &[Cell]) -> [u8; 32] {
+    match body.first() {
+        Some(c) => cell_at_key(c.0, c.1),
+        None => [0u8; 32],
+    }
+}
+
+fn place_located<'a>(
+    out: &mut Sentence,
+    located: (Option<Cite>, Option<(usize, Versor, Vec<Cell>)>, usize),
+    body: &[Cell],
+    word_at: &impl Fn(usize) -> Option<&'a Element>,
+    fiber_of: &impl Fn(&stalk::Invariant) -> Vec<[u8; 32]>,
+    index_of: &impl Fn(&[u8; 32]) -> Option<usize>,
+    shape_at: &impl Fn(usize) -> Option<&'a Shape>,
+    exclude: Option<usize>,
+) {
+    out.multiplicity.insert(body_key(body), located.2);
+    match located {
+        (Some(c), _, _) => out.cites.push(c),
+        (None, Some(p), _) => out.punctures.push(p),
+        (None, None, _) => {
+            for sub in open_by_chart(body) {
+                if sub.as_slice() == body {
+                    out.residual.extend(sub);
+                    continue;
+                }
+                let loc = locate_or_puncture_on(word_at, fiber_of, index_of, shape_at, &sub, exclude);
+                place_located(out, loc, &sub, word_at, fiber_of, index_of, shape_at, exclude);
+            }
+        }
+    }
 }
 
 /// DECONSTRUCT a chain over a language: the whole chain located first (a
@@ -513,48 +548,7 @@ pub fn deconstruct<'a>(
     chain: &[Cell],
     exclude: Option<usize>,
 ) -> Sentence {
-    let mut out = Sentence::default();
-    if chain.is_empty() {
-        return out;
-    }
-    let bodies = pieces(chain);
-    if bodies.len() > 1 {
-        let (whole, m) = locate(words, atlas, index_of, shape_at, chain, exclude);
-        out.multiplicity = m;
-        if let Some(c) = whole {
-            out.cites.push(c);
-            return out;
-        }
-    }
-    for body in bodies {
-        let (c, p, m) = locate_or_puncture(words, atlas, index_of, shape_at,&body, exclude);
-        out.multiplicity = out.multiplicity.max(m);
-        match (c, p) {
-            (Some(c), _) => out.cites.push(c),
-            (None, Some(p)) => out.punctures.push(p),
-            (None, None) => match open_by_chart(&body) {
-                None => out.residual.extend(body),
-                Some(subs) => {
-                    for sub in subs {
-                        let (c, p, m) = locate_or_puncture(words, atlas, index_of, shape_at, &sub, exclude);
-                        out.multiplicity = out.multiplicity.max(m);
-                        match (c, p) {
-                            (Some(c), _) => out.cites.push(c),
-                            (None, Some(p)) => out.punctures.push(p),
-                            (None, None) => out.residual.extend(sub),
-                        }
-                    }
-                }
-            },
-        }
-    }
-    out.residual.sort_unstable();
-    out.connection = out
-        .cites
-        .windows(2)
-        .filter_map(|w| Some(w[0].1.versor_inverse()?.geo(&w[1].1)))
-        .collect();
-    out
+    deconstruct_on(&|i| words.get(i), &|inv| atlas.fiber(inv), index_of, shape_at, chain, exclude)
 }
 
 /// Deconstruct over a getter, so a language snapshot of `Arc<Element>`
@@ -583,37 +577,20 @@ pub fn deconstruct_on<'a>(
     if chain.is_empty() {
         return out;
     }
-    let bodies = pieces(chain);
-    if bodies.len() > 1 {
-        let (whole, _, m) = locate_or_puncture_on(word_at, fiber_of, index_of, shape_at, chain, exclude);
-        out.multiplicity = m;
-        if let Some(c) = whole {
-            out.cites.push(c);
-            return out;
-        }
+    let whole = locate_or_puncture_on(word_at, fiber_of, index_of, shape_at, chain, exclude);
+    if whole.0.is_some() {
+        place_located(&mut out, whole, chain, word_at, fiber_of, index_of, shape_at, exclude);
+        out.residual.sort_unstable();
+        out.connection = out
+            .cites
+            .windows(2)
+            .filter_map(|w| Some(w[0].1.versor_inverse()?.geo(&w[1].1)))
+            .collect();
+        return out;
     }
-    for body in bodies {
-        let (c, p, m) = locate_or_puncture_on(word_at, fiber_of, index_of, shape_at, &body, exclude);
-        out.multiplicity = out.multiplicity.max(m);
-        match (c, p) {
-            (Some(c), _) => out.cites.push(c),
-            (None, Some(p)) => out.punctures.push(p),
-            (None, None) => match open_by_chart(&body) {
-                None => out.residual.extend(body),
-                Some(subs) => {
-                    for sub in subs {
-                        let (c, p, m) =
-                            locate_or_puncture_on(word_at, fiber_of, index_of, shape_at, &sub, exclude);
-                        out.multiplicity = out.multiplicity.max(m);
-                        match (c, p) {
-                            (Some(c), _) => out.cites.push(c),
-                            (None, Some(p)) => out.punctures.push(p),
-                            (None, None) => out.residual.extend(sub),
-                        }
-                    }
-                }
-            },
-        }
+    for body in pieces(chain) {
+        let loc = locate_or_puncture_on(word_at, fiber_of, index_of, shape_at, &body, exclude);
+        place_located(&mut out, loc, &body, word_at, fiber_of, index_of, shape_at, exclude);
     }
     out.residual.sort_unstable();
     out.connection = out
@@ -3602,7 +3579,10 @@ mod tests {
         assert_eq!(s.cites[0].0, 0, "the bar, not the other-hued bar");
         assert!(s.is_closed());
         assert!(replay(&words, &s.cites, &target).is_empty(), "the citation replays to closure");
-        assert!(s.multiplicity >= 1);
+        assert!(
+            !s.multiplicity.is_empty(),
+            "stratum width is recorded per body"
+        );
         // A 2× dilated bar with the other hues: the other bar at ρ = 2.
         let big = vec![(0, 0, 7, 8), (0, 1, 7, 8), (0, 2, 7, 8), (0, 3, 7, 8), (1, 0, 7, 8), (1, 1, 7, 8), (1, 2, 7, 8), (1, 3, 7, 8)];
         let s = deconstruct(&words, &atlas, &index_of, &shape_at,&big, None);
@@ -3614,11 +3594,44 @@ mod tests {
         let mixed = vec![(0, 0, 1, 2), (0, 1, 1, 2), (4, 4, 3, 4), (9, 9, 5, 6), (9, 10, 5, 6), (10, 9, 5, 6)];
         let s = deconstruct(&words, &atlas, &index_of, &shape_at,&mixed, None);
         assert_eq!(s.cites.len(), 2);
+        assert_eq!(
+            s.multiplicity.len(),
+            3,
+            "bar, dot and residual each have a width, never one maximum"
+        );
         assert_eq!(s.connection.len(), 1, "one relative transport between two cited bodies");
         assert_eq!(s.residual, vec![(9, 9, 5, 6), (9, 10, 5, 6), (10, 9, 5, 6)]);
         // Excluding the bar itself: a bar chain has no other word of hue 1→2.
         let s = deconstruct(&words, &atlas, &index_of, &shape_at,words[0].sub(), Some(0));
         assert!(s.cites.is_empty() && !s.is_closed(), "no word but itself speaks it");
+    }
+
+    #[test]
+    fn deconstruct_multiplicity_is_per_body() {
+        let bar = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+        let dot = from_residual(&germinate(&[(0, 0, 3u8)], &[(0, 0, 4u8)]).unwrap());
+        let words = vec![bar, dot];
+        let atlas = Stalks::over_elements(words.iter());
+        let mut index = Keyed::new();
+        for (i, w) in words.iter().enumerate() {
+            index.insert(w.address(), i);
+        }
+        let index_of = |a: &[u8; 32]| index.get(a).copied();
+        let shapes: Vec<Option<Shape>> = words.iter().map(|w| element::shape_of_chain(w.sub())).collect();
+        let shape_at = |i: usize| shapes.get(i).and_then(|s| s.as_ref());
+        let mixed = vec![(0, 0, 1, 2), (0, 1, 1, 2), (4, 4, 3, 4)];
+        let s = deconstruct(&words, &atlas, &index_of, &shape_at, &mixed, None);
+        assert_eq!(s.cites.len(), 2);
+        assert_eq!(s.multiplicity.len(), 2, "two bodies, two keys");
+        let widths: Vec<usize> = s
+            .multiplicity
+            .fiber(&ROOT)
+            .map(|(_, w)| *w)
+            .collect();
+        assert!(
+            widths.iter().all(|&w| w >= 1),
+            "each body keeps its own stratum width: {widths:?}"
+        );
     }
 
     /// The receiving direction: two citations carrying different words

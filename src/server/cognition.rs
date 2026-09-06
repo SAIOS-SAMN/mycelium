@@ -6277,11 +6277,16 @@ pub fn resolve_cites(
 ) -> Vec<Cite> {
     cites
         .iter()
-        .filter_map(|(addr, _st, g, asg, _)| {
+        .filter_map(|(addr, _st, g, _asg, _)| {
             let i = language.at(addr)?;
             // The gauge coordinate is read from the target, never trusted
             // as an index into this copy of the word.
-            let gauge = crate::transducer::sentence::gauge_of(&language.words[i], g, target).unwrap_or(*asg as usize);
+            let agreeing = crate::transducer::sentence::gauge_of(&language.words[i], g, target);
+            let mut it = agreeing.fiber(&crate::network::nerve::ROOT);
+            let (_, &gauge) = it.next()?;
+            if it.next().is_some() {
+                return None;
+            }
             Some((i, g.clone(), gauge))
         })
         .collect()
