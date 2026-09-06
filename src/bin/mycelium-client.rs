@@ -165,7 +165,7 @@ fn speak_form(
     tag: &str,
     rule: &mycelium::transducer::sentence::SentenceRule,
     train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
-    family: &[u8; 32],
+    family: &[u8],
 ) -> bool {
     use mycelium::transducer::alphabet::Rotor;
     use mycelium::transducer::sentence::{as_element_form, Vertex};
@@ -319,7 +319,7 @@ fn main() {
         let _ = ctrlc::set_handler(move || stop.store(true, Ordering::SeqCst));
     }
     let mut extract_memo: mycelium::network::nerve::Keyed<(
-        [u8; 32],
+        mycelium::transducer::a21::Address,
         Option<mycelium::transducer::sentence::SentenceRule>,
     )> = mycelium::network::nerve::Keyed::new();
     let mut last_lang = (usize::MAX, usize::MAX, usize::MAX);

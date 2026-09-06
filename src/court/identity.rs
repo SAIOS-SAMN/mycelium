@@ -35,6 +35,19 @@ impl HyphaKey {
         self.vk.to_bytes()
     }
 
+    /// KDF over a seat name: a seed for an ed25519 voice, not a digest of
+    /// mathematical content. The identity carried everywhere is the vk.
+    pub fn seed_from_name(name: &str) -> [u8; 32] {
+        *blake3::hash(format!("mycelium-kernel:{name}").as_bytes()).as_bytes()
+    }
+
+    /// Verifying key of the voice seated at `name`.
+    pub fn vk_from_name(name: &str) -> [u8; 32] {
+        let seed = Self::seed_from_name(name);
+        let sk = SigningKey::from_bytes(&seed);
+        sk.verifying_key().to_bytes()
+    }
+
     /// Log tag and ledger prefix: first two bytes of the verifying key.
     pub fn prefix(&self) -> String {
         let b = self.vk_bytes();

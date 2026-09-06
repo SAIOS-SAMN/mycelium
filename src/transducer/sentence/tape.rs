@@ -1,6 +1,6 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 
-//! Form tape: v3 encode and decode.
+//! Form tape: v4 encode and decode. Addresses are len16 + bytes.
 
 use super::chain::Cell;
 use super::form::*;
@@ -89,7 +89,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
                 contact,
             } => {
                 out.push(1);
-                out.extend_from_slice(address);
+                crate::transducer::a21::put_addr(out, address);
                 word_to_form_bytes(word, *contact, out);
                 alphabet::put_q(out, rho);
                 alphabet::put_q(out, &placement.0);
@@ -109,7 +109,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
                 placement,
             } => {
                 out.push(2);
-                out.extend_from_slice(address);
+                crate::transducer::a21::put_addr(out, address);
                 put_inv(chart, out)?;
                 for m in magnitude {
                     out.extend_from_slice(&m.to_le_bytes());
@@ -186,7 +186,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
     }
     out.extend_from_slice(&f.depth.to_le_bytes());
     out.extend_from_slice(&(f.certificates.len() as u16).to_le_bytes());
-    for (_, cert) in f.certificates.fiber(&crate::network::nerve::ROOT) {
+    for (_, cert) in f.certificates.fiber(crate::network::nerve::ROOT) {
         cert.to_bytes(out);
     }
     let ((hn, hd), (wn, wd)) = f.ratio;
@@ -194,22 +194,22 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
     out.extend_from_slice(&(hd as u16).to_le_bytes());
     out.extend_from_slice(&(wn as u16).to_le_bytes());
     out.extend_from_slice(&(wd as u16).to_le_bytes());
-    let sec: Vec<([u8; 32], Vec<u16>)> = f
+    let sec: Vec<(Vec<u8>, Vec<u16>)> = f
         .sections
-        .fiber(&crate::network::nerve::ROOT)
-        .map(|(k, v)| (*k, v.clone()))
+        .fiber(crate::network::nerve::ROOT)
+        .map(|(k, v)| (k, v.clone()))
         .collect();
     out.extend_from_slice(&(sec.len() as u16).to_le_bytes());
     for (k, ix) in sec {
-        out.extend_from_slice(&k);
+        crate::transducer::a21::put_addr(out, &k);
         out.extend_from_slice(&(ix.len() as u16).to_le_bytes());
         for i in ix {
             out.extend_from_slice(&i.to_le_bytes());
         }
     }
     out.extend_from_slice(&(f.torsion.len() as u16).to_le_bytes());
-    for (k, (sigma, ell, chord)) in f.torsion.fiber(&crate::network::nerve::ROOT) {
-        out.extend_from_slice(k);
+    for (k, (sigma, ell, chord)) in f.torsion.fiber(crate::network::nerve::ROOT) {
+        crate::transducer::a21::put_addr(out, &k);
         out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
         for &(a, b) in sigma {
             out.push(a);
@@ -239,8 +239,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         let v = match kind {
             0 => Vertex::Frame,
             1 => {
-                let address: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-                *pos += 32;
+                let address = crate::transducer::a21::take_addr(b, pos)?;
                 let (word, contact) = word_from_form_bytes(b, pos)?;
                 let rho = alphabet::take_q(b, pos)?;
                 let p0 = alphabet::take_q(b, pos)?;
@@ -263,8 +262,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                 }
             }
             2 => {
-                let address: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-                *pos += 32;
+                let address = crate::transducer::a21::take_addr(b, pos)?;
                 let chart = take_inv(b, pos)?;
                 let mut magnitude = [0u64; 4];
                 for m in &mut magnitude {
@@ -390,11 +388,10 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         return None;
     }
     let ratio = ((hn as usize, hd as usize), (wn as usize, wd as usize));
-    let ns = take_count(b, *pos, take_u16(b, pos)? as usize, 32)?;
+    let ns = take_u16(b, pos)? as usize;
     let mut sections = Keyed::new();
     for _ in 0..ns {
-        let k: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-        *pos += 32;
+        let k = crate::transducer::a21::take_addr(b, pos)?;
         let nv = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
         let mut ix = Vec::with_capacity(nv);
         for _ in 0..nv {
@@ -402,11 +399,10 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         }
         sections.insert(k, ix);
     }
-    let nt = take_count(b, *pos, take_u16(b, pos)? as usize, 32)?;
+    let nt = take_u16(b, pos)? as usize;
     let mut torsion = Keyed::new();
     for _ in 0..nt {
-        let k: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-        *pos += 32;
+        let k = crate::transducer::a21::take_addr(b, pos)?;
         let nsig = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
         let mut sigma = Vec::with_capacity(nsig);
         for _ in 0..nsig {
@@ -420,7 +416,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
     let mut glued = Keyed::new();
     for (i, v) in vertices.iter().enumerate() {
         if let Vertex::Glued { address, .. } = v {
-            glued.insert(*address, i as u16);
+            glued.insert(address, i as u16);
         }
     }
     let mut form = Form {
@@ -446,27 +442,28 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
     Some(form)
 }
 
-/// SENTENCE_TAG v3: the Form tape. Hue maps are derived from vertices.
-/// `mag` is the descent the form measures over its bundle. Zero is not a word.
+/// SENTENCE_TAG v4: the Form tape. Hue maps are derived from vertices.
+/// Addresses are len16 + bytes. `mag` is the descent the form measures over
+/// its bundle. Zero is not a word.
 pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
     if f.vertices.is_empty() || mag.iter().all(|&x| x == 0) {
         return None;
     }
     let mut e = Element::identity(GERM_DIM);
-    let mut word = vec![element::SENTENCE_TAG, 3];
+    let mut word = vec![element::SENTENCE_TAG, 4];
     encode_form_v2(f, &mut word)?;
     e.set_description(word);
     e.set_magnitude(mag);
     Some(e)
 }
 
-/// Read a Form from a v3 tape. A v2 tape is refused.
+/// Read a Form from a v4 tape. An older tape is refused.
 pub fn from_element_form(e: &Element) -> Option<Form> {
     if !e.is_sentence() {
         return None;
     }
     let b = e.description();
-    if b.get(1).copied() != Some(3) {
+    if b.get(1).copied() != Some(4) {
         return None;
     }
     let mut pos = 2usize;
@@ -497,7 +494,7 @@ pub fn carries_torsion(e: &Element) -> bool {
 
 /// The rotor a filed torsion cycle names: the chord face stored on the
 /// class key. None when that face is missing — never an identity rotor.
-pub fn torsion_loop_rotor(f: &Form, class: &[u8; 32]) -> Option<Rotor> {
+pub fn torsion_loop_rotor(f: &Form, class: &[u8]) -> Option<Rotor> {
     let &(_, _, chord) = f.torsion.get(class)?;
     f.faces.get(chord as usize).map(|face| face.transport.word.rotor())
 }

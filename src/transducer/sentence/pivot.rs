@@ -27,7 +27,7 @@ pub enum Snap {
     Unmeasured { chord: usize, held: Vec<PivotCertificate> },
     TorsionFiled { chord: usize, ell: u32 },
     TorsionOpen { chord: usize },
-    Demand { chord: usize, key: [u8; 32] },
+    Demand { chord: usize, key: crate::transducer::a21::Address },
 }
 
 impl Snap {
@@ -122,13 +122,14 @@ impl Form {
     /// long the loop has been held on the bubble's clock.
     pub fn pivot_loop(
         &mut self,
-        idea: [u8; 32],
+        idea: impl AsRef<[u8]>,
         horizon: &Keyed<(Rotor, Order, Standing)>,
         crystal: &dyn Crystal,
         budget: &mut Budget,
         bundle: Option<&[(Vec<Vec<u8>>, Vec<Vec<u8>>)]>,
         t_extent: u64,
     ) -> Vec<Snap> {
+        let idea = idea.as_ref();
         debug_assert!(
             self.vertices.iter().enumerate().all(|(i, v)| match v {
                 Vertex::Word { address, .. } => self.by_address.get(address) == Some(&(i as u16)),
@@ -230,7 +231,7 @@ impl Form {
                 if handled.contains(&loop_k) {
                     continue;
                 }
-                let rotor_key = self.loops[idx].holonomy.rotor().class_key();
+                let rotor_key = self.loops[idx].holonomy.rotor().class_or_rotor_key();
                 let held = horizon.get(&rotor_key).is_some();
                 let order = self.loops[idx].holonomy.order();
                 let cands = self.candidates_for(idx, &kappa, crystal);
@@ -412,7 +413,7 @@ impl Form {
                     });
                 }
                 _ => {
-                    for (_, chart) in charts.fiber(&ROOT) {
+                    for (_, chart) in charts.fiber(ROOT) {
                         for w in crystal.on_axis(chart, axis) {
                             for side in [Side::Right, Side::Left] {
                                 let wk = w.key();
@@ -506,7 +507,7 @@ impl Form {
             .windows(2)
             .map(|p| (p[0] as u8, p[1] as u8))
             .collect();
-        let class = lp.holonomy.rotor().class_key();
+        let class = lp.holonomy.rotor().class_or_rotor_key();
         self.torsion.insert(class, (sigma, ell, lp.chord));
         true
     }
@@ -653,10 +654,8 @@ pub fn unpivoted_face(g: &Word, w: &Word, side: Side) -> Word {
 /// word. Nested keyed reads, never a hash of the pair.
 pub type AxisIndex = Keyed<Keyed<Keyed<Word>>>;
 
-pub(crate) fn axis_slot(axis: Axis) -> [u8; 32] {
-    let mut k = [0u8; 32];
-    k[0] = axis.to_byte();
-    k
+pub(crate) fn axis_slot(axis: Axis) -> Vec<u8> {
+    vec![axis.to_byte()]
 }
 
 /// The words a form speaks: its Word vertices'.
@@ -692,10 +691,10 @@ pub fn admit_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[Wor
     for w in words {
         for axis in ClassVector::of_word(w).coordinates() {
             let ak = axis_slot(axis);
-            if index.get(&ck).is_none() {
-                index.insert(ck, Keyed::new());
+            if index.get(ck.as_bytes()).is_none() {
+                index.insert(ck.clone(), Keyed::new());
             }
-            if let Some(mid) = index.get_mut(&ck) {
+            if let Some(mid) = index.get_mut(ck.as_bytes()) {
                 mid.nested_insert(ak, w.key(), w.clone());
             }
         }
@@ -724,7 +723,7 @@ pub fn on_axis_of(index: &AxisIndex, chart: &stalk::Invariant, axis: Axis) -> Ve
         .and_then(|mid| mid.get(&axis_slot(axis)))
     {
         Some(bucket) => bucket
-            .fiber(&crate::network::nerve::ROOT)
+            .fiber(crate::network::nerve::ROOT)
             .map(|(_, w)| w.clone())
             .collect(),
         None => Vec::new(),
@@ -741,7 +740,7 @@ struct Candidate {
 /// Hold a vortex cell by its after class, then by the discharging word's
 /// rotor A1 key. Collapse reads `(class, r.key())`.
 pub fn vortex_put(v: &mut Keyed<Keyed<PivotCertificate>>, c: PivotCertificate) {
-    let after = c.after;
+    let after = c.after.clone();
     let k = c.by.move_key();
     v.nested_insert(after, k, c);
 }

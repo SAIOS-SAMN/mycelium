@@ -55,7 +55,7 @@ pub mod strokes {
     /// carried and the listener verified. Returns the fibers deepened.
     pub fn puncture(
         words: &mut [std::sync::Arc<crate::transducer::element::Element>],
-        index_of: impl Fn(&[u8; 32]) -> Option<usize>,
+        index_of: impl Fn(&[u8]) -> Option<usize>,
         cites: &[crate::anastome::dialogue::CiteWire],
     ) -> usize {
         crate::transducer::sentence::puncture_from(words, index_of, cites)

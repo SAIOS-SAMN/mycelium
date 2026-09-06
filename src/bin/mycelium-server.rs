@@ -106,7 +106,7 @@ fn speak_root_locked(
     router: &Mutex<Router>,
     nerve: &std::sync::mpsc::SyncSender<(String, Vec<u8>)>,
     self_id: &[u8; 32],
-    task: &[u8; 32],
+    task: &[u8],
     solver: &[u8; 32],
     heard_from: Option<[u8; 32]>,
     ticks: u64,
@@ -148,18 +148,19 @@ struct ReflexJob {
 /// that needs the kernel runs on a reflex worker, snapshot / off-lock /
 /// re-lock, never on the accept thread.
 struct Syllabus {
-    order: Vec<[u8; 32]>,
+    order: Vec<Vec<u8>>,
     at: Keyed<()>,
     served: Keyed<usize>,
 }
 
 /// Push newly ruled addresses into the served stream. Court_stroke admits
 /// onto the ruled cover; this is the teaching organ that drip feeds them.
-fn syllabus_admit(sy: &mut Syllabus, addrs: impl IntoIterator<Item = [u8; 32]>) {
+fn syllabus_admit(sy: &mut Syllabus, addrs: impl IntoIterator<Item = impl AsRef<[u8]>>) {
     for addr in addrs {
-        if !sy.at.contains(&addr) {
+        let addr = addr.as_ref();
+        if !sy.at.contains(addr) {
             sy.at.insert(addr, ());
-            sy.order.push(addr);
+            sy.order.push(addr.to_vec());
         }
     }
 }
@@ -198,8 +199,9 @@ enum RootHear {
 
 /// Record a root by (task, solver) with its stamp. A solver already held
 /// for this task is silence; a new solver is spoken.
-fn note_root(roots: &mut Keyed<Keyed<u64>>, task: [u8; 32], solver: [u8; 32], stamp: u64) -> RootHear {
-    match roots.get_mut(&task) {
+fn note_root(roots: &mut Keyed<Keyed<u64>>, task: impl AsRef<[u8]>, solver: [u8; 32], stamp: u64) -> RootHear {
+    let task = task.as_ref();
+    match roots.get_mut(task) {
         Some(v) => {
             if v.contains(&solver) {
                 RootHear::Known
@@ -225,14 +227,19 @@ fn speak_root(
     router: &Router,
     nerve: &std::sync::mpsc::SyncSender<(String, Vec<u8>)>,
     self_id: &[u8; 32],
-    task: &[u8; 32],
+    task: &[u8],
     solver: &[u8; 32],
     heard_from: Option<[u8; 32]>,
     ticks: u64,
 ) {
     let mut exclude = vec![*self_id];
     exclude.extend(heard_from);
-    if let Some((_, addr)) = router.closest_excluding(task, &exclude) {
+    let hop = if let Ok(id) = <[u8; 32]>::try_from(task) {
+        router.closest_excluding(&id, &exclude)
+    } else {
+        router.closest_excluding(self_id, &exclude)
+    };
+    if let Some((_, addr)) = hop {
         // Never dialed from the door: queued for the nerve thread, dropped
         // when the nerve is full — the mesh's own impedance.
         let _ = nerve.try_send((addr, dialogue::encode_root(self_id, task, solver, ticks)));
@@ -302,7 +309,7 @@ fn mesh_rtt(mesh: &Mesh) -> std::time::Duration {
         .unwrap_or(std::time::Duration::from_millis(1))
 }
 
-fn peer_rtt(mesh: &Mesh, id: &[u8; 32]) -> std::time::Duration {
+fn peer_rtt(mesh: &Mesh, id: &[u8]) -> std::time::Duration {
     mesh.rtt
         .lock()
         .ok()
@@ -310,13 +317,13 @@ fn peer_rtt(mesh: &Mesh, id: &[u8; 32]) -> std::time::Duration {
         .unwrap_or(std::time::Duration::from_millis(1))
 }
 
-fn peer_deadline(mesh: &Mesh, id: &[u8; 32]) -> std::time::Duration {
+fn peer_deadline(mesh: &Mesh, id: &[u8]) -> std::time::Duration {
     mycelium::physics::transport_deadline(peer_rtt(mesh, id))
 }
 
 /// The floor of the last aperture of measured round trips to a peer: the
 /// one-millisecond tick until the wire has been measured.
-fn rtt_floor(mesh: &Mesh, id: &[u8; 32]) -> std::time::Duration {
+fn rtt_floor(mesh: &Mesh, id: &[u8]) -> std::time::Duration {
     mesh.rtt_window
         .lock()
         .ok()
@@ -327,18 +334,19 @@ fn rtt_floor(mesh: &Mesh, id: &[u8; 32]) -> std::time::Duration {
 /// A measured round trip enters the peer's window (one aperture of
 /// strokes) and stands as its RTT, capped at an aperture of the window's
 /// floor so one slow reply cannot set the next deadline alone.
-fn note_rtt_ok(mesh: &Mesh, id: [u8; 32], dt: std::time::Duration) {
+fn note_rtt_ok(mesh: &Mesh, id: impl AsRef<[u8]>, dt: std::time::Duration) {
+    let id = id.as_ref();
     let sample = if dt.is_zero() { std::time::Duration::from_micros(1) } else { dt };
     let n = mycelium::physics::aperture_cycle().max(1) as usize;
     if let Ok(mut w) = mesh.rtt_window.lock() {
-        let mut ring = w.get(&id).cloned().unwrap_or_default();
+        let mut ring = w.get(id).cloned().unwrap_or_default();
         ring.push(sample);
         if ring.len() > n {
             ring.remove(0);
         }
         w.insert(id, ring);
     }
-    let cap = mycelium::physics::persist_dwell(rtt_floor(mesh, &id));
+    let cap = mycelium::physics::persist_dwell(rtt_floor(mesh, id));
     if let Ok(mut m) = mesh.rtt.lock() {
         m.insert(id, sample.min(cap));
     }
@@ -347,11 +355,12 @@ fn note_rtt_ok(mesh: &Mesh, id: [u8; 32], dt: std::time::Duration) {
 /// A timeout raises the peer's RTT by the aperture ratio, capped at an
 /// aperture of the measured floor: a dead peer's deadline is a ratio of
 /// what its wire measured, never a wall clock and never unbounded.
-fn note_rtt_timeout(mesh: &Mesh, id: [u8; 32]) {
+fn note_rtt_timeout(mesh: &Mesh, id: impl AsRef<[u8]>) {
+    let id = id.as_ref();
     let ratio = mycelium::physics::aperture_cycle().max(2);
-    let cap = mycelium::physics::persist_dwell(rtt_floor(mesh, &id));
+    let cap = mycelium::physics::persist_dwell(rtt_floor(mesh, id));
     if let Ok(mut m) = mesh.rtt.lock() {
-        let cur = m.get(&id).copied().unwrap_or(std::time::Duration::from_millis(1));
+        let cur = m.get(id).copied().unwrap_or(std::time::Duration::from_millis(1));
         m.insert(id, cur.saturating_mul(ratio).min(cap));
     }
 }
@@ -433,7 +442,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
         }
         let hear = {
             let mut roots = door.roots.lock().unwrap();
-            note_root(&mut roots, task, solver, spoken_at)
+            note_root(&mut roots, &task, solver, spoken_at)
         };
         match hear {
             RootHear::Known => {}
@@ -447,9 +456,9 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
                 speak_root_locked(&door.router, &door.nerve_tx, &door.id, &task, &solver, Some(from), spoken_at);
             }
             RootHear::Second => {
-                let voices: Vec<[u8; 32]> = {
+                let voices: Vec<Vec<u8>> = {
                     let sy = door.syllabus.lock().unwrap();
-                    sy.served.fiber(&mycelium::network::nerve::ROOT).map(|(v, _)| *v).collect()
+                    sy.served.fiber(mycelium::network::nerve::ROOT).map(|(v, _)| v).collect()
                 };
                 if let Ok(mut sy) = door.syllabus.lock() {
                     for v in voices {
@@ -463,7 +472,11 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
         let reply = {
             let roots = door.roots.lock().unwrap();
             dialogue::encode_root_reply(
-                roots.get(&task).and_then(|v| v.fiber(&mycelium::network::nerve::ROOT).next().map(|(k, _)| *k)),
+                roots.get(task.as_bytes()).and_then(|v| {
+                    v.fiber(mycelium::network::nerve::ROOT)
+                        .next()
+                        .and_then(|(k, _)| <[u8; 32]>::try_from(k.as_slice()).ok())
+                }),
                 spoken_at,
             )
         };
@@ -474,14 +487,14 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
         if let Some((_dvoice, items)) = dialogue::decode_evidence_deposit(&frame.body) {
             let accepted = {
                 let mut k = door.kernel.lock().unwrap();
-                items.into_iter().filter(|(addr, fp, scene)| k.deposit_evidence(*addr, fp.clone(), scene.clone())).count()
+                items.into_iter().filter(|(addr, fp, scene)| k.deposit_evidence(addr.clone(), fp.clone(), scene.clone())).count()
             };
             let reply = Frame { lane: frame.lane, body: vec![accepted.min(255) as u8] };
             let _ = s.write_all(&reply.encode().unwrap_or_default());
             return true;
         }
         let Some(_evoice) = dialogue::decode_evidence_request(&frame.body) else { return true };
-        let items: Vec<([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)> = {
+        let items: Vec<_> = {
             let k = door.kernel.lock().unwrap();
             k.anchor_evidence().iter().take(32).cloned().collect()
         };
@@ -549,7 +562,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
                     };
                     let hear = {
                         let mut roots = door.roots.lock().unwrap();
-                        note_root(&mut roots, tid, svoice, 0)
+                        note_root(&mut roots, &tid, svoice, 0)
                     };
                     match hear {
                         RootHear::Known => {}
@@ -559,7 +572,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
                         }
                     }
                     if matches!(hear, RootHear::Second) {
-                        let voices: Vec<[u8; 32]> = door.syllabus.lock().unwrap().served.fiber(&mycelium::network::nerve::ROOT).map(|(v, _)| *v).collect();
+                        let voices: Vec<Vec<u8>> = door.syllabus.lock().unwrap().served.fiber(mycelium::network::nerve::ROOT).map(|(v, _)| v).collect();
                         if let Ok(mut sy) = door.syllabus.lock() {
                             for v in voices { sy.served.insert(v, 0); }
                         }
@@ -575,10 +588,10 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
                     };
                     let hear = {
                         let mut roots = door.roots.lock().unwrap();
-                        note_root(&mut roots, tid, svoice, 0)
+                        note_root(&mut roots, &tid, svoice, 0)
                     };
                     if matches!(hear, RootHear::Second) {
-                        let voices: Vec<[u8; 32]> = door.syllabus.lock().unwrap().served.fiber(&mycelium::network::nerve::ROOT).map(|(v, _)| *v).collect();
+                        let voices: Vec<Vec<u8>> = door.syllabus.lock().unwrap().served.fiber(mycelium::network::nerve::ROOT).map(|(v, _)| v).collect();
                         if let Ok(mut sy) = door.syllabus.lock() {
                             for v in voices { sy.served.insert(v, 0); }
                         }
@@ -644,7 +657,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
     }
     if kind == dialogue::ACT_SYLLABUS {
         let Some(svoice) = dialogue::decode_syllabus_request(&frame.body) else { return true };
-        let mut missed: Vec<[u8; 32]> = Vec::new();
+        let mut missed: Vec<Vec<u8>> = Vec::new();
         let seed = door.kernel.lock().ok().map(|k| k.syllabus_seed()).unwrap_or_default();
         let (cursor, order) = {
             let mut sy = door.syllabus.lock().unwrap();
@@ -654,7 +667,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
             }
             (*sy.served.get(&svoice).unwrap(), sy.order.clone())
         };
-        let (words, classes, k_now, height, served_addrs): (Vec<Vec<u8>>, Vec<dialogue::ClassPage>, u64, u64, Vec<[u8; 32]>) = {
+        let (words, classes, k_now, height, served_addrs): (Vec<Vec<u8>>, Vec<dialogue::ClassPage>, u64, u64, Vec<Vec<u8>>) = {
             let k = door.kernel.lock().unwrap();
             let free: u64 = k.physics().reserve.iter().sum();
             let depth = (1 + (free as usize * 7) / (4 * mycelium::physics::reserve_max() as usize)).min(8);
@@ -662,7 +675,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
             let mut served_addrs = Vec::new();
             let mut next = cursor;
             while next < order.len() && out.len() < depth {
-                let addr = order[next];
+                let addr = order[next].clone();
                 match k.word_at(&addr) {
                     Some(w) => {
                         served_addrs.push(addr);
@@ -693,7 +706,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
             for addr in missed {
                 let mut tail: Keyed<()> = Keyed::new();
                 for a in sy.order.get(ahead..).unwrap_or(&[]) {
-                    tail.insert(*a, ());
+                    tail.insert(a, ());
                 }
                 if !tail.contains(&addr) {
                     sy.order.push(addr);
@@ -761,10 +774,11 @@ fn homes_here(mesh: &Mesh, kernel: &Mutex<Kernel>, inv: &mycelium::transducer::s
 fn list_task(
     kernel: &Mutex<Kernel>,
     mesh: &Mesh,
-    tid: [u8; 32],
+    tid: impl AsRef<[u8]>,
     task: &mycelium::arc::Task,
     rehome: bool,
 ) {
+    let tid = tid.as_ref();
     if let Ok(mut k) = kernel.lock() {
         k.bind_task_family(tid, task.train.clone());
     }
@@ -876,7 +890,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
             }
         }
         let codes = match kernel.lock() {
-            Ok(mut k) => k.perceive_speech(svoice, task, &sentences),
+            Ok(mut k) => k.perceive_speech(svoice, &task, &sentences),
             Err(_) => return,
         };
         for (i, e) in sentences.iter().enumerate() {
@@ -952,9 +966,9 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         let mut words: Vec<Vec<u8>> = Vec::new();
         let mut classes: Vec<dialogue::ClassPage> = Vec::new();
         if let Ok(mut k) = kernel.lock() {
-            let mut have_all: Vec<[u8; 32]> = Vec::new();
+            let mut have_all: Vec<mycelium::transducer::a21::Address> = Vec::new();
             for (inv, have) in &charts {
-                have_all.extend_from_slice(have);
+                have_all.extend(have.iter().cloned());
                 let page = k.serve_ruled(inv, have, budget);
                 budget = budget.saturating_sub(page.iter().map(|w| w.len() + 4).sum::<usize>());
                 words.extend(page);
@@ -999,7 +1013,13 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         let _ = stream.write_all(&reply.encode().unwrap_or_default());
         return;
     }
-    let pbytes = if kind == dialogue::ACT_GOSSIP && rest.len() >= 32 { &rest[32..] } else { rest };
+    let pbytes = if kind == dialogue::ACT_GOSSIP {
+        let mut p = 0usize;
+        let _ = mycelium::transducer::a21::take_addr(rest, &mut p);
+        rest.get(p..).unwrap_or(&[])
+    } else {
+        rest
+    };
     if kind == dialogue::ACT_DEMAND && !arrived_routed {
         if let Some((_, chain, _)) = dialogue::decode_demand(&frame.body) {
             let (home_vk, home_addr) = demand_cover_home(mesh, kernel, &chain);
@@ -1029,7 +1049,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
                 Some(g) => {
                     let addr = g.address();
                     let mu = mycelium::economy::price(&g.magnitude(), &k.physics().pressure);
-                    (g.to_bytes(), Some((addr, k.voices_of(&addr), mu)))
+                    (g.to_bytes(), Some((addr.clone(), k.voices_of(addr.as_bytes()), mu)))
                 }
                 None => (Vec::new(), None),
             },
@@ -1088,10 +1108,10 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         let fb: Vec<(i64, i64, u8)> = b_bodies.into_iter().flatten().collect();
         let chain = mycelium::transducer::germinate::germinate(&fa, &fb).unwrap_or_default();
         let key = mycelium::transducer::element::listing_key(&chain, &extent);
-        let dest = door.router.lock().ok().and_then(|r| rendezvous(&key, id, &r));
+        let dest = door.router.lock().ok().and_then(|r| rendezvous(key.as_bytes(), id, &r));
         if let Some(dest) = dest {
             let mut g = vec![0x01u8];
-            g.extend_from_slice(&key);
+            let _ = mycelium::transducer::a21::put_addr(&mut g, &key);
             g.extend_from_slice(pbytes);
             let gframe = Frame { lane: frame.lane, body: g }.encode().unwrap_or_default();
             if let Ok(mut ps) = TcpStream::connect(&dest) {
@@ -1101,17 +1121,14 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
     }
 }
 
-/// A stable node id from a string (address) — a wire identity, not cognition.
-fn id_of(s: &str) -> [u8; 32] {
-    *blake3::hash(s.as_bytes()).as_bytes()
-}
-
-/// The RENDEZVOUS for a content key: the XOR-closest peer (found by trie descent,
-/// O(bits), never a peer scan), IF closer than this node — else `None` (self IS
-/// the rendezvous). One destination, content-addressed; no fanout.
-fn rendezvous(key: &[u8; 32], self_id: &[u8; 32], router: &Router) -> Option<String> {
+/// The RENDEZVOUS for a content key: XOR-closest peer only when the key is a
+/// 32-byte hypha vk. A listing is not hashed into XOR space.
+fn rendezvous(key: &[u8], self_id: &[u8; 32], router: &Router) -> Option<String> {
+    let Ok(key) = <[u8; 32]>::try_from(key) else {
+        return None;
+    };
     let dist = |idb: &[u8; 32]| -> [u8; 32] { std::array::from_fn(|i| idb[i] ^ key[i]) };
-    match router.closest(key) {
+    match router.closest(&key) {
         Some((pid, addr)) if dist(&pid) < dist(self_id) => Some(addr),
         _ => None,
     }
@@ -1152,7 +1169,7 @@ fn main() {
         let mut k = kernel.lock().unwrap();
         if k.restore(&bytes) {
             eprintln!(
-                "[{tag}] ledger MYC2: {} ruled sentences, treasury entries {}, book derived at intake",
+                "[{tag}] ledger MYC3: {} ruled sentences, treasury entries {}, book derived at intake",
                 k.basis_len(),
                 k.treasury_entry_count()
             );
@@ -1227,13 +1244,12 @@ fn main() {
         if p == &addr {
             continue;
         }
-        let pid = id_of(p);
-        match tell_peer(p, dialogue::encode_digests_request(&mesh.vk), peer_deadline(&mesh, &pid)) {
+        match tell_peer(p, dialogue::encode_digests_request(&mesh.vk), peer_deadline(&mesh, p.as_bytes())) {
             Some((reply, dt)) => {
-                note_rtt_ok(&mesh, pid, dt);
+                note_rtt_ok(&mesh, p.as_bytes(), dt);
                 let _ = admit_peer_digest(&mesh, &reply, &router);
             }
-            None => note_rtt_timeout(&mesh, pid),
+            None => note_rtt_timeout(&mesh, p.as_bytes()),
         }
     }
 
@@ -1330,11 +1346,10 @@ fn main() {
         let mesh_nerve = mesh.clone();
         std::thread::spawn(move || {
             for (addr, body) in nerve_rx {
-                let id = id_of(&addr);
-                let deadline = peer_deadline(&mesh_nerve, &id);
+                let deadline = peer_deadline(&mesh_nerve, addr.as_bytes());
                 match tell_peer(&addr, body, deadline) {
                     Some((reply, dt)) => {
-                        note_rtt_ok(&mesh_nerve, id, dt);
+                        note_rtt_ok(&mesh_nerve, addr.as_bytes(), dt);
                         match dialogue::decode_root_reply(&reply) {
                             Some((held, at)) => eprintln!(
                                 "  nerve → {addr}: root delivered at {} ({})",
@@ -1345,7 +1360,7 @@ fn main() {
                         }
                     }
                     None => {
-                        note_rtt_timeout(&mesh_nerve, id);
+                        note_rtt_timeout(&mesh_nerve, addr.as_bytes());
                         eprintln!("  nerve → {addr}: no answer");
                     }
                 }
@@ -1359,7 +1374,7 @@ fn main() {
     for t in &settled {
         let hear = {
             let mut g = roots.lock().unwrap();
-            note_root(&mut g, *t, id, boot_stamp)
+            note_root(&mut g, t, id, boot_stamp)
         };
         match hear {
             RootHear::Known => {}
@@ -1489,13 +1504,13 @@ fn main() {
                 let mut dests: mycelium::network::nerve::Keyed<String> = mycelium::network::nerve::Keyed::new();
                 for p in &join {
                     if p != &mesh.bind {
-                        dests.insert(*blake3::hash(p.as_bytes()).as_bytes(), p.clone());
+                        dests.insert(p.as_bytes(), p.clone());
                     }
                 }
                 if let Ok(a) = mesh.addrs.lock() {
-                    for (id, addr) in a.fiber(&mycelium::network::nerve::ROOT) {
+                    for (_, addr) in a.fiber(mycelium::network::nerve::ROOT) {
                         if addr != &mesh.bind {
-                            dests.insert(*id, addr.clone());
+                            dests.insert(addr.as_bytes(), addr.clone());
                         }
                     }
                 }
@@ -1505,9 +1520,9 @@ fn main() {
                 }
                 let req = dialogue::encode_digests_request(&mesh.vk);
                 let mut any_moved = false;
-                let dest_list: Vec<([u8; 32], String)> = dests
-                    .fiber(&mycelium::network::nerve::ROOT)
-                    .map(|(id, a)| (*id, a.clone()))
+                let dest_list: Vec<(Vec<u8>, String)> = dests
+                    .fiber(mycelium::network::nerve::ROOT)
+                    .map(|(id, a)| (id, a.clone()))
                     .collect();
                 let mut organ_budget = mycelium::physics::expansion_unit() as usize;
                 for (pid, d) in dest_list {
@@ -1517,7 +1532,7 @@ fn main() {
                     organ_budget -= 1;
                     match tell_peer(&d, req.clone(), peer_deadline(&mesh, &pid)) {
                         Some((reply, dt)) => {
-                            note_rtt_ok(&mesh, pid, dt);
+                            note_rtt_ok(&mesh, &pid, dt);
                             if !admit_peer_digest(&mesh, &reply, &router) {
                                 continue;
                             }
@@ -1570,8 +1585,8 @@ fn main() {
                             );
                             match tell_peer(&d, fetch, peer_deadline(&mesh, &pid)) {
                                 Some((page, dt2)) => {
-                                    note_rtt_ok(&mesh, pid, dt2);
-                                    let mut named: Vec<[u8; 32]> = Vec::new();
+                                    note_rtt_ok(&mesh, &pid, dt2);
+                                    let mut named: Vec<mycelium::transducer::a21::Address> = Vec::new();
                                     for w in dialogue::decode_syllabus_reply(&page).unwrap_or_default() {
                                         let mut p = 0usize;
                                         if let Some(spoken) = mycelium::transducer::element::Element::from_bytes(&w, &mut p)
@@ -1677,11 +1692,11 @@ mod tests {
             at: Keyed::new(),
             served: Keyed::new(),
         };
-        let a = [1u8; 32];
-        let b = [2u8; 32];
-        syllabus_admit(&mut sy, [a, b]);
-        syllabus_admit(&mut sy, [a]);
-        assert_eq!(sy.order, vec![a, b], "a ruled address is taught once, in order");
+        let a = vec![1u8];
+        let b = vec![2u8];
+        syllabus_admit(&mut sy, [a.clone(), b.clone()]);
+        syllabus_admit(&mut sy, [a.clone()]);
+        assert_eq!(sy.order, vec![a.clone(), b.clone()], "a ruled address is taught once, in order");
         assert!(sy.at.contains(&a) && sy.at.contains(&b));
     }
 }

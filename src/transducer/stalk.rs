@@ -90,14 +90,14 @@ impl Invariant {
         out
     }
 
-    /// Transport identifier of the axes. Chart identity is [`PartialEq`]
-    /// on the exact rationals, never this digest.
-    pub fn key(&self) -> [u8; 32] {
-        let mut h = blake3::Hasher::new();
+    /// The axes written out, coarsest first, no count. A prefix of the
+    /// key is a coarser stratum of the same chart.
+    pub fn key(&self) -> crate::transducer::a21::Address {
+        let mut buf = vec![crate::transducer::a21::TAG_CHART];
         for a in &self.0 {
-            h.update(&a.to_le_bytes());
+            buf.extend_from_slice(&a.to_le_bytes());
         }
-        *h.finalize().as_bytes()
+        crate::transducer::a21::Address::new(buf)
     }
 }
 
@@ -212,18 +212,19 @@ struct Stratum {
 
 /// An axis value as a key: the coordinate's bytes, big-endian, so the
 /// trie's order is the axis's order.
-fn axis_key(a: u64) -> [u8; 32] {
-    let mut k = [0u8; 32];
-    k[24..].copy_from_slice(&a.to_be_bytes());
-    k
+fn axis_key(a: u64) -> [u8; 8] {
+    crate::network::nerve::axis_key_le(a)
 }
 
-fn axis_of(key: &[u8; 32]) -> u64 {
-    u64::from_be_bytes(key[24..].try_into().unwrap())
+fn axis_of(key: &[u8]) -> u64 {
+    let mut b = [0u8; 8];
+    let n = key.len().min(8);
+    b[..n].copy_from_slice(&key[..n]);
+    u64::from_le_bytes(b)
 }
 
 impl Stratum {
-    fn admit(&mut self, axes: &[u64], addr: [u8; 32]) {
+    fn admit(&mut self, axes: &[u64], addr: &[u8]) {
         match axes.split_first() {
             None => {
                 self.members.insert(addr, ());
@@ -242,9 +243,9 @@ impl Stratum {
         }
     }
 
-    fn fiber(&self, axes: &[u64]) -> Vec<[u8; 32]> {
+    fn fiber(&self, axes: &[u64]) -> Vec<Vec<u8>> {
         match axes.split_first() {
-            None => self.members.fiber(&ROOT).map(|(k, _)| *k).collect(),
+            None => self.members.fiber(ROOT).map(|(k, _)| k).collect(),
             Some((&a, rest)) => self.branches.get(&axis_key(a)).map(|s| s.fiber(rest)).unwrap_or_default(),
         }
     }
@@ -254,7 +255,7 @@ impl Stratum {
     }
 
     /// Drop one member along its own chart path; strata left empty are pruned.
-    fn remove(&mut self, axes: &[u64], addr: &[u8; 32]) {
+    fn remove(&mut self, axes: &[u64], addr: &[u8]) {
         match axes.split_first() {
             None => {
                 self.members.remove(addr);
@@ -275,19 +276,19 @@ impl Stratum {
 
     fn len(&self) -> usize {
         let mut n = self.members.len();
-        for (_, s) in self.branches.fiber(&ROOT) {
+        for (_, s) in self.branches.fiber(ROOT) {
             n += s.len();
         }
         n
     }
 
-    fn strata(&self, path: &mut Vec<u64>, out: &mut Vec<(Invariant, Vec<[u8; 32]>)>) {
+    fn strata(&self, path: &mut Vec<u64>, out: &mut Vec<(Invariant, Vec<Vec<u8>>)>) {
         if !self.members.is_empty() {
-            let members: Vec<[u8; 32]> = self.members.fiber(&ROOT).map(|(k, _)| *k).collect();
+            let members: Vec<Vec<u8>> = self.members.fiber(ROOT).map(|(k, _)| k).collect();
             out.push((Invariant(path.clone()), members));
         }
-        for (k, s) in self.branches.fiber(&ROOT) {
-            path.push(axis_of(k));
+        for (k, s) in self.branches.fiber(ROOT) {
+            path.push(axis_of(&k));
             s.strata(path, out);
             path.pop();
         }
@@ -297,8 +298,8 @@ impl Stratum {
         match axes.split_first() {
             None => {
                 let mut out = Vec::new();
-                for (k, _) in self.branches.fiber(&ROOT) {
-                    out.push(axis_of(k));
+                for (k, _) in self.branches.fiber(ROOT) {
+                    out.push(axis_of(&k));
                 }
                 out
             }
@@ -317,16 +318,16 @@ impl Stratum {
         }
     }
 
-    fn collect_members(&self, out: &mut Vec<[u8; 32]>) {
-        for (k, _) in self.members.fiber(&ROOT) {
-            out.push(*k);
+    fn collect_members(&self, out: &mut Vec<Vec<u8>>) {
+        for (k, _) in self.members.fiber(ROOT) {
+            out.push(k);
         }
-        for (_, s) in self.branches.fiber(&ROOT) {
+        for (_, s) in self.branches.fiber(ROOT) {
             s.collect_members(out);
         }
     }
 
-    fn fiber_under(&self, axes: &[u64]) -> Vec<[u8; 32]> {
+    fn fiber_under(&self, axes: &[u64]) -> Vec<Vec<u8>> {
         match axes.split_first() {
             None => {
                 let mut out = Vec::new();
@@ -362,22 +363,24 @@ impl Stalks {
     }
 
     /// Place `addr` in the stratum over `inv`.
-    pub fn admit(&mut self, inv: &Invariant, addr: [u8; 32]) {
+    pub fn admit(&mut self, inv: &Invariant, addr: impl AsRef<[u8]>) {
+        let addr = addr.as_ref();
         self.charts.insert(addr, inv.clone());
         self.root.admit(&inv.0, addr);
     }
 
     /// A second chart for the same address (the remainder face). The base
     /// chart in `charts` is not overwritten.
-    pub fn admit_also(&mut self, inv: &Invariant, addr: [u8; 32]) {
-        if self.charts.get(&addr).is_some_and(|c| c == inv) {
+    pub fn admit_also(&mut self, inv: &Invariant, addr: impl AsRef<[u8]>) {
+        let addr = addr.as_ref();
+        if self.charts.get(addr).is_some_and(|c| c == inv) {
             return;
         }
         self.root.admit(&inv.0, addr);
     }
 
     /// Retract `addr` from one stratum without touching its base chart.
-    pub fn retract(&mut self, inv: &Invariant, addr: &[u8; 32]) {
+    pub fn retract(&mut self, inv: &Invariant, addr: &[u8]) {
         if self.charts.get(addr).is_some_and(|c| c == inv) {
             return;
         }
@@ -386,7 +389,7 @@ impl Stalks {
 
     /// The stratum over `inv`: every held address whose base point could
     /// be this one. The versor decides on these alone.
-    pub fn fiber(&self, inv: &Invariant) -> Vec<[u8; 32]> {
+    pub fn fiber(&self, inv: &Invariant) -> Vec<Vec<u8>> {
         self.root.fiber(&inv.0)
     }
 
@@ -397,7 +400,7 @@ impl Stalks {
 
     /// Members at prefix depth `d` of `inv`. A read on the trie; chart-space
     /// neighbourhood is prefix depth, never a norm.
-    pub fn fiber_at_depth(&self, inv: &Invariant, d: usize) -> Vec<[u8; 32]> {
+    pub fn fiber_at_depth(&self, inv: &Invariant, d: usize) -> Vec<Vec<u8>> {
         let n = d.min(inv.0.len());
         self.root.fiber(&inv.0[..n])
     }
@@ -420,19 +423,19 @@ impl Stalks {
     pub fn each_child(
         &self,
         inv: &Invariant,
-        after: Option<&[u8; 32]>,
+        after: Option<&[u8]>,
         budget: &mut Budget,
         mut f: impl FnMut(Invariant),
-    ) -> Option<[u8; 32]> {
+    ) -> Option<Vec<u8>> {
         let branches = self.root.branches_at(&inv.0);
         let Some(branches) = branches else {
-            return after.copied();
+            return after.map(|a| a.to_vec());
         };
-        let from = after.copied().unwrap_or(ROOT);
-        let mut last = after.copied();
+        let from = after.unwrap_or(ROOT);
+        let mut last = after.map(|a| a.to_vec());
         for (k, _) in branches.cursor(from, budget) {
-            last = Some(*k);
-            let a = axis_of(k);
+            last = Some(k.clone());
+            let a = axis_of(&k);
             let mut axes = inv.0.clone();
             axes.push(a);
             f(Invariant(axes));
@@ -441,24 +444,24 @@ impl Stalks {
     }
 
     /// Every address under `inv`, including finer charts. A trie collect.
-    pub fn fiber_under(&self, inv: &Invariant) -> Vec<[u8; 32]> {
+    pub fn fiber_under(&self, inv: &Invariant) -> Vec<Vec<u8>> {
         self.root.fiber_under(&inv.0)
     }
 
     /// The chart a held address sits on.
-    pub fn chart_of(&self, addr: &[u8; 32]) -> Option<&Invariant> {
+    pub fn chart_of(&self, addr: &[u8]) -> Option<&Invariant> {
         self.charts.get(addr)
     }
 
     /// The relation removed the word at `addr`: one path, nothing shifts.
-    pub fn remove(&mut self, addr: &[u8; 32]) {
+    pub fn remove(&mut self, addr: &[u8]) {
         if let Some(inv) = self.charts.remove(addr) {
             self.root.remove(&inv.0, addr);
         }
     }
 
     /// Whether this address is charted here.
-    pub fn contains(&self, addr: &[u8; 32]) -> bool {
+    pub fn contains(&self, addr: &[u8]) -> bool {
         self.charts.contains(addr)
     }
 
@@ -477,7 +480,7 @@ impl Stalks {
 
     /// Every populated stratum as (chart, members) — the open cover the
     /// sheaf reconciliation works over. Deterministic order (the trie's).
-    pub fn strata(&self) -> Vec<(Invariant, Vec<[u8; 32]>)> {
+    pub fn strata(&self) -> Vec<(Invariant, Vec<Vec<u8>>)> {
         let mut out = Vec::new();
         self.root.strata(&mut Vec::new(), &mut out);
         out
@@ -485,8 +488,12 @@ impl Stalks {
 
     /// Append class-key bytes as one axis (rewrite peel invert). Prefer
     /// [`refine_axes`] for A7.
-    pub fn refine(inv: &Invariant, class_key: [u8; 32]) -> Invariant {
-        let coordinate = u64::from_le_bytes(class_key[..8].try_into().unwrap());
+    pub fn refine(inv: &Invariant, class_key: impl AsRef<[u8]>) -> Invariant {
+        let class_key = class_key.as_ref();
+        let mut b = [0u8; 8];
+        let n = class_key.len().min(8);
+        b[..n].copy_from_slice(&class_key[..n]);
+        let coordinate = u64::from_le_bytes(b);
         Self::refine_axes(inv, &[coordinate])
     }
 
@@ -499,13 +506,13 @@ impl Stalks {
 
     /// Re-admit members of `inv` under the refined chart, splitting the
     /// stratum by the new axes. Prefix only: other charts are untouched.
-    pub fn split_stratum(&mut self, inv: &Invariant, mut coordinate_of: impl FnMut(&[u8; 32]) -> Vec<u64>) {
+    pub fn split_stratum(&mut self, inv: &Invariant, mut coordinate_of: impl FnMut(&[u8]) -> Vec<u64>) {
         let members = self.fiber(inv);
         for addr in members {
             let next = Self::refine_axes(inv, &coordinate_of(&addr));
             self.root.remove(&inv.0, &addr);
-            self.root.admit(&next.0, addr);
-            self.charts.insert(addr, next);
+            self.root.admit(&next.0, &addr);
+            self.charts.insert(&addr, next);
         }
     }
 }
@@ -553,23 +560,23 @@ impl ZeroQ for num_rational::BigRational {
 /// is a dialect or a section, never a new base.
 pub fn congruent<'a>(
     stalks: &Stalks,
-    at: impl Fn(&[u8; 32]) -> Option<&'a element::Element>,
+    at: impl Fn(&[u8]) -> Option<&'a element::Element>,
     spoken: &element::Element,
-) -> Option<([u8; 32], Versor)> {
+) -> Option<(crate::transducer::a21::Address, Versor)> {
     let fibre = stalks.fiber(&invariant_of(spoken));
     if spoken.is_connection() {
-        let held = fibre.iter().find_map(|a| at(a).filter(|w| w.address() != spoken.address() && !w.axes().is_empty()).map(|w| (*a, w)))?;
+        let held = fibre.iter().find_map(|a| at(a).filter(|w| w.address() != spoken.address() && !w.axes().is_empty()).map(|w| (a.clone(), w)))?;
         let g = super::cech::transition(held.1, spoken)?;
         return match (g.axes().as_slice(), g.sub()) {
-            ([], []) => Some((held.0, element::identity_versor())),
-            _ => placement_of(&g).map(|v| (held.0, v)),
+            ([], []) => Some((crate::transducer::a21::Address::from(held.0), element::identity_versor())),
+            _ => placement_of(&g).map(|v| (crate::transducer::a21::Address::from(held.0), v)),
         };
     }
     let shape = element::shape_of_chain(spoken.sub())?;
     let mut related = fibre
         .iter()
-        .filter_map(|a| at(a).filter(|w| !w.sub().is_empty()).map(|w| (*a, w)))
-        .filter_map(|(a, w)| element::transition_from_shape(&shape, w.sub()).map(|v| (a, v)));
+        .filter_map(|a| at(a).filter(|w| !w.sub().is_empty()).map(|w| (a.clone(), w)))
+        .filter_map(|(a, w)| element::transition_from_shape(&shape, w.sub()).map(|v| (crate::transducer::a21::Address::from(a), v)));
     let first = related.next()?;
     match related.next() {
         None => Some(first),
@@ -582,14 +589,14 @@ pub fn congruent<'a>(
 /// chain it asks about. Exactly one relating word is the base point.
 pub fn congruent_shaped<'a>(
     stalks: &Stalks,
-    shape_at: impl Fn(&[u8; 32]) -> Option<&'a super::blade::Shape>,
+    shape_at: impl Fn(&[u8]) -> Option<&'a super::blade::Shape>,
     chain: &[Cell],
-) -> Option<([u8; 32], Versor)> {
+) -> Option<(crate::transducer::a21::Address, Versor)> {
     let shape = element::shape_of_chain(chain)?;
     let fibre = stalks.fiber(&invariant(chain));
     let mut related = fibre
         .iter()
-        .filter_map(|a| shape_at(a).and_then(|held| super::blade::versor_between(&shape, held)).map(|v| (*a, v)));
+        .filter_map(|a| shape_at(a).and_then(|held| super::blade::versor_between(&shape, held)).map(|v| (crate::transducer::a21::Address::from(a.clone()), v)));
     let first = related.next()?;
     match related.next() {
         None => Some(first),
@@ -605,6 +612,26 @@ mod tests {
 
     fn chain(cells: &[(i64, i64)]) -> Vec<Cell> {
         cells.iter().map(|&(r, c)| (r, c, 0u8, 1u8)).collect()
+    }
+
+    #[test]
+    fn chart_prefix_is_its_coarser_stratum() {
+        let coarse = Invariant(vec![1]).key();
+        let fine = Invariant(vec![1, 2]).key();
+        let sib = Invariant(vec![1, 3]).key();
+        assert!(
+            fine.as_bytes().starts_with(coarse.as_bytes()),
+            "a finer chart's key starts with the coarser chart"
+        );
+        assert!(sib.as_bytes().starts_with(coarse.as_bytes()));
+        assert!(!fine.as_bytes().starts_with(sib.as_bytes()));
+        let mut k: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
+        k.insert(coarse.as_bytes(), 0);
+        k.insert(fine.as_bytes(), 1);
+        k.insert(sib.as_bytes(), 2);
+        let fiber: Vec<_> = k.fiber(coarse.as_bytes()).map(|(key, v)| (key, *v)).collect();
+        assert_eq!(fiber.len(), 3, "the coarse key's fiber is the coarser stratum");
+        assert!(fiber.iter().all(|(key, _)| key.starts_with(coarse.as_bytes())));
     }
 
     /// The chart is invariant under translation, rotation, reflection, and
@@ -652,7 +679,7 @@ mod tests {
         ];
         let mut stalks = Stalks::over_elements(held.iter());
         assert_eq!(stalks.len(), 3);
-        let at = |a: &[u8; 32]| held.iter().find(|w| w.address() == *a);
+        let at = |a: &[u8]| held.iter().find(|w| w.address().as_bytes() == a);
         let bar_rotated = from_residual(&chain(&[(5, 5), (6, 5), (7, 5)]));
         let (a, v) = congruent(&stalks, at, &bar_rotated).expect("the bar's orbit");
         assert_eq!(a, held[0].address());
@@ -689,7 +716,7 @@ mod tests {
         assert!(invariant_of(&word).0[0] >= 1, "a residual chart leads with its component count");
         // Congruence on connections: the fibre's representative and the transition.
         let stalks = Stalks::over_elements([&a, &c].into_iter());
-        let at = |x: &[u8; 32]| [&a, &c].into_iter().find(|w| w.address() == *x);
+        let at = |x: &[u8]| [&a, &c].into_iter().find(|w| w.address().as_bytes() == x);
         assert_eq!(congruent(&stalks, at, &b).map(|(x, _)| x), Some(a.address()), "b is a's word, placed elsewhere");
         assert_eq!(congruent(&stalks, at, &c), None, "c has no other word on its chart");
     }
@@ -725,15 +752,15 @@ mod tests {
         assert_eq!(stalks.fiber(&inv).len(), 2);
         let class_coord = 7u64;
         stalks.split_stratum(&inv, |addr| {
-            if *addr == a.address() {
+            if a.address().as_bytes() == addr {
                 vec![0]
             } else {
                 vec![class_coord]
             }
         });
         assert!(stalks.fiber(&inv).is_empty(), "the coarse chart is empty after the split");
-        assert_eq!(stalks.fiber(&Stalks::refine_axes(&inv, &[0])), vec![a.address()]);
-        assert_eq!(stalks.fiber(&Stalks::refine_axes(&inv, &[class_coord])), vec![b.address()]);
+        assert_eq!(stalks.fiber(&Stalks::refine_axes(&inv, &[0])), vec![a.address().into_vec()]);
+        assert_eq!(stalks.fiber(&Stalks::refine_axes(&inv, &[class_coord])), vec![b.address().into_vec()]);
         let peeled = Stalks::peel(&Stalks::refine_axes(&inv, &[class_coord]));
         assert_eq!(peeled, inv, "peel drops the class axis");
         assert_eq!(inv.prefixes().last().map(|p| p.0.is_empty()), Some(true));

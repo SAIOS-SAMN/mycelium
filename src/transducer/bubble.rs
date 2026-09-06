@@ -18,7 +18,7 @@ use crate::transducer::stalk::{self, Invariant, Standing, Stalks};
 /// One class the mesh or a mind holds on a chart: key, order, representative.
 #[derive(Clone, Debug)]
 pub struct ClassRecord {
-    pub key: [u8; 32],
+    pub key: crate::transducer::a21::Address,
     pub order: Order,
     pub representative: Rotor,
 }
@@ -27,25 +27,27 @@ fn horizon_put(h: &mut Keyed<(Rotor, Order, Standing)>, r: Rotor, standing: Stan
     let Some(order) = r.word_order() else {
         return;
     };
-    let key = r.class_key();
+    let Some(key) = r.class_key() else {
+        return;
+    };
     h.insert(key, (r, order, standing));
 }
 
 type RemCell = (i64, i64, u8, u8);
 
-fn rem_cell_key(r: i64, c: i64) -> [u8; 32] {
-    let mut k = [0u8; 32];
-    k[..8].copy_from_slice(&r.to_le_bytes());
-    k[8..16].copy_from_slice(&c.to_le_bytes());
-    k
+fn rem_cell_key(r: i64, c: i64) -> crate::transducer::a21::Address {
+    let mut buf = vec![crate::transducer::a21::TAG_CELL];
+    buf.extend_from_slice(&r.to_le_bytes());
+    buf.extend_from_slice(&c.to_le_bytes());
+    crate::transducer::a21::Address::new(buf)
 }
 
-fn remainder_addr(remainder: &[RemCell]) -> [u8; 32] {
+fn remainder_addr(remainder: &[RemCell]) -> crate::transducer::a21::Address {
     element::from_residual(&remainder.to_vec()).address()
 }
 
 /// The idea's key: the form's vertex key. Remainder is cargo, not the name.
-fn idea_key(f: &Form) -> [u8; 32] {
+fn idea_key(f: &Form) -> crate::transducer::a21::Address {
     sentence::form_vertex_key(f)
 }
 
@@ -95,8 +97,8 @@ fn form_one_section(a: &Form, b: &Form) -> bool {
 }
 
 fn absorb_keyed<V: Clone>(dst: &mut Keyed<V>, src: &Keyed<V>) {
-    for (k, v) in src.fiber(&ROOT) {
-        dst.insert(*k, v.clone());
+    for (k, v) in src.fiber(ROOT) {
+        dst.insert(&k, v.clone());
     }
 }
 
@@ -104,11 +106,11 @@ fn absorb_vortex(
     dst: &mut Keyed<Keyed<sentence::PivotCertificate>>,
     src: &Keyed<Keyed<sentence::PivotCertificate>>,
 ) {
-    for (after, inner) in src.fiber(&ROOT) {
-        match dst.get_mut(after) {
+    for (after, inner) in src.fiber(ROOT) {
+        match dst.get_mut(&after) {
             Some(d) => absorb_keyed(d, inner),
             None => {
-                dst.insert(*after, inner.clone());
+                dst.insert(after, inner.clone());
             }
         }
     }
@@ -116,7 +118,7 @@ fn absorb_vortex(
 
 fn rem_cells_of(b: &Bubble) -> Vec<RemCell> {
     let mut out = b.remainder.clone();
-    for (_, r) in b.remainders.fiber(&ROOT) {
+    for (_, r) in b.remainders.fiber(ROOT) {
         out.extend_from_slice(r);
     }
     out
@@ -138,16 +140,16 @@ fn intersect(a: &[RemCell], b: &[RemCell]) -> Vec<RemCell> {
     a.iter().copied().filter(|&(r, c, _, _)| kb.contains(&rem_cell_key(r, c))).collect()
 }
 
-fn volume_of(rems: &Keyed<Vec<RemCell>>, verts: &[[u8; 32]]) -> [u64; 4] {
+fn volume_of(rems: &Keyed<Vec<RemCell>>, verts: &[impl AsRef<[u8]>]) -> [u64; 4] {
     if verts.is_empty() {
         return [0; 4];
     }
-    let Some(first) = rems.get(&verts[0]) else {
+    let Some(first) = rems.get(verts[0].as_ref()) else {
         return [0; 4];
     };
     let mut acc = first.clone();
     for v in &verts[1..] {
-        let Some(r) = rems.get(v) else {
+        let Some(r) = rems.get(v.as_ref()) else {
             return [0; 4];
         };
         acc = intersect(&acc, r);
@@ -187,7 +189,7 @@ pub struct Bubble {
     pub volume: [u64; 4],
     pub dirty: bool,
     /// Last chart key visited by expand; the next stroke resumes here.
-    pub cursor: [u8; 32],
+    pub cursor: Vec<u8>,
     /// TUniversal when this bubble's charts last moved.
     pub moved_tu: u64,
     /// Addresses this idea glued (crystallized forms it rests on).
@@ -210,7 +212,7 @@ pub struct Bubble {
 }
 
 impl Bubble {
-    pub fn key(&self) -> [u8; 32] {
+    pub fn key(&self) -> crate::transducer::a21::Address {
         match &self.form {
             Some(f) => idea_key(f),
             None => remainder_addr(&self.remainder),
@@ -252,14 +254,15 @@ impl Bubble {
         }
         let inv = stalk::invariant(&self.remainder);
         let peel = inv.peel();
-        let after = if self.cursor == ROOT {
+        let cursor = self.cursor.clone();
+        let after = if cursor.is_empty() {
             None
         } else {
-            Some(self.cursor)
+            Some(cursor.as_slice())
         };
         let mut spent = 0usize;
         // index: budgeted sibling keys of one trie node (peel)
-        let last = atlas.each_child(&peel, after.as_ref(), budget, |child| {
+        let last = atlas.each_child(&peel, after, budget, |child| {
             let ck = child.key();
             if self.cover.contains(&ck) {
                 return;
@@ -267,14 +270,14 @@ impl Bubble {
             spent += 1;
             // index: keyed fiber at this sibling chart
             let members = atlas.fiber(&child);
-            let Some(&head) = members.first() else {
+            let Some(head) = members.first() else {
                 return;
             };
             let vol = self.potential;
-            let gamma_b = rotors.get(&head).cloned().unwrap_or_else(Rotor::identity);
+            let gamma_b = rotors.get(head.as_slice()).cloned().unwrap_or_else(Rotor::identity);
             let cell = CechCell {
                 vertices: {
-                    let mut v = vec![self.key(), head];
+                    let mut v = vec![self.key().into_vec(), head.clone()];
                     v.sort_unstable();
                     v
                 },
@@ -287,7 +290,7 @@ impl Bubble {
                 gamma: self.rotor(),
             };
             let b = Section {
-                addr: head,
+                addr: crate::transducer::a21::Address::from(head.clone()),
                 gamma: gamma_b,
             };
             match cech::extend(&a, &b, &cell) {
@@ -301,7 +304,7 @@ impl Bubble {
                     self.nerve.file_congruent(self.key(), head, g, ell);
                 }
                 Fill::Class(r) => {
-                    if !self.horizon.contains(&r.class_key()) {
+                    if r.class_key().is_none_or(|ck| !self.horizon.contains(ck.as_bytes())) {
                         horizon_put(&mut self.horizon, r, Standing::Held);
                     }
                 }
@@ -340,13 +343,13 @@ impl Bubble {
     /// A glue or a syllabus class whose key equals one held certificate's
     /// `after` applies the certificate keyed by that rotor's A1 key; the
     /// others of the class are not applied (dialect cells).
-    fn collapse_vortex(&mut self, class: &[u8; 32], word: &[u8; 32], by: &'static str) -> bool {
+    fn collapse_vortex(&mut self, class: &[u8], word: &[u8], by: &'static str) -> bool {
         let Some(mut inner) = self.vortex.remove(class) else {
             return false;
         };
         let Some(win) = inner.remove(word) else {
             if !inner.is_empty() {
-                self.vortex.insert(*class, inner);
+                self.vortex.insert(class, inner);
             }
             return false;
         };
@@ -387,7 +390,7 @@ pub struct Contemplation {
     pub complex: Complex,
     /// Bubbles whose cover still has work; written when dirty is set.
     dirty: Keyed<()>,
-    expand_cursor: [u8; 32],
+    expand_cursor: Vec<u8>,
     pub fills: u64,
     pub torsion_merges: u64,
     pub classes: u64,
@@ -418,15 +421,15 @@ impl Contemplation {
             return;
         }
         let now = self.now_tu;
-        let mut best: Option<([u8; 32], u64)> = None;
-        for (k, b) in self.bubbles.fiber(&ROOT) {
+        let mut best: Option<(Vec<u8>, u64)> = None;
+        for (k, b) in self.bubbles.fiber(ROOT) {
             if b.glued_by.len() > 0 {
                 continue;
             }
             let t = now.saturating_sub(b.moved_tu).max(1);
             match best {
                 Some((_, bt)) if t <= bt => {}
-                _ => best = Some((*k, t)),
+                _ => best = Some((k.clone(), t)),
             }
         }
         let Some((k, _)) = best else {
@@ -434,8 +437,8 @@ impl Contemplation {
         };
         if let Some(b) = self.bubbles.remove(&k) {
             self.retract_incidence(&k, &b);
-            self.cavity.insert(k, b.remainder);
             self.dirty.remove(&k);
+            self.cavity.insert(k, b.remainder);
         }
     }
 
@@ -445,9 +448,9 @@ impl Contemplation {
 
     /// True when a live idea glued this address (a dialect entry so marked
     /// is not shed).
-    pub fn glues_word(&self, addr: &[u8; 32]) -> bool {
+    pub fn glues_word(&self, addr: &[u8]) -> bool {
         self.bubbles
-            .fiber(&ROOT)
+            .fiber(ROOT)
             .any(|(_, b)| b.glues.contains(addr))
     }
 
@@ -459,18 +462,18 @@ impl Contemplation {
                 continue;
             }
             self.seeded.insert(
-                rec.key,
+                rec.key.clone(),
                 (rec.representative.clone(), rec.order, Standing::Held),
             );
             n += 1;
         }
-        let keys: Vec<[u8; 32]> = self.bubbles.fiber(&ROOT).map(|(k, _)| *k).collect();
+        let keys: Vec<Vec<u8>> = self.bubbles.fiber(ROOT).map(|(k, _)| k).collect();
         for k in keys {
             if let Some(b) = self.bubbles.get_mut(&k) {
                 for rec in records {
                     if !b.horizon.contains(&rec.key) {
                         b.horizon.insert(
-                            rec.key,
+                            rec.key.clone(),
                             (rec.representative.clone(), rec.order, Standing::Held),
                         );
                     }
@@ -486,15 +489,15 @@ impl Contemplation {
     }
 
     fn paint_seeded(&self, horizon: &mut Keyed<(Rotor, Order, Standing)>) {
-        for (k, v) in self.seeded.fiber(&ROOT) {
-            if !horizon.contains(k) {
-                horizon.insert(*k, v.clone());
+        for (k, v) in self.seeded.fiber(ROOT) {
+            if !horizon.contains(&k) {
+                horizon.insert(&k, v.clone());
             }
         }
     }
 
     /// Record that idea `bubble` glued crystallized form `word`.
-    pub fn mark_glue(&mut self, bubble: &[u8; 32], word: [u8; 32]) {
+    pub fn mark_glue(&mut self, bubble: &[u8], word: impl AsRef<[u8]>) {
         if let Some(b) = self.bubbles.get_mut(bubble) {
             b.glues.insert(word, ());
         }
@@ -502,11 +505,11 @@ impl Contemplation {
 
     /// Shed ideas no live glue holds. Returns how many bubbles left.
     pub fn shed_unglued(&mut self) -> usize {
-        let drop: Vec<[u8; 32]> = self
+        let drop: Vec<Vec<u8>> = self
             .bubbles
-            .fiber(&ROOT)
+            .fiber(ROOT)
             .filter(|(_, b)| b.glued_by.len() == 0 && b.glues.len() == 0 && !b.dirty)
-            .map(|(k, _)| *k)
+            .map(|(k, _)| k)
             .collect();
         let n = drop.len();
         for k in &drop {
@@ -523,17 +526,17 @@ impl Contemplation {
     pub fn cohesion(&self) -> crate::network::nerve::Keyed<[u64; 4]> {
         let mut out: crate::network::nerve::Keyed<[u64; 4]> = crate::network::nerve::Keyed::new();
         // index: ideas keyed by remainder, then by chart cover
-        for (_, b) in self.bubbles.fiber(&ROOT) {
-            for (ck, _) in b.cover.fiber(&ROOT) {
+        for (_, b) in self.bubbles.fiber(ROOT) {
+            for (ck, _) in b.cover.fiber(ROOT) {
                 let add = b.volume;
-                match out.get_mut(ck) {
+                match out.get_mut(&ck) {
                     Some(v) => {
                         for l in 0..4 {
                             v[l] = v[l].saturating_add(add[l]);
                         }
                     }
                     None => {
-                        out.insert(*ck, add);
+                        out.insert(&ck, add);
                     }
                 }
             }
@@ -546,7 +549,7 @@ impl Contemplation {
     }
 
     pub fn remainders(&self) -> Vec<&[RemCell]> {
-        self.bubbles.fiber(&ROOT).map(|(_, b)| b.remainder.as_slice()).collect()
+        self.bubbles.fiber(ROOT).map(|(_, b)| b.remainder.as_slice()).collect()
     }
 
     /// Unreduced boundary cochain norm of open thoughts: L1 of the
@@ -564,8 +567,8 @@ impl Contemplation {
             .fold(0usize, |s, &x| s.saturating_add(x as usize))
     }
 
-    fn retract_incidence(&mut self, key: &[u8; 32], b: &Bubble) {
-        let charts: Vec<[u8; 32]> = b.cover.fiber(&ROOT).map(|(k, _)| *k).collect();
+    fn retract_incidence(&mut self, key: &[u8], b: &Bubble) {
+        let charts: Vec<Vec<u8>> = b.cover.fiber(ROOT).map(|(k, _)| k).collect();
         for ck in charts {
             if let Some(m) = self.by_chart.get_mut(&ck) {
                 m.remove(key);
@@ -580,16 +583,17 @@ impl Contemplation {
         self.complex.drop_vertex(key);
     }
 
-    fn admit_incidence(&mut self, key: [u8; 32], b: &Bubble) {
-        for (ck, _) in b.cover.fiber(&ROOT) {
-            match self.by_chart.get_mut(ck) {
+    fn admit_incidence(&mut self, key: impl AsRef<[u8]>, b: &Bubble) {
+        let key = key.as_ref();
+        for (ck, _) in b.cover.fiber(ROOT) {
+            match self.by_chart.get_mut(&ck) {
                 Some(m) => {
                     m.insert(key, ());
                 }
                 None => {
                     let mut m = Keyed::new();
                     m.insert(key, ());
-                    self.by_chart.insert(*ck, m);
+                    self.by_chart.insert(&ck, m);
                 }
             }
         }
@@ -608,7 +612,7 @@ impl Contemplation {
         }
     }
 
-    fn rotor_between(&self, a: &[u8; 32], b: &[u8; 32]) -> Rotor {
+    fn rotor_between(&self, a: &[u8], b: &[u8]) -> Rotor {
         let (Some(ba), Some(bb)) = (self.bubbles.get(a), self.bubbles.get(b)) else {
             return Rotor::identity();
         };
@@ -619,20 +623,21 @@ impl Contemplation {
 
     /// Link of one new bubble: edges to bubbles sharing a chart (by_chart
     /// peel), higher cells where shared remainder volume is nonzero.
-    fn link_new(&mut self, key: [u8; 32]) {
+    fn link_new(&mut self, key: impl AsRef<[u8]>) {
+        let key = key.as_ref().to_vec();
         let (charts, vol0) = {
             let Some(b) = self.bubbles.get(&key) else {
                 return;
             };
             (
-                b.cover.fiber(&ROOT).map(|(k, _)| *k).collect::<Vec<_>>(),
+                b.cover.fiber(ROOT).map(|(k, _)| k).collect::<Vec<_>>(),
                 b.volume,
             )
         };
         self.complex.set_section(
-            key,
+            &key,
             Section {
-                addr: key,
+                addr: crate::transducer::a21::Address::from(key.clone()),
                 gamma: Rotor::identity(),
             },
             vol0,
@@ -640,32 +645,32 @@ impl Contemplation {
         let mut neighbors = Keyed::new();
         for ck in &charts {
             for (id, _) in self.by_chart.link(ck) {
-                if id != &key {
-                    neighbors.insert(*id, ());
+                if id.as_slice() != key.as_slice() {
+                    neighbors.insert(&id, ());
                 }
             }
         }
-        let nbs: Vec<[u8; 32]> = neighbors.fiber(&ROOT).map(|(k, _)| *k).collect();
+        let nbs: Vec<Vec<u8>> = neighbors.fiber(ROOT).map(|(k, _)| k).collect();
         let mut rems: Keyed<Vec<RemCell>> = Keyed::new();
         if let Some(b) = self.bubbles.get(&key) {
-            rems.insert(key, b.remainder.clone());
+            rems.insert(&key, b.remainder.clone());
         }
         for n in &nbs {
             if let Some(b) = self.bubbles.get(n) {
-                rems.insert(*n, b.remainder.clone());
+                rems.insert(n, b.remainder.clone());
             }
             let rotor = self.rotor_between(&key, n);
-            let vol = volume_of(&rems, &[key, *n]);
-            self.complex.set_edge(key, *n, rotor, vol);
+            let vol = volume_of(&rems, &[key.as_slice(), n.as_slice()]);
+            self.complex.set_edge(&key, n, rotor, vol);
         }
         self.complex.coboundary_on_link(&key, |verts| volume_of(&rems, verts));
-        self.decide_neighbors(key);
+        self.decide_neighbors(&key);
     }
 
     /// Two bubbles on one cell: extend decides. Extended merges and
     /// re-gauges; Congruent merges with a torsion axis; Class keeps both
     /// and writes each into the other's horizon. Zero volume never merges.
-    fn decide_neighbors(&mut self, key: [u8; 32]) {
+    fn decide_neighbors(&mut self, key: &[u8]) {
         let keys = self.complex.link(&key, 1);
         for ck in keys {
             let Some((fill, volume, vertices)) = self.complex.cell(&ck).map(|c| (c.fill.clone(), c.volume, c.vertices.clone())) else {
@@ -681,8 +686,8 @@ impl Contemplation {
                     self.fills += 1;
                     for v in &vertices {
                         if let Some(b) = self.bubbles.get_mut(v) {
-                            let keys: Vec<[u8; 32]> =
-                                b.nerve.sections.fiber(&ROOT).map(|(k, _)| *k).collect();
+                            let keys: Vec<Vec<u8>> =
+                                b.nerve.sections.fiber(ROOT).map(|(k, _)| k).collect();
                             for sk in keys {
                                 if let Some(sec) = b.nerve.sections.get_mut(&sk) {
                                     sec.gamma = gamma.geo(&sec.gamma);
@@ -695,19 +700,26 @@ impl Contemplation {
                 }
                 Fill::Congruent(g, ell) if vol_nz => {
                     self.torsion_merges += 1;
-                    let ends = [vertices[0], vertices.get(1).copied().unwrap_or(vertices[0])];
+                    let ends = [
+                        vertices[0].clone(),
+                        vertices.get(1).cloned().unwrap_or_else(|| vertices[0].clone()),
+                    ];
                     if let Some(nk) = self.merge(&vertices) {
-                        if let Some(b) = self.bubbles.get_mut(&nk) {
-                            b.nerve.file_congruent(ends[0], ends[1], g, ell);
+                        if let Some(b) = self.bubbles.get_mut(nk.as_bytes()) {
+                            b.nerve.file_congruent(&ends[0], &ends[1], g, ell);
                         }
+                        let before: Vec<crate::transducer::a21::Address> = vertices
+                            .iter()
+                            .map(|v| crate::transducer::a21::Address::from(v.clone()))
+                            .collect();
                         let payload = crate::transducer::rewrite::RewritePayload::Torse {
                             sigma: Vec::new(),
                             period: ell,
                         };
                         if let Some(rw) = crate::transducer::rewrite::mint(
                             crate::transducer::rewrite::RewriteKind::Torse,
-                            &vertices,
-                            nk,
+                            &before,
+                            nk.clone(),
                             payload,
                             [0, 0, (ell as u64).saturating_sub(1).max(1), 0],
                         ) {
@@ -722,7 +734,7 @@ impl Contemplation {
                     self.classes += 1;
                     for v in &vertices {
                         if let Some(b) = self.bubbles.get_mut(v) {
-                            if !b.horizon.contains(&r.class_key()) {
+                            if r.class_key().is_none_or(|ck| !b.horizon.contains(ck.as_bytes())) {
                                 horizon_put(&mut b.horizon, r.clone(), Standing::Held);
                             }
                         }
@@ -761,13 +773,13 @@ impl Contemplation {
             for l in 0..4 {
                 volume[l] = volume[l].saturating_add(m[l]);
             }
-            for (ck, _) in cover_of(&stalk::invariant(r)).fiber(&ROOT) {
-                cover.insert(*ck, ());
+            for (ck, _) in cover_of(&stalk::invariant(r)).fiber(ROOT) {
+                cover.insert(&ck, ());
             }
         }
         if !f.remainder.is_empty() {
-            for (ck, _) in cover_of(&stalk::invariant(&f.remainder)).fiber(&ROOT) {
-                cover.insert(*ck, ());
+            for (ck, _) in cover_of(&stalk::invariant(&f.remainder)).fiber(ROOT) {
+                cover.insert(&ck, ());
             }
         }
         let mut glues = Keyed::new();
@@ -778,7 +790,7 @@ impl Contemplation {
                 }
                 Vertex::Glued { address, chart, .. } => {
                     cover.insert(chart.key(), ());
-                    glues.insert(*address, ());
+                    glues.insert(address, ());
                 }
                 _ => {}
             }
@@ -799,7 +811,7 @@ impl Contemplation {
             potential: volume,
             volume,
             dirty: true,
-            cursor: [0; 32],
+            cursor: Vec::new(),
             moved_tu: self.now_tu,
             glues,
             glued_by: Keyed::new(),
@@ -810,13 +822,13 @@ impl Contemplation {
             bundle,
             remainders: rem_keyed,
         };
-        if let Some(old) = self.bubbles.get(&key).cloned() {
-            self.retract_incidence(&key, &old);
+        if let Some(old) = self.bubbles.get(key.as_bytes()).cloned() {
+            self.retract_incidence(key.as_bytes(), &old);
         }
-        self.admit_incidence(key, &bubble);
-        self.bubbles.insert(key, bubble);
-        self.dirty.insert(key, ());
-        self.link_new(key);
+        self.admit_incidence(&key, &bubble);
+        self.bubbles.insert(&key, bubble);
+        self.dirty.insert(&key, ());
+        self.link_new(&key);
         eprintln!(
             "  form held {:02x}{:02x}…",
             key[0], key[1]
@@ -843,7 +855,7 @@ impl Contemplation {
             potential: volume,
             volume,
             dirty: true,
-            cursor: [0; 32],
+            cursor: Vec::new(),
             moved_tu: self.now_tu,
             glues: Keyed::new(),
             glued_by: Keyed::new(),
@@ -854,22 +866,22 @@ impl Contemplation {
             bundle: None,
             remainders: Keyed::new(),
         };
-        if let Some(old) = self.bubbles.get(&key).cloned() {
-            self.retract_incidence(&key, &old);
+        if let Some(old) = self.bubbles.get(key.as_bytes()).cloned() {
+            self.retract_incidence(key.as_bytes(), &old);
         }
-        self.admit_incidence(key, &bubble);
-        self.bubbles.insert(key, bubble);
-        self.dirty.insert(key, ());
-        self.link_new(key);
+        self.admit_incidence(&key, &bubble);
+        self.bubbles.insert(&key, bubble);
+        self.dirty.insert(&key, ());
+        self.link_new(&key);
     }
 
-    fn merge(&mut self, verts: &[[u8; 32]]) -> Option<[u8; 32]> {
+    fn merge(&mut self, verts: &[Vec<u8>]) -> Option<crate::transducer::a21::Address> {
         if verts.len() < 2 {
-            return verts.first().copied();
+            return verts.first().cloned().map(crate::transducer::a21::Address::from);
         }
         let forms: Vec<Form> = verts
             .iter()
-            .filter_map(|v| self.bubbles.get(v).and_then(|b| b.form.clone()))
+            .filter_map(|v| self.bubbles.get(v.as_slice()).and_then(|b| b.form.clone()))
             .collect();
         if forms.len() >= 2 {
             for w in forms.windows(2) {
@@ -878,7 +890,7 @@ impl Contemplation {
                         "  thought merge refused {:02x}{:02x}… not one section",
                         verts[0][0], verts[0][1]
                     );
-                    return verts.first().copied();
+                    return verts.first().cloned().map(crate::transducer::a21::Address::from);
                 }
             }
         }
@@ -894,10 +906,10 @@ impl Contemplation {
         let mut remainders: Keyed<Vec<RemCell>> = Keyed::new();
         let mut old_rems: Keyed<Vec<RemCell>> = Keyed::new();
         for v in verts {
-            let Some(b) = self.bubbles.get(v).cloned() else {
+            let Some(b) = self.bubbles.get(v.as_slice()).cloned() else {
                 continue;
             };
-            old_rems.insert(*v, b.remainder.clone());
+            old_rems.insert(v, b.remainder.clone());
             self.retract_incidence(v, &b);
             remainder = union_rem(&remainder, &b.remainder);
             absorb_keyed(&mut cover, &b.cover);
@@ -935,7 +947,7 @@ impl Contemplation {
             potential: volume,
             volume,
             dirty: false,
-            cursor: [0; 32],
+            cursor: Vec::new(),
             moved_tu: 0,
             glues: Keyed::new(),
             glued_by: Keyed::new(),
@@ -946,26 +958,30 @@ impl Contemplation {
             bundle,
             remainders,
         };
-        self.admit_incidence(key, &bubble);
-        self.bubbles.insert(key, bubble);
-        self.dirty.insert(key, ());
-        self.link_new(key);
+        self.admit_incidence(&key, &bubble);
+        self.bubbles.insert(&key, bubble);
+        self.dirty.insert(&key, ());
+        self.link_new(&key);
         if verts.len() >= 2 {
             for v in verts {
-                if *v != key {
+                if v.as_slice() != key.as_bytes() {
                     if let Some(rem) = old_rems.get(v) {
-                        self.cavity.insert(*v, rem.clone());
+                        self.cavity.insert(v, rem.clone());
                     }
                 }
             }
+            let before: Vec<crate::transducer::a21::Address> = verts
+                .iter()
+                .map(|v| crate::transducer::a21::Address::from(v.clone()))
+                .collect();
             let payload = crate::transducer::rewrite::RewritePayload::Condense {
                 sections: vec![vec![]],
                 gauge: element::identity_versor(),
             };
             if let Some(rw) = crate::transducer::rewrite::mint(
                 crate::transducer::rewrite::RewriteKind::Condense,
-                verts,
-                key,
+                &before,
+                key.clone(),
                 payload,
                 [0, verts.len().saturating_sub(1) as u64, 0, 0],
             ) {
@@ -975,10 +991,10 @@ impl Contemplation {
         Some(key)
     }
 
-    fn component_of(&self, start: &[u8; 32]) -> Vec<[u8; 32]> {
+    fn component_of(&self, start: &[u8]) -> Vec<Vec<u8>> {
         let mut seen = Keyed::new();
-        let mut stack = vec![*start];
-        seen.insert(*start, ());
+        let mut stack = vec![start.to_vec()];
+        seen.insert(start, ());
         while let Some(v) = stack.pop() {
             for ck in self.complex.link(&v, 1) {
                 let Some((fill, vertices)) = self.complex.cell(&ck).map(|c| {
@@ -991,22 +1007,22 @@ impl Contemplation {
                 }
                 for u in &vertices {
                     if !seen.contains(u) {
-                        seen.insert(*u, ());
-                        stack.push(*u);
+                        seen.insert(u, ());
+                        stack.push(u.clone());
                     }
                 }
             }
         }
-        seen.fiber(&ROOT).map(|(k, _)| *k).collect()
+        seen.fiber(ROOT).map(|(k, _)| k).collect()
     }
 
-    fn component_closed(&self, verts: &[[u8; 32]]) -> bool {
+    fn component_closed(&self, verts: &[Vec<u8>]) -> bool {
         if verts.is_empty() {
             return false;
         }
         let mut held = Keyed::new();
         for v in verts {
-            held.insert(*v, ());
+            held.insert(v, ());
         }
         // index: vertices of this component; each cell from that vertex's link
         for v in verts {
@@ -1036,21 +1052,21 @@ impl Contemplation {
     ) -> (usize, [u64; 4]) {
         let mut spent = 0usize;
         let mut pivoted = [0u64; 4];
-        let mut from = self.expand_cursor;
+        let mut from = self.expand_cursor.clone();
         // index: budgeted keyed cursor over dirty bubbles; each expand spends the rest
         while budget.remaining() > 0 {
             let mut nxt = None;
             {
-                let mut cur = self.dirty.cursor(from, budget);
+                let mut cur = self.dirty.cursor(&from, budget);
                 if let Some((k, _)) = Iterator::next(&mut cur) {
-                    nxt = Some(*k);
+                    nxt = Some(k.clone());
                 }
             }
             let Some(k) = nxt else {
                 break;
             };
-            from = k;
-            self.expand_cursor = k;
+            from = k.clone();
+            self.expand_cursor = k.clone();
             if let Some(b) = self.bubbles.get_mut(&k) {
                 let (s, p) = b.expand_with(atlas, rotors, self.now_tu, crystal, budget);
                 spent += s;
@@ -1077,11 +1093,11 @@ impl Contemplation {
         budget: &mut Budget,
     ) -> (u64, u64, u64, Vec<Element>) {
         let inv = stalk::invariant_of(word);
-        let prefixes: Vec<[u8; 32]> = inv.prefixes().iter().map(|p| p.key()).collect();
-        let cav: Vec<([u8; 32], Vec<RemCell>)> = self.cavity.fiber(&ROOT).map(|(k, r)| (*k, r.clone())).collect();
+        let prefixes: Vec<Vec<u8>> = inv.prefixes().iter().map(|p| p.key().into_vec()).collect();
+        let cav: Vec<(Vec<u8>, Vec<RemCell>)> = self.cavity.fiber(ROOT).map(|(k, r)| (k, r.clone())).collect();
         for (k, rem) in cav {
             let cinv = stalk::invariant(&rem);
-            if cinv.prefixes().iter().any(|p| prefixes.iter().any(|q| q == &p.key())) {
+            if cinv.prefixes().iter().any(|p| prefixes.iter().any(|q| p.key().as_bytes() == q.as_slice())) {
                 self.cavity.remove(&k);
                 self.hold(rem);
             }
@@ -1089,7 +1105,7 @@ impl Contemplation {
         let mut keys = Keyed::new();
         for p in inv.prefixes() {
             for (id, _) in self.by_chart.link(&p.key()) {
-                keys.insert(*id, ());
+                keys.insert(&id, ());
             }
         }
         let word_rotor = cech::rotor_of(word);
@@ -1097,13 +1113,13 @@ impl Contemplation {
         let mut new_classes = 0u64;
         let mut spoken: Vec<Element> = Vec::new();
         spoken.extend(std::mem::take(&mut self.pending_rewrites));
-        let bubble_keys: Vec<[u8; 32]> = keys.fiber(&ROOT).map(|(k, _)| *k).collect();
+        let bubble_keys: Vec<Vec<u8>> = keys.fiber(ROOT).map(|(k, _)| k).collect();
         if word.sub().is_empty() && crate::transducer::sentence::carries_torsion(word) {
             let addr = word.address();
             for bk in &bubble_keys {
-                self.mark_glue(bk, addr);
-                if let Some(b) = self.bubbles.get_mut(&addr) {
-                    b.glued_by.insert(*bk, ());
+                self.mark_glue(bk, &addr);
+                if let Some(b) = self.bubbles.get_mut(addr.as_bytes()) {
+                    b.glued_by.insert(bk, ());
                 }
             }
         }
@@ -1118,11 +1134,13 @@ impl Contemplation {
             let bundle = b.bundle.clone();
             let t = self.now_tu.saturating_sub(b.moved_tu);
             if let Some(mut form) = b.form.clone() {
-                let _ = form.pivot_loop(*bk, &horizon, crystal, budget, bundle.as_deref(), t);
+                let _ = form.pivot_loop(bk, &horizon, crystal, budget, bundle.as_deref(), t);
                 if let Some(b) = self.bubbles.get_mut(bk) {
                     b.take_form(form);
                     if let Some(r) = &word_rotor {
-                        b.collapse_vortex(&r.class_key(), &r.key(), "glue");
+                        if let Some(ck) = r.class_key() {
+                            b.collapse_vortex(ck.as_bytes(), r.key().as_bytes(), "glue");
+                        }
                     }
                 }
             }
@@ -1143,8 +1161,8 @@ impl Contemplation {
                         c.degree(),
                         matches!(c.fill, Fill::Open),
                         c.coefficient.is_identity(),
-                        c.vertices.first().copied(),
-                        c.vertices.get(1).copied(),
+                        c.vertices.first().cloned(),
+                        c.vertices.get(1).cloned(),
                         c.vertices.clone(),
                     )
                 }) else {
@@ -1200,10 +1218,10 @@ impl Contemplation {
                         Fill::Congruent(g, ell) => {
                             self.torsion_merges += 1;
                             if let Some(merged) = self.merge(&vertices) {
-                                if let Some(b) = self.bubbles.get_mut(&merged) {
-                                    let a = vertices[0];
-                                    let c = vertices.get(1).copied().unwrap_or(a);
-                                    b.nerve.file_congruent(a, c, g, ell);
+                                if let Some(b) = self.bubbles.get_mut(merged.as_bytes()) {
+                                    let a = vertices[0].clone();
+                                    let c = vertices.get(1).cloned().unwrap_or_else(|| a.clone());
+                                    b.nerve.file_congruent(&a, &c, g, ell);
                                 }
                             }
                         }
@@ -1212,7 +1230,7 @@ impl Contemplation {
                             self.classes += 1;
                             for v in &vertices {
                                 if let Some(b) = self.bubbles.get_mut(v) {
-                                    if !b.horizon.contains(&r.class_key()) {
+                                    if r.class_key().is_none_or(|ck| !b.horizon.contains(ck.as_bytes())) {
                                         horizon_put(&mut b.horizon, r.clone(), Standing::Held);
                                     }
                                 }
@@ -1225,7 +1243,7 @@ impl Contemplation {
         (fills, self.formed, new_classes, spoken)
     }
 
-    fn form_thought(&self, verts: &[[u8; 32]]) -> Option<Element> {
+    fn form_thought(&self, verts: &[Vec<u8>]) -> Option<Element> {
         let mut forms = Vec::new();
         for v in verts {
             let b = self.bubbles.get(v)?;
@@ -1255,7 +1273,7 @@ impl Contemplation {
     pub fn component_count(&self) -> usize {
         let mut seen = Keyed::new();
         let mut n = 0usize;
-        let keys: Vec<[u8; 32]> = self.bubbles.fiber(&ROOT).map(|(k, _)| *k).collect();
+        let keys: Vec<Vec<u8>> = self.bubbles.fiber(ROOT).map(|(k, _)| k).collect();
         for k in keys {
             if seen.contains(&k) {
                 continue;
@@ -1275,7 +1293,7 @@ impl Contemplation {
         out.extend_from_slice(Self::THT2);
         out.extend_from_slice(&(self.bubbles.len() as u32).to_le_bytes());
         crate::snapshot::persist(&self.bubbles, |k, b| {
-            out.extend_from_slice(k);
+            crate::transducer::a21::put_addr(out, k);
             out.extend_from_slice(&(b.remainder.len() as u32).to_le_bytes());
             for &(r, c, hb, ha) in &b.remainder {
                 out.extend_from_slice(&r.to_le_bytes());
@@ -1284,7 +1302,9 @@ impl Contemplation {
                 out.push(ha);
             }
             out.extend_from_slice(&(b.cover.len() as u32).to_le_bytes());
-            crate::snapshot::persist(&b.cover, |ck, _| out.extend_from_slice(ck));
+            crate::snapshot::persist(&b.cover, |ck, _| {
+                let _ = crate::transducer::a21::put_addr(out, ck);
+            });
             for x in &b.volume {
                 out.extend_from_slice(&x.to_le_bytes());
             }
@@ -1292,7 +1312,7 @@ impl Contemplation {
             out.extend_from_slice(&0u32.to_le_bytes());
             out.extend_from_slice(&(b.horizon.len() as u32).to_le_bytes());
             crate::snapshot::persist(&b.horizon, |hk, (r, order, standing)| {
-                out.extend_from_slice(hk);
+                crate::transducer::a21::put_addr(out, hk);
                 r.to_bytes(out);
                 out.extend_from_slice(&order.to_u32().to_le_bytes());
                 out.push(standing.as_u8());
@@ -1303,7 +1323,7 @@ impl Contemplation {
             out.extend_from_slice(b"TOR1");
             out.extend_from_slice(&(b.torsion.len() as u32).to_le_bytes());
             crate::snapshot::persist(&b.torsion, |tk, (sigma, ell, chord)| {
-                out.extend_from_slice(tk);
+                crate::transducer::a21::put_addr(out, tk);
                 out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
                 for &(a, c) in sigma {
                     out.push(a);
@@ -1318,7 +1338,7 @@ impl Contemplation {
             });
             out.extend_from_slice(&(b.vortex.len() as u32).to_le_bytes());
             crate::snapshot::persist(&b.vortex, |after, inner| {
-                out.extend_from_slice(after);
+                crate::transducer::a21::put_addr(out, after);
                 out.extend_from_slice(&(inner.len() as u32).to_le_bytes());
                 crate::snapshot::persist(inner, |_, c| {
                     c.to_bytes(out);
@@ -1343,7 +1363,7 @@ impl Contemplation {
         out.extend_from_slice(&self.formed.to_le_bytes());
         out.extend_from_slice(&(self.cavity.len() as u32).to_le_bytes());
         crate::snapshot::persist(&self.cavity, |k, rem| {
-            out.extend_from_slice(k);
+            crate::transducer::a21::put_addr(out, k);
             out.extend_from_slice(&(rem.len() as u32).to_le_bytes());
             for &(r, c, hb, ha) in rem {
                 out.extend_from_slice(&r.to_le_bytes());
@@ -1355,13 +1375,9 @@ impl Contemplation {
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Contemplation> {
-        let v2 = if b.get(*pos..*pos + 4) == Some(&Self::THT2[..]) {
-            true
-        } else if b.get(*pos..*pos + 4) == Some(&Self::THT1[..]) {
-            false
-        } else {
+        if b.get(*pos..*pos + 4) != Some(&Self::THT2[..]) {
             return None;
-        };
+        }
         *pos += 4;
         let take_u32 = |b: &[u8], pos: &mut usize| -> Option<u32> {
             let v = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
@@ -1377,11 +1393,10 @@ impl Contemplation {
             }
             Some(n)
         };
-        let n = take_count(b, *pos, take_u32(b, pos)? as usize, 32)?;
+        let n = take_count(b, *pos, take_u32(b, pos)? as usize, 1)?;
         let mut c = Contemplation::new();
         for _ in 0..n {
-            let key: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-            *pos += 32;
+            let key = crate::transducer::a21::take_addr(b, pos)?;
             let nr = take_count(b, *pos, take_u32(b, pos)? as usize, 18)?;
             let mut remainder = Vec::with_capacity(nr);
             for _ in 0..nr {
@@ -1395,11 +1410,10 @@ impl Contemplation {
                 *pos += 1;
                 remainder.push((r, col, hb, ha));
             }
-            let nc = take_count(b, *pos, take_u32(b, pos)? as usize, 32)?;
+            let nc = take_count(b, *pos, take_u32(b, pos)? as usize, 1)?;
             let mut cover = Keyed::new();
             for _ in 0..nc {
-                let ck: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-                *pos += 32;
+                let ck = crate::transducer::a21::take_addr(b, pos)?;
                 cover.insert(ck, ());
             }
             let mut volume = [0u64; 4];
@@ -1414,23 +1428,15 @@ impl Contemplation {
             *pos = end;
             let mut horizon: Keyed<(Rotor, Order, Standing)> = Keyed::new();
             if *pos + 4 <= b.len() {
-                let nh = take_count(b, *pos, take_u32(b, pos)? as usize, 32)?;
+                let nh = take_count(b, *pos, take_u32(b, pos)? as usize, 1)?;
                 for _ in 0..nh {
-                    let hk: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-                    *pos += 32;
+                    let hk = crate::transducer::a21::take_addr(b, pos)?;
                     let r = Rotor::from_bytes(b, pos)?;
-                    if v2 {
-                        let ell = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
-                        *pos += 4;
-                        let st = Standing::from_u8(*b.get(*pos)?).unwrap_or(Standing::Held);
-                        *pos += 1;
-                        horizon.insert(hk, (r, Order::from_u32(ell), st));
-                    } else {
-                        let _d = *b.get(*pos)?;
-                        *pos += 1;
-                        let order = r.word_order()?;
-                        horizon.insert(r.class_key(), (r, order, Standing::Held));
-                    }
+                    let ell = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
+                    *pos += 4;
+                    let st = Standing::from_u8(*b.get(*pos)?).unwrap_or(Standing::Held);
+                    *pos += 1;
+                    horizon.insert(hk, (r, Order::from_u32(ell), st));
                 }
             }
             let mut potential = volume;
@@ -1449,8 +1455,7 @@ impl Contemplation {
                 // truncated: a σ longer than the stream would desync the tape.
                 let nt = take_count(b, *pos, take_u32(b, pos)? as usize, 40)?;
                 for _ in 0..nt {
-                    let tk: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-                    *pos += 32;
+                    let tk = crate::transducer::a21::take_addr(b, pos)?;
                     let ns = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?) as usize;
                     *pos += 2;
                     let ns = take_count(b, *pos, ns, 2)?;
@@ -1468,16 +1473,15 @@ impl Contemplation {
                     *pos += 2;
                     torsion.insert(tk, (sigma, ell, chord));
                 }
-                let nc = take_count(b, *pos, take_u32(b, pos)? as usize, 32)?;
+                let nc = take_count(b, *pos, take_u32(b, pos)? as usize, 1)?;
                 for _ in 0..nc {
                     let c = sentence::PivotCertificate::from_bytes(b, pos)?;
                     certificates.insert(c.key(), c);
                 }
-                let nv = take_count(b, *pos, take_u32(b, pos)? as usize, 32)?;
+                let nv = take_count(b, *pos, take_u32(b, pos)? as usize, 1)?;
                 for _ in 0..nv {
-                    let after: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-                    *pos += 32;
-                    let nc = take_count(b, *pos, take_u32(b, pos)? as usize, 32)?;
+                    let after = crate::transducer::a21::take_addr(b, pos)?;
+                    let nc = take_count(b, *pos, take_u32(b, pos)? as usize, 1)?;
                     let mut inner = Keyed::new();
                     for _ in 0..nc {
                         let c = sentence::PivotCertificate::from_bytes(b, pos)?;
@@ -1506,7 +1510,7 @@ impl Contemplation {
                 potential,
                 volume,
                 dirty,
-                cursor: [0; 32],
+                cursor: Vec::new(),
                 moved_tu: 0,
                 glues: Keyed::new(),
                 glued_by: Keyed::new(),
@@ -1517,8 +1521,8 @@ impl Contemplation {
                 bundle: None,
                 remainders: Keyed::new(),
             };
-            c.admit_incidence(key, &bubble);
-            c.bubbles.insert(key, bubble);
+            c.admit_incidence(&key, &bubble);
+            c.bubbles.insert(&key, bubble);
         }
         c.complex = Complex::from_bytes(b, pos)?;
         if *pos + 24 <= b.len() {
@@ -1534,10 +1538,9 @@ impl Contemplation {
             *pos += 8;
         }
         if *pos + 4 <= b.len() {
-            let nc = take_count(b, *pos, take_u32(b, pos)? as usize, 32)?;
+            let nc = take_count(b, *pos, take_u32(b, pos)? as usize, 1)?;
             for _ in 0..nc {
-                let k: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-                *pos += 32;
+                let k = crate::transducer::a21::take_addr(b, pos)?;
                 let nr = take_count(b, *pos, take_u32(b, pos)? as usize, 18)?;
                 let mut rem = Vec::with_capacity(nr);
                 for _ in 0..nr {
@@ -1559,7 +1562,7 @@ impl Contemplation {
 
     pub fn horizon_cells(&self) -> usize {
         let mut n = 0usize;
-        for (_, b) in self.bubbles.fiber(&ROOT) {
+        for (_, b) in self.bubbles.fiber(ROOT) {
             n += b.horizon.len();
         }
         n
@@ -1567,7 +1570,7 @@ impl Contemplation {
 
     pub fn potential(&self) -> [u64; 4] {
         let mut p = [0u64; 4];
-        for (_, b) in self.bubbles.fiber(&ROOT) {
+        for (_, b) in self.bubbles.fiber(ROOT) {
             for l in 0..4 {
                 p[l] = p[l].saturating_add(b.potential[l]);
             }
@@ -1595,7 +1598,7 @@ mod tests {
         c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
         c.hold(vec![(5, 5, 3, 4), (5, 6, 3, 4)]);
         assert_eq!(c.len(), 2, "disjoint remainders are two bubbles");
-        let keys: Vec<[u8; 32]> = c.bubbles.fiber(&ROOT).map(|(k, _)| *k).collect();
+        let keys: Vec<Vec<u8>> = c.bubbles.fiber(ROOT).map(|(k, _)| k).collect();
         let edges = c.complex.link(&keys[0], 1);
         assert!(!edges.is_empty() || c.complex.degrees.get(1).map_or(true, |l| !l.is_empty()) || {
             // same chart prefix (leading axis of a bar) may or may not coincide;
@@ -1614,7 +1617,7 @@ mod tests {
         c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
         c.hold(vec![(0, 1, 3, 4), (0, 2, 3, 4)]);
         assert_eq!(c.len(), 1, "shared cell is Extended: the bubbles merge");
-        let keys: Vec<[u8; 32]> = c.bubbles.fiber(&ROOT).map(|(k, _)| *k).collect();
+        let keys: Vec<Vec<u8>> = c.bubbles.fiber(ROOT).map(|(k, _)| k).collect();
         assert_eq!(keys.len(), 1);
         assert!(c.bubbles.get(&keys[0]).unwrap().potential.iter().any(|&x| x > 0));
     }
@@ -1644,8 +1647,8 @@ mod tests {
         let snap = |c: &Contemplation| {
             let mut out = Vec::new();
             for layer in &c.complex.degrees {
-                for (k, cell) in layer.fiber(&ROOT) {
-                    out.push((*k, cell.fill.clone()));
+                for (k, cell) in layer.fiber(ROOT) {
+                    out.push((k.clone(), cell.fill.clone()));
                 }
             }
             out.sort_by(|a, b| a.0.cmp(&b.0));
@@ -1656,7 +1659,8 @@ mod tests {
         let before = snap(&c);
         let mut budget = crate::physics::Physics::default().stroke_n(64);
         let _ = c.pivot_on(&word, &crate::transducer::family::NoCrystal, &mut budget);
-        assert_eq!(snap(&c), before, "a second pivot with no new word leaves fills");
+        let fills = |s: &[(Vec<u8>, Fill)]| s.iter().map(|(_, f)| f.clone()).collect::<Vec<_>>();
+        assert_eq!(fills(&snap(&c)), fills(&before), "a second pivot with no new word leaves fills");
     }
 
     #[test]
@@ -1678,13 +1682,13 @@ mod tests {
         let q = LetterId::quarter((0, 1)).unwrap();
         let r = Word::from_letters(&[(q, false)]).rotor();
         let rec = ClassRecord {
-            key: r.class_key(),
+            key: r.class_key().expect("quarter class"),
             order: r.word_order().expect("quarter spells"),
             representative: r.clone(),
         };
         assert_eq!(c.seed_horizon(&[rec.clone()]), 1);
         c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
-        let b = c.bubbles.fiber(&ROOT).next().map(|(_, b)| b).expect("bubble");
+        let b = c.bubbles.fiber(ROOT).next().map(|(_, b)| b).expect("bubble");
         let (_, _, st) = b.horizon.get(&rec.key).expect("seeded");
         assert_eq!(*st, Standing::Held);
     }
@@ -1697,7 +1701,7 @@ mod tests {
         let q = LetterId::quarter((0, 1)).unwrap();
         let r = Word::from_letters(&[(q, false)]).rotor();
         let rec = ClassRecord {
-            key: r.class_key(),
+            key: r.class_key().expect("quarter class"),
             order: r.word_order().expect("quarter spells"),
             representative: r,
         };
@@ -1706,7 +1710,7 @@ mod tests {
         c.hold(vec![(5, 5, 3, 4)]);
         assert!(
             c.bubbles
-                .fiber(&ROOT)
+                .fiber(ROOT)
                 .any(|(_, b)| b.horizon.contains(&rec.key)),
             "a later idea inherits the seeded class"
         );
@@ -1740,7 +1744,7 @@ mod tests {
         let inner = {
             let mut f = Form::default();
             f.vertices.push(Vertex::Word {
-                address: [1u8; 32],
+                address: crate::transducer::a21::Address::from(vec![1]),
                 word: w.clone(),
                 rho: one.clone(),
                 placement: (zero.clone(), zero.clone()),
@@ -1754,13 +1758,13 @@ mod tests {
         };
         let mut outer = Form::default();
         let _gi = outer
-            .glue(&inner, [0xabu8; 32], Word::identity(), [1, 0, 0, 0])
+            .glue(&inner, crate::transducer::a21::Address::from(vec![0xab]), Word::identity(), [1, 0, 0, 0])
             .expect("glue");
         assert!(outer.remainder.is_empty(), "no remainder to hold()");
         let mut c = Contemplation::new();
         c.hold_form(&outer, &[], &[]);
         assert_eq!(c.bubbles.len(), 1, "the glued form is an idea");
-        let b = c.bubbles.fiber(&ROOT).next().map(|(_, b)| b).expect("held");
+        let b = c.bubbles.fiber(ROOT).next().map(|(_, b)| b).expect("held");
         assert!(
             b.form.as_ref().is_some_and(|f| {
                 f.vertices
@@ -1777,7 +1781,7 @@ mod tests {
 
         let mut open = Form::default();
         open.vertices.push(Vertex::Word {
-            address: [2u8; 32],
+            address: crate::transducer::a21::Address::from(vec![2]),
             word: Word::identity(),
             rho: one.clone(),
             placement: (zero.clone(), zero.clone()),
@@ -1786,7 +1790,7 @@ mod tests {
             contact: None,
         });
         open.vertices.push(Vertex::Word {
-            address: [3u8; 32],
+            address: crate::transducer::a21::Address::from(vec![3]),
             word: Word::identity(),
             rho: one,
             placement: (zero.clone(), zero),
@@ -1812,8 +1816,8 @@ mod tests {
         );
         let mut c2 = Contemplation::new();
         c2.hold_form(&open, &[], &[]);
-        let k = c2.bubbles.fiber(&ROOT).next().map(|(k, _)| *k).expect("held");
-        assert_eq!(k, super::idea_key(&open), "hold, merge and Bubble::key share idea_key");
+        let k = c2.bubbles.fiber(ROOT).next().map(|(k, _)| k).expect("held");
+        assert_eq!(k.as_slice(), super::idea_key(&open).as_bytes(), "hold, merge and Bubble::key share idea_key");
         struct HoldQ(Word);
         impl crate::transducer::family::Crystal for HoldQ {
             fn on_class(
@@ -1834,7 +1838,7 @@ mod tests {
             ) -> Option<crate::transducer::family::Speech> {
                 None
             }
-            fn by_address(&self, _a: &[u8; 32]) -> Option<(crate::transducer::element::Element, Form)> {
+            fn by_address(&self, _a: &[u8]) -> Option<(crate::transducer::element::Element, Form)> {
                 None
             }
             fn on_axis(
@@ -1884,7 +1888,7 @@ mod tests {
         let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
         let mut f = Form::default();
         f.vertices.push(Vertex::Word {
-            address: [9u8; 32],
+            address: crate::transducer::a21::Address::from(vec![9]),
             word: Word::identity(),
             rho: one,
             placement: (zero.clone(), zero),
@@ -1902,8 +1906,8 @@ mod tests {
         let mut c = Contemplation::new();
         c.hold_form(&f, &train, &rem);
         assert_eq!(c.bubbles.len(), 1);
-        let (k, b) = c.bubbles.fiber(&ROOT).next().expect("held");
-        assert_eq!(*k, super::idea_key(&f), "idea_key stays the form's vertex key");
+        let (k, b) = c.bubbles.fiber(ROOT).next().expect("held");
+        assert_eq!(k.as_slice(), super::idea_key(&f).as_bytes(), "idea_key stays the form's vertex key");
         assert!(
             b.bundle.as_ref().is_some_and(|t| t.len() == 1),
             "the idea carries the train"
@@ -1928,23 +1932,23 @@ mod tests {
         c.hold(vec![(0, 0, 1, 2), (1, 0, 1, 2)]);
         let q = LetterId::quarter((0, 1)).unwrap();
         let r = Word::from_letters(&[(q, false)]).rotor();
-        let ck = r.class_key();
+        let ck = r.class_key().expect("quarter class");
         let key = {
-            let (k, _) = c.bubbles.fiber(&ROOT).next().expect("bubble");
-            *k
+            let (k, _) = c.bubbles.fiber(ROOT).next().expect("bubble");
+            k
         };
         if let Some(b) = c.bubbles.get_mut(&key) {
             horizon_put(&mut b.horizon, r.clone(), Standing::Held);
         }
-        assert!(c.bubbles.get(&key).unwrap().horizon.contains(&ck));
+        assert!(c.bubbles.get(&key).unwrap().horizon.contains(ck.as_bytes()));
         let mut bytes = Vec::new();
         c.to_bytes(&mut bytes);
         assert_eq!(&bytes[..4], Contemplation::THT2);
         let mut pos = 0usize;
         let back = Contemplation::from_bytes(&bytes, &mut pos).expect("THT2");
         let hb = back.bubbles.get(&key).expect("restored");
-        let (got, order, st) = hb.horizon.get(&ck).expect("class key");
-        assert_eq!(got.class_key(), ck);
+        let (got, order, st) = hb.horizon.get(ck.as_bytes()).expect("class key");
+        assert_eq!(got.class_key(), Some(ck.clone()));
         assert_eq!(*order, r.word_order().expect("quarter spells"));
         assert_eq!(*st, Standing::Held);
     }
@@ -1974,7 +1978,7 @@ mod tests {
             let expand = work::total();
             work::reset();
             let mut charts = 0usize;
-            for (_, b) in c.bubbles.fiber(&ROOT) {
+            for (_, b) in c.bubbles.fiber(ROOT) {
                 let mut cur = stalk::invariant(&b.remainder);
                 loop {
                     if b.cover.contains(&cur.key()) {
@@ -2007,12 +2011,12 @@ mod tests {
         let q = LetterId::quarter((0, 1)).unwrap();
         let w = Word::from_letters(&[(q, false)]);
         let r = w.rotor();
-        let after = r.class_key();
+        let after = r.class_key().expect("quarter class");
         let hit = PivotCertificate {
             chord: 0,
             axis: Axis::Unit(0),
-            before: [1u8; 32],
-            after,
+            before: crate::transducer::a21::Address::from(vec![1]),
+            after: after.clone(),
             rank_before: Rank {
                 torsion: 1,
                 free: 0,
@@ -2036,8 +2040,8 @@ mod tests {
         let other = PivotCertificate {
             chord: 0,
             axis: Axis::Hue,
-            before: [2u8; 32],
-            after,
+            before: crate::transducer::a21::Address::from(vec![2]),
+            after: after.clone(),
             rank_before: Rank {
                 torsion: 1,
                 free: 0,
@@ -2052,7 +2056,7 @@ mod tests {
                 side: Side::Left,
             },
         };
-        let k = c.bubbles.fiber(&ROOT).next().map(|(k, _)| *k).expect("bubble");
+        let k = c.bubbles.fiber(ROOT).next().map(|(k, _)| k).expect("bubble");
         let hit_key = hit.key();
         if let Some(b) = c.bubbles.get_mut(&k) {
             sentence::vortex_put(&mut b.vortex, hit);

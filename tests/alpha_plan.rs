@@ -1,5 +1,5 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
-//! Alpha-plan proofs: vertices, GEN2, faces by constancy, speech, dialect, mint.
+//! Alpha-plan proofs: vertices, GEN3, faces by constancy, speech, dialect, mint.
 
 use mycelium::anastome::dialogue;
 use mycelium::cognition::Kernel;
@@ -28,15 +28,19 @@ fn normal_form_two_tapes_one_key() {
 }
 
 #[test]
-fn gen2_round_trip_and_size() {
+fn gen3_round_trip_and_size() {
     let affine = affine_of(&identity_versor()).unwrap();
     let w = from_connection(&affine, &[(1, 2)], &vec![(0, 0, 1u8, 2)], [1, 1, 0, 0]).unwrap();
     let b = w.to_bytes();
-    assert_eq!(b[0], Element::GEN2_MAGIC);
+    assert_eq!(b[0], Element::GEN3_MAGIC);
     let mut p = 0;
     let back = Element::from_bytes(&b, &mut p).unwrap();
     assert_eq!(back.address(), w.address());
     assert!(b.len() < 200, "a word is under 200 bytes, got {}", b.len());
+    let mut old = b.clone();
+    old[0] = Element::GEN2_MAGIC;
+    let mut p = 0;
+    assert!(Element::from_bytes(&old, &mut p).is_none(), "an old file is refused");
 }
 
 #[test]
@@ -123,7 +127,7 @@ fn perceive_speech_refuses_with_a_reason() {
     let mut k = Kernel::new();
     let mut bad = mycelium::transducer::element::from_residual(&vec![(0, 0, 1u8, 2)]);
     bad.set_magnitude([99, 99, 99, 99]);
-    let codes = k.perceive_speech([9; 32], [0; 32], std::slice::from_ref(&bad));
+    let codes = k.perceive_speech([9; 32], &[0; 32], std::slice::from_ref(&bad));
     assert_eq!(
         codes,
         vec![dialogue::SPEECH_REFUSED],
@@ -131,7 +135,7 @@ fn perceive_speech_refuses_with_a_reason() {
     );
     let affine = affine_of(&identity_versor()).unwrap();
     let ok = from_connection(&affine, &[(1, 2), (2, 1)], &Vec::new(), [1, 1, 0, 0]).unwrap();
-    let codes = k.perceive_speech([9; 32], [0; 32], std::slice::from_ref(&ok));
+    let codes = k.perceive_speech([9; 32], &[0; 32], std::slice::from_ref(&ok));
     assert_eq!(codes, vec![dialogue::SPEECH_STOOD], "a replay-clean word stands");
 }
 
@@ -190,16 +194,19 @@ fn dialect_enters_on_stood_and_sheds() {
 }
 
 #[test]
-fn hypha_snapshot_is_myc2() {
+fn hypha_snapshot_is_myc3() {
     let mut k = Kernel::new();
     let a = vec![(0, 0, 1u8), (0, 1, 1)];
     let b = vec![(0, 0, 2u8), (0, 1, 2)];
     let _ = k.ingest(&a, &b, [1; 32]);
     let snap = k.snapshot();
-    assert_eq!(&snap[..4], b"MYC2");
+    assert_eq!(&snap[..4], b"MYC3");
     let mut k2 = Kernel::new();
     assert!(k2.restore(&snap));
     assert_eq!(k2.occupancy(), [0, 0, 0, 0], "cold listings exert zero occupancy");
+    let mut old = snap.clone();
+    old[..4].copy_from_slice(b"MYC2");
+    assert!(!Kernel::new().restore(&old), "an old file is refused");
 }
 
 #[test]
@@ -215,7 +222,7 @@ fn genome_unchanged_by_dialect() {
     let mut epi = Epigenome::new();
     let n0 = epi.genome_len();
     let frozen = epi.crystallize();
-    assert_eq!(&frozen[..4], b"GEN2");
+    assert_eq!(&frozen[..4], b"GEN3");
     let affine = affine_of(&identity_versor()).unwrap();
     let w = from_connection(&affine, &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0]).unwrap();
     epi.stand_dialect_at(w, 3, 3);
@@ -234,6 +241,6 @@ fn mint_once_on_home_install() {
     let mut k = Kernel::new();
     let affine = affine_of(&identity_versor()).unwrap();
     let w = from_connection(&affine, &[(1, 2), (2, 1)], &Vec::new(), [2, 1, 0, 0]).unwrap();
-    let codes = k.perceive_speech([9; 32], [0; 32], std::slice::from_ref(&w));
+    let codes = k.perceive_speech([9; 32], &[0; 32], std::slice::from_ref(&w));
     assert_eq!(codes.first().copied(), Some(dialogue::SPEECH_STOOD));
 }

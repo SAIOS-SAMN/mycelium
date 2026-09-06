@@ -73,7 +73,7 @@ impl Sentence {
 /// verified, never on what it was told.
 pub fn puncture_from(
     words: &mut [std::sync::Arc<Element>],
-    index_of: impl Fn(&[u8; 32]) -> Option<usize>,
+    index_of: impl Fn(&[u8]) -> Option<usize>,
     cites: &[crate::anastome::dialogue::CiteWire],
 ) -> usize {
     let mut deepened = 0usize;
@@ -124,7 +124,7 @@ pub fn pieces(chain: &[Cell]) -> Vec<Vec<Cell>> {
             }
         }
     }
-    by.fiber(&ROOT).map(|(_, v)| v.clone()).collect()
+    by.fiber(ROOT).map(|(_, v)| v.clone()).collect()
 }
 
 /// THE INCIDENCE of a support: its 1-skeleton, the pairs of cells sharing
@@ -250,7 +250,7 @@ pub fn replay_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Vec<Cel
         }
     }
     let mut residual: Vec<Cell> = at
-        .fiber(&ROOT)
+        .fiber(ROOT)
         .filter(|(k, _)| !spoken.contains(k))
         .map(|(_, t)| *t)
         .collect();
@@ -341,7 +341,7 @@ pub fn seam_defect_operators(ops: &[(Versor, Vec<Cell>)], target: &[Cell]) -> Ve
             }
         }
     }
-    at.fiber(&ROOT)
+    at.fiber(ROOT)
         .filter(|(k, _)| conflict.contains(k))
         .map(|(_, t)| *t)
         .collect()
@@ -389,7 +389,7 @@ pub fn is_flat(cycle: &[Versor]) -> bool {
 pub fn locate<'a>(
     words: &'a [Element],
     atlas: &Stalks,
-    index_of: &impl Fn(&[u8; 32]) -> Option<usize>,
+    index_of: &impl Fn(&[u8]) -> Option<usize>,
     shape_at: &impl Fn(usize) -> Option<&'a Shape>,
     piece: &[Cell],
     exclude: Option<usize>,
@@ -406,7 +406,7 @@ pub fn locate<'a>(
 pub fn locate_or_puncture<'a>(
     words: &'a [Element],
     atlas: &Stalks,
-    index_of: &impl Fn(&[u8; 32]) -> Option<usize>,
+    index_of: &impl Fn(&[u8]) -> Option<usize>,
     shape_at: &impl Fn(usize) -> Option<&'a Shape>,
     piece: &[Cell],
     exclude: Option<usize>,
@@ -417,7 +417,7 @@ pub fn locate_or_puncture<'a>(
 pub fn locate_or_puncture_at<'a>(
     word_at: &impl Fn(usize) -> Option<&'a Element>,
     atlas: &Stalks,
-    index_of: &impl Fn(&[u8; 32]) -> Option<usize>,
+    index_of: &impl Fn(&[u8]) -> Option<usize>,
     shape_at: &impl Fn(usize) -> Option<&'a Shape>,
     piece: &[Cell],
     exclude: Option<usize>,
@@ -428,8 +428,8 @@ pub fn locate_or_puncture_at<'a>(
 /// Locate against an arbitrary fiber — the working atlas, not only the genome.
 pub fn locate_or_puncture_on<'a>(
     word_at: &impl Fn(usize) -> Option<&'a Element>,
-    fiber_of: &impl Fn(&stalk::Invariant) -> Vec<[u8; 32]>,
-    index_of: &impl Fn(&[u8; 32]) -> Option<usize>,
+    fiber_of: &impl Fn(&stalk::Invariant) -> Vec<Vec<u8>>,
+    index_of: &impl Fn(&[u8]) -> Option<usize>,
     shape_at: &impl Fn(usize) -> Option<&'a Shape>,
     piece: &[Cell],
     exclude: Option<usize>,
@@ -450,7 +450,7 @@ pub fn locate_or_puncture_on<'a>(
     let Some(to_word) = blade::versor_between(&shape, held) else { return (None, None, m) };
     let Some(v) = to_word.versor_inverse() else { return (None, None, m) };
     let agreeing = gauge_of(word, &v, piece);
-    let mut asgs = agreeing.fiber(&ROOT);
+    let mut asgs = agreeing.fiber(ROOT);
     if let Some((_, &asg)) = asgs.next() {
         if asgs.next().is_none() {
             let cite: Cite = (i, v.clone(), asg);
@@ -472,7 +472,7 @@ pub fn locate_or_puncture_on<'a>(
     (None, None, m)
 }
 
-fn body_key(body: &[Cell]) -> Option<[u8; 32]> {
+fn body_key(body: &[Cell]) -> Option<crate::transducer::a21::Address> {
     if body.is_empty() {
         return None;
     }
@@ -484,8 +484,8 @@ fn place_located<'a>(
     located: (Option<Cite>, Option<(usize, Versor, Vec<Cell>)>, usize),
     body: &[Cell],
     word_at: &impl Fn(usize) -> Option<&'a Element>,
-    fiber_of: &impl Fn(&stalk::Invariant) -> Vec<[u8; 32]>,
-    index_of: &impl Fn(&[u8; 32]) -> Option<usize>,
+    fiber_of: &impl Fn(&stalk::Invariant) -> Vec<Vec<u8>>,
+    index_of: &impl Fn(&[u8]) -> Option<usize>,
     shape_at: &impl Fn(usize) -> Option<&'a Shape>,
     exclude: Option<usize>,
 ) {
@@ -501,7 +501,7 @@ fn place_located<'a>(
                 out.residual.extend(cells);
             }
             Some(element::GaugeFibers::Many(idx)) => {
-                for (_, fiber) in idx.fiber(&ROOT) {
+                for (_, fiber) in idx.fiber(ROOT) {
                     for sub in pieces(fiber) {
                         let loc = locate_or_puncture_on(
                             word_at, fiber_of, index_of, shape_at, &sub, exclude,
@@ -521,7 +521,7 @@ fn place_located<'a>(
 pub fn deconstruct<'a>(
     words: &'a [Element],
     atlas: &Stalks,
-    index_of: &impl Fn(&[u8; 32]) -> Option<usize>,
+    index_of: &impl Fn(&[u8]) -> Option<usize>,
     shape_at: &impl Fn(usize) -> Option<&'a Shape>,
     chain: &[Cell],
     exclude: Option<usize>,
@@ -534,7 +534,7 @@ pub fn deconstruct<'a>(
 pub fn deconstruct_at<'a>(
     word_at: &impl Fn(usize) -> Option<&'a Element>,
     atlas: &Stalks,
-    index_of: &impl Fn(&[u8; 32]) -> Option<usize>,
+    index_of: &impl Fn(&[u8]) -> Option<usize>,
     shape_at: &impl Fn(usize) -> Option<&'a Shape>,
     chain: &[Cell],
     exclude: Option<usize>,
@@ -545,8 +545,8 @@ pub fn deconstruct_at<'a>(
 /// Deconstruct over a fiber the caller names — genome, dialect, or both.
 pub fn deconstruct_on<'a>(
     word_at: &impl Fn(usize) -> Option<&'a Element>,
-    fiber_of: &impl Fn(&stalk::Invariant) -> Vec<[u8; 32]>,
-    index_of: &impl Fn(&[u8; 32]) -> Option<usize>,
+    fiber_of: &impl Fn(&stalk::Invariant) -> Vec<Vec<u8>>,
+    index_of: &impl Fn(&[u8]) -> Option<usize>,
     shape_at: &impl Fn(usize) -> Option<&'a Shape>,
     chain: &[Cell],
     exclude: Option<usize>,

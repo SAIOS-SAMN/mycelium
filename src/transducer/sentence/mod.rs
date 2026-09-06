@@ -51,11 +51,14 @@ mod tests {
     fn q1() -> num_rational::BigRational {
         num_rational::BigRational::from_integer(num_bigint::BigInt::from(1))
     }
+    fn form_addr(n: u8) -> crate::transducer::a21::Address {
+        crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, n])
+    }
 
     fn closed_word_form(word: Word, contact: Option<alphabet::Contact>) -> Form {
         let mut f = Form::default();
         f.vertices.push(Vertex::Word {
-            address: [7u8; 32],
+            address: crate::transducer::a21::Address::new(Vec::new()),
             word: word.clone(),
             rho: q1(),
             placement: (q0(), q1()),
@@ -70,13 +73,18 @@ mod tests {
         });
         f.remainder.clear();
         f.depth = f.depth_of();
+        let k = form_vertex_key(&f);
+        if let Some(Vertex::Word { address, .. }) = f.vertices.get_mut(1) {
+            *address = k;
+        }
+        f.reindex();
         f
     }
 
-    /// SENTENCE_TAG v3 round-trips Frame, Word (with contact), Glued,
+    /// SENTENCE_TAG v4 round-trips Frame, Word (with contact), Glued,
     /// Rebased, Unfolded, faces, and loops.
     #[test]
-    fn form_tape_v2_round_trips() {
+    fn form_tape_v4_round_trips() {
         let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
         let w = Word::from_letters(&[(q, false)]);
         let inner = closed_word_form(w.clone(), None);
@@ -117,10 +125,10 @@ mod tests {
             }
         ));
 
-        let e = as_element_form(&f, [1, 0, 0, 0]).expect("v3 tape");
+        let e = as_element_form(&f, [1, 0, 0, 0]).expect("v4 tape");
         assert!(e.is_sentence());
-        assert_eq!(e.description()[1], 3, "version 3");
-        let back = from_element_form(&e).expect("decode v3");
+        assert_eq!(e.description()[1], 4, "version 4");
+        let back = from_element_form(&e).expect("decode v4");
         assert_eq!(back.vertices.len(), f.vertices.len());
         assert_eq!(back.faces.len(), f.faces.len());
         assert_eq!(back.loops.len(), f.loops.len());
@@ -201,10 +209,10 @@ mod tests {
     }
 
     #[test]
-    fn tape_v3_refuses_short_or_partial() {
+    fn tape_v4_refuses_short_or_partial() {
         let f = closed_word_form(Word::identity(), None);
-        let e = as_element_form(&f, [1, 0, 0, 0]).expect("v3");
-        assert_eq!(e.description()[1], 3);
+        let e = as_element_form(&f, [1, 0, 0, 0]).expect("v4");
+        assert_eq!(e.description()[1], 4);
         let mut short = e.description().to_vec();
         short.pop();
         let mut truncated = Element::identity(GERM_DIM);
@@ -212,7 +220,7 @@ mod tests {
         truncated.set_magnitude([1, 0, 0, 0]);
         assert!(
             from_element_form(&truncated).is_none(),
-            "a short v3 tape is refused"
+            "a short v4 tape is refused"
         );
         let mut v2 = e.description().to_vec();
         v2[1] = 2;
@@ -310,7 +318,7 @@ mod tests {
             kb.class_key(),
             "(1 2) and (3 4) are one Hue coordinate"
         );
-        assert_ne!(ka.class_key(), CLOSED_KEY, "a hue cycle is not closed");
+        assert!(!ka.is_zero(), "a hue cycle is not closed");
     }
 
     #[test]
@@ -376,7 +384,7 @@ mod tests {
     fn solve_coboundary_is_a_spanning_forest() {
         let mut f = Form::default();
         f.vertices.push(Vertex::Word {
-            address: [1u8; 32],
+            address: form_addr(1),
             word: Word::identity(),
             rho: q1(),
             placement: (q0(), q0()),
@@ -385,7 +393,7 @@ mod tests {
             contact: None,
         });
         f.vertices.push(Vertex::Word {
-            address: [2u8; 32],
+            address: form_addr(2),
             word: Word::identity(),
             rho: q1(),
             placement: (q0(), q0()),
@@ -411,7 +419,7 @@ mod tests {
         let w = Word::from_letters(&[(alphabet::LetterId::quarter((0, 1)).unwrap(), false)]);
         let mut host = Form::default();
         host.vertices.push(Vertex::Word {
-            address: [1u8; 32],
+            address: form_addr(1),
             word: w.clone(),
             rho: q1(),
             placement: (q0(), q0()),
@@ -420,7 +428,7 @@ mod tests {
             contact: None,
         });
         host.vertices.push(Vertex::Word {
-            address: [2u8; 32],
+            address: form_addr(2),
             word: w.clone(),
             rho: q1(),
             placement: (q0(), q1()),
@@ -457,7 +465,7 @@ mod tests {
         let mag = [1u64, 0, 0, 0];
         let clean = as_element_form(&taped, mag).expect("tape");
         assert_eq!(crate::court::verdict::blind_replay(&clean), Some(crate::court::verdict::REFUSE_GLUED_UNRULED));
-        let resolve = |a: &[u8; 32]| (a == &inner_e.address()).then(|| inner.clone());
+        let resolve = |a: &[u8]| (a == inner_e.address().as_bytes()).then(|| inner.clone());
         assert_eq!(crate::court::verdict::blind_replay_with(&clean, &resolve), None);
         let Some(fi) = taped.faces.iter().position(|f| f.i == 0 && matches!(taped.vertices.get(f.j as usize), Some(Vertex::Glued { .. }))) else {
             panic!("placement face");
@@ -505,7 +513,7 @@ mod tests {
         let mut b = closed_word_form(w.clone(), None);
         b.ratio = ((2, 1), (2, 1));
         let mut c = closed_word_form(w, None);
-        c.sections.insert([7u8; 32], vec![1]);
+        c.sections.insert(form_addr(7), vec![1]);
         let ea = as_element_form(&a, [1, 0, 0, 0]).expect("a");
         let eb = as_element_form(&b, [1, 0, 0, 0]).expect("b");
         let ec = as_element_form(&c, [1, 0, 0, 0]).expect("c");
@@ -514,7 +522,7 @@ mod tests {
         let back_b = from_element_form(&eb).expect("v2 tape");
         assert_eq!(back_b.ratio, ((2, 1), (2, 1)));
         let back_c = from_element_form(&ec).expect("v2 tape");
-        assert_eq!(back_c.sections.get(&[7u8; 32]), Some(&vec![1u16]));
+        assert_eq!(back_c.sections.get(&form_addr(7)), Some(&vec![1u16]));
         // Zero the height denominator on the tape: after certificates the
         // tail is ratio (8) + sections count (2) + torsion count (2). hd is
         // the second u16 of the ratio.
@@ -535,25 +543,25 @@ mod tests {
         let inner = closed_word_form(w.clone(), None);
         assert_eq!(inner.depth_of(), 0);
         let mut outer = Form::default();
-        let a0 = [1u8; 32];
-        outer.glue(&inner, a0, Word::identity(), [0, 0, 0, 1]).expect("glue into empty host");
+        let a0 = as_element_form(&inner, [1, 0, 0, 0]).expect("inner").address();
+        outer.glue(&inner, a0.clone(), Word::identity(), [0, 0, 0, 1]).expect("glue into empty host");
         assert_eq!(outer.depth_of(), 1);
         assert_eq!(outer.depth, 1);
         let mut wrap = Form::default();
-        wrap.glue(&outer, [2u8; 32], Word::identity(), [0, 0, 0, 1]).expect("glue depth 1 into depth 0");
+        wrap.glue(&outer, form_addr(2), Word::identity(), [0, 0, 0, 1]).expect("glue depth 1 into depth 0");
         assert_eq!(wrap.depth_of(), 2);
         let outer_copy = outer.clone();
         assert!(
-            outer.glue(&outer_copy, [3u8; 32], Word::identity(), [0, 0, 0, 1]).is_none(),
+            outer.glue(&outer_copy, form_addr(3), Word::identity(), [0, 0, 0, 1]).is_none(),
             "equal depth is refused"
         );
         assert!(
-            outer.glue(&wrap, [4u8; 32], Word::identity(), [0, 0, 0, 1]).is_none(),
+            outer.glue(&wrap, form_addr(4), Word::identity(), [0, 0, 0, 1]).is_none(),
             "deeper form is refused"
         );
         let mut again = Form::default();
-        again.glue(&inner, a0, Word::identity(), [0, 0, 0, 1]).unwrap();
-        again.glue(&inner, [5u8; 32], Word::identity(), [0, 0, 0, 1]).expect("another depth-0 glue");
+        again.glue(&inner, a0.clone(), Word::identity(), [0, 0, 0, 1]).unwrap();
+        again.glue(&inner, form_addr(5), Word::identity(), [0, 0, 0, 1]).expect("another depth-0 glue");
         assert_eq!(again.depth_of(), 1, "max glued depth, not a count");
     }
 
@@ -573,7 +581,7 @@ mod tests {
         for (i, w) in words.iter().enumerate() {
             index.insert(w.address(), i);
         }
-        let index_of = |a: &[u8; 32]| index.get(a).copied();
+        let index_of = |a: &[u8]| index.get(a).copied();
         let shapes: Vec<Option<Shape>> = words.iter().map(|w| element::shape_of_chain(w.sub())).collect();
         let shape_at = |i: usize| shapes.get(i).and_then(|s| s.as_ref());
         // A vertical bar far away: the bar rotated and translated.
@@ -620,7 +628,7 @@ mod tests {
         for (i, w) in words.iter().enumerate() {
             index.insert(w.address(), i);
         }
-        let index_of = |a: &[u8; 32]| index.get(a).copied();
+        let index_of = |a: &[u8]| index.get(a).copied();
         let shapes: Vec<Option<Shape>> = words.iter().map(|w| element::shape_of_chain(w.sub())).collect();
         let shape_at = |i: usize| shapes.get(i).and_then(|s| s.as_ref());
         let mixed = vec![(0, 0, 1, 2), (0, 1, 1, 2), (4, 4, 3, 4)];
@@ -633,7 +641,7 @@ mod tests {
         );
         let widths: Vec<usize> = s
             .multiplicity
-            .fiber(&ROOT)
+            .fiber(ROOT)
             .map(|(_, w)| *w)
             .collect();
         assert_eq!(
@@ -669,7 +677,7 @@ mod tests {
         let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
         let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
         Vertex::Word {
-            address: [addr; 32],
+            address: form_addr(addr),
             word,
             rho: one,
             placement: (zero.clone(), zero),
@@ -786,7 +794,7 @@ mod tests {
             None,
             0,
         );
-        let want = infinite().rotor().class_key();
+        let want = infinite().rotor().class_key().expect("infinite class");
         assert!(
             snaps.iter().any(|s| matches!(s, Snap::Demand { key, .. } if *key == want)),
             "a demand names the rotor class: {snaps:?}"
@@ -926,8 +934,8 @@ mod tests {
         PivotCertificate {
             chord: 0,
             axis,
-            before: [0; 32],
-            after: [0; 32],
+            before: Word::identity().class_key(),
+            after: Word::identity().class_key(),
             rank_before: Rank {
                 torsion: 0,
                 free: 0,
@@ -1017,7 +1025,7 @@ mod tests {
         assert!(!class.0.is_empty(), "the body has a chart");
         let mut spoken = Form::default();
         spoken.vertices.push(Vertex::Word {
-            address: [1u8; 32],
+            address: form_addr(1),
             word: q.clone(),
             rho: q1(),
             placement: (q1() + q1() + q1(), q1() + q1() + q1()),
@@ -1123,13 +1131,13 @@ mod tests {
         let keyed = from_element_form(&e).expect("v2 tape");
         let (class, (_, _, chord)) = keyed
             .torsion
-            .fiber(&crate::network::nerve::ROOT)
+            .fiber(crate::network::nerve::ROOT)
             .next()
-            .map(|(k, v)| (*k, v.clone()))
+            .map(|(k, v)| (k, v.clone()))
             .expect("filed class");
         assert_eq!(
-            torsion_loop_rotor(&keyed, &class).map(|r| r.class_key()),
-            Some(class),
+            torsion_loop_rotor(&keyed, &class).and_then(|r| r.class_key()),
+            Some(crate::transducer::a21::Address::from(class)),
             "the chord face is the keyed representative"
         );
         assert!(
@@ -1172,7 +1180,7 @@ mod tests {
         let mut f = chord_form(&[infinite()]);
         let r = infinite().rotor();
         let mut horizon = crate::network::nerve::Keyed::new();
-        horizon.insert(r.class_key(), (r, Order::Infinite, Standing::Held));
+        horizon.insert(r.class_key().expect("infinite class"), (r, Order::Infinite, Standing::Held));
         let snaps = f.pivot_loop(
             [0x5e; 32],
             &horizon,
@@ -1296,7 +1304,7 @@ mod tests {
             let still = f.loops.iter().any(|lp| {
                 !lp.holonomy.is_identity() && matches!(lp.holonomy.order(), Order::Finite(ell) if ell == o)
             });
-            let filed = f.torsion.fiber(&crate::network::nerve::ROOT).any(|(_, (_, ell, _))| *ell == o);
+            let filed = f.torsion.fiber(crate::network::nerve::ROOT).any(|(_, (_, ell, _))| *ell == o);
             assert!(
                 !still || filed,
                 "order {o} stayed closed or filed; second {second:?}"
@@ -1324,7 +1332,7 @@ mod tests {
         ) -> Option<crate::transducer::family::Speech> {
             None
         }
-        fn by_address(&self, _a: &[u8; 32]) -> Option<(Element, Form)> {
+        fn by_address(&self, _a: &[u8]) -> Option<(Element, Form)> {
             None
         }
         fn on_axis(&self, _chart: &stalk::Invariant, axis: Axis) -> Vec<Word> {
@@ -1353,7 +1361,10 @@ mod tests {
             panic!("a crystal holding q discharges: {snaps:?}");
         };
         assert_eq!(certificate.before, ClassVector::of_word(&q).class_key());
-        assert_eq!(certificate.after, CLOSED_KEY);
+        assert_eq!(
+            certificate.after,
+            ClassVector::of_word(&Word::identity()).class_key()
+        );
         assert_eq!(certificate.rank_before.torsion, 1);
         assert_eq!(certificate.rank_after.torsion, 0);
         assert!(
@@ -1373,7 +1384,7 @@ mod tests {
         let mut tampered = from_element_form(&e).expect("v2 tape");
         let fi = tampered
             .certificates
-            .fiber(&crate::network::nerve::ROOT)
+            .fiber(crate::network::nerve::ROOT)
             .next()
             .expect("one certificate")
             .1
@@ -1405,7 +1416,7 @@ mod tests {
         let mut f = chord_form(&[q.clone()]);
         let mut horizon = Keyed::new();
         let r = q.rotor();
-        horizon.insert(r.class_key(), (r, q.order(), Standing::Held));
+        horizon.insert(r.class_key().expect("q class"), (r, q.order(), Standing::Held));
         let snaps = f.pivot_loop(
             [0x33; 32],
             &horizon,
@@ -1416,7 +1427,7 @@ mod tests {
         );
         assert!(snaps.is_empty(), "a horizon holding q files silently: {snaps:?}");
         assert!(
-            f.torsion.contains(&q.rotor().class_key()),
+            q.rotor().class_key().is_some_and(|k| f.torsion.contains(k.as_bytes())),
             "filed torsion is keyed by the class"
         );
     }
@@ -1591,7 +1602,7 @@ mod tests {
         assert!(w.is_identity(), "Φ⁴ is projectively 1");
         let mut f = Form::default();
         let empty = |addr: u8| Vertex::Word {
-            address: [addr; 32],
+            address: form_addr(addr),
             word: Word::identity(),
             rho: q1(),
             placement: (q0(), q0()),

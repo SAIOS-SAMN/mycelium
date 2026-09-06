@@ -299,37 +299,49 @@ impl Rotor {
     /// Conjugation-and-scale invariants `(a²/w, p²/w, sign a, sign p)` —
     /// exact rationals, never a digest. `a` the scalar, `p` the
     /// pseudoscalar, `w = ΦΦ̃`.
-    pub fn class_invariants(&self) -> (Q, Q, u8, u8) {
-        let w = self.weight().unwrap_or_else(Q::one);
+    pub fn class_invariants(&self) -> Option<(Q, Q, u8, u8)> {
+        let w = self.weight()?;
+        if w.is_zero() {
+            return None;
+        }
         let a = self.c[0].clone();
         let p = self.c[15].clone();
-        if w.is_zero() {
-            (Q::zero(), Q::zero(), 0, 0)
-        } else {
-            (
-                &(&a * &a) / &w,
-                &(&p * &p) / &w,
-                u8::from(a.is_negative()),
-                u8::from(p.is_negative()),
-            )
-        }
+        Some((
+            &(&a * &a) / &w,
+            &(&p * &p) / &w,
+            u8::from(a.is_negative()),
+            u8::from(p.is_negative()),
+        ))
     }
 
     /// Same conjugacy-and-scale class: the invariants agree as rationals.
+    /// A non-versor has no class.
     pub fn class_eq(&self, other: &Rotor) -> bool {
-        self.class_invariants() == other.class_invariants()
+        match (self.class_invariants(), other.class_invariants()) {
+            (Some(a), Some(b)) => a == b,
+            _ => false,
+        }
     }
 
-    /// Transport identifier of [`class_invariants`]. Identity of class is
-    /// [`class_eq`], never this digest.
-    pub fn class_key(&self) -> [u8; 32] {
-        let (x, y, sa, sp) = self.class_invariants();
-        let mut buf = Vec::new();
+    /// Conjugacy invariants written out (A21). Identity of class is
+    /// [`class_eq`]. None when the element is not a versor.
+    pub fn class_key(&self) -> Option<crate::transducer::a21::Address> {
+        let (x, y, sa, sp) = self.class_invariants()?;
+        let mut buf = vec![crate::transducer::a21::TAG_CLASS];
         put_q(&mut buf, &x);
         put_q(&mut buf, &y);
         buf.push(sa);
         buf.push(sp);
-        *blake3::hash(&buf).as_bytes()
+        Some(crate::transducer::a21::Address::new(buf))
+    }
+
+    /// Class key when the rotor is a versor; otherwise the A1 rotor key.
+    /// Never the zero class of a non-versor.
+    pub fn class_or_rotor_key(&self) -> crate::transducer::a21::Address {
+        match self.class_key() {
+            Some(k) => k,
+            None => self.key(),
+        }
     }
 
     /// The exact inverse `Φ̃ / (Φ Φ̃)`.
@@ -366,13 +378,21 @@ impl Rotor {
         }
     }
 
-    /// A1 key: blake3 of the canonical coefficients. Identity is
-    /// [`projective_eq`], never this digest compared as meaning.
-    pub fn key(&self) -> [u8; 32] {
+    /// A1 key: the canonical coefficients written out (A21). Identity is
+    /// [`projective_eq`].
+    pub fn key(&self) -> crate::transducer::a21::Address {
         let n = self.normalised();
-        let mut buf = Vec::new();
+        let mut buf = vec![crate::transducer::a21::TAG_ROTOR];
         n.to_bytes(&mut buf);
-        *blake3::hash(&buf).as_bytes()
+        crate::transducer::a21::Address::new(buf)
+    }
+
+    pub fn from_key(k: &[u8]) -> Option<Rotor> {
+        if k.first() != Some(&crate::transducer::a21::TAG_ROTOR) {
+            return None;
+        }
+        let mut p = 1usize;
+        Rotor::from_bytes(k, &mut p)
     }
 
     /// Refinement axes of this class rotor (A7): conjugacy invariants packed
@@ -521,9 +541,9 @@ impl Word {
         self.1.take();
     }
 
-    /// M1 key: A1 of the rotor, never a hash of a spoken or geodesic tape.
-    /// Mixed-plane spellings of one rotor share this key. Contact is not here.
-    pub fn key(&self) -> [u8; 32] {
+    /// M1 key: A1 of the rotor. Mixed-plane spellings of one rotor share
+    /// this key. Contact is not here.
+    pub fn key(&self) -> crate::transducer::a21::Address {
         self.rotor().key()
     }
 
@@ -547,12 +567,14 @@ impl Word {
         }
     }
 
-    /// Transport identifier of the conjugacy class. Class identity is
-    /// [`same_class`], never this digest.
-    pub fn class_key(&self) -> [u8; 32] {
+    /// Conjugacy coordinates written out. Class identity is [`same_class`].
+    pub fn class_key(&self) -> crate::transducer::a21::Address {
         match self.form() {
             Some(f) => f.conjugacy_key(),
-            None => self.rotor().class_key(),
+            None => match self.rotor().class_key() {
+                Some(k) => k,
+                None => self.rotor().key(),
+            },
         }
     }
 
@@ -943,16 +965,14 @@ impl PlaneForm {
         self.conjugacy_rep() == other.conjugacy_rep()
     }
 
-    /// Transport identifier of [`conjugacy_rep`]. Class identity is
-    /// [`conjugacy_eq`], never this digest.
-    pub fn conjugacy_key(&self) -> [u8; 32] {
+    /// Conjugacy representative written out. Class identity is [`conjugacy_eq`].
+    pub fn conjugacy_key(&self) -> crate::transducer::a21::Address {
         let r = self.conjugacy_rep();
-        let mut buf = Vec::with_capacity(1 + 8 * CAYLEY_ALPHABET_LEN);
-        buf.push(r.parity as u8);
+        let mut buf = vec![crate::transducer::a21::TAG_PLANE, r.parity as u8];
         for &n in &r.rot {
             buf.extend_from_slice(&n.to_le_bytes());
         }
-        *blake3::hash(&buf).as_bytes()
+        crate::transducer::a21::Address::new(buf)
     }
 
     /// Plane-group product: rotations ⋊ sheet parity. A trailing sheet
@@ -1032,13 +1052,12 @@ impl PlaneForm {
         w
     }
 
-    pub fn key(&self) -> [u8; 32] {
-        let mut h = blake3::Hasher::new();
-        h.update(&[self.parity as u8]);
+    pub fn key(&self) -> crate::transducer::a21::Address {
+        let mut buf = vec![crate::transducer::a21::TAG_PLANE, self.parity as u8];
         for &n in &self.rot {
-            h.update(&n.to_le_bytes());
+            buf.extend_from_slice(&n.to_le_bytes());
         }
-        *h.finalize().as_bytes()
+        crate::transducer::a21::Address::new(buf)
     }
 
     pub fn to_bytes(&self, out: &mut Vec<u8>) {

@@ -20,6 +20,7 @@ pub fn run() -> Result<(), String> {
     for d in dirs {
         walk(&root.join(d), d, &mut hits)?;
     }
+    lint_blake3(&root, &mut hits)?;
     if hits.is_empty() {
         return Ok(());
     }
@@ -99,6 +100,84 @@ fn lint_file(path: &Path, hits: &mut Vec<String>, allow_spend: bool) -> Result<(
             check("Vec<bool>");
             check("unwrap_or");
         }
+    }
+    Ok(())
+}
+
+/// A digest of mathematical structure is not a key. blake3 is allowed as a
+/// KDF over a name (court/identity), a transmission digest of served bytes
+/// (network cover roots, chronometry receipts, frame integrity), and nowhere
+/// in cognition.
+fn lint_blake3(root: &Path, hits: &mut Vec<String>) -> Result<(), String> {
+    let deny = [
+        "server",
+        "client",
+        "transducer",
+        "anastome",
+        "voice",
+        "thought",
+        "perception",
+        "economy.rs",
+    ];
+    for d in deny {
+        walk_blake3(&root.join(d), hits)?;
+    }
+    walk_blake3(&root.join("court").join("verdict.rs"), hits)?;
+    walk_blake3(&root.join("court").join("ledger.rs"), hits)?;
+    Ok(())
+}
+
+fn walk_blake3(path: &Path, hits: &mut Vec<String>) -> Result<(), String> {
+    if path.is_file() {
+        if path.extension().and_then(|s| s.to_str()) != Some("rs") {
+            return Ok(());
+        }
+        let src = fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+        let mut in_test = false;
+        let mut pending_test = false;
+        let mut depth = 0i32;
+        for (i, line) in src.lines().enumerate() {
+            let t = line.trim();
+            if t.contains("#[cfg(test)]") {
+                pending_test = true;
+            }
+            let opens = line.chars().filter(|&c| c == '{').count() as i32;
+            let closes = line.chars().filter(|&c| c == '}').count() as i32;
+            if pending_test && opens > 0 {
+                in_test = true;
+                pending_test = false;
+                depth = opens - closes;
+                if depth <= 0 {
+                    in_test = false;
+                }
+                continue;
+            }
+            if in_test {
+                depth += opens - closes;
+                if depth <= 0 {
+                    in_test = false;
+                }
+                continue;
+            }
+            if t.starts_with("//") {
+                continue;
+            }
+            if line.contains("blake3::") {
+                hits.push(format!("{}:{}: blake3 in cognition", path.display(), i + 1));
+            }
+        }
+        return Ok(());
+    }
+    if !path.is_dir() {
+        return Ok(());
+    }
+    let rd = match fs::read_dir(path) {
+        Ok(rd) => rd,
+        Err(_) => return Ok(()),
+    };
+    for ent in rd {
+        let ent = ent.map_err(|e| e.to_string())?;
+        walk_blake3(&ent.path(), hits)?;
     }
     Ok(())
 }

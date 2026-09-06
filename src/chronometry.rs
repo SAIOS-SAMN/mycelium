@@ -8,13 +8,14 @@
 //! independent nodes verging to the same irreducible form, not voting. This is
 //! the spine the dimensional ledger (Step 4) commits onto.
 
-/// One K-step receipt: `chain_hash = BLAKE3(step_le ‖ delta_fp ‖ op ‖ prev)`.
+/// One K-step receipt: `chain_hash = BLAKE3(receipt bytes)`.
+/// The delta is the Address bytes themselves, never a digest of content.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KStepReceipt {
     /// Monotonic step index — the algebraic clock.
     pub step_index: u64,
-    /// Fingerprint of the state/germ this step committed (e.g. a germ address).
-    pub delta_fingerprint: [u8; 32],
+    /// The committed address, written out.
+    pub delta: Vec<u8>,
     /// Which operation was applied (an act digest — never reasoned on).
     pub operator_hash: [u8; 32],
     /// The parent receipt's chain hash (all zeros at genesis).
@@ -23,14 +24,32 @@ pub struct KStepReceipt {
     pub chain_hash: [u8; 32],
 }
 
+/// Receipt payload identity of admitted content bytes (Part IX: the
+/// object of the hash is the bytes written on the receipt).
+pub fn payload_hash(bytes: &[u8]) -> [u8; 32] {
+    *blake3::hash(bytes).as_bytes()
+}
+
+pub fn operator_hash(voice: &[u8; 32], court_head: &[u8; 32]) -> [u8; 32] {
+    let mut buf = [0u8; 64];
+    buf[..32].copy_from_slice(voice);
+    buf[32..].copy_from_slice(court_head);
+    *blake3::hash(&buf).as_bytes()
+}
+
 impl KStepReceipt {
-    fn hash(step_index: u64, delta_fp: &[u8; 32], op: &[u8; 32], prev: &[u8; 32]) -> [u8; 32] {
-        let mut buf = Vec::with_capacity(8 + 96);
+    fn bytes(step_index: u64, delta: &[u8], op: &[u8; 32], prev: &[u8; 32]) -> Vec<u8> {
+        let mut buf = Vec::with_capacity(8 + 2 + delta.len() + 64);
         buf.extend_from_slice(&step_index.to_le_bytes());
-        buf.extend_from_slice(delta_fp);
+        buf.extend_from_slice(&(delta.len() as u32).to_le_bytes());
+        buf.extend_from_slice(delta);
         buf.extend_from_slice(op);
         buf.extend_from_slice(prev);
-        *blake3::hash(&buf).as_bytes()
+        buf
+    }
+
+    fn hash(step_index: u64, delta: &[u8], op: &[u8; 32], prev: &[u8; 32]) -> [u8; 32] {
+        *blake3::hash(&Self::bytes(step_index, delta, op, prev)).as_bytes()
     }
 }
 
@@ -62,13 +81,15 @@ impl ReceiptChain {
     }
 
     /// Append the next receipt — K advances monotonically, the link is sealed.
-    pub fn append(&mut self, delta_fingerprint: [u8; 32], operator_hash: [u8; 32]) -> &KStepReceipt {
+    /// `delta` is the Address bytes the step committed, not a digest of them.
+    pub fn append(&mut self, delta: impl AsRef<[u8]>, operator_hash: [u8; 32]) -> &KStepReceipt {
         let step_index = self.next_step_index();
         let prev = self.head_hash();
-        let chain_hash = KStepReceipt::hash(step_index, &delta_fingerprint, &operator_hash, &prev);
+        let delta = delta.as_ref().to_vec();
+        let chain_hash = KStepReceipt::hash(step_index, &delta, &operator_hash, &prev);
         self.receipts.push(KStepReceipt {
             step_index,
-            delta_fingerprint,
+            delta,
             operator_hash,
             prev_receipt_hash: prev,
             chain_hash,
@@ -84,8 +105,7 @@ impl ReceiptChain {
             if r.step_index != i as u64 || r.prev_receipt_hash != prev {
                 return false;
             }
-            let expect =
-                KStepReceipt::hash(r.step_index, &r.delta_fingerprint, &r.operator_hash, &prev);
+            let expect = KStepReceipt::hash(r.step_index, &r.delta, &r.operator_hash, &prev);
             if r.chain_hash != expect {
                 return false;
             }
@@ -226,16 +246,16 @@ mod tests {
     fn the_chain_is_temporal_authority_and_tamper_evident() {
         let mut c = ReceiptChain::new();
         assert_eq!(c.next_step_index(), 0, "genesis K = 0");
-        c.append([1; 32], [9; 32]);
-        c.append([2; 32], [9; 32]);
-        let r = c.append([3; 32], [8; 32]);
+        c.append([1u8], [9; 32]);
+        c.append([2u8], [9; 32]);
+        let r = c.append([3u8], [8; 32]);
         assert_eq!(r.step_index, 2, "K is the algebraic clock");
         assert_eq!(c.head_k(), 2, "head_k is the last receipt, not TUniversal");
         assert_eq!(c.next_step_index(), 3, "next is one past the head");
         assert!(c.verify_chain_integrity());
-        // Tamper: flip one byte of the middle receipt's fingerprint.
+        // Tamper: flip one byte of the middle receipt's address.
         let mut t = c.clone();
-        t.receipts[1].delta_fingerprint[0] ^= 1;
+        t.receipts[1].delta[0] ^= 1;
         assert!(!t.verify_chain_integrity(), "a single byte breaks the continuity law");
     }
 }

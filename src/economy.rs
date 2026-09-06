@@ -213,8 +213,9 @@ impl Treasury {
     pub fn bind_live(&mut self, live: &[[u8; 32]]) {
         let mut drop: Vec<([u8; 32], [u64; 4])> = Vec::new();
         crate::snapshot::persist(&self.stakes, |who, mu| {
-            if !live.iter().any(|id| id == who) {
-                drop.push((*who, *mu));
+            let Ok(w) = <[u8; 32]>::try_from(who) else { return };
+            if !live.iter().any(|id| *id == w) {
+                drop.push((w, *mu));
             }
         });
         for (who, mu) in drop {
@@ -259,8 +260,9 @@ impl Treasury {
     /// HOLD a consilience award in escrow pending the court's finality verdict
     /// (Step 5: two-voice consilience is provisional, not final). Nothing books
     /// to the ledger yet — unfinalized speech earns nothing.
-    pub fn escrow_award(&mut self, addr: [u8; 32], voices: Vec<[u8; 32]>, mu: [u64; 4], anchor: Anchor) {
-        match self.escrowed.get_mut(&addr) {
+    pub fn escrow_award(&mut self, addr: impl AsRef<[u8]>, voices: Vec<[u8; 32]>, mu: [u64; 4], anchor: Anchor) {
+        let addr = addr.as_ref();
+        match self.escrowed.get_mut(addr) {
             Some((held, _, _)) => {
                 for v in voices {
                     match held.iter().position(|h| *h == v) {
@@ -275,22 +277,22 @@ impl Treasury {
         }
     }
 
-    pub fn escrow_of(&self, addr: &[u8; 32]) -> Option<&(Vec<[u8; 32]>, [u64; 4], Anchor)> {
+    pub fn escrow_of(&self, addr: &[u8]) -> Option<&(Vec<[u8; 32]>, [u64; 4], Anchor)> {
         self.escrowed.get(addr)
     }
 
-    pub fn escrowed_awards(&self) -> Vec<([u8; 32], Vec<[u8; 32]>, [u64; 4], Anchor)> {
+    pub fn escrowed_awards(&self) -> Vec<(Vec<u8>, Vec<[u8; 32]>, [u64; 4], Anchor)> {
         self.escrowed
-            .fiber(&crate::network::nerve::ROOT)
-            .map(|(a, (v, mu, an))| (*a, v.clone(), *mu, *an))
+            .fiber(crate::network::nerve::ROOT)
+            .map(|(a, (v, mu, an))| (a, v.clone(), *mu, *an))
             .collect()
     }
 
     /// A filled triangle releases the escrow of the listings its dialects settled.
-    pub fn release_filled(&mut self, listings: &[[u8; 32]]) -> [u64; 4] {
+    pub fn release_filled<A: AsRef<[u8]>>(&mut self, listings: &[A]) -> [u64; 4] {
         let mut released = [0u64; 4];
         for addr in listings {
-            if let Some((voices, mu, anchor)) = self.release_award(addr) {
+            if let Some((voices, mu, anchor)) = self.release_award(addr.as_ref()) {
                 self.mint_claim(&voices, mu, anchor);
                 for l in 0..4 {
                     released[l] = released[l].saturating_add(mu[l]);
@@ -302,7 +304,7 @@ impl Treasury {
 
     /// Clear the listing claim. Payment is a mint of the same vector, done
     /// by the caller after this returns (release then mint).
-    pub fn release_award(&mut self, addr: &[u8; 32]) -> Option<(Vec<[u8; 32]>, [u64; 4], Anchor)> {
+    pub fn release_award(&mut self, addr: &[u8]) -> Option<(Vec<[u8; 32]>, [u64; 4], Anchor)> {
         self.escrowed.remove(addr)
     }
 
@@ -317,12 +319,12 @@ impl Treasury {
     }
 
     /// Drop the listing claim. A slash debits the stake bond and mints nothing.
-    pub fn revoke_award(&mut self, addr: &[u8; 32], slash: bool) -> bool {
+    pub fn revoke_award(&mut self, addr: &[u8], slash: bool) -> bool {
         let Some((voices, mu, anchor)) = self.escrowed.remove(addr) else {
             return false;
         };
         if slash {
-            let who = voices.first().copied().unwrap_or(*addr);
+            let who = voices.first().copied().unwrap_or([0; 32]);
             if let Some(&held) = self.stakes.get(&who) {
                 let next: [u64; 4] = std::array::from_fn(|l| held[l].saturating_sub(mu[l]));
                 self.stakes.insert(who, next);
@@ -335,8 +337,8 @@ impl Treasury {
 
     pub fn stakes(&self) -> Vec<([u8; 32], [u64; 4])> {
         self.stakes
-            .fiber(&crate::network::nerve::ROOT)
-            .map(|(w, mu)| (*w, *mu))
+            .fiber(crate::network::nerve::ROOT)
+            .filter_map(|(w, mu)| <[u8; 32]>::try_from(w.as_slice()).ok().map(|who| (who, *mu)))
             .collect()
     }
 
@@ -395,7 +397,7 @@ impl Treasury {
     }
 
     /// Release an escrowed Rewrite: mint the claimed vector to the discoverer.
-    pub fn release_rewrite(&mut self, addr: &[u8; 32], voice: [u8; 32]) -> [u64; 4] {
+    pub fn release_rewrite(&mut self, addr: &[u8], voice: [u8; 32]) -> [u64; 4] {
         let Some((voices, mu, anchor)) = self.escrowed.remove(addr) else {
             return [0; 4];
         };
@@ -418,7 +420,7 @@ impl Treasury {
     /// Draw a verified-solve payment from an escrowed listing award, so
     /// reduction and solve share one ledger. Remaining escrow stays for
     /// consilience release.
-    pub fn draw_escrow(&mut self, addr: &[u8; 32], voice: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+    pub fn draw_escrow(&mut self, addr: &[u8], voice: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
         let Some((_, held, _)) = self.escrowed.get(addr) else {
             return [0; 4];
         };
@@ -436,7 +438,7 @@ impl Treasury {
     }
 
     #[cfg(test)]
-    pub fn escrowed_remaining(&self, addr: &[u8; 32]) -> [u64; 4] {
+    pub fn escrowed_remaining(&self, addr: &[u8]) -> [u64; 4] {
         self.escrowed.get(addr).map(|(_, mu, _)| *mu).unwrap_or([0; 4])
     }
 
@@ -450,14 +452,15 @@ impl Treasury {
     /// substantially-more-useful work, paid ON TOP of the children's own
     /// settlements: μ⃗_composite = Σμ⃗(Wᵢ) + μ⃗_assembly(overlaps). Split per
     /// lane across the reassembling voices, float-law bounded like every award.
-    pub fn settle_assembly(&mut self, voices: &[[u8; 32]], mu: [u64; 4], anchor: Anchor) {
+    pub fn settle_assembly<A: AsRef<[u8]>>(&mut self, voices: &[A], mu: [u64; 4], anchor: Anchor) {
         if voices.is_empty() {
             return;
         }
         let n = voices.len() as u64;
         let share: [u64; 4] = std::array::from_fn(|l| if mu[l] == 0 { 0 } else { (mu[l] / n).max(1) });
         for v in voices {
-            self.mint_to(*v, share, anchor);
+            let who = <[u8; 32]>::try_from(v.as_ref()).unwrap_or([0; 32]);
+            self.mint_to(who, share, anchor);
         }
     }
 
@@ -568,7 +571,7 @@ impl Treasury {
         // snapshots (which simply end here) restore with an empty docket.
         out.extend_from_slice(&(self.escrowed.len() as u32).to_le_bytes());
         crate::snapshot::persist(&self.escrowed, |addr, (voices, mu, anchor)| {
-            out.extend_from_slice(addr);
+            let _ = crate::transducer::a21::put_addr(&mut out, addr);
             out.extend_from_slice(&(voices.len() as u32).to_le_bytes());
             for v in voices {
                 out.extend_from_slice(v);
@@ -645,8 +648,7 @@ impl Treasury {
                 return None; // untrusted count: ≥108 bytes per award
             }
             for _ in 0..ne {
-                let addr: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-                *pos += 32;
+                let addr = crate::transducer::a21::take_addr(b, pos)?;
                 let nv = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
                 *pos += 4;
                 if nv > b.len().saturating_sub(*pos) / 32 {

@@ -52,8 +52,8 @@ pub enum RewritePayload {
 #[derive(Debug, Clone)]
 pub struct Rewrite {
     pub kind: RewriteKind,
-    pub before: Vec<[u8; 32]>,
-    pub after: [u8; 32],
+    pub before: Vec<crate::transducer::a21::Address>,
+    pub after: crate::transducer::a21::Address,
     pub claimed: [u64; 4],
     pub payload: RewritePayload,
 }
@@ -63,9 +63,9 @@ impl Rewrite {
         let mut out = vec![REWRITE_TAG, self.kind as u8];
         out.push(self.before.len().min(255) as u8);
         for a in self.before.iter().take(255) {
-            out.extend_from_slice(a);
+            crate::transducer::a21::put_addr(&mut out, a);
         }
-        out.extend_from_slice(&self.after);
+        crate::transducer::a21::put_addr(&mut out, &self.after);
         for m in &self.claimed {
             out.extend_from_slice(&m.to_le_bytes());
         }
@@ -124,12 +124,9 @@ impl Rewrite {
         let mut pos = 3usize;
         let mut before = Vec::with_capacity(n);
         for _ in 0..n {
-            let a: [u8; 32] = b.get(pos..pos + 32)?.try_into().ok()?;
-            pos += 32;
-            before.push(a);
+            before.push(crate::transducer::a21::take_addr(b, &mut pos)?);
         }
-        let after: [u8; 32] = b.get(pos..pos + 32)?.try_into().ok()?;
-        pos += 32;
+        let after = crate::transducer::a21::take_addr(b, &mut pos)?;
         let mut claimed = [0u64; 4];
         for m in &mut claimed {
             *m = u64::from_le_bytes(b.get(pos..pos + 8)?.try_into().ok()?);
@@ -276,8 +273,8 @@ pub fn yield_vector(kind: RewriteKind, before: &[Element], after: &Element) -> [
 
 pub fn mint(
     kind: RewriteKind,
-    before: &[[u8; 32]],
-    after: [u8; 32],
+    before: &[crate::transducer::a21::Address],
+    after: crate::transducer::a21::Address,
     payload: RewritePayload,
     claimed: [u64; 4],
 ) -> Option<Element> {
@@ -373,12 +370,22 @@ mod tests {
 
     #[test]
     fn a_condense_rewrite_round_trips_and_replays() {
-        let after = [7u8; 32];
+        let after = crate::transducer::a21::Address::from_bytes(&[7u8]);
         let payload = RewritePayload::Condense {
             sections: vec![vec![(1, 4)]],
             gauge: crate::transducer::element::identity_versor(),
         };
-        let e = mint(RewriteKind::Condense, &[[1u8; 32], [2u8; 32]], after, payload, [0, 1, 0, 0]).expect("work");
+        let e = mint(
+            RewriteKind::Condense,
+            &[
+                crate::transducer::a21::Address::from_bytes(&[1u8]),
+                crate::transducer::a21::Address::from_bytes(&[2u8]),
+            ],
+            after,
+            payload,
+            [0, 1, 0, 0],
+        )
+        .expect("work");
         assert!(e.is_rewrite());
         assert!(replay(&e).is_none(), "both ways re-derive");
         let back = Rewrite::from_element(&e).unwrap();
@@ -390,8 +397,8 @@ mod tests {
     fn a_zero_vector_is_not_work() {
         assert!(mint(
             RewriteKind::Condense,
-            &[[1u8; 32]],
-            [2u8; 32],
+            &[crate::transducer::a21::Address::from_bytes(&[1u8])],
+            crate::transducer::a21::Address::from_bytes(&[2u8]),
             RewritePayload::Condense { sections: vec![], gauge: crate::transducer::element::identity_versor() },
             [0; 4],
         )

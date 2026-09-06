@@ -39,7 +39,7 @@ pub trait Crystal {
     fn on_class(&self, class: &Invariant) -> Vec<(Element, Form, Standing)>;
     fn speak_form(&self, f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Option<Speech>;
     /// Keyed read of a crystallized form by address. No scan.
-    fn by_address(&self, addr: &[u8; 32]) -> Option<(Element, Form)>;
+    fn by_address(&self, addr: &[u8]) -> Option<(Element, Form)>;
     /// Held words on `chart` whose class vector occupies `axis` (12.6): the
     /// vocabulary a pivot may write onto a loop on that chart. One keyed read
     /// of the axis index the crystal filled when the word was admitted.
@@ -56,7 +56,7 @@ impl Crystal for NoCrystal {
     fn speak_form(&self, f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Option<Speech> {
         apply_form(f, x, placement, self)
     }
-    fn by_address(&self, _addr: &[u8; 32]) -> Option<(Element, Form)> {
+    fn by_address(&self, _addr: &[u8]) -> Option<(Element, Form)> {
         None
     }
     fn on_axis(&self, _chart: &Invariant, _axis: super::sentence::Axis) -> Vec<super::alphabet::Word> {
@@ -228,8 +228,8 @@ fn hue_map_of_chain(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
         seen.insert(super::element::hue_pair_key(b, a), ());
     }
     let mut m: Vec<(u8, u8)> = seen
-        .fiber(&crate::network::nerve::ROOT)
-        .map(|(k, _)| (k[0], k[1]))
+        .fiber(crate::network::nerve::ROOT)
+        .filter_map(|(k, _)| super::element::hue_pair_of(&k))
         .collect();
     m.sort_unstable();
     m
@@ -295,9 +295,9 @@ pub(crate) fn pair_key(a: u16, b: u16) -> [u8; 32] {
     k
 }
 
-pub(crate) fn decode_pair_key(k: &[u8; 32]) -> (u16, u16) {
-    let lo = u16::from_le_bytes(k[..2].try_into().unwrap_or([0, 0]));
-    let hi = u16::from_le_bytes(k[2..4].try_into().unwrap_or([0, 0]));
+pub(crate) fn decode_pair_key(k: &[u8]) -> (u16, u16) {
+    let lo = u16::from_le_bytes(k.get(..2).and_then(|s| s.try_into().ok()).unwrap_or([0, 0]));
+    let hi = u16::from_le_bytes(k.get(2..4).and_then(|s| s.try_into().ok()).unwrap_or([0, 0]));
     (lo, hi)
 }
 
@@ -358,7 +358,7 @@ pub(crate) fn star_and_cell_faces(
             }
         }
     }
-    for (_k, verts) in occ.fiber(&crate::network::nerve::ROOT) {
+    for (_k, verts) in occ.fiber(crate::network::nerve::ROOT) {
         if verts.len() < 2 {
             continue;
         }
@@ -388,8 +388,8 @@ pub(crate) fn star_and_cell_faces(
         }
     }
     related
-        .fiber(&crate::network::nerve::ROOT)
-        .map(|(k, _)| decode_pair_key(k))
+        .fiber(crate::network::nerve::ROOT)
+        .map(|(k, _)| decode_pair_key(&k))
         .collect()
 }
 
@@ -453,8 +453,8 @@ pub fn carriage(a: &Body, b: &Body) -> Option<Carriage> {
         }
     }
     let mut out: Vec<(u8, u8)> = sigma
-        .fiber(&crate::network::nerve::ROOT)
-        .map(|(k, t)| (k[0], *t))
+        .fiber(crate::network::nerve::ROOT)
+        .filter_map(|(k, t)| super::element::hue_pair_of(&k).map(|(h, _)| (h, *t)))
         .collect();
     out.sort_unstable();
     Some(Carriage { v, sigma: out })
@@ -761,7 +761,7 @@ pub fn comprehend(family: &[(Grid, Grid)]) -> Comprehended {
             })
             .collect()
     };
-    let created_addr = |cells: &[Cell3]| -> [u8; 32] {
+    let created_addr = |cells: &[Cell3]| -> crate::transducer::a21::Address {
         let chain: Vec<(i64, i64, u8, u8)> = cells.iter().map(|&(r, c, h)| (r, c, h, h)).collect();
         element::from_residual(&chain).address()
     };
@@ -910,7 +910,7 @@ fn group_by_chart(cands: &[Cand], used: Option<&[bool]>, peel: bool) -> Vec<(Inv
         }
     }
     by_key
-        .fiber(&crate::network::nerve::ROOT)
+        .fiber(crate::network::nerve::ROOT)
         .map(|(_, (inv, ix))| (inv.clone(), ix.clone()))
         .collect()
 }
@@ -1206,7 +1206,7 @@ pub fn orbit(v: &Vertex, x_cells: &[Cell3], anchor: &[(i64, i64)], frame: (usize
     // Canonical form of a placed occupancy: sorted cells as bytes, then
     // blake3. Position is meaning (orbit instance); this is not the
     // translation-free residual address.
-    let state_key = |cs: &[Cell3]| -> [u8; 32] {
+    let state_key = |cs: &[Cell3]| -> Vec<u8> {
         let mut cells = cs.to_vec();
         cells.sort_unstable();
         let mut buf = Vec::with_capacity(4 + cells.len().saturating_mul(17));
@@ -1216,7 +1216,7 @@ pub fn orbit(v: &Vertex, x_cells: &[Cell3], anchor: &[(i64, i64)], frame: (usize
             buf.extend_from_slice(&c.to_le_bytes());
             buf.push(h);
         }
-        *blake3::hash(&buf).as_bytes()
+        buf
     };
     let mut cells = next;
     let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
@@ -1362,9 +1362,7 @@ pub fn apply_form(
     let bodies = perceive(x);
     let mut atlas = super::stalk::Stalks::default();
     for (i, body) in bodies.iter().enumerate() {
-        let mut addr = [0u8; 32];
-        addr[..8].copy_from_slice(&(i as u64).to_le_bytes());
-        atlas.admit(&body.moduli, addr);
+        atlas.admit(&body.moduli, (i as u64).to_le_bytes());
     }
     let mut cells: Vec<Cell3> = Vec::new();
     let mut remainder: Vec<Cell3> = Vec::new();
@@ -1396,7 +1394,10 @@ pub fn apply_form(
                     continue;
                 }
                 for addr in hits {
-                    let i = u64::from_le_bytes(addr[..8].try_into().ok()?) as usize;
+                    let Ok(raw) = <[u8; 8]>::try_from(addr.as_slice()) else {
+                        continue;
+                    };
+                    let i = u64::from_le_bytes(raw) as usize;
                     if let Some(body) = bodies.get(i) {
                         emit_carried(body, &versor, gauge, fy, &mut cells, &mut remainder);
                     }
@@ -1447,7 +1448,10 @@ pub fn apply_form(
                     continue;
                 }
                 for addr in hits {
-                    let i = u64::from_le_bytes(addr[..8].try_into().ok()?) as usize;
+                    let Ok(raw) = <[u8; 8]>::try_from(addr.as_slice()) else {
+                        continue;
+                    };
+                    let i = u64::from_le_bytes(raw) as usize;
                     if let Some(body) = bodies.get(i) {
                         emit_carried(body, &versor, gauge, fy, &mut cells, &mut remainder);
                     }
@@ -1520,15 +1524,14 @@ fn class_of_vertex(v: &Vertex) -> Option<Invariant> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct TransportClass {
     kind: super::peel::ShellKind,
-    word_class: [u8; 32],
+    word_class: Vec<u8>,
 }
 
 impl TransportClass {
-    fn key(&self) -> [u8; 32] {
-        let mut buf = Vec::new();
-        buf.push(self.kind.as_u8());
-        buf.extend_from_slice(&self.word_class);
-        *blake3::hash(&buf).as_bytes()
+    fn key(&self) -> Vec<u8> {
+        let mut buf = vec![self.kind.as_u8()];
+        crate::transducer::a21::put_bytes(&mut buf, &self.word_class);
+        buf
     }
 }
 
@@ -1536,7 +1539,7 @@ fn transport_class(v: &Vertex) -> Option<TransportClass> {
     match v {
         Vertex::Word { word, .. } => Some(TransportClass {
             kind: super::peel::ShellKind::Whole,
-            word_class: word.class_key(),
+            word_class: word.class_key().into_vec(),
         }),
         _ => None,
     }
@@ -1640,7 +1643,7 @@ fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
         }
     }
     form.reindex();
-    for (_, &fi) in form.star.fiber(&crate::network::nerve::ROOT) {
+    for (_, &fi) in form.star.fiber(crate::network::nerve::ROOT) {
         let Some(face) = form.faces.get(fi as usize) else {
             continue;
         };
@@ -1713,12 +1716,12 @@ pub fn extract_rule_with(
             if seen.contains(&k) {
                 continue;
             }
-            seen.insert(k, ());
+            seen.insert(&k, ());
             match class_pairs.get_mut(&k) {
                 Some(ps) => ps.push(pi as u16),
                 None => {
-                    class_pairs.insert(k, vec![pi as u16]);
-                    class_of.insert(k, c);
+                    class_pairs.insert(&k, vec![pi as u16]);
+                    class_of.insert(&k, c);
                 }
             }
         }
@@ -1729,8 +1732,8 @@ pub fn extract_rule_with(
     }
     let mut sections: crate::network::nerve::Keyed<Vec<u16>> = crate::network::nerve::Keyed::new();
     let mut rule_vertices = vec![frame_vertex()];
-    for (k, pairs) in class_pairs.fiber(&crate::network::nerve::ROOT) {
-        let Some(class) = class_of.get(k) else {
+    for (k, pairs) in class_pairs.fiber(crate::network::nerve::ROOT) {
+        let Some(class) = class_of.get(&k) else {
             continue;
         };
         let Some(&pi) = pairs.first() else {
@@ -1747,10 +1750,10 @@ pub fn extract_rule_with(
             have.insert(pair_idx_key(p), ());
         }
         let section = all_pairs
-            .fiber(&crate::network::nerve::ROOT)
-            .any(|(pk, _)| !have.contains(pk));
+            .fiber(crate::network::nerve::ROOT)
+            .any(|(pk, _)| !have.contains(&pk));
         if section {
-            sections.insert(*k, pairs.clone());
+            sections.insert(&k, pairs.clone());
         }
         rule_vertices.push(v);
     }
@@ -1794,7 +1797,7 @@ pub fn extract_rule_with(
         }
     }
     let ends = index_ends(&form);
-    for (_, (ea, eb)) in candidates.fiber(&crate::network::nerve::ROOT) {
+    for (_, (ea, eb)) in candidates.fiber(crate::network::nerve::ROOT) {
         let mut held: Option<super::alphabet::Word> = None;
         let mut constant = true;
         for pf in &pair_forms {
@@ -1927,30 +1930,26 @@ pub fn extract_rule_with(
     Some(super::sentence::rule_of_form(form))
 }
 
-pub(crate) fn pair_idx_key(i: u16) -> [u8; 32] {
-    let mut k = [0u8; 32];
-    k[..2].copy_from_slice(&i.to_le_bytes());
+pub(crate) fn pair_idx_key(i: u16) -> Vec<u8> {
+    let mut k = vec![0u8];
+    k.extend_from_slice(&i.to_le_bytes());
     k
 }
 
-fn end_key(e: &End) -> [u8; 32] {
+fn end_key(e: &End) -> Vec<u8> {
     match e {
-        End::Frame => {
-            let mut k = [0u8; 32];
-            k[31] = 0xff;
-            k
-        }
+        End::Frame => vec![0xff],
         End::Class(c) => c.key(),
     }
 }
 
-fn ends_pair_key(a: &End, b: &End) -> [u8; 32] {
+fn ends_pair_key(a: &End, b: &End) -> Vec<u8> {
     let (ka, kb) = (end_key(a), end_key(b));
     let (lo, hi) = if ka <= kb { (ka, kb) } else { (kb, ka) };
-    let mut buf = [0u8; 64];
-    buf[..32].copy_from_slice(&lo);
-    buf[32..].copy_from_slice(&hi);
-    *blake3::hash(&buf).as_bytes()
+    let mut buf = Vec::new();
+    crate::transducer::a21::put_bytes(&mut buf, &lo);
+    crate::transducer::a21::put_bytes(&mut buf, &hi);
+    buf
 }
 
 fn index_ends(form: &Form) -> crate::network::nerve::Keyed<u16> {
@@ -1990,10 +1989,10 @@ pub fn rule_replays_family(rule: &super::sentence::SentenceRule, family: &[(Grid
 /// Extract, memoized by family id and working-atlas generation. A hit
 /// spends nothing; a miss spends one Budget and stores the rule.
 pub fn extract_rule_cached(
-    cache: &mut crate::network::nerve::Keyed<([u8; 32], Option<super::sentence::SentenceRule>)>,
-    fam: &[u8; 32],
+    cache: &mut crate::network::nerve::Keyed<(crate::transducer::a21::Address, Option<super::sentence::SentenceRule>)>,
+    fam: &[u8],
     family: &[(Grid, Grid)],
-    atlas_root: [u8; 32],
+    atlas_root: crate::transducer::a21::Address,
     budget: &mut crate::physics::Budget,
     crystal: &dyn Crystal,
 ) -> Option<super::sentence::SentenceRule> {
@@ -2006,7 +2005,7 @@ pub fn extract_rule_cached(
         return cache.get(fam).and_then(|(_, r)| r.clone());
     }
     let rule = extract_rule_with(family, crystal);
-    cache.insert(*fam, (atlas_root, rule.clone()));
+    cache.insert(fam, (atlas_root, rule.clone()));
     rule
 }
 
@@ -2522,7 +2521,7 @@ mod tests {
         // Form::default() carries the Frame at index 0.
         let mut pf = Form::default();
         pf.vertices.push(Vertex::Word {
-            address: [1u8; 32],
+            address: crate::transducer::a21::Address::from(vec![1]),
             word: rot.clone(),
             rho: q(1),
             placement: (q(3), q(3)),
@@ -2531,7 +2530,7 @@ mod tests {
             contact: None,
         });
         pf.vertices.push(Vertex::Word {
-            address: [2u8; 32],
+            address: crate::transducer::a21::Address::from(vec![2]),
             word: rot.clone(),
             rho: q(1),
             placement: (q(3), q(3)),
@@ -2645,8 +2644,8 @@ mod tests {
             ) -> Option<Speech> {
                 apply_form(f, x, placement, self)
             }
-            fn by_address(&self, addr: &[u8; 32]) -> Option<(Element, Form)> {
-                if addr == &self.e.address() {
+            fn by_address(&self, addr: &[u8]) -> Option<(Element, Form)> {
+                if addr == self.e.address().as_bytes() {
                     Some((self.e.clone(), self.f.clone()))
                 } else {
                     None
@@ -2721,7 +2720,7 @@ mod tests {
             .expect("a body");
         let mut f = Form::default();
         f.vertices.push(Vertex::Word {
-            address: [1u8; 32],
+            address: crate::transducer::a21::Address::from(vec![1]),
             word: crate::transducer::alphabet::Word::identity(),
             rho: q(0),
             placement: (q(0), q(0)),
@@ -2809,7 +2808,7 @@ mod tests {
         let zero = q(0);
         let one = q(1);
         let moving = Vertex::Word {
-            address: [1u8; 32],
+            address: crate::transducer::a21::Address::from(vec![1]),
             word: crate::transducer::alphabet::Word::identity(),
             rho: one.clone(),
             placement: (zero.clone(), one.clone()),
@@ -2818,7 +2817,7 @@ mod tests {
             contact: None,
         };
         let still = Vertex::Word {
-            address: [2u8; 32],
+            address: crate::transducer::a21::Address::from(vec![2]),
             word: crate::transducer::alphabet::Word::identity(),
             rho: one,
             placement: (zero.clone(), zero),
@@ -2839,7 +2838,7 @@ mod tests {
             "a still word has no orbit"
         );
         let with_c = Vertex::Word {
-            address: [3u8; 32],
+            address: crate::transducer::a21::Address::from(vec![3]),
             word: crate::transducer::alphabet::Word::identity(),
             rho: q(1),
             placement: (q(0), q(1)),
@@ -3032,7 +3031,7 @@ mod tests {
         let mu = minted.magnitude();
         assert!(mu[1] >= 1, "recolour is gauge content, got {mu:?}");
         assert!(mu.iter().any(|&x| x > 0), "T is form_descent, never a floor on the lane");
-        assert_eq!(minted.description().get(1), Some(&3), "the minted word is the form's v3 tape");
+        assert_eq!(minted.description().get(1), Some(&4), "the minted word is the form's v4 tape");
         assert_eq!(
             minted.address(),
             crate::transducer::sentence::as_element_form(&rule.form, minted.magnitude()).expect("tape").address(),
@@ -3127,15 +3126,17 @@ mod tests {
     #[test]
     fn extract_rule_cached_spends_once_per_generation() {
         let family = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];
-        let fam = [7u8; 32];
+        let fam = b"fam";
         let mut cache = crate::network::nerve::Keyed::new();
         let mut budget = crate::physics::Physics::default().stroke_n(8);
-        let a = extract_rule_cached(&mut cache, &fam, &family, [1u8; 32], &mut budget, &NoCrystal);
+        let atlas1 = crate::transducer::a21::Address::from(vec![1]);
+        let atlas2 = crate::transducer::a21::Address::from(vec![2]);
+        let a = extract_rule_cached(&mut cache, fam, &family, atlas1.clone(), &mut budget, &NoCrystal);
         let left = budget.remaining();
-        let b = extract_rule_cached(&mut cache, &fam, &family, [1u8; 32], &mut budget, &NoCrystal);
+        let b = extract_rule_cached(&mut cache, fam, &family, atlas1, &mut budget, &NoCrystal);
         assert_eq!(a.is_some(), b.is_some());
         assert_eq!(budget.remaining(), left, "a cache hit spends nothing");
-        let _ = extract_rule_cached(&mut cache, &fam, &family, [2u8; 32], &mut budget, &NoCrystal);
+        let _ = extract_rule_cached(&mut cache, fam, &family, atlas2, &mut budget, &NoCrystal);
         assert!(budget.remaining() < left, "a new atlas generation re-extracts");
     }
 

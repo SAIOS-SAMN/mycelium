@@ -27,9 +27,10 @@ pub struct Voice {
 }
 
 impl Voice {
-    /// Seat a voice by name — the emblem digest is its durable identity.
+    /// Seat a voice by name. The seed is a KDF over the name; the identity
+    /// carried everywhere is the verifying key.
     pub fn named(name: &str) -> Voice {
-        let identity = *blake3::hash(format!("mycelium-kernel:{name}").as_bytes()).as_bytes();
+        let identity = crate::court::identity::HyphaKey::vk_from_name(name);
         Voice { name: name.to_string(), identity, k: 0 }
     }
 

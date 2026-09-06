@@ -15,6 +15,8 @@
 //! (Law II). The percept codec itself lives in `cognition` (this module owns the
 //! act tags and the non-percept payloads).
 
+use crate::transducer::a21::{put_addr, take_addr, Address};
+
 /// Act tags — frame `body[0]`. ACT_PERCEPT/ACT_GOSSIP keep their historical
 /// values so existing kernels speak unchanged.
 pub const ACT_PERCEPT: u8 = 0x00;
@@ -42,29 +44,29 @@ pub const ACT_SOLVE: u8 = 0x0C;
 /// holonomy preserved because the replacement IS a decomposition of W's own
 /// substance). The hypha verifies by deterministic replay; on success the
 /// word retires, the vocabulary compresses, and the bidder earns the
-/// compression yield. `[ACT_REFINE][voice 32][word address 32]`.
+/// compression yield. `[ACT_REFINE][voice 32][word address]`.
 /// Receipt: solve-receipt shape — `[REFINE_ACCEPTED|REFINE_NOTHING][μ⃗ 32]`.
 pub const ACT_REFINE: u8 = 0x09;
 pub const REFINE_ACCEPTED: u8 = 1;
 pub const REFINE_NOTHING: u8 = 0;
 
-/// `[ACT_REFINE][voice 32][word 32][cites]` — the bidder's sentence for the
+/// `[ACT_REFINE][voice 32][word address][cites]` — the bidder's sentence for the
 /// word (spoken by other words) rides as citations; the hypha replays.
-pub fn encode_refine(voice: &[u8; 32], word: &[u8; 32], cites: &[CiteWire]) -> Vec<u8> {
+pub fn encode_refine(voice: &[u8; 32], word: impl AsRef<[u8]>, cites: &[CiteWire]) -> Vec<u8> {
     let mut out = vec![ACT_REFINE];
     out.extend_from_slice(voice);
-    out.extend_from_slice(word);
+    let _ = put_addr(&mut out, word);
     push_cites(&mut out, cites);
     out
 }
 
-pub fn decode_refine(body: &[u8]) -> Option<([u8; 32], [u8; 32], Vec<CiteWire>)> {
+pub fn decode_refine(body: &[u8]) -> Option<([u8; 32], Address, Vec<CiteWire>)> {
     if body.first() != Some(&ACT_REFINE) {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
-    let word: [u8; 32] = body.get(33..65)?.try_into().ok()?;
-    let mut p = 65usize;
+    let mut p = 33usize;
+    let word = take_addr(body, &mut p)?;
     let cites = read_cites(body, &mut p).unwrap_or_default();
     Some((voice, word, cites))
 }
@@ -87,10 +89,10 @@ pub const THT1: &[u8; 4] = b"THT1";
 pub const COC1: &[u8; 4] = b"COC1";
 
 pub const ACT_ADOPT: u8 = 0x0E;
-/// One family's cohering sentences. `[ACT_SPEECH][voice 32][task 32][tu u64][n u32][len u32|element]…`.
+/// One family's cohering sentences. `[ACT_SPEECH][voice 32][task address][tu u64][n u32][len u32|element]…`.
 pub const ACT_SPEECH: u8 = 0x16;
 
-pub fn encode_speech(voice: &[u8; 32], task: &[u8; 32], tu: u64, sentences: &[Vec<u8>]) -> Vec<u8> {
+pub fn encode_speech(voice: &[u8; 32], task: impl AsRef<[u8]>, tu: u64, sentences: &[Vec<u8>]) -> Vec<u8> {
     encode_speech_standing(voice, task, tu, sentences, &[])
 }
 
@@ -98,14 +100,14 @@ pub fn encode_speech(voice: &[u8; 32], task: &[u8; 32], tu: u64, sentences: &[Ve
 /// beside the record). Empty `standing` is Stood for every sentence.
 pub fn encode_speech_standing(
     voice: &[u8; 32],
-    task: &[u8; 32],
+    task: impl AsRef<[u8]>,
     tu: u64,
     sentences: &[Vec<u8>],
     standing: &[u8],
 ) -> Vec<u8> {
     let mut out = vec![ACT_SPEECH];
     out.extend_from_slice(voice);
-    out.extend_from_slice(task);
+    let _ = put_addr(&mut out, task);
     out.extend_from_slice(&tu.to_le_bytes());
     out.extend_from_slice(&(sentences.len() as u32).to_le_bytes());
     for (i, s) in sentences.iter().enumerate() {
@@ -116,20 +118,22 @@ pub fn encode_speech_standing(
     out
 }
 
-pub fn decode_speech(body: &[u8]) -> Option<([u8; 32], [u8; 32], u64, Vec<Vec<u8>>)> {
+pub fn decode_speech(body: &[u8]) -> Option<([u8; 32], Address, u64, Vec<Vec<u8>>)> {
     let (voice, task, tu, sentences, _) = decode_speech_standing(body)?;
     Some((voice, task, tu, sentences))
 }
 
-pub fn decode_speech_standing(body: &[u8]) -> Option<([u8; 32], [u8; 32], u64, Vec<Vec<u8>>, Vec<u8>)> {
-    if body.first() != Some(&ACT_SPEECH) || body.len() < 77 {
+pub fn decode_speech_standing(body: &[u8]) -> Option<([u8; 32], Address, u64, Vec<Vec<u8>>, Vec<u8>)> {
+    if body.first() != Some(&ACT_SPEECH) || body.len() < 47 {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
-    let task: [u8; 32] = body.get(33..65)?.try_into().ok()?;
-    let tu = u64::from_le_bytes(body.get(65..73)?.try_into().ok()?);
-    let n = u32::from_le_bytes(body.get(73..77)?.try_into().ok()?) as usize;
-    let mut pos = 77usize;
+    let mut pos = 33usize;
+    let task = take_addr(body, &mut pos)?;
+    let tu = u64::from_le_bytes(body.get(pos..pos + 8)?.try_into().ok()?);
+    pos += 8;
+    let n = u32::from_le_bytes(body.get(pos..pos + 4)?.try_into().ok()?) as usize;
+    pos += 4;
     let mut sentences = Vec::with_capacity(n.min(64));
     let mut standing = Vec::with_capacity(n.min(64));
     for _ in 0..n {
@@ -293,21 +297,26 @@ pub fn decode_routed_demand(body: &[u8]) -> Option<([u8; 32], &[u8])> {
     Some((origin, &body[33..]))
 }
 
-pub fn encode_root(voice: &[u8; 32], task: &[u8; 32], solver: &[u8; 32], ticks: u64) -> Vec<u8> {
+pub fn encode_root(voice: &[u8; 32], task: impl AsRef<[u8]>, solver: &[u8; 32], ticks: u64) -> Vec<u8> {
     let mut out = vec![ACT_ROOT];
     out.extend_from_slice(voice);
-    out.extend_from_slice(task);
+    let _ = put_addr(&mut out, task);
     out.extend_from_slice(solver);
     out.extend_from_slice(&ticks.to_le_bytes());
     out
 }
 
-pub fn decode_root(body: &[u8]) -> Option<([u8; 32], [u8; 32], [u8; 32], u64)> {
-    if body.first() != Some(&ACT_ROOT) || body.len() < 97 {
+pub fn decode_root(body: &[u8]) -> Option<([u8; 32], Address, [u8; 32], u64)> {
+    if body.first() != Some(&ACT_ROOT) {
         return None;
     }
-    let ticks = body.get(97..105).map(|b| u64::from_le_bytes(b.try_into().unwrap())).unwrap_or(0);
-    Some((body[1..33].try_into().ok()?, body[33..65].try_into().ok()?, body[65..97].try_into().ok()?, ticks))
+    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    let mut p = 33usize;
+    let task = take_addr(body, &mut p)?;
+    let solver: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
+    p += 32;
+    let ticks = body.get(p..p + 8).and_then(|b| b.try_into().ok()).map(u64::from_le_bytes).unwrap_or(0);
+    Some((voice, task, solver, ticks))
 }
 
 pub fn encode_root_reply(solver: Option<[u8; 32]>, ticks: u64) -> Vec<u8> {
@@ -327,12 +336,12 @@ pub fn decode_root_reply(body: &[u8]) -> Option<(Option<[u8; 32]>, u64)> {
 /// or Held — a coordinate, so the hypha can weight a held idea below a
 /// ruled word. The versor and the body are the operator; the hearer
 /// verifies them and never fetches a copy of the word to verify against.
-pub type CiteWire = ([u8; 32], u8, crate::transducer::element::Versor, u32, Vec<Cell>);
+pub type CiteWire = (crate::transducer::a21::Address, u8, crate::transducer::element::Versor, u32, Vec<Cell>);
 
 pub fn push_cites(out: &mut Vec<u8>, cites: &[CiteWire]) {
     out.extend_from_slice(&(cites.len() as u32).to_le_bytes());
     for (addr, standing, g, asg, body) in cites {
-        out.extend_from_slice(addr);
+        let _ = crate::transducer::a21::put_addr(out, addr);
         out.push(*standing);
         g.to_bytes(out);
         out.extend_from_slice(&asg.to_le_bytes());
@@ -348,8 +357,7 @@ pub fn read_cites(b: &[u8], p: &mut usize) -> Option<Vec<CiteWire>> {
     }
     let mut out = Vec::with_capacity(n);
     for _ in 0..n {
-        let addr: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
-        *p += 32;
+        let addr = crate::transducer::a21::take_addr(b, p)?;
         let standing = *b.get(*p)?;
         *p += 1;
         let g = crate::transducer::element::Versor::from_bytes(b, p)?;
@@ -361,21 +369,21 @@ pub fn read_cites(b: &[u8], p: &mut usize) -> Option<Vec<CiteWire>> {
     Some(out)
 }
 
-pub fn encode_probe(voice: &[u8; 32], target: &[u8; 32], cites: &[CiteWire]) -> Vec<u8> {
+pub fn encode_probe(voice: &[u8; 32], target: impl AsRef<[u8]>, cites: &[CiteWire]) -> Vec<u8> {
     let mut out = vec![ACT_PROBE];
     out.extend_from_slice(voice);
-    out.extend_from_slice(target);
+    let _ = put_addr(&mut out, target);
     push_cites(&mut out, cites);
     out
 }
 
-pub fn decode_probe(body: &[u8]) -> Option<([u8; 32], [u8; 32], Vec<CiteWire>)> {
+pub fn decode_probe(body: &[u8]) -> Option<([u8; 32], Address, Vec<CiteWire>)> {
     if body.first() != Some(&ACT_PROBE) {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
-    let target: [u8; 32] = body.get(33..65)?.try_into().ok()?;
-    let mut p = 65usize;
+    let mut p = 33usize;
+    let target = take_addr(body, &mut p)?;
     let cites = read_cites(body, &mut p)?;
     Some((voice, target, cites))
 }
@@ -432,15 +440,15 @@ pub fn encode_digests_reply(digests: &[crate::transducer::sheaf::StratumDigest])
     for d in digests {
         push_invariant(&mut out, &d.inv);
         out.extend_from_slice(&d.count.to_le_bytes());
-        out.extend_from_slice(&d.root);
+        crate::transducer::a21::put_bytes(&mut out, &d.root);
     }
     out
 }
 
 pub fn decode_digests_reply(body: &[u8]) -> Option<Vec<crate::transducer::sheaf::StratumDigest>> {
     let n = u32::from_le_bytes(body.get(0..4)?.try_into().ok()?) as usize;
-    if n > body.len().saturating_sub(4) / 37 {
-        return None; // untrusted count: at least len + count + root per stratum
+    if n > body.len().saturating_sub(4) / 9 {
+        return None; // untrusted count: at least invariant + count + root per stratum
     }
     let mut p = 4usize;
     let mut out = Vec::with_capacity(n);
@@ -448,8 +456,7 @@ pub fn decode_digests_reply(body: &[u8]) -> Option<Vec<crate::transducer::sheaf:
         let inv = read_invariant(body, &mut p)?;
         let count = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?);
         p += 4;
-        let root: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
-        p += 32;
+        let root = crate::transducer::a21::take_bytes(body, &mut p)?;
         out.push(crate::transducer::sheaf::StratumDigest { inv, count, root });
     }
     Some(out)
@@ -517,7 +524,7 @@ pub fn decode_cover_digest(
     if let Some(digests) = decode_digests_reply(body) {
         p = 4;
         for d in &digests {
-            p += 1 + 8 * d.inv.0.len() + 4 + 32;
+            p += 1 + 8 * d.inv.0.len() + 4 + 4 + d.root.len();
         }
         if p >= body.len() {
             return None;
@@ -589,13 +596,13 @@ pub fn decode_cover(body: &[u8]) -> Option<([u8; 32], String, Vec<(u8, crate::tr
     Some((vk, addr, charts))
 }
 
-/// Offer: `[ACT_OFFER][addr 32][elen u32][elem][nv u32][voices][deflation 32][k 8][sig 64][inst_sig 64]`
+/// Offer: `[ACT_OFFER][addr][elen u32][elem][nv u32][voices][deflation 32][k 8][sig 64][inst_sig 64]`
 /// `k` is TUniversal at first vantage, comparable across hyphas. `sig`
 /// covers the Offer prefix; `inst_sig` is the home organ's signature over
 /// the Installed prefix, so a second vantage can emit Installed without
 /// the home key.
 pub fn encode_offer(
-    addr: &[u8; 32],
+    addr: impl AsRef<[u8]>,
     elem: &[u8],
     voices: &[[u8; 32]],
     deflation: &[u64; 4],
@@ -604,7 +611,7 @@ pub fn encode_offer(
     inst_sig: &[u8; 64],
 ) -> Vec<u8> {
     let mut out = vec![ACT_OFFER];
-    out.extend_from_slice(addr);
+    let _ = put_addr(&mut out, addr);
     out.extend_from_slice(&(elem.len() as u32).to_le_bytes());
     out.extend_from_slice(elem);
     out.extend_from_slice(&(voices.len() as u32).to_le_bytes());
@@ -618,13 +625,14 @@ pub fn encode_offer(
     out
 }
 
-pub fn decode_offer(body: &[u8]) -> Option<([u8; 32], Vec<u8>, Vec<[u8; 32]>, [u64; 4], u64, [u8; 64], [u8; 64])> {
+pub fn decode_offer(body: &[u8]) -> Option<(Address, Vec<u8>, Vec<[u8; 32]>, [u64; 4], u64, [u8; 64], [u8; 64])> {
     if body.first() != Some(&ACT_OFFER) {
         return None;
     }
-    let addr: [u8; 32] = body.get(1..33)?.try_into().ok()?;
-    let elen = u32::from_le_bytes(body.get(33..37)?.try_into().ok()?) as usize;
-    let mut p = 37usize;
+    let mut p = 1usize;
+    let addr = take_addr(body, &mut p)?;
+    let elen = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+    p += 4;
     let elem = body.get(p..p + elen)?.to_vec();
     p += elen;
     let nv = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
@@ -643,10 +651,10 @@ pub fn decode_offer(body: &[u8]) -> Option<([u8; 32], Vec<u8>, Vec<[u8; 32]>, [u
     Some((addr, elem, voices, deflation, k, sig, inst_sig))
 }
 
-/// Installed: `[ACT_INSTALLED][addr 32][elen u32][elem][sig_home 64][sig_peer 64]`
-pub fn encode_installed(addr: &[u8; 32], elem: &[u8], sig_home: &[u8; 64], sig_peer: &[u8; 64]) -> Vec<u8> {
+/// Installed: `[ACT_INSTALLED][addr][elen u32][elem][sig_home 64][sig_peer 64]`
+pub fn encode_installed(addr: impl AsRef<[u8]>, elem: &[u8], sig_home: &[u8; 64], sig_peer: &[u8; 64]) -> Vec<u8> {
     let mut out = vec![ACT_INSTALLED];
-    out.extend_from_slice(addr);
+    let _ = put_addr(&mut out, addr);
     out.extend_from_slice(&(elem.len() as u32).to_le_bytes());
     out.extend_from_slice(elem);
     out.extend_from_slice(sig_home);
@@ -654,24 +662,25 @@ pub fn encode_installed(addr: &[u8; 32], elem: &[u8], sig_home: &[u8; 64], sig_p
     out
 }
 
-pub fn decode_installed(body: &[u8]) -> Option<([u8; 32], Vec<u8>, [u8; 64], [u8; 64])> {
+pub fn decode_installed(body: &[u8]) -> Option<(Address, Vec<u8>, [u8; 64], [u8; 64])> {
     if body.first() != Some(&ACT_INSTALLED) {
         return None;
     }
-    let addr: [u8; 32] = body.get(1..33)?.try_into().ok()?;
-    let elen = u32::from_le_bytes(body.get(33..37)?.try_into().ok()?) as usize;
-    let p = 37usize;
+    let mut p = 1usize;
+    let addr = take_addr(body, &mut p)?;
+    let elen = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+    p += 4;
     let elem = body.get(p..p + elen)?.to_vec();
-    let p = p + elen;
+    p += elen;
     let sig_home: [u8; 64] = body.get(p..p + 64)?.try_into().ok()?;
     let sig_peer: [u8; 64] = body.get(p + 64..p + 128)?.try_into().ok()?;
     Some((addr, elem, sig_home, sig_peer))
 }
 
 /// Bytes of an Offer/Installed body that the signature covers (everything after the act except the trailing sigs).
-pub fn offer_signed_prefix(addr: &[u8; 32], elem: &[u8], voices: &[[u8; 32]], deflation: &[u64; 4], k: u64) -> Vec<u8> {
+pub fn offer_signed_prefix(addr: impl AsRef<[u8]>, elem: &[u8], voices: &[[u8; 32]], deflation: &[u64; 4], k: u64) -> Vec<u8> {
     let mut out = Vec::new();
-    out.extend_from_slice(addr);
+    let _ = put_addr(&mut out, addr);
     out.extend_from_slice(&(elem.len() as u32).to_le_bytes());
     out.extend_from_slice(elem);
     out.extend_from_slice(&(voices.len() as u32).to_le_bytes());
@@ -683,9 +692,9 @@ pub fn offer_signed_prefix(addr: &[u8; 32], elem: &[u8], voices: &[[u8; 32]], de
     out
 }
 
-pub fn installed_signed_prefix(addr: &[u8; 32], elem: &[u8]) -> Vec<u8> {
+pub fn installed_signed_prefix(addr: impl AsRef<[u8]>, elem: &[u8]) -> Vec<u8> {
     let mut out = Vec::new();
-    out.extend_from_slice(addr);
+    let _ = put_addr(&mut out, addr);
     out.extend_from_slice(&(elem.len() as u32).to_le_bytes());
     out.extend_from_slice(elem);
     out
@@ -693,24 +702,28 @@ pub fn installed_signed_prefix(addr: &[u8; 32], elem: &[u8]) -> Vec<u8> {
 
 /// A fetch names every discordant chart with the asker's have-list in each;
 /// the request itself is filled within the frame budget.
-/// `[ACT_FETCH][voice 32][k u32]{[len u8][inv u64·len][n u32][addr 32·n]}·k`.
-pub type Chart = (crate::transducer::stalk::Invariant, Vec<[u8; 32]>);
+/// `[ACT_FETCH][voice 32][k u32]{[len u8][inv u64·len][n u32][addr]·n}·k`.
+pub type Chart = (crate::transducer::stalk::Invariant, Vec<Address>);
 
-pub fn encode_fetch(voice: &[u8; 32], charts: &[Chart], budget: usize) -> Vec<u8> {
+pub fn encode_fetch<A: AsRef<[u8]>>(
+    voice: &[u8; 32],
+    charts: &[(crate::transducer::stalk::Invariant, Vec<A>)],
+    budget: usize,
+) -> Vec<u8> {
     let mut out = vec![ACT_FETCH];
     out.extend_from_slice(voice);
     let count_at = out.len();
     out.extend_from_slice(&0u32.to_le_bytes());
     let mut k = 0u32;
     for (inv, have) in charts {
-        let width = 1 + 8 * inv.0.len() + 4 + 32 * have.len();
+        let width = 1 + 8 * inv.0.len() + 4 + have.iter().map(|a| 2 + a.as_ref().len()).sum::<usize>();
         if out.len() + width > budget {
             break;
         }
         push_invariant(&mut out, inv);
         out.extend_from_slice(&(have.len() as u32).to_le_bytes());
         for a in have {
-            out.extend_from_slice(a);
+            let _ = put_addr(&mut out, a);
         }
         k += 1;
     }
@@ -734,13 +747,12 @@ pub fn decode_fetch(body: &[u8]) -> Option<([u8; 32], Vec<Chart>)> {
         let inv = read_invariant(body, &mut p)?;
         let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
         p += 4;
-        if n > body.len().saturating_sub(p) / 32 {
+        if n > body.len().saturating_sub(p) / 2 {
             return None;
         }
         let mut have = Vec::with_capacity(n);
         for _ in 0..n {
-            have.push(body.get(p..p + 32)?.try_into().ok()?);
-            p += 32;
+            have.push(take_addr(body, &mut p)?);
         }
         charts.push((inv, have));
     }
@@ -820,7 +832,7 @@ pub fn decode_syllabus_reply(body: &[u8]) -> Option<Vec<Vec<u8>>> {
 /// One class record on a syllabus page: key, order (0 = infinite), rotor bytes.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClassPage {
-    pub key: [u8; 32],
+    pub key: crate::transducer::a21::Address,
     pub order: u32,
     pub rotor: Vec<u8>,
 }
@@ -828,8 +840,7 @@ pub struct ClassPage {
 pub fn append_class_records(out: &mut Vec<u8>, records: &[ClassPage]) {
     out.extend_from_slice(&(records.len().min(u16::MAX as usize) as u16).to_le_bytes());
     for r in records {
-        out.extend_from_slice(&r.key);
-        out.extend_from_slice(&r.order.to_le_bytes());
+        let _ = crate::transducer::a21::put_class_record(out, &r.key, r.order);
         out.extend_from_slice(&(r.rotor.len() as u32).to_le_bytes());
         out.extend_from_slice(&r.rotor);
     }
@@ -850,17 +861,9 @@ pub fn decode_class_records(body: &[u8]) -> Vec<ClassPage> {
     p += 2;
     let mut out = Vec::new();
     for _ in 0..n.min(1024) {
-        if p + 40 > body.len() {
-            break;
-        }
-        let Some(key) = body.get(p..p + 32).and_then(|s| s.try_into().ok()) else {
+        let Some((key, order)) = crate::transducer::a21::take_class_record(body, &mut p) else {
             break;
         };
-        p += 32;
-        let Some(order) = body.get(p..p + 4).and_then(|s| s.try_into().ok()).map(u32::from_le_bytes) else {
-            break;
-        };
-        p += 4;
         let Some(rlen) = body.get(p..p + 4).and_then(|s| s.try_into().ok()).map(u32::from_le_bytes) else {
             break;
         };
@@ -913,16 +916,16 @@ pub fn decode_task_request(body: &[u8]) -> Option<[u8; 32]> {
     body.get(1..33)?.try_into().ok()
 }
 
-/// work envelope: `[task_id 32][nt u8][(input grid, output grid)·nt]
+/// work envelope: `[task_id address][nt u8][(input grid, output grid)·nt]
 /// [nx u8][test-input grid·nx]` — train pairs to STUDY, test inputs to
 /// SOLVE; the held answers never ride the wire. An empty body = no work.
 pub fn encode_task_envelope(
-    id: &[u8; 32],
+    id: impl AsRef<[u8]>,
     train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
     tests: &[Vec<Vec<u8>>],
 ) -> Vec<u8> {
     let mut out = Vec::new();
-    out.extend_from_slice(id);
+    let _ = put_addr(&mut out, id);
     out.push(train.len().min(255) as u8);
     for (a, b) in train.iter().take(255) {
         push_grid(&mut out, a);
@@ -935,11 +938,11 @@ pub fn encode_task_envelope(
     out
 }
 
-pub type TaskEnvelope = ([u8; 32], Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>, Vec<Vec<Vec<u8>>>);
+pub type TaskEnvelope = (Address, Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>, Vec<Vec<Vec<u8>>>);
 
 pub fn decode_task_envelope(body: &[u8]) -> Option<TaskEnvelope> {
-    let id: [u8; 32] = body.get(0..32)?.try_into().ok()?;
-    let mut p = 32usize;
+    let mut p = 0usize;
+    let id = take_addr(body, &mut p)?;
     let nt = *body.get(p)? as usize;
     p += 1;
     let mut train = Vec::with_capacity(nt.min(64));
@@ -957,21 +960,21 @@ pub fn decode_task_envelope(body: &[u8]) -> Option<TaskEnvelope> {
     Some((id, train, tests))
 }
 
-/// solve submission: `[ACT_SOLVE][voice 32][task_id 32][n u8][grid·n]`
+/// solve submission: `[ACT_SOLVE][voice 32][task_id address][n u8][grid·n]`
 /// and optionally `[RULE][len u32][element]` so the home speaks the rule.
-pub fn encode_solve(voice: &[u8; 32], id: &[u8; 32], outputs: &[Vec<Vec<u8>>]) -> Vec<u8> {
+pub fn encode_solve(voice: &[u8; 32], id: impl AsRef<[u8]>, outputs: &[Vec<Vec<u8>>]) -> Vec<u8> {
     encode_solve_with_rule(voice, id, outputs, None)
 }
 
 pub fn encode_solve_with_rule(
     voice: &[u8; 32],
-    id: &[u8; 32],
+    id: impl AsRef<[u8]>,
     outputs: &[Vec<Vec<u8>>],
     rule: Option<&[u8]>,
 ) -> Vec<u8> {
     let mut out = vec![ACT_SOLVE];
     out.extend_from_slice(voice);
-    out.extend_from_slice(id);
+    let _ = put_addr(&mut out, id);
     out.push(outputs.len().min(255) as u8);
     for g in outputs.iter().take(255) {
         push_grid(&mut out, g);
@@ -984,13 +987,13 @@ pub fn encode_solve_with_rule(
     out
 }
 
-pub fn decode_solve(body: &[u8]) -> Option<([u8; 32], [u8; 32], Vec<Vec<Vec<u8>>>, Option<Vec<u8>>)> {
+pub fn decode_solve(body: &[u8]) -> Option<([u8; 32], Address, Vec<Vec<Vec<u8>>>, Option<Vec<u8>>)> {
     if body.first() != Some(&ACT_SOLVE) {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
-    let id: [u8; 32] = body.get(33..65)?.try_into().ok()?;
-    let mut p = 65usize;
+    let mut p = 33usize;
+    let id = take_addr(body, &mut p)?;
     let n = *body.get(p)? as usize;
     p += 1;
     let mut outputs = Vec::with_capacity(n.min(64));
@@ -1179,7 +1182,7 @@ pub fn decode_quote_request(body: &[u8]) -> Option<([u8; 32], Vec<crate::transdu
 
 /// One quoted work item: the residual's address, its priced μ⃗, the chain,
 /// and the open (non-flat) charts of its coherence field.
-pub type WorkItem = ([u8; 32], [u64; 4], Vec<Cell>, Vec<crate::transducer::stalk::Invariant>);
+pub type WorkItem = (Address, [u64; 4], Vec<Cell>, Vec<crate::transducer::stalk::Invariant>);
 
 /// `[ACT_QUOTE][height u64][surface 4×u64][K u64][n u8][item: addr 32 | μ⃗ 4×u64 | chain]…`
 /// — height is the book generation; the u64 K is receipt-chain head
@@ -1225,11 +1228,11 @@ pub fn encode_quote_reply_within(height: u64, surface: &[u64; 4], k: u64, items:
     let mut served = 0u8;
     for (addr, mu, chain, open) in items.iter().take(255) {
         let open_len: usize = 1 + open.iter().map(|i| 1 + 8 * i.0.len().min(255)).sum::<usize>();
-        let item_len = 32 + 32 + 4 + chain.len() * 18 + open_len;
+        let item_len = 2 + addr.len() + 32 + 4 + chain.len() * 18 + open_len;
         if out.len() + item_len > budget {
             break;
         }
-        out.extend_from_slice(addr);
+        let _ = put_addr(&mut out, addr);
         push_mu(&mut out, mu);
         push_chain(&mut out, chain);
         out.push(open.len().min(255) as u8);
@@ -1256,8 +1259,7 @@ pub fn decode_quote_reply(body: &[u8]) -> Option<(u64, [u64; 4], u64, Vec<WorkIt
     p += 1;
     let mut items = Vec::with_capacity(n);
     for _ in 0..n {
-        let addr: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
-        p += 32;
+        let addr = take_addr(body, &mut p)?;
         let mu = read_mu(body, &mut p)?;
         let chain = read_chain(body, &mut p)?;
         let nopen = *body.get(p)? as usize;
@@ -1303,7 +1305,7 @@ pub fn decode_docket_request(body: &[u8]) -> Option<([u8; 32], u64, u64)> {
 /// convergence rides with the word.
 /// The last field is the hypha's k-step at which the word was installed:
 /// the coordinate a court's "since" is read against.
-pub type Docket = ([u8; 32], Vec<u8>, Vec<[u8; 32]>, [u64; 4], [u64; 4], u64);
+pub type Docket = (crate::transducer::a21::Address, Vec<u8>, Vec<[u8; 32]>, [u64; 4], [u64; 4], u64);
 
 /// A SETTLEMENT on the docket: the listing, its chain, the voice, the
 /// utterance that settled it, and the magnitudes before and after as the
@@ -1311,7 +1313,7 @@ pub type Docket = ([u8; 32], Vec<u8>, Vec<[u8; 32]>, [u64; 4], [u64; 4], u64);
 /// itself: two measurements of one deflation are the proof of convergence.
 /// The last two fields are the hypha's k-step (order inside one kernel)
 /// and the TUniversal stamp (ledger, cross-node).
-pub type Settlement = ([u8; 32], Vec<Cell>, [u8; 32], Vec<CiteWire>, [u64; 4], [u64; 4], u64, u64);
+pub type Settlement = (crate::transducer::a21::Address, Vec<Cell>, [u8; 32], Vec<CiteWire>, [u64; 4], [u64; 4], u64, u64);
 
 pub fn encode_docket_reply(dockets: &[Docket]) -> Vec<u8> {
     encode_docket_reply_with(dockets, &[])
@@ -1340,7 +1342,7 @@ pub fn encode_docket_reply_paged(
     let mut settled_len = 8usize;
     for (listing, chain, voice, cites, before, after, k, tu) in settlements {
         let mut item = Vec::new();
-        item.extend_from_slice(listing);
+        let _ = put_addr(&mut item, listing);
         push_chain(&mut item, chain);
         item.extend_from_slice(voice);
         push_cites(&mut item, cites);
@@ -1359,7 +1361,7 @@ pub fn encode_docket_reply_paged(
     let mut words = 0usize;
     for (addr, elem, voices, mu, deflation, k) in dockets {
         let mut item = Vec::with_capacity(112 + elem.len() + 32 * voices.len());
-        item.extend_from_slice(addr);
+        let _ = put_addr(&mut item, addr);
         item.extend_from_slice(&(elem.len() as u32).to_le_bytes());
         item.extend_from_slice(elem);
         item.extend_from_slice(&(voices.len() as u32).to_le_bytes());
@@ -1405,8 +1407,7 @@ pub fn decode_settlements(body: &[u8]) -> Vec<Settlement> {
     p += 4;
     let mut out = Vec::new();
     for _ in 0..n {
-        let Some(listing) = body.get(p..p + 32).and_then(|b| b.try_into().ok()) else { break };
-        p += 32;
+        let Some(listing) = take_addr(body, &mut p) else { break };
         let Some(chain) = read_chain(body, &mut p) else { break };
         let Some(voice) = body.get(p..p + 32).and_then(|b| b.try_into().ok()) else { break };
         p += 32;
@@ -1433,7 +1434,9 @@ pub fn decode_cavities(body: &[u8]) -> Vec<Vec<u8>> {
     };
     p += 4;
     for _ in 0..ns {
-        p += 32;
+        if take_addr(body, &mut p).is_none() {
+            return Vec::new();
+        }
         let Some(_) = read_chain(body, &mut p) else { return Vec::new() };
         p += 32;
         let Some(_) = read_cites(body, &mut p) else { return Vec::new() };
@@ -1469,13 +1472,12 @@ fn decode_dockets_at(body: &[u8]) -> Option<(Vec<Docket>, usize)> {
     let mut p = 0usize;
     let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
     p += 4;
-    if n > body.len().saturating_sub(p) / 104 {
-        return None; // untrusted count: ≥104 bytes per docket
+    if n > body.len().saturating_sub(p) / 74 {
+        return None; // untrusted count: address + element + voices + μ⃗ pair + k
     }
     let mut out = Vec::with_capacity(n);
     for _ in 0..n {
-        let addr: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
-        p += 32;
+        let addr = take_addr(body, &mut p)?;
         let el = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
         p += 4;
         if el > body.len().saturating_sub(p) {
@@ -1535,9 +1537,9 @@ pub fn decode_evidence_request(body: &[u8]) -> Option<[u8; 32]> {
 /// evidence DEPOSIT (an entity's verified dialect finding → the court's
 /// docket): `[ACT_EVIDENCE][voice 32][evidence-reply payload]`. A 33-byte
 /// body is a pull; anything longer is a deposit — one act, two directions.
-pub fn encode_evidence_deposit(
+pub fn encode_evidence_deposit<A: AsRef<[u8]>>(
     voice: &[u8; 32],
-    items: &[([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)],
+    items: &[(A, Vec<(i64, i64)>, Vec<(i64, i64, u8)>)],
 ) -> Vec<u8> {
     let mut out = vec![ACT_EVIDENCE];
     out.extend_from_slice(voice);
@@ -1547,7 +1549,7 @@ pub fn encode_evidence_deposit(
 
 pub fn decode_evidence_deposit(
     body: &[u8],
-) -> Option<([u8; 32], Vec<([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)>)> {
+) -> Option<([u8; 32], Vec<(Address, Vec<(i64, i64)>, Vec<(i64, i64, u8)>)>)> {
     if body.first() != Some(&ACT_EVIDENCE) || body.len() <= 33 {
         return None;
     }
@@ -1556,16 +1558,16 @@ pub fn decode_evidence_deposit(
     Some((voice, items))
 }
 
-/// evidence reply: `[n u32] ( [addr 32][nf u32][fp (r i64,c i64)·nf]
+/// evidence reply: `[n u32] ( [addr][nf u32][fp (r i64,c i64)·nf]
 /// [ns u32][scene (r i64,c i64,h u8)·ns] )…` — the selection fiber's birth
 /// evidence, count-guarded at every level.
-pub fn encode_evidence_reply(
-    items: &[([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)],
+pub fn encode_evidence_reply<A: AsRef<[u8]>>(
+    items: &[(A, Vec<(i64, i64)>, Vec<(i64, i64, u8)>)],
 ) -> Vec<u8> {
     let mut out = Vec::new();
     out.extend_from_slice(&(items.len() as u32).to_le_bytes());
     for (addr, fp, scene) in items {
-        out.extend_from_slice(addr);
+        let _ = put_addr(&mut out, addr);
         out.extend_from_slice(&(fp.len() as u32).to_le_bytes());
         for (r, c) in fp {
             out.extend_from_slice(&r.to_le_bytes());
@@ -1583,17 +1585,16 @@ pub fn encode_evidence_reply(
 
 pub fn decode_evidence_reply(
     body: &[u8],
-) -> Option<Vec<([u8; 32], Vec<(i64, i64)>, Vec<(i64, i64, u8)>)>> {
+) -> Option<Vec<(Address, Vec<(i64, i64)>, Vec<(i64, i64, u8)>)>> {
     let mut p = 0usize;
     let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
     p += 4;
-    if n > body.len().saturating_sub(p) / 40 {
+    if n > body.len().saturating_sub(p) / 10 {
         return None; // untrusted count
     }
     let mut out = Vec::with_capacity(n);
     for _ in 0..n {
-        let addr: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
-        p += 32;
+        let addr = take_addr(body, &mut p)?;
         let nf = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
         p += 4;
         if nf > body.len().saturating_sub(p) / 16 {
@@ -1624,10 +1625,10 @@ pub fn decode_evidence_reply(
     Some(out)
 }
 
-/// verdict: `[ACT_VERDICT][court voice 32][addr 32][ruling u8][receipt 32]` —
+/// verdict: `[ACT_VERDICT][court voice 32][addr][ruling u8][receipt 32]` —
 /// the receipt is the head of the court's own chronometric chain (the signature
 /// binding the ruling to the court's tamper-evident history).
-pub fn encode_verdict(voice: &[u8; 32], addr: &[u8; 32], ruling: u8, receipt: &[u8; 32]) -> Vec<u8> {
+pub fn encode_verdict(voice: &[u8; 32], addr: impl AsRef<[u8]>, ruling: u8, receipt: &[u8; 32]) -> Vec<u8> {
     encode_verdict_payload(voice, addr, ruling, receipt, None)
 }
 
@@ -1635,14 +1636,14 @@ pub fn encode_verdict(voice: &[u8; 32], addr: &[u8; 32], ruling: u8, receipt: &[
 /// `…[receipt 32][0]`.
 pub fn encode_verdict_payload(
     voice: &[u8; 32],
-    addr: &[u8; 32],
+    addr: impl AsRef<[u8]>,
     ruling: u8,
     receipt: &[u8; 32],
     pi: Option<&crate::transducer::anchor::Sel>,
 ) -> Vec<u8> {
     let mut out = vec![ACT_VERDICT];
     out.extend_from_slice(voice);
-    out.extend_from_slice(addr);
+    let _ = put_addr(&mut out, addr);
     out.push(ruling);
     out.extend_from_slice(receipt);
     match pi {
@@ -1655,22 +1656,22 @@ pub fn encode_verdict_payload(
     out
 }
 
-/// The attach payload (RULING_ATTACHED): `…[receipt 32][2][base 32][g 17]` —
+/// The attach payload (RULING_ATTACHED): `…[receipt 32][2][base][g 17]` —
 /// the base the word connects to and the transport g into its frame.
 pub fn encode_verdict_attach(
     voice: &[u8; 32],
-    addr: &[u8; 32],
+    addr: impl AsRef<[u8]>,
     receipt: &[u8; 32],
-    base: &[u8; 32],
+    base: impl AsRef<[u8]>,
     g: &crate::transducer::element::Versor,
 ) -> Vec<u8> {
     let mut out = vec![ACT_VERDICT];
     out.extend_from_slice(voice);
-    out.extend_from_slice(addr);
+    let _ = put_addr(&mut out, addr);
     out.push(RULING_ATTACHED);
     out.extend_from_slice(receipt);
     out.push(2);
-    out.extend_from_slice(base);
+    let _ = put_addr(&mut out, base);
     g.to_bytes(&mut out);
     out
 }
@@ -1679,11 +1680,11 @@ pub fn encode_verdict_attach(
 /// rebind, (base, g) for an attach).
 pub type Verdict = (
     [u8; 32],
-    [u8; 32],
+    Address,
     u8,
     [u8; 32],
     Option<crate::transducer::anchor::Sel>,
-    Option<([u8; 32], crate::transducer::element::Versor)>,
+    Option<(Address, crate::transducer::element::Versor)>,
 );
 
 pub fn decode_verdict(body: &[u8]) -> Option<Verdict> {
@@ -1691,17 +1692,20 @@ pub fn decode_verdict(body: &[u8]) -> Option<Verdict> {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
-    let addr: [u8; 32] = body.get(33..65)?.try_into().ok()?;
-    let ruling = *body.get(65)?;
-    let receipt: [u8; 32] = body.get(66..98)?.try_into().ok()?;
-    let (pi, attach) = match body.get(98) {
+    let mut p = 33usize;
+    let addr = take_addr(body, &mut p)?;
+    let ruling = *body.get(p)?;
+    p += 1;
+    let receipt: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
+    p += 32;
+    let (pi, attach) = match body.get(p) {
         Some(1) => {
-            let mut p = 99usize;
+            p += 1;
             (Some(crate::transducer::anchor::Sel::from_bytes(body, &mut p)?), None)
         }
         Some(2) => {
-            let base: [u8; 32] = body.get(99..131)?.try_into().ok()?;
-            let mut p = 131usize;
+            p += 1;
+            let base = take_addr(body, &mut p)?;
             let g = crate::transducer::element::Versor::from_bytes(body, &mut p)?;
             (None, Some((base, g)))
         }
@@ -1727,10 +1731,10 @@ pub fn decode_teach(body: &[u8]) -> Option<Vec<u8>> {
 
 // ── settle: the two-voice consilience receipt ────────────────────────────────
 
-/// `[ACT_SETTLE][germ 32][nvoices u8][voices 32×n][μ⃗ 4×u64]`
-pub fn encode_settle(germ: &[u8; 32], voices: &[[u8; 32]], mu: &[u64; 4]) -> Vec<u8> {
+/// `[ACT_SETTLE][germ address][nvoices u8][voices 32×n][μ⃗ 4×u64]`
+pub fn encode_settle(germ: impl AsRef<[u8]>, voices: &[[u8; 32]], mu: &[u64; 4]) -> Vec<u8> {
     let mut out = vec![ACT_SETTLE];
-    out.extend_from_slice(germ);
+    let _ = put_addr(&mut out, germ);
     out.push(voices.len().min(255) as u8);
     for v in voices.iter().take(255) {
         out.extend_from_slice(v);
@@ -1739,13 +1743,14 @@ pub fn encode_settle(germ: &[u8; 32], voices: &[[u8; 32]], mu: &[u64; 4]) -> Vec
     out
 }
 
-pub fn decode_settle(body: &[u8]) -> Option<([u8; 32], Vec<[u8; 32]>, [u64; 4])> {
+pub fn decode_settle(body: &[u8]) -> Option<(Address, Vec<[u8; 32]>, [u64; 4])> {
     if body.first() != Some(&ACT_SETTLE) {
         return None;
     }
-    let germ: [u8; 32] = body.get(1..33)?.try_into().ok()?;
-    let n = *body.get(33)? as usize; // u8 — bounded by construction
-    let mut p = 34usize;
+    let mut p = 1usize;
+    let germ = take_addr(body, &mut p)?;
+    let n = *body.get(p)? as usize; // u8 — bounded by construction
+    p += 1;
     let mut voices = Vec::with_capacity(n);
     for _ in 0..n {
         let v: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
@@ -1764,9 +1769,14 @@ mod tests {
     #[test]
     fn the_five_acts_round_trip() {
         let chain = vec![(0i64, 0i64, 1u8, 4u8), (2, 3, 0, 7)];
-        let (voice, germ) = ([9u8; 32], [7u8; 32]);
+        let voice = [9u8; 32];
+        let solver = [7u8; 32];
+        let listing = crate::transducer::element::listing_key(
+            &chain,
+            &crate::transducer::element::IDENTITY_FRAME,
+        );
         let cites = vec![(
-            [3u8; 32],
+            listing.clone(),
             0u8,
             crate::transducer::element::translator_versor(1, -1),
             1u32,
@@ -1779,15 +1789,15 @@ mod tests {
             decode_demand_at(&encode_demand_at(&voice, 7, &chain, &cites)).unwrap();
         assert_eq!((v2, c2, cites2, k_voice), (voice, chain.clone(), cites.clone(), 7));
         assert_eq!(decode_quote_request(&encode_quote_request(&voice)).unwrap(), (voice, Vec::new()));
-        let items = vec![(germ, [1u64, 2, 30, 4], chain.clone(), Vec::new())];
+        let items = vec![(listing.clone(), [1u64, 2, 30, 4], chain.clone(), Vec::new())];
         let (h, s, k, it) = decode_quote_reply(&encode_quote_reply(3, &[5, 0, 9, 0], 4208, &items)).unwrap();
         assert_eq!(h, 3, "book height rides the quote");
         assert_eq!(s, [5, 0, 9, 0]);
         assert_eq!(k, 4208, "receipt-chain head K rides the quote, not TUniversal");
         assert_eq!(it, items);
         // A settlement rides the docket after the dockets, with its utterance.
-        let docket: Docket = (germ, vec![1, 2, 3], vec![voice], [1, 2, 3, 4], [0, 0, 7, 0], 41);
-        let settlement: Settlement = (germ, chain.clone(), voice, cites.clone(), [2, 0, 2, 0], [0, 0, 1, 0], 42, 7);
+        let docket: Docket = (listing.clone(), vec![1, 2, 3], vec![voice], [1, 2, 3, 4], [0, 0, 7, 0], 41);
+        let settlement: Settlement = (listing.clone(), chain.clone(), voice, cites.clone(), [2, 0, 2, 0], [0, 0, 1, 0], 42, 7);
         let body = encode_docket_reply_with(std::slice::from_ref(&docket), std::slice::from_ref(&settlement));
         assert_eq!(decode_docket_reply(&body).unwrap(), vec![docket.clone()]);
         assert_eq!(decode_settlements(&body), vec![settlement.clone()]);
@@ -1801,7 +1811,7 @@ mod tests {
         assert_eq!((w, s, n), (1, 1, 1));
         assert_eq!(decode_cavities(&paged), vec![cavity]);
         assert_eq!(decode_teach(&encode_teach(&[0xAB, 0xCD])).unwrap(), vec![0xAB, 0xCD]);
-        let (g2, vs, mu) = decode_settle(&encode_settle(&germ, &[voice, germ], &[0, 0, 12, 0])).unwrap();
-        assert_eq!((g2, vs, mu), (germ, vec![voice, germ], [0, 0, 12, 0]));
+        let (g2, vs, mu) = decode_settle(&encode_settle(&listing, &[voice, solver], &[0, 0, 12, 0])).unwrap();
+        assert_eq!((g2, vs, mu), (listing, vec![voice, solver], [0, 0, 12, 0]));
     }
 }

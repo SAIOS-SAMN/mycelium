@@ -19,6 +19,7 @@
 
 use crate::arc::{refine_delta, Grid, Task};
 use crate::network::nerve::Keyed;
+use crate::transducer::a21::{put_addr, take_addr, Address};
 
 /// The closed task lifecycle. Settled carries the settle count — the decay's
 /// exact denominator, never a boolean "done".
@@ -43,7 +44,7 @@ pub enum SolveYield {
 
 pub struct TaskRegistry {
     /// (task_id, the task, state) — append-only, content-addressed.
-    tasks: Vec<([u8; 32], Task, TaskState)>,
+    tasks: Vec<(Address, Task, TaskState)>,
     /// Position of each id in `tasks`. Dispatch still walks the Vec;
     /// lookup, overlay, and settle read here.
     by_id: Keyed<usize>,
@@ -63,11 +64,14 @@ pub struct TaskRegistry {
 /// unreachable under this M2 form (listing keys of each train pair plus
 /// the test-input chain address). Cut B recuts from genesis — overlay of
 /// a Cut A snapshot is a miss, not a restore.
-pub fn task_id(task: &Task) -> [u8; 32] {
-    let mut buf = Vec::new();
+pub fn task_id(task: &Task) -> Address {
+    let mut buf = vec![crate::transducer::a21::TAG_TASK];
     for (a, b) in &task.train {
         if let Some((chain, _, frame)) = refine_delta(a, b) {
-            buf.extend_from_slice(&crate::transducer::element::listing_key(&chain, &frame));
+            crate::transducer::a21::put_bytes(
+                &mut buf,
+                &crate::transducer::element::listing_key(&chain, &frame),
+            );
         }
     }
     for (x, _) in &task.test {
@@ -80,9 +84,12 @@ pub fn task_id(task: &Task) -> [u8; 32] {
                 })
             })
             .collect();
-        buf.extend_from_slice(&crate::transducer::element::from_residual(&chain).address());
+        crate::transducer::a21::put_bytes(
+            &mut buf,
+            &crate::transducer::element::from_residual(&chain).address(),
+        );
     }
-    *blake3::hash(&buf).as_bytes()
+    Address::new(buf)
 }
 
 /// The task's boundary tension — the per-lane volume of its train
@@ -116,7 +123,7 @@ impl TaskRegistry {
 
     /// Next `n` tasks for first-time listing. Empty once the manifest has
     /// been walked; cover changes re-home through [`next_cover_batch`].
-    pub fn next_intake_batch(&mut self, n: usize) -> Vec<([u8; 32], Task)> {
+    pub fn next_intake_batch(&mut self, n: usize) -> Vec<(Address, Task)> {
         let len = self.tasks.len();
         if self.intake_done || len == 0 || n == 0 {
             return Vec::new();
@@ -127,7 +134,7 @@ impl TaskRegistry {
             let i = self.intake_cursor;
             self.intake_cursor += 1;
             let (id, task, _) = &self.tasks[i];
-            out.push((*id, task.clone()));
+            out.push((id.clone(), task.clone()));
         }
         if self.intake_cursor >= len {
             self.intake_done = true;
@@ -140,7 +147,7 @@ impl TaskRegistry {
     }
 
     /// Next `n` tasks for a cover-change re-home stroke.
-    pub fn next_cover_batch(&mut self, n: usize) -> Vec<([u8; 32], Task)> {
+    pub fn next_cover_batch(&mut self, n: usize) -> Vec<(Address, Task)> {
         let len = self.tasks.len();
         if len == 0 || n == 0 {
             return Vec::new();
@@ -151,7 +158,7 @@ impl TaskRegistry {
             let i = self.cover_cursor % len;
             self.cover_cursor = (self.cover_cursor + 1) % len;
             let (id, task, _) = &self.tasks[i];
-            out.push((*id, task.clone()));
+            out.push((id.clone(), task.clone()));
         }
         out
     }
@@ -166,14 +173,14 @@ impl TaskRegistry {
         self.tasks.iter().filter(|(_, _, s)| *s == TaskState::Unsolved).count()
     }
 
-    pub fn task(&self, id: &[u8; 32]) -> Option<&Task> {
+    pub fn task(&self, id: &[u8]) -> Option<&Task> {
         self.by_id
             .get(id)
             .and_then(|&i| self.tasks.get(i).map(|(_, task, _)| task))
     }
 
     /// Withheld test pairs (input, held output) the home speaks a rule onto.
-    pub fn withheld(&self, id: &[u8; 32]) -> Vec<(Grid, Grid)> {
+    pub fn withheld(&self, id: &[u8]) -> Vec<(Grid, Grid)> {
         self.task(id)
             .map(|t| t.test.iter().filter(|(_, y)| !y.is_empty()).cloned().collect())
             .unwrap_or_default()
@@ -181,12 +188,12 @@ impl TaskRegistry {
 
     /// REGISTER a task (idempotent by content — re-feeding under a new file
     /// name registers nothing). Returns the id.
-    pub fn register(&mut self, task: Task) -> [u8; 32] {
+    pub fn register(&mut self, task: Task) -> Address {
         let id = task_id(&task);
-        if !self.by_id.contains(&id) {
+        if !self.by_id.contains(id.as_bytes()) {
             let i = self.tasks.len();
-            self.tasks.push((id, task, TaskState::Unsolved));
-            self.by_id.insert(id, i);
+            self.tasks.push((id.clone(), task, TaskState::Unsolved));
+            self.by_id.insert(&id, i);
         }
         id
     }
@@ -194,15 +201,15 @@ impl TaskRegistry {
     /// DISPATCH a work envelope: the next Unsolved task, rotating so pulls
     /// spread across the book. None when everything settled.
     /// The tasks settled on this book — its proven roots.
-    pub fn settled_ids(&self) -> Vec<[u8; 32]> {
-        self.tasks.iter().filter(|(_, _, s)| *s != TaskState::Unsolved).map(|(t, _, _)| *t).collect()
+    pub fn settled_ids(&self) -> Vec<Address> {
+        self.tasks.iter().filter(|(_, _, s)| *s != TaskState::Unsolved).map(|(t, _, _)| t.clone()).collect()
     }
 
     /// PRIORITIZE a task: the next dispatch starts at it. A proven root
     /// gossiped from another hypha is re-spoken here first, so every voice
     /// on this book is asked to reproduce it. False when the task is not
     /// registered or already settled here.
-    pub fn prioritize(&mut self, id: &[u8; 32]) -> bool {
+    pub fn prioritize(&mut self, id: &[u8]) -> bool {
         match self.by_id.get(id) {
             Some(&i) if self.tasks.get(i).is_some_and(|(_, _, s)| *s == TaskState::Unsolved) => {
                 self.cursor = i;
@@ -212,14 +219,14 @@ impl TaskRegistry {
         }
     }
 
-    pub fn dispatch(&mut self) -> Option<([u8; 32], &Task)> {
+    pub fn dispatch(&mut self) -> Option<(Address, &Task)> {
         let n = self.tasks.len();
         for k in 0..n {
             let i = (self.cursor + k) % n;
             if self.tasks[i].2 == TaskState::Unsolved {
                 self.cursor = (i + 1) % n;
                 let (id, task, _) = &self.tasks[i];
-                return Some((*id, task));
+                return Some((id.clone(), task));
             }
         }
         None
@@ -238,7 +245,7 @@ impl TaskRegistry {
         out.extend_from_slice(&(self.cursor as u32).to_le_bytes());
         out.extend_from_slice(&(self.tasks.len() as u32).to_le_bytes());
         for (id, _, state) in &self.tasks {
-            out.extend_from_slice(id);
+            put_addr(&mut out, id);
             match state {
                 TaskState::Unsolved => {
                     out.push(0);
@@ -275,21 +282,19 @@ impl TaskRegistry {
         let mut restored = 0usize;
         p += 4;
         for _ in 0..n {
-            let Some(id) = bytes.get(p..p + 32) else { break };
+            let Some(id) = take_addr(bytes, &mut p) else { break };
             let (Some(&settled), Some(count)) = (
-                bytes.get(p + 32),
-                bytes.get(p + 33..p + 37).map(|b| u32::from_le_bytes(b.try_into().unwrap())),
+                bytes.get(p),
+                bytes.get(p + 1..p + 5).map(|b| u32::from_le_bytes(b.try_into().unwrap())),
             ) else {
                 break;
             };
-            p += 37;
+            p += 5;
             if settled == 1 {
-                if let Ok(id) = <[u8; 32]>::try_from(id) {
-                    if let Some(&i) = self.by_id.get(&id) {
-                        if let Some(entry) = self.tasks.get_mut(i) {
-                            entry.2 = TaskState::Settled(count);
-                            restored += 1;
-                        }
+                if let Some(&i) = self.by_id.get(id.as_bytes()) {
+                    if let Some(entry) = self.tasks.get_mut(i) {
+                        entry.2 = TaskState::Settled(count);
+                        restored += 1;
                     }
                 }
             }
@@ -309,7 +314,7 @@ impl TaskRegistry {
     /// outputs EXACTLY (the server is the authority — it holds the answers
     /// for its registered corpus). First verified solve → full bounty;
     /// replays → the verification floor; wrong or unknown → nothing.
-    pub fn settle(&mut self, id: &[u8; 32], predictions: &[Grid]) -> SolveYield {
+    pub fn settle(&mut self, id: &[u8], predictions: &[Grid]) -> SolveYield {
         let Some(&i) = self.by_id.get(id) else {
             return SolveYield::Nothing; // no authoritative origin — rejected
         };

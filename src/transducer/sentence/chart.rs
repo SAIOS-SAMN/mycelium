@@ -11,7 +11,7 @@ use crate::transducer::stalk;
 use super::tape::from_element_form;
 
 impl Form {
-    pub fn glue(&mut self, s: &Form, s_addr: [u8; 32], placement: Word, magnitude: [u64; 4]) -> Option<u16> {
+    pub fn glue(&mut self, s: &Form, s_addr: crate::transducer::a21::Address, placement: Word, magnitude: [u64; 4]) -> Option<u16> {
         if !s.is_closed() {
             return None;
         }
@@ -31,6 +31,7 @@ impl Form {
             return None;
         }
         let idx = self.vertices.len() as u16;
+        self.glued.insert(&s_addr, idx);
         self.vertices.push(Vertex::Glued {
             address: s_addr,
             chart,
@@ -39,7 +40,6 @@ impl Form {
             placement: placement.clone(),
         });
         self.faces.push(FormFace::new(0, idx, placement));
-        self.glued.insert(s_addr, idx);
         self.loops = Self::loops_of(&self.faces, self.vertices.len());
         self.depth = self.depth_of();
         self.reindex();
@@ -79,23 +79,23 @@ impl Form {
             });
         }
         let mut glued = Keyed::new();
-        for (k, &old_i) in self.glued.fiber(&ROOT) {
+        for (k, &old_i) in self.glued.fiber(ROOT) {
             if let Some(&Some(ni)) = old_to_new.get(old_i as usize) {
-                glued.insert(*k, ni);
+                glued.insert(&k, ni);
             }
         }
         let mut sections = Keyed::new();
-        for (k, ix) in self.sections.fiber(&ROOT) {
+        for (k, ix) in self.sections.fiber(ROOT) {
             let mapped: Vec<u16> = ix
                 .iter()
                 .filter_map(|&i| old_to_new.get(i as usize).copied().flatten())
                 .collect();
             if !mapped.is_empty() {
-                sections.insert(*k, mapped);
+                sections.insert(&k, mapped);
             }
         }
         let mut torsion = Keyed::new();
-        for (k, (sigma, ell, chord)) in self.torsion.fiber(&ROOT) {
+        for (k, (sigma, ell, chord)) in self.torsion.fiber(ROOT) {
             let Some(&Some(nc)) = face_old_to_new.get(*chord as usize) else {
                 continue;
             };
@@ -110,7 +110,7 @@ impl Form {
             else {
                 continue;
             };
-            torsion.insert(*k, (mapped, *ell, nc));
+            torsion.insert(&k, (mapped, *ell, nc));
         }
         self.vertices = new_verts;
         self.faces = new_faces;
@@ -253,7 +253,7 @@ pub struct SentenceRule {
 impl SentenceRule {
     pub fn section_count(&self) -> usize {
         self.sections
-            .fiber(&crate::network::nerve::ROOT)
+            .fiber(crate::network::nerve::ROOT)
             .map(|(_, v)| v.len())
             .sum()
     }
@@ -268,7 +268,7 @@ impl SentenceRule {
     }
 
     /// Placement of a transport class, read from the form's placements.
-    pub fn shift_of(&self, key: &[u8; 32]) -> Option<(num_rational::BigRational, num_rational::BigRational)> {
+    pub fn shift_of(&self, key: &[u8]) -> Option<(num_rational::BigRational, num_rational::BigRational)> {
         self.form.placements.get(key).cloned()
     }
 }
@@ -291,11 +291,11 @@ pub fn rule_of_form(mut form: Form) -> SentenceRule {
 /// Vertex key of a sentence form: Word vertices (M1, ρ, placement, contact,
 /// gauge) and face words. The body's absolute position is already quotiented
 /// on the chain; the bundle's translation is meaning.
-pub fn vertex_address(e: &Element) -> Option<[u8; 32]> {
+pub fn vertex_address(e: &Element) -> Option<crate::transducer::a21::Address> {
     from_element_form(e).map(|f| form_vertex_key(&f))
 }
-pub fn form_vertex_key(f: &Form) -> [u8; 32] {
-    let mut buf = Vec::new();
+pub fn form_vertex_key(f: &Form) -> crate::transducer::a21::Address {
+    let mut buf = vec![crate::transducer::a21::TAG_FORM];
     buf.extend_from_slice(&(f.vertices.len() as u32).to_le_bytes());
     for v in &f.vertices {
         match v {
@@ -309,7 +309,7 @@ pub fn form_vertex_key(f: &Form) -> [u8; 32] {
                 ..
             } => {
                 buf.push(1);
-                buf.extend_from_slice(&word.key());
+                crate::transducer::a21::put_bytes(&mut buf, &word.key());
                 alphabet::put_q(&mut buf, rho);
                 alphabet::put_q(&mut buf, &placement.0);
                 alphabet::put_q(&mut buf, &placement.1);
@@ -336,8 +336,8 @@ pub fn form_vertex_key(f: &Form) -> [u8; 32] {
                 ..
             } => {
                 buf.push(2);
-                buf.extend_from_slice(address);
-                buf.extend_from_slice(&placement.key());
+                crate::transducer::a21::put_bytes(&mut buf, address);
+                crate::transducer::a21::put_bytes(&mut buf, &placement.key());
                 buf.extend_from_slice(&depth.to_le_bytes());
             }
             Vertex::Rebased {
@@ -379,7 +379,7 @@ pub fn form_vertex_key(f: &Form) -> [u8; 32] {
     for face in &f.faces {
         buf.extend_from_slice(&face.i.to_le_bytes());
         buf.extend_from_slice(&face.j.to_le_bytes());
-        buf.extend_from_slice(&face.transport.word.key());
+        crate::transducer::a21::put_bytes(&mut buf, &face.transport.word.key());
         alphabet::put_q(&mut buf, &face.transport.shift.0);
         alphabet::put_q(&mut buf, &face.transport.shift.1);
         let mut g = face.transport.gauge.clone();
@@ -397,14 +397,14 @@ pub fn form_vertex_key(f: &Form) -> [u8; 32] {
     for x in [hn, hd, wn, wd] {
         buf.extend_from_slice(&(x as u64).to_le_bytes());
     }
-    for (class, members) in f.sections.fiber(&crate::network::nerve::ROOT) {
-        buf.extend_from_slice(class);
+    for (class, members) in f.sections.fiber(crate::network::nerve::ROOT) {
+        crate::transducer::a21::put_bytes(&mut buf, &class);
         buf.extend_from_slice(&(members.len() as u16).to_le_bytes());
         for m in members {
             buf.extend_from_slice(&m.to_le_bytes());
         }
     }
-    *blake3::hash(&buf).as_bytes()
+    crate::transducer::a21::Address::new(buf)
 }
 /// Chart of a crystallized form (M4 step 3): the form's cell counts,
 /// then per vertex its A3-reduced plane form (a rebased vertex reads the
@@ -447,23 +447,23 @@ pub fn chart_of(e: &Element) -> Option<crate::transducer::stalk::Invariant> {
     chart_of_form(&from_element_form(e)?)
 }
 
-pub(crate) fn vertex_match_key(form: &Form, i: u16) -> Option<[u8; 32]> {
+pub(crate) fn vertex_match_key(form: &Form, i: u16) -> Option<Vec<u8>> {
     match form.vertices.get(i as usize)? {
         Vertex::Frame => Some(vertex_ix_key(0)),
-        Vertex::Word { address, .. } | Vertex::Glued { address, .. } => Some(*address),
+        Vertex::Word { address, .. } | Vertex::Glued { address, .. } => Some(address.clone().into_vec()),
         Vertex::Rebased { of, .. } => match form.vertices.get(*of as usize) {
-            Some(Vertex::Word { address, .. }) => Some(*address),
+            Some(Vertex::Word { address, .. }) => Some(address.clone().into_vec()),
             _ => None,
         },
         Vertex::Unfolded { measure } => Some(unfolded_key(measure)),
     }
 }
 
-pub(crate) fn ends_key(a: &[u8; 32], b: &[u8; 32]) -> [u8; 32] {
-    let mut buf = [0u8; 64];
-    buf[..32].copy_from_slice(a);
-    buf[32..].copy_from_slice(b);
-    *blake3::hash(&buf).as_bytes()
+pub(crate) fn ends_key(a: &[u8], b: &[u8]) -> Vec<u8> {
+    let mut buf = Vec::new();
+    crate::transducer::a21::put_bytes(&mut buf, a);
+    crate::transducer::a21::put_bytes(&mut buf, b);
+    buf
 }
 
 /// Two forms whose cochains differ by a coboundary δγ: the gauge that

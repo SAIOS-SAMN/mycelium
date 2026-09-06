@@ -49,7 +49,7 @@ pub const REFUSE_ROOM: &str = "lane room does not cover the draw";
 /// carries and whose class is filed on torsion; every loop of the
 /// recomputed spanning forest is projectively identity or filed finite
 /// torsion. Descent is checked by the caller on the element.
-pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8; 32]) -> Option<Form>) -> Option<&'static str> {
+pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8]) -> Option<Form>) -> Option<&'static str> {
     replay_form_with(spoken, resolve, None, &crate::transducer::family::NoCrystal)
 }
 
@@ -59,7 +59,7 @@ pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8; 32]) -> Option<Form>
 /// with no Glued vertex.
 pub fn replay_form_with(
     spoken: &Element,
-    resolve: &dyn Fn(&[u8; 32]) -> Option<Form>,
+    resolve: &dyn Fn(&[u8]) -> Option<Form>,
     family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
 ) -> Option<&'static str> {
@@ -264,8 +264,8 @@ fn form_loops_replay(f: &Form) -> bool {
         match lp.holonomy.order() {
             Order::Infinite => return false,
             Order::Finite(ell) => {
-                let k = lp.holonomy.rotor().class_key();
-                match f.torsion.get(&k) {
+                let k = lp.holonomy.rotor().class_or_rotor_key();
+                match f.torsion.get(k.as_bytes()) {
                     Some((_, e, _)) if *e == ell => {}
                     _ => return false,
                 }
@@ -275,17 +275,15 @@ fn form_loops_replay(f: &Form) -> bool {
     true
 }
 
-fn face_idx_key(i: u16) -> [u8; 32] {
-    let mut k = [0u8; 32];
-    k[..2].copy_from_slice(&i.to_le_bytes());
-    k
+fn face_idx_key(i: u16) -> Vec<u8> {
+    i.to_le_bytes().to_vec()
 }
 
 /// A20: each certificate is the un-pivot of one chord face, re-walked.
 /// The loop's class key and rank before and after must match the tape.
 fn replay_certificates(f: &Form, by_chord: &Keyed<u16>) -> Option<&'static str> {
     use crate::transducer::sentence::{rank_of_holonomies, unapply_by};
-    for (_, cert) in f.certificates.fiber(&crate::network::nerve::ROOT) {
+    for (_, cert) in f.certificates.fiber(crate::network::nerve::ROOT) {
         let face = cert.by.face();
         let Some(&li) = by_chord.get(&face_idx_key(face)) else {
             return Some(REFUSE_PIVOT_INEXACT);
@@ -345,7 +343,7 @@ pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
 /// `blind_replay_with` plus the bound family for chapter 23.1 step 6.
 pub fn blind_replay_on(
     spoken: &Element,
-    resolve: &dyn Fn(&[u8; 32]) -> Option<Form>,
+    resolve: &dyn Fn(&[u8]) -> Option<Form>,
     family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
 ) -> Option<&'static str> {
@@ -359,13 +357,13 @@ pub fn blind_replay_on(
 /// framed); a CONNECTION re-derives by inversion of its group component,
 /// with its remainder chain re-deriving as any germ's; every torsion cycle
 /// is walked; and the install must strictly descend (0⃗ ≺_DM μ⃗).
-pub fn blind_replay_with(spoken: &Element, resolve: &dyn Fn(&[u8; 32]) -> Option<Form>) -> Option<&'static str> {
+pub fn blind_replay_with(spoken: &Element, resolve: &dyn Fn(&[u8]) -> Option<Form>) -> Option<&'static str> {
     blind_replay_on_inner(spoken, resolve, None, &crate::transducer::family::NoCrystal)
 }
 
 fn blind_replay_on_inner(
     spoken: &Element,
-    resolve: &dyn Fn(&[u8; 32]) -> Option<Form>,
+    resolve: &dyn Fn(&[u8]) -> Option<Form>,
     family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
 ) -> Option<&'static str> {
@@ -580,10 +578,10 @@ impl Ruling {
 /// (index-aligned with `federation`): the +axis check selects the fiber
 /// over the candidate's invariant and runs the exact orbit test there.
 pub fn rule(
-    federation: &[([u8; 32], Element)],
+    federation: &[(crate::transducer::a21::Address, Element)],
     index: &Keyed<usize>,
     stalks: &Stalks,
-    addr: &[u8; 32],
+    addr: &[u8],
     spoken: Option<&Element>,
     deflation: Option<&[u64; 4]>,
 ) -> Ruling {
@@ -630,7 +628,7 @@ pub fn rule(
                     .fiber(&stalk::invariant_of(spoken))
                     .iter()
                     .filter_map(|a| index.get(a).copied())
-                    .find(|&i| federation[i].0 != *addr && !federation[i].1.axes().is_empty());
+                    .find(|&i| federation[i].0.as_bytes() != addr && !federation[i].1.axes().is_empty());
                 match third {
                     Some(i) => {
                         let z = &federation[i].1;
@@ -680,7 +678,7 @@ pub fn rule(
                     .fiber(&stalk::invariant_of(spoken))
                     .iter()
                     .filter_map(|a| index.get(a).copied())
-                    .find(|&i| federation[i].0 != *addr && !federation[i].1.axes().is_empty());
+                    .find(|&i| federation[i].0.as_bytes() != addr && !federation[i].1.axes().is_empty());
                 return match representative.map(|i| (i, cech::transition(&federation[i].1, spoken))) {
                     None | Some((_, None)) => Ruling::Admitted(spoken.clone()),
                     Some((base, Some(g))) => match (g.axes().as_slice(), g.sub()) {
@@ -694,8 +692,8 @@ pub fn rule(
                     },
                 };
             }
-            let at = |a: &[u8; 32]| index.get(a).and_then(|&i| federation.get(i)).map(|(_, e)| e);
-            let congruent = stalk::congruent(stalks, at, spoken).filter(|(a, _)| a != addr);
+            let at = |a: &[u8]| index.get(a).and_then(|&i| federation.get(i)).map(|(_, e)| e);
+            let congruent = stalk::congruent(stalks, at, spoken).filter(|(a, _)| a.as_bytes() != addr);
             match congruent.and_then(|(a, g)| index.get(&a).map(|&base| (base, g))) {
                 Some((base, g)) => Ruling::Attached { base, g },
                 None => Ruling::Admitted(spoken.clone()),
@@ -733,10 +731,10 @@ fn symmetric_difference(a: &[(i64, i64, u8, u8)], b: &[(i64, i64, u8, u8)]) -> V
 /// π* derivation from a pooled evidence family: the first anchor term
 /// common to every evidence's carrying set (the intersection move — one
 /// evidence never binds; the caller holds families of at least two).
-fn sel_key(s: &Sel) -> [u8; 32] {
-    let mut buf = Vec::new();
+fn sel_key(s: &Sel) -> crate::transducer::a21::Address {
+    let mut buf = vec![crate::transducer::a21::TAG_SEL];
     s.to_bytes(&mut buf);
-    *blake3::hash(&buf).as_bytes()
+    crate::transducer::a21::Address::new(buf)
 }
 
 pub fn derive_pi(family: &[(Vec<(i64, i64)>, Vec<(i64, i64, u8)>)]) -> Option<Sel> {
@@ -772,14 +770,14 @@ mod tests {
         from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap())
     }
 
-    fn stalks_of(fed: &[([u8; 32], Element)]) -> Stalks {
+    fn stalks_of(fed: &[(crate::transducer::a21::Address, Element)]) -> Stalks {
         Stalks::over_elements(fed.iter().map(|(_, e)| e))
     }
 
-    fn index_of(fed: &[([u8; 32], Element)]) -> Keyed<usize> {
+    fn index_of(fed: &[(crate::transducer::a21::Address, Element)]) -> Keyed<usize> {
         let mut k = Keyed::new();
         for (i, (a, _)) in fed.iter().enumerate() {
-            k.insert(*a, i);
+            k.insert(a, i);
         }
         k
     }
@@ -828,7 +826,7 @@ mod tests {
         let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
         let mut f = Form::default();
         f.vertices.push(Vertex::Word {
-            address: [1u8; 32],
+            address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 1]),
             word: w,
             rho: one,
             placement: (zero.clone(), zero),
@@ -854,7 +852,7 @@ mod tests {
         let inner_addr = inner_e.address();
         let mut outer = Form::default();
         let gi = outer
-            .glue(&inner, inner_addr, Word::identity(), [1, 0, 0, 0])
+            .glue(&inner, inner_addr.clone(), Word::identity(), [1, 0, 0, 0])
             .expect("a depth-0 host glues a closed form");
         let outer_e = as_element_form(&outer, [1, 0, 0, 0]).expect("outer tape");
         assert_eq!(
@@ -862,7 +860,7 @@ mod tests {
             Some(REFUSE_GLUED_UNRULED),
             "with no cover behind it the citation refuses"
         );
-        let resolve = |a: &[u8; 32]| (a == &inner_addr).then(|| inner.clone());
+        let resolve = |a: &[u8]| (a == inner_addr.as_bytes()).then(|| inner.clone());
         assert_eq!(blind_replay_with(&outer_e, &resolve), None, "a resolved citation replays");
         let mut bad = outer.clone();
         bad.faces[0].transport = inner.face_of(0, 1).expect("vertices");
@@ -884,8 +882,10 @@ mod tests {
         let s = Sel::Hue(3);
         let mut buf = Vec::new();
         s.to_bytes(&mut buf);
-        assert_eq!(sel_key(&s), *blake3::hash(&buf).as_bytes());
-        assert_ne!(sel_key(&s), *blake3::hash(format!("{s:?}").as_bytes()).as_bytes());
+        let k = sel_key(&s);
+        assert_eq!(k.as_bytes()[0], crate::transducer::a21::TAG_SEL);
+        assert_eq!(&k.as_bytes()[1..], buf.as_slice(), "the key is Sel::to_bytes, never a digest");
+        assert_ne!(k.as_bytes(), format!("{s:?}").as_bytes());
     }
 
     /// A20: a certificate that does not un-pivot to the tape's before/after
@@ -894,7 +894,7 @@ mod tests {
     fn pivot_certificate_replays_or_refuses() {
         use crate::transducer::alphabet::Word;
         use crate::transducer::sentence::{
-            as_element_form, PivotBy, PivotCertificate, Rank, Side, CLOSED_KEY,
+            as_element_form, ClassVector, PivotBy, PivotCertificate, Rank, Side,
         };
         let f = closed_turn_form();
         let e = as_element_form(&f, [1, 0, 0, 0]).expect("tape");
@@ -907,8 +907,8 @@ mod tests {
         let bogus = PivotCertificate {
             chord: 0,
             axis: crate::transducer::sentence::Axis::Unit(0),
-            before: [1u8; 32],
-            after: CLOSED_KEY,
+            before: crate::transducer::a21::Address::from_bytes(&[1u8]),
+            after: ClassVector::of_word(&Word::identity()).class_key(),
             rank_before: Rank {
                 torsion: 1,
                 free: 0,
@@ -947,7 +947,7 @@ mod tests {
         .to_word();
         let mut f = Form::default();
         f.vertices.push(Vertex::Word {
-            address: [1u8; 32],
+            address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 1]),
             word: Word::identity(),
             rho: one.clone(),
             placement: (zero.clone(), zero.clone()),
@@ -956,7 +956,7 @@ mod tests {
             contact: None,
         });
         f.vertices.push(Vertex::Word {
-            address: [2u8; 32],
+            address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 2]),
             word: Word::identity(),
             rho: one,
             placement: (zero.clone(), zero),
@@ -1027,7 +1027,7 @@ mod tests {
 
         let mut re = Form::default();
         re.vertices.push(Vertex::Word {
-            address: [2u8; 32],
+            address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 2]),
             word: Word::identity(),
             rho: one.clone(),
             placement: (zero.clone(), zero.clone()),
@@ -1065,7 +1065,7 @@ mod tests {
 
         let mut orb = Form::default();
         orb.vertices.push(Vertex::Word {
-            address: [3u8; 32],
+            address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 3]),
             word: Word::identity(),
             rho: one,
             placement: (zero.clone(), zero),
@@ -1092,20 +1092,21 @@ mod tests {
         let addr = w.address();
         // Empty federation: new geometry admits — the sealed element is
         // the arm's payload, not a flag.
-        match rule(&[], &Keyed::new(), &Stalks::default(),&addr, Some(&w), None) {
+        match rule(&[], &Keyed::new(), &Stalks::default(), addr.as_bytes(), Some(&w), None) {
             Ruling::Admitted(sealed) => assert_eq!(sealed.address(), addr),
             other => panic!("new geometry must admit, got {other:?}"),
         }
         // Same address, same substance: consilience (no re-admission).
-        let fed = vec![(addr, w.clone())];
+        let fed = vec![(addr.clone(), w.clone())];
         let stalks = stalks_of(&fed);
-        assert!(matches!(rule(&fed, &index_of(&fed), &stalks,&addr, Some(&w), None), Ruling::Consilient(_)));
-        assert_eq!(rule(&fed, &index_of(&fed), &stalks,&addr, Some(&w), None).code(), dialogue::RULING_UPHELD);
+        assert!(matches!(rule(&fed, &index_of(&fed), &stalks, addr.as_bytes(), Some(&w), None), Ruling::Consilient(_)));
+        assert_eq!(rule(&fed, &index_of(&fed), &stalks, addr.as_bytes(), Some(&w), None).code(), dialogue::RULING_UPHELD);
         // Different address, identical base geometry: attached (+axis) by
         // the identity transport.
-        let mut other = addr;
-        other[0] ^= 0xFF;
-        match rule(&fed, &index_of(&fed), &stalks,&other, Some(&w), None) {
+        let mut other_bytes = addr.as_bytes().to_vec();
+        other_bytes[0] ^= 0xFF;
+        let other = crate::transducer::a21::Address::new(other_bytes);
+        match rule(&fed, &index_of(&fed), &stalks, other.as_bytes(), Some(&w), None) {
             Ruling::Attached { base: 0, g } => {
                 assert!(element::same_versor(&g, &element::identity_versor()), "the identity transport")
             }

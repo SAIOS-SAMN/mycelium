@@ -138,12 +138,21 @@ impl Mv {
         projective_ratio(self, other).is_some_and(|l| !l.is_zero())
     }
 
-    /// Transport identifier of the canonical coefficients.
-    pub fn key(&self) -> [u8; 32] {
-        let n = self.canonical().unwrap_or_else(Mv::zero);
-        let mut buf = Vec::new();
+    /// Canonical coefficients written out (A21). None when the element is
+    /// zero (no canonical form).
+    pub fn key(&self) -> Option<crate::transducer::a21::Address> {
+        let n = self.canonical()?;
+        let mut buf = vec![crate::transducer::a21::TAG_VERSOR];
         n.to_bytes(&mut buf);
-        *blake3::hash(&buf).as_bytes()
+        Some(crate::transducer::a21::Address::new(buf))
+    }
+
+    pub fn from_key(k: &[u8]) -> Option<Mv> {
+        if k.first() != Some(&crate::transducer::a21::TAG_VERSOR) {
+            return None;
+        }
+        let mut p = 1usize;
+        Mv::from_bytes(k, &mut p)
     }
 
     pub fn add(&self, o: &Self) -> Self {

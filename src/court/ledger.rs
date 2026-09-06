@@ -14,9 +14,9 @@ use crate::transducer::element::Element;
 
 pub struct CourtState {
     pub chain: ReceiptChain,
-    pub federation: Vec<([u8; 32], Element)>,
-    pub ruled: Vec<[u8; 32]>,
-    pub rebound: Vec<([u8; 32], usize)>,
+    pub federation: Vec<(crate::transducer::a21::Address, Element)>,
+    pub ruled: Vec<crate::transducer::a21::Address>,
+    pub rebound: Vec<(crate::transducer::a21::Address, usize)>,
     pub upheld: u64,
     pub demoted: u64,
     pub slashed: u64,
@@ -46,25 +46,25 @@ impl CourtState {
         push_u32(&mut out, self.chain.receipts().len());
         for r in self.chain.receipts() {
             out.extend_from_slice(&r.step_index.to_le_bytes());
-            out.extend_from_slice(&r.delta_fingerprint);
+            let _ = crate::transducer::a21::put_addr(&mut out, &r.delta);
             out.extend_from_slice(&r.operator_hash);
             out.extend_from_slice(&r.prev_receipt_hash);
             out.extend_from_slice(&r.chain_hash);
         }
         push_u32(&mut out, self.federation.len());
         for (addr, elem) in &self.federation {
-            out.extend_from_slice(addr);
+            let _ = crate::transducer::a21::put_addr(&mut out, addr);
             let bytes = elem.to_bytes();
             push_u32(&mut out, bytes.len());
             out.extend_from_slice(&bytes);
         }
         push_u32(&mut out, self.ruled.len());
         for addr in &self.ruled {
-            out.extend_from_slice(addr);
+            let _ = crate::transducer::a21::put_addr(&mut out, addr);
         }
         push_u32(&mut out, self.rebound.len());
         for (addr, fam) in &self.rebound {
-            out.extend_from_slice(addr);
+            let _ = crate::transducer::a21::put_addr(&mut out, addr);
             push_u32(&mut out, *fam);
         }
         for c in [self.upheld, self.demoted, self.slashed, self.rebinds] {
@@ -91,7 +91,7 @@ impl CourtState {
             p += 8;
             receipts.push(KStepReceipt {
                 step_index,
-                delta_fingerprint: read_32(b, &mut p)?,
+                delta: crate::transducer::a21::take_addr(b, &mut p)?.into_vec(),
                 operator_hash: read_32(b, &mut p)?,
                 prev_receipt_hash: read_32(b, &mut p)?,
                 chain_hash: read_32(b, &mut p)?,
@@ -101,7 +101,7 @@ impl CourtState {
         let n = read_u32(b, &mut p)?;
         let mut federation = Vec::with_capacity(n.min(1 << 20));
         for _ in 0..n {
-            let addr = read_32(b, &mut p)?;
+            let addr = crate::transducer::a21::take_addr(b, &mut p)?;
             let len = read_u32(b, &mut p)?;
             let slice = b.get(p..p + len)?;
             let mut ep = 0usize;
@@ -112,12 +112,12 @@ impl CourtState {
         let n = read_u32(b, &mut p)?;
         let mut ruled = Vec::with_capacity(n.min(1 << 20));
         for _ in 0..n {
-            ruled.push(read_32(b, &mut p)?);
+            ruled.push(crate::transducer::a21::take_addr(b, &mut p)?);
         }
         let n = read_u32(b, &mut p)?;
         let mut rebound = Vec::with_capacity(n.min(1 << 20));
         for _ in 0..n {
-            let addr = read_32(b, &mut p)?;
+            let addr = crate::transducer::a21::take_addr(b, &mut p)?;
             let fam = read_u32(b, &mut p)?;
             rebound.push((addr, fam));
         }
@@ -187,12 +187,12 @@ mod tests {
         let mut chain = ReceiptChain::default();
         let mut op = [0u8; 32];
         op[0] = crate::anastome::dialogue::RULING_UPHELD;
-        chain.append(addr, op);
+        chain.append(&addr, op);
         let state = CourtState {
             chain,
-            federation: vec![(addr, word)],
-            ruled: vec![addr],
-            rebound: vec![(addr, 2)],
+            federation: vec![(addr.clone(), word)],
+            ruled: vec![addr.clone()],
+            rebound: vec![(addr.clone(), 2)],
             upheld: 1,
             demoted: 0,
             slashed: 0,

@@ -30,9 +30,10 @@ pub struct Kernel {
 }
 
 impl Kernel {
-    /// Seat a kernel by name — the emblem digest is its durable address.
+    /// Seat a kernel by name. The seed is a KDF over the name; the identity
+    /// carried everywhere is the verifying key.
     pub fn named(name: &str) -> Self {
-        let voice = *blake3::hash(format!("mycelium-kernel:{name}").as_bytes()).as_bytes();
+        let voice = crate::court::identity::HyphaKey::vk_from_name(name);
         Kernel { name: name.to_string(), voice }
     }
     /// Seat a kernel on verifying-key bytes (home/voice.key).
@@ -107,7 +108,7 @@ pub struct Session {
     /// key (a listing, a task, a word) is spoken to that key's home and a
     /// stranger there is the second voice. The dial address is the seed.
     router: crate::network::nerve::Router,
-    /// Peer addresses keyed by identity (blake3 of the contact string).
+    /// Peer addresses keyed by the contact string's bytes.
     peers: crate::network::nerve::Keyed<String>,
     /// The quote's stroke: quotes walk the nerve in turn, one hypha per
     /// stroke, so every book is thought about and none is a monologue.
@@ -148,8 +149,7 @@ impl Session {
     /// Point a kernel at a hypha address (e.g. `"127.0.0.1:7500"`).
     pub fn open(addr: &str, kernel: Kernel) -> Self {
         let voice = crate::voice::Voice::from_identity(kernel.voice());
-        let mut router = crate::network::nerve::Router::new();
-        router.insert(*blake3::hash(addr.as_bytes()).as_bytes(), addr.to_string());
+        let router = crate::network::nerve::Router::new();
         Session {
             addr: addr.to_string(),
             kernel,
@@ -158,7 +158,7 @@ impl Session {
             router,
             peers: {
                 let mut p = crate::network::nerve::Keyed::new();
-                p.insert(*blake3::hash(addr.as_bytes()).as_bytes(), addr.to_string());
+                p.insert(addr.as_bytes(), addr.to_string());
                 p
             },
             strokes: std::cell::Cell::new(0),
@@ -211,10 +211,8 @@ impl Session {
             return;
         };
         for a in dialogue::decode_peers_reply(&body).unwrap_or_default() {
-            let k = *blake3::hash(a.as_bytes()).as_bytes();
-            if !self.peers.contains(&k) {
-                self.router.insert(k, a.clone());
-                self.peers.insert(k, a);
+            if !self.peers.contains(a.as_bytes()) {
+                self.peers.insert(a.as_bytes().to_vec(), a);
             }
         }
     }
@@ -233,8 +231,13 @@ impl Session {
 
     /// The hypha a key lives on: longest-common-prefix on the cover trie,
     /// the seed when nothing else is known. Same read as the hypha.
-    pub fn route(&self, key: &[u8; 32]) -> String {
-        self.router.closest(key).map(|(_, a)| a).unwrap_or_else(|| self.addr.clone())
+    /// XOR descent is only for a 32-byte verifying key; a listing is not an XOR id.
+    pub fn route(&self, key: &[u8]) -> String {
+        if let Ok(id) = <[u8; 32]>::try_from(key) {
+            self.router.closest(&id).map(|(_, a)| a).unwrap_or_else(|| self.addr.clone())
+        } else {
+            self.addr.clone()
+        }
     }
 
     /// Home a word by its chart and magnitude. Occluded edges drop out of
@@ -247,19 +250,16 @@ impl Session {
         // Impedance is a coordinate on the address entry; occluded hyphas
         // drop out of rooms rather than rebuilding a live trie.
         let mut open_rooms = crate::network::nerve::Keyed::new();
-        for (id, room) in rooms.fiber(&crate::network::nerve::ROOT) {
-            if addrs.get(id).is_some_and(|a| self.occluded_at(a)) {
+        for (id, room) in rooms.fiber(crate::network::nerve::ROOT) {
+            if addrs.get(&id).is_some_and(|a| self.occluded_at(a)) {
                 continue;
             }
-            open_rooms.insert(*id, *room);
+            open_rooms.insert(&id, *room);
         }
         let (_, dest) = home(&cover, inv, mag, &open_rooms, &addrs, None);
         if dest.is_empty() {
             // Empty cover: XOR-closest known hypha to the chart key, not the seed.
-            self.router
-                .closest(&inv.key())
-                .map(|(_, a)| a)
-                .unwrap_or_else(|| self.addr.clone())
+            self.route(inv.key().as_bytes())
         } else {
             dest
         }
@@ -294,20 +294,18 @@ impl Session {
 
     /// The hyphas this entity knows.
     pub fn peers(&self) -> Vec<String> {
-        self.peers.fiber(&crate::network::nerve::ROOT).map(|(_, a)| a.clone()).collect()
+        self.peers.fiber(crate::network::nerve::ROOT).map(|(_, a)| a.clone()).collect()
     }
 
     pub fn add_peer(&mut self, addr: &str) {
-        let k = *blake3::hash(addr.as_bytes()).as_bytes();
-        if self.peers.contains(&k) {
+        if self.peers.contains(addr.as_bytes()) {
             return;
         }
-        self.router.insert(k, addr.to_string());
-        self.peers.insert(k, addr.to_string());
+        self.peers.insert(addr.as_bytes(), addr.to_string());
     }
 
     /// Speak an act carrying a key to that key's home.
-    pub fn speak_keyed(&self, key: &[u8; 32], act_body: Vec<u8>) -> io::Result<Vec<u8>> {
+    pub fn speak_keyed(&self, key: &[u8], act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         let addr = self.route(key);
         self.exchange_at(&addr, act_body)
     }
@@ -429,7 +427,7 @@ impl Session {
 
     /// PROBE an open listing with a tentative sentence; the hypha replays and
     /// settles graded descent or closure. Returns (code, paid, remaining).
-    pub fn probe(&self, target: &[u8; 32], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4], [u64; 4])> {
+    pub fn probe(&self, target: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4], [u64; 4])> {
         let body = self.speak_keyed(target, dialogue::encode_probe(&self.kernel.voice, target, cites))?;
         dialogue::decode_probe_reply(&body)
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "probe decode"))
@@ -637,7 +635,7 @@ impl Session {
 pub enum Comprehension {
     /// The utterance decomposed into held words — address and standing
     /// from the working atlas. Never a sentinel index.
-    Understood(Vec<([u8; 32], Standing)>),
+    Understood(Vec<(Vec<u8>, Standing)>),
     /// Partially decomposed: the residual is the not-yet-understood part (a
     /// prospective for the mesh, not a failure of the ear).
     Novel { residual_cells: usize },
@@ -651,7 +649,7 @@ pub enum Comprehension {
     /// admitted as new geometry.
     Admitted,
     /// A sentence cites forms this mind does not hold.
-    Withheld { missing: Vec<[u8; 32]> },
+    Withheld { missing: Vec<Vec<u8>> },
 }
 
 impl PartialEq for Comprehension {
@@ -740,7 +738,7 @@ pub struct Dialect {
     shape: Option<crate::transducer::blade::Shape>,
     /// A withheld sentence: the cited addresses this mind does not hold.
     pub withheld: bool,
-    pub missing: Vec<[u8; 32]>,
+    pub missing: Vec<Vec<u8>>,
 }
 
 /// Standing of a fiber member on the working atlas.
@@ -758,39 +756,39 @@ impl<'a> WorkingAtlas<'a> {
     /// Addresses on this chart, each carrying the stratum it came from.
     /// Ruled first, then Stood, then Held; an address appears once, at its
     /// strongest standing.
-    pub fn fiber(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<([u8; 32], Standing)> {
-        let mut out: Vec<([u8; 32], Standing)> = Vec::new();
+    pub fn fiber(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<(Vec<u8>, Standing)> {
+        let mut out: Vec<(Vec<u8>, Standing)> = Vec::new();
         let mut have: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         for a in self.genome.fiber(inv) {
-            have.insert(a, ());
+            have.insert(&a, ());
             out.push((a, Standing::Ruled));
         }
         for a in self.dialect.fiber(inv) {
             if have.contains(&a) {
                 continue;
             }
-            have.insert(a, ());
+            have.insert(&a, ());
             out.push((a, Standing::Stood));
         }
         if let Some(ideas) = self.ideas {
-            if let Some(m) = ideas.get(&inv.key()) {
-                for (a, _) in m.fiber(&crate::network::nerve::ROOT) {
-                    if have.contains(a) {
+            if let Some(m) = ideas.get(inv.key().as_bytes()) {
+                for (a, _) in m.fiber(crate::network::nerve::ROOT) {
+                    if have.contains(&a) {
                         continue;
                     }
-                    have.insert(*a, ());
-                    out.push((*a, Standing::Held));
+                    have.insert(&a, ());
+                    out.push((a, Standing::Held));
                 }
             }
         }
         out
     }
 
-    pub fn standing_of(&self, addr: &[u8; 32], inv: &crate::transducer::stalk::Invariant) -> Option<Standing> {
+    pub fn standing_of(&self, addr: &[u8], inv: &crate::transducer::stalk::Invariant) -> Option<Standing> {
         self.fiber(inv).into_iter().find(|(a, _)| a == addr).map(|(_, s)| s)
     }
 
-    pub fn standing_addr(&self, addr: &[u8; 32]) -> Option<Standing> {
+    pub fn standing_addr(&self, addr: &[u8]) -> Option<Standing> {
         if self.genome.contains(addr) {
             return Some(Standing::Ruled);
         }
@@ -798,7 +796,7 @@ impl<'a> WorkingAtlas<'a> {
             return Some(Standing::Stood);
         }
         if let Some(ideas) = self.ideas {
-            if ideas.fiber(&crate::network::nerve::ROOT).any(|(_, m)| m.contains(addr)) {
+            if ideas.fiber(crate::network::nerve::ROOT).any(|(_, m)| m.contains(addr)) {
                 return Some(Standing::Held);
             }
         }
@@ -819,7 +817,7 @@ pub struct Epigenome {
     expression: Vec<u64>,
     /// Locally comprehended sentences, keyed by the sentence's word addresses
     /// (not by basis indices that shift on retire).
-    recollections: crate::network::nerve::Keyed<(Vec<[u8; 32]>, u64)>,
+    recollections: crate::network::nerve::Keyed<(Vec<Vec<u8>>, u64)>,
     /// The entity's chromatic aperture — its perceptual bias (harmonic import).
     pub aperture: Aperture,
     /// THE ATLAS of the genome — admitted in place as words are learned
@@ -849,7 +847,7 @@ pub struct Epigenome {
     /// Charts of stood sentences, admitted in stand_dialect_at, retracted in shed.
     dialect_atlas: crate::transducer::stalk::Stalks,
     /// Addresses promoted from dialect into the genome this learn.
-    promoted: Vec<[u8; 32]>,
+    promoted: Vec<Vec<u8>>,
     /// Dialects dropped this process.
     shed_n: u64,
     /// TUniversal at each of the last aperture_cycle strokes.
@@ -864,24 +862,24 @@ pub struct Epigenome {
 
 impl Epigenome {
     /// The held word at an address, read from the key.
-    pub fn word_at(&self, addr: &[u8; 32]) -> Option<&Element> {
+    pub fn word_at(&self, addr: &[u8]) -> Option<&Element> {
         self.index.get(addr).and_then(|&i| self.genome.get(i))
     }
 
-    /// Working-atlas root: blake3 of sorted stratum roots of genome ∪ dialect.
-    pub fn atlas_root(&self) -> [u8; 32] {
+    /// Working-atlas root: concatenated A21 stratum roots of genome ∪ dialect.
+    pub fn atlas_root(&self) -> crate::transducer::a21::Address {
         let mut rows = crate::transducer::sheaf::digests(&self.atlas);
         rows.extend(crate::transducer::sheaf::digests(&self.dialect_atlas));
         rows.sort_by(|a, b| a.root.cmp(&b.root).then_with(|| a.inv.key().cmp(&b.inv.key())));
-        let mut h = blake3::Hasher::new();
+        let mut buf = Vec::new();
         for r in &rows {
-            h.update(&r.root);
+            crate::transducer::a21::put_bytes(&mut buf, &r.root);
         }
-        *h.finalize().as_bytes()
+        crate::transducer::a21::Address::new(buf)
     }
 
     /// The genome index of an address, read from the key.
-    pub fn index_of(&self, addr: &[u8; 32]) -> Option<usize> {
+    pub fn index_of(&self, addr: &[u8]) -> Option<usize> {
         self.index.get(addr).copied()
     }
 
@@ -917,7 +915,7 @@ impl Epigenome {
     }
 
     /// A working-atlas read of a stood word is a use.
-    pub fn touch(&mut self, addr: &[u8; 32], now_tu: u64) {
+    pub fn touch(&mut self, addr: &[u8], now_tu: u64) {
         if let Some(d) = self.dialect.get_mut(addr) {
             d.last_used_tu = now_tu;
             d.uses = d.uses.saturating_add(1);
@@ -951,15 +949,15 @@ impl Epigenome {
         Some(now_tu.saturating_sub(first))
     }
 
-    pub fn shed_except(&mut self, now_tu: u64, glued: &impl Fn(&[u8; 32]) -> bool) -> usize {
+    pub fn shed_except(&mut self, now_tu: u64, glued: &impl Fn(&[u8]) -> bool) -> usize {
         let Some(aperture_tu) = self.aperture_tu(now_tu) else {
             return 0;
         };
-        let drop: Vec<[u8; 32]> = self
+        let drop: Vec<Vec<u8>> = self
             .dialect
-            .fiber(&crate::network::nerve::ROOT)
+            .fiber(crate::network::nerve::ROOT)
             .filter(|(a, d)| now_tu.saturating_sub(d.last_used_tu) > aperture_tu && !glued(a))
-            .map(|(a, _)| *a)
+            .map(|(a, _)| a)
             .collect();
         let n = drop.len();
         for a in &drop {
@@ -969,17 +967,18 @@ impl Epigenome {
         n
     }
 
-    fn wait_on(&mut self, missing: &[u8; 32], citer: [u8; 32]) {
+    fn wait_on(&mut self, missing: &[u8], citer: impl AsRef<[u8]>) {
+        let citer = citer.as_ref();
         if let Some(citers) = self.waiting_on.get_mut(missing) {
             citers.insert(citer, ());
             return;
         }
         let mut citers = crate::network::nerve::Keyed::new();
         citers.insert(citer, ());
-        self.waiting_on.insert(*missing, citers);
+        self.waiting_on.insert(missing, citers);
     }
 
-    fn retract_waiter(&mut self, missing: &[u8; 32], citer: &[u8; 32]) {
+    fn retract_waiter(&mut self, missing: &[u8], citer: &[u8]) {
         let empty = match self.waiting_on.get_mut(missing) {
             Some(citers) => {
                 citers.remove(citer);
@@ -992,7 +991,7 @@ impl Epigenome {
         }
     }
 
-    fn drop_dialect(&mut self, da: &[u8; 32]) {
+    fn drop_dialect(&mut self, da: &[u8]) {
         let (inv, words, missing) = match self.dialect.get(da) {
             Some(d) => (
                 crate::transducer::stalk::invariant_of(&d.sentence),
@@ -1017,7 +1016,7 @@ impl Epigenome {
         self.dialect.remove(da);
     }
 
-    pub fn stand_dialect_at(&mut self, sentence: Element, k: u64, now_tu: u64) -> Option<[u8; 32]> {
+    pub fn stand_dialect_at(&mut self, sentence: Element, k: u64, now_tu: u64) -> Option<Vec<u8>> {
         if let Some(i) = self.same_vertex_in_genome(&sentence) {
             if let Some(x) = self.expression.get_mut(i) {
                 *x = x.saturating_add(1);
@@ -1025,11 +1024,11 @@ impl Epigenome {
             return None;
         }
         let addr = sentence.address();
-        if let Some(d) = self.dialect.get_mut(&addr) {
+        if let Some(d) = self.dialect.get_mut(addr.as_bytes()) {
             d.last_used_k = k;
             d.last_used_tu = now_tu;
             d.uses = d.uses.saturating_add(1);
-            return Some(addr);
+            return Some(addr.into_vec());
         }
         if let Some(existing) = self.same_vertex_in_dialect(&sentence) {
             if let Some(d) = self.dialect.get_mut(&existing) {
@@ -1040,11 +1039,11 @@ impl Epigenome {
             return Some(existing);
         }
         let inv = crate::transducer::stalk::invariant_of(&sentence);
-        self.dialect_atlas.admit(&inv, addr);
+        self.dialect_atlas.admit(&inv, addr.clone());
         self.axis_admit(&sentence);
         let shape = crate::transducer::element::shape_of_chain(sentence.sub());
         self.dialect.insert(
-            addr,
+            addr.clone(),
             Dialect {
                 sentence,
                 last_used_k: k,
@@ -1059,7 +1058,7 @@ impl Epigenome {
             "  dialect stood {:02x}{:02x}… k {k} tu {now_tu}",
             addr[0], addr[1]
         );
-        Some(addr)
+        Some(addr.into_vec())
     }
 
     /// Stand a withheld form in the dialect (24.2, 24.3): `withheld: true`,
@@ -1069,7 +1068,7 @@ impl Epigenome {
         sentence: Element,
         k: u64,
         now_tu: u64,
-    ) -> Option<[u8; 32]> {
+    ) -> Option<Vec<u8>> {
         let addr = self.stand_dialect_at(sentence, k, now_tu)?;
         if let Some(d) = self.dialect.get_mut(&addr) {
             d.withheld = true;
@@ -1142,9 +1141,9 @@ impl Epigenome {
     pub fn peak_expression(&self) -> u64 {
         self.expression.iter().copied().max().unwrap_or(0)
     }
-    pub fn recollections(&self) -> Vec<(Vec<[u8; 32]>, u64)> {
+    pub fn recollections(&self) -> Vec<(Vec<Vec<u8>>, u64)> {
         self.recollections
-            .fiber(&crate::network::nerve::ROOT)
+            .fiber(crate::network::nerve::ROOT)
             .map(|(_, (a, n))| (a.clone(), *n))
             .collect()
     }
@@ -1185,20 +1184,20 @@ impl Epigenome {
     }
 
     /// A word on the working language: genome first, then dialect.
-    pub fn working_word(&self, addr: &[u8; 32]) -> Option<&Element> {
+    pub fn working_word(&self, addr: &[u8]) -> Option<&Element> {
         self.word_at(addr)
             .or_else(|| self.dialect.get(addr).map(|d| &d.sentence))
     }
 
-    pub fn take_promoted(&mut self) -> Vec<[u8; 32]> {
+    pub fn take_promoted(&mut self) -> Vec<Vec<u8>> {
         std::mem::take(&mut self.promoted)
     }
 
-    fn same_vertex_in_dialect(&self, e: &Element) -> Option<[u8; 32]> {
+    fn same_vertex_in_dialect(&self, e: &Element) -> Option<Vec<u8>> {
         let addr = e.address();
-        let d = self.dialect.get(&addr)?;
+        let d = self.dialect.get(addr.as_bytes())?;
         debug_assert!(d.sentence.same_vertex(e));
-        Some(addr)
+        Some(addr.into_vec())
     }
 
     fn same_vertex_in_genome(&self, e: &Element) -> Option<usize> {
@@ -1225,10 +1224,10 @@ impl Epigenome {
         extra: &[Element],
     ) -> crate::transducer::sentence::Sentence {
         let n = self.genome.len();
-        let dialect_addrs: Vec<[u8; 32]> = self
+        let dialect_addrs: Vec<Vec<u8>> = self
             .dialect
-            .fiber(&crate::network::nerve::ROOT)
-            .map(|(a, _)| *a)
+            .fiber(crate::network::nerve::ROOT)
+            .map(|(a, _)| a)
             .collect();
         let n_d = dialect_addrs.len();
         let extra_shapes: Vec<Option<crate::transducer::blade::Shape>> = extra
@@ -1254,13 +1253,13 @@ impl Epigenome {
                 extra.get(i - n - n_d)
             }
         };
-        let index_of = |a: &[u8; 32]| -> Option<usize> {
+        let index_of = |a: &[u8]| -> Option<usize> {
             index.get(a).copied().or_else(|| {
                 dialect_addrs
                     .iter()
-                    .position(|x| x == a)
+                    .position(|x| x.as_slice() == a)
                     .map(|j| n + j)
-                    .or_else(|| extra.iter().position(|w| &w.address() == a).map(|j| n + n_d + j))
+                    .or_else(|| extra.iter().position(|w| w.address().as_bytes() == a).map(|j| n + n_d + j))
             })
         };
         let shape_at = |i: usize| -> Option<&crate::transducer::blade::Shape> {
@@ -1289,7 +1288,7 @@ impl Epigenome {
         crate::transducer::sentence::deconstruct_on(&word_at, &fiber_of, &index_of, &shape_at, chain, exclude)
     }
 
-    pub fn retire(&mut self, addr: &[u8; 32]) -> bool {
+    pub fn retire(&mut self, addr: &[u8]) -> bool {
         let Some(i) = self.index.get(addr).copied() else {
             return false;
         };
@@ -1300,11 +1299,11 @@ impl Epigenome {
         if i < self.expression.len() {
             self.expression.remove(i);
         }
-        let drop: Vec<[u8; 32]> = self
+        let drop: Vec<Vec<u8>> = self
             .recollections
-            .fiber(&crate::network::nerve::ROOT)
-            .filter(|(_, (addrs, _))| addrs.iter().any(|a| a == &gone))
-            .map(|(k, _)| *k)
+            .fiber(crate::network::nerve::ROOT)
+            .filter(|(_, (addrs, _))| addrs.iter().any(|a| a.as_slice() == gone.as_bytes()))
+            .map(|(k, _)| k)
             .collect();
         for k in drop {
             self.recollections.remove(&k);
@@ -1360,12 +1359,12 @@ impl Epigenome {
         // understood arm; anything left over is the novelty, measured.
         match (located.residual.len(), located.punctures.len()) {
             (0, 0) => {
-                let sentence: Vec<([u8; 32], Standing)> = located
+                let sentence: Vec<(Vec<u8>, Standing)> = located
                     .cites
                     .iter()
                     .filter_map(|(i, _, _)| {
                         let w = self.genome.get(*i)?;
-                        Some((w.address(), Standing::Ruled))
+                        Some((w.address().into_vec(), Standing::Ruled))
                     })
                     .collect();
                 for (i, _, _) in &located.cites {
@@ -1374,7 +1373,7 @@ impl Epigenome {
                     }
                 }
                 if !sentence.is_empty() {
-                    let addrs: Vec<[u8; 32]> = sentence.iter().map(|(a, _)| *a).collect();
+                    let addrs: Vec<Vec<u8>> = sentence.iter().map(|(a, _)| a.clone()).collect();
                     let key = utterance.address();
                     match self.recollections.get_mut(&key) {
                         Some((_, n)) => *n += 1,
@@ -1401,7 +1400,7 @@ impl Epigenome {
             let Vertex::Glued { address, chart, .. } = v else {
                 continue;
             };
-            let address = *address;
+            let address = address.clone();
             let chart = chart.clone();
             if let Some(&i) = self.index.get(&address) {
                 if let Some(x) = self.expression.get_mut(i) {
@@ -1411,10 +1410,10 @@ impl Epigenome {
                     .working_atlas()
                     .fiber(&chart)
                     .into_iter()
-                    .find(|(a, _)| *a == address)
+                    .find(|(a, _)| a.as_slice() == address.as_bytes())
                     .map(|(_, s)| s)
                     .unwrap_or(Standing::Ruled);
-                understood.push((address, st));
+                understood.push((address.clone().into_vec(), st));
                 continue;
             }
             if self.working_word(&address).is_some() {
@@ -1422,13 +1421,13 @@ impl Epigenome {
                     .working_atlas()
                     .fiber(&chart)
                     .into_iter()
-                    .find(|(a, _)| *a == address)
+                    .find(|(a, _)| a.as_slice() == address.as_bytes())
                     .map(|(_, s)| s)
                 else {
-                    missing.push(address);
+                    missing.push(address.clone().into_vec());
                     continue;
                 };
-                understood.push((address, st));
+                understood.push((address.clone().into_vec(), st));
                 continue;
             }
             let mut through = 0usize;
@@ -1436,7 +1435,7 @@ impl Epigenome {
                 if e.address() == address {
                     continue;
                 }
-                understood.push((e.address(), st));
+                understood.push((e.address().into_vec(), st));
                 through += 1;
                 eprintln!(
                     "  form understood through {:02x}{:02x}… for {:02x}{:02x}…",
@@ -1444,7 +1443,7 @@ impl Epigenome {
                 );
             }
             if through == 0 {
-                missing.push(address);
+                missing.push(address.into_vec());
             }
         }
         if !missing.is_empty() {
@@ -1497,7 +1496,7 @@ impl Epigenome {
     fn learn_one(&mut self, taught: &[u8], pos: &mut usize, k: u64, now_tu: u64) -> Option<Comprehension> {
         let e = Element::from_bytes(taught, pos)?;
         let addr = e.address();
-        let resolve = |a: &[u8; 32]| {
+        let resolve = |a: &[u8]| {
             self.working_word(a)
                 .and_then(|w| crate::transducer::sentence::from_element_form(w))
         };
@@ -1540,7 +1539,7 @@ impl Epigenome {
         }
         let ft = crate::transducer::sentence::form_torsion(&e);
         if !ft.is_empty() {
-            for (_, (_, l, _)) in ft.fiber(&crate::network::nerve::ROOT) {
+            for (_, (_, l, _)) in ft.fiber(crate::network::nerve::ROOT) {
                 self.aperture.absorb_spatial_signal(*l);
             }
         } else {
@@ -1565,7 +1564,7 @@ impl Epigenome {
                     d.missing = missing.clone();
                 }
                 for m in &missing {
-                    self.wait_on(m, da);
+                    self.wait_on(m, da.clone());
                 }
                 eprintln!(
                     "  form withheld waiting {:02x}{:02x}…",
@@ -1593,7 +1592,7 @@ impl Epigenome {
                 self.genome.push(e);
                 self.expression.push(uses);
             }
-            self.promoted.push(addr);
+            self.promoted.push(addr.into_vec());
             return Some(heard);
         }
         let arrived = e.clone();
@@ -1617,10 +1616,10 @@ impl Epigenome {
     /// re-comprehend. The waiting-on index is the read.
     fn resolve_withheld(&mut self, arrived: &Element) {
         let addr = arrived.address();
-        let citing: Vec<[u8; 32]> = match self.waiting_on.remove(&addr) {
+        let citing: Vec<Vec<u8>> = match self.waiting_on.remove(&addr) {
             Some(citers) => citers
-                .fiber(&crate::network::nerve::ROOT)
-                .map(|(k, _)| *k)
+                .fiber(crate::network::nerve::ROOT)
+                .map(|(k, _)| k)
                 .collect(),
             None => return,
         };
@@ -1637,7 +1636,7 @@ impl Epigenome {
             match heard {
                 Comprehension::Withheld { missing } => {
                     for m in &old_missing {
-                        if m != &addr {
+                        if m.as_slice() != addr.as_bytes() {
                             self.retract_waiter(m, &sa);
                         }
                     }
@@ -1645,12 +1644,12 @@ impl Epigenome {
                         d.missing = missing.clone();
                     }
                     for m in &missing {
-                        self.wait_on(m, sa);
+                        self.wait_on(m, sa.clone());
                     }
                 }
                 Comprehension::Understood(_) | Comprehension::Admitted | Comprehension::Dialect(_) => {
                     for m in &old_missing {
-                        if m != &addr {
+                        if m.as_slice() != addr.as_bytes() {
                             self.retract_waiter(m, &sa);
                         }
                     }
@@ -1669,15 +1668,15 @@ impl Epigenome {
     }
 
     #[cfg(test)]
-    fn waiting_on_len(&self, missing: &[u8; 32]) -> usize {
+    fn waiting_on_len(&self, missing: &[u8]) -> usize {
         self.waiting_on.get(missing).map(|c| c.len()).unwrap_or(0)
     }
 
     /// CRYSTALLIZE the genome for persistence — the permanent language only.
-    /// The epigenome is memory-only. Format: `GEN2 | n u32 | (len u32 | element)…`.
+    /// The epigenome is memory-only. Format: `GEN3 | n u32 | (len u32 | element)…`.
     pub fn crystallize(&self) -> Vec<u8> {
         let mut out = Vec::with_capacity(4 + self.genome.len() * 64);
-        out.extend_from_slice(b"GEN2");
+        out.extend_from_slice(b"GEN3");
         out.extend_from_slice(&(self.genome.len() as u32).to_le_bytes());
         for g in &self.genome {
             let b = g.to_bytes();
@@ -1687,13 +1686,13 @@ impl Epigenome {
         out
     }
 
-    /// Restore GEN2, else migrate GEN1 in place. Expression starts at zero.
+    /// Restore GEN3 only. An older file is refused.
     pub fn uncrystallize(&mut self, bytes: &[u8]) -> bool {
         if bytes.len() < 8 {
             return false;
         }
         let tag = &bytes[..4];
-        if tag != b"GEN2" && tag != b"GEN1" {
+        if tag != b"GEN3" {
             return false;
         }
         let n = u32::from_le_bytes(bytes[4..8].try_into().unwrap()) as usize;
@@ -1727,10 +1726,7 @@ impl Epigenome {
             return false;
         }
         if skipped > 0 {
-            eprintln!("genome migrated: {} words, {skipped} skipped", genome.len());
-        }
-        if tag == b"GEN1" {
-            eprintln!("genome migrated GEN1 → GEN2: {} words", genome.len());
+            eprintln!("genome restored: {} words, {skipped} skipped", genome.len());
         }
         self.expression = vec![0; genome.len()];
         self.genome = genome;
@@ -1786,7 +1782,7 @@ impl crate::transducer::family::Crystal for Epigenome {
 
     fn by_address(
         &self,
-        addr: &[u8; 32],
+        addr: &[u8],
     ) -> Option<(Element, crate::transducer::sentence::Form)> {
         let e = self.working_word(addr)?.clone();
         let f = crate::transducer::sentence::from_element_form(&e)?;
@@ -1883,18 +1879,14 @@ impl Entity {
     }
 
     /// Open with CONTINUITY: restore the crystallized genome from `genome_path`
-    /// if present (GEN2, migrating GEN1 in place). The epigenome starts empty.
+    /// if present (GEN3). The epigenome starts empty. An older file is refused.
     pub fn open_persistent(addr: &str, kernel: Kernel, genome_path: &str, _thoughts_path: &str) -> Self {
         let mut e = Entity::open(addr, kernel);
         if let Ok(bytes) = std::fs::read(genome_path) {
             if e.epigenome.uncrystallize(&bytes) {
                 let n = e.epigenome.genome_len();
-                let tag = if bytes.get(..4) == Some(b"GEN2") { "GEN2" } else { "GEN1" };
-                if tag == "GEN1" {
-                    let _ = e.save_genome(genome_path);
-                }
                 let kb = std::fs::metadata(genome_path).map(|m| m.len() / 1024).unwrap_or(0);
-                eprintln!("genome {n} words ({tag}, {kb} KB), epigenome empty");
+                eprintln!("genome {n} words (GEN3, {kb} KB), epigenome empty");
             }
         } else {
             eprintln!("genome 0 words, epigenome empty");
@@ -1940,7 +1932,7 @@ impl Entity {
     /// the anti-replay collapse is the server's ruling, never the client's.
     pub fn submit_solve(
         &self,
-        id: &[u8; 32],
+        id: &[u8],
         outputs: &[Grid],
     ) -> io::Result<(u8, [u64; 4])> {
         self.submit_solve_rule(id, outputs, None)
@@ -1949,7 +1941,7 @@ impl Entity {
     /// Submit predicted outputs together with the sentence that spoke them.
     pub fn submit_solve_rule(
         &self,
-        id: &[u8; 32],
+        id: &[u8],
         outputs: &[Grid],
         rule: Option<&Element>,
     ) -> io::Result<(u8, [u64; 4])> {
@@ -1986,7 +1978,7 @@ impl Entity {
     /// redundancy the vocabulary is carrying — a compression bid. The probe
     /// is a virtual rollout (zero mutation); the hypha's deterministic
     /// replay, not this discovery, decides retirement.
-    pub fn seek_refinement(&mut self) -> Option<([u8; 32], Vec<dialogue::CiteWire>)> {
+    pub fn seek_refinement(&mut self) -> Option<(crate::transducer::a21::Address, Vec<dialogue::CiteWire>)> {
         let g = self.epigenome.genome();
         if g.len() < 2 {
             return None;
@@ -2020,7 +2012,7 @@ impl Entity {
     /// `(REFINE_NOTHING, 0⃗)` otherwise. On acceptance the entity drops its
     /// own copy too — the compression is global, and its next decomposition
     /// of the retired meaning re-derives the sentence form.
-    pub fn bid_refinement(&mut self, word: &[u8; 32], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4])> {
+    pub fn bid_refinement(&mut self, word: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4])> {
         let voice = self.session.kernel().voice();
         let body = self.session.speak_keyed(word, dialogue::encode_refine(&voice, word, cites))?;
         let (code, mu) =
@@ -2089,7 +2081,7 @@ impl Entity {
                 continue; // no group view: the additive coboundary has no transition
             }
             let inv = crate::transducer::stalk::invariant_of(&fetched);
-            let fibre: Vec<[u8; 32]> = self.epigenome.atlas.fiber(&inv).to_vec();
+            let fibre: Vec<Vec<u8>> = self.epigenome.atlas.fiber(&inv).to_vec();
             // One transition, to the stratum's representative: the first
             // held word on the fibre with a group view that is not the
             // fetched word itself. Siblings are interchangeable under the
@@ -2135,11 +2127,11 @@ impl Entity {
         let mut taught = 0usize;
         let mut used = 0usize;
         'strata: for (_, held) in &charts {
-            for &addr in held {
-                if self.already_taught_addr(&addr) {
+            for addr in held {
+                if self.already_taught_addr(addr) {
                     continue; // spoken for adoption once; the judge decided
                 }
-                let Some(word) = self.epigenome.word_at(&addr).cloned() else { continue };
+                let Some(word) = self.epigenome.word_at(addr).cloned() else { continue };
                 if self.already_taught(&word) {
                     continue;
                 }
@@ -2148,8 +2140,8 @@ impl Entity {
                     break 'strata;
                 }
                 used += bytes.len();
-                if self.session.speak_keyed(&addr, dialogue::encode_adopt(&voice, &bytes)).is_ok() {
-                    self.taught_up.insert(addr, word.clone());
+                if self.session.speak_keyed(addr, dialogue::encode_adopt(&voice, &bytes)).is_ok() {
+                    self.taught_up.insert(&addr, word.clone());
                     taught += 1;
                 }
             }
@@ -2243,13 +2235,13 @@ impl Entity {
     /// could not reduce. Cognition happens here; the hypha only replays.
     fn idea_words(&self) -> Vec<Element> {
         let mut out = Vec::new();
-        for (_, b) in self.contemplation.bubbles.fiber(&crate::network::nerve::ROOT) {
+        for (_, b) in self.contemplation.bubbles.fiber(crate::network::nerve::ROOT) {
             if let Some(f) = &b.form {
                 if let Some(e) = crate::transducer::sentence::as_element_form(f, b.volume) {
                     out.push(e);
                 }
             }
-            for (_, r) in b.remainders.fiber(&crate::network::nerve::ROOT) {
+            for (_, r) in b.remainders.fiber(crate::network::nerve::ROOT) {
                 if !r.is_empty() {
                     out.push(crate::transducer::element::from_residual(r));
                 }
@@ -2272,11 +2264,11 @@ impl Entity {
             .collect();
         let located = self.epigenome.locate_on(chain, None, &extras);
         let n_genome = self.epigenome.genome_len();
-        let dialect_addrs: Vec<[u8; 32]> = self
+        let dialect_addrs: Vec<Vec<u8>> = self
             .epigenome
             .dialect
-            .fiber(&crate::network::nerve::ROOT)
-            .map(|(a, _)| *a)
+            .fiber(crate::network::nerve::ROOT)
+            .map(|(a, _)| a)
             .collect();
         let n_d = dialect_addrs.len();
         let word_of = |i: usize| -> Option<&Element> {
@@ -2398,13 +2390,13 @@ impl Entity {
                         Some(q) => {
                             let mut have: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
                             for h in &q.clusters {
-                                have.insert(h.address, ());
+                                have.insert(&h.address, ());
                             }
                             for c in clusters {
                                 if have.contains(&c.address) {
                                     continue;
                                 }
-                                have.insert(c.address, ());
+                                have.insert(&c.address, ());
                                 q.clusters.push(c);
                             }
                         }
@@ -2429,7 +2421,7 @@ impl Entity {
         let thought_charts: Vec<crate::transducer::stalk::Invariant> = {
             let mut charts = Vec::new();
             // index: held bubbles; each cover is a peel of its invariant
-            for (_, b) in self.contemplation.bubbles.fiber(&crate::network::nerve::ROOT) {
+            for (_, b) in self.contemplation.bubbles.fiber(crate::network::nerve::ROOT) {
                 let inv = crate::transducer::stalk::invariant(&b.remainder);
                 let mut cur = inv;
                 loop {
@@ -2451,21 +2443,21 @@ impl Entity {
         let bubbles: Vec<(Vec<(i64, i64, u8, u8)>, [u64; 4])> = self
             .contemplation
             .bubbles
-            .fiber(&crate::network::nerve::ROOT)
+            .fiber(crate::network::nerve::ROOT)
             .map(|(_, b)| (b.remainder.clone(), b.volume))
             .collect();
         for (remainder, mag) in &bubbles {
             let inv = crate::transducer::stalk::invariant(remainder);
             let dest = self.session.route_chart(&inv, mag);
-            let dk = *blake3::hash(dest.as_bytes()).as_bytes();
-            match dests.get_mut(&dk) {
+            let dk = dest.as_bytes();
+            match dests.get_mut(dk) {
                 Some(held) => {
                     if !held.iter().any(|h| h == &inv) {
                         held.push(inv);
                     }
                 }
                 None => {
-                    dest_order.push(dest);
+                    dest_order.push(dest.clone());
                     dests.insert(dk, vec![inv]);
                 }
             }
@@ -2485,8 +2477,7 @@ impl Entity {
         let mut last_err = io::Error::new(io::ErrorKind::NotConnected, "no hypha");
         let mut out: Option<YieldQuote> = None;
         for dest in dest_order {
-            let dk = *blake3::hash(dest.as_bytes()).as_bytes();
-            let invs = dests.get(&dk).cloned().unwrap_or_default();
+            let invs = dests.get(dest.as_bytes()).cloned().unwrap_or_default();
             let asked = if invs.is_empty() { charts.clone() } else { invs };
             let asked_st: Vec<(crate::transducer::stalk::Invariant, u8)> = asked
                 .iter()
@@ -2522,13 +2513,13 @@ impl Entity {
                         Some(q) => {
                             let mut have: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
                             for h in &q.clusters {
-                                have.insert(h.address, ());
+                                have.insert(&h.address, ());
                             }
                             for c in clusters {
                                 if have.contains(&c.address) {
                                     continue;
                                 }
-                                have.insert(c.address, ());
+                                have.insert(&c.address, ());
                                 q.clusters.push(c);
                             }
                         }
@@ -2590,23 +2581,23 @@ impl Entity {
     }
 
     /// The word a cite rests on: genome, dialect, or idea.
-    pub fn cited_word(&self, addr: &[u8; 32]) -> Option<Element> {
+    pub fn cited_word(&self, addr: &[u8]) -> Option<Element> {
         self.epigenome
             .working_word(addr)
             .cloned()
-            .or_else(|| self.idea_words().into_iter().find(|w| &w.address() == addr))
+            .or_else(|| self.idea_words().into_iter().find(|w| w.address().as_bytes() == addr))
     }
-    pub fn probe(&self, target: &[u8; 32], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4], [u64; 4])> {
+    pub fn probe(&self, target: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4], [u64; 4])> {
         self.session.probe(target, cites)
     }
     /// The discordance measured at the last sync: strata whose roots differ
     /// from the hypha's. Zero is a glued genome.
     /// The Čech obstructions measured after fetch: fetched words whose
     /// transition to a held word on the same fibre did not vanish.
-    pub fn obstructions(&self) -> Vec<([u8; 32], Element)> {
+    pub fn obstructions(&self) -> Vec<(Vec<u8>, Element)> {
         self.obstructions
-            .fiber(&crate::network::nerve::ROOT)
-            .map(|(a, g)| (*a, g.clone()))
+            .fiber(crate::network::nerve::ROOT)
+            .map(|(a, g)| (a, g.clone()))
             .collect()
     }
 
@@ -2659,7 +2650,7 @@ impl Entity {
                 residual.len(),
                 cites.len()
             );
-            self.taught_up.insert(addr, word.clone());
+            self.taught_up.insert(&addr, word.clone());
             let mu = crate::transducer::element::measure_lanes(&residual);
             eprintln!(
                 "  uttered {:02x}{:02x}… standing Stood K {k} lanes {mu:?}",
@@ -2674,7 +2665,7 @@ impl Entity {
         self.taught_up.len()
     }
 
-    pub fn uttered(&self, addr: &[u8; 32]) -> bool {
+    pub fn uttered(&self, addr: &[u8]) -> bool {
         self.taught_up.contains(addr)
     }
 
@@ -2729,10 +2720,10 @@ impl Entity {
     /// failure (a listing no held word deflates is a thought, not an axis).
     pub fn open_axis(
         &mut self,
-        listing: &[u8; 32],
+        listing: &[u8],
         chain: &[(i64, i64, u8, u8)],
         words: &[Element],
-    ) -> Option<[u8; 32]> {
+    ) -> Option<crate::transducer::a21::Address> {
         use crate::transducer::element::{measure_lanes, FIBER_GERMINATED};
         if let Some(a) = self.open_contemplation_axis() {
             return Some(a);
@@ -2753,7 +2744,7 @@ impl Entity {
         let mut mag = measure_lanes(chain);
         mag[3] = mag[3].saturating_add(words.len() as u64);
         germ.set_magnitude(mag);
-        self.opened.insert(*listing, ());
+        self.opened.insert(listing, ());
         match self.speak_word(&germ) {
             Ok(Utterance::Spoken) => Some(germ.address()),
             _ => None,
@@ -2763,7 +2754,7 @@ impl Entity {
     /// Seed from a class at any degree on the contemplation — the coordinate
     /// the current axes could not express. A class is an ideology; the gauge
     /// that would translate one frame into the other is a translation word.
-    fn open_contemplation_axis(&mut self) -> Option<[u8; 32]> {
+    fn open_contemplation_axis(&mut self) -> Option<crate::transducer::a21::Address> {
         let classes = self.contemplation.classes_held();
         for (class, _degree) in classes {
             let a = [0u8; 32];
@@ -2875,7 +2866,7 @@ impl Entity {
         }
         let voice = self.session.kernel().voice();
         let bytes: Vec<Vec<u8>> = fresh.iter().map(|e| e.to_bytes()).collect();
-        let body = dialogue::encode_speech(&voice, &[0u8; 32], self.now_tu(), &bytes);
+        let body = dialogue::encode_speech(&voice, crate::transducer::a21::Address::new(Vec::new()), self.now_tu(), &bytes);
         let reply = self.session.speak_nerve(body)?;
         let got = dialogue::decode_speech_reply(&reply).unwrap_or_default();
         let mut gi = 0usize;
@@ -2894,7 +2885,7 @@ impl Entity {
         Ok(codes)
     }
 
-    fn already_taught_addr(&self, addr: &[u8; 32]) -> bool {
+    fn already_taught_addr(&self, addr: &[u8]) -> bool {
         self.taught_up.contains(addr)
     }
 
@@ -2906,7 +2897,7 @@ impl Entity {
         }
         if self
             .taught_up
-            .fiber(&crate::network::nerve::ROOT)
+            .fiber(crate::network::nerve::ROOT)
             .any(|(_, e)| e.same_vertex(word))
         {
             return true;
@@ -2972,7 +2963,7 @@ impl Entity {
 
     pub fn shed_at(&mut self, now_tu: u64) -> usize {
         self.epigenome.note_stroke(now_tu);
-        let glued = |a: &[u8; 32]| self.contemplation.glues_word(a);
+        let glued = |a: &[u8]| self.contemplation.glues_word(a);
         let n = self.epigenome.shed_except(now_tu, &glued);
         n.saturating_add(self.contemplation.shed_unglued())
     }
@@ -3004,7 +2995,7 @@ impl Entity {
     }
 
     /// Fiber of the working atlas; a Stood hit updates last_used_tu.
-    pub fn working_fiber(&mut self, c: &crate::transducer::stalk::Invariant) -> Vec<([u8; 32], Standing)> {
+    pub fn working_fiber(&mut self, c: &crate::transducer::stalk::Invariant) -> Vec<(Vec<u8>, Standing)> {
         let f = self.working_atlas().fiber(c);
         let tu = self.now_tu();
         for (a, st) in &f {
@@ -3015,7 +3006,7 @@ impl Entity {
         f
     }
 
-    pub fn take_promoted(&mut self) -> Vec<[u8; 32]> {
+    pub fn take_promoted(&mut self) -> Vec<Vec<u8>> {
         self.epigenome.take_promoted()
     }
 
@@ -3077,7 +3068,7 @@ pub struct YieldQuote {
 
 #[derive(Clone, Debug)]
 pub struct Cluster {
-    pub address: [u8; 32],
+    pub address: crate::transducer::a21::Address,
     pub mu: [u64; 4],
     pub chain: Vec<(i64, i64, u8, u8)>,
     /// Open (non-flat) charts of the listing's coherence field. The entity
@@ -3089,7 +3080,7 @@ pub struct Cluster {
 /// and the polytonic μ⃗ award priced at the moment's yield surface.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SettleReceipt {
-    pub germ: [u8; 32],
+    pub germ: crate::transducer::a21::Address,
     pub voices: Vec<[u8; 32]>,
     pub mu: [u64; 4],
 }
@@ -3230,17 +3221,16 @@ mod tests {
         s.add_peer("127.0.0.1:7501");
         s.add_peer("127.0.0.1:7502");
         let seed = "127.0.0.1:7500";
-        let mut saw_other = false;
-        for i in 0..64u64 {
-            let inv = crate::transducer::stalk::Invariant(vec![i, i.wrapping_mul(3), 2]);
-            let dest = s.route_chart(&inv, &[1, 0, 0, 0]);
-            let closest = s.route(&inv.key());
-            assert_eq!(dest, closest, "empty cover is router.closest(chart key)");
-            if dest != seed {
-                saw_other = true;
-            }
-        }
-        assert!(saw_other, "chart keys fan out across the known hyphae, not only the seed");
+        let inv = crate::transducer::stalk::Invariant(vec![1, 3, 2]);
+        let dest = s.route_chart(&inv, &[1, 0, 0, 0]);
+        let closest = s.route(inv.key().as_bytes());
+        assert_eq!(dest, closest, "empty cover and listing route agree");
+        assert_eq!(dest, seed, "a listing is not hashed into XOR space; the seed is the home");
+        let peers = s.peers();
+        assert!(peers.iter().any(|p| p == "127.0.0.1:7501"));
+        assert!(peers.iter().any(|p| p == "127.0.0.1:7502"));
+        let vk = Kernel::named("fan").voice();
+        assert_eq!(s.route(&vk), seed, "a 32-byte vk with an empty XOR router is the seed");
     }
 
 
@@ -3270,7 +3260,7 @@ mod tests {
         match epi.comprehend(&word) {
             Comprehension::Understood(v) => {
                 assert_eq!(v.len(), 1);
-                assert_eq!(v[0].0, word.address());
+                assert_eq!(v[0].0.as_slice(), word.address().as_bytes());
                 assert_eq!(v[0].1, Standing::Ruled);
             }
             other => panic!("expected Understood with standing, got {other:?}"),
@@ -3298,7 +3288,7 @@ mod tests {
     fn withheld_then_depth_order() {
         use crate::transducer::alphabet::Word;
         use crate::transducer::sentence::{as_element_form, Form, FormFace, Vertex};
-        let missing_addr = [0xabu8; 32];
+        let missing_addr = crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 0xab]);
         let inner = {
             let mut f = Form::default();
             let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
@@ -3306,7 +3296,7 @@ mod tests {
             let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
             let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
             f.vertices.push(Vertex::Word {
-                address: [1u8; 32],
+                address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 1]),
                 word: w.clone(),
                 rho: one,
                 placement: (zero.clone(), zero),
@@ -3320,13 +3310,13 @@ mod tests {
         };
         let mut outer = Form::default();
         let _gi = outer
-            .glue(&inner, missing_addr, Word::identity(), [1, 0, 0, 0])
+            .glue(&inner, missing_addr.clone(), Word::identity(), [1, 0, 0, 0])
             .expect("glue");
         let e = as_element_form(&outer, [1, 0, 0, 0]).expect("v2 tape");
         let mut epi = Epigenome::new();
         match epi.comprehend(&e) {
             Comprehension::Withheld { missing } => {
-                assert_eq!(missing, vec![missing_addr], "the cited address is named")
+                assert_eq!(missing, vec![missing_addr.as_bytes().to_vec()], "the cited address is named")
             }
             other => panic!("expected Withheld, got {other:?}"),
         }
@@ -3336,7 +3326,7 @@ mod tests {
         );
         assert_eq!(epi.genome_len(), 0, "withheld does not enter the genome");
         assert!(
-            epi.dialect.fiber(&crate::network::nerve::ROOT).any(|(_, d)| d.withheld),
+            epi.dialect.fiber(crate::network::nerve::ROOT).any(|(_, d)| d.withheld),
             "the dialect holds the withheld sentence"
         );
     }
@@ -3351,7 +3341,7 @@ mod tests {
         let w = Word::from_letters(&[(q, false)]);
         let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
         let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-        let word_vertex = |addr: [u8; 32]| Vertex::Word {
+        let word_vertex = |addr: crate::transducer::a21::Address| Vertex::Word {
             address: addr,
             word: w.clone(),
             rho: one.clone(),
@@ -3362,7 +3352,7 @@ mod tests {
         };
         let inner = {
             let mut f = Form::default();
-            f.vertices.push(word_vertex([1u8; 32]));
+            f.vertices.push(word_vertex(crate::transducer::a21::Address::from_bytes([1u8; 32])));
             f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), });
             f.loops = Form::loops_of(&f.faces, f.vertices.len());
             f
@@ -3370,10 +3360,10 @@ mod tests {
         let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner tape");
         let inner_addr = inner_e.address();
         let mut outer = Form::default();
-        outer.vertices.push(word_vertex([2u8; 32]));
+        outer.vertices.push(word_vertex(crate::transducer::a21::Address::from_bytes([2u8; 32])));
         outer.faces.push(FormFace { i: 0, j: 1, transport: outer.face_of(0, 1).expect("vertices"), });
         let _gi = outer
-            .glue(&inner, inner_addr, Word::identity(), [1, 0, 0, 0])
+            .glue(&inner, inner_addr.clone(), Word::identity(), [1, 0, 0, 0])
             .expect("glue");
         assert_eq!(
             outer.glued.get(&inner_addr).copied(),
@@ -3410,7 +3400,7 @@ mod tests {
         );
         assert!(
             !epi.dialect
-                .fiber(&crate::network::nerve::ROOT)
+                .fiber(crate::network::nerve::ROOT)
                 .any(|(_, d)| d.withheld),
             "the citing sentence is no longer withheld"
         );
@@ -3425,7 +3415,7 @@ mod tests {
         let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
         let mut f = Form::default();
         f.vertices.push(Vertex::Word {
-            address: [1u8; 32],
+            address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 1]),
             word: w,
             rho: one,
             placement: (zero.clone(), zero),
@@ -3464,7 +3454,7 @@ mod tests {
         match epi.comprehend(&e) {
             Comprehension::Understood(entries) => {
                 assert_eq!(entries.len(), 1, "one held form of the cited chart");
-                assert_eq!(entries[0].0, eb.address());
+                assert_eq!(entries[0].0.as_slice(), eb.address().as_bytes());
                 assert_eq!(entries[0].1, Standing::Ruled);
             }
             other => panic!("expected Understood through the held class, got {other:?}"),
@@ -3487,7 +3477,7 @@ mod tests {
             let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
             let mut f = Form::default();
             f.vertices.push(Vertex::Word {
-                address: [9u8; 32],
+                address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 9]),
                 word: inf,
                 rho: one,
                 placement: (zero.clone(), zero),
@@ -3513,7 +3503,7 @@ mod tests {
         let e = as_element_form(&outer, [1, 0, 0, 0]).expect("citer");
         match epi.comprehend(&e) {
             Comprehension::Withheld { missing } => {
-                assert_eq!(missing, vec![ea.address()], "a foreign class is withheld")
+                assert_eq!(missing, vec![ea.address().as_bytes().to_vec()], "a foreign class is withheld")
             }
             other => panic!("expected Withheld, got {other:?}"),
         }
@@ -3531,7 +3521,7 @@ mod tests {
         let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
         let mut f = Form::default();
         f.vertices.push(Vertex::Word {
-            address: [1u8; 32],
+            address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 1]),
             word: w,
             rho: one,
             placement: (zero.clone(), zero),
@@ -3555,7 +3545,7 @@ mod tests {
     fn learn_at_stamps_voice_k_and_tuniversal() {
         use crate::transducer::alphabet::Word;
         use crate::transducer::sentence::{as_element_form, Form, FormFace, Vertex};
-        let missing_addr = [0xabu8; 32];
+        let missing_addr = crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 0xab]);
         let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
         let w = Word::from_letters(&[(q, false)]);
         let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
@@ -3563,7 +3553,7 @@ mod tests {
         let inner = {
             let mut f = Form::default();
             f.vertices.push(Vertex::Word {
-                address: [1u8; 32],
+                address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 1]),
                 word: w,
                 rho: one,
                 placement: (zero.clone(), zero),
@@ -3577,7 +3567,7 @@ mod tests {
         };
         let mut outer = Form::default();
         let _gi = outer
-            .glue(&inner, missing_addr, Word::identity(), [1, 0, 0, 0])
+            .glue(&inner, missing_addr.clone(), Word::identity(), [1, 0, 0, 0])
             .expect("glue");
         let e = as_element_form(&outer, [1, 0, 0, 0]).expect("v2 tape");
         let mut epi = Epigenome::new();
@@ -3587,7 +3577,7 @@ mod tests {
         ));
         let d = epi
             .dialect
-            .fiber(&crate::network::nerve::ROOT)
+            .fiber(crate::network::nerve::ROOT)
             .next()
             .map(|(_, d)| d)
             .expect("withheld dialect");
@@ -3638,7 +3628,7 @@ mod tests {
         let mut f = Form::default();
         for (i, g) in gauges.iter().enumerate() {
             f.vertices.push(Vertex::Word {
-                address: [i as u8 + 1; 32],
+                address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, i as u8 + 1]),
                 word: Word::identity(),
                 rho: one.clone(),
                 placement: (zero.clone(), zero.clone()),
@@ -3898,11 +3888,11 @@ mod tests {
         let idea = entity
             .contemplation
             .bubbles
-            .fiber(&crate::network::nerve::ROOT)
+            .fiber(crate::network::nerve::ROOT)
             .next()
-            .map(|(k, _)| *k)
+            .map(|(k, _)| k)
             .expect("idea");
-        entity.contemplation.mark_glue(&idea, addr);
+        entity.contemplation.mark_glue(&idea, addr.clone());
         let aperture = crate::physics::aperture_cycle() as u64;
         // The first aperture after boot is unmeasured: nothing sheds while
         // the stroke ring fills, however idle an entry is.

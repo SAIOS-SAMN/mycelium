@@ -12,17 +12,17 @@ pub const QUORUM: usize = 2;
 /// A consilience receipt: an independent voice attesting it derived this germ.
 /// The germ id is a wire encoding of the motor (transport identity), matched for
 /// counting only — never reasoned over.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Receipt {
     pub voice: [u8; 32],
-    pub germ: [u8; 32],
+    pub germ: crate::transducer::a21::Address,
 }
 
 /// The admission ledger: for each germ, the distinct voices that have attested
 /// it. Vec-of-relations (Law II) — no map in the admission path.
 #[derive(Debug, Default, Clone)]
 pub struct Admission {
-    seen: Vec<([u8; 32], Vec<[u8; 32]>)>,
+    seen: Vec<(crate::transducer::a21::Address, Vec<[u8; 32]>)>,
 }
 
 impl Admission {
@@ -38,7 +38,7 @@ impl Admission {
         let slot = match self.seen.iter_mut().find(|(g, _)| *g == r.germ) {
             Some(s) => s,
             None => {
-                self.seen.push((r.germ, Vec::new()));
+                self.seen.push((r.germ.clone(), Vec::new()));
                 self.seen.last_mut().unwrap()
             }
         };
@@ -51,18 +51,18 @@ impl Admission {
     }
 
     /// Is this germ admitted (has it reached quorum)?
-    pub fn admitted(&self, germ: &[u8; 32]) -> bool {
-        self.seen.iter().any(|(g, v)| g == germ && v.len() >= QUORUM)
+    pub fn admitted(&self, germ: &[u8]) -> bool {
+        self.seen.iter().any(|(g, v)| g.as_bytes() == germ && v.len() >= QUORUM)
     }
 
     /// Distinct voices on record for a germ.
-    pub fn voices(&self, germ: &[u8; 32]) -> usize {
-        self.seen.iter().find(|(g, _)| g == germ).map_or(0, |(_, v)| v.len())
+    pub fn voices(&self, germ: &[u8]) -> usize {
+        self.seen.iter().find(|(g, _)| g.as_bytes() == germ).map_or(0, |(_, v)| v.len())
     }
 
     /// The distinct voices that attested a germ (for the consilience split).
-    pub fn voices_of(&self, germ: &[u8; 32]) -> Vec<[u8; 32]> {
-        self.seen.iter().find(|(g, _)| g == germ).map_or_else(Vec::new, |(_, v)| v.clone())
+    pub fn voices_of(&self, germ: &[u8]) -> Vec<[u8; 32]> {
+        self.seen.iter().find(|(g, _)| g.as_bytes() == germ).map_or_else(Vec::new, |(_, v)| v.clone())
     }
 }
 
@@ -71,13 +71,13 @@ mod tests {
     use super::*;
 
     fn r(voice: u8, germ: u8) -> Receipt {
-        Receipt { voice: [voice; 32], germ: [germ; 32] }
+        Receipt { voice: [voice; 32], germ: crate::transducer::a21::Address::from_bytes(&[germ]) }
     }
 
     #[test]
     fn a_germ_admits_only_on_the_second_independent_voice() {
         let mut a = Admission::new();
-        let g = [7u8; 32];
+        let g = [7u8];
         assert!(!a.record(r(1, 7)), "one tip is not consilience");
         assert!(!a.admitted(&g));
         assert!(a.record(r(2, 7)), "the second independent tip admits it");
@@ -90,7 +90,7 @@ mod tests {
         let mut a = Admission::new();
         assert!(!a.record(r(1, 7)));
         assert!(!a.record(r(1, 7)), "same voice twice is still one mouth");
-        assert_eq!(a.voices(&[7u8; 32]), 1);
-        assert!(!a.admitted(&[7u8; 32]));
+        assert_eq!(a.voices(&[7u8]), 1);
+        assert!(!a.admitted(&[7u8]));
     }
 }

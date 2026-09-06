@@ -82,11 +82,11 @@ pub fn adjudicate(
     // deflation there.
     let listing = crate::transducer::germinate::germinate(&ca.concat(), &cb.concat())
         .map(|g| crate::transducer::element::from_residual_framed(&g, frame).address())
-        .unwrap_or([0; 32]);
+        .unwrap_or_default();
     let reductions: Vec<_> = germs
         .into_iter()
         .zip(proof)
-        .map(|(germ, cites)| crate::cognition::reduce_proven(&language, germ, cites, frame, listing))
+        .map(|(germ, cites)| crate::cognition::reduce_proven(&language, germ, cites, frame, listing.clone()))
         .collect();
     let Ok(mut g) = k.lock() else { return Outcome::GermPending };
     g.register_composites(composites);
@@ -113,7 +113,7 @@ pub fn attest(
     let Some((language, _budget)) = g.reflex_open(voice) else { return Outcome::GermPending };
     drop(g);
     let frame = (0usize, 0usize, 0usize, 0usize); // a chain carries no frame: the planar word
-    let reduction = crate::cognition::reduce_proven(&language, germ, cites, &frame, listing);
+    let reduction = crate::cognition::reduce_proven(&language, germ, cites, &frame, listing.clone());
     let residual = match &reduction.form {
         NormalForm::Decomposed(_) => 0,
         NormalForm::Irreducible(r) => r.sub().len(),
@@ -130,7 +130,7 @@ pub fn attest(
 pub fn probe(
     k: &std::sync::Mutex<crate::cognition::Kernel>,
     voice: [u8; 32],
-    target: &[u8; 32],
+    target: &[u8],
     cites: &[crate::anastome::dialogue::CiteWire],
 ) -> (u8, [u64; 4], [u64; 4]) {
     use crate::anastome::dialogue::PROBE_NOTHING;
@@ -183,7 +183,7 @@ pub fn probe(
         g.puncture_from(cites); // the fiber deepens on what was verified
         // The settlement goes to the court with the utterance that made it,
         // for the court to replay and measure itself.
-        g.record_settlement(*target, listing.sub().to_vec(), voice, cites, before, settled.2);
+        g.record_settlement(crate::transducer::a21::Address::from(target), listing.sub().to_vec(), voice, cites, before, settled.2);
     }
     settled
 }

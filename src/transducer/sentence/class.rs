@@ -123,13 +123,15 @@ pub struct ClassVector {
     pub(crate) placement: (num_rational::BigRational, num_rational::BigRational),
     /// Composed gauge around the loop (A4).
     pub(crate) hue: CycleType,
-    /// The holonomy has no plane form: the class is the rotor's invariants.
-    offplane: bool,
-    key: [u8; 32],
+    /// Off-plane conjugacy invariants `(a²/w, p²/w, sign a, sign p)`.
+    /// Zeros when the holonomy has a plane form.
+    offplane: (
+        num_rational::BigRational,
+        num_rational::BigRational,
+        u8,
+        u8,
+    ),
 }
-
-/// The class key of a closed loop: the identity's, written as zero (A20).
-pub const CLOSED_KEY: [u8; 32] = [0u8; 32];
 
 /// The hue cycle type of a loop: sorted cycle lengths of the composed
 /// permutation around its vertices. The listing itself lives on
@@ -159,6 +161,17 @@ impl CycleType {
                 buf.extend_from_slice(lens);
             }
         }
+    }
+
+    fn from_bytes(b: &[u8], pos: &mut usize) -> Option<CycleType> {
+        let n = *b.get(*pos)? as usize;
+        *pos += 1;
+        if n == 0 {
+            return Some(CycleType::Identity);
+        }
+        let lens = b.get(*pos..*pos + n)?.to_vec();
+        *pos += n;
+        Some(CycleType::Type(lens))
     }
 }
 
@@ -208,38 +221,100 @@ impl ClassVector {
         placement: (num_rational::BigRational, num_rational::BigRational),
         hue: CycleType,
     ) -> ClassVector {
+        let z = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+        let off0 = (z.clone(), z, 0, 0);
         let (plane, offplane) = if h.is_identity() {
-            ([(false, 0, 0, 0); 6], false)
+            ([(false, 0, 0, 0); 6], off0)
         } else {
             match h.form() {
-                Some(pf) => (pf.coordinates(), false),
-                None => ([(false, 0, 0, 0); 6], true),
+                Some(pf) => (pf.coordinates(), off0),
+                None => (
+                    [(false, 0, 0, 0); 6],
+                    match h.rotor().class_invariants() {
+                        Some(inv) => inv,
+                        None => off0,
+                    },
+                ),
             }
         };
-        let mut cv = ClassVector {
+        ClassVector {
             plane,
             placement,
             hue,
             offplane,
-            key: CLOSED_KEY,
-        };
-        cv.key = cv.compute_key(h);
-        cv
+        }
     }
 
-    /// `blake3(rotor conjugacy key ‖ cycle type ‖ put_q placement)`.
-    /// `CLOSED_KEY` iff every coordinate is zero.
-    fn compute_key(&self, h: &Word) -> [u8; 32] {
-        if self.coordinates().is_empty() {
-            return CLOSED_KEY;
+    fn zero_q() -> num_rational::BigRational {
+        num_rational::BigRational::from_integer(num_bigint::BigInt::from(0))
+    }
+
+    /// The closed class: every coordinate is zero.
+    pub fn zero() -> ClassVector {
+        let z = Self::zero_q();
+        ClassVector {
+            plane: [(false, 0, 0, 0); 6],
+            placement: (z.clone(), z),
+            hue: CycleType::Identity,
+            offplane: (Self::zero_q(), Self::zero_q(), 0, 0),
         }
-        let mut buf = Vec::new();
-        buf.extend_from_slice(&h.rotor().class_key());
+    }
+
+    /// Coordinates written out in 12.6 axis order: six planes, off-plane
+    /// invariants, hue cycle type, placement. Closed is the zero key.
+    pub fn class_key(&self) -> crate::transducer::a21::Address {
+        let mut buf = vec![crate::transducer::a21::TAG_CLASS];
+        for &(sheet, unit, m5, m13) in &self.plane {
+            buf.push(u8::from(sheet));
+            buf.extend_from_slice(&unit.to_le_bytes());
+            buf.extend_from_slice(&m5.to_le_bytes());
+            buf.extend_from_slice(&m13.to_le_bytes());
+        }
+        alphabet::put_q(&mut buf, &self.offplane.0);
+        alphabet::put_q(&mut buf, &self.offplane.1);
+        buf.push(self.offplane.2);
+        buf.push(self.offplane.3);
         self.hue.to_bytes(&mut buf);
         alphabet::put_q(&mut buf, &self.placement.0);
         alphabet::put_q(&mut buf, &self.placement.1);
-        *blake3::hash(&buf).as_bytes()
+        crate::transducer::a21::Address::new(buf)
     }
+
+    pub fn from_key(k: &[u8]) -> Option<ClassVector> {
+        if k.first() != Some(&crate::transducer::a21::TAG_CLASS) {
+            return None;
+        }
+        let mut p = 1usize;
+        let mut plane = [(false, 0u32, 0i64, 0i64); 6];
+        for slot in &mut plane {
+            let sheet = *k.get(p)? != 0;
+            p += 1;
+            let unit = u32::from_le_bytes(k.get(p..p + 4)?.try_into().ok()?);
+            p += 4;
+            let m5 = i64::from_le_bytes(k.get(p..p + 8)?.try_into().ok()?);
+            p += 8;
+            let m13 = i64::from_le_bytes(k.get(p..p + 8)?.try_into().ok()?);
+            p += 8;
+            *slot = (sheet, unit, m5, m13);
+        }
+        let x = alphabet::take_q(k, &mut p)?;
+        let y = alphabet::take_q(k, &mut p)?;
+        let sa = *k.get(p)?;
+        p += 1;
+        let sp = *k.get(p)?;
+        p += 1;
+        let hue = CycleType::from_bytes(k, &mut p)?;
+        let p0 = alphabet::take_q(k, &mut p)?;
+        let p1 = alphabet::take_q(k, &mut p)?;
+        Some(ClassVector {
+            plane,
+            placement: (p0, p1),
+            hue,
+            offplane: (x, y, sa, sp),
+        })
+    }
+
+
 
     /// The coordinate an axis names, as "nonzero". `Open` is never a
     /// coordinate: it is the last move, admitted when no coordinate's own
@@ -255,7 +330,13 @@ impl ClassVector {
                 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
                 self.placement.0 != zero || self.placement.1 != zero
             }
-            Axis::OffPlane => self.offplane,
+            Axis::OffPlane => {
+                let z = Self::zero_q();
+                self.offplane.0 != z
+                    || self.offplane.1 != z
+                    || self.offplane.2 != 0
+                    || self.offplane.3 != 0
+            }
             Axis::Open => false,
         }
     }
@@ -301,6 +382,15 @@ impl ClassVector {
             && a.offplane == b.offplane
     }
 
+    fn offplane_zero() -> (
+        num_rational::BigRational,
+        num_rational::BigRational,
+        u8,
+        u8,
+    ) {
+        (Self::zero_q(), Self::zero_q(), 0, 0)
+    }
+
     fn clear(&mut self, axis: Axis) {
         match axis {
             Axis::Sheet(p) => {
@@ -327,25 +417,21 @@ impl ClassVector {
                 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
                 self.placement = (zero.clone(), zero);
             }
-            Axis::OffPlane => self.offplane = false,
+            Axis::OffPlane => self.offplane = Self::offplane_zero(),
             Axis::Hue => self.hue = CycleType::Identity,
             Axis::Open => {}
         }
     }
 
-    pub fn class_key(&self) -> [u8; 32] {
-        self.key
-    }
-
-    /// No coordinate is occupied: the loop is closed.
+    /// No coordinate is occupied: the key is the zero key.
     pub fn is_zero(&self) -> bool {
-        self.occupied().is_empty()
+        self.class_key() == ClassVector::zero().class_key()
     }
 
     /// The free part: a prime exponent, or an off-plane class (infinite
     /// order). A loop with a free part is a demand, never filed torsion.
     pub fn free_part(&self) -> bool {
-        self.offplane || self.plane.iter().any(|s| s.2 != 0 || s.3 != 0)
+        self.occupies(Axis::OffPlane) || self.plane.iter().any(|s| s.2 != 0 || s.3 != 0)
     }
 }
 
@@ -371,7 +457,7 @@ pub enum LoopRow {
     Closed,
     Torsion,
     Free([i64; 12]),
-    OffPlane([u8; 32]),
+    OffPlane(crate::transducer::a21::Address),
 }
 
 pub fn loop_row(h: &Word) -> LoopRow {
@@ -381,7 +467,10 @@ pub fn loop_row(h: &Word) -> LoopRow {
     match free_row(h) {
         Some(row) if row == [0i64; 12] => LoopRow::Torsion,
         Some(row) => LoopRow::Free(row),
-        None => LoopRow::OffPlane(h.rotor().class_key()),
+        None => LoopRow::OffPlane(match h.rotor().class_key() {
+            Some(k) => k,
+            None => h.rotor().key(),
+        }),
     }
 }
 
@@ -396,7 +485,7 @@ pub fn rank_of_rows(rows: &[LoopRow]) -> Option<Rank> {
             LoopRow::Torsion => torsion += 1,
             LoopRow::Free(row) => free.push(*row),
             LoopRow::OffPlane(k) => {
-                offplane.insert(*k, ());
+                offplane.insert(&k, ());
             }
         }
     }

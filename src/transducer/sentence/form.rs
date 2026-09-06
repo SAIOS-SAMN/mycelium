@@ -27,7 +27,7 @@ pub enum Measure {
 pub enum Vertex {
     Frame,
     Word {
-        address: [u8; 32],
+        address: crate::transducer::a21::Address,
         word: Word,
         rho: num_rational::BigRational,
         placement: (num_rational::BigRational, num_rational::BigRational),
@@ -37,7 +37,7 @@ pub enum Vertex {
         contact: Option<alphabet::Contact>,
     },
     Glued {
-        address: [u8; 32],
+        address: crate::transducer::a21::Address,
         chart: stalk::Invariant,
         magnitude: [u64; 4],
         depth: u16,
@@ -175,7 +175,7 @@ impl Form {
                     class: _,
                     ..
                 } => {
-                    by_address.insert(*address, i as u16);
+                    by_address.insert(address, i as u16);
                     hue_maps.insert(hue_section_key(word, gauge), gauge.clone());
                     let tk = vertex_transport_key(word, gauge);
                     match places.get(&tk) {
@@ -190,7 +190,7 @@ impl Form {
                 }
                 Vertex::Rebased { of, .. } => {
                     if let Some(Vertex::Word { address, .. }) = self.vertices.get(*of as usize) {
-                        by_rebased.insert(*address, i as u16);
+                        by_rebased.insert(address, i as u16);
                     }
                 }
                 Vertex::Unfolded { measure } => {
@@ -200,9 +200,9 @@ impl Form {
             }
         }
         let mut placements = Keyed::new();
-        for (k, p) in places.fiber(&ROOT) {
-            if !place_conflict.contains(k) {
-                placements.insert(*k, p.clone());
+        for (k, p) in places.fiber(ROOT) {
+            if !place_conflict.contains(&k) {
+                placements.insert(&k, p.clone());
             }
         }
         for (fi, f) in self.faces.iter().enumerate() {
@@ -303,7 +303,7 @@ impl Form {
             match lp.holonomy.order() {
                 Order::Infinite => return false,
                 Order::Finite(ell) => {
-                    let k = lp.holonomy.rotor().class_key();
+                    let k = lp.holonomy.rotor().class_or_rotor_key();
                     match self.torsion.get(&k) {
                         Some((_, e, _)) if *e == ell => {}
                         _ => return false,
@@ -387,25 +387,24 @@ pub(crate) fn spell_versor(v: &Versor) -> Option<Word> {
 }
 
 /// Transport class of a conformal versor: the spelled word's class key.
-pub fn class_key_of_versor(v: &Versor) -> Option<[u8; 32]> {
+pub fn class_key_of_versor(v: &Versor) -> Option<crate::transducer::a21::Address> {
     Some(spell_versor(v)?.class_key())
 }
 
-pub fn vertex_ix_key(i: u16) -> [u8; 32] {
-    let mut k = [0u8; 32];
-    k[..2].copy_from_slice(&i.to_le_bytes());
+pub fn vertex_ix_key(i: u16) -> Vec<u8> {
+    let mut k = vec![0u8];
+    k.extend_from_slice(&i.to_le_bytes());
     k
 }
 
-pub(crate) fn unfolded_key(measure: &Measure) -> [u8; 32] {
-    let mut k = [0u8; 32];
-    k[0] = 4;
+pub(crate) fn unfolded_key(measure: &Measure) -> Vec<u8> {
+    let mut k = vec![4u8];
     match measure {
-        Measure::Occupied => k[1] = 0,
-        Measure::Remainder => k[1] = 1,
+        Measure::Occupied => k.push(0),
+        Measure::Remainder => k.push(1),
         Measure::Ring { anchor } => {
-            k[1] = 2;
-            k[2..4].copy_from_slice(&anchor.to_le_bytes());
+            k.push(2);
+            k.extend_from_slice(&anchor.to_le_bytes());
         }
     }
     k
@@ -413,27 +412,26 @@ pub(crate) fn unfolded_key(measure: &Measure) -> [u8; 32] {
 
 /// Hue map as a section coordinate: word conjugacy and the map, never a
 /// matching key for correspondence (chapter 21 step 1).
-pub(crate) fn hue_section_key(word: &Word, gauge: &[(u8, u8)]) -> [u8; 32] {
-    let mut buf = Vec::new();
-    buf.extend_from_slice(&word.class_key());
+pub(crate) fn hue_section_key(word: &Word, gauge: &[(u8, u8)]) -> crate::transducer::a21::Address {
+    let mut buf = vec![crate::transducer::a21::TAG_HUE];
+    crate::transducer::a21::put_bytes(&mut buf, word.class_key().as_bytes());
     buf.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
     for &(a, b) in gauge {
         buf.push(a);
         buf.push(b);
     }
-    *blake3::hash(&buf).as_bytes()
+    crate::transducer::a21::Address::new(buf)
 }
 
-pub(crate) fn vertex_transport_key(word: &Word, gauge: &[(u8, u8)]) -> [u8; 32] {
-    let mut buf = Vec::new();
-    buf.push(ShellKind::Whole.as_u8());
-    buf.extend_from_slice(&word.class_key());
+pub(crate) fn vertex_transport_key(word: &Word, gauge: &[(u8, u8)]) -> crate::transducer::a21::Address {
+    let mut buf = vec![crate::transducer::a21::TAG_WORD, ShellKind::Whole.as_u8()];
+    crate::transducer::a21::put_bytes(&mut buf, word.class_key().as_bytes());
     buf.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
     for &(b, a) in gauge {
         buf.push(b);
         buf.push(a);
     }
-    *blake3::hash(&buf).as_bytes()
+    crate::transducer::a21::Address::new(buf)
 }
 
 pub(crate) fn take_u16(b: &[u8], pos: &mut usize) -> Option<u16> {
@@ -487,22 +485,23 @@ impl PivotBy {
         }
     }
 
-    pub(crate) fn move_key(&self) -> [u8; 32] {
+    pub(crate) fn move_key(&self) -> Vec<u8> {
         match self {
-            PivotBy::Word { word, .. } => word.rotor().key(),
+            PivotBy::Word { word, .. } => word.rotor().key().into_vec(),
             PivotBy::Placement { shift, .. } => {
-                let mut buf = Vec::new();
+                let mut buf = vec![1u8];
                 alphabet::put_q(&mut buf, &shift.0);
                 alphabet::put_q(&mut buf, &shift.1);
-                *blake3::hash(&buf).as_bytes()
+                buf
             }
             PivotBy::Hue { gauge, .. } => {
-                let mut buf = Vec::new();
+                let mut buf = vec![2u8];
+                buf.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
                 for &(a, b) in gauge {
                     buf.push(a);
                     buf.push(b);
                 }
-                *blake3::hash(&buf).as_bytes()
+                buf
             }
         }
     }
@@ -522,9 +521,9 @@ pub struct PivotCertificate {
     /// The loop's index in the walk before the move.
     pub chord: u16,
     pub axis: Axis,
-    /// Class key of κ(ℓ) before, and after (`CLOSED_KEY` when the loop closed).
-    pub before: [u8; 32],
-    pub after: [u8; 32],
+    /// Class key of κ(ℓ) before, and after (zero vector when the loop closed).
+    pub before: crate::transducer::a21::Address,
+    pub after: crate::transducer::a21::Address,
     pub rank_before: Rank,
     pub rank_after: Rank,
     /// μ⃗ of the form over the bundle before and after the move.
@@ -533,12 +532,12 @@ pub struct PivotCertificate {
 }
 
 impl PivotCertificate {
-    pub fn key(&self) -> [u8; 32] {
-        let mut buf = Vec::new();
+    pub fn key(&self) -> Vec<u8> {
+        let mut buf = vec![crate::transducer::a21::TAG_CERT];
         buf.extend_from_slice(&self.chord.to_le_bytes());
         buf.push(self.axis.to_byte());
-        buf.extend_from_slice(&self.before);
-        buf.extend_from_slice(&self.after);
+        crate::transducer::a21::put_bytes(&mut buf, &self.before);
+        crate::transducer::a21::put_bytes(&mut buf, &self.after);
         self.rank_before.to_bytes(&mut buf);
         self.rank_after.to_bytes(&mut buf);
         match &self.by {
@@ -548,7 +547,7 @@ impl PivotCertificate {
                     Side::Left => 0,
                     Side::Right => 1,
                 });
-                buf.extend_from_slice(&word.key());
+                crate::transducer::a21::put_bytes(&mut buf, &word.key());
             }
             PivotBy::Placement { face, shift } => {
                 buf.push(1);
@@ -566,14 +565,14 @@ impl PivotCertificate {
                 }
             }
         }
-        *blake3::hash(&buf).as_bytes()
+        buf
     }
 
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
         out.extend_from_slice(&self.chord.to_le_bytes());
         out.push(self.axis.to_byte());
-        out.extend_from_slice(&self.before);
-        out.extend_from_slice(&self.after);
+        crate::transducer::a21::put_addr(out, &self.before);
+        crate::transducer::a21::put_addr(out, &self.after);
         self.rank_before.to_bytes(out);
         self.rank_after.to_bytes(out);
         match &self.mu {
@@ -617,10 +616,8 @@ impl PivotCertificate {
         let chord = take_u16(b, pos)?;
         let axis = Axis::from_byte(*b.get(*pos)?)?;
         *pos += 1;
-        let before: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-        *pos += 32;
-        let after: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-        *pos += 32;
+        let before = crate::transducer::a21::take_addr(b, pos)?;
+        let after = crate::transducer::a21::take_addr(b, pos)?;
         let rank_before = Rank::from_bytes(b, pos)?;
         let rank_after = Rank::from_bytes(b, pos)?;
         let mu_tag = *b.get(*pos)?;

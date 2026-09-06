@@ -12,11 +12,9 @@
 /// IS the XOR-closest, in O(bits), INDEPENDENT of N and never a scan of the peer
 /// set. (Correct + simple; path-compression to O(N) nodes is tracked as R5's
 /// follow-up — correctness first.)
-/// A KEYED RELATION over 32-byte identities: a value reached by its key's
-/// bits, O(bits) per read and write, never a scan of the relation. The
-/// carrier every address-keyed fact in the engine is reached through —
-/// listings spoken on, deflations, roots, a language's words — so an
-/// endpoint is always read from the key, whatever the relation's size.
+/// A KEYED RELATION over A21 coordinate bytes: a value reached by its
+/// key's bits, O(bits) per read and write, never a scan. A prefix of a
+/// key is a coarser stratum (`fiber`). Digests are not keys.
 #[derive(Clone, Debug)]
 pub struct Keyed<V> {
     root: Option<Box<Node<V>>>,
@@ -28,10 +26,15 @@ pub struct Keyed<V> {
 /// relation costs what it holds, and every operation is O(bits).
 #[derive(Clone, Debug)]
 enum Node<V> {
-    Leaf([u8; 32], V),
-    /// Both children are always bound; the option is the slot a split or
-    /// a collapse works through.
-    Branch { bit: usize, children: [Option<Box<Node<V>>>; 2] },
+    Leaf(Vec<u8>, V),
+    Branch {
+        bit: usize,
+        children: [Option<Box<Node<V>>>; 2],
+        /// A key whose bit-length equals `bit`. Discriminates a key from
+        /// a proper extension whose next bit is 0 (`key_bit` past the end
+        /// would otherwise walk into the same child).
+        end: Option<Box<(Vec<u8>, V)>>,
+    },
 }
 
 impl<V> Default for Keyed<V> {
@@ -40,66 +43,105 @@ impl<V> Default for Keyed<V> {
     }
 }
 
-fn key_bit(key: &[u8; 32], i: usize) -> usize {
-    ((key[i / 8] >> (7 - (i % 8))) & 1) as usize
+fn key_bit(key: &[u8], i: usize) -> usize {
+    let byte = i / 8;
+    if byte >= key.len() {
+        return 0;
+    }
+    ((key[byte] >> (7 - (i % 8))) & 1) as usize
 }
 
 /// The first bit at which two keys differ, if they differ.
-fn first_difference(a: &[u8; 32], b: &[u8; 32]) -> Option<usize> {
-    for i in 0..32 {
+fn first_difference(a: &[u8], b: &[u8]) -> Option<usize> {
+    let n = a.len().min(b.len());
+    for i in 0..n {
         let x = a[i] ^ b[i];
         if x != 0 {
             return Some(i * 8 + x.leading_zeros() as usize);
         }
     }
+    if a.len() != b.len() {
+        return Some(n * 8);
+    }
     None
 }
 
 impl<V> Node<V> {
+    fn bits(key: &[u8]) -> usize {
+        key.len().saturating_mul(8)
+    }
+
     /// The key of the leaf this key's path reaches.
-    fn held_key(&self, key: &[u8; 32]) -> [u8; 32] {
+    fn held_key(&self, key: &[u8]) -> &[u8] {
         let mut node = self;
         loop {
             match node {
-                Node::Leaf(k, _) => return *k,
-                Node::Branch { bit, children } => {
-                    node = children[key_bit(key, *bit)].as_deref().expect("a branch holds two children");
+                Node::Leaf(k, _) => return k,
+                Node::Branch { bit, children, end } => {
+                    if Self::bits(key) <= *bit {
+                        if let Some((k, _)) = end.as_deref() {
+                            return k;
+                        }
+                        return node.representative();
+                    }
+                    match children[key_bit(key, *bit)].as_deref() {
+                        Some(n) => node = n,
+                        None => return node.representative(),
+                    }
                 }
             }
         }
     }
 
-    fn get(&self, key: &[u8; 32]) -> Option<&V> {
+    fn get(&self, key: &[u8]) -> Option<&V> {
         let mut node = self;
         loop {
             match node {
-                Node::Leaf(k, v) => return (k == key).then_some(v),
-                Node::Branch { bit, children } => node = children[key_bit(key, *bit)].as_deref()?,
-            }
-        }
-    }
-
-    fn get_mut(&mut self, key: &[u8; 32]) -> Option<&mut V> {
-        let mut node = self;
-        loop {
-            match node {
-                Node::Leaf(k, v) => return (k == key).then_some(v),
-                Node::Branch { bit, children } => {
-                    let b = key_bit(key, *bit);
-                    node = children[b].as_deref_mut()?;
+                Node::Leaf(k, v) => return (k.as_slice() == key).then_some(v),
+                Node::Branch { bit, children, end } => {
+                    if Self::bits(key) == *bit {
+                        return end.as_deref().and_then(|(k, v)| (k.as_slice() == key).then_some(v));
+                    }
+                    if Self::bits(key) < *bit {
+                        return None;
+                    }
+                    node = children[key_bit(key, *bit)].as_deref()?;
                 }
             }
         }
     }
 
-    fn representative(&self) -> [u8; 32] {
+    fn get_mut(&mut self, key: &[u8]) -> Option<&mut V> {
         match self {
-            Node::Leaf(k, _) => *k,
-            Node::Branch { children, .. } => children
+            Node::Leaf(k, v) => (k.as_slice() == key).then_some(v),
+            Node::Branch { bit, children, end } => {
+                if Node::<V>::bits(key) == *bit {
+                    return end.as_mut().and_then(|e| (e.0.as_slice() == key).then_some(&mut e.1));
+                }
+                if Node::<V>::bits(key) < *bit {
+                    return None;
+                }
+                children[key_bit(key, *bit)].as_deref_mut()?.get_mut(key)
+            }
+        }
+    }
+
+    fn representative(&self) -> &[u8] {
+        match self {
+            Node::Leaf(k, _) => k,
+            Node::Branch { children, end, .. } => children
                 .iter()
                 .find_map(|c| c.as_deref().map(|n| n.representative()))
-                .unwrap_or([0; 32]),
+                .or_else(|| end.as_deref().map(|(k, _)| k.as_slice()))
+                .unwrap_or(&[]),
         }
+    }
+}
+
+fn meet_end<V, W>(end: Option<&(Vec<u8>, V)>, other: Option<&Node<W>>, out: &mut Keyed<()>) {
+    let Some((k, _)) = end else { return };
+    if other.is_some_and(|n| n.get(k).is_some()) {
+        out.insert(k.as_slice(), ());
     }
 }
 
@@ -108,81 +150,160 @@ fn meet_nodes<V, W>(a: Option<&Node<V>>, b: Option<&Node<W>>, out: &mut Keyed<()
         (None, _) | (_, None) => {}
         (Some(Node::Leaf(k, _)), Some(Node::Leaf(k2, _))) => {
             if k == k2 {
-                out.insert(*k, ());
+                out.insert(k.as_slice(), ());
             }
         }
-        (Some(leaf @ Node::Leaf(k, _)), Some(Node::Branch { bit, children })) => {
-            meet_nodes(Some(leaf), children[key_bit(k, *bit)].as_deref(), out);
+        (Some(leaf @ Node::Leaf(k, _)), Some(Node::Branch { bit, children, end })) => {
+            if Node::<V>::bits(k) == *bit {
+                meet_end(end.as_deref(), Some(leaf), out);
+            } else if Node::<V>::bits(k) > *bit {
+                meet_nodes(Some(leaf), children[key_bit(k, *bit)].as_deref(), out);
+            }
         }
-        (Some(Node::Branch { bit, children }), Some(leaf @ Node::Leaf(k, _))) => {
-            meet_nodes(children[key_bit(k, *bit)].as_deref(), Some(leaf), out);
+        (Some(Node::Branch { bit, children, end }), Some(leaf @ Node::Leaf(k, _))) => {
+            if Node::<W>::bits(k) == *bit {
+                meet_end(end.as_deref(), Some(leaf), out);
+            } else if Node::<W>::bits(k) > *bit {
+                meet_nodes(children[key_bit(k, *bit)].as_deref(), Some(leaf), out);
+            }
         }
         (
-            Some(na @ Node::Branch { bit: ba, children: ca }),
-            Some(nb @ Node::Branch { bit: bb, children: cb }),
+            Some(na @ Node::Branch { bit: ba, children: ca, end: ea }),
+            Some(nb @ Node::Branch { bit: bb, children: cb, end: eb }),
         ) => {
             let ra = na.representative();
             let rb = nb.representative();
-            if let Some(d) = first_difference(&ra, &rb) {
+            if let Some(d) = first_difference(ra, rb) {
                 if d < (*ba).min(*bb) {
                     return;
                 }
             }
+            meet_end(ea.as_deref(), Some(nb), out);
+            meet_end(eb.as_deref(), Some(na), out);
             if ba == bb {
                 meet_nodes(ca[0].as_deref(), cb[0].as_deref(), out);
                 meet_nodes(ca[1].as_deref(), cb[1].as_deref(), out);
             } else if ba < bb {
-                meet_nodes(ca[key_bit(&rb, *ba)].as_deref(), Some(nb), out);
+                meet_nodes(ca[key_bit(rb, *ba)].as_deref(), Some(nb), out);
             } else {
-                meet_nodes(Some(na), cb[key_bit(&ra, *bb)].as_deref(), out);
+                meet_nodes(Some(na), cb[key_bit(ra, *bb)].as_deref(), out);
             }
         }
+    }
+}
+
+fn branch<V>(
+    bit: usize,
+    children: [Option<Box<Node<V>>>; 2],
+    end: Option<Box<(Vec<u8>, V)>>,
+) -> Box<Node<V>> {
+    Box::new(Node::Branch { bit, children, end })
+}
+
+fn collapse<V>(slot: &mut Option<Box<Node<V>>>) {
+    let Some(Node::Branch { children, end, .. }) = slot.as_deref_mut() else {
+        return;
+    };
+    let n0 = children[0].is_some();
+    let n1 = children[1].is_some();
+    let has_end = end.is_some();
+    match (n0, n1, has_end) {
+        (false, false, true) => {
+            let (k, v) = *end.take().unwrap();
+            *slot = Some(Box::new(Node::Leaf(k, v)));
+        }
+        (true, false, false) => *slot = children[0].take(),
+        (false, true, false) => *slot = children[1].take(),
+        _ => {}
     }
 }
 
 /// Insert into the subtree at `slot`, splitting at bit `d` (the first bit
 /// at which `key` differs from the leaf its path reaches).
-fn insert_at<V>(slot: &mut Option<Box<Node<V>>>, key: [u8; 32], value: V, d: usize) {
+fn insert_at<V>(slot: &mut Option<Box<Node<V>>>, key: Vec<u8>, value: V, d: usize) {
+    let key_ends = Node::<V>::bits(&key) == d;
     let descend = match slot.as_deref() {
         Some(Node::Branch { bit, .. }) if *bit < d => Some(key_bit(&key, *bit)),
+        Some(Node::Branch { bit, .. }) if *bit == d && !key_ends => Some(key_bit(&key, *bit)),
         _ => None,
     };
-    match descend {
-        Some(b) => {
-            if let Some(Node::Branch { children, .. }) = slot.as_deref_mut() {
-                insert_at(&mut children[b], key, value, d);
-            }
+    if let Some(b) = descend {
+        if let Some(Node::Branch { children, .. }) = slot.as_deref_mut() {
+            insert_at(&mut children[b], key, value, d);
         }
-        None => {
-            // Split here: the old subtree and the new leaf under a branch
-            // at bit d, ordered by the key's bit.
-            let old = slot.take();
-            let leaf = Some(Box::new(Node::Leaf(key, value)));
-            let children = match key_bit(&key, d) {
-                0 => [leaf, old],
-                _ => [old, leaf],
-            };
-            *slot = Some(Box::new(Node::Branch { bit: d, children }));
+        return;
+    }
+    if let Some(Node::Branch { bit, end, .. }) = slot.as_deref_mut() {
+        if *bit == d && key_ends {
+            *end = Some(Box::new((key, value)));
+            return;
         }
     }
+    let old = slot.take();
+    if key_ends {
+        let side = old.as_ref().map(|n| key_bit(n.representative(), d)).unwrap_or(0);
+        let mut children: [Option<Box<Node<V>>>; 2] = [None, None];
+        children[side] = old;
+        *slot = Some(branch(d, children, Some(Box::new((key, value)))));
+        return;
+    }
+    let old_ends = match old.as_deref() {
+        Some(Node::Leaf(k, _)) if Node::<V>::bits(k) == d => true,
+        Some(Node::Branch { bit, end, .. }) if *bit == d && end.is_some() => {
+            // old already splits at d; should have descended. Fall through.
+            false
+        }
+        _ => false,
+    };
+    if old_ends {
+        let Some(Node::Leaf(ok, ov)) = old.map(|b| *b) else {
+            return;
+        };
+        let side = key_bit(&key, d);
+        let mut children: [Option<Box<Node<V>>>; 2] = [None, None];
+        children[side] = Some(Box::new(Node::Leaf(key, value)));
+        *slot = Some(branch(d, children, Some(Box::new((ok, ov)))));
+        return;
+    }
+    let bit_d = key_bit(&key, d);
+    let leaf = Some(Box::new(Node::Leaf(key, value)));
+    let children = match bit_d {
+        0 => [leaf, old],
+        _ => [old, leaf],
+    };
+    *slot = Some(branch(d, children, None));
 }
 
 /// Remove `key` from the subtree at `slot`; a branch left with one child
-/// collapses into it.
-fn remove_at<V>(slot: &mut Option<Box<Node<V>>>, key: &[u8; 32]) -> Option<V> {
-    let is_leaf = matches!(slot.as_deref(), Some(Node::Leaf(k, _)) if k == key);
+/// and no `end` collapses into it.
+fn remove_at<V>(slot: &mut Option<Box<Node<V>>>, key: &[u8]) -> Option<V> {
+    let is_leaf = matches!(slot.as_deref(), Some(Node::Leaf(k, _)) if k.as_slice() == key);
     if is_leaf {
         return match slot.take().map(|b| *b) {
             Some(Node::Leaf(_, v)) => Some(v),
             _ => None,
         };
     }
-    let Some(Node::Branch { bit, children }) = slot.as_deref_mut() else { return None };
+    let Some(Node::Branch { bit, children, end }) = slot.as_deref_mut() else {
+        return None;
+    };
+    if Node::<V>::bits(key) == *bit {
+        let taken = end.take().and_then(|e| {
+            let (k, v) = *e;
+            (k.as_slice() == key).then_some(v)
+        });
+        if taken.is_some() {
+            collapse(slot);
+        }
+        return taken;
+    }
+    if Node::<V>::bits(key) < *bit {
+        return None;
+    }
     let b = key_bit(key, *bit);
     let removed = remove_at(&mut children[b], key);
-    if children[b].is_none() {
-        let other = children[1 - b].take();
-        *slot = other;
+    if removed.is_some() {
+        collapse(slot);
     }
     removed
 }
@@ -237,15 +358,16 @@ impl<V> Keyed<V> {
 
     /// Bind `key` to `value`; a held key is rebound. Returns the value
     /// displaced, if any.
-    pub fn insert(&mut self, key: [u8; 32], value: V) -> Option<V> {
+    pub fn insert(&mut self, key: impl AsRef<[u8]>, value: V) -> Option<V> {
         #[cfg(test)]
         work::count_insert();
+        let key = key.as_ref().to_vec();
         let Some(root) = self.root.as_deref() else {
             self.root = Some(Box::new(Node::Leaf(key, value)));
             self.n = 1;
             return None;
         };
-        let held = root.held_key(&key);
+        let held = root.held_key(&key).to_vec();
         match first_difference(&key, &held) {
             None => self.root.as_deref_mut()?.get_mut(&key).map(|v| std::mem::replace(v, value)),
             Some(d) => {
@@ -256,22 +378,22 @@ impl<V> Keyed<V> {
         }
     }
 
-    pub fn get(&self, key: &[u8; 32]) -> Option<&V> {
+    pub fn get(&self, key: &[u8]) -> Option<&V> {
         #[cfg(test)]
         work::count_get();
         self.root.as_deref()?.get(key)
     }
 
-    pub fn get_mut(&mut self, key: &[u8; 32]) -> Option<&mut V> {
+    pub fn get_mut(&mut self, key: &[u8]) -> Option<&mut V> {
         self.root.as_deref_mut()?.get_mut(key)
     }
 
-    pub fn contains(&self, key: &[u8; 32]) -> bool {
+    pub fn contains(&self, key: &[u8]) -> bool {
         self.get(key).is_some()
     }
 
     /// Unbind `key`; the value it held, if any.
-    pub fn remove(&mut self, key: &[u8; 32]) -> Option<V> {
+    pub fn remove(&mut self, key: &[u8]) -> Option<V> {
         let v = remove_at(&mut self.root, key);
         if v.is_some() {
             self.n = self.n.saturating_sub(1);
@@ -299,33 +421,43 @@ impl<V> Keyed<V> {
     /// Subtree under `prefix`. The empty prefix [`ROOT`] is this carrier's
     /// own fiber — valid when the Keyed is already scoped (one bubble's
     /// charts, one vertex's star, one chart's incidence).
-    pub fn fiber(&self, prefix: &[u8; 32]) -> Fiber<'_, V> {
+    pub fn fiber(&self, prefix: &[u8]) -> Fiber<'_, V> {
         let mut stack = Vec::new();
         if let Some(root) = self.root.as_deref() {
             stack.push(root);
         }
-        Fiber { stack, prefix: *prefix }
+        Fiber { stack, prefix: prefix.to_vec() }
     }
 
     /// Parent shell of `key`: the branch that split this leaf. None when
     /// the key is unbound or is the sole leaf.
-    pub fn peel(&self, key: &[u8; 32]) -> Option<Shell<'_, V>> {
+    pub fn peel(&self, key: &[u8]) -> Option<Shell<'_, V>> {
         let mut node = self.root.as_deref()?;
         let mut parent: Option<&Node<V>> = None;
         let mut parent_bit = 0usize;
         loop {
             match node {
                 Node::Leaf(k, _) => {
-                    if k != key {
+                    if k.as_slice() != key {
                         return None;
                     }
                     let p = parent?;
                     return Some(Shell {
-                        fiber: Fiber { stack: vec![p], prefix: ROOT },
+                        fiber: Fiber { stack: vec![p], prefix: ROOT.to_vec() },
                         prefix: clear_after_bit(key, parent_bit),
                     });
                 }
-                Node::Branch { bit, children } => {
+                Node::Branch { bit, children, end } => {
+                    if Node::<V>::bits(key) == *bit {
+                        let Some((k, _)) = end.as_deref() else { return None };
+                        if k.as_slice() != key {
+                            return None;
+                        }
+                        return Some(Shell {
+                            fiber: Fiber { stack: vec![node], prefix: ROOT.to_vec() },
+                            prefix: clear_after_bit(key, *bit),
+                        });
+                    }
                     parent = Some(node);
                     parent_bit = *bit;
                     node = children[key_bit(key, *bit)].as_deref()?;
@@ -336,20 +468,21 @@ impl<V> Keyed<V> {
 
     /// At most `budget` entries in key order after `from`. [`ROOT`] starts
     /// at the first key. The last yielded key is the resume cursor.
-    pub fn cursor<'a>(&'a self, from: [u8; 32], budget: &'a mut crate::physics::Budget) -> Cursor<'a, V> {
+    pub fn cursor<'a>(&'a self, from: &[u8], budget: &'a mut crate::physics::Budget) -> Cursor<'a, V> {
         Cursor {
-            fiber: self.fiber(&ROOT),
+            fiber: self.fiber(ROOT),
             budget,
-            from,
-            last: if from == ROOT { None } else { Some(from) },
+            from: from.to_vec(),
+            last: if from.is_empty() { None } else { Some(from.to_vec()) },
         }
     }
 }
 
 impl<V> Keyed<Keyed<V>> {
     /// Insert at `(a, b)` without rebuilding the inner trie when `a` is held.
-    pub fn nested_insert(&mut self, a: [u8; 32], b: [u8; 32], value: V) {
-        if let Some(inner) = self.get_mut(&a) {
+    pub fn nested_insert(&mut self, a: impl AsRef<[u8]>, b: impl AsRef<[u8]>, value: V) {
+        let a = a.as_ref();
+        if let Some(inner) = self.get_mut(a) {
             inner.insert(b, value);
             return;
         }
@@ -360,32 +493,24 @@ impl<V> Keyed<Keyed<V>> {
 }
 
 /// The empty prefix: the root fiber of a keyed that is already a fiber.
-pub const ROOT: [u8; 32] = [0u8; 32];
+pub const ROOT: &[u8] = &[];
 
-fn prefix_len(prefix: &[u8; 32]) -> usize {
-    prefix.iter().rposition(|&b| b != 0).map(|i| i + 1).unwrap_or(0)
+fn key_in_fiber(key: &[u8], prefix: &[u8]) -> bool {
+    prefix.is_empty() || key.starts_with(prefix)
 }
 
-fn key_in_fiber(key: &[u8; 32], prefix: &[u8; 32]) -> bool {
-    let n = prefix_len(prefix);
-    n == 0 || key[..n] == prefix[..n]
-}
-
-fn clear_after_bit(key: &[u8; 32], bit: usize) -> [u8; 32] {
-    let mut p = *key;
+fn clear_after_bit(key: &[u8], bit: usize) -> Vec<u8> {
     let start = bit.saturating_add(1);
     let byte = start / 8;
     let off = start % 8;
-    if byte >= 32 {
-        return p;
+    if byte >= key.len() {
+        return key.to_vec();
     }
+    let mut p = key[..=byte].to_vec();
     if off == 0 {
-        p[byte..].fill(0);
-    } else {
-        p[byte] &= 0xffu8 << (8 - off);
-        if byte + 1 < 32 {
-            p[byte + 1..].fill(0);
-        }
+        p.truncate(byte);
+    } else if let Some(last) = p.last_mut() {
+        *last &= 0xffu8 << (8 - off);
     }
     p
 }
@@ -394,33 +519,37 @@ fn clear_after_bit(key: &[u8; 32], bit: usize) -> [u8; 32] {
 /// is not a link, a peel, or a budgeted cursor.
 pub struct Fiber<'a, V> {
     stack: Vec<&'a Node<V>>,
-    prefix: [u8; 32],
+    prefix: Vec<u8>,
 }
 
 impl<'a, V> Fiber<'a, V> {
     fn empty() -> Self {
-        Fiber { stack: Vec::new(), prefix: ROOT }
+        Fiber { stack: Vec::new(), prefix: ROOT.to_vec() }
     }
 }
 
 impl<'a, V> Iterator for Fiber<'a, V> {
-    type Item = (&'a [u8; 32], &'a V);
+    type Item = (Vec<u8>, &'a V);
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(node) = self.stack.pop() {
             match node {
                 Node::Leaf(k, v) => {
                     if key_in_fiber(k, &self.prefix) {
-                        return Some((k, v));
+                        return Some((k.clone(), v));
                     }
                 }
-                Node::Branch { children, .. } => {
-                    // index: the two children of a PATRICIA branch (fixed arity)
+                Node::Branch { children, end, .. } => {
                     if let Some(c) = children[1].as_deref() {
                         self.stack.push(c);
                     }
                     if let Some(c) = children[0].as_deref() {
                         self.stack.push(c);
+                    }
+                    if let Some((k, v)) = end.as_deref() {
+                        if key_in_fiber(k, &self.prefix) {
+                            return Some((k.clone(), v));
+                        }
                     }
                 }
             }
@@ -435,7 +564,7 @@ pub struct Link<'a, V> {
 }
 
 impl<'a, V> Iterator for Link<'a, V> {
-    type Item = (&'a [u8; 32], &'a V);
+    type Item = (Vec<u8>, &'a V);
     fn next(&mut self) -> Option<Self::Item> {
         self.fiber.next()
     }
@@ -443,10 +572,10 @@ impl<'a, V> Iterator for Link<'a, V> {
 
 impl<T> Keyed<Keyed<T>> {
     /// The inner trie at `key` — cells on a vertex, bubbles on a chart.
-    pub fn link(&self, key: &[u8; 32]) -> Link<'_, T> {
+    pub fn link(&self, key: &[u8]) -> Link<'_, T> {
         Link {
             fiber: match self.get(key) {
-                Some(inner) => inner.fiber(&ROOT),
+                Some(inner) => inner.fiber(ROOT),
                 None => Fiber::empty(),
             },
         }
@@ -457,19 +586,19 @@ impl<T> Keyed<Keyed<T>> {
 pub struct Cursor<'a, V> {
     fiber: Fiber<'a, V>,
     budget: &'a mut crate::physics::Budget,
-    from: [u8; 32],
-    last: Option<[u8; 32]>,
+    from: Vec<u8>,
+    last: Option<Vec<u8>>,
 }
 
 impl<'a, V> Cursor<'a, V> {
     /// Last key yielded, so the next stroke resumes after it.
-    pub fn last_key(&self) -> Option<[u8; 32]> {
-        self.last
+    pub fn last_key(&self) -> Option<&[u8]> {
+        self.last.as_deref()
     }
 }
 
 impl<'a, V> Iterator for Cursor<'a, V> {
-    type Item = (&'a [u8; 32], &'a V);
+    type Item = (Vec<u8>, &'a V);
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -477,13 +606,13 @@ impl<'a, V> Iterator for Cursor<'a, V> {
                 return None;
             }
             let (k, v) = self.fiber.next()?;
-            if self.from != ROOT && k <= &self.from {
+            if !self.from.is_empty() && k.as_slice() <= self.from.as_slice() {
                 continue;
             }
             if !self.budget.spend() {
                 return None;
             }
-            self.last = Some(*k);
+            self.last = Some(k.clone());
             return Some((k, v));
         }
     }
@@ -492,26 +621,26 @@ impl<'a, V> Iterator for Cursor<'a, V> {
 /// One shell: the parent prefix of a peel, and the entries at that branch.
 pub struct Shell<'a, V> {
     fiber: Fiber<'a, V>,
-    prefix: [u8; 32],
+    prefix: Vec<u8>,
 }
 
 impl<'a, V> Shell<'a, V> {
-    pub fn key(&self) -> [u8; 32] {
-        self.prefix
+    pub fn key(&self) -> &[u8] {
+        &self.prefix
     }
 }
 
 impl<'a, V> Iterator for Shell<'a, V> {
-    type Item = (&'a [u8; 32], &'a V);
+    type Item = (Vec<u8>, &'a V);
     fn next(&mut self) -> Option<Self::Item> {
         self.fiber.next()
     }
 }
 
 /// Sealed persist walk: only [`crate::snapshot`] names this.
-pub(crate) fn keyed_persist_walk<V>(k: &Keyed<V>, f: &mut impl FnMut(&[u8; 32], &V)) {
-    for (key, v) in k.fiber(&ROOT) {
-        f(key, v);
+pub(crate) fn keyed_persist_walk<V>(k: &Keyed<V>, f: &mut impl FnMut(&[u8], &V)) {
+    for (key, v) in k.fiber(ROOT) {
+        f(&key, v);
     }
 }
 
@@ -520,42 +649,74 @@ mod keyed_tests {
     use super::{Keyed, ROOT};
 
     /// Keys bind, rebind, read, and unbind exactly; a branch left with one
-    /// child collapses; the walk lists everything.
+    /// child collapses; the walk lists everything. Prefix reads a stratum.
     #[test]
     fn the_keyed_relation_is_exact() {
         let mut k: Keyed<u32> = Keyed::new();
-        let a = *blake3::hash(b"a").as_bytes();
-        let b = *blake3::hash(b"b").as_bytes();
-        let c = *blake3::hash(b"c").as_bytes();
+        let a = b"a".as_slice();
+        let b = b"b".as_slice();
+        let c = b"c".as_slice();
         assert_eq!(k.insert(a, 1), None);
         assert_eq!(k.insert(b, 2), None);
         assert_eq!(k.insert(c, 3), None);
-        assert_eq!(k.get(&a), Some(&1));
-        assert_eq!(k.get(&b), Some(&2));
-        assert_eq!(k.get(&c), Some(&3));
+        assert_eq!(k.get(a), Some(&1));
+        assert_eq!(k.get(b), Some(&2));
+        assert_eq!(k.get(c), Some(&3));
         assert_eq!(k.insert(b, 20), Some(2));
-        assert_eq!(k.get(&b), Some(&20));
+        assert_eq!(k.get(b), Some(&20));
         assert_eq!(k.len(), 3);
-        assert_eq!(k.fiber(&ROOT).count(), 3);
-        assert_eq!(k.remove(&b), Some(20));
-        assert_eq!(k.get(&b), None);
-        assert_eq!(k.get(&a), Some(&1));
-        assert_eq!(k.get(&c), Some(&3));
-        assert_eq!(k.remove(&a), Some(1));
-        assert_eq!(k.remove(&a), None);
+        assert_eq!(k.fiber(ROOT).count(), 3);
+        assert_eq!(k.remove(b), Some(20));
+        assert_eq!(k.get(b), None);
+        assert_eq!(k.get(a), Some(&1));
+        assert_eq!(k.get(c), Some(&3));
+        assert_eq!(k.remove(a), Some(1));
+        assert_eq!(k.remove(a), None);
         assert_eq!(k.len(), 1);
-        assert_eq!(k.fiber(&ROOT).count(), 1);
-        assert_eq!(k.get(&c), Some(&3));
+        assert_eq!(k.fiber(ROOT).count(), 1);
+        assert_eq!(k.get(c), Some(&3));
+    }
+
+    #[test]
+    fn a_prefix_of_a_key_is_its_stratum() {
+        let mut k: Keyed<u8> = Keyed::new();
+        k.insert([1u8, 10, 0], 1);
+        k.insert([1u8, 10, 1], 2);
+        k.insert([1u8, 11, 0], 3);
+        k.insert([2u8, 0, 0], 4);
+        let coarse: Vec<_> = k.fiber(&[1]).map(|(key, v)| (key.to_vec(), *v)).collect();
+        assert_eq!(coarse.len(), 3, "prefix [1] is the chart's coarse stratum");
+        assert!(coarse.iter().all(|(key, _)| key.starts_with(&[1])));
+        let mid: Vec<_> = k.fiber(&[1, 10]).map(|(key, _)| key.to_vec()).collect();
+        assert_eq!(mid.len(), 2);
+        assert!(mid.iter().all(|key| key.starts_with(&[1, 10])));
+        assert_eq!(k.fiber(&[1, 10, 0]).count(), 1);
+        assert_eq!(k.get(&[2, 0, 0]), Some(&4));
+    }
+
+    #[test]
+    fn a_key_and_its_proper_prefix_coexist() {
+        let mut k: Keyed<u8> = Keyed::new();
+        k.insert([1u8, 0], 1);
+        k.insert([1u8], 2);
+        assert_eq!(k.get(&[1]), Some(&2), "the prefix is bound");
+        assert_eq!(k.get(&[1, 0]), Some(&1), "the extension whose next bit is 0 is bound");
+        assert_eq!(k.len(), 2);
+        let mut k2: Keyed<u8> = Keyed::new();
+        k2.insert([1u8], 2);
+        k2.insert([1u8, 0], 1);
+        assert_eq!(k2.get(&[1]), Some(&2));
+        assert_eq!(k2.get(&[1, 0]), Some(&1));
+        assert_eq!(k2.remove(&[1]), Some(2));
+        assert_eq!(k2.get(&[1]), None);
+        assert_eq!(k2.get(&[1, 0]), Some(&1));
+        assert_eq!(k2.len(), 1);
     }
 
     #[test]
     fn meet_is_intersection_and_costs_shared_prefixes() {
         use super::work;
-        let key = |n: u8| {
-            let mut k = [0u8; 32];
-            k[0] = n;
-            k
-        };
+        let key = |n: u8| vec![n];
         let mut a: Keyed<u8> = Keyed::new();
         let mut b: Keyed<u8> = Keyed::new();
         a.insert(key(1), 1);
@@ -574,10 +735,7 @@ mod keyed_tests {
             small.insert(key(1), 1);
             small.insert(key(2), 2);
             for i in 0..n {
-                let mut k = [0u8; 32];
-                k[0] = 10;
-                k[1] = i as u8;
-                big.insert(k, 1);
+                big.insert([10u8, i as u8], 1);
             }
             big.insert(key(1), 1);
             let _ = big.meet(&small);
@@ -589,16 +747,17 @@ mod keyed_tests {
     }
 }
 
-/// An invariant axis as a Keyed key: the coordinate little-endian in the
-/// first eight bytes, so a prefix of axes is a prefix of the plane.
-pub fn axis_key_le(a: u64) -> [u8; 32] {
-    let mut k = [0u8; 32];
-    k[..8].copy_from_slice(&a.to_le_bytes());
-    k
+/// An invariant axis as a Keyed key: the coordinate little-endian, so a
+/// prefix of axes is a prefix of the plane.
+pub fn axis_key_le(a: u64) -> [u8; 8] {
+    a.to_le_bytes()
 }
 
-fn axis_of_le(key: &[u8; 32]) -> u64 {
-    u64::from_le_bytes(key[..8].try_into().unwrap())
+fn axis_of_le(key: &[u8]) -> u64 {
+    let mut b = [0u8; 8];
+    let n = key.len().min(8);
+    b[..n].copy_from_slice(&key[..n]);
+    u64::from_le_bytes(b)
 }
 
 /// Cover trie: per lane, nested Keyed by invariant axes. The fiber at a
@@ -638,7 +797,7 @@ impl CoverNode {
         self.here.is_empty() && self.next.is_empty()
     }
 
-    fn admit(&mut self, axes: &[u64], hypha: [u8; 32]) {
+    fn admit(&mut self, axes: &[u64], hypha: &[u8]) {
         match axes.split_first() {
             None => {
                 self.here.insert(hypha, ());
@@ -658,24 +817,24 @@ impl CoverNode {
     }
 
     fn collect_into(&self, out: &mut Keyed<()>) {
-        for (id, _) in self.here.fiber(&ROOT) {
-            out.insert(*id, ());
+        for (id, _) in self.here.fiber(ROOT) {
+            out.insert(id, ());
         }
-        for (_, child) in self.next.fiber(&ROOT) {
+        for (_, child) in self.next.fiber(ROOT) {
             child.collect_into(out);
         }
     }
 
-    fn collect(&self) -> Vec<[u8; 32]> {
+    fn collect(&self) -> Vec<Vec<u8>> {
         let mut out = Keyed::new();
         self.collect_into(&mut out);
-        out.fiber(&ROOT).map(|(k, _)| *k).collect()
+        out.fiber(ROOT).map(|(k, _)| k).collect()
     }
 
     /// Longest common prefix: descend while axes match. A miss after some
     /// match returns the fiber at that plane. A miss at the first axis is
     /// novel — empty. The empty chart (no axes) is the root fiber.
-    fn lcp(&self, axes: &[u64], matched: bool) -> Vec<[u8; 32]> {
+    fn lcp(&self, axes: &[u64], matched: bool) -> Vec<Vec<u8>> {
         match axes.split_first() {
             None => self.collect(),
             Some((&a, rest)) => match self.next.get(&axis_key_le(a)) {
@@ -687,7 +846,7 @@ impl CoverNode {
     }
 
     /// Retract one hypha along one chart path (the hypha's own axes).
-    fn retract_path(&mut self, axes: &[u64], hypha: &[u8; 32]) {
+    fn retract_path(&mut self, axes: &[u64], hypha: &[u8]) {
         match axes.split_first() {
             None => {
                 self.here.remove(hypha);
@@ -714,8 +873,8 @@ impl CoverNode {
             hasher.update(&[0xff]);
         }
         // Trie order is key order: hash without materialising a Vec of charts.
-        for (k, ch) in self.next.fiber(&ROOT) {
-            path.push(axis_of_le(k));
+        for (k, ch) in self.next.fiber(ROOT) {
+            path.push(axis_of_le(k.as_slice()));
             ch.hash_charts(hasher, path);
             path.pop();
         }
@@ -725,8 +884,8 @@ impl CoverNode {
         if !self.here.is_empty() {
             out.push(crate::transducer::stalk::Invariant(path.clone()));
         }
-        for (k, ch) in self.next.fiber(&ROOT) {
-            path.push(axis_of_le(k));
+        for (k, ch) in self.next.fiber(ROOT) {
+            path.push(axis_of_le(k.as_slice()));
             ch.walk(path, out);
             path.pop();
         }
@@ -738,10 +897,11 @@ impl Cover {
         Cover::default()
     }
 
-    pub fn admit(&mut self, lane: u8, inv: &crate::transducer::stalk::Invariant, hypha: [u8; 32]) {
+    pub fn admit(&mut self, lane: u8, inv: &crate::transducer::stalk::Invariant, hypha: impl AsRef<[u8]>) {
+        let hypha = hypha.as_ref();
         let lane = lane & 3;
         self.lanes[lane as usize].admit(&inv.0, hypha);
-        match self.held.get_mut(&hypha) {
+        match self.held.get_mut(hypha) {
             Some(charts) => {
                 if !charts.iter().any(|(l, i)| *l == lane && i == inv) {
                     charts.push((lane, inv.clone()));
@@ -756,7 +916,7 @@ impl Cover {
 
     /// Drop every chart of this hypha. Retract along the hypha's own chart
     /// paths rather than visiting the whole trie.
-    pub fn retract_hypha(&mut self, hypha: &[u8; 32]) {
+    pub fn retract_hypha(&mut self, hypha: &[u8]) {
         let Some(charts) = self.held.remove(hypha) else {
             return;
         };
@@ -781,7 +941,7 @@ impl Cover {
     /// Fiber at the deepest matching prefix on `lane`. Empty at every
     /// prefix means the chart is novel to the mesh. Ordered by the trie's
     /// walk: these identities are the vertices simplex keys are built from.
-    pub fn fiber(&self, lane: u8, inv: &crate::transducer::stalk::Invariant) -> Vec<[u8; 32]> {
+    pub fn fiber(&self, lane: u8, inv: &crate::transducer::stalk::Invariant) -> Vec<Vec<u8>> {
         self.lanes[(lane as usize) & 3].lcp(&inv.0, false)
     }
 
@@ -796,7 +956,7 @@ impl Cover {
         &mut self,
         lane: u8,
         inv: &crate::transducer::stalk::Invariant,
-        hypha: &[u8; 32],
+        hypha: &[u8],
     ) {
         let lane = lane & 3;
         self.lanes[lane as usize].retract_path(&inv.0, hypha);
@@ -810,12 +970,13 @@ impl Cover {
         lane: u8,
         old: &crate::transducer::stalk::Invariant,
         new: &crate::transducer::stalk::Invariant,
-        hypha: [u8; 32],
+        hypha: impl AsRef<[u8]>,
     ) {
+        let hypha = hypha.as_ref();
         let lane = lane & 3;
-        self.lanes[lane as usize].retract_path(&old.0, &hypha);
+        self.lanes[lane as usize].retract_path(&old.0, hypha);
         self.lanes[lane as usize].admit(&new.0, hypha);
-        if let Some(charts) = self.held.get_mut(&hypha) {
+        if let Some(charts) = self.held.get_mut(hypha) {
             for slot in charts.iter_mut() {
                 if slot.0 == lane && slot.1 == *old {
                     slot.1 = new.clone();
@@ -938,11 +1099,12 @@ pub fn home(
             }
         }
     };
-    for (id, _) in fiber.fiber(&ROOT) {
-        if let Some(room) = room_of(id) {
+    for (id, _) in fiber.fiber(ROOT) {
+        let Some(vk) = <[u8; 32]>::try_from(id.as_slice()).ok() else { continue };
+        if let Some(room) = room_of(&vk) {
             if fits(&room) {
-                if let Some(a) = addr_of(id, addrs, self_id) {
-                    consider(&mut best, *id, a, room);
+                if let Some(a) = addr_of(&vk, addrs, self_id) {
+                    consider(&mut best, vk, a, room);
                 }
             }
         }
@@ -956,10 +1118,11 @@ pub fn home(
             consider(&mut best, *sid, saddr.to_string(), *sroom);
         }
     }
-    for (id, room) in rooms.fiber(&ROOT) {
+    for (id, room) in rooms.fiber(ROOT) {
         if fits(room) {
-            if let Some(a) = addrs.get(id) {
-                consider(&mut best, *id, a.clone(), *room);
+            let Some(vk) = <[u8; 32]>::try_from(id.as_slice()).ok() else { continue };
+            if let Some(a) = addrs.get(&vk) {
+                consider(&mut best, vk, a.clone(), *room);
             }
         }
     }
@@ -987,13 +1150,13 @@ mod cover_tests {
         c.admit(0, &inv(&[1, 2, 3]), a);
         c.admit(0, &inv(&[1, 2, 9]), b);
         let plane = c.fiber(0, &inv(&[1, 2]));
-        assert!(plane.contains(&a) && plane.contains(&b), "prefix 1,2 is the plane both cover");
-        assert_eq!(c.fiber(0, &inv(&[1, 2, 3])), vec![a], "exact chart is one hypha");
+        assert!(plane.iter().any(|x| x.as_slice() == a.as_slice()) && plane.iter().any(|x| x.as_slice() == b.as_slice()), "prefix 1,2 is the plane both cover");
+        assert_eq!(c.fiber(0, &inv(&[1, 2, 3])), vec![a.to_vec()], "exact chart is one hypha");
         assert_eq!(c.multiplicity(0, &inv(&[1, 2])), 2, "multiplicity is the vertex count");
         assert!(c.fiber(0, &inv(&[7, 8])).is_empty(), "a first-axis miss is novel");
         let refined = inv(&[1, 2, 3, 7]);
         c.rehome(0, &inv(&[1, 2, 3]), &refined, a);
-        assert_eq!(c.fiber(0, &refined), vec![a], "the hypha re-homes under the refined prefix");
+        assert_eq!(c.fiber(0, &refined), vec![a.to_vec()], "the hypha re-homes under the refined prefix");
         assert_eq!(c.multiplicity(0, &inv(&[1, 2])), 2, "the plane still has both covering vertices");
     }
 

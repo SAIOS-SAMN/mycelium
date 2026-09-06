@@ -21,21 +21,18 @@ use super::stalk::{invariant_of, Invariant, Stalks};
 pub struct StratumDigest {
     pub inv: Invariant,
     pub count: u32,
-    pub root: [u8; 32],
+    pub root: Vec<u8>,
 }
 
-/// The root over a stratum's members: sorted by address so two holders of
-/// the same words measure the same root. The root is over the BASE — the
-/// words held — never their fibre volume: a copy with fewer sections
-/// speaks the same words and is glued; sections travel by teaching.
-fn root_of(members: &[[u8; 32]]) -> [u8; 32] {
-    let mut rows: Vec<[u8; 32]> = members.to_vec();
-    rows.sort_unstable();
-    let mut h = blake3::Hasher::new();
+/// The root over a stratum's members: sorted addresses concatenated.
+fn root_of(members: &[Vec<u8>]) -> Vec<u8> {
+    let mut rows = members.to_vec();
+    rows.sort();
+    let mut buf = Vec::new();
     for a in &rows {
-        h.update(a);
+        crate::transducer::a21::put_bytes(&mut buf, a);
     }
-    *h.finalize().as_bytes()
+    buf
 }
 
 /// Measure the section digests of a language over its atlas. The atlas
@@ -53,9 +50,9 @@ pub fn digests(stalks: &Stalks) -> Vec<StratumDigest> {
 /// different root. Everything else is glued.
 pub fn discordant<'a>(remote: &'a [StratumDigest], local: &[StratumDigest]) -> Vec<&'a StratumDigest> {
     use crate::network::nerve::Keyed;
-    let mut here: Keyed<([u8; 32], u32)> = Keyed::new();
+    let mut here: Keyed<(Vec<u8>, u32)> = Keyed::new();
     for l in local {
-        here.insert(l.inv.key(), (l.root, l.count));
+        here.insert(l.inv.key(), (l.root.clone(), l.count));
     }
     remote
         .iter()
@@ -68,8 +65,8 @@ pub fn discordant<'a>(remote: &'a [StratumDigest], local: &[StratumDigest]) -> V
 
 /// The addresses this holder already has in the stratum over `inv`, sent
 /// with a fetch so only the lacking words travel.
-pub fn have(stalks: &Stalks, inv: &Invariant) -> Vec<[u8; 32]> {
-    stalks.fiber(inv).to_vec()
+pub fn have(stalks: &Stalks, inv: &Invariant) -> Vec<crate::transducer::a21::Address> {
+    stalks.fiber(inv).into_iter().map(crate::transducer::a21::Address::from).collect()
 }
 
 /// Serve a fetch: the words in the stratum over `inv` whose address the
@@ -78,9 +75,9 @@ pub fn have(stalks: &Stalks, inv: &Invariant) -> Vec<[u8; 32]> {
 /// the asker's have-list grows). `at` reads a held word by its address.
 pub fn serve<'a>(
     stalks: &Stalks,
-    at: impl Fn(&[u8; 32]) -> Option<&'a Element>,
+    at: impl Fn(&[u8]) -> Option<&'a Element>,
     inv: &Invariant,
-    have: &[[u8; 32]],
+    have: &[crate::transducer::a21::Address],
     budget: usize,
 ) -> Vec<Vec<u8>> {
     let mut out = Vec::new();
@@ -88,7 +85,7 @@ pub fn serve<'a>(
     use crate::network::nerve::Keyed;
     let mut held: Keyed<()> = Keyed::new();
     for h in have {
-        held.insert(*h, ());
+        held.insert(h, ());
     }
     for a in stalks.fiber(inv) {
         if held.contains(&a) {
@@ -150,7 +147,7 @@ mod tests {
         for (i, w) in hypha.iter().enumerate() {
             at_index.insert(w.address(), i);
         }
-        let at = |a: &[u8; 32]| at_index.get(a).copied().and_then(|i| hypha.get(i));
+        let at = |a: &[u8]| at_index.get(a).copied().and_then(|i| hypha.get(i));
         let page = serve(&hs, at, &d[0].inv, &mine, 1 << 20);
         assert_eq!(page.len(), 1, "only the lacking word travels");
         let mut pos = 0usize;

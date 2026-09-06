@@ -56,16 +56,17 @@ fn nonzero(v: &[u64; 4]) -> bool {
     v.iter().any(|&x| x > 0)
 }
 
-fn cell_key(verts: &[[u8; 32]]) -> [u8; 32] {
-    let mut h = blake3::Hasher::new();
-    h.update(&(verts.len() as u8).to_le_bytes());
+fn cell_key(verts: &[Vec<u8>]) -> crate::transducer::a21::Address {
+    let mut buf = vec![crate::transducer::a21::TAG_CELL];
+    buf.extend_from_slice(&(verts.len() as u32).to_le_bytes());
     for v in verts {
-        h.update(v);
+        crate::transducer::a21::put_bytes(&mut buf, v);
     }
-    *h.finalize().as_bytes()
+    crate::transducer::a21::Address::new(buf)
 }
 
-fn sorted_verts(mut verts: Vec<[u8; 32]>) -> Vec<[u8; 32]> {
+fn sorted_verts(verts: impl IntoIterator<Item = impl AsRef<[u8]>>) -> Vec<Vec<u8>> {
+    let mut verts: Vec<Vec<u8>> = verts.into_iter().map(|v| v.as_ref().to_vec()).collect();
     verts.sort_unstable();
     verts.dedup();
     verts
@@ -131,7 +132,7 @@ pub fn extend(section_a: &Section, section_b: &Section, cell: &Cell) -> Fill {
 /// One cell of the Čech complex. Keyed by the hash of its sorted vertices.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Cell {
-    pub vertices: Vec<[u8; 32]>,
+    pub vertices: Vec<Vec<u8>>,
     pub coefficient: Rotor,
     pub volume: [u64; 4],
     pub fill: Fill,
@@ -142,19 +143,19 @@ impl Cell {
         self.vertices.len().saturating_sub(1)
     }
 
-    pub fn key(&self) -> [u8; 32] {
+    pub fn key(&self) -> crate::transducer::a21::Address {
         cell_key(&self.vertices)
     }
 
-    pub fn contains(&self, v: &[u8; 32]) -> bool {
-        self.vertices.binary_search(v).is_ok()
+    pub fn contains(&self, v: &[u8]) -> bool {
+        self.vertices.iter().any(|x| x.as_slice() == v)
     }
 }
 
 /// Degree-0 section: the representative word after in-hypha gluing, and its gauge.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Section {
-    pub addr: [u8; 32],
+    pub addr: crate::transducer::a21::Address,
     pub gamma: Rotor,
 }
 
@@ -190,32 +191,34 @@ impl Complex {
         let degree = cell.degree();
         let key = cell.key();
         self.ensure(degree);
-        self.by_key.insert(key, degree as u8);
+        self.by_key.insert(&key, degree as u8);
         // index: vertices of this cell (the simplex, bounded by degree)
         for v in &cell.vertices {
             match self.star.get_mut(v) {
                 Some(keys) => {
-                    keys.insert(key, ());
+                    keys.insert(&key, ());
                 }
                 None => {
                     let mut keys = Keyed::new();
-                    keys.insert(key, ());
-                    self.star.insert(*v, keys);
+                    keys.insert(&key, ());
+                    self.star.insert(v.clone(), keys);
                 }
             }
         }
         self.index_congruent(&cell.fill);
-        self.degrees[degree].insert(key, cell);
+        self.degrees[degree].insert(&key, cell);
     }
 
     fn index_congruent(&mut self, fill: &Fill) {
         if let Fill::Congruent(g, ell) = fill {
-            self.congruent.insert(g.class_key(), (g.clone(), *ell));
+            if let Some(ck) = g.class_key() {
+                self.congruent.insert(ck, (g.clone(), *ell));
+            }
         }
     }
 
     /// The Congruent cell whose rotor has this class key, if the chart holds one.
-    pub fn congruent(&self, class: &[u8; 32]) -> Option<&(Rotor, u32)> {
+    pub fn congruent(&self, class: &[u8]) -> Option<&(Rotor, u32)> {
         self.congruent.get(class)
     }
 
@@ -223,8 +226,9 @@ impl Complex {
         g.normalised()
     }
 
-    pub fn set_section(&mut self, vertex: [u8; 32], section: Section, volume: [u64; 4]) {
-        self.sections.insert(vertex, section);
+    pub fn set_section(&mut self, vertex: impl AsRef<[u8]>, section: Section, volume: [u64; 4]) {
+        let vertex = vertex.as_ref().to_vec();
+        self.sections.insert(&vertex, section);
         if nonzero(&volume) {
             self.remember(Cell {
                 vertices: vec![vertex],
@@ -237,14 +241,16 @@ impl Complex {
 
     /// Degree-1 cell: the transition rotor, or a remainder if it does not
     /// realise. Remainder edges form no higher cells.
-    pub fn set_edge(&mut self, a: [u8; 32], b: [u8; 32], g: Rotor, volume: [u64; 4]) {
+    pub fn set_edge(&mut self, a: impl AsRef<[u8]>, b: impl AsRef<[u8]>, g: Rotor, volume: [u64; 4]) {
+        let a = a.as_ref();
+        let b = b.as_ref();
         let vertices = sorted_verts(vec![a, b]);
         if vertices.len() != 2 {
             return;
         }
         let key = cell_key(&vertices);
         self.remainder.remove(&key);
-        let stored = if vertices[0] == a { g } else { g.inverse().unwrap_or_else(Rotor::identity) };
+        let stored = if vertices[0].as_slice() == a { g } else { g.inverse().unwrap_or_else(Rotor::identity) };
         self.remember(Cell {
             vertices,
             coefficient: Self::store_coeff(stored),
@@ -254,8 +260,8 @@ impl Complex {
     }
 
     /// File a finite-order congruence on an edge: the torsion axis of a merge.
-    pub fn file_congruent(&mut self, a: [u8; 32], b: [u8; 32], g: Rotor, ell: u32) {
-        let vertices = sorted_verts(vec![a, b]);
+    pub fn file_congruent(&mut self, a: impl AsRef<[u8]>, b: impl AsRef<[u8]>, g: Rotor, ell: u32) {
+        let vertices = sorted_verts([a.as_ref(), b.as_ref()]);
         if vertices.len() != 2 {
             return;
         }
@@ -267,7 +273,7 @@ impl Complex {
         });
     }
 
-    pub fn set_remainder_edge(&mut self, a: [u8; 32], b: [u8; 32]) {
+    pub fn set_remainder_edge(&mut self, a: &[u8], b: &[u8]) {
         let vertices = sorted_verts(vec![a, b]);
         if vertices.len() != 2 {
             return;
@@ -279,19 +285,19 @@ impl Complex {
         self.remainder.insert(key, ());
     }
 
-    fn is_remainder(&self, verts: &[[u8; 32]]) -> bool {
+    fn is_remainder(&self, verts: &[Vec<u8>]) -> bool {
         let v = sorted_verts(verts.to_vec());
         self.remainder.contains(&cell_key(&v))
     }
 
-    pub fn get(&self, verts: &[[u8; 32]]) -> Option<&Cell> {
+    pub fn get(&self, verts: &[Vec<u8>]) -> Option<&Cell> {
         let d = verts.len().saturating_sub(1);
         self.degrees.get(d)?.get(&cell_key(verts))
     }
 
     /// Oriented edge rotor from a to b.
-    pub fn edge(&self, a: &[u8; 32], b: &[u8; 32]) -> Option<Rotor> {
-        let vertices = sorted_verts(vec![*a, *b]);
+    pub fn edge(&self, a: &[u8], b: &[u8]) -> Option<Rotor> {
+        let vertices = sorted_verts([a, b]);
         let cell = self.get(&vertices)?;
         if vertices[0] == *a {
             Some(cell.coefficient.clone())
@@ -301,13 +307,13 @@ impl Complex {
     }
 
     /// Cell at `key`, read in place. Never a clone of the rotor.
-    pub fn cell(&self, key: &[u8; 32]) -> Option<&Cell> {
+    pub fn cell(&self, key: &[u8]) -> Option<&Cell> {
         let d = *self.by_key.get(key)?;
         self.degrees.get(d as usize)?.get(key)
     }
 
     /// A key in `by_key` is a stored cell. The degree is the layer.
-    fn stored_mut(&mut self, key: &[u8; 32]) -> &mut Cell {
+    fn stored_mut(&mut self, key: &[u8]) -> &mut Cell {
         let d = *self.by_key.get(key).expect("by_key names a stored cell") as usize;
         assert!(d < self.degrees.len(), "by_key degree is a live layer");
         self.degrees[d].get_mut(key).expect("by_key names a stored cell")
@@ -315,7 +321,7 @@ impl Complex {
 
     /// Reopen a stored cell only when its coboundary coefficient moved.
     /// Absence of a rotor is remainder: the fill stands.
-    fn reopen_on_coeff_change(&mut self, key: &[u8; 32], verts: &[[u8; 32]]) {
+    fn reopen_on_coeff_change(&mut self, key: &[u8], verts: &[Vec<u8>]) {
         let Some(coefficient) = self.coboundary_coeff(verts) else {
             return;
         };
@@ -332,30 +338,30 @@ impl Complex {
 
     /// The link of `vertex`: every incident cell, all degrees. A peel of
     /// the star; work per glue never leaves this set.
-    pub fn star(&self, vertex: &[u8; 32]) -> Vec<[u8; 32]> {
+    pub fn star(&self, vertex: &[u8]) -> Vec<Vec<u8>> {
         self.link_of(vertex)
     }
 
     /// Keys of every cell incident on `vertex`. The climb reads cells by
     /// these keys and never clones a rotor.
-    pub fn link_of(&self, vertex: &[u8; 32]) -> Vec<[u8; 32]> {
+    pub fn link_of(&self, vertex: &[u8]) -> Vec<Vec<u8>> {
         let mut out = Vec::new();
         // index: keyed fiber of star(vertex)
         for (k, _) in self.star.link(vertex) {
-            if self.by_key.contains(k) {
-                out.push(*k);
+            if self.by_key.contains(&k) {
+                out.push(k);
             }
         }
         out
     }
 
-    fn degree_of(&self, key: &[u8; 32]) -> Option<usize> {
+    fn degree_of(&self, key: &[u8]) -> Option<usize> {
         self.by_key.get(key).map(|&d| d as usize)
     }
 
     /// Mark a cell Extended by a known gauge (a translation, a taught
     /// coboundary). Degree-1 never tree-solves — that would always succeed.
-    pub fn fill_by_gauge(&mut self, key: &[u8; 32], gamma: &Rotor) -> Fill {
+    pub fn fill_by_gauge(&mut self, key: &[u8], gamma: &Rotor) -> Fill {
         let Some(degree) = self.degree_of(key) else {
             return Fill::Open;
         };
@@ -383,20 +389,20 @@ impl Complex {
     }
 
     /// Keys of one degree that contain `vertex` — a peel of the star.
-    pub fn link(&self, vertex: &[u8; 32], degree: usize) -> Vec<[u8; 32]> {
+    pub fn link(&self, vertex: &[u8], degree: usize) -> Vec<Vec<u8>> {
         let mut out = Vec::new();
         let Some(layer) = self.degrees.get(degree) else {
             return out;
         };
         for (k, _) in self.star.link(vertex) {
-            if layer.contains(k) {
-                out.push(*k);
+            if layer.contains(&k) {
+                out.push(k);
             }
         }
         out
     }
 
-    fn holonomy(&self, i: &[u8; 32], j: &[u8; 32], k: &[u8; 32]) -> Option<Rotor> {
+    fn holonomy(&self, i: &[u8], j: &[u8], k: &[u8]) -> Option<Rotor> {
         let g_ij = self.edge(i, j)?;
         let g_jk = self.edge(j, k)?;
         let g_ki = self.edge(k, i)?;
@@ -406,7 +412,7 @@ impl Complex {
     /// Face coefficient from stored lower cells: edges (and, when already
     /// climbed, higher faces). A triangle is the holonomy of its three
     /// stored edges — never the triangle's own (possibly stale) cell.
-    fn stored_face_coeff(&self, verts: &[[u8; 32]]) -> Option<Rotor> {
+    fn stored_face_coeff(&self, verts: &[Vec<u8>]) -> Option<Rotor> {
         match verts.len() {
             0 | 1 => Some(Rotor::identity()),
             2 => self.edge(&verts[0], &verts[1]),
@@ -417,14 +423,14 @@ impl Complex {
 
     /// Coboundary of the (k−1)-faces of a k-cell. Face coefficients are
     /// read from stored lower cells that `faces_ready` already proved exist.
-    fn coboundary_coeff(&self, verts: &[[u8; 32]]) -> Option<Rotor> {
+    fn coboundary_coeff(&self, verts: &[Vec<u8>]) -> Option<Rotor> {
         let n = verts.len();
         if n < 4 {
             return self.stored_face_coeff(verts);
         }
         let mut acc = Rotor::identity();
         for i in 0..n {
-            let mut face: Vec<[u8; 32]> = verts.iter().enumerate().filter(|(j, _)| *j != i).map(|(_, v)| *v).collect();
+            let mut face: Vec<Vec<u8>> = verts.iter().enumerate().filter(|(j, _)| *j != i).map(|(_, v)| v.clone()).collect();
             face = sorted_verts(face);
             let mut c = self.stored_face_coeff(&face)?;
             if i % 2 == 1 {
@@ -441,7 +447,7 @@ impl Complex {
     /// A candidate forms when every edge already exists (the 1-skeleton of
     /// the simplex). Faces that omit the climbing vertex are not required
     /// to sit in its link.
-    fn faces_ready(&self, verts: &[[u8; 32]]) -> bool {
+    fn faces_ready(&self, verts: &[Vec<u8>]) -> bool {
         let n = verts.len();
         if n < 3 {
             return true;
@@ -449,7 +455,7 @@ impl Complex {
         // index: edges of this simplex
         for i in 0..n {
             for j in i + 1..n {
-                if self.get(&sorted_verts(vec![verts[i], verts[j]])).is_none() {
+                if self.get(&sorted_verts([&verts[i], &verts[j]])).is_none() {
                     return false;
                 }
             }
@@ -461,7 +467,7 @@ impl Complex {
     /// intersection of the links of existing k-cells with the link of one
     /// more neighbour, never a subset of the fiber. Stops when the next
     /// degree produces no volume. Cells are read by key; rotors are not cloned.
-    pub fn coboundary_on_link(&mut self, vertex: &[u8; 32], mut volume_of: impl FnMut(&[[u8; 32]]) -> [u64; 4]) {
+    pub fn coboundary_on_link(&mut self, vertex: &[u8], mut volume_of: impl FnMut(&[Vec<u8>]) -> [u64; 4]) {
         let mut degree = 1usize;
         loop {
             let layer = self.link(vertex, degree);
@@ -493,7 +499,7 @@ impl Complex {
                                 continue;
                             }
                             let mut verts = cell_verts.clone();
-                            verts.push(*w);
+                            verts.push(w.clone());
                             let verts = sorted_verts(verts);
                             if verts.len() != nverts + 1 {
                                 continue;
@@ -502,8 +508,8 @@ impl Complex {
                             if seen.contains(&nkey) {
                                 continue;
                             }
-                            seen.insert(nkey, ());
-                            match self.by_key.get(&nkey).copied() {
+                            seen.insert(&nkey, ());
+                            match self.by_key.get(nkey.as_bytes()).copied() {
                                 Some(_) => {
                                     self.reopen_on_coeff_change(&nkey, &verts);
                                     continue;
@@ -514,7 +520,7 @@ impl Complex {
                             // index: pairs on this simplex (faces)
                             for i in 0..verts.len() {
                                 for j in i + 1..verts.len() {
-                                    if self.is_remainder(&[verts[i], verts[j]]) {
+                                    if self.is_remainder(&sorted_verts([&verts[i], &verts[j]])) {
                                         blocked = true;
                                     }
                                 }
@@ -551,7 +557,7 @@ impl Complex {
 
     /// Fill a cell by extend: coboundary is Extended, finite order is
     /// Congruent, otherwise Class.
-    pub fn fill(&mut self, key: &[u8; 32]) -> Fill {
+    pub fn fill(&mut self, key: &[u8]) -> Fill {
         let Some(degree) = self.degree_of(key) else {
             return Fill::Open;
         };
@@ -602,9 +608,9 @@ impl Complex {
             .sections
             .get(&verts[0])
             .cloned()
-            .unwrap_or(Section { addr: verts[0], gamma: Rotor::identity() });
+            .unwrap_or(Section { addr: crate::transducer::a21::Address::from(verts[0].clone()), gamma: Rotor::identity() });
         let b = verts.get(1).and_then(|v| self.sections.get(v).cloned()).unwrap_or(Section {
-            addr: *verts.last().unwrap_or(&verts[0]),
+            addr: crate::transducer::a21::Address::from(verts.last().cloned().unwrap_or_else(|| verts[0].clone())),
             gamma: Rotor::identity(),
         });
         let outcome = extend(&a, &b, &cell);
@@ -615,7 +621,7 @@ impl Complex {
         outcome
     }
 
-    pub fn class(&self, key: &[u8; 32]) -> Option<(Rotor, usize)> {
+    pub fn class(&self, key: &[u8]) -> Option<(Rotor, usize)> {
         let d = self.degree_of(key)?;
         let c = self.degrees.get(d)?.get(key)?;
         match &c.fill {
@@ -626,15 +632,15 @@ impl Complex {
     }
 
     /// Drop every cell that contains `vertex`. Used when bubbles merge.
-    pub fn drop_vertex(&mut self, vertex: &[u8; 32]) {
+    pub fn drop_vertex(&mut self, vertex: &[u8]) {
         let Some(keys) = self.star.remove(vertex) else {
             self.sections.remove(vertex);
             return;
         };
-        let mut drop: Vec<[u8; 32]> = Vec::new();
+        let mut drop: Vec<Vec<u8>> = Vec::new();
         // index: keyed fiber of star(vertex)
-        for (k, _) in keys.fiber(&ROOT) {
-            drop.push(*k);
+        for (k, _) in keys.fiber(ROOT) {
+            drop.push(k);
         }
         for k in drop {
             if let Some(d) = self.by_key.remove(&k) {
@@ -649,9 +655,9 @@ impl Complex {
     pub fn classes(&self) -> Vec<(Rotor, usize)> {
         let mut out = Vec::new();
         // index: keyed cells of this complex (one chart's nerve)
-        for (k, d) in self.by_key.fiber(&ROOT) {
+        for (k, d) in self.by_key.fiber(ROOT) {
             let d = *d as usize;
-            if let Some(c) = self.degrees.get(d).and_then(|l| l.get(k)) {
+            if let Some(c) = self.degrees.get(d).and_then(|l| l.get(&k)) {
                 if let Fill::Class(r) = &c.fill {
                     out.push((r.clone(), d));
                 }
@@ -660,15 +666,15 @@ impl Complex {
         out
     }
 
-    pub fn unfilled(&self) -> Vec<(usize, [u8; 32])> {
+    pub fn unfilled(&self) -> Vec<(usize, Vec<u8>)> {
         let mut out = Vec::new();
         // index: keyed cells of this complex (one chart's nerve)
-        for (k, d) in self.by_key.fiber(&ROOT) {
+        for (k, d) in self.by_key.fiber(ROOT) {
             let d = *d as usize;
             if d >= 1 {
-                if let Some(c) = self.degrees.get(d).and_then(|l| l.get(k)) {
+                if let Some(c) = self.degrees.get(d).and_then(|l| l.get(&k)) {
                     if matches!(c.fill, Fill::Open) {
-                        out.push((d, *k));
+                        out.push((d, k));
                     }
                 }
             }
@@ -683,8 +689,8 @@ impl Complex {
     pub fn byte_len(&self) -> usize {
         let mut n = 0usize;
         // index: keyed cells of this complex (persistence size)
-        for (k, d) in self.by_key.fiber(&ROOT) {
-            if let Some(c) = self.degrees.get(*d as usize).and_then(|l| l.get(k)) {
+        for (k, d) in self.by_key.fiber(ROOT) {
+            if let Some(c) = self.degrees.get(*d as usize).and_then(|l| l.get(&k)) {
                 n += 32 * c.vertices.len() + 32 + 32;
             }
         }
@@ -694,8 +700,8 @@ impl Complex {
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
         out.extend_from_slice(&(self.sections.len() as u32).to_le_bytes());
         crate::snapshot::persist(&self.sections, |k, s| {
-            out.extend_from_slice(k);
-            out.extend_from_slice(&s.addr);
+            crate::transducer::a21::put_addr(out, k);
+            crate::transducer::a21::put_addr(out, &s.addr);
             s.gamma.to_bytes(out);
         });
         out.extend_from_slice(&(self.degrees.len() as u32).to_le_bytes());
@@ -704,7 +710,7 @@ impl Complex {
             crate::snapshot::persist(layer, |_, c| {
                 out.push(c.vertices.len() as u8);
                 for v in &c.vertices {
-                    out.extend_from_slice(v);
+                    crate::transducer::a21::put_addr(out, v);
                 }
                 c.coefficient.to_bytes(out);
                 for x in &c.volume {
@@ -730,7 +736,7 @@ impl Complex {
         }
         out.extend_from_slice(&(self.remainder.len() as u32).to_le_bytes());
         crate::snapshot::persist(&self.remainder, |k, _| {
-            out.extend_from_slice(k);
+            crate::transducer::a21::put_addr(out, k);
         });
     }
 
@@ -740,11 +746,7 @@ impl Complex {
             *pos += 4;
             Some(v)
         };
-        let take_id = |b: &[u8], pos: &mut usize| -> Option<[u8; 32]> {
-            let v: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-            *pos += 32;
-            Some(v)
-        };
+        let take_id = |b: &[u8], pos: &mut usize| crate::transducer::a21::take_addr(b, pos);
         let mut c = Complex::new();
         let ns = take_u32(b, pos)? as usize;
         for _ in 0..ns.min(1 << 16) {
@@ -884,8 +886,8 @@ mod tests {
         )
     }
 
-    fn v(n: u8) -> [u8; 32] {
-        [n; 32]
+    fn v(n: u8) -> crate::transducer::a21::Address {
+        crate::transducer::a21::Address::from(vec![n])
     }
 
     fn vol() -> [u64; 4] {
@@ -949,14 +951,14 @@ mod tests {
     fn the_link_is_the_star_and_volume_gates_cells() {
         let mut c = Complex::new();
         let (a, b, cc, d) = (v(1), v(2), v(3), v(4));
-        for x in [a, b, cc, d] {
-            c.set_section(x, Section { addr: x, gamma: Rotor::identity() }, vol());
+        for x in [&a, &b, &cc, &d] {
+            c.set_section(x, Section { addr: (*x).clone(), gamma: Rotor::identity() }, vol());
         }
         let id = Rotor::identity();
-        c.set_edge(a, b, id.clone(), vol());
-        c.set_edge(a, cc, id.clone(), vol());
-        c.set_edge(b, cc, id.clone(), vol());
-        c.set_edge(cc, d, id, vol());
+        c.set_edge(&a, &b, id.clone(), vol());
+        c.set_edge(&a, &cc, id.clone(), vol());
+        c.set_edge(&b, &cc, id.clone(), vol());
+        c.set_edge(&cc, &d, id, vol());
         c.coboundary_on_link(&a, |_| vol());
         for k in c.link(&a, 2) {
             let cell = c.cell(&k).expect("link key is held");
@@ -964,8 +966,8 @@ mod tests {
         }
         assert!(c.degrees.get(3).map_or(true, |l| l.is_empty()), "no tetra on a's link");
         let mut empty = Complex::new();
-        empty.set_section(a, Section { addr: a, gamma: Rotor::identity() }, [0; 4]);
-        empty.set_edge(a, b, Rotor::identity(), [0; 4]);
+        empty.set_section(&a, Section { addr: a.clone(), gamma: Rotor::identity() }, [0; 4]);
+        empty.set_edge(&a, &b, Rotor::identity(), [0; 4]);
         assert!(
             empty.degrees.get(2).map_or(true, |l| l.is_empty()),
             "zero remainder volume forms no higher cell"
@@ -978,27 +980,27 @@ mod tests {
     fn fill_is_gauge_or_class() {
         let mut c = Complex::new();
         let (a, b, cc) = (v(1), v(2), v(3));
-        for x in [a, b, cc] {
-            c.set_section(x, Section { addr: x, gamma: Rotor::identity() }, vol());
+        for x in [&a, &b, &cc] {
+            c.set_section(x, Section { addr: (*x).clone(), gamma: Rotor::identity() }, vol());
         }
         let q = quarter();
-        c.set_edge(a, b, q.clone(), vol());
-        c.set_edge(b, cc, q.clone(), vol());
-        c.set_edge(a, cc, q.geo(&q), vol());
+        c.set_edge(&a, &b, q.clone(), vol());
+        c.set_edge(&b, &cc, q.clone(), vol());
+        c.set_edge(&a, &cc, q.geo(&q), vol());
         c.coboundary_on_link(&a, |_| vol());
         let tri = c.link(&a, 2);
         assert_eq!(tri.len(), 1);
-        let key = tri[0];
+        let key = tri[0].clone();
         assert!(matches!(c.fill(&key), Fill::Filled(_)));
-        c.set_edge(a, cc, Rotor::identity(), vol());
+        c.set_edge(&a, &cc, Rotor::identity(), vol());
         c.coboundary_on_link(&a, |_| vol());
-        let key = c.link(&a, 2)[0];
+        let key = c.link(&a, 2)[0].clone();
         assert!(matches!(c.fill(&key), Fill::Congruent(_, _)));
-        c.set_edge(a, b, pythag5(), vol());
-        c.set_edge(b, cc, Rotor::identity(), vol());
-        c.set_edge(a, cc, Rotor::identity(), vol());
+        c.set_edge(&a, &b, pythag5(), vol());
+        c.set_edge(&b, &cc, Rotor::identity(), vol());
+        c.set_edge(&a, &cc, Rotor::identity(), vol());
         c.coboundary_on_link(&a, |_| vol());
-        let key = c.link(&a, 2)[0];
+        let key = c.link(&a, 2)[0].clone();
         assert!(matches!(c.fill(&key), Fill::Class(_)));
     }
 
@@ -1007,11 +1009,11 @@ mod tests {
     fn congruent_is_read_by_class_key() {
         let mut c = Complex::new();
         let q = quarter();
-        let ck = q.class_key();
+        let ck = q.class_key().expect("quarter class");
         c.file_congruent(v(1), v(2), q.clone(), 4);
-        let got = c.congruent(&ck).expect("Congruent cell by class key");
+        let got = c.congruent(ck.as_bytes()).expect("Congruent cell by class key");
         assert_eq!(got.1, 4);
-        assert!(c.congruent(&Rotor::identity().class_key()).is_none());
+        assert!(Rotor::identity().class_key().is_none_or(|k| c.congruent(k.as_bytes()).is_none()));
     }
 
     /// Four vertices with a coboundary 1-cochain have δh = 1; a rotation on
@@ -1020,22 +1022,22 @@ mod tests {
     fn a_class_at_degree_three_is_the_bianchi_form() {
         let mut c = Complex::new();
         let vs = [v(1), v(2), v(3), v(4)];
-        for x in vs {
-            c.set_section(x, Section { addr: x, gamma: Rotor::identity() }, vol());
+        for x in &vs {
+            c.set_section(x, Section { addr: x.clone(), gamma: Rotor::identity() }, vol());
         }
         let id = Rotor::identity();
         for i in 0..4 {
             for j in i + 1..4 {
-                c.set_edge(vs[i], vs[j], id.clone(), vol());
+                c.set_edge(&vs[i], &vs[j], id.clone(), vol());
             }
         }
         c.coboundary_on_link(&vs[0], |_| vol());
         let tets = c.link(&vs[0], 3);
         assert_eq!(tets.len(), 1, "the link of one vertex of K4 is one tetra");
-        let key = tets[0];
+        let key = tets[0].clone();
         assert!(c.fill(&key) == Fill::Filled(Rotor::identity()) || c.class(&key).is_none());
-        c.set_edge(vs[0], vs[1], pythag5(), vol());
-        c.set_edge(vs[2], vs[3], sheet(), vol());
+        c.set_edge(&vs[0], &vs[1], pythag5(), vol());
+        c.set_edge(&vs[2], &vs[3], sheet(), vol());
         c.coboundary_on_link(&vs[0], |_| vol());
         let mut found = false;
         // index: link of vs[0]
@@ -1063,17 +1065,16 @@ mod tests {
         let run = |n: u64| -> u64 {
             let mut c = Complex::new();
             let (a, b, cc) = (v(1), v(2), v(3));
-            for x in [a, b, cc] {
-                c.set_section(x, Section { addr: x, gamma: Rotor::identity() }, vol());
+            for x in [&a, &b, &cc] {
+                c.set_section(x, Section { addr: (*x).clone(), gamma: Rotor::identity() }, vol());
             }
             let id = Rotor::identity();
-            c.set_edge(a, b, id.clone(), vol());
-            c.set_edge(a, cc, id.clone(), vol());
-            c.set_edge(b, cc, id, vol());
+            c.set_edge(&a, &b, id.clone(), vol());
+            c.set_edge(&a, &cc, id.clone(), vol());
+            c.set_edge(&b, &cc, id, vol());
             for i in 0..n {
-                let mut x = [0u8; 32];
-                x[..8].copy_from_slice(&(1000 + i).to_le_bytes());
-                c.set_section(x, Section { addr: x, gamma: Rotor::identity() }, vol());
+                let x = crate::transducer::a21::Address::from((1000 + i).to_le_bytes().to_vec());
+                c.set_section(&x, Section { addr: x.clone(), gamma: Rotor::identity() }, vol());
             }
             work::reset();
             c.coboundary_on_link(&a, |_| vol());
@@ -1091,9 +1092,8 @@ mod tests {
         // isolated extras on the same complex must not grow the work.
         let mut thirty = Complex::new();
         for i in 0..30u64 {
-            let mut x = [0u8; 32];
-            x[..8].copy_from_slice(&i.to_le_bytes());
-            thirty.set_section(x, Section { addr: x, gamma: Rotor::identity() }, vol());
+            let x = crate::transducer::a21::Address::from(i.to_le_bytes().to_vec());
+            thirty.set_section(&x, Section { addr: x.clone(), gamma: Rotor::identity() }, vol());
         }
         assert!(
             thirty.degrees.get(3).map_or(true, |l| l.is_empty()),
@@ -1102,12 +1102,10 @@ mod tests {
         let run_scene = |n: u64| -> u64 {
             let mut c = thirty.clone();
             for i in 0..n {
-                let mut x = [0u8; 32];
-                x[..8].copy_from_slice(&(2000 + i).to_le_bytes());
-                c.set_section(x, Section { addr: x, gamma: Rotor::identity() }, vol());
+                let x = crate::transducer::a21::Address::from((2000 + i).to_le_bytes().to_vec());
+                c.set_section(&x, Section { addr: x.clone(), gamma: Rotor::identity() }, vol());
             }
-            let mut v0 = [0u8; 32];
-            v0[..8].copy_from_slice(&0u64.to_le_bytes());
+            let v0 = crate::transducer::a21::Address::from(0u64.to_le_bytes().to_vec());
             work::reset();
             c.coboundary_on_link(&v0, |_| [0; 4]);
             work::total()
@@ -1122,10 +1120,10 @@ mod tests {
     fn fill_is_attempted_once() {
         let mut c = Complex::new();
         let (a, b) = (v(1), v(2));
-        c.set_section(a, Section { addr: a, gamma: Rotor::identity() }, vol());
-        c.set_section(b, Section { addr: b, gamma: Rotor::identity() }, vol());
-        c.set_edge(a, b, Rotor::identity(), vol());
-        let key = c.link(&a, 1)[0];
+        c.set_section(&a, Section { addr: a.clone(), gamma: Rotor::identity() }, vol());
+        c.set_section(&b, Section { addr: b.clone(), gamma: Rotor::identity() }, vol());
+        c.set_edge(&a, &b, Rotor::identity(), vol());
+        let key = c.link(&a, 1)[0].clone();
         let first = c.fill(&key);
         assert!(matches!(first, Fill::Filled(_)));
         let second = c.fill(&key);

@@ -51,10 +51,8 @@ pub(crate) fn apply_linear(
     ))
 }
 
-pub(crate) fn hue_key(h: u8) -> [u8; 32] {
-    let mut k = [0u8; 32];
-    k[0] = h;
-    k
+pub(crate) fn hue_key(h: u8) -> Vec<u8> {
+    vec![h]
 }
 
 pub(crate) fn gauge_invert(g: &[(u8, u8)]) -> Vec<(u8, u8)> {
@@ -90,7 +88,7 @@ pub(crate) fn compose_gauge(second: &[(u8, u8)], first: &[(u8, u8)]) -> Vec<(u8,
         hues.insert(hue_key(y), ());
     }
     let mut out = Vec::new();
-    for (k, _) in hues.fiber(&ROOT) {
+    for (k, _) in hues.fiber(ROOT) {
         let h = k[0];
         let image = gauge_image(&b, gauge_image(&a, h));
         if image != h {
@@ -111,7 +109,7 @@ pub(crate) fn relative_gauge(from: &[(u8, u8)], to: &[(u8, u8)]) -> Vec<(u8, u8)
         hues.insert(hue_key(y), ());
     }
     let mut out = Vec::new();
-    for (k, _) in hues.fiber(&ROOT) {
+    for (k, _) in hues.fiber(ROOT) {
         let h = k[0];
         let b = gauge_image(&fm, h);
         let c = gauge_image(&tm, h);
