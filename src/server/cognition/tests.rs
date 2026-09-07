@@ -1722,6 +1722,55 @@ fn an_admitted_receipt_is_cited_and_carries_height_above_the_peers() {
     );
 }
 
+/// 47.2 step 2 verifies a signature under the CLAIMED key, and the claim
+/// is the receipt's own `vk`. An unbound chain seals every receipt with
+/// `[0u8; 32]`, so a hypha's own receipts named a signer that cannot sign:
+/// the fleet refused every one on the signature and admitted nothing.
+/// Binding is lossless -- the vk is written and read, never hashed -- so
+/// the history keeps its chain hashes and gains its author.
+#[test]
+fn a_bound_mind_seals_receipts_under_the_key_that_signs_for_it() {
+    let mut k = Kernel::new();
+    let a = vec![(0, 0, 1), (0, 1, 1)];
+    let b = vec![(0, 0, 2), (0, 1, 2)];
+    k.ingest(&a, &b, [1; 32]);
+    let before: Vec<[u8; 32]> = k.chain().receipts().iter().map(|r| r.chain_hash).collect();
+    assert!(!before.is_empty(), "the mind sealed receipts");
+    assert!(
+        k.chain().receipts().iter().all(|r| r.vk == [0u8; 32]),
+        "unbound, a chain names no signer"
+    );
+
+    k.bind_identity([0xab; 32]);
+    assert!(
+        k.chain().receipts().iter().all(|r| r.vk == [0xab; 32]),
+        "binding stamps the signer the receipts always had"
+    );
+    let after: Vec<[u8; 32]> = k.chain().receipts().iter().map(|r| r.chain_hash).collect();
+    assert_eq!(before, after, "the vk is not in the chain hash: history is intact");
+    assert!(k.chain().verify_chain_integrity(), "and the chain still verifies");
+
+    // A receipt admitted from a peer keeps ITS author, never this mind's.
+    let mut peer = crate::chronometry::ReceiptChain::with_vk([9; 32]);
+    peer.append(b"p0", [0; 32], Vec::new()).expect("appends");
+    let r = peer.receipts()[0].clone();
+    let pre = crate::court::admission::SignedPrefix {
+        genesis: [7; 32],
+        epoch: 2,
+        prev_receipt_hash: r.prev_receipt_hash,
+        k: r.step_index,
+        height: r.height,
+        chart: vec![],
+        payload: r.delta.clone(),
+    };
+    assert!(matches!(
+        k.admit_receipt(([7; 32], 2), &pre, &r),
+        crate::court::admission::Admitted::Parent(_)
+    ));
+    k.bind_identity([0xab; 32]);
+    assert_eq!(k.known_head(&[9; 32]).map(|h| h.0), Some(0), "the peer's author stands");
+}
+
 /// A receipt whose origin is not this node's touches nothing: no head is
 /// remembered, no parent is queued, and the mind's next step cites none.
 #[test]

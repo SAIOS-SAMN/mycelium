@@ -525,32 +525,34 @@ pub fn encode_cover_digest(
     out
 }
 
-pub fn decode_cover_digest(
+/// One cover digest read from `at`, with the offset one past its
+/// signature. Reads the fields once; every caller that needs the end
+/// offset gets it from the same read, so the two cannot drift apart on a
+/// length one of them guessed.
+#[allow(clippy::type_complexity)]
+fn cover_digest_at(
     body: &[u8],
+    at: usize,
 ) -> Option<(
-    Vec<(u8, crate::transducer::stalk::Invariant)>,
-    [u64; 4],
-    [[u8; 32]; 4],
-    [u8; 32],
-    [u8; 32],
-    String,
-    [u8; 64],
+    (
+        Vec<(u8, crate::transducer::stalk::Invariant)>,
+        [u64; 4],
+        [[u8; 32]; 4],
+        [u8; 32],
+        [u8; 32],
+        String,
+        [u8; 64],
+    ),
+    usize,
 )> {
-    // Skip the stratum-digest prefix if present: n then n records.
-    let mut p = 0usize;
-    if let Some(digests) = decode_digests_reply(body) {
-        p = 4;
-        for d in &digests {
-            p += 1 + 8 * d.inv.0.len() + 4 + 4 + d.root.len();
-        }
-        if p >= body.len() {
-            return None;
-        }
-    }
+    let mut p = at;
     let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
     p += 4;
-    let mut charts = Vec::with_capacity(n.min(1024));
-    for _ in 0..n.min(1024) {
+    if n > 1024 {
+        return None;
+    }
+    let mut charts = Vec::with_capacity(n);
+    for _ in 0..n {
         let lane = *body.get(p)?;
         p += 1;
         let inv = read_invariant(body, &mut p)?;
@@ -575,7 +577,79 @@ pub fn decode_cover_digest(
     let addr = String::from_utf8(body.get(p..p + alen)?.to_vec()).ok()?;
     p += alen;
     let sig: [u8; 64] = body.get(p..p + 64)?.try_into().ok()?;
-    Some((charts, room, cover_roots, ruled_root, vk, addr, sig))
+    p += 64;
+    Some(((charts, room, cover_roots, ruled_root, vk, addr, sig), p))
+}
+
+/// Offset one past a stratum-digest reply at the head of `body`, if the
+/// head parses as one. A `Some` here is a CANDIDATE start for the cover
+/// digest, never a decision: the counts and lengths of a cover digest can
+/// read as a digests reply, and the reply that carries both is the shape
+/// `judge` sends, so the two cannot be told apart by looking at the head.
+fn digests_reply_end(body: &[u8]) -> Option<usize> {
+    let digests = decode_digests_reply(body)?;
+    let mut p = 4usize;
+    for d in &digests {
+        p += 1 + 8 * d.inv.0.len() + 4 + 4 + d.root.len();
+    }
+    (p < body.len()).then_some(p)
+}
+
+/// The whole frame, parsed WHOLE. A body either is a cover digest, or a
+/// stratum-digest reply followed by one, and in both cases the parse must
+/// consume every byte -- with or without a receipt section on the end.
+///
+/// The old reader guessed: "skip the stratum-digest prefix if present",
+/// deciding by whether the head happened to parse as one. A bare cover
+/// digest's own chart count and invariant bytes parse as a digests reply,
+/// so the guess mis-read the frame and produced charts that were never
+/// sent, silently. Rule 11: the parse that consumes the buffer exactly is
+/// the reading, two of them are an ambiguity and refuse, and none refuses.
+#[allow(clippy::type_complexity)]
+fn whole_cover_digest(
+    body: &[u8],
+) -> Option<(
+    (
+        Vec<(u8, crate::transducer::stalk::Invariant)>,
+        [u64; 4],
+        [[u8; 32]; 4],
+        [u8; 32],
+        [u8; 32],
+        String,
+        [u8; 64],
+    ),
+    usize,
+)> {
+    let mut hit = None;
+    let starts = [Some(0usize), digests_reply_end(body)];
+    for at in starts.into_iter().flatten() {
+        let Some((fields, end)) = cover_digest_at(body, at) else {
+            continue;
+        };
+        let whole = end == body.len() || receipt_section_end(body, end) == Some(body.len());
+        if whole {
+            if hit.is_some() {
+                return None; // two readings consume the buffer: ambiguous
+            }
+            hit = Some((fields, end));
+        }
+    }
+    hit
+}
+
+#[allow(clippy::type_complexity)]
+pub fn decode_cover_digest(
+    body: &[u8],
+) -> Option<(
+    Vec<(u8, crate::transducer::stalk::Invariant)>,
+    [u64; 4],
+    [[u8; 32]; 4],
+    [u8; 32],
+    [u8; 32],
+    String,
+    [u8; 64],
+)> {
+    whole_cover_digest(body).map(|(f, _)| f)
 }
 
 /// 47.1's RECEIPT SECTION, appended after a digest's signature: the
@@ -642,32 +716,26 @@ pub fn decode_receipt_section(
 }
 
 /// Offset one past a decoded digest's signature: where a receipt section
-/// begins, if one was sent. Re-walks the same fields `decode_cover_digest`
-/// walks, so the two cannot drift apart on a length the other guessed.
+/// begins, if one was sent. Comes from the same single reading the fields
+/// come from, so no length is computed twice.
 pub fn cover_digest_end(body: &[u8]) -> Option<usize> {
-    let mut p = 0usize;
-    if let Some(digests) = decode_digests_reply(body) {
-        p = 4;
-        for d in &digests {
-            p += 1 + 8 * d.inv.0.len() + 4 + 4 + d.root.len();
-        }
-        if p >= body.len() {
-            return None;
-        }
-    }
-    let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+    whole_cover_digest(body).map(|(_, e)| e)
+}
+
+/// Offset one past a receipt section starting at `at`, or `None` when
+/// there is none there or it does not parse whole.
+fn receipt_section_end(body: &[u8], at: usize) -> Option<usize> {
+    let mut p = at;
+    let plen = u16::from_le_bytes(body.get(p..p + 2)?.try_into().ok()?) as usize;
+    p += 2;
+    crate::court::admission::SignedPrefix::read(body.get(p..p + plen)?)?;
+    p += plen + 64;
+    let rlen = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
     p += 4;
-    for _ in 0..n.min(1024) {
-        p += 1;
-        read_invariant(body, &mut p)?;
-    }
-    p += 8 * 4 + 32 * 4 + 32 + 32;
-    let alen = *body.get(p)? as usize;
-    p += 1 + alen + 64;
-    if p > body.len() {
-        return None;
-    }
-    Some(p)
+    let rb = body.get(p..p + rlen)?;
+    let mut q = 0usize;
+    crate::chronometry::KStepReceipt::read(rb, &mut q)?;
+    (q == rlen).then_some(p + rlen)
 }
 
 /// Cover: `[ACT_COVER][vk 32][alen u8][addr][n u32]([lane u8][invariant])*`
@@ -1867,6 +1935,95 @@ pub fn decode_settle(body: &[u8]) -> Option<(Address, Vec<[u8; 32]>, [u64; 4])> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    /// The receipt section must be found INSIDE a real digest frame, at the
+    /// offset one past the digest's signature, with the stratum-digest reply
+    /// in front of it exactly as `judge` assembles it. The prefix codec
+    /// round-tripping on its own proves nothing about that offset, and an
+    /// offset that is wrong by one byte is silent.
+    ///
+    /// It also pins what the reader does with the frame's own ambiguity: a
+    /// cover digest with no stratum-digest reply in front of it parses TWO
+    /// ways that both consume the buffer exactly -- its chart count and
+    /// invariant bytes read as a digests reply -- so the reader refuses it
+    /// rather than inventing the charts the old guess produced. Every
+    /// sender in the tree prepends the reply, so the refused shape is one
+    /// nothing sends; the format's inability to say which shape it is, is
+    /// filed with 5.2c, since only a tag on the frame can settle it.
+    #[test]
+    fn the_receipt_section_is_found_after_a_full_digest_frame() {
+        use crate::transducer::stalk::Invariant;
+        let charts = vec![(0u8, Invariant(vec![1, 2, 3])), (2u8, Invariant(vec![9]))];
+        let room = [11u64, 12, 13, 14];
+        let cover_roots = [[1u8; 32], [2; 32], [3; 32], [4; 32]];
+        let ruled_root = [5u8; 32];
+        let vk = [6u8; 32];
+        let sig = [7u8; 64];
+
+        let mut chain = crate::chronometry::ReceiptChain::with_vk(vk);
+        chain.append(b"an address", [0; 32], Vec::new()).expect("appends");
+        let head = chain.receipts()[0].clone();
+        let prefix = crate::court::admission::SignedPrefix {
+            genesis: [8; 32],
+            epoch: 2,
+            prev_receipt_hash: head.prev_receipt_hash,
+            k: head.step_index,
+            height: head.height,
+            chart: vec![1, 2, 3, 9],
+            payload: ruled_root.to_vec(),
+        };
+        let rsig = [9u8; 64];
+        let digests = vec![crate::transducer::sheaf::StratumDigest {
+            inv: Invariant(vec![4, 5]),
+            count: 3,
+            root: vec![7u8; 12],
+        }];
+
+        // The shape `judge` sends: the stratum-digest reply, the cover
+        // digest, and the receipt section on the end.
+        let mut body = encode_digests_reply(&digests);
+        body.extend(encode_cover_digest(
+            &charts, &room, &cover_roots, &ruled_root, &vk, "127.0.0.1:7500", &sig,
+        ));
+        let bare = body.len();
+        body.extend(encode_receipt_section(&prefix, &rsig, &head));
+
+        let (c, r, cr, rr, v, addr, s) = decode_cover_digest(&body).expect("digest decodes");
+        assert_eq!((c, r, cr, rr, v, s), (charts.clone(), room, cover_roots, ruled_root, vk, sig));
+        assert_eq!(addr, "127.0.0.1:7500");
+        assert_eq!(
+            cover_digest_end(&body),
+            Some(bare),
+            "the section begins one past the digest's signature"
+        );
+        let (p2, s2, r2) = decode_receipt_section(&body, bare).expect("section");
+        assert_eq!((p2, s2, r2), (prefix.clone(), rsig, head.clone()));
+
+        // A peer that sends no section still decodes, and reads as absent.
+        let short = &body[..bare];
+        assert!(decode_cover_digest(short).is_some(), "the digest alone still decodes");
+        assert_eq!(cover_digest_end(short), Some(short.len()));
+        assert!(
+            decode_receipt_section(short, short.len()).is_none(),
+            "no section is absent, never a partial admission"
+        );
+
+        // A truncated section is refused whole, never admitted in part.
+        let cut = &body[..body.len() - 1];
+        assert!(
+            decode_receipt_section(cut, bare).is_none(),
+            "a section that does not parse whole is refused"
+        );
+
+        // The unframed shape is genuinely ambiguous and refuses.
+        let mut lone = encode_cover_digest(
+            &charts, &room, &cover_roots, &ruled_root, &vk, "127.0.0.1:7500", &sig,
+        );
+        lone.extend(encode_receipt_section(&prefix, &rsig, &head));
+        assert!(
+            decode_cover_digest(&lone).is_none(),
+            "two readings consume the buffer: the reader refuses rather than guessing"
+        );
+    }
 
     /// Every act round-trips exactly — the calculus is closed and lossless.
     #[test]

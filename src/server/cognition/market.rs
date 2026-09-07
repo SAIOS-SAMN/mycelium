@@ -18,8 +18,13 @@ impl Kernel {
 
     /// Room is the uttering voice's remaining bond, per lane. Unbonded is
     /// zero room. No ×(reserve/spend): the genesis bond already covers a pair.
+    /// Bind this mind to the key that signs for it -- both the identity it
+    /// draws room against and the chain that seals its receipts. Binding
+    /// only the first left every receipt claiming `[0u8; 32]` as its
+    /// author, so no peer could verify one under the key it claimed.
     pub fn bind_identity(&mut self, vk: [u8; 32]) {
         self.identity = vk;
+        self.chain.bind_vk(vk);
     }
 
     pub fn lane_room(&self) -> [usize; 4] {

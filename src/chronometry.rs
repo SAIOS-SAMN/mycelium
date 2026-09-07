@@ -234,6 +234,26 @@ impl ReceiptChain {
         })
     }
 
+    /// Bind this chain to the key that signs for it. The vk is NOT in the
+    /// chain hash (it is written and read, never hashed), so binding is
+    /// lossless on the history: receipts already sealed under the zero
+    /// placeholder are stamped with the signer they always had, and a
+    /// receipt naming a real signer is never overwritten -- an admitted
+    /// peer receipt keeps its own author.
+    ///
+    /// Unbound, a chain seals every receipt with `vk: [0u8; 32]`, which is
+    /// not a signer: 47.2 step 2 verifies the signature under the CLAIMED
+    /// key, so every receipt this node sent was checked against zeros and
+    /// refused. It is the same zero-sentinel fault as an unwritten genesis.
+    pub fn bind_vk(&mut self, vk: [u8; 32]) {
+        self.vk = vk;
+        for r in &mut self.receipts {
+            if r.vk == [0u8; 32] {
+                r.vk = vk;
+            }
+        }
+    }
+
     /// Admit a verified peer receipt so later parents can re-derive height.
     pub fn admit(&mut self, r: KStepReceipt) {
         self.known.insert(r.chain_hash, r);

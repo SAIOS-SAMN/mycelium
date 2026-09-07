@@ -403,9 +403,22 @@ fn sign_cover_digest(kernel: &Mutex<Kernel>, mesh: &Mesh) -> Vec<u8> {
     out
 }
 
+/// Why one peer's digest carried no admission. A `None` return with no
+/// reason is the rule-11 fault itself: an admission path that cannot say
+/// whether it refused, or never ran, is UNMEASURED, and a fleet reading
+/// zero admitted receipts cannot tell the two apart.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum NoAdmission {
+    /// The peer's digest ends where a section would start: it sent none.
+    NoSection,
+    /// A section is there and does not parse whole (rule 11: refused).
+    Malformed,
+    /// This node has adopted no origin, so it has nothing to compare.
+    NoOrigin,
+}
+
 /// 47.2 on the voice: run admission over the receipt section a peer
-/// appended to its digest, and cite what admits. Returns what the mind
-/// answered, `None` when the peer sent no section.
+/// appended to its digest, and cite what admits.
 ///
 /// The signature (step 2) is checked HERE, over exactly `prefix.bytes()`,
 /// before the mind is asked: `Kernel::admit_receipt` is deliberately not
@@ -415,37 +428,82 @@ fn admit_peer_receipt(
     kernel: &Mutex<Kernel>,
     mesh: &Mesh,
     body: &[u8],
-) -> Option<mycelium::court::admission::Admitted> {
+) -> Result<mycelium::court::admission::Admitted, NoAdmission> {
     use mycelium::court::admission::Admitted;
-    let at = dialogue::cover_digest_end(body)?;
-    let (prefix, sig, receipt) = dialogue::decode_receipt_section(body, at)?;
-    let origin = (*mesh.origin.lock().ok()?)?;
+    let at = dialogue::cover_digest_end(body).ok_or(NoAdmission::Malformed)?;
+    if at >= body.len() {
+        return Err(NoAdmission::NoSection);
+    }
+    let (prefix, sig, receipt) =
+        dialogue::decode_receipt_section(body, at).ok_or(NoAdmission::Malformed)?;
+    let origin = mesh
+        .origin
+        .lock()
+        .ok()
+        .and_then(|o| *o)
+        .ok_or(NoAdmission::NoOrigin)?;
     if !mycelium::court::identity::verify(&receipt.vk, &prefix.bytes(), &sig) {
-        return Some(Admitted::Refused("bad signature"));
+        return Ok(Admitted::Refused("bad signature"));
     }
-    let verdict = kernel.lock().ok()?.admit_receipt(origin, &prefix, &receipt);
-    let vk = receipt.vk;
-    match &verdict {
-        Admitted::Parent(p) => eprintln!(
-            "  court receipt parent {:02x}{:02x}… K {} h {}",
-            vk[0], vk[1], p.k, receipt.height
-        ),
-        Admitted::Gap { from, to, .. } => eprintln!(
-            "  court receipt gap {:02x}{:02x}… {from}→{to} backfill",
-            vk[0], vk[1]
-        ),
-        Admitted::Equivocation { k, .. } => eprintln!(
-            "  court equivocation {:02x}{:02x}… K {k}",
-            vk[0], vk[1]
-        ),
-        Admitted::Refused(why) => {
-            eprintln!("  court origin refused {:02x}{:02x}… {why}", vk[0], vk[1])
+    let mut k = kernel.lock().map_err(|_| NoAdmission::Malformed)?;
+    Ok(k.admit_receipt(origin, &prefix, &receipt))
+}
+
+/// One exchange cycle's admission tally, written with the 34.2 organ line.
+#[derive(Default, Clone, Copy, PartialEq, Eq)]
+struct AdmissionTally {
+    parent: usize,
+    gap: usize,
+    stale: usize,
+    origin: usize,
+    signature: usize,
+    receipt: usize,
+    equivocation: usize,
+    no_section: usize,
+    malformed: usize,
+    no_origin: usize,
+}
+
+impl AdmissionTally {
+    fn note(&mut self, r: Result<mycelium::court::admission::Admitted, NoAdmission>) {
+        use mycelium::court::admission::Admitted;
+        match r {
+            Ok(Admitted::Parent(_)) => self.parent += 1,
+            Ok(Admitted::Gap { .. }) => self.gap += 1,
+            Ok(Admitted::Stale) => self.stale += 1,
+            Ok(Admitted::Equivocation { .. }) => self.equivocation += 1,
+            Ok(Admitted::Refused(why)) => {
+                if why == mycelium::court::admission::REFUSE_ORIGIN {
+                    self.origin += 1;
+                } else if why == mycelium::court::admission::REFUSE_RECEIPT {
+                    self.receipt += 1;
+                } else {
+                    self.signature += 1;
+                }
+            }
+            Err(NoAdmission::NoSection) => self.no_section += 1,
+            Err(NoAdmission::Malformed) => self.malformed += 1,
+            Err(NoAdmission::NoOrigin) => self.no_origin += 1,
         }
-        // A duplicate is ignored in silence; saying so once per exchange
-        // cycle per peer is the log spam that buried the 34.2 trace.
-        Admitted::Stale => {}
     }
-    Some(verdict)
+
+    fn line(&self) -> String {
+        format!(
+            "  court receipts parent {} gap {} stale {} equivocation {} \
+refused-origin {} refused-signature {} refused-receipt {} \
+none {} malformed {} no-origin {}",
+            self.parent,
+            self.gap,
+            self.stale,
+            self.equivocation,
+            self.origin,
+            self.signature,
+            self.receipt,
+            self.no_section,
+            self.malformed,
+            self.no_origin
+        )
+    }
 }
 
 fn admit_peer_digest(mesh: &Mesh, body: &[u8], router: &Mutex<Router>) -> bool {
@@ -1575,6 +1633,7 @@ fn main() {
             mesh_rec.genesis.is_some(),
         ));
         let mut last_organs = (usize::MAX, usize::MAX);
+        let mut last_tally = AdmissionTally::default();
         let registry = Arc::clone(&registry);
         let router = Arc::clone(&router);
         let state_path = state_path.clone();
@@ -1624,6 +1683,7 @@ fn main() {
                     .collect();
                 let mut organ_budget = mycelium::physics::expansion_unit() as usize;
                 let (mut reached, mut silent) = (0usize, 0usize);
+                let mut tally = AdmissionTally::default();
                 let _ = &last_organs;
                 for (pid, d) in dest_list {
                     if organ_budget == 0 {
@@ -1637,7 +1697,7 @@ fn main() {
                             if !admit_peer_digest(&mesh, &reply, &router) {
                                 continue;
                             }
-                            let _ = admit_peer_receipt(&kernel, &mesh, &reply);
+                            tally.note(admit_peer_receipt(&kernel, &mesh, &reply));
                             let Some((_, _, cover_roots, ruled_root, vk_peer, _, _)) =
                                 dialogue::decode_cover_digest(&reply)
                             else {
@@ -1815,6 +1875,13 @@ fn main() {
                     eprintln!(
                         "  court organs reached {reached} silent {silent} moved {any_moved}"
                     );
+                }
+                // 34.2: what the exchange ADMITTED, beside what it reached.
+                // Change-gated like the organ line -- a cycle that admits
+                // the same nothing twice says it once.
+                if tally != last_tally {
+                    last_tally = tally;
+                    eprintln!("{}", tally.line());
                 }
             }
         });
