@@ -1,22 +1,6 @@
-// 24.1 — THE REFLEX: what the mind can afford to think about now.
+// 24.1 — THE REFLEX: the memory headroom the mind reads before it thinks.
 //
-//! The action potential is the quoted value against the dwell it would
-//! cost, and the memory headroom is read from the machine rather than
-//! assumed. Neither is a clock (law 9): the dwell is a receipt count.
-
-
-/// THE ACTION POTENTIAL of a listing — the thermodynamic tension deciding
-/// eviction order: 𝒜 = ‖μ⃗_quoted‖₁ · R / (R + Δk_dwell), with dwell in
-/// K-STEPS (algebraic time) and R = RESERVE_MAX as λ_decay's scale (the
-/// metabolism contract, not a new knob). Exact integer arithmetic; higher =
-/// hotter = kept. The market sheds argmin 𝒜 — its coldest stale residual —
-/// never its oldest.
-#[cfg(test)]
-pub(crate) fn action_potential(mu_quoted: &[u64; 4], dwell_k: u64) -> u128 {
-    let l1: u128 = mu_quoted.iter().map(|&m| m as u128).sum();
-    let r = crate::physics::reserve_max() as u128;
-    l1 * r / (r + dwell_k as u128)
-}
+//! Read from the machine rather than assumed, and not a clock (law 9).
 
 /// The machine's live breath — MemAvailable from /proc/meminfo, in bytes.
 /// A platform without the sensor reports half of a modest measured floor

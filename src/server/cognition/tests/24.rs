@@ -2,7 +2,6 @@
 // and that the cost of one word does not grow with the book.
 
 use crate::cognition::*;
-use crate::cognition::reflex::action_potential;
 
 /// THE TWO-STROKE BREATHES: sustained germination depletes the reserve; a germ
 /// on a depleted lane DEFERS (pending, never stranded) while the syntropic
@@ -70,15 +69,6 @@ for _ in 0..24 {
 }
 let tense = k.lane_room();
 assert_eq!(tense[0], s0, "T pressure does not steal spatial room: {tense:?}");
-// Action potential: a VALUABLE stale listing outranks a worthless
-// fresh one — eviction is argmin tension, not argmax age (anti-FIFO).
-let rich_old = action_potential(&[0, 0, 900, 0], 64);
-let poor_new = action_potential(&[0, 0, 3, 0], 0);
-assert!(rich_old > poor_new, "value dominates age: {rich_old} vs {poor_new}");
-// And dwell genuinely decays tension at equal value.
-let fresh = action_potential(&[0, 0, 40, 0], 0);
-let stale = action_potential(&[0, 0, 40, 0], 128);
-assert!(fresh > stale, "dwell cools a listing: {fresh} vs {stale}");
 }
 
 /// Extra court strokes of a fixed corpus do not grow the hot set.
