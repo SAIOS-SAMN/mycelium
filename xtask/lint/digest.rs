@@ -1,82 +1,29 @@
-// Law 2 — THE DIGEST GATE: blake3 lives where bytes genuinely are the
+// Law 2 — THE DIGEST GATE: a hash lives where bytes genuinely are the
 // object, and nowhere else.
+//
+//! Identity is content (law 2, A21). The four files below hash bytes that
+//! ARE the object — a receipt chain, a wire frame, a cold routing index
+//! below the sovereignty boundary, a key derivation — and every other file
+//! in the tree is refused a digest.
 
-use std::fs;
+use super::walker::Gate;
 use std::path::Path;
 
-pub(crate) fn lint_blake3(root: &Path, hits: &mut Vec<String>) -> Result<(), String> {
-    let deny = [
-        "server",
-        "client",
-        "transducer",
-        "anastome",
-        "voice",
-        "thought",
-        "perception",
-        "economy.rs",
-        "bin",
-    ];
-    for d in deny {
-        walk_blake3(&root.join(d), hits)?;
-    }
-    walk_blake3(&root.join("court").join("verdict.rs"), hits)?;
-    walk_blake3(&root.join("court").join("ledger.rs"), hits)?;
-    Ok(())
-}
+pub(crate) const GATE: Gate = Gate {
+    name: "digest",
+    allow: &[
+        ("chronometry.rs", "receipt chaining, Part IX: the bytes are the object"),
+        ("court/identity.rs", "key derivation, not identity of content"),
+        ("network/wire.rs", "frame integrity over bytes on the wire"),
+        ("network/nerve/cover.rs", "the cold routing index, until A4 replaces the roots with heights"),
+    ],
+    scan,
+};
 
-/// The Element's action is a versor. QMatrix, Delta, Operator, and
-/// core::matrix do not enter cognition.
-pub(crate) fn walk_blake3(path: &Path, hits: &mut Vec<String>) -> Result<(), String> {
-    if path.is_file() {
-        if path.extension().and_then(|s| s.to_str()) != Some("rs") {
-            return Ok(());
+fn scan(path: &Path, src: &str, hits: &mut Vec<String>) {
+    for (i, line) in src.lines().enumerate() {
+        if line.contains("blake3::") {
+            hits.push(format!("{}:{}: blake3 — identity is content (law 2)", path.display(), i + 1));
         }
-        let src = fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
-        let mut in_test = false;
-        let mut pending_test = false;
-        let mut depth = 0i32;
-        for (i, line) in src.lines().enumerate() {
-            let t = line.trim();
-            if t.contains("#[cfg(test)]") {
-                pending_test = true;
-            }
-            let opens = line.chars().filter(|&c| c == '{').count() as i32;
-            let closes = line.chars().filter(|&c| c == '}').count() as i32;
-            if pending_test && opens > 0 {
-                in_test = true;
-                pending_test = false;
-                depth = opens - closes;
-                if depth <= 0 {
-                    in_test = false;
-                }
-                continue;
-            }
-            if in_test {
-                depth += opens - closes;
-                if depth <= 0 {
-                    in_test = false;
-                }
-                continue;
-            }
-            if t.starts_with("//") {
-                continue;
-            }
-            if line.contains("blake3::") {
-                hits.push(format!("{}:{}: blake3 in cognition", path.display(), i + 1));
-            }
-        }
-        return Ok(());
     }
-    if !path.is_dir() {
-        return Ok(());
-    }
-    let rd = match fs::read_dir(path) {
-        Ok(rd) => rd,
-        Err(_) => return Ok(()),
-    };
-    for ent in rd {
-        let ent = ent.map_err(|e| e.to_string())?;
-        walk_blake3(&ent.path(), hits)?;
-    }
-    Ok(())
 }

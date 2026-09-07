@@ -7,6 +7,7 @@
 
 pub mod clock;
 pub mod digest;
+pub mod walker;
 pub mod enumeration;
 pub mod length;
 pub mod maps;
@@ -14,7 +15,6 @@ pub mod matrix;
 pub mod squaring;
 
 use clock::lint_clock;
-use digest::lint_blake3;
 use enumeration::walk;
 use length::lint_file_length;
 use maps::lint_maps;
@@ -48,7 +48,14 @@ pub fn run() -> Result<(), String> {
         None => vec![root.clone()],
     };
     lint_file_length(&bounded, &mut hits)?;
-    lint_blake3(&root, &mut hits)?;
+    // ONE WALK over the tree the rules govern, every gate, allow-lists by
+    // file (4.2, 4.5). The scope is `src/` and not `xtask/`: the content
+    // rules are about cognition, and a gate that forbids a pattern must
+    // contain that pattern to search for it. The reading bound above is the
+    // one rule that does cover `xtask/`, because it is about reading.
+    let mut files = Vec::new();
+    walker::collect(&root, &mut files)?;
+    walker::run_gates(&files, &[digest::GATE], &mut hits)?;
     lint_squaring(&root, &mut hits)?;
     lint_maps(&root, &mut hits)?;
     lint_qmatrix(&root, &mut hits)?;
