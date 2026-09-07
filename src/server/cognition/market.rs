@@ -480,6 +480,17 @@ impl Kernel {
     /// until they bond from balance. Returns the vector added this call.
     pub fn enroll(&mut self, who: [u8; 32], bond: [u64; 4]) -> [u64; 4] {
         let anchor = self.anchor();
+        // A stake moves value from a balance and never creates any (§4), so
+        // an identity bonded at genesis is FUNDED first and stakes from that
+        // -- MU-PRODUCT §4: "a genesis allocation funds our customer voice
+        // and bonds our hyphae". The allocation is its own ledger kind, so
+        // §6 keeps seeded value and earned value separable; what is already
+        // held is never re-allocated.
+        let held = self.treasury.balance_mu(&who);
+        let short: [u64; 4] = std::array::from_fn(|l| bond[l].saturating_sub(held[l]));
+        if short.iter().any(|&x| x > 0) {
+            self.treasury.genesis(who, short, anchor);
+        }
         self.treasury.enroll(who, bond, anchor)
     }
 

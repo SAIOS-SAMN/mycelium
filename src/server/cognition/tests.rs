@@ -1295,7 +1295,7 @@ fn a_single_voice_percept_stays_on_the_docket_and_installs_with_a_mint() {
     let addr = home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().0.clone();
     assert!(home.offered(&addr), "the court Offers a first-vantage germ");
     assert!(home.treasury().escrow_of(&addr).is_some(), "the priced magnitude is the claim");
-    assert_eq!(home.treasury().supply().expect("supply adds up"), [0; 4], "the claim is not yet payment");
+    assert_eq!(home.treasury().minted().expect("minted adds up"), [0; 4], "the claim is not yet payment: nothing minted");
     home.court_stroke();
     let spoken = home.provisional.get(&addr).cloned().expect("still provisional until a peer glues");
     let mut cover = crate::network::nerve::Cover::new();
@@ -1309,7 +1309,7 @@ fn a_single_voice_percept_stays_on_the_docket_and_installs_with_a_mint() {
     assert!(home.provisional.is_empty(), "the docket clears on install");
     assert!(home.treasury().escrow_of(&addr).is_none(), "the claim is released");
     assert!(
-        home.treasury().supply().expect("supply adds up").iter().any(|&x| x > 0),
+        home.treasury().minted().expect("minted adds up").iter().any(|&x| x > 0),
         "release mints the priced vector"
     );
     assert_eq!(home.treasury().bond_total(), bond, "mint does not debit the stake bond");
@@ -1351,7 +1351,7 @@ fn speech_that_closes_nothing_mints_none() {
     k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
     assert!(k.treasury().escrow_of(&addr).is_none(), "escrow returned");
     assert_eq!(
-        k.treasury().supply().expect("supply adds up"),
+        k.treasury().minted().expect("minted adds up"),
         [0; 4],
         "a restatement that closes nothing pays nothing"
     );
@@ -1393,7 +1393,7 @@ fn association_with_a_listing_does_not_mint() {
     k.rule_all_provisionals();
     k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
     assert_eq!(
-        k.treasury().supply().expect("supply adds up"),
+        k.treasury().minted().expect("minted adds up"),
         [0; 4],
         "a bound listing is not a mint without replay"
     );
@@ -1436,7 +1436,7 @@ fn a_rule_that_speaks_the_family_mints_measured_descent() {
     k.rule_all_provisionals();
     k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
     assert_eq!(
-        k.treasury().supply().expect("supply adds up"),
+        k.treasury().minted().expect("minted adds up"),
         expect,
         "mint is the measured coboundary, not a bound listing's magnitude"
     );
@@ -1923,4 +1923,46 @@ fn admitting_a_word_costs_the_same_at_n_and_4n() {
         "one observation costs the same into a large base as a small one: \
          {at_n} at N, {at_4n} at 4N"
     );
+}
+
+/// §6, on a kernel that has actually moved value rather than a treasury in
+/// isolation. This is the gate on 1.10: settlement paths may only be built
+/// where conservation is checkable, and `enroll` used to insert bond that
+/// was never issued, so the second equation failed at the first enrolment.
+#[test]
+fn the_kernel_conserves_across_genesis_bond_and_a_settlement() {
+    use crate::transducer::element::from_residual;
+    use crate::transducer::germinate::germinate;
+    let mut k = Kernel::new();
+    // Kernel::new funds the hypha at genesis and stakes its bond from that.
+    let seeded = k.treasury().audit().expect("genesis and its bond conserve");
+    assert!(seeded.iter().any(|&x| x > 0), "the hypha is funded");
+    assert_eq!(k.treasury().minted().expect("minted"), [0; 4], "seeded is not earned");
+
+    let a = vec![(0, 0, 1), (0, 1, 2)];
+    let b = vec![(0, 0, 5), (0, 1, 2)];
+    k.basis_insert(from_residual(&germinate(&a, &b).expect("coboundary")), [1; 32]);
+    k.treasury().audit().expect("an install conserves");
+
+    // Two voices docket the same residual, then the court rules on it.
+    // WHERE IT STILL DOES NOT HOLD, pinned with its evidence rather than
+    // left for a soak. A docket escrows the claim's price, and
+    // `escrow_award` inserts that μ⃗ into the `escrowed` carrier having
+    // debited nothing: the carriers then exceed what was issued.
+    //
+    // This is a design question and not a slip. MU-ECONOMY §5 has a
+    // REQUESTER escrowing the price, which is funded and conserves; §4 has
+    // an unbonded voice whose "claim is escrowed against its own
+    // deflation", which is value that will exist only if the court upholds.
+    // §6's second equation counts `Σ escrow` as issued supply, so the two
+    // readings cannot both stand: either a claim-escrow is funded from a
+    // balance, or it is provisional and is not supply until the ruling
+    // mints it. The ruling belongs in MU-ECONOMY before the code moves.
+    let _ = k.ingest(&a, &b, [1; 32]);
+    let _ = k.ingest(&a, &b, [2; 32]);
+    let err = k
+        .treasury()
+        .audit()
+        .expect_err("an unfunded claim-escrow is counted as issued");
+    assert!(err.contains("is not the carriers"), "{err}");
 }

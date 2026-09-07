@@ -170,17 +170,47 @@ impl Treasury {
     /// leftover escrow history does not enter it. Returns the vector added
     /// this call.
     pub fn enroll(&mut self, who: [u8; 32], bond: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        let want = bond;
         let held = self.stakes.get(&who).copied().unwrap_or([0; 4]);
-        let add: [u64; 4] = std::array::from_fn(|l| want[l].saturating_sub(held[l]));
+        let asked: [u64; 4] = std::array::from_fn(|l| bond[l].saturating_sub(held[l]));
+        // BOND IS μ AT RISK, STAKED FROM A BALANCE (§4). This inserted the
+        // stake and wrote a "stake" row without debiting anything, so bond
+        // existed that was never issued and §6's second equation --
+        // Σ balance + Σ bond + Σ escrow = genesis + mint − burn -- failed on
+        // the first enrolment. A stake MOVES value between two carriers of
+        // one identity; it never creates any. What the balance cannot cover
+        // is not staked, so an identity stakes what it holds and no more.
+        let bal = self.balance_mu(&who);
+        let add: [u64; 4] = std::array::from_fn(|l| asked[l].min(bal[l]));
         if add.iter().any(|&x| x > 0) {
-            self.stakes.insert(who, want);
+            self.debit(who, add);
+            let next: [u64; 4] = std::array::from_fn(|l| held[l] + add[l]);
+            self.stakes.insert(who, next);
             self.entries.push(Entry { kind: "stake", who, mu: add, k_step: anchor.0, receipt: anchor.1 });
         } else if self.stakes.get(&who).is_none() {
-            self.stakes.insert(who, want);
+            self.stakes.insert(who, held);
         }
         self.refresh_bond();
         add
+    }
+
+    /// The inverse: bond returns to the balance it was staked from (§9's
+    /// unstake). Never more than is bonded, and an identity with escrow
+    /// naming it is not the treasury's business to check here -- the caller
+    /// holds that rule (MU-PRODUCT §5: unstake when no escrow names the
+    /// voice). Conservation holds because the μ⃗ moves between two carriers
+    /// of one identity, exactly as staking it did.
+    pub fn unstake(&mut self, who: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+        let held = self.stakes.get(&who).copied().unwrap_or([0; 4]);
+        let back: [u64; 4] = std::array::from_fn(|l| mu[l].min(held[l]));
+        if back.iter().all(|&x| x == 0) {
+            return back;
+        }
+        let next: [u64; 4] = std::array::from_fn(|l| held[l] - back[l]);
+        self.stakes.insert(who, next);
+        self.credit(who, back);
+        self.entries.push(Entry { kind: "unstake", who, mu: back, k_step: anchor.0, receipt: anchor.1 });
+        self.refresh_bond();
+        back
     }
 
     fn refresh_bond(&mut self) {
@@ -259,6 +289,24 @@ impl Treasury {
             s[l] = issued[l].checked_sub(burned[l])?;
         }
         Some(s)
+    }
+
+    /// EARNED supply alone: the mint rows, without the genesis allocations
+    /// §6 keeps separable from them. "Nothing was minted" is a claim about
+    /// verified work and must not be read off `supply()`, which includes
+    /// seeded value by construction — a testnet differs from the beta only
+    /// in that term.
+    pub fn minted(&self) -> Option<[u64; 4]> {
+        let mut m = [0u64; 4];
+        for e in &self.entries {
+            if e.kind != "mint" {
+                continue;
+            }
+            for l in 0..4 {
+                m[l] = m[l].checked_add(e.mu[l])?;
+            }
+        }
+        Some(m)
     }
 
     /// A finite, signed allocation at genesis. Its own kind, never a mint:
@@ -976,23 +1024,35 @@ mod tests {
         assert_eq!(t.supply().expect("supply adds up"), [11, 10, 12, 10]);
     }
 
-    /// Where the invariant does NOT hold today, stated as a claim rather
-    /// than discovered by a soak. `enroll` inserts a bond and writes a
-    /// "stake" row without debiting anything: bond appears that was never
-    /// issued, so `Σ balance + Σ bond + Σ escrow` exceeds `genesis + mint
-    /// − burn`. MU-ECONOMY §4 has bond as "μ at risk" — staked FROM a
-    /// balance — and §9 lists stake and unstake for voices as not landed.
-    /// This test pins the gap so the fix is a change to this assertion and
-    /// not a surprise: 7.5's fold cannot land while it stands.
+    /// A stake MOVES value between two carriers of one identity and never
+    /// creates any (§4: bond is μ at risk, staked from a balance). This
+    /// assertion is the inverse of the one it replaces, which pinned the
+    /// failure: `enroll` used to insert the bond and write its row without
+    /// debiting anything, so bond existed that was never issued.
     #[test]
-    fn enroll_conjures_bond_and_the_invariant_says_so() {
+    fn a_stake_moves_value_and_never_creates_it() {
         let mut t = Treasury::new();
         let a = (1u64, [1u8; 32]);
         t.genesis([1; 32], [10, 0, 0, 0], a);
-        assert!(t.audit().is_ok(), "genesis alone conserves");
-        t.enroll([1; 32], [4, 0, 0, 0], a);
-        let err = t.audit().expect_err("bond was never issued");
-        assert!(err.contains("is not the carriers"), "{err}");
+        assert_eq!(t.audit().expect("genesis conserves"), [10, 0, 0, 0]);
+
+        let staked = t.enroll([1; 32], [4, 0, 0, 0], a);
+        assert_eq!(staked, [4, 0, 0, 0], "staked from the balance");
+        assert_eq!(t.balance_mu(&[1; 32]), [6, 0, 0, 0], "the balance fell by it");
+        assert_eq!(t.bond_of(&[1; 32]), Some([4, 0, 0, 0]));
+        assert_eq!(t.audit().expect("a stake conserves"), [10, 0, 0, 0], "supply unmoved");
+
+        // What the balance cannot cover is not staked.
+        let over = t.enroll([1; 32], [99, 0, 0, 0], a);
+        assert_eq!(over, [6, 0, 0, 0], "only what was held");
+        assert_eq!(t.balance_mu(&[1; 32]), [0, 0, 0, 0]);
+        assert_eq!(t.audit().expect("still conserves"), [10, 0, 0, 0]);
+
+        // And it returns the way it went.
+        let back = t.unstake([1; 32], [10, 0, 0, 0], a);
+        assert_eq!(back, [10, 0, 0, 0], "never more than is bonded");
+        assert_eq!(t.balance_mu(&[1; 32]), [10, 0, 0, 0]);
+        assert_eq!(t.audit().expect("an unstake conserves"), [10, 0, 0, 0]);
     }
 
     /// G4. An escrow names every voice that stood the claim — `escrow_award`
