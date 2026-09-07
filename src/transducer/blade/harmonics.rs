@@ -1,18 +1,12 @@
-// AI-GENERATED CONTENT — see DISCLAIMER.md.
+// 20, A6 — THE HARMONICS of a body: the eleven scale-free coordinates it
+// is heard on.
 //
-//! THE EAR — the harmonics a body is heard on.
+//! Exact in ℚ and invariant under the whole conformal group: what a body
+//! sounds like, whatever its size, place, or orientation. The atlas is
+//! stratified by these axes, so hearing a body is reading its stratum.
 //!
-//! The convergence engine heard on eleven harmonics: value spectrum,
-//! spatial and geometric sensitivity, adjacency and boundary, and higher
-//! torsion (D.SENSE.HEARING.1, the harmonic tuning). Here they are the
-//! eleven scale-free coordinates of a body on the base manifold, exact in
-//! ℚ and invariant under the whole conformal group: what a body sounds
-//! like, whatever its size, place, or orientation. The atlas is stratified
-//! by these axes, so hearing a body is reading its stratum.
-//!
-//! The ear hears a scene's bodies and a voice's carried bodies the same
-//! way. A kernel's aperture ([`Tuning`]) is the running tuning of its
-//! hearing: H_total = H_core + H_tuning, converging on what it has heard.
+//! One caller, `blade::body::axes_of`, which is why this sits under
+//! `blade/` — the body it measures.
 
 use crate::transducer::blade::{self, Blade};
 use num_rational::BigRational;

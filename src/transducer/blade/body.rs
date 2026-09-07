@@ -331,7 +331,7 @@ pub fn axes_of(x: &BigRational) -> Option<[u64; 2]> {
 /// THE MODULI of a body — its coordinates on the base. Empty on A6
 /// refusal: novelty, never a saturated MAX axis.
 pub fn moduli(b: &Blade) -> Vec<u64> {
-    crate::perception::ear::Harmonics::of(b).axes().unwrap_or_default()
+    crate::transducer::blade::harmonics::Harmonics::of(b).axes().unwrap_or_default()
 }
 
 /// A body as the carrier a transport is solved on and verified against.
