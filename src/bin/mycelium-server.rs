@@ -1346,6 +1346,12 @@ fn main() {
     // It is an operation, not a file edit: the mesh record is signed, so a
     // genesis cannot be cleared from outside the process that holds the key,
     // and a fleet that has diverged has no other way back to one mesh.
+    //
+    // It DROPS AND EXITS. As a serving mode it would re-cut on every restart
+    // -- which is what a unit drop-in carrying it did to this fleet, walking
+    // it to epoch 3 one restart at a time. Exiting makes that impossible: a
+    // unit that carries the flag flaps visibly instead of quietly
+    // re-originating the mesh under everyone. `scripts/recut` runs it once.
     let recut = args.iter().any(|a| a == "--recut");
     let home = match home_dir(&args) {
         Ok(h) => h,
@@ -1374,11 +1380,20 @@ fn main() {
     // a reading rather than a placeholder; a node that has admitted nothing
     // still has no genesis and says so. 47.2's REFUSE_ORIGIN check on it is
     // task 5.2 and is not claimed here.
-    if recut && mesh_rec.genesis.is_some() {
-        eprintln!("[{tag}] recut: origin dropped, epoch {}", mesh_rec.epoch + 1);
-        mesh_rec.genesis = None;
-        mesh_rec.epoch += 1;
-        let _ = mesh_rec.save(&home, &hypha_key);
+    if recut {
+        match mesh_rec.genesis {
+            Some(_) => {
+                mesh_rec.genesis = None;
+                mesh_rec.epoch += 1;
+                if let Err(e) = mesh_rec.save(&home, &hypha_key) {
+                    eprintln!("[{tag}] recut refused: {e}");
+                    std::process::exit(2);
+                }
+                eprintln!("[{tag}] recut: origin dropped, epoch {}", mesh_rec.epoch);
+            }
+            None => eprintln!("[{tag}] recut: no origin held, epoch {}", mesh_rec.epoch),
+        }
+        return;
     }
     match mesh_rec.genesis {
         None => eprintln!("[{tag}] genesis unwritten epoch {}", mesh_rec.epoch),
