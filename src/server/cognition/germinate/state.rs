@@ -60,11 +60,11 @@ impl Kernel {
         &self.chain
     }
 
-    /// THE COHESION WITNESS (cohesion import) — the joint (C, I) state, both
+    /// THE COHESION READING — the joint (C, I) state, both
     /// axes exact and never traded: C counts open demands sitting on KNOWN
     /// geometry (closure failing — collapse-side work); I counts open demands on
     /// geometry NO thought speaks (coverage failing — expansion-side work).
-    pub fn cohesion(&mut self) -> crate::cohesion::CohesionWitness {
+    pub fn cohesion(&mut self) -> (u64, u64) {
         let rank = self.closure_now();
         cohesion_over(&rank)
     }

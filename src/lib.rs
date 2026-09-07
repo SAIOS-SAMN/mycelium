@@ -20,7 +20,6 @@ pub mod economy;
 pub mod arc;
 pub mod anastome;
 pub mod chronometry;
-pub mod cohesion;
 
 // Component roles.
 pub mod server;

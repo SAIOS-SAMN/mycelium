@@ -194,7 +194,7 @@ pub fn quote(
         Vec<crate::transducer::stalk::Invariant>,
     )>,
     u64,
-    crate::cohesion::CohesionWitness,
+    (u64, u64),
     u64,
 )> {
     let view = k.lock().ok()?.market_open();

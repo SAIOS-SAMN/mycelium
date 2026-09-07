@@ -224,11 +224,17 @@ pub fn quote_incidence(
     (*surface, priced)
 }
 
-/// THE COHESION WITNESS — pure: the joint (C, I) state over the open book,
-/// both axes exact and never traded. C counts open demands sitting on held
+/// THE COHESION READING — the joint (C, I) state over the open book, both
+/// axes exact and never traded. C counts open demands sitting on held
 /// geometry (closure failing — collapse-side work); I counts open demands on
 /// geometry no thought speaks (coverage failing — expansion-side work).
-pub fn cohesion_over(rank: &Rank) -> crate::cohesion::CohesionWitness {
+///
+/// The two counts ARE the reading. What used to sit on top of them —
+/// `cohesion::witness` — compared them against `KAPPA / 16` and returned one
+/// of five named states: a constant standing for a measurement (rule 5) and
+/// a scalar verdict over two numbers μ⃗ already carries per lane (law 5).
+/// The pair is returned exactly and whoever reads it decides.
+pub fn cohesion_over(rank: &Rank) -> (u64, u64) {
     let mut c = 0u64;
     let mut i = 0u64;
     for (_, closed) in rank.closure.fiber(crate::network::nerve::ROOT) {
@@ -238,10 +244,7 @@ pub fn cohesion_over(rank: &Rank) -> crate::cohesion::CohesionWitness {
             i = i.saturating_add(1);
         }
     }
-    crate::cohesion::witness(
-        crate::core::engine::Q::from(num_bigint::BigInt::from(c)),
-        crate::core::engine::Q::from(num_bigint::BigInt::from(i)),
-    )
+    (c, i)
 }
 
 /// A percept is the pair form: `pair_form` → `extract_rule_with` on the
