@@ -5,10 +5,9 @@
 //! stroke count and never a duration, and occlusion is a full stroke-cycle
 //! of consecutive failures rather than a timeout.
 
-
-/// The transport aperture — the perceived state of the wire to the server
-/// (distinct from the epigenome's chromatic `Aperture`). A timeout or
-/// refusal is not an anonymous error: it is a measured physical condition
+/// The transport aperture — the perceived state of the wire to the server.
+/// A timeout or refusal is not an anonymous error: it is a measured
+/// physical condition
 /// (an impedance mismatch — a closed door or a saturated manifold). The
 /// entity perceives it, folds it into its metabolic pacing, and adapts its
 /// speech instead of redialing blind.
