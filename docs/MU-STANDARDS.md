@@ -88,7 +88,13 @@ exposed at boundaries only; a `bool` is never branched on inside cognition
 (law I of the Anti-Flattening Law). `*_of` reads a coordinate from a
 carrier (`translator_of`, `class_of_vertex`). `rederive_*` recomputes from
 content. `key()` returns A21 bytes; `address()` returns the M2 composite;
-neither is ever a digest.
+neither is ever a digest. A comparison of two polytonic objects — two μ⃗,
+two `Rank`, two `ClassVector`, two reserves — returns the reading, never a
+verdict: per-lane moves (`Fell`/`Held`/`Rose`), a shortfall per lane, a
+`RankMove`. A `bool` over four lanes is the maximal flattening: it keeps
+neither order nor lane, and every caller that needs to act recomputes what
+the bit threw away (`fits_book` → `log_room_refused` recomputing the room
+is the recorded instance). Ruled 2026-09-07, Stage 9.
 
 2.4 **Refusals.** A function that can refuse returns `Option<T>` when the
 cause is unique and documented at the call site, otherwise `Result<T,
@@ -109,6 +115,15 @@ number is measured or refused (rule 5); a constant named `*_MAX`,
 2.7 **Modules and paths.** `snake_case` files, one word or two joined by
 underscore, named for the chapter's object. The module path is the
 document's binding: `cognition::court::lapse`, `sentence::pivot::snap`.
+
+2.8 **Headers.** A file's header says what the file is, in the document's
+words, in at most three lines: the object it carries and the chapter that
+binds it. It carries no history — what was deleted, when, and why is in
+git and on the backtrack ledger — and no claim about the tree beyond the
+file. A header that calls the coefficient field "the scalar the engine
+counts in" states the collapse law 5 forbids: ℚ is the field the
+coordinates of a multivector are written over; the engine counts in μ⃗ per
+lane, in versors and blades, in ℤ-ranks.
 
 ## 3. Tests
 
@@ -174,8 +189,8 @@ each needs a sentence in the message.
 `Vec<bool>`, `unwrap_or` under `sentence/`), maps (`HashMap`, `BTreeMap`,
 `HashSet`, `BTreeSet` in cognition), digest (`blake3` outside `network/`,
 `court/identity.rs`, `chronometry.rs`, persistence loaders), matrix
-(`QMatrix`, `core::engine::{Delta, Operator}`, `core::matrix` in
-cognition), clock (`SystemTime`, `Instant`, `Duration` in every kernel,
+(the shape of a rational matrix — `QMatrix`, `Vec<Vec<Q>>`, `as_operator`,
+`realize(` — in cognition; `core` exports `Q` alone since F2f), clock (`SystemTime`, `Instant`, `Duration` in every kernel,
 court, client, transducer, economy, physics file and every binary),
 squaring (coordinate pairs outside the sensor allow-list), file length
 (§1.1), rustc warnings (`RUSTFLAGS='-D warnings'`), clippy warnings
@@ -194,6 +209,14 @@ violation is returned.
 `saturating_*` outside accounting floors, `expect` in production), 15
 (`.first()`/`.last()` outside wire tags and chain heads). Until they exist,
 the auditor's grep over production code is the check, on every landing.
+
+4.6 **The order gate** (Stage 9, S9.10; folded into F3's single walker):
+a function whose parameters include two `[u64; 4]`, two `Rank`, or two
+`ClassVector` and whose return is `bool` is a hit anywhere; two μ⃗
+compared against each other outside `economy/`,
+`sentence/pivot/drive.rs::trial` and `sentence/pivot/snap.rs::select_discharge`
+is a hit. `dominant` returns `Option<usize>` and `lane_moves` returns the
+reading; neither is a hit.
 
 4.5 A gate that is handed a path names a hit when the path does not exist;
 it never returns quietly. A gate's allow-list entry for a file that no
@@ -228,6 +251,14 @@ without the operator's word. A commit that must be removed from history
 day as the code it describes; a doctrine change (§9) lands before the code
 that implements it.
 
+5.6 **Shared files.** `git commit --only <path>` commits the file as it
+stands in the working tree, not the hunk the item wrote. A documents file
+two agents edit (`MU-RECURSION-TASKS.md` above all) is named in a commit
+only after `git diff -- <path>` shows nothing but the item's own lines;
+otherwise the item's rows wait for their own commit and the other agent's
+pending edits are left alone. Four bundles on 2026-09-07 had this one
+cause.
+
 ## 6. Verification of a landing
 
 6.1 The implementor runs, in the foreground and in this order, on the
@@ -245,6 +276,17 @@ never the object of an audit, the code is.
 next item lands (chapter 41's consolidation discipline). A landing that
 changes admission, the wire, or the market is followed by a whole-fleet
 recut before its readings are used.
+
+6.4 **Verification never writes.** A check reads: `git diff`, `git show`,
+`git log`, a build, a test run. `git checkout <rev> -- <path>` is a write
+that reverts the file it names, and it reverted a landed fix once
+(2026-09-07, F3f) while being used to "verify" it. A probe that must
+change source — a `panic!` to prove a test reaches an arm, an offending
+line to prove a gate fires — is made only in a detached worktree, never in
+the tree an agent is working in, and a worktree build that shares the
+target directory is followed by `touch build.rs && cargo build --release`
+from the working tree so the build script's cached path is that tree's.
+
 
 6.4 Fleet readings are taken on one binary: a fleet whose voices and
 hyphae run different commits produces no reading.

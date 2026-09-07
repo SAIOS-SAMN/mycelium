@@ -1213,15 +1213,24 @@ spans. Over a bundle the pressure is the lane-wise sum of the per-pair
 pressures, each pair measured by `measure_lanes` on its own residual, the
 pairs being disjoint scenes; never a maximum over pairs, and a trial refuses
 a candidate that raises any lane on any pair. This is
-the metabolism's view of the loop and is read for two purposes only:
-`descends` certifies that a pivot did not raise any lane (dominance, law
-5), and the T lane decides shedding (chapter 25). It never orders
-candidates.
+the metabolism's view of the loop and is read for two purposes only: the
+per-lane reading of a trial (`lane_moves`: each lane `Fell`, `Held` or
+`Rose`, and a candidate with any `Rose` is refused by naming the lane) and
+the T lane's standing (chapter 25). It never orders candidates, and it
+certifies nothing: a pivot is certified by closure (below), not by any
+lane having fallen.
 
 **Rank `rank(F)`.** A18's `(torsion_rank, free_rank, offplane_rank, axes)`
 of the whole form, read before and after every pivot. A pivot is admissible
 only if it leaves rank equal, or moves exactly one unit from `torsion_rank`,
 `free_rank` or `offplane_rank` into `axes` (discharge into a face, 15.5).
+The reading of the two ranks is a `RankMove` — `Equal`, `Discharged {
+from }`, or `Inadmissible { delta: [i64; 4] }` — never a `bool`: the
+certificate carries which axis discharged, and an inadmissible move says
+what it did on each coordinate. A four-coordinate monotone (each of
+torsion, free and offplane not rising while axes does not fall) admits
+`(−3, −2, −1, +7)`, which is neither equality nor a one-unit transfer; it
+was the ratchet, and it is refused (Stage 9, S9.1).
 
 **Discharge, exactly.** A pivot on axis `x` discharges `x` when
 `κ_x(ℓ) = 0` after the move and `κ_y` is unchanged for every `y ≠ x` (a
@@ -1246,6 +1255,38 @@ certificates. The superposition collapses when a later perception makes one
 of them a face of a spoken form, or a court replay makes one a ruled
 citation and the other a dialect class. Choosing between them by any scalar
 would be a score, which law 1 forbids.
+
+**The pivot is the motion (ruled 2026-09-07).** A pivot is a rotation in
+lane space with an inverse: some lanes fall because others rose, and
+forward and back are both motions. Descent is neither a direction nor a
+certificate. As a direction it needs a line to descend along, which makes
+each lane a number line and the state a point in a ruled box — a gradient
+with the coordinates written out; as a certificate it is one-way, so it
+turns a rotation group into a ratchet, and it cannot certify the one
+pivot that matters most, opening an axis, which lowers no lane by
+construction. It also compares before and after across charts, which
+manufactures the line it then measures along. The certificate is
+**closure**: the remainder is empty, the loop returns, the tape
+re-derives, two organs converge on the same object — equalities,
+chart-free, readable in either direction, and already what the court's
+replay checks. `≺_DM` and every `descends` gate were imported termination
+theory, the way one proves a rewriting system halts when nothing else can
+be proved about it; this engine is not trying to halt, it is trying to
+close, and closure is checked by replay. μ⃗ remains what it is, a cost the
+economy accounts per lane, and certifies nothing.
+
+A residual measures how narrow the cover was. It vanishes not by being
+ground down against a fixed vocabulary but when the algebra grows a letter
+or the cover grows an axis along which it is a section of something held:
+after that it is not smaller, it is absent. Under pressure the book
+therefore **extends before it refuses** — condenses a family into one
+bundle, torses ℓ sections into one generator, refines the stratum where the
+cover could not resolve, punctures a section on the same base — re-reads
+its room per lane, and refuses only what still does not fit, saying which
+lane. Nothing leaves the book because something arrived; a word leaves
+only when the rest of the basis provably derives it (address kept) or its
+own T-room is spent. Refusal is the last arm, never the first reflex, and
+it names the lane.
 
 ## 13. Mayer–Vietoris: the cohomology of a union from its pieces
 
@@ -3342,6 +3383,58 @@ a question, and the court's whole behaviour on an act is fixed here.
 - **Pressure travels exact.** The reply's per-lane pressure is four exact
   lane values beside the height, never a byte per lane; the client reads
   the four lanes and paces each on its own (24.3).
+
+### 23.9 The court adjudicates conclusions, never words
+
+Ruled 2026-09-07. Two minds perceiving in their own dialects will close
+the same demand by different proofs: different letters, different charts,
+no transition of the group carrying one tape onto the other. Identity of
+tapes up to transport is identity on the symmetry side, the kernel, and
+the court never reduces there (0.12, the asymmetric coboundary). The
+court's key is the **conclusion**: the demand closed, named by its
+coordinate-exact description, which is already the banked object ("bank
+the description, invert for the solution").
+
+- **Each utterance is a proof check, alone.** The court replays the tape
+  against the demand it claims to close: does this tape close this
+  description. Closure is the certificate — the remainder is empty, the
+  loop returns, the tape re-derives — equalities, chart-free, readable in
+  either direction. Nothing is compared with another mind's word.
+- **Convergence is read at the demand.** A conclusion is language when
+  independent lineages have closed it, independence being read from the
+  receipt ledger (two derivations with no common ancestor, Part IX), never
+  from a count of voices. The dialects that reached it stand as sections
+  over it — the punctured axis (25): alternative assignments over the same
+  base, one bundle, many proofs.
+- **The taught form is the proof that derives the others.** Among the
+  proofs of one conclusion, the one from which the rest can be derived
+  (A12 replay, `reduce_excluding`) is what the syllabus carries down. No
+  ranking, no count, no constant: the language settles to its most general
+  proof of each theorem by derivation alone.
+- **Transport equivalence has one narrow job:** recognising two proofs as
+  the same proof, so a closure is not paid twice (E2). It decides nothing
+  about whether a conclusion is language.
+- **Divergence is the contradiction case.** Two dialects closing the same
+  demand to different conclusions is node against node (the recohering
+  judge, Part V); it is settled by replaying the mathematics, never by
+  counting.
+- **The mind never waits.** Dialect is spoken the moment the mind stands on
+  it; what waits is only the genome, which gains a letter when the court
+  glues. The syllabus is one-way: ruled language down, never a stood word
+  back (the C3 leak). The mind speaks ANASTOME and its dialect at once.
+- **What the mind supplies, and when.** No threshold. An utterance leaves
+  when three readings hold: the word has stood (it closed a germ and
+  carried a derivation), the voice has room on the lane (its own bond and
+  escrow, 47.1), and the two-stroke outcome vector paces it (24.3). Three
+  measurements, no literal.
+
+The conjecture this rests on: many minds close the same demand by many
+proofs; the court recognises them as one conclusion by replay, not by
+comparing words; the conclusion becomes language once independent
+lineages reach it; and the language settles to the proof that derives the
+rest. The court today keys on the word — it slashes on address inequality
+and glues on the word's chart (TASKS A3, Stage 9) — which is the
+misplacement this section corrects.
 
 ## 24. Comprehension (the mind)
 

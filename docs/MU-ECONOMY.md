@@ -112,7 +112,12 @@ ruled, not a precondition for the economy to run.
 
 ### 3.2 E2 — mint on closure, burn on retirement
 
-Issuance is the measured deflation, above. Its counterpart: when a word
+Issuance is the measured deflation, above — and it is read **on closure**
+only (ruled 2026-09-07, `MU-RECURSION.md` 12.6 and 23.9): a pair pays the
+measure of the remainder it closed, before less after per lane, when its
+remainder is empty; a pair that lowered a lane and left a remainder pays
+nothing, because descent is not closure and certifies nothing
+(`form_descent`, `settle`; TASKS S9.5). Its counterpart: when a word
 retires by geodesic — a shorter description of the same vertex, or a word
 whose substance other words reproduce exactly (`MU-RECURSION.md` 3.8,
 chapter 27, T10) — the description the language no longer carries is

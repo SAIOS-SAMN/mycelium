@@ -122,12 +122,14 @@ gate fails the build on
 and on a `(BigRational, BigRational)` or `(i64, i64)` field or parameter
 named `placement`, `shift`, or `residue` outside `family::pair_form`,
 `family::speak_rule`, and `family::orbit` (the squaring gate, law 11), and
-on `QMatrix`, `core::engine::{Delta, Operator}`, or `core::matrix` in
-`src/transducer`, `src/server`, `src/client`, and `src/court` (the matrix
-gate, law 11 and rule 16; `core::zlinalg` is the one matrix arithmetic,
-for ranks). Two more gates and one scope rule (`MU-STANDARDS.md` §4): the
-file-length gate (no source file over 600 lines, `AWAITING_SPLIT` naming
-`core/rcf.rs` until F2 deletes it) and the clippy gate (`cargo clippy --release --all-targets -- -D warnings` in
+on the shape of a rational matrix — `QMatrix`, `Vec<Vec<Q>>`,
+`as_operator`, `realize(` — in `src/transducer`, `src/server`,
+`src/client`, and `src/court` (the matrix gate, law 11 and rule 16; F2f
+deleted `core/{engine, matrix}.rs`, `core` exports `Q` alone, and
+`core::zlinalg` is the one matrix arithmetic, for ranks). Two more gates
+and one scope rule (`MU-STANDARDS.md` §4): the file-length gate (no source
+file over 600 lines; `AWAITING_SPLIT` is empty since F2a) and the clippy
+gate (`cargo clippy --release --all-targets -- -D warnings` in
 the same foreground run as the suite); every gate's scope is the whole of
 `src/` including `src/bin/`, with allow-lists by file or function name and
 never by directory alone. Gates still owed for rules 2, 4, 10, 11 and 15
