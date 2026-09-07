@@ -23,6 +23,11 @@ pub enum RewriteKind {
     Reanchor = 3,
     AxisOpen = 4,
     Translation = 5,
+    /// Retirement by citation (3.8, chapter 27, T10): a word whose substance
+    /// other words reproduce exactly retires, and the language shrinks toward
+    /// the geodesic. The structure changes; the result does not, which is why
+    /// this is convergence and not a vote.
+    Retire = 6,
 }
 
 impl RewriteKind {
@@ -34,6 +39,7 @@ impl RewriteKind {
             3 => RewriteKind::Reanchor,
             4 => RewriteKind::AxisOpen,
             5 => RewriteKind::Translation,
+            6 => RewriteKind::Retire,
             _ => return None,
         })
     }
@@ -47,6 +53,13 @@ pub enum RewritePayload {
     Reanchor { gamma: Vec<Word> },
     AxisOpen { class: Rotor, degree: u8 },
     Translation { a: crate::transducer::a21::Address, b: crate::transducer::a21::Address, gauge: Versor },
+    /// `cites` are the words that speak the retired one; `freed` is the lane
+    /// vector the language no longer carries. The court checks from the tape
+    /// alone that a retirement cites something other than itself and frees
+    /// something; that the cites actually reproduce the retired substance is
+    /// a re-derivation over the language, and it is the kernel's, made
+    /// before the mint (`verify_utterance` in `try_refine`).
+    Retire { cites: Vec<crate::transducer::a21::Address>, freed: [u64; 4] },
 }
 
 #[derive(Debug, Clone)]
@@ -110,6 +123,15 @@ impl Rewrite {
                 crate::transducer::a21::put_addr(&mut out, a);
                 crate::transducer::a21::put_addr(&mut out, b);
                 gauge.to_bytes(&mut out);
+            }
+            RewritePayload::Retire { cites, freed } => {
+                out.extend_from_slice(&(cites.len() as u16).to_le_bytes());
+                for a in cites {
+                    crate::transducer::a21::put_addr(&mut out, a);
+                }
+                for m in freed {
+                    out.extend_from_slice(&m.to_le_bytes());
+                }
             }
         }
         out
@@ -193,6 +215,20 @@ impl Rewrite {
                 let gauge = Versor::from_bytes(b, &mut pos)?;
                 RewritePayload::Translation { a, b: baddr, gauge }
             }
+            RewriteKind::Retire => {
+                let n = u16::from_le_bytes(b.get(pos..pos + 2)?.try_into().ok()?) as usize;
+                pos += 2;
+                let mut cites = Vec::with_capacity(n);
+                for _ in 0..n {
+                    cites.push(crate::transducer::a21::take_addr(b, &mut pos)?);
+                }
+                let mut freed = [0u64; 4];
+                for m in &mut freed {
+                    *m = u64::from_le_bytes(b.get(pos..pos + 8)?.try_into().ok()?);
+                    pos += 8;
+                }
+                RewritePayload::Retire { cites, freed }
+            }
         };
         Some(Rewrite { kind, before, after, claimed, payload })
     }
@@ -226,6 +262,9 @@ impl Rewrite {
             RewritePayload::Translation { .. } => {
                 mu[LANE_GAUGE] = 2;
             }
+            // The compression IS the yield: the description the language no
+            // longer carries, on the lanes it occupied. Not a constant.
+            RewritePayload::Retire { freed, .. } => mu = *freed,
         }
         mu
     }
@@ -264,6 +303,23 @@ pub fn yield_vector(kind: RewriteKind, before: &[Element], after: &Element) -> [
         }
         RewriteKind::Translation => {
             mu[LANE_GAUGE] = 2;
+        }
+        RewriteKind::Retire => {
+            // The language shrank by exactly the descriptions it no longer
+            // carries. The retired words are disjoint carriers, so their
+            // measures accumulate lane-wise (12.6) and never meet. An
+            // overflow yields the zero vector, which `settle_rewrite` and
+            // `replay` both refuse -- a compression too large to measure is
+            // not paid, it is refused (rule 11).
+            for e in before {
+                let m = e.magnitude();
+                for l in 0..4 {
+                    match mu[l].checked_add(m[l]) {
+                        Some(v) => mu[l] = v,
+                        None => return [0; 4],
+                    }
+                }
+            }
         }
     }
     mu
@@ -340,6 +396,23 @@ pub fn replay(e: &Element) -> Option<&'static str> {
                 return Some("translation gauge is not invertible");
             }
         }
+        RewritePayload::Retire { cites, .. } => {
+            // A word retires BECAUSE something else speaks it. No cite is a
+            // deletion, and a word cited as its own proof proves nothing.
+            if cites.is_empty() {
+                return Some("retirement cites nothing that speaks it");
+            }
+            if cites.iter().any(|c| rw.before.iter().any(|b| b == c)) {
+                return Some("retirement cites the word it retires");
+            }
+            // The result is unchanged: a retirement moves the structure and
+            // not the meaning (3.8, T10), so the word it names as `after` is
+            // the word it retires. A retirement naming a different vertex is
+            // claiming a change of meaning it did not make.
+            if !rw.before.iter().any(|b| *b == rw.after) {
+                return Some("retirement changes the vertex it names");
+            }
+        }
     }
     None
 }
@@ -388,6 +461,87 @@ mod tests {
         let back = Rewrite::from_element(&e).unwrap();
         assert_eq!(back.claimed[LANE_GAUGE], 1);
         assert_eq!(back.before.len(), 2);
+    }
+
+    /// G6. Retirement by citation is the compression axis: the structure
+    /// moves toward the geodesic and the result does not move at all (3.8,
+    /// T10). The yield is the description the language stopped carrying, on
+    /// the lanes it occupied — never a constant, which is what the `Refine`
+    /// arm this replaces paid (`yield_from_payload` hardcoded 1 on the shell
+    /// lane and `yield_vector` carried `.max(1)` so the two would agree).
+    #[test]
+    fn a_retirement_pays_what_the_language_stopped_carrying() {
+        use crate::transducer::a21::Address;
+        let word = Address::from_bytes(&[1u8]);
+        let speaker = Address::from_bytes(&[2u8]);
+        let freed = [3u64, 0, 0, 5];
+        let e = mint(
+            RewriteKind::Retire,
+            &[word.clone()],
+            word.clone(),
+            RewritePayload::Retire { cites: vec![speaker.clone()], freed },
+            freed,
+        )
+        .expect("a retirement that frees something is work");
+        assert!(replay(&e).is_none(), "it re-derives from its own tape");
+        let back = Rewrite::from_element(&e).expect("round trip");
+        assert_eq!(back.claimed, freed, "the yield is the measure, not a constant");
+        assert_eq!(back.after, word, "the vertex it names is the one it retires");
+        match back.payload {
+            RewritePayload::Retire { ref cites, freed: f } => {
+                assert_eq!(cites, &vec![speaker], "the cites survive the tape");
+                assert_eq!(f, freed);
+            }
+            _ => panic!("the tape decodes to the move it encoded"),
+        }
+    }
+
+    /// The three things a retirement cannot be, checkable from the tape
+    /// alone. That the cites genuinely reproduce the retired substance is a
+    /// re-derivation over the language and is the kernel's, made before the
+    /// mint; the court checks here what the tape can prove.
+    #[test]
+    fn a_retirement_that_proves_nothing_is_refused() {
+        use crate::transducer::a21::Address;
+        let word = Address::from_bytes(&[1u8]);
+        let other = Address::from_bytes(&[2u8]);
+        let freed = [3u64, 0, 0, 0];
+        let mk = |cites: Vec<Address>, after: Address| {
+            mint(
+                RewriteKind::Retire,
+                &[word.clone()],
+                after,
+                RewritePayload::Retire { cites, freed },
+                freed,
+            )
+            .map(|e| replay(&e))
+        };
+        assert_eq!(
+            mk(Vec::new(), word.clone()),
+            Some(Some("retirement cites nothing that speaks it")),
+            "a deletion is not a retirement"
+        );
+        assert_eq!(
+            mk(vec![word.clone()], word.clone()),
+            Some(Some("retirement cites the word it retires")),
+            "a word is not its own proof"
+        );
+        assert_eq!(
+            mk(vec![other.clone()], other),
+            Some(Some("retirement changes the vertex it names")),
+            "the meaning does not move"
+        );
+        assert!(
+            mint(
+                RewriteKind::Retire,
+                &[word.clone()],
+                word,
+                RewritePayload::Retire { cites: vec![Address::from_bytes(&[2u8])], freed: [0; 4] },
+                [0; 4],
+            )
+            .is_none(),
+            "a retirement that frees nothing is not work"
+        );
     }
 
     #[test]

@@ -4111,22 +4111,30 @@ impl Kernel {
         let residual = crate::transducer::sentence::verify_utterance(cites, sub.sub());
         match residual.as_slice() {
             [] => {
+                // THE COMPRESSION AXIS. The bidder proved that other words
+                // reproduce this word's substance exactly, so the word is
+                // redundant and retires: the language shrinks toward the
+                // geodesic while the meaning it carried is unchanged (3.8,
+                // chapter 27, T10). That is the move, and it is a
+                // retirement — not a refinement of a chart. It was minted as
+                // `Refine { chart, axis: addr[0] }`: under A21 the first
+                // byte of an address is the TAG NAMING THE OBJECT KIND, so
+                // every such rewrite claimed one axis, and chapter 35's "no
+                // axis is a hash fragment" fell to a fragment of an address
+                // standing in for A7's class invariants. Its yield was a
+                // constant besides — `yield_from_payload` hardcoded 1 on the
+                // shell lane and `yield_vector` carried `.max(1)` so the two
+                // would agree. There is no axis here because no chart is
+                // being refined.
                 let saved = candidate.magnitude();
-                let inv = crate::transducer::stalk::invariant_of(&candidate);
-                let after = self
-                    .language
-                    .words
-                    .first()
-                    .map(|w| (**w).clone())
-                    .unwrap_or_else(|| candidate.clone());
-                let payload = crate::transducer::rewrite::RewritePayload::Refine {
-                    chart: inv,
-                    axis: addr[0] as u64,
+                let payload = crate::transducer::rewrite::RewritePayload::Retire {
+                    cites: cites.iter().map(|(a, _, _, _, _)| a.clone()).collect(),
+                    freed: saved,
                 };
                 let _ = self.mint_rewrite(
-                    crate::transducer::rewrite::RewriteKind::Refine,
+                    crate::transducer::rewrite::RewriteKind::Retire,
                     &[candidate.clone()],
-                    &after,
+                    &candidate,
                     payload,
                     bidder,
                 );
