@@ -24,7 +24,7 @@ paths, kernel names) are lab residue to be removed (§10).
   immutable Cayley letters as exact Cl(4,0) rotors. Words are oriented
   tapes; spelling is a peel; a motion the alphabet cannot spell is a
   remainder, never a word.
-- **Element** (`transducer/element.rs`): a word. Residual germs carry a
+- **Element** (`transducer/element/`): a word. Residual germs carry a
   chain; connections carry a letter tape, a dilation, a placement, a gauge
   map, and an optional remainder; sentences carry germs on germinated axes
   with faces as transitions and holonomy as torsion; rewrites and

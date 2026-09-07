@@ -71,20 +71,59 @@ fn walk(dir: &Path, crate_dir: &str, hits: &mut Vec<String>) -> Result<(), Strin
     Ok(())
 }
 
-/// Stage 8's reading bound. Part VII's rule of verification is that the
+/// Stage 8b's reading bound. Part VII's rule of verification is that the
 /// auditor reads the function and its carriers END TO END, and grep is not
 /// verification; a file no one reads whole is a file whose faults are found
 /// by soak instead of by review. Every carrier fault of the G-set was
 /// invisible at 8000 lines and obvious at the function.
 ///
-/// 2500 is the one literal this tree allows, and it is allowed because it
+/// 800 is the one literal this tree allows, and it is allowed because it
 /// measures a person and not the mathematics (rule 5 bans constants that
 /// stand in for a measurement of the world; this stands in for a reading).
-/// A split moves code and changes nothing else, so the cost of obeying it
-/// is a commit whose suite counts are byte-identical.
+/// It goes to 600 in the last commit of Stage 8b (MU-STANDARDS 1.1).
+///
+/// A file still awaiting its split is named in `AWAITING_SPLIT` with the
+/// row of Stage 8b that owes it, so the gate is green on every commit of
+/// the stage and the list IS the remaining work: each split commit deletes
+/// its own row, and the stage ends when the list is empty. A row whose file
+/// is already under the bound, or no longer exists, is a stale row and is
+/// itself a hit — the list cannot outlive what it excuses.
+const AWAITING_SPLIT: &[(&str, &str)] = &[
+    ("src/bin/mycelium-server.rs", "S2"),
+    ("src/server/cognition/tests.rs", "S4"),
+    ("src/server/cognition/mod.rs", "S3"),
+    ("src/transducer/bubble.rs", "S5"),
+    ("src/anastome/dialogue.rs", "S6"),
+    ("src/transducer/sentence/mod.rs", "S7"),
+    ("src/transducer/alphabet.rs", "S8"),
+    ("src/transducer/family/mod.rs", "S9"),
+    ("src/network/nerve.rs", "S10"),
+    ("src/server/cognition/court.rs", "S11"),
+    ("src/economy.rs", "S12"),
+    ("src/client/sdk/entity.rs", "S13"),
+    ("src/server/cognition/book.rs", "S14"),
+    ("src/court/verdict.rs", "S15"),
+    ("src/transducer/cech.rs", "S16"),
+    ("src/client/sdk/mod.rs", "S17"),
+    ("src/transducer/family/tests.rs", "S18"),
+    ("src/client/sdk/epigenome.rs", "S19"),
+    ("src/transducer/blade.rs", "S20"),
+    ("src/bin/mycelium-client.rs", "S21"),
+    ("src/server/cognition/germinate.rs", "S22"),
+    ("src/client/sdk/tests.rs", "S23"),
+    ("src/transducer/sentence/pivot.rs", "S24"),
+];
+
 fn lint_file_length(root: &Path, hits: &mut Vec<String>) -> Result<(), String> {
-    const BOUND: usize = 2500;
-    fn walk_len(dir: &Path, hits: &mut Vec<String>) -> Result<(), String> {
+    const BOUND: usize = 800;
+    fn owed(path: &Path) -> Option<&'static str> {
+        let p = path.to_string_lossy().replace('\\', "/");
+        AWAITING_SPLIT
+            .iter()
+            .find(|(f, _)| p.ends_with(f))
+            .map(|(_, row)| *row)
+    }
+    fn walk_len(dir: &Path, hits: &mut Vec<String>, seen: &mut Vec<String>) -> Result<(), String> {
         let rd = match fs::read_dir(dir) {
             Ok(rd) => rd,
             Err(_) => return Ok(()),
@@ -93,7 +132,7 @@ fn lint_file_length(root: &Path, hits: &mut Vec<String>) -> Result<(), String> {
             let ent = ent.map_err(|e| e.to_string())?;
             let path = ent.path();
             if path.is_dir() {
-                walk_len(&path, hits)?;
+                walk_len(&path, hits, seen)?;
                 continue;
             }
             if path.extension().and_then(|s| s.to_str()) != Some("rs") {
@@ -103,16 +142,35 @@ fn lint_file_length(root: &Path, hits: &mut Vec<String>) -> Result<(), String> {
                 .map_err(|e| format!("{}: {e}", path.display()))?
                 .lines()
                 .count();
-            if n > BOUND {
-                hits.push(format!(
-                    "{}: {n} lines, over the {BOUND}-line reading bound (Stage 8) — split it",
+            match owed(&path) {
+                Some(row) => {
+                    seen.push(row.to_string());
+                    if n <= BOUND {
+                        hits.push(format!(
+                            "{}: {n} lines, already under the {BOUND}-line bound — delete its {row} row from AWAITING_SPLIT",
+                            path.display()
+                        ));
+                    }
+                }
+                None if n > BOUND => hits.push(format!(
+                    "{}: {n} lines, over the {BOUND}-line reading bound (Stage 8b) — split it",
                     path.display()
-                ));
+                )),
+                None => {}
             }
         }
         Ok(())
     }
-    walk_len(root, hits)
+    let mut seen: Vec<String> = Vec::new();
+    walk_len(root, hits, &mut seen)?;
+    for (file, row) in AWAITING_SPLIT {
+        if !seen.iter().any(|r| r == row) {
+            hits.push(format!(
+                "{file}: named by {row} in AWAITING_SPLIT and not found — delete the row"
+            ));
+        }
+    }
+    Ok(())
 }
 
 /// Does the module owning `tests.rs` declare it under `#[cfg(test)]`? The

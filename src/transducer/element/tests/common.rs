@@ -1,0 +1,17 @@
+// Fixture constructors for the element's tests (MU-STANDARDS 3.3): every
+// fixture is built through a constructor the production code exports, so a
+// test never hand-writes a carrier.
+
+use crate::core::engine::Q;
+use crate::transducer::element::*;
+use num_bigint::BigInt;
+
+pub fn q(v: i64) -> Q {
+    Q::from(BigInt::from(v))
+}
+
+pub fn elem_from_versor(v: Versor) -> Element {
+    let mut e = Element::identity();
+    e.action.spatial = Some(v);
+    e
+}

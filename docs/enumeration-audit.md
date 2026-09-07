@@ -208,7 +208,7 @@ Axis count is the moduli of one support, not N. Source: peel
 `family.rs` / `blade.rs` / `arc.rs` grid cells: the scene being
 perceived, one percept. Source: peel of that residual.
 
-`element.rs` `sub` / `sections` / `torsion` / `transitions`: the
+`element/carrier.rs` `sub` / `sections` / `torsion` / `transitions`: the
 fibre of this word. Source: keyed-on-the-word (the word is the
 cursor). Not a mesh scan.
 

@@ -416,7 +416,7 @@ Part III:
 | `alphabet.rs:727` `PlaneForm` | structural equality on unreduced unit exponents; `form()` does not reduce; `sentence::chart_of` (1885) reads raw exponents | A3 |
 | `alphabet.rs:334, 342` `Rotor::key`, `coordinate` | hash of unnormalised coefficients used at `cognition.rs:2947` as class key and refinement axis; `PlaneForm::key/coordinate` (849, 858) likewise | A1, A7 |
 | `cga.rs:46` `Mv` (`Versor`) | derived structural equality; `cognition.rs:1006` `push_cocycle` `old == g` | A4 |
-| `element.rs:140` `Element::eq` | tape bytes plus structural fields; inherited by `Germ`, `Face`, `Nerve` (sentence.rs 583, 600, 633) | M1 `same_vertex` |
+| `element.rs:140` `Element::eq` (now `element/vertex.rs`) | tape bytes plus structural fields; inherited by `Germ`, `Face`, `Nerve` (sentence.rs 583, 600, 633) | M1 `same_vertex` |
 | `sentence.rs:1144` `vertex_address` | writes raw versor bytes beside geodesic keys | A4 canonical versors |
 | `cognition.rs:5635, 5526` `composite_parent_id`, `section_address` | hash cells in given order, uncentred; assignment unsorted | A5, M2 |
 | `sentence.rs:1792` `from_element` | trusts the germ address stored in the tape | recompute (A8 step 2) |
@@ -434,7 +434,7 @@ A21, in one landing (chapter 41, 0.11):
 |---|---|---|
 | `alphabet.rs` `Rotor::key`, `Word::class_key`, `PlaneForm::key` | blake3 over canonical coefficients or conjugacy invariants | the coefficients and invariants written out (A21) |
 | `cga.rs` `Mv::key` | blake3 over canonical versor coefficients | the coefficients written out |
-| `element.rs` `Element::address`, `listing_key`, `form_key_bytes` | blake3 over the M2 composite | the M2 composite itself (17.2) |
+| `element/vertex.rs` `Element::address`, `form_key_bytes`; `element/residual.rs` `listing_key` | blake3 over the M2 composite | the M2 composite itself (17.2) |
 | `stalk.rs` `Invariant::key` | blake3 over the exact axes before the trie sees them | the axes' bytes, so `fiber_under` is a prefix read |
 | `sentence/class.rs` `ClassVector::class_key`, `CLOSED_KEY` | blake3 over the class vector | the class vector's coordinates; closed is the zero vector |
 | `sentence/form.rs` `hue_section_key`, `vertex_transport_key`, `class_key_of_versor` | blake3 over conjugacy ‖ gauge | the conjugacy coordinates ‖ the gauge |
@@ -1890,7 +1890,7 @@ never a single `(plane, exponent)` pair.
 
 ### 16.4 A4 — Canonical conformal versor
 
-Input: `V: Mv` (cga.rs 46; `Versor = Mv`, element.rs 201). The conformal
+Input: `V: Mv` (cga.rs 46; `Versor = Mv`, element/letters.rs). The conformal
 algebra in this tree is `Cl(3,1)` over `{e1, e2, e+, e−}` with squares
 `(+,+,+,−)`, `e_o = ½(e− − e+)`, `e_∞ = e− + e+`, masks `E1 = 1, E2 = 2,
 EP = 4, EM = 8`: the conformal model of the sensor **plane**.
@@ -1927,7 +1927,7 @@ plane and the hues are fibre coordinates (chapter 38 widens the base).
    after` belongs to a chain is the producer's decision (`germinate`).
 4. Output the chain; empty input, empty chain.
 
-`from_residual` (element.rs 1580) does 1–2 today. A5 is that code named and
+`from_residual` (element/residual.rs) does 1–2 today. A5 is that code named and
 called from every place that hashes or compares cells:
 `composite_parent_id`, `footprint_key`, `section_address`'s assignment
 (sorted), and `blind_replay`'s chain compare (the spoken chain
@@ -2499,7 +2499,7 @@ spelling, serialisation, and scaling.
 **Procedure.**
 1. Non-sentence word: M1 coordinates of the letters' word ‖ the canonical
    carriage versor (A4, `dilator(ρ) · translator`) ‖ sorted `sigma` ‖ A5
-   chain, as `form_key_bytes` (element.rs 1039) does with its
+   chain, as `form_key_bytes` (element/vertex.rs) does with its
    `geodesic().key()` replaced by the M1 coordinates and its two shift
    rationals replaced by the carriage.
 2. Rewrite word: `before` addresses, `after` address, kind, claimed, all
@@ -2737,7 +2737,7 @@ else, so every binding below still names the function it always named:
 
 | short name | absolute path |
 |---|---|
-| `alphabet.rs`, `sentence/`, `element.rs`, `cech.rs`, `stalk.rs`, `blade.rs`, `bubble.rs`, `family/`, `cga.rs`, `peel.rs`, `anchor.rs`, `sheaf.rs`, `germinate.rs`, `rewrite.rs`, `factor.rs`, `a21.rs` | `/opt/mycelium-v0.1.0/src/transducer/<name>` |
+| `alphabet.rs`, `sentence/`, `element/`, `cech.rs`, `stalk.rs`, `blade.rs`, `bubble.rs`, `family/`, `cga.rs`, `peel.rs`, `anchor.rs`, `sheaf.rs`, `germinate.rs`, `rewrite.rs`, `factor.rs`, `a21.rs` | `/opt/mycelium-v0.1.0/src/transducer/<name>` |
 | `cognition/`, `registry.rs`, `synthesis.rs` | `/opt/mycelium-v0.1.0/src/server/<name>` |
 | `verdict.rs`, `identity.rs`, `ledger.rs` | `/opt/mycelium-v0.1.0/src/court/<name>` |
 | `nerve.rs`, `mesh.rs`, `wire.rs` | `/opt/mycelium-v0.1.0/src/network/<name>` |
@@ -2872,7 +2872,22 @@ by composition. It never reads cells. `solve_coboundary` (1268) is the tree
 walk of 12.2 with its documented sign convention;
 `sentence::tests::regauge_then_delta1_is_conjugate` pins it.
 
-### 18.3 `/opt/mycelium-v0.1.0/src/transducer/element.rs`
+### 18.3 `/opt/mycelium-v0.1.0/src/transducer/element/`
+
+**The files.** The carrier is seven files, one organ each (Stage 8b S1):
+`carrier.rs` the `Action` and `Element` structs, the fibre reads and
+mutators, and the four-lane measurement; `vertex.rs` M1 and M2 —
+`same_vertex`, `compose`, `solution`, `inverse`, `canonical`, `address`,
+`form_key_bytes`; `letters.rs` the versor constructors, `projective_eq`,
+the decomposition into rho and translation, and `Letters`; `gauge.rs` the
+hue permutation, its profile and key, the transition versor, and the
+fibre of assignments a body can be spoken with; `residual.rs` A5's
+`canonical_chain` and every constructor that reads a chain; `tape.rs` the
+generation magic, the four tags, and the codec; `sensor.rs` the four
+functions permitted a coordinate pair (`cell_of`, `carry_center`,
+`carry_cell`, `pullback`), named in the squaring gate's allow-list. Tests
+are `element/tests/{16,17,18,19,21}.rs` by the chapter each proves, with
+`tests/common.rs` holding the fixture constructors.
 
 `Element` (81) gains `depth: u16`, in `GEN2` after `mag` (`to_bytes` 1035,
 `from_bytes` 1098). The sentence description bytes are the `Form` tape
@@ -3055,7 +3070,7 @@ No pass reads cells; every comparison is M1.
 `speak_rule(rule, x)` (997): `perceive(x)` once; match bodies to rule
 vertices by class through `Stalks::fiber` (stalk.rs 362), several bodies
 on one vertex being a section; `Word` vertices emit through `conformal_of`
-and `carry_cell` (element.rs 346) at the placement solved from the face to
+and `carry_cell` (element/sensor.rs) at the placement solved from the face to
 the anchor; `Glued` through `crystal.speak_form`; `Rebased` through
 `word_in`; `Unfolded` by iterating the form to stop; `Contact` words by
 `orbit` (chapter 22). Remainder as now.
@@ -3567,7 +3582,7 @@ alphabet.rs   Rotor::normalised (sign step), Rotor::projective_eq (either sign),
               Word::form (reduced), Word::normal_form (A2 step 1 off-plane), Word::key (= A1 key), Word::class_key (15.4),
               Word::{with_contact, contact, rebase} NEW, shorter_tape(word, budget) NEW, Contact NEW
 cga.rs        Mv::canonical NEW, Mv::projective_eq NEW, Mv::key NEW, derive(PartialEq) REMOVED
-element.rs    canonical_chain(&[Cell]) -> Vec<Cell> NEW (A5), Element::same_vertex NEW, PartialEq REMOVED,
+element/       canonical_chain(&[Cell]) -> Vec<Cell> NEW (A5), Element::same_vertex NEW, PartialEq REMOVED,
               form_key_bytes uses the M1 key, depth field, GEN2 depth after mag
 sentence.rs   Vertex/Face/Loop/Form NEW (18.2), Form::{face_of, delta1, coheres, is_closed, depth_of, regauge, glue, retract_vertices, rebase, unfold, loops_of},
               as_element/from_element v2 (19), vertex_address writes Mv::canonical, from_element recomputes germ addresses,
@@ -3593,7 +3608,7 @@ bubble.rs     pivot_on and expand_with call Form::pivot_loop (A16), vortex cells
               horizon: Keyed<(Rotor, Order, Standing)> by class key, Contemplation::seed_horizon NEW (A19)
 sentence.rs   Form::class_vector NEW, ClassVector/Axis NEW (12.6), Form::pivot_loop NEW (A16), PivotCertificate NEW (A20) with tape section (19),
               Form::rank NEW (A18); cech.rs Complex::rank NEW
-element.rs    record_torsion as A17's filing call; toroid.rs witness_stored as A17's witness
+element/carrier.rs  record_torsion as A17's filing call; toroid.rs witness_stored as A17's witness
 cognition.rs  glue_fetched torsion arm (23.7), serve_ruled class records (A19), Kernel::rank debug assertions
 dialogue.rs   SPEECH_WITHHELD, speech reply missing list, depth_max in digests, syllabus class section, standing byte
 mycelium-server.rs  judge: A11 and missing_forms; admit_peer_digest depth_max + A10; id_of only for pending_addrs
@@ -3620,7 +3635,7 @@ lines every trace greps.
 | `Germ`/`.germs`/`Cycle`/`.cycles` | `family.rs` 22, `bubble.rs` 14, `cognition.rs` 6, `cech.rs` 5, `sdk.rs` 2, `mycelium-client.rs` 2 | |
 | `SentenceRule` | `family.rs` | 8 |
 
-`ResidualGerm` in `germinate.rs` and its uses in `element.rs`,
+`ResidualGerm` in `germinate.rs` and its uses in `element/`,
 `cognition.rs`, `constants.rs`, `thought/mod.rs` are the chain type of a
 residual and are **not** this `Germ`; they are not renamed.
 
@@ -3697,7 +3712,7 @@ re-gauged copy coheres the mind learns the citer as spoken.
 
 ### 33.1 What changes
 
-`Element::address()` (element.rs 1026) hashed canonical description bytes
+`Element::address()` (element/vertex.rs) hashed canonical description bytes
 (`base_canonical()`) until a29bba5, so a sentence re-serialised from v1 to
 v2 changed address and
 two spellings of one word had two addresses. a29bba5 made the address a
@@ -4117,7 +4132,7 @@ replay the opening as they replay any sentence.
 
 `core/cyclo.rs`, `core/scalar.rs` new; `alphabet.rs`: `Rotor<Scalar>`,
 `Alphabet { base, ext }`, `ExtLetter`, `relators()` appending, `spell`
-steps 1–4, `PlaneForm` torsion in `Z/N`; `element.rs`: `Letters` carries
+steps 1–4, `PlaneForm` torsion in `Z/N`; `element/letters.rs`: `Letters` carries
 the conductor; `economy.rs`: conductor factor in the S-lane cost; genome
 section `SYL1` `(n, plane, id)*`. Tests and traces: chapters 39–40.
 
@@ -4186,7 +4201,7 @@ already need `z`.
 
 ### 38.6 B6 Binding
 
-`element.rs`: `Cell` widened, `positions`, `measure_lanes`, `from_residual`
+`element/{carrier,residual}.rs`: `Cell` widened, `positions`, `measure_lanes`, `from_residual`
 (A5 on six-tuples), chain bytes with dimension byte; `blade.rs`, `ear.rs`:
 `d`-dimensional moments and Betti numbers, axes prefixed by `d`; `peel.rs`:
 `d`-cube shells; `family.rs`: `perceive` over frames writes `t`;
