@@ -20,7 +20,7 @@ paths, kernel names) are lab residue to be removed (§10).
 
 ## 2. The language
 
-- **Alphabet** (`transducer/alphabet.rs`, `ALPHABET.md`): seventeen
+- **Alphabet** (`transducer/alphabet/`, `ALPHABET.md`): seventeen
   immutable Cayley letters as exact Cl(4,0) rotors. Words are oriented
   tapes; spelling is a peel; a motion the alphabet cannot spell is a
   remainder, never a word.
@@ -29,20 +29,20 @@ paths, kernel names) are lab residue to be removed (§10).
   map, and an optional remainder; sentences carry germs on germinated axes
   with faces as transitions and holonomy as torsion; rewrites and
   translations carry their tapes. The address measures the tape.
-- **Sentence** (`transducer/sentence.rs`): a nerve of germs with a Čech
+- **Sentence** (`transducer/sentence/`): a nerve of germs with a Čech
   complex over them; a rule is a sentence whose germ charts, face words,
   holonomies, and hue maps are constant across a family's pairs, the
   per-pair transports being the gauge.
-- **Chart** (`transducer/stalk.rs`): the atlas; charts are invariant
+- **Chart** (`transducer/stalk/`): the atlas; charts are invariant
   vectors whose prefixes are planes; a Keyed trie of strata.
-- **Comprehension** (`transducer/family.rs`, `client/sdk.rs`): perceive
+- **Comprehension** (`transducer/family/`, `client/sdk/`): perceive
   bodies, peel shells, carry bodies pair to pair, assemble the nerve,
   extract the rule, speak it onto a test. Hearing a word is deconstructing
   its tape and gluing it against the representative on its chart.
 
 ## 3. The court organ
 
-Inside every hypha (`server/cognition/`, `court/verdict.rs`):
+Inside every hypha (`server/cognition/`, `court/verdict/`):
 
 - `blind_replay` re-derives every kind of word from its own tape; false
   speech is slashed with a reason.
@@ -112,8 +112,10 @@ Snapshot sections: `MYC1`, `KCH1`, `RNK1`, `DEF1`, `FLD1`, `BOK1`, `CAV1`,
 through a sealed trait. `build.rs` fails the build on `.entries()`,
 `.for_each(`, and `spend_unit()` in cognition directories, and on
 `SystemTime`, `Instant`, and `Duration` in `src/server`, `src/client`,
-`src/court`, `src/transducer`, `src/economy.rs`, and `src/physics.rs`
-(the clock gate, `MU-RECURSION.md` 45.4). The same gate fails the build on
+`src/court`, `src/transducer`, `src/economy/`, and `src/physics.rs`
+(the clock gate, `MU-RECURSION.md` 45.4; at 3c02252 the gate still names
+`economy.rs` and so misses the directory — TASKS Stage 8c A1). The same
+gate fails the build on
 `blake3` anywhere outside `src/network`, `src/court/identity.rs`,
 `src/chronometry.rs`, and the persistence loaders (the digest gate,
 `MU-RECURSION.md` law 2 and A21: no hash of any mathematical structure),
@@ -124,8 +126,8 @@ on `QMatrix`, `core::engine::{Delta, Operator}`, or `core::matrix` in
 `src/transducer`, `src/server`, `src/client`, and `src/court` (the matrix
 gate, law 11 and rule 16; `core::zlinalg` is the one matrix arithmetic,
 for ranks). Two more gates and one scope rule (`MU-STANDARDS.md` §4): the
-file-length gate (no source file over 600 lines; 800 during Stage 8b) and
-the clippy gate (`cargo clippy --release --all-targets -- -D warnings` in
+file-length gate (no source file over 600 lines, `AWAITING_SPLIT` naming
+`core/rcf.rs` until F2 deletes it) and the clippy gate (`cargo clippy --release --all-targets -- -D warnings` in
 the same foreground run as the suite); every gate's scope is the whole of
 `src/` including `src/bin/`, with allow-lists by file or function name and
 never by directory alone. Gates still owed for rules 2, 4, 10, 11 and 15

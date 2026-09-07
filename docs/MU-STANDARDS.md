@@ -195,6 +195,13 @@ violation is returned.
 (`.first()`/`.last()` outside wire tags and chain heads). Until they exist,
 the auditor's grep over production code is the check, on every landing.
 
+4.5 A gate that is handed a path names a hit when the path does not exist;
+it never returns quietly. A gate's allow-list entry for a file that no
+longer exists is a hit as well, the same rule as a stale `AWAITING_SPLIT`
+row. Stage 8b moved `economy.rs` and `court/verdict.rs` out from under the
+digest and clock gates and nothing fired (TASKS Stage 8c, A1); a gate whose
+scope is a list of paths is only as alive as its list.
+
 ## 5. Commits
 
 5.1 **One item per commit.** The item is a row of `MU-RECURSION-TASKS.md`

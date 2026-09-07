@@ -194,6 +194,43 @@ enforces.
 `src/core/rcf.rs` (709) is on the list under F2, which deletes it: a file with
 no callers is not split, it goes.
 
+## Stage 8c — after the splits (audit 2026-09-07 at 3c02252)
+
+Reproduced at 3c02252 in a detached worktree: 396/13/6/4 under
+`RUSTFLAGS='-D warnings'`; clippy 207 warnings on the lib test target and 3
+on the server binary; lint green through `build.rs`; every source file under
+600 lines except `core/rcf.rs` (709, on `AWAITING_SPLIT` under F2).
+Move-only check over S10–S32 (whitespace, visibility and path normalised):
+S21 is a refactor (the client's loop state threaded as `&mut` parameters,
+four `#[allow(clippy::too_many_arguments)]`, a counters struct), S25 and the
+600-bound commit carry the intended gate changes, every other split is a
+move. The audit's subject was the content law (law 2, A21: content is the
+key, no hash or bitmask over a carrier, nothing obfuscated).
+
+| id | finding | status |
+|---|---|---|
+| A1 | **Blind gates.** `xtask/lint/digest.rs` names `economy.rs` and `court/verdict.rs`; `xtask/lint/clock.rs` names `economy.rs`; the a21 test `no_blake3_in_cognition` names `court/verdict.rs`. S12 and S15 made those directories, and each walker returns Ok on a path that is neither a file nor a directory, so `src/economy/` is under neither the digest nor the clock gate and `src/court/verdict/` is under no digest check, and nothing said so. Fix is §4.2 and §4.5: one walker over the whole of `src/` and `xtask/`, an allow-list by file (digest: `network/wire.rs`, `network/nerve/cover.rs` until A4, `chronometry.rs`, `court/identity.rs`; clock: nothing once A9 lands; matrix: `core/` until F2; maps: `core/laws.rs` until F2; squaring: the sensor functions and `cohesion.rs::pressure` until F2), and a named path that does not exist is a hit. A whole-tree dry run at 3c02252 found exactly those files outside the present scopes and nothing else. | open, F3 |
+| A2 | **Bitmasks over content.** `alphabet/word.rs` `to_bytes`/`from_bytes` write a letter as `id \| 0x80` with the orientation in the high bit; `sentence/class.rs` `Axis::to_byte`/`from_byte` write an axis as `kind << 3 \| plane`. Both are lossless and both are masks over two coordinates. Write the coordinates out: a letter is `[id, orientation]`, an axis is `[kind, plane]`. That is tape v5; persisted v4 tapes (genomes, ledgers, thoughts) do not re-read. **RULED 2026-09-07 by the operator: wipe all data, nothing is persisted across this.** No v4 reader is carried, `legacy_versor` and every GEN/MYC/THT legacy arm goes with it (F2h), and the F7 recut wipes ledgers, genomes and thoughts on all eight units. | open, F4 |
+| A3 | **Raw carriage bytes in the form address.** `sentence/chart.rs` `form_vertex_key` writes `carriage.to_bytes` at the `Word` and `Rebased` vertices where every other key writes `carriage.key()` (the canonical coefficients, A21). `court/verdict/blind.rs` slashes on `rederived.address() != spoken.address()`, so a true form whose carriage re-derives with the opposite projective sign is slashed for its bytes — the fault `element/vertex.rs` names in the comment above `same_vertex`. Write `put_bytes(&carriage.key())` at both sites; then address inequality is content inequality and the slash is honest. | open, F4 |
+| A4 | **Digests of a mathematical structure.** `network/nerve/cover.rs` `hash_charts` digests the chart axes into `roots: [[u8; 32]; 4]` (with `empty_cover_root`); `server/cognition/basis.rs` sets `ruled_root = chronometry::payload_hash(..)` over the ruled addresses; both are signed and exchanged and the exchange paces on "root moved" (`bin/mycelium-server/exchange.rs`). The charts already travel in the same frame (`encode_cover_digest(&charts, ..)`) and the signature covers the frame bytes, so the roots carry nothing the frame does not. Replace with heights: the cover height is the count of admitted cover changes, the ruled height the ledger height of the last ruling; a peer changed iff its height moved; a fetch is by height, never by digest. Delete `roots`, `hash_charts`, `empty_cover_root`, `ruled_root`, and the root fields of the cover frame. | open, F5 |
+| A5 | **A name that says hash.** `transducer/sheaf.rs` `StratumDigest.root` is the stratum's sorted member addresses written out — compliant, and `count` is redundant with it. Rename `StratumRoster { inv, members }`. Its wire cost is the whole language per learn stroke (`client/sdk/entity/learn.rs`), which A4's heights remove. | open, F5 |
+| A6 | `court/identity.rs` `named` derives a key from a digest of a name; only `voice/mod.rs`'s tests call it. Move it to the tests. | open, F3 |
+| A7 | **Compliant, no action:** `pack_axis` (i64 numerator, u64 denominator, refusal — A6), the 4-bit blade index of Cl(4,0) and Cl(3,1) (the basis, not a mask), `axis_key_le`, the trie bit walks, `same_vertex` (M1 re-derivation with the address as fast path), `Mv::key` (canonical). One guard: `cga.rs`'s coefficient accessors index by `mask & 0xF`, which silently aliases an out-of-range blade; `debug_assert!(mask < 16)`. | noted |
+| A8 | **Standards residues.** S21's four `#[allow(clippy::too_many_arguments)]`: the stroke arms take one `Metabolism` state (`last_lang`, `last_height`, `last_quoted_height`, `last_pressure`, `dwell_remaining`, `k_step`, `last_genome`), no allows. `cognition/wire.rs` `type_complexity`, `cognition/reflex.rs` and `economy/treasury.rs` `dead_code`: delete the dead code. The doc comments on `lint/matrix.rs` and `lint/digest.rs` are each other's; `lint/mod.rs` labels every gate's hits `lint-enumeration`. | open, F3 |
+| A9 | The client binary reads `Instant` for lap telemetry (`mycelium-client/main.rs`, `arms/quote.rs`), printed and never read back. The binary is outside the clock gate's present scope, which is A1. Delete the laps; the stroke outcome vector is the telemetry. | open, F3 |
+
+The order, one commit per item, suite and clippy and lint lines on each:
+
+| id | directive | status |
+|---|---|---|
+| F2 | **Deletions, callers first.** (a) `core/laws.rs`, `core/rcf.rs`, `core/constants.rs`: no callers, delete with their `pub mod` lines. (b) `core/ccl.rs`: `src/ccl.rs` imports `Audience`; move `Audience` into `src/ccl.rs`, delete the module. (c) `torsion.rs`: `germinate/ingest.rs` calls `residue_of_chain` and `required_k_steps`; the steps a residue needs are the order of its loop word (`Word::order`, `Finite(p)` is p steps, `Infinite` is open) — bind that, delete `torsion.rs` and with it the last use of `core::engine::Delta`. (d) `cohesion.rs`: `cognition/reduce.rs` `cohesion_over`, `germinate/state.rs` `cohesion`, `server/synthesis.rs`'s field; its `pressure` is a `(Q, Q)`, a scalar witness of what μ⃗ already carries per lane; delete the three sites and the module. (e) `thought/`, `perception/{congruence, eye, touch}.rs`: declared only in `perception/mod.rs` and `lib.rs`; `perception/ear.rs` stays (`blade/body.rs` reads `Harmonics`). (f) `core/matrix.rs` and `core/engine.rs`: after (c), the ten remaining users of `core::engine` import `Q` alone — `core/q.rs` with `pub type Q = num_rational::BigRational` and `pub use q::Q` from `core/mod.rs`; delete both files; the matrix gate's `core::engine`/`core::matrix` patterns are then stale rows and go in the same commit. (g) the scalar `Aperture` (`client/sdk/aperture.rs`) as directed; (h) `element/letters.rs` `legacy_versor` with the v4 reader (A2). About 2,700 lines leave; `AWAITING_SPLIT` empties at (a). | next |
+| F3 | **Gates and clippy.** A1 (one walker, whole scope, allow by file, missing path is a hit, one commit per gate), A6, A8, A9; then clippy to zero with `cargo clippy --release --all-targets -- -D warnings` in the verification line and in `run/recut.sh`, no `#[allow]` left in production. | after F2 |
+| F4 | **Costumes.** A3 (two lines, first), then A2 (tape v5; the wipe decision recorded). | after F3 |
+| F8 | Push `main` to origin once F1–F4 are green. | after F4 |
+| F5 | **Admission and exchange.** A4, A5, then 5.2g and the A-series of the admission set as issued. | after F8 |
+| F6 | Sweeps B1–B8 and the owed gates of §4.4 as issued. | after F5 |
+| F7 | Whole-fleet recut on HEAD through `run/recut.sh`, wiping ledgers, genomes and thoughts on all eight units — ruled 2026-09-07, tape v5 carries no v4 reader. A machine change, run on the operator's word. | after F4 |
+
 ## Backtrack ledger
 
 What was lost, when, and what it cost, so that it is paid once.

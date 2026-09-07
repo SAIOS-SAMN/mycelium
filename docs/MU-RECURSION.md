@@ -2727,13 +2727,18 @@ rotors; cells are touched only in `family::perceive` and in `speak_rule`'s
 final emission of output cells. Every identity in this part is a master
 algorithm of chapter 17.
 
-Every file name in Parts IV–VII is under `/opt/mycelium-v0.1.0/src/`. Three
-of them are directories now, split under Stage 8's reading bound, and a
-function named against the old file is found in the module its role names —
-`cognition/{mod,book,court,market,germinate,snapshot}`,
-`sdk/{mod,entity,epigenome}`, `family/{mod}`, `sentence/{chain,form,
-transport,class,pivot,tape,chart}`. A split moves code and changes nothing
-else, so every binding below still names the function it always named:
+Every file name in Parts IV–VII is under `/opt/mycelium-v0.1.0/src/`. Stage
+8b (S1–S32) made every monolith a directory of organs with its tests under
+`tests/<chapter>.rs`, and a function named against the old file is found in
+the module its role names — `server/cognition/{kernel, language, basis,
+cocycle, reduce, keys, wire, reflex, identity, book/, court/, market/,
+germinate/, snapshot/}`, `client/sdk/{kernel, session, types, aperture,
+entity/, epigenome/}`, `transducer/family/{perceive, pair, orbit, extract,
+descent, speak}`, `transducer/sentence/{chain, form/, transport, class,
+pivot/, tape, chart}`, `court/verdict/{replay, blind, ruling, selection}`,
+`economy/{lanes, treasury, escrow, settle, persist}`. A split moves code
+and changes nothing else, so every binding below still names the function
+it always named:
 
 | short name | absolute path |
 |---|---|
