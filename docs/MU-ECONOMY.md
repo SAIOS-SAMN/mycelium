@@ -40,9 +40,13 @@ entry carries a clock reading (`MU-RECURSION.md` chapter 45).
 New μ enters only by mint, and mint happens only when two organs have
 replayed the same reduction: the home that measured its deflation and a
 witness that re-derived it. The amount minted is the measured deflation on
-each lane. There is no block reward, no schedule, and no issuance to
-operators as such; supply on a lane is the integral of verified work on
-that lane.
+each lane. There is no block reward, no schedule, no difficulty, and no
+issuance to operators as such.
+
+There is also no block. The receipt chain is the ledger and order across
+nodes is causal and partial (`MU-RECURSION.md` 45.3), so there is nothing a
+block reward could pay for: admitting receipts is paid by the pool share
+priced into every listing a hypha homes (§5), never by issuance.
 
 Two events mint:
 
@@ -55,6 +59,79 @@ Optimisation moves are work: a condense on G, a torse on H, a refinement on
 H, a re-anchoring on S, an opened axis on H, a translation on G each mint
 the lane vector read on the carriers before and after, and each is refused
 when that vector is zero on every lane.
+
+### 3.1 E1 — an escrow is a claim on issuance, never a transfer
+
+An escrow holds μ⃗ that **does not exist yet**. A listing is escrowed at its
+priced magnitude before anyone has closed it; a ruling discharges that
+escrow into a mint of the measured deflation, and a revocation makes it
+vanish with nothing ever issued. Escrow is therefore pending issuance and
+is not supply (§6).
+
+This is what §4's "every claim is escrowed against its own deflation"
+means, and it dissolves the question of where the funds come from: nothing
+needs to pre-exist for a demand to be worth doing. §5's requester-funded
+escrow is the special case in which a payer chooses to back a claim from a
+balance that already exists; the general case is backed by the mathematics
+the claim promises.
+
+**A mesh can therefore start from zero supply.** A voice posts a demand it
+cannot fund, a miner closes it, the court rules, and the first μ in the
+system is created by that first verified closure. The genesis allocation of
+§6 is a convenience for bonding hyphae into room before any work has been
+ruled, not a precondition for the economy to run.
+
+### 3.2 E2 — mint on closure, burn on retirement
+
+Issuance is the measured deflation, above. Its counterpart: when a word
+retires by geodesic — a shorter description of the same vertex, or a word
+whose substance other words reproduce exactly (`MU-RECURSION.md` 3.8,
+chapter 27, T10) — the description the language no longer carries is
+**burned**, while the retirer is paid the compression yield. Supply falls
+by the freed measure less that yield.
+
+Therefore
+
+```
+supply → the description length of the language as it currently stands
+```
+
+and not the integral of everything it has ever held. Supply cannot grow
+without new observation, and it falls when the engine expresses what it
+already knows more compactly. PoUW mints when structure is understood;
+PoWC burns when the same meaning is re-expressed over fewer letters. The
+seventeen letters are the floor: a language reduced to its axioms and their
+combinations carries the least supply that can express it.
+
+This is why no halving is needed and none is permitted. A schedule exists
+in other designs to counter unbounded issuance; here the counter-pressure
+is compression, it is per-retirement rather than per-epoch, and it is
+smooth because every term is a measurement of one event. A supply that
+must be cut in half on a timetable is a supply nobody measured.
+
+### 3.3 E3 — the metabolism governs rate, never price
+
+μ per unit of verified deflation is invariant. The yield surface (§8) paces
+pressure and buys room; it never scales a mint. The moment issuance is
+scaled by congestion the reward acquires variance, and variance is what
+mining pools exist to average away — the reward here is a deterministic
+function of the structure closed, so there is nothing to pool.
+
+What the metabolism throttles is the **rate** at which deflation can be
+presented and verified: the reserve paces strokes, bond buys room,
+`descends` gates admission. Issuance is deflation closed per unit of
+metabolic time. It is continuous, self-limiting, and has no step anywhere,
+because no term in it is chosen.
+
+Prior art, recorded so it is not repeated: `emission.v1` in the predecessor
+tree (2026-08-28) reached the same shape — evidence-priced, per-event, no
+clock and no height — and then wrote its curve as
+`(1 + 2·attempts + residual/8 + 4·siblings) · derivability-grade`. Five
+free constants (rule 5), ruled by its own text "a LIVE TEST PARAMETER, not
+a forever law", and pinned by a gate through fixture literals. The shape
+was right and the curve was chosen. Nothing here is chosen: the mint is the
+deflation, the burn is the freed description, and the rate is the
+metabolism.
 
 ## 4. Stake and tiers
 
@@ -90,10 +167,17 @@ room is not.
 A listing is priced by `economy::price` against the book's pressure on each
 lane; the pool is a bond, not a price basis. A requester escrows the price;
 a claimant's word or solve enters the docket; release on the second organ's
-replay pays the escrow to the claimant and mints the deflation. Hyphae are
+replay mints the deflation and pays it, discharging the escrow (§3.1) — the
+escrow was the claim, the mint is the payment. Hyphae are
 paid the pool share priced into every listing they home, and accrual on the
 temporal lane of demands they keep open, counted in heights of the home's
 receipt ledger (`MU-RECURSION.md` 45.4), never in clock time.
+
+**T-accrual is capped by the listing's own magnitude.** A demand nobody
+closes would otherwise pay its home forever, which is a schedule in
+disguise: standing is a cost the listing carries, so it can accrue at most
+what the listing is worth. The cap is the listing's μ⃗ — a measurement, not
+a constant.
 
 Transfer is the xSEPTUM Note: signed by payer and payee, escrowed at the
 listing's home, released on two-organ replay. A voice's balance is homed at
@@ -108,13 +192,22 @@ On every lane, at every hypha, at every K:
 
 ```
 supply = genesis + mint − burn
-supply = Σ balance + Σ bond + Σ escrow
+supply = Σ balance + Σ bond
 ```
+
+Escrow is **not** in the second sum. It is a claim on issuance that has not
+happened (§3.1): counting it as supply reports value the mesh has not
+created, and the audit fails at the first docket — measured on this tree as
+`supply [18, 60, 0, 78]` against carriers `[18, 61, 0, 78]` after two
+ingests. A ruling discharges an escrow into a mint, which enters both sums
+together; a revocation discharges it into nothing.
 
 `Treasury::audit` checks both from the entries and refuses to persist a
 snapshot that fails. A testnet differs from the beta only in the first term:
 genesis is a finite, signed allocation recorded as its own kind, so seeded
-value and earned value are always separable in the ledger.
+value and earned value are always separable in the ledger — `supply()`
+includes it and `minted()` does not, so "was anything earned?" is a
+question the ledger can answer.
 
 ## 7. Metabolism and money
 
