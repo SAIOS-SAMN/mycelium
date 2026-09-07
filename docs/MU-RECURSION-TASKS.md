@@ -155,7 +155,7 @@ Move-only, one file per commit, tests to `<module>/tests/<chapter>.rs`, document
 | S3 | server/cognition/mod.rs | 2,100 | cognition/{kernel, language, basis, cocycle, reduce, keys, wire, reflex, identity}.rs; mod.rs declarations and re-exports only | landed (S3) |
 | S4 | server/cognition/tests.rs | 2,251 | cognition/tests/{13,21,23,24,26,28,42,45,47}.rs + common.rs | landed (S4) |
 | S5 | transducer/bubble.rs | 2,086 | bubble/{idea, contemplation, merge, drive, horizon, shed, tape}.rs, tests/{13,24,25,28,30}.rs | landed (S5) |
-| S6 | anastome/dialogue.rs | 2,075 | dialogue/{mod, speech, percept, demand, quote, docket, cover, receipts, offer, syllabus}.rs, tests/{26,47}.rs | open |
+| S6 | anastome/dialogue.rs | 2,075 | dialogue/{mod, acts, carrier, speech, percept, demand, quote, docket, cover, receipts, offer, syllabus}.rs, tests/{26,47}.rs | landed (S6) |
 | S7 | transducer/sentence/mod.rs | 2,029 | sentence/tests/{10,12,16,18,19,21,42}.rs; mod.rs declarations only | open |
 | S8 | transducer/alphabet.rs | 1,801 | alphabet/{rotor, letters, word, plane, spelling}.rs, tests/{1,9,16}.rs | open |
 | S9 | transducer/family/mod.rs | 1,762 | family/{mod, perceive, pair, extract, speak, orbit, descent}.rs | open |

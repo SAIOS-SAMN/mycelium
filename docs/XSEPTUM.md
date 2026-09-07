@@ -63,7 +63,7 @@ it can work instead (§6.3).
 ## 5. Wire
 
 All frames use `network::wire::Frame { lane, body }` with the first body
-byte the act. Reserved acts (new; verify against `anastome/dialogue.rs`
+byte the act. Reserved acts (new; verify against `anastome/dialogue/acts.rs`
 before landing, 0x20–0x22 are taken by COVER/OFFER/INSTALLED):
 
 | act | name | direction |
@@ -306,7 +306,7 @@ Codes are typed variants in code, never bare integers in cognition.
 
 New:
 
-- `src/anastome/dialogue.rs`: acts 0x30–0x35, `encode_*`/`decode_*`; every
+- `src/anastome/dialogue/`: acts 0x30–0x35, `encode_*`/`decode_*`; every
   signed prefix is the receipt prefix of MU-RECURSION 47.1 followed by the
   act's fields (`challenge_signed_prefix`, `note_signed_prefix`,
   `receipt_signed_prefix`, `release_signed_prefix`).

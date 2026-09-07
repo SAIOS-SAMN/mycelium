@@ -2742,7 +2742,7 @@ else, so every binding below still names the function it always named:
 | `verdict.rs`, `identity.rs`, `ledger.rs` | `/opt/mycelium-v0.1.0/src/court/<name>` |
 | `nerve.rs`, `mesh.rs`, `wire.rs` | `/opt/mycelium-v0.1.0/src/network/<name>` |
 | `sdk/` | `/opt/mycelium-v0.1.0/src/client/sdk/` |
-| `dialogue.rs` | `/opt/mycelium-v0.1.0/src/anastome/dialogue.rs` |
+| `dialogue/` | `/opt/mycelium-v0.1.0/src/anastome/dialogue/` |
 | `ear.rs` | `/opt/mycelium-v0.1.0/src/perception/ear.rs` |
 | `economy.rs`, `physics.rs`, `chronometry.rs` | `/opt/mycelium-v0.1.0/src/<name>` |
 | `cyclo.rs`, `scalar.rs`, `constants.rs` | `/opt/mycelium-v0.1.0/src/core/<name>` |
@@ -3511,7 +3511,7 @@ fills it from syllabus pages; A16 consults it before filing or demanding.
 
 ## 26. Wire and economics
 
-Carried from chapter 25: forms are spoken. `/opt/mycelium-v0.1.0/src/anastome/dialogue.rs`:
+Carried from chapter 25: forms are spoken. `/opt/mycelium-v0.1.0/src/anastome/dialogue/speech.rs`:
 
 - `SPEECH_WITHHELD: u8 = 3` beside line 127; `encode_speech_reply` (131)
   appends `n_missing u16 ‖ address 32…`; `decode_speech_reply` (137) returns
@@ -3632,7 +3632,7 @@ sentence.rs   Form::class_vector NEW, ClassVector/Axis NEW (12.6), Form::pivot_l
               Form::rank NEW (A18); cech.rs Complex::rank NEW
 element/carrier.rs  record_torsion as A17's filing call; toroid.rs witness_stored as A17's witness
 cognition.rs  glue_fetched torsion arm (23.7), serve_ruled class records (A19), Kernel::rank debug assertions
-dialogue.rs   SPEECH_WITHHELD, speech reply missing list, depth_max in digests, syllabus class section, standing byte
+dialogue/      SPEECH_WITHHELD, speech reply missing list, depth_max in digests, syllabus class section, standing byte
 mycelium-server/       judge: A11 and missing_forms; admit_peer_digest depth_max + A10; id_of only for pending_addrs
 mycelium-client.rs  speak_sentence(entity, tag, &Form); family id by registry::task_id
 ```
@@ -5269,7 +5269,7 @@ mesh.rs             MeshRecord.{genesis, epoch} replace origin_unix; origin_of D
 cognition.rs        now_tu → height(); standing_mag in heights; every _tu carrier → _h; MarketView.tu DELETED; set_clock → set_height;
                     cocycle_at supersession by causal order (45.3); one receipt per admitted act carrying its parents
 sdk.rs              now_tu → height() read from the last admitting receipt; shed and stand by the mind's own K
-dialogue.rs         ACT_SPEECH tu → voice K + cited home head; ACT_ROOT ticks → (K, height, hash), the reply carrying the receiver's own
+dialogue/            ACT_SPEECH tu → voice K + cited home head; ACT_ROOT ticks → (K, height, hash), the reply carrying the receiver's own
                     (K, height) as its comment at 227 already states; Settlement field 7 → height; cover_signed_prefix → the prefix of 47.1
 mycelium-server/       Mesh.rtt_window/rtt_floor in strokes; the boot line prints genesis and epoch; note_root keeps the speaker's (K, height, hash)
 physics.rs          transport_deadline, persist_dwell, aperture_cycle in strokes; no Duration
@@ -5335,7 +5335,7 @@ digest of frame bytes: two spellings of one word have one receipt lineage,
 and a receiver reads the form's coordinates off the address. The
 `prev_receipt_hash` and the receipt's own chain hash are digests of
 receipt bytes, which are the object there. `cover_signed_prefix`
-(dialogue.rs 460) becomes this prefix, so every signed digest is a receipt
+(dialogue/cover.rs) becomes this prefix, so every signed digest is a receipt
 and every signer's causal position travels with its signature.
 
 ### 47.2 Admission

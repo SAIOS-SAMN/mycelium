@@ -1,0 +1,147 @@
+// ACT_QUOTE — "what is the highest-yield work?", and the outcome reply
+// every judged act answers with.
+//
+//! The reply is bounded by the frame budget: items ride in rank order until
+//! the next would not fit, and the count is written where the reader can
+//! find it without parsing the whole body.
+
+use super::*;
+
+/// `[ACT_QUOTE][voice 32][n u8][invariants…]` — the question, carrying the
+/// charts of the voice's own atlas so the hypha can answer by incidence.
+pub fn encode_quote_request(voice: &[u8; 32]) -> Vec<u8> {
+    encode_quote_request_charts(voice, &[])
+}
+
+pub fn encode_quote_request_charts(
+    voice: &[u8; 32],
+    charts: &[crate::transducer::stalk::Invariant],
+) -> Vec<u8> {
+    let mut out = vec![ACT_QUOTE];
+    out.extend_from_slice(voice);
+    out.push(charts.len().min(255) as u8);
+    for inv in charts.iter().take(255) {
+        push_invariant(&mut out, inv);
+        out.push(0); // Ruled unless the caller uses encode_quote_request_standing
+    }
+    out
+}
+
+/// Quote request with the standing of each chart the mind rests on.
+pub fn encode_quote_request_standing(
+    voice: &[u8; 32],
+    charts: &[(crate::transducer::stalk::Invariant, u8)],
+) -> Vec<u8> {
+    let mut out = vec![ACT_QUOTE];
+    out.extend_from_slice(voice);
+    out.push(charts.len().min(255) as u8);
+    for (inv, st) in charts.iter().take(255) {
+        push_invariant(&mut out, inv);
+        out.push(*st);
+    }
+    out
+}
+
+pub fn decode_quote_request(body: &[u8]) -> Option<([u8; 32], Vec<crate::transducer::stalk::Invariant>)> {
+    if body.first() != Some(&ACT_QUOTE) {
+        return None;
+    }
+    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    if body.len() == 33 {
+        return Some((voice, Vec::new()));
+    }
+    let n = *body.get(33)? as usize;
+    let mut p = 34usize;
+    let mut charts = Vec::with_capacity(n);
+    for _ in 0..n {
+        charts.push(read_invariant(body, &mut p)?);
+        let _standing = *body.get(p)?;
+        p += 1;
+    }
+    Some((voice, charts))
+}
+
+
+pub fn encode_quote_reply(height: u64, surface: &[u64; 4], k: u64, items: &[WorkItem]) -> Vec<u8> {
+    encode_quote_reply_within(height, surface, k, items, usize::MAX)
+}
+
+/// Demand/percept reply: `[code][height u64][pressure 4×u64][taught_len u16][taught…]`.
+pub fn encode_outcome_reply(code: u8, height: u64, pressure: &[u64; 4], taught: &[u8]) -> Vec<u8> {
+    let mut body = vec![code];
+    body.extend_from_slice(&height.to_le_bytes());
+    push_mu(&mut body, pressure);
+    body.extend_from_slice(&(taught.len() as u16).to_le_bytes());
+    body.extend_from_slice(taught);
+    body
+}
+
+/// The deferral a full judge answers every act with: the pending outcome
+/// and four zero lanes, nothing taught. For a percept or a demand it is a
+/// verdict; for any other act it is impedance.
+pub fn encode_deferral(code: u8) -> Vec<u8> {
+    encode_outcome_reply(code, 0, &[0; 4], &[])
+}
+
+pub fn is_deferral(body: &[u8], code: u8) -> bool {
+    body.first() == Some(&code) && body.len() == 1 + 8 + 32 + 2 && body[1..].iter().all(|&x| x == 0)
+}
+
+/// The quote reply filled up to `budget` bytes: items ride in rank order
+/// until the next would not fit. The frame budget decides what a contact
+/// can carry; a wide book is served across contacts, never as a frame the
+/// wire refuses.
+pub fn encode_quote_reply_within(height: u64, surface: &[u64; 4], k: u64, items: &[WorkItem], budget: usize) -> Vec<u8> {
+    let mut out = vec![ACT_QUOTE];
+    out.extend_from_slice(&height.to_le_bytes());
+    push_mu(&mut out, surface);
+    out.extend_from_slice(&k.to_le_bytes());
+    let count_at = out.len();
+    out.push(0);
+    let mut served = 0u8;
+    for (addr, mu, chain, open) in items.iter().take(255) {
+        let open_len: usize = 1 + open.iter().map(|i| 1 + 8 * i.0.len().min(255)).sum::<usize>();
+        let item_len = 2 + addr.len() + 32 + 4 + chain.len() * 18 + open_len;
+        if out.len() + item_len > budget {
+            break;
+        }
+        let _ = put_addr(&mut out, addr);
+        push_mu(&mut out, mu);
+        push_chain(&mut out, chain);
+        out.push(open.len().min(255) as u8);
+        for inv in open.iter().take(255) {
+            push_invariant(&mut out, inv);
+        }
+        served += 1;
+    }
+    out[count_at] = served;
+    out
+}
+
+pub fn decode_quote_reply(body: &[u8]) -> Option<(u64, [u64; 4], u64, Vec<WorkItem>)> {
+    if body.first() != Some(&ACT_QUOTE) {
+        return None;
+    }
+    let mut p = 1usize;
+    let height = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
+    p += 8;
+    let surface = read_mu(body, &mut p)?;
+    let k = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
+    p += 8;
+    let n = *body.get(p)? as usize; // u8 — bounded by construction
+    p += 1;
+    let mut items = Vec::with_capacity(n);
+    for _ in 0..n {
+        let addr = take_addr(body, &mut p)?;
+        let mu = read_mu(body, &mut p)?;
+        let chain = read_chain(body, &mut p)?;
+        let nopen = *body.get(p)? as usize;
+        p += 1;
+        let mut open = Vec::with_capacity(nopen);
+        for _ in 0..nopen {
+            open.push(read_invariant(body, &mut p)?);
+        }
+        items.push((addr, mu, chain, open));
+    }
+    Some((height, surface, k, items))
+}
