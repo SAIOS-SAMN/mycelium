@@ -425,6 +425,21 @@ impl ReceiptChain {
         Some(le && !equal)
     }
 
+    /// `a ≺ b` for two receipts named by their chain hashes. `None` when
+    /// this chain does not hold one of them, or when the budget cannot
+    /// finish a walk: both are UNMEASURED order, which a caller holds as
+    /// unordered (45.3) rather than reading as "does not precede".
+    pub fn precedes_hashes(
+        &self,
+        a: &[u8; 32],
+        b: &[u8; 32],
+        budget: &mut Budget,
+    ) -> Option<bool> {
+        let ra = self.by_hash(a)?.clone();
+        let rb = self.by_hash(b)?.clone();
+        self.precedes(&ra, &rb, budget)
+    }
+
     /// Rehydrate a chain from persisted receipts. Integrity is verified
     /// before acceptance — a tampered journal refuses whole.
     pub fn from_receipts(receipts: Vec<KStepReceipt>) -> Option<ReceiptChain> {
