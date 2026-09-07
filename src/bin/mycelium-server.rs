@@ -1167,14 +1167,33 @@ fn main() {
     let mut join_peers: Vec<String> = mesh_rec.peers.clone();
 
     let height = mycelium::chronometry::Height::default();
-    eprintln!(
-        "[{tag}] genesis {:02x}{:02x}… epoch {}",
-        mesh_rec.genesis[0],
-        mesh_rec.genesis[1],
-        mesh_rec.epoch
-    );
-
     let kernel = Arc::new(Mutex::new(Kernel::new()));
+    // C6. `genesis` was written as [0u8; 32] and only ever printed, so the
+    // boot line read `genesis 0000… epoch 2` on every node and said nothing.
+    // 45.5: H_genesis is the CHAIN HASH OF THE MESH'S FIRST RECEIPT, written
+    // once by the first hypha started on a fresh state. It is adopted here
+    // from this kernel's own chain the first time one exists, so the line is
+    // a reading rather than a placeholder; a node that has admitted nothing
+    // still has no genesis and says so. 47.2's REFUSE_ORIGIN check on it is
+    // task 5.2 and is not claimed here.
+    if mesh_rec.genesis == [0u8; 32] {
+        let first = kernel
+            .lock()
+            .ok()
+            .and_then(|k| k.chain().receipts().first().map(|r| r.chain_hash));
+        if let Some(h) = first {
+            mesh_rec.genesis = h;
+            let _ = mesh_rec.save(&home, &hypha_key);
+        }
+    }
+    if mesh_rec.genesis == [0u8; 32] {
+        eprintln!("[{tag}] genesis unwritten epoch {}", mesh_rec.epoch);
+    } else {
+        eprintln!(
+            "[{tag}] genesis {:02x}{:02x}… epoch {}",
+            mesh_rec.genesis[0], mesh_rec.genesis[1], mesh_rec.epoch
+        );
+    }
     {
         let k = Arc::clone(&kernel);
         let path = state_path.clone();

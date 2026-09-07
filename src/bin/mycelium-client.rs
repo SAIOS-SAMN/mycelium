@@ -481,7 +481,17 @@ fn main() {
                     StrokeOutcome::add(&mut outcome.fed, &mag);
                     last_pressure = reply.pressure;
                     last_height = reply.height;
+                    // C4. T NEVER PACES A STROKE. Lane 2 is temporal extent
+                    // -- a COST the listing carries, counted in heights
+                    // (law 9, 45.4) -- not a coordinate a voice can expand
+                    // on. The hypha's reported T pressure is the standing
+                    // extent of listings that have not closed, so it climbs
+                    // for as long as the book holds anything and never
+                    // falls; dwelling on it paced voices into a stop, the
+                    // soak reading `dwell [.., .., 909 -> 4048, ..]`. The
+                    // voice dwells on the lanes it can actually expand.
                     dwell_remaining = reply.pressure;
+                    dwell_remaining[2] = 0;
                 }
                 Err(_) => {
                     errors += 1;
@@ -495,7 +505,12 @@ fn main() {
         // repetition.
         lap("feed");
         let lang = entity.atlas_standing_counts();
-        let dwell_elapsed = (0..4).any(|l| last_pressure[l] > 0 && dwell_remaining[l] == 0);
+        // The T lane is excluded from the dwell entirely (C4), so it neither
+        // holds a voice back nor releases it: a lane that never falls would
+        // make `dwell_elapsed` true forever and the quote unpaced.
+        let dwell_elapsed = [0usize, 1, 3]
+            .iter()
+            .any(|&l| last_pressure[l] > 0 && dwell_remaining[l] == 0);
         let ask_quote = !occluded
             && (lang != last_lang || last_height > last_quoted_height || dwell_elapsed);
         if ask_quote {
@@ -516,7 +531,9 @@ fn main() {
                     last_height = q.height;
                 }
                 last_pressure = q.surface;
+                // C4, again at the quote: T is a cost, never a pace.
                 dwell_remaining = q.surface;
+                dwell_remaining[2] = 0;
                 let (mut n_closed, mut n_descent, mut n_nothing, mut n_settled, mut n_silent, mut n_attested, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32, 0u32, 0u32);
                 let (mut n_closing, mut n_ruled_hit, mut n_stood, mut n_held) = (0u32, 0u32, 0u32, 0u32);
                 for cluster in &q.clusters {

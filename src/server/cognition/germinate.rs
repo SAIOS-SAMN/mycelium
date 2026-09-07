@@ -390,32 +390,57 @@ impl Kernel {
     /// invertible (group) generator γ, form `γ⁻¹ ∘ s`, and keep the one whose
     /// reduction magnitude descends most (tie-broken by basis order — deterministic,
     /// so the reduction is confluent). `None` when no generator lowers `s`.
+    /// One step of the CANONICAL factorisation (A12), not a search.
+    ///
+    /// This scanned the whole basis, composed an inverse against the residue
+    /// for every generator, and kept a running best by `descends` — a choice
+    /// among candidates by a measure (rule 4, law 10: descent certifies, it
+    /// never selects), which silently dropped every factorisation that did
+    /// not dominate the one it happened to hold (rule 15). Two nodes holding
+    /// the same basis in different orders could keep different peels.
+    ///
+    /// A12 answers the same question exactly: the plane factorisation over
+    /// the fiber's basis is determined by the Hermite normal form, so its
+    /// terms are in a canonical order and the NEXT term is a reading, not a
+    /// preference. The whole tape is computed and the first term taken,
+    /// because the caller peels one step at a time; the rest of the tape is
+    /// re-derived on the next step from the new residue and is the same
+    /// tape, since HNF is a function of the lattice.
     fn best_peel(&self, s: &Element, exclude: Option<&[u8]>) -> Option<(usize, Element)> {
-        // Retired by M6/A12 (HNF membership + budgeted coset shortening).
-        // Left as a fiber walk so the group path still compiles; it is not
-        // repaired in place.
-        let before = s.reduction_magnitude();
-        let mut best: Option<(usize, Element, [u64; 4])> = None;
+        use crate::transducer::factor::{factor_on_plane, Factored};
+        let g = s.letters()?.spelling.word.form()?;
+        let mut slots = Vec::new();
+        let mut forms = Vec::new();
         for (addr, gen) in self.basis.fiber(crate::network::nerve::ROOT) {
             if exclude.map(|e| e == addr.as_slice()) == Some(true) {
                 continue;
             }
             let Some(i) = self.live_slot(&addr) else { continue };
-            let gs = gen.substance();
-            let Some(inv) = gs.solution() else { continue }; // only group generators peel
-            let cand = inv.compose(s);
-            let m = cand.reduction_magnitude();
-            if crate::economy::descends(&m, &before) {
-                let take = match &best {
-                    Some((_, _, bm)) => crate::economy::descends(&m, bm),
-                    None => true,
-                };
-                if take {
-                    best = Some((i, cand, m));
-                }
+            // Only group generators peel: a word with no solution is not one.
+            if gen.substance().solution().is_none() {
+                continue;
             }
+            let Some(f) = gen.letters().and_then(|l| l.spelling.word.form()) else {
+                continue;
+            };
+            slots.push(i);
+            forms.push(f);
         }
-        best.map(|(i, cand, _)| (i, cand))
+        if forms.is_empty() {
+            return None;
+        }
+        let tape = match factor_on_plane(&g, &forms) {
+            Factored::Understood(t) => t,
+            // A remainder is a demand, not a peel, and an unmeasured
+            // factorisation is neither (rule 11).
+            Factored::Novel { .. } | Factored::Unmeasured => return None,
+        };
+        let (first, _) = *tape.first()?;
+        let slot = *slots.get(first)?;
+        let addr = self.language.words.get(slot)?.address();
+        let gen = self.basis.get(addr.as_bytes())?;
+        let inv = gen.substance().solution()?;
+        Some((slot, inv.compose(s)))
     }
 
 

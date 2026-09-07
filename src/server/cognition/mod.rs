@@ -705,10 +705,15 @@ pub struct Kernel {
     /// Settlements the court has read; the SET1 section holds them.
     settlements_cold: Vec<crate::anastome::dialogue::Settlement>,
     /// Test height: when set, height() returns this instead of the chain head.
+    /// C6: a TEST knob, `None` on any live fleet. A kernel that can be told
+    /// its own height is a kernel whose time is an input (law 9), so the
+    /// SETTER is behind `cfg(test)` and nothing in production can reach it.
     height_override: Option<u64>,
     /// Set on home_install, glue Admitted, mint, and slash.
     persist_due: bool,
-    /// Test lane capacity override; production reads dynamic_lane_capacity.
+    /// C6: a TEST knob, `None` on any live fleet. Production reads
+    /// `dynamic_lane_capacity`, which is measured; a cap that can be set is
+    /// a free constant (rule 5), so the SETTER is behind `cfg(test)`.
     lane_cap: Option<[usize; 4]>,
     /// Height at first vantage of a standing carrier (listing or docket).
     standing_h: crate::network::nerve::Keyed<u64>,
@@ -932,10 +937,14 @@ impl Kernel {
         self.height_override.unwrap_or_else(|| self.chain.head_height())
     }
 
+    /// C6: test only. Time is not an input to a kernel (law 9).
+    #[cfg(test)]
     pub fn set_height(&mut self, h: u64) {
         self.height_override = Some(h);
     }
 
+    /// C6: test only. Capacity is measured, never set (rule 5).
+    #[cfg(test)]
     pub fn set_lane_cap(&mut self, cap: [usize; 4]) {
         self.lane_cap = Some(cap);
     }

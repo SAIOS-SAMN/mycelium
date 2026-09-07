@@ -24,16 +24,18 @@ impl Height {
         self.0
     }
 
+    /// A height reads as a height. This printed `XX:XX:XX:XX:XX:XX` — the
+    /// big-endian bytes of the number, formatted to look like a wall clock
+    /// (C6). There is no clock (law 9, Part IX): TUniversal is the height of
+    /// the receipt ledger, and a reader who sees a timestamp will reason
+    /// about elapsed time that nothing in this system measures. `h {n}`, as
+    /// 34.2 writes it.
     pub fn stamp(self) -> String {
         Self::stamp_of(self.0)
     }
 
     pub fn stamp_of(h: u64) -> String {
-        let b = h.to_be_bytes();
-        format!(
-            "{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}",
-            b[2], b[3], b[4], b[5], b[6], b[7]
-        )
+        format!("h {h}")
     }
 }
 
