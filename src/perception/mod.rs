@@ -20,7 +20,4 @@
 //! (`crate::thought`); what a kernel then says leaves through its voice
 //! (`crate::voice`).
 
-pub mod congruence;
 pub mod ear;
-pub mod eye;
-pub mod touch;

@@ -10,7 +10,6 @@
 pub mod core;
 pub mod transducer;
 pub mod perception;
-pub mod thought;
 pub mod voice;
 pub mod network;
 mod snapshot;
