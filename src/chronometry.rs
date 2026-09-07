@@ -315,19 +315,20 @@ impl ReceiptChain {
         })
     }
 
-    /// Frontier of the head: vk ↦ greatest K reachable through prev and parents.
-    /// Each reached receipt is visited once.
-    pub fn frontier(&self, budget: &mut Budget) -> Keyed<u64> {
+    /// Frontier reachable from one receipt: vk ↦ greatest K reachable through
+    /// prev and parents. Each reached receipt is visited once, one spend per
+    /// visit. `None` when the budget is spent with the walk unfinished: a
+    /// truncated frontier is UNMEASURED, never a smaller one. Reporting a
+    /// short frontier as the frontier is what let `precedes` answer `false`
+    /// for receipts that do precede (rule 11: exact or refused).
+    fn frontier_from(&self, head: [u8; 32], budget: &mut Budget) -> Option<Keyed<u64>> {
         let mut f = Keyed::new();
         let mut seen: Keyed<()> = Keyed::new();
-        let mut stack: Vec<[u8; 32]> = Vec::new();
-        if let Some(h) = self.receipts.last() {
-            stack.push(h.chain_hash);
-        }
-        while budget.spend() {
-            let Some(hash) = stack.pop() else {
-                break;
-            };
+        let mut stack: Vec<[u8; 32]> = vec![head];
+        while let Some(hash) = stack.pop() {
+            if !budget.spend() {
+                return None;
+            }
             if seen.contains(&hash) {
                 continue;
             }
@@ -346,29 +347,36 @@ impl ReceiptChain {
                 stack.push(p.hash);
             }
         }
-        f
+        Some(f)
+    }
+
+    /// Frontier of the head. An empty chain has an empty frontier; a walk
+    /// the budget could not finish is unmeasured.
+    pub fn frontier(&self, budget: &mut Budget) -> Option<Keyed<u64>> {
+        match self.receipts.last() {
+            None => Some(Keyed::new()),
+            Some(h) => self.frontier_from(h.chain_hash, budget),
+        }
     }
 
     /// `a ≺ b` iff F(a) ≤ F(b) componentwise and the frontiers differ.
-    pub fn precedes(&self, a: &KStepReceipt, b: &KStepReceipt, budget: &mut Budget) -> bool {
-        let mut chain_a = self.clone();
-        chain_a.receipts = self
-            .receipts
-            .iter()
-            .take_while(|r| r.chain_hash != a.chain_hash)
-            .cloned()
-            .collect();
-        chain_a.receipts.push(a.clone());
-        let mut chain_b = self.clone();
-        chain_b.receipts = self
-            .receipts
-            .iter()
-            .take_while(|r| r.chain_hash != b.chain_hash)
-            .cloned()
-            .collect();
-        chain_b.receipts.push(b.clone());
-        let fa = chain_a.frontier(budget);
-        let fb = chain_b.frontier(budget);
+    /// `None` when either frontier is unmeasured under this budget — the
+    /// caller holds both receipts as concurrent (45.3), which is what an
+    /// unordered pair is, rather than reading an exhausted walk as evidence
+    /// that `a` does not precede `b`.
+    ///
+    /// The two frontiers are walked from `a` and `b` over this chain's own
+    /// receipts, so nothing is copied to compare two of its members: the
+    /// walk from a receipt reaches exactly its ancestors, which is what the
+    /// prefix-plus-self copy used to construct (rule 12).
+    pub fn precedes(
+        &self,
+        a: &KStepReceipt,
+        b: &KStepReceipt,
+        budget: &mut Budget,
+    ) -> Option<bool> {
+        let fa = self.frontier_from(a.chain_hash, budget)?;
+        let fb = self.frontier_from(b.chain_hash, budget)?;
         let mut equal = true;
         let mut le = true;
         for (vk, &ka) in fa.fiber(crate::network::nerve::ROOT) {
@@ -385,7 +393,7 @@ impl ReceiptChain {
                 equal = false;
             }
         }
-        le && !equal
+        Some(le && !equal)
     }
 
     /// Rehydrate a chain from persisted receipts. Integrity is verified
@@ -410,8 +418,12 @@ mod tests {
     use super::*;
     use crate::physics::Physics;
 
-    fn budget() -> Budget {
-        Physics::default().stroke()
+    /// A budget of exactly `n` visits. The walks below are bounded by the
+    /// receipts they reach, not by this box's reserve: `stroke()` is
+    /// `(reserve_max()/8).max(2)`, so a hardware-derived budget made these
+    /// claims pass on a large host and fail on a small one.
+    fn budget(n: usize) -> Budget {
+        Physics::default().stroke_n(n)
     }
 
     #[test]
@@ -449,12 +461,17 @@ mod tests {
         let r0 = &c.receipts()[0];
         let r1 = &c.receipts()[1];
         let r2 = &c.receipts()[2];
-        let mut b = budget();
-        assert!(c.precedes(r0, r1, &mut b), "earlier ≺ later");
-        let mut b = budget();
-        assert!(c.precedes(r1, r2, &mut b));
-        let mut b = budget();
-        assert!(!c.precedes(r2, r0, &mut b), "later does not precede earlier");
+        // Each pair pays for the two walks it reaches: 1+2, 2+3, 3+1 visits.
+        let mut b = budget(8);
+        assert_eq!(c.precedes(r0, r1, &mut b), Some(true), "earlier ≺ later");
+        let mut b = budget(8);
+        assert_eq!(c.precedes(r1, r2, &mut b), Some(true));
+        let mut b = budget(8);
+        assert_eq!(
+            c.precedes(r2, r0, &mut b),
+            Some(false),
+            "later does not precede earlier"
+        );
         assert!(r0.height < r1.height && r1.height < r2.height);
         let mut d = ReceiptChain::with_vk([3; 32]);
         d.append([1u8], [9; 32], Vec::new()).unwrap();
@@ -481,11 +498,31 @@ mod tests {
             ],
         )
         .unwrap();
-        let mut b = budget();
-        assert!(
-            !mix.precedes(&d.receipts()[0], &e.receipts()[0], &mut b),
+        let mut b = budget(8);
+        assert_eq!(
+            mix.precedes(&d.receipts()[0], &e.receipts()[0], &mut b),
+            Some(false),
             "two geneses are concurrent"
         );
+    }
+
+    /// An exhausted walk is unmeasured, never "does not precede": a budget
+    /// that cannot reach the second frontier refuses, and the caller holds
+    /// the pair as concurrent (45.3) instead of ordering it on a short read.
+    #[test]
+    fn a_frontier_the_budget_cannot_finish_is_refused_not_shortened() {
+        let mut c = ReceiptChain::with_vk([1; 32]);
+        c.append([1u8], [9; 32], Vec::new()).unwrap();
+        c.append([2u8], [9; 32], Vec::new()).unwrap();
+        c.append([3u8], [9; 32], Vec::new()).unwrap();
+        let (r0, r2) = (&c.receipts()[0], &c.receipts()[2]);
+        // r0 costs one visit, r2 three: one unit reaches neither pair.
+        let mut short = budget(1);
+        assert_eq!(c.precedes(r0, r2, &mut short), None, "unmeasured, not false");
+        let mut short = budget(2);
+        assert!(c.frontier(&mut short).is_none(), "the head walk is three deep");
+        let mut enough = budget(3);
+        assert!(c.frontier(&mut enough).is_some(), "measured at its own size");
     }
 
     #[test]
@@ -493,8 +530,8 @@ mod tests {
         let mut c = ReceiptChain::with_vk([7; 32]);
         c.append([1u8], [9; 32], Vec::new()).unwrap();
         c.append([2u8], [9; 32], Vec::new()).unwrap();
-        let mut b = budget();
-        let f = c.frontier(&mut b);
+        let mut b = budget(8);
+        let f = c.frontier(&mut b).expect("measured");
         assert_eq!(f.get(&[7; 32]).copied(), Some(1), "greatest K of this vk");
         assert_eq!(f.len(), 1, "one vk, visited once");
     }
