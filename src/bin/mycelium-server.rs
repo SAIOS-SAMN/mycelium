@@ -20,6 +20,26 @@ fn arm_deadline(s: &TcpStream) {
     let _ = s.set_write_timeout(None);
 }
 
+/// Write one frame back, or REFUSE the act. `encode` answers `None` when a
+/// body is over the wire budget, and every one of these sites wrote
+/// `.unwrap_or_default()` -- an EMPTY buffer, which is not a frame. The
+/// caller then waited on five bytes that were never coming, with no read
+/// bound, which is how one oversized reply stopped an exchange thread and
+/// every act it had left to perform. An act that cannot be framed is
+/// refused, said once, and the connection closes; the caller reads that as
+/// silence, which it already counts (rule 11).
+fn answer(s: &mut TcpStream, frame: Frame) {
+    match frame.encode() {
+        Some(bytes) => {
+            let _ = s.write_all(&bytes);
+        }
+        None => eprintln!(
+            "  court reply refused: body {} over the wire budget",
+            frame.body.len()
+        ),
+    }
+}
+
 fn read_frame(s: &mut TcpStream) -> Option<Frame> {
     let mut head = [0u8; 5];
     s.read_exact(&mut head).ok()?;
@@ -628,7 +648,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
     if kind == dialogue::ACT_ROOT {
         let Some((from, task, solver, spoken_at)) = dialogue::decode_root(&frame.body) else { return true };
         if !door.router.lock().map(|r| r.knows(&from)).unwrap_or(false) {
-            let _ = s.write_all(&Frame { lane: frame.lane, body: Vec::new() }.encode().unwrap_or_default());
+            answer(s, Frame { lane: frame.lane, body: Vec::new() });
             return true;
         }
         let hear = {
@@ -671,7 +691,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
                 spoken_at,
             )
         };
-        let _ = s.write_all(&Frame { lane: frame.lane, body: reply }.encode().unwrap_or_default());
+        answer(s, Frame { lane: frame.lane, body: reply });
         return true;
     }
     if kind == dialogue::ACT_EVIDENCE {
@@ -681,7 +701,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
                 items.into_iter().filter(|(addr, fp, scene)| k.deposit_evidence(addr.clone(), fp.clone(), scene.clone())).count()
             };
             let reply = Frame { lane: frame.lane, body: vec![accepted.min(255) as u8] };
-            let _ = s.write_all(&reply.encode().unwrap_or_default());
+            answer(s, reply);
             return true;
         }
         let Some(_evoice) = dialogue::decode_evidence_request(&frame.body) else { return true };
@@ -690,7 +710,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
             k.anchor_evidence().iter().take(32).cloned().collect()
         };
         let reply = Frame { lane: frame.lane, body: dialogue::encode_evidence_reply(&items) };
-        let _ = s.write_all(&reply.encode().unwrap_or_default());
+        answer(s, reply);
         return true;
     }
     if kind == dialogue::ACT_TASK {
@@ -707,7 +727,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
             None => Vec::new(),
         };
         let reply = Frame { lane: frame.lane, body };
-        let _ = s.write_all(&reply.encode().unwrap_or_default());
+        answer(s, reply);
         return true;
     }
     if kind == dialogue::ACT_SOLVE {
@@ -728,7 +748,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
             };
             if !matches {
                 let reply = Frame { lane: frame.lane, body: dialogue::encode_solve_receipt(dialogue::SOLVE_NOTHING, &[0; 4]) };
-                let _ = s.write_all(&reply.encode().unwrap_or_default());
+                answer(s, reply);
                 return true;
             }
         }
@@ -795,7 +815,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
             }
         };
         let reply = Frame { lane: frame.lane, body: dialogue::encode_solve_receipt(code, &mu) };
-        let _ = s.write_all(&reply.encode().unwrap_or_default());
+        answer(s, reply);
         return true;
     }
     if kind == dialogue::ACT_PEERS {
@@ -814,7 +834,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
                 }
             }
             let reply = Frame { lane: frame.lane, body: dialogue::encode_peers_reply(&nerve_addrs) };
-            let _ = s.write_all(&reply.encode().unwrap_or_default());
+            answer(s, reply);
         }
         return true;
     }
@@ -867,14 +887,30 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
         // cannot carry it still ANSWERS -- with the verdict bit alone, which
         // the home reads as "no form travelled" and holds as unmeasured --
         // because writing nothing leaves the home waiting on a frame that
-        // will never come. Rule 11: refuse the payload, never the reply.
-        let reply = match (Frame { lane: frame.lane, body: rb }).encode() {
-            Some(bytes) => bytes,
-            None => Frame { lane: frame.lane, body: vec![glued as u8] }
-                .encode()
-                .unwrap_or_else(|| vec![frame.lane.as_u8(), 0, 0, 0, 0]),
-        };
-        let _ = s.write_all(&reply);
+        // will never come. Refuse the PAYLOAD, never the reply.
+        //
+        // What is not done here is invent one. My first cut ended
+        // `.unwrap_or_else(|| vec![frame.lane.as_u8(), 0, 0, 0, 0])`: a
+        // hand-built frame for the case where encoding a five-byte frame
+        // fails, which is exactly the shape rule 11 refuses and which I have
+        // been deleting from other people's code all session. A one-byte
+        // body is inside every budget the wire has, so the fallback cannot
+        // fail; if it somehow does, the act is REFUSED and the connection
+        // closes, which the caller already reads as silence.
+        // The witness's form may not fit the wire budget. A reply that
+        // cannot carry it still ANSWERS, with the verdict bit alone, which
+        // the home reads as "no form travelled" and holds as unmeasured.
+        // Refuse the PAYLOAD, never the reply -- and never invent one: the
+        // first cut of this ended `.unwrap_or_else(|| vec![lane, 0,0,0,0])`,
+        // a hand-built frame for the case where a five-byte frame fails to
+        // encode, which is the shape rule 11 refuses.
+        let full = Frame { lane: frame.lane, body: rb };
+        match full.encode() {
+            Some(bytes) => {
+                let _ = s.write_all(&bytes);
+            }
+            None => answer(s, Frame { lane: frame.lane, body: vec![glued as u8] }),
+        }
         return true;
     }
     if kind == dialogue::ACT_ADOPT {
@@ -889,8 +925,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
                 door.synth_tx.try_send(mycelium::synthesis::Deliberation::Adopt(ratifier, word)).is_ok()
             })
             .unwrap_or(false);
-        let reply = Frame { lane: frame.lane, body: vec![queued as u8] };
-        let _ = s.write_all(&reply.encode().unwrap_or_default());
+        answer(s, Frame { lane: frame.lane, body: vec![queued as u8] });
         return true;
     }
     if kind == dialogue::ACT_GENESIS {
@@ -902,7 +937,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
             k.basis().iter().skip(cursor as usize).take(depth).map(|w| w.to_bytes()).collect()
         };
         let reply = Frame { lane: frame.lane, body: dialogue::encode_syllabus_reply(&words) };
-        let _ = s.write_all(&reply.encode().unwrap_or_default());
+        answer(s, reply);
         return true;
     }
     if kind == dialogue::ACT_SYLLABUS {
@@ -966,7 +1001,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
         let mut body = dialogue::encode_syllabus_reply(&words);
         dialogue::append_class_records(&mut body, &classes);
         let reply = Frame { lane: frame.lane, body };
-        let _ = s.write_all(&reply.encode().unwrap_or_default());
+        answer(s, reply);
         return true;
     }
     if kind == dialogue::ACT_REFINE {
@@ -979,7 +1014,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
             }
         };
         let reply = Frame { lane: frame.lane, body: dialogue::encode_solve_receipt(code, &mu) };
-        let _ = s.write_all(&reply.encode().unwrap_or_default());
+        answer(s, reply);
         return true;
     }
     if kind == dialogue::ACT_VERDICT {
@@ -1007,7 +1042,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
             }
         }
         let reply = Frame { lane: frame.lane, body: vec![applied as u8] };
-        let _ = s.write_all(&reply.encode().unwrap_or_default());
+        answer(s, reply);
         return true;
     }
     false
@@ -1162,7 +1197,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         }
         let body = dialogue::encode_speech_reply(&codes);
         let reply = Frame { lane: frame.lane, body };
-        let _ = stream.write_all(&reply.encode().unwrap_or_default());
+        answer(stream, reply);
         return;
     }
     if kind == dialogue::ACT_QUOTE {
@@ -1200,7 +1235,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
             body.len()
         );
         let reply = Frame { lane: frame.lane, body };
-        let _ = stream.write_all(&reply.encode().unwrap_or_default());
+        answer(stream, reply);
         return;
     }
     // ── sheaf sync: section digests over the atlas, and a stratum fetch —
@@ -1215,7 +1250,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         let mut body = dialogue::encode_digests_reply(&digests);
         body.extend(sign_cover_digest(kernel, mesh));
         let reply = Frame { lane: frame.lane, body };
-        let _ = stream.write_all(&reply.encode().unwrap_or_default());
+        answer(stream, reply);
         return;
     }
     if kind == dialogue::ACT_FETCH {
@@ -1248,7 +1283,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         let mut body = dialogue::encode_syllabus_reply(&words);
         dialogue::append_class_records(&mut body, &classes);
         let reply = Frame { lane: frame.lane, body };
-        let _ = stream.write_all(&reply.encode().unwrap_or_default());
+        answer(stream, reply);
         return;
     }
     // ── probe: a tentative sentence against an open listing — replayed,
@@ -1268,7 +1303,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
             );
         }
         let reply = Frame { lane: frame.lane, body: dialogue::encode_probe_reply(code, &paid, &remaining) };
-        let _ = stream.write_all(&reply.encode().unwrap_or_default());
+        answer(stream, reply);
         return;
     }
     let pbytes = if kind == dialogue::ACT_GOSSIP {
@@ -1347,7 +1382,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         body.extend_from_slice(&dialogue::encode_settle(germ, voices, mu));
     }
     let reply = Frame { lane: frame.lane, body };
-    let _ = stream.write_all(&reply.encode().unwrap_or_default());
+    answer(stream, reply);
 
     // P6/R5 · sun_recon: a CLIENT percept still awaiting consilience routes ONE
     // receipt to its RENDEZVOUS — the node XOR-closest to the demand's
@@ -1371,9 +1406,8 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
             let mut g = vec![0x01u8];
             let _ = mycelium::transducer::a21::put_addr(&mut g, &key);
             g.extend_from_slice(pbytes);
-            let gframe = Frame { lane: frame.lane, body: g }.encode().unwrap_or_default();
             if let Ok(mut ps) = TcpStream::connect(&dest) {
-                let _ = ps.write_all(&gframe);
+                answer(&mut ps, Frame { lane: frame.lane, body: g });
             }
         }
     }
@@ -2137,7 +2171,7 @@ fn main() {
             };
             let mut s = job.stream;
             let body = dialogue::encode_deferral(outcome_code(&Outcome::GermPending));
-            let _ = s.write_all(&Frame { lane: mycelium::network::wire::Stratum::Spatial, body }.encode().unwrap_or_default());
+            answer(&mut s, Frame { lane: mycelium::network::wire::Stratum::Spatial, body });
         }
     }
 }
@@ -2162,6 +2196,62 @@ mod tests {
         let out = tell_peer_within(&addr, vec![0x10], 1);
         assert!(out.is_none(), "silence is a refusal, not an answer");
         drop(held.join());
+    }
+
+    /// AN ENCODE FAILURE REFUSES THE FRAME. Twenty-one sites wrote
+    /// `.encode().unwrap_or_default()`, which sends an EMPTY buffer when a
+    /// body is over the wire budget. That is not a frame, and the caller
+    /// waited on five bytes that were never coming: one oversized reply
+    /// stopped an exchange thread and every act it had left. Nothing is
+    /// written, and nothing is invented in its place.
+    #[test]
+    fn a_frame_over_the_wire_budget_is_refused_and_nothing_is_written() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
+        let addr = listener.local_addr().expect("addr").to_string();
+        let reader = std::thread::spawn(move || {
+            let (mut s, _) = listener.accept().expect("accept");
+            let mut buf = Vec::new();
+            std::io::Read::read_to_end(&mut s, &mut buf).expect("read");
+            buf
+        });
+
+        let mut s = TcpStream::connect(&addr).expect("connect");
+        let over = mycelium::network::wire::BODY_BUDGET + 1;
+        answer(
+            &mut s,
+            Frame { lane: mycelium::network::wire::Stratum::Spatial, body: vec![0u8; over] },
+        );
+        drop(s);
+        assert!(reader.join().expect("join").is_empty(), "an unframeable act writes nothing");
+    }
+
+    /// And a frame within the budget is written whole, so the refusal above
+    /// is not simply a write path that never works.
+    #[test]
+    fn a_frame_within_the_budget_is_written_whole() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
+        let addr = listener.local_addr().expect("addr").to_string();
+        let reader = std::thread::spawn(move || {
+            let (mut s, _) = listener.accept().expect("accept");
+            let mut buf = Vec::new();
+            std::io::Read::read_to_end(&mut s, &mut buf).expect("read");
+            buf
+        });
+
+        let mut s = TcpStream::connect(&addr).expect("connect");
+        let body = vec![7u8, 8, 9];
+        answer(
+            &mut s,
+            Frame { lane: mycelium::network::wire::Stratum::Spatial, body: body.clone() },
+        );
+        drop(s);
+        let got = reader.join().expect("join");
+        assert_eq!(&got[5..], &body[..], "the body arrives");
+        assert_eq!(
+            u32::from_le_bytes([got[1], got[2], got[3], got[4]]) as usize,
+            body.len(),
+            "with its length"
+        );
     }
 
     #[test]
