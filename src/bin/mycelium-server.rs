@@ -595,6 +595,44 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
         }
         return true;
     }
+    // THE SECOND ORGAN ARRIVES HERE. A home Offers a first-vantage germ;
+    // the peer replays it and glues it into its own cover, and its ruled
+    // root moves, which is the evidence the home installs on
+    // (MU-ENGINEERING §3). ACT_OFFER had an encoder and a decoder and no
+    // caller at either end: the home marked germs `offered` in a carrier
+    // nothing read, so no peer ever saw a provisional, no root ever moved,
+    // and every percept sat at `germ pending (one voice)` forever with
+    // basis 0. The gate was never the germ quorum; it was that the offer
+    // never left the process.
+    if kind == dialogue::ACT_OFFER {
+        let Some((_addr, elem_bytes, _voices, _defl, _k, _sig, _inst)) =
+            dialogue::decode_offer(&frame.body)
+        else {
+            return true;
+        };
+        let mut pos = 0usize;
+        let glued = match mycelium::transducer::element::Element::from_bytes(&elem_bytes, &mut pos) {
+            Some(word) => {
+                let mut cover = mycelium::network::nerve::Cover::new();
+                match door.kernel.lock() {
+                    Ok(mut k) => {
+                        let vk = door.mesh.vk;
+                        // Replayed and ruled here on its own tapes; the
+                        // offering hypha's word is never taken on trust.
+                        !matches!(
+                            k.glue_fetched(word, vk, vk, &mut cover),
+                            mycelium::cognition::Glue::Slashed(_)
+                        )
+                    }
+                    Err(_) => false,
+                }
+            }
+            None => false,
+        };
+        let reply = Frame { lane: frame.lane, body: vec![glued as u8] };
+        let _ = s.write_all(&reply.encode().unwrap_or_default());
+        return true;
+    }
     if kind == dialogue::ACT_ADOPT {
         let Some((ratifier, elem_bytes)) = dialogue::decode_adopt(&frame.body) else { return true };
         let mut pos = 0usize;
@@ -1492,6 +1530,7 @@ fn main() {
                     .map(|(id, a)| (id, a.clone()))
                     .collect();
                 let mut organ_budget = mycelium::physics::expansion_unit() as usize;
+                let (mut reached, mut silent) = (0usize, 0usize);
                 for (pid, d) in dest_list {
                     if organ_budget == 0 {
                         break;
@@ -1499,6 +1538,7 @@ fn main() {
                     organ_budget -= 1;
                     match tell_peer(&d, req.clone()) {
                         Some((reply, dt)) => {
+                            reached += 1;
                             note_rtt_ok(&mesh, &pid, dt);
                             if !admit_peer_digest(&mesh, &reply, &router) {
                                 continue;
@@ -1590,10 +1630,57 @@ fn main() {
                                 None => note_rtt_timeout(&mesh, pid),
                             }
                         }
-                        None => note_rtt_timeout(&mesh, pid),
+                        None => {
+                            silent += 1;
+                            note_rtt_timeout(&mesh, pid)
+                        }
                     }
                 }
-                let _ = any_moved;
+                // 34.2's missing trace. The second organ arrives only through
+                // this exchange, so a fleet where it never lands looks exactly
+                // like a fleet where the germ gate is wrong -- 379 `germ
+                // pending (one voice)` against `basis=0` reads as a quorum
+                // fault and is a reachability fault. Silence here is the
+                // difference and nothing said it. Written once per cycle,
+                // not per peer, and only when something changed or nothing
+                // was reached, so an exchange that is working is quiet.
+                // OFFER what this court holds at first vantage. Without
+                // this the exchange has nothing to move: a ruled root only
+                // moves once a peer has glued a provisional, and a peer only
+                // sees a provisional when it is offered. `moved false` on
+                // every cycle was that deadlock.
+                let offers = {
+                    let mut b = mycelium::physics::Physics::default().stroke();
+                    match kernel.lock() {
+                        Ok(k) => k.offers_pending(&mut b),
+                        Err(_) => Vec::new(),
+                    }
+                };
+                let mut offered_out = 0usize;
+                for (oaddr, elem) in offers {
+                    for (_pid, d) in dests.fiber(mycelium::network::nerve::ROOT) {
+                        let body = dialogue::encode_offer(
+                            &oaddr,
+                            &elem,
+                            &[mesh.vk],
+                            &[0; 4],
+                            0,
+                            &[0u8; 64],
+                            &[0u8; 64],
+                        );
+                        if tell_peer(d, body).is_some() {
+                            offered_out += 1;
+                        }
+                    }
+                }
+                if offered_out > 0 {
+                    eprintln!("  court offered {offered_out} germs to the overlap");
+                }
+                if silent > 0 || any_moved {
+                    eprintln!(
+                        "  court organs reached {reached} silent {silent} moved {any_moved}"
+                    );
+                }
             }
         });
     }

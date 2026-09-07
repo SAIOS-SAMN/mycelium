@@ -1547,6 +1547,27 @@ impl Kernel {
         self.offered.get(addr).is_some()
     }
 
+    /// The germs this court has Offered and still holds provisionally, with
+    /// their tapes — what a second organ needs in order to replay them.
+    /// Bounded by the caller's `Budget`: an offer is work like any other and
+    /// a stroke sends what it can pay for, never the whole docket.
+    pub fn offers_pending(
+        &self,
+        budget: &mut crate::physics::Budget,
+    ) -> Vec<(crate::transducer::a21::Address, Vec<u8>)> {
+        let mut out = Vec::new();
+        for (addr, _) in self.offered.fiber(crate::network::nerve::ROOT) {
+            if !budget.spend() {
+                break;
+            }
+            let Some(w) = self.provisional.get(&addr) else {
+                continue;
+            };
+            out.push((crate::transducer::a21::Address::from(addr), w.to_bytes()));
+        }
+        out
+    }
+
     pub fn dialect_len(&self) -> usize {
         self.cocycle_at.len()
     }
