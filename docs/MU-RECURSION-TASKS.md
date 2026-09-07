@@ -241,6 +241,19 @@ Residues of F2 (audit 2026-09-07 at 69d6857), one commit each, before F3:
 | F2r4 | **Headers that describe what was deleted.** `core/mod.rs` still opens with the Δ core, RCF, the CCL Laws, SAIOS and the S5 prune; `client/sdk/aperture.rs` still says "distinct from the epigenome's chromatic `Aperture`"; `reduce.rs`'s doc names `KAPPA / 16`. A header says what the file is (§2). Two lines each. | open |
 | F2r5 | **A third bundle.** 626ec93 (F2b) carries the backtrack-ledger row that records 57b6950's bundle, ten lines of `MU-RECURSION-TASKS.md` about a different commit. `git commit --only <paths>` commits what is named, and a ledger row about another commit was named. Recorded here once; one item per commit means the row lands alone. | recorded |
 
+**2026-09-07, the third bundle: F2b carried a ledger row about another
+commit.** `F2b` is named for deleting `core/ccl.rs` and moving `Audience`,
+and it also carries ten lines of this ledger — the row recording the SECOND
+bundle, which is about `57b6950` and not about F2b at all. I staged it
+deliberately, reasoning that a disclosure should land as early as possible;
+that reasoning is wrong. A ledger row is an item. It lands alone, and a
+reader looking for when a fault was recorded should find a commit whose
+subject says so. Third instance of the same shape in one session: the fix
+each time was mechanical, and the fault each time was mine deciding what
+"one item" meant while I was in the middle of something else. Paid by this
+row, which lands alone, and by the rule it states: a ledger row is its own
+commit.
+
 **2026-09-07, F2r1's arm has no test.** The open-demand arm of
 `germinate/ingest.rs` — everything under `else` when `physics.can_expand`
 is false — is not executed by any of the 343 tests. Verified by probe, not
