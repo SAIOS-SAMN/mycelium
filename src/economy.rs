@@ -121,8 +121,8 @@ pub struct Entry {
 /// `recompute_balances` applies those, not this sign.
 pub fn orientation(kind: &str) -> i8 {
     match kind {
-        "mint" => 1,
-        "transfer" | "slash" => -1,
+        "mint" | "genesis" => 1,
+        "transfer" | "slash" | "burn" => -1,
         _ => 0,
     }
 }
@@ -231,17 +231,111 @@ impl Treasury {
         self.refresh_bond();
     }
 
-    /// Sum of mint entries, per lane — issued supply.
-    pub fn supply(&self) -> [u64; 4] {
-        let mut s = [0u64; 4];
+    /// `supply = genesis + mint − burn`, per lane (MU-ECONOMY §6). Genesis
+    /// is a finite signed allocation recorded as its own kind, so seeded
+    /// value and earned value are always separable in the ledger; burn
+    /// leaves circulation and reduces supply by the same vector, so the
+    /// equation holds through a forfeiture (47.4, R9).
+    ///
+    /// `None` when a lane overflows or a burn exceeds what was issued on it:
+    /// a supply that does not add up is not a smaller supply, it is a
+    /// ledger that does not describe the mesh (rule 11). Summing mint alone
+    /// with `saturating_add`, as this did, could report neither.
+    pub fn supply(&self) -> Option<[u64; 4]> {
+        let mut issued = [0u64; 4];
+        let mut burned = [0u64; 4];
         for e in &self.entries {
-            if e.kind == "mint" {
-                for l in 0..4 {
-                    s[l] = s[l].saturating_add(e.mu[l]);
-                }
+            let into = match e.kind {
+                "mint" | "genesis" => &mut issued,
+                "burn" => &mut burned,
+                _ => continue,
+            };
+            for l in 0..4 {
+                into[l] = into[l].checked_add(e.mu[l])?;
             }
         }
-        s
+        let mut s = [0u64; 4];
+        for l in 0..4 {
+            s[l] = issued[l].checked_sub(burned[l])?;
+        }
+        Some(s)
+    }
+
+    /// A finite, signed allocation at genesis. Its own kind, never a mint:
+    /// §6 requires seeded value and earned value to stay separable, and a
+    /// testnet differs from the beta only in this term.
+    pub fn genesis(&mut self, who: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+        if mu.iter().all(|&x| x == 0) {
+            return [0; 4];
+        }
+        self.entries.push(Entry { kind: "genesis", who, mu, k_step: anchor.0, receipt: anchor.1 });
+        self.credit(who, mu);
+        mu
+    }
+
+    /// Forfeiture: μ⃗ leaves circulation (47.4). Bond first, then balance,
+    /// on each lane; supply falls by exactly what left, so §6 holds through
+    /// it (R9). Returns the vector actually burned — never more than was
+    /// held, and nothing is redistributed.
+    pub fn burn(&mut self, who: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+        let bond = self.stakes.get(&who).copied().unwrap_or([0; 4]);
+        let bal = self.balance_mu(&who);
+        let from_bond: [u64; 4] = std::array::from_fn(|l| mu[l].min(bond[l]));
+        let from_bal: [u64; 4] =
+            std::array::from_fn(|l| (mu[l] - from_bond[l]).min(bal[l]));
+        let took: [u64; 4] = std::array::from_fn(|l| from_bond[l] + from_bal[l]);
+        if took.iter().all(|&x| x == 0) {
+            return took;
+        }
+        if from_bond.iter().any(|&x| x > 0) {
+            let next: [u64; 4] = std::array::from_fn(|l| bond[l] - from_bond[l]);
+            self.stakes.insert(who, next);
+            self.refresh_bond();
+        }
+        if from_bal.iter().any(|&x| x > 0) {
+            self.debit(who, from_bal);
+        }
+        self.entries.push(Entry { kind: "burn", who, mu: took, k_step: anchor.0, receipt: anchor.1 });
+        took
+    }
+
+    /// THE INVARIANT (§6), both equations, on every lane:
+    ///
+    /// ```text
+    /// supply = genesis + mint − burn
+    /// supply = Σ balance + Σ bond + Σ escrow
+    /// ```
+    ///
+    /// The first is read off the journal, the second off the carriers, and
+    /// the fold of LEDGER_EPOCH_DESIGN is admissible only where this holds
+    /// at the prefix it folds — a compression whose conservation cannot be
+    /// checked is not a compression, it is a loss.
+    pub fn audit(&self) -> Result<[u64; 4], String> {
+        let issued = self
+            .supply()
+            .ok_or_else(|| "supply does not add up on some lane".to_string())?;
+        let mut held = [0u64; 4];
+        let add = |v: &[u64; 4], held: &mut [u64; 4]| -> Result<(), String> {
+            for l in 0..4 {
+                held[l] = held[l]
+                    .checked_add(v[l])
+                    .ok_or_else(|| format!("carriers overflow lane {l}"))?;
+            }
+            Ok(())
+        };
+        let mut sums: Vec<[u64; 4]> = Vec::new();
+        crate::snapshot::persist(&self.balances, |_, mu| sums.push(*mu));
+        crate::snapshot::persist(&self.stakes, |_, mu| sums.push(*mu));
+        crate::snapshot::persist(&self.escrowed, |_, (_, mu, _)| sums.push(*mu));
+        for v in &sums {
+            add(v, &mut held)?;
+        }
+        if held != issued {
+            return Err(format!(
+                "supply {issued:?} is not the carriers {held:?}: balances + bond + escrow must be what was issued"
+            ));
+        }
+        Ok(issued)
     }
 
     fn mint_to(&mut self, who: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
@@ -577,6 +671,12 @@ impl Treasury {
                 "stake" => 4,
                 "slash" => 8,
                 "transfer" => 15,
+                "genesis" => 16,
+                "burn" => 17,
+                "escrow" => 18,
+                "release" => 19,
+                "revoke" => 20,
+                "unstake" => 21,
                 "utility" | "consilience" | "torse" | "assembly" | "solve" | "refine" | "condense" | "rewrite" => 14,
                 "spend" | "fee" => 15,
                 _ => 255,
@@ -645,6 +745,12 @@ impl Treasury {
                 8 => "slash",
                 14 => "mint",
                 15 => "transfer",
+                16 => "genesis",
+                17 => "burn",
+                18 => "escrow",
+                19 => "release",
+                20 => "revoke",
+                21 => "unstake",
                 0 | 1 | 3 | 9 | 10 | 11 | 12 | 13 => "mint",
                 5 | 6 => "transfer",
                 _ => "unknown",
@@ -797,7 +903,7 @@ mod tests {
         t.mint_claim(&voices, mu, anchor);
         assert_eq!(t.balance_mu(&[1; 32]), [2, 0, 1, 0]);
         assert_eq!(t.balance_mu(&[2; 32]), [2, 0, 1, 0]);
-        assert_eq!(t.supply(), [4, 0, 2, 0]);
+        assert_eq!(t.supply().expect("supply adds up"), [4, 0, 2, 0]);
         assert_eq!(t.bond_total(), [0; 4], "mint does not touch the stake bond");
     }
 
@@ -815,7 +921,7 @@ mod tests {
         let (v2, m2, a2) = t.release_award(&[9; 32]).expect("d2");
         t.mint_claim(&v2, m2, a2);
         let expect: [u64; 4] = std::array::from_fn(|l| d1[l] + d2[l]);
-        assert_eq!(t.supply(), expect);
+        assert_eq!(t.supply().expect("supply adds up"), expect);
     }
 
     /// A slash debits the bond and mints nothing.
@@ -827,7 +933,7 @@ mod tests {
         t.escrow_award(addr, vec![[1; 32]], [8, 0, 0, 0], (1, [1; 32]));
         assert!(t.revoke_award(&addr, true));
         assert_eq!(t.bond_of(&[1; 32]).unwrap()[0], bond[0].saturating_sub(8));
-        assert_eq!(t.supply(), [0; 4]);
+        assert_eq!(t.supply().expect("supply adds up"), [0; 4]);
         assert_eq!(t.balance_mu(&[1; 32]), [0; 4]);
     }
 
@@ -851,6 +957,42 @@ mod tests {
         assert!(descends(&[0, 0, 0, 0], &[1, 0, 0, 0]), "strict on one lane");
         assert!(!descends(&[1, 0, 0, 0], &[0, 1, 0, 0]), "lanes are not traded");
         assert!(!descends(&[1, 1, 0, 0], &[1, 1, 0, 0]), "equal is not descent");
+    }
+
+    /// §6, both equations, on a treasury that has actually moved value.
+    /// The fold of LEDGER_EPOCH_DESIGN is admissible only where this holds
+    /// at the prefix it folds, so this is the gate on 7.5.
+    #[test]
+    fn the_audit_holds_through_genesis_mint_and_burn() {
+        let mut t = Treasury::new();
+        let a = (1u64, [1u8; 32]);
+        t.genesis([1; 32], [10, 10, 10, 10], a);
+        assert_eq!(t.audit().expect("genesis conserves"), [10, 10, 10, 10]);
+        t.settle_subsidy([2; 32], [4, 0, 2, 0], a);
+        assert_eq!(t.audit().expect("a mint conserves"), [14, 10, 12, 10]);
+        let burned = t.burn([1; 32], [3, 0, 0, 0], a);
+        assert_eq!(burned, [3, 0, 0, 0], "burned from what was held");
+        assert_eq!(t.audit().expect("a burn conserves"), [11, 10, 12, 10]);
+        assert_eq!(t.supply().expect("supply adds up"), [11, 10, 12, 10]);
+    }
+
+    /// Where the invariant does NOT hold today, stated as a claim rather
+    /// than discovered by a soak. `enroll` inserts a bond and writes a
+    /// "stake" row without debiting anything: bond appears that was never
+    /// issued, so `Σ balance + Σ bond + Σ escrow` exceeds `genesis + mint
+    /// − burn`. MU-ECONOMY §4 has bond as "μ at risk" — staked FROM a
+    /// balance — and §9 lists stake and unstake for voices as not landed.
+    /// This test pins the gap so the fix is a change to this assertion and
+    /// not a surprise: 7.5's fold cannot land while it stands.
+    #[test]
+    fn enroll_conjures_bond_and_the_invariant_says_so() {
+        let mut t = Treasury::new();
+        let a = (1u64, [1u8; 32]);
+        t.genesis([1; 32], [10, 0, 0, 0], a);
+        assert!(t.audit().is_ok(), "genesis alone conserves");
+        t.enroll([1; 32], [4, 0, 0, 0], a);
+        let err = t.audit().expect_err("bond was never issued");
+        assert!(err.contains("is not the carriers"), "{err}");
     }
 
     /// G4. An escrow names every voice that stood the claim — `escrow_award`

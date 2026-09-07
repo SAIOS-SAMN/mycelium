@@ -1295,7 +1295,7 @@ fn a_single_voice_percept_stays_on_the_docket_and_installs_with_a_mint() {
     let addr = home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().0.clone();
     assert!(home.offered(&addr), "the court Offers a first-vantage germ");
     assert!(home.treasury().escrow_of(&addr).is_some(), "the priced magnitude is the claim");
-    assert_eq!(home.treasury().supply(), [0; 4], "the claim is not yet payment");
+    assert_eq!(home.treasury().supply().expect("supply adds up"), [0; 4], "the claim is not yet payment");
     home.court_stroke();
     let spoken = home.provisional.get(&addr).cloned().expect("still provisional until a peer glues");
     let mut cover = crate::network::nerve::Cover::new();
@@ -1309,7 +1309,7 @@ fn a_single_voice_percept_stays_on_the_docket_and_installs_with_a_mint() {
     assert!(home.provisional.is_empty(), "the docket clears on install");
     assert!(home.treasury().escrow_of(&addr).is_none(), "the claim is released");
     assert!(
-        home.treasury().supply().iter().any(|&x| x > 0),
+        home.treasury().supply().expect("supply adds up").iter().any(|&x| x > 0),
         "release mints the priced vector"
     );
     assert_eq!(home.treasury().bond_total(), bond, "mint does not debit the stake bond");
@@ -1351,7 +1351,7 @@ fn speech_that_closes_nothing_mints_none() {
     k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
     assert!(k.treasury().escrow_of(&addr).is_none(), "escrow returned");
     assert_eq!(
-        k.treasury().supply(),
+        k.treasury().supply().expect("supply adds up"),
         [0; 4],
         "a restatement that closes nothing pays nothing"
     );
@@ -1393,7 +1393,7 @@ fn association_with_a_listing_does_not_mint() {
     k.rule_all_provisionals();
     k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
     assert_eq!(
-        k.treasury().supply(),
+        k.treasury().supply().expect("supply adds up"),
         [0; 4],
         "a bound listing is not a mint without replay"
     );
@@ -1436,7 +1436,7 @@ fn a_rule_that_speaks_the_family_mints_measured_descent() {
     k.rule_all_provisionals();
     k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
     assert_eq!(
-        k.treasury().supply(),
+        k.treasury().supply().expect("supply adds up"),
         expect,
         "mint is the measured coboundary, not a bound listing's magnitude"
     );
