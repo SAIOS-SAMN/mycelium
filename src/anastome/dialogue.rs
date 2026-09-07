@@ -118,12 +118,12 @@ pub fn encode_speech_standing(
     out
 }
 
-pub fn decode_speech(body: &[u8]) -> Option<([u8; 32], Address, u64, Vec<Vec<u8>>)> {
+pub fn decode_speech(body: &[u8]) -> Option<Speech> {
     let (voice, task, tu, sentences, _) = decode_speech_standing(body)?;
     Some((voice, task, tu, sentences))
 }
 
-pub fn decode_speech_standing(body: &[u8]) -> Option<([u8; 32], Address, u64, Vec<Vec<u8>>, Vec<u8>)> {
+pub fn decode_speech_standing(body: &[u8]) -> Option<SpeechStanding> {
     if body.first() != Some(&ACT_SPEECH) || body.len() < 47 {
         return None;
     }
@@ -529,22 +529,7 @@ pub fn encode_cover_digest(
 /// signature. Reads the fields once; every caller that needs the end
 /// offset gets it from the same read, so the two cannot drift apart on a
 /// length one of them guessed.
-#[allow(clippy::type_complexity)]
-fn cover_digest_at(
-    body: &[u8],
-    at: usize,
-) -> Option<(
-    (
-        Vec<(u8, crate::transducer::stalk::Invariant)>,
-        [u64; 4],
-        [[u8; 32]; 4],
-        [u8; 32],
-        [u8; 32],
-        String,
-        [u8; 64],
-    ),
-    usize,
-)> {
+fn cover_digest_at(body: &[u8], at: usize) -> Option<(CoverDigest, usize)> {
     let mut p = at;
     let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
     p += 4;
@@ -605,21 +590,7 @@ fn digests_reply_end(body: &[u8]) -> Option<usize> {
 /// so the guess mis-read the frame and produced charts that were never
 /// sent, silently. Rule 11: the parse that consumes the buffer exactly is
 /// the reading, two of them are an ambiguity and refuse, and none refuses.
-#[allow(clippy::type_complexity)]
-fn whole_cover_digest(
-    body: &[u8],
-) -> Option<(
-    (
-        Vec<(u8, crate::transducer::stalk::Invariant)>,
-        [u64; 4],
-        [[u8; 32]; 4],
-        [u8; 32],
-        [u8; 32],
-        String,
-        [u8; 64],
-    ),
-    usize,
-)> {
+fn whole_cover_digest(body: &[u8]) -> Option<(CoverDigest, usize)> {
     let mut hit = None;
     let starts = [Some(0usize), digests_reply_end(body)];
     for at in starts.into_iter().flatten() {
@@ -637,18 +608,7 @@ fn whole_cover_digest(
     hit
 }
 
-#[allow(clippy::type_complexity)]
-pub fn decode_cover_digest(
-    body: &[u8],
-) -> Option<(
-    Vec<(u8, crate::transducer::stalk::Invariant)>,
-    [u64; 4],
-    [[u8; 32]; 4],
-    [u8; 32],
-    [u8; 32],
-    String,
-    [u8; 64],
-)> {
+pub fn decode_cover_digest(body: &[u8]) -> Option<CoverDigest> {
     whole_cover_digest(body).map(|(f, _)| f)
 }
 
@@ -689,14 +649,7 @@ pub fn encode_receipt_section(
 /// digest's signature. `None` when the peer sent none, or when the section
 /// does not parse whole -- a truncated section is refused, never a partial
 /// admission (rule 11).
-pub fn decode_receipt_section(
-    body: &[u8],
-    at: usize,
-) -> Option<(
-    crate::court::admission::SignedPrefix,
-    [u8; 64],
-    crate::chronometry::KStepReceipt,
-)> {
+pub fn decode_receipt_section(body: &[u8], at: usize) -> Option<ReceiptSection> {
     let mut p = at;
     let plen = u16::from_le_bytes(body.get(p..p + 2)?.try_into().ok()?) as usize;
     p += 2;
@@ -753,7 +706,7 @@ pub fn encode_cover(vk: &[u8; 32], addr: &str, charts: &[(u8, crate::transducer:
     out
 }
 
-pub fn decode_cover(body: &[u8]) -> Option<([u8; 32], String, Vec<(u8, crate::transducer::stalk::Invariant)>)> {
+pub fn decode_cover(body: &[u8]) -> Option<Cover> {
     if body.first() != Some(&ACT_COVER) {
         return None;
     }
@@ -802,7 +755,7 @@ pub fn encode_offer(
     out
 }
 
-pub fn decode_offer(body: &[u8]) -> Option<(Address, Vec<u8>, Vec<[u8; 32]>, [u64; 4], u64, [u8; 64], [u8; 64])> {
+pub fn decode_offer(body: &[u8]) -> Option<Offer> {
     if body.first() != Some(&ACT_OFFER) {
         return None;
     }
@@ -839,7 +792,7 @@ pub fn encode_installed(addr: impl AsRef<[u8]>, elem: &[u8], sig_home: &[u8; 64]
     out
 }
 
-pub fn decode_installed(body: &[u8]) -> Option<(Address, Vec<u8>, [u8; 64], [u8; 64])> {
+pub fn decode_installed(body: &[u8]) -> Option<Installed> {
     if body.first() != Some(&ACT_INSTALLED) {
         return None;
     }
@@ -967,6 +920,47 @@ pub fn decode_genesis_request(body: &[u8]) -> Option<([u8; 32], u32)> {
 /// bytes)·n]` — full lossless element forms (Epigenome::learn refreshes by
 /// address, so rebinds propagate too).
 pub const ACT_SYLLABUS: u8 = 0x0D;
+
+/// DECODED ACT SHAPES. Each alias names one act's field list -- the tuple
+/// is the act, written out (A21), and the alias gives it a name rather than
+/// hiding it behind a struct nobody constructs. Introduced because these
+/// signatures were unreadable in place and clippy was right to say so.
+///
+/// `(voice, task, K, sentences)`
+pub type Speech = ([u8; 32], Address, u64, Vec<Vec<u8>>);
+/// `(voice, task, K, sentences, standing)`
+pub type SpeechStanding = ([u8; 32], Address, u64, Vec<Vec<u8>>, Vec<u8>);
+/// `(vk, bind, charts)`
+pub type Cover = ([u8; 32], String, Vec<(u8, crate::transducer::stalk::Invariant)>);
+/// `(address, element bytes, voices, deflation, K, sig, install sig)`
+pub type Offer = (Address, Vec<u8>, Vec<[u8; 32]>, [u64; 4], u64, [u8; 64], [u8; 64]);
+/// `(address, element bytes, home sig, witness sig)`
+pub type Installed = (Address, Vec<u8>, [u8; 64], [u8; 64]);
+/// `(voice, task, grids, rule)`
+pub type Solve = ([u8; 32], Address, Vec<Vec<Vec<u8>>>, Option<Vec<u8>>);
+/// `(voice, chain, cites, height)`
+pub type DemandAt = ([u8; 32], Vec<Cell>, Vec<CiteWire>, u64);
+/// One selection's birth evidence: `(address, positions, scene)`
+pub type EvidenceItem = (Address, Vec<(i64, i64)>, Vec<(i64, i64, u8)>);
+/// `(voice, items)`
+pub type EvidenceDeposit = ([u8; 32], Vec<EvidenceItem>);
+/// 47.1's receipt section: `(prefix, signature over it, the receipt)`
+pub type ReceiptSection = (
+    crate::court::admission::SignedPrefix,
+    [u8; 64],
+    crate::chronometry::KStepReceipt,
+);
+/// The cover digest's fields: `(charts, room, cover roots, ruled root, vk,
+/// bind, sig)`
+pub type CoverDigest = (
+    Vec<(u8, crate::transducer::stalk::Invariant)>,
+    [u64; 4],
+    [[u8; 32]; 4],
+    [u8; 32],
+    [u8; 32],
+    String,
+    [u8; 64],
+);
 
 pub fn encode_syllabus_request(voice: &[u8; 32]) -> Vec<u8> {
     let mut out = vec![ACT_SYLLABUS];
@@ -1164,7 +1158,7 @@ pub fn encode_solve_with_rule(
     out
 }
 
-pub fn decode_solve(body: &[u8]) -> Option<([u8; 32], Address, Vec<Vec<Vec<u8>>>, Option<Vec<u8>>)> {
+pub fn decode_solve(body: &[u8]) -> Option<Solve> {
     if body.first() != Some(&ACT_SOLVE) {
         return None;
     }
@@ -1285,7 +1279,7 @@ pub fn decode_demand(body: &[u8]) -> Option<([u8; 32], Vec<Cell>, Vec<CiteWire>)
     Some((voice, chain, cites))
 }
 
-pub fn decode_demand_at(body: &[u8]) -> Option<([u8; 32], Vec<Cell>, Vec<CiteWire>, u64)> {
+pub fn decode_demand_at(body: &[u8]) -> Option<DemandAt> {
     if body.first() != Some(&ACT_DEMAND) {
         return None;
     }
@@ -1718,9 +1712,7 @@ pub fn encode_evidence_deposit<A: AsRef<[u8]>>(
     out
 }
 
-pub fn decode_evidence_deposit(
-    body: &[u8],
-) -> Option<([u8; 32], Vec<(Address, Vec<(i64, i64)>, Vec<(i64, i64, u8)>)>)> {
+pub fn decode_evidence_deposit(body: &[u8]) -> Option<EvidenceDeposit> {
     if body.first() != Some(&ACT_EVIDENCE) || body.len() <= 33 {
         return None;
     }
@@ -1754,9 +1746,7 @@ pub fn encode_evidence_reply<A: AsRef<[u8]>>(
     out
 }
 
-pub fn decode_evidence_reply(
-    body: &[u8],
-) -> Option<Vec<(Address, Vec<(i64, i64)>, Vec<(i64, i64, u8)>)>> {
+pub fn decode_evidence_reply(body: &[u8]) -> Option<Vec<EvidenceItem>> {
     let mut p = 0usize;
     let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
     p += 4;
