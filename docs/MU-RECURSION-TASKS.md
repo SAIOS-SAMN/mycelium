@@ -90,6 +90,29 @@ The four gating commits verified (71524ef, 619f56f, 3a089c9, aa959c4; suite 358/
 
 Next set, in order: C1, C2, C3 (they gate any word being ruled), C4, C6, then R1 and 2.3; C5 follows C1.
 
+## Gate audit (2026-09-07): every gate guilty until proven
+
+Ruled: a gate nobody has watched fail is a costume. Each was probed by
+writing a file that violates the rule it claims to enforce and checking the
+build fails. Six fired on the obvious violation. Probing the shape the
+DOCTRINE names rather than the shape each was written for found three gaps,
+one of them a rule with no gate at all.
+
+| gate | obvious violation | doctrine's shape | outcome |
+|---|---|---|---|
+| enumeration (`.entries()`, `.for_each(`, `spend_unit()`) | fires | a bare `for` over a `Vec` with no `Budget` (rule 10) is **silent** | open — not cheaply matchable; rule 10 stays a review rule, recorded here so it is not mistaken for gated |
+| blake3 / digest (law 2, A21) | fires | fires through a `use` alias too | sound |
+| clock (law 9, 45.6) | fires | `Instant::now`, `SystemTime::now` both fire | sound |
+| matrix (law 11, rule 16) | fires | — | sound |
+| file length (Stage 8) | fires on a 4371-line file | — | sound |
+| squaring (law 11, checklist f′) | fires on `(Q, Q)` | **`placement: (i64, i64)` was silent** | **closed** — (f′) names `(i64, i64)` and the gate read only the rationals. It cannot match by type, since `(i64, i64)` IS the cell coordinate and is legitimate at the sensor boundary in `blade.rs` and `chain.rs`; it matches by ROLE, which is what (f′) says — a pair *carried as* a placement, shift or residue |
+| maps (rule 9, checklist g) | — | `HashMap` in cognition was **silent** | **closed** — there was NO gate for this rule at all, and four transport tables had already landed in `client/sdk` (W7). `lint_maps` over `server`, `client`, `transducer`, `court`, with `network/` exempt as the sovereignty boundary, and the four tables converted to `Keyed` over the socket string's bytes as A10 prescribes |
+
+One correction to my own probing: the first `(i64, i64)` widening matched by
+type and fired on eleven legitimate cell-coordinate sites in `blade.rs` and
+`chain.rs`. The probe was the costume, not the gate. Matching by role is
+what (f′) actually states.
+
 ## Custody of the in-flight surgery (2026-09-07) — the G-set
 
 The implementor node stopped mid-flight on the positional-carrier surgery.

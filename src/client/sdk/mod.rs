@@ -14,7 +14,6 @@ use crate::cognition::{encode_percept, perceive};
 use crate::network::wire::{Frame, Stratum};
 use crate::transducer::element::Element;
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::io::{self, Read, Write};
 use std::net::TcpStream;
 
@@ -106,7 +105,7 @@ pub struct Session {
     /// The voice this session is the mouth of.
     voice: crate::voice::Voice,
     /// Consecutive failed exchanges per hypha address.
-    resistance: RefCell<std::collections::HashMap<String, u64>>,
+    resistance: RefCell<crate::network::nerve::Keyed<u64>>,
     /// THE NERVE, as this entity holds it: every hypha it has learned of,
     /// placed by the same XOR router the hyphas use, so an act carrying a
     /// key (a listing, a task, a word) is spoken to that key's home and a
@@ -118,16 +117,16 @@ pub struct Session {
     /// stroke, so every book is thought about and none is a monologue.
     strokes: std::cell::Cell<u64>,
     /// Keep-alive streams keyed by destination address.
-    streams: RefCell<HashMap<String, TcpStream>>,
+    streams: RefCell<crate::network::nerve::Keyed<TcpStream>>,
     /// Cover trie learned from digest replies. Same read as the hypha.
     cover: RefCell<crate::network::nerve::Cover>,
     rooms: RefCell<crate::network::nerve::Keyed<[u64; 4]>>,
     addrs: RefCell<crate::network::nerve::Keyed<String>>,
     /// Last measured round-trip per hypha address; a timeout raises it by
     /// the aperture ratio, a success sets it to the measured trip.
-    rtt: RefCell<HashMap<String, u64>>,
+    rtt: RefCell<crate::network::nerve::Keyed<u64>>,
     /// Last aperture of RTTs per address, in strokes; the floor is the min of this window.
-    rtt_window: RefCell<HashMap<String, Vec<u64>>>,
+    rtt_window: RefCell<crate::network::nerve::Keyed<Vec<u64>>>,
 }
 
 /// The transport aperture — the perceived state of the wire to the server
@@ -159,7 +158,7 @@ impl Session {
             addr: addr.to_string(),
             kernel,
             voice,
-            resistance: RefCell::new(std::collections::HashMap::new()),
+            resistance: RefCell::new(crate::network::nerve::Keyed::new()),
             router: RefCell::new(router),
             peers: {
                 let mut p = crate::network::nerve::Keyed::new();
@@ -167,12 +166,12 @@ impl Session {
                 p
             },
             strokes: std::cell::Cell::new(0),
-            streams: RefCell::new(HashMap::new()),
+            streams: RefCell::new(crate::network::nerve::Keyed::new()),
             cover: RefCell::new(crate::network::nerve::Cover::new()),
             rooms: RefCell::new(crate::network::nerve::Keyed::new()),
             addrs: RefCell::new(crate::network::nerve::Keyed::new()),
-            rtt: RefCell::new(HashMap::new()),
-            rtt_window: RefCell::new(HashMap::new()),
+            rtt: RefCell::new(crate::network::nerve::Keyed::new()),
+            rtt_window: RefCell::new(crate::network::nerve::Keyed::new()),
         }
     }
 
@@ -336,7 +335,14 @@ impl Session {
 
     /// The measured impedance Z: consecutive failed exchanges.
     pub fn impedance(&self) -> u64 {
-        self.resistance.borrow().values().copied().max().unwrap_or(0)
+        // W8: a max over wires collapses them to one impedance. Left as
+        // the reading it was, keyed now; the per-wire read is `z_at`.
+        let r = self.resistance.borrow();
+        let mut z = 0u64;
+        for (_, v) in r.fiber(crate::network::nerve::ROOT) {
+            z = z.max(*v);
+        }
+        z
     }
 
     pub fn rtt(&self) -> Option<u64> {
@@ -344,27 +350,28 @@ impl Session {
     }
 
     fn rtt_of(&self, addr: &str) -> Option<u64> {
-        self.rtt.borrow().get(addr).copied()
+        self.rtt.borrow().get(addr.as_bytes()).copied()
     }
 
     fn rtt_ok(&self, addr: &str, sample: u64) {
         let n = crate::physics::aperture_cycle().max(1) as usize;
         let mut windows = self.rtt_window.borrow_mut();
-        let w = windows.entry(addr.to_string()).or_default();
+        let mut w = windows.get(addr.as_bytes()).cloned().unwrap_or_default();
         w.push(sample);
         if w.len() > n {
             w.remove(0);
         }
         let floor = w.iter().copied().min().unwrap_or(sample);
+        windows.insert(addr.as_bytes(), w);
         let cap = crate::physics::persist_dwell(floor);
-        self.rtt.borrow_mut().insert(addr.to_string(), sample.min(cap));
+        self.rtt.borrow_mut().insert(addr.as_bytes(), sample.min(cap));
     }
 
     fn rtt_timeout(&self, addr: &str) {
         let Some(floor) = self
             .rtt_window
             .borrow()
-            .get(addr)
+            .get(addr.as_bytes())
             .and_then(|w| w.iter().copied().min())
         else {
             return;
@@ -372,13 +379,13 @@ impl Session {
         let ratio = crate::physics::aperture_cycle().max(2) as u64;
         let cap = crate::physics::persist_dwell(floor);
         let mut m = self.rtt.borrow_mut();
-        if let Some(cur) = m.get(addr).copied() {
-            m.insert(addr.to_string(), cur.saturating_mul(ratio).min(cap));
+        if let Some(cur) = m.get(addr.as_bytes()).copied() {
+            m.insert(addr.as_bytes(), cur.saturating_mul(ratio).min(cap));
         }
     }
 
     fn z_at(&self, addr: &str) -> u64 {
-        self.resistance.borrow().get(addr).copied().unwrap_or(0)
+        self.resistance.borrow().get(addr.as_bytes()).copied().unwrap_or(0)
     }
 
     fn occluded_at(&self, addr: &str) -> bool {
@@ -543,13 +550,18 @@ impl Session {
                 (Ok(_), false) => {
                     // A success anywhere means the aperture is open: every
                     // hypha's Z decays, and the working path is clear.
-                    for z in r.values_mut() {
-                        *z = z.saturating_sub(1);
+                    let all: Vec<Vec<u8>> =
+                        r.fiber(crate::network::nerve::ROOT).map(|(k, _)| k).collect();
+                    for k in all {
+                        if let Some(z) = r.get_mut(&k) {
+                            *z = z.saturating_sub(1);
+                        }
                     }
-                    r.insert(addr.to_string(), 0);
+                    r.insert(addr.as_bytes(), 0);
                 }
                 _ => {
-                    *r.entry(addr.to_string()).or_insert(0) += 1;
+                    let cur = r.get(addr.as_bytes()).copied().unwrap_or(0);
+                    r.insert(addr.as_bytes(), cur + 1);
                 }
             }
         }
@@ -563,14 +575,14 @@ impl Session {
         let frame = Frame { lane: Stratum::Spatial, body: act_body };
         let bytes = frame.encode().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "frame encode"))?;
         let mut pool = self.streams.borrow_mut();
-        if let Some(s) = pool.get_mut(addr) {
+        if let Some(s) = pool.get_mut(addr.as_bytes()) {
             match Self::roundtrip(s, &bytes) {
                 Ok(body) => {
                     self.rtt_ok(addr, 1);
                     return Ok(body);
                 }
                 Err(e) => {
-                    pool.remove(addr);
+                    pool.remove(addr.as_bytes());
                     if e.kind() == io::ErrorKind::TimedOut || e.kind() == io::ErrorKind::WouldBlock {
                         self.rtt_timeout(addr);
                     }

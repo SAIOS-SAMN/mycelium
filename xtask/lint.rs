@@ -23,6 +23,7 @@ pub fn run() -> Result<(), String> {
     lint_file_length(&root, &mut hits)?;
     lint_blake3(&root, &mut hits)?;
     lint_squaring(&root, &mut hits)?;
+    lint_maps(&root, &mut hits)?;
     lint_qmatrix(&root, &mut hits)?;
     lint_clock(&root, &mut hits)?;
     if hits.is_empty() {
@@ -188,6 +189,85 @@ fn lint_file(path: &Path, hits: &mut Vec<String>, allow_spend: bool) -> Result<(
             check(".find_map(");
             check("Vec<bool>");
             check("unwrap_or");
+        }
+    }
+    Ok(())
+}
+
+/// Rule 9 and checklist (g): `HashMap`, `BTreeMap` and `HashSet` do not
+/// appear in cognition. A flat map keyed by a digest collapses a dimension
+/// at the storage boundary, and the only operation left on a bucket of
+/// points is equality lookup (ANTI_FLATTENING_LAW). There was NO gate for
+/// this — the whole rule rested on review, and four transport tables had
+/// already landed in `client/sdk`.
+///
+/// The sovereignty boundary is the one exemption and it is a directory, not
+/// a judgement: `network/` frames the wire and indexes the cold store, and
+/// those are I/O, not reasoning operands.
+fn lint_maps(root: &Path, hits: &mut Vec<String>) -> Result<(), String> {
+    for d in ["server", "client", "transducer", "court"] {
+        walk_maps(&root.join(d), hits)?;
+    }
+    Ok(())
+}
+
+fn walk_maps(path: &Path, hits: &mut Vec<String>) -> Result<(), String> {
+    if path.is_dir() {
+        let rd = match fs::read_dir(path) {
+            Ok(rd) => rd,
+            Err(_) => return Ok(()),
+        };
+        for ent in rd {
+            walk_maps(&ent.map_err(|e| e.to_string())?.path(), hits)?;
+        }
+        return Ok(());
+    }
+    if path.extension().and_then(|s| s.to_str()) != Some("rs") {
+        return Ok(());
+    }
+    if path.file_name().and_then(|s| s.to_str()) == Some("tests.rs")
+        && parent_declares_test_module(path)
+    {
+        return Ok(());
+    }
+    let src = fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let mut in_test = false;
+    let mut pending_test = false;
+    let mut depth = 0i32;
+    for (i, line) in src.lines().enumerate() {
+        let t = line.trim();
+        if t.contains("#[cfg(test)]") {
+            pending_test = true;
+        }
+        let opens = line.chars().filter(|&c| c == '{').count() as i32;
+        let closes = line.chars().filter(|&c| c == '}').count() as i32;
+        if pending_test && opens > 0 {
+            in_test = true;
+            pending_test = false;
+            depth = opens - closes;
+            if depth <= 0 {
+                in_test = false;
+            }
+            continue;
+        }
+        if in_test {
+            depth += opens - closes;
+            if depth <= 0 {
+                in_test = false;
+            }
+            continue;
+        }
+        if t.starts_with("//") {
+            continue;
+        }
+        for pat in ["HashMap", "BTreeMap", "HashSet", "BTreeSet"] {
+            if t.contains(pat) {
+                hits.push(format!(
+                    "{}:{}: {pat} in cognition — the carrier is a Keyed trie or a Vec of relations (rule 9)",
+                    path.display(),
+                    i + 1
+                ));
+            }
         }
     }
     Ok(())
@@ -443,6 +523,23 @@ fn walk_squaring(path: &Path, hits: &mut Vec<String>) -> Result<(), String> {
                 || t.contains("BigRational, BigRational")
                 || t.contains("BigRational, num_rational")
                 || t.contains("num_rational::BigRational, num_rational::BigRational");
+            // Checklist (f') names `(i64, i64)` beside the rational pairs,
+            // and the gate read only the rationals. It cannot be matched by
+            // TYPE -- `(i64, i64)` is the cell coordinate itself, legitimate
+            // at the sensor boundary in blade.rs and chain.rs -- so it is
+            // matched by ROLE, which is what (f') actually says: a pair
+            // "carried as a placement, shift, or residue". A field named for
+            // one of those roles and typed as a coordinate pair is a squared
+            // placement whatever its components are (law 11).
+            let role = t.contains("placement:") || t.contains("shift:") || t.contains("residue:");
+            let int_pair = t.contains("(i64, i64)") || t.contains("(i64,i64)");
+            if role && int_pair {
+                hits.push(format!(
+                    "{}:{}: (i64, i64) carried as a placement/shift/residue outside the sensor boundary",
+                    path.display(),
+                    i + 1
+                ));
+            }
             if pair {
                 hits.push(format!(
                     "{}:{}: (Q, Q) outside pair_form/speak_rule/orbit/cell_of/carry_center/carriage",
