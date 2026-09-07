@@ -66,7 +66,12 @@ pub(crate) fn run_gates(
     gates: &[Gate],
     hits: &mut Vec<String>,
 ) -> Result<(), String> {
-    let mut matched: Vec<(&'static str, &'static str)> = Vec::new();
+    // A row is EARNED, not merely present: it is kept only if the file it
+    // names exists AND the gate would actually have hit it. A row that
+    // excuses nothing is the same fault as a row naming a deleted file,
+    // reached from the other side — it reads as a sanctioned exception and
+    // sanctions nothing.
+    let mut earned: Vec<(&'static str, &'static str)> = Vec::new();
     for path in files {
         if super::length::is_declared_test_file(path) {
             continue;
@@ -75,17 +80,23 @@ pub(crate) fn run_gates(
         let production = strip_tests(&src);
         for gate in gates {
             match gate.allows(path) {
-                Some(row) => matched.push((gate.name, row)),
+                Some(row) => {
+                    let mut would = Vec::new();
+                    (gate.scan)(path, &production, &mut would);
+                    if !would.is_empty() {
+                        earned.push((gate.name, row));
+                    }
+                }
                 None => (gate.scan)(path, &production, hits),
             }
         }
     }
     for gate in gates {
         for (file, why) in gate.allow {
-            if !matched.iter().any(|(g, f)| *g == gate.name && f == file) {
+            if !earned.iter().any(|(g, f)| *g == gate.name && f == file) {
                 hits.push(format!(
-                    "{}: allowed by the {} gate ({why}) and not found — delete the row",
-                    file, gate.name
+                    "{file}: the {} gate allows it ({why}) and would not have hit it — delete the row",
+                    gate.name
                 ));
             }
         }

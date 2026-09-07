@@ -2,15 +2,15 @@
 // by digest.
 //
 //! The carrier is a `Keyed` trie over A21 coordinates or a Vec of
-//! relations (rule 9). `core/zlinalg.rs` is exempt: its maps are over
-//! integer row indices inside one exact rank computation, not over content.
+//! relations (rule 9). Nothing is exempt: there is no map anywhere in
+//! `src/`.
 
 use super::walker::Gate;
 use std::path::Path;
 
 pub(crate) const GATE: Gate = Gate {
     name: "maps",
-    allow: &[("core/zlinalg.rs", "row indices inside A18's exact rank, not content")],
+    allow: &[],
     scan,
 };
 
