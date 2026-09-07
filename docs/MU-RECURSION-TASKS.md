@@ -157,7 +157,7 @@ Move-only, one file per commit, tests to `<module>/tests/<chapter>.rs`, document
 | S5 | transducer/bubble.rs | 2,086 | bubble/{idea, contemplation, merge, drive, horizon, shed, tape}.rs, tests/{13,24,25,28,30}.rs | landed (S5) |
 | S6 | anastome/dialogue.rs | 2,075 | dialogue/{mod, acts, carrier, speech, percept, demand, quote, docket, cover, receipts, offer, syllabus}.rs, tests/{26,47}.rs | landed (S6) |
 | S7 | transducer/sentence/mod.rs | 2,029 | sentence/tests/{10,12,16,18,19,42}.rs + common.rs; mod.rs declarations only | landed (S7) |
-| S8 | transducer/alphabet.rs | 1,801 | alphabet/{rotor, letters, word, plane, spelling}.rs, tests/{1,9,16}.rs | open |
+| S8 | transducer/alphabet.rs | 1,801 | alphabet/{rotor, letters, word, plane, spelling}.rs, tests/{1,9,16}.rs | landed (S8) |
 | S9 | transducer/family/mod.rs | 1,762 | family/{mod, perceive, pair, extract, speak, orbit, descent}.rs | open |
 | S10 | network/nerve.rs | 1,353 | network/{keyed, cover, router}.rs, tests/{13,16}.rs | open |
 | S11 | server/cognition/court.rs | 1,322 | court/{replay, glue, lapse, syllabus, task}.rs | open |

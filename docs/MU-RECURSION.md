@@ -284,7 +284,7 @@ in Cl(4,0) over ℚ with its inverse carried. They never change.
 ### 1.2 Relators
 
 The letters satisfy a finite set of relations and no others
-(`alphabet::relators()`, alphabet.rs 705):
+(`alphabet::relators()`, alphabet/letters.rs):
 
 - a quarter turn has order four (projectively; see 1.5 on sign);
 - rotors on one plane commute;
@@ -411,10 +411,10 @@ Part III:
 
 | site | what it does | replaced by |
 |---|---|---|
-| `alphabet.rs:466` `normal_form` | returns the spoken tape for words that mix planes, so `Word::key` (448) and `Word::eq` (410) fall back to spelling | A1 key for every word; A2 for the tape |
-| `alphabet.rs:569` `same_form` | tape-equality arm `(None, None) => self.0 == other.0` | `projective_eq` |
-| `alphabet.rs:727` `PlaneForm` | structural equality on unreduced unit exponents; `form()` does not reduce; `sentence::chart_of` (1885) reads raw exponents | A3 |
-| `alphabet.rs:334, 342` `Rotor::key`, `coordinate` | hash of unnormalised coefficients used at `cognition.rs:2947` as class key and refinement axis; `PlaneForm::key/coordinate` (849, 858) likewise | A1, A7 |
+| `alphabet/word.rs` `normal_form` | returns the spoken tape for words that mix planes, so `Word::key` (448) and `Word::eq` (410) fall back to spelling | A1 key for every word; A2 for the tape |
+| `alphabet/word.rs` `same_form` | tape-equality arm `(None, None) => self.0 == other.0` | `projective_eq` |
+| `alphabet/plane.rs` `PlaneForm` | structural equality on unreduced unit exponents; `form()` does not reduce; `sentence::chart_of` (1885) reads raw exponents | A3 |
+| `alphabet/rotor.rs` `Rotor::key`, `coordinate` | hash of unnormalised coefficients used at `cognition.rs:2947` as class key and refinement axis; `PlaneForm::key/coordinate` (849, 858) likewise | A1, A7 |
 | `cga.rs:46` `Mv` (`Versor`) | derived structural equality; `cognition.rs:1006` `push_cocycle` `old == g` | A4 |
 | `element.rs:140` `Element::eq` (now `element/vertex.rs`) | tape bytes plus structural fields; inherited by `Germ`, `Face`, `Nerve` (sentence.rs 583, 600, 633) | M1 `same_vertex` |
 | `sentence.rs:1144` `vertex_address` | writes raw versor bytes beside geodesic keys | A4 canonical versors |
@@ -432,7 +432,7 @@ A21, in one landing (chapter 41, 0.11):
 
 | site | what it does | replaced by |
 |---|---|---|
-| `alphabet.rs` `Rotor::key`, `Word::class_key`, `PlaneForm::key` | blake3 over canonical coefficients or conjugacy invariants | the coefficients and invariants written out (A21) |
+| `alphabet/rotor.rs` `Rotor::key`, `alphabet/word.rs` `Word::class_key`, `alphabet/plane.rs` `PlaneForm::key` | blake3 over canonical coefficients or conjugacy invariants | the coefficients and invariants written out (A21) |
 | `cga.rs` `Mv::key` | blake3 over canonical versor coefficients | the coefficients written out |
 | `element/vertex.rs` `Element::address`, `form_key_bytes`; `element/residual.rs` `listing_key` | blake3 over the M2 composite | the M2 composite itself (17.2) |
 | `stalk.rs` `Invariant::key` | blake3 over the exact axes before the trie sees them | the axes' bytes, so `fiber_under` is a prefix read |
@@ -920,7 +920,7 @@ product is the semidirect one:
 identity            = (0, (0, 0, 0))
 ```
 
-`PlaneForm::compose`, `inverse`, `is_identity` (alphabet.rs 720, 735, 714)
+`PlaneForm::compose`, `inverse`, `is_identity` (alphabet/plane.rs)
 are this arithmetic and nothing else. Orders follow from the product rule:
 `(1, r)² = (0, r − r) = identity`, so every element with `s = 1` has order
 2 whatever `r` is; an element with `s = 0` has the order of `r`, infinite
@@ -1834,7 +1834,7 @@ Input: `R: Rotor`, coefficients `c[0..16]` by blade mask.
 
 Equality: `R ≡ S` iff `canonical(R) = canonical(S)` coefficientwise, iff
 `R·S⁻¹` is a nonzero scalar of **either sign** (chapter 1.5).
-`Rotor::projective_eq` (alphabet.rs 268) requires a positive scalar today
+`Rotor::projective_eq` (alphabet/rotor.rs) requires a positive scalar today
 and must accept a negative one; `Rotor::normalised` (249) performs step 2
 and must add step 3. Cost: sixteen rational divisions. A word with no
 plane-closed geodesic is **not** the identity and is never keyed as `1`; it
@@ -2737,7 +2737,7 @@ else, so every binding below still names the function it always named:
 
 | short name | absolute path |
 |---|---|
-| `alphabet.rs`, `sentence/`, `element/`, `cech.rs`, `stalk.rs`, `blade.rs`, `bubble/`, `family/`, `cga.rs`, `peel.rs`, `anchor.rs`, `sheaf.rs`, `germinate.rs`, `rewrite.rs`, `factor.rs`, `a21.rs` | `/opt/mycelium-v0.1.0/src/transducer/<name>` |
+| `alphabet/`, `sentence/`, `element/`, `cech.rs`, `stalk.rs`, `blade.rs`, `bubble/`, `family/`, `cga.rs`, `peel.rs`, `anchor.rs`, `sheaf.rs`, `germinate.rs`, `rewrite.rs`, `factor.rs`, `a21.rs` | `/opt/mycelium-v0.1.0/src/transducer/<name>` |
 | `cognition/`, `registry.rs`, `synthesis.rs` | `/opt/mycelium-v0.1.0/src/server/<name>` |
 | `verdict.rs`, `identity.rs`, `ledger.rs` | `/opt/mycelium-v0.1.0/src/court/<name>` |
 | `nerve.rs`, `mesh.rs`, `wire.rs` | `/opt/mycelium-v0.1.0/src/network/<name>` |
@@ -2753,7 +2753,13 @@ else, so every binding below still names the function it always named:
 
 Carried from Part I: a form is vertices, faces, loops, remainder.
 
-### 18.1 `/opt/mycelium-v0.1.0/src/transducer/alphabet.rs`
+### 18.1 `/opt/mycelium-v0.1.0/src/transducer/alphabet/`
+
+**The files.** Five organs (Stage 8b S8): `rotor.rs` the exact even versor
+and its arithmetic (16.1, 9); `letters.rs` the seventeen letters and the
+relators (1.1, 1.2); `word.rs` a path through the alphabet, its normal form
+and its order (1.3, 16.2); `plane.rs` the coefficient group and its
+conjugacy (16.3, 9.1); `spelling.rs` which word spells a block (A2, 20).
 
 `Word` (line 371) is the word form's tape. Add:
 
@@ -3598,7 +3604,7 @@ Carried from chapter 25: forms are spoken. `/opt/mycelium-v0.1.0/src/anastome/di
 Everything Parts III and IV change, in one table.
 
 ```
-alphabet.rs   Rotor::normalised (sign step), Rotor::projective_eq (either sign), Rotor::key (A1), Rotor::class_key (15.3),
+alphabet/rotor.rs  Rotor::normalised (sign step), Rotor::projective_eq (either sign), Rotor::key (A1), Rotor::class_key (15.3),
               Rotor::coordinate DELETED, PlaneForm::coordinate DELETED, PlaneForm::conjugacy_key (15.2), PlaneForm eq on reduced,
               PlaneForm::torsion_part() -> (u8,u8) NEW, PlaneForm::free_part() -> (i64,i64) NEW,
               Word::form (reduced), Word::normal_form (A2 step 1 off-plane), Word::key (= A1 key), Word::class_key (15.4),
@@ -4152,7 +4158,7 @@ replay the opening as they replay any sentence.
 
 ### 37.6 F6 Binding and tests
 
-`core/cyclo.rs`, `core/scalar.rs` new; `alphabet.rs`: `Rotor<Scalar>`,
+`core/cyclo.rs`, `core/scalar.rs` new; `alphabet/`: `Rotor<Scalar>`,
 `Alphabet { base, ext }`, `ExtLetter`, `relators()` appending, `spell`
 steps 1–4, `PlaneForm` torsion in `Z/N`; `element/letters.rs`: `Letters` carries
 the conductor; `economy.rs`: conductor factor in the S-lane cost; genome
