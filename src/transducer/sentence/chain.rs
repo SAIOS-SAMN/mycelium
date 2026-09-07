@@ -72,14 +72,13 @@ impl Sentence {
 /// receiving side of speech: the hearer's language deepens on what it
 /// verified, never on what it was told.
 pub fn puncture_from(
-    words: &mut [std::sync::Arc<Element>],
-    index_of: impl Fn(&[u8]) -> Option<usize>,
+    words: &mut Keyed<std::sync::Arc<Element>>,
     cites: &[crate::anastome::dialogue::CiteWire],
 ) -> usize {
     let mut deepened = 0usize;
     for (addr, _, _, _, body) in cites {
-        let Some(i) = index_of(addr) else { continue };
-        let mut pos = element::positions(words[i].sub());
+        let Some(word) = words.get_mut(addr) else { continue };
+        let mut pos = element::positions(word.sub());
         pos.sort_unstable();
         let mut carried = body.clone();
         carried.sort_unstable();
@@ -89,8 +88,8 @@ pub fn puncture_from(
         let asg = element::assignment(&carried);
         // Keyed membership on the gauge axis: only the assignments with
         // this charge are compared, never the whole list.
-        let same_charge = words[i].assignments_by_profile(&element::gauge_key(&asg));
-        let held = words[i].assignments();
+        let same_charge = word.assignments_by_profile(&element::gauge_key(&asg));
+        let held = word.assignments();
         let mut held_asg: Keyed<()> = Keyed::new();
         for &k in &same_charge {
             if let Some(a) = held.get(k) {
@@ -100,7 +99,7 @@ pub fn puncture_from(
         if held_asg.contains(&element::assignment_key(&asg)) {
             continue;
         }
-        if std::sync::Arc::make_mut(&mut words[i]).puncture(asg) {
+        if std::sync::Arc::make_mut(word).puncture(asg) {
             deepened += 1;
         }
     }

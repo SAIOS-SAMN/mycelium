@@ -131,10 +131,7 @@ pub fn probe(
     let Ok(mut g) = k.lock() else { return (PROBE_NOTHING, [0; 4], [0; 4]) };
     let view = g.market_open();
     drop(g);
-    let Some(&idx) = view.book_index.get(target) else {
-        return (crate::anastome::dialogue::PROBE_SETTLED, [0; 4], [0; 4]);
-    };
-    let Some((listing, _)) = view.pending.get(idx) else {
+    let Some((listing, _)) = view.pending.get(target) else {
         return (crate::anastome::dialogue::PROBE_SETTLED, [0; 4], [0; 4]);
     };
     // The utterance is verified as spoken — its operators against the
@@ -210,7 +207,7 @@ pub fn quote(
                 &view.pending,
                 &view.prior,
                 view.gens.0,
-                None,
+                &view.chart_listings,
             );
             k.lock().ok()?.seal_closure(view.gens, measured)
         }
@@ -218,7 +215,7 @@ pub fn quote(
     eprintln!(
         "  rank: book {} listings, closed {}, sealed {sealed}, gens {:?}",
         view.pending.len(),
-        rank.closure.iter().filter(|c| c.is_some()).count(),
+        rank.closure.fiber(crate::network::nerve::ROOT).filter(|(_, c)| c.is_some()).count(),
         view.gens,
     );
     let budget = crate::network::wire::frame_budget() - 34;
@@ -227,7 +224,6 @@ pub fn quote(
         let g = k.lock().ok()?;
         crate::cognition::quote_incidence(
             &view.pending,
-            g.book_index(),
             g.listing_atlas(),
             g.field(),
             g.on_page(),
@@ -241,7 +237,7 @@ pub fn quote(
             &view.standing_t,
         )
     };
-    let cohesion = crate::cognition::cohesion_over(&rank.closure);
+    let cohesion = crate::cognition::cohesion_over(&rank);
     Some((surface, priced, view.head_k, cohesion, view.gens.1))
 }
 

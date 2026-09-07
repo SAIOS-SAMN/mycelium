@@ -1166,15 +1166,8 @@ fn main() {
         let mut k = kernel.lock().unwrap();
         k.bind_live(&live);
         k.bind_identity(vk);
-        match k.treasury().bond_of(&vk) {
-            Some(held) => eprintln!("[{tag}] bond from ledger {held:?}"),
-            None => match genesis.hypha.iter().find(|(who, _)| *who == vk).map(|(_, b)| *b) {
-                Some(bond) => {
-                    let staked = k.enroll(vk, bond);
-                    eprintln!("[{tag}] genesis bond {bond:?}; staked {staked:?}");
-                }
-                None => eprintln!("[{tag}] unbonded; earn until a bond can stand"),
-            },
+        if let Some(held) = k.treasury().bond_of(&vk) {
+            eprintln!("[{tag}] bond from ledger {held:?}");
         }
         for (who, mu) in &genesis.voice {
             let paid = k.allocate(*who, *mu);
@@ -1182,14 +1175,6 @@ fn main() {
                 eprintln!("[{tag}] genesis voice {:02x}{:02x}… allocated {paid:?}", who[0], who[1]);
             }
         }
-        let room = k.lane_room();
-        let bond = k.treasury().bond_of(&vk);
-        let occ = k.occupancy();
-        let res = k.reserve();
-        let spend = mycelium::physics::expansion_unit();
-        eprintln!(
-            "[{tag}] room {room:?} = bond {bond:?} × (reserve {res:?} / spend {spend}) − occupancy {occ:?}"
-        );
     }
 
     let (early_listener, addr) = if !mesh_rec.bind.is_empty() {
@@ -1235,6 +1220,8 @@ fn main() {
 
     let registry = Arc::new(Mutex::new(mycelium::registry::TaskRegistry::new()));
     let genesis_vks: Vec<[u8; 32]> = genesis.hypha.iter().map(|(v, _)| *v).collect();
+    let mut cover = [0u64; 4];
+    let mut cover_measured = false;
     if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
         let mut manifests: Vec<_> = rd.filter_map(|e| e.ok().map(|e| e.path())).filter(|p| {
             p.extension().is_some_and(|x| x == "manifest")
@@ -1271,6 +1258,10 @@ fn main() {
             for f in &files {
                 let Ok(text) = std::fs::read_to_string(f) else { continue };
                 let Some(task) = mycelium::arc::parse_task(&text) else { continue };
+                if let Some(fam) = mycelium::arc::family_cover(&task.train) {
+                    cover_measured = true;
+                    mycelium::arc::cover_join(&mut cover, &fam);
+                }
                 registry.lock().unwrap().register(task);
                 tasked += 1;
             }
@@ -1284,6 +1275,29 @@ fn main() {
                 registry.lock().unwrap().unsolved(),
             );
         }
+    }
+    {
+        let mut k = kernel.lock().unwrap();
+        if cover_measured {
+            k.set_genesis_cover(cover);
+            if k.treasury().bond_of(&vk).is_none() {
+                let staked = k.enroll(vk, cover);
+                eprintln!("[{tag}] genesis bond {cover:?}; staked {staked:?}");
+            }
+            for (who, _) in &genesis.voice {
+                if k.treasury().bond_of(who).is_none() {
+                    k.enroll(*who, cover);
+                }
+            }
+        } else if k.treasury().bond_of(&vk).is_none() {
+            eprintln!("[{tag}] unbonded; the corpus did not measure a cover");
+        }
+        let room = k.lane_room();
+        let bond = k.treasury().bond_of(&vk);
+        eprintln!(
+            "[{tag}] room {room:?} = bond {bond:?} − occupancy {:?}",
+            k.occupancy()
+        );
     }
 
     let listener = match early_listener {
