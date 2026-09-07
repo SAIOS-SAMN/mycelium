@@ -4,24 +4,6 @@
 use super::common::*;
 use crate::client::sdk::*;
 
-/// THE CHROMATIC APERTURE (harmonic import): absorption is the EXACT running
-/// average h[k] = (h[k]·n + signal)/(n+1) — signals 3/10 then 7/10 average to
-/// exactly 1/2; dimensions tune independently; the aperture drifts with the
-/// entity's diet, never with a clock.
-#[test]
-fn the_aperture_absorbs_as_an_exact_running_average() {
-use crate::core::Q;
-use num_bigint::BigInt;
-let mut ap = Aperture::default();
-ap.absorb_value_signal(1, 4); // |1−4|/10 = 3/10 into h[0]
-ap.absorb_value_signal(2, 9); // 7/10 → mean = 1/2 exactly
-assert_eq!(ap.bias(0), Some(&Q::new(BigInt::from(1), BigInt::from(2))));
-assert_eq!(ap.count(0), 2);
-ap.absorb_spatial_signal(3); // 3/8 into h[1] — independent dimension
-assert_eq!(ap.bias(1), Some(&Q::new(BigInt::from(3), BigInt::from(8))));
-assert_eq!(ap.tuned_dims(), 2, "dimensions tune independently — no collapse");
-}
-
 /// Shed never removes a dialect entry a live idea glued, and never the genome.
 #[test]
 fn shed_spares_glued_dialect_and_the_genome() {

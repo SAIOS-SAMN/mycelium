@@ -189,8 +189,6 @@ pub struct Epigenome {
     /// Locally comprehended sentences, keyed by the sentence's word addresses
     /// (not by basis indices that shift on retire).
     pub(crate) recollections: crate::network::nerve::Keyed<(Vec<Vec<u8>>, u64)>,
-    /// The entity's chromatic aperture — its perceptual bias (harmonic import).
-    pub aperture: Aperture,
     /// THE ATLAS of the genome — admitted in place as words are learned
     /// or restored; rebuilt only on retire. Never persisted.
     pub(crate) atlas: crate::transducer::stalk::Stalks,

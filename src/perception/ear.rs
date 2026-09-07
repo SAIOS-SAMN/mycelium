@@ -18,10 +18,6 @@ use crate::transducer::blade::{self, Blade};
 use num_rational::BigRational;
 use num_traits::Zero;
 
-/// The kernel's aperture: eleven harmonic tunings as a running average of
-/// what it has heard. Volatile by ruling — it re-forms each run.
-pub use crate::client::sdk::Aperture as Tuning;
-
 /// THE HARMONICS of a body, in axis order.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Harmonics {

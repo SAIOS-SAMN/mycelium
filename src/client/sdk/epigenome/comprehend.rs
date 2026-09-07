@@ -287,22 +287,6 @@ impl Epigenome {
             self.refused += 1;
             return None;
         }
-        // The APERTURE tunes on what is inherited: each transition refracts a
-        // value signal into h[0]; each torsion period a spatial signal into h[1]
-        // — the entity's optics drift with its diet (dialect-legitimate).
-        for &(_, _, before, after) in e.sub() {
-            self.aperture.absorb_value_signal(before, after);
-        }
-        let ft = crate::transducer::sentence::form_torsion(&e);
-        if !ft.is_empty() {
-            for (_, (_, l, _)) in ft.fiber(crate::network::nerve::ROOT) {
-                self.aperture.absorb_spatial_signal(*l);
-            }
-        } else {
-            for (_, l, _) in e.torsion() {
-                self.aperture.absorb_spatial_signal(*l);
-            }
-        }
         let heard = self.comprehend(&e);
         if let Comprehension::Withheld { missing } = &heard {
             let missing = missing.clone();
