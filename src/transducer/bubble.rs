@@ -191,7 +191,7 @@ pub struct Bubble {
     /// Last chart key visited by expand; the next stroke resumes here.
     pub cursor: Vec<u8>,
     /// TUniversal when this bubble's charts last moved.
-    pub moved_tu: u64,
+    pub moved_k: u64,
     /// Addresses this idea glued (crystallized forms it rests on).
     pub glues: Keyed<()>,
     /// Ideas that glued this bubble; a non-empty set is not shed.
@@ -245,7 +245,7 @@ impl Bubble {
         budget: &mut Budget,
     ) -> (usize, [u64; 4]) {
         self.potential = element::measure_lanes(&self.remainder);
-        self.potential[2] = now.saturating_sub(self.moved_tu).max(1);
+        self.potential[2] = now.saturating_sub(self.moved_k).max(1);
         if budget.remaining() == 0 || !self.potential.iter().any(|&x| x > 0) {
             return (0, [0; 4]);
         }
@@ -298,11 +298,11 @@ impl Bubble {
             match cech::extend(&a, &b, &cell) {
                 Fill::Filled(_) => {
                     self.cover.insert(ck, ());
-                    self.moved_tu = now;
+                    self.moved_k = now;
                 }
                 Fill::Congruent(g, ell) => {
                     self.cover.insert(ck, ());
-                    self.moved_tu = now;
+                    self.moved_k = now;
                     self.nerve.file_congruent(self.key(), head, g, ell);
                 }
                 Fill::Class(r) => {
@@ -320,7 +320,7 @@ impl Bubble {
         if budget.remaining() > 0 {
             if let Some(mut form) = self.form.clone() {
                 let key = self.key();
-                let t = now.saturating_sub(self.moved_tu);
+                let t = now.saturating_sub(self.moved_k);
                 let snaps = form.pivot_loop(
                     key,
                     &self.horizon,
@@ -401,7 +401,7 @@ pub struct Contemplation {
     cavity: Keyed<Vec<RemCell>>,
     pending_rewrites: Vec<Element>,
     /// TUniversal the entity last stamped; T-room and potential[2] read it.
-    now_tu: u64,
+    now_k: u64,
     /// Mesh-seeded classes, keyed by class key, Standing::Held. Not persisted.
     seeded: Keyed<(Rotor, Order, Standing)>,
 }
@@ -411,8 +411,13 @@ impl Contemplation {
         Contemplation::default()
     }
 
-    pub fn set_now(&mut self, tu: u64) {
-        self.now_tu = tu;
+    /// The mind's OWN K (45.4), never the mesh's height. A height advances
+    /// only on admitted receipts (45.2), so a contemplation clocked by one
+    /// froze at 0 on a mesh that admitted nothing: every bubble's extent
+    /// read as the same value, `retire_on_t` could not tell them apart, and
+    /// ideas accumulated for the life of the process.
+    pub fn set_now(&mut self, k: u64) {
+        self.now_k = k;
     }
 
     /// When T-room on the entity's reserve is exhausted, the bubble with
@@ -422,13 +427,13 @@ impl Contemplation {
         if self.bubbles.len() <= room.max(1) {
             return;
         }
-        let now = self.now_tu;
+        let now = self.now_k;
         let mut best: Option<(Vec<u8>, u64)> = None;
         for (k, b) in self.bubbles.fiber(ROOT) {
             if b.glued_by.len() > 0 {
                 continue;
             }
-            let t = now.saturating_sub(b.moved_tu).max(1);
+            let t = now.saturating_sub(b.moved_k).max(1);
             match best {
                 Some((_, bt)) if t <= bt => {}
                 _ => best = Some((k.clone(), t)),
@@ -822,7 +827,7 @@ impl Contemplation {
             volume,
             dirty: true,
             cursor: Vec::new(),
-            moved_tu: self.now_tu,
+            moved_k: self.now_k,
             glues,
             glued_by: Keyed::new(),
             torsion: f.torsion.clone(),
@@ -866,7 +871,7 @@ impl Contemplation {
             volume,
             dirty: true,
             cursor: Vec::new(),
-            moved_tu: self.now_tu,
+            moved_k: self.now_k,
             glues: Keyed::new(),
             glued_by: Keyed::new(),
             torsion: Keyed::new(),
@@ -958,7 +963,7 @@ impl Contemplation {
             volume,
             dirty: false,
             cursor: Vec::new(),
-            moved_tu: 0,
+            moved_k: 0,
             glues: Keyed::new(),
             glued_by: Keyed::new(),
             torsion,
@@ -1078,7 +1083,7 @@ impl Contemplation {
             from = k.clone();
             self.expand_cursor = k.clone();
             if let Some(b) = self.bubbles.get_mut(&k) {
-                let (s, p) = b.expand_with(atlas, rotors, self.now_tu, crystal, budget);
+                let (s, p) = b.expand_with(atlas, rotors, self.now_k, crystal, budget);
                 spent += s;
                 for i in 0..4 {
                     pivoted[i] = pivoted[i].saturating_add(p[i]);
@@ -1142,7 +1147,7 @@ impl Contemplation {
             };
             let horizon = b.horizon.clone();
             let bundle = b.bundle.clone();
-            let t = self.now_tu.saturating_sub(b.moved_tu);
+            let t = self.now_k.saturating_sub(b.moved_k);
             if let Some(mut form) = b.form.clone() {
                 let _ = form.pivot_loop(bk, &horizon, crystal, budget, bundle.as_deref(), t);
                 if let Some(b) = self.bubbles.get_mut(bk) {
@@ -1521,7 +1526,7 @@ impl Contemplation {
                 volume,
                 dirty,
                 cursor: Vec::new(),
-                moved_tu: 0,
+                moved_k: 0,
                 glues: Keyed::new(),
                 glued_by: Keyed::new(),
                 torsion,

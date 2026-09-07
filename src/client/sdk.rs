@@ -2801,7 +2801,7 @@ impl Entity {
     /// measure of A16 snaps (Discharged, Vortex, TorsionFiled).
     pub fn expand_ideas(&mut self) -> [u64; 4] {
         let mut budget = self.physics.stroke();
-        self.contemplation.set_now(self.now_tu());
+        self.contemplation.set_now(self.session.voice().k());
         let rotors = crate::network::nerve::Keyed::new();
         let (_spent, pivoted) = self.contemplation.expand_all(
             self.epigenome.atlas(),
@@ -2817,7 +2817,7 @@ impl Entity {
     /// those ideas under one stroke Budget. The atlas is borrowed, never cloned.
     pub fn pivot_on(&mut self, word: &Element) -> usize {
         let mut budget = self.physics.stroke();
-        self.contemplation.set_now(self.now_tu());
+        self.contemplation.set_now(self.session.voice().k());
         let (_fills, _formed, _classes, spoken) =
             self.contemplation.pivot_on(word, &self.epigenome, &mut budget);
         let mut n = 0usize;
