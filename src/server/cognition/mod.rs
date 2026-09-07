@@ -77,9 +77,12 @@ impl Eq for NormalForm {}
 /// quoting run over it with no lock held.
 #[derive(Debug, Clone, Default)]
 pub struct Language {
-    /// Shared snapshot: each word is its own Arc, so an append clones
-    /// pointers, never the basis.
-    pub words: std::sync::Arc<[std::sync::Arc<Element>]>,
+    /// Shared snapshot: each word is its own Arc, so a snapshot shares
+    /// pointers and never copies the basis. The vector and the index are
+    /// owned so an admit MODIFIES this snapshot in place through
+    /// `Arc::make_mut` rather than building a new one beside it; a copy is
+    /// paid once, and only when a reader is actually holding the old one.
+    pub words: Vec<std::sync::Arc<Element>>,
     pub stalks: std::sync::Arc<crate::transducer::stalk::Stalks>,
     /// Each word's shape, lifted once on first use and shared by every
     /// lookup over this snapshot (a measurement memoized, never persisted).
@@ -87,7 +90,7 @@ pub struct Language {
     /// The retirement generation of the basis this snapshot was taken at.
     pub retire_gen: u64,
     /// Each word reached by its address — a coordinate read, never a scan.
-    pub index: std::sync::Arc<crate::network::nerve::Keyed<usize>>,
+    pub index: crate::network::nerve::Keyed<usize>,
 }
 
 impl Language {

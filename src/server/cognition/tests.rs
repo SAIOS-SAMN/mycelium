@@ -1839,3 +1839,88 @@ fn listings_on_is_the_meet_of_its_vertices() {
     // through it is empty, never "everything on the chart".
     assert_eq!(k.listings_on(&inv, &[v1, [9u8; 32]]).len(), 0, "a silent vertex empties the meet");
 }
+
+/// The genome boundary. A taught word is CRYSTALLIZED on the receiver — it
+/// enters the genome, the persisted stratum (24.1, chapter 6) — while the
+/// epigenome's dialect is the transmutable one. `word_at` resolves for
+/// replay and falls through basis → cavity → provisional on purpose; the
+/// teaching path must not, or a voice is handed its own unratified dialect
+/// back as language and files it as crystallized intelligence.
+#[test]
+fn the_syllabus_never_teaches_a_provisional_word() {
+    use crate::transducer::element::from_residual;
+    use crate::transducer::germinate::germinate;
+    let mut k = Kernel::new();
+    let a = vec![(0, 0, 1), (0, 1, 2)];
+    let b = vec![(0, 0, 5), (0, 1, 2)];
+    let w = from_residual(&germinate(&a, &b).expect("a coboundary"));
+    let addr = w.address();
+    let inv = crate::transducer::stalk::invariant_of(&w);
+
+    // The word stands only as provisional, and its address reaches the
+    // ruled cover: exactly the state the soak found, basis 0 with a
+    // syllabus serving.
+    k.provisional.insert(&addr, w.clone());
+    k.ruled.admit(&inv, addr.clone());
+    assert!(k.word_at(&addr).is_some(), "replay still resolves it");
+    assert!(k.installed_word(&addr).is_none(), "but nothing installed it");
+
+    let served = k.serve_ruled(&inv, &[], 1 << 20);
+    assert!(served.is_empty(), "a provisional word is not language and is not taught");
+
+    // Installed, the same address teaches.
+    k.basis_insert(w, [1; 32]);
+    assert!(k.installed_word(&addr).is_some());
+    assert_eq!(
+        k.serve_ruled(&inv, &[], 1 << 20).len(),
+        1,
+        "what the court installed is what it teaches"
+    );
+}
+
+/// COST PER OBSERVATION. The test that tells the two architectures apart:
+/// a base that is MODIFIED absorbs one more word at a cost independent of
+/// how much it already holds; a base that is APPENDED TO pays for its own
+/// size on every observation, and grows once per input forever.
+///
+/// Admitting a word rebuilt the whole language snapshot — the word vector
+/// copied, the index trie deep-cloned, N fresh `OnceLock`s allocated and
+/// every lifted shape thrown away — so the Nth admit cost O(N) and the
+/// fleet's footprint grew quadratically in what it had learned. This is the
+/// N vs 4N counter of the enumeration audit, applied to a write.
+#[test]
+fn admitting_a_word_costs_the_same_at_n_and_4n() {
+    use crate::network::nerve::work;
+    use crate::transducer::element::from_residual;
+    use crate::transducer::germinate::germinate;
+    let admit_after = |n: usize| -> u64 {
+        let mut k = Kernel::new();
+        // Distinct SUPPORTS, not distinct positions: A5 centres a chain to
+        // its min corner, so words that differ only by placement are one
+        // word (1.5) and the base would not grow at all.
+        let fill = |i: usize, k: &mut Kernel| {
+            let a: Vec<(i64, i64, u8)> = (0..=i as i64).map(|c| (0, c, 1u8)).collect();
+            let b: Vec<(i64, i64, u8)> = (0..=i as i64).map(|c| (0, c, 2u8)).collect();
+            if let Some(g) = germinate(&a, &b) {
+                k.basis_insert(from_residual(&g), [1; 32]);
+            }
+        };
+        for i in 0..n {
+            fill(i, &mut k);
+        }
+        let held = k.basis_len();
+        work::reset();
+        fill(n + 1, &mut k);
+        let cost = work::total();
+        assert!(k.basis_len() > held, "the word was admitted at n={n}");
+        cost
+    };
+    let at_n = admit_after(8);
+    let at_4n = admit_after(32);
+    assert!(at_n > 0, "the admit is measured");
+    assert_eq!(
+        at_n, at_4n,
+        "one observation costs the same into a large base as a small one: \
+         {at_n} at N, {at_4n} at 4N"
+    );
+}

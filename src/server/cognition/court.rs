@@ -1124,7 +1124,16 @@ impl Kernel {
             if held.contains(&addr) {
                 continue;
             }
-            let Some(w) = self.word_at(&addr) else { continue };
+            // THE GENOME BOUNDARY. A taught word becomes GENOME on the
+            // receiver -- crystallized intelligence, the persisted stratum
+            // (24.1, chapter 6) -- so only what this court installed may be
+            // taught. `word_at` falls through basis -> cavity -> PROVISIONAL,
+            // so serving through it hands a voice its own unratified dialect
+            // back as language: the epigenome's transmutable stratum filed
+            // as the genome's crystallized one. The installed word is the
+            // one in `basis`; a ruled address whose word never left
+            // provisional is not yet language and is not served.
+            let Some(w) = self.installed_word(&addr) else { continue };
             if w.is_connection() && w.letters().is_none() {
                 continue; // letterless history is never taught
             }

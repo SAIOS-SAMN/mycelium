@@ -540,6 +540,15 @@ impl Kernel {
             .or_else(|| self.provisional.get(addr))
     }
 
+    /// The word this court INSTALLED, never a provisional one. `word_at`
+    /// resolves for replay and falls through to `provisional` and the
+    /// cavity on purpose; the teaching path must not, because a taught word
+    /// is crystallized on the receiver (24.1). Chapter 23.2 states the same
+    /// rule for `resolve_form`: provisional and dialect return `None`.
+    pub(super) fn installed_word(&self, addr: &[u8]) -> Option<&Element> {
+        self.basis.get(addr).map(|w| w.as_ref())
+    }
+
     /// A word the court finalized here joins the ruled cover (keyed admit).
     pub(super) fn ruled_admit(&mut self, addr: &[u8]) {
         if let Some(w) = self.word_at(addr) {
@@ -758,11 +767,11 @@ impl Kernel {
     ) -> Language {
         let shapes = (0..words.len()).map(|_| std::sync::OnceLock::new()).collect();
         Language {
-            words: words.into(),
+            words,
             stalks,
             shapes,
             retire_gen: self.retire_gen,
-            index: std::sync::Arc::new(index),
+            index,
         }
     }
 
@@ -803,24 +812,33 @@ impl Kernel {
             self.language_rebuild();
             return;
         }
-        if let Some(&i) = self.language.index.get(&addr) {
-            let mut words: Vec<std::sync::Arc<Element>> = self.language.words.iter().cloned().collect();
-            if i < words.len() {
-                words[i] = word;
-            }
-            let index = (*self.language.index).clone();
-            let stalks = std::sync::Arc::clone(&self.stalks);
-            self.language = std::sync::Arc::new(self.language_from_words(words, stalks, index));
-            self.language_gen = self.basis_gen;
-            return;
-        }
-        let mut words: Vec<std::sync::Arc<Element>> = self.language.words.iter().cloned().collect();
-        let i = words.len();
-        words.push(word);
-        let mut index = (*self.language.index).clone();
-        index.insert(&addr, i);
+        // MODIFY the snapshot, never build another beside it. This copied
+        // the whole word vector AND deep-cloned the whole index trie AND
+        // allocated N fresh OnceLocks per word admitted -- four O(N) passes
+        // for one observation, and the fresh `shapes` discarded every shape
+        // lifted so far, so each admit also forced them all to be lifted
+        // again. `Arc::make_mut` mutates in place when nobody is reading and
+        // copies once when someone is: the cost of sharing is paid by the
+        // sharing, not by the growth.
         let stalks = std::sync::Arc::clone(&self.stalks);
-        self.language = std::sync::Arc::new(self.language_from_words(words, stalks, index));
+        let retire_gen = self.retire_gen;
+        let lang = std::sync::Arc::make_mut(&mut self.language);
+        lang.stalks = stalks;
+        lang.retire_gen = retire_gen;
+        match lang.index.get(&addr).copied() {
+            Some(i) if i < lang.words.len() => {
+                // One vertex, one slot: the word at its address is replaced,
+                // and its lifted shape with it.
+                lang.words[i] = word;
+                lang.shapes[i] = std::sync::OnceLock::new();
+            }
+            _ => {
+                let i = lang.words.len();
+                lang.index.insert(&addr, i);
+                lang.words.push(word);
+                lang.shapes.push(std::sync::OnceLock::new());
+            }
+        }
         self.language_gen = self.basis_gen;
     }
 
