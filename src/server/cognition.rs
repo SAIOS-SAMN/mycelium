@@ -165,17 +165,26 @@ pub struct ListingField {
     pub nonflat: u32,
 }
 
-fn versors_close(vs: &[element::Versor]) -> bool {
+/// The holonomy of a fiber of transitions: the geometric product around it.
+/// `None` when the fiber is not a loop — a singleton has nothing to close.
+/// The loop closes iff this is projectively the identity (10.3); the value
+/// itself is the obstruction when it is not, and it is what a germ is bred
+/// from. Reading a member of the fiber instead made the obstruction depend
+/// on which transition the fiber happened to list last, and two nodes
+/// holding one loop in two insertion orders bred two different germs from
+/// identical mathematics.
+fn fiber_holonomy(vs: &[element::Versor]) -> Option<element::Versor> {
     // The fiber holds more than one transition; a singleton is not a loop.
     if vs.len() < 2 {
-        return false;
+        return None;
     }
     let mut p = vs[0].clone();
     for v in &vs[1..] {
         p = p.geo(v);
     }
-    p.projective_eq(&element::identity_versor())
+    Some(p)
 }
+
 
 fn rotor_versor(g: &crate::transducer::alphabet::Rotor) -> Option<element::Versor> {
     let word = g.spelled_word()?;
@@ -1220,7 +1229,7 @@ impl Kernel {
     /// Place a word on the basis with no syntropic stroke: restore and the
     /// fallback cursor walk insert this way so a snapshot does not condense
     /// the language it is loading.
-    fn basis_insert(&mut self, word: Element, discoverer: [u8; 32]) -> usize {
+    fn basis_insert(&mut self, word: Element, discoverer: [u8; 32]) {
         let addr = word.address();
         self.index_word(&word);
         let arc = std::sync::Arc::new(word);
@@ -1228,27 +1237,29 @@ impl Kernel {
         self.discoverers.insert(&addr, discoverer);
         self.basis_gen += 1;
         self.language_append_arc(arc);
-        self.live_slot(&addr).unwrap_or(0)
     }
 
     /// Install a word and pivot Path 2 on the axis it just moved: condense
     /// a congruent sibling, probe the stratum for a derivable generator,
-    /// pay each yield on its own lane. Returns the surviving word's index.
-    fn basis_push(&mut self, word: Element, discoverer: [u8; 32]) -> usize {
+    /// pay each yield on its own lane. A word is named by its address; the
+    /// slot index these returned was a position in the language snapshot,
+    /// read back through `live_slot` and defaulted to 0 when the snapshot
+    /// lagged the carrier -- slot 0 is a real word, and it is not this one.
+    /// No caller read either return (rule 11).
+    fn basis_push(&mut self, word: Element, discoverer: [u8; 32]) {
         let addr = word.address();
         self.basis_insert(word, discoverer);
-        self.syntropic_on_admit(addr)
+        self.syntropic_on_admit(addr);
     }
 
     /// Path 2 at admit: the atlas names the sibling a versor relates, the
     /// stratum names a word the new generator derives. Fallback consolidate
     /// still walks the cursor when these reads are empty.
-    fn syntropic_on_admit(&mut self, addr: Address) -> usize {
+    fn syntropic_on_admit(&mut self, addr: Address) {
         let survivor = self.condense_on(&addr);
         self.refine_stratum(&survivor);
         self.holonomy_orbit(&survivor);
         self.drain_unreachable();
-        self.live_slot(&survivor).unwrap_or(0)
     }
 
     /// Read the holonomy group on the admitted word: a closed orbit of
@@ -1293,12 +1304,14 @@ impl Kernel {
         let mut germinate: Option<element::Versor> = None;
         let mut torse = false;
         for (_, vs) in asgs.fiber(crate::network::nerve::ROOT) {
-            if versors_close(&vs) {
-                torse = true;
-            } else if twisted {
-                if let Some(fail) = vs.last() {
-                    germinate = Some(fail.clone());
-                }
+            match fiber_holonomy(&vs) {
+                // Closed: the loop is torsion the language already carries.
+                Some(h) if h.projective_eq(&element::identity_versor()) => torse = true,
+                // Held: the germ is the holonomy itself, the exact thing the
+                // loop failed to close by, not a transition read off the end
+                // of the fiber.
+                Some(h) if twisted => germinate = Some(h),
+                _ => {}
             }
         }
         if torse {
@@ -1782,11 +1795,21 @@ impl Kernel {
         };
         let lanes = after.lanes();
         self.physics.torse_relief(lanes, spanned as u64);
-        let (sigma, period) = after
+        // The payload carries a cycle the word actually filed: the one with
+        // the least class coordinates, canonical so two nodes torsing one
+        // word speak one rewrite. `last()` read whichever cycle the Vec
+        // happened to end on, and the fallback invented an empty sigma with
+        // the torse span standing in for a period that was never witnessed
+        // (A17: a period is believed only when the loop closes at it, T5).
+        // A word carrying no filed cycle has no torse to speak (rule 8).
+        let Some((sigma, period)) = after
             .torsion()
-            .last()
+            .iter()
+            .min_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)))
             .map(|(s, p, _)| (s.clone(), *p))
-            .unwrap_or((Vec::new(), spanned as u32));
+        else {
+            return;
+        };
         let payload = crate::transducer::rewrite::RewritePayload::Torse { sigma, period };
         if let Some(disc) = self.discoverer_of(addr) {
             let _ = self.mint_rewrite(
@@ -2296,7 +2319,15 @@ impl Kernel {
         if charts.is_empty() {
             charts.push(crate::transducer::stalk::invariant(listing.sub()));
         }
-        let cite_g = cites.first().map(|(_, _, g, _, _)| g.clone()).unwrap_or_else(element::identity_versor);
+        // The transport a flat loop is recorded under is the composite of
+        // the cites that flattened it, by the geometric product, not the
+        // first cite's versor with the identity invented when there are
+        // none. A versor invented where no transport exists is a claim the
+        // court cannot replay (rule 11); `None` records no loop at all.
+        let cite_g: Option<element::Versor> = cites
+            .iter()
+            .map(|(_, _, g, _, _)| g.clone())
+            .reduce(|acc, g| acc.geo(&g));
         if let [] = residual.as_slice() {
             let paid = if section || listing.is_connection() {
                 self.treasury.settle_subsidy(voice, crate::economy::price(&before, &self.physics.pressure), anchor)
@@ -2313,7 +2344,9 @@ impl Kernel {
             }
             for chart in charts {
                 self.write_field(target, chart.clone(), Closure::Flat, Vec::new(), &before, &[0; 4]);
-                self.record_flat(target, chart, voice, cite_g.clone());
+                if let Some(g) = cite_g.clone() {
+                    self.record_flat(target, chart, voice, g);
+                }
             }
             self.unlist(target, false);
             self.physics.relieve(&mag);
@@ -2339,7 +2372,9 @@ impl Kernel {
         for chart in &charts {
             if *chart != rem_inv {
                 self.write_field(target, chart.clone(), Closure::Flat, Vec::new(), &before, &after);
-                self.record_flat(target, chart.clone(), voice, cite_g.clone());
+                if let Some(g) = cite_g.clone() {
+                    self.record_flat(target, chart.clone(), voice, g);
+                }
             }
         }
         let v_disloc = {
@@ -4537,7 +4572,12 @@ impl Kernel {
                         return Outcome::GermPending;
                     };
                     debug_assert_eq!(element::positions(held.sub()), element::positions(&centered));
-                    let ti = self.live_slot(&taddr).unwrap_or(0);
+                    // The slot names this word in the language snapshot or
+                    // the snapshot lags the carrier; 0 is another word.
+                    let Some(ti) = self.live_slot(&taddr) else {
+                        self.physics.bump(&mag);
+                        return Outcome::GermPending;
+                    };
                     let asg = element::assignment(&centered);
                     let saddr = Address::from(section_address(&held.address(), &asg));
                     let _ = self.admission.record(Receipt { voice, germ: saddr.clone() });
@@ -4843,7 +4883,10 @@ impl Kernel {
         let mut t_stale = false;
         for (inv, lanes) in jobs {
             if lanes[1] {
-                if let Some(a) = self.stalks.fiber(&inv).first().cloned() {
+                // Canonical, not positional: the least address on the chart.
+                // Two hyphae holding one chart must condense the same word,
+                // or the distributed language forks along insertion order.
+                if let Some(a) = self.stalks.fiber(&inv).iter().min().cloned() {
                     let _ = self.condense_on(&a);
                 }
             }
@@ -4851,7 +4894,10 @@ impl Kernel {
                 t_stale = true;
             }
             if lanes[3] {
-                if let Some(a) = self.stalks.fiber(&inv).first().cloned() {
+                // Canonical, not positional: the least address on the chart.
+                // Two hyphae holding one chart must condense the same word,
+                // or the distributed language forks along insertion order.
+                if let Some(a) = self.stalks.fiber(&inv).iter().min().cloned() {
                     self.torse_at(&a);
                     self.refine_stratum(&a);
                 }
@@ -8058,6 +8104,36 @@ mod tests {
             root: moved.to_vec(),
         }], [2; 32]);
         assert_eq!(k.heard_len(), 0, "a moved stratum root drops heard");
+    }
+
+    /// G4b. A loop's obstruction is the product around it (10.3), never a
+    /// transition read off the end of the fiber. The distinction is not
+    /// cosmetic on a distributed mesh: the geometric product is not
+    /// commutative, so a member picked by position is a different object on
+    /// every node that holds the fiber in a different insertion order, and
+    /// two nodes would breed two germs from identical mathematics.
+    #[test]
+    fn a_held_fiber_germinates_its_holonomy_not_a_member() {
+        use crate::transducer::alphabet::{LetterId, Word};
+        let q = LetterId::quarter((0, 1)).expect("quarter turn");
+        let one = rotor_versor(&Word::from_letters(&[(q, false)]).rotor()).expect("versor");
+        let inv = rotor_versor(&Word::from_letters(&[(q, true)]).rotor()).expect("inverse versor");
+        let id = element::identity_versor();
+
+        assert!(fiber_holonomy(&[one.clone()]).is_none(), "a singleton is not a loop");
+        assert!(fiber_holonomy(&[]).is_none(), "an empty fiber is not a loop");
+
+        let closed = fiber_holonomy(&[one.clone(), inv]).expect("a loop");
+        assert!(closed.projective_eq(&id), "q then q-inverse closes");
+
+        // Four quarter turns on one plane: the product is the obstruction,
+        // and it is not any member of the fiber.
+        let held = fiber_holonomy(&[one.clone(), one.clone(), one.clone()]).expect("a loop");
+        assert!(!held.projective_eq(&id), "three quarter turns do not close");
+        assert!(
+            !held.projective_eq(&one),
+            "the holonomy is the composite, not the transition the fiber ends on"
+        );
     }
 
     /// G3. `listings_on` is the meet of the cell's own vertices (13.1, 14.6):
