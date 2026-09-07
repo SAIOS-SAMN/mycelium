@@ -986,20 +986,67 @@ impl Kernel {
         }
     }
 
+    /// A WITNESS HYPHA replayed an offered form on its own tapes and sent
+    /// back the form it reached. This is 47.3's second vantage: two organs
+    /// re-derived one object, and `Converged` asks whether they reached the
+    /// same VERTEX (M1), not whether they spelled it the same way. On
+    /// convergence the home installs; on a genuine difference it refuses
+    /// with REFUSE_MV_INEXACT (13.9 step 8), which is inconsistent data and
+    /// never a vote to be broken.
+    pub fn witness_rederived(
+        &mut self,
+        object: &crate::transducer::a21::Address,
+        witness: [u8; 32],
+        reached: Element,
+    ) {
+        if !self.provisional.contains(object) {
+            return;
+        }
+        let (k, ht) = (self.k_step(), self.height());
+        match self.converge_witness(object, witness, reached, k, ht) {
+            crate::court::convergence::Converged::Witnessed { witness, .. } => {
+                eprintln!(
+                    "  court witness {:02x}{:02x}… co-signed {:02x}{:02x}… (replayed)",
+                    witness[0], witness[1], object[0], object[1]
+                );
+                self.home_install(object);
+            }
+            crate::court::convergence::Converged::Inexact { a, b } => {
+                eprintln!(
+                    "  court form refused {:02x}{:02x}…: {} ({:02x}… vs {:02x}…)",
+                    object[0],
+                    object[1],
+                    crate::court::verdict::REFUSE_MV_INEXACT,
+                    a[0],
+                    b[0]
+                );
+            }
+            crate::court::convergence::Converged::AwaitingWitness => {}
+        }
+    }
+
     /// A peer's have-list naming a ruled provisional is the same evidence:
     /// the address is on their cover, so the home installs.
     pub fn confirm_peer_holds_addrs(&mut self, have: &[crate::transducer::a21::Address], peer: [u8; 32]) {
         // index: the peer's have-list
         for h in have {
             if self.provisional.contains(h) && self.ruled_contains(h) {
-                // THE WITNESS'S RE-DERIVATION. The peer glued this Offer on
-                // its own tapes and reached the same address -- the address
-                // IS what it holds it under, so holding it is the claim.
-                // Two organs at one address is convergence (47.3); a
-                // different address never reaches here, because the peer
-                // would hold something else.
+                // A HAVE-LIST IS A CLAIM ABOUT AN ADDRESS, not a
+                // re-derivation this court can compare. The peer says it
+                // holds the form under `h`; the object it reached never
+                // travels on this act, so the object recorded here is the
+                // one THIS court holds and `same_vertex` against it is
+                // vacuous. The re-derivation that is not vacuous arrives on
+                // the Offer reply, where the witness sends back the form it
+                // reached after replaying on its own tapes. This site stands
+                // as the weaker evidence it is rather than pretending; 17.2
+                // says a form reads back from its address, and when that
+                // decode exists this site can re-derive instead of trusting.
+                let Some(mine) = self.provisional.get(h).cloned() else {
+                    continue;
+                };
                 let (k, ht) = (self.k_step(), self.height());
-                match self.converge_witness(h, peer, h.clone(), k, ht) {
+                match self.converge_witness(h, peer, mine, k, ht) {
                     crate::court::convergence::Converged::Witnessed { witness, .. } => {
                         eprintln!(
                             "  court witness {:02x}{:02x}… co-signed {:02x}{:02x}…",

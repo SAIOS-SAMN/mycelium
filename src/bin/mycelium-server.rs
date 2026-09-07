@@ -745,25 +745,36 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
             return true;
         };
         let mut pos = 0usize;
-        let glued = match mycelium::transducer::element::Element::from_bytes(&elem_bytes, &mut pos) {
-            Some(word) => {
-                let mut cover = mycelium::network::nerve::Cover::new();
-                match door.kernel.lock() {
-                    Ok(mut k) => {
-                        let vk = door.mesh.vk;
-                        // Replayed and ruled here on its own tapes; the
-                        // offering hypha's word is never taken on trust.
-                        !matches!(
-                            k.glue_fetched(word, vk, vk, &mut cover),
-                            mycelium::cognition::Glue::Slashed(_)
-                        )
+        // THE WITNESS RE-DERIVES. This hypha replays the offered form on its
+        // OWN tapes and reaches a form of its own; that form is what 47.3's
+        // second vantage is, and until now it was reduced to one bit on the
+        // way back. The reply carries it, so the home compares two
+        // re-derivations by `same_vertex` (M1) rather than assuming that a
+        // peer which did not slash agreed.
+        let (glued, reached) =
+            match mycelium::transducer::element::Element::from_bytes(&elem_bytes, &mut pos) {
+                Some(word) => {
+                    let mut cover = mycelium::network::nerve::Cover::new();
+                    match door.kernel.lock() {
+                        Ok(mut k) => {
+                            let vk = door.mesh.vk;
+                            let g = k.glue_fetched(word.clone(), vk, vk, &mut cover);
+                            let ok = !matches!(g, mycelium::cognition::Glue::Slashed(_));
+                            // What this court holds at that address after
+                            // replay, which is its own reading of the form.
+                            let mine = k.word_at(&word.address()).cloned().unwrap_or(word);
+                            (ok, ok.then_some(mine))
+                        }
+                        Err(_) => (false, None),
                     }
-                    Err(_) => false,
                 }
-            }
-            None => false,
-        };
-        let reply = Frame { lane: frame.lane, body: vec![glued as u8] };
+                None => (false, None),
+            };
+        let mut rb = vec![glued as u8];
+        if let Some(w) = reached.as_ref() {
+            rb.extend_from_slice(&w.to_bytes());
+        }
+        let reply = Frame { lane: frame.lane, body: rb };
         let _ = s.write_all(&reply.encode().unwrap_or_default());
         return true;
     }
@@ -1848,7 +1859,7 @@ fn main() {
                 };
                 let mut offered_out = 0usize;
                 for (oaddr, elem) in offers {
-                    for (_pid, d) in dests.fiber(mycelium::network::nerve::ROOT) {
+                    for (pid, d) in dests.fiber(mycelium::network::nerve::ROOT) {
                         let body = dialogue::encode_offer(
                             &oaddr,
                             &elem,
@@ -1858,8 +1869,32 @@ fn main() {
                             &[0u8; 64],
                             &[0u8; 64],
                         );
-                        if tell_peer(d, body).is_some() {
-                            offered_out += 1;
+                        let Some((reply, _)) = tell_peer(d, body) else {
+                            continue;
+                        };
+                        offered_out += 1;
+                        // 47.3's SECOND VANTAGE. The peer replayed the offer
+                        // on its own tapes and sent back the form it reached;
+                        // that is a re-derivation, and the home converges on
+                        // it by `same_vertex` (M1), never by comparing the
+                        // bytes it happens to be spelled with. A reply of one
+                        // byte carries no form: the witness is UNMEASURED and
+                        // the object keeps waiting, which is not the same as
+                        // a witness that disagreed.
+                        if reply.first() != Some(&1) || reply.len() < 2 {
+                            continue;
+                        }
+                        let Some(peer_vk) = <[u8; 32]>::try_from(pid.as_slice()).ok() else {
+                            continue;
+                        };
+                        let mut p = 0usize;
+                        let Some(theirs) =
+                            mycelium::transducer::element::Element::from_bytes(&reply[1..], &mut p)
+                        else {
+                            continue;
+                        };
+                        if let Ok(mut k) = kernel.lock() {
+                            k.witness_rederived(&oaddr, peer_vk, theirs);
                         }
                     }
                 }

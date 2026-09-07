@@ -1006,12 +1006,88 @@ impl Element {
             .all(|((i, a), (j, b))| i == j && same_versor(a, b))
     }
 
-    /// Same vertex of the Cayley graph: the M2 address, which is geodesic,
-    /// ρ, shift, gauge, and the A5 chain. Two spellings of one vertex have
-    /// one address; a different dilation, hue map, or placement is another
-    /// vertex.
+    /// M1 (17.1): same vertex of the Cayley graph. Equal M1 coordinates of
+    /// the letters, PROJECTIVELY equal carriage versors (A4), equal sigma,
+    /// A5-equal chain.
+    ///
+    /// This was `self.address() == other.address()`, which is the M2
+    /// invariant read backwards. Address equality does imply the same
+    /// vertex (17.2), so it stands as a fast path; but a DIFFERING address
+    /// does not imply a different vertex, and reading it as one makes the
+    /// codec the arbiter of meaning. A carriage versor and its negation are
+    /// one projective element and two byte strings: two organs that derive
+    /// carriages of opposite sign hold the same vertex and would have been
+    /// called different. Every comparison below is on decoded coordinates
+    /// with the predicate that coordinate's algebra provides.
     pub fn same_vertex(&self, other: &Element) -> bool {
-        self.address() == other.address()
+        // The fast path, never the test: a differing address falls through.
+        if self.address() == other.address() {
+            return true;
+        }
+        // SENTENCE FORMS are addressed by `sentence::vertex_address`, which
+        // 17.2 step 3 defines as M1 keys and A4 canonical versors per germ
+        // and per face -- canonical coordinates, so equality of those bytes
+        // IS the vertex comparison. Today it writes raw versor bytes rather
+        // than A4 outputs (17.2 names the line), so a carriage and its
+        // negation still read as two addresses here. That is the remaining
+        // place where the codec can call one vertex two, it is 17.2's own
+        // open item, and it is left visible rather than papered over with a
+        // comparison that would be right for a different encoder.
+        if self.is_sentence() || other.is_sentence() {
+            return false;
+        }
+        // A5: the chain is the boundary, and it is canonical before it is
+        // compared -- two spellings of one boundary reduce to one chain.
+        let mine = canonical_chain(&self.sub).unwrap_or_else(|| self.sub.clone());
+        let theirs = canonical_chain(&other.sub).unwrap_or_else(|| other.sub.clone());
+        if mine != theirs {
+            return false;
+        }
+        // 17.2 step 2: a rewrite is named by the forms it cites, and those
+        // citations are M2 outputs -- coordinates, not digests of content.
+        let rw = (
+            crate::transducer::rewrite::Rewrite::from_element(self),
+            crate::transducer::rewrite::Rewrite::from_element(other),
+        );
+        match rw {
+            (Some(a), Some(b)) => {
+                return a.kind == b.kind
+                    && a.before == b.before
+                    && a.after == b.after
+                    && a.claimed == b.claimed;
+            }
+            (None, None) => {}
+            _ => return false,
+        }
+        // The ACTION is part of the vertex whichever arm names the word:
+        // the gauge permutation and the germinated axes are coordinates of
+        // it, and comparing only the letters left two elements differing in
+        // an opened axis reading as one vertex.
+        if self.action.gauge != other.action.gauge || !self.germinated_eq(other) {
+            return false;
+        }
+        match (self.letters(), other.letters()) {
+            (Some(a), Some(b)) => {
+                // M1 on the letters: the rotor's projective class, which is
+                // the same test as key equality without going through bytes.
+                if !a.spelling.word.rotor().projective_eq(&b.spelling.word.rotor()) {
+                    return false;
+                }
+                if !same_versor(&a.carriage, &b.carriage) {
+                    return false;
+                }
+                let (mut x, mut y) = (a.sigma.clone(), b.sigma.clone());
+                x.sort_unstable();
+                y.sort_unstable();
+                x == y
+            }
+            (None, None) => match (self.action.spatial.as_ref(), other.action.spatial.as_ref()) {
+                (Some(a), Some(b)) => same_versor(a, b),
+                (None, None) => true,
+                _ => false,
+            },
+            _ => false,
+        }
     }
 
     /// COMPOSE — geometric product on S, permutation composition on G,
@@ -1471,6 +1547,16 @@ pub fn canonical_chain(cells: &[(i64, i64, u8, u8)]) -> Option<Vec<(i64, i64, u8
     Some(out)
 }
 
+/// A GROUP ELEMENT: one versor, no chain. This is the thing 3.x calls a
+/// group element and `same_action` describes -- an action on the sensor
+/// with no boundary of its own.
+pub fn of_versor(v: Versor) -> Element {
+    let mut e = Element::identity();
+    e.action.spatial = Some(v);
+    e.address.take();
+    e
+}
+
 pub fn from_residual(g: &ResidualGerm) -> Element {
     let centered: ResidualGerm = canonical_chain(g).unwrap_or_else(|| {
         let min_r = g.iter().map(|(r, _, _, _)| *r).min().unwrap_or(0);
@@ -1859,6 +1945,30 @@ impl Element {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// M1 (17.1): equality is the projective class, and `same_vertex` says
+    /// so. A versor and its negation are ONE element of the conformal group
+    /// and TWO byte strings, and `form_key_bytes` writes the bytes, so the
+    /// two have different M2 addresses. `same_vertex` was
+    /// `address() == address()`, which called them two vertices; two organs
+    /// that derived opposite signs would then have been REFUSE_MV_INEXACT
+    /// for agreeing.
+    #[test]
+    fn a_versor_and_its_negation_are_one_vertex_and_two_addresses() {
+        let q = |n: i64| num_rational::BigRational::from_integer(BigInt::from(n));
+        let v = translator_versor(2, 3);
+        let neg = v.scale(&q(-1));
+        assert!(same_versor(&v, &neg), "one projective element");
+
+        let a = of_versor(v);
+        let b = of_versor(neg);
+        assert_ne!(a.address(), b.address(), "and two addresses: the codec writes the sign");
+        assert!(a.same_vertex(&b), "M1 reads the class, not the bytes");
+
+        // A genuinely different action is still a different vertex.
+        let c = of_versor(translator_versor(2, 4));
+        assert!(!a.same_vertex(&c));
+    }
 
     /// The legacy lattice transport decodes to the versor with the same
     /// action: index 1 is (r, c) → (c, −r), then the offset.

@@ -25,11 +25,25 @@ use crate::transducer::a21::Address;
 /// where it stood when it reached it. The address is the claim — two organs
 /// converge iff theirs are equal — and K and height place it causally
 /// (45.2, 45.4) so a witness's own chain can be checked against it.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct Rederivation {
-    pub address: Address,
+    /// What the organ RE-DERIVED. Two organs converge iff their objects are
+    /// the same vertex (M1, 17.1), which is a question about the algebra
+    /// and not about the encoding: a carriage versor and its negation are
+    /// one projective element and two byte strings, so two organs that
+    /// derived carriages of opposite sign hold one vertex and comparing
+    /// their addresses would have called them different.
+    pub object: crate::transducer::element::Element,
     pub k: u64,
     pub height: u64,
+}
+
+impl Rederivation {
+    /// The address this re-derivation reaches. A coordinate of the object,
+    /// carried for the docket and the log -- never the convergence test.
+    pub fn address(&self) -> Address {
+        self.object.address()
+    }
 }
 
 /// What each organ re-derived, per object. Keyed by the object's address,
@@ -136,10 +150,16 @@ impl Convergence {
         // object, never a product over the mesh.
         for (i, (a, ra)) in organs.iter().enumerate() {
             for (b, rb) in organs.iter().skip(i + 1) {
-                if ra.address != rb.address {
+                // A1: the test is RE-DERIVATION, never bytes. `same_vertex`
+                // compares decoded coordinates with each algebra's own
+                // predicate -- M1 on the letters, projective equality on the
+                // carriage versors, A5 on the chain -- and takes address
+                // equality only as a fast path inside itself. Only a
+                // genuinely differing re-derivation is Inexact (13.9 step 8).
+                if !ra.object.same_vertex(&rb.object) {
                     return Converged::Inexact {
-                        a: ra.address.clone(),
-                        b: rb.address.clone(),
+                        a: ra.address(),
+                        b: rb.address(),
                     };
                 }
                 if independent(a, b) {
@@ -158,11 +178,18 @@ impl Convergence {
 mod tests {
     use super::*;
 
+    use crate::transducer::element::{self, Element};
+
+    /// A distinct object per `n`: the residual of one cell recoloured to
+    /// hue `n`, which is a different vertex for each n.
+    fn obj(n: u8) -> Element {
+        element::from_residual(&vec![(0i64, 0i64, 1u8, n)])
+    }
     fn addr(n: u8) -> Address {
-        Address::from_bytes(&[n])
+        obj(n).address()
     }
     fn r(n: u8) -> Rederivation {
-        Rederivation { address: addr(n), k: 1, height: 1 }
+        Rederivation { object: obj(n), k: 1, height: 1 }
     }
     fn always(_: &[u8; 32], _: &[u8; 32]) -> bool {
         true
@@ -190,6 +217,45 @@ mod tests {
         assert!(!c.rederived(&[9u8], [1; 32], r(9)), "one organ, one vantage");
         assert_eq!(c.organs(&[9u8]).len(), 1);
         assert_eq!(c.state(&[9u8], &always), Converged::AwaitingWitness);
+    }
+
+    /// A1. TWO ORGANS THAT SPELL ONE VERTEX DIFFERENTLY CONVERGE. The test
+    /// is re-derivation, not bytes: a versor and its negation are ONE
+    /// projective element and two byte strings, and `form_key_bytes` writes
+    /// the bytes, so the two reach different M2 addresses. An organ that
+    /// derived the negated sign holds the same vertex and must not be
+    /// called inexact. Comparing addresses made the codec the arbiter of
+    /// meaning; 17.1 says equality is M1, and `projective_eq` with either
+    /// sign is that test without going through bytes at all.
+    #[test]
+    fn differently_spelled_rederivations_converge() {
+        use num_rational::BigRational;
+        use num_traits::One;
+        let v = element::translator_versor(2, 3);
+        let neg = v.scale(&-BigRational::one());
+        let mine = element::of_versor(v);
+        let theirs = element::of_versor(neg);
+        assert_ne!(
+            mine.address(),
+            theirs.address(),
+            "two addresses -- otherwise this test proves nothing"
+        );
+
+        let mut c = Convergence::new();
+        let key = mine.address();
+        c.rederived(key.as_bytes(), [1; 32], Rederivation { object: mine, k: 1, height: 1 });
+        c.rederived(key.as_bytes(), [2; 32], Rederivation { object: theirs, k: 1, height: 1 });
+        assert_eq!(
+            c.state(key.as_bytes(), &always),
+            Converged::Witnessed { home: [1; 32], witness: [2; 32] },
+            "two organs, one vertex, two spellings: converged"
+        );
+
+        // And a genuinely different vertex still refuses.
+        let mut d = Convergence::new();
+        d.rederived(&[9u8], [1; 32], r(3));
+        d.rederived(&[9u8], [2; 32], r(4));
+        assert!(matches!(d.state(&[9u8], &always), Converged::Inexact { .. }));
     }
 
     /// Two organs reaching one address is the admission condition.

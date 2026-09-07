@@ -176,7 +176,9 @@ impl Kernel {
                     // settlement party (24.1), never a vantage. The second
                     // vantage is a witness hypha that re-derives the same
                     // address (47.3), and it arrives through the Offer.
-                    self.converge_here(&saddr, voice);
+                    let mut section = held.clone();
+                    section.puncture(asg.clone());
+                    self.converge_here_at(&saddr, &section, voice);
                     self.record_spoken(saddr.clone(), voice);
                     if self.physics.can_expand(lanes) {
                         if let Some(w) = self.word_mut(&taddr) {
@@ -206,7 +208,7 @@ impl Kernel {
                 // DEFERS and dockets on a later submission once the reserve
                 // recovers, so deferral never strands one.
                 if self.physics.can_expand(lanes) {
-                    self.converge_here(&addr, voice);
+                    self.converge_here(&residual, voice);
                     // 23.8: the residual is "docketed AS A LISTING". One
                     // thing, not two -- it stays quotable on the open book
                     // while it awaits a witness, so other voices can reduce
@@ -793,15 +795,24 @@ impl Kernel {
     /// that uttered it is a party to the settlement. The second vantage is a
     /// witness hypha's re-derivation of the same address (47.3), recorded by
     /// `converge_witness` when an Offer is glued.
-    pub(super) fn converge_here(&mut self, object: &Address, voice: [u8; 32]) {
+    pub(super) fn converge_here(&mut self, object: &Element, voice: [u8; 32]) {
+        let addr = object.address();
+        self.converge_here_at(&addr, object, voice);
+    }
+
+    /// The same, where the object is DOCKETED under a key that is not its
+    /// own address -- a section, which is keyed by `section_address` over
+    /// the held word and the assignment. The key is the docket's coordinate;
+    /// the object is what convergence compares.
+    pub(super) fn converge_here_at(&mut self, addr: &Address, object: &Element, voice: [u8; 32]) {
         let me = self.identity;
         let (k, h) = (self.k_step(), self.height());
         self.convergence.rederived(
-            object.as_bytes(),
+            addr.as_bytes(),
             me,
-            crate::court::convergence::Rederivation { address: object.clone(), k, height: h },
+            crate::court::convergence::Rederivation { object: object.clone(), k, height: h },
         );
-        self.convergence.used_by(object.as_bytes(), voice);
+        self.convergence.used_by(addr.as_bytes(), voice);
     }
 
     /// A WITNESS HYPHA re-derived `object` and reached `reached`. Equal to
@@ -811,14 +822,14 @@ impl Kernel {
         &mut self,
         object: &Address,
         witness: [u8; 32],
-        reached: Address,
+        reached: Element,
         k: u64,
         h: u64,
     ) -> crate::court::convergence::Converged {
         self.convergence.rederived(
             object.as_bytes(),
             witness,
-            crate::court::convergence::Rederivation { address: reached, k, height: h },
+            crate::court::convergence::Rederivation { object: reached, k, height: h },
         );
         let me = self.identity;
         let bond = |v: &[u8; 32]| self.treasury.bond_of(v);
