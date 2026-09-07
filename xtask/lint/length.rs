@@ -6,7 +6,6 @@ use std::path::{Path, PathBuf};
 
 pub(crate) const AWAITING_SPLIT: &[(&str, &str)] = &[
     ("src/core/rcf.rs", "F2"),
-    ("src/server/cognition/tests/26.rs", "S30"),
     ("src/network/nerve/keyed.rs", "S31"),
     ("src/transducer/anchor.rs", "S32"),
 ];

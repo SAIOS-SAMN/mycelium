@@ -187,7 +187,7 @@ enforces.
 | S27 | server/cognition/snapshot.rs | 733 | snapshot/{write, read}.rs | landed (S27) |
 | S28 | transducer/sentence/form.rs | 675 | form/{carrier, keys, certificate}.rs | landed (S28) |
 | S29 | xtask/lint.rs | 676 | lint/{mod, length, enumeration, maps, digest, matrix, clock, squaring}.rs | landed (S29) |
-| S30 | server/cognition/tests/26.rs | 669 | 26 and the docket | open |
+| S30 | server/cognition/tests/26.rs | 669 | tests/26.rs (the market) + tests/26-mint.rs (what mints) | landed (S30) |
 | S31 | network/nerve/keyed.rs | 648 | the trie and its walks | open |
 | S32 | transducer/anchor.rs | 645 | by organ | open |
 

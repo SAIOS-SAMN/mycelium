@@ -15,6 +15,8 @@ mod chapter_23;
 mod chapter_24;
 #[path = "26.rs"]
 mod chapter_26;
+#[path = "26-mint.rs"]
+mod chapter_26_mint;
 #[path = "28.rs"]
 mod chapter_28;
 #[path = "42.rs"]
