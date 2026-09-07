@@ -229,11 +229,10 @@ pub fn quote_incidence(
 /// geometry (closure failing — collapse-side work); I counts open demands on
 /// geometry no thought speaks (coverage failing — expansion-side work).
 ///
-/// The two counts ARE the reading. What used to sit on top of them —
-/// `cohesion::witness` — compared them against `KAPPA / 16` and returned one
-/// of five named states: a constant standing for a measurement (rule 5) and
-/// a scalar verdict over two numbers μ⃗ already carries per lane (law 5).
-/// The pair is returned exactly and whoever reads it decides.
+/// The two counts ARE the reading, returned exactly, and whoever reads them
+/// decides. Nothing compares them against a tolerance and nothing collapses
+/// them to one state: C and I are two lanes of the same object, and a scalar
+/// verdict over two lanes is the flattening law 5 refuses.
 pub fn cohesion_over(rank: &Rank) -> (u64, u64) {
     let mut c = 0u64;
     let mut i = 0u64;
