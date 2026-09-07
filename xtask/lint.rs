@@ -20,7 +20,16 @@ pub fn run() -> Result<(), String> {
     for d in dirs {
         walk(&root.join(d), d, &mut hits)?;
     }
-    lint_file_length(&root, &mut hits)?;
+    // The reading bound covers the gate itself: `lint.rs` is a source file a
+    // reviewer must read whole like any other (MU-STANDARDS 1.1), so `xtask`
+    // is walked beside `src`. Both in ONE call: the stale-row check below is
+    // over everything the bound walks, and two calls would each report the
+    // other's rows as missing.
+    let bounded: Vec<PathBuf> = match root.parent() {
+        Some(up) => vec![root.clone(), up.join("xtask")],
+        None => vec![root.clone()],
+    };
+    lint_file_length(&bounded, &mut hits)?;
     lint_blake3(&root, &mut hits)?;
     lint_squaring(&root, &mut hits)?;
     lint_maps(&root, &mut hits)?;
@@ -73,10 +82,11 @@ fn walk(dir: &Path, crate_dir: &str, hits: &mut Vec<String>) -> Result<(), Strin
 /// by soak instead of by review. Every carrier fault of the G-set was
 /// invisible at 8000 lines and obvious at the function.
 ///
-/// 800 is the one literal this tree allows, and it is allowed because it
+/// 600 is the one literal this tree allows, and it is allowed because it
 /// measures a person and not the mathematics (rule 5 bans constants that
 /// stand in for a measurement of the world; this stands in for a reading).
-/// It goes to 600 in the last commit of Stage 8b (MU-STANDARDS 1.1).
+/// It was 800 through Stage 8b's twenty-four splits and is 600 from S24
+/// on, which is the tree's final reading bound (MU-STANDARDS 1.1).
 ///
 /// A file still awaiting its split is named in `AWAITING_SPLIT` with the
 /// row of Stage 8b that owes it, so the gate is green on every commit of
@@ -85,10 +95,20 @@ fn walk(dir: &Path, crate_dir: &str, hits: &mut Vec<String>) -> Result<(), Strin
 /// is already under the bound, or no longer exists, is a stale row and is
 /// itself a hit — the list cannot outlive what it excuses.
 const AWAITING_SPLIT: &[(&str, &str)] = &[
+    ("src/transducer/stalk.rs", "S25"),
+    ("src/transducer/family/tests/21.rs", "S26"),
+    ("src/server/cognition/snapshot.rs", "S27"),
+    ("src/core/rcf.rs", "F2"),
+    ("src/transducer/sentence/form.rs", "S28"),
+    ("xtask/lint.rs", "S29"),
+    ("src/server/cognition/tests/26.rs", "S30"),
+    ("src/network/nerve/keyed.rs", "S31"),
+    ("src/transducer/anchor.rs", "S32"),
 ];
 
-fn lint_file_length(root: &Path, hits: &mut Vec<String>) -> Result<(), String> {
-    const BOUND: usize = 800;
+
+fn lint_file_length(roots: &[PathBuf], hits: &mut Vec<String>) -> Result<(), String> {
+    const BOUND: usize = 600;
     fn owed(path: &Path) -> Option<&'static str> {
         let p = path.to_string_lossy().replace('\\', "/");
         AWAITING_SPLIT
@@ -126,7 +146,7 @@ fn lint_file_length(root: &Path, hits: &mut Vec<String>) -> Result<(), String> {
                     }
                 }
                 None if n > BOUND => hits.push(format!(
-                    "{}: {n} lines, over the {BOUND}-line reading bound (Stage 8b) — split it",
+                    "{}: {n} lines, over the {BOUND}-line reading bound — split it",
                     path.display()
                 )),
                 None => {}
@@ -135,7 +155,9 @@ fn lint_file_length(root: &Path, hits: &mut Vec<String>) -> Result<(), String> {
         Ok(())
     }
     let mut seen: Vec<String> = Vec::new();
-    walk_len(root, hits, &mut seen)?;
+    for root in roots {
+        walk_len(root, hits, &mut seen)?;
+    }
     for (file, row) in AWAITING_SPLIT {
         if !seen.iter().any(|r| r == row) {
             hits.push(format!(

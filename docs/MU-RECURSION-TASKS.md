@@ -175,7 +175,24 @@ Move-only, one file per commit, tests to `<module>/tests/<chapter>.rs`, document
 | S23 | client/sdk/tests.rs | 844 | sdk/tests/{6,24,25}.rs + common.rs | landed (S23); tests/25.rs is 584 |
 | S24 | transducer/sentence/pivot.rs | 810 | pivot/{snap, drive, loops, words}.rs | landed (S24) |
 
-After S24: the bound goes to 600 and any file above it is split by the same rules, one commit per file.
+After S24: the bound is 600 and `AWAITING_SPLIT` carries what is still over
+it, one row per file, each deleted by the commit that splits it. The gate now
+walks `xtask/` beside `src/`, so the gate's own file is under the bound it
+enforces.
+
+| id | file | lines | target | status |
+|---|---|---|---|---|
+| S25 | transducer/stalk.rs | 766 | by organ | open |
+| S26 | transducer/family/tests/21.rs | 733 | by the steps of chapter 21 | open |
+| S27 | server/cognition/snapshot.rs | 733 | by carrier | open |
+| S28 | transducer/sentence/form.rs | 675 | by organ | open |
+| S29 | xtask/lint.rs | 676 | one file per gate | open |
+| S30 | server/cognition/tests/26.rs | 669 | 26 and the docket | open |
+| S31 | network/nerve/keyed.rs | 648 | the trie and its walks | open |
+| S32 | transducer/anchor.rs | 645 | by organ | open |
+
+`src/core/rcf.rs` (709) is on the list under F2, which deletes it: a file with
+no callers is not split, it goes.
 
 ## Backtrack ledger
 
