@@ -1,7 +1,7 @@
 # Economy — μ, the four-lane currency
 
 Status at f595b4e: balances, stake bond, escrow, per-lane pricing, and the
-ledger entries exist in `src/economy.rs`. Issuance as mint, stake for
+ledger entries exist in `src/economy/`. Issuance as mint, stake for
 voices, transfer, genesis, and the audit invariant are specified here and
 not yet landed. Companion documents: `MU-PRODUCT.md`, `MU-ENGINEERING.md`,
 `XSEPTUM.md`.

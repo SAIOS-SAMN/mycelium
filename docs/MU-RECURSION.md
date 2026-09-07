@@ -424,7 +424,7 @@ Part III:
 | `verdict.rs:374` `sel_key` | hash of `format!("{s:?}")` | A9 |
 | `mycelium-server/judge/percept.rs` | percept rendezvous by `hash(pbytes[32..])` | A11 |
 | `verdict.rs:102` `blind_replay` | compares the spoken chain without canonicalising it | A5 |
-| `cognition.rs:5052`, `economy.rs:651`, client loaders | restore carriers under stored byte addresses after the address rule changed (a29bba5 landed without a migration) | A8, M3 |
+| `cognition.rs:5052`, `economy/persist.rs`, client loaders | restore carriers under stored byte addresses after the address rule changed (a29bba5 landed without a migration) | A8, M3 |
 
 The audit of 2026-09-06 found the same fault one step removed: every key
 of a canonical form in the tree is a digest of it. These are replaced by
@@ -1975,7 +1975,7 @@ are deleted.
 ### 16.8 A8 — RMP1 migration
 
 Runs once per store at load (`Kernel::restore` cognition.rs 5018,
-`Treasury::restore` economy.rs 568, `Epigenome::uncrystallize` sdk.rs
+`Treasury::restore` economy/persist.rs, `Epigenome::uncrystallize` sdk.rs
 1025) and once per tape arriving from a peer on the old build.
 
 1. For every stored tape `T` with stored address `a_old`: `a_new =
@@ -2744,7 +2744,7 @@ else, so every binding below still names the function it always named:
 | `sdk/` | `/opt/mycelium-v0.1.0/src/client/sdk/` |
 | `dialogue/` | `/opt/mycelium-v0.1.0/src/anastome/dialogue/` |
 | `ear.rs` | `/opt/mycelium-v0.1.0/src/perception/ear.rs` |
-| `economy.rs`, `physics.rs`, `chronometry.rs` | `/opt/mycelium-v0.1.0/src/<name>` |
+| `economy/`, `physics.rs`, `chronometry.rs` | `/opt/mycelium-v0.1.0/src/<name>` |
 | `cyclo.rs`, `scalar.rs`, `constants.rs` | `/opt/mycelium-v0.1.0/src/core/<name>` |
 | `mycelium-server/`, `mycelium-client.rs` | `/opt/mycelium-v0.1.0/src/bin/<name>` |
 | `voice/mod.rs` | `/opt/mycelium-v0.1.0/src/voice/mod.rs` |
@@ -3556,7 +3556,11 @@ Carried from chapter 25: forms are spoken. `/opt/mycelium-v0.1.0/src/anastome/di
   `judge`'s percept rendezvous is A11; `nerve::home` (788) gains `depth:
   u16` and excludes hyphae with `depth_max + 1 < depth`.
 
-`/opt/mycelium-v0.1.0/src/economy.rs`:
+`/opt/mycelium-v0.1.0/src/economy/`: five organs (Stage 8b S12) —
+`lanes.rs` what a word measures and how two measurements compare (law 5);
+`treasury.rs` who is bonded and what the audit says (E1); `escrow.rs` value
+set aside against a listing (E1, E2); `settle.rs` what each closed act pays
+(E2, 26); `persist.rs` the ledger on disk (28).
 
 - `settle_recursive(&mut self, escrow: &[u8;32], shares: &[([u8;32],[u64;4])], anchor) -> [u64;4]`
   **new**: draws the bundle's escrow proportionally to each speaker's
@@ -3632,7 +3636,7 @@ verdict.rs    replay_form NEW, REFUSE_* (chapter 34), sel_key over Sel::to_bytes
 cognition.rs  resolve_form, replay_memo, cited_by, cocycle_at fifth field, push_cocycle (M5), glue_fetched (M8), refine_chart (15.5),
               cover-change re-representation (15.6), restore: A8 + RMP1, composite_parent_id/section_address via M2,
               reduce_excluding calls A12 for connections, shorter_form, missing_forms, pay_solve → settle_recursive
-economy.rs    settle_recursive, use_credit, Treasury::restore A8 collision rule
+economy/       settle_recursive, use_credit, Treasury::restore A8 collision rule
 sdk.rs        Epigenome::working_atlas NEW, Standing NEW, dialect Stalks NEW (admitted in stand_dialect, retracted in shed),
               learn_one promotion dialect → genome by same_vertex, Comprehension::Withheld, comprehend (24, M6),
               pull_syllabus depth order, uncrystallize A8, peers keyed by vk with pending_addrs (A10)
@@ -4166,7 +4170,7 @@ replay the opening as they replay any sentence.
 `core/cyclo.rs`, `core/scalar.rs` new; `alphabet/`: `Rotor<Scalar>`,
 `Alphabet { base, ext }`, `ExtLetter`, `relators()` appending, `spell`
 steps 1–4, `PlaneForm` torsion in `Z/N`; `element/letters.rs`: `Letters` carries
-the conductor; `economy.rs`: conductor factor in the S-lane cost; genome
+the conductor; `economy/settle.rs`: conductor factor in the S-lane cost; genome
 section `SYL1` `(n, plane, id)*`. Tests and traces: chapters 39–40.
 
 ## 38. Upgrade B — the base promotion

@@ -1,0 +1,147 @@
+// E1 — the ledger holds: the supply is the sum of the minted deflations,
+// a stake moves value and never creates it, and the audit survives genesis,
+// mint and burn.
+
+use crate::economy::*;
+
+/// Supply after N installs equals the sum of their deflations per lane.
+#[test]
+fn supply_is_the_sum_of_minted_deflations() {
+    let mut t = Treasury::new();
+    t.enroll([1; 32], UNIT_BOND, (0, [0; 32]));
+    let d1 = [4u64, 2, 0, 2];
+    let d2 = [0u64, 4, 6, 2];
+    t.escrow_award([8; 32], vec![[1; 32], [2; 32]], d1, (1, [1; 32]));
+    t.escrow_award([9; 32], vec![[1; 32], [2; 32]], d2, (2, [2; 32]));
+    let (v1, m1, a1) = t.release_award(&[8; 32]).expect("d1");
+    t.mint_claim(&v1, m1, a1);
+    let (v2, m2, a2) = t.release_award(&[9; 32]).expect("d2");
+    t.mint_claim(&v2, m2, a2);
+    let expect: [u64; 4] = std::array::from_fn(|l| d1[l] + d2[l]);
+    assert_eq!(t.supply().expect("supply adds up"), expect);
+}
+
+/// A slash debits the bond and mints nothing.
+#[test]
+fn slash_debits_the_bond_and_mints_nothing() {
+    let mut t = Treasury::new();
+    let bond = t.enroll([1; 32], [8, 8, 8, 8], (0, [0; 32]));
+    let addr = [3u8; 32];
+    t.escrow_award(addr, vec![[1; 32]], [8, 0, 0, 0], (1, [1; 32]));
+    assert!(t.revoke_award(&addr, true));
+    assert_eq!(t.bond_of(&[1; 32]).unwrap()[0], bond[0].saturating_sub(8));
+    assert_eq!(t.supply().expect("supply adds up"), [0; 4]);
+    assert_eq!(t.balance_mu(&[1; 32]), [0; 4]);
+}
+
+/// Pool + stakes survive the v3 snapshot exactly.
+#[test]
+fn escrow_snapshot_round_trips() {
+    let mut t = Treasury::new();
+    t.enroll([3; 32], UNIT_BOND, (0, [4; 32]));
+    t.settle_subsidy([3; 32], [0, 0, 5, 0], (1, [4; 32]));
+    t.settle_recall([3; 32], [false, false, true, false], (2, [4; 32]));
+    let snap = t.snapshot();
+    let mut pos = 0;
+    let back = Treasury::restore(&snap, &mut pos).expect("restore v3");
+    assert_eq!(back.bond_total(), t.bond_total(), "live bonds survive, per lane");
+    assert_eq!(back.stakes(), t.stakes(), "stakes survive");
+    assert_eq!(back.entries(), t.entries());
+}
+
+/// §6, both equations, on a treasury that has actually moved value.
+/// The fold of LEDGER_EPOCH_DESIGN is admissible only where this holds
+/// at the prefix it folds, so this is the gate on 7.5.
+#[test]
+fn the_audit_holds_through_genesis_mint_and_burn() {
+    let mut t = Treasury::new();
+    let a = (1u64, [1u8; 32]);
+    t.genesis([1; 32], [10, 10, 10, 10], a);
+    assert_eq!(t.audit().expect("genesis conserves"), [10, 10, 10, 10]);
+    t.settle_subsidy([2; 32], [4, 0, 2, 0], a);
+    assert_eq!(t.audit().expect("a mint conserves"), [14, 10, 12, 10]);
+    let burned = t.burn([1; 32], [3, 0, 0, 0], a);
+    assert_eq!(burned, [3, 0, 0, 0], "burned from what was held");
+    assert_eq!(t.audit().expect("a burn conserves"), [11, 10, 12, 10]);
+    assert_eq!(t.supply().expect("supply adds up"), [11, 10, 12, 10]);
+}
+
+/// R9, and the distinction the audit turns on. A FUNDED escrow holds
+/// μ⃗ that left a balance and is still in the mesh, so it is counted;
+/// discharging it MOVES value and mints nothing. A CLAIM escrow holds
+/// μ⃗ that does not exist yet (§3.1), so it is not counted, and a ruling
+/// MINTS it. Removing escrow from the equation outright would make the
+/// audit hold by not looking; counting all of it asserts value that was
+/// never created. Both readings conserve here, and they conserve
+/// differently — which is the whole point.
+#[test]
+fn a_funded_escrow_is_counted_and_a_claim_escrow_is_not() {
+    let mut t = Treasury::new();
+    let a = (1u64, [1u8; 32]);
+    t.genesis([1; 32], [10, 0, 0, 0], a);
+    let seeded = t.audit().expect("genesis conserves");
+
+    // A CLAIM: nobody paid for it, so the carriers do not move and
+    // supply does not move.
+    t.escrow_award([7u8; 32], vec![[2; 32]], [4, 0, 0, 0], a);
+    assert_eq!(t.audit().expect("a claim is not supply"), seeded);
+    assert_eq!(t.balance_mu(&[2; 32]), [0; 4], "no one was debited for it");
+
+    // A FUND: the payer is debited, so the μ⃗ moved out of a balance and
+    // must still be found — in the escrow.
+    let paid = t.escrow_from_balance([8u8; 32], [1; 32], [6, 0, 0, 0], a);
+    assert_eq!(paid, [6, 0, 0, 0]);
+    assert_eq!(t.balance_mu(&[1; 32]), [4, 0, 0, 0], "the payer paid");
+    assert_eq!(
+        t.audit().expect("a funded escrow is counted, not ignored"),
+        seeded,
+        "supply unmoved: value moved between carriers"
+    );
+
+    // Discharging it moves value back and mints nothing.
+    assert!(t.revoke_award(&[8u8; 32], false), "the award was there");
+    assert_eq!(t.balance_mu(&[1; 32]), [10, 0, 0, 0], "returned whence it came");
+    assert_eq!(t.audit().expect("a discharge conserves"), seeded);
+    assert_eq!(t.minted().expect("minted"), [0; 4], "and nothing was earned");
+
+    // The claim, released, MINTS — supply rises by what the ruling
+    // measured, which is E1's whole mechanism.
+    let (voices, mu, anc) = t.release_award(&[7u8; 32]).expect("the claim stood");
+    t.mint_claim(&voices, mu, anc);
+    let after = t.audit().expect("a ruling conserves");
+    assert!(
+        after.iter().zip(seeded.iter()).any(|(x, y)| x > y),
+        "a claim released is issuance: {seeded:?} then {after:?}"
+    );
+}
+
+/// A stake MOVES value between two carriers of one identity and never
+/// creates any (§4: bond is μ at risk, staked from a balance). This
+/// assertion is the inverse of the one it replaces, which pinned the
+/// failure: `enroll` used to insert the bond and write its row without
+/// debiting anything, so bond existed that was never issued.
+#[test]
+fn a_stake_moves_value_and_never_creates_it() {
+    let mut t = Treasury::new();
+    let a = (1u64, [1u8; 32]);
+    t.genesis([1; 32], [10, 0, 0, 0], a);
+    assert_eq!(t.audit().expect("genesis conserves"), [10, 0, 0, 0]);
+
+    let staked = t.enroll([1; 32], [4, 0, 0, 0], a);
+    assert_eq!(staked, [4, 0, 0, 0], "staked from the balance");
+    assert_eq!(t.balance_mu(&[1; 32]), [6, 0, 0, 0], "the balance fell by it");
+    assert_eq!(t.bond_of(&[1; 32]), Some([4, 0, 0, 0]));
+    assert_eq!(t.audit().expect("a stake conserves"), [10, 0, 0, 0], "supply unmoved");
+
+    // What the balance cannot cover is not staked.
+    let over = t.enroll([1; 32], [99, 0, 0, 0], a);
+    assert_eq!(over, [6, 0, 0, 0], "only what was held");
+    assert_eq!(t.balance_mu(&[1; 32]), [0, 0, 0, 0]);
+    assert_eq!(t.audit().expect("still conserves"), [10, 0, 0, 0]);
+
+    // And it returns the way it went.
+    let back = t.unstake([1; 32], [10, 0, 0, 0], a);
+    assert_eq!(back, [10, 0, 0, 0], "never more than is bonded");
+    assert_eq!(t.balance_mu(&[1; 32]), [10, 0, 0, 0]);
+    assert_eq!(t.audit().expect("an unstake conserves"), [10, 0, 0, 0]);
+}
