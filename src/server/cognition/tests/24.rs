@@ -185,3 +185,80 @@ fn a_depleted_lane_lists_the_demand_instead_of_germinating_it() {
          residual chain is the germination demand itself"
     );
 }
+
+/// 24.1, 18.2 — THE SENTENCE ARM. A sentence has no single spelling: it is
+/// a nerve one level above a word, and its words are its loop holonomies.
+/// Under a depleted lane it reaches the open-demand arm with no stored
+/// cycle, and the arm charges the ORDERS OF THOSE LOOPS' CLASSES rather
+/// than reading `letters()` — a question one level below the carrier — and
+/// charging the whole nerve as a bare chain.
+///
+/// The form is a triangle, so it has a loop; a tree has none and charges
+/// nothing, which is correct and is why this fixture is three vertices.
+#[test]
+fn a_depleted_lane_charges_a_sentence_by_its_loop_words() {
+    use crate::transducer::alphabet::Word;
+    use crate::transducer::sentence::{as_element_form, Form, FormFace, Vertex};
+    let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+    let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+    let mut f = Form::default();
+    for tag in [2u8, 3u8, 4u8] {
+        f.vertices.push(Vertex::Word {
+            address: Address::from_bytes([tag; 32]),
+            word: Word::identity(),
+            carriage: element::carriage(&one, &(zero.clone(), zero.clone())),
+            gauge: vec![(1, 2)],
+            class: crate::transducer::stalk::Invariant::default(),
+            contact: None,
+        });
+    }
+    for (i, j) in [(0u16, 1u16), (1, 2), (0, 2)] {
+        f.faces.push(FormFace { i, j, transport: f.face_of(i, j).expect("face") });
+    }
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    assert!(!f.loops.is_empty(), "a triangle closes a loop");
+    assert!(!f.loop_words().is_empty(), "and the loop carries a holonomy word");
+    let spoken = as_element_form(&f, [1, 1, 0, 0]).expect("a sentence tape");
+    assert!(spoken.letters().is_none(), "a sentence is not a word: it has no letters");
+    let decoded = spoken.form().expect("and it decodes to the nerve its words live in");
+    let steps: u64 = decoded
+        .loop_words()
+        .iter()
+        .map(|(w, _)| match w.order() {
+            crate::transducer::alphabet::Order::Finite(p) => p as u64,
+            crate::transducer::alphabet::Order::Infinite => w.len() as u64,
+        })
+        .sum();
+    assert!(steps > 0, "the loops name a charge");
+
+    let mut k = Kernel::new();
+    for _ in 0..8 {
+        k.physics_mut().spend([true; 4]);
+    }
+    assert!(!k.physics().can_expand([true; 4]), "the reserve is spent");
+    let before = k.physics().pressure;
+    let language = k.language();
+    let (form, qs) = reduce_germ(&language, (0, 0), &spoken);
+    assert!(
+        matches!(form, NormalForm::Irreducible(_)),
+        "a sentence the language does not hold is irreducible, tape and all"
+    );
+    let out = k.commit_germ(
+        Reduction {
+            germ: spoken.clone(),
+            form,
+            qs,
+            language,
+            listing: spoken.address(),
+            frontier: true,
+        },
+        [1; 32],
+    );
+    assert_eq!(out, Outcome::GermPending, "a deferred sentence still stands");
+    let after = k.physics().pressure;
+    assert!(
+        after[0] > before[0],
+        "the sentence is charged by its loops' orders, not by a chain it does not have: \
+         {before:?} then {after:?}"
+    );
+}
