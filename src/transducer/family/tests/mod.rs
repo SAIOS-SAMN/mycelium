@@ -8,6 +8,8 @@ pub mod common;
 mod chapter_20;
 #[path = "21.rs"]
 mod chapter_21;
+#[path = "21-speak.rs"]
+mod chapter_21_speak;
 #[path = "22.rs"]
 mod chapter_22;
 #[path = "26.rs"]

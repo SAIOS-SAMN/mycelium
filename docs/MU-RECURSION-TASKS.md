@@ -167,7 +167,7 @@ Move-only, one file per commit, tests to `<module>/tests/<chapter>.rs`, document
 | S15 | court/verdict.rs | 1,138 | verdict/{replay, blind, ruling, selection}.rs, tests/{23,42}.rs + common.rs | landed (S15) |
 | S16 | transducer/cech.rs | 1,128 | cech/{cell, complex, coboundary, tape}.rs, tests/{13,14}.rs + common.rs | landed (S16) |
 | S17 | client/sdk/mod.rs | 1,039 | sdk/{mod, kernel, session, aperture, types}.rs | landed (S17) |
-| S18 | transducer/family/tests.rs | 1,002 | family/tests/{20,21,22,26}.rs + common.rs | landed (S18); tests/21.rs is 733 and splits again at the 600 bound |
+| S18 | transducer/family/tests.rs | 1,002 | family/tests/{20,21,22,26}.rs + common.rs | landed (S18); tests/21.rs split again at the 600 bound (S26) |
 | S19 | client/sdk/epigenome.rs | 999 | epigenome/{atlas, dialect, shed, comprehend, persist, crystal}.rs | landed (S19) |
 | S20 | transducer/blade.rs | 911 | blade/{body, carry, peel}.rs, tests/{16,20}.rs + common.rs | landed (S20) |
 | S21 | bin/mycelium-client.rs | 904 | mycelium-client/{main, feed, speak, arms/{feed,quote,task,syntropy}}.rs | landed (S21) |
@@ -183,7 +183,7 @@ enforces.
 | id | file | lines | target | status |
 |---|---|---|---|---|
 | S25 | transducer/stalk.rs | 766 | stalk/{chart, stratum, stalks}.rs, tests/6.rs | landed (S25) |
-| S26 | transducer/family/tests/21.rs | 733 | by the steps of chapter 21 | open |
+| S26 | transducer/family/tests/21.rs | 733 | tests/21.rs (steps 1-7) + tests/21-speak.rs | landed (S26) |
 | S27 | server/cognition/snapshot.rs | 733 | by carrier | open |
 | S28 | transducer/sentence/form.rs | 675 | by organ | open |
 | S29 | xtask/lint.rs | 676 | one file per gate | open |
