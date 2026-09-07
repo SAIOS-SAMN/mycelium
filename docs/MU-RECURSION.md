@@ -420,7 +420,7 @@ Part III:
 | `sentence.rs:1144` `vertex_address` | writes raw versor bytes beside geodesic keys | A4 canonical versors |
 | `cognition.rs:5635, 5526` `composite_parent_id`, `section_address` | hash cells in given order, uncentred; assignment unsorted | A5, M2 |
 | `sentence.rs:1792` `from_element` | trusts the germ address stored in the tape | recompute (A8 step 2) |
-| `blade.rs:339` `ratio_axes` | drops the sign, saturates to `u64::MAX`; under `moduli ==`, `moduli.key()`, `Invariant::key`, `connection_chart` | A6 |
+| `blade/body.rs` `ratio_axes` | drops the sign, saturates to `u64::MAX`; under `moduli ==`, `moduli.key()`, `Invariant::key`, `connection_chart` | A6 |
 | `verdict/selection.rs` `sel_key` | hash of `format!("{s:?}")` | A9 |
 | `mycelium-server/judge/percept.rs` | percept rendezvous by `hash(pbytes[32..])` | A11 |
 | `verdict/blind.rs` `blind_replay` | compares the spoken chain without canonicalising it | A5 |
@@ -1944,7 +1944,7 @@ Input: `x ∈ ℚ` reduced, denominator positive. Output `Option<[u64; 2]>`.
 Refusal propagates: `Harmonics::axes() -> Option<Vec<u64>>`;
 `blade::moduli` and `stalk::invariant` return the **empty** `Invariant`,
 which is novelty, with the log line `[{tag}] chart refused: ratio exceeds
-axis`. Nothing saturates; `ratio_axes` (blade.rs 339), which drops the sign
+axis`. Nothing saturates; `ratio_axes` (blade/body.rs), which drops the sign
 and saturates to `u64::MAX`, is replaced. The two-limb encoding preserves
 equality, which is all the atlas trie reads (strata are prefixes, `peel`
 drops the last axis, nothing compares axes by magnitude). Should an
@@ -2737,7 +2737,7 @@ else, so every binding below still names the function it always named:
 
 | short name | absolute path |
 |---|---|
-| `alphabet/`, `sentence/`, `element/`, `cech/`, `stalk.rs`, `blade.rs`, `bubble/`, `family/`, `cga.rs`, `peel.rs`, `anchor.rs`, `sheaf.rs`, `germinate.rs`, `rewrite.rs`, `factor.rs`, `a21.rs` | `/opt/mycelium-v0.1.0/src/transducer/<name>` |
+| `alphabet/`, `sentence/`, `element/`, `cech/`, `stalk.rs`, `blade/`, `bubble/`, `family/`, `cga.rs`, `peel.rs`, `anchor.rs`, `sheaf.rs`, `germinate.rs`, `rewrite.rs`, `factor.rs`, `a21.rs` | `/opt/mycelium-v0.1.0/src/transducer/<name>` |
 | `cognition/`, `registry.rs`, `synthesis.rs` | `/opt/mycelium-v0.1.0/src/server/<name>` |
 | `verdict/`, `identity.rs`, `ledger.rs` | `/opt/mycelium-v0.1.0/src/court/<name>` |
 | `nerve/`, `mesh.rs`, `wire.rs` | `/opt/mycelium-v0.1.0/src/network/<name>` |
@@ -3635,7 +3635,7 @@ cech.rs       ChartGraph, Goodness, goodness, cell_key with component, set_edge_
               solve_gauge_between (A14); solve_gauge unchanged
 nerve/        Keyed::meet (A13), Cover::charts_of, Router::insert(vk, addr), home(depth), no hash(addr) keys outside pending_addrs
 stalk.rs      Stalks::refine(inv, &[u64]), split_stratum coordinate_of -> Vec<u64>, invariant/invariant_of empty on A6 refusal
-blade.rs      axes_of -> Option<[u64;2]> (A6), moduli -> Option<Vec<u64>>
+blade/body.rs axes_of -> Option<[u64;2]> (A6), moduli -> Option<Vec<u64>>
 ear.rs        Harmonics::axes -> Option<Vec<u64>>
 anchor.rs     Sel::to_bytes NEW (A9)
 verdict/      replay_form NEW, REFUSE_* (chapter 34), sel_key over Sel::to_bytes, blind_replay canonicalises the spoken chain and recomputes 13.9 step 5

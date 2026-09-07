@@ -205,7 +205,7 @@ scale with the state.
 Axis count is the moduli of one support, not N. Source: peel
 (governor shrinking).
 
-`family.rs` / `blade.rs` / `arc.rs` grid cells: the scene being
+`family/` / `blade/peel.rs` / `arc.rs` grid cells: the scene being
 perceived, one percept. Source: peel of that residual.
 
 `element/carrier.rs` `sub` / `sections` / `torsion` / `transitions`: the
