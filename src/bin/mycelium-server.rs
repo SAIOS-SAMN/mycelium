@@ -1177,16 +1177,6 @@ fn main() {
     // still has no genesis and says so. 47.2's REFUSE_ORIGIN check on it is
     // task 5.2 and is not claimed here.
     if mesh_rec.genesis == [0u8; 32] {
-        let first = kernel
-            .lock()
-            .ok()
-            .and_then(|k| k.chain().receipts().first().map(|r| r.chain_hash));
-        if let Some(h) = first {
-            mesh_rec.genesis = h;
-            let _ = mesh_rec.save(&home, &hypha_key);
-        }
-    }
-    if mesh_rec.genesis == [0u8; 32] {
         eprintln!("[{tag}] genesis unwritten epoch {}", mesh_rec.epoch);
     } else {
         eprintln!(
@@ -1501,6 +1491,11 @@ fn main() {
         let kernel = Arc::clone(&kernel);
         let mesh = mesh.clone();
         let join = join_peers.clone();
+        let gen_home = home.clone();
+        let genesis_written = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(
+            mesh_rec.genesis != [0u8; 32],
+        ));
+        let mut last_organs = (usize::MAX, usize::MAX);
         let registry = Arc::clone(&registry);
         let router = Arc::clone(&router);
         let state_path = state_path.clone();
@@ -1550,6 +1545,7 @@ fn main() {
                     .collect();
                 let mut organ_budget = mycelium::physics::expansion_unit() as usize;
                 let (mut reached, mut silent) = (0usize, 0usize);
+                let _ = &last_organs;
                 for (pid, d) in dest_list {
                     if organ_budget == 0 {
                         break;
@@ -1663,6 +1659,33 @@ fn main() {
                 // difference and nothing said it. Written once per cycle,
                 // not per peer, and only when something changed or nothing
                 // was reached, so an exchange that is working is quiet.
+                // C6. H_genesis is the chain hash of the mesh's FIRST
+                // RECEIPT (45.5). It cannot be read at boot: a fresh kernel
+                // has an empty chain, which is why the adoption I put there
+                // never fired and every node still printed `genesis
+                // unwritten`. It is adopted here, the first cycle after a
+                // receipt exists, and written once.
+                if !genesis_written.load(std::sync::atomic::Ordering::Relaxed) {
+                    let first = kernel
+                        .lock()
+                        .ok()
+                        .and_then(|k| k.chain().receipts().first().map(|r| r.chain_hash));
+                    if let Some(h) = first {
+                        let key = HyphaKey::load_or_mint(
+                            gen_home.join("hypha.key").to_str().unwrap_or("hypha.key"),
+                        );
+                        let mut rec = mycelium::network::mesh::load_or_migrate_hypha(&gen_home, &key);
+                        if rec.genesis == [0u8; 32] {
+                            rec.genesis = h;
+                            let _ = rec.save(&gen_home, &key);
+                            eprintln!(
+                                "  court genesis {:02x}{:02x}… epoch {}",
+                                h[0], h[1], rec.epoch
+                            );
+                        }
+                        genesis_written.store(true, std::sync::atomic::Ordering::Relaxed);
+                    }
+                }
                 // OFFER what this court holds at first vantage. Without
                 // this the exchange has nothing to move: a ruled root only
                 // moves once a peer has glued a provisional, and a peer only
@@ -1695,7 +1718,12 @@ fn main() {
                 if offered_out > 0 {
                     eprintln!("  court offered {offered_out} germs to the overlap");
                 }
-                if silent > 0 || any_moved {
+                // Written when the READING CHANGES, not every cycle. As
+                // first shipped this fired on any silence and logged 17,588
+                // lines in 35 minutes on one hypha: it found the deadlock
+                // and then became the noise it was added to cut through.
+                if (reached, silent) != last_organs {
+                    last_organs = (reached, silent);
                     eprintln!(
                         "  court organs reached {reached} silent {silent} moved {any_moved}"
                     );

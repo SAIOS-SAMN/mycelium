@@ -62,11 +62,25 @@ when that vector is zero on every lane.
 
 ### 3.1 E1 — an escrow is a claim on issuance, never a transfer
 
-An escrow holds μ⃗ that **does not exist yet**. A listing is escrowed at its
-priced magnitude before anyone has closed it; a ruling discharges that
-escrow into a mint of the measured deflation, and a revocation makes it
-vanish with nothing ever issued. Escrow is therefore pending issuance and
-is not supply (§6).
+An escrow is one of two things and the invariant needs them apart.
+
+A **funded** escrow is a LIABILITY: a payer backed the claim from a balance,
+so the μ⃗ left that balance and is still in the mesh. It is counted in §6's
+carriers, and discharging it MOVES value — back to the payer on a
+revocation, to the payee on a release — and mints nothing. This is §5's
+requester escrow, and `escrow_from_balance` is the path that creates one:
+the payer is debited, not merely checked.
+
+A **claim** escrow is pending issuance: nobody gave anything up for it, so
+the μ⃗ does not exist yet. It is not counted, and a ruling MINTS it at the
+measured deflation while a revocation makes it vanish with nothing ever
+issued. This is what §4's "every claim is escrowed against its own
+deflation" means.
+
+Counting all escrow as supply asserts value the mesh never created;
+counting none makes the audit hold by not looking. R9 stands as written —
+`Σ escrow` is the funded escrow — and `Treasury::funded` records, per
+listing, what was debited to create the award.
 
 This is what §4's "every claim is escrowed against its own deflation"
 means, and it dissolves the question of where the funds come from: nothing

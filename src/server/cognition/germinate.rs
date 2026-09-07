@@ -333,82 +333,35 @@ impl Kernel {
             let ex = exclude.and_then(|a| self.live_slot(a));
             return self.reduce_chain(sub.sub().to_vec(), ex);
         }
-        let mut s = sub;
-        let mut word = Vec::new();
-        let budget = self.peel_budget(&g.magnitude());
-        // ≺_DM is well-founded so this terminates; the 64 is only a safety net.
-        for step in 0..64 {
-            if s.is_identity() {
-                return NormalForm::Decomposed(word); // fully reduced (empty = pure transposition)
-            }
-            // Terminal: the substance IS an installed generator (length-1 sentence).
-            if let Some(k) = action_index_key(&s) {
-                if let Some(addr) = self.by_action.get(&k) {
-                    if exclude.map(|e| e == addr.as_bytes()) != Some(true) {
-                        if let Some(held) = self.basis.get(addr) {
-                            debug_assert!(held.substance().same_action(&s));
-                            if let Some(i) = self.live_slot(addr) {
-                                word.push(i);
-                                return NormalForm::Decomposed(word);
-                            }
+        // A12, ONCE. This peeled one generator at a time for up to 64
+        // steps, re-deriving the whole question at every step from the new
+        // residue -- and each step scanned the basis and kept a running best
+        // by `descends`, which is selection by measure (law 10) and dropped
+        // every factorisation that did not dominate (rule 15). A12 answers
+        // the whole question in one reading: membership in the lattice the
+        // held words span, decided by Hermite normal form, with the
+        // factorisation as its witness and a canonical residue when it
+        // fails. There is nothing left to peel and `best_peel` is deleted.
+        let s = sub;
+        if s.is_identity() {
+            return NormalForm::Decomposed(Vec::new()); // a pure transposition
+        }
+        // Terminal: the substance IS an installed generator.
+        if let Some(k) = action_index_key(&s) {
+            if let Some(addr) = self.by_action.get(&k) {
+                if exclude.map(|e| e == addr.as_bytes()) != Some(true) {
+                    if let Some(held) = self.basis.get(addr) {
+                        debug_assert!(held.substance().same_action(&s));
+                        if let Some(i) = self.live_slot(addr) {
+                            return NormalForm::Decomposed(vec![i]);
                         }
                     }
                 }
             }
-            // METABOLIC THROTTLE: peeling is the expensive arm.
-            if step >= budget {
-                return NormalForm::Irreducible(s);
-            }
-            match self.best_peel(&s, exclude) {
-                Some((i, next)) => {
-                    word.push(i);
-                    s = next;
-                }
-                None => return NormalForm::Irreducible(s),
-            }
         }
-        NormalForm::Irreducible(s)
-    }
-
-    /// The metabolic PEEL BUDGET — how many expensive peels the confluent reduction
-    /// may spend, governed by the current per-lane PRESSURE (the entropic backlog),
-    /// never a monotone scalar (#34). Polytonic: the most-pressured lane governs
-    /// (Liebig). Calm → full reduction; loaded → shallow; saturated → direct-match
-    /// only, then germinate the compound (refined later, when the mesh is calm).
-    fn peel_budget(&self, mag: &[u64; 4]) -> usize {
-        // The occupied lane of this reduction; no max across lanes.
-        for l in 0..4 {
-            if mag[l] > 0 {
-                let unit = crate::physics::expansion_unit().max(1);
-                return (self.physics.reserve[l] / unit) as usize;
-            }
-        }
-        0
-    }
-
-    /// Peel the MAXIMAL ≺_DM-descending generator from substance `s`: try each
-    /// invertible (group) generator γ, form `γ⁻¹ ∘ s`, and keep the one whose
-    /// reduction magnitude descends most (tie-broken by basis order — deterministic,
-    /// so the reduction is confluent). `None` when no generator lowers `s`.
-    /// One step of the CANONICAL factorisation (A12), not a search.
-    ///
-    /// This scanned the whole basis, composed an inverse against the residue
-    /// for every generator, and kept a running best by `descends` — a choice
-    /// among candidates by a measure (rule 4, law 10: descent certifies, it
-    /// never selects), which silently dropped every factorisation that did
-    /// not dominate the one it happened to hold (rule 15). Two nodes holding
-    /// the same basis in different orders could keep different peels.
-    ///
-    /// A12 answers the same question exactly: the plane factorisation over
-    /// the fiber's basis is determined by the Hermite normal form, so its
-    /// terms are in a canonical order and the NEXT term is a reading, not a
-    /// preference. The whole tape is computed and the first term taken,
-    /// because the caller peels one step at a time; the rest of the tape is
-    /// re-derived on the next step from the new residue and is the same
-    /// tape, since HNF is a function of the lattice.
-    fn best_peel(&self, s: &Element, exclude: Option<&[u8]>) -> Option<(usize, Element)> {
-        use crate::transducer::factor::{factor_on_plane, Factored};
-        let g = s.letters()?.spelling.word.form()?;
+        let Some(gf) = s.letters().and_then(|l| l.spelling.word.form()) else {
+            return NormalForm::Irreducible(s);
+        };
         let mut slots = Vec::new();
         let mut forms = Vec::new();
         for (addr, gen) in self.basis.fiber(crate::network::nerve::ROOT) {
@@ -416,9 +369,8 @@ impl Kernel {
                 continue;
             }
             let Some(i) = self.live_slot(&addr) else { continue };
-            // Only group generators peel: a word with no solution is not one.
             if gen.substance().solution().is_none() {
-                continue;
+                continue; // only group generators factor
             }
             let Some(f) = gen.letters().and_then(|l| l.spelling.word.form()) else {
                 continue;
@@ -427,23 +379,38 @@ impl Kernel {
             forms.push(f);
         }
         if forms.is_empty() {
-            return None;
+            return NormalForm::Irreducible(s);
         }
-        let tape = match factor_on_plane(&g, &forms) {
-            Factored::Understood(t) => t,
-            // A remainder is a demand, not a peel, and an unmeasured
-            // factorisation is neither (rule 11).
-            Factored::Novel { .. } | Factored::Unmeasured => return None,
-        };
-        let (first, _) = *tape.first()?;
-        let slot = *slots.get(first)?;
-        let addr = self.language.words.get(slot)?.address();
-        let gen = self.basis.get(addr.as_bytes())?;
-        let inv = gen.substance().solution()?;
-        Some((slot, inv.compose(s)))
+        match crate::transducer::factor::factor_on_plane(&gf, &forms) {
+            // `Decomposed` is the CITATION SET -- which held words the
+            // substance decomposes through -- so the exponents are dropped
+            // here and the tape itself is `factor::word_of` when a caller
+            // needs the ordered product.
+            crate::transducer::factor::Factored::Understood(tape) => {
+                let mut cited: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+                let mut word = Vec::new();
+                for (i, _) in tape {
+                    let Some(slot) = slots.get(i).copied() else { continue };
+                    let k = (slot as u64).to_le_bytes();
+                    if cited.contains(&k) {
+                        continue;
+                    }
+                    cited.insert(k, ());
+                    word.push(slot);
+                }
+                NormalForm::Decomposed(word)
+            }
+            // A remainder is a demand and an unmeasured factorisation is
+            // neither: both leave the substance irreducible here, and the
+            // remainder travels as the residual it already is.
+            _ => NormalForm::Irreducible(s),
+        }
     }
 
-
+    /// Peel the MAXIMAL ≺_DM-descending generator from substance `s`: try each
+    /// invertible (group) generator γ, form `γ⁻¹ ∘ s`, and keep the one whose
+    /// reduction magnitude descends most (tie-broken by basis order — deterministic,
+    /// so the reduction is confluent). `None` when no generator lowers `s`.
     /// The kernel's chain reduction — delegates to the shared projective
     /// decomposition ([`decompose_over`]) at the metabolic projection budget.
     fn reduce_chain(&self, first: Vec<(i64, i64, u8, u8)>, exclude: Option<usize>) -> NormalForm {

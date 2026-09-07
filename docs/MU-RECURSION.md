@@ -3778,6 +3778,9 @@ Prefix `  court ` as the existing court lines; addresses as
   court memo hit {addr} family {family}
   court class degree {k} chart {inv} key {class_key}
   court refine chart {inv} by class {class_key}
+  court organs reached {n} silent {n} moved {bool}
+  court offered {n} germs to the overlap
+  court genesis {hash} epoch {e} (written once, at the first receipt)
   court goodness chart {inv} peer {peer}: good component {ckey} charts {n}
   court goodness chart {inv} peer {peer}: {k} components
   court goodness chart {inv} peer {peer}: cyclic in {hypha} chord {c}-{c'} holonomy {hkey}
