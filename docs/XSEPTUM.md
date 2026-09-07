@@ -320,7 +320,7 @@ New:
   `accept_receipt`, `accept_equivocation`, `expire(K)` called from the court
   stroke under its budget; `witness_sign` for the second signature of a
   release.
-- `src/bin/mycelium-server.rs`: handlers for the six acts in `judge`.
+- `src/bin/mycelium-server/judge/`: one file per act family, dispatched by `judge/mod.rs`.
 - `src/client/sdk.rs`: `Session::septum_note`, `septum_receipt`,
   `septum_release`.
 - `src/bin/mycelium-septum.rs`: the HTTP adapter. Listens on a local port,

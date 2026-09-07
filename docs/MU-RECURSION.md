@@ -422,7 +422,7 @@ Part III:
 | `sentence.rs:1792` `from_element` | trusts the germ address stored in the tape | recompute (A8 step 2) |
 | `blade.rs:339` `ratio_axes` | drops the sign, saturates to `u64::MAX`; under `moduli ==`, `moduli.key()`, `Invariant::key`, `connection_chart` | A6 |
 | `verdict.rs:374` `sel_key` | hash of `format!("{s:?}")` | A9 |
-| `mycelium-server.rs:1065` | percept rendezvous by `hash(pbytes[32..])` | A11 |
+| `mycelium-server/judge/percept.rs` | percept rendezvous by `hash(pbytes[32..])` | A11 |
 | `verdict.rs:102` `blind_replay` | compares the spoken chain without canonicalising it | A5 |
 | `cognition.rs:5052`, `economy.rs:651`, client loaders | restore carriers under stored byte addresses after the address rule changed (a29bba5 landed without a migration) | A8, M3 |
 
@@ -2050,7 +2050,7 @@ another genesis or epoch, is dropped before any carrier is touched (47.2).
 
 ### 16.11 A11 — Rendezvous by listing key
 
-For a percept (server `judge`, mycelium-server.rs 1061):
+For a percept (server `judge`, mycelium-server/judge/percept.rs):
 
 1. Decode the chain and the frame rationals `(h_in, w_in, h_out, w_out)`.
 2. A5 on the chain.
@@ -2642,7 +2642,7 @@ system may act on, with nothing decided on the bytes themselves.
 **Invariant.** A peer on any build that speaks a correct tape in any
 spelling is understood; a tampered tape is refused by re-derivation.
 
-**Binding.** `mycelium-server.rs::judge`, `serve_control`,
+**Binding.** `mycelium-server/judge/`, `mycelium-server/door.rs::serve_control`,
 `admit_peer_digest`; `sdk.rs::absorb_digest`, `add_peer`, `ask_peers`;
 `verdict::blind_replay`; `dialogue` decoders.
 
@@ -2746,7 +2746,7 @@ else, so every binding below still names the function it always named:
 | `ear.rs` | `/opt/mycelium-v0.1.0/src/perception/ear.rs` |
 | `economy.rs`, `physics.rs`, `chronometry.rs` | `/opt/mycelium-v0.1.0/src/<name>` |
 | `cyclo.rs`, `scalar.rs`, `constants.rs` | `/opt/mycelium-v0.1.0/src/core/<name>` |
-| `mycelium-server.rs`, `mycelium-client.rs` | `/opt/mycelium-v0.1.0/src/bin/<name>` |
+| `mycelium-server/`, `mycelium-client.rs` | `/opt/mycelium-v0.1.0/src/bin/<name>` |
 | `voice/mod.rs` | `/opt/mycelium-v0.1.0/src/voice/mod.rs` |
 
 ## 18. The form types
@@ -3244,7 +3244,7 @@ loop {i} axis {label} {before}→{after}`; any mismatch is
 crystallization that rests on a pivot that does not replay rests on
 nothing. A form with no certificates is replayed as before.
 
-`serve_ruled` (3148) and the `ACT_SYLLABUS` reply (mycelium-server.rs 630,
+`serve_ruled` (3148) and the `ACT_SYLLABUS` reply (mycelium-server/door.rs,
 920) append the chart's class records (A19 step 1). `Kernel::rank`
 (A18) is asserted in debug on every glue and on every refinement.
 
@@ -3516,7 +3516,7 @@ Carried from chapter 25: forms are spoken. `/opt/mycelium-v0.1.0/src/anastome/di
   speech frame's `tu` field becomes the voice's K and its cited home head,
   and the root frame's tick becomes the speaker's `(K, height, hash)` with
   the reply carrying the receiver's own `(K, height)` (45.6).
-- `/opt/mycelium-v0.1.0/src/bin/mycelium-server.rs`: `judge`'s `ACT_SPEECH`
+- `/opt/mycelium-v0.1.0/src/bin/mycelium-server/judge/speech.rs`: `ACT_SPEECH`
   handler collects `Kernel::missing_forms(&Element) -> Vec<[u8;32]>`
   **new** into the reply; `admit_peer_digest` (385) records `depth_max` and
   is the point where a pending socket string becomes a `vk` peer (A10);
@@ -3611,7 +3611,7 @@ sentence.rs   Form::class_vector NEW, ClassVector/Axis NEW (12.6), Form::pivot_l
 element/carrier.rs  record_torsion as A17's filing call; toroid.rs witness_stored as A17's witness
 cognition.rs  glue_fetched torsion arm (23.7), serve_ruled class records (A19), Kernel::rank debug assertions
 dialogue.rs   SPEECH_WITHHELD, speech reply missing list, depth_max in digests, syllabus class section, standing byte
-mycelium-server.rs  judge: A11 and missing_forms; admit_peer_digest depth_max + A10; id_of only for pending_addrs
+mycelium-server/       judge: A11 and missing_forms; admit_peer_digest depth_max + A10; id_of only for pending_addrs
 mycelium-client.rs  speak_sentence(entity, tag, &Form); family id by registry::task_id
 ```
 
@@ -3786,7 +3786,7 @@ These are returned by `replay_form` and `blind_replay`, by the admission of
 `"citation pending"`, `"overlap goodness pending"`, and `"letter not in
 syllabus"` (chapter 37) as `Glue::Dialect` reasons.
 
-### 34.2 Server log lines, `mycelium-server.rs` and `cognition.rs`
+### 34.2 Server log lines, `mycelium-server/` and `cognition.rs`
 
 Prefix `  court ` as the existing court lines; addresses as
 `{:02x}{:02x}…`:
@@ -5200,7 +5200,7 @@ Every duration a kernel reads is a count of its own K or of heights.
 
 - **Transport.** A round trip is the number of the kernel's own strokes
   between a frame sent and its reply. `Mesh.rtt_window` and `rtt_floor`
-  (mycelium-server.rs) hold stroke counts; `persist_dwell`, `aperture_cycle`,
+  (mycelium-server/exchange.rs) hold stroke counts; `persist_dwell`, `aperture_cycle`,
   and `transport_deadline` (physics.rs) are stroke counts derived from them;
   `from_transport(rtt_floor, aperture_cycle())` is unchanged in form and
   returns strokes. The socket layer polls readiness each stroke and blocks
@@ -5249,7 +5249,7 @@ cognition.rs        now_tu → height(); standing_mag in heights; every _tu carr
 sdk.rs              now_tu → height() read from the last admitting receipt; shed and stand by the mind's own K
 dialogue.rs         ACT_SPEECH tu → voice K + cited home head; ACT_ROOT ticks → (K, height, hash), the reply carrying the receiver's own
                     (K, height) as its comment at 227 already states; Settlement field 7 → height; cover_signed_prefix → the prefix of 47.1
-mycelium-server.rs  Mesh.rtt_window/rtt_floor in strokes; the boot line prints genesis and epoch; note_root keeps the speaker's (K, height, hash)
+mycelium-server/       Mesh.rtt_window/rtt_floor in strokes; the boot line prints genesis and epoch; note_root keeps the speaker's (K, height, hash)
 physics.rs          transport_deadline, persist_dwell, aperture_cycle in strokes; no Duration
 build.rs            the clock gate: SystemTime, Instant, Duration refused in src/server, src/client, src/court, src/transducer, src/economy.rs, src/physics.rs
 ```
