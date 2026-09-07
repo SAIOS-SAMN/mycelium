@@ -249,27 +249,86 @@ fn speak_root(
 /// Speak one act to a peer on the nerve, bounded by the transport deadline;
 /// the reply, if any, is not needed. Silence is the peer's impedance.
 fn tell_peer(addr: &str, body: Vec<u8>) -> Option<(Vec<u8>, u64)> {
+    tell_peer_within(addr, body, 5)
+}
+
+/// `tell_peer` with the transport measure the caller holds: `rtt_hint` is
+/// the peer's measured round trip in strokes, and the wait is an aperture
+/// of it (`transport_deadline`). A caller with no measurement passes the
+/// same floor the rtt window uses.
+fn tell_peer_within(addr: &str, body: Vec<u8>, rtt_hint: u64) -> Option<(Vec<u8>, u64)> {
     let mut s = std::net::TcpStream::connect(addr).ok()?;
     let _ = s.set_nodelay(true);
     // A PEER THAT SAYS NOTHING IS SILENT, NOT AUTHORITATIVE. `read_exact`
-    // with no timeout makes a peer that writes nothing an unbounded wait,
-    // and one such peer stops this thread and every act it was going to
-    // perform -- which is what a frame that failed to encode on the far
-    // side produced: an empty write, and a caller waiting on five bytes
-    // that never came. Silence is a refusal and is counted as one.
-    let _ = s.set_read_timeout(Some(std::time::Duration::from_secs(20)));
-    let _ = s.set_write_timeout(Some(std::time::Duration::from_secs(20)));
+    // with no bound makes a peer that writes nothing an unbounded wait, and
+    // one such peer stops this thread and every act it was going to perform
+    // -- which is what a frame that failed to encode on the far side
+    // produced: an empty write, and a caller waiting on five bytes that
+    // never came. Silence is a refusal and is counted as one.
+    //
+    // The bound is STROKES, not seconds. My first cut set two 20-second
+    // socket timeouts, which is a wall clock in a binary (law 9) and the
+    // very sites B6 exists to remove. A socket cannot be handed a stroke,
+    // so the READ is budgeted instead: non-blocking, one spend per attempt,
+    // refused when the transport's own deadline is spent.
     let frame = Frame { lane: mycelium::network::wire::Stratum::Spatial, body };
     s.write_all(&frame.encode()?).ok()?;
+    s.set_nonblocking(true).ok()?;
+    let stall = mycelium::physics::transport_deadline(rtt_hint) as usize;
     let mut head = [0u8; 5];
-    std::io::Read::read_exact(&mut s, &mut head).ok()?;
+    read_budgeted(&mut s, &mut head, stall)?;
     let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
     if len > mycelium::network::wire::BODY_BUDGET {
         return None;
     }
     let mut reply = vec![0u8; len];
-    std::io::Read::read_exact(&mut s, &mut reply).ok()?;
+    read_budgeted(&mut s, &mut reply, stall)?;
+    // THE RTT IS NOT MEASURED. Every caller feeds this 1 into
+    // `note_rtt_ok`, so every rtt window holds 1s, `rtt_floor` is 1, and
+    // `transport_deadline(1)` is 8 -- eight yields, which is microseconds
+    // and refuses a peer that merely has not been scheduled yet. 5.1 claims
+    // "rtt in strokes"; this constant is why the claim has nothing behind
+    // it, and why the stall budget above has no measurement to be
+    // denominated in. Filed as W9b; not invented here (rule 11).
     Some((reply, 1))
+}
+
+/// Fill `buf` from a non-blocking stream, paying one stroke per attempt
+/// that finds nothing. `None` when the peer closed, when the read errors,
+/// or when the budget is spent -- all three are the same answer to the
+/// caller: this peer is SILENT, which the exchange already counts as a
+/// refusal. It is never a partial buffer read as a short frame (rule 11).
+fn read_budgeted(s: &mut TcpStream, buf: &mut [u8], stall: usize) -> Option<()> {
+    let fresh = || mycelium::physics::Physics::default().stroke_n(stall);
+    let mut budget = fresh();
+    let mut got = 0usize;
+    while got < buf.len() {
+        match std::io::Read::read(s, &mut buf[got..]) {
+            Ok(0) => return None,
+            Ok(n) => {
+                got += n;
+                // PROGRESS REFILLS THE BUDGET. Spent per poll it counted
+                // scheduler passes, not transport: `transport_deadline(8)`
+                // is 64, and 64 yields pass in microseconds, so a peer that
+                // was merely slow to be scheduled was refused as silent.
+                // Measured on my own test, which passed alone and failed
+                // beside its neighbours. What the budget bounds is a STALL
+                // -- consecutive polls that move no bytes -- so a peer
+                // trickling a large frame is never refused for being slow,
+                // and one that has said nothing at all still is.
+                budget = fresh();
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                if !budget.spend() {
+                    return None;
+                }
+                std::thread::yield_now();
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
+            Err(_) => return None,
+        }
+    }
+    Some(())
 }
 
 struct Mesh {
@@ -2086,6 +2145,24 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A PEER THAT ACCEPTS AND SAYS NOTHING IS REFUSED, in strokes. This
+    /// waited forever: `read_exact` on a blocking socket with no bound, and
+    /// one such peer stopped the exchange thread and every act it had left.
+    /// The bound is a budget, not a duration — a socket cannot be handed a
+    /// stroke, so the read pays one per attempt that finds nothing and
+    /// refuses when the transport's deadline is spent (law 9).
+    #[test]
+    fn a_peer_that_never_answers_is_refused_within_its_transport_budget() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
+        let addr = listener.local_addr().expect("addr").to_string();
+        // Accept and hold the connection open, writing nothing at all.
+        let held = std::thread::spawn(move || listener.accept().map(|(s, _)| s));
+
+        let out = tell_peer_within(&addr, vec![0x10], 1);
+        assert!(out.is_none(), "silence is a refusal, not an answer");
+        drop(held.join());
+    }
 
     #[test]
     fn court_seed_enters_syllabus_order_once() {

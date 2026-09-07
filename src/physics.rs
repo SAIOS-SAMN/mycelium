@@ -172,9 +172,10 @@ impl Physics {
         Budget { remaining: spend_unit() as usize }
     }
 
-    /// Test-only: a stroke whose remaining reads are `n`, so the N vs 4N
-    /// counters stay independent of a machine whose spend exceeds N.
-    #[cfg(test)]
+    /// A stroke whose remaining reads are `n`. Test callers use it so the
+    /// N vs 4N counters stay independent of a machine whose spend exceeds
+    /// N; the transport uses it to wait on a peer for a MEASURED number of
+    /// strokes rather than for a duration (law 9).
     pub fn stroke_n(&mut self, n: usize) -> Budget {
         Budget { remaining: n }
     }
