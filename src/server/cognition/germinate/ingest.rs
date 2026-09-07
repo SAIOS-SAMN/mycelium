@@ -282,39 +282,46 @@ impl Kernel {
                     // per-lane as ever, never a summed winding.
                     let witnesses = crate::transducer::toroid::witness_thought(&residual);
                     if witnesses.is_empty() {
-                        // NO STORED CYCLE. What this residual costs is the
-                        // ORDER of the loop word its tape spells (16.2).
-                        match residual.letters().map(|l| l.spelling.word.order()) {
-                            // A word of order p closes in p steps, exactly.
-                            Some(crate::transducer::alphabet::Order::Finite(p)) => {
-                                for _ in 0..p {
+                        // NO STORED CYCLE. What this residual costs is what
+                        // its own carrier says, and there are three carriers.
+                        match residual.letters() {
+                            // A TAPE the alphabet spells. A word of order p
+                            // closes in p steps, exactly (16.2).
+                            Some(l) => match l.spelling.word.order() {
+                                crate::transducer::alphabet::Order::Finite(p) => {
+                                    for _ in 0..p {
+                                        self.physics.bump(&mag);
+                                    }
+                                }
+                                // A word of infinite order never closes on
+                                // its own. What it cost is the walk that did
+                                // not close: the LETTERS it spelled. The
+                                // byte length of the description is the
+                                // codec's, not the walk's — measuring a word
+                                // by its encoding is law 2, and tape v5
+                                // would silently double the charge.
+                                crate::transducer::alphabet::Order::Infinite => {
+                                    for _ in 0..l.spelling.word.len() as u64 {
+                                        self.physics.bump(&mag);
+                                    }
+                                }
+                            },
+                            // A PURE RESIDUAL CHAIN — no tape, because the
+                            // alphabet has no word for it yet. This is the
+                            // germination demand itself: the thing the market
+                            // lists so that a letter can be minted for it. It
+                            // is charged by the support its chain touches and
+                            // it is LISTED, never refused.
+                            None if !residual.sub().is_empty() => {
+                                for _ in 0..residual.sub().len() as u64 {
                                     self.physics.bump(&mag);
                                 }
                             }
-                            // A word of infinite order never closes on its
-                            // own. What it cost is the walk that did not
-                            // close: the tape it spelled, letter by letter.
-                            // Reading that as one step was a floor, and a
-                            // floor on a measurement is a constant standing
-                            // in for it (rule 5).
-                            Some(crate::transducer::alphabet::Order::Infinite) => {
-                                for _ in 0..residual.description().len() as u64 {
-                                    self.physics.bump(&mag);
-                                }
-                            }
-                            // NO TAPE is not a word of the language at all
-                            // (16.2). It is REFUSED, not listed at one step:
-                            // a demand the alphabet cannot spell is not a
-                            // demand the market can price, and listing it
-                            // anyway was the same invention rule 11 refuses
-                            // everywhere else.
-                            None => {
-                                eprintln!(
-                                    "  court demand refused voice {:02x}{:02x}… {}",
-                                    voice[0], voice[1], crate::verdict::REFUSE_UNSPELLED
-                                );
-                                return Outcome::Pivot;
-                            }
+                            // Neither word nor chain: nothing to reduce and
+                            // nothing to list. `Outcome::Pivot` is what the
+                            // judge already names that, and it needs no new
+                            // refusal string beside it.
+                            None => return Outcome::Pivot,
                         }
                     } else {
                         // WITNESSES CHARGE PER LANE and are never summed
