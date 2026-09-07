@@ -438,7 +438,7 @@ A21, in one landing (chapter 41, 0.11):
 | `stalk.rs` `Invariant::key` | blake3 over the exact axes before the trie sees them | the axes' bytes, so `fiber_under` is a prefix read |
 | `sentence/class.rs` `ClassVector::class_key`, `CLOSED_KEY` | blake3 over the class vector | the class vector's coordinates; closed is the zero vector |
 | `sentence/form.rs` `hue_section_key`, `vertex_transport_key`, `class_key_of_versor` | blake3 over conjugacy ‖ gauge | the conjugacy coordinates ‖ the gauge |
-| `sentence/chart.rs` `form_vertex_key`; `family.rs` `TransportClass::key` | blake3 over kind ‖ class | kind ‖ class coordinates |
+| `sentence/chart.rs` `form_vertex_key`; `family/extract.rs` `TransportClass::key` | blake3 over kind ‖ class | kind ‖ class coordinates |
 | `sentence/pivot.rs` certificate key; `Form.certificates`, `torsion`, `vortex`, `horizon` indices | keyed by digests | keyed by the class vector and the move (16.20) |
 | `cech.rs` `cell_key`, `cocycle_key`; `verdict.rs` `sel_key`, `chart_simplex_key` | digests of sorted vertex keys and terms | the sorted vertex keys concatenated; `Sel::to_bytes` itself |
 | `sentence/*` `placement: (ℚ, ℚ)`, `Transport.shift`, `Rebased.shift`, `PivotBy::Placement.shift`, `Form.placements`, the 12.6 placement residue | ℚ² carried as cognition (law 11) | the carriage versor (A4) and the translator component of the holonomy versor |
@@ -2972,7 +2972,12 @@ is no migration, because every cut is from genesis (chapter 33).
 Carried from chapter 19: forms are read from tapes. This is the one place
 cells become forms.
 
-`/opt/mycelium-v0.1.0/src/transducer/family.rs`: `perceive(grid)` (76)
+`/opt/mycelium-v0.1.0/src/transducer/family/`: `perceive(grid)`
+(`perceive.rs`). The moves are six files (Stage 8b S9): `perceive.rs` a grid
+becoming bodies (20); `pair.rs` the pair form of one train pair (21 step 2);
+`extract.rs` the seven extraction moves (21); `speak.rs` a rule applied to a
+scene; `orbit.rs` where a versor carries a body (22); `descent.rs` what a
+rule measures over a family (12.6, 26)
 returns bodies. Add:
 
 ```rust
@@ -3615,7 +3620,7 @@ element/       canonical_chain(&[Cell]) -> Vec<Cell> NEW (A5), Element::same_ver
 sentence.rs   Vertex/Face/Loop/Form NEW (18.2), Form::{face_of, delta1, coheres, is_closed, depth_of, regauge, glue, retract_vertices, rebase, unfold, loops_of},
               as_element/from_element v2 (19), vertex_address writes Mv::canonical, from_element recomputes germ addresses,
               chart_of on reduced forms, SentenceRule { form, sections, ratio } (31), Nerve/Germ/Cycle REMOVED (30)
-family.rs     word_form, frame_vertex, pair_form, Crystal, extract_rule (seven moves), speak_rule on Form, rule_replays_family shares, orbit/OrbitEnd
+family/       word_form, frame_vertex, pair_form, Crystal, extract_rule (seven moves), speak_rule on Form, rule_replays_family shares, orbit/OrbitEnd
 cech.rs       ChartGraph, Goodness, goodness, cell_key with component, set_edge_in, Overlap, MayerVietoris, Complex::{overlap, mayer_vietoris, delta2, restrict, straddling},
               solve_gauge_between (A14); solve_gauge unchanged
 nerve.rs      Keyed::meet (A13), Cover::charts_of, Router::insert(vk, addr), home(depth), no hash(addr) keys outside pending_addrs
@@ -3657,11 +3662,11 @@ lines every trace greps.
 
 | type | file | sites |
 |---|---|---|
-| `Nerve` | `family.rs` | 3 |
+| `Nerve` | `family/` | 3 |
 | `Nerve` | `bubble.rs` | 2 (`hold_nerve`, `Bubble.nerve`) |
 | `Nerve` | `mycelium-client.rs` | 1 (`speak_sentence`) |
-| `Germ`/`.germs`/`Cycle`/`.cycles` | `family.rs` 22, `bubble.rs` 14, `cognition.rs` 6, `cech.rs` 5, `sdk.rs` 2, `mycelium-client.rs` 2 | |
-| `SentenceRule` | `family.rs` | 8 |
+| `Germ`/`.germs`/`Cycle`/`.cycles` | `family/` 22, `bubble.rs` 14, `cognition.rs` 6, `cech.rs` 5, `sdk.rs` 2, `mycelium-client.rs` 2 | |
+| `SentenceRule` | `family/` | 8 |
 
 `ResidualGerm` in `germinate.rs` and its uses in `element/`,
 `cognition.rs`, `constants.rs`, `thought/mod.rs` are the chain type of a
@@ -3682,7 +3687,7 @@ residual and are **not** this `Germ`; they are not renamed.
    and reads v1 and v2. `sdk.rs:831`, `sdk.rs:1624`, `cognition.rs:1600`,
    `1603`, `2667`, `3199` take the `Form`; `bubble.rs::hold_nerve` becomes
    `hold_form(&mut self, f: Form)`; `Bubble.nerve: Complex` is unchanged.
-3. `family.rs`: `pair_nerve` → `pair_form`; `extract_rule` on `Form`s;
+3. `family/pair.rs`: `pair_nerve` → `pair_form`; `extract_rule` on `Form`s;
    `SentenceRule` per chapter 31; `speak_rule`, `rule_replays_family`,
    `mint_sentence` (981) on `Form`. **Landed** (`abacf53`): `extract_rule`
    is `extract_rule_with`; `speak_rule` speaks the form; `agree_up_to_gauge`
@@ -3711,7 +3716,7 @@ pub struct SentenceRule {
 
 Removed: `charts`, `faces`, `holonomies` (derived), `hue_maps` (on
 `Form`), `shifts` (placements live on `Vertex::Word`), `sections: usize`
-(replaced by the keyed map). The eight consumers in `family.rs` read
+(replaced by the keyed map). The eight consumers in `family/` read
 through `rule.form`. Until 1.15 the live `SentenceRule` still carries
 nerve adapters (`charts`, `faces`, `holonomies`, `nerve`); `hue_maps` and
 `shifts` are already `Keyed` by chart key and transport-class key
@@ -4232,7 +4237,7 @@ already need `z`.
 `element/{carrier,residual}.rs`: `Cell` widened, `positions`, `measure_lanes`, `from_residual`
 (A5 on six-tuples), chain bytes with dimension byte; `blade.rs`, `ear.rs`:
 `d`-dimensional moments and Betti numbers, axes prefixed by `d`; `peel.rs`:
-`d`-cube shells; `family.rs`: `perceive` over frames writes `t`;
+`d`-cube shells; `family/perceive.rs`: `perceive` over frames writes `t`;
 `stalk.rs`: `invariant` on `d`-cells; `cga.rs`: dimension-generic `Mv`.
 Tests and traces: chapters 39–40.
 
