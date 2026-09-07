@@ -185,9 +185,6 @@ mod tests {
     fn obj(n: u8) -> Element {
         element::from_residual(&vec![(0i64, 0i64, 1u8, n)])
     }
-    fn addr(n: u8) -> Address {
-        obj(n).address()
-    }
     fn r(n: u8) -> Rederivation {
         Rederivation { object: obj(n), k: 1, height: 1 }
     }
