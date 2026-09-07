@@ -1,7 +1,7 @@
 // 19 — the tape: every carrier of the element survives the wire, and a
 // tape of an older generation is refused rather than guessed at.
 
-use crate::core::engine::Q;
+use crate::core::Q;
 use crate::transducer::element::*;
 use crate::transducer::germinate::ResidualGerm;
 use num_bigint::BigInt;

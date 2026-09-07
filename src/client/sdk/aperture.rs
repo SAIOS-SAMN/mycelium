@@ -41,24 +41,24 @@ pub enum TransportAperture {
 /// the same observation refracts differently through different entities: the
 /// aperture IS the dialect's optics, epigenome-side, genome-untouched.
 pub struct Aperture {
-    h: Vec<crate::core::engine::Q>,
+    h: Vec<crate::core::Q>,
     counts: Vec<u64>,
 }
 
 impl Default for Aperture {
     fn default() -> Self {
         use num_traits::Zero;
-        Aperture { h: vec![crate::core::engine::Q::zero(); 11], counts: vec![0; 11] }
+        Aperture { h: vec![crate::core::Q::zero(); 11], counts: vec![0; 11] }
     }
 }
 
 impl Aperture {
     /// Absorb a signal into dimension `k` — exact running average, exact ℚ.
-    pub fn absorb(&mut self, dim: usize, signal: crate::core::engine::Q) {
+    pub fn absorb(&mut self, dim: usize, signal: crate::core::Q) {
         use num_bigint::BigInt;
         let (Some(h), Some(n)) = (self.h.get_mut(dim), self.counts.get_mut(dim)) else { return };
-        let nq = crate::core::engine::Q::from(BigInt::from(*n));
-        let n1 = crate::core::engine::Q::from(BigInt::from(n.saturating_add(1)));
+        let nq = crate::core::Q::from(BigInt::from(*n));
+        let n1 = crate::core::Q::from(BigInt::from(n.saturating_add(1)));
         *h = (h.clone() * nq + signal) / n1;
         *n = n.saturating_add(1);
     }
@@ -66,13 +66,13 @@ impl Aperture {
     pub fn absorb_value_signal(&mut self, from: u8, to: u8) {
         use num_bigint::BigInt;
         let d = (from as i64 - to as i64).unsigned_abs();
-        self.absorb(0, crate::core::engine::Q::new(BigInt::from(d), BigInt::from(10)));
+        self.absorb(0, crate::core::Q::new(BigInt::from(d), BigInt::from(10)));
     }
     /// A spatial/torsion-order signal: period / 8 into h[1] (normalized to the
     /// source's D4-max convention).
     pub fn absorb_spatial_signal(&mut self, torsion_order: u32) {
         use num_bigint::BigInt;
-        self.absorb(1, crate::core::engine::Q::new(BigInt::from(torsion_order as i64), BigInt::from(8)));
+        self.absorb(1, crate::core::Q::new(BigInt::from(torsion_order as i64), BigInt::from(8)));
     }
     pub fn tuned_dims(&self) -> usize {
         self.counts.iter().filter(|&&n| n > 0).count()
@@ -80,7 +80,7 @@ impl Aperture {
     pub fn count(&self, dim: usize) -> u64 {
         self.counts.get(dim).copied().unwrap_or(0)
     }
-    pub fn bias(&self, dim: usize) -> Option<&crate::core::engine::Q> {
+    pub fn bias(&self, dim: usize) -> Option<&crate::core::Q> {
         self.h.get(dim)
     }
 }

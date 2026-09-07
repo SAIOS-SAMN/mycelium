@@ -1,7 +1,7 @@
 // 17.1, 17.2 — M1 and M2: when two elements are one vertex, and what the
 // address of a vertex is derived from.
 
-use crate::core::engine::Q;
+use crate::core::Q;
 use crate::transducer::element::*;
 use num_bigint::BigInt;
 use crate::transducer::germinate::germinate;

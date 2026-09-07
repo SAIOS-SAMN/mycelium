@@ -1,7 +1,7 @@
 // 16 — the versor algebra of the carrier: what a word spells, how two
 // descriptions compose, and when a description has a solution.
 
-use crate::core::engine::Q;
+use crate::core::Q;
 use crate::transducer::element::*;
 use num_bigint::BigInt;
 use crate::transducer::germinate::germinate;

@@ -8,7 +8,7 @@
 //! torsion cycle (σ, ℓ) is a winding of valency 1/ℓ whose loop witness is the
 //! exact σ-walk returning to base.
 
-use crate::core::engine::Q;
+use crate::core::Q;
 use crate::transducer::element::{apply_hue_map, assignment, Element};
 use num_bigint::BigInt;
 use num_traits::Zero;

@@ -45,15 +45,12 @@ pub(crate) fn walk_qmatrix(path: &Path, hits: &mut Vec<String>) -> Result<(), St
             if t.starts_with("//") {
                 continue;
             }
-            for pat in [
-                "QMatrix",
-                "core::engine::Delta",
-                "core::engine::Operator",
-                "core::matrix::",
-                "use crate::core::matrix",
-                "use crate::core::engine::{Delta",
-                "use crate::core::engine::{Operator",
-            ] {
+            // `core::engine` and `core::matrix` are gone (F2f): `core`
+            // exports `Q` and nothing else, so a pattern naming either is a
+            // row that can never fire again. What remains is the SHAPE — a
+            // rational matrix by any name, and the two reads that only a
+            // matrix has.
+            for pat in ["QMatrix", "Vec<Vec<Q>>", "as_operator", "realize("] {
                 if line.contains(pat) {
                     hits.push(format!("{}:{}: {pat} in cognition", path.display(), i + 1));
                 }

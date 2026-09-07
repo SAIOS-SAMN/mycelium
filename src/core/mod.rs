@@ -11,8 +11,10 @@
 //! 2026-09-03: the dormant executor door (SaiosKernel, EntityState, the
 //! coordinator's residual walks, the fold, the RCF hash as an identity) is
 //! excised too. `engine` holds only the types the live organs stand on:
-//! Q, QVec, QMatrix, the antisymmetric Δ, and the conjugating Operator.
+//! `Q`, the exact rational, and nothing else: the matrix carriers that sat
+//! beside it were the squared shadow law 11 refuses.
 
-pub mod engine;
-pub mod matrix;
+pub mod q;
 pub mod zlinalg;
+
+pub use q::Q;

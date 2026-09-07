@@ -8,7 +8,7 @@
 //! key that names a chain within a frame.
 
 use crate::transducer::germinate::{germ_bytes as residual_word, ResidualGerm};
-use crate::core::engine::Q;
+use crate::core::Q;
 use num_bigint::BigInt;
 use num_traits::One;
 use super::*;

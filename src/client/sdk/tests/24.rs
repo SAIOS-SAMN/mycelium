@@ -10,7 +10,7 @@ use crate::client::sdk::*;
 /// entity's diet, never with a clock.
 #[test]
 fn the_aperture_absorbs_as_an_exact_running_average() {
-use crate::core::engine::Q;
+use crate::core::Q;
 use num_bigint::BigInt;
 let mut ap = Aperture::default();
 ap.absorb_value_signal(1, 4); // |1−4|/10 = 3/10 into h[0]

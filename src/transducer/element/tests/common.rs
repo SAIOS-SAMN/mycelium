@@ -2,7 +2,7 @@
 // fixture is built through a constructor the production code exports, so a
 // test never hand-writes a carrier.
 
-use crate::core::engine::Q;
+use crate::core::Q;
 use crate::transducer::element::*;
 use num_bigint::BigInt;
 

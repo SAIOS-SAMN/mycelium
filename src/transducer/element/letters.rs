@@ -7,7 +7,7 @@
 //! rho and the translation, and `Letters` — the M1 coordinates a
 //! connection's tape re-derives.
 
-use crate::core::engine::Q;
+use crate::core::Q;
 use num_bigint::BigInt;
 use num_traits::{One, Zero};
 use super::*;
