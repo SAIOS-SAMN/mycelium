@@ -141,6 +141,12 @@ fn strip_tests(src: &str) -> String {
                 out.push('\n');
                 continue;
             }
+            // Still inside the governed item's own attributes and
+            // signature, which have not opened the body yet. Those lines
+            // are the test item's too — a `#[cfg(test)]` function whose
+            // parameters span lines carries its types there.
+            out.push('\n');
+            continue;
         }
         if in_test {
             depth += opens - closes;
@@ -176,6 +182,18 @@ mod tests {
             out.contains("Instant"),
             "production code after `mod tests;` must reach the gates:\n{out}"
         );
+    }
+
+    /// A `#[cfg(test)]` item whose signature spans lines is test code from
+    /// the attribute to the closing brace. `sentence/transport.rs`'s
+    /// `apply_linear` carries a `(BigRational, BigRational)` in its
+    /// parameters, three lines before its body opens.
+    #[test]
+    fn a_multi_line_test_signature_is_test_code() {
+        let src = "#[cfg(test)]\npub fn apply_linear(\n    t: &(BigRational, BigRational),\n) -> Option<()> {\n    None\n}\n\nfn production() {\n    let ok = 1;\n}\n";
+        let out = strip_tests(src);
+        assert!(!out.contains("BigRational"), "the signature is test code:\n{out}");
+        assert!(out.contains("let ok = 1"), "and production survives it:\n{out}");
     }
 
     /// And `#[cfg(test)]` on a BLOCK still strips the block whole.
