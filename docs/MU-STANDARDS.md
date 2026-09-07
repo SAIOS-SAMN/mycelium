@@ -20,7 +20,7 @@ found and removed.
 
 1.1 **Bound.** No source file exceeds 600 lines (800 during Stage 8b of
 `MU-RECURSION-TASKS.md`, lowered to 600 in that stage's last commit). The
-bound is a gate (`xtask/lint.rs`, `lint_file_length`) that fails the build
+bound is a gate (`xtask/lint/length.rs`) that fails the build
 and names the file and its count. The bound exists so that a reader, human
 or agent, reads a file whole in one pass; a file that has to be searched is
 a file that is not audited.
