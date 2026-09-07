@@ -1939,9 +1939,22 @@ fn main() {
             }
         });
     }
+    // ACTS SERVED, counted per kind. This wrote one line per act and one
+    // wall-clock duration with it: 63,331 lines in five minutes on one
+    // hypha, which is not a trace, it is a screen that hides every other
+    // line the fleet writes -- the exchange's own lines were read as absent
+    // when they were merely outnumbered a thousand to one. It also read
+    // `Instant::now()`, and a kernel reads no clock (law 9).
+    //
+    // The count speaks when it crosses a power of two: about twenty lines
+    // per kind for the life of the process, dense where the behaviour is
+    // new and silent where it is steady.
+    let served: Arc<[std::sync::atomic::AtomicU64; 256]> =
+        Arc::new(std::array::from_fn(|_| std::sync::atomic::AtomicU64::new(0)));
     for _ in 0..(cores / 2).max(1) {
         let rx = Arc::clone(&reflex_rx);
         let door = door.clone();
+        let served = Arc::clone(&served);
         std::thread::spawn(move || loop {
             let job = match rx.lock() {
                 Ok(r) => r.recv(),
@@ -1956,9 +1969,13 @@ fn main() {
                     arm_deadline(&stream);
                     if let Some(frame) = read_frame(&mut stream) {
                         let kind = frame.body.first().copied().unwrap_or(0xff);
-                        let t0 = std::time::Instant::now();
                         judge(&mut stream, frame, &door);
-                        eprintln!("  reflex act {kind:02x} {} ms", t0.elapsed().as_millis());
+                        let n = served[kind as usize]
+                            .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+                            + 1;
+                        if n.is_power_of_two() {
+                            eprintln!("  reflex act {kind:02x} served {n}");
+                        }
                     }
                 }
                 Err(_) => break,
