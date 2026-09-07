@@ -184,7 +184,7 @@ enforces.
 |---|---|---|---|---|
 | S25 | transducer/stalk.rs | 766 | stalk/{chart, stratum, stalks}.rs, tests/6.rs | landed (S25) |
 | S26 | transducer/family/tests/21.rs | 733 | tests/21.rs (steps 1-7) + tests/21-speak.rs | landed (S26) |
-| S27 | server/cognition/snapshot.rs | 733 | by carrier | open |
+| S27 | server/cognition/snapshot.rs | 733 | snapshot/{write, read}.rs | landed (S27) |
 | S28 | transducer/sentence/form.rs | 675 | by organ | open |
 | S29 | xtask/lint.rs | 676 | one file per gate | open |
 | S30 | server/cognition/tests/26.rs | 669 | 26 and the docket | open |
