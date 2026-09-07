@@ -332,7 +332,7 @@ chapter is a gap in the spec, not only in the tree.
 |---|---|---|---|---|---|
 | 7.1 | **The tape truncates silently.** `sentence/tape.rs` writes 18 counts as `len() as u16` — vertices, faces, loops, gauge lengths, contact anchor, chord, face `i`/`j`, depth — with no `u16::MAX` guard anywhere in the file. A form past the ceiling is written short and read back as a different form. Same fault class as the snapshot codec's `.min(1 << 16)` that the surgery already closed, in a second place | rule 11, 19 | sentence/tape.rs | **open** — first of the stage | a count past the ceiling refuses the encode; `form_tape_v4_refuses_an_overlong_count` |
 | 7.2 | **Hue is `u8` and the corpus is about to stop being ARC.** `Cell = (i64, i64, u8, u8)` (sentence/chain.rs 18) and every gauge `Vec<(u8, u8)>` cap the label alphabet at 256. ARC has ten; an external corpus need not. Decide the width once, at the sensor boundary, and carry the refusal when a corpus exceeds it | rule 11, 38.1, law 4 | chain.rs, transport.rs, class.rs, pivot.rs, element.rs, tape.rs | **open** — after 7.1 | a corpus past the hue ceiling refuses at ingest with the count named, never wraps |
-| 7.3 | **Footprint.** A21 made addresses variable-length composites where they were 32 bytes, and they are the keys of most tries; the growth was deliberate and has never been measured. Measure RSS against corpus size per MU-ENGINEERING §11, with the key-length distribution beside it | MU-ENGINEERING §11, A21 §5 | measurement, then the sites it names | **open** | RSS flat against corpus size over hours; the measurement recorded here |
+| 7.3 | **The client leaks until the kernel kills it — measured, 2026-09-07.** Reading taken off the Cut B+1 soak before it was stopped (`aa959c4`, 8.7 h): client RSS by uptime 0.34 GB @ 1.0 h, 1.2 GB @ 2.3 h, 2.0 GB @ 3.4 h, 2.7 GB @ 5.5 h, 2.6 GB @ 8.7 h — roughly 0.3–0.6 GB per hour, and the plateau at the top is not convergence, it is death: **four of five clients were OOM-killed and restarted** (`The kernel OOM killer killed some processes in this unit`, clients 3 and 5 at 04:11 and 05:33; `NRestarts=1` on 1, 2, 3, 5). The fleet held ~9 GB of 15.6 GB and the box had 303 MB free. Servers are two orders smaller and flat-ish (a 31 MB, b 220 MB, c 81 MB). The earlier soak note's "84–121 MB and rising" was an early sample of the same curve, read before it mattered. This is not a tuning problem: MU-ENGINEERING §11's release gate is "RSS flat against corpus size over hours" and the client fails it by 30×. Suspects, in the order the measurement points at them: nothing sheds while the aperture is unmeasured (soak-C5), so held listings and ideas accumulate for the process's life; A21 made every address a variable-length composite and addresses are the keys of most tries; `Element::form()` memoises a decoded form per element; the language snapshot is rebuilt by `language_from_words` on every generation change and the old `Arc` is dropped only when nothing holds it | MU-ENGINEERING §11, A21 §5, 24.1, 25 | measurement first — a heap profile of one client over one hour — then the sites it names | **open** — first of the stage, ahead of 7.1: a fleet that dies in three hours cannot soak anything | RSS flat against corpus size over hours on every host; no OOM kill in a full soak; the curve recorded here beside this one |
 | 7.4 | **Allocation on the hot path.** `precedes` clones the chain twice per comparison (G1 closes this one); the sweep reads the remaining `clone()` of a carrier into two places against rule 12 | rule 12, rule 11 | chronometry.rs, cognition.rs, bubble.rs | **open** — after G1 | no carrier cloned into two places on a court or stroke path |
 
 ## Stage 8 — decomposition of the monoliths
@@ -343,16 +343,30 @@ ruled in `THREE_BINARIES.md` item 1 and has never landed; `sentence/`
 the pattern to follow. Stage 2's Mayer–Vietoris work lands squarely in the
 part that must move to the court module, which is why the split precedes it.
 
-Sizes at `aa959c4`: cognition.rs 8039, sdk.rs 3975, family.rs 2760,
-element.rs 2346, bubble.rs 2084, sentence/mod.rs 2029, dialogue.rs 1836,
-alphabet.rs 1801.
+**The rule: no file over 2500 lines.** A file past that is not read end to
+end, and the verification rule of Part VII is that the auditor reads the
+function and its carriers end to end — grep is not verification. Every
+carrier fault of the G-set (a stale mirror in `basis()`, a maximum standing
+in for a sum, two entangled items in one diff) was invisible at 8000 lines
+and obvious at the function. The threshold is a reading bound, not a style
+preference, and it is the one number in this document that is allowed to be
+a literal because it measures a person and not the mathematics.
+
+Over the line at `0b94f78`: **cognition.rs 8055, sdk.rs 3975, family.rs
+2760.** Under it and watched, in descending order: element.rs 2346,
+bubble.rs 2084, sentence/mod.rs 2029, dialogue.rs 1836, alphabet.rs 1801.
+
+A split moves code and changes nothing else: no signature, no behaviour, no
+test. Each lands with the suite byte-identical in its counts, so a split
+that needs a test changed is not a split and is returned.
 
 | id | task | rule / chapter | files | status | DoD |
 |---|---|---|---|---|---|
-| 8.1 | `server/cognition/` along the role boundary of THREE_BINARIES item 1: request-path adjudication, the market and the door stay on the server; court verification leaves `Kernel` for a module the court binary owns and the market and treasury code it does not need stops being pulled in with it | THREE_BINARIES §1 | server/cognition.rs → server/cognition/ | **open** — after the G-set | no module over ~1200 lines; `cargo build -D warnings` green; suite unchanged |
-| 8.2 | `client/sdk/` — the epigenome, comprehension, the working atlas, the stroke and the wire arms as separate modules | 24, 26 | client/sdk.rs | **open** — after 8.1 | as above |
-| 8.3 | `transducer/family/` — perception, the seven extraction moves, `speak_rule`, orbit | 20, 21, 22 | transducer/family.rs | **open** — after 8.2 | as above |
-| 8.4 | `sentence/mod.rs` carries 2029 lines beside the seven modules 18.2 names; what is left in `mod.rs` belongs in one of them or is a module of its own | 18.2 | sentence/ | **open** | `mod.rs` is declarations and the shared types only |
+| 8.1 | **`server/cognition.rs` 8055 → `server/cognition/`** along the role boundary of THREE_BINARIES item 1: request-path adjudication, the market and the door stay on the server; court verification leaves `Kernel` for a module the court binary owns, and the market and treasury code it does not need stops being pulled in with it. Candidate modules from the file's own seams: `kernel` (the carriers and their keyed reads), `book` (listings, pricing, quote, rank), `court` (glue, replay, verdicts, torsion), `market` (escrow, settle, room), `snapshot` (the MYC codec), `germinate` (the percept path) | THREE_BINARIES §1, Part VII | server/cognition.rs | **open** — after the G-set | no module over 2500 lines; `-D warnings` green; the suite's counts unchanged |
+| 8.2 | **`client/sdk.rs` 3975 → `client/sdk/`** — the epigenome, comprehension and the working atlas, the stroke and pacing, the wire arms | 24, 26 | client/sdk.rs | **open** — after 8.1 | as above |
+| 8.3 | **`transducer/family.rs` 2760 → `transducer/family/`** — perception, the seven extraction moves of chapter 21, `speak_rule`, orbit | 20, 21, 22 | transducer/family.rs | **open** — after 8.2 | as above |
+| 8.4 | **The bound as a gate.** `xtask/lint.rs` fails the build on any `src/**/*.rs` over 2500 lines, so the next monolith is refused at the commit that grows it rather than at an audit a month later. Lands with 8.3, once nothing is over the line | Part VII, rule 14 | xtask/lint.rs | **open** — with 8.3 | the gate fails on a file grown past the bound |
+| 8.5 | **Watch list.** element.rs 2346, bubble.rs 2084 and sentence/mod.rs 2029 are inside the bound and climbing; `sentence/mod.rs` in particular carries 2029 lines beside the seven modules 18.2 already names, so what is left in it belongs in one of them or is a module of its own. Split when a change would carry one past 2500, never as a separate errand | 18.2 | as listed | **open** — standing | no file crosses the bound between audits |
 
 ## Cuts and soaks
 
