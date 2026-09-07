@@ -2487,14 +2487,11 @@ impl Kernel {
             let spoken = spoken.or_else(|| self.word_at(addr).cloned());
             if let Some(w) = spoken {
                 if w.is_rewrite() {
-                    let Some(voice) = self
-                        .treasury
-                        .escrow_of(addr)
-                        .and_then(|(vs, _, _)| vs.first().copied())
-                    else {
+                    // Every voice the escrow names is paid; an escrow with
+                    // no party is not released and the ruling does not land.
+                    if self.treasury.release_rewrite(addr).is_none() {
                         return false;
-                    };
-                    let _ = self.treasury.release_rewrite(addr, voice);
+                    }
                     self.retire_rewrite_inputs(&w);
                     self.fed_admit(addr, w);
                     self.unlist(addr, false);
@@ -2732,32 +2729,47 @@ impl Kernel {
     fn pay_cell_volume<A: AsRef<[u8]>>(&mut self, inv: &crate::transducer::stalk::Invariant, addrs: &[A]) {
         let held = self.listings_on(inv, addrs);
         let vol = self.volume_of_cell(inv, addrs);
-        let Some(voice) = addrs
-            .first()
-            .and_then(|a| <[u8; 32]>::try_from(a.as_ref()).ok())
-        else {
+        // Every vertex of the cell is a party to what the cell closed. The
+        // volume is one quantity for all of them, so it splits per lane as
+        // a consilience award does; paying `addrs.first()` paid whichever
+        // member the cell happened to list first (rule 15).
+        let parties: Vec<[u8; 32]> = addrs
+            .iter()
+            .filter_map(|a| <[u8; 32]>::try_from(a.as_ref()).ok())
+            .collect();
+        if parties.is_empty() {
             return;
-        };
+        }
+        let n = parties.len() as u64;
+        let share: [u64; 4] =
+            std::array::from_fn(|l| if vol[l] == 0 { 0 } else { (vol[l] / n).max(1) });
+        let vol = share;
         let anchor = self.anchor();
         for (a, _) in held.fiber(crate::network::nerve::ROOT) {
-            let _ = self.treasury.draw_escrow(&a, voice, vol, anchor);
+            for v in &parties {
+                let _ = self.treasury.draw_escrow(&a, *v, vol, anchor);
+            }
         }
     }
 
+    /// Each member of the cell is paid the torsion IT measured. Reading the
+    /// magnitude off `addrs.first()` made the value of a torsion depend on
+    /// which member the cell happened to list first, and paid it to that
+    /// member alone; a member with no measured tension is unmeasured and is
+    /// paid nothing, never paid another member's reading (rule 11, 15).
     fn pay_torse<A: AsRef<[u8]>>(&mut self, addrs: &[A]) {
-        let Some(voice) = addrs
-            .first()
-            .and_then(|a| <[u8; 32]>::try_from(a.as_ref()).ok())
-        else {
-            return;
-        };
-        let Some(mag) = addrs
-            .first()
-            .and_then(|a| self.tension.get(a.as_ref()).copied())
-        else {
-            return;
-        };
-        let _ = self.treasury.settle_torse(voice, mag, self.anchor());
+        let anchor = self.anchor();
+        let parties: Vec<([u8; 32], [u64; 4])> = addrs
+            .iter()
+            .filter_map(|a| {
+                let who = <[u8; 32]>::try_from(a.as_ref()).ok()?;
+                let mag = self.tension.get(a.as_ref()).copied()?;
+                Some((who, mag))
+            })
+            .collect();
+        for (who, mag) in parties {
+            let _ = self.treasury.settle_torse(who, mag, anchor);
+        }
     }
 
     fn file_torsion<A: AsRef<[u8]>>(&mut self, addrs: &[A], ell: u32) {
@@ -3335,14 +3347,9 @@ impl Kernel {
         self.ruled_admit(addr);
         if let Some(w) = held {
             if w.is_rewrite() {
-                let Some(voice) = self
-                    .treasury
-                    .escrow_of(addr)
-                    .and_then(|(vs, _, _)| vs.first().copied())
-                else {
+                if self.treasury.release_rewrite(addr).is_none() {
                     return;
-                };
-                let _ = self.treasury.release_rewrite(addr, voice);
+                }
                 self.retire_rewrite_inputs(&w);
             } else {
                 let pay = self.verified_install_deflation(addr, &w);

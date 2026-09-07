@@ -399,12 +399,30 @@ impl Treasury {
     }
 
     /// Release an escrowed Rewrite: mint the claimed vector to the discoverer.
-    pub fn release_rewrite(&mut self, addr: &[u8], voice: [u8; 32]) -> [u64; 4] {
-        let Some((voices, mu, anchor)) = self.escrowed.remove(addr) else {
-            return [0; 4];
-        };
-        let who = voices.first().copied().unwrap_or(voice);
-        self.mint_to(who, mu, anchor)
+    /// Release an escrowed Rewrite to the parties the escrow names: EVERY
+    /// voice that stood it, split per lane, as a consilience award is split.
+    /// `escrow_award` accumulates voices — each new one is pushed onto the
+    /// entry — so they are all parties to the claim, and paying
+    /// `voices.first()` paid one of several who did the work, chosen by the
+    /// order they happened to arrive in (rule 15). The `voice` argument it
+    /// fell back on was an invented payee besides (rule 11).
+    ///
+    /// `None` when the address holds no escrow, or holds one with no voice:
+    /// a mint with no party is a mint to nobody, and the escrow stands
+    /// rather than being spent into the void.
+    pub fn release_rewrite(&mut self, addr: &[u8]) -> Option<[u64; 4]> {
+        let (voices, mu, anchor) = self.escrowed.get(addr)?;
+        if voices.is_empty() {
+            return None;
+        }
+        let (voices, mu, anchor) = (voices.clone(), *mu, *anchor);
+        self.escrowed.remove(addr);
+        let n = voices.len() as u64;
+        let share: [u64; 4] = std::array::from_fn(|l| if mu[l] == 0 { 0 } else { (mu[l] / n).max(1) });
+        for v in &voices {
+            self.mint_to(*v, share, anchor);
+        }
+        Some(share)
     }
 
     pub fn settle_refine(&mut self, bidder: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
@@ -835,5 +853,32 @@ mod tests {
         assert!(!descends(&[1, 1, 0, 0], &[1, 1, 0, 0]), "equal is not descent");
     }
 
+    /// G4. An escrow names every voice that stood the claim — `escrow_award`
+    /// accumulates them, pushing each new one onto the entry — so a release
+    /// pays all of them, split per lane, as a consilience award is split.
+    /// Paying `voices.first()` paid one of several who did the work, chosen
+    /// by the order they arrived in.
+    #[test]
+    fn a_released_rewrite_pays_every_voice_the_escrow_names() {
+        let mut t = Treasury::new();
+        let addr = [3u8; 32];
+        t.escrow_award(addr, vec![[1; 32]], [8, 0, 4, 0], (1, [1; 32]));
+        t.escrow_award(addr, vec![[2; 32]], [8, 0, 4, 0], (1, [1; 32]));
+        let share = t.release_rewrite(&addr).expect("two parties stood it");
+        assert_eq!(share, [4, 0, 2, 0], "one quantity, split per lane, lanes never meeting");
+        assert_eq!(t.balance_mu(&[1; 32]), share, "the voice that stood it");
+        assert_eq!(t.balance_mu(&[2; 32]), share, "and the one that stood it after");
+        assert!(t.release_rewrite(&addr).is_none(), "the escrow is spent once");
+    }
 
+    /// A mint with no payee is a mint to nobody: an escrow naming no voice
+    /// is not released and stands (rule 11 — the old fallback invented one).
+    #[test]
+    fn an_escrow_with_no_voice_is_not_released() {
+        let mut t = Treasury::new();
+        let addr = [4u8; 32];
+        t.escrow_award(addr, Vec::new(), [8, 0, 0, 0], (1, [1; 32]));
+        assert!(t.release_rewrite(&addr).is_none(), "no party, no release");
+        assert_eq!(t.escrowed_remaining(&addr), [8, 0, 0, 0], "the escrow stands");
+    }
 }
