@@ -140,8 +140,11 @@ expansion, one quote, and one thirty-body assembly cost the same at N and
 
 Ledgers and genomes are rewritten atomically; a restore rebuilds the basis
 from the lettered federation and drops what does not replay; old genome
-layouts are read by a migration reader. Residuals, thoughts, and dialects
-are never deleted.
+layouts are not read: before beta a layout change is a recut with a wipe
+of every persisted carrier, and no migration or legacy reader exists in
+the tree (ruled 2026-09-07, `MU-STANDARDS.md` §10; Part V's migration
+window is a beta concern). Within one layout, residuals, thoughts, and
+dialects are never deleted.
 
 ## 9. The simulator
 

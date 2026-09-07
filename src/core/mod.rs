@@ -13,10 +13,7 @@
 //! excised too. `engine` holds only the types the live organs stand on:
 //! Q, QVec, QMatrix, the antisymmetric Δ, and the conjugating Operator.
 
-pub mod rcf;
-pub mod constants;
 pub mod engine;
 pub mod matrix;
 pub mod zlinalg;
 pub mod ccl;
-pub mod laws;

@@ -319,3 +319,10 @@ a; wipe ledgers, genomes, thoughts, registry, court federation; keep keys,
 mesh, corpora; `--mint-genesis` on hypha a once; start a, b, c then 1–5.
 No flag of the recut lives in a unit file or a drop-in; a unit starts the
 binary with `--home` and nothing else.
+
+Ruled 2026-09-07: this is a development environment and nothing persisted
+survives a recut. A change to any persisted layout (tape, genome, ledger,
+snapshot section) is a recut, never a reader for the old layout; no
+migration or legacy reader exists in the tree before beta, and one that is
+found is deleted. Keys, the peer list and the corpora are configuration,
+not data, and stay.
