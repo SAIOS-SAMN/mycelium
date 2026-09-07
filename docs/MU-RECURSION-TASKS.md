@@ -235,6 +235,20 @@ The order, one commit per item, suite and clippy and lint lines on each:
 
 What was lost, when, and what it cost, so that it is paid once.
 
+**2026-09-07, a bundle: `git add -A` swept the auditor's doc edits into
+F2(a).** `75cd02d` is named for one item — three dead `core/` modules
+deleted — and also carries the auditor's uncommitted recording of the
+persistence ruling (`MU-STANDARDS.md` §10, `MU-ENGINEERING.md` §8, the F4
+row). Two items in one commit, which §5.1 returns, and a doctrine change
+landing WITH rather than BEFORE the code it governs, which §5.5 returns.
+Cost: the ruling's own commit does not exist, so a reader of the log finds
+§10 inside a deletion commit and cannot see when it was ruled without
+reading the message of the commit before it. Cause: `git add -A` in a tree
+another agent is also writing to. Paid by staging BY PATH from here on —
+every commit of Stage 8c names its files — and by this row, which is where
+the ruling's landing is recorded.
+
+
 | date | drift | landed from | found by | cost | corrected by |
 |---|---|---|---|---|---|
 | 2026-09-05 | digests of canonical forms as M1/M2/class keys after 88f58e1 said digests are transport only | b6758e5, 9481243, then 04931ab (class vector, certificate) | ipsal survey and the content ruling, 2026-09-06 | every class key, certificate and tape from 04931ab to de6fa58 non-comparable; Cut B soak readings before 38ee193 void; one identity recut (38ee193) and one residue commit (75e26eb) | laws 2, 12; A21; 0.11, 0.11b |
