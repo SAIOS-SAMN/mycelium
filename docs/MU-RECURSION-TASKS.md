@@ -173,7 +173,7 @@ Move-only, one file per commit, tests to `<module>/tests/<chapter>.rs`, document
 | S21 | bin/mycelium-client.rs | 904 | mycelium-client/{main, feed, speak, arms/{feed,quote,task,syntropy}}.rs | landed (S21) |
 | S22 | server/cognition/germinate.rs | 899 | germinate/{ingest, stroke, attest, state}.rs | landed (S22) |
 | S23 | client/sdk/tests.rs | 844 | sdk/tests/{6,24,25}.rs + common.rs | landed (S23); tests/25.rs is 584 |
-| S24 | transducer/sentence/pivot.rs | 813 | pivot/{snap, loop_, loops, words}.rs | open |
+| S24 | transducer/sentence/pivot.rs | 810 | pivot/{snap, drive, loops, words}.rs | landed (S24) |
 
 After S24: the bound goes to 600 and any file above it is split by the same rules, one commit per file.
 

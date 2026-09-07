@@ -85,7 +85,6 @@ fn walk(dir: &Path, crate_dir: &str, hits: &mut Vec<String>) -> Result<(), Strin
 /// is already under the bound, or no longer exists, is a stale row and is
 /// itself a hit — the list cannot outlive what it excuses.
 const AWAITING_SPLIT: &[(&str, &str)] = &[
-    ("src/transducer/sentence/pivot.rs", "S24"),
 ];
 
 fn lint_file_length(root: &Path, hits: &mut Vec<String>) -> Result<(), String> {
