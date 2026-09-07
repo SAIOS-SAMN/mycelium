@@ -223,13 +223,37 @@ The order, one commit per item, suite and clippy and lint lines on each:
 
 | id | directive | status |
 |---|---|---|
-| F2 | **Deletions, callers first.** (a) `core/laws.rs`, `core/rcf.rs`, `core/constants.rs`: no callers, delete with their `pub mod` lines. (b) `core/ccl.rs`: `src/ccl.rs` imports `Audience`; move `Audience` into `src/ccl.rs`, delete the module. (c) `torsion.rs`: `germinate/ingest.rs` calls `residue_of_chain` and `required_k_steps`; the steps a residue needs are the order of its loop word (`Word::order`, `Finite(p)` is p steps, `Infinite` is open) — bind that, delete `torsion.rs` and with it the last use of `core::engine::Delta`. (d) `cohesion.rs`: `cognition/reduce.rs` `cohesion_over`, `germinate/state.rs` `cohesion`, `server/synthesis.rs`'s field; its `pressure` is a `(Q, Q)`, a scalar witness of what μ⃗ already carries per lane; delete the three sites and the module. (e) `thought/`, `perception/{congruence, eye, touch}.rs`: declared only in `perception/mod.rs` and `lib.rs`; `perception/ear.rs` stays (`blade/body.rs` reads `Harmonics`). (f) `core/matrix.rs` and `core/engine.rs`: after (c), the ten remaining users of `core::engine` import `Q` alone — `core/q.rs` with `pub type Q = num_rational::BigRational` and `pub use q::Q` from `core/mod.rs`; delete both files; the matrix gate's `core::engine`/`core::matrix` patterns are then stale rows and go in the same commit. (g) the scalar `Aperture` (`client/sdk/aperture.rs`) as directed; (h) `element/letters.rs` `legacy_versor` with the v4 reader (A2). About 2,700 lines leave; `AWAITING_SPLIT` empties at (a). | next |
+| F2 | **Deletions, callers first.** (a) `core/laws.rs`, `core/rcf.rs`, `core/constants.rs`: no callers, delete with their `pub mod` lines. (b) `core/ccl.rs`: `src/ccl.rs` imports `Audience`; move `Audience` into `src/ccl.rs`, delete the module. (c) `torsion.rs`: `germinate/ingest.rs` calls `residue_of_chain` and `required_k_steps`; the steps a residue needs are the order of its loop word (`Word::order`, `Finite(p)` is p steps, `Infinite` is open) — bind that, delete `torsion.rs` and with it the last use of `core::engine::Delta`. (d) `cohesion.rs`: `cognition/reduce.rs` `cohesion_over`, `germinate/state.rs` `cohesion`, `server/synthesis.rs`'s field; its `pressure` is a `(Q, Q)`, a scalar witness of what μ⃗ already carries per lane; delete the three sites and the module. (e) `thought/`, `perception/{congruence, eye, touch}.rs`: declared only in `perception/mod.rs` and `lib.rs`; `perception/ear.rs` stays (`blade/body.rs` reads `Harmonics`). (f) `core/matrix.rs` and `core/engine.rs`: after (c), the ten remaining users of `core::engine` import `Q` alone — `core/q.rs` with `pub type Q = num_rational::BigRational` and `pub use q::Q` from `core/mod.rs`; delete both files; the matrix gate's `core::engine`/`core::matrix` patterns are then stale rows and go in the same commit. (g) the scalar `Aperture` (`client/sdk/aperture.rs`) as directed; (h) `element/letters.rs` `legacy_versor` with the v4 reader (A2). About 2,700 lines leave; `AWAITING_SPLIT` empties at (a). | **landed** 75cd02d–69d6857 (audit 2026-09-07: 343/13/6/4 under `-D warnings` reproduced in a worktree, clippy 167 lib-test + 3 server-bin, lint green, `AWAITING_SPLIT` empty, no file over 600, 2,838 lines out and 81 in across `src/` and `xtask/`; every deleted organ read as gone, no production reference left; 53 tests removed and each named in its commit with its claim and survivor; residues F2r1–F2r5 below) |
 | F3 | **Gates and clippy.** A1 (one walker, whole scope, allow by file, missing path is a hit, one commit per gate), A6, A8, A9; then clippy to zero with `cargo clippy --release --all-targets -- -D warnings` in the verification line and in `run/recut.sh`, no `#[allow]` left in production. | after F2 |
 | F4 | **Costumes.** A3 (two lines, first), then A2 (tape v5, no v4 reader — ruled 2026-09-07). | after F3 |
 | F8 | Push `main` to origin once F1–F4 are green. | after F4 |
 | F5 | **Admission and exchange.** A4, A5, then 5.2g and the A-series of the admission set as issued. | after F8 |
 | F6 | Sweeps B1–B8 and the owed gates of §4.4 as issued. | after F5 |
 | F7 | Whole-fleet recut on HEAD through `run/recut.sh`, wiping ledgers, genomes and thoughts on all eight units — ruled 2026-09-07, tape v5 carries no v4 reader. A machine change, run on the operator's word. | after F4 |
+
+Residues of F2 (audit 2026-09-07 at 69d6857), one commit each, before F3:
+
+| id | residue | status |
+|---|---|---|
+| F2r1 | **The T-lane step count in `germinate/ingest.rs` is a nest of literals, and F2c bound one arm of it.** The no-cycle arm now reads `Word::order` (right) and then `_ => 1` for both a word of infinite order and a residual with no tape (a literal standing for two different facts, rule 5). Around it, untouched and unreported: `(*walked as u64).max(1)` and `k.max(1)` (floors, rule 11), `.min(8)` (a cap on the steps a demand may need, rule 5), and `.sum::<u64>()` over the loop witnesses under a comment that says "never a summed winding" (law 5). Bind: `Infinite` is the tape length (the walk that did not close, measured); no tape is a refusal, the residual is not listed; the witnesses charge per lane and are never summed; no floor and no cap — the lanes' own room bounds the listing. | open |
+| F2r2 | **`src/ccl.rs` is dead.** `pub mod ccl` in `lib.rs` and no caller anywhere (`crate::ccl` appears nowhere; 65 lines of English glossing of germs). F2b moved `Audience` into it as directed — the directive named a dead file. Delete `src/ccl.rs` and the declaration; `Audience` goes with it. | open |
+| F2r3 | **`perception/` holds one organ and a header for five.** `perception/mod.rs` describes `eye`, `touch`, `congruence` and `crate::thought`, all deleted; `ear.rs` (106 lines) has one caller, `blade/body.rs`. Move it to `transducer/blade/harmonics.rs` and delete `perception/`. | open |
+| F2r4 | **Headers that describe what was deleted.** `core/mod.rs` still opens with the Δ core, RCF, the CCL Laws, SAIOS and the S5 prune; `client/sdk/aperture.rs` still says "distinct from the epigenome's chromatic `Aperture`"; `reduce.rs`'s doc names `KAPPA / 16`. A header says what the file is (§2). Two lines each. | open |
+| F2r5 | **A third bundle.** 626ec93 (F2b) carries the backtrack-ledger row that records 57b6950's bundle, ten lines of `MU-RECURSION-TASKS.md` about a different commit. `git commit --only <paths>` commits what is named, and a ledger row about another commit was named. Recorded here once; one item per commit means the row lands alone. | recorded |
+
+**2026-09-07, F2r1's arm has no test.** The open-demand arm of
+`germinate/ingest.rs` — everything under `else` when `physics.can_expand`
+is false — is not executed by any of the 343 tests. Verified by probe, not
+inferred: a `panic!` on its no-tape path and an `eprintln!` at its head both
+ran zero times across the whole suite, including
+`a_depleted_lane_defers_germination_until_the_reserve_recovers`, whose
+syntropic stroke recovers the lane before the arm is reached. So F2r1's
+corrections are right by reading and unverified by running, and
+`REFUSE_UNSPELLED` has no producing test, which MU-STANDARDS 3.5 requires.
+Owed: a test that depletes a lane without the stroke recovering it, so the
+arm is reached and the refusal is produced. Filed as F2r1b rather than
+invented — a test written to make an assertion pass, without reaching the
+code it names, is the costume this standard exists to refuse.
 
 ## Backtrack ledger
 

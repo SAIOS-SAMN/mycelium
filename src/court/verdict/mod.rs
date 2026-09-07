@@ -39,6 +39,10 @@ use crate::transducer::stalk::{self, Stalks};
 use crate::transducer::toroid::{self, HolonomicLoopWitness};
 
 /// Spoken torsion period does not re-derive against the mesh's class.
+/// A demand whose residual the alphabet does not spell: no tape, so no word
+/// of the language, so nothing the market can price (16.2).
+pub const REFUSE_UNSPELLED: &str = "residual has no tape to spell";
+
 pub const REFUSE_NOT_NATURAL: &str = "not natural";
 /// Refusals of a crystallized form's replay (chapter 34.1).
 pub const REFUSE_FORM_TAPE: &str = "form does not parse from its tape";

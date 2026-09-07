@@ -281,43 +281,58 @@ impl Kernel {
                     // δ-field's kinematic residue. Bounded per demand;
                     // per-lane as ever, never a summed winding.
                     let witnesses = crate::transducer::toroid::witness_thought(&residual);
-                    let k = match witnesses.is_empty() {
-                        // No stored cycle: the steps this residual needs are
-                        // the ORDER of the loop word its gauge spells (16.2).
-                        // A word of order p closes in p steps; a word of
-                        // infinite order never closes on its own and the
-                        // demand stands open at one step, which is what an
-                        // unclosed loop is worth. This read what a Δ field's
-                        // "kinematic energy" divided by a rate of 1/4 came
-                        // to: a matrix (law 11), a constant standing for a
-                        // measurement (rule 5), and a saturating conversion
-                        // (rule 11), for a number the alphabet already knows.
-                        true => match residual.letters().map(|l| l.spelling.word.order()) {
-                            Some(crate::transducer::alphabet::Order::Finite(p)) => p as u64,
-                            // A word of infinite order never closes on its
-                            // own, and a residual with no tape is not a word
-                            // of the language at all: both stand open at one
-                            // step, which is what an unclosed loop is worth.
-                            _ => 1,
-                        },
-                        false => witnesses
-                            .iter()
-                            .map(|w| match w {
-                                crate::transducer::toroid::HolonomicLoopWitness::Open { walked } => {
-                                    // A failed loop is the torsion charge the economy
-                                    // already names: it pivots the lanes the demand
-                                    // occupies, and the listing below carries it to
-                                    // the market as the demand for a new fiber.
-                                    self.physics.pivot(crate::physics::Physics::lanes_of(&mag));
-                                    (*walked as u64).max(1)
+                    if witnesses.is_empty() {
+                        // NO STORED CYCLE. What this residual costs is the
+                        // ORDER of the loop word its tape spells (16.2).
+                        match residual.letters().map(|l| l.spelling.word.order()) {
+                            // A word of order p closes in p steps, exactly.
+                            Some(crate::transducer::alphabet::Order::Finite(p)) => {
+                                for _ in 0..p {
+                                    self.physics.bump(&mag);
                                 }
-                                crate::transducer::toroid::HolonomicLoopWitness::Closed { .. } => 0,
-                            })
-                            .sum::<u64>(),
-                    }
-                    .min(8);
-                    for _ in 0..k.max(1) {
-                        self.physics.bump(&mag);
+                            }
+                            // A word of infinite order never closes on its
+                            // own. What it cost is the walk that did not
+                            // close: the tape it spelled, letter by letter.
+                            // Reading that as one step was a floor, and a
+                            // floor on a measurement is a constant standing
+                            // in for it (rule 5).
+                            Some(crate::transducer::alphabet::Order::Infinite) => {
+                                for _ in 0..residual.description().len() as u64 {
+                                    self.physics.bump(&mag);
+                                }
+                            }
+                            // NO TAPE is not a word of the language at all
+                            // (16.2). It is REFUSED, not listed at one step:
+                            // a demand the alphabet cannot spell is not a
+                            // demand the market can price, and listing it
+                            // anyway was the same invention rule 11 refuses
+                            // everywhere else.
+                            None => {
+                                eprintln!(
+                                    "  court demand refused voice {:02x}{:02x}… {}",
+                                    voice[0], voice[1], crate::verdict::REFUSE_UNSPELLED
+                                );
+                                return Outcome::Pivot;
+                            }
+                        }
+                    } else {
+                        // WITNESSES CHARGE PER LANE and are never summed
+                        // (law 5). Each Open walk pivots the lanes the demand
+                        // occupies and bumps them for the length it walked; a
+                        // Closed loop is proven monodromy and charges
+                        // nothing. Summing the walks into one number and
+                        // capping it at eight was a scalar over a polytonic
+                        // reading, under a comment that said "never a summed
+                        // winding".
+                        for w in &witnesses {
+                            if let crate::transducer::toroid::HolonomicLoopWitness::Open { walked } = w {
+                                self.physics.pivot(crate::physics::Physics::lanes_of(&mag));
+                                for _ in 0..*walked as u64 {
+                                    self.physics.bump(&mag);
+                                }
+                            }
+                        }
                     }
                     // LIST the un-factored residual on the open-demand market.
                     // Capacity is THERMODYNAMIC (live memory headroom × lane
