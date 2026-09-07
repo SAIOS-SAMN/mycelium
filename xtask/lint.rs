@@ -96,7 +96,6 @@ fn walk(dir: &Path, crate_dir: &str, hits: &mut Vec<String>) -> Result<(), Strin
 /// itself a hit — the list cannot outlive what it excuses.
 const AWAITING_SPLIT: &[(&str, &str)] = &[
     ("src/core/rcf.rs", "F2"),
-    ("src/transducer/sentence/form.rs", "S28"),
     ("xtask/lint.rs", "S29"),
     ("src/server/cognition/tests/26.rs", "S30"),
     ("src/network/nerve/keyed.rs", "S31"),
