@@ -2718,15 +2718,21 @@ rotors; cells are touched only in `family::perceive` and in `speak_rule`'s
 final emission of output cells. Every identity in this part is a master
 algorithm of chapter 17.
 
-Every file name in Parts IV–VII is under `/opt/mycelium-v0.1.0/src/`:
+Every file name in Parts IV–VII is under `/opt/mycelium-v0.1.0/src/`. Three
+of them are directories now, split under Stage 8's reading bound, and a
+function named against the old file is found in the module its role names —
+`cognition/{mod,book,court,market,germinate,snapshot}`,
+`sdk/{mod,entity,epigenome}`, `family/{mod}`, `sentence/{chain,form,
+transport,class,pivot,tape,chart}`. A split moves code and changes nothing
+else, so every binding below still names the function it always named:
 
 | short name | absolute path |
 |---|---|
-| `alphabet.rs`, `sentence.rs`, `element.rs`, `cech.rs`, `stalk.rs`, `blade.rs`, `bubble.rs`, `family.rs`, `cga.rs`, `peel.rs`, `anchor.rs`, `sheaf.rs`, `germinate.rs`, `rewrite.rs` | `/opt/mycelium-v0.1.0/src/transducer/<name>` |
-| `cognition.rs`, `registry.rs`, `synthesis.rs` | `/opt/mycelium-v0.1.0/src/server/<name>` |
+| `alphabet.rs`, `sentence/`, `element.rs`, `cech.rs`, `stalk.rs`, `blade.rs`, `bubble.rs`, `family/`, `cga.rs`, `peel.rs`, `anchor.rs`, `sheaf.rs`, `germinate.rs`, `rewrite.rs`, `factor.rs`, `a21.rs` | `/opt/mycelium-v0.1.0/src/transducer/<name>` |
+| `cognition/`, `registry.rs`, `synthesis.rs` | `/opt/mycelium-v0.1.0/src/server/<name>` |
 | `verdict.rs`, `identity.rs`, `ledger.rs` | `/opt/mycelium-v0.1.0/src/court/<name>` |
 | `nerve.rs`, `mesh.rs`, `wire.rs` | `/opt/mycelium-v0.1.0/src/network/<name>` |
-| `sdk.rs` | `/opt/mycelium-v0.1.0/src/client/sdk.rs` |
+| `sdk/` | `/opt/mycelium-v0.1.0/src/client/sdk/` |
 | `dialogue.rs` | `/opt/mycelium-v0.1.0/src/anastome/dialogue.rs` |
 | `ear.rs` | `/opt/mycelium-v0.1.0/src/perception/ear.rs` |
 | `economy.rs`, `physics.rs`, `chronometry.rs` | `/opt/mycelium-v0.1.0/src/<name>` |
@@ -3312,7 +3318,15 @@ court has returned to it (chapter 6). `/opt/mycelium-v0.1.0/src/client/sdk.rs`:
   mind being silent.
 - `Epigenome::shed` removes dialect and ideas only, and never a dialect
   entry a live idea glues (chapter 25); the genome never sheds, it retires by
-  geodesic through the court (chapter 27).
+  geodesic through the court (chapter 27). It counts **the mind's own K**,
+  never TUniversal, as 45.4 rules for every lifecycle of the mind: a height
+  advances only on admitted receipts (45.2), so a lifecycle read against one
+  cannot fire at all on a mesh that admits nothing, and a fleet refusing
+  work would be unable to reclaim what it holds. A mind's K advances on its
+  own acts, so it reclaims whether or not anyone answered it. The same holds
+  for `retire_on_t` (25.4) and for `touch`, whose stamp is the use the shed
+  measures against. `last_used_tu` remains beside it as standing extent in
+  heights, which is a coordinate (45.4) and not a lifecycle.
 
 **24.2 Sentences and connections.**
 
@@ -4809,8 +4823,14 @@ tape is a key (1.5, 17.1). Code: `Rotor::key`, `Mv::key`,
 **R9 Burn conserves supply.** Forfeiture on equivocation and the burn of a
 duplicate issuance reduce `bond` or `balance` and `supply` by one vector, so
 `supply = genesis + mint − burn = Σ balance + Σ bond + Σ escrow` holds on
-every lane after every burn (47.4, `MU-ECONOMY.md` §6). Code:
-`Treasury::burn`, `audit`. Proof: `equivocation_proof_burns_bond_and_supply`,
+every lane after every burn (47.4, `MU-ECONOMY.md` §6), where `Σ escrow` is
+the **funded** escrow. An escrow that a payer backed from a balance holds
+μ⃗ that left that balance and is still in the mesh, so it is counted and
+discharging it moves value; an escrow that is a claim on issuance holds μ⃗
+that does not exist yet (`MU-ECONOMY.md` §3.1), so it is not counted and a
+ruling mints it. Counting all escrow asserts value that was never created;
+counting none makes the audit hold by not looking. Code:
+`Treasury::burn`, `audit`, `escrow_from_balance`, `discharge_funded`. Proof: `equivocation_proof_burns_bond_and_supply`,
 `duplicate_mint_after_partition_is_burned_once`.
 
 The dimension audit A18 asserts R1–R5 in debug on every move and every

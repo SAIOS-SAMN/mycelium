@@ -142,6 +142,19 @@ pub struct Treasury {
     escrowed: crate::network::nerve::Keyed<(Vec<[u8; 32]>, [u64; 4], Anchor)>,
     /// Per-voice balances, updated on every entry. Never a scan of the ledger.
     balances: crate::network::nerve::Keyed<[u64; 4]>,
+    /// FUNDED escrow, per listing: the part of an award that was debited
+    /// from a balance to create it, as against the part that is a claim on
+    /// issuance which does not exist yet (`MU-ECONOMY.md` §3.1).
+    ///
+    /// The two are different facts and the invariant needs them apart.
+    /// R9's `Σ escrow` is the funded part: μ⃗ that left a balance is still
+    /// in the mesh and must be counted, or a burn would not conserve. A
+    /// claim-escrow contributes nothing, because nobody gave anything up
+    /// for it and a ruling MINTS it rather than moving it. Removing escrow
+    /// from the equation outright, as this briefly did, makes the audit
+    /// hold by not looking; counting all of it says value exists that does
+    /// not. Both are wrong and the difference is exactly what R9 turns on.
+    funded: crate::network::nerve::Keyed<([u8; 32], [u64; 4])>,
 }
 
 impl Treasury {
@@ -371,19 +384,22 @@ impl Treasury {
             }
             Ok(())
         };
-        // ESCROW IS NOT SUPPLY (§3.1, §6). An escrow holds μ⃗ that does not
-        // exist yet: a ruling discharges it into a mint, a revocation makes
-        // it vanish with nothing issued. Counting it here reported value the
-        // mesh had not created and the audit failed at the first docket.
+        // R9's equation, with `Σ escrow` meaning the FUNDED escrow. An
+        // escrow that was paid for holds μ⃗ that left a balance and is still
+        // in the mesh; an escrow that is a claim on issuance holds μ⃗ that
+        // does not exist yet (§3.1), and a ruling mints it rather than
+        // moving it. Counting all escrow says value exists that does not,
+        // and counting none makes the audit hold by not looking.
         let mut sums: Vec<[u64; 4]> = Vec::new();
         crate::snapshot::persist(&self.balances, |_, mu| sums.push(*mu));
         crate::snapshot::persist(&self.stakes, |_, mu| sums.push(*mu));
+        crate::snapshot::persist(&self.funded, |_, (_, mu)| sums.push(*mu));
         for v in &sums {
             add(v, &mut held)?;
         }
         if held != issued {
             return Err(format!(
-                "supply {issued:?} is not the carriers {held:?}: balances + bond must be what was issued"
+                "supply {issued:?} is not the carriers {held:?}: balances + bond + funded escrow must be what was issued"
             ));
         }
         Ok(issued)
@@ -400,6 +416,33 @@ impl Treasury {
             who[0], who[1], anchor.0
         );
         mu
+    }
+
+    /// FUND an escrow from a payer's balance — the xSEPTUM Note (§5), where
+    /// a requester backs a claim with μ⃗ that already exists. The balance is
+    /// DEBITED, not merely checked, and the funded part is recorded so R9's
+    /// `Σ escrow` counts it. Returns what was actually funded; a payer short
+    /// on a lane funds what it holds there and no more.
+    pub fn escrow_from_balance(
+        &mut self,
+        addr: impl AsRef<[u8]>,
+        payer: [u8; 32],
+        mu: [u64; 4],
+        anchor: Anchor,
+    ) -> [u64; 4] {
+        let held = self.balance_mu(&payer);
+        let paid: [u64; 4] = std::array::from_fn(|l| mu[l].min(held[l]));
+        if paid.iter().all(|&x| x == 0) {
+            return paid;
+        }
+        let addr = addr.as_ref();
+        self.debit(payer, paid);
+        self.escrow_award(addr, vec![payer], paid, anchor);
+        let prev = self.funded.get(addr).map(|(_, m)| *m).unwrap_or([0; 4]);
+        let next: [u64; 4] = std::array::from_fn(|l| prev[l] + paid[l]);
+        self.funded.insert(addr, (payer, next));
+        self.entries.push(Entry { kind: "escrow", who: payer, mu: paid, k_step: anchor.0, receipt: anchor.1 });
+        paid
     }
 
     /// HOLD a consilience award in escrow pending the court's finality verdict
@@ -450,7 +493,33 @@ impl Treasury {
     /// Clear the listing claim. Payment is a mint of the same vector, done
     /// by the caller after this returns (release then mint).
     pub fn release_award(&mut self, addr: &[u8]) -> Option<(Vec<[u8; 32]>, [u64; 4], Anchor)> {
+        self.discharge_funded(addr, "release");
         self.escrowed.remove(addr)
+    }
+
+    /// Return the funded part of an escrow to the balance it came from. A
+    /// funded escrow holds μ⃗ that already existed, so discharging it MOVES
+    /// value and never mints or destroys any; a claim-escrow has no funded
+    /// part and this does nothing. Dropping the record instead would leave
+    /// the carriers short of supply and R9 would fail on the next burn.
+    ///
+    /// The payee of a funded release is xSEPTUM §5's business, not the
+    /// treasury's: until the Note names one, the μ⃗ goes back where it came
+    /// from rather than to a party chosen here.
+    fn discharge_funded(&mut self, addr: &[u8], kind: &'static str) {
+        let Some((payer, mu)) = self.funded.remove(addr) else {
+            return;
+        };
+        if mu.iter().all(|&x| x == 0) {
+            return;
+        }
+        let anchor = self
+            .escrowed
+            .get(addr)
+            .map(|(_, _, a)| *a)
+            .unwrap_or((0, [0; 32]));
+        self.credit(payer, mu);
+        self.entries.push(Entry { kind, who: payer, mu, k_step: anchor.0, receipt: anchor.1 });
     }
 
     /// Mint a released claim: consilience split when two voices stand, else
@@ -465,6 +534,7 @@ impl Treasury {
 
     /// Drop the listing claim. A slash debits the stake bond and mints nothing.
     pub fn revoke_award(&mut self, addr: &[u8], slash: bool) -> bool {
+        self.discharge_funded(addr, "revoke");
         let Some((voices, mu, anchor)) = self.escrowed.remove(addr) else {
             return false;
         };
@@ -850,7 +920,16 @@ impl Treasury {
                 escrowed.insert(addr, (voices, mu, (k, r)));
             }
         }
-        let mut t = Treasury { entries, bond_total, stakes, escrowed, balances: crate::network::nerve::Keyed::new() };
+        // `funded` is rebuilt from the journal by `recompute_balances`, not
+        // persisted twice: the escrow and release rows say what was funded.
+        let mut t = Treasury {
+            entries,
+            bond_total,
+            stakes,
+            escrowed,
+            balances: crate::network::nerve::Keyed::new(),
+            funded: crate::network::nerve::Keyed::new(),
+        };
         t.refresh_bond();
         t.recompute_balances();
         Some(t)
@@ -1025,6 +1104,55 @@ mod tests {
         assert_eq!(burned, [3, 0, 0, 0], "burned from what was held");
         assert_eq!(t.audit().expect("a burn conserves"), [11, 10, 12, 10]);
         assert_eq!(t.supply().expect("supply adds up"), [11, 10, 12, 10]);
+    }
+
+    /// R9, and the distinction the audit turns on. A FUNDED escrow holds
+    /// μ⃗ that left a balance and is still in the mesh, so it is counted;
+    /// discharging it MOVES value and mints nothing. A CLAIM escrow holds
+    /// μ⃗ that does not exist yet (§3.1), so it is not counted, and a ruling
+    /// MINTS it. Removing escrow from the equation outright would make the
+    /// audit hold by not looking; counting all of it asserts value that was
+    /// never created. Both readings conserve here, and they conserve
+    /// differently — which is the whole point.
+    #[test]
+    fn a_funded_escrow_is_counted_and_a_claim_escrow_is_not() {
+        let mut t = Treasury::new();
+        let a = (1u64, [1u8; 32]);
+        t.genesis([1; 32], [10, 0, 0, 0], a);
+        let seeded = t.audit().expect("genesis conserves");
+
+        // A CLAIM: nobody paid for it, so the carriers do not move and
+        // supply does not move.
+        t.escrow_award([7u8; 32], vec![[2; 32]], [4, 0, 0, 0], a);
+        assert_eq!(t.audit().expect("a claim is not supply"), seeded);
+        assert_eq!(t.balance_mu(&[2; 32]), [0; 4], "no one was debited for it");
+
+        // A FUND: the payer is debited, so the μ⃗ moved out of a balance and
+        // must still be found — in the escrow.
+        let paid = t.escrow_from_balance([8u8; 32], [1; 32], [6, 0, 0, 0], a);
+        assert_eq!(paid, [6, 0, 0, 0]);
+        assert_eq!(t.balance_mu(&[1; 32]), [4, 0, 0, 0], "the payer paid");
+        assert_eq!(
+            t.audit().expect("a funded escrow is counted, not ignored"),
+            seeded,
+            "supply unmoved: value moved between carriers"
+        );
+
+        // Discharging it moves value back and mints nothing.
+        assert!(t.revoke_award(&[8u8; 32], false), "the award was there");
+        assert_eq!(t.balance_mu(&[1; 32]), [10, 0, 0, 0], "returned whence it came");
+        assert_eq!(t.audit().expect("a discharge conserves"), seeded);
+        assert_eq!(t.minted().expect("minted"), [0; 4], "and nothing was earned");
+
+        // The claim, released, MINTS — supply rises by what the ruling
+        // measured, which is E1's whole mechanism.
+        let (voices, mu, anc) = t.release_award(&[7u8; 32]).expect("the claim stood");
+        t.mint_claim(&voices, mu, anc);
+        let after = t.audit().expect("a ruling conserves");
+        assert!(
+            after.iter().zip(seeded.iter()).any(|(x, y)| x > y),
+            "a claim released is issuance: {seeded:?} then {after:?}"
+        );
     }
 
     /// A stake MOVES value between two carriers of one identity and never
