@@ -421,9 +421,9 @@ Part III:
 | `cognition.rs:5635, 5526` `composite_parent_id`, `section_address` | hash cells in given order, uncentred; assignment unsorted | A5, M2 |
 | `sentence.rs:1792` `from_element` | trusts the germ address stored in the tape | recompute (A8 step 2) |
 | `blade.rs:339` `ratio_axes` | drops the sign, saturates to `u64::MAX`; under `moduli ==`, `moduli.key()`, `Invariant::key`, `connection_chart` | A6 |
-| `verdict.rs:374` `sel_key` | hash of `format!("{s:?}")` | A9 |
+| `verdict/selection.rs` `sel_key` | hash of `format!("{s:?}")` | A9 |
 | `mycelium-server/judge/percept.rs` | percept rendezvous by `hash(pbytes[32..])` | A11 |
-| `verdict.rs:102` `blind_replay` | compares the spoken chain without canonicalising it | A5 |
+| `verdict/blind.rs` `blind_replay` | compares the spoken chain without canonicalising it | A5 |
 | `cognition.rs:5052`, `economy/persist.rs`, client loaders | restore carriers under stored byte addresses after the address rule changed (a29bba5 landed without a migration) | A8, M3 |
 
 The audit of 2026-09-06 found the same fault one step removed: every key
@@ -440,7 +440,7 @@ A21, in one landing (chapter 41, 0.11):
 | `sentence/form.rs` `hue_section_key`, `vertex_transport_key`, `class_key_of_versor` | blake3 over conjugacy ‖ gauge | the conjugacy coordinates ‖ the gauge |
 | `sentence/chart.rs` `form_vertex_key`; `family/extract.rs` `TransportClass::key` | blake3 over kind ‖ class | kind ‖ class coordinates |
 | `sentence/pivot.rs` certificate key; `Form.certificates`, `torsion`, `vortex`, `horizon` indices | keyed by digests | keyed by the class vector and the move (16.20) |
-| `cech.rs` `cell_key`, `cocycle_key`; `verdict.rs` `sel_key`, `chart_simplex_key` | digests of sorted vertex keys and terms | the sorted vertex keys concatenated; `Sel::to_bytes` itself |
+| `cech.rs` `cell_key`, `cocycle_key`; `verdict/selection.rs` `sel_key`, `chart_simplex_key` | digests of sorted vertex keys and terms | the sorted vertex keys concatenated; `Sel::to_bytes` itself |
 | `sentence/*` `placement: (ℚ, ℚ)`, `Transport.shift`, `Rebased.shift`, `PivotBy::Placement.shift`, `Form.placements`, the 12.6 placement residue | ℚ² carried as cognition (law 11) | the carriage versor (A4) and the translator component of the holonomy versor |
 
 Allowed, and why: hypha and voice identity by verifying key; signatures;
@@ -2739,7 +2739,7 @@ else, so every binding below still names the function it always named:
 |---|---|
 | `alphabet/`, `sentence/`, `element/`, `cech.rs`, `stalk.rs`, `blade.rs`, `bubble/`, `family/`, `cga.rs`, `peel.rs`, `anchor.rs`, `sheaf.rs`, `germinate.rs`, `rewrite.rs`, `factor.rs`, `a21.rs` | `/opt/mycelium-v0.1.0/src/transducer/<name>` |
 | `cognition/`, `registry.rs`, `synthesis.rs` | `/opt/mycelium-v0.1.0/src/server/<name>` |
-| `verdict.rs`, `identity.rs`, `ledger.rs` | `/opt/mycelium-v0.1.0/src/court/<name>` |
+| `verdict/`, `identity.rs`, `ledger.rs` | `/opt/mycelium-v0.1.0/src/court/<name>` |
 | `nerve/`, `mesh.rs`, `wire.rs` | `/opt/mycelium-v0.1.0/src/network/<name>` |
 | `sdk/` | `/opt/mycelium-v0.1.0/src/client/sdk/` |
 | `dialogue/` | `/opt/mycelium-v0.1.0/src/anastome/dialogue/` |
@@ -3108,7 +3108,13 @@ word that returns it.
 Carried from chapters 21–22: rules as forms. The court replays them and
 glues sections across hyphae (M8).
 
-### 23.1 `replay_form`, `/opt/mycelium-v0.1.0/src/court/verdict.rs`
+### 23.1 `replay_form`, `/opt/mycelium-v0.1.0/src/court/verdict/replay.rs`
+
+**The files.** Four organs (Stage 8b S15): `replay.rs` a spoken form
+re-derived from its own tape move by move (23, 42); `blind.rs` the same
+re-derivation with nothing supplied but the word (42); `ruling.rs` what a
+court decides about a word (42); `selection.rs` the anchor a family derives
+and the key that names it (A9).
 
 Before the existing sentence arm in `blind_replay` (31):
 
@@ -3632,7 +3638,7 @@ stalk.rs      Stalks::refine(inv, &[u64]), split_stratum coordinate_of -> Vec<u6
 blade.rs      axes_of -> Option<[u64;2]> (A6), moduli -> Option<Vec<u64>>
 ear.rs        Harmonics::axes -> Option<Vec<u64>>
 anchor.rs     Sel::to_bytes NEW (A9)
-verdict.rs    replay_form NEW, REFUSE_* (chapter 34), sel_key over Sel::to_bytes, blind_replay canonicalises the spoken chain and recomputes 13.9 step 5
+verdict/      replay_form NEW, REFUSE_* (chapter 34), sel_key over Sel::to_bytes, blind_replay canonicalises the spoken chain and recomputes 13.9 step 5
 cognition.rs  resolve_form, replay_memo, cited_by, cocycle_at fifth field, push_cocycle (M5), glue_fetched (M8), refine_chart (15.5),
               cover-change re-representation (15.6), restore: A8 + RMP1, composite_parent_id/section_address via M2,
               reduce_excluding calls A12 for connections, shorter_form, missing_forms, pay_solve → settle_recursive
@@ -3789,7 +3795,7 @@ Carried from chapters 23–33: every refusal and every trace line, in one
 place. A trace that would need a different line is a defect in this
 chapter, not in the implementation.
 
-### 34.1 Refusals, `/opt/mycelium-v0.1.0/src/court/verdict.rs`
+### 34.1 Refusals, `/opt/mycelium-v0.1.0/src/court/verdict/mod.rs`
 
 ```rust
 pub const REFUSE_GLUED_DEPTH: &str = "glued form depth not below sentence depth";
