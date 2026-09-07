@@ -206,6 +206,15 @@ claims the court cannot replay. Rules 3, 6, 9 and checklist items (f),
 why a hash of a canonical form is refused answers with 1.7, not with a
 preference.
 
+**The development standard.** The rules above say what a diff may not
+contain. How the tree is laid out (no file over 600 lines, one organ per
+file), how things are named, how tests are named and organised by chapter,
+how a commit is cut and verified, which gates enforce which rules, and how
+an implementor and an auditor work with each other and with the operator
+is `MU-STANDARDS.md`, binding on every agent from 2026-09-07. A diff that
+violates it is returned exactly as a rule-violating diff is; a private
+gate, fixture style, or naming scheme is refused the same way.
+
 **How to write the move, not the search.** Ask what the carrier already
 names. Bodies name their cells: key the cells. Faces name their vertices:
 walk a face's two ends. A loop names its faces: walk them. A class vector

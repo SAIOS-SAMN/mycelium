@@ -123,7 +123,13 @@ named `placement`, `shift`, or `residue` outside `family::pair_form`,
 on `QMatrix`, `core::engine::{Delta, Operator}`, or `core::matrix` in
 `src/transducer`, `src/server`, `src/client`, and `src/court` (the matrix
 gate, law 11 and rule 16; `core::zlinalg` is the one matrix arithmetic,
-for ranks).
+for ranks). Two more gates and one scope rule (`MU-STANDARDS.md` §4): the
+file-length gate (no source file over 600 lines; 800 during Stage 8b) and
+the clippy gate (`cargo clippy --release --all-targets -- -D warnings` in
+the same foreground run as the suite); every gate's scope is the whole of
+`src/` including `src/bin/`, with allow-lists by file or function name and
+never by directory alone. Gates still owed for rules 2, 4, 10, 11 and 15
+are listed there and checked by the auditor's grep until they exist.
 Work-counter tests assert that one fetched vertex, one held thought, one
 expansion, one quote, and one thirty-body assembly cost the same at N and
 4N.

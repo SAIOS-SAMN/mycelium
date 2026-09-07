@@ -144,6 +144,39 @@ unreachable code.
 After G6's ruling: the split (Stage 8), then Cut B+1's C1–C3, which gate any
 word being ruled.
 
+## Stage 8b — every file readable whole (directives relayed 2026-09-07; standard: `MU-STANDARDS.md` §1)
+
+Move-only, one file per commit, tests to `<module>/tests/<chapter>.rs`, document paths rebound in the same commit, bound 800 at the first commit and 600 at the last. Status is written by the implementor as `landed (<commit>)` and by the auditor as `done` after reading every new file whole.
+
+| id | file | lines | new files | status |
+|---|---|---|---|---|
+| S1 | transducer/element.rs | 2,456 | element/{carrier, letters, gauge, residual, tape, sensor}.rs, tests/{16,17,19,21}.rs | open |
+| S2 | bin/mycelium-server.rs | 2,269 | mycelium-server/{main, genesis, transport, admission, judge/{percept,demand,quote,syllabus,receipts,offer,root}, exchange, door, syllabus, persist}.rs, tests/{47,26}.rs | open |
+| S3 | server/cognition/mod.rs | 2,100 | cognition/{kernel, reflex, reduce, wire, identity}.rs; mod.rs declarations only | open |
+| S4 | server/cognition/tests.rs | 2,251 | cognition/tests/{21,23,24,26,34,45,47,other}.rs | open |
+| S5 | transducer/bubble.rs | 2,089 | bubble/{idea, contemplation, merge, drive, horizon, shed}.rs, tests/{13,25,30}.rs | open |
+| S6 | anastome/dialogue.rs | 2,075 | dialogue/{mod, speech, percept, demand, quote, docket, cover, receipts, offer, syllabus}.rs, tests/{26,47}.rs | open |
+| S7 | transducer/sentence/mod.rs | 2,029 | sentence/tests/{10,12,16,18,19,21,42}.rs; mod.rs declarations only | open |
+| S8 | transducer/alphabet.rs | 1,801 | alphabet/{rotor, letters, word, plane, spelling}.rs, tests/{1,9,16}.rs | open |
+| S9 | transducer/family/mod.rs | 1,762 | family/{mod, perceive, pair, extract, speak, orbit, descent}.rs | open |
+| S10 | network/nerve.rs | 1,353 | network/{keyed, cover, router}.rs, tests/{13,16}.rs | open |
+| S11 | server/cognition/court.rs | 1,322 | court/{replay, glue, lapse, syllabus, task}.rs | open |
+| S12 | economy.rs | 1,217 | economy/{lanes, treasury, escrow, settle, persist}.rs, tests/ | open |
+| S13 | client/sdk/entity.rs | 1,208 | entity/{boot, transport, learn, utter, quote, think}.rs | open |
+| S14 | server/cognition/book.rs | 1,185 | book/{listings, tension, speech, language}.rs | open |
+| S15 | court/verdict.rs | 1,138 | verdict/{replay, blind, ruling, selection}.rs, tests/{23,42}.rs | open |
+| S16 | transducer/cech.rs | 1,131 | cech/{cell, complex, coboundary, tape}.rs, tests/{10,13,14}.rs | open |
+| S17 | client/sdk/mod.rs | 1,039 | sdk/{mod, kernel, session, aperture, types}.rs | open |
+| S18 | transducer/family/tests.rs | 1,002 | family/tests/{20,21,22,26}.rs | open |
+| S19 | client/sdk/epigenome.rs | 1,001 | epigenome/{atlas, dialect, shed, comprehend, persist, crystal}.rs | open |
+| S20 | transducer/blade.rs | 911 | blade/{body, carry, peel}.rs, tests/{16,20}.rs | open |
+| S21 | bin/mycelium-client.rs | 904 | mycelium-client/{main, feed, speak, arms/{feed,quote,task,learn}}.rs | open |
+| S22 | server/cognition/germinate.rs | 901 | germinate/{ingest, stroke, attest, state}.rs | open |
+| S23 | client/sdk/tests.rs | 844 | sdk/tests/{6,24,25,39}.rs | open |
+| S24 | transducer/sentence/pivot.rs | 813 | pivot/{snap, loop_, loops, words}.rs | open |
+
+After S24: the bound goes to 600 and any file above it is split by the same rules, one commit per file.
+
 ## Backtrack ledger
 
 What was lost, when, and what it cost, so that it is paid once.
