@@ -53,7 +53,6 @@ pub const TRANSLATION_TAG: u8 = 0x13;
 /// Word-tape tag for an optimisation (a Rewrite). Same value as `element::REWRITE_TAG`.
 pub const REWRITE_TAG: u8 = 0x14;
 /// Genome-file section holding persisted thought bubbles.
-pub const THT1: &[u8; 4] = b"THT1";
 /// Snapshot section holding Čech complexes (addresses and rotors only).
 pub const COC1: &[u8; 4] = b"COC1";
 

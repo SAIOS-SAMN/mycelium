@@ -1,6 +1,6 @@
 // 28 — THE TAPE: a contemplation as bytes.
 //
-//! `THT1` and `THT2` are the two generations this codec reads. A tape that
+//! `THT2` is the generation this codec reads. A tape that
 //! does not parse whole is refused rather than partly restored; a restored
 //! contemplation holds the same bubbles, the same incidence and the same
 //! horizon as the one that was written.
@@ -8,7 +8,6 @@
 use super::*;
 
 impl Contemplation {
-    pub const THT1: &'static [u8; 4] = b"THT1";
 
     pub const THT2: &'static [u8; 4] = b"THT2";
 

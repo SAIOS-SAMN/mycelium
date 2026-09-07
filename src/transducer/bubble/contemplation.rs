@@ -23,7 +23,7 @@ pub struct Contemplation {
     pub torsion_merges: u64,
     pub classes: u64,
     pub formed: u64,
-    /// Bubbles retired to a cavity chart, address kept, remainder in THT1.
+    /// Bubbles retired to a cavity chart, address kept, remainder in the tape.
     pub(crate) cavity: Keyed<Vec<RemCell>>,
     pub(crate) pending_rewrites: Vec<Element>,
     /// TUniversal the entity last stamped; T-room and potential[2] read it.

@@ -114,12 +114,12 @@ impl Element {
     /// Deserialize GEN3 only. An older file is refused, never migrated.
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Element> {
         if b.get(*pos) == Some(&Self::GEN3_MAGIC) {
-            return Self::from_bytes_gen2(b, pos);
+            return Self::from_bytes_gen3(b, pos);
         }
         None
     }
 
-    fn from_bytes_gen2(b: &[u8], pos: &mut usize) -> Option<Element> {
+    fn from_bytes_gen3(b: &[u8], pos: &mut usize) -> Option<Element> {
         if b.get(*pos) != Some(&Self::GEN3_MAGIC) {
             return None;
         }

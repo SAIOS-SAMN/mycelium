@@ -2,7 +2,7 @@
 //
 //! `Versor` is the conformal multivector the action carries. This file
 //! holds the versors the language builds by name (identity, translator,
-//! dilator, carriage, the legacy lattice transport), the projective
+//! dilator, carriage), the projective
 //! equality that reads two of them as one, the decomposition back into
 //! rho and the translation, and `Letters` — the M1 coordinates a
 //! connection's tape re-derives.
@@ -21,29 +21,6 @@ pub type Versor = crate::transducer::cga::Mv;
 
 pub fn identity_versor() -> Versor {
     Versor::scalar(num_rational::BigRational::from_integer(BigInt::from(1)))
-}
-
-/// The legacy lattice transport (a D4 index over the eight isometries in
-/// their historical order, then an integer offset) lifted to its versor:
-/// the word of the alphabet whose action on the row and column steps is
-/// the isometry, realised as a conformal versor, then the translator. The
-/// index table is the legacy wire's convention; decoding only.
-pub fn legacy_versor(d4: u8, tr: i64, tc: i64) -> Option<Versor> {
-    let images: [fn(i64, i64) -> (i64, i64); 8] = [
-        |r, c| (r, c),
-        |r, c| (c, -r),
-        |r, c| (-r, -c),
-        |r, c| (-c, r),
-        |r, c| (r, -c),
-        |r, c| (-r, c),
-        |r, c| (c, r),
-        |r, c| (-c, -r),
-    ];
-    let image = images.get(d4 as usize)?;
-    // The isometry is the images of the row and column steps, spelled in
-    // the alphabet; the versor is realised from the word, never tabulated.
-    let spelling = crate::transducer::alphabet::spell_images(image(1, 0), image(0, 1))?;
-    conformal_of(&spelling.word, &translator_versor(tr, tc))
 }
 
 /// Linear word as a CGA versor, no translation. The identity translator is

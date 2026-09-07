@@ -7,19 +7,6 @@ use num_bigint::BigInt;
 use crate::transducer::germinate::germinate;
 use super::common::*;
 
-/// The legacy lattice transport decodes to the versor with the same
-/// action: index 1 is (r, c) → (c, −r), then the offset.
-#[test]
-fn the_legacy_transport_lifts_to_its_versor() {
-    let v = legacy_versor(1, 2, 3).expect("a lattice isometry is a rational versor");
-    let q = |n: i64| num_rational::BigRational::from_integer(BigInt::from(n));
-    let at = |r: i64, c: i64| crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&q(r), &q(c))));
-    assert_eq!(at(0, 0), Some((q(2), q(3))));
-    assert_eq!(at(1, 0), Some((q(2), q(2))), "(1,0) → (0,−1) + (2,3)");
-    assert_eq!(at(0, 1), Some((q(3), q(3))), "(0,1) → (1,0) + (2,3)");
-    assert!(legacy_versor(9, 0, 0).is_none());
-}
-
 /// Congruence on the conformal orbit: translations, rotations,
 /// reflections, and exact dilations of a support are carried by a
 /// rational versor found in closed form; a genuinely different shape
