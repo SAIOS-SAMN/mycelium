@@ -1945,24 +1945,44 @@ fn the_kernel_conserves_across_genesis_bond_and_a_settlement() {
     k.treasury().audit().expect("an install conserves");
 
     // Two voices docket the same residual, then the court rules on it.
-    // WHERE IT STILL DOES NOT HOLD, pinned with its evidence rather than
-    // left for a soak. A docket escrows the claim's price, and
-    // `escrow_award` inserts that μ⃗ into the `escrowed` carrier having
-    // debited nothing: the carriers then exceed what was issued.
-    //
-    // This is a design question and not a slip. MU-ECONOMY §5 has a
-    // REQUESTER escrowing the price, which is funded and conserves; §4 has
-    // an unbonded voice whose "claim is escrowed against its own
-    // deflation", which is value that will exist only if the court upholds.
-    // §6's second equation counts `Σ escrow` as issued supply, so the two
-    // readings cannot both stand: either a claim-escrow is funded from a
-    // balance, or it is provisional and is not supply until the ruling
-    // mints it. The ruling belongs in MU-ECONOMY before the code moves.
+    // E1: an escrow holds μ⃗ that does not exist yet, so it is a claim on
+    // issuance and not supply (§3.1, §6). A ruling discharges it into a
+    // mint; a revocation makes it vanish with nothing ever issued. Counting
+    // it as issued reported value the mesh had not created, and the audit
+    // failed here at the first docket.
     let _ = k.ingest(&a, &b, [1; 32]);
     let _ = k.ingest(&a, &b, [2; 32]);
-    let err = k
-        .treasury()
-        .audit()
-        .expect_err("an unfunded claim-escrow is counted as issued");
-    assert!(err.contains("is not the carriers"), "{err}");
+    let docketed = k.treasury().audit().expect("a claim is not yet supply");
+    assert_eq!(k.treasury().minted().expect("minted"), [0; 4], "no claim has been ruled");
+
+    // PINNED, with its number. Supply grew from the seed to three times it
+    // across two ingests: `ensure_bonded` funds EVERY arriving identity at
+    // the genesis cover so it can bond into room. Identities are free
+    // (47.3), so that is a faucet — free μ⃗ per key — and it was invisible
+    // while `enroll` conjured bond instead of being funded.
+    //
+    // §4 says an unbonded voice "may learn, speak, and be paid; every claim
+    // is escrowed against its own deflation", and under E1 an escrow is a
+    // claim rather than a transfer, so speaking needs no bond at all. What
+    // bond buys is ROOM — throughput, the rate the metabolism governs
+    // (§3.3) — and the question §4 leaves open is what room an unbonded
+    // voice has. Until that is ruled, this asserts the faucet exists rather
+    // than hiding it.
+    assert_eq!(
+        docketed,
+        std::array::from_fn(|l| seeded[l] * 3),
+        "one genesis allocation per arriving identity — a faucet, not a mint"
+    );
+
+    k.glue_local();
+    let held = k.treasury().audit().expect("a glue conserves");
+    let addrs: Vec<Address> = k.dockets().iter().map(|(a, _, _, _, _, _)| a.clone()).collect();
+    for a in addrs {
+        let _ = k.apply_verdict(&a, crate::anastome::dialogue::RULING_UPHELD);
+    }
+    let after = k.treasury().audit().expect("a verdict conserves");
+    assert!(
+        after.iter().zip(held.iter()).all(|(x, y)| x >= y),
+        "a ruling mints and never unmakes: {held:?} then {after:?}"
+    );
 }

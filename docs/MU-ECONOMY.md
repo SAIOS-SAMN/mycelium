@@ -75,6 +75,21 @@ escrow is the special case in which a payer chooses to back a claim from a
 balance that already exists; the general case is backed by the mathematics
 the claim promises.
 
+**Open, and named here so it is not mistaken for settled: what room does an
+unbonded voice have?** §4 says an unbonded voice may learn, speak and be
+paid, and under this section speaking needs no bond at all, since a claim
+is escrowed rather than transferred. Bond buys **room** — throughput, the
+rate the metabolism governs (§3.3) — and §4 does not say what room an
+identity has before it has earned any. The tree currently funds every
+arriving identity at the genesis cover so it can bond into room, which,
+since identities are free (`MU-RECURSION.md` 47.3), is a faucet: μ⃗ per key.
+It is measured — supply grew to three times the seed across two ingests
+from two voices — and it is pinned by
+`the_kernel_conserves_across_genesis_bond_and_a_settlement` rather than
+hidden. The candidates are that an unbonded voice has room for exactly one
+claim in flight, or that its room is what its own closed deflation has
+earned it. Neither is ruled.
+
 **A mesh can therefore start from zero supply.** A voice posts a demand it
 cannot fund, a miner closes it, the court rules, and the first μ in the
 system is created by that first verified closure. The genesis allocation of

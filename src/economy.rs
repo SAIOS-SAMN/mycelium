@@ -371,16 +371,19 @@ impl Treasury {
             }
             Ok(())
         };
+        // ESCROW IS NOT SUPPLY (§3.1, §6). An escrow holds μ⃗ that does not
+        // exist yet: a ruling discharges it into a mint, a revocation makes
+        // it vanish with nothing issued. Counting it here reported value the
+        // mesh had not created and the audit failed at the first docket.
         let mut sums: Vec<[u64; 4]> = Vec::new();
         crate::snapshot::persist(&self.balances, |_, mu| sums.push(*mu));
         crate::snapshot::persist(&self.stakes, |_, mu| sums.push(*mu));
-        crate::snapshot::persist(&self.escrowed, |_, (_, mu, _)| sums.push(*mu));
         for v in &sums {
             add(v, &mut held)?;
         }
         if held != issued {
             return Err(format!(
-                "supply {issued:?} is not the carriers {held:?}: balances + bond + escrow must be what was issued"
+                "supply {issued:?} is not the carriers {held:?}: balances + bond must be what was issued"
             ));
         }
         Ok(issued)
