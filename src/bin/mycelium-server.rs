@@ -1662,6 +1662,16 @@ fn main() {
             mesh_rec.genesis.is_some(),
         ));
         let mut last_organs = (usize::MAX, usize::MAX);
+        // CYCLES RUN, counted. A change-gated line says nothing while the
+        // reading is steady, which is right -- and says nothing at all when
+        // the loop is not running, which is indistinguishable from steady.
+        // The two were read as one for most of a session: an exchange that
+        // had stopped and an exchange with nothing new to report wrote the
+        // same empty journal. The count separates them, on powers of two, so
+        // a live loop is visibly alive without becoming the noise it is here
+        // to cut through.
+        let mut cycles = 0u64;
+        let mut idle = 0u64;
         let mut last_tally = AdmissionTally::default();
         let registry = Arc::clone(&registry);
         let router = Arc::clone(&router);
@@ -1701,7 +1711,18 @@ fn main() {
                         }
                     }
                 }
+                cycles += 1;
+                if cycles.is_power_of_two() {
+                    eprintln!("  court exchange cycle {cycles} idle {idle}");
+                }
                 if dests.is_empty() {
+                    // NOT A SLEEP AND NOT A SPIN: with no destination there
+                    // is nothing to exchange, and `yield_now` alone burned a
+                    // core doing the whole preamble again. The stroke is the
+                    // pace (law 9), so the loop pays one before retrying.
+                    idle += 1;
+                    let mut b = mycelium::physics::Physics::default().stroke();
+                    while b.spend() {}
                     continue;
                 }
                 let req = dialogue::encode_digests_request(&mesh.vk);
