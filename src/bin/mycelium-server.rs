@@ -245,6 +245,14 @@ fn speak_root(
 fn tell_peer(addr: &str, body: Vec<u8>) -> Option<(Vec<u8>, u64)> {
     let mut s = std::net::TcpStream::connect(addr).ok()?;
     let _ = s.set_nodelay(true);
+    // A PEER THAT SAYS NOTHING IS SILENT, NOT AUTHORITATIVE. `read_exact`
+    // with no timeout makes a peer that writes nothing an unbounded wait,
+    // and one such peer stops this thread and every act it was going to
+    // perform -- which is what a frame that failed to encode on the far
+    // side produced: an empty write, and a caller waiting on five bytes
+    // that never came. Silence is a refusal and is counted as one.
+    let _ = s.set_read_timeout(Some(std::time::Duration::from_secs(20)));
+    let _ = s.set_write_timeout(Some(std::time::Duration::from_secs(20)));
     let frame = Frame { lane: mycelium::network::wire::Stratum::Spatial, body };
     s.write_all(&frame.encode()?).ok()?;
     let mut head = [0u8; 5];
@@ -774,8 +782,18 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
         if let Some(w) = reached.as_ref() {
             rb.extend_from_slice(&w.to_bytes());
         }
-        let reply = Frame { lane: frame.lane, body: rb };
-        let _ = s.write_all(&reply.encode().unwrap_or_default());
+        // The witness's form may not fit the frame budget. A reply that
+        // cannot carry it still ANSWERS -- with the verdict bit alone, which
+        // the home reads as "no form travelled" and holds as unmeasured --
+        // because writing nothing leaves the home waiting on a frame that
+        // will never come. Rule 11: refuse the payload, never the reply.
+        let reply = match (Frame { lane: frame.lane, body: rb }).encode() {
+            Some(bytes) => bytes,
+            None => Frame { lane: frame.lane, body: vec![glued as u8] }
+                .encode()
+                .unwrap_or_else(|| vec![frame.lane.as_u8(), 0, 0, 0, 0]),
+        };
+        let _ = s.write_all(&reply);
         return true;
     }
     if kind == dialogue::ACT_ADOPT {
