@@ -1492,7 +1492,7 @@ citer's own held loop is not a comprehension outcome but an idea (chapter
 
 ### 13.12 Instance three: two thoughts in a mind
 
-`Contemplation` (bubble.rs). Two bubbles whose cell sets meet are `A` and
+`Contemplation` (bubble/contemplation.rs). Two bubbles whose cell sets meet are `A` and
 `B`; `pivot_on` (712) merges them when step 5 gives `∂θ = 1` for the
 difference of their sections on the meet. When it fails the thoughts stay
 two and the class is the coordinate on which the mind may pivot
@@ -2238,7 +2238,7 @@ candidate list of a loop is finite (at most the occupied axes times the
 held words on them); so the loop makes at most (occupied coordinates)
 applications and (candidates) trials per application, all under `Budget`.
 Cost per trial is one move and one tree walk. Binding:
-`Contemplation::pivot_on` (bubble.rs 712) and `expand_with` (84) call
+`Contemplation::pivot_on` and `expand_all` (bubble/drive.rs) call
 `Form::pivot_loop(&mut self, atlas: &WorkingAtlas, horizon: &Horizon,
 budget: &mut Budget) -> Vec<PivotCertificate>` **new** in sentence.rs;
 `Form::class_vector`, `ClassVector::occupied`, `Form::rank` (A18) are its
@@ -2737,7 +2737,7 @@ else, so every binding below still names the function it always named:
 
 | short name | absolute path |
 |---|---|
-| `alphabet.rs`, `sentence/`, `element/`, `cech.rs`, `stalk.rs`, `blade.rs`, `bubble.rs`, `family/`, `cga.rs`, `peel.rs`, `anchor.rs`, `sheaf.rs`, `germinate.rs`, `rewrite.rs`, `factor.rs`, `a21.rs` | `/opt/mycelium-v0.1.0/src/transducer/<name>` |
+| `alphabet.rs`, `sentence/`, `element/`, `cech.rs`, `stalk.rs`, `blade.rs`, `bubble/`, `family/`, `cga.rs`, `peel.rs`, `anchor.rs`, `sheaf.rs`, `germinate.rs`, `rewrite.rs`, `factor.rs`, `a21.rs` | `/opt/mycelium-v0.1.0/src/transducer/<name>` |
 | `cognition/`, `registry.rs`, `synthesis.rs` | `/opt/mycelium-v0.1.0/src/server/<name>` |
 | `verdict.rs`, `identity.rs`, `ledger.rs` | `/opt/mycelium-v0.1.0/src/court/<name>` |
 | `nerve.rs`, `mesh.rs`, `wire.rs` | `/opt/mycelium-v0.1.0/src/network/<name>` |
@@ -3450,7 +3450,16 @@ dialect, and a mind that has stood nothing utters nothing but a percept.
 ## 25. Germination and thoughts
 
 Carried from chapter 24: comprehension re-gauges. Germination pivots, files,
-cauterizes, and wraps (M9). `/opt/mycelium-v0.1.0/src/transducer/bubble.rs`:
+cauterizes, and wraps (M9). `/opt/mycelium-v0.1.0/src/transducer/bubble/`:
+
+**The files.** The contemplation is eight files, one organ each (Stage 8b
+S5): `idea.rs` one bubble and what it measures; `contemplation.rs` the
+complex of held thoughts and their incidence; `merge.rs` when two held
+thoughts are one (13.12); `drive.rs` what makes a thought move (25.1);
+`horizon.rs` the classes seeded from the syllabus (A19); `shed.rs` what a
+mind stops holding when the room is spent (24.1); `tape.rs` the THT codec
+(28); `mod.rs` declarations and re-exports.
+
 
 **25.1 The pivot loop in the contemplation.** Each stroke, for each dirty
 idea under the stroke `Budget`:
@@ -3616,7 +3625,7 @@ economy.rs    settle_recursive, use_credit, Treasury::restore A8 collision rule
 sdk.rs        Epigenome::working_atlas NEW, Standing NEW, dialect Stalks NEW (admitted in stand_dialect, retracted in shed),
               learn_one promotion dialect → genome by same_vertex, Comprehension::Withheld, comprehend (24, M6),
               pull_syllabus depth order, uncrystallize A8, peers keyed by vk with pending_addrs (A10)
-bubble.rs     pivot_on and expand_with call Form::pivot_loop (A16), vortex cells kept in Bubble.nerve with certificates (25.1),
+bubble/drive.rs  pivot_on and expand_with call Form::pivot_loop (A16), vortex cells kept in Bubble.nerve with certificates (25.1),
               Bubble glues/glued_by, retire_on_t, Contemplation::bundle,
               horizon: Keyed<(Rotor, Order, Standing)> by class key, Contemplation::seed_horizon NEW (A19)
 sentence.rs   Form::class_vector NEW, ClassVector/Axis NEW (12.6), Form::pivot_loop NEW (A16), PivotCertificate NEW (A20) with tape section (19),
@@ -5228,7 +5237,7 @@ Every duration a kernel reads is a count of its own K or of heights.
   voice reports nothing but its K. No admitted receipt, no extent: an idle
   voice accrues nothing, and a home that hears nothing advances nothing. Any
   witness re-derives a home's extents from the home's chain (T16).
-- **The mind.** `Epigenome::shed` (sdk.rs 946) and `retire_on_t` (bubble.rs
+- **The mind.** `Epigenome::shed` (sdk.rs 946) and `retire_on_t` (bubble/shed.rs
   223) count the mind's own K; `moved_tu`, `last_used_tu`, `stroke_tu` are
   K values and are renamed `_k`.
 - **Carriers.** Every `_tu` field in the kernel (`provisional_tu`,
