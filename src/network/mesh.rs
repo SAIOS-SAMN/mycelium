@@ -17,7 +17,12 @@ pub struct MeshRecord {
     pub bootstrap: String,
     pub hypha: Vec<([u8; 32], [u64; 4])>,
     pub voice: Vec<([u8; 32], [u64; 4])>,
-    pub genesis: [u8; 32],
+    /// H_genesis: the chain hash of the mesh's FIRST receipt (45.5).
+    /// `None` is UNMEASURED -- a node that has adopted no origin -- and is
+    /// not the same as a genesis of all zeros, which is what the field held
+    /// before and what every 47.2 origin check would have compared against.
+    /// The wire still carries 32 bytes; all-zeros there IS the absence.
+    pub genesis: Option<[u8; 32]>,
     pub epoch: u32,
 }
 
@@ -72,7 +77,7 @@ impl MeshRecord {
         for (who, bond) in self.voice.iter().take(255) {
             put_bond(&mut out, who, bond);
         }
-        out.extend_from_slice(&self.genesis);
+        out.extend_from_slice(&self.genesis.unwrap_or([0u8; 32]));
         out.extend_from_slice(&self.epoch.to_le_bytes());
         out
     }
@@ -105,6 +110,7 @@ impl MeshRecord {
             voice.push(take_bond(b, &mut p)?);
         }
         let genesis: [u8; 32] = b.get(p..p + 32)?.try_into().ok()?;
+        let genesis = (genesis != [0u8; 32]).then_some(genesis);
         p += 32;
         let epoch = u32::from_le_bytes(b.get(p..p + 4)?.try_into().ok()?);
         p += 4;
@@ -227,7 +233,7 @@ pub fn load_or_migrate_hypha(home: &Path, key: &HyphaKey) -> MeshRecord {
         bootstrap: String::new(),
         hypha,
         voice,
-        genesis: [0u8; 32],
+        genesis: None,
         epoch: 0,
     };
     let _ = rec.save(home, key);
@@ -262,7 +268,7 @@ pub fn load_or_migrate_voice(home: &Path, key: &HyphaKey) -> MeshRecord {
         bootstrap,
         hypha: Vec::new(),
         voice: Vec::new(),
-        genesis: [0u8; 32],
+        genesis: None,
         epoch: 0,
     };
     let _ = rec.save(home, key);
@@ -304,7 +310,7 @@ mod tests {
             bootstrap: String::new(),
             hypha: vec![([1; 32], [8, 8, 1, 8])],
             voice: vec![([2; 32], [8, 8, 1, 8])],
-            genesis: [7; 32],
+            genesis: Some([7; 32]),
             epoch: 2,
         };
         let bytes = rec.signed_bytes(&key);
@@ -314,5 +320,34 @@ mod tests {
         assert_eq!(back.hypha[0].1, [8, 8, 1, 8]);
         assert_eq!(back.genesis, rec.genesis);
         assert_eq!(back.epoch, rec.epoch);
+    }
+
+    /// 45.5: a genesis of all zeros is not a genesis, it is the ABSENCE of
+    /// one. The field held `[0u8; 32]` and every reader compared against
+    /// that sentinel, so a node with no origin and a node whose origin
+    /// happened to be zero were the same value. The wire still carries 32
+    /// bytes; the type no longer lets the sentinel reach 47.2's origin
+    /// check, which would otherwise have admitted under a genesis nobody
+    /// wrote.
+    #[test]
+    fn an_unwritten_genesis_reads_back_as_absent_not_as_zero() {
+        let key = HyphaKey::load_or_mint("/tmp/mycelium-mesh-nogen.key");
+        let rec = MeshRecord {
+            kind: HYPHA,
+            bind: "127.0.0.1:7500".into(),
+            peers: vec![],
+            bootstrap: String::new(),
+            hypha: vec![],
+            voice: vec![],
+            genesis: None,
+            epoch: 2,
+        };
+        let bytes = rec.signed_bytes(&key);
+        let back = MeshRecord::open(&bytes, &key.vk_bytes()).expect("verify");
+        assert_eq!(back.genesis, None, "unwritten stays unwritten");
+
+        let written = MeshRecord { genesis: Some([9; 32]), ..rec };
+        let back = MeshRecord::open(&written.signed_bytes(&key), &key.vk_bytes()).expect("verify");
+        assert_eq!(back.genesis, Some([9; 32]), "a written one survives");
     }
 }

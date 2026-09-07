@@ -1252,13 +1252,9 @@ fn main() {
     // a reading rather than a placeholder; a node that has admitted nothing
     // still has no genesis and says so. 47.2's REFUSE_ORIGIN check on it is
     // task 5.2 and is not claimed here.
-    if mesh_rec.genesis == [0u8; 32] {
-        eprintln!("[{tag}] genesis unwritten epoch {}", mesh_rec.epoch);
-    } else {
-        eprintln!(
-            "[{tag}] genesis {:02x}{:02x}… epoch {}",
-            mesh_rec.genesis[0], mesh_rec.genesis[1], mesh_rec.epoch
-        );
+    match mesh_rec.genesis {
+        None => eprintln!("[{tag}] genesis unwritten epoch {}", mesh_rec.epoch),
+        Some(g) => eprintln!("[{tag}] genesis {:02x}{:02x}… epoch {}", g[0], g[1], mesh_rec.epoch),
     }
     {
         let k = Arc::clone(&kernel);
@@ -1327,7 +1323,7 @@ fn main() {
         // even reached -- there is nothing to compare against), which is the
         // correct answer for a node that has adopted no origin.
         origin: Arc::new(Mutex::new(
-            (mesh_rec.genesis != [0u8; 32]).then_some((mesh_rec.genesis, mesh_rec.epoch)),
+            mesh_rec.genesis.map(|g| (g, mesh_rec.epoch)),
         )),
     };
     let router = Arc::new(Mutex::new(Router::new()));
@@ -1576,7 +1572,7 @@ fn main() {
         let join = join_peers.clone();
         let gen_home = home.clone();
         let genesis_written = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(
-            mesh_rec.genesis != [0u8; 32],
+            mesh_rec.genesis.is_some(),
         ));
         let mut last_organs = (usize::MAX, usize::MAX);
         let registry = Arc::clone(&registry);
@@ -1759,8 +1755,8 @@ fn main() {
                             gen_home.join("hypha.key").to_str().unwrap_or("hypha.key"),
                         );
                         let mut rec = mycelium::network::mesh::load_or_migrate_hypha(&gen_home, &key);
-                        if rec.genesis == [0u8; 32] {
-                            rec.genesis = h;
+                        if rec.genesis.is_none() {
+                            rec.genesis = Some(h);
                             let _ = rec.save(&gen_home, &key);
                             eprintln!(
                                 "  court genesis {:02x}{:02x}… epoch {}",
@@ -1770,9 +1766,9 @@ fn main() {
                         // The origin 47.2 step 1 tests against is adopted with
                         // it; until this the mesh had no pair to compare and
                         // admitted no receipt.
-                        if let Ok(mut o) = mesh.origin.lock() {
+                        if let (Ok(mut o), Some(g)) = (mesh.origin.lock(), rec.genesis) {
                             if o.is_none() {
-                                *o = Some((rec.genesis, rec.epoch));
+                                *o = Some((g, rec.epoch));
                             }
                         }
                         genesis_written.store(true, std::sync::atomic::Ordering::Relaxed);

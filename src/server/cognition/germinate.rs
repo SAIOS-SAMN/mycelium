@@ -367,7 +367,7 @@ impl Kernel {
         // the whole question in one reading: membership in the lattice the
         // held words span, decided by Hermite normal form, with the
         // factorisation as its witness and a canonical residue when it
-        // fails. There is nothing left to peel and `best_peel` is deleted.
+        // fails. There is nothing left to peel, so the peel is gone.
         let s = sub;
         if s.is_identity() {
             return NormalForm::Decomposed(Vec::new()); // a pure transposition
