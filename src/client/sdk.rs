@@ -844,7 +844,7 @@ pub struct Epigenome {
     /// Dialects dropped this process.
     shed_n: u64,
     /// TUniversal at each of the last aperture_cycle strokes.
-    stroke_tu: Vec<u64>,
+    stroke_k: Vec<u64>,
     /// Held words keyed by (chart, axis). Filled at atlas/dialect admit,
     /// emptied at remove/shed/retire. `on_axis` is one fiber read.
     axis_index: crate::transducer::sentence::AxisIndex,
@@ -907,25 +907,36 @@ impl Epigenome {
         self.shed_n
     }
 
-    /// A working-atlas read of a stood word is a use.
-    pub fn touch(&mut self, addr: &[u8], now_tu: u64) {
+    /// A working-atlas read of a stood word is a use, stamped with the
+    /// mind's OWN K (45.4). The height beside it is standing extent and is
+    /// left alone; the lifecycle is the mind's, and a mind that hears
+    /// nothing still thinks.
+    pub fn touch(&mut self, addr: &[u8], now_k: u64) {
         if let Some(d) = self.dialect.get_mut(addr) {
-            d.last_used_tu = now_tu;
+            d.last_used_k = now_k;
             d.uses = d.uses.saturating_add(1);
         }
     }
 
-    /// Drop dialect unused for an aperture of TUniversal. A dialect entry a live
-    /// idea glues is not shed. The genome never sheds.
-    pub fn shed(&mut self, now_tu: u64) -> usize {
-        self.shed_except(now_tu, &|_| false)
+    /// Drop dialect unused for an aperture of the MIND'S OWN K (45.4: the
+    /// mind sheds by its own receipt index, never by the mesh's height). A
+    /// dialect entry a live idea glues is not shed. The genome never sheds.
+    ///
+    /// Read against TUniversal this could not fire at all on a mesh that
+    /// admitted nothing: heights advance only on admitted receipts (45.2),
+    /// so a fleet refusing work also could not reclaim what it held, and the
+    /// two failures compounded into a client the kernel killed. A mind's own
+    /// K advances on its own acts, so truncation is independent of whether
+    /// anyone answered it.
+    pub fn shed(&mut self, now_k: u64) -> usize {
+        self.shed_except(now_k, &|_| false)
     }
 
-    pub fn note_stroke(&mut self, now_tu: u64) {
+    pub fn note_stroke(&mut self, now_k: u64) {
         let n = crate::physics::aperture_cycle().max(1) as usize;
-        self.stroke_tu.push(now_tu);
-        if self.stroke_tu.len() > n {
-            self.stroke_tu.remove(0);
+        self.stroke_k.push(now_k);
+        if self.stroke_k.len() > n {
+            self.stroke_k.remove(0);
         }
     }
 
@@ -933,23 +944,23 @@ impl Epigenome {
     /// `None` until a whole aperture of strokes has been noted: an
     /// unmeasured aperture is held, never guessed (rule 15), so nothing
     /// sheds in the first aperture after boot.
-    fn aperture_tu(&self, now_tu: u64) -> Option<u64> {
+    fn aperture_k(&self, now_k: u64) -> Option<u64> {
         let n = crate::physics::aperture_cycle().max(1) as usize;
-        if self.stroke_tu.len() < n {
+        if self.stroke_k.len() < n {
             return None;
         }
-        let first = *self.stroke_tu.first()?;
-        Some(now_tu.saturating_sub(first))
+        let first = *self.stroke_k.first()?;
+        Some(now_k.saturating_sub(first))
     }
 
-    pub fn shed_except(&mut self, now_tu: u64, glued: &impl Fn(&[u8]) -> bool) -> usize {
-        let Some(aperture_tu) = self.aperture_tu(now_tu) else {
+    pub fn shed_except(&mut self, now_k: u64, glued: &impl Fn(&[u8]) -> bool) -> usize {
+        let Some(aperture_k) = self.aperture_k(now_k) else {
             return 0;
         };
         let drop: Vec<Vec<u8>> = self
             .dialect
             .fiber(crate::network::nerve::ROOT)
-            .filter(|(a, d)| now_tu.saturating_sub(d.last_used_tu) > aperture_tu && !glued(a))
+            .filter(|(a, d)| now_k.saturating_sub(d.last_used_k) > aperture_k && !glued(a))
             .map(|(a, _)| a)
             .collect();
         let n = drop.len();
@@ -2917,7 +2928,7 @@ impl Entity {
             return true;
         }
         if let Some(a) = self.epigenome.same_vertex_in_dialect(word) {
-            self.epigenome.touch(&a, self.now_tu());
+            self.epigenome.touch(&a, self.session.voice().k());
             return true;
         }
         false
@@ -2969,13 +2980,13 @@ impl Entity {
     }
 
     pub fn shed(&mut self) -> usize {
-        self.shed_at(self.now_tu())
+        self.shed_at(self.session.voice().k())
     }
 
-    pub fn shed_at(&mut self, now_tu: u64) -> usize {
-        self.epigenome.note_stroke(now_tu);
+    pub fn shed_at(&mut self, now_k: u64) -> usize {
+        self.epigenome.note_stroke(now_k);
         let glued = |a: &[u8]| self.contemplation.glues_word(a);
-        let n = self.epigenome.shed_except(now_tu, &glued);
+        let n = self.epigenome.shed_except(now_k, &glued);
         n.saturating_add(self.contemplation.shed_unglued())
     }
 
@@ -3005,13 +3016,13 @@ impl Entity {
         )
     }
 
-    /// Fiber of the working atlas; a Stood hit updates last_used_tu.
+    /// Fiber of the working atlas; a Stood hit is a use at the mind's own K.
     pub fn working_fiber(&mut self, c: &crate::transducer::stalk::Invariant) -> Vec<(Vec<u8>, Standing)> {
         let f = self.working_atlas().fiber(c);
-        let tu = self.now_tu();
+        let k = self.session.voice().k();
         for (a, st) in &f {
             if *st == Standing::Stood {
-                self.epigenome.touch(a, tu);
+                self.epigenome.touch(a, k);
             }
         }
         f
@@ -3961,15 +3972,43 @@ mod tests {
         let addr = from_residual(&residual.to_vec()).address();
         let d = epi.dialect.get(&addr).expect("stood");
         assert_eq!(d.last_used_k, 7, "k is the voice's K");
-        assert_eq!(d.last_used_tu, 10, "tu is TUniversal");
+        assert_eq!(d.last_used_tu, 10, "tu is the standing extent in heights");
+        // The lifecycle is counted in the mind's OWN K (45.4), so the
+        // strokes that measure the aperture are K values, not heights.
         let aperture = crate::physics::aperture_cycle() as u64;
-        let now = 10 + aperture - 1;
-        for tu in 10..=now {
-            epi.note_stroke(tu);
+        let now = 7 + aperture - 1;
+        for k in 7..=now {
+            epi.note_stroke(k);
         }
         let n = epi.shed(now);
         assert_eq!(n, 0, "expressed within the aperture stands");
         assert_eq!(epi.dialect_len(), 1);
         assert!(epi.working_word(&addr).is_some());
+    }
+
+    /// The defect this coordinate change closes. Heights advance only on
+    /// admitted receipts (45.2), so a mind whose mesh admits nothing has a
+    /// TUniversal frozen at 0 — and a lifecycle read against it could never
+    /// fire, holding everything the mind ever stood for the life of the
+    /// process. A mind's own K advances on its own acts, so it reclaims
+    /// what it holds whether or not anyone answered it.
+    #[test]
+    fn a_mind_sheds_on_its_own_k_though_the_mesh_never_advances() {
+        use crate::transducer::element::from_residual;
+        let mut epi = Epigenome::new();
+        let residual = [(0i64, 0i64, 1u8, 2u8)];
+        // Stood at the mind's K 1, with TUniversal frozen at 0 throughout:
+        // no receipt was ever admitted.
+        assert!(epi.express(&residual, 1, 0), "the residual is claimed");
+        let addr = from_residual(&residual.to_vec()).address();
+        assert_eq!(epi.dialect_len(), 1);
+        let aperture = crate::physics::aperture_cycle() as u64;
+        let now = 1 + aperture + 1;
+        for k in 1..=now {
+            epi.note_stroke(k);
+        }
+        assert_eq!(epi.shed(now), 1, "unused past the aperture, it sheds");
+        assert_eq!(epi.dialect_len(), 0, "the mind reclaimed what it held");
+        assert!(epi.working_word(&addr).is_none());
     }
 }
