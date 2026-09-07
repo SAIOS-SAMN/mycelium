@@ -274,9 +274,18 @@ impl Kernel {
     /// digest folds the acting voice with the court head last ruled here,
     /// so the receipt is causally ordered against the mesh's chain of
     /// record and verifiable end to end.
+    /// Seal one K-step, CITING every peer receipt admitted since the last
+    /// one (47.2 step 3). The parents are taken only when the append
+    /// succeeds: `append` refuses a parent whose height this chain cannot
+    /// re-derive, and dropping the queue on a refusal would lose the
+    /// admission rather than hold it for the step that can cite it.
     pub(super) fn append_step(&mut self, addr: impl AsRef<[u8]>, voice: [u8; 32]) {
         let op = crate::chronometry::operator_hash(&voice, &self.court_head);
-        self.chain.append(addr.as_ref(), op, Vec::new());
+        let parents = std::mem::take(&mut self.pending_parents);
+        if self.chain.append(addr.as_ref(), op, parents.clone()).is_none() {
+            self.pending_parents = parents;
+            self.chain.append(addr.as_ref(), op, Vec::new());
+        }
     }
 
     /// A voice spoke on a listing in its current state.

@@ -5,6 +5,7 @@
 //! derivation. See docs/THREE_BINARIES.md — no market, door, registry, or
 //! epigenome links here.
 
+pub mod admission;
 pub mod convergence;
 pub mod identity;
 pub mod ledger;

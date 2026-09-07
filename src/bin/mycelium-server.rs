@@ -269,6 +269,11 @@ struct Mesh {
     /// The last aperture of measured round trips per peer, in strokes.
     rtt_window: Arc<Mutex<Keyed<Vec<u64>>>>,
     last_roots: Arc<Mutex<Keyed<([[u8; 32]; 4], [u8; 32])>>>,
+    /// This node's own `(H_genesis, E_origin)`, the pair 47.2 step 1 tests
+    /// every signed frame against. `None` is UNMEASURED, not zero: a node
+    /// that has not adopted a genesis admits no receipt at all rather than
+    /// admitting everything under a zero sentinel.
+    origin: Arc<Mutex<Option<([u8; 32], u32)>>>,
 }
 
 impl Clone for Mesh {
@@ -283,6 +288,7 @@ impl Clone for Mesh {
             rtt: Arc::clone(&self.rtt),
             rtt_window: Arc::clone(&self.rtt_window),
             last_roots: Arc::clone(&self.last_roots),
+            origin: Arc::clone(&self.origin),
         }
     }
 }
@@ -369,7 +375,77 @@ fn sign_cover_digest(kernel: &Mutex<Kernel>, mesh: &Mesh) -> Vec<u8> {
         use ed25519_dalek::Signer;
         mesh.sk.sign(&prefix).to_bytes()
     };
-    dialogue::encode_cover_digest(&charts, &room, &cover_roots, &ruled_root, &mesh.vk, &mesh.bind, &sig)
+    let mut out =
+        dialogue::encode_cover_digest(&charts, &room, &cover_roots, &ruled_root, &mesh.vk, &mesh.bind, &sig);
+    // 47.1: the signer's causal position travels with its signature. The
+    // head receipt and the prefix it is signed over are appended, so the
+    // peer can run 47.2 and cite this receipt as a parent of its next step.
+    // A node with no genesis sends none: it has no origin to claim.
+    let origin = mesh.origin.lock().ok().and_then(|o| *o);
+    if let (Some((genesis, epoch)), Ok(k)) = (origin, kernel.lock()) {
+        if let Some(head) = k.chain().receipts().last().cloned() {
+            let prefix = mycelium::court::admission::SignedPrefix {
+                genesis,
+                epoch,
+                prev_receipt_hash: head.prev_receipt_hash,
+                k: head.step_index,
+                height: head.height,
+                chart: k.active_cover().iter().flat_map(|(_, inv)| inv.0.clone()).collect(),
+                payload: ruled_root.to_vec(),
+            };
+            let sig = {
+                use ed25519_dalek::Signer;
+                mesh.sk.sign(&prefix.bytes()).to_bytes()
+            };
+            out.extend(dialogue::encode_receipt_section(&prefix, &sig, &head));
+        }
+    }
+    out
+}
+
+/// 47.2 on the voice: run admission over the receipt section a peer
+/// appended to its digest, and cite what admits. Returns what the mind
+/// answered, `None` when the peer sent no section.
+///
+/// The signature (step 2) is checked HERE, over exactly `prefix.bytes()`,
+/// before the mind is asked: `Kernel::admit_receipt` is deliberately not
+/// given a key, so no call site can satisfy admission by verifying bytes
+/// and skipping the chain.
+fn admit_peer_receipt(
+    kernel: &Mutex<Kernel>,
+    mesh: &Mesh,
+    body: &[u8],
+) -> Option<mycelium::court::admission::Admitted> {
+    use mycelium::court::admission::Admitted;
+    let at = dialogue::cover_digest_end(body)?;
+    let (prefix, sig, receipt) = dialogue::decode_receipt_section(body, at)?;
+    let origin = (*mesh.origin.lock().ok()?)?;
+    if !mycelium::court::identity::verify(&receipt.vk, &prefix.bytes(), &sig) {
+        return Some(Admitted::Refused("bad signature"));
+    }
+    let verdict = kernel.lock().ok()?.admit_receipt(origin, &prefix, &receipt);
+    let vk = receipt.vk;
+    match &verdict {
+        Admitted::Parent(p) => eprintln!(
+            "  court receipt parent {:02x}{:02x}… K {} h {}",
+            vk[0], vk[1], p.k, receipt.height
+        ),
+        Admitted::Gap { from, to, .. } => eprintln!(
+            "  court receipt gap {:02x}{:02x}… {from}→{to} backfill",
+            vk[0], vk[1]
+        ),
+        Admitted::Equivocation { k, .. } => eprintln!(
+            "  court equivocation {:02x}{:02x}… K {k}",
+            vk[0], vk[1]
+        ),
+        Admitted::Refused(why) => {
+            eprintln!("  court origin refused {:02x}{:02x}… {why}", vk[0], vk[1])
+        }
+        // A duplicate is ignored in silence; saying so once per exchange
+        // cycle per peer is the log spam that buried the 34.2 trace.
+        Admitted::Stale => {}
+    }
+    Some(verdict)
 }
 
 fn admit_peer_digest(mesh: &Mesh, body: &[u8], router: &Mutex<Router>) -> bool {
@@ -1246,6 +1322,13 @@ fn main() {
         rtt: Arc::new(Mutex::new(Keyed::new())),
         rtt_window: Arc::new(Mutex::new(Keyed::new())),
         last_roots: Arc::new(Mutex::new(Keyed::new())),
+        // 45.5: a genesis of all zeros is not a genesis, it is the absence
+        // of one. `None` here refuses every admission (REFUSE_ORIGIN is not
+        // even reached -- there is nothing to compare against), which is the
+        // correct answer for a node that has adopted no origin.
+        origin: Arc::new(Mutex::new(
+            (mesh_rec.genesis != [0u8; 32]).then_some((mesh_rec.genesis, mesh_rec.epoch)),
+        )),
     };
     let router = Arc::new(Mutex::new(Router::new()));
     if let Ok(mut r) = router.lock() {
@@ -1558,6 +1641,7 @@ fn main() {
                             if !admit_peer_digest(&mesh, &reply, &router) {
                                 continue;
                             }
+                            let _ = admit_peer_receipt(&kernel, &mesh, &reply);
                             let Some((_, _, cover_roots, ruled_root, vk_peer, _, _)) =
                                 dialogue::decode_cover_digest(&reply)
                             else {
@@ -1682,6 +1766,14 @@ fn main() {
                                 "  court genesis {:02x}{:02x}… epoch {}",
                                 h[0], h[1], rec.epoch
                             );
+                        }
+                        // The origin 47.2 step 1 tests against is adopted with
+                        // it; until this the mesh had no pair to compare and
+                        // admitted no receipt.
+                        if let Ok(mut o) = mesh.origin.lock() {
+                            if o.is_none() {
+                                *o = Some((rec.genesis, rec.epoch));
+                            }
                         }
                         genesis_written.store(true, std::sync::atomic::Ordering::Relaxed);
                     }

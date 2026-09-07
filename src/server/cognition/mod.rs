@@ -643,6 +643,17 @@ pub struct Kernel {
     /// Retirements of basis words, counted: while it stands still, every
     /// index into the basis names the same word it did.
     retire_gen: u64,
+    /// 47.2's admission state: what this mind knows of each hypha's chain
+    /// head. Empty until a receipt is admitted, and nothing admits one
+    /// except `admit_receipt`.
+    admissions: crate::court::admission::Admissions,
+    /// Peer receipts admitted since this mind's last step, waiting to be
+    /// CITED as parents of it (47.2 step 3). This is the only thing that
+    /// makes height more than a rename of K: `append` takes
+    /// `1 + max(h(prev), parent heights)`, and with no parent ever named
+    /// the max was always this chain's own head, so TUniversal advanced on
+    /// this mind's strokes rather than on the mesh's receipts (45.2).
+    pending_parents: Vec<crate::chronometry::Parent>,
     /// THE RECEIPTS OF SPEECH: listing → voices that have spoken on it.
     spoken: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// Transpose: voice → listings that voice holds. Written with `spoken`.
@@ -937,6 +948,45 @@ impl Kernel {
             return;
         };
         self.enroll(voice, cover);
+    }
+
+    /// 47.2, on the voice: admit one hypha's receipt, carried with the
+    /// prefix it was signed over. `origin` is this node's own
+    /// `(H_genesis, E_origin)`. Only `Parent` touches a carrier -- it puts
+    /// the receipt on the chain's known set and queues it to be cited by
+    /// this mind's next step, which is how height climbs on ADMITTED
+    /// receipts rather than on this mind's own strokes.
+    ///
+    /// The caller verifies the signature over `prefix.bytes()` before
+    /// calling; step 2 is not performed here, so no call site can satisfy
+    /// admission by checking bytes alone.
+    pub fn admit_receipt(
+        &mut self,
+        origin: ([u8; 32], u32),
+        prefix: &crate::court::admission::SignedPrefix,
+        r: &crate::chronometry::KStepReceipt,
+    ) -> crate::court::admission::Admitted {
+        let chain = &self.chain;
+        let verdict = self
+            .admissions
+            .admit(origin, prefix, r, |p| chain.height_of(&p.hash));
+        if let crate::court::admission::Admitted::Parent(p) = &verdict {
+            self.chain.admit(r.clone());
+            if !self.pending_parents.iter().any(|q| q.hash == p.hash) {
+                self.pending_parents.push(p.clone());
+            }
+        }
+        verdict
+    }
+
+    /// Receipts admitted and not yet cited. A step consumes them.
+    pub fn pending_parents(&self) -> usize {
+        self.pending_parents.len()
+    }
+
+    /// What this mind knows of a hypha's chain head, if it has admitted one.
+    pub fn known_head(&self, vk: &[u8; 32]) -> Option<(u64, [u8; 32])> {
+        self.admissions.head(vk)
     }
 
     pub fn height(&self) -> u64 {

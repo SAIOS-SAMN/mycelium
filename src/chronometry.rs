@@ -218,6 +218,13 @@ impl ReceiptChain {
         self.receipts.last().map_or(0, |r| r.height)
     }
 
+    /// Height of a receipt this chain holds, by its chain hash. `None` when
+    /// the chain does not hold it: that is UNMEASURED height, and a caller
+    /// re-deriving a claimed height must refuse rather than read it as zero.
+    pub fn height_of(&self, hash: &[u8; 32]) -> Option<u64> {
+        self.parent_height(&Parent { vk: [0u8; 32], k: 0, hash: *hash })
+    }
+
     fn parent_height(&self, p: &Parent) -> Option<u64> {
         self.known.get(&p.hash).map(|r| r.height).or_else(|| {
             self.receipts

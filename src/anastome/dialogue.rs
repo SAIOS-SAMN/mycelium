@@ -578,6 +578,98 @@ pub fn decode_cover_digest(
     Some((charts, room, cover_roots, ruled_root, vk, addr, sig))
 }
 
+/// 47.1's RECEIPT SECTION, appended after a digest's signature: the
+/// sender's head receipt, the 47.1 prefix it was signed over, and the
+/// signature over exactly those prefix bytes.
+///
+/// `[plen u16][prefix][sig 64][rlen u32][receipt]`
+///
+/// The section is what carries a signer's causal position with its
+/// signature (47.1). Without it a receiver could verify that bytes came
+/// from a key and learn nothing about where in that key's chain they came
+/// from, so no receipt was ever admitted and no height ever climbed on
+/// anything but the receiver's own strokes (45.2).
+///
+/// It is APPENDED, so a peer that does not send one still decodes: the
+/// digest's own carriers and signature are unchanged by it. Migrating
+/// `cover_signed_prefix` itself onto 47.1 -- which moves what the digest's
+/// primary signature covers -- is its own task and is not this.
+pub fn encode_receipt_section(
+    prefix: &crate::court::admission::SignedPrefix,
+    sig: &[u8; 64],
+    receipt: &crate::chronometry::KStepReceipt,
+) -> Vec<u8> {
+    let pb = prefix.bytes();
+    let mut rb = Vec::new();
+    receipt.write(&mut rb);
+    let mut out = Vec::with_capacity(pb.len() + rb.len() + 70);
+    out.extend_from_slice(&(pb.len() as u16).to_le_bytes());
+    out.extend_from_slice(&pb);
+    out.extend_from_slice(sig);
+    out.extend_from_slice(&(rb.len() as u32).to_le_bytes());
+    out.extend_from_slice(&rb);
+    out
+}
+
+/// Read a receipt section from `body` at `at`, the offset one past the
+/// digest's signature. `None` when the peer sent none, or when the section
+/// does not parse whole -- a truncated section is refused, never a partial
+/// admission (rule 11).
+pub fn decode_receipt_section(
+    body: &[u8],
+    at: usize,
+) -> Option<(
+    crate::court::admission::SignedPrefix,
+    [u8; 64],
+    crate::chronometry::KStepReceipt,
+)> {
+    let mut p = at;
+    let plen = u16::from_le_bytes(body.get(p..p + 2)?.try_into().ok()?) as usize;
+    p += 2;
+    let prefix = crate::court::admission::SignedPrefix::read(body.get(p..p + plen)?)?;
+    p += plen;
+    let sig: [u8; 64] = body.get(p..p + 64)?.try_into().ok()?;
+    p += 64;
+    let rlen = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+    p += 4;
+    let rb = body.get(p..p + rlen)?;
+    let mut q = 0usize;
+    let receipt = crate::chronometry::KStepReceipt::read(rb, &mut q)?;
+    if q != rlen {
+        return None;
+    }
+    Some((prefix, sig, receipt))
+}
+
+/// Offset one past a decoded digest's signature: where a receipt section
+/// begins, if one was sent. Re-walks the same fields `decode_cover_digest`
+/// walks, so the two cannot drift apart on a length the other guessed.
+pub fn cover_digest_end(body: &[u8]) -> Option<usize> {
+    let mut p = 0usize;
+    if let Some(digests) = decode_digests_reply(body) {
+        p = 4;
+        for d in &digests {
+            p += 1 + 8 * d.inv.0.len() + 4 + 4 + d.root.len();
+        }
+        if p >= body.len() {
+            return None;
+        }
+    }
+    let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+    p += 4;
+    for _ in 0..n.min(1024) {
+        p += 1;
+        read_invariant(body, &mut p)?;
+    }
+    p += 8 * 4 + 32 * 4 + 32 + 32;
+    let alen = *body.get(p)? as usize;
+    p += 1 + alen + 64;
+    if p > body.len() {
+        return None;
+    }
+    Some(p)
+}
+
 /// Cover: `[ACT_COVER][vk 32][alen u8][addr][n u32]([lane u8][invariant])*`
 pub fn encode_cover(vk: &[u8; 32], addr: &str, charts: &[(u8, crate::transducer::stalk::Invariant)]) -> Vec<u8> {
     let mut out = vec![ACT_COVER];
