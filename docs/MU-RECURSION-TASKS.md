@@ -162,7 +162,7 @@ Move-only, one file per commit, tests to `<module>/tests/<chapter>.rs`, document
 | S10 | network/nerve.rs | 1,353 | network/nerve/{keyed, cover, router}.rs, tests/{13,16}.rs | landed (S10); the module path stays `network::nerve` so no call site changed |
 | S11 | server/cognition/court.rs | 1,322 | court/{replay, glue, lapse, syllabus, task}.rs | landed (S11) |
 | S12 | economy.rs | 1,217 | economy/{lanes, treasury, escrow, settle, persist}.rs, tests/{26,47}.rs | landed (S12) |
-| S13 | client/sdk/entity.rs | 1,208 | entity/{boot, transport, learn, utter, quote, think}.rs | open |
+| S13 | client/sdk/entity.rs | 1,202 | entity/{boot, transport, learn, utter, quote, think}.rs | landed (S13) |
 | S14 | server/cognition/book.rs | 1,185 | book/{listings, tension, speech, language}.rs | open |
 | S15 | court/verdict.rs | 1,138 | verdict/{replay, blind, ruling, selection}.rs, tests/{23,42}.rs | open |
 | S16 | transducer/cech.rs | 1,131 | cech/{cell, complex, coboundary, tape}.rs, tests/{10,13,14}.rs | open |

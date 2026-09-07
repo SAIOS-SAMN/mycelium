@@ -85,7 +85,6 @@ fn walk(dir: &Path, crate_dir: &str, hits: &mut Vec<String>) -> Result<(), Strin
 /// is already under the bound, or no longer exists, is a stale row and is
 /// itself a hit — the list cannot outlive what it excuses.
 const AWAITING_SPLIT: &[(&str, &str)] = &[
-    ("src/client/sdk/entity.rs", "S13"),
     ("src/server/cognition/book.rs", "S14"),
     ("src/court/verdict.rs", "S15"),
     ("src/transducer/cech.rs", "S16"),
