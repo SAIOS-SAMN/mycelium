@@ -20,6 +20,7 @@ pub fn run() -> Result<(), String> {
     for d in dirs {
         walk(&root.join(d), d, &mut hits)?;
     }
+    lint_file_length(&root, &mut hits)?;
     lint_blake3(&root, &mut hits)?;
     lint_squaring(&root, &mut hits)?;
     lint_qmatrix(&root, &mut hits)?;
@@ -67,6 +68,50 @@ fn walk(dir: &Path, crate_dir: &str, hits: &mut Vec<String>) -> Result<(), Strin
         }
     }
     Ok(())
+}
+
+/// Stage 8's reading bound. Part VII's rule of verification is that the
+/// auditor reads the function and its carriers END TO END, and grep is not
+/// verification; a file no one reads whole is a file whose faults are found
+/// by soak instead of by review. Every carrier fault of the G-set was
+/// invisible at 8000 lines and obvious at the function.
+///
+/// 2500 is the one literal this tree allows, and it is allowed because it
+/// measures a person and not the mathematics (rule 5 bans constants that
+/// stand in for a measurement of the world; this stands in for a reading).
+/// A split moves code and changes nothing else, so the cost of obeying it
+/// is a commit whose suite counts are byte-identical.
+fn lint_file_length(root: &Path, hits: &mut Vec<String>) -> Result<(), String> {
+    const BOUND: usize = 2500;
+    fn walk_len(dir: &Path, hits: &mut Vec<String>) -> Result<(), String> {
+        let rd = match fs::read_dir(dir) {
+            Ok(rd) => rd,
+            Err(_) => return Ok(()),
+        };
+        for ent in rd {
+            let ent = ent.map_err(|e| e.to_string())?;
+            let path = ent.path();
+            if path.is_dir() {
+                walk_len(&path, hits)?;
+                continue;
+            }
+            if path.extension().and_then(|s| s.to_str()) != Some("rs") {
+                continue;
+            }
+            let n = fs::read_to_string(&path)
+                .map_err(|e| format!("{}: {e}", path.display()))?
+                .lines()
+                .count();
+            if n > BOUND {
+                hits.push(format!(
+                    "{}: {n} lines, over the {BOUND}-line reading bound (Stage 8) — split it",
+                    path.display()
+                ));
+            }
+        }
+        Ok(())
+    }
+    walk_len(root, hits)
 }
 
 /// Does the module owning `tests.rs` declare it under `#[cfg(test)]`? The
