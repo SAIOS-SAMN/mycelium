@@ -170,7 +170,7 @@ Move-only, one file per commit, tests to `<module>/tests/<chapter>.rs`, document
 | S18 | transducer/family/tests.rs | 1,002 | family/tests/{20,21,22,26}.rs + common.rs | landed (S18); tests/21.rs is 733 and splits again at the 600 bound |
 | S19 | client/sdk/epigenome.rs | 999 | epigenome/{atlas, dialect, shed, comprehend, persist, crystal}.rs | landed (S19) |
 | S20 | transducer/blade.rs | 911 | blade/{body, carry, peel}.rs, tests/{16,20}.rs + common.rs | landed (S20) |
-| S21 | bin/mycelium-client.rs | 904 | mycelium-client/{main, feed, speak, arms/{feed,quote,task,learn}}.rs | open |
+| S21 | bin/mycelium-client.rs | 904 | mycelium-client/{main, feed, speak, arms/{feed,quote,task,syntropy}}.rs | landed (S21) |
 | S22 | server/cognition/germinate.rs | 901 | germinate/{ingest, stroke, attest, state}.rs | open |
 | S23 | client/sdk/tests.rs | 844 | sdk/tests/{6,24,25,39}.rs | open |
 | S24 | transducer/sentence/pivot.rs | 813 | pivot/{snap, loop_, loops, words}.rs | open |
