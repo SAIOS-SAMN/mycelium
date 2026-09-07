@@ -85,7 +85,6 @@ fn walk(dir: &Path, crate_dir: &str, hits: &mut Vec<String>) -> Result<(), Strin
 /// is already under the bound, or no longer exists, is a stale row and is
 /// itself a hit — the list cannot outlive what it excuses.
 const AWAITING_SPLIT: &[(&str, &str)] = &[
-    ("src/transducer/sentence/mod.rs", "S7"),
     ("src/transducer/alphabet.rs", "S8"),
     ("src/transducer/family/mod.rs", "S9"),
     ("src/network/nerve.rs", "S10"),
@@ -519,6 +518,13 @@ fn lint_squaring(root: &Path, hits: &mut Vec<String>) -> Result<(), String> {
 fn walk_squaring(path: &Path, hits: &mut Vec<String>) -> Result<(), String> {
     if path.is_file() {
         if path.extension().and_then(|s| s.to_str()) != Some("rs") {
+            return Ok(());
+        }
+        // A split-out test file carries no `#[cfg(test)]` marker for the
+        // brace scan below to find, so the gate would read the whole of it
+        // as production. The exemption is the same one `lint_file` uses and
+        // is checked against the owning module's declaration, not the name.
+        if is_declared_test_file(path) {
             return Ok(());
         }
         let src = fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;

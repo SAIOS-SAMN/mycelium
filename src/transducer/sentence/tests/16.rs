@@ -1,0 +1,350 @@
+// 16 — THE ROTOR and ITS CLASS: what order a word has, what is filed as
+// torsion, and what is refused rather than read as the zero class.
+
+use super::common::*;
+use crate::network::nerve::Keyed;
+use crate::transducer::alphabet::{self, Order, Word};
+use crate::transducer::element::{self, from_residual};
+use crate::transducer::sentence::*;
+use crate::transducer::stalk::{self, Standing};
+
+#[test]
+fn infinite_class_is_never_filed() {
+    let mut f = chord_form(&[infinite()]);
+    let snaps = f.pivot_loop(
+        [0x11; 32],
+        &crate::network::nerve::Keyed::new(),
+        &crate::transducer::family::NoCrystal,
+        &mut crate::physics::Physics::default().stroke_n(8),
+        None,
+        0,
+    );
+    let want = infinite().rotor().class_key().expect("infinite class");
+    assert!(
+        snaps.iter().any(|s| matches!(s, Snap::Demand { key, .. } if *key == want)),
+        "a demand names the rotor class: {snaps:?}"
+    );
+    assert!(
+        !snaps.iter().any(|s| matches!(s, Snap::TorsionFiled { .. })),
+        "infinite is never filed: {snaps:?}"
+    );
+    assert!(
+        f.torsion.is_empty(),
+        "an infinite class is never a large-ℓ torsion cycle"
+    );
+}
+
+#[test]
+fn torsion_filed_only_when_witnessed_at_period() {
+    let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
+    let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
+    let mut t = from_residual(&crate::transducer::germinate::germinate(&a, &b).unwrap());
+    t.puncture(vec![(2, 3), (3, 1), (1, 2)]);
+    assert_eq!(t.torse(), 1, "the hue cycle is one torsion generator");
+    let ws = crate::transducer::toroid::witness_stored(&t);
+    assert!(
+        ws.iter().any(|(ell, w)| *ell == 3
+            && matches!(w, crate::transducer::toroid::HolonomicLoopWitness::Closed { period: 3, .. })),
+        "period 3 is witnessed closed: {ws:?}"
+    );
+    t.record_torsion(vec![(1, 9)], 8, crate::transducer::element::FIBER_SPATIAL);
+    let ws = crate::transducer::toroid::witness_stored(&t);
+    assert!(
+        ws.iter().any(|(ell, w)| *ell == 8
+            && matches!(w, crate::transducer::toroid::HolonomicLoopWitness::Open { .. })),
+        "an unclosed walk is not believed: {ws:?}"
+    );
+}
+
+#[test]
+fn rank_offplane_is_its_own_lane() {
+    let w = Word::from_letters(&[(alphabet::LetterId::quarter((0, 2)).unwrap(), false)]);
+    assert!(w.plane_block().is_none(), "a (0,2) quarter is off the sensor plane");
+    let two = chord_form(&[w.clone(), w.clone()]);
+    let r = two.rank().expect("rank");
+    assert_eq!(r.offplane, 1, "two chords of one off-plane class count once, got {r:?}");
+    assert_eq!(r.free, 0, "plane free rank is empty, got {r:?}");
+    assert_ne!(r.offplane, 2, "the old per-chord count is not a coordinate");
+    assert_ne!(r.free, 2, "the old folded sum is not free");
+    let mixed = chord_form(&[infinite(), w]);
+    let r = mixed.rank().expect("rank");
+    assert_eq!(r.free, 1, "one plane free chord, got {r:?}");
+    assert_eq!(r.offplane, 1, "one off-plane class, got {r:?}");
+    assert_ne!(r.free, 2, "no component equals the old sum");
+    assert_ne!(r.offplane, 2, "no component equals the old sum");
+}
+
+/// Chapter 23.1 step 4: a filed torsion chord replays; a chord that is
+/// not the holonomy refuses the face; a missing torsion entry refuses
+/// the loop.
+#[test]
+fn filed_torsion_chord_replays_or_refuses() {
+    let mut f0 = chord_form(&[order4()]);
+    let _ = f0.pivot_loop(
+        [0xca; 32],
+        &crate::network::nerve::Keyed::new(),
+        &crate::transducer::family::NoCrystal,
+        &mut crate::physics::Physics::default().stroke_n(8),
+        None,
+        0,
+    );
+    assert!(f0.is_cauterized(), "filed finite torsion with empty remainder cauterizes");
+    let e = as_element_form(&f0, [1, 0, 0, 0]).expect("the filed form crystallizes");
+    assert!(
+        e.torsion().is_empty(),
+        "v2 does not fill the element torsion section"
+    );
+    assert!(
+        carries_torsion(&e),
+        "the form carries the filed cycle"
+    );
+    let keyed = from_element_form(&e).expect("v2 tape");
+    let (class, (_, _, chord)) = keyed
+        .torsion
+        .fiber(crate::network::nerve::ROOT)
+        .next()
+        .map(|(k, v)| (k, v.clone()))
+        .expect("filed class");
+    assert_eq!(
+        torsion_loop_rotor(&keyed, &class).and_then(|r| r.class_key()),
+        Some(crate::transducer::a21::Address::from(class)),
+        "the chord face is the keyed representative"
+    );
+    assert!(
+        keyed.faces.get(chord as usize).is_some(),
+        "the carrier stores a live chord face"
+    );
+    assert_eq!(
+        crate::court::verdict::blind_replay(&e),
+        None,
+        "a filed torsion chord replays: the chord carries the holonomy"
+    );
+    let mut f = from_element_form(&e).expect("v2 tape");
+    let mag = e.magnitude();
+    let Some(ci) = f
+        .faces
+        .iter()
+        .position(|face| f.face_of(face.i, face.j).as_ref() != Some(&face.transport))
+    else {
+        panic!("the filed form has a torsion chord");
+    };
+    f.faces[ci].transport.word = order2();
+    let bad = as_element_form(&f, mag).expect("tampered chord");
+    assert_eq!(
+        crate::court::verdict::blind_replay(&bad),
+        Some(crate::court::verdict::REFUSE_LOOP),
+        "a chord whose holonomy is not the filed class refuses the loop"
+    );
+    let mut gone = from_element_form(&e).expect("v2 tape");
+    gone.torsion = Keyed::new();
+    let missing = as_element_form(&gone, mag).expect("torsion stripped");
+    assert_eq!(
+        crate::court::verdict::blind_replay(&missing),
+        Some(crate::court::verdict::REFUSE_LOOP),
+        "a filed chord without its torsion entry refuses the loop"
+    );
+}
+
+#[test]
+fn horizon_seeded_infinite_is_not_demanded() {
+    let mut f = chord_form(&[infinite()]);
+    let r = infinite().rotor();
+    let mut horizon = crate::network::nerve::Keyed::new();
+    horizon.insert(r.class_key().expect("infinite class"), (r, Order::Infinite, Standing::Held));
+    let snaps = f.pivot_loop(
+        [0x5e; 32],
+        &horizon,
+        &crate::transducer::family::NoCrystal,
+        &mut crate::physics::Physics::default().stroke_n(8),
+        None,
+        0,
+    );
+    assert!(
+        !snaps.iter().any(|s| matches!(s, Snap::Demand { .. })),
+        "a held infinite class is not spoken again: {snaps:?}"
+    );
+}
+
+#[test]
+fn offplane_word_refuses_to_act_on_a_translation() {
+    let w = Word::from_letters(&[(alphabet::LetterId::quarter((0, 2)).unwrap(), false)]);
+    assert!(w.plane_block().is_none(), "a (0,2) quarter leaves the sensor plane");
+    let t = (q1(), q0());
+    assert!(
+        apply_linear(&w, &t).is_none(),
+        "an off-plane word does not act as the identity on a translation"
+    );
+    let tr = Transport {
+        word: w.clone(),
+        carriage: element::identity_versor(),
+        gauge: Vec::new(),
+    };
+    assert!(
+        tr.inverse().is_some(),
+        "an off-plane holonomy is a rotor like any other: inverse is the carriage inverse"
+    );
+    assert!(
+        tr.refract(&Form::default()).is_none(),
+        "refraction refuses a word that moves the sensor plane"
+    );
+}
+
+/// A1: a (0,2) quarter to the fourth power is projectively identity and
+/// closed to coheres, pivot_loop, is_cauterized, and the court. The
+/// sensor-plane abelianisation does not see it.
+#[test]
+fn offplane_quarter_to_the_fourth_is_closed_to_all_four_readers() {
+    let q = alphabet::LetterId::quarter((0, 2)).expect("quarter");
+    let w = Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
+    assert!(w.is_identity(), "Φ⁴ is projectively 1");
+    let mut f = Form::default();
+    let empty = |addr: u8| Vertex::Word {
+        address: form_addr(addr),
+        word: Word::identity(),
+        carriage: element::carriage(&q1(), &(q0(), q0())),
+        gauge: Vec::new(),
+        class: stalk::Invariant::default(),
+        contact: None,
+    };
+    f.vertices.push(empty(1));
+    f.vertices.push(empty(2));
+    f.faces.push(FormFace {
+        i: 0,
+        j: 1,
+        transport: f.face_of(0, 1).expect("star 1"),
+    });
+    f.faces.push(FormFace {
+        i: 0,
+        j: 2,
+        transport: f.face_of(0, 2).expect("star 2"),
+    });
+    f.faces.push(FormFace::new(1, 2, w));
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.reindex();
+    assert!(f.coheres(), "coheres reads projective identity");
+    assert!(
+        f.is_cauterized(),
+        "is_cauterized reads projective identity"
+    );
+    assert!(
+        f.loops.iter().all(|lp| lp.holonomy.is_identity()),
+        "the chord holonomy is A1 identity"
+    );
+    let snaps = f.pivot_loop(
+        [0xa1; 32],
+        &Keyed::new(),
+        &crate::transducer::family::NoCrystal,
+        &mut crate::physics::Physics::default().stroke_n(8),
+        None,
+        0,
+    );
+    assert!(
+        !snaps.iter().any(|s| matches!(
+            s,
+            Snap::Demand { .. } | Snap::TorsionOpen { .. } | Snap::TorsionFiled { .. }
+        )),
+        "pivot_loop does not demand a projective identity: {snaps:?}"
+    );
+    let e = as_element_form(&f, [1, 0, 0, 0]).expect("the identity chord crystallizes");
+    assert_eq!(
+        crate::court::verdict::blind_replay(&e),
+        None,
+        "the court reads projective identity"
+    );
+}
+
+#[test]
+fn rotor_class_is_read_before_the_plane_form() {
+    let w = order4();
+    let rk = w.rotor().class_key().expect("quarter is a versor");
+    assert_eq!(
+        w.class_key(),
+        Some(rk.clone()),
+        "Word::class_key is the rotor conjugacy, not the plane form"
+    );
+    let cv = ClassVector::of_word(&w).expect("quarter");
+    let kb = cv.class_key();
+    assert!(
+        kb.as_bytes().starts_with(rk.as_bytes()),
+        "a prefix of the class vector is the rotor's conjugacy stratum"
+    );
+    assert!(cv.occupies(Axis::Unit(0)));
+    assert!(!cv.occupies(Axis::OffPlane), "a plane word is not an off-plane fallback");
+    let other = order2();
+    assert!(
+        !w.same_class(&other),
+        "distinct rotor classes are distinct even when both have a plane form"
+    );
+}
+
+#[test]
+fn a_word_that_moves_the_sensor_plane_is_not_an_exception() {
+    let w = Word::from_letters(&[(alphabet::LetterId::quarter((0, 2)).unwrap(), false)]);
+    assert!(w.form().is_none());
+    assert!(w.plane_block().is_none());
+    let cv = ClassVector::of_word(&w).expect("off-plane quarter is a versor");
+    assert!(
+        cv.occupies(Axis::OffPlane),
+        "an off-plane holonomy occupies OffPlane as a rotor, got {:?}",
+        cv.coordinates()
+    );
+    assert!(
+        !cv.occupies(Axis::Orientation(0))
+            && !cv.occupies(Axis::Unit(0))
+            && !cv.occupies(Axis::Prime5(0)),
+        "plane blocks are zero, not a fallback identity"
+    );
+    assert_eq!(w.class_key(), w.rotor().class_key());
+    assert!(w.same_form(&w), "missing plane form is not an exception when rotors agree");
+}
+
+#[test]
+fn orientation_is_the_third_axis_half_turn() {
+    let s = alphabet::PlaneForm::sheet_word();
+    assert_eq!(s.len(), 2, "the 1.2 relator is two quarter turns, S = q²");
+    let f = s.form().expect("the half-turn keeps the sensor plane");
+    assert!(f.orientation, "det/ρ² = −1 is the orientation character");
+    let cv = ClassVector::of_word(&s).expect("half-turn");
+    assert_eq!(
+        cv.coordinates(),
+        vec![Axis::Orientation(0)],
+        "orientation occupies Orientation(0), never a stored flag, got {:?}",
+        cv.coordinates()
+    );
+    let q = order4();
+    let conj = s.compose(&q).compose(&s).compose(&q.inverse());
+    assert!(
+        !conj.form().expect("plane").is_identity(),
+        "S R S⁻¹ = R⁻¹, not the commuting identity"
+    );
+}
+
+#[test]
+fn a_loop_residue_is_the_translator_of_its_holonomy_versor() {
+    let mut f = chord_form(&[Word::identity()]);
+    for fa in &mut f.faces {
+        fa.transport.gauge.clear();
+    }
+    let chord = f.loops[0].chord as usize;
+    f.faces[chord].transport.carriage = element::carriage(&q1(), &(q1(), q0()));
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    let kappa = f.class_vector(0).expect("loop");
+    assert!(kappa.occupies(Axis::Placement));
+    let t = element::translator_of(&kappa.carriage).expect("translator");
+    assert!(
+        !element::same_versor(&t, &element::identity_versor()),
+        "the residue is the translator, not a pair"
+    );
+    assert!(!kappa.occupies(Axis::Dilation));
+}
+
+#[test]
+fn a_non_versor_holonomy_is_refused_not_zero_class() {
+    let w = Word::formed(alphabet::Rotor::zero());
+    assert!(w.class_key().is_none(), "a non-versor is never a class");
+    assert!(ClassVector::of_word(&w).is_none());
+    assert!(ClassVector::read(&w, element::identity_versor(), CycleType::Identity).is_none());
+    let rk = alphabet::Rotor::zero().key();
+    assert_eq!(rk.tag(), Some(crate::transducer::a21::TAG_ROTOR));
+    assert_ne!(w.class_key(), Some(rk), "Word::class_key does not fall back to TAG_ROTOR");
+}
