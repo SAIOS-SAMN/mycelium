@@ -93,7 +93,6 @@ const AWAITING_SPLIT: &[(&str, &str)] = &[
     ("src/court/verdict.rs", "S15"),
     ("src/transducer/cech.rs", "S16"),
     ("src/client/sdk/mod.rs", "S17"),
-    ("src/transducer/family/tests.rs", "S18"),
     ("src/client/sdk/epigenome.rs", "S19"),
     ("src/transducer/blade.rs", "S20"),
     ("src/bin/mycelium-client.rs", "S21"),
