@@ -2117,10 +2117,10 @@ budget.
 
 ### 16.13 A13 — Meet of two keyed tries
 
-`Keyed::meet<W>(&self, other: &Keyed<W>) -> Keyed<()>` (nerve/keyed.rs): keys
+`Keyed::meet<W>(&self, other: &Keyed<W>) -> Keyed<()>` (nerve/keyed/relation.rs): keys
 present in both. A simultaneous walk down the two PATRICIA tries
 (`Node::Leaf(key, _)`, `Node::Branch { bit, children }`, `key_bit`,
-`first_difference`, `held_key`, nerve/keyed.rs), using one fact: every key
+`first_difference`, `held_key`, nerve/keyed/trie.rs), using one fact: every key
 in the subtree of a `Branch { bit }` agrees on all bits before `bit`.
 `meet(a, b)` on two nodes:
 
