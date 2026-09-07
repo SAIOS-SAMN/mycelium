@@ -608,7 +608,7 @@ impl Kernel {
         let mag = held.magnitude();
         let elem = self.basis_remove(addr);
         self.ruled_admit(addr);
-        self.cavity_book.insert(&addr, elem.clone());
+        self.cavity_book.insert(addr, elem.clone());
         self.cavities.push(elem);
         self.physics.syntropy(&mag);
         1
@@ -639,9 +639,7 @@ impl Kernel {
                 fiber = self
                     .stalks
                     .fiber(&inv)
-                    .iter()
-                    .cloned()
-                    .filter(|a| a.as_slice() != own.as_bytes())
+                    .iter().filter(|&a| a.as_slice() != own.as_bytes()).cloned()
                     .collect();
             }
             let mut spend = self.physics.stroke();

@@ -280,7 +280,7 @@ fn candidates(fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel> {
     // footprint touches (measured from the data, not enumerated blindly).
     let mut hues: Vec<u8> = scene
         .iter()
-        .filter(|(r, c, _)| has(&fp, (*r, *c)))
+        .filter(|(r, c, _)| has(fp, (*r, *c)))
         .map(|(_, _, h)| *h)
         .collect();
     hues.sort_unstable();

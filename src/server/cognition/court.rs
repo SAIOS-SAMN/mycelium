@@ -70,7 +70,7 @@ impl Kernel {
                         &elem.magnitude(),
                         &elem.magnitude(),
                     );
-                    self.cavity_book.insert(&addr, elem.clone());
+                    self.cavity_book.insert(addr, elem.clone());
                     self.cavities.push(elem);
                 }
                 self.mark_persist();
@@ -936,11 +936,11 @@ impl Kernel {
             };
             match self.cited_by.get_mut(address) {
                 Some(bucket) => {
-                    bucket.insert(&addr, ());
+                    bucket.insert(addr, ());
                 }
                 None => {
                     let mut bucket = crate::network::nerve::Keyed::new();
-                    bucket.insert(&addr, ());
+                    bucket.insert(addr, ());
                     self.cited_by.insert(address.clone(), bucket);
                 }
             }
@@ -954,7 +954,7 @@ impl Kernel {
                 None => {
                     let mut bucket = crate::network::nerve::Keyed::new();
                     bucket.insert(k, (true, self.chain.head_k()));
-                    self.replay_memo.insert(&addr, bucket);
+                    self.replay_memo.insert(addr, bucket);
                 }
             }
             eprintln!(

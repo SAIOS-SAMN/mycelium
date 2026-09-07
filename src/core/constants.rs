@@ -177,8 +177,8 @@ pub fn locked_rational_exp_n(x: &Q, terms: usize) -> Q {
 
     for &(num, den) in &TAYLOR_EXP_COEFFICIENTS[..n] {
         let coeff = Q::new(BigInt::from(num), BigInt::from(den));
-        result = result + &x_power * &coeff;
-        x_power = x_power * x;
+        result += &x_power * &coeff;
+        x_power *= x;
     }
 
     let zero = Q::new(BigInt::from(0), BigInt::from(1));

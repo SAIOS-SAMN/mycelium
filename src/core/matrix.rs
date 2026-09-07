@@ -81,10 +81,7 @@ pub fn invert(m: &[Vec<Q>]) -> Option<Vec<Vec<Q>>> {
         for row in col..n {
             if !aug[row][col].is_zero() { pivot_row = Some(row); break; }
         }
-        let pivot_row = match pivot_row {
-            Some(r) => r,
-            None => return None,
-        };
+        let pivot_row = pivot_row?;
 
         if pivot_row != col { aug.swap(pivot_row, col); }
 

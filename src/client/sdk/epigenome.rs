@@ -686,9 +686,7 @@ impl Epigenome {
                     }
                 }
                 None => {
-                    if first.is_none() {
-                        return None;
-                    }
+                    first.as_ref()?;
                 }
             }
         }
@@ -700,7 +698,7 @@ impl Epigenome {
         let addr = e.address();
         let resolve = |a: &[u8]| {
             self.working_word(a)
-                .and_then(|w| crate::transducer::sentence::from_element_form(w))
+                .and_then(crate::transducer::sentence::from_element_form)
         };
         match crate::verdict::blind_replay_with(&e, &resolve) {
             Some(crate::verdict::REFUSE_GLUED_UNRULED)

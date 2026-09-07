@@ -330,7 +330,7 @@ impl Entity {
                 }
                 used += bytes.len();
                 if self.session.speak_keyed(addr, dialogue::encode_adopt(&voice, &bytes)).is_ok() {
-                    self.taught_up.insert(&addr, word.clone());
+                    self.taught_up.insert(addr, word.clone());
                     taught += 1;
                 }
             }
@@ -945,10 +945,7 @@ impl Entity {
             let Some(t) = crate::transducer::element::from_translation(&class, a, b) else {
                 continue;
             };
-            match self.speak_word(&t) {
-                Ok(Utterance::Spoken) => return Some(t.address()),
-                _ => {}
-            }
+            if let Ok(Utterance::Spoken) = self.speak_word(&t) { return Some(t.address()) }
         }
         None
     }
@@ -983,10 +980,7 @@ impl Entity {
             self.contemplation.pivot_on(word, &self.epigenome, &mut budget);
         let mut n = 0usize;
         for e in spoken {
-            match self.speak_word(&e) {
-                Ok(Utterance::Spoken) => n += 1,
-                _ => {}
-            }
+            if let Ok(Utterance::Spoken) = self.speak_word(&e) { n += 1 }
         }
         n
     }

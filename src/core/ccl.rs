@@ -39,7 +39,7 @@ pub enum Audience {
 ///
 /// The translation is a pure function: no state, no allocation, no side effects.
 /// Unknown identifiers pass through unchanged (Law V — information is not discarded).
-pub fn translate<'a>(identifier: &'a str, audience: Audience) -> &'a str {
+pub fn translate(identifier: &str, audience: Audience) -> &str {
     match (identifier, audience) {
         // ─── Tier depth ───────────────────────────────────────────
         ("T0", Audience::Operator)      => "founder",

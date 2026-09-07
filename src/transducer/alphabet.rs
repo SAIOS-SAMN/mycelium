@@ -1518,7 +1518,7 @@ pub fn spell(block: &[[Q; 2]; 2]) -> Option<Spelling> {
 pub fn spell_peel(block: &[[Q; 2]; 2]) -> Option<(PeelNest<SpellResidualView, Syllable>, Q)> {
     let (a, b, c, d) = (&block[0][0], &block[0][1], &block[1][0], &block[1][1]);
     let rho2 = a * a + c * c;
-    if rho2.is_zero() || &(b * b + d * d) != &rho2 || !(a * b + c * d).is_zero() {
+    if rho2.is_zero() || (b * b + d * d) != rho2 || !(a * b + c * d).is_zero() {
         return None;
     }
     let rho = rational_sqrt(&rho2)?;

@@ -1387,7 +1387,7 @@ pub fn extract_rule_with(
         let mut held: Option<super::alphabet::Word> = None;
         let mut constant = true;
         for pf in &pair_forms {
-            match face_word_between(pf, &ea, &eb) {
+            match face_word_between(pf, ea, eb) {
                 None => {}
                 Some(w) => match &held {
                     None => held = Some(w),

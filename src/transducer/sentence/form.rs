@@ -358,9 +358,7 @@ pub(crate) fn tree_path(adj: &[Vec<(usize, usize)>], src: usize, dst: usize) -> 
             q.push(v);
         }
     }
-    if prev[dst].is_none() {
-        return None;
-    }
+    prev[dst]?;
     let mut path = vec![dst];
     let mut walked = Vec::new();
     let mut cur = dst;
@@ -488,11 +486,8 @@ impl PivotBy {
             PivotBy::Word { word, .. } => word.rotor().key().into_vec(),
             PivotBy::Placement { translator, .. } => {
                 let mut buf = vec![1u8];
-                match translator.key() {
-                    Some(k) => {
-                        let _ = crate::transducer::a21::put_addr(&mut buf, k);
-                    }
-                    None => {}
+                if let Some(k) = translator.key() {
+                    let _ = crate::transducer::a21::put_addr(&mut buf, k);
                 }
                 buf
             }

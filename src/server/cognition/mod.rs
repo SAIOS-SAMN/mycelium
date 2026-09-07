@@ -1035,10 +1035,10 @@ impl Kernel {
     fn stamp_standing(&mut self, addr: impl AsRef<[u8]>) {
         let addr = addr.as_ref();
         let h = self.height();
-        if self.standing_h.get(&addr).is_none() {
+        if self.standing_h.get(addr).is_none() {
             self.standing_h.insert(addr, h);
         }
-        if self.provisional.contains(&addr) && self.provisional_h.get(&addr).is_none() {
+        if self.provisional.contains(addr) && self.provisional_h.get(addr).is_none() {
             self.provisional_h.insert(addr, h);
         }
     }
@@ -1229,7 +1229,7 @@ impl Kernel {
         } else if let Some(w) = self.provisional.get(addr).cloned() {
             let inv = crate::transducer::stalk::invariant_of(&w);
             self.listing_atlas.admit(&inv, addr);
-            self.cavity_book.insert(&addr, w.clone());
+            self.cavity_book.insert(addr, w.clone());
             self.cavities.push(w);
             self.chill_field(addr);
         }
@@ -1313,7 +1313,7 @@ impl Kernel {
             } else {
                 self.occupancy[l] = self.occupancy[l].saturating_sub(mag[l]);
                 if mag[l] > 0 {
-                    self.lane_listings[l].remove(&addr);
+                    self.lane_listings[l].remove(addr);
                 }
             }
             if add {
@@ -1422,7 +1422,7 @@ impl Kernel {
         let mut germinate: Option<element::Versor> = None;
         let mut torse = false;
         for (_, vs) in asgs.fiber(crate::network::nerve::ROOT) {
-            match fiber_holonomy(&vs) {
+            match fiber_holonomy(vs) {
                 // Closed: the loop is torsion the language already carries.
                 Some(h) if h.projective_eq(&element::identity_versor()) => torse = true,
                 // Held: the germ is the holonomy itself, the exact thing the
@@ -1484,11 +1484,11 @@ impl Kernel {
             if seen.contains(addr) {
                 continue;
             }
-            seen.insert(&addr, ());
+            seen.insert(addr, ());
             if let Some(w) = self.basis.get(addr) {
                 nb.insert(addr, std::sync::Arc::clone(w));
                 if let Some(d) = self.discoverer_of(addr) {
-                    nd.insert(&addr, d);
+                    nd.insert(addr, d);
                 }
             } else {
                 nb.insert(addr, std::sync::Arc::new(elem.clone()));
@@ -1580,7 +1580,7 @@ impl Kernel {
         if self.court_fed_index.get(addr).is_some() {
             return;
         }
-        self.court_fed_index.insert(&addr, self.court_federation.len());
+        self.court_fed_index.insert(addr, self.court_federation.len());
         self.court_federation.push((Address::from(addr), spoken));
     }
 

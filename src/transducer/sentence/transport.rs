@@ -45,9 +45,7 @@ impl Transport {
 impl Form {
     /// The one function that moves a form between frames (3.10).
     pub fn refract(&self, gamma: &Transport) -> Option<Form> {
-        if gamma.word.form().is_none() {
-            return None;
-        }
+        gamma.word.form()?;
         let mut f = self.clone();
         f.rebase_by_word(&gamma.word);
         f.regauge_listing(&gamma.gauge);

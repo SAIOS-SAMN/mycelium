@@ -409,7 +409,7 @@ pub fn replay(e: &Element) -> Option<&'static str> {
             // not the meaning (3.8, T10), so the word it names as `after` is
             // the word it retires. A retirement naming a different vertex is
             // claiming a change of meaning it did not make.
-            if !rw.before.iter().any(|b| *b == rw.after) {
+            if !rw.before.contains(&rw.after) {
                 return Some("retirement changes the vertex it names");
             }
         }

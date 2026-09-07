@@ -78,7 +78,7 @@ impl QPolynomial {
     }
 
     fn trim(&mut self) {
-        while self.coeffs.last().map_or(false, |c| c.is_zero()) {
+        while self.coeffs.last().is_some_and(|c| c.is_zero()) {
             self.coeffs.pop();
         }
     }
@@ -468,7 +468,7 @@ pub fn compute_invariant_factors(matrix: &[Vec<Q>], dim: usize) -> InvariantFact
     // Filter to non-trivial factors (degree >= 1)
     let factors: Vec<QPolynomial> = diag
         .into_iter()
-        .filter(|p| p.degree().map_or(false, |d| d >= 1))
+        .filter(|p| p.degree().is_some_and(|d| d >= 1))
         .collect();
 
     // Build block-diagonal RCF matrix from companion matrices

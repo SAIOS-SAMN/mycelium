@@ -161,17 +161,14 @@ impl Form {
                 );
                 break;
             };
-            match self.solve_coboundary() {
-                Some(gamma) => {
-                    if self.regauge(&gamma).is_none() {
-                        eprintln!(
-                            "  pivot {:02x}{:02x}… held, tree gauge cannot be applied",
-                            idea[0], idea[1]
-                        );
-                        break;
-                    }
+            if let Some(gamma) = self.solve_coboundary() {
+                if self.regauge(&gamma).is_none() {
+                    eprintln!(
+                        "  pivot {:02x}{:02x}… held, tree gauge cannot be applied",
+                        idea[0], idea[1]
+                    );
+                    break;
                 }
-                None => {}
             }
             debug_assert_eq!(
                 Some(rank_before_gauge),

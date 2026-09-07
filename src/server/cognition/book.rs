@@ -119,7 +119,7 @@ impl Kernel {
         }
         let inv = crate::transducer::stalk::invariant_of(&elem);
         self.listing_atlas.admit_also(&inv, addr);
-        self.cavity_book.insert(&addr, elem.clone());
+        self.cavity_book.insert(addr, elem.clone());
         self.cavities.push(elem);
         self.chill_field(addr);
         self.book_gen += 1;
@@ -138,7 +138,7 @@ impl Kernel {
         };
         match t {
             Some(t) => {
-                self.tension.insert(&addr, t);
+                self.tension.insert(addr, t);
             }
             None => {
                 self.tension.remove(addr);
@@ -229,8 +229,8 @@ impl Kernel {
             });
         }
         if listing.nonflat > 0 {
-            self.open.insert(&addr, ());
-            self.field.insert(&addr, listing);
+            self.open.insert(addr, ());
+            self.field.insert(addr, listing);
         } else {
             self.open.remove(addr);
             self.field_cold.insert(addr, listing);
@@ -252,12 +252,12 @@ impl Kernel {
                 if now_flat {
                     m.remove(addr);
                 } else {
-                    m.insert(&addr, ());
+                    m.insert(addr, ());
                 }
             }
             None if !now_flat => {
                 let mut m = crate::network::nerve::Keyed::new();
-                m.insert(&addr, ());
+                m.insert(addr, ());
                 self.chart_listings.insert(ck, m);
             }
             None => {}
@@ -365,7 +365,7 @@ impl Kernel {
         };
         if word.is_sentence() {
             let inv = crate::transducer::stalk::invariant_of(&word);
-            let members: Vec<Vec<u8>> = self.stalks.fiber(&inv).iter().cloned().filter(|a| a != addr).collect();
+            let members: Vec<Vec<u8>> = self.stalks.fiber(&inv).iter().filter(|&a| a != addr).cloned().collect();
             if let Some(na) = crate::transducer::sentence::from_element_form(&word) {
                 let mut survivor = crate::transducer::a21::Address::from_bytes(addr);
                 for sib in members {
@@ -493,9 +493,7 @@ impl Kernel {
         let members: Vec<Vec<u8>> = self
             .stalks
             .fiber(&inv)
-            .iter()
-            .cloned()
-            .filter(|a| a.as_slice() != new)
+            .iter().filter(|&a| a.as_slice() != new).cloned()
             .collect();
         let Some(bidder) = self.discoverer_of(new) else {
             return;
@@ -556,7 +554,7 @@ impl Kernel {
             let words = crate::transducer::sentence::words_of_element(w);
             self.ruled.admit(&inv, addr);
             crate::transducer::sentence::admit_words(&mut self.axis_index, &inv, &words);
-            self.ruled_addrs.insert(&addr, ());
+            self.ruled_addrs.insert(addr, ());
             self.refresh_ruled_root();
         }
     }

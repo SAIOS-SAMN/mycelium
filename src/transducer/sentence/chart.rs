@@ -374,11 +374,8 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::a21::Address {
         buf.extend_from_slice(&face.i.to_le_bytes());
         buf.extend_from_slice(&face.j.to_le_bytes());
         crate::transducer::a21::put_bytes(&mut buf, &face.transport.word.key());
-        match face.transport.carriage.key() {
-            Some(k) => {
-                let _ = crate::transducer::a21::put_addr(&mut buf, k);
-            }
-            None => {}
+        if let Some(k) = face.transport.carriage.key() {
+            let _ = crate::transducer::a21::put_addr(&mut buf, k);
         }
         let mut g = face.transport.gauge.clone();
         g.sort_unstable();

@@ -23,7 +23,7 @@ use crate::transducer::stalk::{self, Stalks};
 use crate::transducer::toroid::{self, HolonomicLoopWitness};
 
 /// Spoken torsion period does not re-derive against the mesh's class.
-pub const REFUSE_NOT_NATURAL: &'static str = "not natural";
+pub const REFUSE_NOT_NATURAL: &str = "not natural";
 /// Refusals of a crystallized form's replay (chapter 34.1).
 pub const REFUSE_FORM_TAPE: &str = "form does not parse from its tape";
 pub const REFUSE_GLUED_DEPTH: &str = "glued form depth not below sentence depth";

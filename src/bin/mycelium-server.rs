@@ -827,7 +827,7 @@ fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
                 }
             }
             if let Ok(addrs) = door.mesh.addrs.lock() {
-                for (_, a) in addrs.fiber(&mycelium::network::nerve::ROOT) {
+                for (_, a) in addrs.fiber(mycelium::network::nerve::ROOT) {
                     if !nerve_addrs.iter().any(|x| x == a) {
                         nerve_addrs.push(a.clone());
                     }
@@ -1089,10 +1089,7 @@ fn list_task(
                     k.bind_listing_task(addr, tid);
                 }
             }
-            false if rehome => match k.has_listing(&addr) {
-                true => k.relocate_listing(&addr),
-                false => {}
-            },
+            false if rehome => if k.has_listing(&addr) { k.relocate_listing(&addr) },
             false => {}
         }
     }

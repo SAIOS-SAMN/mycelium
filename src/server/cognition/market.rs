@@ -211,7 +211,7 @@ impl Kernel {
                 );
                 self.basis_remove(addr);
                 self.physics.syntropy(&candidate.magnitude());
-                self.append_step(&addr, bidder);
+                self.append_step(addr, bidder);
                 Some(saved)
             }
             _ => None,

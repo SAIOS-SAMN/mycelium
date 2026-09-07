@@ -257,7 +257,7 @@ impl Treasury {
         let mut drop: Vec<([u8; 32], [u64; 4])> = Vec::new();
         crate::snapshot::persist(&self.stakes, |who, mu| {
             let Ok(w) = <[u8; 32]>::try_from(who) else { return };
-            if !live.iter().any(|id| *id == w) {
+            if !live.contains(&w) {
                 drop.push((w, *mu));
             }
         });

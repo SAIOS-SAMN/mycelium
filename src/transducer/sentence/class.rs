@@ -517,7 +517,7 @@ pub fn rank_of_rows(rows: &[LoopRow]) -> Option<Rank> {
             LoopRow::Torsion => torsion += 1,
             LoopRow::Free(row) => free.push(*row),
             LoopRow::OffPlane(k) => {
-                offplane.insert(&k, ());
+                offplane.insert(k, ());
             }
         }
     }

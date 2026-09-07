@@ -430,7 +430,7 @@ impl Contemplation {
         let now = self.now_k;
         let mut best: Option<(Vec<u8>, u64)> = None;
         for (k, b) in self.bubbles.fiber(ROOT) {
-            if b.glued_by.len() > 0 {
+            if !b.glued_by.is_empty() {
                 continue;
             }
             let t = now.saturating_sub(b.moved_k).max(1);
@@ -515,7 +515,7 @@ impl Contemplation {
         let drop: Vec<Vec<u8>> = self
             .bubbles
             .fiber(ROOT)
-            .filter(|(_, b)| b.glued_by.len() == 0 && b.glues.len() == 0 && !b.dirty)
+            .filter(|(_, b)| b.glued_by.is_empty() && b.glues.is_empty() && !b.dirty)
             .map(|(k, _)| k)
             .collect();
         let n = drop.len();
@@ -686,7 +686,7 @@ impl Contemplation {
     /// re-gauges; Congruent merges with a torsion axis; Class keeps both
     /// and writes each into the other's horizon. Zero volume never merges.
     fn decide_neighbors(&mut self, key: &[u8]) {
-        let keys = self.complex.link(&key, 1);
+        let keys = self.complex.link(key, 1);
         for ck in keys {
             let Some((fill, volume, vertices)) = self.complex.cell(&ck).map(|c| (c.fill.clone(), c.volume, c.vertices.clone())) else {
                 continue;
@@ -1359,16 +1359,13 @@ impl Contemplation {
                     c.to_bytes(out);
                 });
             });
-            match &b.form {
-                Some(f) => {
-                    let mut fb = Vec::new();
-                    if sentence::encode_form_v2(f, &mut fb).is_some() {
-                        out.extend_from_slice(b"FRM1");
-                        out.extend_from_slice(&(fb.len() as u32).to_le_bytes());
-                        out.extend_from_slice(&fb);
-                    }
+            if let Some(f) = &b.form {
+                let mut fb = Vec::new();
+                if sentence::encode_form_v2(f, &mut fb).is_some() {
+                    out.extend_from_slice(b"FRM1");
+                    out.extend_from_slice(&(fb.len() as u32).to_le_bytes());
+                    out.extend_from_slice(&fb);
                 }
-                None => {}
             }
         });
         self.complex.to_bytes(out);

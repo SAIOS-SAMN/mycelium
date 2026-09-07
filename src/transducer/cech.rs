@@ -512,12 +512,9 @@ impl Complex {
                                 continue;
                             }
                             seen.insert(&nkey, ());
-                            match self.by_key.get(nkey.as_bytes()).copied() {
-                                Some(_) => {
-                                    self.reopen_on_coeff_change(&nkey, &verts);
-                                    continue;
-                                }
-                                None => {}
+                            if self.by_key.get(nkey.as_bytes()).is_some() {
+                                self.reopen_on_coeff_change(&nkey, &verts);
+                                continue;
                             }
                             let mut blocked = false;
                             // index: pairs on this simplex (faces)
