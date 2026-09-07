@@ -14,7 +14,6 @@ pub mod maps;
 pub mod matrix;
 pub mod squaring;
 
-use clock::lint_clock;
 use enumeration::walk;
 use length::lint_file_length;
 use maps::lint_maps;
@@ -55,11 +54,10 @@ pub fn run() -> Result<(), String> {
     // one rule that does cover `xtask/`, because it is about reading.
     let mut files = Vec::new();
     walker::collect(&root, &mut files)?;
-    walker::run_gates(&files, &[digest::GATE], &mut hits)?;
+    walker::run_gates(&files, &[clock::GATE, digest::GATE], &mut hits)?;
     lint_squaring(&root, &mut hits)?;
     lint_maps(&root, &mut hits)?;
     lint_qmatrix(&root, &mut hits)?;
-    lint_clock(&root, &mut hits)?;
     if hits.is_empty() {
         return Ok(());
     }
