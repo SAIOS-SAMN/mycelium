@@ -3411,9 +3411,22 @@ the description, invert for the solution").
   (A12 replay, `reduce_excluding`) is what the syllabus carries down. No
   ranking, no count, no constant: the language settles to its most general
   proof of each theorem by derivation alone.
-- **Transport equivalence has one narrow job:** recognising two proofs as
-  the same proof, so a closure is not paid twice (E2). It decides nothing
-  about whether a conclusion is language.
+- **Four levels, and the court reads the top two.** Letters are the
+  seventeen rotors. Words are tapes of letters, group elements; equality is
+  `projective_eq`, `same_vertex`. Conjugates are words up to `g w g⁻¹`, the
+  same motion seen from another frame: the class vector, the canonical
+  representative of 15.2–15.3, the third equality of law 3; the transition
+  on a face is the conjugating element, and order is a conjugacy invariant.
+  Sentences are nerves whose vertices carry words and whose faces carry the
+  conjugations between them; a loop's holonomy is a word and κ(ℓ) is its
+  class. Two proofs made of conjugate words are one proof in two frames,
+  and E2 pays it once — that is the conjugate level, and it is the whole of
+  what "transport equivalence" decides. Two proofs whose words are not
+  conjugate but close the same demand are two proofs of one conclusion —
+  that is the sentence level, where the court glues. Word, conjugate,
+  conclusion; a reading that goes from letters to sentences has skipped the
+  level where a word's class, and so its order, lives (corrected
+  2026-09-08).
 - **Divergence is the contradiction case.** Two dialects closing the same
   demand to different conclusions is node against node (the recohering
   judge, Part V); it is settled by replaying the mathematics, never by
