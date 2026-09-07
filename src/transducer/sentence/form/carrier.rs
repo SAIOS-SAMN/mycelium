@@ -6,6 +6,27 @@
 
 use super::*;
 
+impl Form {
+    /// THE WORDS A SENTENCE IS MADE OF — one holonomy per loop, with the
+    /// class it belongs to.
+    ///
+    /// A sentence has no single spelling: it is a NERVE of germs whose
+    /// vertices carry words and whose faces carry the conjugations between
+    /// them (18.2). Asking it for `Element::letters` is a level error —
+    /// letters spell a word, and a sentence is one level above a word. What
+    /// it does have is a word per loop, its holonomy, already composed on
+    /// the carrier, and the class that word belongs to.
+    ///
+    /// Order is a CONJUGACY invariant (15.2, 15.3): "closes in p steps" is a
+    /// fact about the class, never about the spelling, which is why the
+    /// class travels beside the word here and not the tape.
+    pub fn loop_words(&self) -> Vec<(&crate::transducer::alphabet::Word, Option<ClassVector>)> {
+        (0..self.loops.len())
+            .filter_map(|i| self.loops.get(i).map(|lp| (&lp.holonomy, self.class_vector(i))))
+            .collect()
+    }
+}
+
 /// How an unfolding stops. The step count is an instance coordinate, never
 /// stored on the form.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

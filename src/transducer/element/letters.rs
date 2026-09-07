@@ -140,13 +140,22 @@ pub struct Letters {
 }
 
 impl Element {
-    /// The letters of this word — `None` for a residual germ or a word
+    /// The letters of this WORD — `None` for a residual germ or a word
     /// spoken before the alphabet (no tape: not a word of the language).
+    ///
+    /// Two tags, and they are the two the parser below reads: a connection
+    /// and a translation are words. A SENTENCE is not — it is a nerve one
+    /// level above a word (18.2), its tape is `[tag, version, form…]`, and
+    /// byte 1 is the version where a spelling would be. It used to be
+    /// admitted by this guard and then fail silently on that byte, which
+    /// read as "this sentence has no letters" when the truth is that the
+    /// question does not apply to it. A sentence's words are its loop
+    /// holonomies: `Form::loop_words`.
     pub fn letters(&self) -> Option<Letters> {
         use crate::transducer::alphabet::Spelling;
         let b = &self.word;
         let tag = b.first().copied()?;
-        if tag != CONNECTION_TAG && tag != SENTENCE_TAG && tag != TRANSLATION_TAG {
+        if tag != CONNECTION_TAG && tag != TRANSLATION_TAG {
             return None;
         }
         let mut pos = 1usize;
