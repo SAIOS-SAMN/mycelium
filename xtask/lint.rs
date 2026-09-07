@@ -47,6 +47,18 @@ fn walk(dir: &Path, crate_dir: &str, hits: &mut Vec<String>) -> Result<(), Strin
         if path.extension().and_then(|s| s.to_str()) != Some("rs") {
             continue;
         }
+        // A split-out test module is test code in whole. The gates below
+        // find `#[cfg(test)]` by scanning WITHIN a file and tracking brace
+        // depth, so a test module moved to its own file under Stage 8's
+        // reading bound carries no marker and every gate fires on it. The
+        // exemption is checked, not assumed: the parent module must declare
+        // this file under `#[cfg(test)]`, so a file merely NAMED tests.rs
+        // is still linted.
+        if path.file_name().and_then(|s| s.to_str()) == Some("tests.rs")
+            && parent_declares_test_module(&path)
+        {
+            continue;
+        }
         // Wire MTU is the byte size of one spend; physics names the number.
         if crate_dir == "network" && path.file_name().and_then(|s| s.to_str()) == Some("wire.rs") {
             lint_file(&path, hits, true)?;
@@ -55,6 +67,35 @@ fn walk(dir: &Path, crate_dir: &str, hits: &mut Vec<String>) -> Result<(), Strin
         }
     }
     Ok(())
+}
+
+/// Does the module owning `tests.rs` declare it under `#[cfg(test)]`? The
+/// declaration is the only place the attribute can live for a file module,
+/// so this reads the fact rather than trusting the name.
+fn parent_declares_test_module(path: &Path) -> bool {
+    let Some(dir) = path.parent() else {
+        return false;
+    };
+    let owner = dir.join("mod.rs");
+    let src = match fs::read_to_string(&owner) {
+        Ok(s) => s,
+        Err(_) => return false,
+    };
+    let mut saw_cfg_test = false;
+    for line in src.lines() {
+        let t = line.trim();
+        if t.contains("#[cfg(test)]") {
+            saw_cfg_test = true;
+            continue;
+        }
+        if t == "mod tests;" || t == "pub mod tests;" {
+            return saw_cfg_test;
+        }
+        if !t.is_empty() && !t.starts_with("//") {
+            saw_cfg_test = false;
+        }
+    }
+    false
 }
 
 fn lint_file(path: &Path, hits: &mut Vec<String>, allow_spend: bool) -> Result<(), String> {
