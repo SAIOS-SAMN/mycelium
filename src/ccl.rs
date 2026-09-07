@@ -8,8 +8,21 @@
 //! generator kinds to gloss — a germ is a germinated pattern, described only by
 //! its measured shape (cells touched, lanes, magnitude), never by a solver word.
 
-use crate::core::ccl::Audience;
 use crate::transducer::element::Element;
+
+/// The audience consuming the translated vocabulary.
+/// Each audience sees the same algebraic reality through a different lens.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Audience {
+    /// The human operating the system — sees operational vocabulary.
+    Operator,
+    /// A Rust developer reading the code — sees engineering vocabulary.
+    Engineer,
+    /// Algebraic/topological frame — sees mathematical vocabulary.
+    Mathematician,
+    /// Biological frame — sees biological vocabulary.
+    Biologist,
+}
 
 /// Translate an anonymous germ to an English phrase for a human audience. Purely
 /// descriptive; the germ's identity remains its ANASTOME address.

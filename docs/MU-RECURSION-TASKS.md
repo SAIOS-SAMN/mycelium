@@ -235,6 +235,16 @@ The order, one commit per item, suite and clippy and lint lines on each:
 
 What was lost, when, and what it cost, so that it is paid once.
 
+**2026-09-07, the same fault twice: the commit that recorded the first
+bundle was itself one.** `57b6950` is named as a documents-only commit and
+carries the deletion of `src/core/ccl.rs` with it. `git rm` had already
+STAGED that deletion; `git add docs/...` added to the index rather than
+replacing it, and `git commit` takes the whole index. Staging by path is not
+enough — the index carries what was staged before. Paid by committing with
+an explicit pathspec (`git commit --only <paths>`), which commits exactly
+the named files whatever the index holds, and by reading `git show --stat`
+of every commit before writing the next.
+
 **2026-09-07, a bundle: `git add -A` swept the auditor's doc edits into
 F2(a).** `75cd02d` is named for one item — three dead `core/` modules
 deleted — and also carries the auditor's uncommitted recording of the
