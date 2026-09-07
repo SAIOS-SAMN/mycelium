@@ -283,55 +283,74 @@ impl Kernel {
                     let witnesses = crate::transducer::toroid::witness_thought(&residual);
                     if witnesses.is_empty() {
                         // NO STORED CYCLE. What this residual costs is what
-                        // its own carrier says, and there are three carriers.
+                        // its own carrier says, and the carriers are four
+                        // LEVELS, not four tags: letters spell a word, words
+                        // up to conjugacy are a class, and a sentence is a
+                        // nerve of words one level above that (18.2). The
+                        // charge is read at the level the carrier is on.
                         match residual.letters() {
-                            // A TAPE the alphabet spells. A word of order p
-                            // closes in p steps, exactly (16.2).
+                            // A WORD — a connection or a translation. Its
+                            // order is a conjugacy invariant, so `Finite(p)`
+                            // is p steps exactly and `Infinite` is the walk
+                            // that did not close, the letters it spelled.
                             Some(l) => match l.spelling.word.order() {
                                 crate::transducer::alphabet::Order::Finite(p) => {
                                     for _ in 0..p {
                                         self.physics.bump(&mag);
                                     }
                                 }
-                                // A word of infinite order never closes on
-                                // its own. What it cost is the walk that did
-                                // not close: the LETTERS it spelled. The
-                                // byte length of the description is the
-                                // codec's, not the walk's — measuring a word
-                                // by its encoding is law 2, and tape v5
-                                // would silently double the charge.
                                 crate::transducer::alphabet::Order::Infinite => {
                                     for _ in 0..l.spelling.word.len() as u64 {
                                         self.physics.bump(&mag);
                                     }
                                 }
                             },
-                            // A PURE RESIDUAL CHAIN — no tape, because the
-                            // alphabet has no word for it yet. This is the
-                            // germination demand itself: the thing the market
-                            // lists so that a letter can be minted for it. It
-                            // is charged by the support its chain touches and
-                            // it is LISTED, never refused.
+                            // A SENTENCE with no stored cycle. It has no
+                            // single spelling; its words are its LOOP
+                            // HOLONOMIES, and each closes in the order of
+                            // its class. Reading `letters()` here returned
+                            // None and charged the whole nerve as a bare
+                            // chain, with its loops sitting unread in its
+                            // own Form.
+                            None if residual.form().is_some() => {
+                                let steps: u64 = residual
+                                    .form()
+                                    .map(|f| {
+                                        f.loop_words()
+                                            .iter()
+                                            .map(|(w, _)| match w.order() {
+                                                crate::transducer::alphabet::Order::Finite(p) => p as u64,
+                                                crate::transducer::alphabet::Order::Infinite => w.len() as u64,
+                                            })
+                                            .sum::<u64>()
+                                    })
+                                    .unwrap_or_default();
+                                for _ in 0..steps {
+                                    self.physics.bump(&mag);
+                                }
+                            }
+                            // A PURE RESIDUAL CHAIN — no word yet, because
+                            // the alphabet has no letter for it. This is the
+                            // germination demand itself, charged by the
+                            // support its chain touches and LISTED.
                             None if !residual.sub().is_empty() => {
                                 for _ in 0..residual.sub().len() as u64 {
                                     self.physics.bump(&mag);
                                 }
                             }
-                            // Neither word nor chain: nothing to reduce and
-                            // nothing to list. `Outcome::Pivot` is what the
-                            // judge already names that, and it needs no new
-                            // refusal string beside it.
+                            // Neither word, nor nerve, nor chain: nothing to
+                            // reduce and nothing to list.
                             None => return Outcome::Pivot,
                         }
                     } else {
-                        // WITNESSES CHARGE PER LANE and are never summed
-                        // (law 5). Each Open walk pivots the lanes the demand
-                        // occupies and bumps them for the length it walked; a
-                        // Closed loop is proven monodromy and charges
-                        // nothing. Summing the walks into one number and
-                        // capping it at eight was a scalar over a polytonic
-                        // reading, under a comment that said "never a summed
-                        // winding".
+                        // A STORED CYCLE is the conjugate level already: an
+                        // Open or Closed walk is a statement about a
+                        // holonomy class. Each Open walk pivots the lanes
+                        // the demand occupies and bumps them for the length
+                        // IT walked; a Closed loop is proven monodromy and
+                        // charges nothing. Summing the walks into one number
+                        // and capping it at eight was a scalar over a
+                        // polytonic reading (law 5).
                         for w in &witnesses {
                             if let crate::transducer::toroid::HolonomicLoopWitness::Open { walked } = w {
                                 self.physics.pivot(crate::physics::Physics::lanes_of(&mag));
