@@ -33,5 +33,6 @@ pub mod sheaf;
 pub mod peel;
 pub mod alphabet;
 pub mod a21;
+pub mod factor;
 pub use a21::Address;
 pub mod rewrite;

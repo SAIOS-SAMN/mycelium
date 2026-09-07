@@ -501,6 +501,45 @@ impl Epigenome {
         if utterance.is_connection() && utterance.sub().is_empty() {
             let inv = crate::transducer::stalk::invariant_of(utterance);
             let fibre = self.working_atlas().fiber(&inv);
+            // M6 STEP 3, A12: the incoming word is factored through the
+            // WHOLE fiber, not tested against one representative at a time.
+            // A mind speaks what it can re-derive from what it holds
+            // (chapter 6), and a word may be a product of several held words
+            // while matching none of them — the pairwise transition test
+            // below could only ever find it in one.
+            if let Some(spoken) = utterance.letters() {
+                let mut words = Vec::new();
+                let mut basis = Vec::new();
+                for (a, _) in &fibre {
+                    let Some(held) = self.working_word(a) else { continue };
+                    if held.address() == utterance.address() {
+                        continue;
+                    }
+                    let Some(l) = held.letters() else { continue };
+                    words.push(l.spelling.word.clone());
+                    basis.push(l.spelling.word.rotor());
+                }
+                let g = spoken.spelling.word.rotor();
+                if let (Some(gf), true) =
+                    (g.spelled_word().and_then(|w| w.form()), !basis.is_empty())
+                {
+                    let forms: Vec<crate::transducer::alphabet::PlaneForm> = words
+                        .iter()
+                        .filter_map(|w| w.form())
+                        .collect();
+                    if forms.len() == words.len() {
+                        if let crate::transducer::factor::Factored::Understood(tape) =
+                            crate::transducer::factor::factor_on_plane(&gf, &forms)
+                        {
+                            // Verified by re-derivation, never trusted from
+                            // the algebra that produced it (16.12 step 4).
+                            if crate::transducer::factor::replays(&tape, &basis, &g) {
+                                return Comprehension::Held;
+                            }
+                        }
+                    }
+                }
+            }
             let mut dialect: Option<(crate::transducer::a21::Address, Element)> = None;
             for (a, _) in fibre {
                 let Some(held) = self.working_word(&a).cloned() else {
