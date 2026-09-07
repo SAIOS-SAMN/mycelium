@@ -44,6 +44,12 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
             i += 2;
             continue;
         }
+        // Valueless flags, checked here so an unknown one is still refused
+        // rather than silently ignored (rule 11).
+        if args[i] == "--mint-genesis" || args[i] == "--recut" {
+            i += 1;
+            continue;
+        }
         if args[i].starts_with("--") {
             return Err(format!("unknown flag {}", args[i]));
         }
@@ -444,15 +450,31 @@ fn admit_peer_receipt(
     }
     let (prefix, sig, receipt) =
         dialogue::decode_receipt_section(body, at).ok_or(NoAdmission::Malformed)?;
+    if !mycelium::court::identity::verify(&receipt.vk, &prefix.bytes(), &sig) {
+        return Ok(Admitted::Refused("bad signature"));
+    }
+    // 45.5: a node with NO origin adopts the one its bootstrap peer signs
+    // for. That is the provisioning channel the chapter names -- the peer
+    // list is how a node is told which mesh it belongs to, and the genesis
+    // travels the same way. A node that already holds an origin never
+    // adopts another: a peer claiming a different one is REFUSE_ORIGIN
+    // below, which is the whole point of the check.
+    {
+        let mut o = mesh.origin.lock().map_err(|_| NoAdmission::Malformed)?;
+        if o.is_none() {
+            *o = Some((prefix.genesis, prefix.epoch));
+            eprintln!(
+                "  court genesis {:02x}{:02x}… epoch {} adopted from {:02x}{:02x}…",
+                prefix.genesis[0], prefix.genesis[1], prefix.epoch, receipt.vk[0], receipt.vk[1]
+            );
+        }
+    }
     let origin = mesh
         .origin
         .lock()
         .ok()
         .and_then(|o| *o)
         .ok_or(NoAdmission::NoOrigin)?;
-    if !mycelium::court::identity::verify(&receipt.vk, &prefix.bytes(), &sig) {
-        return Ok(Admitted::Refused("bad signature"));
-    }
     let mut k = kernel.lock().map_err(|_| NoAdmission::Malformed)?;
     Ok(k.admit_receipt(origin, &prefix, &receipt))
 }
@@ -1312,6 +1334,19 @@ fn rendezvous(key: &[u8], self_id: &[u8; 32], router: &Router) -> Option<String>
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
+    // 45.5: H_genesis is written ONCE, by the first hypha started on a fresh
+    // state, and PROVISIONED to every other node the way the bootstrap peer
+    // list is. Self-adoption from a node's own first receipt is not that:
+    // three hyphae started together each wrote their own, and by 45.5 that
+    // is three meshes -- measured on this fleet as `refused-origin 2` on
+    // every cycle, every node refusing both its peers. A node mints only
+    // when told to; every other node adopts from a peer that has one.
+    let mint_genesis = args.iter().any(|a| a == "--mint-genesis");
+    // A RECUT drops this node's origin so it takes the mesh's again (45.5).
+    // It is an operation, not a file edit: the mesh record is signed, so a
+    // genesis cannot be cleared from outside the process that holds the key,
+    // and a fleet that has diverged has no other way back to one mesh.
+    let recut = args.iter().any(|a| a == "--recut");
     let home = match home_dir(&args) {
         Ok(h) => h,
         Err(e) => {
@@ -1339,6 +1374,12 @@ fn main() {
     // a reading rather than a placeholder; a node that has admitted nothing
     // still has no genesis and says so. 47.2's REFUSE_ORIGIN check on it is
     // task 5.2 and is not claimed here.
+    if recut && mesh_rec.genesis.is_some() {
+        eprintln!("[{tag}] recut: origin dropped, epoch {}", mesh_rec.epoch + 1);
+        mesh_rec.genesis = None;
+        mesh_rec.epoch += 1;
+        let _ = mesh_rec.save(&home, &hypha_key);
+    }
     match mesh_rec.genesis {
         None => eprintln!("[{tag}] genesis unwritten epoch {}", mesh_rec.epoch),
         Some(g) => eprintln!("[{tag}] genesis {:02x}{:02x}… epoch {}", g[0], g[1], mesh_rec.epoch),
@@ -1658,6 +1699,7 @@ fn main() {
         let mesh = mesh.clone();
         let join = join_peers.clone();
         let gen_home = home.clone();
+        let epoch = mesh_rec.epoch;
         let genesis_written = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(
             mesh_rec.genesis.is_some(),
         ));
@@ -1856,29 +1898,36 @@ fn main() {
                 // unwritten`. It is adopted here, the first cycle after a
                 // receipt exists, and written once.
                 if !genesis_written.load(std::sync::atomic::Ordering::Relaxed) {
-                    let first = kernel
-                        .lock()
-                        .ok()
-                        .and_then(|k| k.chain().receipts().first().map(|r| r.chain_hash));
-                    if let Some(h) = first {
+                    // Adopted from a peer above, or minted here when this
+                    // node is the one told to mint. Either way it is written
+                    // to the mesh record once, so it survives a restart and
+                    // is what 47.2 step 1 tests against from then on.
+                    let held = mesh.origin.lock().ok().and_then(|o| *o);
+                    let mine = if held.is_some() {
+                        held
+                    } else if mint_genesis {
+                        kernel
+                            .lock()
+                            .ok()
+                            .and_then(|k| k.chain().receipts().first().map(|r| r.chain_hash))
+                            .map(|h| (h, epoch))
+                    } else {
+                        None
+                    };
+                    if let Some((g, e)) = mine {
                         let key = HyphaKey::load_or_mint(
                             gen_home.join("hypha.key").to_str().unwrap_or("hypha.key"),
                         );
                         let mut rec = mycelium::network::mesh::load_or_migrate_hypha(&gen_home, &key);
-                        if rec.genesis.is_none() {
-                            rec.genesis = Some(h);
+                        if rec.genesis != Some(g) {
+                            rec.genesis = Some(g);
+                            rec.epoch = e;
                             let _ = rec.save(&gen_home, &key);
-                            eprintln!(
-                                "  court genesis {:02x}{:02x}… epoch {}",
-                                h[0], h[1], rec.epoch
-                            );
+                            eprintln!("  court genesis {:02x}{:02x}… epoch {e} written", g[0], g[1]);
                         }
-                        // The origin 47.2 step 1 tests against is adopted with
-                        // it; until this the mesh had no pair to compare and
-                        // admitted no receipt.
-                        if let (Ok(mut o), Some(g)) = (mesh.origin.lock(), rec.genesis) {
+                        if let Ok(mut o) = mesh.origin.lock() {
                             if o.is_none() {
-                                *o = Some((g, rec.epoch));
+                                *o = Some((g, e));
                             }
                         }
                         genesis_written.store(true, std::sync::atomic::Ordering::Relaxed);
