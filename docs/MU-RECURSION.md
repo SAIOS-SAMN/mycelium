@@ -3449,6 +3449,27 @@ rest. The court today keys on the word — it slashes on address inequality
 and glues on the word's chart (TASKS A3, Stage 9) — which is the
 misplacement this section corrects.
 
+**The membrane: holonomy over the proofs (ruled 2026-09-08).** The
+gluing of 23.8 is pairwise — a representative against a spoken word, one
+transition per pair, a dialect row where the transition is not the
+identity. The question 23.9 asks is not pairwise: given the proofs of one
+conclusion from independent lineages, compose the transitions between
+them around the loop, `g_ab · g_bc · g_ca`, exactly as `holonomy` composes
+the versors around a Čech cell (13, `cech/cell.rs`). The minds are the
+cover, their proofs the sections, the transitions the cocycle. Holonomy
+trivial: the proofs are one proof seen from several frames — the conjugate
+level — and E2 pays the closure once. Holonomy non-trivial: the proofs are
+genuinely several, the conclusion needed more than one perception to be
+spanned, and the residual of the holonomy, localised to the cells where
+every lineage diverges, is a boundary of the language and not a fault of a
+mind — it is the demand the next letter answers. This is the court's whole
+answer to "does one mind suffice for this conclusion", and it is a
+computation on carriers the tree already holds; no count, no vote, no
+threshold. The convergence engine had this as the membrane's holonomy over
+perspectives and its meta-Delta between observers; what it lacked was the
+level (it compared outputs, not proofs) and it identified orbits by a
+digest. The geometry carries over; the identity and the votes do not.
+
 ## 24. Comprehension (the mind)
 
 Carried from chapter 23: what the court checks, the mind must be able to
