@@ -42,7 +42,7 @@ paths, kernel names) are lab residue to be removed (§10).
 
 ## 3. The court organ
 
-Inside every hypha (`server/cognition.rs`, `court/verdict.rs`):
+Inside every hypha (`server/cognition/`, `court/verdict.rs`):
 
 - `blind_replay` re-derives every kind of word from its own tape; false
   speech is slashed with a reason.

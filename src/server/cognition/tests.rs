@@ -5,6 +5,7 @@
 //! faults are found by soak instead of by review (Part VII).
 
 use super::*;
+use super::reflex::action_potential;
 use crate::transducer::germinate::germinate;
 
 fn scene(sr: i64, sc: i64) -> Vec<(i64, i64, u8)> {

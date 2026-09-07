@@ -3128,7 +3128,20 @@ from its recomputation on the cited tapes (`REFUSE_NOT_NATURAL`). The chain
 compare canonicalises the spoken chain by A5 first. `sel_key` (374) is A9.
 `rule(...)` (222) is unchanged.
 
-### 23.2 Kernel carriers, `/opt/mycelium-v0.1.0/src/server/cognition.rs`
+### 23.2 Kernel carriers, `/opt/mycelium-v0.1.0/src/server/cognition/`
+
+**The files.** The mind is fourteen files, one organ each (Stage 8b S3):
+`kernel.rs` the `Kernel` struct and the reads that count what is in it;
+`language.rs` the `Language` snapshot and what a reduction answers with
+(`Outcome`, `Glue`, `NormalForm`, `MarketView`, `Rank`, `FieldEntry`,
+`ListingField`, `Reduction`, `Adoption`); `basis.rs` how a ruled word
+enters, occupies, relocates and leaves; `cocycle.rs` the filed cocycles and
+their causal supersession (45.3); `reduce.rs` the reduction and the quote
+over the snapshot; `keys.rs` the A21 keys the mind indexes by; `wire.rs`
+the mind's own codec; `reflex.rs` the action potential and the memory
+headroom (24.1); `identity.rs` the `Crystal` the family extraction speaks
+to; and `book.rs`, `court.rs`, `germinate.rs`, `market.rs`, `snapshot.rs`
+as before. `mod.rs` holds declarations and re-exports only.
 
 - `resolve_form(&self, addr) -> Option<Form>` **new**: `word_at` (1766) if
   `ruled_contains`, then `from_element`; provisional and dialect return

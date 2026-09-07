@@ -1,0 +1,542 @@
+// 23.4, 26 — THE BASIS: how a ruled word enters this mind, what it
+// occupies while it is here, and what makes it leave.
+//
+//! A word admitted to the basis is indexed by its stalk, its axis words and
+//! its action; it occupies room on the four lanes; it is relocated when its
+//! T extent is spent and unindexed when it is pruned. The holonomy orbit and
+//! the germinated fibre are the two moves that grow a word rather than add
+//! one (25.1).
+
+use super::*;
+
+impl Kernel {
+    pub(crate) fn ensure_bonded(&mut self, voice: [u8; 32]) {
+        if self.treasury.bond_of(&voice).is_some() {
+            return;
+        }
+        let Some(cover) = self.genesis_cover else {
+            return;
+        };
+        self.enroll(voice, cover);
+    }
+
+    pub(crate) fn t_extent(&self, addr: &[u8], now: u64) -> u64 {
+        let Some(then) = self
+            .provisional_h
+            .get(addr)
+            .copied()
+            .or_else(|| self.standing_h.get(addr).copied())
+        else {
+            return 0;
+        };
+        now.saturating_sub(then)
+    }
+
+    pub(crate) fn stamp_standing(&mut self, addr: impl AsRef<[u8]>) {
+        let addr = addr.as_ref();
+        let h = self.height();
+        if self.standing_h.get(addr).is_none() {
+            self.standing_h.insert(addr, h);
+        }
+        if self.provisional.contains(addr) && self.provisional_h.get(addr).is_none() {
+            self.provisional_h.insert(addr, h);
+        }
+    }
+
+    pub(crate) fn stratum_root_of(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<u8> {
+        let mut rows = self.ruled.fiber(inv);
+        rows.sort();
+        let mut buf = Vec::new();
+        for a in &rows {
+            crate::transducer::a21::put_bytes(&mut buf, a);
+        }
+        buf
+    }
+
+    pub(crate) fn heard_mark(&mut self, addr: impl AsRef<[u8]>, inv: &crate::transducer::stalk::Invariant) {
+        let root = self.stratum_root_of(inv);
+        self.heard.insert(addr, (inv.key().into_vec(), root));
+    }
+
+    pub(crate) fn chill_field(&mut self, addr: &[u8]) {
+        if let Some(listing) = self.field.remove(addr) {
+            self.field_cold.insert(addr, listing);
+        }
+        self.open.remove(addr);
+    }
+
+    /// Relocate the largest-T standing carriers on a saturated temporal lane.
+    /// T-room is standing extent in heights, never a stored occupancy floor.
+    pub(crate) fn relocate_t_exhausted(&mut self) {
+        if self.lane_cap.is_none()
+            && self.occupancy[2] == 0
+            && self.t_leases.fiber(crate::network::nerve::ROOT).next().is_none()
+        {
+            return;
+        }
+        let now = self.height();
+        let mut tot = 0u64;
+        let mut best: Option<(Vec<u8>, u64)> = None;
+        let mut consider = |addr: Vec<u8>| {
+            let t = self.t_extent(&addr, now);
+            tot = tot.saturating_add(t);
+            match best {
+                Some((_, bt)) if t <= bt => {}
+                _ => best = Some((addr, t)),
+            }
+        };
+        for (addr, _) in self.lane_listings[2].fiber(crate::network::nerve::ROOT) {
+            consider(addr);
+        }
+        for (addr, _) in self.provisional.fiber(crate::network::nerve::ROOT) {
+            consider(addr);
+        }
+        let cap = self
+            .lane_cap
+            .map(|c| c[2] as u64)
+            .unwrap_or_else(|| tot.saturating_add(self.lane_room()[2] as u64));
+        if tot < cap {
+            return;
+        }
+        let Some((addr, t)) = best else {
+            return;
+        };
+        eprintln!(
+            "  cavity relocate {:02x}{:02x}… T={t} (T-room exhausted)",
+            addr[0], addr[1]
+        );
+        self.relocate_standing(&addr);
+    }
+
+    pub(crate) fn relocate_standing(&mut self, addr: &[u8]) {
+        let _ = self.treasury.revoke_award(addr, false);
+        if self.pending.contains(addr) {
+            self.relocate_cavity(addr);
+        } else if let Some(w) = self.provisional.get(addr).cloned() {
+            let inv = crate::transducer::stalk::invariant_of(&w);
+            self.listing_atlas.admit(&inv, addr);
+            self.cavity_book.insert(addr, w.clone());
+            self.cavities.push(w);
+            self.chill_field(addr);
+        }
+        self.provisional.remove(addr);
+        self.provisional_k.remove(addr);
+        self.provisional_h.remove(addr);
+        self.offered.remove(addr);
+        if self.lane_listings[2].contains(addr) {
+            self.occupancy[2] = self.occupancy[2].saturating_sub(1);
+            self.lane_listings[2].remove(addr);
+        }
+        self.standing_h.remove(addr);
+    }
+
+    pub(crate) fn discoverer_of(&self, addr: &[u8]) -> Option<[u8; 32]> {
+        self.discoverers.get(addr).copied()
+    }
+
+    pub(crate) fn word_mut(&mut self, addr: &[u8]) -> Option<&mut Element> {
+        self.basis.get_mut(addr).map(std::sync::Arc::make_mut)
+    }
+
+    pub(crate) fn book_elem(&self, addr: &[u8]) -> Option<&Element> {
+        self.pending.get(addr).map(|(p, _)| p)
+    }
+
+    pub(crate) fn live_slot(&self, addr: &[u8]) -> Option<usize> {
+        self.language.index.get(addr).copied()
+    }
+
+    pub(crate) fn index_word(&mut self, w: &Element) {
+        let addr = w.address();
+        if let Some(k) = action_index_key(w) {
+            self.by_action.insert(k, addr.clone());
+        }
+        if !w.sub().is_empty() {
+            let inv = crate::transducer::stalk::invariant_of(w);
+            self.by_footprint.nested_insert(chart_footprint_key(&inv, w.sub()), addr, ());
+        }
+    }
+
+    pub(crate) fn unindex_word(&mut self, w: &Element) {
+        let addr = w.address();
+        if let Some(k) = action_index_key(w) {
+            if self.by_action.get(&k).is_some_and(|a| a.as_bytes() == addr.as_bytes()) {
+                self.by_action.remove(&k);
+            }
+        }
+        if !w.sub().is_empty() {
+            let inv = crate::transducer::stalk::invariant_of(w);
+            let fk = chart_footprint_key(&inv, w.sub());
+            if let Some(inner) = self.by_footprint.get_mut(&fk) {
+                inner.remove(addr.as_bytes());
+            }
+        }
+    }
+
+    pub(crate) fn forget_spoken(&mut self, listing: &[u8]) {
+        if let Some(voices) = self.spoken.remove(listing) {
+            for (v, _) in voices.fiber(crate::network::nerve::ROOT) {
+                if let Some(inner) = self.spoken_by.get_mut(&v) {
+                    inner.remove(listing);
+                }
+            }
+        }
+    }
+
+    pub(crate) fn occupy(&mut self, addr: impl AsRef<[u8]>, mag: &[u64; 4], add: bool) {
+        let addr = addr.as_ref();
+        let voice = self.drawers.get(addr).copied();
+        for l in 0..4 {
+            if add {
+                self.occupancy[l] = self.occupancy[l].saturating_add(mag[l]);
+                if mag[l] > 0 {
+                    self.lane_listings[l].insert(addr, ());
+                }
+            } else {
+                self.occupancy[l] = self.occupancy[l].saturating_sub(mag[l]);
+                if mag[l] > 0 {
+                    self.lane_listings[l].remove(addr);
+                }
+            }
+            if add {
+                self.pressure_sum[l] = self.pressure_sum[l].saturating_add(mag[l]);
+            } else {
+                self.pressure_sum[l] = self.pressure_sum[l].saturating_sub(mag[l]);
+            }
+        }
+        if let Some(v) = voice {
+            let mut d = self.drawn.get(&v).copied().unwrap_or([0; 4]);
+            for l in 0..4 {
+                if add {
+                    d[l] = d[l].saturating_add(mag[l]);
+                } else {
+                    d[l] = d[l].saturating_sub(mag[l]);
+                }
+            }
+            self.drawn.insert(v, d);
+        }
+    }
+
+    pub(crate) fn refresh_ruled_root(&mut self) {
+        let digests = crate::transducer::sheaf::digests(&self.ruled);
+        let mut buf = Vec::new();
+        for d in &digests {
+            crate::transducer::a21::put_bytes(&mut buf, &d.root);
+        }
+        self.ruled_root = crate::chronometry::payload_hash(&buf);
+    }
+
+    /// Place a word on the basis with no syntropic stroke: restore and the
+    /// fallback cursor walk insert this way so a snapshot does not condense
+    /// the language it is loading.
+    pub(crate) fn basis_insert(&mut self, word: Element, discoverer: [u8; 32]) {
+        let addr = word.address();
+        self.index_word(&word);
+        let arc = std::sync::Arc::new(word);
+        self.basis.insert(&addr, std::sync::Arc::clone(&arc));
+        self.discoverers.insert(&addr, discoverer);
+        self.basis_gen += 1;
+        self.language_append_arc(arc);
+    }
+
+    /// Install a word and pivot Path 2 on the axis it just moved: condense
+    /// a congruent sibling, probe the stratum for a derivable generator,
+    /// pay each yield on its own lane. A word is named by its address; the
+    /// slot index these returned was a position in the language snapshot,
+    /// read back through `live_slot` and defaulted to 0 when the snapshot
+    /// lagged the carrier -- slot 0 is a real word, and it is not this one.
+    /// No caller read either return (rule 11).
+    pub(crate) fn basis_push(&mut self, word: Element, discoverer: [u8; 32]) {
+        let addr = word.address();
+        self.basis_insert(word, discoverer);
+        self.syntropic_on_admit(addr);
+    }
+
+    /// Path 2 at admit: the atlas names the sibling a versor relates, the
+    /// stratum names a word the new generator derives. Fallback consolidate
+    /// still walks the cursor when these reads are empty.
+    pub(crate) fn syntropic_on_admit(&mut self, addr: Address) {
+        let survivor = self.condense_on(&addr);
+        self.refine_stratum(&survivor);
+        self.holonomy_orbit(&survivor);
+        self.drain_unreachable();
+    }
+
+    /// Read the holonomy group on the admitted word: a closed orbit of
+    /// gauge transitions condenses through torse_at; an open orbit stays
+    /// free; an orbit that fails to close on a Twisted chart germinates a
+    /// fibre on a fresh axis seeded with the failing transition.
+    pub(crate) fn holonomy_orbit(&mut self, addr: &[u8]) {
+        let Some(word) = self.basis.get(addr) else {
+            return;
+        };
+        let trans = word.transitions().to_vec();
+        if trans.is_empty() {
+            return;
+        }
+        let inv = crate::transducer::stalk::invariant_of(word);
+        let twisted = self.field.get(&word.address()).is_some_and(|f| {
+            f.nonflat > 0
+                && f.entries.iter().any(|e| {
+                    e.chart == inv
+                        && matches!(
+                            e.state,
+                            crate::transducer::stalk::Closure::Twisted(_)
+                                | crate::transducer::stalk::Closure::Class(..)
+                        )
+                })
+        });
+        let mut asgs: crate::network::nerve::Keyed<Vec<element::Versor>> =
+            crate::network::nerve::Keyed::new();
+        for (asg, g, _) in trans {
+            let mut k = Vec::with_capacity(asg.len() * 2);
+            for &(a, b) in &asg {
+                k.push(a);
+                k.push(b);
+            }
+            match asgs.get_mut(&k) {
+                Some(vs) => vs.push(g),
+                None => {
+                    asgs.insert(k, vec![g]);
+                }
+            }
+        }
+        let mut germinate: Option<element::Versor> = None;
+        let mut torse = false;
+        for (_, vs) in asgs.fiber(crate::network::nerve::ROOT) {
+            match fiber_holonomy(vs) {
+                // Closed: the loop is torsion the language already carries.
+                Some(h) if h.projective_eq(&element::identity_versor()) => torse = true,
+                // Held: the germ is the holonomy itself, the exact thing the
+                // loop failed to close by, not a transition read off the end
+                // of the fiber.
+                Some(h) if twisted => germinate = Some(h),
+                _ => {}
+            }
+        }
+        if torse {
+            self.torse_at(addr);
+        }
+        if let Some(fail) = germinate {
+            self.germinate_fibre(addr, &fail);
+        }
+    }
+
+    pub(crate) fn germinate_fibre(&mut self, addr: &[u8], fail: &element::Versor) {
+        let Some(word) = self.basis.get(addr).map(|w| (**w).clone()) else {
+            return;
+        };
+        let Some(seed) = word.versor() else {
+            let asg = element::assignment(word.sub());
+            if let Some(w) = self.word_mut(addr) {
+                w.record_dislocation(asg, fail.clone(), element::FIBER_SPATIAL);
+            }
+            self.touch_at(addr);
+            return;
+        };
+        let asg = element::assignment(word.sub());
+        let axis = match self.word_mut(addr) {
+            Some(w) => {
+                let axis = w.open_axis(seed);
+                w.record_dislocation(asg, fail.clone(), axis);
+                axis
+            }
+            None => return,
+        };
+        self.touch_at(addr);
+        eprintln!(
+            "  germinated fibre axis {axis} from a failed orbit on a Twisted chart"
+        );
+    }
+
+    pub fn prune_basis_to_ruled(&mut self) -> usize {
+        let before = self.basis.len();
+        let mut nb = crate::network::nerve::Keyed::new();
+        let mut nd = crate::network::nerve::Keyed::new();
+        let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        // Walk the federation once through the fed index; peel the live word.
+        for (addr, elem) in &self.court_federation {
+            if elem.is_connection() && elem.letters().is_none() {
+                continue;
+            }
+            if seen.contains(addr) {
+                continue;
+            }
+            seen.insert(addr, ());
+            if let Some(w) = self.basis.get(addr) {
+                nb.insert(addr, std::sync::Arc::clone(w));
+                if let Some(d) = self.discoverer_of(addr) {
+                    nd.insert(addr, d);
+                }
+            } else {
+                nb.insert(addr, std::sync::Arc::new(elem.clone()));
+            }
+        }
+        if seen.is_empty() {
+            // No court cover: the restored or local language stands.
+            return 0;
+        }
+        let dropped = before.saturating_sub(nb.len());
+        self.basis = nb;
+        self.discoverers = nd;
+        self.by_action = crate::network::nerve::Keyed::new();
+        self.by_footprint = crate::network::nerve::Keyed::new();
+        let mut stalks = crate::transducer::stalk::Stalks::default();
+        let mut ruled = crate::transducer::stalk::Stalks::default();
+        self.ruled_addrs = crate::network::nerve::Keyed::new();
+        let held: Vec<(Vec<u8>, std::sync::Arc<Element>)> = self
+            .basis
+            .fiber(crate::network::nerve::ROOT)
+            .map(|(a, w)| (a, std::sync::Arc::clone(w)))
+            .collect();
+        for (addr, w) in &held {
+            self.index_word(w);
+            let inv = crate::transducer::stalk::invariant_of(w);
+            stalks.admit(&inv, addr);
+            ruled.admit(&inv, addr);
+            self.ruled_addrs.insert(addr, ());
+        }
+        self.stalks = std::sync::Arc::new(stalks);
+        self.ruled = ruled;
+        self.refill_axis_index();
+        self.refresh_ruled_root();
+        self.basis_gen += 1;
+        self.retire_gen += 1;
+        self.language_rebuild();
+        dropped
+    }
+
+    /// Restore fills the axis index through the same admits as `ruled_admit`.
+    pub(crate) fn refill_axis_index(&mut self) {
+        self.axis_index = crate::transducer::sentence::AxisIndex::new();
+        let strata = self.ruled.strata();
+        let mut held = Vec::new();
+        for (inv, addrs) in strata {
+            for addr in addrs {
+                if let Some(w) = self.word_at(&addr) {
+                    held.push((
+                        inv.clone(),
+                        crate::transducer::sentence::words_of_element(w),
+                    ));
+                }
+            }
+        }
+        for (inv, words) in held {
+            crate::transducer::sentence::admit_words(&mut self.axis_index, &inv, &words);
+        }
+    }
+
+    /// Test/helper: identity-glue every provisional as if an overlapping
+    /// hypha fetched the same word. The basis grows from gluing, not from
+    /// the vantage that docketed them.
+    pub fn glue_local(&mut self) {
+        let words: Vec<Element> = self.provisional.fiber(crate::network::nerve::ROOT).map(|(_, e)| e.clone()).collect();
+        let mut cover = crate::network::nerve::Cover::new();
+        for w in words {
+            let _ = self.glue_fetched(w, [2; 32], [1; 32], &mut cover);
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn leak_unruled(&mut self, w: Element) {
+        self.basis_insert(w, [0; 32]);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn rule_all_provisionals(&mut self) {
+        let addrs: Vec<Vec<u8>> = self.provisional.fiber(crate::network::nerve::ROOT).map(|(a, _)| a).collect();
+        for a in addrs {
+            self.ruled_admit(&a);
+        }
+    }
+
+    pub(crate) fn fed_admit(&mut self, addr: &[u8], spoken: Element) {
+        if self.court_fed_index.get(addr).is_some() {
+            return;
+        }
+        self.court_fed_index.insert(addr, self.court_federation.len());
+        self.court_federation.push((Address::from(addr), spoken));
+    }
+
+    /// Active cover: the identity fibre (so Čech overlap is non-empty after
+    /// the first Cover), plus charts of open listings and of the ruled language.
+    pub fn active_cover(&self) -> Vec<(u8, crate::transducer::stalk::Invariant)> {
+        let mut out = vec![(0, crate::transducer::stalk::invariant_of(&Element::identity()))];
+        for (inv, _) in self.listing_atlas.strata() {
+            out.push((0, inv));
+        }
+        for (inv, _) in self.ruled.strata() {
+            out.push((0, inv));
+        }
+        out.sort_by(|a, b| a.1 .0.cmp(&b.1 .0));
+        out.dedup();
+        out
+    }
+
+    /// Whether this address still stands on the quote book.
+    pub fn has_listing(&self, addr: &[u8]) -> bool {
+        self.pending.contains(addr)
+    }
+
+    /// Relocate one listing onto the cavity atlas. The address is kept.
+    pub fn relocate_listing(&mut self, addr: &[u8]) {
+        self.relocate_cavity(addr);
+    }
+
+    /// Relocate restored demands whose chart no longer homes here. Never dropped.
+    pub fn unlist_foreign(&mut self, home: impl Fn(&Element) -> bool) {
+        let keys: Vec<Address> = self
+            .pending
+            .fiber(crate::network::nerve::ROOT)
+            .filter(|(_, (p, _))| !home(p))
+            .map(|(_, (p, _))| p.address())
+            .collect();
+        for k in keys {
+            self.relocate_cavity(&k);
+        }
+    }
+
+    /// Import a court.federation once as the initial ruled cover.
+    /// Letterless words are history and are never taught (not on the basis).
+    pub fn import_crt(&mut self, state: crate::court::ledger::CourtState) {
+        if self.crt_imported {
+            return;
+        }
+        self.crt_imported = true;
+        for (addr, elem) in state.federation {
+            let letterless = elem.is_connection() && elem.letters().is_none();
+            if !letterless {
+                if self.basis.get(&addr).is_none() {
+                    self.basis_insert(elem.clone(), [0; 32]);
+                }
+                self.ruled_admit(&addr);
+            }
+            self.fed_admit(&addr, elem);
+        }
+        if !state.chain.receipts().is_empty() && self.chain.receipts().is_empty() {
+            self.chain = state.chain;
+        }
+    }
+
+    /// The germs this court has Offered and still holds provisionally, with
+    /// their tapes — what a second organ needs in order to replay them.
+    /// Bounded by the caller's `Budget`: an offer is work like any other and
+    /// a stroke sends what it can pay for, never the whole docket.
+    pub fn offers_pending(
+        &self,
+        budget: &mut crate::physics::Budget,
+    ) -> Vec<(crate::transducer::a21::Address, Vec<u8>)> {
+        let mut out = Vec::new();
+        for (addr, _) in self.offered.fiber(crate::network::nerve::ROOT) {
+            if !budget.spend() {
+                break;
+            }
+            let Some(w) = self.provisional.get(&addr) else {
+                continue;
+            };
+            out.push((crate::transducer::a21::Address::from(addr), w.to_bytes()));
+        }
+        out
+    }
+
+}
