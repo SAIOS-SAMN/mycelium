@@ -168,7 +168,7 @@ Move-only, one file per commit, tests to `<module>/tests/<chapter>.rs`, document
 | S16 | transducer/cech.rs | 1,128 | cech/{cell, complex, coboundary, tape}.rs, tests/{13,14}.rs + common.rs | landed (S16) |
 | S17 | client/sdk/mod.rs | 1,039 | sdk/{mod, kernel, session, aperture, types}.rs | landed (S17) |
 | S18 | transducer/family/tests.rs | 1,002 | family/tests/{20,21,22,26}.rs + common.rs | landed (S18); tests/21.rs is 733 and splits again at the 600 bound |
-| S19 | client/sdk/epigenome.rs | 1,001 | epigenome/{atlas, dialect, shed, comprehend, persist, crystal}.rs | open |
+| S19 | client/sdk/epigenome.rs | 999 | epigenome/{atlas, dialect, shed, comprehend, persist, crystal}.rs | landed (S19) |
 | S20 | transducer/blade.rs | 911 | blade/{body, carry, peel}.rs, tests/{16,20}.rs | open |
 | S21 | bin/mycelium-client.rs | 904 | mycelium-client/{main, feed, speak, arms/{feed,quote,task,learn}}.rs | open |
 | S22 | server/cognition/germinate.rs | 901 | germinate/{ingest, stroke, attest, state}.rs | open |

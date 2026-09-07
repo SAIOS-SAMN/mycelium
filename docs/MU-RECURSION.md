@@ -1975,7 +1975,7 @@ are deleted.
 ### 16.8 A8 — RMP1 migration
 
 Runs once per store at load (`Kernel::restore` cognition.rs 5018,
-`Treasury::restore` economy/persist.rs, `Epigenome::uncrystallize` sdk.rs
+`Treasury::restore` economy/persist.rs, `Epigenome::uncrystallize` sdk/epigenome/persist.rs
 1025) and once per tape arriving from a peer on the old build.
 
 1. For every stored tape `T` with stored address `a_old`: `a_new =
@@ -5258,7 +5258,7 @@ Every duration a kernel reads is a count of its own K or of heights.
   voice reports nothing but its K. No admitted receipt, no extent: an idle
   voice accrues nothing, and a home that hears nothing advances nothing. Any
   witness re-derives a home's extents from the home's chain (T16).
-- **The mind.** `Epigenome::shed` (sdk.rs 946) and `retire_on_t` (bubble/shed.rs
+- **The mind.** `Epigenome::shed` (sdk/epigenome/shed.rs) and `retire_on_t` (bubble/shed.rs
   223) count the mind's own K; `moved_tu`, `last_used_tu`, `stroke_tu` are
   K values and are renamed `_k`.
 - **Carriers.** Every `_tu` field in the kernel (`provisional_tu`,
