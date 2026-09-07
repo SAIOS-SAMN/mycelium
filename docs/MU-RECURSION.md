@@ -440,7 +440,7 @@ A21, in one landing (chapter 41, 0.11):
 | `sentence/form.rs` `hue_section_key`, `vertex_transport_key`, `class_key_of_versor` | blake3 over conjugacy ‖ gauge | the conjugacy coordinates ‖ the gauge |
 | `sentence/chart.rs` `form_vertex_key`; `family/extract.rs` `TransportClass::key` | blake3 over kind ‖ class | kind ‖ class coordinates |
 | `sentence/pivot.rs` certificate key; `Form.certificates`, `torsion`, `vortex`, `horizon` indices | keyed by digests | keyed by the class vector and the move (16.20) |
-| `cech.rs` `cell_key`, `cocycle_key`; `verdict/selection.rs` `sel_key`, `chart_simplex_key` | digests of sorted vertex keys and terms | the sorted vertex keys concatenated; `Sel::to_bytes` itself |
+| `cech/cell.rs` `cell_key`; `cognition/keys.rs` `cocycle_key`; `verdict/selection.rs` `sel_key`, `chart_simplex_key` | digests of sorted vertex keys and terms | the sorted vertex keys concatenated; `Sel::to_bytes` itself |
 | `sentence/*` `placement: (ℚ, ℚ)`, `Transport.shift`, `Rebased.shift`, `PivotBy::Placement.shift`, `Form.placements`, the 12.6 placement residue | ℚ² carried as cognition (law 11) | the carriage versor (A4) and the translator component of the holonomy versor |
 
 Allowed, and why: hypha and voice identity by verifying key; signatures;
@@ -2737,7 +2737,7 @@ else, so every binding below still names the function it always named:
 
 | short name | absolute path |
 |---|---|
-| `alphabet/`, `sentence/`, `element/`, `cech.rs`, `stalk.rs`, `blade.rs`, `bubble/`, `family/`, `cga.rs`, `peel.rs`, `anchor.rs`, `sheaf.rs`, `germinate.rs`, `rewrite.rs`, `factor.rs`, `a21.rs` | `/opt/mycelium-v0.1.0/src/transducer/<name>` |
+| `alphabet/`, `sentence/`, `element/`, `cech/`, `stalk.rs`, `blade.rs`, `bubble/`, `family/`, `cga.rs`, `peel.rs`, `anchor.rs`, `sheaf.rs`, `germinate.rs`, `rewrite.rs`, `factor.rs`, `a21.rs` | `/opt/mycelium-v0.1.0/src/transducer/<name>` |
 | `cognition/`, `registry.rs`, `synthesis.rs` | `/opt/mycelium-v0.1.0/src/server/<name>` |
 | `verdict/`, `identity.rs`, `ledger.rs` | `/opt/mycelium-v0.1.0/src/court/<name>` |
 | `nerve/`, `mesh.rs`, `wire.rs` | `/opt/mycelium-v0.1.0/src/network/<name>` |
