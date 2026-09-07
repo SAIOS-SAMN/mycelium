@@ -1,10 +1,13 @@
-// The one scalar: exact rational arithmetic, and nothing above it.
+// ℚ — the coefficient field.
 //
-//! Every number in this engine is a `BigRational`. There is no float, no
-//! fixed point, and no approximation with an error term: a value is exact or
-//! it is refused (rule 11). `Q` is the only thing `core` exports to the rest
-//! of the tree — the matrix carriers that used to sit beside it (`QMatrix`,
-//! the antisymmetric `Delta`, the conjugating `Operator`) were the squared
-//! shadow law 11 refuses, and they are gone.
+//! Every COEFFICIENT of a multivector, a rotor, a class vector and a lane
+//! measure is a `BigRational`. There is no float, no fixed point and no
+//! approximation with an error term: a coordinate is exact or it is refused
+//! (rule 11).
+//!
+//! `Q` is the field those coordinates are written in, not a quantity the
+//! engine reasons over. What it reasons over is versors, blades, μ⃗ per lane
+//! and ℤ-ranks; "scalar" is grade 0 of a multivector and never the whole of
+//! one (law 5).
 
 pub type Q = num_rational::BigRational;
