@@ -3,10 +3,12 @@
 //! COGNITION — the kernel loop. A demand (scene A → scene B) enters as raw
 //! cells; the percept is a pair form (`pair_form` → `extract_rule_with`) on
 //! the court as on the mind. A closed form is the word; a withheld remainder
-//! is the residual. A novel word installs ONLY on two-voice consilience
-//! (`consensus`). No digest-keyed cognition (Anti-Flattening Law).
+//! is the residual. A novel word installs ONLY on two-organ CONVERGENCE
+//! (`court::convergence`): one vantage dockets the residual, and a witness
+//! that re-derives the same address from the same demand installs it.
+//! Convergence is not a count of mouths -- the same voice twice converges
+//! on nothing. No digest-keyed cognition (Anti-Flattening Law).
 
-use crate::network::consensus::{Admission, Receipt};
 use crate::transducer::a21::{put_addr, take_addr, Address};
 use crate::transducer::blade::{components};
 use crate::transducer::element::{self, Element};
@@ -27,9 +29,10 @@ pub enum Outcome {
     /// pure transposition (no substance). This one outcome subsumes the old recall
     /// (length 1) and composition (length k): one reduction, not two search kinds.
     Decomposed(Vec<usize>),
-    /// A novel generator awaiting a second kernel's voice (consilience pending).
+    /// A novel generator docketed on one vantage, awaiting a witness organ's
+    /// independent re-derivation of the same address (47.3).
     GermPending,
-    /// An irreducible residual that reached quorum and adjoined as a new generator
+    /// An irreducible residual that CONVERGED and adjoined as a new generator
     /// (Knuth–Bendix completion — the alphabet grows).
     Installed(usize),
     /// A family member punctured as a section of held word `ti`. Not an install,
@@ -120,7 +123,7 @@ pub struct MarketView {
     pub pressure: [u64; 4],
     pub pool: Option<[u64; 4]>,
     pub k_step: u64,
-    /// Receipt-chain head K — verified consensus depth packed on Quote.
+    /// Receipt-chain head K — the kernel's own receipt index, packed on Quote.
     pub head_k: u64,
     /// Standing extent per listing, in heights.
     pub standing_t: std::sync::Arc<crate::network::nerve::Keyed<u64>>,
@@ -616,7 +619,10 @@ pub struct Kernel {
     /// generation moved. `book_gen` counts every mutation of the open book.
     book_gen: u64,
     closure: (u64, u64, std::sync::Arc<Rank>),
-    admission: Admission,
+    /// What each ORGAN re-derived, per object (court::convergence). Two
+    /// organs reaching one address is the admission condition; a voice is a
+    /// use and a settlement party, never a vantage.
+    convergence: crate::court::convergence::Convergence,
     /// THE OPEN-DEMAND MARKET: irreducible residuals still awaiting consilience —
     /// the un-factored chains the mesh QUOTES as work (Vec-of-relations, capped;
     /// ephemeral — the market is runtime tension, not persisted language).
@@ -1454,7 +1460,7 @@ impl Kernel {
 
     /// Test/helper: identity-glue every provisional as if an overlapping
     /// hypha fetched the same word. The basis grows from gluing, not from
-    /// the two-voice quorum that listed them.
+    /// the vantage that docketed them.
     pub fn glue_local(&mut self) {
         let words: Vec<Element> = self.provisional.fiber(crate::network::nerve::ROOT).map(|(_, e)| e.clone()).collect();
         let mut cover = crate::network::nerve::Cover::new();

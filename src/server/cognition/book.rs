@@ -627,6 +627,11 @@ impl Kernel {
             crate::economy::price(&mag, &self.physics.pressure)
         };
         let anchor = self.anchor();
+        // THIS COURT re-derived the word to docket it: its own vantage,
+        // recorded so a witness's re-derivation can converge with it (47.3).
+        // Every path that dockets records one, or the object waits for a
+        // second organ it can never reach because the first was never there.
+        self.converge_here(&addr, ratifier);
         self.treasury.escrow_award(&addr, vec![ratifier], mu, anchor);
         self.deflations.insert(&addr, mag);
         let k_now = self.k_step();

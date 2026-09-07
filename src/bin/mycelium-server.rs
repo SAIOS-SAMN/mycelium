@@ -1081,7 +1081,7 @@ fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
     };
     let label = match &out {
         Outcome::Decomposed(word) => format!("valid: decomposed → sentence {word:?} ({} generators)", word.len()),
-        Outcome::GermPending => "valid: germ pending (one voice)".to_string(),
+        Outcome::GermPending => "valid: docketed, awaiting witness".to_string(),
         Outcome::Installed(i) => format!("valid: GERM INSTALLED #{i}"),
         Outcome::Sectioned(i) => format!("valid: section of #{i}"),
         Outcome::Fragmented(parts) => format!("valid: fragmented ({} bodies)", parts.len()),

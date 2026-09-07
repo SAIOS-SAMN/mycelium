@@ -39,6 +39,10 @@ pub const REFUSE_NO_DESCENT: &str = "no strict descent — the form closes nothi
 pub const REFUSE_RANK_LOST: &str = "form rank below what its tape re-derives";
 pub const REFUSE_PIVOT_INEXACT: &str = "pivot certificate does not re-derive";
 pub const REFUSE_ROOM: &str = "lane room does not cover the draw";
+/// 13.9 step 8. Two organs re-derive one object and reach DIFFERENT
+/// addresses: not a disagreement for a third to settle, but inconsistent
+/// data, which can only arise from tapes that do not re-derive.
+pub const REFUSE_MV_INEXACT: &str = "Mayer–Vietoris exactness fails: cochains are inconsistent";
 
 /// Chapter 23.1: replay a crystallized form from its tape and the forms it
 /// cites. `resolve` is the hypha's ruled cover (a caller without one

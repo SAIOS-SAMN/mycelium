@@ -456,9 +456,9 @@ impl Kernel {
             self.touch_at(addr);
             bound = true;
         }
-        // A germ still PENDING quorum accepts the bind too — it installs
-        // already anchored (evidence often reaches family size before the
-        // second voice completes the install).
+        // A germ still awaiting its witness accepts the bind too — it
+        // installs already anchored (evidence often reaches family size
+        // before the witness re-derivation lands).
         if let Some((elem, listed)) = self.pending.get(addr).cloned() {
             self.pending.insert(addr, (elem.with_anchor(pi), listed));
             self.book_gen += 1;

@@ -171,10 +171,14 @@ impl Kernel {
                     };
                     let asg = element::assignment(&centered);
                     let saddr = Address::from(section_address(&held.address(), &asg));
-                    let _ = self.admission.record(Receipt { voice, germ: saddr.clone() });
+                    // This court RE-DERIVED the section from its own held
+                    // word; the voice that uttered it is a use and a
+                    // settlement party (24.1), never a vantage. The second
+                    // vantage is a witness hypha that re-derives the same
+                    // address (47.3), and it arrives through the Offer.
+                    self.converge_here(&saddr, voice);
                     self.record_spoken(saddr.clone(), voice);
-                    let quorum = self.admission.voices(&saddr) >= crate::network::consensus::QUORUM;
-                    if quorum && self.physics.can_expand(lanes) {
+                    if self.physics.can_expand(lanes) {
                         if let Some(w) = self.word_mut(&taddr) {
                             w.puncture(asg);
                         }
@@ -188,33 +192,55 @@ impl Kernel {
                     self.physics.bump(&mag);
                     return Outcome::GermPending;
                 }
-                // KB COMPLETION — a genuinely new base thought adjoins on
-                // two-kernel consilience. Confluence is the gate: two kernels
-                // reducing the same demand reach the SAME residual (same address),
-                // so agreement is a theorem about the algebra, not a matched card.
+                // KB COMPLETION. Confluence IS the condition: two organs
+                // reducing one demand reach the same residual address
+                // because the algebra is confluent, and a differing address
+                // is inconsistent data, not a vote to be broken. The old
+                // comment said exactly this and then counted mouths.
                 let addr = residual.address();
-                // A refused draw is not an attestation: room that does not
-                // accept the residual must not count toward quorum.
-                let heard = self.admission.voices_of(&addr).iter().any(|v| v == &voice);
-                let n = self.admission.voices(&addr);
-                let n_after = if heard { n } else { n.saturating_add(1) };
-                // ENTROPIC EXPANSION needs BOTH consilience (quorum of distinct
-                // kernels) AND metabolic fuel (reserve above the floor on the germ's
-                // lanes). A germ at quorum with a depleted lane DEFERS — it stays
-                // pending while the mesh optimizes/regenerates, and installs on a
-                // later voice's submission once the reserve recovers (the recheck
-                // below, not record()'s one-shot crossing, so deferral never
-                // strands a germ).
-                let quorum = n_after >= crate::network::consensus::QUORUM;
-                if quorum && self.physics.can_expand(lanes) {
-                    let _ = self.admission.record(Receipt { voice, germ: addr.clone() });
+                // ONE VANTAGE DOCKETS. This court re-derived the residual to
+                // get here, which is its own re-derivation recorded; the
+                // second is a witness hypha's, and it arrives through the
+                // Offer. What still gates is the metabolism, which is the
+                // only thing that should (E3): a germ with a depleted lane
+                // DEFERS and dockets on a later submission once the reserve
+                // recovers, so deferral never strands one.
+                if self.physics.can_expand(lanes) {
+                    self.converge_here(&addr, voice);
+                    // 23.8: the residual is "docketed AS A LISTING". One
+                    // thing, not two -- it stays quotable on the open book
+                    // while it awaits a witness, so other voices can reduce
+                    // it and be credited for the use. Only the install
+                    // clears the page. While two vantages were required this
+                    // branch never listed, because the first voice fell
+                    // through to the `else` and listed there; with one
+                    // vantage docketing, nothing would ever reach the book
+                    // and the market would vanish.
+                    // ADMISSION IS ROOM (23.8): the draw comes from the
+                    // voice's own room on each lane it occupies, and a lane
+                    // that does not cover it refuses the act. Listing here
+                    // without that check would let the docket branch bypass
+                    // the gate the other branch performs.
+                    // T-room is swept BEFORE the draw, exactly as the other
+                    // listing site does it: standing extent that has aged out
+                    // relocates to the cavity so the lane it held is free.
+                    // Drawing first would refuse an act the sweep would have
+                    // covered, which reads as a cap and is really a stale row.
+                    let draw = residual.magnitude();
+                    let k_now = self.k_step();
+                    self.relocate_t_exhausted();
+                    if !self.fits_book(&voice, &draw) {
+                        self.log_room_refused(&voice, &draw);
+                    } else {
+                        self.book_list(residual.clone(), k_now, voice);
+                    }
                     let _ = self.treasury.settle_install(&residual, voice); // POW++ gate only
                     let mu = crate::economy::price(&residual.magnitude(), &self.physics.pressure);
                     let anchor = self.anchor();
                     // PROVISIONAL (Step 5): consilience escrows pending the
                     // court's admission docket; the word joins the basis as
                     // local dialect, final settlement waits for the verdict.
-                    self.treasury.escrow_award(&addr, self.admission.voices_of(&addr), mu, anchor);
+                    self.treasury.escrow_award(&addr, self.convergence.parties(&addr), mu, anchor);
                     self.record_deflation(addr.clone(), listing, residual.magnitude());
                     let k_now = self.k_step();
                     self.provisional_k.insert(&addr, k_now);
@@ -302,14 +328,14 @@ impl Kernel {
                         self.quote_frontier.insert(&addr, ());
                     }
                     if self.pending.contains(&addr) {
-                        let _ = self.admission.record(Receipt { voice, germ: addr.clone() });
+                        self.convergence.used_by(addr.as_bytes(), voice);
                     } else {
                         let k_now = self.k_step();
                         self.relocate_t_exhausted();
                         if !self.fits_book(&voice, &draw) {
                             self.log_room_refused(&voice, &draw);
                         } else {
-                            let _ = self.admission.record(Receipt { voice, germ: addr.clone() });
+                            self.convergence.used_by(addr.as_bytes(), voice);
                             self.book_list(residual.clone(), k_now, voice);
                             self.docket_connection(&residual, voice);
                             self.offered.insert(&addr, ());
@@ -757,9 +783,58 @@ impl Kernel {
         taught_anchored_words(word.iter().filter_map(|&i| self.language.words.get(i).map(|e| e.as_ref())))
     }
 
-    /// The consilience voices on record for a germ — the settle receipt's parties.
+    /// The voices that uttered this object — the settle receipt's parties.
+    /// A use, credited (24.1); never a vantage.
     pub fn voices_of(&self, germ: &[u8]) -> Vec<[u8; 32]> {
-        self.admission.voices_of(germ)
+        self.convergence.parties(germ)
+    }
+
+    /// THIS COURT re-derived `object` and reached its address, and the voice
+    /// that uttered it is a party to the settlement. The second vantage is a
+    /// witness hypha's re-derivation of the same address (47.3), recorded by
+    /// `converge_witness` when an Offer is glued.
+    pub(super) fn converge_here(&mut self, object: &Address, voice: [u8; 32]) {
+        let me = self.identity;
+        let (k, h) = (self.k_step(), self.height());
+        self.convergence.rederived(
+            object.as_bytes(),
+            me,
+            crate::court::convergence::Rederivation { address: object.clone(), k, height: h },
+        );
+        self.convergence.used_by(object.as_bytes(), voice);
+    }
+
+    /// A WITNESS HYPHA re-derived `object` and reached `reached`. Equal to
+    /// this court's address, the object has converged and may install;
+    /// different, it is inconsistent data and refuses (13.9 step 8).
+    pub(super) fn converge_witness(
+        &mut self,
+        object: &Address,
+        witness: [u8; 32],
+        reached: Address,
+        k: u64,
+        h: u64,
+    ) -> crate::court::convergence::Converged {
+        self.convergence.rederived(
+            object.as_bytes(),
+            witness,
+            crate::court::convergence::Rederivation { address: reached, k, height: h },
+        );
+        let me = self.identity;
+        let bond = |v: &[u8; 32]| self.treasury.bond_of(v);
+        let room = |v: &[u8; 32]| self.lane_room_of(v);
+        // 47.3: a second VANTAGE, not a second copy. The witness is another
+        // organ, bonded outside this home's delegation closure, with room on
+        // every lane. Delegation closure is task 5.3; until it lands the
+        // test is identity and bond, and that limit is stated rather than
+        // hidden behind a passing check.
+        let independent = move |a: &[u8; 32], b: &[u8; 32]| -> bool {
+            a != b && (*a == me || *b == me) && {
+                let other = if *a == me { b } else { a };
+                bond(other).is_some() && room(other).iter().any(|&r| r > 0)
+            }
+        };
+        self.convergence.state(object.as_bytes(), &independent)
     }
 
     /// The basis's interior VOLUME — the full fiber span across all punctured

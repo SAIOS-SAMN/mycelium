@@ -992,11 +992,35 @@ impl Kernel {
         // index: the peer's have-list
         for h in have {
             if self.provisional.contains(h) && self.ruled_contains(h) {
-                eprintln!(
-                    "  court peer holds {:02x}{:02x}… from {:02x}{:02x}…",
-                    h[0], h[1], peer[0], peer[1]
-                );
-                self.home_install(h);
+                // THE WITNESS'S RE-DERIVATION. The peer glued this Offer on
+                // its own tapes and reached the same address -- the address
+                // IS what it holds it under, so holding it is the claim.
+                // Two organs at one address is convergence (47.3); a
+                // different address never reaches here, because the peer
+                // would hold something else.
+                let (k, ht) = (self.k_step(), self.height());
+                match self.converge_witness(h, peer, h.clone(), k, ht) {
+                    crate::court::convergence::Converged::Witnessed { witness, .. } => {
+                        eprintln!(
+                            "  court witness {:02x}{:02x}… co-signed {:02x}{:02x}…",
+                            witness[0], witness[1], h[0], h[1]
+                        );
+                        self.home_install(h);
+                    }
+                    crate::court::convergence::Converged::Inexact { .. } => {
+                        eprintln!(
+                            "  court form refused {:02x}{:02x}…: {}",
+                            h[0], h[1],
+                            crate::court::verdict::REFUSE_MV_INEXACT
+                        );
+                    }
+                    crate::court::convergence::Converged::AwaitingWitness => {
+                        eprintln!(
+                            "  court docketed {:02x}{:02x}…, awaiting witness",
+                            h[0], h[1]
+                        );
+                    }
+                }
             }
         }
     }

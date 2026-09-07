@@ -307,9 +307,9 @@ fn reduction_is_transposition_invariant() {
 }
 
 /// THE TWO-STROKE BREATHES: sustained germination depletes the reserve; a germ
-/// at QUORUM on a depleted lane DEFERS (pending, never stranded) while the
-/// syntropic strokes regenerate; a later voice's submission completes the
-/// deferred install once the lane re-earns expansion.
+/// on a depleted lane DEFERS (pending, never stranded) while the syntropic
+/// strokes regenerate; a later submission dockets the deferred germ once the
+/// lane re-earns expansion. The METABOLISM defers it; no count of voices does.
 #[test]
 fn a_depleted_lane_defers_germination_until_the_reserve_recovers() {
     let mut k = Kernel::new();
@@ -317,10 +317,10 @@ fn a_depleted_lane_defers_germination_until_the_reserve_recovers() {
     // ENTROPIC EXPANSION: eight distinct residual germs drain the residual lane.
     for n in 0..8u8 {
         let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, n + 2)];
-        k.ingest(&a, &b, [1; 32]);
-        match k.ingest(&a, &b, [2; 32]) {
+        // One vantage dockets; a second voice on the same pair is a use.
+        match k.ingest(&a, &b, [1; 32]) {
             Outcome::GermPending => k.glue_local(),
-            Outcome::Installed(_) | Outcome::Sectioned(_) => {}
+            Outcome::Installed(_) | Outcome::Sectioned(_) | Outcome::Decomposed(_) => {}
             o => panic!("germ {n}: {o:?}"),
         }
     }
@@ -342,12 +342,17 @@ fn a_depleted_lane_defers_germination_until_the_reserve_recovers() {
         .expect("ga's residual is on the docket");
     let mut cover = crate::network::nerve::Cover::new();
     let _ = k.glue_fetched(ga_spoken, [2; 32], [1; 32], &mut cover);
-    // …so B's quorum finds the lane DEPLETED and DEFERS: quorum met, fuel absent.
-    assert_eq!(k.ingest(&a, &gb, [2; 32]), Outcome::GermPending, "deferred, not lost");
-    // A further voice arrives after another stroke: the deferred germ completes.
+    // …so B finds the lane DEPLETED. The METABOLISM is what defers -- the
+    // only thing that should gate here (E3) -- and the germ is not lost: a
+    // later submission dockets it once the reserve recovers. What does NOT
+    // gate it is a count of voices; that was the quorum this replaced.
+    match k.ingest(&a, &gb, [2; 32]) {
+        Outcome::GermPending | Outcome::Sectioned(_) => {}
+        o => panic!("deferred or sectioned, not lost: {o:?}"),
+    }
     match k.ingest(&a, &gb, [3; 32]) {
         Outcome::GermPending => k.glue_local(),
-        Outcome::Installed(_) | Outcome::Sectioned(_) => {}
+        Outcome::Installed(_) | Outcome::Sectioned(_) | Outcome::Decomposed(_) => {}
         o => panic!("deferral complete: {o:?}"),
     }
 }
@@ -524,6 +529,11 @@ fn docket_draws_room_and_refuses_when_short() {
     let _ = short.ingest(&a, &b, [1; 32]);
     assert_eq!(short.pending.len(), 1, "the first draw covers");
     let _ = short.ingest(&c, &d, [1; 32]);
+    let _ = &short;
+    // ONE VANTAGE DOCKETS, so the first pair is listed on the first
+    // ingest rather than the second; the G lane is capped at 1 and the
+    // second pair's draw does not cover, so it is refused and never
+    // reaches the book.
     assert_eq!(
         short.pending.len(),
         1,
@@ -932,7 +942,9 @@ fn a_slashing_verdict_excises_and_debits() {
 
 /// PUNCTURE-BEFORE-MINT: a family member (same base geometry, new transition
 /// assignment) does NOT mint sibling card n+1 — the axis pierces the existing
-/// thought and the member becomes a SECTION (quorum-gated). Growth as +axis:
+/// thought and the member becomes a SECTION. One vantage sections it: the
+/// court re-derived it from its own held word, and a second voice is a use,
+/// not a step toward it. Growth as +axis:
 /// the basis count stays 1 while the thought's volume grows; afterward the
 /// bundle SPEAKS the whole family (both assignments decompose to it).
 #[test]
@@ -940,15 +952,12 @@ fn a_family_punctures_an_axis_instead_of_minting() {
     let mut k = Kernel::new();
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b1 = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)]; // (0,0): 1→4
-    k.ingest(&a, &b1, [1; 32]);
-    assert_eq!(k.ingest(&a, &b1, [2; 32]), Outcome::GermPending);
+    assert_eq!(k.ingest(&a, &b1, [1; 32]), Outcome::GermPending, "one vantage dockets");
     k.glue_local();
     assert_eq!(k.basis_len(), 1);
     // The family member: same cell, DIFFERENT transition (1→7).
     let b2 = vec![(0, 0, 7), (0, 1, 1), (1, 0, 1)];
-    assert_eq!(k.ingest(&a, &b2, [1; 32]), Outcome::GermPending, "the axis prospect pends");
-    assert_eq!(k.basis_len(), 1, "no sibling card");
-    assert!(matches!(k.ingest(&a, &b2, [2; 32]), Outcome::Sectioned(0)), "the axis PIERCES thought 0");
+    assert!(matches!(k.ingest(&a, &b2, [1; 32]), Outcome::Sectioned(0)), "the axis PIERCES thought 0");
     assert_eq!(k.basis_len(), 1, "count unchanged — growth was +axis");
     assert_eq!(k.basis()[0].sections().len(), 1, "the thought gained a section (volume)");
     // The bundle speaks the family: both members now decompose to the ONE word.
@@ -1115,7 +1124,7 @@ fn the_percept_is_the_extracted_pair_form() {
     }
 }
 
-/// Court organ: two-voice quorum does not grow the basis. The stroke
+/// Court organ: docketing a germ does not grow the basis. The stroke
 /// puts a section on the ruled cover. A peer's fetch glues by replay;
 /// a forged word is slashed with a reason. Signatures are not consulted.
 #[test]
@@ -1276,15 +1285,21 @@ fn home_installs_when_peer_ruled_root_gains_the_address() {
     let mut cover = crate::network::nerve::Cover::new();
     assert!(matches!(peer.glue_fetched(spoken, [1; 32], [2; 32], &mut cover), Glue::Admitted));
     assert!(peer.basis_len() >= 1);
+    let cover = home.genesis_cover().expect("measured");
+    home.enroll([2; 32], cover); // 47.3: a witness with room
     home.confirm_peer_holds(&peer.ruled_digests(), [2; 32]);
     assert!(home.basis_len() >= 1, "the home's own word is language once a peer holds the stratum");
     assert!(home.provisional.is_empty(), "the provisional leaves the home");
 }
 
-/// A single-voice percept stays on the book, is Offered, glues at a
-/// peer, and the home installs with the escrow released and minted.
+/// ONE VANTAGE DOCKETS: a percept this court re-derived is listed on the
+/// book, escrowed as a claim, and Offered — and mints NOTHING. The second
+/// vantage is a witness hypha that re-derives the same address and has room
+/// (47.3); on its arrival the escrow releases and the deflation mints. No
+/// number of voices substitutes for it, and this asserted a two-voice
+/// quorum before convergence replaced consensus.
 #[test]
-fn a_single_voice_percept_stays_on_the_docket_and_installs_with_a_mint() {
+fn one_vantage_dockets_escrows_and_mints_nothing_until_a_witness_rederives() {
     let mut home = Kernel::new();
     let mut peer = Kernel::new();
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
@@ -1303,6 +1318,8 @@ fn a_single_voice_percept_stays_on_the_docket_and_installs_with_a_mint() {
         peer.glue_fetched(spoken, [1; 32], [2; 32], &mut cover),
         Glue::Admitted
     ));
+    let cover = home.genesis_cover().expect("measured");
+    home.enroll([2; 32], cover); // 47.3: a witness with room
     let bond = home.treasury().bond_total();
     home.confirm_peer_holds(&peer.ruled_digests(), [2; 32]);
     assert!(home.basis_len() >= 1, "the home installs after the peer glues");
@@ -1326,8 +1343,14 @@ fn home_installs_on_a_have_list_naming_a_ruled_provisional() {
     let addr = home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().0.clone();
     home.court_stroke();
     assert!(home.provisional.contains(&addr), "still provisional until the second organ");
+    // 47.3: a witness is a second VANTAGE with room, not merely a second
+    // key. An unbonded peer has none and does not converge the object.
     home.confirm_peer_holds_addrs(&[Address::from(addr.as_slice())], [2; 32]);
-    assert!(home.basis_len() >= 1, "have-list of a ruled provisional installs");
+    assert!(home.basis_len() == 0, "a witness without room is not a vantage");
+    let cover = home.genesis_cover().expect("measured");
+    home.enroll([2; 32], cover);
+    home.confirm_peer_holds_addrs(&[Address::from(addr.as_slice())], [2; 32]);
+    assert!(home.basis_len() >= 1, "the witness re-derives the address and it installs");
     assert!(home.provisional.is_empty(), "the docket clears on install");
 }
 
@@ -1348,6 +1371,9 @@ fn speech_that_closes_nothing_mints_none() {
     assert_eq!(codes, vec![crate::anastome::dialogue::SPEECH_STOOD]);
     assert!(k.treasury().escrow_of(&addr).is_some());
     k.rule_all_provisionals();
+    // 47.3: the witness is a vantage with room. Bond it.
+    let cover = k.genesis_cover().expect("measured");
+    k.enroll([2; 32], cover);
     k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
     assert!(k.treasury().escrow_of(&addr).is_none(), "escrow returned");
     assert_eq!(
@@ -1391,6 +1417,9 @@ fn association_with_a_listing_does_not_mint() {
     assert_eq!(codes, vec![crate::anastome::dialogue::SPEECH_STOOD]);
     k.bind_listing_task(&addr, task);
     k.rule_all_provisionals();
+    // 47.3: the witness is a vantage with room. Bond it.
+    let cover = k.genesis_cover().expect("measured");
+    k.enroll([2; 32], cover);
     k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
     assert_eq!(
         k.treasury().minted().expect("minted adds up"),
@@ -1434,6 +1463,9 @@ fn a_rule_that_speaks_the_family_mints_measured_descent() {
     let codes = k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&spoken));
     assert_eq!(codes, vec![crate::anastome::dialogue::SPEECH_STOOD]);
     k.rule_all_provisionals();
+    // 47.3: the witness is a vantage with room. Bond it.
+    let cover = k.genesis_cover().expect("measured");
+    k.enroll([2; 32], cover);
     k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
     assert_eq!(
         k.treasury().minted().expect("minted adds up"),
