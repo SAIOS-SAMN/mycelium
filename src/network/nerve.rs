@@ -728,8 +728,14 @@ mod keyed_tests {
         let m = a.meet(&b);
         assert!(m.contains(&key(2)) && m.contains(&key(3)));
         assert!(!m.contains(&key(1)) && !m.contains(&key(4)));
+        // The cost claim, stated: with the shared structure fixed, growing
+        // the larger trie's DISJOINT bulk costs the meet nothing, because
+        // the prune stops at the branch where that bulk diverges. The
+        // counter is reset AFTER construction; resetting before it measured
+        // n inserts plus the meet, so the ratio was the build's own linear
+        // growth and the move under test was invisible. A bound of 8x at
+        // 4N passed for any implementation that did not actually explode.
         let run = |n: usize| {
-            work::reset();
             let mut big: Keyed<u8> = Keyed::new();
             let mut small: Keyed<u8> = Keyed::new();
             small.insert(key(1), 1);
@@ -738,12 +744,16 @@ mod keyed_tests {
                 big.insert([10u8, i as u8], 1);
             }
             big.insert(key(1), 1);
-            let _ = big.meet(&small);
-            work::total()
+            work::reset();
+            let m = big.meet(&small);
+            (work::total(), m.len())
         };
-        let w = run(8);
-        let w4 = run(32);
-        assert!(w > 0 && w4 <= w.saturating_mul(8), "meet cost follows shared prefixes, not |A|×|B|: {w} then {w4}");
+        let (w, held) = run(8);
+        let (w4, held4) = run(32);
+        assert_eq!(held, 1, "the one shared key is the meet");
+        assert_eq!(held4, 1, "and stays the only one as the bulk grows");
+        assert!(w > 0, "the meet is measured, not skipped");
+        assert_eq!(w, w4, "4N of disjoint bulk costs the meet nothing: {w} then {w4}");
     }
 }
 

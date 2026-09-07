@@ -8052,4 +8052,50 @@ mod tests {
         }], [2; 32]);
         assert_eq!(k.heard_len(), 0, "a moved stratum root drops heard");
     }
+
+    /// G3. `listings_on` is the meet of the cell's own vertices (13.1, 14.6):
+    /// the listings every voice of the cell speaks, on its chart, still open.
+    /// It is a fold of `Keyed::meet` over the cell's vertex list — a boundary
+    /// walk — and never a product of the vertices with the chart's listings.
+    #[test]
+    fn listings_on_is_the_meet_of_its_vertices() {
+        use crate::transducer::a21::Address;
+        let mut k = Kernel::new();
+        let inv = crate::transducer::stalk::Invariant(vec![7]);
+        let (v1, v2) = ([1u8; 32], [2u8; 32]);
+        let both = Address::from(&b"both"[..]);
+        let only_v1 = Address::from(&b"only_v1"[..]);
+        let shut = Address::from(&b"shut"[..]);
+        let off_chart = Address::from(&b"off_chart"[..]);
+        for a in [&both, &only_v1, &shut] {
+            k.chart_listings.nested_insert(inv.key(), a.as_bytes(), ());
+        }
+        for a in [&both, &only_v1, &shut, &off_chart] {
+            k.open.insert(a.as_bytes(), ());
+        }
+        k.open.remove(shut.as_bytes());
+        k.record_spoken(both.clone(), v1);
+        k.record_spoken(both.clone(), v2);
+        k.record_spoken(only_v1.clone(), v1);
+        k.record_spoken(shut.clone(), v1);
+        k.record_spoken(shut.clone(), v2);
+        k.record_spoken(off_chart.clone(), v1);
+        k.record_spoken(off_chart.clone(), v2);
+
+        let held = k.listings_on(&inv, &[v1, v2]);
+        assert!(held.contains(both.as_bytes()), "spoken by both, on the chart, open");
+        assert!(!held.contains(only_v1.as_bytes()), "a listing one vertex never spoke is not in the meet");
+        assert!(!held.contains(shut.as_bytes()), "a closed listing is not held");
+        assert!(!held.contains(off_chart.as_bytes()), "a listing off the chart is not held");
+        assert_eq!(held.len(), 1, "the meet is exactly the shared, open, on-chart listing");
+
+        // One vertex alone holds what it spoke; the meet only ever shrinks.
+        let alone = k.listings_on(&inv, &[v1]);
+        assert!(alone.contains(both.as_bytes()) && alone.contains(only_v1.as_bytes()));
+        assert_eq!(alone.len(), 2, "and nothing it did not speak");
+
+        // A vertex that has spoken nothing empties the cell: an intersection
+        // through it is empty, never "everything on the chart".
+        assert_eq!(k.listings_on(&inv, &[v1, [9u8; 32]]).len(), 0, "a silent vertex empties the meet");
+    }
 }
