@@ -182,7 +182,7 @@ enforces.
 
 | id | file | lines | target | status |
 |---|---|---|---|---|
-| S25 | transducer/stalk.rs | 766 | by organ | open |
+| S25 | transducer/stalk.rs | 766 | stalk/{chart, stratum, stalks}.rs, tests/6.rs | landed (S25) |
 | S26 | transducer/family/tests/21.rs | 733 | by the steps of chapter 21 | open |
 | S27 | server/cognition/snapshot.rs | 733 | by carrier | open |
 | S28 | transducer/sentence/form.rs | 675 | by organ | open |
