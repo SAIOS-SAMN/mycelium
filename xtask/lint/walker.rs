@@ -117,16 +117,30 @@ fn strip_tests(src: &str) -> String {
         let closes = line.chars().filter(|&c| c == '}').count() as i32;
         if !in_test && t.contains("#[cfg(test)]") {
             pending = true;
-        }
-        if pending && opens > 0 {
-            in_test = true;
-            pending = false;
-            depth = opens - closes;
-            if depth <= 0 {
-                in_test = false;
-            }
             out.push('\n');
             continue;
+        }
+        if pending {
+            // A DECLARATION, not a block: `#[cfg(test)] mod tests;` is the
+            // shape 3.3 mandates and it carries no brace. Left armed, the
+            // arm fires on the NEXT braced item in the file — production
+            // code, blanked and then read by no gate. Disarm on the
+            // semicolon; a test block starts only where an item opens.
+            if opens == 0 && t.ends_with(';') {
+                pending = false;
+                out.push('\n');
+                continue;
+            }
+            if opens > 0 {
+                in_test = true;
+                pending = false;
+                depth = opens - closes;
+                if depth <= 0 {
+                    in_test = false;
+                }
+                out.push('\n');
+                continue;
+            }
         }
         if in_test {
             depth += opens - closes;
@@ -144,4 +158,32 @@ fn strip_tests(src: &str) -> String {
         out.push('\n');
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::strip_tests;
+
+    /// F3f: `#[cfg(test)]` on a DECLARATION disarms. Left armed, the next
+    /// braced item in the file — production code — was blanked and read by
+    /// no gate. Seven files carry code after that shape, the server
+    /// binary's `main` with 396 lines of it.
+    #[test]
+    fn a_test_declaration_does_not_swallow_the_next_item() {
+        let src = "#[cfg(test)]\nmod tests;\n\nfn production() {\n    let t = Instant::now();\n}\n";
+        let out = strip_tests(src);
+        assert!(
+            out.contains("Instant"),
+            "production code after `mod tests;` must reach the gates:\n{out}"
+        );
+    }
+
+    /// And `#[cfg(test)]` on a BLOCK still strips the block whole.
+    #[test]
+    fn a_test_block_is_stripped_whole() {
+        let src = "#[cfg(test)]\nmod tests {\n    fn hidden() {\n        let t = Instant::now();\n    }\n}\n\nfn production() {\n    let ok = 1;\n}\n";
+        let out = strip_tests(src);
+        assert!(!out.contains("Instant"), "the block is stripped:\n{out}");
+        assert!(out.contains("let ok = 1"), "and production survives it:\n{out}");
+    }
 }
