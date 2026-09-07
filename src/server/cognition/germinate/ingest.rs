@@ -282,10 +282,24 @@ impl Kernel {
                     // per-lane as ever, never a summed winding.
                     let witnesses = crate::transducer::toroid::witness_thought(&residual);
                     let k = match witnesses.is_empty() {
-                        true => {
-                            let residue = crate::torsion::residue_of_chain(residual.sub());
-                            crate::torsion::required_k_steps(&residue)
-                        }
+                        // No stored cycle: the steps this residual needs are
+                        // the ORDER of the loop word its gauge spells (16.2).
+                        // A word of order p closes in p steps; a word of
+                        // infinite order never closes on its own and the
+                        // demand stands open at one step, which is what an
+                        // unclosed loop is worth. This read what a Δ field's
+                        // "kinematic energy" divided by a rate of 1/4 came
+                        // to: a matrix (law 11), a constant standing for a
+                        // measurement (rule 5), and a saturating conversion
+                        // (rule 11), for a number the alphabet already knows.
+                        true => match residual.letters().map(|l| l.spelling.word.order()) {
+                            Some(crate::transducer::alphabet::Order::Finite(p)) => p as u64,
+                            // A word of infinite order never closes on its
+                            // own, and a residual with no tape is not a word
+                            // of the language at all: both stand open at one
+                            // step, which is what an unclosed loop is worth.
+                            _ => 1,
+                        },
                         false => witnesses
                             .iter()
                             .map(|w| match w {

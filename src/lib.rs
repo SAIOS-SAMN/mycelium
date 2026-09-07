@@ -19,7 +19,6 @@ pub mod physics;
 pub mod economy;
 pub mod arc;
 pub mod anastome;
-pub mod torsion;
 pub mod chronometry;
 pub mod cohesion;
 
