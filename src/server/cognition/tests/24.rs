@@ -160,3 +160,38 @@ assert_eq!(
      {at_n} at N, {at_4n} at 4N"
 );
 }
+
+/// 24.1, 26 — THE OPEN-DEMAND ARM. When the lane a residual occupies is
+/// depleted, germination DEFERS and the residual is listed on the open
+/// market instead: the demand stands, quotable, until the reserve recovers.
+/// Each of the three carriers charges for itself — a word of finite order
+/// charges its order, an unclosed walk charges the letters it spelled, and a
+/// pure residual chain charges the support its chain touches — and all three
+/// are LISTED. Only an element with neither word nor chain is degenerate.
+///
+/// This arm had no test at all: a probe at its head ran zero times across
+/// the whole suite while the corrections of F2r1 and F2r1c were written into
+/// it (backtrack ledger, 2026-09-07). This test reaches it and takes the
+/// PURE RESIDUAL CHAIN carrier — the one F2r1c corrected, and the one that
+/// was being refused. The two tape carriers (a word of finite order, an
+/// unclosed walk) are still unreached; the fixture that spells one under a
+/// depleted lane is owed as F2r1d.
+#[test]
+fn a_depleted_lane_lists_the_demand_instead_of_germinating_it() {
+    let mut k = Kernel::new();
+    let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, 7)];
+    // Empty every lane: eight spends empty a full reserve, exactly.
+    for _ in 0..8 {
+        k.physics_mut().spend([true; 4]);
+    }
+    assert!(!k.physics().can_expand([true; 4]), "the reserve is spent");
+    let before = k.field().len();
+    let out = k.ingest(&a, &b, [1; 32]);
+    assert_eq!(out, Outcome::GermPending, "a deferred demand still stands");
+    assert!(
+        k.field().len() > before,
+        "the residual is LISTED on the open book, not refused: a pure \
+         residual chain is the germination demand itself"
+    );
+}
