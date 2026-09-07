@@ -21,7 +21,6 @@ pub(crate) fn quote_arm(
     last_pressure: &mut [u64; 4],
     dwell_remaining: &mut [u64; 4],
     k_step: &mut u64,
-    lap: &mut dyn FnMut(&'static str),
     occluded: bool,
     tag: &str,
 ) {
@@ -64,13 +63,11 @@ match entity.quote() {
             // THINK, then CONVERSE. Incidence is deconstruction:
             // every served listing is concluded. Chart keys route;
             // they never decide comprehension.
-            let t0 = std::time::Instant::now();
             let (cites, residual, familiar) = entity.conclude_listing(&cluster.chain);
             eprintln!(
-                "[{tag}] [{}] cluster {} cells: concluded in {} ms -> {} cites, {} residual{}",
+                "[{tag}] [{}] cluster {} cells: concluded -> {} cites, {} residual{}",
                 mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                 cluster.chain.len(),
-                t0.elapsed().as_millis(),
                 cites.len(),
                 residual.len(),
                 if familiar { " (familiar)" } else { "" },
@@ -208,8 +205,6 @@ match entity.quote() {
     }
 }
 }
-
-lap("quote");
 // Syllabus after quote so a voice can close dialect/idea charts
 // before its first SYLLABUS line. Under the Budget, not a timer.
 if !occluded

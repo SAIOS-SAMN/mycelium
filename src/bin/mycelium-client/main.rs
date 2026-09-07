@@ -142,14 +142,6 @@ fn main() {
             dwell_remaining[l] = dwell_remaining[l].saturating_sub(1);
         }
         let mut outcome = StrokeOutcome::default();
-        // Stroke phase laps — one reading across every axis of the stroke.
-        let mut laps: Vec<(&'static str, u128)> = Vec::new();
-        let mut t_last = std::time::Instant::now();
-        let mut lap = |label: &'static str| {
-            laps.push((label, t_last.elapsed().as_millis()));
-            t_last = std::time::Instant::now();
-        };
-
         let occluded =
             matches!(entity.transport(), mycelium::sdk::TransportAperture::Occluded { .. });
 
@@ -157,19 +149,16 @@ fn main() {
             &mut entity, &mut physics, &mut feed, &mut extract_memo, &mut c, &mut outcome,
             &mut last_height, &mut last_pressure, &mut dwell_remaining, occluded, &tag,
         );
-        lap("feed");
         quote_arm(
             &mut entity, &mut physics, &mut c, &mut outcome, &mut last_lang, &mut last_height,
             &mut last_quoted_height, &mut last_pressure, &mut dwell_remaining, &mut k_step,
-            &mut lap, occluded, &tag,
+            occluded, &tag,
         );
-        lap("quote");
         task_arm(&mut entity, &mut physics, &mut extract_memo, &mut c, &mut outcome, &tag);
         if physics.depleted() {
-            lap("task");
             syntropy_arm(
                 &mut entity, &mut physics, &mut c, &mut outcome, &genome_path,
-                &mut last_genome, &mut lap, &tag,
+                &mut last_genome, &tag,
             );
             physics.relax();
         }
@@ -204,7 +193,6 @@ fn main() {
                     if feed.exhausted() { "clear" } else { "held" },
                 );
             } else {
-                eprintln!("[{tag}] [{}] stroke laps ms {laps:?}", mycelium::chronometry::Height::stamp_of(entity.now_tu()));
                 eprintln!(
                     "[{tag}] [{}] K {k_step} | genome {} | dialect {} | ideas {} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | shed {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} discordance {} axes {}",
                     mycelium::chronometry::Height::stamp_of(entity.now_tu()),

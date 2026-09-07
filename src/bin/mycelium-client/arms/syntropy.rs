@@ -16,10 +16,8 @@ pub(crate) fn syntropy_arm(
     outcome: &mut StrokeOutcome,
     genome_path: &str,
     last_genome: &mut usize,
-    lap: &mut dyn FnMut(&'static str),
     tag: &str,
 ) {
-lap("task");
 let shed = entity.shed();
 if shed > 0 {
     eprintln!("[{tag}] shed {shed} dialect");
@@ -65,7 +63,6 @@ if let Ok(n) = entity.sync_genome() {
 // if the rest of the vocabulary already speaks it, bid the
 // compression. The hypha's replay rules; on acceptance the word
 // retires fleet-wide and the entity earns the compression yield.
-lap("sync");
 if let Some((word, cites)) = entity.seek_refinement() {
     if let Ok((code, mu)) = entity.bid_refinement(&word, &cites) {
         if code == mycelium::anastome::dialogue::REFINE_ACCEPTED {
@@ -85,7 +82,6 @@ if let Some((word, cites)) = entity.seek_refinement() {
         }
     }
 }
-lap("refine");
 if entity.epigenome.genome_len() != *last_genome {
     let _ = entity.save_genome(genome_path);
     *last_genome = entity.epigenome.genome_len();
