@@ -239,11 +239,26 @@ Landed: `Treasury` with balances, bond (`enroll`), escrow
 (`price`), the ledger entries, the four-lane comparison, the T-room
 lifecycle that returns escrow when a docket entry relocates.
 
-Not landed: mint as issuance (release currently draws from the bond and
-pays nothing when the bond is empty), `price` returning zero when the bond
-is empty, stake and unstake for voices, the Note, voice keys, genesis,
-burn, `supply`, `audit`, T accrual on open demands, delegation. Also not
-landed: the equivocation burn, receipt-indexed Notes, two-signature
-releases, FROST voice groups and manifests, and heights in place of ticks
-(`MU-RECURSION.md` Part IX). The
-landing order is in `MU-ENGINEERING.md` §10.
+Landed 2026-09-07: `genesis` and `burn` as their own entry kinds, with
+`escrow`, `release`, `revoke` and `unstake` beside them; `supply()` as
+`genesis + mint − burn` with checked arithmetic, refusing rather than
+saturating; `minted()` reading the mint rows alone, so seeded and earned
+value can be asked apart; `Treasury::audit` on both equations of §6; and
+stake as a MOVE — `enroll` debits the balance it stakes from and stakes
+only what is held, `unstake` returns it the way it went, and
+`Kernel::enroll` funds an identity at genesis before staking it.
+
+Not landed, in the order they gate each other: **E1** — escrow out of the
+supply equation, and a ruling discharging an escrow into a mint. The audit
+fails at the first docket until it lands, so it gates every settlement path
+and therefore `MU-RECURSION.md` 1.10. **E2**'s burn on retirement, which
+needs the retirement driver (1.11 `shorter_form`) beside the
+`RewriteKind::Retire` that 0.G6 built. **E3**'s cap on T-accrual. Then
+`price` returning zero when the bond is empty, the Note, voice keys, and
+delegation.
+
+Also not landed: the equivocation burn, receipt-indexed Notes,
+two-signature releases, FROST voice groups and manifests. Heights in place
+of ticks landed with `MU-RECURSION.md` 5.1, and the mind's own K in place
+of a mesh height for the dialect and contemplation lifecycles landed with
+7.3a/7.3b. The landing order is in `MU-ENGINEERING.md` §10.
