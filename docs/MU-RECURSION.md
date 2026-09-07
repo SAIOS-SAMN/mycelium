@@ -2117,10 +2117,10 @@ budget.
 
 ### 16.13 A13 — Meet of two keyed tries
 
-`Keyed::meet<W>(&self, other: &Keyed<W>) -> Keyed<()>` (nerve.rs): keys
+`Keyed::meet<W>(&self, other: &Keyed<W>) -> Keyed<()>` (nerve/keyed.rs): keys
 present in both. A simultaneous walk down the two PATRICIA tries
 (`Node::Leaf(key, _)`, `Node::Branch { bit, children }`, `key_bit`,
-`first_difference`, `held_key`, nerve.rs 21–75), using one fact: every key
+`first_difference`, `held_key`, nerve/keyed.rs), using one fact: every key
 in the subtree of a `Branch { bit }` agrees on all bits before `bit`.
 `meet(a, b)` on two nodes:
 
@@ -2740,7 +2740,7 @@ else, so every binding below still names the function it always named:
 | `alphabet/`, `sentence/`, `element/`, `cech.rs`, `stalk.rs`, `blade.rs`, `bubble/`, `family/`, `cga.rs`, `peel.rs`, `anchor.rs`, `sheaf.rs`, `germinate.rs`, `rewrite.rs`, `factor.rs`, `a21.rs` | `/opt/mycelium-v0.1.0/src/transducer/<name>` |
 | `cognition/`, `registry.rs`, `synthesis.rs` | `/opt/mycelium-v0.1.0/src/server/<name>` |
 | `verdict.rs`, `identity.rs`, `ledger.rs` | `/opt/mycelium-v0.1.0/src/court/<name>` |
-| `nerve.rs`, `mesh.rs`, `wire.rs` | `/opt/mycelium-v0.1.0/src/network/<name>` |
+| `nerve/`, `mesh.rs`, `wire.rs` | `/opt/mycelium-v0.1.0/src/network/<name>` |
 | `sdk/` | `/opt/mycelium-v0.1.0/src/client/sdk/` |
 | `dialogue/` | `/opt/mycelium-v0.1.0/src/anastome/dialogue/` |
 | `ear.rs` | `/opt/mycelium-v0.1.0/src/perception/ear.rs` |
@@ -3623,7 +3623,7 @@ sentence.rs   Vertex/Face/Loop/Form NEW (18.2), Form::{face_of, delta1, coheres,
 family/       word_form, frame_vertex, pair_form, Crystal, extract_rule (seven moves), speak_rule on Form, rule_replays_family shares, orbit/OrbitEnd
 cech.rs       ChartGraph, Goodness, goodness, cell_key with component, set_edge_in, Overlap, MayerVietoris, Complex::{overlap, mayer_vietoris, delta2, restrict, straddling},
               solve_gauge_between (A14); solve_gauge unchanged
-nerve.rs      Keyed::meet (A13), Cover::charts_of, Router::insert(vk, addr), home(depth), no hash(addr) keys outside pending_addrs
+nerve/        Keyed::meet (A13), Cover::charts_of, Router::insert(vk, addr), home(depth), no hash(addr) keys outside pending_addrs
 stalk.rs      Stalks::refine(inv, &[u64]), split_stratum coordinate_of -> Vec<u64>, invariant/invariant_of empty on A6 refusal
 blade.rs      axes_of -> Option<[u64;2]> (A6), moduli -> Option<Vec<u64>>
 ear.rs        Harmonics::axes -> Option<Vec<u64>>

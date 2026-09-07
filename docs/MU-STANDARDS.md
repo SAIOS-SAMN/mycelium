@@ -47,10 +47,25 @@ squaring gate's allow-list (law 11). Nothing else touches `(i64, i64)`,
 per act family or arm; the binaries are inside every gate's scope.
 
 1.6 **Splits are move-only commits.** A split changes no line of any
-function body; only `use`, `mod`, and `pub use` lines are new. The suite
-count and the clippy count are identical before and after, both quoted in
-the message, and every document path that pointed into the split file is
-rebound in the same commit (§7.4).
+function body; only `use`, `mod`, `pub use` and `#[path]` lines are new.
+The suite count and the clippy count are identical before and after, both
+quoted in the message, and every document path that pointed into the split
+file is rebound in the same commit (§7.4). Four shapes are permitted inside
+a move-only commit and each is declared in the message: an `impl` block
+that cannot span files is opened again in the new file with the same
+methods; `super::` paths become `crate::` paths when a file moves down a
+level; a function that dispatched several acts in sequence becomes one
+function per act plus a `match` that dispatches and holds nothing else;
+a `main` that ran boot phases in sequence becomes one function per phase
+plus the ordered calls. Anything beyond these four is a code change and
+lands as its own commit.
+
+1.7 **The bound during a split stage.** The gate is the bound plus a list,
+`AWAITING_SPLIT`, naming every file still over it with the row that owes
+its split. Each split deletes its own row; a stale row (a file already
+under the bound, or gone) fails the build like an over-bound file. The
+list is empty at the stage's last commit, and the bound then drops to its
+final value.
 
 ## 2. Naming
 
@@ -118,7 +133,10 @@ chapter of `MU-RECURSION.md` they prove (`sentence/tests/12.rs`,
 `tests/other.rs` and is listed in the commit message until a chapter is
 named for it. `tests/common.rs` is the one shared file per module and
 holds fixture constructors only (`grid`, `word`, `form_with_two_words`),
-named for what they build.
+named for what they build. A gate recognises a test file by the owning
+module's `#[cfg(test)] mod tests;` declaration, never by the file's name
+or directory; a file merely named `tests.rs`, or one under `tests/` that
+no module declares, is production code to every gate.
 
 3.4 **Fixtures are built, never faked.** Addresses come from
 `Element::address()` of a constructed form, keys from `key()`, forms from

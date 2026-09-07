@@ -60,7 +60,7 @@ Inside every hypha (`server/cognition/`, `court/verdict.rs`):
 
 ## 4. The mesh
 
-- **Cover trie** (`network/nerve.rs`): per lane, a trie of chart prefixes
+- **Cover trie** (`network/nerve/cover.rs`): per lane, a trie of chart prefixes
   to the hyphae whose active work covers them. Home is the fiber
   intersection on every occupied lane, then per-lane room, then identity.
 - **Digest exchange**: signed cover and ruled roots; fetch of discordant

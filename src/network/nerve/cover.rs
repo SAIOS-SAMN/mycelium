@@ -1,0 +1,394 @@
+// 16.11, 26 — THE COVER: the trie that homes a word by incidence.
+//
+//! Descent is by longest common prefix on the chart's lane, never by XOR
+//! distance: a word goes where its own coordinates say, and the room a node
+//! has is read from its bond against its occupancy. `home` refuses rather
+//! than choosing when no node dominates.
+
+use super::*;
+
+/// An invariant axis as a Keyed key: the coordinate little-endian, so a
+/// prefix of axes is a prefix of the plane.
+pub fn axis_key_le(a: u64) -> [u8; 8] {
+    a.to_le_bytes()
+}
+
+fn axis_of_le(key: &[u8]) -> u64 {
+    let mut b = [0u8; 8];
+    let n = key.len().min(8);
+    b[..n].copy_from_slice(&key[..n]);
+    u64::from_le_bytes(b)
+}
+
+/// Cover trie: per lane, nested Keyed by invariant axes. The fiber at a
+/// node is the hyphas covering that plane (this prefix and every finer
+/// chart beneath it). Own charts and peer charts share the trie.
+#[derive(Clone, Debug)]
+pub struct Cover {
+    lanes: [CoverNode; 4],
+    /// Cover root per lane, hashed in trie order on admit/retract.
+    roots: [[u8; 32]; 4],
+    /// Charts each hypha holds, so retract walks those paths only.
+    held: Keyed<Vec<(u8, crate::transducer::stalk::Invariant)>>,
+}
+
+fn empty_cover_root() -> [u8; 32] {
+    *blake3::Hasher::new().finalize().as_bytes()
+}
+
+impl Default for Cover {
+    fn default() -> Self {
+        Cover {
+            lanes: Default::default(),
+            roots: [empty_cover_root(); 4],
+            held: Keyed::new(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+struct CoverNode {
+    here: Keyed<()>,
+    next: Keyed<CoverNode>,
+}
+
+impl CoverNode {
+    fn is_empty(&self) -> bool {
+        self.here.is_empty() && self.next.is_empty()
+    }
+
+    fn admit(&mut self, axes: &[u64], hypha: &[u8]) {
+        match axes.split_first() {
+            None => {
+                self.here.insert(hypha, ());
+            }
+            Some((&a, rest)) => {
+                let k = axis_key_le(a);
+                match self.next.get_mut(&k) {
+                    Some(ch) => ch.admit(rest, hypha),
+                    None => {
+                        let mut ch = CoverNode::default();
+                        ch.admit(rest, hypha);
+                        self.next.insert(k, ch);
+                    }
+                }
+            }
+        }
+    }
+
+    fn collect_into(&self, out: &mut Keyed<()>) {
+        for (id, _) in self.here.fiber(ROOT) {
+            out.insert(id, ());
+        }
+        for (_, child) in self.next.fiber(ROOT) {
+            child.collect_into(out);
+        }
+    }
+
+    fn collect(&self) -> Vec<Vec<u8>> {
+        let mut out = Keyed::new();
+        self.collect_into(&mut out);
+        out.fiber(ROOT).map(|(k, _)| k).collect()
+    }
+
+    /// Longest common prefix: descend while axes match. A miss after some
+    /// match returns the fiber at that plane. A miss at the first axis is
+    /// novel — empty. The empty chart (no axes) is the root fiber.
+    fn lcp(&self, axes: &[u64], matched: bool) -> Vec<Vec<u8>> {
+        match axes.split_first() {
+            None => self.collect(),
+            Some((&a, rest)) => match self.next.get(&axis_key_le(a)) {
+                Some(child) => child.lcp(rest, true),
+                None if matched => self.collect(),
+                None => Vec::new(),
+            },
+        }
+    }
+
+    /// Retract one hypha along one chart path (the hypha's own axes).
+    fn retract_path(&mut self, axes: &[u64], hypha: &[u8]) {
+        match axes.split_first() {
+            None => {
+                self.here.remove(hypha);
+            }
+            Some((&a, rest)) => {
+                let k = axis_key_le(a);
+                let empty = {
+                    let Some(ch) = self.next.get_mut(&k) else { return };
+                    ch.retract_path(rest, hypha);
+                    ch.is_empty()
+                };
+                if empty {
+                    self.next.remove(&k);
+                }
+            }
+        }
+    }
+
+    fn hash_charts(&self, hasher: &mut blake3::Hasher, path: &mut Vec<u64>) {
+        if !self.here.is_empty() {
+            for a in path.iter() {
+                hasher.update(&a.to_le_bytes());
+            }
+            hasher.update(&[0xff]);
+        }
+        // Trie order is key order: hash without materialising a Vec of charts.
+        for (k, ch) in self.next.fiber(ROOT) {
+            path.push(axis_of_le(k.as_slice()));
+            ch.hash_charts(hasher, path);
+            path.pop();
+        }
+    }
+
+    fn walk(&self, path: &mut Vec<u64>, out: &mut Vec<crate::transducer::stalk::Invariant>) {
+        if !self.here.is_empty() {
+            out.push(crate::transducer::stalk::Invariant(path.clone()));
+        }
+        for (k, ch) in self.next.fiber(ROOT) {
+            path.push(axis_of_le(k.as_slice()));
+            ch.walk(path, out);
+            path.pop();
+        }
+    }
+}
+
+impl Cover {
+    pub fn new() -> Self {
+        Cover::default()
+    }
+
+    pub fn admit(&mut self, lane: u8, inv: &crate::transducer::stalk::Invariant, hypha: impl AsRef<[u8]>) {
+        let hypha = hypha.as_ref();
+        let lane = lane & 3;
+        self.lanes[lane as usize].admit(&inv.0, hypha);
+        match self.held.get_mut(hypha) {
+            Some(charts) => {
+                if !charts.iter().any(|(l, i)| *l == lane && i == inv) {
+                    charts.push((lane, inv.clone()));
+                }
+            }
+            None => {
+                self.held.insert(hypha, vec![(lane, inv.clone())]);
+            }
+        }
+        self.refresh_root(lane);
+    }
+
+    /// Drop every chart of this hypha. Retract along the hypha's own chart
+    /// paths rather than visiting the whole trie.
+    pub fn retract_hypha(&mut self, hypha: &[u8]) {
+        let Some(charts) = self.held.remove(hypha) else {
+            return;
+        };
+        let mut touched = [false; 4];
+        for (lane, inv) in charts {
+            self.lanes[lane as usize].retract_path(&inv.0, hypha);
+            touched[lane as usize] = true;
+        }
+        for (l, t) in touched.iter().enumerate() {
+            if *t {
+                self.refresh_root(l as u8);
+            }
+        }
+    }
+
+    fn refresh_root(&mut self, lane: u8) {
+        let mut h = blake3::Hasher::new();
+        self.lanes[(lane as usize) & 3].hash_charts(&mut h, &mut Vec::new());
+        self.roots[(lane as usize) & 3] = *h.finalize().as_bytes();
+    }
+
+    /// Fiber at the deepest matching prefix on `lane`. Empty at every
+    /// prefix means the chart is novel to the mesh. Ordered by the trie's
+    /// walk: these identities are the vertices simplex keys are built from.
+    pub fn fiber(&self, lane: u8, inv: &crate::transducer::stalk::Invariant) -> Vec<Vec<u8>> {
+        self.lanes[(lane as usize) & 3].lcp(&inv.0, false)
+    }
+
+    /// Cover multiplicity of a chart: the vertex count of the Čech nerve,
+    /// not the word count. Read, never chosen; the room vector is untouched.
+    pub fn multiplicity(&self, lane: u8, inv: &crate::transducer::stalk::Invariant) -> usize {
+        self.fiber(lane, inv).len()
+    }
+
+    /// Retract one hypha from one chart path.
+    pub fn retract(
+        &mut self,
+        lane: u8,
+        inv: &crate::transducer::stalk::Invariant,
+        hypha: &[u8],
+    ) {
+        let lane = lane & 3;
+        self.lanes[lane as usize].retract_path(&inv.0, hypha);
+        self.refresh_root(lane);
+    }
+
+    /// Prefix split: one hypha leaves `old` and is admitted under `new`.
+    /// Only the refined path is touched.
+    pub fn rehome(
+        &mut self,
+        lane: u8,
+        old: &crate::transducer::stalk::Invariant,
+        new: &crate::transducer::stalk::Invariant,
+        hypha: impl AsRef<[u8]>,
+    ) {
+        let hypha = hypha.as_ref();
+        let lane = lane & 3;
+        self.lanes[lane as usize].retract_path(&old.0, hypha);
+        self.lanes[lane as usize].admit(&new.0, hypha);
+        if let Some(charts) = self.held.get_mut(hypha) {
+            for slot in charts.iter_mut() {
+                if slot.0 == lane && slot.1 == *old {
+                    slot.1 = new.clone();
+                }
+            }
+        }
+        self.refresh_root(lane);
+    }
+
+    pub fn charts(&self, lane: u8) -> Vec<crate::transducer::stalk::Invariant> {
+        let mut out = Vec::new();
+        self.lanes[(lane as usize) & 3].walk(&mut Vec::new(), &mut out);
+        out
+    }
+
+    pub fn all_charts(&self) -> Vec<(u8, crate::transducer::stalk::Invariant)> {
+        let mut out = Vec::new();
+        for lane in 0..4u8 {
+            for inv in self.charts(lane) {
+                out.push((lane, inv));
+            }
+        }
+        out
+    }
+
+    pub fn root(&self, lane: u8) -> [u8; 32] {
+        self.roots[(lane as usize) & 3]
+    }
+
+    pub fn roots(&self) -> [[u8; 32]; 4] {
+        self.roots
+    }
+}
+
+/// Room on one lane: that lane's bonded μ times the host's remaining
+/// strokes per unit bond on that lane, minus occupancy. Other lanes do
+/// not enter. A zero bond yields zero room.
+pub fn lane_cover_room(bond: u64, reserve: u64, occupancy: u64, spend: u64) -> u64 {
+    let per = (reserve / spend.max(1)).max(1);
+    bond.saturating_mul(per).saturating_sub(occupancy)
+}
+
+/// Occupied lanes of a magnitude — every lane the word moves, not the first.
+pub fn occupied_lanes(mag: &[u64; 4]) -> Vec<u8> {
+    let v: Vec<u8> = (0..4u8).filter(|&l| mag[l as usize] > 0).collect();
+    if v.is_empty() {
+        vec![0]
+    } else {
+        v
+    }
+}
+
+fn addr_of(
+    id: &[u8; 32],
+    addrs: &Keyed<String>,
+    self_id: Option<(&[u8; 32], &[u64; 4], &str)>,
+) -> Option<String> {
+    if let Some((sid, _, saddr)) = self_id {
+        if id == sid {
+            return Some(saddr.to_string());
+        }
+    }
+    addrs.get(id).cloned()
+}
+
+/// Dershowitz–Manna dominance on occupied lanes: `a` wins only when it is
+/// at least as large on every occupied lane and larger on one. Inverse of
+/// `economy::descends` (more remaining room, never a lane ordering).
+fn room_dominates(a: &[u64; 4], b: &[u64; 4], lanes: &[u8]) -> bool {
+    lanes.iter().all(|&l| a[l as usize] >= b[l as usize])
+        && lanes.iter().any(|&l| a[l as usize] > b[l as usize])
+}
+
+/// Home by incidence: intersection of cover fibers on every occupied lane,
+/// then remaining-room dominance on those lanes (a hypha wins only when its
+/// room is ≥ on every occupied lane and > on one), then identity when rooms
+/// are equal or incomparable.
+pub fn home(
+    cover: &Cover,
+    inv: &crate::transducer::stalk::Invariant,
+    mag: &[u64; 4],
+    rooms: &Keyed<[u64; 4]>,
+    addrs: &Keyed<String>,
+    self_id: Option<(&[u8; 32], &[u64; 4], &str)>,
+) -> ([u8; 32], String) {
+    let lanes = occupied_lanes(mag);
+    let fits = |room: &[u64; 4]| lanes.iter().all(|&l| mag[l as usize] == 0 || room[l as usize] > 0);
+    let room_of = |id: &[u8; 32]| -> Option<[u64; 4]> {
+        if let Some((sid, sroom, _)) = self_id {
+            if id == sid {
+                return Some(*sroom);
+            }
+        }
+        rooms.get(id).copied()
+    };
+    // Intersection of fibers across occupied lanes, as a trie union/meet.
+    let mut fiber: Option<Keyed<()>> = None;
+    for l in &lanes {
+        let f = cover.fiber(*l, inv);
+        let mut next = Keyed::new();
+        for id in f {
+            if fiber.as_ref().map_or(true, |acc| acc.contains(&id)) {
+                next.insert(id, ());
+            }
+        }
+        fiber = Some(next);
+    }
+    let fiber = fiber.unwrap_or_default();
+    let mut best: Option<([u8; 32], String, [u64; 4])> = None;
+    let consider = |best: &mut Option<([u8; 32], String, [u64; 4])>, id: [u8; 32], addr: String, room: [u64; 4]| {
+        match best {
+            None => *best = Some((id, addr, room)),
+            Some((bid, _, broom)) => {
+                if room_dominates(&room, broom, &lanes) {
+                    *best = Some((id, addr, room));
+                } else if !room_dominates(broom, &room, &lanes) && id < *bid {
+                    // Equal or incomparable: identity is the last tiebreak.
+                    *best = Some((id, addr, room));
+                }
+            }
+        }
+    };
+    for (id, _) in fiber.fiber(ROOT) {
+        let Some(vk) = <[u8; 32]>::try_from(id.as_slice()).ok() else { continue };
+        if let Some(room) = room_of(&vk) {
+            if fits(&room) {
+                if let Some(a) = addr_of(&vk, addrs, self_id) {
+                    consider(&mut best, vk, a, room);
+                }
+            }
+        }
+    }
+    if let Some((id, addr, _)) = best {
+        return (id, addr);
+    }
+    // No covering hypha with room: novel (or the fiber is full), room then identity.
+    if let Some((sid, sroom, saddr)) = self_id {
+        if fits(sroom) {
+            consider(&mut best, *sid, saddr.to_string(), *sroom);
+        }
+    }
+    for (id, room) in rooms.fiber(ROOT) {
+        if fits(room) {
+            let Some(vk) = <[u8; 32]>::try_from(id.as_slice()).ok() else { continue };
+            if let Some(a) = addrs.get(&vk) {
+                consider(&mut best, vk, a.clone(), *room);
+            }
+        }
+    }
+    best.map(|(id, addr, _)| (id, addr)).unwrap_or_else(|| {
+        self_id
+            .map(|(id, _, a)| (*id, a.to_string()))
+            .unwrap_or(([0u8; 32], String::new()))
+    })
+}

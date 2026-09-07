@@ -155,7 +155,7 @@ which of the four sources.
 
 File | Line | Carrier | Grows with | Should have been | Source
 ---|---|---|---|---|---
-network/nerve.rs | PATRICIA children | two children of a branch | fixed arity 2 | — | keyed (branch)
+network/nerve/keyed.rs | PATRICIA children | two children of a branch | fixed arity 2 | — | keyed (branch)
 transducer/cech.rs | `link_of` | star(vertex) keys | link size at multiplicity m | — | link
 transducer/cech.rs | `coboundary_on_link` | link of vertex, then link of a neighbour | m, not N | not C(m,k) of the fiber | link
 transducer/cech.rs | `faces_ready` | edges of one simplex | degree | — | link
