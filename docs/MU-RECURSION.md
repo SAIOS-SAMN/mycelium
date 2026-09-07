@@ -5408,6 +5408,39 @@ physics.rs          transport_deadline, persist_dwell, aperture_cycle in strokes
 build.rs            the clock gate: SystemTime, Instant, Duration refused in src/server, src/client, src/court, src/transducer, src/economy.rs, src/physics.rs
 ```
 
+### 45.7 Local orbit, universal height (ruled 2026-09-08)
+
+The mesh synchronises on TUniversal and on nothing else: the height is the
+one quantity two kernels share, it advances only by the exchange of
+verified receipts (45.2), and it is read only as an extent at one reader.
+Every other temporal reading a kernel takes is its own. K is the kernel's
+own index of admitted acts (45.1), and the **stroke** is the kernel's own
+orbit: one circuit of what it holds, in the fixed order the carrier gives —
+the pivot's candidate list over the occupied axes (12.6), the court's
+docket in key order, the mind's dirty bubbles, the basis. A kernel's local
+time is therefore two counts and never a clock: K, the acts it admitted,
+and the orbit count, the circuits it completed; both are per kernel, both
+are per lane where the lane paces (24.3), and neither is ever compared
+with another kernel's.
+
+The orbit is the primary motion, and it is a circuit, not a walk. A cursor
+that resumes after the last key it served and stops at the end of the key
+order has walked off the edge of its book: nothing below the resume point
+is ever revisited, and a listing admitted at a smaller key is never ruled.
+A cursor that restarts at the first key on every stroke never reaches the
+tail beyond one stroke's budget. Neither is an orbit. `Keyed::cursor(from,
+budget)` continues past the last key from the first and ends where it
+began, and reports the completed circuit so the stroke can count it; every
+stroke over a carrier resumes where it left off; the period of a carrier —
+strokes per orbit — is measured by that count and is never a constant. The
+convergence engine's orbits were its conjugacy classes and its genesis
+class was the sun they were read against; that geometry is the conjugate
+level of 23.9 and stands. Its dynamics — motion between orbits down a
+coherence gradient, chosen by echelon votes, identified by a hash of a
+normal form — are the imports Stage 9 removes, and an orbit that pulls
+toward the axioms by a potential is one of them. The pull that belongs is
+the group action itself: each circuit applies each generator once.
+
 ## 46. Identity: threshold keys and manifests
 
 ### 46.1 Group keys
