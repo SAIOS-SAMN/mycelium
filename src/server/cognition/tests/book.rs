@@ -28,6 +28,8 @@ assert!(!quoted.priced.is_empty(), "an empty atlas reads the book at depth zero"
 /// (no re-mint) — a lookup on the coordinate-exact word would have missed it.
 /// And a pure translate has EMPTY substance — it decomposes to the empty
 /// sentence, minting nothing (a translate is pure transposition, not cognition).
+/// A second vantage here is `glue_local`'s two fixture keys (§3.4's
+/// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn reduction_is_transposition_invariant() {
 let mut k = Kernel::new();
@@ -101,6 +103,8 @@ assert!(k.basis_len() < 3, "at least one earlier duplicate retired");
 /// virtually (zero mutation), and COLLAPSES into the branch whose remainder
 /// closes (trivial holonomy): the two-word sentence. Nothing germinates —
 /// imagination beats reaction.
+/// A second vantage here is `glue_local`'s two fixture keys (§3.4's
+/// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn projection_escapes_the_greedy_trap() {
 let mut k = Kernel::new();
@@ -128,6 +132,8 @@ assert_eq!(k.basis_len(), before, "nothing installs on one voice");
 }
 
 /// Restore keeps the lettered federation and drops a leaked basis card.
+/// A second vantage here is `glue_pair`'s two fixture keys (§3.4's
+/// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn prune_drops_the_leaked_basis_and_keeps_the_ruled_cover() {
 let mut k = Kernel::new();

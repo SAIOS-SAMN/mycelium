@@ -156,6 +156,8 @@ assert_eq!(
 /// the ℤ/2 cycle — sections condense to (σ, 2) — and the extracted
 /// mathematical torsion RELIEVES the physical torsion charge (booked as
 /// syntropic order, per lane, never a scalar).
+/// A second vantage here is `glue_local`'s two fixture keys (§3.4's
+/// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn the_torse_stroke_extracts_the_cycle_and_relieves_torsion() {
 let mut k = Kernel::new();

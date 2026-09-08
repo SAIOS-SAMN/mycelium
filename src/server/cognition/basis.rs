@@ -427,7 +427,9 @@ impl Kernel {
     /// only under test: a hypha that glued its own provisionals under a
     /// pair of made-up keys would be manufacturing its own second vantage
     /// (47.3), and rule 5 does not let a constant stand for a measurement
-    /// in shipped code.
+    /// in shipped code. The two keys are wire identifiers, which is §3.4's
+    /// one exception; every test that reaches a basis through this says so
+    /// and claims nothing about 47.3's witness (Stage 11 I24).
     #[cfg(test)]
     pub fn glue_local(&mut self) {
         let words: Vec<Element> = self.provisional.fiber(crate::network::nerve::ROOT).map(|(_, e)| e.clone()).collect();

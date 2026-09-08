@@ -10,6 +10,8 @@ use crate::transducer::germinate::germinate;
 /// pends as a tape, not quoted); A's empty-cites demand lists the remainder
 /// on the quote frontier; B independently attests; consilience installs,
 /// the market CLEARS. {demand → quote → demand → settle}.
+/// A second vantage here is `glue_local`'s two fixture keys (§3.4's
+/// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn the_five_act_conversation_closes_with_settlement() {
 let mut k = Kernel::new();
@@ -360,6 +362,8 @@ assert!(
 
 /// THE PROOF: on the wire the judge replays; a proven percept commits its
 /// sentence, an unproven one is deferred, never searched.
+/// A second vantage here is `glue_local`'s two fixture keys (§3.4's
+/// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn the_wire_judge_replays_proofs_and_defers_the_unproven() {
 let k = std::sync::Mutex::new(Kernel::new());

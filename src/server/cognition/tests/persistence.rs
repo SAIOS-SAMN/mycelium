@@ -7,6 +7,8 @@ use crate::transducer::germinate::germinate;
 /// P7 — the germinated language survives restart: install two germs, snapshot,
 /// restore into a fresh kernel, and the restored kernel RECALLS them (no
 /// re-germination) with balances intact.
+/// A second vantage here is `glue_local`'s two fixture keys (§3.4's
+/// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn the_basis_survives_a_restart() {
 let mut k = Kernel::new();

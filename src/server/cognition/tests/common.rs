@@ -8,6 +8,9 @@ pub fn scene(sr: i64, sc: i64) -> Vec<(i64, i64, u8)> {
 vec![(sr, sc, 1), (sr, sc + 1, 1), (sr + 1, sc, 1)]
 }
 
+/// Two voices docket a pair and `glue_local` glues it: a basis reached
+/// through the fixture's two wire identifiers (§3.4's exception), so a test
+/// built on this proves nothing about 47.3's witness and says so.
 pub fn glue_pair(k: &mut Kernel, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) {
 k.ingest(a, b, [1; 32]);
 let _ = k.ingest(a, b, [2; 32]);

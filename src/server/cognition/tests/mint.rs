@@ -232,6 +232,8 @@ assert_eq!(k.basis_len(), 2);
 /// isolation. This is the gate on 1.10: settlement paths may only be built
 /// where conservation is checkable, and `enroll` used to insert bond that
 /// was never issued, so the second equation failed at the first enrolment.
+/// A second vantage here is `glue_local`'s two fixture keys (§3.4's
+/// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn the_kernel_conserves_across_genesis_bond_and_a_settlement() {
 use crate::transducer::element::from_residual;

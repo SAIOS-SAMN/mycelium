@@ -6,6 +6,8 @@ use crate::cognition::*;
 /// A novel SUBSTANCE (here a rotation) germinates: one voice pends, a second
 /// settles the listing; the basis grows only from gluing. Afterward the same
 /// demand REDUCES to the length-1 sentence [0].
+/// A second vantage here is `glue_local`'s two fixture keys (§3.4's
+/// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn a_novel_substance_germinates_then_decomposes() {
 let mut k = Kernel::new();
@@ -24,6 +26,8 @@ assert_eq!(k.ingest(&a, &rot, [3; 32]), Outcome::Decomposed(vec![0]), "reduces t
 /// upgrades (⊤, Δ) → (π*, Δ) in place; the dual condition then bites in
 /// live adjudication — the same demand in an off-region scene stops
 /// decomposing through the word and pends as new coverage instead.
+/// A second vantage here is `glue_local`'s two fixture keys (§3.4's
+/// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn rebind_activates_the_dual_condition_in_adjudication() {
 use crate::transducer::anchor::Sel;
@@ -64,6 +68,8 @@ assert!(
 /// not a step toward it. Growth as +axis:
 /// the basis count stays 1 while the thought's volume grows; afterward the
 /// bundle SPEAKS the whole family (both assignments decompose to it).
+/// A second vantage here is `glue_local`'s two fixture keys (§3.4's
+/// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn a_family_punctures_an_axis_instead_of_minting() {
 let mut k = Kernel::new();
@@ -123,6 +129,8 @@ assert!(
 /// SENTENCES over germinated patterns — install two single-cell patterns, then
 /// a compound demand containing BOTH (at different offsets) DECOMPOSES into
 /// the two-word sentence by chain peeling. Nothing minted; language composed.
+/// A second vantage here is `glue_local`'s two fixture keys (§3.4's
+/// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn a_compound_demand_decomposes_over_germinated_patterns() {
 let mut k = Kernel::new();
@@ -156,6 +164,8 @@ assert_eq!(k.basis_len(), before, "a compound pair is not peeled into a second w
 /// germ and installs on two-voice consilience (priced on USE per R3, so a
 /// one-off earns ~0 — no basis flood). The reframe made operational: germinate
 /// the description, never discard the residual.
+/// A second vantage here is `glue_local`'s two fixture keys (§3.4's
+/// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn a_shape_deformation_germinates_a_residual() {
 let mut k = Kernel::new();
@@ -171,6 +181,8 @@ assert_eq!(k.ingest(&a, &b, [3; 32]), Outcome::Decomposed(vec![0]), "and reduces
 
 /// Two distinct objects in one pair are one pair form, not a Cartesian
 /// fragment per body. Two voices docket the residual.
+/// A second vantage here is `glue_local`'s two fixture keys (§3.4's
+/// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn independent_objects_fragment_and_resolve() {
 let mut k = Kernel::new();

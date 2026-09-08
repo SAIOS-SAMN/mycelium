@@ -7,6 +7,8 @@ use crate::cognition::*;
 /// on a depleted lane DEFERS (pending, never stranded) while the syntropic
 /// strokes regenerate; a later submission dockets the deferred germ once the
 /// lane re-earns expansion. The METABOLISM defers it; no count of voices does.
+/// A second vantage here is `glue_local`'s two fixture keys (§3.4's
+/// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn a_depleted_lane_defers_germination_until_the_reserve_recovers() {
 let mut k = Kernel::new();
