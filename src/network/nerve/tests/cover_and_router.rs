@@ -134,3 +134,64 @@ fn trie_closest_matches_brute_force_without_scanning() {
         assert_eq!(r.closest(&key).unwrap().0.as_slice(), brute.as_slice(), "trie descent finds the XOR-closest");
     }
 }
+
+/// 47.3, 42.6: A FORM IS OFFERED TO THE HYPHAE COVERING ITS STRATUM, never
+/// to every peer. The witness "holds ruled sections over the chart, since
+/// replay needs them, so it is at nerve distance one from the home" (47.3),
+/// and 42.6 bounds the mesh cover by "the number of covering hyphae" — a
+/// destination set indexed by the size of the mesh is the one shape that
+/// section forbids, and it is what the exchange did.
+#[test]
+fn a_form_is_offered_to_the_hyphae_covering_its_chart_and_not_to_every_peer() {
+    let home = [1u8; 32];
+    let near = [2u8; 32];
+    let far = [3u8; 32];
+    let elsewhere = [4u8; 32];
+    let chart = inv(&[1, 2, 3]);
+    let mut c = Cover::new();
+    // Three hyphae on the form's lane: the home, one on its exact chart,
+    // one on the plane above it. A fourth covers a different chart, and a
+    // fifth covers this chart on a lane the form does not occupy.
+    c.admit(0, &chart, home);
+    c.admit(0, &chart, near);
+    c.admit(0, &inv(&[1, 2]), far);
+    c.admit(0, &inv(&[7, 7]), elsewhere);
+    c.admit(2, &chart, [5u8; 32]);
+
+    // A form occupying lane 0 only.
+    let w = c.witnesses(&chart, &[3, 0, 0, 0], &home);
+    let mut got: Vec<Vec<u8>> = w.fiber(ROOT).map(|(k, _)| k).collect();
+    got.sort();
+    assert_eq!(
+        got,
+        vec![near.to_vec()],
+        "the hyphae on the form's own chart, and this home is not its own witness"
+    );
+    assert!(
+        !got.iter().any(|v| v.as_slice() == elsewhere.as_slice()),
+        "a hypha covering another chart is not at nerve distance one"
+    );
+    assert!(
+        !got.iter().any(|v| v.as_slice() == [5u8; 32].as_slice()),
+        "nor is one covering this chart on a lane the form does not occupy"
+    );
+
+    // A form occupying the plane above resolves to the plane's cover.
+    let up = c.witnesses(&inv(&[1, 2]), &[3, 0, 0, 0], &home);
+    let mut got: Vec<Vec<u8>> = up.fiber(ROOT).map(|(k, _)| k).collect();
+    got.sort();
+    assert_eq!(got, vec![near.to_vec(), far.to_vec()], "the plane both cover");
+
+    // A chart no hypha covers has no eligible witness. The form waits;
+    // that is 47.3's answer, and it is not the same as reaching nobody.
+    assert!(
+        c.witnesses(&inv(&[9, 9]), &[3, 0, 0, 0], &home).is_empty(),
+        "a form no hypha covers has no witness and is not broadcast"
+    );
+    // A form measuring nothing falls back to lane 0 — `occupied_lanes`'s
+    // own rule for an empty reading — so it is witnessed on that lane and
+    // nowhere else, never on all four.
+    let none = c.witnesses(&chart, &[0; 4], &home);
+    let got: Vec<Vec<u8>> = none.fiber(ROOT).map(|(k, _)| k).collect();
+    assert_eq!(got, vec![near.to_vec()], "lane 0's cover, by that fallback");
+}

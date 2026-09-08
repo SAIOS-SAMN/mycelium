@@ -210,6 +210,38 @@ impl Cover {
         self.fiber(lane, inv).len()
     }
 
+    /// 47.3, 42.6: THE HYPHAE THAT MAY WITNESS A FORM — those covering its
+    /// chart on a lane the form occupies, and never the home itself.
+    ///
+    /// 47.3 fixes the set: a witness "holds ruled sections over the chart,
+    /// since replay needs them, so it is at nerve distance one from the
+    /// home". 42.6 bounds the mesh cover's cost by "the number of covering
+    /// hyphae", never by the number of nodes: "a demand goes to the hyphae
+    /// covering its stratum; adding hyphae adds coverage and never
+    /// coordination". A form offered to every peer indexes the fourth cover
+    /// by the size of the mesh, which is the one thing that section forbids.
+    ///
+    /// An empty answer is a form no hypha covers: it has no eligible
+    /// witness and waits. That is the chapter's answer, not a failure to
+    /// reach anyone, and a home that offered to everyone could not tell the
+    /// two apart.
+    pub fn witnesses(
+        &self,
+        inv: &crate::transducer::stalk::Invariant,
+        mag: &[u64; 4],
+        home: &[u8; 32],
+    ) -> crate::network::nerve::Keyed<()> {
+        let mut out: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        for lane in crate::network::nerve::occupied_lanes(mag) {
+            for v in self.fiber(lane, inv) {
+                if v.as_slice() != home.as_slice() {
+                    out.insert(&v, ());
+                }
+            }
+        }
+        out
+    }
+
     /// Retract one hypha from one chart path.
     pub fn retract(
         &mut self,

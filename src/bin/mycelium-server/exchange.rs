@@ -448,8 +448,50 @@ impl Exchange {
                 }
             };
             let mut offered_out = 0usize;
+            // AN OFFER GOES TO THE HYPHAE COVERING ITS STRATUM, ONE PER
+            // SPEND. It went to every destination in `dests`, with a
+            // blocking `tell_peer` inside and neither a budget nor a
+            // resume cursor: rule 10's refused shape written out, "for peer
+            // in all_peers { exchange(peer) } on one stroke", and its
+            // "write instead" column says "one peer per spend with a resume
+            // cursor". Cost per cycle was offers × peers synchronous TCP
+            // round trips on one thread; at a thousand peers with ten
+            // offers that is ten thousand blocking connections before the
+            // cycle can do anything else, and at ten thousand it never
+            // completes -- the deadlock this loop was written to break,
+            // reintroduced by the loop itself.
+            //
+            // The destination set is not "everyone" either. 42.6 bounds the
+            // mesh cover by "the number of covering hyphae", and 47.3 says
+            // the witness "holds ruled sections over the chart, since
+            // replay needs them, so it is at nerve distance one from the
+            // home". That set is `cover.fiber(lane, &inv)` on the lanes the
+            // form occupies. A form whose chart no peer covers has no
+            // eligible witness and waits, which is the chapter's answer and
+            // not a failure to reach anyone.
+            let mut offer_budget = mycelium::physics::Physics::default().stroke();
             for (oaddr, elem) in offers {
-                for (pid, d) in dests.fiber(mycelium::network::nerve::ROOT) {
+                let mut pos = 0usize;
+                let Some(word) =
+                    mycelium::transducer::element::Element::from_bytes(&elem, &mut pos)
+                else {
+                    continue;
+                };
+                let inv = mycelium::transducer::stalk::invariant_of(&word);
+                let witnesses = match mesh.cover.lock() {
+                    Ok(c) => c.witnesses(&inv, &word.magnitude(), &mesh.vk),
+                    Err(_) => mycelium::network::nerve::Keyed::new(),
+                };
+                for (vk, _) in witnesses.fiber(mycelium::network::nerve::ROOT) {
+                    if !offer_budget.spend() {
+                        break;
+                    }
+                    let Some(d) = mesh.addrs.lock().ok().and_then(|a| a.get(&vk).cloned())
+                    else {
+                        continue;
+                    };
+                    let d = &d;
+                    let pid = vk;
                     let body = dialogue::encode_offer(&dialogue::Offer {
                         addr: oaddr.clone(),
                         home: mesh.vk,
