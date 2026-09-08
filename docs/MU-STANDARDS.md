@@ -194,7 +194,11 @@ each needs a sentence in the message.
 court, client, transducer, economy, physics file and every binary),
 squaring (coordinate pairs outside the sensor allow-list), file length
 (§1.1), rustc warnings (`RUSTFLAGS='-D warnings'`), clippy warnings
-(`cargo clippy --release --all-targets -- -D warnings`).
+(`cargo clippy --release --all-targets -- -D warnings`, run by the
+`xtask` binary and never by `build.rs`, which cannot invoke cargo from
+inside a build; F3ag). Closing a warning by naming a tuple in a `type`
+alias is not closing it (§2.1): the coordinates get names, or the
+warning stands.
 
 4.2 A gate's scope is the whole of `src/` including `src/bin/`; an
 allow-list is by file or function name, never by directory alone.
@@ -263,9 +267,12 @@ cause.
 
 6.1 The implementor runs, in the foreground and in this order, on the
 commit as it will land: `RUSTFLAGS='-D warnings' cargo test --release`
-(every target), `cargo clippy --release --all-targets -- -D warnings`,
-`xtask lint`. All three lines go in the message. "Lint clean" alone is not
-green.
+(every target), then `cd xtask && cargo run`, which runs the file gates
+(the same ones `build.rs` runs) and then the warning gate, `cargo clippy
+--release --all-targets -- -D warnings`, and exits non-zero on any row
+from either (F3ag; `cargo run -- gates` runs the file gates alone). Both
+lines go in the message, the suite's `test result` lines and the gate's
+exit. "Lint clean" alone is not green.
 
 6.2 The auditor reproduces all three on the same commit, in a detached
 worktree if the implementor's tree is dirty, and reads every changed file
