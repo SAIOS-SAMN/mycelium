@@ -136,7 +136,11 @@ impl Treasury {
         let Some((payer, mu)) = self.funded.remove(addr) else {
             return;
         };
-        if mu.iter().all(|&x| x == 0) {
+        // A funded escrow carrying nothing on any lane returns nothing.
+        // `mu.iter().all(|&x| x == 0)` folds four lanes into one bool to
+        // decide the branch (rule 2, §2.3); `lanes_short` is the tree's own
+        // reading and names which lanes carry value.
+        if super::lanes_short(&mu).is_empty() {
             return;
         }
         let anchor = self
@@ -148,13 +152,22 @@ impl Treasury {
         self.entries.push(Entry { kind, who: payer, mu, k_step: anchor.0, receipt: anchor.1 });
     }
 
-    /// Mint a released claim: consilience split when two voices stand, else
-    /// the first voice takes the vector.
+    /// Mint a released claim: a consilience split when two or more voices
+    /// stand it, the vector to the one voice when one does, nothing when
+    /// the escrow names none.
+    ///
+    /// The arms are read off the slice, not off `voices.len() >= 2` and a
+    /// `.first()` behind it — rule 2's "a count is never a branch", and a
+    /// `.first()` that looks like rule 15's tie-break by arrival order even
+    /// where, as here, the one voice is the only voice. The shape says
+    /// which case it is.
     pub fn mint_claim(&mut self, voices: &[[u8; 32]], mu: [u64; 4], anchor: Anchor) {
-        if voices.len() >= 2 {
-            self.settle_consilience(voices, mu, anchor);
-        } else if let Some(&v) = voices.first() {
-            self.mint_to(v, mu, anchor);
+        match voices {
+            [] => {}
+            [one] => {
+                self.mint_to(*one, mu, anchor);
+            }
+            _ => self.settle_consilience(voices, mu, anchor),
         }
     }
 

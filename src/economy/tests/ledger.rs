@@ -40,7 +40,7 @@ fn escrow_snapshot_round_trips() {
     let mut t = Treasury::new();
     t.enroll([3; 32], UNIT_BOND, (0, [4; 32]));
     t.settle_subsidy([3; 32], [0, 0, 5, 0], (1, [4; 32]));
-    t.settle_recall([3; 32], &[0, 0, 3, 0], (2, [4; 32]));
+    t.settle_recall([3; 32], &[0, 0, 3, 0], &[0; 4], (2, [4; 32]));
     let snap = t.snapshot();
     let mut pos = 0;
     let back = Treasury::restore(&snap, &mut pos).expect("restore v3");
@@ -162,7 +162,7 @@ fn a_fee_and_a_slash_leave_the_supply_with_the_carrier() {
 
     // A READING FEE is WHAT THE READING EXERCISED, per lane (§5) — not one
     // unit per lane touched, which was a monetary constant §8 forbids.
-    let (fee, short) = t.settle_recall([1; 32], &[4, 0, 2, 0], (2, [1; 32]));
+    let (fee, short) = t.settle_recall([1; 32], &[4, 0, 2, 0], &[0; 4], (2, [1; 32]));
     assert_eq!(fee, [4, 0, 2, 0], "the structure moved on each lane, not a unit");
     assert_eq!(short, [0; 4], "a balance of 20 covers it on every lane");
     let after = t.audit().expect("the ledger conserves through a recall fee");

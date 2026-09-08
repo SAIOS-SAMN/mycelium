@@ -133,7 +133,8 @@ impl Kernel {
                 // The reader's fee is what the reading exercised, per lane
                 // (§5), and the lanes it could not cover are named rather
                 // than clamped away.
-                let (_paid, short) = self.treasury.settle_recall(voice, &mag, anchor);
+                let pressure = self.physics.pressure;
+                let (_paid, short) = self.treasury.settle_recall(voice, &mag, &pressure, anchor);
                 for l in crate::economy::lanes_short(&short) {
                     eprintln!(
                         "  court recall short voice {:02x}{:02x}… lane {l} by {}",

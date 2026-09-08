@@ -172,10 +172,16 @@ impl Treasury {
         &mut self,
         voice: [u8; 32],
         exercised: &[u64; 4],
+        pressure: &[u64; 4],
         anchor: Anchor,
     ) -> ([u64; 4], [u64; 4]) {
         let held = self.balance_mu(&voice);
-        let asked = super::price(exercised, &[0; 4]);
+        // The pressure surface comes from the caller's own physics, as it
+        // does at every other `price` site in the tree. R2 passed `&[0; 4]`
+        // -- a constant filling an argument so the call compiled, which is
+        // rule 8's named shape, and the one call site in seven that did not
+        // measure what it handed in.
+        let asked = super::price(exercised, pressure);
         let short = super::shortfall(&asked, &held);
         let paid: [u64; 4] = std::array::from_fn(|l| asked[l] - short[l]);
         if paid.iter().all(|&m| m == 0) {
