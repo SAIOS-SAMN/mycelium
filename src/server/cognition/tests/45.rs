@@ -45,7 +45,7 @@ let standing = k
     .cocycle_at
     .fiber(crate::network::nerve::ROOT)
     .next()
-    .map(|(_, row)| row.0.clone())
+    .map(|(_, row)| row.gauge.clone())
     .expect("a row stands");
 assert!(
     crate::transducer::element::same_versor(&standing, &v2),
@@ -82,7 +82,7 @@ let standing = k
     .cocycle_at
     .fiber(crate::network::nerve::ROOT)
     .next()
-    .map(|(_, row)| row.0.clone())
+    .map(|(_, row)| row.gauge.clone())
     .expect("a row stands");
 assert!(
     crate::transducer::element::same_versor(&standing, &v1),

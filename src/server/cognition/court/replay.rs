@@ -156,8 +156,8 @@ impl Kernel {
                         if let Some((a, b)) = edge_pair(&addrs) {
                             self.mint_or_admit_translation(&gamma, a.clone(), b.clone(), [0; 32]);
                             let key = Self::cocycle_key(&inv, &a, &b);
-                            if let Some((v, tu, _, _, _)) = self.cocycle_at.remove(&key) {
-                                self.dialect_chain.push((key.clone(), v, tu));
+                            if let Some(row) = self.cocycle_at.remove(&key) {
+                                self.dialect_chain.push((key.clone(), row.gauge, row.t_universal));
                             }
                             if let Some(m) = self.cocycle_by_chart.get_mut(&inv.key()) {
                                 m.remove(&key);

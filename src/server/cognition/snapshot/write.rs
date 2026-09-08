@@ -190,13 +190,13 @@ impl Kernel {
         });
         out.extend_from_slice(b"CYC2");
         out.extend_from_slice(&(self.cocycle_at.len() as u32).to_le_bytes());
-        crate::snapshot::persist(&self.cocycle_at, |key, (v, tu, a, b, ck)| {
+        crate::snapshot::persist(&self.cocycle_at, |key, row| {
             put_addr(&mut out, key);
-            out.extend_from_slice(a);
-            out.extend_from_slice(b);
-            out.extend_from_slice(&tu.to_le_bytes());
-            put_addr(&mut out, ck);
-            v.to_bytes(&mut out);
+            out.extend_from_slice(&row.a);
+            out.extend_from_slice(&row.b);
+            out.extend_from_slice(&row.t_universal.to_le_bytes());
+            put_addr(&mut out, &row.class_key);
+            row.gauge.to_bytes(&mut out);
         });
         out.extend_from_slice(&(self.dialect_chain.len() as u32).to_le_bytes());
         for (key, v, tu) in &self.dialect_chain {

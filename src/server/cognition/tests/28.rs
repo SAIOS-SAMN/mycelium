@@ -62,7 +62,7 @@ let got = booted
     .cocycle_at
     .fiber(crate::network::nerve::ROOT)
     .next()
-    .map(|(_, row)| row.4.clone());
+    .map(|(_, row)| row.class_key.clone());
 assert_eq!(got, Some(ck), "class key survives the ledger");
 }
 

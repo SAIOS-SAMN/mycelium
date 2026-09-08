@@ -8,10 +8,24 @@
 
 use super::*;
 
-/// A STANDING COCYCLE: the gauge versor between two charts, the k-step it
-/// was stamped at, the two class keys it joins, and the address that
-/// speaks it. A newer stamp supersedes; the chain keeps the old.
-pub type CocycleRow = (element::Versor, u64, [u8; 32], [u8; 32], Address);
+/// A STANDING COCYCLE: the transition between two voices' sections on one
+/// chart. A newer receipt supersedes it; the dialect chain keeps the old,
+/// and two that neither precede the other are held concurrent (45.3).
+#[derive(Clone)]
+pub struct CocycleRow {
+    /// The gauge versor taking `a`'s section to `b`'s.
+    pub gauge: element::Versor,
+    /// The height it was written at — a reading, never the order itself:
+    /// supersession is decided by the receipt chain, not by this number.
+    pub t_universal: u64,
+    /// The voice the transition is FROM.
+    pub a: [u8; 32],
+    /// The voice the transition is TO.
+    pub b: [u8; 32],
+    /// The rotor class the transport belongs to, stored beside the versor
+    /// so a restore reads the class and never a hash of the row (CYC2).
+    pub class_key: Address,
+}
 
 impl Kernel {
     pub(crate) fn cocycle_key(
@@ -68,7 +82,8 @@ impl Kernel {
         }
         let key = Self::cocycle_key(chart, &a, &b);
         let tu = self.height();
-        if let Some((old, old_tu, _, _, _)) = self.cocycle_at.get(&key).cloned() {
+        if let Some(prev) = self.cocycle_at.get(&key).cloned() {
+            let (old, old_tu) = (prev.gauge, prev.t_universal);
             if element::same_versor(&old, &g) {
                 return;
             }
@@ -91,7 +106,10 @@ impl Kernel {
             }
         }
         self.cocycle_receipt.insert(&key, at);
-        self.cocycle_at.insert(key.clone(), (g, tu, a, b, class_key));
+        self.cocycle_at.insert(
+            key.clone(),
+            CocycleRow { gauge: g, t_universal: tu, a, b, class_key },
+        );
         let ck = chart.key();
         match self.cocycle_by_chart.get_mut(&ck) {
             Some(m) => {
@@ -118,13 +136,14 @@ impl Kernel {
         let mut saved: Vec<CocycleRow> = Vec::new();
         for (key, _) in rows.fiber(crate::network::nerve::ROOT) {
             if let Some(row) = self.cocycle_at.remove(&key) {
-                self.dialect_chain.push((key, row.0.clone(), row.1));
+                self.dialect_chain.push((key, row.gauge.clone(), row.t_universal));
                 saved.push(row);
             }
         }
-        for (g, _, a, b, ck) in saved {
-            self.push_cocycle(new_a, a, b, g.clone(), ck.clone());
-            self.push_cocycle(new_b, a, b, g, ck);
+        for row in saved {
+            let CocycleRow { gauge, a, b, class_key, .. } = row;
+            self.push_cocycle(new_a, a, b, gauge.clone(), class_key.clone());
+            self.push_cocycle(new_b, a, b, gauge, class_key);
         }
     }
 

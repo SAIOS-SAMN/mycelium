@@ -358,7 +358,16 @@ impl Kernel {
                             }
                         },
                     };
-                    kernel.cocycle_at.insert(key, (v, tu, a, bp, class_key));
+                    kernel.cocycle_at.insert(
+                        key,
+                        crate::cognition::CocycleRow {
+                            gauge: v,
+                            t_universal: tu,
+                            a,
+                            b: bp,
+                            class_key,
+                        },
+                    );
                     // Chart index is rebuilt on next glue; hot row is enough.
                 }
                 let nc = read_u32(b, pos)? as usize;
