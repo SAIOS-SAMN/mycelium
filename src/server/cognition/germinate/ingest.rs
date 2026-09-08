@@ -282,64 +282,64 @@ impl Kernel {
                     // per-lane as ever, never a summed winding.
                     let witnesses = crate::transducer::toroid::witness_thought(&residual);
                     if witnesses.is_empty() {
-                        // NO STORED CYCLE. What this residual costs is what
-                        // its own carrier says, and the carriers are four
-                        // LEVELS, not four tags: letters spell a word, words
-                        // up to conjugacy are a class, and a sentence is a
-                        // nerve of words one level above that (18.2). The
-                        // charge is read at the level the carrier is on.
-                        match residual.letters() {
-                            // A WORD — a connection or a translation. Its
-                            // order is a conjugacy invariant, so `Finite(p)`
-                            // is p steps exactly and `Infinite` is the walk
-                            // that did not close, the letters it spelled.
-                            Some(l) => match l.spelling.word.order() {
-                                crate::transducer::alphabet::Order::Finite(p) => {
-                                    for _ in 0..p {
-                                        self.physics.bump(&mag);
+                        // NO STORED CYCLE. The charge is read at the LEVEL
+                        // the carrier is on (18.2): letters spell a word,
+                        // words up to conjugacy are a class, a sentence is a
+                        // nerve of words one level above that.
+                        //
+                        // There is no WORD arm here, and that is a reading
+                        // of the six routes into this branch rather than an
+                        // omission. `reduce.rs` builds through
+                        // `from_residual` (306), `from_residual_framed`
+                        // (442, 444) — no tape — and `ingest.rs` passes
+                        // `g.substance()` (445, 464, 488), which clears
+                        // `word` by construction. The one route that keeps a
+                        // word is `reduce.rs:340`, the `is_sentence` branch.
+                        // So a connection or translation tape cannot arrive
+                        // at this arm, and an arm for one would be dead code
+                        // asserting a carrier the path cannot deliver.
+                        match residual.form() {
+                            // A SENTENCE. Its words are its loop holonomies,
+                            // and each closes in the order of its class. Per
+                            // loop, never summed: a bundle's pressure is the
+                            // lane-wise reading of its parts (12.6), and
+                            // summing the orders into one bump count is the
+                            // shape F2r1 removed from the witness branch.
+                            Some(f) => {
+                                for (w, _) in f.loop_words() {
+                                    match w.order() {
+                                        crate::transducer::alphabet::Order::Finite(p) => {
+                                            for _ in 0..p {
+                                                self.physics.bump(&mag);
+                                            }
+                                        }
+                                        // A loop that never closes is an
+                                        // open walk, the same anholonomity
+                                        // the witness branch charges: it
+                                        // pivots the lanes the demand
+                                        // occupies and bumps them for the
+                                        // letters it walked.
+                                        crate::transducer::alphabet::Order::Infinite => {
+                                            self.physics
+                                                .pivot(crate::physics::Physics::lanes_of(&mag));
+                                            for _ in 0..w.len() as u64 {
+                                                self.physics.bump(&mag);
+                                            }
+                                        }
                                     }
-                                }
-                                crate::transducer::alphabet::Order::Infinite => {
-                                    for _ in 0..l.spelling.word.len() as u64 {
-                                        self.physics.bump(&mag);
-                                    }
-                                }
-                            },
-                            // A SENTENCE with no stored cycle. It has no
-                            // single spelling; its words are its LOOP
-                            // HOLONOMIES, and each closes in the order of
-                            // its class. Reading `letters()` here returned
-                            // None and charged the whole nerve as a bare
-                            // chain, with its loops sitting unread in its
-                            // own Form.
-                            None if residual.form().is_some() => {
-                                let steps: u64 = residual
-                                    .form()
-                                    .map(|f| {
-                                        f.loop_words()
-                                            .iter()
-                                            .map(|(w, _)| match w.order() {
-                                                crate::transducer::alphabet::Order::Finite(p) => p as u64,
-                                                crate::transducer::alphabet::Order::Infinite => w.len() as u64,
-                                            })
-                                            .sum::<u64>()
-                                    })
-                                    .unwrap_or_default();
-                                for _ in 0..steps {
-                                    self.physics.bump(&mag);
                                 }
                             }
                             // A PURE RESIDUAL CHAIN — no word yet, because
                             // the alphabet has no letter for it. This is the
-                            // germination demand itself, charged by the
-                            // support its chain touches and LISTED.
+                            // germination demand itself: charged by the
+                            // support its chain touches, and LISTED.
                             None if !residual.sub().is_empty() => {
                                 for _ in 0..residual.sub().len() as u64 {
                                     self.physics.bump(&mag);
                                 }
                             }
-                            // Neither word, nor nerve, nor chain: nothing to
-                            // reduce and nothing to list.
+                            // Neither nerve nor chain: nothing to reduce and
+                            // nothing to list.
                             None => return Outcome::Pivot,
                         }
                     } else {
@@ -348,9 +348,7 @@ impl Kernel {
                         // holonomy class. Each Open walk pivots the lanes
                         // the demand occupies and bumps them for the length
                         // IT walked; a Closed loop is proven monodromy and
-                        // charges nothing. Summing the walks into one number
-                        // and capping it at eight was a scalar over a
-                        // polytonic reading (law 5).
+                        // charges nothing.
                         for w in &witnesses {
                             if let crate::transducer::toroid::HolonomicLoopWitness::Open { walked } = w {
                                 self.physics.pivot(crate::physics::Physics::lanes_of(&mag));
