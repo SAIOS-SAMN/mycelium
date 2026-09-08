@@ -4,11 +4,13 @@
 //! the cover trie. A frame that arrived as ACT_DEMAND_ROUTED is judged and
 //! never forwarded.
 
+pub(crate) mod offer;
 pub(crate) mod percept;
 pub(crate) mod probe;
 pub(crate) mod quote;
 pub(crate) mod speech;
 pub(crate) mod syllabus;
+pub(crate) mod verdict;
 
 use crate::door::{serve_control, Door};
 use mycelium::anastome::dialogue;
