@@ -420,9 +420,15 @@ impl Kernel {
         }
     }
 
-    /// Test/helper: identity-glue every provisional as if an overlapping
-    /// hypha fetched the same word. The basis grows from gluing, not from
-    /// the vantage that docketed them.
+    /// A FIXTURE, NOT AN ORGAN: identity-glue every provisional as if an
+    /// overlapping hypha had fetched the same word, so a test can reach a
+    /// basis without standing up a second court. The two vantages are the
+    /// constants `[2; 32]` and `[1; 32]`, which is why this is compiled
+    /// only under test: a hypha that glued its own provisionals under a
+    /// pair of made-up keys would be manufacturing its own second vantage
+    /// (47.3), and rule 5 does not let a constant stand for a measurement
+    /// in shipped code.
+    #[cfg(test)]
     pub fn glue_local(&mut self) {
         let words: Vec<Element> = self.provisional.fiber(crate::network::nerve::ROOT).map(|(_, e)| e.clone()).collect();
         let mut cover = crate::network::nerve::Cover::new();
