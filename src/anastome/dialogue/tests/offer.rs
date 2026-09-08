@@ -42,7 +42,7 @@ fn an_offer_names_the_home_that_made_it_and_signs_its_own_position() {
         deflation: [1, 0, 2, 0],
         section: section.clone(),
     };
-    let o = decode_offer(&encode_offer(&offer)).expect("an offer parses whole");
+    let o = decode_offer(&encode_offer(&offer).expect("frames")).expect("an offer parses whole");
     assert_eq!(o.home, home, "the home's key rides the act");
     assert_eq!(o.addr, addr);
     assert_eq!(o.elem, offer.elem);
@@ -62,7 +62,7 @@ fn an_offer_names_the_home_that_made_it_and_signs_its_own_position() {
     assert_eq!(o.section.prefix, section.prefix);
 
     // A frame truncated inside its section is refused, never half-read.
-    let whole = encode_offer(&offer);
+    let whole = encode_offer(&offer).expect("frames");
     assert!(
         decode_offer(&whole[..whole.len() - 8]).is_none(),
         "a truncated section is not an offer"

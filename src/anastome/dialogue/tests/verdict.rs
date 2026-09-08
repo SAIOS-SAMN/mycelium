@@ -39,7 +39,7 @@ fn a_ruling_with_no_payload_parses_back_to_the_ruling_it_was() {
     let s = section();
 
     for ruling in [RULING_UPHELD, RULING_DEMOTED, RULING_SLASHED] {
-        let body = encode_verdict(&court, &addr, ruling, &head, &s);
+        let body = encode_verdict(&court, &addr, ruling, &head, &s).expect("frames");
         let v = decode_verdict(&body).expect("a ruling with no payload parses whole");
         assert_eq!(v.voice, court, "the court that ruled");
         assert_eq!(v.addr, addr, "the word it ruled on");
@@ -64,7 +64,7 @@ fn a_rebind_and_an_attach_carry_their_payload_and_still_find_the_section() {
     let s = section();
 
     let pi = crate::transducer::anchor::Sel::Hue(3);
-    let body = encode_verdict_payload(&court, &addr, RULING_REBIND, &head, Some(&pi), &s);
+    let body = encode_verdict_payload(&court, &addr, RULING_REBIND, &head, Some(&pi), &s).expect("frames");
     let v = decode_verdict(&body).expect("a rebind parses whole");
     assert_eq!(v.ruling, RULING_REBIND);
     assert_eq!(v.pi, Some(pi), "the selection the court rebinds to");
@@ -72,7 +72,7 @@ fn a_rebind_and_an_attach_carry_their_payload_and_still_find_the_section() {
 
     let base = crate::transducer::address::Address::new(vec![9, 9]);
     let g = crate::transducer::element::identity_versor();
-    let body = encode_verdict_attach(&court, &addr, &head, &base, &g, &s);
+    let body = encode_verdict_attach(&court, &addr, &head, &base, &g, &s).expect("frames");
     let v = decode_verdict(&body).expect("an attach parses whole");
     assert_eq!(v.ruling, RULING_ATTACHED);
     let (b, gg) = v.attach.expect("the base and the transport");
@@ -138,13 +138,15 @@ fn a_ruling_is_answered_with_the_arm_it_reached() {
 fn an_unknown_payload_tag_is_refused_rather_than_skipped() {
     let s = section();
     let addr = crate::transducer::address::Address::new(vec![5, 5]);
-    let mut body = encode_verdict(&[0x33; 32], &addr, RULING_UPHELD, &[0; 32], &s);
-    let tag = body.len() - super::super::encode_receipt_section(&s.prefix, &s.sig, &s.receipt).len() - 1;
+    let mut body = encode_verdict(&[0x33; 32], &addr, RULING_UPHELD, &[0; 32], &s).expect("frames");
+    let section = super::super::encode_receipt_section(&s.prefix, &s.sig, &s.receipt).expect("frames");
+    let tag = body.len() - section.len() - 1;
     assert_eq!(body[tag], 0, "the no-payload tag is where the encoder put it");
     body[tag] = 0x7e;
     assert!(decode_verdict(&body).is_none(), "an undefined tag refuses the frame");
     // And a frame truncated inside its receipt section refuses too, rather
     // than admitting a partial ruling (rule 11).
-    let short = &encode_verdict(&[0x33; 32], &addr, RULING_UPHELD, &[0; 32], &s)[..tag + 3];
+    let whole = encode_verdict(&[0x33; 32], &addr, RULING_UPHELD, &[0; 32], &s).expect("frames");
+    let short = &whole[..tag + 3];
     assert!(decode_verdict(short).is_none(), "a truncated section is not a ruling");
 }

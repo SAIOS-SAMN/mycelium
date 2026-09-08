@@ -40,6 +40,20 @@ pub struct SignedPrefix {
 }
 
 impl SignedPrefix {
+    /// Does this prefix fit the lengths the wire writes for it: its chart
+    /// count and payload length in two bytes each, and the whole of
+    /// `bytes()` in the two-byte length the receipt section frames it with
+    /// (47.1, I33). A prefix that does not fit is refused where it is
+    /// built — never signed, never framed — because a length written
+    /// `as u16` wraps, and a wrapped section is refused whole by every
+    /// receiver while the sender believes it spoke.
+    pub fn fits(&self) -> bool {
+        let max = u16::MAX as usize;
+        self.chart.len() <= max
+            && self.payload.len() <= max
+            && 84 + 2 + 8 * self.chart.len() + 2 + self.payload.len() <= max
+    }
+
     pub fn bytes(&self) -> Vec<u8> {
         let mut out = Vec::with_capacity(84 + self.chart.len() * 8 + self.payload.len());
         out.extend_from_slice(&self.genesis);

@@ -52,7 +52,14 @@ fn a_peer_that_answers_is_read_whole_and_its_round_trip_is_counted_in_strokes() 
         body
     });
 
-    let out = tell_peer_within(&addr, vec![0x10, 1, 2], mycelium::physics::reserve_max());
+    // The deadline is this test's patience for the responder thread to be
+    // scheduled, not the measure: a poll is a yield, and on a host running a
+    // whole fleet at full CPU one reserve of yields passed before the
+    // responder ran once (read on 2026-09-08 with eight processes live). The
+    // patience is the host's own reserve squared — a measurement, never a
+    // literal — and the rtt read back is whatever it took.
+    let reserve = mycelium::physics::reserve_max();
+    let out = tell_peer_within(&addr, vec![0x10, 1, 2], reserve.saturating_mul(reserve));
     let (reply, rtt) = out.expect("a peer that answers is not silence");
     assert_eq!(reply, echo, "the reply is read whole");
     assert!(rtt >= 1, "a round trip takes at least the one poll that read it: {rtt}");

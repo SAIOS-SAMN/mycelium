@@ -53,7 +53,7 @@ fn the_receipt_section_is_found_after_a_full_digest_frame() {
         &charts, &room, &cover_roots, &ruled_root, &vk, "127.0.0.1:7500", &sig,
     ));
     let bare = body.len();
-    body.extend(encode_receipt_section(&prefix, &rsig, &head));
+    body.extend(encode_receipt_section(&prefix, &rsig, &head).expect("a prefix that fits frames"));
 
     let d = decode_cover_digest(&body).expect("digest decodes");
     assert_eq!(
@@ -89,9 +89,44 @@ fn the_receipt_section_is_found_after_a_full_digest_frame() {
     let mut lone = encode_cover_digest(
         &charts, &room, &cover_roots, &ruled_root, &vk, "127.0.0.1:7500", &sig,
     );
-    lone.extend(encode_receipt_section(&prefix, &rsig, &head));
+    lone.extend(encode_receipt_section(&prefix, &rsig, &head).expect("frames"));
     assert!(
         decode_cover_digest(&lone).is_none(),
         "two readings consume the buffer: the reader refuses rather than guessing"
     );
+}
+
+/// 47.1, I33 — A PREFIX THAT DOES NOT FIT THE WIRE IS NOT FRAMED. The
+/// section's length is two bytes; a prefix carrying a hypha's whole cover
+/// (10,855 axes on the fleet of 2026-09-08) was written with a wrapped
+/// length, and every peer refused every digest whole while the hypha
+/// believed it spoke. `fits` says so before anything is signed, and
+/// `encode_receipt_section` refuses rather than wraps; a prefix of one
+/// chart frames and reads back.
+#[test]
+fn a_prefix_that_does_not_fit_the_wire_is_refused_not_wrapped() {
+    let mut chain = crate::chronometry::ReceiptChain::with_vk([6u8; 32]);
+    chain.append(b"an address", [0; 32], Vec::new()).expect("appends");
+    let head = chain.receipts()[0].clone();
+    let prefix = |chart: Vec<u64>| crate::court::admission::SignedPrefix {
+        genesis: [8; 32],
+        epoch: 2,
+        prev_receipt_hash: head.prev_receipt_hash,
+        k: head.step_index,
+        height: head.height,
+        chart,
+        payload: b"a root".to_vec(),
+    };
+    let cover = prefix(vec![7u64; 10_855]);
+    assert!(!cover.fits(), "a whole cover does not fit two bytes of length");
+    assert!(
+        encode_receipt_section(&cover, &[9u8; 64], &head).is_none(),
+        "and is not framed with a wrapped length"
+    );
+    let one = prefix(vec![1, 2, 3, 9]);
+    assert!(one.fits(), "one chart fits");
+    let framed = encode_receipt_section(&one, &[9u8; 64], &head).expect("frames");
+    let back = decode_receipt_section(&framed, 0).expect("and reads back whole");
+    assert_eq!(back.prefix, one);
+    assert_eq!(receipt_section_end(&framed, 0), Some(framed.len()));
 }

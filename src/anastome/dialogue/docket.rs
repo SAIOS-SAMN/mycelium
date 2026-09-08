@@ -330,12 +330,14 @@ pub fn encode_verdict(
     ruling: u8,
     receipt: &[u8; 32],
     section: &ReceiptSection,
-) -> Vec<u8> {
+) -> Option<Vec<u8>> {
     encode_verdict_payload(voice, addr, ruling, receipt, None, section)
 }
 
 /// With the optional π* payload (RULING_REBIND): `…[receipt 32][1][sel]` /
-/// `…[receipt 32][0]`, then the receipt section.
+/// `…[receipt 32][0]`, then the receipt section. `None` when the section
+/// cannot be framed (`encode_receipt_section`): a ruling without its
+/// signed position is not spoken.
 pub fn encode_verdict_payload(
     voice: &[u8; 32],
     addr: impl AsRef<[u8]>,
@@ -343,7 +345,7 @@ pub fn encode_verdict_payload(
     receipt: &[u8; 32],
     pi: Option<&crate::transducer::anchor::Sel>,
     section: &ReceiptSection,
-) -> Vec<u8> {
+) -> Option<Vec<u8>> {
     let mut out = vec![ACT_VERDICT];
     out.extend_from_slice(voice);
     let _ = put_addr(&mut out, addr);
@@ -360,8 +362,8 @@ pub fn encode_verdict_payload(
         &section.prefix,
         &section.sig,
         &section.receipt,
-    ));
-    out
+    )?);
+    Some(out)
 }
 
 /// The attach payload (RULING_ATTACHED): `…[receipt 32][2][base][g 17]` —
@@ -373,7 +375,7 @@ pub fn encode_verdict_attach(
     base: impl AsRef<[u8]>,
     g: &crate::transducer::element::Versor,
     section: &ReceiptSection,
-) -> Vec<u8> {
+) -> Option<Vec<u8>> {
     let mut out = vec![ACT_VERDICT];
     out.extend_from_slice(voice);
     let _ = put_addr(&mut out, addr);
@@ -386,8 +388,8 @@ pub fn encode_verdict_attach(
         &section.prefix,
         &section.sig,
         &section.receipt,
-    ));
-    out
+    )?);
+    Some(out)
 }
 
 

@@ -28,7 +28,7 @@ fn section(delta: &[u8], sig: u8) -> ReceiptSection {
 #[test]
 fn two_receipt_sections_parse_back_whole_in_the_order_presented() {
     let (a, b) = (section(b"one", 0x11), section(b"two", 0x22));
-    let body = encode_equivocation(&a, &b);
+    let body = encode_equivocation(&a, &b).expect("two prefixes that fit frame");
     assert_eq!(body[0], ACT_EQUIVOCATION, "the act byte");
     assert_eq!(body[1], EQUIVOCATION_VERSION, "then the layout version");
     let (ga, gb) = decode_equivocation(&body).expect("two sections parse whole");
@@ -48,7 +48,7 @@ fn two_receipt_sections_parse_back_whole_in_the_order_presented() {
 #[test]
 fn a_truncated_padded_or_misversioned_frame_refuses_whole() {
     let (a, b) = (section(b"one", 0x11), section(b"two", 0x22));
-    let body = encode_equivocation(&a, &b);
+    let body = encode_equivocation(&a, &b).expect("frames");
     assert!(
         decode_equivocation(&body[..body.len() - 1]).is_none(),
         "a truncated second section is not a proof"

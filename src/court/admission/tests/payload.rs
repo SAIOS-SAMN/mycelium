@@ -40,13 +40,13 @@ fn a_ruling_that_names_a_payload_it_does_not_carry_is_malformed() {
     let head = [0x9e; 32];
     let s = section();
 
-    let bare_rebind = decode_verdict(&encode_verdict(&court, &addr, RULING_REBIND, &head, &s))
+    let bare_rebind = decode_verdict(&encode_verdict(&court, &addr, RULING_REBIND, &head, &s).expect("frames"))
         .expect("the frame parses; it is the fields that disagree");
     assert!(
         matches!(admit_payload(&bare_rebind), Err(why) if why == REFUSE_MALFORMED),
         "a rebind with no selection is refused by its own name"
     );
-    let bare_attach = decode_verdict(&encode_verdict(&court, &addr, RULING_ATTACHED, &head, &s))
+    let bare_attach = decode_verdict(&encode_verdict(&court, &addr, RULING_ATTACHED, &head, &s).expect("frames"))
         .expect("parses");
     assert!(
         matches!(admit_payload(&bare_attach), Err(why) if why == REFUSE_MALFORMED),
@@ -54,22 +54,25 @@ fn a_ruling_that_names_a_payload_it_does_not_carry_is_malformed() {
     );
 
     let pi = crate::transducer::anchor::Sel::Hue(3);
-    let rebind = decode_verdict(&encode_verdict_payload(&court, &addr, RULING_REBIND, &head, Some(&pi), &s))
-        .expect("parses");
+    let rebind = decode_verdict(
+        &encode_verdict_payload(&court, &addr, RULING_REBIND, &head, Some(&pi), &s).expect("frames"),
+    )
+    .expect("parses");
     assert!(
         matches!(admit_payload(&rebind), Ok(Payload::Rebind(ref t)) if *t == pi),
         "a rebind that carries its selection reads back as that selection"
     );
     let base = crate::transducer::address::Address::new(vec![9, 9]);
     let g = crate::transducer::element::identity_versor();
-    let attach = decode_verdict(&encode_verdict_attach(&court, &addr, &head, &base, &g, &s))
+    let attach = decode_verdict(&encode_verdict_attach(&court, &addr, &head, &base, &g, &s).expect("frames"))
         .expect("parses");
     assert!(
         matches!(admit_payload(&attach), Ok(Payload::Attach(ref b, ref v)) if *b == base && crate::transducer::element::same_versor(v, &g)),
         "an attach that carries its base and transport reads back as both, the transport by projective equality"
     );
     for ruling in [RULING_UPHELD, RULING_SLASHED] {
-        let plain = decode_verdict(&encode_verdict(&court, &addr, ruling, &head, &s)).expect("parses");
+        let plain = decode_verdict(&encode_verdict(&court, &addr, ruling, &head, &s).expect("frames"))
+            .expect("parses");
         assert!(
             matches!(admit_payload(&plain), Ok(Payload::Plain)),
             "an ordinary ruling carries no payload and names none"

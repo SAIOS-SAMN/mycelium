@@ -12,14 +12,15 @@ pub const EQUIVOCATION_VERSION: u8 = 1;
 
 /// `[ACT_EQUIVOCATION][version][len32 section_a][len32 section_b]`, each
 /// section `encode_receipt_section`'s bytes: prefix, signature, receipt.
-pub fn encode_equivocation(a: &ReceiptSection, b: &ReceiptSection) -> Vec<u8> {
+/// `None` when either section cannot be framed.
+pub fn encode_equivocation(a: &ReceiptSection, b: &ReceiptSection) -> Option<Vec<u8>> {
     let mut out = vec![ACT_EQUIVOCATION, EQUIVOCATION_VERSION];
     for s in [a, b] {
-        let bytes = encode_receipt_section(&s.prefix, &s.sig, &s.receipt);
+        let bytes = encode_receipt_section(&s.prefix, &s.sig, &s.receipt)?;
         out.extend_from_slice(&(bytes.len() as u32).to_le_bytes());
         out.extend_from_slice(&bytes);
     }
-    out
+    Some(out)
 }
 
 /// The two sections, in the order presented. `None` for another act or

@@ -22,21 +22,32 @@ use super::*;
 /// digest's own carriers and signature are unchanged by it. Migrating
 /// `cover_signed_prefix` itself onto 47.1 -- which moves what the digest's
 /// primary signature covers -- is its own task and is not this.
+///
+/// `None` when the prefix does not fit the two-byte length that frames it
+/// (`SignedPrefix::fits`): the length was written `as u16` and wrapped, so
+/// a hypha whose prefix carried its whole cover sent a section no peer
+/// could read and every one of its digests was refused whole (I33). An act
+/// whose section cannot be framed is not spoken (rule 11).
 pub fn encode_receipt_section(
     prefix: &crate::court::admission::SignedPrefix,
     sig: &[u8; 64],
     receipt: &crate::chronometry::KStepReceipt,
-) -> Vec<u8> {
+) -> Option<Vec<u8>> {
+    if !prefix.fits() {
+        return None;
+    }
     let pb = prefix.bytes();
+    let plen = u16::try_from(pb.len()).ok()?;
     let mut rb = Vec::new();
     receipt.write(&mut rb);
+    let rlen = u32::try_from(rb.len()).ok()?;
     let mut out = Vec::with_capacity(pb.len() + rb.len() + 70);
-    out.extend_from_slice(&(pb.len() as u16).to_le_bytes());
+    out.extend_from_slice(&plen.to_le_bytes());
     out.extend_from_slice(&pb);
     out.extend_from_slice(sig);
-    out.extend_from_slice(&(rb.len() as u32).to_le_bytes());
+    out.extend_from_slice(&rlen.to_le_bytes());
     out.extend_from_slice(&rb);
-    out
+    Some(out)
 }
 
 /// Read a receipt section from `body` at `at`, the offset one past the

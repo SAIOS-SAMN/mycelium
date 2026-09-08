@@ -10,8 +10,9 @@ use super::*;
 /// signature over exactly those bytes, and the receipt the prefix names —
 /// so the witness runs 47.2 before touching a carrier. It carried `k`, a
 /// bespoke `sig` and an `inst_sig` instead, all three written as zeroes at
-/// the only call site and read by nobody.
-pub fn encode_offer(o: &Offer) -> Vec<u8> {
+/// the only call site and read by nobody. `None` when the section cannot
+/// be framed: an offer without its signed position is not spoken.
+pub fn encode_offer(o: &Offer) -> Option<Vec<u8>> {
     let mut out = vec![ACT_OFFER];
     let _ = put_addr(&mut out, &o.addr);
     out.extend_from_slice(&o.home);
@@ -26,8 +27,8 @@ pub fn encode_offer(o: &Offer) -> Vec<u8> {
         &o.section.prefix,
         &o.section.sig,
         &o.section.receipt,
-    ));
-    out
+    )?);
+    Some(out)
 }
 
 pub fn decode_offer(body: &[u8]) -> Option<Offer> {

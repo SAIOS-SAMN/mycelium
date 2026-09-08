@@ -47,26 +47,41 @@ pub(crate) fn rebuild_own_cover(kernel: &Mutex<Kernel>, mesh: &Mesh) -> (Vec<(u8
 /// it was sent, so signing the address signs the form by its content and
 /// not by the spelling (law 2).
 ///
+/// `chart` is the FRAME's chart (47.1): the axes of the chart the payload
+/// lives on — an offered word's — and none for a transmission digest,
+/// whose payload is a root over the whole cover. It wrote the hypha's
+/// entire active cover here: with a thousand corpus listings that was
+/// 10,855 axes and an 86,926-byte prefix, the section's two-byte length
+/// wrapped, and every peer refused every digest of this hypha whole, so no
+/// origin was ever adopted and no receipt ever admitted (Stage 11 I33,
+/// read on the fleet of 2026-09-08).
+///
 /// `None` when this hypha has adopted no origin or holds no receipt yet: it
 /// has no causal position to sign from, and an act it cannot sign is one it
-/// does not make.
+/// does not make. `None` too when the prefix does not fit the wire
+/// (`SignedPrefix::fits`): a position that cannot be framed is not signed.
 pub(crate) fn sign_position(
     kernel: &Mutex<Kernel>,
     mesh: &Mesh,
+    chart: &[u64],
     payload: &[u8],
 ) -> Option<dialogue::ReceiptSection> {
     let (genesis, epoch) = mesh.origin.lock().ok().and_then(|o| *o)?;
     let k = kernel.lock().ok()?;
     let head = k.chain().receipts().last().cloned()?;
+    drop(k);
     let prefix = mycelium::court::admission::SignedPrefix {
         genesis,
         epoch,
         prev_receipt_hash: head.prev_receipt_hash,
         k: head.step_index,
         height: head.height,
-        chart: k.active_cover().iter().flat_map(|(_, inv)| inv.0.clone()).collect(),
+        chart: chart.to_vec(),
         payload: payload.to_vec(),
     };
+    if !prefix.fits() {
+        return None;
+    }
     let sig = {
         use ed25519_dalek::Signer;
         mesh.sk.sign(&prefix.bytes()).to_bytes()
@@ -91,9 +106,12 @@ pub(crate) fn sign_cover_digest(kernel: &Mutex<Kernel>, mesh: &Mesh) -> Vec<u8> 
     // 47.1: the signer's causal position travels with its signature. The
     // head receipt and the prefix it is signed over are appended, so the
     // peer can run 47.2 and cite this receipt as a parent of its next step.
-    // A node with no genesis sends none: it has no origin to claim.
-    if let Some(sec) = sign_position(kernel, mesh, &ruled_root) {
-        out.extend(dialogue::encode_receipt_section(&sec.prefix, &sec.sig, &sec.receipt));
+    // A node with no genesis sends none: it has no origin to claim. The
+    // digest is a root over the whole cover, so its prefix names no chart.
+    if let Some(bytes) = sign_position(kernel, mesh, &[], &ruled_root)
+        .and_then(|sec| dialogue::encode_receipt_section(&sec.prefix, &sec.sig, &sec.receipt))
+    {
+        out.extend(bytes);
     }
     out
 }
