@@ -67,7 +67,7 @@ impl Treasury {
         let prev = self.funded.get(addr).map(|(_, m)| *m).unwrap_or([0; 4]);
         let next: [u64; 4] = std::array::from_fn(|l| prev[l] + paid[l]);
         self.funded.insert(addr, (payer, next));
-        self.write(Entry { kind: "escrow", who: payer, mu: paid, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Escrow, who: payer, mu: paid, k_step: anchor.0, receipt: anchor.1 });
         paid
     }
 
@@ -119,7 +119,7 @@ impl Treasury {
     /// Clear the listing claim. Payment is a mint of the same vector, done
     /// by the caller after this returns (release then mint).
     pub fn release_award(&mut self, addr: &[u8]) -> Option<Escrowed> {
-        self.discharge_funded(addr, "release");
+        self.discharge_funded(addr, Kind::Release);
         self.escrowed.remove(addr)
     }
 
@@ -132,7 +132,7 @@ impl Treasury {
     /// The payee of a funded release is xSEPTUM §5's business, not the
     /// treasury's: until the Note names one, the μ⃗ goes back where it came
     /// from rather than to a party chosen here.
-    pub(crate) fn discharge_funded(&mut self, addr: &[u8], kind: &'static str) {
+    pub(crate) fn discharge_funded(&mut self, addr: &[u8], kind: Kind) {
         let Some((payer, mu)) = self.funded.remove(addr) else {
             return;
         };
@@ -199,7 +199,7 @@ impl Treasury {
     /// a slash reaches the same set, or a word two voices stood costs one
     /// of them nothing at all.
     pub fn revoke_award(&mut self, addr: &[u8], slash: bool) -> Option<Revoked> {
-        self.discharge_funded(addr, "revoke");
+        self.discharge_funded(addr, Kind::Revoke);
         let Escrowed { voices, mu, anchor } = self.escrowed.remove(addr)?;
         let mut out = Revoked { released: mu, slashed: Vec::new(), short: Vec::new() };
         if !slash {
@@ -220,7 +220,7 @@ impl Treasury {
             }
             let next: [u64; 4] = std::array::from_fn(|l| held[l] - took[l]);
             self.stakes.insert(who, next);
-            self.write(Entry { kind: "slash", who, mu: took, k_step: anchor.0, receipt: anchor.1 });
+            self.write(Entry { kind: Kind::Slash, who, mu: took, k_step: anchor.0, receipt: anchor.1 });
             out.slashed.push((who, took));
         }
         if !out.slashed.is_empty() {

@@ -12,11 +12,61 @@ pub type Anchor = (u64, [u8; 32]);
 /// Economic tiers for a decentralized mesh running cryptographic semantic
 /// operations: yields scale by the participant's tier. A hypha/client's standing
 /// weights its reward, so the topology supports staked, tiered roles — never a
+/// §2's ENTRY KINDS, the closed vocabulary of what moves μ⃗: "Entry kinds:
+/// `genesis`, `mint`, `stake`, `unstake`, `transfer`, `escrow`, `release`,
+/// `revoke`, `slash`, `burn`. Nothing else moves μ."
+///
+/// It was a `&'static str` matched by literal. B5 made that load-bearing:
+/// `write` folds the supply on `"mint" | "genesis" => issued,
+/// "burn" | "slash" => burned, _ => continue`, so a row whose kind did not
+/// spell one of five strings was silently dropped from the supply, and the
+/// audit then reported carriers that did not match a journal it had not
+/// read whole. A typo in a kind is a ledger that does not describe the
+/// mesh, and nothing would say so. The chapter fixes a list; the type is
+/// that list, and every match on it is exhaustive.
+///
+/// `Legacy` is not §2's: it marks a stake dropped by `refresh_bond` for a
+/// key that is no longer enrolled, and it moves no supply. It is named
+/// here rather than left to fall through a `_` arm.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Kind {
+    Genesis,
+    Mint,
+    Stake,
+    Unstake,
+    Transfer,
+    Escrow,
+    Release,
+    Revoke,
+    Slash,
+    Burn,
+    Legacy,
+}
+
+impl Kind {
+    /// Which side of `supply = genesis + mint − burn` this row falls on.
+    /// Exhaustive: a kind that moved the supply and was not named here
+    /// would not compile.
+    pub(crate) fn issues(&self) -> Option<bool> {
+        match self {
+            Kind::Genesis | Kind::Mint => Some(true),
+            Kind::Burn | Kind::Slash => Some(false),
+            Kind::Stake
+            | Kind::Unstake
+            | Kind::Transfer
+            | Kind::Escrow
+            | Kind::Release
+            | Kind::Revoke
+            | Kind::Legacy => None,
+        }
+    }
+}
+
 /// A settlement receipt (below-boundary storage — a Vec, not a map): a
 /// polytonic μ⃗ amount, chronometrically anchored.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Entry {
-    pub kind: &'static str,
+    pub kind: Kind,
     pub who: [u8; 32],
     /// The per-lane vector amount — never a scalar.
     pub mu: [u64; 4],
@@ -130,7 +180,7 @@ impl Treasury {
             self.debit(who, add);
             let next: [u64; 4] = std::array::from_fn(|l| held[l] + add[l]);
             self.stakes.insert(who, next);
-            self.write(Entry { kind: "stake", who, mu: add, k_step: anchor.0, receipt: anchor.1 });
+            self.write(Entry { kind: Kind::Stake, who, mu: add, k_step: anchor.0, receipt: anchor.1 });
         } else if self.stakes.get(&who).is_none() {
             self.stakes.insert(who, held);
         }
@@ -153,7 +203,7 @@ impl Treasury {
         let next: [u64; 4] = std::array::from_fn(|l| held[l] - back[l]);
         self.stakes.insert(who, next);
         self.credit(who, back);
-        self.write(Entry { kind: "unstake", who, mu: back, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Unstake, who, mu: back, k_step: anchor.0, receipt: anchor.1 });
         self.refresh_bond();
         back
     }
@@ -196,7 +246,7 @@ impl Treasury {
         for (who, mu) in drop {
             self.stakes.remove(&who);
             self.write(Entry {
-                kind: "legacy",
+                kind: Kind::Legacy,
                 who,
                 mu,
                 k_step: 0,
@@ -239,10 +289,10 @@ impl Treasury {
     /// ledger can still answer "was anyone slashed?" apart from "what was
     /// burned?".
     pub(crate) fn write(&mut self, e: Entry) {
-        let into = match e.kind {
-            "mint" | "genesis" => &mut self.issued,
-            "burn" | "slash" => &mut self.burned,
-            _ => {
+        let into = match e.kind.issues() {
+            Some(true) => &mut self.issued,
+            Some(false) => &mut self.burned,
+            None => {
                 self.entries.push(e);
                 return;
             }
@@ -265,10 +315,10 @@ impl Treasury {
     pub(crate) fn refold_supply(&mut self) {
         let (mut issued, mut burned) = (Some([0u64; 4]), Some([0u64; 4]));
         for e in &self.entries {
-            let into = match e.kind {
-                "mint" | "genesis" => &mut issued,
-                "burn" | "slash" => &mut burned,
-                _ => continue,
+            let into = match e.kind.issues() {
+                Some(true) => &mut issued,
+                Some(false) => &mut burned,
+                None => continue,
             };
             *into = into.and_then(|mut t| {
                 for (a, d) in t.iter_mut().zip(&e.mu) {
@@ -289,7 +339,7 @@ impl Treasury {
     pub fn minted(&self) -> Option<[u64; 4]> {
         let mut m = [0u64; 4];
         for e in &self.entries {
-            if e.kind != "mint" {
+            if e.kind != Kind::Mint {
                 continue;
             }
             for (t, d) in m.iter_mut().zip(&e.mu) {
@@ -306,7 +356,7 @@ impl Treasury {
         if mu.iter().all(|&x| x == 0) {
             return [0; 4];
         }
-        self.write(Entry { kind: "genesis", who, mu, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Genesis, who, mu, k_step: anchor.0, receipt: anchor.1 });
         self.credit(who, mu);
         mu
     }
@@ -333,7 +383,7 @@ impl Treasury {
         if from_bal.iter().any(|&x| x > 0) {
             self.debit(who, from_bal);
         }
-        self.write(Entry { kind: "burn", who, mu: took, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Burn, who, mu: took, k_step: anchor.0, receipt: anchor.1 });
         took
     }
 
@@ -386,7 +436,7 @@ impl Treasury {
         if mu.iter().all(|&x| x == 0) {
             return [0; 4];
         }
-        self.write(Entry { kind: "mint", who, mu, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Mint, who, mu, k_step: anchor.0, receipt: anchor.1 });
         self.credit(who, mu);
         eprintln!(
             "  mint {:02x}{:02x}… μ⃗ {mu:?} k {}",
@@ -411,7 +461,7 @@ impl Treasury {
 
     /// Whether a mint entry already stands for this identity.
     pub fn has_mint(&self, who: &[u8; 32]) -> bool {
-        self.entries.iter().any(|e| e.kind == "mint" && e.who == *who)
+        self.entries.iter().any(|e| e.kind == Kind::Mint && e.who == *who)
     }
 
 }

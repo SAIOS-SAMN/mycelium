@@ -118,18 +118,3 @@ pub fn yield_surface(p: &crate::physics::Physics) -> [u64; 4] {
 pub fn price(mag: &[u64; 4], _surface: &[u64; 4]) -> [u64; 4] {
     *mag
 }
-
-/// THE FLOW ORIENTATION of a ledger entry relative to its identity — a signed
-/// coefficient in the flow algebra (the chain-complex orientation), never a
-/// boolean gate: +1 credits the identity, −1 debits it, 0 orients nothing
-/// (markers whose μ⃗ moved the stake bond, not a balance). An exhaustive total
-/// function — an unknown kind orients nothing rather than silently crediting.
-/// Transfer credits are the second of a paired pair (same μ⃗, K, receipt);
-/// `recompute_balances` applies those, not this sign.
-pub fn orientation(kind: &str) -> i8 {
-    match kind {
-        "mint" | "genesis" => 1,
-        "transfer" | "slash" | "burn" => -1,
-        _ => 0,
-    }
-}

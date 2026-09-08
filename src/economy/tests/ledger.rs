@@ -238,10 +238,10 @@ fn the_supply_folded_as_it_is_written_equals_the_journal_it_describes() {
     let mut issued = [0u64; 4];
     let mut burned = [0u64; 4];
     for e in t.entries() {
-        let into = match e.kind {
-            "mint" | "genesis" => &mut issued,
-            "burn" | "slash" => &mut burned,
-            _ => continue,
+        let into = match e.kind.issues() {
+            Some(true) => &mut issued,
+            Some(false) => &mut burned,
+            None => continue,
         };
         for (x, d) in into.iter_mut().zip(&e.mu) {
             *x += d;
@@ -268,6 +268,30 @@ fn the_supply_folded_as_it_is_written_equals_the_journal_it_describes() {
     assert_eq!(back.balance_mu(&b), t.balance_mu(&b), "and b's");
     assert_eq!(back.audit().ok(), t.audit().ok(), "and the audit holds through a restore");
     assert!(back.audit().is_ok(), "on a ledger that used every kind that moves value");
+}
+
+/// AN UNDEFINED ENTRY TAG REFUSES THE TAPE. It decoded as the kind
+/// `"unknown"`, which no arm of the supply fold matched, so the row was
+/// dropped in silence and the audit then compared the carriers against a
+/// journal it had not read whole — rule 11, and A21 1's "the decoder is
+/// total on well-formed keys and refuses otherwise". The typed `Kind`
+/// leaves nothing for an undefined tag to decode into.
+#[test]
+fn an_undefined_entry_tag_refuses_the_tape() {
+    let mut t = Treasury::new();
+    t.genesis([0x33; 32], [1, 0, 0, 0], (0, [0; 32]));
+    let mut snap = t.snapshot();
+    // Where the one entry's tag byte sits: `bond_total` (four lanes of
+    // u64), the stake count (u32) with no stakes behind it, and the entry
+    // count (u32).
+    let tag = 4 * 8 + 4 + 4;
+    assert_eq!(snap[tag], 16, "the row written is a genesis");
+    snap[tag] = snap[tag].wrapping_add(0x80); // a tag the layout defines no kind for
+    let mut pos = 0;
+    assert!(
+        Treasury::restore(&snap, &mut pos).is_none(),
+        "the tape is refused whole, not read past the row it cannot name"
+    );
 }
 
 /// §4: "a word that fails replay debits the voice that spoke it" — every

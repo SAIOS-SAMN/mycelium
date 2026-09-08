@@ -25,20 +25,25 @@ impl Treasury {
         });
         out.extend_from_slice(&(self.entries.len() as u32).to_le_bytes());
         for e in &self.entries {
+            // One tag per kind, and the match is exhaustive: a kind that
+            // could not be written would not compile, where the string
+            // match fell through to `255` and wrote a row nothing could
+            // read back. The eight aliases it also carried -- "utility",
+            // "consilience", "torse", "solve", "spend", "fee" and the rest
+            // -- named no kind any writer produced; they were a reader for
+            // a vocabulary that no longer exists (§10).
             let tag: u8 = match e.kind {
-                "mint" => 14,
-                "stake" => 4,
-                "slash" => 8,
-                "transfer" => 15,
-                "genesis" => 16,
-                "burn" => 17,
-                "escrow" => 18,
-                "release" => 19,
-                "revoke" => 20,
-                "unstake" => 21,
-                "utility" | "consilience" | "torse" | "assembly" | "solve" | "refine" | "condense" | "rewrite" => 14,
-                "spend" | "fee" => 15,
-                _ => 255,
+                Kind::Stake => 4,
+                Kind::Slash => 8,
+                Kind::Mint => 14,
+                Kind::Transfer => 15,
+                Kind::Genesis => 16,
+                Kind::Burn => 17,
+                Kind::Escrow => 18,
+                Kind::Release => 19,
+                Kind::Revoke => 20,
+                Kind::Unstake => 21,
+                Kind::Legacy => 22,
             };
             out.push(tag);
             out.extend_from_slice(&e.who);
@@ -138,20 +143,28 @@ impl Treasury {
         for _ in 0..n {
             let tag = *b.get(*pos)?;
             *pos += 1;
+            // A tag the layout does not define REFUSES the tape. It read
+            // as the kind `"unknown"`, which no arm of `supply` matched,
+            // so the row was silently dropped from the supply and the
+            // audit then compared carriers against a journal it had not
+            // read whole -- rule 11, and A21 1's "the decoder is total on
+            // well-formed keys and refuses otherwise". The nine legacy
+            // aliases went with it: they mapped tags no writer has emitted
+            // onto kinds, which is a reader for a vocabulary that no
+            // longer exists (§10).
             let kind = match tag {
-                4 => "stake",
-                8 => "slash",
-                14 => "mint",
-                15 => "transfer",
-                16 => "genesis",
-                17 => "burn",
-                18 => "escrow",
-                19 => "release",
-                20 => "revoke",
-                21 => "unstake",
-                0 | 1 | 3 | 9 | 10 | 11 | 12 | 13 => "mint",
-                5 | 6 => "transfer",
-                _ => "unknown",
+                4 => Kind::Stake,
+                8 => Kind::Slash,
+                14 => Kind::Mint,
+                15 => Kind::Transfer,
+                16 => Kind::Genesis,
+                17 => Kind::Burn,
+                18 => Kind::Escrow,
+                19 => Kind::Release,
+                20 => Kind::Revoke,
+                21 => Kind::Unstake,
+                22 => Kind::Legacy,
+                _ => return None,
             };
             let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
             *pos += 32;

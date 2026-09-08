@@ -35,9 +35,9 @@ impl Treasury {
         if paid.iter().all(|&m| m == 0) {
             return paid;
         }
-        self.write(Entry { kind: "transfer", who: demander, mu: paid, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Transfer, who: demander, mu: paid, k_step: anchor.0, receipt: anchor.1 });
         self.debit(demander, paid);
-        self.write(Entry { kind: "transfer", who: discoverer, mu: paid, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Transfer, who: discoverer, mu: paid, k_step: anchor.0, receipt: anchor.1 });
         self.credit(discoverer, paid);
         paid
     }
@@ -187,7 +187,7 @@ impl Treasury {
         if paid.iter().all(|&m| m == 0) {
             return (paid, short);
         }
-        self.write(Entry { kind: "burn", who: voice, mu: paid, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Burn, who: voice, mu: paid, k_step: anchor.0, receipt: anchor.1 });
         self.debit(voice, paid);
         (paid, short)
     }
@@ -216,7 +216,7 @@ impl Treasury {
         if paid.iter().all(|&m| m == 0) {
             return (paid, short);
         }
-        self.write(Entry { kind: "burn", who: voice, mu: paid, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Burn, who: voice, mu: paid, k_step: anchor.0, receipt: anchor.1 });
         self.debit(voice, paid);
         (paid, short)
     }

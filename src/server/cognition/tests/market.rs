@@ -109,7 +109,7 @@ k.court_stroke();
 assert!(k.pending.is_empty(), "the listing lapsed");
 assert_eq!(k.occupancy(), [0; 4], "the draw released");
 assert!(
-    !k.treasury().entries().iter().any(|e| e.kind == "slash"),
+    !k.treasury().entries().iter().any(|e| e.kind == crate::economy::Kind::Slash),
     "lapse does not slash"
 );
 }
@@ -125,8 +125,12 @@ let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 3)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 3)];
 assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending, "calm door admits");
+// The door fee is a BURN (`settle_door`), and a calm mesh writes none.
+// This read `e.kind == "fee"`, which named a kind no writer in the tree
+// has ever produced, so the assertion held whatever the door did. The
+// typed `Kind` is what caught it: there is no `Fee` to compare against.
 assert!(
-    !k.treasury().entries().iter().any(|e| e.kind == "fee"),
+    !k.treasury().entries().iter().any(|e| e.kind == crate::economy::Kind::Burn),
     "no fee on a calm mesh"
 );
 // Exhaust the metabolism entirely (every lane to zero reserve).
@@ -160,7 +164,7 @@ let _ = k.ingest(&a2, &b2, [7; 32]);
 // asserted a `transfer`, which is a payment to a payee, and there was
 // none: the debit half was written and the credit half never existed.
 assert!(
-    k.treasury().entries().iter().any(|e| e.kind == "burn" && e.who == [7; 32]),
+    k.treasury().entries().iter().any(|e| e.kind == crate::economy::Kind::Burn && e.who == [7; 32]),
     "the funded speaker paid the door out of balance"
 );
 assert!(

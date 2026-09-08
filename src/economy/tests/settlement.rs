@@ -29,7 +29,7 @@ fn novelty_pays_on_use_not_on_existence() {
     assert_eq!(t.balance_mu(&[2; 32])[2], 100 - 2 * magnitude(&g)[2], "the demander PAID — a transfer, not a mint");
     // Every YIELD entry carries its chronometric anchor — the unforgeable
     // binding (the genesis stake carries its own enrollment anchor).
-    assert!(t.entries().iter().filter(|e| e.kind != "stake").all(|e| e.k_step == 3 && e.receipt == [7; 32]));
+    assert!(t.entries().iter().filter(|e| e.kind != Kind::Stake).all(|e| e.k_step == 3 && e.receipt == [7; 32]));
 }
 
 /// The dimensional ledger: consilience splits the PRICED μ⃗ per lane (nonzero
