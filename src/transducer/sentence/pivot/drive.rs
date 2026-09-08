@@ -62,13 +62,15 @@ impl Form {
         t_extent: u64,
     ) -> Vec<Snap> {
         let idea = idea.as_ref();
-        debug_assert!(
-            self.vertices.iter().enumerate().all(|(i, v)| match v {
-                Vertex::Word { address, .. } => self.by_address.get(address) == Some(&(i as u16)),
-                _ => true,
-            }),
-            "by_address holds every Word vertex"
-        );
+        // THE MEET IS RE-DERIVED, NOT ASSERTED. `by_address` is how A6 and
+        // Mayer–Vietoris find the vertex carrying an address, and a stroke
+        // that reads a stale one reads the wrong word — Law 2, under an
+        // index instead of a digest. This stood as a `debug_assert!` that
+        // the caller had reindexed, which is nothing at all in release: the
+        // form went on to be pivoted with an empty meet. Deriving it here
+        // costs one pass over the vertices and faces, which `apply_pivot`
+        // already pays on every applied move.
+        self.reindex();
         let mut snaps = Vec::new();
         let mut handled: Keyed<()> = Keyed::new();
         loop {

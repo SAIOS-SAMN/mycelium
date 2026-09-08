@@ -390,3 +390,35 @@ fn chord_is_never_a_star_face() {
         );
     }
 }
+
+/// A6: the address→vertex meet a stroke reads is DERIVED at the stroke, not
+/// carried in from the caller. A form assembled vertex by vertex has an
+/// empty meet until something fills it; a pivot on such a form used to go
+/// ahead with the empty one in release and only assert in debug, so A6 and
+/// Mayer–Vietoris would look up a word and find no vertex holding it.
+#[test]
+fn a_pivot_derives_the_address_meet_it_reads() {
+    let mut f = chord_form(&[order4()]);
+    f.by_address = Keyed::new();
+    let _ = f.pivot_loop(
+        [0x2a; 32],
+        &Keyed::new(),
+        &crate::transducer::family::NoCrystal,
+        &mut crate::physics::Physics::default().stroke_n(16),
+        None,
+        0,
+    );
+    let mut words = 0usize;
+    for (i, v) in f.vertices.iter().enumerate() {
+        if let Vertex::Word { address, .. } = v {
+            words += 1;
+            assert_eq!(
+                f.by_address.get(address),
+                Some(&(i as u16)),
+                "vertex {i} at {:?} is not what the meet resolves",
+                address.as_bytes()
+            );
+        }
+    }
+    assert_eq!(words, 2, "the chord form carries its two word vertices");
+}
