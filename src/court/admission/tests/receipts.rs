@@ -1,8 +1,8 @@
 // 47.2 — ADMISSION'S TESTS: what a receipt must re-derive before this
 // node's book will hold it, and what it is answered with when it does not.
 
-use super::*;
-use crate::chronometry::ReceiptChain;
+use super::super::*;
+use crate::chronometry::{KStepReceipt, Parent, ReceiptChain};
 
 const G: [u8; 32] = [7; 32];
 const E: u32 = 2;
