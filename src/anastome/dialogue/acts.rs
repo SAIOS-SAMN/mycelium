@@ -394,13 +394,20 @@ pub const RULING_ATTACHED: u8 = 4;
 /// Two independent voices verified the same task: a proven root.
 pub const RULING_ROOT: u8 = 5;
 
-/// A decoded verdict: (court voice, word address, ruling, receipt, π* for a
-/// rebind, (base, g) for an attach).
-pub type Verdict = (
-    [u8; 32],
-    Address,
-    u8,
-    [u8; 32],
-    Option<crate::transducer::anchor::Sel>,
-    Option<(Address, crate::transducer::element::Versor)>,
-);
+/// A DECODED VERDICT.
+pub struct Verdict {
+    /// The COURT's voice — the ruling's author, not the word's.
+    pub voice: [u8; 32],
+    /// The word ruled on.
+    pub addr: Address,
+    /// The ruling itself, from the closed vocabulary above.
+    pub ruling: u8,
+    /// The head of the court's own receipt chain, binding the ruling to a
+    /// tamper-evident history.
+    pub receipt: [u8; 32],
+    /// π* — present only on RULING_REBIND, the selection the court rebinds
+    /// the word to.
+    pub pi: Option<crate::transducer::anchor::Sel>,
+    /// The base and the transport — present only on RULING_ATTACHED.
+    pub attach: Option<(Address, crate::transducer::element::Versor)>,
+}

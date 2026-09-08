@@ -131,14 +131,21 @@ pub fn encode_percept(
     out
 }
 
-/// A decoded percept: (voice, bodies A, bodies B, frame, proof per germ).
-pub type Percept = (
-    [u8; 32],
-    Vec<Vec<(i64, i64, u8)>>,
-    Vec<Vec<(i64, i64, u8)>>,
-    crate::arc::Frame,
-    Vec<Vec<crate::anastome::dialogue::CiteWire>>,
-);
+/// A DECODED PERCEPT: what one voice says it saw.
+pub struct Percept {
+    /// The perceiving voice.
+    pub voice: [u8; 32],
+    /// The bodies of scene A — segmented by the SENSING side (A1); the
+    /// hypha receives bodies, never a raw grid to segment for itself.
+    pub a: Bodies,
+    /// The bodies of scene B.
+    pub b: Bodies,
+    /// The measured frame of the pair.
+    pub frame: crate::arc::Frame,
+    /// The PROOF: per germ, in germination order, the citations the
+    /// speaker offers for it. Empty is a claim with no proof, not an error.
+    pub proof: Vec<Vec<crate::anastome::dialogue::CiteWire>>,
+}
 
 pub fn decode_percept(body: &[u8]) -> Option<Percept> {
     let voice: [u8; 32] = body.get(0..32)?.try_into().ok()?;
@@ -157,7 +164,7 @@ pub fn decode_percept(body: &[u8]) -> Option<Percept> {
             proof.push(crate::anastome::dialogue::read_cites(body, &mut p)?);
         }
     }
-    Some((voice, a, b, crate::arc::Frame::new(d[0], d[1], d[2], d[3]), proof))
+    Some(Percept { voice, a, b, frame: crate::arc::Frame::new(d[0], d[1], d[2], d[3]), proof })
 }
 
 /// The frame measured from two cell scenes (their 0-cell extents) — the

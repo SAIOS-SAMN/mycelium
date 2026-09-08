@@ -50,7 +50,11 @@ let (out, voice) = if kind == dialogue::ACT_DEMAND {
     (mycelium::synthesis::attest(kernel, &chain, dvoice, &cites, k_voice), dvoice)
 } else {
     // The client PERCEIVED and REDUCED; the JUDGE replays the proof.
-    let Some((pvoice, a_bodies, b_bodies, frame, proof)) = decode_percept(pbytes) else { return };
+    let Some(mycelium::cognition::Percept { voice: pvoice, a: a_bodies, b: b_bodies, frame, proof }) =
+        decode_percept(pbytes)
+    else {
+        return;
+    };
     (
         mycelium::synthesis::adjudicate(kernel, &a_bodies, &b_bodies, pvoice, &frame, &proof),
         pvoice,
@@ -117,7 +121,8 @@ if kind == dialogue::ACT_PERCEPT
     && pbytes.len() > 32
     && matches!(out, Outcome::GermPending | Outcome::Fragmented(_))
 {
-    let Some((_, a_bodies, b_bodies, extent, _)) = decode_percept(pbytes) else {
+    let Some(mycelium::cognition::Percept { a: a_bodies, b: b_bodies, frame: extent, .. }) = decode_percept(pbytes)
+    else {
         return;
     };
     let fa: Vec<(i64, i64, u8)> = a_bodies.into_iter().flatten().collect();

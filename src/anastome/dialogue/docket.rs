@@ -392,7 +392,7 @@ pub fn decode_verdict(body: &[u8]) -> Option<Verdict> {
         }
         _ => (None, None),
     };
-    Some((voice, addr, ruling, receipt, pi, attach))
+    Some(Verdict { voice, addr, ruling, receipt, pi, attach })
 }
 
 pub fn encode_teach(element_bytes: &[u8]) -> Vec<u8> {

@@ -421,7 +421,11 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         return true;
     }
     if kind == dialogue::ACT_VERDICT {
-        let Some((cvoice, addr, ruling, receipt, pi, attach)) = dialogue::decode_verdict(&frame.body) else { return true };
+        let Some(dialogue::Verdict { voice: cvoice, addr, ruling, receipt, pi, attach }) =
+            dialogue::decode_verdict(&frame.body)
+        else {
+            return true;
+        };
         let applied = {
             let mut k = door.kernel.lock().unwrap();
             k.set_court_head(receipt);
