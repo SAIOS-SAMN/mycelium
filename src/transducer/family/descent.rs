@@ -1,9 +1,10 @@
-// 12.6, 26 — DESCENT: what a rule measures when it speaks a whole family,
-// and the pressure a bundle is under.
+// 12.6, 26 — THE MEASURE OVER A BUNDLE: what a rule measures when it speaks
+// a whole family, and the pressure a bundle is under.
 //
-//! Descent CERTIFIES: it says whether the lanes fell, never which candidate
-//! to take. A miss is zero, because association with a listing is not a
-//! mint.
+//! Closure certifies (S9.5): a pair pays when the form closes it, and what
+//! a form measures is priced by the economy per lane — never a direction
+//! and never a choice among candidates (12.6). A miss is zero, because
+//! association with a listing is not a mint.
 
 use super::*;
 

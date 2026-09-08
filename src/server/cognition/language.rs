@@ -9,17 +9,19 @@ use super::*;
 /// The verdict of ingesting one demand.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Outcome {
-    /// The demand's substance DECOMPOSED into a canonical sentence of installed
-    /// generators — the confluent normal form, reached by peeling under ≺_DM (no
-    /// lookup, no search). The algebra spans it, nothing minted. An empty word is a
-    /// pure transposition (no substance). This one outcome subsumes the old recall
-    /// (length 1) and composition (length k): one reduction, not two search kinds.
+    /// The demand's substance DECOMPOSED into a sentence of installed
+    /// generators: its normal form on one stratum, reached by reduction
+    /// against the generators the language holds (A12, 1.8), unique because
+    /// replay closes it and never because an order on tapes says so. The
+    /// algebra spans it, nothing minted. An empty word is a pure
+    /// transposition (no substance). One reduction, not two search kinds.
     Decomposed(Vec<usize>),
     /// A novel generator docketed on one vantage, awaiting a witness organ's
     /// independent re-derivation of the same address (47.3).
     GermPending,
-    /// An irreducible residual that CONVERGED and adjoined as a new generator
-    /// (Knuth–Bendix completion — the alphabet grows).
+    /// An irreducible residual that CONVERGED and was adjoined as a generator
+    /// of the presentation (1.8): the base of the language grows, the group
+    /// and the alphabet do not. Chapter 44 refuses a completion procedure.
     Installed(usize),
     /// A family member punctured as a section of held word `ti`. Not an install,
     /// and it does not mint.

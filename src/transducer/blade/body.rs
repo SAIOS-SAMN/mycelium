@@ -8,7 +8,7 @@
 use super::*;
 
 /// A polytonic volumetric body. The four strata are ORTHOGONAL lanes (never
-/// summed — the Dershowitz–Manna law); only the SPATIAL lane is a Cl(3,1)
+/// summed, law 5); only the SPATIAL lane is a Cl(3,1)
 /// multivector (versor-acted). Gauge/time/topology pass through rigid motion
 /// unchanged — that orthogonality IS the polytonic separation.
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -122,9 +122,9 @@ impl Kernel {
         })
     }
 
-    /// The SELECTION-FIBER critical pairs awaiting Knuth–Bendix anchor
-    /// refinement — (word address, Q_anchor, scene). Draining is the court's
-    /// move (7c); the queue is bounded and in-memory.
+    /// The SELECTION-FIBER critical pairs awaiting the court's anchor
+    /// refinement (7c) — (word address, Q_anchor, scene). Draining is the
+    /// court's move; the queue is bounded and in-memory.
     pub fn anchor_mismatch_dockets(&self) -> &[crate::transducer::anchor::AddressedEvidence] {
         &self.anchor_mismatches
     }

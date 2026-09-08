@@ -387,10 +387,12 @@ pub fn home(
         match best {
             None => *best = Some((id, addr, room)),
             Some((bid, _, broom)) => {
-                // Dershowitz-Manna on the occupied lanes, READ rather than
-                // asked: the candidate takes the place when it falls short
-                // on no lane and has more room on one. The shortfall is the
-                // reading, and this is where it is spent.
+                // The room reading on the occupied lanes (16.11 step 5,
+                // `room_reading`), read rather than asked: the candidate
+                // takes the place when it falls short on no lane and has
+                // more room on one. The shortfall is the reading, and this
+                // is where it is spent; no lane is summed and no scalar
+                // orders the two (law 5).
                 let short = |r: &[(u8, i64)]| r.iter().any(|(_, d)| *d < 0);
                 let spare = |r: &[(u8, i64)]| r.iter().any(|(_, d)| *d > 0);
                 let mine = room_reading(&room, broom, &lanes);

@@ -529,12 +529,13 @@ impl Kernel {
         }
     }
 
-    /// Peel the MAXIMAL ≺_DM-descending generator from substance `s`: try each
-    /// invertible (group) generator γ, form `γ⁻¹ ∘ s`, and keep the one whose
-    /// reduction magnitude descends most (tie-broken by basis order — deterministic,
-    /// so the reduction is confluent). `None` when no generator lowers `s`.
-    /// The kernel's chain reduction — delegates to the shared projective
-    /// decomposition ([`decompose_over`]) at the metabolic projection budget.
+    /// The kernel's chain reduction: the shared decomposition over the
+    /// language snapshot (`normal_form`, A12, M6 step 4), which factors the
+    /// chain through the held words and leaves the remainder as the demand.
+    /// The header that stood here described a greedy over "the generator
+    /// whose magnitude descends most, tie-broken by basis order" — a choice
+    /// by a scalar (rule 4) that this function does not make and the
+    /// doctrine refuses; whether `normal_form` still makes one is row I29.
     pub(crate) fn reduce_chain(&self, first: Vec<(i64, i64, u8, u8)>, exclude: Option<usize>) -> NormalForm {
         normal_form(&self.language, &first, exclude)
     }

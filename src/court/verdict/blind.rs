@@ -31,7 +31,8 @@ pub fn blind_replay_on(
 /// its chain (from_residual is deterministic, the chain canonically
 /// framed); a CONNECTION re-derives by inversion of its group component,
 /// with its remainder chain re-deriving as any germ's; every torsion cycle
-/// is walked; and the install must strictly descend (0⃗ ≺_DM μ⃗).
+/// is walked; and an install measures something on some lane
+/// (`settle_install`). Closure is the certificate, never a descent (12.6).
 pub fn blind_replay_with(spoken: &Element, resolve: &dyn Fn(&[u8]) -> Option<Form>) -> Option<&'static str> {
     blind_replay_on_inner(spoken, resolve, None, &crate::transducer::family::NoCrystal)
 }

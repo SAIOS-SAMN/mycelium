@@ -7,10 +7,11 @@
 use super::*;
 
 impl Treasury {
-    /// The POW++ GATE on a germ install: it admits iff the germ reduces the demand
-    /// (`0⃗ ≺_DM magnitude`). NB: installing pays NOTHING here — a germ that only
-    /// closes its own birth demand has proven nothing about the corpus. Reward
-    /// flows later, on USE (`settle_use`), proportional to real demand unlocked.
+    /// A germ install admits iff the germ measures something on some lane;
+    /// nothing is ordered and nothing descends (12.6, law 5). Installing pays
+    /// NOTHING here — a germ that only closes its own birth demand has proven
+    /// nothing about the corpus. Reward flows later, on USE (`settle_use`),
+    /// proportional to real demand unlocked.
     pub fn settle_install(&mut self, g: &Element, _voice: [u8; 32]) -> bool {
         // The germ MEASURES something on some lane. This was written as a
         // descent from the zero vector, which is a nonzero test wearing a

@@ -30,11 +30,11 @@ pub const ACT_TASK: u8 = 0x0B;
 /// solve takes the bounty, replays collapse to the verification floor.
 pub const ACT_SOLVE: u8 = 0x0C;
 /// REFINEMENT BID (compression IS learning): a client claims basis word W
-/// is derivable — the rest of the vocabulary already speaks it (S' ≺_DM S,
-/// holonomy preserved because the replacement IS a decomposition of W's own
-/// substance). The hypha verifies by deterministic replay; on success the
-/// word retires, the vocabulary compresses, and the bidder earns the
-/// compression yield. `[ACT_REFINE][voice 32][word address]`.
+/// is derivable — the rest of the vocabulary already speaks it, a retirement
+/// by derivation (3.8, 27; holonomy preserved because the replacement IS a
+/// decomposition of W's own substance). The hypha verifies by deterministic
+/// replay; on success the word retires, the vocabulary compresses, and the
+/// bidder earns the compression yield. `[ACT_REFINE][voice 32][word address]`.
 /// Receipt: solve-receipt shape — `[REFINE_ACCEPTED|REFINE_NOTHING][μ⃗ 32]`.
 pub const ACT_REFINE: u8 = 0x09;
 pub const REFINE_ACCEPTED: u8 = 1;

@@ -10,8 +10,9 @@ use super::*;
 /// A germ's polytonic magnitude — per-lane support size (‖Δ‖'s |supp| component),
 /// never summed, computed EXACTLY from the germ's description. 𝒮 = motion support
 /// (shift/rotation/scale), 𝒢 = relabeled-hue count, 𝒯 = temporal extent,
-/// 𝒽 = holonomic volume. A settled demand's residual magnitude is the zero vector; a real
-/// germ's is nonzero — hence the descent.
+/// 𝒽 = holonomic volume. A settled demand's residual magnitude is the zero
+/// vector and a real germ's is nonzero; the reading between two
+/// measurements is `lane_moves`, per lane, never a descent (12.6).
 pub fn magnitude(g: &Element) -> [u64; 4] {
     g.magnitude()
 }
