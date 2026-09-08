@@ -300,7 +300,7 @@ pub fn normal_form(language: &Language, chain: &[(i64, i64, u8, u8)], exclude: O
     );
     match (sentence.residual.as_slice(), sentence.punctures.as_slice()) {
         ([], []) => NormalForm::Decomposed(sentence.cites.iter().map(|(i, _, _)| *i).collect()),
-        _ => NormalForm::Irreducible(element::from_residual(&sentence.open_at(&|i| language.get(i), chain))),
+        _ => NormalForm::Irreducible(Box::new(element::from_residual(&sentence.open_at(&|i| language.get(i), chain)))),
     }
 }
 
@@ -334,7 +334,7 @@ pub fn reduce_germ(
                 return (NormalForm::Decomposed(cited), Vec::new());
             }
         }
-        return (NormalForm::Irreducible(g.clone()), Vec::new());
+        return (NormalForm::Irreducible(Box::new(g.clone())), Vec::new());
     }
     let sub = g.substance();
     if sub.sub().is_empty() {
@@ -436,9 +436,9 @@ pub fn reduce_proven(
         ([], false) => {
             let named: Vec<Address> = resolved.iter().map(|(i, _, _)| language.words[*i].address()).collect();
             let missing = cites.iter().find(|(a, _, _, _, _)| !named.contains(a)).map(|(_, _, _, _, body)| body.clone()).unwrap_or_default();
-            NormalForm::Irreducible(element::from_residual_framed(&missing, frame))
+            NormalForm::Irreducible(Box::new(element::from_residual_framed(&missing, frame)))
         }
-        ([_, ..], _) => NormalForm::Irreducible(element::from_residual_framed(&residual, frame)),
+        ([_, ..], _) => NormalForm::Irreducible(Box::new(element::from_residual_framed(&residual, frame))),
     };
     Reduction {
         germ,

@@ -233,7 +233,7 @@ impl Kernel {
                     if !self.fits_book(&voice, &draw) {
                         self.log_room_refused(&voice, &draw);
                     } else {
-                        self.book_list(residual.clone(), k_now, voice);
+                        self.book_list((*residual).clone(), k_now, voice);
                     }
                     let _ = self.treasury.settle_install(&residual, voice); // POW++ gate only
                     let mu = crate::economy::price(&residual.magnitude(), &self.physics.pressure);
@@ -245,7 +245,7 @@ impl Kernel {
                     self.record_deflation(addr.clone(), listing, residual.magnitude());
                     let k_now = self.k_step();
                     self.provisional_k.insert(&addr, k_now);
-                    self.provisional.insert(&addr, residual.clone());
+                    self.provisional.insert(&addr, (*residual).clone());
                     self.provisional_h.insert(&addr, self.height());
                     self.stamp_standing(&addr);
                     self.physics.relieve(&mag);
@@ -390,7 +390,7 @@ impl Kernel {
                             self.log_room_refused(&voice, &draw);
                         } else {
                             self.convergence.used_by(addr.as_bytes(), voice);
-                            self.book_list(residual.clone(), k_now, voice);
+                            self.book_list((*residual).clone(), k_now, voice);
                             self.docket_connection(&residual, voice);
                             self.offered.insert(&addr, ());
                         }
@@ -440,7 +440,7 @@ impl Kernel {
             }
         }
         let Some(gf) = s.letters().and_then(|l| l.spelling.word.form()) else {
-            return NormalForm::Irreducible(s);
+            return NormalForm::Irreducible(Box::new(s));
         };
         let mut slots = Vec::new();
         let mut forms = Vec::new();
@@ -459,7 +459,7 @@ impl Kernel {
             forms.push(f);
         }
         if forms.is_empty() {
-            return NormalForm::Irreducible(s);
+            return NormalForm::Irreducible(Box::new(s));
         }
         match crate::transducer::factor::factor_on_plane(&gf, &forms) {
             // `Decomposed` is the CITATION SET -- which held words the
@@ -483,7 +483,7 @@ impl Kernel {
             // A remainder is a demand and an unmeasured factorisation is
             // neither: both leave the substance irreducible here, and the
             // remainder travels as the residual it already is.
-            _ => NormalForm::Irreducible(s),
+            _ => NormalForm::Irreducible(Box::new(s)),
         }
     }
 

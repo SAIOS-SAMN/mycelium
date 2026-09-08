@@ -49,7 +49,7 @@ pub enum Glue {
 #[derive(Debug, Clone)]
 pub enum NormalForm {
     Decomposed(Vec<usize>),
-    Irreducible(Element),
+    Irreducible(Box<Element>),
 }
 
 impl PartialEq for NormalForm {
