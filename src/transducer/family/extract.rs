@@ -189,9 +189,7 @@ pub fn extract_rule_with(
     if family.is_empty() {
         return None;
     }
-    let Some(scale) = family_ratio(family) else {
-        return None;
-    };
+    let scale = family_ratio(family)?;
     let pair_forms: Vec<Form> = family
         .iter()
         .map(|(a, b)| pair_form(a, b, Some(scale)))

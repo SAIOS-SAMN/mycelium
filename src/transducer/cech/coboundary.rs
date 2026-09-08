@@ -51,9 +51,7 @@ pub fn solve_gauge(n: usize, edges: &[(usize, usize, Rotor)]) -> Option<Vec<Roto
                     progressed = true;
                 }
                 (false, true) => {
-                    let Some(inv) = g.inverse() else {
-                        return None;
-                    };
+                    let inv = g.inverse()?;
                     gamma[*i] = inv.geo(&gamma[*j]);
                     placed[*i] = true;
                     progressed = true;
@@ -63,9 +61,7 @@ pub fn solve_gauge(n: usize, edges: &[(usize, usize, Rotor)]) -> Option<Vec<Roto
         }
     }
     for (i, j, g) in &chords {
-        let Some(inv) = gamma[*i].inverse() else {
-            return None;
-        };
+        let inv = gamma[*i].inverse()?;
         let expect = gamma[*j].geo(&inv);
         if expect != *g {
             return None;

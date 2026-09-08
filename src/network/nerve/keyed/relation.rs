@@ -123,7 +123,7 @@ impl<V> Keyed<V> {
                 }
                 Node::Branch { bit, children, end } => {
                     if Node::<V>::bits(key) == *bit {
-                        let Some((k, _)) = end.as_deref() else { return None };
+                        let (k, _) = end.as_deref()?;
                         if k.as_slice() != key {
                             return None;
                         }

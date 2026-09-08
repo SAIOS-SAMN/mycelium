@@ -220,9 +220,7 @@ impl Kernel {
             }
         }
         self.torse_at(&own);
-        let Some(held) = self.basis.get(&own) else {
-            return None;
-        };
+        let held = self.basis.get(&own)?;
         if held.sections().is_empty() && !crate::transducer::sentence::carries_torsion(held) {
             return Some(own);
         }

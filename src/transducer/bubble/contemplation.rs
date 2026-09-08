@@ -410,9 +410,7 @@ impl Contemplation {
             }
             forms.push(b.form.as_ref()?);
         }
-        let Some(&f) = forms.first() else {
-            return None;
-        };
+        let &f = forms.first()?;
         if !f.is_cauterized() {
             return None;
         }

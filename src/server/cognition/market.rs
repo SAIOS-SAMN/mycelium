@@ -154,9 +154,7 @@ impl Kernel {
         bidder: [u8; 32],
         cites: &[crate::anastome::dialogue::CiteWire],
     ) -> Option<[u64; 4]> {
-        let Some(candidate) = self.basis.get(addr).map(|w| (**w).clone()) else {
-            return None;
-        };
+        let candidate = self.basis.get(addr).map(|w| (**w).clone())?;
         if self.provisional.contains(addr) {
             return None;
         }
@@ -170,9 +168,7 @@ impl Kernel {
         // Each cite resolves or the bid withholds that cite.
         let mut resolved: Vec<Cite> = Vec::new();
         for (a, _st, g, asg, _) in cites {
-            let Some(j) = self.live_slot(a).filter(|_| a.as_bytes() != addr) else {
-                return None;
-            };
+            let j = self.live_slot(a).filter(|_| a.as_bytes() != addr)?;
             resolved.push((j, g.clone(), *asg as usize));
         }
         if resolved.is_empty() {
