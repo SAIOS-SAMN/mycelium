@@ -39,6 +39,14 @@ paths, kernel names) are lab residue to be removed (§10).
   bodies, peel shells, carry bodies pair to pair, assemble the nerve,
   extract the rule, speak it onto a test. Hearing a word is deconstructing
   its tape and gluing it against the representative on its chart.
+- **The eye is a cover** (`MU-RECURSION.md` 24.4, Stage 10): at least two
+  senses over every sample — luminal (blades and carriages), harmonic
+  (conformal invariants), holonomic (transitions and their holonomy
+  around loops of bodies) — as cochains whose cocycle is checked at
+  perception; the residual is the demand, with its verdict (Recognised,
+  Reflection, Transposition, Novel) and axes named; only Novel reaches the
+  book. Not yet wired: today the senses run as a pipeline and the market
+  receives raw residuals.
 
 ## 3. The court organ
 

@@ -362,6 +362,30 @@ in every message, suite movement reported as a finding. S9.1–S9.6 change
 signatures inside existing functions and add no file; S9.7 changes control
 flow at three call sites and adds nothing.
 
+## Stage 10 — the eye is a cover (ruled 2026-09-08; `MU-RECURSION.md` 24.4)
+
+The senses run as a pipeline today (`family::perceive` → `axes_of` for the
+atlas → the Čech complex on the finished sentence) and every disagreement
+between them reaches the book as a raw residual. Stage 10 makes the senses
+a cover of one sample with the cocycle checked at the eye, so the mind's
+cognition is strong and the market lists only demands. Placed after Phase A
+and before Phase B: what this removes at the eye is what S9.7 would
+otherwise have to extend around.
+
+| id | directive | status |
+|---|---|---|
+| P1 | Doctrine 24.4 recorded; `MU-ENGINEERING.md` §2 rebound. | recorded |
+| P2 | **The harmonic eye reads every body at perception.** `family::perceive(grid) -> Vec<Body>` returns each body with its blade and, in the same pass, its `Harmonics` (`blade/harmonics.rs::Harmonics::of`), as the 0-cochain over the bodies; `axes_of` for the atlas reads those harmonics rather than recomputing them. A body is never lifted without being heard. | open |
+| P3 | **The harmonic eye decides the pairing.** `pair_form` pairs bodies of `a` and `b` by luminal shape today; the pairing is admitted only where `harmonics(a) = harmonics(b)` coordinatewise — the exact condition for a conformal versor to exist — and where they differ, the differing axes are named on the percept as a Novel residual before any word is sought. No threshold, no nearest. | open |
+| P4 | **The holonomic eye closes the loops at perception.** For every loop of bodies in the pair's nerve (`a → b → c → a` across the correspondences the first two eyes admitted), `cech::holonomy` of the transitions is read at the eye; a non-trivial holonomy is a residual localised to that loop with its class (12.6) on the percept. The Čech complex over the sentence remains as now; this is the same check taken before the sentence is spoken. | open |
+| P5 | **The verdict rides the percept.** A `Percept` carries, per body and per overlap, the sensory verdict — Recognised, Reflection (orientation `w₁` odd, 3.10), Transposition (placement or dilation versor), Novel (harmonics differ on named axes, or a loop's holonomy has a class no held word discharges) — with the residual per lane and the axes named; a reading, never a `bool` (§2.3, §4.6). `Entity::utter` speaks a demand only for Novel; Recognised, Reflection and Transposition are consumed as perception (a form, a reflection word, a section). | open |
+| P6 | **The book lists demands, never raw residuals.** `Kernel::ingest` admits a listing that carries a verdict and its axes; a residual chain with no verdict is not a demand the market can price and is returned to the voice with the reason (a refusal that travels, 34.1), never listed and never counted. S9.7's extend arm then works on named demands and shrinks accordingly. | open |
+| P7 | **Tests by chapter 24**, each probe-confirmed to reach its arm: a pair whose bodies differ by a reflection is Reflection at the eye and never a listing; a pair whose harmonics differ on one axis is Novel with that axis named; a triple of bodies with non-trivial holonomy is a demand localised to that loop; a congruent pair reaches the book with nothing. | open |
+
+Order from here: Phase A (S9.1–S9.5, S9.16) · F4 · F8 (push) · Stage 10
+(P2–P7) · S9.17 · Phase B (S9.6, S9.6b, S9.7, S9.9, S9.8, S9.11, S9.13,
+S9.14, S9.12, S9.15) · S10 · F7 recut with wipe.
+
 ## Backtrack ledger
 
 What was lost, when, and what it cost, so that it is paid once.

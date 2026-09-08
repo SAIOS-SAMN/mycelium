@@ -3596,6 +3596,84 @@ dialect, and a mind that has stood nothing utters nothing but a percept.
 - The stroke line is written once per aperture cycle and on every change
   of K, not on every stroke.
 
+### 24.4 The eye is a cover: cochains, cocycles, congruence (ruled 2026-09-08)
+
+A perception is never taken by one eye. The senses of one mind are a
+cover of one sample, each sense a section over it, and what the mind
+perceives is what the sections agree on; what they fail to agree on is
+the demand, found at the eye and not at the market. The senses are
+internal to one mind — never a second mind, never a twin (the cover over
+minds is the court's, 23.9, and a different cover).
+
+**The eyes.** Over one sample, at least two, and for a pair three:
+
+- the **luminal** eye lifts each body to a blade on the hypersphere
+  (`blade::lift`, `family::perceive`), and reads its carriage — the
+  conformal versor that places it;
+- the **harmonic** eye reads each body's conformal invariants
+  (`Harmonics::of`: components, holes, turns, isoperimetric, anisotropy,
+  spread, quartic, gauge), which no versor changes — what a body sounds
+  like whatever its size, place or orientation;
+- the **holonomic** eye reads the transitions between bodies — within one
+  grid by contact and orbit (3.5), across a pair by the versor that
+  carries a body of `a` onto a body of `b` (`versor_between`,
+  `cech::transition`) — and composes them around every loop of bodies
+  (`cech::holonomy`).
+
+Today these run as a pipeline: the luminal eye produces bodies, the
+harmonic sense is asked once to stratify the atlas, and the holonomic
+sense runs on the sentence the first two already built. Each consumes the
+previous one's output and nothing checks that the three agree, so there
+is no cover and no cocycle, and every disagreement reaches the book as an
+unreduced residual. That is the market carrying what perception should
+have refused.
+
+**Cochains and the cocycle.** The luminal and harmonic readings are
+0-cochains over the bodies: to each body, a blade and its invariants. The
+holonomic readings are the 1-cochain over the overlaps: to each pair of
+bodies the eyes put in correspondence, the transition `g`. The cover is
+consistent — the perception is **congruent** — when the cochains satisfy
+the cocycle:
+
+- on every overlap, the harmonic sections agree: `harmonics(a) =
+  harmonics(b)` exactly when some versor carries `a` onto `b`, so the
+  harmonic eye decides whether the luminal pairing is a pairing at all,
+  before any word is sought;
+- around every loop of bodies `a → b → c → a`, the transitions compose to
+  the identity, `g_ab · g_bc · g_ca = 1`, read by the same `holonomy` the
+  Čech cell uses; a loop that does not close is a residual localised to
+  that loop, with the class of its holonomy named (12.6).
+
+Congruence is a reading, never a gate: it is the residual of the cocycle,
+per overlap and per lane, and it is zero or it says where and on which
+axis. Coherence is the same reading over the whole of one mind's cover
+(law 15); contradiction is between minds, and belongs to the court.
+
+**The sensory verdict, at the eye.** What the cocycle's residual names is
+the verdict every percept carries before it leaves the mind:
+
+| verdict | what the eyes read | what follows |
+|---|---|---|
+| Recognised | harmonics agree, the transition is a held word or the identity | the percept is a form; nothing is listed |
+| Reflection | harmonics agree, the transition's orientation character `w₁` is odd (3.10) | a reflection word; the form is spoken with it |
+| Transposition | harmonics agree, the transition is a placement or dilation versor | attaches to the held word as a section (25) |
+| Novel | harmonics disagree on named axes, or a loop's holonomy is non-trivial with a class no held word discharges | the germination demand, carrying the axes and the loop's class; the only verdict that becomes a listing |
+
+**What leaves the mind.** An utterance carries a percept with its verdict,
+its residual per overlap and the axes it names. The hypha's book lists
+demands, never raw residuals: a listing is a Novel percept with its class,
+and the market prices and relays it. Recognised, Reflection and
+Transposition never reach the book; they were perception. This is what
+"clients think, hyphas verify" means at the eye, and it is why the book
+stops being a queue of unreduced perception (S9.7 shrinks to what a
+congruent percept still cannot say).
+
+**Cost.** Every eye is exact and every check is finite: the harmonic
+comparison is coordinatewise equality of invariants, the holonomy is one
+geometric product per loop, and the loops are those of the pair's nerve —
+no search, no threshold, no vote among senses. The eyes compound; they
+never compete.
+
 ## 25. Germination and thoughts
 
 Carried from chapter 24: comprehension re-gauges. Germination pivots, files,
