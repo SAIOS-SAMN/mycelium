@@ -180,6 +180,27 @@ impl<'a> WorkingAtlas<'a> {
     }
 }
 
+/// The working atlas read as one atlas (24.1): a thought expands over the
+/// genome's charts and the dialect's alike, each trie walked from the same
+/// cursor under one budget; members carry both strata.
+impl crate::transducer::stalk::AtlasRead for WorkingAtlas<'_> {
+    fn children(
+        &self,
+        inv: &crate::transducer::stalk::Invariant,
+        after: Option<&[u8]>,
+        budget: &mut crate::physics::Budget,
+        f: &mut dyn FnMut(crate::transducer::stalk::Invariant),
+    ) -> Option<Vec<u8>> {
+        let a = self.genome.each_child(inv, after, budget, &mut *f);
+        let b = self.dialect.each_child(inv, after, budget, &mut *f);
+        b.or(a)
+    }
+
+    fn members(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<Vec<u8>> {
+        self.fiber(inv).into_iter().map(|(a, _)| a).collect()
+    }
+}
+
 /// The crystallized language: words on disk. The epigenome is the rest.
 pub struct GenomeView<'a> {
     pub words: &'a [Element],

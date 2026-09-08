@@ -153,14 +153,18 @@ impl Bubble {
     /// per stroke, only over overlaps with nonzero volume. Extended grows
     /// the cover; Congruent grows it with a torsion axis; Class writes the
     /// horizon and stops that branch.
-    pub fn expand(&mut self, atlas: &Stalks, crystal: &dyn Crystal, budget: &mut Budget) -> usize {
-        self.expand_with(atlas, &Keyed::new(), 0, crystal, budget).0
+    pub fn expand(&mut self, atlas: &dyn AtlasRead, crystal: &dyn Crystal, budget: &mut Budget) -> usize {
+        self.expand_with(atlas, &|_| None, 0, crystal, budget).0
     }
 
+    /// `atlas` is the language this thought expands over (the working
+    /// atlas, 24.1); `rotor_at` is the keyed read of a held word's rotor by
+    /// address, so the Čech arm reads the word the chart names and never a
+    /// table built for the stroke.
     pub fn expand_with(
         &mut self,
-        atlas: &Stalks,
-        rotors: &Keyed<Rotor>,
+        atlas: &dyn AtlasRead,
+        rotor_at: &dyn Fn(&[u8]) -> Option<Rotor>,
         now: u64,
         crystal: &dyn Crystal,
         budget: &mut Budget,
@@ -180,19 +184,19 @@ impl Bubble {
         };
         let mut spent = 0usize;
         // index: budgeted sibling keys of one trie node (peel)
-        let last = atlas.each_child(&peel, after, budget, |child| {
+        let last = atlas.children(&peel, after, budget, &mut |child| {
             let ck = child.key();
             if self.cover.contains(&ck) {
                 return;
             }
             spent += 1;
             // index: keyed fiber at this sibling chart
-            let members = atlas.fiber(&child);
+            let members = atlas.members(&child);
             let Some(head) = members.first() else {
                 return;
             };
             let vol = self.potential;
-            let Some(gamma_b) = rotors.get(head.as_slice()).cloned() else {
+            let Some(gamma_b) = rotor_at(head.as_slice()) else {
                 return;
             };
             let cell = CechCell {

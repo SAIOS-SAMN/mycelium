@@ -1,22 +1,29 @@
-// 25.1 — THE DRIVE: what makes a held thought move.
+// 25.1, 25.2 — THE DRIVE: what makes a held thought move, and what a
+// closed one becomes.
 //
-//! `expand_all` spends a budget opening axes on the bubbles that have room;
-//! `pivot_on` runs the pivot loop of A16 over one idea and files what it
-//! obstructs. Neither searches: each walks what the complex already names.
+//! `expand_all` spends a budget opening axes on the bubbles that have room
+//! and runs the pivot loop of A16 over each; an idea whose form closes
+//! crystallizes (25.2) and is returned to the mind to stand and utter.
+//! `pivot_on` runs the pivot loop over the ideas a word meets and files
+//! what it obstructs. Neither searches: each walks what the complex already
+//! names.
 
 use super::*;
 
 impl Contemplation {
     /// Expand dirty bubbles from the atlas, one Budget of charts per call.
+    /// Returns the charts spent, the lane measure of the A16 snaps, and
+    /// the forms that crystallized this stroke (25.2), in bubble key order.
     pub fn expand_all(
         &mut self,
-        atlas: &Stalks,
-        rotors: &Keyed<Rotor>,
+        atlas: &dyn AtlasRead,
+        rotor_at: &dyn Fn(&[u8]) -> Option<Rotor>,
         crystal: &dyn Crystal,
         budget: &mut Budget,
-    ) -> (usize, [u64; 4]) {
+    ) -> (usize, [u64; 4], Vec<Element>) {
         let mut spent = 0usize;
         let mut pivoted = [0u64; 4];
+        let mut crystallized = Vec::new();
         let mut from = self.expand_cursor.clone();
         // index: budgeted keyed cursor over dirty bubbles; each expand spends the rest
         while budget.remaining() > 0 {
@@ -33,7 +40,7 @@ impl Contemplation {
             from = k.clone();
             self.expand_cursor = k.clone();
             if let Some(b) = self.bubbles.get_mut(&k) {
-                let (s, p) = b.expand_with(atlas, rotors, self.now_k, crystal, budget);
+                let (s, p) = b.expand_with(atlas, rotor_at, self.now_k, crystal, budget);
                 spent += s;
                 for i in 0..4 {
                     pivoted[i] = pivoted[i].saturating_add(p[i]);
@@ -44,8 +51,11 @@ impl Contemplation {
             } else {
                 self.dirty.remove(&k);
             }
+            if let Some(e) = self.crystallize(&k, crystal) {
+                crystallized.push(e);
+            }
         }
-        (spent, pivoted)
+        (spent, pivoted, crystallized)
     }
 
     /// Attempt fill on the link of bubbles at `word`'s chart and prefixes.

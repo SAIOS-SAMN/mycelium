@@ -149,8 +149,8 @@ fn hold_form_keeps_a_glued_open_loop() {
     }
     let mut budget = crate::physics::Physics::default().stroke_n(16);
     if let Some(b) = c2.bubbles.get_mut(&k) {
-        let atlas = Stalks::default();
-        let _ = b.expand_with(&atlas, &Keyed::new(), 0, &HoldQ(w.clone()), &mut budget);
+        let atlas = crate::transducer::stalk::Stalks::default();
+        let _ = b.expand_with(&atlas, &|_| None, 0, &HoldQ(w.clone()), &mut budget);
     }
     let b = c2.bubbles.get(&k).expect("still held");
     let form = b.form.as_ref().expect("form carrier");
@@ -217,6 +217,52 @@ fn hold_form_carries_bundle_and_remainder() {
     );
 }
 
+/// 25.2 — CAUTERIZE. An idea whose form is closed on its bundle
+/// crystallizes on the stroke: the drive returns the minted sentence, its
+/// magnitude is the descent the form measures over the bundle (26, the
+/// same word `mint_sentence` mints), the tape reads back closed, the court
+/// replays it against the bundle, and the idea leaves the contemplation.
+#[test]
+fn a_closed_idea_crystallizes_with_its_descent_and_leaves_the_contemplation() {
+    use crate::transducer::family::{extract_rule, mint_sentence, Grid, NoCrystal};
+    let grid = |rows: &[&str]| -> Grid {
+        rows.iter()
+            .map(|r| r.bytes().map(|b| b - b'0').collect())
+            .collect()
+    };
+    let train_in = grid(&["11011", "11011", "00000", "11000", "11000"]);
+    let train_out: Grid = train_in
+        .iter()
+        .map(|row| row.iter().map(|&h| if h == 1 { 2 } else { h }).collect())
+        .collect();
+    let family = vec![(train_in, train_out)];
+    let rule = extract_rule(&family).expect("the recolour family extracts");
+    let minted = mint_sentence(&rule, &family, &NoCrystal).expect("the family mints");
+    let mut c = Contemplation::new();
+    c.hold_form(&rule.form, &family, &[Vec::new()]);
+    assert_eq!(c.bubbles.len(), 1, "the closed form is held as an idea");
+    let atlas = crate::transducer::stalk::Stalks::default();
+    let mut budget = crate::physics::Physics::default().stroke_n(8);
+    let (_, _, crystallized) = c.expand_all(&atlas, &|_| None, &NoCrystal, &mut budget);
+    let [e] = crystallized.as_slice() else {
+        panic!("one idea crystallizes, got {}", crystallized.len());
+    };
+    assert!(e.is_sentence(), "the crystallized idea is a sentence tape");
+    assert_eq!(e.address(), minted.address(), "the crystallized idea is the minted word");
+    assert_eq!(e.magnitude(), minted.magnitude(), "its magnitude is the descent over the bundle");
+    assert!(
+        sentence::from_element_form(e).is_some_and(|f| f.is_closed()),
+        "the tape reads back closed"
+    );
+    assert_eq!(
+        crate::court::verdict::replay_form_with(e, &|_| None, Some(&family), &NoCrystal),
+        None,
+        "the court replays it closed on its bundle"
+    );
+    assert!(c.bubbles.is_empty(), "the idea left the contemplation");
+    assert_eq!(c.formed, 1, "one thought formed");
+}
+
 /// Hold, expand, and the quote-chart peel of one thought do not grow
 /// with N unrelated atlas words.
 #[test]
@@ -225,7 +271,7 @@ fn work_of_one_thought_is_independent_of_n() {
     use crate::transducer::element::from_residual;
     use crate::transducer::germinate::germinate;
     let run = |n: usize| -> (u64, u64, u64) {
-        let mut atlas = Stalks::default();
+        let mut atlas = crate::transducer::stalk::Stalks::default();
         for i in 2..n + 2 {
             let before: Vec<(i64, i64, u8)> = (0..i as i64).map(|c| (0, c, 1u8)).collect();
             let after: Vec<(i64, i64, u8)> = (0..i as i64).map(|c| (0, c, 2u8)).collect();
@@ -238,7 +284,7 @@ fn work_of_one_thought_is_independent_of_n() {
         let hold = work::total();
         work::reset();
         let mut budget = crate::physics::Physics::default().stroke_n(4);
-        let _ = c.expand_all(&atlas, &Keyed::new(), &crate::transducer::family::NoCrystal, &mut budget);
+        let _ = c.expand_all(&atlas, &|_| None, &crate::transducer::family::NoCrystal, &mut budget);
         let expand = work::total();
         work::reset();
         let mut charts = 0usize;
