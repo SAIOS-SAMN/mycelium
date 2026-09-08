@@ -60,7 +60,7 @@ let inner = {
     f.vertices.push(Vertex::Word {
         address: crate::transducer::a21::Address::from_bytes([crate::transducer::a21::TAG_FORM, 1]),
         word: w.clone(),
-        carriage: crate::transducer::element::carriage(&one, &(zero.clone(), zero)),
+        carriage: Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
         gauge: vec![(1, 2)],
         class: crate::transducer::stalk::Invariant::default(),
         contact: None,
@@ -105,7 +105,7 @@ let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
 let word_vertex = |addr: crate::transducer::a21::Address| Vertex::Word {
     address: addr,
     word: w.clone(),
-    carriage: crate::transducer::element::carriage(&one.clone(), &(zero.clone(), zero.clone())),
+    carriage: Box::new(crate::transducer::element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
     gauge: vec![(1, 2)],
     class: crate::transducer::stalk::Invariant::default(),
     contact: None,
@@ -217,7 +217,7 @@ let other = {
     f.vertices.push(Vertex::Word {
         address: crate::transducer::a21::Address::from_bytes([crate::transducer::a21::TAG_FORM, 9]),
         word: inf,
-        carriage: crate::transducer::element::carriage(&one, &(zero.clone(), zero)),
+        carriage: Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
         gauge: Vec::new(),
         class: crate::transducer::stalk::Invariant::default(),
         contact: None,
@@ -260,7 +260,7 @@ let mut f = Form::default();
 f.vertices.push(Vertex::Word {
     address: crate::transducer::a21::Address::from_bytes([crate::transducer::a21::TAG_FORM, 1]),
     word: w,
-    carriage: crate::transducer::element::carriage(&one, &(zero.clone(), zero)),
+    carriage: Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
     gauge: vec![(1, 2)],
     class: crate::transducer::stalk::Invariant::default(),
     contact: None,
@@ -291,7 +291,7 @@ let inner = {
     f.vertices.push(Vertex::Word {
         address: crate::transducer::a21::Address::from_bytes([crate::transducer::a21::TAG_FORM, 1]),
         word: w,
-        carriage: crate::transducer::element::carriage(&one, &(zero.clone(), zero)),
+        carriage: Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
         gauge: vec![(1, 2)],
         class: crate::transducer::stalk::Invariant::default(),
         contact: None,

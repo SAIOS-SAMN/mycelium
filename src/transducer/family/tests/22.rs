@@ -11,7 +11,7 @@ let one = q(1);
 let moving = Vertex::Word {
     address: crate::transducer::a21::Address::from(vec![1]),
     word: crate::transducer::alphabet::Word::identity(),
-    carriage: element::carriage(&one.clone(), &(zero.clone(), one.clone())),
+    carriage: Box::new(element::carriage(&one.clone(), &(zero.clone(), one.clone()))),
     gauge: Vec::new(),
     class: Invariant::default(),
     contact: None,
@@ -19,7 +19,7 @@ let moving = Vertex::Word {
 let still = Vertex::Word {
     address: crate::transducer::a21::Address::from(vec![2]),
     word: crate::transducer::alphabet::Word::identity(),
-    carriage: element::carriage(&one, &(zero.clone(), zero)),
+    carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
     gauge: Vec::new(),
     class: Invariant::default(),
     contact: None,
@@ -39,7 +39,7 @@ assert_eq!(
 let with_c = Vertex::Word {
     address: crate::transducer::a21::Address::from(vec![3]),
     word: crate::transducer::alphabet::Word::identity(),
-    carriage: element::carriage(&q(1), &(q(0), q(1))),
+    carriage: Box::new(element::carriage(&q(1), &(q(0), q(1)))),
     gauge: Vec::new(),
     class: Invariant::default(),
     contact: Some(crate::transducer::alphabet::Contact { anchor: 0, ring: 0 }),

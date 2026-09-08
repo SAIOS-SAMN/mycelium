@@ -13,7 +13,7 @@ let mut f = Form::default();
 f.vertices.push(Vertex::Word {
     address: crate::transducer::a21::Address::from_bytes([crate::transducer::a21::TAG_FORM, 1]),
     word: w,
-    carriage: crate::transducer::element::carriage(&one, &(zero.clone(), zero)),
+    carriage: Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
     gauge: vec![(1, 2)],
     class: crate::transducer::stalk::Invariant::default(),
     contact,
@@ -33,7 +33,7 @@ for (i, g) in gauges.iter().enumerate() {
     f.vertices.push(Vertex::Word {
         address: crate::transducer::a21::Address::from_bytes([crate::transducer::a21::TAG_FORM, i as u8 + 1]),
         word: Word::identity(),
-        carriage: crate::transducer::element::carriage(&one.clone(), &(zero.clone(), zero.clone())),
+        carriage: Box::new(crate::transducer::element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
         gauge: g.to_vec(),
         class: crate::transducer::stalk::Invariant::default(),
         contact: None,

@@ -98,7 +98,7 @@ impl Form {
         for v in &mut self.vertices {
             match v {
                 Vertex::Word { carriage, .. } | Vertex::Rebased { carriage, .. } => {
-                    *carriage = c.geo(carriage);
+                    **carriage = c.geo(carriage);
                 }
                 _ => {}
             }
@@ -197,10 +197,10 @@ pub(crate) fn relative_gauge(from: &[(u8, u8)], to: &[(u8, u8)]) -> Vec<(u8, u8)
 
 pub(crate) fn vertex_carriage(v: &Vertex, form: &Form) -> Option<Versor> {
     match v {
-        Vertex::Word { carriage, .. } => Some(carriage.clone()),
+        Vertex::Word { carriage, .. } => Some((**carriage).clone()),
         Vertex::Rebased { by, carriage, .. } => match form.vertices.get(*by as usize) {
             Some(Vertex::Word { carriage: c, .. }) => Some(carriage.geo(c)),
-            Some(Vertex::Frame) => Some(carriage.clone()),
+            Some(Vertex::Frame) => Some((**carriage).clone()),
             _ => None,
         },
         Vertex::Frame | Vertex::Glued { .. } | Vertex::Unfolded { .. } => {

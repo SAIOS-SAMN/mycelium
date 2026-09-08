@@ -83,7 +83,7 @@ fn rebase_conjugates_by_a_versor_never_subtracts() {
     let mut f = Form::default();
     f.vertices.push(word_vertex(1, order4()));
     if let Vertex::Word { carriage, .. } = &mut f.vertices[1] {
-        *carriage = element::carriage(&q1(), &(q1(), q0()));
+        **carriage = element::carriage(&q1(), &(q1(), q0()));
     }
     f.faces.push(FormFace {
         i: 0,

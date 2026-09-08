@@ -51,7 +51,7 @@ fn closed_turn_form() -> Form {
     f.vertices.push(Vertex::Word {
         address: crate::transducer::a21::Address::from_bytes([crate::transducer::a21::TAG_FORM, 1]),
         word: w,
-        carriage: element::carriage(&one, &(zero.clone(), zero)),
+        carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
         gauge: vec![(1, 2)],
         class: stalk::Invariant(vec![7]),
         contact: None,
@@ -157,7 +157,7 @@ fn rank_lost_refused() {
     f.vertices.push(Vertex::Word {
         address: crate::transducer::a21::Address::from_bytes([crate::transducer::a21::TAG_FORM, 1]),
         word: Word::identity(),
-        carriage: element::carriage(&one.clone(), &(zero.clone(), zero.clone())),
+        carriage: Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
         gauge: vec![(1, 2)],
         class: stalk::Invariant::default(),
         contact: None,
@@ -165,7 +165,7 @@ fn rank_lost_refused() {
     f.vertices.push(Vertex::Word {
         address: crate::transducer::a21::Address::from_bytes([crate::transducer::a21::TAG_FORM, 2]),
         word: Word::identity(),
-        carriage: element::carriage(&one, &(zero.clone(), zero)),
+        carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
         gauge: vec![(1, 2)],
         class: stalk::Invariant::default(),
         contact: None,
@@ -236,7 +236,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     re.vertices.push(Vertex::Word {
         address: crate::transducer::a21::Address::from_bytes([crate::transducer::a21::TAG_FORM, 2]),
         word: Word::identity(),
-        carriage: element::carriage(&one.clone(), &(zero.clone(), zero.clone())),
+        carriage: Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
         gauge: Vec::new(),
         class: stalk::Invariant::default(),
         contact: None,
@@ -244,7 +244,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     re.vertices.push(Vertex::Rebased {
         by: 1,
         of: 2,
-        carriage: element::carriage(&one.clone(), &(zero.clone(), zero.clone())),
+        carriage: Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
         gauge: Vec::new(),
         class: stalk::Invariant::default(),
     });
@@ -272,7 +272,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     orb.vertices.push(Vertex::Word {
         address: crate::transducer::a21::Address::from_bytes([crate::transducer::a21::TAG_FORM, 3]),
         word: Word::identity(),
-        carriage: element::carriage(&one, &(zero.clone(), zero)),
+        carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
         gauge: Vec::new(),
         class: stalk::Invariant::default(),
         contact: Some(crate::transducer::alphabet::Contact { anchor: 0, ring: 1 }),

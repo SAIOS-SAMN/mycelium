@@ -24,7 +24,7 @@ pub fn closed_word_form(word: Word, contact: Option<alphabet::Contact>) -> Form 
     f.vertices.push(Vertex::Word {
         address: crate::transducer::a21::Address::new(Vec::new()),
         word: word.clone(),
-        carriage: element::carriage(&q1(), &(q0(), q1())),
+        carriage: Box::new(element::carriage(&q1(), &(q0(), q1()))),
         gauge: vec![(1, 2)],
         class: stalk::Invariant(vec![3, 5]),
         contact,
@@ -50,7 +50,7 @@ pub fn word_vertex(addr: u8, word: Word) -> Vertex {
     Vertex::Word {
         address: form_addr(addr),
         word,
-        carriage: element::carriage(&one, &(zero.clone(), zero)),
+        carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
         gauge: vec![(1, 2)],
         class: stalk::Invariant::default(),
         contact: None,

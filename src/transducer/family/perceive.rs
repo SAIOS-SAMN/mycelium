@@ -181,7 +181,7 @@ pub fn word_form(a: &Body, b: &Body) -> Option<Vertex> {
     Some(Vertex::Word {
         address: element::from_residual(&chain).address(),
         word: sp.word,
-        carriage,
+        carriage: Box::new(carriage),
         gauge,
         class: b.moduli.clone(),
         contact: None,
@@ -197,7 +197,7 @@ pub(crate) fn body_only_vertex(body: &Body, created: bool) -> Vertex {
     Vertex::Word {
         address: element::from_residual(&chain).address(),
         word: crate::transducer::alphabet::Word::identity(),
-        carriage: element::identity_versor(),
+        carriage: Box::new(element::identity_versor()),
         gauge: hue_map_of_chain(&chain),
         class: body.moduli.clone(),
         contact: None,

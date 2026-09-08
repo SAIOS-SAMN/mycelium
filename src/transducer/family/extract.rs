@@ -163,7 +163,7 @@ pub(crate) fn word_place_of_class(
     tc: &TransportClass,
 ) -> Option<(crate::transducer::alphabet::Word, Versor)> {
     match match_vertex(pf, tc) {
-        Some(Vertex::Word { word, carriage, .. }) => Some((word.clone(), carriage.clone())),
+        Some(Vertex::Word { word, carriage, .. }) => Some((word.clone(), (**carriage).clone())),
         _ => None,
     }
 }
@@ -414,7 +414,7 @@ pub fn extract_rule_with(
             if let Some(r) = rings {
                 if let Vertex::Word { contact, carriage, .. } = &mut form.vertices[vi] {
                     *contact = Some(crate::transducer::alphabet::Contact { anchor: 0, ring: r });
-                    *carriage = element::identity_versor();
+                    **carriage = element::identity_versor();
                 }
             }
         }

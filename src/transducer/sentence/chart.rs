@@ -227,7 +227,7 @@ impl Form {
         self.vertices[of as usize] = Vertex::Rebased {
             by,
             of,
-            carriage,
+            carriage: Box::new(carriage),
             gauge,
             class,
         };

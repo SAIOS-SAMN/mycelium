@@ -27,7 +27,7 @@ fn glue_retract_remaps_faces_and_placement_refuses() {
     host.vertices.push(Vertex::Word {
         address: form_addr(1),
         word: w.clone(),
-        carriage: element::carriage(&q1(), &(q0(), q0())),
+        carriage: Box::new(element::carriage(&q1(), &(q0(), q0()))),
         gauge: Vec::new(),
         class: stalk::Invariant::default(),
         contact: None,
@@ -35,7 +35,7 @@ fn glue_retract_remaps_faces_and_placement_refuses() {
     host.vertices.push(Vertex::Word {
         address: form_addr(2),
         word: w.clone(),
-        carriage: element::carriage(&q1(), &(q0(), q1())),
+        carriage: Box::new(element::carriage(&q1(), &(q0(), q1()))),
         gauge: Vec::new(),
         class: stalk::Invariant::default(),
         contact: None,
@@ -92,10 +92,10 @@ fn two_shifts_are_two_addresses() {
     let mut a = closed_word_form(w.clone(), None);
     let mut b = closed_word_form(w, None);
     if let Vertex::Word { carriage, .. } = &mut a.vertices[1] {
-        *carriage = element::carriage(&q1(), &(q0(), q1()));
+        **carriage = element::carriage(&q1(), &(q0(), q1()));
     }
     if let Vertex::Word { carriage, .. } = &mut b.vertices[1] {
-        *carriage = element::carriage(
+        **carriage = element::carriage(
             &q1(),
             &(
                 q0(),

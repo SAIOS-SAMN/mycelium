@@ -43,7 +43,10 @@ pub enum Vertex {
     Word {
         address: crate::transducer::a21::Address,
         word: Word,
-        carriage: Versor,
+        /// A4 carriage. Boxed: a versor is 1024 bytes and every vertex of a
+        /// form — Glued, Rebased, Frame — would carry that footprint
+        /// whether or not it holds one.
+        carriage: Box<Versor>,
         gauge: Vec<(u8, u8)>,
         class: stalk::Invariant,
         /// Stop ring. A form coordinate with the carriage and gauge; not M1.
@@ -64,7 +67,7 @@ pub enum Vertex {
         by: u16,
         of: u16,
         /// Relative carriage t = C_of · C_by⁻¹.
-        carriage: Versor,
+        carriage: Box<Versor>,
         /// `of`'s hue map, spoken on `of`'s bodies.
         gauge: Vec<(u8, u8)>,
         /// `of`'s chart: the section coordinate naming the bodies it speaks to.
@@ -191,7 +194,7 @@ impl Form {
                     if let Some(tk) = vertex_transport_key(word, gauge) {
                     match places.get(&tk) {
                         None => {
-                            places.insert(tk, carriage.clone());
+                            places.insert(tk, (**carriage).clone());
                         }
                         Some(held) if !element::same_versor(held, carriage) => {
                             place_conflict.insert(tk, ());

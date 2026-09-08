@@ -104,7 +104,7 @@ fn descent_certifies_never_selects() {
     spoken.vertices.push(Vertex::Word {
         address: form_addr(1),
         word: q.clone(),
-        carriage: element::carriage(&q1(), &(q1() + q1() + q1(), q1() + q1() + q1())),
+        carriage: Box::new(element::carriage(&q1(), &(q1() + q1() + q1(), q1() + q1() + q1()))),
         gauge: vec![(1, 1)],
         class: class.clone(),
         contact: None,
@@ -131,7 +131,7 @@ fn descent_certifies_never_selects() {
     {
         *c = class;
         *gauge = vec![(1, 1)];
-        *carriage = element::carriage(&q1(), &(q1() + q1() + q1(), q1() + q1() + q1()));
+        **carriage = element::carriage(&q1(), &(q1() + q1() + q1(), q1() + q1() + q1()));
     }
     let bundle = vec![(x, y)];
     let snaps = f.pivot_loop(

@@ -246,7 +246,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                 Vertex::Word {
                     address,
                     word,
-                    carriage,
+                    carriage: Box::new(carriage),
                     gauge,
                     class,
                     contact,
@@ -284,7 +284,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                 Vertex::Rebased {
                     by,
                     of,
-                    carriage,
+                    carriage: Box::new(carriage),
                     gauge,
                     class,
                 }

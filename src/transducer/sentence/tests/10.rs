@@ -114,7 +114,7 @@ fn coboundary_gauge_matches_by_address() {
     a.vertices.push(Vertex::Rebased {
         by: 0,
         of: 1,
-        carriage: element::carriage(&q1(), &(q0(), q1())),
+        carriage: Box::new(element::carriage(&q1(), &(q0(), q1()))),
         gauge: Vec::new(),
         class: stalk::Invariant::default(),
     });
@@ -141,7 +141,7 @@ fn coboundary_gauge_matches_by_address() {
     b.vertices.push(Vertex::Rebased {
         by: 0,
         of: 2,
-        carriage: element::carriage(&q1(), &(q0(), q1())),
+        carriage: Box::new(element::carriage(&q1(), &(q0(), q1()))),
         gauge: Vec::new(),
         class: stalk::Invariant::default(),
     });
@@ -158,7 +158,7 @@ fn solve_coboundary_is_a_spanning_forest() {
     f.vertices.push(Vertex::Word {
         address: form_addr(1),
         word: Word::identity(),
-        carriage: element::carriage(&q1(), &(q0(), q0())),
+        carriage: Box::new(element::carriage(&q1(), &(q0(), q0()))),
         gauge: Vec::new(),
         class: stalk::Invariant::default(),
         contact: None,
@@ -166,7 +166,7 @@ fn solve_coboundary_is_a_spanning_forest() {
     f.vertices.push(Vertex::Word {
         address: form_addr(2),
         word: Word::identity(),
-        carriage: element::carriage(&q1(), &(q0(), q0())),
+        carriage: Box::new(element::carriage(&q1(), &(q0(), q0()))),
         gauge: Vec::new(),
         class: stalk::Invariant::default(),
         contact: None,

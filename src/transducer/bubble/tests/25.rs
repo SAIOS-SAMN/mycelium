@@ -42,7 +42,7 @@ fn hold_form_keeps_a_glued_open_loop() {
         f.vertices.push(Vertex::Word {
             address: crate::transducer::a21::Address::from(vec![1]),
             word: w.clone(),
-            carriage: element::carriage(&one.clone(), &(zero.clone(), zero.clone())),
+            carriage: Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
             gauge: vec![(1, 2)],
             class: crate::transducer::stalk::Invariant::default(),
             contact: None,
@@ -78,7 +78,7 @@ fn hold_form_keeps_a_glued_open_loop() {
     open.vertices.push(Vertex::Word {
         address: crate::transducer::a21::Address::from(vec![2]),
         word: Word::identity(),
-        carriage: element::carriage(&one.clone(), &(zero.clone(), zero.clone())),
+        carriage: Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
         gauge: vec![(1, 2)],
         class: crate::transducer::stalk::Invariant::default(),
         contact: None,
@@ -86,7 +86,7 @@ fn hold_form_keeps_a_glued_open_loop() {
     open.vertices.push(Vertex::Word {
         address: crate::transducer::a21::Address::from(vec![3]),
         word: Word::identity(),
-        carriage: element::carriage(&one, &(zero.clone(), zero)),
+        carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
         gauge: vec![(1, 2)],
         class: crate::transducer::stalk::Invariant::default(),
         contact: None,
@@ -183,7 +183,7 @@ fn hold_form_carries_bundle_and_remainder() {
     f.vertices.push(Vertex::Word {
         address: crate::transducer::a21::Address::from(vec![9]),
         word: Word::identity(),
-        carriage: element::carriage(&one, &(zero.clone(), zero)),
+        carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
         gauge: vec![(1, 2)],
         class: crate::transducer::stalk::Invariant::default(),
         contact: None,

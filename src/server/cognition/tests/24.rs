@@ -206,7 +206,7 @@ fn a_depleted_lane_charges_a_sentence_by_its_loop_words() {
         f.vertices.push(Vertex::Word {
             address: Address::from_bytes([tag; 32]),
             word: Word::identity(),
-            carriage: element::carriage(&one, &(zero.clone(), zero.clone())),
+            carriage: Box::new(element::carriage(&one, &(zero.clone(), zero.clone()))),
             gauge: vec![(1, 2)],
             class: crate::transducer::stalk::Invariant::default(),
             contact: None,

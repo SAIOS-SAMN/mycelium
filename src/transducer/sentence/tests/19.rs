@@ -30,7 +30,7 @@ fn form_tape_v4_round_trips() {
     f.vertices.push(Vertex::Rebased {
         by: 0,
         of: 1,
-        carriage: element::carriage(&q1(), &(q0(), q1())),
+        carriage: Box::new(element::carriage(&q1(), &(q0(), q1()))),
         gauge: vec![(1, 2)],
         class: stalk::Invariant(vec![3, 5]),
     });

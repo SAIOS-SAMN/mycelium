@@ -81,7 +81,7 @@ let mut pf = Form::default();
 pf.vertices.push(Vertex::Word {
     address: crate::transducer::a21::Address::from(vec![1]),
     word: rot.clone(),
-    carriage: element::carriage(&q(1), &(q(3), q(3))),
+    carriage: Box::new(element::carriage(&q(1), &(q(3), q(3)))),
     gauge: vec![(1, 1)],
     class: a.moduli.clone(),
     contact: None,
@@ -89,7 +89,7 @@ pf.vertices.push(Vertex::Word {
 pf.vertices.push(Vertex::Word {
     address: crate::transducer::a21::Address::from(vec![2]),
     word: rot.clone(),
-    carriage: element::carriage(&q(1), &(q(3), q(3))),
+    carriage: Box::new(element::carriage(&q(1), &(q(3), q(3)))),
     gauge: vec![(3, 5)],
     class: b.moduli.clone(),
     contact: None,

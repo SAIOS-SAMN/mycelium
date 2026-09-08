@@ -21,7 +21,7 @@ f.vertices.push(Vertex::Word {
         crate::transducer::alphabet::LetterId::quarter((0, 2)).expect("off-plane"),
         false,
     )]),
-    carriage: element::identity_versor(),
+    carriage: Box::new(element::identity_versor()),
     gauge: Vec::new(),
     class,
     contact: None,
