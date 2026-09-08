@@ -209,8 +209,8 @@ impl Form {
                         break;
                     }
                     Discharge::Vortex(held_certs) => {
-                        for c in &held_certs {
-                            vortex_put(&mut self.vortex, c.clone());
+                        for h in &held_certs {
+                            vortex_put(&mut self.vortex, h.certificate.clone());
                         }
                         if prior.mu_before.is_some() {
                             eprintln!(

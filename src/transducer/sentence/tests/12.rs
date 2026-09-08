@@ -146,7 +146,7 @@ fn descent_certifies_never_selects() {
         panic!("a pivot that does not write vertices leaves μ⃗ unmoved, so two discharges are a vortex: {snaps:?}");
     };
     assert!(held.len() >= 2, "q and q⁻¹ both discharge: {held:?}");
-    let (mu0, mu1) = match (&held[0].mu, &held[1].mu) {
+    let (mu0, mu1) = match (&held[0].certificate.mu, &held[1].certificate.mu) {
         (
             Mu::Measured { before: b0, after: a0 },
             Mu::Measured { after: a1, .. },
@@ -155,9 +155,21 @@ fn descent_certifies_never_selects() {
             assert_eq!(a0[2], 3);
             (*a0, *a1)
         }
-        _ => panic!("a measured vortex carries μ⃗, got {:?}", held[0].mu),
+        _ => panic!("a measured vortex carries μ⃗, got {:?}", held[0].certificate.mu),
     };
     assert_eq!(mu0, mu1, "equal μ⃗, neither dominates");
+    // S9.16 — AND THE VORTEX HOLDS WHY. Equal μ⃗ means every cell IS the
+    // lane-wise minimum, so no cell stands above it on any lane: the
+    // superposition is a TIE. An incomparable cell would name the lanes
+    // that keep it from the minimum, and the two facts are different.
+    for h in held {
+        assert_eq!(
+            h.above_minimum,
+            Some(Vec::new()),
+            "a tied cell is at the minimum on every lane: {:?}",
+            h.above_minimum
+        );
+    }
 }
 
 #[test]

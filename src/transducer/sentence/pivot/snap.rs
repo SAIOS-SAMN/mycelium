@@ -15,10 +15,10 @@ pub enum Snap {
     Discharged { chord: usize, certificate: Box<PivotCertificate> },
     /// Several pivots discharge and none dominates on μ⃗: all are held as
     /// cells of the thought until a perception, a glue or a ruling collapses
-    /// the superposition (12.6).
-    Vortex { chord: usize, held: Vec<PivotCertificate> },
+    /// the superposition (12.6). Each carries the READING that put it here.
+    Vortex { chord: usize, held: Vec<Held> },
     /// Several discharges with no bundle to measure μ⃗.
-    Unmeasured { chord: usize, held: Vec<PivotCertificate> },
+    Unmeasured { chord: usize, held: Vec<Held> },
     TorsionFiled { chord: usize, ell: u32 },
     TorsionOpen { chord: usize },
     Demand { chord: usize, key: crate::transducer::a21::Address },
@@ -32,8 +32,8 @@ impl Snap {
             Snap::Discharged { certificate, .. } => mu_deflation(&certificate.mu),
             Snap::Vortex { held, .. } => {
                 let mut s = [0u64; 4];
-                for c in held {
-                    let m = mu_deflation(&c.mu);
+                for h in held {
+                    let m = mu_deflation(&h.certificate.mu);
                     for i in 0..4 {
                         s[i] = s[i].saturating_add(m[i]);
                     }
@@ -56,11 +56,28 @@ pub(crate) fn mu_deflation(mu: &crate::transducer::sentence::form::Mu) -> [u64; 
     }
 }
 
+/// ONE CELL OF A VORTEX: a certified discharge, with the reading that kept
+/// it in superposition instead of discharging it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Held {
+    /// The certificate itself — the pivot stands, whatever the vortex does.
+    pub certificate: PivotCertificate,
+    /// The lanes on which this candidate's μ⃗ is ABOVE the lane-wise
+    /// minimum of the cell, when there was a μ⃗ to read.
+    ///
+    /// Empty means it IS the minimum and is held because it is not alone
+    /// there. Non-empty names the lanes that keep it from being the
+    /// minimum — an incomparability, not a defeat, and the two are
+    /// different facts that a bare list of candidates could not tell apart.
+    /// `None` is an UNMEASURED cell: no bundle, so no μ⃗ and no reading.
+    pub above_minimum: Option<Vec<usize>>,
+}
+
 /// The three outcomes of selecting among certified discharges.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Discharge {
     One(Box<PivotCertificate>),
-    Vortex(Vec<PivotCertificate>),
+    Vortex(Vec<Held>),
     NoneDischarged,
 }
 
@@ -119,10 +136,57 @@ pub(crate) fn select_discharge(cands: &[PivotCertificate]) -> Discharge {
     match (measured.as_slice(), cands) {
         ([], []) => Discharge::NoneDischarged,
         ([], [c]) => Discharge::One(Box::new(c.clone())),
-        ([], _) => Discharge::Vortex(cands.to_vec()),
+        // No bundle, so no μ⃗ and no reading: the cell is unmeasured, which
+        // is a different thing from measured and incomparable.
+        ([], _) => Discharge::Vortex(
+            cands
+                .iter()
+                .map(|c| Held { certificate: c.clone(), above_minimum: None })
+                .collect(),
+        ),
         (vals, _) => match crate::economy::dominant(vals) {
             Some(i) => Discharge::One(Box::new(cands[i].clone())),
-            None => Discharge::Vortex(cands.to_vec()),
+            // 12.6: the vortex holds what does not dominate — and now it
+            // holds WHY. The lane-wise minimum is computed once; each cell
+            // carries the lanes on which it stands above that minimum, so
+            // an incomparable cell (some lane above) is distinguishable
+            // from a tied one (no lane above, and not alone).
+            None => {
+                // The minimum is FOLDED from the candidates themselves —
+                // seeded by the first, never by a zero standing in for a
+                // measurement that was not taken (rule 5). This arm's
+                // `vals` is non-empty by construction: the empty case is
+                // matched above.
+                let min: [u64; 4] = match vals.split_first() {
+                    Some((seed, rest)) => rest
+                        .iter()
+                        .fold(*seed, |acc, v| std::array::from_fn(|l| acc[l].min(v[l]))),
+                    // No μ⃗ at all is no reading. The empty case is matched
+                    // above, so this arm is unreachable; if it is ever
+                    // reached the cells are held UNMEASURED rather than
+                    // measured against a minimum that was invented here.
+                    None => {
+                        return Discharge::Vortex(
+                            cands
+                                .iter()
+                                .map(|c| Held { certificate: c.clone(), above_minimum: None })
+                                .collect(),
+                        )
+                    }
+                };
+                Discharge::Vortex(
+                    cands
+                        .iter()
+                        .zip(vals)
+                        .map(|(c, v)| Held {
+                            certificate: c.clone(),
+                            above_minimum: Some(
+                                (0..4).filter(|&l| v[l] > min[l]).collect(),
+                            ),
+                        })
+                        .collect(),
+                )
+            }
         },
     }
 }
