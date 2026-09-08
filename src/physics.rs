@@ -441,8 +441,7 @@ mod tests {
             [0, 7, 0, 0],
             "a stroke that needs G dwells G's pressure only"
         );
-        let mut outcome = StrokeOutcome::default();
-        outcome.pivoted = [0, 3, 0, 0];
+        let outcome = StrokeOutcome { pivoted: [0, 3, 0, 0], ..Default::default() };
         assert!(!outcome.dormant());
         assert_eq!(Physics::lanes_of(&outcome.total()), g);
         assert!(StrokeOutcome::default().dormant());

@@ -146,9 +146,8 @@ pub fn factor_on_plane(g: &PlaneForm, basis: &[PlaneForm]) -> Factored {
     if residue.iter().all(|&x| x == 0) {
         return Factored::Understood(tape);
     }
-    let mut rem = PlaneForm::default();
     // The residue is even by construction: the odd part was divided out.
-    rem.rot = std::array::from_fn(|k| residue[k] as i64);
+    let rem = PlaneForm { rot: std::array::from_fn(|k| residue[k] as i64), ..Default::default() };
     Factored::Novel { remainder: rem, understood: tape }
 }
 

@@ -272,8 +272,7 @@ pub struct Kernel {
 
 impl Kernel {
     pub fn new() -> Self {
-        let mut k = Kernel::default();
-        k.identity = [0x11; 32];
+        let mut k = Kernel { identity: [0x11; 32], ..Kernel::default() };
         if let Some(cover) = Self::measured_test_cover() {
             k.set_genesis_cover(cover);
             k.enroll([0x11; 32], cover);

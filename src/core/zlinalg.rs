@@ -67,10 +67,7 @@ pub fn hnf_with_transform<const N: usize>(rows: &[[i64; N]]) -> Option<Hnf<N>> {
         // the pivot until one entry is left. No division that is not exact,
         // and no choice of pivot by size — the loop terminates because
         // every step strictly reduces a non-negative remainder.
-        loop {
-            let Some(piv) = (rank..h.len()).find(|&r| h[r][col] != 0) else {
-                break;
-            };
+        while let Some(piv) = (rank..h.len()).find(|&r| h[r][col] != 0) {
             h.swap(rank, piv);
             u.swap(rank, piv);
             let mut done = true;
