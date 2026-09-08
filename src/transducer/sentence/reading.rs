@@ -13,6 +13,19 @@ use crate::transducer::sentence::chain::{
 };
 use crate::transducer::stalk::{self, Stalks};
 
+/// THE FOUR LOOKUPS A READING NEEDS, which always travel together: the word
+/// at an index, the fibre of a chart, the index of an address, and the shape
+/// at an index. This file sits BELOW the language — the cognition book reads
+/// 18.x, never the other way — so a reading takes the lookups rather than the
+/// language itself, and a caller can point them at the genome, the dialect, a
+/// working atlas, or all three.
+pub struct Reading<'r, W, F, I, S> {
+    pub word_at: &'r W,
+    pub fiber_of: &'r F,
+    pub index_of: &'r I,
+    pub shape_at: &'r S,
+}
+
 /// LOCATE one body: read its moduli, take the stratum, and for the word
 /// there whose gauge charge is the body's, solve the transport from the
 /// moments and verify it by replay. Returns the citation and the stratum's
@@ -53,18 +66,27 @@ pub fn locate_or_puncture_at<'a>(
     piece: &[Cell],
     exclude: Option<usize>,
 ) -> Located {
-    locate_or_puncture_on(word_at, &|inv| atlas.fiber(inv), index_of, shape_at, piece, exclude)
+    let fiber_of = |inv: &stalk::Invariant| atlas.fiber(inv);
+    locate_or_puncture_on(
+        &Reading { word_at, fiber_of: &fiber_of, index_of, shape_at },
+        piece,
+        exclude,
+    )
 }
 
 /// Locate against an arbitrary fiber — the working atlas, not only the genome.
-pub fn locate_or_puncture_on<'a>(
-    word_at: &impl Fn(usize) -> Option<&'a Element>,
-    fiber_of: &impl Fn(&stalk::Invariant) -> Vec<Vec<u8>>,
-    index_of: &impl Fn(&[u8]) -> Option<usize>,
-    shape_at: &impl Fn(usize) -> Option<&'a Shape>,
+pub fn locate_or_puncture_on<'a, W, F, I, S>(
+    read: &Reading<'_, W, F, I, S>,
     piece: &[Cell],
     exclude: Option<usize>,
-) -> Located {
+) -> Located
+where
+    W: Fn(usize) -> Option<&'a Element>,
+    F: Fn(&stalk::Invariant) -> Vec<Vec<u8>>,
+    I: Fn(&[u8]) -> Option<usize>,
+    S: Fn(usize) -> Option<&'a Shape>,
+{
+    let &Reading { word_at, fiber_of, index_of, shape_at } = read;
     let Some(shape) = element::shape_of_chain(piece) else { return (None, None, 0) };
     let stratum: Vec<usize> = fiber_of(&stalk::invariant(piece)).iter().filter_map(|a| index_of(a)).collect();
     let key = element::gauge_key(&element::assignment(piece));
@@ -110,16 +132,18 @@ fn body_key(body: &[Cell]) -> Option<crate::transducer::a21::Address> {
     Some(element::from_residual(&body.to_vec()).address())
 }
 
-fn place_located<'a>(
+fn place_located<'a, W, F, I, S>(
     out: &mut Sentence,
     located: Located,
     body: &[Cell],
-    word_at: &impl Fn(usize) -> Option<&'a Element>,
-    fiber_of: &impl Fn(&stalk::Invariant) -> Vec<Vec<u8>>,
-    index_of: &impl Fn(&[u8]) -> Option<usize>,
-    shape_at: &impl Fn(usize) -> Option<&'a Shape>,
+    read: &Reading<'_, W, F, I, S>,
     exclude: Option<usize>,
-) {
+) where
+    W: Fn(usize) -> Option<&'a Element>,
+    F: Fn(&stalk::Invariant) -> Vec<Vec<u8>>,
+    I: Fn(&[u8]) -> Option<usize>,
+    S: Fn(usize) -> Option<&'a Shape>,
+{
     if let Some(k) = body_key(body) {
         out.multiplicity.insert(k, located.2);
     }
@@ -134,10 +158,8 @@ fn place_located<'a>(
             Some(element::GaugeFibers::Many(idx)) => {
                 for (_, fiber) in idx.fiber(ROOT) {
                     for sub in pieces(fiber) {
-                        let loc = locate_or_puncture_on(
-                            word_at, fiber_of, index_of, shape_at, &sub, exclude,
-                        );
-                        place_located(out, loc, &sub, word_at, fiber_of, index_of, shape_at, exclude);
+                        let loc = locate_or_puncture_on(read, &sub, exclude);
+                        place_located(out, loc, &sub, read, exclude);
                     }
                 }
             }
@@ -157,7 +179,13 @@ pub fn deconstruct<'a>(
     chain: &[Cell],
     exclude: Option<usize>,
 ) -> Sentence {
-    deconstruct_on(&|i| words.get(i), &|inv| atlas.fiber(inv), index_of, shape_at, chain, exclude)
+    let word_at = |i: usize| words.get(i);
+    let fiber_of = |inv: &stalk::Invariant| atlas.fiber(inv);
+    deconstruct_on(
+        &Reading { word_at: &word_at, fiber_of: &fiber_of, index_of, shape_at },
+        chain,
+        exclude,
+    )
 }
 
 /// Deconstruct over a getter, so a language snapshot of `Arc<Element>`
@@ -170,34 +198,42 @@ pub fn deconstruct_at<'a>(
     chain: &[Cell],
     exclude: Option<usize>,
 ) -> Sentence {
-    deconstruct_on(word_at, &|inv| atlas.fiber(inv), index_of, shape_at, chain, exclude)
+    let fiber_of = |inv: &stalk::Invariant| atlas.fiber(inv);
+    deconstruct_on(
+        &Reading { word_at, fiber_of: &fiber_of, index_of, shape_at },
+        chain,
+        exclude,
+    )
 }
 
 /// Deconstruct over a fiber the caller names — genome, dialect, or both.
-pub fn deconstruct_on<'a>(
-    word_at: &impl Fn(usize) -> Option<&'a Element>,
-    fiber_of: &impl Fn(&stalk::Invariant) -> Vec<Vec<u8>>,
-    index_of: &impl Fn(&[u8]) -> Option<usize>,
-    shape_at: &impl Fn(usize) -> Option<&'a Shape>,
+pub fn deconstruct_on<'a, W, F, I, S>(
+    read: &Reading<'_, W, F, I, S>,
     chain: &[Cell],
     exclude: Option<usize>,
-) -> Sentence {
+) -> Sentence
+where
+    W: Fn(usize) -> Option<&'a Element>,
+    F: Fn(&stalk::Invariant) -> Vec<Vec<u8>>,
+    I: Fn(&[u8]) -> Option<usize>,
+    S: Fn(usize) -> Option<&'a Shape>,
+{
     let mut out = Sentence::default();
     if chain.is_empty() {
         return out;
     }
-    let whole = locate_or_puncture_on(word_at, fiber_of, index_of, shape_at, chain, exclude);
+    let whole = locate_or_puncture_on(read, chain, exclude);
     if let Some(k) = body_key(chain) {
         out.multiplicity.insert(k, whole.2);
     }
     match whole.0 {
         Some(_) => {
-            place_located(&mut out, whole, chain, word_at, fiber_of, index_of, shape_at, exclude);
+            place_located(&mut out, whole, chain, read, exclude);
         }
         None => {
             for body in pieces(chain) {
-                let loc = locate_or_puncture_on(word_at, fiber_of, index_of, shape_at, &body, exclude);
-                place_located(&mut out, loc, &body, word_at, fiber_of, index_of, shape_at, exclude);
+                let loc = locate_or_puncture_on(read, &body, exclude);
+                place_located(&mut out, loc, &body, read, exclude);
             }
         }
     }
