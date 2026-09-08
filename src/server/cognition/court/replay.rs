@@ -80,6 +80,25 @@ impl Kernel {
         }
     }
 
+    /// The family a spoken form is bound to on this court (23.8): the
+    /// trains of the task it was spoken for, or of the listing it answers.
+    pub(crate) fn family_of(&self, addr: &[u8]) -> Option<&[crate::transducer::family::TrainPair]> {
+        let task = self.speech_task.get(addr).or_else(|| self.listing_task.get(addr))?;
+        self.task_family.get(task).map(Vec::as_slice)
+    }
+
+    /// THE COURT'S REPLAY of a word it holds (23.1, 23.8): through its own
+    /// genome as the `Crystal` that resolves what the word cites, and
+    /// against the family the word is bound to, so step 7 — closure on
+    /// every pair, `REFUSE_NOT_CLOSED` — is checked on the court path and
+    /// not only when the word was first spoken. A word bound to no family
+    /// replays without that clause: it can still be ruled, and it mints
+    /// only what it measures on a family, which is then nothing.
+    pub(crate) fn court_replay(&self, spoken: &Element) -> Option<&'static str> {
+        let family = self.family_of(&spoken.address());
+        crate::verdict::blind_replay_on(spoken, &|a| self.resolve_form(a), family, self)
+    }
+
     /// Court organ: the docket is the field's projection — listings whose
     /// closure is not Flat and whose deflation is nonzero — plus unfilled
     /// triangles and tetrahedron classes. Fail → slash with a replay reason
@@ -107,7 +126,7 @@ impl Kernel {
             let Some(spoken) = spoken else {
                 continue;
             };
-            if let Some(reason) = crate::verdict::blind_replay_with(&spoken, &|a| self.resolve_form(a)) {
+            if let Some(reason) = self.court_replay(&spoken) {
                 eprintln!("  court slash {:02x}{:02x}… {reason}", addr[0], addr[1]);
                 let _ = self.treasury.revoke_award(&addr, true);
                 self.redocket_citers_of(&addr);

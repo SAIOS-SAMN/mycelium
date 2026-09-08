@@ -51,10 +51,11 @@ pub const REFUSE_LOOP: &str = "loop holonomy is not identity";
 pub const REFUSE_REBASE_TRIVIAL: &str = "rebased form equals its base";
 pub const REFUSE_UNFOLD_STILL: &str = "unfolding measure does not move";
 pub const REFUSE_ORBIT_STILL: &str = "orbit does not move";
-/// S9.4 — CLOSURE, NOT DESCENT. A form is refused when it leaves a
-/// remainder on some train pair: it does not close the family it claims.
-/// What it MEASURED is priced by the economy and is not a verdict here.
-pub const REFUSE_NO_CLOSURE: &str = "the form leaves a remainder — it closes nothing";
+/// S9.4 — CLOSURE, NOT DESCENT (23.1 step 7, 34.1). A form is refused when
+/// it leaves a remainder on some train pair: it does not close the family
+/// it claims. What it MEASURED is priced by the economy and is not a
+/// verdict here.
+pub const REFUSE_NOT_CLOSED: &str = "form leaves a remainder on the family";
 pub const REFUSE_RANK_LOST: &str = "form rank below what its tape re-derives";
 pub const REFUSE_PIVOT_INEXACT: &str = "pivot certificate does not re-derive";
 pub const REFUSE_ROOM: &str = "lane room does not cover the draw";

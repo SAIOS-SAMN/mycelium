@@ -120,7 +120,7 @@ pub fn replay_form_with(
         // economy's reading, taken after the court's.
         let _ = pay;
         if rems.iter().any(|r| !r.is_empty()) {
-            return Some(REFUSE_NO_CLOSURE);
+            return Some(REFUSE_NOT_CLOSED);
         }
     }
     replay_certificates(&walked, &by_chord)

@@ -283,12 +283,12 @@ pub fn adopt(
     word: &crate::transducer::element::Element,
 ) -> crate::cognition::Adoption {
     use crate::cognition::Adoption;
-    // A v3 form cites ruled forms: its replay reads the cover, so it takes
-    // the lock; every other word replays pure, off the lock.
-    let is_form = word.is_sentence() && word.description().get(1).copied() == Some(3);
-    let refused = if is_form {
+    // A form cites ruled forms and is bound to a family: its replay reads
+    // the cover and the trains, so it takes the lock (23.8); every other
+    // word replays pure, off the lock.
+    let refused = if word.is_sentence() {
         let Ok(g) = k.lock() else { return Adoption::Refused("kernel unavailable") };
-        crate::verdict::blind_replay_with(word, &|a| g.resolve_form(a))
+        g.court_replay(word)
     } else {
         crate::verdict::blind_replay(word)
     };

@@ -93,7 +93,7 @@ fn replay_form_refuses_unruled_glue_and_replays_resolved() {
     // refused for measuring nothing, which made the court an economist —
     // μ⃗ is a cost, not a score, and a word that costs nothing to say has
     // still said it. What closes the family is checked where the family is
-    // (REFUSE_NO_CLOSURE); pricing is read afterwards, by the economy.
+    // (REFUSE_NOT_CLOSED); pricing is read afterwards, by the economy.
     let mut flat = as_element_form(&outer, [1, 0, 0, 0]).expect("tape");
     flat.set_magnitude([0; 4]);
     assert_eq!(
@@ -315,7 +315,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
 /// magnitude: a form that closes every pair while measuring nothing has
 /// still closed them, and what it measured is the economy's reading.
 ///
-/// This is `REFUSE_NO_CLOSURE`'s producing test (3.5). The reason it
+/// This is `REFUSE_NOT_CLOSED`'s producing test (3.5). The reason it
 /// replaces, `REFUSE_NO_DESCENT`, fired on a zero magnitude — a fact about
 /// price, ruled on by a court.
 #[test]
@@ -338,7 +338,7 @@ fn a_form_that_leaves_a_remainder_is_refused_for_closure() {
     let wider = vec![(x, y), (grid(&["10"]), grid(&["23"]))];
     assert_eq!(
         blind_replay_on(&word, &|_| None, Some(&wider), &NoCrystal),
-        Some(REFUSE_NO_CLOSURE),
+        Some(REFUSE_NOT_CLOSED),
         "a remainder on any pair is the refusal"
     );
 }
