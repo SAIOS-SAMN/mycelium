@@ -95,8 +95,33 @@ pub(crate) fn loop_transport(form: &Form, lp: &Loop) -> Option<Transport> {
     })
 }
 
+impl Form {
+    /// Apply a certified move (A20 `by`) to this form: a write onto the
+    /// chord face's transport, or a chart axis opened over the loop that
+    /// closes on the face (I6). Loops are re-walked by the caller.
+    pub fn apply_move(&mut self, by: &PivotBy) {
+        match by {
+            PivotBy::OpenAxis { face, .. } => {
+                let _ = self.open_axis_on(*face);
+            }
+            _ => apply_by(&mut self.faces, by),
+        }
+    }
+
+    /// The inverse of [`Form::apply_move`]: the court's un-pivot (A20 step 3).
+    pub fn unapply_move(&mut self, by: &PivotBy) {
+        match by {
+            PivotBy::OpenAxis { face, .. } => {
+                let _ = self.close_axis_on(*face);
+            }
+            _ => unapply_by(&mut self.faces, by),
+        }
+    }
+}
+
 pub(crate) fn apply_by(faces: &mut [FormFace], by: &PivotBy) {
     match by {
+        PivotBy::OpenAxis { .. } => {}
         PivotBy::Word { face, word, side } => {
             if let Some(f) = faces.get_mut(*face as usize) {
                 f.transport.word = pivoted_face(&f.transport.word, word, *side);
@@ -117,6 +142,7 @@ pub(crate) fn apply_by(faces: &mut [FormFace], by: &PivotBy) {
 
 pub(crate) fn unapply_by(faces: &mut [FormFace], by: &PivotBy) {
     match by {
+        PivotBy::OpenAxis { .. } => {}
         PivotBy::Word { face, word, side } => {
             if let Some(f) = faces.get_mut(*face as usize) {
                 f.transport.word = unpivoted_face(&f.transport.word, word, *side);

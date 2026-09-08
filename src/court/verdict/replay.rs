@@ -233,6 +233,15 @@ pub(crate) fn form_loops_replay(f: &Form) -> bool {
         if lp.holonomy.is_identity() {
             continue;
         }
+        // An axis the form opened over this loop (I6): the holonomy is the
+        // transition on that axis, and it replays only when the recorded
+        // seed re-derives from the loop itself (law 12).
+        if let Some(chord) = f.opened_axis_of(lp) {
+            if f.axis_rederives(lp, chord) {
+                continue;
+            }
+            return false;
+        }
         match lp.holonomy.order() {
             Order::Infinite => return false,
             Order::Finite(ell) => {
@@ -258,15 +267,26 @@ pub(crate) fn face_idx_key(i: u16) -> Vec<u8> {
 /// A20: each certificate is the un-pivot of one chord face, re-walked.
 /// The loop's class key and rank before and after must match the tape.
 pub(crate) fn replay_certificates(f: &Form, by_chord: &Keyed<u16>) -> Option<&'static str> {
-    use crate::transducer::sentence::{rank_of_holonomies, unapply_by};
     for (_, cert) in f.certificates.fiber(crate::network::nerve::ROOT) {
         let face = cert.by.face();
         let Some(&li) = by_chord.get(&face_idx_key(face)) else {
             return Some(REFUSE_PIVOT_INEXACT);
         };
         let mut pre = f.clone();
-        unapply_by(&mut pre.faces, &cert.by);
+        pre.unapply_move(&cert.by);
         pre.loops = Form::loops_of(&pre.faces, pre.vertices.len());
+        // An opened axis (I6) is seeded by the loop's own holonomy versor
+        // (16.20): the court re-derives the seed from the loop it re-walked
+        // and refuses a certificate whose seed is anything else (law 12).
+        if let crate::transducer::sentence::PivotBy::OpenAxis { seed, .. } = &cert.by {
+            let rederived = pre
+                .loops
+                .get(li as usize)
+                .and_then(|lp| pre.axis_seed_of(lp));
+            if !rederived.is_some_and(|v| element::same_versor(&v, seed)) {
+                return Some(REFUSE_PIVOT_INEXACT);
+            }
+        }
         let Some(kappa_before) = pre.class_vector(li as usize) else {
             return Some(REFUSE_PIVOT_INEXACT);
         };
@@ -279,10 +299,10 @@ pub(crate) fn replay_certificates(f: &Form, by_chord: &Keyed<u16>) -> Option<&'s
         if kappa_after.class_key() != cert.after || kappa_after.occupies(cert.axis) {
             return Some(REFUSE_PIVOT_INEXACT);
         }
-        let Some(rb) = rank_of_holonomies(pre.loops.iter().map(|l| &l.holonomy)) else {
+        let Some(rb) = pre.rank() else {
             return Some(REFUSE_PIVOT_INEXACT);
         };
-        let Some(ra) = rank_of_holonomies(f.loops.iter().map(|l| &l.holonomy)) else {
+        let Some(ra) = f.rank() else {
             return Some(REFUSE_PIVOT_INEXACT);
         };
         // S9.1 — THE COURT RE-DERIVES THE MOVE. The certificate claims what

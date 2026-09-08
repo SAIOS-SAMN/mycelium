@@ -375,6 +375,7 @@ pub(crate) fn pair_form_uncached(
         sections: crate::network::nerve::Keyed::new(),
         certificates: crate::network::nerve::Keyed::new(),
         torsion: crate::network::nerve::Keyed::new(),
+        axes: crate::network::nerve::Keyed::new(),
         glued: crate::network::nerve::Keyed::new(),
         vortex: crate::network::nerve::Keyed::new(),
         by_address: crate::network::nerve::Keyed::new(),

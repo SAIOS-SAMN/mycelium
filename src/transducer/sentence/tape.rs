@@ -212,6 +212,11 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
         out.extend_from_slice(&ell.to_le_bytes());
         out.extend_from_slice(&chord.to_le_bytes());
     }
+    out.extend_from_slice(&(f.axes.len() as u16).to_le_bytes());
+    for (k, chord) in f.axes.fiber(crate::network::nerve::ROOT) {
+        crate::transducer::address::put_addr(out, &k);
+        out.extend_from_slice(&chord.to_le_bytes());
+    }
     Some(())
 }
 
@@ -402,6 +407,13 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         let chord = take_u16(b, pos)?;
         torsion.insert(k, FiledLoop { sigma, period: ell, chord });
     }
+    let na = take_count(b, *pos, take_u16(b, pos)? as usize, 4)?;
+    let mut axes = Keyed::new();
+    for _ in 0..na {
+        let k = crate::transducer::address::take_addr(b, pos)?;
+        let chord = take_u16(b, pos)?;
+        axes.insert(k, chord);
+    }
     let mut glued = Keyed::new();
     for (i, v) in vertices.iter().enumerate() {
         if let Vertex::Glued { address, .. } = v {
@@ -419,6 +431,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         sections,
         certificates,
         torsion,
+        axes,
         glued,
         vortex: Keyed::new(),
         by_address: Keyed::new(),
@@ -431,7 +444,11 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
     Some(form)
 }
 
-/// SENTENCE_TAG v4: the Form tape. Hue maps are derived from vertices.
+/// The tape layout this tree writes and reads (chapter 19). A layout change
+/// is a recut: no reader for an older version exists (MU-STANDARDS §10).
+pub const FORM_TAPE_VERSION: u8 = 5;
+
+/// SENTENCE_TAG v5: the Form tape. Hue maps are derived from vertices.
 /// Addresses are len16 + bytes. `mag` is the descent the form measures over
 /// its bundle. Zero is not a word.
 pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
@@ -439,20 +456,20 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
         return None;
     }
     let mut e = Element::identity();
-    let mut word = vec![element::SENTENCE_TAG, 4];
+    let mut word = vec![element::SENTENCE_TAG, FORM_TAPE_VERSION];
     encode_form_v2(f, &mut word)?;
     e.set_description(word);
     e.set_magnitude(mag);
     Some(e)
 }
 
-/// Read a Form from a v4 tape. An older tape is refused.
+/// Read a Form from a v5 tape. Every other version is refused.
 pub fn from_element_form(e: &Element) -> Option<Form> {
     if !e.is_sentence() {
         return None;
     }
     let b = e.description();
-    if b.get(1).copied() != Some(4) {
+    if b.get(1).copied() != Some(FORM_TAPE_VERSION) {
         return None;
     }
     let mut pos = 2usize;

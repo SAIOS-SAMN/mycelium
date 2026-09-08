@@ -122,6 +122,7 @@ pub struct Loop {
     pub carriage: Versor,
 }
 
+
 /// A sentence as vertices, faces, loops, remainder.
 #[derive(Debug, Clone)]
 pub struct Form {
@@ -139,6 +140,12 @@ pub struct Form {
     /// Filed torsion cycles, keyed by class key: `(σ, ℓ, chord face)`.
     /// The form owns this carrier; the element reads it whole.
     pub torsion: Keyed<FiledLoop>,
+    /// CHART AXES OPENED OVER HELD LOOPS (3.7, 15.5, 16.16 step 3; I6):
+    /// the holonomy class opened on → the chord of the loop that is its
+    /// section. The relation is all the form carries; the seed versor and
+    /// A7's coordinate are re-derived from that loop on every read (law
+    /// 12), never stored beside it. On the tape and in the address.
+    pub axes: Keyed<u16>,
     /// Cited form address → glued vertex index. Written by [`Form::glue`]
     /// and rebuilt by the decoder from Glued vertices.
     pub glued: Keyed<u16>,
@@ -170,6 +177,7 @@ impl Default for Form {
             sections: Keyed::new(),
             certificates: Keyed::new(),
             torsion: Keyed::new(),
+            axes: Keyed::new(),
             glued: Keyed::new(),
             vortex: Keyed::new(),
             by_address: Keyed::new(),
@@ -178,6 +186,80 @@ impl Default for Form {
             by_rebased: Keyed::new(),
             by_unfolded: Keyed::new(),
         }
+    }
+}
+
+impl Form {
+    /// The loop closing on `chord`, by index. A walk of this form's own
+    /// loops — its boundary, never a search over anything else.
+    pub(crate) fn loop_of_chord(&self, chord: u16) -> Option<usize> {
+        for (i, lp) in self.loops.iter().enumerate() {
+            if lp.chord == chord {
+                return Some(i);
+            }
+        }
+        None
+    }
+
+    /// The chord of the loop this loop's class was opened on, if any (I6).
+    pub fn opened_axis_of(&self, lp: &Loop) -> Option<u16> {
+        let class = lp.holonomy.rotor().class_key()?;
+        self.axes.get(&class).copied()
+    }
+
+    /// Law 12: the opened axis is a theorem the loop proves — the loop is
+    /// the one the relation names, and its holonomy is a versor, so the
+    /// seed (A20 `OpenAxis`) re-derives from it. Otherwise the relation is
+    /// a stored coordinate the form cannot re-derive, and the loop stays a
+    /// defect.
+    pub fn axis_rederives(&self, lp: &Loop, chord: u16) -> bool {
+        chord == lp.chord && self.axis_seed_of(lp).is_some()
+    }
+
+    /// The seed of the axis a loop opens: its own holonomy versor (16.20).
+    pub fn axis_seed_of(&self, lp: &Loop) -> Option<Versor> {
+        element::versor_of_word(&lp.holonomy)
+    }
+
+    /// Open a chart axis over the loop closing on `chord` (A20 `OpenAxis`).
+    /// Refuses a chord with no loop, a holonomy with no class, and a
+    /// holonomy with no versor to seed the axis.
+    pub(crate) fn open_axis_on(&mut self, chord: u16) -> Option<()> {
+        let i = self.loop_of_chord(chord)?;
+        let lp = self.loops.get(i)?;
+        let class = lp.holonomy.rotor().class_key()?;
+        self.axis_seed_of(lp)?;
+        self.axes.insert(class, chord);
+        Some(())
+    }
+
+    /// The inverse move: the axis opened over the loop closing on `chord`
+    /// leaves the form (the court's un-pivot, A20 step 3).
+    pub(crate) fn close_axis_on(&mut self, chord: u16) -> Option<()> {
+        let i = self.loop_of_chord(chord)?;
+        let class = self.loops.get(i)?.holonomy.rotor().class_key()?;
+        self.axes.remove(&class)?;
+        Some(())
+    }
+
+    /// The row one loop contributes to the rank audit (A18): an opened
+    /// axis, or what its holonomy is; `None` when the holonomy has no class.
+    pub fn loop_row_at(&self, idx: usize) -> Option<crate::transducer::sentence::LoopRow> {
+        let lp = self.loops.get(idx)?;
+        if self.opened_axis_of(lp).is_some() {
+            return Some(crate::transducer::sentence::LoopRow::Opened);
+        }
+        crate::transducer::sentence::loop_row(&lp.holonomy)
+    }
+
+    pub fn loop_rows(&self) -> Option<Vec<crate::transducer::sentence::LoopRow>> {
+        (0..self.loops.len()).map(|i| self.loop_row_at(i)).collect()
+    }
+
+    /// A18 over this form's loops. `None` when a holonomy has no class or
+    /// the ℤ-rank overflows: unmeasured, and the caller refuses.
+    pub fn rank(&self) -> Option<crate::transducer::sentence::Rank> {
+        crate::transducer::sentence::rank_of_rows(&self.loop_rows()?)
     }
 }
 
@@ -306,10 +388,14 @@ impl Form {
             .collect()
     }
 
+    /// `δ¹g = 1` on every loop (10.3), where a loop whose class is an axis
+    /// the form opened is coherent on the refined cover: its holonomy is
+    /// the transition on that axis, re-derived from the loop (I6, 15.5).
     pub fn coheres(&self) -> bool {
-        self.delta1()
-            .into_iter()
-            .all(|(_, w)| w.rotor().projective_eq(&Rotor::identity()))
+        self.loops.iter().all(|lp| {
+            lp.holonomy.rotor().projective_eq(&Rotor::identity())
+                || self.opened_axis_of(lp).is_some_and(|chord| self.axis_rederives(lp, chord))
+        })
     }
 
     pub fn is_closed(&self) -> bool {
@@ -333,6 +419,12 @@ impl Form {
         for lp in &self.loops {
             if lp.holonomy.is_identity() {
                 continue;
+            }
+            if let Some(chord) = self.opened_axis_of(lp) {
+                if self.axis_rederives(lp, chord) {
+                    continue;
+                }
+                return false;
             }
             match lp.holonomy.order() {
                 Order::Infinite => return false,

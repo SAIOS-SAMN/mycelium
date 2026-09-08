@@ -131,12 +131,12 @@ fn ratio_and_sections_are_on_the_form_key() {
     let back_c = from_element_form(&ec).expect("v2 tape");
     assert_eq!(back_c.sections.get(&form_addr(7)), Some(&vec![1u16]));
     // Zero the height denominator on the tape: after certificates the
-    // tail is ratio (8) + sections count (2) + torsion count (2). hd is
-    // the second u16 of the ratio.
+    // tail is ratio (8) + sections count (2) + torsion count (2) + axes
+    // count (2). hd is the second u16 of the ratio.
     let mut bytes = ea.description().to_vec();
     let n = bytes.len();
-    bytes[n - 10] = 0;
-    bytes[n - 9] = 0;
+    bytes[n - 12] = 0;
+    bytes[n - 11] = 0;
     let mut broken = ea.clone();
     broken.set_description(bytes);
     assert!(from_element_form(&broken).is_none(), "a zero denominator refuses the tape");
