@@ -12,6 +12,7 @@ pub mod enumeration;
 pub mod length;
 pub mod maps;
 pub mod matrix;
+pub mod order;
 pub mod squaring;
 
 use length::lint_file_length;
@@ -52,6 +53,7 @@ pub fn run() -> Result<(), String> {
             enumeration::GATE,
             maps::GATE,
             matrix::GATE,
+            order::GATE,
             squaring::GATE,
         ], &mut hits)?;
     if hits.is_empty() {
