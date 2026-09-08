@@ -23,3 +23,33 @@ pub(crate) fn syllabus_admit(sy: &mut Syllabus, addrs: impl IntoIterator<Item = 
         }
     }
 }
+
+/// ONE PAGE FOR ONE VOICE: the `depth` addresses standing after that
+/// voice's cursor, and the cursor they start at. A voice with no cursor
+/// starts at the beginning of the order.
+///
+/// The door read this by cloning `sy.order` — every address the court has
+/// ever ruled — out of the lock and then walking a window of at most
+/// `depth` entries from it. Checklist (j) refuses "any `clone()` of a
+/// carrier into two places", and on a mesh of ten thousand polling peers
+/// the cost was O(ruled words) per request per peer, copied while the
+/// syllabus lock was held, to read at most eight. The window is a slice
+/// read from the cursor: O(depth), and it never materialises the book.
+pub(crate) fn syllabus_page(
+    sy: &mut Syllabus,
+    voice: &[u8; 32],
+    depth: usize,
+) -> (usize, Vec<Vec<u8>>) {
+    let at = match sy.served.get(voice) {
+        Some(&n) => n,
+        None => {
+            sy.served.insert(voice, 0);
+            0
+        }
+    };
+    let page = match sy.order.get(at..) {
+        Some(rest) => rest.iter().take(depth).cloned().collect(),
+        None => Vec::new(),
+    };
+    (at, page)
+}

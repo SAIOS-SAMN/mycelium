@@ -7,7 +7,7 @@
 
 use crate::admission::room64;
 use crate::exchange::{note_root, speak_root_locked, Mesh, RootHear};
-use crate::syllabus::{syllabus_admit, Syllabus};
+use crate::syllabus::{syllabus_admit, syllabus_page, Syllabus};
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
 use mycelium::cognition::Kernel;
@@ -273,24 +273,34 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
     if kind == dialogue::ACT_SYLLABUS {
         let Some(svoice) = dialogue::decode_syllabus_request(&frame.body) else { return true };
         let mut missed: Vec<Vec<u8>> = Vec::new();
-        let seed = door.kernel.lock().ok().map(|k| k.syllabus_seed()).unwrap_or_default();
-        let (cursor, order) = {
-            let mut sy = door.syllabus.lock().unwrap();
-            syllabus_admit(&mut sy, seed);
-            if sy.served.get(&svoice).is_none() {
-                sy.served.insert(svoice, 0);
+        // A PAGE IS A WINDOW, NOT A COPY OF THE BOOK. This cloned
+        // `sy.order` — every address this court has ever ruled — out of the
+        // lock on every request, so that a window of at most `depth`
+        // entries could be read from it. Checklist (j) refuses "any
+        // `clone()` of a carrier into two places"; at ten thousand peers
+        // polling a court that holds a large order, the cost is O(ruled
+        // words) per request per peer, allocated and copied while the
+        // syllabus lock is held. The window is taken under the lock, from
+        // the cursor, by a slice read that is O(depth) and not O(cursor).
+        let (seed, depth) = match door.kernel.lock() {
+            Ok(k) => {
+                let free: u64 = k.physics().reserve.iter().sum();
+                let d = (1 + (free as usize * 7) / (4 * mycelium::physics::reserve_max() as usize))
+                    .min(8);
+                (k.syllabus_seed(), d)
             }
-            (*sy.served.get(&svoice).unwrap(), sy.order.clone())
+            Err(_) => return true,
         };
-        let (words, classes, k_now, height, served_addrs) = {
-            let k = door.kernel.lock().unwrap();
-            let free: u64 = k.physics().reserve.iter().sum();
-            let depth = (1 + (free as usize * 7) / (4 * mycelium::physics::reserve_max() as usize)).min(8);
+        let (cursor, page) = {
+            let Ok(mut sy) = door.syllabus.lock() else { return true };
+            syllabus_admit(&mut sy, seed);
+            syllabus_page(&mut sy, &svoice, depth)
+        };
+        let (words, classes, served_addrs) = {
+            let Ok(k) = door.kernel.lock() else { return true };
             let mut out = Vec::new();
             let mut served_addrs = Vec::new();
-            let mut next = cursor;
-            while next < order.len() && out.len() < depth {
-                let addr = order[next].clone();
+            for addr in page {
                 match k.word_at(&addr) {
                     Some(w) => {
                         served_addrs.push(addr);
@@ -298,23 +308,15 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                     }
                     None => missed.push(addr),
                 }
-                next += 1;
             }
             let classes = k.class_records(&mycelium::transducer::stalk::Invariant::default());
-            let k_now = k.k_step();
-            let height = k.book_height();
+            let next = cursor + out.len() + missed.len();
             drop(k);
             if let Ok(mut sy) = door.syllabus.lock() {
                 sy.served.insert(svoice, next);
             }
-            (out, classes, k_now, height, served_addrs)
+            (out, classes, served_addrs)
         };
-        // 45.1: each page served seals a receipt, and the line reports the
-        // position that page actually took rather than the K some earlier
-        // act happened to leave behind. `k_now` and `height` above are read
-        // before any of these steps and are no longer what a served page
-        // stands at.
-        let _ = (k_now, height);
         for addr in &served_addrs {
             let (k_at, h_at) = match door.kernel.lock() {
                 Ok(mut k) => {

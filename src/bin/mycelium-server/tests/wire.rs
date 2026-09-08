@@ -64,6 +64,47 @@ fn a_frame_within_the_budget_is_written_whole() {
 }
 
 
+/// A PAGE IS A WINDOW, NOT A COPY OF THE BOOK. The door cloned the whole
+/// ruled order out of the lock on every request to read at most eight
+/// entries from it — checklist (j), and O(ruled words) per request per
+/// peer on a mesh of ten thousand pollers. The page is read from the
+/// voice's own cursor, it advances only by what was served, and each voice
+/// has its own.
+#[test]
+fn a_syllabus_page_is_the_window_after_a_voice_own_cursor() {
+    let mut sy = Syllabus { order: Vec::new(), at: Keyed::new(), served: Keyed::new() };
+    let book: Vec<Vec<u8>> = (0u8..10).map(|i| vec![i]).collect();
+    syllabus_admit(&mut sy, book.clone());
+    assert_eq!(sy.order.len(), 10, "ten ruled words stand in the order");
+
+    let a = [0xaau8; 32];
+    let (at, page) = crate::syllabus::syllabus_page(&mut sy, &a, 3);
+    assert_eq!(at, 0, "a voice with no cursor starts at the beginning");
+    assert_eq!(page, book[0..3].to_vec(), "and reads the window, not the book");
+
+    // The cursor advances by what was served, and the next page follows on.
+    sy.served.insert(a, at + page.len());
+    let (at, page) = crate::syllabus::syllabus_page(&mut sy, &a, 3);
+    assert_eq!((at, page), (3, book[3..6].to_vec()), "the next window follows");
+
+    // A second voice is served from its own cursor, not the first's.
+    let b = [0xbbu8; 32];
+    let (at, page) = crate::syllabus::syllabus_page(&mut sy, &b, 2);
+    assert_eq!((at, page), (0, book[0..2].to_vec()), "each voice has its own cursor");
+
+    // A cursor at the end reads an empty page rather than walking anything.
+    sy.served.insert(a, 10);
+    let (at, page) = crate::syllabus::syllabus_page(&mut sy, &a, 8);
+    assert_eq!(at, 10);
+    assert!(page.is_empty(), "a voice served to the end is served nothing");
+    // And a cursor past the end is an empty page, never a panic.
+    sy.served.insert(a, 99);
+    assert!(crate::syllabus::syllabus_page(&mut sy, &a, 8).1.is_empty());
+    // A page never runs past the order however deep it is asked for.
+    let c = [0xccu8; 32];
+    assert_eq!(crate::syllabus::syllabus_page(&mut sy, &c, 100).1.len(), 10);
+}
+
 #[test]
 fn court_seed_enters_syllabus_order_once() {
     let mut sy = Syllabus {
