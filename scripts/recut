@@ -30,6 +30,20 @@ for h in $(printf '%s\n' "${HYPHAE[@]}" | tac); do
   systemctl --user stop "mycelium-server@$h" 2>/dev/null || true
 done
 
+# MU-STANDARDS §10: nothing persisted survives a recut. Ledgers, the
+# registry snapshot beside the ledger or under corpora/, genomes (which carry
+# the thoughts) go; keys, the mesh record and the corpora stay. A layout
+# change is a recut and no reader for an older layout exists, so a carrier
+# left here would only be refused at boot.
+say "wiping persisted carriers"
+for h in "${HYPHAE[@]}"; do
+  rm -f "$ROOT/$h/ledger" "$ROOT/$h/ledger.tmp" "$ROOT/$h/ledger.registry" \
+        "$ROOT/$h/corpora/registry" "$ROOT/$h/corpora/registry.tmp"
+done
+for v in "${VOICES[@]}"; do
+  rm -f "$ROOT/$v/genome" "$ROOT/$v/genome.tmp"
+done
+
 # The mesh record is SIGNED, so a genesis cannot be cleared from outside the
 # process that holds the key: each hypha drops its own origin, in a one-shot
 # run of the binary, and exits.
