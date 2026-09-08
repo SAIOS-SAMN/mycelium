@@ -168,6 +168,16 @@ impl Kernel {
         out
     }
 
+    /// 45.1: A SYLLABUS PAGE SERVED IS AN ADMITTED ACT. One page of the
+    /// order went out to one voice, so this court's clock steps once for it
+    /// and the receipt names the address served and the voice it went to.
+    /// The door already wrote `receipt K … h …` beside every page it served
+    /// — a receipt nothing sealed, so the K it named was whatever the last
+    /// unrelated act had left there.
+    pub fn note_served(&mut self, addr: &[u8], to: [u8; 32]) {
+        self.append_step(addr, to);
+    }
+
     pub fn fetch_have(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<Vec<u8>> {
         let mut h: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         for a in self.ruled.fiber(inv) {

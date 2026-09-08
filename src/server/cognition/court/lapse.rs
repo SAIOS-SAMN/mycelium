@@ -19,6 +19,7 @@ impl Kernel {
                 lapse.push(Address::from(addr));
             }
         }
+        let me = self.identity;
         for addr in lapse {
             let n = now.saturating_sub(self.standing_h.get(&addr).copied().unwrap_or(now));
             eprintln!(
@@ -27,6 +28,14 @@ impl Kernel {
             );
             let _ = self.treasury.revoke_award(&addr, false);
             self.unlist(&addr, false);
+            // 45.1: the release is this court's own act -- it returns an
+            // escrow and unlists a draw -- so it is a step of this court's
+            // clock, authored by this court. A lapse that sealed nothing
+            // moved the book at no position, and the height a later lapse
+            // measures its aperture against is a count of receipts (47.5):
+            // a court whose lapses are not receipted stops advancing the
+            // very quantity it lapses on.
+            self.append_step(&addr, me);
         }
     }
 

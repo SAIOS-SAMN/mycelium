@@ -309,9 +309,22 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             }
             (out, classes, k_now, height, served_addrs)
         };
+        // 45.1: each page served seals a receipt, and the line reports the
+        // position that page actually took rather than the K some earlier
+        // act happened to leave behind. `k_now` and `height` above are read
+        // before any of these steps and are no longer what a served page
+        // stands at.
+        let _ = (k_now, height);
         for addr in &served_addrs {
+            let (k_at, h_at) = match door.kernel.lock() {
+                Ok(mut k) => {
+                    k.note_served(addr, svoice);
+                    (k.k_step(), k.book_height())
+                }
+                Err(_) => continue,
+            };
             eprintln!(
-                "  court syllabus {:02x}{:02x}… to {:02x}{:02x}… receipt K {k_now} h {height}",
+                "  court syllabus {:02x}{:02x}… to {:02x}{:02x}… receipt K {k_at} h {h_at}",
                 addr[0], addr[1], svoice[0], svoice[1]
             );
         }

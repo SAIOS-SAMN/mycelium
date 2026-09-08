@@ -281,7 +281,7 @@ impl Kernel {
                             "  court peer holds {:02x}{:02x}… from {:02x}{:02x}…",
                             addr[0], addr[1], peer[0], peer[1]
                         );
-                        self.home_install(&addr);
+                        self.home_install(&addr, peer);
                     }
                 }
             }
@@ -327,7 +327,11 @@ impl Kernel {
         [0; 4]
     }
 
-    pub(crate) fn home_install(&mut self, addr: &[u8]) {
+    /// 47.3: THE HOME INSTALLS on a second vantage. `witness` is the organ
+    /// whose re-derivation the install rests on, and it is the author of the
+    /// receipt this act seals (45.1): a book that cannot say which vantage
+    /// an install stood on cannot re-derive the install.
+    pub(crate) fn home_install(&mut self, addr: &[u8], witness: [u8; 32]) {
         let held = self.word_at(addr).cloned().or_else(|| self.provisional.get(addr).cloned());
         if self.basis.get(addr).is_none() {
             if let Some(w) = held.as_ref() {
@@ -372,6 +376,12 @@ impl Kernel {
         if let Some(w) = self.word_at(addr).cloned() {
             self.note_form_citations(addr, &w);
         }
+        // 45.1: an install is an ADMITTED ACT, so it is a step of this
+        // kernel's clock and a receipt in its chain. Without one the book
+        // grew a ruled word at no position: nothing cited the peer receipts
+        // admitted since the last step, and a reader replaying the chain
+        // found the install nowhere in it.
+        self.append_step(addr, witness);
         eprintln!("  court home installed {:02x}{:02x}… peer holds the stratum", addr[0], addr[1]);
     }
 
@@ -459,7 +469,7 @@ impl Kernel {
                     "  court witness {:02x}{:02x}… co-signed {:02x}{:02x}… (replayed)",
                     witness[0], witness[1], object[0], object[1]
                 );
-                self.home_install(object);
+                self.home_install(object, witness);
             }
             crate::court::convergence::Converged::Inexact { a, b } => {
                 eprintln!(
@@ -502,7 +512,7 @@ impl Kernel {
                             "  court witness {:02x}{:02x}… co-signed {:02x}{:02x}…",
                             witness[0], witness[1], h[0], h[1]
                         );
-                        self.home_install(h);
+                        self.home_install(h, witness);
                     }
                     crate::court::convergence::Converged::Inexact { .. } => {
                         eprintln!(

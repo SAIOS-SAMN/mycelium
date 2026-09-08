@@ -26,6 +26,21 @@ impl Kernel {
         if self.provisional.remove(addr).is_none() {
             return false;
         }
+        // 45.1: A RULING IS AN ADMITTED ACT. Every arm below moves the book
+        // -- the word joins the ruled cover, or its award evaporates, or it
+        // is excised and re-admitted as a cavity -- and none of it was a
+        // step of this kernel's clock, so the chain held no position for the
+        // act that changes the book most.
+        //
+        // Sealed HERE, at the one point past which the book has moved on
+        // every path: the two refusals above return before the provisional
+        // is removed and rule nothing, so they seal nothing; past the
+        // removal every arm has already changed what this court holds, the
+        // rewrite arm's `return false` included. The author is the court
+        // whose verdict this is (`set_court_voice`, 47.2), and this court
+        // itself when it is ruling on its own stroke.
+        let ruler = self.court_voice.unwrap_or(self.identity);
+        self.append_step(addr, ruler);
         if ruling == RULING_UPHELD {
             self.ruled_admit(addr); // finalized here: it joins the ruled cover
             let spoken = spoken.or_else(|| self.word_at(addr).cloned());

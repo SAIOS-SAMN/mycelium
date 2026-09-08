@@ -121,3 +121,87 @@ assert_eq!(
     "a witness re-derives the same extent from the recorded height"
 );
 }
+
+/// 45.1: A RECEIPT FOR EVERY ADMITTED ACT. A ruling, an install on a
+/// second vantage, a syllabus page served and a lapsed citation each move
+/// this court's book, and each is a step of its own clock. None of them
+/// sealed one: the book grew ruled words, released escrows and served
+/// pages at no position in the chain that is supposed to record them, and
+/// a reader replaying the chain found the acts nowhere in it.
+#[test]
+fn every_act_that_moves_the_book_seals_a_receipt() {
+    use crate::anastome::dialogue::{RULING_SLASHED, RULING_UPHELD};
+
+    // A RULING. Two voices docket a percept; the court rules on it.
+    let mut k = Kernel::new();
+    k.bind_identity([0x5a; 32]);
+    let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+    assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+    assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending);
+    k.court_stroke();
+    let addr = k.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().0;
+    let before = k.k_step();
+    assert!(k.apply_verdict(&addr, RULING_UPHELD), "the ruling lands");
+    let after = k.k_step();
+    assert_eq!(after, before + 1, "a ruling is one step of the court's clock");
+    assert_eq!(
+        k.chain().receipts().last().map(|r| r.delta.clone()),
+        Some(addr.clone()),
+        "and the receipt names the word it ruled on"
+    );
+
+    // A RULING THAT RULES NOTHING SEALS NOTHING: the same address twice,
+    // and an unknown ruling byte, both refuse before the book moves.
+    let held = k.k_step();
+    assert!(!k.apply_verdict(&addr, RULING_UPHELD), "a verdict lands once");
+    assert!(!k.apply_verdict(&addr, 0xfe), "an unknown ruling rules nothing");
+    assert_eq!(k.k_step(), held, "neither moved the clock");
+
+    // A SYLLABUS PAGE SERVED.
+    let before = k.k_step();
+    k.note_served(&addr, [3; 32]);
+    assert_eq!(k.k_step(), before + 1, "a page served is one step");
+
+    // A SLASH, which is a ruling on the other arm.
+    let mut k2 = Kernel::new();
+    k2.bind_identity([0x5b; 32]);
+    assert_eq!(k2.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+    assert_eq!(k2.ingest(&a, &b, [2; 32]), Outcome::GermPending);
+    k2.court_stroke();
+    let saddr = k2.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().0;
+    let before = k2.k_step();
+    k2.apply_verdict(&saddr, RULING_SLASHED);
+    assert_eq!(k2.k_step(), before + 1, "a slash is one step too");
+
+    // AN INSTALL ON A SECOND VANTAGE, and A LAPSE of what is left standing.
+    let mut k3 = Kernel::new();
+    k3.bind_identity([0x5c; 32]);
+    assert_eq!(k3.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+    assert_eq!(k3.ingest(&a, &b, [2; 32]), Outcome::GermPending);
+    k3.court_stroke();
+    let iaddr = k3.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().0;
+    let before = k3.k_step();
+    k3.home_install(&iaddr, [0xbb; 32]);
+    assert_eq!(k3.k_step(), before + 1, "an install is one step");
+    assert!(
+        k3.chain().receipts().last().is_some_and(|r| r.delta == iaddr),
+        "sealed at the installed address"
+    );
+
+    // A LAPSE. A citation standing an aperture of receipts behind the head
+    // releases its draw (47.5); the release is this court's own act.
+    let mut k4 = Kernel::new();
+    k4.bind_identity([0x5d; 32]);
+    assert_eq!(k4.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+    let laddr = k4.pending.fiber(crate::network::nerve::ROOT).next().unwrap().0;
+    k4.standing_h.insert(&laddr, 0);
+    k4.set_height(crate::physics::aperture_cycle() as u64 + 1);
+    let before = k4.k_step();
+    k4.lapse_docket();
+    assert_eq!(k4.k_step(), before + 1, "a lapsed citation is one step");
+    assert!(
+        k4.chain().receipts().last().is_some_and(|r| r.delta == laddr),
+        "sealed at the address whose draw was released"
+    );
+}
