@@ -196,16 +196,19 @@ pub(crate) fn group_by_chart(cands: &[Cand], used: Option<&[bool]>, peel: bool) 
         .collect()
 }
 
-pub(crate) fn greedy_within(
-    ins: &[Cand],
-    outs: &[Cand],
-    ii: &[usize],
-    oo: &[usize],
-    used_in: &mut [bool],
-    used_out: &mut [bool],
-    pairs: &mut Vec<(usize, usize, Carriage)>,
-    want: u8,
-) {
+/// THE STATE OF ONE PAIRING PASS: the candidates on each side, which of
+/// them a pass has consumed, and the pairs it has made. A pass reads all
+/// five or none of them — they are the same object at five names.
+pub(crate) struct Pairing<'a> {
+    pub(crate) ins: &'a [Cand],
+    pub(crate) outs: &'a [Cand],
+    pub(crate) used_in: &'a mut [bool],
+    pub(crate) used_out: &'a mut [bool],
+    pub(crate) pairs: &'a mut Vec<(usize, usize, Carriage)>,
+}
+
+pub(crate) fn greedy_within(p: &mut Pairing<'_>, ii: &[usize], oo: &[usize], want: u8) {
+    let Pairing { ins, outs, used_in, used_out, pairs } = p;
     for &i in ii {
         if used_in[i] {
             continue;
@@ -235,13 +238,9 @@ pub(crate) fn greedy_within(
 }
 
 pub(crate) fn pair_groups(
-    ins: &[Cand],
-    outs: &[Cand],
+    p: &mut Pairing<'_>,
     in_g: &[(Invariant, Vec<usize>)],
     out_g: &[(Invariant, Vec<usize>)],
-    used_in: &mut [bool],
-    used_out: &mut [bool],
-    pairs: &mut Vec<(usize, usize, Carriage)>,
     want: u8,
 ) {
     let mut out_by: crate::network::nerve::Keyed<&[usize]> = crate::network::nerve::Keyed::new();
@@ -252,7 +251,7 @@ pub(crate) fn pair_groups(
         let Some(oo) = out_by.get(&inv.key()) else {
             continue;
         };
-        greedy_within(ins, outs, ii, oo, used_in, used_out, pairs, want);
+        greedy_within(p, ii, oo, want);
     }
 }
 
@@ -274,13 +273,31 @@ pub(crate) fn pair_scene(
     let mut pairs: Vec<(usize, usize, Carriage)> = Vec::new();
     let in_exact = group_by_chart(&ins, None, false);
     let out_exact = group_by_chart(&outs, None, false);
-    for want in 0u8..=1 {
-        pair_groups(&ins, &outs, &in_exact, &out_exact, &mut used_in, &mut used_out, &mut pairs, want);
+    {
+        let mut pass = Pairing {
+            ins: &ins,
+            outs: &outs,
+            used_in: &mut used_in,
+            used_out: &mut used_out,
+            pairs: &mut pairs,
+        };
+        for want in 0u8..=1 {
+            pair_groups(&mut pass, &in_exact, &out_exact, want);
+        }
     }
     let in_peel = group_by_chart(&ins, Some(&used_in), true);
     let out_peel = group_by_chart(&outs, Some(&used_out), true);
-    for want in 2u8..=3 {
-        pair_groups(&ins, &outs, &in_peel, &out_peel, &mut used_in, &mut used_out, &mut pairs, want);
+    {
+        let mut pass = Pairing {
+            ins: &ins,
+            outs: &outs,
+            used_in: &mut used_in,
+            used_out: &mut used_out,
+            pairs: &mut pairs,
+        };
+        for want in 2u8..=3 {
+            pair_groups(&mut pass, &in_peel, &out_peel, want);
+        }
     }
     // Leftover wholes: ∃V even when the chart axes disagree. Not a
     // cartesian of peel shells — unused wholes only.
@@ -296,8 +313,17 @@ pub(crate) fn pair_scene(
         .filter(|(i, c)| !used_out[*i] && c.kind == crate::transducer::peel::ShellKind::Whole)
         .map(|(i, _)| i)
         .collect();
-    for want in 2u8..=3 {
-        greedy_within(&ins, &outs, &ii, &oo, &mut used_in, &mut used_out, &mut pairs, want);
+    {
+        let mut pass = Pairing {
+            ins: &ins,
+            outs: &outs,
+            used_in: &mut used_in,
+            used_out: &mut used_out,
+            pairs: &mut pairs,
+        };
+        for want in 2u8..=3 {
+            greedy_within(&mut pass, &ii, &oo, want);
+        }
     }
     (ins, outs, pairs, used_in, used_out)
 }
