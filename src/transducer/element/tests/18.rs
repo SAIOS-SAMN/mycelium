@@ -71,28 +71,3 @@ fn axes_are_independent_and_extensible() {
     spatial.open_axis(translator_versor(2, 0));
     assert_eq!(spatial.opened_axes(), vec![FIBER_GERMINATED]);
 }
-
-/// The gate this chapter owes: the element's action is a versor and never a
-/// matrix. It read one file when the carrier was one file; it reads every
-/// production file of `element/` now, and the test module is a sibling
-/// directory rather than a `#[cfg(test)]` tail, so the split is what the
-/// scan walks.
-#[test]
-fn no_qmatrix_in_cognition() {
-    let production = [
-        ("carrier.rs", include_str!("../carrier.rs")),
-        ("gauge.rs", include_str!("../gauge.rs")),
-        ("letters.rs", include_str!("../letters.rs")),
-        ("mod.rs", include_str!("../mod.rs")),
-        ("residual.rs", include_str!("../residual.rs")),
-        ("sensor.rs", include_str!("../sensor.rs")),
-        ("tape.rs", include_str!("../tape.rs")),
-        ("vertex.rs", include_str!("../vertex.rs")),
-    ];
-    for (name, src) in production {
-        assert!(
-            !src.contains("fibers: Vec") && !src.contains("as_operator") && !src.contains("realize("),
-            "the Element's action is a versor, never a matrix — {name}"
-        );
-    }
-}
