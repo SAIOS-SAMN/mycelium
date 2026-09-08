@@ -142,16 +142,20 @@ at N versus 4N. It never asserts on tape bytes, letters, `to_bytes()`
 equality, counts standing in for properties, or `description()[i]` beyond
 the version byte.
 
-3.3 **Layout.** Tests live in `<module>/tests/<chapter>.rs`, one file per
-chapter of `MU-RECURSION.md` they prove (`sentence/tests/12.rs`,
-`cognition/tests/47.rs`). A test proving no chapter goes in
-`tests/other.rs` and is listed in the commit message until a chapter is
-named for it. `tests/common.rs` is the one shared file per module and
-holds fixture constructors only (`grid`, `word`, `form_with_two_words`),
-named for what they build. A gate recognises a test file by the owning
-module's `#[cfg(test)] mod tests;` declaration, never by the file's name
-or directory; a file merely named `tests.rs`, or one under `tests/` that
-no module declares, is production code to every gate.
+3.3 **Layout.** Tests live in `<module>/tests/<function>.rs`, one file
+per function of the organ they prove, named for what the tests in it claim
+in the document's vocabulary (`sentence/tests/pivot.rs`,
+`sentence/tests/tape.rs`, `cognition/tests/ledger_clock.rs`,
+`admission/tests/receipts.rs`); the file's first line names the chapter
+the claims come from. A file is never named for a chapter number: a number
+says where the claim was read, not what it is, and the tree renames when
+the document renumbers (ruled 2026-09-08; f799557 and f179bdd carried the
+renaming). `tests/common.rs` is the one shared file per module and holds
+fixture constructors only (`grid`, `word`, `form_with_two_words`), named
+for what they build. A gate recognises a test file by the owning module's
+`#[cfg(test)] mod tests;` declaration, never by the file's name or
+directory; a file merely named `tests.rs`, or one under `tests/` that no
+module declares, is production code to every gate.
 
 3.4 **Fixtures are built, never faked.** Addresses come from
 `Element::address()` of a constructed form, keys from `key()`, forms from
