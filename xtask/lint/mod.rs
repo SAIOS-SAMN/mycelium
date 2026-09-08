@@ -2,7 +2,7 @@
 //
 //! MU-STANDARDS 4 — THE GATES: one file per gate, each named for the rule
 //! it enforces — the reading bound, rules 1 and 8, law 2, law 11, law 9,
-//! law 5. This file is the order they run in and nothing else.
+//! law 5, 2.4. This file is the order they run in and nothing else.
 
 pub mod clock;
 pub mod digest;
@@ -12,6 +12,7 @@ pub mod length;
 pub mod maps;
 pub mod matrix;
 pub mod order;
+pub mod panics;
 pub mod squaring;
 
 use length::lint_file_length;
@@ -53,6 +54,7 @@ pub fn run() -> Result<(), String> {
             maps::GATE,
             matrix::GATE,
             order::GATE,
+            panics::GATE,
             squaring::GATE,
         ], &mut hits)?;
     if hits.is_empty() {

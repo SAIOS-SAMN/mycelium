@@ -73,30 +73,34 @@ pub(crate) fn lint_file_length(roots: &[PathBuf], hits: &mut Vec<String>) -> Res
 /// Is this file test code the compiler only builds under `#[cfg(test)]`?
 /// Two shapes count, and both are CHECKED rather than trusted to a name:
 /// `<module>/tests.rs`, whose owner is `<module>/mod.rs`; and
-/// `<module>/tests/<chapter>.rs` (MU-STANDARDS 3.3), whose owner is the same
-/// `<module>/mod.rs` one directory further up. In both the owner must carry
-/// `#[cfg(test)] mod tests;`, so a file merely NAMED `tests.rs`, or one
-/// dropped into a directory called `tests` that nothing declares, is still
-/// linted in full.
+/// `<module>/tests/<function>.rs` (MU-STANDARDS 3.3), whose owner is the
+/// same `<module>/mod.rs` one directory further up. A binary is a module
+/// too (1.5) and its root is `main.rs`, so that is the owner read when the
+/// directory has no `mod.rs`; a library root is `lib.rs`. In every case the
+/// owner must carry `#[cfg(test)] mod tests;`, so a file merely NAMED
+/// `tests.rs`, or one dropped into a directory called `tests` that nothing
+/// declares, is still linted in full.
 pub(crate) fn is_declared_test_file(path: &Path) -> bool {
     let Some(dir) = path.parent() else {
         return false;
     };
     let named_tests_rs = path.file_name().and_then(|s| s.to_str()) == Some("tests.rs");
     let in_tests_dir = dir.file_name().and_then(|s| s.to_str()) == Some("tests");
-    let owner = if named_tests_rs {
-        dir.join("mod.rs")
+    let module = if named_tests_rs {
+        dir.to_path_buf()
     } else if in_tests_dir {
         match dir.parent() {
-            Some(up) => up.join("mod.rs"),
+            Some(up) => up.to_path_buf(),
             None => return false,
         }
     } else {
         return false;
     };
-    let src = match fs::read_to_string(&owner) {
-        Ok(s) => s,
-        Err(_) => return false,
+    let Some(src) = ["mod.rs", "main.rs", "lib.rs"]
+        .iter()
+        .find_map(|root| fs::read_to_string(module.join(root)).ok())
+    else {
+        return false;
     };
     let mut saw_cfg_test = false;
     for line in src.lines() {
