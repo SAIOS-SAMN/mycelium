@@ -153,7 +153,8 @@ the document renumbers (ruled 2026-09-08; f799557 and f179bdd carried the
 renaming). `tests/common.rs` is the one shared file per module and holds
 fixture constructors only (`grid`, `word`, `form_with_two_words`), named
 for what they build. A gate recognises a test file by the owning module's
-`#[cfg(test)] mod tests;` declaration, never by the file's name or
+`#[cfg(test)] mod tests;` declaration — in its `mod.rs`, or in `main.rs`
+when the module is a binary (§1.5) — never by the file's name or
 directory; a file merely named `tests.rs`, or one under `tests/` that no
 module declares, is production code to every gate.
 
@@ -196,7 +197,10 @@ each needs a sentence in the message.
 (the shape of a rational matrix — `QMatrix`, `Vec<Vec<Q>>`, `as_operator`,
 `realize(` — in cognition; `core` exports `Q` alone since F2f), clock (`SystemTime`, `Instant`, `Duration` in every kernel,
 court, client, transducer, economy, physics file and every binary),
-squaring (coordinate pairs outside the sensor allow-list), file length
+squaring (coordinate pairs outside the sensor allow-list), panics
+(`.unwrap()`, `.expect(`, `panic!`, `unreachable!`, `todo!`,
+`unimplemented!` in production anywhere under `src/`, §2.4; the
+allow-list is empty), file length
 (§1.1), rustc warnings (`RUSTFLAGS='-D warnings'`), clippy warnings
 (`cargo clippy --release --all-targets -- -D warnings`, run by the
 `xtask` binary and never by `build.rs`, which cannot invoke cargo from
@@ -214,9 +218,10 @@ violation is returned.
 
 4.4 Gates owed (recorded, not yet built): rules 2 (count as branch), 4
 (choice by scalar), 10 (loop without budget or boundary), 11 (`unwrap_or`,
-`saturating_*` outside accounting floors, `expect` in production), 15
-(`.first()`/`.last()` outside wire tags and chain heads). Until they exist,
-the auditor's grep over production code is the check, on every landing.
+`saturating_*` outside accounting floors; `expect` in production is the
+panic gate's since Stage 11 I19), 15 (`.first()`/`.last()` outside wire
+tags and chain heads). Until they exist, the auditor's grep over
+production code is the check, on every landing.
 
 4.6 **The order gate** (Stage 9, S9.10; folded into F3's single walker):
 a function whose parameters include two `[u64; 4]`, two `Rank`, or two
