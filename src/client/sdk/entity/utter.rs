@@ -111,9 +111,9 @@ impl Entity {
         Ok((reply, heard))
     }
 
-    /// This entity's voice read the judge's clock.
-    pub fn at(&mut self, k: u64) {
-        self.session.at(k);
+    /// An act of this entity was admitted; its own clock steps (45.4).
+    pub fn advance(&mut self) -> u64 {
+        self.session.advance()
     }
 
     pub fn attest(&self, chain: &[(i64, i64, u8, u8)], cites: &[dialogue::CiteWire]) -> io::Result<Reply> {
@@ -180,12 +180,16 @@ impl Entity {
         if sentences.is_empty() {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "no sentence"));
         }
-        let k = self.session.voice().k();
         let tu = self.now_tu();
         let mut fresh: Vec<&Element> = Vec::new();
         let mut codes = vec![dialogue::SPEECH_STOOD; sentences.len()];
         for (i, e) in sentences.iter().enumerate() {
             let taught = self.already_taught(e);
+            // 45.4: STANDING A FORM IS AN ADMITTED ACT of this mind, so the
+            // mind's own clock steps and the form stands at the step it
+            // took. The stamp is the act's own K, not a number the hypha
+            // last replied with.
+            let k = self.session.advance();
             self.epigenome.stand_dialect_at(e.clone(), k, tu);
             if taught {
                 continue;
@@ -210,6 +214,10 @@ impl Entity {
             gi += 1;
             codes[i] = c;
             if c != dialogue::SPEECH_REFUSED {
+                // The utterance was admitted: the second act, and the second
+                // step of this mind's clock (45.4). A refused utterance is
+                // not an act and moves nothing.
+                self.session.advance();
                 self.taught_up.insert(e.address(), e.clone());
             }
         }

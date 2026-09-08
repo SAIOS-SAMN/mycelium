@@ -226,9 +226,9 @@ impl Session {
         &self.voice
     }
 
-    /// The voice read the judge's clock.
-    pub fn at(&mut self, k: u64) {
-        self.voice.at(k);
+    /// An act of this voice was admitted; its own clock steps (45.4).
+    pub fn advance(&mut self) -> u64 {
+        self.voice.advance()
     }
 
     /// The measured impedance Z: consecutive failed exchanges.

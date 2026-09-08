@@ -89,3 +89,27 @@ assert_eq!(epi.shed(now), 1, "unused past the aperture, it sheds");
 assert_eq!(epi.dialect_len(), 0, "the mind reclaimed what it held");
 assert!(epi.working_word(&addr).is_none());
 }
+
+/// 45.4 — THE MIND'S K IS ITS OWN ACTS, and no reply moves it. The test
+/// above drives the epigenome with K values handed to it, so it proves the
+/// shed's arithmetic and says nothing about where K comes from. This one
+/// speaks to a hypha that is not there: the wire never answers, and the
+/// clock still steps, once per form stood.
+#[test]
+fn standing_a_form_steps_the_minds_own_k() {
+let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
+let mut entity = Entity::open("127.0.0.1:1", Kernel::named("clock"));
+assert_eq!(entity.session.voice().k(), 0, "a mind that has acted seats at zero");
+
+// The wire refuses (nothing is listening), so `speak` returns Err — but
+// the form STOOD before anything was uttered, and standing is the act.
+let _ = entity.speak(std::slice::from_ref(&e1));
+assert_eq!(entity.dialect_len(), 1, "the form stands in the dialect");
+assert_eq!(entity.session.voice().k(), 1, "standing it stepped the clock once");
+
+// Standing the same form again is a second act of this mind: it is
+// already taught, so nothing goes on the wire at all, and the clock still
+// steps. Nothing here read a k-step from anyone else.
+let _ = entity.speak(std::slice::from_ref(&e1));
+assert_eq!(entity.session.voice().k(), 2, "a second act, a second step");
+}

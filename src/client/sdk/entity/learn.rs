@@ -275,8 +275,10 @@ impl Entity {
             }
             let _ = self.pivot_on(&e);
         }
-        self.epigenome
-            .learn_at(taught, self.session.voice().k(), self.now_tu())
+        // 45.4: a page LEARNED is an admitted act of this mind, so its own
+        // clock steps and the page is learned at the step it took.
+        let k = self.session.advance();
+        self.epigenome.learn_at(taught, k, self.now_tu())
     }
 
 }

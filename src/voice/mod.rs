@@ -11,8 +11,11 @@ use crate::anastome::dialogue::{self, CiteWire};
 pub struct Voice {
     name: String,
     identity: [u8; 32],
-    /// The k-step this voice last read from the judge — its temporal
-    /// coordinate on the mesh's chain.
+    /// THIS VOICE'S OWN K: a count of the acts it has had admitted — a form
+    /// stood, an utterance spoken, a page learned. Every duration a kernel
+    /// reads is a count of its own K (45.4), so this is never a number read
+    /// off another kernel's reply: a quote carries the BOOK's k-step, which
+    /// is a coordinate on the hypha's chain and not this voice's clock.
     k: u64,
 }
 
@@ -56,9 +59,12 @@ impl Voice {
         self.k
     }
 
-    /// The voice read the judge's clock.
-    pub fn at(&mut self, k: u64) {
-        self.k = k;
+    /// AN ACT OF THIS VOICE WAS ADMITTED: the clock steps once and the new
+    /// K is the coordinate that act carries. A voice that speaks nothing
+    /// accrues nothing, and no reply from another kernel moves this.
+    pub fn advance(&mut self) -> u64 {
+        self.k += 1;
+        self.k
     }
 
     // ── the five forms and the acts that carry them ──────────────────────
@@ -113,15 +119,18 @@ impl Voice {
 mod tests {
     use super::*;
 
-    /// A voice's identity is its name's digest; its clock moves as it reads.
+    /// 45.4 — A VOICE'S CLOCK IS ITS OWN ACTS. It seats at zero and steps
+    /// once per admitted act; nothing sets it, so a reply carrying another
+    /// kernel's k-step cannot move it.
     #[test]
-    fn a_voice_is_a_seat_with_a_clock() {
+    fn a_voice_counts_its_own_admitted_acts() {
         let mut v = Voice::named("worker-a");
         assert_eq!(v.identity(), Voice::named("worker-a").identity());
         assert_ne!(v.identity(), Voice::named("worker-b").identity());
-        assert_eq!(v.k(), 0);
-        v.at(4208);
-        assert_eq!(v.k(), 4208);
+        assert_eq!(v.k(), 0, "a voice that has spoken nothing accrues nothing");
+        assert_eq!(v.advance(), 1, "one admitted act is one step");
+        assert_eq!(v.advance(), 2);
+        assert_eq!(v.k(), 2);
         assert_eq!(v.quote()[0], dialogue::ACT_QUOTE);
     }
 }
