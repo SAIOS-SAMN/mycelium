@@ -1,5 +1,5 @@
-// The alphabet's tests, one file per ORGAN they prove. Each file's header
-// names the chapter of MU-RECURSION the claim comes from.
+//! 39 — THE ALPHABET'S TESTS: one file per organ they prove — the letters
+//! and their relators, the plane form, the rotor's key and normal form.
 
 mod letters;
 mod plane_form;

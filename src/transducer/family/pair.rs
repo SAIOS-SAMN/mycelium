@@ -1,10 +1,9 @@
 // 21 step 2 — THE PAIR FORM: the scene of one train pair, grouped by chart
 // and ranked by carriage.
 //
-//! `pair_form` is the memoised entry; everything under it reads the scene's
-//! own candidates and their carriages. `greedy_within` and `pair_rank` are
-//! the two sites the enumeration sweep still watches, and they are here so
-//! that watch is one file.
+//! `pair_form` is the memoised entry: the scene's candidate bodies grouped
+//! by exact chart, paired where a carriage exists, and the unpaired left as
+//! the residual the form does not speak.
 
 use super::*;
 use std::cell::RefCell;

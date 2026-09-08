@@ -1,11 +1,9 @@
 // 10.2, 21 step 1 — THE GAUGE: the hue permutation, its profile, and the
 // fiber of assignments one body can be spoken with.
 //
-//! A gauge is a set of (before, after) hue pairs. This file holds its
-//! profile and key, permutation composition and inversion, the hue map
-//! between two assignments, the transition versor between two chains, and
-//! the reads that walk a word's fibre: its variant chains, its assignments
-//! by profile, and whether a chain is one of them.
+//! A gauge is a set of (before, after) hue pairs: its profile and key,
+//! permutation composition and inversion, the hue map between two
+//! assignments, the transition versor, and the reads that walk a word's fibre.
 
 use super::*;
 

@@ -2,10 +2,8 @@
 // built from one.
 //
 //! A5 centers a chain to its minimum corner and sorts it, so the same
-//! deformation at any position is one substance. This file holds that
-//! canonicalization and every constructor that reads a chain: a residual
-//! germ, a framed residual, a connection, a translation, and the listing
-//! key that names a chain within a frame.
+//! deformation at any position is one substance: that canonicalisation, the
+//! constructors that read a chain, and the listing key naming it in a frame.
 
 use crate::transducer::germinate::{germ_bytes as residual_word, ResidualGerm};
 use crate::core::Q;

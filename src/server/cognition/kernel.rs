@@ -4,8 +4,6 @@
 //! The struct is the whole of a court's state: the basis of ruled words and
 //! their indices, the book of listings and its fields, the dockets, the
 //! dialect, the treasury, the receipt chain and the admissions it has made.
-//! The methods here are the ones that set it up and the ones that count
-//! what is in it; the moves are in the sibling files.
 
 use super::*;
 

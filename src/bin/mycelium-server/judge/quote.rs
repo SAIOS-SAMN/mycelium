@@ -1,10 +1,9 @@
-// ACT_QUOTE — the market view: what this book has open, in rank order,
-// for as much of it as one frame carries.
+// 23.8, 26 — ACT_QUOTE: the market view, what this book has open in rank
+// order, for as much of it as one frame carries.
 //
 //! The view leaves under a brief lock; pricing and the cohesion witness
-//! compute over the snapshot with no lock held. The frame budget bounds
-//! what one contact carries: items ride in rank order until the next
-//! would not fit.
+//! compute over the snapshot with no lock held. Items ride in rank order
+//! until the next would not fit the frame budget.
 
 use crate::door::Door;
 use crate::transport::answer;

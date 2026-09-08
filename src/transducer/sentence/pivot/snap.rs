@@ -1,13 +1,9 @@
 // A16, A20 — WHAT A PIVOT PRODUCES: the snapshot of one pivot, the
 // discharge it certifies, and the cell it opened.
 //
-//! SEVERAL CERTIFIED DISCHARGES ARE A VORTEX. `select_discharge` compares
-//! nothing: closure certifies a pivot after it is made, and no reading of
-//! μ⃗ — no dominance, no minimum, no order on the lanes — chooses among the
-//! candidates that discharged (12.6, 16.16 step 5, T13, T22, consolidated
-//! 2026-09-08). What the vortex records is the OBSTRUCTION between its
-//! cells: the lane reading and the two axes, which is why they are two
-//! proofs and not one.
+//! SEVERAL CERTIFIED DISCHARGES ARE A VORTEX: closure certifies a pivot
+//! after it is made, and no reading of μ⃗ chooses among the candidates that
+//! discharged. A vortex records the OBSTRUCTION between its cells.
 
 use super::*;
 

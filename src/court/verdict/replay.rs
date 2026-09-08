@@ -3,8 +3,7 @@
 //
 //! Every vertex re-derives from its tape, every face from its vertices,
 //! every loop's holonomy to the identity, and every pivot certificate from
-//! the axis it names. A form that does not is REFUSED with the move that
-//! failed, never scored.
+//! the axis it names. A form that does not is REFUSED, never scored.
 
 use super::*;
 

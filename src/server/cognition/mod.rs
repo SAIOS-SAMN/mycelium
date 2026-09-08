@@ -1,13 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! COGNITION — the kernel loop. A demand (scene A → scene B) enters as raw
-//! cells; the percept is a pair form (`pair_form` → `extract_rule_with`) on
-//! the court as on the mind. A closed form is the word; a withheld remainder
-//! is the residual. A novel word installs ONLY on two-organ CONVERGENCE
-//! (`court::convergence`): one vantage dockets the residual, and a witness
-//! that re-derives the same address from the same demand installs it.
-//! Convergence is not a count of mouths -- the same voice twice converges
-//! on nothing. No digest-keyed cognition (Anti-Flattening Law).
+//! 23.2, 47.3 — COGNITION, the kernel loop: a demand (scene A → scene B)
+//! enters as raw cells, the percept is a pair form, a closed form is the
+//! word, and a novel word installs only on two-organ CONVERGENCE.
 
 mod basis;
 mod book;

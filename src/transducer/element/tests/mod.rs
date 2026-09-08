@@ -1,5 +1,6 @@
-// The element's tests, one file per ORGAN they prove. Each file's header
-// names the chapter of MU-RECURSION the claim comes from.
+//! 39 — THE ELEMENT'S TESTS: one file per organ they prove — the gauge
+//! fibre, the four lanes and the germinated axes, the tape, the versor
+//! algebra, the vertex and its address, over the fixtures in `common`.
 
 pub mod common;
 

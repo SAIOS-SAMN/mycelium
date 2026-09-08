@@ -1,11 +1,9 @@
-// 6.2, 6.4 — THE DOOR: what one hypha holds for the act it is serving, and
+// 23.8, 26 — THE DOOR: what one hypha holds for the act it is serving, and
 // the control surface a client or an operator speaks to.
 //
-//! `Door` is the whole of a server's state as one act sees it. `serve_control`
-//! answers the acts that are about the mesh rather than about the language:
-//! peers, roots, the syllabus, task listing and intake, the cover's home for
-//! a chain. Everything here is a read or a small keyed write; the language
-//! moves are in `judge`.
+//! `Door` is the whole of a server's state as one act sees it.
+//! `serve_control` answers the acts that are about the mesh rather than
+//! about the language: peers, roots, the syllabus, task listing and intake.
 
 use crate::admission::room64;
 use crate::exchange::{note_root, speak_root_locked, Mesh, RootHear};

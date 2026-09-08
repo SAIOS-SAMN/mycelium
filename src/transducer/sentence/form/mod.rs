@@ -1,11 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
-
-//! Sentence form: vertices, faces, loops, and the tree gauge.
-
-//!
-//! Three organs (Stage 8b S28): `carrier.rs` the form's vertices, faces and
-//! loops (18.2); `keys.rs` the A21 keys it is indexed by; `certificate.rs`
-//! the pivot certificate (A20).
+//
+//! 18.2, A21, A20 — THE SENTENCE FORM: its vertices, faces and loops, the
+//! tree gauge that flattens it, the structured keys it is indexed by, and
+//! the certificate a pivot on it writes.
 
 pub mod carrier;
 pub mod certificate;

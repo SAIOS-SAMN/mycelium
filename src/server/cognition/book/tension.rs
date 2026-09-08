@@ -1,5 +1,5 @@
-// 23.4 — TENSION: what a listing is under, and the field the market reads
-// it from.
+// 23.8, 26 — TENSION: what a listing is under, and the field the market
+// reads it from.
 //
 //! The field is written from the listing's own deflation and its stagnancy,
 //! per lane. Nothing is capped and nothing is defaulted: a lane with no

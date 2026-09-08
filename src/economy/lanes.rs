@@ -2,11 +2,8 @@
 // reads against another, and what the surface prices it at.
 //
 //! Lanes are never summed and never ordered by a scalar. `lane_moves` is
-//! the READING — what each of the four lanes did, and nothing else. There
-//! is no dominance here and nothing that picks: the consolidation of
-//! 2026-09-08 (12.6, 16.16 step 5, T13, T22) holds every certified
-//! discharge as a vortex and lets no reading of μ⃗ choose among them.
-//! `price` is per lane.
+//! the READING — what each of the four lanes did, and nothing else: no
+//! dominance, nothing that picks among discharges, and `price` per lane.
 
 use super::*;
 

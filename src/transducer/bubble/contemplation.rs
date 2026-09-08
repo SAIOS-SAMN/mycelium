@@ -2,9 +2,8 @@
 // incidence between them.
 //
 //! `Contemplation` is the complex of held thoughts: the bubbles, their
-//! remainders, the Čech complex over them, the horizon of classes seeded
-//! from the syllabus, and the cavity of what has been retired. Holding a
-//! form or a remainder admits a vertex and links it to what it meets.
+//! remainders, the horizon of classes seeded from the syllabus, and the
+//! cavity. Holding a form admits a vertex and links it to what it meets.
 
 use super::*;
 

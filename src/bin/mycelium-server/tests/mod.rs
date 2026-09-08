@@ -1,5 +1,4 @@
-// The hypha binary's own tests, one file per ORGAN they prove. Each file's
-// header names the chapter of MU-RECURSION the claim comes from.
+// 39 — the hypha binary's own tests, one file per ORGAN they prove.
 
 mod strokes;
 mod wire;

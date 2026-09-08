@@ -3,8 +3,7 @@
 //
 //! A fetched word is replayed against this court's own tapes before it is
 //! admitted to anything. A witness that RE-DERIVED the object converges by
-//! `same_vertex` (M1) and never by comparing the bytes it is spelled with;
-//! a have-list is a claim about an address, not a re-derivation.
+//! `same_vertex` (M1), never by comparing the bytes it is spelled with.
 
 use crate::cognition::*;
 use crate::transducer::address::Address;

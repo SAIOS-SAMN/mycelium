@@ -1,8 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! CHRONOMETRY — the receipt is the clock (MU-RECURSION 45). K orders events
-//! inside one kernel. TUniversal is the height of the receipt ledger. No
-//! kernel reads a wall clock.
+//! 45 — CHRONOMETRY: the receipt is the clock. K orders events inside one
+//! kernel, TUniversal is the height of the receipt ledger, and no kernel
+//! reads a wall clock.
 
 use crate::network::nerve::Keyed;
 use crate::physics::Budget;

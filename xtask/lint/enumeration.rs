@@ -1,10 +1,9 @@
 // Rules 1 and 8 — ENUMERATION: a loop over a carrier reads a keyed source,
 // or it is a search.
 //
-//! `.entries()`, `.for_each(` and `.for_each_from(` walk a carrier whole;
-//! the move is a keyed read. `spend_unit()` names the spend count as a
-//! number: `physics.rs` defines it and `network/wire.rs` reads it, because
-//! the wire MTU IS the byte size of one spend.
+//! `.entries()`, `.for_each(` and `.for_each_from(` walk a carrier whole
+//! where the move is a keyed read; `spend_unit()` names the spend count as
+//! a number, and only the file that defines it and the wire may say it.
 
 use super::walker::Gate;
 use std::path::Path;

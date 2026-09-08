@@ -1,22 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! CONVERGENCE — two organs re-derive one object and reach one address.
-//!
-//! This was `network::consensus`: "two independent mouths must meet",
-//! `QUORUM = 2`, `voices(germ) >= QUORUM`. That counts agreement, which is
-//! not what this engine does. The condition is convergence: the home
-//! re-derives the object, an independent witness hypha re-derives it, and
-//! they reach the SAME M2 address because the algebra is confluent. Nothing
-//! is outvoted; it either re-derives or it does not, and the only other
-//! outcome is `REFUSE_MV_INEXACT` (13.9 step 8). The old code's own comment
-//! said so — "agreement is a theorem about the algebra, not a matched card"
-//! — and then counted mouths anyway.
-//!
-//! The two organs are the home and a WITNESS HYPHA (47.3), never two voices
-//! on one percept. A second voice uttering the same residual is a USE,
-//! credited to both and made a settlement party (24.1), and never a step
-//! toward admission: distinct tasks per voice never supply a second mouth,
-//! so counting them held every germ pending forever.
+//! 47.3, 13.9 — CONVERGENCE: the home and a witness hypha re-derive one
+//! object and reach the SAME M2 address because the algebra is confluent.
+//! Nothing is outvoted; the only other outcome is `REFUSE_MV_INEXACT`.
 
 use crate::network::nerve::{Keyed, ROOT};
 use crate::transducer::address::Address;

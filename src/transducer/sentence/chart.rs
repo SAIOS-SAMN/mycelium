@@ -1,6 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
-
-//! Charts, coboundary, glue, and the form key.
+//
+//! 17.4, 3.3, 31 — THE CHART OF A FORM: its M4 coordinates, the glue of a
+//! crystallized form into it, the coboundary gauge between two forms, the
+//! A21 vertex key, and the `SentenceRule` a form is spoken as.
 
 use super::form::*;
 use super::transport::*;

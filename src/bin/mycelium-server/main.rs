@@ -1,8 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! THE HYPHA — a court on the mesh. This file is the boot order and the
-//! accept loop and nothing else (MU-STANDARDS 1.3): what each organ is, and
-//! in what order it comes up. The organs themselves are the modules below.
+//! 23.8, 26 — THE HYPHA, a court on the mesh: the arguments it is started
+//! with, the order its organs come up in, and the accept loop that hands
+//! each act to the judge.
 
 mod admission;
 mod door;

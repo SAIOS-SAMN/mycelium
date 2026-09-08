@@ -2,8 +2,7 @@
 //
 //! A body is a connected component of one hue. `word_form` reads the versor
 //! that carries one body onto another and the chain of hue transitions it
-//! leaves; `cell_reads` counts what the sensor was asked for, so a test can
-//! assert that one perception costs the same at N and 4N.
+//! leaves; `cell_reads` counts what the sensor was asked for.
 
 use super::*;
 

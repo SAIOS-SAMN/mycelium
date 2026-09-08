@@ -1,18 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! THE KERNEL SDK — how an external kernel joins the mesh and DEVELOPS on it.
-//! Sodalitum, netstratum, or any newcomer links this to: take a stable mesh
-//! identity, PERCEIVE a scene pair (segment it — perception is the kernel's, never
-//! the hypha's), SUBMIT the A→B demand to a hypha, receive the judge's VERDICT, and
-//! LEARN the taught ANASTOME element so no dialect drifts from the mesh. No engine
-//! internals leak across this seam: cells in, verdict out. Ported from the old
-//! mycelium SDK (Session / kernel emblem / observe) onto the v0.1.0 percept wire.
-
-//!
-//! Five organs (Stage 8b S17): `kernel.rs` the voice this client speaks as;
-//! `session.rs` its contact with the mesh (6.2, 24.3); `aperture.rs` how
-//! open that contact is (24.1); `types.rs` the shapes it reads and answers
-//! with; and `entity/` and `epigenome/` beside them.
+//! 24 — THE KERNEL SDK: how a kernel takes a stable mesh identity, perceives
+//! a scene of its own, speaks a demand to a hypha, and learns the word the
+//! court teaches back. Cells in, verdict out.
 
 mod entity;
 mod epigenome;

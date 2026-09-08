@@ -1,11 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! ARC-AGI INGESTION ARM — read a task's grids and yield input→output train pairs
-//! as A→B cell demands for the mesh. Ported from the old mycelium ingest (uplink /
-//! sdk::ocular). The grid→cells convention is the PERCEPTUAL eye's: background hue
-//! 0 is not a cell (the eye sees novelty — old `ocular::observe`'s `if v != 0`),
-//! which is also forced by the coboundary germination (hue 0 = absent). This arm
-//! does NO cognition — it only presents the scene; the mesh perceives and judges.
+//! Law 11 — THE SENSOR'S GRIDS: a task's grids read as input→output train
+//! pairs of A→B cell demands, and the measured frame of a pair. Hue 0 is
+//! not a cell; this arm presents the scene and does no cognition.
 
 use serde::Deserialize;
 

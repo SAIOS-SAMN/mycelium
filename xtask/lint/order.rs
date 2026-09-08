@@ -1,24 +1,9 @@
 // Law 5, rule 4 — THE ORDER GATE: a comparison of polytonic objects returns
 // the reading, never a verdict.
 //
-//! A `bool` from four lanes is the maximal flattening: the caller cannot act
-//! on WHICH lane, so every caller that needs to know recomputes what the
-//! bool threw away. `fits_book` was the proof — it returned one bit and its
-//! caller then called `log_room_refused`, which read the room again to find
-//! the short lane.
-//!
-//! Two hits. A function whose parameters carry two polytonic objects and
-//! whose return is `bool`. And any return of the three verbs the
-//! consolidation of 2026-09-08 deleted: `descends`, `pairs_descend`,
-//! `dominant`.
-//!
-//! There is no sanctioned site for those three any more, so there is no
-//! allow-list of files here. `lane_moves` is the reading and may be called
-//! anywhere; what is forbidden is a function that answers "which of these
-//! two wins" (`descends`), "did every pair descend" (`pairs_descend`), or
-//! "which candidate is the minimum" (`dominant`). The last one selected
-//! among CERTIFIED discharges, which 12.6, 16.16 step 5, T13 and T22 now
-//! forbid outright: several discharges are a vortex.
+//! A `bool` over four lanes is the maximal flattening: the caller cannot
+//! act on WHICH lane. Two hits — a function whose parameters carry two
+//! polytonic objects and whose return is `bool`, and the three deleted verbs.
 
 use super::walker::Gate;
 use std::path::Path;

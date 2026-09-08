@@ -2,8 +2,8 @@
 // reads a wall clock.
 //
 //! Every wait is denominated in strokes and every stamp in receipts. The
-//! allow-list is EMPTY since A9 took the client's lap telemetry: there is
-//! no file in `src/` that may read `SystemTime`, `Instant` or `Duration`.
+//! allow-list is EMPTY: no file in `src/` may read `SystemTime`, `Instant`
+//! or `Duration`.
 
 use super::walker::Gate;
 use std::path::Path;

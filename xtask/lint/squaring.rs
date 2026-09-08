@@ -2,10 +2,8 @@
 // boundary and nowhere above it.
 //
 //! Above the sensor everything is versors and words. The functions in
-//! `SENSOR` are the boundary itself — they read or write a cell and nothing
-//! else does. The exemption is by FUNCTION name and holds only inside that
-//! function's braces (§4.2), so a pair in the same file but outside them is
-//! a hit.
+//! `SENSOR` are the boundary itself; the exemption is by FUNCTION name and
+//! holds only inside that function's braces, so a pair outside them is a hit.
 
 use super::walker::Gate;
 use std::path::Path;

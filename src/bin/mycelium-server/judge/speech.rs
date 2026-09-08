@@ -1,4 +1,4 @@
-// ACT_SPEECH — a voice stands sentences at their home court.
+// 26 — ACT_SPEECH: a voice stands sentences at their home court.
 //
 //! The speaker's words are decoded, the book perceives them, and each one
 //! that stood is named in the reply by its own code (SPEECH_STOOD and its

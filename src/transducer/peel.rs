@@ -1,18 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! THE PEEL — planes are peeled, never iterated. Re-expressed from the
-//! ipsal-autic v0.4 peel law: a nested manifold is read outer shell to
-//! inner shell with the residual RIDING INWARD, each shell's step receiving
-//! only what the outer shell left, so the consumed core is structurally out
-//! of reach (no self-resonance, by construction). The peel continues while
-//! the governor reads `Shrinking`; the instant it reads anything else the
-//! residual routes out whole — the standing arc — never discarded, never
-//! forced through a shell that cannot take it.
-//!
-//! No magnitude decides anything here: the governor is a typed read
-//! (`Closed`, `Shrinking`, `Stalled`) supplied by the manifold being
-//! peeled. The alphabet's spelling, the frame of a connection and the
-//! entity's axis opening are all nests of this one law.
+//! 20 — THE PEEL: a nested manifold read outer shell to inner with the
+//! residual riding inward, continuing while the governor reads `Shrinking`
+//! and routing the residual out whole — the standing arc — when it does not.
 
 /// What the governor reads off a residual.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,10 +1,6 @@
-
-//! mycelium v0.1.0 — topological cognitive engine.
-//!
-//! Source is organized by component (docs/THREE_BINARIES.md): shared exact
-//! algebra and wire at the top level; role-specific modules under
-//! `server/`, `client/`, and `court/`. Wire acts are the only coupling
-//! between roles.
+//! mycelium v0.1.0 — the linguistics engine on crystallized forms: the
+//! exact algebra and its transduction, the wire and the ledger, and the
+//! server, client and court roles that speak over them.
 
 // Shared: exact algebra, transduction, wire, physics, chronometry.
 pub mod core;

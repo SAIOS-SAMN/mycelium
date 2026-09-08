@@ -1,9 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! THE GATES. One file per gate (Stage 8b S29), each named for the rule it
-//! enforces: `length.rs` the reading bound, `enumeration.rs` rules 1 and 8,
-//! `maps.rs` and `digest.rs` law 2, `matrix.rs` and `squaring.rs` law 11,
-//! `clock.rs` law 9. This file is the order they run in and nothing else.
+//! MU-STANDARDS 4 — THE GATES: one file per gate, each named for the rule
+//! it enforces — the reading bound, rules 1 and 8, law 2, law 11, law 9,
+//! law 5. This file is the order they run in and nothing else.
 
 pub mod clock;
 pub mod digest;

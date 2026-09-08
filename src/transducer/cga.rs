@@ -1,33 +1,6 @@
-//! CONFORMAL GEOMETRIC ALGEBRA (DIM-5, the volumetric body) — the cure for
-//! dimensional volumetric collapse. The perception must not hand the engine a
-//! flat 0-chain (a scatter of per-cell point-diffs, un-factorable); it must hand
-//! it VOLUMETRIC BLADES — objects as spheres with body — so the alphabet's
-//! starved versors (rotors) have something to sandwich.
-//!
-//! This is the full exact multivector algebra `Cl(3,1)` over ℚ (no floats, no
-//! roots — refuse, never round, as `iae::rotor` does one dimension down). The
-//! orthonormal basis is `e1,e2,e+,e-` with squares `(+,+,+,-)`; the CONFORMAL
-//! null basis is derived:
-//!   e_o = ½(e- − e+)   (origin),   e_∞ = e- + e+   (infinity)
-//!   e_o² = e_∞² = 0,   e_o·e_∞ = −1.
-//! A base point embeds on the null cone `X(x) = x + ½‖x‖² e_∞ + e_o` (so
-//! `X·X = 0`, exact — the base lives ON the cone, distances are bilinear one
-//! level up). A SPHERE is the off-cone blade `S = X(c) − ½ r² e_∞`, and
-//! `X(p)·S = 0` iff p lies on it. The point is the sphere's degenerate r=0 case.
-//!
-//! The whole reason for the ascent: a rigid motion is a single VERSOR SANDWICH
-//! `V σ Ṽ` — a translation `T = 1 − ½ d e_∞` moves a whole volume (centroid,
-//! boundary, interior) coherently in one algebraic step, where the 0-skeleton
-//! needed `2·area` independent point deletions/insertions. And a null point is
-//! NOT invertible (`X·X = 0`), so the geometric quotient `Q = B·A⁻¹` — the
-//! demand between two scene states — only EXISTS once the object has volume
-//! (`S·S = r² ≠ 0`). Volume is what makes the demand factorable.
-//!
-//! Blades are indexed by a 4-bit mask over `{e1,e2,e+,e-}`; the algebra is 16
-//! coefficients of `BigRational`. The geometric product is the canonical
-//! reordering-sign × metric construction. `iae::conformal` carries the same
-//! embedding in coordinate form (proven in `g_conformal`); this module is its
-//! multivector completion, so the sandwich and the quotient become first-class.
+//! A4 — CONFORMAL GEOMETRIC ALGEBRA: the exact multivector algebra `Cl(3,1)`
+//! over ℚ, where a body is an invertible dual sphere and a rigid motion is one
+//! versor sandwich, so the quotient between two scene states exists.
 
 use num_bigint::BigInt;
 use num_rational::BigRational;

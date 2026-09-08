@@ -1,4 +1,4 @@
-// 47.1, 5.2 — ACT_GENESIS and ACT_FETCH, and the receipt section a cover
+// 47.1, 45.5 — ACT_GENESIS and ACT_FETCH, and the receipt section a cover
 // digest carries behind it.
 //
 //! The section is framed, so its start is derived from the digest frame

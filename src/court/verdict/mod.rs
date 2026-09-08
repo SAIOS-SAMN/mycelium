@@ -1,23 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! Verification core for the court binary (#162, three-binary split).
-//!
-//! The court runs on this module and the shared exact algebra only — no
-//! market, no door, no epigenome, no task registry. Replaying a candidate
-//! reduction needs the minimal cellular replayer:
-//!
-//!   replay: (W, ∂₁Q) → (δσ̂ = 0)  ∧  strict ≺_DM descent
-//!
-//! plus the two-docket ruling over the federated basis and the π*
-//! derivation from pooled evidence. Keeping this separate lets the court
-//! binary run in constrained validator environments without linking the
-//! server's role-specific machinery.
-
-//!
-//! Four organs (Stage 8b S15): `replay.rs` a spoken form re-derived from
-//! its tape (23, 42); `blind.rs` the same with nothing supplied (42);
-//! `ruling.rs` what a court decides (42); `selection.rs` the anchor a
-//! family derives (A9).
+//! 23, 42, 34.1 — THE VERDICT: a spoken form re-derived from its tape, the
+//! same replay with nothing supplied, the ruling over the federated basis,
+//! the π* selection term, and the REFUSE_* constants a court answers with.
 
 pub mod blind;
 pub mod replay;

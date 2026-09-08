@@ -1,5 +1,5 @@
-// 6.2, 16.10 — the client's contact with the mesh: the impedance it
-// measures, the aperture that derives from it, and the route it takes.
+// 39, A10 — the client's contact with the mesh: the impedance it measures,
+// the aperture that derives from it, and the route it takes.
 
 use crate::client::sdk::*;
 

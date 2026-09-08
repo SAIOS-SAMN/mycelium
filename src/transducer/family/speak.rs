@@ -1,9 +1,8 @@
 // 21 — SPEAKING a rule: the form applied to a scene, and what it emits.
 //
 //! `apply_form` carries the rule's vertices onto the scene's bodies and
-//! emits the cells they name. A hue that no neighbour supplies is refused,
-//! never defaulted; a spoken grid that does not grow to the frame is not a
-//! speech.
+//! emits the cells they name. A hue no neighbour supplies is refused; a
+//! spoken grid that does not grow to the frame is not a speech.
 
 use super::*;
 

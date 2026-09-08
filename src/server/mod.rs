@@ -1,9 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! Server-role modules (mycelium-server): the judge kernel with the demand
-//! market, treasury, and door (cognition); the PoUW task registry
-//! (registry); and the deliberative synthesis arm (synthesis). See
-//! docs/THREE_BINARIES.md — no other binary links these.
+//! 5, 23 — THE HYPHA'S ROLE: the judge kernel with its demand market,
+//! treasury and door (cognition); the record of useful work (registry);
+//! and the deliberation the judge runs off the lock (synthesis).
 
 pub mod cognition;
 pub mod registry;

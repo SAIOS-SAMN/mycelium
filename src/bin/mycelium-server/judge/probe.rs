@@ -1,4 +1,4 @@
-// ACT_PROBE — a tentative sentence against an open listing.
+// 23.8, 26 — ACT_PROBE: a tentative sentence against an open listing.
 //
 //! Replayed and settled on graded descent or on closure, never germinated:
 //! a probe is a claim about a listing that already exists, so it either

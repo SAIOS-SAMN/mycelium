@@ -1,10 +1,8 @@
 // 23.8, 26 — THE LANGUAGE the mind reasons over, and what it answers with.
 //
 //! `Language` is the snapshot a reduction runs against with no lock held:
-//! the ruled words, their stalks, the axis index and the dialect. `Outcome`
-//! is what a percept became, `Glue` what a fetched word became, `Adoption`
-//! what a court's ruling became here. `MarketView`, `Rank`, `FieldEntry`
-//! and `ListingField` are the book as one quote sees it.
+//! the ruled words, their stalks, the axis index and the dialect. `Outcome`,
+//! `Glue`, `Adoption` and `MarketView` are what it answers with.
 
 use super::*;
 

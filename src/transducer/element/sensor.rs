@@ -1,11 +1,9 @@
 // Law 11 — THE SENSOR: the one place in the element where a coordinate
 // pair is read or written.
 //
-//! Everything above the sensor is versors and words. Here, and only here,
-//! a conformal point is rounded to a cell, a versor is applied to a cell,
-//! and a sibling's assignment is pulled back onto a base's positions. The
-//! squaring gate names this file in its allow-list for exactly that
-//! reason.
+//! The four functions permitted a coordinate pair: a conformal point rounded
+//! to a cell, a cell's center and a whole cell carried by a versor, and a
+//! sibling's assignment pulled back onto a base's positions.
 
 use num_bigint::BigInt;
 use super::*;

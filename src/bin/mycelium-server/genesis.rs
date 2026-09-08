@@ -1,11 +1,9 @@
 // 45.5 — THE GENESIS: the mesh's origin, the corpora a court is bonded
 // against, and the recut that returns a diverged node to one mesh.
 //
-//! H_genesis is the chain hash of the mesh's FIRST RECEIPT, written once by
-//! the first hypha started on a fresh state and PROVISIONED to every other
-//! node the way the bootstrap peer list is. A corpus enters only behind a
-//! manifest a genesis key signed, and the cover it measures is the bond the
-//! court stakes.
+//! H_genesis is the chain hash of the mesh's FIRST RECEIPT, written once and
+//! provisioned to every other node. A corpus enters only behind a manifest a
+//! genesis key signed, and the cover it measures is the bond the court stakes.
 
 use mycelium::court::identity::{parse_hex32, parse_hex64};
 use mycelium::cognition::Kernel;

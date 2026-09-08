@@ -4,9 +4,6 @@
 //! Exact in ℚ and invariant under the whole conformal group: what a body
 //! sounds like, whatever its size, place, or orientation. The atlas is
 //! stratified by these axes, so hearing a body is reading its stratum.
-//!
-//! One caller, `blade::body::axes_of`, which is why this sits under
-//! `blade/` — the body it measures.
 
 use crate::transducer::blade::{self, Blade};
 use num_rational::BigRational;

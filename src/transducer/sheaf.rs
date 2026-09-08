@@ -1,16 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! THE SHEAF OF THE LANGUAGE over the atlas — reconciliation by stratum.
-//!
-//! Two holders of the language (a hypha and an entity, a court and a
-//! hypha) do not page through each other's books. Each measures the same
-//! open cover — the atlas strata of its own words — and over every stratum
-//! a section digest: the root over (address, fibre volume) of the words
-//! held there. The digests are exchanged; a stratum whose roots agree is
-//! glued and never spoken of; a discordant stratum names exactly the fibre
-//! whose sections differ, and only the words the receiver lacks in that
-//! stratum are fetched, with their sections and connection riding along.
-//! Cost scales with the divergence, never with the language.
+//! 13, 26 — THE SHEAF OF THE LANGUAGE over the atlas: each holder measures a
+//! section digest per stratum of its own words. Strata whose roots agree glue;
+//! a discordant one names exactly the fibre whose sections differ.
 
 use super::element::Element;
 use super::stalk::{invariant_of, Invariant, Stalks};

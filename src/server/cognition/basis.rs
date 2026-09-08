@@ -1,11 +1,9 @@
-// 23.4, 26 — THE BASIS: how a ruled word enters this mind, what it
+// 23.2, 26 — THE BASIS: how a ruled word enters this mind, what it
 // occupies while it is here, and what makes it leave.
 //
 //! A word admitted to the basis is indexed by its stalk, its axis words and
-//! its action; it occupies room on the four lanes; it is relocated when its
-//! T extent is spent and unindexed when it is pruned. The holonomy orbit and
-//! the germinated fibre are the two moves that grow a word rather than add
-//! one (25.1).
+//! its action; it occupies room on the four lanes and is relocated when its
+//! T extent is spent. The holonomy orbit and the germinated fibre grow it (25.1).
 
 use super::*;
 

@@ -2,9 +2,8 @@
 // off the rotor and the versor and never off a matrix.
 //
 //! A chart is a vector of exact coordinates, coarsest first, so a prefix of
-//! one chart is its coarser stratum. Two words congruent under the
-//! conformal group share a chart; two of equal volume and different
-//! structure do not.
+//! one chart is its coarser stratum. Two words congruent under the conformal
+//! group share a chart; two of equal volume and different structure do not.
 
 use super::*;
 

@@ -1,9 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! A REWRITE — an optimisation spoken as a word so the court can replay it
-//! both ways. The tape names the move, the input addresses, the output
-//! address, and the move's own content. Yield is a lane vector read on the
-//! carriers; a zero vector is not work.
+//! 3.9, M2 — A REWRITE: an optimisation spoken as a word so the court can
+//! replay it both ways. The tape names the move, the input addresses, the
+//! output address, and the move's own content.
 
 use super::alphabet::{Rotor, Word};
 use super::element::{Element, Versor, REWRITE_TAG};

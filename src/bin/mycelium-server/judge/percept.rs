@@ -1,11 +1,10 @@
-// ACT_PERCEPT, ACT_DEMAND and ACT_GOSSIP — the language moves: a percept
-// the client already reduced, a demand replayed against the book, and the
-// rendezvous a still-unwitnessed percept is routed to.
+// 23.8, A11 — ACT_PERCEPT, ACT_DEMAND and ACT_GOSSIP: a percept the client
+// already reduced, a demand replayed against the book, and the rendezvous a
+// still-unwitnessed percept is routed to.
 //
-//! The client PERCEIVED and REDUCED; the judge REPLAYS the proof. A demand
-//! carries the speaker's own reduction and is replayed the same way. What
-//! the outcome teaches and settles is read from the docket's standing of
-//! the cited word, never from a sentence's length.
+//! The client PERCEIVED and REDUCED; the judge REPLAYS the proof. What the
+//! outcome teaches and settles is read from the docket's standing of the
+//! cited word, never from a sentence's length.
 
 use crate::door::Door;
 use crate::transport::answer;

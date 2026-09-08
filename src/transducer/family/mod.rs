@@ -1,23 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! FAMILY TRANSPORT — pair forms extracted as a crystallized sentence.
-//!
-//! A training pair is two perceived scenes. Each output body is the image
-//! of an input body under a versor solved from the two bodies' moments and
-//! a gauge map read cell by cell. The form engine (`extract_rule_with`) is
-//! the only extractor: correspondence by transport class, faces by star and
-//! cell occupancy, glue, rebase, unfold, contact, tree gauge. A family it
-//! does not close is a withheld form. Cells are spoken by sandwich and read
-//! at the sensor (`pair_form`, `speak_rule`, `orbit`). No second extractor,
-//! no centroid pairing, no coordinate pair outside the sensor.
-//!
-
-//!
-//! One organ per file (Stage 8b S9): `perceive.rs` a grid becoming bodies
-//! (20); `pair.rs` the pair form of one train pair (21 step 2);
-//! `extract.rs` the seven extraction moves (21); `speak.rs` a rule applied
-//! to a scene; `orbit.rs` where a versor carries a body (22); `descent.rs`
-//! what a rule measures over a family (12.6, 26).
+//! 20, 21 — THE MOVES ON A BUNDLE OF TRAIN PAIRS: scenes perceived as pair
+//! forms, the rule those forms already agree on, and that rule spoken back
+//! onto a scene. A bundle it does not close is a withheld form.
 
 pub mod descent;
 pub mod extract;

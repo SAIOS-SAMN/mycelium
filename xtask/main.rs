@@ -1,4 +1,9 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
+//
+//! MU-STANDARDS 4 — THE GATE BINARY: the boot order of the gates. The file
+//! gates first, then the warning gate; `xtask gates` asks for the file
+//! gates alone.
+
 mod lint;
 
 // The warning gate is declared HERE and not in `lint/mod.rs`, because

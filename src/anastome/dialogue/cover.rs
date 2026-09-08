@@ -1,10 +1,9 @@
 // ACT_PEERS, ACT_ROOT, ACT_DIGESTS, ACT_COVER — how two courts find each
 // other and read what the other holds.
 //
-//! The cover digest is the signed statement of where a court stands. Its
-//! frame is parsed WHOLE: `whole_cover_digest` accepts the one reading that
-//! consumes the buffer exactly and refuses on two or zero, because a bare
-//! cover digest's own chart count also parses as a digests reply.
+//! The cover digest is the signed statement of where a court stands, and
+//! its frame is parsed WHOLE: `whole_cover_digest` accepts the one reading
+//! that consumes the buffer exactly and refuses on two or zero.
 
 use super::*;
 

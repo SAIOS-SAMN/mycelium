@@ -2,9 +2,8 @@
 // states, read off the pair forms rather than searched for.
 //
 //! A transport class names what a vertex does; the ends name where it does
-//! it; the face word between two ends is constant across the family or the
-//! rule refuses. Nothing here ranks candidates: each step reads what the
-//! pair forms already agree on.
+//! it; the face word between two ends is constant across the bundle or the
+//! rule refuses. Each step reads what the pair forms already agree on.
 
 use super::*;
 

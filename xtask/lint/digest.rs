@@ -1,11 +1,9 @@
 // Law 2 — THE DIGEST GATE: a hash lives where bytes genuinely are the
 // object, and nowhere else.
 //
-//! Identity is content (law 2, A21). The three files below hash bytes that
-//! ARE the object — a receipt chain, a wire frame, a cold routing index
-//! below the sovereignty boundary — and every other file in the tree is
-//! refused a digest. `court/identity.rs` was a fourth until A6 made its KDF
-//! test-only; the earned check deleted its row the moment that landed.
+//! Identity is content (law 2, A21). The files allowed below hash bytes
+//! that ARE the object — a receipt chain, a wire frame, a cold routing
+//! index — and every other file in the tree is refused a digest.
 
 use super::walker::Gate;
 use std::path::Path;

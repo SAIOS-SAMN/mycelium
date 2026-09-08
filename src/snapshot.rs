@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! Persistence is the sealed door: a Keyed yields every entry here, in
-//! key order, for the wire. Cognition names `to_bytes` / `snapshot` on
+//! Law 3, 28 — THE SEALED DOOR: the one place a Keyed yields every entry,
+//! in key order, for the wire. Cognition names `to_bytes` / `snapshot` on
 //! the carrier, never this trait's supertrait.
 
 use crate::network::nerve::Keyed;

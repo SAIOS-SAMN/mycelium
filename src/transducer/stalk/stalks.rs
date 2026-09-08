@@ -1,5 +1,5 @@
-// A6, 23.4 — THE STALKS: every word this mind holds, filed by chart, with
-// the standing each is at.
+// A6, M4 — THE STALKS: every word this mind holds, filed by chart, and the
+// refinement that re-admits a stratum under a coordinate that arrived.
 
 use super::*;
 

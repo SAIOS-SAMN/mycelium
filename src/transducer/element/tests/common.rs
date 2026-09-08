@@ -1,6 +1,5 @@
-// Fixture constructors for the element's tests (MU-STANDARDS 3.3): every
-// fixture is built through a constructor the production code exports, so a
-// test never hand-writes a carrier.
+//! 39 — FIXTURES for the element's tests: each one built through a
+//! constructor the carrier itself exports.
 
 use crate::core::Q;
 use crate::transducer::element::*;

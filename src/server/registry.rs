@@ -1,21 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! THE TASK REGISTRY — the hypha's authoritative record of USEFUL work
-//! (PoUW integrity, operator-ruled). Without an authority deciding what
-//! counts, a node ingests garbage and calls it work, or replays a solved
-//! puzzle and harvests continuous yield — the economics collapse into an
-//! extractive puzzle mill. Here:
-//!
-//! - Every task is IMMUTABLY identified by its boundary root digest:
-//!   task_id = BLAKE3(⊕ train coboundaries ‖ test inputs). Content is
-//!   identity; provenance cannot be forged and duplicates cannot be re-fed
-//!   under new names.
-//! - THE ANTI-REPLAY YIELD COLLAPSE: the FIRST court-verifiable solve
-//!   captures the full bounty; every subsequent submission of the same
-//!   task earns only the asymptotic verification floor — real once,
-//!   maintenance thereafter. Solving what is solved is not useful work.
-//! - The registry is Vec-of-relations (Law II), states form the closed
-//!   lifecycle Unsolved → Settled(n).
+//! 26 — THE TASK REGISTRY: the hypha's record of useful work. A task is
+//! named by the listing identity of its train pairs and test inputs; the
+//! first verified solve takes the bounty and every replay the floor.
 
 use crate::arc::{refine_delta, Grid, Task};
 use crate::network::nerve::Keyed;

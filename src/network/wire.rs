@@ -1,9 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! WIRE — binary frame encoding, MTU budget, and 4-lane stratum multiplexing.
-//! A frame carries a body on exactly one polytonic lane; the codec is exact and
-//! reversible, and refuses any body over the MTU budget (a frame is transport,
-//! never a place cognition reasons — the body is opaque bytes here).
+//! 8, 17.7 — THE WIRE: binary frames, the MTU budget, and the four-lane
+//! stratum multiplex. A frame carries a body on exactly one polytonic lane
+//! and is transport only — the body is opaque bytes here.
 
 /// The MTU body budget: the wire's hard cap. A body exceeding it is refused
 /// (fragmentation is the caller's concern; the wire never silently truncates).

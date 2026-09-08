@@ -1,6 +1,5 @@
-// The work counters the enumeration gate reads: what one fetched vertex, one
-// held thought and one meet actually cost, so a test can assert the same
-// number at N and at 4N.
+// Rule 13 — THE WORK COUNTERS: what one fetched vertex, one held thought
+// and one meet actually cost.
 //
 //! Incremented in test builds on Keyed get/insert, Rotor::geo, and
 //! cech::extend.

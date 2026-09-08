@@ -1,31 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! ADMISSION — 47.1's signed prefix and 47.2's order of checks.
-//!
-//! Every signature in the tree is over exactly one byte string, and every
-//! signer's causal position travels with its signature. Before this module
-//! `cover_signed_prefix` signed `(cover_roots, ruled_root, room)`: three
-//! carriers and no position at all. A receiver could verify that the bytes
-//! came from the key and learn nothing about WHERE in the signer's chain
-//! they came from, so `KStepReceipt::parents` was constructed in exactly
-//! three places, all of them tests. Every production receipt named no
-//! parent, `append` took `1 + max(head_height)` over an empty parent set,
-//! and height was the kernel's own K wearing TUniversal's name. 45.2 says
-//! height climbs on ADMITTED receipts; nothing was ever admitted.
-//!
-//! The prefix (47.1), in this order and no other:
-//!
-//! ```text
-//! H_genesis 32 ‖ E_origin u32 ‖ prev_receipt_hash 32 ‖ K u64 ‖ height u64
-//!   ‖ chart len16 + axes u64… ‖ payload address len16 + bytes
-//! ```
-//!
-//! The payload is an ADDRESS -- the M2 composite (A21) for a word or form,
-//! a root for a transmission digest, a listing key for a settlement act --
-//! and never a digest of frame bytes, so two spellings of one word share
-//! one receipt lineage and a receiver reads coordinates off the address
-//! (law 2). `prev_receipt_hash` is a digest of receipt bytes because the
-//! receipt bytes are the object there (Part IX).
+//! 47.1, 47.2 — ADMISSION: the one byte string every signature in the tree
+//! is over, carrying the signer's causal position, and the order of checks
+//! a signed frame passes before any carrier is touched.
 
 use crate::chronometry::{KStepReceipt, Parent};
 use crate::network::nerve::{Keyed, ROOT};
@@ -40,7 +17,20 @@ pub const REFUSE_RECEIPT_STALE: &str = "receipt already held at this K";
 pub const REFUSE_EQUIVOCATION: &str = "two receipts at one K with different chain hashes";
 
 /// 47.1's signed prefix, held as its fields so a reader takes coordinates
-/// off it rather than a digest. `bytes()` is the ONLY thing ever signed.
+/// off it rather than a digest. `bytes()` is the ONLY thing ever signed,
+/// in this order and no other:
+///
+/// ```text
+/// H_genesis 32 ‖ E_origin u32 ‖ prev_receipt_hash 32 ‖ K u64 ‖ height u64
+///   ‖ chart len16 + axes u64… ‖ payload address len16 + bytes
+/// ```
+///
+/// The payload is an ADDRESS -- the M2 composite (A21) for a word or form,
+/// a root for a transmission digest, a listing key for a settlement act --
+/// and never a digest of frame bytes, so two spellings of one word share
+/// one receipt lineage and a receiver reads coordinates off the address
+/// (law 2). `prev_receipt_hash` is a digest of receipt bytes because the
+/// receipt bytes are the object there (Part IX).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SignedPrefix {
     pub genesis: [u8; 32],

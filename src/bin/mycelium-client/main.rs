@@ -1,9 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! THE VOICE — a client on the mesh. This file is the boot order and the
-//! stroke loop's skeleton and nothing else (MU-STANDARDS 1.3): the four
-//! arms of a stroke are `arms/{feed, quote, task, syntropy}.rs`, the corpus
-//! feed is `feed.rs`, and what a voice speaks is `speak.rs`.
+//! 24.3 — THE VOICE, a client on the mesh: the arguments it is started
+//! with, the order it comes up in, and the skeleton of the stroke loop that
+//! runs its four arms.
 
 mod arms;
 mod feed;

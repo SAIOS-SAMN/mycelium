@@ -1,9 +1,8 @@
 // E2, 26 — SETTLEMENT: what each closed act pays, per lane.
 //
-//! One function per act the market closes. Each is a movement of value that
-//! already exists or a mint against a measured deflation; none of them
-//! prices anything, because the metabolism governs the rate and never the
-//! price.
+//! One function per act the market closes. Each is a movement of value
+//! that already exists or a mint against a measured deflation; none of them
+//! prices anything — the metabolism governs the rate, never the price.
 
 use super::*;
 

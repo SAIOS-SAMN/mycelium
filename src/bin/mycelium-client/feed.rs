@@ -1,4 +1,5 @@
-// 38 — THE FEED: the corpus this voice has been given, one task at a time.
+// THE FEED: the corpus this voice has been given, one task at a time, and
+// the cursor that presents its pairs.
 //
 //! A feed file is retired when it is spent, so a restart does not present
 //! the same pair twice.

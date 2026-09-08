@@ -1,12 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
-
-//! Pivot loop, class vector, and rank.
-
-//!
-//! Four organs (Stage 8b S24): `snap.rs` what a pivot produces and the
-//! discharge it certifies (A16, A20); `drive.rs` the pivot loop and its
-//! candidates (A16); `loops.rs` the loops of a form and the faces a pivot
-//! writes (12.2, 18.2); `words.rs` the axis index (18.2, A21).
+//
+//! A16, A20 — THE PIVOT LOOP: the candidates a form's occupied axes offer,
+//! the trial that opens one axis, the discharge it certifies, and the loops
+//! and axis index the move is read and written on.
 
 pub mod drive;
 pub mod loops;

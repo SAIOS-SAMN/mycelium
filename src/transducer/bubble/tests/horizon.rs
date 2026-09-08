@@ -1,4 +1,4 @@
-// A19, 30.2 — the horizon: a seeded class is recognised, never re-derived,
+// A19, 25.4 — the horizon: a seeded class is recognised, never re-derived,
 // and it is keyed by the class key.
 
 use crate::transducer::bubble::*;

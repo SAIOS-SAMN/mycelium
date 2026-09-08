@@ -1,4 +1,4 @@
-// 6.2, 24.3 — THE SESSION: one client's contact with the mesh.
+// 24.3 — THE SESSION: one client's contact with the mesh.
 //
 //! Discovery, the peer cursor, the cover it absorbs, the route it takes for
 //! a chart, and every act it speaks. Each exchange is bounded by the

@@ -1,11 +1,8 @@
 // 16.4, 1.4 — THE LETTERS: the versor and the alphabet it spells.
 //
-//! `Versor` is the conformal multivector the action carries. This file
-//! holds the versors the language builds by name (identity, translator,
-//! dilator, carriage), the projective
-//! equality that reads two of them as one, the decomposition back into
-//! rho and the translation, and `Letters` — the M1 coordinates a
-//! connection's tape re-derives.
+//! `Versor` is the conformal multivector the action carries: the versors built
+//! by name (identity, translator, dilator, carriage), the projective equality,
+//! the decomposition into rho and translation, and `Letters`, the M1 coordinates.
 
 use crate::core::Q;
 use num_bigint::BigInt;

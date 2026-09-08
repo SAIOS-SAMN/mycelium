@@ -2,9 +2,8 @@
 // a linear representation on squared coordinates.
 //
 //! What the gate looks for is the SHAPE — a rational matrix by any name —
-//! and the three reads only a matrix has. `core/lattice.rs` needs no
-//! exemption: A18's ℤ rank is `Vec<Vec<i128>>`, integer rows, not a
-//! rational representation of an action.
+//! and the three reads only a matrix has. A rank's integer rows (A18) are
+//! not a rational representation of an action and are not hit.
 
 use super::walker::Gate;
 use std::path::Path;

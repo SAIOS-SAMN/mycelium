@@ -3,8 +3,7 @@
 //
 //! `coboundary_on_link` walks the link of a vertex and closes what its
 //! faces already determine; a cell whose faces are not ready is left open
-//! rather than guessed at. `solve_gauge` is the spanning-forest solve of
-//! 12.2 with its documented sign convention.
+//! rather than guessed at. `solve_gauge` is the tree walk of 12.2.
 
 use super::*;
 

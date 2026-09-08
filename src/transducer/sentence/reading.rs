@@ -1,9 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
-
-//! Locating a body against a language, and deconstructing a chain into the
-//! words that speak it. What `chain.rs` holds is the chain itself — its
-//! cells, its pieces, its replay; what a READING of that chain is, against
-//! some set of held words, is here.
+//
+//! 6, 24.1 — A READING of a chain against a language: locating one body by
+//! its moduli, puncturing a held word the body deepens, and deconstructing
+//! the whole chain into the words that speak it and the residual that stays.
 
 use crate::network::nerve::ROOT;
 use crate::transducer::blade::{self, Shape};

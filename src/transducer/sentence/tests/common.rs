@@ -1,6 +1,5 @@
-// Fixture constructors for the sentence's tests (MU-STANDARDS 3.3): the two
-// rationals, a form address, a closed word form, a star, and the words of
-// each order the class tests need.
+//! 39 — FIXTURES for the sentence's tests: the two rationals, a form
+//! address, a closed word form, a star, and the words of each order.
 
 use crate::transducer::alphabet::{self, Word};
 use crate::transducer::element::{self};

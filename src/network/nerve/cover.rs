@@ -1,9 +1,8 @@
 // 16.11, 26 — THE COVER: the trie that homes a word by incidence.
 //
 //! Descent is by longest common prefix on the chart's lane, never by XOR
-//! distance: a word goes where its own coordinates say, and the room a node
-//! has is read from its bond against its occupancy. `home` refuses rather
-//! than choosing when no node dominates.
+//! distance: a word goes where its own coordinates say, and a node's room
+//! is its bond against its occupancy. `home` refuses when none dominates.
 
 use super::*;
 

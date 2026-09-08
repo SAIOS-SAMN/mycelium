@@ -1,6 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
-
-//! Face transport: word, carriage versor, and hue map, and the gauge algebra.
+//
+//! 18.2, 21 step 1 — THE TRANSPORT of a face: the relative word, carriage
+//! versor and hue map from one vertex to another, and the gauge algebra
+//! those coordinates compose and invert by.
 
 use super::form::{Form, Vertex};
 use crate::network::nerve::{Keyed, ROOT};

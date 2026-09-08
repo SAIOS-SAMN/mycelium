@@ -1,13 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! Court-state persistence (the atomic journal pattern proven in
-//! registry.rs): the federation, the ruled set, the rebind marks, the
-//! ruling counters, and the full K-step receipt chain persist as one
-//! state file written by atomic write-rename after every sealed ruling.
-//! At boot the court rehydrates: the receipt chain re-verifies link by
-//! link (a tampered journal refuses whole), the ruled index restores so
-//! sealed words are never re-adjudicated, and the K-lineage continues
-//! from its persisted head instead of resetting to zero.
+//! 28, 45.1 — THE COURT'S STATE ON DISK: the federation, the ruled set,
+//! the rebind marks, the ruling counters and the K-step receipt chain as
+//! one file; at boot the chain re-verifies link by link or refuses whole.
 
 use crate::chronometry::{KStepReceipt, ReceiptChain};
 use crate::transducer::element::Element;

@@ -2,8 +2,8 @@
 // remembers of it, and where two organs converge.
 //
 //! A repeated demand is answered from the docket rather than re-docketed
-//! (U7). Convergence is on a witness's RE-DERIVATION by `same_vertex` (M1)
-//! and never on the bytes it happens to be spelled with.
+//! (23.8). Convergence is on a witness's RE-DERIVATION by `same_vertex`
+//! (M1) and never on the bytes it happens to be spelled with.
 
 use crate::cognition::*;
 use crate::transducer::address::Address;

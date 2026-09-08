@@ -2,8 +2,7 @@
 //
 //! One identity, six quarter turns, six Pythagorean (3,4,5) rotors and four
 //! (5,12,13) rotors, each the one pair with its carried inverse, exact over
-//! the rationals. The relators are the equalities the alphabet satisfies;
-//! they are stated, never searched for.
+//! the rationals. The relators are stated, never searched for.
 
 use crate::transducer::alphabet::{Rotor, Word, Q};
 

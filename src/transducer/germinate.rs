@@ -1,13 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! GERMINATION — a new fiber from the residual. When no conformal+gauge element
-//! closes a body (a pivot), the residual is not noise: it is the EXACT spec of
-//! the missing operator. We mint it as an anonymous ANASTOME element — the exact
-//! coboundary A→B (per-cell before/after over the union of positions, hue 0 =
-//! absent). It reproduces A→B by construction (topological closure); it
-//! generalises only if it later RECURS (recalled), which the economy prices
-//! (R3) — so tautological germs that close only their own birth demand earn ~0.
-//! Anonymous + opaque: addressed by canonical form, never a named "kind".
+//! A5 — THE RESIDUAL GERM: the chain of the exact coboundary A→B, one cell
+//! per changed position over the union of the two supports, minted when no
+//! conformal-and-gauge element closes a body. Anonymous, addressed by form.
 
 /// A residual germ: sorted `(row, col, hue_before, hue_after)` over the union of
 /// A's and B's occupied positions. hue 0 means the cell is absent on that side.

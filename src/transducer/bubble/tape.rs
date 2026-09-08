@@ -1,9 +1,8 @@
 // 28 — THE TAPE: a contemplation as bytes.
 //
-//! `THT2` is the generation this codec reads. A tape that
-//! does not parse whole is refused rather than partly restored; a restored
-//! contemplation holds the same bubbles, the same incidence and the same
-//! horizon as the one that was written.
+//! `THT2` is the tape this codec reads. One that does not parse whole is
+//! refused rather than partly restored; a restored contemplation holds the
+//! same bubbles, the same incidence and the same horizon as the one written.
 
 use super::*;
 

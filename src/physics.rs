@@ -1,11 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! COMPUTATIONAL PHYSICS — polytonic kinematic pressure + torsion, per lane,
-//! never a monotone scalar (the #34 law). Pressure is the per-lane backlog of
-//! unresolved demand (𝒮 spatial, 𝒢 gauge, 𝒯 temporal, 𝒽 shell); the metabolism
-//! rate is derived per-lane from it, so no lane is ever traded against another.
-//! Torsion is the obstruction reading: a demand that will not close is a PIVOT —
-//! a torsion charge on the lane it resisted, the demand for a new fiber.
+//! Law 5, 12.6 — THE PHYSICS: pressure is the per-lane backlog of unresolved
+//! demand (𝒮, 𝒢, 𝒯, 𝒽) and the metabolism rate is derived per lane from it,
+//! so no lane is traded against another. Torsion is what will not close.
 
 // The four lanes a germ carries content on — 𝒮 (spatial), 𝒢 (gauge), 𝒯
 // (temporal), 𝒽 (holonomic/shell) — are read off the germ's exact per-lane

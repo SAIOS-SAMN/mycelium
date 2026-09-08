@@ -1,9 +1,8 @@
 // A2, 20 — THE SPELLING: which word, if any, spells a given block.
 //
 //! `spell` peels a 2x2 rational block into syllables of the alphabet under
-//! a shrinking governor, and refuses when no word spells it. Nothing here
-//! searches a candidate list: each step reads the block's own unit and the
-//! residual it leaves.
+//! a shrinking governor, and refuses when no word spells it. Each step reads
+//! the block's own unit and the residual it leaves, never a candidate list.
 
 use crate::transducer::alphabet::{rational_sqrt, LetterId, Word, Q};
 use crate::transducer::peel::{peel_nest, PeelNest, ShellMotion, ShellStep, ShrinkGovernor};

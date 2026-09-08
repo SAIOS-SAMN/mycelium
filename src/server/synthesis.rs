@@ -1,25 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! THE HYPHA'S DEEP JOINT PROJECTION (distributed cognition, operator-ruled).
-//!
-//! The gate's thought was correct; its LOCATION was the crime. The cognition
-//! that once lived in an isolated test runner is redistributed here to the
-//! node whose role it is: the CLIENT perceives and humbly projects; the
-//! SERVER projects more deeply, analyses, and reassembles — using ONLY the
-//! engine's own primitives (the same lift → beam → rollout the entity
-//! thinks with, at the judge's deeper budget); the COURT adjudicates the
-//! well-formed constructs the server dockets; the server then teaches the
-//! ratified syllabus back to every client, whose dialects re-resolve and
-//! produce MORE VALID results. Nothing here is task-specific and nothing is
-//! searched: candidate bindings are derived carriers (comprehension),
-//! rollout is virtual replay (mathematics), and the only judge of a
-//! construct is δσ̂ = 0.
-//!
-//! CROSS-TEST CONSENSUS — what the gate had and the entity lacks: a
-//! construct is WELL-FORMED only if one binding set closes on EVERY train
-//! pair AND speaks (bound, non-silent) on EVERY test input JOINTLY. A
-//! reading that explains one grid but goes mute on its sibling is not
-//! understanding; joint coherence is the consensus.
+//! 23.8, 26 — THE JUDGE OFF THE LOCK: adjudicate, attest, probe, quote,
+//! consolidate and adopt. Each replays the voice's own proof over the
+//! language snapshot with no lock held and settles under a brief one.
 
 use crate::arc::{frame_ratio, Grid};
 

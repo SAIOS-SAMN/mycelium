@@ -1,11 +1,9 @@
 // 19, 28 — THE TAPE: the element as bytes, and the tags that name what a
 // tape spells.
 //
-//! The tape is the coordinate-exact ANASTOME description. This file holds
-//! the generation magic, the four tags (connection, sentence, translation,
-//! rewrite), the codec in both directions, and the resynchronisation of
-//! the action from the tape after the tape is rewritten. Bytes are the
-//! object here and nowhere else in the carrier.
+//! The tape is the coordinate-exact ANASTOME description: the generation
+//! magic, the four tags (connection, sentence, translation, rewrite), the
+//! codec both ways, and the resynchronisation of the action from the tape.
 
 use super::*;
 

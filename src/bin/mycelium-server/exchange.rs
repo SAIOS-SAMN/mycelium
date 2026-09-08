@@ -2,13 +2,8 @@
 // cycle in which two courts read each other.
 //
 //! `Mesh` is what one hypha holds about the others: the cover, the rooms,
-//! the addresses, the transport apertures, and the origin it has adopted.
-//! The nerve thread drains every act this node speaks so the door never
-//! dials. `Exchange` is the cycle: a stroke of the court, the corpus
-//! intake, the cover rebuild, then one digest round-trip per peer under an
-//! organ budget — admitting receipts (47.2), gluing what the peer holds,
-//! offering what this court holds at first vantage, and converging on the
-//! second vantage's re-derivation by `same_vertex` and never by bytes.
+//! the addresses, the apertures, the origin it adopted. `Exchange` is the
+//! cycle: a court stroke, the intake, then one digest round-trip per peer.
 
 use crate::admission::{admit_peer_digest, admit_peer_receipt, rebuild_own_cover, AdmissionTally};
 use crate::door::{intake_corpus, relocate_corpus};

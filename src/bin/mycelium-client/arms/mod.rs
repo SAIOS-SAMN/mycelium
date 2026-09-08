@@ -1,5 +1,5 @@
-// The four arms of one stroke (24.3), one file each: feed, quote, task,
-// syntropy. Each takes what it reads and what it writes, and nothing else.
+// 24.3 — THE FOUR ARMS OF ONE STROKE: feed, quote, task, syntropy, one
+// file each.
 
 pub mod feed;
 pub mod quote;

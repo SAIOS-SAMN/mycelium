@@ -2,8 +2,7 @@
 //
 //! A word is a sequence of letters with orientation. `run_reduce` carries a
 //! tape to the normal form the relators define; the contact rides on the
-//! word's key so a rebased word is a different vertex, not the same one
-//! spelled differently.
+//! word's key, so a rebased word is a different vertex.
 
 use num_traits::{One, Zero};
 use crate::transducer::alphabet::{

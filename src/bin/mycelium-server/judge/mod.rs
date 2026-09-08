@@ -1,10 +1,8 @@
-// The dispatch. One act, one file: this module decides which act a frame
-// is and holds nothing else (MU-STANDARDS 1.2).
+// 23.8, 26 — THE DISPATCH: which act a frame is, and which judge it goes to.
 //
 //! A demand the client spoke here is forwarded once, to the key's home on
 //! the cover trie. A frame that arrived as ACT_DEMAND_ROUTED is judged and
-//! never forwarded — the loop a→b→c→a was that unwrap becoming ACT_DEMAND
-//! and `closest_excluding` sending it on again.
+//! never forwarded.
 
 pub(crate) mod percept;
 pub(crate) mod probe;

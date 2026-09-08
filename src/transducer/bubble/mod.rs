@@ -1,10 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! CONTEMPLATION — the Čech complex over thought bubbles. Vertices are
-//! bubbles; a k-cell is a (k+1)-fold overlap of bubble covers with shared
-//! remainder volume. The same Cell and Complex types as germs-in-a-sentence
-//! and hyphas-on-a-chart. Connections are computed on the link of one new
-//! bubble through by_chart; bubbles are never enumerated.
+//! 13, 25 — THE CONTEMPLATION: the Čech complex over the thought bubbles a
+//! mind holds. Vertices are bubbles; a k-cell is a (k+1)-fold overlap of
+//! their covers with shared remainder volume.
 
 
 pub mod contemplation;

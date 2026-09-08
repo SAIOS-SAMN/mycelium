@@ -1,5 +1,5 @@
-// Fixture constructors for the client's tests (MU-STANDARDS 3.3): a closed
-// turn form and a two-body sentence.
+// 39 — fixture constructors for the client's tests: a closed turn form and
+// a two-body sentence.
 
 
 pub fn closed_turn(contact: Option<crate::transducer::alphabet::Contact>) -> crate::transducer::sentence::Form {

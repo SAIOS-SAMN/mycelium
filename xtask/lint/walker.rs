@@ -1,23 +1,9 @@
 // MU-STANDARDS 4.2, 4.5 — ONE WALK over every source file, and a gate's
 // scope stated as what it ALLOWS.
 //
-//! A gate used to carry its own list of directories to descend into, and
-//! every walker returned `Ok` on a path that was neither a file nor a
-//! directory. So when S12 and S15 turned `economy.rs` and
-//! `court/verdict.rs` into directories, the digest gate stopped covering
-//! either and the clock gate stopped covering the economy, silently, and a
-//! green run meant nothing about them.
-//!
-//! Here the walk is one function over the whole of `src/`, and a gate says
-//! only which FILES it does not apply to. `xtask/` is outside it: the
-//! content rules are about cognition, and a gate that forbids a pattern has
-//! to contain that pattern to search for it. The reading bound is the one
-//! rule that covers `xtask/`, and `mod.rs` runs it separately.
-//!
-//! An allow row is EARNED. A row naming a file that does not exist is a
-//! hit, and so is a row naming a file the gate would not have hit: a list
-//! cannot outlive what it excuses, whether the file went away or the reason
-//! did.
+//! The walk is one function over the whole of `src/`, and a gate says only
+//! which FILES it does not apply to. An allow row is EARNED: a row naming a
+//! file that does not exist, or one the gate would not have hit, is a hit.
 
 use std::fs;
 use std::path::{Path, PathBuf};

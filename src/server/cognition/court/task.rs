@@ -1,4 +1,4 @@
-// 26, 38 — THE TASK: a listing bound to a corpus family, and what a solve
+// 21, 26 — THE TASK: a listing bound to a corpus family, and what a solve
 // against it pays.
 
 use crate::cognition::*;

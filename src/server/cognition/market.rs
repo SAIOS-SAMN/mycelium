@@ -1,12 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! Room, escrow and settlement: what a voice may draw, what a
-//! compression pays, and the receipts each writes.
-//!
-//! Split from cognition.rs under Stage 8's reading bound. A private
-//! item is visible to its module AND its descendants, so these are the
-//! same `impl Kernel` reaching the same private carriers: the split
-//! moves code and changes nothing else.
+//! 26 — ROOM, ESCROW AND SETTLEMENT: what a voice may draw against its
+//! bond, what a compression pays each speaker it cites, and the receipts
+//! each of those writes.
 
 use super::*;
 

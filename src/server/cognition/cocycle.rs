@@ -3,8 +3,7 @@
 //
 //! A cocycle is filed at the receipt that produced it, and a second filing
 //! on the same simplex supersedes the first only when the incumbent
-//! demonstrably PRECEDES it on the chain (45.3). Two that cannot be ordered
-//! are both kept: causal order is partial, and a tie is not a vote.
+//! PRECEDES it on the chain (45.3); two that cannot be ordered are kept.
 
 use super::*;
 

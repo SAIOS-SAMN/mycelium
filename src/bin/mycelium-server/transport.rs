@@ -1,11 +1,9 @@
-// The court's transport aperture: how a hypha reaches a peer, and what
-// bounds the reach.
+// law 9 — THE COURT'S TRANSPORT APERTURE: how a hypha reaches a peer, and
+// what bounds the reach.
 //
-//! Every wait here is denominated in STROKES and never in seconds (law 9):
+//! Every wait here is denominated in STROKES and never in seconds:
 //! `read_budgeted` spends a stroke budget while a peer is silent, and the
-//! rtt an aperture holds is a stroke count. `answer` refuses a frame that
-//! will not fit the wire budget rather than writing a truncated one, and
-//! nothing invents a frame in its place (rule 11).
+//! rtt an aperture holds is a stroke count.
 
 use crate::Mesh;
 use mycelium::network::wire::Frame;

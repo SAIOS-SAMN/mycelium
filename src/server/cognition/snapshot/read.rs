@@ -2,8 +2,7 @@
 // derived re-derived rather than restored.
 //
 //! Balances, the ruled stalks, the axis index and the deflations are
-//! recomputed from the carriers that were written, so a tape that disagrees
-//! with itself is caught here and not carried forward. A tape that does not
+//! recomputed from the carriers that were written. A tape that does not
 //! parse whole is refused: nothing is partly restored.
 
 use crate::cognition::*;

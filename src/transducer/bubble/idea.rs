@@ -1,9 +1,8 @@
-// 25, 30.2 — THE IDEA: one bubble, its remainder, and the volume it holds.
+// 25 — THE IDEA: one bubble, its remainder, and the volume it holds.
 //
 //! A `Bubble` is a thought under contemplation: the form it carries, the
-//! remainder cells it has not accounted for, the words it glues and is glued
-//! by, and the class it was seeded from. Everything here reads or measures
-//! one bubble; what happens BETWEEN bubbles is `merge.rs` and `drive.rs`.
+//! remainder cells it has not accounted for, the words it glues and is
+//! glued by, and the class it was seeded from.
 
 use super::*;
 

@@ -1,6 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
-//! One signed record at `home/mesh`: bind, peers, bootstrap, genesis, origin.
-//! The binary writes it; a home of loose text files is migrated once.
+//
+//! 45.5 — THE MESH RECORD: one signed record at `home/mesh` carrying the
+//! node's bind, its peers, its bootstrap, and the genesis and epoch it
+//! speaks under.
 
 use crate::court::identity::{self, HyphaKey};
 use std::path::Path;

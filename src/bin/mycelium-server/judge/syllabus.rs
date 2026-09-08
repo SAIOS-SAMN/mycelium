@@ -1,10 +1,9 @@
-// ACT_DIGESTS and ACT_FETCH — the sheaf sync: section digests over the
-// atlas, and the stratum fetch that follows a discordance.
+// A19, 47.1 — ACT_DIGESTS and ACT_FETCH: the sheaf sync, section digests
+// over the atlas and the stratum fetch that follows a discordance.
 //
-//! Both are reads over the language snapshot with no lock held. The
-//! digests reply carries this court's signed cover digest behind it, so
-//! one round trip tells a peer both what sections differ and where this
-//! court stands.
+//! Both are reads over the language snapshot with no lock held. The digests
+//! reply carries this court's signed cover digest behind it, so one round
+//! trip tells a peer what sections differ and where this court stands.
 
 use crate::door::Door;
 use crate::transport::answer;

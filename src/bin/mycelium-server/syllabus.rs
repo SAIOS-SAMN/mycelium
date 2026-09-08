@@ -1,5 +1,5 @@
-// The syllabus: every court-ratified word in ruling order, with a cursor
-// per enrolled voice so the stream is served exactly once on contact.
+// 26 — THE SYLLABUS: every court-ratified word in ruling order, with a
+// cursor per enrolled voice so the stream is served exactly once on contact.
 
 use mycelium::network::nerve::Keyed;
 

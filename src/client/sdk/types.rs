@@ -1,5 +1,6 @@
-// The shapes a client reads and answers with: a verdict, a comprehension, a
-// dialect, a working atlas, a genome view, an utterance, a quote.
+// 24, 26 — the shapes a client reads and answers with: a verdict, a
+// comprehension, a dialect, a working atlas, a genome view, an utterance,
+// a quote.
 
 use super::*;
 

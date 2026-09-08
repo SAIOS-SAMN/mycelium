@@ -3,8 +3,7 @@
 //
 //! A receipt is admitted against the origin, its signature, its K against
 //! the head this court already holds, and its height, in that order. A gap
-//! is a gap and not a refusal: the receipts that make a gapped height
-//! re-derive are exactly what the back-fill fetches.
+//! is a gap and not a refusal: the back-fill fetches what makes it re-derive.
 
 use crate::Mesh;
 use mycelium::anastome::dialogue;

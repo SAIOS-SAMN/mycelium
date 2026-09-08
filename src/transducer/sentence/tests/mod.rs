@@ -1,7 +1,6 @@
-// The sentence's tests, one file per ORGAN they prove. Each file's header
-// names the chapter of MU-RECURSION the claim comes from; the file is named
-// for the claim, because a reader looking for the pivot's tests is looking
-// for the pivot and not for the number twelve.
+//! 39 — THE SENTENCE'S TESTS: one file per organ they prove — the form,
+//! the gauge, the pivot, refraction, the rotor's class, the tape — over the
+//! fixtures in `common`, each file named for the claim it carries.
 
 pub mod common;
 

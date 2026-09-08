@@ -1,6 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
-
-//! Form tape: v4 encode and decode. Addresses are len16 + bytes.
+//
+//! 19 — THE FORM TAPE: `SENTENCE_TAG` version 4 in both directions, with
+//! addresses as len16 + bytes, and the torsion a sentence tape files.
 
 use super::chain::Cell;
 use super::form::*;

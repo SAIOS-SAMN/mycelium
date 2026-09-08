@@ -1,11 +1,8 @@
 // 18.3 — THE CARRIER: the element's four strata and the fibers it opens.
 //
 //! `Action` is the four-lane action (S a versor, G a hue permutation, T an
-//! extent in receipts, H a shell coordinate) plus the germinated axes.
-//! `Element` is tape, action, chain, and magnitude, with the punctured
-//! fibre (free sections and torsion cycles), the anchor, and the
-//! connection. This file holds the carrier itself: what it is, what it
-//! reads, what mutates it, and what it measures on the four lanes.
+//! extent in receipts, H a shell coordinate) plus the germinated axes;
+//! `Element` is tape, action, chain, magnitude, fibre, anchor and connection.
 
 use super::*;
 

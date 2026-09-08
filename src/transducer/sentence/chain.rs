@@ -1,6 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
-
-//! Chain deconstruction, replay, and location.
+//
+//! 18.2, 6 — THE CHAIN: its cells and their incidence, the citations and
+//! punctures a deconstruction produces, the residual no word speaks, and the
+//! replay that measures what a proof leaves.
 
 use crate::network::nerve::{Keyed, ROOT};
 use crate::transducer::element::{self, Element, Versor};

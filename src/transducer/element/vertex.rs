@@ -1,10 +1,8 @@
 // 17.1, 17.2 — M1 and M2: one vertex, and the address that names it.
 //
 //! Equality of elements is equality of vertices, not of bytes: equal M1
-//! coordinates of the letters, projectively equal carriage versors, equal
-//! sigma, an A5-equal chain. The address is the M2 composite derived from
-//! that same content, and composition, solution and inverse are the moves
-//! that carry one vertex to another.
+//! coordinates, projectively equal carriages, equal sigma, an A5-equal chain.
+//! The address is the M2 composite of that same content.
 
 use crate::transducer::germinate::ResidualGerm;
 use super::*;

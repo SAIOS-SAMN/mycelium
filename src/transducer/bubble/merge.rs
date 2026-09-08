@@ -1,11 +1,9 @@
-// 13.12, 25.3 — THE MERGE: when two held thoughts are one, and what the
+// 13.12, 25 — THE MERGE: when two held thoughts are one, and what the
 // one that remains carries.
 //
 //! Two bubbles merge when their forms are one section of the same bundle:
-//! congruent up to a re-gauge, or congruent with a torsion axis. A merge
-//! absorbs the other's incidence, its remainder and its vortex; a class
-//! neighbour that is neither keeps both and writes each into the other's
-//! horizon. Zero volume never merges.
+//! congruent up to a re-gauge, or with a torsion axis. A merge absorbs the
+//! other's incidence, remainder and vortex; zero volume never merges.
 
 use super::*;
 

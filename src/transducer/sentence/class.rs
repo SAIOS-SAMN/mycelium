@@ -1,6 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
-
-//! Class vector, cycle type, rank, and axis.
+//
+//! 12.6, A18 — THE STATE VECTOR OF A HELD LOOP: its axes, the hue cycle
+//! type, the placement and dilation residues, and the rank audit read one
+//! loop at a time.
 
 use super::transport::{gauge_image, gauge_keyed, hue_key};
 use crate::core::lattice::z_rank;

@@ -1,5 +1,4 @@
-// The mind's tests, one file per ORGAN they prove. Each file's header names
-// the chapter of MU-RECURSION the claim comes from.
+// 39 — THE MIND'S TESTS: one file per organ of the court they prove.
 
 pub mod common;
 

@@ -1,18 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! VOICE — how a kernel speaks.
-//!
-//! A voice is an identity with a clock: the durable seat a kernel speaks
-//! from, stamped with the universal time and the k-step it last read. It
-//! speaks in the five forms of the anastome — percept, demand, quote,
-//! teach, settle — and in the acts that carry them (probe, syllabus,
-//! solve, digests, fetch). Every form is an utterance: operators carried,
-//! verifiable by any listener in its own dialect. A voice never carries
-//! its kernel's state; it carries what the kernel concluded.
-//!
-//! Entity, hypha, and court each hold one voice. The session
-//! (`crate::client::sdk::Session`) is the mouth a voice speaks through
-//! and the ear a reply is perceived through.
+//! 45, 46 — THE VOICE: an identity with a clock, the durable seat a kernel
+//! speaks from, stamped with the k-step it last read. It utters the five
+//! forms and the acts that carry them, and never its kernel's state.
 
 use crate::anastome::dialogue::{self, CiteWire};
 

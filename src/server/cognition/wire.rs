@@ -1,8 +1,7 @@
 // 26 — the mind's own codec: a germ, a demand and a percept as bytes.
 //
-//! These are the acts the kernel itself spells, beside the act table in
-//! `anastome::dialogue`. A body that does not parse whole is refused; none
-//! of them guesses at a shape.
+//! These are the acts the kernel itself spells. A body that does not parse
+//! whole is refused; none of them guesses at a shape.
 
 use super::*;
 

@@ -1,10 +1,9 @@
 // 16.12, 23.8 — REDUCTION: what a spoken chain becomes against the
 // language, and what the book is worth to a voice that asks.
 //
-//! A reduction runs over the `Language` SNAPSHOT with no lock held. `rank_over`
-//! and `quote_incidence` read the book as a market view; `normal_form`,
-//! `reduce_germ` and `reduce_all` carry a chain to what the language already
-//! says; `reduce_proven` replays a proof a client already reduced.
+//! A reduction runs over the `Language` SNAPSHOT with no lock held.
+//! `rank_over` and `quote_incidence` read the book as a market view; the
+//! reductions carry a chain to what the language already says.
 
 use super::*;
 

@@ -1,18 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! A12 — COMPREHENSION BY FACTORISATION (`MU-RECURSION.md` 16.12, M6).
-//!
-//! "Recognition is comprehension, never a lookup: a mind recognises what it
-//! can re-derive, and nothing else" (Vocabulary, chapter 6). This is the
-//! procedure that decides it: an incoming word is understood iff it factors
-//! through the words the mind already holds, and when it does not, the
-//! remainder it leaves is *exact* — the demand, with no choice in it.
-//!
-//! It replaces a greedy peel that scanned the whole language per step and
-//! kept a running best by dominance, dropping incomparable factorisations
-//! (rule 4, rule 15). Nothing here searches: on the sensor plane membership
-//! is decided by Hermite normal form over ℤ, and off the plane by a
-//! budgeted walk whose states are A1 keys.
+//! A12, M6 — COMPREHENSION BY FACTORISATION: an incoming word is understood
+//! iff it factors through the words the mind already holds, and when it does
+//! not, the remainder it leaves is exact — the demand, with no choice in it.
 
 use super::alphabet::{PlaneForm, Rotor, Word, CAYLEY_ALPHABET_LEN};
 
