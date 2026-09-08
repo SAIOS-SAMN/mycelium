@@ -535,7 +535,7 @@ mod tests {
             mint(
                 RewriteKind::Retire,
                 std::slice::from_ref(&word),
-                word,
+                word.clone(),
                 RewritePayload::Retire { cites: vec![Address::from_bytes([2u8])], freed: [0; 4] },
                 [0; 4],
             )
