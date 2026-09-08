@@ -59,7 +59,7 @@ impl Kernel {
         let mut cx = self
             .complexes
             .remove(&inv.key())
-            .unwrap_or_else(crate::transducer::cech::Complex::new);
+            .unwrap_or_default();
         let vol0 = self.volume_of_cell(&inv, &[peer]);
         let peer_gamma = if spoken.is_translation() {
             spoken
@@ -70,7 +70,7 @@ impl Kernel {
             crate::transducer::alphabet::Rotor::identity()
         };
         cx.set_section(
-            peer.to_vec(),
+            peer,
             crate::transducer::cech::Section {
                 addr: addr.clone(),
                 gamma: peer_gamma,

@@ -238,7 +238,7 @@ impl Kernel {
             .iter()
             .map(|(_, _, g, _, _)| g.clone())
             .reduce(|acc, g| acc.geo(&g));
-        if let [] = residual.as_slice() {
+        if residual.as_slice().is_empty() {
             let paid = if section || listing.is_connection() {
                 self.treasury.settle_subsidy(voice, crate::economy::price(&before, &self.physics.pressure), anchor)
             } else {

@@ -16,7 +16,7 @@ pub fn q1() -> num_rational::BigRational {
 }
 
 pub fn form_addr(n: u8) -> crate::transducer::a21::Address {
-    crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, n])
+    crate::transducer::a21::Address::from_bytes([crate::transducer::a21::TAG_FORM, n])
 }
 
 pub fn closed_word_form(word: Word, contact: Option<alphabet::Contact>) -> Form {

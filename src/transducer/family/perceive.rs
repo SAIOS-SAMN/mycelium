@@ -71,7 +71,7 @@ pub(crate) fn body_of(comp: Vec<Cell3>) -> Body {
 }
 
 thread_local! {
-    static CELL_READS: Cell<u64> = Cell::new(0);
+    static CELL_READS: Cell<u64> = const { Cell::new(0) };
 }
 
 /// Grid cells visited by [`perceive`] since the last reset.

@@ -118,7 +118,7 @@ pub fn factor_on_plane(g: &PlaneForm, basis: &[PlaneForm]) -> Factored {
     // preference between candidates.
     let (target, odd_word) = if g.orientation {
         let Some(i) = (0..basis.len()).find(|&i| basis[i].orientation) else {
-            return Factored::Novel { remainder: g.clone(), understood: Vec::new() };
+            return Factored::Novel { remainder: *g, understood: Vec::new() };
         };
         let mut r = [0i64; CAYLEY_ALPHABET_LEN];
         for k in 0..CAYLEY_ALPHABET_LEN {

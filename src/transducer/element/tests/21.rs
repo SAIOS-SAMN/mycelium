@@ -24,7 +24,7 @@ fn a_closed_cycle_speaks_unwitnessed_members() {
     // punctured, never seen — yet the cycle speaks it.
     let unwitnessed = vec![(0, 0, 3, 1), (0, 1, 1, 2), (0, 2, 2, 3)];
     assert!(t.matches_chain(&unwitnessed), "capacity beyond the evidence, exactly");
-    assert!(!t.matches_chain(&vec![(0, 0, 5, 6), (0, 1, 1, 2), (0, 2, 2, 3)]), "no hallucination");
+    assert!(!t.matches_chain(&[(0, 0, 5, 6), (0, 1, 1, 2), (0, 2, 2, 3)]), "no hallucination");
     assert_eq!(t.fiber_span(), 3, "the volume counts the full orbit");
 }
 

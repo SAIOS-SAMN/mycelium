@@ -109,6 +109,12 @@ pub fn task_tension(task: &Task) -> [u64; 4] {
     mu
 }
 
+impl Default for TaskRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TaskRegistry {
     pub fn new() -> Self {
         TaskRegistry {

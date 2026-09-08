@@ -10,7 +10,7 @@ use super::*;
 use std::cell::RefCell;
 
 thread_local! {
-    static PAIR_FORM_MEMO: RefCell<Option<PairFormMemo>> = RefCell::new(None);
+    static PAIR_FORM_MEMO: RefCell<Option<PairFormMemo>> = const { RefCell::new(None) };
 }
 
 pub(crate) struct PairFormMemo {

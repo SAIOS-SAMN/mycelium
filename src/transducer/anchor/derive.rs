@@ -158,7 +158,7 @@ pub fn derive_carrying_all(footprint: &[(i64, i64)], scene: &[(i64, i64, u8)]) -
             }
         })
         .collect();
-    ranked.sort_by(|a, b| (a.0, a.1).cmp(&(b.0, b.1)));
+    ranked.sort_by_key(|a| (a.0, a.1));
     let mut out: Vec<Sel> = ranked.into_iter().map(|(_, _, t)| t).collect();
     out.dedup();
     out.truncate(32);

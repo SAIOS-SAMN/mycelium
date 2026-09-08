@@ -50,7 +50,7 @@ assert!(!Epigenome::new().uncrystallize(b"GEN1\xff\xff\xff\xff"), "hostile count
 fn withheld_then_depth_order() {
 use crate::transducer::alphabet::Word;
 use crate::transducer::sentence::{as_element_form, Form, FormFace, Vertex};
-let missing_addr = crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 0xab]);
+let missing_addr = crate::transducer::a21::Address::from_bytes([crate::transducer::a21::TAG_FORM, 0xab]);
 let inner = {
     let mut f = Form::default();
     let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
@@ -58,7 +58,7 @@ let inner = {
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     f.vertices.push(Vertex::Word {
-        address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 1]),
+        address: crate::transducer::a21::Address::from_bytes([crate::transducer::a21::TAG_FORM, 1]),
         word: w.clone(),
         carriage: crate::transducer::element::carriage(&one, &(zero.clone(), zero)),
         gauge: vec![(1, 2)],
@@ -215,7 +215,7 @@ let other = {
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
     f.vertices.push(Vertex::Word {
-        address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 9]),
+        address: crate::transducer::a21::Address::from_bytes([crate::transducer::a21::TAG_FORM, 9]),
         word: inf,
         carriage: crate::transducer::element::carriage(&one, &(zero.clone(), zero)),
         gauge: Vec::new(),
@@ -258,7 +258,7 @@ let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
 let mut f = Form::default();
 f.vertices.push(Vertex::Word {
-    address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 1]),
+    address: crate::transducer::a21::Address::from_bytes([crate::transducer::a21::TAG_FORM, 1]),
     word: w,
     carriage: crate::transducer::element::carriage(&one, &(zero.clone(), zero)),
     gauge: vec![(1, 2)],
@@ -281,7 +281,7 @@ assert!(
 fn learn_at_stamps_voice_k_and_tuniversal() {
 use crate::transducer::alphabet::Word;
 use crate::transducer::sentence::{as_element_form, Form, FormFace, Vertex};
-let missing_addr = crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 0xab]);
+let missing_addr = crate::transducer::a21::Address::from_bytes([crate::transducer::a21::TAG_FORM, 0xab]);
 let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
 let w = Word::from_letters(&[(q, false)]);
 let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
@@ -289,7 +289,7 @@ let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
 let inner = {
     let mut f = Form::default();
     f.vertices.push(Vertex::Word {
-        address: crate::transducer::a21::Address::from_bytes(&[crate::transducer::a21::TAG_FORM, 1]),
+        address: crate::transducer::a21::Address::from_bytes([crate::transducer::a21::TAG_FORM, 1]),
         word: w,
         carriage: crate::transducer::element::carriage(&one, &(zero.clone(), zero)),
         gauge: vec![(1, 2)],

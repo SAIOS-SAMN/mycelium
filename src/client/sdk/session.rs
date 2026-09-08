@@ -107,7 +107,7 @@ impl Session {
         };
         for a in dialogue::decode_peers_reply(&body).unwrap_or_default() {
             if !self.peers.contains(a.as_bytes()) {
-                self.peers.insert(a.as_bytes().to_vec(), a);
+                self.peers.insert(a.as_bytes(), a.clone());
             }
         }
     }

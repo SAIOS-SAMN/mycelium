@@ -440,7 +440,7 @@ mod tests {
 
     #[test]
     fn a_condense_rewrite_round_trips_and_replays() {
-        let after = crate::transducer::a21::Address::from_bytes(&[7u8]);
+        let after = crate::transducer::a21::Address::from_bytes([7u8]);
         let payload = RewritePayload::Condense {
             sections: vec![vec![(1, 4)]],
             gauge: crate::transducer::element::identity_versor(),
@@ -448,8 +448,8 @@ mod tests {
         let e = mint(
             RewriteKind::Condense,
             &[
-                crate::transducer::a21::Address::from_bytes(&[1u8]),
-                crate::transducer::a21::Address::from_bytes(&[2u8]),
+                crate::transducer::a21::Address::from_bytes([1u8]),
+                crate::transducer::a21::Address::from_bytes([2u8]),
             ],
             after,
             payload,
@@ -472,8 +472,8 @@ mod tests {
     #[test]
     fn a_retirement_pays_what_the_language_stopped_carrying() {
         use crate::transducer::a21::Address;
-        let word = Address::from_bytes(&[1u8]);
-        let speaker = Address::from_bytes(&[2u8]);
+        let word = Address::from_bytes([1u8]);
+        let speaker = Address::from_bytes([2u8]);
         let freed = [3u64, 0, 0, 5];
         let e = mint(
             RewriteKind::Retire,
@@ -503,8 +503,8 @@ mod tests {
     #[test]
     fn a_retirement_that_proves_nothing_is_refused() {
         use crate::transducer::a21::Address;
-        let word = Address::from_bytes(&[1u8]);
-        let other = Address::from_bytes(&[2u8]);
+        let word = Address::from_bytes([1u8]);
+        let other = Address::from_bytes([2u8]);
         let freed = [3u64, 0, 0, 0];
         let mk = |cites: Vec<Address>, after: Address| {
             mint(
@@ -536,7 +536,7 @@ mod tests {
                 RewriteKind::Retire,
                 &[word.clone()],
                 word,
-                RewritePayload::Retire { cites: vec![Address::from_bytes(&[2u8])], freed: [0; 4] },
+                RewritePayload::Retire { cites: vec![Address::from_bytes([2u8])], freed: [0; 4] },
                 [0; 4],
             )
             .is_none(),
@@ -548,8 +548,8 @@ mod tests {
     fn a_zero_vector_is_not_work() {
         assert!(mint(
             RewriteKind::Condense,
-            &[crate::transducer::a21::Address::from_bytes(&[1u8])],
-            crate::transducer::a21::Address::from_bytes(&[2u8]),
+            &[crate::transducer::a21::Address::from_bytes([1u8])],
+            crate::transducer::a21::Address::from_bytes([2u8]),
             RewritePayload::Condense { sections: vec![], gauge: crate::transducer::element::identity_versor() },
             [0; 4],
         )

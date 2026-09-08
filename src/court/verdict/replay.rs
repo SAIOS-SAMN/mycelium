@@ -153,11 +153,10 @@ pub(crate) fn vertex_tape_and_moves(
                     }
                 }
             }
-            Vertex::Rebased { .. } => {
-                if v.word_in(f).is_some_and(|w| w.is_identity()) {
+            Vertex::Rebased { .. }
+                if v.word_in(f).is_some_and(|w| w.is_identity()) => {
                     return Some(REFUSE_REBASE_TRIVIAL);
                 }
-            }
             Vertex::Unfolded { measure: Measure::Remainder } if f.remainder.is_empty() => {
                 return Some(REFUSE_UNFOLD_STILL);
             }

@@ -98,7 +98,7 @@ impl Entity {
             // transition with no axis and no chain glues. What does not
             // vanish is kept as the dialect measured, never discarded.
             let Some(fetched) = fetched else { continue };
-            if let [] = fetched.axes().as_slice() {
+            if fetched.axes().as_slice().is_empty() {
                 continue; // no group view: the additive coboundary has no transition
             }
             let inv = crate::transducer::stalk::invariant_of(&fetched);

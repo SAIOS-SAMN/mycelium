@@ -127,7 +127,7 @@ fn torsion_round_trips_through_bytes() {
     let back = Element::from_bytes(&bytes, &mut pos).expect("reload");
     assert_eq!(pos, bytes.len());
     assert_eq!(back.address(), t.address(), "the reloaded word is the same citation");
-    assert!(back.matches_chain(&vec![(0, 0, 3, 1), (0, 1, 1, 2), (0, 2, 2, 3)]), "capacity survives restart");
+    assert!(back.matches_chain(&[(0, 0, 3, 1), (0, 1, 1, 2), (0, 2, 2, 3)]), "capacity survives restart");
     assert!(t.transitions().is_empty());
 }
 
