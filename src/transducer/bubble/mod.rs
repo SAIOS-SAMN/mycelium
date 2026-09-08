@@ -26,7 +26,7 @@ use crate::transducer::cech::{self, Cell as CechCell, Complex, Fill, Section};
 use crate::transducer::element::{self, Element};
 use crate::transducer::family::Crystal;
 use crate::transducer::sentence::{self, Form, PivotCertificate, Vertex};
-use crate::transducer::stalk::{self, Invariant, Standing, Stalks};
+use crate::transducer::stalk::{self, AtlasRead, Invariant, Standing};
 
 #[cfg(test)]
 mod tests;

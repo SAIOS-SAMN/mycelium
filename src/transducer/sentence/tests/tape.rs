@@ -52,7 +52,7 @@ fn form_tape_v4_round_trips() {
 
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("v4 tape");
     assert!(e.is_sentence());
-    assert_eq!(e.description()[1], 4, "version 4");
+    assert_eq!(e.description()[1], FORM_TAPE_VERSION, "the tape names its version");
     let back = from_element_form(&e).expect("decode v4");
     assert_eq!(back.vertices.len(), f.vertices.len());
     assert_eq!(back.faces.len(), f.faces.len());
@@ -127,8 +127,8 @@ fn form_tape_v4_round_trips() {
 #[test]
 fn tape_v4_refuses_short_or_partial() {
     let f = closed_word_form(Word::identity(), None);
-    let e = as_element_form(&f, [1, 0, 0, 0]).expect("v4");
-    assert_eq!(e.description()[1], 4);
+    let e = as_element_form(&f, [1, 0, 0, 0]).expect("tape");
+    assert_eq!(e.description()[1], FORM_TAPE_VERSION);
     let mut short = e.description().to_vec();
     short.pop();
     let mut truncated = Element::identity();

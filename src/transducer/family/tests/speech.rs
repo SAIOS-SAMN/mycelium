@@ -249,7 +249,11 @@ let minted = mint_sentence(&rule, &family, &NoCrystal).expect("the family mints"
 let mu = minted.magnitude();
 assert!(mu[1] >= 1, "recolour is gauge content, got {mu:?}");
 assert!(mu.iter().any(|&x| x > 0), "T is form_descent, never a floor on the lane");
-assert_eq!(minted.description().get(1), Some(&4), "the minted word is the form's v4 tape");
+assert_eq!(
+    minted.description().get(1),
+    Some(&crate::transducer::sentence::FORM_TAPE_VERSION),
+    "the minted word is the form's tape"
+);
 assert_eq!(
     minted.address(),
     crate::transducer::sentence::as_element_form(&rule.form, minted.magnitude()).expect("tape").address(),

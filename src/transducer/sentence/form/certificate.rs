@@ -30,6 +30,10 @@ pub enum PivotBy {
     },
     /// The hue cycle type, composed as inverse onto the chord gauge (A4).
     Hue { face: u16, gauge: Vec<(u8, u8)> },
+    /// A chart axis opened over the loop closing on `face`, seeded by the
+    /// loop's holonomy versor (3.7, 16.16 step 3; I6). The move writes no
+    /// face: it makes the holonomy a coordinate of the form.
+    OpenAxis { face: u16, seed: Versor },
 }
 
 impl PivotBy {
@@ -37,7 +41,8 @@ impl PivotBy {
         match self {
             PivotBy::Word { face, .. }
             | PivotBy::Placement { face, .. }
-            | PivotBy::Hue { face, .. } => *face,
+            | PivotBy::Hue { face, .. }
+            | PivotBy::OpenAxis { face, .. } => *face,
         }
     }
 
@@ -57,6 +62,13 @@ impl PivotBy {
                 for &(a, b) in gauge {
                     buf.push(a);
                     buf.push(b);
+                }
+                buf
+            }
+            PivotBy::OpenAxis { seed, .. } => {
+                let mut buf = vec![3u8];
+                if let Some(k) = seed.key() {
+                    let _ = crate::transducer::address::put_addr(&mut buf, k);
                 }
                 buf
             }
@@ -124,6 +136,11 @@ impl PivotCertificate {
                     buf.push(b);
                 }
             }
+            PivotBy::OpenAxis { face, seed } => {
+                buf.push(3);
+                buf.extend_from_slice(&face.to_le_bytes());
+                seed.to_bytes(&mut buf);
+            }
         }
         buf
     }
@@ -166,6 +183,11 @@ impl PivotCertificate {
                     out.push(a);
                     out.push(b);
                 }
+            }
+            PivotBy::OpenAxis { face, seed } => {
+                out.push(3);
+                out.extend_from_slice(&face.to_le_bytes());
+                seed.to_bytes(out);
             }
         }
     }
@@ -220,6 +242,11 @@ impl PivotCertificate {
                     *pos += 2;
                 }
                 PivotBy::Hue { face, gauge }
+            }
+            3 => {
+                let face = take_u16(b, pos)?;
+                let seed = Versor::from_bytes(b, pos)?;
+                PivotBy::OpenAxis { face, seed }
             }
             _ => return None,
         };

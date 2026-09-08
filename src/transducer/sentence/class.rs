@@ -374,9 +374,11 @@ impl ClassVector {
     }
 
     /// The coordinate an axis names, as "nonzero". `Open` is never a
-    /// coordinate: it is the last move, admitted when no coordinate's own
-    /// pivot discharged. Off-plane is occupied when the holonomy has no
-    /// plane section, not as a fallback from a missing form.
+    /// coordinate of the vector: it is a move on the form's cover, and the
+    /// form's `axes` carrier says whether it was taken — a loop whose class
+    /// is an opened axis reads as the zero vector (`Form::class_vector`,
+    /// I6). Off-plane is occupied when the holonomy has no plane section,
+    /// not as a fallback from a missing form.
     pub fn occupies(&self, axis: Axis) -> bool {
         match axis {
             Axis::Orientation(p) => self.plane_slot(p).is_some_and(|s| s.0),
@@ -538,25 +540,31 @@ pub enum LoopRow {
     Torsion,
     Free([i64; 12]),
     OffPlane(crate::transducer::address::Address),
+    /// The loop's class is a chart axis the form opened (I6, 15.5): its
+    /// holonomy is the transition on that axis, so it counts on `axes`
+    /// and on no other coordinate.
+    Opened,
 }
 
-pub fn loop_row(h: &Word) -> LoopRow {
+/// `None` when the holonomy is not a versor: it has no class (15.3), so
+/// it has no row in the audit and the rank is unmeasured. It was keyed by
+/// its rotor's bytes in place of the class it lacks, which is 0.12b's
+/// refused fallback (rule 11).
+pub fn loop_row(h: &Word) -> Option<LoopRow> {
     if h.is_identity() {
-        return LoopRow::Closed;
+        return Some(LoopRow::Closed);
     }
-    match free_row(h) {
+    Some(match free_row(h) {
         Some(row) if row == [0i64; 12] => LoopRow::Torsion,
         Some(row) => LoopRow::Free(row),
-        None => LoopRow::OffPlane(match h.rotor().class_key() {
-            Some(k) => k,
-            None => h.rotor().key(),
-        }),
-    }
+        None => LoopRow::OffPlane(h.rotor().class_key()?),
+    })
 }
 
 /// A18 over the rows of a nerve's cycles or a form's loops.
 pub fn rank_of_rows(rows: &[LoopRow]) -> Option<Rank> {
     let mut torsion = 0u32;
+    let mut axes = 0u32;
     let mut offplane: Keyed<()> = Keyed::new();
     let mut free: Vec<[i64; 12]> = Vec::new();
     for r in rows {
@@ -567,17 +575,13 @@ pub fn rank_of_rows(rows: &[LoopRow]) -> Option<Rank> {
             LoopRow::OffPlane(k) => {
                 offplane.insert(k, ());
             }
+            LoopRow::Opened => axes += 1,
         }
     }
     Some(Rank {
         torsion,
         free: z_rank(&free)?,
         offplane: offplane.len() as u32,
-        axes: 0,
+        axes,
     })
-}
-
-pub fn rank_of_holonomies<'a>(holonomies: impl Iterator<Item = &'a Word>) -> Option<Rank> {
-    let rows: Vec<LoopRow> = holonomies.map(loop_row).collect();
-    rank_of_rows(&rows)
 }

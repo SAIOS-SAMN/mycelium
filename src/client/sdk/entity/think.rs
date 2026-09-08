@@ -197,20 +197,74 @@ impl Entity {
         self.opened.len()
     }
 
-    /// Expand dirty ideas once per syntropic phase. Returns the lane
-    /// measure of A16 snaps (Discharged, Vortex, TorsionFiled).
+    /// Expand dirty ideas once per syntropic phase (25.1): each dirty idea
+    /// expands over the working atlas — genome and dialect, read as one
+    /// atlas, the held word's rotor read by address — and runs the pivot
+    /// loop with the epigenome as its crystal (the closed forms it holds,
+    /// ruled or stood; an idea is glued only once it has closed and stood,
+    /// 13.6). An idea that closes crystallizes (25.2), stands in the
+    /// dialect and is uttered once (24.3). Returns the lane measure of the
+    /// A16 snaps (Discharged, Vortex, TorsionFiled).
     pub fn expand_ideas(&mut self) -> [u64; 4] {
         let mut budget = self.physics.stroke();
         self.contemplation.set_now(self.session.voice().k());
-        let rotors = crate::network::nerve::Keyed::new();
-        let (_spent, pivoted) = self.contemplation.expand_all(
-            self.epigenome.atlas(),
-            &rotors,
-            &self.epigenome,
-            &mut budget,
-        );
+        let (_spent, pivoted, crystallized) = {
+            let epigenome = &self.epigenome;
+            let atlas = epigenome.working_atlas();
+            let rotor_at = |a: &[u8]| epigenome.working_word(a).and_then(crate::transducer::cech::rotor_of);
+            self.contemplation
+                .expand_all(&atlas, &rotor_at, epigenome, &mut budget)
+        };
         self.contemplation.retire_on_t(self.physics.reserve[2] as usize);
+        for e in &crystallized {
+            self.stand_crystallized(e);
+        }
         pivoted
+    }
+
+    /// A crystallized idea stands in the dialect and is uttered once
+    /// (25.2, 24.3): the same vertex already stood or taught is a use, not
+    /// a second utterance.
+    fn stand_crystallized(&mut self, e: &Element) {
+        let addr = e.address();
+        if self.already_taught(e) {
+            self.remember_spoken(e);
+            return;
+        }
+        let (depth, vertices, glued, faces, torsion) =
+            match crate::transducer::sentence::from_element_form(e) {
+                Some(f) => (
+                    f.depth,
+                    f.vertices.len(),
+                    f.vertices
+                        .iter()
+                        .filter(|v| matches!(v, crate::transducer::sentence::Vertex::Glued { .. }))
+                        .count(),
+                    f.faces.len(),
+                    f.torsion.len(),
+                ),
+                None => (0, 0, 0, 0, 0),
+            };
+        match self.speak(std::slice::from_ref(e)) {
+            Ok(codes) if codes.first().copied() == Some(dialogue::SPEECH_REFUSED) => {
+                eprintln!(
+                    "  form withheld: {:02x}{:02x}… refused on the wire",
+                    addr[0], addr[1]
+                );
+            }
+            Ok(_) => {
+                eprintln!(
+                    "  form spoken: {:02x}{:02x}… depth {depth} vertices {vertices} glued {glued} faces {faces} torsion {torsion}",
+                    addr[0], addr[1]
+                );
+            }
+            Err(err) => {
+                eprintln!(
+                    "  form withheld: {:02x}{:02x}… {err}",
+                    addr[0], addr[1]
+                );
+            }
+        }
     }
 
     /// PIVOT ON A WORD: read by_chart at the word's chart and peels, fill

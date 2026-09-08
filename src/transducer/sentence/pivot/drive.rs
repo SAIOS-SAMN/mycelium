@@ -22,16 +22,16 @@ pub(crate) struct Prior<'a> {
 }
 
 impl Form {
-    /// A18 over this form's loops.
-    pub fn rank(&self) -> Option<Rank> {
-        rank_of_holonomies(self.loops.iter().map(|lp| &lp.holonomy))
-    }
-
     /// The class vector of loop `idx` (12.6): plane coordinates from the
-    /// oriented holonomy; placement and hue from the affine and gauge
-    /// composed around `lp.vertices` (A4).
+    /// oriented holonomy; placement and hue from the carriage and gauge
+    /// composed around `lp.vertices` (A4). A loop whose class is an axis
+    /// the form opened reads as the zero vector: its holonomy is the
+    /// transition on that axis and no longer a defect (I6, 15.5, T14).
     pub fn class_vector(&self, idx: usize) -> Option<ClassVector> {
         let lp = self.loops.get(idx)?;
+        if self.opened_axis_of(lp).is_some() {
+            return Some(ClassVector::zero());
+        }
         let t = loop_transport(self, lp)?;
         ClassVector::read(
             &lp.holonomy,
@@ -40,10 +40,11 @@ impl Form {
         )
     }
 
-    /// Write a certified move onto the chord face's transport and re-walk.
-    /// Vertices are not written.
+    /// Write a certified move onto the form — the chord face's transport,
+    /// or an axis opened over the loop — and re-walk. Vertices are not
+    /// written.
     pub fn apply_pivot(&mut self, cert: &PivotCertificate) {
-        apply_by(&mut self.faces, &cert.by);
+        self.apply_move(&cert.by);
         self.loops = Self::loops_of(&self.faces, self.vertices.len());
         self.reindex();
     }
@@ -135,7 +136,16 @@ impl Form {
             if open.is_empty() {
                 break;
             }
-            let rows: Vec<LoopRow> = self.loops.iter().map(|lp| loop_row(&lp.holonomy)).collect();
+            // A loop whose holonomy is not a versor has no row (15.3): the
+            // audit is unmeasured and the form is held, never counted
+            // under a key of the rotor's bytes.
+            let Some(rows) = self.loop_rows() else {
+                eprintln!(
+                    "  pivot {:02x}{:02x}… held, rank unmeasured",
+                    idea[0], idea[1]
+                );
+                break;
+            };
             let Some(rank_before) = rank_of_rows(&rows) else {
                 eprintln!(
                     "  pivot {:02x}{:02x}… held, rank overflow",
@@ -167,10 +177,15 @@ impl Form {
                 if handled.contains(&loop_k) {
                     continue;
                 }
-                let rotor_key = self.loops[idx].holonomy.rotor().class_or_rotor_key();
+                // `open` holds only loops with a class vector, so the class
+                // key exists here; a holonomy with no class is never keyed
+                // by its rotor's bytes in its place.
+                let Some(rotor_key) = self.loops[idx].holonomy.rotor().class_key() else {
+                    continue;
+                };
                 let held = horizon.get(&rotor_key).is_some();
                 let order = self.loops[idx].holonomy.order();
-                let cands = self.candidates_for(idx, &kappa, crystal);
+                let cands = self.candidates_for(idx, &kappa, crystal, held);
                 let mut discharging: Vec<PivotCertificate> = Vec::new();
                 for cand in &cands {
                     if !budget.spend() {
@@ -284,11 +299,17 @@ impl Form {
         snaps
     }
 
+    /// The candidate pivots of a held loop (16.16 step 3), read off its
+    /// class vector in the fixed order, each instantiated from what the
+    /// crystal holds. `held` is the horizon's word: the mesh holds this
+    /// class already (A19), so the mind neither demands it nor opens an
+    /// axis on it; it is still discharged by a held form when one arrives.
     pub(crate) fn candidates_for(
         &self,
         idx: usize,
         kappa: &ClassVector,
         crystal: &dyn Crystal,
+        held: bool,
     ) -> Vec<Candidate> {
         let Some(lp) = self.loops.get(idx) else {
             return Vec::new();
@@ -391,6 +412,25 @@ impl Form {
                 }
             }
         }
+        // THE OPENING AXIS (12.6, 16.16 step 3, 3.7; I6). A residual
+        // measures how narrow the cover was: a loop whose class has a free
+        // part, which the working atlas holds no word or form on and the
+        // mesh does not hold, opens a chart axis seeded by its own holonomy.
+        // This is read off the fibre — it is empty — and never off a
+        // trial's failure; a finite-order loop with no word files as
+        // torsion instead (step 6, A17). The class becomes a coordinate of
+        // the form, and the court re-derives the seed from the loop.
+        if out.is_empty() && !held && kappa.free_part() && !lp.holonomy.is_identity() {
+            if let Some(seed) = element::versor_of_word(&lp.holonomy) {
+                out.push(Candidate {
+                    axis: Axis::Open,
+                    by: PivotBy::OpenAxis {
+                        face: chord as u16,
+                        seed,
+                    },
+                });
+            }
+        }
         out
     }
 
@@ -403,15 +443,23 @@ impl Form {
     ) -> Option<PivotCertificate> {
         let &Prior { rows, rank_before, crystal, bundle, t_extent, ref mu_before } = before;
         let mut trial_form = self.clone();
-        apply_by(&mut trial_form.faces, &cand.by);
+        trial_form.apply_move(&cand.by);
         trial_form.loops = Form::loops_of(&trial_form.faces, trial_form.vertices.len());
         let kappa_after = trial_form.class_vector(idx)?;
-        if kappa_after.occupies(cand.axis) || !kappa.agrees_except(&kappa_after, cand.axis) {
+        // 12.6: a pivot on axis x discharges when x reads zero after and no
+        // other coordinate moved; opening an axis discharges the LOOP — it
+        // is no longer a loop on the refined cover (15.5, T14) — so its
+        // whole vector reads zero.
+        let discharged = if cand.axis == Axis::Open {
+            kappa_after.is_zero()
+        } else {
+            !kappa_after.occupies(cand.axis) && kappa.agrees_except(&kappa_after, cand.axis)
+        };
+        if !discharged {
             return None;
         }
-        let after_h = trial_form.loops.get(idx)?.holonomy.clone();
         let mut after_rows = rows.to_vec();
-        *after_rows.get_mut(idx)? = loop_row(&after_h);
+        *after_rows.get_mut(idx)? = trial_form.loop_row_at(idx)?;
         let rank_after = rank_of_rows(&after_rows)?;
         // T21 (iii): the rank holds, or one unit moves out of torsion, free
         // or off-plane and into axes. Anything else is not this pivot's move
@@ -482,7 +530,11 @@ impl Form {
             .windows(2)
             .map(|p| (p[0] as u8, p[1] as u8))
             .collect();
-        let class = lp.holonomy.rotor().class_or_rotor_key();
+        // Torsion is filed under the holonomy's CLASS (16.17, 15.4); a
+        // holonomy that has none is not a versor and stays open.
+        let Some(class) = lp.holonomy.rotor().class_key() else {
+            return false;
+        };
         self.torsion.insert(class, FiledLoop { sigma, period: ell, chord: lp.chord });
         true
     }

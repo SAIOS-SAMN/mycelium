@@ -189,5 +189,6 @@ pub fn outcome_code(o: &Outcome) -> u8 {
         Outcome::Sectioned(_) => 6,
         Outcome::Fragmented(_) => 5,
         Outcome::Pivot => 4,
+        Outcome::Refused(_) => 7,
     }
 }

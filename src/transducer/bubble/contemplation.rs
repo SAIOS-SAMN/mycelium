@@ -425,6 +425,54 @@ impl Contemplation {
         sentence::as_element_form(f, mag)
     }
 
+    /// CAUTERIZE (25.2): an idea whose form is closed — every loop the
+    /// identity, filed torsion or an opened axis, every remainder empty —
+    /// crystallizes. The tape carries its torsion, certificates and axes,
+    /// M2 fixes the address, and its magnitude is the descent it measures
+    /// over the bundle it germinated from (26), through the crystal that
+    /// resolves what it cites; a form with no bundle carries what it glued.
+    /// The bubble leaves the contemplation unless a live idea glued it
+    /// (`retire_on_t` skips those). `None` when the form is not closed, a
+    /// pair of the bundle is still open, or nothing is measured: a form that
+    /// closes nothing is the citation, not a form (4), and stays a thought.
+    pub fn crystallize(&mut self, key: &[u8], crystal: &dyn Crystal) -> Option<Element> {
+        let b = self.bubbles.get(key)?;
+        let f = b.form.as_ref()?;
+        if !f.is_cauterized() || !f.remainder.is_empty() {
+            return None;
+        }
+        if b.remainders.fiber(ROOT).any(|(_, r)| !r.is_empty()) {
+            return None;
+        }
+        let mag = match b.bundle.as_deref() {
+            Some(bundle) => {
+                let (pay, rems) = crate::transducer::family::form_descent(f, bundle, crystal);
+                if rems.iter().any(|r| !r.is_empty()) {
+                    return None;
+                }
+                pay
+            }
+            None => form_mag(f),
+        };
+        let e = sentence::as_element_form(f, mag)?;
+        let (loops, torsion, certificates, axes) =
+            (f.loops.len(), f.torsion.len(), f.certificates.len(), f.axes.len());
+        let retire = b.glued_by.is_empty();
+        if retire {
+            let old = b.clone();
+            self.retract_incidence(key, &old);
+            self.bubbles.remove(key);
+            self.dirty.remove(key);
+        }
+        self.formed += 1;
+        eprintln!(
+            "  form crystallized {:02x}{:02x}… loops {loops} torsion {torsion} certificates {certificates} axes {axes} carried {mag:?}",
+            e.address()[0],
+            e.address()[1]
+        );
+        Some(e)
+    }
+
     /// Classes on the contemplation, any degree.
     pub fn classes_held(&self) -> Vec<(Rotor, usize)> {
         self.complex.classes()

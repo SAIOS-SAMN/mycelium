@@ -36,29 +36,36 @@ assert!(k.quote().1.is_empty(), "the market cleared");
 }
 
 /// A docket draws the chain's μ⃗ from the uttering voice's remaining bond;
-/// a short lane refuses and nothing is listed. A second voice's bond is
-/// its own; the hypha's identity is not the drawer.
+/// a short lane refuses the act with REFUSE_ROOM, and nothing is listed,
+/// drawn, escrowed or sealed (23.8, S9.6). A second voice's bond is its
+/// own; the hypha's identity is not the drawer.
 #[test]
-fn docket_draws_room_and_refuses_when_short() {
+fn a_short_lane_refuses_the_act_and_dockets_nothing() {
 let a = vec![(0, 0, 1u8)];
 let b = vec![(0, 0, 2u8)];
 let c = vec![(1, 0, 3u8)];
 let d = vec![(1, 0, 4u8)];
 let mut short = Kernel::new();
 short.set_lane_cap([8, 1, 8, 8]);
-let _ = short.ingest(&a, &b, [1; 32]);
-assert_eq!(short.pending.len(), 1, "the first draw covers");
-let _ = short.ingest(&c, &d, [1; 32]);
-let _ = &short;
-// ONE VANTAGE DOCKETS, so the first pair is listed on the first
-// ingest rather than the second; the G lane is capped at 1 and the
-// second pair's draw does not cover, so it is refused and never
-// reaches the book.
+assert_eq!(short.ingest(&a, &b, [1; 32]), Outcome::GermPending, "the first draw covers");
+assert_eq!(short.pending.len(), 1, "the first pair is listed on one vantage");
+let occupancy = short.occupancy();
+let provisional = short.provisional.len();
+let entries = short.treasury().entries().len();
+let k = short.k_step();
+// The G lane is capped at 1 and the second pair's draw does not cover:
+// the act is refused with the reason, and the book, the room, the
+// escrow and the receipt chain are exactly as they were.
 assert_eq!(
-    short.pending.len(),
-    1,
-    "a lane that does not cover the draw refuses, nothing further docketed"
+    short.ingest(&c, &d, [1; 32]),
+    Outcome::Refused(crate::verdict::REFUSE_ROOM),
+    "a lane that does not cover the draw refuses the act"
 );
+assert_eq!(short.pending.len(), 1, "nothing further docketed");
+assert_eq!(short.occupancy(), occupancy, "nothing drawn");
+assert_eq!(short.provisional.len(), provisional, "nothing provisional");
+assert_eq!(short.treasury().entries().len(), entries, "nothing escrowed");
+assert_eq!(short.k_step(), k, "no receipt sealed for a refused act");
 
 let mut bonded = Kernel::new();
 let cover = crate::arc::family_cover(&[(vec![vec![1]], vec![vec![2]])])
@@ -71,12 +78,12 @@ let chain_ab = germinate(&a, &b).unwrap();
 let chain_cd = germinate(&c, &d).unwrap();
 assert_eq!(bonded.attest(&chain_ab, [1; 32]), Outcome::GermPending);
 assert_eq!(bonded.pending.len(), 1, "the cover admits one pair");
-assert_eq!(bonded.attest(&chain_cd, [1; 32]), Outcome::GermPending);
 assert_eq!(
-    bonded.pending.len(),
-    1,
-    "a second pair of the same μ⃗ waits until the first draw releases"
+    bonded.attest(&chain_cd, [1; 32]),
+    Outcome::Refused(crate::verdict::REFUSE_ROOM),
+    "a second pair of the same μ⃗ is refused until the first draw releases"
 );
+assert_eq!(bonded.pending.len(), 1, "and it is not listed");
 assert_eq!(bonded.attest(&chain_cd, [2; 32]), Outcome::GermPending);
 assert_eq!(
     bonded.pending.len(),
@@ -126,6 +133,15 @@ assert!(
 for _ in 0..16 {
     k.physics_mut().spend([true; 4]);
 }
+// The door's reading is per lane (S9.6b): every lane is spent to
+// nothing and a broke speaker pays nothing on any, so the reading names
+// all four with the fee that went unpaid, the deficit itself.
+let reading = k.door_deferral([9; 32]);
+assert_eq!(
+    reading,
+    k.physics().reserve_deficit(),
+    "a broke speaker on an exhausted mesh is deferred on every lane, by the deficit"
+);
 // A broke speaker (no earned balance) is DEFERRED at the door.
 let a2 = vec![(5, 0, 2), (5, 1, 2)];
 let b2 = vec![(5, 0, 6), (5, 1, 6)];

@@ -114,11 +114,19 @@ impl Form {
             };
             torsion.insert(&k, FiledLoop { sigma: mapped, period: *ell, chord: nc });
         }
+        let mut axes = Keyed::new();
+        for (k, chord) in self.axes.fiber(ROOT) {
+            let Some(&Some(nc)) = face_old_to_new.get(*chord as usize) else {
+                continue;
+            };
+            axes.insert(&k, nc);
+        }
         self.vertices = new_verts;
         self.faces = new_faces;
         self.glued = glued;
         self.sections = sections;
         self.torsion = torsion;
+        self.axes = axes;
         self.loops = Self::loops_of(&self.faces, self.vertices.len());
         self.depth = self.depth_of();
         self.reindex();
@@ -400,6 +408,11 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
         for m in members {
             buf.extend_from_slice(&m.to_le_bytes());
         }
+    }
+    // An opened axis is a coordinate of the form (I6): the class it was
+    // opened on, written out, key order.
+    for (class, _) in f.axes.fiber(crate::network::nerve::ROOT) {
+        crate::transducer::address::put_bytes(&mut buf, &class);
     }
     crate::transducer::address::Address::new(buf)
 }

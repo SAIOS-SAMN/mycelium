@@ -172,20 +172,22 @@ impl Entity {
     }
 
     /// SPEAK a family's cohering sentences as one act. Refuses if two
-    /// sentences share a germ with a non-identity transition. Each uttered
-    /// word enters the dialect (epigenome handles); the genome is frozen.
-    /// A vertex already on `taught_up` stands in the dialect and does not
-    /// go on the wire.
+    /// sentences share a germ with a non-identity transition. Each word
+    /// STANDS in the dialect before it is uttered (24.3: perceive, think,
+    /// stand, utter); the genome is frozen. A vertex already on `taught_up`
+    /// stands in the dialect and does not go on the wire.
     pub fn speak(&mut self, sentences: &[Element]) -> io::Result<Vec<u8>> {
         if sentences.is_empty() {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "no sentence"));
         }
         let k = self.session.voice().k();
+        let tu = self.now_tu();
         let mut fresh: Vec<&Element> = Vec::new();
         let mut codes = vec![dialogue::SPEECH_STOOD; sentences.len()];
         for (i, e) in sentences.iter().enumerate() {
-            if self.already_taught(e) {
-                self.epigenome.stand_dialect_at(e.clone(), k, self.now_tu());
+            let taught = self.already_taught(e);
+            self.epigenome.stand_dialect_at(e.clone(), k, tu);
+            if taught {
                 continue;
             }
             fresh.push(e);
@@ -196,7 +198,7 @@ impl Entity {
         }
         let voice = self.session.kernel().voice();
         let bytes: Vec<Vec<u8>> = fresh.iter().map(|e| e.to_bytes()).collect();
-        let body = dialogue::encode_speech(&voice, crate::transducer::address::Address::new(Vec::new()), self.now_tu(), &bytes);
+        let body = dialogue::encode_speech(&voice, crate::transducer::address::Address::new(Vec::new()), tu, &bytes);
         let reply = self.session.speak_nerve(body)?;
         let got = dialogue::decode_speech_reply(&reply).unwrap_or_default();
         let mut gi = 0usize;
@@ -207,7 +209,6 @@ impl Entity {
             let c = got.get(gi).copied().unwrap_or(dialogue::SPEECH_STOOD);
             gi += 1;
             codes[i] = c;
-            self.epigenome.stand_dialect_at(e.clone(), k, self.now_tu());
             if c != dialogue::SPEECH_REFUSED {
                 self.taught_up.insert(e.address(), e.clone());
             }

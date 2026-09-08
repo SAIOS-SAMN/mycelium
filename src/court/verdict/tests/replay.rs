@@ -93,7 +93,7 @@ fn replay_form_refuses_unruled_glue_and_replays_resolved() {
     // refused for measuring nothing, which made the court an economist —
     // μ⃗ is a cost, not a score, and a word that costs nothing to say has
     // still said it. What closes the family is checked where the family is
-    // (REFUSE_NO_CLOSURE); pricing is read afterwards, by the economy.
+    // (REFUSE_NOT_CLOSED); pricing is read afterwards, by the economy.
     let mut flat = as_element_form(&outer, [1, 0, 0, 0]).expect("tape");
     flat.set_magnitude([0; 4]);
     assert_eq!(
@@ -107,6 +107,47 @@ fn replay_form_refuses_unruled_glue_and_replays_resolved() {
     }
     let deeper_e = as_element_form(&cited_deeper, [1, 0, 0, 0]).expect("tape");
     assert_eq!(blind_replay_with(&deeper_e, &resolve), Some(REFUSE_GLUED_DEPTH));
+}
+
+/// 34.1: a sentence whose tape does not parse whole is refused by name,
+/// never partly read. This is `REFUSE_FORM_TAPE`'s producing test (3.5).
+#[test]
+fn a_form_whose_tape_does_not_parse_is_refused_by_name() {
+    use crate::transducer::sentence::as_element_form;
+    let e = as_element_form(&closed_turn_form(), [1, 0, 0, 0]).expect("tape");
+    assert_eq!(replay_form(&e, &|_| None), None, "the whole tape replays");
+    let mut short = e.description().to_vec();
+    short.pop();
+    let mut cut = e.clone();
+    cut.set_description(short);
+    assert_eq!(
+        replay_form(&cut, &|_| None),
+        Some(REFUSE_FORM_TAPE),
+        "a tape one byte short is refused, not read up to the cut"
+    );
+}
+
+/// 15.3, 16.17, rule 11 (I5): a loop whose holonomy is not a versor has
+/// no class. It is never keyed by its rotor's bytes in place of the class
+/// it lacks: the rank audit is unmeasured, the form is not cauterized, and
+/// the loop does not replay. The fallback this refuses survived 0.12b under
+/// the name `class_or_rotor_key`.
+#[test]
+fn a_loop_whose_holonomy_is_not_a_versor_is_refused_not_keyed() {
+    use crate::transducer::alphabet::{Rotor, Word};
+    let mut f = closed_turn_form();
+    assert!(f.loops.is_empty() && f.rank().is_some(), "a tree has a rank, and it is zero");
+    f.loops.push(crate::transducer::sentence::Loop {
+        vertices: vec![0, 1, 0],
+        faces: vec![0, 0],
+        chord: 0,
+        holonomy: Word::formed(Rotor::zero()),
+        carriage: element::identity_versor(),
+    });
+    assert!(f.loops[0].holonomy.rotor().class_key().is_none(), "a zero rotor is not a class");
+    assert!(f.rank().is_none(), "the audit is unmeasured, not counted under a rotor key");
+    assert!(!f.is_cauterized(), "nothing files what has no class");
+    assert!(!form_loops_replay(&f), "and the loop does not replay");
 }
 
 /// A20: a certificate that does not un-pivot to the tape's before/after
@@ -315,7 +356,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
 /// magnitude: a form that closes every pair while measuring nothing has
 /// still closed them, and what it measured is the economy's reading.
 ///
-/// This is `REFUSE_NO_CLOSURE`'s producing test (3.5). The reason it
+/// This is `REFUSE_NOT_CLOSED`'s producing test (3.5). The reason it
 /// replaces, `REFUSE_NO_DESCENT`, fired on a zero magnitude — a fact about
 /// price, ruled on by a court.
 #[test]
@@ -338,7 +379,7 @@ fn a_form_that_leaves_a_remainder_is_refused_for_closure() {
     let wider = vec![(x, y), (grid(&["10"]), grid(&["23"]))];
     assert_eq!(
         blind_replay_on(&word, &|_| None, Some(&wider), &NoCrystal),
-        Some(REFUSE_NO_CLOSURE),
+        Some(REFUSE_NOT_CLOSED),
         "a remainder on any pair is the refusal"
     );
 }

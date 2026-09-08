@@ -29,6 +29,11 @@ pub enum Outcome {
     Fragmented(Vec<Outcome>),
     /// A degenerate demand (empty, or mismatched body counts) — nothing to reduce.
     Pivot,
+    /// The act is REFUSED with a reason of 34.1: a lane of the voice's room
+    /// did not cover the draw (23.8). Nothing was docketed, drawn, escrowed
+    /// or sealed; the refusal is the whole of what happened, and it travels
+    /// to the voice.
+    Refused(&'static str),
 }
 
 /// The Čech glue of a fetched word on an overlapping chart.

@@ -56,7 +56,11 @@ impl Kernel {
             self.condense_stroke();
             self.physics.regenerate();
         }
-        if self.door_defers(voice) {
+        // The door's reading is per lane (S9.6b): a lane spent to nothing
+        // that the speaker paid nothing on defers the act, and the reading
+        // names the lanes it was deferred on.
+        let deferred = self.door_deferral(voice);
+        if !crate::economy::lanes_short(&deferred).is_empty() {
             return None;
         }
         let budget = (0usize, 0usize); // reduction is closed-form: no search budget
@@ -207,21 +211,13 @@ impl Kernel {
                 // DEFERS and dockets on a later submission once the reserve
                 // recovers, so deferral never strands one.
                 if self.physics.can_expand(lanes) {
-                    self.converge_here(&residual, voice);
-                    // 23.8: the residual is "docketed AS A LISTING". One
-                    // thing, not two -- it stays quotable on the open book
-                    // while it awaits a witness, so other voices can reduce
-                    // it and be credited for the use. Only the install
-                    // clears the page. While two vantages were required this
-                    // branch never listed, because the first voice fell
-                    // through to the `else` and listed there; with one
-                    // vantage docketing, nothing would ever reach the book
-                    // and the market would vanish.
                     // ADMISSION IS ROOM (23.8): the draw comes from the
                     // voice's own room on each lane it occupies, and a lane
-                    // that does not cover it refuses the act. Listing here
-                    // without that check would let the docket branch bypass
-                    // the gate the other branch performs.
+                    // that does not cover it REFUSES THE ACT — nothing is
+                    // docketed, drawn, escrowed, offered or sealed. The
+                    // shortfall is read per lane and the refusal names the
+                    // lanes; before S9.6 the act was logged as refused and
+                    // then escrowed, marked provisional and offered anyway.
                     // T-room is swept BEFORE the draw, exactly as the other
                     // listing site does it: standing extent that has aged out
                     // relocates to the cavity so the lane it held is free.
@@ -230,11 +226,18 @@ impl Kernel {
                     let draw = residual.magnitude();
                     let k_now = self.k_step();
                     self.relocate_t_exhausted();
-                    if !self.fits_book(&voice, &draw) {
-                        self.log_room_refused(&voice, &draw);
-                    } else {
-                        self.book_list((*residual).clone(), k_now, voice);
+                    let short = self.room_shortfall(&voice, &draw);
+                    if !crate::economy::lanes_short(&short).is_empty() {
+                        self.log_room_refused(&voice, &draw, &short);
+                        return Outcome::Refused(crate::verdict::REFUSE_ROOM);
                     }
+                    self.converge_here(&residual, voice);
+                    // 23.8: the residual is "docketed AS A LISTING". One
+                    // thing, not two -- it stays quotable on the open book
+                    // while it awaits a witness, so other voices can reduce
+                    // it and be credited for the use. Only the install
+                    // clears the page.
+                    self.book_list((*residual).clone(), k_now, voice);
                     let _ = self.treasury.settle_install(&residual, voice); // POW++ gate only
                     let mu = crate::economy::price(&residual.magnitude(), &self.physics.pressure);
                     let anchor = self.anchor();
@@ -272,6 +275,21 @@ impl Kernel {
                     self.offered.insert(&addr, ());
                     Outcome::GermPending
                 } else {
+                    // ADMISSION IS ROOM here too (23.8): a demand the lane
+                    // cannot expand on is still listed, and the listing draws
+                    // the voice's room. A short lane refuses the act before
+                    // anything is charged or written; a use of an address
+                    // already listed draws nothing new.
+                    let draw = residual.magnitude();
+                    let listed = self.pending.contains(&addr);
+                    if !listed {
+                        self.relocate_t_exhausted();
+                        let short = self.room_shortfall(&voice, &draw);
+                        if !crate::economy::lanes_short(&short).is_empty() {
+                            self.log_room_refused(&voice, &draw, &short);
+                            return Outcome::Refused(crate::verdict::REFUSE_ROOM);
+                        }
+                    }
                     // THE TORSION SOURCE: the open demand's pressure is the
                     // torsion the word actually carries. Every stored cycle
                     // is walked from the base assignment: an Open walk is
@@ -370,7 +388,6 @@ impl Kernel {
                     // the word does not hold, is holonomic demand — its
                     // tension projects onto lane 3, so the puncture that
                     // settles it is paid there.
-                    let draw = residual.magnitude();
                     let residual = {
                         let mut r = residual;
                         if crate::transducer::stalk::congruent(&self.stalks, |a| self.word_at(a), &r).is_some() {
@@ -381,19 +398,12 @@ impl Kernel {
                     if frontier {
                         self.quote_frontier.insert(&addr, ());
                     }
-                    if self.pending.contains(&addr) {
-                        self.convergence.used_by(addr.as_bytes(), voice);
-                    } else {
+                    self.convergence.used_by(addr.as_bytes(), voice);
+                    if !listed {
                         let k_now = self.k_step();
-                        self.relocate_t_exhausted();
-                        if !self.fits_book(&voice, &draw) {
-                            self.log_room_refused(&voice, &draw);
-                        } else {
-                            self.convergence.used_by(addr.as_bytes(), voice);
-                            self.book_list((*residual).clone(), k_now, voice);
-                            self.docket_connection(&residual, voice);
-                            self.offered.insert(&addr, ());
-                        }
+                        self.book_list((*residual).clone(), k_now, voice);
+                        self.docket_connection(&residual, voice);
+                        self.offered.insert(&addr, ());
                     }
                     Outcome::GermPending
                 }

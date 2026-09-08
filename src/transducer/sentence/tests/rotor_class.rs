@@ -8,9 +8,19 @@ use crate::transducer::element::{self, from_residual};
 use crate::transducer::sentence::*;
 use crate::transducer::stalk::{self, Standing};
 
+/// 12.6, 16.16 step 3, 3.7 (I6): a loop whose class has a free part and
+/// which no held word discharges OPENS A CHART AXIS seeded by its own
+/// holonomy — the residual measured how narrow the cover was, and the
+/// cover grew an axis along which it is a section. The loop then reads
+/// zero, the rank moves one unit from `free` into `axes`, the form coheres
+/// on the refined cover, and it is never filed as torsion (T3). The
+/// certificate replays on the court, which re-derives the seed from the
+/// loop; a tape whose axis was struck out is refused on that loop.
 #[test]
-fn infinite_class_is_never_filed() {
+fn an_infinite_class_no_word_discharges_opens_an_axis_and_is_never_filed() {
     let mut f = chord_form(&[infinite()]);
+    let before = f.rank().expect("rank");
+    assert_eq!((before.free, before.axes), (1, 0), "one free loop, no axis yet");
     let snaps = f.pivot_loop(
         [0x11; 32],
         &crate::network::nerve::Keyed::new(),
@@ -19,18 +29,53 @@ fn infinite_class_is_never_filed() {
         None,
         0,
     );
-    let want = infinite().rotor().class_key().expect("infinite class");
-    assert!(
-        snaps.iter().any(|s| matches!(s, Snap::Demand { key, .. } if *key == want)),
-        "a demand names the rotor class: {snaps:?}"
+    let discharged: Vec<&PivotCertificate> = snaps
+        .iter()
+        .filter_map(|s| match s {
+            Snap::Discharged { certificate, .. } => Some(certificate.as_ref()),
+            _ => None,
+        })
+        .collect();
+    let [certificate] = discharged[..] else {
+        panic!("the opening axis discharges the loop once: {snaps:?}");
+    };
+    assert_eq!(certificate.axis, Axis::Open, "on the opening axis");
+    assert_eq!(
+        certificate.rank_move,
+        RankMove::Discharged { from: RankAxis::Free },
+        "one unit left free for axes"
     );
+    assert!(matches!(certificate.by, PivotBy::OpenAxis { .. }), "the move is the opened axis");
     assert!(
-        !snaps.iter().any(|s| matches!(s, Snap::TorsionFiled { .. })),
-        "infinite is never filed: {snaps:?}"
+        !snaps.iter().any(|s| matches!(s, Snap::TorsionFiled { .. } | Snap::Demand { .. })),
+        "neither filed nor demanded: {snaps:?}"
     );
+    assert!(f.torsion.is_empty(), "an infinite class is never a large-ℓ torsion cycle");
+    assert_eq!(f.axes.len(), 1, "the form carries the opened axis");
+    let after = f.rank().expect("rank");
+    assert_eq!((after.free, after.axes), (0, 1), "the free unit is an axis now");
+    assert!(f.coheres(), "the loop is the transition on the opened axis");
     assert!(
-        f.torsion.is_empty(),
-        "an infinite class is never a large-ℓ torsion cycle"
+        f.class_vector(0).is_some_and(|k| k.is_zero()),
+        "and it reads as the zero vector"
+    );
+
+    // The court replays the opened axis from the tape and the loop.
+    let e = as_element_form(&f, [1, 0, 0, 0]).expect("crystallizes");
+    let back = from_element_form(&e).expect("tape");
+    assert_eq!(back.axes.len(), 1, "the axis rides the tape");
+    assert_eq!(
+        crate::court::verdict::blind_replay(&e),
+        None,
+        "the court re-derives the seed from the loop and the certificate re-walks"
+    );
+    let mut struck = back.clone();
+    struck.axes = Keyed::new();
+    let bad = as_element_form(&struck, [1, 0, 0, 0]).expect("tape without its axis");
+    assert_eq!(
+        crate::court::verdict::blind_replay(&bad),
+        Some(crate::court::verdict::REFUSE_LOOP),
+        "without the axis the loop is a free class again, and it does not replay"
     );
 }
 

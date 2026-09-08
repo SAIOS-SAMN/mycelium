@@ -21,7 +21,7 @@ impl Kernel {
         if self.heard.contains(&addr) {
             return Glue::Dialect;
         }
-        if let Some(reason) = crate::verdict::blind_replay_with(&spoken, &|a| self.resolve_form(a)) {
+        if let Some(reason) = self.court_replay(&spoken) {
             eprintln!("  court glue slash {:02x}{:02x}… {reason}", addr[0], addr[1]);
             let inv = crate::transducer::stalk::invariant_of(&spoken);
             self.heard_mark(addr, &inv);

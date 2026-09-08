@@ -21,6 +21,10 @@ pub enum Verdict {
     Fragmented,
     /// A degenerate demand — nothing to reduce.
     Pivot,
+    /// The act was refused at the door of the book (23.8): a lane of this
+    /// voice's room did not cover the draw. Nothing was docketed; the
+    /// hypha logged the lanes.
+    Refused,
     /// An unrecognized reply code (forward-compat).
     Unknown(u8),
 }
@@ -34,6 +38,7 @@ impl Verdict {
             Verdict::Sectioned => "section",
             Verdict::Fragmented => "fragmented",
             Verdict::Pivot => "pivot",
+            Verdict::Refused => "refused",
             Verdict::Unknown(_) => "unknown",
         }
     }
@@ -173,6 +178,27 @@ impl<'a> WorkingAtlas<'a> {
             }
         }
         None
+    }
+}
+
+/// The working atlas read as one atlas (24.1): a thought expands over the
+/// genome's charts and the dialect's alike, each trie walked from the same
+/// cursor under one budget; members carry both strata.
+impl crate::transducer::stalk::AtlasRead for WorkingAtlas<'_> {
+    fn children(
+        &self,
+        inv: &crate::transducer::stalk::Invariant,
+        after: Option<&[u8]>,
+        budget: &mut crate::physics::Budget,
+        f: &mut dyn FnMut(crate::transducer::stalk::Invariant),
+    ) -> Option<Vec<u8>> {
+        let a = self.genome.each_child(inv, after, budget, &mut *f);
+        let b = self.dialect.each_child(inv, after, budget, &mut *f);
+        b.or(a)
+    }
+
+    fn members(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<Vec<u8>> {
+        self.fiber(inv).into_iter().map(|(a, _)| a).collect()
     }
 }
 
@@ -408,6 +434,7 @@ pub(crate) fn decode_verdict(body: &[u8]) -> Verdict {
         Some(6) => Verdict::Sectioned,
         Some(4) => Verdict::Pivot,
         Some(5) => Verdict::Fragmented,
+        Some(7) => Verdict::Refused,
         Some(&c) => Verdict::Unknown(c),
         None => Verdict::Unknown(0),
     }

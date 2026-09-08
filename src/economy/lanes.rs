@@ -68,6 +68,20 @@ pub fn lanes_fallen(reading: &[LaneMove; 4]) -> Vec<usize> {
     (0..4).filter(|&l| matches!(reading[l], LaneMove::Fell(_))).collect()
 }
 
+/// THE SHORTFALL of a draw against a room, per lane: what the draw needs
+/// beyond the room, and zero where the lane fits (S9.6, 23.8). A reading,
+/// never a verdict — the caller acts on the lanes that are short, and the
+/// refusal it writes names them. The floor at zero is the accounting
+/// floor of a deficit, not a saturation of a measurement.
+pub fn shortfall(draw: &[u64; 4], room: &[u64; 4]) -> [u64; 4] {
+    std::array::from_fn(|l| draw[l].saturating_sub(room[l]))
+}
+
+/// The lanes that are SHORT in a shortfall reading, by index.
+pub fn lanes_short(short: &[u64; 4]) -> Vec<usize> {
+    (0..4).filter(|&l| short[l] > 0).collect()
+}
+
 /// The deflation a reading measured, per lane.
 pub fn deflation_of(reading: &[LaneMove; 4]) -> [u64; 4] {
     std::array::from_fn(|l| reading[l].deflation())

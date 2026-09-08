@@ -192,6 +192,45 @@ assert!(home.basis_len() >= 1, "the witness re-derives the address and it instal
 assert!(home.provisional.is_empty(), "the docket clears on install");
 }
 
+/// 23.1 step 7 on the court's own stroke (I3): a docketed form is replayed
+/// against the family it is bound to, so a form that leaves a remainder on
+/// a pair of that family is slashed with `REFUSE_NOT_CLOSED` where the
+/// stroke rules, and the same form bound to the family it closes is ruled.
+/// Before this the stroke replayed with no family, so closure was checked
+/// only at speech and never again.
+#[test]
+fn the_court_stroke_refuses_a_form_that_leaves_a_remainder_on_its_family() {
+use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
+let grid = |rows: &[&str]| -> crate::arc::Grid {
+    rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
+};
+let (x, y) = (grid(&["1"]), grid(&["2"]));
+let one_pair = vec![(x.clone(), y.clone())];
+let rule = extract_rule(&one_pair).expect("a recolour is a rule");
+let word = mint_sentence(&rule, &one_pair, &NoCrystal).expect("it closes its own pair");
+let addr = word.address();
+let wider = vec![(x, y), (grid(&["10"]), grid(&["23"]))];
+
+let mut refusing = Kernel::new();
+let task = [7u8; 32];
+refusing.bind_task_family(task, wider);
+refusing.docket_sentence(&word, [1; 32]);
+refusing.speech_task.insert(&addr, Address::from_bytes(task));
+assert!(refusing.provisional.contains(&addr), "docketed");
+refusing.court_stroke();
+assert_eq!(refusing.court_slashed, 1, "the stroke refuses the form on the family it does not close");
+assert!(!refusing.provisional.contains(&addr), "and it leaves the docket");
+assert!(!refusing.ruled_contains(&addr), "never ruled");
+
+let mut ruling = Kernel::new();
+ruling.bind_task_family(task, one_pair);
+ruling.docket_sentence(&word, [1; 32]);
+ruling.speech_task.insert(&addr, Address::from_bytes(task));
+ruling.court_stroke();
+assert_eq!(ruling.court_slashed, 0, "the form closes every pair of the family it is bound to");
+assert!(ruling.ruled_contains(&addr), "and the stroke rules it");
+}
+
 /// A glued form's descent is measured through the court genome as Crystal.
 #[test]
 fn glued_form_replays_descent_through_the_court_genome() {
