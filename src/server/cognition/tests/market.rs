@@ -105,7 +105,7 @@ let occ = k.occupancy();
 assert!(occ.iter().any(|&x| x > 0), "the draw occupies");
 let lambda = crate::physics::aperture_cycle() as u64;
 k.set_height(k.height().saturating_add(lambda));
-k.court_stroke();
+k.court_stroke(one_stroke_transport);
 assert!(k.pending.is_empty(), "the listing lapsed");
 assert_eq!(k.occupancy(), [0; 4], "the draw released");
 assert!(

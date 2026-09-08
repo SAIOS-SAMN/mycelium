@@ -80,7 +80,7 @@ let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
 k.ingest(&a, &b, [1; 32]);
 k.ingest(&a, &b, [2; 32]);
-k.court_stroke();
+k.court_stroke(super::common::one_stroke_transport);
 let hot = (
     k.field_hot_len(),
     k.pending.len(),
@@ -89,7 +89,7 @@ let hot = (
     k.provisional.len(),
 );
 for _ in 0..16 {
-    k.court_stroke();
+    k.court_stroke(super::common::one_stroke_transport);
 }
 assert_eq!(
     (

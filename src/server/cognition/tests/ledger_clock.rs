@@ -132,7 +132,7 @@ fn docketed(me: [u8; 32]) -> (Kernel, crate::transducer::address::Address) {
     let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
     assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
     assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending);
-    k.court_stroke();
+    k.court_stroke(super::common::one_stroke_transport);
     let addr = k.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().0;
     (k, crate::transducer::address::Address::from(addr))
 }
@@ -221,10 +221,39 @@ fn a_lapsed_citation_seals_a_receipt() {
     k.standing_h.insert(&laddr, 0);
     k.set_height(crate::physics::aperture_cycle() as u64 + 1);
     let before = k.k_step();
-    k.lapse_docket(&mut crate::physics::Physics::default().stroke());
+    k.lapse_docket(
+        &mut crate::physics::Physics::default().stroke(),
+        super::common::one_stroke_transport,
+    );
     assert_eq!(k.k_step(), before + 1, "a lapsed citation is one step");
     assert!(
         k.chain().receipts().last().is_some_and(|r| r.delta == laddr),
         "sealed at the address whose draw was released"
     );
+}
+
+/// 47.5: Λ is `from_transport(rtt_floor, aperture_cycle())`, "never a
+/// constant". A home this node has measured no round trip to has no Λ, so
+/// nothing lapses against it — an unmeasured transport is not a fast one
+/// (rule 11), and `transport_deadline` says the same of an unmeasured RTT.
+/// The lapse read `aperture_cycle()` alone, so a citation waited a number
+/// that had nothing to do with the home it waits on.
+#[test]
+fn a_citation_does_not_lapse_against_an_unmeasured_transport() {
+    let mut k = Kernel::new();
+    k.bind_identity([0x5d; 32]);
+    let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+    assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+    let laddr = k.pending.fiber(crate::network::nerve::ROOT).next().unwrap().0;
+    k.standing_h.insert(&laddr, 0);
+    // Standing far past any aperture: the extent is not what holds it.
+    k.set_height(crate::physics::aperture_cycle() as u64 * 4);
+    let before = k.k_step();
+    k.lapse_docket(
+        &mut crate::physics::Physics::default().stroke(),
+        super::common::unmeasured_transport,
+    );
+    assert_eq!(k.k_step(), before, "no lapse, so no receipt");
+    assert!(k.pending.get(&laddr).is_some(), "and the listing stands");
 }

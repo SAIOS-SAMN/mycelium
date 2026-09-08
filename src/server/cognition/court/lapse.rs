@@ -4,9 +4,29 @@ use crate::cognition::*;
 use crate::transducer::address::Address;
 
 impl Kernel {
-    /// 47.5 / 5.5: a listing whose standing height is an aperture of
-    /// admitted receipts behind the head releases its draw. Escrow returns;
-    /// nothing is slashed. Λ is aperture_cycle (the measured reserve ratio).
+    /// 47.5 / 5.5: a listing whose standing height is Λ admitted receipts
+    /// behind the head releases its draw. Escrow returns; nothing is
+    /// slashed.
+    ///
+    /// Λ IS MEASURED TRANSPORT, NOT A CONSTANT. 47.5 fixes it: "`Λ` is
+    /// `from_transport(rtt_floor, aperture_cycle())` on that chart in
+    /// strokes, never a constant", and rule 5 names the same shape as the
+    /// thing a free constant must become. This read `aperture_cycle()`
+    /// alone -- a number that had nothing to do with how long the home it
+    /// waits on actually takes to answer, so a citation on a fast wire
+    /// waited as long as one on a slow one, and no wire's measurement
+    /// moved it. The transport is not measured in this kernel and cannot
+    /// be: the caller holds the mesh. It answers `lambda(addr)`, and
+    /// `None` -- an unmeasured round trip -- does NOT lapse, which is what
+    /// `transport_deadline` already says of an unmeasured RTT and what
+    /// rule 11 says of every unread value.
+    ///
+    /// WHAT IS STILL OWED: 47.5's Λ is per CHART, and the caller resolves
+    /// per listing ADDRESS. A listing's charts can be homed at different
+    /// hyphae, and the home of a chart is the Cover's answer (16.11) over
+    /// the listing's invariant and magnitude, which the caller would have
+    /// to read out of this kernel to ask. Recorded, not guessed at.
+    ///
     /// THE LAPSE IS AN ORBIT, NOT A SWEEP (45.7, rule 10). It walked the
     /// whole `pending` fiber with no budget, collected every expired
     /// address into a `Vec`, and then ran a second unbudgeted loop that
@@ -23,9 +43,12 @@ impl Kernel {
     /// all at once in one. The extent each lapse reports is the one read
     /// when it was measured, not a second read guarded by `unwrap_or(now)`
     /// — a default standing in for a height (checklist (i)).
-    pub(crate) fn lapse_docket(&mut self, budget: &mut crate::physics::Budget) {
+    pub(crate) fn lapse_docket(
+        &mut self,
+        budget: &mut crate::physics::Budget,
+        lambda: impl Fn(&[u8]) -> Option<u64>,
+    ) {
         let now = self.height();
-        let lambda = crate::physics::aperture_cycle() as u64;
         let mut lapse: Vec<(Address, u64)> = Vec::new();
         let mut last: Option<Vec<u8>> = None;
         {
@@ -35,8 +58,11 @@ impl Kernel {
                 let Some(&h0) = self.standing_h.get(&addr) else {
                     continue;
                 };
+                let Some(lam) = lambda(&addr) else {
+                    continue;
+                };
                 let extent = now.saturating_sub(h0);
-                if extent >= lambda {
+                if extent >= lam {
                     lapse.push((Address::from(addr), extent));
                 }
             }

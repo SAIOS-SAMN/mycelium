@@ -14,6 +14,19 @@ let _ = k.ingest(a, b, [2; 32]);
 k.glue_local();
 }
 
+/// 47.5's Λ on a mesh whose measured round trip to every home is one
+/// stroke: `from_transport(1, aperture_cycle())`, on every listing. A test
+/// that lapses states the transport it lapses against, because the kernel
+/// names no constant and does not lapse against an unmeasured one.
+pub fn one_stroke_transport(_addr: &[u8]) -> Option<u64> {
+    Some(crate::physics::from_transport(1, crate::physics::aperture_cycle() as u64))
+}
+
+/// A home this node has measured no round trip to: nothing lapses.
+pub fn unmeasured_transport(_addr: &[u8]) -> Option<u64> {
+    None
+}
+
 pub fn digits(rows: &[&str]) -> Vec<Vec<u8>> {
 rows.iter()
     .map(|r| r.bytes().map(|b| b - b'0').collect())

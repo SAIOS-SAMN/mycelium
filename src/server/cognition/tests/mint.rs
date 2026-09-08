@@ -26,7 +26,7 @@ let addr = home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().0
 assert!(home.offered(&addr), "the court Offers a first-vantage germ");
 assert!(home.treasury().escrow_of(&addr).is_some(), "the priced magnitude is the claim");
 assert_eq!(home.treasury().minted().expect("minted adds up"), [0; 4], "the claim is not yet payment: nothing minted");
-home.court_stroke();
+home.court_stroke(one_stroke_transport);
 let spoken = home.provisional.get(&addr).cloned().expect("still provisional until a peer glues");
 let mut cover = crate::network::nerve::Cover::new();
 assert!(matches!(

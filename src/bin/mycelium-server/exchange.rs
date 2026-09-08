@@ -9,7 +9,7 @@ use crate::admission::{admit_peer_digest, admit_peer_receipt, rebuild_own_cover,
 use crate::door::{intake_corpus, relocate_corpus};
 use crate::persist::persist_if_due;
 use crate::syllabus::{syllabus_admit, Syllabus};
-use crate::transport::{note_rtt_ok, note_rtt_timeout, tell_peer};
+use crate::transport::{note_rtt_ok, note_rtt_timeout, tell_peer, withholding_lambda};
 use mycelium::anastome::dialogue;
 use mycelium::cognition::Kernel;
 use mycelium::court::identity::HyphaKey;
@@ -219,7 +219,7 @@ impl Exchange {
         loop {
             std::thread::yield_now();
             if let Ok(mut k) = kernel.lock() {
-                k.court_stroke();
+                k.court_stroke(|addr| withholding_lambda(&mesh, &router, addr));
                 let seed = k.syllabus_seed();
                 drop(k);
                 if let Ok(mut sy) = syllabus.lock() {

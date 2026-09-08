@@ -135,7 +135,11 @@ impl Kernel {
     /// triangles and tetrahedron classes. Fail → slash with a replay reason
     /// and relocate to the cavity atlas. Pass → a section on the ruled
     /// cover, escrow held. Fills and refinements share the stroke Budget.
-    pub fn court_stroke(&mut self) {
+    ///
+    /// `lambda` is 47.5's Λ for a listing, in admitted receipts, from the
+    /// caller's measured transport; the lapse does not fire where it reads
+    /// `None`. See `lapse_docket`.
+    pub fn court_stroke(&mut self, lambda: impl Fn(&[u8]) -> Option<u64>) {
         let mut budget = self.physics.stroke();
         let mut keys: Vec<Vec<u8>> = Vec::new();
         let from = self.open_cursor.clone();
@@ -173,7 +177,7 @@ impl Kernel {
             self.rule_own(&addr);
             eprintln!("  court section {:02x}{:02x}… ruled cover, escrow held", addr[0], addr[1]);
         }
-        self.lapse_docket(&mut budget);
+        self.lapse_docket(&mut budget, &lambda);
         self.relocate_t_exhausted();
         self.stroke_fills(&mut budget);
     }

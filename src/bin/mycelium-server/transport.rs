@@ -6,9 +6,11 @@
 //! rtt an aperture holds is a stroke count.
 
 use crate::Mesh;
+use mycelium::network::nerve::Router;
 use mycelium::network::wire::Frame;
 use std::io::{Read, Write};
 use std::net::TcpStream;
+use std::sync::Mutex;
 
 pub(crate) fn arm_deadline(s: &TcpStream) {
     let _ = s.set_read_timeout(None);
@@ -139,6 +141,29 @@ pub(crate) fn rtt_floor(mesh: &Mesh, id: &[u8]) -> Option<u64> {
         .lock()
         .ok()
         .and_then(|w| w.get(id).and_then(|ring| ring.iter().copied().min()))
+}
+
+/// 47.5's Λ for one listing, in admitted receipts:
+/// `from_transport(rtt_floor, aperture_cycle())` to the hypha the
+/// listing's address is routed to. `None` where this node has measured no
+/// round trip to that hypha, or routes the address nowhere — an unmeasured
+/// transport has no deadline (`transport_deadline`), and a citation does
+/// not lapse against a number nobody read.
+///
+/// The chapter's Λ is per CHART and this is per listing address; a
+/// listing's charts can be homed at different hyphae, and a chart's home
+/// is the Cover's answer (16.11) over the invariant and magnitude the
+/// kernel holds. Recorded in `lapse_docket`, not guessed at here.
+pub(crate) fn withholding_lambda(mesh: &Mesh, router: &Mutex<Router>, addr: &[u8]) -> Option<u64> {
+    let home = {
+        let r = router.lock().ok()?;
+        r.closest(addr).map(|(id, _)| id)?
+    };
+    let floor = rtt_floor(mesh, &home)?;
+    Some(mycelium::physics::from_transport(
+        floor,
+        mycelium::physics::aperture_cycle() as u64,
+    ))
 }
 
 /// A measured round trip in strokes enters the peer's window.
