@@ -46,10 +46,9 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
             s,
             Frame {
                 lane: frame.lane,
-                body: dialogue::encode_offer_reply(&dialogue::Witnessed {
+                body: dialogue::encode_offer_reply(&dialogue::Witnessed::Refused {
                     vk: me,
-                    reached: Vec::new(),
-                    refused: why.as_bytes().to_vec(),
+                    why: why.as_bytes().to_vec(),
                 }),
             },
         );
@@ -97,13 +96,16 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // can be pushed across a cell with one vertex. The empty cover was the
     // same fault in the other direction: the cell had no other hypha in it
     // because the cover the mesh actually holds was left behind.
-    let (refused, reached) =
+    let answered =
         match mycelium::transducer::element::Element::from_bytes(&elem_bytes, &mut pos) {
             Some(word) if word.address() != addr => {
                 // The tape does not re-derive to the address the home
                 // signed: identity is content (law 2), so this is not the
                 // form that was offered whatever the frame says.
-                (mycelium::verdict::REFUSE_VERTEX_TAPE.as_bytes().to_vec(), Vec::new())
+                dialogue::Witnessed::Refused {
+                    vk: me,
+                    why: mycelium::verdict::REFUSE_VERTEX_TAPE.as_bytes().to_vec(),
+                }
             }
             Some(word) => {
                 let inv = mycelium::transducer::stalk::invariant_of(&word);
@@ -128,32 +130,35 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
                         // witness that has re-derived nothing.
                         match k.glue_fetched(word, home, me, &mut cover) {
                             mycelium::cognition::Glue::Slashed(r) => {
-                                (r.as_bytes().to_vec(), Vec::new())
+                                dialogue::Witnessed::Refused { vk: me, why: r.as_bytes().to_vec() }
                             }
                             mycelium::cognition::Glue::Admitted
                             | mycelium::cognition::Glue::Attached
-                            | mycelium::cognition::Glue::Dialect => (
-                                Vec::new(),
-                                match k.own_section(&inv) {
-                                    Some(w) => w.to_bytes(),
-                                    None => Vec::new(),
-                                },
-                            ),
+                            | mycelium::cognition::Glue::Dialect => match k.own_section(&inv) {
+                                Some(w) => {
+                                    dialogue::Witnessed::Reached { vk: me, form: w.to_bytes() }
+                                }
+                                None => dialogue::Witnessed::Unmeasured { vk: me },
+                            },
                         }
                     }
-                    _ => (Vec::new(), Vec::new()),
+                    // A court that cannot be read has judged nothing and
+                    // says so: unmeasured is not a refusal of the offer.
+                    _ => dialogue::Witnessed::Unmeasured { vk: me },
                 }
             }
-            None => (mycelium::verdict::REFUSE_FORM_TAPE.as_bytes().to_vec(), Vec::new()),
+            None => dialogue::Witnessed::Refused {
+                vk: me,
+                why: mycelium::verdict::REFUSE_FORM_TAPE.as_bytes().to_vec(),
+            },
         };
-    let answered = dialogue::Witnessed { vk: me, reached, refused: refused.clone() };
     // The witness's form may not fit the wire budget. A reply that cannot
-    // carry it still ANSWERS, with this court's key and its refusal, which
-    // the home reads as "no form travelled" and holds as unmeasured. Refuse
-    // the PAYLOAD, never the reply -- and never invent one: the first cut of
-    // this ended `.unwrap_or_else(|| vec![lane, 0,0,0,0])`, a hand-built
-    // frame for the case where a five-byte frame fails to encode, which is
-    // the shape rule 11 refuses.
+    // carry it still ANSWERS -- as UNMEASURED, since the form did not
+    // travel and the home must not read a frame it could not send as a
+    // vantage. Refuse the PAYLOAD, never the reply, and never invent one:
+    // the first cut of this ended `.unwrap_or_else(|| vec![lane, 0,0,0,0])`,
+    // a hand-built frame for the case where a five-byte frame fails to
+    // encode, which is the shape rule 11 refuses.
     let full = Frame { lane: frame.lane, body: dialogue::encode_offer_reply(&answered) };
     match full.encode() {
         Some(bytes) => {
@@ -163,11 +168,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
             s,
             Frame {
                 lane: frame.lane,
-                body: dialogue::encode_offer_reply(&dialogue::Witnessed {
-                    vk: me,
-                    reached: Vec::new(),
-                    refused,
-                }),
+                body: dialogue::encode_offer_reply(&dialogue::Witnessed::Unmeasured { vk: me }),
             },
         ),
     }

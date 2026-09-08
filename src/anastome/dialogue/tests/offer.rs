@@ -69,52 +69,55 @@ fn an_offer_names_the_home_that_made_it_and_signs_its_own_position() {
     );
 }
 
-/// The witness answers with ITS OWN KEY, the form it reached, and the
-/// refusal that slashed it — three states read off the content, with no bit
-/// over the outcome of a replay. A witness that reached nothing says so
-/// with an empty form; the offered tape is never echoed back, which the
-/// home would read as a re-derivation that never happened.
+/// THE WITNESS ANSWERS WITH ONE OF THREE ARMS, and the home matches on
+/// which. Every arm names the key that answered: an address is where a
+/// hypha answers, a vantage is a key. This was a `glued: bool` and then a
+/// struct of two byte vectors whose LENGTHS the home tested to tell the
+/// arms apart, which is checklist (b) in a longer form.
 #[test]
-fn a_witness_answers_with_its_own_key_and_only_what_it_reached() {
+fn a_witness_answers_with_one_of_three_arms_and_names_the_key() {
     let vk = [0x2fu8; 32];
-    let reached = vec![1u8, 2, 3, 4, 5];
-    let w = decode_offer_reply(&encode_offer_reply(&Witnessed {
+
+    // REACHED: the second vantage, as a tape, never the offered form.
+    let form = vec![1u8, 2, 3, 4, 5];
+    let w = decode_offer_reply(&encode_offer_reply(&Witnessed::Reached {
         vk,
-        reached: reached.clone(),
-        refused: Vec::new(),
+        form: form.clone(),
     }))
     .expect("an answer parses whole");
-    assert_eq!(w.vk, vk, "the vantage is the key the witness names");
-    assert_eq!(w.reached, reached);
-    assert!(w.refused.is_empty(), "it did not refuse");
+    assert_eq!(w.vk(), vk, "the vantage is the key the witness names");
+    match w {
+        Witnessed::Reached { form: got, .. } => assert_eq!(got, form),
+        _ => panic!("the arm it was encoded as"),
+    }
 
-    let none = decode_offer_reply(&encode_offer_reply(&Witnessed {
-        vk,
-        reached: Vec::new(),
-        refused: Vec::new(),
-    }))
-    .expect("an answer with no form still parses");
-    assert_eq!(none.vk, vk);
+    // UNMEASURED: it replayed and has re-derived nothing of its own.
+    let none = decode_offer_reply(&encode_offer_reply(&Witnessed::Unmeasured { vk }))
+        .expect("an answer with no form still parses");
     assert!(
-        none.reached.is_empty() && none.refused.is_empty(),
-        "a witness that reached nothing is unmeasured, neither agreeing nor refusing"
+        matches!(none, Witnessed::Unmeasured { .. }),
+        "unmeasured is its own arm, neither agreeing nor refusing"
     );
+    assert_eq!(none.vk(), vk, "and it still names the key that answered");
 
-    // A SLASH NAMES ITS REFUSAL. The home logs and acts on the 34.1
-    // constant; a bit would have said only "not admitted".
+    // REFUSED: the 34.1 constant travels, not the fact that there was one.
     let why = crate::court::verdict::REFUSE_NOT_CLOSED;
-    let slashed = decode_offer_reply(&encode_offer_reply(&Witnessed {
+    let slashed = decode_offer_reply(&encode_offer_reply(&Witnessed::Refused {
         vk,
-        reached: Vec::new(),
-        refused: why.as_bytes().to_vec(),
+        why: why.as_bytes().to_vec(),
     }))
     .expect("a refusal parses whole");
-    assert_eq!(
-        String::from_utf8(slashed.refused).expect("a 34.1 constant is text"),
-        why,
-        "the reason travels, not the fact that there was one"
-    );
+    match slashed {
+        Witnessed::Refused { why: got, .. } => assert_eq!(
+            String::from_utf8(got).expect("a 34.1 constant is text"),
+            why,
+            "the reason travels, not the fact that there was one"
+        ),
+        _ => panic!("the arm it was encoded as"),
+    }
 
+    // An arm the layout does not define is refused, never guessed at.
+    assert!(decode_offer_reply(&[9u8; 40]).is_none(), "an undefined arm refuses the frame");
     assert!(decode_offer_reply(&[1u8]).is_none(), "a truncated answer names no vantage");
     assert!(decode_offer_reply(&[]).is_none());
 }

@@ -238,29 +238,46 @@ pub struct Offer {
     pub section: ReceiptSection,
 }
 
-/// WHAT A WITNESS ANSWERS AN OFFER WITH (47.3, 13.9): the key that
-/// replayed, the form that key reached, and the refusal that slashed it.
+/// WHAT A WITNESS ANSWERS AN OFFER WITH (47.3, 13.9). Three arms, and the
+/// home matches on which one it is — never a flag, never an emptiness.
 ///
-/// There is no bit here. It carried `glued: bool`, and the home branched on
-/// it: a bool over the outcome of a replay keeps neither which refusal was
-/// reached nor which form, and every reader that needs to act recomputes
-/// what the bit threw away (MU-STANDARDS §2.3, law I). The three arms the
-/// home actually distinguishes are the three states below, read off the
-/// content and never off a flag.
-pub struct Witnessed {
-    /// The witness's own verifying key. The home reads the second vantage
-    /// off this and never off the address it happened to dial: an address
-    /// is where a hypha answers, and a vantage is a key.
-    pub vk: [u8; 32],
-    /// The form this court holds at the offered address after replay, as a
-    /// tape — empty when it holds none. Never the offered form handed back:
-    /// a witness that reached nothing is UNMEASURED, which is not the same
-    /// as a witness that re-derived what it was sent.
-    pub reached: Vec<u8>,
-    /// The 34.1 constant the replay refused with, empty when it did not
-    /// refuse. A witness that slashed the form has said something the home
-    /// must be able to read and log; `Ok(())` said only "not that".
-    pub refused: Vec<u8>,
+/// It carried `glued: bool` first and the home branched on the bit. R1
+/// replaced that with a struct of two byte vectors, `reached` and
+/// `refused`, and the home then told the arms apart by
+/// `!w.refused.is_empty()` and by whether `reached` decoded — checklist
+/// (b), "any `len()`, `count()`, `is_empty()` that decides a branch rather
+/// than an emptiness of a fiber". Neither vector is a fiber; both were
+/// flags in a longer form, and the doc above them claimed the arms were
+/// "read off the content and never off a flag" while the content that
+/// named the arm was two lengths.
+///
+/// Every arm carries the witness's own verifying key: the home reads the
+/// second vantage off that and never off the address it happened to dial.
+/// An address is where a hypha answers; a vantage is a key.
+pub enum Witnessed {
+    /// The witness replayed the offer and holds a form of its own on the
+    /// class: the second vantage, as a tape. Never the offered form handed
+    /// back, which is the byte exactness of 1.7.
+    Reached { vk: [u8; 32], form: Vec<u8> },
+    /// The replay slashed the offer, naming the 34.1 constant it refused
+    /// with, so the home logs and acts on the reason rather than on the
+    /// fact that there was one.
+    Refused { vk: [u8; 32], why: Vec<u8> },
+    /// The offer survived the replay and this court has re-derived nothing
+    /// of its own on the class: unmeasured, which is neither agreement nor
+    /// refusal, and the object keeps waiting.
+    Unmeasured { vk: [u8; 32] },
+}
+
+impl Witnessed {
+    /// The key that answered, on every arm.
+    pub fn vk(&self) -> [u8; 32] {
+        match self {
+            Witnessed::Reached { vk, .. }
+            | Witnessed::Refused { vk, .. }
+            | Witnessed::Unmeasured { vk } => *vk,
+        }
+    }
 }
 
 /// AN INSTALLED word, carrying both hyphae's signatures.

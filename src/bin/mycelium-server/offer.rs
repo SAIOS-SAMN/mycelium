@@ -110,34 +110,42 @@ pub(crate) fn offer_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
             let Some(w) = dialogue::decode_offer_reply(&reply) else {
                 continue;
             };
-            // THREE STATES, READ OFF THE CONTENT. A refusal names
-            // the 34.1 constant the witness slashed with; a form is
-            // the second vantage and goes to `converge_witness`,
-            // which compares the two re-derivations by `same_vertex`
-            // (M1); neither is a witness that reached nothing, held
-            // unmeasured. A voice never witnesses itself (47.3).
-            if !w.refused.is_empty() {
-                eprintln!(
+            // A VOICE NEVER WITNESSES ITSELF (47.3).
+            if w.vk() == mesh.vk {
+                continue;
+            }
+            // THREE ARMS, MATCHED. The home tested `!w.refused.is_empty()`
+            // and then whether `w.reached` decoded -- two lengths standing
+            // in for the arm (checklist (b)). A refusal names the 34.1
+            // constant the witness slashed with; a form is the second
+            // vantage and goes to `converge_witness`, which compares the
+            // two re-derivations by `same_vertex` (M1); unmeasured is a
+            // witness that has re-derived nothing of its own, and the
+            // object keeps waiting.
+            match w {
+                dialogue::Witnessed::Refused { vk, why } => eprintln!(
                     "  court offer refused {:02x}{:02x}… by {:02x}{:02x}…: {}",
                     oaddr[0],
                     oaddr[1],
-                    w.vk[0],
-                    w.vk[1],
-                    String::from_utf8_lossy(&w.refused)
-                );
-                continue;
-            }
-            if w.vk == mesh.vk {
-                continue;
-            }
-            let mut p = 0usize;
-            let Some(theirs) =
-                mycelium::transducer::element::Element::from_bytes(&w.reached, &mut p)
-            else {
-                continue;
-            };
-            if let Ok(mut k) = kernel.lock() {
-                k.witness_rederived(&oaddr, w.vk, theirs);
+                    vk[0],
+                    vk[1],
+                    String::from_utf8_lossy(&why)
+                ),
+                dialogue::Witnessed::Unmeasured { vk } => eprintln!(
+                    "  court offer unmeasured {:02x}{:02x}… at {:02x}{:02x}…",
+                    oaddr[0], oaddr[1], vk[0], vk[1]
+                ),
+                dialogue::Witnessed::Reached { vk, form } => {
+                    let mut p = 0usize;
+                    let Some(theirs) =
+                        mycelium::transducer::element::Element::from_bytes(&form, &mut p)
+                    else {
+                        continue;
+                    };
+                    if let Ok(mut k) = kernel.lock() {
+                        k.witness_rederived(&oaddr, vk, theirs);
+                    }
+                }
             }
         }
     }

@@ -54,30 +54,52 @@ pub fn decode_offer(body: &[u8]) -> Option<Offer> {
     Some(Offer { addr, home, elem, voices, deflation, section })
 }
 
-/// The witness's answer: `[vk 32][flen u16][refused][rlen u32][reached]`.
-/// A form the witness did not reach is a zero length, never the offered
-/// tape echoed; a replay that refused says which refusal.
+/// The witness's answer: `[arm u8][vk 32][payload]` — `0` unmeasured with
+/// no payload, `1` reached with `len32 + form`, `2` refused with
+/// `len16 + reason`. The arm is a tag the home matches on; it was two byte
+/// vectors whose LENGTHS the home tested to tell the arms apart.
 pub fn encode_offer_reply(w: &Witnessed) -> Vec<u8> {
-    let mut out = Vec::with_capacity(38 + w.refused.len() + w.reached.len());
-    out.extend_from_slice(&w.vk);
-    out.extend_from_slice(&(w.refused.len() as u16).to_le_bytes());
-    out.extend_from_slice(&w.refused);
-    out.extend_from_slice(&(w.reached.len() as u32).to_le_bytes());
-    out.extend_from_slice(&w.reached);
+    let mut out = Vec::new();
+    match w {
+        Witnessed::Unmeasured { vk } => {
+            out.push(0);
+            out.extend_from_slice(vk);
+        }
+        Witnessed::Reached { vk, form } => {
+            out.push(1);
+            out.extend_from_slice(vk);
+            out.extend_from_slice(&(form.len() as u32).to_le_bytes());
+            out.extend_from_slice(form);
+        }
+        Witnessed::Refused { vk, why } => {
+            out.push(2);
+            out.extend_from_slice(vk);
+            out.extend_from_slice(&(why.len() as u16).to_le_bytes());
+            out.extend_from_slice(why);
+        }
+    }
     out
 }
 
 pub fn decode_offer_reply(body: &[u8]) -> Option<Witnessed> {
-    let vk: [u8; 32] = body.get(0..32)?.try_into().ok()?;
-    let mut p = 32usize;
-    let flen = u16::from_le_bytes(body.get(p..p + 2)?.try_into().ok()?) as usize;
-    p += 2;
-    let refused = body.get(p..p + flen)?.to_vec();
-    p += flen;
-    let rlen = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
-    p += 4;
-    let reached = body.get(p..p + rlen)?.to_vec();
-    Some(Witnessed { vk, reached, refused })
+    let arm = *body.first()?;
+    let vk: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    let p = 33usize;
+    match arm {
+        0 => Some(Witnessed::Unmeasured { vk }),
+        1 => {
+            let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
+            Some(Witnessed::Reached { vk, form: body.get(p + 4..p + 4 + n)?.to_vec() })
+        }
+        2 => {
+            let n = u16::from_le_bytes(body.get(p..p + 2)?.try_into().ok()?) as usize;
+            Some(Witnessed::Refused { vk, why: body.get(p + 2..p + 2 + n)?.to_vec() })
+        }
+        // An arm the layout does not define is refused, never guessed at
+        // (rule 11, A21 1: the decoder is total on well-formed keys and
+        // refuses otherwise).
+        _ => None,
+    }
 }
 
 /// Installed: `[ACT_INSTALLED][addr][elen u32][elem][sig_home 64][sig_peer 64]`
