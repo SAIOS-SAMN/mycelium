@@ -7,6 +7,20 @@
 
 use super::*;
 
+/// WHAT A TRIAL IS MEASURED AGAINST: the form's standing before any
+/// candidate is applied — the loop rows and the rank they carry, the
+/// crystal the axes are read in, the bundle and its T extent, and the μ⃗ the
+/// bundle stood at. Constant across every candidate of one stroke, which is
+/// why it is read once and lent to each trial rather than passed six times.
+pub(crate) struct Prior<'a> {
+    pub(crate) rows: &'a [LoopRow],
+    pub(crate) rank_before: Rank,
+    pub(crate) crystal: &'a dyn Crystal,
+    pub(crate) bundle: Option<&'a crate::transducer::family::Family>,
+    pub(crate) t_extent: u64,
+    pub(crate) mu_before: Option<(Vec<[u64; 4]>, [u64; 4])>,
+}
+
 impl Form {
     /// A18 over this form's loops.
     pub fn rank(&self) -> Option<Rank> {
@@ -133,6 +147,14 @@ impl Form {
                 None => None,
                 Some(b) => crate::transducer::family::bundle_pressure(self, b, crystal, t_extent),
             };
+            let prior = Prior {
+                rows: &rows,
+                rank_before,
+                crystal,
+                bundle,
+                t_extent,
+                mu_before,
+            };
             let mut applied = false;
             for idx in open {
                 if !budget.spend() {
@@ -154,17 +176,7 @@ impl Form {
                     if !budget.spend() {
                         break;
                     }
-                    if let Some(cert) = self.trial(
-                        idx,
-                        cand,
-                        &kappa,
-                        &rows,
-                        rank_before,
-                        crystal,
-                        bundle,
-                        t_extent,
-                        mu_before.clone(),
-                    ) {
+                    if let Some(cert) = self.trial(idx, cand, &kappa, &prior) {
                         discharging.push(cert);
                     } else {
                         eprintln!(
@@ -200,7 +212,7 @@ impl Form {
                         for c in &held_certs {
                             vortex_put(&mut self.vortex, c.clone());
                         }
-                        if mu_before.is_some() {
+                        if prior.mu_before.is_some() {
                             eprintln!(
                                 "  vortex {:02x}{:02x}… loop {idx} {} candidates held",
                                 idea[0],
@@ -383,13 +395,9 @@ impl Form {
         idx: usize,
         cand: &Candidate,
         kappa: &ClassVector,
-        rows: &[LoopRow],
-        rank_before: Rank,
-        crystal: &dyn Crystal,
-        bundle: Option<&crate::transducer::family::Family>,
-        t_extent: u64,
-        mu_before: Option<(Vec<[u64; 4]>, [u64; 4])>,
+        before: &Prior<'_>,
     ) -> Option<PivotCertificate> {
+        let &Prior { rows, rank_before, crystal, bundle, t_extent, ref mu_before } = before;
         let mut trial_form = self.clone();
         apply_by(&mut trial_form.faces, &cand.by);
         trial_form.loops = Form::loops_of(&trial_form.faces, trial_form.vertices.len());
@@ -407,6 +415,7 @@ impl Form {
         let mu = match mu_before {
             None => Mu::Unmeasured,
             Some((pairs_before, before)) => {
+                let (pairs_before, before) = (pairs_before, *before);
                 let (pairs_after, after) = crate::transducer::family::bundle_pressure(
                     &trial_form,
                     bundle?,
