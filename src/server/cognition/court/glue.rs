@@ -347,6 +347,44 @@ impl Kernel {
         self.word_at(&sec.addr)
     }
 
+    /// 13.9, 13.10: THIS COURT RECORDS ITS OWN SECTION. Piece `A` of the
+    /// Mayer–Vietoris union is "the hypha's own complex on chart `inv`
+    /// (`self.complexes` at `inv.key()`, sections for `self_id` and every
+    /// hypha in `cover.fiber(lane, &inv)` it already holds)" — so a word
+    /// this court has ruled on a chart is its section there, at its own
+    /// vantage, with the identity transition to itself.
+    ///
+    /// Nothing wrote one. `Complex::set_section` had exactly one production
+    /// caller in the tree, `glue_fetched`'s `set_section(peer, …)`, always
+    /// at the INCOMING peer's key. `self_rep = cx.sections.get(self_id)` was
+    /// therefore always `None`, `held_rep` always `None`, and everything
+    /// behind it dead: 13.9 step 3's difference on 0-cells, step 4's
+    /// automorphism check, step 5's connecting image, 13.10's
+    /// Consilient/Attached/Dialect table, and `push_cocycle` (M5). Every
+    /// glue returned `Admitted` because there was no first vantage to
+    /// compare a second against.
+    pub(crate) fn section_own(
+        &mut self,
+        inv: &crate::transducer::stalk::Invariant,
+        addr: &crate::transducer::address::Address,
+    ) {
+        let me = self.identity;
+        let vol = self.volume_of_cell(inv, &[me.as_slice()]);
+        let mut cx = match self.complexes.remove(&inv.key()) {
+            Some(c) => c,
+            None => crate::transducer::cech::Complex::new(),
+        };
+        cx.set_section(
+            me,
+            crate::transducer::cech::Section {
+                addr: addr.clone(),
+                gamma: crate::transducer::alphabet::Rotor::identity(),
+            },
+            vol,
+        );
+        self.complexes.insert(inv.key(), cx);
+    }
+
     /// 47.3: THE HOME INSTALLS on a second vantage. `witness` is the organ
     /// whose re-derivation the install rests on, and it is the author of the
     /// receipt this act seals (45.1): a book that cannot say which vantage
@@ -361,7 +399,9 @@ impl Kernel {
                 }
             }
         }
-        self.ruled_admit(addr);
+        // 13.9: the home's install is its OWN word, ruled on a witness's
+        // re-derivation, so it becomes this court's section on the chart.
+        self.rule_own(addr);
         if let Some(w) = held {
             if w.is_rewrite() {
                 if self.treasury.release_rewrite(addr).is_none() {

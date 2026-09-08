@@ -403,6 +403,13 @@ impl Kernel {
     }
 
     /// A word the court finalized here joins the ruled cover (keyed admit).
+    ///
+    /// This does NOT write the court's own Čech section, though every one
+    /// of its callers rules a word. `glue_fetched`'s `Admitted` arm calls it
+    /// for a word a PEER sent, and sectioning that at this court's own
+    /// vantage would file the peer's tape as this court's re-derivation —
+    /// the same byte exactness one level down (1.7). The three sites where
+    /// the word is this court's own call `section_own` by name.
     pub(crate) fn ruled_admit(&mut self, addr: &[u8]) {
         if let Some(w) = self.word_at(addr) {
             let inv = crate::transducer::stalk::invariant_of(w);
@@ -412,6 +419,18 @@ impl Kernel {
             self.ruled_addrs.insert(addr, ());
             self.refresh_ruled_root();
         }
+    }
+
+    /// A word this court reached on its OWN tapes and ruled: it joins the
+    /// ruled cover and becomes this court's section on that chart, at its
+    /// own vantage (13.9, 13.10). The stroke's own ruling, the home's
+    /// install, and an upheld verdict are the three; a peer's glued word is
+    /// not one of them.
+    pub(crate) fn rule_own(&mut self, addr: &[u8]) {
+        self.ruled_admit(addr);
+        let Some(w) = self.word_at(addr) else { return };
+        let inv = crate::transducer::stalk::invariant_of(w);
+        self.section_own(&inv, &crate::transducer::address::Address::from(addr.to_vec()));
     }
 
     pub(crate) fn ruled_contains(&self, addr: &[u8]) -> bool {

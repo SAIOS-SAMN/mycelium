@@ -417,3 +417,59 @@ fn a_witness_that_rederived_nothing_answers_with_nothing() {
         "the offer was filed at the HOME's vantage, which is where it belongs"
     );
 }
+
+/// 13.9, 13.10: A COURT THAT RULES ITS OWN WORD HOLDS A SECTION AT ITS OWN
+/// VANTAGE — and that is the first vantage every later comparison needs.
+/// `Complex::set_section` had one production caller, always at the incoming
+/// peer's key, so `self_rep` in `glue_fetched` was always None: 13.9's
+/// difference on 0-cells, its automorphism check, its connecting image and
+/// 13.10's whole ruling table were unreachable, and every glue returned
+/// `Admitted` for want of anything to compare against.
+///
+/// A word a PEER sent is not this court's own reading, however it is ruled;
+/// sectioning that at this vantage would file the peer's tape as this
+/// court's re-derivation, which is 1.7's byte exactness one level down.
+#[test]
+fn a_court_sections_what_it_ruled_itself_and_not_what_a_peer_sent() {
+    let me = [0x0au8; 32];
+    let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+
+    // ITS OWN: perceived here, replayed here, ruled here on the stroke.
+    let mut own = Kernel::new();
+    own.bind_identity(me);
+    assert_eq!(own.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+    assert_eq!(own.ingest(&a, &b, [2; 32]), Outcome::GermPending);
+    let spoken = own.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().1.clone();
+    let inv = crate::transducer::stalk::invariant_of(&spoken);
+    assert!(
+        own.own_section(&inv).is_none(),
+        "a provisional is not yet a section: the court has not ruled it"
+    );
+    own.court_stroke();
+    let mine = own
+        .own_section(&inv)
+        .expect("the stroke ruled it, so this court holds it at its own vantage");
+    assert!(
+        mine.same_vertex(&spoken),
+        "and the section is the word it reached, by vertex (M1), never by bytes"
+    );
+
+    // A PEER'S: the same word, arriving by glue. It is ruled into the
+    // cover, and it is filed at the PEER's vantage, never at this one.
+    let mut heard = Kernel::new();
+    heard.bind_identity(me);
+    let mut cover = crate::network::nerve::Cover::new();
+    assert!(matches!(
+        heard.glue_fetched(spoken.clone(), [0x0b; 32], me, &mut cover),
+        Glue::Admitted
+    ));
+    assert!(
+        heard.ruled_have(&inv).iter().any(|h| h.as_slice() == spoken.address().as_bytes()),
+        "the glued word did join the ruled cover"
+    );
+    assert!(
+        heard.own_section(&inv).is_none(),
+        "but a word a peer sent is not this court's own re-derivation"
+    );
+}

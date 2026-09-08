@@ -42,7 +42,9 @@ impl Kernel {
         let ruler = self.court_voice.unwrap_or(self.identity);
         self.append_step(addr, ruler);
         if ruling == RULING_UPHELD {
-            self.ruled_admit(addr); // finalized here: it joins the ruled cover
+            // Upheld on this court's own book: the word joins the ruled
+            // cover AND becomes this court's section on the chart (13.9).
+            self.rule_own(addr);
             let spoken = spoken.or_else(|| self.word_at(addr).cloned());
             if let Some(w) = spoken {
                 if w.is_rewrite() {
@@ -150,7 +152,11 @@ impl Kernel {
                 self.court_slashed += 1;
                 continue;
             }
-            self.ruled_admit(&addr);
+            // The stroke ruled a word THIS court replayed from its own
+            // book: the line already calls it a section, and now it is one
+            // (13.9, 13.10) -- a vantage a peer's section can be compared
+            // against, which is what makes a glue a Mayer-Vietoris step.
+            self.rule_own(&addr);
             eprintln!("  court section {:02x}{:02x}… ruled cover, escrow held", addr[0], addr[1]);
         }
         self.lapse_docket();
