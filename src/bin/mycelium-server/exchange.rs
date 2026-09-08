@@ -25,6 +25,19 @@ pub(crate) type Roots = ([[u8; 32]; 4], [u8; 32]);
 /// at — the pair 47.2 step 1 tests every signed frame against.
 pub(crate) type Origin = ([u8; 32], u32);
 
+/// THE LOCK ORDER of this binary (Stage 11 I26), read from every site that
+/// holds one lock while taking another. The kernel is taken first, and
+/// under it, in this order and never the reverse: `cover`, then `rooms`,
+/// then `addrs` (`homes_here`, `demand_cover_home`, the glue in the
+/// exchange and the offer judge), or `router` and then `rtt_window` (the
+/// court stroke's Λ, `withholding_lambda`). No path holds a mesh lock,
+/// the router, the registry, the syllabus, the roots or the origin while
+/// it takes the kernel: `sign_position`, `admit_peer_receipt` and the two
+/// judges read `origin` and drop it before the kernel; the door drops the
+/// registry (`drop(reg)`) and the kernel before the syllabus and the
+/// roots; the exchange drops the kernel (`drop(k)`) before the syllabus;
+/// the transport takes `rtt_window` and `rtt` one at a time. A new site
+/// that nests two of these locks keeps this order or is returned.
 pub(crate) struct Mesh {
     pub(crate) cover: Arc<Mutex<Cover>>,
     pub(crate) rooms: Arc<Mutex<Keyed<[u64; 4]>>>,
