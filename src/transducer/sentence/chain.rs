@@ -20,7 +20,17 @@ pub type Cell = (i64, i64, u8, u8);
 /// utterance's frame, and the gauge coordinate (which assignment along the
 /// punctured axis). A proof is a sequence of citations; a replay applies
 /// them and measures what remains.
-pub type Cite = (usize, Versor, usize);
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Cite {
+    /// Which word of the language is cited — an index into the snapshot the
+    /// reading ran over, resolved to an address at commit.
+    pub word: usize,
+    /// The transport carrying that word's chain into the utterance's frame.
+    pub transport: Versor,
+    /// The gauge coordinate: which assignment along the punctured axis. Read
+    /// off the target, never trusted as an index into a copy of the word.
+    pub gauge: usize,
+}
 
 /// What deconstruction produced: the citations in body order, the
 /// connection between consecutive cited bodies (the relative transport
@@ -209,7 +219,7 @@ pub fn replay(language: &[Element], cites: &[Cite], target: &[Cell]) -> Vec<Cell
 pub fn replay_at<'a>(word_at: &impl Fn(usize) -> Option<&'a Element>, cites: &[Cite], target: &[Cell]) -> Vec<Cell> {
     let ops: Vec<(Versor, Vec<Cell>)> = cites
         .iter()
-        .filter_map(|(i, v, asg)| Some((v.clone(), cited_pattern(word_at(*i)?, *asg)?)))
+        .filter_map(|c| Some((c.transport.clone(), cited_pattern(word_at(c.word)?, c.gauge)?)))
         .collect();
     replay_operators(&ops, target)
 }
@@ -307,7 +317,7 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[Cell]) -> Keyed<usize> {
 pub fn seam_defect(language: &[Element], cites: &[Cite], target: &[Cell]) -> Vec<Cell> {
     let ops: Vec<(Versor, Vec<Cell>)> = cites
         .iter()
-        .filter_map(|(i, v, asg)| Some((v.clone(), cited_pattern(language.get(*i)?, *asg)?)))
+        .filter_map(|c| Some((c.transport.clone(), cited_pattern(language.get(c.word)?, c.gauge)?)))
         .collect();
     seam_defect_operators(&ops, target)
 }

@@ -48,10 +48,17 @@ impl Entity {
         let mut cites: Vec<dialogue::CiteWire> = located
             .cites
             .into_iter()
-            .filter_map(|(i, g, asg)| {
-                let w = word_of(i)?;
-                let body = crate::transducer::sentence::cited_pattern(w, asg).unwrap_or_default();
-                Some((w.address(), standing_of(i).as_u8(), g, asg as u32, body))
+            .filter_map(|c| {
+                let w = word_of(c.word)?;
+                let body =
+                    crate::transducer::sentence::cited_pattern(w, c.gauge).unwrap_or_default();
+                Some((
+                    w.address(),
+                    standing_of(c.word).as_u8(),
+                    c.transport,
+                    c.gauge as u32,
+                    body,
+                ))
             })
             .collect();
         for (i, g, body) in &located.punctures {

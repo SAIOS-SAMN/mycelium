@@ -169,7 +169,7 @@ impl Kernel {
         let mut resolved: Vec<Cite> = Vec::new();
         for (a, _st, g, asg, _) in cites {
             let j = self.live_slot(a).filter(|_| a.as_bytes() != addr)?;
-            resolved.push((j, g.clone(), *asg as usize));
+            resolved.push(Cite { word: j, transport: g.clone(), gauge: *asg as usize });
         }
         if resolved.is_empty() {
             return None;

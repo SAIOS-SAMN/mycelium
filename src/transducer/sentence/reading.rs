@@ -106,7 +106,7 @@ where
     let mut asgs = agreeing.fiber(ROOT);
     if let Some((_, &asg)) = asgs.next() {
         if asgs.next().is_none() {
-            let cite: Cite = (i, v.clone(), asg);
+            let cite = Cite { word: i, transport: v.clone(), gauge: asg };
             if replay_at(word_at, std::slice::from_ref(&cite), piece).is_empty() {
                 return (Some(cite), None, m);
             }
@@ -241,7 +241,7 @@ where
     out.connection = out
         .cites
         .windows(2)
-        .filter_map(|w| Some(w[0].1.versor_inverse()?.geo(&w[1].1)))
+        .filter_map(|w| Some(w[0].transport.versor_inverse()?.geo(&w[1].transport)))
         .collect();
     out
 }

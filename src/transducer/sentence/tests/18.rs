@@ -195,7 +195,7 @@ fn a_chain_deconstructs_into_its_words_and_residual() {
     let target = vec![(5, 5, 1, 2), (6, 5, 1, 2)];
     let s = deconstruct(&words, &atlas, &index_of, &shape_at,&target, None);
     assert_eq!(s.cites.len(), 1);
-    assert_eq!(s.cites[0].0, 0, "the bar, not the other-hued bar");
+    assert_eq!(s.cites[0].word, 0, "the bar, not the other-hued bar");
     assert!(s.is_closed());
     assert!(replay(&words, &s.cites, &target).is_empty(), "the citation replays to closure");
     assert!(
@@ -206,7 +206,7 @@ fn a_chain_deconstructs_into_its_words_and_residual() {
     let big = vec![(0, 0, 7, 8), (0, 1, 7, 8), (0, 2, 7, 8), (0, 3, 7, 8), (1, 0, 7, 8), (1, 1, 7, 8), (1, 2, 7, 8), (1, 3, 7, 8)];
     let s = deconstruct(&words, &atlas, &index_of, &shape_at,&big, None);
     assert_eq!(s.cites.len(), 1);
-    assert_eq!(s.cites[0].0, 2);
+    assert_eq!(s.cites[0].word, 2);
     assert!(s.is_closed());
     // Two bodies and an unknown: two citations with one relative
     // transport between them, one residual body.
@@ -269,7 +269,10 @@ fn seams_and_holonomy_are_located_exactly() {
     let words = vec![bar, bar_other];
     let target = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
     let id = element::identity_versor();
-    let cites: Vec<Cite> = vec![(0, id.clone(), 0), (1, id.clone(), 0)];
+    let cites: Vec<Cite> = vec![
+        Cite { word: 0, transport: id.clone(), gauge: 0 },
+        Cite { word: 1, transport: id.clone(), gauge: 0 },
+    ];
     assert!(replay(&words, &cites[..1], &target).is_empty());
     assert_eq!(seam_defect(&words, &cites, &target), target, "both cells spoken twice, differently");
     assert_eq!(verify(&words, &cites, &target), target);

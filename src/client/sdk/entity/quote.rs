@@ -30,9 +30,16 @@ impl Entity {
                 g[i].address(),
                 cites
                     .into_iter()
-                    .map(|(j, t, asg)| {
-                        let body = crate::transducer::sentence::cited_pattern(&g[j], asg).unwrap_or_default();
-                        (g[j].address(), Standing::Ruled.as_u8(), t, asg as u32, body)
+                    .map(|c| {
+                        let body = crate::transducer::sentence::cited_pattern(&g[c.word], c.gauge)
+                            .unwrap_or_default();
+                        (
+                            g[c.word].address(),
+                            Standing::Ruled.as_u8(),
+                            c.transport,
+                            c.gauge as u32,
+                            body,
+                        )
                     })
                     .collect(),
             )),

@@ -133,13 +133,13 @@ impl Epigenome {
                 let sentence: Vec<(Vec<u8>, Standing)> = located
                     .cites
                     .iter()
-                    .filter_map(|(i, _, _)| {
-                        let w = self.genome.get(*i)?;
+                    .filter_map(|c| {
+                        let w = self.genome.get(c.word)?;
                         Some((w.address().into_vec(), Standing::Ruled))
                     })
                     .collect();
-                for (i, _, _) in &located.cites {
-                    if let Some(x) = self.expression.get_mut(*i) {
+                for c in &located.cites {
+                    if let Some(x) = self.expression.get_mut(c.word) {
                         *x += 1;
                     }
                 }

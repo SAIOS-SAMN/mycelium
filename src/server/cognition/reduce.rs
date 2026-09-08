@@ -317,7 +317,7 @@ pub fn normal_form(language: &Language, chain: &[(i64, i64, u8, u8)], exclude: O
         exclude,
     );
     match (sentence.residual.as_slice(), sentence.punctures.as_slice()) {
-        ([], []) => NormalForm::Decomposed(sentence.cites.iter().map(|(i, _, _)| *i).collect()),
+        ([], []) => NormalForm::Decomposed(sentence.cites.iter().map(|c| c.word).collect()),
         _ => NormalForm::Irreducible(Box::new(element::from_residual(&sentence.open_at(&|i| language.get(i), chain)))),
     }
 }
@@ -415,7 +415,7 @@ pub fn resolve_cites(
                 );
                 return None;
             }
-            Some((i, g.clone(), gauge))
+            Some(Cite { word: i, transport: g.clone(), gauge })
         })
         .collect()
 }
@@ -450,9 +450,9 @@ pub fn reduce_proven(
     let residual = crate::transducer::sentence::verify_utterance(cites, sub.sub());
     let resolved = resolve_cites(language, cites, sub.sub());
     let form = match (residual.as_slice(), resolved.len() == cites.len()) {
-        ([], true) => NormalForm::Decomposed(resolved.iter().map(|(i, _, _)| *i).collect()),
+        ([], true) => NormalForm::Decomposed(resolved.iter().map(|c| c.word).collect()),
         ([], false) => {
-            let named: Vec<Address> = resolved.iter().map(|(i, _, _)| language.words[*i].address()).collect();
+            let named: Vec<Address> = resolved.iter().map(|c| language.words[c.word].address()).collect();
             let missing = cites.iter().find(|(a, _, _, _, _)| !named.contains(a)).map(|(_, _, _, _, body)| body.clone()).unwrap_or_default();
             NormalForm::Irreducible(Box::new(element::from_residual_framed(&missing, frame)))
         }
