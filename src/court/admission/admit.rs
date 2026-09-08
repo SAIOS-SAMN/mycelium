@@ -3,7 +3,10 @@
 //! 47.2 — ADMISSION: the order of checks a signed frame passes before
 //! any carrier is touched, and the per-signer heads they read.
 
-use super::{SignedPrefix, REFUSE_EQUIVOCATION, REFUSE_ORIGIN, REFUSE_RECEIPT, REFUSE_RECEIPT_STALE, REFUSE_SIGNATURE};
+use super::{
+    SignedPrefix, REFUSE_EQUIVOCATION, REFUSE_NOT_EQUIVOCATION, REFUSE_ORIGIN, REFUSE_RECEIPT,
+    REFUSE_RECEIPT_STALE, REFUSE_SIGNATURE,
+};
 use crate::chronometry::{KStepReceipt, Parent};
 use crate::network::nerve::{Keyed, ROOT};
 
@@ -146,6 +149,49 @@ pub fn admit_ruled(
         return Err(REFUSE_RECEIPT);
     }
     Ok(())
+}
+
+/// 47.4's PROOF, DECIDED: one signer, one K, two chain hashes, both
+/// signatures verified. What the court burns against, and all it needs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Equivocated {
+    pub vk: [u8; 32],
+    pub k: u64,
+}
+
+/// 47.4 ON A THIRD PARTY'S PRESENTATION (`ACT_EQUIVOCATION`, I21): two
+/// receipt sections it holds are an equivocation proof iff both signatures
+/// verified (the two `Verified`, 47.2 step 2, the caller's), each receipt
+/// is one claim with its prefix and its signer — the key that verified is
+/// the key the receipt names, the prefix's K, height and predecessor are the
+/// receipt's, and the receipt re-derives its own chain hash — and the two
+/// share key and K and differ in hash. Two keys, two K, or one hash (a
+/// duplicate frame) are not a proof and are `REFUSE_NOT_EQUIVOCATION`; a
+/// half that disagrees with itself is `REFUSE_RECEIPT`, as `admit` refuses
+/// the same disagreement on a single frame. The court replays nothing: the
+/// signatures decide (T17).
+pub fn admit_equivocation(
+    a: Verified<'_>,
+    ra: &KStepReceipt,
+    b: Verified<'_>,
+    rb: &KStepReceipt,
+) -> Result<Equivocated, &'static str> {
+    for (v, r) in [(&a, ra), (&b, rb)] {
+        if v.signer() != r.vk {
+            return Err(REFUSE_RECEIPT);
+        }
+        let p = v.prefix();
+        if p.k != r.step_index || p.height != r.height || p.prev_receipt_hash != r.prev_receipt_hash {
+            return Err(REFUSE_RECEIPT);
+        }
+        if !r.rederives() {
+            return Err(REFUSE_RECEIPT);
+        }
+    }
+    if ra.vk != rb.vk || ra.step_index != rb.step_index || ra.chain_hash == rb.chain_hash {
+        return Err(REFUSE_NOT_EQUIVOCATION);
+    }
+    Ok(Equivocated { vk: ra.vk, k: ra.step_index })
 }
 
 /// WHAT A RULING CARRIES BESIDE ITS BYTE (42): the selection a REBIND

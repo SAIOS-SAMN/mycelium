@@ -111,6 +111,23 @@ impl KStepReceipt {
         *blake3::hash(&Self::bytes(step_index, height, parents, delta, op, prev)).as_bytes()
     }
 
+    /// Does this receipt's chain hash re-derive from its own fields. A
+    /// receipt presented by a third party (47.4) is believed only through
+    /// this: the signature covers the prefix, and the prefix names the K,
+    /// height and predecessor the receipt claims, so a hash that does not
+    /// re-derive is a receipt nobody wrote.
+    pub fn rederives(&self) -> bool {
+        self.chain_hash
+            == Self::hash(
+                self.step_index,
+                self.height,
+                &self.parents,
+                &self.delta,
+                &self.operator_hash,
+                &self.prev_receipt_hash,
+            )
+    }
+
     pub fn write(&self, out: &mut Vec<u8>) {
         out.extend_from_slice(&self.step_index.to_le_bytes());
         out.extend_from_slice(&self.height.to_le_bytes());

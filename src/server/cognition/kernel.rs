@@ -355,11 +355,25 @@ impl Kernel {
                 self.pending_parents.insert(p.hash, p.clone());
             }
             crate::court::admission::Admitted::Equivocation { k, .. } => {
-                self.burn_equivocation(r.vk, *k)
+                self.burn_equivocation(r.vk, *k);
             }
             _ => {}
         }
         verdict
+    }
+
+    /// 47.4 ON A THIRD PARTY'S PROOF (`ACT_EQUIVOCATION`, I21): the proof
+    /// was decided by `admission::admit_equivocation` over two verified
+    /// signatures, and this court burns the signer's bond as it does on the
+    /// `Equivocation` arm of its own admission. `Some(burned)` is what left
+    /// circulation; `None` is a signer with no bond left to take — the same
+    /// proof presented again, or a signer never bonded here — and nothing is
+    /// written for it.
+    pub fn accept_equivocation(
+        &mut self,
+        proof: crate::court::admission::Equivocated,
+    ) -> Option<[u64; 4]> {
+        self.burn_equivocation(proof.vk, proof.k)
     }
 
     /// 47.4: TWO SIGNED RECEIPTS UNDER ONE KEY AT ONE K WITH DIFFERENT
@@ -381,23 +395,23 @@ impl Kernel {
     /// `Treasury::burn` takes what is held and writes no entry for a
     /// vector of zeros, and the line is written only for what left.
     ///
-    /// WHAT IS NOT DONE: `ACT_EQUIVOCATION` (0x35), by which a THIRD party
-    /// presents a proof of two receipts it holds, is not in the dialogue.
-    /// This is the burn on a proof THIS node assembled from its own
-    /// carriers.
-    fn burn_equivocation(&mut self, vk: [u8; 32], k: u64) {
-        let Some(bond) = self.treasury.bond_of(&vk) else {
-            return;
-        };
+    /// Reached from this node's own admission (the `Equivocation` arm) and
+    /// from a third party's presentation (`accept_equivocation`, 0x35);
+    /// both hold the two verified signatures 47.4 asks for. `Some` is the
+    /// vector that left circulation, `None` a signer with nothing left to
+    /// burn, for which nothing is written.
+    fn burn_equivocation(&mut self, vk: [u8; 32], k: u64) -> Option<[u64; 4]> {
+        let bond = self.treasury.bond_of(&vk)?;
         let anchor = self.anchor();
         let burned = self.treasury.burn(vk, bond, anchor);
         if crate::economy::lanes_short(&burned).is_empty() {
-            return;
+            return None;
         }
         eprintln!(
             "  court equivocation {:02x}{:02x}… K {k} burned {burned:?}",
             vk[0], vk[1]
         );
+        Some(burned)
     }
 
     /// Receipts admitted and not yet cited. A step consumes them.

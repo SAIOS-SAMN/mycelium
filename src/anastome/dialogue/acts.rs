@@ -88,6 +88,14 @@ pub const ACT_FETCH: u8 = 0x11;
 pub const ACT_COVER: u8 = 0x20;
 pub const ACT_OFFER: u8 = 0x21;
 pub const ACT_INSTALLED: u8 = 0x22;
+/// AN EQUIVOCATION PROOF (47.4, `XSEPTUM.md` §5.5): any node presents two
+/// receipt sections it holds under one key at one K with two chain
+/// hashes, and the court burns the signer's bond. The one xSEPTUM act
+/// landed; 0x30–0x34 stay reserved.
+/// `[ACT_EQUIVOCATION][version u8][len32 section_a][len32 section_b]`.
+/// Reply: `Ruled` — `Applied` burned, `Inert` nothing left to burn,
+/// `Refused` naming the 34.1 constant.
+pub const ACT_EQUIVOCATION: u8 = 0x35;
 
 /// THE PROBE (interrogative grammar): a tentative sentence spoken against an
 /// open listing — citations (word address, transport g, gauge coordinate)

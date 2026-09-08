@@ -2,6 +2,7 @@
 // names the chapter of MU-RECURSION the claim comes from.
 
 mod acts;
+mod equivocation;
 mod offer;
 mod receipt_section;
 mod verdict;

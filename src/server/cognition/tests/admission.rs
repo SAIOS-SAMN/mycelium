@@ -253,3 +253,54 @@ assert!(matches!(
 ));
 assert_eq!(k.treasury().supply(), after, "a second frame burns nothing");
 }
+
+/// 47.4 ON A THIRD PARTY'S PROOF (I21): a court that never heard the
+/// signer's two truths itself burns on the proof presented to it, exactly
+/// as on one its own admission assembled — the bond whole, one entry, §6
+/// holding — and reports what left; the same proof again finds no bond
+/// and is inert, so a proof relayed to every hypha burns once at each.
+#[test]
+fn a_third_party_proof_burns_the_bond_once() {
+use crate::court::admission::{admit_equivocation, SignedPrefix};
+let key = super::common::court_key("liar");
+let liar = key.vk_bytes();
+let pre = |r: &crate::chronometry::KStepReceipt| SignedPrefix {
+    genesis: [7; 32],
+    epoch: 2,
+    prev_receipt_hash: r.prev_receipt_hash,
+    k: r.step_index,
+    height: r.height,
+    chart: vec![],
+    payload: r.delta.clone(),
+};
+let mut told_a = crate::chronometry::ReceiptChain::with_vk(liar);
+told_a.append(b"one", [0; 32], Vec::new()).expect("appends");
+let mut told_b = crate::chronometry::ReceiptChain::with_vk(liar);
+told_b.append(b"two", [0; 32], Vec::new()).expect("appends");
+let (ra, rb) = (told_a.receipts()[0].clone(), told_b.receipts()[0].clone());
+
+let mut k = Kernel::new();
+let bond = [3u64, 3, 3, 3];
+k.treasury_mut().genesis(liar, bond, (0, [0; 32]));
+k.treasury_mut().enroll(liar, bond, (0, [0; 32]));
+let supply = k.treasury().supply().expect("measured");
+assert!(k.known_head(&liar).is_none(), "this court heard neither truth itself");
+
+let proof = admit_equivocation(
+    super::common::verified(&pre(&ra), &key),
+    &ra,
+    super::common::verified(&pre(&rb), &key),
+    &rb,
+)
+.expect("two signed roots at one K are the proof");
+assert_eq!(k.accept_equivocation(proof), Some(bond), "the reply reports the bond that left");
+assert_eq!(k.treasury().bond_of(&liar), Some([0; 4]), "burned whole");
+assert_eq!(
+    k.treasury().supply().expect("still measured"),
+    std::array::from_fn(|l| supply[l] - bond[l]),
+    "supply falls by exactly what left circulation"
+);
+assert!(k.treasury().audit().is_ok(), "§6 holds through the forfeiture");
+assert_eq!(k.accept_equivocation(proof), None, "the same proof again finds nothing to burn");
+assert!(k.treasury().audit().is_ok());
+}

@@ -67,6 +67,10 @@ pub const REFUSE_SIGNATURE: &str = "signature does not verify over the signed pr
 /// the frame does not carry — a REBIND with no selection, an ATTACH with no
 /// base and transport. Decided before any carrier is touched.
 pub const REFUSE_MALFORMED: &str = "act names a payload it does not carry";
+/// 34.1 (I21): an `ACT_EQUIVOCATION` whose two receipts are not 47.4's
+/// proof — two keys, two K, or one chain hash (a duplicate frame). Decided
+/// by `admission::admit_equivocation` before any carrier is touched.
+pub const REFUSE_NOT_EQUIVOCATION: &str = "two receipts that do not share key and K, or do not differ";
 
 #[cfg(test)]
 mod tests;

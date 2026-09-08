@@ -4,6 +4,7 @@
 //! the cover trie. A frame that arrived as ACT_DEMAND_ROUTED is judged and
 //! never forwarded.
 
+pub(crate) mod equivocation;
 pub(crate) mod offer;
 pub(crate) mod percept;
 pub(crate) mod probe;
@@ -46,6 +47,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         dialogue::ACT_DIGESTS => syllabus::digests(stream, &frame, door),
         dialogue::ACT_FETCH => syllabus::fetch(stream, &frame, door),
         dialogue::ACT_PROBE => probe::judge(stream, &frame, door),
+        dialogue::ACT_EQUIVOCATION => equivocation::judge(stream, &frame, door),
         _ => percept::judge(stream, &frame, door, kind, arrived_routed),
     }
 }
