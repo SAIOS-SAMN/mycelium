@@ -64,6 +64,21 @@ impl Treasury {
             out.extend_from_slice(&anchor.0.to_le_bytes());
             out.extend_from_slice(&anchor.1);
         });
+        // FUNDED ESCROW, written out. It stood as "rebuilt from the journal
+        // by `recompute_balances`, not persisted twice" -- but an entry
+        // carries a party and a lane vector and NOT the listing it is
+        // against, so no rebuild can key it, and `recompute_balances` never
+        // touched it. A restored treasury therefore held zero funded escrow
+        // against balances that had already paid for it, and §6's second
+        // equation failed by exactly the funded total at every restart.
+        out.extend_from_slice(&(self.funded.len() as u32).to_le_bytes());
+        crate::snapshot::persist(&self.funded, |addr, (payer, mu)| {
+            let _ = crate::transducer::address::put_addr(&mut out, addr);
+            out.extend_from_slice(payer);
+            for m in mu {
+                out.extend_from_slice(&m.to_le_bytes());
+            }
+        });
         out
     }
 
@@ -159,15 +174,34 @@ impl Treasury {
                 escrowed.insert(addr, crate::economy::escrow::Escrowed { voices, mu, anchor: (k, r) });
             }
         }
-        // `funded` is rebuilt from the journal by `recompute_balances`, not
-        // persisted twice: the escrow and release rows say what was funded.
+        // FUNDED ESCROW, read back. A snapshot that ends before this section
+        // is an older one and restores with none, which is what it held.
+        let mut funded = crate::network::nerve::Keyed::new();
+        if let Some(c4) = b.get(*pos..*pos + 4) {
+            let nf = u32::from_le_bytes(c4.try_into().ok()?) as usize;
+            *pos += 4;
+            if nf > b.len().saturating_sub(*pos) / 66 {
+                return None; // untrusted count: ≥66 bytes per funded row
+            }
+            for _ in 0..nf {
+                let addr = crate::transducer::address::take_addr(b, pos)?;
+                let payer: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                *pos += 32;
+                let mut mu = [0u64; 4];
+                for m in &mut mu {
+                    *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+                    *pos += 8;
+                }
+                funded.insert(addr, (payer, mu));
+            }
+        }
         let mut t = Treasury {
             entries,
             bond_total,
             stakes,
             escrowed,
             balances: crate::network::nerve::Keyed::new(),
-            funded: crate::network::nerve::Keyed::new(),
+            funded,
         };
         t.refresh_bond();
         t.recompute_balances();

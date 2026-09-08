@@ -39,29 +39,38 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // can be pushed across a cell with one vertex. The empty cover was the
     // same fault in the other direction: the cell had no other hypha in it
     // because the cover the mesh actually holds was left behind.
-    let (glued, reached) =
+    let (refused, reached) =
         match mycelium::transducer::element::Element::from_bytes(&elem_bytes, &mut pos) {
             Some(word) => {
                 let addr = word.address();
                 match (door.kernel.lock(), door.mesh.cover.lock()) {
                     (Ok(mut k), Ok(mut cover)) => {
-                        let g = k.glue_fetched(word, home, me, &mut cover);
-                        let ok = !matches!(g, mycelium::cognition::Glue::Slashed(_));
+                        // The REFUSAL travels, not a bit saying there was
+                        // one: `Slashed(reason)` names a 34.1 constant, and
+                        // the home logs and acts on the reason.
+                        let why = match k.glue_fetched(word, home, me, &mut cover) {
+                            mycelium::cognition::Glue::Slashed(r) => r.as_bytes().to_vec(),
+                            _ => Vec::new(),
+                        };
                         // What THIS court holds at that address after the
                         // replay. Holding nothing is a witness that reached
                         // nothing: it is unmeasured, and the offered word is
                         // never handed back in its place, which the home
                         // would read as a re-derivation that never happened.
-                        (ok, k.word_at(&addr).map(|w| w.to_bytes()).unwrap_or_default())
+                        let mine = match why.is_empty() {
+                            true => k.word_at(&addr).map(|w| w.to_bytes()).unwrap_or_default(),
+                            false => Vec::new(),
+                        };
+                        (why, mine)
                     }
-                    _ => (false, Vec::new()),
+                    _ => (Vec::new(), Vec::new()),
                 }
             }
-            None => (false, Vec::new()),
+            None => (mycelium::verdict::REFUSE_FORM_TAPE.as_bytes().to_vec(), Vec::new()),
         };
-    let answered = dialogue::Witnessed { glued, vk: me, reached };
+    let answered = dialogue::Witnessed { vk: me, reached, refused: refused.clone() };
     // The witness's form may not fit the wire budget. A reply that cannot
-    // carry it still ANSWERS, with the verdict and this court's key, which
+    // carry it still ANSWERS, with this court's key and its refusal, which
     // the home reads as "no form travelled" and holds as unmeasured. Refuse
     // the PAYLOAD, never the reply -- and never invent one: the first cut of
     // this ended `.unwrap_or_else(|| vec![lane, 0,0,0,0])`, a hand-built
@@ -77,9 +86,9 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
             Frame {
                 lane: frame.lane,
                 body: dialogue::encode_offer_reply(&dialogue::Witnessed {
-                    glued,
                     vk: me,
                     reached: Vec::new(),
+                    refused,
                 }),
             },
         ),

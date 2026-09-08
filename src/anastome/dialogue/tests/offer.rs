@@ -46,36 +46,51 @@ fn an_offer_names_the_home_that_made_it() {
     );
 }
 
-/// The witness answers with ITS OWN KEY and the form it reached. A witness
-/// that reached nothing says so with an empty form; the offered tape is
-/// never echoed back, which the home would read as a re-derivation.
+/// The witness answers with ITS OWN KEY, the form it reached, and the
+/// refusal that slashed it — three states read off the content, with no bit
+/// over the outcome of a replay. A witness that reached nothing says so
+/// with an empty form; the offered tape is never echoed back, which the
+/// home would read as a re-derivation that never happened.
 #[test]
 fn a_witness_answers_with_its_own_key_and_only_what_it_reached() {
     let vk = [0x2fu8; 32];
     let reached = vec![1u8, 2, 3, 4, 5];
     let w = decode_offer_reply(&encode_offer_reply(&Witnessed {
-        glued: true,
         vk,
         reached: reached.clone(),
+        refused: Vec::new(),
     }))
     .expect("an answer parses whole");
-    assert!(w.glued);
     assert_eq!(w.vk, vk, "the vantage is the key the witness names");
     assert_eq!(w.reached, reached);
+    assert!(w.refused.is_empty(), "it did not refuse");
 
-    let none =
-        decode_offer_reply(&encode_offer_reply(&Witnessed { glued: true, vk, reached: Vec::new() }))
-            .expect("an answer with no form still parses");
-    assert!(none.glued && none.vk == vk);
+    let none = decode_offer_reply(&encode_offer_reply(&Witnessed {
+        vk,
+        reached: Vec::new(),
+        refused: Vec::new(),
+    }))
+    .expect("an answer with no form still parses");
+    assert_eq!(none.vk, vk);
     assert!(
-        none.reached.is_empty(),
-        "a witness that reached nothing is unmeasured, not agreeing"
+        none.reached.is_empty() && none.refused.is_empty(),
+        "a witness that reached nothing is unmeasured, neither agreeing nor refusing"
     );
 
-    let slashed =
-        decode_offer_reply(&encode_offer_reply(&Witnessed { glued: false, vk, reached: Vec::new() }))
-            .expect("a refusal parses whole");
-    assert!(!slashed.glued);
+    // A SLASH NAMES ITS REFUSAL. The home logs and acts on the 34.1
+    // constant; a bit would have said only "not admitted".
+    let why = crate::court::verdict::REFUSE_NOT_CLOSED;
+    let slashed = decode_offer_reply(&encode_offer_reply(&Witnessed {
+        vk,
+        reached: Vec::new(),
+        refused: why.as_bytes().to_vec(),
+    }))
+    .expect("a refusal parses whole");
+    assert_eq!(
+        String::from_utf8(slashed.refused).expect("a 34.1 constant is text"),
+        why,
+        "the reason travels, not the fact that there was one"
+    );
 
     assert!(decode_offer_reply(&[1u8]).is_none(), "a truncated answer names no vantage");
     assert!(decode_offer_reply(&[]).is_none());

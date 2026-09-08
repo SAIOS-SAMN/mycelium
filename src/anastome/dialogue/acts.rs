@@ -227,12 +227,16 @@ pub struct Offer {
     pub install_sig: [u8; 64],
 }
 
-/// WHAT A WITNESS ANSWERS AN OFFER WITH (47.3): whether the offered form
-/// survived its replay here, the key that replayed it, and the form THIS
-/// court reached at that address.
+/// WHAT A WITNESS ANSWERS AN OFFER WITH (47.3, 13.9): the key that
+/// replayed, the form that key reached, and the refusal that slashed it.
+///
+/// There is no bit here. It carried `glued: bool`, and the home branched on
+/// it: a bool over the outcome of a replay keeps neither which refusal was
+/// reached nor which form, and every reader that needs to act recomputes
+/// what the bit threw away (MU-STANDARDS §2.3, law I). The three arms the
+/// home actually distinguishes are the three states below, read off the
+/// content and never off a flag.
 pub struct Witnessed {
-    /// The replay did not slash the form.
-    pub glued: bool,
     /// The witness's own verifying key. The home reads the second vantage
     /// off this and never off the address it happened to dial: an address
     /// is where a hypha answers, and a vantage is a key.
@@ -242,6 +246,10 @@ pub struct Witnessed {
     /// a witness that reached nothing is UNMEASURED, which is not the same
     /// as a witness that re-derived what it was sent.
     pub reached: Vec<u8>,
+    /// The 34.1 constant the replay refused with, empty when it did not
+    /// refuse. A witness that slashed the form has said something the home
+    /// must be able to read and log; `Ok(())` said only "not that".
+    pub refused: Vec<u8>,
 }
 
 /// AN INSTALLED word, carrying both hyphae's signatures.
