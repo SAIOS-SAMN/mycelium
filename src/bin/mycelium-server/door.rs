@@ -131,7 +131,11 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         return true;
     }
     if kind == dialogue::ACT_SOLVE {
-        let Some((svoice, tid, outputs, rule_bytes)) = dialogue::decode_solve(&frame.body) else { return true };
+        let Some(dialogue::SolveAct { voice: svoice, task: tid, outputs, rule: rule_bytes }) =
+            dialogue::decode_solve(&frame.body)
+        else {
+            return true;
+        };
         let rule_elem = rule_bytes.as_ref().and_then(|b| {
             let mut p = 0usize;
             mycelium::transducer::element::Element::from_bytes(b, &mut p)

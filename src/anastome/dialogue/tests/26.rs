@@ -20,12 +20,14 @@ fn the_five_acts_round_trip() {
         gauge: 1,
         body: chain.clone(),
     }];
-    let (v, c, k) = decode_demand(&encode_demand(&voice, &chain, &cites)).unwrap();
-    assert_eq!(k, cites, "the citations ride the demand");
-    assert_eq!((v, c), (voice, chain.clone()));
-    let (v2, c2, cites2, k_voice) =
-        decode_demand_at(&encode_demand_at(&voice, 7, &chain, &cites)).unwrap();
-    assert_eq!((v2, c2, cites2, k_voice), (voice, chain.clone(), cites.clone(), 7));
+    let d = decode_demand(&encode_demand(&voice, &chain, &cites)).unwrap();
+    assert_eq!(d.cites, cites, "the citations ride the demand");
+    assert_eq!((d.voice, d.chain), (voice, chain.clone()));
+    let at = decode_demand_at(&encode_demand_at(&voice, 7, &chain, &cites)).unwrap();
+    assert_eq!(
+        (at.voice, at.chain, at.cites, at.k),
+        (voice, chain.clone(), cites.clone(), 7)
+    );
     assert_eq!(decode_quote_request(&encode_quote_request(&voice)).unwrap(), (voice, Vec::new()));
     let items = vec![(listing.clone(), [1u64, 2, 30, 4], chain.clone(), Vec::new())];
     let (h, s, k, it) = decode_quote_reply(&encode_quote_reply(3, &[5, 0, 9, 0], 4208, &items)).unwrap();

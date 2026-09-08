@@ -98,7 +98,7 @@ pub fn encode_solve_with_rule(
     out
 }
 
-pub fn decode_solve(body: &[u8]) -> Option<Solve> {
+pub fn decode_solve(body: &[u8]) -> Option<SolveAct> {
     if body.first() != Some(&ACT_SOLVE) {
         return None;
     }
@@ -119,7 +119,7 @@ pub fn decode_solve(body: &[u8]) -> Option<Solve> {
     } else {
         None
     };
-    Some((voice, id, outputs, rule))
+    Some(SolveAct { voice, task: id, outputs, rule })
 }
 
 

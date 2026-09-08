@@ -33,7 +33,7 @@ let pbytes = if kind == dialogue::ACT_GOSSIP {
     rest
 };
 if kind == dialogue::ACT_DEMAND && !arrived_routed {
-    if let Some((_, chain, _)) = dialogue::decode_demand(&frame.body) {
+    if let Some(dialogue::DemandAct { chain, .. }) = dialogue::decode_demand(&frame.body) {
         let (home_vk, home_addr) = demand_cover_home(mesh, kernel, &chain);
         if home_vk != mesh.vk && home_addr != mesh.bind && !home_addr.is_empty() {
             let _ = door.nerve_tx.try_send((home_addr, dialogue::encode_routed_demand(id, &frame.body)));
@@ -42,7 +42,11 @@ if kind == dialogue::ACT_DEMAND && !arrived_routed {
 }
 let (out, voice) = if kind == dialogue::ACT_DEMAND {
     // A spoken coboundary with the speaker's own reduction — replayed.
-    let Some((dvoice, chain, cites, k_voice)) = dialogue::decode_demand_at(&frame.body) else { return };
+    let Some(dialogue::DemandAct { voice: dvoice, chain, cites, k: k_voice }) =
+        dialogue::decode_demand_at(&frame.body)
+    else {
+        return;
+    };
     (mycelium::synthesis::attest(kernel, &chain, dvoice, &cites, k_voice), dvoice)
 } else {
     // The client PERCEIVED and REDUCED; the JUDGE replays the proof.

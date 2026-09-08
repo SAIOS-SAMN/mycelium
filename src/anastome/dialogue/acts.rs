@@ -162,25 +162,58 @@ pub type Chart = (crate::transducer::stalk::Invariant, Vec<Address>);
 /// address, so rebinds propagate too).
 pub const ACT_SYLLABUS: u8 = 0x0D;
 
-/// DECODED ACT SHAPES. Each alias names one act's field list -- the tuple
-/// is the act, written out (A21), and the alias gives it a name rather than
-/// hiding it behind a struct nobody constructs. Introduced because these
-/// signatures were unreadable in place and clippy was right to say so.
+/// DECODED ACT SHAPES. One struct per act, each field named and carrying
+/// what the field means. An alias over a tuple names the act and none of
+/// its coordinates, which is the `#[allow]` attribute by another route
+/// (F3ah).
 ///
-/// `(voice, task, K, sentences)`
-pub type Speech = ([u8; 32], Address, u64, Vec<Vec<u8>>);
-/// `(voice, task, K, sentences, standing)`
-pub type SpeechStanding = ([u8; 32], Address, u64, Vec<Vec<u8>>, Vec<u8>);
+/// SPEECH: what a voice says it derived, with the standing it claims for
+/// each sentence.
+pub struct SpeechAct {
+    /// The speaking voice.
+    pub voice: [u8; 32],
+    /// The task the sentences answer.
+    pub task: Address,
+    /// The speaker's K — its own receipt-chain depth, not the hearer's.
+    pub k: u64,
+    /// The sentences, as full element tapes.
+    pub sentences: Vec<Vec<u8>>,
+    /// The standing claimed for each sentence, in the same order: Stood
+    /// where the speaker holds it, Ruled where a court already has. A
+    /// missing entry is Stood, never Ruled.
+    pub standing: Vec<u8>,
+}
 /// `(vk, bind, charts)`
 pub type Cover = ([u8; 32], String, Vec<(u8, crate::transducer::stalk::Invariant)>);
 /// `(address, element bytes, voices, deflation, K, sig, install sig)`
 pub type Offer = (Address, Vec<u8>, Vec<[u8; 32]>, [u64; 4], u64, [u8; 64], [u8; 64]);
 /// `(address, element bytes, home sig, witness sig)`
 pub type Installed = (Address, Vec<u8>, [u8; 64], [u8; 64]);
-/// `(voice, task, grids, rule)`
-pub type Solve = ([u8; 32], Address, Vec<Vec<Vec<u8>>>, Option<Vec<u8>>);
-/// `(voice, chain, cites, height)`
-pub type DemandAt = ([u8; 32], Vec<Cell>, Vec<CiteWire>, u64);
+/// A SOLVE submission: the answers a voice claims for a registered task.
+pub struct SolveAct {
+    /// The solving voice.
+    pub voice: [u8; 32],
+    /// The task answered.
+    pub task: Address,
+    /// One output grid per test input, in the order they were served.
+    pub outputs: Vec<Vec<Vec<u8>>>,
+    /// The rule the voice extracted, when it speaks one. `None` is an
+    /// answer with no rule behind it — the registry prices it differently.
+    pub rule: Option<Vec<u8>>,
+}
+
+/// A DEMAND with the citations that came with it.
+pub struct DemandAct {
+    /// The demanding voice.
+    pub voice: [u8; 32],
+    /// The chain it demands a word for.
+    pub chain: Vec<Cell>,
+    /// What it could already cite.
+    pub cites: Vec<CiteWire>,
+    /// The demander's own K, so a duplicate (voice, address, K) is answered
+    /// from the docket rather than re-reduced.
+    pub k: u64,
+}
 /// One selection's birth evidence: `(address, positions, scene)`
 pub type EvidenceItem = crate::transducer::anchor::AddressedEvidence;
 

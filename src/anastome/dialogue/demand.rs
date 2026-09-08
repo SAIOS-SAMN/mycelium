@@ -70,12 +70,12 @@ pub fn encode_demand_at(voice: &[u8; 32], k: u64, chain: &[Cell], cites: &[CiteW
     out
 }
 
-pub fn decode_demand(body: &[u8]) -> Option<([u8; 32], Vec<Cell>, Vec<CiteWire>)> {
-    let (voice, chain, cites, _) = decode_demand_at(body)?;
-    Some((voice, chain, cites))
+/// The same act read by a caller that does not use the demander's K.
+pub fn decode_demand(body: &[u8]) -> Option<DemandAct> {
+    decode_demand_at(body)
 }
 
-pub fn decode_demand_at(body: &[u8]) -> Option<DemandAt> {
+pub fn decode_demand_at(body: &[u8]) -> Option<DemandAct> {
     if body.first() != Some(&ACT_DEMAND) {
         return None;
     }
@@ -84,5 +84,5 @@ pub fn decode_demand_at(body: &[u8]) -> Option<DemandAt> {
     let chain = read_chain(body, &mut p)?;
     let cites = read_cites(body, &mut p).unwrap_or_default();
     let k = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
-    Some((voice, chain, cites, k))
+    Some(DemandAct { voice, chain, cites, k })
 }

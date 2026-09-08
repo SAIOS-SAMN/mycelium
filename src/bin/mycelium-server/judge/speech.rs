@@ -15,7 +15,11 @@ use std::net::TcpStream;
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let kernel = &door.kernel;
 
-    let Some((svoice, task, _tu, blobs)) = dialogue::decode_speech(&frame.body) else { return };
+    let Some(dialogue::SpeechAct { voice: svoice, task, sentences: blobs, .. }) =
+        dialogue::decode_speech(&frame.body)
+    else {
+        return;
+    };
     let mut sentences = Vec::new();
     for b in &blobs {
         let mut p = 0usize;

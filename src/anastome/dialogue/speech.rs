@@ -50,12 +50,7 @@ pub fn encode_speech_standing(
     out
 }
 
-pub fn decode_speech(body: &[u8]) -> Option<Speech> {
-    let (voice, task, tu, sentences, _) = decode_speech_standing(body)?;
-    Some((voice, task, tu, sentences))
-}
-
-pub fn decode_speech_standing(body: &[u8]) -> Option<SpeechStanding> {
+pub fn decode_speech(body: &[u8]) -> Option<SpeechAct> {
     if body.first() != Some(&ACT_SPEECH) || body.len() < 47 {
         return None;
     }
@@ -78,7 +73,7 @@ pub fn decode_speech_standing(body: &[u8]) -> Option<SpeechStanding> {
         standing.push(st);
         sentences.push(s);
     }
-    Some((voice, task, tu, sentences, standing))
+    Some(SpeechAct { voice, task, k: tu, sentences, standing })
 }
 
 
