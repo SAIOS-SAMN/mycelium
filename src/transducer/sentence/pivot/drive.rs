@@ -104,11 +104,22 @@ impl Form {
                     break;
                 }
             }
-            debug_assert_eq!(
-                Some(rank_before_gauge),
-                self.rank(),
-                "R1: re-gauging preserves rank"
-            );
+            // R1: RE-GAUGING PRESERVES RANK, certified here. This stood as
+            // a `debug_assert_eq!`, which is nothing in a release build,
+            // and a release build is what the mesh runs -- so a gauge that
+            // moved the rank went on to be pivoted from, and every
+            // certificate the drive then issued measured its move against
+            // a rank the theorem says it should not have had. A theorem
+            // asserted only in a debug build is not certified (law 10:
+            // direction is a pivot, closure certifies). It HOLDS, in the
+            // vocabulary the arms above it already use.
+            if self.rank() != Some(rank_before_gauge) {
+                eprintln!(
+                    "  pivot {:02x}{:02x}… held, the tree gauge moved the rank",
+                    idea[0], idea[1]
+                );
+                break;
+            }
             for (idx, lp) in self.loops.iter().enumerate() {
                 let Some(&order) = pending.get(&vertex_ix_key(lp.chord)) else {
                     continue;
@@ -205,13 +216,31 @@ impl Form {
                 match select_discharge(&discharging) {
                     Discharge::One(cert) => {
                         self.apply_pivot(&cert);
-                        // A18, T21 (iii): the applied pivot's move on the
-                        // whole form is the move its certificate claims.
-                        debug_assert_eq!(
-                            self.rank().map(|r| Rank::moved(rank_before, r)),
-                            Some(cert.rank_move),
-                            "the applied pivot makes the move its certificate claims"
-                        );
+                        // A18, T21 (iii): THE APPLIED PIVOT MAKES THE MOVE
+                        // ITS CERTIFICATE CLAIMS, certified here. A
+                        // `debug_assert_eq!` certified it in debug builds
+                        // and in nothing else, so in the build the mesh
+                        // runs a certificate claiming one move while the
+                        // form made another was recorded, spoken, and
+                        // settled on -- law 10 says closure certifies, and
+                        // a closure nobody checks certifies nothing.
+                        //
+                        // On disagreement the loop HOLDS: no snap, no
+                        // certificate filed, and `applied` stays false so
+                        // the drive stops rather than pivoting again from
+                        // a form it cannot account for. What is NOT done
+                        // is undoing the transport already written -- the
+                        // move is a legitimate one on the form, it is the
+                        // CLAIM about it that fails, and nothing
+                        // downstream may rest on an uncertified move
+                        // because nothing downstream is given one.
+                        if self.rank().map(|r| Rank::moved(rank_before, r)) != Some(cert.rank_move) {
+                            eprintln!(
+                                "  pivot {:02x}{:02x}… loop {idx} held, the applied pivot did not make the move its certificate claims",
+                                idea[0], idea[1]
+                            );
+                            break;
+                        }
                         eprintln!(
                             "  pivot {:02x}{:02x}… loop {idx} axis {:?} discharged {:02x}{:02x}…→{:02x}{:02x}…",
                             idea[0], idea[1], cert.axis, cert.before[0], cert.before[1], cert.after[0], cert.after[1]
