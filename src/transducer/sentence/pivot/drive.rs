@@ -187,7 +187,7 @@ impl Form {
                             idea[0], idea[1], cert.axis, cert.before[0], cert.before[1], cert.after[0], cert.after[1]
                         );
                         let ck = cert.key();
-                        self.certificates.insert(ck, cert.clone());
+                        self.certificates.insert(ck, (*cert).clone());
                         snaps.push(Snap::Discharged {
                             chord: idx,
                             certificate: cert,

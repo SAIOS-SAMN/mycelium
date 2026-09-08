@@ -12,7 +12,7 @@ pub enum Snap {
     /// A chord the tree gauge closed: its class was trivial (T2), never rank.
     Closed { chord: usize, order: Order },
     /// A held loop discharged on one occupied axis by a certified pivot.
-    Discharged { chord: usize, certificate: PivotCertificate },
+    Discharged { chord: usize, certificate: Box<PivotCertificate> },
     /// Several pivots discharge and none dominates on μ⃗: all are held as
     /// cells of the thought until a perception, a glue or a ruling collapses
     /// the superposition (12.6).
@@ -59,7 +59,7 @@ pub(crate) fn mu_deflation(mu: &crate::transducer::sentence::form::Mu) -> [u64; 
 /// The three outcomes of selecting among certified discharges.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Discharge {
-    One(PivotCertificate),
+    One(Box<PivotCertificate>),
     Vortex(Vec<PivotCertificate>),
     NoneDischarged,
 }
@@ -118,10 +118,10 @@ pub(crate) fn select_discharge(cands: &[PivotCertificate]) -> Discharge {
     );
     match (measured.as_slice(), cands) {
         ([], []) => Discharge::NoneDischarged,
-        ([], [c]) => Discharge::One(c.clone()),
+        ([], [c]) => Discharge::One(Box::new(c.clone())),
         ([], _) => Discharge::Vortex(cands.to_vec()),
         (vals, _) => match crate::economy::dominant(vals) {
-            Some(i) => Discharge::One(cands[i].clone()),
+            Some(i) => Discharge::One(Box::new(cands[i].clone())),
             None => Discharge::Vortex(cands.to_vec()),
         },
     }
