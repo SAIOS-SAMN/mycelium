@@ -265,8 +265,10 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // reserve lanes clamped at eight (law 5, rule 5); `skip(cursor)`
         // walked every word before the cursor to reach it.
         let words: Vec<Vec<u8>> = {
-            let Ok(k) = door.kernel.lock() else { return true };
-            let mut budget = mycelium::physics::Physics::default().stroke();
+            let Ok(mut k) = door.kernel.lock() else { return true };
+            // The page is what THIS court's stroke affords, read off its own
+            // physics, never a default's (rule 5).
+            let mut budget = k.stroke();
             let mut out = Vec::new();
             if let Some(rest) = k.basis().get(cursor as usize..) {
                 for w in rest {
@@ -299,11 +301,13 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // `free = reserve.iter().sum()`: law 5's "μ⃗ is never summed … or
         // reduced to a scalar" in one expression, and rule 5's own named
         // example, `depth.min(8)`, on the result.
-        let seed = match door.kernel.lock() {
-            Ok(k) => k.syllabus_seed(),
+        // The budget is this court's own stroke, taken under the same lock
+        // as the seed: a default `Physics` is not the court's metabolism
+        // (rule 5).
+        let (seed, mut budget) = match door.kernel.lock() {
+            Ok(mut k) => (k.syllabus_seed(), k.stroke()),
             Err(_) => return true,
         };
-        let mut budget = mycelium::physics::Physics::default().stroke();
         let (cursor, page) = {
             let Ok(mut sy) = door.syllabus.lock() else { return true };
             syllabus_admit(&mut sy, seed);

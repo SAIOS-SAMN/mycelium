@@ -15,12 +15,16 @@ pub(crate) fn offer_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
     // moves once a peer has glued a provisional, and a peer only
     // sees a provisional when it is offered. `moved false` on
     // every cycle was that deadlock.
-    let offers = {
-        let mut b = mycelium::physics::Physics::default().stroke();
-        match kernel.lock() {
-            Ok(k) => k.offers_pending(&mut b),
-            Err(_) => Vec::new(),
+    // Both budgets are this court's own strokes (rule 5): what it offers in
+    // one cycle and how many witnesses it reaches are what its metabolism
+    // affords, not a default's. A court that cannot be read offers nothing.
+    let (offers, mut offer_budget) = match kernel.lock() {
+        Ok(mut k) => {
+            let mut b = k.stroke();
+            let offers = k.offers_pending(&mut b);
+            (offers, k.stroke())
         }
+        Err(_) => return,
     };
     let mut offered_out = 0usize;
     // AN OFFER GOES TO THE HYPHAE COVERING ITS STRATUM, ONE PER
@@ -44,7 +48,6 @@ pub(crate) fn offer_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
     // form occupies. A form whose chart no peer covers has no
     // eligible witness and waits, which is the chapter's answer and
     // not a failure to reach anyone.
-    let mut offer_budget = mycelium::physics::Physics::default().stroke();
     for (oaddr, elem) in offers {
         let mut pos = 0usize;
         let Some(word) = mycelium::transducer::element::Element::from_bytes(&elem, &mut pos)

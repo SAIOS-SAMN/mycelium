@@ -183,6 +183,15 @@ impl Kernel {
         &self.physics
     }
 
+    /// ONE STROKE OF THIS COURT'S OWN METABOLISM (rule 10, 45.7): the
+    /// `Budget` a page, an offer round or an idle wait is paced by. The
+    /// binaries drew it from `Physics::default()`, a fresh default standing
+    /// in for the kernel's measured reserve (rule 5); what a court can
+    /// afford in one stroke is read off the court.
+    pub fn stroke(&mut self) -> crate::physics::Budget {
+        self.physics.stroke()
+    }
+
     /// Crate-internal: the deliberative arm (synthesis::contemplate) spends
     /// the reserve through here — thought is metabolically real.
     #[cfg(test)]

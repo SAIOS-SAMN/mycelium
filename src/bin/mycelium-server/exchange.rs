@@ -258,7 +258,12 @@ impl Exchange {
                 // core doing the whole preamble again. The stroke is the
                 // pace (law 9), so the loop pays one before retrying.
                 idle += 1;
-                let mut b = mycelium::physics::Physics::default().stroke();
+                // One stroke of this court's own metabolism, not a default's
+                // (rule 5); a court that cannot be read waits on nothing and
+                // tries again.
+                let Some(mut b) = kernel.lock().ok().map(|mut k| k.stroke()) else {
+                    continue;
+                };
                 while b.spend() {}
                 continue;
             }
