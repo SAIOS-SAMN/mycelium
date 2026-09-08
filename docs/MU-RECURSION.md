@@ -2497,11 +2497,13 @@ pub struct PivotCertificate {                          // sentence/pivot.rs
 
 `OpenAxis { face, seed }` (Stage 11 I6) opens a chart axis over the loop
 whose chord is `face`, seeded by the loop's holonomy versor: the form
-gains the axis (`Form.axes`, keyed by the holonomy's class key, carrying
-the chord, the seed and A7's refinement coordinate), the loop reads zero,
-and the rank moves one unit from the row the loop occupied into `axes`.
-The court replays it by removing the axis, reading the loop's class vector
-before and after, and re-deriving the seed from the loop's holonomy.
+gains the relation (`Form.axes`, the holonomy's class key → the chord of
+the loop that is its section; nothing else is stored, the seed and A7's
+refinement coordinate re-derive from that loop on every read, law 12),
+the loop reads zero, and the rank moves one unit from the row the loop
+occupied into `axes`. The court replays it by removing the relation,
+reading the loop's class vector before and after, and refusing a seed that
+is not the re-walked loop's own holonomy versor.
 
 1. **Key.** The certificate's own coordinates written out (A21): `chord ‖
    axis ‖ before ‖ after ‖ rank_before ‖ rank_after ‖ the move in `by``,
@@ -3001,7 +3003,7 @@ pub struct Form {                                       // replaces Nerve as the
     pub sections: Keyed<Vec<u16>>,                      // by transport-class coordinates
     pub certificates: Keyed<PivotCertificate>,          // A20, keyed by the certificate's own coordinates; evidence, not in the address
     pub torsion: Keyed<(Vec<(u8, u8)>, u32, u16)>,      // (σ, ℓ, chord), keyed by the rotor's conjugacy coordinates
-    pub axes: Keyed<OpenedAxis>,                        // Stage 11 I6: chart axes opened over held loops, keyed by the holonomy's class key: { chord, seed: Versor, axes: A7 coordinate }
+    pub axes: Keyed<u16>,                               // Stage 11 I6: chart axes opened over held loops, the holonomy's class key → the chord of the loop that is its section; seed and A7 coordinate re-derive from the loop (law 12)
     pub glued: Keyed<u16>,
     pub vortex: Keyed<Keyed<PivotCertificate>>,
     pub by_address: Keyed<u16>,                         // Word address (M2 composite) → index
@@ -3124,7 +3126,7 @@ n_certificates u16, then per certificate (A20): chord u16 ‖ axis u8 ‖ before
 ratio 4×u16 (h_out, h_in, w_out, w_in; a zero denominator refuses)
 n_sections u16, then per section: class key len16 + bytes ‖ len16 + vertex indices u16…
 n_torsion u16, then per cycle: class key len16 + bytes ‖ len16 + σ pairs ‖ ℓ u32 ‖ chord u16
-n_axes u16, then per opened axis: class key len16 + bytes ‖ chord u16 ‖ seed Versor bytes ‖ len16 + refinement axes u64…
+n_axes u16, then per opened axis: class key len16 + bytes ‖ chord u16 (the seed and A7's refinement coordinate are not on the tape: they re-derive from the loop, law 12)
 ```
 
 The remainder's cells are the one place a coordinate pair is written: a
