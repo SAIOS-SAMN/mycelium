@@ -27,6 +27,7 @@ pub mod class;
 pub mod pivot;
 pub mod tape;
 pub mod chart;
+pub mod reading;
 
 pub use chain::*;
 pub use form::*;
@@ -35,6 +36,7 @@ pub use class::*;
 pub use pivot::*;
 pub use tape::*;
 pub use chart::*;
+pub use reading::*;
 
 #[cfg(test)]
 mod tests;
