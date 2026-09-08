@@ -11,9 +11,11 @@ not yet landed. Companion documents: `MU-PRODUCT.md`, `MU-ENGINEERING.md`,
 μ is a vector on four lanes: spatial (S), gauge (G), temporal (T),
 holonomic (H). It is never summed and never converted across lanes. A
 balance is `[u64; 4]`; a price is `[u64; 4]`; a payment moves value on
-exactly the lanes the work moved. Comparison is the Dershowitz–Manna order
-(`economy::descends`), which is the same order the court uses to accept a
-reduction. There is no scalar anywhere in the economy.
+exactly the lanes the work moved. A comparison of two vectors returns the
+reading per lane (`economy::lane_moves`: each lane fell, held or rose) and
+never a verdict; the court accepts a reduction by closure, never by an
+order on μ⃗ (`MU-RECURSION.md` 12.6). There is no scalar anywhere in the
+economy.
 
 The reason is not stylistic. Value on a lane exists because work on that
 lane was verified; if lanes converted, a lane with no verified work could
@@ -152,8 +154,9 @@ mining pools exist to average away — the reward here is a deterministic
 function of the structure closed, so there is nothing to pool.
 
 What the metabolism throttles is the **rate** at which deflation can be
-presented and verified: the reserve paces strokes, bond buys room,
-`descends` gates admission. Issuance is deflation closed per unit of
+presented and verified: the reserve paces strokes, bond buys room, and
+room and closure gate admission (`MU-RECURSION.md` 23.8). Issuance is
+deflation closed per unit of
 metabolic time. It is continuous, self-limiting, and has no step anywhere,
 because no term in it is chosen.
 

@@ -17,7 +17,7 @@ replaces the content:
 
 | x402 | xSEPTUM |
 |---|---|
-| scalar amount in one currency | a four-lane magnitude `μ⃗ = [spatial, gauge, temporal, holonomic]`, never summed, compared by `economy::descends` |
+| scalar amount in one currency | a four-lane magnitude `μ⃗ = [spatial, gauge, temporal, holonomic]`, never summed, read per lane by `economy::lane_moves` and never ordered |
 | facilitator verifies a signature | the home hypha escrows on a signed Note and releases only after replay by two organs, each signing the release (MU-RECURSION 47.3), exactly as words are installed |
 | off-chain balance in a token | `Treasury` balances earned by verified reduction and solves (`economy::balance_mu`) |
 | pay with money only | pay with money (a Note) or with work (a reduction attested on the listing that priced the request) |
@@ -109,7 +109,7 @@ task id.
 ‖ prefix                  the payer's receipt prefix: genesis, epoch, prev_payer, K_payer, height, chart, challenge address
 ‖ challenge_prefix        the CHALLENGE bytes through request_digest (not the signature)
 ‖ payer_voice 32
-‖ mu 4×u64                what the payer escrows; must satisfy descends(price, mu) or equality
+‖ mu 4×u64                what the payer escrows; must cover the price on every lane the price occupies (`lane_moves(price, mu)` shows no lane short)
 ‖ sig_payee 64            copied from the challenge
 ‖ sig_payer 64            over everything before it
 ```
@@ -241,10 +241,12 @@ second organ re-derived the word.
 
 A payer with no balance on the required lanes may answer a CHALLENGE by
 attesting a reduction on `listing_key` through `ACT_SETTLE`. The home's
-`record_deflation` measures the descent; a deflation that covers `mu` on
-every occupied lane is accepted as the Note and the flow continues at
-ESCROWED with the payer's own deflation as the escrow source. This is the
-POW++ path and the reason the protocol needs no token to bootstrap.
+`record_deflation` measures what the reduction closed, per lane; a
+deflation that covers `mu` on every occupied lane is accepted as the Note
+and the flow continues at ESCROWED with the payer's own deflation as the
+escrow source. This is the proof-of-work path — the work is a closure the
+court replays (`MU-RECURSION.md` 12.6, `MU-ECONOMY.md` §3.2) — and the
+reason the protocol needs no token to bootstrap.
 
 ## 7. Canonical forms
 
@@ -329,7 +331,7 @@ New:
   need it.
 
 Existing, reused unchanged: `escrow_award`, `release_award`, `revoke_award`,
-`draw_escrow`, `balance_mu`, `price`, `descends`, `bind_listing_task`,
+`draw_escrow`, `balance_mu`, `price`, `lane_moves`, `bind_listing_task`,
 `record_deflation`, `blind_replay`, `home_install`, `nerve::home`,
 `HyphaKey`, `Frame`.
 

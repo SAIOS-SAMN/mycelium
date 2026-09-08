@@ -59,8 +59,9 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
 - Gluing across hyphae (`glue_fetched`) is the Čech coboundary: identity
   transition admits, placement attaches, any other transition is a dialect
   row with its versor, and cells at higher degree carry classes. The basis
-  grows only by gluing; the two-voice quorum settles listings and never
-  installs.
+  grows only by gluing; a listing settles when two organs converge on one
+  re-derivation (`court::convergence`), never by a count of voices, and
+  convergence never installs on its own.
 - A word is language when the home ruled it and a peer's ruled root holds
   it; the home installs on that evidence and releases escrow.
 - Signed roots: each hypha signs its cover roots and ruled root; nothing

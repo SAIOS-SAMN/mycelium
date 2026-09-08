@@ -60,8 +60,8 @@ These are not restated in each chapter; every chapter assumes them.
    over ℚ; its angle is never formed. No norms or roots beyond an exact
    rational square root that refuses when inexact. No limits, series,
    derivatives, or probabilities. Termination is by an integer measure or
-   a `Budget`. Nothing is scored; things are equal, or they are not, or
-   one strictly descends.
+   a `Budget`. Nothing is scored; things are equal, or they are not, and
+   a reading of two lane vectors says per lane which fell, held or rose.
 2. **Identity is content, never bytes and never a digest of content.** Two
    words are equal when their rotors are projectively equal. A key is the
    canonical coordinates of an exact object written out, in a fixed order,
@@ -84,7 +84,9 @@ These are not restated in each chapter; every chapter assumes them.
 4. **Exact ℚ; refuse rather than round.** Every scalar is a rational (or,
    in Part VI, an element of a cyclotomic field with canonical reduction).
 5. **Polytonic lanes.** μ⃗ = (S, G, T, H) is never summed, ordered, or
-   reduced to a scalar; descent is dominance.
+   reduced to a scalar; a comparison of two lane vectors returns the
+   reading per lane and never a verdict, and no lane falling certifies
+   anything (12.6).
 6. **The alphabet is immutable.** Seventeen letters are the base; words are
    their combinations; vertex equality is projective rotor equality, never
    tape equality; the normal form is the geodesic where one exists.
@@ -102,12 +104,14 @@ These are not restated in each chapter; every chapter assumes them.
 10. **Direction is a pivot, never a gradient.** A held loop is discharged
     by a move on one of the axes its class vector occupies (chapters 3.9,
     12.6, 16.16). The candidate moves are read from the class vector in a
-    fixed order, each is tried exactly, and every one that discharges with
-    rank conserved is kept. Descent on μ⃗ and the rank audit **certify** a
-    pivot after it is made; they never choose among pivots, and no scalar
-    ever orders the candidates. Two candidates that both discharge and
-    neither dominates are held together as a superposition, the vortex,
-    until a perception or a court replay collapses it.
+    fixed order, each is tried exactly, and every one that discharges is
+    kept. **Closure certifies** a pivot after it is made: the coordinate it
+    acted on is zero, no other rose, and the rank moved by its one unit or
+    not at all; the lane reading of a trial refuses a candidate that raises
+    a lane by naming the lane. Nothing on μ⃗ and nothing in the rank audit
+    chooses among pivots, and no scalar ever orders the candidates. Several
+    candidates that discharge are held together as a superposition, the
+    vortex, until a perception or a court replay collapses it.
 11. **No squaring.** The sensor's ℤ² is the substrate a hypha reads cells
     from; it is not a space cognition lives in, and ℚ² is ℤ² squared
     again. Cognition never carries a position, a placement, or a shift as
@@ -246,10 +250,11 @@ which ideas germinate; **germination** is the movement toward closure. A
 **held loop** is a loop of an idea whose holonomy no gauge removes; its
 **class vector** is the exact record of what would have to change for it to
 close; a **pivot** is a move on one axis of that vector, and the pivot is
-the only motion in this engine; **descent** names only the lane-wise
-comparison of μ⃗ that certifies a pivot or a mint after it is made
-(`descends`), never a direction and never a slope, and in chapter 13 the
-word keeps its sheaf-theoretic sense of gluing across an overlap; a
+the only motion in this engine; **descent** has in this document only its
+sheaf-theoretic sense (chapter 13), sections on the pieces gluing iff they
+agree on the overlap: it is not a motion, not a direction and not a
+certificate, and the lane-wise reading of two μ⃗ is `lane_moves`, per
+lane, which certifies nothing (12.6); a
 **deflation** is what a word or form closes, measured on μ⃗; a
 **shortening** is A2's budgeted retirement of a tape, which moves nothing;
 a **vortex** is a
@@ -763,9 +768,10 @@ a trivial-class chord, which was never rank.
 The candidate pivots of a held loop are read from its class vector in the
 fixed order of 12.6, tried under the stroke `Budget`, and every one that
 discharges with rank conserved is kept as a cell of the thought with its
-**certificate** (16.20). When two candidates discharge and neither
-dominates the other on μ⃗, the mind keeps both; choosing would be a score.
-Descent certifies a pivot after it is made and never selects it. A
+**certificate** (16.20). When several candidates discharge, the mind
+keeps all of them with their certificates; choosing among certified
+discharges by any reading of μ⃗ would be a score. Closure certifies a pivot
+after it is made; μ⃗ certifies nothing and selects nothing. A
 coordinate no listed pivot discharges is filed as torsion if finite (16.17)
 and spoken as a demand if infinite (17.6 step 5).
 
@@ -844,7 +850,10 @@ form from its tape; the bound version is chapter 23.
 5. Every conjugate, unfolding, orbit: execute on the bundle as 3.2–3.5;
    refuse a conjugate equal to its base, an unfolding whose measure does
    not move, an orbit that does not move.
-6. Descent on the form's own deflation.
+6. Closure beyond the cited forms: the form's own deflation, what it
+   closes beyond what its cited forms close at their placements, read per
+   lane and paid (E2); a form that closes nothing beyond them is the
+   citation, not a form (`REFUSE_REDUNDANT`).
 
 A cited form slashed later re-dockets its citers; each replays without it
 and re-installs with larger deflation or is withheld with escrow returned.
@@ -1106,7 +1115,7 @@ For a form:
 | re-gauging (3.6) | the action of `δ⁰γ` |
 | refinement (3.7) | when `H²` of a good cover is nonzero, subdivide the base so the class becomes a face between children |
 | retirement (3.8) | choose the shortest known representative in a class |
-| pivot (3.9) | a move on one summand of a held loop's class vector; discharge is the summand becoming zero with no other rising, or the loop becoming a boundary or a face; certified by rank and dominance, never selected by them |
+| pivot (3.9) | a move on one summand of a held loop's class vector; discharge is the summand becoming zero with no other rising, or the loop becoming a boundary or a face; certified by closure and the rank move, never selected by any reading of μ⃗ |
 | coherence (`coheres`) | `δ¹g = 1` |
 | closure (`close`) | find `γ` with `δ⁰γ · g` flat and remainder empty |
 | consilience (court) | two organs' sections have `g_XY = 1` on their overlap |
@@ -1299,12 +1308,13 @@ the court by applying the labelled move to the resolved form and
 re-reading the vector. Two minds that discharge a loop produce the same certificate, and
 the hypha installs it once.
 
-**The vortex.** When two candidates both discharge and neither dominates
-the other on `μ⃗(ℓ)`, the mind keeps both as cells of the thought with their
-certificates. The superposition collapses when a later perception makes one
+**The vortex.** When two candidates both discharge, the mind keeps both
+as cells of the thought with their certificates: two certified discharges
+are two proofs of one loop (23.9), and no reading of `μ⃗(ℓ)` chooses
+between them. The superposition collapses when a later perception makes one
 of them a face of a spoken form, or a court replay makes one a ruled
 citation and the other a dialect class. Choosing between them by any scalar
-would be a score, which law 1 forbids.
+or by any order on the lanes would be a score, which law 1 forbids.
 
 **The pivot is the motion (ruled 2026-09-07).** A pivot is a rotation in
 lane space with an inverse: some lanes fall because others rose, and
@@ -1400,7 +1410,7 @@ not defined as a group. What holds and what the system uses:
 exact as **pointed sets** at every term, plus the **descent statement** in
 place of the next exactness (descent here in the sheaf-theoretic sense,
 sections on the pieces glue iff they agree on the overlap; it is not the
-lane-wise comparison of μ⃗ that `descends` names, and it is not a motion):
+lane-wise reading of μ⃗ that `lane_moves` returns, and it is not a motion):
 
 > `(a, b) ∈ H¹(A) × H¹(B)` is the restriction of a class on `X` iff `res a`
 > and `res b` are cohomologous on `A ∩ B`; the classes on `X` restricting to
@@ -2307,14 +2317,13 @@ vector names.
 5. **Keep.** Every discharging candidate is kept as a cell of the thought
    with its certificate (16.20) and logged `pivot {idea} loop {ℓ} axis {x}
    discharged {key}→{key'}`. If exactly one candidate discharges the whole
-   loop, apply it to `F`. If several discharge and one dominates the rest on
-   `μ⃗(ℓ)` (12.6, `descends` on all four lanes), apply that one; dominance
-   here certifies, it does not rank, and a candidate that discharges but
-   raises a lane was already dropped in step 4. If several discharge and
-   none dominates, apply none: the loop is a **vortex**, its cells stay in
-   the thought (`vortex {idea} loop {ℓ} {n} candidates held`), and it
-   collapses when a later perception, a glue, or a court replay makes one
-   candidate a face of a spoken form (25.1).
+   loop, apply it to `F`. If several discharge, apply none: the loop is a
+   **vortex**, its cells stay in the thought (`vortex {idea} loop {ℓ} {n}
+   candidates held`), and it collapses when a later perception, a glue, or
+   a court replay makes one candidate a face of a spoken form (25.1). No
+   reading of `μ⃗(ℓ)` chooses among certified discharges; a candidate that
+   raises a lane on any pair was already refused in step 4 by the lane
+   reading, which names the lane.
 6. **File or demand.** A held loop with no discharging candidate: if
    `κ(ℓ)` has zero free part and finite order, hand it to A17 (torsion); if
    it has a nonzero free part, speak the canonical remainder as a demand
@@ -2642,7 +2651,7 @@ ruled fibers.
 class on the atlas, exactly and identically on every node.
 
 **Procedure.**
-1. Body: `Harmonics::of` (ear.rs 48) → each ratio through A6 → the axes
+1. Body: `Harmonics::of` (blade/harmonics.rs) → each ratio through A6 → the axes
    vector, or the empty `Invariant` on any refusal.
 2. Connection: `connection_chart` (stalk.rs 136): trace and determinant
    through A6, then the gauge permutation's cycle type; refusal → empty.
@@ -2772,7 +2781,7 @@ class the mesh already holds.
 **Procedure.**
 1. Per idea per stroke: A16 (the pivot loop: read the class vector, try the
    moves its occupied axes name, keep every certified discharge, hold a
-   vortex when discharges are incomparable), A17 (file what stays finite),
+   vortex when several discharge), A17 (file what stays finite),
    M6 step 5 for what stays free. No step orders candidates by a measure.
 2. Cauterize: when every loop is identity or filed torsion and the remainder
    is empty, crystallize (`as_element` with the torsion section, M2 address,
@@ -2839,9 +2848,9 @@ it always named:
 | `nerve/`, `mesh.rs`, `wire.rs` | `/opt/mycelium-v0.1.0/src/network/<name>` |
 | `sdk/` | `/opt/mycelium-v0.1.0/src/client/sdk/` |
 | `dialogue/` | `/opt/mycelium-v0.1.0/src/anastome/dialogue/` |
-| `ear.rs` | `/opt/mycelium-v0.1.0/src/perception/ear.rs` |
+| `harmonics.rs` | `/opt/mycelium-v0.1.0/src/transducer/blade/harmonics.rs` |
 | `economy/`, `physics.rs`, `chronometry.rs` | `/opt/mycelium-v0.1.0/src/<name>` |
-| `cyclo.rs`, `scalar.rs`, `constants.rs` | `/opt/mycelium-v0.1.0/src/core/<name>` |
+| `q.rs`, `zlinalg.rs`; `cyclo.rs`, `scalar.rs` (Part VI, new) | `/opt/mycelium-v0.1.0/src/core/<name>` |
 | `mycelium-server/`, `mycelium-client.rs` | `/opt/mycelium-v0.1.0/src/bin/<name>` |
 | `voice/mod.rs` | `/opt/mycelium-v0.1.0/src/voice/mod.rs` |
 
@@ -3231,7 +3240,9 @@ pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8;32]) -> Option<Form>,
 6. `REFUSE_REBASE_TRIVIAL`, `REFUSE_UNFOLD_STILL`, `REFUSE_ORBIT_STILL`, by
    executing the move on `family` when given, else by the form's own
    consistency.
-7. Descent on `spoken.magnitude()` (`REFUSE_NO_DESCENT`, `REFUSE_REDUNDANT`).
+7. Closure: every remainder on the family empty (`REFUSE_NOT_CLOSED`) and
+   a deflation beyond the cited forms (`REFUSE_REDUNDANT`); the deflation is
+   read per lane and paid, never compared against anything.
 
 The translation arm of `blind_replay` recomputes 13.9 step 5 blind for a
 `TRANSLATION_TAG` element (`REFUSE_MV_INEXACT`), refuses a translation
@@ -3385,9 +3396,9 @@ a question, and the court's whole behaviour on an act is fixed here.
   The court replays the citations against the chain as spoken
   (`verify_utterance`, `reduce_proven`), measures the residual lane-wise,
   and rules by that measure alone: an empty residual closes the listing
-  the chain names; a residual that descends is docketed as a listing under
-  the voice's room and the citations are credited with the deflation
-  they replayed; a residual equal to the chain with citations present is
+  the chain names; a residual that fell on some lane and rose on none is
+  docketed as a listing under the voice's room and the citations are
+  credited with the deflation they replayed; a residual equal to the chain with citations present is
   `REFUSE_UNPROVEN`; a residual equal to the chain with no citations is
   the voice's irreducible claim and is docketed as such. `reduce_all` and
   `reduce_germ` over the court's own language are not reachable from a
@@ -3772,8 +3783,8 @@ mind stops holding when the room is spent (24.1); `tape.rs` the THT codec
 idea under the stroke `Budget`:
 `idea.form.pivot_loop(&entity.working_atlas(), &self.horizon, budget)`
 (A16). Every discharge is logged with its certificate; A18's rank is
-asserted before and after each applied pivot (R2). A loop whose discharging
-candidates are incomparable stays a vortex: its candidate cells remain in
+asserted before and after each applied pivot (R2). A loop with several
+discharging candidates stays a vortex: its candidate cells remain in
 `Bubble.nerve` (the thought complex), each carrying its certificate, and
 the idea is not `dirty`-cleared. A vortex collapses when: a later
 perception adds a face that one candidate predicted (that candidate is
@@ -3786,7 +3797,7 @@ or left open with `torsion open`; a free chord is spoken as `Novel(g_rem)`
 through M6 step 5 unless its key is `Held` in `horizon`. Nothing in this
 loop orders candidates by a scalar; the fixed axis order of 12.6 is the
 order of trial, not a preference, and a candidate is applied only because
-it discharged and dominated, or because it was the only one.
+it was the only one that discharged.
 
 **25.2 Cauterize.** An idea whose form `is_closed()` after filing (every
 loop identity or filed torsion, remainder empty) crystallizes: `as_element`
@@ -3926,7 +3937,7 @@ cech.rs       ChartGraph, Goodness, goodness, cell_key with component, set_edge_
 nerve/        Keyed::meet (A13), Cover::charts_of, Router::insert(vk, addr), home(depth), no hash(addr) keys outside pending_addrs
 stalk.rs      Stalks::refine(inv, &[u64]), split_stratum coordinate_of -> Vec<u64>, invariant/invariant_of empty on A6 refusal
 blade/body.rs axes_of -> Option<[u64;2]> (A6), moduli -> Option<Vec<u64>>
-ear.rs        Harmonics::axes -> Option<Vec<u64>>
+blade/harmonics.rs  Harmonics::axes -> Option<Vec<u64>>
 anchor.rs     Sel::to_bytes NEW (A9)
 verdict/      replay_form NEW, REFUSE_* (chapter 34), sel_key over Sel::to_bytes, blind_replay canonicalises the spoken chain and recomputes 13.9 step 5
 cognition.rs  resolve_form, replay_memo, cited_by, cocycle_at fifth field, push_cocycle (M5), glue_fetched (M8), refine_chart (15.5),
@@ -4098,7 +4109,7 @@ pub const REFUSE_REBASE_TRIVIAL: &str = "rebased form equals its base";
 pub const REFUSE_UNFOLD_STILL: &str = "unfolding measure does not move";
 pub const REFUSE_ORBIT_STILL: &str = "orbit does not move";
 pub const REFUSE_REDUNDANT: &str = "form adds no deflation beyond its glued forms";
-pub const REFUSE_NO_DESCENT: &str = "no strict descent — the form closes nothing";
+pub const REFUSE_NOT_CLOSED: &str = "form leaves a remainder on the family";
 pub const REFUSE_MV_INEXACT: &str = "Mayer–Vietoris exactness fails: cochains are inconsistent";
 pub const REFUSE_OVERLAP_CYCLIC: &str = "translation across a non-acyclic overlap";
 pub const REFUSE_NOT_NATURAL: &str = "class key changes under restriction";
@@ -4398,9 +4409,10 @@ existing test runs unchanged with all scalars in `Rat`. Multiplication is
 The **conductor** of a word is the least `m` with every rotor coefficient in
 `ℚ(ζ_m)`: `1` for every word of Parts I–V; computed as the lcm of its
 letters' conductors. It enters the S lane's cost as a factor `φ(m)`, never
-a fifth lane, and `descends` prefers, among two descriptions closing the
-same remainder, the lower conductor. The tower is climbed only when ℚ
-cannot close, and a word ℚ can close is never spoken at a higher conductor.
+a fifth lane; among two descriptions closing the same remainder the one
+the other derives retires it (27), and nothing prefers by conductor. The
+tower is climbed only when ℚ cannot close, and a word ℚ can close is never
+spoken at a higher conductor.
 
 ### 37.3 F3 Extension letters
 
@@ -4535,8 +4547,9 @@ already need `z`.
 ### 38.6 B6 Binding
 
 `element/{carrier,residual}.rs`: `Cell` widened, `positions`, `measure_lanes`, `from_residual`
-(A5 on six-tuples), chain bytes with dimension byte; `blade.rs`, `ear.rs`:
-`d`-dimensional moments and Betti numbers, axes prefixed by `d`; `peel.rs`:
+(A5 on six-tuples), chain bytes with dimension byte; `blade/`,
+`blade/harmonics.rs`: `d`-dimensional moments and Betti numbers, axes
+prefixed by `d`; `peel.rs`:
 `d`-cube shells; `family/perceive.rs`: `perceive` over frames writes `t`;
 `stalk.rs`: `invariant` on `d`-cells; `cga.rs`: dimension-generic `Mv`.
 Tests and traces: chapters 39–40.
@@ -4645,9 +4658,9 @@ cloned; children's cell counts sum to the parent's minus straddling);
 `sentence::tests::pivot_discharges_only_its_axis_and_raises_none` (12.6 discharge condition);
 `sentence::tests::pivot_loop_terminates_in_occupied_coordinates` (T4);
 `sentence::tests::pivot_never_reopens_a_closed_chord` (T2);
-`sentence::tests::incomparable_discharges_are_held_as_vortex` (A16 step 5: two discharging candidates, neither dominating, both kept, none applied);
+`sentence::tests::several_discharges_are_held_as_vortex` (A16 step 5: two discharging candidates, both kept, none applied; S9.3 renames it from `incomparable_discharges_are_held_as_vortex`);
 `sentence::tests::vortex_collapses_by_perception_glue_or_ruling` (25.1);
-`sentence::tests::descent_certifies_never_selects` (T13: the applied pivot is a function of the class vector and the held words, unchanged when μ⃗ of the remainder is permuted across lanes);
+`sentence::tests::mu_neither_certifies_nor_selects` (T13: the applied pivot is a function of the class vector and the held words, unchanged when μ⃗ of the remainder is permuted across lanes; S9.3 renames it from `descent_certifies_never_selects`);
 `sentence::tests::certificate_key_equal_across_two_minds` (A20 step 1);
 `verdict::tests::pivot_certificate_replays_or_refuses` (23.7, `REFUSE_PIVOT_INEXACT`);
 `sentence::tests::torsion_filed_only_when_witnessed_at_period` (T5);
@@ -4656,7 +4669,7 @@ cloned; children's cell counts sum to the parent's minus straddling);
 `sentence::tests::rank_invariant_under_gluing_closed_form` (R3);
 `cognition::tests::rank_conserved_under_refinement_carried_plus_discharged` (R4);
 `cech::tests::rank_of_union_is_sum_over_components` (R5);
-`economy::tests::descends_has_no_infinite_chain_on_bounded_lanes` (T9);
+`physics::tests::stroke_terminates_on_zero_outcome` (T9, T25; `descends_has_no_infinite_chain_on_bounded_lanes` leaves with S9.3);
 `cognition::tests::torsion_consilient_or_filed_or_refused` (23.7);
 `bubble::tests::horizon_seeded_class_is_not_rederived` (A19);
 `bubble::tests::restart_refills_horizon_from_syllabus` (A19 step 4);
@@ -4675,7 +4688,7 @@ resolve after load);
 `cyclo::tests::inverse_and_norm` (`norm(ζ_8) = 1`, `norm(1 + ζ_8)` rational);
 `alphabet::tests::eighth_turn_has_order_eight` (`τ_8^8 ≡ 1`, `τ_8^2 ≡ q`);
 `alphabet::tests::spell_tower_reads_free_and_torsion`;
-`alphabet::tests::conductor_is_lcm_and_descends_prefers_lower`;
+`alphabet::tests::conductor_is_lcm_and_nothing_prefers_by_it`;
 `family::tests::octagonal_pair_opens_letter_and_closes`;
 `element::tests::plane_cell_bytes_unchanged_under_b1` (every existing address equal);
 `ear::tests::cube_and_plane_square_have_distinct_charts`;
@@ -4822,8 +4835,8 @@ servers and five minds.
 - One idea with one held loop whose class vector occupies a unit turn on
   the sensor plane and a placement residue, with the mind holding a
   quarter-turn word and the translation: two `pivot … discharged` lines
-  naming axes `Unit(0)` and `Placement`, in that order, neither dominating
-  → one `vortex … 2 candidates held` line and no applied pivot on that loop
+  naming axes `Unit(0)` and `Placement`, in that order → one `vortex … 2
+  candidates held` line and no applied pivot on that loop
   in that stroke; on the next perception that adds the translation face,
   `vortex … collapsed by perception to axis Placement`, then `form spoken …
   torsion 0` with two certificates on the tape, and the hypha's `court pivot
@@ -4979,7 +4992,7 @@ they prove. Each theorem names the statement, the algorithm that decides it,
 the code that runs the algorithm, and the test or trace that is the proof.
 Fibre means a section over a chart (a word form or a crystallized form);
 torsion means a finite-order holonomy; pressure means the metabolism (the
-stroke `Budget`, descent on μ⃗, T-extent shedding, K-disuse). A fibre that
+stroke `Budget`, the lane readings of μ⃗, T-extent, K-disuse). A fibre that
 does not break under torsion and pressure persists as linguistic memory;
 the theorems say exactly what "does not break" means and why the persisting
 set is well defined.
@@ -5047,14 +5060,17 @@ children; nothing else. Code: `refine_chart`, `Rotor::class_key`,
 `PlaneForm::conjugacy_key`. Proof:
 `refine_carries_or_discharges_every_class`, `refine_rolls_back_on_not_natural`.
 
-**T9 Descent is well-founded, so pressure terminates.** Dominance on μ⃗ over
-ℕ⁴ has no infinite strictly descending chain (Dickson's lemma), so a fibre
-is retired or shed finitely often and the persisting set stabilises. Code:
-`economy::descends`, `Physics::stroke`, `Budget`, `retire_on_t` (223),
-`Epigenome::shed`, `relocate_t_exhausted`. Proof:
-`descends_has_no_infinite_chain_on_bounded_lanes`,
-`settle_recursive_pays_by_deflation`; invariant: no `mint` without a
-descent in the same stroke.
+**T9 Pressure terminates by budget and closure, never by an order.** A
+fibre leaves the hot set only by derivation (retirement, address kept,
+27) or by its own T-room being spent, each a finite event on a finite
+carrier; every stroke spends a `Budget`; a minted deflation closes a
+remainder, and a closed remainder is not minted again (idempotence by
+receipt, 23.8), so no chain of mints is infinite. No well-founded order on
+μ⃗ is invoked (12.6, ruled 2026-09-07). Code: `Physics::stroke`, `Budget`,
+`retire_on_t` (223), `Epigenome::shed`, `relocate_t_exhausted`,
+`reduce_excluding`. Proof: `settle_recursive_pays_by_deflation`,
+`stroke_terminates_on_zero_outcome`; invariant: no `mint` without a
+closure in the same stroke.
 
 **T10 Retirement by geodesic terminates and preserves meaning.** Tape
 length is a natural number; the strictly shorter retires the longer on the
@@ -5076,16 +5092,18 @@ genome is the same word because M1 is injective on projective classes
 (17.1). Code: `Element::same_vertex`, `learn_one` (24.1). Proof:
 `m2_two_spellings_one_address`, trace `promoted {addr} dialect → genome`.
 
-**T13 Descent certifies and never selects.** The candidate list of a held
+**T13 μ⃗ neither certifies nor selects.** The candidate list of a held
 loop is a function of its class vector and the held words on its charts
-(12.6, A16 step 3), and the applied pivot is a function of which candidates
-discharge with rank conserved and of dominance among them; `μ⃗(ℓ)` enters
-only as the dominance test after discharge. Therefore permuting the lanes
-of the remainder's `μ⃗`, or scaling all of them, changes neither the
-candidate list nor which candidate is applied, and two minds with the same
-vector and the same held words apply the same pivot or hold the same
-vortex. Code: `Form::pivot_loop`, `economy::descends`. Proof:
-`descent_certifies_never_selects`, `certificate_key_equal_across_two_minds`;
+(12.6, A16 step 3); the applied pivot is a function of which candidates
+discharge with an admissible rank move, and a loop with several certified
+discharges is a vortex. `μ⃗(ℓ)` enters a trial only as the per-lane reading
+that refuses a candidate raising a lane, never as a comparison between
+candidates. Therefore permuting the lanes of the remainder's `μ⃗`, or
+scaling all of them, changes neither the candidate list nor which
+candidate is applied, and two minds with the same vector and the same held
+words apply the same pivot or hold the same vortex. Code:
+`Form::pivot_loop`, `economy::lane_moves`. Proof:
+`mu_neither_certifies_nor_selects`, `certificate_key_equal_across_two_minds`;
 trace: identical `pivot … discharged` sequences for one loop on two voices
 holding the same words.
 
@@ -5162,11 +5180,13 @@ disconnected overlap is the sum over its components; keying cells per
 component (14.7) never merges two components' classes into one coefficient.
 Code: `set_edge_in`, `Components`. Proof: `rank_of_union_is_sum_over_components`.
 
-**R6 The polytonic lanes are never projected.** Descent is dominance on
-four lanes; no operation orders, sums, or thresholds μ⃗, so no lane's
-extent is ever lost to a scalar. Code: `economy::descends` as the only
-comparison; `lane_room` per lane. Proof: the ban on `argmax`/sum over lanes
-in review, and `descends_has_no_infinite_chain_on_bounded_lanes`.
+**R6 The polytonic lanes are never projected.** No operation orders,
+sums, or thresholds μ⃗; a comparison of two lane vectors returns the
+reading per lane (`lane_moves`: each lane fell, held or rose) and never a
+verdict, so no lane's extent is ever lost to a scalar. Code:
+`economy::lane_moves` as the only comparison; `lane_room` per lane. Proof:
+the order gate of `MU-STANDARDS.md` §4.6, which fails the build on a
+`bool` over two lane vectors, and S9.3's test of the reading.
 
 **R7 Exact axes never merge distinct invariants.** A6 is injective on its
 admitted range and refuses outside it; two bodies with different exact
@@ -5211,7 +5231,8 @@ under pressure) if and only if:
 4. `F`'s overlap with every hypha holding `c` is good, so its classes are
    the language's (T7);
 5. two organs replay `F` to the same verdict (T11);
-6. `F` strictly descends beyond what its cited forms close (T9);
+6. `F` closes a remainder beyond what its cited forms close (E2,
+   `REFUSE_REDUNDANT`);
 7. no strictly shorter form on the same vertices exists (T10);
 8. every pivot `F`'s crystallization rests on has a certificate that replays
    on the court (A20, T13, T14), and none of them was selected by a measure.
@@ -5226,7 +5247,7 @@ the mesh, or a dialect shed by K-disuse; none is forgotten by the mesh.
 
 *Proof by running.* Conditions 1–7 are exactly the seven checks of
 `replay_form` and `glue_fetched` (chapter 23) plus `shorter_form` (chapter
-27) and `descends`; the "only if" is that each check refuses with its named
+27) and the deflation read per lane; the "only if" is that each check refuses with its named
 constant (chapter 34.1) and a refused form is neither installed nor taught;
 the "if" is `home_install` followed by the syllabus (chapter 26) and
 promotion (T12). The cold-boot traces of chapter 40 are the instances the
@@ -5242,7 +5263,7 @@ auditor reproduces.
 - Unfolding terminates by a strictly monotone integer measure (3.4); orbit
   by an integer ring count bounded by the frame (3.5).
 - Retirement terminates because tape length is a natural number (T10).
-- Pressure terminates because μ⃗-dominance is well-founded (T9).
+- Pressure terminates by budget and closure (T9).
 - Cover repair terminates because each retraction removes a chart from a
   finite set (14.8).
 - Mayer–Vietoris over `N` hyphae terminates in `N − 1` steps and is
@@ -5292,26 +5313,26 @@ invariants, not group elements. Code: `ClassVector::read`, `key`,
 is certified iff (i) `κ_x' = 0`; (ii) `κ_y' = κ_y` for every `y ≠ x`,
 unchanged, since `≤` is undefined on `Z/4` or a partition; (iii) `rank'`
 equals `rank` or moves exactly one unit from torsion, free or off-plane
-into axes (A18); (iv) `μ⃗' ⪯ μ⃗` lane-wise on every pair of the bundle, no
-lane rises, strictness not required. Every clause is decided exactly and
-replays on the court from the certificate (A20). T14 is the corollary
-that a move changes exactly its axis. Code: `pivot_loop`, `Rank::admits`,
-`economy::descends`, `PivotCertificate`. Proof:
+into axes (A18); (iv) on every pair of the bundle no lane rises, read per
+lane (`lane_moves` with no `Rose`), strictness not required and no descent
+asked. Every clause is decided exactly and replays on the court from the
+certificate (A20). T14 is the corollary that a move changes exactly its
+axis. Code: `pivot_loop`, `Rank::moved`, `economy::lane_moves`,
+`PivotCertificate`. Proof:
 `pivot_discharges_only_its_axis_and_raises_none`,
 `pivot_certificate_replays_or_refuses`, `rank_lost_refused`.
 
-**T22 The vortex is two certified discharges neither of which dominates.**
-If two trials on one loop are both certified by T21 and their measured
-`μ⃗` are incomparable or equal, the loop is a vortex: both are held as cells
-of the thought with their certificates, no scalar selects, and the vortex
-collapses only when a perception adds a face one candidate predicted, a
+**T22 The vortex is two certified discharges.** If two trials on one loop
+are both certified by T21, the loop is a vortex: both are held as cells of
+the thought with their certificates, no scalar and no reading of `μ⃗`
+selects between them, and the vortex collapses only when a perception adds a face one candidate predicted, a
 glued or taught form's class equals one candidate's `after`, or a court
 ruling installs one. A trial that does not discharge is not applied and is
 not a vortex; a remainder the mind did not reduce is a thought (24.3), not
 a vortex; nothing searches and nothing terminates a search. Code:
 `select_discharge`, `Discharge::Vortex`, `Contemplation` cells. Proof:
 `pivot_loop_discharges_held_word_and_vortices_a_pair`,
-`vortex_collapses_by_glue_or_ruling`, `equal_mu_neither_dominates`.
+`vortex_collapses_by_glue_or_ruling`, `two_certified_discharges_are_a_vortex` (S9.3 renames it from `equal_mu_neither_dominates`).
 
 **T23 The quotient carries the refraction.** For a trial transport `Γ` on
 a pair `(I, O)` with `R = residual_of(Γ·I, O)`, the element deposited in
@@ -5319,7 +5340,7 @@ the contemplation, uttered, and docketed is `Refraction { pair, remainder:
 R, transport: Γ }`, never `R` alone. `Transport::inverse(Γ).refract` reads
 `R` in `I`'s frame with the closed part identity, and the next trial acts
 on that; the court, given `(R, Γ)` and `I`, re-derives `Γ·I` and `R`
-exactly and rules graded descent on them. Without `Γ` the remainder
+exactly and reads their closure per lane. Without `Γ` the remainder
 re-enters at the identity frame as a new scene, the faces already walked
 are re-derived, and no partial closure can be replayed. Code:
 `Refraction`, `Transport::refract`, `hold_form`, `speak_form`,
@@ -5340,22 +5361,16 @@ obstruction. Code: `Complex::delta2`, `cocycle_at`, `refine_chart`. Proof:
 `delta2_of_refractions_is_the_triple_product`,
 `nontrivial_delta2_files_a_class2`.
 
-**T25 Metabolic termination is polytonic.** Every minted deflation lowers
-`μ⃗` in the product order on `ℕ⁴`, which is well-founded, so every minted
-chain is finite; every trial spends a `Budget` on the lanes it occupies,
-so every stroke terminates; a stroke whose outcome is zero on every lane
-spends the tick. A vortex and a held thought are states, not
-non-termination. No clause compares lanes with each other or with a
-constant. Code: `Physics::stroke`, `Budget::spend`, `descends`,
-`StrokeOutcome::dormant`. Proof: `descends_is_well_founded`, the
-enumeration gate (every loop spends or walks a boundary),
+**T25 Metabolic termination is polytonic.** Every trial spends a `Budget`
+on the lanes it occupies, so every stroke terminates; a stroke whose
+outcome is zero on every lane spends the tick; a minted deflation closes a
+remainder and a closed remainder is not minted again (idempotence by
+receipt, 23.8), so no chain of mints is infinite. A vortex and a held
+thought are states, not non-termination. No clause compares lanes with
+each other or with a constant, and no order on `μ⃗` is invoked. Code:
+`Physics::stroke`, `Budget::spend`, `StrokeOutcome`, `lane_moves`. Proof:
+the enumeration gate (every loop spends or walks a boundary),
 `stroke_terminates_on_zero_outcome`.
-
-(The termination clauses above that read `descends` are superseded by the
-ruling of 12.6: after Stage 9 nothing is certified by a lane falling, a
-loop is bounded by its `Budget` or its boundary, and closure is checked
-by replay. The theorems keep their names; their proofs are the budget and
-the closure.)
 
 ### 42.6 Scale: four covers, one product (ruled 2026-09-08)
 
@@ -5409,10 +5424,11 @@ No angles: a rotation is a rotor with rational (or, in the tower,
 cyclotomic) coordinates, and its angle is never formed. No norms or roots
 beyond `rational_sqrt`, which refuses when inexact. No limits, series, or
 derivatives: unfolding terminates by an integer measure, orbit by an integer
-ring count, replay by finite products, descent by a `Budget`. No
+ring count, replay by finite products, every stroke by a `Budget`. No
 probability: superposition is a set of cells, resolved by fill or class.
 No scoring: nothing is compared except by `projective_eq`, `same_form`,
-`is_identity`, class keys, and `descends`. No spectral sequence: the N-fold
+`is_identity`, class keys, and the per-lane reading `lane_moves`, which
+returns each lane's move and never a verdict. No spectral sequence: the N-fold
 cover is handled by iterated pairwise Mayer–Vietoris, order independent
 (13.7), and Leray's theorem is proved by that induction along the link. No
 homotopy beyond the acyclicity of an overlap, decided by a component count
@@ -5420,7 +5436,8 @@ and a tree walk; the one contractibility used is that a single face has
 trivial `H¹` and constant `H⁰`. No abelianization off the sensor plane:
 rotor coefficients use the pointed-set sequence and descent only, and
 degree 2 is read on the plane or recorded as remainder. No metric on
-classes: a class key is an exact hash of conjugation invariants. No
+classes: a class key is the conjugation invariants written out (A21),
+compared coordinatewise and never as a digest. No
 "good enough" covers: an overlap is good or the cover is changed until it
 is, every retraction decided by `home`. No consensus, voting, or scoring
 between nodes: exactness is the reason two nodes agree, and
