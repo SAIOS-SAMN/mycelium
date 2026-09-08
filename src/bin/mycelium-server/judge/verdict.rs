@@ -16,12 +16,19 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         return;
     };
     let (a0, a1) = (addr.as_bytes()[0], addr.as_bytes()[1]);
+    let say = |s: &mut TcpStream, r: dialogue::Ruled| {
+        if let dialogue::Ruled::Refused(why) = &r {
+            eprintln!(
+                "  court verdict refused {a0:02x}{a1:02x}… from {:02x}{:02x}…: {}",
+                cvoice[0],
+                cvoice[1],
+                String::from_utf8_lossy(why)
+            );
+        }
+        answer(s, Frame { lane: frame.lane, body: dialogue::encode_ruled(&r) });
+    };
     let refuse = |s: &mut TcpStream, why: &str| {
-        eprintln!(
-            "  court verdict refused {a0:02x}{a1:02x}… from {:02x}{:02x}…: {why}",
-            cvoice[0], cvoice[1]
-        );
-        answer(s, Frame { lane: frame.lane, body: vec![0] });
+        say(s, dialogue::Ruled::Refused(why.as_bytes().to_vec()))
     };
     // 47.2, IN FOUR STEPS, BEFORE ANY CARRIER IS TOUCHED. A verdict slashes
     // words, rebinds selections and moves this court's head, so the frame is
@@ -31,8 +38,11 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         Ok(o) => *o,
         Err(_) => None,
     };
+    // A node that has adopted no origin has none equal to the frame's, which
+    // is 47.2 step 1 exactly: REFUSE_ORIGIN, not a sentence of my own. §2.4
+    // takes its refusals from 34.1 and this one is already there.
     let Some(origin) = origin else {
-        refuse(s, "this node has adopted no origin");
+        refuse(s, mycelium::verdict::REFUSE_ORIGIN);
         return;
     };
     // Steps 1 and 2: the origin is ours and the signature verifies over
@@ -71,42 +81,90 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // that same gap from its genesis, which is the chapter's answer to a key
     // this mesh has not seen — never a refusal for being unknown, since
     // identities are free and room is what admits (47.3).
-    let admitted = match door.kernel.lock() {
-        Ok(mut k) => k.admit_receipt(origin, &section.prefix, &section.receipt),
-        Err(_) => {
-            refuse(s, "the court is not readable");
-            return;
-        }
+    // A court that cannot be read has judged nothing. That is not a refusal
+    // of the frame and there is no 34.1 constant for it: nothing is written,
+    // and the caller reads silence as it already reads an unreachable peer.
+    let Ok(mut k) = door.kernel.lock() else {
+        eprintln!("  court verdict unread {a0:02x}{a1:02x}…: the court is not readable");
+        return;
     };
+    let admitted = k.admit_receipt(origin, &section.prefix, &section.receipt);
+    use mycelium::court::admission::Admitted;
     match &admitted {
-        mycelium::court::admission::Admitted::Parent(_) => {}
-        mycelium::court::admission::Admitted::Gap { vk, from, to } => {
+        Admitted::Parent(_) => {}
+        // A GAP IS NOT A REFUSAL. The back-fill fetches what makes the chain
+        // close, and nothing is applied until it does (47.2 step 3). The
+        // reply names the span so the sender can send it.
+        //
+        // WHAT IS STILL OWED: step 3 also says "the frame is docketed as a
+        // pending citation is, the missing receipts are fetched from the
+        // signer or any peer holding them". This receiver dockets nothing
+        // and fetches nothing, so the span it asks for has no local entry
+        // waiting to close against it. Recorded, not papered over.
+        Admitted::Gap { vk, from, to } => {
             eprintln!("  court receipt gap {:02x}{:02x}… {from}→{to} backfill", vk[0], vk[1]);
-            answer(s, Frame { lane: frame.lane, body: vec![0] });
+            drop(k);
+            say(s, dialogue::Ruled::Gap { from: *from, to: *to });
             return;
         }
-        other => {
-            refuse(s, other.reason().unwrap_or(mycelium::verdict::REFUSE_RECEIPT));
+        // Every remaining arm named, so no catch-all reaches for a reason
+        // that is not there. `reason()` is None on Parent and Gap alone,
+        // and both are above; `unwrap_or(REFUSE_RECEIPT)` invented a cause
+        // for an arm it could never see (rule 11, checklist (i)).
+        Admitted::Stale => {
+            drop(k);
+            refuse(s, mycelium::verdict::REFUSE_RECEIPT_STALE);
+            return;
+        }
+        Admitted::Equivocation { .. } => {
+            drop(k);
+            refuse(s, mycelium::verdict::REFUSE_EQUIVOCATION);
+            return;
+        }
+        Admitted::Refused(why) => {
+            let why = *why;
+            drop(k);
+            refuse(s, why);
             return;
         }
     }
-    let applied = {
-        let mut k = door.kernel.lock().unwrap();
-        k.set_court_head(receipt);
-        k.set_court_voice(cvoice);
-        match ruling {
-            dialogue::RULING_REBIND => match pi {
-                Some(term) => k.apply_rebind(&addr, term),
-                None => false,
-            },
-            dialogue::RULING_ATTACHED => match attach {
-                Some((base, g)) => k.apply_attach(&addr, &base, &g) > 0,
-                None => false,
-            },
-            _ => k.apply_verdict(&addr, ruling),
+    k.set_court_head(receipt);
+    k.set_court_voice(cvoice);
+    // ONE ARM, ONE READING. This folded three unrelated readings into one
+    // bool — `apply_rebind`'s, `apply_attach(..) > 0` (a count deciding a
+    // branch, checklist (b)), and `apply_verdict`'s — and answered `false`
+    // alike for "the act named RULING_REBIND and carried no selection" and
+    // "the rebind did not take". A ruling that names a payload it did not
+    // bring is a malformed act and is refused; a ruling that found nothing
+    // to move is inert.
+    let ruled = match (ruling, pi, attach) {
+        (dialogue::RULING_REBIND, Some(term), _) => match k.apply_rebind(&addr, term) {
+            true => dialogue::Ruled::Applied,
+            false => dialogue::Ruled::Inert,
+        },
+        (dialogue::RULING_REBIND, None, _) => {
+            drop(k);
+            refuse(s, mycelium::verdict::REFUSE_FORM_TAPE);
+            return;
         }
+        (dialogue::RULING_ATTACHED, _, Some((base, g))) => {
+            match k.apply_attach(&addr, &base, &g) {
+                0 => dialogue::Ruled::Inert,
+                _ => dialogue::Ruled::Applied,
+            }
+        }
+        (dialogue::RULING_ATTACHED, _, None) => {
+            drop(k);
+            refuse(s, mycelium::verdict::REFUSE_FORM_TAPE);
+            return;
+        }
+        _ => match k.apply_verdict(&addr, ruling) {
+            true => dialogue::Ruled::Applied,
+            false => dialogue::Ruled::Inert,
+        },
     };
-    let held = door.kernel.lock().map(|k| k.word_at(&addr).is_some()).unwrap_or(false);
+    let held = k.word_at(&addr).is_some();
+    drop(k);
     if held
         && matches!(
             ruling,
@@ -117,6 +175,5 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
             syllabus_admit(&mut sy, [addr]);
         }
     }
-    let reply = Frame { lane: frame.lane, body: vec![applied as u8] };
-    answer(s, reply);
+    say(s, ruled);
 }

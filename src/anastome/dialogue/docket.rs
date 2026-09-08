@@ -433,6 +433,45 @@ pub fn decode_verdict(body: &[u8]) -> Option<Verdict> {
     Some(Verdict { voice, addr, ruling, receipt, pi, attach, section })
 }
 
+/// The receiver's answer to a ruling: `[arm u8][payload]` — `0` applied,
+/// `1` inert, `2` refused with `len16 + reason`, `3` gap with two `u64`.
+/// It was one byte carrying a bool.
+pub fn encode_ruled(r: &Ruled) -> Vec<u8> {
+    let mut out = Vec::new();
+    match r {
+        Ruled::Applied => out.push(0),
+        Ruled::Inert => out.push(1),
+        Ruled::Refused(why) => {
+            out.push(2);
+            out.extend_from_slice(&(why.len() as u16).to_le_bytes());
+            out.extend_from_slice(why);
+        }
+        Ruled::Gap { from, to } => {
+            out.push(3);
+            out.extend_from_slice(&from.to_le_bytes());
+            out.extend_from_slice(&to.to_le_bytes());
+        }
+    }
+    out
+}
+
+pub fn decode_ruled(body: &[u8]) -> Option<Ruled> {
+    match *body.first()? {
+        0 => Some(Ruled::Applied),
+        1 => Some(Ruled::Inert),
+        2 => {
+            let n = u16::from_le_bytes(body.get(1..3)?.try_into().ok()?) as usize;
+            Some(Ruled::Refused(body.get(3..3 + n)?.to_vec()))
+        }
+        3 => Some(Ruled::Gap {
+            from: u64::from_le_bytes(body.get(1..9)?.try_into().ok()?),
+            to: u64::from_le_bytes(body.get(9..17)?.try_into().ok()?),
+        }),
+        // An arm the layout does not define is refused, never guessed at.
+        _ => None,
+    }
+}
+
 pub fn encode_teach(element_bytes: &[u8]) -> Vec<u8> {
     let mut out = vec![ACT_TEACH];
     out.extend_from_slice(&(element_bytes.len() as u32).to_le_bytes());

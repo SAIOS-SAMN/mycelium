@@ -280,6 +280,33 @@ impl Witnessed {
     }
 }
 
+/// WHAT A RULING DID AT A RECEIVER (42, 47.2). Four arms, and the ruling
+/// court must be able to tell them apart.
+///
+/// It was one byte, `vec![applied as u8]`, and every distinguishable
+/// outcome answered `0`: a node on another mesh, a signature that did not
+/// verify, a prefix naming another address, a poisoned lock, a chain GAP,
+/// a stale frame, an equivocation, and a ruling that simply found nothing
+/// to move. A gap means "send me the back-fill"; an equivocation is 47.4's
+/// burn proof, the mesh's only bond-slashing evidence; `REFUSE_ORIGIN`
+/// means "you are on another mesh". All three read identically to "your
+/// ruling did not land", so the sender's only recovery was blind retry and
+/// equivocation proofs died silently at the door (MU-STANDARDS §2.3: "every
+/// caller that needs to act recomputes what the bit threw away").
+pub enum Ruled {
+    /// The ruling landed and this court's book moved.
+    Applied,
+    /// Admitted under 47.2, and the arm found nothing to move: the word is
+    /// not held here, or it was ruled already.
+    Inert,
+    /// 47.2 refused the frame, naming the 34.1 constant it refused with.
+    Refused(Vec<u8>),
+    /// 47.2 step 3: this receiver's knowledge of the signer's chain has a
+    /// gap, and it is asking for the receipts between `from` and `to`. Not
+    /// a refusal — "the back-fill fetches what makes it re-derive".
+    Gap { from: u64, to: u64 },
+}
+
 /// AN INSTALLED word, carrying both hyphae's signatures.
 pub struct Installed {
     /// The word's address.
