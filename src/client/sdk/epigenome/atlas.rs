@@ -115,16 +115,34 @@ impl Epigenome {
         std::mem::take(&mut self.promoted)
     }
 
+    /// The dialect entry at this form's address, WHEN IT IS THIS VERTEX.
+    ///
+    /// The name says `same_vertex` and the re-derivation that proves it
+    /// stood in a `debug_assert!`, which is nothing in a release build: in
+    /// the build the mesh runs, this answered "yes, the same vertex" on
+    /// nothing but an address match. Law 2 is that identity is CONTENT and
+    /// an address is a coordinate on it; `same_vertex` is M1's own
+    /// re-derivation and `element/vertex.rs` says beside it that two forms
+    /// agreeing on an address and not on a vertex is the case it exists
+    /// for. A caller then took a held word for the one it was holding.
     pub(crate) fn same_vertex_in_dialect(&self, e: &Element) -> Option<Vec<u8>> {
         let addr = e.address();
         let d = self.dialect.get(addr.as_bytes())?;
-        debug_assert!(d.sentence.same_vertex(e));
+        if !d.sentence.same_vertex(e) {
+            return None;
+        }
         Some(addr.into_vec())
     }
 
+    /// The genome slot at this form's address, WHEN IT IS THIS VERTEX.
+    /// The same debug-only re-derivation, and the index can also LAG the
+    /// carrier: a slot that names a word the genome has since moved is not
+    /// a smaller answer, it is no answer (rule 11).
     pub(crate) fn same_vertex_in_genome(&self, e: &Element) -> Option<usize> {
         let i = self.index.get(&e.address()).copied()?;
-        debug_assert!(self.genome.get(i).is_some_and(|w| w.same_vertex(e)));
+        if !self.genome.get(i).is_some_and(|w| w.same_vertex(e)) {
+            return None;
+        }
         Some(i)
     }
 

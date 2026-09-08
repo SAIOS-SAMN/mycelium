@@ -175,7 +175,18 @@ impl Kernel {
                         self.physics.bump(&mag);
                         return Outcome::GermPending;
                     };
-                    debug_assert_eq!(element::positions(held.sub()), element::positions(&centered));
+                    // THE BASE POSITIONS ARE RE-DERIVED, NOT ASSERTED. The
+                    // section address below is computed against `held`'s
+                    // base, so a word the footprint index named that does
+                    // NOT sit on those positions puts the section at an
+                    // address that is not its own (law 2). This stood in a
+                    // `debug_assert_eq!`, which is nothing in the release
+                    // build the mesh runs. It holds, as the two arms
+                    // around it do.
+                    if element::positions(held.sub()) != element::positions(&centered) {
+                        self.physics.bump(&mag);
+                        return Outcome::GermPending;
+                    }
                     // The slot names this word in the language snapshot or
                     // the snapshot lags the carrier; 0 is another word.
                     let Some(ti) = self.live_slot(&taddr) else {
@@ -450,10 +461,21 @@ impl Kernel {
         if let Some(k) = action_index_key(&s) {
             if let Some(addr) = self.by_action.get(&k) {
                 if exclude.map(|e| e == addr.as_bytes()) != Some(true) {
+                    // THE ACTION IS RE-DERIVED, NOT ASSERTED. `by_action`
+                    // is an index and the terminal it names must carry the
+                    // action being decomposed; `same_action` is that
+                    // re-derivation and it stood in a `debug_assert!`,
+                    // which the release build the mesh runs does not
+                    // perform. A stale or colliding index therefore ended
+                    // the decomposition at a word that does not speak the
+                    // substance, and the reduction reported Decomposed on
+                    // it (law 2). Where it does not hold there is no
+                    // terminal here, and the general path below runs.
                     if let Some(held) = self.basis.get(addr) {
-                        debug_assert!(held.substance().same_action(&s));
-                        if let Some(i) = self.live_slot(addr) {
-                            return NormalForm::Decomposed(vec![i]);
+                        if held.substance().same_action(&s) {
+                            if let Some(i) = self.live_slot(addr) {
+                                return NormalForm::Decomposed(vec![i]);
+                            }
                         }
                     }
                 }
