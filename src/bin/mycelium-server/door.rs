@@ -260,11 +260,23 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
     }
     if kind == dialogue::ACT_GENESIS {
         let Some((_gvoice, cursor)) = dialogue::decode_genesis_request(&frame.body) else { return true };
+        // A genesis page is a stroke's worth of basis from the cursor, read
+        // as a slice and not walked to it. The size was a sum of the four
+        // reserve lanes clamped at eight (law 5, rule 5); `skip(cursor)`
+        // walked every word before the cursor to reach it.
         let words: Vec<Vec<u8>> = {
-            let k = door.kernel.lock().unwrap();
-            let free: u64 = k.physics().reserve.iter().sum();
-            let depth = (1 + (free as usize * 7) / (4 * mycelium::physics::reserve_max() as usize)).min(8);
-            k.basis().iter().skip(cursor as usize).take(depth).map(|w| w.to_bytes()).collect()
+            let Ok(k) = door.kernel.lock() else { return true };
+            let mut budget = mycelium::physics::Physics::default().stroke();
+            let mut out = Vec::new();
+            if let Some(rest) = k.basis().get(cursor as usize..) {
+                for w in rest {
+                    if !budget.spend() {
+                        break;
+                    }
+                    out.push(w.to_bytes());
+                }
+            }
+            out
         };
         let reply = Frame { lane: frame.lane, body: dialogue::encode_syllabus_reply(&words) };
         answer(s, reply);
@@ -282,19 +294,20 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // words) per request per peer, allocated and copied while the
         // syllabus lock is held. The window is taken under the lock, from
         // the cursor, by a slice read that is O(depth) and not O(cursor).
-        let (seed, depth) = match door.kernel.lock() {
-            Ok(k) => {
-                let free: u64 = k.physics().reserve.iter().sum();
-                let d = (1 + (free as usize * 7) / (4 * mycelium::physics::reserve_max() as usize))
-                    .min(8);
-                (k.syllabus_seed(), d)
-            }
+        // THE PAGE IS WHAT A STROKE AFFORDS. Its size was
+        // `(1 + (free * 7) / (4 * reserve_max)).min(8)` over
+        // `free = reserve.iter().sum()`: law 5's "μ⃗ is never summed … or
+        // reduced to a scalar" in one expression, and rule 5's own named
+        // example, `depth.min(8)`, on the result.
+        let seed = match door.kernel.lock() {
+            Ok(k) => k.syllabus_seed(),
             Err(_) => return true,
         };
+        let mut budget = mycelium::physics::Physics::default().stroke();
         let (cursor, page) = {
             let Ok(mut sy) = door.syllabus.lock() else { return true };
             syllabus_admit(&mut sy, seed);
-            syllabus_page(&mut sy, &svoice, depth)
+            syllabus_page(&mut sy, &svoice, &mut budget)
         };
         let (words, classes, served_addrs) = {
             let Ok(k) = door.kernel.lock() else { return true };
@@ -330,16 +343,28 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 addr[0], addr[1], svoice[0], svoice[1]
             );
         }
+        // An address whose word this court no longer holds is re-queued
+        // behind the cursor, once. This rebuilt the whole tail index INSIDE
+        // the loop, one full walk of the order per missed address —
+        // O(missed × order) where O(order) already stands (rule 10). The
+        // index is built once, and the `.unwrap()`s with it (§2.4).
         if !missed.is_empty() {
-            let mut sy = door.syllabus.lock().unwrap();
-            let ahead = *sy.served.get(&svoice).unwrap_or(&0);
-            for addr in missed {
+            if let Ok(mut sy) = door.syllabus.lock() {
+                let ahead = match sy.served.get(&svoice) {
+                    Some(&n) => n,
+                    None => 0,
+                };
                 let mut tail: Keyed<()> = Keyed::new();
-                for a in sy.order.get(ahead..).unwrap_or(&[]) {
-                    tail.insert(a, ());
+                if let Some(rest) = sy.order.get(ahead..) {
+                    for a in rest {
+                        tail.insert(a, ());
+                    }
                 }
-                if !tail.contains(&addr) {
-                    sy.order.push(addr);
+                for addr in missed {
+                    if !tail.contains(&addr) {
+                        tail.insert(&addr, ());
+                        sy.order.push(addr);
+                    }
                 }
             }
         }

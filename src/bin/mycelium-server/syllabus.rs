@@ -24,21 +24,29 @@ pub(crate) fn syllabus_admit(sy: &mut Syllabus, addrs: impl IntoIterator<Item = 
     }
 }
 
-/// ONE PAGE FOR ONE VOICE: the `depth` addresses standing after that
-/// voice's cursor, and the cursor they start at. A voice with no cursor
-/// starts at the beginning of the order.
+/// ONE PAGE FOR ONE VOICE: the addresses standing after that voice's
+/// cursor that this stroke's `Budget` affords, and the cursor they start
+/// at. A voice with no cursor starts at the beginning of the order.
 ///
 /// The door read this by cloning `sy.order` — every address the court has
-/// ever ruled — out of the lock and then walking a window of at most
-/// `depth` entries from it. Checklist (j) refuses "any `clone()` of a
-/// carrier into two places", and on a mesh of ten thousand polling peers
-/// the cost was O(ruled words) per request per peer, copied while the
-/// syllabus lock was held, to read at most eight. The window is a slice
-/// read from the cursor: O(depth), and it never materialises the book.
+/// ever ruled — out of the lock and then walking a window from it.
+/// Checklist (j) refuses "any `clone()` of a carrier into two places", and
+/// on a mesh of ten thousand polling peers the cost was O(ruled words) per
+/// request per peer, copied while the syllabus lock was held. The window
+/// is a slice read from the cursor: O(page), never O(cursor) and never
+/// O(order).
+///
+/// THE PAGE IS WHAT A STROKE AFFORDS. Its size was
+/// `(1 + (free * 7) / (4 * reserve_max)).min(8)` with
+/// `free = reserve.iter().sum()` — law 5's "μ⃗ is never summed … or
+/// reduced to a scalar" in one expression, and then rule 5's own named
+/// example, `depth.min(8)`, on the result. What the court can afford to do
+/// in one stroke is a `Budget`, which is the doctrine's measure of exactly
+/// that (rule 10), so the page spends one and takes a word per spend.
 pub(crate) fn syllabus_page(
     sy: &mut Syllabus,
     voice: &[u8; 32],
-    depth: usize,
+    budget: &mut mycelium::physics::Budget,
 ) -> (usize, Vec<Vec<u8>>) {
     let at = match sy.served.get(voice) {
         Some(&n) => n,
@@ -47,9 +55,14 @@ pub(crate) fn syllabus_page(
             0
         }
     };
-    let page = match sy.order.get(at..) {
-        Some(rest) => rest.iter().take(depth).cloned().collect(),
-        None => Vec::new(),
-    };
+    let mut page = Vec::new();
+    if let Some(rest) = sy.order.get(at..) {
+        for addr in rest {
+            if !budget.spend() {
+                break;
+            }
+            page.push(addr.clone());
+        }
+    }
     (at, page)
 }
