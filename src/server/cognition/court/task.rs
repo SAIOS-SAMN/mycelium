@@ -23,7 +23,7 @@ impl Kernel {
     }
 
     /// The trains a rule must speak to mint at install. Empty trains are ignored.
-    pub fn bind_task_family(&mut self, task: impl AsRef<[u8]>, train: Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>) {
+    pub fn bind_task_family(&mut self, task: impl AsRef<[u8]>, train: Vec<crate::transducer::family::TrainPair>) {
         if !train.is_empty() {
             self.task_family.insert(task, train);
         }
@@ -31,7 +31,7 @@ impl Kernel {
 
     /// Speak a submitted rule onto withheld tests and compare cells exactly.
     /// The rule's cited forms resolve through this kernel's ruled cover.
-    pub fn rule_matches_tests(&self, rule: &Element, tests: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)]) -> bool {
+    pub fn rule_matches_tests(&self, rule: &Element, tests: &crate::transducer::family::Family) -> bool {
         if tests.is_empty() {
             return false;
         }
@@ -53,7 +53,7 @@ impl Kernel {
         voice: [u8; 32],
         mu: [u64; 4],
         rule: Option<&Element>,
-        tests: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
+        tests: &crate::transducer::family::Family,
     ) -> [u64; 4] {
         if let Some(rule) = rule {
             if !self.rule_matches_tests(rule, tests) {

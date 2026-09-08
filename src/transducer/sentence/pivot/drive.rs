@@ -43,7 +43,7 @@ impl Form {
         horizon: &Keyed<(Rotor, Order, Standing)>,
         crystal: &dyn Crystal,
         budget: &mut Budget,
-        bundle: Option<&[(Vec<Vec<u8>>, Vec<Vec<u8>>)]>,
+        bundle: Option<&crate::transducer::family::Family>,
         t_extent: u64,
     ) -> Vec<Snap> {
         let idea = idea.as_ref();
@@ -386,7 +386,7 @@ impl Form {
         rows: &[LoopRow],
         rank_before: Rank,
         crystal: &dyn Crystal,
-        bundle: Option<&[(Vec<Vec<u8>>, Vec<Vec<u8>>)]>,
+        bundle: Option<&crate::transducer::family::Family>,
         t_extent: u64,
         mu_before: Option<(Vec<[u64; 4]>, [u64; 4])>,
     ) -> Option<PivotCertificate> {

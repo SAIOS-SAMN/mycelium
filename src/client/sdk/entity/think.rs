@@ -37,7 +37,7 @@ impl Entity {
     pub fn hold_form(
         &mut self,
         f: &crate::transducer::sentence::Form,
-        train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
+        train: &crate::transducer::family::Family,
         remainders: &[Vec<(i64, i64, u8, u8)>],
     ) {
         self.contemplation.hold_form(f, train, remainders);
@@ -58,7 +58,7 @@ impl Entity {
     pub fn withhold_form(
         &mut self,
         f: &crate::transducer::sentence::Form,
-        train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
+        train: &crate::transducer::family::Family,
         remainders: &[Vec<(i64, i64, u8, u8)>],
         mag: [u64; 4],
     ) {

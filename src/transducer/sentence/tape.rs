@@ -462,7 +462,7 @@ pub fn from_element_form(e: &Element) -> Option<Form> {
 /// Filed torsion on a sentence tape: `Form.torsion`, keyed by class.
 /// Empty when the word is not a sentence, or when the tape is v1 and the
 /// cycles live only on the element's residual section.
-pub fn form_torsion(e: &Element) -> Keyed<(Vec<(u8, u8)>, u32, u16)> {
+pub fn form_torsion(e: &Element) -> Keyed<crate::transducer::element::TorsionCycle> {
     match e.form() {
         Some(f) => f.torsion.clone(),
         None => Keyed::new(),

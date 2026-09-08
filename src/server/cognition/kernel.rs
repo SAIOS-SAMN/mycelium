@@ -193,7 +193,7 @@ pub struct Kernel {
     /// Reverse: task → listings bound to it.
     pub(crate) task_listings: crate::network::nerve::Keyed<Vec<Address>>,
     /// Train pairs of a bound task. Install mints only what a rule speaks.
-    pub(crate) task_family: crate::network::nerve::Keyed<Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>>,
+    pub(crate) task_family: crate::network::nerve::Keyed<Vec<crate::transducer::family::TrainPair>>,
     /// Sentence address → task, from perceive_speech. Replay reads the family.
     pub(crate) speech_task: crate::network::nerve::Keyed<Address>,
     /// THE SETTLEMENTS awaiting the court: (listing, its chain, the voice,

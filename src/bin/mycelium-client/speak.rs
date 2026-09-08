@@ -31,7 +31,7 @@ pub(crate) fn speak_form(
     entity: &mut Entity,
     tag: &str,
     rule: &mycelium::transducer::sentence::SentenceRule,
-    train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
+    train: &mycelium::transducer::family::Family,
     family: &[u8],
 ) -> bool {
     use mycelium::transducer::alphabet::Rotor;
@@ -104,7 +104,7 @@ pub(crate) fn speak_form(
 pub(crate) fn withhold_unextracted(
     entity: &mut Entity,
     tag: &str,
-    train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
+    train: &mycelium::transducer::family::Family,
     family: &[u8],
 ) {
     let fam = format!("{:02x}{:02x}…", family[0], family[1]);

@@ -118,7 +118,7 @@ pub struct Form {
     pub certificates: Keyed<PivotCertificate>,
     /// Filed torsion cycles, keyed by class key: `(σ, ℓ, chord face)`.
     /// The form owns this carrier; the element reads it whole.
-    pub torsion: Keyed<(Vec<(u8, u8)>, u32, u16)>,
+    pub torsion: Keyed<crate::transducer::element::TorsionCycle>,
     /// Cited form address → glued vertex index. Written by [`Form::glue`]
     /// and rebuilt by the decoder from Glued vertices.
     pub glued: Keyed<u16>,

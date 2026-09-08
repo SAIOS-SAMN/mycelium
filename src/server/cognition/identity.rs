@@ -58,7 +58,7 @@ impl Kernel {
     /// Descent a rule measures by speaking every train pair, its cited
     /// forms resolved through this kernel's ruled cover. Any miss is zero:
     /// association with a listing is not a mint.
-    pub(crate) fn measured_replay_descent(&self, form: &Element, family: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)]) -> [u64; 4] {
+    pub(crate) fn measured_replay_descent(&self, form: &Element, family: &crate::transducer::family::Family) -> [u64; 4] {
         if let Some(f) = crate::transducer::sentence::from_element_form(form) {
             return crate::transducer::family::form_descent(&f, family, self).0;
         }

@@ -22,7 +22,7 @@ pub fn decode_task_request(body: &[u8]) -> Option<[u8; 32]> {
 /// SOLVE; the held answers never ride the wire. An empty body = no work.
 pub fn encode_task_envelope(
     id: impl AsRef<[u8]>,
-    train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
+    train: &crate::transducer::family::Family,
     tests: &[Vec<Vec<u8>>],
 ) -> Vec<u8> {
     let mut out = Vec::new();
@@ -39,7 +39,7 @@ pub fn encode_task_envelope(
     out
 }
 
-pub type TaskEnvelope = (Address, Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>, Vec<Vec<Vec<u8>>>);
+pub type TaskEnvelope = (Address, Vec<crate::transducer::family::TrainPair>, Vec<Vec<Vec<u8>>>);
 
 pub fn decode_task_envelope(body: &[u8]) -> Option<TaskEnvelope> {
     let mut p = 0usize;

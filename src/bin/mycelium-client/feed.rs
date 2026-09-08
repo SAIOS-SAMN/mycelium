@@ -85,7 +85,7 @@ impl Feed {
     }
 }
 
-pub(crate) fn family_magnitude(train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)]) -> [u64; 4] {
+pub(crate) fn family_magnitude(train: &mycelium::transducer::family::Family) -> [u64; 4] {
     let mut mag = [0u64; 4];
     for (x, y) in train {
         let (ho, wo) = (y.len(), y.first().map_or(0, |r| r.len()));

@@ -225,7 +225,7 @@ impl Contemplation {
     pub fn hold_form(
         &mut self,
         f: &Form,
-        train: &[(Vec<Vec<u8>>, Vec<Vec<u8>>)],
+        train: &crate::transducer::family::Family,
         remainders: &[Vec<RemCell>],
     ) {
         if f.vertices.len() <= 1

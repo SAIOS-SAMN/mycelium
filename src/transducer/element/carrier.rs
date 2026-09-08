@@ -20,6 +20,14 @@ pub const FIBER_GERMINATED: u16 = 4;
 /// Hue states on the gauge (ARC palette 0..9; 0 = absent).
 pub const PALETTE: usize = 10;
 
+/// ONE TORSION CYCLE of a punctured axis: the hue-map generator, the period
+/// it closes at, and the fibre it lives on (18.3).
+pub type TorsionCycle = (Vec<(u8, u8)>, u32, u16);
+
+/// ONE TRANSITION of the connection: the assignment a sibling was observed
+/// under, the versor that carried it into this frame, and the fibre.
+pub type Transition = (Vec<(u8, u8)>, Versor, u16);
+
 /// The four strata of a word's action. S is one versor; G a hue permutation;
 /// T an extent in receipts; H the shell coordinates. Germinated axes are
 /// further versors. Nothing here is a matrix.
@@ -68,7 +76,7 @@ pub struct Element {
     /// and a CLOSED cycle (σ^ℓ = id on its support) speaks orbit members never
     /// individually witnessed: capacity earned by exact structure. The fiber is
     /// thus ℤ^r ⊕ ⊕ᵢ ℤ/tᵢ — free sections ⊕ torsion cycles.
-    pub(crate) torsion: Vec<(Vec<(u8, u8)>, u32, u16)>,
+    pub(crate) torsion: Vec<TorsionCycle>,
     /// THE ANCHOR FIBER (Step 7) — γ = (π_anchor, Δ_substance): the recursive
     /// selection term restricting WHERE this word's substance applies on a
     /// scene. None = ⊤, the unconstrained carrier (pure topological actions,
@@ -81,7 +89,7 @@ pub struct Element {
     /// set of V reached for one assignment is its holonomy. Vec-of-relations;
     /// excluded from the address (a connection deepens the thought, it does
     /// not rename it).
-    pub(crate) transitions: Vec<(Vec<(u8, u8)>, Versor, u16)>,
+    pub(crate) transitions: Vec<Transition>,
     /// The memoized address — a measurement of the tape and the action,
     /// taken once and cleared wherever the base mutates. Never serialized.
     pub(crate) address: std::sync::OnceLock<crate::transducer::a21::Address>,
@@ -236,13 +244,13 @@ impl Element {
     }
 
     /// The torsion cycles of the axis: `(generator σ, period ℓ)` each.
-    pub fn torsion(&self) -> &[(Vec<(u8, u8)>, u32, u16)] {
+    pub fn torsion(&self) -> &[TorsionCycle] {
         &self.torsion
     }
 
     /// The connection: every (assignment, g) under which a sibling was
     /// transported into this frame.
-    pub fn transitions(&self) -> &[(Vec<(u8, u8)>, Versor, u16)] {
+    pub fn transitions(&self) -> &[Transition] {
         &self.transitions
     }
 
@@ -268,7 +276,7 @@ impl Element {
 
     /// Take a form's (or nerve's) torsion carrier whole. The element's
     /// torsion is that carrier, not a second list re-recorded cycle by cycle.
-    pub fn adopt_torsion(&mut self, torsion: &crate::network::nerve::Keyed<(Vec<(u8, u8)>, u32, u16)>) {
+    pub fn adopt_torsion(&mut self, torsion: &crate::network::nerve::Keyed<TorsionCycle>) {
         self.torsion.clear();
         for (_, (sigma, ell, _)) in torsion.fiber(crate::network::nerve::ROOT) {
             if *ell > 0 {

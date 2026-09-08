@@ -118,7 +118,7 @@ pub struct Bubble {
     /// Ideas that glued this bubble; a non-empty set is not shed.
     pub glued_by: Keyed<()>,
     /// Filed torsion `(σ, ℓ, chord)` keyed by class, written from `pivot_loop`.
-    pub torsion: Keyed<(Vec<(u8, u8)>, u32, u16)>,
+    pub torsion: Keyed<crate::transducer::element::TorsionCycle>,
     /// Certified discharges this idea's crystallization rests on (A20).
     pub certificates: Keyed<PivotCertificate>,
     /// Incomparable discharges held as cells (25.1) until a glue or ruling.
@@ -127,7 +127,7 @@ pub struct Bubble {
     /// The form this idea is (chapter 30 step 6).
     pub form: Option<Form>,
     /// Pairs the idea germinated from; trial speaks over them for μ⃗.
-    pub bundle: Option<Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>>,
+    pub bundle: Option<Vec<crate::transducer::family::TrainPair>>,
     /// Per-pair remainder chains, keyed by pair index. `remainder` is their union.
     pub remainders: Keyed<Vec<RemCell>>,
 }
