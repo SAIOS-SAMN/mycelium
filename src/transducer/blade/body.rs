@@ -202,7 +202,7 @@ pub fn components(cells: &[(i64, i64, u8)]) -> Vec<Vec<(i64, i64, u8)>> {
     let positions: Vec<(i64, i64)> = sorted.iter().map(|c| (c.0, c.1)).collect();
     let edges = crate::transducer::sentence::incidence_of(&positions);
     let roots = crate::transducer::sentence::components(sorted.len(), &edges);
-    let mut out: Vec<(usize, Vec<(i64, i64, u8)>)> = Vec::new();
+    let mut out: Vec<(usize, Vec<Painted>)> = Vec::new();
     for (i, cell) in sorted.into_iter().enumerate() {
         match out.iter_mut().find(|(r, _)| *r == roots[i]) {
             Some((_, comp)) => comp.push(cell),
@@ -223,7 +223,15 @@ pub fn transduce(cells: &[(i64, i64, u8)], time_index: i64) -> Vec<Blade> {
 /// edges from (r,c) to (r+1,c)), each as its start vertex. The boundary is
 /// the coboundary of the support's 2-chain; its length is a measurement of
 /// the body, not a coordinate of it.
-pub(crate) fn boundary_edges(cells: &[(i64, i64)]) -> (Vec<(i64, i64)>, Vec<(i64, i64)>) {
+/// A CELL AS THE SENSOR HANDS IT OVER: its position and the hue it carries.
+pub(crate) type Painted = (i64, i64, u8);
+
+/// THE OPEN FACES OF A BODY, each named by the cell it opens on: the
+/// horizontal edges from (r,c) to (r,c+1), then the vertical ones from
+/// (r,c) to (r+1,c). This is the coboundary of the support's 2-chain.
+pub(crate) type OpenFaces = (Vec<(i64, i64)>, Vec<(i64, i64)>);
+
+pub(crate) fn boundary_edges(cells: &[(i64, i64)]) -> OpenFaces {
     // Which of a cell's four faces are shared is read off the support's
     // 1-skeleton (sentence::incidence_of): a row edge (i, j) closes i's
     // right face and j's left face; a column edge closes i's lower face

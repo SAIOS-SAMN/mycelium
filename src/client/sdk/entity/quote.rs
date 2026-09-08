@@ -151,7 +151,7 @@ impl Entity {
         let mut dests: crate::network::nerve::Keyed<Vec<crate::transducer::stalk::Invariant>> =
             crate::network::nerve::Keyed::new();
         let mut dest_order: Vec<String> = Vec::new();
-        let bubbles: Vec<(Vec<(i64, i64, u8, u8)>, [u64; 4])> = self
+        let bubbles: Vec<Bubbled> = self
             .contemplation
             .bubbles
             .fiber(crate::network::nerve::ROOT)

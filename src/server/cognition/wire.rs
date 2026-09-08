@@ -68,12 +68,13 @@ pub fn decode_demand(body: &[u8]) -> Option<Demand> {
     Some((voice, a, b))
 }
 
+/// THE BODIES OF ONE SCENE: each a connected support with its hues. A scene
+/// is not a set of cells but the bodies the cells fall into (A1).
+pub type Bodies = Vec<Vec<(i64, i64, u8)>>;
+
 /// CLIENT PERCEPTION — segment each scene into bodies. This is the sensing act;
 /// it lives with the client, which reports the resulting percept to its hypha.
-pub fn perceive(
-    a: &[(i64, i64, u8)],
-    b: &[(i64, i64, u8)],
-) -> (Vec<Vec<(i64, i64, u8)>>, Vec<Vec<(i64, i64, u8)>>) {
+pub fn perceive(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> (Bodies, Bodies) {
     (components(a), components(b))
 }
 

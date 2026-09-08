@@ -178,7 +178,12 @@ fn read_lines(path: &Path) -> Vec<String> {
         .unwrap_or_default()
 }
 
-fn parse_genesis_text(path: &Path) -> (Vec<([u8; 32], [u64; 4])>, Vec<([u8; 32], [u64; 4])>) {
+/// THE GENESIS ALLOCATIONS of one kind: a key and the μ⃗ seeded to it. §6
+/// keeps seeded value separable from earned value, so these never enter as
+/// mints.
+type Allocations = Vec<([u8; 32], [u64; 4])>;
+
+fn parse_genesis_text(path: &Path) -> (Allocations, Allocations) {
     let mut hypha = Vec::new();
     let mut voice = Vec::new();
     for line in read_lines(path) {

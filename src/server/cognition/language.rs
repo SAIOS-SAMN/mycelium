@@ -165,13 +165,21 @@ pub struct ListingField {
     pub nonflat: u32,
 }
 
+/// ONE PRICED ITEM ON A QUOTE: the word, the μ⃗ it is priced at, and the
+/// charts it leaves open.
+pub type Priced = (crate::transducer::element::Element, [u64; 4], Vec<crate::transducer::stalk::Invariant>);
+
+/// A SELECTION CRITICAL PAIR: the index of the word that was placed and the
+/// support it was placed on.
+pub type CriticalPair = (usize, Vec<(i64, i64)>);
+
 /// A reduction computed off the lock, ready to commit: the germ, its context,
 /// the normal form over `language` (the snapshot it reduced over, so cited
 /// indices resolve to addresses at commit), and the selection critical pairs.
 pub struct Reduction {
     pub germ: Element,
     pub form: NormalForm,
-    pub qs: Vec<(usize, Vec<(i64, i64)>)>,
+    pub qs: Vec<CriticalPair>,
     pub language: std::sync::Arc<Language>,
     /// The listing this reduction settles: the address of the whole
     /// utterance's coboundary (a percept's pair, a demand's chain), where

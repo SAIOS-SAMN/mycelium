@@ -6,6 +6,13 @@
 
 use super::*;
 
+/// WHAT AN ESCROW HOLDS: the voices backing the claim, the μ⃗ funded against
+/// it, and the anchor the funding stands at.
+pub type Escrowed = (Vec<[u8; 32]>, [u64; 4], Anchor);
+
+/// An escrow read off the book, carrying the address it is filed under.
+pub type EscrowedAward = (Vec<u8>, Vec<[u8; 32]>, [u64; 4], Anchor);
+
 impl Treasury {
     /// FUND an escrow from a payer's balance — the xSEPTUM Note (§5), where
     /// a requester backs a claim with μ⃗ that already exists. The balance is
@@ -54,11 +61,11 @@ impl Treasury {
         }
     }
 
-    pub fn escrow_of(&self, addr: &[u8]) -> Option<&(Vec<[u8; 32]>, [u64; 4], Anchor)> {
+    pub fn escrow_of(&self, addr: &[u8]) -> Option<&Escrowed> {
         self.escrowed.get(addr)
     }
 
-    pub fn escrowed_awards(&self) -> Vec<(Vec<u8>, Vec<[u8; 32]>, [u64; 4], Anchor)> {
+    pub fn escrowed_awards(&self) -> Vec<EscrowedAward> {
         self.escrowed
             .fiber(crate::network::nerve::ROOT)
             .map(|(a, (v, mu, an))| (a, v.clone(), *mu, *an))

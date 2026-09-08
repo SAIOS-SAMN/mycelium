@@ -289,6 +289,14 @@ pub(crate) fn residual_descends(residual: &[(i64, i64, u8, u8)], chain: &[(i64, 
     below
 }
 
+/// ONE CONTEMPLATED BUBBLE, as the quote reads it: the remainder it holds
+/// and the volume that remainder stands at.
+pub type Bubbled = (Vec<(i64, i64, u8, u8)>, [u64; 4]);
+
+/// WHAT CITING A CHAIN YIELDS: the words it cited, and the part of the chain
+/// no held word covers.
+pub type Cited = (Vec<crate::anastome::dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>);
+
 /// WHAT CONCLUDING A LISTING RETURNS: the words it cited, the chain it could
 /// not reduce, and whether the genome already held it (24.2).
 pub type Concluded = (Vec<crate::anastome::dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>, bool);

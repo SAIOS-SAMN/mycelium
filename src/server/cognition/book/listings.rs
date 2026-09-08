@@ -9,6 +9,11 @@ use crate::cognition::*;
 use crate::transducer::a21::Address;
 use crate::transducer::element::Element;
 
+/// ONE ROW OF THE DOCKET: the address, the provisional word, the voices
+/// attesting it, the μ⃗ escrowed against it, the μ⃗ it stands priced at, and
+/// the k-step it was installed on.
+pub type Docketed = (Address, Element, Vec<[u8; 32]>, [u64; 4], [u64; 4], u64);
+
 impl Kernel {
     pub(crate) fn drain_unreachable(&mut self) {
         let kappa = crate::physics::aperture_cycle();
@@ -411,12 +416,12 @@ impl Kernel {
 
     /// THE DOCKET (Step 5): every provisional word, exported for the court's
     /// blind replay + confluence audit — (element, attesting voices, escrowed μ⃗).
-    pub fn dockets(&self) -> Vec<(Address, Element, Vec<[u8; 32]>, [u64; 4], [u64; 4], u64)> {
+    pub fn dockets(&self) -> Vec<Docketed> {
         self.dockets_since(0)
     }
 
     /// The provisional words installed past a court's "since" k-step.
-    pub fn dockets_since(&self, since_k: u64) -> Vec<(Address, Element, Vec<[u8; 32]>, [u64; 4], [u64; 4], u64)> {
+    pub fn dockets_since(&self, since_k: u64) -> Vec<Docketed> {
         self.provisional
             .fiber(crate::network::nerve::ROOT)
             .filter_map(|(addr, spoken)| {

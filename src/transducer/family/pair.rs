@@ -256,11 +256,17 @@ pub(crate) fn pair_groups(
     }
 }
 
+/// WHAT PAIRING TWO SCENES YIELDS: the candidate bodies on each side, the
+/// carriage taking one to the other for each pair that matched, and which
+/// candidates on each side were consumed. The unconsumed are the residual.
+pub(crate) type PairedScene =
+    (Vec<Cand>, Vec<Cand>, Vec<(usize, usize, Carriage)>, Vec<bool>, Vec<bool>);
+
 pub(crate) fn pair_scene(
     a: &Grid,
     b: &Grid,
     scale: Option<((usize, usize), (usize, usize))>,
-) -> (Vec<Cand>, Vec<Cand>, Vec<(usize, usize, Carriage)>, Vec<bool>, Vec<bool>) {
+) -> PairedScene {
     let ins = scene_cands(a, scale);
     let outs = scene_cands(b, scale);
     let mut used_in = vec![false; ins.len()];

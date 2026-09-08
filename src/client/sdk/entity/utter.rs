@@ -7,7 +7,7 @@
 use crate::client::sdk::*;
 
 impl Entity {
-    pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)]) -> (Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>) {
+    pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)]) -> Cited {
         // A remainder is not a citation of itself: deconstruction reads
         // other words on the working atlas, never the chain under locate.
         let self_addr = crate::transducer::element::from_residual(&chain.to_vec()).address();

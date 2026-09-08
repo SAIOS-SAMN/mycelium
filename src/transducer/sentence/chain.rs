@@ -485,7 +485,7 @@ fn body_key(body: &[Cell]) -> Option<crate::transducer::a21::Address> {
 
 fn place_located<'a>(
     out: &mut Sentence,
-    located: (Option<Cite>, Option<(usize, Versor, Vec<Cell>)>, usize),
+    located: Located,
     body: &[Cell],
     word_at: &impl Fn(usize) -> Option<&'a Element>,
     fiber_of: &impl Fn(&stalk::Invariant) -> Vec<Vec<u8>>,

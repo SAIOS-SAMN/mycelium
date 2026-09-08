@@ -163,12 +163,9 @@ pub fn quote_incidence(
     spoken: &crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     voice: &[u8; 32],
     standing_t: &crate::network::nerve::Keyed<u64>,
-) -> (
-    [u64; 4],
-    Vec<(Element, [u64; 4], Vec<crate::transducer::stalk::Invariant>)>,
-) {
+) -> ([u64; 4], Vec<Priced>) {
     let cell = crate::anastome::dialogue::cell_wire_width();
-    let mut priced: Vec<(Element, [u64; 4], Vec<crate::transducer::stalk::Invariant>)> = Vec::new();
+    let mut priced: Vec<Priced> = Vec::new();
     let mut used = 0usize;
     let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     let root_chart = crate::transducer::stalk::Invariant(Vec::new());
@@ -314,7 +311,7 @@ pub fn reduce_germ(
     language: &Language,
     _budget: (usize, usize),
     g: &Element,
-) -> (NormalForm, Vec<(usize, Vec<(i64, i64)>)>) {
+) -> (NormalForm, Vec<CriticalPair>) {
     if g.is_sentence() {
         if let Some(i) = language.at(&g.address()) {
             return (NormalForm::Decomposed(vec![i]), Vec::new());

@@ -26,8 +26,12 @@ mod wire;
 pub use crate::transducer::sentence::{cited_pattern, replay, verify, Cite};
 pub use kernel::Kernel;
 pub(crate) use keys::*;
+pub(crate) use cocycle::CocycleRow;
 pub(crate) use reduce::*;
-pub use language::{Adoption, FieldEntry, Glue, Language, ListingField, MarketView, NormalForm, Outcome, Rank, Reduction};
+pub use language::{
+    Adoption, CriticalPair, FieldEntry, Glue, Language, ListingField, MarketView, NormalForm,
+    Outcome, Priced, Rank, Reduction,
+};
 pub use reduce::{
     cohesion_over, normal_form, percept_elements, quote_incidence, rank_over, reduce_all,
     reduce_germ, reduce_proven, resolve_cites, taught_anchored_words,

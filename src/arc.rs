@@ -142,12 +142,17 @@ pub fn frame_ratio(f: &Frame) -> ((usize, usize), (usize, usize)) {
     ((ho / gh.max(1), hi / gh.max(1)), (wo / gw.max(1), wi / gw.max(1)))
 }
 
+
+/// WHAT REFINING A PAIR YIELDS: the delta between the two grids as changed
+/// cells, the refined output grid, and the frame it was read in.
+pub type Refined = (Vec<(i64, i64, u8, u8)>, Grid, Frame);
+
 /// THE CROSS-COMPLEX COBOUNDARY on the codomain: the input pulled back along
 /// ρ⁻¹ onto K_out, then the ordinary per-cell difference. Returns (chain on
 /// K_out, the pulled-back input — the scene π evaluates over, the measured
 /// frame). Total for all dims ≥ 1; equal frames yield exactly the planar
 /// delta. Support ≤ |K_out|.
-pub fn refine_delta(a: &Grid, b: &Grid) -> Option<(Vec<(i64, i64, u8, u8)>, Grid, Frame)> {
+pub fn refine_delta(a: &Grid, b: &Grid) -> Option<Refined> {
     let (hi, wi) = (a.len(), a.first().map(|r| r.len()).unwrap_or(0));
     let (ho, wo) = (b.len(), b.first().map(|r| r.len()).unwrap_or(0));
     if hi == 0 || wi == 0 || ho == 0 || wo == 0 {

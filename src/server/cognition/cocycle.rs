@@ -8,6 +8,11 @@
 
 use super::*;
 
+/// A STANDING COCYCLE: the gauge versor between two charts, the k-step it
+/// was stamped at, the two class keys it joins, and the address that
+/// speaks it. A newer stamp supersedes; the chain keeps the old.
+pub type CocycleRow = (element::Versor, u64, [u8; 32], [u8; 32], Address);
+
 impl Kernel {
     pub(crate) fn cocycle_key(
         chart: &crate::transducer::stalk::Invariant,
@@ -110,7 +115,7 @@ impl Kernel {
         let Some(rows) = self.cocycle_by_chart.remove(&ck) else {
             return;
         };
-        let mut saved: Vec<(element::Versor, u64, [u8; 32], [u8; 32], Address)> = Vec::new();
+        let mut saved: Vec<CocycleRow> = Vec::new();
         for (key, _) in rows.fiber(crate::network::nerve::ROOT) {
             if let Some(row) = self.cocycle_at.remove(&key) {
                 self.dialect_chain.push((key, row.0.clone(), row.1));

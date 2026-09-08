@@ -234,7 +234,7 @@ pub fn decode_evidence_request(body: &[u8]) -> Option<[u8; 32]> {
 /// body is a pull; anything longer is a deposit — one act, two directions.
 pub fn encode_evidence_deposit<A: AsRef<[u8]>>(
     voice: &[u8; 32],
-    items: &[(A, Vec<(i64, i64)>, Vec<(i64, i64, u8)>)],
+    items: &[EvidenceOf<A>],
 ) -> Vec<u8> {
     let mut out = vec![ACT_EVIDENCE];
     out.extend_from_slice(voice);
@@ -255,7 +255,7 @@ pub fn decode_evidence_deposit(body: &[u8]) -> Option<EvidenceDeposit> {
 /// [ns u32][scene (r i64,c i64,h u8)·ns] )…` — the selection fiber's birth
 /// evidence, count-guarded at every level.
 pub fn encode_evidence_reply<A: AsRef<[u8]>>(
-    items: &[(A, Vec<(i64, i64)>, Vec<(i64, i64, u8)>)],
+    items: &[EvidenceOf<A>],
 ) -> Vec<u8> {
     let mut out = Vec::new();
     out.extend_from_slice(&(items.len() as u32).to_le_bytes());

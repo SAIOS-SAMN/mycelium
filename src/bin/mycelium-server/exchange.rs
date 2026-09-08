@@ -23,6 +23,13 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 
+/// THE FOUR STRATUM ROOTS a peer last showed, with the cover root over them.
+pub(crate) type Roots = ([[u8; 32]; 4], [u8; 32]);
+
+/// A NODE'S ORIGIN: the genesis hash it adopted and the epoch it adopted it
+/// at — the pair 47.2 step 1 tests every signed frame against.
+pub(crate) type Origin = ([u8; 32], u32);
+
 pub(crate) struct Mesh {
     pub(crate) cover: Arc<Mutex<Cover>>,
     pub(crate) rooms: Arc<Mutex<Keyed<[u64; 4]>>>,
@@ -33,12 +40,12 @@ pub(crate) struct Mesh {
     pub(crate) rtt: Arc<Mutex<Keyed<u64>>>,
     /// The last aperture of measured round trips per peer, in strokes.
     pub(crate) rtt_window: Arc<Mutex<Keyed<Vec<u64>>>>,
-    pub(crate) last_roots: Arc<Mutex<Keyed<([[u8; 32]; 4], [u8; 32])>>>,
+    pub(crate) last_roots: Arc<Mutex<Keyed<Roots>>>,
     /// This node's own `(H_genesis, E_origin)`, the pair 47.2 step 1 tests
     /// every signed frame against. `None` is UNMEASURED, not zero: a node
     /// that has not adopted a genesis admits no receipt at all rather than
     /// admitting everything under a zero sentinel.
-    pub(crate) origin: Arc<Mutex<Option<([u8; 32], u32)>>>,
+    pub(crate) origin: Arc<Mutex<Option<Origin>>>,
 }
 
 impl Clone for Mesh {

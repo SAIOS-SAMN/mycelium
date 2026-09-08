@@ -161,7 +161,7 @@ pub struct Kernel {
     /// Current dialect transition per (chart, hypha pair): one versor, the
     /// TUniversal stamp it stood at, the two hyphae, and the transport
     /// class key. A newer stamp supersedes; the chain keeps the old.
-    pub(crate) cocycle_at: crate::network::nerve::Keyed<(element::Versor, u64, [u8; 32], [u8; 32], Address)>,
+    pub(crate) cocycle_at: crate::network::nerve::Keyed<CocycleRow>,
     /// The receipt each standing cocycle stands at, so supersession is a
     /// question of causal order (45.3) and not of a height scalar. A row
     /// with no receipt here — one restored from a snapshot written before

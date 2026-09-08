@@ -179,6 +179,10 @@ pub fn probe(
     settled
 }
 
+/// WHAT A QUOTE READS OFF THE LOCK: the surface μ⃗, the priced items with the
+/// charts they leave open, K, the cohesion pair, and the height it stands at.
+pub type Quoted = ([u64; 4], Vec<crate::cognition::Priced>, u64, (u64, u64), u64);
+
 /// THE QUOTE, off the lock: incidence of the voice's charts against the
 /// listing atlas. The page width is the body budget. Returns (surface,
 /// priced items with open charts, K, cohesion).
@@ -186,17 +190,7 @@ pub fn quote(
     k: &std::sync::Mutex<crate::cognition::Kernel>,
     voice: [u8; 32],
     charts: &[crate::transducer::stalk::Invariant],
-) -> Option<(
-    [u64; 4],
-    Vec<(
-        crate::transducer::element::Element,
-        [u64; 4],
-        Vec<crate::transducer::stalk::Invariant>,
-    )>,
-    u64,
-    (u64, u64),
-    u64,
-)> {
+) -> Option<Quoted> {
     let view = k.lock().ok()?.market_open();
     let sealed = view.closure.is_some();
     let rank = match view.closure {

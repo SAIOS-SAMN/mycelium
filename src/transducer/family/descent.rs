@@ -18,7 +18,7 @@ pub fn form_descent(
     form: &Form,
     family: &[(Grid, Grid)],
     crystal: &dyn Crystal,
-) -> ([u64; 4], Vec<Vec<(i64, i64, u8, u8)>>) {
+) -> ([u64; 4], Vec<crate::transducer::germinate::ResidualGerm>) {
     if family.is_empty() {
         return ([0; 4], Vec::new());
     }

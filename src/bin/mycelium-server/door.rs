@@ -347,7 +347,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             }
             (*sy.served.get(&svoice).unwrap(), sy.order.clone())
         };
-        let (words, classes, k_now, height, served_addrs): (Vec<Vec<u8>>, Vec<dialogue::ClassPage>, u64, u64, Vec<Vec<u8>>) = {
+        let (words, classes, k_now, height, served_addrs) = {
             let k = door.kernel.lock().unwrap();
             let free: u64 = k.physics().reserve.iter().sum();
             let depth = (1 + (free as usize * 7) / (4 * mycelium::physics::reserve_max() as usize)).min(8);

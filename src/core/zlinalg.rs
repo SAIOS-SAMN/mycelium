@@ -2,6 +2,12 @@
 //
 //! Exact integer linear algebra: lattice rank by fraction-free elimination.
 
+/// THE HERMITE FORM AND ITS TRANSFORM: the reduced rows `H`, and `U` giving
+/// each of them as an integer combination of the input rows. `U` is the
+/// factorisation — an HNF without it decides membership and cannot say what
+/// the word was made of.
+pub type Hnf<const N: usize> = (Vec<[i128; N]>, Vec<Vec<i128>>);
+
 /// Rank of the lattice spanned by integer rows: fraction-free Gaussian
 /// elimination (Bareiss) over i128, exact. `None` when a multiply, subtract
 /// or divide overflows; the caller refuses.
@@ -46,9 +52,7 @@ pub fn z_rank<const N: usize>(rows: &[[i64; N]]) -> Option<u32> {
 /// generators — which is the factorisation, the thing comprehension is
 /// looking for. An HNF without `U` decides membership and cannot say what
 /// the word was made of.
-pub fn hnf_with_transform<const N: usize>(
-    rows: &[[i64; N]],
-) -> Option<(Vec<[i128; N]>, Vec<Vec<i128>>)> {
+pub fn hnf_with_transform<const N: usize>(rows: &[[i64; N]]) -> Option<Hnf<N>> {
     let mut h: Vec<[i128; N]> = rows
         .iter()
         .map(|r| std::array::from_fn(|i| r[i] as i128))
