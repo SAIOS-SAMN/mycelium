@@ -3674,6 +3674,36 @@ geometric product per loop, and the loops are those of the pair's nerve —
 no search, no threshold, no vote among senses. The eyes compound; they
 never compete.
 
+**The harmonic eye's coordinates, carried from the convergence engine
+(ruled 2026-09-08).** The older engine read its harmonics as projections
+of the nested relational field `Δ[i][j][l]` — `Vec<Vec<Vec<Q>>>`, the third
+index the fibre layer — into eleven exact rationals, three times over:
+`HarmonicState` (an entity's self-perception), `HarmonicTuning` (running
+averages), `SoundnessSpectrum` (eleven layers over a percept). The
+mathematics that carries is the exact part of the third, and it is
+exactly the second and third eyes this section names; the rest is refused
+by name so it is not re-imported.
+
+| reading | the older engine | exact? | mycelium receiver |
+|---|---|---|---|
+| the body's conformal invariants | vision: `SymmetryGroup` elements and per-body shape | yes | `Harmonics` (seven invariants and the hue spectrum) — present, one caller |
+| **cohesion χ**, per cell: same-hue neighbours over neighbours, a 0-cochain over the body's cells | touch: `AdjacencyStructure`, `CohesionCluster` | yes, Q per cell, no threshold | the touch eye of P2: a 0-cochain on the blade's cells, its coboundary the body's seams |
+| **refraction at a boundary**: Σ|δ_a − δ_b| over the boundary length between two bodies | `ClusterRefraction`, `refractive_index` | yes; `transparent` is only "index = 0" | the holonomic eye across a face: the transition Γ's residual on the seam (3.10), read at perception |
+| **stabiliser order**: the smallest p with A^p = I for the body's symmetry element | vision: `torsion_order` | yes | `Word::order` of the body's stabiliser word, a class invariant (23.9), on the percept |
+| **periodicities from the state's own entries**: the primes of every entry's reduced numerator and denominator | `RefractiveLens::torsion_orders` | the factorisation yes; the `[−2, +2]` rescale no | a candidate, not ruled: the primes of the invariants' denominators as the body's periodicities, beside the class's `(m5, m13)` |
+| **per-layer harmonics**: the same readings taken on every fibre layer, never summed across layers | `Δ[i][j][l]` per `l`; `compute_rank` over `l` | yes | the punctured axis: `Harmonics` of every section of a word's fibre, a `Vec` over the sections (25, S9.13), never one reading for the bundle |
+| eleven "tones" of self-perception: coherence, velocity, attention, symmetry score | `HarmonicState::from_delta` | no — scalar composites of a coherence functional (law 4, D0) | refused; the mind's self-reading is the outcome vector per lane (24.3) |
+| eleven running averages with `/10` and `/8` | `HarmonicTuning` | no (rule 5) | refused; was `Aperture`, deleted (F2g) |
+| dominance ratio, anchored fraction, coverage fraction | `SoundnessSpectrum` layers 1, 4, 5 | no — count ratios, majority tests (rule 2) | refused; the readings above replace them |
+| a gravitational field over vibrations | `gravitational_field` | no — a potential (12.6) | refused |
+
+Two corrections to the tree follow. `blade/harmonics.rs` claims eleven
+coordinates and holds seven and a spectrum; the header says what the file
+holds (§2.8). And a body is read by three eyes or it is not perceived:
+`Harmonics` alone is the harmonic eye, the cohesion cochain is touch, and
+the refraction on a seam is the holonomic eye at a face — the pipeline had
+one of the three, called once.
+
 ## 25. Germination and thoughts
 
 Carried from chapter 24: comprehension re-gauges. Germination pivots, files,
