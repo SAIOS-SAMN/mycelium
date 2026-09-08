@@ -6,6 +6,40 @@
 
 use crate::client::sdk::*;
 
+/// WHAT THE HYPHA SAID ABOUT EACH SENTENCE SENT, written into `codes` in
+/// the order the sentences stand, and the indices it ADMITTED.
+///
+/// A slot still holding `0xff` is one this mind put on the wire; the reply
+/// answers those in order. A CODE THE HYPHA DID NOT SEND IS NOT AN
+/// OUTCOME: this read `got.get(gi).copied().unwrap_or(SPEECH_STOOD)`, so
+/// a reply shorter than the sentences sent — a truncated frame, a hypha
+/// that answered about fewer — was read as the hypha having STOOD the
+/// rest. The mind then stepped its clock for an act nobody admitted
+/// (45.4) and filed the word in `taught_up`, where it would never be
+/// spoken again. An invented value, and the value it invents is the
+/// favourable one (rule 11, checklist (i)). Nothing was heard about that
+/// sentence, so it is `SPEECH_DIALECT` — stood here, unanswered there —
+/// and it may be spoken again.
+pub(crate) fn read_speech_reply(codes: &mut [u8], got: &[u8]) -> Vec<usize> {
+    let mut admitted = Vec::new();
+    let mut gi = 0usize;
+    for (i, slot) in codes.iter_mut().enumerate() {
+        if *slot != 0xff {
+            continue;
+        }
+        let Some(c) = got.get(gi).copied() else {
+            *slot = dialogue::SPEECH_DIALECT;
+            continue;
+        };
+        gi += 1;
+        *slot = c;
+        if c != dialogue::SPEECH_REFUSED {
+            admitted.push(i);
+        }
+    }
+    admitted
+}
+
 impl Entity {
     pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)]) -> Cited {
         // A remainder is not a citation of itself: deconstruction reads
@@ -205,21 +239,13 @@ impl Entity {
         let body = dialogue::encode_speech(&voice, crate::transducer::address::Address::new(Vec::new()), tu, &bytes);
         let reply = self.session.speak_nerve(body)?;
         let got = dialogue::decode_speech_reply(&reply).unwrap_or_default();
-        let mut gi = 0usize;
-        for (i, e) in sentences.iter().enumerate() {
-            if codes[i] != 0xff {
-                continue;
-            }
-            let c = got.get(gi).copied().unwrap_or(dialogue::SPEECH_STOOD);
-            gi += 1;
-            codes[i] = c;
-            if c != dialogue::SPEECH_REFUSED {
-                // The utterance was admitted: the second act, and the second
-                // step of this mind's clock (45.4). A refused utterance is
-                // not an act and moves nothing.
-                self.session.advance();
-                self.taught_up.insert(e.address(), e.clone());
-            }
+        for i in read_speech_reply(&mut codes, &got) {
+            // The utterance was admitted: the second act, and the second
+            // step of this mind's clock (45.4). A refused utterance is not
+            // an act and moves nothing.
+            self.session.advance();
+            let e = &sentences[i];
+            self.taught_up.insert(e.address(), e.clone());
         }
         Ok(codes)
     }
