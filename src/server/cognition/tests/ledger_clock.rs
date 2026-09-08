@@ -60,7 +60,8 @@ k.ingest(&a, &b, [1; 32]);
 let mine = k.chain().head_hash();
 k.push_cocycle_at(&inv, [1; 32], [2; 32], v1.clone(), ck1.clone(), mine);
 
-let mut peer = crate::chronometry::ReceiptChain::with_vk([9; 32]);
+let key = super::common::court_key("peer");
+let mut peer = crate::chronometry::ReceiptChain::with_vk(key.vk_bytes());
 peer.append(b"p0", [0; 32], Vec::new()).expect("appends");
 let pr = peer.receipts()[0].clone();
 let pre = crate::court::admission::SignedPrefix {
@@ -73,7 +74,7 @@ let pre = crate::court::admission::SignedPrefix {
     payload: pr.delta.clone(),
 };
 assert!(matches!(
-    k.admit_receipt(([7; 32], 2), &pre, &pr),
+    k.admit_receipt(([7; 32], 2), super::common::verified(&pre, &key), &pr),
     crate::court::admission::Admitted::Parent(_)
 ));
 let chain_before = k.dialect_chain_len();

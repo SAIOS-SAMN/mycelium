@@ -15,7 +15,8 @@ let origin = ([7u8; 32], 2u32);
 
 // A peer chain that has run ahead of this mind: three steps, so its
 // head sits at a height this mind's own strokes have not reached.
-let mut peer = crate::chronometry::ReceiptChain::with_vk([9; 32]);
+let key = super::common::court_key("peer");
+let mut peer = crate::chronometry::ReceiptChain::with_vk(key.vk_bytes());
 for d in [b"p0".as_slice(), b"p1", b"p2"] {
     peer.append(d, [0; 32], Vec::new()).expect("peer appends");
 }
@@ -41,18 +42,24 @@ let pre = |r: &crate::chronometry::KStepReceipt| SignedPrefix {
 };
 let head = peer.receipts()[2].clone();
 assert!(
-    matches!(k.admit_receipt(origin, &pre(&head), &head), Admitted::Gap { .. }),
+    matches!(
+        k.admit_receipt(origin, super::common::verified(&pre(&head), &key), &head),
+        Admitted::Gap { .. }
+    ),
     "a chain this mind has never held is a gap, not an admission"
 );
 for r in peer.receipts().iter().take(3) {
     assert!(
-        matches!(k.admit_receipt(origin, &pre(r), r), Admitted::Parent(_)),
+        matches!(
+            k.admit_receipt(origin, super::common::verified(&pre(r), &key), r),
+            Admitted::Parent(_)
+        ),
         "back-fill in order admits K {}",
         r.step_index
     );
 }
 assert_eq!(k.pending_parents(), 3, "three admitted, none cited yet");
-assert_eq!(k.known_head(&[9; 32]), Some((2, head.chain_hash)));
+assert_eq!(k.known_head(&key.vk_bytes()), Some((2, head.chain_hash)));
 
 // The next step cites them, and its height is above the peer's head.
 let before = k.height();
@@ -96,7 +103,8 @@ assert_eq!(before, after, "the vk is not in the chain hash: history is intact");
 assert!(k.chain().verify_chain_integrity(), "and the chain still verifies");
 
 // A receipt admitted from a peer keeps ITS author, never this mind's.
-let mut peer = crate::chronometry::ReceiptChain::with_vk([9; 32]);
+let key = super::common::court_key("peer");
+let mut peer = crate::chronometry::ReceiptChain::with_vk(key.vk_bytes());
 peer.append(b"p0", [0; 32], Vec::new()).expect("appends");
 let r = peer.receipts()[0].clone();
 let pre = crate::court::admission::SignedPrefix {
@@ -109,11 +117,11 @@ let pre = crate::court::admission::SignedPrefix {
     payload: r.delta.clone(),
 };
 assert!(matches!(
-    k.admit_receipt(([7; 32], 2), &pre, &r),
+    k.admit_receipt(([7; 32], 2), super::common::verified(&pre, &key), &r),
     crate::court::admission::Admitted::Parent(_)
 ));
 k.bind_identity([0xab; 32]);
-assert_eq!(k.known_head(&[9; 32]).map(|h| h.0), Some(0), "the peer's author stands");
+assert_eq!(k.known_head(&key.vk_bytes()).map(|h| h.0), Some(0), "the peer's author stands");
 }
 
 /// A receipt whose origin is not this node's touches nothing: no head is
@@ -121,7 +129,8 @@ assert_eq!(k.known_head(&[9; 32]).map(|h| h.0), Some(0), "the peer's author stan
 #[test]
 fn a_foreign_origin_is_refused_before_the_mind_holds_anything() {
 use crate::court::admission::{Admitted, SignedPrefix, REFUSE_ORIGIN};
-let mut peer = crate::chronometry::ReceiptChain::with_vk([9; 32]);
+let key = super::common::court_key("peer");
+let mut peer = crate::chronometry::ReceiptChain::with_vk(key.vk_bytes());
 peer.append(b"p0", [0; 32], Vec::new()).expect("appends");
 let r = peer.receipts()[0].clone();
 let mut k = Kernel::new();
@@ -134,12 +143,49 @@ let foreign = SignedPrefix {
     chart: vec![],
     payload: r.delta.clone(),
 };
+// Signed and verified (step 2), so the refusal below is the origin's
+// alone (step 1), and nothing behind it is reached.
 assert_eq!(
-    k.admit_receipt(([7; 32], 2), &foreign, &r),
+    k.admit_receipt(([7; 32], 2), super::common::verified(&foreign, &key), &r),
     Admitted::Refused(REFUSE_ORIGIN)
 );
 assert_eq!(k.pending_parents(), 0);
-assert!(k.known_head(&[9; 32]).is_none());
+assert!(k.known_head(&key.vk_bytes()).is_none());
+}
+
+/// 47.2 CHECKS ONE SIGNER (A2), and the mind holds it to that: a receipt
+/// naming one key, carried under a signature that verified under ANOTHER,
+/// is two claims and is refused before the chain is read. The verified
+/// signature is a value (`Verified`, I17), so this is the one seam left
+/// between step 2 and steps 3–4, and it is closed here.
+#[test]
+fn a_receipt_signed_by_another_key_than_it_names_is_refused() {
+use crate::court::admission::{Admitted, SignedPrefix, REFUSE_RECEIPT};
+let victim = super::common::court_key("victim");
+let forger = super::common::court_key("forger");
+let mut chain = crate::chronometry::ReceiptChain::with_vk(victim.vk_bytes());
+chain.append(b"p0", [0; 32], Vec::new()).expect("appends");
+let r = chain.receipts()[0].clone();
+let pre = SignedPrefix {
+    genesis: [7; 32],
+    epoch: 2,
+    prev_receipt_hash: r.prev_receipt_hash,
+    k: r.step_index,
+    height: r.height,
+    chart: vec![],
+    payload: r.delta.clone(),
+};
+let mut k = Kernel::new();
+assert_eq!(
+    k.admit_receipt(([7; 32], 2), super::common::verified(&pre, &forger), &r),
+    Admitted::Refused(REFUSE_RECEIPT),
+    "the signature verified under the forger; the receipt names the victim"
+);
+assert!(k.known_head(&victim.vk_bytes()).is_none(), "and the victim's head is untouched");
+assert!(matches!(
+    k.admit_receipt(([7; 32], 2), super::common::verified(&pre, &victim), &r),
+    Admitted::Parent(_)
+));
 }
 
 /// 47.4 — TWO ROOTS AT ONE K BURN THE SIGNER'S BOND. The proof is two
@@ -153,7 +199,8 @@ assert!(k.known_head(&[9; 32]).is_none());
 fn two_roots_at_one_k_burn_the_signers_bond() {
 use crate::court::admission::{Admitted, SignedPrefix};
 let origin = ([7u8; 32], 2u32);
-let liar = [9u8; 32];
+let key = super::common::court_key("liar");
+let liar = key.vk_bytes();
 let pre = |r: &crate::chronometry::KStepReceipt| SignedPrefix {
     genesis: origin.0,
     epoch: origin.1,
@@ -180,9 +227,14 @@ k.treasury_mut().enroll(liar, bond, (0, [0; 32]));
 assert_eq!(k.treasury().bond_of(&liar), Some(bond), "the liar is bonded");
 let supply = k.treasury().supply().expect("measured");
 
-assert!(matches!(k.admit_receipt(origin, &pre(&ra), &ra), Admitted::Parent(_)));
+// Both receipts arrive SIGNED and verified (47.4's two signatures): the
+// held one when it was admitted, the claimed one now.
 assert!(matches!(
-    k.admit_receipt(origin, &pre(&rb), &rb),
+    k.admit_receipt(origin, super::common::verified(&pre(&ra), &key), &ra),
+    Admitted::Parent(_)
+));
+assert!(matches!(
+    k.admit_receipt(origin, super::common::verified(&pre(&rb), &key), &rb),
     Admitted::Equivocation { .. }
 ));
 assert_eq!(k.treasury().bond_of(&liar), Some([0; 4]), "the bond is burned whole");
@@ -196,7 +248,7 @@ assert!(k.treasury().audit().is_ok(), "and §6 holds through the forfeiture");
 // The same lie again costs nothing more: there is no bond left to take.
 let after = k.treasury().supply();
 assert!(matches!(
-    k.admit_receipt(origin, &pre(&rb), &rb),
+    k.admit_receipt(origin, super::common::verified(&pre(&rb), &key), &rb),
     Admitted::Equivocation { .. }
 ));
 assert_eq!(k.treasury().supply(), after, "a second frame burns nothing");

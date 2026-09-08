@@ -52,12 +52,18 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // that checks one signer, so a frame could pass step 2 on its own key
     // and write step 3's state under someone else's.
     let signer = section.receipt.vk;
-    if let Err(why) =
-        mycelium::court::admission::admit_signature(origin, &section.prefix, &signer, &section.sig)
-    {
-        refuse(s, why);
-        return;
-    }
+    let verified = match mycelium::court::admission::admit_signature(
+        origin,
+        &section.prefix,
+        &signer,
+        &section.sig,
+    ) {
+        Ok(v) => v,
+        Err(why) => {
+            refuse(s, why);
+            return;
+        }
+    };
     // 47.1's bindings: the prefix's payload is the ruled ADDRESS, its prev
     // hash is the head the ruling binds to, and the receipt names the key
     // this act claims as its court.
@@ -99,7 +105,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         eprintln!("  court verdict unread {a0:02x}{a1:02x}…: the court is not readable");
         return;
     };
-    let admitted = k.admit_receipt(origin, &section.prefix, &section.receipt);
+    let admitted = k.admit_receipt(origin, verified, &section.receipt);
     use mycelium::court::admission::Admitted;
     match &admitted {
         Admitted::Parent(_) => {}

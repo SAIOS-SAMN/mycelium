@@ -27,6 +27,28 @@ pub fn unmeasured_transport(_addr: &[u8]) -> Option<u64> {
     None
 }
 
+/// A hypha's signing key from a name, for a receipt fixture that must be
+/// SIGNED: 47.2 step 2 is a value (`Verified`), and a test reaches the
+/// chain checks only through it. The seed is a KDF over the name, which is
+/// what a fixture wants and is not an identity (46).
+pub fn court_key(name: &str) -> crate::court::identity::HyphaKey {
+    use ed25519_dalek::SigningKey;
+    let seed = crate::court::identity::HyphaKey::seed_from_name(name);
+    let sk = SigningKey::from_bytes(&seed);
+    crate::court::identity::HyphaKey { vk: sk.verifying_key(), sk }
+}
+
+/// The prefix signed by `key` and verified under its own vk: the one way a
+/// test hands `admit_receipt` step 2.
+pub fn verified<'a>(
+    prefix: &'a crate::court::admission::SignedPrefix,
+    key: &crate::court::identity::HyphaKey,
+) -> crate::court::admission::Verified<'a> {
+    let sig = key.sign(&prefix.bytes());
+    crate::court::admission::verify_signature(prefix, &key.vk_bytes(), &sig)
+        .expect("a key verifies its own signature over its own prefix")
+}
+
 pub fn digits(rows: &[&str]) -> Vec<Vec<u8>> {
 rows.iter()
     .map(|r| r.bytes().map(|b| b - b'0').collect())

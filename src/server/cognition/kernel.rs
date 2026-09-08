@@ -327,19 +327,28 @@ impl Kernel {
     /// this mind's next step, which is how height climbs on ADMITTED
     /// receipts rather than on this mind's own strokes.
     ///
-    /// The caller verifies the signature over `prefix.bytes()` before
-    /// calling; step 2 is not performed here, so no call site can satisfy
-    /// admission by checking bytes alone.
+    /// Step 2 is the caller's and it is PROVED, not assumed: `verified` is
+    /// built only by `court::admission::{admit_signature, verify_signature}`
+    /// over exactly the prefix it carries, so no call site can reach the
+    /// chain checks — or the burn on the `Equivocation` arm (47.4) — with
+    /// bytes nobody verified. A receipt whose signer is not the key that
+    /// verified is two claims and is `REFUSE_RECEIPT` (A2's rule, one
+    /// signer).
     pub fn admit_receipt(
         &mut self,
         origin: ([u8; 32], u32),
-        prefix: &crate::court::admission::SignedPrefix,
+        verified: crate::court::admission::Verified<'_>,
         r: &crate::chronometry::KStepReceipt,
     ) -> crate::court::admission::Admitted {
+        if verified.signer() != r.vk {
+            return crate::court::admission::Admitted::Refused(
+                crate::court::admission::REFUSE_RECEIPT,
+            );
+        }
         let chain = &self.chain;
         let verdict = self
             .admissions
-            .admit(origin, prefix, r, |p| chain.height_of(&p.hash));
+            .admit(origin, verified.prefix(), r, |p| chain.height_of(&p.hash));
         match &verdict {
             crate::court::admission::Admitted::Parent(p) => {
                 self.chain.admit(r.clone());

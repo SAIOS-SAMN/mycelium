@@ -54,19 +54,58 @@ impl Admitted {
 /// what admits a vantage is room, not identity — identities are free (47.3).
 /// Refusing an unknown key here would refuse every new hypha before its
 /// first receipt could ever be admitted.
-pub fn admit_signature(
+pub fn admit_signature<'a>(
     origin: ([u8; 32], u32),
-    prefix: &SignedPrefix,
+    prefix: &'a SignedPrefix,
     signer: &[u8; 32],
     sig: &[u8; 64],
-) -> Result<(), &'static str> {
+) -> Result<Verified<'a>, &'static str> {
     if prefix.genesis != origin.0 || prefix.epoch != origin.1 {
         return Err(REFUSE_ORIGIN);
     }
+    verify_signature(prefix, signer, sig)
+}
+
+/// A SIGNATURE THAT VERIFIED, as a value (I17). `Verified` is built here
+/// and nowhere else, so a caller holding one has run 47.2 step 2 over
+/// exactly these prefix bytes under exactly this key. `Kernel::admit_receipt`
+/// takes it rather than the bare prefix: the `Equivocation` arm burns a
+/// bond (47.4), and 47.4's condition is two VERIFIED signatures — the held
+/// receipt's when it was admitted, the claimed one's now — which used to
+/// hold by caller discipline alone, and a test caller reached the burn with
+/// no signature at all.
+#[derive(Debug, Clone, Copy)]
+pub struct Verified<'a> {
+    prefix: &'a SignedPrefix,
+    signer: [u8; 32],
+}
+
+impl<'a> Verified<'a> {
+    /// The prefix the signature was verified over.
+    pub fn prefix(&self) -> &'a SignedPrefix {
+        self.prefix
+    }
+
+    /// The key it verified under.
+    pub fn signer(&self) -> [u8; 32] {
+        self.signer
+    }
+}
+
+/// 47.2 STEP 2 alone: the signature verifies over 47.1's bytes under the
+/// claimed key, or `REFUSE_SIGNATURE`. The digest path runs this before it
+/// has an origin to compare — a node with none adopts the one its bootstrap
+/// peer signs for (45.5), and only a signed prefix may provision it — and
+/// `Admissions::admit` runs step 1 afterwards.
+pub fn verify_signature<'a>(
+    prefix: &'a SignedPrefix,
+    signer: &[u8; 32],
+    sig: &[u8; 64],
+) -> Result<Verified<'a>, &'static str> {
     if !crate::court::identity::verify(signer, &prefix.bytes(), sig) {
         return Err(REFUSE_SIGNATURE);
     }
-    Ok(())
+    Ok(Verified { prefix, signer: *signer })
 }
 
 /// THE BINDINGS 47.1 FIXES, for a ruling that travels with its receipt: the

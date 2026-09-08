@@ -314,19 +314,20 @@ fn a_frame_is_admitted_only_under_a_signature_over_its_own_prefix() {
     let p = prefix_for(&c.receipts()[0]);
     let sig = court.sign(&p.bytes());
 
+    // What admits is a VALUE (I17): the verified prefix and the key it
+    // verified under, which is all `admit_receipt` will take.
+    let verified = admit_signature((G, E), &p, &vk, &sig)
+        .expect("the court's own signature over its own prefix");
+    assert_eq!(verified.signer(), vk, "verified under the key the frame claims");
+    assert_eq!(verified.prefix(), &p, "over exactly these prefix bytes");
     assert_eq!(
-        admit_signature((G, E), &p, &vk, &sig),
-        Ok(()),
-        "the court's own signature over its own prefix"
-    );
-    assert_eq!(
-        admit_signature(([8; 32], E), &p, &vk, &sig),
-        Err(REFUSE_ORIGIN),
+        admit_signature(([8; 32], E), &p, &vk, &sig).err(),
+        Some(REFUSE_ORIGIN),
         "another genesis is refused before any bytes are verified"
     );
     assert_eq!(
-        admit_signature((G, E + 1), &p, &vk, &sig),
-        Err(REFUSE_ORIGIN),
+        admit_signature((G, E + 1), &p, &vk, &sig).err(),
+        Some(REFUSE_ORIGIN),
         "and so is another epoch of this genesis"
     );
     // A KEY THIS MESH HAS NOT SEEN IS NOT REFUSED FOR BEING UNSEEN. It
@@ -335,8 +336,8 @@ fn a_frame_is_admitted_only_under_a_signature_over_its_own_prefix() {
     // the chapter's answer to a first sighting. Identities are free and
     // room is what admits (47.3).
     assert_eq!(
-        admit_signature((G, E), &p, &stranger, &sig),
-        Err(REFUSE_SIGNATURE),
+        admit_signature((G, E), &p, &stranger, &sig).err(),
+        Some(REFUSE_SIGNATURE),
         "the stranger did not sign this prefix"
     );
     // The same signer over a DIFFERENT prefix: the bytes signed are not the
@@ -344,15 +345,18 @@ fn a_frame_is_admitted_only_under_a_signature_over_its_own_prefix() {
     let mut other = p.clone();
     other.payload = b"another address".to_vec();
     assert_eq!(
-        admit_signature((G, E), &other, &vk, &sig),
-        Err(REFUSE_SIGNATURE),
+        admit_signature((G, E), &other, &vk, &sig).err(),
+        Some(REFUSE_SIGNATURE),
         "a signature over one position does not admit another"
     );
     assert_eq!(
-        admit_signature((G, E), &p, &vk, &[0u8; 64]),
-        Err(REFUSE_SIGNATURE),
+        admit_signature((G, E), &p, &vk, &[0u8; 64]).err(),
+        Some(REFUSE_SIGNATURE),
         "and a zero signature admits nothing at all"
     );
+    // Step 2 alone, for the digest path that has no origin yet to compare.
+    assert!(verify_signature(&p, &vk, &sig).is_ok(), "step 2 on its own verifies");
+    assert_eq!(verify_signature(&p, &stranger, &sig).err(), Some(REFUSE_SIGNATURE));
 }
 
 /// 47.1: the prefix names the ruled address and the receipt the ruling

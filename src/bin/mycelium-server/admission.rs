@@ -131,9 +131,13 @@ pub(crate) fn admit_peer_receipt(
     }
     let dialogue::ReceiptSection { prefix, sig, receipt } =
         dialogue::decode_receipt_section(body, at).ok_or(NoAdmission::Malformed)?;
-    if !mycelium::court::identity::verify(&receipt.vk, &prefix.bytes(), &sig) {
-        return Ok(Admitted::Refused(mycelium::court::admission::REFUSE_SIGNATURE));
-    }
+    // Step 2, as a VALUE the mind is handed (I17): `admit_receipt` takes
+    // the verified prefix and not the bare one, so the chain checks and
+    // 47.4's burn cannot be reached with bytes nobody verified.
+    let verified = match mycelium::court::admission::verify_signature(&prefix, &receipt.vk, &sig) {
+        Ok(v) => v,
+        Err(why) => return Ok(Admitted::Refused(why)),
+    };
     // 45.5: a node with NO origin adopts the one its bootstrap peer signs
     // for. That is the provisioning channel the chapter names -- the peer
     // list is how a node is told which mesh it belongs to, and the genesis
@@ -157,7 +161,7 @@ pub(crate) fn admit_peer_receipt(
         .and_then(|o| *o)
         .ok_or(NoAdmission::NoOrigin)?;
     let mut k = kernel.lock().map_err(|_| NoAdmission::Malformed)?;
-    Ok(k.admit_receipt(origin, &prefix, &receipt))
+    Ok(k.admit_receipt(origin, verified, &receipt))
 }
 
 /// One exchange cycle's admission tally, written with the 34.2 organ line.
