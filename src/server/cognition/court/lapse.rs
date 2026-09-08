@@ -7,23 +7,47 @@ impl Kernel {
     /// 47.5 / 5.5: a listing whose standing height is an aperture of
     /// admitted receipts behind the head releases its draw. Escrow returns;
     /// nothing is slashed. Λ is aperture_cycle (the measured reserve ratio).
-    pub(crate) fn lapse_docket(&mut self) {
+    /// THE LAPSE IS AN ORBIT, NOT A SWEEP (45.7, rule 10). It walked the
+    /// whole `pending` fiber with no budget, collected every expired
+    /// address into a `Vec`, and then ran a second unbudgeted loop that
+    /// revoked an escrow, unlisted a draw and — since I10 — sealed a
+    /// receipt per address. `pending` grows with demand arriving from every
+    /// peer, so on a mesh of ten thousand nodes it is one of the carriers
+    /// that grows with the mesh; a stroke that meets a large expiry cohort,
+    /// which is what follows any pause, did all of that work in one
+    /// unbounded pass while holding the kernel.
+    ///
+    /// Now it spends the stroke's own `Budget` and resumes from
+    /// `lapse_cursor`, so "every stroke over a carrier resumes where it
+    /// left off" and the docket is walked whole across strokes rather than
+    /// all at once in one. The extent each lapse reports is the one read
+    /// when it was measured, not a second read guarded by `unwrap_or(now)`
+    /// — a default standing in for a height (checklist (i)).
+    pub(crate) fn lapse_docket(&mut self, budget: &mut crate::physics::Budget) {
         let now = self.height();
         let lambda = crate::physics::aperture_cycle() as u64;
-        let mut lapse: Vec<crate::transducer::address::Address> = Vec::new();
-        for (addr, _) in self.pending.fiber(crate::network::nerve::ROOT) {
-            let Some(&h0) = self.standing_h.get(&addr) else {
-                continue;
-            };
-            if now.saturating_sub(h0) >= lambda {
-                lapse.push(Address::from(addr));
+        let mut lapse: Vec<(Address, u64)> = Vec::new();
+        let mut last: Option<Vec<u8>> = None;
+        {
+            let from = self.lapse_cursor.clone();
+            for (addr, _) in self.pending.cursor(&from, budget) {
+                last = Some(addr.clone());
+                let Some(&h0) = self.standing_h.get(&addr) else {
+                    continue;
+                };
+                let extent = now.saturating_sub(h0);
+                if extent >= lambda {
+                    lapse.push((Address::from(addr), extent));
+                }
             }
         }
+        if let Some(k) = last {
+            self.lapse_cursor = k;
+        }
         let me = self.identity;
-        for addr in lapse {
-            let n = now.saturating_sub(self.standing_h.get(&addr).copied().unwrap_or(now));
+        for (addr, extent) in lapse {
             eprintln!(
-                "  court citation lapsed {:02x}{:02x}… after {n} receipts",
+                "  court citation lapsed {:02x}{:02x}… after {extent} receipts",
                 addr[0], addr[1]
             );
             let _ = self.treasury.revoke_award(&addr, false);

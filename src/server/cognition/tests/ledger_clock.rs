@@ -198,7 +198,7 @@ fn every_act_that_moves_the_book_seals_a_receipt() {
     k4.standing_h.insert(&laddr, 0);
     k4.set_height(crate::physics::aperture_cycle() as u64 + 1);
     let before = k4.k_step();
-    k4.lapse_docket();
+    k4.lapse_docket(&mut crate::physics::Physics::default().stroke());
     assert_eq!(k4.k_step(), before + 1, "a lapsed citation is one step");
     assert!(
         k4.chain().receipts().last().is_some_and(|r| r.delta == laddr),

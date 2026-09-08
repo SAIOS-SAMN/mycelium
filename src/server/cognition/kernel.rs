@@ -235,6 +235,10 @@ pub struct Kernel {
     pub(crate) open: crate::network::nerve::Keyed<()>,
     /// Keyed cursor into `open` for court_stroke.
     pub(crate) open_cursor: Vec<u8>,
+    /// Keyed cursor into `pending` for the lapse (45.7): the stroke's orbit
+    /// over the docket resumes where the last one left off, so a book that
+    /// outgrows one stroke's budget is still walked whole across strokes.
+    pub(crate) lapse_cursor: Vec<u8>,
     /// This hypha's cover, admitted in write_field; own_cover_charts reads it.
     pub(crate) own_cover: crate::network::nerve::Cover,
     /// Listings keyed by chart, so rank_over's moved set is a fiber.
