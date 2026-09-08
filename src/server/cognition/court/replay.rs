@@ -397,7 +397,8 @@ impl Kernel {
                 return f
                     .torsion
                     .fiber(crate::network::nerve::ROOT)
-                            .map(|(k, (_, ell, _))| {
+                            .map(|(k, filed)| {
+                                let ell = &filed.period;
                         let rotor = torsion_loop_rotor(f, &k);
                         (Address::from(k), *ell, rotor)
                     })
@@ -407,9 +408,9 @@ impl Kernel {
         spoken
             .torsion()
             .iter()
-            .filter_map(|(_, ell, _)| {
+            .filter_map(|c| {
                 let r = spoken.letters()?.spelling.word.rotor();
-                Some((r.class_key()?, *ell, Some(r)))
+                Some((r.class_key()?, c.period, Some(r)))
             })
             .collect()
     }

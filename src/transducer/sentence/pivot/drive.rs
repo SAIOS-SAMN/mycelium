@@ -456,7 +456,7 @@ impl Form {
             .map(|p| (p[0] as u8, p[1] as u8))
             .collect();
         let class = lp.holonomy.rotor().class_or_rotor_key();
-        self.torsion.insert(class, (sigma, ell, lp.chord));
+        self.torsion.insert(class, FiledLoop { sigma, period: ell, chord: lp.chord });
         true
     }
 

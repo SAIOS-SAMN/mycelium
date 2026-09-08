@@ -202,7 +202,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
         }
     }
     out.extend_from_slice(&(f.torsion.len() as u16).to_le_bytes());
-    for (k, (sigma, ell, chord)) in f.torsion.fiber(crate::network::nerve::ROOT) {
+    for (k, FiledLoop { sigma, period: ell, chord }) in f.torsion.fiber(crate::network::nerve::ROOT) {
         crate::transducer::a21::put_addr(out, &k);
         out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
         for &(a, b) in sigma {
@@ -400,7 +400,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         }
         let ell = take_u32(b, pos)?;
         let chord = take_u16(b, pos)?;
-        torsion.insert(k, (sigma, ell, chord));
+        torsion.insert(k, FiledLoop { sigma, period: ell, chord });
     }
     let mut glued = Keyed::new();
     for (i, v) in vertices.iter().enumerate() {
@@ -462,7 +462,7 @@ pub fn from_element_form(e: &Element) -> Option<Form> {
 /// Filed torsion on a sentence tape: `Form.torsion`, keyed by class.
 /// Empty when the word is not a sentence, or when the tape is v1 and the
 /// cycles live only on the element's residual section.
-pub fn form_torsion(e: &Element) -> Keyed<crate::transducer::element::TorsionCycle> {
+pub fn form_torsion(e: &Element) -> Keyed<FiledLoop> {
     match e.form() {
         Some(f) => f.torsion.clone(),
         None => Keyed::new(),
@@ -484,7 +484,7 @@ pub fn carries_torsion(e: &Element) -> bool {
 /// The rotor a filed torsion cycle names: the chord face stored on the
 /// class key. None when that face is missing — never an identity rotor.
 pub fn torsion_loop_rotor(f: &Form, class: &[u8]) -> Option<Rotor> {
-    let &(_, _, chord) = f.torsion.get(class)?;
+    let chord = f.torsion.get(class)?.chord;
     f.faces.get(chord as usize).map(|face| face.transport.word.rotor())
 }
 

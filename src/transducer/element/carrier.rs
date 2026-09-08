@@ -20,13 +20,28 @@ pub const FIBER_GERMINATED: u16 = 4;
 /// Hue states on the gauge (ARC palette 0..9; 0 = absent).
 pub const PALETTE: usize = 10;
 
-/// ONE TORSION CYCLE of a punctured axis: the hue-map generator, the period
-/// it closes at, and the fibre it lives on (18.3).
-pub type TorsionCycle = (Vec<(u8, u8)>, u32, u16);
+/// ONE TORSION CYCLE of a punctured axis (18.3).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TorsionCycle {
+    /// The hue-map generator: the permutation one step around the cycle.
+    pub sigma: Vec<(u8, u8)>,
+    /// The PERIOD it closes at — the order of that generator, measured, and
+    /// the extent the word owes on the T lane.
+    pub period: u32,
+    /// The fibre it lives on: `FIBER_SPATIAL`, or a germinated axis.
+    pub fibre: u16,
+}
 
-/// ONE TRANSITION of the connection: the assignment a sibling was observed
-/// under, the versor that carried it into this frame, and the fibre.
-pub type Transition = (Vec<(u8, u8)>, Versor, u16);
+/// ONE TRANSITION of the connection: how a sibling section was seen.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Transition {
+    /// The assignment the sibling was observed under.
+    pub asg: Vec<(u8, u8)>,
+    /// The versor that carried it into this frame.
+    pub gauge: Versor,
+    /// The fibre it was observed on.
+    pub fibre: u16,
+}
 
 /// The four strata of a word's action. S is one versor; G a hue permutation;
 /// T an extent in receipts; H the shell coordinates. Germinated axes are
@@ -257,8 +272,12 @@ impl Element {
     /// Record a dislocation versor on the fibre: (assignment, V, fibre)
     /// excluded from the address. Duplicate (asg, V, fibre) not stored twice.
     pub fn record_dislocation(&mut self, asg: Vec<(u8, u8)>, g: Versor, fibre: u16) {
-        if !self.transitions.iter().any(|(a, h, f)| a == &asg && same_versor(h, &g) && *f == fibre) {
-            self.transitions.push((asg, g, fibre));
+        if !self
+            .transitions
+            .iter()
+            .any(|t| t.asg == asg && same_versor(&t.gauge, &g) && t.fibre == fibre)
+        {
+            self.transitions.push(Transition { asg, gauge: g, fibre });
         }
     }
 
@@ -268,19 +287,27 @@ impl Element {
         if period == 0 {
             return;
         }
-        if !self.torsion.iter().any(|(s, _, f)| s == &sigma && *f == fibre) {
-            self.torsion.push((sigma, period, fibre));
+        if !self.torsion.iter().any(|t| t.sigma == sigma && t.fibre == fibre) {
+            self.torsion.push(TorsionCycle { sigma, period, fibre });
             self.profiles.take();
         }
     }
 
     /// Take a form's (or nerve's) torsion carrier whole. The element's
     /// torsion is that carrier, not a second list re-recorded cycle by cycle.
-    pub fn adopt_torsion(&mut self, torsion: &crate::network::nerve::Keyed<TorsionCycle>) {
+    pub fn adopt_torsion(
+        &mut self,
+        torsion: &crate::network::nerve::Keyed<crate::transducer::sentence::FiledLoop>,
+    ) {
         self.torsion.clear();
-        for (_, (sigma, ell, _)) in torsion.fiber(crate::network::nerve::ROOT) {
+        for (_, filed) in torsion.fiber(crate::network::nerve::ROOT) {
+            let (sigma, ell) = (&filed.sigma, &filed.period);
             if *ell > 0 {
-                self.torsion.push((sigma.clone(), *ell, FIBER_SPATIAL));
+                self.torsion.push(TorsionCycle {
+                    sigma: sigma.clone(),
+                    period: *ell,
+                    fibre: FIBER_SPATIAL,
+                });
             }
         }
         self.profiles.take();
@@ -290,7 +317,7 @@ impl Element {
     /// member (the volume metric; cycles count their full period).
     pub fn fiber_span(&self) -> usize {
         1 + self.sections.len()
-            + self.torsion.iter().map(|(_, l, _)| (*l as usize).saturating_sub(1)).sum::<usize>()
+            + self.torsion.iter().map(|t| (t.period as usize).saturating_sub(1)).sum::<usize>()
     }
 
     /// THE TORSE MOVE — extract the torsion of the punctured axis. Candidate
@@ -338,7 +365,7 @@ impl Element {
                 for &i in spanned.iter().rev() {
                     self.sections.remove(i);
                 }
-                self.torsion.push((sigma, period, FIBER_SPATIAL));
+                self.torsion.push(TorsionCycle { sigma, period, fibre: FIBER_SPATIAL });
                 self.profiles.take();
                 return spanned.len();
             }
@@ -373,8 +400,8 @@ impl Element {
     pub fn attach(&mut self, sibling: &Element, g: &Versor) -> usize {
         let Some(asg) = pullback(&positions(&self.sub), &sibling.sub, g) else { return 0 };
         let gained = self.puncture(asg.clone()) as usize;
-        if !self.transitions.iter().any(|(a, h, _)| *a == asg && same_versor(h, g)) {
-            self.transitions.push((asg, g.clone(), FIBER_SPATIAL));
+        if !self.transitions.iter().any(|t| t.asg == asg && same_versor(&t.gauge, g)) {
+            self.transitions.push(Transition { asg, gauge: g.clone(), fibre: FIBER_SPATIAL });
         }
         gained
     }
@@ -389,9 +416,17 @@ impl Element {
                 added += 1;
             }
         }
-        for (a, g, f) in &other.transitions {
-            if !self.transitions.iter().any(|(aa, gg, ff)| aa == a && same_versor(gg, g) && ff == f) {
-                self.transitions.push((a.clone(), g.clone(), *f));
+        for Transition { asg: a, gauge: g, fibre: f } in &other.transitions {
+            if !self
+                .transitions
+                .iter()
+                .any(|t| &t.asg == a && same_versor(&t.gauge, g) && &t.fibre == f)
+            {
+                self.transitions.push(Transition {
+                    asg: a.clone(),
+                    gauge: g.clone(),
+                    fibre: *f,
+                });
             }
         }
         added

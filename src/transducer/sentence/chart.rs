@@ -95,7 +95,7 @@ impl Form {
             }
         }
         let mut torsion = Keyed::new();
-        for (k, (sigma, ell, chord)) in self.torsion.fiber(ROOT) {
+        for (k, FiledLoop { sigma, period: ell, chord }) in self.torsion.fiber(ROOT) {
             let Some(&Some(nc)) = face_old_to_new.get(*chord as usize) else {
                 continue;
             };
@@ -110,7 +110,7 @@ impl Form {
             else {
                 continue;
             };
-            torsion.insert(&k, (mapped, *ell, nc));
+            torsion.insert(&k, FiledLoop { sigma: mapped, period: *ell, chord: nc });
         }
         self.vertices = new_verts;
         self.faces = new_faces;

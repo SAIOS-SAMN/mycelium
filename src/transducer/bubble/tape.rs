@@ -44,7 +44,8 @@ impl Contemplation {
             }
             out.extend_from_slice(b"TOR1");
             out.extend_from_slice(&(b.torsion.len() as u32).to_le_bytes());
-            crate::snapshot::persist(&b.torsion, |tk, (sigma, ell, chord)| {
+            crate::snapshot::persist(&b.torsion, |tk, filed| {
+                let (sigma, ell, chord) = (&filed.sigma, &filed.period, &filed.chord);
                 crate::transducer::a21::put_addr(out, tk);
                 out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
                 for &(a, c) in sigma {
@@ -190,7 +191,10 @@ impl Contemplation {
                     *pos += 4;
                     let chord = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
                     *pos += 2;
-                    torsion.insert(tk, (sigma, ell, chord));
+                    torsion.insert(
+                        tk,
+                        crate::transducer::sentence::FiledLoop { sigma, period: ell, chord },
+                    );
                 }
                 let nc = take_count(b, *pos, take_u32(b, pos)? as usize, 1)?;
                 for _ in 0..nc {

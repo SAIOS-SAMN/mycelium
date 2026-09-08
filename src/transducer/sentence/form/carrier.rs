@@ -36,6 +36,23 @@ pub enum Measure {
     Ring { anchor: u16 },
 }
 
+/// A FILED LOOP: a torsion cycle of a FORM, keyed by the class of the loop
+/// that carries it. The same three members as an element's `TorsionCycle`
+/// with one difference that matters — the third is the CHORD the loop closes
+/// on, an index into `faces`, not a fibre index. As one tuple the two were
+/// interchangeable by type and only ever kept apart by which file was being
+/// read; `Element::adopt_torsion` silently dropped the chord and wrote
+/// `FIBER_SPATIAL` in its place.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FiledLoop {
+    /// The hue-map generator: the permutation one step around the loop.
+    pub sigma: Vec<(u8, u8)>,
+    /// The period it closes at — the order of the loop's holonomy.
+    pub period: u32,
+    /// The chord it closes on: an index into the form's faces.
+    pub chord: u16,
+}
+
 /// A vertex of a sentence form (chapter 18).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Vertex {
@@ -121,7 +138,7 @@ pub struct Form {
     pub certificates: Keyed<PivotCertificate>,
     /// Filed torsion cycles, keyed by class key: `(σ, ℓ, chord face)`.
     /// The form owns this carrier; the element reads it whole.
-    pub torsion: Keyed<crate::transducer::element::TorsionCycle>,
+    pub torsion: Keyed<FiledLoop>,
     /// Cited form address → glued vertex index. Written by [`Form::glue`]
     /// and rebuilt by the decoder from Glued vertices.
     pub glued: Keyed<u16>,
@@ -322,7 +339,7 @@ impl Form {
                 Order::Finite(ell) => {
                     let k = lp.holonomy.rotor().class_or_rotor_key();
                     match self.torsion.get(&k) {
-                        Some((_, e, _)) if *e == ell => {}
+                        Some(filed) if filed.period == ell => {}
                         _ => return false,
                     }
                 }

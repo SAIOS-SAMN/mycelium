@@ -204,7 +204,7 @@ impl Element {
         }
         // The torsion cycles: (generator relations, period).
         out.extend_from_slice(&(self.torsion.len() as u32).to_le_bytes());
-        for (sigma, l, fibre) in &self.torsion {
+        for TorsionCycle { sigma, period: l, fibre } in &self.torsion {
             out.extend_from_slice(&(sigma.len() as u32).to_le_bytes());
             for (f, t) in sigma {
                 out.push(*f);
@@ -215,7 +215,7 @@ impl Element {
         }
         // The connection: (assignment, g, fibre) relations.
         out.extend_from_slice(&(self.transitions.len() as u32).to_le_bytes());
-        for (a, g, fibre) in &self.transitions {
+        for Transition { asg: a, gauge: g, fibre } in &self.transitions {
             out.extend_from_slice(&(a.len() as u32).to_le_bytes());
             for (b, f) in a {
                 out.push(*b);

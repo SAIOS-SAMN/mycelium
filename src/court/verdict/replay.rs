@@ -227,7 +227,7 @@ pub(crate) fn form_loops_replay(f: &Form) -> bool {
             Order::Finite(ell) => {
                 let k = lp.holonomy.rotor().class_or_rotor_key();
                 match f.torsion.get(k.as_bytes()) {
-                    Some((_, e, _)) if *e == ell => {}
+                    Some(filed) if filed.period == ell => {}
                     _ => return false,
                 }
             }

@@ -99,11 +99,11 @@ fn filed_torsion_chord_replays_or_refuses() {
         "the form carries the filed cycle"
     );
     let keyed = from_element_form(&e).expect("v2 tape");
-    let (class, (_, _, chord)) = keyed
+    let (class, chord) = keyed
         .torsion
         .fiber(crate::network::nerve::ROOT)
         .next()
-        .map(|(k, v)| (k, v.clone()))
+        .map(|(k, v)| (k, v.chord))
         .expect("filed class");
     assert_eq!(
         torsion_loop_rotor(&keyed, &class).and_then(|r| r.class_key()),

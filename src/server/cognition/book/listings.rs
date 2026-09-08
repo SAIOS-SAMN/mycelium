@@ -319,8 +319,8 @@ impl Kernel {
         let Some((sigma, period)) = after
             .torsion()
             .iter()
-            .min_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)))
-            .map(|(s, p, _)| (s.clone(), *p))
+            .min_by(|a, b| a.sigma.cmp(&b.sigma).then(a.period.cmp(&b.period)))
+            .map(|c| (c.sigma.clone(), c.period))
         else {
             return;
         };

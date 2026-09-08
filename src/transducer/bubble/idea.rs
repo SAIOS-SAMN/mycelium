@@ -118,7 +118,7 @@ pub struct Bubble {
     /// Ideas that glued this bubble; a non-empty set is not shed.
     pub glued_by: Keyed<()>,
     /// Filed torsion `(σ, ℓ, chord)` keyed by class, written from `pivot_loop`.
-    pub torsion: Keyed<crate::transducer::element::TorsionCycle>,
+    pub torsion: Keyed<crate::transducer::sentence::FiledLoop>,
     /// Certified discharges this idea's crystallization rests on (A20).
     pub certificates: Keyed<PivotCertificate>,
     /// Incomparable discharges held as cells (25.1) until a glue or ruling.

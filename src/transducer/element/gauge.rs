@@ -307,7 +307,7 @@ impl Element {
         let base = assignment(&self.sub);
         let mut out = vec![base.clone()];
         out.extend(self.sections.iter().cloned());
-        for (sigma, l, _) in &self.torsion {
+        for TorsionCycle { sigma, period: l, .. } in &self.torsion {
             let mut cur = base.clone();
             for _ in 1..*l {
                 match apply_hue_map(sigma, &cur) {
@@ -349,7 +349,7 @@ impl Element {
         if asg == base || self.sections.contains(&asg) {
             return true;
         }
-        for (sigma, l, _) in &self.torsion {
+        for TorsionCycle { sigma, period: l, .. } in &self.torsion {
             let mut cur = base.clone();
             for _ in 1..*l {
                 match apply_hue_map(sigma, &cur) {

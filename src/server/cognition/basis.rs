@@ -284,7 +284,7 @@ impl Kernel {
         });
         let mut asgs: crate::network::nerve::Keyed<Vec<element::Versor>> =
             crate::network::nerve::Keyed::new();
-        for (asg, g, _) in trans {
+        for crate::transducer::element::Transition { asg, gauge: g, .. } in trans {
             let mut k = Vec::with_capacity(asg.len() * 2);
             for &(a, b) in &asg {
                 k.push(a);

@@ -283,7 +283,7 @@ pub fn yield_vector(kind: RewriteKind, before: &[Element], after: &Element) -> [
             mu[LANE_SHELL] = after
                 .torsion()
                 .iter()
-                .map(|(_, p, _)| (*p as u64).saturating_sub(1))
+                .map(|c| (c.period as u64).saturating_sub(1))
                 .sum();
         }
         RewriteKind::Refine => {
