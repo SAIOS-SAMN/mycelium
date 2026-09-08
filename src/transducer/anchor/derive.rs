@@ -21,11 +21,11 @@ pub fn derive(footprint: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Option<Sel>
     for t in &terms {
         let sup = t.eval(scene);
         if sup == fp {
-            if exact.map_or(true, |e| t.size() < e.size()) {
+            if exact.is_none_or(|e| t.size() < e.size()) {
                 exact = Some(t);
             }
         } else if fp.iter().all(|p| has(&sup, *p)) {
-            let better = carrier.map_or(true, |(c, n)| {
+            let better = carrier.is_none_or(|(c, n)| {
                 sup.len() < n || (sup.len() == n && t.size() < c.size())
             });
             if better {

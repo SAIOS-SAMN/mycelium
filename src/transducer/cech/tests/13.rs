@@ -60,12 +60,12 @@ fn the_link_is_the_star_and_volume_gates_cells() {
         let cell = c.cell(&k).expect("link key is held");
         assert!(cell.contains(&a), "link(a) contains only a");
     }
-    assert!(c.degrees.get(3).map_or(true, |l| l.is_empty()), "no tetra on a's link");
+    assert!(c.degrees.get(3).is_none_or(|l| l.is_empty()), "no tetra on a's link");
     let mut empty = Complex::new();
     empty.set_section(&a, Section { addr: a.clone(), gamma: Rotor::identity() }, [0; 4]);
     empty.set_edge(&a, &b, Rotor::identity(), [0; 4]);
     assert!(
-        empty.degrees.get(2).map_or(true, |l| l.is_empty()),
+        empty.degrees.get(2).is_none_or(|l| l.is_empty()),
         "zero remainder volume forms no higher cell"
     );
 }

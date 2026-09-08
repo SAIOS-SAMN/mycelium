@@ -273,7 +273,7 @@ impl Entity {
 
     /// Empty when genome, dialect and ideas are all empty.
     pub fn atlas_is_empty(&self) -> bool {
-        self.epigenome.atlas_is_empty() && self.contemplation.len() == 0
+        self.epigenome.atlas_is_empty() && self.contemplation.is_empty()
     }
 
     /// Word counts per stratum on the working atlas: ruled (genome words),

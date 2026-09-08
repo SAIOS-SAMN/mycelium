@@ -338,7 +338,7 @@ pub fn home(
         let f = cover.fiber(*l, inv);
         let mut next = Keyed::new();
         for id in f {
-            if fiber.as_ref().map_or(true, |acc| acc.contains(&id)) {
+            if fiber.as_ref().is_none_or(|acc| acc.contains(&id)) {
                 next.insert(id, ());
             }
         }

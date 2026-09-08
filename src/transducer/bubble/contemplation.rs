@@ -52,7 +52,7 @@ impl Contemplation {
 
     /// No bubble is held: nothing is under contemplation.
     pub fn is_empty(&self) -> bool {
-        self.bubbles.len() == 0
+        self.bubbles.is_empty()
     }
 
     /// True when a live idea glued this address (a dialect entry so marked

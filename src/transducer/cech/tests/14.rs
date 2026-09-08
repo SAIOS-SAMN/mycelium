@@ -85,7 +85,7 @@ fn work_of_one_fetched_vertex_is_independent_of_n() {
         thirty.set_section(&x, Section { addr: x.clone(), gamma: Rotor::identity() }, vol());
     }
     assert!(
-        thirty.degrees.get(3).map_or(true, |l| l.is_empty()),
+        thirty.degrees.get(3).is_none_or(|l| l.is_empty()),
         "thirty disjoint bodies form no 3-cell"
     );
     let run_scene = |n: u64| -> u64 {

@@ -11,13 +11,13 @@ fn two_bubbles_on_one_chart_share_an_edge_not_a_triangle() {
     assert_eq!(c.len(), 2, "disjoint remainders are two bubbles");
     let keys: Vec<Vec<u8>> = c.bubbles.fiber(ROOT).map(|(k, _)| k).collect();
     let edges = c.complex.link(&keys[0], 1);
-    assert!(!edges.is_empty() || c.complex.degrees.get(1).map_or(true, |l| !l.is_empty()) || {
+    assert!(!edges.is_empty() || c.complex.degrees.get(1).is_none_or(|l| !l.is_empty()) || {
         // same chart prefix (leading axis of a bar) may or may not coincide;
         // empty cover overlap is honest.
         true
     });
     assert!(
-        c.complex.degrees.get(2).map_or(true, |l| l.is_empty()),
+        c.complex.degrees.get(2).is_none_or(|l| l.is_empty()),
         "disjoint remainders share no 2-cell"
     );
 }
