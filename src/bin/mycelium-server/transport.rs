@@ -6,11 +6,9 @@
 //! rtt an aperture holds is a stroke count.
 
 use crate::Mesh;
-use mycelium::network::nerve::Router;
 use mycelium::network::wire::Frame;
 use std::io::{Read, Write};
 use std::net::TcpStream;
-use std::sync::Mutex;
 
 pub(crate) fn arm_deadline(s: &TcpStream) {
     let _ = s.set_read_timeout(None);
@@ -154,23 +152,35 @@ pub(crate) fn rtt_floor(mesh: &Mesh, id: &[u8]) -> Option<u64> {
         .and_then(|w| w.get(id).and_then(|ring| ring.iter().copied().min()))
 }
 
-/// 47.5's Λ for one listing, in admitted receipts:
-/// `from_transport(rtt_floor, aperture_cycle())` to the hypha the
-/// listing's address is routed to. `None` where this node has measured no
-/// round trip to that hypha, or routes the address nowhere — an unmeasured
-/// transport has no deadline (`transport_deadline`), and a citation does
-/// not lapse against a number nobody read.
+/// 47.5's Λ for one chart, in admitted receipts:
+/// `from_transport(rtt_floor, aperture_cycle())` to the hypha the Cover
+/// homes that chart to — the fibre on the lanes the listing's magnitude
+/// occupies, then room, then identity (16.11, `nerve::home`), this court a
+/// candidate at the room the kernel read. `None` where this node has
+/// measured no round trip to that hypha — a chart homed here among them,
+/// since a court measures no transport to itself — or where a mesh lock
+/// cannot be read: an unmeasured transport has no deadline
+/// (`transport_deadline`), and a citation does not lapse against a number
+/// nobody read.
 ///
-/// The chapter's Λ is per CHART and this is per listing address; a
-/// listing's charts can be homed at different hyphae, and a chart's home
-/// is the Cover's answer (16.11) over the invariant and magnitude the
-/// kernel holds. Recorded in `lapse_docket`, not guessed at here.
-pub(crate) fn withholding_lambda(mesh: &Mesh, router: &Mutex<Router>, addr: &[u8]) -> Option<u64> {
-    let home = {
-        let r = router.lock().ok()?;
-        r.closest(addr).map(|(id, _)| id)?
+/// It resolved the home by the router's XOR distance on the listing's
+/// address bytes (Stage 11 I20), which is where a percept rendezvous is
+/// routed and not where a chart is homed, and it looked the round trip up
+/// under the home's key where the windows are kept under the socket
+/// string, so it never named a hypha the transport had measured.
+pub(crate) fn withholding_lambda(
+    mesh: &Mesh,
+    chart: &mycelium::transducer::stalk::Invariant,
+    mag: &[u64; 4],
+    room: &[u64; 4],
+) -> Option<u64> {
+    let (Ok(c), Ok(r), Ok(a)) = (mesh.cover.lock(), mesh.rooms.lock(), mesh.addrs.lock()) else {
+        return None;
     };
-    let floor = rtt_floor(mesh, &home)?;
+    let (_, home_addr) =
+        mycelium::network::nerve::home(&c, chart, mag, &r, &a, Some((&mesh.vk, room, mesh.bind.as_str())));
+    drop((c, r, a));
+    let floor = rtt_floor(mesh, home_addr.as_bytes())?;
     Some(mycelium::physics::from_transport(
         floor,
         mycelium::physics::aperture_cycle() as u64,

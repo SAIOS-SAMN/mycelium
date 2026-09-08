@@ -114,6 +114,44 @@ assert!(
 );
 }
 
+/// 47.5, Stage 11 I20 — Λ IS PER CHART. The lapse asks the caller with the
+/// listing's chart (`invariant_of` of the pending element), the listing's
+/// magnitude and this court's room — the three coordinates the Cover's
+/// `home` reads (16.11) — and never with the listing's address, which the
+/// router could only place by XOR distance. A caller that records what it
+/// was asked is asked exactly those coordinates, once for the one pending
+/// listing; a caller that has measured no transport lapses nothing.
+#[test]
+fn the_lapse_asks_lambda_with_the_listing_chart_magnitude_and_the_court_room() {
+let mut k = Kernel::new();
+let a = vec![(0, 0, 1u8)];
+let b = vec![(0, 0, 2u8)];
+assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+let listed = k
+    .pending
+    .fiber(crate::network::nerve::ROOT)
+    .next()
+    .map(|(_, (e, _))| e.clone())
+    .expect("listed");
+let want_chart = crate::transducer::stalk::invariant_of(&listed);
+let want_mag = listed.magnitude();
+let room = k.lane_room();
+let want_room: [u64; 4] = std::array::from_fn(|l| room[l] as u64);
+let lambda = crate::physics::aperture_cycle() as u64;
+k.set_height(k.height().saturating_add(lambda));
+let asked = std::cell::RefCell::new(Vec::new());
+k.court_stroke(|chart, mag, room| {
+    asked.borrow_mut().push((chart.clone(), *mag, *room));
+    None
+});
+let asked = asked.into_inner();
+assert_eq!(asked.len(), 1, "Λ is asked once, for the one pending listing: {asked:?}");
+assert_eq!(asked[0].0, want_chart, "with the listing's chart, never its address");
+assert_eq!(asked[0].1, want_mag, "with the listing's magnitude, so the occupied lanes route it");
+assert_eq!(asked[0].2, want_room, "and with this court's room, so it is a candidate home");
+assert_eq!(k.pending.len(), 1, "an unmeasured transport lapses nothing");
+}
+
 /// D12 — THE ESCROW-PRICED DOOR: a calm mesh keeps a free door; a
 /// saturated mesh charges congestion (fee → the pool) and DEFERS a
 /// speaker who can pay nothing on a fully exhausted lane — spam costs

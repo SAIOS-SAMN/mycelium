@@ -16,16 +16,19 @@ impl Kernel {
     /// waits on actually takes to answer, so a citation on a fast wire
     /// waited as long as one on a slow one, and no wire's measurement
     /// moved it. The transport is not measured in this kernel and cannot
-    /// be: the caller holds the mesh. It answers `lambda(addr)`, and
-    /// `None` -- an unmeasured round trip -- does NOT lapse, which is what
-    /// `transport_deadline` already says of an unmeasured RTT and what
-    /// rule 11 says of every unread value.
+    /// be: the caller holds the mesh. `None` -- an unmeasured round trip
+    /// -- does NOT lapse, which is what `transport_deadline` already says
+    /// of an unmeasured RTT and what rule 11 says of every unread value.
     ///
-    /// WHAT IS STILL OWED: 47.5's Λ is per CHART, and the caller resolves
-    /// per listing ADDRESS. A listing's charts can be homed at different
-    /// hyphae, and the home of a chart is the Cover's answer (16.11) over
-    /// the listing's invariant and magnitude, which the caller would have
-    /// to read out of this kernel to ask. Recorded, not guessed at.
+    /// Λ IS PER CHART (47.5, Stage 11 I20). The caller is asked with the
+    /// listing's chart and magnitude — `invariant_of` and `magnitude()` of
+    /// the pending element, which only this kernel holds — and this
+    /// court's own room, so it can answer with the Cover's home for that
+    /// chart (16.11: the fibre on the occupied lanes, then room, then
+    /// identity) and the round trip it measured to that home. It was asked
+    /// with the listing's address and resolved the home by the router's
+    /// XOR distance on the address bytes, which is not where a chart is
+    /// homed and never named a hypha the transport had measured.
     ///
     /// THE LAPSE IS AN ORBIT, NOT A SWEEP (45.7, rule 10). It walked the
     /// whole `pending` fiber with no budget, collected every expired
@@ -46,19 +49,22 @@ impl Kernel {
     pub(crate) fn lapse_docket(
         &mut self,
         budget: &mut crate::physics::Budget,
-        lambda: impl Fn(&[u8]) -> Option<u64>,
+        lambda: impl Fn(&crate::transducer::stalk::Invariant, &[u64; 4], &[u64; 4]) -> Option<u64>,
     ) {
         let now = self.height();
+        let room = self.lane_room();
+        let room: [u64; 4] = std::array::from_fn(|l| room[l] as u64);
         let mut lapse: Vec<(Address, u64)> = Vec::new();
         let mut last: Option<Vec<u8>> = None;
         {
             let from = self.lapse_cursor.clone();
-            for (addr, _) in self.pending.cursor(&from, budget) {
+            for (addr, (listed, _)) in self.pending.cursor(&from, budget) {
                 last = Some(addr.clone());
                 let Some(&h0) = self.standing_h.get(&addr) else {
                     continue;
                 };
-                let Some(lam) = lambda(&addr) else {
+                let chart = crate::transducer::stalk::invariant_of(listed);
+                let Some(lam) = lambda(&chart, &listed.magnitude(), &room) else {
                     continue;
                 };
                 let extent = now.saturating_sub(h0);

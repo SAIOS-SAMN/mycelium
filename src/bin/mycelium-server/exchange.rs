@@ -29,15 +29,17 @@ pub(crate) type Origin = ([u8; 32], u32);
 /// holds one lock while taking another. The kernel is taken first, and
 /// under it, in this order and never the reverse: `cover`, then `rooms`,
 /// then `addrs` (`homes_here`, `demand_cover_home`, the glue in the
-/// exchange and the offer judge), or `router` and then `rtt_window` (the
-/// court stroke's Λ, `withholding_lambda`). No path holds a mesh lock,
-/// the router, the registry, the syllabus, the roots or the origin while
-/// it takes the kernel: `sign_position`, `admit_peer_receipt` and the two
-/// judges read `origin` and drop it before the kernel; the door drops the
-/// registry (`drop(reg)`) and the kernel before the syllabus and the
-/// roots; the exchange drops the kernel (`drop(k)`) before the syllabus;
-/// the transport takes `rtt_window` and `rtt` one at a time. A new site
-/// that nests two of these locks keeps this order or is returned.
+/// exchange and the offer judge, the court stroke's Λ in
+/// `withholding_lambda`), then, those three released, `rtt_window` (the
+/// same Λ). The router is never taken under the kernel. No path holds a
+/// mesh lock, the router, the registry, the syllabus, the roots or the
+/// origin while it takes the kernel: `sign_position`, `admit_peer_receipt`
+/// and the two judges read `origin` and drop it before the kernel; the
+/// door drops the registry (`drop(reg)`) and the kernel before the
+/// syllabus and the roots; the exchange drops the kernel (`drop(k)`)
+/// before the syllabus; the transport takes `rtt_window` and `rtt` one at
+/// a time. A new site that nests two of these locks keeps this order or is
+/// returned.
 pub(crate) struct Mesh {
     pub(crate) cover: Arc<Mutex<Cover>>,
     pub(crate) rooms: Arc<Mutex<Keyed<[u64; 4]>>>,
@@ -232,7 +234,7 @@ impl Exchange {
         loop {
             std::thread::yield_now();
             if let Ok(mut k) = kernel.lock() {
-                k.court_stroke(|addr| withholding_lambda(&mesh, &router, addr));
+                k.court_stroke(|chart, mag, room| withholding_lambda(&mesh, chart, mag, room));
                 let seed = k.syllabus_seed();
                 drop(k);
                 if let Ok(mut sy) = syllabus.lock() {

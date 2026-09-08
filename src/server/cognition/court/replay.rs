@@ -136,10 +136,15 @@ impl Kernel {
     /// and relocate to the cavity atlas. Pass → a section on the ruled
     /// cover, escrow held. Fills and refinements share the stroke Budget.
     ///
-    /// `lambda` is 47.5's Λ for a listing, in admitted receipts, from the
-    /// caller's measured transport; the lapse does not fire where it reads
+    /// `lambda` is 47.5's Λ for a listing's chart, in admitted receipts,
+    /// from the caller's measured transport to the hypha the Cover homes
+    /// that chart to; it is asked with the chart, the listing's magnitude
+    /// and this court's room, and the lapse does not fire where it reads
     /// `None`. See `lapse_docket`.
-    pub fn court_stroke(&mut self, lambda: impl Fn(&[u8]) -> Option<u64>) {
+    pub fn court_stroke(
+        &mut self,
+        lambda: impl Fn(&crate::transducer::stalk::Invariant, &[u64; 4], &[u64; 4]) -> Option<u64>,
+    ) {
         let mut budget = self.physics.stroke();
         let mut keys: Vec<Vec<u8>> = Vec::new();
         let from = self.open_cursor.clone();
