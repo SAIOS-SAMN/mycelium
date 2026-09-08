@@ -368,19 +368,28 @@ fn a_verdict_binds_the_signed_position_to_the_word_it_rules() {
     let p = prefix_for(r);
 
     assert_eq!(
-        admit_ruled(&p, &ruled, r.prev_receipt_hash),
+        admit_ruled(&p, r, &vk, &ruled, r.prev_receipt_hash),
         Ok(()),
         "the signed position and the ruled word are the same"
     );
     assert_eq!(
-        admit_ruled(&p, b"another word", r.prev_receipt_hash),
+        admit_ruled(&p, r, &vk, b"another word", r.prev_receipt_hash),
         Err(REFUSE_RECEIPT),
         "a ruling on an address the prefix does not name is refused"
     );
     assert_eq!(
-        admit_ruled(&p, &ruled, [0xab; 32]),
+        admit_ruled(&p, r, &vk, &ruled, [0xab; 32]),
         Err(REFUSE_RECEIPT),
-        "and so is one travelling with a receipt the prefix does not name"
+        "and so is one travelling with a head the prefix does not name"
+    );
+    // ONE SIGNER. A frame whose receipt names a key other than the court it
+    // claims is two claims, and step 3 would write its state under the key
+    // the receipt names while step 2 verified under the other.
+    let victim = crate::court::identity::HyphaKey::vk_from_name("victim");
+    assert_eq!(
+        admit_ruled(&p, r, &victim, &ruled, r.prev_receipt_hash),
+        Err(REFUSE_RECEIPT),
+        "the receipt's key and the act's court are one key or the frame is refused"
     );
     let _ = court;
 }

@@ -36,18 +36,28 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         return;
     };
     // Steps 1 and 2: the origin is ours and the signature verifies over
-    // 47.1's prefix under the key the frame claims.
+    // 47.1's prefix under THE KEY THE RECEIPT NAMES. It verified under
+    // `cvoice`, a separate field of the act body, while step 3 below reads
+    // the head at `section.receipt.vk` -- two different keys for a chapter
+    // that checks one signer, so a frame could pass step 2 on its own key
+    // and write step 3's state under someone else's.
+    let signer = section.receipt.vk;
     if let Err(why) =
-        mycelium::court::admission::admit_signature(origin, &section.prefix, &cvoice, &section.sig)
+        mycelium::court::admission::admit_signature(origin, &section.prefix, &signer, &section.sig)
     {
         refuse(s, why);
         return;
     }
-    // The two bindings 47.1 fixes in the prefix itself: its payload is the
-    // ruled ADDRESS and its prev hash is the receipt the ruling binds to.
-    if let Err(why) =
-        mycelium::court::admission::admit_ruled(&section.prefix, addr.as_bytes(), receipt)
-    {
+    // 47.1's bindings: the prefix's payload is the ruled ADDRESS, its prev
+    // hash is the head the ruling binds to, and the receipt names the key
+    // this act claims as its court.
+    if let Err(why) = mycelium::court::admission::admit_ruled(
+        &section.prefix,
+        &section.receipt,
+        &cvoice,
+        addr.as_bytes(),
+        receipt,
+    ) {
         refuse(s, why);
         return;
     }

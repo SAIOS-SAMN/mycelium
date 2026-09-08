@@ -148,11 +148,25 @@ pub fn admit_signature(
     Ok(())
 }
 
-/// THE TWO BINDINGS 47.1 FIXES IN THE PREFIX ITSELF, for a ruling: its
-/// payload is the ruled ADDRESS and its prev hash is the receipt the ruling
-/// binds to. Without them a signature proves only that the court signed
-/// SOMETHING — a frame could carry a valid signature over one position and
-/// a ruling on another address under it.
+/// THE BINDINGS 47.1 FIXES, for a ruling that travels with its receipt: the
+/// prefix's payload is the ruled ADDRESS, its prev hash is the head the
+/// ruling binds to, and the receipt names the very key the act claims as
+/// its court. Without the first two a signature proves only that the court
+/// signed SOMETHING — a frame could carry a valid signature over one
+/// position and a ruling on another address under it.
+///
+/// ONE SIGNER, AND ONE ONLY. Without the third, 47.2 checks two different
+/// keys: step 2 verifies "under the claimed key" while step 3 checks "`K`
+/// against the signer's known head", and `Admissions::admit` reads that
+/// head at `receipt.vk`. A frame carrying a signature that verifies under
+/// its own key and a receipt naming a VICTIM's key therefore passed step 2
+/// on the sender's key and wrote step 3's state under the victim's, so one
+/// frame per victim poisoned that victim's head: its next genuine receipt
+/// then reads as a `Gap` that no back-fill can close, or as an
+/// `Equivocation`, which 47.4 answers with a bond burn. The prefix and the
+/// receipt are one claim, and so is the voice that carries them; a
+/// disagreement between halves of one claim is `REFUSE_RECEIPT`, as the
+/// prefix-versus-receipt disagreement in `admit` already is.
 ///
 /// What the prefix does not cover is the ruling byte; 47.1 fixes the signed
 /// bytes exactly, so a verdict binds the court's position and the word it
@@ -160,10 +174,15 @@ pub fn admit_signature(
 /// K for each one.
 pub fn admit_ruled(
     prefix: &SignedPrefix,
+    receipt: &KStepReceipt,
+    claimed_court: &[u8; 32],
     ruled: &[u8],
-    receipt: [u8; 32],
+    head: [u8; 32],
 ) -> Result<(), &'static str> {
-    if prefix.payload != ruled || prefix.prev_receipt_hash != receipt {
+    if prefix.payload != ruled || prefix.prev_receipt_hash != head {
+        return Err(REFUSE_RECEIPT);
+    }
+    if receipt.vk != *claimed_court {
         return Err(REFUSE_RECEIPT);
     }
     Ok(())
