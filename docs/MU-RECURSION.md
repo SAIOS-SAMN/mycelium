@@ -5861,11 +5861,20 @@ The payload address is the M2 composite (A21) for a word or form, the
 ruled root or cover root for a transmission digest, the listing key for a
 settlement act, the manifest's own address for a manifest. It is never a
 digest of frame bytes: two spellings of one word have one receipt lineage,
-and a receiver reads the form's coordinates off the address. The
-`prev_receipt_hash` and the receipt's own chain hash are digests of
-receipt bytes, which are the object there. `cover_signed_prefix`
-(dialogue/cover.rs) becomes this prefix, so every signed digest is a receipt
-and every signer's causal position travels with its signature.
+and a receiver reads the form's coordinates off the address. The chart is
+the FRAME's chart, the one the payload lives on and a manifest key would be
+scoped to (46.2): a word's or form's chart on an offer or a verdict, and
+none on a transmission digest, whose payload is a root over the whole
+cover. It is never the signer's cover written out: a prefix carrying every
+chart a hypha holds grows with the book, and a length the wire writes in
+two bytes then wraps, which is how every digest of a hypha with a thousand
+listings was refused whole by every peer on 2026-09-08 (Stage 11 I33). A
+prefix that does not fit its wire lengths is refused where it is built,
+never signed and never framed (rule 11). The `prev_receipt_hash` and the
+receipt's own chain hash are digests of receipt bytes, which are the
+object there. `cover_signed_prefix` (dialogue/cover.rs) becomes this
+prefix, so every signed digest is a receipt and every signer's causal
+position travels with its signature.
 
 ### 47.2 Admission
 
