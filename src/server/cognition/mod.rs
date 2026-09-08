@@ -24,6 +24,7 @@ mod snapshot;
 mod wire;
 
 pub use crate::transducer::sentence::{cited_pattern, replay, verify, Cite};
+pub use germinate::attest::Uttered;
 pub use kernel::Kernel;
 pub(crate) use keys::*;
 pub(crate) use cocycle::CocycleRow;

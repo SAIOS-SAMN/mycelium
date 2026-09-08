@@ -9,6 +9,15 @@ use crate::cognition::*;
 use crate::transducer::a21::Address;
 use crate::transducer::element::{self, Element};
 
+/// WHAT ONE UTTERANCE MEASURED: the words it cited, the residual it left,
+/// and the length of the chain it spoke to. Three counts that are read
+/// together, written to the receipt together, and mean nothing apart.
+pub struct Uttered {
+    pub cites: usize,
+    pub residual: usize,
+    pub chain_len: usize,
+}
+
 impl Kernel {
     /// QUOTE — a local reading of the page: listings still on_page, in
     /// atlas order, under one stroke Budget. Tests use this; the wire
@@ -63,7 +72,8 @@ impl Kernel {
             NormalForm::Irreducible(r) => r.sub().len(),
         };
         let out = self.commit_all(vec![reduction], voice);
-        self.record_utterance(voice, listing, k, cites.len(), residual, chain.len(), out)
+        let said = Uttered { cites: cites.len(), residual, chain_len: chain.len() };
+        self.record_utterance(voice, listing, k, said, out)
     }
 
     /// A repeated (vk, address, K) is the reply last given, if any.
@@ -95,11 +105,10 @@ impl Kernel {
         voice: [u8; 32],
         addr: Address,
         k: u64,
-        cites: usize,
-        residual: usize,
-        chain_len: usize,
+        said: Uttered,
         out: Outcome,
     ) -> Outcome {
+        let Uttered { cites, residual, chain_len } = said;
         eprintln!(
             "  court attest {:02x}{:02x}… voice {:02x}{:02x}… K {k} cites {cites} residual {residual} of {chain_len}",
             addr[0], addr[1], voice[0], voice[1]

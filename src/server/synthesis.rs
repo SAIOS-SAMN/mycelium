@@ -115,7 +115,8 @@ pub fn attest(
     let Ok(mut g) = k.lock() else { return Outcome::GermPending };
     g.puncture_from(cites);
     let out = g.commit_all(vec![reduction], voice);
-    g.record_utterance(voice, listing, k_voice, cites.len(), residual, chain.len(), out)
+    let said = crate::cognition::Uttered { cites: cites.len(), residual, chain_len: chain.len() };
+    g.record_utterance(voice, listing, k_voice, said, out)
 }
 
 /// THE PROBE, off the lock: the sentence replays over the language snapshot
