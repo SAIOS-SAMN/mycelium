@@ -10,11 +10,11 @@ pub fn clean_word() -> Element {
     from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap())
 }
 
-pub fn stalks_of(fed: &[(crate::transducer::a21::Address, Element)]) -> Stalks {
+pub fn stalks_of(fed: &[(crate::transducer::address::Address, Element)]) -> Stalks {
     Stalks::over_elements(fed.iter().map(|(_, e)| e))
 }
 
-pub fn index_of(fed: &[(crate::transducer::a21::Address, Element)]) -> Keyed<usize> {
+pub fn index_of(fed: &[(crate::transducer::address::Address, Element)]) -> Keyed<usize> {
     let mut k = Keyed::new();
     for (i, (a, _)) in fed.iter().enumerate() {
         k.insert(a, i);

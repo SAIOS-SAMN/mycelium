@@ -53,7 +53,7 @@ impl Treasury {
         out.extend_from_slice(&(self.escrowed.len() as u32).to_le_bytes());
         crate::snapshot::persist(&self.escrowed, |addr, row| {
             let (voices, mu, anchor) = (&row.voices, &row.mu, &row.anchor);
-            let _ = crate::transducer::a21::put_addr(&mut out, addr);
+            let _ = crate::transducer::address::put_addr(&mut out, addr);
             out.extend_from_slice(&(voices.len() as u32).to_le_bytes());
             for v in voices {
                 out.extend_from_slice(v);
@@ -136,7 +136,7 @@ impl Treasury {
                 return None; // untrusted count: ≥108 bytes per award
             }
             for _ in 0..ne {
-                let addr = crate::transducer::a21::take_addr(b, pos)?;
+                let addr = crate::transducer::address::take_addr(b, pos)?;
                 let nv = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
                 *pos += 4;
                 if nv > b.len().saturating_sub(*pos) / 32 {

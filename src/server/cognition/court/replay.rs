@@ -6,7 +6,7 @@
 //! it closes; a torsion cycle is filed at the period it was witnessed at.
 
 use crate::cognition::*;
-use crate::transducer::a21::Address;
+use crate::transducer::address::Address;
 use crate::transducer::element::{self, Element};
 
 impl Kernel {
@@ -128,7 +128,7 @@ impl Kernel {
         if budget.remaining() == 0 {
             return;
         }
-        let mut pending: Vec<(crate::transducer::stalk::Invariant, crate::transducer::a21::Address)> = Vec::new();
+        let mut pending: Vec<(crate::transducer::stalk::Invariant, crate::transducer::address::Address)> = Vec::new();
         for (_, v) in self.unfilled.cursor(crate::network::nerve::ROOT, budget) {
             pending.push(v.clone());
         }
@@ -290,8 +290,8 @@ impl Kernel {
     pub(crate) fn mint_or_admit_translation(
         &mut self,
         gamma: &crate::transducer::alphabet::Rotor,
-        a: crate::transducer::a21::Address,
-        b: crate::transducer::a21::Address,
+        a: crate::transducer::address::Address,
+        b: crate::transducer::address::Address,
         ratifier: [u8; 32],
     ) {
         let Some(t) = element::from_translation(gamma, &a, &b) else {

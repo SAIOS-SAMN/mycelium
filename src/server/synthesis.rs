@@ -180,7 +180,7 @@ pub fn probe(
         g.puncture_from(cites); // the fiber deepens on what was verified
         // The settlement goes to the court with the utterance that made it,
         // for the court to replay and measure itself.
-        g.record_settlement(crate::transducer::a21::Address::from(target), listing.sub().to_vec(), voice, cites, before, settled.2);
+        g.record_settlement(crate::transducer::address::Address::from(target), listing.sub().to_vec(), voice, cites, before, settled.2);
     }
     settled
 }

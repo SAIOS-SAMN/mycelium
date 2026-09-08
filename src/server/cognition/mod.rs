@@ -42,7 +42,7 @@ pub use wire::{
     germ_bytes, outcome_code, perceive, Percept,
 };
 
-use crate::transducer::a21::{put_addr, take_addr, Address};
+use crate::transducer::address::{put_addr, take_addr, Address};
 use crate::transducer::blade::components;
 use crate::transducer::element::{self, Element};
 

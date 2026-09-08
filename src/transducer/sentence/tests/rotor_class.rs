@@ -41,17 +41,17 @@ fn torsion_filed_only_when_witnessed_at_period() {
     let mut t = from_residual(&crate::transducer::germinate::germinate(&a, &b).unwrap());
     t.puncture(vec![(2, 3), (3, 1), (1, 2)]);
     assert_eq!(t.torse(), 1, "the hue cycle is one torsion generator");
-    let ws = crate::transducer::toroid::witness_stored(&t);
+    let ws = crate::transducer::torsion_witness::witness_stored(&t);
     assert!(
         ws.iter().any(|(ell, w)| *ell == 3
-            && matches!(w, crate::transducer::toroid::HolonomicLoopWitness::Closed { period: 3, .. })),
+            && matches!(w, crate::transducer::torsion_witness::HolonomicLoopWitness::Closed { period: 3, .. })),
         "period 3 is witnessed closed: {ws:?}"
     );
     t.record_torsion(vec![(1, 9)], 8, crate::transducer::element::FIBER_SPATIAL);
-    let ws = crate::transducer::toroid::witness_stored(&t);
+    let ws = crate::transducer::torsion_witness::witness_stored(&t);
     assert!(
         ws.iter().any(|(ell, w)| *ell == 8
-            && matches!(w, crate::transducer::toroid::HolonomicLoopWitness::Open { .. })),
+            && matches!(w, crate::transducer::torsion_witness::HolonomicLoopWitness::Open { .. })),
         "an unclosed walk is not believed: {ws:?}"
     );
 }
@@ -107,7 +107,7 @@ fn filed_torsion_chord_replays_or_refuses() {
         .expect("filed class");
     assert_eq!(
         torsion_loop_rotor(&keyed, &class).and_then(|r| r.class_key()),
-        Some(crate::transducer::a21::Address::from(class)),
+        Some(crate::transducer::address::Address::from(class)),
         "the chord face is the keyed representative"
     );
     assert!(
@@ -345,6 +345,6 @@ fn a_non_versor_holonomy_is_refused_not_zero_class() {
     assert!(ClassVector::of_word(&w).is_none());
     assert!(ClassVector::read(&w, element::identity_versor(), CycleType::Identity).is_none());
     let rk = alphabet::Rotor::zero().key();
-    assert_eq!(rk.tag(), Some(crate::transducer::a21::TAG_ROTOR));
+    assert_eq!(rk.tag(), Some(crate::transducer::address::TAG_ROTOR));
     assert_ne!(w.class_key(), Some(rk), "Word::class_key does not fall back to TAG_ROTOR");
 }

@@ -11,7 +11,7 @@ use crate::transducer::stalk;
 use super::tape::from_element_form;
 
 impl Form {
-    pub fn glue(&mut self, s: &Form, s_addr: crate::transducer::a21::Address, placement: Word, magnitude: [u64; 4]) -> Option<u16> {
+    pub fn glue(&mut self, s: &Form, s_addr: crate::transducer::address::Address, placement: Word, magnitude: [u64; 4]) -> Option<u16> {
         if !s.is_closed() {
             return None;
         }
@@ -291,11 +291,11 @@ pub fn rule_of_form(mut form: Form) -> SentenceRule {
 /// Vertex key of a sentence form: Word vertices (M1, carriage, contact,
 /// gauge) and face words. The body's absolute position is already quotiented
 /// on the chain; the bundle's carriage is meaning.
-pub fn vertex_address(e: &Element) -> Option<crate::transducer::a21::Address> {
+pub fn vertex_address(e: &Element) -> Option<crate::transducer::address::Address> {
     from_element_form(e).map(|f| form_vertex_key(&f))
 }
-pub fn form_vertex_key(f: &Form) -> crate::transducer::a21::Address {
-    let mut buf = vec![crate::transducer::a21::TAG_FORM];
+pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
+    let mut buf = vec![crate::transducer::address::TAG_FORM];
     buf.extend_from_slice(&(f.vertices.len() as u32).to_le_bytes());
     for v in &f.vertices {
         match v {
@@ -308,7 +308,7 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::a21::Address {
                 ..
             } => {
                 buf.push(1);
-                crate::transducer::a21::put_bytes(&mut buf, &word.key());
+                crate::transducer::address::put_bytes(&mut buf, &word.key());
                 carriage.to_bytes(&mut buf);
                 match contact {
                     None => buf.push(0),
@@ -333,8 +333,8 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::a21::Address {
                 ..
             } => {
                 buf.push(2);
-                crate::transducer::a21::put_bytes(&mut buf, address);
-                crate::transducer::a21::put_bytes(&mut buf, &placement.key());
+                crate::transducer::address::put_bytes(&mut buf, address);
+                crate::transducer::address::put_bytes(&mut buf, &placement.key());
                 buf.extend_from_slice(&depth.to_le_bytes());
             }
             Vertex::Rebased {
@@ -373,9 +373,9 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::a21::Address {
     for face in &f.faces {
         buf.extend_from_slice(&face.i.to_le_bytes());
         buf.extend_from_slice(&face.j.to_le_bytes());
-        crate::transducer::a21::put_bytes(&mut buf, &face.transport.word.key());
+        crate::transducer::address::put_bytes(&mut buf, &face.transport.word.key());
         if let Some(k) = face.transport.carriage.key() {
-            let _ = crate::transducer::a21::put_addr(&mut buf, k);
+            let _ = crate::transducer::address::put_addr(&mut buf, k);
         }
         let mut g = face.transport.gauge.clone();
         g.sort_unstable();
@@ -393,13 +393,13 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::a21::Address {
         buf.extend_from_slice(&(x as u64).to_le_bytes());
     }
     for (class, members) in f.sections.fiber(crate::network::nerve::ROOT) {
-        crate::transducer::a21::put_bytes(&mut buf, &class);
+        crate::transducer::address::put_bytes(&mut buf, &class);
         buf.extend_from_slice(&(members.len() as u16).to_le_bytes());
         for m in members {
             buf.extend_from_slice(&m.to_le_bytes());
         }
     }
-    crate::transducer::a21::Address::new(buf)
+    crate::transducer::address::Address::new(buf)
 }
 /// Chart of a crystallized form (M4 step 3): the form's cell counts,
 /// then per vertex its A3-reduced plane form (a rebased vertex reads the
@@ -456,8 +456,8 @@ pub(crate) fn vertex_match_key(form: &Form, i: u16) -> Option<Vec<u8>> {
 
 pub(crate) fn ends_key(a: &[u8], b: &[u8]) -> Vec<u8> {
     let mut buf = Vec::new();
-    crate::transducer::a21::put_bytes(&mut buf, a);
-    crate::transducer::a21::put_bytes(&mut buf, b);
+    crate::transducer::address::put_bytes(&mut buf, a);
+    crate::transducer::address::put_bytes(&mut buf, b);
     buf
 }
 

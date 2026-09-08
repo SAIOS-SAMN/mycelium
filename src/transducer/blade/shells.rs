@@ -1,5 +1,5 @@
-// 20 — THE PEEL: the outline, the core, the ring, the interior, and the
-// exact magnifications of a body.
+// 20 — THE SHELLS OF A BODY: the outline, the core, the ring, the
+// interior, and the exact magnifications between them.
 //
 //! This file and the sensor read cell coordinates; everything above them is
 //! versors and words (law 11).

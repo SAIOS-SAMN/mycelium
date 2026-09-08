@@ -13,7 +13,7 @@ pub(crate) fn spell_versor(v: &Versor) -> Option<Word> {
 }
 
 /// Transport class of a conformal versor: the spelled word's class key.
-pub fn class_key_of_versor(v: &Versor) -> Option<crate::transducer::a21::Address> {
+pub fn class_key_of_versor(v: &Versor) -> Option<crate::transducer::address::Address> {
     spell_versor(v)?.class_key()
 }
 
@@ -38,26 +38,26 @@ pub(crate) fn unfolded_key(measure: &Measure) -> Vec<u8> {
 
 /// Hue map as a section coordinate: word conjugacy and the map, never a
 /// matching key for correspondence (chapter 21 step 1).
-pub(crate) fn hue_section_key(word: &Word, gauge: &[(u8, u8)]) -> Option<crate::transducer::a21::Address> {
-    let mut buf = vec![crate::transducer::a21::TAG_HUE];
-    crate::transducer::a21::put_bytes(&mut buf, word.class_key()?.as_bytes());
+pub(crate) fn hue_section_key(word: &Word, gauge: &[(u8, u8)]) -> Option<crate::transducer::address::Address> {
+    let mut buf = vec![crate::transducer::address::TAG_HUE];
+    crate::transducer::address::put_bytes(&mut buf, word.class_key()?.as_bytes());
     buf.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
     for &(a, b) in gauge {
         buf.push(a);
         buf.push(b);
     }
-    Some(crate::transducer::a21::Address::new(buf))
+    Some(crate::transducer::address::Address::new(buf))
 }
 
-pub(crate) fn vertex_transport_key(word: &Word, gauge: &[(u8, u8)]) -> Option<crate::transducer::a21::Address> {
-    let mut buf = vec![crate::transducer::a21::TAG_WORD, ShellKind::Whole.as_u8()];
-    crate::transducer::a21::put_bytes(&mut buf, word.class_key()?.as_bytes());
+pub(crate) fn vertex_transport_key(word: &Word, gauge: &[(u8, u8)]) -> Option<crate::transducer::address::Address> {
+    let mut buf = vec![crate::transducer::address::TAG_WORD, ShellKind::Whole.as_u8()];
+    crate::transducer::address::put_bytes(&mut buf, word.class_key()?.as_bytes());
     buf.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
     for &(b, a) in gauge {
         buf.push(b);
         buf.push(a);
     }
-    Some(crate::transducer::a21::Address::new(buf))
+    Some(crate::transducer::address::Address::new(buf))
 }
 
 pub(crate) fn take_u16(b: &[u8], pos: &mut usize) -> Option<u16> {

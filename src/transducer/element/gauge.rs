@@ -42,7 +42,7 @@ pub(crate) fn gcd(a: u32, b: u32) -> u32 {
 
 /// The key of a gauge profile: the charge coordinates written out.
 pub fn gauge_key(asg: &[(u8, u8)]) -> Vec<u8> {
-    let mut buf = vec![crate::transducer::a21::TAG_GAUGE];
+    let mut buf = vec![crate::transducer::address::TAG_GAUGE];
     for ((b, a), n) in gauge_profile(asg) {
         buf.push(b);
         buf.push(a);
@@ -185,20 +185,20 @@ pub fn assignment(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
 
 /// Canonical key of one hue pair.
 pub fn hue_pair_key(before: u8, after: u8) -> Vec<u8> {
-    vec![crate::transducer::a21::TAG_HUE, before, after]
+    vec![crate::transducer::address::TAG_HUE, before, after]
 }
 
 /// The hues a pair key names. The tag is not a colour.
 pub fn hue_pair_of(key: &[u8]) -> Option<(u8, u8)> {
     match key {
-        [crate::transducer::a21::TAG_HUE, b, a] => Some((*b, *a)),
+        [crate::transducer::address::TAG_HUE, b, a] => Some((*b, *a)),
         _ => None,
     }
 }
 
 /// Canonical key of a whole assignment (the exact list of pairs).
 pub fn assignment_key(asg: &[(u8, u8)]) -> Vec<u8> {
-    let mut buf = vec![crate::transducer::a21::TAG_ASSIGN];
+    let mut buf = vec![crate::transducer::address::TAG_ASSIGN];
     buf.extend_from_slice(&(asg.len() as u32).to_le_bytes());
     for &(b, a) in asg {
         buf.push(b);

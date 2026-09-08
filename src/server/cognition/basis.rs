@@ -48,7 +48,7 @@ impl Kernel {
         rows.sort();
         let mut buf = Vec::new();
         for a in &rows {
-            crate::transducer::a21::put_bytes(&mut buf, a);
+            crate::transducer::address::put_bytes(&mut buf, a);
         }
         buf
     }
@@ -217,7 +217,7 @@ impl Kernel {
         let digests = crate::transducer::sheaf::digests(&self.ruled);
         let mut buf = Vec::new();
         for d in &digests {
-            crate::transducer::a21::put_bytes(&mut buf, &d.root);
+            crate::transducer::address::put_bytes(&mut buf, &d.root);
         }
         self.ruled_root = crate::chronometry::payload_hash(&buf);
     }
@@ -521,7 +521,7 @@ impl Kernel {
     pub fn offers_pending(
         &self,
         budget: &mut crate::physics::Budget,
-    ) -> Vec<(crate::transducer::a21::Address, Vec<u8>)> {
+    ) -> Vec<(crate::transducer::address::Address, Vec<u8>)> {
         let mut out = Vec::new();
         for (addr, _) in self.offered.fiber(crate::network::nerve::ROOT) {
             if !budget.spend() {
@@ -530,7 +530,7 @@ impl Kernel {
             let Some(w) = self.provisional.get(&addr) else {
                 continue;
             };
-            out.push((crate::transducer::a21::Address::from(addr), w.to_bytes()));
+            out.push((crate::transducer::address::Address::from(addr), w.to_bytes()));
         }
         out
     }

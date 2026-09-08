@@ -1,7 +1,7 @@
 // 26, law 7 — THE LAPSE: what a docket that ran out of time releases.
 
 use crate::cognition::*;
-use crate::transducer::a21::Address;
+use crate::transducer::address::Address;
 
 impl Kernel {
     /// 47.5 / 5.5: a listing whose standing height is an aperture of
@@ -10,7 +10,7 @@ impl Kernel {
     pub(crate) fn lapse_docket(&mut self) {
         let now = self.height();
         let lambda = crate::physics::aperture_cycle() as u64;
-        let mut lapse: Vec<crate::transducer::a21::Address> = Vec::new();
+        let mut lapse: Vec<crate::transducer::address::Address> = Vec::new();
         for (addr, _) in self.pending.fiber(crate::network::nerve::ROOT) {
             let Some(&h0) = self.standing_h.get(&addr) else {
                 continue;

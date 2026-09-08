@@ -62,7 +62,7 @@ fn work_of_one_fetched_vertex_is_independent_of_n() {
         c.set_edge(&a, &cc, id.clone(), vol());
         c.set_edge(&b, &cc, id, vol());
         for i in 0..n {
-            let x = crate::transducer::a21::Address::from((1000 + i).to_le_bytes().to_vec());
+            let x = crate::transducer::address::Address::from((1000 + i).to_le_bytes().to_vec());
             c.set_section(&x, Section { addr: x.clone(), gamma: Rotor::identity() }, vol());
         }
         work::reset();
@@ -81,7 +81,7 @@ fn work_of_one_fetched_vertex_is_independent_of_n() {
     // isolated extras on the same complex must not grow the work.
     let mut thirty = Complex::new();
     for i in 0..30u64 {
-        let x = crate::transducer::a21::Address::from(i.to_le_bytes().to_vec());
+        let x = crate::transducer::address::Address::from(i.to_le_bytes().to_vec());
         thirty.set_section(&x, Section { addr: x.clone(), gamma: Rotor::identity() }, vol());
     }
     assert!(
@@ -91,10 +91,10 @@ fn work_of_one_fetched_vertex_is_independent_of_n() {
     let run_scene = |n: u64| -> u64 {
         let mut c = thirty.clone();
         for i in 0..n {
-            let x = crate::transducer::a21::Address::from((2000 + i).to_le_bytes().to_vec());
+            let x = crate::transducer::address::Address::from((2000 + i).to_le_bytes().to_vec());
             c.set_section(&x, Section { addr: x.clone(), gamma: Rotor::identity() }, vol());
         }
-        let v0 = crate::transducer::a21::Address::from(0u64.to_le_bytes().to_vec());
+        let v0 = crate::transducer::address::Address::from(0u64.to_le_bytes().to_vec());
         work::reset();
         c.coboundary_on_link(&v0, |_| [0; 4]);
         work::total()

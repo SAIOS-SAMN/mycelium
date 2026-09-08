@@ -6,7 +6,7 @@
 //! and never on the bytes it happens to be spelled with.
 
 use crate::cognition::*;
-use crate::transducer::a21::Address;
+use crate::transducer::address::Address;
 use crate::transducer::element::{self, Element};
 
 /// WHAT ONE UTTERANCE MEASURED: the words it cited, the residual it left,

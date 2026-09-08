@@ -107,7 +107,7 @@ fn tape_of(coeffs: &[i128], from: &[Gen]) -> Vec<(usize, i64)> {
 /// residue of a failure is canonical.
 pub fn factor_on_plane(g: &PlaneForm, basis: &[PlaneForm]) -> Factored {
     let (rows, from) = generators(basis);
-    let Some((h, u)) = crate::core::zlinalg::hnf_with_transform(&rows) else {
+    let Some((h, u)) = crate::core::lattice::hnf_with_transform(&rows) else {
         return Factored::Unmeasured;
     };
     // s = 1: the target is odd, so one odd basis word is divided out first
@@ -124,7 +124,7 @@ pub fn factor_on_plane(g: &PlaneForm, basis: &[PlaneForm]) -> Factored {
     } else {
         (g.rot, None)
     };
-    let Some((coeffs, residue)) = crate::core::zlinalg::reduce_against(&h, &target) else {
+    let Some((coeffs, residue)) = crate::core::lattice::reduce_against(&h, &target) else {
         return Factored::Unmeasured;
     };
     // Pull the reduction back through U to exponents over the ORIGINAL

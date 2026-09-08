@@ -196,7 +196,7 @@ impl Entity {
         }
         let voice = self.session.kernel().voice();
         let bytes: Vec<Vec<u8>> = fresh.iter().map(|e| e.to_bytes()).collect();
-        let body = dialogue::encode_speech(&voice, crate::transducer::a21::Address::new(Vec::new()), self.now_tu(), &bytes);
+        let body = dialogue::encode_speech(&voice, crate::transducer::address::Address::new(Vec::new()), self.now_tu(), &bytes);
         let reply = self.session.speak_nerve(body)?;
         let got = dialogue::decode_speech_reply(&reply).unwrap_or_default();
         let mut gi = 0usize;

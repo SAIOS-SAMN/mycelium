@@ -27,7 +27,7 @@ pub enum Snap {
     Unmeasured { chord: usize, held: Vec<PivotCertificate> },
     TorsionFiled { chord: usize, ell: u32 },
     TorsionOpen { chord: usize },
-    Demand { chord: usize, key: crate::transducer::a21::Address },
+    Demand { chord: usize, key: crate::transducer::address::Address },
 }
 
 impl Snap {

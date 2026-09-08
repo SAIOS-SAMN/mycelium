@@ -2,7 +2,7 @@
 // against it pays.
 
 use crate::cognition::*;
-use crate::transducer::a21::Address;
+use crate::transducer::address::Address;
 use crate::transducer::element::Element;
 
 impl Kernel {

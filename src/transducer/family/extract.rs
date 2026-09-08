@@ -29,7 +29,7 @@ pub(crate) struct TransportClass {
 impl TransportClass {
     pub(crate) fn key(&self) -> Vec<u8> {
         let mut buf = vec![self.kind.as_u8()];
-        crate::transducer::a21::put_bytes(&mut buf, &self.word_class);
+        crate::transducer::address::put_bytes(&mut buf, &self.word_class);
         buf
     }
 }
@@ -450,8 +450,8 @@ pub(crate) fn ends_pair_key(a: &End, b: &End) -> Vec<u8> {
     let (ka, kb) = (end_key(a), end_key(b));
     let (lo, hi) = if ka <= kb { (ka, kb) } else { (kb, ka) };
     let mut buf = Vec::new();
-    crate::transducer::a21::put_bytes(&mut buf, &lo);
-    crate::transducer::a21::put_bytes(&mut buf, &hi);
+    crate::transducer::address::put_bytes(&mut buf, &lo);
+    crate::transducer::address::put_bytes(&mut buf, &hi);
     buf
 }
 
@@ -493,10 +493,10 @@ pub fn rule_replays_family(rule: &crate::transducer::sentence::SentenceRule, fam
 /// Extract, memoized by family id and working-atlas generation. A hit
 /// spends nothing; a miss spends one Budget and stores the rule.
 pub fn extract_rule_cached(
-    cache: &mut crate::network::nerve::Keyed<(crate::transducer::a21::Address, Option<crate::transducer::sentence::SentenceRule>)>,
+    cache: &mut crate::network::nerve::Keyed<(crate::transducer::address::Address, Option<crate::transducer::sentence::SentenceRule>)>,
     fam: &[u8],
     family: &[(Grid, Grid)],
-    atlas_root: crate::transducer::a21::Address,
+    atlas_root: crate::transducer::address::Address,
     budget: &mut crate::physics::Budget,
     crystal: &dyn Crystal,
 ) -> Option<crate::transducer::sentence::SentenceRule> {

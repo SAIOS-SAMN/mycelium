@@ -10,26 +10,26 @@ use super::*;
 /// One class the mesh or a mind holds on a chart: key, order, representative.
 #[derive(Clone, Debug)]
 pub struct ClassRecord {
-    pub key: crate::transducer::a21::Address,
+    pub key: crate::transducer::address::Address,
     pub order: Order,
     pub representative: Rotor,
 }
 
 pub(crate) type RemCell = (i64, i64, u8, u8);
 
-pub(crate) fn rem_cell_key(r: i64, c: i64) -> crate::transducer::a21::Address {
-    let mut buf = vec![crate::transducer::a21::TAG_CELL];
+pub(crate) fn rem_cell_key(r: i64, c: i64) -> crate::transducer::address::Address {
+    let mut buf = vec![crate::transducer::address::TAG_CELL];
     buf.extend_from_slice(&r.to_le_bytes());
     buf.extend_from_slice(&c.to_le_bytes());
-    crate::transducer::a21::Address::new(buf)
+    crate::transducer::address::Address::new(buf)
 }
 
-pub(crate) fn remainder_addr(remainder: &[RemCell]) -> crate::transducer::a21::Address {
+pub(crate) fn remainder_addr(remainder: &[RemCell]) -> crate::transducer::address::Address {
     element::from_residual(&remainder.to_vec()).address()
 }
 
 /// The idea's key: the form's vertex key. Remainder is cargo, not the name.
-pub(crate) fn idea_key(f: &Form) -> crate::transducer::a21::Address {
+pub(crate) fn idea_key(f: &Form) -> crate::transducer::address::Address {
     sentence::form_vertex_key(f)
 }
 
@@ -133,7 +133,7 @@ pub struct Bubble {
 }
 
 impl Bubble {
-    pub fn key(&self) -> crate::transducer::a21::Address {
+    pub fn key(&self) -> crate::transducer::address::Address {
         match &self.form {
             Some(f) => idea_key(f),
             None => remainder_addr(&self.remainder),
@@ -213,7 +213,7 @@ impl Bubble {
                 gamma,
             };
             let b = Section {
-                addr: crate::transducer::a21::Address::from(head.clone()),
+                addr: crate::transducer::address::Address::from(head.clone()),
                 gamma: gamma_b,
             };
             match cech::extend(&a, &b, &cell) {

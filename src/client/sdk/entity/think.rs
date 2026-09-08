@@ -149,7 +149,7 @@ impl Entity {
         listing: &[u8],
         chain: &[(i64, i64, u8, u8)],
         words: &[Element],
-    ) -> Option<crate::transducer::a21::Address> {
+    ) -> Option<crate::transducer::address::Address> {
         use crate::transducer::element::measure_lanes;
         if let Some(a) = self.open_contemplation_axis() {
             return Some(a);
@@ -179,7 +179,7 @@ impl Entity {
     /// Seed from a class at any degree on the contemplation — the coordinate
     /// the current axes could not express. A class is an ideology; the gauge
     /// that would translate one frame into the other is a translation word.
-    pub(crate) fn open_contemplation_axis(&mut self) -> Option<crate::transducer::a21::Address> {
+    pub(crate) fn open_contemplation_axis(&mut self) -> Option<crate::transducer::address::Address> {
         let classes = self.contemplation.classes_held();
         for (class, _degree) in classes {
             let a = [0u8; 32];

@@ -44,7 +44,7 @@ pub fn decode_syllabus_reply(body: &[u8]) -> Option<Vec<Vec<u8>>> {
 /// One class record on a syllabus page: key, order (0 = infinite), rotor bytes.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClassPage {
-    pub key: crate::transducer::a21::Address,
+    pub key: crate::transducer::address::Address,
     pub order: u32,
     pub rotor: Vec<u8>,
 }
@@ -52,7 +52,7 @@ pub struct ClassPage {
 pub fn append_class_records(out: &mut Vec<u8>, records: &[ClassPage]) {
     out.extend_from_slice(&(records.len().min(u16::MAX as usize) as u16).to_le_bytes());
     for r in records {
-        let _ = crate::transducer::a21::put_class_record(out, &r.key, r.order);
+        let _ = crate::transducer::address::put_class_record(out, &r.key, r.order);
         out.extend_from_slice(&(r.rotor.len() as u32).to_le_bytes());
         out.extend_from_slice(&r.rotor);
     }
@@ -73,7 +73,7 @@ pub fn decode_class_records(body: &[u8]) -> Vec<ClassPage> {
     p += 2;
     let mut out = Vec::new();
     for _ in 0..n.min(1024) {
-        let Some((key, order)) = crate::transducer::a21::take_class_record(body, &mut p) else {
+        let Some((key, order)) = crate::transducer::address::take_class_record(body, &mut p) else {
             break;
         };
         let Some(rlen) = body.get(p..p + 4).and_then(|s| s.try_into().ok()).map(u32::from_le_bytes) else {

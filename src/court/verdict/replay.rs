@@ -299,7 +299,7 @@ pub(crate) fn replay_certificates(f: &Form, by_chord: &Keyed<u16>) -> Option<&'s
 /// period is a winding the word misspoke. Replay was Δ = 0 on the chain;
 /// this is ∮ dX = 0 on the fibre.
 pub(crate) fn witness_torsion(spoken: &Element) -> Option<&'static str> {
-    for (stored, witness) in toroid::witness_stored(spoken) {
+    for (stored, witness) in torsion_witness::witness_stored(spoken) {
         match witness {
             HolonomicLoopWitness::Closed { period, .. } if period == stored => {}
             HolonomicLoopWitness::Closed { .. } => return Some("torsion period does not re-derive — the winding was misspoken"),

@@ -5,9 +5,9 @@
 use super::*;
 
 pub(crate) fn chart_simplex_key(inv: &crate::transducer::stalk::Invariant, sim: &[u8]) -> Vec<u8> {
-    let mut buf = vec![crate::transducer::a21::TAG_CELL];
-    crate::transducer::a21::put_bytes(&mut buf, &inv.key());
-    crate::transducer::a21::put_bytes(&mut buf, sim);
+    let mut buf = vec![crate::transducer::address::TAG_CELL];
+    crate::transducer::address::put_bytes(&mut buf, &inv.key());
+    crate::transducer::address::put_bytes(&mut buf, sim);
     buf
 }
 
@@ -18,7 +18,7 @@ pub(crate) fn utterance_k_key(k: u64) -> Vec<u8> {
 
 pub(crate) fn loop_key(chart: &crate::transducer::stalk::Invariant, voice: &[u8; 32]) -> Vec<u8> {
     let mut buf = Vec::new();
-    crate::transducer::a21::put_bytes(&mut buf, &chart.key());
+    crate::transducer::address::put_bytes(&mut buf, &chart.key());
     buf.extend_from_slice(voice);
     buf
 }
@@ -30,7 +30,7 @@ pub(crate) fn footprint_key(addr: &[u8], fp: &[(i64, i64)], scene: &[(i64, i64, 
     let mut cells = scene.to_vec();
     cells.sort_unstable();
     let mut buf = Vec::new();
-    crate::transducer::a21::put_bytes(&mut buf, addr);
+    crate::transducer::address::put_bytes(&mut buf, addr);
     buf.extend_from_slice(&(points.len() as u32).to_le_bytes());
     for &(r, c) in &points {
         buf.extend_from_slice(&r.to_le_bytes());
@@ -54,7 +54,7 @@ pub(crate) fn action_index_key(e: &Element) -> Option<Vec<u8>> {
     match e.versor() {
         Some(v) => {
             let k = v.key()?;
-            crate::transducer::a21::put_bytes(&mut buf, k.as_bytes());
+            crate::transducer::address::put_bytes(&mut buf, k.as_bytes());
         }
         None => buf.push(0),
     }
@@ -99,7 +99,7 @@ pub(crate) fn section_address(thought: &[u8], asg: &[(u8, u8)]) -> Vec<u8> {
     let mut sigma = asg.to_vec();
     sigma.sort_unstable();
     let mut buf = Vec::new();
-    crate::transducer::a21::put_bytes(&mut buf, thought);
+    crate::transducer::address::put_bytes(&mut buf, thought);
     buf.extend_from_slice(&(sigma.len() as u32).to_le_bytes());
     for (b, a) in sigma {
         buf.push(b);

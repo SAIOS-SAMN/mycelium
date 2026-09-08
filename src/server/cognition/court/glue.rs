@@ -7,7 +7,7 @@
 //! a have-list is a claim about an address, not a re-derivation.
 
 use crate::cognition::*;
-use crate::transducer::a21::Address;
+use crate::transducer::address::Address;
 use crate::transducer::element::{self, Element};
 
 impl Kernel {
@@ -273,7 +273,7 @@ impl Kernel {
             rows.sort();
             let mut buf = Vec::new();
             for a in &rows {
-                crate::transducer::a21::put_bytes(&mut buf, a);
+                crate::transducer::address::put_bytes(&mut buf, a);
             }
             if buf == d.root && members.len() as u32 == d.count {
                 for addr in members {
@@ -446,7 +446,7 @@ impl Kernel {
     /// never a vote to be broken.
     pub fn witness_rederived(
         &mut self,
-        object: &crate::transducer::a21::Address,
+        object: &crate::transducer::address::Address,
         witness: [u8; 32],
         reached: Element,
     ) {
@@ -478,7 +478,7 @@ impl Kernel {
 
     /// A peer's have-list naming a ruled provisional is the same evidence:
     /// the address is on their cover, so the home installs.
-    pub fn confirm_peer_holds_addrs(&mut self, have: &[crate::transducer::a21::Address], peer: [u8; 32]) {
+    pub fn confirm_peer_holds_addrs(&mut self, have: &[crate::transducer::address::Address], peer: [u8; 32]) {
         // index: the peer's have-list
         for h in have {
             if self.provisional.contains(h) && self.ruled_contains(h) {

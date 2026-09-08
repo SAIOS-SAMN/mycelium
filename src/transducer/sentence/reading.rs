@@ -128,7 +128,7 @@ where
     Located { cite: None, puncture: None, multiplicity: m }
 }
 
-fn body_key(body: &[Cell]) -> Option<crate::transducer::a21::Address> {
+fn body_key(body: &[Cell]) -> Option<crate::transducer::address::Address> {
     if body.is_empty() {
         return None;
     }

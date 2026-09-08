@@ -132,7 +132,7 @@ pub const ACT_DEMAND_ROUTED: u8 = 0x14;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CiteWire {
     /// The word cited, by address.
-    pub addr: crate::transducer::a21::Address,
+    pub addr: crate::transducer::address::Address,
     /// Its STANDING (`Standing::as_u8`): Ruled, Stood or Held. A
     /// coordinate, so a hypha can weight a held idea below a ruled word —
     /// never a filter that drops one.
@@ -334,7 +334,7 @@ pub const QUOTE_COUNT_AT: usize = 1 + 8 + 32 + 8;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Docket {
     /// The word's address.
-    pub addr: crate::transducer::a21::Address,
+    pub addr: crate::transducer::address::Address,
     /// The element itself, as a full tape — the court replays it blind.
     pub elem: Vec<u8>,
     /// The voices attesting it.
@@ -359,7 +359,7 @@ pub struct Docket {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Settlement {
     /// The listing settled.
-    pub listing: crate::transducer::a21::Address,
+    pub listing: crate::transducer::address::Address,
     /// Its chain.
     pub chain: Vec<Cell>,
     /// The voice that settled it.

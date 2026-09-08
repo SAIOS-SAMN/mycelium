@@ -17,7 +17,7 @@ pub fn germ_bytes(g: &Element) -> Vec<u8> {
 /// The germ's canonical ADDRESS — a digest of its ANASTOME form. Used to match
 /// consilience receipts across voices; a wire/cache identity, never a reasoning
 /// operand (the kernel reasons on the element, addresses by this).
-pub fn germ_address(g: &Element) -> crate::transducer::a21::Address {
+pub fn germ_address(g: &Element) -> crate::transducer::address::Address {
     g.address()
 }
 

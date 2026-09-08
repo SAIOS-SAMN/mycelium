@@ -16,7 +16,7 @@ let class = bodies
     .expect("a body");
 let mut f = Form::default();
 f.vertices.push(Vertex::Word {
-    address: crate::transducer::a21::Address::from(vec![1]),
+    address: crate::transducer::address::Address::from(vec![1]),
     word: crate::transducer::alphabet::Word::from_letters(&[(
         crate::transducer::alphabet::LetterId::quarter((0, 2)).expect("off-plane"),
         false,

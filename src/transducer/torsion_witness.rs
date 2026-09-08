@@ -1,12 +1,9 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! TOROIDAL CONSTRUCTS — ported from ipsal-autic `engine/toroidal_construct.rs`:
-//! bounded toroidal windings as exact-ℚ HOLONOMIC VALENCIES (coprime n/d), and
-//! the closed-loop integrity witness (Theorems XXXII/XXXIV): ∮_γ dX = 0 over a
-//! walked trajectory — zero monodromy iff the loop properly closes; a non-zero
-//! residual NAMES the torsion class. Bound here to the germinated axis: a
-//! torsion cycle (σ, ℓ) is a winding of valency 1/ℓ whose loop witness is the
-//! exact σ-walk returning to base.
+//! A17, T5 — THAT A TORSION CYCLE CLOSES: the walk of `σ` around the fibre,
+//! and the exact residual when it does not. A period is believed only where
+//! the loop returns to base (∮ dX = 0); an open walk names the anholonomity
+//! the label was filing over.
 
 use crate::core::Q;
 use crate::transducer::element::{apply_hue_map, assignment, Element};

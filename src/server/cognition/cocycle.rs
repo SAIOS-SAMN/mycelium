@@ -34,10 +34,10 @@ impl Kernel {
         b: &[u8],
     ) -> Vec<u8> {
         let (lo, hi) = if a <= b { (a, b) } else { (b, a) };
-        let mut buf = vec![crate::transducer::a21::TAG_COCYCLE];
-        crate::transducer::a21::put_bytes(&mut buf, &chart.key());
-        crate::transducer::a21::put_bytes(&mut buf, lo);
-        crate::transducer::a21::put_bytes(&mut buf, hi);
+        let mut buf = vec![crate::transducer::address::TAG_COCYCLE];
+        crate::transducer::address::put_bytes(&mut buf, &chart.key());
+        crate::transducer::address::put_bytes(&mut buf, lo);
+        crate::transducer::address::put_bytes(&mut buf, hi);
         buf
     }
 

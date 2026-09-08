@@ -192,7 +192,7 @@ pub struct Reduction {
     /// The listing this reduction settles: the address of the whole
     /// utterance's coboundary (a percept's pair, a demand's chain), where
     /// the deflation an installed word earns is read.
-    pub listing: crate::transducer::a21::Address,
+    pub listing: crate::transducer::address::Address,
     /// Empty-cites irreducible: remainder of a spoken connection or an
     /// unreached-moduli demand. Quoted. A percept-pair tape is not.
     pub frontier: bool,

@@ -77,7 +77,7 @@ pub fn from_residual(g: &ResidualGerm) -> Element {
 /// The unique listing key of a demand: the address of the framed residual.
 /// Intake, the book, quote, attest, probe, settle, task, and the nerve
 /// route all use this, never an unframed shadow.
-pub fn listing_key(chain: &[(i64, i64, u8, u8)], frame: &crate::arc::Frame) -> crate::transducer::a21::Address {
+pub fn listing_key(chain: &[(i64, i64, u8, u8)], frame: &crate::arc::Frame) -> crate::transducer::address::Address {
     from_residual_framed(&chain.to_vec(), frame).address()
 }
 
@@ -157,8 +157,8 @@ pub fn from_translation(
     if d.first() == Some(&CONNECTION_TAG) {
         d[0] = TRANSLATION_TAG;
     }
-    crate::transducer::a21::put_addr(&mut d, a)?;
-    crate::transducer::a21::put_addr(&mut d, b)?;
+    crate::transducer::address::put_addr(&mut d, a)?;
+    crate::transducer::address::put_addr(&mut d, b)?;
     e.set_description(d);
     Some(e)
 }

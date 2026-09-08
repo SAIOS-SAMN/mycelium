@@ -309,7 +309,7 @@ assert_eq!(k.heard_len(), 0, "a moved stratum root drops heard");
 /// walk — and never a product of the vertices with the chart's listings.
 #[test]
 fn listings_on_is_the_meet_of_its_vertices() {
-use crate::transducer::a21::Address;
+use crate::transducer::address::Address;
 let mut k = Kernel::new();
 let inv = crate::transducer::stalk::Invariant(vec![7]);
 let (v1, v2) = ([1u8; 32], [2u8; 32]);

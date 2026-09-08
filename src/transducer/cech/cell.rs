@@ -43,13 +43,13 @@ pub(crate) fn nonzero(v: &[u64; 4]) -> bool {
     v.iter().any(|&x| x > 0)
 }
 
-pub(crate) fn cell_key(verts: &[Vec<u8>]) -> crate::transducer::a21::Address {
-    let mut buf = vec![crate::transducer::a21::TAG_CELL];
+pub(crate) fn cell_key(verts: &[Vec<u8>]) -> crate::transducer::address::Address {
+    let mut buf = vec![crate::transducer::address::TAG_CELL];
     buf.extend_from_slice(&(verts.len() as u32).to_le_bytes());
     for v in verts {
-        crate::transducer::a21::put_bytes(&mut buf, v);
+        crate::transducer::address::put_bytes(&mut buf, v);
     }
-    crate::transducer::a21::Address::new(buf)
+    crate::transducer::address::Address::new(buf)
 }
 
 pub(crate) fn sorted_verts(verts: impl IntoIterator<Item = impl AsRef<[u8]>>) -> Vec<Vec<u8>> {
@@ -132,7 +132,7 @@ impl Cell {
         self.vertices.len().saturating_sub(1)
     }
 
-    pub fn key(&self) -> crate::transducer::a21::Address {
+    pub fn key(&self) -> crate::transducer::address::Address {
         cell_key(&self.vertices)
     }
 
@@ -144,6 +144,6 @@ impl Cell {
 /// Degree-0 section: the representative word after in-hypha gluing, and its gauge.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Section {
-    pub addr: crate::transducer::a21::Address,
+    pub addr: crate::transducer::address::Address,
     pub gamma: Rotor,
 }

@@ -9,7 +9,7 @@ fn orbit_contact_and_no_orbit() {
 let zero = q(0);
 let one = q(1);
 let moving = Vertex::Word {
-    address: crate::transducer::a21::Address::from(vec![1]),
+    address: crate::transducer::address::Address::from(vec![1]),
     word: crate::transducer::alphabet::Word::identity(),
     carriage: Box::new(element::carriage(&one.clone(), &(zero.clone(), one.clone()))),
     gauge: Vec::new(),
@@ -17,7 +17,7 @@ let moving = Vertex::Word {
     contact: None,
 };
 let still = Vertex::Word {
-    address: crate::transducer::a21::Address::from(vec![2]),
+    address: crate::transducer::address::Address::from(vec![2]),
     word: crate::transducer::alphabet::Word::identity(),
     carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
     gauge: Vec::new(),
@@ -37,7 +37,7 @@ assert_eq!(
     "a still word has no orbit"
 );
 let with_c = Vertex::Word {
-    address: crate::transducer::a21::Address::from(vec![3]),
+    address: crate::transducer::address::Address::from(vec![3]),
     word: crate::transducer::alphabet::Word::identity(),
     carriage: Box::new(element::carriage(&q(1), &(q(0), q(1)))),
     gauge: Vec::new(),

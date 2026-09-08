@@ -19,7 +19,7 @@
 
 use crate::arc::{refine_delta, Grid, Task};
 use crate::network::nerve::Keyed;
-use crate::transducer::a21::{put_addr, take_addr, Address};
+use crate::transducer::address::{put_addr, take_addr, Address};
 
 /// The closed task lifecycle. Settled carries the settle count — the decay's
 /// exact denominator, never a boolean "done".
@@ -65,10 +65,10 @@ pub struct TaskRegistry {
 /// the test-input chain address). Cut B recuts from genesis — overlay of
 /// a Cut A snapshot is a miss, not a restore.
 pub fn task_id(task: &Task) -> Address {
-    let mut buf = vec![crate::transducer::a21::TAG_TASK];
+    let mut buf = vec![crate::transducer::address::TAG_TASK];
     for (a, b) in &task.train {
         if let Some(crate::arc::Refined { delta: chain, frame, .. }) = refine_delta(a, b) {
-            crate::transducer::a21::put_bytes(
+            crate::transducer::address::put_bytes(
                 &mut buf,
                 &crate::transducer::element::listing_key(&chain, &frame),
             );
@@ -84,7 +84,7 @@ pub fn task_id(task: &Task) -> Address {
                 })
             })
             .collect();
-        crate::transducer::a21::put_bytes(
+        crate::transducer::address::put_bytes(
             &mut buf,
             &crate::transducer::element::from_residual(&chain).address(),
         );

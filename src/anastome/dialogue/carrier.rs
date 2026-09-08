@@ -9,7 +9,7 @@ use super::*;
 pub fn push_cites(out: &mut Vec<u8>, cites: &[CiteWire]) {
     out.extend_from_slice(&(cites.len() as u32).to_le_bytes());
     for c in cites {
-        let _ = crate::transducer::a21::put_addr(out, &c.addr);
+        let _ = crate::transducer::address::put_addr(out, &c.addr);
         out.push(c.standing);
         c.transport.to_bytes(out);
         out.extend_from_slice(&c.gauge.to_le_bytes());
@@ -25,7 +25,7 @@ pub fn read_cites(b: &[u8], p: &mut usize) -> Option<Vec<CiteWire>> {
     }
     let mut out = Vec::with_capacity(n);
     for _ in 0..n {
-        let addr = crate::transducer::a21::take_addr(b, p)?;
+        let addr = crate::transducer::address::take_addr(b, p)?;
         let standing = *b.get(*p)?;
         *p += 1;
         let g = crate::transducer::element::Versor::from_bytes(b, p)?;

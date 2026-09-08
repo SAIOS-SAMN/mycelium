@@ -4,7 +4,7 @@
 
 use crate::network::nerve::{Keyed, ROOT};
 use crate::transducer::element::{self, Element, Versor};
-use crate::transducer::spectral;
+use crate::transducer::beam;
 
 fn index_key(i: usize) -> [u8; 32] {
     let mut k = [0u8; 32];
@@ -188,12 +188,12 @@ pub fn incidence_of(positions: &[(i64, i64)]) -> Vec<(usize, usize)> {
 pub fn components(n: usize, edges: &[(usize, usize)]) -> Vec<usize> {
     let mut parent: Vec<usize> = (0..n).collect();
     for &(i, j) in edges {
-        let (ri, rj) = (spectral::find(&mut parent, i), spectral::find(&mut parent, j));
+        let (ri, rj) = (beam::find(&mut parent, i), beam::find(&mut parent, j));
         if ri != rj {
             parent[ri] = rj;
         }
     }
-    (0..n).map(|i| spectral::find(&mut parent, i)).collect()
+    (0..n).map(|i| beam::find(&mut parent, i)).collect()
 }
 
 /// The transition profile of an assignment: sorted ((before, after), count).

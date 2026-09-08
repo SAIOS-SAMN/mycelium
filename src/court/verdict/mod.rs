@@ -36,7 +36,7 @@ use crate::transducer::cech;
 use crate::transducer::element::{self, Element, Versor};
 use crate::transducer::sentence::{self, Form, Vertex};
 use crate::transducer::stalk::{self, Stalks};
-use crate::transducer::toroid::{self, HolonomicLoopWitness};
+use crate::transducer::torsion_witness::{self, HolonomicLoopWitness};
 
 /// Spoken torsion period does not re-derive against the mesh's class.
 pub const REFUSE_NOT_NATURAL: &str = "not natural";

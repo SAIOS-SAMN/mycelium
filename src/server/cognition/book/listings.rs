@@ -6,7 +6,7 @@
 //! address, chart or lane, never by a rank over the whole of it.
 
 use crate::cognition::*;
-use crate::transducer::a21::Address;
+use crate::transducer::address::Address;
 use crate::transducer::element::Element;
 
 /// ONE ROW OF THE DOCKET, as the court replays it. Six fields, and which
@@ -214,20 +214,20 @@ impl Kernel {
     /// If the fibre over `addr` names exactly one other word a versor
     /// relates, absorb the card into the bundle and pay the absorbed
     /// discoverer the condense yield. Returns the surviving address.
-    pub(crate) fn condense_on(&mut self, addr: &[u8]) -> crate::transducer::a21::Address {
+    pub(crate) fn condense_on(&mut self, addr: &[u8]) -> crate::transducer::address::Address {
         let Some(word) = self.word_at(addr).cloned() else {
-            return crate::transducer::a21::Address::from_bytes(addr);
+            return crate::transducer::address::Address::from_bytes(addr);
         };
         if word.is_sentence() {
             let inv = crate::transducer::stalk::invariant_of(&word);
             let members: Vec<Vec<u8>> = self.stalks.fiber(&inv).iter().filter(|&a| a != addr).cloned().collect();
             if let Some(na) = crate::transducer::sentence::from_element_form(&word) {
-                let mut survivor = crate::transducer::a21::Address::from_bytes(addr);
+                let mut survivor = crate::transducer::address::Address::from_bytes(addr);
                 for sib in members {
                     let Some(other) = self.word_at(&sib).cloned() else { continue };
                     let Some(nb) = crate::transducer::sentence::from_element_form(&other) else { continue };
                     if crate::transducer::sentence::coboundary_gauge(&na, &nb).is_some() {
-                        survivor = self.absorb_pair(survivor, crate::transducer::a21::Address::from(sib));
+                        survivor = self.absorb_pair(survivor, crate::transducer::address::Address::from(sib));
                     }
                 }
                 return survivor;
@@ -244,15 +244,15 @@ impl Kernel {
             },
             &word,
         ) else {
-            return crate::transducer::a21::Address::from_bytes(addr);
+            return crate::transducer::address::Address::from_bytes(addr);
         };
-        self.absorb_pair(crate::transducer::a21::Address::from_bytes(addr), sib)
+        self.absorb_pair(crate::transducer::address::Address::from_bytes(addr), sib)
     }
 
     /// Absorb one of `new` / `sib` into the other: a bundle keeps the
     /// fibre; two cards make the newly admitted word the bundle. Pays the
     /// absorbed discoverer. Returns the surviving address.
-    pub(crate) fn absorb_pair(&mut self, new: crate::transducer::a21::Address, sib: crate::transducer::a21::Address) -> crate::transducer::a21::Address {
+    pub(crate) fn absorb_pair(&mut self, new: crate::transducer::address::Address, sib: crate::transducer::address::Address) -> crate::transducer::address::Address {
         let Some(nw) = self.basis.get(&new) else {
             return new;
         };

@@ -185,7 +185,7 @@ impl Contemplation {
         self.complex.set_section(
             &key,
             Section {
-                addr: crate::transducer::a21::Address::from(key.clone()),
+                addr: crate::transducer::address::Address::from(key.clone()),
                 gamma: Rotor::identity(),
             },
             vol0,

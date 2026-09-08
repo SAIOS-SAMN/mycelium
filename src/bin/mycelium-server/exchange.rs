@@ -347,7 +347,7 @@ impl Exchange {
                         match tell_peer(&d, fetch) {
                             Some((page, dt2)) => {
                                 note_rtt_ok(&mesh, &pid, dt2);
-                                let mut named: Vec<mycelium::transducer::a21::Address> = Vec::new();
+                                let mut named: Vec<mycelium::transducer::address::Address> = Vec::new();
                                 for w in dialogue::decode_syllabus_reply(&page).unwrap_or_default() {
                                     let mut p = 0usize;
                                     if let Some(spoken) = mycelium::transducer::element::Element::from_bytes(&w, &mut p)

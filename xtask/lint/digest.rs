@@ -33,13 +33,13 @@ mod tests {
     use std::path::Path;
 
     /// The gate hits a digest taken over content, and says which law.
-    /// F3ai: this gate had no test of its own — the `a21` deletion took the
-    /// only one that reached it, and a gate nothing exercises is a costume.
+    /// A gate nothing exercises is a costume: this one asserts both the hit
+    /// and the clean case.
     #[test]
     fn a_blake3_call_is_a_hit() {
         let mut hits = Vec::new();
         super::scan(
-            Path::new("src/transducer/a21.rs"),
+            Path::new("src/transducer/address.rs"),
             "fn key(b: &[u8]) -> [u8; 32] {\n    blake3::hash(b).into()\n}\n",
             &mut hits,
         );
@@ -53,7 +53,7 @@ mod tests {
     fn prose_about_hashing_is_not_a_hit() {
         let mut hits = Vec::new();
         super::scan(
-            Path::new("src/transducer/a21.rs"),
+            Path::new("src/transducer/address.rs"),
             "/// Identity is content, never a blake3 digest of it.\nfn address() {}\n",
             &mut hits,
         );

@@ -116,7 +116,7 @@ pub fn encode_digests_reply(digests: &[crate::transducer::sheaf::StratumDigest])
     for d in digests {
         push_invariant(&mut out, &d.inv);
         out.extend_from_slice(&d.count.to_le_bytes());
-        crate::transducer::a21::put_bytes(&mut out, &d.root);
+        crate::transducer::address::put_bytes(&mut out, &d.root);
     }
     out
 }
@@ -132,7 +132,7 @@ pub fn decode_digests_reply(body: &[u8]) -> Option<Vec<crate::transducer::sheaf:
         let inv = read_invariant(body, &mut p)?;
         let count = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?);
         p += 4;
-        let root = crate::transducer::a21::take_bytes(body, &mut p)?;
+        let root = crate::transducer::address::take_bytes(body, &mut p)?;
         out.push(crate::transducer::sheaf::StratumDigest { inv, count, root });
     }
     Some(out)

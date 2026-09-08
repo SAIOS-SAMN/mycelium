@@ -2,7 +2,7 @@
 // settling against an open listing, and a rewrite offered for one.
 
 use crate::cognition::*;
-use crate::transducer::a21::Address;
+use crate::transducer::address::Address;
 use crate::transducer::element::Element;
 
 impl Kernel {

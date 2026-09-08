@@ -18,8 +18,8 @@ impl Complex {
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
         out.extend_from_slice(&(self.sections.len() as u32).to_le_bytes());
         crate::snapshot::persist(&self.sections, |k, s| {
-            crate::transducer::a21::put_addr(out, k);
-            crate::transducer::a21::put_addr(out, &s.addr);
+            crate::transducer::address::put_addr(out, k);
+            crate::transducer::address::put_addr(out, &s.addr);
             s.gamma.to_bytes(out);
         });
         out.extend_from_slice(&(self.degrees.len() as u32).to_le_bytes());
@@ -28,7 +28,7 @@ impl Complex {
             crate::snapshot::persist(layer, |_, c| {
                 out.push(c.vertices.len() as u8);
                 for v in &c.vertices {
-                    crate::transducer::a21::put_addr(out, v);
+                    crate::transducer::address::put_addr(out, v);
                 }
                 c.coefficient.to_bytes(out);
                 for x in &c.volume {
@@ -54,7 +54,7 @@ impl Complex {
         }
         out.extend_from_slice(&(self.remainder.len() as u32).to_le_bytes());
         crate::snapshot::persist(&self.remainder, |k, _| {
-            crate::transducer::a21::put_addr(out, k);
+            crate::transducer::address::put_addr(out, k);
         });
     }
 
@@ -64,7 +64,7 @@ impl Complex {
             *pos += 4;
             Some(v)
         };
-        let take_id = |b: &[u8], pos: &mut usize| crate::transducer::a21::take_addr(b, pos);
+        let take_id = |b: &[u8], pos: &mut usize| crate::transducer::address::take_addr(b, pos);
         let mut c = Complex::new();
         let ns = take_u32(b, pos)? as usize;
         for _ in 0..ns.min(1 << 16) {

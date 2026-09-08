@@ -88,7 +88,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
                 contact,
             } => {
                 out.push(1);
-                crate::transducer::a21::put_addr(out, address);
+                crate::transducer::address::put_addr(out, address);
                 word_to_form_bytes(word, *contact, out);
                 carriage.to_bytes(out);
                 out.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
@@ -106,7 +106,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
                 placement,
             } => {
                 out.push(2);
-                crate::transducer::a21::put_addr(out, address);
+                crate::transducer::address::put_addr(out, address);
                 put_inv(chart, out)?;
                 for m in magnitude {
                     out.extend_from_slice(&m.to_le_bytes());
@@ -195,7 +195,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
         .collect();
     out.extend_from_slice(&(sec.len() as u16).to_le_bytes());
     for (k, ix) in sec {
-        crate::transducer::a21::put_addr(out, &k);
+        crate::transducer::address::put_addr(out, &k);
         out.extend_from_slice(&(ix.len() as u16).to_le_bytes());
         for i in ix {
             out.extend_from_slice(&i.to_le_bytes());
@@ -203,7 +203,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
     }
     out.extend_from_slice(&(f.torsion.len() as u16).to_le_bytes());
     for (k, FiledLoop { sigma, period: ell, chord }) in f.torsion.fiber(crate::network::nerve::ROOT) {
-        crate::transducer::a21::put_addr(out, &k);
+        crate::transducer::address::put_addr(out, &k);
         out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
         for &(a, b) in sigma {
             out.push(a);
@@ -233,7 +233,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         let v = match kind {
             0 => Vertex::Frame,
             1 => {
-                let address = crate::transducer::a21::take_addr(b, pos)?;
+                let address = crate::transducer::address::take_addr(b, pos)?;
                 let (word, contact) = word_from_form_bytes(b, pos)?;
                 let carriage = element::Versor::from_bytes(b, pos)?;
                 let ng = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
@@ -253,7 +253,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                 }
             }
             2 => {
-                let address = crate::transducer::a21::take_addr(b, pos)?;
+                let address = crate::transducer::address::take_addr(b, pos)?;
                 let chart = take_inv(b, pos)?;
                 let mut magnitude = [0u64; 4];
                 for m in &mut magnitude {
@@ -380,7 +380,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
     let ns = take_u16(b, pos)? as usize;
     let mut sections = Keyed::new();
     for _ in 0..ns {
-        let k = crate::transducer::a21::take_addr(b, pos)?;
+        let k = crate::transducer::address::take_addr(b, pos)?;
         let nv = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
         let mut ix = Vec::with_capacity(nv);
         for _ in 0..nv {
@@ -391,7 +391,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
     let nt = take_u16(b, pos)? as usize;
     let mut torsion = Keyed::new();
     for _ in 0..nt {
-        let k = crate::transducer::a21::take_addr(b, pos)?;
+        let k = crate::transducer::address::take_addr(b, pos)?;
         let nsig = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
         let mut sigma = Vec::with_capacity(nsig);
         for _ in 0..nsig {

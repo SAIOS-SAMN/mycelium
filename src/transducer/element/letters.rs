@@ -236,7 +236,7 @@ impl Element {
     }
 
     /// The two sections a translation gauges, if the tape carries them.
-    pub fn translation_sections(&self) -> Option<(crate::transducer::a21::Address, crate::transducer::a21::Address)> {
+    pub fn translation_sections(&self) -> Option<(crate::transducer::address::Address, crate::transducer::address::Address)> {
         if !self.is_translation() {
             return None;
         }
@@ -248,8 +248,8 @@ impl Element {
         while q + 2 <= b.len() {
             let mut t = q;
             if let (Some(a), Some(c)) = (
-                crate::transducer::a21::take_addr(b, &mut t),
-                crate::transducer::a21::take_addr(b, &mut t),
+                crate::transducer::address::take_addr(b, &mut t),
+                crate::transducer::address::take_addr(b, &mut t),
             ) {
                 if t == b.len() {
                     return Some((a, c));

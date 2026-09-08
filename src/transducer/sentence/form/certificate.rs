@@ -47,7 +47,7 @@ impl PivotBy {
             PivotBy::Placement { translator, .. } => {
                 let mut buf = vec![1u8];
                 if let Some(k) = translator.key() {
-                    let _ = crate::transducer::a21::put_addr(&mut buf, k);
+                    let _ = crate::transducer::address::put_addr(&mut buf, k);
                 }
                 buf
             }
@@ -79,8 +79,8 @@ pub struct PivotCertificate {
     pub chord: u16,
     pub axis: Axis,
     /// Class key of κ(ℓ) before, and after (zero vector when the loop closed).
-    pub before: crate::transducer::a21::Address,
-    pub after: crate::transducer::a21::Address,
+    pub before: crate::transducer::address::Address,
+    pub after: crate::transducer::address::Address,
     /// WHAT THE PIVOT DID TO THE RANK (S9.1): the move itself, not the two
     /// audits it was read from. The certificate makes a claim — the rank
     /// held, or one unit left this coordinate for `axes` — and the court
@@ -95,11 +95,11 @@ pub struct PivotCertificate {
 
 impl PivotCertificate {
     pub fn key(&self) -> Vec<u8> {
-        let mut buf = vec![crate::transducer::a21::TAG_CERT];
+        let mut buf = vec![crate::transducer::address::TAG_CERT];
         buf.extend_from_slice(&self.chord.to_le_bytes());
         buf.push(self.axis.to_byte());
-        crate::transducer::a21::put_bytes(&mut buf, &self.before);
-        crate::transducer::a21::put_bytes(&mut buf, &self.after);
+        crate::transducer::address::put_bytes(&mut buf, &self.before);
+        crate::transducer::address::put_bytes(&mut buf, &self.after);
         put_rank_move(&self.rank_move, &mut buf);
         match &self.by {
             PivotBy::Word { face, word, side } => {
@@ -108,7 +108,7 @@ impl PivotCertificate {
                     Side::Left => 0,
                     Side::Right => 1,
                 });
-                crate::transducer::a21::put_bytes(&mut buf, &word.key());
+                crate::transducer::address::put_bytes(&mut buf, &word.key());
             }
             PivotBy::Placement { face, translator } => {
                 buf.push(1);
@@ -131,8 +131,8 @@ impl PivotCertificate {
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
         out.extend_from_slice(&self.chord.to_le_bytes());
         out.push(self.axis.to_byte());
-        crate::transducer::a21::put_addr(out, &self.before);
-        crate::transducer::a21::put_addr(out, &self.after);
+        crate::transducer::address::put_addr(out, &self.before);
+        crate::transducer::address::put_addr(out, &self.after);
         put_rank_move(&self.rank_move, out);
         match &self.mu {
             Mu::Unmeasured => out.push(0),
@@ -174,8 +174,8 @@ impl PivotCertificate {
         let chord = take_u16(b, pos)?;
         let axis = Axis::from_byte(*b.get(*pos)?)?;
         *pos += 1;
-        let before = crate::transducer::a21::take_addr(b, pos)?;
-        let after = crate::transducer::a21::take_addr(b, pos)?;
+        let before = crate::transducer::address::take_addr(b, pos)?;
+        let after = crate::transducer::address::take_addr(b, pos)?;
         let rank_move = take_rank_move(b, pos)?;
         let mu_tag = *b.get(*pos)?;
         *pos += 1;

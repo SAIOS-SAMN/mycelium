@@ -7,7 +7,7 @@
 //! parse whole is refused: nothing is partly restored.
 
 use crate::cognition::*;
-use crate::transducer::a21::Address;
+use crate::transducer::address::Address;
 use crate::transducer::element::Element;
 
 impl Kernel {
@@ -44,7 +44,7 @@ impl Kernel {
                     return None; // untrusted count: len16 + elem len at least
                 }
                 for _ in 0..np {
-                    let addr = crate::transducer::a21::take_addr(b, pos)?;
+                    let addr = crate::transducer::address::take_addr(b, pos)?;
                     let elen = read_u32(b, pos)? as usize;
                     let mut ep = *pos;
                     let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
@@ -81,7 +81,7 @@ impl Kernel {
                 }
                 let mut rank = Rank { basis_gen: u64::MAX, basis_len, retire_gen: kernel.retire_gen, ..Rank::default() };
                 for _ in 0..n {
-                    let addr = crate::transducer::a21::take_addr(b, pos)?;
+                    let addr = crate::transducer::address::take_addr(b, pos)?;
                     let closed = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                     *pos += 8;
                     let m = read_u32(b, pos)? as usize;
@@ -106,7 +106,7 @@ impl Kernel {
                     return None;
                 }
                 for _ in 0..n {
-                    let addr = crate::transducer::a21::take_addr(b, pos)?;
+                    let addr = crate::transducer::address::take_addr(b, pos)?;
                     let mut mag = [0u64; 4];
                     for m in &mut mag {
                         *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
@@ -136,7 +136,7 @@ impl Kernel {
                 *pos += 4;
                 let n = read_u32(b, pos)? as usize;
                 for _ in 0..n {
-                    let addr = crate::transducer::a21::take_addr(b, pos)?;
+                    let addr = crate::transducer::address::take_addr(b, pos)?;
                     let ne = read_u32(b, pos)? as usize;
                     let mut entries = Vec::with_capacity(ne.min(64));
                     for _ in 0..ne {
@@ -213,7 +213,7 @@ impl Kernel {
                 *pos += 4;
                 let n = read_u32(b, pos)? as usize;
                 for _ in 0..n {
-                    let addr = crate::transducer::a21::take_addr(b, pos)?;
+                    let addr = crate::transducer::address::take_addr(b, pos)?;
                     let elen = read_u32(b, pos)? as usize;
                     let mut ep = *pos;
                     let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
@@ -229,7 +229,7 @@ impl Kernel {
                 *pos += 1;
                 let n = read_u32(b, pos)? as usize;
                 for _ in 0..n {
-                    let addr = crate::transducer::a21::take_addr(b, pos)?;
+                    let addr = crate::transducer::address::take_addr(b, pos)?;
                     let elen = read_u32(b, pos)? as usize;
                     let mut ep = *pos;
                     let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
@@ -272,7 +272,7 @@ impl Kernel {
                     return None;
                 }
                 for _ in 0..n {
-                    let addr = crate::transducer::a21::take_addr(b, pos)?;
+                    let addr = crate::transducer::address::take_addr(b, pos)?;
                     let ne = read_u32(b, pos)? as usize;
                     let mut entries = Vec::with_capacity(ne.min(64));
                     for _ in 0..ne {
@@ -389,7 +389,7 @@ impl Kernel {
                     return None;
                 }
                 for _ in 0..n {
-                    let listing = crate::transducer::a21::take_addr(b, pos)?;
+                    let listing = crate::transducer::address::take_addr(b, pos)?;
                     let chain = crate::anastome::dialogue::read_chain(b, pos)?;
                     let voice: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                     *pos += 32;

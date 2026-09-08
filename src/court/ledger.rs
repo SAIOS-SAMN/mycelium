@@ -14,9 +14,9 @@ use crate::transducer::element::Element;
 
 pub struct CourtState {
     pub chain: ReceiptChain,
-    pub federation: Vec<(crate::transducer::a21::Address, Element)>,
-    pub ruled: Vec<crate::transducer::a21::Address>,
-    pub rebound: Vec<(crate::transducer::a21::Address, usize)>,
+    pub federation: Vec<(crate::transducer::address::Address, Element)>,
+    pub ruled: Vec<crate::transducer::address::Address>,
+    pub rebound: Vec<(crate::transducer::address::Address, usize)>,
     pub upheld: u64,
     pub demoted: u64,
     pub slashed: u64,
@@ -43,18 +43,18 @@ impl CourtState {
         }
         push_u32(&mut out, self.federation.len());
         for (addr, elem) in &self.federation {
-            let _ = crate::transducer::a21::put_addr(&mut out, addr);
+            let _ = crate::transducer::address::put_addr(&mut out, addr);
             let bytes = elem.to_bytes();
             push_u32(&mut out, bytes.len());
             out.extend_from_slice(&bytes);
         }
         push_u32(&mut out, self.ruled.len());
         for addr in &self.ruled {
-            let _ = crate::transducer::a21::put_addr(&mut out, addr);
+            let _ = crate::transducer::address::put_addr(&mut out, addr);
         }
         push_u32(&mut out, self.rebound.len());
         for (addr, fam) in &self.rebound {
-            let _ = crate::transducer::a21::put_addr(&mut out, addr);
+            let _ = crate::transducer::address::put_addr(&mut out, addr);
             push_u32(&mut out, *fam);
         }
         for c in [self.upheld, self.demoted, self.slashed, self.rebinds] {
@@ -83,7 +83,7 @@ impl CourtState {
         let n = read_u32(b, &mut p)?;
         let mut federation = Vec::with_capacity(n.min(1 << 20));
         for _ in 0..n {
-            let addr = crate::transducer::a21::take_addr(b, &mut p)?;
+            let addr = crate::transducer::address::take_addr(b, &mut p)?;
             let len = read_u32(b, &mut p)?;
             let slice = b.get(p..p + len)?;
             let mut ep = 0usize;
@@ -94,12 +94,12 @@ impl CourtState {
         let n = read_u32(b, &mut p)?;
         let mut ruled = Vec::with_capacity(n.min(1 << 20));
         for _ in 0..n {
-            ruled.push(crate::transducer::a21::take_addr(b, &mut p)?);
+            ruled.push(crate::transducer::address::take_addr(b, &mut p)?);
         }
         let n = read_u32(b, &mut p)?;
         let mut rebound = Vec::with_capacity(n.min(1 << 20));
         for _ in 0..n {
-            let addr = crate::transducer::a21::take_addr(b, &mut p)?;
+            let addr = crate::transducer::address::take_addr(b, &mut p)?;
             let fam = read_u32(b, &mut p)?;
             rebound.push((addr, fam));
         }

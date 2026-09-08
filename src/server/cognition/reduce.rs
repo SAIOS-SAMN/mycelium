@@ -430,7 +430,7 @@ pub fn reduce_proven(
     germ: Element,
     cites: &[crate::anastome::dialogue::CiteWire],
     frame: &crate::arc::Frame,
-    listing: crate::transducer::a21::Address,
+    listing: crate::transducer::address::Address,
 ) -> Reduction {
     if germ.is_sentence() {
         let (form, qs) = reduce_germ(language, (0, 0), &germ);

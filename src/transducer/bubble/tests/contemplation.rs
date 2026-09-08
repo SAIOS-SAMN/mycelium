@@ -40,7 +40,7 @@ fn hold_form_keeps_a_glued_open_loop() {
     let inner = {
         let mut f = Form::default();
         f.vertices.push(Vertex::Word {
-            address: crate::transducer::a21::Address::from(vec![1]),
+            address: crate::transducer::address::Address::from(vec![1]),
             word: w.clone(),
             carriage: Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
             gauge: vec![(1, 2)],
@@ -53,7 +53,7 @@ fn hold_form_keeps_a_glued_open_loop() {
     };
     let mut outer = Form::default();
     let _gi = outer
-        .glue(&inner, crate::transducer::a21::Address::from(vec![0xab]), Word::identity(), [1, 0, 0, 0])
+        .glue(&inner, crate::transducer::address::Address::from(vec![0xab]), Word::identity(), [1, 0, 0, 0])
         .expect("glue");
     assert!(outer.remainder.is_empty(), "no remainder to hold()");
     let mut c = Contemplation::new();
@@ -76,7 +76,7 @@ fn hold_form_keeps_a_glued_open_loop() {
 
     let mut open = Form::default();
     open.vertices.push(Vertex::Word {
-        address: crate::transducer::a21::Address::from(vec![2]),
+        address: crate::transducer::address::Address::from(vec![2]),
         word: Word::identity(),
         carriage: Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
         gauge: vec![(1, 2)],
@@ -84,7 +84,7 @@ fn hold_form_keeps_a_glued_open_loop() {
         contact: None,
     });
     open.vertices.push(Vertex::Word {
-        address: crate::transducer::a21::Address::from(vec![3]),
+        address: crate::transducer::address::Address::from(vec![3]),
         word: Word::identity(),
         carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
         gauge: vec![(1, 2)],
@@ -181,7 +181,7 @@ fn hold_form_carries_bundle_and_remainder() {
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
     f.vertices.push(Vertex::Word {
-        address: crate::transducer::a21::Address::from(vec![9]),
+        address: crate::transducer::address::Address::from(vec![9]),
         word: Word::identity(),
         carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
         gauge: vec![(1, 2)],

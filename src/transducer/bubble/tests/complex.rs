@@ -77,7 +77,7 @@ fn vortex_collapses_by_glue_or_ruling() {
     let hit = PivotCertificate {
         chord: 0,
         axis: Axis::Unit(0),
-        before: crate::transducer::a21::Address::from(vec![1]),
+        before: crate::transducer::address::Address::from(vec![1]),
         after: after.clone(),
         rank_move: RankMove::Discharged { from: RankAxis::Torsion },
         mu: crate::transducer::sentence::Mu::Unmeasured,
@@ -96,7 +96,7 @@ fn vortex_collapses_by_glue_or_ruling() {
     let other = PivotCertificate {
         chord: 0,
         axis: Axis::Hue,
-        before: crate::transducer::a21::Address::from(vec![2]),
+        before: crate::transducer::address::Address::from(vec![2]),
         after: after.clone(),
         rank_move: RankMove::Discharged { from: RankAxis::Torsion },
         mu: crate::transducer::sentence::Mu::Unmeasured,

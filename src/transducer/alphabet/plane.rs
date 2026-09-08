@@ -74,13 +74,13 @@ impl PlaneForm {
     }
 
     /// Conjugacy representative written out. Class identity is [`conjugacy_eq`].
-    pub fn conjugacy_key(&self) -> crate::transducer::a21::Address {
+    pub fn conjugacy_key(&self) -> crate::transducer::address::Address {
         let r = self.conjugacy_rep();
-        let mut buf = vec![crate::transducer::a21::TAG_PLANE, r.orientation as u8];
+        let mut buf = vec![crate::transducer::address::TAG_PLANE, r.orientation as u8];
         for &n in &r.rot {
             buf.extend_from_slice(&n.to_le_bytes());
         }
-        crate::transducer::a21::Address::new(buf)
+        crate::transducer::address::Address::new(buf)
     }
 
     /// Plane-group product: rotations ⋊ orientation. A trailing half-turn
@@ -144,12 +144,12 @@ impl PlaneForm {
         w
     }
 
-    pub fn key(&self) -> crate::transducer::a21::Address {
-        let mut buf = vec![crate::transducer::a21::TAG_PLANE, self.orientation as u8];
+    pub fn key(&self) -> crate::transducer::address::Address {
+        let mut buf = vec![crate::transducer::address::TAG_PLANE, self.orientation as u8];
         for &n in &self.rot {
             buf.extend_from_slice(&n.to_le_bytes());
         }
-        crate::transducer::a21::Address::new(buf)
+        crate::transducer::address::Address::new(buf)
     }
 
     pub fn to_bytes(&self, out: &mut Vec<u8>) {

@@ -67,12 +67,12 @@ impl Invariant {
 
     /// The axes written out, coarsest first, no count. A prefix of the
     /// key is a coarser stratum of the same chart.
-    pub fn key(&self) -> crate::transducer::a21::Address {
-        let mut buf = vec![crate::transducer::a21::TAG_CHART];
+    pub fn key(&self) -> crate::transducer::address::Address {
+        let mut buf = vec![crate::transducer::address::TAG_CHART];
         for a in &self.0 {
             buf.extend_from_slice(&a.to_le_bytes());
         }
-        crate::transducer::a21::Address::new(buf)
+        crate::transducer::address::Address::new(buf)
     }
 }
 
@@ -206,21 +206,21 @@ pub fn congruent<'a>(
     stalks: &Stalks,
     at: impl Fn(&[u8]) -> Option<&'a element::Element>,
     spoken: &element::Element,
-) -> Option<(crate::transducer::a21::Address, Versor)> {
+) -> Option<(crate::transducer::address::Address, Versor)> {
     let fibre = stalks.fiber(&invariant_of(spoken));
     if spoken.is_connection() {
         let held = fibre.iter().find_map(|a| at(a).filter(|w| w.address() != spoken.address() && !w.axes().is_empty()).map(|w| (a.clone(), w)))?;
         let g = crate::transducer::cech::transition(held.1, spoken)?;
         return match (g.axes().as_slice(), g.sub()) {
-            ([], []) => Some((crate::transducer::a21::Address::from(held.0), element::identity_versor())),
-            _ => placement_of(&g).map(|v| (crate::transducer::a21::Address::from(held.0), v)),
+            ([], []) => Some((crate::transducer::address::Address::from(held.0), element::identity_versor())),
+            _ => placement_of(&g).map(|v| (crate::transducer::address::Address::from(held.0), v)),
         };
     }
     let shape = element::shape_of_chain(spoken.sub())?;
     let mut related = fibre
         .iter()
         .filter_map(|a| at(a).filter(|w| !w.sub().is_empty()).map(|w| (a.clone(), w)))
-        .filter_map(|(a, w)| element::transition_from_shape(&shape, w.sub()).map(|v| (crate::transducer::a21::Address::from(a), v)));
+        .filter_map(|(a, w)| element::transition_from_shape(&shape, w.sub()).map(|v| (crate::transducer::address::Address::from(a), v)));
     let first = related.next()?;
     match related.next() {
         None => Some(first),
@@ -235,12 +235,12 @@ pub fn congruent_shaped<'a>(
     stalks: &Stalks,
     shape_at: impl Fn(&[u8]) -> Option<&'a crate::transducer::blade::Shape>,
     chain: &[Cell],
-) -> Option<(crate::transducer::a21::Address, Versor)> {
+) -> Option<(crate::transducer::address::Address, Versor)> {
     let shape = element::shape_of_chain(chain)?;
     let fibre = stalks.fiber(&invariant(chain));
     let mut related = fibre
         .iter()
-        .filter_map(|a| shape_at(a).and_then(|held| crate::transducer::blade::versor_between(&shape, held)).map(|v| (crate::transducer::a21::Address::from(a.clone()), v)));
+        .filter_map(|a| shape_at(a).and_then(|held| crate::transducer::blade::versor_between(&shape, held)).map(|v| (crate::transducer::address::Address::from(a.clone()), v)));
     let first = related.next()?;
     match related.next() {
         None => Some(first),

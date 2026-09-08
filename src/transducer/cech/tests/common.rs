@@ -15,8 +15,8 @@ pub fn motion(dc: i64) -> Element {
     .expect("translator spells")
 }
 
-pub fn v(n: u8) -> crate::transducer::a21::Address {
-    crate::transducer::a21::Address::from(vec![n])
+pub fn v(n: u8) -> crate::transducer::address::Address {
+    crate::transducer::address::Address::from(vec![n])
 }
 
 pub fn vol() -> [u64; 4] {

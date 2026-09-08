@@ -27,7 +27,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door, kind: u8
 
 let pbytes = if kind == dialogue::ACT_GOSSIP {
     let mut p = 0usize;
-    let _ = mycelium::transducer::a21::take_addr(rest, &mut p);
+    let _ = mycelium::transducer::address::take_addr(rest, &mut p);
     rest.get(p..).unwrap_or(&[])
 } else {
     rest
@@ -132,7 +132,7 @@ if kind == dialogue::ACT_PERCEPT
     let dest = door.router.lock().ok().and_then(|r| rendezvous(key.as_bytes(), id, &r));
     if let Some(dest) = dest {
         let mut g = vec![0x01u8];
-        let _ = mycelium::transducer::a21::put_addr(&mut g, &key);
+        let _ = mycelium::transducer::address::put_addr(&mut g, &key);
         g.extend_from_slice(pbytes);
         if let Ok(mut ps) = TcpStream::connect(&dest) {
             answer(&mut ps, Frame { lane: frame.lane, body: g });

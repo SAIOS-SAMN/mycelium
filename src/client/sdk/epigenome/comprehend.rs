@@ -96,7 +96,7 @@ impl Epigenome {
                     }
                 }
             }
-            let mut dialect: Option<(crate::transducer::a21::Address, Element)> = None;
+            let mut dialect: Option<(crate::transducer::address::Address, Element)> = None;
             for (a, _) in fibre {
                 let Some(held) = self.working_word(&a).cloned() else {
                     continue;

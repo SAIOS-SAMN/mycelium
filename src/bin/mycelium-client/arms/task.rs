@@ -12,7 +12,7 @@ use mycelium::physics::{Physics, StrokeOutcome};
 pub(crate) fn task_arm(
     stroke: &mut Stroke<'_>,
     extract_memo: &mut mycelium::network::nerve::Keyed<(
-        mycelium::transducer::a21::Address,
+        mycelium::transducer::address::Address,
         Option<mycelium::transducer::sentence::SentenceRule>,
     )>,
 ) {

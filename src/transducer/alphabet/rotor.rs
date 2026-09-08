@@ -215,19 +215,19 @@ impl Rotor {
 
     /// Conjugacy invariants written out (A21). Identity of class is
     /// [`class_eq`]. None when the element is not a versor.
-    pub fn class_key(&self) -> Option<crate::transducer::a21::Address> {
+    pub fn class_key(&self) -> Option<crate::transducer::address::Address> {
         let (x, y, sa, sp) = self.class_invariants()?;
-        let mut buf = vec![crate::transducer::a21::TAG_CLASS];
+        let mut buf = vec![crate::transducer::address::TAG_CLASS];
         put_q(&mut buf, &x);
         put_q(&mut buf, &y);
         buf.push(sa);
         buf.push(sp);
-        Some(crate::transducer::a21::Address::new(buf))
+        Some(crate::transducer::address::Address::new(buf))
     }
 
     /// Class key when the rotor is a versor; otherwise the A1 rotor key.
     /// Never the zero class of a non-versor.
-    pub fn class_or_rotor_key(&self) -> crate::transducer::a21::Address {
+    pub fn class_or_rotor_key(&self) -> crate::transducer::address::Address {
         match self.class_key() {
             Some(k) => k,
             None => self.key(),
@@ -270,15 +270,15 @@ impl Rotor {
 
     /// A1 key: the canonical coefficients written out (A21). Identity is
     /// [`projective_eq`].
-    pub fn key(&self) -> crate::transducer::a21::Address {
+    pub fn key(&self) -> crate::transducer::address::Address {
         let n = self.normalised();
-        let mut buf = vec![crate::transducer::a21::TAG_ROTOR];
+        let mut buf = vec![crate::transducer::address::TAG_ROTOR];
         n.to_bytes(&mut buf);
-        crate::transducer::a21::Address::new(buf)
+        crate::transducer::address::Address::new(buf)
     }
 
     pub fn from_key(k: &[u8]) -> Option<Rotor> {
-        if k.first() != Some(&crate::transducer::a21::TAG_ROTOR) {
+        if k.first() != Some(&crate::transducer::address::TAG_ROTOR) {
             return None;
         }
         let mut p = 1usize;

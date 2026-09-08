@@ -18,7 +18,7 @@ pub struct Kernel {
     /// carry an insertion-order slice for Decomposed citations.
     pub(crate) basis: crate::network::nerve::Keyed<std::sync::Arc<Element>>,
     /// Empty-sub group words by M1 action key, written on admit.
-    pub(crate) by_action: crate::network::nerve::Keyed<crate::transducer::a21::Address>,
+    pub(crate) by_action: crate::network::nerve::Keyed<crate::transducer::address::Address>,
     /// Chart+footprint → addresses on that base, written on admit.
     /// same_base reads the canonical member; condense reads the fiber.
     pub(crate) by_footprint: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
@@ -148,7 +148,7 @@ pub struct Kernel {
     /// are Rotor. One Keyed entry per cell; never Elements.
     pub(crate) complexes: crate::network::nerve::Keyed<crate::transducer::cech::Complex>,
     /// Unfilled cells, keyed by (chart, cell). Filled within spend_unit.
-    pub(crate) unfilled: crate::network::nerve::Keyed<(crate::transducer::stalk::Invariant, crate::transducer::a21::Address)>,
+    pub(crate) unfilled: crate::network::nerve::Keyed<(crate::transducer::stalk::Invariant, crate::transducer::address::Address)>,
     /// Class cells awaiting a prefix split.
     pub(crate) pending_refine: crate::network::nerve::Keyed<(
         crate::transducer::stalk::Invariant,
@@ -189,7 +189,7 @@ pub struct Kernel {
     /// Height at first vantage of a standing carrier (listing or docket).
     pub(crate) standing_h: crate::network::nerve::Keyed<u64>,
     /// Listing address → corpus task id, so a verified solve pays the same escrow.
-    pub(crate) listing_task: crate::network::nerve::Keyed<crate::transducer::a21::Address>,
+    pub(crate) listing_task: crate::network::nerve::Keyed<crate::transducer::address::Address>,
     /// Reverse: task → listings bound to it.
     pub(crate) task_listings: crate::network::nerve::Keyed<Vec<Address>>,
     /// Train pairs of a bound task. Install mints only what a rule speaks.

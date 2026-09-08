@@ -180,13 +180,13 @@ impl Kernel {
     /// Condense and torse at the cursor; returns the cursor index when the
     /// cursor word is a plain card (a redundancy-probe candidate — never a
     /// bundle: its sections/cycles carry family volume no other word speaks).
-    pub(crate) fn condense_stroke(&mut self) -> Option<crate::transducer::a21::Address> {
+    pub(crate) fn condense_stroke(&mut self) -> Option<crate::transducer::address::Address> {
         let mut budget = self.physics.stroke();
         let Some((addr, word)) = self.basis.cursor(&self.optimize_cursor, &mut budget).next() else {
             self.optimize_cursor.clear();
             return None;
         };
-        let own = crate::transducer::a21::Address::from(addr.as_slice());
+        let own = crate::transducer::address::Address::from(addr.as_slice());
         self.optimize_cursor = addr;
         let word = (**word).clone();
         if !word.sub().is_empty() {
@@ -216,7 +216,7 @@ impl Kernel {
                 if !card {
                     continue;
                 }
-                let _ = self.absorb_pair(own.clone(), crate::transducer::a21::Address::from(sibling));
+                let _ = self.absorb_pair(own.clone(), crate::transducer::address::Address::from(sibling));
             }
         }
         self.torse_at(&own);

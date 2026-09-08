@@ -107,7 +107,7 @@ pub struct Element {
     pub(crate) transitions: Vec<Transition>,
     /// The memoized address — a measurement of the tape and the action,
     /// taken once and cleared wherever the base mutates. Never serialized.
-    pub(crate) address: std::sync::OnceLock<crate::transducer::a21::Address>,
+    pub(crate) address: std::sync::OnceLock<crate::transducer::address::Address>,
     /// THE GAUGE AXIS KEYED BY PROFILE: every assignment this word speaks
     /// (its own, its sections, its torsion orbits) reached by the key of
     /// its gauge charge — one read names the 0 / 1 / many assignments a
@@ -471,8 +471,8 @@ pub fn measure_lanes(chain: &[(i64, i64, u8, u8)]) -> [u64; 4] {
             _ => {}
         }
     }
-    let sb = crate::transducer::spectral::signature(&before_pos, &[]);
-    let sa = crate::transducer::spectral::signature(&after_pos, &[]);
+    let sb = crate::transducer::beam::signature(&before_pos, &[]);
+    let sa = crate::transducer::beam::signature(&after_pos, &[]);
     let shell = sb.components.abs_diff(sa.components) + sb.boundary.abs_diff(sa.boundary);
     // Lane 2 is temporal extent — TUniversal ticks or scene-state span —
     // and is measured on the standing carrier or at mint, never on the chain.

@@ -11,15 +11,15 @@ impl Epigenome {
     }
 
     /// Working-atlas root: concatenated A21 stratum roots of genome ∪ dialect.
-    pub fn atlas_root(&self) -> crate::transducer::a21::Address {
+    pub fn atlas_root(&self) -> crate::transducer::address::Address {
         let mut rows = crate::transducer::sheaf::digests(&self.atlas);
         rows.extend(crate::transducer::sheaf::digests(&self.dialect_atlas));
         rows.sort_by(|a, b| a.root.cmp(&b.root).then_with(|| a.inv.key().cmp(&b.inv.key())));
         let mut buf = Vec::new();
         for r in &rows {
-            crate::transducer::a21::put_bytes(&mut buf, &r.root);
+            crate::transducer::address::put_bytes(&mut buf, &r.root);
         }
-        crate::transducer::a21::Address::new(buf)
+        crate::transducer::address::Address::new(buf)
     }
 
     /// The genome index of an address, read from the key.

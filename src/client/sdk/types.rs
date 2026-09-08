@@ -333,7 +333,7 @@ pub struct YieldQuote {
 
 #[derive(Clone, Debug)]
 pub struct Cluster {
-    pub address: crate::transducer::a21::Address,
+    pub address: crate::transducer::address::Address,
     pub mu: [u64; 4],
     pub chain: Vec<(i64, i64, u8, u8)>,
     /// Open (non-flat) charts of the listing's coherence field. The entity
@@ -345,7 +345,7 @@ pub struct Cluster {
 /// and the polytonic μ⃗ award priced at the moment's yield surface.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SettleReceipt {
-    pub germ: crate::transducer::a21::Address,
+    pub germ: crate::transducer::address::Address,
     pub voices: Vec<[u8; 32]>,
     pub mu: [u64; 4],
 }

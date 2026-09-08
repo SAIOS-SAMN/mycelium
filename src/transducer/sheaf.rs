@@ -30,7 +30,7 @@ fn root_of(members: &[Vec<u8>]) -> Vec<u8> {
     rows.sort();
     let mut buf = Vec::new();
     for a in &rows {
-        crate::transducer::a21::put_bytes(&mut buf, a);
+        crate::transducer::address::put_bytes(&mut buf, a);
     }
     buf
 }
@@ -65,8 +65,8 @@ pub fn discordant<'a>(remote: &'a [StratumDigest], local: &[StratumDigest]) -> V
 
 /// The addresses this holder already has in the stratum over `inv`, sent
 /// with a fetch so only the lacking words travel.
-pub fn have(stalks: &Stalks, inv: &Invariant) -> Vec<crate::transducer::a21::Address> {
-    stalks.fiber(inv).into_iter().map(crate::transducer::a21::Address::from).collect()
+pub fn have(stalks: &Stalks, inv: &Invariant) -> Vec<crate::transducer::address::Address> {
+    stalks.fiber(inv).into_iter().map(crate::transducer::address::Address::from).collect()
 }
 
 /// Serve a fetch: the words in the stratum over `inv` whose address the
@@ -77,7 +77,7 @@ pub fn serve<'a>(
     stalks: &Stalks,
     at: impl Fn(&[u8]) -> Option<&'a Element>,
     inv: &Invariant,
-    have: &[crate::transducer::a21::Address],
+    have: &[crate::transducer::address::Address],
     budget: usize,
 ) -> Vec<Vec<u8>> {
     let mut out = Vec::new();

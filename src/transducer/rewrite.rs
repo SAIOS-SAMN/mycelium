@@ -52,21 +52,21 @@ pub enum RewritePayload {
     Refine { chart: Invariant, axis: u64 },
     Reanchor { gamma: Vec<Word> },
     AxisOpen { class: Rotor, degree: u8 },
-    Translation { a: crate::transducer::a21::Address, b: crate::transducer::a21::Address, gauge: Versor },
+    Translation { a: crate::transducer::address::Address, b: crate::transducer::address::Address, gauge: Versor },
     /// `cites` are the words that speak the retired one; `freed` is the lane
     /// vector the language no longer carries. The court checks from the tape
     /// alone that a retirement cites something other than itself and frees
     /// something; that the cites actually reproduce the retired substance is
     /// a re-derivation over the language, and it is the kernel's, made
     /// before the mint (`verify_utterance` in `try_refine`).
-    Retire { cites: Vec<crate::transducer::a21::Address>, freed: [u64; 4] },
+    Retire { cites: Vec<crate::transducer::address::Address>, freed: [u64; 4] },
 }
 
 #[derive(Debug, Clone)]
 pub struct Rewrite {
     pub kind: RewriteKind,
-    pub before: Vec<crate::transducer::a21::Address>,
-    pub after: crate::transducer::a21::Address,
+    pub before: Vec<crate::transducer::address::Address>,
+    pub after: crate::transducer::address::Address,
     pub claimed: [u64; 4],
     pub payload: RewritePayload,
 }
@@ -76,9 +76,9 @@ impl Rewrite {
         let mut out = vec![REWRITE_TAG, self.kind as u8];
         out.push(self.before.len().min(255) as u8);
         for a in self.before.iter().take(255) {
-            crate::transducer::a21::put_addr(&mut out, a);
+            crate::transducer::address::put_addr(&mut out, a);
         }
-        crate::transducer::a21::put_addr(&mut out, &self.after);
+        crate::transducer::address::put_addr(&mut out, &self.after);
         for m in &self.claimed {
             out.extend_from_slice(&m.to_le_bytes());
         }
@@ -120,14 +120,14 @@ impl Rewrite {
                 class.to_bytes(&mut out);
             }
             RewritePayload::Translation { a, b, gauge } => {
-                crate::transducer::a21::put_addr(&mut out, a);
-                crate::transducer::a21::put_addr(&mut out, b);
+                crate::transducer::address::put_addr(&mut out, a);
+                crate::transducer::address::put_addr(&mut out, b);
                 gauge.to_bytes(&mut out);
             }
             RewritePayload::Retire { cites, freed } => {
                 out.extend_from_slice(&(cites.len() as u16).to_le_bytes());
                 for a in cites {
-                    crate::transducer::a21::put_addr(&mut out, a);
+                    crate::transducer::address::put_addr(&mut out, a);
                 }
                 for m in freed {
                     out.extend_from_slice(&m.to_le_bytes());
@@ -146,9 +146,9 @@ impl Rewrite {
         let mut pos = 3usize;
         let mut before = Vec::with_capacity(n);
         for _ in 0..n {
-            before.push(crate::transducer::a21::take_addr(b, &mut pos)?);
+            before.push(crate::transducer::address::take_addr(b, &mut pos)?);
         }
-        let after = crate::transducer::a21::take_addr(b, &mut pos)?;
+        let after = crate::transducer::address::take_addr(b, &mut pos)?;
         let mut claimed = [0u64; 4];
         for m in &mut claimed {
             *m = u64::from_le_bytes(b.get(pos..pos + 8)?.try_into().ok()?);
@@ -210,8 +210,8 @@ impl Rewrite {
                 RewritePayload::AxisOpen { class, degree }
             }
             RewriteKind::Translation => {
-                let a = crate::transducer::a21::take_addr(b, &mut pos)?;
-                let baddr = crate::transducer::a21::take_addr(b, &mut pos)?;
+                let a = crate::transducer::address::take_addr(b, &mut pos)?;
+                let baddr = crate::transducer::address::take_addr(b, &mut pos)?;
                 let gauge = Versor::from_bytes(b, &mut pos)?;
                 RewritePayload::Translation { a, b: baddr, gauge }
             }
@@ -220,7 +220,7 @@ impl Rewrite {
                 pos += 2;
                 let mut cites = Vec::with_capacity(n);
                 for _ in 0..n {
-                    cites.push(crate::transducer::a21::take_addr(b, &mut pos)?);
+                    cites.push(crate::transducer::address::take_addr(b, &mut pos)?);
                 }
                 let mut freed = [0u64; 4];
                 for m in &mut freed {
@@ -327,8 +327,8 @@ pub fn yield_vector(kind: RewriteKind, before: &[Element], after: &Element) -> [
 
 pub fn mint(
     kind: RewriteKind,
-    before: &[crate::transducer::a21::Address],
-    after: crate::transducer::a21::Address,
+    before: &[crate::transducer::address::Address],
+    after: crate::transducer::address::Address,
     payload: RewritePayload,
     claimed: [u64; 4],
 ) -> Option<Element> {
@@ -440,7 +440,7 @@ mod tests {
 
     #[test]
     fn a_condense_rewrite_round_trips_and_replays() {
-        let after = crate::transducer::a21::Address::from_bytes([7u8]);
+        let after = crate::transducer::address::Address::from_bytes([7u8]);
         let payload = RewritePayload::Condense {
             sections: vec![vec![(1, 4)]],
             gauge: crate::transducer::element::identity_versor(),
@@ -448,8 +448,8 @@ mod tests {
         let e = mint(
             RewriteKind::Condense,
             &[
-                crate::transducer::a21::Address::from_bytes([1u8]),
-                crate::transducer::a21::Address::from_bytes([2u8]),
+                crate::transducer::address::Address::from_bytes([1u8]),
+                crate::transducer::address::Address::from_bytes([2u8]),
             ],
             after,
             payload,
@@ -471,7 +471,7 @@ mod tests {
     /// lane and `yield_vector` carried `.max(1)` so the two would agree).
     #[test]
     fn a_retirement_pays_what_the_language_stopped_carrying() {
-        use crate::transducer::a21::Address;
+        use crate::transducer::address::Address;
         let word = Address::from_bytes([1u8]);
         let speaker = Address::from_bytes([2u8]);
         let freed = [3u64, 0, 0, 5];
@@ -502,7 +502,7 @@ mod tests {
     /// mint; the court checks here what the tape can prove.
     #[test]
     fn a_retirement_that_proves_nothing_is_refused() {
-        use crate::transducer::a21::Address;
+        use crate::transducer::address::Address;
         let word = Address::from_bytes([1u8]);
         let other = Address::from_bytes([2u8]);
         let freed = [3u64, 0, 0, 0];
@@ -548,8 +548,8 @@ mod tests {
     fn a_zero_vector_is_not_work() {
         assert!(mint(
             RewriteKind::Condense,
-            &[crate::transducer::a21::Address::from_bytes([1u8])],
-            crate::transducer::a21::Address::from_bytes([2u8]),
+            &[crate::transducer::address::Address::from_bytes([1u8])],
+            crate::transducer::address::Address::from_bytes([2u8]),
             RewritePayload::Condense { sections: vec![], gauge: crate::transducer::element::identity_versor() },
             [0; 4],
         )

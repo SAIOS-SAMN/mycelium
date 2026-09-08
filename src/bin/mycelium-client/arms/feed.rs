@@ -17,7 +17,7 @@ pub(crate) fn feed_arm(
     stroke: &mut Stroke<'_>,
     feed: &mut Feed,
     extract_memo: &mut mycelium::network::nerve::Keyed<(
-        mycelium::transducer::a21::Address,
+        mycelium::transducer::address::Address,
         Option<mycelium::transducer::sentence::SentenceRule>,
     )>,
     occluded: bool,

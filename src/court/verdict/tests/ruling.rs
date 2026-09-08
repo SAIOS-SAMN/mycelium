@@ -12,7 +12,7 @@ fn a9_sel_key_stable_under_debug_change() {
     let mut buf = Vec::new();
     s.to_bytes(&mut buf);
     let k = sel_key(&s);
-    assert_eq!(k.as_bytes()[0], crate::transducer::a21::TAG_SEL);
+    assert_eq!(k.as_bytes()[0], crate::transducer::address::TAG_SEL);
     assert_eq!(&k.as_bytes()[1..], buf.as_slice(), "the key is Sel::to_bytes, never a digest");
     assert_ne!(k.as_bytes(), format!("{s:?}").as_bytes());
 }
@@ -39,7 +39,7 @@ fn the_ruling_maps_the_federation_correctly() {
     // the identity transport.
     let mut other_bytes = addr.as_bytes().to_vec();
     other_bytes[0] ^= 0xFF;
-    let other = crate::transducer::a21::Address::new(other_bytes);
+    let other = crate::transducer::address::Address::new(other_bytes);
     match rule(&fed, &index_of(&fed), &stalks, other.as_bytes(), Some(&w), None) {
         Ruling::Attached { base: 0, g } => {
             assert!(element::same_versor(&g, &element::identity_versor()), "the identity transport")

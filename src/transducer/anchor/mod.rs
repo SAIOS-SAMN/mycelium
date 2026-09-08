@@ -52,7 +52,7 @@ pub struct EvidenceOf<A> {
 }
 
 /// Evidence carried with the address that produced it.
-pub type AddressedEvidence = EvidenceOf<crate::transducer::a21::Address>;
+pub type AddressedEvidence = EvidenceOf<crate::transducer::address::Address>;
 pub use sel::*;
 
 use super::blade::components;

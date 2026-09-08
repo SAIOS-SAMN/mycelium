@@ -250,7 +250,7 @@ impl Element {
     /// coordinates as exact rationals. A sentence is keyed by its form
     /// (M1, ρ, agreed shift relative to the Frame, contact, gauge, faces).
     /// The body's absolute position is already quotiented on the chain.
-    pub fn address(&self) -> crate::transducer::a21::Address {
+    pub fn address(&self) -> crate::transducer::address::Address {
         self.address
             .get_or_init(|| {
                 if self.is_sentence() {
@@ -258,9 +258,9 @@ impl Element {
                         return k;
                     }
                 }
-                let mut buf = vec![crate::transducer::a21::TAG_FORM];
-                crate::transducer::a21::put_bytes(&mut buf, &self.form_key_bytes().unwrap_or_default());
-                crate::transducer::a21::Address::new(buf)
+                let mut buf = vec![crate::transducer::address::TAG_FORM];
+                crate::transducer::address::put_bytes(&mut buf, &self.form_key_bytes().unwrap_or_default());
+                crate::transducer::address::Address::new(buf)
             })
             .clone()
     }
@@ -274,16 +274,16 @@ impl Element {
             out.push(rw.kind as u8);
             out.extend_from_slice(&(rw.before.len() as u16).to_le_bytes());
             for a in &rw.before {
-                crate::transducer::a21::put_addr(&mut out, a)?;
+                crate::transducer::address::put_addr(&mut out, a)?;
             }
-            crate::transducer::a21::put_addr(&mut out, &rw.after)?;
+            crate::transducer::address::put_addr(&mut out, &rw.after)?;
             for m in &rw.claimed {
                 out.extend_from_slice(&m.to_le_bytes());
             }
             return Some(out);
         }
         if let Some(letters) = self.letters() {
-            crate::transducer::a21::put_bytes(&mut out, letters.spelling.word.key().as_bytes());
+            crate::transducer::address::put_bytes(&mut out, letters.spelling.word.key().as_bytes());
             letters.carriage.to_bytes(&mut out);
             let mut sigma = letters.sigma.clone();
             sigma.sort_unstable();

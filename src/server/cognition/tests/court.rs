@@ -134,7 +134,7 @@ for i in 0..(cap + 1) {
     assert!(k.field().get(&addr).is_some(), "adopt writes a field entry");
     addrs.push(addr);
 }
-let ruled_n = |k: &Kernel, addrs: &[crate::transducer::a21::Address]| {
+let ruled_n = |k: &Kernel, addrs: &[crate::transducer::address::Address]| {
     addrs
         .iter()
         .filter(|a| {

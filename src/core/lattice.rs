@@ -1,6 +1,14 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! Exact integer linear algebra: lattice rank by fraction-free elimination.
+//! 16.18, 16.12 — THE INTEGER LATTICE a form's free part spans: its rank,
+//! and the Hermite form that says what a word was made of.
+//!
+//! A18 reads the rank (16.18) to audit a form's dimension; A12 reads the
+//! Hermite form with its transform `U` to factor a word through the words a
+//! mind already holds (16.12), and the residue it leaves is the boundary
+//! demand, unique and with no choice in it. Both are exact over ℤ by
+//! fraction-free elimination and refuse on overflow rather than round
+//! (law 4).
 
 /// THE HERMITE FORM AND ITS TRANSFORM: the reduced rows `H`, and `U` giving
 /// each of them as an integer combination of the input rows. `U` is the

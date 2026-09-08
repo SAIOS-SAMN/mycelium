@@ -41,7 +41,7 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let mut words: Vec<Vec<u8>> = Vec::new();
     let mut classes: Vec<dialogue::ClassPage> = Vec::new();
     if let Ok(mut k) = kernel.lock() {
-        let mut have_all: Vec<mycelium::transducer::a21::Address> = Vec::new();
+        let mut have_all: Vec<mycelium::transducer::address::Address> = Vec::new();
         for dialogue::ChartOf { inv, have } in &charts {
             have_all.extend(have.iter().cloned());
             let page = k.serve_ruled(inv, have, budget);

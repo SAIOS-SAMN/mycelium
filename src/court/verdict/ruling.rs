@@ -76,7 +76,7 @@ impl Ruling {
 pub(crate) fn unique_other_on_fiber(
     stalks: &Stalks,
     index: &Keyed<usize>,
-    federation: &[(crate::transducer::a21::Address, Element)],
+    federation: &[(crate::transducer::address::Address, Element)],
     spoken: &Element,
     skip: &[u8],
 ) -> Option<usize> {
@@ -101,7 +101,7 @@ pub(crate) fn unique_other_on_fiber(
 /// (index-aligned with `federation`): the +axis check selects the fiber
 /// over the candidate's invariant and runs the exact orbit test there.
 pub fn rule(
-    federation: &[(crate::transducer::a21::Address, Element)],
+    federation: &[(crate::transducer::address::Address, Element)],
     index: &Keyed<usize>,
     stalks: &Stalks,
     addr: &[u8],

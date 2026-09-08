@@ -3,7 +3,7 @@
 //! Class vector, cycle type, rank, and axis.
 
 use super::transport::{gauge_image, gauge_keyed, hue_key};
-use crate::core::zlinalg::z_rank;
+use crate::core::lattice::z_rank;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::{self, Word};
 use crate::transducer::element::{self, Versor};
@@ -304,8 +304,8 @@ impl ClassVector {
     /// Coordinates written out in 12.6 axis order. Rotor conjugacy first so
     /// a prefix of the key is the rotor's conjugacy stratum. Closed is the
     /// zero key.
-    pub fn class_key(&self) -> crate::transducer::a21::Address {
-        let mut buf = vec![crate::transducer::a21::TAG_CLASS];
+    pub fn class_key(&self) -> crate::transducer::address::Address {
+        let mut buf = vec![crate::transducer::address::TAG_CLASS];
         alphabet::put_q(&mut buf, &self.offplane.0);
         alphabet::put_q(&mut buf, &self.offplane.1);
         buf.push(self.offplane.2);
@@ -324,11 +324,11 @@ impl ClassVector {
         }
         self.hue.to_bytes(&mut buf);
         self.carriage.to_bytes(&mut buf);
-        crate::transducer::a21::Address::new(buf)
+        crate::transducer::address::Address::new(buf)
     }
 
     pub fn from_key(k: &[u8]) -> Option<ClassVector> {
-        if k.first() != Some(&crate::transducer::a21::TAG_CLASS) {
+        if k.first() != Some(&crate::transducer::address::TAG_CLASS) {
             return None;
         }
         let mut p = 1usize;
@@ -535,7 +535,7 @@ pub enum LoopRow {
     Closed,
     Torsion,
     Free([i64; 12]),
-    OffPlane(crate::transducer::a21::Address),
+    OffPlane(crate::transducer::address::Address),
 }
 
 pub fn loop_row(h: &Word) -> LoopRow {

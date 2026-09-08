@@ -91,7 +91,7 @@ impl Word {
 
     /// M1 key: A1 of the rotor. Mixed-plane spellings of one rotor share
     /// this key. Contact is not here.
-    pub fn key(&self) -> crate::transducer::a21::Address {
+    pub fn key(&self) -> crate::transducer::address::Address {
         self.rotor().key()
     }
 
@@ -117,7 +117,7 @@ impl Word {
     /// Conjugacy coordinates written out. Rotor class first; the plane
     /// form is not the key. None when the rotor is not a versor: a
     /// non-versor is never a class.
-    pub fn class_key(&self) -> Option<crate::transducer::a21::Address> {
+    pub fn class_key(&self) -> Option<crate::transducer::address::Address> {
         self.rotor().class_key()
     }
 

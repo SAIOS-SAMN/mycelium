@@ -1,20 +1,10 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! SPECTRAL PROJECTION OF FUTURE STATES (DC3, operator-ruled; discipline
-//! imported from ipsal-autic v0.2's exact-rational interference/Laplacian
-//! machinery, written natively for the ℤ² substrate).
-//!
-//! The beam holds candidate bindings — a bundle of PROJECTED FUTURE STATES.
-//! Collapsing that bundle by raw cardinality (tightest-first) is counting,
-//! not comprehension: two selections of equal size can be topologically
-//! alien (one coherent region vs. scattered shrapnel). Here every candidate
-//! selection carries an EXACT per-axis invariant signature — β₀ (connected
-//! components), volume, boundary-cochain length, and the hue tally — and
-//! candidates are ranked by their per-axis mismatch against the witnessed
-//! footprint, worst witnessing pair governing (the joint criterion). Zero
-//! mismatch = perfect resonance. All integers, all exact, no scalar
-//! collapse: the axes compare lexicographically in structural order
-//! (topology before volume before boundary before palette), never summed.
+//! A9 — THE BEAM of candidate selections a family's evidence admits, and
+//! the exact invariant signature each carries: components, volume, boundary
+//! length, hue tally. Candidates are read against the witnessed footprint
+//! per axis, in structural order and never summed; two selections of equal
+//! size are not equal readings (law 5).
 
 use crate::transducer::anchor::Sel;
 

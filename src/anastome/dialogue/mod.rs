@@ -45,7 +45,7 @@ pub use receipts::*;
 pub use speech::*;
 pub use syllabus::*;
 
-use crate::transducer::a21::{put_addr, take_addr, Address};
+use crate::transducer::address::{put_addr, take_addr, Address};
 
 #[cfg(test)]
 mod tests;

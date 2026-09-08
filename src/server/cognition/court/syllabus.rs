@@ -108,7 +108,7 @@ impl Kernel {
     pub fn serve_ruled(
         &self,
         inv: &crate::transducer::stalk::Invariant,
-        have: &[crate::transducer::a21::Address],
+        have: &[crate::transducer::address::Address],
         budget: usize,
     ) -> Vec<Vec<u8>> {
         let mut out = Vec::new();

@@ -6,7 +6,7 @@
 //! remains is what the language does not yet say.
 
 use crate::cognition::*;
-use crate::transducer::a21::Address;
+use crate::transducer::address::Address;
 use crate::transducer::element::{self, Element};
 
 impl Kernel {
@@ -155,7 +155,7 @@ impl Kernel {
                     .by_footprint
                     .link(&fk)
                     .next()
-                    .map(|(a, _)| crate::transducer::a21::Address::from(a))
+                    .map(|(a, _)| crate::transducer::address::Address::from(a))
                 {
                     let Some(held) = self.basis.get(&taddr).map(|w| (**w).clone()) else {
                         self.physics.bump(&mag);
@@ -280,7 +280,7 @@ impl Kernel {
                     // nothing. A word with no cycle falls back to the
                     // δ-field's kinematic residue. Bounded per demand;
                     // per-lane as ever, never a summed winding.
-                    let witnesses = crate::transducer::toroid::witness_thought(&residual);
+                    let witnesses = crate::transducer::torsion_witness::witness_thought(&residual);
                     if witnesses.is_empty() {
                         // NO STORED CYCLE. The charge is read at the LEVEL
                         // the carrier is on (18.2): letters spell a word,
@@ -350,7 +350,7 @@ impl Kernel {
                         // IT walked; a Closed loop is proven monodromy and
                         // charges nothing.
                         for w in &witnesses {
-                            if let crate::transducer::toroid::HolonomicLoopWitness::Open { walked } = w {
+                            if let crate::transducer::torsion_witness::HolonomicLoopWitness::Open { walked } = w {
                                 self.physics.pivot(crate::physics::Physics::lanes_of(&mag));
                                 for _ in 0..*walked as u64 {
                                     self.physics.bump(&mag);

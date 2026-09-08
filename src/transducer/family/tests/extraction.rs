@@ -79,7 +79,7 @@ assert_ne!(a.moduli, b.moduli, "two shapes, two charts");
 // Form::default() carries the Frame at index 0.
 let mut pf = Form::default();
 pf.vertices.push(Vertex::Word {
-    address: crate::transducer::a21::Address::from(vec![1]),
+    address: crate::transducer::address::Address::from(vec![1]),
     word: rot.clone(),
     carriage: Box::new(element::carriage(&q(1), &(q(3), q(3)))),
     gauge: vec![(1, 1)],
@@ -87,7 +87,7 @@ pf.vertices.push(Vertex::Word {
     contact: None,
 });
 pf.vertices.push(Vertex::Word {
-    address: crate::transducer::a21::Address::from(vec![2]),
+    address: crate::transducer::address::Address::from(vec![2]),
     word: rot.clone(),
     carriage: Box::new(element::carriage(&q(1), &(q(3), q(3)))),
     gauge: vec![(3, 5)],
@@ -298,8 +298,8 @@ let family = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];
 let fam = b"fam";
 let mut cache = crate::network::nerve::Keyed::new();
 let mut budget = crate::physics::Physics::default().stroke_n(8);
-let atlas1 = crate::transducer::a21::Address::from(vec![1]);
-let atlas2 = crate::transducer::a21::Address::from(vec![2]);
+let atlas1 = crate::transducer::address::Address::from(vec![1]);
+let atlas2 = crate::transducer::address::Address::from(vec![2]);
 let a = extract_rule_cached(&mut cache, fam, &family, atlas1.clone(), &mut budget, &NoCrystal);
 let left = budget.remaining();
 let b = extract_rule_cached(&mut cache, fam, &family, atlas1, &mut budget, &NoCrystal);

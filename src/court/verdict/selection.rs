@@ -6,10 +6,10 @@ use super::*;
 /// π* derivation from a pooled evidence family: the first anchor term
 /// common to every evidence's carrying set (the intersection move — one
 /// evidence never binds; the caller holds families of at least two).
-pub(crate) fn sel_key(s: &Sel) -> crate::transducer::a21::Address {
-    let mut buf = vec![crate::transducer::a21::TAG_SEL];
+pub(crate) fn sel_key(s: &Sel) -> crate::transducer::address::Address {
+    let mut buf = vec![crate::transducer::address::TAG_SEL];
     s.to_bytes(&mut buf);
-    crate::transducer::a21::Address::new(buf)
+    crate::transducer::address::Address::new(buf)
 }
 
 pub fn derive_pi(family: &[crate::transducer::anchor::Evidence]) -> Option<Sel> {

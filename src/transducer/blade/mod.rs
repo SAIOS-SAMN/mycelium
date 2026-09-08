@@ -23,17 +23,17 @@
 //! Four organs (Stage 8b S20, F2r3): `harmonics.rs` the eleven scale-free
 //! coordinates a body is heard on (20, A6); `body.rs` a body lifted into the algebra
 //! and the invariants read off it (16, 20); `carry.rs` the versor that
-//! carries one shape onto another (16.4); `peel.rs` the outline, core, ring
-//! and exact magnifications of a body (20).
+//! carries one shape onto another (16.4); `shells.rs` the outline, core,
+//! ring and exact magnifications of a body (20).
 
 pub mod body;
 pub mod harmonics;
 pub mod carry;
-pub mod peel;
+pub mod shells;
 
 pub use body::*;
 pub use carry::*;
-pub use peel::*;
+pub use shells::*;
 
 use crate::transducer::cga::{self, Mv};
 use num_bigint::BigInt;

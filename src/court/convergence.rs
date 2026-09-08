@@ -19,7 +19,7 @@
 //! so counting them held every germ pending forever.
 
 use crate::network::nerve::{Keyed, ROOT};
-use crate::transducer::a21::Address;
+use crate::transducer::address::Address;
 
 /// One organ's re-derivation of one object: the address it reached, and
 /// where it stood when it reached it. The address is the claim — two organs

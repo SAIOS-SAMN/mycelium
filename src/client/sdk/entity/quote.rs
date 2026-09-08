@@ -11,7 +11,7 @@ impl Entity {
     /// redundancy the vocabulary is carrying — a compression bid. The probe
     /// is a virtual rollout (zero mutation); the hypha's deterministic
     /// replay, not this discovery, decides retirement.
-    pub fn seek_refinement(&mut self) -> Option<(crate::transducer::a21::Address, Vec<dialogue::CiteWire>)> {
+    pub fn seek_refinement(&mut self) -> Option<(crate::transducer::address::Address, Vec<dialogue::CiteWire>)> {
         let g = self.epigenome.genome();
         if g.len() < 2 {
             return None;

@@ -58,7 +58,7 @@ pub struct FiledLoop {
 pub enum Vertex {
     Frame,
     Word {
-        address: crate::transducer::a21::Address,
+        address: crate::transducer::address::Address,
         word: Word,
         /// A4 carriage. Boxed: a versor is 1024 bytes and every vertex of a
         /// form — Glued, Rebased, Frame — would carry that footprint
@@ -70,7 +70,7 @@ pub enum Vertex {
         contact: Option<alphabet::Contact>,
     },
     Glued {
-        address: crate::transducer::a21::Address,
+        address: crate::transducer::address::Address,
         chart: stalk::Invariant,
         magnitude: [u64; 4],
         depth: u16,

@@ -140,15 +140,15 @@ impl Mv {
 
     /// Canonical coefficients written out (A21). None when the element is
     /// zero (no canonical form).
-    pub fn key(&self) -> Option<crate::transducer::a21::Address> {
+    pub fn key(&self) -> Option<crate::transducer::address::Address> {
         let n = self.canonical()?;
-        let mut buf = vec![crate::transducer::a21::TAG_VERSOR];
+        let mut buf = vec![crate::transducer::address::TAG_VERSOR];
         n.to_bytes(&mut buf);
-        Some(crate::transducer::a21::Address::new(buf))
+        Some(crate::transducer::address::Address::new(buf))
     }
 
     pub fn from_key(k: &[u8]) -> Option<Mv> {
-        if k.first() != Some(&crate::transducer::a21::TAG_VERSOR) {
+        if k.first() != Some(&crate::transducer::address::TAG_VERSOR) {
             return None;
         }
         let mut p = 1usize;

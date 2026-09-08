@@ -15,14 +15,14 @@ pub fn q1() -> num_rational::BigRational {
     num_rational::BigRational::from_integer(num_bigint::BigInt::from(1))
 }
 
-pub fn form_addr(n: u8) -> crate::transducer::a21::Address {
-    crate::transducer::a21::Address::from_bytes([crate::transducer::a21::TAG_FORM, n])
+pub fn form_addr(n: u8) -> crate::transducer::address::Address {
+    crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, n])
 }
 
 pub fn closed_word_form(word: Word, contact: Option<alphabet::Contact>) -> Form {
     let mut f = Form::default();
     f.vertices.push(Vertex::Word {
-        address: crate::transducer::a21::Address::new(Vec::new()),
+        address: crate::transducer::address::Address::new(Vec::new()),
         word: word.clone(),
         carriage: Box::new(element::carriage(&q1(), &(q0(), q1()))),
         gauge: vec![(1, 2)],

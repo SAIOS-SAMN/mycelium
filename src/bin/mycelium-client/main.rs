@@ -148,7 +148,7 @@ fn main() {
         let _ = ctrlc::set_handler(move || stop.store(true, Ordering::SeqCst));
     }
     let mut extract_memo: mycelium::network::nerve::Keyed<(
-        mycelium::transducer::a21::Address,
+        mycelium::transducer::address::Address,
         Option<mycelium::transducer::sentence::SentenceRule>,
     )> = mycelium::network::nerve::Keyed::new();
     m.last_lang = (usize::MAX, usize::MAX, usize::MAX);

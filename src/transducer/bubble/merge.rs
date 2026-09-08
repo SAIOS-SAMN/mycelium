@@ -112,9 +112,9 @@ impl Contemplation {
                         if let Some(b) = self.bubbles.get_mut(nk.as_bytes()) {
                             b.nerve.file_congruent(&ends[0], &ends[1], g, ell);
                         }
-                        let before: Vec<crate::transducer::a21::Address> = vertices
+                        let before: Vec<crate::transducer::address::Address> = vertices
                             .iter()
-                            .map(|v| crate::transducer::a21::Address::from(v.clone()))
+                            .map(|v| crate::transducer::address::Address::from(v.clone()))
                             .collect();
                         let payload = crate::transducer::rewrite::RewritePayload::Torse {
                             sigma: Vec::new(),
@@ -148,9 +148,9 @@ impl Contemplation {
         }
     }
 
-    pub(crate) fn merge(&mut self, verts: &[Vec<u8>]) -> Option<crate::transducer::a21::Address> {
+    pub(crate) fn merge(&mut self, verts: &[Vec<u8>]) -> Option<crate::transducer::address::Address> {
         if verts.len() < 2 {
-            return verts.first().cloned().map(crate::transducer::a21::Address::from);
+            return verts.first().cloned().map(crate::transducer::address::Address::from);
         }
         let forms: Vec<Form> = verts
             .iter()
@@ -163,7 +163,7 @@ impl Contemplation {
                         "  thought merge refused {:02x}{:02x}… not one section",
                         verts[0][0], verts[0][1]
                     );
-                    return verts.first().cloned().map(crate::transducer::a21::Address::from);
+                    return verts.first().cloned().map(crate::transducer::address::Address::from);
                 }
             }
         }
@@ -243,9 +243,9 @@ impl Contemplation {
                     }
                 }
             }
-            let before: Vec<crate::transducer::a21::Address> = verts
+            let before: Vec<crate::transducer::address::Address> = verts
                 .iter()
-                .map(|v| crate::transducer::a21::Address::from(v.clone()))
+                .map(|v| crate::transducer::address::Address::from(v.clone()))
                 .collect();
             let payload = crate::transducer::rewrite::RewritePayload::Condense {
                 sections: vec![vec![]],

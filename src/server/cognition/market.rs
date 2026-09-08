@@ -229,13 +229,13 @@ impl Kernel {
         // The loop check at the mint: an arriving word's torsion cycles are
         // walked before they enter the genome. Only a witnessed closed loop
         // at the spoken period is believed.
-        for (stored, witness) in crate::transducer::toroid::witness_stored(word) {
+        for (stored, witness) in crate::transducer::torsion_witness::witness_stored(word) {
             match witness {
-                crate::transducer::toroid::HolonomicLoopWitness::Closed { period, .. } if period == stored => {}
-                crate::transducer::toroid::HolonomicLoopWitness::Closed { .. } => {
+                crate::transducer::torsion_witness::HolonomicLoopWitness::Closed { period, .. } if period == stored => {}
+                crate::transducer::torsion_witness::HolonomicLoopWitness::Closed { .. } => {
                     return Adoption::Refused("torsion period does not re-derive — the winding was misspoken")
                 }
-                crate::transducer::toroid::HolonomicLoopWitness::Open { .. } => {
+                crate::transducer::torsion_witness::HolonomicLoopWitness::Open { .. } => {
                     return Adoption::Refused("torsion cycle does not close — the period was a filing")
                 }
             }
@@ -294,7 +294,7 @@ impl Kernel {
     }
 
     /// A voice spoke on a listing in its current state.
-    pub(super) fn record_spoken(&mut self, listing: crate::transducer::a21::Address, voice: [u8; 32]) {
+    pub(super) fn record_spoken(&mut self, listing: crate::transducer::address::Address, voice: [u8; 32]) {
         self.spoken.nested_insert(&listing, voice, ());
         self.spoken_by.nested_insert(voice, &listing, ());
     }
@@ -325,7 +325,7 @@ impl Kernel {
     /// pulled).
     pub fn record_settlement(
         &mut self,
-        listing: crate::transducer::a21::Address,
+        listing: crate::transducer::address::Address,
         chain: Vec<(i64, i64, u8, u8)>,
         voice: [u8; 32],
         cites: &[crate::anastome::dialogue::CiteWire],
