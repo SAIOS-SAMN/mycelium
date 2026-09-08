@@ -259,10 +259,10 @@ pub fn encode_evidence_reply<A: AsRef<[u8]>>(
 ) -> Vec<u8> {
     let mut out = Vec::new();
     out.extend_from_slice(&(items.len() as u32).to_le_bytes());
-    for (addr, fp, scene) in items {
+    for EvidenceOf { addr, footprint, scene } in items {
         let _ = put_addr(&mut out, addr);
-        out.extend_from_slice(&(fp.len() as u32).to_le_bytes());
-        for (r, c) in fp {
+        out.extend_from_slice(&(footprint.len() as u32).to_le_bytes());
+        for (r, c) in footprint {
             out.extend_from_slice(&r.to_le_bytes());
             out.extend_from_slice(&c.to_le_bytes());
         }
@@ -311,7 +311,7 @@ pub fn decode_evidence_reply(body: &[u8]) -> Option<Vec<EvidenceItem>> {
             p += 17;
             scene.push((r, c, h));
         }
-        out.push((addr, fp, scene));
+        out.push(EvidenceOf { addr, footprint: fp, scene });
     }
     Some(out)
 }

@@ -168,11 +168,11 @@ pub type Solve = ([u8; 32], Address, Vec<Vec<Vec<u8>>>, Option<Vec<u8>>);
 /// `(voice, chain, cites, height)`
 pub type DemandAt = ([u8; 32], Vec<Cell>, Vec<CiteWire>, u64);
 /// One selection's birth evidence: `(address, positions, scene)`
-pub type EvidenceItem = EvidenceOf<Address>;
+pub type EvidenceItem = crate::transducer::anchor::AddressedEvidence;
 
 /// The same item as a SENDER holds it, before the address is decoded: the
 /// key is whatever bytes it is filed under.
-pub type EvidenceOf<A> = (A, Vec<(i64, i64)>, Vec<(i64, i64, u8)>);
+pub use crate::transducer::anchor::EvidenceOf;
 /// `(voice, items)`
 pub type EvidenceDeposit = ([u8; 32], Vec<EvidenceItem>);
 /// 47.1's receipt section: `(prefix, signature over it, the receipt)`

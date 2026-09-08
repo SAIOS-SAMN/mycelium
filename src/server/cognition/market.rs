@@ -449,7 +449,11 @@ impl Kernel {
             return false;
         }
         self.evidence_at.insert(key, ());
-        self.anchor_evidence.push((addr, fp, scene));
+        self.anchor_evidence.push(crate::transducer::anchor::EvidenceOf {
+            addr,
+            footprint: fp,
+            scene,
+        });
         true
     }
 
@@ -480,7 +484,7 @@ impl Kernel {
             // re-refine iteratively: loose early carriers tighten as more
             // witnessed placements accumulate (rebinding is never one-shot).
             self.mismatch_at.remove(addr);
-            self.anchor_mismatches.retain(|(a, _, _)| a.as_bytes() != addr);
+            self.anchor_mismatches.retain(|e| e.addr.as_bytes() != addr);
         }
         bound
     }

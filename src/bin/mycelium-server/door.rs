@@ -93,7 +93,12 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         if let Some((_dvoice, items)) = dialogue::decode_evidence_deposit(&frame.body) {
             let accepted = {
                 let mut k = door.kernel.lock().unwrap();
-                items.into_iter().filter(|(addr, fp, scene)| k.deposit_evidence(addr.clone(), fp.clone(), scene.clone())).count()
+                items
+                    .into_iter()
+                    .filter(|e| {
+                        k.deposit_evidence(e.addr.clone(), e.footprint.clone(), e.scene.clone())
+                    })
+                    .count()
             };
             let reply = Frame { lane: frame.lane, body: vec![accepted.min(255) as u8] };
             answer(s, reply);

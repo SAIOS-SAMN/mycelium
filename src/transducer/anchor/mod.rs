@@ -39,8 +39,20 @@ pub use derive::*;
 /// derived from; one of them underdetermines it.
 pub type Evidence = (Vec<(i64, i64)>, Vec<(i64, i64, u8)>);
 
+/// Evidence carried with whatever names the word that produced it — an
+/// `Address` in the mind, raw key bytes on the wire.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EvidenceOf<A> {
+    /// The word the evidence is FOR.
+    pub addr: A,
+    /// The footprint it touched.
+    pub footprint: Vec<(i64, i64)>,
+    /// The scene it touched it on.
+    pub scene: Vec<(i64, i64, u8)>,
+}
+
 /// Evidence carried with the address that produced it.
-pub type AddressedEvidence = (crate::transducer::a21::Address, Vec<(i64, i64)>, Vec<(i64, i64, u8)>);
+pub type AddressedEvidence = EvidenceOf<crate::transducer::a21::Address>;
 pub use sel::*;
 
 use super::blade::components;
