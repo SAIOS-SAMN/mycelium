@@ -80,36 +80,47 @@ pub(crate) fn tell_peer_within(addr: &str, body: Vec<u8>, rtt_hint: u64) -> Opti
     s.set_nonblocking(true).ok()?;
     let stall = mycelium::physics::transport_deadline(rtt_hint) as usize;
     let mut head = [0u8; 5];
-    read_budgeted(&mut s, &mut head, stall)?;
+    // THE ROUND TRIP IS MEASURED HERE (45.4, W9b): the strokes this kernel
+    // spent between the write and the first byte back, one stroke per poll
+    // of the socket, the poll that found the byte included. It returned a
+    // literal 1, so every rtt window held ones, `rtt_floor` was 1 on every
+    // wire and `transport_deadline(1)` was eight yields -- microseconds,
+    // refusing a peer that had merely not been scheduled. The body's read
+    // is the frame's length, not the transport, and is not in the measure.
+    let rtt = read_budgeted(&mut s, &mut head, stall)?;
     let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
     if len > mycelium::network::wire::BODY_BUDGET {
         return None;
     }
     let mut reply = vec![0u8; len];
     read_budgeted(&mut s, &mut reply, stall)?;
-    // THE RTT IS NOT MEASURED. Every caller feeds this 1 into
-    // `note_rtt_ok`, so every rtt window holds 1s, `rtt_floor` is 1, and
-    // `transport_deadline(1)` is 8 -- eight yields, which is microseconds
-    // and refuses a peer that merely has not been scheduled yet. 5.1 claims
-    // "rtt in strokes"; this constant is why the claim has nothing behind
-    // it, and why the stall budget above has no measurement to be
-    // denominated in. Filed as W9b; not invented here (rule 11).
-    Some((reply, 1))
+    Some((reply, rtt))
 }
 
 /// Fill `buf` from a non-blocking stream, paying one stroke per attempt
-/// that finds nothing. `None` when the peer closed, when the read errors,
-/// or when the budget is spent -- all three are the same answer to the
-/// caller: this peer is SILENT, which the exchange already counts as a
-/// refusal. It is never a partial buffer read as a short frame (rule 11).
-pub(crate) fn read_budgeted(s: &mut TcpStream, buf: &mut [u8], stall: usize) -> Option<()> {
+/// that finds nothing, and answer with the strokes it took for the first
+/// byte to arrive: the polls made up to and including the one that read
+/// it, so a reply present on the first poll took one stroke, the
+/// instrument's own resolution, never a floor. `None` when the peer
+/// closed, when the read errors, or when the budget is spent -- all three
+/// are the same answer to the caller: this peer is SILENT, which the
+/// exchange already counts as a refusal. It is never a partial buffer read
+/// as a short frame (rule 11). An empty buffer is filled by no poll and
+/// measures nothing, which reads as zero strokes.
+pub(crate) fn read_budgeted(s: &mut TcpStream, buf: &mut [u8], stall: usize) -> Option<u64> {
     let fresh = || mycelium::physics::Physics::default().stroke_n(stall);
     let mut budget = fresh();
     let mut got = 0usize;
+    let mut polls = 0u64;
+    let mut first_byte_at = 0u64;
     while got < buf.len() {
+        polls += 1;
         match std::io::Read::read(s, &mut buf[got..]) {
             Ok(0) => return None,
             Ok(n) => {
+                if got == 0 {
+                    first_byte_at = polls;
+                }
                 got += n;
                 // PROGRESS REFILLS THE BUDGET. Spent per poll it counted
                 // scheduler passes, not transport: `transport_deadline(8)`
@@ -132,7 +143,7 @@ pub(crate) fn read_budgeted(s: &mut TcpStream, buf: &mut [u8], stall: usize) -> 
             Err(_) => return None,
         }
     }
-    Some(())
+    Some(first_byte_at)
 }
 
 /// The floor of the last aperture of measured round trips to a peer.
