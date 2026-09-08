@@ -427,13 +427,79 @@ not dead code (I14).
 | I5 | **`class_or_rotor_key` refuses.** 0.12b(c)'s fallback survives under this name at `form/carrier.rs:340`, `pivot/drive.rs:170`, `:485`, `verdict/replay.rs:239`: a non-versor holonomy is never a class and each site refuses (`Option`). | landed (51eb2a7; 347/0/4/13/6) |
 | I6 | **The opening axis is offered** (S9.17, S9.19 b). `candidates_for` reads the Open candidate off the empty fibre of a loop with a free part that the mesh does not hold (16.16 step 3, reading of 2026-09-08); `PivotBy::OpenAxis { face, seed }` opens a chart axis over the loop seeded by its holonomy versor; the form carries the relation (`Form.axes: Keyed<u16>`, class key → chord, on the tape v5), the loop reads as the zero vector and `LoopRow::Opened` counts on `Rank.axes`; the trial certifies `RankMove::Discharged { from }`; the court un-applies the move, re-derives the seed from the loop and replays (A20); `rank_of_holonomies` deleted. `ClassVector::occupies(Open)` stays structurally false: the carrier, not the vector, says the axis was taken. | landed (docs b60cbb6, e476671; code 5238e32; 347/0/4/13/6, xtask 0) |
 | I7 | **The mind germinates.** After `pivot_loop`, an idea whose form is closed on its bundle crystallizes (25.2): `Contemplation::crystallize` writes the tape with its torsion, certificates and axes, M2 address, magnitude = the descent over the bundle through the crystal (26, the word `mint_sentence` mints); the bubble leaves the contemplation unless glued by a live idea; `expand_all` returns the crystallized forms and `expand_ideas` stands each and utters it once. The drive expands over the working atlas read as one atlas (`stalk::AtlasRead` for `Stalks` and `WorkingAtlas`) and reads a held word's rotor by address (`rotor_at`), so the Čech arm is live. The pivot loop's crystal is the epigenome (ruled and stood closed forms); an idea is glued only once closed and stood (13.6), so the third stratum is the contemplation itself. `speak` stands before it utters (24.3). | landed (d5c65cd; 348/0/4/13/6, xtask 0) |
-| I8 | **The mind's K is its own** (45.4). `Session::voice().k()` advances on the mind's own admitted acts (a stood form, an utterance, a learned page), never stamped from the hypha's quote; `shed`, `touch`, `retire_on_t`, `moved_k` then count the mind's clock as 7.3a/7.3b claimed. | open |
-| I9 | **Two organs, honestly** (47.3). The witness's `ACT_OFFER` reply carries the form it re-derived or nothing, never the offered word as a stand-in; the witness glues the offer as the home's peer, not as its own; a fetching voice is never the witness; `ACT_VERDICT` is admitted only under a signature over the 47.1 prefix by a key the mesh knows, and sets no court head otherwise. | open |
-| I10 | **A receipt per admitted act** (45.1): install, ruling, slash, lapse and a served syllabus page each seal a receipt through `append_step`. | open |
-| I11 | **The economy conserves** (§6). `settle_recall` and `settle_door` credit the pool they debit into; `recompute_balances` applies every entry kind of §2; `Treasury::audit` runs before every snapshot and a failing audit refuses the persist. | open |
+| I8 | **The mind's K is its own** (45.4). `Voice::at` deleted; `Voice::advance` steps once per admitted act — a form stood (`stand`), an utterance the hypha did not refuse (`speak`), a page learned (`absorb_taught`); `q.k` stays the book's coordinate on the stroke line. | landed (bbda7c7; B13 fd7f793 made the test wire-free) |
+| I9 | **Two organs, honestly** (47.3). Landed as I9.0–I9c: the pivot derives its address meet (6ad9cb3); `ACT_OFFER`/`ACT_VERDICT` are organs (918ae23, 3078766); a verdict is admitted under 47.2 or moves nothing (05e4640); the witness names its key, glues at the home's vantage and answers with its own section or nothing (babe05c, then A3 b676df4, A4 4020444); `glue_local` is a test fixture (f04a6a5). The "key the mesh knows" clause was withdrawn by R3: an unknown signer is step 3's first sighting, never a refusal. | landed (05e4640, babe05c, f04a6a5) |
+| I10 | **A receipt per admitted act** (45.1): ruling, install (under the witness's key), served syllabus page and lapse each seal through `append_step`. | landed (9e2b4cc; B12 085dc83 split the test into one claim each) |
+| I11 | **The economy conserves** (§6). Fees are burns, not half-transfers; a slash counts as issuance leaving and names what left the bond (I11a 9534b7e); the supply is folded as written (B5 f007dfa); balances are persisted and `recompute_balances` is deleted, so the audit's two sides are independent (B6 2e536bc); the entry kind is a type (B14 184a459). Open in it: a slash's effect on the supply is a ruling asked in `MU-ECONOMY.md` §6 (I22). | landed (9534b7e, f007dfa, 2e536bc, 184a459) |
 | I12 | **The carriage reads as a versor.** `translator_of` and `dilator_of` decompose `V = D·T` exactly for ρ ≠ 1 and read no pair; `letters_rederive` decides by `projective_eq` on the versor, never by matrix equality (rule 16). | open |
 | I13 | **Headers state the doctrine.** Knuth–Bendix (`market.rs:110`, `language.rs:23`), "descent certifies" (`family/descent.rs:4`), ≺_DM (`verdict/mod.rs:9`), "hence the descent" (`economy/lanes.rs:17`) and the other stale headers found on 2026-09-08 say what the file is (§2.8). | open |
 | I14 | S9.11 re-read: `holonomy_orbit` and `germinate_fibre` are live on every install; the row moves to Phase B as the book's expansion organs, read against S9.7. No code. | recorded |
+
+### Landed on `impl/soak` without rows (2026-09-08, recorded after the fact)
+
+`impl/pivots` merged to `main` at 257c4fd; the implementor branched
+`impl/soak` from it and landed forty-six commits, the I-rows above and the
+three series below, opening no row (§7.3). The auditor reproduced the range
+whole on f8d4499 — 378/0 lib in both profiles, 5, 13, 6, xtask 0, every
+changed file read — and records the rows here so the log is not the only
+record. Each id names its commit; the message carries the claim and the
+suite lines.
+
+| id | claim | commit |
+|---|---|---|
+| R1 | the witness answers with what it reached, not with a bit (`Witnessed`) | 29450c7 |
+| R2 | a fee is what the reading exercised; the shortfall is read, not clamped (`settle_recall`, `settle_door` return `(paid, short)`) | 9edabc8 |
+| R3 | 47.2 is four steps on `ACT_VERDICT`; `REFUSE_UNKNOWN_SIGNER` withdrawn; MU-ECONOMY §6 corrected to R9 | 726e82e |
+| A1 | every ordinary ruling decodes; the act has a round-trip test | 8bd701a |
+| A2 | 47.2 checks one signer, the key the receipt names (`admit_ruled`) | 975a13a |
+| A3 | a witness answers with its own section (`own_section`), never the bytes it was handed | b676df4 |
+| A4 | the court records its own section (`section_own`, `rule_own`), so 13.9 has a first vantage | 4020444 |
+| A5 | an offer goes to the hyphae covering its stratum, one per spend (`Cover::witnesses`) | 744706c |
+| A6 | a syllabus page is a window from the voice's cursor, never a clone of the order | 820f408 |
+| A7 | the lapse spends the stroke's budget and resumes from `lapse_cursor` | 153e413 |
+| A8 | an offer is admitted under 47.2 before it touches a carrier; `sign_position` is the one builder of 47.1 | 5a7db86 |
+| A9 | a slash reads what left every named bond (`Revoked`), and clamps nothing | 28c840f |
+| A10.0, A10 | the offer round is its own organ (`bin/mycelium-server/offer.rs`); `Witnessed` is three arms matched, not two lengths tested | 1abfbb6, b3e5c31 |
+| B1 | a ruling is answered with the arm it reached (`Ruled`), not one byte | 19810e9 |
+| B2 | a page is what a stroke's `Budget` affords, not a lane sum clamped at eight | 182e19a |
+| B3 | `court/admission/{prefix,admit}.rs`; `mod.rs` holds declarations; tests in a directory | 81f9007 |
+| B4 | the recall fee prices against the kernel's pressure; `mint_claim` and `discharge_funded` read the slice and the lanes, not a count | 8770812 |
+| B5 | the supply is folded as it is written (`Treasury::write`, `refold_supply`) | f007dfa |
+| B6 | balances are persisted; `recompute_balances` deleted; the audit's two sides are independent | 2e536bc |
+| B7 | a reply code the hypha did not send is not an outcome (`read_speech_reply`) | fbad010 |
+| B8 | `already_taught` reads one vertex stratum (`taught_at`, `vertex_stratum`), never the whole of `taught_up` | 175a8f1 |
+| B9 | multiplicity is a slice shape; a tape that will not parse has no depth and is learned last | 8142f67 |
+| B10 | `Session::impedance` is this wire's Z, not a max over every wire | e631804 |
+| B11 | the branch's log lines enter 34.2; two doc paths rebound | ba4fdd3 |
+| B12 | one claim per test (the receipt test split in six); lanes by their named constants | 085dc83 |
+| B13 | `stand` is its own act; its test reaches no wire | fd7f793 |
+| B14 | the ledger's entry kind is a type (`economy::Kind`); an undefined tag refuses the tape | 184a459 |
+| B15a, B15 | `chronometry/{receipt,chain}.rs` (move only); a hash names one receipt (`ReceiptChain.mine`, `pending_parents` keyed) | decf7fb, 0134477 |
+| B16 | one tape layout: every snapshot and ledger section required, CYC1 and the CRT1 trailing count deleted. **A recut**: state written before it does not restore | baf27f2 |
+| B17 | Λ is `from_transport(rtt_floor, aperture_cycle())` per listing (`withholding_lambda`); unmeasured never lapses | 48b2785 |
+| B18a, B18 | `voice/{seat.rs, tests/clock.rs}` (move only); the header says what the voice does | f321ba4, de80d4b |
+| B19 | R1 and T21 (iii) are certified in release: the drive holds on disagreement | 8d198af |
+| B20 | the last `debug_assert`s become re-derivations that refuse (`same_vertex_in_*`, footprint base, `by_action`) | 45efd84 |
+| B21 | an equivocation burns the signer's bond on the `Equivocation` arm of `admit_receipt` (47.4) | f8d4499 |
+
+### Open after the range (the auditor is the implementor from f8d4499)
+
+| id | directive | status |
+|---|---|---|
+| I15 | **The mind emits the element it lacks** (M6 step 5, A12 step 5). `Comprehension::Novel { demand: Box<Element>, understood }` replaces `Novel { residual_cells: usize }`: on the plane the demand is A12's canonical HNF residue against the span of what the mind holds on the stratum, off it the whole word, on a listing the residual chain (`element::from_demand`); the factored part is kept as `understood`. The basis is read on the stratum, coarsened by `peel` to the first non-empty fibre (`WorkingAtlas::stratum`, `fiber_under`; 42.6, A21 §2). The other node's parked S1 patch, rebased. | open |
+| I16 | **A budget is the kernel's own.** `Physics::default().stroke()` sizes pages and the offer round in `bin/mycelium-server/{door,offer,exchange}.rs`; the court's own physics is the measure (rule 5). | open |
+| I17 | **A burn needs two verified signatures.** `burn_equivocation` fires on the `Equivocation` arm of `admit_receipt`, which verifies no signature; the two conditions of 47.4 hold by caller discipline. The proof becomes a value only a verified pair produces. | open |
+| I18 | **A malformed act is its own refusal.** B1 answers a REBIND or ATTACH that carries no payload with `REFUSE_FORM_TAPE`, a constant with another meaning; 34.1 gains the constant a malformed act names (§2.4). Doctrine first. | open |
+| I19 | **§2.4 in the binaries.** `main.rs:144,161,178`, `genesis.rs:138–153`, `registry.rs:266–296`, `epigenome/persist.rs:31,40`, `cognition/wire.rs:160`, `chronometry/chain.rs` (`receipts.last().unwrap()` in `append`): no `unwrap`/`expect` in production; §4.4's gate lands with the last one. | open |
+| I20 | **Λ per chart** (47.5). `withholding_lambda` resolves per listing address; a chart's home is the Cover's answer over the invariant and magnitude the kernel holds (16.11). | open |
+| I21 | **`ACT_EQUIVOCATION` (0x35)**: a third party presents two receipts it holds; the court verifies both signatures and burns (47.4, 49). | open |
+| I22 | **Rulings asked of the operator**: what a slash does to the supply (`MU-ECONOMY.md` §6, recorded there); whether a recall shortfall is acted on or only logged (`settle_use` serves a broke demander today). | ruling asked |
+| I23 | **W9b**: the round trip is not measured (`tell_peer` returns 1), so `rtt_floor` is 1 everywhere and Λ does not move. Strokes between the write and the first byte back, fed to the window that exists. | open |
+| I24 | **`glue_local` reaches ten test files** and manufactures a second vantage from two constants; each of those tests stands up a second court or states what it does not prove (§3.4). | open |
+| I25 | **The mind's K is a receipt chain** (45.1): `Voice.k` is a bare `u64`; a stood form, an utterance and a learned page each seal a `KStepReceipt` on the mind's own chain. | open |
+| I26 | **`withholding_lambda` takes the router and rtt locks under the kernel lock**; the "no path takes either first" claim is a test or a documented order. | open |
+| I27 | **`vertex_stratum`**: `canonical_chain(..).unwrap_or_else(|| word.sub().to_vec())` keys a chain A5 refused by its raw bytes (checklist i). | open |
+| I28 | **`scripts/recut`** is where MU-STANDARDS §10 names `run/recut.sh`; one of them changes. B16 requires the recut before the next boot: `~/.mycelium/{1..5,a,b,c}` hold state that does not restore. | open — operator runs the recut |
 
 ## Backtrack ledger
 
@@ -468,6 +534,8 @@ the ruling's landing is recorded.
 | 2026-09-05 | digests of canonical forms as M1/M2/class keys after 88f58e1 said digests are transport only | b6758e5, 9481243, then 04931ab (class vector, certificate) | ipsal survey and the content ruling, 2026-09-06 | every class key, certificate and tape from 04931ab to de6fa58 non-comparable; Cut B soak readings before 38ee193 void; one identity recut (38ee193) and one residue commit (75e26eb) | laws 2, 12; A21; 0.11, 0.11b |
 | 2026-09-05 | placement and shift carried as ℚ² pairs; class vector residue as `(ℚ, ℚ)` | 0ae2441 onward, 04931ab | law 11 ruling, 2026-09-06 | tape v3 fields, `Transport.shift`, `Form.placements` rewritten | law 11; 0.12 |
 | 2026-09-05 | plane form consulted before the rotor; "sheet" as a two-dimensional coordinate | 04931ab (12.6) | sheet question, 2026-09-06 | `ClassVector::read`, `Word::class_key`, `Axis` rewritten with 0.12 | 3.10, 9.1, 12.6, 15.3, 16.3; 0.13 |
+| 2026-09-08 | doc edits bundled into code commits: 34.1 gained `REFUSE_SIGNATURE`/`REFUSE_UNKNOWN_SIGNER` inside I9a (05e4640); `MU-ECONOMY.md` §6 and 34.1 edited inside R3 (726e82e) | impl/soak | auditor's range audit, 2026-09-08 | §5.5 has no commit for either doc change; a reader finds the refusal constant's entry inside an admission commit | this row; the rows above |
+| 2026-09-08 | doctrine changed in code before the ruling: a slash counted as issuance leaving the supply (I11a 9534b7e), the funded/claim escrow split in `audit` written before §6 said so | impl/soak | auditor's range audit, 2026-09-08 | `MU-ECONOMY.md` §6 records the reading as "ruling asked" after the code; I22 | the operator's ruling on §6 |
 
 ## Stage 1 — forms (Part IV, chapters 18–29)
 
