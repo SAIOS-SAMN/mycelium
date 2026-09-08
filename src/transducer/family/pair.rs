@@ -255,11 +255,21 @@ pub(crate) fn pair_groups(
     }
 }
 
-/// WHAT PAIRING TWO SCENES YIELDS: the candidate bodies on each side, the
-/// carriage taking one to the other for each pair that matched, and which
-/// candidates on each side were consumed. The unconsumed are the residual.
-pub(crate) type PairedScene =
-    (Vec<Cand>, Vec<Cand>, Vec<(usize, usize, Carriage)>, Vec<bool>, Vec<bool>);
+/// WHAT PAIRING TWO SCENES YIELDS.
+pub(crate) struct PairedScene {
+    /// The candidate bodies read off the input scene.
+    pub(crate) ins: Vec<Cand>,
+    /// The candidate bodies read off the output scene.
+    pub(crate) outs: Vec<Cand>,
+    /// For each pair that matched: the input candidate, the output
+    /// candidate, and the carriage taking one to the other.
+    pub(crate) pairs: Vec<(usize, usize, Carriage)>,
+    /// Which input candidates a pass consumed. The UNCONSUMED are the
+    /// residual — what the form does not speak.
+    pub(crate) used_in: Vec<bool>,
+    /// Which output candidates a pass consumed.
+    pub(crate) used_out: Vec<bool>,
+}
 
 pub(crate) fn pair_scene(
     a: &Grid,
@@ -325,7 +335,7 @@ pub(crate) fn pair_scene(
             greedy_within(&mut pass, &ii, &oo, want);
         }
     }
-    (ins, outs, pairs, used_in, used_out)
+    PairedScene { ins, outs, pairs, used_in, used_out }
 }
 
 pub(crate) fn pair_form_uncached(
@@ -333,7 +343,7 @@ pub(crate) fn pair_form_uncached(
     b: &Grid,
     scale: Option<((usize, usize), (usize, usize))>,
 ) -> Form {
-    let (ins, outs, pairs, used_in, used_out) = pair_scene(a, b, scale);
+    let PairedScene { ins, outs, pairs, used_in, used_out } = pair_scene(a, b, scale);
     let mut vertices = vec![frame_vertex()];
     let mut supports: Vec<Vec<(i64, i64)>> = vec![Vec::new()];
     for (i, j, _car) in &pairs {
