@@ -53,16 +53,16 @@ pub fn encode_docket_reply_paged(
     // provisional list never starves the court of what actually settled.
     let mut settled: Vec<Vec<u8>> = Vec::new();
     let mut settled_len = 8usize;
-    for (listing, chain, voice, cites, before, after, k, tu) in settlements {
+    for s in settlements {
         let mut item = Vec::new();
-        let _ = put_addr(&mut item, listing);
-        push_chain(&mut item, chain);
-        item.extend_from_slice(voice);
-        push_cites(&mut item, cites);
-        push_mu(&mut item, before);
-        push_mu(&mut item, after);
-        item.extend_from_slice(&k.to_le_bytes());
-        item.extend_from_slice(&tu.to_le_bytes());
+        let _ = put_addr(&mut item, &s.listing);
+        push_chain(&mut item, &s.chain);
+        item.extend_from_slice(&s.voice);
+        push_cites(&mut item, &s.cites);
+        push_mu(&mut item, &s.before);
+        push_mu(&mut item, &s.after);
+        item.extend_from_slice(&s.k.to_le_bytes());
+        item.extend_from_slice(&s.t_universal.to_le_bytes());
         if settled_len + item.len() > budget {
             break;
         }
@@ -72,18 +72,18 @@ pub fn encode_docket_reply_paged(
     let mut out = Vec::new();
     out.extend_from_slice(&0u32.to_le_bytes());
     let mut words = 0usize;
-    for (addr, elem, voices, mu, deflation, k) in dockets {
-        let mut item = Vec::with_capacity(112 + elem.len() + 32 * voices.len());
-        let _ = put_addr(&mut item, addr);
-        item.extend_from_slice(&(elem.len() as u32).to_le_bytes());
-        item.extend_from_slice(elem);
-        item.extend_from_slice(&(voices.len() as u32).to_le_bytes());
-        for v in voices {
+    for d in dockets {
+        let mut item = Vec::with_capacity(112 + d.elem.len() + 32 * d.voices.len());
+        let _ = put_addr(&mut item, &d.addr);
+        item.extend_from_slice(&(d.elem.len() as u32).to_le_bytes());
+        item.extend_from_slice(&d.elem);
+        item.extend_from_slice(&(d.voices.len() as u32).to_le_bytes());
+        for v in &d.voices {
             item.extend_from_slice(v);
         }
-        push_mu(&mut item, mu);
-        push_mu(&mut item, deflation);
-        item.extend_from_slice(&k.to_le_bytes());
+        push_mu(&mut item, &d.escrowed);
+        push_mu(&mut item, &d.deflation);
+        item.extend_from_slice(&d.k.to_le_bytes());
         if out.len() + item.len() + settled_len > budget {
             break;
         }
@@ -131,7 +131,7 @@ pub fn decode_settlements(body: &[u8]) -> Vec<Settlement> {
         p += 8;
         let Some(tu) = body.get(p..p + 8).map(|b| u64::from_le_bytes(b.try_into().unwrap())) else { break };
         p += 8;
-        out.push((listing, chain, voice, cites, before, after, k, tu));
+        out.push(Settlement { listing, chain, voice, cites, before, after, k, t_universal: tu });
     }
     out
 }
@@ -210,7 +210,7 @@ pub(crate) fn decode_dockets_at(body: &[u8]) -> Option<(Vec<Docket>, usize)> {
         let deflation = read_mu(body, &mut p)?;
         let k = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
         p += 8;
-        out.push((addr, elem, voices, mu, deflation, k));
+        out.push(Docket { addr, elem, voices, escrowed: mu, deflation, k });
     }
     Some((out, p))
 }

@@ -208,19 +208,19 @@ impl Kernel {
         let mut all = self.settlements_cold.clone();
         all.extend(self.settlements.iter().cloned());
         out.extend_from_slice(&(all.len() as u32).to_le_bytes());
-        for (listing, chain, voice, cites, before, after, k, tu) in &all {
-            put_addr(&mut out, listing);
-            crate::anastome::dialogue::push_chain(&mut out, chain);
-            out.extend_from_slice(voice);
-            crate::anastome::dialogue::push_cites(&mut out, cites);
-            for m in before {
+        for s in &all {
+            put_addr(&mut out, &s.listing);
+            crate::anastome::dialogue::push_chain(&mut out, &s.chain);
+            out.extend_from_slice(&s.voice);
+            crate::anastome::dialogue::push_cites(&mut out, &s.cites);
+            for m in &s.before {
                 out.extend_from_slice(&m.to_le_bytes());
             }
-            for m in after {
+            for m in &s.after {
                 out.extend_from_slice(&m.to_le_bytes());
             }
-            out.extend_from_slice(&k.to_le_bytes());
-            out.extend_from_slice(&tu.to_le_bytes());
+            out.extend_from_slice(&s.k.to_le_bytes());
+            out.extend_from_slice(&s.t_universal.to_le_bytes());
         }
         out
     }

@@ -335,9 +335,18 @@ impl Kernel {
         // Settlements are receipts: they stay until the court hears them, never drop.
         let k = self.k_step();
         let tu = self.height();
-        self.settlements.push((listing, chain, voice, cites.to_vec(), before, after, k, tu));
+        self.settlements.push(crate::anastome::dialogue::Settlement {
+            listing,
+            chain,
+            voice,
+            cites: cites.to_vec(),
+            before,
+            after,
+            k,
+            t_universal: tu,
+        });
         let floor = self.k_step().saturating_sub(crate::physics::reserve_max());
-        while self.settlements.first().map(|s| s.6 < floor && s.6 + 1 < self.k_step()).unwrap_or(false) {
+        while self.settlements.first().map(|s| s.k < floor && s.k + 1 < self.k_step()).unwrap_or(false) {
             let old = self.settlements.remove(0);
             self.settlements_cold.push(old);
         }
@@ -347,7 +356,7 @@ impl Kernel {
     /// order, so the walk is over the delta only, from the newest back.
     pub fn settlements_since(&self, since_k: u64) -> &[crate::anastome::dialogue::Settlement] {
         let mut start = self.settlements.len();
-        while start > 0 && self.settlements[start - 1].6 > since_k {
+        while start > 0 && self.settlements[start - 1].k > since_k {
             start -= 1;
         }
         &self.settlements[start..]
@@ -357,7 +366,7 @@ impl Kernel {
     /// and leaves the docket.
     pub fn settlements_heard_to(&mut self, since_k: u64) {
         let mut n = 0usize;
-        while n < self.settlements.len() && self.settlements[n].6 <= since_k {
+        while n < self.settlements.len() && self.settlements[n].k <= since_k {
             n += 1;
         }
         self.settlements_cold.extend(self.settlements.drain(..n));

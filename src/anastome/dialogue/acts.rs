@@ -266,7 +266,24 @@ pub const QUOTE_COUNT_AT: usize = 1 + 8 + 32 + 8;
 /// convergence rides with the word.
 /// The last field is the hypha's k-step at which the word was installed:
 /// the coordinate a court's "since" is read against.
-pub type Docket = (crate::transducer::a21::Address, Vec<u8>, Vec<[u8; 32]>, [u64; 4], [u64; 4], u64);
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Docket {
+    /// The word's address.
+    pub addr: crate::transducer::a21::Address,
+    /// The element itself, as a full tape — the court replays it blind.
+    pub elem: Vec<u8>,
+    /// The voices attesting it.
+    pub voices: Vec<[u8; 32]>,
+    /// The μ⃗ ESCROWED against it: a claim on issuance.
+    pub escrowed: [u64; 4],
+    /// The DEFLATION its install measured on a listed demand — zero when
+    /// the germ settled nothing. The proof of convergence rides with the
+    /// word, and this is not the escrow.
+    pub deflation: [u64; 4],
+    /// The hypha's k-step at install: the coordinate a court's "since" is
+    /// read against.
+    pub k: u64,
+}
 
 /// A SETTLEMENT on the docket: the listing, its chain, the voice, the
 /// utterance that settled it, and the magnitudes before and after as the
@@ -274,7 +291,27 @@ pub type Docket = (crate::transducer::a21::Address, Vec<u8>, Vec<[u8; 32]>, [u64
 /// itself: two measurements of one deflation are the proof of convergence.
 /// The last two fields are the hypha's k-step (order inside one kernel)
 /// and the TUniversal stamp (ledger, cross-node).
-pub type Settlement = (crate::transducer::a21::Address, Vec<Cell>, [u8; 32], Vec<CiteWire>, [u64; 4], [u64; 4], u64, u64);
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Settlement {
+    /// The listing settled.
+    pub listing: crate::transducer::a21::Address,
+    /// Its chain.
+    pub chain: Vec<Cell>,
+    /// The voice that settled it.
+    pub voice: [u8; 32],
+    /// The utterance: the citations the voice spoke. The court replays
+    /// these and measures for itself — two measurements of one deflation
+    /// are the proof of convergence.
+    pub cites: Vec<CiteWire>,
+    /// The magnitude BEFORE, as the hypha measured it.
+    pub before: [u64; 4],
+    /// The magnitude AFTER. `before − after` is the deflation claimed.
+    pub after: [u64; 4],
+    /// The hypha's k-step: order inside one kernel.
+    pub k: u64,
+    /// The TUniversal stamp: the ledger coordinate, across nodes.
+    pub t_universal: u64,
+}
 
 /// Verdict rulings — the court's closed vocabulary.
 pub const RULING_UPHELD: u8 = 1;

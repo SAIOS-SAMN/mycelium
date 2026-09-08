@@ -408,7 +408,16 @@ impl Kernel {
                     *pos += 8;
                     let tu = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                     *pos += 8;
-                    kernel.settlements_cold.push((listing, chain, voice, cites, before, after, k, tu));
+                    kernel.settlements_cold.push(crate::anastome::dialogue::Settlement {
+                        listing,
+                        chain,
+                        voice,
+                        cites,
+                        before,
+                        after,
+                        k,
+                        t_universal: tu,
+                    });
                 }
             }
             // index: keyed field at restore (persistence snapshot, once)
