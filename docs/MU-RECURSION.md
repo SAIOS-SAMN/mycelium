@@ -4208,7 +4208,15 @@ pub const REFUSE_ROOM: &str = "voice room does not cover the utterance on an occ
 pub const REFUSE_FORM_TAPE: &str = "form does not parse from its tape";
 pub const REFUSE_EQUIVOCATION: &str = "two receipts at one K with different chain hashes";
 pub const REFUSE_SIGNATURE: &str = "signature does not verify over the signed prefix";
+pub const REFUSE_MALFORMED: &str = "act names a payload it does not carry";
 ```
+
+`REFUSE_MALFORMED` (Stage 11 I18) is the door's answer to an act whose
+frame parsed but whose fields do not agree with one another: a
+`RULING_REBIND` with no selection, a `RULING_ATTACHED` with no base and
+transport. It is not `REFUSE_FORM_TAPE`, which says a form's tape does not
+re-derive, and it is decided by `court::admission::admit_payload` before
+any carrier is touched; the reply is `Ruled::Refused` naming it.
 
 These are returned by `replay_form` and `blind_replay`, by the admission of
 47.2 (`Admitted::reason` names the constant an arm answers with:
