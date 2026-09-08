@@ -90,11 +90,16 @@ pub fn replay_form_with(
     let Some(derived) = walked.rank() else {
         return Some(REFUSE_RANK_LOST);
     };
-    if taped_rank.torsion < derived.torsion
-        || taped_rank.free < derived.free
-        || taped_rank.offplane < derived.offplane
-        || taped_rank.axes < derived.axes
-    {
+    // S9.2 — THE RANK RE-DERIVES OR THE WORD IS REFUSED. The court walks
+    // the forest itself and compares the audit it derived against the one
+    // the tape claims, coordinate by coordinate, and demands EQUALITY.
+    //
+    // The old clause refused only a tape claiming LESS than the walk on
+    // some coordinate, so a tape claiming MORE passed: structure the court
+    // could not derive, admitted because it pointed the convenient way.
+    // Rule 11 is exact or refused, and a rank that does not re-derive is
+    // not exact in either direction.
+    if taped_rank != derived {
         return Some(REFUSE_RANK_LOST);
     }
     if let Some(fam) = family {

@@ -204,6 +204,22 @@ fn rank_lost_refused() {
         Some(REFUSE_RANK_LOST),
         "stored loops below the re-derived forest refuse"
     );
+
+    // S9.2 — AND A TAPE CLAIMING MORE THAN THE WALK IS REFUSED TOO. The
+    // clause used to test `taped < derived` alone, so a form whose stored
+    // loops carry rank the re-walk does not produce passed: structure the
+    // court could not derive, admitted because it pointed the convenient
+    // way. Duplicating a stored loop raises the tape's audit above the
+    // forest's without touching a face.
+    let mut extra = crate::transducer::sentence::from_element_form(&e).expect("v2");
+    let held = extra.loops[0].clone();
+    extra.loops.push(held);
+    let over = as_element_form(&extra, [1, 0, 0, 0]).expect("loops duplicated");
+    assert_eq!(
+        replay_form(&over, &|_| None),
+        Some(REFUSE_RANK_LOST),
+        "a rank the walk does not re-derive refuses in either direction"
+    );
 }
 
 /// Chapter 23.1 steps 3 and 6: a Word whose affine does not spell
