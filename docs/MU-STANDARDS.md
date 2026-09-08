@@ -343,6 +343,18 @@ fixture style, naming scheme, test harness, trace format, or script that
 this document and `MU-ENGINEERING.md` do not name. A needed addition is
 proposed as a change to this document first.
 
+8.6 **Cadence (ruled 2026-09-08).** The implementor never waits for the
+auditor. It runs the directive queue as given, end to end, one item per
+commit as §5 says, and reports at milestones — the end of a stage or
+phase, a ruling it needs, a blocker — not after each item. The auditor
+audits commit ranges, asynchronously, and files rows; a finding that
+returns a landing is corrected forward as the next item, never by
+stopping the queue. A ruling the implementor needs is asked in one line
+and the queue continues on every item the ruling does not touch. A
+report is the commit log (id, first line, the three gate lines) plus
+rulings asked plus departures; prose is for findings only. Stopping
+after one commit to report it is a departure (§8.3).
+
 ## 9. Doctrine changes
 
 The semantics of a chapter (what a move does, what a carrier holds, what
