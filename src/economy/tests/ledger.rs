@@ -204,6 +204,52 @@ fn a_fee_and_a_slash_leave_the_supply_with_the_carrier() {
     assert_eq!(t.minted().expect("minted adds up"), [0; 4]);
 }
 
+/// THE SUPPLY IS FOLDED AS IT IS WRITTEN, not walked on every read.
+/// `supply()` iterated the whole journal, `audit()` calls `supply()`, and
+/// §6 requires the audit before every snapshot — so the cost of proving
+/// the ledger conserves grew with the ledger, on a carrier that grows for
+/// as long as the mesh runs (rule 10). The fold must agree with the walk
+/// it replaces on every kind, and survive a restore.
+#[test]
+fn the_supply_folded_as_it_is_written_equals_the_journal_it_describes() {
+    let (a, b) = ([0x11u8; 32], [0x22u8; 32]);
+    let mut t = Treasury::new();
+    assert_eq!(t.supply(), Some([0; 4]), "a fresh ledger has issued nothing, measured");
+
+    // Every kind that moves the supply, and several that do not.
+    t.genesis(a, [10, 10, 10, 10], (0, [0; 32]));
+    t.enroll(a, [4, 4, 4, 4], (1, [0; 32])); // stake: moves no supply
+    t.settle_subsidy(b, [0, 3, 0, 0], (2, [0; 32])); // mint
+    t.settle_use(a, b, [1, 0, 0, 0], (3, [0; 32])); // two transfers
+    t.settle_recall(a, &[2, 0, 0, 0], &[0; 4], (4, [0; 32])); // burn
+    t.escrow_award([7u8; 32], vec![a], [9, 0, 0, 0], (5, [0; 32]));
+    t.revoke_award(&[7u8; 32], true); // slash
+
+    // The walk this replaced, recomputed here from the rows themselves.
+    let mut issued = [0u64; 4];
+    let mut burned = [0u64; 4];
+    for e in t.entries() {
+        let into = match e.kind {
+            "mint" | "genesis" => &mut issued,
+            "burn" | "slash" => &mut burned,
+            _ => continue,
+        };
+        for (x, d) in into.iter_mut().zip(&e.mu) {
+            *x += d;
+        }
+    }
+    let walked: [u64; 4] = std::array::from_fn(|l| issued[l] - burned[l]);
+    assert_eq!(t.supply(), Some(walked), "the fold is the walk, on every kind");
+    assert!(t.audit().is_ok(), "and the carriers agree with it");
+
+    // It comes back from disk. `restore` reads rows straight off the tape,
+    // so the fold is rebuilt there in the one O(journal) pass.
+    let snap = t.snapshot();
+    let mut pos = 0;
+    let back = Treasury::restore(&snap, &mut pos).expect("restores");
+    assert_eq!(back.supply(), t.supply(), "the fold survives a restore");
+}
+
 /// §4: "a word that fails replay debits the voice that spoke it" — every
 /// voice the escrow names, as `mint_claim` credits every one. It slashed
 /// `voices.first()`, one voice chosen by arrival order, which is rule 15's

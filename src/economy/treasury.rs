@@ -29,9 +29,22 @@ pub struct Entry {
 /// Default operator bond when none is chosen — one unit on every lane.
 pub const UNIT_BOND: [u64; 4] = [1, 1, 1, 1];
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct Treasury {
     pub(crate) entries: Vec<Entry>,
+    /// THE SUPPLY, FOLDED AS IT IS WRITTEN. `supply()` walked the whole
+    /// journal on every call, and `audit()` calls it, and §6 requires the
+    /// audit before every snapshot — so the cost of proving the ledger
+    /// conserves grew with the ledger, on a carrier that grows for as long
+    /// as the mesh runs (rule 10: a loop whose bound is neither a `Budget`
+    /// nor one cell's boundary is unbounded work in disguise).
+    ///
+    /// `None` once a fold overflowed, exactly as the walk returned `None`
+    /// from `checked_add`: a supply that does not add up is not a smaller
+    /// supply, it is unmeasured (rule 11). `restore` folds the journal once
+    /// at load, which is the one O(journal) pass the doctrine sanctions.
+    pub(crate) issued: Option<[u64; 4]>,
+    pub(crate) burned: Option<[u64; 4]>,
     /// Sum of live identity bonds. Escrowed awards are `escrowed`, never this.
     pub(crate) bond_total: [u64; 4],
     /// Enrolled identities and their staked μ⃗, keyed by identity.
@@ -54,6 +67,26 @@ pub struct Treasury {
     /// hold by not looking; counting all of it says value exists that does
     /// not. Both are wrong and the difference is exactly what R9 turns on.
     pub(crate) funded: crate::network::nerve::Keyed<([u8; 32], [u64; 4])>,
+}
+
+/// Written out rather than derived: `#[derive(Default)]` gives the folded
+/// supply `None`, and a fresh ledger has issued and burned NOTHING, which
+/// is a measurement of zero and not an absence of one. Derived, every
+/// treasury that was not built by `new()` reported its supply unmeasured
+/// and the audit refused a ledger that added up perfectly.
+impl Default for Treasury {
+    fn default() -> Self {
+        Treasury {
+            entries: Vec::new(),
+            issued: Some([0; 4]),
+            burned: Some([0; 4]),
+            bond_total: [0; 4],
+            stakes: crate::network::nerve::Keyed::new(),
+            escrowed: crate::network::nerve::Keyed::new(),
+            balances: crate::network::nerve::Keyed::new(),
+            funded: crate::network::nerve::Keyed::new(),
+        }
+    }
 }
 
 impl Treasury {
@@ -97,7 +130,7 @@ impl Treasury {
             self.debit(who, add);
             let next: [u64; 4] = std::array::from_fn(|l| held[l] + add[l]);
             self.stakes.insert(who, next);
-            self.entries.push(Entry { kind: "stake", who, mu: add, k_step: anchor.0, receipt: anchor.1 });
+            self.write(Entry { kind: "stake", who, mu: add, k_step: anchor.0, receipt: anchor.1 });
         } else if self.stakes.get(&who).is_none() {
             self.stakes.insert(who, held);
         }
@@ -120,7 +153,7 @@ impl Treasury {
         let next: [u64; 4] = std::array::from_fn(|l| held[l] - back[l]);
         self.stakes.insert(who, next);
         self.credit(who, back);
-        self.entries.push(Entry { kind: "unstake", who, mu: back, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: "unstake", who, mu: back, k_step: anchor.0, receipt: anchor.1 });
         self.refresh_bond();
         back
     }
@@ -162,7 +195,7 @@ impl Treasury {
         });
         for (who, mu) in drop {
             self.stakes.remove(&who);
-            self.entries.push(Entry {
+            self.write(Entry {
                 kind: "legacy",
                 who,
                 mu,
@@ -184,31 +217,68 @@ impl Treasury {
     /// ledger that does not describe the mesh (rule 11). Summing mint alone
     /// with `saturating_add`, as this did, could report neither.
     pub fn supply(&self) -> Option<[u64; 4]> {
-        let mut issued = [0u64; 4];
-        let mut burned = [0u64; 4];
-        for e in &self.entries {
-            // A SLASH IS μ⃗ LEAVING CIRCULATION. It debits a bond (§5) and
-            // §2's carriers -- balance, bond, escrow -- hold nothing that
-            // could receive it, so it is issuance returned exactly as a
-            // burn is; 47.4's forfeiture says the same of the whole bond.
-            // Counted nowhere, `Σ bond` fell while `supply` held, and the
-            // audit failed on every lane anyone had ever been slashed on.
-            // It stays its OWN KIND so the ledger can still answer "was
-            // anyone slashed?" separately from "what was burned?".
-            let into = match e.kind {
-                "mint" | "genesis" => &mut issued,
-                "burn" | "slash" => &mut burned,
-                _ => continue,
-            };
-            for (t, d) in into.iter_mut().zip(&e.mu) {
-                *t = t.checked_add(*d)?;
-            }
-        }
+        let (issued, burned) = (self.issued?, self.burned?);
         let mut s = [0u64; 4];
         for ((n, i), b) in s.iter_mut().zip(&issued).zip(&burned) {
             *n = i.checked_sub(*b)?;
         }
         Some(s)
+    }
+
+    /// EVERY LEDGER ROW GOES THROUGH HERE, and the two supply sums are
+    /// folded as it is written. Nothing else pushes an `Entry`: a row that
+    /// bypassed this would leave the folded supply describing a ledger that
+    /// is not the one on disk.
+    ///
+    /// A SLASH IS μ⃗ LEAVING CIRCULATION. It debits a bond (§5) and §2's
+    /// carriers -- balance, bond, escrow -- hold nothing that could receive
+    /// it, so it is issuance returned exactly as a burn is; 47.4's
+    /// forfeiture says the same of the whole bond. Counted nowhere,
+    /// `Σ bond` fell while `supply` held, and the audit failed on every
+    /// lane anyone had ever been slashed on. It stays its OWN KIND so the
+    /// ledger can still answer "was anyone slashed?" apart from "what was
+    /// burned?".
+    pub(crate) fn write(&mut self, e: Entry) {
+        let into = match e.kind {
+            "mint" | "genesis" => &mut self.issued,
+            "burn" | "slash" => &mut self.burned,
+            _ => {
+                self.entries.push(e);
+                return;
+            }
+        };
+        // An overflow leaves the fold UNMEASURED and it stays unmeasured:
+        // the walk this replaces returned `None` from `checked_add` on the
+        // same arithmetic (rule 11).
+        *into = into.and_then(|mut t| {
+            for (a, d) in t.iter_mut().zip(&e.mu) {
+                *a = a.checked_add(*d)?;
+            }
+            Some(t)
+        });
+        self.entries.push(e);
+    }
+
+    /// Fold the supply from the journal in one pass. `restore` reads the
+    /// rows off disk directly, so this is where the two sums come back —
+    /// the one O(journal) pass the doctrine sanctions, at load.
+    pub(crate) fn refold_supply(&mut self) {
+        let (mut issued, mut burned) = (Some([0u64; 4]), Some([0u64; 4]));
+        for e in &self.entries {
+            let into = match e.kind {
+                "mint" | "genesis" => &mut issued,
+                "burn" | "slash" => &mut burned,
+                _ => continue,
+            };
+            *into = into.and_then(|mut t| {
+                for (a, d) in t.iter_mut().zip(&e.mu) {
+                    *a = a.checked_add(*d)?;
+                }
+                Some(t)
+            });
+        }
+        self.issued = issued;
+        self.burned = burned;
     }
 
     /// EARNED supply alone: the mint rows, without the genesis allocations
@@ -236,7 +306,7 @@ impl Treasury {
         if mu.iter().all(|&x| x == 0) {
             return [0; 4];
         }
-        self.entries.push(Entry { kind: "genesis", who, mu, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: "genesis", who, mu, k_step: anchor.0, receipt: anchor.1 });
         self.credit(who, mu);
         mu
     }
@@ -263,7 +333,7 @@ impl Treasury {
         if from_bal.iter().any(|&x| x > 0) {
             self.debit(who, from_bal);
         }
-        self.entries.push(Entry { kind: "burn", who, mu: took, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: "burn", who, mu: took, k_step: anchor.0, receipt: anchor.1 });
         took
     }
 
@@ -316,7 +386,7 @@ impl Treasury {
         if mu.iter().all(|&x| x == 0) {
             return [0; 4];
         }
-        self.entries.push(Entry { kind: "mint", who, mu, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: "mint", who, mu, k_step: anchor.0, receipt: anchor.1 });
         self.credit(who, mu);
         eprintln!(
             "  mint {:02x}{:02x}… μ⃗ {mu:?} k {}",

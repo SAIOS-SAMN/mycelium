@@ -202,8 +202,13 @@ impl Treasury {
             escrowed,
             balances: crate::network::nerve::Keyed::new(),
             funded,
+            // Folded from the rows below, since they arrived off disk and
+            // not through `write`. This is the one O(journal) pass.
+            issued: None,
+            burned: None,
         };
         t.refresh_bond();
+        t.refold_supply();
         t.recompute_balances();
         Some(t)
     }

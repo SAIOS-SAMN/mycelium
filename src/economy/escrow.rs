@@ -67,7 +67,7 @@ impl Treasury {
         let prev = self.funded.get(addr).map(|(_, m)| *m).unwrap_or([0; 4]);
         let next: [u64; 4] = std::array::from_fn(|l| prev[l] + paid[l]);
         self.funded.insert(addr, (payer, next));
-        self.entries.push(Entry { kind: "escrow", who: payer, mu: paid, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: "escrow", who: payer, mu: paid, k_step: anchor.0, receipt: anchor.1 });
         paid
     }
 
@@ -149,7 +149,7 @@ impl Treasury {
             .map(|row| row.anchor)
             .unwrap_or((0, [0; 32]));
         self.credit(payer, mu);
-        self.entries.push(Entry { kind, who: payer, mu, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind, who: payer, mu, k_step: anchor.0, receipt: anchor.1 });
     }
 
     /// Mint a released claim: a consilience split when two or more voices
@@ -220,7 +220,7 @@ impl Treasury {
             }
             let next: [u64; 4] = std::array::from_fn(|l| held[l] - took[l]);
             self.stakes.insert(who, next);
-            self.entries.push(Entry { kind: "slash", who, mu: took, k_step: anchor.0, receipt: anchor.1 });
+            self.write(Entry { kind: "slash", who, mu: took, k_step: anchor.0, receipt: anchor.1 });
             out.slashed.push((who, took));
         }
         if !out.slashed.is_empty() {
