@@ -9,6 +9,7 @@ mod door;
 mod exchange;
 mod genesis;
 mod judge;
+mod offer;
 mod persist;
 mod syllabus;
 mod transport;
