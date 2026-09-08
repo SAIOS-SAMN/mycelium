@@ -18,13 +18,15 @@ pub fn z_rank<const N: usize>(rows: &[[i64; N]]) -> Option<u32> {
         };
         m.swap(rank, piv);
         let p = m[rank][col];
-        for r in (rank + 1)..m.len() {
-            let f = m[r][col];
-            for c in 0..N {
-                let left = m[r][c].checked_mul(p)?;
-                let right = m[rank][c].checked_mul(f)?;
+        let (head, tail) = m.split_at_mut(rank + 1);
+        let pivot = &head[rank];
+        for row in tail.iter_mut() {
+            let f = row[col];
+            for (x, &pv) in row.iter_mut().zip(pivot.iter()) {
+                let left = x.checked_mul(p)?;
+                let right = pv.checked_mul(f)?;
                 let diff = left.checked_sub(right)?;
-                m[r][c] = diff.checked_div(prev)?;
+                *x = diff.checked_div(prev)?;
             }
         }
         prev = p;
@@ -68,15 +70,16 @@ pub fn hnf_with_transform<const N: usize>(
             h.swap(rank, piv);
             u.swap(rank, piv);
             let mut done = true;
+            let pivot = h[rank];
             for r in (rank + 1)..h.len() {
                 if h[r][col] == 0 {
                     continue;
                 }
                 let q = h[r][col].checked_div(h[rank][col])?;
                 if q != 0 {
-                    for c in 0..N {
-                        let d = h[rank][c].checked_mul(q)?;
-                        h[r][c] = h[r][c].checked_sub(d)?;
+                    for (x, &pv) in h[r].iter_mut().zip(pivot.iter()) {
+                        let d = pv.checked_mul(q)?;
+                        *x = x.checked_sub(d)?;
                     }
                     for c in 0..u[rank].len() {
                         let d = u[rank][c].checked_mul(q)?;
@@ -93,8 +96,8 @@ pub fn hnf_with_transform<const N: usize>(
         }
         if rank < h.len() && h[rank][col] != 0 {
             if h[rank][col] < 0 {
-                for c in 0..N {
-                    h[rank][c] = h[rank][c].checked_neg()?;
+                for x in h[rank].iter_mut() {
+                    *x = x.checked_neg()?;
                 }
                 for c in 0..u[rank].len() {
                     u[rank][c] = u[rank][c].checked_neg()?;

@@ -246,8 +246,8 @@ impl Rotor {
     pub fn carry(&self, v: &[Q; 4]) -> Option<[Q; 4]> {
         let w = self.weight()?;
         let mut x = Rotor::zero();
-        for k in 0..4 {
-            x.c[1 << k] = v[k].clone();
+        for (k, e) in v.iter().enumerate() {
+            x.c[1 << k] = e.clone();
         }
         let out = self.geo(&x).geo(&self.reverse());
         if (0..16).any(|i| (i as u32).count_ones() != 1 && !out.c[i].is_zero()) {

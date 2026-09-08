@@ -179,8 +179,8 @@ impl Kernel {
             if e.state.is_flat() {
                 continue;
             }
-            for l in 0..4 {
-                s[l] = s[l].max(e.stagnant[l]);
+            for (t, d) in s.iter_mut().zip(&e.stagnant) {
+                *t = (*t).max(*d);
             }
         }
         s

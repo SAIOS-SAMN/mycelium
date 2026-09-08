@@ -186,32 +186,28 @@ impl Kernel {
     pub(crate) fn occupy(&mut self, addr: impl AsRef<[u8]>, mag: &[u64; 4], add: bool) {
         let addr = addr.as_ref();
         let voice = self.drawers.get(addr).copied();
-        for l in 0..4 {
+        for (l, &m) in mag.iter().enumerate() {
             if add {
-                self.occupancy[l] = self.occupancy[l].saturating_add(mag[l]);
-                if mag[l] > 0 {
+                self.occupancy[l] = self.occupancy[l].saturating_add(m);
+                if m > 0 {
                     self.lane_listings[l].insert(addr, ());
                 }
             } else {
-                self.occupancy[l] = self.occupancy[l].saturating_sub(mag[l]);
-                if mag[l] > 0 {
+                self.occupancy[l] = self.occupancy[l].saturating_sub(m);
+                if m > 0 {
                     self.lane_listings[l].remove(addr);
                 }
             }
             if add {
-                self.pressure_sum[l] = self.pressure_sum[l].saturating_add(mag[l]);
+                self.pressure_sum[l] = self.pressure_sum[l].saturating_add(m);
             } else {
-                self.pressure_sum[l] = self.pressure_sum[l].saturating_sub(mag[l]);
+                self.pressure_sum[l] = self.pressure_sum[l].saturating_sub(m);
             }
         }
         if let Some(v) = voice {
             let mut d = self.drawn.get(&v).copied().unwrap_or([0; 4]);
-            for l in 0..4 {
-                if add {
-                    d[l] = d[l].saturating_add(mag[l]);
-                } else {
-                    d[l] = d[l].saturating_sub(mag[l]);
-                }
+            for (t, &m) in d.iter_mut().zip(mag) {
+                *t = if add { t.saturating_add(m) } else { t.saturating_sub(m) };
             }
             self.drawn.insert(v, d);
         }

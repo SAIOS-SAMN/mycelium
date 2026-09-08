@@ -190,16 +190,16 @@ impl Physics {
     /// A demand entered — pressure rises by its exact per-lane magnitude,
     /// the graded defect itself, never an event count through a threshold.
     pub fn bump(&mut self, m: &[u64; 4]) {
-        for l in 0..4 {
-            self.pressure[l] = self.pressure[l].saturating_add(m[l]);
+        for (p, d) in self.pressure.iter_mut().zip(m) {
+            *p = p.saturating_add(*d);
         }
     }
 
     /// A demand closed — pressure falls by the magnitude the settlement
     /// removed from the book.
     pub fn relieve(&mut self, m: &[u64; 4]) {
-        for l in 0..4 {
-            self.pressure[l] = self.pressure[l].saturating_sub(m[l]);
+        for (p, d) in self.pressure.iter_mut().zip(m) {
+            *p = p.saturating_sub(*d);
         }
     }
 
@@ -209,8 +209,8 @@ impl Physics {
     /// adjudication; steady-state pressure then equilibrates where the germination
     /// rate meets this relaxation — a bounded, self-limiting metabolism.
     pub fn relax(&mut self) {
-        for l in 0..4 {
-            self.pressure[l] = self.pressure[l].saturating_sub(1);
+        for p in self.pressure.iter_mut() {
+            *p = p.saturating_sub(1);
         }
     }
 
@@ -218,9 +218,9 @@ impl Physics {
     /// unattributable pivot charges all lanes (its resisting axis is unknown).
     pub fn pivot(&mut self, lanes: [bool; 4]) {
         let any = lanes.iter().any(|&b| b);
-        for l in 0..4 {
-            if lanes[l] || !any {
-                self.torsion[l] = self.torsion[l].saturating_add(1);
+        for (t, &on) in self.torsion.iter_mut().zip(&lanes) {
+            if on || !any {
+                *t = t.saturating_add(1);
             }
         }
     }
@@ -231,10 +231,10 @@ impl Physics {
     /// on the active lanes only — polytonic, never a summed scalar), and books
     /// the same amount as syntropic order built.
     pub fn torse_relief(&mut self, lanes: [bool; 4], spanned: u64) {
-        for l in 0..4 {
-            if lanes[l] {
-                self.torsion[l] = self.torsion[l].saturating_sub(spanned);
-                self.syntropic[l] = self.syntropic[l].saturating_add(spanned);
+        for ((t, o), &on) in self.torsion.iter_mut().zip(self.syntropic.iter_mut()).zip(&lanes) {
+            if on {
+                *t = t.saturating_sub(spanned);
+                *o = o.saturating_add(spanned);
             }
         }
     }
@@ -242,17 +242,17 @@ impl Physics {
     /// A settlement built order on these lanes — a SYNTROPIC event (negentropy).
     /// Order built, by the magnitude of what was settled or composed.
     pub fn syntropy(&mut self, m: &[u64; 4]) {
-        for l in 0..4 {
-            self.syntropic[l] = self.syntropic[l].saturating_add(m[l]);
+        for (o, d) in self.syntropic.iter_mut().zip(m) {
+            *o = o.saturating_add(*d);
         }
     }
 
     /// ENTROPIC EXPANSION spends the reserve on the germinated lanes — the
     /// metabolism SHRINKS as the alphabet grows.
     pub fn spend(&mut self, lanes: [bool; 4]) {
-        for l in 0..4 {
-            if lanes[l] {
-                self.reserve[l] = self.reserve[l].saturating_sub(spend_unit());
+        for (r, &on) in self.reserve.iter_mut().zip(&lanes) {
+            if on {
+                *r = r.saturating_sub(spend_unit());
             }
         }
     }

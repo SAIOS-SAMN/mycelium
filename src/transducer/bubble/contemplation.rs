@@ -455,8 +455,8 @@ impl Contemplation {
     pub fn potential(&self) -> [u64; 4] {
         let mut p = [0u64; 4];
         for (_, b) in self.bubbles.fiber(ROOT) {
-            for l in 0..4 {
-                p[l] = p[l].saturating_add(b.potential[l]);
+            for (t, d) in p.iter_mut().zip(&b.potential) {
+                *t = t.saturating_add(*d);
             }
         }
         p

@@ -192,13 +192,13 @@ impl Treasury {
                 "burn" => &mut burned,
                 _ => continue,
             };
-            for l in 0..4 {
-                into[l] = into[l].checked_add(e.mu[l])?;
+            for (t, d) in into.iter_mut().zip(&e.mu) {
+                *t = t.checked_add(*d)?;
             }
         }
         let mut s = [0u64; 4];
-        for l in 0..4 {
-            s[l] = issued[l].checked_sub(burned[l])?;
+        for ((n, i), b) in s.iter_mut().zip(&issued).zip(&burned) {
+            *n = i.checked_sub(*b)?;
         }
         Some(s)
     }
@@ -214,8 +214,8 @@ impl Treasury {
             if e.kind != "mint" {
                 continue;
             }
-            for l in 0..4 {
-                m[l] = m[l].checked_add(e.mu[l])?;
+            for (t, d) in m.iter_mut().zip(&e.mu) {
+                *t = t.checked_add(*d)?;
             }
         }
         Some(m)

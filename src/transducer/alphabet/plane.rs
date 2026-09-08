@@ -87,16 +87,11 @@ impl PlaneForm {
     /// conjugates the leading rotation to its inverse.
     pub fn compose(&self, other: &PlaneForm) -> PlaneForm {
         let orientation = self.orientation ^ other.orientation;
-        let mut rot = [0i64; CAYLEY_ALPHABET_LEN];
-        if other.orientation {
-            for i in 0..CAYLEY_ALPHABET_LEN {
-                rot[i] = -self.rot[i] + other.rot[i];
-            }
+        let rot: [i64; CAYLEY_ALPHABET_LEN] = if other.orientation {
+            std::array::from_fn(|i| -self.rot[i] + other.rot[i])
         } else {
-            for i in 0..CAYLEY_ALPHABET_LEN {
-                rot[i] = self.rot[i] + other.rot[i];
-            }
-        }
+            std::array::from_fn(|i| self.rot[i] + other.rot[i])
+        };
         PlaneForm { orientation, rot }
     }
 
@@ -104,11 +99,7 @@ impl PlaneForm {
         if self.orientation {
             *self
         } else {
-            let mut rot = [0i64; CAYLEY_ALPHABET_LEN];
-            for i in 0..CAYLEY_ALPHABET_LEN {
-                rot[i] = -self.rot[i];
-            }
-            PlaneForm { orientation: false, rot }
+            PlaneForm { orientation: false, rot: self.rot.map(|e| -e) }
         }
     }
 
@@ -117,17 +108,9 @@ impl PlaneForm {
         if !by.orientation {
             *self
         } else if self.orientation {
-            let mut rot = [0i64; CAYLEY_ALPHABET_LEN];
-            for i in 0..CAYLEY_ALPHABET_LEN {
-                rot[i] = -self.rot[i];
-            }
-            PlaneForm { orientation: true, rot }
+            PlaneForm { orientation: true, rot: self.rot.map(|e| -e) }
         } else {
-            let mut rot = [0i64; CAYLEY_ALPHABET_LEN];
-            for i in 0..CAYLEY_ALPHABET_LEN {
-                rot[i] = -self.rot[i];
-            }
-            PlaneForm { orientation: false, rot }
+            PlaneForm { orientation: false, rot: self.rot.map(|e| -e) }
         }
     }
 

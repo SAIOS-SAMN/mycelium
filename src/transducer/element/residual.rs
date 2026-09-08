@@ -116,8 +116,8 @@ pub fn from_connection(
     e.action.spatial = Some(v);
     e.action.gauge = sigma.to_vec();
     e.address.take();
-    for l in 0..4 {
-        e.mag[l] = e.mag[l].saturating_add(carried[l]);
+    for (g, c) in e.mag.iter_mut().zip(carried) {
+        *g = g.saturating_add(c);
     }
     Some(e)
 }

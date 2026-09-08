@@ -60,10 +60,8 @@ fn generators(basis: &[PlaneForm]) -> (Vec<[i64; CAYLEY_ALPHABET_LEN]>, Vec<Gen>
     // it a generator, and the walk is over that set alone.
     for (a, &i) in odd.iter().enumerate() {
         for &j in odd.iter().skip(a + 1) {
-            let mut r = [0i64; CAYLEY_ALPHABET_LEN];
-            for k in 0..CAYLEY_ALPHABET_LEN {
-                r[k] = basis[i].rot[k] - basis[j].rot[k];
-            }
+            let r: [i64; CAYLEY_ALPHABET_LEN] =
+                std::array::from_fn(|k| basis[i].rot[k] - basis[j].rot[k]);
             rows.push(r);
             from.push(Gen::Diff(i, j));
         }
@@ -120,10 +118,8 @@ pub fn factor_on_plane(g: &PlaneForm, basis: &[PlaneForm]) -> Factored {
         let Some(i) = (0..basis.len()).find(|&i| basis[i].orientation) else {
             return Factored::Novel { remainder: *g, understood: Vec::new() };
         };
-        let mut r = [0i64; CAYLEY_ALPHABET_LEN];
-        for k in 0..CAYLEY_ALPHABET_LEN {
-            r[k] = g.rot[k] - basis[i].rot[k];
-        }
+        let r: [i64; CAYLEY_ALPHABET_LEN] =
+            std::array::from_fn(|k| g.rot[k] - basis[i].rot[k]);
         (r, Some(i))
     } else {
         (g.rot, None)
@@ -152,9 +148,7 @@ pub fn factor_on_plane(g: &PlaneForm, basis: &[PlaneForm]) -> Factored {
     }
     let mut rem = PlaneForm::default();
     // The residue is even by construction: the odd part was divided out.
-    for k in 0..CAYLEY_ALPHABET_LEN {
-        rem.rot[k] = residue[k] as i64;
-    }
+    rem.rot = std::array::from_fn(|k| residue[k] as i64);
     Factored::Novel { remainder: rem, understood: tape }
 }
 
