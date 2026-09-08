@@ -4207,13 +4207,17 @@ pub const REFUSE_UNPROVEN: &str = "utterance citations do not deflate its chain"
 pub const REFUSE_ROOM: &str = "voice room does not cover the utterance on an occupied lane";
 pub const REFUSE_FORM_TAPE: &str = "form does not parse from its tape";
 pub const REFUSE_EQUIVOCATION: &str = "two receipts at one K with different chain hashes";
+pub const REFUSE_SIGNATURE: &str = "signature does not verify over the signed prefix";
+pub const REFUSE_UNKNOWN_SIGNER: &str = "signing key was never admitted by this mesh";
 ```
 
 These are returned by `replay_form` and `blind_replay`, by the admission of
 47.2 (`Admitted::reason` names the constant an arm answers with:
 `REFUSE_RECEIPT_STALE` for a duplicate frame, `REFUSE_EQUIVOCATION` for
-the proof of 47.4; `court/admission.rs` re-exports the four receipt
-constants from this file), by `Kernel::commit_germ` as
+the proof of 47.4; `admit_signature` answers steps 1 and 2 with
+`REFUSE_ORIGIN`, `REFUSE_UNKNOWN_SIGNER` and `REFUSE_SIGNATURE`, in that
+order; `court/admission.rs` re-exports the receipt constants from this
+file), by `Kernel::commit_germ` as
 `Outcome::Refused(REFUSE_ROOM)` on the demand and percept replies (wire
 code 7), and by `Kernel::perceive_speech` in the speech reply. Speech replies also carry
 `"citation pending"`, `"overlap goodness pending"`, and `"letter not in

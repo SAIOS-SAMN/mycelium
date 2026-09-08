@@ -290,3 +290,99 @@ fn a_duplicate_is_stale_and_a_second_hash_at_one_k_is_equivocation() {
         "a second hearing of the head is stale too"
     );
 }
+
+/// A court key over a real prefix, for the two 47.2 steps below.
+fn court_key() -> crate::court::identity::HyphaKey {
+    use ed25519_dalek::SigningKey;
+    let seed = crate::court::identity::HyphaKey::seed_from_name("court");
+    let sk = SigningKey::from_bytes(&seed);
+    crate::court::identity::HyphaKey { vk: sk.verifying_key(), sk }
+}
+
+/// 47.2 steps 1 and 2, IN THE CHAPTER'S ORDER: the origin is this mesh's,
+/// the key is one the mesh has admitted, and the signature verifies over
+/// the 47.1 prefix. Each refusal is reached on its own, and the admitting
+/// case is a real ed25519 signature over the real prefix bytes — not a
+/// fixture that returns true.
+#[test]
+fn a_frame_is_admitted_only_under_a_known_key_signing_the_prefix() {
+    let court = court_key();
+    let vk = court.vk_bytes();
+    let stranger = crate::court::identity::HyphaKey::vk_from_name("stranger");
+
+    let c = chain(vk, &[(b"an address, ruled".as_slice(), Vec::new())]);
+    let p = prefix_for(&c.receipts()[0]);
+    let sig = court.sign(&p.bytes());
+    let known = |k: &[u8; 32]| *k == vk;
+
+    assert_eq!(
+        admit_signature((G, E), &p, &vk, &sig, known),
+        Ok(()),
+        "the court's own signature over its own prefix"
+    );
+    assert_eq!(
+        admit_signature(([8; 32], E), &p, &vk, &sig, known),
+        Err(REFUSE_ORIGIN),
+        "another genesis is refused before the key is even read"
+    );
+    assert_eq!(
+        admit_signature((G, E + 1), &p, &vk, &sig, known),
+        Err(REFUSE_ORIGIN),
+        "and so is another epoch of this genesis"
+    );
+    assert_eq!(
+        admit_signature((G, E), &p, &stranger, &sig, known),
+        Err(REFUSE_UNKNOWN_SIGNER),
+        "a key this mesh never admitted has no vantage behind it"
+    );
+    // The same signer over a DIFFERENT prefix: the bytes signed are not the
+    // bytes sent, which is the whole of step 2.
+    let mut other = p.clone();
+    other.payload = b"another address".to_vec();
+    assert_eq!(
+        admit_signature((G, E), &other, &vk, &sig, known),
+        Err(REFUSE_SIGNATURE),
+        "a signature over one position does not admit another"
+    );
+    assert_eq!(
+        admit_signature((G, E), &p, &vk, &[0u8; 64], known),
+        Err(REFUSE_SIGNATURE),
+        "and a zero signature admits nothing at all"
+    );
+}
+
+/// 47.1: the prefix names the ruled address and the receipt the frame
+/// travels with, so a verdict cannot carry a signature over one position
+/// and a ruling on another address under it.
+#[test]
+fn a_verdict_binds_the_signed_position_to_the_word_it_rules() {
+    let court = court_key();
+    let vk = court.vk_bytes();
+    let ruled = b"an address, ruled".to_vec();
+    let c = chain(vk, &[(ruled.as_slice(), Vec::new())]);
+    let r = &c.receipts()[0];
+    let p = prefix_for(r);
+    let sig = court.sign(&p.bytes());
+    let known = |k: &[u8; 32]| *k == vk;
+
+    assert_eq!(
+        admit_verdict((G, E), &p, &vk, &sig, &ruled, r.prev_receipt_hash, known),
+        Ok(()),
+        "the signed position and the ruled word are the same"
+    );
+    assert_eq!(
+        admit_verdict((G, E), &p, &vk, &sig, b"another word", r.prev_receipt_hash, known),
+        Err(REFUSE_RECEIPT),
+        "a ruling on an address the prefix does not name is refused"
+    );
+    assert_eq!(
+        admit_verdict((G, E), &p, &vk, &sig, &ruled, [0xab; 32], known),
+        Err(REFUSE_RECEIPT),
+        "and so is one travelling with a receipt the prefix does not name"
+    );
+    assert_eq!(
+        admit_verdict((G, E), &p, &vk, &[0; 64], &ruled, r.prev_receipt_hash, known),
+        Err(REFUSE_SIGNATURE),
+        "step 2 is reached before either binding is read"
+    );
+}

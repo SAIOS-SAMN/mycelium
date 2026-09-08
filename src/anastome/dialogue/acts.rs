@@ -410,4 +410,12 @@ pub struct Verdict {
     pub pi: Option<crate::transducer::anchor::Sel>,
     /// The base and the transport — present only on RULING_ATTACHED.
     pub attach: Option<(Address, crate::transducer::element::Versor)>,
+    /// 47.1's SIGNED PREFIX, carrying the court's causal position and, as
+    /// its payload, the address ruled on. The signature below is over these
+    /// bytes and no others.
+    pub prefix: crate::court::admission::SignedPrefix,
+    /// The court's signature over `prefix.bytes()`. A frame whose signature
+    /// does not verify under a key this mesh admitted touches no carrier and
+    /// sets no court head (47.2 step 2).
+    pub sig: [u8; 64],
 }

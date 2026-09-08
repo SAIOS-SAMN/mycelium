@@ -316,21 +316,35 @@ pub fn decode_evidence_reply(body: &[u8]) -> Option<Vec<EvidenceItem>> {
     Some(out)
 }
 
-/// verdict: `[ACT_VERDICT][court voice 32][addr][ruling u8][receipt 32]` —
-/// the receipt is the head of the court's own chronometric chain (the signature
-/// binding the ruling to the court's tamper-evident history).
-pub fn encode_verdict(voice: &[u8; 32], addr: impl AsRef<[u8]>, ruling: u8, receipt: &[u8; 32]) -> Vec<u8> {
-    encode_verdict_payload(voice, addr, ruling, receipt, None)
+/// verdict: `[ACT_VERDICT][court voice 32][addr][ruling u8][receipt 32]
+/// [payload tag …][plen u16][47.1 prefix][sig 64]`.
+///
+/// The receipt is the head of the court's own chronometric chain; the prefix
+/// is 47.1's signed byte string with the ruled ADDRESS as its payload, and
+/// the signature is over `prefix.bytes()` and nothing else. A receiver
+/// admits the frame only under that signature, by a key this mesh knows
+/// (47.2 step 2), and touches no carrier otherwise.
+pub fn encode_verdict(
+    voice: &[u8; 32],
+    addr: impl AsRef<[u8]>,
+    ruling: u8,
+    receipt: &[u8; 32],
+    prefix: &crate::court::admission::SignedPrefix,
+    sig: &[u8; 64],
+) -> Vec<u8> {
+    encode_verdict_payload(voice, addr, ruling, receipt, None, prefix, sig)
 }
 
 /// With the optional π* payload (RULING_REBIND): `…[receipt 32][1][sel]` /
-/// `…[receipt 32][0]`.
+/// `…[receipt 32][0]`, then the prefix and the signature.
 pub fn encode_verdict_payload(
     voice: &[u8; 32],
     addr: impl AsRef<[u8]>,
     ruling: u8,
     receipt: &[u8; 32],
     pi: Option<&crate::transducer::anchor::Sel>,
+    prefix: &crate::court::admission::SignedPrefix,
+    sig: &[u8; 64],
 ) -> Vec<u8> {
     let mut out = vec![ACT_VERDICT];
     out.extend_from_slice(voice);
@@ -344,7 +358,34 @@ pub fn encode_verdict_payload(
         }
         None => out.push(0),
     }
+    push_signature(&mut out, prefix, sig);
     out
+}
+
+/// The 47.1 prefix and its signature, length-prefixed so the frame parses
+/// whole or is refused (A21).
+fn push_signature(
+    out: &mut Vec<u8>,
+    prefix: &crate::court::admission::SignedPrefix,
+    sig: &[u8; 64],
+) {
+    let bytes = prefix.bytes();
+    out.extend_from_slice(&(bytes.len() as u16).to_le_bytes());
+    out.extend_from_slice(&bytes);
+    out.extend_from_slice(sig);
+}
+
+fn take_signature(
+    b: &[u8],
+    p: &mut usize,
+) -> Option<(crate::court::admission::SignedPrefix, [u8; 64])> {
+    let n = u16::from_le_bytes(b.get(*p..*p + 2)?.try_into().ok()?) as usize;
+    *p += 2;
+    let prefix = crate::court::admission::SignedPrefix::read(b.get(*p..*p + n)?)?;
+    *p += n;
+    let sig: [u8; 64] = b.get(*p..*p + 64)?.try_into().ok()?;
+    *p += 64;
+    Some((prefix, sig))
 }
 
 /// The attach payload (RULING_ATTACHED): `…[receipt 32][2][base][g 17]` —
@@ -355,6 +396,8 @@ pub fn encode_verdict_attach(
     receipt: &[u8; 32],
     base: impl AsRef<[u8]>,
     g: &crate::transducer::element::Versor,
+    prefix: &crate::court::admission::SignedPrefix,
+    sig: &[u8; 64],
 ) -> Vec<u8> {
     let mut out = vec![ACT_VERDICT];
     out.extend_from_slice(voice);
@@ -364,6 +407,7 @@ pub fn encode_verdict_attach(
     out.push(2);
     let _ = put_addr(&mut out, base);
     g.to_bytes(&mut out);
+    push_signature(&mut out, prefix, sig);
     out
 }
 
@@ -392,7 +436,8 @@ pub fn decode_verdict(body: &[u8]) -> Option<Verdict> {
         }
         _ => (None, None),
     };
-    Some(Verdict { voice, addr, ruling, receipt, pi, attach })
+    let (prefix, sig) = take_signature(body, &mut p)?;
+    Some(Verdict { voice, addr, ruling, receipt, pi, attach, prefix, sig })
 }
 
 pub fn encode_teach(element_bytes: &[u8]) -> Vec<u8> {

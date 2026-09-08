@@ -109,7 +109,7 @@ pub(crate) fn admit_peer_receipt(
     let dialogue::ReceiptSection { prefix, sig, receipt } =
         dialogue::decode_receipt_section(body, at).ok_or(NoAdmission::Malformed)?;
     if !mycelium::court::identity::verify(&receipt.vk, &prefix.bytes(), &sig) {
-        return Ok(Admitted::Refused("bad signature"));
+        return Ok(Admitted::Refused(mycelium::court::admission::REFUSE_SIGNATURE));
     }
     // 45.5: a node with NO origin adopts the one its bootstrap peer signs
     // for. That is the provisioning channel the chapter names -- the peer
