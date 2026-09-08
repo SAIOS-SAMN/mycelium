@@ -51,7 +51,8 @@ impl Treasury {
         // ESCROWED AWARDS section (Step 5) — appended after entries so older
         // snapshots (which simply end here) restore with an empty docket.
         out.extend_from_slice(&(self.escrowed.len() as u32).to_le_bytes());
-        crate::snapshot::persist(&self.escrowed, |addr, (voices, mu, anchor)| {
+        crate::snapshot::persist(&self.escrowed, |addr, row| {
+            let (voices, mu, anchor) = (&row.voices, &row.mu, &row.anchor);
             let _ = crate::transducer::a21::put_addr(&mut out, addr);
             out.extend_from_slice(&(voices.len() as u32).to_le_bytes());
             for v in voices {
@@ -155,7 +156,7 @@ impl Treasury {
                 *pos += 8;
                 let r: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                 *pos += 32;
-                escrowed.insert(addr, (voices, mu, (k, r)));
+                escrowed.insert(addr, crate::economy::escrow::Escrowed { voices, mu, anchor: (k, r) });
             }
         }
         // `funded` is rebuilt from the journal by `recompute_balances`, not

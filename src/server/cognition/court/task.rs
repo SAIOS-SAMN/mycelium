@@ -66,7 +66,9 @@ impl Kernel {
         let mut paid = [0u64; 4];
         let anchor = self.anchor();
         for addr in &listings {
-            if let Some((_, held, a)) = self.treasury.release_award(addr) {
+            if let Some(crate::economy::escrow::Escrowed { mu: held, anchor: a, .. }) =
+                self.treasury.release_award(addr)
+            {
                 let take = self.treasury.settle_solve(voice, held, a);
                 for l in 0..4 {
                     paid[l] = paid[l].saturating_add(take[l]);

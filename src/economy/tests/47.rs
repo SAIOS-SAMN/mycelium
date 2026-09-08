@@ -13,10 +13,10 @@ fn supply_is_the_sum_of_minted_deflations() {
     let d2 = [0u64, 4, 6, 2];
     t.escrow_award([8; 32], vec![[1; 32], [2; 32]], d1, (1, [1; 32]));
     t.escrow_award([9; 32], vec![[1; 32], [2; 32]], d2, (2, [2; 32]));
-    let (v1, m1, a1) = t.release_award(&[8; 32]).expect("d1");
-    t.mint_claim(&v1, m1, a1);
-    let (v2, m2, a2) = t.release_award(&[9; 32]).expect("d2");
-    t.mint_claim(&v2, m2, a2);
+    let h1 = t.release_award(&[8; 32]).expect("d1");
+    t.mint_claim(&h1.voices, h1.mu, h1.anchor);
+    let h2 = t.release_award(&[9; 32]).expect("d2");
+    t.mint_claim(&h2.voices, h2.mu, h2.anchor);
     let expect: [u64; 4] = std::array::from_fn(|l| d1[l] + d2[l]);
     assert_eq!(t.supply().expect("supply adds up"), expect);
 }
@@ -106,8 +106,8 @@ fn a_funded_escrow_is_counted_and_a_claim_escrow_is_not() {
 
     // The claim, released, MINTS — supply rises by what the ruling
     // measured, which is E1's whole mechanism.
-    let (voices, mu, anc) = t.release_award(&[7u8; 32]).expect("the claim stood");
-    t.mint_claim(&voices, mu, anc);
+    let held = t.release_award(&[7u8; 32]).expect("the claim stood");
+    t.mint_claim(&held.voices, held.mu, held.anchor);
     let after = t.audit().expect("a ruling conserves");
     assert!(
         after.iter().zip(seeded.iter()).any(|(x, y)| x > y),

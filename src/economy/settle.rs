@@ -75,11 +75,11 @@ impl Treasury {
     /// a mint with no party is a mint to nobody, and the escrow stands
     /// rather than being spent into the void.
     pub fn release_rewrite(&mut self, addr: &[u8]) -> Option<[u64; 4]> {
-        let (voices, mu, anchor) = self.escrowed.get(addr)?;
-        if voices.is_empty() {
+        let row = self.escrowed.get(addr)?;
+        if row.voices.is_empty() {
             return None;
         }
-        let (voices, mu, anchor) = (voices.clone(), *mu, *anchor);
+        let (voices, mu, anchor) = (row.voices.clone(), row.mu, row.anchor);
         self.escrowed.remove(addr);
         let n = voices.len() as u64;
         let share: [u64; 4] = std::array::from_fn(|l| if mu[l] == 0 { 0 } else { (mu[l] / n).max(1) });

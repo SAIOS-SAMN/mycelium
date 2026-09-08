@@ -444,7 +444,7 @@ impl Kernel {
                 if k <= since_k && since_k > 0 {
                     return None;
                 }
-                let (voices, mu, _) = self.treasury.escrow_of(&addr)?;
+                let held = self.treasury.escrow_of(&addr)?;
                 // A word whose deflation is unmeasured is not served: the
                 // court rules what was measured, never a fabricated zero.
                 let deflation = self.deflation_of(&addr)?;
@@ -454,8 +454,8 @@ impl Kernel {
                 Some(Docketed {
                     addr: Address::from(addr),
                     spoken: spoken.clone(),
-                    voices: voices.clone(),
-                    escrowed: *mu,
+                    voices: held.voices.clone(),
+                    escrowed: held.mu,
                     deflation,
                     k,
                 })

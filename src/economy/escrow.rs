@@ -6,12 +6,27 @@
 
 use super::*;
 
-/// WHAT AN ESCROW HOLDS: the voices backing the claim, the μ⃗ funded against
-/// it, and the anchor the funding stands at.
-pub type Escrowed = (Vec<[u8; 32]>, [u64; 4], Anchor);
+/// WHAT AN ESCROW HOLDS: a claim on issuance (§5), pending the court.
+#[derive(Debug, Clone)]
+pub struct Escrowed {
+    /// The voices whose consilience backs the claim. Two or more split the
+    /// mint; one takes the vector. Parties, never vantages.
+    pub voices: Vec<[u8; 32]>,
+    /// The μ⃗ claimed, per lane. Unfinalized speech earns nothing, so this
+    /// is a claim and not a balance until the verdict releases it.
+    pub mu: [u64; 4],
+    /// The k-step and receipt the claim stands at, so a release books at
+    /// the moment it was earned and not the moment it was paid.
+    pub anchor: Anchor,
+}
 
 /// An escrow read off the book, carrying the address it is filed under.
-pub type EscrowedAward = (Vec<u8>, Vec<[u8; 32]>, [u64; 4], Anchor);
+pub struct EscrowedAward {
+    /// The listing the claim is against.
+    pub addr: Vec<u8>,
+    /// What that listing holds.
+    pub held: Escrowed,
+}
 
 impl Treasury {
     /// FUND an escrow from a payer's balance — the xSEPTUM Note (§5), where
@@ -47,16 +62,16 @@ impl Treasury {
     pub fn escrow_award(&mut self, addr: impl AsRef<[u8]>, voices: Vec<[u8; 32]>, mu: [u64; 4], anchor: Anchor) {
         let addr = addr.as_ref();
         match self.escrowed.get_mut(addr) {
-            Some((held, _, _)) => {
+            Some(row) => {
                 for v in voices {
-                    match held.iter().position(|h| *h == v) {
+                    match row.voices.iter().position(|h| *h == v) {
                         Some(_) => {}
-                        None => held.push(v),
+                        None => row.voices.push(v),
                     }
                 }
             }
             None => {
-                self.escrowed.insert(addr, (voices, mu, anchor));
+                self.escrowed.insert(addr, Escrowed { voices, mu, anchor });
             }
         }
     }
@@ -68,7 +83,7 @@ impl Treasury {
     pub fn escrowed_awards(&self) -> Vec<EscrowedAward> {
         self.escrowed
             .fiber(crate::network::nerve::ROOT)
-            .map(|(a, (v, mu, an))| (a, v.clone(), *mu, *an))
+            .map(|(addr, held)| EscrowedAward { addr, held: held.clone() })
             .collect()
     }
 
@@ -76,10 +91,10 @@ impl Treasury {
     pub fn release_filled<A: AsRef<[u8]>>(&mut self, listings: &[A]) -> [u64; 4] {
         let mut released = [0u64; 4];
         for addr in listings {
-            if let Some((voices, mu, anchor)) = self.release_award(addr.as_ref()) {
+            if let Some(Escrowed { voices, mu, anchor }) = self.release_award(addr.as_ref()) {
                 self.mint_claim(&voices, mu, anchor);
-                for l in 0..4 {
-                    released[l] = released[l].saturating_add(mu[l]);
+                for (r, m) in released.iter_mut().zip(&mu) {
+                    *r = r.saturating_add(*m);
                 }
             }
         }
@@ -88,7 +103,7 @@ impl Treasury {
 
     /// Clear the listing claim. Payment is a mint of the same vector, done
     /// by the caller after this returns (release then mint).
-    pub fn release_award(&mut self, addr: &[u8]) -> Option<(Vec<[u8; 32]>, [u64; 4], Anchor)> {
+    pub fn release_award(&mut self, addr: &[u8]) -> Option<Escrowed> {
         self.discharge_funded(addr, "release");
         self.escrowed.remove(addr)
     }
@@ -112,7 +127,7 @@ impl Treasury {
         let anchor = self
             .escrowed
             .get(addr)
-            .map(|(_, _, a)| *a)
+            .map(|row| row.anchor)
             .unwrap_or((0, [0; 32]));
         self.credit(payer, mu);
         self.entries.push(Entry { kind, who: payer, mu, k_step: anchor.0, receipt: anchor.1 });
@@ -131,7 +146,7 @@ impl Treasury {
     /// Drop the listing claim. A slash debits the stake bond and mints nothing.
     pub fn revoke_award(&mut self, addr: &[u8], slash: bool) -> bool {
         self.discharge_funded(addr, "revoke");
-        let Some((voices, mu, anchor)) = self.escrowed.remove(addr) else {
+        let Some(Escrowed { voices, mu, anchor }) = self.escrowed.remove(addr) else {
             return false;
         };
         if slash {
@@ -163,17 +178,18 @@ impl Treasury {
     /// reduction and solve share one ledger. Remaining escrow stays for
     /// consilience release.
     pub fn draw_escrow(&mut self, addr: &[u8], voice: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        let Some((_, held, _)) = self.escrowed.get(addr) else {
+        let Some(row) = self.escrowed.get(addr) else {
             return [0; 4];
         };
+        let held = row.mu;
         let asked: [u64; 4] = std::array::from_fn(|l| if mu[l] == 0 { 0 } else { mu[l].max(1) });
         let take: [u64; 4] = std::array::from_fn(|l| asked[l].min(held[l]));
         if take.iter().all(|&m| m == 0) {
             return take;
         }
-        if let Some((_, held, _)) = self.escrowed.get_mut(addr) {
-            for l in 0..4 {
-                held[l] -= take[l];
+        if let Some(row) = self.escrowed.get_mut(addr) {
+            for (h, t) in row.mu.iter_mut().zip(&take) {
+                *h -= t;
             }
         }
         self.mint_to(voice, take, anchor)
@@ -181,7 +197,7 @@ impl Treasury {
 
     #[cfg(test)]
     pub fn escrowed_remaining(&self, addr: &[u8]) -> [u64; 4] {
-        self.escrowed.get(addr).map(|(_, mu, _)| *mu).unwrap_or([0; 4])
+        self.escrowed.get(addr).map(|row| row.mu).unwrap_or([0; 4])
     }
 
 }

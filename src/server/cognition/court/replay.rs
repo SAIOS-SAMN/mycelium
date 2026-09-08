@@ -44,7 +44,9 @@ impl Kernel {
                 }
                 self.fed_admit(addr, w);
             }
-            if let Some((voices, mu, anchor)) = self.treasury.release_award(addr) {
+            if let Some(crate::economy::escrow::Escrowed { voices, mu, anchor }) =
+                self.treasury.release_award(addr)
+            {
                 self.treasury.mint_claim(&voices, mu, anchor);
             }
             self.unlist(addr, false);

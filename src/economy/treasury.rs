@@ -38,7 +38,7 @@ pub struct Treasury {
     pub(crate) stakes: crate::network::nerve::Keyed<[u64; 4]>,
     /// AWARDS IN ESCROW (Step 5): consilience settlements held unfinalized —
     /// keyed by germ address. Only the court's verdict releases or revokes.
-    pub(crate) escrowed: crate::network::nerve::Keyed<(Vec<[u8; 32]>, [u64; 4], Anchor)>,
+    pub(crate) escrowed: crate::network::nerve::Keyed<super::escrow::Escrowed>,
     /// Per-voice balances, updated on every entry. Never a scan of the ledger.
     pub(crate) balances: crate::network::nerve::Keyed<[u64; 4]>,
     /// FUNDED escrow, per listing: the part of an award that was debited

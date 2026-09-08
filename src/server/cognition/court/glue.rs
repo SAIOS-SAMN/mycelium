@@ -233,7 +233,9 @@ impl Kernel {
                 }
                 self.ruled_admit(&addr);
                 self.fed_admit(&addr, spoken.clone());
-                if let Some((voices, mu, anchor)) = self.treasury.release_award(&addr) {
+                if let Some(crate::economy::escrow::Escrowed { voices, mu, anchor }) =
+                    self.treasury.release_award(&addr)
+                {
                     self.treasury.mint_claim(&voices, mu, anchor);
                 }
                 self.unlist(&addr, false);
@@ -351,7 +353,9 @@ impl Kernel {
                         "  court form installed {:02x}{:02x}… mint none (closes nothing)",
                         addr[0], addr[1]
                     );
-                } else if let Some((voices, _, anchor)) = self.treasury.release_award(addr) {
+                } else if let Some(crate::economy::escrow::Escrowed { voices, anchor, .. }) =
+                    self.treasury.release_award(addr)
+                {
                     self.treasury.mint_claim(&voices, pay, anchor);
                 }
             }
