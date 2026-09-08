@@ -141,10 +141,25 @@ impl Treasury {
         self.mint_to(discoverer, mu, anchor)
     }
 
-    /// A reading (decomposition) charges the READER a unit fee on each lane
-    /// the sentence exercised, paid out of the reader's earned balance. This
-    /// is the RECHARGE stroke: the pool drains on discovery (a subsidy mints)
-    /// and refills on use (a fee is burned), so it breathes instead of dying.
+    /// A reading (decomposition) charges the READER what the reading
+    /// exercised, per lane, out of its earned balance. This is the RECHARGE
+    /// stroke: the pool drains on discovery (a subsidy mints) and refills on
+    /// use (a fee is burned), so it breathes instead of dying.
+    ///
+    /// THE FEE IS WHAT WAS MEASURED. It took `lanes: [bool; 4]` and charged
+    /// `(lanes[l] as u64)` — one unit per lane touched, a monetary constant
+    /// where `MU-ECONOMY.md` §8 says there are none and §5 says a reading is
+    /// priced against the structure it moved. `Element::lanes()` threw the
+    /// extent away and this cast a bit back into a magnitude; the μ⃗ was
+    /// already measured at the call site. `price` is the magnitude on the
+    /// lane (§5), so the fee is that, and a reader who moved more of a lane
+    /// pays more of it.
+    ///
+    /// WHAT CANNOT BE PAID IS READ, NOT CLAMPED. `fee[l].min(held[l])` is a
+    /// scalar comparison per lane returning a value; the doctrine's form is
+    /// the shortfall reading (law 5, §2.3), which says on which lanes the
+    /// reader came up short and by how much. The caller acts on the lanes it
+    /// reads. Returns `(paid, short)`.
     ///
     /// THE FEE IS A BURN, not a transfer. It stood as a `transfer` entry
     /// with only the debit half written — the μ⃗ left a balance and reached
@@ -153,15 +168,22 @@ impl Treasury {
     /// carriers are balance, bond and escrow: there is no pool among them
     /// to hold the fee, and the pool a subsidy draws on is issuance
     /// headroom, which a burn is exactly what returns to.
-    pub fn settle_recall(&mut self, voice: [u8; 32], lanes: [bool; 4], anchor: Anchor) -> [u64; 4] {
+    pub fn settle_recall(
+        &mut self,
+        voice: [u8; 32],
+        exercised: &[u64; 4],
+        anchor: Anchor,
+    ) -> ([u64; 4], [u64; 4]) {
         let held = self.balance_mu(&voice);
-        let fee: [u64; 4] = std::array::from_fn(|l| (lanes[l] as u64).min(held[l]));
-        if fee.iter().all(|&m| m == 0) {
-            return fee;
+        let asked = super::price(exercised, &[0; 4]);
+        let short = super::shortfall(&asked, &held);
+        let paid: [u64; 4] = std::array::from_fn(|l| asked[l] - short[l]);
+        if paid.iter().all(|&m| m == 0) {
+            return (paid, short);
         }
-        self.entries.push(Entry { kind: "burn", who: voice, mu: fee, k_step: anchor.0, receipt: anchor.1 });
-        self.debit(voice, fee);
-        fee
+        self.entries.push(Entry { kind: "burn", who: voice, mu: paid, k_step: anchor.0, receipt: anchor.1 });
+        self.debit(voice, paid);
+        (paid, short)
     }
 
     /// THE DOOR FEE (D12) — a strained mesh prices its own door: the speaker
@@ -173,16 +195,24 @@ impl Treasury {
     ///
     /// A burn for the same reason `settle_recall` is: the congestion fee
     /// leaves circulation, and a `transfer` with no payee was μ⃗ leaving a
-    /// balance for nowhere.
-    pub fn settle_door(&mut self, voice: [u8; 32], fee: [u64; 4], anchor: Anchor) -> [u64; 4] {
+    /// balance for nowhere. And the part that cannot be paid is the
+    /// shortfall reading, not a `min` — it is exactly what the caller
+    /// defers on, per lane. Returns `(paid, short)`.
+    pub fn settle_door(
+        &mut self,
+        voice: [u8; 32],
+        fee: [u64; 4],
+        anchor: Anchor,
+    ) -> ([u64; 4], [u64; 4]) {
         let held = self.balance_mu(&voice);
-        let paid: [u64; 4] = std::array::from_fn(|l| fee[l].min(held[l]));
+        let short = super::shortfall(&fee, &held);
+        let paid: [u64; 4] = std::array::from_fn(|l| fee[l] - short[l]);
         if paid.iter().all(|&m| m == 0) {
-            return paid;
+            return (paid, short);
         }
         self.entries.push(Entry { kind: "burn", who: voice, mu: paid, k_step: anchor.0, receipt: anchor.1 });
         self.debit(voice, paid);
-        paid
+        (paid, short)
     }
 
 }

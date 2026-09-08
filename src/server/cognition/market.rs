@@ -108,13 +108,17 @@ impl Kernel {
             return [0; 4];
         }
         let anchor = self.anchor();
-        let paid = self.treasury.settle_door(voice, deficit, anchor);
-        std::array::from_fn(|l| {
-            if self.physics.reserve[l] == 0 && paid[l] == 0 {
-                deficit[l]
-            } else {
-                0
-            }
+        // TWO READINGS, BOTH READ. A lane defers when the mesh has spent
+        // that lane to nothing AND the speaker did not cover the fee on it;
+        // the amount deferred is what it did not cover. The second half was
+        // `paid[l] == 0`, a zero test standing for the shortfall, which
+        // cannot tell a lane half-paid from one wholly unpaid and reported
+        // the whole deficit for a single unit short. `settle_door` now
+        // returns that reading, so the door reads it instead of guessing it.
+        let (_paid, short) = self.treasury.settle_door(voice, deficit, anchor);
+        std::array::from_fn(|l| match self.physics.reserve[l] == 0 {
+            true => short[l],
+            false => 0,
         })
     }
 

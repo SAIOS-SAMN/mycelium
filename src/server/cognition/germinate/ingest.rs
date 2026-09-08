@@ -130,7 +130,16 @@ impl Kernel {
         match normal_form {
             NormalForm::Decomposed(word) => {
                 let anchor = self.anchor();
-                self.treasury.settle_recall(voice, lanes, anchor); // reader's fee → the pool recharges
+                // The reader's fee is what the reading exercised, per lane
+                // (§5), and the lanes it could not cover are named rather
+                // than clamped away.
+                let (_paid, short) = self.treasury.settle_recall(voice, &mag, anchor);
+                for l in crate::economy::lanes_short(&short) {
+                    eprintln!(
+                        "  court recall short voice {:02x}{:02x}… lane {l} by {}",
+                        voice[0], voice[1], short[l]
+                    );
+                }
                 for &i in &word {
                     // PoUW circulation: the demander pays each cited word's
                     // discoverer the structure exercised, from earned balance.

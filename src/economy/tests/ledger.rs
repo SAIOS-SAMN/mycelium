@@ -40,7 +40,7 @@ fn escrow_snapshot_round_trips() {
     let mut t = Treasury::new();
     t.enroll([3; 32], UNIT_BOND, (0, [4; 32]));
     t.settle_subsidy([3; 32], [0, 0, 5, 0], (1, [4; 32]));
-    t.settle_recall([3; 32], [false, false, true, false], (2, [4; 32]));
+    t.settle_recall([3; 32], &[0, 0, 3, 0], (2, [4; 32]));
     let snap = t.snapshot();
     let mut pos = 0;
     let back = Treasury::restore(&snap, &mut pos).expect("restore v3");
@@ -160,19 +160,21 @@ fn a_fee_and_a_slash_leave_the_supply_with_the_carrier() {
     t.enroll([1; 32], [6, 6, 6, 6], (1, [0; 32]));
     let issued = t.audit().expect("a funded, bonded voice conserves");
 
-    // A READING FEE on two lanes.
-    let fee = t.settle_recall([1; 32], [true, false, true, false], (2, [1; 32]));
-    assert_eq!(fee, [1, 0, 1, 0], "one unit on each lane read");
+    // A READING FEE is WHAT THE READING EXERCISED, per lane (§5) — not one
+    // unit per lane touched, which was a monetary constant §8 forbids.
+    let (fee, short) = t.settle_recall([1; 32], &[4, 0, 2, 0], (2, [1; 32]));
+    assert_eq!(fee, [4, 0, 2, 0], "the structure moved on each lane, not a unit");
+    assert_eq!(short, [0; 4], "a balance of 20 covers it on every lane");
     let after = t.audit().expect("the ledger conserves through a recall fee");
     assert_eq!(
         after,
-        [issued[0] - 1, issued[1], issued[2] - 1, issued[3]],
+        [issued[0] - 4, issued[1], issued[2] - 2, issued[3]],
         "and the supply fell by exactly the fee"
     );
 
     // A DOOR FEE.
-    let paid = t.settle_door([1; 32], [2, 0, 0, 3], (3, [1; 32]));
-    assert_eq!(paid, [2, 0, 0, 3]);
+    let (paid, short) = t.settle_door([1; 32], [2, 0, 0, 3], (3, [1; 32]));
+    assert_eq!((paid, short), ([2, 0, 0, 3], [0; 4]));
     let after2 = t.audit().expect("the ledger conserves through a door fee");
     assert_eq!(after2, [after[0] - 2, after[1], after[2], after[3] - 3]);
 
@@ -183,6 +185,16 @@ fn a_fee_and_a_slash_leave_the_supply_with_the_carrier() {
     assert_eq!(t.bond_of(&[1; 32]).expect("still enrolled")[0], 0, "the whole bond went");
     let after3 = t.audit().expect("the ledger conserves through a slash");
     assert_eq!(after3[0], after2[0] - 6, "supply fell by the bond that left, not by the ask");
+
+    // WHAT A BALANCE CANNOT COVER IS READ, NOT CLAMPED. `min(fee, held)`
+    // returned a value and the caller then guessed the deferral from a zero
+    // test; the shortfall says on which lanes, and by how much.
+    let held = t.balance_mu(&[1; 32]);
+    let (paid, short) = t.settle_door([1; 32], [held[0] + 5, 0, 0, 0], (5, [1; 32]));
+    assert_eq!(paid[0], held[0], "everything the balance held went");
+    assert_eq!(short[0], 5, "and the five it did not is the reading");
+    assert_eq!(crate::economy::lanes_short(&short), vec![0], "named by lane");
+    assert!(t.audit().is_ok(), "and it conserves through a partial payment");
 
     // And nothing was minted by any of it: the earned supply never moved.
     assert_eq!(t.minted().expect("minted adds up"), [0; 4]);
