@@ -1,10 +1,6 @@
-// The alphabet's tests, one file per chapter of MU-RECURSION whose claim
-// they prove (MU-STANDARDS 3.3). The `#[path]` attributes are here because
-// a Rust module name cannot begin with a digit.
+// The alphabet's tests, one file per ORGAN they prove. Each file's header
+// names the chapter of MU-RECURSION the claim comes from.
 
-#[path = "1.rs"]
-mod chapter_1;
-#[path = "9.rs"]
-mod chapter_9;
-#[path = "16.rs"]
-mod chapter_16;
+mod letters;
+mod plane_form;
+mod rotor_key;

@@ -1,5 +1,4 @@
-// The anchor's tests. The `#[path]` attribute is here because a Rust module
-// name cannot begin with a digit; A9 is the claim they prove.
+// The anchor's tests. A9 is the claim they prove; the file is named for
+// what A9 is about.
 
-#[path = "9.rs"]
-mod appendix_a9;
+mod selection;

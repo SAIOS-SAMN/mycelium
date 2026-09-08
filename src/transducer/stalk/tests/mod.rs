@@ -1,5 +1,4 @@
-// The stalk's tests. The `#[path]` attribute is here because a Rust module
-// name cannot begin with a digit; A6 and A7 are the claims they prove.
+// The stalk's tests. A6 and A7 are the claims they prove; the file is named
+// for what they are about.
 
-#[path = "6.rs"]
-mod appendix_a6;
+mod chart;
