@@ -167,9 +167,13 @@ impl Kernel {
         // must reproduce the candidate's substance exactly. No search here.
         // Each cite resolves or the bid withholds that cite.
         let mut resolved: Vec<Cite> = Vec::new();
-        for (a, _st, g, asg, _) in cites {
-            let j = self.live_slot(a).filter(|_| a.as_bytes() != addr)?;
-            resolved.push(Cite { word: j, transport: g.clone(), gauge: *asg as usize });
+        for c in cites {
+            let j = self.live_slot(&c.addr).filter(|_| c.addr.as_bytes() != addr)?;
+            resolved.push(Cite {
+                word: j,
+                transport: c.transport.clone(),
+                gauge: c.gauge as usize,
+            });
         }
         if resolved.is_empty() {
             return None;
@@ -195,7 +199,7 @@ impl Kernel {
                 // being refined.
                 let saved = candidate.magnitude();
                 let payload = crate::transducer::rewrite::RewritePayload::Retire {
-                    cites: cites.iter().map(|(a, _, _, _, _)| a.clone()).collect(),
+                    cites: cites.iter().map(|c| c.addr.clone()).collect(),
                     freed: saved,
                 };
                 let _ = self.mint_rewrite(

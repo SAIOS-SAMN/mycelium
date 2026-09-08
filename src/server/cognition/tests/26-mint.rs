@@ -187,12 +187,24 @@ k.basis_insert(from_residual(&germinate(&a_far, &rot_far).unwrap()), [7; 32]);
 let derivable = k.basis()[0].address(); // its duplicate speaks it
 // The bidder's sentence: the duplicate, cited at the identity.
 let body = |w: &Element| crate::transducer::sentence::cited_pattern(w, 0).unwrap();
-let sentence = vec![(k.basis()[1].address(), 0u8, element::identity_versor(), 0u32, body(&k.basis()[1]))];
+let sentence = vec![crate::anastome::dialogue::CiteWire {
+    addr: k.basis()[1].address(),
+    standing: 0,
+    transport: element::identity_versor(),
+    gauge: 0,
+    body: body(&k.basis()[1]),
+}];
 let paid = k.try_refine(&derivable, [5; 32], &sentence);
 assert!(paid.is_some(), "the derivable word is a confirmed compression bid");
 assert_eq!(k.basis_len(), 1, "the vocabulary compressed");
 let essential = k.basis()[0].address();
-let self_cite = vec![(essential.clone(), 0u8, element::identity_versor(), 0u32, body(&k.basis()[0]))];
+let self_cite = vec![crate::anastome::dialogue::CiteWire {
+    addr: essential.clone(),
+    standing: 0,
+    transport: element::identity_versor(),
+    gauge: 0,
+    body: body(&k.basis()[0]),
+}];
 assert!(k.try_refine(&essential, [5; 32], &self_cite).is_none(), "an essential word is refused");
 assert_eq!(k.basis_len(), 1, "refusal mutates nothing");
 assert!(k.try_refine(&[3; 32], [5; 32], &sentence).is_none(), "an unknown address is refused");
@@ -205,7 +217,13 @@ k.basis_insert(
 );
 let addr = k.basis()[k.basis_len() - 1].address();
 k.provisional.insert(&addr, (*k.basis()[k.basis_len() - 1]).clone());
-let sentence = vec![(k.basis()[0].address(), 0u8, element::identity_versor(), 0u32, body(&k.basis()[0]))];
+let sentence = vec![crate::anastome::dialogue::CiteWire {
+    addr: k.basis()[0].address(),
+    standing: 0,
+    transport: element::identity_versor(),
+    gauge: 0,
+    body: body(&k.basis()[0]),
+}];
 assert!(k.try_refine(&addr, [5; 32], &sentence).is_none(), "provisional words are refused");
 assert_eq!(k.basis_len(), 2);
 }

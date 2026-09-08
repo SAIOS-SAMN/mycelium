@@ -13,13 +13,13 @@ fn the_five_acts_round_trip() {
         &chain,
         &crate::transducer::element::IDENTITY_FRAME,
     );
-    let cites = vec![(
-        listing.clone(),
-        0u8,
-        crate::transducer::element::translator_versor(1, -1),
-        1u32,
-        chain.clone(),
-    )];
+    let cites = vec![CiteWire {
+        addr: listing.clone(),
+        standing: 0,
+        transport: crate::transducer::element::translator_versor(1, -1),
+        gauge: 1,
+        body: chain.clone(),
+    }];
     let (v, c, k) = decode_demand(&encode_demand(&voice, &chain, &cites)).unwrap();
     assert_eq!(k, cites, "the citations ride the demand");
     assert_eq!((v, c), (voice, chain.clone()));

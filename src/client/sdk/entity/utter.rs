@@ -52,24 +52,24 @@ impl Entity {
                 let w = word_of(c.word)?;
                 let body =
                     crate::transducer::sentence::cited_pattern(w, c.gauge).unwrap_or_default();
-                Some((
-                    w.address(),
-                    standing_of(c.word).as_u8(),
-                    c.transport,
-                    c.gauge as u32,
+                Some(dialogue::CiteWire {
+                    addr: w.address(),
+                    standing: standing_of(c.word).as_u8(),
+                    transport: c.transport,
+                    gauge: c.gauge as u32,
                     body,
-                ))
+                })
             })
             .collect();
         for p in &located.punctures {
             let Some(w) = word_of(p.word) else { continue };
-            cites.push((
-                w.address(),
-                standing_of(p.word).as_u8(),
-                p.transport.clone(),
-                u32::MAX,
-                p.cells.clone(),
-            ));
+            cites.push(dialogue::CiteWire {
+                addr: w.address(),
+                standing: standing_of(p.word).as_u8(),
+                transport: p.transport.clone(),
+                gauge: u32::MAX,
+                body: p.cells.clone(),
+            });
         }
         (cites, located.residual)
     }
@@ -78,12 +78,12 @@ impl Entity {
     /// the proof; each address is a keyed read.
     pub fn puncture_verified(&mut self, cites: &[dialogue::CiteWire]) -> usize {
         let mut deepened = 0usize;
-        for (addr, _, _, asg, body) in cites {
-            if *asg != u32::MAX {
+        for c in cites {
+            if c.gauge != u32::MAX {
                 continue;
             }
-            let Some(i) = self.epigenome.index_of(addr) else { continue };
-            if self.epigenome.puncture(i, crate::transducer::element::assignment(body)) {
+            let Some(i) = self.epigenome.index_of(&c.addr) else { continue };
+            if self.epigenome.puncture(i, crate::transducer::element::assignment(&c.body)) {
                 deepened += 1;
             }
         }

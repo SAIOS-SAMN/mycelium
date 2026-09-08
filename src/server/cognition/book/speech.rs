@@ -217,8 +217,8 @@ impl Kernel {
         let mag = listing.magnitude();
         let mut charts_at: crate::network::nerve::Keyed<crate::transducer::stalk::Invariant> =
             crate::network::nerve::Keyed::new();
-        for (_, _, _, _, body) in cites {
-            let inv = crate::transducer::stalk::invariant(body);
+        for cite in cites {
+            let inv = crate::transducer::stalk::invariant(&cite.body);
             charts_at.insert(inv.key(), inv);
         }
         let mut charts: Vec<crate::transducer::stalk::Invariant> = charts_at
@@ -235,7 +235,7 @@ impl Kernel {
         // court cannot replay (rule 11); `None` records no loop at all.
         let cite_g: Option<element::Versor> = cites
             .iter()
-            .map(|(_, _, g, _, _)| g.clone())
+            .map(|c| c.transport.clone())
             .reduce(|acc, g| acc.geo(&g));
         if residual.as_slice().is_empty() {
             let paid = if section || listing.is_connection() {
@@ -243,7 +243,8 @@ impl Kernel {
             } else {
                 [0; 4]
             };
-            for (addr, _, _, _, _) in cites {
+            for cite in cites {
+                let addr = &cite.addr;
                 if let Some(w) = self.basis.get(addr) {
                     let mag = w.magnitude();
                     if let Some(disc) = self.discoverer_of(addr) {

@@ -79,7 +79,7 @@ match entity.quote() {
                 expressed.address()[1]
             );
             n_closing += cites.len() as u32;
-            for (_, st, _, _, _) in &cites {
+            for mycelium::anastome::dialogue::CiteWire { standing: st, .. } in &cites {
                 match mycelium::sdk::Standing::from_u8(*st) {
                     Some(mycelium::sdk::Standing::Stood) => n_stood += 1,
                     Some(mycelium::sdk::Standing::Held) => n_held += 1,
@@ -92,8 +92,8 @@ match entity.quote() {
             // failure axis.
             let held: Vec<_> = cites
                 .iter()
-                .filter(|(_, st, _, _, _)| *st == mycelium::sdk::Standing::Held.as_u8())
-                .filter_map(|(addr, _, _, _, _)| entity.cited_word(addr))
+                .filter(|c| c.standing == mycelium::sdk::Standing::Held.as_u8())
+                .filter_map(|c| entity.cited_word(&c.addr))
                 .collect();
             if held.len() >= 2 {
                 if let Some(a) = entity.open_axis(&cluster.address, &cluster.chain, &held) {

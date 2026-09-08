@@ -400,7 +400,8 @@ pub fn resolve_cites(
 ) -> Vec<Cite> {
     cites
         .iter()
-        .filter_map(|(addr, _st, g, _asg, _)| {
+        .filter_map(|c| {
+            let (addr, g) = (&c.addr, &c.transport);
             let i = language.at(addr)?;
             // The gauge coordinate is read from the target, never trusted
             // as an index into this copy of the word.
@@ -453,7 +454,11 @@ pub fn reduce_proven(
         ([], true) => NormalForm::Decomposed(resolved.iter().map(|c| c.word).collect()),
         ([], false) => {
             let named: Vec<Address> = resolved.iter().map(|c| language.words[c.word].address()).collect();
-            let missing = cites.iter().find(|(a, _, _, _, _)| !named.contains(a)).map(|(_, _, _, _, body)| body.clone()).unwrap_or_default();
+            let missing = cites
+                .iter()
+                .find(|c| !named.contains(&c.addr))
+                .map(|c| c.body.clone())
+                .unwrap_or_default();
             NormalForm::Irreducible(Box::new(element::from_residual_framed(&missing, frame)))
         }
         ([_, ..], _) => NormalForm::Irreducible(Box::new(element::from_residual_framed(&residual, frame))),

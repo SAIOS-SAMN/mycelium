@@ -126,12 +126,26 @@ pub const ACT_PEERS: u8 = 0x15;
 /// Heard once as a demand at the home; never routed again.
 pub const ACT_DEMAND_ROUTED: u8 = 0x14;
 
-/// A citation on the wire: (word address, standing, transport, gauge, body).
-/// Standing is one byte beside the address (`Standing::as_u8`): Ruled, Stood,
-/// or Held — a coordinate, so the hypha can weight a held idea below a
-/// ruled word. The versor and the body are the operator; the hearer
-/// verifies them and never fetches a copy of the word to verify against.
-pub type CiteWire = (crate::transducer::a21::Address, u8, crate::transducer::element::Versor, u32, Vec<Cell>);
+/// A CITATION ON THE WIRE. The versor and the body ARE the operator: the
+/// hearer verifies them by replay and never fetches a copy of the word to
+/// verify against.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CiteWire {
+    /// The word cited, by address.
+    pub addr: crate::transducer::a21::Address,
+    /// Its STANDING (`Standing::as_u8`): Ruled, Stood or Held. A
+    /// coordinate, so a hypha can weight a held idea below a ruled word —
+    /// never a filter that drops one.
+    pub standing: u8,
+    /// The transport carrying the word's chain into the utterance's frame.
+    pub transport: crate::transducer::element::Versor,
+    /// The gauge coordinate. `u32::MAX` is the SECTION marker: this cite is
+    /// a puncture, not an assignment index.
+    pub gauge: u32,
+    /// The word's cells as the speaker says them, under the body's own
+    /// transitions.
+    pub body: Vec<Cell>,
+}
 
 /// A fetch names every discordant chart with the asker's have-list in each;
 /// the request itself is filled within the frame budget.

@@ -99,7 +99,8 @@ pub fn puncture_from(
     cites: &[crate::anastome::dialogue::CiteWire],
 ) -> usize {
     let mut deepened = 0usize;
-    for (addr, _, _, _, body) in cites {
+    for cite in cites {
+        let (addr, body) = (&cite.addr, &cite.body);
         let Some(word) = words.get_mut(addr) else { continue };
         let mut pos = element::positions(word.sub());
         pos.sort_unstable();
@@ -385,7 +386,8 @@ pub fn verify(language: &[Element], cites: &[Cite], target: &[Cell]) -> Vec<Cell
 /// of any word fetched. The hearer's lexicon is consulted only afterward,
 /// to name what was verified.
 pub fn verify_utterance(cites: &[crate::anastome::dialogue::CiteWire], target: &[Cell]) -> Vec<Cell> {
-    let ops: Vec<(Versor, Vec<Cell>)> = cites.iter().map(|(_, _, v, _, body)| (v.clone(), body.clone())).collect();
+    let ops: Vec<(Versor, Vec<Cell>)> =
+        cites.iter().map(|c| (c.transport.clone(), c.body.clone())).collect();
     let mut out = replay_operators(&ops, target);
     out.extend(seam_defect_operators(&ops, target));
     out.sort_unstable();

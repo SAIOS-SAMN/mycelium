@@ -385,7 +385,7 @@ assert!(
 );
 let (cites, _rem) = entity.cite(&next);
 assert!(
-    cites.iter().any(|(_, st, _, _, _)| *st == Standing::Stood.as_u8()),
+    cites.iter().any(|c| c.standing == Standing::Stood.as_u8()),
     "the stood residual is cited with standing Stood, got {cites:?}"
 );
 
@@ -399,7 +399,7 @@ assert!(
 assert_eq!(self_rem, residual, "the remainder stays the residual");
 let (cites, _rem) = held.cite(&next);
 assert!(
-    cites.iter().any(|(_, st, _, _, _)| *st == Standing::Held.as_u8()),
+    cites.iter().any(|c| c.standing == Standing::Held.as_u8()),
     "the held remainder is cited with standing Held, got {cites:?}"
 );
 }
@@ -425,7 +425,7 @@ let mut held = Entity::open("127.0.0.1:1", Kernel::named("listing-held"));
 held.hold_thought(prefix);
 let Concluded { cites, residual, .. } = held.conclude_listing(&listing);
 assert!(
-    cites.iter().any(|(_, st, _, _, _)| *st == Standing::Held.as_u8()),
+    cites.iter().any(|c| c.standing == Standing::Held.as_u8()),
     "a held word deflates the listing, got {cites:?}"
 );
 let r = crate::transducer::element::measure_lanes(&residual);

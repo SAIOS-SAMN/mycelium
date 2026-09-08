@@ -8,12 +8,12 @@ use super::*;
 
 pub fn push_cites(out: &mut Vec<u8>, cites: &[CiteWire]) {
     out.extend_from_slice(&(cites.len() as u32).to_le_bytes());
-    for (addr, standing, g, asg, body) in cites {
-        let _ = crate::transducer::a21::put_addr(out, addr);
-        out.push(*standing);
-        g.to_bytes(out);
-        out.extend_from_slice(&asg.to_le_bytes());
-        push_chain(out, body);
+    for c in cites {
+        let _ = crate::transducer::a21::put_addr(out, &c.addr);
+        out.push(c.standing);
+        c.transport.to_bytes(out);
+        out.extend_from_slice(&c.gauge.to_le_bytes());
+        push_chain(out, &c.body);
     }
 }
 
@@ -32,7 +32,7 @@ pub fn read_cites(b: &[u8], p: &mut usize) -> Option<Vec<CiteWire>> {
         let asg = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
         *p += 4;
         let body = read_chain(b, p)?;
-        out.push((addr, standing, g, asg, body));
+        out.push(CiteWire { addr, standing, transport: g, gauge: asg, body });
     }
     Some(out)
 }
