@@ -442,12 +442,16 @@ pub struct Verdict {
     pub pi: Option<crate::transducer::anchor::Sel>,
     /// The base and the transport — present only on RULING_ATTACHED.
     pub attach: Option<(Address, crate::transducer::element::Versor)>,
-    /// 47.1's SIGNED PREFIX, carrying the court's causal position and, as
-    /// its payload, the address ruled on. The signature below is over these
-    /// bytes and no others.
-    pub prefix: crate::court::admission::SignedPrefix,
-    /// The court's signature over `prefix.bytes()`. A frame whose signature
-    /// does not verify under a key this mesh admitted touches no carrier and
-    /// sets no court head (47.2 step 2).
-    pub sig: [u8; 64],
+    /// THE COURT'S CAUSAL POSITION, whole: 47.1's signed prefix with the
+    /// ruled address as its payload, the signature over exactly those
+    /// bytes, and the receipt the prefix names.
+    ///
+    /// The receipt travels because 47.2 is four steps and the first cut
+    /// carried only the prefix and the signature, which decide steps 1 and
+    /// 2. Steps 3 and 4 — K against the signer's known head, and a height
+    /// that re-derives from the parents the receipt names — need the
+    /// receipt, so without it a verdict was admitted at any K and any
+    /// height, and a frame replayed from a spent position moved a court
+    /// head as readily as a fresh one.
+    pub section: ReceiptSection,
 }

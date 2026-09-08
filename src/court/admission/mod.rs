@@ -11,7 +11,6 @@ use crate::network::nerve::{Keyed, ROOT};
 /// `court/verdict/mod.rs` and read here by the name that chapter gives them.
 pub use crate::court::verdict::{
     REFUSE_EQUIVOCATION, REFUSE_ORIGIN, REFUSE_RECEIPT, REFUSE_RECEIPT_STALE, REFUSE_SIGNATURE,
-    REFUSE_UNKNOWN_SIGNER,
 };
 
 /// 47.1's signed prefix, held as its fields so a reader takes coordinates
@@ -119,33 +118,29 @@ impl Admitted {
     }
 }
 
-/// 47.2 STEPS 1 AND 2 for a frame that carries a prefix and a signature but
-/// not the signer's whole receipt: the origin is this node's, the key is one
-/// this mesh has admitted, and the signature verifies over 47.1's bytes and
-/// nothing else. Steps 3 and 4 need the signer's chain and are
-/// `Admissions::admit`.
+/// 47.2 STEPS 1 AND 2 for any signed frame: the origin is this node's, and
+/// the signature verifies over 47.1's bytes and nothing else. Steps 3 and 4
+/// need the signer's chain and are `Admissions::admit`.
 ///
 /// The order is the chapter's and it matters: a frame from another mesh is
-/// refused before its key is looked up, and an unknown key is refused before
-/// any bytes are verified, so no carrier and no table is read on behalf of a
-/// frame that has no vantage behind it.
+/// refused before any bytes are verified, so no carrier and no table is read
+/// on behalf of a frame that is not addressed to this mesh at all.
 ///
-/// `knows` answers whether this mesh has ever admitted the key. Identities
-/// are free (47.3) — anyone can mint one and sign with it — so a signature
-/// that verifies proves only that the holder of a key signed, never that the
-/// key is a hypha of this mesh.
+/// THERE IS NO "KNOWN SIGNER" TEST HERE. This carried one, refusing a key
+/// the mesh had not admitted with a refusal that is not in the chapter. 47.2
+/// step 2 verifies under the claimed key; a key this node has never seen is
+/// step 3's first sighting, which back-fills from that signer's genesis, and
+/// what admits a vantage is room, not identity — identities are free (47.3).
+/// Refusing an unknown key here would refuse every new hypha before its
+/// first receipt could ever be admitted.
 pub fn admit_signature(
     origin: ([u8; 32], u32),
     prefix: &SignedPrefix,
     signer: &[u8; 32],
     sig: &[u8; 64],
-    knows: impl Fn(&[u8; 32]) -> bool,
 ) -> Result<(), &'static str> {
     if prefix.genesis != origin.0 || prefix.epoch != origin.1 {
         return Err(REFUSE_ORIGIN);
-    }
-    if !knows(signer) {
-        return Err(REFUSE_UNKNOWN_SIGNER);
     }
     if !crate::court::identity::verify(signer, &prefix.bytes(), sig) {
         return Err(REFUSE_SIGNATURE);
@@ -153,28 +148,21 @@ pub fn admit_signature(
     Ok(())
 }
 
-/// WHAT ADMITS A VERDICT (42, 47.1, 47.2). A ruling slashes words, rebinds
-/// selections and moves this node's court head, so it is admitted before
-/// any carrier is touched: `admit_signature` for steps 1 and 2, and then
-/// the two bindings 47.1 fixes in the prefix itself — the payload is the
-/// ruled ADDRESS and the prev hash is the receipt the frame travels with.
+/// THE TWO BINDINGS 47.1 FIXES IN THE PREFIX ITSELF, for a ruling: its
+/// payload is the ruled ADDRESS and its prev hash is the receipt the ruling
+/// binds to. Without them a signature proves only that the court signed
+/// SOMETHING — a frame could carry a valid signature over one position and
+/// a ruling on another address under it.
 ///
-/// Without those two the signature would prove only that the court signed
-/// SOMETHING: a frame could carry a valid signature over one position and
-/// a ruling on another address under it. What the prefix does not cover is
-/// the ruling byte; 47.1 fixes the signed bytes exactly, so a verdict binds
-/// the court's position and the word it ruled on, and a court that means to
-/// bind the ruling too must move its own K for each one.
-pub fn admit_verdict(
-    origin: ([u8; 32], u32),
+/// What the prefix does not cover is the ruling byte; 47.1 fixes the signed
+/// bytes exactly, so a verdict binds the court's position and the word it
+/// ruled on, and a court that means to bind the ruling too must move its own
+/// K for each one.
+pub fn admit_ruled(
     prefix: &SignedPrefix,
-    signer: &[u8; 32],
-    sig: &[u8; 64],
     ruled: &[u8],
     receipt: [u8; 32],
-    knows: impl Fn(&[u8; 32]) -> bool,
 ) -> Result<(), &'static str> {
-    admit_signature(origin, prefix, signer, sig, knows)?;
     if prefix.payload != ruled || prefix.prev_receipt_hash != receipt {
         return Err(REFUSE_RECEIPT);
     }

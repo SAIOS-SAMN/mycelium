@@ -63,10 +63,6 @@ pub const REFUSE_EQUIVOCATION: &str = "two receipts at one K with different chai
 /// 47.2 step 2: the signature does not verify over the 47.1 prefix under
 /// the key the frame claims.
 pub const REFUSE_SIGNATURE: &str = "signature does not verify over the signed prefix";
-/// 47.2 step 2: the claimed key is one this mesh has never admitted, so
-/// there is no vantage behind the frame. Identities are free (47.3); a key
-/// the mesh knows is one that arrived through an admitted cover digest.
-pub const REFUSE_UNKNOWN_SIGNER: &str = "signing key was never admitted by this mesh";
 
 #[cfg(test)]
 mod tests;

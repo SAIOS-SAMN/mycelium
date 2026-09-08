@@ -232,15 +232,30 @@ On every lane, at every hypha, at every K:
 
 ```
 supply = genesis + mint − burn
-supply = Σ balance + Σ bond
+supply = Σ balance + Σ bond + Σ funded escrow
 ```
 
-Escrow is **not** in the second sum. It is a claim on issuance that has not
-happened (§3.1): counting it as supply reports value the mesh has not
-created, and the audit fails at the first docket — measured on this tree as
-`supply [18, 60, 0, 78]` against carriers `[18, 61, 0, 78]` after two
-ingests. A ruling discharges an escrow into a mint, which enters both sums
+A **claim** escrow is not in the second sum. It is a claim on issuance that
+has not happened (§3.1): counting it as supply reports value the mesh has
+not created, and the audit fails at the first docket — measured on this
+tree as `supply [18, 60, 0, 78]` against carriers `[18, 61, 0, 78]` after
+two ingests. A ruling discharges it into a mint, which enters both sums
 together; a revocation discharges it into nothing.
+
+A **funded** escrow is in it. The μ⃗ left a payer's balance and is still in
+the mesh, so a burn would not conserve without it (§3.1, and
+`MU-RECURSION.md` 42.2 R9, which states the equation this way). This
+section said "escrow is not in the second sum" without the distinction §3.1
+draws two paragraphs above it, and `Treasury::audit` has held `funded`
+apart from the claim escrow since it was written; the text is corrected to
+the ruling, not the code to the text.
+
+**What a slash does to the supply is asked, not assumed.** A slash debits a
+bond and §2 lists no carrier that receives it, so `supply()` counts it as
+μ⃗ leaving circulation exactly as 47.4's forfeiture does, or the audit fails
+on every lane anyone has been slashed on. That reading is what the tree
+implements (I11a); it is recorded here as the operator's ruling to confirm
+or overturn, since §9 reserves the semantics of what the economy pays.
 
 `Treasury::audit` checks both from the entries and refuses to persist a
 snapshot that fails. A testnet differs from the beta only in the first term:
