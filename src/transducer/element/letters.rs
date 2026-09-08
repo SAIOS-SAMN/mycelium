@@ -83,28 +83,52 @@ pub fn carriage(rho: &Q, t: &(Q, Q)) -> Versor {
     crate::transducer::cga::dilator(rho).geo(&crate::transducer::cga::translator(&t.0, &t.1))
 }
 
-/// Translator component of a carriage: the origin image under the sandwich,
-/// as a translator versor. None when the origin is sent to infinity.
+/// THE DILATION A VERSOR CARRIES (A4, I12), read exactly off its action:
+/// every translator and rotor fixes `e_∞` up to its own norm, and the
+/// dilator alone scales it — `V e_∞ Ṽ = κ e_∞` with `κ / (V Ṽ) = ρ` for
+/// `V = D(ρ) · T · R`. A reflection in `V` (the orientation character, 3.10)
+/// negates the ratio and is not a scale, so the magnitude is read. `None`
+/// when `V` is not a versor or sends `e_∞` off itself (no conformal action
+/// of this form).
+pub fn rho_of(v: &Versor) -> Option<Q> {
+    let n = crate::transducer::cga::is_versor(v)?;
+    let inf = crate::transducer::cga::e_inf();
+    let kappa = crate::transducer::cga::projective_ratio(&v.sandwich(&inf), &inf)?;
+    let rho = kappa / n;
+    if rho.is_zero() {
+        return None;
+    }
+    Some(if rho < Q::zero() { -rho } else { rho })
+}
+
+/// Translator component of a carriage `V = D(ρ) · T(t) · R`: the origin's
+/// image under the sandwich is `X(ρ t)` — the dilator scales the
+/// translation it follows — so `t` is that image divided by ρ. It read the
+/// image as `t` itself, which is exact only at ρ = 1: at ρ ≠ 1 the
+/// placement residue was ρ times the placement and `dilator_of` was not a
+/// dilator (I12). `None` when the origin is sent to infinity or ρ cannot
+/// be read.
 pub fn translator_of(v: &Versor) -> Option<Versor> {
+    let rho = rho_of(v)?;
     let z = Q::zero();
     let img = crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&z, &z)))?;
-    if img.0.is_zero() && img.1.is_zero() {
+    let (t1, t2) = (img.0 / &rho, img.1 / &rho);
+    if t1.is_zero() && t2.is_zero() {
         Some(identity_versor())
     } else {
-        Some(crate::transducer::cga::translator(&img.0, &img.1))
+        Some(crate::transducer::cga::translator(&t1, &t2))
     }
 }
 
-/// Dilator component of a carriage: `v · T⁻¹` when `v = D · T`. None when
-/// the translator cannot be read or inverted.
+/// Dilator component of a carriage: `D(ρ)` for the ρ the versor carries,
+/// the identity at ρ = 1. Exact at every ρ; it was `v · T⁻¹` with `T` read
+/// wrong at ρ ≠ 1, which left a translation inside the "dilator".
 pub fn dilator_of(v: &Versor) -> Option<Versor> {
-    let t = translator_of(v)?;
-    let inv = t.versor_inverse()?;
-    let d = v.geo(&inv);
-    if same_versor(&d, &identity_versor()) {
+    let rho = rho_of(v)?;
+    if rho.is_one() {
         Some(identity_versor())
     } else {
-        Some(d)
+        Some(crate::transducer::cga::dilator(&rho))
     }
 }
 
@@ -174,12 +198,14 @@ impl Element {
     }
 
     /// Tape re-derives vertex: the geodesic of the stored word is the same
-    /// transport, and V reconstructed from the tape agrees with the action.
-    /// `None` when there are no letters.
+    /// transport — projective equality of the two rotors (M1, A1), never
+    /// equality of two matrices (rule 16) — and V reconstructed from the
+    /// tape agrees with the action. `None` when there are no letters.
     pub fn letters_rederive(&self) -> Option<bool> {
         let letters = self.letters()?;
         let v = conformal_of(&letters.spelling.word, &letters.carriage)?;
-        let same_word = letters.spelling.word.matrix()? == letters.spelling.word.geodesic().matrix()?;
+        let word = &letters.spelling.word;
+        let same_word = word.rotor().projective_eq(&word.geodesic().rotor());
         Some(same_word && self.versor().is_some_and(|held| same_versor(&held, &v)))
     }
 

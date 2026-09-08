@@ -120,3 +120,41 @@ fn carriage_holds_rho_once() {
     // form_key is M1 ‖ carriage ‖ σ ‖ chain: no second ρ beside the carriage.
     assert!(key.as_bytes().len() > 1);
 }
+
+/// A4, I12: A CARRIAGE `D(ρ) · T(t)` DECOMPOSES EXACTLY AT EVERY ρ. The
+/// origin's image under the sandwich is `X(ρ t)`, so the translator read off
+/// it alone was `T(ρ t)` and the "dilator" `V · T(ρ t)⁻¹` kept a translation
+/// inside it: at ρ = 2 and t = (3, 5) the placement residue read (6, 10)
+/// and no pure `D · T` passed `chart.rs`'s identity test on the dilator. ρ
+/// is read off the versor's action on `e_∞`, `t` off the origin divided by
+/// it; the two recompose to the carriage, and a reflection does not change
+/// the scale it carries.
+#[test]
+fn a_carriage_decomposes_into_its_dilator_and_translator_at_every_rho() {
+    use crate::transducer::cga;
+    let q = |n: i64, d: i64| Q::new(BigInt::from(n), BigInt::from(d));
+    for (rho, t1, t2) in [(q(1, 1), q(3, 1), q(5, 1)), (q(2, 1), q(3, 1), q(5, 1)), (q(1, 3), q(-2, 1), q(7, 2))] {
+        let car = carriage(&rho, &(t1.clone(), t2.clone()));
+        assert_eq!(rho_of(&car), Some(rho.clone()), "ρ is read off the action on e_∞");
+        let t = translator_of(&car).expect("translator");
+        assert!(
+            same_versor(&t, &cga::translator(&t1, &t2)),
+            "the translator is t, not ρ·t, at ρ = {rho}"
+        );
+        let d = dilator_of(&car).expect("dilator");
+        assert!(same_versor(&d, &cga::dilator(&rho)), "the dilator is D(ρ) and carries no translation");
+        assert!(same_versor(&d.geo(&t), &car), "and D · T is the carriage again");
+    }
+    // A rotor in the versor changes neither reading: it fixes the origin
+    // and scales e_∞ by its own norm, which the ratio divides out.
+    let rot = cga::rotator(&q(3, 1), &q(4, 1));
+    let v = carriage(&q(2, 1), &(q(1, 1), q(0, 1))).geo(&rot);
+    assert_eq!(rho_of(&v), Some(q(2, 1)), "ρ through a rotor");
+    assert!(same_versor(&translator_of(&v).expect("t"), &cga::translator(&q(1, 1), &q(0, 1))));
+    // A reflection is the orientation character, never a scale.
+    let flipped = v.geo(&cga::reflector());
+    assert_eq!(rho_of(&flipped), Some(q(2, 1)), "ρ through a reflection is ρ");
+    // The identity carriage reads as no translation and no dilation.
+    assert!(same_versor(&translator_of(&identity_versor()).expect("t"), &identity_versor()));
+    assert!(same_versor(&dilator_of(&identity_versor()).expect("d"), &identity_versor()));
+}
