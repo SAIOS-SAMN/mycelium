@@ -165,9 +165,17 @@ pub struct ListingField {
     pub nonflat: u32,
 }
 
-/// ONE PRICED ITEM ON A QUOTE: the word, the μ⃗ it is priced at, and the
-/// charts it leaves open.
-pub type Priced = (crate::transducer::element::Element, [u64; 4], Vec<crate::transducer::stalk::Invariant>);
+/// ONE PRICED ITEM ON A QUOTE.
+pub struct Priced {
+    /// The listed word, whole — the quote serves the substance, not a digest.
+    pub word: crate::transducer::element::Element,
+    /// What it is priced at, per lane: magnitude · (1 + surface), never a
+    /// scalar and never summed.
+    pub mu: [u64; 4],
+    /// The charts it leaves OPEN — the incidence a voice reads to decide
+    /// whether this item is work it can do.
+    pub open: Vec<crate::transducer::stalk::Invariant>,
+}
 
 /// A SELECTION CRITICAL PAIR: the index of the word that was placed and the
 /// support it was placed on.

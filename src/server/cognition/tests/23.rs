@@ -270,9 +270,7 @@ let quote = |p: &crate::network::nerve::Keyed<(Element, u64)>| {
 };
 let (_, pa) = quote(&pending_a);
 let (_, pb) = quote(&pending_b);
-let addrs = |p: &[(Element, [u64; 4], Vec<crate::transducer::stalk::Invariant>)]| {
-    p.iter().map(|(e, _, _)| e.address()).collect::<Vec<_>>()
-};
+let addrs = |p: &[Priced]| p.iter().map(|i| i.word.address()).collect::<Vec<_>>();
 assert_eq!(
     addrs(&pa),
     addrs(&pb),

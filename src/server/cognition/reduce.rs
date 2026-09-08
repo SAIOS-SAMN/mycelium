@@ -223,7 +223,7 @@ pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Pri
                     mag[2] = t;
                 }
                 let mu = crate::economy::price(&mag, pressure);
-                priced.push((p.clone(), mu, open));
+                priced.push(Priced { word: p.clone(), mu, open });
             }
         }
     };
