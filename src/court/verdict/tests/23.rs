@@ -115,7 +115,7 @@ fn replay_form_refuses_unruled_glue_and_replays_resolved() {
 fn pivot_certificate_replays_or_refuses() {
     use crate::transducer::alphabet::Word;
     use crate::transducer::sentence::{
-        as_element_form, ClassVector, PivotBy, PivotCertificate, Rank, Side,
+        as_element_form, ClassVector, PivotBy, PivotCertificate, Side,
     };
     let f = closed_turn_form();
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("tape");
@@ -130,13 +130,9 @@ fn pivot_certificate_replays_or_refuses() {
         axis: crate::transducer::sentence::Axis::Unit(0),
         before: crate::transducer::a21::Address::from_bytes([1u8]),
         after: ClassVector::of_word(&Word::identity()).expect("identity is a versor").class_key(),
-        rank_before: Rank {
-            torsion: 1,
-            free: 0,
-            offplane: 0,
-            axes: 0,
+        rank_move: crate::transducer::sentence::RankMove::Discharged {
+            from: crate::transducer::sentence::RankAxis::Torsion,
         },
-        rank_after: Rank::default(),
         mu: crate::transducer::sentence::Mu::Unmeasured,
         by: PivotBy::Word {
             face: 0,

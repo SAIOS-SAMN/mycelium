@@ -16,7 +16,7 @@ pub use certificate::*;
 pub use keys::*;
 
 use crate::transducer::sentence::chain::Cell;
-use crate::transducer::sentence::class::{Axis, ClassVector, Rank};
+use crate::transducer::sentence::class::{Axis, ClassVector};
 use crate::transducer::sentence::transport::{relative_gauge, vertex_gauge, Transport};
 use crate::network::nerve::{Keyed, ROOT};
 use crate::transducer::alphabet::{self, Order, Rotor, Word};

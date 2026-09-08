@@ -187,13 +187,14 @@ impl Form {
                 }
                 match select_discharge(&discharging) {
                     Discharge::One(cert) => {
-                        debug_assert_eq!(cert.rank_before, rank_before);
                         self.apply_pivot(&cert);
-                        debug_assert!(
-                            self.rank().is_some_and(|r| Rank::moved(rank_before, r).raised().is_empty()),
-                            "A18: an applied pivot does not lose rank"
+                        // A18, T21 (iii): the applied pivot's move on the
+                        // whole form is the move its certificate claims.
+                        debug_assert_eq!(
+                            self.rank().map(|r| Rank::moved(rank_before, r)),
+                            Some(cert.rank_move),
+                            "the applied pivot makes the move its certificate claims"
                         );
-                        debug_assert_eq!(self.rank(), Some(cert.rank_after));
                         eprintln!(
                             "  pivot {:02x}{:02x}… loop {idx} axis {:?} discharged {:02x}{:02x}…→{:02x}{:02x}…",
                             idea[0], idea[1], cert.axis, cert.before[0], cert.before[1], cert.after[0], cert.after[1]
@@ -412,12 +413,15 @@ impl Form {
         let mut after_rows = rows.to_vec();
         *after_rows.get_mut(idx)? = loop_row(&after_h);
         let rank_after = rank_of_rows(&after_rows)?;
-        // 12.6: the trial refuses a candidate that raises any coordinate.
-        // The reading says WHICH, and the refusal is taken here — this is
-        // one of the four sites sanctioned to take it.
-        let moved = Rank::moved(rank_before, rank_after);
-        let raised = moved.raised();
-        if !raised.is_empty() {
+        // T21 (iii): the rank holds, or one unit moves out of torsion, free
+        // or off-plane and into axes. Anything else is not this pivot's move
+        // and the trial refuses it here, naming what the audit did.
+        let rank_move = Rank::moved(rank_before, rank_after);
+        if let RankMove::Inadmissible { delta } = rank_move {
+            eprintln!(
+                "  pivot loop {idx} axis {:?} refused: rank moved {delta:?}",
+                cand.axis
+            );
             return None;
         }
         let mu = match mu_before {
@@ -460,8 +464,7 @@ impl Form {
             axis: cand.axis,
             before: kappa.class_key(),
             after: kappa_after.class_key(),
-            rank_before,
-            rank_after,
+            rank_move,
             mu,
             by: cand.by.clone(),
         })

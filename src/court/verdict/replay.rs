@@ -281,7 +281,12 @@ pub(crate) fn replay_certificates(f: &Form, by_chord: &Keyed<u16>) -> Option<&'s
         let Some(ra) = rank_of_holonomies(f.loops.iter().map(|l| &l.holonomy)) else {
             return Some(REFUSE_PIVOT_INEXACT);
         };
-        if rb != cert.rank_before || ra != cert.rank_after {
+        // S9.1 — THE COURT RE-DERIVES THE MOVE. The certificate claims what
+        // the pivot did to the rank; the court walks the form before and
+        // after for itself and computes the same move. The two absolute
+        // audits it used to compare against are the court's own here, so
+        // carrying them on the tape only invited a second comparison.
+        if crate::transducer::sentence::Rank::moved(rb, ra) != cert.rank_move {
             return Some(REFUSE_PIVOT_INEXACT);
         }
     }

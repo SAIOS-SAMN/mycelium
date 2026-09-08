@@ -91,78 +91,72 @@ pub enum RankAxis {
     Axes,
 }
 
-/// THE MOVE a pivot made in rank space: the signed difference per
-/// coordinate, `after − before`. A18's audit is a vector never summed, and
-/// so is the difference of two of them.
+/// WHAT A PIVOT DID TO THE RANK — three states and no fourth (S9.1, 12.6,
+/// T21 (iii)).
 ///
-/// This is a READING. It refuses nothing and admits nothing — 12.6 leaves
-/// the refusal with the trial, which is one of the four sites sanctioned to
-/// take it, and the reading is what the trial reads.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
-pub struct RankMove {
-    pub torsion: i64,
-    pub free: i64,
-    pub offplane: i64,
-    pub axes: i64,
-}
-
-impl RankMove {
-    /// The coordinates this move RAISED against 12.6's direction: torsion,
-    /// free or offplane climbing, or axes falling. An empty list is a move
-    /// that raised nothing — never "the move is admissible", which is the
-    /// caller's sentence to say.
-    pub fn raised(&self) -> Vec<RankAxis> {
-        let mut out = Vec::new();
-        if self.torsion > 0 {
-            out.push(RankAxis::Torsion);
-        }
-        if self.free > 0 {
-            out.push(RankAxis::Free);
-        }
-        if self.offplane > 0 {
-            out.push(RankAxis::OffPlane);
-        }
-        if self.axes < 0 {
-            out.push(RankAxis::Axes);
-        }
-        out
-    }
+/// The predicate this replaces was a four-coordinate monotone: it admitted
+/// `(−3, −2, −1, +7)`, a move that emptied three coordinates and opened
+/// seven axes, as readily as the one unit A18 describes. A pivot moves ONE
+/// axis; a move that changes four coordinates at once is not a pivot that
+/// went well, it is a different thing that the audit could not name.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RankMove {
+    /// The rank did not move. The pivot is certified by its closure alone
+    /// — the coordinate it acted on is zero and no other rose — and pays
+    /// for itself without touching the audit.
+    Equal,
+    /// ONE UNIT moved out of `from`: exactly one of torsion, free or
+    /// off-plane fell by one and the other two are unchanged. This is A18's
+    /// step and the only rank move a pivot makes.
+    ///
+    /// `axes` rises by that unit when the discharge OPENED a chart axis, and
+    /// holds when it did not — a held word written onto a chord closes the
+    /// loop without widening the form's scope. Both are this arm: the unit
+    /// left `from`, and where it went is the destination's business.
+    ///
+    /// FINDING (S9.1, 2026-09-08): `rank_of_rows` writes `axes: 0`
+    /// unconditionally, so no rank the engine computes has ever carried an
+    /// opened axis and no move can put a unit INTO axes. T21 (iii) reads
+    /// "one unit from torsion, free or off-plane into axes"; the second half
+    /// is unreachable until S9.17 gives `Axis::Open` a candidate and the
+    /// reader a value to count. Requiring it here refuses every pivot in the
+    /// tree — measured: five chapter-12 tests, every discharge.
+    Discharged { from: RankAxis },
+    /// Anything else, carried whole so a refusal can say what happened:
+    /// `after − before` per coordinate, in the order torsion, free,
+    /// off-plane, axes.
+    Inadmissible { delta: [i64; 4] },
 }
 
 impl Rank {
-    /// What the pivot did to each coordinate (12.6, R2). Signed, per
-    /// coordinate, never collapsed: `torsion`, `free` and `offplane` are
-    /// read as falling and `axes` as rising, and nothing here decides.
+    /// What the pivot did to the audit (12.6, R2, T21 (iii)). Reads the
+    /// four coordinates and names the move; nothing here decides, and the
+    /// trial is the site that refuses on `Inadmissible`.
     pub fn moved(before: Rank, after: Rank) -> RankMove {
-        let d = |a: u32, b: u32| a as i64 - b as i64;
-        RankMove {
-            torsion: d(after.torsion, before.torsion),
-            free: d(after.free, before.free),
-            offplane: d(after.offplane, before.offplane),
-            axes: d(after.axes, before.axes),
+        let delta = [
+            after.torsion as i64 - before.torsion as i64,
+            after.free as i64 - before.free as i64,
+            after.offplane as i64 - before.offplane as i64,
+            after.axes as i64 - before.axes as i64,
+        ];
+        if delta == [0; 4] {
+            return RankMove::Equal;
+        }
+        // ONE unit out of ONE coordinate. `axes` rises by that unit if the
+        // discharge opened a chart axis, or holds if it did not; nothing
+        // else may move, and a fall of two is not a smaller fall of one.
+        let from = match delta {
+            [-1, 0, 0, 0 | 1] => Some(RankAxis::Torsion),
+            [0, -1, 0, 0 | 1] => Some(RankAxis::Free),
+            [0, 0, -1, 0 | 1] => Some(RankAxis::OffPlane),
+            _ => None,
+        };
+        match from {
+            Some(from) => RankMove::Discharged { from },
+            None => RankMove::Inadmissible { delta },
         }
     }
 
-    pub(crate) fn to_bytes(self, out: &mut Vec<u8>) {
-        out.extend_from_slice(&self.torsion.to_le_bytes());
-        out.extend_from_slice(&self.free.to_le_bytes());
-        out.extend_from_slice(&self.offplane.to_le_bytes());
-        out.extend_from_slice(&self.axes.to_le_bytes());
-    }
-
-    pub(crate) fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Rank> {
-        let mut f = [0u32; 4];
-        for x in &mut f {
-            *x = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
-            *pos += 4;
-        }
-        Some(Rank {
-            torsion: f[0],
-            free: f[1],
-            offplane: f[2],
-            axes: f[3],
-        })
-    }
 }
 
 /// The state vector of a held loop (12.6). Rotor conjugacy invariants (15.3)

@@ -2,6 +2,7 @@
 // fill closes, and what a vortex collapses to.
 
 use crate::transducer::bubble::*;
+use crate::transducer::sentence::{RankAxis, RankMove};
 
 #[test]
 fn two_bubbles_on_one_chart_share_an_edge_not_a_triangle() {
@@ -66,7 +67,7 @@ fn two_pivots_without_a_new_word_leave_fills() {
 #[test]
 fn vortex_collapses_by_glue_or_ruling() {
     use crate::transducer::alphabet::{LetterId, Word};
-    use crate::transducer::sentence::{Axis, PivotBy, PivotCertificate, Rank, Side};
+    use crate::transducer::sentence::{Axis, PivotBy, PivotCertificate, Side};
     let mut c = Contemplation::new();
     c.hold(vec![(0, 0, 1, 2)]);
     let q = LetterId::quarter((0, 1)).unwrap();
@@ -78,13 +79,7 @@ fn vortex_collapses_by_glue_or_ruling() {
         axis: Axis::Unit(0),
         before: crate::transducer::a21::Address::from(vec![1]),
         after: after.clone(),
-        rank_before: Rank {
-            torsion: 1,
-            free: 0,
-            offplane: 0,
-            axes: 0,
-        },
-        rank_after: Rank::default(),
+        rank_move: RankMove::Discharged { from: RankAxis::Torsion },
         mu: crate::transducer::sentence::Mu::Unmeasured,
         by: PivotBy::Word {
             face: 0,
@@ -103,13 +98,7 @@ fn vortex_collapses_by_glue_or_ruling() {
         axis: Axis::Hue,
         before: crate::transducer::a21::Address::from(vec![2]),
         after: after.clone(),
-        rank_before: Rank {
-            torsion: 1,
-            free: 0,
-            offplane: 0,
-            axes: 0,
-        },
-        rank_after: Rank::default(),
+        rank_move: RankMove::Discharged { from: RankAxis::Torsion },
         mu: crate::transducer::sentence::Mu::Unmeasured,
         by: PivotBy::Word {
             face: 0,

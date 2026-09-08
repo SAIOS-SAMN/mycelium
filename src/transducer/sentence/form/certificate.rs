@@ -5,6 +5,7 @@
 //! claim is the move, and the move is replayed.
 
 use super::*;
+use crate::transducer::sentence::class::{RankAxis, RankMove};
 
 /// Which side of the chord face a held word is written on: the face word
 /// `g` becomes `g · w⁻¹` (Right) or `w · g` (Left). Both are the relation
@@ -80,8 +81,13 @@ pub struct PivotCertificate {
     /// Class key of κ(ℓ) before, and after (zero vector when the loop closed).
     pub before: crate::transducer::a21::Address,
     pub after: crate::transducer::a21::Address,
-    pub rank_before: Rank,
-    pub rank_after: Rank,
+    /// WHAT THE PIVOT DID TO THE RANK (S9.1): the move itself, not the two
+    /// audits it was read from. The certificate makes a claim — the rank
+    /// held, or one unit left this coordinate for `axes` — and the court
+    /// re-walks the form and re-derives the same move (A20). Two absolute
+    /// ranks would have been data the court derives for itself anyway, and
+    /// leaving them here invited a later reader to do its own comparison.
+    pub rank_move: RankMove,
     /// μ⃗ of the form over the bundle before and after the move.
     pub mu: Mu,
     pub by: PivotBy,
@@ -94,8 +100,7 @@ impl PivotCertificate {
         buf.push(self.axis.to_byte());
         crate::transducer::a21::put_bytes(&mut buf, &self.before);
         crate::transducer::a21::put_bytes(&mut buf, &self.after);
-        self.rank_before.to_bytes(&mut buf);
-        self.rank_after.to_bytes(&mut buf);
+        put_rank_move(&self.rank_move, &mut buf);
         match &self.by {
             PivotBy::Word { face, word, side } => {
                 buf.extend_from_slice(&face.to_le_bytes());
@@ -128,8 +133,7 @@ impl PivotCertificate {
         out.push(self.axis.to_byte());
         crate::transducer::a21::put_addr(out, &self.before);
         crate::transducer::a21::put_addr(out, &self.after);
-        self.rank_before.to_bytes(out);
-        self.rank_after.to_bytes(out);
+        put_rank_move(&self.rank_move, out);
         match &self.mu {
             Mu::Unmeasured => out.push(0),
             Mu::Measured { before, after } => {
@@ -172,8 +176,7 @@ impl PivotCertificate {
         *pos += 1;
         let before = crate::transducer::a21::take_addr(b, pos)?;
         let after = crate::transducer::a21::take_addr(b, pos)?;
-        let rank_before = Rank::from_bytes(b, pos)?;
-        let rank_after = Rank::from_bytes(b, pos)?;
+        let rank_move = take_rank_move(b, pos)?;
         let mu_tag = *b.get(*pos)?;
         *pos += 1;
         let mu = match mu_tag {
@@ -225,10 +228,62 @@ impl PivotCertificate {
             axis,
             before,
             after,
-            rank_before,
-            rank_after,
+            rank_move,
             mu,
             by,
         })
+    }
+}
+
+/// The rank move on a tape: one tag byte, and for a discharge the
+/// coordinate the unit left. `Inadmissible` carries its four deltas so a
+/// refused move can still be written down; no trial produces one, and a
+/// tape carrying one replays as the refusal it names.
+fn put_rank_move(m: &RankMove, out: &mut Vec<u8>) {
+    match m {
+        RankMove::Equal => out.push(0),
+        RankMove::Discharged { from } => {
+            out.push(1);
+            out.push(match from {
+                RankAxis::Torsion => 0,
+                RankAxis::Free => 1,
+                RankAxis::OffPlane => 2,
+                RankAxis::Axes => 3,
+            });
+        }
+        RankMove::Inadmissible { delta } => {
+            out.push(2);
+            for d in delta {
+                out.extend_from_slice(&d.to_le_bytes());
+            }
+        }
+    }
+}
+
+fn take_rank_move(b: &[u8], pos: &mut usize) -> Option<RankMove> {
+    let tag = *b.get(*pos)?;
+    *pos += 1;
+    match tag {
+        0 => Some(RankMove::Equal),
+        1 => {
+            let from = match *b.get(*pos)? {
+                0 => RankAxis::Torsion,
+                1 => RankAxis::Free,
+                2 => RankAxis::OffPlane,
+                3 => RankAxis::Axes,
+                _ => return None,
+            };
+            *pos += 1;
+            Some(RankMove::Discharged { from })
+        }
+        2 => {
+            let mut delta = [0i64; 4];
+            for d in &mut delta {
+                *d = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+                *pos += 8;
+            }
+            Some(RankMove::Inadmissible { delta })
+        }
+        _ => None,
     }
 }

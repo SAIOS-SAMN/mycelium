@@ -135,18 +135,7 @@ pub fn cert(axis: Axis, mu: [u64; 4]) -> PivotCertificate {
         axis,
         before: Word::identity().class_key().expect("identity"),
         after: Word::identity().class_key().expect("identity"),
-        rank_before: Rank {
-            torsion: 0,
-            free: 0,
-            offplane: 0,
-            axes: 0,
-        },
-        rank_after: Rank {
-            torsion: 0,
-            free: 0,
-            offplane: 0,
-            axes: 0,
-        },
+        rank_move: RankMove::Equal,
         mu: Mu::Measured {
             before: [0; 4],
             after: mu,
