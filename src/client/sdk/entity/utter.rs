@@ -115,7 +115,7 @@ impl Entity {
     pub fn conclude(
         &mut self,
         chain: &[(i64, i64, u8, u8)],
-    ) -> (Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>, bool) {
+    ) -> crate::client::sdk::Concluded {
         let (cites, residual) = self.cite(chain);
         let familiar = !self
             .epigenome
@@ -129,7 +129,7 @@ impl Entity {
     pub fn conclude_listing(
         &mut self,
         chain: &[(i64, i64, u8, u8)],
-    ) -> (Vec<dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>, bool) {
+    ) -> crate::client::sdk::Concluded {
         let (cites, residual) = self.cite(chain);
         if !residual_descends(&residual, chain) {
             self.hold_thought(chain.to_vec());

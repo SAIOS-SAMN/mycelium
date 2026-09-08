@@ -371,6 +371,11 @@ pub fn verify_utterance(cites: &[crate::anastome::dialogue::CiteWire], target: &
 }
 
 /// THE HOLONOMY of a cycle of transports: their product around the loop.
+/// WHAT LOCATING A BODY RETURNS: the citation if the atlas holds the word,
+/// the puncture if it holds the geometry under another assignment, and the
+/// stratum's multiplicity — the measurement, never a search width (A8).
+pub type Located = (Option<Cite>, Option<(usize, Versor, Vec<Cell>)>, usize);
+
 pub fn holonomy(cycle: &[Versor]) -> Versor {
     cycle.iter().fold(element::identity_versor(), |acc, v| acc.geo(v))
 }
@@ -409,7 +414,7 @@ pub fn locate_or_puncture<'a>(
     shape_at: &impl Fn(usize) -> Option<&'a Shape>,
     piece: &[Cell],
     exclude: Option<usize>,
-) -> (Option<Cite>, Option<(usize, Versor, Vec<Cell>)>, usize) {
+) -> Located {
     locate_or_puncture_at(&|i| words.get(i), atlas, index_of, shape_at, piece, exclude)
 }
 
@@ -420,7 +425,7 @@ pub fn locate_or_puncture_at<'a>(
     shape_at: &impl Fn(usize) -> Option<&'a Shape>,
     piece: &[Cell],
     exclude: Option<usize>,
-) -> (Option<Cite>, Option<(usize, Versor, Vec<Cell>)>, usize) {
+) -> Located {
     locate_or_puncture_on(word_at, &|inv| atlas.fiber(inv), index_of, shape_at, piece, exclude)
 }
 
@@ -432,7 +437,7 @@ pub fn locate_or_puncture_on<'a>(
     shape_at: &impl Fn(usize) -> Option<&'a Shape>,
     piece: &[Cell],
     exclude: Option<usize>,
-) -> (Option<Cite>, Option<(usize, Versor, Vec<Cell>)>, usize) {
+) -> Located {
     let Some(shape) = element::shape_of_chain(piece) else { return (None, None, 0) };
     let stratum: Vec<usize> = fiber_of(&stalk::invariant(piece)).iter().filter_map(|a| index_of(a)).collect();
     let key = element::gauge_key(&element::assignment(piece));

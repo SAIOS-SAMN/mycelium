@@ -262,12 +262,12 @@ pub struct Kernel {
     /// substance matched a defect but its π refused the support. (word address,
     /// the symmetric difference, the scene it arose in). The court's admission
     /// docket refines these into rebound anchors. Bounded; in-memory work queue.
-    pub(crate) anchor_mismatches: Vec<(crate::transducer::a21::Address, Vec<(i64, i64)>, Vec<(i64, i64, u8)>)>,
+    pub(crate) anchor_mismatches: Vec<crate::transducer::anchor::AddressedEvidence>,
     /// BIRTH EVIDENCE for the selection fiber: (word address, the footprint it
     /// spoke on, the scene) — every germination and every witnessed placement
     /// deposits one; the court's refinement derives π over the accumulated
     /// family (one evidence never binds). Bounded; in-memory.
-    pub(crate) anchor_evidence: Vec<(crate::transducer::a21::Address, Vec<(i64, i64)>, Vec<(i64, i64, u8)>)>,
+    pub(crate) anchor_evidence: Vec<crate::transducer::anchor::AddressedEvidence>,
 }
 
 impl Kernel {

@@ -33,6 +33,14 @@ pub mod sel;
 pub mod tape;
 
 pub use derive::*;
+
+/// ONE PIECE OF EVIDENCE for a selection term: the footprint a word touched
+/// and the scene it touched it on (A9). The family of these is what `π` is
+/// derived from; one of them underdetermines it.
+pub type Evidence = (Vec<(i64, i64)>, Vec<(i64, i64, u8)>);
+
+/// Evidence carried with the address that produced it.
+pub type AddressedEvidence = (crate::transducer::a21::Address, Vec<(i64, i64)>, Vec<(i64, i64, u8)>);
 pub use sel::*;
 
 use super::blade::components;

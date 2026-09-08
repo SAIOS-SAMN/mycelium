@@ -123,7 +123,7 @@ pub fn mismatch(a: &Signature, b: &Signature) -> [u64; 4] {
 /// judge. Empty input → None (no candidate, no invention).
 pub fn collapse_beam(
     candidates: &[Sel],
-    witnesses: &[(Vec<(i64, i64)>, Vec<(i64, i64, u8)>)],
+    witnesses: &[crate::transducer::anchor::Evidence],
 ) -> Option<Sel> {
     rank_beam(candidates, witnesses).into_iter().next()
 }
@@ -136,7 +136,7 @@ pub fn collapse_beam(
 /// draws from.
 pub fn rank_beam(
     candidates: &[Sel],
-    witnesses: &[(Vec<(i64, i64)>, Vec<(i64, i64, u8)>)],
+    witnesses: &[crate::transducer::anchor::Evidence],
 ) -> Vec<Sel> {
     if candidates.len() <= 1 || witnesses.is_empty() {
         return candidates.to_vec();

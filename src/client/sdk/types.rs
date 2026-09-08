@@ -289,6 +289,10 @@ pub(crate) fn residual_descends(residual: &[(i64, i64, u8, u8)], chain: &[(i64, 
     below
 }
 
+/// WHAT CONCLUDING A LISTING RETURNS: the words it cited, the chain it could
+/// not reduce, and whether the genome already held it (24.2).
+pub type Concluded = (Vec<crate::anastome::dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>, bool);
+
 /// What `speak_word` did with a closed mint. Only [`Utterance::Spoken`]
 /// is a fresh frame; the memo and the identity gate are not speech.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

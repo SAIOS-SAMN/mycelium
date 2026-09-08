@@ -12,7 +12,7 @@ pub(crate) fn sel_key(s: &Sel) -> crate::transducer::a21::Address {
     crate::transducer::a21::Address::new(buf)
 }
 
-pub fn derive_pi(family: &[(Vec<(i64, i64)>, Vec<(i64, i64, u8)>)]) -> Option<Sel> {
+pub fn derive_pi(family: &[crate::transducer::anchor::Evidence]) -> Option<Sel> {
     let sets: Vec<Vec<Sel>> =
         family.iter().map(|(fp, scene)| derive_carrying_all(fp, scene)).collect();
     let (first, rest) = sets.split_first()?;
