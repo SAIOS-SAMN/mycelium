@@ -2922,7 +2922,7 @@ it always named:
 | `economy/`, `physics.rs`, `chronometry/` | `/opt/mycelium-v0.1.0/src/<name>` |
 | `q.rs`, `zlinalg.rs`; `cyclo.rs`, `scalar.rs` (Part VI, new) | `/opt/mycelium-v0.1.0/src/core/<name>` |
 | `mycelium-server/`, `mycelium-client.rs` | `/opt/mycelium-v0.1.0/src/bin/<name>` |
-| `voice/mod.rs` | `/opt/mycelium-v0.1.0/src/voice/mod.rs` |
+| `voice/` | `/opt/mycelium-v0.1.0/src/voice/<name>` |
 
 ## 18. The form types
 
