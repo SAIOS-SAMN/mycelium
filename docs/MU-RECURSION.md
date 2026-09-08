@@ -4209,6 +4209,7 @@ pub const REFUSE_FORM_TAPE: &str = "form does not parse from its tape";
 pub const REFUSE_EQUIVOCATION: &str = "two receipts at one K with different chain hashes";
 pub const REFUSE_SIGNATURE: &str = "signature does not verify over the signed prefix";
 pub const REFUSE_MALFORMED: &str = "act names a payload it does not carry";
+pub const REFUSE_NOT_EQUIVOCATION: &str = "two receipts that do not share key and K, or do not differ";
 ```
 
 `REFUSE_MALFORMED` (Stage 11 I18) is the door's answer to an act whose
@@ -4217,6 +4218,19 @@ frame parsed but whose fields do not agree with one another: a
 transport. It is not `REFUSE_FORM_TAPE`, which says a form's tape does not
 re-derive, and it is decided by `court::admission::admit_payload` before
 any carrier is touched; the reply is `Ruled::Refused` naming it.
+
+`REFUSE_NOT_EQUIVOCATION` (Stage 11 I21) is the door's answer to an
+`ACT_EQUIVOCATION` (0x35, 47.4, `XSEPTUM.md` §5.5) whose two receipt
+sections are not a proof: signed by two keys, at two K, or carrying one
+chain hash, which is a duplicate frame and not an equivocation. Before it
+is read, both prefixes name this node's origin (`REFUSE_ORIGIN`), both
+signatures verify under the key each receipt names (`REFUSE_SIGNATURE`),
+and each receipt agrees with its prefix and re-derives its own chain hash
+(`REFUSE_RECEIPT`); `court::admission::admit_equivocation` decides all of
+it before any carrier is touched. A proof burns the signer's bond on all
+four lanes once and is answered `Ruled::Applied`; the same proof presented
+again finds no bond and is answered `Ruled::Inert`. A third party presents
+what it holds; the court replays nothing and judges only the signatures.
 
 These are returned by `replay_form` and `blind_replay`, by the admission of
 47.2 (`Admitted::reason` names the constant an arm answers with:

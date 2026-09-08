@@ -198,9 +198,14 @@ needs no second vantage, installing does.
 The home verifies both signatures under the common key, equal K, unequal
 hashes, and burns the signer's bond on all four lanes with one `burn` entry
 naming the proof (MU-RECURSION 47.4, MU-ECONOMY §4). Nothing is replayed.
-Reply: a `RELEASE`-shaped acknowledgement with state `BURNED`, or
-`BAD_SIGNATURE`, or `NOT_EQUIVOCATION` when the two receipts do not share
-key and K or do not differ.
+Reply, as landed (Stage 11 I21; `dialogue::Ruled`, the hypha's ruling
+reply): `Applied` when the bond burned, `Inert` when the same proof finds
+no bond left to burn, `Refused` naming `REFUSE_SIGNATURE`, `REFUSE_ORIGIN`,
+`REFUSE_RECEIPT` (a receipt that disagrees with its prefix or does not
+re-derive its hash) or `REFUSE_NOT_EQUIVOCATION` when the two receipts do
+not share key and K or do not differ (MU-RECURSION 34.1). Each `len32`
+section is the receipt section of 47.1 as the digest carries it
+(`encode_receipt_section`: prefix, signature, receipt).
 
 ## 6. State machine
 

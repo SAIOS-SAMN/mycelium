@@ -75,9 +75,10 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
 - **Digest exchange**: signed cover and ruled roots; fetch of discordant
   strata; paced by time since the root last moved, never by a timer.
 - **Roots**: solved families announced by key, keyed by task and solver.
-- **Wire** (`anastome/dialogue.rs`, `network/wire.rs`): one frame, one act
-  byte; client acts 0x00–0x15, hypha acts 0x20–0x22, xSEPTUM reserved
-  0x30–0x34.
+- **Wire** (`anastome/dialogue/`, `network/wire.rs`): one frame, one act
+  byte; client acts 0x00–0x16, hypha acts 0x20–0x22, xSEPTUM 0x30–0x35,
+  of which `ACT_EQUIVOCATION` (0x35, `MU-RECURSION.md` 47.4) is landed and
+  0x30–0x34 are reserved.
 
 ## 5. Physics and time
 
