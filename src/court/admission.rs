@@ -30,14 +30,9 @@
 use crate::chronometry::{KStepReceipt, Parent};
 use crate::network::nerve::{Keyed, ROOT};
 
-/// The frame's genesis or epoch is not this node's (47.2 step 1).
-pub const REFUSE_ORIGIN: &str = "genesis or epoch is not this node's";
-/// The claimed height does not re-derive from the parents named (47.2 step 4).
-pub const REFUSE_RECEIPT: &str = "claimed height does not re-derive from its parents";
-/// A receipt already held at this K with this chain hash (47.2 step 3).
-pub const REFUSE_RECEIPT_STALE: &str = "receipt already held at this K";
-/// Two receipts at one K on one chain with different hashes (47.4).
-pub const REFUSE_EQUIVOCATION: &str = "two receipts at one K with different chain hashes";
+/// The receipt refusals are 34.1's, defined with every other refusal in
+/// `court/verdict/mod.rs` and read here by the name that chapter gives them.
+pub use crate::court::verdict::{REFUSE_EQUIVOCATION, REFUSE_ORIGIN, REFUSE_RECEIPT, REFUSE_RECEIPT_STALE};
 
 /// 47.1's signed prefix, held as its fields so a reader takes coordinates
 /// off it rather than a digest. `bytes()` is the ONLY thing ever signed.
@@ -115,6 +110,20 @@ pub enum Admitted {
     Equivocation { k: u64, held: [u8; 32], claimed: [u8; 32] },
     /// Refused before any carrier was touched, with the reason.
     Refused(&'static str),
+}
+
+impl Admitted {
+    /// The 34.1 constant this arm answers a reply with: a duplicate frame
+    /// is `REFUSE_RECEIPT_STALE`, an equivocation proof `REFUSE_EQUIVOCATION`,
+    /// a refusal its own reason; a parent or a gap refuses nothing.
+    pub fn reason(&self) -> Option<&'static str> {
+        match self {
+            Admitted::Parent(_) | Admitted::Gap { .. } => None,
+            Admitted::Stale => Some(REFUSE_RECEIPT_STALE),
+            Admitted::Equivocation { .. } => Some(REFUSE_EQUIVOCATION),
+            Admitted::Refused(why) => Some(why),
+        }
+    }
 }
 
 /// Per-signer chain heads: vk ↦ (head K, head chain hash). A coordinate
@@ -436,13 +445,25 @@ mod tests {
         assert!(matches!(a.admit((G, E), &prefix_for(&r0), &r0, held), Admitted::Parent(_)));
         assert!(matches!(a.admit((G, E), &prefix_for(&r1), &r1, held), Admitted::Parent(_)));
 
-        assert_eq!(a.admit((G, E), &prefix_for(&r0), &r0, held), Admitted::Stale);
+        let stale = a.admit((G, E), &prefix_for(&r0), &r0, held);
+        assert_eq!(stale, Admitted::Stale);
+        assert_eq!(
+            stale.reason(),
+            Some(REFUSE_RECEIPT_STALE),
+            "the reply names 34.1's constant for a duplicate frame"
+        );
 
         let fork = d.receipts()[0].clone();
         assert_ne!(fork.chain_hash, r0.chain_hash, "one K, two hashes");
+        let proof = a.admit((G, E), &prefix_for(&fork), &fork, held);
         assert_eq!(
-            a.admit((G, E), &prefix_for(&fork), &fork, held),
+            proof,
             Admitted::Equivocation { k: 0, held: r0.chain_hash, claimed: fork.chain_hash }
+        );
+        assert_eq!(proof.reason(), Some(REFUSE_EQUIVOCATION), "and for the proof of 47.4");
+        assert!(
+            a.admit((G, E), &prefix_for(&r1), &r1, held).reason().is_some(),
+            "a second hearing of the head is stale too"
         );
     }
 }

@@ -109,6 +109,24 @@ fn replay_form_refuses_unruled_glue_and_replays_resolved() {
     assert_eq!(blind_replay_with(&deeper_e, &resolve), Some(REFUSE_GLUED_DEPTH));
 }
 
+/// 34.1: a sentence whose tape does not parse whole is refused by name,
+/// never partly read. This is `REFUSE_FORM_TAPE`'s producing test (3.5).
+#[test]
+fn a_form_whose_tape_does_not_parse_is_refused_by_name() {
+    use crate::transducer::sentence::as_element_form;
+    let e = as_element_form(&closed_turn_form(), [1, 0, 0, 0]).expect("tape");
+    assert_eq!(replay_form(&e, &|_| None), None, "the whole tape replays");
+    let mut short = e.description().to_vec();
+    short.pop();
+    let mut cut = e.clone();
+    cut.set_description(short);
+    assert_eq!(
+        replay_form(&cut, &|_| None),
+        Some(REFUSE_FORM_TAPE),
+        "a tape one byte short is refused, not read up to the cut"
+    );
+}
+
 /// A20: a certificate that does not un-pivot to the tape's before/after
 /// refuses the form whole; a form with no certificates still replays.
 #[test]
