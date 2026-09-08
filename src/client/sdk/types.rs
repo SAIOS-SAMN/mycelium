@@ -60,9 +60,18 @@ pub enum Comprehension {
     /// The utterance decomposed into held words — address and standing
     /// from the working atlas. Never a sentinel index.
     Understood(Vec<(Vec<u8>, Standing)>),
-    /// Partially decomposed: the residual is the not-yet-understood part (a
-    /// prospective for the mesh, not a failure of the ear).
-    Novel { residual_cells: usize },
+    /// Partially decomposed: `demand` is the EXACT element still missing —
+    /// A12's canonical HNF residue against the span of what this mind holds
+    /// on the plane, the whole word off it, or the residual chain a listing
+    /// left. `understood` is the part that did factor, kept rather than
+    /// thrown away with the rest.
+    ///
+    /// It carried `residual_cells: usize`. A count is not what M6 step 5
+    /// asks for: "No mind emits `unknown`; it emits the element it lacks."
+    /// A count cannot be docketed by a hypha, cannot be reduced by another
+    /// mind, and cannot be replayed — and the remainder A12 had already
+    /// computed exactly was discarded to produce it.
+    Novel { demand: Box<Element>, understood: Vec<(Vec<u8>, Standing)> },
     /// A CONNECTION heard by holding it: the transition to the held word on
     /// its fibre vanished — the same word, glued.
     Held,
@@ -80,7 +89,12 @@ impl PartialEq for Comprehension {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Comprehension::Understood(a), Comprehension::Understood(b)) => a == b,
-            (Comprehension::Novel { residual_cells: a }, Comprehension::Novel { residual_cells: b }) => a == b,
+            // Two demands are one demand when they name the same vertex
+            // (M1, rule 3), never when two counts happen to match.
+            (
+                Comprehension::Novel { demand: a, understood: ua },
+                Comprehension::Novel { demand: b, understood: ub },
+            ) => a.same_vertex(b) && ua == ub,
             (Comprehension::Held, Comprehension::Held) | (Comprehension::Admitted, Comprehension::Admitted) => true,
             (Comprehension::Dialect(a), Comprehension::Dialect(b)) => a.same_vertex(b),
             (Comprehension::Withheld { missing: a }, Comprehension::Withheld { missing: b }) => a == b,
@@ -143,6 +157,61 @@ impl<'a> WorkingAtlas<'a> {
                     have.insert(&a, ());
                     out.push((a, Standing::Held));
                 }
+            }
+        }
+        out
+    }
+
+    /// THE GENERATORS OF ONE STRATUM (42.6, 16.12, A21 §2): every address
+    /// under a prefix of `inv`, coarsened one axis at a time until the read
+    /// is not empty, with the stratum it was found at.
+    ///
+    /// A12's basis is "the held words on the chart's fiber", and read at the
+    /// EXACT chart that basis is almost always empty or a single word: a
+    /// connection's chart is its rotor's trace and determinant (M4 step 2),
+    /// so every distinct rotation is its own chart and the only words a mind
+    /// could factor through were the powers of one word. The lattice could
+    /// never have more than one generator and the whole Hermite computation
+    /// was decorative. A stratum is the fiber under a PREFIX — "a demand is
+    /// reduced against the generators of one stratum, never the language"
+    /// — and `peel` is what walks out to it.
+    ///
+    /// It coarsens no further than it must: the first non-empty stratum is
+    /// the one returned, so a mind factors against the nearest generators it
+    /// holds and never against everything it holds.
+    pub fn stratum(
+        &self,
+        inv: &crate::transducer::stalk::Invariant,
+    ) -> (crate::transducer::stalk::Invariant, Vec<(Vec<u8>, Standing)>) {
+        let mut at = inv.clone();
+        loop {
+            let held = self.fiber_under(&at);
+            if !held.is_empty() || at.0.is_empty() {
+                return (at, held);
+            }
+            at = at.peel();
+        }
+    }
+
+    /// Every address under a chart prefix, not only those exactly at it:
+    /// `fiber` reads one node's own members, and a stratum is the subtree
+    /// (A21 §2). Ruled first, then Stood, then Held, each address once.
+    pub fn fiber_under(
+        &self,
+        inv: &crate::transducer::stalk::Invariant,
+    ) -> Vec<(Vec<u8>, Standing)> {
+        let mut out: Vec<(Vec<u8>, Standing)> = Vec::new();
+        let mut have: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        for (addrs, st) in [
+            (self.genome.fiber_under(inv), Standing::Ruled),
+            (self.dialect.fiber_under(inv), Standing::Stood),
+        ] {
+            for a in addrs {
+                if have.contains(&a) {
+                    continue;
+                }
+                have.insert(&a, ());
+                out.push((a, st));
             }
         }
         out

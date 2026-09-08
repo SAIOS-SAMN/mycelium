@@ -45,7 +45,12 @@ impl Epigenome {
             if let Some(f) = crate::transducer::sentence::from_element_form(utterance) {
                 return self.comprehend_form(&f);
             }
-            return Comprehension::Novel { residual_cells: utterance.sub().len() };
+            // A sentence tape that does not re-derive as a form: what the
+            // mind lacks is the whole utterance, and that is what it says.
+            return Comprehension::Novel {
+                demand: Box::new(utterance.clone()),
+                understood: Vec::new(),
+            };
         }
         // HEAR g BY HOLDING IT: a connection has no chain to cover. It is
         // glued against the representative on its fibre — the transition
@@ -63,10 +68,24 @@ impl Epigenome {
             // (chapter 6), and a word may be a product of several held words
             // while matching none of them — the pairwise transition test
             // below could only ever find it in one.
+            // A12's answer for this fibre, computed once: the tape when the
+            // word is in the span, and the canonical remainder when it is
+            // not. The remainder used to be thrown away here — only the
+            // `Understood` arm was read — and the mind then said `Admitted`
+            // to a word it could exactly say what it was missing of.
+            let mut demand: Option<Comprehension> = None;
             if let Some(spoken) = utterance.letters() {
+                // THE BASIS IS THE STRATUM (42.6, A21 §2): the generators
+                // under the nearest prefix of this chart that holds any,
+                // read by `peel` and no coarser. A connection's chart is
+                // its rotor's trace and determinant (M4 step 2), so the
+                // exact fibre of another rotation is empty or one word,
+                // and a basis read there factored nothing.
+                let (_, generators) = self.working_atlas().stratum(&inv);
                 let mut words = Vec::new();
                 let mut basis = Vec::new();
-                for (a, _) in &fibre {
+                let mut held_at = Vec::new();
+                for (a, st) in &generators {
                     let Some(held) = self.working_word(a) else { continue };
                     if held.address() == utterance.address() {
                         continue;
@@ -74,6 +93,7 @@ impl Epigenome {
                     let Some(l) = held.letters() else { continue };
                     words.push(l.spelling.word.clone());
                     basis.push(l.spelling.word.rotor());
+                    held_at.push((held.address().into_vec(), *st));
                 }
                 let g = spoken.spelling.word.rotor();
                 if let (Some(gf), true) =
@@ -84,14 +104,38 @@ impl Epigenome {
                         .filter_map(|w| w.form())
                         .collect();
                     if forms.len() == words.len() {
-                        if let crate::transducer::factor::Factored::Understood(tape) =
-                            crate::transducer::factor::factor_on_plane(&gf, &forms)
-                        {
-                            // Verified by re-derivation, never trusted from
-                            // the algebra that produced it (16.12 step 4).
-                            if crate::transducer::factor::replays(&tape, &basis, &g) {
-                                return Comprehension::Held;
+                        match crate::transducer::factor::factor_on_plane(&gf, &forms) {
+                            crate::transducer::factor::Factored::Understood(tape) => {
+                                // Verified by re-derivation, never trusted
+                                // from the algebra that produced it (16.12
+                                // step 4).
+                                if crate::transducer::factor::replays(&tape, &basis, &g) {
+                                    return Comprehension::Held;
+                                }
                             }
+                            crate::transducer::factor::Factored::Novel {
+                                remainder,
+                                understood,
+                            } => {
+                                // The exact boundary demand, and the part
+                                // that did factor, kept as expression on the
+                                // words it went through (M6 step 3).
+                                let spoke: Vec<(Vec<u8>, Standing)> = understood
+                                    .iter()
+                                    .filter_map(|(i, _)| held_at.get(*i).cloned())
+                                    .collect();
+                                if let Some(d) = crate::transducer::element::from_demand(
+                                    &remainder.to_word(),
+                                ) {
+                                    demand = Some(Comprehension::Novel {
+                                        demand: Box::new(d),
+                                        understood: spoke,
+                                    });
+                                }
+                            }
+                            // A budget that ran out is UNMEASURED, and a
+                            // refusal is not a demand (rule 11).
+                            crate::transducer::factor::Factored::Unmeasured => {}
                         }
                     }
                 }
@@ -118,9 +162,18 @@ impl Epigenome {
                     },
                 }
             }
-            return match dialect {
-                None => Comprehension::Admitted,
-                Some((_, g)) => Comprehension::Dialect(Box::new(g)),
+            return match (dialect, demand) {
+                // A transition to a held word that does not vanish is the
+                // class, and it is what the mind carries (M6 step 3).
+                (Some((_, g)), _) => Comprehension::Dialect(Box::new(g)),
+                // No closing transition, and A12 measured exactly what of
+                // the word this mind's fibre does not span: the demand. It
+                // said `Admitted` here — "new geometry" — for a word it
+                // could name the missing part of.
+                (None, Some(novel)) => novel,
+                // A fibre this mind holds no word on at all: there is
+                // nothing to factor through and nothing to be short of.
+                (None, None) => Comprehension::Admitted,
             };
         }
         // Located through the atlas and the versor, never searched. A taught
@@ -155,7 +208,24 @@ impl Epigenome {
                 }
                 Comprehension::Understood(sentence)
             }
-            _ => Comprehension::Novel { residual_cells: located.open(self.genome(), utterance.sub()).len() },
+            // THE RESIDUAL IS THE DEMAND. This counted the open cells and
+            // spoke the number; the chain those cells form is the element
+            // the mind lacks, and a hypha can docket that.
+            _ => {
+                let open = located.open(self.genome(), utterance.sub());
+                let understood: Vec<(Vec<u8>, Standing)> = located
+                    .cites
+                    .iter()
+                    .filter_map(|c| {
+                        let w = self.genome.get(c.word)?;
+                        Some((w.address().into_vec(), Standing::Ruled))
+                    })
+                    .collect();
+                Comprehension::Novel {
+                    demand: Box::new(crate::transducer::element::from_residual(&open)),
+                    understood,
+                }
+            }
         }
     }
 

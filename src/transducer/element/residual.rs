@@ -142,6 +142,24 @@ pub(crate) fn connection_word(
     out
 }
 
+/// THE DEMAND A MIND SPEAKS (A12 step 5, M6 step 5): the exact element it
+/// lacks, spoken as a connection with no chain. On the plane this is the
+/// canonical HNF residue of the incoming word against the span of what the
+/// mind holds — unique for that lattice, so two minds holding the same
+/// words speak the same demand, with no choice in it; off the plane there
+/// is no HNF and no metric to say which partial is nearer, so the whole
+/// word is the demand.
+///
+/// Its μ⃗ is read off the content by `reduction_magnitude` — what the
+/// connection carries — and never handed in as a constant. "No mind emits
+/// `unknown`; it emits the element it lacks."
+pub fn from_demand(linear: &crate::transducer::alphabet::Word) -> Option<Element> {
+    let mut e = from_connection(linear, &identity_versor(), &[], &Vec::new(), [0; 4])?;
+    e.mag = e.reduction_magnitude();
+    e.address.take();
+    Some(e)
+}
+
 /// A gauge between two sections, spelled as a connection with identity
 /// gauge map and tagged so the court replays it as a translation.
 pub fn from_translation(
