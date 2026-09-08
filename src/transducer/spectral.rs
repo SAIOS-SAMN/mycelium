@@ -201,7 +201,7 @@ mod tests {
         let chosen = collapse_beam(&[a, b.clone()], &witnesses).expect("a candidate survives");
         assert_eq!(chosen, b, "resonance beats arrival order");
         // A single candidate collapses trivially; an empty beam is honest None.
-        assert_eq!(collapse_beam(&[b.clone()], &[]), Some(b));
+        assert_eq!(collapse_beam(std::slice::from_ref(&b), &[]), Some(b));
         assert_eq!(collapse_beam(&[], &[]), None);
     }
 }

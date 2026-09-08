@@ -204,7 +204,7 @@ impl Kernel {
                 };
                 let _ = self.mint_rewrite(
                     crate::transducer::rewrite::RewriteKind::Retire,
-                    &[candidate.clone()],
+                    std::slice::from_ref(&candidate),
                     &candidate,
                     payload,
                     bidder,

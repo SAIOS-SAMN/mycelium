@@ -177,7 +177,7 @@ impl Kernel {
                 };
                 let _ = self.mint_rewrite(
                     crate::transducer::rewrite::RewriteKind::Condense,
-                    &[sib.clone()],
+                    std::slice::from_ref(&sib),
                     &after,
                     payload,
                     disc,

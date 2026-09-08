@@ -121,7 +121,7 @@ fn descent_certifies_never_selects() {
         y.iter().flatten().any(|&h| h != 0),
         "the spoken image is not the empty frame"
     );
-    let mut f = chord_form(&[q.clone()]);
+    let mut f = chord_form(std::slice::from_ref(&q));
     if let Vertex::Word {
         class: c,
         gauge,
@@ -333,7 +333,7 @@ impl crate::transducer::family::Crystal for Hold {
 fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
     let q = order4();
     let qinv = q.inverse();
-    let mut f = chord_form(&[q.clone()]);
+    let mut f = chord_form(std::slice::from_ref(&q));
     let snaps = f.pivot_loop(
         [0x11; 32],
         &Keyed::new(),
@@ -386,7 +386,7 @@ fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
         "tampering a certified face re-opens an unfiled loop"
     );
 
-    let mut f = chord_form(&[q.clone()]);
+    let mut f = chord_form(std::slice::from_ref(&q));
     let snaps = f.pivot_loop(
         [0x22; 32],
         &Keyed::new(),
@@ -401,7 +401,7 @@ fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
     assert_eq!(held.len(), 2, "two certificates, got {held:?}");
     assert!(!f.vortex.is_empty(), "the form holds the vortex cells");
 
-    let mut f = chord_form(&[q.clone()]);
+    let mut f = chord_form(std::slice::from_ref(&q));
     let mut horizon = Keyed::new();
     let r = q.rotor();
     horizon.insert(r.class_key().expect("q class"), (r, q.order(), Standing::Held));
@@ -423,7 +423,7 @@ fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
 #[test]
 fn pivot_writes_the_chord_transport_only() {
     let q = order4();
-    let mut f = chord_form(&[q.clone()]);
+    let mut f = chord_form(std::slice::from_ref(&q));
     let verts_before = f.vertices.clone();
     let chord = f.loops[0].chord;
     let snaps = f.pivot_loop(

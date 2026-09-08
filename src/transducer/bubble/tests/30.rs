@@ -14,7 +14,7 @@ fn horizon_seeded_class_is_not_rederived() {
         order: r.word_order().expect("quarter spells"),
         representative: r.clone(),
     };
-    assert_eq!(c.seed_horizon(&[rec.clone()]), 1);
+    assert_eq!(c.seed_horizon(std::slice::from_ref(&rec)), 1);
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
     let b = c.bubbles.fiber(ROOT).next().map(|(_, b)| b).expect("bubble");
     let (_, _, st) = b.horizon.get(&rec.key).expect("seeded");

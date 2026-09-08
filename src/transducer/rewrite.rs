@@ -477,7 +477,7 @@ mod tests {
         let freed = [3u64, 0, 0, 5];
         let e = mint(
             RewriteKind::Retire,
-            &[word.clone()],
+            std::slice::from_ref(&word),
             word.clone(),
             RewritePayload::Retire { cites: vec![speaker.clone()], freed },
             freed,
@@ -509,7 +509,7 @@ mod tests {
         let mk = |cites: Vec<Address>, after: Address| {
             mint(
                 RewriteKind::Retire,
-                &[word.clone()],
+                std::slice::from_ref(&word),
                 after,
                 RewritePayload::Retire { cites, freed },
                 freed,
@@ -534,7 +534,7 @@ mod tests {
         assert!(
             mint(
                 RewriteKind::Retire,
-                &[word.clone()],
+                std::slice::from_ref(&word),
                 word,
                 RewritePayload::Retire { cites: vec![Address::from_bytes([2u8])], freed: [0; 4] },
                 [0; 4],

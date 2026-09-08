@@ -198,7 +198,7 @@ let one = rotor_versor(&Word::from_letters(&[(q, false)]).rotor()).expect("verso
 let inv = rotor_versor(&Word::from_letters(&[(q, true)]).rotor()).expect("inverse versor");
 let id = element::identity_versor();
 
-assert!(fiber_holonomy(&[one.clone()]).is_none(), "a singleton is not a loop");
+assert!(fiber_holonomy(std::slice::from_ref(&one)).is_none(), "a singleton is not a loop");
 assert!(fiber_holonomy(&[]).is_none(), "an empty fiber is not a loop");
 
 let closed = fiber_holonomy(&[one.clone(), inv]).expect("a loop");

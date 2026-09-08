@@ -268,7 +268,7 @@ impl Kernel {
             };
             let _ = self.mint_rewrite(
                 crate::transducer::rewrite::RewriteKind::Condense,
-                &[card.clone()],
+                std::slice::from_ref(&card),
                 &after,
                 payload,
                 disc,
@@ -357,7 +357,7 @@ impl Kernel {
             let payload = crate::transducer::rewrite::RewritePayload::Refine { chart, axis };
             let _ = self.mint_rewrite(
                 crate::transducer::rewrite::RewriteKind::Refine,
-                &[candidate.clone()],
+                std::slice::from_ref(&candidate),
                 &after,
                 payload,
                 bidder,
