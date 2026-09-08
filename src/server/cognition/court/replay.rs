@@ -71,7 +71,21 @@ impl Kernel {
             true
         } else {
             let slash = ruling == RULING_SLASHED;
-            let ok = self.treasury.revoke_award(addr, slash);
+            let revoked = self.treasury.revoke_award(addr, slash);
+            // The reading names the lanes on which a slashed voice's bond
+            // did not cover the ask; the court writes it rather than
+            // discarding it into the ruling's own return.
+            if let Some(r) = &revoked {
+                for (who, short) in &r.short {
+                    for l in crate::economy::lanes_short(short) {
+                        eprintln!(
+                            "  court slash short voice {:02x}{:02x}… lane {l} by {}",
+                            who[0], who[1], short[l]
+                        );
+                    }
+                }
+            }
+            let ok = revoked.is_some();
             if slash {
                 self.redocket_citers_of(addr);
                 // A slashed word leaves the language and is admitted as a

@@ -28,7 +28,7 @@ fn slash_debits_the_bond_and_mints_nothing() {
     let bond = t.enroll([1; 32], [8, 8, 8, 8], (0, [0; 32]));
     let addr = [3u8; 32];
     t.escrow_award(addr, vec![[1; 32]], [8, 0, 0, 0], (1, [1; 32]));
-    assert!(t.revoke_award(&addr, true));
+    assert!(t.revoke_award(&addr, true).is_some());
     assert_eq!(t.bond_of(&[1; 32]).unwrap()[0], bond[0].saturating_sub(8));
     assert_eq!(t.supply().expect("supply adds up"), [0; 4]);
     assert_eq!(t.balance_mu(&[1; 32]), [0; 4]);
@@ -99,7 +99,7 @@ fn a_funded_escrow_is_counted_and_a_claim_escrow_is_not() {
     );
 
     // Discharging it moves value back and mints nothing.
-    assert!(t.revoke_award(&[8u8; 32], false), "the award was there");
+    assert!(t.revoke_award(&[8u8; 32], false).is_some(), "the award was there");
     assert_eq!(t.balance_mu(&[1; 32]), [10, 0, 0, 0], "returned whence it came");
     assert_eq!(t.audit().expect("a discharge conserves"), seeded);
     assert_eq!(t.minted().expect("minted"), [0; 4], "and nothing was earned");
@@ -181,7 +181,11 @@ fn a_fee_and_a_slash_leave_the_supply_with_the_carrier() {
     // A SLASH takes bond, and the entry names what LEFT the bond rather
     // than what the escrow asked for: a bond of 6 slashed for 9 loses 6.
     t.escrow_award([7u8; 32], vec![[1; 32]], [9, 0, 0, 0], (4, [1; 32]));
-    assert!(t.revoke_award(&[7u8; 32], true));
+    // The slash reads what left each named voice's bond, and the lanes on
+    // which the bond did not cover the ask, rather than clamping to it.
+    let r = t.revoke_award(&[7u8; 32], true).expect("the escrow was there");
+    assert_eq!(r.slashed, vec![([1u8; 32], [6, 0, 0, 0])], "the whole bond, and no more");
+    assert_eq!(r.short, vec![([1u8; 32], [3, 0, 0, 0])], "and the three it could not cover");
     assert_eq!(t.bond_of(&[1; 32]).expect("still enrolled")[0], 0, "the whole bond went");
     let after3 = t.audit().expect("the ledger conserves through a slash");
     assert_eq!(after3[0], after2[0] - 6, "supply fell by the bond that left, not by the ask");
@@ -198,4 +202,50 @@ fn a_fee_and_a_slash_leave_the_supply_with_the_carrier() {
 
     // And nothing was minted by any of it: the earned supply never moved.
     assert_eq!(t.minted().expect("minted adds up"), [0; 4]);
+}
+
+/// §4: "a word that fails replay debits the voice that spoke it" — every
+/// voice the escrow names, as `mint_claim` credits every one. It slashed
+/// `voices.first()`, one voice chosen by arrival order, which is rule 15's
+/// "a tie-break by index, by size, by first found presented as a decision":
+/// a word two voices stood cost the second of them nothing at all.
+#[test]
+fn a_slash_debits_every_voice_the_escrow_names() {
+    let (a, b) = ([0xa1u8; 32], [0xb2u8; 32]);
+    let mut t = Treasury::new();
+    t.genesis(a, [10, 10, 10, 10], (0, [0; 32]));
+    t.genesis(b, [10, 10, 10, 10], (0, [0; 32]));
+    t.enroll(a, [5, 5, 5, 5], (1, [0; 32]));
+    t.enroll(b, [2, 2, 2, 2], (1, [0; 32]));
+    let before = t.audit().expect("two bonded voices conserve");
+
+    t.escrow_award([9u8; 32], vec![a, b], [4, 0, 0, 0], (2, [1; 32]));
+    let r = t.revoke_award(&[9u8; 32], true).expect("the escrow was there");
+
+    assert_eq!(
+        r.slashed,
+        vec![(a, [4, 0, 0, 0]), (b, [2, 0, 0, 0])],
+        "both voices are debited, each by what its own bond covered"
+    );
+    assert_eq!(
+        r.short,
+        vec![(b, [2, 0, 0, 0])],
+        "and the lanes one of them could not cover are named, not clamped away"
+    );
+    assert_eq!(t.bond_of(&a).expect("a is enrolled")[0], 1, "a had five, four went");
+    assert_eq!(t.bond_of(&b).expect("b is enrolled")[0], 0, "b had two, both went");
+
+    // Six left the bonds, so six left the supply: §6 holds through it.
+    let after = t.audit().expect("the ledger conserves through a two-voice slash");
+    assert_eq!(after[0], before[0] - 6, "supply fell by what left the bonds");
+
+    // A plain revoke drops the claim and slashes nobody.
+    t.escrow_award([8u8; 32], vec![a], [1, 0, 0, 0], (3, [1; 32]));
+    let r = t.revoke_award(&[8u8; 32], false).expect("the escrow was there");
+    assert!(r.slashed.is_empty() && r.short.is_empty(), "a revoke is not a slash");
+    assert_eq!(r.released, [1, 0, 0, 0], "and it says what claim it dropped");
+
+    // An address holding no escrow is the third state, which the old bool
+    // could not tell from "slashed nothing".
+    assert!(t.revoke_award(&[7u8; 32], true).is_none(), "no escrow, nothing revoked");
 }

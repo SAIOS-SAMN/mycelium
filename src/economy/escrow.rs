@@ -6,6 +6,21 @@
 
 use super::*;
 
+/// WHAT A REVOCATION DID, read per lane and per voice — never a bool. The
+/// three outcomes a caller must tell apart are the escrow dropped with
+/// nothing slashed, the bond of each named voice debited by what actually
+/// left it, and a bond that did not cover the ask, which is the shortfall
+/// and names its lanes (law 5, §2.3).
+#[derive(Debug, Clone)]
+pub struct Revoked {
+    /// The escrow that was dropped.
+    pub released: [u64; 4],
+    /// What left each voice's bond. Empty on a plain revoke.
+    pub slashed: Vec<([u8; 32], [u64; 4])>,
+    /// Where a voice's bond did not cover the ask, per lane.
+    pub short: Vec<([u8; 32], [u64; 4])>,
+}
+
 /// WHAT AN ESCROW HOLDS: a claim on issuance (§5), pending the court.
 #[derive(Debug, Clone)]
 pub struct Escrowed {
@@ -143,33 +158,62 @@ impl Treasury {
         }
     }
 
-    /// Drop the listing claim. A slash debits the stake bond and mints nothing.
-    pub fn revoke_award(&mut self, addr: &[u8], slash: bool) -> bool {
+    /// Drop the listing claim. A slash debits the bond of EVERY voice the
+    /// escrow names and mints nothing. `None` when the address held no
+    /// escrow to drop.
+    ///
+    /// Three faults, one line apart, and I11a wrote the middle one two
+    /// files from the paragraph in `settle.rs` condemning it.
+    ///
+    /// `mu[l].min(held[l])` is rule 4's "any `.min()`/`.max()`/clamp on two
+    /// measurements" and law 5's "a comparison of two lane vectors returns
+    /// the reading per lane and never a verdict". The escrow's ask and the
+    /// voice's bond are two measurements; what leaves is the ask less the
+    /// shortfall, and the shortfall is the reading — the lanes on which the
+    /// bond did not cover what was asked, which is what a court needs to
+    /// know and what the clamp threw away.
+    ///
+    /// `took.iter().all(|&x| x == 0)` folds four lanes into one bool to
+    /// decide a branch (rule 2, §2.3), and both sides of it returned the
+    /// same `true`, so `revoke_award` answered identically for "the bond
+    /// was slashed", "the bond was empty" and "the escrow named no voice".
+    /// It returns the reading now.
+    ///
+    /// `voices.first()` slashed one voice by arrival order — rule 15's
+    /// "a tie-break by index, by size, by first found presented as a
+    /// decision". `MU-ECONOMY.md` §4 debits "the voice that spoke it", and
+    /// `mint_claim` splits an award across every voice the escrow names;
+    /// a slash reaches the same set, or a word two voices stood costs one
+    /// of them nothing at all.
+    pub fn revoke_award(&mut self, addr: &[u8], slash: bool) -> Option<Revoked> {
         self.discharge_funded(addr, "revoke");
-        let Some(Escrowed { voices, mu, anchor }) = self.escrowed.remove(addr) else {
-            return false;
-        };
-        if slash {
-            let Some(&who) = voices.first() else {
-                return true;
+        let Escrowed { voices, mu, anchor } = self.escrowed.remove(addr)?;
+        let mut out = Revoked { released: mu, slashed: Vec::new(), short: Vec::new() };
+        if !slash {
+            return Some(out);
+        }
+        for who in voices {
+            let held = match self.stakes.get(&who) {
+                Some(&h) => h,
+                None => [0; 4],
             };
-            // THE ENTRY NAMES WHAT LEFT THE BOND, not what the escrow asked
-            // for. A bond of 3 slashed for 8 loses 3; the entry said 8, and
-            // since a slash is μ⃗ leaving circulation (`supply`), the ledger
-            // then claimed more had left than ever existed and `supply()`
-            // underflowed to None -- "unmeasured" for a treasury that is
-            // perfectly well measured. Rule 5: the row is the measurement.
-            let held = self.stakes.get(&who).copied().unwrap_or([0; 4]);
-            let took: [u64; 4] = std::array::from_fn(|l| mu[l].min(held[l]));
-            if took.iter().all(|&x| x == 0) {
-                return true;
+            let short = super::shortfall(&mu, &held);
+            let took: [u64; 4] = std::array::from_fn(|l| mu[l] - short[l]);
+            if !super::lanes_short(&short).is_empty() {
+                out.short.push((who, short));
+            }
+            if super::lanes_short(&took).is_empty() {
+                continue;
             }
             let next: [u64; 4] = std::array::from_fn(|l| held[l] - took[l]);
             self.stakes.insert(who, next);
             self.entries.push(Entry { kind: "slash", who, mu: took, k_step: anchor.0, receipt: anchor.1 });
+            out.slashed.push((who, took));
+        }
+        if !out.slashed.is_empty() {
             self.refresh_bond();
         }
-        true
+        Some(out)
     }
 
     pub fn stakes(&self) -> Vec<([u8; 32], [u64; 4])> {
