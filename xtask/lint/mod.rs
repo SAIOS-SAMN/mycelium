@@ -14,7 +14,6 @@ pub mod maps;
 pub mod matrix;
 pub mod squaring;
 
-use enumeration::walk;
 use length::lint_file_length;
 
 use std::path::PathBuf;
@@ -29,11 +28,7 @@ pub fn run() -> Result<(), String> {
             .ok_or("xtask has no parent")?
             .join("src")
     };
-    let dirs = ["server", "client", "transducer", "network"];
     let mut hits = Vec::new();
-    for d in dirs {
-        walk(&root.join(d), d, &mut hits)?;
-    }
     // The reading bound covers the gate itself: `lint.rs` is a source file a
     // reviewer must read whole like any other (MU-STANDARDS 1.1), so `xtask`
     // is walked beside `src`. Both in ONE call: the stale-row check below is
@@ -51,7 +46,14 @@ pub fn run() -> Result<(), String> {
     // one rule that does cover `xtask/`, because it is about reading.
     let mut files = Vec::new();
     walker::collect(&root, &mut files)?;
-    walker::run_gates(&files, &[clock::GATE, digest::GATE, maps::GATE, matrix::GATE, squaring::GATE], &mut hits)?;
+    walker::run_gates(&files, &[
+            clock::GATE,
+            digest::GATE,
+            enumeration::GATE,
+            maps::GATE,
+            matrix::GATE,
+            squaring::GATE,
+        ], &mut hits)?;
     if hits.is_empty() {
         return Ok(());
     }
