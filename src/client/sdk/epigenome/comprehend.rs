@@ -120,7 +120,7 @@ impl Epigenome {
             }
             return match dialect {
                 None => Comprehension::Admitted,
-                Some((_, g)) => Comprehension::Dialect(g),
+                Some((_, g)) => Comprehension::Dialect(Box::new(g)),
             };
         }
         // Located through the atlas and the versor, never searched. A taught

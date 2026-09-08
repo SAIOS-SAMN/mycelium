@@ -62,7 +62,7 @@ pub enum Comprehension {
     Held,
     /// A connection heard whose transition to the fibre's representative
     /// did not vanish: the obstruction element is the dialect, carried.
-    Dialect(Element),
+    Dialect(Box<Element>),
     /// A connection on a fibre this genome holds no representative on:
     /// admitted as new geometry.
     Admitted,
