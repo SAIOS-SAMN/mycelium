@@ -113,7 +113,7 @@ pub fn replay_form_with(
             &crate::transducer::family::NoCrystal
         };
         let (pay, rems) = crate::transducer::family::form_descent(&walked, fam, descent_crystal);
-        if rems.iter().any(|r| !r.is_empty()) || !crate::economy::descends(&[0; 4], &pay) {
+        if rems.iter().any(|r| !r.is_empty()) || pay.iter().all(|&m| m == 0) {
             return Some(REFUSE_NO_DESCENT);
         }
     }

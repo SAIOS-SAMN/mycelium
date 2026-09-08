@@ -71,7 +71,11 @@ pub(crate) fn blind_replay_on_inner(
         if let Some(reason) = replay_form_with(spoken, resolve, family, crystal) {
             return Some(reason);
         }
-        if !crate::economy::descends(&[0; 4], &spoken.magnitude()) {
+        // The sentence MEASURES something. Written as a descent from the
+        // zero vector, this read as a lane comparison and was a
+        // nonzero test wearing one: `0⃗ ≺ m` is true exactly when some
+        // lane of `m` is above zero.
+        if spoken.magnitude().iter().all(|&m| m == 0) {
             return Some(REFUSE_NO_DESCENT);
         }
         return None;
@@ -158,7 +162,7 @@ pub(crate) fn blind_replay_on_inner(
                     // one lane comparison (law 5); no lane is visited by index.
                     let remainder = rederived.base_magnitude();
                     let carried = spoken.chain_magnitude();
-                    if !(remainder == carried || crate::economy::descends(&remainder, &carried)) {
+                    if !crate::economy::lane_moves(&remainder, &carried).rose().is_empty() {
                         return Some("magnitude below the remainder's own measure");
                     }
                     if spoken.solution().is_none() {
@@ -168,8 +172,8 @@ pub(crate) fn blind_replay_on_inner(
             }
         }
     }
-    if !crate::economy::descends(&[0; 4], &spoken.magnitude()) {
-        return Some("no strict descent — the germ closes nothing");
+    if spoken.magnitude().iter().all(|&m| m == 0) {
+        return Some("the germ measures nothing on any lane");
     }
     witness_torsion(spoken)
 }

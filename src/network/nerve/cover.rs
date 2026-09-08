@@ -304,7 +304,7 @@ fn addr_of(
 
 /// Dershowitz–Manna dominance on occupied lanes: `a` wins only when it is
 /// at least as large on every occupied lane and larger on one. Inverse of
-/// `economy::descends` (more remaining room, never a lane ordering).
+/// `economy::lane_moves` (more remaining room, never a lane ordering).
 fn room_dominates(a: &[u64; 4], b: &[u64; 4], lanes: &[u8]) -> bool {
     lanes.iter().all(|&l| a[l as usize] >= b[l as usize])
         && lanes.iter().any(|&l| a[l as usize] > b[l as usize])

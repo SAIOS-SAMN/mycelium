@@ -1,9 +1,10 @@
 // Law 5, 12.6 — THE FOUR LANES: what a word measures, when one measurement
-// descends against another, and what the surface prices it at.
+// one measurement moves against another, and what the surface prices it at.
 //
-//! Lanes are never summed and never ordered by a scalar. `descends` is the
-//! product order, `dominant` is Dershowitz-Manna dominance and refuses when
-//! no candidate dominates, and `price` is per lane.
+//! Lanes are never summed and never ordered by a scalar. `lane_moves` is
+//! the READING — what each lane did, signed, and nothing else; `dominant`
+//! is Dershowitz-Manna dominance and refuses when no candidate dominates;
+//! `price` is per lane.
 
 use super::*;
 
@@ -16,10 +17,49 @@ pub fn magnitude(g: &Element) -> [u64; 4] {
     g.magnitude()
 }
 
-/// The per-lane Dershowitz–Manna descent: `after ≺_DM before` iff after ≤ before
-/// on every lane and strictly less on some lane. No lane is traded for another.
-pub fn descends(after: &[u64; 4], before: &[u64; 4]) -> bool {
-    after.iter().zip(before).all(|(a, b)| a <= b) && after.iter().zip(before).any(|(a, b)| a < b)
+/// WHAT EACH LANE DID between two measurements: `after[l] − before[l]`,
+/// signed, four of them, never summed and never ordered against each other.
+///
+/// This is a READING and not a verdict. Dershowitz–Manna descent is one
+/// sentence a reader can say about it — no lane rose and some lane fell —
+/// and the four sites 12.6 sanctions are the ones that may say it. Everyone
+/// else reads which lanes moved and reports that.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub struct LaneMove {
+    /// Per lane, `after − before`. Negative is a fall.
+    pub per_lane: [i64; 4],
+}
+
+impl LaneMove {
+    /// The lanes that FELL, by index. Empty means nothing was reduced.
+    pub fn fell(&self) -> Vec<usize> {
+        (0..4).filter(|&l| self.per_lane[l] < 0).collect()
+    }
+
+    /// The lanes that ROSE, by index. Empty is the condition every descent
+    /// site actually tests: no lane was traded for another.
+    pub fn rose(&self) -> Vec<usize> {
+        (0..4).filter(|&l| self.per_lane[l] > 0).collect()
+    }
+
+    /// Nothing moved on any lane. Equal measures are not a descent: the
+    /// mind did not reduce, and this says that rather than returning false
+    /// for two different reasons.
+    pub fn is_still(&self) -> bool {
+        self.per_lane.iter().all(|&d| d == 0)
+    }
+
+    /// The DEFLATION this move measured, per lane: what fell, as a
+    /// magnitude, with a lane that rose contributing nothing. This is what
+    /// a mint is paid on.
+    pub fn deflation(&self) -> [u64; 4] {
+        std::array::from_fn(|l| self.per_lane[l].min(0).unsigned_abs())
+    }
+}
+
+/// The per-lane move from `before` to `after`.
+pub fn lane_moves(after: &[u64; 4], before: &[u64; 4]) -> LaneMove {
+    LaneMove { per_lane: std::array::from_fn(|l| after[l] as i64 - before[l] as i64) }
 }
 
 /// The unique index of the vector that equals the lane-wise minimum, if
@@ -46,10 +86,14 @@ pub fn dominant(vals: &[[u64; 4]]) -> Option<usize> {
 
 /// A refinement is measured as deflation on the split strata. No new price.
 pub fn split_deflation(before: &[u64; 4], after: &[u64; 4]) -> Option<[u64; 4]> {
-    if !descends(after, before) {
+    let moved = lane_moves(after, before);
+    // A lane that rose is a trade, not a split; nothing moving at all is
+    // not a refinement. Both are refused, and the economy is one of the
+    // four sites that may take that refusal.
+    if !moved.rose().is_empty() || moved.is_still() {
         return None;
     }
-    Some(std::array::from_fn(|l| before[l] - after[l]))
+    Some(moved.deflation())
 }
 
 /// THE YIELD SURFACE — the treasury's dynamic per-lane quote, read from GENUINE

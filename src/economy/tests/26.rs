@@ -70,11 +70,28 @@ fn release_mints_when_the_bond_is_empty() {
     assert_eq!(t.bond_total(), [0; 4], "mint does not touch the stake bond");
 }
 
+/// S9.3 — THE READING, PER LANE. `lane_moves` says what each lane did and
+/// decides nothing; Dershowitz–Manna descent is one sentence a reader can
+/// say about it (no lane rose, some lane fell), and the reading keeps the
+/// three cases apart that one bool collapsed into `false`.
 #[test]
-fn the_dm_gate_is_per_lane() {
-    assert!(descends(&[0, 0, 0, 0], &[1, 0, 0, 0]), "strict on one lane");
-    assert!(!descends(&[1, 0, 0, 0], &[0, 1, 0, 0]), "lanes are not traded");
-    assert!(!descends(&[1, 1, 0, 0], &[1, 1, 0, 0]), "equal is not descent");
+fn a_lane_move_is_read_per_lane() {
+    let fell = lane_moves(&[0, 0, 0, 0], &[1, 0, 0, 0]);
+    assert_eq!(fell.per_lane, [-1, 0, 0, 0], "the fall is signed and on its lane");
+    assert_eq!(fell.fell(), vec![0]);
+    assert!(fell.rose().is_empty(), "and nothing rose");
+    assert_eq!(fell.deflation(), [1, 0, 0, 0], "what fell is what is paid");
+
+    // A trade: one lane down, another up. The old bool said only "no".
+    let traded = lane_moves(&[1, 0, 0, 0], &[0, 1, 0, 0]);
+    assert_eq!(traded.rose(), vec![0], "the raise is named");
+    assert_eq!(traded.fell(), vec![1], "and so is the fall it was traded for");
+    assert_eq!(traded.deflation(), [0, 1, 0, 0], "a raised lane pays nothing");
+
+    // Equal is not descent — and now it says why: nothing moved at all.
+    let still = lane_moves(&[1, 1, 0, 0], &[1, 1, 0, 0]);
+    assert!(still.is_still(), "the mind did not reduce");
+    assert!(still.rose().is_empty() && still.fell().is_empty());
 }
 
 /// G4. An escrow names every voice that stood the claim — `escrow_award`

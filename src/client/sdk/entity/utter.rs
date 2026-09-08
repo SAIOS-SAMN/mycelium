@@ -144,7 +144,10 @@ impl Entity {
         chain: &[(i64, i64, u8, u8)],
     ) -> crate::client::sdk::Concluded {
         let (cites, residual) = self.cite(chain);
-        if !residual_descends(&residual, chain) {
+        // 24.2: a residual that raised a lane, or moved nothing at all, is
+        // held as thought and never spoken. The reading says which case.
+        let moved = residual_move(&residual, chain);
+        if !moved.rose().is_empty() || moved.is_still() {
             self.hold_thought(chain.to_vec());
             return Concluded { cites, residual: chain.to_vec(), familiar: false };
         }

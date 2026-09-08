@@ -430,7 +430,10 @@ impl Form {
                 if !crate::transducer::family::pairs_descend(pairs_before, &pairs_after) {
                     return None;
                 }
-                if !(after == before || crate::economy::descends(&after, &before)) {
+                // 12.6: a candidate that RAISES any lane is refused. The
+                // reading says which; equal is allowed here because the
+                // pivot may be paid for by the rank move alone.
+                if !crate::economy::lane_moves(&after, &before).rose().is_empty() {
                     return None;
                 }
                 Mu::Measured { before, after }

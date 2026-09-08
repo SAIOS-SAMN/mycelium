@@ -73,9 +73,10 @@ let before_pairs = [[3u64, 0, 0, 5], [0, 0, 0, 1]];
 let after_pairs = [pair_one_down, pair_two_raise];
 let before_sum = [3u64, 0, 0, 6];
 let after_sum = [1u64, 0, 0, 5];
+let summed = crate::economy::lane_moves(&after_sum, &before_sum);
 assert!(
-    crate::economy::descends(&after_sum, &before_sum),
-    "the summed μ⃗ descends"
+    summed.rose().is_empty() && !summed.is_still(),
+    "the summed μ⃗ descends: {summed:?}"
 );
 assert!(
     !pairs_descend(&before_pairs, &after_pairs),

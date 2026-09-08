@@ -32,13 +32,7 @@ const COMPARES: &[(&str, &str)] = &[
 /// the list is empty. Same device as `AWAITING_SPLIT` carried through Stage
 /// 8b. A row naming a file the gate would not have hit is itself a hit.
 const AWAITING_READING: &[(&str, &str)] = &[
-    ("court/verdict/replay.rs", "S9.2, S9.4: rank equality, and the descent clause deleted"),
-    ("court/verdict/blind.rs", "S9.4: two magnitude-nonzero checks and one per-lane remainder"),
-    ("economy/lanes.rs", "S9.3: descends becomes lane_moves"),
-    ("economy/settle.rs", "S9.3"),
     ("transducer/family/descent.rs", "S9.3, S9.5: pairs_descend, and the pay gate becomes closure"),
-    ("client/sdk/types.rs", "S9.3: residual_descends"),
-    ("client/sdk/entity/utter.rs", "S9.3"),
     ("network/nerve/cover.rs", "S9.6: room_dominates returns the shortfall"),
 ];
 

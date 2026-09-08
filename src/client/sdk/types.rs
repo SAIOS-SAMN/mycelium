@@ -272,21 +272,18 @@ pub struct Entity {
     pub(crate) height: crate::chronometry::Height,
 }
 
-/// Residual strictly below the chain on a lane, and never a raise on any
-/// lane. Equal measures do not descend: the mind did not reduce.
-pub(crate) fn residual_descends(residual: &[(i64, i64, u8, u8)], chain: &[(i64, i64, u8, u8)]) -> bool {
-    let r = crate::transducer::element::measure_lanes(residual);
-    let c = crate::transducer::element::measure_lanes(chain);
-    let mut below = false;
-    for i in 0..4 {
-        if r[i] > c[i] {
-            return false;
-        }
-        if r[i] < c[i] {
-            below = true;
-        }
-    }
-    below
+/// WHAT THE MIND'S OWN REDUCTION DID, per lane: the residual measured
+/// against the chain it came from. A reading — the caller decides what to
+/// do with a residual that raised a lane or moved nothing, and 24.2 says
+/// what that is: hold it as thought rather than speak it.
+pub(crate) fn residual_move(
+    residual: &[(i64, i64, u8, u8)],
+    chain: &[(i64, i64, u8, u8)],
+) -> crate::economy::LaneMove {
+    crate::economy::lane_moves(
+        &crate::transducer::element::measure_lanes(residual),
+        &crate::transducer::element::measure_lanes(chain),
+    )
 }
 
 /// ONE CONTEMPLATED BUBBLE, as the quote reads it: the remainder it holds

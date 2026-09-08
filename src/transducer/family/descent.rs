@@ -33,9 +33,12 @@ pub fn form_descent(
         let after_chain = residual_of(grid.as_ref(), y);
         let before_mu = element::measure_lanes(&before_chain);
         let after_mu = element::measure_lanes(&after_chain);
-        if crate::economy::descends(&after_mu, &before_mu) {
-            for i in 0..4 {
-                pay[i] = pay[i].saturating_add(before_mu[i].saturating_sub(after_mu[i]));
+        let moved = crate::economy::lane_moves(&after_mu, &before_mu);
+        // Per pair: what fell is paid, and a pair that raised a lane pays
+        // nothing at all rather than paying for the lanes that fell.
+        if moved.rose().is_empty() && !moved.is_still() {
+            for (p, d) in pay.iter_mut().zip(&moved.deflation()) {
+                *p = p.saturating_add(*d);
             }
         }
         remainders.push(after_chain);
@@ -98,5 +101,5 @@ pub(crate) fn pairs_descend(before: &[[u64; 4]], after: &[[u64; 4]]) -> bool {
     before
         .iter()
         .zip(after)
-        .all(|(b, a)| *a == *b || crate::economy::descends(a, b))
+        .all(|(b, a)| crate::economy::lane_moves(a, b).rose().is_empty())
 }

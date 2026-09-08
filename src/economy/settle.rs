@@ -13,7 +13,10 @@ impl Treasury {
     /// closes its own birth demand has proven nothing about the corpus. Reward
     /// flows later, on USE (`settle_use`), proportional to real demand unlocked.
     pub fn settle_install(&mut self, g: &Element, _voice: [u8; 32]) -> bool {
-        descends(&[0u64; 4], &magnitude(g))
+        // The germ MEASURES something on some lane. This was written as a
+        // descent from the zero vector, which is a nonzero test wearing a
+        // lane comparison's clothes.
+        magnitude(g).iter().any(|&m| m > 0)
     }
 
     /// PoUW — a word was USED: a real later demand decomposed through it. THE
