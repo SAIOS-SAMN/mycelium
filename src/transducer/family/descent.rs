@@ -43,7 +43,8 @@ pub fn form_descent(
         // The deflation of a closed pair is the whole delta it named:
         // `after` is empty, so `before − after` is `before`.
         if after_chain.is_empty() {
-            let closed = crate::economy::lane_moves(&after_mu, &before_mu).deflation();
+            let closed =
+                crate::economy::deflation_of(&crate::economy::lane_moves(&after_mu, &before_mu));
             for (p, d) in pay.iter_mut().zip(&closed) {
                 *p = p.saturating_add(*d);
             }
@@ -116,7 +117,9 @@ pub(crate) fn pairs_raised(before: &[[u64; 4]], after: &[[u64; 4]]) -> Option<Ve
             .iter()
             .zip(after)
             .enumerate()
-            .filter(|(_, (b, a))| !crate::economy::lane_moves(a, b).rose().is_empty())
+            .filter(|(_, (b, a))| {
+                !crate::economy::lanes_risen(&crate::economy::lane_moves(a, b)).is_empty()
+            })
             .map(|(i, _)| i)
             .collect(),
     )

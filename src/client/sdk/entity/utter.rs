@@ -146,8 +146,10 @@ impl Entity {
         let (cites, residual) = self.cite(chain);
         // 24.2: a residual that raised a lane, or moved nothing at all, is
         // held as thought and never spoken. The reading says which case.
-        let moved = residual_move(&residual, chain);
-        if !moved.rose().is_empty() || moved.is_still() {
+        let reading = residual_move(&residual, chain);
+        if !crate::economy::lanes_risen(&reading).is_empty()
+            || crate::economy::lanes_fallen(&reading).is_empty()
+        {
             self.hold_thought(chain.to_vec());
             return Concluded { cites, residual: chain.to_vec(), familiar: false };
         }

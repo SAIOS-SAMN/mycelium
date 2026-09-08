@@ -279,7 +279,7 @@ pub struct Entity {
 pub(crate) fn residual_move(
     residual: &[(i64, i64, u8, u8)],
     chain: &[(i64, i64, u8, u8)],
-) -> crate::economy::LaneMove {
+) -> [crate::economy::LaneMove; 4] {
     crate::economy::lane_moves(
         &crate::transducer::element::measure_lanes(residual),
         &crate::transducer::element::measure_lanes(chain),

@@ -156,14 +156,22 @@ pub(crate) fn blind_replay_on_inner(
                     if rederived.sub() != spoken_c.as_slice() {
                         return Some("remainder does not re-derive from the chain");
                     }
-                    // The connection carries at least its remainder's own
-                    // measure: equal, or the remainder strictly descends
-                    // from it on the lanes the chain names. Dominance is the
-                    // one lane comparison (law 5); no lane is visited by index.
+                    // S9.4 — THE CONNECTION CARRIES AT LEAST ITS REMAINDER'S
+                    // OWN MEASURE, read per lane: no lane of the remainder
+                    // rises above what the chain carries. The refusal names
+                    // the lane it was taken on; a `bool` here said only that
+                    // some lane, somewhere, was short.
                     let remainder = rederived.base_magnitude();
                     let carried = spoken.chain_magnitude();
-                    if !crate::economy::lane_moves(&remainder, &carried).rose().is_empty() {
-                        return Some("magnitude below the remainder's own measure");
+                    let risen = crate::economy::lanes_risen(&crate::economy::lane_moves(
+                        &remainder, &carried,
+                    ));
+                    match risen.as_slice() {
+                        [] => {}
+                        [0, ..] => return Some("magnitude below the remainder's own S"),
+                        [1, ..] => return Some("magnitude below the remainder's own G"),
+                        [2, ..] => return Some("magnitude below the remainder's own T"),
+                        _ => return Some("magnitude below the remainder's own H"),
                     }
                     if spoken.solution().is_none() {
                         return Some("connection is not invertible");
@@ -172,8 +180,10 @@ pub(crate) fn blind_replay_on_inner(
             }
         }
     }
-    if spoken.magnitude().iter().all(|&m| m == 0) {
-        return Some("the germ measures nothing on any lane");
-    }
+    // S9.4 — a zero magnitude is not a refusal here either. Everything above
+    // is the re-derivation: the chain canonicalises, the letters re-spell,
+    // the versor inverts, the torsion witnesses below. What the word MEASURES
+    // is priced by the economy after this returns, and a court that refused
+    // a word for measuring nothing was ruling on its price.
     witness_torsion(spoken)
 }

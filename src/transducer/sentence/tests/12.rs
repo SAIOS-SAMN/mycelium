@@ -37,28 +37,31 @@ fn pivot_candidates_are_read_from_occupied_axes_only() {
     assert_eq!(seen, declaration, "occupied axes already in declaration order");
 }
 
+/// A16 step 5: SEVERAL discharges are a vortex. Not "several that cannot be
+/// ordered" — several, whatever their μ⃗ says, because nothing orders them.
 #[test]
-fn incomparable_discharges_are_held_as_vortex() {
+fn several_discharges_are_held_as_vortex() {
     let a = cert(Axis::Unit(0), [2, 0, 1, 0]);
     let b = cert(Axis::Hue, [0, 3, 0, 1]);
     assert!(
         matches!(select_discharge(&[a, b]), Discharge::Vortex(_)),
-        "incomparable μ⃗ are a vortex, not a pick"
+        "two certified discharges are a vortex, not a pick"
     );
 }
 
-/// Descent certifies after a trial; it never ranks candidates. A chord
-/// write changes no vertex, so speech and μ⃗ are unmoved: two words that
-/// both discharge tie and are a vortex. Per-candidate μ⃗ moves only when
-/// a candidate changes what the form speaks (a glue pivot).
+/// T13 — μ⃗ NEITHER CERTIFIES NOR SELECTS. Two candidates discharge and one
+/// measures lower on every lane: it is still a vortex. Dominance used to
+/// apply that one, which made the lower measurement a reason, which is a
+/// score (law 1). μ⃗ enters a trial once, to refuse a candidate that RAISES
+/// a lane, and never enters the comparison between certified discharges.
 #[test]
-fn descent_certifies_never_selects() {
+fn mu_neither_certifies_nor_selects() {
     let loose = cert(Axis::Unit(0), [4, 4, 4, 4]);
     let tight = cert(Axis::Unit(0), [1, 1, 1, 1]);
-    let Discharge::One(won) = select_discharge(&[loose.clone(), tight.clone()]) else {
-        panic!("one μ⃗ dominates");
+    let Discharge::Vortex(cells) = select_discharge(&[loose.clone(), tight.clone()]) else {
+        panic!("a lower μ⃗ on every lane is not a reason to apply it");
     };
-    assert_eq!(won.mu, tight.mu, "the lane-wise minimum is the discharge");
+    assert_eq!(cells.len(), 2, "both are held: {cells:?}");
     fn perm(m: [u64; 4]) -> [u64; 4] {
         [m[2], m[1], m[0], m[3]]
     }
@@ -75,15 +78,17 @@ fn descent_certifies_never_selects() {
     let mut tp = tight.clone();
     lp.mu = perm_mu(lp.mu);
     tp.mu = perm_mu(tp.mu);
-    let Discharge::One(won_p) = select_discharge(&[lp, tp]) else {
-        panic!("permuted lanes keep the winner");
-    };
-    assert_eq!(won_p.axis, tight.axis, "the same pivot after a lane permutation");
+    let permuted = select_discharge(&[lp, tp]);
+    assert_eq!(
+        permuted,
+        select_discharge(&[loose, tight]),
+        "permuting the lanes changes nothing, because nothing read them"
+    );
     let a = cert(Axis::Unit(0), [2, 0, 0, 0]);
     let b = cert(Axis::Hue, [0, 2, 0, 0]);
     assert!(
         matches!(select_discharge(&[a, b]), Discharge::Vortex(_)),
-        "two incomparable discharges are a vortex"
+        "and two on different axes are a vortex too"
     );
 
     let q = order4();
@@ -142,11 +147,13 @@ fn descent_certifies_never_selects() {
         Some(&bundle),
         3,
     );
-    let Some(Snap::Vortex { held, .. }) = snaps.iter().find(|s| matches!(s, Snap::Vortex { .. })) else {
-        panic!("a pivot that does not write vertices leaves μ⃗ unmoved, so two discharges are a vortex: {snaps:?}");
+    let Some(Snap::Vortex { held, between, .. }) =
+        snaps.iter().find(|s| matches!(s, Snap::Vortex { .. }))
+    else {
+        panic!("two discharges on one loop are a vortex: {snaps:?}");
     };
     assert!(held.len() >= 2, "q and q⁻¹ both discharge: {held:?}");
-    let (mu0, mu1) = match (&held[0].certificate.mu, &held[1].certificate.mu) {
+    let (mu0, mu1) = match (&held[0].mu, &held[1].mu) {
         (
             Mu::Measured { before: b0, after: a0 },
             Mu::Measured { after: a1, .. },
@@ -155,21 +162,21 @@ fn descent_certifies_never_selects() {
             assert_eq!(a0[2], 3);
             (*a0, *a1)
         }
-        _ => panic!("a measured vortex carries μ⃗, got {:?}", held[0].certificate.mu),
+        _ => panic!("a measured vortex carries μ⃗, got {:?}", held[0].mu),
     };
-    assert_eq!(mu0, mu1, "equal μ⃗, neither dominates");
-    // S9.16 — AND THE VORTEX HOLDS WHY. Equal μ⃗ means every cell IS the
-    // lane-wise minimum, so no cell stands above it on any lane: the
-    // superposition is a TIE. An incomparable cell would name the lanes
-    // that keep it from the minimum, and the two facts are different.
-    for h in held {
-        assert_eq!(
-            h.above_minimum,
-            Some(Vec::new()),
-            "a tied cell is at the minimum on every lane: {:?}",
-            h.above_minimum
-        );
-    }
+    assert_eq!(mu0, mu1, "a chord write moves no vertex, so μ⃗ is unmoved");
+    // S9.16 — THE VORTEX RECORDS THE OBSTRUCTION, and spends it on nothing.
+    // Here the two cells measure the same μ⃗, so every lane HELD; the axes
+    // they acted on are what separates them, and that is what a later
+    // collapse resolves.
+    assert_eq!(between.len(), held.len() - 1, "one reading per adjacency");
+    let o = &between[0];
+    assert_eq!(
+        o.lanes,
+        Some([crate::economy::LaneMove::Held; 4]),
+        "equal μ⃗ reads as four held lanes, not as a tie score"
+    );
+    assert_eq!(o.axes, (held[0].axis, held[1].axis), "the axes are the obstruction");
 }
 
 #[test]

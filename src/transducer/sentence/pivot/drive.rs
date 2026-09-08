@@ -209,19 +209,22 @@ impl Form {
                         break;
                     }
                     Discharge::Vortex(held_certs) => {
-                        for h in &held_certs {
-                            vortex_put(&mut self.vortex, h.certificate.clone());
+                        for c in &held_certs {
+                            vortex_put(&mut self.vortex, c.clone());
                         }
                         if prior.mu_before.is_some() {
+                            let between = obstructions(&held_certs);
                             eprintln!(
-                                "  vortex {:02x}{:02x}… loop {idx} {} candidates held",
+                                "  vortex {:02x}{:02x}… loop {idx} {} candidates held, axes {:?}",
                                 idea[0],
                                 idea[1],
-                                held_certs.len()
+                                held_certs.len(),
+                                between.iter().map(|o| o.axes).collect::<Vec<_>>()
                             );
                             snaps.push(Snap::Vortex {
                                 chord: idx,
                                 held: held_certs,
+                                between,
                             });
                         } else {
                             eprintln!(
@@ -436,10 +439,17 @@ impl Form {
                 if !raised.is_empty() {
                     return None;
                 }
-                // 12.6: a candidate that RAISES any lane is refused. The
-                // reading says which; equal is allowed here because the
-                // pivot may be paid for by the rank move alone.
-                if !crate::economy::lane_moves(&after, &before).rose().is_empty() {
+                // 12.6, T21 (iv): a candidate that RAISES any lane is
+                // refused, read per lane and named. Strictness is not
+                // asked: a pivot that moves no lane is certified by its
+                // closure, not by a fall.
+                let reading = crate::economy::lane_moves(&after, &before);
+                let risen = crate::economy::lanes_risen(&reading);
+                if !risen.is_empty() {
+                    eprintln!(
+                        "  pivot loop {idx} axis {:?} refused: lanes {risen:?} rose",
+                        cand.axis
+                    );
                     return None;
                 }
                 Mu::Measured { before, after }

@@ -83,8 +83,9 @@ let before_sum = [3u64, 0, 0, 6];
 let after_sum = [1u64, 0, 0, 5];
 let summed = crate::economy::lane_moves(&after_sum, &before_sum);
 assert!(
-    summed.rose().is_empty() && !summed.is_still(),
-    "the summed μ⃗ descends: {summed:?}"
+    crate::economy::lanes_risen(&summed).is_empty()
+        && !crate::economy::lanes_fallen(&summed).is_empty(),
+    "the summed μ⃗ falls on some lane and rises on none: {summed:?}"
 );
 assert_eq!(
     pairs_raised(&before_pairs, &after_pairs),

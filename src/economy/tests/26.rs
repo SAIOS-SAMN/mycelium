@@ -70,28 +70,30 @@ fn release_mints_when_the_bond_is_empty() {
     assert_eq!(t.bond_total(), [0; 4], "mint does not touch the stake bond");
 }
 
-/// S9.3 — THE READING, PER LANE. `lane_moves` says what each lane did and
-/// decides nothing; Dershowitz–Manna descent is one sentence a reader can
-/// say about it (no lane rose, some lane fell), and the reading keeps the
-/// three cases apart that one bool collapsed into `false`.
+/// S9.3 — THE READING, PER LANE, AND THE AMOUNT INSIDE IT. Each lane is
+/// `Fell(d)`, `Held` or `Rose(d)`: a lane that fell by three and a lane
+/// that fell by one are different readings, and a lane that held is a third
+/// thing rather than a zero. Nothing here decides anything.
 #[test]
 fn a_lane_move_is_read_per_lane() {
+    use crate::economy::LaneMove::{Fell, Held, Rose};
     let fell = lane_moves(&[0, 0, 0, 0], &[1, 0, 0, 0]);
-    assert_eq!(fell.per_lane, [-1, 0, 0, 0], "the fall is signed and on its lane");
-    assert_eq!(fell.fell(), vec![0]);
-    assert!(fell.rose().is_empty(), "and nothing rose");
-    assert_eq!(fell.deflation(), [1, 0, 0, 0], "what fell is what is paid");
+    assert_eq!(fell, [Fell(1), Held, Held, Held], "the fall is on its lane, by its amount");
+    assert_eq!(lanes_fallen(&fell), vec![0]);
+    assert!(lanes_risen(&fell).is_empty(), "and nothing rose");
+    assert_eq!(deflation_of(&fell), [1, 0, 0, 0], "what fell is what is paid");
 
-    // A trade: one lane down, another up. The old bool said only "no".
+    // A trade: one lane down, another up. A bool said only "no".
     let traded = lane_moves(&[1, 0, 0, 0], &[0, 1, 0, 0]);
-    assert_eq!(traded.rose(), vec![0], "the raise is named");
-    assert_eq!(traded.fell(), vec![1], "and so is the fall it was traded for");
-    assert_eq!(traded.deflation(), [0, 1, 0, 0], "a raised lane pays nothing");
+    assert_eq!(traded, [Rose(1), Fell(1), Held, Held], "both moves are in the reading");
+    assert_eq!(lanes_risen(&traded), vec![0], "the raise is named");
+    assert_eq!(lanes_fallen(&traded), vec![1], "and so is the fall traded for it");
+    assert_eq!(deflation_of(&traded), [0, 1, 0, 0], "a raised lane pays nothing");
 
-    // Equal is not descent — and now it says why: nothing moved at all.
+    // Nothing moved: four held lanes, which is not "no descent" and not zero.
     let still = lane_moves(&[1, 1, 0, 0], &[1, 1, 0, 0]);
-    assert!(still.is_still(), "the mind did not reduce");
-    assert!(still.rose().is_empty() && still.fell().is_empty());
+    assert_eq!(still, [Held; 4], "the mind did not reduce");
+    assert!(lanes_risen(&still).is_empty() && lanes_fallen(&still).is_empty());
 }
 
 /// G4. An escrow names every voice that stood the claim — `escrow_award`
