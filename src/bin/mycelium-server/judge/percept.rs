@@ -33,9 +33,10 @@ let pbytes = if kind == dialogue::ACT_GOSSIP {
 };
 if kind == dialogue::ACT_DEMAND && !arrived_routed {
     if let Some(dialogue::DemandAct { chain, .. }) = dialogue::decode_demand(&frame.body) {
-        let (home_vk, home_addr) = demand_cover_home(mesh, kernel, &chain);
-        if home_vk != mesh.vk && home_addr != mesh.bind && !home_addr.is_empty() {
-            let _ = door.nerve_tx.try_send((home_addr, dialogue::encode_routed_demand(id, &frame.body)));
+        if let Some((home_vk, home_addr)) = demand_cover_home(mesh, kernel, &chain) {
+            if home_vk != mesh.vk && home_addr != mesh.bind && !home_addr.is_empty() {
+                let _ = door.nerve_tx.try_send((home_addr, dialogue::encode_routed_demand(id, &frame.body)));
+            }
         }
     }
 }
@@ -62,7 +63,8 @@ let (out, voice) = if kind == dialogue::ACT_DEMAND {
 // TEACH by the docket's standing of the cited word (anchored → taught),
 // never by sentence length. SETTLE: the consilience receipt.
 let (basis, flux, reserve, taught, settle, height) = {
-    let k = kernel.lock().unwrap();
+    // A poisoned kernel answers nothing, as an undecodable act does (§2.4).
+    let Ok(k) = kernel.lock() else { return };
     let (taught, settle) = match &out {
         Outcome::Installed(i) => match k.basis().get(*i) {
             Some(g) => {

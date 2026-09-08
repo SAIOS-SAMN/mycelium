@@ -65,6 +65,15 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
     Ok(PathBuf::from(home).join(".mycelium"))
 }
 
+/// A boot that cannot come up says why and exits: a socket that will not
+/// bind, a lock poisoned before any thread ran. It panicked at each of
+/// these (§2.4); the operator reads one line either way, and a unit
+/// restarts a clean exit as it restarts a panic, without the backtrace.
+fn refuse_boot(tag: &str, what: &str) -> ! {
+    eprintln!("[{tag}] boot refused: {what}");
+    std::process::exit(2)
+}
+
 fn resolved_bind(local: std::net::SocketAddr) -> String {
     if local.ip().is_unspecified() {
         format!("127.0.0.1:{}", local.port())
@@ -110,7 +119,9 @@ fn main() {
     let _ = std::fs::create_dir_all(&home);
     let _ = std::fs::create_dir_all(home.join("corpora"));
     let state_path = home.join("ledger").to_string_lossy().into_owned();
-    let hypha_key = HyphaKey::load_or_mint(home.join("hypha.key").to_str().unwrap_or("hypha.key"));
+    // The key lives under the home the operator named; a home that is not
+    // UTF-8 is spelled lossily, never swapped for a relative default.
+    let hypha_key = HyphaKey::load_or_mint(&home.join("hypha.key").to_string_lossy());
     let vk = hypha_key.vk_bytes();
     let id = vk;
     let tag = hypha_key.prefix();
@@ -141,7 +152,7 @@ fn main() {
         });
     }
     if let Ok(bytes) = std::fs::read(&state_path) {
-        let mut k = kernel.lock().unwrap();
+        let Ok(mut k) = kernel.lock() else { refuse_boot(&tag, "kernel lock poisoned at restore") };
         if k.restore(&bytes) {
             eprintln!(
                 "[{tag}] ledger MYC3: {} ruled sentences, treasury entries {}, book derived at intake",
@@ -158,7 +169,7 @@ fn main() {
     {
         let mut live: Vec<[u8; 32]> = genesis.hypha.iter().map(|(who, _)| *who).collect();
         live.extend(genesis.voice.iter().map(|(who, _)| *who));
-        let mut k = kernel.lock().unwrap();
+        let Ok(mut k) = kernel.lock() else { refuse_boot(&tag, "kernel lock poisoned at genesis") };
         k.bind_live(&live);
         k.bind_identity(vk);
         if let Some(held) = k.treasury().bond_of(&vk) {
@@ -175,8 +186,14 @@ fn main() {
     let (early_listener, addr) = if !mesh_rec.bind.is_empty() {
         (None, mesh_rec.bind.clone())
     } else {
-        let listener = TcpListener::bind("0.0.0.0:0").expect("bind");
-        let resolved = resolved_bind(listener.local_addr().expect("local_addr"));
+        let listener = match TcpListener::bind("0.0.0.0:0") {
+            Ok(l) => l,
+            Err(e) => refuse_boot(&tag, &format!("bind 0.0.0.0:0: {e}")),
+        };
+        let resolved = match listener.local_addr() {
+            Ok(local) => resolved_bind(local),
+            Err(e) => refuse_boot(&tag, &format!("local address unread: {e}")),
+        };
         mesh_rec.bind = resolved.clone();
         let _ = mesh_rec.save(&home, &hypha_key);
         eprintln!("[{tag}] wrote bind {resolved}");
@@ -224,7 +241,10 @@ fn main() {
     genesis::register_corpora(&home, &state_path, &kernel, &registry, &genesis, vk, &tag);
     let listener = match early_listener {
         Some(l) => l,
-        None => TcpListener::bind(&addr).expect("bind"),
+        None => match TcpListener::bind(&addr) {
+            Ok(l) => l,
+            Err(e) => refuse_boot(&tag, &format!("bind {addr}: {e}")),
+        },
     };
     eprintln!(
         "[{tag}] mycelium-hypha bound {addr}; join {:?}; vk {tag}…",
@@ -241,8 +261,11 @@ fn main() {
         served: Keyed::new(),
     }));
     {
-        let seed = kernel.lock().unwrap().syllabus_seed();
-        let mut sy = syllabus.lock().unwrap();
+        let seed = match kernel.lock() {
+            Ok(k) => k.syllabus_seed(),
+            Err(_) => refuse_boot(&tag, "kernel lock poisoned at syllabus seed"),
+        };
+        let Ok(mut sy) = syllabus.lock() else { refuse_boot(&tag, "syllabus lock poisoned at seed") };
         // index: ruled strata, coarsest first
         syllabus_admit(&mut sy, seed);
         if !sy.order.is_empty() {
@@ -265,7 +288,7 @@ fn main() {
     let boot_stamp = 0u64;
     for t in &settled {
         let hear = {
-            let mut g = roots.lock().unwrap();
+            let Ok(mut g) = roots.lock() else { refuse_boot(&tag, "roots lock poisoned at boot") };
             note_root(&mut g, t, id, boot_stamp)
         };
         match hear {
@@ -382,13 +405,18 @@ fn main() {
                     // transport deadline bounds the wait for that one frame.
                     arm_deadline(&stream);
                     if let Some(frame) = read_frame(&mut stream) {
-                        let kind = frame.body.first().copied().unwrap_or(0xff);
+                        // An act with no kind byte is judged (and refused
+                        // there) but counted under no kind: 0xff was a
+                        // sentinel standing for a byte that was not read.
+                        let kind = frame.body.first().copied();
                         judge::judge(&mut stream, frame, &door);
-                        let n = served[kind as usize]
-                            .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
-                            + 1;
-                        if n.is_power_of_two() {
-                            eprintln!("  reflex act {kind:02x} served {n}");
+                        if let Some(kind) = kind {
+                            let n = served[kind as usize]
+                                .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+                                + 1;
+                            if n.is_power_of_two() {
+                                eprintln!("  reflex act {kind:02x} served {n}");
+                            }
                         }
                     }
                 }

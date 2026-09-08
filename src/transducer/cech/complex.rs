@@ -166,11 +166,12 @@ impl Complex {
         self.degrees.get(d as usize)?.get(key)
     }
 
-    /// A key in `by_key` is a stored cell. The degree is the layer.
-    pub(crate) fn stored_mut(&mut self, key: &[u8]) -> &mut Cell {
-        let d = *self.by_key.get(key).expect("by_key names a stored cell") as usize;
-        assert!(d < self.degrees.len(), "by_key degree is a live layer");
-        self.degrees[d].get_mut(key).expect("by_key names a stored cell")
+    /// A key in `by_key` names a stored cell in the layer of its degree.
+    /// `None` when it names none: a key with no cell is not reopened, and
+    /// was two panics and an assertion (§2.4).
+    pub(crate) fn stored_mut(&mut self, key: &[u8]) -> Option<&mut Cell> {
+        let d = *self.by_key.get(key)? as usize;
+        self.degrees.get_mut(d)?.get_mut(key)
     }
 
     /// Reopen a stored cell only when its coboundary coefficient moved.
@@ -180,7 +181,9 @@ impl Complex {
             return;
         };
         let coefficient = Self::store_coeff(coefficient);
-        let c = self.stored_mut(key);
+        let Some(c) = self.stored_mut(key) else {
+            return;
+        };
         match c.coefficient.projective_eq(&coefficient) {
             true => {}
             false => {

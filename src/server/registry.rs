@@ -263,12 +263,12 @@ impl TaskRegistry {
     pub fn overlay(&mut self, bytes: &[u8]) -> usize {
         let mut p = 0usize;
         if bytes.get(0..4) == Some(b"CUR1") {
-            if let Some(c) = bytes.get(4..8).map(|b| u32::from_le_bytes(b.try_into().unwrap()) as usize) {
+            if let Some(c) = bytes.get(4..8).and_then(|b| b.try_into().ok()).map(|b| u32::from_le_bytes(b) as usize) {
                 self.cursor = c % self.tasks.len().max(1);
             }
             p = 8;
         }
-        let Some(n) = bytes.get(p..p + 4).map(|b| u32::from_le_bytes(b.try_into().unwrap()) as usize)
+        let Some(n) = bytes.get(p..p + 4).and_then(|b| b.try_into().ok()).map(|b| u32::from_le_bytes(b) as usize)
         else {
             return 0;
         };
@@ -278,7 +278,7 @@ impl TaskRegistry {
             let Some(id) = take_addr(bytes, &mut p) else { break };
             let (Some(&settled), Some(count)) = (
                 bytes.get(p),
-                bytes.get(p + 1..p + 5).map(|b| u32::from_le_bytes(b.try_into().unwrap())),
+                bytes.get(p + 1..p + 5).and_then(|b| b.try_into().ok()).map(u32::from_le_bytes),
             ) else {
                 break;
             };
@@ -293,7 +293,7 @@ impl TaskRegistry {
             }
         }
         if bytes.get(p..p + 4) == Some(b"INT1") {
-            if let Some(c) = bytes.get(p + 4..p + 8).map(|b| u32::from_le_bytes(b.try_into().unwrap()) as usize) {
+            if let Some(c) = bytes.get(p + 4..p + 8).and_then(|b| b.try_into().ok()).map(|b| u32::from_le_bytes(b) as usize) {
                 self.intake_cursor = c.min(self.tasks.len());
             }
             if let Some(&d) = bytes.get(p + 8) {

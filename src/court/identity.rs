@@ -14,13 +14,11 @@ pub struct HyphaKey {
 
 impl HyphaKey {
     pub fn load_or_mint(path: &str) -> Self {
-        if let Ok(bytes) = std::fs::read(path) {
-            if bytes.len() == 32 {
-                let seed: [u8; 32] = bytes.as_slice().try_into().unwrap();
-                let sk = SigningKey::from_bytes(&seed);
-                let vk = sk.verifying_key();
-                return HyphaKey { sk, vk };
-            }
+        // A file of any other length is not a seed and is minted over.
+        if let Some(seed) = std::fs::read(path).ok().and_then(|b| <[u8; 32]>::try_from(b.as_slice()).ok()) {
+            let sk = SigningKey::from_bytes(&seed);
+            let vk = sk.verifying_key();
+            return HyphaKey { sk, vk };
         }
         let mut seed = [0u8; 32];
         OsRng.fill_bytes(&mut seed);

@@ -185,15 +185,16 @@ pub(crate) fn collapse<V>(slot: &mut Option<Box<Node<V>>>) {
     };
     let n0 = children[0].is_some();
     let n1 = children[1].is_some();
-    let has_end = end.is_some();
-    match (n0, n1, has_end) {
-        (false, false, true) => {
-            let (k, v) = *end.take().unwrap();
+    // The end is taken into the match, so the leaf arm holds it by value
+    // and the arms that leave the branch standing put it back (§2.4).
+    match (n0, n1, end.take()) {
+        (false, false, Some(e)) => {
+            let (k, v) = *e;
             *slot = Some(Box::new(Node::Leaf(k, v)));
         }
-        (true, false, false) => *slot = children[0].take(),
-        (false, true, false) => *slot = children[1].take(),
-        _ => {}
+        (true, false, None) => *slot = children[0].take(),
+        (false, true, None) => *slot = children[1].take(),
+        (_, _, taken) => *end = taken,
     }
 }
 

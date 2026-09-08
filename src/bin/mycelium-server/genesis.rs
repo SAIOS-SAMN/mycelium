@@ -135,22 +135,35 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
                 cover_measured = true;
                 mycelium::arc::cover_join(&mut cover, &fam);
             }
-            registry.lock().unwrap().register(task);
+            let Ok(mut reg) = registry.lock() else { continue };
+            reg.register(task);
             tasked += 1;
         }
+        // No snapshot is no state restored (a count of zero is a reading);
+        // a poisoned registry is a corpus not registered, and said (§2.4).
         let restored = std::fs::read(home.join("corpora").join("registry"))
             .or_else(|_| std::fs::read(format!("{state_path}.registry")))
-            .map(|b| registry.lock().unwrap().overlay(&b))
+            .ok()
+            .and_then(|b| registry.lock().ok().map(|mut r| r.overlay(&b)))
             .unwrap_or(0);
+        let unsolved = match registry.lock() {
+            Ok(reg) => reg.unsolved(),
+            Err(_) => {
+                eprintln!("[{tag}] corpus {} registry lock poisoned", corpus_dir.display());
+                continue;
+            }
+        };
         eprintln!(
-            "[{tag}] corpus registered: {tasked} tasks from {} ({} unsolved, {restored} settled states restored; intake continues under stroke budget)",
+            "[{tag}] corpus registered: {tasked} tasks from {} ({unsolved} unsolved, {restored} settled states restored; intake continues under stroke budget)",
             corpus_dir.display(),
-            registry.lock().unwrap().unsolved(),
         );
     }
 }
 {
-    let mut k = kernel.lock().unwrap();
+    let Ok(mut k) = kernel.lock() else {
+        eprintln!("[{tag}] kernel lock poisoned; no bond staked");
+        return;
+    };
     if cover_measured {
         k.set_genesis_cover(cover);
         if k.treasury().bond_of(&vk).is_none() {

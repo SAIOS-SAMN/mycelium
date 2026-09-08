@@ -157,7 +157,7 @@ pub fn decode_percept(body: &[u8]) -> Option<Percept> {
         p += 4;
     }
     let mut proof = Vec::new();
-    if let Some(n) = body.get(p..p + 4).map(|x| u32::from_le_bytes(x.try_into().unwrap()) as usize) {
+    if let Some(n) = body.get(p..p + 4).and_then(|x| x.try_into().ok()).map(|x| u32::from_le_bytes(x) as usize) {
         p += 4;
         for _ in 0..n {
             proof.push(crate::anastome::dialogue::read_cites(body, &mut p)?);

@@ -116,7 +116,7 @@ pub fn encode_docket_reply_paged(
 /// older reply: none).
 pub fn decode_settlements(body: &[u8]) -> Vec<Settlement> {
     let Some((_, mut p)) = decode_dockets_at(body) else { return Vec::new() };
-    let Some(n) = body.get(p..p + 4).map(|b| u32::from_le_bytes(b.try_into().unwrap()) as usize) else { return Vec::new() };
+    let Some(n) = body.get(p..p + 4).and_then(|b| b.try_into().ok()).map(|b| u32::from_le_bytes(b) as usize) else { return Vec::new() };
     p += 4;
     let mut out = Vec::new();
     for _ in 0..n {
@@ -127,9 +127,9 @@ pub fn decode_settlements(body: &[u8]) -> Vec<Settlement> {
         let Some(cites) = read_cites(body, &mut p) else { break };
         let Some(before) = read_mu(body, &mut p) else { break };
         let Some(after) = read_mu(body, &mut p) else { break };
-        let Some(k) = body.get(p..p + 8).map(|b| u64::from_le_bytes(b.try_into().unwrap())) else { break };
+        let Some(k) = body.get(p..p + 8).and_then(|b| b.try_into().ok()).map(u64::from_le_bytes) else { break };
         p += 8;
-        let Some(tu) = body.get(p..p + 8).map(|b| u64::from_le_bytes(b.try_into().unwrap())) else { break };
+        let Some(tu) = body.get(p..p + 8).and_then(|b| b.try_into().ok()).map(u64::from_le_bytes) else { break };
         p += 8;
         out.push(Settlement { listing, chain, voice, cites, before, after, k, t_universal: tu });
     }
@@ -140,7 +140,7 @@ pub fn decode_settlements(body: &[u8]) -> Vec<Settlement> {
 /// Absent on an older reply.
 pub fn decode_cavities(body: &[u8]) -> Vec<Vec<u8>> {
     let Some((_, mut p)) = decode_dockets_at(body) else { return Vec::new() };
-    let Some(ns) = body.get(p..p + 4).map(|b| u32::from_le_bytes(b.try_into().unwrap()) as usize) else {
+    let Some(ns) = body.get(p..p + 4).and_then(|b| b.try_into().ok()).map(|b| u32::from_le_bytes(b) as usize) else {
         return Vec::new();
     };
     p += 4;
@@ -158,13 +158,13 @@ pub fn decode_cavities(body: &[u8]) -> Vec<Vec<u8>> {
             p += 8;
         }
     }
-    let Some(n) = body.get(p..p + 4).map(|b| u32::from_le_bytes(b.try_into().unwrap()) as usize) else {
+    let Some(n) = body.get(p..p + 4).and_then(|b| b.try_into().ok()).map(|b| u32::from_le_bytes(b) as usize) else {
         return Vec::new();
     };
     p += 4;
     let mut out = Vec::with_capacity(n.min(64));
     for _ in 0..n {
-        let Some(el) = body.get(p..p + 4).map(|b| u32::from_le_bytes(b.try_into().unwrap()) as usize) else {
+        let Some(el) = body.get(p..p + 4).and_then(|b| b.try_into().ok()).map(|b| u32::from_le_bytes(b) as usize) else {
             break;
         };
         p += 4;

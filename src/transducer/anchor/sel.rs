@@ -99,23 +99,20 @@ impl Sel {
                 if sup.is_empty() {
                     return sup;
                 }
+                // The extremum of a non-empty support exists; an empty one
+                // was returned above, and selects nothing here (§2.4).
+                let rows = || sup.iter().map(|(r, _)| *r);
+                let cols = || sup.iter().map(|(_, c)| *c);
+                let extremum = match axis {
+                    0 => rows().min(),
+                    1 => rows().max(),
+                    2 => cols().min(),
+                    _ => cols().max(),
+                };
+                let Some(m) = extremum else { return Vec::new() };
                 match axis {
-                    0 => {
-                        let m = sup.iter().map(|(r, _)| *r).min().unwrap();
-                        sup.into_iter().filter(|(r, _)| *r == m).collect()
-                    }
-                    1 => {
-                        let m = sup.iter().map(|(r, _)| *r).max().unwrap();
-                        sup.into_iter().filter(|(r, _)| *r == m).collect()
-                    }
-                    2 => {
-                        let m = sup.iter().map(|(_, c)| *c).min().unwrap();
-                        sup.into_iter().filter(|(_, c)| *c == m).collect()
-                    }
-                    _ => {
-                        let m = sup.iter().map(|(_, c)| *c).max().unwrap();
-                        sup.into_iter().filter(|(_, c)| *c == m).collect()
-                    }
+                    0 | 1 => sup.into_iter().filter(|(r, _)| *r == m).collect(),
+                    _ => sup.into_iter().filter(|(_, c)| *c == m).collect(),
                 }
             }
             Sel::Inter(a, b) => {
@@ -156,9 +153,8 @@ impl Sel {
                 let target = match code {
                     0 | 2 => vals.iter().max(),
                     _ => vals.iter().min(),
-                }
-                .copied()
-                .unwrap();
+                };
+                let Some(target) = target.copied() else { return Vec::new() };
                 let winners: Vec<&Vec<(i64, i64)>> = comps
                     .iter()
                     .zip(&vals)
@@ -176,13 +172,11 @@ impl Sel {
                     return Vec::new();
                 }
                 let corner = |s: &[(i64, i64)]| {
-                    (
-                        s.iter().map(|(r, _)| *r).min().unwrap(),
-                        s.iter().map(|(_, c)| *c).min().unwrap(),
-                    )
+                    Some((s.iter().map(|(r, _)| *r).min()?, s.iter().map(|(_, c)| *c).min()?))
                 };
-                let (ar, ac) = corner(&sa);
-                let (br, bc) = corner(&sb);
+                let (Some((ar, ac)), Some((br, bc))) = (corner(&sa), corner(&sb)) else {
+                    return Vec::new();
+                };
                 let (dr, dc) = (ar - br, ac - bc);
                 let shifted: Vec<(i64, i64)> =
                     sorted(sb.iter().map(|(r, c)| (r + dr, c + dc)).collect());

@@ -135,7 +135,7 @@ impl ReceiptChain {
             prev_receipt_hash: prev,
             chain_hash,
         });
-        Some(self.receipts.last().unwrap())
+        self.receipts.last()
     }
 
     /// Verify the whole chain: indices monotone from 0, every link's parent hash

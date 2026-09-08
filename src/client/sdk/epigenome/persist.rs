@@ -28,7 +28,9 @@ impl Epigenome {
         if tag != b"GEN3" {
             return false;
         }
-        let n = u32::from_le_bytes(bytes[4..8].try_into().unwrap()) as usize;
+        let Some(n) = bytes.get(4..8).and_then(|b| b.try_into().ok()).map(|b| u32::from_le_bytes(b) as usize) else {
+            return false;
+        };
         if n > bytes.len().saturating_sub(8) / 5 {
             return false; // untrusted count vs remaining bytes
         }
@@ -36,8 +38,10 @@ impl Epigenome {
         let mut pos = 8usize;
         let mut skipped = 0usize;
         for _ in 0..n {
-            let Some(l4) = bytes.get(pos..pos + 4) else { break };
-            let len = u32::from_le_bytes(l4.try_into().unwrap()) as usize;
+            let Some(len) = bytes.get(pos..pos + 4).and_then(|b| b.try_into().ok()).map(|b| u32::from_le_bytes(b) as usize)
+            else {
+                break;
+            };
             pos += 4;
             if len > bytes.len().saturating_sub(pos) {
                 break;

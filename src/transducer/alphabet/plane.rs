@@ -118,7 +118,7 @@ impl PlaneForm {
     /// quarter-turns. The orientation letter of the plane group; there is
     /// no reflection letter.
     pub fn sheet_word() -> Word {
-        let id = LetterId::quarter((1, 2)).expect("plane (1,2) is a letter");
+        let id = LetterId::SHEET;
         Word::raw(vec![(id, false), (id, false)])
     }
 

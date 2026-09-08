@@ -44,7 +44,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             return true;
         }
         let hear = {
-            let mut roots = door.roots.lock().unwrap();
+            let Ok(mut roots) = door.roots.lock() else { return true };
             note_root(&mut roots, &task, solver, spoken_at)
         };
         match hear {
@@ -59,21 +59,13 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 speak_root_locked(&door.router, &door.nerve_tx, &door.id, &task, &solver, Some(from), spoken_at);
             }
             RootHear::Second => {
-                let voices: Vec<Vec<u8>> = {
-                    let sy = door.syllabus.lock().unwrap();
-                    sy.served.fiber(mycelium::network::nerve::ROOT).map(|(v, _)| v).collect()
-                };
-                if let Ok(mut sy) = door.syllabus.lock() {
-                    for v in voices {
-                        sy.served.insert(v, 0);
-                    }
-                }
+                rewind_syllabus(door);
                 eprintln!("  ROOT CONSILIENT task {:02x}{:02x}… two voices; syllabus rewound", task[0], task[1]);
                 speak_root_locked(&door.router, &door.nerve_tx, &door.id, &task, &solver, Some(from), spoken_at);
             }
         }
         let reply = {
-            let roots = door.roots.lock().unwrap();
+            let Ok(roots) = door.roots.lock() else { return true };
             dialogue::encode_root_reply(
                 roots.get(task.as_bytes()).and_then(|v| {
                     v.fiber(mycelium::network::nerve::ROOT)
@@ -89,7 +81,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
     if kind == dialogue::ACT_EVIDENCE {
         if let Some((_dvoice, items)) = dialogue::decode_evidence_deposit(&frame.body) {
             let accepted = {
-                let mut k = door.kernel.lock().unwrap();
+                let Ok(mut k) = door.kernel.lock() else { return true };
                 items
                     .into_iter()
                     .filter(|e| {
@@ -103,7 +95,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         }
         let Some(_evoice) = dialogue::decode_evidence_request(&frame.body) else { return true };
         let items: Vec<_> = {
-            let k = door.kernel.lock().unwrap();
+            let Ok(k) = door.kernel.lock() else { return true };
             k.anchor_evidence().iter().take(32).cloned().collect()
         };
         let reply = Frame { lane: frame.lane, body: dialogue::encode_evidence_reply(&items) };
@@ -113,7 +105,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
     if kind == dialogue::ACT_TASK {
         let Some(_tvoice) = dialogue::decode_task_request(&frame.body) else { return true };
         let dispatched = {
-            let mut reg = door.registry.lock().unwrap();
+            let Ok(mut reg) = door.registry.lock() else { return true };
             reg.dispatch().map(|(tid, task)| (tid, task.clone()))
         };
         let body = match &dispatched {
@@ -138,7 +130,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             mycelium::transducer::element::Element::from_bytes(b, &mut p)
         });
         let withheld = {
-            let reg = door.registry.lock().unwrap();
+            let Ok(reg) = door.registry.lock() else { return true };
             reg.withheld(&tid)
         };
         if let Some(rule) = rule_elem.as_ref() {
@@ -154,7 +146,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             }
         }
         let (code, mu) = {
-            let mut reg = door.registry.lock().unwrap();
+            let Ok(mut reg) = door.registry.lock() else { return true };
             match reg.settle(&tid, &outputs) {
                 mycelium::registry::SolveYield::Bounty(tension) => {
                     let snap = reg.snapshot();
@@ -169,11 +161,11 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                     }
                     drop(reg);
                     let paid = {
-                        let mut k = door.kernel.lock().unwrap();
+                        let Ok(mut k) = door.kernel.lock() else { return true };
                         k.pay_solve(&tid, svoice, tension, rule_elem.as_ref(), &withheld)
                     };
                     let hear = {
-                        let mut roots = door.roots.lock().unwrap();
+                        let Ok(mut roots) = door.roots.lock() else { return true };
                         note_root(&mut roots, &tid, svoice, 0)
                     };
                     match hear {
@@ -184,10 +176,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                         }
                     }
                     if matches!(hear, RootHear::Second) {
-                        let voices: Vec<Vec<u8>> = door.syllabus.lock().unwrap().served.fiber(mycelium::network::nerve::ROOT).map(|(v, _)| v).collect();
-                        if let Ok(mut sy) = door.syllabus.lock() {
-                            for v in voices { sy.served.insert(v, 0); }
-                        }
+                        rewind_syllabus(door);
                         eprintln!("  ROOT CONSILIENT task {:02x}{:02x}… two voices; syllabus rewound", tid[0], tid[1]);
                     }
                     (dialogue::SOLVE_BOUNTY, paid)
@@ -195,18 +184,15 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 mycelium::registry::SolveYield::VerifyFloor => {
                     drop(reg);
                     let paid = {
-                        let mut k = door.kernel.lock().unwrap();
+                        let Ok(mut k) = door.kernel.lock() else { return true };
                         k.pay_solve(&tid, svoice, [0, 0, 1, 0], rule_elem.as_ref(), &withheld)
                     };
                     let hear = {
-                        let mut roots = door.roots.lock().unwrap();
+                        let Ok(mut roots) = door.roots.lock() else { return true };
                         note_root(&mut roots, &tid, svoice, 0)
                     };
                     if matches!(hear, RootHear::Second) {
-                        let voices: Vec<Vec<u8>> = door.syllabus.lock().unwrap().served.fiber(mycelium::network::nerve::ROOT).map(|(v, _)| v).collect();
-                        if let Ok(mut sy) = door.syllabus.lock() {
-                            for v in voices { sy.served.insert(v, 0); }
-                        }
+                        rewind_syllabus(door);
                         speak_root_locked(&door.router, &door.nerve_tx, &door.id, &tid, &svoice, None, 0);
                         eprintln!("  ROOT CONSILIENT task {:02x}{:02x}… two voices; syllabus rewound", tid[0], tid[1]);
                     }
@@ -381,7 +367,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
     if kind == dialogue::ACT_REFINE {
         let Some((rvoice, word, cites)) = dialogue::decode_refine(&frame.body) else { return true };
         let (code, mu) = {
-            let mut k = door.kernel.lock().unwrap();
+            let Ok(mut k) = door.kernel.lock() else { return true };
             match k.try_refine(&word, rvoice, &cites) {
                 Some(paid) => (dialogue::REFINE_ACCEPTED, paid),
                 None => (dialogue::REFINE_NOTHING, [0; 4]),
@@ -398,14 +384,28 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
     false
 }
 
+/// ROOT CONSILIENT: every voice's syllabus cursor returns to the start, so
+/// the proven word reaches each of them on its next page (26). Read and
+/// rewound under one lock; it read the fibre under one lock and wrote under
+/// a second, and panicked on a poisoned first (§2.4).
+fn rewind_syllabus(door: &Door) {
+    let Ok(mut sy) = door.syllabus.lock() else { return };
+    let voices: Vec<Vec<u8>> = sy.served.fiber(mycelium::network::nerve::ROOT).map(|(v, _)| v).collect();
+    for v in voices {
+        sy.served.insert(v, 0);
+    }
+}
+
+/// Does the listing home on this hypha. A poisoned mesh lock is no reading
+/// of the cover: the listing is not taken here (§2.4, rule 11).
 pub(crate) fn homes_here(mesh: &Mesh, kernel: &Mutex<Kernel>, inv: &mycelium::transducer::stalk::Invariant, mag: &[u64; 4]) -> bool {
     let room = match kernel.lock() {
         Ok(k) => room64(k.lane_room()),
         Err(_) => return false,
     };
-    let c = mesh.cover.lock().unwrap();
-    let r = mesh.rooms.lock().unwrap();
-    let a = mesh.addrs.lock().unwrap();
+    let (Ok(c), Ok(r), Ok(a)) = (mesh.cover.lock(), mesh.rooms.lock(), mesh.addrs.lock()) else {
+        return false;
+    };
     home(&c, inv, mag, &r, &a, Some((&mesh.vk, &room, &mesh.bind))).0 == mesh.vk
 }
 
@@ -479,7 +479,11 @@ pub(crate) fn relocate_corpus(
     }
 }
 
-pub(crate) fn demand_cover_home(mesh: &Mesh, kernel: &Mutex<Kernel>, chain: &[(i64, i64, u8, u8)]) -> ([u8; 32], String) {
+/// The hypha a demand's residual homes on, read off the cover. `None` when a
+/// mesh lock is poisoned: no home is read, so none is routed to (§2.4); it
+/// panicked, and a caller that took "here" for an unread cover would route
+/// by a default (rule 11).
+pub(crate) fn demand_cover_home(mesh: &Mesh, kernel: &Mutex<Kernel>, chain: &[(i64, i64, u8, u8)]) -> Option<([u8; 32], String)> {
     let residual = mycelium::transducer::element::from_residual(&chain.to_vec());
     let inv = mycelium::transducer::stalk::invariant_of(&residual);
     let mag = residual.magnitude();
@@ -489,10 +493,10 @@ pub(crate) fn demand_cover_home(mesh: &Mesh, kernel: &Mutex<Kernel>, chain: &[(i
         Err(_) => None,
     };
     let self_id = room.as_ref().map(|room| (&mesh.vk, room, mesh.bind.as_str()));
-    let c = mesh.cover.lock().unwrap();
-    let r = mesh.rooms.lock().unwrap();
-    let a = mesh.addrs.lock().unwrap();
-    home(&c, &inv, &mag, &r, &a, self_id)
+    let (Ok(c), Ok(r), Ok(a)) = (mesh.cover.lock(), mesh.rooms.lock(), mesh.addrs.lock()) else {
+        return None;
+    };
+    Some(home(&c, &inv, &mag, &r, &a, self_id))
 }
 
 /// The RENDEZVOUS for a content key: XOR-closest known hypha to the key's

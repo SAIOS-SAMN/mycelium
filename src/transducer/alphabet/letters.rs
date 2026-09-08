@@ -31,6 +31,14 @@ pub(crate) const SLOT_PLANES_13: [(u8, u8); 4] = [(0, 1), (0, 2), (0, 3), (1, 2)
 
 impl LetterId {
     pub const IDENTITY: LetterId = LetterId(0);
+    /// The quarter turn on the sheet plane `(1, 2)` (slot 4): two of them
+    /// are the orientation character of the sensor plane; there is no
+    /// reflection letter.
+    pub const SHEET: LetterId = LetterId(4);
+    /// The (3,4,5) rotor on the sensor plane `(0, 1)` (slot 7).
+    pub const PRIME_5: LetterId = LetterId(7);
+    /// The (5,12,13) rotor on the sensor plane `(0, 1)` (slot 13).
+    pub const PRIME_13: LetterId = LetterId(13);
 
     /// Refuses `id >= 17` typed; the range comparison lives here.
     pub const fn try_new(id: u8) -> Option<LetterId> {
@@ -147,49 +155,54 @@ pub(crate) const RELATOR_N: usize = 12;
 /// planes commute, a sheet conjugates a rotation to its inverse, prime
 /// letters have infinite order.
 pub fn relators() -> [Relator; RELATOR_N] {
-    let q = |plane: (u8, u8)| LetterId::quarter(plane).expect("pair plane");
+    // The letters are named by slot (law VIII), never searched for by
+    // plane: a quarter turn in slot `i` of the six planes is letter `1 + i`.
+    // It looked each one up and panicked on a plane it declared itself (§2.4).
+    let quarter_in = |slot: usize| LetterId(1 + slot as u8);
     let mut out: [Relator; RELATOR_N] = std::array::from_fn(|_| Relator {
         kind: RelatorKind::PrimeInfinite,
         plane: None,
         word: Word::identity(),
     });
     let mut i = 0usize;
-    for &plane in &SLOT_PLANES_SIX {
-        let id = q(plane);
+    for (slot, &plane) in SLOT_PLANES_SIX.iter().enumerate() {
+        let id = quarter_in(slot);
         // q^4 = 1 — stored as the raw tape of four quarters, then reduced
         // to the identity vertex.
         let w = Word::from_letters(&[(id, false), (id, false), (id, false), (id, false)]);
         out[i] = Relator { kind: RelatorKind::QuarterOrderFour, plane: Some(plane), word: w };
         i += 1;
     }
-    let complements: [((u8, u8), (u8, u8)); 3] = [((0, 1), (2, 3)), ((0, 2), (1, 3)), ((0, 3), (1, 2))];
+    // Complementary planes commute: (0,1) with (2,3), (0,2) with (1,3),
+    // (0,3) with (1,2) — as slots of `SLOT_PLANES_SIX`.
+    let complements: [(usize, usize); 3] = [(0, 5), (1, 4), (2, 3)];
     for &(a, b) in &complements {
-        let qa = q(a);
-        let qb = q(b);
+        let qa = quarter_in(a);
+        let qb = quarter_in(b);
         // aba^{-1}b^{-1} = 1
         let w = Word::from_letters(&[(qa, false), (qb, false), (qa, true), (qb, true)]);
-        out[i] = Relator { kind: RelatorKind::PlaneCommute, plane: Some(a), word: w };
+        out[i] = Relator { kind: RelatorKind::PlaneCommute, plane: Some(SLOT_PLANES_SIX[a]), word: w };
         i += 1;
     }
-    let sheet = LetterId::quarter((1, 2)).expect("sheet plane");
+    let sheet = LetterId::SHEET;
     // S² = 1: four quarter-turns on the sheet plane reduce to the identity.
     let w = Word::from_letters(&[(sheet, false), (sheet, false), (sheet, false), (sheet, false)]);
     out[i] = Relator {
         kind: RelatorKind::SheetConjugate,
-        plane: Some((1, 2)),
+        plane: plane_of(sheet),
         word: w,
     };
     i += 1;
     out[i] = Relator {
         kind: RelatorKind::PrimeInfinite,
-        plane: Some((0, 1)),
-        word: Word::from_letters(&[(LetterId::pythagorean_5((0, 1)).unwrap(), false)]),
+        plane: plane_of(LetterId::PRIME_5),
+        word: Word::from_letters(&[(LetterId::PRIME_5, false)]),
     };
     i += 1;
     out[i] = Relator {
         kind: RelatorKind::PrimeInfinite,
-        plane: Some((0, 1)),
-        word: Word::from_letters(&[(LetterId::pythagorean_13((0, 1)).unwrap(), false)]),
+        plane: plane_of(LetterId::PRIME_13),
+        word: Word::from_letters(&[(LetterId::PRIME_13, false)]),
     };
     out
 }

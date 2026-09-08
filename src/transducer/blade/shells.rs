@@ -77,10 +77,11 @@ pub fn enclosed_interior(cells: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
         return Vec::new();
     }
     let have = occupy(cells);
-    let r0 = cells.iter().map(|c| c.0).min().unwrap();
-    let r1 = cells.iter().map(|c| c.0).max().unwrap();
-    let c0 = cells.iter().map(|c| c.1).min().unwrap();
-    let c1 = cells.iter().map(|c| c.1).max().unwrap();
+    let rows = || cells.iter().map(|c| c.0);
+    let cols = || cells.iter().map(|c| c.1);
+    let (Some(r0), Some(r1), Some(c0), Some(c1)) = (rows().min(), rows().max(), cols().min(), cols().max()) else {
+        return Vec::new();
+    };
     let mut escape = crate::network::nerve::Keyed::new();
     let mut work = Vec::new();
     for r in r0..=r1 {
