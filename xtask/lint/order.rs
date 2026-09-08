@@ -32,7 +32,6 @@ const COMPARES: &[(&str, &str)] = &[
 /// the list is empty. Same device as `AWAITING_SPLIT` carried through Stage
 /// 8b. A row naming a file the gate would not have hit is itself a hit.
 const AWAITING_READING: &[(&str, &str)] = &[
-    ("network/nerve/cover.rs", "S9.6: room_dominates returns the shortfall"),
 ];
 
 pub(crate) const GATE: Gate = Gate {

@@ -302,12 +302,18 @@ fn addr_of(
     addrs.get(id).cloned()
 }
 
-/// Dershowitz–Manna dominance on occupied lanes: `a` wins only when it is
-/// at least as large on every occupied lane and larger on one. Inverse of
-/// `economy::lane_moves` (more remaining room, never a lane ordering).
-fn room_dominates(a: &[u64; 4], b: &[u64; 4], lanes: &[u8]) -> bool {
-    lanes.iter().all(|&l| a[l as usize] >= b[l as usize])
-        && lanes.iter().any(|&l| a[l as usize] > b[l as usize])
+/// HOW MUCH ROOM `a` HAS BEYOND `b`, per OCCUPIED lane: `a[l] − b[l]`,
+/// signed, paired with the lane it is read on. Negative is a SHORTFALL —
+/// `a` has less room there.
+///
+/// A lane the demand does not occupy is not read at all: comparing room on
+/// a lane nothing is asked of is not a comparison, and dropping those lanes
+/// from the reading says so more plainly than passing them through as zero.
+fn room_reading(a: &[u64; 4], b: &[u64; 4], lanes: &[u8]) -> Vec<(u8, i64)> {
+    lanes
+        .iter()
+        .map(|&l| (l, a[l as usize] as i64 - b[l as usize] as i64))
+        .collect()
 }
 
 /// Home by incidence: intersection of cover fibers on every occupied lane,
@@ -350,11 +356,24 @@ pub fn home(
         match best {
             None => *best = Some((id, addr, room)),
             Some((bid, _, broom)) => {
-                if room_dominates(&room, broom, &lanes) {
+                // Dershowitz-Manna on the occupied lanes, READ rather than
+                // asked: the candidate takes the place when it falls short
+                // on no lane and has more room on one. The shortfall is the
+                // reading, and this is where it is spent.
+                let short = |r: &[(u8, i64)]| r.iter().any(|(_, d)| *d < 0);
+                let spare = |r: &[(u8, i64)]| r.iter().any(|(_, d)| *d > 0);
+                let mine = room_reading(&room, broom, &lanes);
+                if !short(&mine) && spare(&mine) {
                     *best = Some((id, addr, room));
-                } else if !room_dominates(broom, &room, &lanes) && id < *bid {
-                    // Equal or incomparable: identity is the last tiebreak.
-                    *best = Some((id, addr, room));
+                } else {
+                    // The incumbent may not dominate either -- equal room, or
+                    // each short on a lane the other is not. Neither is
+                    // worse, so identity decides, as a TIEBREAK and never as
+                    // a measure.
+                    let theirs = room_reading(broom, &room, &lanes);
+                    if (short(&theirs) || !spare(&theirs)) && id < *bid {
+                        *best = Some((id, addr, room));
+                    }
                 }
             }
         }
