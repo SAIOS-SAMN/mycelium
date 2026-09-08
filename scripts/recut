@@ -52,16 +52,34 @@ for h in "${HYPHAE[@]}"; do
   timeout 30 "$BIN" --home "$ROOT/$h" --recut || true
 done
 
+# 45.5: H_genesis is written ONCE by the first hypha started on a fresh
+# state, and the binary mints only when told (`--mint-genesis`). The unit
+# starts the binary with `--home` and nothing else (§10), so the flag is
+# passed here, to a ONE-SHOT run of the binary in the foreground of this
+# script: it needs a first receipt to hash — the corpus intake seals one on
+# its first listing — and the run ends when the line appears or the bound
+# is spent. The unit then boots on the mesh record that run signed, which
+# is how the origin reaches every restart without a flag on the unit. It
+# started the unit and waited for a line the unit could never write: the
+# fleet came up with `genesis unwritten` on every node (2026-09-08).
 say "minting on $MINTER"
-systemctl --user start "mycelium-server@$MINTER"
-# The minter must hold its origin before a peer asks, or the peer adopts
-# nothing and the sweep repeats. One aperture is enough; the loop below
-# waits for the line rather than guessing a duration.
+MINT_LOG="$ROOT/$MINTER/mint.log"
+timeout 180 "$BIN" --home "$ROOT/$MINTER" --mint-genesis >"$MINT_LOG" 2>&1 &
+MINT_PID=$!
 for _ in $(seq 1 60); do
-  if journalctl --user -u "mycelium-server@$MINTER" --since "-2 min" -o cat 2>/dev/null \
-     | grep -q "court genesis .* written"; then break; fi
+  if grep -q "court genesis .* written" "$MINT_LOG" 2>/dev/null; then break; fi
   sleep 2
 done
+# SIGINT: the binary's handler persists the ledger and exits; the mesh
+# record was signed when the genesis was written.
+kill -INT "$MINT_PID" 2>/dev/null || true
+wait "$MINT_PID" 2>/dev/null || true
+if grep -q "court genesis .* written" "$MINT_LOG" 2>/dev/null; then
+  say "genesis written: $(grep -m1 'court genesis .* written' "$MINT_LOG")"
+else
+  say "genesis NOT written within the bound — read $MINT_LOG before starting the rest"
+fi
+systemctl --user start "mycelium-server@$MINTER"
 
 say "starting the rest"
 for h in "${HYPHAE[@]}"; do
