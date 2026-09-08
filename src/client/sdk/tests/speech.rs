@@ -1,8 +1,70 @@
-// 24.3, 45.4 — WHAT THE HYPHA SAID: how a mind reads a speech reply, and
-// what it does not read into one that says less than it asked about.
+// 24.3, 45.4 — WHAT THE HYPHA SAID: how a mind reads a speech reply, what
+// it does not read into one that says less than it asked about, and where
+// it looks to know whether it has spoken a vertex before.
 
-use crate::client::sdk::entity::utter::read_speech_reply;
+use crate::client::sdk::entity::utter::{read_speech_reply, vertex_stratum};
 use crate::anastome::dialogue;
+
+/// 24.3, law 3: A MIND LOOKS IN ONE STRATUM, not through everything it has
+/// ever said. `already_taught` walked the whole of `taught_up` running an
+/// exact `same_vertex` against every word this mind had ever uttered, on
+/// every sentence of every speak — law 3's "no loop over pairs the carrier
+/// does not already name", and its own answer, "the carrier is missing a
+/// key and that key is the first thing to write". On a mesh whose voices
+/// all produce language, that walk grew with the mesh's whole output.
+///
+/// The key must be NECESSARY, or the mind would speak a word twice: two
+/// words that are one vertex must land in one stratum. That is what this
+/// asserts, since it is the property a wrong key would break silently.
+#[test]
+fn one_vertex_lies_in_one_stratum_however_it_is_spelled() {
+    use crate::transducer::alphabet::{LetterId, Word};
+    use crate::transducer::element::{from_connection, identity_versor, translator_versor};
+
+    let q = LetterId::quarter((0, 1)).expect("the quarter turn");
+    let p5 = LetterId::pythagorean_5((0, 1)).expect("a prime on the same plane");
+    let conn = |w: &Word, shift: i64| {
+        from_connection(w, &translator_versor(shift, 0), &[], &Vec::new(), [1, 0, 0, 0])
+            .expect("a connection on the plane")
+    };
+
+    // ONE VERTEX, TWO PLACES. Same rotor, different carriage: not the same
+    // vertex, but they must share a stratum or the exact test never sees
+    // the pair it has to decide.
+    let here = conn(&Word::from_letters(&[(q, false)]), 0);
+    let there = conn(&Word::from_letters(&[(q, false)]), 5);
+    assert_eq!(
+        vertex_stratum(&here),
+        vertex_stratum(&there),
+        "the same rotor is one stratum wherever it is placed"
+    );
+    assert!(!here.same_vertex(&there), "and the exact test still tells them apart");
+
+    // A DIFFERENT ROTOR IS A DIFFERENT STRATUM, so the fiber a lookup
+    // reads is the words at one vertex and not the mind's whole output.
+    let other = conn(&Word::from_letters(&[(p5, false)]), 0);
+    assert_ne!(
+        vertex_stratum(&here),
+        vertex_stratum(&other),
+        "another rotor is another stratum"
+    );
+
+    // The key is over the ROTOR, not the tape: four quarter turns are the
+    // identity projectively, so a word spelled long lands where the word
+    // spelled short does. A key over spelling would let the mind utter one
+    // vertex twice under two spellings, which is 1.5's fork exactly.
+    let long = conn(
+        &Word::from_letters(&[(q, false), (q, false), (q, false), (q, false), (q, false)]),
+        0,
+    );
+    assert!(long.same_vertex(&here), "five quarter turns are one, projectively");
+    assert_eq!(
+        vertex_stratum(&long),
+        vertex_stratum(&here),
+        "so they lie in one stratum, and the mind does not say it twice"
+    );
+    let _ = identity_versor();
+}
 
 /// A CODE THE HYPHA DID NOT SEND IS NOT AN OUTCOME. The loop read
 /// `got.get(gi).copied().unwrap_or(SPEECH_STOOD)`, so a reply shorter than

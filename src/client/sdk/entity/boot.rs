@@ -22,6 +22,7 @@ impl Entity {
             epigenome: Epigenome::new(),
             refine_cursor: 0,
             taught_up: crate::network::nerve::Keyed::new(),
+            taught_at: crate::network::nerve::Keyed::new(),
             discordance: 0,
             discordance_measured: false,
             obstructions: crate::network::nerve::Keyed::new(),

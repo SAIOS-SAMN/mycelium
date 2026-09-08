@@ -180,7 +180,7 @@ impl Entity {
                 }
                 used += bytes.len();
                 if self.session.speak_keyed(addr, dialogue::encode_adopt(&voice, &bytes)).is_ok() {
-                    self.taught_up.insert(addr, word.clone());
+                    self.file_taught(&word);
                     taught += 1;
                 }
             }

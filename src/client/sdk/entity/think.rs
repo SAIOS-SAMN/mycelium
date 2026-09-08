@@ -85,7 +85,7 @@ impl Entity {
                 residual.len(),
                 cites.len()
             );
-            self.taught_up.insert(&addr, word.clone());
+            self.file_taught(&word);
             let mu = crate::transducer::element::measure_lanes(&residual);
             eprintln!(
                 "  uttered {:02x}{:02x}… standing Stood K {k} lanes {mu:?}",

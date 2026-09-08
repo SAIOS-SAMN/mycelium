@@ -269,6 +269,24 @@ pub struct Entity {
     /// decided (installed, derivable, or refused). Keyed by transport
     /// address; membership is vertex equality, never the digest alone.
     pub(crate) taught_up: crate::network::nerve::Keyed<Element>,
+    /// `taught_up` INDEXED BY VERTEX STRATUM: the M1 key of a word's rotor
+    /// (or its canonical chain, where it has no letters) to the addresses
+    /// uttered at it.
+    ///
+    /// `already_taught` walked the whole of `taught_up` doing an exact
+    /// `same_vertex` against every word this mind had ever uttered, on
+    /// every sentence of every speak — law 3's "no loop over pairs the
+    /// carrier does not already name", and its answer: "the carrier is
+    /// missing a key and that key is the first thing to write". On a mesh
+    /// whose voices all produce language, that walk grew with the mesh's
+    /// whole output.
+    ///
+    /// The key is NECESSARY and not sufficient: `same_vertex` requires the
+    /// rotors to be projectively equal, so two words that are one vertex
+    /// share this key, and the exact test still decides over the fiber it
+    /// names. That is A21 §3's own shape — "equal keys are necessary for
+    /// two classes to be the same; sufficiency … is `solve_gauge_between`".
+    pub(crate) taught_at: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// The discordance measured at the last sync (strata whose roots differ
     /// from the hypha's); zero is a glued genome — the condition under which
     /// this entity speaks proofs. Unmeasured: the open thought's boundary

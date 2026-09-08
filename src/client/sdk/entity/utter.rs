@@ -40,7 +40,46 @@ pub(crate) fn read_speech_reply(codes: &mut [u8], got: &[u8]) -> Vec<usize> {
     admitted
 }
 
+/// THE STRATUM A WORD'S VERTEX LIES IN: the M1 key of its rotor where it
+/// has letters, its canonical chain where it does not, its address where it
+/// is a sentence.
+///
+/// Every one is a NECESSARY condition of `same_vertex`: that test requires
+/// the rotors to be projectively equal (M1), the canonical chains to be
+/// equal (A5), and it decides two sentence forms by address alone. So two
+/// words that are one vertex share this key, and a fiber read under it
+/// holds every candidate. It is not sufficient — the exact test still
+/// decides — which is A21 §3's own shape.
+pub(crate) fn vertex_stratum(word: &Element) -> Vec<u8> {
+    if word.is_sentence() {
+        return word.address().into_vec();
+    }
+    match word.letters() {
+        Some(l) => l.spelling.word.key().as_bytes().to_vec(),
+        None => {
+            let chain = crate::transducer::element::canonical_chain(word.sub())
+                .unwrap_or_else(|| word.sub().to_vec());
+            let mut out = Vec::with_capacity(chain.len() * 18);
+            for (r, c, b, a) in &chain {
+                out.extend_from_slice(&r.to_le_bytes());
+                out.extend_from_slice(&c.to_le_bytes());
+                out.push(*b);
+                out.push(*a);
+            }
+            out
+        }
+    }
+}
+
 impl Entity {
+    /// File an uttered word in both indices at once: by address, and in
+    /// the stratum its vertex lies in.
+    pub(crate) fn file_taught(&mut self, word: &Element) {
+        let addr = word.address();
+        self.taught_at.nested_insert(vertex_stratum(word), &addr, ());
+        self.taught_up.insert(addr, word.clone());
+    }
+
     pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)]) -> Cited {
         // A remainder is not a citation of itself: deconstruction reads
         // other words on the working atlas, never the chain under locate.
@@ -244,8 +283,8 @@ impl Entity {
             // step of this mind's clock (45.4). A refused utterance is not
             // an act and moves nothing.
             self.session.advance();
-            let e = &sentences[i];
-            self.taught_up.insert(e.address(), e.clone());
+            let e = sentences[i].clone();
+            self.file_taught(&e);
         }
         Ok(codes)
     }
@@ -260,12 +299,20 @@ impl Entity {
         if self.taught_up.contains(&word.address()) {
             return true;
         }
-        if self
-            .taught_up
-            .fiber(crate::network::nerve::ROOT)
-            .any(|(_, e)| e.same_vertex(word))
-        {
-            return true;
+        // THE STRATUM, THEN THE EXACT TEST. This walked the whole of
+        // `taught_up` running `same_vertex` against every word this mind
+        // had ever uttered, on every sentence of every speak (law 3, and
+        // its answer: the carrier was missing a key). `taught_at` names the
+        // words that COULD be one vertex with this one; the exact test
+        // decides over that fiber and nothing else.
+        let at = vertex_stratum(word);
+        if let Some(fiber) = self.taught_at.get(&at) {
+            let candidates: Vec<Vec<u8>> = fiber.fiber(crate::network::nerve::ROOT).map(|(k, _)| k).collect();
+            for a in candidates {
+                if self.taught_up.get(&a).is_some_and(|e| e.same_vertex(word)) {
+                    return true;
+                }
+            }
         }
         if self.epigenome.same_vertex_in_genome(word).is_some() {
             return true;
@@ -281,7 +328,7 @@ impl Entity {
     pub fn remember_spoken(&mut self, word: &Element) {
         let k = self.session.voice().k();
         self.epigenome.stand_dialect_at(word.clone(), k, self.now_tu());
-        self.taught_up.insert(word.address(), word.clone());
+        self.file_taught(word);
     }
 
     /// SPEAK A WORD as a one-sentence family. The word enters the dialect
@@ -305,8 +352,8 @@ impl Entity {
         }
         let bytes = word.to_bytes();
         let codes = self.speak(std::slice::from_ref(word))?;
-        self.taught_up.insert(addr, word.clone());
-        let _ = (voice, bytes);
+        self.file_taught(word);
+        let _ = (voice, bytes, addr);
         match codes.first().copied() {
             Some(dialogue::SPEECH_STOOD) | None => Ok(Utterance::Spoken),
             Some(dialogue::SPEECH_REFUSED) => Ok(Utterance::Silent),
