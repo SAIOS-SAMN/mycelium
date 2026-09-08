@@ -327,6 +327,26 @@ impl Kernel {
         [0; 4]
     }
 
+    /// 47.3, 13.9: WHAT THIS COURT HOLDS OF ITS OWN ON A CLASS — the Čech
+    /// section it wrote from its own perception, at its own vantage. This is
+    /// the second vantage a home's offer asks for, and it is the only thing
+    /// on this court that is one.
+    ///
+    /// It is emphatically NOT `word_at(offered_address)`. `glue_fetched`'s
+    /// `Admitted` arm calls `basis_push(spoken.clone(), peer)`, which files
+    /// the HOME'S OWN TAPE at the offered address, so reading that address
+    /// back returns the bytes the home just sent. A witness that answers
+    /// with them "can only confirm that a voice sent bytes it had seen
+    /// before, which is byte exactness, the one failure this architecture
+    /// cannot absorb" (1.7). `None` when this court has no section of its
+    /// own on the class: it has re-derived nothing, and an offer it has not
+    /// independently reached is UNMEASURED, never agreement.
+    pub fn own_section(&self, inv: &crate::transducer::stalk::Invariant) -> Option<&Element> {
+        let cx = self.complexes.get(inv.key().as_bytes())?;
+        let sec = cx.sections.get(self.identity.as_slice())?;
+        self.word_at(&sec.addr)
+    }
+
     /// 47.3: THE HOME INSTALLS on a second vantage. `witness` is the organ
     /// whose re-derivation the install rests on, and it is the author of the
     /// receipt this act seals (45.1): a book that cannot say which vantage

@@ -361,3 +361,59 @@ fn a_witness_glues_an_offer_at_the_homes_vantage() {
     );
     assert!(cx.sections.get(home_vk.as_slice()).is_none(), "and the home has no section at all");
 }
+
+/// 47.3, 1.7: A WITNESS NEVER ANSWERS WITH THE BYTES IT WAS HANDED. The
+/// second vantage a home installs on must be a form THIS court reached on
+/// its own tapes. `glue_fetched`'s `Admitted` arm files the spoken tape at
+/// its own address, so reading that address back returns the offer verbatim
+/// — and a home comparing that by `same_vertex` compares the form with
+/// itself and converges every time. Chapter 1.7 names the failure: "it can
+/// only confirm that a voice sent bytes it had seen before, which is byte
+/// exactness, the one failure this architecture cannot absorb."
+#[test]
+fn a_witness_that_rederived_nothing_answers_with_nothing() {
+    let home_vk = [1u8; 32];
+    let witness_vk = [2u8; 32];
+    let mut home = Kernel::new();
+    home.bind_identity(home_vk);
+    let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+    assert_eq!(home.ingest(&a, &b, home_vk), Outcome::GermPending);
+    assert_eq!(home.ingest(&a, &b, [3; 32]), Outcome::GermPending);
+    home.court_stroke();
+    let spoken = home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().1.clone();
+    let inv = crate::transducer::stalk::invariant_of(&spoken);
+    let offered = spoken.address();
+
+    // A witness that has done no work of its own on this class.
+    let mut witness = Kernel::new();
+    witness.bind_identity(witness_vk);
+    let mut cover = crate::network::nerve::Cover::new();
+    assert!(matches!(
+        witness.glue_fetched(spoken.clone(), home_vk, witness_vk, &mut cover),
+        Glue::Admitted
+    ));
+
+    // The offered address now RESOLVES on the witness — the glue filed the
+    // home's own tape there — which is exactly why it must not be the answer.
+    let filed = witness.word_at(&offered).expect("the glue filed the offer at its address");
+    assert!(
+        filed.same_vertex(&spoken),
+        "and what it filed is the home's own word, byte for byte the offer"
+    );
+
+    // The second vantage is this court's OWN section, and a court that has
+    // re-derived nothing on the class holds none. This is the answer that
+    // travels: unmeasured, which is not agreement.
+    assert!(
+        witness.own_section(&inv).is_none(),
+        "a court that has re-derived nothing on the class holds no section of its own"
+    );
+    assert!(
+        witness.complexes().get(inv.key().as_bytes()).is_some_and(|cx| cx
+            .sections
+            .get(home_vk.as_slice())
+            .is_some()),
+        "the offer was filed at the HOME's vantage, which is where it belongs"
+    );
+}

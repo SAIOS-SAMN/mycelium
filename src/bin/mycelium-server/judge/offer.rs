@@ -42,26 +42,40 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     let (refused, reached) =
         match mycelium::transducer::element::Element::from_bytes(&elem_bytes, &mut pos) {
             Some(word) => {
-                let addr = word.address();
+                let inv = mycelium::transducer::stalk::invariant_of(&word);
                 match (door.kernel.lock(), door.mesh.cover.lock()) {
                     (Ok(mut k), Ok(mut cover)) => {
-                        // The REFUSAL travels, not a bit saying there was
-                        // one: `Slashed(reason)` names a 34.1 constant, and
-                        // the home logs and acts on the reason.
-                        let why = match k.glue_fetched(word, home, me, &mut cover) {
-                            mycelium::cognition::Glue::Slashed(r) => r.as_bytes().to_vec(),
-                            _ => Vec::new(),
-                        };
-                        // What THIS court holds at that address after the
-                        // replay. Holding nothing is a witness that reached
-                        // nothing: it is unmeasured, and the offered word is
-                        // never handed back in its place, which the home
-                        // would read as a re-derivation that never happened.
-                        let mine = match why.is_empty() {
-                            true => k.word_at(&addr).map(|w| w.to_bytes()).unwrap_or_default(),
-                            false => Vec::new(),
-                        };
-                        (why, mine)
+                        // One typed reading, every arm of `Glue` named. The
+                        // REFUSAL travels, not a bit saying there was one:
+                        // `Slashed(reason)` is a 34.1 constant the home logs
+                        // and acts on.
+                        //
+                        // THE SECOND VANTAGE IS THIS COURT'S OWN SECTION.
+                        // It was `word_at(&word.address())` — the offered
+                        // address — and the `Admitted` arm of `glue_fetched`
+                        // has just filed the HOME'S OWN TAPE there, so the
+                        // witness handed the home back the bytes it sent and
+                        // the home's `same_vertex` compared the form with
+                        // itself. That is 1.7's byte exactness: "it can only
+                        // confirm that a voice sent bytes it had seen
+                        // before". `own_section` reads what this court wrote
+                        // from its own perception, at its own vantage, and
+                        // `None` — no section of its own on the class — is a
+                        // witness that has re-derived nothing.
+                        match k.glue_fetched(word, home, me, &mut cover) {
+                            mycelium::cognition::Glue::Slashed(r) => {
+                                (r.as_bytes().to_vec(), Vec::new())
+                            }
+                            mycelium::cognition::Glue::Admitted
+                            | mycelium::cognition::Glue::Attached
+                            | mycelium::cognition::Glue::Dialect => (
+                                Vec::new(),
+                                match k.own_section(&inv) {
+                                    Some(w) => w.to_bytes(),
+                                    None => Vec::new(),
+                                },
+                            ),
+                        }
                     }
                     _ => (Vec::new(), Vec::new()),
                 }
