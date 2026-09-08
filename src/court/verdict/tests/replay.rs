@@ -127,6 +127,29 @@ fn a_form_whose_tape_does_not_parse_is_refused_by_name() {
     );
 }
 
+/// 15.3, 16.17, rule 11 (I5): a loop whose holonomy is not a versor has
+/// no class. It is never keyed by its rotor's bytes in place of the class
+/// it lacks: the rank audit is unmeasured, the form is not cauterized, and
+/// the loop does not replay. The fallback this refuses survived 0.12b under
+/// the name `class_or_rotor_key`.
+#[test]
+fn a_loop_whose_holonomy_is_not_a_versor_is_refused_not_keyed() {
+    use crate::transducer::alphabet::{Rotor, Word};
+    let mut f = closed_turn_form();
+    assert!(f.loops.is_empty() && f.rank().is_some(), "a tree has a rank, and it is zero");
+    f.loops.push(crate::transducer::sentence::Loop {
+        vertices: vec![0, 1, 0],
+        faces: vec![0, 0],
+        chord: 0,
+        holonomy: Word::formed(Rotor::zero()),
+        carriage: element::identity_versor(),
+    });
+    assert!(f.loops[0].holonomy.rotor().class_key().is_none(), "a zero rotor is not a class");
+    assert!(f.rank().is_none(), "the audit is unmeasured, not counted under a rotor key");
+    assert!(!f.is_cauterized(), "nothing files what has no class");
+    assert!(!form_loops_replay(&f), "and the loop does not replay");
+}
+
 /// A20: a certificate that does not un-pivot to the tape's before/after
 /// refuses the form whole; a form with no certificates still replays.
 #[test]

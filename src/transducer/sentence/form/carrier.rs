@@ -337,7 +337,12 @@ impl Form {
             match lp.holonomy.order() {
                 Order::Infinite => return false,
                 Order::Finite(ell) => {
-                    let k = lp.holonomy.rotor().class_or_rotor_key();
+                    // A holonomy that is not a versor has no class (15.3) and
+                    // nothing files it: the form is not cauterized. No key of
+                    // the rotor's bytes stands in for the class it lacks.
+                    let Some(k) = lp.holonomy.rotor().class_key() else {
+                        return false;
+                    };
                     match self.torsion.get(&k) {
                         Some(filed) if filed.period == ell => {}
                         _ => return false,

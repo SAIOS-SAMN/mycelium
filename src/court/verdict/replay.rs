@@ -236,7 +236,11 @@ pub(crate) fn form_loops_replay(f: &Form) -> bool {
         match lp.holonomy.order() {
             Order::Infinite => return false,
             Order::Finite(ell) => {
-                let k = lp.holonomy.rotor().class_or_rotor_key();
+                // No class, no filing: a holonomy that is not a versor is a
+                // loop that does not replay, never one keyed by its bytes.
+                let Some(k) = lp.holonomy.rotor().class_key() else {
+                    return false;
+                };
                 match f.torsion.get(k.as_bytes()) {
                     Some(filed) if filed.period == ell => {}
                     _ => return false,

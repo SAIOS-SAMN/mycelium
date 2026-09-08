@@ -538,18 +538,19 @@ pub enum LoopRow {
     OffPlane(crate::transducer::address::Address),
 }
 
-pub fn loop_row(h: &Word) -> LoopRow {
+/// `None` when the holonomy is not a versor: it has no class (15.3), so
+/// it has no row in the audit and the rank is unmeasured. It was keyed by
+/// its rotor's bytes in place of the class it lacks, which is 0.12b's
+/// refused fallback (rule 11).
+pub fn loop_row(h: &Word) -> Option<LoopRow> {
     if h.is_identity() {
-        return LoopRow::Closed;
+        return Some(LoopRow::Closed);
     }
-    match free_row(h) {
+    Some(match free_row(h) {
         Some(row) if row == [0i64; 12] => LoopRow::Torsion,
         Some(row) => LoopRow::Free(row),
-        None => LoopRow::OffPlane(match h.rotor().class_key() {
-            Some(k) => k,
-            None => h.rotor().key(),
-        }),
-    }
+        None => LoopRow::OffPlane(h.rotor().class_key()?),
+    })
 }
 
 /// A18 over the rows of a nerve's cycles or a form's loops.
@@ -576,6 +577,6 @@ pub fn rank_of_rows(rows: &[LoopRow]) -> Option<Rank> {
 }
 
 pub fn rank_of_holonomies<'a>(holonomies: impl Iterator<Item = &'a Word>) -> Option<Rank> {
-    let rows: Vec<LoopRow> = holonomies.map(loop_row).collect();
+    let rows: Vec<LoopRow> = holonomies.map(loop_row).collect::<Option<Vec<_>>>()?;
     rank_of_rows(&rows)
 }

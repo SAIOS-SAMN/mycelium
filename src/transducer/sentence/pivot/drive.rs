@@ -135,12 +135,18 @@ impl Form {
             if open.is_empty() {
                 break;
             }
-            let rows: Vec<LoopRow> = self.loops.iter().map(|lp| loop_row(&lp.holonomy)).collect();
-            let Some(rank_before) = rank_of_rows(&rows) else {
+            // A loop whose holonomy is not a versor has no row (15.3): the
+            // audit is unmeasured and the form is held, never counted
+            // under a key of the rotor's bytes.
+            let rows: Option<Vec<LoopRow>> = self.loops.iter().map(|lp| loop_row(&lp.holonomy)).collect();
+            let Some(rank_before) = rows.as_deref().and_then(rank_of_rows) else {
                 eprintln!(
-                    "  pivot {:02x}{:02x}… held, rank overflow",
+                    "  pivot {:02x}{:02x}… held, rank unmeasured",
                     idea[0], idea[1]
                 );
+                break;
+            };
+            let Some(rows) = rows else {
                 break;
             };
             let mu_before: Option<(Vec<[u64; 4]>, [u64; 4])> = match bundle {
@@ -167,7 +173,12 @@ impl Form {
                 if handled.contains(&loop_k) {
                     continue;
                 }
-                let rotor_key = self.loops[idx].holonomy.rotor().class_or_rotor_key();
+                // `open` holds only loops with a class vector, so the class
+                // key exists here; a holonomy with no class is never keyed
+                // by its rotor's bytes in its place.
+                let Some(rotor_key) = self.loops[idx].holonomy.rotor().class_key() else {
+                    continue;
+                };
                 let held = horizon.get(&rotor_key).is_some();
                 let order = self.loops[idx].holonomy.order();
                 let cands = self.candidates_for(idx, &kappa, crystal);
@@ -411,7 +422,7 @@ impl Form {
         }
         let after_h = trial_form.loops.get(idx)?.holonomy.clone();
         let mut after_rows = rows.to_vec();
-        *after_rows.get_mut(idx)? = loop_row(&after_h);
+        *after_rows.get_mut(idx)? = loop_row(&after_h)?;
         let rank_after = rank_of_rows(&after_rows)?;
         // T21 (iii): the rank holds, or one unit moves out of torsion, free
         // or off-plane and into axes. Anything else is not this pivot's move
@@ -482,7 +493,11 @@ impl Form {
             .windows(2)
             .map(|p| (p[0] as u8, p[1] as u8))
             .collect();
-        let class = lp.holonomy.rotor().class_or_rotor_key();
+        // Torsion is filed under the holonomy's CLASS (16.17, 15.4); a
+        // holonomy that has none is not a versor and stays open.
+        let Some(class) = lp.holonomy.rotor().class_key() else {
+            return false;
+        };
         self.torsion.insert(class, FiledLoop { sigma, period: ell, chord: lp.chord });
         true
     }

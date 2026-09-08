@@ -225,15 +225,6 @@ impl Rotor {
         Some(crate::transducer::address::Address::new(buf))
     }
 
-    /// Class key when the rotor is a versor; otherwise the A1 rotor key.
-    /// Never the zero class of a non-versor.
-    pub fn class_or_rotor_key(&self) -> crate::transducer::address::Address {
-        match self.class_key() {
-            Some(k) => k,
-            None => self.key(),
-        }
-    }
-
     /// The exact inverse `Φ̃ / (Φ Φ̃)`.
     pub fn inverse(&self) -> Option<Rotor> {
         let w = self.weight()?;
