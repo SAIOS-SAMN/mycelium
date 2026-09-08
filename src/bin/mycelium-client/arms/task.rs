@@ -21,7 +21,9 @@ let Stroke { entity, physics, c, outcome, tag, .. } = stroke;
 // the hypha's authoritative registry — study the family, think the
 // tests through, submit. The REGISTRY rules bounty vs floor
 // (anti-replay yield collapse); unique solves count ONLY on BOUNTY.
-if let Ok(Some((tid, train, tests))) = entity.pull_task() {
+if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, tests })) =
+    entity.pull_task()
+{
     // The form engine is the only extractor. A family it does not
     // close is a withheld form; U1 stands it. No second extractor.
     let mag = family_magnitude(&train);

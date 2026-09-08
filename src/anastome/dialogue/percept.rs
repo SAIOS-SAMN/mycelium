@@ -39,7 +39,17 @@ pub fn encode_task_envelope(
     out
 }
 
-pub type TaskEnvelope = (Address, Vec<crate::transducer::family::TrainPair>, Vec<Vec<Vec<u8>>>);
+/// A REGISTERED TASK as the registry hands it over: the family to learn
+/// from and the inputs to answer, never the answers.
+pub struct TaskEnvelope {
+    /// The task's address — what a solve is filed under.
+    pub id: Address,
+    /// The TRAIN pairs: the family the rule is extracted from.
+    pub train: Vec<crate::transducer::family::TrainPair>,
+    /// The TEST inputs. Their outputs are what a solve claims; the registry
+    /// never sends them.
+    pub tests: Vec<Vec<Vec<u8>>>,
+}
 
 pub fn decode_task_envelope(body: &[u8]) -> Option<TaskEnvelope> {
     let mut p = 0usize;
@@ -58,7 +68,7 @@ pub fn decode_task_envelope(body: &[u8]) -> Option<TaskEnvelope> {
     for _ in 0..nx {
         tests.push(read_grid(body, &mut p)?);
     }
-    Some((id, train, tests))
+    Some(TaskEnvelope { id, train, tests })
 }
 
 /// solve submission: `[ACT_SOLVE][voice 32][task_id address][n u8][grid·n]`

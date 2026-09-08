@@ -38,7 +38,7 @@ pub use reduce::{
     reduce_germ, reduce_proven, resolve_cites, taught_anchored_words, Ask, BookView,
 };
 pub use wire::{
-    decode_demand, decode_percept, encode_demand, encode_percept, frame_of, germ_address,
+    decode_demand, decode_percept, encode_demand, encode_percept, frame_of, germ_address, Demand,
     germ_bytes, outcome_code, perceive, Percept,
 };
 

@@ -357,7 +357,8 @@ assert_eq!(other, Outcome::GermPending, "another voice is consilience, not a dup
 #[test]
 fn the_demand_codec_roundtrips() {
 let (a, b) = (scene(2, 2), scene(2, 5));
-let (v, ra, rb) = decode_demand(&encode_demand(&a, &b, &[9; 32])).unwrap();
+let Demand { voice: v, a: ra, b: rb } =
+    decode_demand(&encode_demand(&a, &b, &[9; 32])).unwrap();
 assert_eq!((v, ra, rb), ([9; 32], a, b));
 }
 
