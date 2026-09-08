@@ -57,7 +57,7 @@ pub fn run() -> Result<(), String> {
     if hits.is_empty() {
         return Ok(());
     }
-    let mut msg = String::from("lint-enumeration: a loop without a keyed source:\n");
+    let mut msg = String::from("mycelium gates refused this tree:\n");
     for h in &hits {
         msg.push_str(h);
         msg.push('\n');

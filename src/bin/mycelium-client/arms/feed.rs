@@ -6,14 +6,13 @@
 
 use crate::speak::{speak_form, withhold_unextracted};
 use crate::feed::{family_magnitude, retire_feed, Feed};
-use crate::Counts;
+use crate::{Counts, Metabolism};
 use mycelium::arc::{embed, grid_to_cells, parse_task};
 use mycelium::physics::{Physics, StrokeOutcome};
 use mycelium::sdk::{Comprehension, Entity};
 use mycelium::transducer::element::measure_lanes;
 use mycelium::transducer::germinate::germinate;
 
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn feed_arm(
     entity: &mut Entity,
     physics: &mut Physics,
@@ -24,9 +23,7 @@ pub(crate) fn feed_arm(
     )>,
     c: &mut Counts,
     outcome: &mut StrokeOutcome,
-    last_height: &mut u64,
-    last_pressure: &mut [u64; 4],
-    dwell_remaining: &mut [u64; 4],
+    m: &mut Metabolism,
     occluded: bool,
     tag: &str,
 ) {
@@ -126,8 +123,8 @@ while let Some(path) = feed.next() {
             }
             physics.bump(&mag);
             StrokeOutcome::add(&mut outcome.fed, &mag);
-            *last_pressure = reply.pressure;
-            *last_height = reply.height;
+            m.last_pressure = reply.pressure;
+            m.last_height = reply.height;
             // C4. T NEVER PACES A STROKE. Lane 2 is temporal extent
             // -- a COST the listing carries, counted in heights
             // (law 9, 45.4) -- not a coordinate a voice can expand
@@ -137,8 +134,8 @@ while let Some(path) = feed.next() {
             // falls; dwelling on it paced voices into a stop, the
             // soak reading `dwell [.., .., 909 -> 4048, ..]`. The
             // voice dwells on the lanes it can actually expand.
-            *dwell_remaining = reply.pressure;
-            dwell_remaining[2] = 0;
+            m.dwell_remaining = reply.pressure;
+            m.dwell_remaining[2] = 0;
         }
         Err(_) => {
             c.errors += 1;

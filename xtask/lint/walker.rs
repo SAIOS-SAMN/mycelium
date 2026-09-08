@@ -8,10 +8,16 @@
 //! either and the clock gate stopped covering the economy, silently, and a
 //! green run meant nothing about them.
 //!
-//! Here the walk is one function over the whole of `src/` and `xtask/`, and
-//! a gate says only which FILES it does not apply to. A named allow-list
-//! entry that matches no walked file is itself a hit: the list cannot
-//! outlive the file it excuses.
+//! Here the walk is one function over the whole of `src/`, and a gate says
+//! only which FILES it does not apply to. `xtask/` is outside it: the
+//! content rules are about cognition, and a gate that forbids a pattern has
+//! to contain that pattern to search for it. The reading bound is the one
+//! rule that covers `xtask/`, and `mod.rs` runs it separately.
+//!
+//! An allow row is EARNED. A row naming a file that does not exist is a
+//! hit, and so is a row naming a file the gate would not have hit: a list
+//! cannot outlive what it excuses, whether the file went away or the reason
+//! did.
 
 use std::fs;
 use std::path::{Path, PathBuf};

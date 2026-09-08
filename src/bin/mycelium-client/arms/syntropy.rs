@@ -4,18 +4,17 @@
 //! expands its dirty ideas once, and it pivots the new words on their own
 //! charts.
 
-use crate::Counts;
+use crate::{Counts, Metabolism};
 use mycelium::physics::{Physics, StrokeOutcome};
 use mycelium::sdk::Entity;
 
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn syntropy_arm(
     entity: &mut Entity,
     physics: &mut Physics,
     c: &mut Counts,
     outcome: &mut StrokeOutcome,
     genome_path: &str,
-    last_genome: &mut usize,
+    m: &mut Metabolism,
     tag: &str,
 ) {
 let shed = entity.shed();
@@ -82,9 +81,9 @@ if let Some((word, cites)) = entity.seek_refinement() {
         }
     }
 }
-if entity.epigenome.genome_len() != *last_genome {
+if entity.epigenome.genome_len() != m.last_genome {
     let _ = entity.save_genome(genome_path);
-    *last_genome = entity.epigenome.genome_len();
+    m.last_genome = entity.epigenome.genome_len();
 }
 physics.regenerate();
 }

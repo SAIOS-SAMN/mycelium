@@ -56,8 +56,11 @@ pub fn encode_demand(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)], voice: &[u8; 32
     out
 }
 
-#[allow(clippy::type_complexity)]
-pub fn decode_demand(body: &[u8]) -> Option<([u8; 32], Vec<(i64, i64, u8)>, Vec<(i64, i64, u8)>)> {
+/// A demand as it arrives: the voice that spoke it, and the two scenes it
+/// names — before and after (26).
+pub type Demand = ([u8; 32], Vec<(i64, i64, u8)>, Vec<(i64, i64, u8)>);
+
+pub fn decode_demand(body: &[u8]) -> Option<Demand> {
     let voice: [u8; 32] = body.get(0..32)?.try_into().ok()?;
     let mut p = 32;
     let a = read_cells(body, &mut p)?;

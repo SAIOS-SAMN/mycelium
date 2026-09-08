@@ -4,23 +4,17 @@
 //! perceived, and the answer to it is patience rather than repetition. The
 //! ask is paced by the dwell, which is a receipt count and not a timer.
 
-use crate::Counts;
+use crate::{Counts, Metabolism};
 use mycelium::physics::{Physics, StrokeOutcome};
 use mycelium::sdk::{Entity};
 use mycelium::transducer::element::measure_lanes;
 
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn quote_arm(
     entity: &mut Entity,
     physics: &mut Physics,
     c: &mut Counts,
     outcome: &mut StrokeOutcome,
-    last_lang: &mut (usize, usize, usize),
-    last_height: &mut u64,
-    last_quoted_height: &mut u64,
-    last_pressure: &mut [u64; 4],
-    dwell_remaining: &mut [u64; 4],
-    k_step: &mut u64,
+    m: &mut Metabolism,
     occluded: bool,
     tag: &str,
 ) {
@@ -30,30 +24,30 @@ let lang = entity.atlas_standing_counts();
 // make `dwell_elapsed` true forever and the quote unpaced.
 let dwell_elapsed = [0usize, 1, 3]
     .iter()
-    .any(|&l| (*last_pressure)[l] > 0 && dwell_remaining[l] == 0);
+    .any(|&l| m.last_pressure[l] > 0 && m.dwell_remaining[l] == 0);
 let ask_quote = !occluded
-    && (lang != (*last_lang) || (*last_height) > (*last_quoted_height) || dwell_elapsed);
+    && (lang != m.last_lang || m.last_height > m.last_quoted_height || dwell_elapsed);
 if ask_quote {
-let lang_state = if lang != (*last_lang) { "changed" } else { "same" };
-eprintln!("[{tag}] quote asked: language {lang_state} book {}", *last_height);
+let lang_state = if lang != m.last_lang { "changed" } else { "same" };
+eprintln!("[{tag}] quote asked: language {lang_state} book {}", m.last_height);
 match entity.quote() {
     Ok(q) => {
         // An empty WouldBlock is impedance, not a clock: do not
         // stamp K=0 over the receipt-chain head last read.
         let heard = q.k != 0 || q.surface.iter().any(|&x| x != 0) || !q.clusters.is_empty();
         if heard {
-            (*k_step) = q.k;
+            m.k_step = q.k;
             entity.at(q.k);
         }
-        (*last_lang) = lang;
-        (*last_quoted_height) = q.height;
-        if q.height > (*last_height) {
-            (*last_height) = q.height;
+        m.last_lang = lang;
+        m.last_quoted_height = q.height;
+        if q.height > m.last_height {
+            m.last_height = q.height;
         }
-        (*last_pressure) = q.surface;
+        m.last_pressure = q.surface;
         // C4, again at the quote: T is a cost, never a pace.
-        *dwell_remaining = q.surface;
-        dwell_remaining[2] = 0;
+        m.dwell_remaining = q.surface;
+        m.dwell_remaining[2] = 0;
         let (mut n_closed, mut n_descent, mut n_nothing, mut n_settled, mut n_silent, mut n_attested, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32, 0u32, 0u32);
         let (mut n_closing, mut n_ruled_hit, mut n_stood, mut n_held) = (0u32, 0u32, 0u32, 0u32);
         for cluster in &q.clusters {
@@ -171,9 +165,9 @@ match entity.quote() {
                         if let t @ [_, ..] = reply.verdict.taught() {
                             let _ = entity.absorb_taught(t);
                         }
-                        (*last_pressure) = reply.pressure;
-                        (*last_height) = reply.height;
-                        *dwell_remaining = reply.pressure;
+                        m.last_pressure = reply.pressure;
+                        m.last_height = reply.height;
+                        m.dwell_remaining = reply.pressure;
                     }
                     Err(_) => {
                         c.errors += 1;

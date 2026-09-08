@@ -8,9 +8,8 @@ use crate::speak::{speak_form, withhold_unextracted};
 use crate::feed::{family_magnitude};
 use crate::Counts;
 use mycelium::physics::{Physics, StrokeOutcome};
-use mycelium::sdk::{Entity};
+use mycelium::sdk::Entity;
 
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn task_arm(
     entity: &mut Entity,
     physics: &mut Physics,

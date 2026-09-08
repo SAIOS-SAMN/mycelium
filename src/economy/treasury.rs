@@ -12,17 +12,6 @@ pub type Anchor = (u64, [u8; 32]);
 /// Economic tiers for a decentralized mesh running cryptographic semantic
 /// operations: yields scale by the participant's tier. A hypha/client's standing
 /// weights its reward, so the topology supports staked, tiered roles — never a
-/// flat one-class network.
-/// Persistence discriminant for older snapshots. Not a value, not a scale,
-/// not an enroll argument.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(dead_code)]
-pub enum Tier {
-    Founder,
-    Validator,
-    Participant,
-    Observer,
-}
 /// A settlement receipt (below-boundary storage — a Vec, not a map): a
 /// polytonic μ⃗ amount, chronometrically anchored.
 #[derive(Debug, Clone, PartialEq, Eq)]

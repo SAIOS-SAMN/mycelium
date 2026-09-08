@@ -21,6 +21,23 @@ use std::path::{PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
+/// WHAT THE STROKE PACES ON — the readings a stroke carries forward to the
+/// next one. The quote asks when the language moved or the book rose or the
+/// dwell elapsed; the dwell falls from the last reply's pressure; K is the
+/// court's own index. One carrier, because they are one state: the arms
+/// took them as seven `&mut` parameters and each needed
+/// `#[allow(clippy::too_many_arguments)]` to say so.
+#[derive(Default)]
+pub(crate) struct Metabolism {
+    pub(crate) last_lang: (usize, usize, usize),
+    pub(crate) last_height: u64,
+    pub(crate) last_quoted_height: u64,
+    pub(crate) last_pressure: [u64; 4],
+    pub(crate) dwell_remaining: [u64; 4],
+    pub(crate) k_step: u64,
+    pub(crate) last_genome: usize,
+}
+
 /// What this voice has done since it came up. Every field is read by the
 /// stroke line; an accumulator nobody reads is dead.
 #[derive(Default)]
@@ -111,8 +128,7 @@ fn main() {
 
     let mut physics = Physics::default();
     let mut c = Counts::default();
-    let mut last_genome = usize::MAX;
-    let mut k_step = 0u64;
+    let mut m = Metabolism { last_genome: usize::MAX, ..Metabolism::default() };
     let stop = Arc::new(AtomicBool::new(false));
     {
         let stop = Arc::clone(&stop);
@@ -122,11 +138,7 @@ fn main() {
         mycelium::transducer::a21::Address,
         Option<mycelium::transducer::sentence::SentenceRule>,
     )> = mycelium::network::nerve::Keyed::new();
-    let mut last_lang = (usize::MAX, usize::MAX, usize::MAX);
-    let mut last_height = 0u64;
-    let mut last_quoted_height = 0u64;
-    let mut last_pressure = [0u64; 4];
-    let mut dwell_remaining = [0u64; 4];
+    m.last_lang = (usize::MAX, usize::MAX, usize::MAX);
     let mut stroke_n = 0u64;
     let mut last_logged_n = 0u64;
     let mut last_logged_k = u64::MAX;
@@ -139,7 +151,7 @@ fn main() {
         }
         stroke_n = stroke_n.saturating_add(1);
         for l in 0..4 {
-            dwell_remaining[l] = dwell_remaining[l].saturating_sub(1);
+            m.dwell_remaining[l] = m.dwell_remaining[l].saturating_sub(1);
         }
         let mut outcome = StrokeOutcome::default();
         let occluded =
@@ -147,18 +159,15 @@ fn main() {
 
         feed_arm(
             &mut entity, &mut physics, &mut feed, &mut extract_memo, &mut c, &mut outcome,
-            &mut last_height, &mut last_pressure, &mut dwell_remaining, occluded, &tag,
+            &mut m, occluded, &tag,
         );
         quote_arm(
-            &mut entity, &mut physics, &mut c, &mut outcome, &mut last_lang, &mut last_height,
-            &mut last_quoted_height, &mut last_pressure, &mut dwell_remaining, &mut k_step,
-            occluded, &tag,
+            &mut entity, &mut physics, &mut c, &mut outcome, &mut m, occluded, &tag,
         );
         task_arm(&mut entity, &mut physics, &mut extract_memo, &mut c, &mut outcome, &tag);
         if physics.depleted() {
             syntropy_arm(
-                &mut entity, &mut physics, &mut c, &mut outcome, &genome_path,
-                &mut last_genome, &tag,
+                &mut entity, &mut physics, &mut c, &mut outcome, &genome_path, &mut m, &tag,
             );
             physics.relax();
         }
@@ -180,6 +189,7 @@ fn main() {
             learned,
             solves_paid,
         } = c;
+        let Metabolism { dwell_remaining, k_step, .. } = m;
         let cycle = mycelium::physics::aperture_cycle() as u64;
         if last_logged_k == u64::MAX || k_step != last_logged_k || stroke_n.saturating_sub(last_logged_n) >= cycle {
             let (atlas_ruled, atlas_stood, atlas_held) = entity.atlas_standing_counts();
@@ -214,6 +224,6 @@ fn main() {
         }
         let want = Physics::lanes_of(&outcome.total());
         let wait = std::array::from_fn(|l| want[l] && !physics.can_expand(std::array::from_fn(|i| i == l)));
-        dwell_remaining = physics.dwell(&last_pressure, wait);
+        m.dwell_remaining = physics.dwell(&m.last_pressure, wait);
     }
 }
