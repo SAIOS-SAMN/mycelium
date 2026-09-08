@@ -248,6 +248,17 @@ fn the_supply_folded_as_it_is_written_equals_the_journal_it_describes() {
     let mut pos = 0;
     let back = Treasury::restore(&snap, &mut pos).expect("restores");
     assert_eq!(back.supply(), t.supply(), "the fold survives a restore");
+
+    // AND SO DO THE CARRIERS. `recompute_balances` applied `mint` and
+    // paired `transfer` and ignored genesis, burn, stake, unstake, escrow,
+    // release, revoke and slash, so a restored ledger that had used any of
+    // them failed its own audit -- which §6 requires before every snapshot,
+    // so the mesh could not persist. Every voice's balance comes back, and
+    // the audit holds against a supply re-derived independently of it.
+    assert_eq!(back.balance_mu(&a), t.balance_mu(&a), "a's balance survives");
+    assert_eq!(back.balance_mu(&b), t.balance_mu(&b), "and b's");
+    assert_eq!(back.audit().ok(), t.audit().ok(), "and the audit holds through a restore");
+    assert!(back.audit().is_ok(), "on a ledger that used every kind that moves value");
 }
 
 /// §4: "a word that fails replay debits the voice that spoke it" — every

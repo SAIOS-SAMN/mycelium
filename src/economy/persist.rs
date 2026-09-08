@@ -1,9 +1,9 @@
-// 28 — THE TREASURY ON DISK: the entries written whole, and the balances
-// re-derived from them at load.
+// 28 — THE TREASURY ON DISK: every carrier written whole, and the supply
+// folded back from the rows at load.
 //
-//! Balances are never restored from the tape: they are recomputed from the
-//! entries, so a tape that disagrees with itself is caught by the audit
-//! rather than carried forward.
+//! A carrier is persisted and the supply is re-derived, so a tape whose
+//! carriers disagree with its journal is caught by the audit (§6) rather
+//! than carried forward.
 
 use super::*;
 
@@ -75,6 +75,29 @@ impl Treasury {
         crate::snapshot::persist(&self.funded, |addr, (payer, mu)| {
             let _ = crate::transducer::address::put_addr(&mut out, addr);
             out.extend_from_slice(payer);
+            for m in mu {
+                out.extend_from_slice(&m.to_le_bytes());
+            }
+        });
+        // BALANCES, written out. They were "recomputed from the entries" at
+        // load, and `recompute_balances` applied two of §2's ten kinds --
+        // `mint` and paired `transfer` -- ignoring genesis, burn, stake,
+        // unstake, escrow, release, revoke and slash. Every restored ledger
+        // that had used one of those failed its own audit, which §6
+        // requires before every snapshot: the mesh could not persist.
+        //
+        // A better walk was not the fix. A `burn` writes ONE row for what
+        // it took from the bond and the balance together, so the balance
+        // half cannot be recovered from the journal at all. And recomputing
+        // balances FROM the journal makes them agree with it by
+        // construction, which destroys the cross-check the audit exists for
+        // -- §6 compares `genesis + mint − burn` against the carriers, and
+        // a carrier derived from the first can never disagree with it. The
+        // carrier is persisted and the supply re-derived, so the two are
+        // independent and their disagreement is what the audit catches.
+        out.extend_from_slice(&(self.balances.len() as u32).to_le_bytes());
+        crate::snapshot::persist(&self.balances, |who, mu| {
+            out.extend_from_slice(who);
             for m in mu {
                 out.extend_from_slice(&m.to_le_bytes());
             }
@@ -195,52 +218,40 @@ impl Treasury {
                 funded.insert(addr, (payer, mu));
             }
         }
+        // BALANCES, read back. Not recomputed: see `snapshot`.
+        let mut balances = crate::network::nerve::Keyed::new();
+        if let Some(c4) = b.get(*pos..*pos + 4) {
+            let nb = u32::from_le_bytes(c4.try_into().ok()?) as usize;
+            *pos += 4;
+            if nb > b.len().saturating_sub(*pos) / 64 {
+                return None; // untrusted count: 64 bytes per balance row
+            }
+            for _ in 0..nb {
+                let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+                *pos += 32;
+                let mut mu = [0u64; 4];
+                for m in &mut mu {
+                    *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+                    *pos += 8;
+                }
+                balances.insert(who, mu);
+            }
+        }
         let mut t = Treasury {
             entries,
             bond_total,
             stakes,
             escrowed,
-            balances: crate::network::nerve::Keyed::new(),
+            balances,
             funded,
-            // Folded from the rows below, since they arrived off disk and
-            // not through `write`. This is the one O(journal) pass.
+            // Folded from the rows, since they arrived off disk and not
+            // through `write`. This is the one O(journal) pass.
             issued: None,
             burned: None,
         };
         t.refresh_bond();
         t.refold_supply();
-        t.recompute_balances();
         Some(t)
-    }
-
-    pub(crate) fn recompute_balances(&mut self) {
-        self.balances = crate::network::nerve::Keyed::new();
-        let mut i = 0;
-        while i < self.entries.len() {
-            let who = self.entries[i].who;
-            let mu = self.entries[i].mu;
-            match self.entries[i].kind {
-                "mint" => self.credit(who, mu),
-                "transfer" => {
-                    self.debit(who, mu);
-                    if i + 1 < self.entries.len() {
-                        let nxt = &self.entries[i + 1];
-                        if nxt.kind == "transfer"
-                            && nxt.mu == mu
-                            && nxt.k_step == self.entries[i].k_step
-                            && nxt.receipt == self.entries[i].receipt
-                            && nxt.who != who
-                        {
-                            self.credit(nxt.who, nxt.mu);
-                            i += 2;
-                            continue;
-                        }
-                    }
-                }
-                _ => {}
-            }
-            i += 1;
-        }
     }
 
 }
