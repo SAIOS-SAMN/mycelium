@@ -104,8 +104,13 @@ These are not restated in each chapter; every chapter assumes them.
 10. **Direction is a pivot, never a gradient.** A held loop is discharged
     by a move on one of the axes its class vector occupies (chapters 3.9,
     12.6, 16.16). The candidate moves are read from the class vector in a
-    fixed order, each is tried exactly, and every one that discharges is
-    kept. **Closure certifies** a pivot after it is made: the coordinate it
+    fixed order, each is tried exactly, no move waits on another's failure,
+    and reduction against held words is one of the moves and never a
+    precondition; every one that discharges is kept. There is no list of
+    directions and no loop over "descend, then ascend": there is the
+    vector, read before anything is reduced, and each occupied coordinate
+    names the one move that can zero it (16.16, chapter 5, ruled
+    2026-09-08). **Closure certifies** a pivot after it is made: the coordinate it
     acted on is zero, no other rose, and the rank moved by its one unit or
     not at all; the lane reading of a trial refuses a candidate that raises
     a lane by naming the lane. Nothing on μ⃗ and nothing in the rank audit
@@ -734,14 +739,24 @@ unchanged; the language shrinks toward geodesics. Off the plane a shorter
 tape is found by budgeted shortening (chapter 16.2) and is a retirement, not a
 minimality claim.
 
+**Retirement by condensation** is the same move one level up (ruled
+2026-09-08). A form that closes what its cited forms close with more reach
+— a torse of ℓ sections into one generator of period ℓ, a punctured
+section in place of a card (25) — or with a shorter description retires
+what it derives (27), addresses kept, and is paid as compression (E2). It
+is never refused as redundant: redundant is a form that closes nothing
+new, reaches nothing new and is not shorter.
+
 ### 3.9 Pivot (discharge of a held loop)
 
 A loop whose holonomy `h` no re-gauging removes is **held**. Its **class
 vector** (12.6) is the canonical conjugacy representative of `h` read
 coordinate by coordinate: per plane the sheet parity, the unit turns, the
 prime exponents; the hue gauge's cycle type; the placement residue; off the
-plane the rotor's grade invariants. The nonzero coordinates are the axes
-the class **occupies**, and there is no direction that is not one of them.
+plane the rotor's grade invariants; on the fibre the sections and cycles
+the loop's words carry (25), their reach. The nonzero coordinates are the
+axes the class **occupies**, and there is no direction that is not one of
+them.
 
 A **pivot** is one of the moves 3.1–3.8 applied to the held loop, labelled
 by the axis it acts on. Each move acts on a known summand of the class
@@ -753,7 +768,9 @@ vector and on nothing else:
 | glue a held closed form (3.3) whose word equals the loop's residue | the whole vector, by making the loop a boundary | citation |
 | a translation word | the placement residue | a face the bundle was missing |
 | a hue word | the gauge cycle type | a recolouring the bundle was missing |
-| open a chart axis (3.7) | the loop itself, by cutting it into a face between children | refinement, last because it adds dimension |
+| open a chart axis (3.7) | the loop itself, by cutting it into a face between children | refinement: it adds a dimension, and it is tried on its own axis like every other, never after the others have failed |
+| torse ℓ sections that form a cycle into one generator of period ℓ (25) | the fibre coordinate: the sections | condensation — the same closure with more reach and a shorter description |
+| puncture a member onto the fibre as a section (25) | the fibre coordinate: a card becomes a section | reach |
 | retire by geodesic (3.8) | none: same vertex, shorter tape | length only |
 | a Rewrite word (multi-lane) | several coordinates at once, as its lanes name | optimisation across axes |
 
@@ -829,8 +846,11 @@ strictly less; addresses are fixed at crystallization, so a form cannot
 glue an address that did not exist when it closed. The cited set is
 finite and every element of it has already been replayed by two organs. A
 recursive form's own magnitude is its own deflation, what it closes beyond
-what its cited forms close at their placements; a form that adds nothing is
-the citation, not a form. Chapter 12.5 restates recursion as pushforward
+what its cited forms close at their placements, together with its reach and
+its length: a form that closes nothing new, reaches nothing new and is not
+shorter is the citation, not a form; a compound that condenses its cited
+forms — the same closure with more reach or a shorter description — is a
+form, and is paid as compression (3.8, 27, E2). Chapter 12.5 restates recursion as pushforward
 along inclusions and chapter 13.6 shows why a cited closed form contributes
 no class.
 
@@ -852,8 +872,26 @@ form from its tape; the bound version is chapter 23.
    not move, an orbit that does not move.
 6. Closure beyond the cited forms: the form's own deflation, what it
    closes beyond what its cited forms close at their placements, read per
-   lane and paid (E2); a form that closes nothing beyond them is the
-   citation, not a form (`REFUSE_REDUNDANT`).
+   lane and paid (E2), together with its reach and its length; a form that
+   closes nothing new, reaches nothing new and is not shorter is the
+   citation, not a form (`REFUSE_REDUNDANT`), and a form that condenses
+   its cited forms is paid as compression (3.8).
+
+**The court reads before it reduces, and it never reduces an arrival
+(ruled 2026-09-08).** What arrives is read first — its class vector (12.6)
+and its fibre (25), the coordinates it occupies — and the court replays
+the moves the tape names against those readings. It does not put the
+arrival into normal form against its own words, list what will not
+reduce, and only then ask what it was; that order is descent by
+construction, and it mishandles the generator that needed to ascend or
+condense (23.8). A demand no held word closes is listed with its readings,
+so the mind that reduces it starts from the axes it occupies — the
+opening axis and the fibre among them — and not from a peel. The readings
+are the proof of which moves exist: each occupied coordinate names the one
+move that can zero it, and closure on that coordinate with nothing else
+rising is the certificate. Nothing enumerates a list of moves and nothing
+tries descent before ascent, because there is no list; there is the
+vector.
 
 A cited form slashed later re-dockets its citers; each replays without it
 and re-installs with larger deflation or is withheld with escrow returned.
@@ -1229,6 +1267,7 @@ than another except by exact dominance.
 | placement residue | the translator component (the `e_i ∧ e_∞` blades) of the loop's canonical holonomy versor after the tree gauge | a translator versor | its inverse translator, a translation word |
 | dilation residue | the `e_o ∧ e_∞` component of the same versor | a dilator versor | its inverse dilator |
 | off-plane invariants | `(a²/w, p²/w, sign a, sign p)` of the rotor (15.3) | exact rationals and signs | glue of a held form with that class, else a demand |
+| the fibre: sections and torsion cycles, the reach | `sections` and `torsion` on the loop's words (25), `fiber_span` (S9.13) | exact counts and periods | torse ℓ sections that form a cycle into one generator of period ℓ; puncture a member onto the fibre |
 
 **Which regime is primary.** The holonomy is a rotor, and its conjugacy
 class in Cl(4,0) (15.3, `(a²/w, p²/w, sign a, sign p)`) is read for
@@ -1261,9 +1300,11 @@ directions a pivot can take, and a coordinate that is zero is never visited.
 reads it in one tree walk; `ClassVector::occupied(&self) -> Vec<Axis>`
 lists the occupied axes in the **fixed order**: slot plane `(0,1)` through
 `(2,3)`, within a plane orientation, unit, prime-5, prime-13; then hue; then
-placement; then off-plane; then, as the last axis always, opening a chart
-axis. The order is fixed so that two minds holding the same loop list the
-same candidates in the same order; it is not a preference.
+placement; then off-plane; then the fibre; then, as the last axis always,
+opening a chart axis. The order is fixed so that two minds holding the
+same loop list the same candidates in the same order; it is not a
+preference, and no axis waits on another's failure: every occupied axis is
+tried, and the last is last in the listing only.
 
 **Pressure `μ⃗(ℓ)`.** The four lanes of the remainder the loop leaves open:
 S the cells it fails to speak, G the hue transitions it fails to carry, T
@@ -2287,7 +2328,11 @@ vector names.
    that remain are **held loops**.
 2. **Class vector.** For each held loop `ℓ` read `κ(ℓ) =
    F.class_vector(ℓ)` (12.6) and its occupied axes in the fixed order
-   (`ClassVector::occupied`). If a coordinate's class key is `Held` in the
+   (`ClassVector::occupied`), the fibre coordinate among them (the sections
+   and cycles the loop's words carry, 25). This reading comes first and is
+   the whole of the decision: nothing is reduced, peeled or factored before
+   it, and reduction — the glue of a held closed form — is one of the moves
+   it names (ruled 2026-09-08). If a coordinate's class key is `Held` in the
    `horizon`, the mesh already holds that class: mark it `Held` and do not
    demand it again; it is still a candidate for discharge by a held form.
 3. **Candidate pivots.** For each occupied axis `x` of `ℓ`, in the fixed
@@ -2302,12 +2347,19 @@ vector names.
    - for the off-plane invariants: the held closed forms whose class key
      equals the loop's (`Crystal::on_class` over the working atlas), each as
      a glue at the placement that makes the loop a boundary;
+   - for the fibre coordinate: the torse of ℓ sections that form a cycle
+     into one generator of period ℓ, or the puncture of a member onto the
+     fibre as a section (25), each a condensation certified by the same
+     closure with the reach on its certificate (S9.13);
    - for the last axis: opening a chart axis on the loop's class (3.7),
-     admitted only if no earlier axis discharged (14.8 says when a class is
-     entitled to it).
+     tried on its own axis like every other and never gated on the others
+     having failed (14.8 says what the opened axis is).
    The candidate list is a `Vec` built from keyed reads; no axis is
-   enumerated, only the occupied ones are visited, and each is visited once
-   per stroke.
+   enumerated, only the occupied ones are visited, each is visited once
+   per stroke, and no axis waits on another's failure. This is not a loop
+   over "descend, then ascend": there is no list of directions to try,
+   there is the vector, and each occupied coordinate names the one move
+   that can zero it (T14).
 4. **Trial.** For each candidate in list order, under `budget.spend()`: copy
    `F`'s working state, apply the move, re-walk (12.2), read `κ'(ℓ)` and
    `rank'`. The candidate **discharges** iff `κ'_x(ℓ) = 0`, `κ'_y = κ_y` for
@@ -3240,9 +3292,11 @@ pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8;32]) -> Option<Form>,
 6. `REFUSE_REBASE_TRIVIAL`, `REFUSE_UNFOLD_STILL`, `REFUSE_ORBIT_STILL`, by
    executing the move on `family` when given, else by the form's own
    consistency.
-7. Closure: every remainder on the family empty (`REFUSE_NOT_CLOSED`) and
-   a deflation beyond the cited forms (`REFUSE_REDUNDANT`); the deflation is
-   read per lane and paid, never compared against anything.
+7. Closure: every remainder on the family empty (`REFUSE_NOT_CLOSED`), and
+   beyond the cited forms a deflation, a reach or a shorter description
+   (`REFUSE_REDUNDANT` only when all three are absent); the deflation is
+   read per lane and paid, the reach travels on the certificate (S9.13),
+   and nothing is compared against anything.
 
 The translation arm of `blind_replay` recomputes 13.9 step 5 blind for a
 `TRANSLATION_TAG` element (`REFUSE_MV_INEXACT`), refuses a translation
@@ -3796,8 +3850,8 @@ and applies the same). A chord A16 hands to A17 is filed on the idea's form
 or left open with `torsion open`; a free chord is spoken as `Novel(g_rem)`
 through M6 step 5 unless its key is `Held` in `horizon`. Nothing in this
 loop orders candidates by a scalar; the fixed axis order of 12.6 is the
-order of trial, not a preference, and a candidate is applied only because
-it was the only one that discharged.
+order of trial, not a preference, no axis waits on another's failure, and
+a candidate is applied only because it was the only one that discharged.
 
 **25.2 Cauterize.** An idea whose form `is_closed()` after filing (every
 loop identity or filed torsion, remainder empty) crystallizes: `as_element`
@@ -3890,6 +3944,12 @@ set aside against a listing (E1, E2); `settle.rs` what each closed act pays
   serves it.
 - A form with no bundle and empty `cited_by` after its last citer retires
   relocates on the next `court_stroke`.
+- **Condensation retires what it derives** (3.8, ruled 2026-09-08): a
+  torse or a punctured bundle that closes what its cited forms close with
+  more reach or a shorter description relocates them to the cavity,
+  addresses kept, and is paid the compression yield (E2); `shorter_form`
+  widens from strictly shorter tapes on the same vertices to this, the
+  reach read from the certificate (S9.13).
 
 ## 28. Persistence
 
@@ -4108,7 +4168,7 @@ pub const REFUSE_LOOP: &str = "loop holonomy is not identity";
 pub const REFUSE_REBASE_TRIVIAL: &str = "rebased form equals its base";
 pub const REFUSE_UNFOLD_STILL: &str = "unfolding measure does not move";
 pub const REFUSE_ORBIT_STILL: &str = "orbit does not move";
-pub const REFUSE_REDUNDANT: &str = "form adds no deflation beyond its glued forms";
+pub const REFUSE_REDUNDANT: &str = "form closes nothing new, reaches nothing new, and is no shorter than what it cites";
 pub const REFUSE_NOT_CLOSED: &str = "form leaves a remainder on the family";
 pub const REFUSE_MV_INEXACT: &str = "Mayer–Vietoris exactness fails: cochains are inconsistent";
 pub const REFUSE_OVERLAP_CYCLIC: &str = "translation across a non-acyclic overlap";

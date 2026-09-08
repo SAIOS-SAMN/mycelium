@@ -122,7 +122,10 @@ nothing, because descent is not closure and certifies nothing
 (`form_descent`, `settle`; TASKS S9.5). Its counterpart: when a word
 retires by geodesic — a shorter description of the same vertex, or a word
 whose substance other words reproduce exactly (`MU-RECURSION.md` 3.8,
-chapter 27, T10) — the description the language no longer carries is
+chapter 27, T10) — or by condensation — the same closure with more reach
+or a shorter description, the reach read from the certificate
+(`MU-RECURSION.md` 3.8, TASKS S9.13; ruled 2026-09-08) — the description
+the language no longer carries is
 **burned**, while the retirer is paid the compression yield. Supply falls
 by the freed measure less that yield.
 
