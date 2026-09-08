@@ -3611,7 +3611,7 @@ digest. The geometry carries over; the identity and the votes do not.
 
 Carried from chapter 23: what the court checks, the mind must be able to
 re-derive, and it re-derives against everything it holds, not only what the
-court has returned to it (chapter 6). `/opt/mycelium-v0.1.0/src/client/sdk.rs`:
+court has returned to it (chapter 6). `/opt/mycelium-v0.1.0/src/client/sdk/`:
 
 **24.1 The working atlas.**
 
@@ -4278,7 +4278,26 @@ Prefix `  court ` as the existing court lines; addresses as
   court room refused voice {vk} lane {l} draw {mu} room {r}
   court syllabus {addr} to {vk} receipt K {k} h {h}
   court book height {h} frontier {n} for {vk}
+  court offer refused {addr} from {vk}: {REFUSE_*}
+  court offer refused {addr} by {vk}: {REFUSE_*}
+  court offer unmeasured {addr} at {vk}
+  court verdict refused {addr} from {vk}: {REFUSE_*}
+  court verdict unread {addr}: the court is not readable
+  court recall short voice {vk} lane {l} by {mu}
+  court slash short voice {vk} lane {l} by {mu}
 ```
+
+The two `court offer refused` lines are the two ends of one act: `from`
+is the witness refusing a frame 47.2 would not admit (`judge/offer.rs`),
+`by` is the home reading a witness's refusal off the reply
+(`offer.rs::offer_round`). `court offer unmeasured` is the third arm of
+that reply — the witness admitted the frame and has re-derived nothing of
+its own on the class, which is neither agreement nor refusal (47.3).
+`court verdict unread` is not a refusal and names no 34.1 constant: a
+court whose kernel cannot be read has judged nothing, and answers
+nothing. The two `short` lines are the lanes on which a voice's balance
+or bond did not cover what was asked, read per lane as `court room
+refused` reads a draw against a room (law 5).
 
 ### 34.3 Client log lines, `mycelium-client.rs` and `sdk.rs`
 
@@ -5727,7 +5746,7 @@ dialogue/            ACT_SPEECH tu → voice K + cited home head; ACT_ROOT ticks
                     (K, height) as its comment at 227 already states; Settlement field 7 → height; cover_signed_prefix → the prefix of 47.1
 mycelium-server/       Mesh.rtt_window/rtt_floor in strokes; the boot line prints genesis and epoch; note_root keeps the speaker's (K, height, hash)
 physics.rs          transport_deadline, persist_dwell, aperture_cycle in strokes; no Duration
-build.rs            the clock gate: SystemTime, Instant, Duration refused in src/server, src/client, src/court, src/transducer, src/economy.rs, src/physics.rs
+build.rs            the clock gate: SystemTime, Instant, Duration refused in src/server, src/client, src/court, src/transducer, src/economy/, src/physics.rs
 ```
 
 ### 45.7 Local orbit, universal height (ruled 2026-09-08)
