@@ -427,7 +427,13 @@ impl Form {
                     crystal,
                     t_extent,
                 )?;
-                if !crate::transducer::family::pairs_descend(pairs_before, &pairs_after) {
+                // 12.6: a trial refuses a candidate that raises any lane on
+                // ANY pair, and the reading names the pairs. Two readings of
+                // different lengths are not the same bundle and are not
+                // comparable, which is also a refusal — of the comparison.
+                let raised =
+                    crate::transducer::family::pairs_raised(pairs_before, &pairs_after)?;
+                if !raised.is_empty() {
                     return None;
                 }
                 // 12.6: a candidate that RAISES any lane is refused. The

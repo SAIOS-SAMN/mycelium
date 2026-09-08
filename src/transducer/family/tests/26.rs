@@ -38,6 +38,14 @@ assert_ne!(
     pay2, [0; 4],
     "a miss on pair two does not zero pair one's deflation"
 );
+// S9.5 — THE PAY GATE IS CLOSURE. Pair two leaves a remainder, so it pays
+// NOTHING, however much of its delta the form happened to speak: a partial
+// speaking is not a closed pair. Pair one closes and pays its whole delta,
+// so the family's pay is exactly pair one's.
+assert_eq!(
+    pay2, pay,
+    "an unclosed pair contributes nothing, so the pay is pair one's alone"
+);
 assert!(
     mint_sentence(&rule, &family, &NoCrystal).is_none(),
     "a form is spoken only when every remainder is empty"
@@ -78,8 +86,9 @@ assert!(
     summed.rose().is_empty() && !summed.is_still(),
     "the summed μ⃗ descends: {summed:?}"
 );
-assert!(
-    !pairs_descend(&before_pairs, &after_pairs),
-    "a raise on pair two is refused even though the sum descends"
+assert_eq!(
+    pairs_raised(&before_pairs, &after_pairs),
+    Some(vec![1]),
+    "the reading names PAIR TWO, and the sum descending does not hide it"
 );
 }

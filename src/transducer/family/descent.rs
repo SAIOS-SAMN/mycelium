@@ -33,11 +33,18 @@ pub fn form_descent(
         let after_chain = residual_of(grid.as_ref(), y);
         let before_mu = element::measure_lanes(&before_chain);
         let after_mu = element::measure_lanes(&after_chain);
-        let moved = crate::economy::lane_moves(&after_mu, &before_mu);
-        // Per pair: what fell is paid, and a pair that raised a lane pays
-        // nothing at all rather than paying for the lanes that fell.
-        if moved.rose().is_empty() && !moved.is_still() {
-            for (p, d) in pay.iter_mut().zip(&moved.deflation()) {
+        // S9.5 — THE PAY GATE IS CLOSURE. A pair pays when the form CLOSES
+        // it: the remainder is empty and what the pair demanded is what the
+        // form spoke. A pair that merely descended — less remainder than
+        // before, but still a remainder — pays nothing, because a partial
+        // speaking is not a closed pair and the court refuses the form on
+        // that remainder anyway (S9.4).
+        //
+        // The deflation of a closed pair is the whole delta it named:
+        // `after` is empty, so `before − after` is `before`.
+        if after_chain.is_empty() {
+            let closed = crate::economy::lane_moves(&after_mu, &before_mu).deflation();
+            for (p, d) in pay.iter_mut().zip(&closed) {
                 *p = p.saturating_add(*d);
             }
         }
@@ -92,14 +99,25 @@ pub fn bundle_pressure(
     Some((pairs, sum))
 }
 
-/// A candidate is refused if it raises any lane on any pair, even when the
-/// summed μ⃗ descends. Equal or `descends` on every pair.
-pub(crate) fn pairs_descend(before: &[[u64; 4]], after: &[[u64; 4]]) -> bool {
+/// THE PAIRS ON WHICH A LANE ROSE, by index — the reading a trial refuses
+/// on. Summing first would hide it: a bundle can descend in total while one
+/// pair pays for another, and 12.6 refuses that trade whatever the sum says.
+///
+/// `None` when the two readings do not describe the same bundle (different
+/// lengths). That is not "every pair rose"; it is not a comparison at all,
+/// and the caller is told so rather than handed a `false` that reads like
+/// one.
+pub(crate) fn pairs_raised(before: &[[u64; 4]], after: &[[u64; 4]]) -> Option<Vec<usize>> {
     if before.len() != after.len() {
-        return false;
+        return None;
     }
-    before
-        .iter()
-        .zip(after)
-        .all(|(b, a)| crate::economy::lane_moves(a, b).rose().is_empty())
+    Some(
+        before
+            .iter()
+            .zip(after)
+            .enumerate()
+            .filter(|(_, (b, a))| !crate::economy::lane_moves(a, b).rose().is_empty())
+            .map(|(i, _)| i)
+            .collect(),
+    )
 }
