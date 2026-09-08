@@ -340,11 +340,55 @@ impl Kernel {
         let verdict = self
             .admissions
             .admit(origin, prefix, r, |p| chain.height_of(&p.hash));
-        if let crate::court::admission::Admitted::Parent(p) = &verdict {
-            self.chain.admit(r.clone());
-            self.pending_parents.insert(p.hash, p.clone());
+        match &verdict {
+            crate::court::admission::Admitted::Parent(p) => {
+                self.chain.admit(r.clone());
+                self.pending_parents.insert(p.hash, p.clone());
+            }
+            crate::court::admission::Admitted::Equivocation { k, .. } => {
+                self.burn_equivocation(r.vk, *k)
+            }
+            _ => {}
         }
         verdict
+    }
+
+    /// 47.4: TWO SIGNED RECEIPTS UNDER ONE KEY AT ONE K WITH DIFFERENT
+    /// CHAIN HASHES IS AN EQUIVOCATION PROOF, and the court burns the
+    /// signer's bond on all four lanes — one `burn` entry, supply reduced
+    /// by the same vector, so §6's equation holds through the forfeiture
+    /// (R9). Nothing is replayed and nothing is redistributed.
+    ///
+    /// `Admissions::admit` has held exactly that proof since it was
+    /// written: the hash it holds at that K, and the one claimed. Both
+    /// signatures were verified under the claimed key at 47.2 step 2, the
+    /// held one when it was admitted and the claimed one by this caller.
+    /// Every reader of the verdict answered `REFUSE_EQUIVOCATION` and one
+    /// counted a tally; nothing burned. A signer could therefore tell two
+    /// peers two truths, be caught by both, and pay nothing — which is the
+    /// one line of 48's table that 47.4 is the whole of.
+    ///
+    /// A second frame at the same K burns nothing more: the bond is gone,
+    /// `Treasury::burn` takes what is held and writes no entry for a
+    /// vector of zeros, and the line is written only for what left.
+    ///
+    /// WHAT IS NOT DONE: `ACT_EQUIVOCATION` (0x35), by which a THIRD party
+    /// presents a proof of two receipts it holds, is not in the dialogue.
+    /// This is the burn on a proof THIS node assembled from its own
+    /// carriers.
+    fn burn_equivocation(&mut self, vk: [u8; 32], k: u64) {
+        let Some(bond) = self.treasury.bond_of(&vk) else {
+            return;
+        };
+        let anchor = self.anchor();
+        let burned = self.treasury.burn(vk, bond, anchor);
+        if crate::economy::lanes_short(&burned).is_empty() {
+            return;
+        }
+        eprintln!(
+            "  court equivocation {:02x}{:02x}… K {k} burned {burned:?}",
+            vk[0], vk[1]
+        );
     }
 
     /// Receipts admitted and not yet cited. A step consumes them.

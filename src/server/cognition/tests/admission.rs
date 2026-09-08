@@ -141,3 +141,63 @@ assert_eq!(
 assert_eq!(k.pending_parents(), 0);
 assert!(k.known_head(&[9; 32]).is_none());
 }
+
+/// 47.4 — TWO ROOTS AT ONE K BURN THE SIGNER'S BOND. The proof is two
+/// signed receipts under one key, equal K, different chain hashes; the
+/// court burns the bond on all four lanes, one `burn` entry, supply down
+/// by the same vector, so §6 holds through the forfeiture (R9). It was
+/// DETECTED and answered `REFUSE_EQUIVOCATION`, and nothing burned: a
+/// signer could tell two peers two truths, be caught by both, and pay
+/// nothing. A second frame at the same K burns nothing more.
+#[test]
+fn two_roots_at_one_k_burn_the_signers_bond() {
+use crate::court::admission::{Admitted, SignedPrefix};
+let origin = ([7u8; 32], 2u32);
+let liar = [9u8; 32];
+let pre = |r: &crate::chronometry::KStepReceipt| SignedPrefix {
+    genesis: origin.0,
+    epoch: origin.1,
+    prev_receipt_hash: r.prev_receipt_hash,
+    k: r.step_index,
+    height: r.height,
+    chart: vec![],
+    payload: r.delta.clone(),
+};
+
+// One signer, two chains, two different first receipts at K 0.
+let mut told_a = crate::chronometry::ReceiptChain::with_vk(liar);
+told_a.append(b"one", [0; 32], Vec::new()).expect("appends");
+let mut told_b = crate::chronometry::ReceiptChain::with_vk(liar);
+told_b.append(b"two", [0; 32], Vec::new()).expect("appends");
+let (ra, rb) = (told_a.receipts()[0].clone(), told_b.receipts()[0].clone());
+assert_eq!(ra.step_index, rb.step_index, "one K");
+assert_ne!(ra.chain_hash, rb.chain_hash, "two roots");
+
+let mut k = Kernel::new();
+let bond = [3u64, 3, 3, 3];
+k.treasury_mut().genesis(liar, bond, (0, [0; 32]));
+k.treasury_mut().enroll(liar, bond, (0, [0; 32]));
+assert_eq!(k.treasury().bond_of(&liar), Some(bond), "the liar is bonded");
+let supply = k.treasury().supply().expect("measured");
+
+assert!(matches!(k.admit_receipt(origin, &pre(&ra), &ra), Admitted::Parent(_)));
+assert!(matches!(
+    k.admit_receipt(origin, &pre(&rb), &rb),
+    Admitted::Equivocation { .. }
+));
+assert_eq!(k.treasury().bond_of(&liar), Some([0; 4]), "the bond is burned whole");
+assert_eq!(
+    k.treasury().supply().expect("still measured"),
+    std::array::from_fn(|l| supply[l] - bond[l]),
+    "supply falls by exactly what left circulation"
+);
+assert!(k.treasury().audit().is_ok(), "and §6 holds through the forfeiture");
+
+// The same lie again costs nothing more: there is no bond left to take.
+let after = k.treasury().supply();
+assert!(matches!(
+    k.admit_receipt(origin, &pre(&rb), &rb),
+    Admitted::Equivocation { .. }
+));
+assert_eq!(k.treasury().supply(), after, "a second frame burns nothing");
+}
