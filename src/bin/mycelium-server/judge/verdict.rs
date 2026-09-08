@@ -10,11 +10,11 @@ use std::net::TcpStream;
 
 /// One ruling from a court on one address (42).
 pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
-    let Some(dialogue::Verdict { voice: cvoice, addr, ruling, receipt, pi, attach, section }) =
-        dialogue::decode_verdict(&frame.body)
-    else {
+    let Some(verdict) = dialogue::decode_verdict(&frame.body) else {
         return;
     };
+    let dialogue::Verdict { voice: cvoice, addr, ruling, receipt, section, .. } = &verdict;
+    let (cvoice, ruling, receipt) = (*cvoice, *ruling, *receipt);
     let (a0, a1) = (addr.as_bytes()[0], addr.as_bytes()[1]);
     let say = |s: &mut TcpStream, r: dialogue::Ruled| {
         if let dialogue::Ruled::Refused(why) = &r {
@@ -71,6 +71,17 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         refuse(s, why);
         return;
     }
+    // THE ACT'S FIELDS AGREE WITH ITS RULING, or it is malformed (34.1
+    // `REFUSE_MALFORMED`). Read once, before any carrier is touched, so the
+    // match below is total over what the act carries and no arm answers
+    // for a payload that is not there.
+    let payload = match mycelium::court::admission::admit_payload(&verdict) {
+        Ok(p) => p,
+        Err(why) => {
+            refuse(s, why);
+            return;
+        }
+    };
     // Steps 3 and 4: K against this node's knowledge of the signer's head,
     // and a height that re-derives from the parents the receipt names. This
     // is the half that was missing — the frame carried no receipt, so a
@@ -134,36 +145,25 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // bool — `apply_rebind`'s, `apply_attach(..) > 0` (a count deciding a
     // branch, checklist (b)), and `apply_verdict`'s — and answered `false`
     // alike for "the act named RULING_REBIND and carried no selection" and
-    // "the rebind did not take". A ruling that names a payload it did not
-    // bring is a malformed act and is refused; a ruling that found nothing
-    // to move is inert.
-    let ruled = match (ruling, pi, attach) {
-        (dialogue::RULING_REBIND, Some(term), _) => match k.apply_rebind(&addr, term) {
+    // "the rebind did not take". The malformed act was refused above by its
+    // own name; what is left is total over the payload the act carries, and
+    // a ruling that found nothing to move is inert.
+    use mycelium::court::admission::Payload;
+    let ruled = match payload {
+        Payload::Rebind(term) => match k.apply_rebind(addr, term) {
             true => dialogue::Ruled::Applied,
             false => dialogue::Ruled::Inert,
         },
-        (dialogue::RULING_REBIND, None, _) => {
-            drop(k);
-            refuse(s, mycelium::verdict::REFUSE_FORM_TAPE);
-            return;
-        }
-        (dialogue::RULING_ATTACHED, _, Some((base, g))) => {
-            match k.apply_attach(&addr, &base, &g) {
-                0 => dialogue::Ruled::Inert,
-                _ => dialogue::Ruled::Applied,
-            }
-        }
-        (dialogue::RULING_ATTACHED, _, None) => {
-            drop(k);
-            refuse(s, mycelium::verdict::REFUSE_FORM_TAPE);
-            return;
-        }
-        _ => match k.apply_verdict(&addr, ruling) {
+        Payload::Attach(base, g) => match k.apply_attach(addr, &base, &g) {
+            0 => dialogue::Ruled::Inert,
+            _ => dialogue::Ruled::Applied,
+        },
+        Payload::Plain => match k.apply_verdict(addr, ruling) {
             true => dialogue::Ruled::Applied,
             false => dialogue::Ruled::Inert,
         },
     };
-    let held = k.word_at(&addr).is_some();
+    let held = k.word_at(addr).is_some();
     drop(k);
     if held
         && matches!(
@@ -172,7 +172,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         )
     {
         if let Ok(mut sy) = door.syllabus.lock() {
-            syllabus_admit(&mut sy, [addr]);
+            syllabus_admit(&mut sy, [addr.clone()]);
         }
     }
     say(s, ruled);

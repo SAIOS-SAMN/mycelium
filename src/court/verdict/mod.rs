@@ -63,6 +63,10 @@ pub const REFUSE_EQUIVOCATION: &str = "two receipts at one K with different chai
 /// 47.2 step 2: the signature does not verify over the 47.1 prefix under
 /// the key the frame claims.
 pub const REFUSE_SIGNATURE: &str = "signature does not verify over the signed prefix";
+/// 34.1 (I18): an act whose frame parsed but whose ruling names a payload
+/// the frame does not carry — a REBIND with no selection, an ATTACH with no
+/// base and transport. Decided before any carrier is touched.
+pub const REFUSE_MALFORMED: &str = "act names a payload it does not carry";
 
 #[cfg(test)]
 mod tests;

@@ -6,7 +6,8 @@
 /// The receipt refusals are 34.1's, read here by the name that chapter
 /// gives them.
 pub use crate::court::verdict::{
-    REFUSE_EQUIVOCATION, REFUSE_ORIGIN, REFUSE_RECEIPT, REFUSE_RECEIPT_STALE, REFUSE_SIGNATURE,
+    REFUSE_EQUIVOCATION, REFUSE_MALFORMED, REFUSE_ORIGIN, REFUSE_RECEIPT, REFUSE_RECEIPT_STALE,
+    REFUSE_SIGNATURE,
 };
 
 

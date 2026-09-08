@@ -109,6 +109,38 @@ pub fn admit_ruled(
     Ok(())
 }
 
+/// WHAT A RULING CARRIES BESIDE ITS BYTE (42): the selection a REBIND
+/// rebinds to, the base and transport an ATTACH attaches by, or nothing.
+/// Read off the act once, by `admit_payload`, so the door matches one
+/// total value and no arm is left to answer for a payload that is not
+/// there.
+#[derive(Debug, Clone)]
+pub enum Payload {
+    Rebind(crate::transducer::anchor::Sel),
+    Attach(crate::transducer::address::Address, Box<crate::transducer::element::Versor>),
+    Plain,
+}
+
+/// THE ACT'S FIELDS AGREE WITH ITS RULING, or the act is malformed (34.1
+/// `REFUSE_MALFORMED`, I18). A `RULING_REBIND` that carries no selection
+/// and a `RULING_ATTACHED` that carries no base and transport name a
+/// payload the frame does not hold; the door refuses them by that name
+/// before any carrier is touched, never as `Inert` (a ruling that found
+/// nothing to move) and never as `REFUSE_FORM_TAPE` (a form whose tape does
+/// not re-derive), which is what B1 answered with.
+pub fn admit_payload(v: &crate::anastome::dialogue::Verdict) -> Result<Payload, &'static str> {
+    use crate::anastome::dialogue::{RULING_ATTACHED, RULING_REBIND};
+    match (v.ruling, &v.pi, &v.attach) {
+        (RULING_REBIND, Some(term), _) => Ok(Payload::Rebind(term.clone())),
+        (RULING_REBIND, None, _) => Err(super::REFUSE_MALFORMED),
+        (RULING_ATTACHED, _, Some((base, g))) => {
+            Ok(Payload::Attach(base.clone(), Box::new(g.clone())))
+        }
+        (RULING_ATTACHED, _, None) => Err(super::REFUSE_MALFORMED),
+        _ => Ok(Payload::Plain),
+    }
+}
+
 /// Per-signer chain heads: vk ↦ (head K, head chain hash). A coordinate
 /// read at the signer's own key, never a scan over receipts.
 #[derive(Debug, Default, Clone)]
