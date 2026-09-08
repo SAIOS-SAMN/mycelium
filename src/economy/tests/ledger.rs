@@ -160,6 +160,14 @@ fn a_fee_and_a_slash_leave_the_supply_with_the_carrier() {
     t.enroll([1; 32], [6, 6, 6, 6], (1, [0; 32]));
     let issued = t.audit().expect("a funded, bonded voice conserves");
 
+    // Lanes by the names the tree gives them, never a bare `[2]` (§2.5).
+    use crate::transducer::rewrite::{LANE_GAUGE, LANE_SHELL, LANE_SPATIAL, LANE_TEMPORAL};
+    let less = |v: [u64; 4], lane: usize, by: u64| -> [u64; 4] {
+        let mut out = v;
+        out[lane] -= by;
+        out
+    };
+
     // A READING FEE is WHAT THE READING EXERCISED, per lane (§5) — not one
     // unit per lane touched, which was a monetary constant §8 forbids.
     let (fee, short) = t.settle_recall([1; 32], &[4, 0, 2, 0], &[0; 4], (2, [1; 32]));
@@ -168,15 +176,16 @@ fn a_fee_and_a_slash_leave_the_supply_with_the_carrier() {
     let after = t.audit().expect("the ledger conserves through a recall fee");
     assert_eq!(
         after,
-        [issued[0] - 4, issued[1], issued[2] - 2, issued[3]],
-        "and the supply fell by exactly the fee"
+        less(less(issued, LANE_SPATIAL, 4), LANE_TEMPORAL, 2),
+        "and the supply fell by exactly the fee, on the lanes it was read on"
     );
+    assert_eq!(after[LANE_GAUGE], issued[LANE_GAUGE], "a lane not read is untouched");
 
     // A DOOR FEE.
     let (paid, short) = t.settle_door([1; 32], [2, 0, 0, 3], (3, [1; 32]));
     assert_eq!((paid, short), ([2, 0, 0, 3], [0; 4]));
     let after2 = t.audit().expect("the ledger conserves through a door fee");
-    assert_eq!(after2, [after[0] - 2, after[1], after[2], after[3] - 3]);
+    assert_eq!(after2, less(less(after, LANE_SPATIAL, 2), LANE_SHELL, 3));
 
     // A SLASH takes bond, and the entry names what LEFT the bond rather
     // than what the escrow asked for: a bond of 6 slashed for 9 loses 6.

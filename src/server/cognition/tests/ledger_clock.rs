@@ -122,86 +122,109 @@ assert_eq!(
 );
 }
 
-/// 45.1: A RECEIPT FOR EVERY ADMITTED ACT. A ruling, an install on a
-/// second vantage, a syllabus page served and a lapsed citation each move
-/// this court's book, and each is a step of its own clock. None of them
-/// sealed one: the book grew ruled words, released escrows and served
-/// pages at no position in the chain that is supposed to record them, and
-/// a reader replaying the chain found the acts nowhere in it.
-#[test]
-fn every_act_that_moves_the_book_seals_a_receipt() {
-    use crate::anastome::dialogue::{RULING_SLASHED, RULING_UPHELD};
-
-    // A RULING. Two voices docket a percept; the court rules on it.
+/// A court with one provisional word standing, ruled by two voices. The
+/// fixture 45.1's four acts each need, built through the constructors the
+/// production code exports (§3.4).
+fn docketed(me: [u8; 32]) -> (Kernel, crate::transducer::address::Address) {
     let mut k = Kernel::new();
-    k.bind_identity([0x5a; 32]);
+    k.bind_identity(me);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
     assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
     assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending);
     k.court_stroke();
     let addr = k.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().0;
+    (k, crate::transducer::address::Address::from(addr))
+}
+
+/// 45.1: A RULING IS AN ADMITTED ACT, so it is a step of this court's own
+/// clock and a receipt in its chain. It sealed none: the book admitted the
+/// word to the ruled cover, or evaporated its award, or excised it as a
+/// cavity, at no position in the chain that is supposed to record it.
+#[test]
+fn a_ruling_seals_a_receipt_at_the_word_it_ruled() {
+    use crate::anastome::dialogue::RULING_UPHELD;
+    let (mut k, addr) = docketed([0x5a; 32]);
     let before = k.k_step();
     assert!(k.apply_verdict(&addr, RULING_UPHELD), "the ruling lands");
-    let after = k.k_step();
-    assert_eq!(after, before + 1, "a ruling is one step of the court's clock");
+    assert_eq!(k.k_step(), before + 1, "a ruling is one step of the court's clock");
     assert_eq!(
         k.chain().receipts().last().map(|r| r.delta.clone()),
-        Some(addr.clone()),
+        Some(addr.clone().into_vec()),
         "and the receipt names the word it ruled on"
     );
+}
 
-    // A RULING THAT RULES NOTHING SEALS NOTHING: the same address twice,
-    // and an unknown ruling byte, both refuse before the book moves.
+/// And a ruling that rules NOTHING seals nothing: both refusals return
+/// before the provisional is removed, which is the one point past which
+/// the book has moved on every path.
+#[test]
+fn a_ruling_that_rules_nothing_seals_nothing() {
+    use crate::anastome::dialogue::RULING_UPHELD;
+    let (mut k, addr) = docketed([0x5a; 32]);
+    assert!(k.apply_verdict(&addr, RULING_UPHELD), "the first lands");
     let held = k.k_step();
     assert!(!k.apply_verdict(&addr, RULING_UPHELD), "a verdict lands once");
     assert!(!k.apply_verdict(&addr, 0xfe), "an unknown ruling rules nothing");
     assert_eq!(k.k_step(), held, "neither moved the clock");
+}
 
-    // A SYLLABUS PAGE SERVED.
+/// 45.1: a slash is a ruling on the other arm, and seals its own receipt.
+#[test]
+fn a_slash_seals_a_receipt() {
+    use crate::anastome::dialogue::RULING_SLASHED;
+    let (mut k, addr) = docketed([0x5b; 32]);
+    let before = k.k_step();
+    k.apply_verdict(&addr, RULING_SLASHED);
+    assert_eq!(k.k_step(), before + 1, "a slash is one step too");
+}
+
+/// 45.1: "a syllabus page served" is one of the acts the chapter names.
+/// The door wrote `receipt K … h …` beside every page it served — a
+/// receipt nothing sealed, so the K it named was whatever the last
+/// unrelated act had left there.
+#[test]
+fn a_syllabus_page_served_seals_a_receipt() {
+    let (mut k, addr) = docketed([0x5a; 32]);
     let before = k.k_step();
     k.note_served(&addr, [3; 32]);
     assert_eq!(k.k_step(), before + 1, "a page served is one step");
+}
 
-    // A SLASH, which is a ruling on the other arm.
-    let mut k2 = Kernel::new();
-    k2.bind_identity([0x5b; 32]);
-    assert_eq!(k2.ingest(&a, &b, [1; 32]), Outcome::GermPending);
-    assert_eq!(k2.ingest(&a, &b, [2; 32]), Outcome::GermPending);
-    k2.court_stroke();
-    let saddr = k2.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().0;
-    let before = k2.k_step();
-    k2.apply_verdict(&saddr, RULING_SLASHED);
-    assert_eq!(k2.k_step(), before + 1, "a slash is one step too");
-
-    // AN INSTALL ON A SECOND VANTAGE, and A LAPSE of what is left standing.
-    let mut k3 = Kernel::new();
-    k3.bind_identity([0x5c; 32]);
-    assert_eq!(k3.ingest(&a, &b, [1; 32]), Outcome::GermPending);
-    assert_eq!(k3.ingest(&a, &b, [2; 32]), Outcome::GermPending);
-    k3.court_stroke();
-    let iaddr = k3.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().0;
-    let before = k3.k_step();
-    k3.home_install(&iaddr, [0xbb; 32]);
-    assert_eq!(k3.k_step(), before + 1, "an install is one step");
+/// 45.1, 47.3: an install on a second vantage seals a receipt, at the
+/// installed address. A book that cannot say where an install stands
+/// cannot re-derive it.
+#[test]
+fn an_install_seals_a_receipt_at_the_installed_address() {
+    let (mut k, addr) = docketed([0x5c; 32]);
+    let before = k.k_step();
+    k.home_install(&addr, [0xbb; 32]);
+    assert_eq!(k.k_step(), before + 1, "an install is one step");
     assert!(
-        k3.chain().receipts().last().is_some_and(|r| r.delta == iaddr),
+        k.chain().receipts().last().is_some_and(|r| r.delta == addr.as_bytes()),
         "sealed at the installed address"
     );
+}
 
-    // A LAPSE. A citation standing an aperture of receipts behind the head
-    // releases its draw (47.5); the release is this court's own act.
-    let mut k4 = Kernel::new();
-    k4.bind_identity([0x5d; 32]);
-    assert_eq!(k4.ingest(&a, &b, [1; 32]), Outcome::GermPending);
-    let laddr = k4.pending.fiber(crate::network::nerve::ROOT).next().unwrap().0;
-    k4.standing_h.insert(&laddr, 0);
-    k4.set_height(crate::physics::aperture_cycle() as u64 + 1);
-    let before = k4.k_step();
-    k4.lapse_docket(&mut crate::physics::Physics::default().stroke());
-    assert_eq!(k4.k_step(), before + 1, "a lapsed citation is one step");
+/// 45.1, 47.5: a lapsed citation releases an escrow and unlists a draw, so
+/// it is this court's own act. And a lapse measures its aperture in
+/// receipts, so a court whose lapses were not receipted stopped advancing
+/// the very quantity it lapses on.
+#[test]
+fn a_lapsed_citation_seals_a_receipt() {
+    let mut k = Kernel::new();
+    k.bind_identity([0x5d; 32]);
+    let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+    assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+    let laddr = k.pending.fiber(crate::network::nerve::ROOT).next().unwrap().0;
+    k.standing_h.insert(&laddr, 0);
+    k.set_height(crate::physics::aperture_cycle() as u64 + 1);
+    let before = k.k_step();
+    k.lapse_docket(&mut crate::physics::Physics::default().stroke());
+    assert_eq!(k.k_step(), before + 1, "a lapsed citation is one step");
     assert!(
-        k4.chain().receipts().last().is_some_and(|r| r.delta == laddr),
+        k.chain().receipts().last().is_some_and(|r| r.delta == laddr),
         "sealed at the address whose draw was released"
     );
 }
