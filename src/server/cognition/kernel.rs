@@ -100,7 +100,14 @@ pub struct Kernel {
     /// `1 + max(h(prev), parent heights)`, and with no parent ever named
     /// the max was always this chain's own head, so TUniversal advanced on
     /// this mind's strokes rather than on the mesh's receipts (45.2).
-    pub(crate) pending_parents: Vec<crate::chronometry::Parent>,
+    ///
+    /// KEYED BY CHAIN HASH. It was a `Vec` and every admission scanned the
+    /// whole queue for a duplicate (rule 10). Between two of this mind's
+    /// steps a mesh admits one receipt per speaking peer, so the queue is
+    /// as long as the mesh is wide and the scan ran once per arrival: the
+    /// cost of admitting a peer grew with the number of peers. A chain
+    /// hash names one receipt, and the carrier says so.
+    pub(crate) pending_parents: crate::network::nerve::Keyed<crate::chronometry::Parent>,
     /// THE RECEIPTS OF SPEECH: listing → voices that have spoken on it.
     pub(crate) spoken: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// Transpose: voice → listings that voice holds. Written with `spoken`.
@@ -335,9 +342,7 @@ impl Kernel {
             .admit(origin, prefix, r, |p| chain.height_of(&p.hash));
         if let crate::court::admission::Admitted::Parent(p) = &verdict {
             self.chain.admit(r.clone());
-            if !self.pending_parents.iter().any(|q| q.hash == p.hash) {
-                self.pending_parents.push(p.clone());
-            }
+            self.pending_parents.insert(p.hash, p.clone());
         }
         verdict
     }

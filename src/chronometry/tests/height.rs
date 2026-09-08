@@ -28,3 +28,24 @@ fn height_is_one_plus_max_of_prev_and_parents() {
         "h = 1 + max(h(prev)=1, h(parent)=2)"
     );
 }
+
+/// EVERY RECEIPT THE CHAIN HOLDS IS FOUND BY ITS HASH — its own and the
+/// ones it admitted alike — and one it does not hold is unmeasured. The
+/// admitted set was a keyed read and this chain's own receipts were the
+/// `receipts.iter().find(…)` behind it, so re-deriving the height of an
+/// own receipt walked the whole chain (rule 10): once per admission
+/// (47.2 step 4) and once per frontier visit.
+#[test]
+fn a_chains_own_receipts_are_found_by_hash_like_the_ones_it_admitted() {
+    let mut peer = ReceiptChain::with_vk([2; 32]);
+    peer.append([1u8], [9; 32], Vec::new()).expect("peer genesis");
+    let mut c = ReceiptChain::with_vk([1; 32]);
+    c.append([1u8], [9; 32], Vec::new()).expect("genesis");
+    c.append([2u8], [9; 32], Vec::new()).expect("second");
+    c.admit(peer.receipts()[0].clone());
+    for r in c.receipts() {
+        assert_eq!(c.height_of(&r.chain_hash), Some(r.height), "its own, by hash");
+    }
+    assert_eq!(c.height_of(&peer.head_hash()), Some(0), "and one it admitted");
+    assert_eq!(c.height_of(&[0xab; 32]), None, "a hash it holds neither way is unmeasured");
+}

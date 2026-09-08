@@ -12,6 +12,16 @@ pub struct ReceiptChain {
     vk: [u8; 32],
     /// Verified peer receipts, keyed by chain hash, so parent heights re-derive.
     known: Keyed<KStepReceipt>,
+    /// THIS CHAIN'S OWN RECEIPTS, keyed by chain hash — the step each hash
+    /// sits at. `by_hash` and `parent_height` fell back to
+    /// `receipts.iter().find(…)`, a walk of the whole chain for one lookup
+    /// (rule 10: a loop whose bound is neither a `Budget` nor one cell's
+    /// boundary). Every admitted receipt re-derives a height through it
+    /// (47.2 step 4) and `frontier_from` pays it once per VISIT, so
+    /// ordering two receipts cost the walk's depth times the chain — on a
+    /// carrier that grows for as long as the node runs. A chain hash names
+    /// one receipt, and that is a keyed read.
+    mine: Keyed<usize>,
 }
 
 impl Default for ReceiptChain {
@@ -20,6 +30,7 @@ impl Default for ReceiptChain {
             receipts: Vec::new(),
             vk: [0u8; 32],
             known: Keyed::new(),
+            mine: Keyed::new(),
         }
     }
 }
@@ -64,12 +75,7 @@ impl ReceiptChain {
     }
 
     fn parent_height(&self, p: &Parent) -> Option<u64> {
-        self.known.get(&p.hash).map(|r| r.height).or_else(|| {
-            self.receipts
-                .iter()
-                .find(|r| r.chain_hash == p.hash)
-                .map(|r| r.height)
-        })
+        self.by_hash(&p.hash).map(|r| r.height)
     }
 
     /// Bind this chain to the key that signs for it. The vk is NOT in the
@@ -118,6 +124,7 @@ impl ReceiptChain {
             1 + m
         };
         let chain_hash = KStepReceipt::hash(step_index, height, &parents, &delta, &operator_hash, &prev);
+        self.mine.insert(chain_hash, self.receipts.len());
         self.receipts.push(KStepReceipt {
             step_index,
             height,
@@ -176,10 +183,13 @@ impl ReceiptChain {
         &self.receipts
     }
 
+    /// The receipt a chain hash names — this chain's own, else one it has
+    /// admitted. Two keyed reads and no walk.
     fn by_hash(&self, hash: &[u8]) -> Option<&KStepReceipt> {
-        self.known.get(hash).or_else(|| {
-            self.receipts.iter().find(|r| r.chain_hash.as_slice() == hash)
-        })
+        match self.mine.get(hash) {
+            Some(&i) => self.receipts.get(i),
+            None => self.known.get(hash),
+        }
     }
 
     /// Frontier reachable from one receipt: vk ↦ greatest K reachable through
@@ -282,10 +292,17 @@ impl ReceiptChain {
     /// before acceptance — a tampered journal refuses whole.
     pub fn from_receipts(receipts: Vec<KStepReceipt>) -> Option<ReceiptChain> {
         let vk = receipts.first().map(|r| r.vk).unwrap_or([0u8; 32]);
+        // The index is built before integrity is verified, because
+        // verification re-derives every height through it.
+        let mut mine = Keyed::new();
+        for (i, r) in receipts.iter().enumerate() {
+            mine.insert(r.chain_hash, i);
+        }
         let c = ReceiptChain {
             receipts,
             vk,
             known: Keyed::new(),
+            mine,
         };
         if c.verify_chain_integrity() {
             Some(c)

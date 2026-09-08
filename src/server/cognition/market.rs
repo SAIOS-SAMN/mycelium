@@ -300,9 +300,13 @@ impl Kernel {
     /// admission rather than hold it for the step that can cite it.
     pub(super) fn append_step(&mut self, addr: impl AsRef<[u8]>, voice: [u8; 32]) {
         let op = crate::chronometry::operator_hash(&voice, &self.court_head);
-        let parents = std::mem::take(&mut self.pending_parents);
-        if self.chain.append(addr.as_ref(), op, parents.clone()).is_none() {
-            self.pending_parents = parents;
+        let queued = std::mem::take(&mut self.pending_parents);
+        let parents: Vec<_> = queued
+            .fiber(crate::network::nerve::ROOT)
+            .map(|(_, p)| p.clone())
+            .collect();
+        if self.chain.append(addr.as_ref(), op, parents).is_none() {
+            self.pending_parents = queued;
             self.chain.append(addr.as_ref(), op, Vec::new());
         }
     }
