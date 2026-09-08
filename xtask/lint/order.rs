@@ -96,3 +96,63 @@ fn scan(path: &Path, src: &str, out: &mut Vec<String>) {
         None => out.append(&mut mine),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    /// A function taking two lane vectors and returning `bool` is a hit:
+    /// the reading is the answer, never a verdict (law 5).
+    #[test]
+    fn a_bool_over_two_lane_vectors_is_a_hit() {
+        let mut hits = Vec::new();
+        super::scan(
+            Path::new("src/server/cognition/market.rs"),
+            "fn beats(a: &[u64; 4], b: &[u64; 4]) -> bool {\n    true\n}\n",
+            &mut hits,
+        );
+        assert_eq!(hits.len(), 1, "the signature is the hit: {hits:?}");
+        assert!(hits[0].contains("law 5"), "and it names the law: {}", hits[0]);
+    }
+
+    /// The same signature split across lines is still one hit: a gate that
+    /// reads one line at a time would miss every wrapped signature.
+    #[test]
+    fn a_multi_line_signature_is_read_whole() {
+        let mut hits = Vec::new();
+        super::scan(
+            Path::new("src/server/cognition/market.rs"),
+            "fn beats(\n    a: &[u64; 4],\n    b: &[u64; 4],\n) -> bool {\n    true\n}\n",
+            &mut hits,
+        );
+        assert_eq!(hits.len(), 1, "wrapped is not hidden: {hits:?}");
+    }
+
+    /// `descends(` outside the sanctioned sites is a hit; inside one of the
+    /// four it is the doctrine and passes. `snap.rs` is sanctioned and not
+    /// owed, so it is the clean half — `lanes.rs` is BOTH, and a sanctioned
+    /// file that is also owed reports its own row rather than nothing.
+    #[test]
+    fn descends_is_a_hit_outside_the_four_sanctioned_files() {
+        let src = "if descends(&after, &before) {}\n";
+        let mut hits = Vec::new();
+        super::scan(Path::new("src/server/cognition/book/listings.rs"), src, &mut hits);
+        assert_eq!(hits.len(), 1, "outside, a scalar order over the book: {hits:?}");
+
+        let mut sanctioned = Vec::new();
+        super::scan(Path::new("src/transducer/sentence/pivot/snap.rs"), src, &mut sanctioned);
+        assert!(sanctioned.is_empty(), "12.6: the vortex holds what does not dominate: {sanctioned:?}");
+    }
+
+    /// An `AWAITING_READING` row whose file the gate would NOT hit is
+    /// itself a hit — the row would otherwise outlive the work it names.
+    /// This is the device that ends Phase A: the stage closes when the list
+    /// is empty, and a row that stops earning says so on the next run.
+    #[test]
+    fn an_owed_row_that_hits_nothing_is_reported() {
+        let mut out = Vec::new();
+        super::scan(Path::new("src/court/verdict/blind.rs"), "fn clean() {}\n", &mut out);
+        assert_eq!(out.len(), 1, "the stale row is the hit: {out:?}");
+        assert!(out[0].contains("delete the row"), "and says what to do: {}", out[0]);
+    }
+}

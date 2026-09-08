@@ -27,3 +27,35 @@ fn scan(path: &Path, src: &str, hits: &mut Vec<String>) {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    /// Each of the three wall-clock types is a hit, on its own line.
+    /// F3ai: the clock gate's allow-list is empty, so nothing in `src/`
+    /// exercised it and a broken scan would have read as a clean tree.
+    #[test]
+    fn every_wall_clock_type_is_a_hit() {
+        let mut hits = Vec::new();
+        super::scan(
+            Path::new("src/client/sdk/session.rs"),
+            "let t = Instant::now();\nlet d = Duration::from_millis(5);\nlet s = SystemTime::now();\n",
+            &mut hits,
+        );
+        assert_eq!(hits.len(), 3, "one per line: {hits:?}");
+        assert!(hits.iter().all(|h| h.contains("law 9")), "each names the law: {hits:?}");
+    }
+
+    /// A wait denominated in strokes is what the law asks for and passes.
+    #[test]
+    fn a_stroke_wait_is_clean() {
+        let mut hits = Vec::new();
+        super::scan(
+            Path::new("src/client/sdk/session.rs"),
+            "fn wait(strokes: u64) {\n    for _ in 0..strokes {}\n}\n",
+            &mut hits,
+        );
+        assert!(hits.is_empty(), "strokes are the clock: {hits:?}");
+    }
+}

@@ -27,3 +27,31 @@ fn scan(path: &Path, src: &str, hits: &mut Vec<String>) {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    /// The four std carriers are hits; the trie is not.
+    /// F3ai: this gate's allow-list is empty too, so a green run said
+    /// nothing about whether the scan still worked.
+    #[test]
+    fn a_std_map_is_a_hit_and_a_keyed_trie_is_not() {
+        let mut hits = Vec::new();
+        super::scan(
+            Path::new("src/server/cognition/kernel.rs"),
+            "let a: HashMap<u8, u8> = HashMap::new();\nlet b: BTreeSet<u8> = BTreeSet::new();\n",
+            &mut hits,
+        );
+        assert_eq!(hits.len(), 2, "one per line: {hits:?}");
+        assert!(hits[0].contains("Keyed trie"), "the hit says what to use: {}", hits[0]);
+
+        let mut clean = Vec::new();
+        super::scan(
+            Path::new("src/server/cognition/kernel.rs"),
+            "let held: Keyed<Element> = Keyed::new();\n",
+            &mut clean,
+        );
+        assert!(clean.is_empty(), "the trie is the carrier: {clean:?}");
+    }
+}

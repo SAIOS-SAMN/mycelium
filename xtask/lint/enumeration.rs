@@ -51,3 +51,53 @@ fn scan(path: &Path, src: &str, hits: &mut Vec<String>) {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    /// A walk over a carrier's entries is a hit anywhere.
+    #[test]
+    fn a_walk_over_entries_is_a_hit() {
+        let mut hits = Vec::new();
+        super::scan(
+            Path::new("src/server/cognition/basis.rs"),
+            "for (k, v) in map.entries() {}\n",
+            &mut hits,
+        );
+        assert_eq!(hits.len(), 1, "the walk is a hit: {hits:?}");
+    }
+
+    /// `spend_unit()` is a hit everywhere EXCEPT the two files that may
+    /// name it — the one that defines the number and the one where the MTU
+    /// is one spend. Both halves are checked: an exemption nothing tests
+    /// is an exemption that could have swallowed the whole pattern.
+    #[test]
+    fn spend_unit_is_a_hit_except_in_the_two_files_that_own_it() {
+        let src = "let n = spend_unit();\n";
+        let mut hit = Vec::new();
+        super::scan(Path::new("src/economy/treasury.rs"), src, &mut hit);
+        assert_eq!(hit.len(), 1, "elsewhere it is a number standing in: {hit:?}");
+
+        for owner in ["src/physics.rs", "src/network/wire.rs"] {
+            let mut clean = Vec::new();
+            super::scan(Path::new(owner), src, &mut clean);
+            assert!(clean.is_empty(), "{owner} may name it: {clean:?}");
+        }
+    }
+
+    /// The five inherited patterns are scoped to `sentence/` and hit there
+    /// alone. The scope is a known gap (the auditor's F3k), and this test
+    /// is what makes the gap a measurement rather than an assumption.
+    #[test]
+    fn the_five_inherited_patterns_hit_under_sentence_only() {
+        let src = "let i = xs.position(|x| x);\nlet f: Vec<bool> = vec![];\nlet u = o.unwrap_or(0);\n";
+        let mut inside = Vec::new();
+        super::scan(Path::new("src/transducer/sentence/chain.rs"), src, &mut inside);
+        assert_eq!(inside.len(), 3, "inside sentence/ all three hit: {inside:?}");
+
+        let mut outside = Vec::new();
+        super::scan(Path::new("src/server/cognition/basis.rs"), src, &mut outside);
+        assert!(outside.is_empty(), "outside it none do — this is F3k's gap: {outside:?}");
+    }
+}

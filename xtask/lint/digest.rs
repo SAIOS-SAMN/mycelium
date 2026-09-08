@@ -27,3 +27,36 @@ fn scan(path: &Path, src: &str, hits: &mut Vec<String>) {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    /// The gate hits a digest taken over content, and says which law.
+    /// F3ai: this gate had no test of its own — the `a21` deletion took the
+    /// only one that reached it, and a gate nothing exercises is a costume.
+    #[test]
+    fn a_blake3_call_is_a_hit() {
+        let mut hits = Vec::new();
+        super::scan(
+            Path::new("src/transducer/a21.rs"),
+            "fn key(b: &[u8]) -> [u8; 32] {\n    blake3::hash(b).into()\n}\n",
+            &mut hits,
+        );
+        assert_eq!(hits.len(), 1, "the call is one hit: {hits:?}");
+        assert!(hits[0].contains("law 2"), "and it names the law: {}", hits[0]);
+    }
+
+    /// A file that names the crate without calling it is not a hit: the
+    /// gate reads `blake3::`, the call, and not the word.
+    #[test]
+    fn prose_about_hashing_is_not_a_hit() {
+        let mut hits = Vec::new();
+        super::scan(
+            Path::new("src/transducer/a21.rs"),
+            "/// Identity is content, never a blake3 digest of it.\nfn address() {}\n",
+            &mut hits,
+        );
+        assert!(hits.is_empty(), "prose is not a call: {hits:?}");
+    }
+}
