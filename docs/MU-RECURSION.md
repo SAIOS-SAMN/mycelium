@@ -543,6 +543,56 @@ for a placement carried as two numbers instead of a translator versor
 (law 11), and for any stored coordinate the form cannot re-derive (law
 12): each is a shadow kept in place of the object.
 
+### 1.8 The language is a presentation (ruled 2026-09-08)
+
+The seventeen letters generate the group (1.1) and never change. What
+grows is not the group but a **presentation** inside it: the language is
+a chosen generating set together with its relations, and the geometry
+makes it a groupoid rather than a group.
+
+- **Objects** are the charts of the atlas (stalk/).
+- **Generators** are the ruled words: each a group element spelled from
+  the letters, carried by the conformal versor that places it and the
+  gauge permutation that colours it. A word acts on a chart; its transport
+  to another chart is a conjugation (T19, 3.10), so two conjugate words
+  are one generator seen from two charts (23.9, the conjugate level), and
+  the class vector is the coordinate that generator is filed under.
+- **Relations** are the sentences: a loop whose holonomy composes to the
+  identity is a relation among the generators, which is what "each loop
+  is a theorem" (law 12, 2.3) says.
+- **Sections** of a punctured axis (25) add coordinates to a generator's
+  fibre, never letters to the group.
+
+Read cohomologically, the same object is the gluing data of a principal
+bundle over the atlas (the bundle ruling of 2026-09-02): the ruled words
+are its transition functions, a Čech 1-cocycle with values in the group;
+the sentences are the cocycle condition on the triple overlaps; a germ is
+a 1-cochain that fails it, the residual the coboundary leaves; and the
+genome is the cocycle the court has ruled, taught down by the syllabus.
+
+**How it grows.** The presentation extends itself: a residual that no
+generator reduces is adjoined as a new generator once the court has
+replayed it and independent lineages have reached the same conclusion
+(23.9); a loop that closes is adjoined as a relation; a generator the
+rest derive retires, address kept, its description burned (27, E2). The
+presentation stays reduced by retirement and stays paid for by the
+economy, and that is the whole of the bound on its size.
+
+**What is not claimed.** Chapter 44 refuses, and this section does not
+reinstate, a complete rewriting system for the group, a Knuth–Bendix
+completion, or a unique minimal-length tape: the prime letters have
+infinite order and letters on planes sharing an axis generate dense
+subgroups, so no such relators exist and no such procedure terminates.
+The normal form of a demand (`Decomposed`, 24) is its reduction against
+the language's generators on one stratum, and that reduction is unique
+because replay closes it (the certificate of 12.6), never because an
+order on tapes says it must be. A comment in the tree that names
+Knuth–Bendix on `Installed` is a statement chapter 44 refused, and it is
+corrected (TASKS S9.18). The recursion is real and it is this: the base
+of the language grows by its own perception and ruling, while the group
+it presents inside, and the alphabet that generates that group, never
+change.
+
 ## 2. Forms
 
 Carried from chapter 1: a word is a vertex with a frame; identity is the
@@ -5300,6 +5350,39 @@ constant. Code: `Physics::stroke`, `Budget::spend`, `descends`,
 `StrokeOutcome::dormant`. Proof: `descends_is_well_founded`, the
 enumeration gate (every loop spends or walks a boundary),
 `stroke_terminates_on_zero_outcome`.
+
+(The termination clauses above that read `descends` are superseded by the
+ruling of 12.6: after Stage 9 nothing is certified by a lane falling, a
+loop is bounded by its `Budget` or its boundary, and closure is checked
+by replay. The theorems keep their names; their proofs are the budget and
+the closure.)
+
+### 42.6 Scale: four covers, one product (ruled 2026-09-08)
+
+The engine scales along four axes that are four different covers, each
+with its own Čech structure, its own cocycle and its own stroke budget,
+and no one of them is indexed by another's size. Cost is therefore a
+product of four independent extents and never a sum along one line; this
+is the polytonic law applied to cost, and the four are the four lanes of
+μ⃗: spatial, gauge, temporal, holonomic.
+
+| cover | covers | by | the cost that follows it | its bound |
+|---|---|---|---|---|
+| the atlas | the language | strata (class vectors as prefixes) | a demand is reduced against the generators of one stratum, never the language; a stratum that cannot resolve is split by refinement | the stratum's population; the refinement, never a constant |
+| the fibre | a word | its sections and torsion cycles (25) | the harmonic and holonomic readings are taken per section, never once for the bundle (24.4) | sections held; a period-ℓ cycle speaks ℓ for the price of one generator |
+| the nerve | a sample, a sentence, the proofs of one conclusion | overlaps | a cocycle is one geometric product per loop (24.4, 23.9) | the nerve's dimension: eyes minus one, bodies minus one, lineages minus one; there is no other maximum on cochains |
+| the mesh | the atlas | hyphae holding covers (4, 47) | a demand goes to the hyphae covering its stratum; adding hyphae adds coverage and never coordination; convergence is read from independent lineages on the ledger, never counted | the number of covering hyphae; the height is the only extent the mesh shares (45.7) |
+
+The covers meet only on overlaps — a demand's stratum on a hypha's
+cover, a section's harmonics on a loop, a proof's transition on another's
+— and the overlap is where a cocycle is read, which is why a meeting
+costs a geometric product and not a join. The work counters of chapter 42
+and MU-ENGINEERING §7 are this section's proofs: one fetched vertex, one
+held thought, one expansion, one quote and one thirty-body assembly cost
+the same at N and 4N. Where the tree scales worse than this today —
+the cursor that walks off its docket (S9.14), the book that holds raw
+residuals (Stage 10), the fibre without a priced coordinate (S9.13) — is
+recorded as work, not as a limit.
 
 # Part VIII — Boundaries
 
