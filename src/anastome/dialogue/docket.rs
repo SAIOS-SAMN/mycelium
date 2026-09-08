@@ -402,7 +402,21 @@ pub fn decode_verdict(body: &[u8]) -> Option<Verdict> {
     p += 1;
     let receipt: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
     p += 32;
+    // THE PAYLOAD TAG IS ONE BYTE ON EVERY ARM, and every arm consumes it.
+    // The no-payload arm did not: `encode_verdict_payload` writes `push(0)`
+    // for it, so `p` was left pointing AT that zero and the receipt section
+    // was then read from one byte early — its `plen` came out of
+    // `[0x00, first-byte-of-plen]`. RULING_UPHELD and RULING_SLASHED carry
+    // no payload, so the two ordinary rulings never decoded at all: the
+    // door returned before answering and the ruling court blocked on a
+    // reply that never came. REBIND and ATTACH parsed, which is why nothing
+    // in the tree noticed. A tag that is written on three arms and read on
+    // two is not a layout, and `0` is refused rather than ignored.
     let (pi, attach) = match body.get(p) {
+        Some(0) => {
+            p += 1;
+            (None, None)
+        }
         Some(1) => {
             p += 1;
             (Some(crate::transducer::anchor::Sel::from_bytes(body, &mut p)?), None)
@@ -413,7 +427,7 @@ pub fn decode_verdict(body: &[u8]) -> Option<Verdict> {
             let g = crate::transducer::element::Versor::from_bytes(body, &mut p)?;
             (None, Some((base, g)))
         }
-        _ => (None, None),
+        _ => return None,
     };
     let section = super::decode_receipt_section(body, p)?;
     Some(Verdict { voice, addr, ruling, receipt, pi, attach, section })

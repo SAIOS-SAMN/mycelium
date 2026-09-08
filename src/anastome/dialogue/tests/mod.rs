@@ -4,3 +4,4 @@
 mod acts;
 mod offer;
 mod receipt_section;
+mod verdict;
