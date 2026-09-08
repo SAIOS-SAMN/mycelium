@@ -244,6 +244,35 @@ impl Entity {
         self.session.probe(target, cites)
     }
 
+    /// STAND every sentence in the dialect, and say which of them are
+    /// fresh. 24.3 fixes the order — "perceive, think, stand, utter" — and
+    /// these are two of those acts, not one: standing is complete before
+    /// anything reaches the wire, and it is what steps this mind's clock.
+    ///
+    /// A slot reads `0xff` when the sentence is fresh and the utterance
+    /// will ask about it; `SPEECH_STOOD` when this mind has already taught
+    /// that vertex, which stands in the dialect and goes nowhere.
+    ///
+    /// It is its own function so that the claim "standing steps the mind's
+    /// own K, and no reply moves it" can be proved without a socket, which
+    /// §3.7 does not let a test open.
+    pub(crate) fn stand(&mut self, sentences: &[Element], tu: u64) -> Vec<u8> {
+        let mut codes = vec![dialogue::SPEECH_STOOD; sentences.len()];
+        for (i, e) in sentences.iter().enumerate() {
+            let taught = self.already_taught(e);
+            // 45.4: STANDING A FORM IS AN ADMITTED ACT of this mind, so the
+            // mind's own clock steps and the form stands at the step it
+            // took. The stamp is the act's own K, not a number the hypha
+            // last replied with.
+            let k = self.session.advance();
+            self.epigenome.stand_dialect_at(e.clone(), k, tu);
+            if !taught {
+                codes[i] = 0xff; // asked about on the wire below
+            }
+        }
+        codes
+    }
+
     /// SPEAK a family's cohering sentences as one act. Refuses if two
     /// sentences share a germ with a non-identity transition. Each word
     /// STANDS in the dialect before it is uttered (24.3: perceive, think,
@@ -254,22 +283,13 @@ impl Entity {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "no sentence"));
         }
         let tu = self.now_tu();
-        let mut fresh: Vec<&Element> = Vec::new();
-        let mut codes = vec![dialogue::SPEECH_STOOD; sentences.len()];
-        for (i, e) in sentences.iter().enumerate() {
-            let taught = self.already_taught(e);
-            // 45.4: STANDING A FORM IS AN ADMITTED ACT of this mind, so the
-            // mind's own clock steps and the form stands at the step it
-            // took. The stamp is the act's own K, not a number the hypha
-            // last replied with.
-            let k = self.session.advance();
-            self.epigenome.stand_dialect_at(e.clone(), k, tu);
-            if taught {
-                continue;
-            }
-            fresh.push(e);
-            codes[i] = 0xff; // filled from the wire below
-        }
+        let mut codes = self.stand(sentences, tu);
+        let fresh: Vec<&Element> = sentences
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| codes[*i] == 0xff)
+            .map(|(_, e)| e)
+            .collect();
         if fresh.is_empty() {
             return Ok(codes);
         }

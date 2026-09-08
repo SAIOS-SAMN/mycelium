@@ -92,24 +92,35 @@ assert!(epi.working_word(&addr).is_none());
 
 /// 45.4 — THE MIND'S K IS ITS OWN ACTS, and no reply moves it. The test
 /// above drives the epigenome with K values handed to it, so it proves the
-/// shed's arithmetic and says nothing about where K comes from. This one
-/// speaks to a hypha that is not there: the wire never answers, and the
-/// clock still steps, once per form stood.
+/// shed's arithmetic and says nothing about where K comes from.
+///
+/// This one calls `stand` alone, which is 24.3's own act -- "perceive,
+/// think, stand, utter" -- and reaches no wire at all. It spoke through
+/// `speak` to a hypha that was not there, so it depended on a TCP connect
+/// to a port nothing listened on failing, which §3.7 does not let a test
+/// do ("what a test never does ... read the network"). Nothing about the
+/// claim needed the wire: standing is complete before anything is uttered.
 #[test]
 fn standing_a_form_steps_the_minds_own_k() {
 let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
 let mut entity = Entity::open("127.0.0.1:1", Kernel::named("clock"));
 assert_eq!(entity.session.voice().k(), 0, "a mind that has acted seats at zero");
 
-// The wire refuses (nothing is listening), so `speak` returns Err — but
-// the form STOOD before anything was uttered, and standing is the act.
-let _ = entity.speak(std::slice::from_ref(&e1));
+// Standing is the act, and it is complete before anything is uttered.
+let codes = entity.stand(std::slice::from_ref(&e1), 0);
 assert_eq!(entity.dialect_len(), 1, "the form stands in the dialect");
 assert_eq!(entity.session.voice().k(), 1, "standing it stepped the clock once");
+assert_eq!(codes, vec![0xff], "and it is fresh, so an utterance would ask about it");
 
 // Standing the same form again is a second act of this mind: it is
-// already taught, so nothing goes on the wire at all, and the clock still
-// steps. Nothing here read a k-step from anyone else.
-let _ = entity.speak(std::slice::from_ref(&e1));
+// already taught, so nothing would go on the wire at all, and the clock
+// still steps. Nothing here read a k-step from anyone else.
+entity.file_taught(&e1);
+let codes = entity.stand(std::slice::from_ref(&e1), 0);
 assert_eq!(entity.session.voice().k(), 2, "a second act, a second step");
+assert_eq!(
+    codes,
+    vec![crate::anastome::dialogue::SPEECH_STOOD],
+    "a vertex already taught stands and goes nowhere"
+);
 }
