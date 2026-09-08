@@ -133,19 +133,46 @@ pub fn embed(g: &Grid, h: usize, w: usize) -> Grid {
 }
 
 
-/// The MEASURED frame of a pair — (h_in, w_in, h_out, w_out) exact counts —
-/// and its reduced ratio ((h_num, h_den), (w_num, w_den)).
-pub type Frame = (usize, usize, usize, usize);
+/// THE MEASURED FRAME of a pair: four exact counts, never a ratio and never
+/// a guess. The ratio is derived from them by `frame_ratio`, and a word at a
+/// frame that is not (1,1) is a DIFFERENT word from its planar shadow.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct Frame {
+    pub h_in: usize,
+    pub w_in: usize,
+    pub h_out: usize,
+    pub w_out: usize,
+}
+
+impl Frame {
+    /// Identity: no scale. Unframed speech uses this so its key matches a
+    /// planar intake.
+    pub const IDENTITY: Frame = Frame { h_in: 1, w_in: 1, h_out: 1, w_out: 1 };
+
+    /// The frame of a pair whose extents are known.
+    pub const fn new(h_in: usize, w_in: usize, h_out: usize, w_out: usize) -> Frame {
+        Frame { h_in, w_in, h_out, w_out }
+    }
+}
+
 pub fn frame_ratio(f: &Frame) -> ((usize, usize), (usize, usize)) {
-    let (hi, wi, ho, wo) = *f;
+    let Frame { h_in: hi, w_in: wi, h_out: ho, w_out: wo } = *f;
     let (gh, gw) = (gcd(ho, hi), gcd(wo, wi));
     ((ho / gh.max(1), hi / gh.max(1)), (wo / gw.max(1), wi / gw.max(1)))
 }
 
 
-/// WHAT REFINING A PAIR YIELDS: the delta between the two grids as changed
-/// cells, the refined output grid, and the frame it was read in.
-pub type Refined = (Vec<(i64, i64, u8, u8)>, Grid, Frame);
+/// WHAT REFINING A PAIR YIELDS.
+pub struct Refined {
+    /// The coboundary: the cells that changed, each with the hue it came
+    /// from and the hue it went to.
+    pub delta: Vec<(i64, i64, u8, u8)>,
+    /// The input pulled back onto the output complex — the scene π is
+    /// evaluated over, not the input as given.
+    pub pulled_back: Grid,
+    /// The frame it was read in.
+    pub frame: Frame,
+}
 
 /// THE CROSS-COMPLEX COBOUNDARY on the codomain: the input pulled back along
 /// ρ⁻¹ onto K_out, then the ordinary per-cell difference. Returns (chain on
@@ -170,7 +197,7 @@ pub fn refine_delta(a: &Grid, b: &Grid) -> Option<Refined> {
             }
         }
     }
-    Some((chain, scene, (hi, wi, ho, wo)))
+    Some(Refined { delta: chain, pulled_back: scene, frame: Frame::new(hi, wi, ho, wo) })
 }
 
 

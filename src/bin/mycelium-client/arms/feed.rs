@@ -104,7 +104,7 @@ while let Some(path) = feed.next() {
     if !physics.can_expand(Physics::lanes_of(&mag)) {
         break;
     }
-    match entity.submit(&a, &b, &(hi, wi, ho, wo)) {
+    match entity.submit(&a, &b, &mycelium::arc::Frame::new(hi, wi, ho, wo)) {
         Ok((reply, heard)) => {
             c.fed += 1;
             if reply.settle.is_some() {

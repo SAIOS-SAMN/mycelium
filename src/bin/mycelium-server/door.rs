@@ -471,7 +471,9 @@ pub(crate) fn list_task(
         k.bind_task_family(tid, task.train.clone());
     }
     for (a, b) in &task.train {
-        let Some((mut chain, _, frame)) = mycelium::arc::refine_delta(a, b) else {
+        let Some(mycelium::arc::Refined { delta: mut chain, frame, .. }) =
+            mycelium::arc::refine_delta(a, b)
+        else {
             continue;
         };
         chain.sort_unstable();

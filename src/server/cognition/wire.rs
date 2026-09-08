@@ -114,7 +114,7 @@ pub fn encode_percept(
     out.extend_from_slice(voice);
     push_bodies(&mut out, a_bodies);
     push_bodies(&mut out, b_bodies);
-    for d in [frame.0, frame.1, frame.2, frame.3] {
+    for d in [frame.h_in, frame.w_in, frame.h_out, frame.w_out] {
         out.extend_from_slice(&(d as u32).to_le_bytes());
     }
     // THE PROOF: per germ (in germination order), the speaker's citations.
@@ -151,7 +151,7 @@ pub fn decode_percept(body: &[u8]) -> Option<Percept> {
             proof.push(crate::anastome::dialogue::read_cites(body, &mut p)?);
         }
     }
-    Some((voice, a, b, (d[0], d[1], d[2], d[3]), proof))
+    Some((voice, a, b, crate::arc::Frame::new(d[0], d[1], d[2], d[3]), proof))
 }
 
 /// The frame measured from two cell scenes (their 0-cell extents) — the
@@ -165,7 +165,7 @@ pub fn frame_of(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> crate::arc::Frame
     };
     let (hi, wi) = extent(a);
     let (ho, wo) = extent(b);
-    (hi, wi, ho, wo)
+    crate::arc::Frame::new(hi, wi, ho, wo)
 }
 
 /// One byte on the wire summarising an outcome (server → client reply).

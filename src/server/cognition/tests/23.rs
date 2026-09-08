@@ -59,7 +59,7 @@ let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
 k.basis_insert(element::from_residual(&germinate(&a, &rot).unwrap()), [1; 32]);
 let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
 let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
-k.basis_insert(element::from_residual_framed(&germinate(&a_far, &rot_far).unwrap(), &(4, 4, 8, 8)), [7; 32]);
+k.basis_insert(element::from_residual_framed(&germinate(&a_far, &rot_far).unwrap(), &crate::arc::Frame::new(4, 4, 8, 8)), [7; 32]);
 assert_eq!(k.basis_len(), 2);
 k.optimize();
 assert_eq!(k.basis_len(), 1, "the redundant rule is consolidated away");
@@ -80,11 +80,11 @@ k.basis_insert(from_residual(&germinate(&a, &rot).unwrap()), [1; 32]);
 let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
 let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
 k.basis_insert(
-    from_residual_framed(&germinate(&a_far, &rot_far).unwrap(), &(4, 4, 8, 8)),
+    from_residual_framed(&germinate(&a_far, &rot_far).unwrap(), &crate::arc::Frame::new(4, 4, 8, 8)),
     [7; 32],
 );
 k.basis_insert(
-    from_residual_framed(&germinate(&a_far, &rot_far).unwrap(), &(3, 3, 6, 6)),
+    from_residual_framed(&germinate(&a_far, &rot_far).unwrap(), &crate::arc::Frame::new(3, 3, 6, 6)),
     [8; 32],
 );
 assert!(k.basis_len() >= 2, "two distinct addresses remain");

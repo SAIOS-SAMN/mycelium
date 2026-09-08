@@ -151,7 +151,7 @@ impl Entity {
                             (h, w)
                         };
                         let ((ha, wa), (hb, wb)) = (extent(&a), extent(&b));
-                        let _ = self.session.submit(&a, &b, &(ha, wa, hb, wb), &[]);
+                        let _ = self.session.submit(&a, &b, &crate::arc::Frame::new(ha, wa, hb, wb), &[]);
                         self.obstructions.insert(fetched.address(), g);
                     }
                 }

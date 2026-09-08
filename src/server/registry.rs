@@ -67,7 +67,7 @@ pub struct TaskRegistry {
 pub fn task_id(task: &Task) -> Address {
     let mut buf = vec![crate::transducer::a21::TAG_TASK];
     for (a, b) in &task.train {
-        if let Some((chain, _, frame)) = refine_delta(a, b) {
+        if let Some(crate::arc::Refined { delta: chain, frame, .. }) = refine_delta(a, b) {
             crate::transducer::a21::put_bytes(
                 &mut buf,
                 &crate::transducer::element::listing_key(&chain, &frame),
@@ -99,7 +99,7 @@ pub fn task_id(task: &Task) -> Address {
 pub fn task_tension(task: &Task) -> [u64; 4] {
     let mut mu = [0u64; 4];
     for (a, b) in &task.train {
-        if let Some((chain, _, _)) = refine_delta(a, b) {
+        if let Some(crate::arc::Refined { delta: chain, .. }) = refine_delta(a, b) {
             let lanes = crate::transducer::element::measure_lanes(&chain);
             for l in 0..4 {
                 mu[l] = mu[l].saturating_add(lanes[l]);

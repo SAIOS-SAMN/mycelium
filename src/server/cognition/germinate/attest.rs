@@ -65,7 +65,7 @@ impl Kernel {
         let Some((language, _budget)) = self.reflex_open(voice) else {
             return Outcome::GermPending;
         };
-        let frame = (0usize, 0usize, 0usize, 0usize);
+        let frame = crate::arc::Frame::default();
         let reduction = reduce_proven(&language, germ, cites, &frame, listing.clone());
         let residual = match &reduction.form {
             NormalForm::Decomposed(_) => 0,

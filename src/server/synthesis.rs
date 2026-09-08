@@ -28,9 +28,13 @@ use crate::arc::{frame_ratio, Grid};
 pub fn family_ratio(train: &[(Grid, Grid)]) -> Option<((usize, usize), (usize, usize))> {
     let mut ratio = None;
     for (a, b) in train {
-        let f =
-            (a.len(), a.first().map_or(0, |r| r.len()), b.len(), b.first().map_or(0, |r| r.len()));
-        if f.0 == 0 || f.1 == 0 || f.2 == 0 || f.3 == 0 {
+        let f = crate::arc::Frame::new(
+            a.len(),
+            a.first().map_or(0, |r| r.len()),
+            b.len(),
+            b.first().map_or(0, |r| r.len()),
+        );
+        if f.h_in == 0 || f.w_in == 0 || f.h_out == 0 || f.w_out == 0 {
             return None;
         }
         let r = frame_ratio(&f);
@@ -106,7 +110,8 @@ pub fn attest(
     }
     let Some((language, _budget)) = g.reflex_open(voice) else { return Outcome::GermPending };
     drop(g);
-    let frame = (0usize, 0usize, 0usize, 0usize); // a chain carries no frame: the planar word
+    // A chain carries no frame: the planar word, every extent zero.
+    let frame = crate::arc::Frame::default();
     let reduction = crate::cognition::reduce_proven(&language, germ, cites, &frame, listing.clone());
     let residual = match &reduction.form {
         NormalForm::Decomposed(_) => 0,

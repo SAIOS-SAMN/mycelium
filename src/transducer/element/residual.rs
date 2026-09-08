@@ -77,17 +77,17 @@ pub fn from_residual(g: &ResidualGerm) -> Element {
 /// The unique listing key of a demand: the address of the framed residual.
 /// Intake, the book, quote, attest, probe, settle, task, and the nerve
 /// route all use this, never an unframed shadow.
-pub fn listing_key(chain: &[(i64, i64, u8, u8)], frame: &(usize, usize, usize, usize)) -> crate::transducer::a21::Address {
+pub fn listing_key(chain: &[(i64, i64, u8, u8)], frame: &crate::arc::Frame) -> crate::transducer::a21::Address {
     from_residual_framed(&chain.to_vec(), frame).address()
 }
 
 /// Identity frame: no scale. Unframed speech uses this so its key matches
 /// a planar intake.
-pub const IDENTITY_FRAME: (usize, usize, usize, usize) = (1, 1, 1, 1);
+pub const IDENTITY_FRAME: crate::arc::Frame = crate::arc::Frame::IDENTITY;
 
-pub fn from_residual_framed(g: &ResidualGerm, frame: &(usize, usize, usize, usize)) -> Element {
+pub fn from_residual_framed(g: &ResidualGerm, frame: &crate::arc::Frame) -> Element {
     let mut e = from_residual(g);
-    let (hi, wi, ho, wo) = *frame;
+    let crate::arc::Frame { h_in: hi, w_in: wi, h_out: ho, w_out: wo } = *frame;
     if hi > 0 && wi > 0 && (hi, wi) != (ho, wo) {
         let rh = Q::new(BigInt::from(ho as u64), BigInt::from(hi as u64));
         let rw = Q::new(BigInt::from(wo as u64), BigInt::from(wi as u64));

@@ -84,7 +84,8 @@ let family = vec![(
     digits(&["1100", "0000"]),
     digits(&["0011", "0000"]),
 )];
-let (chain, _, frame) = crate::arc::refine_delta(&family[0].0, &family[0].1).expect("coboundary");
+let crate::arc::Refined { delta: chain, frame, .. } =
+    crate::arc::refine_delta(&family[0].0, &family[0].1).expect("coboundary");
 assert!(k.intake(&chain, &frame), "the listing stands");
 let listing = k.pending.fiber(crate::network::nerve::ROOT).next().expect("listed").1.0.address();
 let task = [7u8; 32];
@@ -127,7 +128,7 @@ let spoken = crate::transducer::family::mint_sentence(&rule, &family, &crate::tr
 assert!(spoken.is_sentence());
 let mut expect = [0u64; 4];
 for (x, y) in &family {
-    let (chain, _, _) = crate::arc::refine_delta(x, y).expect("coboundary");
+    let chain = crate::arc::refine_delta(x, y).expect("coboundary").delta;
     let lanes = crate::transducer::element::measure_lanes(&chain);
     for i in 0..4 {
         expect[i] = expect[i].saturating_add(lanes[i]);
@@ -181,7 +182,7 @@ let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
 // Two words, one centered chain: the first carries a frame fibre (a
 // distinct address, since a keyed basis holds one word per address)
 // and the second speaks its chain exactly.
-k.basis_insert(element::from_residual_framed(&germinate(&a, &rot).unwrap(), &(4, 4, 8, 8)), [1; 32]);
+k.basis_insert(element::from_residual_framed(&germinate(&a, &rot).unwrap(), &crate::arc::Frame::new(4, 4, 8, 8)), [1; 32]);
 k.basis_insert(from_residual(&germinate(&a_far, &rot_far).unwrap()), [7; 32]);
 let derivable = k.basis()[0].address(); // its duplicate speaks it
 // The bidder's sentence: the duplicate, cited at the identity.
@@ -199,7 +200,7 @@ assert!(k.try_refine(&[3; 32], [5; 32], &sentence).is_none(), "an unknown addres
 // THE COURT'S BUSINESS STAYS THE COURT'S: a provisional word cannot be
 // bid away, even if derivable.
 k.basis_insert(
-    element::from_residual_framed(&germinate(&a, &rot).unwrap(), &(3, 3, 9, 9)),
+    element::from_residual_framed(&germinate(&a, &rot).unwrap(), &crate::arc::Frame::new(3, 3, 9, 9)),
     [1; 32],
 );
 let addr = k.basis()[k.basis_len() - 1].address();

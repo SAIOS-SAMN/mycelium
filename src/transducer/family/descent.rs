@@ -26,7 +26,7 @@ pub fn form_descent(
     let mut remainders = Vec::with_capacity(family.len());
     for (x, y) in family {
         let before_chain = crate::arc::refine_delta(x, y)
-            .map(|(c, _, _)| c)
+            .map(|r| r.delta)
             .unwrap_or_else(|| residual_of(Some(x), y));
         let spoken = apply_form(form, x, &crate::transducer::alphabet::Word::identity(), crystal);
         let grid = spoken.as_ref().map(|s| s.grid());
