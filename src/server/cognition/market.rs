@@ -98,20 +98,27 @@ impl Kernel {
         }
     }
 
-    /// D12 — charge the congestion door and decide deferral: fee[l] =
-    /// reserve_deficit[l]/8 (0 on a calm mesh, up to 4 at an empty lane); the
-    /// speaker pays what their balance holds; a zero payment on a FULLY
-    /// exhausted lane defers the demand. Returns true when the door defers.
-    pub(super) fn door_defers(&mut self, voice: [u8; 32]) -> bool {
+    /// THE CONGESTION DOOR (26, 48; S9.6b): the fee on a lane is the
+    /// reserve deficit on that lane itself — no divisor, since none is
+    /// measured — and the speaker pays what its balance holds. The reading
+    /// returned is per lane: on a lane the mesh has spent to nothing, the
+    /// fee that went unpaid; zero on every lane that was paid on, or that
+    /// still holds reserve. A calm mesh keeps a free door and reads zero
+    /// everywhere. The caller acts on the lanes it reads; the one `bool`
+    /// this replaced said "somewhere" and named nothing.
+    pub(super) fn door_deferral(&mut self, voice: [u8; 32]) -> [u64; 4] {
         let deficit = self.physics.reserve_deficit();
-        let fee: [u64; 4] = std::array::from_fn(|l| deficit[l] / 8);
-        if fee.iter().all(|&f| f == 0) {
-            return false; // a calm mesh keeps a free door
+        if crate::economy::lanes_short(&deficit).is_empty() {
+            return [0; 4];
         }
         let anchor = self.anchor();
-        let paid = self.treasury.settle_door(voice, fee, anchor);
-        (0..4).any(|l| {
-            deficit[l] >= crate::physics::reserve_max() && fee[l] > 0 && paid[l] == 0
+        let paid = self.treasury.settle_door(voice, deficit, anchor);
+        std::array::from_fn(|l| {
+            if self.physics.reserve[l] == 0 && paid[l] == 0 {
+                deficit[l]
+            } else {
+                0
+            }
         })
     }
 

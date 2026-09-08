@@ -133,6 +133,15 @@ assert!(
 for _ in 0..16 {
     k.physics_mut().spend([true; 4]);
 }
+// The door's reading is per lane (S9.6b): every lane is spent to
+// nothing and a broke speaker pays nothing on any, so the reading names
+// all four with the fee that went unpaid, the deficit itself.
+let reading = k.door_deferral([9; 32]);
+assert_eq!(
+    reading,
+    k.physics().reserve_deficit(),
+    "a broke speaker on an exhausted mesh is deferred on every lane, by the deficit"
+);
 // A broke speaker (no earned balance) is DEFERRED at the door.
 let a2 = vec![(5, 0, 2), (5, 1, 2)];
 let b2 = vec![(5, 0, 6), (5, 1, 6)];

@@ -56,7 +56,11 @@ impl Kernel {
             self.condense_stroke();
             self.physics.regenerate();
         }
-        if self.door_defers(voice) {
+        // The door's reading is per lane (S9.6b): a lane spent to nothing
+        // that the speaker paid nothing on defers the act, and the reading
+        // names the lanes it was deferred on.
+        let deferred = self.door_deferral(voice);
+        if !crate::economy::lanes_short(&deferred).is_empty() {
             return None;
         }
         let budget = (0usize, 0usize); // reduction is closed-form: no search budget
