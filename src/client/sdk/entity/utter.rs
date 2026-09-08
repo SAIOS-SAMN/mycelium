@@ -61,9 +61,15 @@ impl Entity {
                 ))
             })
             .collect();
-        for (i, g, body) in &located.punctures {
-            let Some(w) = word_of(*i) else { continue };
-            cites.push((w.address(), standing_of(*i).as_u8(), g.clone(), u32::MAX, body.clone()));
+        for p in &located.punctures {
+            let Some(w) = word_of(p.word) else { continue };
+            cites.push((
+                w.address(),
+                standing_of(p.word).as_u8(),
+                p.transport.clone(),
+                u32::MAX,
+                p.cells.clone(),
+            ));
         }
         (cites, located.residual)
     }

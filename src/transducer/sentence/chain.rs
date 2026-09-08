@@ -32,6 +32,21 @@ pub struct Cite {
     pub gauge: usize,
 }
 
+/// A PUNCTURE: a body a held word carries by SHAPE under a gauge the word
+/// does not yet hold. It is spoken as a section of that word — the fibre
+/// deepens instead of the vocabulary widening — so it is not a citation and
+/// not a residual.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Puncture {
+    /// The word that carries the body.
+    pub word: usize,
+    /// The transport taking the word's shape onto the body.
+    pub transport: Versor,
+    /// The word's cells under the BODY's own transitions — what the section
+    /// says, in the body's hues and not the word's.
+    pub cells: Vec<Cell>,
+}
+
 /// What deconstruction produced: the citations in body order, the
 /// connection between consecutive cited bodies (the relative transport
 /// `Vᵢ⁻¹ Vⱼ`), the residual no word speaks, and the widest stratum read.
@@ -42,7 +57,7 @@ pub struct Sentence {
     /// word does not yet hold — (word, versor, the word's cells under the
     /// body's own transitions). Spoken as sections of the word, not as new
     /// words: the fiber deepens instead of the vocabulary widening.
-    pub punctures: Vec<(usize, Versor, Vec<Cell>)>,
+    pub punctures: Vec<Puncture>,
     pub connection: Vec<Versor>,
     pub residual: Vec<Cell>,
     /// Stratum width per body key, never a maximum over bodies.
@@ -382,7 +397,16 @@ pub fn verify_utterance(cites: &[crate::anastome::dialogue::CiteWire], target: &
 /// WHAT LOCATING A BODY RETURNS: the citation if the atlas holds the word,
 /// the puncture if it holds the geometry under another assignment, and the
 /// stratum's multiplicity — the measurement, never a search width (A8).
-pub type Located = (Option<Cite>, Option<(usize, Versor, Vec<Cell>)>, usize);
+pub struct Located {
+    /// The citation, when a held word speaks the body as held.
+    pub cite: Option<Cite>,
+    /// The puncture, when one carries it by shape under another gauge. A
+    /// citation is preferred; this stands only when none was found.
+    pub puncture: Option<Puncture>,
+    /// The stratum's MULTIPLICITY — how many words shared the body's
+    /// moduli. A measurement of the atlas, never a search width.
+    pub multiplicity: usize,
+}
 
 pub fn holonomy(cycle: &[Versor]) -> Versor {
     cycle.iter().fold(element::identity_versor(), |acc, v| acc.geo(v))

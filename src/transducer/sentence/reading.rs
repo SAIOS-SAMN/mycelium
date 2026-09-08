@@ -9,7 +9,7 @@ use crate::network::nerve::ROOT;
 use crate::transducer::blade::{self, Shape};
 use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::chain::{
-    gauge_of, pieces, replay_at, replay_operators, Cell, Cite, Located, Sentence,
+    gauge_of, pieces, replay_at, replay_operators, Cell, Cite, Located, Puncture, Sentence,
 };
 use crate::transducer::stalk::{self, Stalks};
 
@@ -38,8 +38,8 @@ pub fn locate<'a>(
     piece: &[Cell],
     exclude: Option<usize>,
 ) -> (Option<Cite>, usize) {
-    let (cite, _, m) = locate_or_puncture_at(&|i| words.get(i), atlas, index_of, shape_at, piece, exclude);
-    (cite, m)
+    let found = locate_or_puncture_at(&|i| words.get(i), atlas, index_of, shape_at, piece, exclude);
+    (found.cite, found.multiplicity)
 }
 
 /// LOCATE, and when a word carries the body by shape under a gauge it does
@@ -87,7 +87,9 @@ where
     S: Fn(usize) -> Option<&'a Shape>,
 {
     let &Reading { word_at, fiber_of, index_of, shape_at } = read;
-    let Some(shape) = element::shape_of_chain(piece) else { return (None, None, 0) };
+    let Some(shape) = element::shape_of_chain(piece) else {
+        return Located { cite: None, puncture: None, multiplicity: 0 };
+    };
     let stratum: Vec<usize> = fiber_of(&stalk::invariant(piece)).iter().filter_map(|a| index_of(a)).collect();
     let key = element::gauge_key(&element::assignment(piece));
     let stratum: Vec<usize> = stratum
@@ -96,22 +98,22 @@ where
         .filter(|&i| word_at(i).is_some_and(|w| !w.assignments_by_profile(&key).is_empty()))
         .collect();
     let m = stratum.len();
-    let [i] = stratum.as_slice() else { return (None, None, m) };
+    let [i] = stratum.as_slice() else { return Located { cite: None, puncture: None, multiplicity: m } };
     let i = *i;
-    let Some(word) = word_at(i) else { return (None, None, m) };
-    let Some(held) = shape_at(i) else { return (None, None, m) };
-    let Some(to_word) = blade::versor_between(&shape, held) else { return (None, None, m) };
-    let Some(v) = to_word.versor_inverse() else { return (None, None, m) };
+    let Some(word) = word_at(i) else { return Located { cite: None, puncture: None, multiplicity: m } };
+    let Some(held) = shape_at(i) else { return Located { cite: None, puncture: None, multiplicity: m } };
+    let Some(to_word) = blade::versor_between(&shape, held) else { return Located { cite: None, puncture: None, multiplicity: m } };
+    let Some(v) = to_word.versor_inverse() else { return Located { cite: None, puncture: None, multiplicity: m } };
     let agreeing = gauge_of(word, &v, piece);
     let mut asgs = agreeing.fiber(ROOT);
     if let Some((_, &asg)) = asgs.next() {
         if asgs.next().is_none() {
             let cite = Cite { word: i, transport: v.clone(), gauge: asg };
             if replay_at(word_at, std::slice::from_ref(&cite), piece).is_empty() {
-                return (Some(cite), None, m);
+                return Located { cite: Some(cite), puncture: None, multiplicity: m };
             }
         } else {
-            return (None, None, agreeing.len());
+            return Located { cite: None, puncture: None, multiplicity: agreeing.len() };
         }
     }
     let pos = element::positions(word.sub());
@@ -119,10 +121,11 @@ where
         let mut body: Vec<Cell> = pos.iter().zip(&asg).map(|(&(r, c), &(b, a))| (r, c, b, a)).collect();
         body.sort_unstable();
         if replay_operators(&[(v.clone(), body.clone())], piece).is_empty() {
-            return (None, Some((i, v, body)), m);
+            let puncture = Puncture { word: i, transport: v, cells: body };
+            return Located { cite: None, puncture: Some(puncture), multiplicity: m };
         }
     }
-    (None, None, m)
+    Located { cite: None, puncture: None, multiplicity: m }
 }
 
 fn body_key(body: &[Cell]) -> Option<crate::transducer::a21::Address> {
@@ -145,12 +148,12 @@ fn place_located<'a, W, F, I, S>(
     S: Fn(usize) -> Option<&'a Shape>,
 {
     if let Some(k) = body_key(body) {
-        out.multiplicity.insert(k, located.2);
+        out.multiplicity.insert(k, located.multiplicity);
     }
-    match located {
-        (Some(c), _, _) => out.cites.push(c),
-        (None, Some(p), _) => out.punctures.push(p),
-        (None, None, _) => match element::gauge_fibers(body) {
+    match (located.cite, located.puncture) {
+        (Some(c), _) => out.cites.push(c),
+        (None, Some(p)) => out.punctures.push(p),
+        (None, None) => match element::gauge_fibers(body) {
             None => {}
             Some(element::GaugeFibers::One(_, cells)) => {
                 out.residual.extend(cells);
@@ -224,9 +227,9 @@ where
     }
     let whole = locate_or_puncture_on(read, chain, exclude);
     if let Some(k) = body_key(chain) {
-        out.multiplicity.insert(k, whole.2);
+        out.multiplicity.insert(k, whole.multiplicity);
     }
-    match whole.0 {
+    match whole.cite {
         Some(_) => {
             place_located(&mut out, whole, chain, read, exclude);
         }
