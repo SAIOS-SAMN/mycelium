@@ -72,7 +72,7 @@ impl Entity {
             if r.is_empty() {
                 continue;
             }
-            let (cites, residual, _) = self.conclude(r);
+            let Concluded { cites, residual, .. } = self.conclude(r);
             if residual.is_empty() {
                 continue;
             }

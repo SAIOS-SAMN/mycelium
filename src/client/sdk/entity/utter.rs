@@ -133,7 +133,7 @@ impl Entity {
         let familiar = !self
             .epigenome
             .express(&residual, self.session.voice().k(), self.now_tu());
-        (cites, residual, familiar)
+        Concluded { cites, residual, familiar }
     }
 
     /// A served listing: cite over the working atlas. Residual strictly
@@ -146,12 +146,12 @@ impl Entity {
         let (cites, residual) = self.cite(chain);
         if !residual_descends(&residual, chain) {
             self.hold_thought(chain.to_vec());
-            return (cites, chain.to_vec(), false);
+            return Concluded { cites, residual: chain.to_vec(), familiar: false };
         }
         let familiar = !self
             .epigenome
             .express(&residual, self.session.voice().k(), self.now_tu());
-        (cites, residual, familiar)
+        Concluded { cites, residual, familiar }
     }
 
     /// The word a cite rests on: genome, dialect, or idea.

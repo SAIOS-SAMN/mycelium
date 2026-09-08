@@ -411,7 +411,7 @@ let prefix = vec![(0i64, 0i64, 1u8, 2u8)];
 let listing = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 3, 4)];
 
 let mut bare = Entity::open("127.0.0.1:1", Kernel::named("listing-bare"));
-let (cites, residual, _) = bare.conclude_listing(&listing);
+let Concluded { cites, residual, .. } = bare.conclude_listing(&listing);
 assert!(cites.is_empty(), "nothing deflates an unseen listing, got {cites:?}");
 assert_eq!(residual, listing, "equal residual is the chain");
 assert_eq!(
@@ -423,7 +423,7 @@ assert!(bare.ideas_len() >= 1, "it is held as thought");
 
 let mut held = Entity::open("127.0.0.1:1", Kernel::named("listing-held"));
 held.hold_thought(prefix);
-let (cites, residual, _) = held.conclude_listing(&listing);
+let Concluded { cites, residual, .. } = held.conclude_listing(&listing);
 assert!(
     cites.iter().any(|(_, st, _, _, _)| *st == Standing::Held.as_u8()),
     "a held word deflates the listing, got {cites:?}"

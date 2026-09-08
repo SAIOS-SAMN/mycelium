@@ -297,9 +297,17 @@ pub type Bubbled = (Vec<(i64, i64, u8, u8)>, [u64; 4]);
 /// no held word covers.
 pub type Cited = (Vec<crate::anastome::dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>);
 
-/// WHAT CONCLUDING A LISTING RETURNS: the words it cited, the chain it could
-/// not reduce, and whether the genome already held it (24.2).
-pub type Concluded = (Vec<crate::anastome::dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>, bool);
+/// WHAT CONCLUDING A LISTING RETURNS (24.2).
+pub struct Concluded {
+    /// The words this entity cited to speak the chain.
+    pub cites: Vec<crate::anastome::dialogue::CiteWire>,
+    /// The chain it could NOT reduce — its own claim, or the whole chain
+    /// back when the residual does not descend and is held as thought.
+    pub residual: Vec<(i64, i64, u8, u8)>,
+    /// Whether the genome already held that residual. A familiar residual
+    /// is not spoken again.
+    pub familiar: bool,
+}
 
 /// What `speak_word` did with a closed mint. Only [`Utterance::Spoken`]
 /// is a fresh frame; the memo and the identity gate are not speech.

@@ -49,7 +49,8 @@ match entity.quote() {
             // THINK, then CONVERSE. Incidence is deconstruction:
             // every served listing is concluded. Chart keys route;
             // they never decide comprehension.
-            let (cites, residual, familiar) = entity.conclude_listing(&cluster.chain);
+            let mycelium::sdk::Concluded { cites, residual, familiar } =
+                entity.conclude_listing(&cluster.chain);
             eprintln!(
                 "[{tag}] [{}] cluster {} cells: concluded -> {} cites, {} residual{}",
                 mycelium::chronometry::Height::stamp_of(entity.now_tu()),
