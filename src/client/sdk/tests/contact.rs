@@ -23,6 +23,19 @@ assert!(
 );
 // Dwell is bounded by one aperture; Z is a routing coordinate.
 assert_eq!(s.impedance(), cycle);
+
+// ONE OCCLUDED WIRE IS NOT AN OCCLUDED MIND. `impedance` was a `max`
+// over every wire the session had touched (rule 4), so a peer that had
+// gone quiet made the mind read itself as occluded on the wires that
+// were answering, and `transport` -- which paces the whole stroke --
+// read it that way too. Z is per wire, and the wires are not one wire.
+assert_eq!(s.z_at("127.0.0.1:2"), 0, "a wire never spoken on carries no Z");
+assert_eq!(
+    s.impedance(),
+    s.z_at("127.0.0.1:1"),
+    "the session's own impedance is the wire it is bound to"
+);
+assert!(!s.occluded_at("127.0.0.1:2"), "and another wire is not occluded by this one");
 }
 
 /// A successful exchange with any hypha decays Z on every path, so a

@@ -231,16 +231,19 @@ impl Session {
         self.voice.advance()
     }
 
-    /// The measured impedance Z: consecutive failed exchanges.
+    /// The measured impedance Z on THIS SESSION'S OWN WIRE: consecutive
+    /// failed exchanges with the peer it is bound to.
+    ///
+    /// It was a `max` over every wire the session had ever touched, which
+    /// is rule 4's "any `.max()` on two measurements" and collapses N
+    /// independent readings to one: a mind with one occluded peer and nine
+    /// open ones read itself as occluded, and `transport()` -- which paces
+    /// the whole stroke -- read it that way too. The wires are not one
+    /// wire, and 42.6 prices the mesh cover by the hyphae covering a
+    /// stratum, not by the worst of them. `z_at` reads any other wire, and
+    /// `occluded_at` decides one.
     pub fn impedance(&self) -> u64 {
-        // W8: a max over wires collapses them to one impedance. Left as
-        // the reading it was, keyed now; the per-wire read is `z_at`.
-        let r = self.resistance.borrow();
-        let mut z = 0u64;
-        for (_, v) in r.fiber(crate::network::nerve::ROOT) {
-            z = z.max(*v);
-        }
-        z
+        self.z_at(&self.addr)
     }
 
     pub fn rtt(&self) -> Option<u64> {
