@@ -97,7 +97,14 @@ match entity.quote() {
                 .filter(|c| c.standing == mycelium::sdk::Standing::Held.as_u8())
                 .filter_map(|c| entity.cited_word(&c.addr))
                 .collect();
-            if held.len() >= 2 {
+            // "MULTIPLICITY OPENS AN AXIS. `open_axis` fires when several
+            // held words deflate one listing at once, and the glue between
+            // them is the new coordinate" (24.3). Several is a SHAPE -- two
+            // or more, so there is a glue to be the coordinate -- and it is
+            // read off the slice. `held.len() >= 2` is rule 2's "a count is
+            // never a branch"; the shape says which case it is without
+            // measuring anything.
+            if let [_, _, ..] = held.as_slice() {
                 if let Some(a) = entity.open_axis(&cluster.address, &cluster.chain, &held) {
                     eprintln!(
                         "[{tag}] axis opened on {:02x}{:02x}…: {} held words deflated, glue spoken as {:02x}{:02x}…",

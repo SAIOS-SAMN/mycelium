@@ -244,12 +244,24 @@ impl Entity {
         }
         let body = self.session.speak_keyed(&voice, dialogue::encode_syllabus_request(&voice))?;
         let mut words = dialogue::decode_syllabus_reply(&body).unwrap_or_default();
+        // DEPTH ORDER IS THE DOCTRINE, not a choice by a scalar: "a mind
+        // never receives depth d before it holds every cited form below d;
+        // the syllabus serves in depth order" (chapter 6, 24.2), and
+        // chapter 4's well-foundedness rests on it. What is not doctrine is
+        // `unwrap_or(0)`: a word whose tape does not re-derive as a form
+        // was given DEPTH ZERO and sorted to the front, ahead of the words
+        // it might cite (rule 11, checklist (i)). A tape that does not
+        // parse has no depth; it is learned last, where it can cite
+        // everything already in hand, and `learn_one` refuses it there on
+        // its own replay.
         words.sort_by_key(|w| {
             let mut pos = 0usize;
-            crate::transducer::element::Element::from_bytes(w, &mut pos)
+            match crate::transducer::element::Element::from_bytes(w, &mut pos)
                 .and_then(|e| crate::transducer::sentence::from_element_form(&e))
-                .map(|f| f.depth)
-                .unwrap_or(0)
+            {
+                Some(f) => (0u8, f.depth),
+                None => (1u8, 0),
+            }
         });
         let mut learned = 0usize;
         for w in &words {
