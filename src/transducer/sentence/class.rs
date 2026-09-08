@@ -81,14 +81,66 @@ pub struct Rank {
     pub axes: u32,
 }
 
+/// ONE COORDINATE of the rank audit, by name. A refusal says which
+/// coordinate refused it; a number in that sentence would say nothing.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RankAxis {
+    Torsion,
+    Free,
+    OffPlane,
+    Axes,
+}
+
+/// THE MOVE a pivot made in rank space: the signed difference per
+/// coordinate, `after − before`. A18's audit is a vector never summed, and
+/// so is the difference of two of them.
+///
+/// This is a READING. It refuses nothing and admits nothing — 12.6 leaves
+/// the refusal with the trial, which is one of the four sites sanctioned to
+/// take it, and the reading is what the trial reads.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub struct RankMove {
+    pub torsion: i64,
+    pub free: i64,
+    pub offplane: i64,
+    pub axes: i64,
+}
+
+impl RankMove {
+    /// The coordinates this move RAISED against 12.6's direction: torsion,
+    /// free or offplane climbing, or axes falling. An empty list is a move
+    /// that raised nothing — never "the move is admissible", which is the
+    /// caller's sentence to say.
+    pub fn raised(&self) -> Vec<RankAxis> {
+        let mut out = Vec::new();
+        if self.torsion > 0 {
+            out.push(RankAxis::Torsion);
+        }
+        if self.free > 0 {
+            out.push(RankAxis::Free);
+        }
+        if self.offplane > 0 {
+            out.push(RankAxis::OffPlane);
+        }
+        if self.axes < 0 {
+            out.push(RankAxis::Axes);
+        }
+        out
+    }
+}
+
 impl Rank {
-    /// A pivot is admissible when it leaves rank equal or lowers `torsion`,
-    /// `free` or `offplane` while `axes` does not fall (12.6, R2).
-    pub fn admits(before: Rank, after: Rank) -> bool {
-        after.torsion <= before.torsion
-            && after.free <= before.free
-            && after.offplane <= before.offplane
-            && after.axes >= before.axes
+    /// What the pivot did to each coordinate (12.6, R2). Signed, per
+    /// coordinate, never collapsed: `torsion`, `free` and `offplane` are
+    /// read as falling and `axes` as rising, and nothing here decides.
+    pub fn moved(before: Rank, after: Rank) -> RankMove {
+        let d = |a: u32, b: u32| a as i64 - b as i64;
+        RankMove {
+            torsion: d(after.torsion, before.torsion),
+            free: d(after.free, before.free),
+            offplane: d(after.offplane, before.offplane),
+            axes: d(after.axes, before.axes),
+        }
     }
 
     pub(crate) fn to_bytes(self, out: &mut Vec<u8>) {

@@ -190,7 +190,7 @@ impl Form {
                         debug_assert_eq!(cert.rank_before, rank_before);
                         self.apply_pivot(&cert);
                         debug_assert!(
-                            self.rank().is_some_and(|r| Rank::admits(rank_before, r)),
+                            self.rank().is_some_and(|r| Rank::moved(rank_before, r).raised().is_empty()),
                             "A18: an applied pivot does not lose rank"
                         );
                         debug_assert_eq!(self.rank(), Some(cert.rank_after));
@@ -409,7 +409,12 @@ impl Form {
         let mut after_rows = rows.to_vec();
         *after_rows.get_mut(idx)? = loop_row(&after_h);
         let rank_after = rank_of_rows(&after_rows)?;
-        if !Rank::admits(rank_before, rank_after) {
+        // 12.6: the trial refuses a candidate that raises any coordinate.
+        // The reading says WHICH, and the refusal is taken here — this is
+        // one of the four sites sanctioned to take it.
+        let moved = Rank::moved(rank_before, rank_after);
+        let raised = moved.raised();
+        if !raised.is_empty() {
             return None;
         }
         let mu = match mu_before {

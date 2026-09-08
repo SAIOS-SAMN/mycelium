@@ -532,3 +532,32 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
     assert!(!after.occupies(Axis::Dilation), "Dilation zeroes, got {:?}", after.coordinates());
     assert!(before.agrees_except(&after, Axis::Dilation));
 }
+
+/// 12.6, S9.1 — RANK IS READ, NOT ADJUDICATED. `Rank::moved` returns the
+/// signed move per coordinate and refuses nothing; `raised()` names the
+/// coordinates that went the wrong way, so a refusal can say WHICH. The
+/// predicate this replaces returned one bool over two rank vectors, which
+/// is the scalar collapse law 5 refuses: three coordinates falling and one
+/// rising read as a single "no" with nothing to point at.
+#[test]
+fn a_rank_move_is_a_reading_per_coordinate() {
+    let before = Rank { torsion: 3, free: 2, offplane: 1, axes: 0 };
+    // A discharge: torsion falls by two, an axis opens.
+    let after = Rank { torsion: 1, free: 2, offplane: 1, axes: 1 };
+    let m = Rank::moved(before, after);
+    assert_eq!(m, RankMove { torsion: -2, free: 0, offplane: 0, axes: 1 });
+    assert!(m.raised().is_empty(), "nothing went the wrong way: {:?}", m.raised());
+
+    // A candidate that trades free rank for torsion raises `free`, and the
+    // reading says so by name — the torsion it bought is still visible.
+    let traded = Rank { torsion: 1, free: 5, offplane: 1, axes: 0 };
+    let m = Rank::moved(before, traded);
+    assert_eq!(m.torsion, -2, "the fall is still in the reading");
+    assert_eq!(m.raised(), vec![RankAxis::Free], "and the rise is named");
+
+    // Axes falling is a refusal in its own right: an axis that closes is
+    // not a saving, it is a coordinate lost.
+    let closed = Rank { torsion: 3, free: 2, offplane: 1, axes: 0 };
+    let m = Rank::moved(Rank { axes: 2, ..before }, closed);
+    assert_eq!(m.raised(), vec![RankAxis::Axes], "a closed axis is a rise");
+}
