@@ -180,9 +180,20 @@ pub fn probe(
     settled
 }
 
-/// WHAT A QUOTE READS OFF THE LOCK: the surface μ⃗, the priced items with the
-/// charts they leave open, K, the cohesion pair, and the height it stands at.
-pub type Quoted = ([u64; 4], Vec<crate::cognition::Priced>, u64, (u64, u64), u64);
+/// WHAT A QUOTE READS OFF THE LOCK.
+pub struct Quoted {
+    /// The yield surface, per lane, read off genuine metabolic tension.
+    pub surface: [u64; 4],
+    /// The items served, each with the charts it leaves open.
+    pub priced: Vec<crate::cognition::Priced>,
+    /// The K-step this quote stands at.
+    pub k_step: u64,
+    /// The cohesion reading (C, I): closure work and coverage work, two
+    /// lanes of one object, returned exactly and never compared.
+    pub cohesion: (u64, u64),
+    /// The height the book stands at.
+    pub height: u64,
+}
 
 /// THE QUOTE, off the lock: incidence of the voice's charts against the
 /// listing atlas. The page width is the body budget. Returns (surface,
@@ -239,7 +250,13 @@ pub fn quote(
         )
     };
     let cohesion = crate::cognition::cohesion_over(&rank);
-    Some((surface, priced, view.head_k, cohesion, view.gens.1))
+    Some(Quoted {
+        surface,
+        priced,
+        k_step: view.head_k,
+        cohesion,
+        height: view.gens.1,
+    })
 }
 
 /// Idle consolidation, orchestrated off the request path: the cheap moves

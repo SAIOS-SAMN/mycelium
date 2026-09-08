@@ -18,9 +18,10 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let kernel = &door.kernel;
 
     let Some((qvoice, charts)) = dialogue::decode_quote_request(&frame.body) else { return };
-    let Some((surface, priced, k_step, cohesion, height)) = mycelium::synthesis::quote(kernel, qvoice, &charts) else {
+    let Some(quoted) = mycelium::synthesis::quote(kernel, qvoice, &charts) else {
         return;
     };
+    let mycelium::synthesis::Quoted { surface, priced, k_step, cohesion, height } = quoted;
     let items: Vec<dialogue::WorkItem> = priced
         .iter()
         .map(|p| (p.word.address(), p.mu, p.word.sub().to_vec(), p.open.clone()))

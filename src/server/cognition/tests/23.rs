@@ -19,9 +19,8 @@ let k = std::sync::Mutex::new(Kernel::new());
     assert!(matches!(g.ingest(&a, &b, [1; 32]), Outcome::GermPending));
     assert!(matches!(g.attest(&germinate(&a, &b).unwrap(), [1; 32]), Outcome::GermPending));
 }
-let (_, priced, _, _, _) =
-    crate::synthesis::quote(&k, [1u8; 32], &[]).expect("quote");
-assert!(!priced.is_empty(), "an empty atlas reads the book at depth zero");
+let quoted = crate::synthesis::quote(&k, [1u8; 32], &[]).expect("quote");
+assert!(!quoted.priced.is_empty(), "an empty atlas reads the book at depth zero");
 }
 
 /// CONFLUENT REDUCTION is TRANSPOSITION-INVARIANT (the win over lookup): install
