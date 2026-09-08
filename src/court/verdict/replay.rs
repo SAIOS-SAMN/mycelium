@@ -113,8 +113,14 @@ pub fn replay_form_with(
             &crate::transducer::family::NoCrystal
         };
         let (pay, rems) = crate::transducer::family::form_descent(&walked, fam, descent_crystal);
-        if rems.iter().any(|r| !r.is_empty()) || pay.iter().all(|&m| m == 0) {
-            return Some(REFUSE_NO_DESCENT);
+        // S9.4 — CLOSURE IS THE CERTIFICATE. A remainder on any pair means
+        // the form does not close the family it claims, and that is the
+        // refusal. The μ⃗ it measured is NOT: a form that closes every pair
+        // while measuring nothing has still closed them, and pricing is the
+        // economy's reading, taken after the court's.
+        let _ = pay;
+        if rems.iter().any(|r| !r.is_empty()) {
+            return Some(REFUSE_NO_CLOSURE);
         }
     }
     replay_certificates(&walked, &by_chord)

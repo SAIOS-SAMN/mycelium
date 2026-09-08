@@ -13,7 +13,7 @@ use super::*;
 /// only if the spoken residual descends on that pair, else the pair
 /// contributes zero. Summed over pairs. The per-pair `residual_of(spoken, y)`
 /// chains sit beside the sum. A form is spoken only when every remainder
-/// is empty; `REFUSE_NO_DESCENT` means the form closes nothing.
+/// is empty; `REFUSE_NO_CLOSURE` means a remainder was left.
 pub fn form_descent(
     form: &Form,
     family: &[(Grid, Grid)],

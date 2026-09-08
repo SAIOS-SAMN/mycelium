@@ -88,9 +88,19 @@ fn replay_form_refuses_unruled_glue_and_replays_resolved() {
     bad.faces[0].transport = inner.face_of(0, 1).expect("vertices");
     let bad_e = as_element_form(&bad, [1, 0, 0, 0]).expect("tampered tape");
     assert_eq!(blind_replay_with(&bad_e, &resolve), Some(REFUSE_FACE));
+    // S9.4 — A ZERO MAGNITUDE IS NOT A REFUSAL. This tape replays: its
+    // loops return, its faces re-derive, its citation resolves. It was
+    // refused for measuring nothing, which made the court an economist —
+    // μ⃗ is a cost, not a score, and a word that costs nothing to say has
+    // still said it. What closes the family is checked where the family is
+    // (REFUSE_NO_CLOSURE); pricing is read afterwards, by the economy.
     let mut flat = as_element_form(&outer, [1, 0, 0, 0]).expect("tape");
     flat.set_magnitude([0; 4]);
-    assert_eq!(blind_replay_with(&flat, &resolve), Some(REFUSE_NO_DESCENT));
+    assert_eq!(
+        blind_replay_with(&flat, &resolve),
+        None,
+        "closure certifies; a zero magnitude prices at zero and refuses nothing"
+    );
     let mut cited_deeper = outer.clone();
     if let Vertex::Glued { depth, .. } = &mut cited_deeper.vertices[gi as usize] {
         *depth = 1;
@@ -300,5 +310,39 @@ fn vertex_tape_and_moves_replay_or_refuse() {
         replay_form(&orb_e, &|_| None),
         Some(REFUSE_ORBIT_STILL),
         "an identity word does not orbit"
+    );
+}
+
+/// S9.4 — CLOSURE IS WHAT THE COURT CHECKS. A form minted over one train
+/// pair replays clean against that pair, and refuses against a family whose
+/// second pair it does not close. The refusal names the remainder, not the
+/// magnitude: a form that closes every pair while measuring nothing has
+/// still closed them, and what it measured is the economy's reading.
+///
+/// This is `REFUSE_NO_CLOSURE`'s producing test (3.5). The reason it
+/// replaces, `REFUSE_NO_DESCENT`, fired on a zero magnitude — a fact about
+/// price, ruled on by a court.
+#[test]
+fn a_form_that_leaves_a_remainder_is_refused_for_closure() {
+    use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
+    let grid = |rows: &[&str]| -> crate::arc::Grid {
+        rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
+    };
+    let (x, y) = (grid(&["1"]), grid(&["2"]));
+    let one_pair = vec![(x.clone(), y.clone())];
+    let rule = extract_rule(&one_pair).expect("a recolour is a rule");
+    let word = mint_sentence(&rule, &one_pair, &NoCrystal).expect("it closes its own pair");
+    assert_eq!(
+        blind_replay_on(&word, &|_| None, Some(&one_pair), &NoCrystal),
+        None,
+        "the form closes the family it was minted over"
+    );
+
+    // A second pair the same rule does not speak: the remainder is not empty.
+    let wider = vec![(x, y), (grid(&["10"]), grid(&["23"]))];
+    assert_eq!(
+        blind_replay_on(&word, &|_| None, Some(&wider), &NoCrystal),
+        Some(REFUSE_NO_CLOSURE),
+        "a remainder on any pair is the refusal"
     );
 }

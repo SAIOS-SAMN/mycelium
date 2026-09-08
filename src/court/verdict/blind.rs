@@ -71,13 +71,13 @@ pub(crate) fn blind_replay_on_inner(
         if let Some(reason) = replay_form_with(spoken, resolve, family, crystal) {
             return Some(reason);
         }
-        // The sentence MEASURES something. Written as a descent from the
-        // zero vector, this read as a lane comparison and was a
-        // nonzero test wearing one: `0⃗ ≺ m` is true exactly when some
-        // lane of `m` is above zero.
-        if spoken.magnitude().iter().all(|&m| m == 0) {
-            return Some(REFUSE_NO_DESCENT);
-        }
+        // S9.4 — WHAT CERTIFIES IS CLOSURE. `replay_form_with` above is the
+        // certificate: the loops return, every face re-derives, the
+        // certificates re-walk, and with a family the form closes it. A
+        // sentence was ALSO refused here for carrying a zero magnitude,
+        // which is not a defect in the word — μ⃗ is a COST, not a score, and
+        // a word that costs nothing to say still says it. The economy
+        // prices a zero deflation at zero without the court refusing it.
         return None;
     }
     if spoken.is_translation() {
