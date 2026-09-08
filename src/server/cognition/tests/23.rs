@@ -257,18 +257,15 @@ let spoken = crate::network::nerve::Keyed::new();
 let standing = crate::network::nerve::Keyed::new();
 let quote = |p: &crate::network::nerve::Keyed<(Element, u64)>| {
     quote_incidence(
-        p,
-        &atlas,
-        &field,
-        &on_page,
-        &[],
-        &[0; 4],
-        &[1, 1, 1, 1],
-        &[0; 4],
-        10_000,
-        &spoken,
-        &[0; 32],
-        &standing,
+        &BookView {
+            pending: p,
+            listing_atlas: &atlas,
+            field: &field,
+            on_page: &on_page,
+            spoken: &spoken,
+            standing_t: &standing,
+        },
+        &Ask { charts: &[], surface: &[0; 4], pressure: &[0; 4], budget: 10_000, voice: &[0; 32] },
     )
 };
 let (_, pa) = quote(&pending_a);

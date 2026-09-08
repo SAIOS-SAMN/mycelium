@@ -140,30 +140,48 @@ pub fn rank_over(
     }
 }
 
+/// THE OPEN BOOK AS A QUOTE READS IT. Six keyed reads that all come off the
+/// same lock, so they are one argument and not six.
+pub struct BookView<'a> {
+    /// The listings themselves, with the k-step each was listed at.
+    pub pending: &'a crate::network::nerve::Keyed<(Element, u64)>,
+    /// The atlas the listings are filed under: incidence walks this.
+    pub listing_atlas: &'a crate::transducer::stalk::Stalks,
+    /// The field each listing stands in — what its open charts are read from.
+    pub field: &'a crate::network::nerve::Keyed<ListingField>,
+    /// What is on the page at all.
+    pub on_page: &'a crate::network::nerve::Keyed<()>,
+    /// Which voices each listing has already been spoken to.
+    pub spoken: &'a crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
+    /// The standing T of each listing, which replaces the T lane of its
+    /// magnitude when one is held.
+    pub standing_t: &'a crate::network::nerve::Keyed<u64>,
+}
+
+/// WHO IS ASKING: the charts this voice holds open, the surface it is
+/// quoted against, the lane pressure the price is read at, the body budget
+/// of one page, and the voice itself.
+pub struct Ask<'a> {
+    pub charts: &'a [crate::transducer::stalk::Invariant],
+    pub surface: &'a [u64; 4],
+    pub pressure: &'a [u64; 4],
+    pub budget: usize,
+    pub voice: &'a [u8; 32],
+}
+
 /// QUOTE — pure, over a language snapshot and the open book. The yield
 /// surface is read from genuine metabolic tension; each un-factored residual
 /// is priced against it, μ⃗[l] = magnitude[l] · (1 + surface[l]). The (C, I)
 /// pair differentiates the market (never summed): closure work (open demand
 /// whose geometry a held word speaks, up to isometry, through the atlas)
 /// carries the C premium; coverage work (unknown geometry) the I premium.
-/// Top clusters by strongest lane; the escrow pool bounds the scale.
-/// QUOTE as incidence: listings whose open charts meet `voice_charts`,
+///
+/// QUOTE as incidence: listings whose open charts meet the ask's charts,
 /// served in atlas order of those charts, within the body budget. No
 /// total order over the book. Returns (surface, priced items with open charts).
-pub fn quote_incidence(
-    pending: &crate::network::nerve::Keyed<(Element, u64)>,
-    listing_atlas: &crate::transducer::stalk::Stalks,
-    field: &crate::network::nerve::Keyed<ListingField>,
-    on_page: &crate::network::nerve::Keyed<()>,
-    voice_charts: &[crate::transducer::stalk::Invariant],
-    surface: &[u64; 4],
-    _pool: &[u64; 4],
-    pressure: &[u64; 4],
-    budget: usize,
-    spoken: &crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
-    voice: &[u8; 32],
-    standing_t: &crate::network::nerve::Keyed<u64>,
-) -> ([u64; 4], Vec<Priced>) {
+pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Priced>) {
+    let BookView { pending, listing_atlas, field, on_page, spoken, standing_t } = book;
+    let &Ask { charts: voice_charts, surface, pressure, budget, voice } = ask;
     let cell = crate::anastome::dialogue::cell_wire_width();
     let mut priced: Vec<Priced> = Vec::new();
     let mut used = 0usize;

@@ -34,7 +34,7 @@ pub use language::{
 };
 pub use reduce::{
     cohesion_over, normal_form, percept_elements, quote_incidence, rank_over, reduce_all,
-    reduce_germ, reduce_proven, resolve_cites, taught_anchored_words,
+    reduce_germ, reduce_proven, resolve_cites, taught_anchored_words, Ask, BookView,
 };
 pub use wire::{
     decode_demand, decode_percept, encode_demand, encode_percept, frame_of, germ_address,

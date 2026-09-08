@@ -213,22 +213,28 @@ pub fn quote(
         view.gens,
     );
     let budget = crate::network::wire::frame_budget() - 34;
-    let pool = view.pool.as_ref()?;
+    // NO ESCROW POOL, NO QUOTE. The pool gates whether the book is quotable
+    // at all; it does not bound the scale of what is served, which is the
+    // body budget's job.
+    view.pool.as_ref()?;
     let (surface, priced) = {
         let g = k.lock().ok()?;
         crate::cognition::quote_incidence(
-            &view.pending,
-            g.listing_atlas(),
-            g.field(),
-            g.on_page(),
-            charts,
-            &view.surface,
-            pool,
-            &view.pressure,
-            budget,
-            g.spoken(),
-            &voice,
-            &view.standing_t,
+            &crate::cognition::BookView {
+                pending: &view.pending,
+                listing_atlas: g.listing_atlas(),
+                field: g.field(),
+                on_page: g.on_page(),
+                spoken: g.spoken(),
+                standing_t: &view.standing_t,
+            },
+            &crate::cognition::Ask {
+                charts,
+                surface: &view.surface,
+                pressure: &view.pressure,
+                budget,
+                voice: &voice,
+            },
         )
     };
     let cohesion = crate::cognition::cohesion_over(&rank);
