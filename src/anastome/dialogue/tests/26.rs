@@ -29,7 +29,12 @@ fn the_five_acts_round_trip() {
         (voice, chain.clone(), cites.clone(), 7)
     );
     assert_eq!(decode_quote_request(&encode_quote_request(&voice)).unwrap(), (voice, Vec::new()));
-    let items = vec![(listing.clone(), [1u64, 2, 30, 4], chain.clone(), Vec::new())];
+    let items = vec![WorkItem {
+        addr: listing.clone(),
+        mu: [1, 2, 30, 4],
+        chain: chain.clone(),
+        open: Vec::new(),
+    }];
     let (h, s, k, it) = decode_quote_reply(&encode_quote_reply(3, &[5, 0, 9, 0], 4208, &items)).unwrap();
     assert_eq!(h, 3, "book height rides the quote");
     assert_eq!(s, [5, 0, 9, 0]);

@@ -80,7 +80,7 @@ impl Entity {
         // carrier. A wide discordance converges over contacts.
         let charts: Vec<dialogue::Chart> = strata
             .iter()
-            .map(|d| (d.inv.clone(), sheaf::have(&atlas, &d.inv)))
+            .map(|d| dialogue::ChartOf { inv: d.inv.clone(), have: sheaf::have(&atlas, &d.inv) })
             .collect();
         let request = dialogue::encode_fetch(&voice, &charts, crate::network::wire::frame_budget());
         let mut learned = 0usize;
@@ -165,7 +165,7 @@ impl Entity {
         // and installs what it cannot already derive.
         let mut taught = 0usize;
         let mut used = 0usize;
-        'strata: for (_, held) in &charts {
+        'strata: for dialogue::ChartOf { have: held, .. } in &charts {
             for addr in held {
                 if self.already_taught_addr(addr) {
                     continue; // spoken for adoption once; the judge decided

@@ -107,7 +107,7 @@ pub(crate) fn admit_peer_receipt(
     if at >= body.len() {
         return Err(NoAdmission::NoSection);
     }
-    let (prefix, sig, receipt) =
+    let dialogue::ReceiptSection { prefix, sig, receipt } =
         dialogue::decode_receipt_section(body, at).ok_or(NoAdmission::Malformed)?;
     if !mycelium::court::identity::verify(&receipt.vk, &prefix.bytes(), &sig) {
         return Ok(Admitted::Refused("bad signature"));
@@ -196,7 +196,9 @@ none {} malformed {} no-origin {}",
 }
 
 pub(crate) fn admit_peer_digest(mesh: &Mesh, body: &[u8], router: &Mutex<Router>) -> bool {
-    let Some((charts, room, cover_roots, ruled_root, vk, addr, sig)) = dialogue::decode_cover_digest(body) else {
+    let Some(dialogue::CoverDigest { charts, room, cover_roots, ruled_root, vk, bind: addr, sig }) =
+        dialogue::decode_cover_digest(body)
+    else {
         return false;
     };
     let prefix = dialogue::cover_signed_prefix(&cover_roots, &ruled_root, &room);

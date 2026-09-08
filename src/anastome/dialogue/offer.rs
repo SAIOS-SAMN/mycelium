@@ -55,7 +55,7 @@ pub fn decode_offer(body: &[u8]) -> Option<Offer> {
     let sig: [u8; 64] = body.get(p..p + 64)?.try_into().ok()?;
     p += 64;
     let inst_sig: [u8; 64] = body.get(p..p + 64)?.try_into().ok()?;
-    Some((addr, elem, voices, deflation, k, sig, inst_sig))
+    Some(Offer { addr, elem, voices, deflation, k, sig, install_sig: inst_sig })
 }
 
 /// Installed: `[ACT_INSTALLED][addr][elen u32][elem][sig_home 64][sig_peer 64]`
@@ -81,7 +81,7 @@ pub fn decode_installed(body: &[u8]) -> Option<Installed> {
     p += elen;
     let sig_home: [u8; 64] = body.get(p..p + 64)?.try_into().ok()?;
     let sig_peer: [u8; 64] = body.get(p + 64..p + 128)?.try_into().ok()?;
-    Some((addr, elem, sig_home, sig_peer))
+    Some(Installed { addr, elem, sig_home, sig_peer })
 }
 
 /// Bytes of an Offer/Installed body that the signature covers (everything after the act except the trailing sigs).

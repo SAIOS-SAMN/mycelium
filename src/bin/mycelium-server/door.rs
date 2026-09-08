@@ -252,8 +252,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
     // basis 0. The gate was never the germ quorum; it was that the offer
     // never left the process.
     if kind == dialogue::ACT_OFFER {
-        let Some((_addr, elem_bytes, _voices, _defl, _k, _sig, _inst)) =
-            dialogue::decode_offer(&frame.body)
+        let Some(dialogue::Offer { elem: elem_bytes, .. }) = dialogue::decode_offer(&frame.body)
         else {
             return true;
         };

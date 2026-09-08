@@ -59,7 +59,7 @@ pub fn decode_receipt_section(body: &[u8], at: usize) -> Option<ReceiptSection> 
     if q != rlen {
         return None;
     }
-    Some((prefix, sig, receipt))
+    Some(ReceiptSection { prefix, sig, receipt })
 }
 
 /// Offset one past a receipt section starting at `at`, or `None` when
@@ -80,7 +80,7 @@ pub(crate) fn receipt_section_end(body: &[u8], at: usize) -> Option<usize> {
 
 pub fn encode_fetch<A: AsRef<[u8]>>(
     voice: &[u8; 32],
-    charts: &[(crate::transducer::stalk::Invariant, Vec<A>)],
+    charts: &[ChartOf<A>],
     budget: usize,
 ) -> Vec<u8> {
     let mut out = vec![ACT_FETCH];
@@ -88,7 +88,7 @@ pub fn encode_fetch<A: AsRef<[u8]>>(
     let count_at = out.len();
     out.extend_from_slice(&0u32.to_le_bytes());
     let mut k = 0u32;
-    for (inv, have) in charts {
+    for ChartOf { inv, have } in charts {
         let width = 1 + 8 * inv.0.len() + 4 + have.iter().map(|a| 2 + a.as_ref().len()).sum::<usize>();
         if out.len() + width > budget {
             break;
@@ -127,7 +127,7 @@ pub fn decode_fetch(body: &[u8]) -> Option<([u8; 32], Vec<Chart>)> {
         for _ in 0..n {
             have.push(take_addr(body, &mut p)?);
         }
-        charts.push((inv, have));
+        charts.push(Chart { inv, have });
     }
     Some((voice, charts))
 }

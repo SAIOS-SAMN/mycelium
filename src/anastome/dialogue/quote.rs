@@ -99,7 +99,7 @@ pub fn encode_quote_reply_within(height: u64, surface: &[u64; 4], k: u64, items:
     let count_at = out.len();
     out.push(0);
     let mut served = 0u8;
-    for (addr, mu, chain, open) in items.iter().take(255) {
+    for WorkItem { addr, mu, chain, open } in items.iter().take(255) {
         let open_len: usize = 1 + open.iter().map(|i| 1 + 8 * i.0.len().min(255)).sum::<usize>();
         let item_len = 2 + addr.len() + 32 + 4 + chain.len() * 18 + open_len;
         if out.len() + item_len > budget {
@@ -141,7 +141,7 @@ pub fn decode_quote_reply(body: &[u8]) -> Option<(u64, [u64; 4], u64, Vec<WorkIt
         for _ in 0..nopen {
             open.push(read_invariant(body, &mut p)?);
         }
-        items.push((addr, mu, chain, open));
+        items.push(WorkItem { addr, mu, chain, open });
     }
     Some((height, surface, k, items))
 }

@@ -222,7 +222,7 @@ pub(crate) fn cover_digest_at(body: &[u8], at: usize) -> Option<(CoverDigest, us
     p += alen;
     let sig: [u8; 64] = body.get(p..p + 64)?.try_into().ok()?;
     p += 64;
-    Some(((charts, room, cover_roots, ruled_root, vk, addr, sig), p))
+    Some((CoverDigest { charts, room, cover_roots, ruled_root, vk, bind: addr, sig }, p))
 }
 
 /// Offset one past a stratum-digest reply at the head of `body`, if the
@@ -310,5 +310,5 @@ pub fn decode_cover(body: &[u8]) -> Option<Cover> {
         let inv = read_invariant(body, &mut p)?;
         charts.push((lane, inv));
     }
-    Some((vk, addr, charts))
+    Some(Cover { vk, bind: addr, charts })
 }

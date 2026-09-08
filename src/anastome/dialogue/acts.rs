@@ -150,7 +150,16 @@ pub struct CiteWire {
 /// A fetch names every discordant chart with the asker's have-list in each;
 /// the request itself is filled within the frame budget.
 /// `[ACT_FETCH][voice 32][k u32]{[len u8][inv u64·len][n u32][addr]·n}·k`.
-pub type Chart = (crate::transducer::stalk::Invariant, Vec<Address>);
+pub struct ChartOf<A> {
+    /// The chart, by invariant.
+    pub inv: crate::transducer::stalk::Invariant,
+    /// What the ASKER already holds on it, so the server sends the
+    /// difference and never the stratum.
+    pub have: Vec<A>,
+}
+
+/// A chart as the receiver reads it, with addresses decoded.
+pub type Chart = ChartOf<Address>;
 
 /// THE SYLLABUS (distributed cognition, operator-ruled): court-ratified
 /// vocabulary PUSHED to every enrolled voice on its next contact — teaching
@@ -183,12 +192,46 @@ pub struct SpeechAct {
     /// missing entry is Stood, never Ruled.
     pub standing: Vec<u8>,
 }
-/// `(vk, bind, charts)`
-pub type Cover = ([u8; 32], String, Vec<(u8, crate::transducer::stalk::Invariant)>);
-/// `(address, element bytes, voices, deflation, K, sig, install sig)`
-pub type Offer = (Address, Vec<u8>, Vec<[u8; 32]>, [u64; 4], u64, [u8; 64], [u8; 64]);
-/// `(address, element bytes, home sig, witness sig)`
-pub type Installed = (Address, Vec<u8>, [u8; 64], [u8; 64]);
+/// A COVER announcement: who, where, and what it covers.
+pub struct Cover {
+    /// The announcing key.
+    pub vk: [u8; 32],
+    /// Where to reach it.
+    pub bind: String,
+    /// The charts it covers, each on its lane.
+    pub charts: Vec<(u8, crate::transducer::stalk::Invariant)>,
+}
+/// AN OFFER: a home hypha asking a witness to re-derive a word (47.3).
+pub struct Offer {
+    /// The word's address.
+    pub addr: Address,
+    /// The element as a full tape. The witness replays THIS on its own
+    /// tapes; it never fetches the home's copy to compare bytes.
+    pub elem: Vec<u8>,
+    /// The voices that attested it at home.
+    pub voices: Vec<[u8; 32]>,
+    /// The deflation the home measured.
+    pub deflation: [u64; 4],
+    /// The home's k-step.
+    pub k: u64,
+    /// The home's signature over the offer prefix.
+    pub sig: [u8; 64],
+    /// The home's INSTALL signature — the second, over the installed form.
+    pub install_sig: [u8; 64],
+}
+
+/// AN INSTALLED word, carrying both hyphae's signatures.
+pub struct Installed {
+    /// The word's address.
+    pub addr: Address,
+    /// The element as a full tape.
+    pub elem: Vec<u8>,
+    /// The HOME's signature.
+    pub sig_home: [u8; 64],
+    /// The WITNESS's signature. Two signatures, two vantages: the pair is
+    /// what makes the install a convergence and not an assertion.
+    pub sig_peer: [u8; 64],
+}
 /// A SOLVE submission: the answers a voice claims for a registered task.
 pub struct SolveAct {
     /// The solving voice.
@@ -222,23 +265,35 @@ pub type EvidenceItem = crate::transducer::anchor::AddressedEvidence;
 pub use crate::transducer::anchor::EvidenceOf;
 /// `(voice, items)`
 pub type EvidenceDeposit = ([u8; 32], Vec<EvidenceItem>);
-/// 47.1's receipt section: `(prefix, signature over it, the receipt)`
-pub type ReceiptSection = (
-    crate::court::admission::SignedPrefix,
-    [u8; 64],
-    crate::chronometry::KStepReceipt,
-);
-/// The cover digest's fields: `(charts, room, cover roots, ruled root, vk,
-/// bind, sig)`
-pub type CoverDigest = (
-    Vec<(u8, crate::transducer::stalk::Invariant)>,
-    [u64; 4],
-    [[u8; 32]; 4],
-    [u8; 32],
-    [u8; 32],
-    String,
-    [u8; 64],
-);
+/// 47.1's RECEIPT SECTION. A truncated section is refused whole, never a
+/// partial admission (rule 11).
+pub struct ReceiptSection {
+    /// The signed prefix, as the signer wrote it.
+    pub prefix: crate::court::admission::SignedPrefix,
+    /// The signature over that prefix.
+    pub sig: [u8; 64],
+    /// The receipt the signature binds to.
+    pub receipt: crate::chronometry::KStepReceipt,
+}
+
+/// A COVER DIGEST: what a hypha publishes about itself.
+pub struct CoverDigest {
+    /// The charts it covers, each on its lane.
+    pub charts: Vec<(u8, crate::transducer::stalk::Invariant)>,
+    /// Its room, per lane.
+    pub room: [u64; 4],
+    /// The four stratum roots of its cover.
+    pub cover_roots: [[u8; 32]; 4],
+    /// The root of its RULED language — a different tree from the four
+    /// above, and the pair is what a peer compares to see it moved.
+    pub ruled_root: [u8; 32],
+    /// Its verifying key.
+    pub vk: [u8; 32],
+    /// Where to reach it.
+    pub bind: String,
+    /// The signature over the prefix `cover_signed_prefix` builds.
+    pub sig: [u8; 64],
+}
 
 
 /// solve receipt: `[code u8][μ⃗ 32]` — code 2 = BOUNTY (first verified solve),
@@ -252,7 +307,17 @@ pub type Cell = (i64, i64, u8, u8);
 
 /// One quoted work item: the residual's address, its priced μ⃗, the chain,
 /// and the open (non-flat) charts of its coherence field.
-pub type WorkItem = (Address, [u64; 4], Vec<Cell>, Vec<crate::transducer::stalk::Invariant>);
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WorkItem {
+    /// The residual's address — what a demand for it is filed under.
+    pub addr: Address,
+    /// Its priced μ⃗, per lane.
+    pub mu: [u64; 4],
+    /// The chain itself: real, attemptable work, not a pointer to it.
+    pub chain: Vec<Cell>,
+    /// The OPEN (non-flat) charts of its coherence field.
+    pub open: Vec<crate::transducer::stalk::Invariant>,
+}
 
 /// `[ACT_QUOTE][height u64][surface 4×u64][K u64][n u8][item: addr 32 | μ⃗ 4×u64 | chain]…`
 /// — height is the book generation; the u64 K is receipt-chain head

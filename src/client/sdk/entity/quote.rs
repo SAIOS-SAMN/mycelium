@@ -101,7 +101,7 @@ impl Entity {
                         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
                     let clusters: Vec<Cluster> = items
                         .into_iter()
-                        .map(|(address, mu, chain, open)| Cluster { address, mu, chain, open })
+                        .map(|i| Cluster { address: i.addr, mu: i.mu, chain: i.chain, open: i.open })
                         .collect();
                     match &mut out {
                         None => out = Some(YieldQuote { height, surface, k, clusters }),
@@ -222,7 +222,7 @@ impl Entity {
                         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "quote decode"))?;
                     let clusters: Vec<Cluster> = items
                         .into_iter()
-                        .map(|(address, mu, chain, open)| Cluster { address, mu, chain, open })
+                        .map(|i| Cluster { address: i.addr, mu: i.mu, chain: i.chain, open: i.open })
                         .collect();
                     match &mut out {
                         None => {

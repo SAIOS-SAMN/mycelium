@@ -290,8 +290,9 @@ impl Exchange {
                             continue;
                         }
                         tally.note(admit_peer_receipt(&kernel, &mesh, &reply));
-                        let Some((_, _, cover_roots, ruled_root, vk_peer, _, _)) =
-                            dialogue::decode_cover_digest(&reply)
+                        let Some(dialogue::CoverDigest {
+                            cover_roots, ruled_root, vk: vk_peer, ..
+                        }) = dialogue::decode_cover_digest(&reply)
                         else {
                             continue;
                         };
@@ -317,12 +318,18 @@ impl Exchange {
                             if discord.is_empty() {
                                 local
                                     .iter()
-                                    .map(|s| (s.inv.clone(), k.fetch_have(&s.inv)))
+                                    .map(|s| dialogue::ChartOf {
+                                        inv: s.inv.clone(),
+                                        have: k.fetch_have(&s.inv),
+                                    })
                                     .collect::<Vec<_>>()
                             } else {
                                 discord
                                     .iter()
-                                    .map(|s| (s.inv.clone(), k.fetch_have(&s.inv)))
+                                    .map(|s| dialogue::ChartOf {
+                                        inv: s.inv.clone(),
+                                        have: k.fetch_have(&s.inv),
+                                    })
                                     .collect::<Vec<_>>()
                             }
                         };

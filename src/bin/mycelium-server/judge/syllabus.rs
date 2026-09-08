@@ -42,7 +42,7 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let mut classes: Vec<dialogue::ClassPage> = Vec::new();
     if let Ok(mut k) = kernel.lock() {
         let mut have_all: Vec<mycelium::transducer::a21::Address> = Vec::new();
-        for (inv, have) in &charts {
+        for dialogue::ChartOf { inv, have } in &charts {
             have_all.extend(have.iter().cloned());
             let page = k.serve_ruled(inv, have, budget);
             budget = budget.saturating_sub(page.iter().map(|w| w.len() + 4).sum::<usize>());

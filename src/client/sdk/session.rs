@@ -165,8 +165,15 @@ impl Session {
     }
 
     pub(crate) fn absorb_digest(&self, body: &[u8]) {
-        let Some((charts, room, cover_roots, ruled_root, vk, addr, sig)) =
-            crate::anastome::dialogue::decode_cover_digest(body)
+        let Some(crate::anastome::dialogue::CoverDigest {
+            charts,
+            room,
+            cover_roots,
+            ruled_root,
+            vk,
+            bind: addr,
+            sig,
+        }) = crate::anastome::dialogue::decode_cover_digest(body)
         else {
             return;
         };
@@ -357,11 +364,11 @@ impl Session {
                     k,
                     clusters: items
                         .into_iter()
-                        .map(|(address, mu, chain, open)| Cluster {
-                            address,
-                            mu,
-                            chain,
-                            open,
+                        .map(|i| Cluster {
+                            address: i.addr,
+                            mu: i.mu,
+                            chain: i.chain,
+                            open: i.open,
                         })
                         .collect(),
                 })

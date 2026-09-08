@@ -55,16 +55,19 @@ fn the_receipt_section_is_found_after_a_full_digest_frame() {
     let bare = body.len();
     body.extend(encode_receipt_section(&prefix, &rsig, &head));
 
-    let (c, r, cr, rr, v, addr, s) = decode_cover_digest(&body).expect("digest decodes");
-    assert_eq!((c, r, cr, rr, v, s), (charts.clone(), room, cover_roots, ruled_root, vk, sig));
-    assert_eq!(addr, "127.0.0.1:7500");
+    let d = decode_cover_digest(&body).expect("digest decodes");
+    assert_eq!(
+        (d.charts, d.room, d.cover_roots, d.ruled_root, d.vk, d.sig),
+        (charts.clone(), room, cover_roots, ruled_root, vk, sig)
+    );
+    assert_eq!(d.bind, "127.0.0.1:7500");
     assert_eq!(
         cover_digest_end(&body),
         Some(bare),
         "the section begins one past the digest's signature"
     );
-    let (p2, s2, r2) = decode_receipt_section(&body, bare).expect("section");
-    assert_eq!((p2, s2, r2), (prefix.clone(), rsig, head.clone()));
+    let sec = decode_receipt_section(&body, bare).expect("section");
+    assert_eq!((sec.prefix, sec.sig, sec.receipt), (prefix.clone(), rsig, head.clone()));
 
     // A peer that sends no section still decodes, and reads as absent.
     let short = &body[..bare];

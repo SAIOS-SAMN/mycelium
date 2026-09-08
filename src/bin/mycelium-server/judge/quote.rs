@@ -24,7 +24,12 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let mycelium::synthesis::Quoted { surface, priced, k_step, cohesion, height } = quoted;
     let items: Vec<dialogue::WorkItem> = priced
         .iter()
-        .map(|p| (p.word.address(), p.mu, p.word.sub().to_vec(), p.open.clone()))
+        .map(|p| dialogue::WorkItem {
+            addr: p.word.address(),
+            mu: p.mu,
+            chain: p.word.sub().to_vec(),
+            open: p.open.clone(),
+        })
         .collect();
     // The frame budget bounds what one contact carries: items ride in
     // rank order until the next would not fit.
