@@ -6,27 +6,23 @@
 
 use crate::speak::{speak_form, withhold_unextracted};
 use crate::feed::{family_magnitude, retire_feed, Feed};
-use crate::{Counts, Metabolism};
+use crate::Stroke;
 use mycelium::arc::{embed, grid_to_cells, parse_task};
 use mycelium::physics::{Physics, StrokeOutcome};
-use mycelium::sdk::{Comprehension, Entity};
+use mycelium::sdk::Comprehension;
 use mycelium::transducer::element::measure_lanes;
 use mycelium::transducer::germinate::germinate;
 
 pub(crate) fn feed_arm(
-    entity: &mut Entity,
-    physics: &mut Physics,
+    stroke: &mut Stroke<'_>,
     feed: &mut Feed,
     extract_memo: &mut mycelium::network::nerve::Keyed<(
         mycelium::transducer::a21::Address,
         Option<mycelium::transducer::sentence::SentenceRule>,
     )>,
-    c: &mut Counts,
-    outcome: &mut StrokeOutcome,
-    m: &mut Metabolism,
     occluded: bool,
-    tag: &str,
 ) {
+let Stroke { entity, physics, c, outcome, m, tag } = stroke;
 // ── FEED (entropic): present corpus transitions until the stroke
 // spends. A percept is a PROOF spoken over this genome: what the
 // genome reduces is cited, what it cannot is this voice's

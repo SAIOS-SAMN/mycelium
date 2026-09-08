@@ -4,20 +4,12 @@
 //! perceived, and the answer to it is patience rather than repetition. The
 //! ask is paced by the dwell, which is a receipt count and not a timer.
 
-use crate::{Counts, Metabolism};
-use mycelium::physics::{Physics, StrokeOutcome};
-use mycelium::sdk::{Entity};
+use crate::Stroke;
+use mycelium::physics::StrokeOutcome;
 use mycelium::transducer::element::measure_lanes;
 
-pub(crate) fn quote_arm(
-    entity: &mut Entity,
-    physics: &mut Physics,
-    c: &mut Counts,
-    outcome: &mut StrokeOutcome,
-    m: &mut Metabolism,
-    occluded: bool,
-    tag: &str,
-) {
+pub(crate) fn quote_arm(stroke: &mut Stroke<'_>, occluded: bool) {
+let Stroke { entity, physics, c, outcome, m, tag } = stroke;
 let lang = entity.atlas_standing_counts();
 // The T lane is excluded from the dwell entirely (C4), so it neither
 // holds a voice back nor releases it: a lane that never falls would

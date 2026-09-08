@@ -6,21 +6,17 @@
 
 use crate::speak::{speak_form, withhold_unextracted};
 use crate::feed::{family_magnitude};
-use crate::Counts;
+use crate::Stroke;
 use mycelium::physics::{Physics, StrokeOutcome};
-use mycelium::sdk::Entity;
 
 pub(crate) fn task_arm(
-    entity: &mut Entity,
-    physics: &mut Physics,
+    stroke: &mut Stroke<'_>,
     extract_memo: &mut mycelium::network::nerve::Keyed<(
         mycelium::transducer::a21::Address,
         Option<mycelium::transducer::sentence::SentenceRule>,
     )>,
-    c: &mut Counts,
-    outcome: &mut StrokeOutcome,
-    tag: &str,
 ) {
+let Stroke { entity, physics, c, outcome, tag, .. } = stroke;
 // ── PULL REGISTERED WORK (PoUW): one signed envelope per stroke from
 // the hypha's authoritative registry — study the family, think the
 // tests through, submit. The REGISTRY rules bounty vs floor

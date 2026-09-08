@@ -4,19 +4,11 @@
 //! expands its dirty ideas once, and it pivots the new words on their own
 //! charts.
 
-use crate::{Counts, Metabolism};
-use mycelium::physics::{Physics, StrokeOutcome};
-use mycelium::sdk::Entity;
+use crate::Stroke;
+use mycelium::physics::StrokeOutcome;
 
-pub(crate) fn syntropy_arm(
-    entity: &mut Entity,
-    physics: &mut Physics,
-    c: &mut Counts,
-    outcome: &mut StrokeOutcome,
-    genome_path: &str,
-    m: &mut Metabolism,
-    tag: &str,
-) {
+pub(crate) fn syntropy_arm(stroke: &mut Stroke<'_>, genome_path: &str) {
+let Stroke { entity, physics, c, outcome, m, tag } = stroke;
 let shed = entity.shed();
 if shed > 0 {
     eprintln!("[{tag}] shed {shed} dialect");

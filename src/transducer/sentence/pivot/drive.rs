@@ -422,7 +422,7 @@ impl Form {
                     crystal,
                     t_extent,
                 )?;
-                if !crate::transducer::family::pairs_descend(&pairs_before, &pairs_after) {
+                if !crate::transducer::family::pairs_descend(pairs_before, &pairs_after) {
                     return None;
                 }
                 if !(after == before || crate::economy::descends(&after, &before)) {

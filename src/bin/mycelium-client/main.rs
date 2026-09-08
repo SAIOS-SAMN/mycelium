@@ -38,6 +38,19 @@ pub(crate) struct Metabolism {
     pub(crate) last_genome: usize,
 }
 
+/// WHAT ONE STROKE WORKS ON: this voice's entity and the metabolism it
+/// breathes on, the counters the stroke line reads, the outcome being
+/// accumulated, and the tag it logs under. Every arm of a stroke takes all
+/// of it — there is no arm that reads the entity and not the physics.
+pub(crate) struct Stroke<'a> {
+    pub(crate) entity: &'a mut Entity,
+    pub(crate) physics: &'a mut Physics,
+    pub(crate) c: &'a mut Counts,
+    pub(crate) outcome: &'a mut StrokeOutcome,
+    pub(crate) m: &'a mut Metabolism,
+    pub(crate) tag: &'a str,
+}
+
 /// What this voice has done since it came up. Every field is read by the
 /// stroke line; an accumulator nobody reads is dead.
 #[derive(Default)]
@@ -157,19 +170,22 @@ fn main() {
         let occluded =
             matches!(entity.transport(), mycelium::sdk::TransportAperture::Occluded { .. });
 
-        feed_arm(
-            &mut entity, &mut physics, &mut feed, &mut extract_memo, &mut c, &mut outcome,
-            &mut m, occluded, &tag,
-        );
-        quote_arm(
-            &mut entity, &mut physics, &mut c, &mut outcome, &mut m, occluded, &tag,
-        );
-        task_arm(&mut entity, &mut physics, &mut extract_memo, &mut c, &mut outcome, &tag);
-        if physics.depleted() {
-            syntropy_arm(
-                &mut entity, &mut physics, &mut c, &mut outcome, &genome_path, &mut m, &tag,
-            );
-            physics.relax();
+        {
+            let mut stroke = Stroke {
+                entity: &mut entity,
+                physics: &mut physics,
+                c: &mut c,
+                outcome: &mut outcome,
+                m: &mut m,
+                tag: &tag,
+            };
+            feed_arm(&mut stroke, &mut feed, &mut extract_memo, occluded);
+            quote_arm(&mut stroke, occluded);
+            task_arm(&mut stroke, &mut extract_memo);
+            if stroke.physics.depleted() {
+                syntropy_arm(&mut stroke, &genome_path);
+                stroke.physics.relax();
+            }
         }
         if outcome.dormant() {
             physics.spend([true; 4]); // the tick, not work
