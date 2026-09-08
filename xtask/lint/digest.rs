@@ -11,7 +11,7 @@ use std::path::Path;
 pub(crate) const GATE: Gate = Gate {
     name: "digest",
     allow: &[
-        ("chronometry.rs", "receipt chaining, Part IX: the bytes are the object"),
+        ("chronometry/receipt.rs", "receipt chaining, Part IX: the bytes are the object"),
         ("network/wire.rs", "frame integrity over bytes on the wire"),
         ("network/nerve/cover.rs", "the cold routing index, until A4 replaces the roots with heights"),
     ],

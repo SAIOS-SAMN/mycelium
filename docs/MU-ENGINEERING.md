@@ -126,7 +126,7 @@ through a sealed trait. `build.rs` fails the build on `.entries()`,
 `economy.rs` and so misses the directory — TASKS Stage 8c A1). The same
 gate fails the build on
 `blake3` anywhere outside `src/network`, `src/court/identity.rs`,
-`src/chronometry.rs`, and the persistence loaders (the digest gate,
+`src/chronometry/receipt.rs`, and the persistence loaders (the digest gate,
 `MU-RECURSION.md` law 2 and A21: no hash of any mathematical structure),
 and on a `(BigRational, BigRational)` or `(i64, i64)` field or parameter
 named `placement`, `shift`, or `residue` outside `family::pair_form`,

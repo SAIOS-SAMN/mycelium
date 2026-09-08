@@ -2919,7 +2919,7 @@ it always named:
 | `sdk/` | `/opt/mycelium-v0.1.0/src/client/sdk/` |
 | `dialogue/` | `/opt/mycelium-v0.1.0/src/anastome/dialogue/` |
 | `harmonics.rs` | `/opt/mycelium-v0.1.0/src/transducer/blade/harmonics.rs` |
-| `economy/`, `physics.rs`, `chronometry.rs` | `/opt/mycelium-v0.1.0/src/<name>` |
+| `economy/`, `physics.rs`, `chronometry/` | `/opt/mycelium-v0.1.0/src/<name>` |
 | `q.rs`, `zlinalg.rs`; `cyclo.rs`, `scalar.rs` (Part VI, new) | `/opt/mycelium-v0.1.0/src/core/<name>` |
 | `mycelium-server/`, `mycelium-client.rs` | `/opt/mycelium-v0.1.0/src/bin/<name>` |
 | `voice/mod.rs` | `/opt/mycelium-v0.1.0/src/voice/mod.rs` |
@@ -5618,10 +5618,10 @@ burn rule of 47.4. Functions named without **new** exist at 5865bd0.
 ### 45.1 The receipt is the clock
 
 Every kernel, hypha or mind, keeps one receipt chain
-(`chronometry::ReceiptChain`, chronometry.rs 39). A receipt is written for
+(`chronometry::ReceiptChain`, chronometry/chain.rs). A receipt is written for
 every admitted act: a percept docketed, a word sectioned or installed, a
 ruling, a settlement, a syllabus page served, a peer digest admitted, a form
-stood in the dialect. `KStepReceipt` (chronometry.rs 13) gains parents and a
+stood in the dialect. `KStepReceipt` (chronometry/receipt.rs) gains parents and a
 height:
 
 ```rust
@@ -5736,8 +5736,9 @@ provisions it to b, c and the minds.
 ### 45.6 Binding
 
 ```
-chronometry.rs      Parent NEW; KStepReceipt.{height, parents} NEW; ReceiptChain::append(parents, …); Height NEW replaces TUniversal;
-                    frontier(&self, budget) -> Keyed<u64> NEW; precedes(a, b) -> bool NEW; unix_now, ticks, ticks_at, load_or_genesis DELETED
+chronometry/receipt.rs  Parent NEW; KStepReceipt.{height, parents} NEW; Height NEW replaces TUniversal
+chronometry/chain.rs    ReceiptChain::append(parents, …); frontier(&self, budget) -> Keyed<u64> NEW; precedes(a, b) -> bool NEW;
+                    unix_now, ticks, ticks_at, load_or_genesis DELETED
 mesh.rs             MeshRecord.{genesis, epoch} replace origin_unix; origin_of DELETED
 cognition.rs        now_tu → height(); standing_mag in heights; every _tu carrier → _h; MarketView.tu DELETED; set_clock → set_height;
                     cocycle_at supersession by causal order (45.3); one receipt per admitted act carrying its parents

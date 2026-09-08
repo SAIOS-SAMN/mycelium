@@ -188,7 +188,7 @@ each needs a sentence in the message.
 `spend_unit()` in cognition; `.position(`, `.find(`, `.find_map(`,
 `Vec<bool>`, `unwrap_or` under `sentence/`), maps (`HashMap`, `BTreeMap`,
 `HashSet`, `BTreeSet` in cognition), digest (`blake3` outside `network/`,
-`court/identity.rs`, `chronometry.rs`, persistence loaders), matrix
+`court/identity.rs`, `chronometry/receipt.rs`, persistence loaders), matrix
 (the shape of a rational matrix — `QMatrix`, `Vec<Vec<Q>>`, `as_operator`,
 `realize(` — in cognition; `core` exports `Q` alone since F2f), clock (`SystemTime`, `Instant`, `Duration` in every kernel,
 court, client, transducer, economy, physics file and every binary),
