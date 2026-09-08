@@ -50,6 +50,11 @@ impl Contemplation {
         self.bubbles.len()
     }
 
+    /// No bubble is held: nothing is under contemplation.
+    pub fn is_empty(&self) -> bool {
+        self.bubbles.len() == 0
+    }
+
     /// True when a live idea glued this address (a dialect entry so marked
     /// is not shed).
     pub fn glues_word(&self, addr: &[u8]) -> bool {

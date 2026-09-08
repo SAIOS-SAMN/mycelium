@@ -17,7 +17,6 @@ impl Kernel {
     /// `task` binds the stood sentence to that family's trains so install
     /// can mint only measured descent.
     pub fn perceive_speech(&mut self, voice: [u8; 32], task: &[u8], sentences: &[Element]) -> Vec<u8> {
-        let task = task;
         let mut codes = Vec::with_capacity(sentences.len());
         let family = self.task_family.get(task).cloned();
         for s in sentences {

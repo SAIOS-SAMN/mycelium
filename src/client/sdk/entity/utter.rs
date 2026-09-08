@@ -92,7 +92,7 @@ impl Entity {
                 .unwrap_or_default();
         let reply = self.session.submit(a, b, frame, &proof)?;
         let heard = match reply.verdict.taught() {
-            t if t.is_empty() => None,
+            [] => None,
             t => self.absorb_taught(t),
         };
         Ok((reply, heard))
@@ -242,7 +242,7 @@ impl Entity {
         }
         // Speech is a connection or a connection with an opened axis; a
         // residual germ or the unit is not a message.
-        if word.is_identity() || !(word.is_connection() || !word.opened_axes().is_empty()) {
+        if word.is_identity() || (!word.is_connection() && word.opened_axes().is_empty()) {
             return Ok(Utterance::Silent);
         }
         let voice = self.session.kernel().voice();

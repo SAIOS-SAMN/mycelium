@@ -370,12 +370,10 @@ pub fn is_versor(m: &Mv) -> Option<BigRational> {
 pub fn projective_ratio(a: &Mv, b: &Mv) -> Option<BigRational> {
     let bb = b.norm2();
     if bb.is_zero() {
-        // A null blade: compare through the reverse product against itself.
-        let prod = a.geo(&b.reverse());
-        let s = prod.scalar_part();
-        // For null vectors a b̃ has no scalar part; fall back to the exact
-        // componentwise proportionality, which is what projective equality is.
-        return proportional(a, b).or(if s.is_zero() { None } else { None });
+        // A null blade: `a b̃` has no scalar part at all, so the reverse
+        // product decides nothing here. Exact componentwise proportionality
+        // is what projective equality is for these.
+        return proportional(a, b);
     }
     let prod = a.geo(&b.reverse());
     let s = prod.scalar_part();
