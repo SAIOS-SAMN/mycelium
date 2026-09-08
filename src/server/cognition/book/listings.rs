@@ -9,10 +9,25 @@ use crate::cognition::*;
 use crate::transducer::a21::Address;
 use crate::transducer::element::Element;
 
-/// ONE ROW OF THE DOCKET: the address, the provisional word, the voices
-/// attesting it, the μ⃗ escrowed against it, the μ⃗ it stands priced at, and
-/// the k-step it was installed on.
-pub type Docketed = (Address, Element, Vec<[u8; 32]>, [u64; 4], [u64; 4], u64);
+/// ONE ROW OF THE DOCKET, as the court replays it. Six fields, and which
+/// μ⃗ is which is the whole question: `escrowed` is what was staked against
+/// the word, `deflation` is what it MEASURED. A row where those two swap
+/// places is a mint for unmeasured work.
+pub struct Docketed {
+    /// The listing the word answers.
+    pub addr: Address,
+    /// The provisional word itself, to be replayed blind.
+    pub spoken: Element,
+    /// The voices attesting it — parties to the settlement, never vantages.
+    pub voices: Vec<[u8; 32]>,
+    /// The μ⃗ escrowed against the word: a claim on issuance (§5).
+    pub escrowed: [u64; 4],
+    /// The μ⃗ the word measured, per lane. Never fabricated: a word with no
+    /// measured deflation is not served.
+    pub deflation: [u64; 4],
+    /// The k-step it was installed on.
+    pub k: u64,
+}
 
 impl Kernel {
     pub(crate) fn drain_unreachable(&mut self) {
@@ -436,7 +451,14 @@ impl Kernel {
                 if deflation.iter().all(|&x| x == 0) {
                     return None;
                 }
-                Some((Address::from(addr), spoken.clone(), voices.clone(), *mu, deflation, k))
+                Some(Docketed {
+                    addr: Address::from(addr),
+                    spoken: spoken.clone(),
+                    voices: voices.clone(),
+                    escrowed: *mu,
+                    deflation,
+                    k,
+                })
             })
             .collect()
     }

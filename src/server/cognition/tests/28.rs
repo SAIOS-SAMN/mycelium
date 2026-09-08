@@ -78,11 +78,11 @@ let chain = germinate(&a, &b).unwrap();
 assert_eq!(k.attest(&chain, [2; 32]), Outcome::GermPending);
 let before = k.dockets();
 assert_eq!(before.len(), 1);
-assert!(before[0].4.iter().any(|&x| x > 0), "deflation was measured at install");
+assert!(before[0].deflation.iter().any(|&x| x > 0), "deflation was measured at install");
 let snap = k.snapshot();
 let mut booted = Kernel::new();
 assert!(booted.restore(&snap), "clean restore");
 let after = booted.dockets();
 assert_eq!(after.len(), 1, "the provisional survived");
-assert_eq!(after[0].4, before[0].4, "deflation survived; the court will not slash Δ⃗ = 0");
+assert_eq!(after[0].deflation, before[0].deflation, "deflation survived; the court will not slash Δ⃗ = 0");
 }

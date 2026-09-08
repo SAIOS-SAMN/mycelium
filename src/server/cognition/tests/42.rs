@@ -47,10 +47,11 @@ assert_eq!(k.treasury().balance_mu(&[1; 32]), [0; 4], "unfinalized speech earns 
 assert_eq!(k.treasury().balance_mu(&[2; 32]), [0; 4]);
 let dockets = k.dockets();
 assert_eq!(dockets.len(), 1, "the provisional word is on the docket");
-let (addr, spoken, voices, mu, _, _) = &dockets[0];
-assert_eq!(voices.len(), 2, "both attesting voices ride the docket");
-assert!(mu.iter().any(|&m| m > 0), "the escrowed award is real");
-assert_eq!(spoken.address(), addr.clone(), "the docket carries the word as spoken");
+let row = &dockets[0];
+assert_eq!(row.voices.len(), 2, "both attesting voices ride the docket");
+assert!(row.escrowed.iter().any(|&m| m > 0), "the escrowed award is real");
+assert_eq!(row.spoken.address(), row.addr.clone(), "the docket carries the word as spoken");
+let addr = &row.addr;
 // UPHELD: finality releases the award — the voices are paid at last.
 assert!(k.apply_verdict(&addr.clone(), crate::anastome::dialogue::RULING_UPHELD));
 assert!(k.treasury().balance_mu(&[1; 32]).iter().any(|&m| m > 0), "finality pays voice A");
@@ -69,7 +70,7 @@ let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
 assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
 let chain = germinate(&a, &b).unwrap();
 assert_eq!(k.attest(&chain, [2; 32]), Outcome::GermPending);
-let (addr, _, _, _, _, _) = k.dockets()[0].clone();
+let addr = k.dockets()[0].addr.clone();
 assert!(k.apply_verdict(&addr, crate::anastome::dialogue::RULING_SLASHED));
 assert_eq!(k.treasury().balance_mu(&[1; 32]), [0; 4], "nothing was ever paid");
 assert!(k.dockets().is_empty());

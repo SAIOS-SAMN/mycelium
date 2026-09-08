@@ -109,7 +109,7 @@ for _ in 0..3 {
 }
 assert_eq!(k.basis_len(), 1, "the family collapsed into one bundle");
 assert_eq!(k.basis()[0].sections().len(), 2, "two sections along the pierced axis");
-let addrs: Vec<Address> = k.dockets().iter().map(|(a, _, _, _, _, _)| a.clone()).collect();
+let addrs: Vec<Address> = k.dockets().iter().map(|d| d.addr.clone()).collect();
 for a in addrs {
     let _ = k.apply_verdict(&a, crate::anastome::dialogue::RULING_UPHELD);
 }

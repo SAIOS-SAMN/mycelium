@@ -259,7 +259,7 @@ assert_eq!(
 
 k.glue_local();
 let held = k.treasury().audit().expect("a glue conserves");
-let addrs: Vec<Address> = k.dockets().iter().map(|(a, _, _, _, _, _)| a.clone()).collect();
+let addrs: Vec<Address> = k.dockets().iter().map(|d| d.addr.clone()).collect();
 for a in addrs {
     let _ = k.apply_verdict(&a, crate::anastome::dialogue::RULING_UPHELD);
 }
