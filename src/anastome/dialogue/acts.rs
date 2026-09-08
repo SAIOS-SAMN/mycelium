@@ -202,9 +202,16 @@ pub struct Cover {
     pub charts: Vec<(u8, crate::transducer::stalk::Invariant)>,
 }
 /// AN OFFER: a home hypha asking a witness to re-derive a word (47.3).
+#[derive(Clone)]
 pub struct Offer {
     /// The word's address.
     pub addr: Address,
+    /// THE HOME'S KEY, named by the act. The witness glues the offer as
+    /// this vantage and holds its own separately, which is what makes the
+    /// Čech cell have two vertices; a witness that does not know who
+    /// offered can only glue the form as itself, and then it compares the
+    /// form with itself and agrees every time.
+    pub home: [u8; 32],
     /// The element as a full tape. The witness replays THIS on its own
     /// tapes; it never fetches the home's copy to compare bytes.
     pub elem: Vec<u8>,
@@ -218,6 +225,23 @@ pub struct Offer {
     pub sig: [u8; 64],
     /// The home's INSTALL signature — the second, over the installed form.
     pub install_sig: [u8; 64],
+}
+
+/// WHAT A WITNESS ANSWERS AN OFFER WITH (47.3): whether the offered form
+/// survived its replay here, the key that replayed it, and the form THIS
+/// court reached at that address.
+pub struct Witnessed {
+    /// The replay did not slash the form.
+    pub glued: bool,
+    /// The witness's own verifying key. The home reads the second vantage
+    /// off this and never off the address it happened to dial: an address
+    /// is where a hypha answers, and a vantage is a key.
+    pub vk: [u8; 32],
+    /// The form this court holds at the offered address after replay, as a
+    /// tape — empty when it holds none. Never the offered form handed back:
+    /// a witness that reached nothing is UNMEASURED, which is not the same
+    /// as a witness that re-derived what it was sent.
+    pub reached: Vec<u8>,
 }
 
 /// AN INSTALLED word, carrying both hyphae's signatures.

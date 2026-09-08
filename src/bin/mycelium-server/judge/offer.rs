@@ -17,9 +17,11 @@ use std::net::TcpStream;
 /// pending (one voice)` forever with basis 0. The gate was never the germ
 /// quorum; it was that the offer never left the process.
 pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
-    let Some(dialogue::Offer { elem: elem_bytes, .. }) = dialogue::decode_offer(&frame.body) else {
+    let Some(dialogue::Offer { home, elem: elem_bytes, .. }) = dialogue::decode_offer(&frame.body)
+    else {
         return;
     };
+    let me = door.mesh.vk;
     let mut pos = 0usize;
     // THE WITNESS RE-DERIVES. This hypha replays the offered form on its
     // OWN tapes and reaches a form of its own; that form is what 47.3's
@@ -27,41 +29,59 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // way back. The reply carries it, so the home compares two
     // re-derivations by `same_vertex` (M1) rather than assuming that a
     // peer which did not slash agreed.
+    //
+    // The offer is glued AS THE HOME, into this mesh's own cover. It stood
+    // as `glue_fetched(word, me, me, &mut Cover::new())`: one vertex where
+    // there should be two, so the section written at this court's key was
+    // the home's own word, read straight back out and compared with itself.
+    // That is identity every time -- an agreement manufactured by writing
+    // the answer into the place the question is read from -- and no cocycle
+    // can be pushed across a cell with one vertex. The empty cover was the
+    // same fault in the other direction: the cell had no other hypha in it
+    // because the cover the mesh actually holds was left behind.
     let (glued, reached) =
         match mycelium::transducer::element::Element::from_bytes(&elem_bytes, &mut pos) {
             Some(word) => {
-                let mut cover = mycelium::network::nerve::Cover::new();
-                match door.kernel.lock() {
-                    Ok(mut k) => {
-                        let vk = door.mesh.vk;
-                        let g = k.glue_fetched(word.clone(), vk, vk, &mut cover);
+                let addr = word.address();
+                match (door.kernel.lock(), door.mesh.cover.lock()) {
+                    (Ok(mut k), Ok(mut cover)) => {
+                        let g = k.glue_fetched(word, home, me, &mut cover);
                         let ok = !matches!(g, mycelium::cognition::Glue::Slashed(_));
-                        // What this court holds at that address after
-                        // replay, which is its own reading of the form.
-                        let mine = k.word_at(&word.address()).cloned().unwrap_or(word);
-                        (ok, ok.then_some(mine))
+                        // What THIS court holds at that address after the
+                        // replay. Holding nothing is a witness that reached
+                        // nothing: it is unmeasured, and the offered word is
+                        // never handed back in its place, which the home
+                        // would read as a re-derivation that never happened.
+                        (ok, k.word_at(&addr).map(|w| w.to_bytes()).unwrap_or_default())
                     }
-                    Err(_) => (false, None),
+                    _ => (false, Vec::new()),
                 }
             }
-            None => (false, None),
+            None => (false, Vec::new()),
         };
-    let mut rb = vec![glued as u8];
-    if let Some(w) = reached.as_ref() {
-        rb.extend_from_slice(&w.to_bytes());
-    }
+    let answered = dialogue::Witnessed { glued, vk: me, reached };
     // The witness's form may not fit the wire budget. A reply that cannot
-    // carry it still ANSWERS, with the verdict bit alone, which the home
-    // reads as "no form travelled" and holds as unmeasured. Refuse the
-    // PAYLOAD, never the reply -- and never invent one: the first cut of
+    // carry it still ANSWERS, with the verdict and this court's key, which
+    // the home reads as "no form travelled" and holds as unmeasured. Refuse
+    // the PAYLOAD, never the reply -- and never invent one: the first cut of
     // this ended `.unwrap_or_else(|| vec![lane, 0,0,0,0])`, a hand-built
     // frame for the case where a five-byte frame fails to encode, which is
     // the shape rule 11 refuses.
-    let full = Frame { lane: frame.lane, body: rb };
+    let full = Frame { lane: frame.lane, body: dialogue::encode_offer_reply(&answered) };
     match full.encode() {
         Some(bytes) => {
             let _ = s.write_all(&bytes);
         }
-        None => answer(s, Frame { lane: frame.lane, body: vec![glued as u8] }),
+        None => answer(
+            s,
+            Frame {
+                lane: frame.lane,
+                body: dialogue::encode_offer_reply(&dialogue::Witnessed {
+                    glued,
+                    vk: me,
+                    reached: Vec::new(),
+                }),
+            },
+        ),
     }
 }

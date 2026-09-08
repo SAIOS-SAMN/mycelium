@@ -450,15 +450,16 @@ impl Exchange {
             let mut offered_out = 0usize;
             for (oaddr, elem) in offers {
                 for (pid, d) in dests.fiber(mycelium::network::nerve::ROOT) {
-                    let body = dialogue::encode_offer(
-                        &oaddr,
-                        &elem,
-                        &[mesh.vk],
-                        &[0; 4],
-                        0,
-                        &[0u8; 64],
-                        &[0u8; 64],
-                    );
+                    let body = dialogue::encode_offer(&dialogue::Offer {
+                        addr: oaddr.clone(),
+                        home: mesh.vk,
+                        elem: elem.clone(),
+                        voices: vec![mesh.vk],
+                        deflation: [0; 4],
+                        k: 0,
+                        sig: [0u8; 64],
+                        install_sig: [0u8; 64],
+                    });
                     let Some((reply, _)) = tell_peer(d, body) else {
                         continue;
                     };
@@ -467,24 +468,37 @@ impl Exchange {
                     // on its own tapes and sent back the form it reached;
                     // that is a re-derivation, and the home converges on
                     // it by `same_vertex` (M1), never by comparing the
-                    // bytes it happens to be spelled with. A reply of one
-                    // byte carries no form: the witness is UNMEASURED and
-                    // the object keeps waiting, which is not the same as
-                    // a witness that disagreed.
-                    if reply.first() != Some(&1) || reply.len() < 2 {
-                        continue;
-                    }
-                    let Some(peer_vk) = <[u8; 32]>::try_from(pid.as_slice()).ok() else {
+                    // bytes it happens to be spelled with. A reply with no
+                    // form carries no vantage: the witness is UNMEASURED
+                    // and the object keeps waiting, which is not the same
+                    // as a witness that disagreed.
+                    //
+                    // THE VANTAGE IS THE KEY THE REPLY NAMES. This read the
+                    // 32 bytes of the destination's BIND STRING as a
+                    // verifying key: on any deployment whose addresses are
+                    // not exactly 32 characters the `try_from` failed and
+                    // every second vantage was dropped on the floor, and
+                    // where it did not fail the witness was recorded under
+                    // an ASCII address that no bond and no room answers to.
+                    // Either way `converge_witness` never found an
+                    // independent second organ and every germ stayed
+                    // pending on one voice. An address is where a hypha
+                    // answers; a vantage is a key.
+                    let _ = &pid;
+                    let Some(w) = dialogue::decode_offer_reply(&reply) else {
                         continue;
                     };
+                    if !w.glued || w.reached.is_empty() || w.vk == mesh.vk {
+                        continue;
+                    }
                     let mut p = 0usize;
                     let Some(theirs) =
-                        mycelium::transducer::element::Element::from_bytes(&reply[1..], &mut p)
+                        mycelium::transducer::element::Element::from_bytes(&w.reached, &mut p)
                     else {
                         continue;
                     };
                     if let Ok(mut k) = kernel.lock() {
-                        k.witness_rederived(&oaddr, peer_vk, theirs);
+                        k.witness_rederived(&oaddr, w.vk, theirs);
                     }
                 }
             }

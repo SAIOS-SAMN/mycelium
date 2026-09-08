@@ -308,3 +308,56 @@ assert_eq!(
     "glued descent replays through the court genome, not NoCrystal"
 );
 }
+
+/// 47.3, 13.9: A WITNESS GLUES AN OFFER AS THE HOME, NOT AS ITSELF. The
+/// Čech cell of a converging pair has two vertices, one per vantage. Gluing
+/// with `peer == self_id` writes the offered word into the section this
+/// court's own reading is read back from, so the court compares the form
+/// with itself and agrees every time — an agreement manufactured by writing
+/// the answer into the place the question is asked.
+#[test]
+fn a_witness_glues_an_offer_at_the_homes_vantage() {
+    let home_vk = [1u8; 32];
+    let witness_vk = [2u8; 32];
+    let mut home = Kernel::new();
+    let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+    assert_eq!(home.ingest(&a, &b, home_vk), Outcome::GermPending);
+    assert_eq!(home.ingest(&a, &b, [3; 32]), Outcome::GermPending);
+    home.court_stroke();
+    let spoken =
+        home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().1.clone();
+    let inv = crate::transducer::stalk::invariant_of(&spoken);
+    let offered = spoken.address();
+
+    let mut witness = Kernel::new();
+    let mut cover = crate::network::nerve::Cover::new();
+    assert!(matches!(
+        witness.glue_fetched(spoken.clone(), home_vk, witness_vk, &mut cover),
+        Glue::Admitted
+    ));
+    let cx = witness.complexes().get(&inv.key()).expect("the class has a complex");
+    assert_eq!(
+        cx.sections.get(home_vk.as_slice()).map(|s| s.addr.clone()),
+        Some(offered.clone()),
+        "the offered form is the HOME's section"
+    );
+    assert!(
+        cx.sections.get(witness_vk.as_slice()).is_none(),
+        "and is not this court's own reading, which it has not made"
+    );
+
+    // The old read, kept here so the difference is a measurement and not a
+    // claim: gluing as oneself files the home's word under this court's own
+    // vantage, and the cell has one vertex where 13.9 needs two.
+    let mut confused = Kernel::new();
+    let mut cover = crate::network::nerve::Cover::new();
+    let _ = confused.glue_fetched(spoken, witness_vk, witness_vk, &mut cover);
+    let cx = confused.complexes().get(&inv.key()).expect("the class has a complex");
+    assert_eq!(
+        cx.sections.get(witness_vk.as_slice()).map(|s| s.addr.clone()),
+        Some(offered),
+        "one vantage: the court holds the offer as its own re-derivation"
+    );
+    assert!(cx.sections.get(home_vk.as_slice()).is_none(), "and the home has no section at all");
+}
