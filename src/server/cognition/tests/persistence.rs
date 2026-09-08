@@ -86,3 +86,36 @@ let after = booted.dockets();
 assert_eq!(after.len(), 1, "the provisional survived");
 assert_eq!(after[0].deflation, before[0].deflation, "deflation survived; the court will not slash Δ⃗ = 0");
 }
+
+/// A TAPE THAT ENDS EARLY IS REFUSED WHOLE, at every section boundary.
+/// Each section read as "absent in an earlier snapshot → carry on with
+/// nothing", and `snapshot` writes every one of them, so what those arms
+/// admitted was a truncated tape: a mind restored with an empty docket,
+/// a clock at zero and an unmeasured book, silently. §10 makes a layout
+/// change a recut and deletes the reader for the old layout.
+#[test]
+fn a_snapshot_cut_short_at_any_section_is_refused() {
+let mut k = Kernel::new();
+let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+let snap = k.snapshot();
+let mut whole = Kernel::new();
+assert!(whole.restore(&snap), "the tape as written restores");
+
+// Every section tag names a boundary the old reader would have stopped
+// at and called a restore.
+for tag in [b"KCH1", b"RNK1", b"DEF1", b"FLD1", b"BOK1", b"CAV1", b"CRT1", b"COC1", b"FLC1", b"CYC2", b"SET1"] {
+    let at = snap
+        .windows(4)
+        .position(|w| w == tag)
+        .unwrap_or_else(|| panic!("the tape carries {}", String::from_utf8_lossy(tag)));
+    let mut booted = Kernel::new();
+    assert!(
+        !booted.restore(&snap[..at]),
+        "a tape ending at {} is refused",
+        String::from_utf8_lossy(tag)
+    );
+    assert_eq!(booted.basis_len(), 0, "and nothing is partly restored");
+}
+}

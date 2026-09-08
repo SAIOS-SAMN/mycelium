@@ -53,8 +53,7 @@ impl Treasury {
             out.extend_from_slice(&e.k_step.to_le_bytes());
             out.extend_from_slice(&e.receipt);
         }
-        // ESCROWED AWARDS section (Step 5) — appended after entries so older
-        // snapshots (which simply end here) restore with an empty docket.
+        // ESCROWED AWARDS section (Step 5).
         out.extend_from_slice(&(self.escrowed.len() as u32).to_le_bytes());
         crate::snapshot::persist(&self.escrowed, |addr, row| {
             let (voices, mu, anchor) = (&row.voices, &row.mu, &row.anchor);
@@ -179,9 +178,17 @@ impl Treasury {
             *pos += 32;
             entries.push(Entry { kind, who, mu, k_step, receipt });
         }
+        // THE THREE SECTIONS BELOW ARE REQUIRED. Each read as "a snapshot
+        // that ends here is an older one and restores with none", and
+        // `snapshot` writes all three unconditionally, so no writer emits
+        // a tape without them: what that admitted was a TRUNCATED ledger,
+        // restored with no escrow, no funded escrow and no balances, which
+        // then failed its own audit or passed one it should not have.
+        // §10 makes a layout change a recut and deletes the reader for the
+        // old layout.
         let mut escrowed = crate::network::nerve::Keyed::new();
-        if let Some(c4) = b.get(*pos..*pos + 4) {
-            let ne = u32::from_le_bytes(c4.try_into().ok()?) as usize;
+        {
+            let ne = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
             *pos += 4;
             if ne > b.len().saturating_sub(*pos) / 108 {
                 return None; // untrusted count: ≥108 bytes per award
@@ -210,11 +217,10 @@ impl Treasury {
                 escrowed.insert(addr, crate::economy::escrow::Escrowed { voices, mu, anchor: (k, r) });
             }
         }
-        // FUNDED ESCROW, read back. A snapshot that ends before this section
-        // is an older one and restores with none, which is what it held.
+        // FUNDED ESCROW, read back.
         let mut funded = crate::network::nerve::Keyed::new();
-        if let Some(c4) = b.get(*pos..*pos + 4) {
-            let nf = u32::from_le_bytes(c4.try_into().ok()?) as usize;
+        {
+            let nf = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
             *pos += 4;
             if nf > b.len().saturating_sub(*pos) / 66 {
                 return None; // untrusted count: ≥66 bytes per funded row
@@ -233,8 +239,8 @@ impl Treasury {
         }
         // BALANCES, read back. Not recomputed: see `snapshot`.
         let mut balances = crate::network::nerve::Keyed::new();
-        if let Some(c4) = b.get(*pos..*pos + 4) {
-            let nb = u32::from_le_bytes(c4.try_into().ok()?) as usize;
+        {
+            let nb = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
             *pos += 4;
             if nb > b.len().saturating_sub(*pos) / 64 {
                 return None; // untrusted count: 64 bytes per balance row

@@ -24,8 +24,7 @@ impl Kernel {
             out.extend_from_slice(&who);
         }
         out.extend_from_slice(&self.treasury.snapshot());
-        // PROVISIONAL section (Step 5) — appended so pre-court snapshots
-        // restore with an empty docket rather than failing.
+        // PROVISIONAL section (Step 5).
         out.extend_from_slice(&(self.provisional.len() as u32).to_le_bytes());
         crate::snapshot::persist(&self.provisional, |addr, spoken| {
             put_addr(&mut out, addr);
@@ -146,7 +145,9 @@ impl Kernel {
             out.extend_from_slice(&(eb.len() as u32).to_le_bytes());
             out.extend_from_slice(&eb);
         }
-        out.extend_from_slice(&0u32.to_le_bytes());
+        // A constant zero stood here: the count of a sub-section this
+        // writer stopped emitting, which the reader skipped by peeking at
+        // whether the next four bytes were COC1's tag. Both are gone (§10).
         out.extend_from_slice(b"COC1");
         out.extend_from_slice(&(self.complexes.len() as u32).to_le_bytes());
         crate::snapshot::persist(&self.complexes, |k, c| {
