@@ -63,6 +63,19 @@ fn one_vertex_lies_in_one_stratum_however_it_is_spelled() {
         vertex_stratum(&here),
         "so they lie in one stratum, and the mind does not say it twice"
     );
+    assert!(vertex_stratum(&here).is_some(), "a connection has a stratum");
+
+    // A CHAIN A5 REFUSES HAS NO STRATUM. Two transitions on one site
+    // describe nothing (16.5 step 3): the word is not a vertex, so no other
+    // spelling can share a stratum with it, and it is filed by address
+    // alone. It was keyed by its raw bytes — a key invented where the
+    // canonical one is refused (rule 11, checklist i).
+    let conflicting = crate::transducer::element::from_residual(&vec![(0, 0, 1, 2), (0, 0, 3, 4)]);
+    assert_eq!(
+        vertex_stratum(&conflicting),
+        None,
+        "a chain A5 refuses is not a vertex and has no stratum"
+    );
     let _ = identity_versor();
 }
 

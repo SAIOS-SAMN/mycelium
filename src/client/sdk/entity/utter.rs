@@ -50,15 +50,19 @@ pub(crate) fn read_speech_reply(codes: &mut [u8], got: &[u8]) -> Vec<usize> {
 /// words that are one vertex share this key, and a fiber read under it
 /// holds every candidate. It is not sufficient — the exact test still
 /// decides — which is A21 §3's own shape.
-pub(crate) fn vertex_stratum(word: &Element) -> Vec<u8> {
+///
+/// `None` when the chain is one A5 refuses (two transitions on one site):
+/// such a word is not a vertex, and it has no stratum. It was keyed by its
+/// raw bytes instead — `unwrap_or_else(|| word.sub().to_vec())`, a key
+/// invented where the canonical one is refused (rule 11, checklist i).
+pub(crate) fn vertex_stratum(word: &Element) -> Option<Vec<u8>> {
     if word.is_sentence() {
-        return word.address().into_vec();
+        return Some(word.address().into_vec());
     }
     match word.letters() {
-        Some(l) => l.spelling.word.key().as_bytes().to_vec(),
+        Some(l) => Some(l.spelling.word.key().as_bytes().to_vec()),
         None => {
-            let chain = crate::transducer::element::canonical_chain(word.sub())
-                .unwrap_or_else(|| word.sub().to_vec());
+            let chain = crate::transducer::element::canonical_chain(word.sub())?;
             let mut out = Vec::with_capacity(chain.len() * 18);
             for (r, c, b, a) in &chain {
                 out.extend_from_slice(&r.to_le_bytes());
@@ -66,7 +70,7 @@ pub(crate) fn vertex_stratum(word: &Element) -> Vec<u8> {
                 out.push(*b);
                 out.push(*a);
             }
-            out
+            Some(out)
         }
     }
 }
@@ -76,7 +80,11 @@ impl Entity {
     /// the stratum its vertex lies in.
     pub(crate) fn file_taught(&mut self, word: &Element) {
         let addr = word.address();
-        self.taught_at.nested_insert(vertex_stratum(word), &addr, ());
+        // A word with no stratum (a chain A5 refuses) is filed by address
+        // alone: there is no vertex for another spelling to share.
+        if let Some(at) = vertex_stratum(word) {
+            self.taught_at.nested_insert(at, &addr, ());
+        }
         self.taught_up.insert(addr, word.clone());
     }
 
@@ -325,8 +333,7 @@ impl Entity {
         // its answer: the carrier was missing a key). `taught_at` names the
         // words that COULD be one vertex with this one; the exact test
         // decides over that fiber and nothing else.
-        let at = vertex_stratum(word);
-        if let Some(fiber) = self.taught_at.get(&at) {
+        if let Some(fiber) = vertex_stratum(word).and_then(|at| self.taught_at.get(&at)) {
             let candidates: Vec<Vec<u8>> = fiber.fiber(crate::network::nerve::ROOT).map(|(k, _)| k).collect();
             for a in candidates {
                 if self.taught_up.get(&a).is_some_and(|e| e.same_vertex(word)) {
