@@ -192,11 +192,6 @@ impl Entity {
         Ok((reply, heard))
     }
 
-    /// An act of this entity was admitted; its own clock steps (45.4).
-    pub fn advance(&mut self) -> u64 {
-        self.session.advance()
-    }
-
     pub fn attest(&self, chain: &[(i64, i64, u8, u8)], cites: &[dialogue::CiteWire]) -> io::Result<Reply> {
         self.session.attest(chain, cites)
     }
@@ -268,11 +263,11 @@ impl Entity {
         let mut codes = vec![dialogue::SPEECH_STOOD; sentences.len()];
         for (i, e) in sentences.iter().enumerate() {
             let taught = self.already_taught(e);
-            // 45.4: STANDING A FORM IS AN ADMITTED ACT of this mind, so the
-            // mind's own clock steps and the form stands at the step it
-            // took. The stamp is the act's own K, not a number the hypha
-            // last replied with.
-            let k = self.session.advance();
+            // 45.1, 45.4: STANDING A FORM IS AN ADMITTED ACT of this mind,
+            // so a receipt naming the form is sealed on the mind's own chain
+            // and the form stands at the K it took. The stamp is the act's
+            // own K, not a number the hypha last replied with.
+            let k = self.session.seal(crate::voice::Act::Stood, e.address().as_bytes());
             self.epigenome.stand_dialect_at(e.clone(), k, tu);
             if !taught {
                 codes[i] = 0xff; // asked about on the wire below
@@ -308,10 +303,10 @@ impl Entity {
         let got = dialogue::decode_speech_reply(&reply).unwrap_or_default();
         for i in read_speech_reply(&mut codes, &got) {
             // The utterance was admitted: the second act, and the second
-            // step of this mind's clock (45.4). A refused utterance is not
-            // an act and moves nothing.
-            self.session.advance();
+            // receipt on this mind's chain (45.1, 45.4). A refused utterance
+            // is not an act and seals nothing.
             let e = sentences[i].clone();
+            self.session.seal(crate::voice::Act::Uttered, e.address().as_bytes());
             self.file_taught(&e);
         }
         Ok(codes)

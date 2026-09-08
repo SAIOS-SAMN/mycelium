@@ -1,19 +1,46 @@
-// 45, 46 — THE SEAT: the identity a kernel speaks from, its own K, and the
-// five forms it utters.
+// 45, 46 — THE SEAT: the identity a kernel speaks from, its own receipt
+// chain, and the five forms it utters.
 
 use crate::anastome::dialogue::{self, CiteWire};
+use crate::chronometry::ReceiptChain;
+
+/// AN ADMITTED ACT OF A VOICE (45.1): a form stood in the dialect, an
+/// utterance the hypha did not refuse, a page learned. Each seals one
+/// receipt on the voice's own chain; the act's name is the receipt's
+/// operator digest, never reasoned on.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Act {
+    Stood,
+    Uttered,
+    Learned,
+}
+
+impl Act {
+    fn operator(self) -> [u8; 32] {
+        let name: &[u8] = match self {
+            Act::Stood => b"stood",
+            Act::Uttered => b"uttered",
+            Act::Learned => b"learned",
+        };
+        crate::chronometry::payload_hash(name)
+    }
+}
 
 /// A kernel's voice: its seat and its clock.
 #[derive(Clone, Debug)]
 pub struct Voice {
     name: String,
     identity: [u8; 32],
-    /// THIS VOICE'S OWN K: a count of the acts it has had admitted — a form
-    /// stood, an utterance spoken, a page learned. Every duration a kernel
-    /// reads is a count of its own K (45.4), so this is never a number read
-    /// off another kernel's reply: a quote carries the BOOK's k-step, which
-    /// is a coordinate on the hypha's chain and not this voice's clock.
-    k: u64,
+    /// THIS VOICE'S OWN RECEIPT CHAIN (45.1): one receipt per act it has
+    /// had admitted — a form stood, an utterance spoken, a page learned —
+    /// each naming what was admitted and linked to the one before. Its K
+    /// is the chain's length. Every duration a kernel reads is a count of
+    /// its own K (45.4), so this is never a number read off another
+    /// kernel's reply: a quote carries the BOOK's k-step, which is a
+    /// coordinate on the hypha's chain and not this voice's clock. It was a
+    /// bare `u64` stepped by `advance()`, a count with no receipt behind it
+    /// (Stage 11 I25).
+    chain: ReceiptChain,
 }
 
 impl Voice {
@@ -25,7 +52,7 @@ impl Voice {
     #[cfg(test)]
     pub fn named(name: &str) -> Voice {
         let identity = crate::court::identity::HyphaKey::vk_from_name(name);
-        Voice { name: name.to_string(), identity, k: 0 }
+        Voice { name: name.to_string(), identity, chain: ReceiptChain::with_vk(identity) }
     }
 
     /// Seat a voice on verifying-key bytes (home/voice.key).
@@ -33,7 +60,7 @@ impl Voice {
         Voice {
             name: format!("{:02x}{:02x}", identity[0], identity[1]),
             identity,
-            k: 0,
+            chain: ReceiptChain::with_vk(identity),
         }
     }
 
@@ -51,17 +78,27 @@ impl Voice {
         self.identity
     }
 
-    /// The k-step this voice speaks at.
+    /// The k-step this voice speaks at: the receipts on its own chain.
     pub fn k(&self) -> u64 {
-        self.k
+        self.chain.next_step_index()
     }
 
-    /// AN ACT OF THIS VOICE WAS ADMITTED: the clock steps once and the new
-    /// K is the coordinate that act carries. A voice that speaks nothing
-    /// accrues nothing, and no reply from another kernel moves this.
-    pub fn advance(&mut self) -> u64 {
-        self.k += 1;
-        self.k
+    /// The voice's own receipt chain, read whole: what it stood, uttered
+    /// and learned, in the order it was admitted.
+    pub fn chain(&self) -> &ReceiptChain {
+        &self.chain
+    }
+
+    /// AN ACT OF THIS VOICE WAS ADMITTED: a receipt naming what was admitted
+    /// (`delta`, the act's address written out) is sealed on this voice's
+    /// chain under this voice's key, and the new K is the coordinate that
+    /// act carries. A voice that speaks nothing seals nothing, and no reply
+    /// from another kernel moves this. The chain cites no peer receipt yet:
+    /// the mind admits none (47.2 on the mind is open), so its height is
+    /// its own K and its parents are empty.
+    pub fn seal(&mut self, act: Act, delta: &[u8]) -> u64 {
+        self.chain.append(delta, act.operator(), Vec::new());
+        self.k()
     }
 
     // ── the five forms and the acts that carry them ──────────────────────
@@ -83,7 +120,7 @@ impl Voice {
     /// A DEMAND: a residual with this voice's citations (empty: irreducible
     /// for this voice).
     pub fn demand(&self, chain: &[(i64, i64, u8, u8)], cites: &[CiteWire]) -> Vec<u8> {
-        dialogue::encode_demand_at(&self.identity, self.k, chain, cites)
+        dialogue::encode_demand_at(&self.identity, self.k(), chain, cites)
     }
 
     /// A QUOTE request: "what is the highest-yield work?"

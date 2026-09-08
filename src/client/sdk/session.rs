@@ -226,9 +226,11 @@ impl Session {
         &self.voice
     }
 
-    /// An act of this voice was admitted; its own clock steps (45.4).
-    pub fn advance(&mut self) -> u64 {
-        self.voice.advance()
+    /// An act of this voice was admitted: a receipt naming it is sealed on
+    /// the voice's own chain, and the new K is the coordinate the act
+    /// carries (45.1, 45.4).
+    pub fn seal(&mut self, act: crate::voice::Act, delta: &[u8]) -> u64 {
+        self.voice.seal(act, delta)
     }
 
     /// The measured impedance Z on THIS SESSION'S OWN WIRE: consecutive

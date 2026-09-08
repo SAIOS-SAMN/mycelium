@@ -277,6 +277,9 @@ impl Entity {
     /// k is the voice's K (law 9), tu is TUniversal; they are not one clock.
     pub fn absorb_taught(&mut self, taught: &[u8]) -> Option<Comprehension> {
         let mut pos = 0usize;
+        // The page's addresses, written out (A21), are what the receipt
+        // names: the words this mind learned, never the page's bytes.
+        let mut page: Vec<u8> = Vec::new();
         while pos < taught.len() {
             let before = pos;
             let Some(e) = Element::from_bytes(taught, &mut pos) else {
@@ -285,11 +288,13 @@ impl Entity {
             if pos == before {
                 break;
             }
+            let _ = crate::transducer::address::put_addr(&mut page, e.address());
             let _ = self.pivot_on(&e);
         }
-        // 45.4: a page LEARNED is an admitted act of this mind, so its own
-        // clock steps and the page is learned at the step it took.
-        let k = self.session.advance();
+        // 45.1, 45.4: a page LEARNED is an admitted act of this mind, so a
+        // receipt naming the words is sealed on its own chain and the page
+        // is learned at the K it took.
+        let k = self.session.seal(crate::voice::Act::Learned, &page);
         self.epigenome.learn_at(taught, k, self.now_tu())
     }
 
