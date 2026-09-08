@@ -384,9 +384,11 @@ each such drift found after the fact.
 ## 10. The recut
 
 The recut is a procedure the operator runs from a script in the
-repository (`run/recut.sh`, to be landed with 5.2g): stop 1–5 then c, b,
-a; wipe ledgers, genomes, thoughts, registry, court federation; keep keys,
-mesh, corpora; `--mint-genesis` on hypha a once; start a, b, c then 1–5.
+repository (`scripts/recut`): stop 1–5 then c, b, a; wipe ledgers, genomes,
+thoughts, registry, court federation; keep keys, mesh, corpora; drop each
+hypha's origin (`--recut`, one run of the binary per hypha, which bumps the
+epoch under the signed mesh record); `--mint-genesis` on hypha a once;
+start a, b, c then 1–5.
 No flag of the recut lives in a unit file or a drop-in; a unit starts the
 binary with `--home` and nothing else.
 
