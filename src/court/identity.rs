@@ -35,13 +35,19 @@ impl HyphaKey {
         self.vk.to_bytes()
     }
 
-    /// KDF over a seat name: a seed for an ed25519 voice, not a digest of
-    /// mathematical content. The identity carried everywhere is the vk.
+    /// KDF over a seat name, FOR TESTS ONLY: a seed for an ed25519 voice,
+    /// not a digest of mathematical content. An identity derived from a
+    /// string is reproducible — which is what a fixture wants — and
+    /// derivable by anyone who knows the string, which is not an identity.
+    /// A real voice is a keypair from the genesis manifest (46).
+    #[cfg(test)]
     pub fn seed_from_name(name: &str) -> [u8; 32] {
         *blake3::hash(format!("mycelium-kernel:{name}").as_bytes()).as_bytes()
     }
 
-    /// Verifying key of the voice seated at `name`.
+    /// Verifying key of the voice seated at `name`. Tests only, with
+    /// `seed_from_name`.
+    #[cfg(test)]
     pub fn vk_from_name(name: &str) -> [u8; 32] {
         let seed = Self::seed_from_name(name);
         let sk = SigningKey::from_bytes(&seed);

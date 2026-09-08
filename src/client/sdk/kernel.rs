@@ -12,8 +12,12 @@ pub struct Kernel {
 }
 
 impl Kernel {
-    /// Seat a kernel by name. The seed is a KDF over the name; the identity
-    /// carried everywhere is the verifying key.
+    /// Seat a kernel by name, FOR TESTS ONLY. The seed is a KDF over the
+    /// name, so the identity is a function of a string: reproducible, which
+    /// is what a fixture wants, and derivable by anyone who knows the name,
+    /// which is not an identity (46). A real voice is a keypair from the
+    /// genesis manifest, seated by `from_voice`.
+    #[cfg(test)]
     pub fn named(name: &str) -> Self {
         let voice = crate::court::identity::HyphaKey::vk_from_name(name);
         Kernel { name: name.to_string(), voice }
