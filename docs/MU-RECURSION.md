@@ -2353,7 +2353,15 @@ vector names.
      closure with the reach on its certificate (S9.13);
    - for the last axis: opening a chart axis on the loop's class (3.7),
      tried on its own axis like every other and never gated on the others
-     having failed (14.8 says what the opened axis is).
+     having failed (14.8 says what the opened axis is). Reading taken
+     2026-09-08 (Stage 11 I6, ruling asked): the opening axis is read for a
+     loop whose class has a free part and whose axes the working atlas
+     holds no word or form on — an emptiness of the fibre, read before any
+     trial, never the failure of one; a finite-order loop with no word
+     files as torsion (step 6, A17). The opened axis is a coordinate of the
+     form (`Form.axes`, 18.2): the loop's holonomy is the transition on
+     that axis, the loop reads zero, and the court re-derives the seed from
+     the loop (law 12).
    The candidate list is a `Vec` built from keyed reads; no axis is
    enumerated, only the occupied ones are visited, each is visited once
    per stroke, and no axis waits on another's failure. This is not a loop
@@ -2483,9 +2491,17 @@ pub struct PivotCertificate {                          // sentence/pivot.rs
     pub rank_before: Rank,                             // A18
     pub rank_after: Rank,
     pub mu: Mu,                                        // Measured { before, after } over the idea's bundle, or Unmeasured
-    pub by: PivotBy,                                   // Word { face, word, side } | Placement { face, translator } | Hue { face, gauge }; Glue, OpenAxis, Rewrite reserved
+    pub by: PivotBy,                                   // Word { face, word, side } | Placement { face, translator } | Hue { face, gauge } | OpenAxis { face, seed }; Glue, Rewrite reserved
 }
 ```
+
+`OpenAxis { face, seed }` (Stage 11 I6) opens a chart axis over the loop
+whose chord is `face`, seeded by the loop's holonomy versor: the form
+gains the axis (`Form.axes`, keyed by the holonomy's class key, carrying
+the chord, the seed and A7's refinement coordinate), the loop reads zero,
+and the rank moves one unit from the row the loop occupied into `axes`.
+The court replays it by removing the axis, reading the loop's class vector
+before and after, and re-deriving the seed from the loop's holonomy.
 
 1. **Key.** The certificate's own coordinates written out (A21): `chord ‖
    axis ‖ before ‖ after ‖ rank_before ‖ rank_after ‖ the move in `by``,
@@ -2985,6 +3001,7 @@ pub struct Form {                                       // replaces Nerve as the
     pub sections: Keyed<Vec<u16>>,                      // by transport-class coordinates
     pub certificates: Keyed<PivotCertificate>,          // A20, keyed by the certificate's own coordinates; evidence, not in the address
     pub torsion: Keyed<(Vec<(u8, u8)>, u32, u16)>,      // (σ, ℓ, chord), keyed by the rotor's conjugacy coordinates
+    pub axes: Keyed<OpenedAxis>,                        // Stage 11 I6: chart axes opened over held loops, keyed by the holonomy's class key: { chord, seed: Versor, axes: A7 coordinate }
     pub glued: Keyed<u16>,
     pub vortex: Keyed<Keyed<PivotCertificate>>,
     pub by_address: Keyed<u16>,                         // Word address (M2 composite) → index
@@ -3086,11 +3103,13 @@ Carried from chapter 18: the `Form`. Written by `sentence::as_element_form`
 (`encode_form` in `sentence/tape.rs`), read by `from_element_form`
 (`decode_form`); every section is mandatory and a short or partial tape
 is refused, never repaired. Version 4 replaces version 3's 32-byte digests
-by A21 keys and its rational pairs by carriage versors; a version 3 tape is
-refused after item 0.11 lands, as version 2 is today:
+by A21 keys and its rational pairs by carriage versors; version 5 (Stage
+11 I6) appends the opened-axes section and the `OpenAxis` certificate
+kind. Every earlier version is refused: a layout change is a recut, and
+no reader for an older layout exists (`MU-STANDARDS.md` §10):
 
 ```
-SENTENCE_TAG ‖ version u8 (=4)
+SENTENCE_TAG ‖ version u8 (=5)
 n_vertices u16, then per vertex:
   kind u8: 0 Frame | 1 Word | 2 Glued | 3 Rebased | 4 Unfolded
   Word:    address len16 + M2 bytes ‖ Word bytes ‖ contact 0 | 1 ‖ anchor u16 ‖ ring u8 ‖ carriage Versor bytes (A4 canonical) ‖ gauge len16 + pairs ‖ class len16 + axes u64…
@@ -3101,10 +3120,11 @@ n_faces u16, then per face: i u16 ‖ j u16 ‖ word bytes ‖ carriage Versor b
 n_loops u16, then per loop: n_vertices u16 ‖ vertex indices u16… ‖ n_faces u16 ‖ face indices u16… ‖ chord u16 ‖ holonomy Word bytes ‖ carriage Versor bytes
 remainder len32 + cells (r i64 ‖ c i64 ‖ before u8 ‖ after u8)
 depth u16
-n_certificates u16, then per certificate (A20): chord u16 ‖ axis u8 ‖ before len16 + ClassVector bytes ‖ after len16 + ClassVector bytes ‖ rank_before 4×u32 ‖ rank_after 4×u32 ‖ mu: 0 | 1 ‖ before 4×u64 ‖ after 4×u64 ‖ by: 0 ‖ face u16 ‖ side u8 ‖ Word bytes | 1 ‖ face u16 ‖ translator Versor bytes | 2 ‖ face u16 ‖ gauge len16 + pairs
+n_certificates u16, then per certificate (A20): chord u16 ‖ axis u8 ‖ before len16 + ClassVector bytes ‖ after len16 + ClassVector bytes ‖ rank_move: 0 (Equal) | 1 ‖ from u8 (Discharged) | 2 ‖ delta 4×i64 (Inadmissible) ‖ mu: 0 | 1 ‖ before 4×u64 ‖ after 4×u64 ‖ by: 0 ‖ face u16 ‖ side u8 ‖ Word bytes | 1 ‖ face u16 ‖ translator Versor bytes | 2 ‖ face u16 ‖ gauge len16 + pairs | 3 ‖ face u16 ‖ seed Versor bytes
 ratio 4×u16 (h_out, h_in, w_out, w_in; a zero denominator refuses)
 n_sections u16, then per section: class key len16 + bytes ‖ len16 + vertex indices u16…
 n_torsion u16, then per cycle: class key len16 + bytes ‖ len16 + σ pairs ‖ ℓ u32 ‖ chord u16
+n_axes u16, then per opened axis: class key len16 + bytes ‖ chord u16 ‖ seed Versor bytes ‖ len16 + refinement axes u64…
 ```
 
 The remainder's cells are the one place a coordinate pair is written: a
