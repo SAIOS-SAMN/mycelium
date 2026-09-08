@@ -141,34 +141,46 @@ impl Treasury {
         self.mint_to(discoverer, mu, anchor)
     }
 
-    /// A reading (decomposition) charges the READER a unit fee on each lane the
-    /// sentence exercised — paid from the reader's earned balance INTO the pool.
-    /// This is the RECHARGE stroke: consumption refills the subsidy float, so
-    /// the pool breathes (drain on discovery, refill on use) instead of dying.
+    /// A reading (decomposition) charges the READER a unit fee on each lane
+    /// the sentence exercised, paid out of the reader's earned balance. This
+    /// is the RECHARGE stroke: the pool drains on discovery (a subsidy mints)
+    /// and refills on use (a fee is burned), so it breathes instead of dying.
+    ///
+    /// THE FEE IS A BURN, not a transfer. It stood as a `transfer` entry
+    /// with only the debit half written — the μ⃗ left a balance and reached
+    /// no carrier, so `Σ balance` fell while `supply` held and §6's second
+    /// equation failed on every lane a reader had ever paid on. §2's
+    /// carriers are balance, bond and escrow: there is no pool among them
+    /// to hold the fee, and the pool a subsidy draws on is issuance
+    /// headroom, which a burn is exactly what returns to.
     pub fn settle_recall(&mut self, voice: [u8; 32], lanes: [bool; 4], anchor: Anchor) -> [u64; 4] {
         let held = self.balance_mu(&voice);
         let fee: [u64; 4] = std::array::from_fn(|l| (lanes[l] as u64).min(held[l]));
         if fee.iter().all(|&m| m == 0) {
             return fee;
         }
-        self.entries.push(Entry { kind: "transfer", who: voice, mu: fee, k_step: anchor.0, receipt: anchor.1 });
+        self.entries.push(Entry { kind: "burn", who: voice, mu: fee, k_step: anchor.0, receipt: anchor.1 });
         self.debit(voice, fee);
         fee
     }
 
     /// THE DOOR FEE (D12) — a strained mesh prices its own door: the speaker
     /// pays the congestion fee (per lane, derived from the reserve deficit —
-    /// zero on a calm mesh) from earned balance INTO the pool. The door is an
-    /// economic rate limit, not a gate: what cannot be paid is simply not
-    /// paid, and the caller decides deferral from the shortfall. Returns the
-    /// per-lane amount actually paid.
+    /// zero on a calm mesh) out of earned balance. The door is an economic
+    /// rate limit, not a gate: what cannot be paid is simply not paid, and
+    /// the caller decides deferral from the shortfall. Returns the per-lane
+    /// amount actually paid.
+    ///
+    /// A burn for the same reason `settle_recall` is: the congestion fee
+    /// leaves circulation, and a `transfer` with no payee was μ⃗ leaving a
+    /// balance for nowhere.
     pub fn settle_door(&mut self, voice: [u8; 32], fee: [u64; 4], anchor: Anchor) -> [u64; 4] {
         let held = self.balance_mu(&voice);
         let paid: [u64; 4] = std::array::from_fn(|l| fee[l].min(held[l]));
         if paid.iter().all(|&m| m == 0) {
             return paid;
         }
-        self.entries.push(Entry { kind: "transfer", who: voice, mu: paid, k_step: anchor.0, receipt: anchor.1 });
+        self.entries.push(Entry { kind: "burn", who: voice, mu: paid, k_step: anchor.0, receipt: anchor.1 });
         self.debit(voice, paid);
         paid
     }

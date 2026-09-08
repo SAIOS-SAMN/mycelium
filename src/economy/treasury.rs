@@ -187,9 +187,17 @@ impl Treasury {
         let mut issued = [0u64; 4];
         let mut burned = [0u64; 4];
         for e in &self.entries {
+            // A SLASH IS μ⃗ LEAVING CIRCULATION. It debits a bond (§5) and
+            // §2's carriers -- balance, bond, escrow -- hold nothing that
+            // could receive it, so it is issuance returned exactly as a
+            // burn is; 47.4's forfeiture says the same of the whole bond.
+            // Counted nowhere, `Σ bond` fell while `supply` held, and the
+            // audit failed on every lane anyone had ever been slashed on.
+            // It stays its OWN KIND so the ledger can still answer "was
+            // anyone slashed?" separately from "what was burned?".
             let into = match e.kind {
                 "mint" | "genesis" => &mut issued,
-                "burn" => &mut burned,
+                "burn" | "slash" => &mut burned,
                 _ => continue,
             };
             for (t, d) in into.iter_mut().zip(&e.mu) {

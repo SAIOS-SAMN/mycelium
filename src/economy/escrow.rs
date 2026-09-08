@@ -153,11 +153,20 @@ impl Treasury {
             let Some(&who) = voices.first() else {
                 return true;
             };
-            if let Some(&held) = self.stakes.get(&who) {
-                let next: [u64; 4] = std::array::from_fn(|l| held[l].saturating_sub(mu[l]));
-                self.stakes.insert(who, next);
+            // THE ENTRY NAMES WHAT LEFT THE BOND, not what the escrow asked
+            // for. A bond of 3 slashed for 8 loses 3; the entry said 8, and
+            // since a slash is μ⃗ leaving circulation (`supply`), the ledger
+            // then claimed more had left than ever existed and `supply()`
+            // underflowed to None -- "unmeasured" for a treasury that is
+            // perfectly well measured. Rule 5: the row is the measurement.
+            let held = self.stakes.get(&who).copied().unwrap_or([0; 4]);
+            let took: [u64; 4] = std::array::from_fn(|l| mu[l].min(held[l]));
+            if took.iter().all(|&x| x == 0) {
+                return true;
             }
-            self.entries.push(Entry { kind: "slash", who, mu, k_step: anchor.0, receipt: anchor.1 });
+            let next: [u64; 4] = std::array::from_fn(|l| held[l] - took[l]);
+            self.stakes.insert(who, next);
+            self.entries.push(Entry { kind: "slash", who, mu: took, k_step: anchor.0, receipt: anchor.1 });
             self.refresh_bond();
         }
         true

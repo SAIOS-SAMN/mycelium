@@ -155,9 +155,18 @@ for _ in 0..16 {
     k.physics_mut().spend([true; 4]); // re-exhaust (the deferral relaxed some)
 }
 let _ = k.ingest(&a2, &b2, [7; 32]);
+// The fee is a BURN: §2 has no pool carrier for it to land in, so μ⃗
+// that leaves the speaker's balance leaves the supply with it. This
+// asserted a `transfer`, which is a payment to a payee, and there was
+// none: the debit half was written and the credit half never existed.
 assert!(
-    k.treasury().entries().iter().any(|e| e.kind == "transfer" && e.who == [7; 32]),
-    "the funded speaker paid the door as a transfer"
+    k.treasury().entries().iter().any(|e| e.kind == "burn" && e.who == [7; 32]),
+    "the funded speaker paid the door out of balance"
+);
+assert!(
+    k.treasury().audit().is_ok(),
+    "and the ledger still conserves after it: {:?}",
+    k.treasury().audit()
 );
 }
 
