@@ -219,12 +219,23 @@ pub struct Offer {
     pub voices: Vec<[u8; 32]>,
     /// The deflation the home measured.
     pub deflation: [u64; 4],
-    /// The home's k-step.
-    pub k: u64,
-    /// The home's signature over the offer prefix.
-    pub sig: [u8; 64],
-    /// The home's INSTALL signature — the second, over the installed form.
-    pub install_sig: [u8; 64],
+    /// THE HOME'S CAUSAL POSITION AND ITS SIGNATURE, as 47.1 writes them.
+    ///
+    /// It carried `k: u64`, `sig: [u8; 64]` and `install_sig: [u8; 64]`,
+    /// signed over `offer_signed_prefix` — a bespoke prefix, where 47.1
+    /// says "Every signature in the tree is over exactly these bytes" and
+    /// 26 says "Every signed frame signs the receipt prefix of 47.1". The
+    /// three fields had no production writer: every offer left with
+    /// `k: 0`, `sig: [0u8; 64]`, `install_sig: [0u8; 64]`, which is rule
+    /// 8's named shape ("all-zero signatures"), and no reader anywhere ran
+    /// 47.2 on them. Any host that could open a socket could post an offer
+    /// naming any `home` and have the receiving court write a Čech section
+    /// at that stranger's vantage.
+    ///
+    /// `install_sig` is gone rather than zeroed: 47.3's second signature
+    /// belongs to the install, and `Installed` already carries `sig_home`
+    /// and `sig_peer` for it.
+    pub section: ReceiptSection,
 }
 
 /// WHAT A WITNESS ANSWERS AN OFFER WITH (47.3, 13.9): the key that
@@ -299,6 +310,7 @@ pub use crate::transducer::anchor::EvidenceOf;
 pub type EvidenceDeposit = ([u8; 32], Vec<EvidenceItem>);
 /// 47.1's RECEIPT SECTION. A truncated section is refused whole, never a
 /// partial admission (rule 11).
+#[derive(Clone)]
 pub struct ReceiptSection {
     /// The signed prefix, as the signer wrote it.
     pub prefix: crate::court::admission::SignedPrefix,

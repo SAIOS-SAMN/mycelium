@@ -482,6 +482,18 @@ impl Exchange {
                     Ok(c) => c.witnesses(&inv, &word.magnitude(), &mesh.vk),
                     Err(_) => mycelium::network::nerve::Keyed::new(),
                 };
+                // 47.1: THE HOME SIGNS ITS OWN CAUSAL POSITION, with the
+                // offered ADDRESS as the payload. The three fields this
+                // replaces went out as `k: 0` and two all-zero signatures
+                // at this one call site, so nothing on the mesh ever signed
+                // an offer and the receiver had nothing to verify. A home
+                // that has adopted no origin, or holds no receipt yet, has
+                // no position to sign from and offers nothing.
+                let Some(section) =
+                    crate::admission::sign_position(&kernel, &mesh, oaddr.as_bytes())
+                else {
+                    continue;
+                };
                 for (vk, _) in witnesses.fiber(mycelium::network::nerve::ROOT) {
                     if !offer_budget.spend() {
                         break;
@@ -497,10 +509,8 @@ impl Exchange {
                         home: mesh.vk,
                         elem: elem.clone(),
                         voices: vec![mesh.vk],
-                        deflation: [0; 4],
-                        k: 0,
-                        sig: [0u8; 64],
-                        install_sig: [0u8; 64],
+                        deflation: word.magnitude(),
+                        section: section.clone(),
                     });
                     let Some((reply, _)) = tell_peer(d, body) else {
                         continue;

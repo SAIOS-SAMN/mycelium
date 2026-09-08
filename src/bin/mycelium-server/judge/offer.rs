@@ -17,11 +17,69 @@ use std::net::TcpStream;
 /// pending (one voice)` forever with basis 0. The gate was never the germ
 /// quorum; it was that the offer never left the process.
 pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
-    let Some(dialogue::Offer { home, elem: elem_bytes, .. }) = dialogue::decode_offer(&frame.body)
+    let Some(dialogue::Offer { addr, home, elem: elem_bytes, section, .. }) =
+        dialogue::decode_offer(&frame.body)
     else {
         return;
     };
     let me = door.mesh.vk;
+    // 47.2, BEFORE ANY CARRIER IS TOUCHED. `glue_fetched` below writes a
+    // Čech section into THIS MESH'S OWN COVER at the vantage the frame
+    // names, pushes cocycles, marks classes, admits into `ruled`, releases
+    // escrow and mints. Not one of 47.2's steps ran on this path: no
+    // origin, no signature, no K, no height. Any host that could open a
+    // socket could post an offer claiming to be any hypha and have this
+    // court file a section under that stranger's key -- chapter 48's "free
+    // identities witnessing themselves", from outside the mesh entirely.
+    // I9b made it worse by making `home` load-bearing: before it, the
+    // forged key was ignored; after it, the forged key is where the
+    // section goes.
+    let refuse_offer = |s: &mut TcpStream, why: &str| {
+        eprintln!(
+            "  court offer refused {:02x}{:02x}… from {:02x}{:02x}…: {why}",
+            addr.as_bytes()[0],
+            addr.as_bytes()[1],
+            home[0],
+            home[1]
+        );
+        answer(
+            s,
+            Frame {
+                lane: frame.lane,
+                body: dialogue::encode_offer_reply(&dialogue::Witnessed {
+                    vk: me,
+                    reached: Vec::new(),
+                    refused: why.as_bytes().to_vec(),
+                }),
+            },
+        );
+    };
+    let origin = match door.mesh.origin.lock() {
+        Ok(o) => *o,
+        Err(_) => None,
+    };
+    let Some(origin) = origin else {
+        refuse_offer(s, "this node has adopted no origin");
+        return;
+    };
+    // The signer is the key the receipt names, and the act's `home` is that
+    // same key or the frame is two claims (A2's rule, one signer).
+    let signer = section.receipt.vk;
+    if let Err(why) =
+        mycelium::court::admission::admit_signature(origin, &section.prefix, &signer, &section.sig)
+    {
+        refuse_offer(s, why);
+        return;
+    }
+    // 47.1's binding: the prefix's payload is the OFFERED ADDRESS, and the
+    // receipt names the hypha the act claims as its home. The tape is bound
+    // through the address, which the witness re-derives from it below: two
+    // spellings of one word have one address (law 2), so signing the
+    // address signs the form and never the spelling.
+    if section.prefix.payload != addr.as_bytes() || section.receipt.vk != home {
+        refuse_offer(s, mycelium::verdict::REFUSE_RECEIPT);
+        return;
+    }
     let mut pos = 0usize;
     // THE WITNESS RE-DERIVES. This hypha replays the offered form on its
     // OWN tapes and reaches a form of its own; that form is what 47.3's
@@ -41,6 +99,12 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // because the cover the mesh actually holds was left behind.
     let (refused, reached) =
         match mycelium::transducer::element::Element::from_bytes(&elem_bytes, &mut pos) {
+            Some(word) if word.address() != addr => {
+                // The tape does not re-derive to the address the home
+                // signed: identity is content (law 2), so this is not the
+                // form that was offered whatever the frame says.
+                (mycelium::verdict::REFUSE_VERTEX_TAPE.as_bytes().to_vec(), Vec::new())
+            }
             Some(word) => {
                 let inv = mycelium::transducer::stalk::invariant_of(&word);
                 match (door.kernel.lock(), door.mesh.cover.lock()) {

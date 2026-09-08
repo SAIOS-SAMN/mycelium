@@ -35,6 +35,45 @@ pub(crate) fn rebuild_own_cover(kernel: &Mutex<Kernel>, mesh: &Mesh) -> (Vec<(u8
     (charts, room)
 }
 
+/// 47.1: THIS HYPHA'S SIGNED POSITION FOR ONE PAYLOAD — the prefix carrying
+/// its genesis, epoch, head receipt, K and height, with `payload` as the
+/// address it is signing for, the signature over exactly those bytes, and
+/// the head receipt the prefix names.
+///
+/// "Every signature in the tree is over exactly these bytes, in this
+/// order" (47.1), so there is one builder and every act uses it. The
+/// payload is an ADDRESS and never a tape: two spellings of one word have
+/// one receipt lineage, and a receiver re-derives the address from the tape
+/// it was sent, so signing the address signs the form by its content and
+/// not by the spelling (law 2).
+///
+/// `None` when this hypha has adopted no origin or holds no receipt yet: it
+/// has no causal position to sign from, and an act it cannot sign is one it
+/// does not make.
+pub(crate) fn sign_position(
+    kernel: &Mutex<Kernel>,
+    mesh: &Mesh,
+    payload: &[u8],
+) -> Option<dialogue::ReceiptSection> {
+    let (genesis, epoch) = mesh.origin.lock().ok().and_then(|o| *o)?;
+    let k = kernel.lock().ok()?;
+    let head = k.chain().receipts().last().cloned()?;
+    let prefix = mycelium::court::admission::SignedPrefix {
+        genesis,
+        epoch,
+        prev_receipt_hash: head.prev_receipt_hash,
+        k: head.step_index,
+        height: head.height,
+        chart: k.active_cover().iter().flat_map(|(_, inv)| inv.0.clone()).collect(),
+        payload: payload.to_vec(),
+    };
+    let sig = {
+        use ed25519_dalek::Signer;
+        mesh.sk.sign(&prefix.bytes()).to_bytes()
+    };
+    Some(dialogue::ReceiptSection { prefix, sig, receipt: head })
+}
+
 pub(crate) fn sign_cover_digest(kernel: &Mutex<Kernel>, mesh: &Mesh) -> Vec<u8> {
     let (charts, room) = rebuild_own_cover(kernel, mesh);
     let ruled_root = match kernel.lock() {
@@ -53,24 +92,8 @@ pub(crate) fn sign_cover_digest(kernel: &Mutex<Kernel>, mesh: &Mesh) -> Vec<u8> 
     // head receipt and the prefix it is signed over are appended, so the
     // peer can run 47.2 and cite this receipt as a parent of its next step.
     // A node with no genesis sends none: it has no origin to claim.
-    let origin = mesh.origin.lock().ok().and_then(|o| *o);
-    if let (Some((genesis, epoch)), Ok(k)) = (origin, kernel.lock()) {
-        if let Some(head) = k.chain().receipts().last().cloned() {
-            let prefix = mycelium::court::admission::SignedPrefix {
-                genesis,
-                epoch,
-                prev_receipt_hash: head.prev_receipt_hash,
-                k: head.step_index,
-                height: head.height,
-                chart: k.active_cover().iter().flat_map(|(_, inv)| inv.0.clone()).collect(),
-                payload: ruled_root.to_vec(),
-            };
-            let sig = {
-                use ed25519_dalek::Signer;
-                mesh.sk.sign(&prefix.bytes()).to_bytes()
-            };
-            out.extend(dialogue::encode_receipt_section(&prefix, &sig, &head));
-        }
+    if let Some(sec) = sign_position(kernel, mesh, &ruled_root) {
+        out.extend(dialogue::encode_receipt_section(&sec.prefix, &sec.sig, &sec.receipt));
     }
     out
 }

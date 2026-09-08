@@ -3,46 +3,69 @@
 
 use crate::anastome::dialogue::*;
 
-/// The offer names WHO OFFERED. Without it the witness has only the socket
-/// it was dialled on, and a socket is not a vantage: it can glue the form
-/// as itself, compare it with itself, and agree.
+fn section_at(payload: &[u8], vk: [u8; 32]) -> ReceiptSection {
+    let mut c = crate::chronometry::ReceiptChain::with_vk(vk);
+    c.append(payload, [0; 32], Vec::new()).expect("appends");
+    let r = c.receipts()[0].clone();
+    ReceiptSection {
+        prefix: crate::court::admission::SignedPrefix {
+            genesis: [7; 32],
+            epoch: 2,
+            prev_receipt_hash: r.prev_receipt_hash,
+            k: r.step_index,
+            height: r.height,
+            chart: vec![1, 2, 3],
+            payload: payload.to_vec(),
+        },
+        sig: [0x4a; 64],
+        receipt: r,
+    }
+}
+
+/// The offer names WHO OFFERED and carries 47.1's signed position for it.
+/// Without the first the witness has only the socket it was dialled on,
+/// and a socket is not a vantage: it can glue the form as itself, compare
+/// it with itself, and agree. Without the second nothing is verifiable at
+/// all — the act carried `k: 0` and two all-zero signatures over a bespoke
+/// prefix that had no production signer and no verifier.
 #[test]
-fn an_offer_names_the_home_that_made_it() {
+fn an_offer_names_the_home_that_made_it_and_signs_its_own_position() {
     let addr = crate::transducer::address::Address::new(vec![0xA1u8, 0xB2, 0xC3]);
     let home = [3u8; 32];
     let attested = [9u8; 32];
+    let section = section_at(addr.as_bytes(), home);
     let offer = Offer {
         addr: addr.clone(),
         home,
         elem: vec![7u8, 7, 7, 7],
         voices: vec![attested],
         deflation: [1, 0, 2, 0],
-        k: 11,
-        sig: [4u8; 64],
-        install_sig: [5u8; 64],
+        section: section.clone(),
     };
     let o = decode_offer(&encode_offer(&offer)).expect("an offer parses whole");
     assert_eq!(o.home, home, "the home's key rides the act");
     assert_eq!(o.addr, addr);
     assert_eq!(o.elem, offer.elem);
     assert_eq!(o.voices, vec![attested], "and is not the attesting voices");
-    assert_eq!((o.deflation, o.k), ([1, 0, 2, 0], 11));
-    assert_eq!((o.sig, o.install_sig), ([4u8; 64], [5u8; 64]));
+    assert_eq!(o.deflation, [1, 0, 2, 0]);
 
-    // The home is inside what the offer's signature covers: a different
-    // home is a different offer, not the same offer re-addressed. And the
-    // prefix stops before both signatures, which cannot cover themselves.
-    let elsewhere = Offer { home: [4u8; 32], ..offer.clone() };
-    assert_ne!(
-        offer_signed_prefix(&offer),
-        offer_signed_prefix(&elsewhere),
-        "the signed prefix covers the home"
-    );
-    let resigned = Offer { sig: [0xEE; 64], install_sig: [0xEE; 64], ..offer.clone() };
+    // 47.1: the signature's payload is the OFFERED ADDRESS, so it binds the
+    // form by its content and not by the spelling — the witness re-derives
+    // the address from the tape it was sent (law 2).
     assert_eq!(
-        offer_signed_prefix(&offer),
-        offer_signed_prefix(&resigned),
-        "and stops before the signatures themselves"
+        o.section.prefix.payload,
+        addr.as_bytes(),
+        "the prefix's payload is the address the offer is for"
+    );
+    assert_eq!(o.section.receipt.vk, home, "and the receipt names the home");
+    assert_eq!(o.section.sig, section.sig, "the signature survives whole");
+    assert_eq!(o.section.prefix, section.prefix);
+
+    // A frame truncated inside its section is refused, never half-read.
+    let whole = encode_offer(&offer);
+    assert!(
+        decode_offer(&whole[..whole.len() - 8]).is_none(),
+        "a truncated section is not an offer"
     );
 }
 
