@@ -232,6 +232,11 @@ fn a_depleted_lane_charges_a_sentence_by_its_loop_words() {
     assert!(steps > 0, "the loops name a charge");
 
     let mut k = Kernel::new();
+    // Admission is room (23.8, S9.6): a first-time voice is enrolled by
+    // `reflex_open`, which this fixture bypasses to reach `commit_germ`
+    // directly, so it enrols the voice itself; an unbonded voice has no
+    // room and its act is refused before anything is charged.
+    k.ensure_bonded([1; 32]);
     for _ in 0..8 {
         k.physics_mut().spend([true; 4]);
     }

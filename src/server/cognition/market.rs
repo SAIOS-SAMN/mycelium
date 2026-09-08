@@ -72,22 +72,29 @@ impl Kernel {
         std::array::from_fn(|l| room[l].saturating_add(self.occupancy[l] as usize))
     }
 
-    /// Does a residual fit the uttering voice's remaining bond on every lane?
-    pub(super) fn fits_book(&self, voice: &[u8; 32], mag: &[u64; 4]) -> bool {
+    /// THE SHORTFALL of a draw against the uttering voice's remaining room,
+    /// per lane: what the draw needs beyond the room, zero where the lane
+    /// fits (S9.6, §2.3). A reading, never a verdict. The bit this replaced
+    /// threw the lane away, and its one caller then read the room a second
+    /// time to learn which lane had refused — the recorded proof that a
+    /// `bool` over four lanes destroys what the caller needs.
+    pub(super) fn room_shortfall(&self, voice: &[u8; 32], draw: &[u64; 4]) -> [u64; 4] {
         let room = self.lane_room_of(voice);
-        (0..4).all(|l| (room[l] as u64) >= mag[l])
+        crate::economy::shortfall(draw, &std::array::from_fn(|l| room[l] as u64))
     }
 
-    /// One line per short lane: room is the named voice's, never the hypha's.
-    pub(super) fn log_room_refused(&self, voice: &[u8; 32], need: &[u64; 4]) {
-        let room = self.lane_room_of(voice);
-        for l in 0..4 {
-            if need[l] > 0 && (room[l] as u64) < need[l] {
-                eprintln!(
-                    "  court room refused voice {:02x}{:02x}… lane {l} draw {} room {}",
-                    voice[0], voice[1], need[l], room[l]
-                );
-            }
+    /// One line per short lane (34.2), read off the shortfall the caller
+    /// holds: room is the named voice's, never the hypha's, and it is not
+    /// measured again here.
+    pub(super) fn log_room_refused(&self, voice: &[u8; 32], draw: &[u64; 4], short: &[u64; 4]) {
+        for l in crate::economy::lanes_short(short) {
+            eprintln!(
+                "  court room refused voice {:02x}{:02x}… lane {l} draw {} room {}",
+                voice[0],
+                voice[1],
+                draw[l],
+                draw[l] - short[l]
+            );
         }
     }
 
@@ -434,9 +441,12 @@ impl Kernel {
         if self.basis.contains(&addr) || self.pending.contains(&addr) {
             return false; // already speakable or already listed
         }
-        // Every lane the residual moves must have room; none is chosen.
-        if !self.fits_book(&self.identity, &residual.magnitude()) {
-            self.log_room_refused(&self.identity, &residual.magnitude());
+        // Every lane the residual moves must have room; none is chosen. The
+        // corpus has no voice, so the hypha's own room is the draw's (6.4).
+        let draw = residual.magnitude();
+        let short = self.room_shortfall(&self.identity, &draw);
+        if !crate::economy::lanes_short(&short).is_empty() {
+            self.log_room_refused(&self.identity, &draw, &short);
             return false;
         }
         let k_now = self.k_step();

@@ -92,6 +92,7 @@ let label = match &out {
     Outcome::Sectioned(i) => format!("valid: section of #{i}"),
     Outcome::Fragmented(parts) => format!("valid: fragmented ({} bodies)", parts.len()),
     Outcome::Pivot => "invalid: pivot (degenerate — nothing to reduce)".to_string(),
+    Outcome::Refused(reason) => format!("refused: {reason}"),
 };
 let src = match kind {
     k if k == dialogue::ACT_GOSSIP => "gossip",

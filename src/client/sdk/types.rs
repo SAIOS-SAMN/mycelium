@@ -20,6 +20,10 @@ pub enum Verdict {
     Fragmented,
     /// A degenerate demand — nothing to reduce.
     Pivot,
+    /// The act was refused at the door of the book (23.8): a lane of this
+    /// voice's room did not cover the draw. Nothing was docketed; the
+    /// hypha logged the lanes.
+    Refused,
     /// An unrecognized reply code (forward-compat).
     Unknown(u8),
 }
@@ -33,6 +37,7 @@ impl Verdict {
             Verdict::Sectioned => "section",
             Verdict::Fragmented => "fragmented",
             Verdict::Pivot => "pivot",
+            Verdict::Refused => "refused",
             Verdict::Unknown(_) => "unknown",
         }
     }
@@ -407,6 +412,7 @@ pub(crate) fn decode_verdict(body: &[u8]) -> Verdict {
         Some(6) => Verdict::Sectioned,
         Some(4) => Verdict::Pivot,
         Some(5) => Verdict::Fragmented,
+        Some(7) => Verdict::Refused,
         Some(&c) => Verdict::Unknown(c),
         None => Verdict::Unknown(0),
     }
