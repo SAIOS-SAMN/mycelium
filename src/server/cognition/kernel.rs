@@ -251,6 +251,15 @@ pub struct Kernel {
     /// over the docket resumes where the last one left off, so a book that
     /// outgrows one stroke's budget is still walked whole across strokes.
     pub(crate) lapse_cursor: Vec<u8>,
+    /// The docket's orbit (45.7, S13.3): the circuits of `open` the court
+    /// stroke completed and the strokes the last one took, written once
+    /// per circuit as `court orbit docket` — the court's local time beside K.
+    pub(crate) docket_orbit: crate::physics::Orbit,
+    /// Keyed cursors into `unfilled` and `pending_refine` for `stroke_fills`
+    /// (rule 10): each stroke resumes where the last left off, so a tail
+    /// beyond one budget is reached rather than starved by the head.
+    pub(crate) fill_cursor: Vec<u8>,
+    pub(crate) refine_cursor: Vec<u8>,
     /// This hypha's cover, admitted in write_field; own_cover_charts reads it.
     pub(crate) own_cover: crate::network::nerve::Cover,
     /// Listings keyed by chart, so rank_over's moved set is a fiber.

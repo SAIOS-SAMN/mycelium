@@ -185,6 +185,55 @@ k.court_stroke(one_stroke_transport);
 assert_eq!(ruled_n(&k, &addrs), cap + 1, "later listings are not starved by already-ruled ones");
 }
 
+/// 45.7, S9.14, S13.3 — THE DOCKET IS AN ORBIT: a docket of more listings
+/// than one budget is ruled whole across strokes, the stroke whose walk
+/// passes the end of the key order reports the circuit and its period,
+/// and a listing admitted below the resume point is ruled on the next
+/// circuit — where a cursor that resumed after the last key it served and
+/// stopped at the end of the order never reached it.
+#[test]
+fn the_docket_is_an_orbit_and_reaches_a_listing_admitted_below_the_cursor() {
+use crate::transducer::element::from_connection;
+fn conn(shift: i64) -> Element {
+    from_connection(
+        &crate::transducer::alphabet::Word::identity(),
+        &crate::transducer::element::translator_versor(shift, 0),
+        &[],
+        &Vec::new(),
+        [1, 0, 0, 0],
+    )
+    .expect("spells")
+}
+let mut k = Kernel::new();
+let cap = crate::physics::Physics::default().stroke().remaining();
+for i in 0..(cap + 1) {
+    assert!(matches!(k.install_adopted(&conn(2 * (i as i64 + 1)), [1; 32]), Adoption::Installed));
+}
+k.court_stroke(one_stroke_transport);
+assert_eq!(k.docket_orbit().circuits(), 0, "one stroke over cap + 1 listings is not a circuit");
+let resume = k.open_cursor.clone();
+// A listing whose address sorts below the resume point, found among the
+// odd shifts — never constructed by hand.
+let below = (0..cap as i64 + 2)
+    .map(|i| conn(2 * i + 1))
+    .find(|w| w.address().as_bytes() < resume.as_slice())
+    .expect("an odd shift sorts below the cursor");
+let addr = below.address();
+assert!(matches!(k.install_adopted(&below, [1; 32]), Adoption::Installed));
+assert!(!k.ruled_contains(addr.as_bytes()), "admitted, not yet ruled");
+// The orbit reaches it before the walk returns to where it began: the
+// tail, then past the end from the first key.
+let mut strokes = 0;
+while !k.ruled_contains(addr.as_bytes()) {
+    strokes += 1;
+    assert!(strokes <= 3, "the listing below the cursor is ruled within one circuit");
+    k.court_stroke(one_stroke_transport);
+}
+let orbit = k.docket_orbit();
+assert!(orbit.circuits() >= 1, "the walk passed the end of the docket: {orbit:?}");
+assert!(orbit.period() >= 1, "the period is measured in strokes: {orbit:?}");
+}
+
 /// The home installs when a peer's ruled digest holds the stratum.
 #[test]
 fn home_installs_when_peer_ruled_root_gains_the_address() {

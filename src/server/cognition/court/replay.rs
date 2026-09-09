@@ -148,15 +148,22 @@ impl Kernel {
         let mut budget = self.physics.stroke();
         let mut keys: Vec<Vec<u8>> = Vec::new();
         let from = self.open_cursor.clone();
-        // index: budgeted keyed cursor over the open docket
-        {
-            let cur = self.open.cursor(&from, &mut budget);
-            for (addr, _) in cur {
+        // index: budgeted keyed cursor over the open docket — an orbit
+        // (45.7, S13.3): it continues past the last key from the first, so
+        // a listing admitted below the cursor is ruled on the next circuit,
+        // and the circuit it completes is the docket's orbit.
+        let circuit = {
+            let mut cur = self.open.cursor(&from, &mut budget);
+            for (addr, _) in &mut cur {
                 keys.push(addr);
             }
-        }
-        if let Some(k) = keys.last() {
-            self.open_cursor = k.clone();
+            if let Some(k) = cur.last_key() {
+                self.open_cursor = k.to_vec();
+            }
+            cur.circuit()
+        };
+        if let Some((n, period)) = self.docket_orbit.stroke(u64::from(circuit)) {
+            eprintln!("  court orbit docket {n} period {period}");
         }
         for addr in keys {
             let spoken = self
@@ -185,6 +192,12 @@ impl Kernel {
         self.lapse_docket(&mut budget, &lambda);
         self.relocate_t_exhausted();
         self.stroke_fills(&mut budget);
+    }
+
+    /// The docket's orbit reading (45.7): circuits completed and the
+    /// strokes the last one took, the court's local time beside K.
+    pub fn docket_orbit(&self) -> crate::physics::Orbit {
+        self.docket_orbit
     }
 
     /// A gauge from Extended between two hyphas is a translation: minted

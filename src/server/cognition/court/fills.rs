@@ -16,8 +16,18 @@ impl Kernel {
             return;
         }
         let mut pending: Vec<(crate::transducer::stalk::Invariant, crate::transducer::address::Address)> = Vec::new();
-        for (_, v) in self.unfilled.cursor(crate::network::nerve::ROOT, budget) {
-            pending.push(v.clone());
+        {
+            // Resumed, never restarted at the first key (rule 10, S13.3):
+            // a head that refills faster than one budget no longer starves
+            // the tail, and the orbit reaches every cell.
+            let from = self.fill_cursor.clone();
+            let mut cur = self.unfilled.cursor(&from, budget);
+            for (_, v) in &mut cur {
+                pending.push(v.clone());
+            }
+            if let Some(k) = cur.last_key() {
+                self.fill_cursor = k.to_vec();
+            }
         }
         for (inv, sim_key) in pending {
             let dkey = chart_simplex_key(&inv, &sim_key);
@@ -86,8 +96,15 @@ impl Kernel {
             crate::transducer::alphabet::Rotor,
             u8,
         )> = Vec::new();
-        for (_, v) in self.pending_refine.cursor(crate::network::nerve::ROOT, budget) {
-            refine.push(v.clone());
+        {
+            let from = self.refine_cursor.clone();
+            let mut cur = self.pending_refine.cursor(&from, budget);
+            for (_, v) in &mut cur {
+                refine.push(v.clone());
+            }
+            if let Some(k) = cur.last_key() {
+                self.refine_cursor = k.to_vec();
+            }
         }
         for (inv, class, degree) in refine {
             let key = inv.key();
