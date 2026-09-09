@@ -174,6 +174,12 @@ pub(crate) fn speak_root_locked(
 pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: std::sync::mpsc::Receiver<(String, Vec<u8>)>) {
     std::thread::spawn(move || {
         let mesh_nerve = mesh;
+        // R2 (34.2): a peer's deferrals of the acts routed to it — demands
+        // routed to a listing's home above all — are read once per
+        // aperture of acts per peer, never per act: per act it was 376,000
+        // lines in one aperture on the fleet of 2026-09-09.
+        let mut deferred: mycelium::network::nerve::Keyed<u64> = mycelium::network::nerve::Keyed::new();
+        let aperture = u64::from(mycelium::physics::aperture_cycle().max(1));
         for (addr, body) in nerve_rx {
             match tell_peer(&addr, body) {
                 Some((reply, dt)) => {
@@ -181,7 +187,11 @@ pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: std::sync::mpsc::Receiver<(Strin
                     // 23.8, I36: a full reflex pool's deferral is impedance,
                     // not a root reply that failed to decode.
                     if crate::transport::is_deferred(&reply) {
-                        eprintln!("  court exchange deferred by {addr}");
+                        let n = deferred.get(addr.as_bytes()).copied().unwrap_or(0).saturating_add(1);
+                        deferred.insert(addr.as_bytes(), n);
+                        if n % aperture == 0 {
+                            eprintln!("  court nerve deferred by {addr} acts {n}");
+                        }
                         continue;
                     }
                     match dialogue::decode_root_reply(&reply) {
