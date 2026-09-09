@@ -294,7 +294,7 @@ impl Entity {
         // 45.1, 45.4: a page LEARNED is an admitted act of this mind, so a
         // receipt naming the words is sealed on its own chain and the page
         // is learned at the K it took.
-        let k = self.session.seal(crate::voice::Act::Learned, &page);
+        let k = self.session.seal(crate::chronometry::ActKind::Learned, &page);
         self.epigenome.learn_at(taught, k, self.now_tu())
     }
 

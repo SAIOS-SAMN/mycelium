@@ -20,7 +20,7 @@ fn court_key(name: &str) -> crate::court::identity::HyphaKey {
 /// such chains under one key are two roots at K 0.
 fn first_receipt(vk: [u8; 32], delta: &[u8]) -> KStepReceipt {
     let mut c = ReceiptChain::with_vk(vk);
-    c.append(delta, [0; 32], Vec::new()).expect("appends");
+    c.append(crate::chronometry::ActKind::List,delta, [0; 32], Vec::new()).expect("appends");
     c.receipts()[0].clone()
 }
 
@@ -81,8 +81,8 @@ fn a_duplicate_two_signers_or_two_k_are_not_a_proof() {
         "two signers are two chains"
     );
     let mut c = ReceiptChain::with_vk(vk);
-    c.append(b"one", [0; 32], Vec::new()).expect("appends");
-    c.append(b"two", [0; 32], Vec::new()).expect("appends");
+    c.append(crate::chronometry::ActKind::List,b"one", [0; 32], Vec::new()).expect("appends");
+    c.append(crate::chronometry::ActKind::List,b"two", [0; 32], Vec::new()).expect("appends");
     let (r0, r1) = (c.receipts()[0].clone(), c.receipts()[1].clone());
     let (p0, p1) = (prefix_for(&r0), prefix_for(&r1));
     assert_eq!(

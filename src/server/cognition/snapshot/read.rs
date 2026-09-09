@@ -14,7 +14,7 @@ impl Kernel {
     /// kernel empty) on a bad magic or corruption — a corrupt ledger never crashes
     /// a boot, it just starts clean.
     pub fn restore(&mut self, b: &[u8]) -> bool {
-        if b.get(0..4) != Some(b"MYC3") {
+        if b.get(0..4) != Some(b"MYC4") {
             return false;
         }
         let mut pos = 4usize;

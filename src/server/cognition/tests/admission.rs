@@ -18,7 +18,7 @@ let origin = ([7u8; 32], 2u32);
 let key = super::common::court_key("peer");
 let mut peer = crate::chronometry::ReceiptChain::with_vk(key.vk_bytes());
 for d in [b"p0".as_slice(), b"p1", b"p2"] {
-    peer.append(d, [0; 32], Vec::new()).expect("peer appends");
+    peer.append(crate::chronometry::ActKind::List, d, [0; 32], Vec::new()).expect("peer appends");
 }
 
 let mut k = Kernel::new();
@@ -107,7 +107,7 @@ assert!(k.chain().verify_chain_integrity(), "and the chain still verifies");
 // A receipt admitted from a peer keeps ITS author, never this mind's.
 let key = super::common::court_key("peer");
 let mut peer = crate::chronometry::ReceiptChain::with_vk(key.vk_bytes());
-peer.append(b"p0", [0; 32], Vec::new()).expect("appends");
+peer.append(crate::chronometry::ActKind::List, b"p0", [0; 32], Vec::new()).expect("appends");
 let r = peer.receipts()[0].clone();
 let pre = crate::court::admission::SignedPrefix {
     genesis: [7; 32],
@@ -133,7 +133,7 @@ fn a_foreign_origin_is_refused_before_the_mind_holds_anything() {
 use crate::court::admission::{Admitted, SignedPrefix, REFUSE_ORIGIN};
 let key = super::common::court_key("peer");
 let mut peer = crate::chronometry::ReceiptChain::with_vk(key.vk_bytes());
-peer.append(b"p0", [0; 32], Vec::new()).expect("appends");
+peer.append(crate::chronometry::ActKind::List, b"p0", [0; 32], Vec::new()).expect("appends");
 let r = peer.receipts()[0].clone();
 let mut k = Kernel::new();
 let foreign = SignedPrefix {
@@ -166,7 +166,7 @@ use crate::court::admission::{Admitted, SignedPrefix, REFUSE_RECEIPT};
 let victim = super::common::court_key("victim");
 let forger = super::common::court_key("forger");
 let mut chain = crate::chronometry::ReceiptChain::with_vk(victim.vk_bytes());
-chain.append(b"p0", [0; 32], Vec::new()).expect("appends");
+chain.append(crate::chronometry::ActKind::List, b"p0", [0; 32], Vec::new()).expect("appends");
 let r = chain.receipts()[0].clone();
 let pre = SignedPrefix {
     genesis: [7; 32],
@@ -215,9 +215,9 @@ let pre = |r: &crate::chronometry::KStepReceipt| SignedPrefix {
 
 // One signer, two chains, two different first receipts at K 0.
 let mut told_a = crate::chronometry::ReceiptChain::with_vk(liar);
-told_a.append(b"one", [0; 32], Vec::new()).expect("appends");
+told_a.append(crate::chronometry::ActKind::List, b"one", [0; 32], Vec::new()).expect("appends");
 let mut told_b = crate::chronometry::ReceiptChain::with_vk(liar);
-told_b.append(b"two", [0; 32], Vec::new()).expect("appends");
+told_b.append(crate::chronometry::ActKind::List, b"two", [0; 32], Vec::new()).expect("appends");
 let (ra, rb) = (told_a.receipts()[0].clone(), told_b.receipts()[0].clone());
 assert_eq!(ra.step_index, rb.step_index, "one K");
 assert_ne!(ra.chain_hash, rb.chain_hash, "two roots");
@@ -276,9 +276,9 @@ let pre = |r: &crate::chronometry::KStepReceipt| SignedPrefix {
     payload: r.delta.clone(),
 };
 let mut told_a = crate::chronometry::ReceiptChain::with_vk(liar);
-told_a.append(b"one", [0; 32], Vec::new()).expect("appends");
+told_a.append(crate::chronometry::ActKind::List, b"one", [0; 32], Vec::new()).expect("appends");
 let mut told_b = crate::chronometry::ReceiptChain::with_vk(liar);
-told_b.append(b"two", [0; 32], Vec::new()).expect("appends");
+told_b.append(crate::chronometry::ActKind::List, b"two", [0; 32], Vec::new()).expect("appends");
 let (ra, rb) = (told_a.receipts()[0].clone(), told_b.receipts()[0].clone());
 
 let mut k = Kernel::new();

@@ -243,7 +243,7 @@ impl Kernel {
                         self.physics.relieve(&mag);
                         self.physics.syntropy(&mag);
                         self.unlist(&residual.address(), false);
-                        self.append_step(&saddr, voice);
+                        self.append_step(crate::chronometry::ActKind::Section, &saddr, voice);
                         return Outcome::Sectioned(ti);
                     }
                     self.physics.bump(&mag);
@@ -318,7 +318,7 @@ impl Kernel {
                     self.physics.spend(lanes); // the expansion SHRINKS the reserve
                     // Seal the K-step receipt: the install IS a tick of algebraic
                     // time, parent-linked to the mesh's whole history.
-                    self.append_step(&addr, voice);
+                    self.append_step(crate::chronometry::ActKind::Install, &addr, voice);
                     // The listing is settled. The basis grows only from gluing,
                     // never from a single hypha's two voices. The field stays
                     // so the court stroke can read it; the page clears.

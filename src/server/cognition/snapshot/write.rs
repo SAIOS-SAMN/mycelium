@@ -10,7 +10,9 @@ use crate::cognition::*;
 impl Kernel {
     pub fn snapshot(&self) -> Vec<u8> {
         let mut out = Vec::new();
-        out.extend_from_slice(b"MYC3");
+        // MYC4: receipts carry their act kind (45.1, S13.6); a MYC3
+        // snapshot does not re-read — a layout change is a recut.
+        out.extend_from_slice(b"MYC4");
         let items: Vec<_> = self
             .basis
             .fiber(crate::network::nerve::ROOT)

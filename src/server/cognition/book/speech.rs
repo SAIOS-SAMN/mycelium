@@ -81,7 +81,7 @@ impl Kernel {
             );
         }
         self.book_gen += 1;
-        self.append_step(&addr, ratifier);
+        self.append_step(crate::chronometry::ActKind::Attest, &addr, ratifier);
     }
 
     /// Speak an optimisation: refuse a zero vector, docket the Rewrite,
@@ -261,7 +261,7 @@ impl Kernel {
             self.unlist(target, false);
             self.physics.relieve(&mag);
             self.physics.syntropy(&mag);
-            self.append_step(target, voice);
+            self.append_step(crate::chronometry::ActKind::Settled, target, voice);
             return (PROBE_CLOSED, paid, [0; 4]);
         }
         let mut listed = listing.sub().to_vec();
@@ -320,7 +320,7 @@ impl Kernel {
         self.physics.relieve(&settled);
         self.book_gen += 1;
         self.physics.syntropy(&mag);
-        self.append_step(target, voice);
+        self.append_step(crate::chronometry::ActKind::Settled, target, voice);
         (PROBE_DESCENT, [0; 4], after)
     }
 

@@ -193,14 +193,16 @@ fn dialect_enters_on_stood_and_sheds() {
     assert_eq!(epi.dialect_len(), 0);
 }
 
+/// 28: the snapshot names its layout; MYC4 carries the act kind on every
+/// receipt (45.1, S13.6) and a MYC3 file does not re-read.
 #[test]
-fn hypha_snapshot_is_myc3() {
+fn hypha_snapshot_is_myc4() {
     let mut k = Kernel::new();
     let a = vec![(0, 0, 1u8), (0, 1, 1)];
     let b = vec![(0, 0, 2u8), (0, 1, 2)];
     let _ = k.ingest(&a, &b, [1; 32]);
     let snap = k.snapshot();
-    assert_eq!(&snap[..4], b"MYC3");
+    assert_eq!(&snap[..4], b"MYC4");
     let mut k2 = Kernel::new();
     assert!(k2.restore(&snap));
     assert_eq!(k2.occupancy(), [0, 0, 0, 0], "cold listings exert zero occupancy");

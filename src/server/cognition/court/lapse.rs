@@ -91,7 +91,7 @@ impl Kernel {
             // measures its aperture against is a count of receipts (47.5):
             // a court whose lapses are not receipted stops advancing the
             // very quantity it lapses on.
-            self.append_step(&addr, me);
+            self.append_step(crate::chronometry::ActKind::Lapse, &addr, me);
         }
     }
 

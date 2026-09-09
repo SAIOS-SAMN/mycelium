@@ -124,7 +124,7 @@ impl Kernel {
                 );
                 self.basis_remove(addr);
                 self.physics.syntropy(&candidate.magnitude());
-                self.append_step(addr, bidder);
+                self.append_step(crate::chronometry::ActKind::Ruling, addr, bidder);
                 Some(saved)
             }
             _ => None,
@@ -197,16 +197,21 @@ impl Kernel {
     /// succeeds: `append` refuses a parent whose height this chain cannot
     /// re-derive, and dropping the queue on a refusal would lose the
     /// admission rather than hold it for the step that can cite it.
-    pub(super) fn append_step(&mut self, addr: impl AsRef<[u8]>, voice: [u8; 32]) {
+    pub(super) fn append_step(
+        &mut self,
+        kind: crate::chronometry::ActKind,
+        addr: impl AsRef<[u8]>,
+        voice: [u8; 32],
+    ) {
         let op = crate::chronometry::operator_hash(&voice, &self.court_head);
         let queued = std::mem::take(&mut self.pending_parents);
         let parents: Vec<_> = queued
             .fiber(crate::network::nerve::ROOT)
             .map(|(_, p)| p.clone())
             .collect();
-        if self.chain.append(addr.as_ref(), op, parents).is_none() {
+        if self.chain.append(kind, addr.as_ref(), op, parents).is_none() {
             self.pending_parents = queued;
-            self.chain.append(addr.as_ref(), op, Vec::new());
+            self.chain.append(kind, addr.as_ref(), op, Vec::new());
         }
     }
 

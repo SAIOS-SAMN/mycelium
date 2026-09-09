@@ -13,7 +13,7 @@ const E: u32 = 2;
 fn chain(vk: [u8; 32], steps: &[(&[u8], Vec<Parent>)]) -> ReceiptChain {
     let mut c = ReceiptChain::with_vk(vk);
     for (delta, parents) in steps {
-        c.append(delta, [0; 32], parents.clone()).expect("appends");
+        c.append(crate::chronometry::ActKind::List,delta, [0; 32], parents.clone()).expect("appends");
     }
     c
 }

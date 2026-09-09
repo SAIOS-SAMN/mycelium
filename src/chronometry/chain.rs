@@ -1,7 +1,7 @@
 // 45 — THE RECEIPT CHAIN: append-only, parent-linked, and the order two
 // receipts stand in.
 
-use super::receipt::{KStepReceipt, Parent};
+use super::receipt::{ActKind, KStepReceipt, Parent};
 use crate::network::nerve::Keyed;
 use crate::physics::Budget;
 
@@ -103,10 +103,11 @@ impl ReceiptChain {
         self.known.insert(r.chain_hash, r);
     }
 
-    /// Append the next receipt. Height is 0 at genesis, else
-    /// `1 + max(h(prev), max parent heights)`.
+    /// Append the next receipt, naming the act it admits (45.1). Height is
+    /// 0 at genesis, else `1 + max(h(prev), max parent heights)`.
     pub fn append(
         &mut self,
+        kind: ActKind,
         delta: impl AsRef<[u8]>,
         operator_hash: [u8; 32],
         parents: Vec<Parent>,
@@ -123,12 +124,14 @@ impl ReceiptChain {
             }
             1 + m
         };
-        let chain_hash = KStepReceipt::hash(step_index, height, &parents, &delta, &operator_hash, &prev);
+        let chain_hash =
+            KStepReceipt::hash(step_index, height, &parents, kind, &delta, &operator_hash, &prev);
         self.mine.insert(chain_hash, self.receipts.len());
         self.receipts.push(KStepReceipt {
             step_index,
             height,
             parents,
+            kind,
             vk: self.vk,
             delta,
             operator_hash,
@@ -166,6 +169,7 @@ impl ReceiptChain {
                 r.step_index,
                 r.height,
                 &r.parents,
+                r.kind,
                 &r.delta,
                 &r.operator_hash,
                 &prev,

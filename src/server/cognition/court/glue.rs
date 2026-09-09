@@ -441,7 +441,7 @@ impl Kernel {
         // grew a ruled word at no position: nothing cited the peer receipts
         // admitted since the last step, and a reader replaying the chain
         // found the install nowhere in it.
-        self.append_step(addr, witness);
+        self.append_step(crate::chronometry::ActKind::Install, addr, witness);
         eprintln!("  court home installed {:02x}{:02x}… peer holds the stratum", addr[0], addr[1]);
     }
 

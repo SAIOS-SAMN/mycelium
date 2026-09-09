@@ -40,7 +40,7 @@ impl Kernel {
         // whose verdict this is (`set_court_voice`, 47.2), and this court
         // itself when it is ruling on its own stroke.
         let ruler = self.court_voice.unwrap_or(self.identity);
-        self.append_step(addr, ruler);
+        self.append_step(crate::chronometry::ActKind::Ruling, addr, ruler);
         if ruling == RULING_UPHELD {
             // Upheld on this court's own book: the word joins the ruled
             // cover AND becomes this court's section on the chart (13.9).

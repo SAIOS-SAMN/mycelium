@@ -175,7 +175,7 @@ impl Kernel {
     /// — a receipt nothing sealed, so the K it named was whatever the last
     /// unrelated act had left there.
     pub fn note_served(&mut self, addr: &[u8], to: [u8; 32]) {
-        self.append_step(addr, to);
+        self.append_step(crate::chronometry::ActKind::Syllabus, addr, to);
     }
 
     pub fn fetch_have(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<Vec<u8>> {

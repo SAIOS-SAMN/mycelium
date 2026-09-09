@@ -117,7 +117,7 @@ impl Kernel {
         }
         self.pending.insert(&addr, (residual, k_now));
         self.book_gen += 1;
-        self.append_step(&addr, actor);
+        self.append_step(crate::chronometry::ActKind::List, &addr, actor);
     }
 
     pub(crate) fn pending_take(&mut self, addr: &[u8]) -> Option<Element> {
@@ -419,7 +419,7 @@ impl Kernel {
             );
             self.basis_remove(&addr);
             self.physics.syntropy(&candidate.magnitude());
-            self.append_step(&addr, bidder);
+            self.append_step(crate::chronometry::ActKind::Ruling, &addr, bidder);
         }
     }
 

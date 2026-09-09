@@ -458,7 +458,7 @@ let first_b = list(&mut hb, false);
 assert_eq!(first_a, first_b);
 // Advance K on ha only — TUniversal stays the clock we set.
 for _ in 0..8 {
-    ha.append_step([1; 32], [2; 32]);
+    ha.append_step(crate::chronometry::ActKind::List, [1; 32], [2; 32]);
 }
 assert!(ha.k_step() > hb.k_step());
 ha.set_height(40);

@@ -1,5 +1,5 @@
-// 45 — THE RECEIPT: one K-step, the peer receipts it cites, and the
-// height it carries.
+// 45 — THE RECEIPT: one K-step, the peer receipts it cites, the height it
+// carries, and the kind of act it admits.
 
 /// A peer receipt this act verified.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -36,7 +36,94 @@ impl Height {
 /// TUniversal is the height of the mesh receipt ledger.
 pub type TUniversal = Height;
 
-/// One K-step receipt: `chain_hash = blake3(step ‖ height ‖ parents ‖ delta ‖ op ‖ prev)`.
+/// THE KIND OF ACT A RECEIPT ADMITS (45.1, ruled 2026-09-09; S13.6):
+/// written on the tape as one coordinate byte after the parents and in the
+/// chain hash, so a phase (45.9) and a fold (45.8) read the ledger by
+/// kind, never by grepping a journal. A byte that names no kind refuses
+/// the read.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ActKind {
+    Attest,
+    List,
+    Section,
+    Install,
+    Ruling,
+    Syllabus,
+    Lapse,
+    Fold,
+    Adopted,
+    Stood,
+    Uttered,
+    Learned,
+    Settled,
+}
+
+impl ActKind {
+    /// The kind as the coordinate byte the tape carries.
+    pub fn to_byte(self) -> u8 {
+        match self {
+            ActKind::Attest => 1,
+            ActKind::List => 2,
+            ActKind::Section => 3,
+            ActKind::Install => 4,
+            ActKind::Ruling => 5,
+            ActKind::Syllabus => 6,
+            ActKind::Lapse => 7,
+            ActKind::Fold => 8,
+            ActKind::Adopted => 9,
+            ActKind::Stood => 10,
+            ActKind::Uttered => 11,
+            ActKind::Learned => 12,
+            ActKind::Settled => 13,
+        }
+    }
+
+    /// The kind a tape byte names; `None` names no kind and refuses.
+    pub fn from_byte(b: u8) -> Option<ActKind> {
+        Some(match b {
+            1 => ActKind::Attest,
+            2 => ActKind::List,
+            3 => ActKind::Section,
+            4 => ActKind::Install,
+            5 => ActKind::Ruling,
+            6 => ActKind::Syllabus,
+            7 => ActKind::Lapse,
+            8 => ActKind::Fold,
+            9 => ActKind::Adopted,
+            10 => ActKind::Stood,
+            11 => ActKind::Uttered,
+            12 => ActKind::Learned,
+            13 => ActKind::Settled,
+            _ => return None,
+        })
+    }
+
+    /// The kind's name, the bytes the mind's operator digest is taken over.
+    pub fn name(self) -> &'static [u8] {
+        match self {
+            ActKind::Attest => b"attest",
+            ActKind::List => b"list",
+            ActKind::Section => b"section",
+            ActKind::Install => b"install",
+            ActKind::Ruling => b"ruling",
+            ActKind::Syllabus => b"syllabus",
+            ActKind::Lapse => b"lapse",
+            ActKind::Fold => b"fold",
+            ActKind::Adopted => b"adopted",
+            ActKind::Stood => b"stood",
+            ActKind::Uttered => b"uttered",
+            ActKind::Learned => b"learned",
+            ActKind::Settled => b"settled",
+        }
+    }
+
+    /// The operator digest of a mind's own act (never reasoned on).
+    pub fn operator(self) -> [u8; 32] {
+        payload_hash(self.name())
+    }
+}
+
+/// One K-step receipt: `chain_hash = blake3(step ‖ height ‖ parents ‖ kind ‖ delta ‖ op ‖ prev)`.
 /// The delta is the Address bytes themselves, never a digest of content.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KStepReceipt {
@@ -46,6 +133,8 @@ pub struct KStepReceipt {
     pub height: u64,
     /// Peer receipts this act verified.
     pub parents: Vec<Parent>,
+    /// The act admitted (45.1).
+    pub kind: ActKind,
     /// This kernel's verifying key.
     pub vk: [u8; 32],
     /// The committed address, written out.
@@ -85,6 +174,7 @@ impl KStepReceipt {
         step_index: u64,
         height: u64,
         parents: &[Parent],
+        kind: ActKind,
         delta: &[u8],
         op: &[u8; 32],
         prev: &[u8; 32],
@@ -93,6 +183,7 @@ impl KStepReceipt {
         buf.extend_from_slice(&step_index.to_le_bytes());
         buf.extend_from_slice(&height.to_le_bytes());
         Self::put_parents(&mut buf, parents);
+        buf.push(kind.to_byte());
         buf.extend_from_slice(&(delta.len() as u32).to_le_bytes());
         buf.extend_from_slice(delta);
         buf.extend_from_slice(op);
@@ -104,11 +195,12 @@ impl KStepReceipt {
         step_index: u64,
         height: u64,
         parents: &[Parent],
+        kind: ActKind,
         delta: &[u8],
         op: &[u8; 32],
         prev: &[u8; 32],
     ) -> [u8; 32] {
-        *blake3::hash(&Self::bytes(step_index, height, parents, delta, op, prev)).as_bytes()
+        *blake3::hash(&Self::bytes(step_index, height, parents, kind, delta, op, prev)).as_bytes()
     }
 
     /// Does this receipt's chain hash re-derive from its own fields. A
@@ -122,6 +214,7 @@ impl KStepReceipt {
                 self.step_index,
                 self.height,
                 &self.parents,
+                self.kind,
                 &self.delta,
                 &self.operator_hash,
                 &self.prev_receipt_hash,
@@ -133,6 +226,7 @@ impl KStepReceipt {
         out.extend_from_slice(&self.height.to_le_bytes());
         out.extend_from_slice(&self.vk);
         Self::put_parents(out, &self.parents);
+        out.push(self.kind.to_byte());
         out.extend_from_slice(&(self.delta.len() as u32).to_le_bytes());
         out.extend_from_slice(&self.delta);
         out.extend_from_slice(&self.operator_hash);
@@ -161,6 +255,8 @@ impl KStepReceipt {
             let hash = take32(pos)?;
             parents.push(Parent { vk, k, hash });
         }
+        let kind = ActKind::from_byte(*b.get(*pos)?)?;
+        *pos += 1;
         let n = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
         *pos += 4;
         let delta = b.get(*pos..*pos + n)?.to_vec();
@@ -169,6 +265,7 @@ impl KStepReceipt {
             step_index,
             height,
             parents,
+            kind,
             vk,
             delta,
             operator_hash: take32(pos)?,

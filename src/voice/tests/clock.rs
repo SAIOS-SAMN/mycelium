@@ -2,7 +2,8 @@
 // admitted act, naming it, and no reply moves it.
 
 use crate::anastome::dialogue;
-use crate::voice::{Act, Voice};
+use crate::chronometry::ActKind;
+use crate::voice::Voice;
 
 /// 45.1, 45.4 — A VOICE'S CLOCK IS ITS OWN RECEIPT CHAIN. It seats with an
 /// empty chain and seals one receipt per admitted act — a form stood, an
@@ -18,9 +19,9 @@ fn a_voice_seals_one_receipt_per_admitted_act_and_its_k_is_the_chain() {
     assert_eq!(v.k(), 0, "a voice that has spoken nothing accrues nothing");
     assert!(v.chain().receipts().is_empty(), "and holds no receipt");
 
-    assert_eq!(v.seal(Act::Stood, b"a stood form"), 1, "one admitted act is one receipt");
-    assert_eq!(v.seal(Act::Uttered, b"an utterance"), 2);
-    assert_eq!(v.seal(Act::Learned, b"a learned page"), 3);
+    assert_eq!(v.seal(ActKind::Stood, b"a stood form"), 1, "one admitted act is one receipt");
+    assert_eq!(v.seal(ActKind::Uttered, b"an utterance"), 2);
+    assert_eq!(v.seal(ActKind::Learned, b"a learned page"), 3);
     assert_eq!(v.k(), 3, "K is the chain's length");
 
     let rs = v.chain().receipts();
