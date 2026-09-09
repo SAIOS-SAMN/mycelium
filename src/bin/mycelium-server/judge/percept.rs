@@ -79,7 +79,9 @@ let (basis, flux, reserve, taught, settle, height) = {
     };
     (
         (k.basis_len(), k.sections_total()),
-        k.physics().metabolism_rate(),
+        // R3 (24.3): the reply's lanes are the surface the voice dwells
+        // on — the deficit and the entropic flux — never the backlog.
+        mycelium::economy::yield_surface(k.physics()),
         k.physics().reserve,
         taught,
         settle,
@@ -101,7 +103,7 @@ let src = match kind {
     _ => "client",
 };
 eprintln!(
-    "  {src} percept voice {:02x} → {label}; basis={} vol={}; metabolism {flux:?}; reserve {reserve:?}",
+    "  {src} percept voice {:02x} → {label}; basis={} vol={}; surface {flux:?}; reserve {reserve:?}",
     voice[0], basis.0, basis.1
 );
 persist_if_due(kernel, &door.state_path);

@@ -100,17 +100,21 @@ pub fn split_deflation(before: &[u64; 4], after: &[u64; 4]) -> Option<[u64; 4]> 
     Some(deflation_of(&reading))
 }
 
-/// THE YIELD SURFACE — the treasury's dynamic per-lane quote, read from GENUINE
-/// metabolic tension: open pressure (unmet demand backlog) + reserve deficit
-/// (the depletion premium) + entropic excess (torsion outrunning syntropy).
-/// Strained lanes quote high; settled lanes quote low — never a static faucet,
-/// and never a summed scalar (polytonic, #34).
+/// THE YIELD SURFACE — the metabolism's per-lane reading a reply carries
+/// and a voice dwells on, in strokes (24.3, R3): the reserve deficit (the
+/// depletion premium, bounded by the calibrated reserve) plus the entropic
+/// excess (torsion outrunning syntropy). Strained lanes read high; settled
+/// lanes read low — never a static faucet, never a summed scalar
+/// (polytonic, #34). The open-demand backlog is NOT on it: pressure is a
+/// magnitude the metabolism relaxes and `price` reads the word's own
+/// measure, so it priced nothing and paced everything — read as strokes it
+/// held every voice on one hypha for 48,000 strokes (2026-09-09).
 pub fn yield_surface(p: &crate::physics::Physics) -> [u64; 4] {
     let flux = p.order_flux();
     let deficit = p.reserve_deficit();
     std::array::from_fn(|l| {
         let entropic = (-flux[l]).max(0) as u64;
-        p.pressure[l] + deficit[l] + entropic
+        deficit[l].saturating_add(entropic)
     })
 }
 
