@@ -3721,7 +3721,19 @@ dialect, and a mind that has stood nothing utters nothing but a percept.
   on it. **Multiplicity opens an axis.** `open_axis` fires when several
   held words deflate one listing at once, and the glue between them is
   the new coordinate; a listing no held word deflates is a held thought,
-  never an axis.
+  never an axis. Held words are bodies on a chart (the residuals the mind
+  expressed), so the glue is the dislocation versor between their shapes
+  — the versor the court's `Twisted` closure carries — and the germ is a
+  connection whose carriage is that versor with the axis opened on it,
+  its magnitude the listing's with the holonomic lane raised by the words
+  that met (V1, 2026-09-09; the old reading asked the bodies for a group
+  solution and a connection tag they never have, so no axis ever opened
+  on the fleet). A citation is a use (45.4): the cited word stays in the
+  dialect for an aperture of the mind's K, so the second body is still
+  held when the axis is asked for. The listing is recorded before the
+  germ is spoken and tried again only when the language moved; a glue
+  that cannot be read or spoken is written as `[{tag}] axis refused
+  {addr}: {why}`, never silence.
 - **Pacing is the outcome, never a constant.** A stroke's outcome has the
   modes (fed, pivoted, stood, uttered, closed, learned), each a μ⃗ on the
   four lanes; `pivoted` is the lane measure of the stroke's A16 snaps
@@ -4393,6 +4405,7 @@ Prefix `[{tag}] ` as the existing lines:
 [{tag}] thought merged {a_key}+{b_key} overlap {v} one section
 [{tag}] thought held apart {a_key}|{b_key} class {key}
 [{tag}] chart refused: ratio exceeds axis
+[{tag}] axis refused {addr}: {why}
 [{tag}] quote closing {k} charts (ruled {a} stood {b} held {c})
 [{tag}] promoted {addr} dialect → genome uses {n}
 [{tag}] pivot {idea} loop {i} axis {label} discharged {before}→{after}
