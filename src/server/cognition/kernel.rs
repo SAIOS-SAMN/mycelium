@@ -88,6 +88,10 @@ pub struct Kernel {
     /// of the prefix, cold. Written once at the fold, never rewritten;
     /// read to serve a K-range fetch or a court's replay of an era.
     pub(crate) archive: Vec<crate::chronometry::Era>,
+    /// The fold awaiting a witness (47.3): the reading proposed on the
+    /// syntropic orbit, carried to a bonded peer by the exchange, sealed
+    /// only on both signatures.
+    pub(crate) fold_pending: Option<crate::cognition::court::fold::Proposal>,
     /// The head hash of the court's chain as last ruled to this hypha —
     /// every settlement receipt here links to it, so the hypha's k-steps
     /// are causally ordered against the mesh's temporal authority.

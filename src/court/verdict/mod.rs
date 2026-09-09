@@ -51,6 +51,10 @@ pub const REFUSE_ROOM: &str = "voice room does not cover the utterance on an occ
 /// fully final, and a fold whose epoch rows do not conserve.
 pub const REFUSE_FOLD_OPEN: &str = "fold prefix is not final";
 pub const REFUSE_FOLD_INEXACT: &str = "fold does not conserve";
+/// 47.3, 34.1: a second organ must hold bond outside the home's
+/// delegation closure and room on the lanes the act occupies.
+pub const REFUSE_WITNESS_DEPENDENT: &str = "witness bond lies inside the home's delegation closure";
+pub const REFUSE_WITNESS_ROOM: &str = "witness room does not cover the escrow on an occupied lane";
 /// 13.9 step 8. Two organs re-derive one object and reach DIFFERENT
 /// addresses: not a disagreement for a third to settle, but inconsistent
 /// data, which can only arise from tapes that do not re-derive.

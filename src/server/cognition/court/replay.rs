@@ -168,13 +168,15 @@ impl Kernel {
             // read off the receipts and the cover and written; nothing
             // stores or gates on it.
             self.read_phase();
-            // 45.8, S13.9: an orbit that completes while a lane is short is
-            // the syntropic phase, and the fold is the ledger's
-            // consolidation stroke in it. A prefix that is not final folds
-            // nothing and writes no line; a fold that does not conserve
-            // says so inside `fold_era`.
-            if !crate::economy::lanes_short(&self.physics.reserve_shortfall([true; 4])).is_empty() {
-                let _ = self.fold_era();
+            // 45.8, S13.9, S13.10: an orbit that completes while a lane is
+            // short is the syntropic phase, and the fold is the ledger's
+            // consolidation stroke in it — proposed here, carried to a
+            // witness by the exchange, sealed on both signatures (47.3). A
+            // prefix that is not final proposes nothing and writes no line.
+            if self.fold_pending.is_none()
+                && !crate::economy::lanes_short(&self.physics.reserve_shortfall([true; 4])).is_empty()
+            {
+                let _ = self.propose_fold();
             }
         }
         for addr in keys {

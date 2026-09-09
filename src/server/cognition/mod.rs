@@ -20,6 +20,7 @@ mod snapshot;
 mod wire;
 
 pub use crate::transducer::sentence::{cited_pattern, replay, verify, Cite};
+pub use court::fold::Proposal;
 pub use germinate::attest::Uttered;
 pub use kernel::Kernel;
 pub(crate) use keys::*;

@@ -8,6 +8,7 @@ mod admission;
 mod backfill;
 mod door;
 mod exchange;
+mod fold;
 mod genesis;
 mod judge;
 mod offer;

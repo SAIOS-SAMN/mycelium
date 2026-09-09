@@ -544,6 +544,9 @@ impl Exchange {
                 }
             }
             crate::offer::offer_round(&kernel, &mesh);
+            // 47.3, S13.10: a fold proposed on the docket orbit is carried
+            // to a witness here and sealed on its co-signature.
+            crate::fold::fold_round(&kernel, &mesh);
             // 45.7, S13.1: an orbit that asked no peer spends the tick, as
             // the orbit with no destination does, so the loop paces on the
             // court's own stroke; `idle` counts those orbits on the cycle

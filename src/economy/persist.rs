@@ -7,6 +7,75 @@
 
 use super::*;
 
+impl Entry {
+    /// One row's tape: `[tag u8][who 32][μ⃗ 4×u64][k u64][receipt 32]`,
+    /// 105 bytes — the one layout the ledger, the snapshot and the wire
+    /// (`ACT_ROWS`) share.
+    pub const TAPE: usize = 1 + 32 + 32 + 8 + 32;
+
+    /// One tag per kind, and the match is exhaustive: a kind that could not
+    /// be written would not compile, where a string match once fell
+    /// through to `255` and wrote a row nothing could read back.
+    pub fn write(&self, out: &mut Vec<u8>) {
+        let tag: u8 = match self.kind {
+            Kind::Stake => 4,
+            Kind::Slash => 8,
+            Kind::Mint => 14,
+            Kind::Transfer => 15,
+            Kind::Genesis => 16,
+            Kind::Burn => 17,
+            Kind::Escrow => 18,
+            Kind::Release => 19,
+            Kind::Revoke => 20,
+            Kind::Unstake => 21,
+            Kind::Epoch => 22,
+        };
+        out.push(tag);
+        out.extend_from_slice(&self.who);
+        for m in &self.mu {
+            out.extend_from_slice(&m.to_le_bytes());
+        }
+        out.extend_from_slice(&self.k_step.to_le_bytes());
+        out.extend_from_slice(&self.receipt);
+    }
+
+    /// A tag the layout does not define REFUSES the tape (rule 11, A21 1:
+    /// the decoder is total on well-formed keys and refuses otherwise);
+    /// a row read as an unknown kind was once dropped from the supply and
+    /// the audit then compared carriers against a journal it had not read
+    /// whole.
+    pub fn read(b: &[u8], pos: &mut usize) -> Option<Entry> {
+        let tag = *b.get(*pos)?;
+        *pos += 1;
+        let kind = match tag {
+            4 => Kind::Stake,
+            8 => Kind::Slash,
+            14 => Kind::Mint,
+            15 => Kind::Transfer,
+            16 => Kind::Genesis,
+            17 => Kind::Burn,
+            18 => Kind::Escrow,
+            19 => Kind::Release,
+            20 => Kind::Revoke,
+            21 => Kind::Unstake,
+            22 => Kind::Epoch,
+            _ => return None,
+        };
+        let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+        *pos += 32;
+        let mut mu = [0u64; 4];
+        for m in &mut mu {
+            *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+            *pos += 8;
+        }
+        let k_step = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+        *pos += 8;
+        let receipt: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+        *pos += 32;
+        Some(Entry { kind, who, mu, k_step, receipt })
+    }
+}
+
 impl Treasury {
     /// Serialize the dimensional ledger: `[n][tag u8][who 32][μ⃗ 4×u64][k u64]
     /// [receipt 32]…` — vector amounts and chronometric anchors survive restart.
@@ -25,33 +94,7 @@ impl Treasury {
         });
         out.extend_from_slice(&(self.entries.len() as u32).to_le_bytes());
         for e in &self.entries {
-            // One tag per kind, and the match is exhaustive: a kind that
-            // could not be written would not compile, where the string
-            // match fell through to `255` and wrote a row nothing could
-            // read back. The eight aliases it also carried -- "utility",
-            // "consilience", "torse", "solve", "spend", "fee" and the rest
-            // -- named no kind any writer produced; they were a reader for
-            // a vocabulary that no longer exists (§10).
-            let tag: u8 = match e.kind {
-                Kind::Stake => 4,
-                Kind::Slash => 8,
-                Kind::Mint => 14,
-                Kind::Transfer => 15,
-                Kind::Genesis => 16,
-                Kind::Burn => 17,
-                Kind::Escrow => 18,
-                Kind::Release => 19,
-                Kind::Revoke => 20,
-                Kind::Unstake => 21,
-                Kind::Epoch => 22,
-            };
-            out.push(tag);
-            out.extend_from_slice(&e.who);
-            for m in &e.mu {
-                out.extend_from_slice(&m.to_le_bytes());
-            }
-            out.extend_from_slice(&e.k_step.to_le_bytes());
-            out.extend_from_slice(&e.receipt);
+            e.write(&mut out);
         }
         // ESCROWED AWARDS section (Step 5).
         out.extend_from_slice(&(self.escrowed.len() as u32).to_le_bytes());
@@ -140,43 +183,7 @@ impl Treasury {
         }
         let mut entries = Vec::with_capacity(n);
         for _ in 0..n {
-            let tag = *b.get(*pos)?;
-            *pos += 1;
-            // A tag the layout does not define REFUSES the tape. It read
-            // as the kind `"unknown"`, which no arm of `supply` matched,
-            // so the row was silently dropped from the supply and the
-            // audit then compared carriers against a journal it had not
-            // read whole -- rule 11, and A21 1's "the decoder is total on
-            // well-formed keys and refuses otherwise". The nine legacy
-            // aliases went with it: they mapped tags no writer has emitted
-            // onto kinds, which is a reader for a vocabulary that no
-            // longer exists (§10).
-            let kind = match tag {
-                4 => Kind::Stake,
-                8 => Kind::Slash,
-                14 => Kind::Mint,
-                15 => Kind::Transfer,
-                16 => Kind::Genesis,
-                17 => Kind::Burn,
-                18 => Kind::Escrow,
-                19 => Kind::Release,
-                20 => Kind::Revoke,
-                21 => Kind::Unstake,
-                22 => Kind::Epoch,
-                _ => return None,
-            };
-            let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-            *pos += 32;
-            let mut mu = [0u64; 4];
-            for m in &mut mu {
-                *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                *pos += 8;
-            }
-            let k_step = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-            *pos += 8;
-            let receipt: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-            *pos += 32;
-            entries.push(Entry { kind, who, mu, k_step, receipt });
+            entries.push(Entry::read(b, pos)?);
         }
         // THE THREE SECTIONS BELOW ARE REQUIRED. Each read as "a snapshot
         // that ends here is an older one and restores with none", and

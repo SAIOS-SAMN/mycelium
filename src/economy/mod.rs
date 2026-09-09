@@ -11,7 +11,7 @@ pub mod persist;
 pub mod settle;
 pub mod treasury;
 
-pub use fold::Folded;
+pub use fold::{nets_of, Folded, Nets};
 pub use lanes::*;
 pub use treasury::*;
 

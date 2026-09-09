@@ -103,6 +103,18 @@ pub const ACT_EQUIVOCATION: u8 = 0x35;
 /// budget, from `from` upward. Reply: `[n u32][receipt…]`. A gap's
 /// back-fill and an archived prefix are both fetched by it.
 pub const ACT_RECEIPTS: u8 = 0x36;
+/// THE FOLD PROPOSAL (47.3, 45.8; S13.10): a home asks a bonded peer to
+/// witness its fold — `[ACT_FOLD][k0 u64][root k u64 ‖ hash 32 ‖ height
+/// u64][n u32][(who 32 ‖ μ⃗ 4×u64)…][47.1 receipt section, payload the root
+/// hash]`. The witness fetches the prefix by `ACT_RECEIPTS` and `ACT_ROWS`,
+/// re-derives it, and answers refused, unmeasured, or co-signed with its
+/// own signed position over the root.
+pub const ACT_FOLD: u8 = 0x37;
+/// THE ROWS A FOLD RE-EXPRESSES (§6 across a fold): `[ACT_ROWS][voice 32]
+/// [signer 32][from u64][to u64][cursor u32]` asks for the signer's own
+/// ledger rows anchored in `from..=to`, from `cursor`; reply `[total u32]
+/// [m u32][row…]`, a page within the frame budget.
+pub const ACT_ROWS: u8 = 0x38;
 
 /// THE PROBE (interrogative grammar): a tentative sentence spoken against an
 /// open listing — citations (word address, transport g, gauge coordinate)

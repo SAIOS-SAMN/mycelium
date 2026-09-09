@@ -1,30 +1,14 @@
-// 45.8 — THE ERA: the finality reading over a court's carriers, the fold
-// behind a fully final prefix, and the archive it leaves cold.
+// 45.8 — THE ERA: the finality reading over a court's carriers, the
+// archive a fold leaves cold, and the K-range read over both.
 //
 //! A hypha folds its ledger behind a prefix below which no listing,
-//! provisional word or escrow stands, when its reserve reading says so:
-//! the fold writes the ledger's net as `epoch` rows (`Treasury::fold`),
-//! seals a receipt of kind `Fold` citing the archived prefix's head, and
-//! moves the prefix to `ARC1`, so the chain never breaks and heights
-//! continue. A prefix that is not final is `REFUSE_FOLD_OPEN`; a fold
-//! that does not conserve is `REFUSE_FOLD_INEXACT`, and neither writes.
+//! provisional word or escrow stands, when its reserve reading says so
+//! (`court/fold.rs`, two organs); what it archived is read here by K
+//! range, for a gap's back-fill or a court's replay of an era.
 
-use crate::chronometry::{ActKind, Era, KStepReceipt};
+use crate::chronometry::{Era, KStepReceipt};
 use crate::cognition::Kernel;
 use crate::network::nerve::ROOT;
-
-/// What a fold did, read for the line 34.2 writes.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FoldDone {
-    /// The fold receipt's K and height.
-    pub k: u64,
-    pub h: u64,
-    /// The archived prefix, first K to last.
-    pub k0: u64,
-    pub k1: u64,
-    /// Identities the epoch rows named.
-    pub identities: u32,
-}
 
 impl Kernel {
     /// THE FINALITY READING (45.8): the greatest K below which nothing is
@@ -58,53 +42,24 @@ impl Kernel {
         (floor >= first).then_some(floor)
     }
 
-    /// FOLD AN ERA (45.8, S13.9): read the finality, read that the ledger
-    /// conserves over the prefix, archive the prefix, seal the `Fold`
-    /// receipt citing its head, and write the epoch rows anchored to that
-    /// receipt. Refuses before it writes: `REFUSE_FOLD_OPEN` with nothing
-    /// final, `REFUSE_FOLD_INEXACT` with a ledger that does not conserve.
-    pub fn fold_era(&mut self) -> Result<FoldDone, &'static str> {
-        let head_k = self.final_prefix_head().ok_or(crate::verdict::REFUSE_FOLD_OPEN)?;
-        self.treasury.fold_reading(head_k)?;
-        let (cold, root) = self.chain.fold_before(head_k).ok_or(crate::verdict::REFUSE_FOLD_OPEN)?;
-        let k0 = cold.first().map_or(root.k, |r| r.step_index);
-        let me = self.identity;
-        self.append_step(ActKind::Fold, root.hash, me);
-        let anchor = self.anchor();
-        let folded = match self.treasury.fold(head_k, anchor) {
-            Ok(f) => f,
-            Err(reason) => {
-                eprintln!("  court fold refused {:02x}{:02x}…: {reason}", me[0], me[1]);
-                return Err(reason);
-            }
-        };
-        let identities = folded.rows as u32;
-        self.archive.push(Era { root, identities, receipts: cold });
-        let done = FoldDone { k: self.chain.head_k(), h: self.chain.head_height(), k0, k1: root.k, identities };
-        eprintln!(
-            "  court fold {:02x}{:02x}… K {} h {} prefix {}..{} identities {}",
-            me[0], me[1], done.k, done.h, done.k0, done.k1, done.identities
-        );
-        self.mark_persist();
-        Ok(done)
-    }
-
-    /// The eras this court archived, in K order (`ARC1`).
+    /// The eras this court holds, in the order it filed them (`ARC1`): its
+    /// own folds and the ones it witnessed, each under its signer's key.
     pub fn archive(&self) -> &[Era] {
         &self.archive
     }
 
     /// THE K-RANGE READ (47.2 step 3, 45.8; S13.10): `signer`'s receipts
     /// `from..=to` in K order, at most `budget` of them — this court's
-    /// own from `ARC1` and its hot chain, another signer's from what this
-    /// court admitted of it, never past a hole.
+    /// own from `ARC1` and its hot chain, another signer's from the eras
+    /// this court witnessed for it and what it admitted of it, never past
+    /// a hole.
     pub fn receipts_range(&self, signer: &[u8; 32], from: u64, to: u64, budget: usize) -> Vec<KStepReceipt> {
         let mut out = Vec::new();
         if to < from {
             return out;
         }
+        let eras = self.archive.iter().filter(|e| e.signer == *signer).flat_map(|e| e.receipts.iter());
         if *signer == self.identity {
-            let eras = self.archive.iter().flat_map(|e| e.receipts.iter());
             for r in eras.chain(self.chain.receipts().iter()) {
                 if out.len() >= budget {
                     break;
@@ -115,7 +70,17 @@ impl Kernel {
             }
             return out;
         }
-        for k in from..=to {
+        let mut next = from;
+        for r in eras {
+            if out.len() >= budget || r.step_index > to {
+                break;
+            }
+            if r.step_index == next {
+                out.push(r.clone());
+                next += 1;
+            }
+        }
+        for k in next..=to {
             if out.len() >= budget {
                 break;
             }

@@ -1,0 +1,20 @@
+// §6 across a fold, 47.3 — ACT_ROWS: the ledger rows a witness re-derives a
+// fold over, a page from a cursor within the frame budget.
+
+use crate::door::Door;
+use crate::transport::answer;
+use mycelium::anastome::dialogue;
+use mycelium::network::wire::Frame;
+use std::net::TcpStream;
+
+pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
+    let Some(req) = dialogue::decode_rows_request(&frame.body) else { return };
+    let budget = mycelium::network::wire::frame_budget().saturating_sub(64);
+    let at_most = budget / mycelium::economy::Entry::TAPE;
+    let (total, rows) = match door.kernel.lock() {
+        Ok(k) => k.rows_range(&req.signer, req.from, req.to, req.cursor, at_most),
+        Err(_) => return,
+    };
+    let body = dialogue::encode_rows_reply(total, &rows, budget);
+    answer(stream, Frame { lane: frame.lane, body });
+}

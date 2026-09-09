@@ -5,11 +5,13 @@
 //! never forwarded.
 
 pub(crate) mod equivocation;
+pub(crate) mod fold;
 pub(crate) mod offer;
 pub(crate) mod percept;
 pub(crate) mod probe;
 pub(crate) mod quote;
 pub(crate) mod receipts;
+pub(crate) mod rows;
 pub(crate) mod speech;
 pub(crate) mod syllabus;
 pub(crate) mod verdict;
@@ -50,6 +52,8 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         dialogue::ACT_PROBE => probe::judge(stream, &frame, door),
         dialogue::ACT_EQUIVOCATION => equivocation::judge(stream, &frame, door),
         dialogue::ACT_RECEIPTS => receipts::judge(stream, &frame, door),
+        dialogue::ACT_ROWS => rows::judge(stream, &frame, door),
+        dialogue::ACT_FOLD => fold::judge(stream, &frame, door),
         _ => percept::judge(stream, &frame, door, kind, arrived_routed),
     }
 }
