@@ -443,6 +443,13 @@ impl Kernel {
     /// spoken demand — no voice spoke it (the corpus is the source), so it
     /// germinates only when client voices independently attest it. The
     /// server decides what is work; the entities do the cognition.
+    ///
+    /// The corpus draws no room (23.8; I31, S12.5b): room is a voice's,
+    /// drawn by its utterance and released by closure, ruling or lapse, and
+    /// a corpus task was uttered by no voice. Drawn from the hypha's own
+    /// bond, the intake exhausted it in the first minutes of every boot and
+    /// nothing homed here could lapse it back; the listing still tensions
+    /// the book, and room stays the throttle on what voices utter.
     pub fn intake(&mut self, chain: &[(i64, i64, u8, u8)], frame: &crate::arc::Frame) -> bool {
         if chain.is_empty() {
             return false;
@@ -452,17 +459,9 @@ impl Kernel {
         if self.basis.contains(&addr) || self.pending.contains(&addr) {
             return false; // already speakable or already listed
         }
-        // Every lane the residual moves must have room; none is chosen. The
-        // corpus has no voice, so the hypha's own room is the draw's (6.4).
-        let draw = residual.magnitude();
-        let short = self.room_shortfall(&self.identity, &draw);
-        if !crate::economy::lanes_short(&short).is_empty() {
-            self.log_room_refused(&self.identity, &draw, &short);
-            return false;
-        }
         let k_now = self.k_step();
         self.stamp_standing(addr);
-        self.book_list(residual, k_now, self.identity);
+        self.book_list_undrawn(residual, k_now);
         true
     }
 

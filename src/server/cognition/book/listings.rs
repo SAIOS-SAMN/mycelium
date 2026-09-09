@@ -69,6 +69,23 @@ impl Kernel {
     /// List a residual on the book and admit its base chart. The draw occupies
     /// the uttering voice's bond; a receipt is sealed so lapse can fire.
     pub(crate) fn book_list(&mut self, residual: Element, k_now: u64, voice: [u8; 32]) {
+        self.list(residual, k_now, voice, Some(voice));
+    }
+
+    /// THE CORPUS INTAKE'S LISTING (23.8; I31, S12.5b): the hypha lists its
+    /// own corpus with no drawer. Room is a voice's — drawn by its utterance
+    /// and released by closure, ruling or lapse — and no voice uttered a
+    /// corpus task; drawn from the hypha's own bond the corpus exhausted it
+    /// in the first minutes of every boot (245 refusals on hypha a in 150 s
+    /// of the 2026-09-08 recut) and nothing homed here could lapse it back.
+    /// The listing still tensions the book and admits its chart, and its
+    /// receipt names the hypha as the actor.
+    pub(crate) fn book_list_undrawn(&mut self, residual: Element, k_now: u64) {
+        let actor = self.identity;
+        self.list(residual, k_now, actor, None);
+    }
+
+    fn list(&mut self, residual: Element, k_now: u64, actor: [u8; 32], drawer: Option<[u8; 32]>) {
         let addr = residual.address();
         self.stamp_standing(&addr);
         let mag = residual.magnitude();
@@ -77,11 +94,13 @@ impl Kernel {
         self.listing_atlas.admit(&inv, &addr);
         self.tension.insert(&addr, mag);
         self.on_page.insert(&addr, ());
-        self.drawers.insert(&addr, voice);
+        if let Some(voice) = drawer {
+            self.drawers.insert(&addr, voice);
+        }
         self.occupy(&addr, &mag, true);
         self.pending.insert(&addr, (residual, k_now));
         self.book_gen += 1;
-        self.append_step(&addr, voice);
+        self.append_step(&addr, actor);
     }
 
     pub(crate) fn pending_take(&mut self, addr: &[u8]) -> Option<Element> {

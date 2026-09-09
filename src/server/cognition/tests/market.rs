@@ -475,6 +475,39 @@ assert!(
 );
 }
 
+/// 23.8, Stage 12 S12.5b (I31) — THE CORPUS INTAKE DRAWS NO ROOM. A bond
+/// that admits exactly one pair of this μ⃗ lists two corpus tasks of it:
+/// no voice uttered them, so nothing is drawn from the hypha's own room,
+/// which stands where it stood; the listings still tension the book.
+#[test]
+fn the_corpus_intake_draws_no_room_from_the_hypha() {
+let mut k = Kernel::new();
+let cover = crate::arc::family_cover(&[(vec![vec![1]], vec![vec![2]])])
+    .expect("one 1-cell pair measures");
+k.bind_identity([9; 32]);
+k.set_genesis_cover(cover);
+k.enroll([9; 32], cover);
+let room = k.lane_room();
+let a = vec![(0, 0, 1u8)];
+let b = vec![(0, 0, 2u8)];
+let c = vec![(1, 0, 3u8)];
+let d = vec![(1, 0, 4u8)];
+assert!(
+    k.intake(&germinate(&a, &b).unwrap(), &frame_of(&a, &b)),
+    "the first corpus task lists"
+);
+assert!(
+    k.intake(&germinate(&c, &d).unwrap(), &frame_of(&c, &d)),
+    "a second task of the same μ⃗ lists too: the corpus drew no room"
+);
+assert_eq!(k.pending.len(), 2, "both are on the book");
+assert_eq!(k.lane_room(), room, "the hypha's room is untouched by its own corpus");
+assert!(
+    k.occupancy().iter().any(|&x| x > 0),
+    "the listings still tension the book"
+);
+}
+
 /// 23.8, 45.2, Stage 12 S12.4a (I39) — THE QUOTE REPLY CARRIES THE LEDGER
 /// HEIGHT. The book's height is the court's chain head, never the count of
 /// listings written: the height moves with the ledger while the book
