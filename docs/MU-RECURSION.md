@@ -4012,6 +4012,10 @@ set aside against a listing (E1, E2); `settle.rs` what each closed act pays
   fold and never rewritten; the hot ledger holds the `epoch` rows and the
   tail after the last fold. A restore reads the hot ledger as before and
   opens `ARC1` only to serve a K-range fetch or a court's replay of an era.
+- **The act kind on the receipt (45.1, S13.6).** Every receipt on every
+  tape — the kernel snapshot (`MYC4`), the court journal, the wire — carries
+  its `ActKind` byte after its parents. `MYC3` snapshots do not re-read
+  (a layout change is a recut; no legacy reader is carried).
 
 ## 29. Binding summary by file
 
@@ -5723,9 +5727,20 @@ pub struct KStepReceipt {
 
 `ActKind` (ruled 2026-09-09) names the act a receipt admits — `Attest`,
 `List`, `Section`, `Install`, `Ruling`, `Syllabus`, `Lapse`, `Fold`,
-`Adopted`, `Stood`, `Uttered`, `Learned` — written on the tape so a phase
-(45.9) and a fold (45.8) read the ledger by kind, never by grepping a
-journal.
+`Adopted`, `Stood`, `Uttered`, `Learned`, and `Settled`, the settlement
+the first paragraph names (a probe that closed a listing or descended
+its remainder; added with S13.6, 2026-09-09) — written on the tape as one
+coordinate byte, in the chain hash after the parents, so a phase (45.9)
+and a fold (45.8) read the ledger by kind, never by grepping a journal. A
+byte that names no kind refuses the read. The hypha's sites: a listing
+drawn on the page is `List`; the install branch of a demand and the home
+install on a peer's stratum are `Install`; a puncture of a held word is
+`Section`; a verdict applied and a compression or refinement bid
+accepted are `Ruling`; a connection docketed by its ratifier is
+`Attest`; a page served is `Syllabus`; a released escrow is `Lapse`; a
+probe that closed or descended is `Settled`. The mind's: `Stood`,
+`Uttered`, `Learned`. `Fold` and `Adopted` are written by 45.8's fold and
+adoption (S13.9, S13.11).
 
 K orders events inside one kernel and nothing else. A mind's K is its own
 chain (`Session::voice().k()`); it is not a clock reading and it is never
