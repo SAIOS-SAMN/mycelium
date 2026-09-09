@@ -103,7 +103,9 @@ pub fn perceive(grid: &Grid) -> Vec<Body> {
     blade::components(&cells).into_iter().map(body_of).collect()
 }
 
-pub(crate) fn spelling_of_versor(v: &Versor) -> Option<crate::transducer::alphabet::Spelling> {
+/// The linear block of a conformal versor on the sensor plane: the images
+/// of the row and column steps, the translation subtracted.
+pub(crate) fn linear_block_of_versor(v: &Versor) -> Option<[[num_rational::BigRational; 2]; 2]> {
     let qn = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
     let at = |r, c| {
         crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&qn(r), &qn(c))))
@@ -111,11 +113,41 @@ pub(crate) fn spelling_of_versor(v: &Versor) -> Option<crate::transducer::alphab
     let o = at(0, 0)?;
     let er = at(1, 0)?;
     let ec = at(0, 1)?;
-    let block = [
+    Some([
         [&er.0 - &o.0, &ec.0 - &o.0],
         [&er.1 - &o.1, &ec.1 - &o.1],
-    ];
-    crate::transducer::alphabet::spell(&block)
+    ])
+}
+
+/// A22 on a measured carriage (50.2 F step 2): the sensor plane is the
+/// first block of 50.4 and the other planes read the identity for a plane
+/// versor, so the ordered peel is the sensor peel with its remainder typed.
+/// `None` when the versor has no linear block; `Err` the demand it leaves.
+pub(crate) fn factor_versor(v: &Versor) -> Option<Result<crate::transducer::alphabet::Word, crate::transducer::sentence::Demand>> {
+    use crate::transducer::alphabet::{spell_peel_on, PLANE_COL, PLANE_ROW};
+    use crate::transducer::peel::PeelNest;
+    use crate::transducer::sentence::Demand;
+    let block = linear_block_of_versor(v)?;
+    let plane = (PLANE_ROW, PLANE_COL);
+    Some(match spell_peel_on(plane, &block) {
+        Some((PeelNest::Closed { cores }, _rho)) => {
+            let mut w = crate::transducer::alphabet::Word::identity();
+            for syllable in cores.iter().rev() {
+                for &(id, inv) in syllable {
+                    w.push(id, inv);
+                }
+            }
+            Ok(w)
+        }
+        Some((PeelNest::Standing { arc, .. }, _)) => {
+            let norm = &arc.p * &arc.p + &arc.q * &arc.q;
+            match crate::transducer::alphabet::prime_outside_the_alphabet(&norm, plane) {
+                Some(prime) => Err(Demand::RotorPrime { plane, prime }),
+                None => Err(Demand::Standing { block: Box::new(block) }),
+            }
+        }
+        None => Err(Demand::Standing { block: Box::new(block) }),
+    })
 }
 
 pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Vec<(i64, i64, u8, u8)> {
@@ -164,10 +196,13 @@ pub(crate) fn hue_map_of_chain(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
     m
 }
 
-/// Carriage of two bodies spelled as a word form. Class is the target's chart.
+/// Carriage of two bodies spelled as a word form (50.2 F steps 1–2): the
+/// versor measured, its rotor spelled by A22. Class is the target's chart.
+/// `None` when no versor carries `a` onto `b` or the rotor leaves a demand;
+/// the demand itself is `word_or_demand`'s to place (L4).
 pub fn word_form(a: &Body, b: &Body) -> Option<Vertex> {
     let car = carriage(a, b)?;
-    let sp = spelling_of_versor(&car.v)?;
+    let word = factor_versor(&car.v)?.ok()?;
     let t = element::translator_of(&car.v)?;
     let d = element::dilator_of(&car.v)?;
     let carriage = d.geo(&t);
@@ -179,7 +214,7 @@ pub fn word_form(a: &Body, b: &Body) -> Option<Vertex> {
     };
     Some(Vertex::Word {
         address: element::from_residual(&chain).address(),
-        word: sp.word,
+        word,
         carriage: Box::new(carriage),
         gauge,
         class: b.moduli.clone(),

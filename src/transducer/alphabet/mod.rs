@@ -4,12 +4,14 @@
 //! Euclidean rank-4 chart `e0..e3`, each the one pair `Φ` with its carried
 //! `Φ⁻¹`, exact over ℚ. The alphabet never grows; the language grows by words.
 
+pub mod factor;
 pub mod letters;
 pub mod plane;
 pub mod rotor;
 pub mod spelling;
 pub mod word;
 
+pub use factor::*;
 pub use letters::*;
 pub use plane::*;
 pub use rotor::*;

@@ -95,12 +95,14 @@ pub(crate) struct SpellResidual {
 /// One syllable of the tape.
 pub(crate) type Syllable = Vec<(LetterId, bool)>;
 
-/// The alphabet's own actions on the plane, read once from the letters so
-/// every orientation convention is settled by the algebra itself.
+/// The alphabet's own actions on one pair plane, read once from the letters
+/// so every orientation convention is settled by the algebra itself. The
+/// (5,12,13) letter exists on four planes only (1.1); on the other two the
+/// prime 13 is outside the plane's alphabet and stands as a remainder.
 pub(crate) struct SpellStep {
     quarter: LetterId,
     l5: LetterId,
-    l13: LetterId,
+    l13: Option<LetterId>,
     flip: LetterId,
     /// The quarter letter's action on `e0`, as a Gaussian unit.
     quarter_unit: Gauss,
@@ -124,13 +126,16 @@ pub(crate) fn unit_of_block(b: &[[Q; 2]; 2]) -> Option<Gauss> {
 }
 
 impl SpellStep {
-    fn new() -> Option<SpellStep> {
-        let plane = (PLANE_ROW, PLANE_COL);
+    /// The step on one pair plane (50.4). The orientation sheet is the
+    /// half-turn through the least axis outside the plane, realised as
+    /// two quarter letters on the plane it shares with `plane.1` (1.2).
+    fn on(plane: (u8, u8)) -> Option<SpellStep> {
         let quarter = LetterId::quarter(plane)?;
         let l5 = LetterId::pythagorean_5(plane)?;
-        let l13 = LetterId::pythagorean_13(plane)?;
-        let flip = LetterId::quarter((PLANE_COL, 2))?;
-        let quarter_unit = unit_of_block(&Word::raw(vec![(quarter, false)]).plane_block()?)?;
+        let l13 = LetterId::pythagorean_13(plane);
+        let third = (0u8..4).find(|k| *k != plane.0 && *k != plane.1)?;
+        let flip = LetterId::quarter((plane.1.min(third), plane.1.max(third)))?;
+        let quarter_unit = unit_of_block(&Word::raw(vec![(quarter, false)]).block_on(plane)?)?;
         let pi5 = Gauss::new(2, 1);
         let pi13 = Gauss::new(3, 2);
         // ((2+i)/(2−i))² = (2+i)⁴/25 and ((3+2i)/(3−2i))² = (3+2i)⁴/169:
@@ -138,12 +143,11 @@ impl SpellStep {
         let t5 = pi5.mul(&pi5).mul(&pi5).mul(&pi5);
         let t13 = pi13.mul(&pi13).mul(&pi13).mul(&pi13);
         let action = |id: LetterId, weight: i64| -> Option<Gauss> {
-            let b = Word::raw(vec![(id, false)]).plane_block()?;
+            let b = Word::raw(vec![(id, false)]).block_on(plane)?;
             let w = q(weight);
             unit_of_block(&[[&b[0][0] * &w, &b[0][1] * &w], [&b[1][0] * &w, &b[1][1] * &w]])
         };
         let a5 = action(l5, 25)?;
-        let a13 = action(l13, 169)?;
         let l5_forward = if a5 == t5 {
             true
         } else if a5 == t5.conj() {
@@ -151,23 +155,33 @@ impl SpellStep {
         } else {
             return None;
         };
-        let l13_forward = if a13 == t13 {
-            true
-        } else if a13 == t13.conj() {
-            false
-        } else {
-            return None;
+        let l13_forward = match l13 {
+            None => true,
+            Some(id) => {
+                let a13 = action(id, 169)?;
+                if a13 == t13 {
+                    true
+                } else if a13 == t13.conj() {
+                    false
+                } else {
+                    return None;
+                }
+            }
         };
         Some(SpellStep { quarter, l5, l13, flip, quarter_unit, l5_forward, l13_forward, pi5, pi13 })
     }
 
     /// The signed prime exponents `(m5, m13)` and the unit remainder of a
-    /// residual — `None` when a prime outside the alphabet remains.
+    /// residual — `None` when a prime outside the alphabet remains, the
+    /// prime 13 included on a plane that has no (5,12,13) letter.
     fn read(&self, r: &SpellResidual) -> Option<(i64, i64, Gauss)> {
         let (v5p, z) = r.z.valuation(&self.pi5);
         let (v5m, z) = z.valuation(&self.pi5.conj());
         let (v13p, z) = z.valuation(&self.pi13);
         let (v13m, rest) = z.valuation(&self.pi13.conj());
+        if self.l13.is_none() && (v13p != 0 || v13m != 0) {
+            return None;
+        }
         // The weight after the same primes leave it.
         let mut n = r.n.clone();
         for _ in 0..(v5p + v5m) / 2 {
@@ -242,9 +256,10 @@ impl ShellStep for SpellStep {
             return None; // a half letter: not in the language
         }
         if m13.abs() >= 2 {
+            let l13 = self.l13?;
             let forward = m13 > 0;
             let z = remove(&r.z, &self.pi13, forward)?;
-            return Some((vec![(self.l13, forward != self.l13_forward)], SpellResidual { z, ..r.clone() }));
+            return Some((vec![(l13, forward != self.l13_forward)], SpellResidual { z, ..r.clone() }));
         }
         if m13 != 0 {
             return None;
@@ -322,6 +337,12 @@ pub fn spell(block: &[[Q; 2]; 2]) -> Option<Spelling> {
 /// stalls, the standing arc (the Gaussian remainder the alphabet cannot
 /// speak) — carried out whole for the caller to hold as thought.
 pub fn spell_peel(block: &[[Q; 2]; 2]) -> Option<(PeelNest<SpellResidualView, Syllable>, Q)> {
+    spell_peel_on((PLANE_ROW, PLANE_COL), block)
+}
+
+/// The same peel on any pair plane (50.4, A22): the block's rows and
+/// columns are the plane's own two axes, and the letters are that plane's.
+pub fn spell_peel_on(plane: (u8, u8), block: &[[Q; 2]; 2]) -> Option<(PeelNest<SpellResidualView, Syllable>, Q)> {
     let (a, b, c, d) = (&block[0][0], &block[0][1], &block[1][0], &block[1][1]);
     let rho2 = a * a + c * c;
     if rho2.is_zero() || (b * b + d * d) != rho2 || !(a * b + c * d).is_zero() {
@@ -348,7 +369,7 @@ pub fn spell_peel(block: &[[Q; 2]; 2]) -> Option<(PeelNest<SpellResidualView, Sy
     if z.norm() != &n * &n {
         return None;
     }
-    let step = SpellStep::new()?;
+    let step = SpellStep::on(plane)?;
     let mut governor = SpellGovernor { step: &step, last: None };
     let nest = peel_nest(SpellResidual { z, n, flipped }, &step, &mut governor);
     let view = match nest {

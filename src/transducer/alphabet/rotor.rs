@@ -325,6 +325,24 @@ impl Rotor {
     }
 }
 
+/// The rotor's action on the pair plane `(i, j)` as a 2×2 block, columns
+/// the images of `e_i` and `e_j`; `None` when the rotor is not a versor,
+/// the plane is not a pair, or the images leave the plane (50.4).
+pub fn rotor_block_on(r: &Rotor, plane: (u8, u8)) -> Option<[[Q; 2]; 2]> {
+    let (i, j) = (plane.0 as usize, plane.1 as usize);
+    if i >= 4 || j >= 4 || i == j {
+        return None;
+    }
+    let unit = |k: usize| -> [Q; 4] { std::array::from_fn(|t| if t == k { Q::one() } else { Q::zero() }) };
+    let a = r.carry(&unit(i))?;
+    let b = r.carry(&unit(j))?;
+    let closed = (0..4).filter(|&t| t != i && t != j).all(|t| a[t].is_zero() && b[t].is_zero());
+    if !closed {
+        return None;
+    }
+    Some([[a[i].clone(), b[i].clone()], [a[j].clone(), b[j].clone()]])
+}
+
 pub fn put_q(out: &mut Vec<u8>, v: &Q) {
     let nb = v.numer().to_signed_bytes_le();
     let db = v.denom().to_signed_bytes_le();

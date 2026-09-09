@@ -149,11 +149,20 @@ impl Word {
         Word::raw(t)
     }
 
-    /// Plane-closed: A3 tape. Off-plane: A2 run reduction. The key is A1
-    /// of the rotor either way; a mixed-plane word is never keyed as 1.
+    /// On the sensor plane (its letters and the sheet's, 1.2): the A3 tape.
+    /// Anywhere else: A2 run reduction. The key is A1 of the rotor either
+    /// way; a mixed-plane word is never keyed as 1. A word on another plane
+    /// keeps the sensor plane closed and its sensor form is the identity,
+    /// so the A3 path would write it as the empty tape; the letters decide
+    /// the path, never the sensor's shadow (found by L2, 50.4).
     pub fn normal_form(&self) -> Word {
-        if let Some(f) = self.form() {
-            return f.to_word();
+        let sensor = (PLANE_ROW, PLANE_COL);
+        let sheet = (PLANE_COL, 2);
+        let on_sensor = self.0.iter().all(|(id, _)| plane_of(*id).is_none_or(|p| p == sensor || p == sheet));
+        if on_sensor {
+            if let Some(f) = self.form() {
+                return f.to_word();
+            }
         }
         run_reduce(self.letters())
     }
@@ -241,12 +250,14 @@ impl Word {
     /// The word's action on the sensor's plane `(e0, e1)` as a 2×2 block —
     /// only when the word preserves that plane (no third axis mixed in).
     pub fn plane_block(&self) -> Option<[[Q; 2]; 2]> {
-        let m = self.matrix()?;
-        let closed = (0..2).all(|col| (2..4).all(|row| m[row][col].is_zero()));
-        if !closed {
-            return None;
-        }
-        Some([[m[0][0].clone(), m[0][1].clone()], [m[1][0].clone(), m[1][1].clone()]])
+        self.block_on((PLANE_ROW, PLANE_COL))
+    }
+
+    /// The word's action on the pair plane `(i, j)` as a 2×2 block, columns
+    /// the images of `e_i` and `e_j` — only when the word keeps that plane
+    /// closed (50.4, A22).
+    pub fn block_on(&self, plane: (u8, u8)) -> Option<[[Q; 2]; 2]> {
+        rotor_block_on(&self.rotor(), plane)
     }
 
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
@@ -280,10 +291,39 @@ pub(crate) fn reduce_unit_exponents(f: &mut PlaneForm) {
     }
 }
 
+/// The canonical tape of a run on one plane (A2 step 1): the sensor plane
+/// through its plane form, any other pair plane through its own peel
+/// (50.4). A run read through the sensor's form alone was erased when its
+/// plane was not the sensor's — its sensor block is the identity — which
+/// turned a word on `(2,3)` into the empty word (found by L2's A22 test).
 pub(crate) fn plane_nf(w: &Word) -> Word {
-    match w.form() {
-        Some(f) => f.to_word(),
-        None => w.clone(),
+    let Some(plane) = w.letters().first().and_then(|(id, _)| plane_of(*id)) else {
+        return w.clone();
+    };
+    if plane == (PLANE_ROW, PLANE_COL) {
+        return match w.form() {
+            Some(f) => f.to_word(),
+            None => w.clone(),
+        };
+    }
+    let Some(block) = w.block_on(plane) else {
+        return w.clone();
+    };
+    match spell_peel_on(plane, &block) {
+        Some((crate::transducer::peel::PeelNest::Closed { cores }, rho)) if rho.is_one() => {
+            let mut tape = Word::identity();
+            for syllable in cores.iter().rev() {
+                for &(id, inv) in syllable {
+                    tape.push(id, inv);
+                }
+            }
+            if tape.block_on(plane).as_ref() == Some(&block) {
+                tape
+            } else {
+                w.clone()
+            }
+        }
+        _ => w.clone(),
     }
 }
 
