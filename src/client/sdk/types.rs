@@ -464,20 +464,35 @@ pub struct SettleReceipt {
     pub mu: [u64; 4],
 }
 
-pub(crate) fn decode_reply(body: &[u8]) -> Reply {
-    // `[code][height u64][pressure 4×u64][taught_len u16][taught…][settle?]`
-    let settle = {
-        let tl = body.get(41..43).map(|b| u16::from_le_bytes([b[0], b[1]]) as usize).unwrap_or(0);
-        body.get(43 + tl..)
-            .and_then(dialogue::decode_settle)
-            .map(|(germ, voices, mu)| SettleReceipt { germ, voices, mu })
-    };
-    Reply {
-        verdict: decode_verdict(body),
-        height: decode_height(body),
-        pressure: decode_pressure(body),
-        settle,
+/// THE DEFERRAL a judge answered with (23.8, S13.4): the door's per-lane
+/// reserve deficit, carried on the `WouldBlock` refusal so the arm dwells
+/// on the lanes the judge named.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Deferral {
+    pub lanes: [u64; 4],
+}
+
+impl std::fmt::Display for Deferral {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "deferred by the judge: deficit {:?}", self.lanes)
     }
+}
+
+impl std::error::Error for Deferral {}
+
+/// A hypha's reply, read through the codec's one reader of the outcome
+/// layout (`dialogue::decode_outcome_reply`); a frame that does not parse
+/// whole is no reply (rule 11), never a reply of zeros.
+pub(crate) fn decode_reply(body: &[u8]) -> Option<Reply> {
+    let read = dialogue::decode_outcome_reply(body)?;
+    let settle = dialogue::decode_settle(read.rest)
+        .map(|(germ, voices, mu)| SettleReceipt { germ, voices, mu });
+    Some(Reply {
+        verdict: verdict_of(read.code, read.taught),
+        height: read.height,
+        pressure: read.pressure,
+        settle,
+    })
 }
 
 /// A hypha's answer: the verdict, the book height, and the per-lane
@@ -491,38 +506,17 @@ pub struct Reply {
     pub settle: Option<SettleReceipt>,
 }
 
-pub(crate) fn decode_height(body: &[u8]) -> u64 {
-    body.get(1..9)
-        .and_then(|b| b.try_into().ok())
-        .map(u64::from_le_bytes)
-        .unwrap_or(0)
-}
-
-pub(crate) fn decode_pressure(body: &[u8]) -> [u64; 4] {
-    std::array::from_fn(|i| {
-        let o = 9 + i * 8;
-        body.get(o..o + 8)
-            .and_then(|b| b.try_into().ok())
-            .map(u64::from_le_bytes)
-            .unwrap_or(0)
-    })
-}
-
-/// Decode a hypha reply: `[code][height u64][pressure 4×u64][taught_len u16][taught…]`.
-pub(crate) fn decode_verdict(body: &[u8]) -> Verdict {
-    let taught = {
-        let tl = body.get(41..43).map(|b| u16::from_le_bytes([b[0], b[1]]) as usize).unwrap_or(0);
-        body.get(43..43 + tl).map(<[u8]>::to_vec).unwrap_or_default()
-    };
-    match body.first() {
-        Some(1) => Verdict::Decomposed { taught },
-        Some(2) => Verdict::GermPending,
-        Some(3) => Verdict::Installed { taught },
-        Some(6) => Verdict::Sectioned,
-        Some(4) => Verdict::Pivot,
-        Some(5) => Verdict::Fragmented,
-        Some(7) => Verdict::Refused,
-        Some(&c) => Verdict::Unknown(c),
-        None => Verdict::Unknown(0),
+/// The verdict a reply's code names, with what it taught.
+pub(crate) fn verdict_of(code: u8, taught: &[u8]) -> Verdict {
+    let taught = taught.to_vec();
+    match code {
+        1 => Verdict::Decomposed { taught },
+        2 => Verdict::GermPending,
+        3 => Verdict::Installed { taught },
+        6 => Verdict::Sectioned,
+        4 => Verdict::Pivot,
+        5 => Verdict::Fragmented,
+        7 => Verdict::Refused,
+        c => Verdict::Unknown(c),
     }
 }

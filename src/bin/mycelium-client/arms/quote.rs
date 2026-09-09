@@ -29,8 +29,10 @@ match entity.quote() {
         // mind's clock — the mind's K counts the mind's own admitted acts
         // and is never stamped from a reply. An empty WouldBlock is
         // impedance, so a zero reply does not overwrite the last read.
-        let heard = q.k != 0 || q.surface.iter().any(|&x| x != 0) || !q.clusters.is_empty();
-        if heard {
+        // A deferred quote carries the door's deficit as its surface and no
+        // K (S13.4): the surface is dwelt on below and the book's K is
+        // taken only from a quote that named one.
+        if q.k != 0 {
             m.k_step = q.k;
         }
         m.last_lang = lang;

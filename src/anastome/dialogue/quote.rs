@@ -76,15 +76,48 @@ pub fn encode_outcome_reply(code: u8, height: u64, pressure: &[u64; 4], taught: 
     body
 }
 
-/// The deferral a full judge answers every act with: the pending outcome
-/// and four zero lanes, nothing taught. For a percept or a demand it is a
-/// verdict; for any other act it is impedance.
-pub fn encode_deferral(code: u8) -> Vec<u8> {
-    encode_outcome_reply(code, 0, &[0; 4], &[])
+/// The deferral a full judge answers every act with (23.8, ruled
+/// 2026-09-09): the pending outcome, no height, the door's per-lane reserve
+/// deficit as its four lanes, nothing taught. For a percept or a demand it
+/// is a verdict; for any other act it is impedance; either way the asker
+/// dwells on the lanes it carries and never counts deferrals.
+pub fn encode_deferral(code: u8, deficit: &[u64; 4]) -> Vec<u8> {
+    encode_outcome_reply(code, 0, deficit, &[])
+}
+
+/// THE OUTCOME REPLY READ BACK — the one reader of the layout
+/// `encode_outcome_reply` writes: the code, the height, the four lanes,
+/// what was taught, and whatever the sender appended after it (a settle
+/// receipt). A frame shorter than it names refuses; nothing is defaulted.
+pub struct OutcomeReply<'a> {
+    pub code: u8,
+    pub height: u64,
+    pub pressure: [u64; 4],
+    pub taught: &'a [u8],
+    pub rest: &'a [u8],
+}
+
+pub fn decode_outcome_reply(body: &[u8]) -> Option<OutcomeReply<'_>> {
+    let code = *body.first()?;
+    let mut p = 1usize;
+    let height = read_u64(body, &mut p)?;
+    let pressure = read_mu(body, &mut p)?;
+    let n = read_u16(body, &mut p)? as usize;
+    let taught = body.get(p..p + n)?;
+    let rest = body.get(p + n..)?;
+    Some(OutcomeReply { code, height, pressure, taught, rest })
+}
+
+/// The deferral's shape, read through the codec: the pending code, no
+/// height, four lanes of any value, nothing taught, nothing after. A
+/// pending outcome that carries a height is an answer.
+pub fn deferral_lanes(body: &[u8], code: u8) -> Option<[u64; 4]> {
+    let r = decode_outcome_reply(body)?;
+    (r.code == code && r.height == 0 && r.taught.is_empty() && r.rest.is_empty()).then_some(r.pressure)
 }
 
 pub fn is_deferral(body: &[u8], code: u8) -> bool {
-    body.first() == Some(&code) && body.len() == 1 + 8 + 32 + 2 && body[1..].iter().all(|&x| x == 0)
+    deferral_lanes(body, code).is_some()
 }
 
 /// The quote reply filled up to `budget` bytes: items ride in rank order

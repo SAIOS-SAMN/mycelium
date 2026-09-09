@@ -120,11 +120,24 @@ pub(crate) fn push_mu(out: &mut Vec<u8>, mu: &[u64; 4]) {
     }
 }
 
+/// One `u64`, little-endian, or none when the frame ends before it.
+pub(crate) fn read_u64(b: &[u8], p: &mut usize) -> Option<u64> {
+    let v = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+    *p += 8;
+    Some(v)
+}
+
+/// One `u16`, little-endian, or none when the frame ends before it.
+pub(crate) fn read_u16(b: &[u8], p: &mut usize) -> Option<u16> {
+    let v = u16::from_le_bytes(b.get(*p..*p + 2)?.try_into().ok()?);
+    *p += 2;
+    Some(v)
+}
+
 pub(crate) fn read_mu(b: &[u8], p: &mut usize) -> Option<[u64; 4]> {
     let mut mu = [0u64; 4];
     for v in &mut mu {
-        *v = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
-        *p += 8;
+        *v = read_u64(b, p)?;
     }
     Some(mu)
 }

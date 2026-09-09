@@ -328,7 +328,7 @@ impl Session {
         let mut pbody = vec![dialogue::ACT_PERCEPT];
         pbody.extend_from_slice(&encode_percept(&a_bodies, &b_bodies, &self.kernel.voice, frame, proof));
         let body = self.exchange(pbody)?;
-        Ok(decode_reply(&body))
+        decode_reply(&body).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "reply decode"))
     }
 
     /// SPEAK a `demand` — this kernel's INDEPENDENT derivation of an open
@@ -343,7 +343,7 @@ impl Session {
             dialogue::encode_demand_at(&self.kernel.voice, self.voice.k(), chain, cites),
         )?;
         let _ = key;
-        Ok(decode_reply(&body))
+        decode_reply(&body).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "reply decode"))
     }
 
     /// PROBE an open listing with a tentative sentence; the hypha replays and
@@ -378,9 +378,16 @@ impl Session {
                         .collect(),
                 })
             }
+            // A deferred quote is no quote: no height, no K, no clusters —
+            // and the door's deficit as the surface, so the arm dwells on
+            // the lanes the judge named (23.8, S13.4).
             Err(e) if e.kind() == io::ErrorKind::WouldBlock => Ok(YieldQuote {
                 height: 0,
-                surface: [0; 4],
+                surface: e
+                    .get_ref()
+                    .and_then(|inner| inner.downcast_ref::<Deferral>())
+                    .map(|d| d.lanes)
+                    .unwrap_or([0; 4]),
                 k: 0,
                 clusters: Vec::new(),
             }),
@@ -469,7 +476,14 @@ impl Session {
             }
         }
         if deferred {
-            return Err(io::Error::new(io::ErrorKind::WouldBlock, "deferred by the judge"));
+            // 23.8 (S13.4): the deferral carries the door's deficit; the
+            // refusal carries it up so the arm dwells on those lanes.
+            let code = crate::cognition::outcome_code(&crate::cognition::Outcome::GermPending);
+            let lanes = out.as_ref().ok().and_then(|b| dialogue::deferral_lanes(b, code));
+            return Err(io::Error::new(
+                io::ErrorKind::WouldBlock,
+                Deferral { lanes: lanes.unwrap_or([0; 4]) },
+            ));
         }
         out
     }

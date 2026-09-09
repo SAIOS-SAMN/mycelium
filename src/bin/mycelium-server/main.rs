@@ -224,6 +224,7 @@ fn main() {
         rtt_window: Arc::new(Mutex::new(Keyed::new())),
         last_roots: Arc::new(Mutex::new(Keyed::new())),
         asked_at: Arc::new(Mutex::new(Keyed::new())),
+        deficit: Arc::new(Mutex::new([0; 4])),
         // 45.5: a genesis of all zeros is not a genesis, it is the absence
         // of one. `None` here refuses every admission (REFUSE_ORIGIN is not
         // even reached -- there is nothing to compare against), which is the
@@ -453,7 +454,14 @@ fn main() {
                 std::sync::mpsc::TrySendError::Full(j) | std::sync::mpsc::TrySendError::Disconnected(j) => j,
             };
             let mut s = job.stream;
-            let body = dialogue::encode_deferral(outcome_code(&Outcome::GermPending));
+            // 23.8 (S13.4): the deferral carries the door's per-lane reserve
+            // deficit, snapshotted on every court stroke, so the asker dwells
+            // on the lanes it names; a deficit that cannot be read is
+            // silence, which the asker already counts.
+            let Ok(deficit) = mesh.deficit.lock().map(|d| *d) else {
+                continue;
+            };
+            let body = dialogue::encode_deferral(outcome_code(&Outcome::GermPending), &deficit);
             answer(&mut s, Frame { lane: mycelium::network::wire::Stratum::Spatial, body });
         }
     }

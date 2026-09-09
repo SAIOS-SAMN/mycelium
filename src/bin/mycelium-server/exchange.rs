@@ -55,6 +55,11 @@ pub(crate) struct Mesh {
     /// is asked again only after its Λ elapsed on this court's own clock or
     /// this court's own roots moved. Taken one at a time, like `rtt_window`.
     pub(crate) asked_at: Arc<Mutex<Keyed<u64>>>,
+    /// The door's per-lane reserve deficit, snapshotted from the kernel on
+    /// every court stroke so the listener can say it without the kernel
+    /// (23.8, S13.4): the deferral carries it and the asker dwells on it.
+    /// Taken one at a time, like `rtt_window`.
+    pub(crate) deficit: Arc<Mutex<[u64; 4]>>,
     /// This node's own `(H_genesis, E_origin)`, the pair 47.2 step 1 tests
     /// every signed frame against. `None` is UNMEASURED, not zero: a node
     /// that has not adopted a genesis admits no receipt at all rather than
@@ -75,6 +80,7 @@ impl Clone for Mesh {
             rtt_window: Arc::clone(&self.rtt_window),
             last_roots: Arc::clone(&self.last_roots),
             asked_at: Arc::clone(&self.asked_at),
+            deficit: Arc::clone(&self.deficit),
             origin: Arc::clone(&self.origin),
         }
     }
@@ -247,7 +253,13 @@ impl Exchange {
             if let Ok(mut k) = kernel.lock() {
                 k.court_stroke(|chart, mag, room| withholding_lambda(&mesh, chart, mag, room));
                 let seed = k.syllabus_seed();
+                // 23.8, S13.4: the door's deficit, read under the kernel and
+                // handed to the listener's deferral without it.
+                let deficit = k.physics().reserve_deficit();
                 drop(k);
+                if let Ok(mut d) = mesh.deficit.lock() {
+                    *d = deficit;
+                }
                 if let Ok(mut sy) = syllabus.lock() {
                     syllabus_admit(&mut sy, seed);
                 }
