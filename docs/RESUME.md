@@ -41,6 +41,31 @@ were not touched.
 
 ## State at handoff
 
+- **PAUSED 2026-09-09 on the operator's word** after V1 (9d66c45) and V2
+  (ffed51c) landed and the fleet was recut on ffed51c at epoch 6 (genesis
+  be05…), every commit of the pass in one soak. Development resumes only
+  when authorized; the fleet is running.
+- Clean-slate readings an aperture after the recut (`scratchpad/launch.sh`),
+  in kernel coordinates: V2 holds — `[h N]` climbs on every voice (3177,
+  6230, 6137, 6312, 6151); V1 holds — `axis opened` 1 on voices 2, 3 and 5,
+  the first axes ever, with `already spoken` refusals thereafter; two-organ
+  folds sealed (`court fold witnessed` on all three); `home installed` 1 on
+  b and 5 on c; `court phase … congruence 13/48, 23/68, 11/53` (charts with
+  two sections against strata); back-fill pages admitted (3, 26, 36
+  receipts). Faults found, to land next, one item each: (1) the docket
+  orbit re-rules every ruled listing on every circuit — period 1, 35k
+  circuits, `court section 0428…` 20,800 times on a, 90–130 % CPU; (2) an
+  unpaced digest poll in `main.rs:248` — 376k `court exchange deferred by`
+  on a in one aperture, outside S13.1's pacing; (3) the voices' dwell is
+  the raw pressure surface (`dwell [47728, 26923, 0, 53465]` on b's
+  voices), so they stop asking for tens of thousands of strokes; (4)
+  `court receipts parent 0` still — one back-fill page per gap reported
+  is slower than the peer's K, so the gap never closes; (5) fold proposals
+  refused `REFUSE_ORIGIN` by the witness after a first co-sign (a refusing
+  c 26 times, c refusing a 46) — the origin compared or carried differs on
+  later proposals; (6) `cells filled/class 0` although 13–23 charts hold
+  two sections — the fills have no input; (7) the phase window per orbit
+  is a receipt or none, so comprehension reads 0/0.
 - Stage 13 (velocity, phase, eras; ratified 2026-09-09) landed through
   S13.10, one item per commit, suite green on each (416/0/9/13/6/0, xtask
   0 at 69983cd): doctrine c46117c; S13.1 f42c3fe, S13.5 7da548a, S13.4
