@@ -56,7 +56,7 @@ fn closed_turn_form() -> Form {
         class: stalk::Invariant(vec![7]),
         contact: None,
     });
-    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), });
+    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     assert!(f.is_closed(), "the star form coheres");
     f
@@ -221,11 +221,13 @@ fn rank_lost_refused() {
         i: 0,
         j: 1,
         transport: f.face_of(0, 1).expect("star 1"),
+        edge: None,
     });
     f.faces.push(FormFace {
         i: 0,
         j: 2,
         transport: f.face_of(0, 2).expect("star 2"),
+        edge: None,
     });
     f.faces.push(FormFace::new(1, 2, sheet));
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
@@ -311,7 +313,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
         gauge: Vec::new(),
         class: stalk::Invariant::default(),
     });
-    re.faces.push(FormFace { i: 0, j: 1, transport: re.face_of(0, 1).expect("vertices"), });
+    re.faces.push(FormFace { i: 0, j: 1, transport: re.face_of(0, 1).expect("vertices"), edge: None });
     re.loops = Form::loops_of(&re.faces, re.vertices.len());
     let re_e = as_element_form(&re, [1, 0, 0, 0]).expect("rebased tape");
     assert_eq!(
@@ -340,7 +342,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
         class: stalk::Invariant::default(),
         contact: Some(crate::transducer::alphabet::Contact { anchor: 0, ring: 1 }),
     });
-    orb.faces.push(FormFace { i: 0, j: 1, transport: orb.face_of(0, 1).expect("vertices"), });
+    orb.faces.push(FormFace { i: 0, j: 1, transport: orb.face_of(0, 1).expect("vertices"), edge: None });
     orb.loops = Form::loops_of(&orb.faces, orb.vertices.len());
     let orb_e = as_element_form(&orb, [1, 0, 0, 0]).expect("orbit tape");
     assert_eq!(
@@ -348,6 +350,30 @@ fn vertex_tape_and_moves_replay_or_refuse() {
         Some(REFUSE_ORBIT_STILL),
         "an identity word does not orbit"
     );
+
+    // 50.5: a demand vertex names a kind that carries its coordinates. A
+    // source no chart carries onto is a creation, not a source of
+    // multiplicity zero; the court refuses the vertex by name.
+    let mut dem = closed_turn_form();
+    dem.vertices.push(Vertex::Demand {
+        kind: crate::transducer::sentence::Demand::Source { multiplicity: 0 },
+        chart: stalk::Invariant(vec![1, 2, 2]),
+        bodies: vec![(3, 3, 0, 2)],
+    });
+    let dem_e = as_element_form(&dem, [1, 0, 0, 0]).expect("demand tape");
+    assert_eq!(
+        replay_form(&dem_e, &|_| None),
+        Some(REFUSE_DEMAND_UNTYPED),
+        "a demand vertex carrying nothing is refused by name"
+    );
+    let mut typed = closed_turn_form();
+    typed.vertices.push(Vertex::Demand {
+        kind: crate::transducer::sentence::Demand::Creation,
+        chart: stalk::Invariant(vec![1, 2, 2]),
+        bodies: vec![(3, 3, 0, 2)],
+    });
+    let typed_e = as_element_form(&typed, [1, 0, 0, 0]).expect("typed demand tape");
+    assert_eq!(replay_form(&typed_e, &|_| None), None, "a typed demand vertex replays beside its words");
 }
 
 /// S9.4 — CLOSURE IS WHAT THE COURT CHECKS. A form minted over one train

@@ -65,7 +65,7 @@ let inner = {
         class: crate::transducer::stalk::Invariant::default(),
         contact: None,
     });
-    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), });
+    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f
 };
@@ -113,7 +113,7 @@ let word_vertex = |addr: crate::transducer::address::Address| Vertex::Word {
 let inner = {
     let mut f = Form::default();
     f.vertices.push(word_vertex(crate::transducer::address::Address::from_bytes([1u8; 32])));
-    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), });
+    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f
 };
@@ -121,7 +121,7 @@ let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner tape");
 let inner_addr = inner_e.address();
 let mut outer = Form::default();
 outer.vertices.push(word_vertex(crate::transducer::address::Address::from_bytes([2u8; 32])));
-outer.faces.push(FormFace { i: 0, j: 1, transport: outer.face_of(0, 1).expect("vertices"), });
+outer.faces.push(FormFace { i: 0, j: 1, transport: outer.face_of(0, 1).expect("vertices"), edge: None });
 let _gi = outer
     .glue(&inner, inner_addr.clone(), Word::identity(), [1, 0, 0, 0])
     .expect("glue");
@@ -222,7 +222,7 @@ let other = {
         class: crate::transducer::stalk::Invariant::default(),
         contact: None,
     });
-    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), });
+    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f
 };
@@ -265,7 +265,7 @@ f.vertices.push(Vertex::Word {
     class: crate::transducer::stalk::Invariant::default(),
     contact: None,
 });
-f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), });
+f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
 f.loops = Form::loops_of(&f.faces, f.vertices.len());
 assert!(f.is_closed(), "a tree of two vertices coheres");
 let e = as_element_form(&f, [1, 0, 0, 0]).expect("v2 tape");
@@ -296,7 +296,7 @@ let inner = {
         class: crate::transducer::stalk::Invariant::default(),
         contact: None,
     });
-    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), });
+    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f
 };

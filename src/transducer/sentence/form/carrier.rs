@@ -91,14 +91,27 @@ pub enum Vertex {
         class: stalk::Invariant,
     },
     Unfolded { measure: Measure },
+    /// 50.5: what the speaker could not spell or the eyes could not pair,
+    /// one vertex per (kind, chart), carrying the bodies it stands for as
+    /// the sentence's remainder. It has no word and reconstructs nothing.
+    Demand {
+        kind: crate::transducer::sentence::Demand,
+        chart: stalk::Invariant,
+        bodies: Vec<Cell>,
+    },
 }
 
-/// Face of a `Form`: two vertices and the transport between them.
+/// Face of a `Form`: two vertices, the transport between them (the
+/// coboundary of their placements, 3.1), and the edge transport of 50.3 —
+/// the stabilizer element or exchange the pair's rigid motion picks out
+/// relative to the body's own; `None` is a remainder edge, a pair no
+/// single versor carries.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FormFace {
     pub i: u16,
     pub j: u16,
     pub transport: Transport,
+    pub edge: Option<Transport>,
 }
 
 impl FormFace {
@@ -107,6 +120,7 @@ impl FormFace {
             i,
             j,
             transport: Transport::from_word(word),
+            edge: None,
         }
     }
 }
@@ -162,6 +176,9 @@ pub struct Form {
     pub by_rebased: Keyed<u16>,
     /// Unfolded vertex keyed by its measure key.
     pub by_unfolded: Keyed<u16>,
+    /// Demand vertex keyed by (kind, chart) (50.5): the read that keeps a
+    /// sentence to one demand vertex per pair. Written by `reindex`.
+    pub demands: Keyed<u16>,
 }
 
 impl Default for Form {
@@ -185,6 +202,7 @@ impl Default for Form {
             carriages: Keyed::new(),
             by_rebased: Keyed::new(),
             by_unfolded: Keyed::new(),
+            demands: Keyed::new(),
         }
     }
 }
@@ -272,6 +290,7 @@ impl Form {
         let mut by_address = Keyed::new();
         let mut by_rebased = Keyed::new();
         let mut by_unfolded = Keyed::new();
+        let mut demands = Keyed::new();
         let mut hue_maps = std::mem::take(&mut self.hue_maps);
         let mut places: Keyed<Versor> = Keyed::new();
         let mut place_conflict: Keyed<()> = Keyed::new();
@@ -310,6 +329,9 @@ impl Form {
                 Vertex::Unfolded { measure } => {
                     by_unfolded.insert(unfolded_key(measure), i as u16);
                 }
+                Vertex::Demand { kind, chart, .. } => {
+                    demands.insert(crate::transducer::sentence::demand_key(kind, chart), i as u16);
+                }
                 _ => {}
             }
         }
@@ -339,6 +361,7 @@ impl Form {
         self.by_address = by_address;
         self.by_rebased = by_rebased;
         self.by_unfolded = by_unfolded;
+        self.demands = demands;
         self.star = star;
         self.carriages = carriages;
         self.hue_maps = hue_maps;
@@ -347,19 +370,22 @@ impl Form {
 
 impl Vertex {
 
+    /// The word a vertex speaks; a demand vertex speaks none (50.5), so no
+    /// face reaches it and it enters no loop.
     pub fn word_in(&self, form: &Form) -> Option<Word> {
         match self {
             Vertex::Frame | Vertex::Unfolded { .. } => Some(Word::identity()),
             Vertex::Word { word, .. } => Some(word.clone()),
             Vertex::Glued { placement, .. } => Some(placement.clone()),
             Vertex::Rebased { by, .. } => form.vertices.get(*by as usize)?.word_in(form),
+            Vertex::Demand { .. } => None,
         }
     }
 
     pub fn class(&self) -> stalk::Invariant {
         match self {
             Vertex::Word { class, .. } | Vertex::Rebased { class, .. } => class.clone(),
-            Vertex::Glued { chart, .. } => chart.clone(),
+            Vertex::Glued { chart, .. } | Vertex::Demand { chart, .. } => chart.clone(),
             Vertex::Frame | Vertex::Unfolded { .. } => stalk::Invariant::default(),
         }
     }
@@ -408,8 +434,18 @@ impl Form {
         })
     }
 
+    /// Closed: coheres, no remainder, and no demand vertex (2.2, 50.1);
+    /// a sentence with demands is valid, never closed.
     pub fn is_closed(&self) -> bool {
-        self.coheres() && self.remainder.is_empty()
+        self.coheres() && self.remainder.is_empty() && self.demand_vertices().next().is_none()
+    }
+
+    /// The demand vertices of this sentence, with their indices (50.5).
+    pub fn demand_vertices(&self) -> impl Iterator<Item = (u16, &crate::transducer::sentence::Demand, &stalk::Invariant, &[Cell])> {
+        self.vertices.iter().enumerate().filter_map(|(i, v)| match v {
+            Vertex::Demand { kind, chart, bodies } => Some((i as u16, kind, chart, bodies.as_slice())),
+            _ => None,
+        })
     }
 
     pub fn depth_of(&self) -> u16 {
@@ -423,7 +459,7 @@ impl Form {
     }
 
     pub fn is_cauterized(&self) -> bool {
-        if !self.remainder.is_empty() {
+        if !self.remainder.is_empty() || self.demand_vertices().next().is_some() {
             return false;
         }
         for lp in &self.loops {

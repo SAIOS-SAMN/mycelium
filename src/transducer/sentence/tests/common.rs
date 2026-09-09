@@ -32,6 +32,7 @@ pub fn closed_word_form(word: Word, contact: Option<alphabet::Contact>) -> Form 
         i: 0,
         j: 1,
         transport: f.face_of(0, 1).expect("star"),
+        edge: None,
     });
     f.remainder.clear();
     f.depth = f.depth_of();
@@ -65,6 +66,7 @@ pub fn star_form(n_words: usize, extra: Vec<(u16, u16, Word)>) -> Form {
             i: 0,
             j,
             transport: f.face_of(0, j).expect("star"),
+            edge: None,
         });
     }
     for (i, j, w) in extra {
@@ -102,11 +104,13 @@ pub fn chord_form(chords: &[Word]) -> Form {
             i: 0,
             j: a,
             transport: f.face_of(0, a).expect("star a"),
+            edge: None,
         });
         f.faces.push(FormFace {
             i: 0,
             j: b,
             transport: f.face_of(0, b).expect("star b"),
+            edge: None,
         });
         f.faces.push(FormFace::new(a, b, w.clone()));
     }

@@ -179,6 +179,13 @@ pub(crate) fn vertex_tape_and_moves(
                     }
                 }
             }
+            // 50.5: a demand vertex names a kind that carries its
+            // coordinates, or it is not a demand.
+            Vertex::Demand { kind, .. } => {
+                if let Err(why) = kind.typed() {
+                    return Some(why);
+                }
+            }
             _ => {}
         }
     }

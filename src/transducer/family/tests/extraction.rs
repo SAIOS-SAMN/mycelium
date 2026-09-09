@@ -138,7 +138,7 @@ pf.vertices.push(Vertex::Word {
     class: b.moduli.clone(),
     contact: None,
 });
-pf.faces.push(FormFace { i: 1, j: 2, transport: pf.face_of(1, 2).expect("pair vertices"), });
+pf.faces.push(FormFace { i: 1, j: 2, transport: pf.face_of(1, 2).expect("pair vertices"), edge: None });
 let mut form = pf.clone();
 let tc_a = transport_class(&pf.vertices[1]).expect("A has a transport class");
 let tc_b = transport_class(&pf.vertices[2]).expect("B has a transport class");

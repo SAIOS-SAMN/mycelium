@@ -40,9 +40,9 @@ fn glue_retract_remaps_faces_and_placement_refuses() {
         class: stalk::Invariant::default(),
         contact: None,
     });
-    host.faces.push(FormFace { i: 0, j: 1, transport: host.face_of(0, 1).expect("0-1"), });
-    host.faces.push(FormFace { i: 1, j: 2, transport: host.face_of(1, 2).expect("1-2"), });
-    host.faces.push(FormFace { i: 0, j: 2, transport: host.face_of(0, 2).expect("0-2"), });
+    host.faces.push(FormFace { i: 0, j: 1, transport: host.face_of(0, 1).expect("0-1"), edge: None });
+    host.faces.push(FormFace { i: 1, j: 2, transport: host.face_of(1, 2).expect("1-2"), edge: None });
+    host.faces.push(FormFace { i: 0, j: 2, transport: host.face_of(0, 2).expect("0-2"), edge: None });
     let inner = closed_word_form(w.clone(), None);
     let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner");
     let gi = host

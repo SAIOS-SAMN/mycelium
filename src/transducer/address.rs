@@ -24,6 +24,7 @@ pub const TAG_PLANE: u8 = 13;
 pub const TAG_CELL: u8 = 14;
 pub const TAG_COCYCLE: u8 = 15;
 pub const TAG_TASK: u8 = 16;
+pub const TAG_DEMAND: u8 = 17;
 
 /// Canonical A21 coordinates of a form, listing, or class. Coarse-first:
 /// a proper prefix is a coarser stratum of the same kind, never a sibling.

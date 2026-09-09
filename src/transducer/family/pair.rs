@@ -382,6 +382,7 @@ pub(crate) fn pair_form_uncached(
         carriages: crate::network::nerve::Keyed::new(),
         by_rebased: crate::network::nerve::Keyed::new(),
         by_unfolded: crate::network::nerve::Keyed::new(),
+        demands: crate::network::nerve::Keyed::new(),
     };
     let n = form.vertices.len();
     let frame = 0usize;
@@ -389,7 +390,7 @@ pub(crate) fn pair_form_uncached(
         let Some(g) = form.face_of(i, j) else {
             continue;
         };
-        form.faces.push(FormFace { i, j, transport: g });
+        form.faces.push(FormFace { i, j, transport: g, edge: None });
     }
     form.loops = Form::loops_of(&form.faces, n);
     form.reindex();

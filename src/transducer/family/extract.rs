@@ -278,6 +278,7 @@ pub fn extract_rule_with(
         carriages: crate::network::nerve::Keyed::new(),
         by_rebased: crate::network::nerve::Keyed::new(),
         by_unfolded: crate::network::nerve::Keyed::new(),
+        demands: crate::network::nerve::Keyed::new(),
     };
     // 2. Faces named by the pair forms (star + cell overlap). Constancy is
     // over the pairs where both ends exist; a missing end is not a violation.
@@ -345,7 +346,7 @@ pub fn extract_rule_with(
         let Some(t) = form.face_of(i, j) else {
             continue;
         };
-        form.faces.push(FormFace { i, j, transport: t });
+        form.faces.push(FormFace { i, j, transport: t, edge: None });
         let mut rest = sections_of_face.peekable();
         if rest.peek().is_some() {
             sections.insert(ends_pair_key(ea, eb), first_pairs);

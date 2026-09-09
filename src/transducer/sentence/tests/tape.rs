@@ -7,10 +7,11 @@ use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::*;
 use crate::transducer::stalk::{self};
 
-/// SENTENCE_TAG v4 round-trips Frame, Word (with contact), Glued,
-/// Rebased, Unfolded, faces, and loops.
+/// SENTENCE_TAG v6 round-trips Frame, Word (with contact), Glued,
+/// Rebased, Unfolded, Demand (50.5), faces with their edge transport
+/// (50.3), and loops.
 #[test]
-fn form_tape_v4_round_trips() {
+fn form_tape_v6_round_trips() {
     let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
     let w = Word::from_letters(&[(q, false)]);
     let inner = closed_word_form(w.clone(), None);
@@ -35,9 +36,18 @@ fn form_tape_v4_round_trips() {
         class: stalk::Invariant(vec![3, 5]),
     });
     let unfolded = f.unfold(Measure::Occupied);
-    f.faces.push(FormFace::new(1, glued, w.clone(),));
+    let demand = f.vertices.len() as u16;
+    f.vertices.push(Vertex::Demand {
+        kind: Demand::Source { multiplicity: 2 },
+        chart: stalk::Invariant(vec![1, 4, 4]),
+        bodies: vec![(9, 9, 0, 1), (9, 10, 0, 1)],
+    });
+    let mut edged = FormFace::new(1, glued, w.clone());
+    edged.edge = Some(Transport::from_word(w.clone()));
+    f.faces.push(edged);
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     f.remainder = vec![(9, 9, 1, 0)];
+    f.reindex();
     assert!(matches!(f.vertices[glued as usize], Vertex::Glued { .. }));
     assert!(matches!(
         f.vertices[rebased as usize],
@@ -107,6 +117,26 @@ fn form_tape_v4_round_trips() {
     assert_eq!(back.faces[0].i, 0);
     assert_eq!(back.faces[0].j, 1);
     assert_eq!(back.faces[0].transport.word, f.faces[0].transport.word);
+    assert_eq!(back.faces[0].edge, None, "a face with no measured edge transport is a remainder edge");
+    let last = back.faces.len() - 1;
+    assert_eq!(back.faces[last].edge.as_ref().map(|t| t.word.clone()), Some(w.clone()), "the edge transport rides the face");
+    match (&f.vertices[demand as usize], &back.vertices[demand as usize]) {
+        (
+            Vertex::Demand { kind: ka, chart: ca, bodies: ba },
+            Vertex::Demand { kind: kb, chart: cb, bodies: bb },
+        ) => {
+            assert_eq!(ka, kb);
+            assert_eq!(ca, cb);
+            assert_eq!(ba, bb, "the bodies a demand stands for ride the tape");
+        }
+        _ => panic!("demand vertex"),
+    }
+    assert!(!back.is_closed(), "a sentence with a demand vertex is not closed");
+    assert_eq!(
+        back.demands.get(&demand_key(&Demand::Source { multiplicity: 2 }, &stalk::Invariant(vec![1, 4, 4]))),
+        Some(&demand),
+        "the demand is read by (kind, chart)"
+    );
     let e_plain = as_element_form(&closed_word_form(w.clone(), None), [1, 0, 0, 0]).expect("plain");
     let e_contact = as_element_form(
         &closed_word_form(
@@ -122,6 +152,42 @@ fn form_tape_v4_round_trips() {
         "contact is on the form key"
     );
     assert_eq!(w, w, "M1 is the rotor; contact is not a letter");
+}
+
+/// 50.5 — a demand is named by its kind and the coordinates it carries: two
+/// kinds on one chart are two demands, one kind on two charts is two, and
+/// every kind decodes to itself; a kind carrying nothing is not a demand.
+#[test]
+fn a_demand_keys_by_kind_and_coordinates_and_an_empty_one_is_untyped() {
+    let chart = stalk::Invariant(vec![1, 4, 4]);
+    let other = stalk::Invariant(vec![1, 6, 2]);
+    let kinds = [
+        Demand::RotorPrime { plane: (0, 1), prime: 17 },
+        Demand::Standing { block: Box::new([[q1(), q0()], [q0(), q1()]]) },
+        Demand::Source { multiplicity: 3 },
+        Demand::Creation,
+        Demand::TopologicalDeformation { image: other.clone(), axes: vec![1, 2] },
+    ];
+    for k in &kinds {
+        let mut b = Vec::new();
+        k.to_bytes(&mut b);
+        let mut pos = 0;
+        assert_eq!(Demand::from_bytes(&b, &mut pos).as_ref(), Some(k), "every kind decodes to itself");
+        assert_eq!(pos, b.len(), "and consumes exactly its bytes");
+        assert_eq!(k.typed(), Ok(()), "{}", k.label());
+        assert_eq!(k.key().tag(), Some(crate::transducer::address::TAG_DEMAND));
+    }
+    assert_ne!(demand_key(&kinds[2], &chart), demand_key(&kinds[3], &chart), "two kinds on one chart are two demands");
+    assert_ne!(demand_key(&kinds[2], &chart), demand_key(&kinds[2], &other), "one kind on two charts is two demands");
+    for untyped in [
+        Demand::Source { multiplicity: 0 },
+        Demand::RotorPrime { plane: (1, 1), prime: 17 },
+        Demand::RotorPrime { plane: (0, 1), prime: 5 },
+        Demand::Standing { block: Box::new([[q0(), q0()], [q0(), q0()]]) },
+        Demand::TopologicalDeformation { image: other.clone(), axes: Vec::new() },
+    ] {
+        assert_eq!(untyped.typed(), Err(crate::court::verdict::REFUSE_DEMAND_UNTYPED), "{}", untyped.label());
+    }
 }
 
 #[test]

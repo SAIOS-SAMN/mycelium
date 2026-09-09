@@ -14,6 +14,7 @@ fn refraction_is_rebase_regauge_and_carriage() {
         i: 0,
         j: 1,
         transport: f.face_of(0, 1).expect("star"),
+        edge: None,
     });
     f.reindex();
     let gamma = Transport {
@@ -47,6 +48,7 @@ fn refraction_replays_as_its_three_moves() {
         i: 0,
         j: 1,
         transport: f.face_of(0, 1).expect("star"),
+        edge: None,
     });
     f.reindex();
     let gamma = Transport {
@@ -89,6 +91,7 @@ fn rebase_conjugates_by_a_versor_never_subtracts() {
         i: 0,
         j: 1,
         transport: f.face_of(0, 1).expect("star"),
+        edge: None,
     });
     let by = f.face_of(0, 1).expect("relative");
     assert!(

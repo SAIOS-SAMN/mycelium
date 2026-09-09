@@ -1,7 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 19 — THE FORM TAPE: `SENTENCE_TAG` version 4 in both directions, with
-//! addresses as len16 + bytes, and the torsion a sentence tape files.
+//! 19 — THE FORM TAPE: `SENTENCE_TAG` version 6 in both directions, with
+//! addresses as len16 + bytes, the torsion a sentence tape files, the
+//! demand vertices (50.5) and the edge transport on every face (50.3).
 
 use super::chain::Cell;
 use super::form::*;
@@ -54,7 +55,7 @@ fn take_count(b: &[u8], pos: usize, n: usize, item: usize) -> Option<usize> {
     Some(n)
 }
 
-fn put_inv(inv: &stalk::Invariant, out: &mut Vec<u8>) -> Option<()> {
+pub(crate) fn put_inv(inv: &stalk::Invariant, out: &mut Vec<u8>) -> Option<()> {
     let n = u16::try_from(inv.0.len()).ok()?;
     out.extend_from_slice(&n.to_le_bytes());
     for a in &inv.0 {
@@ -63,7 +64,7 @@ fn put_inv(inv: &stalk::Invariant, out: &mut Vec<u8>) -> Option<()> {
     Some(())
 }
 
-fn take_inv(b: &[u8], pos: &mut usize) -> Option<stalk::Invariant> {
+pub(crate) fn take_inv(b: &[u8], pos: &mut usize) -> Option<stalk::Invariant> {
     let n = take_u16(b, pos)? as usize;
     let n = take_count(b, *pos, n, 8)?;
     let mut axes = Vec::with_capacity(n);
@@ -144,18 +145,31 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
                     }
                 }
             }
+            Vertex::Demand { kind, chart, bodies } => {
+                out.push(5);
+                kind.to_bytes(out);
+                put_inv(chart, out)?;
+                out.extend_from_slice(&(u32::try_from(bodies.len()).ok()?).to_le_bytes());
+                for &(r, c, before, after) in bodies {
+                    out.extend_from_slice(&r.to_le_bytes());
+                    out.extend_from_slice(&c.to_le_bytes());
+                    out.push(before);
+                    out.push(after);
+                }
+            }
         }
     }
     out.extend_from_slice(&(f.faces.len() as u16).to_le_bytes());
     for face in &f.faces {
         out.extend_from_slice(&face.i.to_le_bytes());
         out.extend_from_slice(&face.j.to_le_bytes());
-        word_to_form_bytes(&face.transport.word, None, out);
-        face.transport.carriage.to_bytes(out);
-        out.extend_from_slice(&(face.transport.gauge.len() as u16).to_le_bytes());
-        for &(a, b) in &face.transport.gauge {
-            out.push(a);
-            out.push(b);
+        put_transport(&face.transport, out);
+        match &face.edge {
+            None => out.push(0),
+            Some(t) => {
+                out.push(1);
+                put_transport(t, out);
+            }
         }
     }
     out.extend_from_slice(&(f.loops.len() as u16).to_le_bytes());
@@ -225,6 +239,28 @@ fn take_u16(b: &[u8], pos: &mut usize) -> Option<u16> {
     let v = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
     *pos += 2;
     Some(v)
+}
+
+fn put_transport(t: &Transport, out: &mut Vec<u8>) {
+    word_to_form_bytes(&t.word, None, out);
+    t.carriage.to_bytes(out);
+    out.extend_from_slice(&(t.gauge.len() as u16).to_le_bytes());
+    for &(a, b) in &t.gauge {
+        out.push(a);
+        out.push(b);
+    }
+}
+
+fn take_transport(b: &[u8], pos: &mut usize) -> Option<Transport> {
+    let (word, _) = word_from_form_bytes(b, pos)?;
+    let carriage = element::Versor::from_bytes(b, pos)?;
+    let ng = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
+    let mut gauge = Vec::with_capacity(ng);
+    for _ in 0..ng {
+        gauge.push((*b.get(*pos)?, *b.get(*pos + 1)?));
+        *pos += 2;
+    }
+    Some(Transport { word, carriage, gauge })
 }
 
 pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
@@ -309,6 +345,16 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                 };
                 Vertex::Unfolded { measure }
             }
+            5 => {
+                let kind = crate::transducer::sentence::Demand::from_bytes(b, pos)?;
+                let chart = take_inv(b, pos)?;
+                let nb = take_count(b, *pos, take_u32(b, pos)? as usize, 18)?;
+                let mut bodies = Vec::with_capacity(nb);
+                for _ in 0..nb {
+                    bodies.push(take_cell(b, pos)?);
+                }
+                Vertex::Demand { kind, chart, bodies }
+            }
             _ => return None,
         };
         vertices.push(v);
@@ -318,23 +364,19 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
     for _ in 0..nf {
         let i = take_u16(b, pos)?;
         let j = take_u16(b, pos)?;
-        let (word, _) = word_from_form_bytes(b, pos)?;
-        let carriage = element::Versor::from_bytes(b, pos)?;
-        let ng = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
-        let mut gauge = Vec::with_capacity(ng);
-        for _ in 0..ng {
-            gauge.push((*b.get(*pos)?, *b.get(*pos + 1)?));
-            *pos += 2;
-        }
-        faces.push(FormFace {
-            i,
-            j,
-            transport: Transport {
-                word,
-                carriage,
-                gauge,
-            },
-        });
+        let transport = take_transport(b, pos)?;
+        let edge = match *b.get(*pos)? {
+            0 => {
+                *pos += 1;
+                None
+            }
+            1 => {
+                *pos += 1;
+                Some(take_transport(b, pos)?)
+            }
+            _ => return None,
+        };
+        faces.push(FormFace { i, j, transport, edge });
     }
     let nl = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
     let mut loops = Vec::with_capacity(nl);
@@ -440,6 +482,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         carriages: Keyed::new(),
         by_rebased: Keyed::new(),
         by_unfolded: Keyed::new(),
+        demands: Keyed::new(),
     };
     form.reindex();
     Some(form)
@@ -447,9 +490,10 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
 
 /// The tape layout this tree writes and reads (chapter 19). A layout change
 /// is a recut: no reader for an older version exists (MU-STANDARDS §10).
-pub const FORM_TAPE_VERSION: u8 = 5;
+/// Version 6 (chapter 50, L1) adds the demand vertex and the edge transport.
+pub const FORM_TAPE_VERSION: u8 = 6;
 
-/// SENTENCE_TAG v5: the Form tape. Hue maps are derived from vertices.
+/// SENTENCE_TAG v6: the Form tape. Hue maps are derived from vertices.
 /// Addresses are len16 + bytes. `mag` is the descent the form measures over
 /// its bundle. Zero is not a word.
 pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
@@ -464,7 +508,7 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
     Some(e)
 }
 
-/// Read a Form from a v5 tape. Every other version is refused.
+/// Read a Form from a v6 tape. Every other version is refused.
 pub fn from_element_form(e: &Element) -> Option<Form> {
     if !e.is_sentence() {
         return None;

@@ -47,7 +47,7 @@ fn hold_form_keeps_a_glued_open_loop() {
             class: crate::transducer::stalk::Invariant::default(),
             contact: None,
         });
-        f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), });
+        f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
         f.loops = Form::loops_of(&f.faces, f.vertices.len());
         f
     };
@@ -95,11 +95,13 @@ fn hold_form_keeps_a_glued_open_loop() {
         i: 0,
         j: 1,
         transport: open.face_of(0, 1).expect("star 1"),
+        edge: None,
     });
     open.faces.push(FormFace {
         i: 0,
         j: 2,
         transport: open.face_of(0, 2).expect("star 2"),
+        edge: None,
     });
     open.faces.push(FormFace::new(1, 2, w.clone()));
     open.loops = Form::loops_of(&open.faces, open.vertices.len());
@@ -192,6 +194,7 @@ fn hold_form_carries_bundle_and_remainder() {
         i: 0,
         j: 1,
         transport: f.face_of(0, 1).expect("star"),
+        edge: None,
     });
     let train = vec![(vec![vec![1u8]], vec![vec![2u8]])];
     let rem = vec![vec![(0i64, 0i64, 1u8, 2u8)]];

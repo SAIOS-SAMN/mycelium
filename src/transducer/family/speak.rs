@@ -199,6 +199,8 @@ pub fn apply_form(
                 unfolded = true;
             }
             Vertex::Unfolded { .. } => {}
+            // 50.5: a demand speaks nothing; its bodies are the remainder.
+            Vertex::Demand { .. } => {}
         }
     }
     if unfolded {

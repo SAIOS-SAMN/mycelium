@@ -208,6 +208,7 @@ pub(crate) fn vertex_carriage(v: &Vertex, form: &Form) -> Option<Versor> {
         Vertex::Frame | Vertex::Glued { .. } | Vertex::Unfolded { .. } => {
             Some(element::identity_versor())
         }
+        Vertex::Demand { .. } => None,
     }
 }
 

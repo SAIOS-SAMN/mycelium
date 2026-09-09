@@ -12,8 +12,10 @@ pub mod pivot;
 pub mod tape;
 pub mod chart;
 pub mod reading;
+pub mod demand;
 
 pub use chain::*;
+pub use demand::*;
 pub use form::*;
 pub use transport::*;
 pub use class::*;

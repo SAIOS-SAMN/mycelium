@@ -105,11 +105,13 @@ fn coboundary_gauge_matches_by_address() {
         i: 0,
         j: 1,
         transport: a.face_of(0, 1).expect("a star 1"),
+        edge: None,
     });
     a.faces.push(FormFace {
         i: 0,
         j: 2,
         transport: a.face_of(0, 2).expect("a star 2"),
+        edge: None,
     });
     a.vertices.push(Vertex::Rebased {
         by: 0,
@@ -129,11 +131,13 @@ fn coboundary_gauge_matches_by_address() {
         i: 0,
         j: 1,
         transport: b.face_of(0, 1).expect("b star 1"),
+        edge: None,
     });
     b.faces.push(FormFace {
         i: 0,
         j: 2,
         transport: b.face_of(0, 2).expect("b star 2"),
+        edge: None,
     });
     b.vertices.push(Vertex::Unfolded {
         measure: Measure::Occupied,
@@ -194,11 +198,13 @@ fn holonomy_is_oriented() {
         i: 0,
         j: 1,
         transport: fwd.face_of(0, 1).expect("star"),
+        edge: None,
     });
     fwd.faces.push(FormFace {
         i: 0,
         j: 2,
         transport: fwd.face_of(0, 2).expect("star"),
+        edge: None,
     });
     fwd.faces.push(FormFace::new(1, 2, w.clone()));
     fwd.loops = Form::loops_of(&fwd.faces, fwd.vertices.len());
@@ -209,11 +215,13 @@ fn holonomy_is_oriented() {
         i: 0,
         j: 1,
         transport: rev.face_of(0, 1).expect("star"),
+        edge: None,
     });
     rev.faces.push(FormFace {
         i: 0,
         j: 2,
         transport: rev.face_of(0, 2).expect("star"),
+        edge: None,
     });
     rev.faces.push(FormFace::new(2, 1, w.inverse()));
     rev.loops = Form::loops_of(&rev.faces, rev.vertices.len());

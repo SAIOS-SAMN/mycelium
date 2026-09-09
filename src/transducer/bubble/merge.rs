@@ -27,6 +27,7 @@ pub(crate) fn form_one_section(a: &Form, b: &Form) -> bool {
             i,
             j,
             transport: face.transport.clone(),
+            edge: face.edge.clone(),
         });
     }
     f.remainder = union_rem(&a.remainder, &b.remainder);

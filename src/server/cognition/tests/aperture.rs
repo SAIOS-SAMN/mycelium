@@ -220,7 +220,7 @@ fn a_depleted_lane_charges_a_sentence_by_its_loop_words() {
         });
     }
     for (i, j) in [(0u16, 1u16), (1, 2), (0, 2)] {
-        f.faces.push(FormFace { i, j, transport: f.face_of(i, j).expect("face") });
+        f.faces.push(FormFace { i, j, transport: f.face_of(i, j).expect("face"), edge: None });
     }
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
     assert!(!f.loops.is_empty(), "a triangle closes a loop");

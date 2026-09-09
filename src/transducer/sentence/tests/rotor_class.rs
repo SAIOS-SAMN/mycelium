@@ -257,11 +257,13 @@ fn offplane_quarter_to_the_fourth_is_closed_to_all_four_readers() {
         i: 0,
         j: 1,
         transport: f.face_of(0, 1).expect("star 1"),
+        edge: None,
     });
     f.faces.push(FormFace {
         i: 0,
         j: 2,
         transport: f.face_of(0, 2).expect("star 2"),
+        edge: None,
     });
     f.faces.push(FormFace::new(1, 2, w));
     f.loops = Form::loops_of(&f.faces, f.vertices.len());

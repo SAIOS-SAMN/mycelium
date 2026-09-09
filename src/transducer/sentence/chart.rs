@@ -78,6 +78,7 @@ impl Form {
                 i,
                 j,
                 transport: f.transport.clone(),
+                edge: f.edge.clone(),
             });
         }
         let mut glued = Keyed::new();
@@ -377,6 +378,13 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
                     }
                 }
             }
+            // 50.5: a demand is named by its kind and chart; the bodies it
+            // stands for are the remainder, on the tape and not in the key.
+            Vertex::Demand { kind, chart, .. } => {
+                buf.push(5);
+                crate::transducer::address::put_bytes(&mut buf, kind.key().as_bytes());
+                crate::transducer::address::put_bytes(&mut buf, chart.key().as_bytes());
+            }
         }
     }
     buf.extend_from_slice(&(f.faces.len() as u32).to_le_bytes());
@@ -441,6 +449,11 @@ pub(crate) fn chart_of_form(f: &Form) -> Option<crate::transducer::stalk::Invari
                 row.extend_from_slice(&chart.0);
                 rows.push(row);
             }
+            Vertex::Demand { kind, chart, .. } => {
+                let mut row = vec![4u64, u64::from(kind.kind_byte())];
+                row.extend_from_slice(&chart.0);
+                rows.push(row);
+            }
             Vertex::Frame | Vertex::Unfolded { .. } => {}
         }
     }
@@ -466,6 +479,7 @@ pub(crate) fn vertex_match_key(form: &Form, i: u16) -> Option<Vec<u8>> {
             _ => None,
         },
         Vertex::Unfolded { measure } => Some(unfolded_key(measure)),
+        Vertex::Demand { kind, chart, .. } => Some(crate::transducer::sentence::demand_key(kind, chart)),
     }
 }
 
@@ -500,6 +514,10 @@ pub fn coboundary_gauge(a: &Form, b: &Form) -> Option<Vec<Word>> {
             }
             Vertex::Unfolded { measure } => {
                 let j = *b.by_unfolded.get(&unfolded_key(measure))?;
+                b.vertices.get(j as usize)?
+            }
+            Vertex::Demand { kind, chart, .. } => {
+                let j = *b.demands.get(&crate::transducer::sentence::demand_key(kind, chart))?;
                 b.vertices.get(j as usize)?
             }
         };
