@@ -3729,7 +3729,18 @@ court has returned to it (chapter 6). `/opt/mycelium-v0.1.0/src/client/sdk/`:
   exists beside the contemplation: `Entity::ideas`, a `Keyed<Element>`
   filled at hold time and scanned at cite time, is the dual carrier the
   enumeration audit names and is deleted. `Reading` takes the held words
-  as a reader at a chart, never as a list of elements.
+  as a reader at a chart, never as a list of elements. Bound (L6):
+  `Contemplation::held_at(chart)` is the read, `Reading.held_at` the
+  reader, `sentence::vertex_cites` the evaluation — the vertex's rotor
+  under its dilator, carried onto the body's own frame by the translator
+  the two centroids solve (`blade::versor_carrying`, verified cell by
+  cell both ways as `versor_between` verifies) with each landed hue the
+  gauge's image of the hue it left — and a `HeldCite` (the vertex's
+  address, the body reconstructed in the listing's frame) is what it
+  answers. The strata are read in their order, Ruled, then Stood, then
+  Held: a held word answers only where no ruled or stood word is on the
+  chart, and exactly one held word must reconstruct the body; several
+  stand as multiplicity, never a choice (rule 15).
 - Readers that move to `working_atlas()`: quote incidence
   (`mycelium-client.rs 418–433`, the `closing` filter), `Crystal::on_class`
   (chapter 21), `locate`, `comprehend`'s basis for A12, `speak_word`'s
@@ -4175,6 +4186,14 @@ bubble/drive.rs  pivot_on and expand_with call Form::pivot_loop (A16), vortex ce
               horizon: Keyed<(Rotor, Order, Standing)> by class key, Contemplation::seed_horizon NEW (A19)
 sentence.rs   Form::class_vector NEW, ClassVector/Axis NEW (12.6), Form::pivot_loop NEW (A16), PivotCertificate NEW (A20) with tape section (19),
               Form::rank NEW (A18); cech.rs Complex::rank NEW
+sentence/     Form.by_class NEW (18.2, written in reindex, never on the tape); reading.rs Reading.held_at NEW, HeldCite NEW,
+              vertex_cites NEW, no_held NEW (24.1, L6); chain.rs Sentence.held, Located.held NEW
+blade/carry.rs  carries NEW (the cell-by-cell verification, shared), versor_carrying NEW (24.1: the translator solved for a given linear action)
+bubble/       Contemplation::held_at NEW (24.1); hold_form reindexes the form it takes custody of
+family/perceive.rs  scene_of_chain NEW (50.6 seam 1: a chain's before and after grids in one frame)
+client/sdk    Entity::ideas DELETED, hold_thought DELETED, conclude DELETED, cited_word DELETED, WorkingAtlas::standing_addr DELETED (L6);
+              hold_chain NEW (the pair form of the chain's scene), WorkingAtlas.held is the contemplation, Entity::cite reads the Held
+              stratum through it, open_axis/axis_germ take the held cites' bodies
 element/carrier.rs  record_torsion as A17's filing call; toroid.rs witness_stored as A17's witness
 cognition.rs  glue_fetched torsion arm (23.7), serve_ruled class records (A19), Kernel::rank debug assertions
 dialogue/      SPEECH_WITHHELD, speech reply missing list, depth_max in digests, syllabus class section, standing byte
@@ -6634,7 +6653,7 @@ blade/carry.rs             versor_between on the union shape for V_ij (50.3)
 family/perceive.rs         word_form → factor_rotor; demand_vertex NEW; body_only_vertex DELETED
 family/pair.rs             pair_form: F steps 1–5; the edge transport on every face
 sentence/form/carrier.rs   Form::loops_of composes FormFace.edge around a cycle; holonomy read in the stabilizer up to conjugacy
-client/sdk/entity/think.rs withhold_form speaks the sentence; hold_thought DELETED; attest(chain) unreachable from a voice
+client/sdk/entity/think.rs withhold_form stands the sentence withheld and holds it; hold_thought DELETED (hold_chain holds a chain as the pair form of its scene); attest(chain) unreachable from a withheld form (L6); from a served listing until L8
 court/verdict/replay.rs    replay_form_with: G steps 1–4; REFUSE_NOT_A_SENTENCE, REFUSE_VERTEX_BODY, REFUSE_EDGE, REFUSE_DEMAND_UNTYPED
 server/cognition/reduce.rs reduce_proven, reduce_germ: no Irreducible(from_residual*); a demand vertex is listed by kind; a chain is refused
 server/cognition/germinate/ingest.rs   commit_germ lists demand vertices, never a residual
