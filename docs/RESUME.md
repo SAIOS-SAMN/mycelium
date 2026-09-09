@@ -153,8 +153,14 @@ connects edges in the stabilizer, emits demands as typed vertices; G
 factors, replays, checks congruence by class vector and coherence by
 holonomy; the three seams (`withhold_form`'s attest loop,
 `body_only_vertex`, the court's `Irreducible(from_residual*)` listing) are
-severed in the order L4, L6, L8. L1 is tape v6, a recut. L0 landed; L1
-next. The fleet is stopped and soaks nothing until L8 lands.
+severed in the order L4, L6, L8. L1 is tape v6, a recut. L0–L5 landed
+(2ac81e2, 0b5cf2b, 78af4e5, 634b3d0, 15a3a08, 6e37e0a; 433/0/9/13/6/0,
+xtask 0 at 6e37e0a). L6 is in progress under two rulings of 2026-09-09
+recorded in `MU-RECURSION.md` 24.1 and chapter 20: the Held stratum is
+the contemplation's forms read at the listing body's chart
+(`Form.by_class`, `Reading.held_at`, `Entity::ideas` deleted), and a body
+is a component of one hue (L6b, the seven court tests re-asserted). Then
+L7, L8, L9. The fleet is stopped and soaks nothing until L8 lands.
 
 The earlier reading list (R1–R7 on d6e19a1): `court orbit docket …`
 period rising above 1 once ruled listings are passed over (R1); `court

@@ -3033,6 +3033,7 @@ pub struct Form {                                       // replaces Nerve as the
     pub glued: Keyed<u16>,
     pub vortex: Keyed<Keyed<PivotCertificate>>,
     pub by_address: Keyed<u16>,                         // Word address (M2 composite) → index
+    pub by_class: Keyed<Vec<u16>>,                      // chart key → the Word vertices on that chart: the fiber a listing body's chart reads (24.1); derived by reindex, never on the tape
     pub star: Keyed<u16>,
     pub carriages: Keyed<Versor>,                       // by transport-class coordinates; two carriages on one class are two sections
     pub by_rebased: Keyed<u16>,                         // of address → Rebased index
@@ -3190,6 +3191,18 @@ pub fn word_form(a: &Body, b: &Body) -> Option<Vertex>   // new: carriage(a,b) (
 pub fn frame_vertex() -> Vertex                           // new: Vertex::Frame
 pub fn demand_vertex(kind: Demand, chart: &Invariant, bodies: &[Body]) -> Vertex   // 50.5: what no versor carries or no rotor spells
 ```
+
+**A body is one hue (ruled 2026-09-09).** `perceive` reads a body as a
+4-connected component of cells of one hue. Two touching bodies of
+different hues are two bodies sharing a boundary, and that boundary is a
+contact face of the pair form carrying the edge transport of 50.3, so
+sliding, relative rotation and the evolution of a colour boundary are
+measured on the edge. A component of every non-zero cell merged touching
+bodies into one blob that no single versor carries, so `versor_between`
+refused it, every such scene became a `TopologicalDeformation` demand,
+and no pair form ever had a contact face. The court reads a two-hue
+percept as one sentence with two body vertices and their edge, never as
+two detached listings (50.1).
 
 `pair_nerve` (about 590) becomes `pair_form(a: &Grid, b: &Grid, scale) ->
 Form`: vertices = `Frame` plus one `Word` per carried body — its versor
@@ -3677,6 +3690,19 @@ court has returned to it (chapter 6). `/opt/mycelium-v0.1.0/src/client/sdk/`:
   read returns `(address, Standing)` with
   `pub enum Standing { Ruled, Stood, Held }` **new**; no read returns a
   boolean. `atlas()` remains for persistence (`crystallize`) only.
+- **The Held stratum is the contemplation's forms, read at the
+  coordinate (ruled 2026-09-09).** An idea is a form (50.6) and its held
+  words are its `Word` vertices. A cite reads them at the coordinate the
+  listing supplies and nowhere else: the body's chart →
+  `Contemplation.by_chart` → the bubble → `Form.by_class` (18.2) → the
+  vertex, and the word is derived at that vertex alone, its letters,
+  carriage and gauge on the body its address names (A21 §4). Nothing
+  materialises the ideas' words ahead of a question, no walk over a
+  form's vertices is made at a cite, and no second carrier of held words
+  exists beside the contemplation: `Entity::ideas`, a `Keyed<Element>`
+  filled at hold time and scanned at cite time, is the dual carrier the
+  enumeration audit names and is deleted. `Reading` takes the held words
+  as a reader at a chart, never as a list of elements.
 - Readers that move to `working_atlas()`: quote incidence
   (`mycelium-client.rs 418–433`, the `closing` filter), `Crystal::on_class`
   (chapter 21), `locate`, `comprehend`'s basis for A12, `speak_word`'s
@@ -6544,7 +6570,8 @@ closed by this ruling and stays closed by the invariant below.
    `uttered … cites 0`), and `hold_thought` held the same chain as an
    idea. The withheld form is stood with its demand vertices and uttered
    whole; no residual is expressed, `attest` is never called with a bare
-   chain, and an idea is a form.
+   chain, and an idea is a form whose words are read at the listing's
+   chart when a cite asks (24.1), never listed ahead of one.
 2. **The body-only vertex.** `family::body_only_vertex`
    (family/perceive.rs) made an unpaired body a `Vertex::Word` with the
    identity word and no measured versor, so a created, destroyed or
