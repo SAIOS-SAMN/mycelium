@@ -14,7 +14,7 @@ git log --oneline -1 main impl/soak          # the two are one commit
 systemctl --user list-units 'mycelium-server@*' 'mycelium-client@*' --no-legend
 RUSTFLAGS='-D warnings' cargo test --release 2>&1 | grep -E "test result|FAILED"
 (cd xtask && cargo run)                        # gates, then clippy -D warnings
-# expected at 1cf2c1e: lib 402, bins 7, alpha_plan 13, g_cga 6; xtask exit 0
+# expected at d6e19a1: lib 421, bins 9, alpha_plan 13, g_cga 6; xtask exit 0
 ```
 
 ## The fleet
@@ -41,10 +41,25 @@ were not touched.
 
 ## State at handoff
 
-- **PAUSED 2026-09-09 on the operator's word** after V1 (9d66c45) and V2
-  (ffed51c) landed and the fleet was recut on ffed51c at epoch 6 (genesis
-  be05…), every commit of the pass in one soak. Development resumes only
-  when authorized; the fleet is running.
+- **R1–R7 landed 2026-09-09** on the operator's word, one item per commit,
+  suite green on each (421/0/9/13/6/0, xtask 0 at d6e19a1): doctrine
+  de29cab; R1 4f3337c (the docket orbit passes over ruled and cavity
+  listings); R2 634b3d0 (`court nerve deferred by {addr} acts {n}`, once
+  per aperture per destination); R3 fbba134 (`yield_surface` = reserve
+  deficit + entropic flux, the percept reply carries it); R4 dc58f86
+  (`backfill::pages` pages until the chain closes, then re-admits the
+  reporting frame); R5 c99ba16 (fold refusal names both origins; a witness
+  with no origin says so); R6-prep 6d824f1 (`court/install.rs`), R6
+  a9c9b54 (`listings_on(inv)` = `chart_listings[inv] ∩ open`,
+  `volume_of_cell(inv)`; identity edge for one body at two vantages;
+  remainder edge for a versor-related pair no rotor spells); R7 d6e19a1
+  (phase read when the docket orbit count crosses a multiple of
+  `aperture_cycle()`). Rows in the task list. The fleet was relaunched on
+  d6e19a1 (no tape change since ffed51c, so a restart keeps the ledger);
+  the preliminary reading is in the session's report.
+- **Earlier pause 2026-09-09** after V1 (9d66c45) and V2 (ffed51c) landed
+  and the fleet was recut on ffed51c at epoch 6 (genesis be05…), every
+  commit of the pass in one soak.
 - Clean-slate readings an aperture after the recut (`scratchpad/launch.sh`),
   in kernel coordinates: V2 holds — `[h N]` climbs on every voice (3177,
   6230, 6137, 6312, 6151); V1 holds — `axis opened` 1 on voices 2, 3 and 5,
@@ -119,16 +134,18 @@ were not touched.
 
 ## Immediate next actions
 
-On the operator's word: rebuild and recut the fleet on impl/soak (69983cd
-or later), then read in kernel coordinates: `court orbit docket …` and
-`court orbit exchange …` periods per hypha, `court phase …` per docket
-orbit, `court receipt backfill …` closing the gaps and `court receipts
-parent N` rising, `court fold …`/`court fold witnessed …` once a lane is
-short, `[{tag}] orbit ring …` on voices, and whether `axis opened` and
-`court cell class` appear once sections stand at two vantages. Before or
-beside that: the two voice faults above (`open_axis` on held cites, `h 0`
-on the stroke line) as their own items, then S13.11 onward. The older
-reading list below stands for the items it names.
+Read the soak on d6e19a1 in kernel coordinates: `court orbit docket …`
+period rising above 1 once ruled listings are passed over (R1); `court
+nerve deferred by …` once per aperture per destination in place of the
+per-act line (R2); voices' `dwell` as the surface, tens not tens of
+thousands (R3); `court receipt backfill … admitted` pages and `court
+receipts parent N` rising (R4); `court fold refused … [origin … carried
+…]` naming the two origins where a witness still refuses (R5); `court
+cell filled`/`court cell class` once two sections stand on a chart (R6);
+`court phase …` once per aperture of docket orbits with `comprehension
+n/m` over a span (R7). Then S13.11 onward, and the item R6 names: spelling
+a versor-related pair's versor as an alphabet rotor. The older reading
+list below stands for the items it names.
 
 Earlier list (Stage 12 recut): read: `cites > 0` on attests (bodies as words, S12.3a),
 shared strata in the cover (fewer unique charts), `pivot … discharged` or
