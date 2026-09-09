@@ -141,6 +141,32 @@ assert_eq!(cells.len(), 4, "both bars' cells ride it");
 assert_eq!(f.demands.get(&crate::transducer::sentence::demand_key(kind, chart)), Some(&idx), "and it is read by (kind, chart)");
 }
 
+/// 50.5 (F step 5) — THE DEMANDS RIDE THE RULE: over a bundle of two pairs
+/// that each create a bar of one chart, the rule form carries one `Source`
+/// demand vertex with both pairs' cells, and the sentence mints whole —
+/// its measure the deflation its words closed and the cells its demand
+/// asks for — where a form with a remainder and no demand mints nothing.
+#[test]
+fn demands_ride_the_rule_form_and_the_sentence_mints_whole() {
+use crate::transducer::sentence::Demand;
+let family = vec![
+    (grid(&["1100", "0000", "0000", "0000"]), grid(&["1100", "0000", "0220", "0000"])),
+    (grid(&["0000", "1100", "0000", "0000"]), grid(&["0000", "1100", "0000", "0220"])),
+];
+let rule = extract_rule(&family).expect("the bundle extracts");
+let demands: Vec<_> = rule.form.demand_vertices().collect();
+assert_eq!(demands.len(), 1, "one (kind, chart) over the bundle: {:?}", rule.form.vertices);
+let (_, kind, _, cells) = demands[0];
+assert_eq!(*kind, Demand::Source { multiplicity: 1 });
+assert_eq!(cells.len(), 4, "both pairs' created cells ride it: {cells:?}");
+let word = mint_sentence(&rule, &family, &NoCrystal).expect("a sentence with demands mints whole");
+assert!(word.is_sentence());
+assert!(word.magnitude().iter().any(|&m| m > 0), "it measures what it asks for: {:?}", word.magnitude());
+let back = crate::transducer::sentence::from_element_form(&word).expect("its tape decodes");
+assert_eq!(back.demand_vertices().count(), 1, "the demand rides the tape");
+assert!(!back.is_closed());
+}
+
 /// Three touching after-supports: two adjacency faces besides the
 /// Frame star, and the 1-skeleton is not a tree.
 #[test]

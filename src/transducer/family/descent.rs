@@ -65,11 +65,48 @@ pub fn mint_sentence(
     family: &[(Grid, Grid)],
     crystal: &dyn Crystal,
 ) -> Option<element::Element> {
-    let (mag, remainders) = form_descent(&rule.form, family, crystal);
-    if remainders.iter().any(|r| !r.is_empty()) {
-        return None;
-    }
+    let mag = sentence_measure(&rule.form, family, crystal)?;
     crate::transducer::sentence::as_element_form(&rule.form, mag)
+}
+
+/// What a sentence measures over its bundle (50.5). A sentence with no
+/// demand vertex measures its descent and is spoken only when every pair
+/// closes; a sentence with demand vertices is spoken whole: its closed
+/// sub-complex measures the deflation its words performed on every pair
+/// — before less after per lane, whether or not the pair closed — and its
+/// demands measure the cells they stand for, so a sentence that closes
+/// nothing yet still carries what it asks for. `None` when a form with no
+/// demands leaves a remainder: that is a withheld form, never a word.
+pub fn sentence_measure(form: &Form, family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Option<[u64; 4]> {
+    let (pay, remainders) = form_descent(form, family, crystal);
+    if form.demand_vertices().next().is_none() {
+        return remainders.iter().all(|r| r.is_empty()).then_some(pay);
+    }
+    let mut mag = [0u64; 4];
+    for (x, y) in family {
+        let before_chain = crate::arc::refine_delta(x, y)
+            .map(|r| r.delta)
+            .unwrap_or_else(|| residual_of(Some(x), y));
+        let spoken = apply_form(form, x, &crate::transducer::alphabet::Word::identity(), crystal);
+        let grid = spoken.as_ref().map(|s| s.grid());
+        let after_chain = residual_of(grid.as_ref(), y);
+        let closed = crate::economy::deflation_of(&crate::economy::lane_moves(
+            &element::measure_lanes(&after_chain),
+            &element::measure_lanes(&before_chain),
+        ));
+        for (m, d) in mag.iter_mut().zip(&closed) {
+            *m = m.saturating_add(*d);
+        }
+    }
+    let mut demanded: Vec<crate::transducer::sentence::Cell> = Vec::new();
+    for (_, _, _, cells) in form.demand_vertices() {
+        demanded.extend(cells.iter().copied().filter(|c| c.2 != c.3));
+    }
+    let asked = element::measure_lanes(&demanded);
+    for (m, a) in mag.iter_mut().zip(&asked) {
+        *m = m.saturating_add(*a);
+    }
+    Some(mag)
 }
 
 /// Pressure of a form spoken over its germinating bundle (A1, 12.6):

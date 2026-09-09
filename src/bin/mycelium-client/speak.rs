@@ -53,6 +53,12 @@ pub(crate) fn speak_form(
         }
     };
     let (mag, remainders) = mycelium::transducer::family::form_descent(form, train, &entity.epigenome);
+    // 50.5 (F step 5): a sentence with demand vertices is uttered WHOLE —
+    // its closed sub-complex and its demands together — never withheld
+    // and never expressed as a residual.
+    if form.demand_vertices().next().is_some() {
+        return speak_with_demands(entity, tag, rule, train, &fam);
+    }
     let n_rem: usize = remainders.iter().map(|r| r.len()).sum();
     if remainders.iter().any(|r| !r.is_empty()) {
         let n_pairs = remainders.iter().filter(|r| !r.is_empty()).count();
@@ -94,6 +100,71 @@ pub(crate) fn speak_form(
         }
         Err(e) => {
             eprintln!("[{tag}] form withheld: family {fam} {e}");
+            false
+        }
+    }
+}
+
+/// 50.5 — THE SENTENCE WITH ITS DEMANDS, uttered whole: the closed
+/// sub-complex measures what its words closed, the demand vertices what
+/// they ask for (`sentence_measure`); one `sentence spoken` line, one
+/// `demand` line per (kind, chart) and one `edge remainder` line per pair
+/// of bodies no single versor carried (34.3).
+fn speak_with_demands(
+    entity: &mut Entity,
+    tag: &str,
+    rule: &mycelium::transducer::sentence::SentenceRule,
+    train: &mycelium::transducer::family::Family,
+    fam: &str,
+) -> bool {
+    use mycelium::transducer::sentence::Vertex;
+    let form = &rule.form;
+    let Some(word) = mycelium::transducer::family::mint_sentence(rule, train, &entity.epigenome) else {
+        eprintln!("[{tag}] form withheld: family {fam} no measured descent and no demand");
+        return false;
+    };
+    let addr = word.address();
+    let hx = |b: &[u8]| format!("{:02x}{:02x}…", b.first().copied().unwrap_or(0), b.get(1).copied().unwrap_or(0));
+    if entity.already_taught(&word) {
+        entity.remember_spoken(&word);
+        return true;
+    }
+    match entity.speak(std::slice::from_ref(&word)) {
+        Ok(codes) => match codes.first().copied() {
+            Some(mycelium::anastome::dialogue::SPEECH_REFUSED) => {
+                eprintln!("[{tag}] sentence withheld: family {fam} refused on the wire");
+                false
+            }
+            _ => {
+                let demands = form.demand_vertices().count();
+                let remainder_edges = form
+                    .faces
+                    .iter()
+                    .filter(|f| f.i != 0 && f.j != 0 && f.edge.is_none())
+                    .filter(|f| {
+                        matches!(form.vertices.get(f.i as usize), Some(Vertex::Word { .. }))
+                            && matches!(form.vertices.get(f.j as usize), Some(Vertex::Word { .. }))
+                    })
+                    .count();
+                eprintln!(
+                    "[{tag}] sentence spoken: {} vertices {} demands {demands} loops {} remainder edges {remainder_edges}",
+                    hx(addr.as_bytes()),
+                    form.vertices.len(),
+                    form.loops.len()
+                );
+                for (_, kind, chart, _) in form.demand_vertices() {
+                    eprintln!("[{tag}] demand {} chart {} on {}", kind.label(), hx(chart.key().as_bytes()), hx(addr.as_bytes()));
+                }
+                for f in &form.faces {
+                    if f.i != 0 && f.j != 0 && f.edge.is_none() {
+                        eprintln!("[{tag}] edge remainder {}-{} on {}", f.i, f.j, hx(addr.as_bytes()));
+                    }
+                }
+                true
+            }
+        },
+        Err(e) => {
+            eprintln!("[{tag}] sentence withheld: family {fam} {e}");
             false
         }
     }

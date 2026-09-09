@@ -452,6 +452,26 @@ pub fn extract_rule_with(
             let _ = form.regauge(&gamma);
         }
     }
+    // 50.5 (F step 5): the demands of every pair ride the rule, one vertex
+    // per (kind, chart) over the bundle, carrying every pair's cells.
+    let mut by_demand: crate::network::nerve::Keyed<Demanded> = crate::network::nerve::Keyed::new();
+    for pf in &pair_forms {
+        for (_, kind, chart, cells) in pf.demand_vertices() {
+            let key = crate::transducer::sentence::demand_key(kind, chart);
+            match by_demand.get_mut(&key) {
+                Some((_, _, held)) => held.extend_from_slice(cells),
+                None => {
+                    by_demand.insert(key, (kind.clone(), chart.clone(), cells.to_vec()));
+                }
+            }
+        }
+    }
+    for (_, (kind, chart, cells)) in by_demand.fiber(crate::network::nerve::ROOT) {
+        let mut cells = cells.clone();
+        cells.sort_unstable();
+        cells.dedup();
+        form.vertices.push(demand_vertex(kind.clone(), chart, cells));
+    }
     form.depth = form.depth_of();
     form.loops = Form::loops_of(&form.faces, form.vertices.len());
     form.ratio = scale;
