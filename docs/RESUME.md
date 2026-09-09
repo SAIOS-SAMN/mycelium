@@ -55,8 +55,20 @@ were not touched.
   remainder edge for a versor-related pair no rotor spells); R7 d6e19a1
   (phase read when the docket orbit count crosses a multiple of
   `aperture_cycle()`). Rows in the task list. The fleet was relaunched on
-  d6e19a1 (no tape change since ffed51c, so a restart keeps the ledger);
-  the preliminary reading is in the session's report.
+  d6e19a1 (no tape change since ffed51c, so a restart keeps the ledger),
+  read for one aperture, and STOPPED on the operator's word. The
+  operator's reading of that soak: the market is flooded with garbage, not
+  dialects — voices list unreduced residual chains as if they were words
+  (226 remainders expressed against 0 forms spoken, 235 held against 23
+  reduced, genomes of 250–420 ruled words that comprehend 0 of 2 listings,
+  no axis opened, no class, no refinement), and the court rules and
+  sections them. The next work is the language itself, not the court's
+  plumbing. New faults from that reading: the back-fill fetches from the
+  reporter rather than the signer (`… 1083..1083 admitted 0` repeats, every
+  hypha's view of its peers' chains at K ~1k against heads at 10–12k);
+  back-fill throughput (~3 receipts/s) below the receipt rate (~10/s);
+  the phase window thin on a period-1 docket (b `h 12262..12262 0/0`);
+  `axes_opened()` is a run counter; b at 204 % CPU with unnamed threads.
 - **Earlier pause 2026-09-09** after V1 (9d66c45) and V2 (ffed51c) landed
   and the fleet was recut on ffed51c at epoch 6 (genesis be05…), every
   commit of the pass in one soak.
