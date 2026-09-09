@@ -5,6 +5,7 @@
 //! what a lapsed docket releases, what this court serves a peer, and the
 //! task a listing is bound to.
 
+pub mod era;
 pub mod fills;
 pub mod glue;
 pub mod lapse;

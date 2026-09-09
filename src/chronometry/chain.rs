@@ -1,6 +1,7 @@
 // 45 — THE RECEIPT CHAIN: append-only, parent-linked, and the order two
 // receipts stand in.
 
+use super::era::Root;
 use super::receipt::{ActKind, KStepReceipt, Parent};
 use crate::network::nerve::Keyed;
 use crate::physics::Budget;
@@ -9,6 +10,11 @@ use crate::physics::Budget;
 #[derive(Debug, Clone)]
 pub struct ReceiptChain {
     pub(super) receipts: Vec<KStepReceipt>,
+    /// THE FOLD ROOT (45.8): the archived prefix's head this hot chain
+    /// stands on, or none before the first fold. K, the previous hash and
+    /// the height continue from it; the archived receipts are held cold in
+    /// `ARC1` and are not read through this chain.
+    root: Option<Root>,
     vk: [u8; 32],
     /// Verified peer receipts, keyed by chain hash, so parent heights re-derive.
     known: Keyed<KStepReceipt>,
@@ -28,6 +34,7 @@ impl Default for ReceiptChain {
     fn default() -> Self {
         ReceiptChain {
             receipts: Vec::new(),
+            root: None,
             vk: [0u8; 32],
             known: Keyed::new(),
             mine: Keyed::new(),
@@ -47,24 +54,60 @@ impl ReceiptChain {
         }
     }
 
-    /// The next step index — the current K (0 at genesis).
+    /// The next step index — the current K (0 at genesis; one past the
+    /// fold root and the hot receipts after a fold).
     pub fn next_step_index(&self) -> u64 {
-        self.receipts.len() as u64
+        self.root.map_or(0, |r| r.k + 1) + self.receipts.len() as u64
     }
 
-    /// The head's chain hash (all zeros before genesis).
+    /// The head's chain hash (the fold root's before the first hot receipt;
+    /// all zeros before genesis).
     pub fn head_hash(&self) -> [u8; 32] {
-        self.receipts.last().map_or([0u8; 32], |r| r.chain_hash)
+        self.receipts
+            .last()
+            .map(|r| r.chain_hash)
+            .or_else(|| self.root.map(|r| r.hash))
+            .unwrap_or([0u8; 32])
     }
 
     /// The head receipt's step index. Zero before genesis.
     pub fn head_k(&self) -> u64 {
-        self.receipts.last().map_or(0, |r| r.step_index)
+        self.receipts
+            .last()
+            .map(|r| r.step_index)
+            .or_else(|| self.root.map(|r| r.k))
+            .unwrap_or(0)
     }
 
     /// TUniversal: height of the head receipt. Zero before genesis.
     pub fn head_height(&self) -> u64 {
-        self.receipts.last().map_or(0, |r| r.height)
+        self.receipts
+            .last()
+            .map(|r| r.height)
+            .or_else(|| self.root.map(|r| r.height))
+            .unwrap_or(0)
+    }
+
+    /// The fold root this chain stands on, if it was ever folded.
+    pub fn root(&self) -> Option<Root> {
+        self.root
+    }
+
+    /// FOLD (45.8): the receipts at or below `k` leave the hot chain and
+    /// are returned, cold, with the root they leave it standing on. `None`
+    /// when no hot receipt sits at or below `k`: nothing to fold.
+    pub fn fold_before(&mut self, k: u64) -> Option<(Vec<KStepReceipt>, Root)> {
+        let n = self.receipts.iter().take_while(|r| r.step_index <= k).count();
+        let last = self.receipts.get(n.checked_sub(1)?)?;
+        let root = Root { k: last.step_index, hash: last.chain_hash, height: last.height };
+        let tail = self.receipts.split_off(n);
+        let cold = std::mem::replace(&mut self.receipts, tail);
+        self.mine = Keyed::new();
+        for (i, r) in self.receipts.iter().enumerate() {
+            self.mine.insert(r.chain_hash, i);
+        }
+        self.root = Some(root);
+        Some((cold, root))
     }
 
     /// Height of a receipt this chain holds, by its chain hash. `None` when
@@ -115,7 +158,7 @@ impl ReceiptChain {
         let step_index = self.next_step_index();
         let prev = self.head_hash();
         let delta = delta.as_ref().to_vec();
-        let height = if self.receipts.is_empty() {
+        let height = if self.receipts.is_empty() && self.root.is_none() {
             0
         } else {
             let mut m = self.head_height();
@@ -141,16 +184,18 @@ impl ReceiptChain {
         self.receipts.last()
     }
 
-    /// Verify the whole chain: indices monotone from 0, every link's parent hash
-    /// matches, every chain hash recomputes, every height re-derives.
+    /// Verify the whole hot chain: indices monotone from 0 (or from one past
+    /// the fold root), every link's parent hash matches, every chain hash
+    /// recomputes, every height re-derives.
     pub fn verify_chain_integrity(&self) -> bool {
-        let mut prev = [0u8; 32];
-        let mut prev_h = 0u64;
+        let mut prev = self.root.map_or([0u8; 32], |r| r.hash);
+        let mut prev_h = self.root.map_or(0, |r| r.height);
+        let first_k = self.root.map_or(0, |r| r.k + 1);
         for (i, r) in self.receipts.iter().enumerate() {
-            if r.step_index != i as u64 || r.prev_receipt_hash != prev {
+            if r.step_index != first_k + i as u64 || r.prev_receipt_hash != prev {
                 return false;
             }
-            let expect_h = if i == 0 {
+            let expect_h = if i == 0 && self.root.is_none() {
                 0
             } else {
                 let mut m = prev_h;
@@ -295,6 +340,11 @@ impl ReceiptChain {
     /// Rehydrate a chain from persisted receipts. Integrity is verified
     /// before acceptance — a tampered journal refuses whole.
     pub fn from_receipts(receipts: Vec<KStepReceipt>) -> Option<ReceiptChain> {
+        Self::from_receipts_at(None, receipts)
+    }
+
+    /// Rehydrate a hot chain standing on a fold root (45.8), or on none.
+    pub fn from_receipts_at(root: Option<Root>, receipts: Vec<KStepReceipt>) -> Option<ReceiptChain> {
         let vk = receipts.first().map(|r| r.vk).unwrap_or([0u8; 32]);
         // The index is built before integrity is verified, because
         // verification re-derives every height through it.
@@ -304,6 +354,7 @@ impl ReceiptChain {
         }
         let c = ReceiptChain {
             receipts,
+            root,
             vk,
             known: Keyed::new(),
             mine,

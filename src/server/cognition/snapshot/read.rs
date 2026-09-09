@@ -72,6 +72,7 @@ impl Kernel {
             tag(b, pos, b"KCH1")?;
             let head: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
             *pos += 32;
+            let root = crate::chronometry::Root::read_opt(b, pos)?;
             let n = read_u32(b, pos)? as usize;
             if n > b.len().saturating_sub(*pos) / 106 {
                 return None;
@@ -81,7 +82,19 @@ impl Kernel {
                 receipts.push(crate::chronometry::KStepReceipt::read(b, pos)?);
             }
             kernel.court_head = head;
-            kernel.chain = crate::chronometry::ReceiptChain::from_receipts(receipts)?;
+            kernel.chain = crate::chronometry::ReceiptChain::from_receipts_at(root, receipts)?;
+            // ARC1: the eras, in K order. Each era's receipts re-verify as
+            // a chain of their own below their root.
+            tag(b, pos, b"ARC1")?;
+            let ne = read_u32(b, pos)? as usize;
+            if ne > b.len().saturating_sub(*pos) / 56 {
+                return None;
+            }
+            let mut archive = Vec::with_capacity(ne);
+            for _ in 0..ne {
+                archive.push(crate::chronometry::Era::read(b, pos)?);
+            }
+            kernel.archive = archive;
             // The prior measurement, continued incrementally (never read as
             // current: its generations are unknowable here).
             tag(b, pos, b"RNK1")?;

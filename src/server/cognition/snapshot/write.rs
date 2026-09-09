@@ -38,10 +38,19 @@ impl Kernel {
         // the hypha's clock continues across boots instead of restarting.
         out.extend_from_slice(b"KCH1");
         out.extend_from_slice(&self.court_head);
+        // The fold root before the hot receipts (45.8, S13.9), so a chain
+        // that begins at a fold re-verifies from it.
+        crate::chronometry::Root::write_opt(self.chain.root().as_ref(), &mut out);
         let receipts = self.chain.receipts();
         out.extend_from_slice(&(receipts.len() as u32).to_le_bytes());
         for r in receipts {
             r.write(&mut out);
+        }
+        // ARC1: the eras this court folded, in K order, cold.
+        out.extend_from_slice(b"ARC1");
+        out.extend_from_slice(&(self.archive.len() as u32).to_le_bytes());
+        for era in &self.archive {
+            era.write(&mut out);
         }
         // THE RANK section: each listing's closure and moduli as last
         // measured, so a boot continues the measurement instead of walking

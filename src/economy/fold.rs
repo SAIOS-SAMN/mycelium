@@ -18,30 +18,36 @@ pub struct Folded {
     pub net: [u64; 4],
 }
 
+/// The nets a fold would write: the prefix's row count, one (identity,
+/// net) per identity with a nonzero net in identity order, and their total.
+struct Nets {
+    replaced: usize,
+    rows: Vec<([u8; 32], [u64; 4])>,
+    total: [u64; 4],
+}
+
 impl Treasury {
-    /// FOLD the rows anchored at or below `k_head` into `epoch` rows
-    /// anchored to the fold receipt. The net per identity is read off the
-    /// rows themselves: genesis and mint credit, burn and slash debit, a
-    /// transfer's two halves (one anchor, one vector, debit then credit)
-    /// move between two identities, and a stake, an escrow or a discharge
-    /// moves within one and nets nothing. A net below zero on any lane, an
-    /// unpaired transfer, or an audit that fails before or after the fold
-    /// is `REFUSE_FOLD_INEXACT` and writes nothing.
-    pub fn fold(&mut self, k_head: u64, anchor: Anchor) -> Result<Folded, &'static str> {
+    /// THE NET PER IDENTITY over the rows anchored at or below `k_head`,
+    /// read off the rows themselves: genesis, mint and an earlier epoch
+    /// credit, burn and slash debit, a transfer's two halves (one anchor,
+    /// one vector, debit then credit) move between two identities, and a
+    /// stake, an escrow or a discharge moves within one and nets nothing.
+    /// A net below zero on any lane or an unpaired transfer half is
+    /// `REFUSE_FOLD_INEXACT`.
+    fn nets(&self, k_head: u64) -> Result<Nets, &'static str> {
         let inexact = crate::verdict::REFUSE_FOLD_INEXACT;
-        self.audit().map_err(|_| inexact)?;
-        let (prefix, rest): (Vec<Entry>, Vec<Entry>) =
-            self.entries.iter().cloned().partition(|e| e.k_step <= k_head);
         let mut net: Keyed<[i128; 4]> = Keyed::new();
-        let mut half: Option<Entry> = None;
-        for e in &prefix {
+        let mut half: Option<&Entry> = None;
+        let mut replaced = 0usize;
+        for e in self.entries.iter().filter(|e| e.k_step <= k_head) {
+            replaced += 1;
             let sign: i128 = match e.kind {
                 Kind::Genesis | Kind::Mint | Kind::Epoch => 1,
                 Kind::Burn | Kind::Slash => -1,
                 Kind::Stake | Kind::Unstake | Kind::Escrow | Kind::Release | Kind::Revoke => 0,
                 Kind::Transfer => match half.take() {
                     None => {
-                        half = Some(e.clone());
+                        half = Some(e);
                         -1
                     }
                     Some(debit) => {
@@ -64,12 +70,10 @@ impl Treasury {
         if half.is_some() {
             return Err(inexact);
         }
-        let mut epochs = Vec::new();
+        let mut rows = Vec::new();
         let mut total = [0u64; 4];
         for (who, n) in net.fiber(ROOT) {
-            let Ok(who) = <[u8; 32]>::try_from(who.as_slice()) else {
-                return Err(inexact);
-            };
+            let who = <[u8; 32]>::try_from(who.as_slice()).map_err(|_| inexact)?;
             let mut mu = [0u64; 4];
             for (m, &v) in mu.iter_mut().zip(n) {
                 *m = u64::try_from(v).map_err(|_| inexact)?;
@@ -80,12 +84,34 @@ impl Treasury {
             for (t, &m) in total.iter_mut().zip(&mu) {
                 *t = t.checked_add(m).ok_or(inexact)?;
             }
-            epochs.push(Entry { kind: Kind::Epoch, who, mu, k_step: anchor.0, receipt: anchor.1 });
+            rows.push((who, mu));
         }
-        let replaced = prefix.len();
-        let rows = epochs.len();
+        Ok(Nets { replaced, rows, total })
+    }
+
+    /// What a fold at `k_head` would do, without writing it: the audit
+    /// must hold now and the nets must read exact.
+    pub fn fold_reading(&self, k_head: u64) -> Result<Folded, &'static str> {
+        self.audit().map_err(|_| crate::verdict::REFUSE_FOLD_INEXACT)?;
+        let Nets { replaced, rows, total } = self.nets(k_head)?;
+        Ok(Folded { replaced, rows: rows.len(), net: total })
+    }
+
+    /// FOLD the rows anchored at or below `k_head` into `epoch` rows
+    /// anchored to the fold receipt. The audit failing before or after, a
+    /// net below zero on a lane, or an unpaired transfer half is
+    /// `REFUSE_FOLD_INEXACT` and the journal is exactly as it was.
+    pub fn fold(&mut self, k_head: u64, anchor: Anchor) -> Result<Folded, &'static str> {
+        let inexact = crate::verdict::REFUSE_FOLD_INEXACT;
+        self.audit().map_err(|_| inexact)?;
+        let Nets { replaced, rows, total: net } = self.nets(k_head)?;
+        let epochs: Vec<Entry> = rows
+            .iter()
+            .map(|&(who, mu)| Entry { kind: Kind::Epoch, who, mu, k_step: anchor.0, receipt: anchor.1 })
+            .collect();
         let before = std::mem::take(&mut self.entries);
         let (issued, burned) = (self.issued, self.burned);
+        let rest = before.iter().filter(|e| e.k_step > k_head).cloned();
         self.entries = epochs;
         self.entries.extend(rest);
         self.refold_supply();
@@ -95,6 +121,6 @@ impl Treasury {
             self.burned = burned;
             return Err(inexact);
         }
-        Ok(Folded { replaced, rows, net: total })
+        Ok(Folded { replaced, rows: rows.len(), net })
     }
 }

@@ -83,6 +83,11 @@ pub struct Kernel {
     /// authority (algebraic time, no wall clocks); every install seals a
     /// parent-linked receipt (LAW-5 continuity). The Step-4 ledger's spine.
     pub(crate) chain: crate::chronometry::ReceiptChain,
+    /// `ARC1` (28, 45.8): the eras this court folded, in K order — each
+    /// the fold root, the identities its epoch rows named and the receipts
+    /// of the prefix, cold. Written once at the fold, never rewritten;
+    /// read to serve a K-range fetch or a court's replay of an era.
+    pub(crate) archive: Vec<crate::chronometry::Era>,
     /// The head hash of the court's chain as last ruled to this hypha —
     /// every settlement receipt here links to it, so the hypha's k-steps
     /// are causally ordered against the mesh's temporal authority.

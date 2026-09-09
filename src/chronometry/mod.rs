@@ -5,9 +5,11 @@
 //! reads a wall clock.
 
 pub mod chain;
+pub mod era;
 pub mod receipt;
 
 pub use chain::*;
+pub use era::*;
 pub use receipt::*;
 
 #[cfg(test)]
