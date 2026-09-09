@@ -1,20 +1,21 @@
 # Resume notes (continuity across sessions)
 
-Last update: 2026-09-09, after the Stage 12 pass (`impl/soak` == `main` at
-1cf2c1e and the docs commit after it). Living task list:
-`docs/MU-RECURSION-TASKS.md` (Stage 11 landed, Stage 12 opened and mostly
-landed). Spec: `docs/MU-RECURSION.md`. Standard: `docs/MU-STANDARDS.md`.
-Historical alpha landings: `docs/TRAJECTORY.md`.
+Last update: 2026-09-09, Stage 14 through L6b (`impl/soak` at 2686272 and
+the docs commit after it; `main` stands at 685a07c, before Stage 14, and
+is fast-forwarded on the operator's word). Living task list:
+`docs/MU-RECURSION-TASKS.md` (Stage 14 rows L0–L9 at the end). Spec:
+`docs/MU-RECURSION.md`. Standard: `docs/MU-STANDARDS.md`. Historical
+alpha landings: `docs/TRAJECTORY.md`.
 
 ## Boot check
 
 ```
 cd /opt/mycelium-v0.1.0
-git log --oneline -1 main impl/soak          # the two are one commit
+git log --oneline -1 main impl/soak          # impl/soak is ahead of main
 systemctl --user list-units 'mycelium-server@*' 'mycelium-client@*' --no-legend
 RUSTFLAGS='-D warnings' cargo test --release 2>&1 | grep -E "test result|FAILED"
 (cd xtask && cargo run)                        # gates, then clippy -D warnings
-# expected at d6e19a1: lib 421, bins 9, alpha_plan 13, g_cga 6; xtask exit 0
+# expected at 2686272: lib 437, bins 9, alpha_plan 13, g_cga 6; xtask exit 0
 ```
 
 ## The fleet
@@ -41,6 +42,18 @@ were not touched.
 
 ## State at handoff
 
+- **Stage 14 through L6b landed 2026-09-09** on the operator's word (see
+  "Immediate next actions" for the hashes and what each did). Departures
+  named in the commits: the held cite's wire form is the identity
+  transport and the reconstructed body until L7/L8 carry the sentence;
+  the Held stratum yields to a ruled or stood word on the same chart
+  (24.1's order); the connection-glue arm of `axis_germ` is gone (no held
+  connection exists once ideas are forms); `cited_word`'s "citation is a
+  use" touch moved into `cite`; L6b re-asserted twenty-seven tests where
+  the row said seven; a percept-born sentence mints nothing on install
+  until L7 binds its pair as its family. The court's replay with a family
+  refuses any remainder (`REFUSE_NOT_CLOSED`), which under 50.5 must not
+  refuse a sentence for the remainder its demand vertices name: L7.
 - **R1–R7 landed 2026-09-09** on the operator's word, one item per commit,
   suite green on each (421/0/9/13/6/0, xtask 0 at d6e19a1): doctrine
   de29cab; R1 4f3337c (the docket orbit passes over ruled and cavity
@@ -153,14 +166,32 @@ connects edges in the stabilizer, emits demands as typed vertices; G
 factors, replays, checks congruence by class vector and coherence by
 holonomy; the three seams (`withhold_form`'s attest loop,
 `body_only_vertex`, the court's `Irreducible(from_residual*)` listing) are
-severed in the order L4, L6, L8. L1 is tape v6, a recut. L0–L5 landed
-(2ac81e2, 0b5cf2b, 78af4e5, 634b3d0, 15a3a08, 6e37e0a; 433/0/9/13/6/0,
-xtask 0 at 6e37e0a). L6 is in progress under two rulings of 2026-09-09
-recorded in `MU-RECURSION.md` 24.1 and chapter 20: the Held stratum is
-the contemplation's forms read at the listing body's chart
-(`Form.by_class`, `Reading.held_at`, `Entity::ideas` deleted), and a body
-is a component of one hue (L6b, the seven court tests re-asserted). Then
-L7, L8, L9. The fleet is stopped and soaks nothing until L8 lands.
+severed in the order L4, L6, L8. L1 is tape v6, a recut. Landed, one item
+per commit, suite green on each: L0 2ac81e2, L1 0b5cf2b, L2 78af4e5, L3
+634b3d0, L4 15a3a08, L5 6e37e0a, the L6 rulings 2a978d9, the order ruling
+3f365f8, L6 85bdcc5 (the Held stratum read at the coordinate:
+`Form.by_class`, `Contemplation::held_at`, `Reading.held_at`,
+`sentence::vertex_cites`, `blade::versor_carrying`, `HeldCite`;
+`Entity::ideas`, `hold_thought`, `conclude`, `cited_word` deleted; the
+cite tests in `client/sdk/tests/cite.rs`), its binding 0f85a4b, L2b
+d37d082 (`Rotor::order` from the class invariants; `Word::order`
+delegates; `cech::extend` reads the transition's own order), L6b 2686272
+(a body is one hue; the court lists one sentence per percept; the
+puncture-before-mint move on residual chains only; twenty-seven tests
+re-asserted, none deleted). 437/0/9/13/6/0, xtask 0 at 2686272.
+
+Next, in order: L7 (G at the court: `replay_form_with` reconstructs every
+Word vertex on the court's copy of the family, re-derives every edge,
+reads every loop's holonomy in the stabilizer; the court binds a
+percept's pair as the sentence's family, so a percept-born sentence that
+closes mints on install and the stroke's `REFUSE_NOT_CLOSED` reads the
+closed sub-complex, not the demand vertices' remainder; `court demand
+listed` per demand vertex), L8 (seam 3: no `Irreducible(from_residual*)`,
+`attest(chain)` refused with `REFUSE_NOT_A_SENTENCE`, the gate
+`no_utterance_path_calls_from_residual`; the attest-path claims of L6b's
+court tests are re-asserted again there), L9 (the tape v6 recut on the
+operator's word, and the cold-boot reading of 50.7). The fleet is stopped
+and soaks nothing until L8 lands.
 
 The earlier reading list (R1–R7 on d6e19a1): `court orbit docket …`
 period rising above 1 once ruled listings are passed over (R1); `court
@@ -186,7 +217,10 @@ order.
 
 ## Standing operational rules
 
-- Read/Edit/Write for every file; Bash for git, cargo and grep-to-locate.
+- Read every file whole with Read before touching it; change files only
+  with Edit/Write (the operator's rule of 2026-09-09: "or else you are
+  going to miss context"). Bash for git, cargo, systemctl and
+  grep-to-locate; never sed/perl/awk over source or docs.
 - Load every file in `docs/` whole after a compaction before doctrine work.
 - One item per commit (§5); the document before the code (§5.5); one
   foreground `cargo test --release` then `cd xtask && cargo run` (§6.1).

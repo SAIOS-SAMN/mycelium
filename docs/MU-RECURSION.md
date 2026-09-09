@@ -4194,6 +4194,11 @@ family/perceive.rs  scene_of_chain NEW (50.6 seam 1: a chain's before and after 
 client/sdk    Entity::ideas DELETED, hold_thought DELETED, conclude DELETED, cited_word DELETED, WorkingAtlas::standing_addr DELETED (L6);
               hold_chain NEW (the pair form of the chain's scene), WorkingAtlas.held is the contemplation, Entity::cite reads the Held
               stratum through it, open_axis/axis_germ take the held cites' bodies
+alphabet/rotor.rs  Rotor::order NEW (15.3 as ruled: the period of the class invariants); Rotor::word_order DELETED; Word::order delegates;
+              unit_order DELETED; cech/cell.rs word_of_rotor DELETED, extend reads the transition's own order (L2b)
+blade/body.rs  components joins by adjacency within one hue (20 as ruled, L6b)
+server/cognition/reduce.rs  percept_elements lists one sentence per percept, its demand vertices riding it (20, 50.1; L6b);
+              germinate/ingest.rs the puncture-before-mint move applies to residual chains only
 element/carrier.rs  record_torsion as A17's filing call; toroid.rs witness_stored as A17's witness
 cognition.rs  glue_fetched torsion arm (23.7), serve_ruled class records (A19), Kernel::rank debug assertions
 dialogue/      SPEECH_WITHHELD, speech reply missing list, depth_max in digests, syllabus class section, standing byte
