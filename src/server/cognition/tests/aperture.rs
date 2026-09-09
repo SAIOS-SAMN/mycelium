@@ -13,7 +13,9 @@ use crate::cognition::*;
 fn a_depleted_lane_defers_germination_until_the_reserve_recovers() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-// ENTROPIC EXPANSION: eight distinct residual germs drain the residual lane.
+// ENTROPIC EXPANSION: eight distinct germs drain the residual lane — each
+// a new cell of its own hue beside the L, a creation the percept's
+// sentence carries as a demand (20 as ruled, 50.5).
 for n in 0..8u8 {
     let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, n + 2)];
     // One vantage dockets; a second voice on the same pair is a use.
@@ -24,23 +26,27 @@ for n in 0..8u8 {
     }
 }
 // Two fresh germs: their first voices each trigger a syntropic stroke (the
-// mesh is depleted), partially recovering the lane.
-// Distinct single-transition residuals (unique hue pairs, so their tallies
-// are distinct — see the Step-2 note on residual-substance geometry).
+// mesh is depleted), partially recovering the lane. One cell of the L
+// recoloured, two ways: under one hue the recoloured cell is a body of
+// its own, so each percept is a sentence of demands, and the two differ
+// in the hue they ask for.
 let ga = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)]; // (0,0): 1→4
 let gb = vec![(0, 0, 1), (0, 1, 5), (1, 0, 1)]; // (0,1): 1→5
+let held: Vec<Vec<u8>> = k.provisional.fiber(crate::network::nerve::ROOT).map(|(key, _)| key).collect();
 assert_eq!(k.ingest(&a, &ga, [1; 32]), Outcome::GermPending);
+// The sentence A's percept listed, read off the docket by the address
+// the court gave it: the one listing that was not there before.
+let ga_spoken = k
+    .provisional
+    .fiber(crate::network::nerve::ROOT)
+    .find(|(key, _)| !held.contains(key))
+    .map(|(_, e)| e.clone())
+    .expect("ga's sentence is on the docket");
 // Voice 1 has its one claim in flight on this lane (§3.1 as ruled,
 // S13.15); B's first voice is another arriving identity.
 assert_eq!(k.ingest(&a, &gb, [4; 32]), Outcome::GermPending);
 // A's quorum lands on the recovered lane and installs — spending it back out…
 assert_eq!(k.ingest(&a, &ga, [2; 32]), Outcome::GermPending);
-let ga_spoken = k
-    .provisional
-    .fiber(crate::network::nerve::ROOT)
-    .map(|(_, e)| e.clone())
-    .find(|e| e.sub().iter().any(|c| c.2 == 1 && c.3 == 4))
-    .expect("ga's residual is on the docket");
 let mut cover = crate::network::nerve::Cover::new();
 let _ = k.glue_fetched(ga_spoken, [2; 32], [1; 32], &mut cover);
 // …so B finds the lane DEPLETED. The METABOLISM is what defers -- the

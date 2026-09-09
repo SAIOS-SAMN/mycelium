@@ -193,15 +193,22 @@ impl Kernel {
                 // reduction's direct terminal speaks the family.)
                 let centered = residual.sub().to_vec();
                 // The stratum over the residual's chart, read by key: a held
-                // word on the same base positions is a section prospect.
+                // word on the same base positions is a section prospect. A
+                // SENTENCE HAS NO CHAIN (20 as ruled, 50.1): its sections
+                // are the hue sections of its own form (18.2), never this
+                // move, and every sentence shares the empty footprint, so
+                // read here a second sentence sectioned the first.
                 let inv = crate::transducer::stalk::invariant(&centered);
                 let fk = chart_footprint_key(&inv, &centered);
-                if let Some(taddr) = self
-                    .by_footprint
-                    .link(&fk)
-                    .next()
-                    .map(|(a, _)| crate::transducer::address::Address::from(a))
-                {
+                let prospect = match centered.as_slice() {
+                    [] => None,
+                    _ => self
+                        .by_footprint
+                        .link(&fk)
+                        .next()
+                        .map(|(a, _)| crate::transducer::address::Address::from(a)),
+                };
+                if let Some(taddr) = prospect {
                     let Some(held) = self.basis.get(&taddr).map(|w| (**w).clone()) else {
                         self.physics.bump(&mag);
                         return Outcome::GermPending;

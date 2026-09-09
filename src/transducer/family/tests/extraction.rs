@@ -472,41 +472,45 @@ assert_eq!(
 );
 }
 
-/// Two bars that meet in the output are one body there, which no versor
-/// carries either bar onto: the pair form holds no word for them and a
-/// demand vertex each (50.5, 50.6 seam 2). Before this the two stood as
-/// identity-word vertices and were counted as one transport class — a
-/// word class read off bodies nothing reconstructed.
+/// TWO HUES THAT MEET ARE TWO BODIES WITH A CONTACT FACE (chapter 20 as
+/// ruled 2026-09-09, 50.1, 50.3). Two bars of different hues that touch
+/// in the output are two bodies each carried by its own versor — one
+/// translated, one still — so the pair form holds two word vertices, no
+/// demand, and a face between the touching bodies; the pair did not move
+/// rigidly, so that face's edge transport is a remainder edge. Read
+/// hue-blind, the joined output was one blob no versor carried and every
+/// such scene became a deformation demand with no contact face at all.
 #[test]
-fn two_hues_form_a_cycle_the_word_not_the_versor() {
+fn two_hues_that_meet_are_two_bodies_with_a_contact_face() {
 let family = vec![
     (grid(&["110022", "000000"]), grid(&["001122", "000000"])),
     (grid(&["000000", "110022"]), grid(&["000000", "001122"])),
 ];
 let pf = pair_form(&family[0].0, &family[0].1, None);
 let words = pf.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).count();
-assert_eq!(words, 0, "no versor carries a bar onto the joined body: no word vertex, got {words}");
-let kinds: Vec<_> = pf.demand_vertices().map(|(_, k, _, _)| k.clone()).collect();
-assert_eq!(kinds.len(), 2, "two demands, one per bar: {kinds:?}");
+assert_eq!(words, 2, "two bodies of one hue each, both carried: two word vertices, got {words}");
+assert_eq!(pf.demand_vertices().count(), 0, "nothing the eyes could not pair");
+let contact: Vec<&FormFace> = pf.faces.iter().filter(|f| f.i != 0 && f.j != 0).collect();
+assert_eq!(contact.len(), 1, "one face between the two touching bodies, got {}", contact.len());
 assert!(
-    kinds.iter().any(|k| matches!(k, crate::transducer::sentence::Demand::TopologicalDeformation { image, .. } if !image.0.is_empty())),
-    "the bar under the joined body deforms toward it, and the joined body is that deformation's image, no creation: {kinds:?}"
+    contact[0].edge.is_none(),
+    "one bar moved and the other stood: no single versor carries the pair, a remainder edge (50.3)"
 );
-assert!(
-    kinds.iter().any(|k| matches!(k, crate::transducer::sentence::Demand::TopologicalDeformation { image, .. } if image.0.is_empty())),
-    "the bar nothing overlaps vanished: {kinds:?}"
-);
-let rule = extract_rule(&family).expect("the family still extracts a frame");
+let rule = extract_rule(&family).expect("the family extracts");
 let words = rule
     .form
     .vertices
     .iter()
     .filter(|v| matches!(v, Vertex::Word { .. }))
     .count();
-assert_eq!(words, 0, "the rule carries no word it cannot reconstruct, got {words}");
+assert_eq!(
+    words, 1,
+    "correspondence is transport class (21 step 1): both bodies carry the identity word, one rule vertex, their two carriages two sections; got {words}"
+);
+assert_eq!(rule.form.demand_vertices().count(), 0, "and no demand");
 assert!(
     rule.form.loops.iter().all(|c| c.holonomy.is_identity()),
-    "holonomy of identity-word faces is the identity"
+    "the placements' coboundary telescopes around the contact loop"
 );
 let e = crate::transducer::sentence::as_element_form(&rule.form, [1, 0, 0, 0]).expect("element");
 assert!(

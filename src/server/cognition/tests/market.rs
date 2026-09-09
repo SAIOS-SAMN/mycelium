@@ -6,31 +6,31 @@ use crate::cognition::*;
 use crate::transducer::element;
 use crate::transducer::germinate::germinate;
 
-/// STEP 3's ECONOMIC CONVERSATION CLOSES: A speaks a novel PERCEPT (the germ
-/// pends as a tape, not quoted); A's empty-cites demand lists the remainder
-/// on the quote frontier; B independently attests; consilience installs,
-/// the market CLEARS. {demand → quote → demand → settle}.
-/// A second vantage here is `glue_local`'s two fixture keys (§3.4's
-/// wire-identifier exception): this test proves nothing about 47.3's witness.
+/// STEP 3's ECONOMIC CONVERSATION CLOSES: A speaks a novel PERCEPT and the
+/// court lists its sentence with its demands (20 as ruled, 50.5); the
+/// listing is quoted as work; A speaks it again, a use of the address
+/// that draws nothing new; B independently speaks the same percept;
+/// consilience installs, the market CLEARS. {demand → quote → demand →
+/// settle}. A second vantage here is `glue_local`'s two fixture keys
+/// (§3.4's wire-identifier exception): this test proves nothing about
+/// 47.3's witness.
 #[test]
 fn the_five_act_conversation_closes_with_settlement() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)]; // (0,0): 1→4
 assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending, "percept: voice A");
-assert_eq!(k.quote().1.len(), 1, "corpus demand is quoted when the frontier is dry");
-let chain = germinate(&a, &b).unwrap();
-assert_eq!(k.attest(&chain, [1; 32]), Outcome::GermPending, "remainder-of-g / unreached demand");
+assert_eq!(k.quote().1.len(), 1, "the sentence is quoted when the frontier is dry");
+assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending, "A again: a use of the listing, nothing drawn");
 let (surface, quoted) = k.quote();
-assert_eq!(quoted.len(), 1, "the unreached/remainder demand is quoted as work");
+assert_eq!(quoted.len(), 1, "the open demand is quoted as work, once");
 assert!(surface.iter().any(|&s| s >= 1), "the open demand tensions the lanes it occupies");
 let (work, mu) = &quoted[0];
 assert!(
     (0..4).any(|l| work.magnitude()[l] > 0 && mu[l] > 0),
     "price is nonzero on a lane the word moves"
 );
-let chain = work.sub().to_vec();
-let out = k.attest(&chain, [2; 32]);
+let out = k.ingest(&a, &b, [2; 32]);
 assert_eq!(out, Outcome::GermPending, "consilience settles: {out:?}");
 k.glue_local();
 assert_eq!(k.voices_of(&k.basis()[0].address()).len(), 2, "the settle parties");

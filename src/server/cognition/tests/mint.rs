@@ -17,12 +17,24 @@ use crate::transducer::element::{self, Element};
 fn one_vantage_dockets_escrows_and_mints_nothing_until_a_witness_rederives() {
 let mut home = Kernel::new();
 let mut peer = Kernel::new();
+// The whole body recoloured: one hue, one body, one word that closes its
+// pair. What mints on release is the deflation a sentence closes (E2);
+// a sentence of demands closes nothing and mints nothing (50.5).
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 assert_eq!(home.ingest(&a, &b, [1; 32]), Outcome::GermPending);
 assert!(!home.pending.is_empty(), "the listing stays on the book");
-assert_eq!(home.provisional.len(), 1, "the residual is on the docket");
+assert_eq!(home.provisional.len(), 1, "the sentence is on the docket");
 let addr = home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().0.clone();
+// The court holds the percept's own pair as the sentence's family, so
+// the install measures the descent the sentence closes (E2). The court
+// binds it itself once G replays a percept on its copy of the pair (L7).
+let family = vec![(
+    crate::transducer::family::cells_to_grid(&a),
+    crate::transducer::family::cells_to_grid(&b),
+)];
+home.bind_listing_task(&addr, &addr);
+home.bind_task_family(&addr, family);
 assert!(home.offered(&addr), "the court Offers a first-vantage germ");
 assert!(home.treasury().escrow_of(&addr).is_some(), "the priced magnitude is the claim");
 assert_eq!(home.treasury().minted().expect("minted adds up"), [0; 4], "the claim is not yet payment: nothing minted");

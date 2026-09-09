@@ -121,13 +121,14 @@ pub(crate) fn note_cell_read() {
     CELL_READS.with(|c| c.set(c.get().saturating_add(1)));
 }
 
-/// Perceive a scene: its bodies (connected components of the non-background
-/// cells, whatever their hues; hue 0 is the background the eye does not
-/// see). Read this way no two bodies of one scene ever touch, so a pair
-/// form has no face among its bodies and the edge transport of 50.3 is
-/// carried only where after-supports overlap; a body as a component of
-/// ONE hue is the reading the file's header states and a ruling to ask
-/// (L3, Stage 10 P2/P3): it moves the court's segmentation as well.
+/// Perceive a scene: its bodies, each a 4-connected component of cells of
+/// ONE hue (chapter 20, ruled 2026-09-09); hue 0 is the background the
+/// eye does not see. Two touching bodies of different hues are two bodies
+/// sharing a boundary, and the pair form carries that boundary as a
+/// contact face with the edge transport of 50.3, so sliding, relative
+/// rotation and the evolution of a colour boundary are measured on the
+/// edge. The court reads a two-hue percept as one sentence with two body
+/// vertices and their edge, never as two detached listings (50.1).
 pub fn perceive(grid: &Grid) -> Vec<Body> {
     let mut cells: Vec<Cell3> = Vec::new();
     for (r, row) in grid.iter().enumerate() {

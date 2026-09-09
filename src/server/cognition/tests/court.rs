@@ -71,14 +71,16 @@ assert_eq!(
 /// its consilience award (unfinalized speech earns nothing); the docket
 /// exports the spoken word; the upheld verdict releases the award; a
 /// slashing verdict excises the word and debits the voices into the pool.
+/// The second voice speaks the same percept: a percept lists one sentence
+/// (20 as ruled, 50.1), and a second vantage on it is a use of that
+/// address, never a second listing.
 #[test]
 fn installs_are_provisional_until_verdict() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
 assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
-let chain = germinate(&a, &b).unwrap();
-assert_eq!(k.attest(&chain, [2; 32]), Outcome::GermPending);
+assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending);
 // The install PAID NOTHING — the award sits in escrow.
 assert_eq!(k.treasury().balance_mu(&[1; 32]), [0; 4], "unfinalized speech earns nothing");
 assert_eq!(k.treasury().balance_mu(&[2; 32]), [0; 4]);
@@ -105,8 +107,7 @@ let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
 assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
-let chain = germinate(&a, &b).unwrap();
-assert_eq!(k.attest(&chain, [2; 32]), Outcome::GermPending);
+assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending);
 let addr = k.dockets()[0].addr.clone();
 assert!(k.apply_verdict(&addr, crate::anastome::dialogue::RULING_SLASHED));
 assert_eq!(k.treasury().balance_mu(&[1; 32]), [0; 4], "nothing was ever paid");
@@ -116,6 +117,11 @@ assert!(k.dockets().is_empty());
 /// Court organ: docketing a germ does not grow the basis. The stroke
 /// puts a section on the ruled cover. A peer's fetch glues by replay;
 /// a forged word is slashed with a reason. Signatures are not consulted.
+/// The germ is a chain attested on the wire, whose magnitude the blind
+/// replay re-derives from the chain itself; a percept lists a sentence
+/// (20 as ruled), whose magnitude is replayed against its family on the
+/// court's stroke and not at a fetch — L7 brings that replay to the
+/// witness, and L8 retires the attested chain.
 #[test]
 fn court_organ_glue_on_replay_not_on_signatures() {
 let mut home = Kernel::new();
@@ -123,8 +129,9 @@ let mut peer = Kernel::new();
 let mut third = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
-assert_eq!(home.ingest(&a, &b, [1; 32]), Outcome::GermPending);
-assert_eq!(home.ingest(&a, &b, [2; 32]), Outcome::GermPending);
+let chain = germinate(&a, &b).unwrap();
+assert_eq!(home.attest(&chain, [1; 32]), Outcome::GermPending);
+assert_eq!(home.attest(&chain, [2; 32]), Outcome::GermPending);
 assert_eq!(home.basis_len(), 0);
 home.court_stroke(one_stroke_transport);
 let spoken = home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().1.clone();

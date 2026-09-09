@@ -261,8 +261,14 @@ pub fn cohesion_over(rank: &Rank) -> (u64, u64) {
 }
 
 /// A percept is the pair form: `pair_form` → `extract_rule_with` on the
-/// court as on the mind. A family the engine closes is the minted word;
-/// a withheld form is the remainder. No pairing by index, no composite tiles.
+/// court as on the mind, and it is ONE SENTENCE (chapter 20 as ruled
+/// 2026-09-09, 50.1): the pair form's word vertices with their faces and
+/// edges, and its demand vertices riding it (50.5) — never one listing
+/// per body and never one per demand. A two-hue percept is two body
+/// vertices and their edge, not two detached listings. The court lists
+/// the sentence; under L8 it lists the demand vertices by kind beside the
+/// closed sub-complex. A family the engine does not extract, or a form
+/// with no measured descent and no demand, lists its remainder until L8.
 pub fn percept_elements(
     ca: &[Vec<(i64, i64, u8)>],
     cb: &[Vec<(i64, i64, u8)>],
@@ -286,21 +292,6 @@ pub fn percept_elements(
             element::from_residual_framed(&rem, frame)
         }
     };
-    // 50.5: what the pair form could not reconstruct rides it as demand
-    // vertices, each carrying the bodies it stands for; those bodies are
-    // the remainder, and until L8 lists a demand by its kind each stands
-    // as the residual chain of what changed on it.
-    let pf = pair_form(&family[0].0, &family[0].1, family_ratio(&family));
-    let demanded: Vec<Element> = pf
-        .demand_vertices()
-        .filter_map(|(_, _, _, cells)| {
-            let changed: Vec<(i64, i64, u8, u8)> = cells.iter().copied().filter(|c| c.2 != c.3).collect();
-            (!changed.is_empty()).then(|| element::from_residual_framed(&changed, frame))
-        })
-        .collect();
-    if !demanded.is_empty() {
-        return Some(demanded);
-    }
     Some(vec![match extract_rule_with(&family, crystal) {
         Some(rule) => match mint_sentence(&rule, &family, crystal) {
             Some(e) => e,

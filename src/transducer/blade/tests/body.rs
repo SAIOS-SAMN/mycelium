@@ -1,5 +1,5 @@
 // 20 — the body: what lifts to an invertible blade, what has volume, and
-// what joins by adjacency rather than by hue.
+// what joins by adjacency within one hue.
 
 use super::common::*;
 use crate::transducer::blade::*;
@@ -45,14 +45,20 @@ fn a_lone_cell_has_volume() {
     assert!(b.is_invertible());
 }
 
-/// Segmentation is by adjacency, hue-blind: two touching cells of different
-/// hues are ONE body (the recolour is Δ𝒢, read afterward); a gap splits.
+/// A BODY IS ONE HUE (chapter 20, ruled 2026-09-09): two touching cells of
+/// different hues are TWO bodies sharing a boundary — the contact face a
+/// pair form carries with its edge transport — two touching cells of one
+/// hue are one body, and a gap splits. (Read hue-blind, every touching
+/// scene was one blob no versor carried, and every such percept a
+/// deformation demand.)
 #[test]
-fn components_join_by_adjacency_not_hue() {
-    let one = components(&cells(&[(0, 0, 1), (0, 1, 2)]));
-    assert_eq!(one.len(), 1, "adjacent cells are one body regardless of hue");
-    let two = components(&cells(&[(0, 0, 1), (0, 5, 1)]));
-    assert_eq!(two.len(), 2, "a gap separates bodies");
+fn components_join_by_adjacency_and_one_hue() {
+    let two = components(&cells(&[(0, 0, 1), (0, 1, 2)]));
+    assert_eq!(two.len(), 2, "adjacent cells of two hues are two bodies sharing a boundary");
+    let one = components(&cells(&[(0, 0, 1), (0, 1, 1)]));
+    assert_eq!(one.len(), 1, "adjacent cells of one hue are one body");
+    let apart = components(&cells(&[(0, 0, 1), (0, 5, 1)]));
+    assert_eq!(apart.len(), 2, "a gap separates bodies");
 }
 
 /// A translated square is the SAME body up to rigid motion: identical

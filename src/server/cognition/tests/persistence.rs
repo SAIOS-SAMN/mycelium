@@ -2,7 +2,6 @@
 // one, carrier for carrier.
 
 use crate::cognition::*;
-use crate::transducer::germinate::germinate;
 
 /// P7 — the germinated language survives restart: install two germs, snapshot,
 /// restore into a fresh kernel, and the restored kernel RECALLS them (no
@@ -76,8 +75,8 @@ let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
 assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
-let chain = germinate(&a, &b).unwrap();
-assert_eq!(k.attest(&chain, [2; 32]), Outcome::GermPending);
+// The second voice speaks the same percept: one sentence, one docket.
+assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending);
 let before = k.dockets();
 assert_eq!(before.len(), 1);
 assert!(before[0].deflation.iter().any(|&x| x > 0), "deflation was measured at install");

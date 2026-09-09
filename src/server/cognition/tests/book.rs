@@ -112,12 +112,16 @@ assert!(k.basis_len() < 3, "at least one earlier duplicate retired");
 #[test]
 fn projection_escapes_the_greedy_trap() {
 let mut k = Kernel::new();
+// A pair the held language already derives — the court glues the held
+// form into the percept's rule — is decomposed, not settled again (20 as
+// ruled: a percept is one sentence, and one the language spans is spoken
+// by it).
 let install = |k: &mut Kernel, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]| {
     k.ingest(a, b, [1; 32]);
     match k.ingest(a, b, [2; 32]) {
         Outcome::GermPending => k.glue_local(),
-        Outcome::Installed(_) | Outcome::Sectioned(_) => {}
-        o => panic!("expected settle or puncture, got {o:?}"),
+        Outcome::Installed(_) | Outcome::Sectioned(_) | Outcome::Decomposed(_) => {}
+        o => panic!("expected settle, puncture or a spanned pair, got {o:?}"),
     }
 };
 install(&mut k, &[(0, 0, 1), (0, 1, 3), (0, 2, 5)], &[(0, 0, 2), (0, 1, 4), (0, 2, 6)]);
@@ -127,10 +131,13 @@ assert!(k.basis_len() >= 1, "pair forms stand");
 let before = k.basis_len();
 let a = [(0, 0, 1), (0, 1, 3), (0, 2, 5), (0, 3, 7)];
 let b = [(0, 0, 2), (0, 1, 4), (0, 2, 6), (0, 3, 8)];
-// The saddle is one pair form: not peeled by search into two words.
+// The saddle is one pair form: not peeled by search into two words. It
+// stands, decomposes through what is held, or sections a held word on
+// its own positions; it never mints a second word.
+let fused = k.ingest(&a, &b, [3; 32]);
 assert!(
-    matches!(k.ingest(&a, &b, [3; 32]), Outcome::GermPending | Outcome::Decomposed(_)),
-    "a fused pair is one percept"
+    matches!(fused, Outcome::GermPending | Outcome::Decomposed(_) | Outcome::Sectioned(_)),
+    "a fused pair is one percept, got {fused:?}"
 );
 assert_eq!(k.basis_len(), before, "nothing installs on one voice");
 }
@@ -192,14 +199,17 @@ assert_eq!(
 }
 
 /// Dialect/Slashed addresses are heard once; a cocycle row is unique
-/// on (chart, pair, versor).
+/// on (chart, pair, versor). The forged word is an attested chain, whose
+/// magnitude the blind replay re-derives from the chain (a percept's
+/// sentence is replayed against its family, L7; the chain retires at L8).
 #[test]
 fn heard_and_cocycles_do_not_re_row() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
-k.ingest(&a, &b, [1; 32]);
-k.ingest(&a, &b, [2; 32]);
+let chain = germinate(&a, &b).unwrap();
+k.attest(&chain, [1; 32]);
+k.attest(&chain, [2; 32]);
 let spoken = k.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().1.clone();
 let mut forged = spoken.clone();
 forged.mag = [999, 0, 0, 0];
@@ -288,14 +298,16 @@ assert_eq!(
 assert!(!pa.is_empty(), "the book is served");
 }
 
-/// heard drops when the peer's stratum root moves.
+/// heard drops when the peer's stratum root moves. The forged word is an
+/// attested chain, as in the test above.
 #[test]
 fn heard_drops_when_stratum_root_moves() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
-k.ingest(&a, &b, [1; 32]);
-k.ingest(&a, &b, [2; 32]);
+let chain = germinate(&a, &b).unwrap();
+k.attest(&chain, [1; 32]);
+k.attest(&chain, [2; 32]);
 let spoken = k.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().1.clone();
 let mut forged = spoken.clone();
 forged.mag = [999, 0, 0, 0];

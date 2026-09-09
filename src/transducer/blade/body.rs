@@ -191,16 +191,25 @@ pub fn lift(comp: &[(i64, i64, u8)], time_index: i64) -> Blade {
 }
 
 /// 4-connected components of a scene, as `Vec`-of-`Vec` (no maps/sets — Law II).
-/// Two cells join iff they are orthogonally adjacent, regardless of hue (the
-/// object is a shape; the relabel is read afterward as `Δ𝒢`).
+/// A BODY IS ONE HUE (chapter 20, ruled 2026-09-09): two cells join iff
+/// they are orthogonally adjacent and carry the same hue. Two touching
+/// bodies of different hues are two bodies sharing a boundary, which the
+/// pair form carries as a contact face with its edge transport (50.3); a
+/// component of every non-zero cell merged them into one blob no single
+/// versor carries, so every such scene became a deformation demand and no
+/// pair form ever had a contact face.
 pub fn components(cells: &[(i64, i64, u8)]) -> Vec<Vec<(i64, i64, u8)>> {
     // The support in row order; its 1-skeleton read off the ordering
-    // (sentence::incidence_of), never a distance test against every cell.
+    // (sentence::incidence_of), never a distance test against every cell;
+    // an edge between two hues is a boundary, not an adjacency.
     let mut sorted: Vec<(i64, i64, u8)> = cells.to_vec();
     sorted.sort_unstable();
     sorted.dedup_by_key(|c| (c.0, c.1));
     let positions: Vec<(i64, i64)> = sorted.iter().map(|c| (c.0, c.1)).collect();
-    let edges = crate::transducer::sentence::incidence_of(&positions);
+    let edges: Vec<(usize, usize)> = crate::transducer::sentence::incidence_of(&positions)
+        .into_iter()
+        .filter(|&(i, j)| sorted[i].2 == sorted[j].2)
+        .collect();
     let roots = crate::transducer::sentence::components(sorted.len(), &edges);
     let mut out: Vec<(usize, Vec<Painted>)> = Vec::new();
     for (i, cell) in sorted.into_iter().enumerate() {
