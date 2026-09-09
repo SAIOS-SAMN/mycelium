@@ -1,10 +1,10 @@
 # Resume notes (continuity across sessions)
 
-Last update: 2026-09-09, after the first soak on Stage 11 (`impl/soak` ==
-`main`, 2c67ee2 and after). Living task list: `docs/MU-RECURSION-TASKS.md`
-(Stage 11 landed, Stage 12 opened). Spec: `docs/MU-RECURSION.md`.
-Standard: `docs/MU-STANDARDS.md`. Historical alpha landings:
-`docs/TRAJECTORY.md`.
+Last update: 2026-09-09, after the Stage 12 pass (`impl/soak` == `main` at
+1cf2c1e and the docs commit after it). Living task list:
+`docs/MU-RECURSION-TASKS.md` (Stage 11 landed, Stage 12 opened and mostly
+landed). Spec: `docs/MU-RECURSION.md`. Standard: `docs/MU-STANDARDS.md`.
+Historical alpha landings: `docs/TRAJECTORY.md`.
 
 ## Boot check
 
@@ -14,7 +14,7 @@ git log --oneline -1 main impl/soak          # the two are one commit
 systemctl --user list-units 'mycelium-server@*' 'mycelium-client@*' --no-legend
 RUSTFLAGS='-D warnings' cargo test --release 2>&1 | grep -E "test result|FAILED"
 (cd xtask && cargo run)                        # gates, then clippy -D warnings
-# expected at 2c67ee2: lib 391, bins 6, alpha_plan 13, g_cga 6; xtask exit 0
+# expected at 1cf2c1e: lib 402, bins 7, alpha_plan 13, g_cga 6; xtask exit 0
 ```
 
 ## The fleet
@@ -31,7 +31,8 @@ or `voice.key`, the signed `mesh` record (bind, peers, genesis, epoch), and
 recut. `scripts/recut` stops the units, wipes state, drops each hypha's
 origin, mints the genesis in a one-shot run of the binary and starts the
 units. Do not `pkill`; use `systemctl --user`. Do not recut or soak unless
-asked.
+asked. The fleet is STOPPED and the binaries in `target/release` are the
+ones the last verification built; a soak needs the operator's word.
 
 Other `mycelium-*` units in that directory are earlier fleets
 (`mycelium-hypha*`, `mycelium-client-{a,b,c}`, `mycelium-v010-*`,
@@ -40,27 +41,32 @@ were not touched.
 
 ## State at handoff
 
-- Fleet stopped 2026-09-09 after a seven-hour soak on a91fcb8; state wiped,
-  build artifacts cleaned (`target/`, the `.wt/impl` worktree). The
-  readings are in `MU-RECURSION-TASKS.md` Stage 11 (I34, I34b) and the
-  directive that follows from them is Stage 12.
-- Stage 11 rows I12–I33 landed. Open: I22 (rulings asked), I30–I32, I35–I39
-  (faults found on the fleet), 5.2g (receipt back-fill, the live blocker).
-- What the soak showed, in one line each: perception discriminates instead
-  of recognising (one 13-axis stratum per task, no shared charts); forms
-  have no loops (two-vertex stars, no pivot ever fires, no axis opens);
-  words are chains, not letters (no held word deflates a demand); the fleet
-  polls (131k digest requests per hypha in ten minutes).
+- Stage 12 landed on 2026-09-09, one item per commit, suite green on each:
+  S12.4a fda0778, S12.4b b340ec0, S12.4c 5316fed/c7646b4, S12.4d 013cb09,
+  S12.5a dc47ac1, S12.5b 14bf2e0, S12.5c 31abfd5, S12.2 470f324, I35
+  d5d2792, S12.1a 72f30f2, S12.3a a42b5a9, S12.6a 1cf2c1e; rows ba531d5
+  and the docs commit after 1cf2c1e.
+- Open in Stage 12: S12.1c/S12.1d (Stage 10 P3–P6, the percept carries its
+  verdict; a codec change and a recut), S12.3b (Stage 2 Mayer–Vietoris at
+  the court), S12.6b (the treasury fold; MU-ECONOMY §2 `epoch` kind to be
+  ruled first), S12.6a's remaining sites (`expressed*`, `Entity::ideas`,
+  dirty bubbles). Rulings asked: S12.5d (room of an unbonded voice, §3.1),
+  S12.6c (may a receipt chain checkpoint), I22 (slash and supply; recall
+  shortfall).
+- Stage 11 still open: I30 (`conclude` seals nothing), I32 (`--recut` on a
+  node with no origin does not bump the epoch), 5.2g (receipt back-fill).
 
 ## Immediate next actions
 
-Stage 12, in the order of `MU-RECURSION-TASKS.md`: perception as
-congruence (coarse-first axes, peel, the harmonic eye decides the pairing),
-forms with loops (non-constant faces kept as sections), reduction before
-listing, pacing by the ledger (I39, I37, I36), governance by room (I38,
-I31, S9.7), footprint (7.3, the treasury fold, a ruling on receipt
-checkpoints). Pause and report after; the soak restarts only on the
-operator's word.
+On the operator's word: rebuild is done, recut and soak the fleet on
+1cf2c1e, then read: `cites > 0` on attests (bodies as words, S12.3a),
+shared strata in the cover (fewer unique charts), `pivot … discharged` or
+`vortex` lines (forms with loops, S12.2), `[h N]` climbing on stroke lines
+(I39), `ACT_DIGESTS` served per hypha in ten minutes (I37), `court offer
+deferred` in place of `court offer refused … by 0000…` (I36), `audit` green
+on every hypha (I38), no `court room refused` from the intake (I31), voice
+RSS over hours (S12.6a). Then S12.1c/d, S12.3b, S12.6b in the task list's
+order.
 
 ## Standing operational rules
 
