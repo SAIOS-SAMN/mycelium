@@ -650,12 +650,14 @@ S13.6 and S13.9 change tapes and are recuts.
 | S13.13 | **The mesh record carries the fold roots of a node's cover**, provisioned and signed as the genesis is; first contact adopts them; depth and strata are the node's choice. | 45.5, 24.2 | open |
 | S13.14 | **The simulator** (ME §9) runs eras and phase readings over a seeded fleet before the wire changes of S13.10–S13.13 are soaked. | ME §9 | open |
 | S13.15 | **The room of an unbonded voice** (S12.5d, I22 as ruled): one claim in flight per lane, nothing funds an arriving identity (`ensure_bonded` and the genesis funding of arriving keys go), a recall shortfall recorded per lane closes that lane until the claim closes. | MU-ECONOMY §3.1 | landed: readings named in the commit — the record closes a lane only while the voice has a claim in flight there and clears when its occupancy on that lane returns to zero; not persisted. Found by the ruling and fixed with it: a listing is drawn once (a second vantage on a listed address neither doubled the occupancy nor took the drawer over). Residue, one item: a percept and the attested chain of the same pair list under two addresses (framed and unframed residual), so one demand is two claims |
+| V1 | **The axis on multiplicity re-volumized** (found on the soak of 2026-09-09: 31/69/91 closings with two held cites, no axis). `axis_germ`: the glue between two bodies is the versor between their shapes, minted as a connection with the axis opened; a citation is a use (`cited_word` touches); the listing is tried once per language (`reopen_axes`); `[{tag}] axis refused {addr}: {why}`. | 24.3, 45.4, 34.3 | landed (doctrine afa8de7, code 9d66c45) |
+| V2 | **The height a mind reads is its TUniversal** (found on the same soak: `[h 0]` on every voice against a book at 3573). `Entity::advance_height` from the quote and attest replies, only forward; the stroke line and every dialect stamp carry it. | 23.8, 45.2 | landed (doctrine 126cff7, code ffed51c) |
 
 Order: S13.1 · S13.5 · S13.4 · S13.2 · S13.3 · S13.15 · S13.6 (recut) ·
 S13.7 · S13.8 · S13.9 (recut) · S13.10 · S13.11 · S13.12 · S13.13 · S13.14.
-S13.1–S13.5 landed 2026-09-09 (f42c3fe … 0e03f47); the fleet still soaks
-on 2eff0de, and the rebuild onto these commits and the recut of S13.6
-wait on the operator's word.
+S13.1–S13.10 and S13.15 landed 2026-09-09 (f42c3fe … 69983cd), then V1
+and V2; on the operator's word of 2026-09-09 the fleet was recut on
+ffed51c (epoch 6), every commit of the pass in one soak.
 
 ## Backtrack ledger
 
