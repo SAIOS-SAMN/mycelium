@@ -72,23 +72,12 @@ pub enum Fill {
     Already,
 }
 
-pub(crate) fn word_of_rotor(r: &Rotor) -> crate::transducer::alphabet::Word {
-    use crate::transducer::alphabet::{spell, Word};
-    let one = crate::transducer::alphabet::Q::from_integer(num_bigint::BigInt::from(1));
-    let zero = crate::transducer::alphabet::Q::from_integer(num_bigint::BigInt::from(0));
-    let e0 = r.carry(&[one.clone(), zero.clone(), zero.clone(), zero.clone()]);
-    let e1 = r.carry(&[zero.clone(), one, zero.clone(), zero]);
-    if let (Some(a), Some(b)) = (e0, e1) {
-        let block = [[a[0].clone(), b[0].clone()], [a[1].clone(), b[1].clone()]];
-        if let Some(sp) = spell(&block) {
-            return sp.word;
-        }
-    }
-    Word::identity()
-}
-
 /// Transition between two sections on a cell: identity or coboundary is
-/// Extended, finite Word::order is Congruent, otherwise Class.
+/// Extended, a finite order is Congruent at its period, an infinite one
+/// is a Class. The order is the rotor's own (15.3, ruled 2026-09-09) —
+/// read on the element, never on a spelling of its sensor-plane shadow,
+/// which read the identity for every transition off that plane. A
+/// transition that is not a versor has no class and fills nothing.
 pub fn extend(section_a: &Section, section_b: &Section, cell: &Cell) -> Fill {
     #[cfg(test)]
     crate::network::nerve::work::count_extend();
@@ -104,17 +93,19 @@ pub fn extend(section_a: &Section, section_b: &Section, cell: &Cell) -> Fill {
         if g.is_identity() {
             return Fill::Filled(trans);
         }
-        return match word_of_rotor(&g).order() {
-            crate::transducer::alphabet::Order::Finite(ell) => Fill::Congruent(g, ell),
-            crate::transducer::alphabet::Order::Infinite => Fill::Class(g),
+        return match g.order() {
+            Some(crate::transducer::alphabet::Order::Finite(ell)) => Fill::Congruent(g, ell),
+            Some(crate::transducer::alphabet::Order::Infinite) => Fill::Class(g),
+            None => Fill::Open,
         };
     }
     if cell.coefficient.is_identity() {
         return Fill::Filled(Rotor::identity());
     }
-    match word_of_rotor(&cell.coefficient).order() {
-        crate::transducer::alphabet::Order::Finite(ell) => Fill::Congruent(cell.coefficient.clone(), ell),
-        crate::transducer::alphabet::Order::Infinite => Fill::Class(cell.coefficient.clone()),
+    match cell.coefficient.order() {
+        Some(crate::transducer::alphabet::Order::Finite(ell)) => Fill::Congruent(cell.coefficient.clone(), ell),
+        Some(crate::transducer::alphabet::Order::Infinite) => Fill::Class(cell.coefficient.clone()),
+        None => Fill::Open,
     }
 }
 

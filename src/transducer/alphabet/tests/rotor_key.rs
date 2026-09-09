@@ -18,17 +18,18 @@ fn rebase_is_normal_form_and_contact_in_key() {
     assert_eq!(r.key(), r.normal_form().key());
 }
 
-/// An unspellable rotor does not invent the identity word. A letter's
-/// spelling carries the same A1 key as the rotor itself.
+/// An unspellable rotor does not invent the identity word, and a rotor
+/// that is no versor has no order. A letter's spelling carries the same
+/// A1 key as the rotor itself, and the same order.
 #[test]
 fn spelled_word_is_none_when_the_rotor_does_not_spell() {
     assert!(Rotor::zero().spelled_word().is_none());
-    assert!(Rotor::zero().word_order().is_none());
+    assert!(Rotor::zero().order().is_none());
     let q = LetterId::quarter((0, 1)).expect("sensor quarter");
     let r = letter(q);
     let w = r.spelled_word().expect("quarter spells");
     assert_eq!(w.key(), r.key());
-    assert_eq!(r.word_order().expect("quarter has order"), w.order());
+    assert_eq!(r.order().expect("quarter has order"), w.order());
 }
 
 #[test]

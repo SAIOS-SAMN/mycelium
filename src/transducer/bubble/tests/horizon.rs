@@ -11,7 +11,7 @@ fn horizon_seeded_class_is_not_rederived() {
     let r = Word::from_letters(&[(q, false)]).rotor();
     let rec = ClassRecord {
         key: r.class_key().expect("quarter class"),
-        order: r.word_order().expect("quarter spells"),
+        order: r.order().expect("quarter has an order"),
         representative: r.clone(),
     };
     assert_eq!(c.seed_horizon(std::slice::from_ref(&rec)), 1);
@@ -45,6 +45,6 @@ fn horizon_is_keyed_by_class_key_and_round_trips() {
     let hb = back.bubbles.get(&key).expect("restored");
     let (got, order, st) = hb.horizon.get(ck.as_bytes()).expect("class key");
     assert_eq!(got.class_key(), Some(ck.clone()));
-    assert_eq!(*order, r.word_order().expect("quarter spells"));
+    assert_eq!(*order, r.order().expect("quarter has an order"));
     assert_eq!(*st, Standing::Held);
 }

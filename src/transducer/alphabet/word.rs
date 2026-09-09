@@ -216,22 +216,20 @@ impl Word {
         self.form().is_some_and(|f| f.is_identity())
     }
 
-    /// Order of the normal form: Infinite when any prime-5 or prime-13
-    /// exponent is nonzero, else the order of the unit part under orientation.
+    /// THE ORDER OF THE WORD'S ROTATION, read on the rotor (15.3, ruled
+    /// 2026-09-09) and never on the sensor plane's shadow: the period of
+    /// the rotor's two commuting quaternion factors (`Rotor::order`). Read
+    /// on the plane form, a word off the sensor plane — which keeps that
+    /// plane closed and reads the identity there — answered 1 or an
+    /// assumed 4, and two quarter turns on planes sharing an axis, which
+    /// close in three, were never a cycle. A word is a product of letters,
+    /// each a versor of positive weight, so its rotor has a weight; an even
+    /// element with none has `|q₊| ≠ |q₋|` and no power that is a scalar,
+    /// which is infinite order by the same arithmetic — not a default.
     pub fn order(&self) -> Order {
-        let n = self.normal_form();
-        for &(id, _) in n.letters() {
-            if id.raw() >= 7 {
-                return Order::Infinite;
-            }
-        }
-        match n.form() {
-            Some(f) => match unit_order(&f) {
-                Some(p) => Order::Finite(p),
-                None => Order::Infinite,
-            },
-            None if n.is_empty() => Order::Finite(1),
-            None => Order::Finite(4),
+        match self.rotor().order() {
+            Some(order) => order,
+            None => Order::Infinite,
         }
     }
 
@@ -402,9 +400,9 @@ pub(crate) fn run_reduce(tape: &[(LetterId, bool)]) -> Word {
     runs.into_iter().fold(Word::identity(), |a, b| a.compose(&b))
 }
 
-/// Order of a word's normal form: finite unit/sheet, or infinite when a
-/// prime-5 or prime-13 exponent stands. Finite sorts before Infinite;
-/// among finite, smaller ℓ first. Wire: 0 = infinite, else ℓ.
+/// The order of a rotation: the period of its rotor's class (15.3), or
+/// infinite when a factor is not a root of unity. Finite sorts before
+/// Infinite; among finite, smaller ℓ first. Wire: 0 = infinite, else ℓ.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Order {
     Finite(u32),
@@ -443,36 +441,6 @@ impl Order {
         } else {
             Order::Finite(v)
         }
-    }
-}
-
-pub(crate) fn unit_order(f: &PlaneForm) -> Option<u32> {
-    if f.is_identity() {
-        return Some(1);
-    }
-    if f.orientation && f.rot.iter().all(|&x| x == 0) {
-        return Some(2);
-    }
-    let q01 = LetterId::quarter((0, 1)).map(|id| id.raw() as usize);
-    let p5 = LetterId::pythagorean_5((0, 1)).map(|id| id.raw() as usize);
-    let p13 = LetterId::pythagorean_13((0, 1)).map(|id| id.raw() as usize);
-    for (i, &n) in f.rot.iter().enumerate() {
-        if n == 0 {
-            continue;
-        }
-        if Some(i) == p5 || Some(i) == p13 {
-            return None;
-        }
-        if Some(i) != q01 {
-            return None;
-        }
-    }
-    let q = q01.map(|i| f.rot[i]).unwrap_or(0).rem_euclid(4) as u32;
-    let rot = if q == 0 { 1 } else { 4 / gcd_u32(q, 4) };
-    if f.orientation {
-        Some(if rot % 2 == 0 { rot } else { rot * 2 })
-    } else {
-        Some(rot)
     }
 }
 

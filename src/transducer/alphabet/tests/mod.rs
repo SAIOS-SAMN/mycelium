@@ -3,5 +3,6 @@
 
 mod factor;
 mod letters;
+mod order;
 mod plane_form;
 mod rotor_key;

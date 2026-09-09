@@ -319,10 +319,51 @@ impl Rotor {
         Some(spell(&block)?.word)
     }
 
-    /// [`Word::order`] of [`Self::spelled_word`]. None when the rotor does not spell.
-    pub fn word_order(&self) -> Option<Order> {
-        self.spelled_word().map(|w| w.order())
+    /// THE ORDER OF A ROTOR, read from its class (15.3, ruled 2026-09-09).
+    /// The even subalgebra splits by the central idempotents `(1 ± I)/2`
+    /// into two commuting quaternion factors of one weight `w`, with
+    /// scalar parts `a ± p`; each factor's half-angle has
+    /// `cos² = (a ± p)²/w`, an exact rational, a finite period exactly at
+    /// `{1, 3/4, 1/2, 1/4, 0}` (Niven), and its angle `kπ/m` is read off
+    /// the sign. `R^n` is a scalar iff both factors' n-th powers are real
+    /// and equal, so the projective order — the order of the rotation `R`
+    /// induces — is the lcm of the two periods, or twice it when the two
+    /// lcm-th powers are opposite scalars. `None` for a non-versor: no
+    /// weight, no class, and no scalar power at all. Never a spelling, and
+    /// never the sensor plane's shadow.
+    pub fn order(&self) -> Option<Order> {
+        let w = self.weight()?;
+        let (a, p) = (&self.c[0], &self.c[15]);
+        let (Some((k1, m1)), Some((k2, m2))) = (half_angle(&(a + p), &w), half_angle(&(a - p), &w)) else {
+            return Some(Order::Infinite);
+        };
+        let l = m1 / gcd_u32(m1, m2) * m2;
+        let same = (l / m1 * k1) % 2 == (l / m2 * k2) % 2;
+        Some(Order::Finite(if same { l } else { 2 * l }))
     }
+}
+
+/// The half-angle of one quaternion factor as `(k, m)` with `θ = kπ/m`,
+/// from its scalar part `s` and the weight `w`: `cos² θ = s²/w`. The five
+/// rationals are the only ones a root of unity has (Niven), and a
+/// negative cosine is the supplement. `None`: not a root of unity, the
+/// factor turns forever.
+fn half_angle(s: &Q, w: &Q) -> Option<(u32, u32)> {
+    let c = &(s * s) / w;
+    let (k, m) = if c.is_one() {
+        (0, 1)
+    } else if c == qn(3, 4) {
+        (1, 6)
+    } else if c == qn(1, 2) {
+        (1, 4)
+    } else if c == qn(1, 4) {
+        (1, 3)
+    } else if c.is_zero() {
+        (1, 2)
+    } else {
+        return None;
+    };
+    Some(if s.is_negative() { (m - k, m) } else { (k, m) })
 }
 
 /// The rotor's action on the pair plane `(i, j)` as a 2×2 block, columns

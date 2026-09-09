@@ -8,7 +8,7 @@
 use super::*;
 
 pub(crate) fn horizon_put(h: &mut Keyed<(Rotor, Order, Standing)>, r: Rotor, standing: Standing) {
-    let Some(order) = r.word_order() else {
+    let Some(order) = r.order() else {
         return;
     };
     let Some(key) = r.class_key() else {

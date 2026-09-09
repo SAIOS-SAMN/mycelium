@@ -114,7 +114,7 @@ fn vortex_collapses_by_glue_or_ruling() {
     }
     let rec = ClassRecord {
         key: after,
-        order: r.word_order().expect("quarter spells"),
+        order: r.order().expect("quarter has an order"),
         representative: r,
     };
     assert_eq!(c.seed_horizon(&[rec]), 1);

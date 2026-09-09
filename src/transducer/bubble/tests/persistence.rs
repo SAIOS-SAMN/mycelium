@@ -24,7 +24,7 @@ fn restart_refills_horizon_from_syllabus() {
     let r = Word::from_letters(&[(q, false)]).rotor();
     let rec = ClassRecord {
         key: r.class_key().expect("quarter class"),
-        order: r.word_order().expect("quarter spells"),
+        order: r.order().expect("quarter has an order"),
         representative: r,
     };
     let n = c.seed_horizon(std::slice::from_ref(&rec));
