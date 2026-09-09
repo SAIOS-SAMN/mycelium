@@ -450,19 +450,32 @@ impl Kernel {
     /// bond, the intake exhausted it in the first minutes of every boot and
     /// nothing homed here could lapse it back; the listing still tensions
     /// the book, and room stays the throttle on what voices utter.
+    ///
+    /// A task is listed one BODY at a time (20, 24.4 P6; S12.3a): each
+    /// connected piece of the residual is its own demand on its own body
+    /// chart, so a body two tasks share is one listing on one stratum and a
+    /// held word deflates it wherever it recurs. Listed whole, a task's
+    /// residual was a chain of several bodies with a chart no other task
+    /// shared — a thousand unrelated descriptions (I34). A body already
+    /// speakable or already listed is not listed again; the intake answers
+    /// whether anything new was.
     pub fn intake(&mut self, chain: &[(i64, i64, u8, u8)], frame: &crate::arc::Frame) -> bool {
         if chain.is_empty() {
             return false;
         }
-        let residual = element::from_residual_framed(&chain.to_vec(), frame);
-        let addr = residual.address();
-        if self.basis.contains(&addr) || self.pending.contains(&addr) {
-            return false; // already speakable or already listed
+        let mut listed = false;
+        for body in crate::transducer::sentence::pieces(chain) {
+            let residual = element::from_residual_framed(&body, frame);
+            let addr = residual.address();
+            if self.basis.contains(&addr) || self.pending.contains(&addr) {
+                continue; // already speakable or already listed
+            }
+            let k_now = self.k_step();
+            self.stamp_standing(addr);
+            self.book_list_undrawn(residual, k_now);
+            listed = true;
         }
-        let k_now = self.k_step();
-        self.stamp_standing(addr);
-        self.book_list_undrawn(residual, k_now);
-        true
+        listed
     }
 
     /// DEPOSIT evidence from the wire (an entity's verified dialect finding):

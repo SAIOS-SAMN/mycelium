@@ -76,22 +76,35 @@ impl Entity {
             if residual.is_empty() {
                 continue;
             }
-            let word = crate::transducer::element::from_residual(&residual);
-            let addr = word.address();
-            eprintln!(
-                "  remainder expressed {:02x}{:02x}… pair {i} cells {} cites {}",
-                addr[0],
-                addr[1],
-                residual.len(),
-                cites.len()
-            );
-            self.file_taught(&word);
-            let mu = crate::transducer::element::measure_lanes(&residual);
-            eprintln!(
-                "  uttered {:02x}{:02x}… standing Stood K {k} lanes {mu:?}",
-                addr[0], addr[1]
-            );
-            let _ = self.attest(&residual, &cites);
+            // WORDS ARE BODIES, NOT CHAINS (20, 24.4; Stage 12 S12.3a). The
+            // residual no held word deflates is uttered one body at a time:
+            // each connected piece is a word form on its own body chart, so
+            // a body another task's residual also holds is one stratum on
+            // the atlas and one listing on the book, and a held word can
+            // deflate it. Uttered whole, a pair's remainder was a chain of
+            // several bodies with a chart no other chain shared — 954
+            // charts, all unique, `cites 0` on every attest for seven hours
+            // (I34). The citations belong to the pair's conclusion and are
+            // logged with it; a body no word spoke is the voice's
+            // irreducible claim and travels with none (23.8).
+            for body in crate::transducer::sentence::pieces(&residual) {
+                let word = crate::transducer::element::from_residual(&body);
+                let addr = word.address();
+                eprintln!(
+                    "  remainder expressed {:02x}{:02x}… pair {i} cells {} cites {}",
+                    addr[0],
+                    addr[1],
+                    body.len(),
+                    cites.len()
+                );
+                self.file_taught(&word);
+                let mu = crate::transducer::element::measure_lanes(&body);
+                eprintln!(
+                    "  uttered {:02x}{:02x}… standing Stood K {k} lanes {mu:?}",
+                    addr[0], addr[1]
+                );
+                let _ = self.attest(&body, &[]);
+            }
         }
     }
 

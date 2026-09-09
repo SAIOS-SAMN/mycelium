@@ -206,9 +206,17 @@ impl Entity {
         chain: &[(i64, i64, u8, u8)],
     ) -> crate::client::sdk::Concluded {
         let (cites, residual) = self.cite(chain);
-        let familiar = !self
-            .epigenome
-            .express(&residual, self.session.voice().k(), self.now_tu());
+        // The residual is expressed one BODY at a time (20; S12.3a): each
+        // connected piece stands as its own word on its own body chart, so
+        // the working atlas can cite it against another chain that holds
+        // the same body. Familiar when every body was already spoken.
+        let (k, tu) = (self.session.voice().k(), self.now_tu());
+        let mut familiar = true;
+        for body in crate::transducer::sentence::pieces(&residual) {
+            if self.epigenome.express(&body, k, tu) {
+                familiar = false;
+            }
+        }
         Concluded { cites, residual, familiar }
     }
 

@@ -12,3 +12,4 @@ mod ledger_clock;
 mod market;
 mod mint;
 mod persistence;
+mod room;
