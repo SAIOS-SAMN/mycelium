@@ -27,13 +27,31 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         say(s, dialogue::FoldWitness::Refused { vk: me, why: why.as_bytes().to_vec() });
     };
     let origin = door.mesh.origin.lock().ok().and_then(|o| *o);
+    // R5 (34.2): a witness with no origin says so by name, and an origin
+    // refusal names the two origins it compared, so a fold refused after
+    // a co-sign can be read for which side moved.
     let Some(origin) = origin else {
-        refuse(s, mycelium::verdict::REFUSE_ORIGIN);
+        refuse(s, "this node has adopted no origin");
         return;
     };
     if let Err(why) =
         mycelium::court::admission::admit_signature(origin, &p.section.prefix, &home, &p.section.sig)
     {
+        if why == mycelium::verdict::REFUSE_ORIGIN {
+            eprintln!(
+                "  court fold refused {:02x}{:02x}…: {why} [origin {:02x}{:02x}… e{} carried {:02x}{:02x}… e{}]",
+                home[0],
+                home[1],
+                origin.0[0],
+                origin.0[1],
+                origin.1,
+                p.section.prefix.genesis[0],
+                p.section.prefix.genesis[1],
+                p.section.prefix.epoch
+            );
+            say(s, dialogue::FoldWitness::Refused { vk: me, why: why.as_bytes().to_vec() });
+            return;
+        }
         refuse(s, why);
         return;
     }
