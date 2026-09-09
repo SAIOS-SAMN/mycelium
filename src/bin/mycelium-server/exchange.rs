@@ -55,6 +55,11 @@ pub(crate) struct Mesh {
     /// is asked again only after its Λ elapsed on this court's own clock or
     /// this court's own roots moved. Taken one at a time, like `rtt_window`.
     pub(crate) asked_at: Arc<Mutex<Keyed<u64>>>,
+    /// The exchange to each peer as a carrier (45.7, S13.3): every cycle
+    /// strokes it, each ask is one circuit, and the period is this court's
+    /// cycles between asks, written once per ask as `court orbit exchange`.
+    /// Taken one at a time, like `rtt_window`.
+    pub(crate) orbits: Arc<Mutex<Keyed<mycelium::physics::Orbit>>>,
     /// The door's per-lane reserve deficit, snapshotted from the kernel on
     /// every court stroke so the listener can say it without the kernel
     /// (23.8, S13.4): the deferral carries it and the asker dwells on it.
@@ -80,6 +85,7 @@ impl Clone for Mesh {
             rtt_window: Arc::clone(&self.rtt_window),
             last_roots: Arc::clone(&self.last_roots),
             asked_at: Arc::clone(&self.asked_at),
+            orbits: Arc::clone(&self.orbits),
             deficit: Arc::clone(&self.deficit),
             origin: Arc::clone(&self.origin),
         }
@@ -340,7 +346,18 @@ impl Exchange {
                     mycelium::physics::from_transport(floor, mycelium::physics::aperture_cycle() as u64)
                 });
                 let last = mesh.asked_at.lock().ok().and_then(|a| a.get(&pid).copied());
-                if !crate::transport::exchange_due(last, k_now, lambda, own_moved) {
+                let due = crate::transport::exchange_due(last, k_now, lambda, own_moved);
+                // 45.7, S13.3: the exchange to one peer is a carrier whose
+                // circuit is one ask; every cycle strokes it, so its period
+                // is read in this court's cycles between asks — velocity in
+                // kernel coordinates, beside K on the ask line.
+                let orbit = mesh.orbits.lock().ok().and_then(|mut o| {
+                    if o.get(&pid).is_none() {
+                        o.insert(&pid, mycelium::physics::Orbit::default());
+                    }
+                    o.get_mut(&pid).and_then(|orb| orb.stroke(u64::from(due)))
+                });
+                if !due {
                     continue;
                 }
                 if let Ok(mut a) = mesh.asked_at.lock() {
@@ -348,6 +365,9 @@ impl Exchange {
                 }
                 asked_any = true;
                 eprintln!("  court exchange asked {d} K {k_now}");
+                if let Some((n, period)) = orbit {
+                    eprintln!("  court orbit exchange {d} {n} period {period}");
+                }
                 organ_budget -= 1;
                 match tell_peer(&d, req.clone()) {
                     Some((reply, dt)) => {
