@@ -511,6 +511,115 @@ suite lines.
 | I38 | **`Treasury::audit` fails on every hypha by exactly one `Legacy` row.** Ledger b: supply `[855428, 178748, 5, 1831868]`, carriers `[855422, 178728, 5, 1831842]`, and the journal holds `Legacy [6, 20, 0, 26]` once: `bind_live` at boot dropped the stake of identity `1111…` — funded at genesis and staked `[6, 20, 0, 26]` by the kernel's bootstrap, then not in the live genesis — and a `Legacy` row moves no supply (§2 says nothing else moves μ⃗). Either the drop is an unstake to that identity's balance or a burn, and the bootstrap identity is not funded in production (rule 8). §6 has never held on a live hypha since the mesh record's live set was introduced. | open — next |
 | I39 | **The height a voice reads never advances.** `synthesis::quote` fills `height` with `view.gens.1`, the book generation, where 23.8 says the quote reply carries the book's LEDGER height; every voice's stroke line reads `[h 0]` while a's chain stands at height 14,731, so "quote asked when the height advanced" never fires and I37's pacing has nothing to pace on. | open — next |
 | I33 | **The signed prefix carried the signer's whole cover, and its wire length wrapped** (47.1, rule 11; found by a wire probe on the fleet of 2026-09-08). `sign_position` wrote every chart of the active cover into the prefix's `chart` — 10,855 axes, an 86,926-byte prefix on a hypha with a thousand listings — and `encode_receipt_section` wrote its length `as u16` (21,424), so `whole_cover_digest` found no reading of a's digest that consumed the frame, `admit_peer_digest` refused every one, and b and c never adopted the origin or admitted a receipt: `court receipts … none` on every cycle, `moved false` forever, Part IX dark. Now the chart is the frame's (none for a digest, the offered word's for an offer), `SignedPrefix::fits` refuses a prefix that does not fit two-byte lengths before it is signed, and every section-carrying encoder answers `Option`. Read after the restart: b and c adopt a's origin on the first cycle and every admission is `gap` (first sighting mid-chain), which is 5.2g. | landed (doc 756a9a1; code a91fcb8; 391/0/6/13/6, xtask 0; `a_prefix_that_does_not_fit_the_wire_is_refused_not_wrapped`) |
+| I34b | **The same fleet at seven hours (2026-09-09 05:00, a91fcb8; the journal retains the last ~6 h).** No panic after voice 4's (I35); no restart. RSS: voices 350–618 MB, hyphae 245–375 MB; CPU 80–96 % on every process. Hyphae: `court attest` 1,483 / 1,596 / 1,833, `court syllabus` 227 / 201 / 115, `court section` 0 in the retained window, glue admitted 16 / 6 / 18, dialect 6 on c, offers 26 / 169 / 50 with 15 / 56 / 44 refused (I36) — the offer and digest storms of the first ten minutes had subsided as the reflex pools kept deferring. Voices (whole run): `form spoken` 0 on all five; `form withheld` 106–206; `dialect stood` 260–504; `uttered` 430–764; `listing … reduced` 766–1,151 against `held` 2,285–3,470 (a quarter reduced once the genome held 135–161 words); `learned` 241–401, `promoted` 0–7, `refined` 2–6; `pivot`, `vortex`, `torsion`, `demand spoken`, `axes` all 0; `[h 0]` on every stroke line to the end (I39); `err` 63–166; K 6,982–19,485. State: a 37 MB, b 17 MB, c 24 MB; journal 298 MB; disk 93 % used before the cleanup, 83 % after (8.7 GB of build artifacts and the `.wt/impl` worktree removed; the user journal could not be vacuumed without privileges). Fleet stopped, state wiped, homes moved to `var/` (RESUME.md). | recorded |
+
+## Stage 12 — cognition before machinery (operator's directive, 2026-09-09)
+
+The directive, as given, after the seven-hour soak (I34, I34b). The four
+readings first, in the operator's words:
+
+> - Perception discriminates instead of recognising. 954 charts, all
+>   unique, 13 exact-rational axes each: one stratum per task. Nothing is
+>   ever the same as anything, so there is no congruence, no shared
+>   stratum, no glue between listings, and the book fills with a thousand
+>   unrelated descriptions. That is a lookup table, the failure 1.7 names.
+> - Forms have no loops. Extraction keeps only vertices whose transports
+>   are constant across the pairs and drops the rest, so every rule is a
+>   two-vertex star. The class vector is never read, the pivot loop never
+>   fires, no axis opens. The only motion the doctrine allows has nothing
+>   to act on.
+> - Words are chains, not letters. Voices stand residual chains and utter
+>   them; `cites 0` on every attest means no held word ever deflates a
+>   demand. Hyphae then glue each other's chains as "admitted" (1,099 on a)
+>   because the address is new, not because two organs re-derived one
+>   vertex.
+> - Everything is polled. 131,000 digest requests per hypha in ten
+>   minutes, 12,000 offers re-sent, quotes on every stroke, the whole corpus
+>   listed at boot. The pacing law exists (24.3) but has nothing to pace
+>   on, because the height voices read is always 0.
+
+And the six changes, in the order that unlocks cognition:
+
+> 1. Perception as congruence (Stage 10, 24.4). Order the atlas axes
+>    coarsest first, topology (components, holes, turns) before the moment
+>    ratios, so a prefix is a real stratum and the working atlas is read by
+>    `peel`. The harmonic eye decides the pairing; only Novel becomes a
+>    listing (P3–P6). Without this every task is its own universe and
+>    nothing below can learn.
+> 2. Forms with loops. Keep non-constant faces as sections over the pairs
+>    (21 step 2, 25) instead of dropping them, and bundle across pairs.
+>    Then held loops exist, κ(ℓ) is read, pivots discharge or hold
+>    vortices, and axes open where the class demands one (3.7, S9.17/S9.19).
+>    Axis uniqueness stays free: an axis is a class-vector coordinate keyed
+>    by its own coordinates, never a count.
+> 3. Reduction before listing. A demand is factored through the stratum's
+>    generators (A12, over the working atlas) and only the canonical
+>    remainder is uttered; the court glues by Mayer–Vietoris on the overlap
+>    (2.3, 2.4) and rules conclusions, not addresses (23.9). Then `reduced`
+>    climbs and `held` falls, and the genome is a presentation, not an
+>    inventory.
+> 4. Pace by the ledger. The quote reply carries the ledger height (I39);
+>    sync, quote and offer are asked when the language changed, the height
+>    moved or a dwell elapsed (24.3, I37); an offer is re-sent only after
+>    the witness's receipt or lapse. The reflex pool then serves acts
+>    instead of polls, and the deferral misread (I36) disappears with the
+>    deferrals.
+> 5. Governance by room, not by intake. The book extends before it refuses
+>    (S9.7), corpus listings do not draw the hypha's own bond (I31), §6
+>    holds (I38), and the unbonded-voice room ruling (§3.1) is made. Room is
+>    the throttle; there is no other.
+> 6. Footprint as a measurement. Fix the voice leak first (7.3), fold the
+>    treasury (LEDGER_EPOCH_DESIGN), and decide by ruling whether a receipt
+>    chain may checkpoint; today the doctrine says append-only.
+
+Recorded in `MU-RECURSION.md` chapter 41 (Stage 12 precedes every
+remaining item of Stages 2–5). Rows, one per commit; status written by the
+implementor as `landed (<commit>)`.
+
+| id | directive | chapters | status |
+|---|---|---|---|
+| S12.1a | **Axes coarsest first.** `Harmonics::axes` already writes components, holes, turns before the four moment ratios and the hue spectrum, but every axis after the third is an exact-rational pair (A6's two limbs), so the prefix that two bodies share ends at the topology; read on the fleet: 952 of 954 charts had 13 axes and no two shared one. The order is the stratum: topology, then the moment ratios coarsest first (isoperimetric, anisotropy, spread, quartic), then the hue spectrum last; and every reader that needs a stratum reads it by `peel` (A21 §2, 12.6), never by the whole chart. | 24.4, A6, A21, 12.6 | open |
+| S12.1b | **The working atlas is read by peel.** `Epigenome::locate`, `cite`, `Crystal::on_class` and the quote's incidence read the fibre at the first non-empty prefix of the chart (`WorkingAtlas::stratum`, landed for A12 in I15), so a held word on a coarser stratum is a citation. `stalk::congruent` and `congruent_shaped` read the same way. | 24.1, 24.3, A12 | open |
+| S12.1c | **The harmonic eye decides the pairing** (P3). `pair_form` admits a pairing of a body of `a` with a body of `b` only where their harmonics agree on the topological prefix — the exact condition for a conformal versor to exist — and where they differ, the differing axes are named on the percept as a Novel residual before any word is sought. No threshold, no nearest. | 24.4 P3 | open |
+| S12.1d | **The verdict rides the percept and only Novel is listed** (P5, P6). `Percept` carries, per overlap, Recognised / Reflection / Transposition / Novel with the residual per lane and the axes named; `Kernel::ingest` lists a residual with a verdict and returns one without to the voice with the reason. | 24.4 P5–P6, 34.1 | open — after S12.1c |
+| S12.2 | **Forms with loops.** `extract_rule_with` step 2 keeps a face whose transport is not constant across the pairs as a SECTION over those pairs — the transports become carriages on the face's transport class (`Form.carriages`, 18.2: "two carriages on one class are two sections") — instead of dropping it; `pair_form` bundles the pairs; the form then has loops, `class_vector` is read, `pivot_loop` runs on ideas with held loops, and the opening axis is offered where the class has a free part (I6). Test: a two-body family whose relative transport varies per pair yields a form with a face, a held loop and a class vector, and the pivot loop reads it. | 21 step 2, 25, 12.6, A16, 3.7 | open |
+| S12.3a | **Reduction before listing, on the voice.** `conclude` factors the residual through the stratum's generators by peel (S12.1b) and utters only the canonical remainder (A12 step 5, M6 step 5); a residual no held word deflates is a held thought, never expressed. Read on the fleet: `cites 0` on every attest for seven hours. | A12, M6, 24.3 | open — with S12.1b |
+| S12.3b | **The court rules conclusions and glues by Mayer–Vietoris.** `glue_fetched` runs 13.9 on the overlap (A13, A14, `Overlap`, `MayerVietoris`) and rules by the 13.10 table; `Admitted` is one section by re-derivation, never "the address is new"; the court's key is the conclusion (S9.12). This is Stage 2 (2.3, 2.4) and S9.12, ordered here. | 13, 23.3, 23.9 | open — Stage 2 |
+| S12.4a | **The quote reply carries the ledger height** (I39): `synthesis::quote` fills `height` with `book_height()` = the chain's head height, not the book generation. | 23.8, 45.2 | open |
+| S12.4b | **Sync, syllabus and discovery are paced as the quote is** (I37): the syntropy arm runs `discover`, `pull_syllabus` and `sync_genome` when the language changed, the height moved or a lane's dwell elapsed, never on every depleted stroke. | 24.3 | open |
+| S12.4c | **A deferral is impedance, never a vantage** (I36): `offer_round` reads `is_deferral` before `decode_offer_reply`; every hypha-to-hypha reply reader does the same. | 23.8, B7 | open |
+| S12.4d | **An offer is re-sent only after the witness's receipt or the lapse.** `offers_pending` records the K at which each witness was offered; the next round offers a germ to a witness again only when that witness's receipt is admitted since or Λ elapsed. Read on the fleet: 12,165 offers in ten minutes on b. | 47.3, 47.5 | open |
+| S12.5a | **§6 holds** (I38): `bind_live` burns a dropped stake (a `Burn` row, supply falls by the same vector) instead of writing `Legacy`; `Kernel::new` funds and stakes no bootstrap identity in production. | MU-ECONOMY §2, §6 | open |
+| S12.5b | **Corpus listings draw no room** (I31): the intake lists the hypha's own corpus without a draw on its bond; room is drawn by a voice's utterance and released by closure, ruling or lapse. | 23.8, S9.7 | open |
+| S12.5c | **The book extends before it refuses** (S9.7): at the three refusal sites the book runs its own moves on the short lanes and re-reads the shortfall before `REFUSE_ROOM`. | 12.6, S9.7 | open |
+| S12.5d | **Ruling asked:** the room of an unbonded voice (MU-ECONOMY §3.1). | §3.1 | ruling asked |
+| S12.6a | **The voice leak, measured** (7.3): a test that runs an `Entity` over a fixed feed at N and 4N strokes and reads its carriers (dialect, ideas, taught, memo, streams) grows by the shed's residue and not by the strokes; the site the measurement names is fixed in the same row. Read on the fleet: 10 MB → 618 MB in seven hours. | 7.3, 24.1, 25 | open |
+| S12.6b | **The treasury folds** (LEDGER_EPOCH_DESIGN): an epoch closes behind a fully final prefix, the net per identity per lane is written as one `epoch` row each (a new §2 kind, ruled first), the prefix is archived beside the ledger, and `audit` holds across the fold. | MU-ECONOMY §2, §6; LEDGER_EPOCH_DESIGN | open — doc first |
+| S12.6c | **Ruling asked:** whether a receipt chain may checkpoint (45.1 says append-only). | 45.1 | ruling asked |
+
+### Governance in the convergence engine (2026-09-09, read for the operator's question)
+
+`/opt/ipsal-autic-v0.1/repos/convergence-engine`, with its GOVERNANCE
+repository alongside, names five layers: C2R, IRS, MDC, Chronometry,
+Creative Expansion; CCL is its coding vocabulary. What each is, and where
+its intent already lives here or is refused:
+
+| layer | what it is there | here |
+|---|---|---|
+| MDC (Multi-Dimensional Cameral Logic, `mdc.rs`) | four echelons — a gradient descent on a coherence functional, a legal parameter envelope, a modal RCF-hash prefix, a security gradient — resolved by weighted vote summation with an entropy threshold that holds K | refused as a mechanism (law 1, law 10, D0: no functional, no gradient, no vote, no threshold; Stage 9 survey). Its intent — several vantages, hold when they disagree — is 47.3's independent witness with room, 45.3's concurrency held as a vortex, and 23.9's convergence read at the demand across independent lineages, never counted |
+| IRS (Inverse Relational Semantics, `irs.rs`) | mode 1 reads the orbit structure as language for a human operator; mode 2 compresses human intent into constraints for the operator sampler | mode 1 is the tree's own reading: the exact log lines of 34.2–34.3, the five acts of anastome, the class vector and receipt a court prints. Mode 2 is how the operator governs here: rulings recorded in the documents before code changes (§9), not a runtime intent channel; a live channel would be a Rewrite or a verdict, both acts the court replays |
+| C2R | the mechanical language ↔ algebra bridge, absorbed into IRS mode 2 | comprehension as deconstruction (chapter 6, A12): an utterance is deconstructed into the algebra that spoke it; the wire codec is the bridge and carries only geometry |
+| CCL (`CCL.md`) | a coding vocabulary bridging engineering, biology, physics and chemistry frames so the code does not misdescribe the architecture | MU-STANDARDS §2 (types are nouns of the document, functions its verbs); `src/ccl.rs` was the dead port and F2r2 deleted it |
+| consensus, coordinator, register, credential (`consensus.rs`, `coordinator.rs`, `register.rs`, `credential.rs`) | Σ_mesh weighted means and a weighted-majority anchor; L1 subgradient cocycle resolution; a derivation register locked by blake3 over dependencies; re-entry by a receipt chain of length ≥ K_COOL | refused: weighted means and majorities (consensus is convergence, 23.9), the L1 functional (law 1), a register of hashes over content (law 2; the register here is the document and the commit log), the K_COOL constant (rule 5). Kept in this tree's own form: the receipt chain as the credential (45, 47.2), the cocycle condition as the court's replay (13.9), lineage as parents on receipts |
+
+Ruling recommended: no port. The governance the mesh needs is the one
+Part IX and 23.9 already state — room per lane as the only standing,
+replay as the only judgement, the independent witness as the second organ,
+the burn as the only discipline — and the missing pieces are landings
+(47.3 two-organ install, 5.2g back-fill, S9.12 conclusions), not layers.
+What the convergence engine had that this tree does not: an operator
+channel at runtime (IRS mode 2). If one is wanted it is a ruling on §9, and
+its carrier is an act the court replays like any other.
 
 ## Backtrack ledger
 

@@ -5114,6 +5114,20 @@ citations (47.5). 5.6 FROST group keys and manifests (46). 5.7 xSEPTUM acts
 40. 5.1 lands before the first recut after Cut B; 5.2–5.5 before any
 settlement is live; 5.6–5.7 with xSEPTUM. Stage 5 does not wait on Stage 4.
 
+**Stage 12 — cognition before machinery (ruled 2026-09-09).** The first
+soak of Stage 11 (seven hours on a91fcb8, `MU-RECURSION-TASKS.md` I34,
+I34b) read a machine that pays everywhere and learns nowhere: one 13-axis
+stratum per corpus task and no shared chart, so no congruence and no glue
+(24.4 is the eye that recognises; the atlas axes must run coarsest first
+so a prefix is a stratum); two-vertex star forms with no loop, so the
+pivot loop never fires and no axis opens (21 step 2 keeps non-constant
+faces as sections, 25); residual chains uttered as words with no citation
+deflating any demand (A12 over the working atlas before anything is
+listed, 23.9 at the court); and every act polled on every stroke because
+the quote reply's height never moved (23.8, 24.3). The landing order for
+this is Stage 12 of the task list, and it precedes every remaining item of
+Stages 2–5: nothing below the eye can learn while the eye discriminates.
+
 **Consolidation discipline.** This document is edited in place. A change
 to any chapter edits that chapter; nothing is amended by reference from a
 later part. The auditor's greps of chapters 34–35 and 40 are rerun against
