@@ -161,6 +161,12 @@ pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: std::sync::mpsc::Receiver<(Strin
             match tell_peer(&addr, body) {
                 Some((reply, dt)) => {
                     note_rtt_ok(&mesh_nerve, addr.as_bytes(), dt);
+                    // 23.8, I36: a full reflex pool's deferral is impedance,
+                    // not a root reply that failed to decode.
+                    if crate::transport::is_deferred(&reply) {
+                        eprintln!("  court exchange deferred by {addr}");
+                        continue;
+                    }
                     match dialogue::decode_root_reply(&reply) {
                         Some((held, at)) => eprintln!(
                             "  nerve → {addr}: root delivered at {} ({})",
@@ -301,6 +307,12 @@ impl Exchange {
                     Some((reply, dt)) => {
                         reached += 1;
                         note_rtt_ok(&mesh, &pid, dt);
+                        // 23.8, I36: a full reflex pool's deferral is
+                        // impedance, not a digest that failed admission.
+                        if crate::transport::is_deferred(&reply) {
+                            eprintln!("  court exchange deferred by {d}");
+                            continue;
+                        }
                         if !admit_peer_digest(&mesh, &reply, &router) {
                             continue;
                         }
@@ -362,6 +374,10 @@ impl Exchange {
                         match tell_peer(&d, fetch) {
                             Some((page, dt2)) => {
                                 note_rtt_ok(&mesh, &pid, dt2);
+                                if crate::transport::is_deferred(&page) {
+                                    eprintln!("  court exchange deferred by {d}");
+                                    continue;
+                                }
                                 let mut named: Vec<mycelium::transducer::address::Address> = Vec::new();
                                 for w in dialogue::decode_syllabus_reply(&page).unwrap_or_default() {
                                     let mut p = 0usize;

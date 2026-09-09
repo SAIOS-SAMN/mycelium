@@ -94,6 +94,19 @@ pub(crate) fn offer_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
                 continue;
             };
             offered_out += 1;
+            // 23.8, I36 — A DEFERRAL IS IMPEDANCE, NEVER A VANTAGE. The
+            // witness's reflex pool was full: it replayed nothing and the
+            // object keeps waiting. Read as an offer reply this frame was
+            // arm 2, a refusal by key `0000…`, logged 4,762 times on one
+            // hypha in ten minutes; the offer is asked again after that
+            // peer's Λ (S12.4d), never on the next cycle.
+            if crate::transport::is_deferred(&reply) {
+                eprintln!(
+                    "  court offer deferred {:02x}{:02x}… by {d}",
+                    oaddr[0], oaddr[1]
+                );
+                continue;
+            }
             // 47.3's SECOND VANTAGE. The peer replayed the offer
             // on its own tapes and sent back the form it reached;
             // that is a re-derivation, and the home converges on

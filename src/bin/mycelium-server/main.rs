@@ -234,6 +234,12 @@ fn main() {
         match tell_peer(p, dialogue::encode_digests_request(&mesh.vk)) {
             Some((reply, dt)) => {
                 note_rtt_ok(&mesh, p.as_bytes(), dt);
+                // 23.8, I36: a peer whose reflex pool is full at boot
+                // deferred; it is impedance, not a digest refused.
+                if crate::transport::is_deferred(&reply) {
+                    eprintln!("  court exchange deferred by {p}");
+                    continue;
+                }
                 let _ = admit_peer_digest(&mesh, &reply, &router);
             }
             None => note_rtt_timeout(&mesh, p.as_bytes()),
