@@ -270,6 +270,10 @@ pub struct Kernel {
     /// stroke completed and the strokes the last one took, written once
     /// per circuit as `court orbit docket` — the court's local time beside K.
     pub(crate) docket_orbit: crate::physics::Orbit,
+    /// Where the phase's next window starts (45.9, S13.7): the chain
+    /// length and the cover reading at the last docket orbit. A reading
+    /// of the carriers, never a phase — the phase is computed and written.
+    pub(crate) phase_mark: Option<(usize, crate::cognition::court::phase::CoverReading)>,
     /// Keyed cursors into `unfilled` and `pending_refine` for `stroke_fills`
     /// (rule 10): each stroke resumes where the last left off, so a tail
     /// beyond one budget is reached rather than starved by the head.

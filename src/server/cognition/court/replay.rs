@@ -164,6 +164,10 @@ impl Kernel {
         };
         if let Some((n, period)) = self.docket_orbit.stroke(u64::from(circuit)) {
             eprintln!("  court orbit docket {n} period {period}");
+            // 45.9, S13.7: the phase over the window since the last orbit,
+            // read off the receipts and the cover and written; nothing
+            // stores or gates on it.
+            self.read_phase();
         }
         for addr in keys {
             let spoken = self

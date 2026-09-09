@@ -8,6 +8,7 @@
 pub mod fills;
 pub mod glue;
 pub mod lapse;
+pub mod phase;
 pub mod replay;
 pub mod syllabus;
 pub mod task;
