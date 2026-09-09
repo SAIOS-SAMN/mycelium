@@ -227,6 +227,10 @@ pub struct Kernel {
     /// redundancy next (bounds consolidation to one reduce per depleted step).
     /// Last key the syntropic cursor yielded; the next stroke resumes after it.
     pub(crate) optimize_cursor: Vec<u8>,
+    /// Keyed cursor into `open` for `syntropic_stroke` (rule 10, S13.3):
+    /// the stagnation walk resumes where the last stroke left off, so a
+    /// docket beyond one budget is read whole across strokes.
+    pub(crate) syntropic_cursor: Vec<u8>,
     /// Polytonic kinematic pressure + torsion (per lane).
     pub(crate) physics: crate::physics::Physics,
     /// The settlement ledger (POW++-gated bounties, consilience splits).

@@ -28,19 +28,28 @@ impl Kernel {
     pub fn syntropic_stroke(&mut self) {
         let mut budget = self.physics.stroke();
         let mut jobs: Vec<(crate::transducer::stalk::Invariant, [bool; 4])> = Vec::new();
-        // index: budgeted cursor over the open docket
-        for (addr, _) in self.open.cursor(crate::network::nerve::ROOT, &mut budget) {
-            let Some(listing) = self.field.get(&addr) else {
-                continue;
-            };
-            for e in &listing.entries {
-                if e.state.is_flat() {
+        // index: budgeted cursor over the open docket, resumed from the
+        // last stroke (rule 10, S13.3) — an orbit, so a docket beyond one
+        // budget is read whole across strokes and never only its head.
+        {
+            let from = self.syntropic_cursor.clone();
+            let mut cur = self.open.cursor(&from, &mut budget);
+            for (addr, _) in &mut cur {
+                let Some(listing) = self.field.get(&addr) else {
                     continue;
+                };
+                for e in &listing.entries {
+                    if e.state.is_flat() {
+                        continue;
+                    }
+                    let lanes = std::array::from_fn(|l| e.stagnant[l] > 0);
+                    if lanes.iter().any(|&x| x) {
+                        jobs.push((e.chart.clone(), lanes));
+                    }
                 }
-                let lanes = std::array::from_fn(|l| e.stagnant[l] > 0);
-                if lanes.iter().any(|&x| x) {
-                    jobs.push((e.chart.clone(), lanes));
-                }
+            }
+            if let Some(k) = cur.last_key() {
+                self.syntropic_cursor = k.to_vec();
             }
         }
         // index: ruled cover fiber
@@ -182,6 +191,8 @@ impl Kernel {
     /// bundle: its sections/cycles carry family volume no other word speaks).
     pub(crate) fn condense_stroke(&mut self) -> Option<crate::transducer::address::Address> {
         let mut budget = self.physics.stroke();
+        // The cursor orbits the basis (S13.3): past the last word it
+        // continues from the first, so `None` here is an empty basis.
         let Some((addr, word)) = self.basis.cursor(&self.optimize_cursor, &mut budget).next() else {
             self.optimize_cursor.clear();
             return None;
