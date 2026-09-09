@@ -3747,10 +3747,15 @@ dialect, and a mind that has stood nothing utters nothing but a percept.
   `lanes_of(outcome)`; only the tick spends all four lanes, and the idle
   `physics.spend([true; 4])` is that tick, not work. The dormant test is
   `outcome == [0; 4]` on every mode, with no threshold other than zero.
-  The dwell is per lane: each lane's dwell is that lane's pressure in the
-  last reply, in strokes, and the loop dwells for the lanes it needs to
-  expand next (`can_expand(lanes)`), never for the most-pressured lane;
-  there is no `max` over lanes and no clamp against the aperture cycle.
+  The dwell is per lane: each lane's dwell is that lane's surface in the
+  last reply, in strokes — the door's reserve deficit and the entropic
+  flux (`yield_surface`), each a calibrated reading — and the loop dwells
+  for the lanes it needs to expand next, never for the most-pressured
+  lane; there is no `max` over lanes and no clamp against the aperture
+  cycle. The open-demand backlog is not on the surface: pressure is a
+  magnitude the metabolism relaxes and prices nothing (`price` reads the
+  word's own measure), and read as strokes it held every voice on one
+  hypha for 48,000 strokes on the fleet of 2026-09-09 (R3).
   Until 5.1 the dwell is `from_transport(rtt, strokes)` per lane; after
   5.1 it blocks on the next admitted receipt or quote reply. The quote is
   asked when the working language changed since the last ask, when the
@@ -4363,7 +4368,8 @@ Prefix `  court ` as the existing court lines; addresses as
   court phase h {h0}..{h1} comprehension {deflated}/{held} congruence {sections}/{strata} lineages {n} growth +{adjoined} -{retired} expansion {axes}/{splits}
   court fold {vk} K {k} h {h} prefix {k0}..{k1} identities {n}
   court fold witnessed {vk} co-signed {root}
-  court fold refused {vk}: {REFUSE_*}
+  court fold refused {vk}: {REFUSE_*} [origin {g} e{e} carried {g'} e{e'}]
+  court nerve deferred by {addr} acts {n}
   court era adopted {root} h {h}
   court verdict refused {addr} from {vk}: {REFUSE_*}
   court verdict unread {addr}: the court is not readable
@@ -4450,6 +4456,12 @@ in strokes, so velocity is read in kernel coordinates.
 
 Stroke line adds `forms {spoken}/{withheld} glued {n} depth {max}`; it is
 written once per aperture cycle and on every change of K (24.3).
+
+`court nerve deferred by {addr} acts {n}` (R2, 2026-09-09) is the nerve
+thread's reading of a peer that deferred the acts routed to it — a demand
+routed to a listing's home above all — written once per aperture of acts
+per peer, never per act: written per act it was 376,000 lines in one
+aperture, each one a percept the home's full reflex pool had deferred.
 
 ## 35. Closing invariants
 
@@ -5900,6 +5912,13 @@ and the orbit count, the circuits it completed; both are per kernel, both
 are per lane where the lane paces (24.3), and neither is ever compared
 with another kernel's.
 
+The docket orbit rules what is not yet ruled: a listing already on the
+ruled cover, or relocated to the cavity, is passed over by the circuit —
+its standing moves only by a verdict or a lapse — so a circuit's cost is
+the unruled listings and its `court section` lines are one per ruling.
+Re-replayed on every circuit, one word was sectioned 20,800 times and
+another slashed 2,227 times on the fleet of 2026-09-09 (R1).
+
 The orbit is the primary motion, and it is a circuit, not a walk. A cursor
 that resumes after the last key it served and stops at the end of the key
 order has walked off the edge of its book: nothing below the resume point
@@ -5976,6 +5995,12 @@ the head's book. The mesh record of a new node carries the fold roots of
 its cover beside the genesis and epoch (45.5).
 
 ### 45.9 Phase is a reading (ruled 2026-09-09)
+
+The window is an aperture of docket orbits (`aperture_cycle()` circuits),
+so a court whose docket fits one budget reads its phase over a span of
+receipts and not over the one receipt a single circuit may seal (R7,
+2026-09-09: `comprehension 0/0` on every orbit at period 1); `court phase
+…` is written once per window.
 
 A phase is computed from the receipts over a height window and is never
 stored, announced or thresholded; a transition is read after the fact and
@@ -6082,10 +6107,14 @@ any carrier is touched:
    signature of its own: it is admitted by its chain — it re-derives its
    hash, links to the head this node holds for the signer, and its height
    re-derives — and the signed head that reported the gap is admitted
-   again once the chain reaches it. One page is fetched per gap reported,
-   on the exchange that reported it (`court receipt backfill {vk}
-   {k0}..{k1} admitted {n}`), and nothing back-filled is cited as a
-   parent: the closing frame is.
+   again once the chain reaches it. On the exchange that reported a gap,
+   pages are fetched until the chain reaches the reported K or the
+   exchange's own stroke budget is spent (`court receipt backfill {vk}
+   {k0}..{k1} admitted {n}` per page), and the frame that reported the
+   gap is then admitted again on that same exchange; nothing back-filled
+   is cited as a parent: the closing frame is. One page per gap reported
+   fell behind a peer's K on the fleet of 2026-09-09 and no gap ever
+   closed (R4).
 2. The signature verifies under the claimed key or, for a chart-scoped
    frame, under that key's active manifest entry: else `BAD_SIGNATURE` or
    `REFUSE_MANIFEST`.
@@ -6116,6 +6145,17 @@ An install is a receipt with two signatures over one prefix:
   `REFUSE_WITNESS_DEPENDENT`;
 - has room on every lane the install's escrow occupies, by dominance
   (`lane_room` ≥ escrow lane-wise), else `REFUSE_WITNESS_ROOM`.
+
+The volume of a cell is the measure of the open listings on its chart:
+its vertices are vantages (hyphas), and no speaker's index gates it.
+Read through `spoken_by`, which is keyed by voice, every hypha vertex
+measured zero, so no section stood a 0-cell, no edge had volume, and
+nothing ever filled although charts held two sections (R6, 2026-09-09).
+Two sections that are the same body at two vantages glue by the identity
+edge, which fills, pays the cell's volume and records the gamma; two
+bodies a versor relates but no alphabet rotor spells stand as a
+remainder edge, the obstruction recorded — spelling that versor as a
+rotor is its own item.
 
 `confirm_peer_holds` (cognition.rs 3031) becomes the request for the
 witness's signature over the install prefix after the witness's own replay;
