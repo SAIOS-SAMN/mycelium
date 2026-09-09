@@ -10,6 +10,58 @@ use crate::transducer::germinate::germinate;
 use crate::transducer::sentence::*;
 use crate::transducer::stalk::{self, Stalks};
 
+/// 50.3 — THE EDGE HOLONOMY DOES NOT TELESCOPE. The face transports of a
+/// loop are the coboundary of the placements and compose to the identity
+/// by construction; the edge transports are stabilizer elements, and two
+/// quarter turns around a triangle compose to the half turn, a class the
+/// loop holds until it is filed. A loop through a remainder edge is not
+/// evaluated.
+#[test]
+fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
+    let qw = Word::from_letters(&[(alphabet::LetterId::quarter((0, 1)).unwrap(), false)]);
+    let mut f = Form::default();
+    for k in 1..=3u8 {
+        f.vertices.push(Vertex::Word {
+            address: form_addr(k),
+            word: Word::identity(),
+            carriage: Box::new(element::carriage(
+                &q1(),
+                &(q0(), num_rational::BigRational::from_integer(num_bigint::BigInt::from(k as i64))),
+            )),
+            gauge: Vec::new(),
+            class: stalk::Invariant::default(),
+            contact: None,
+        });
+    }
+    // The faces among the bodies only: the loop 1-2-3 closes on the chord
+    // 1-3 without passing the Frame.
+    for (i, j) in [(1u16, 2u16), (2, 3), (1, 3)] {
+        f.faces.push(FormFace { i, j, transport: f.face_of(i, j).expect("vertices"), edge: None });
+    }
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    assert_eq!(f.loops.len(), 1, "one loop among three bodies");
+    assert!(f.coheres(), "the coboundary of the placements telescopes: every loop is the identity");
+    let at = |f: &Form, i: u16, j: u16| f.faces.iter().position(|fc| (fc.i, fc.j) == (i, j)).expect("face");
+    let (e12, e23, e13) = (at(&f, 1, 2), at(&f, 2, 3), at(&f, 1, 3));
+    f.faces[e12].edge = Some(Transport::from_word(qw.clone()));
+    f.faces[e23].edge = Some(Transport::from_word(qw.clone()));
+    f.faces[e13].edge = Some(Transport::from_word(Word::identity()));
+    let triangle = f.loops.first().expect("the loop 1-2-3 among the bodies");
+    let h = f.edge_holonomy(triangle).expect("every edge of the loop is carried");
+    let half = qw.compose(&qw);
+    assert!(h.word.rotor().projective_eq(&half.rotor()), "quarter, quarter, identity compose to the half turn: {:?}", h.word);
+    assert_eq!(f.edge_class(triangle), half.rotor().class_key(), "read up to conjugacy: the half turn's class");
+    assert!(!f.coheres(), "a held stabilizer holonomy is not coherence");
+    f.torsion.insert(half.rotor().class_key().expect("class"), FiledLoop { sigma: Vec::new(), period: 2, chord: triangle.chord });
+    assert!(f.coheres(), "filed at its period, the loop coheres (A17)");
+    f.faces[e23].edge = Some(Transport::from_word(qw.inverse()));
+    let h = f.edge_holonomy(triangle).expect("carried");
+    assert!(h.word.rotor().projective_eq(&alphabet::Rotor::identity()), "quarter, quarter inverse, identity is the identity");
+    f.faces[e13].edge = None;
+    assert!(f.edge_holonomy(triangle).is_none(), "a loop through a remainder edge is not evaluated");
+    assert!(f.coheres(), "and holds nothing against the form");
+}
+
 #[test]
 fn face_of_a_missing_vertex_is_none() {
     let f = Form::default();

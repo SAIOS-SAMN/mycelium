@@ -33,6 +33,48 @@ assert_eq!(f1.vertices.len(), f2.vertices.len());
 assert_eq!(f1.faces.len(), f2.faces.len());
 }
 
+/// 50.3 — A RIGID SCENE HAS IDENTITY EDGES AND A RELATIVE MOTION DOES NOT.
+/// Two touching bodies translated together: the pair-body carries rigidly,
+/// `V_ij = V_i`, and the edge between them is the identity. One of them
+/// moved alone: no versor carries the pair, and the edge is a remainder
+/// edge, never a loop's face.
+#[test]
+fn a_rigid_scene_has_identity_edges_and_a_relative_motion_does_not() {
+let body = |rows: &[&str]| perceive(&grid(rows)).into_iter().next().expect("one body");
+let (a1, a2) = (body(&["1100", "0000"]), body(&["0000", "2200"]));
+let (b1, b2) = (body(&["0110", "0000"]), body(&["0000", "0220"]));
+let v1 = carriage(&a1, &b1).expect("a translated bar carries").v;
+let edge = edge_transport(&v1, &a1, &a2, &b1, &b2).expect("the pair moved rigidly: an edge transport");
+assert!(edge.word.is_identity(), "a rigid motion is the identity on the edge: {:?}", edge.word);
+assert!(
+    crate::transducer::element::same_versor(&edge.carriage, &crate::transducer::element::identity_versor()),
+    "and carries no relative placement"
+);
+let b2_still = body(&["0000", "2200"]);
+assert!(
+    edge_transport(&v1, &a1, &a2, &b1, &b2_still).is_none(),
+    "a pair no single versor carries is a remainder edge"
+);
+}
+
+/// 50.3 — AN EXCHANGE: two congruent bodies that swap places carry as one
+/// pair-body by the identity, and the edge transport is the exchange —
+/// `V_i⁻¹`, a placement with the identity word, finite on the word.
+#[test]
+fn edge_transport_lies_in_the_stabilizer_or_the_exchange() {
+let body = |rows: &[&str]| perceive(&grid(rows)).into_iter().next().expect("one body");
+let (a1, a2) = (body(&["100"]), body(&["002"]));
+let (b1, b2) = (body(&["001"]), body(&["200"]));
+let v1 = carriage(&a1, &b1).expect("a translated cell carries").v;
+let edge = edge_transport(&v1, &a1, &a2, &b1, &b2).expect("the pair-body is carried by the identity: an edge");
+assert!(edge.word.is_identity(), "the exchange has the identity word");
+assert!(
+    !crate::transducer::element::same_versor(&edge.carriage, &crate::transducer::element::identity_versor()),
+    "and a placement: the bodies exchanged"
+);
+assert!(matches!(edge.word.order(), crate::transducer::alphabet::Order::Finite(_)));
+}
+
 /// Three touching after-supports: two adjacency faces besides the
 /// Frame star, and the 1-skeleton is not a tree.
 #[test]

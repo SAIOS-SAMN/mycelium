@@ -76,6 +76,15 @@ pub fn replay_form_with(
     // the loop check; a missing torsion entry is REFUSE_LOOP, a chord
     // that does not carry the holonomy is REFUSE_FACE.
     for (i, face) in f.faces.iter().enumerate() {
+        // 50.3: an edge transport is a stabilizer element or an exchange
+        // of lattice bodies, both of finite order on the word; a word of
+        // infinite order is neither (the membership on the bodies is read
+        // with the family, L7).
+        if let Some(edge) = &face.edge {
+            if matches!(edge.word.order(), crate::transducer::alphabet::Order::Infinite) {
+                return Some(REFUSE_EDGE);
+            }
+        }
         if f.face_of(face.i, face.j).as_ref() == Some(&face.transport) {
             continue;
         }

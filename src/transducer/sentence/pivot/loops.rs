@@ -73,6 +73,55 @@ impl Form {
 }
 
 
+impl Form {
+    /// THE HOLONOMY OF THE EDGE TRANSPORTS around a loop (50.3): the product
+    /// of `FormFace.edge` along the loop's faces, in the base body's
+    /// stabilizer or exchange; stabilizer cosets do not telescope, which is
+    /// what makes it a reading. `None` when a face of the loop is a
+    /// remainder edge — the loop is not evaluated (13.9).
+    pub fn edge_holonomy(&self, lp: &Loop) -> Option<Transport> {
+        let mut acc_word = Word::identity();
+        let mut acc_carriage = element::identity_versor();
+        for (win, &fi) in lp.vertices.windows(2).zip(&lp.faces) {
+            let f = self.faces.get(fi as usize)?;
+            // The Frame is the trivialization every body is read against
+            // (2.2): a star face contributes the identity, so a loop
+            // through the Frame reads the edges among the bodies it joins.
+            if f.i == 0 || f.j == 0 {
+                continue;
+            }
+            let edge = f.edge.as_ref()?;
+            let step = if f.i == win[0] && f.j == win[1] { edge.clone() } else { edge.inverse()? };
+            acc_carriage = step.carriage.geo(&acc_carriage);
+            acc_word = step.word.compose(&acc_word);
+        }
+        Some(Transport { word: acc_word.normal_form(), carriage: acc_carriage, gauge: Vec::new() })
+    }
+
+    /// The class the edge holonomy belongs to (15.4), read up to
+    /// conjugacy; `None` when the loop is not evaluated or the holonomy is
+    /// not a versor.
+    pub fn edge_class(&self, lp: &Loop) -> Option<crate::transducer::address::Address> {
+        self.edge_holonomy(lp)?.word.rotor().class_key()
+    }
+
+    /// A loop's edge holonomy coheres when it is not evaluated, is the
+    /// identity, or is filed as torsion under its class at its period
+    /// (50.1 step 2, A17).
+    pub(crate) fn edge_coheres(&self, lp: &Loop) -> bool {
+        let Some(h) = self.edge_holonomy(lp) else {
+            return true;
+        };
+        if h.word.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()) {
+            return true;
+        }
+        let (Some(class), crate::transducer::alphabet::Order::Finite(ell)) = (h.word.rotor().class_key(), h.word.order()) else {
+            return false;
+        };
+        matches!(self.torsion.get(&class), Some(filed) if filed.period == ell)
+    }
+}
+
 pub(crate) fn loop_transport(form: &Form, lp: &Loop) -> Option<Transport> {
     let mut acc_word = Word::identity();
     let mut acc_carriage = element::identity_versor();

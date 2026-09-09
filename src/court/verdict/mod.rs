@@ -52,6 +52,7 @@ pub const REFUSE_ROOM: &str = "voice room does not cover the utterance on an occ
 pub const REFUSE_FOLD_OPEN: &str = "fold prefix is not final";
 pub const REFUSE_FOLD_INEXACT: &str = "fold does not conserve";
 pub const REFUSE_DEMAND_UNTYPED: &str = "demand vertex names no kind";
+pub const REFUSE_EDGE: &str = "edge transport is neither in the stabilizer nor the exchange nor a remainder edge";
 /// 47.3, 34.1: a second organ must hold bond outside the home's
 /// delegation closure and room on the lanes the act occupies.
 pub const REFUSE_WITNESS_DEPENDENT: &str = "witness bond lies inside the home's delegation closure";

@@ -345,22 +345,28 @@ pub(crate) fn pair_form_uncached(
     let PairedScene { ins, outs, pairs, used_in, used_out } = pair_scene(a, b, scale);
     let mut vertices = vec![frame_vertex()];
     let mut supports: Vec<Vec<(i64, i64)>> = vec![Vec::new()];
-    for (i, j, _car) in &pairs {
+    // Per vertex, the pair it carries and the versor that carried it (50.3):
+    // the Frame and the body-only vertices carry none.
+    let mut carried: Vec<Option<(usize, usize, Versor)>> = vec![None];
+    for (i, j, car) in &pairs {
         if let Some(v) = word_form(&ins[*i].body, &outs[*j].body) {
             vertices.push(v);
             supports.push(support_of(&outs[*j].body));
+            carried.push(Some((*i, *j, car.v.clone())));
         }
     }
     for (j, oc) in outs.iter().enumerate() {
         if !used_out[j] && oc.kind == crate::transducer::peel::ShellKind::Whole {
             vertices.push(body_only_vertex(&oc.body, true));
             supports.push(support_of(&oc.body));
+            carried.push(None);
         }
     }
     for (i, ic) in ins.iter().enumerate() {
         if !used_in[i] && ic.kind == crate::transducer::peel::ShellKind::Whole {
             vertices.push(body_only_vertex(&ic.body, false));
             supports.push(support_of(&ic.body));
+            carried.push(None);
         }
     }
     let mut form = Form {
@@ -390,7 +396,15 @@ pub(crate) fn pair_form_uncached(
         let Some(g) = form.face_of(i, j) else {
             continue;
         };
-        form.faces.push(FormFace { i, j, transport: g, edge: None });
+        // The edge transport between two carried bodies (50.3); a face to
+        // the Frame or to an uncarried body carries none.
+        let edge = match (carried.get(i as usize), carried.get(j as usize)) {
+            (Some(Some((ai, bi, v_i))), Some(Some((aj, bj, _)))) => {
+                edge_transport(v_i, &ins[*ai].body, &ins[*aj].body, &outs[*bi].body, &outs[*bj].body)
+            }
+            _ => None,
+        };
+        form.faces.push(FormFace { i, j, transport: g, edge });
     }
     form.loops = Form::loops_of(&form.faces, n);
     form.reindex();

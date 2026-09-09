@@ -374,6 +374,19 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     });
     let typed_e = as_element_form(&typed, [1, 0, 0, 0]).expect("typed demand tape");
     assert_eq!(replay_form(&typed_e, &|_| None), None, "a typed demand vertex replays beside its words");
+
+    // 50.3: an edge transport is a stabilizer element or an exchange, both
+    // of finite order on the word; a (3,4,5) rotor on an edge is neither.
+    let mut edged = closed_turn_form();
+    let p5 = crate::transducer::alphabet::LetterId::pythagorean_5((0, 1)).expect("(3,4,5)");
+    let fi = edged.faces.iter().position(|f| f.i == 0 && f.j == 1).expect("the star face");
+    edged.faces[fi].edge = Some(crate::transducer::sentence::Transport::from_word(Word::from_letters(&[(p5, false)])));
+    let edged_e = as_element_form(&edged, [1, 0, 0, 0]).expect("edged tape");
+    assert_eq!(replay_form(&edged_e, &|_| None), Some(REFUSE_EDGE), "an edge of infinite order is refused by name");
+    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    edged.faces[fi].edge = Some(crate::transducer::sentence::Transport::from_word(Word::from_letters(&[(q, false)])));
+    let fine_e = as_element_form(&edged, [1, 0, 0, 0]).expect("edged tape");
+    assert_eq!(replay_form(&fine_e, &|_| None), None, "a quarter turn on an edge is a stabilizer element and replays");
 }
 
 /// S9.4 — CLOSURE IS WHAT THE COURT CHECKS. A form minted over one train

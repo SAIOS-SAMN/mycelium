@@ -429,8 +429,9 @@ impl Form {
     /// the transition on that axis, re-derived from the loop (I6, 15.5).
     pub fn coheres(&self) -> bool {
         self.loops.iter().all(|lp| {
-            lp.holonomy.rotor().projective_eq(&Rotor::identity())
-                || self.opened_axis_of(lp).is_some_and(|chord| self.axis_rederives(lp, chord))
+            (lp.holonomy.rotor().projective_eq(&Rotor::identity())
+                || self.opened_axis_of(lp).is_some_and(|chord| self.axis_rederives(lp, chord)))
+                && self.edge_coheres(lp)
         })
     }
 

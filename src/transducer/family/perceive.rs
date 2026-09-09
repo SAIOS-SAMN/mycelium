@@ -89,7 +89,12 @@ pub(crate) fn note_cell_read() {
 }
 
 /// Perceive a scene: its bodies (connected components of the non-background
-/// cells; hue 0 is the background the eye does not see).
+/// cells, whatever their hues; hue 0 is the background the eye does not
+/// see). Read this way no two bodies of one scene ever touch, so a pair
+/// form has no face among its bodies and the edge transport of 50.3 is
+/// carried only where after-supports overlap; a body as a component of
+/// ONE hue is the reading the file's header states and a ruling to ask
+/// (L3, Stage 10 P2/P3): it moves the court's segmentation as well.
 pub fn perceive(grid: &Grid) -> Vec<Body> {
     let mut cells: Vec<Cell3> = Vec::new();
     for (r, row) in grid.iter().enumerate() {
@@ -220,6 +225,26 @@ pub fn word_form(a: &Body, b: &Body) -> Option<Vertex> {
         class: b.moduli.clone(),
         contact: None,
     })
+}
+
+/// THE EDGE TRANSPORT of 50.3 between two carried bodies. `V_ij` carries
+/// the pair-body `(a_i ∪ a_j)` onto `(b_i ∪ b_j)`; it exists iff the pair
+/// moved rigidly, and then `Γ_ij = V_i⁻¹ · V_ij` lies in the stabilizer of
+/// `a_i` or the exchange of the two bodies. `None` is a remainder edge: no
+/// single versor carries the pair, and the two bodies are two charts.
+pub(crate) fn edge_transport(v_i: &Versor, a_i: &Body, a_j: &Body, b_i: &Body, b_j: &Body) -> Option<crate::transducer::sentence::Transport> {
+    let union = |x: &Body, y: &Body| -> Shape {
+        let mut pos: Vec<(i64, i64)> = x.cells.iter().chain(y.cells.iter()).map(|&(r, c, _)| (r, c)).collect();
+        pos.sort_unstable();
+        pos.dedup();
+        blade::shape_of(&pos)
+    };
+    let v_ij = blade::versor_between(&union(a_i, a_j), &union(b_i, b_j))?;
+    let gamma = v_i.versor_inverse()?.geo(&v_ij);
+    let word = factor_versor(&gamma)?.ok()?;
+    let t = element::translator_of(&gamma)?;
+    let d = element::dilator_of(&gamma)?;
+    Some(crate::transducer::sentence::Transport { word, carriage: d.geo(&t), gauge: Vec::new() })
 }
 
 pub(crate) fn body_only_vertex(body: &Body, created: bool) -> Vertex {
