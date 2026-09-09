@@ -9,6 +9,7 @@ pub mod era;
 pub mod fills;
 pub mod fold;
 pub mod glue;
+pub mod install;
 pub mod lapse;
 pub mod phase;
 pub mod replay;
