@@ -1036,9 +1036,14 @@ identity            = (0, (0, 0, 0))
 are this arithmetic and nothing else. Orders follow from the product rule:
 `(1, r)² = (0, r − r) = identity`, so every element with `s = 1` has order
 2 whatever `r` is; an element with `s = 0` has the order of `r`, infinite
-when `m5 ≠ 0` or `m13 ≠ 0`, otherwise dividing 4. `Word::order` (552)
-returns exactly this. Only the six unit turns have finite order; eleven of
-the seventeen letters do not.
+when `m5 ≠ 0` or `m13 ≠ 0`, otherwise dividing 4. On the sensor plane
+`Word::order` agrees with this arithmetic, and it is read on the rotor
+(15.3, ruled 2026-09-09), never on the plane form: a word off the sensor
+plane keeps that plane closed, its plane form is the identity, and read
+there its order was 1 or an assumed 4 — so the commutator tables and the
+relator reducers missed the cycles such words close (a product of two
+quarter turns on planes sharing an axis closes in three). Only the six
+unit turns have finite order; eleven of the seventeen letters do not.
 
 ### 9.2 On the full chart
 
@@ -1886,6 +1891,28 @@ every holonomy: `Word::class_key` writes them first, and the plane
 conjugacy representative of 15.2 follows as the sensor-chart section when
 the rotor keeps that plane closed (12.6). A plane form is never consulted
 before the rotor, and a word with no plane form is not a special case.
+
+**The order of a rotor is read from its class (ruled 2026-09-09).** The
+two quaternion factors of the split above commute, each has the weight
+`w`, and each has scalar part `a ± p`, so the cosine of each factor's
+half-angle squares to `c± = (a ± p)² / w`, an exact rational, with the
+sign of `a ± p` fixing which of the two angles it is. A factor has finite
+period exactly when `c± ∈ {1, 3/4, 1/2, 1/4, 0}` (Niven: a rational
+`cos 2θ` at a rational multiple of π is `±1, ±1/2, 0`), and its period in
+`ℝ/πℤ` is then `1, 6, 4, 3, 2` respectively, with the angle `kπ/m` read
+off the sign. The projective order of the rotor — the least `n` with
+`R^n` a scalar, which is the order of the rotation it induces — is
+`L = lcm(m₊, m₋)` when the two factors' `L`-th powers are the same scalar
+and `2L` when they are opposite, since `R^n` is a scalar only when both
+factors' `n`-th powers are real and equal. Any other `c±` is infinite
+order, and an even element that is not a versor has `|q₊| ≠ |q₋|` and no
+power that is a scalar at all: infinite by the same arithmetic, never by
+default. `Rotor::order` is this computation and nothing else, and
+`Word::order` is `Rotor::order` of the word's rotor: a single letter reads
+1, 4 or infinite; a composite word reads the period of its class
+invariants; an off-plane word reads the least common period of its
+commuting factors and never the sensor shadow's. It is the order T2 and
+T3 cite and the one the commutator and relator reductions consult.
 
 ### 15.4 Key of a class
 
@@ -5367,9 +5394,11 @@ on.
 
 **T3 Torsion is exactly the finite-order part and is read, not searched.**
 `(1, r)² = 1`; `s = 0` has infinite order iff a prime exponent is nonzero,
-else order dividing 4 (9.1). Code: `Word::order`, `PlaneForm::torsion_part`,
-`free_part`, `cech::extend` (106) mapping finite to `Fill::Congruent(g, ℓ)`
-and infinite to `Fill::Class`. Proof: `a3_form_is_reduced_and_eq_on_reduced`,
+else order dividing 4 (9.1); off the sensor plane the order is the period
+of the rotor's class invariants (15.3, ruled 2026-09-09). Code:
+`Rotor::order`, `Word::order`, `PlaneForm::torsion_part`, `free_part`,
+`cech::extend` (106) reading the rotor's order and mapping finite to
+`Fill::Congruent(g, ℓ)` and infinite to `Fill::Class`. Proof: `a3_form_is_reduced_and_eq_on_reduced`,
 `goodness_cyclic_reports_chord`, `infinite_class_is_never_filed`.
 
 **T4 The pivot loop terminates.** Every applied pivot zeroes one occupied

@@ -680,6 +680,7 @@ L1 changes the form tape and is a recut. Stage 14 precedes S13.11 onward.
 | L0 | **The rulings, written.** Part X, chapter 50; 2.2, 16.12, 17.6, 20, 23.1, 23.8, 24.3, 24.4, 34.1–34.3, 35, 41, 43 amended in place; `MU-ENGINEERING.md` §2. | §9 | landed (this commit) |
 | L1 | **The typed demand and the demand vertex.** `sentence/demand.rs`: `Demand::{RotorPrime, Standing, Source, Creation, TopologicalDeformation}` with its A21 key; `Vertex::Demand { kind, chart, bodies }`; `FormFace.edge: Option<Transport>`; tape v6 (`FORM_TAPE_VERSION`), a recut; `Form::is_closed` reads no demand vertex and every loop filed or identity; `REFUSE_DEMAND_UNTYPED`. | 50.5, 50.7, 19 | landed (0b5cf2b) |
 | L2 | **A22 `factor_rotor`.** `alphabet/factor.rs`: the ordered peel over `(Π_01×Π_23) → (Π_02×Π_13) → (Π_03×Π_12)`, each block by `spell_peel` and the `ℤ²⊕ℤ/4` lattice; `Result<Word, Demand>` with `RotorPrime` and `Standing`; `word_form` spells through it. | 50.4, 16.12 | landed (78af4e5): the quaternion-factor Tait–Bryan peel per commuting block; found with it: A2's run reduction and `normal_form` read the sensor form for every plane and erased every word off the sensor plane, corrected to the letters' own plane |
+| L2b | **`Word::order` reads the rotor** (15.3 as ruled 2026-09-09). `Rotor::order`: the period of each quaternion factor from `(a ± p)²/w` and its sign, the projective order `lcm` or twice it; `Word::order` is `Rotor::order` of the word's rotor and consults no plane form; `cech::extend` reads the rotor's order in place of a sensor spelling; `unit_order` deleted. Claim: two quarter turns on planes sharing an axis close in three, where the plane form read four; a Pythagorean letter is infinite; the identity is one. | 9.1, 15.3, 42 T3 | ruled; open — after L6 |
 | L3 | **Edge transport in the stabilizer.** `versor_between` on the union shape gives `V_ij`; `Γ_ij = V_i⁻¹·V_ij` in `Stab(B_i)` or the exchange, else a remainder edge; `pair_form` writes it on every face; `loops_of` composes it and the holonomy is read up to conjugacy; `REFUSE_EDGE`. | 50.3, 13.9 | landed (634b3d0): `edge_holonomy` composes the edges around a loop with the Frame's star faces as the trivialisation |
 | L4 | **Seam 2: `body_only_vertex` becomes a demand vertex.** `demand_vertex` in `family/perceive.rs`; an unpaired output body is `Source` (every input chart a versor carries onto it, multiplicity recorded) or `Creation`; an unpaired input body with a differing-harmonics image is `TopologicalDeformation`; one vertex per (kind, chart). `body_only_vertex` deleted. | 50.5, 50.6 (2) | landed (15a3a08); the percept path lists a demand vertex's changed cells under `from_residual_framed` until L8 |
 | L5 | **F: the speaker.** `pair_form` runs 50.2 F steps 1–5 and `speak_form` utters the sentence whole with its demand vertices; `sentence spoken`, `demand`, `edge remainder` lines. | 50.2, 24.3, 34.3 | landed (6e37e0a): `sentence_measure` measures a form with demands (deflation per pair plus the demand cells), `mint_sentence` mints through it |
@@ -689,10 +690,12 @@ L1 changes the form tape and is a recut. Stage 14 precedes S13.11 onward.
 | L8 | **Seam 3: no irreducible listing.** `reduce_proven`/`reduce_germ` answer no `Irreducible(from_residual*)`; `commit_germ` lists demand vertices and never a residual; `attest(chain)` on the wire is `REFUSE_NOT_A_SENTENCE`; `from_residual` remains only as a listing key, a measure and a fixture; the gate `no_utterance_path_calls_from_residual`. | 50.6 (3), 23.8 | open |
 | L9 | **Recut and the reading.** Tape v6 recut on the operator's word; cold-boot traces of 50.7: `sentence spoken … demands d ≥ 1`, `court demand listed` per demand, no `remainder expressed`, no `uttered … cites 0`, every listing typed. | 50.7, 40 | open |
 
-Order: L0 · L1 · L2 · L3 · L4 · L5 · L6 · L6b · L7 · L8 · L9 (recut). L1–L8
-are one soak; nothing soaks between them, since a fleet on L1 without L8
-lists chains beside demands. Ruling still asked: `Word::order` reads the
-sensor form of a non-sensor unit word (a residue found under L2).
+Order: L0 · L1 · L2 · L3 · L4 · L5 · L6 · L2b · L6b · L7 · L8 · L9 (recut).
+L1–L8 are one soak; nothing soaks between them, since a fleet on L1
+without L8 lists chains beside demands. The ruling asked under L2 —
+`Word::order` read the sensor form of a non-sensor unit word — was given
+2026-09-09 and is recorded in 15.3; it lands as L2b after L6, on the
+operator's sequence.
 
 ## Backtrack ledger
 
