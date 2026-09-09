@@ -88,6 +88,24 @@ impl Entity {
         self.taught_up.insert(addr, word.clone());
     }
 
+    /// The utterance receipt of a word that left the dialect leaves both
+    /// indices with it (S12.6a): by address, and in its vertex stratum.
+    pub(crate) fn forget_utterance(&mut self, addr: &[u8]) {
+        let Some(word) = self.taught_up.remove(addr) else {
+            return;
+        };
+        if let Some(at) = vertex_stratum(&word) {
+            if let Some(inner) = self.taught_at.get_mut(&at) {
+                inner.remove(addr);
+            }
+        }
+    }
+
+    /// How many utterance receipts the mind holds (7.3's measurement).
+    pub fn utterances_filed(&self) -> usize {
+        self.taught_up.len()
+    }
+
     pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)]) -> Cited {
         // A remainder is not a citation of itself: deconstruction reads
         // other words on the working atlas, never the chain under locate.

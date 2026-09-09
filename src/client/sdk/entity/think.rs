@@ -324,8 +324,15 @@ impl Entity {
     pub fn shed_at(&mut self, now_k: u64) -> usize {
         self.epigenome.note_stroke(now_k);
         let glued = |a: &[u8]| self.contemplation.glues_word(a);
-        let n = self.epigenome.shed_except(now_k, &glued);
-        n.saturating_add(self.contemplation.shed_unglued())
+        let dropped = self.epigenome.shed_except(now_k, &glued);
+        // 7.3, S12.6a: the utterance receipt of a word that shed leaves
+        // with it. Kept, `taught_up` grew by every word the mind ever
+        // uttered — the strokes, not the shed's residue — and 24.3's "nothing
+        // is uttered twice" only needs the receipt while the word stands.
+        for a in &dropped {
+            self.forget_utterance(a);
+        }
+        dropped.len().saturating_add(self.contemplation.shed_unglued())
     }
 
     pub fn dialect_len(&self) -> usize {

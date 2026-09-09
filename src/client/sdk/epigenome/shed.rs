@@ -30,7 +30,7 @@ impl Epigenome {
     /// K advances on its own acts, so truncation is independent of whether
     /// anyone answered it.
     pub fn shed(&mut self, now_k: u64) -> usize {
-        self.shed_except(now_k, &|_| false)
+        self.shed_except(now_k, &|_| false).len()
     }
 
     pub fn note_stroke(&mut self, now_k: u64) {
@@ -54,9 +54,11 @@ impl Epigenome {
         Some(now_k.saturating_sub(first))
     }
 
-    pub fn shed_except(&mut self, now_k: u64, glued: &impl Fn(&[u8]) -> bool) -> usize {
+    /// Returns the addresses shed, so the carriers that hang off a dialect
+    /// word — its utterance receipt above all (S12.6a) — leave with it.
+    pub fn shed_except(&mut self, now_k: u64, glued: &impl Fn(&[u8]) -> bool) -> Vec<Vec<u8>> {
         let Some(aperture_k) = self.aperture_k(now_k) else {
-            return 0;
+            return Vec::new();
         };
         let drop: Vec<Vec<u8>> = self
             .dialect
@@ -64,12 +66,11 @@ impl Epigenome {
             .filter(|(a, d)| now_k.saturating_sub(d.last_used_k) > aperture_k && !glued(a))
             .map(|(a, _)| a)
             .collect();
-        let n = drop.len();
         for a in &drop {
             self.drop_dialect(a);
         }
-        self.shed_n = self.shed_n.saturating_add(n as u64);
-        n
+        self.shed_n = self.shed_n.saturating_add(drop.len() as u64);
+        drop
     }
 
 }

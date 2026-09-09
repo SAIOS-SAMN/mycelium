@@ -39,6 +39,40 @@ assert!(entity.epigenome.working_word(&e2.address()).is_none(), "the idle entry 
 assert_eq!(entity.epigenome.genome_len(), 0, "genome is untouched by shed");
 }
 
+/// 7.3, 24.1, Stage 12 S12.6a — THE MIND'S CARRIERS GROW BY THE SHED'S
+/// RESIDUE, NOT BY THE STROKES. A voice that withholds a form with a new
+/// body every stroke and sheds on its own K holds, at 4N strokes, no more
+/// dialect and no more utterance receipts than at N plus one aperture: a
+/// word idle for an aperture leaves, and its receipt leaves with it. The
+/// receipt stayed, and `taught_up` grew by every word ever uttered.
+#[test]
+fn a_minds_carriers_grow_by_the_sheds_residue_not_by_the_strokes() {
+use super::common::closed_turn;
+let aperture = crate::physics::aperture_cycle() as u64;
+let run = |strokes: u64| -> (usize, usize) {
+    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("leak"));
+    let form = closed_turn(None);
+    for k in 1..=strokes {
+        // A body no earlier stroke spoke: a bar one cell longer each stroke.
+        let bar: Vec<(i64, i64, u8, u8)> = (0..=k as i64).map(|c| (0, c, 1u8, 2u8)).collect();
+        entity.withhold_form(&form, &[], std::slice::from_ref(&bar), [1, 0, 0, 0]);
+        entity.shed_at(k);
+    }
+    (entity.dialect_len(), entity.utterances_filed())
+};
+let n = 2 * aperture;
+let (dialect_n, receipts_n) = run(n);
+let (dialect_4n, receipts_4n) = run(4 * n);
+assert!(
+    dialect_4n <= dialect_n + aperture as usize,
+    "dialect at 4N ({dialect_4n}) stays within an aperture of N ({dialect_n})"
+);
+assert!(
+    receipts_4n <= receipts_n + aperture as usize,
+    "utterance receipts at 4N ({receipts_4n}) stay within an aperture of N ({receipts_n}): a receipt leaves with its word"
+);
+}
+
 /// An expressed word stands at the voice's K and TUniversal, so a shed
 /// inside the aperture does not drop the mind's own speech.
 #[test]
