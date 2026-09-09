@@ -3513,7 +3513,12 @@ a question, and the court's whole behaviour on an act is fixed here.
   working language changed, when the height advanced, or when its dwell
   elapsed (24.3), so an unchanged book is not asked on every stroke. A
   height a voice reads off a reply only advances; a deferral carries no
-  height and moves nothing (ruled 2026-09-09).
+  height and moves nothing (ruled 2026-09-09). That height is the mind's
+  TUniversal (45.2: its own chain cites no peer, so its own height is its
+  K): the quote and attest arms advance it on the entity, the stroke
+  line's `h` reads it, and every dialect stand, expressed residual,
+  learned page and withheld form is stamped with it (V2, 2026-09-09; set
+  once to zero at boot, every voice's temporal lane was a point).
 - **A deferral carries the door's deficit.** The frame a full reflex pool
   answers every act with carries the door's per-lane reserve deficit
   (S9.6b's reading) as its four lanes, with no height and nothing taught;
