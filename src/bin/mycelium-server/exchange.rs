@@ -392,11 +392,16 @@ impl Exchange {
                         if !admit_peer_digest(&mesh, &reply, &router) {
                             continue;
                         }
-                        let admitted = admit_peer_receipt(&kernel, &mesh, &reply);
-                        // 47.2 step 3, S13.10: a gap fetches one page of the
-                        // missing receipts from the peer that reported it.
+                        let mut admitted = admit_peer_receipt(&kernel, &mesh, &reply);
+                        // 47.2 step 3, S13.10a, R4: a gap fetches pages of the
+                        // missing receipts from the peer that reported it
+                        // until the chain reaches the reported K, within this
+                        // exchange's stroke budget, and the reporting frame
+                        // is then admitted again — the one citation.
                         if let Ok(mycelium::court::admission::Admitted::Gap { vk, to, .. }) = &admitted {
-                            crate::backfill::page(&kernel, &mesh, &d, *vk, *to);
+                            if crate::backfill::pages(&kernel, &mesh, &d, *vk, *to) {
+                                admitted = admit_peer_receipt(&kernel, &mesh, &reply);
+                            }
                         }
                         tally.note(admitted);
                         let Some(dialogue::CoverDigest {
