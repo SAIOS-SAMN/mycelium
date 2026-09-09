@@ -45,7 +45,7 @@ while let Some(path) = feed.next() {
         // TASK BOUNDARY — the form engine is the only extractor.
         // A family it does not close is a withheld form (U1 stands it).
         let mag = family_magnitude(&task.train);
-        if !physics.can_expand(Physics::lanes_of(&mag)) {
+        if !mycelium::economy::lanes_short(&physics.reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
             break;
         }
         physics.bump(&mag);
@@ -101,7 +101,7 @@ while let Some(path) = feed.next() {
         continue;
     };
     let mag = measure_lanes(&g);
-    if !physics.can_expand(Physics::lanes_of(&mag)) {
+    if !mycelium::economy::lanes_short(&physics.reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
         break;
     }
     match entity.submit(&a, &b, &mycelium::arc::Frame::new(hi, wi, ho, wo)) {

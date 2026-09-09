@@ -189,15 +189,20 @@ fn main() {
             feed_arm(&mut stroke, &mut feed, &mut extract_memo, occluded);
             quote_arm(&mut stroke, occluded);
             task_arm(&mut stroke, &mut extract_memo);
-            if stroke.physics.depleted() {
+            // The syntropic phase on any lane short of one expansion
+            // (S10's reading, S13.2).
+            if !mycelium::economy::lanes_short(&stroke.physics.reserve_shortfall([true; 4])).is_empty() {
                 syntropy_arm(&mut stroke, &genome_path);
                 stroke.physics.relax();
             }
         }
-        if outcome.dormant() {
-            physics.spend([true; 4]); // the tick, not work
+        // 24.3: a working stroke spends the lanes its outcome moved; a stroke
+        // that moved no lane spends the tick on all four — the tick, not work.
+        let moved = outcome.moved();
+        if moved == [false; 4] {
+            physics.spend([true; 4]);
         } else {
-            physics.spend(Physics::lanes_of(&outcome.total()));
+            physics.spend(moved);
         }
         let Counts {
             fed,
@@ -216,7 +221,7 @@ fn main() {
         let cycle = mycelium::physics::aperture_cycle() as u64;
         if last_logged_k == u64::MAX || k_step != last_logged_k || stroke_n.saturating_sub(last_logged_n) >= cycle {
             let (atlas_ruled, atlas_stood, atlas_held) = entity.atlas_standing_counts();
-            if outcome.dormant() {
+            if moved == [false; 4] {
                 eprintln!(
                     "[{tag}] [{}] stroke idle: dwell {dwell_remaining:?} K {k_step} | genome {} | dialect {} | ideas {} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | feed {}",
                     mycelium::chronometry::Height::stamp_of(entity.now_tu()),
@@ -245,8 +250,10 @@ fn main() {
             last_logged_k = k_step;
             last_logged_n = stroke_n;
         }
-        let want = Physics::lanes_of(&outcome.total());
-        let wait = std::array::from_fn(|l| want[l] && !physics.can_expand(std::array::from_fn(|i| i == l)));
+        // The lanes the next stroke needs to expand on and cannot: one
+        // reading per lane (S10, S13.2), never a bit recomputed per lane.
+        let short = physics.reserve_shortfall(moved);
+        let wait: [bool; 4] = std::array::from_fn(|l| short[l] > 0);
         m.dwell_remaining = physics.dwell(&m.last_pressure, wait);
     }
 }

@@ -27,7 +27,7 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
     // The form engine is the only extractor. A family it does not
     // close is a withheld form; U1 stands it. No second extractor.
     let mag = family_magnitude(&train);
-    if physics.can_expand(Physics::lanes_of(&mag)) {
+    if mycelium::economy::lanes_short(&physics.reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
         physics.bump(&mag);
         StrokeOutcome::add(&mut outcome.fed, &mag);
     }

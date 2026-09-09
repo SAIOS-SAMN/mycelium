@@ -267,22 +267,27 @@ impl Physics {
         }
     }
 
-    /// Is any lane DEPLETED — the mesh in the SYNTROPIC (optimize + regenerate)
-    /// phase, rather than the entropic (expand) one?
-    pub fn depleted(&self) -> bool {
-        self.reserve.iter().any(|&r| r < expand_floor())
+    /// THE RESERVE SHORTFALL (S10 as ruled, 45.7; S13.2): per wanted lane,
+    /// how far the reserve stands below one expansion — zero where the lane
+    /// expands. A reading, never a verdict (§2.3): the caller acts on the
+    /// lanes that are short, and a lane at zero reserve affords only the
+    /// tick. `depleted()` collapsed the four lanes to one bit and
+    /// `can_expand` to another, and every caller that had to act recomputed
+    /// which lane the bit had thrown away.
+    pub fn reserve_shortfall(&self, lanes: [bool; 4]) -> [u64; 4] {
+        std::array::from_fn(|l| {
+            if lanes[l] {
+                expand_floor().saturating_sub(self.reserve[l])
+            } else {
+                0
+            }
+        })
     }
 
     /// Distance to the full reserve per lane — the DEPLETION PREMIUM the yield
     /// surface charges (a strained metabolism prices its recovery work higher).
     pub fn reserve_deficit(&self) -> [u64; 4] {
         std::array::from_fn(|l| reserve_max().saturating_sub(self.reserve[l]))
-    }
-
-    /// May the mesh EXPAND (germinate) on these lanes — is the reserve above the
-    /// floor there (the entropic phase)?
-    pub fn can_expand(&self, lanes: [bool; 4]) -> bool {
-        (0..4).all(|l| !lanes[l] || self.reserve[l] >= expand_floor())
     }
 
     /// Per-lane dwell in strokes from the last reply's pressure, for the
@@ -336,15 +341,11 @@ impl StrokeOutcome {
         t
     }
 
-    /// Dormant iff every mode is the zero vector; no threshold other than zero.
-    pub fn dormant(&self) -> bool {
-        let z = [0u64; 4];
-        self.fed == z
-            && self.pivoted == z
-            && self.stood == z
-            && self.uttered == z
-            && self.closed == z
-            && self.learned == z
+    /// The lanes this stroke moved, over every mode (24.3): a reading per
+    /// lane, never one bit over six modes. A stroke that moved no lane
+    /// spends the tick on all four (24.3), and the stroke line reads idle.
+    pub fn moved(&self) -> [bool; 4] {
+        Physics::lanes_of(&self.total())
     }
 }
 
@@ -390,18 +391,20 @@ mod tests {
     /// paced by the recovery the optimization earns.
     #[test]
     fn the_reserve_spends_depletes_and_regenerates_per_lane() {
+        let t = [false, false, true, false];
         let mut p = Physics::default();
-        assert!(p.can_expand([true; 4]), "full at rest");
+        assert_eq!(p.reserve_shortfall([true; 4]), [0; 4], "full at rest: no lane is short");
         for _ in 0..8 {
-            p.spend([false, false, true, false]); // 32 − 8·4 = 0 on the residual lane
+            p.spend(t); // 32 − 8·4 = 0 on the residual lane
         }
-        assert!(p.depleted());
-        assert!(!p.can_expand([false, false, true, false]), "the spent lane is barred");
-        assert!(p.can_expand([true, false, false, false]), "other lanes unaffected — polytonic");
+        let short = p.reserve_shortfall([true; 4]);
+        assert!(short[2] > 0, "the spent lane is short by what one expansion needs: {short:?}");
+        assert_eq!((short[0], short[1], short[3]), (0, 0, 0), "other lanes unaffected — polytonic");
+        assert_eq!(p.reserve_shortfall([true, false, false, false]), [0; 4], "a lane not wanted reads zero");
         p.regenerate();
-        assert!(!p.can_expand([false, false, true, false]), "one stroke is not recovery");
+        assert!(p.reserve_shortfall(t)[2] > 0, "one stroke is not recovery");
         p.regenerate();
-        assert!(p.can_expand([false, false, true, false]), "two strokes re-earn expansion");
+        assert_eq!(p.reserve_shortfall(t), [0; 4], "two strokes re-earn expansion");
     }
 
     /// The metabolism is per-lane syntropic minus entropic — the order flux.
@@ -419,13 +422,15 @@ mod tests {
     fn pressure_on_one_lane_dwells_that_lane_only() {
         let mut p = Physics::default();
         let g = [false, true, false, false];
-        while p.can_expand(g) {
+        while crate::economy::lanes_short(&p.reserve_shortfall(g)).is_empty() {
             p.spend(g);
         }
-        assert!(!p.can_expand(g), "G is spent");
-        assert!(p.can_expand([true, false, false, false]), "S still expands");
-        assert!(p.can_expand([false, false, true, false]), "T still expands");
-        assert!(p.can_expand([false, false, false, true]), "H still expands");
+        assert!(p.reserve_shortfall(g)[1] > 0, "G is spent");
+        assert_eq!(
+            p.reserve_shortfall([true, false, true, true]),
+            [0; 4],
+            "S, T and H still expand"
+        );
         let pressure = [0u64, 7, 0, 0];
         let sth = [true, false, true, true];
         assert_eq!(
@@ -439,9 +444,8 @@ mod tests {
             "a stroke that needs G dwells G's pressure only"
         );
         let outcome = StrokeOutcome { pivoted: [0, 3, 0, 0], ..Default::default() };
-        assert!(!outcome.dormant());
-        assert_eq!(Physics::lanes_of(&outcome.total()), g);
-        assert!(StrokeOutcome::default().dormant());
+        assert_eq!(outcome.moved(), g, "the stroke moved G and no other lane");
+        assert_eq!(StrokeOutcome::default().moved(), [false; 4], "a stroke that moved nothing");
     }
 
     #[test]

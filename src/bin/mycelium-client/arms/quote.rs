@@ -216,7 +216,7 @@ match entity.quote() {
 // Syllabus after quote so a voice can close dialect/idea charts
 // before its first SYLLABUS line. Under the Budget, not a timer.
 if !occluded
-    && !physics.depleted()
+    && mycelium::economy::lanes_short(&physics.reserve_shortfall([true; 4])).is_empty()
     && (entity.epigenome.genome_len() == 0 || entity.epigenome.atlas_is_empty())
 {
     if let Ok(n) = entity.pull_syllabus() {

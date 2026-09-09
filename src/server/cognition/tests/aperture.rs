@@ -177,7 +177,10 @@ fn a_depleted_lane_lists_the_demand_instead_of_germinating_it() {
     for _ in 0..8 {
         k.physics_mut().spend([true; 4]);
     }
-    assert!(!k.physics().can_expand([true; 4]), "the reserve is spent");
+    assert!(
+        !crate::economy::lanes_short(&k.physics().reserve_shortfall([true; 4])).is_empty(),
+        "the reserve is spent on some lane"
+    );
     let before = k.field().len();
     let out = k.ingest(&a, &b, [1; 32]);
     assert_eq!(out, Outcome::GermPending, "a deferred demand still stands");
@@ -242,7 +245,10 @@ fn a_depleted_lane_charges_a_sentence_by_its_loop_words() {
     for _ in 0..8 {
         k.physics_mut().spend([true; 4]);
     }
-    assert!(!k.physics().can_expand([true; 4]), "the reserve is spent");
+    assert!(
+        !crate::economy::lanes_short(&k.physics().reserve_shortfall([true; 4])).is_empty(),
+        "the reserve is spent on some lane"
+    );
     let before = k.physics().pressure;
     let language = k.language();
     let (form, qs) = reduce_germ(&language, (0, 0), &spoken);

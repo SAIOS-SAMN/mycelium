@@ -71,7 +71,10 @@ impl Kernel {
         self.physics.relax();
         self.ensure_bonded(voice);
         let idle = self.physics.metabolism_rate().iter().all(|&p| p <= 1);
-        if self.physics.depleted() || idle {
+        // A lane short of one expansion, or an idle book, is the syntropic
+        // phase: condense and regenerate (S10's reading, S13.2).
+        let short = self.physics.reserve_shortfall([true; 4]);
+        if !crate::economy::lanes_short(&short).is_empty() || idle {
             self.condense_stroke();
             self.physics.regenerate();
         }
@@ -223,7 +226,7 @@ impl Kernel {
                     section.puncture(asg.clone());
                     self.converge_here_at(&saddr, &section, voice);
                     self.record_spoken(saddr.clone(), voice);
-                    if self.physics.can_expand(lanes) {
+                    if crate::economy::lanes_short(&self.physics.reserve_shortfall(lanes)).is_empty() {
                         if let Some(w) = self.word_mut(&taddr) {
                             w.puncture(asg);
                         }
@@ -250,7 +253,7 @@ impl Kernel {
                 // only thing that should (E3): a germ with a depleted lane
                 // DEFERS and dockets on a later submission once the reserve
                 // recovers, so deferral never strands one.
-                if self.physics.can_expand(lanes) {
+                if crate::economy::lanes_short(&self.physics.reserve_shortfall(lanes)).is_empty() {
                     // ADMISSION IS ROOM (23.8): the draw comes from the
                     // voice's own room on each lane it occupies, and a lane
                     // that does not cover it REFUSES THE ACT — nothing is
