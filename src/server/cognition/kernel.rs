@@ -249,6 +249,11 @@ pub struct Kernel {
     pub(crate) drawers: crate::network::nerve::Keyed<[u8; 32]>,
     /// Per-voice occupancy of open draws, keyed by vk.
     pub(crate) drawn: crate::network::nerve::Keyed<[u64; 4]>,
+    /// Per-voice recall fee it could not cover, per lane (MU-ECONOMY §3.1
+    /// as ruled 2026-09-09, S13.15): while a claim of the voice is in
+    /// flight on a lane it owes on, its room on that lane is closed; the
+    /// record clears when that claim closes. Rebuilt from nothing at boot.
+    pub(crate) recall_short: crate::network::nerve::Keyed<[u64; 4]>,
     /// Words installed on two-voice consilience but NOT yet court-final
     /// (Step 5): local dialect awaiting the admission docket, keyed by address.
     pub(crate) provisional: crate::network::nerve::Keyed<Element>,

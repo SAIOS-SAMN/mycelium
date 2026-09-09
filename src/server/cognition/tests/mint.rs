@@ -259,24 +259,16 @@ let _ = k.ingest(&a, &b, [2; 32]);
 let docketed = k.treasury().audit().expect("a claim is not yet supply");
 assert_eq!(k.treasury().minted().expect("minted"), [0; 4], "no claim has been ruled");
 
-// PINNED, with its number. Supply grew from the seed to three times it
-// across two ingests: `ensure_bonded` funds EVERY arriving identity at
-// the genesis cover so it can bond into room. Identities are free
-// (47.3), so that is a faucet — free μ⃗ per key — and it was invisible
-// while `enroll` conjured bond instead of being funded.
-//
-// §4 says an unbonded voice "may learn, speak, and be paid; every claim
-// is escrowed against its own deflation", and under E1 an escrow is a
-// claim rather than a transfer, so speaking needs no bond at all. What
-// bond buys is ROOM — throughput, the rate the metabolism governs
-// (§3.3) — and the question §4 leaves open is what room an unbonded
-// voice has. Until that is ruled, this asserts the faucet exists rather
-// than hiding it.
-assert_eq!(
-    docketed,
-    std::array::from_fn(|l| seeded[l] * 3),
-    "one genesis allocation per arriving identity — a faucet, not a mint"
-);
+// NOTHING FUNDS AN ARRIVING IDENTITY (§3.1 as ruled 2026-09-09, S13.15).
+// Supply used to grow from the seed to three times it across these two
+// ingests: `ensure_bonded` funded every arriving identity at the genesis
+// cover so it could bond into room — a faucet, free μ⃗ per key, since
+// identities are free (47.3). Speaking needs no bond (an escrow is a
+// claim, E1); bond buys room, and an unbonded voice has room for one
+// claim in flight per lane. The seed is the supply.
+assert_eq!(docketed, seeded, "no allocation per arriving identity: the seed is the supply");
+assert_eq!(k.treasury().bond_of(&[1; 32]), None, "the arriving voice is unbonded");
+assert_eq!(k.treasury().bond_of(&[2; 32]), None);
 
 k.glue_local();
 let held = k.treasury().audit().expect("a glue conserves");

@@ -64,7 +64,6 @@ impl Kernel {
         cites: &[crate::anastome::dialogue::CiteWire],
         k: u64,
     ) -> Outcome {
-        self.ensure_bonded(voice);
         let germ = element::from_residual(&chain.to_vec());
         let listing = germ.address();
         if let Some(out) = self.answer_if_duplicate(&voice, &listing, k) {

@@ -64,7 +64,9 @@ assert_eq!(k.known_head(&key.vk_bytes()), Some((2, head.chain_hash)));
 // The next step cites them, and its height is above the peer's head.
 let before = k.height();
 let c = vec![(0, 0, 5), (0, 1, 3)];
-k.ingest(&a, &c, [1; 32]);
+// A second voice: the first has its one claim in flight on this lane
+// (§3.1 as ruled, S13.15), and any admitted act seals the step.
+k.ingest(&a, &c, [2; 32]);
 assert_eq!(k.pending_parents(), 0, "the step consumed them");
 assert!(
     k.height() > peer.head_height(),

@@ -180,8 +180,10 @@ assert!(
     matches!(k.ingest(&a, &b, [3; 32]), Outcome::Decomposed(_) | Outcome::GermPending),
     "the forward pair still speaks or its residual pends"
 );
+// A fourth voice: the third may hold its one claim in flight on this
+// lane from the forward pair (§3.1 as ruled, S13.15).
 assert!(
-    matches!(k.ingest(&fwd, &rev, [3; 32]), Outcome::Decomposed(_) | Outcome::GermPending),
+    matches!(k.ingest(&fwd, &rev, [4; 32]), Outcome::Decomposed(_) | Outcome::GermPending),
     "the reverse pair is the same form or its residual"
 );
 }

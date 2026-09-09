@@ -30,7 +30,9 @@ for n in 0..8u8 {
 let ga = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)]; // (0,0): 1→4
 let gb = vec![(0, 0, 1), (0, 1, 5), (1, 0, 1)]; // (0,1): 1→5
 assert_eq!(k.ingest(&a, &ga, [1; 32]), Outcome::GermPending);
-assert_eq!(k.ingest(&a, &gb, [1; 32]), Outcome::GermPending);
+// Voice 1 has its one claim in flight on this lane (§3.1 as ruled,
+// S13.15); B's first voice is another arriving identity.
+assert_eq!(k.ingest(&a, &gb, [4; 32]), Outcome::GermPending);
 // A's quorum lands on the recovered lane and installs — spending it back out…
 assert_eq!(k.ingest(&a, &ga, [2; 32]), Outcome::GermPending);
 let ga_spoken = k
@@ -237,11 +239,10 @@ fn a_depleted_lane_charges_a_sentence_by_its_loop_words() {
     assert!(steps > 0, "the loops name a charge");
 
     let mut k = Kernel::new();
-    // Admission is room (23.8, S9.6): a first-time voice is enrolled by
-    // `reflex_open`, which this fixture bypasses to reach `commit_germ`
-    // directly, so it enrols the voice itself; an unbonded voice has no
-    // room and its act is refused before anything is charged.
-    k.ensure_bonded([1; 32]);
+    // Admission is room (23.8, S9.6): this fixture bypasses `reflex_open`
+    // to reach `commit_germ` directly with an unbonded voice, which has
+    // room for one claim in flight per lane (§3.1 as ruled, S13.15) —
+    // nothing enrols it, and this first claim is admitted on that room.
     for _ in 0..8 {
         k.physics_mut().spend([true; 4]);
     }

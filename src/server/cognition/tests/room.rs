@@ -4,6 +4,80 @@
 use crate::cognition::*;
 use crate::transducer::germinate::germinate;
 
+/// MU-ECONOMY §3.1 as ruled 2026-09-09 (S12.5d, I22; S13.15) — THE ROOM OF
+/// AN UNBONDED VOICE. Nothing funds an arriving identity: its first claim
+/// is admitted without a bond and the supply stays the seed. It has room
+/// for exactly one claim in flight per lane: a second claim on an occupied
+/// lane is refused with `REFUSE_ROOM` — another voice's first claim on the
+/// same lane is not — and admitted once the first closed.
+#[test]
+fn an_unbonded_voice_has_room_for_one_claim_in_flight_per_lane() {
+use crate::transducer::element::from_residual;
+let mut k = Kernel::new();
+let seeded = k.treasury().audit().expect("genesis conserves");
+let a = vec![(0, 0, 1u8), (0, 1, 1)];
+let b = vec![(0, 0, 2u8), (0, 1, 2)];
+assert_eq!(k.ingest(&a, &b, [7; 32]), Outcome::GermPending, "the first claim needs no bond");
+assert_eq!(k.treasury().bond_of(&[7; 32]), None, "nothing bonded the arriving identity");
+assert_eq!(k.treasury().audit().expect("a claim is not supply"), seeded, "and nothing funded it");
+let first = from_residual(&germinate(&a, &b).unwrap());
+let listed = k.quote().1[0].0.address();
+let c = vec![(0, 0, 3u8), (0, 1, 3)];
+let d = vec![(0, 0, 4u8), (0, 1, 4)];
+assert_eq!(
+    from_residual(&germinate(&c, &d).unwrap()).lanes(),
+    first.lanes(),
+    "the second claim draws on the lanes the first occupies"
+);
+assert_eq!(
+    k.ingest(&c, &d, [7; 32]),
+    Outcome::Refused(crate::verdict::REFUSE_ROOM),
+    "a second claim on a lane with one in flight is refused"
+);
+assert_eq!(k.ingest(&c, &d, [8; 32]), Outcome::GermPending, "another voice's first claim is its own room");
+k.unlist(listed.as_bytes(), false);
+let e = vec![(0, 0, 5u8), (0, 1, 5)];
+let f = vec![(0, 0, 6u8), (0, 1, 6)];
+assert_eq!(k.ingest(&e, &f, [7; 32]), Outcome::GermPending, "admitted once the claim in flight closed");
+}
+
+/// §3.1 as ruled (I22, S13.15) — AN UNPAID RECALL CLOSES THE LANE UNTIL THE
+/// CLAIM IN FLIGHT CLOSES: a bonded voice with room to spare owes a recall
+/// on a lane it has a claim on and is refused there; the claim closes and
+/// the lane reopens. Owed on a lane with nothing in flight, the record
+/// waits and refuses nothing.
+#[test]
+fn an_unpaid_recall_closes_the_lane_until_the_claim_in_flight_closes() {
+use crate::transducer::element::from_residual;
+let mut k = Kernel::new();
+let cover = k.treasury().bond_of(&[0x11; 32]).expect("the fixture hypha is bonded");
+k.enroll([9; 32], cover);
+let a = vec![(0, 0, 1u8), (0, 1, 1)];
+let b = vec![(0, 0, 2u8), (0, 1, 2)];
+let c = vec![(0, 0, 3u8), (0, 1, 3)];
+let d = vec![(0, 0, 4u8), (0, 1, 4)];
+assert_eq!(k.ingest(&a, &b, [9; 32]), Outcome::GermPending);
+let listed = k.quote().1[0].0.address();
+let lanes = from_residual(&germinate(&a, &b).unwrap()).lanes();
+let short: [u64; 4] = std::array::from_fn(|l| u64::from(lanes[l]) * 3);
+k.record_recall_short([9; 32], &short);
+assert_eq!(
+    k.ingest(&c, &d, [9; 32]),
+    Outcome::Refused(crate::verdict::REFUSE_ROOM),
+    "the lane it owes on is closed while its claim stands, bond or no bond"
+);
+k.unlist(listed.as_bytes(), false);
+assert_eq!(k.ingest(&c, &d, [9; 32]), Outcome::GermPending, "the claim closed and the lane reopened");
+let e = vec![(0, 0, 5u8), (0, 1, 5)];
+let f = vec![(0, 0, 6u8), (0, 1, 6)];
+k.record_recall_short([10; 32], &short);
+assert_eq!(
+    k.ingest(&e, &f, [10; 32]),
+    Outcome::GermPending,
+    "owed on a lane with nothing in flight, the first claim is admitted"
+);
+}
+
 /// 12.6, S9.7, Stage 12 S12.5c — THE BOOK EXTENDS BEFORE IT REFUSES. A
 /// voice's first listing takes its whole room on a lane; probed a full
 /// aperture without moving it is unreachable. The next draw on that lane

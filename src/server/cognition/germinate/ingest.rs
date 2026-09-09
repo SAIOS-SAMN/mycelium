@@ -57,8 +57,8 @@ impl Kernel {
         self.commit_all(reductions, voice)
     }
 
-    /// THE REFLEX OPENING — under a brief lock: the voice enrols on first
-    /// speech, the metabolism dissipates its backlog, the cheap syntropic
+    /// THE REFLEX OPENING — under a brief lock: the metabolism dissipates
+    /// its backlog (no voice enrols here, §3.1 as ruled), the cheap syntropic
     /// moves fire in both resting states of the two-stroke (depleted or
     /// idle; the redundancy probe stays with the idle worker), and the
     /// escrow-priced door prices congestion. Returns the language snapshot
@@ -69,7 +69,12 @@ impl Kernel {
         voice: [u8; 32],
     ) -> Option<(std::sync::Arc<Language>, (usize, usize))> {
         self.physics.relax();
-        self.ensure_bonded(voice);
+        // Nothing funds an arriving identity (MU-ECONOMY §3.1 as ruled
+        // 2026-09-09, S13.15): `ensure_bonded` enrolled every new voice at
+        // the genesis cover here — a faucet measured as supply three times
+        // the seed after two ingests — and an unbonded voice has room for
+        // one claim in flight per lane instead (`room_shortfall`). The
+        // voice still pays the door below.
         let idle = self.physics.metabolism_rate().iter().all(|&p| p <= 1);
         // A lane short of one expansion, or an idle book, is the syntropic
         // phase: condense and regenerate (S10's reading, S13.2).
@@ -157,6 +162,10 @@ impl Kernel {
                 // than clamped away.
                 let pressure = self.physics.pressure;
                 let (_paid, short) = self.treasury.settle_recall(voice, &mag, &pressure, anchor);
+                // The reading is served and the shortfall recorded per lane
+                // (§3.1 as ruled, S13.15): it closes the voice's room on a
+                // short lane while its claim in flight there stands.
+                self.record_recall_short(voice, &short);
                 for l in crate::economy::lanes_short(&short) {
                     eprintln!(
                         "  court recall short voice {:02x}{:02x}… lane {l} by {}",
@@ -271,10 +280,18 @@ impl Kernel {
                     // the page and the shortfall is read again.
                     let draw = residual.magnitude();
                     let k_now = self.k_step();
-                    let short = self.room_after_extending(&voice, &draw);
-                    if !crate::economy::lanes_short(&short).is_empty() {
-                        self.log_room_refused(&voice, &draw, &short);
-                        return Outcome::Refused(crate::verdict::REFUSE_ROOM);
+                    // A use of an address already listed draws nothing new
+                    // (§3.1 as ruled, S13.15), here as at the other listing
+                    // site: a second vantage on the same address is
+                    // consilience, not a second claim, and the drawer stays
+                    // the voice that listed it. Drawn again, the first
+                    // voice's room never came back — the faucet hid it.
+                    if !self.pending.contains(&addr) {
+                        let short = self.room_after_extending(&voice, &draw);
+                        if !crate::economy::lanes_short(&short).is_empty() {
+                            self.log_room_refused(&voice, &draw, &short);
+                            return Outcome::Refused(crate::verdict::REFUSE_ROOM);
+                        }
                     }
                     self.converge_here(&residual, voice);
                     // 23.8: the residual is "docketed AS A LISTING". One

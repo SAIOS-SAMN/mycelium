@@ -68,15 +68,49 @@ impl Kernel {
         std::array::from_fn(|l| room[l].saturating_add(self.occupancy[l] as usize))
     }
 
-    /// THE SHORTFALL of a draw against the uttering voice's remaining room,
-    /// per lane: what the draw needs beyond the room, zero where the lane
-    /// fits (S9.6, §2.3). A reading, never a verdict. The bit this replaced
-    /// threw the lane away, and its one caller then read the room a second
-    /// time to learn which lane had refused — the recorded proof that a
-    /// `bool` over four lanes destroys what the caller needs.
+    /// THE SHORTFALL of a draw against the uttering voice's room, per lane:
+    /// what the draw needs beyond the room, zero where the lane fits (S9.6,
+    /// §2.3). A reading, never a verdict. The bit this replaced threw the
+    /// lane away, and its one caller then read the room a second time to
+    /// learn which lane had refused — the recorded proof that a `bool` over
+    /// four lanes destroys what the caller needs.
+    ///
+    /// Room is what bond buys (MU-ECONOMY §3.1 as ruled 2026-09-09,
+    /// S13.15): a bonded voice draws against its bond less what it has
+    /// drawn; an unbonded voice has room for exactly one claim in flight
+    /// per lane — a lane it already draws on is short by the whole draw,
+    /// a lane it does not is not short at all, since speaking needs no
+    /// bond. A lane the voice owes an unpaid recall on (`recall_short`)
+    /// is short by the whole draw while its claim in flight on that lane
+    /// stands. A test cap (`lane_cap`) reads as a bond.
     pub(super) fn room_shortfall(&self, voice: &[u8; 32], draw: &[u64; 4]) -> [u64; 4] {
+        let occ = self.drawn.get(voice).copied().unwrap_or([0; 4]);
+        let owed = self.recall_short.get(voice).copied().unwrap_or([0; 4]);
+        let bonded = self.lane_cap.is_some() || self.treasury.bond_of(voice).is_some();
         let room = self.lane_room_of(voice);
-        crate::economy::shortfall(draw, &std::array::from_fn(|l| room[l] as u64))
+        std::array::from_fn(|l| match (draw[l], bonded) {
+            (0, _) => 0,
+            (d, _) if owed[l] > 0 && occ[l] > 0 => d,
+            (d, true) => d.saturating_sub(room[l] as u64),
+            (d, false) if occ[l] > 0 => d,
+            (_, false) => 0,
+        })
+    }
+
+    /// A recall the voice could not pay (§3.1 as ruled, S13.15): the
+    /// shortfall is recorded per lane; it closes the voice's room on each
+    /// short lane while a claim of the voice is in flight there, and clears
+    /// when that claim closes (`occupy`). Nothing is written for a recall
+    /// that was paid in full.
+    pub(super) fn record_recall_short(&mut self, voice: [u8; 32], short: &[u64; 4]) {
+        if crate::economy::lanes_short(short).is_empty() {
+            return;
+        }
+        let mut owed = self.recall_short.get(&voice).copied().unwrap_or([0; 4]);
+        for l in crate::economy::lanes_short(short) {
+            owed[l] = owed[l].saturating_add(short[l]);
+        }
+        self.recall_short.insert(voice, owed);
     }
 
     /// One line per short lane (34.2), read off the shortfall the caller

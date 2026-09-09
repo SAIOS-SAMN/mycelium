@@ -8,16 +8,6 @@
 use super::*;
 
 impl Kernel {
-    pub(crate) fn ensure_bonded(&mut self, voice: [u8; 32]) {
-        if self.treasury.bond_of(&voice).is_some() {
-            return;
-        }
-        let Some(cover) = self.genesis_cover else {
-            return;
-        };
-        self.enroll(voice, cover);
-    }
-
     pub(crate) fn t_extent(&self, addr: &[u8], now: u64) -> u64 {
         let Some(then) = self
             .provisional_h
@@ -207,6 +197,23 @@ impl Kernel {
             let mut d = self.drawn.get(&v).copied().unwrap_or([0; 4]);
             for (t, &m) in d.iter_mut().zip(mag) {
                 *t = if add { t.saturating_add(m) } else { t.saturating_sub(m) };
+            }
+            // §3.1 as ruled (S13.15): the voice's claim in flight on a lane
+            // closed, so the recall shortfall that closed its room there
+            // clears with it.
+            if !add {
+                if let Some(mut owed) = self.recall_short.get(&v).copied() {
+                    for l in 0..4 {
+                        if d[l] == 0 {
+                            owed[l] = 0;
+                        }
+                    }
+                    if owed == [0; 4] {
+                        self.recall_short.remove(&v);
+                    } else {
+                        self.recall_short.insert(v, owed);
+                    }
+                }
             }
             self.drawn.insert(v, d);
         }

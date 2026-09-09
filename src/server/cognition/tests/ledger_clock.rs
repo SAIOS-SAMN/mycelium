@@ -36,7 +36,9 @@ let b = vec![(0, 0, 2), (0, 1, 2)];
 k.ingest(&a, &b, [1; 32]);
 let r0 = k.chain().head_hash();
 k.push_cocycle_at(&inv, [1; 32], [2; 32], v1.clone(), ck1.clone(), r0);
-k.ingest(&a, &[(0, 0, 5), (0, 1, 3)], [1; 32]);
+// A second voice: the first has its one claim in flight on this lane
+// (§3.1 as ruled, S13.15), and the act here only needs the mind to move.
+k.ingest(&a, &[(0, 0, 5), (0, 1, 3)], [2; 32]);
 let r1 = k.chain().head_hash();
 assert_ne!(r0, r1, "the mind moved");
 let chain_before = k.dialect_chain_len();

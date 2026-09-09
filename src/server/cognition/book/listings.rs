@@ -103,10 +103,18 @@ impl Kernel {
         self.listing_atlas.admit(&inv, &addr);
         self.tension.insert(&addr, mag);
         self.on_page.insert(&addr, ());
-        if let Some(voice) = drawer {
+        // A LISTING IS DRAWN ONCE (§3.1 as ruled, S13.15): an address
+        // already on the page keeps its drawer and its occupancy, so a
+        // second vantage on it neither doubles the occupancy nor takes the
+        // drawer over — which left the first voice's room drawn for good
+        // when the install released the second's instead.
+        let already = self.pending.contains(&addr);
+        if let (Some(voice), false) = (drawer, already) {
             self.drawers.insert(&addr, voice);
         }
-        self.occupy(&addr, &mag, true);
+        if !already {
+            self.occupy(&addr, &mag, true);
+        }
         self.pending.insert(&addr, (residual, k_now));
         self.book_gen += 1;
         self.append_step(&addr, actor);

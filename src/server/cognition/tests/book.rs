@@ -17,7 +17,11 @@ let k = std::sync::Mutex::new(Kernel::new());
     let a = vec![(0, 0, 1u8), (0, 1, 1)];
     let b = vec![(0, 0, 2u8), (0, 1, 2)];
     assert!(matches!(g.ingest(&a, &b, [1; 32]), Outcome::GermPending));
-    assert!(matches!(g.attest(&germinate(&a, &b).unwrap(), [1; 32]), Outcome::GermPending));
+    // A second voice: the percept and the attested chain list under two
+    // addresses (the framed and the unframed residual — a residue noted in
+    // S13.15), and voice 1 has its one claim in flight on this lane (§3.1
+    // as ruled).
+    assert!(matches!(g.attest(&germinate(&a, &b).unwrap(), [2; 32]), Outcome::GermPending));
 }
 let quoted = crate::synthesis::quote(&k, [1u8; 32], &[]).expect("quote");
 assert!(!quoted.priced.is_empty(), "an empty atlas reads the book at depth zero");
