@@ -89,8 +89,9 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
     if let Ok(p) = std::env::var("MYCELIUM_HOME") {
         return Ok(PathBuf::from(p));
     }
-    let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
-    Ok(PathBuf::from(home).join(".mycelium"))
+    // The fleet's homes are `var/<unit>` under the repository the binary
+    // runs from, never the operator's home directory (moved 2026-09-09).
+    Ok(PathBuf::from("var").join("voice"))
 }
 
 fn main() {

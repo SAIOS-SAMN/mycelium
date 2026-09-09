@@ -61,8 +61,11 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
     if let Ok(p) = std::env::var("MYCELIUM_HOME") {
         return Ok(PathBuf::from(p));
     }
-    let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
-    Ok(PathBuf::from(home).join(".mycelium"))
+    // The fleet's homes are `var/<unit>` under the repository the binary
+    // runs from (the units' working directory), never the operator's home
+    // directory (moved 2026-09-09). A hypha started with no `--home` is the
+    // one hypha of a single-node run.
+    Ok(PathBuf::from("var").join("hypha"))
 }
 
 /// A boot that cannot come up says why and exits: a socket that will not

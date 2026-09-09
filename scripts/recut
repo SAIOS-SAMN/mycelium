@@ -8,18 +8,23 @@
 # the origin and bumps the epoch on every restart. Both belong here, run
 # once, and nowhere else.
 #
-# Usage: scripts/recut [HOME_ROOT]        (default ~/.mycelium)
+# Usage: scripts/recut [HOME_ROOT]        (default <repository>/var)
+#
+# The fleet's homes live under the repository, `var/<unit>` (2026-09-09:
+# moved out of the operator's home directory); keys, mesh records and corpus
+# manifests are configuration and stay, everything else is state and goes.
 #
 # Order matters. Voices go down first so nothing speaks into a mesh that is
 # being re-originated; hyphae go down in reverse of the order they come up,
 # so the minting hypha is the last to stop and the first to start.
 set -euo pipefail
 
-ROOT="${1:-$HOME/.mycelium}"
+REPO="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="${1:-$REPO/var}"
 VOICES=(1 2 3 4 5)
 HYPHAE=(a b c)
 MINTER="${HYPHAE[0]}"
-BIN="$(cd "$(dirname "$0")/.." && pwd)/target/release/mycelium-server"
+BIN="$REPO/target/release/mycelium-server"
 
 say() { printf '  recut: %s\n' "$*"; }
 
