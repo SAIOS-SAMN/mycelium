@@ -66,6 +66,37 @@ fn the_audit_holds_through_genesis_mint_and_burn() {
     assert_eq!(t.supply().expect("supply adds up"), [11, 10, 12, 10]);
 }
 
+/// §4, §6, Stage 12 S12.5a (I38) — A STAKE OUTSIDE THE LIVE GENESIS IS
+/// BURNED, and the audit holds through it: the bond leaves the carriers and
+/// the supply by one vector as one `Burn` row; the identity's balance stays;
+/// the live bond stands; nothing is written that moves no supply.
+#[test]
+fn a_stake_outside_the_live_genesis_is_burned_and_the_audit_holds() {
+    let mut t = Treasury::new();
+    let a = (1u64, [1u8; 32]);
+    t.genesis([1; 32], [10, 10, 10, 10], a);
+    t.enroll([1; 32], [6, 20, 0, 26], a);
+    t.genesis([2; 32], [4, 4, 4, 4], a);
+    t.enroll([2; 32], [4, 4, 4, 4], a);
+    assert!(t.audit().is_ok(), "two bonded identities conserve");
+    let burned = t.bind_live(&[[2; 32]], a);
+    assert_eq!(burned, vec![([1; 32], [6, 10, 0, 10])], "the dropped stake is burned whole");
+    assert_eq!(t.bond_of(&[1; 32]), None, "the identity is no longer bonded");
+    assert_eq!(t.bond_of(&[2; 32]), Some([4, 4, 4, 4]), "the live bond stands");
+    assert_eq!(t.balance_mu(&[1; 32]), [4, 0, 10, 0], "its balance stays; only the bond left");
+    assert!(
+        t.entries()
+            .iter()
+            .any(|e| e.kind == Kind::Burn && e.who == [1; 32] && e.mu == [6, 10, 0, 10]),
+        "one burn row names what left"
+    );
+    assert_eq!(
+        t.audit().expect("the audit holds through the burn"),
+        [8, 4, 14, 4],
+        "supply = genesis − burn, and the carriers agree"
+    );
+}
+
 /// R9, and the distinction the audit turns on. A FUNDED escrow holds
 /// μ⃗ that left a balance and is still in the mesh, so it is counted;
 /// discharging it MOVES value and mints nothing. A CLAIM escrow holds

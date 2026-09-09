@@ -285,6 +285,14 @@ pub struct Kernel {
 }
 
 impl Kernel {
+    /// THE FIXTURE KERNEL (§3.4): a bootstrap identity `[0x11; 32]` funded
+    /// and staked at the six-family cover below, so a test can list, quote
+    /// and settle without registering a corpus. No production path calls
+    /// it: the hypha boots by [`Kernel::boot`], whose cover is measured from
+    /// the corpus that registers and whose bond is the hypha's own key (rule
+    /// 8). Booted from here, every live hypha of the 2026-09-08 soak carried
+    /// a stake for a key the mesh record never named and dropped it at boot
+    /// (I38).
     pub fn new() -> Self {
         let mut k = Kernel { identity: [0x11; 32], ..Kernel::default() };
         if let Some(cover) = Self::measured_test_cover() {
@@ -292,6 +300,14 @@ impl Kernel {
             k.enroll([0x11; 32], cover);
         }
         k
+    }
+
+    /// THE HYPHA'S KERNEL AS IT BOOTS: no identity until `bind_identity`, no
+    /// cover until the corpus registers (`genesis::register_corpora` measures
+    /// it and stakes the hypha's own key), nothing funded and nothing staked
+    /// that the mesh record does not name.
+    pub fn boot() -> Self {
+        Kernel::default()
     }
 
     /// Bootstrap genesis: the lane-wise measure of a named genesis family,

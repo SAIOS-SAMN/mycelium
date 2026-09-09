@@ -23,11 +23,10 @@ pub type Anchor = (u64, [u8; 32]);
 /// audit then reported carriers that did not match a journal it had not
 /// read whole. A typo in a kind is a ledger that does not describe the
 /// mesh, and nothing would say so. The chapter fixes a list; the type is
-/// that list, and every match on it is exhaustive.
-///
-/// `Legacy` is not §2's: it marks a stake dropped by `refresh_bond` for a
-/// key that is no longer enrolled, and it moves no supply. It is named
-/// here rather than left to fall through a `_` arm.
+/// that list, and every match on it is exhaustive. A stake dropped for a
+/// key outside the live genesis is a `Burn` (§4, §6); the `Legacy` kind
+/// that once marked it moved no supply and failed the audit by exactly its
+/// vector (I38).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Kind {
     Genesis,
@@ -40,7 +39,6 @@ pub enum Kind {
     Revoke,
     Slash,
     Burn,
-    Legacy,
 }
 
 impl Kind {
@@ -56,8 +54,7 @@ impl Kind {
             | Kind::Transfer
             | Kind::Escrow
             | Kind::Release
-            | Kind::Revoke
-            | Kind::Legacy => None,
+            | Kind::Revoke => None,
         }
     }
 }
@@ -228,14 +225,20 @@ impl Treasury {
         self.bond_of(who)
     }
 
-    /// Sum of live stakes. Legacy entries are excluded.
+    /// Sum of live stakes.
     pub fn bond_total(&self) -> [u64; 4] {
         self.bond_total
     }
 
-    /// Stakes whose identity is not in the live genesis become `legacy`
-    /// entries and leave `stakes` / `bond_total`.
-    pub fn bind_live(&mut self, live: &[[u8; 32]]) {
+    /// A STAKE OUTSIDE THE LIVE GENESIS IS BURNED (§4: bond is μ⃗ at risk;
+    /// §6: every row moves the supply or moves nothing, and a stake that
+    /// leaves the carriers under a row that moves no supply breaks the
+    /// audit by exactly its vector). Each dropped stake leaves as one `Burn`
+    /// anchored to the caller's position, the identity leaves `stakes`, and
+    /// what left is returned so the caller can say so. The `Legacy` row this
+    /// wrote, at K 0 under a zero receipt, failed `audit` on every live
+    /// hypha of the 2026-09-08 soak (I38).
+    pub fn bind_live(&mut self, live: &[[u8; 32]], anchor: Anchor) -> Vec<([u8; 32], [u64; 4])> {
         let mut drop: Vec<([u8; 32], [u64; 4])> = Vec::new();
         crate::snapshot::persist(&self.stakes, |who, mu| {
             let Ok(w) = <[u8; 32]>::try_from(who) else { return };
@@ -243,17 +246,14 @@ impl Treasury {
                 drop.push((w, *mu));
             }
         });
+        let mut burned = Vec::with_capacity(drop.len());
         for (who, mu) in drop {
+            let took = self.burn(who, mu, anchor);
             self.stakes.remove(&who);
-            self.write(Entry {
-                kind: Kind::Legacy,
-                who,
-                mu,
-                k_step: 0,
-                receipt: [0; 32],
-            });
+            burned.push((who, took));
         }
         self.refresh_bond();
+        burned
     }
 
     /// `supply = genesis + mint − burn`, per lane (MU-ECONOMY §6). Genesis

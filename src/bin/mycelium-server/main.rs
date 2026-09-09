@@ -132,7 +132,11 @@ fn main() {
     let mut join_peers: Vec<String> = mesh_rec.peers.clone();
 
     let height = mycelium::chronometry::Height::default();
-    let kernel = Arc::new(Mutex::new(Kernel::new()));
+    // I38: the hypha boots unfunded and unbonded; the corpus that registers
+    // measures its cover and its own key is what stakes (rule 8). The
+    // fixture kernel funded `[0x11; 32]`, and every live ledger carried a
+    // stake for a key the mesh record never named.
+    let kernel = Arc::new(Mutex::new(Kernel::boot()));
     // C6. `genesis` was written as [0u8; 32] and only ever printed, so the
     // boot line read `genesis 0000… epoch 2` on every node and said nothing.
     // 45.5: H_genesis is the CHAIN HASH OF THE MESH'S FIRST RECEIPT, written
@@ -173,7 +177,12 @@ fn main() {
         let mut live: Vec<[u8; 32]> = genesis.hypha.iter().map(|(who, _)| *who).collect();
         live.extend(genesis.voice.iter().map(|(who, _)| *who));
         let Ok(mut k) = kernel.lock() else { refuse_boot(&tag, "kernel lock poisoned at genesis") };
-        k.bind_live(&live);
+        for (who, mu) in k.bind_live(&live) {
+            eprintln!(
+                "[{tag}] bond outside the live genesis burned {:02x}{:02x}… {mu:?}",
+                who[0], who[1]
+            );
+        }
         k.bind_identity(vk);
         if let Some(held) = k.treasury().bond_of(&vk) {
             eprintln!("[{tag}] bond from ledger {held:?}");
