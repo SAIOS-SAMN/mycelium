@@ -18,31 +18,40 @@ impl Entity {
         }
         self.refine_cursor = (self.refine_cursor + 1) % g.len();
         let i = self.refine_cursor;
-        let sub = g[i].substance();
+        let sub = g.get(i)?.substance();
         if sub.sub().is_empty() {
             return None;
         }
+        // `locate` deconstructs over the WORKING atlas (U2): a cite's index
+        // runs over the genome, then the dialect, then the ideas. A
+        // refinement bid cites ruled words only (rule 11: a cite the genome
+        // does not hold is not a compression the mesh can replay), so a
+        // deconstruction that leans on a stood or held word is no bid; it
+        // was read as a genome index and voice 4 died on it (I35).
         let located = self.epigenome.locate(sub.sub(), Some(i));
         let (cites, residual) = (located.cites, located.residual);
         let g = self.epigenome.genome();
-        match (cites.len(), residual.as_slice()) {
-            (1.., []) => Some((
-                g[i].address(),
-                cites
+        let ruled = cites.iter().all(|c| c.word < g.len());
+        match (cites.len(), residual.as_slice(), ruled) {
+            (1.., [], true) => {
+                let word = g.get(i)?.address();
+                let wires: Option<Vec<dialogue::CiteWire>> = cites
                     .into_iter()
                     .map(|c| {
-                        let body = crate::transducer::sentence::cited_pattern(&g[c.word], c.gauge)
+                        let cited = g.get(c.word)?;
+                        let body = crate::transducer::sentence::cited_pattern(cited, c.gauge)
                             .unwrap_or_default();
-                        dialogue::CiteWire {
-                            addr: g[c.word].address(),
+                        Some(dialogue::CiteWire {
+                            addr: cited.address(),
                             standing: Standing::Ruled.as_u8(),
                             transport: c.transport,
                             gauge: c.gauge as u32,
                             body,
-                        }
+                        })
                     })
-                    .collect(),
-            )),
+                    .collect();
+                Some((word, wires?))
+            }
             _ => None,
         }
     }
