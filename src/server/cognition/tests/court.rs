@@ -185,6 +185,32 @@ k.court_stroke(one_stroke_transport);
 assert_eq!(ruled_n(&k, &addrs), cap + 1, "later listings are not starved by already-ruled ones");
 }
 
+/// R6, 47.3 — A CELL'S VOLUME IS THE OPEN LISTINGS ON ITS CHART: the
+/// measure of the remainders the chart's open, non-flat fields hold. It
+/// is one quantity for the chart, whatever vantages the cell has; a flat
+/// field and a field on another chart contribute nothing. Measured
+/// through the speakers' index it was zero for every hypha vertex, so no
+/// section stood a 0-cell and nothing filled.
+#[test]
+fn a_cells_volume_is_the_open_listings_on_its_chart() {
+use crate::transducer::address::Address;
+use crate::transducer::stalk::{Closure, Invariant};
+let mut k = Kernel::new();
+let inv = Invariant(vec![7]);
+let listed = Address::from(&b"listed"[..]);
+let flat = Address::from(&b"flat"[..]);
+let elsewhere = Address::from(&b"elsewhere"[..]);
+let rem = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 0)];
+let mag = crate::transducer::element::measure_lanes(&rem);
+assert!(mag.iter().any(|&x| x > 0));
+k.write_field(listed.as_bytes(), inv.clone(), Closure::Cavity, rem.clone(), &[0; 4], &mag);
+k.write_field(flat.as_bytes(), inv.clone(), Closure::Flat, Vec::new(), &[0; 4], &[0; 4]);
+k.write_field(elsewhere.as_bytes(), Invariant(vec![8]), Closure::Cavity, rem.clone(), &[0; 4], &mag);
+assert_eq!(k.volume_of_cell(&inv), mag, "the open listing on the chart is the cell's volume");
+assert_eq!(k.listings_on(&inv).len(), 1, "the flat field and the other chart's field are not on it");
+assert_eq!(k.volume_of_cell(&Invariant(vec![9])), [0; 4], "a chart with no open listing has no volume");
+}
+
 /// 45.7, S9.14, S13.3 — THE DOCKET IS AN ORBIT: a docket of more listings
 /// than one budget is ruled whole across strokes, the stroke whose walk
 /// passes the end of the key order reports the circuit and its period,

@@ -117,8 +117,11 @@ impl Kernel {
         }
     }
 
-    pub(crate) fn volume_of_cell<A: AsRef<[u8]>>(&self, inv: &crate::transducer::stalk::Invariant, verts: &[A]) -> [u64; 4] {
-        let held = self.listings_on(inv, verts);
+    /// R6 (47.3): the volume of a cell is the measure of the open listings
+    /// on its chart. Its vertices are vantages — hyphas — and no speaker's
+    /// index gates it, so the cell's vertex list is not an argument here.
+    pub(crate) fn volume_of_cell(&self, inv: &crate::transducer::stalk::Invariant) -> [u64; 4] {
+        let held = self.listings_on(inv);
         let mut chain = Vec::new();
         for (a, _) in held.fiber(crate::network::nerve::ROOT) {
             if let Some(f) = self.field.get(&a) {
@@ -129,8 +132,8 @@ impl Kernel {
     }
 
     pub(crate) fn pay_cell_volume<A: AsRef<[u8]>>(&mut self, inv: &crate::transducer::stalk::Invariant, addrs: &[A]) {
-        let held = self.listings_on(inv, addrs);
-        let vol = self.volume_of_cell(inv, addrs);
+        let held = self.listings_on(inv);
+        let vol = self.volume_of_cell(inv);
         // Every vertex of the cell is a party to what the cell closed. The
         // volume is one quantity for all of them, so it splits per lane as
         // a consilience award does; paying `addrs.first()` paid whichever

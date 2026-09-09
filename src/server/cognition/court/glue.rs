@@ -60,7 +60,7 @@ impl Kernel {
             .complexes
             .remove(&inv.key())
             .unwrap_or_default();
-        let vol0 = self.volume_of_cell(&inv, &[peer]);
+        let vol0 = self.volume_of_cell(&inv);
         let peer_gamma = if spoken.is_translation() {
             spoken
                 .letters()
@@ -110,17 +110,40 @@ impl Kernel {
             let Some(w) = self.word_at(&sec.addr) else {
                 continue;
             };
-            let vol_e = self.volume_of_cell(&inv, &[v.as_slice(), peer.as_slice()]);
+            // R6 (47.3): two sections of one body at two vantages glue by
+            // the identity edge — the versor between their shapes is the
+            // identity — which fills, pays and records; two bodies a versor
+            // relates but no alphabet rotor spells stand as a remainder
+            // edge, the obstruction recorded. Words with a group transition
+            // glue by its rotor, as before.
+            let bodies = (
+                crate::transducer::element::shape_of_chain(w.sub()),
+                crate::transducer::element::shape_of_chain(spoken.sub()),
+            );
             match crate::transducer::cech::transition(w, &spoken).and_then(|g| crate::transducer::cech::rotor_of(&g)) {
-                Some(g) => cx.set_edge(v, peer.as_slice(), g, vol_e),
-                None => {
-                    if crate::transducer::cech::transition(w, &spoken).is_some() {
-                        cx.set_remainder_edge(v, peer.as_slice());
+                Some(g) => cx.set_edge(v, peer.as_slice(), g, vol0),
+                None => match bodies {
+                    (Some(a), Some(b)) => match crate::transducer::blade::versor_between(&a, &b) {
+                        Some(between)
+                            if crate::transducer::element::same_versor(
+                                &between,
+                                &crate::transducer::element::identity_versor(),
+                            ) =>
+                        {
+                            cx.set_edge(v, peer.as_slice(), crate::transducer::alphabet::Rotor::identity(), vol0)
+                        }
+                        Some(_) => cx.set_remainder_edge(v, peer.as_slice()),
+                        None => {}
+                    },
+                    _ => {
+                        if crate::transducer::cech::transition(w, &spoken).is_some() {
+                            cx.set_remainder_edge(v, peer.as_slice());
+                        }
                     }
-                }
+                },
             }
         }
-        cx.coboundary_on_link(&peer, |vs| self.volume_of_cell(&inv, vs));
+        cx.coboundary_on_link(&peer, |_| self.volume_of_cell(&inv));
         let mut filled = false;
         let mut class_cell: Option<(crate::transducer::alphabet::Rotor, u8)> = None;
         let mut congruent: Option<(crate::transducer::alphabet::Rotor, u32, Vec<Address>)> = None;
@@ -370,7 +393,7 @@ impl Kernel {
         addr: &crate::transducer::address::Address,
     ) {
         let me = self.identity;
-        let vol = self.volume_of_cell(inv, &[me.as_slice()]);
+        let vol = self.volume_of_cell(inv);
         let mut cx = match self.complexes.remove(&inv.key()) {
             Some(c) => c,
             None => crate::transducer::cech::Complex::new(),

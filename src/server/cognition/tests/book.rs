@@ -313,12 +313,13 @@ k.confirm_peer_holds(&[crate::transducer::sheaf::StratumDigest {
 assert_eq!(k.heard_len(), 0, "a moved stratum root drops heard");
 }
 
-/// G3. `listings_on` is the meet of the cell's own vertices (13.1, 14.6):
-/// the listings every voice of the cell speaks, on its chart, still open.
-/// It is a fold of `Keyed::meet` over the cell's vertex list — a boundary
-/// walk — and never a product of the vertices with the chart's listings.
+/// G3 (R6, 47.3). `listings_on` is the open listings on the cell's chart.
+/// A cell's vertices are vantages — hyphas — and no speaker's index gates
+/// what its chart holds: read as the meet of `spoken_by` over the cell's
+/// vertices, keyed by voice, every hypha vertex measured zero and nothing
+/// ever filled although charts held two sections.
 #[test]
-fn listings_on_is_the_meet_of_its_vertices() {
+fn listings_on_is_the_open_listings_on_the_chart() {
 use crate::transducer::address::Address;
 let mut k = Kernel::new();
 let inv = crate::transducer::stalk::Invariant(vec![7]);
@@ -337,26 +338,14 @@ k.open.remove(shut.as_bytes());
 k.record_spoken(both.clone(), v1);
 k.record_spoken(both.clone(), v2);
 k.record_spoken(only_v1.clone(), v1);
-k.record_spoken(shut.clone(), v1);
-k.record_spoken(shut.clone(), v2);
-k.record_spoken(off_chart.clone(), v1);
-k.record_spoken(off_chart.clone(), v2);
 
-let held = k.listings_on(&inv, &[v1, v2]);
-assert!(held.contains(both.as_bytes()), "spoken by both, on the chart, open");
-assert!(!held.contains(only_v1.as_bytes()), "a listing one vertex never spoke is not in the meet");
+let held = k.listings_on(&inv);
+assert!(held.contains(both.as_bytes()), "open, on the chart");
+assert!(held.contains(only_v1.as_bytes()), "spoken by one voice, and on the chart all the same");
 assert!(!held.contains(shut.as_bytes()), "a closed listing is not held");
 assert!(!held.contains(off_chart.as_bytes()), "a listing off the chart is not held");
-assert_eq!(held.len(), 1, "the meet is exactly the shared, open, on-chart listing");
-
-// One vertex alone holds what it spoke; the meet only ever shrinks.
-let alone = k.listings_on(&inv, &[v1]);
-assert!(alone.contains(both.as_bytes()) && alone.contains(only_v1.as_bytes()));
-assert_eq!(alone.len(), 2, "and nothing it did not speak");
-
-// A vertex that has spoken nothing empties the cell: an intersection
-// through it is empty, never "everything on the chart".
-assert_eq!(k.listings_on(&inv, &[v1, [9u8; 32]]).len(), 0, "a silent vertex empties the meet");
+assert_eq!(held.len(), 2, "exactly the open, on-chart listings");
+assert_eq!(k.listings_on(&crate::transducer::stalk::Invariant(vec![8])).len(), 0, "a chart with no listings holds nothing");
 }
 
 /// The genome boundary. A taught word is CRYSTALLIZED on the receiver — it
