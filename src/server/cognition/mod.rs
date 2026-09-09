@@ -15,6 +15,7 @@ mod keys;
 mod language;
 mod market;
 mod reduce;
+mod room;
 mod snapshot;
 mod wire;
 
