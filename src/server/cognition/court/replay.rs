@@ -180,6 +180,14 @@ impl Kernel {
             }
         }
         for addr in keys {
+            // R1 (45.7): the orbit rules what is not yet ruled. A listing on
+            // the ruled cover or in the cavity is passed over — its standing
+            // moves by a verdict or a lapse, never by the circuit. Replayed
+            // on every circuit, one word was sectioned 20,800 times and
+            // another slashed 2,227 times (2026-09-09).
+            if self.ruled_contains(&addr) || self.cavity_book.contains(&addr) {
+                continue;
+            }
             let spoken = self
                 .word_at(&addr)
                 .cloned()
