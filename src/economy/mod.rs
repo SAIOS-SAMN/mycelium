@@ -5,11 +5,13 @@
 //! on disk. Every balance is a polytonic μ⃗ (𝒮, 𝒢, 𝒯, 𝒽), never a scalar.
 
 pub mod escrow;
+pub mod fold;
 pub mod lanes;
 pub mod persist;
 pub mod settle;
 pub mod treasury;
 
+pub use fold::Folded;
 pub use lanes::*;
 pub use treasury::*;
 

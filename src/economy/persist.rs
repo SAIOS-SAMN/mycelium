@@ -43,6 +43,7 @@ impl Treasury {
                 Kind::Release => 19,
                 Kind::Revoke => 20,
                 Kind::Unstake => 21,
+                Kind::Epoch => 22,
             };
             out.push(tag);
             out.extend_from_slice(&e.who);
@@ -161,6 +162,7 @@ impl Treasury {
                 19 => Kind::Release,
                 20 => Kind::Revoke,
                 21 => Kind::Unstake,
+                22 => Kind::Epoch,
                 _ => return None,
             };
             let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;

@@ -47,6 +47,10 @@ pub const REFUSE_PIVOT_INEXACT: &str = "pivot certificate does not replay";
 /// 23.8: a lane of the voice's room did not cover the draw. Nothing is
 /// docketed; the refusal travels to the voice.
 pub const REFUSE_ROOM: &str = "voice room does not cover the utterance on an occupied lane";
+/// 45.8, 34.1 (ruled 2026-09-09): a fold behind a prefix that is not
+/// fully final, and a fold whose epoch rows do not conserve.
+pub const REFUSE_FOLD_OPEN: &str = "fold prefix is not final";
+pub const REFUSE_FOLD_INEXACT: &str = "fold does not conserve";
 /// 13.9 step 8. Two organs re-derive one object and reach DIFFERENT
 /// addresses: not a disagreement for a third to settle, but inconsistent
 /// data, which can only arise from tapes that do not re-derive.

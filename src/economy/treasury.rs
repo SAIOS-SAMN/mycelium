@@ -14,7 +14,10 @@ pub type Anchor = (u64, [u8; 32]);
 /// weights its reward, so the topology supports staked, tiered roles — never a
 /// §2's ENTRY KINDS, the closed vocabulary of what moves μ⃗: "Entry kinds:
 /// `genesis`, `mint`, `stake`, `unstake`, `transfer`, `escrow`, `release`,
-/// `revoke`, `slash`, `burn`. Nothing else moves μ."
+/// `revoke`, `slash`, `burn`, and `epoch`. Nothing else moves μ." An
+/// `epoch` row (45.8, S13.8) is the net an identity's rows moved over a
+/// folded prefix: it stands on the issued side of the supply in place of
+/// the genesis, mint, burn and slash rows it replaced, and moves none.
 ///
 /// It was a `&'static str` matched by literal. B5 made that load-bearing:
 /// `write` folds the supply on `"mint" | "genesis" => issued,
@@ -39,15 +42,17 @@ pub enum Kind {
     Revoke,
     Slash,
     Burn,
+    Epoch,
 }
 
 impl Kind {
     /// Which side of `supply = genesis + mint − burn` this row falls on.
     /// Exhaustive: a kind that moved the supply and was not named here
-    /// would not compile.
+    /// would not compile. An `epoch` row stands for the net of the issued
+    /// and burned rows it replaced, so it reads on the issued side.
     pub(crate) fn issues(&self) -> Option<bool> {
         match self {
-            Kind::Genesis | Kind::Mint => Some(true),
+            Kind::Genesis | Kind::Mint | Kind::Epoch => Some(true),
             Kind::Burn | Kind::Slash => Some(false),
             Kind::Stake
             | Kind::Unstake
