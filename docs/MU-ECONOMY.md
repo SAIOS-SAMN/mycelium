@@ -34,8 +34,14 @@ the mesh did.
 Every change to a carrier is a ledger entry with a kind, the party, the
 lane vector, the K-step and height of the receipt that wrote it, and the
 receipt. Entry kinds: `genesis`, `mint`, `stake`, `unstake`, `transfer`,
-`escrow`, `release`, `revoke`, `slash`, `burn`. Nothing else moves μ. No
+`escrow`, `release`, `revoke`, `slash`, `burn`, and `epoch`. Nothing else moves μ. No
 entry carries a clock reading (`MU-RECURSION.md` chapter 45).
+
+An `epoch` row (ruled 2026-09-09, `MU-RECURSION.md` 45.8) is the net per
+identity per lane over a folded prefix of the ledger: it moves no supply
+and re-expresses the rows it replaces, one row per identity with a
+nonzero net, anchored to the fold receipt. A fold changes no price, extent
+or ruling.
 
 ## 3. Issuance
 
@@ -91,20 +97,22 @@ escrow is the special case in which a payer chooses to back a claim from a
 balance that already exists; the general case is backed by the mathematics
 the claim promises.
 
-**Open, and named here so it is not mistaken for settled: what room does an
-unbonded voice have?** §4 says an unbonded voice may learn, speak and be
-paid, and under this section speaking needs no bond at all, since a claim
-is escrowed rather than transferred. Bond buys **room** — throughput, the
-rate the metabolism governs (§3.3) — and §4 does not say what room an
-identity has before it has earned any. The tree currently funds every
-arriving identity at the genesis cover so it can bond into room, which,
-since identities are free (`MU-RECURSION.md` 47.3), is a faucet: μ⃗ per key.
-It is measured — supply grew to three times the seed across two ingests
-from two voices — and it is pinned by
-`the_kernel_conserves_across_genesis_bond_and_a_settlement` rather than
-hidden. The candidates are that an unbonded voice has room for exactly one
-claim in flight, or that its room is what its own closed deflation has
-earned it. Neither is ruled.
+**The room of an unbonded voice (ruled 2026-09-09).** §4 says an unbonded
+voice may learn, speak and be paid, and under this section speaking needs
+no bond at all, since a claim is escrowed rather than transferred. Bond
+buys **room** — throughput, the rate the metabolism governs (§3.3). An
+unbonded voice has room for exactly one claim in flight per lane: its
+next claim on a lane is admitted when the one before it closed, was ruled
+or lapsed, and refused with `REFUSE_ROOM` naming the lane otherwise. Its
+room grows only by bonding what it earned. Identities are free
+(`MU-RECURSION.md` 47.3), so nothing funds an arriving identity: the
+genesis cover bonds the hyphae and the voices the mesh record names, and
+the faucet the tree carried — every arriving key funded at the genesis
+cover, measured as supply three times the seed after two ingests — is
+closed by this ruling. A recall shortfall is the same reading one act
+later: the reading the voice asked for is served, the shortfall is recorded
+per lane, and the voice has no room for a further claim on a short lane
+until the claim in flight closes.
 
 **A mesh can therefore start from zero supply.** A voice posts a demand it
 cannot fund, a miner closes it, the court rules, and the first μ in the
@@ -250,12 +258,20 @@ draws two paragraphs above it, and `Treasury::audit` has held `funded`
 apart from the claim escrow since it was written; the text is corrected to
 the ruling, not the code to the text.
 
-**What a slash does to the supply is asked, not assumed.** A slash debits a
-bond and §2 lists no carrier that receives it, so `supply()` counts it as
-μ⃗ leaving circulation exactly as 47.4's forfeiture does, or the audit fails
-on every lane anyone has been slashed on. That reading is what the tree
-implements (I11a); it is recorded here as the operator's ruling to confirm
-or overturn, since §9 reserves the semantics of what the economy pays.
+**A slash is issuance leaving (ruled 2026-09-09).** A slash debits a bond
+and §2 lists no carrier that receives it, so `supply()` counts it as μ⃗
+leaving circulation exactly as 47.4's forfeiture does; it keeps its own
+kind so the ledger can still answer "was anyone slashed?" apart from "what
+was burned?". This is what the tree implements (I11a), now ruled.
+
+**Across a fold (ruled 2026-09-09, `MU-RECURSION.md` 45.8).** Both
+equations hold at the folded prefix before the fold and at the `epoch`
+rows after it, on every lane: the net per identity written by the fold is
+exactly what the replaced rows moved, and a witness re-derives this before
+it co-signs. A fold that does not conserve is `REFUSE_FOLD_INEXACT` and
+writes nothing. Extents in heights survive a fold because heights
+continue; install receipts survive it because they are the proofs the
+compensation rests on.
 
 `Treasury::audit` checks both from the entries and refuses to persist a
 snapshot that fails. A testnet differs from the beta only in the first term:

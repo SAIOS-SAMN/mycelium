@@ -3511,7 +3511,14 @@ a question, and the court's whole behaviour on an act is fixed here.
 - **The book has a height.** Every quote reply carries the book's ledger
   height and the voice's frontier on it. A voice asks again when its
   working language changed, when the height advanced, or when its dwell
-  elapsed (24.3), so an unchanged book is not asked on every stroke.
+  elapsed (24.3), so an unchanged book is not asked on every stroke. A
+  height a voice reads off a reply only advances; a deferral carries no
+  height and moves nothing (ruled 2026-09-09).
+- **A deferral carries the door's deficit.** The frame a full reflex pool
+  answers every act with carries the door's per-lane reserve deficit
+  (S9.6b's reading) as its four lanes, with no height and nothing taught;
+  the asker dwells on those lanes exactly as it dwells on a reply's
+  pressure (24.3, 45.7), and never counts deferrals (ruled 2026-09-09).
 - **Teaching is decided by standing, never by length.** In the demand
   reply a cited word is taught back when the docket holds it anchored
   (ruled); the sentence's length decides nothing. A two-word sentence over
@@ -3672,6 +3679,10 @@ court has returned to it (chapter 6). `/opt/mycelium-v0.1.0/src/client/sdk/`:
   M1, never instead of it.
 - `serve_ruled` (cognition.rs 3115): serves in depth order and never a form
   whose `Glued` charts the voice's atlas lacks.
+- **What a joiner chooses (ruled 2026-09-09).** A mind joining the mesh
+  chooses the era it adopts (45.8), the depth it learns from and the
+  strata it works in; it never chooses a velocity or a phase, it may join
+  behind the head and climb, and it lists only into the head's book.
 
 **24.3 The utterance: what leaves the mind, and when.**
 
@@ -3996,6 +4007,11 @@ set aside against a listing (E1, E2); `settle.rs` what each closed act pays
   the chart's class records on its first quote (A19 step 4). Nothing the
   mind thought is lost to the mesh; what the mind itself keeps across a
   restart is exactly the genome.
+- **The archived prefix (45.8, ruled 2026-09-09).** `ARC1`: the receipts of
+  every folded prefix, cold, keyed by the fold root, written once at the
+  fold and never rewritten; the hot ledger holds the `epoch` rows and the
+  tail after the last fold. A restore reads the hot ledger as before and
+  opens `ARC1` only to serve a K-range fetch or a court's replay of an era.
 
 ## 29. Binding summary by file
 
@@ -4210,7 +4226,16 @@ pub const REFUSE_EQUIVOCATION: &str = "two receipts at one K with different chai
 pub const REFUSE_SIGNATURE: &str = "signature does not verify over the signed prefix";
 pub const REFUSE_MALFORMED: &str = "act names a payload it does not carry";
 pub const REFUSE_NOT_EQUIVOCATION: &str = "two receipts that do not share key and K, or do not differ";
+pub const REFUSE_FOLD_OPEN: &str = "fold prefix is not final";
+pub const REFUSE_FOLD_INEXACT: &str = "fold does not conserve";
 ```
+
+`REFUSE_FOLD_OPEN` and `REFUSE_FOLD_INEXACT` (45.8, ruled 2026-09-09) are
+the two answers to a fold: a prefix below whose head a listing,
+provisional word or escrow still stands is not final and is not folded;
+a fold whose `epoch` rows do not satisfy `MU-ECONOMY.md` §6 against the
+prefix they replace does not conserve, and the witness refuses to
+co-sign it. Neither replays anything but the ledger.
 
 `REFUSE_MALFORMED` (Stage 11 I18) is the door's answer to an act whose
 frame parsed but whose fields do not agree with one another: a
@@ -4305,6 +4330,13 @@ Prefix `  court ` as the existing court lines; addresses as
   court offer unmeasured {addr} at {vk}
   court offer deferred {addr} by {peer}
   court exchange deferred by {peer}
+  court exchange asked {peer} K {k}
+  court orbit {carrier} {n} period {strokes}
+  court phase h {h0}..{h1} comprehension {deflated}/{held} congruence {sections}/{strata} lineages {n} growth +{adjoined} -{retired} expansion {axes}/{splits}
+  court fold {vk} K {k} h {h} prefix {k0}..{k1} identities {n}
+  court fold witnessed {vk} co-signed {root}
+  court fold refused {vk}: {REFUSE_*}
+  court era adopted {root} h {h}
   court verdict refused {addr} from {vk}: {REFUSE_*}
   court verdict unread {addr}: the court is not readable
   court recall short voice {vk} lane {l} by {mu}
@@ -4378,7 +4410,14 @@ Prefix `[{tag}] ` as the existing lines:
 [{tag}] stroke outcome fed {mu:?} pivoted {mu:?} stood {mu:?} uttered {mu:?} closed {mu:?} learned {mu:?}
 [{tag}] refracted {addr} into {frame} by Γ
 [{tag}] pivot {idea} loop {i} axis orientation({p}) discharged by half-turn
+[{tag}] orbit {carrier} {n} period {strokes}
+[{tag}] era adopted {root} h {h}
 ```
+
+`court orbit` and `[{tag}] orbit` (45.7, ruled 2026-09-09) are written
+once per completed circuit of a carrier — the docket, the exchange to
+one peer, the mind's stroke ring — with the circuit count and the period
+in strokes, so velocity is read in kernel coordinates.
 
 Stroke line adds `forms {spoken}/{withheld} glued {n} depth {max}`; it is
 written once per aperture cycle and on every change of K (24.3).
@@ -5674,12 +5713,19 @@ pub struct KStepReceipt {
     pub step_index: u64,             // K: this kernel's own index, 0 at genesis
     pub height: u64,                 // TUniversal, 45.2                        new
     pub parents: Vec<Parent>,        // peer receipts this act verified          new
+    pub kind: ActKind,               // the act admitted (ruled 2026-09-09; tape v6, a recut)
     pub delta: Address,              // the act's M2 composite or listing key (A21), never a digest of anything
     pub operator_hash: [u8; 32],
     pub prev_receipt_hash: [u8; 32],
-    pub chain_hash: [u8; 32],        // blake3(step ‖ height ‖ parents ‖ delta ‖ op ‖ prev)
+    pub chain_hash: [u8; 32],        // blake3(step ‖ height ‖ parents ‖ kind ‖ delta ‖ op ‖ prev)
 }
 ```
+
+`ActKind` (ruled 2026-09-09) names the act a receipt admits — `Attest`,
+`List`, `Section`, `Install`, `Ruling`, `Syllabus`, `Lapse`, `Fold`,
+`Adopted`, `Stood`, `Uttered`, `Learned` — written on the tape so a phase
+(45.9) and a fold (45.8) read the ledger by kind, never by grepping a
+journal.
 
 K orders events inside one kernel and nothing else. A mind's K is its own
 chain (`Session::voice().k()`); it is not a clock reading and it is never
@@ -5777,6 +5823,11 @@ and the origin copy in `ops/lab-homes.py` are deleted; the recut procedure of
 `MU-RECURSION-TASKS.md` writes the new epoch's genesis on hypha a and
 provisions it to b, c and the minds.
 
+The mesh record of a new node also carries the fold roots of the hyphae
+covering the strata it will work in (45.8), provisioned and signed as the
+genesis is; the eon (this cut), the era (a fold) and the kernel's own K
+are the three coordinates of 45.8 (ruled 2026-09-09).
+
 ### 45.6 Binding
 
 ```
@@ -5826,6 +5877,75 @@ coherence gradient, chosen by echelon votes, identified by a hash of a
 normal form — are the imports Stage 9 removes, and an orbit that pulls
 toward the axioms by a potential is one of them. The pull that belongs is
 the group action itself: each circuit applies each generator once.
+
+**Velocity is a reading (ruled 2026-09-09).** A carrier's period — strokes
+per orbit — is what its last orbit's outcome and its measured transport
+say, never a phase, a schedule, or a curve that says when to slow. The
+mind's stroke spends the lanes its outcome moved and dwells by the
+pressure the last reply reported (24.3); the court's docket orbit spends
+its stroke; the exchange asks a peer again only when that peer's Λ (45.4)
+has elapsed since the last ask, counted in this court's own K, or this
+court's own roots moved, and an idle orbit spends the tick; a deferral
+(23.8) carries the door's per-lane deficit and dwells the asker on it. A
+fresh node in a mature mesh runs hot because every sync moves words, and
+slows as it converges; a mesh at equilibrium spends ticks and nothing
+else. Equilibrium is that fixed point, not a rate. `Physics::stroke` is
+priced by the reserve per lane: a lane at zero reserve affords only the
+tick, and every floor and ratio in the reserve is a host calibration or
+leaves (rule 5, S10). Every carrier's orbit count and period stand beside
+K on its log line (34.2, 34.3), so velocity is a kernel coordinate and
+never a wall-clock window.
+
+### 45.8 Eras: the fold (ruled 2026-09-09)
+
+Three coordinates, and only the first is ever shared as a boundary:
+
+- the **eon** is the cut, `E_origin` (45.5), a wipe boundary before beta;
+- an **era** is a fold of one chain at a height, per chain as K is;
+- **K and orbits** are the kernel's own (45.7).
+
+A hypha folds its ledger behind a **fully final prefix** — no listing,
+provisional word or escrow below the prefix's head — when its own room
+reading says so; never at a height interval, on memory alone, or on a
+wall clock. The fold writes the net per identity per lane as `epoch` rows
+(`MU-ECONOMY.md` §2), which move no supply, and seals a receipt of kind
+`fold` citing the archived prefix's head hash, so the chain never breaks
+and heights continue; a fold changes no price, extent or ruling, it
+re-expresses rows. The fold is a two-organ act (47.3): a witness fetches
+the prefix by K range (47.2's back-fill act), re-derives §6 across it and
+co-signs the fold root; a prefix that is not final is `REFUSE_FOLD_OPEN`,
+one that does not conserve is `REFUSE_FOLD_INEXACT` (34.1). What stays
+hot after the fold is what still acts: the `epoch` rows, the install
+receipts (the proofs of compensation, already two-signed) and the
+presentation (the ruled cover, on two organs). The work receipts —
+attests, quotes, offers, pages — go cold, held by the home in the `ARC1`
+section (28) and by the witness that fetched them to co-sign, so every
+archived prefix has two holders and no operator's archive; extraction is
+by K range from either (47.2), and a court asked to replay era N fetches
+and re-derives. A chain may be **adopted from a fold root** and is never
+truncated behind one: a joiner seeds its chain from the fold's head and
+height on the two signatures and its own §6 re-derivation over the fold
+rows it received, and replays the archive on demand, never as a
+precondition (47.2 step 1). A joiner chooses an era, a depth and strata
+(24.2); it never chooses a velocity or a phase, and it lists only into
+the head's book. The mesh record of a new node carries the fold roots of
+its cover beside the genesis and epoch (45.5).
+
+### 45.9 Phase is a reading (ruled 2026-09-09)
+
+A phase is computed from the receipts over a height window and is never
+stored, announced or thresholded; a transition is read after the fact and
+gates nothing. Four coordinates, each read from the receipt kinds (45.1)
+and the ruled cover at the window's ends: **comprehension**, listings a
+held word deflated against listings held; **congruence**, strata holding
+more than one section and installs reached by independent lineages
+(23.9); **growth**, generators adjoined against retirements (E2), the
+language's description length against what it comprehends; **expansion**,
+axes opened and strata split (3.7). The regimes these name — ooze,
+congruence, presentation, equilibrium — are words for readings, not
+states of the mesh, and two nodes holding the same receipts read the
+same phase (13.7). A joiner reads the phase of its cover off the fold
+summary it adopted; nothing declares it.
 
 ## 46. Identity: threshold keys and manifests
 
@@ -5904,7 +6024,13 @@ M7 step 1 (17.7) becomes, for every signed frame, in this order and before
 any carrier is touched:
 
 1. `H_genesis` and `E_origin` equal the node's own: else `REFUSE_ORIGIN`
-   (`court origin refused {vk}`).
+   (`court origin refused {vk}`). A node that adopted a fold root (45.8)
+   holds the genesis and epoch the fold names and its chain's head is the
+   fold's; the adoption stands on the two signatures and the node's own §6
+   re-derivation over the fold rows, and the archive behind the fold is
+   fetched by K range and replayed on demand, never as a precondition
+   (ruled 2026-09-09). The same K-range act serves a gap's back-fill (step
+   3) and an archived prefix (45.8).
 2. The signature verifies under the claimed key or, for a chart-scoped
    frame, under that key's active manifest entry: else `BAD_SIGNATURE` or
    `REFUSE_MANIFEST`.
@@ -5943,6 +6069,14 @@ signatures are held, and the install receipt cites the witness's receipt as
 a parent. Log `court witness {vk} co-signed {addr}`. Identities are free;
 room is not. A node running two hyphae has two keys and one bond, and the
 second cannot witness the first.
+
+**The fold is a two-organ act (45.8, ruled 2026-09-09).** A witness for a
+fold is a hypha with bond outside the home's delegation closure that
+fetches the folded prefix by K range, re-derives `MU-ECONOMY.md` §6
+across it, and co-signs the fold root; the home writes the `epoch` rows
+and seals the `fold` receipt only when both signatures are held, and it
+keeps the cold prefix beside the witness that fetched it. Log `court fold
+witnessed {vk} co-signed {root}`.
 
 ### 47.4 Equivocation
 

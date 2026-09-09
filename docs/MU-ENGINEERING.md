@@ -76,7 +76,10 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
   to the hyphae whose active work covers them. Home is the fiber
   intersection on every occupied lane, then per-lane room, then identity.
 - **Digest exchange**: signed cover and ruled roots; fetch of discordant
-  strata; paced by time since the root last moved, never by a timer.
+  strata; paced per peer by that peer's Λ counted in the court's own K
+  and by the court's own roots moving, never by a timer and never on every
+  orbit; a deferral carries the door's per-lane deficit and dwells the
+  asker (`MU-RECURSION.md` 45.7, 23.8; ruled 2026-09-09).
 - **Roots**: solved families announced by key, keyed by task and solver.
 - **Wire** (`anastome/dialogue/`, `network/wire.rs`): one frame, one act
   byte; client acts 0x00–0x16, hypha acts 0x20–0x22, xSEPTUM 0x30–0x35,
@@ -112,6 +115,7 @@ leaves by relocation to a cold section, never by deletion (`MU-ECONOMY.md`
 | settlements | read by the court | `SET1` |
 | basis word | derivable from the rest (`reduce_excluding`) | cavity, address kept |
 | bubble | merged, or T-room on the entity | `THT1` |
+| folded prefix (work receipts) | its fold co-signed by a witness (`MU-RECURSION.md` 45.8) | `ARC1`, held by the home and the witness |
 
 Snapshot sections: `MYC1`, `KCH1`, `RNK1`, `DEF1`, `FLD1`, `BOK1`, `CAV1`,
 `CRT1`, `COC1`, `FLC1`, `CYC1`, `SET1`; the genome carries `GEN1` and
