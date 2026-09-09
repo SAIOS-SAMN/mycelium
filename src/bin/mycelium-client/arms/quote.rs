@@ -34,7 +34,14 @@ match entity.quote() {
             m.k_step = q.k;
         }
         m.last_lang = lang;
-        m.last_quoted_height = q.height;
+        // 23.8 (ruled 2026-09-09; S13.5): a height read off a reply only
+        // advances. A deferral carries no height, and taking its zero as
+        // the height last quoted made the next stroke ask again at once —
+        // a poll on every deferral — and taking it as the book's height
+        // regressed the pacing to `book 0` (voices 2 and 5, 2026-09-09).
+        if q.height > m.last_quoted_height {
+            m.last_quoted_height = q.height;
+        }
         if q.height > m.last_height {
             m.last_height = q.height;
         }
@@ -168,7 +175,10 @@ match entity.quote() {
                             let _ = entity.absorb_taught(t);
                         }
                         m.last_pressure = reply.pressure;
-                        m.last_height = reply.height;
+                        // The attest reply's height only advances too (S13.5).
+                        if reply.height > m.last_height {
+                            m.last_height = reply.height;
+                        }
                         m.dwell_remaining = reply.pressure;
                     }
                     Err(_) => {
