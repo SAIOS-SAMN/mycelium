@@ -285,6 +285,33 @@ impl Admissions {
         {
             return Admitted::Refused(REFUSE_RECEIPT);
         }
+        self.admit_chain(r, parent_height)
+    }
+
+    /// 47.2 STEPS 3 AND 4 for a receipt fetched by K range (S13.10): it
+    /// carries no signature of its own and is admitted by its chain — it
+    /// re-derives its own hash, links to the head this node holds for the
+    /// signer, and its height re-derives. A receipt whose hash does not
+    /// re-derive is `REFUSE_RECEIPT` before the chain is read. Nothing
+    /// admitted here is cited as a parent; the signed frame that closes
+    /// the gap is, when it is admitted again.
+    pub fn admit_backfilled(
+        &mut self,
+        r: &KStepReceipt,
+        parent_height: impl Fn(&Parent) -> Option<u64>,
+    ) -> Admitted {
+        if !r.rederives() {
+            return Admitted::Refused(REFUSE_RECEIPT);
+        }
+        self.admit_chain(r, parent_height)
+    }
+
+    /// The hash this node holds for a signer at one K, if any.
+    pub fn hash_at(&self, vk: &[u8; 32], k: u64) -> Option<[u8; 32]> {
+        self.at_k.get(vk)?.get(&k.to_le_bytes()).copied()
+    }
+
+    fn admit_chain(&mut self, r: &KStepReceipt, parent_height: impl Fn(&Parent) -> Option<u64>) -> Admitted {
         // 3. K against the signer's known head. This runs BEFORE the height
         // check, in 47.2's own order: a gapped frame's height cannot
         // re-derive here yet -- the receipts that would make it re-derive

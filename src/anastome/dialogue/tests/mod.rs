@@ -5,4 +5,5 @@ mod acts;
 mod equivocation;
 mod offer;
 mod receipt_section;
+mod receipts_range;
 mod verdict;

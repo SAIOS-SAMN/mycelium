@@ -43,6 +43,11 @@ assert!(
     "the archived prefix re-verifies as a chain of its own"
 );
 assert_eq!(k.treasury().audit().expect("conserves after"), before);
+assert_eq!(
+    k.receipts_range(&[0x5c; 32], 0, 3, 10).iter().map(|r| r.step_index).collect::<Vec<_>>(),
+    vec![0, 1, 2, 3],
+    "the K-range read spans ARC1 and the hot chain"
+);
 
 let snap = k.snapshot();
 let mut back = Kernel::new();

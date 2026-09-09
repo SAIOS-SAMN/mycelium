@@ -9,7 +9,7 @@
 //! continue. A prefix that is not final is `REFUSE_FOLD_OPEN`; a fold
 //! that does not conserve is `REFUSE_FOLD_INEXACT`, and neither writes.
 
-use crate::chronometry::{ActKind, Era};
+use crate::chronometry::{ActKind, Era, KStepReceipt};
 use crate::cognition::Kernel;
 use crate::network::nerve::ROOT;
 
@@ -92,5 +92,38 @@ impl Kernel {
     /// The eras this court archived, in K order (`ARC1`).
     pub fn archive(&self) -> &[Era] {
         &self.archive
+    }
+
+    /// THE K-RANGE READ (47.2 step 3, 45.8; S13.10): `signer`'s receipts
+    /// `from..=to` in K order, at most `budget` of them — this court's
+    /// own from `ARC1` and its hot chain, another signer's from what this
+    /// court admitted of it, never past a hole.
+    pub fn receipts_range(&self, signer: &[u8; 32], from: u64, to: u64, budget: usize) -> Vec<KStepReceipt> {
+        let mut out = Vec::new();
+        if to < from {
+            return out;
+        }
+        if *signer == self.identity {
+            let eras = self.archive.iter().flat_map(|e| e.receipts.iter());
+            for r in eras.chain(self.chain.receipts().iter()) {
+                if out.len() >= budget {
+                    break;
+                }
+                if r.step_index >= from && r.step_index <= to {
+                    out.push(r.clone());
+                }
+            }
+            return out;
+        }
+        for k in from..=to {
+            if out.len() >= budget {
+                break;
+            }
+            let Some(r) = self.admissions.hash_at(signer, k).and_then(|h| self.chain.known(&h)) else {
+                break;
+            };
+            out.push(r.clone());
+        }
+        out
     }
 }

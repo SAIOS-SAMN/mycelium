@@ -306,3 +306,62 @@ assert!(k.treasury().audit().is_ok(), "§6 holds through the forfeiture");
 assert_eq!(k.accept_equivocation(proof), None, "the same proof again finds nothing to burn");
 assert!(k.treasury().audit().is_ok());
 }
+
+/// 47.2 step 3, 5.2g, S13.10 — A GAP CLOSES WHEN THE MISSING RECEIPTS
+/// ARRIVE: a peer's head first seen mid-chain is a gap; the receipts below
+/// it, fetched by K range, admit by their chain in order; the head then
+/// admits as a parent and is cited. Nothing is acted on while the chain is
+/// gapped: a page that stops short leaves the gap standing and cites
+/// nothing; a receipt that does not re-derive ends a page; and the K-range
+/// read of what this node holds of the peer never runs past a hole.
+#[test]
+fn a_gap_closes_when_the_missing_receipts_arrive() {
+use crate::court::admission::{Admitted, SignedPrefix};
+let origin = ([7u8; 32], 2u32);
+let key = super::common::court_key("peer");
+let vk = key.vk_bytes();
+let mut peer = crate::chronometry::ReceiptChain::with_vk(vk);
+for d in [b"p0".as_slice(), b"p1", b"p2", b"p3"] {
+    peer.append(crate::chronometry::ActKind::List, d, [0; 32], Vec::new()).expect("peer appends");
+}
+let pre = |r: &crate::chronometry::KStepReceipt| SignedPrefix {
+    genesis: origin.0,
+    epoch: origin.1,
+    prev_receipt_hash: r.prev_receipt_hash,
+    k: r.step_index,
+    height: r.height,
+    chart: vec![],
+    payload: r.delta.clone(),
+};
+let head = peer.receipts()[3].clone();
+let mut k = Kernel::new();
+assert!(matches!(
+    k.admit_receipt(origin, super::common::verified(&pre(&head), &key), &head),
+    Admitted::Gap { from: 0, to: 3, .. }
+));
+assert_eq!(k.pending_parents(), 0, "nothing is cited while the chain is gapped");
+assert!(k.known_head(&vk).is_none());
+assert_eq!(k.admit_backfill(&peer.receipts()[..2]), 2, "a page of two admits by its chain");
+assert_eq!(k.known_head(&vk).map(|h| h.0), Some(1), "the head this node holds moved to K 1");
+assert!(matches!(
+    k.admit_receipt(origin, super::common::verified(&pre(&head), &key), &head),
+    Admitted::Gap { from: 1, to: 3, .. }
+), "the page stopped short: still a gap");
+assert_eq!(k.pending_parents(), 0, "and still nothing cited");
+assert_eq!(k.admit_backfill(&peer.receipts()[2..3]), 1, "the next page closes the chain");
+assert!(matches!(
+    k.admit_receipt(origin, super::common::verified(&pre(&head), &key), &head),
+    Admitted::Parent(_)
+), "the head admits once the chain reaches it");
+assert_eq!(k.pending_parents(), 1, "only the closing frame is cited");
+assert_eq!(k.admit_backfill(&peer.receipts()[..1]), 1, "a receipt already held is passed over");
+let mut forged = peer.receipts()[3].clone();
+forged.delta = b"x".to_vec();
+assert_eq!(k.admit_backfill(&[forged]), 0, "a receipt that does not re-derive admits nothing");
+assert_eq!(
+    k.receipts_range(&vk, 0, 9, 100),
+    peer.receipts().to_vec(),
+    "the K-range read: every admitted receipt in K order, never past a hole"
+);
+assert_eq!(k.receipts_range(&vk, 2, 3, 1).len(), 1, "a page is bounded by its budget");
+}

@@ -161,6 +161,12 @@ pub fn operator_hash(voice: &[u8; 32], court_head: &[u8; 32]) -> [u8; 32] {
 }
 
 impl KStepReceipt {
+    /// The tape of a receipt with no parent and an empty delta: step,
+    /// height, vk, the parent count, the kind, the delta length, and the
+    /// three hashes — the least a reader may allot one receipt when it
+    /// bounds an untrusted count.
+    pub const MIN_TAPE: usize = 8 + 8 + 32 + 4 + 1 + 4 + 32 + 32 + 32;
+
     fn put_parents(buf: &mut Vec<u8>, parents: &[Parent]) {
         buf.extend_from_slice(&(parents.len() as u32).to_le_bytes());
         for p in parents {

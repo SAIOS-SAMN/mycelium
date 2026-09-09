@@ -96,6 +96,13 @@ pub const ACT_INSTALLED: u8 = 0x22;
 /// Reply: `Ruled` — `Applied` burned, `Inert` nothing left to burn,
 /// `Refused` naming the 34.1 constant.
 pub const ACT_EQUIVOCATION: u8 = 0x35;
+/// THE K-RANGE ACT (47.2 step 3, 45.8; S13.10):
+/// `[ACT_RECEIPTS][voice 32][signer 32][from u64][to u64]` asks for the
+/// signer's receipts `from..=to` — its own from its hot chain or `ARC1`,
+/// or the ones a holder admitted from it — as many as fit the frame
+/// budget, from `from` upward. Reply: `[n u32][receipt…]`. A gap's
+/// back-fill and an archived prefix are both fetched by it.
+pub const ACT_RECEIPTS: u8 = 0x36;
 
 /// THE PROBE (interrogative grammar): a tentative sentence spoken against an
 /// open listing — citations (word address, transport g, gauge coordinate)

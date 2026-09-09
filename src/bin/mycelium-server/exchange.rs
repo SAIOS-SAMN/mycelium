@@ -382,7 +382,13 @@ impl Exchange {
                         if !admit_peer_digest(&mesh, &reply, &router) {
                             continue;
                         }
-                        tally.note(admit_peer_receipt(&kernel, &mesh, &reply));
+                        let admitted = admit_peer_receipt(&kernel, &mesh, &reply);
+                        // 47.2 step 3, S13.10: a gap fetches one page of the
+                        // missing receipts from the peer that reported it.
+                        if let Ok(mycelium::court::admission::Admitted::Gap { vk, to, .. }) = &admitted {
+                            crate::backfill::page(&kernel, &mesh, &d, *vk, *to);
+                        }
+                        tally.note(admitted);
                         let Some(dialogue::CoverDigest {
                             cover_roots, ruled_root, vk: vk_peer, ..
                         }) = dialogue::decode_cover_digest(&reply)

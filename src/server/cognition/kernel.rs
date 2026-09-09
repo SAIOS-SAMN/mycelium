@@ -416,6 +416,29 @@ impl Kernel {
         verdict
     }
 
+    /// 47.2 STEP 3'S BACK-FILL (S13.10): receipts fetched by K range from
+    /// the signer or a holder, admitted in order by their chain and held
+    /// as known so later heights re-derive through them; one already held
+    /// at its K is passed over. Nothing here is cited as a parent: the
+    /// signed frame that closes the gap is, when it is admitted again.
+    /// Returns how many the page advanced by; the first that does not
+    /// admit ends it.
+    pub fn admit_backfill(&mut self, receipts: &[crate::chronometry::KStepReceipt]) -> usize {
+        let mut n = 0usize;
+        for r in receipts {
+            let chain = &self.chain;
+            match self.admissions.admit_backfilled(r, |p| chain.height_of(&p.hash)) {
+                crate::court::admission::Admitted::Parent(_) => {
+                    self.chain.admit(r.clone());
+                    n += 1;
+                }
+                crate::court::admission::Admitted::Stale => n += 1,
+                _ => break,
+            }
+        }
+        n
+    }
+
     /// 47.4 ON A THIRD PARTY'S PROOF (`ACT_EQUIVOCATION`, I21): the proof
     /// was decided by `admission::admit_equivocation` over two verified
     /// signatures, and this court burns the signer's bond as it does on the

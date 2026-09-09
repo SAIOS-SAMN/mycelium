@@ -146,6 +146,11 @@ impl ReceiptChain {
         self.known.insert(r.chain_hash, r);
     }
 
+    /// A peer receipt this chain admitted, by its chain hash.
+    pub fn known(&self, hash: &[u8; 32]) -> Option<&KStepReceipt> {
+        self.known.get(hash)
+    }
+
     /// Append the next receipt, naming the act it admits (45.1). Height is
     /// 0 at genesis, else `1 + max(h(prev), max parent heights)`.
     pub fn append(

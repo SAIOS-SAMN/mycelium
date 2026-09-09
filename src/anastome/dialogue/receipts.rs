@@ -143,6 +143,69 @@ pub fn decode_fetch(body: &[u8]) -> Option<([u8; 32], Vec<Chart>)> {
     Some((voice, charts))
 }
 
+/// 47.2's K-RANGE REQUEST (S13.10): which signer, and which span of its K.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReceiptsRequest {
+    pub voice: [u8; 32],
+    pub signer: [u8; 32],
+    pub from: u64,
+    pub to: u64,
+}
+
+pub fn encode_receipts_request(voice: &[u8; 32], signer: &[u8; 32], from: u64, to: u64) -> Vec<u8> {
+    let mut out = vec![ACT_RECEIPTS];
+    out.extend_from_slice(voice);
+    out.extend_from_slice(signer);
+    out.extend_from_slice(&from.to_le_bytes());
+    out.extend_from_slice(&to.to_le_bytes());
+    out
+}
+
+pub fn decode_receipts_request(body: &[u8]) -> Option<ReceiptsRequest> {
+    if body.first() != Some(&ACT_RECEIPTS) || body.len() != 81 {
+        return None;
+    }
+    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
+    let signer: [u8; 32] = body.get(33..65)?.try_into().ok()?;
+    let from = u64::from_le_bytes(body.get(65..73)?.try_into().ok()?);
+    let to = u64::from_le_bytes(body.get(73..81)?.try_into().ok()?);
+    Some(ReceiptsRequest { voice, signer, from, to })
+}
+
+/// The K-range reply: as many of `receipts`, in order, as fit `budget`
+/// bytes — a page, never a receipt cut short.
+pub fn encode_receipts_reply(receipts: &[crate::chronometry::KStepReceipt], budget: usize) -> Vec<u8> {
+    let mut out = Vec::new();
+    out.extend_from_slice(&0u32.to_le_bytes());
+    let mut n = 0u32;
+    for r in receipts {
+        let mut rb = Vec::new();
+        r.write(&mut rb);
+        if out.len() + rb.len() > budget {
+            break;
+        }
+        out.extend_from_slice(&rb);
+        n += 1;
+    }
+    out[..4].copy_from_slice(&n.to_le_bytes());
+    out
+}
+
+/// The page read back whole, or refused: a reply that does not parse to
+/// its end is not a shorter page (rule 11).
+pub fn decode_receipts_reply(body: &[u8]) -> Option<Vec<crate::chronometry::KStepReceipt>> {
+    let n = u32::from_le_bytes(body.get(0..4)?.try_into().ok()?) as usize;
+    let mut p = 4usize;
+    if n > body.len().saturating_sub(p) / crate::chronometry::KStepReceipt::MIN_TAPE {
+        return None;
+    }
+    let mut out = Vec::with_capacity(n);
+    for _ in 0..n {
+        out.push(crate::chronometry::KStepReceipt::read(body, &mut p)?);
+    }
+    (p == body.len()).then_some(out)
+}
+
 pub fn encode_genesis_request(voice: &[u8; 32], cursor: u32) -> Vec<u8> {
     let mut out = vec![ACT_GENESIS];
     out.extend_from_slice(voice);
