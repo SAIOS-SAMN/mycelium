@@ -164,10 +164,17 @@ impl Kernel {
         };
         if let Some((n, period)) = self.docket_orbit.stroke(u64::from(circuit)) {
             eprintln!("  court orbit docket {n} period {period}");
-            // 45.9, S13.7: the phase over the window since the last orbit,
-            // read off the receipts and the cover and written; nothing
-            // stores or gates on it.
-            self.read_phase();
+            // 45.9, S13.7, R7: the phase over the window, read off the
+            // receipts and the cover and written; nothing stores or gates
+            // on it. The window is an aperture of docket orbits, so the
+            // reading is taken when the circuit count crosses a multiple
+            // of the aperture — a docket that fits one budget completes a
+            // circuit per stroke, and read per circuit its window was one
+            // receipt or none (`comprehension 0/0` at period 1).
+            let aperture = u64::from(crate::physics::aperture_cycle());
+            if n / aperture != n.saturating_sub(u64::from(circuit)) / aperture {
+                self.read_phase();
+            }
             // 45.8, S13.9, S13.10: an orbit that completes while a lane is
             // short is the syntropic phase, and the fold is the ledger's
             // consolidation stroke in it — proposed here, carried to a

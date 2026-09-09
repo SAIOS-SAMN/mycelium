@@ -99,3 +99,36 @@ fn the_court_reads_the_phase_once_per_orbit_and_stores_no_phase() {
     assert!(k1 > k0, "the window moved with the chain");
     let _: Keyed<usize> = at_h0.strata;
 }
+
+/// R7 (45.9): the window is an aperture of docket orbits. A docket that
+/// fits one budget completes a circuit per stroke, and read per circuit
+/// its window was one receipt or none; the court stroke takes the reading
+/// when the circuit count crosses a multiple of `aperture_cycle()`.
+#[test]
+fn the_phase_window_is_an_aperture_of_docket_orbits() {
+    use super::common::one_stroke_transport;
+    let mut k = Kernel::new();
+    let w = crate::transducer::element::from_connection(
+        &crate::transducer::alphabet::Word::identity(),
+        &crate::transducer::element::translator_versor(2, 0),
+        &[],
+        &Vec::new(),
+        [1, 0, 0, 0],
+    )
+    .expect("spells");
+    assert!(matches!(k.install_adopted(&w, [1; 32]), Adoption::Installed));
+    let aperture = u64::from(crate::physics::aperture_cycle());
+    let mut strokes = 0u64;
+    loop {
+        strokes += 1;
+        assert!(strokes <= aperture.saturating_mul(2).saturating_add(2), "a one-listing docket circuits every stroke: {:?}", k.docket_orbit());
+        k.court_stroke(one_stroke_transport);
+        let c = k.docket_orbit().circuits();
+        if c < aperture {
+            assert!(k.phase_mark.is_none(), "no reading below the aperture: circuits {c} of {aperture}");
+        } else {
+            assert!(k.phase_mark.is_some(), "read when the circuit count crosses the aperture: circuits {c}");
+            break;
+        }
+    }
+}

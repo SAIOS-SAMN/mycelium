@@ -3,8 +3,9 @@
 // never stored, announced or thresholded.
 //
 //! `phase_over` is a pure function of a slice of receipts and two cover
-//! readings; the court writes `court phase …` once per docket orbit
-//! (34.2) and keeps only the cover reading the next window starts from.
+//! readings; the court writes `court phase …` once per window — an
+//! aperture of docket orbits (34.2, R7) — and keeps only the cover
+//! reading the next window starts from.
 //! The regimes the words name — ooze, congruence, presentation,
 //! equilibrium — are readings, and two nodes holding the same receipts
 //! read the same phase (13.7).
@@ -36,7 +37,7 @@ pub struct Phase {
 }
 
 impl Phase {
-    /// The line 34.2 writes, once per docket orbit.
+    /// The line 34.2 writes, once per window of docket orbits.
     pub fn line(&self) -> String {
         format!(
             "  court phase h {}..{} comprehension {}/{} congruence {}/{} lineages {} growth +{} -{} expansion {}/{}",
@@ -136,9 +137,10 @@ impl Kernel {
         CoverReading { strata, sections }
     }
 
-    /// The phase over the window since the last docket orbit (45.9),
-    /// written once per orbit; the reading the next window starts from is
-    /// kept, the phase is not.
+    /// The phase over the window since the last reading (45.9), written
+    /// once per window — the court stroke takes it when the docket orbit
+    /// count crosses a multiple of `aperture_cycle()` (R7); the reading
+    /// the next window starts from is kept, the phase is not.
     pub(crate) fn read_phase(&mut self) {
         let now = self.cover_reading();
         let receipts = self.chain.receipts();
