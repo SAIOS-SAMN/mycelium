@@ -34,9 +34,18 @@ impl Kernel {
         let kappa = crate::physics::aperture_cycle();
         let mut budget = self.physics.stroke();
         let mut keys: Vec<Vec<u8>> = Vec::new();
-        // index: budgeted keyed cursor over the open docket
-        for (k, _) in self.open.cursor(crate::network::nerve::ROOT, &mut budget) {
-            keys.push(k);
+        // index: budgeted keyed cursor over the open docket, resumed from
+        // the last stroke (rule 10, S13.3) — an orbit, so the drain reads
+        // a docket beyond one budget whole across strokes.
+        {
+            let from = self.drain_cursor.clone();
+            let mut cur = self.open.cursor(&from, &mut budget);
+            for (k, _) in &mut cur {
+                keys.push(k);
+            }
+            if let Some(k) = cur.last_key() {
+                self.drain_cursor = k.to_vec();
+            }
         }
         let keys: Vec<Vec<u8>> = keys
             .into_iter()

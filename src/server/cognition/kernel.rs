@@ -231,6 +231,9 @@ pub struct Kernel {
     /// the stagnation walk resumes where the last stroke left off, so a
     /// docket beyond one budget is read whole across strokes.
     pub(crate) syntropic_cursor: Vec<u8>,
+    /// Keyed cursor into `open` for `drain_unreachable` (rule 10, S13.3):
+    /// the drain resumes where the last stroke left off.
+    pub(crate) drain_cursor: Vec<u8>,
     /// Polytonic kinematic pressure + torsion (per lane).
     pub(crate) physics: crate::physics::Physics,
     /// The settlement ledger (POW++-gated bounties, consilience splits).
