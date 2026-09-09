@@ -70,18 +70,35 @@ impl<T> Keyed<Keyed<T>> {
     }
 }
 
-/// Budgeted walk in key order from `from`, consuming a [`crate::physics::Budget`].
+/// Budgeted ORBIT in key order from `from`, consuming a
+/// [`crate::physics::Budget`] (45.7, S9.14). The walk continues past the
+/// last key from the first and ends where it began, so a carrier larger
+/// than one budget is walked whole across strokes and a key admitted below
+/// the resume point is reached on the next circuit; a cursor that stopped
+/// at the end of the key order had walked off the edge of its book.
+/// `circuit` reports that the walk passed the end of the order — one
+/// completed circuit of the carrier, which the stroke counts as its orbit.
 pub struct Cursor<'a, V> {
+    pub(crate) keyed: &'a Keyed<V>,
     pub(crate) fiber: Fiber<'a, V>,
     pub(crate) budget: &'a mut crate::physics::Budget,
-    pub(crate) from: Vec<u8>,
+    /// The key the walk began after; `None` began at the first key.
+    pub(crate) from: Option<Vec<u8>>,
     pub(crate) last: Option<Vec<u8>>,
+    pub(crate) wrapped: bool,
+    pub(crate) done: bool,
 }
 
 impl<'a, V> Cursor<'a, V> {
     /// Last key yielded, so the next stroke resumes after it.
     pub fn last_key(&self) -> Option<&[u8]> {
         self.last.as_deref()
+    }
+
+    /// The walk passed the last key of the order and continued from the
+    /// first: one circuit of the carrier completed under this cursor.
+    pub fn circuit(&self) -> bool {
+        self.wrapped
     }
 }
 
@@ -90,12 +107,35 @@ impl<'a, V> Iterator for Cursor<'a, V> {
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            if self.budget.remaining() == 0 {
+            if self.done || self.budget.remaining() == 0 {
                 return None;
             }
-            let (k, v) = self.fiber.next()?;
-            if !self.from.is_empty() && k.as_slice() <= self.from.as_slice() {
+            let Some((k, v)) = self.fiber.next() else {
+                // The end of the key order. An empty carrier has no
+                // circuit; a walk from the first key has completed one and
+                // ends; a walk from `from` continues from the first key.
+                if self.wrapped || self.keyed.is_empty() {
+                    self.done = true;
+                    return None;
+                }
+                self.wrapped = true;
+                if self.from.is_none() {
+                    self.done = true;
+                    return None;
+                }
+                self.fiber = self.keyed.fiber(ROOT);
                 continue;
+            };
+            match (&self.from, self.wrapped) {
+                // Before the wrap: the keys after `from` only.
+                (Some(f), false) if k.as_slice() <= f.as_slice() => continue,
+                // After it: the keys skipped, up to and including `from` —
+                // the walk ends where it began.
+                (Some(f), true) if k.as_slice() > f.as_slice() => {
+                    self.done = true;
+                    return None;
+                }
+                _ => {}
             }
             if !self.budget.spend() {
                 return None;

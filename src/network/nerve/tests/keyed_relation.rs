@@ -69,6 +69,61 @@ fn a_key_and_its_proper_prefix_coexist() {
     assert_eq!(k2.len(), 1);
 }
 
+/// 45.7, S9.14 — THE CURSOR IS AN ORBIT, NOT A WALK: a carrier larger than
+/// one budget is walked whole across strokes, the walk continues past the
+/// last key from the first and reports the circuit, a key admitted below
+/// the resume point is reached on the next circuit, and a budget beyond
+/// the carrier yields every key once and ends where it began.
+#[test]
+fn the_cursor_is_an_orbit() {
+    let mut k: Keyed<u8> = Keyed::new();
+    for b in [2u8, 4, 6, 8, 10] {
+        k.insert([b], b);
+    }
+    let mut phys = crate::physics::Physics::default();
+    // Stroke 1 from the first key: three of five, no circuit yet.
+    let mut budget = phys.stroke_n(3);
+    let mut cur = k.cursor(ROOT, &mut budget);
+    let seen: Vec<u8> = (&mut cur).map(|(_, v)| *v).collect();
+    assert_eq!(seen, [2, 4, 6]);
+    assert!(!cur.circuit(), "the walk has not reached the end");
+    let resume = cur.last_key().map(<[u8]>::to_vec).expect("a key was yielded");
+    assert_eq!(resume, [6]);
+    // Stroke 2 resumes: the tail, then past the end from the first key.
+    let mut budget = phys.stroke_n(3);
+    let mut cur = k.cursor(&resume, &mut budget);
+    let seen: Vec<u8> = (&mut cur).map(|(_, v)| *v).collect();
+    assert_eq!(seen, [8, 10, 2], "the walk continues past the last key from the first");
+    assert!(cur.circuit(), "one circuit of the carrier completed");
+    let resume = cur.last_key().map(<[u8]>::to_vec).expect("a key was yielded");
+    // A key admitted below the resume point is reached on the next circuit.
+    k.insert([1u8], 1);
+    let mut budget = phys.stroke_n(5);
+    let mut cur = k.cursor(&resume, &mut budget);
+    let seen: Vec<u8> = (&mut cur).map(|(_, v)| *v).collect();
+    assert_eq!(seen, [4, 6, 8, 10, 1], "the orbit reaches the key admitted below the cursor");
+    assert!(cur.circuit());
+    // A budget beyond the carrier: every key once, ending where it began.
+    let mut budget = phys.stroke_n(64);
+    let mut cur = k.cursor(&[6], &mut budget);
+    let seen: Vec<u8> = (&mut cur).map(|(_, v)| *v).collect();
+    assert_eq!(seen, [8, 10, 1, 2, 4, 6], "every key once, ending where it began");
+    assert!(cur.circuit());
+    assert_eq!(budget.remaining(), 58, "the walk spends one read per key and no more");
+    // From the first key with the same budget: one circuit, the last key last.
+    let mut budget = phys.stroke_n(64);
+    let mut cur = k.cursor(ROOT, &mut budget);
+    assert_eq!((&mut cur).count(), 6);
+    assert!(cur.circuit(), "a walk from the first key past the last is a circuit");
+    assert_eq!(cur.last_key(), Some([10u8].as_slice()));
+    // An empty carrier has nothing to orbit.
+    let empty: Keyed<u8> = Keyed::new();
+    let mut budget = phys.stroke_n(4);
+    let mut cur = empty.cursor(ROOT, &mut budget);
+    assert!(cur.next().is_none());
+    assert!(!cur.circuit(), "no circuit on an empty carrier");
+}
+
 #[test]
 fn meet_is_intersection_and_costs_shared_prefixes() {
     use crate::network::nerve::work;

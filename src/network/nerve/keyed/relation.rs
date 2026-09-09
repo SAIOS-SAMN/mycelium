@@ -140,14 +140,20 @@ impl<V> Keyed<V> {
         }
     }
 
-    /// At most `budget` entries in key order after `from`. [`ROOT`] starts
-    /// at the first key. The last yielded key is the resume cursor.
+    /// At most `budget` entries in key order after `from`, continuing past
+    /// the last key from the first and ending where it began (45.7).
+    /// [`ROOT`] starts at the first key. The last yielded key is the
+    /// resume cursor; `Cursor::circuit` reports a completed circuit.
     pub fn cursor<'a>(&'a self, from: &[u8], budget: &'a mut crate::physics::Budget) -> Cursor<'a, V> {
+        let from = (!from.is_empty()).then(|| from.to_vec());
         Cursor {
+            keyed: self,
             fiber: self.fiber(ROOT),
             budget,
-            from: from.to_vec(),
-            last: if from.is_empty() { None } else { Some(from.to_vec()) },
+            last: from.clone(),
+            from,
+            wrapped: false,
+            done: false,
         }
     }
 }
