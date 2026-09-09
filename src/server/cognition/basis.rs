@@ -121,6 +121,7 @@ impl Kernel {
         self.provisional_k.remove(addr);
         self.provisional_h.remove(addr);
         self.offered.remove(addr);
+        self.offered_to.remove(addr);
         if self.lane_listings[2].contains(addr) {
             self.occupancy[2] = self.occupancy[2].saturating_sub(1);
             self.lane_listings[2].remove(addr);
@@ -539,6 +540,25 @@ impl Kernel {
             out.push((crate::transducer::address::Address::from(addr), w.to_bytes()));
         }
         out
+    }
+
+    /// What the offer of `addr` stands at for `witness` (S12.4d): `None`
+    /// until it has been offered to that witness.
+    pub fn offer_standing(&self, addr: &[u8], witness: &[u8; 32]) -> Option<crate::cognition::OfferStanding> {
+        self.offered_to.get(addr).and_then(|w| w.get(witness)).copied()
+    }
+
+    /// The offer of `addr` went to `witness` at this court's K `k`; it
+    /// stands pending there until the witness answers or its Λ elapses.
+    pub fn note_offered(&mut self, addr: &[u8], witness: [u8; 32], k: u64) {
+        self.offered_to.nested_insert(addr, witness, crate::cognition::OfferStanding::Pending { k });
+    }
+
+    /// `witness` answered the offer of `addr` with a vantage of its own —
+    /// the section it reached, or the refusal it named — and is not asked
+    /// again for this word.
+    pub fn note_witness_answered(&mut self, addr: &[u8], witness: [u8; 32]) {
+        self.offered_to.nested_insert(addr, witness, crate::cognition::OfferStanding::Answered);
     }
 
 }

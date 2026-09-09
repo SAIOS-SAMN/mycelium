@@ -79,6 +79,30 @@ pub(crate) fn offer_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
                 continue;
             };
             let d = &d;
+            // 47.3, 47.5, S12.4d — RE-SENT ONLY AFTER THE WITNESS'S ANSWER OR
+            // ITS Λ. A witness that has answered is not asked again for this
+            // word; one that has answered nothing is asked again only once
+            // the round trips this court has measured to it say its Λ has
+            // elapsed since the offer left. Unmeasured, the offer stands: a
+            // silent witness is not polled. On the fleet of 2026-09-08 one
+            // hypha re-sent 12,165 offers in ten minutes.
+            let Ok(witness) = <[u8; 32]>::try_from(vk.as_slice()) else {
+                continue;
+            };
+            let lambda = crate::transport::rtt_floor(mesh, d.as_bytes()).map(|floor| {
+                mycelium::physics::from_transport(floor, mycelium::physics::aperture_cycle() as u64)
+            });
+            let (standing, k_now) = match kernel.lock() {
+                Ok(k) => (k.offer_standing(oaddr.as_bytes(), &witness), k.k_step()),
+                Err(_) => continue,
+            };
+            match (standing, lambda) {
+                (Some(mycelium::cognition::OfferStanding::Answered), _) => continue,
+                (Some(mycelium::cognition::OfferStanding::Pending { k }), Some(l))
+                    if k_now.saturating_sub(k) >= l => {}
+                (Some(mycelium::cognition::OfferStanding::Pending { .. }), _) => continue,
+                (None, _) => {}
+            }
             // An offer whose section cannot be framed is not spoken.
             let Some(body) = dialogue::encode_offer(&dialogue::Offer {
                 addr: oaddr.clone(),
@@ -90,9 +114,17 @@ pub(crate) fn offer_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
             }) else {
                 continue;
             };
-            let Some((reply, _)) = tell_peer(d, body) else {
+            // The offer leaves: it stands pending at this witness from this
+            // K whether or not an answer comes back, and the round trip, or
+            // the silence, is the transport measure its Λ is read from.
+            if let Ok(mut k) = kernel.lock() {
+                k.note_offered(oaddr.as_bytes(), witness, k_now);
+            }
+            let Some((reply, dt)) = tell_peer(d, body) else {
+                crate::transport::note_rtt_timeout(mesh, d.as_bytes());
                 continue;
             };
+            crate::transport::note_rtt_ok(mesh, d.as_bytes(), dt);
             offered_out += 1;
             // 23.8, I36 — A DEFERRAL IS IMPEDANCE, NEVER A VANTAGE. The
             // witness's reflex pool was full: it replayed nothing and the
@@ -143,14 +175,20 @@ pub(crate) fn offer_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
             // witness that has re-derived nothing of its own, and the
             // object keeps waiting.
             match w {
-                dialogue::Witnessed::Refused { vk, why } => eprintln!(
-                    "  court offer refused {:02x}{:02x}… by {:02x}{:02x}…: {}",
-                    oaddr[0],
-                    oaddr[1],
-                    vk[0],
-                    vk[1],
-                    String::from_utf8_lossy(&why)
-                ),
+                dialogue::Witnessed::Refused { vk, why } => {
+                    eprintln!(
+                        "  court offer refused {:02x}{:02x}… by {:02x}{:02x}…: {}",
+                        oaddr[0],
+                        oaddr[1],
+                        vk[0],
+                        vk[1],
+                        String::from_utf8_lossy(&why)
+                    );
+                    // A refusal is the witness's answer (S12.4d).
+                    if let Ok(mut k) = kernel.lock() {
+                        k.note_witness_answered(oaddr.as_bytes(), vk);
+                    }
+                }
                 dialogue::Witnessed::Unmeasured { vk } => eprintln!(
                     "  court offer unmeasured {:02x}{:02x}… at {:02x}{:02x}…",
                     oaddr[0], oaddr[1], vk[0], vk[1]

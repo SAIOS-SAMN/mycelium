@@ -106,6 +106,17 @@ impl Language {
     }
 }
 
+/// WHAT AN OFFER STANDS AT, per witness (47.3, 47.5; S12.4d): pending
+/// since the K it was offered at, or answered — the witness replayed and
+/// sent its section, or named its refusal. An offer is asked again only
+/// once the witness has answered nothing for that peer's Λ; a pending offer
+/// is never re-sent on the next cycle, and an answered one never again.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OfferStanding {
+    Pending { k: u64 },
+    Answered,
+}
+
 /// The market as seen at one instant (see [`Kernel::market_open`]).
 pub struct MarketView {
     pub language: std::sync::Arc<Language>,

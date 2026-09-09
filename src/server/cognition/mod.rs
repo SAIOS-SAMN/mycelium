@@ -26,7 +26,7 @@ pub(crate) use cocycle::CocycleRow;
 pub(crate) use reduce::*;
 pub use language::{
     Adoption, CriticalPair, FieldEntry, Glue, Language, ListingField, MarketView, NormalForm,
-    Outcome, Priced, Rank, Reduction,
+    OfferStanding, Outcome, Priced, Rank, Reduction,
 };
 pub use reduce::{
     cohesion_over, normal_form, percept_elements, quote_incidence, rank_over, reduce_all,

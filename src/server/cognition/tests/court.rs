@@ -30,6 +30,43 @@ empty.sub.clear();
 assert!(blind_replay(&empty).is_some(), "no evidence, no word");
 }
 
+/// 47.3, 47.5, Stage 12 S12.4d — AN OFFER STANDS PENDING UNTIL THE WITNESS
+/// ANSWERS. Before it is offered a word has no standing at a witness;
+/// offered, it stands pending at the K it left; a witness that sent its
+/// vantage has answered and is not asked again; a word that leaves the
+/// docket takes its standings with it.
+#[test]
+fn an_offer_stands_pending_until_the_witness_answers() {
+let mut k = Kernel::new();
+let a = vec![(0, 0, 1u8), (0, 1, 1)];
+let b = vec![(0, 0, 2u8), (0, 1, 2)];
+assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+let mut budget = k.stroke();
+let offers = k.offers_pending(&mut budget);
+let (addr, _) = offers.first().expect("the germ is offered at first vantage");
+let witness = [7u8; 32];
+assert_eq!(k.offer_standing(addr.as_bytes(), &witness), None, "not yet offered to this witness");
+let now = k.k_step();
+k.note_offered(addr.as_bytes(), witness, now);
+assert_eq!(
+    k.offer_standing(addr.as_bytes(), &witness),
+    Some(OfferStanding::Pending { k: now }),
+    "offered: pending at the K it left"
+);
+k.note_witness_answered(addr.as_bytes(), witness);
+assert_eq!(
+    k.offer_standing(addr.as_bytes(), &witness),
+    Some(OfferStanding::Answered),
+    "the witness answered and is not asked again"
+);
+k.relocate_standing(addr.as_bytes());
+assert_eq!(
+    k.offer_standing(addr.as_bytes(), &witness),
+    None,
+    "a word off the docket takes its standings with it"
+);
+}
+
 /// STEP 5 — PROVISIONAL UNTIL THE COURT SPEAKS: a two-voice install escrows
 /// its consilience award (unfinalized speech earns nothing); the docket
 /// exports the spoken word; the upheld verdict releases the award; a

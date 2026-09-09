@@ -143,6 +143,11 @@ pub struct Kernel {
     pub(crate) cavities: Vec<Element>,
     /// First-vantage words already Offered.
     pub(crate) offered: crate::network::nerve::Keyed<()>,
+    /// Per offered word, per witness: what the offer stands at (S12.4d).
+    /// In-memory work, never persisted: a restart offers once more and the
+    /// witness's own idempotence by receipt (23.8) answers the repeat.
+    pub(crate) offered_to:
+        crate::network::nerve::Keyed<crate::network::nerve::Keyed<crate::cognition::OfferStanding>>,
     /// The court organ's federation (ruled language) and index.
     pub(crate) court_federation: Vec<(Address, Element)>,
     pub(crate) court_fed_index: crate::network::nerve::Keyed<usize>,
