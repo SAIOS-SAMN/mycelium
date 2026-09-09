@@ -337,6 +337,120 @@ pub(crate) fn pair_scene(
     PairedScene { ins, outs, pairs, used_in, used_out }
 }
 
+/// THE DEMANDS OF THE UNPAIRED (50.5): an output body no pairing consumed
+/// is a `Source` when input charts carry onto it (every one standing,
+/// their number the multiplicity) and a `Creation` when none does; an
+/// input body no pairing consumed is a `TopologicalDeformation` toward
+/// each unpaired output body its support overlaps, on the axes their
+/// charts differ, and toward the empty chart on every axis when nothing
+/// overlaps it — it vanished.
+fn unpaired_demands(ins: &[Cand], outs: &[Cand], used_in: &[bool], used_out: &[bool]) -> Vec<Demanded> {
+    use crate::transducer::peel::ShellKind::Whole;
+    use crate::transducer::sentence::Demand;
+    let mut out = Vec::new();
+    // The unpaired input bodies first: what each overlaps decides its
+    // reading. An output body of the SAME chart it overlaps is its image
+    // in place — carried on the shape, its hues not a map (a section over
+    // the same base, 25): the input is the SOURCE of that output. An
+    // output body of another chart it overlaps is the image of its
+    // DEFORMATION, and is consumed as such. Nothing overlapping: vanished.
+    let mut sourced_in: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    let mut imaged_out: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    for (i, ic) in ins.iter().enumerate() {
+        if used_in[i] || ic.kind != Whole {
+            continue;
+        }
+        let mut same: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        let mut images: crate::network::nerve::Keyed<(Invariant, usize)> = crate::network::nerve::Keyed::new();
+        for (j, oc) in outs.iter().enumerate() {
+            if used_out[j] || oc.kind != Whole || !supports_overlap(&ic.body, &oc.body) {
+                continue;
+            }
+            if differing_axes(&ic.body.moduli, &oc.body.moduli).is_empty() {
+                same.insert(j.to_le_bytes(), ());
+            } else {
+                images.insert(oc.body.moduli.key(), (oc.body.moduli.clone(), j));
+            }
+        }
+        if same.fiber(crate::network::nerve::ROOT).next().is_some() {
+            sourced_in.insert(i.to_le_bytes(), ());
+            continue;
+        }
+        match images.fiber(crate::network::nerve::ROOT).next() {
+            None => {
+                let axes: Vec<u16> = (0..ic.body.moduli.0.len() as u16).collect();
+                let cells: Vec<_> = ic.body.cells.iter().map(|&(r, c, h)| (r, c, h, 0u8)).collect();
+                out.push((Demand::TopologicalDeformation { image: Invariant(Vec::new()), axes }, ic.body.moduli.clone(), cells));
+            }
+            Some(_) => {
+                for (_, (image, j)) in images.fiber(crate::network::nerve::ROOT) {
+                    imaged_out.insert(j.to_le_bytes(), ());
+                    let axes = differing_axes(&ic.body.moduli, image);
+                    let cells = delta_cells(&ic.body, &outs[*j].body);
+                    out.push((Demand::TopologicalDeformation { image: image.clone(), axes }, ic.body.moduli.clone(), cells));
+                }
+            }
+        }
+    }
+    // The unpaired output bodies no deformation imaged: a SOURCE when input
+    // charts carry onto it by shape (every one standing, their number the
+    // multiplicity; an in-place source's hues ride the cells), a CREATION
+    // when none does.
+    for (j, oc) in outs.iter().enumerate() {
+        if used_out[j] || oc.kind != Whole || imaged_out.contains(&j.to_le_bytes()) {
+            continue;
+        }
+        let mut charts: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        let mut cells: Vec<crate::transducer::sentence::Cell> = Vec::new();
+        for (i, ic) in ins.iter().enumerate() {
+            if ic.kind != Whole {
+                continue;
+            }
+            let Some(v) = blade::versor_between(&ic.body.shape, &oc.body.shape) else {
+                continue;
+            };
+            charts.insert(ic.body.moduli.key(), ());
+            if sourced_in.contains(&i.to_le_bytes()) && supports_overlap(&ic.body, &oc.body) {
+                cells.extend(chain_of(Some(&ic.body), Some(&oc.body), &v));
+            }
+        }
+        if cells.is_empty() {
+            cells = oc.body.cells.iter().map(|&(r, c, h)| (r, c, 0u8, h)).collect();
+        }
+        let kind = match charts.fiber(crate::network::nerve::ROOT).next() {
+            None => Demand::Creation,
+            Some(_) => Demand::Source { multiplicity: charts.len() as u32 },
+        };
+        out.push((kind, oc.body.moduli.clone(), cells));
+    }
+    out
+}
+
+/// The cells a deformation stands for: the union of both bodies' supports,
+/// each with the hue before and after (0 where a body has no cell).
+fn delta_cells(a: &Body, b: &Body) -> Vec<crate::transducer::sentence::Cell> {
+    let mut before: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
+    for &(r, c, h) in &a.cells {
+        before.insert(cell_pos_key(r, c), h);
+    }
+    let mut after: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
+    for &(r, c, h) in &b.cells {
+        after.insert(cell_pos_key(r, c), h);
+    }
+    let mut cells: Vec<crate::transducer::sentence::Cell> = Vec::new();
+    for &(r, c, h) in &a.cells {
+        cells.push((r, c, h, after.get(&cell_pos_key(r, c)).copied().unwrap_or(0)));
+    }
+    for &(r, c, h) in &b.cells {
+        if !before.contains(&cell_pos_key(r, c)) {
+            cells.push((r, c, 0, h));
+        }
+    }
+    cells.sort_unstable();
+    cells.dedup();
+    cells
+}
+
 pub(crate) fn pair_form_uncached(
     a: &Grid,
     b: &Grid,
@@ -346,28 +460,43 @@ pub(crate) fn pair_form_uncached(
     let mut vertices = vec![frame_vertex()];
     let mut supports: Vec<Vec<(i64, i64)>> = vec![Vec::new()];
     // Per vertex, the pair it carries and the versor that carried it (50.3):
-    // the Frame and the body-only vertices carry none.
+    // the Frame and the demand vertices carry none.
     let mut carried: Vec<Option<(usize, usize, Versor)>> = vec![None];
+    let mut demanded: Vec<Demanded> = Vec::new();
     for (i, j, car) in &pairs {
-        if let Some(v) = word_form(&ins[*i].body, &outs[*j].body) {
-            vertices.push(v);
-            supports.push(support_of(&outs[*j].body));
-            carried.push(Some((*i, *j, car.v.clone())));
+        match word_or_demand(&ins[*i].body, &outs[*j].body) {
+            Some(Ok(v)) => {
+                vertices.push(v);
+                supports.push(support_of(&outs[*j].body));
+                carried.push(Some((*i, *j, car.v.clone())));
+            }
+            Some(Err(d)) => demanded.push(d),
+            None => {}
         }
     }
-    for (j, oc) in outs.iter().enumerate() {
-        if !used_out[j] && oc.kind == crate::transducer::peel::ShellKind::Whole {
-            vertices.push(body_only_vertex(&oc.body, true));
-            supports.push(support_of(&oc.body));
-            carried.push(None);
+    demanded.extend(unpaired_demands(&ins, &outs, &used_in, &used_out));
+    // One demand vertex per (kind, chart) (50.5), the bodies it stands for
+    // gathered under it; key order, never arrival order.
+    let mut by_demand: crate::network::nerve::Keyed<Demanded> = crate::network::nerve::Keyed::new();
+    for (kind, chart, cells) in demanded {
+        let key = crate::transducer::sentence::demand_key(&kind, &chart);
+        match by_demand.get_mut(&key) {
+            Some((_, _, held)) => held.extend(cells),
+            None => {
+                by_demand.insert(key, (kind, chart, cells));
+            }
         }
     }
-    for (i, ic) in ins.iter().enumerate() {
-        if !used_in[i] && ic.kind == crate::transducer::peel::ShellKind::Whole {
-            vertices.push(body_only_vertex(&ic.body, false));
-            supports.push(support_of(&ic.body));
-            carried.push(None);
-        }
+    for (_, (kind, chart, cells)) in by_demand.fiber(crate::network::nerve::ROOT) {
+        let mut cells = cells.clone();
+        cells.sort_unstable();
+        cells.dedup();
+        let mut support: Vec<(i64, i64)> = cells.iter().map(|&(r, c, _, _)| (r, c)).collect();
+        support.sort_unstable();
+        support.dedup();
+        vertices.push(demand_vertex(kind.clone(), chart, cells));
+        supports.push(support);
+        carried.push(None);
     }
     let mut form = Form {
         vertices,

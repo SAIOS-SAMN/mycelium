@@ -75,6 +75,72 @@ assert!(
 assert!(matches!(edge.word.order(), crate::transducer::alphabet::Order::Finite(_)));
 }
 
+/// 50.5 — A CREATED BODY IS A SOURCE OR A CREATION DEMAND, never a word
+/// with the identity: a new bar some input chart carries onto is a
+/// `Source` with that multiplicity; a new body no input chart carries
+/// onto is a `Creation`. Both ride the pair form as demand vertices with
+/// the cells they stand for, and the form is not closed.
+#[test]
+fn a_created_body_is_a_source_or_creation_demand() {
+use crate::transducer::sentence::Demand;
+let f = pair_form(&grid(&["1100", "0000", "0000"]), &grid(&["1100", "0000", "0220"]), None);
+let demands: Vec<_> = f.demand_vertices().collect();
+assert_eq!(demands.len(), 1, "one demand: {:?}", f.vertices);
+let (_, kind, _, cells) = demands[0];
+assert_eq!(*kind, Demand::Source { multiplicity: 1 }, "the input bar's chart carries onto the new bar");
+assert_eq!(cells, &[(2, 1, 0, 2), (2, 2, 0, 2)], "the created cells, hue 0 before");
+assert!(!f.is_closed(), "a sentence with a demand is not closed");
+assert_eq!(
+    f.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).count(),
+    1,
+    "the carried bar is the one word vertex; the created bar is no word: {:?}",
+    f.vertices
+);
+
+let f = pair_form(&grid(&["1100", "0000", "0000"]), &grid(&["1100", "0000", "0222"]), None);
+let demands: Vec<_> = f.demand_vertices().collect();
+assert_eq!(demands.len(), 1);
+assert_eq!(*demands[0].1, Demand::Creation, "no input chart carries onto a bar of three");
+}
+
+/// 50.5 — A DEFORMED BODY IS A DEFORMATION DEMAND: an input body no versor
+/// carries onto the output body over it names that image's chart and the
+/// axes they differ on, and the image is consumed by the deformation — it
+/// is not a second demand, a creation; a body that vanished names the
+/// empty chart on every axis.
+#[test]
+fn a_deformed_body_is_a_deformation_demand() {
+use crate::transducer::sentence::Demand;
+let f = pair_form(&grid(&["1100"]), &grid(&["1000"]), None);
+let kinds: Vec<&Demand> = f.demand_vertices().map(|(_, k, _, _)| k).collect();
+assert_eq!(kinds.len(), 1, "one demand: the deformation, its image consumed: {kinds:?}");
+assert!(matches!(kinds[0], Demand::TopologicalDeformation { image, axes } if !image.0.is_empty() && !axes.is_empty()), "{kinds:?}");
+let (_, _, _, cells) = f.demand_vertices().next().expect("the demand");
+assert_eq!(cells, &[(0, 0, 1, 1), (0, 1, 1, 0)], "the deformation stands for the union of both bodies, hue before and after");
+
+let f = pair_form(&grid(&["1100", "0000", "0220"]), &grid(&["1100", "0000", "0000"]), None);
+let kinds: Vec<&Demand> = f.demand_vertices().map(|(_, k, _, _)| k).collect();
+assert_eq!(kinds.len(), 1, "{kinds:?}");
+assert!(matches!(kinds[0], Demand::TopologicalDeformation { image, axes } if image.0.is_empty() && !axes.is_empty()), "a vanished body deforms to the empty chart on every axis: {kinds:?}");
+for (_, kind, _, _) in f.demand_vertices() {
+    assert_eq!(kind.typed(), Ok(()), "every demand the eyes emit is typed");
+}
+}
+
+/// 50.5 — DEMANDS RIDE THE SENTENCE ONE PER (KIND, CHART): two created bars
+/// of one chart are one demand vertex carrying both bodies' cells.
+#[test]
+fn demands_ride_the_sentence_one_per_chart() {
+use crate::transducer::sentence::Demand;
+let f = pair_form(&grid(&["1100000", "0000000", "0000000"]), &grid(&["1100000", "0000000", "0220022"]), None);
+let demands: Vec<_> = f.demand_vertices().collect();
+assert_eq!(demands.len(), 1, "one vertex for one (kind, chart): {:?}", f.vertices);
+let (idx, kind, chart, cells) = demands[0];
+assert_eq!(*kind, Demand::Source { multiplicity: 1 });
+assert_eq!(cells.len(), 4, "both bars' cells ride it");
+assert_eq!(f.demands.get(&crate::transducer::sentence::demand_key(kind, chart)), Some(&idx), "and it is read by (kind, chart)");
+}
+
 /// Three touching after-supports: two adjacency faces besides the
 /// Frame star, and the 1-skeleton is not a tree.
 #[test]

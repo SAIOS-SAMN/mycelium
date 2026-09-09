@@ -472,31 +472,38 @@ assert_eq!(
 );
 }
 
-/// Two hues of one linear word are one transport class; the maps are
-/// hue sections, not two vertices. A vortex needs two words, not two hues.
+/// Two bars that meet in the output are one body there, which no versor
+/// carries either bar onto: the pair form holds no word for them and a
+/// demand vertex each (50.5, 50.6 seam 2). Before this the two stood as
+/// identity-word vertices and were counted as one transport class — a
+/// word class read off bodies nothing reconstructed.
 #[test]
 fn two_hues_form_a_cycle_the_word_not_the_versor() {
 let family = vec![
     (grid(&["110022", "000000"]), grid(&["001122", "000000"])),
     (grid(&["000000", "110022"]), grid(&["000000", "001122"])),
 ];
-let rule = extract_rule(&family).expect("two bodies extract");
+let pf = pair_form(&family[0].0, &family[0].1, None);
+let words = pf.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).count();
+assert_eq!(words, 0, "no versor carries a bar onto the joined body: no word vertex, got {words}");
+let kinds: Vec<_> = pf.demand_vertices().map(|(_, k, _, _)| k.clone()).collect();
+assert_eq!(kinds.len(), 2, "two demands, one per bar: {kinds:?}");
+assert!(
+    kinds.iter().any(|k| matches!(k, crate::transducer::sentence::Demand::TopologicalDeformation { image, .. } if !image.0.is_empty())),
+    "the bar under the joined body deforms toward it, and the joined body is that deformation's image, no creation: {kinds:?}"
+);
+assert!(
+    kinds.iter().any(|k| matches!(k, crate::transducer::sentence::Demand::TopologicalDeformation { image, .. } if image.0.is_empty())),
+    "the bar nothing overlaps vanished: {kinds:?}"
+);
+let rule = extract_rule(&family).expect("the family still extracts a frame");
 let words = rule
     .form
     .vertices
     .iter()
     .filter(|v| matches!(v, Vertex::Word { .. }))
     .count();
-assert_eq!(
-    words, 1,
-    "two hues of one word class are one vertex, got {words} words, {} vertices",
-    rule.form.vertices.len()
-);
-assert!(
-    rule.form.hue_maps.len() >= 2,
-    "two hue sections, got {}",
-    rule.form.hue_maps.len()
-);
+assert_eq!(words, 0, "the rule carries no word it cannot reconstruct, got {words}");
 assert!(
     rule.form.loops.iter().all(|c| c.holonomy.is_identity()),
     "holonomy of identity-word faces is the identity"

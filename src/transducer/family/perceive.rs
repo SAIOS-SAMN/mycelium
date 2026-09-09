@@ -201,30 +201,64 @@ pub(crate) fn hue_map_of_chain(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
     m
 }
 
-/// Carriage of two bodies spelled as a word form (50.2 F steps 1–2): the
-/// versor measured, its rotor spelled by A22. Class is the target's chart.
-/// `None` when no versor carries `a` onto `b` or the rotor leaves a demand;
-/// the demand itself is `word_or_demand`'s to place (L4).
-pub fn word_form(a: &Body, b: &Body) -> Option<Vertex> {
+/// What a demand vertex stands for: its kind, the chart it is listed under
+/// and the cells of the bodies it carries (50.5).
+pub type Demanded = (crate::transducer::sentence::Demand, Invariant, Vec<crate::transducer::sentence::Cell>);
+
+/// 50.5: a demand vertex over the bodies it stands for.
+pub fn demand_vertex(kind: crate::transducer::sentence::Demand, chart: &Invariant, bodies: Vec<crate::transducer::sentence::Cell>) -> Vertex {
+    Vertex::Demand { kind, chart: chart.clone(), bodies }
+}
+
+/// Carriage of two bodies spelled as a word form (50.2 F steps 1–2), or the
+/// demand its rotor leaves: the versor measured, its rotor spelled by A22.
+/// Class is the target's chart. `None` when no versor carries `a` onto `b`.
+pub(crate) fn word_or_demand(a: &Body, b: &Body) -> Option<Result<Vertex, Demanded>> {
     let car = carriage(a, b)?;
-    let word = factor_versor(&car.v)?.ok()?;
+    let chain = chain_of(Some(a), Some(b), &car.v);
+    let word = match factor_versor(&car.v)? {
+        Ok(word) => word,
+        Err(demand) => return Some(Err((demand, b.moduli.clone(), chain))),
+    };
     let t = element::translator_of(&car.v)?;
     let d = element::dilator_of(&car.v)?;
     let carriage = d.geo(&t);
-    let chain = chain_of(Some(a), Some(b), &car.v);
     let gauge = if car.sigma.is_empty() {
         hue_map_of_chain(&chain)
     } else {
         car.sigma
     };
-    Some(Vertex::Word {
+    Some(Ok(Vertex::Word {
         address: element::from_residual(&chain).address(),
         word,
         carriage: Box::new(carriage),
         gauge,
         class: b.moduli.clone(),
         contact: None,
-    })
+    }))
+}
+
+/// The word vertex of two bodies; `None` when none carries or the rotor
+/// leaves a demand (`word_or_demand` carries the demand).
+pub fn word_form(a: &Body, b: &Body) -> Option<Vertex> {
+    word_or_demand(a, b)?.ok()
+}
+
+/// Whether two bodies' supports share a cell: the overlap the eyes admit
+/// as a correspondence when no versor carries one onto the other.
+pub(crate) fn supports_overlap(a: &Body, b: &Body) -> bool {
+    let mut have: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    for &(r, c, _) in &a.cells {
+        have.insert(cell_pos_key(r, c), ());
+    }
+    b.cells.iter().any(|&(r, c, _)| have.contains(&cell_pos_key(r, c)))
+}
+
+/// The axes on which two charts differ, by position; an axis one chart
+/// lacks differs.
+pub(crate) fn differing_axes(a: &Invariant, b: &Invariant) -> Vec<u16> {
+    let n = a.0.len().max(b.0.len());
+    (0..n).filter(|&i| a.0.get(i) != b.0.get(i)).map(|i| i as u16).collect()
 }
 
 /// THE EDGE TRANSPORT of 50.3 between two carried bodies. `V_ij` carries
@@ -245,22 +279,6 @@ pub(crate) fn edge_transport(v_i: &Versor, a_i: &Body, a_j: &Body, b_i: &Body, b
     let t = element::translator_of(&gamma)?;
     let d = element::dilator_of(&gamma)?;
     Some(crate::transducer::sentence::Transport { word, carriage: d.geo(&t), gauge: Vec::new() })
-}
-
-pub(crate) fn body_only_vertex(body: &Body, created: bool) -> Vertex {
-    let chain: Vec<(i64, i64, u8, u8)> = body
-        .cells
-        .iter()
-        .map(|&(r, c, h)| if created { (r, c, 0, h) } else { (r, c, h, 0) })
-        .collect();
-    Vertex::Word {
-        address: element::from_residual(&chain).address(),
-        word: crate::transducer::alphabet::Word::identity(),
-        carriage: Box::new(element::identity_versor()),
-        gauge: hue_map_of_chain(&chain),
-        class: body.moduli.clone(),
-        contact: None,
-    }
 }
 
 pub(crate) fn support_of(body: &Body) -> Vec<(i64, i64)> {

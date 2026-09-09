@@ -286,6 +286,21 @@ pub fn percept_elements(
             element::from_residual_framed(&rem, frame)
         }
     };
+    // 50.5: what the pair form could not reconstruct rides it as demand
+    // vertices, each carrying the bodies it stands for; those bodies are
+    // the remainder, and until L8 lists a demand by its kind each stands
+    // as the residual chain of what changed on it.
+    let pf = pair_form(&family[0].0, &family[0].1, family_ratio(&family));
+    let demanded: Vec<Element> = pf
+        .demand_vertices()
+        .filter_map(|(_, _, _, cells)| {
+            let changed: Vec<(i64, i64, u8, u8)> = cells.iter().copied().filter(|c| c.2 != c.3).collect();
+            (!changed.is_empty()).then(|| element::from_residual_framed(&changed, frame))
+        })
+        .collect();
+    if !demanded.is_empty() {
+        return Some(demanded);
+    }
     Some(vec![match extract_rule_with(&family, crystal) {
         Some(rule) => match mint_sentence(&rule, &family, crystal) {
             Some(e) => e,
