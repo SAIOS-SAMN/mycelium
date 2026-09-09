@@ -13,7 +13,27 @@ let shed = entity.shed();
 if shed > 0 {
     eprintln!("[{tag}] shed {shed} dialect");
 }
-entity.discover();
+// 24.3, I37 — THE SYNC IS PACED AS THE QUOTE IS. Discovery, the syllabus
+// pull and the sheaf sync are wire acts, and they ran on every depleted
+// stroke of every voice: on the fleet of 2026-09-08 two hyphae each
+// served 131,072 digest requests in ten minutes and their reflex pools
+// deferred the quotes and probes that were the work. They are asked when
+// the working language changed since the last sync, when the book's height
+// moved (the height I39 made real), when a lane's dwell elapsed, or while
+// the mind holds no language at all; never because a stroke was depleted.
+// The T lane is excluded from the dwell (C4), as at the quote.
+let lang = entity.atlas_standing_counts();
+let dwell_elapsed = [0usize, 1, 3]
+    .iter()
+    .any(|&l| m.last_pressure[l] > 0 && m.dwell_remaining[l] == 0);
+let unlearned = entity.epigenome.atlas_is_empty();
+let sync_due = lang != m.last_synced_lang
+    || m.last_height > m.last_synced_height
+    || dwell_elapsed
+    || unlearned;
+if sync_due {
+    entity.discover();
+}
 // Syllabus and sheaf sync live on the depletion dwell so the
 // door serves quotes and percepts on the hot stroke.
 {
@@ -25,30 +45,36 @@ entity.discover();
     if pivoted > 0 {
         eprintln!("[{tag}] pivot: {pivoted} held thoughts spoken as demands on charts the language now holds");
     }
-    if let Ok(n) = entity.pull_syllabus() {
-        for a in entity.take_promoted() {
-            eprintln!("[{tag}] promoted {:02x}{:02x}…", a[0], a[1]);
-        }
-        if n > 0 {
-            c.learned += n as u64;
-            eprintln!(
-                "[{tag}] SYLLABUS +{n} ratified words (genome {})",
-                entity.epigenome.genome_len(),
-            );
+    if sync_due {
+        if let Ok(n) = entity.pull_syllabus() {
+            for a in entity.take_promoted() {
+                eprintln!("[{tag}] promoted {:02x}{:02x}…", a[0], a[1]);
+            }
+            if n > 0 {
+                c.learned += n as u64;
+                eprintln!(
+                    "[{tag}] SYLLABUS +{n} ratified words (genome {})",
+                    entity.epigenome.genome_len(),
+                );
+            }
         }
     }
 }
 // THE SHEAF SYNC (Q3): converge the genome on the hypha's
 // language by discordant stratum — the entity thinks in the
 // whole language, not the syllabus drip.
-if let Ok(n) = entity.sync_genome() {
-    if n > 0 {
-        c.learned += n as u64;
-        eprintln!(
-            "[{tag}] SYNC +{n} words by stratum (genome {})",
-            entity.epigenome.genome_len(),
-        );
+if sync_due {
+    if let Ok(n) = entity.sync_genome() {
+        if n > 0 {
+            c.learned += n as u64;
+            eprintln!(
+                "[{tag}] SYNC +{n} words by stratum (genome {})",
+                entity.epigenome.genome_len(),
+            );
+        }
     }
+    m.last_synced_lang = lang;
+    m.last_synced_height = m.last_height;
 }
 // REFINEMENT PROBE (0x09): one genome word per syntropic stroke —
 // if the rest of the vocabulary already speaks it, bid the

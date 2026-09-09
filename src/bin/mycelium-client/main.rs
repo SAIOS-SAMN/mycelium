@@ -35,6 +35,12 @@ pub(crate) struct Metabolism {
     pub(crate) dwell_remaining: [u64; 4],
     pub(crate) k_step: u64,
     pub(crate) last_genome: usize,
+    /// The language and the book height the syntropy arm last synced at
+    /// (24.3, I37): the sheaf sync, the syllabus pull and peer discovery
+    /// are asked when either moved or a lane's dwell elapsed, exactly as
+    /// the quote is, never on every depleted stroke.
+    pub(crate) last_synced_lang: (usize, usize, usize),
+    pub(crate) last_synced_height: u64,
 }
 
 /// WHAT ONE STROKE WORKS ON: this voice's entity and the metabolism it
@@ -152,6 +158,7 @@ fn main() {
         Option<mycelium::transducer::sentence::SentenceRule>,
     )> = mycelium::network::nerve::Keyed::new();
     m.last_lang = (usize::MAX, usize::MAX, usize::MAX);
+    m.last_synced_lang = (usize::MAX, usize::MAX, usize::MAX);
     let mut stroke_n = 0u64;
     let mut last_logged_n = 0u64;
     let mut last_logged_k = u64::MAX;
