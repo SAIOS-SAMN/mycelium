@@ -158,6 +158,20 @@ pub(crate) fn read_budgeted(s: &mut TcpStream, buf: &mut [u8], stall: usize) -> 
     Some(first_byte_at)
 }
 
+/// WHETHER A PEER IS ASKED AGAIN (45.7, S13.1), a predicate at the wire
+/// boundary (§2.3): never asked, or this court's own roots moved, or the
+/// peer's Λ — measured in strokes, `None` while unmeasured — has elapsed
+/// since the last ask on this court's own K. An unmeasured peer is not
+/// polled: it is asked again when the roots move.
+pub(crate) fn exchange_due(last_asked: Option<u64>, k_now: u64, lambda: Option<u64>, own_roots_moved: bool) -> bool {
+    match (last_asked, lambda) {
+        (None, _) => true,
+        _ if own_roots_moved => true,
+        (Some(last), Some(l)) => k_now.saturating_sub(last) >= l,
+        (Some(_), None) => false,
+    }
+}
+
 /// The floor of the last aperture of measured round trips to a peer.
 pub(crate) fn rtt_floor(mesh: &Mesh, id: &[u8]) -> Option<u64> {
     mesh.rtt_window

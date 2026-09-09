@@ -51,6 +51,10 @@ pub(crate) struct Mesh {
     /// The last aperture of measured round trips per peer, in strokes.
     pub(crate) rtt_window: Arc<Mutex<Keyed<Vec<u64>>>>,
     pub(crate) last_roots: Arc<Mutex<Keyed<Roots>>>,
+    /// This court's K at the last digest ask per peer (45.7, S13.1): a peer
+    /// is asked again only after its Λ elapsed on this court's own clock or
+    /// this court's own roots moved. Taken one at a time, like `rtt_window`.
+    pub(crate) asked_at: Arc<Mutex<Keyed<u64>>>,
     /// This node's own `(H_genesis, E_origin)`, the pair 47.2 step 1 tests
     /// every signed frame against. `None` is UNMEASURED, not zero: a node
     /// that has not adopted a genesis admits no receipt at all rather than
@@ -70,6 +74,7 @@ impl Clone for Mesh {
             rtt: Arc::clone(&self.rtt),
             rtt_window: Arc::clone(&self.rtt_window),
             last_roots: Arc::clone(&self.last_roots),
+            asked_at: Arc::clone(&self.asked_at),
             origin: Arc::clone(&self.origin),
         }
     }
@@ -252,10 +257,17 @@ impl Exchange {
             intake_corpus(&kernel, &mesh, &registry, budget);
             rebuild_own_cover(&kernel, &mesh);
             let roots = mesh.cover.lock().ok().map(|c| c.roots());
-            if roots != last_cover {
+            // 45.7, S13.1: this court's own roots moving is one of the two
+            // readings that ask a peer again; the other is the peer's Λ.
+            let own_moved = roots != last_cover;
+            if own_moved {
                 relocate_corpus(&kernel, &mesh, &registry, budget);
                 last_cover = roots;
             }
+            let k_now = match kernel.lock() {
+                Ok(k) => k.k_step(),
+                Err(_) => continue,
+            };
             let mut dests: mycelium::network::nerve::Keyed<String> = mycelium::network::nerve::Keyed::new();
             for p in &join {
                 if p != &mesh.bind {
@@ -296,12 +308,34 @@ impl Exchange {
                 .collect();
             let mut organ_budget = mycelium::physics::expansion_unit() as usize;
             let (mut reached, mut silent) = (0usize, 0usize);
+            let mut asked_any = false;
             let mut tally = AdmissionTally::default();
             let _ = &last_organs;
             for (pid, d) in dest_list {
                 if organ_budget == 0 {
                     break;
                 }
+                // 45.7, S13.1 — THE EXCHANGE IS PACED PER PEER. A peer is
+                // asked for its digest again only when its Λ, read from the
+                // round trips this court measured to it, has elapsed since
+                // the last ask on this court's own K, or this court's own
+                // roots moved. Asked on every orbit, one hypha ran 131,072
+                // orbits and 100,000 deferrals in one reading (2026-09-09):
+                // the poll filled the peers' reflex pools and nothing was
+                // admitted. A peer silent since boot has no Λ and is asked
+                // again when these roots move.
+                let lambda = crate::transport::rtt_floor(&mesh, &pid).map(|floor| {
+                    mycelium::physics::from_transport(floor, mycelium::physics::aperture_cycle() as u64)
+                });
+                let last = mesh.asked_at.lock().ok().and_then(|a| a.get(&pid).copied());
+                if !crate::transport::exchange_due(last, k_now, lambda, own_moved) {
+                    continue;
+                }
+                if let Ok(mut a) = mesh.asked_at.lock() {
+                    a.insert(&pid, k_now);
+                }
+                asked_any = true;
+                eprintln!("  court exchange asked {d} K {k_now}");
                 organ_budget -= 1;
                 match tell_peer(&d, req.clone()) {
                     Some((reply, dt)) => {
@@ -472,6 +506,16 @@ impl Exchange {
                 }
             }
             crate::offer::offer_round(&kernel, &mesh);
+            // 45.7, S13.1: an orbit that asked no peer spends the tick, as
+            // the orbit with no destination does, so the loop paces on the
+            // court's own stroke; `idle` counts those orbits on the cycle
+            // line.
+            if !asked_any {
+                idle += 1;
+                if let Some(mut b) = kernel.lock().ok().map(|mut k| k.stroke()) {
+                    while b.spend() {}
+                }
+            }
             // Written when the READING CHANGES, not every cycle. As
             // first shipped this fired on any silence and logged 17,588
             // lines in 35 minutes on one hypha: it found the deadlock

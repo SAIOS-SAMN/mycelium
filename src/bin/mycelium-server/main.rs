@@ -223,6 +223,7 @@ fn main() {
         rtt: Arc::new(Mutex::new(Keyed::new())),
         rtt_window: Arc::new(Mutex::new(Keyed::new())),
         last_roots: Arc::new(Mutex::new(Keyed::new())),
+        asked_at: Arc::new(Mutex::new(Keyed::new())),
         // 45.5: a genesis of all zeros is not a genesis, it is the absence
         // of one. `None` here refuses every admission (REFUSE_ORIGIN is not
         // even reached -- there is nothing to compare against), which is the
