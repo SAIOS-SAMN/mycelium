@@ -30,6 +30,7 @@ impl Entity {
             contemplation: crate::transducer::bubble::Contemplation::new(),
             thought_gen: 0,
             opened: crate::network::nerve::Keyed::new(),
+            axes_spoken: 0,
             ideas: crate::network::nerve::Keyed::new(),
             physics: crate::physics::Physics::default(),
             height: crate::chronometry::Height::default(),

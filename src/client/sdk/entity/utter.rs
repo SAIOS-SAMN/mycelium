@@ -261,8 +261,13 @@ impl Entity {
         Concluded { cites, residual, familiar }
     }
 
-    /// The word a cite rests on: genome, dialect, or idea.
-    pub fn cited_word(&self, addr: &[u8]) -> Option<Element> {
+    /// The word a cite rests on: genome, dialect, or idea. A citation is a
+    /// use (45.4): the dialect entry is touched at the mind's own K, so a
+    /// word cited on a listing stays held for an aperture and is still
+    /// there when the axis its multiplicity opens is asked for (24.3, V1).
+    pub fn cited_word(&mut self, addr: &[u8]) -> Option<Element> {
+        let k = self.session.voice().k();
+        self.epigenome.touch(addr, k);
         self.epigenome
             .working_word(addr)
             .cloned()

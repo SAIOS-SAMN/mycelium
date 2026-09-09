@@ -328,6 +328,14 @@ pub struct Epigenome {
 /// THE ENTITY — a kernel identity with its genome/epigenome, conversing through
 /// a session: it submits percepts, learns what the mesh teaches (comprehending,
 /// not storing), asks quotes, and attests demands.
+/// Why an axis did not open (24.3), written by the stroke as `axis refused`.
+pub const AXIS_ONE_BODY: &str = "one body deflated the listing";
+pub const AXIS_NO_BODY: &str = "a held word has no body";
+pub const AXIS_NO_VERSOR: &str = "no rational versor carries one body onto the other";
+pub const AXIS_TRIED: &str = "the listing was tried in this language";
+pub const AXIS_ALREADY: &str = "the axis germ was already spoken";
+pub const AXIS_REFUSED_SPEECH: &str = "the axis germ was refused on the wire";
+
 pub struct Entity {
     pub(crate) session: Session,
     pub epigenome: Epigenome,
@@ -380,6 +388,9 @@ pub struct Entity {
     /// Listings this mind has opened an axis on (Vec-of-relations, keyed by
     /// listing address on read): an axis is opened once per listing.
     pub(crate) opened: crate::network::nerve::Keyed<()>,
+    /// Axes this mind has spoken (24.3): the count the stroke line reads,
+    /// kept apart from `opened`, which is cleared when the language moves.
+    pub(crate) axes_spoken: usize,
     /// Ideas keyed by address: a cite is a read, never a walk of bubbles.
     pub(crate) ideas: crate::network::nerve::Keyed<Element>,
     pub(crate) physics: crate::physics::Physics,

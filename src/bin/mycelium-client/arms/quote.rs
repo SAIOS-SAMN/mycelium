@@ -35,6 +35,12 @@ match entity.quote() {
         if q.k != 0 {
             m.k_step = q.k;
         }
+        // 24.3, V1: the language moved, so every listing may open an axis
+        // again; a listing refused in this language is not retried on
+        // every quote.
+        if lang != m.last_lang {
+            entity.reopen_axes();
+        }
         m.last_lang = lang;
         // 23.8 (ruled 2026-09-09; S13.5): a height read off a reply only
         // advances. A deferral carries no height, and taking its zero as
@@ -114,15 +120,21 @@ match entity.quote() {
             // never a branch"; the shape says which case it is without
             // measuring anything.
             if let [_, _, ..] = held.as_slice() {
-                if let Some(a) = entity.open_axis(&cluster.address, &cluster.chain, &held) {
-                    eprintln!(
+                match entity.open_axis(&cluster.address, &cluster.chain, &held) {
+                    Ok(a) => eprintln!(
                         "[{tag}] axis opened on {:02x}{:02x}…: {} held words deflated, glue spoken as {:02x}{:02x}…",
                         cluster.address[0],
                         cluster.address[1],
                         held.len(),
                         a[0],
                         a[1]
-                    );
+                    ),
+                    // Tried in this language already: said once, not per quote.
+                    Err(mycelium::sdk::AXIS_TRIED) => {}
+                    Err(why) => eprintln!(
+                        "[{tag}] axis refused {:02x}{:02x}…: {why}",
+                        cluster.address[0], cluster.address[1]
+                    ),
                 }
             }
             // Two utterances at most: the sentence c.settles the

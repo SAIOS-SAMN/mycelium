@@ -154,39 +154,70 @@ impl Entity {
         self.contemplation.torsion_merges
     }
 
-    /// OPEN AN AXIS ON MULTIPLICITY — several held words deflated one
-    /// listing; the glue between them is the new coordinate. Never on
-    /// failure (a listing no held word deflates is a thought, not an axis).
+    /// OPEN AN AXIS ON MULTIPLICITY (24.3) — several held words deflated
+    /// one listing; the glue between them is the new coordinate. Held words
+    /// are bodies on a chart, so the glue is the dislocation versor between
+    /// their shapes and the germ a connection carrying it (`axis_germ`).
+    /// The listing is recorded before the germ is spoken, so it is tried
+    /// once per language (`reopen_axes`); a glue that cannot be read or
+    /// spoken is refused with its reason, which the stroke writes. Never on
+    /// failure: a listing no held word deflates is a thought, not an axis.
     pub fn open_axis(
         &mut self,
         listing: &[u8],
         chain: &[(i64, i64, u8, u8)],
         words: &[Element],
-    ) -> Option<crate::transducer::address::Address> {
-        use crate::transducer::element::measure_lanes;
+    ) -> Result<crate::transducer::address::Address, &'static str> {
         if let Some(a) = self.open_contemplation_axis() {
-            return Some(a);
+            return Ok(a);
         }
-        if words.len() < 2 || self.opened.contains(listing) {
-            return None;
+        if self.opened.contains(listing) {
+            return Err(AXIS_TRIED);
         }
-        let [base, other, ..] = words else { return None };
-        // The glue between the two words that deflated this listing.
-        let glue = crate::transducer::cech::transition(base, other)?;
-        let v = glue.versor()?;
-        if !base.is_connection() {
-            return None; // the axis stands on a spoken motion, never on a bare residual
+        let germ = Self::axis_germ(chain, words)?;
+        self.opened.insert(listing, ());
+        match self.speak_word(&germ) {
+            Ok(Utterance::Spoken) => {
+                self.axes_spoken = self.axes_spoken.saturating_add(1);
+                Ok(germ.address())
+            }
+            Ok(Utterance::Already) => Err(AXIS_ALREADY),
+            _ => Err(AXIS_REFUSED_SPEECH),
         }
-        let mut germ = base.clone();
+    }
+
+    /// THE AXIS GERM, read off the bodies alone: the versor carrying the
+    /// first body's shape onto the second's (the one the court's `Twisted`
+    /// closure carries), minted as a connection with the identity word and
+    /// that carriage, the axis opened on it, its magnitude the listing's
+    /// with the holonomic lane raised by the count of words that met. Two
+    /// connections glue by their transition, as before. One body, a word
+    /// with no body, or bodies no rational versor relates are refused by
+    /// name.
+    pub fn axis_germ(chain: &[(i64, i64, u8, u8)], words: &[Element]) -> Result<Element, &'static str> {
+        use crate::transducer::element::{from_connection, measure_lanes, shape_of_chain};
+        let [base, other, ..] = words else { return Err(AXIS_ONE_BODY) };
+        let (v, mut germ) = if base.is_connection() && other.is_connection() {
+            let glue = crate::transducer::cech::transition(base, other).ok_or(AXIS_NO_VERSOR)?;
+            (glue.versor().ok_or(AXIS_NO_VERSOR)?, base.clone())
+        } else {
+            let sa = shape_of_chain(base.sub()).ok_or(AXIS_NO_BODY)?;
+            let sb = shape_of_chain(other.sub()).ok_or(AXIS_NO_BODY)?;
+            let v = crate::transducer::blade::versor_between(&sa, &sb).ok_or(AXIS_NO_VERSOR)?;
+            let germ = from_connection(&crate::transducer::alphabet::Word::identity(), &v, &[], &Vec::new(), [0; 4])
+                .ok_or(AXIS_NO_VERSOR)?;
+            (v, germ)
+        };
         germ.open_axis(v);
         let mut mag = measure_lanes(chain);
         mag[3] = mag[3].saturating_add(words.len() as u64);
         germ.set_magnitude(mag);
-        self.opened.insert(listing, ());
-        match self.speak_word(&germ) {
-            Ok(Utterance::Spoken) => Some(germ.address()),
-            _ => None,
-        }
+        Ok(germ)
+    }
+
+    /// The language moved: every listing may open an axis again (24.3).
+    pub fn reopen_axes(&mut self) {
+        self.opened = crate::network::nerve::Keyed::new();
     }
 
     /// Seed from a class at any degree on the contemplation — the coordinate
@@ -207,7 +238,7 @@ impl Entity {
 
     /// Listings this mind opened an axis on.
     pub fn axes_opened(&self) -> usize {
-        self.opened.len()
+        self.axes_spoken
     }
 
     /// Expand dirty ideas once per syntropic phase (25.1): each dirty idea
