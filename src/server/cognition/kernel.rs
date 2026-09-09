@@ -234,6 +234,9 @@ pub struct Kernel {
     /// Keyed cursor into `open` for `drain_unreachable` (rule 10, S13.3):
     /// the drain resumes where the last stroke left off.
     pub(crate) drain_cursor: Vec<u8>,
+    /// Keyed cursor into `on_page` for the local `quote` (rule 10, S13.3):
+    /// a page beyond one budget is served whole across quotes.
+    pub(crate) quote_cursor: Vec<u8>,
     /// Polytonic kinematic pressure + torsion (per lane).
     pub(crate) physics: crate::physics::Physics,
     /// The settlement ledger (POW++-gated bounties, consilience splits).

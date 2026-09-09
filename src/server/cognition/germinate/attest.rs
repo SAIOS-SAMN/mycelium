@@ -27,12 +27,20 @@ impl Kernel {
         let surface = crate::economy::yield_surface(&self.physics);
         let mut priced = Vec::new();
         let mut budget = self.physics.stroke();
-        for (addr, _) in self.on_page.cursor(crate::network::nerve::ROOT, &mut budget) {
+        // Resumed from the last quote (rule 10, S13.3): the page is an
+        // orbit, so a page beyond one budget is served whole across quotes
+        // rather than its head on every one.
+        let from = self.quote_cursor.clone();
+        let mut cur = self.on_page.cursor(&from, &mut budget);
+        for (addr, _) in &mut cur {
             let Some((p, _)) = self.pending.get(&addr) else { continue };
             let mut mag = p.magnitude();
             mag[2] = self.t_extent(&p.address(), self.height());
             let mu = crate::economy::price(&mag, &self.physics.pressure);
             priced.push((p.clone(), mu));
+        }
+        if let Some(k) = cur.last_key() {
+            self.quote_cursor = k.to_vec();
         }
         (surface, priced)
     }
