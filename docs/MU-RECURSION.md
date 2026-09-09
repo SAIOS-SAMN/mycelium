@@ -4016,6 +4016,12 @@ set aside against a listing (E1, E2); `settle.rs` what each closed act pays
   tape — the kernel snapshot (`MYC4`), the court journal, the wire — carries
   its `ActKind` byte after its parents. `MYC3` snapshots do not re-read
   (a layout change is a recut; no legacy reader is carried).
+- **The fold root and the archive (45.8, S13.9).** `KCH1` carries the
+  chain's fold root — the archived prefix's K, hash and height, or none —
+  before the hot receipts, so a chain that begins at a fold re-verifies
+  from its root; `ARC1` follows it: one era per fold, in K order, each the
+  root, the identities its epoch rows named and the receipts it archived.
+  Both are in `MYC4`, before the recut.
 
 ## 29. Binding summary by file
 
@@ -5922,7 +5928,11 @@ Three coordinates, and only the first is ever shared as a boundary:
 A hypha folds its ledger behind a **fully final prefix** — no listing,
 provisional word or escrow below the prefix's head — when its own room
 reading says so; never at a height interval, on memory alone, or on a
-wall clock. The fold writes the net per identity per lane as `epoch` rows
+wall clock. The reading is the reserve shortfall (S10): a docket orbit
+that completes while a lane is short is the syntropic phase (24.3), and
+the fold is the ledger's consolidation stroke in it — read once per
+orbit, and a prefix that is not final folds nothing and writes no line
+(S13.9). The fold writes the net per identity per lane as `epoch` rows
 (`MU-ECONOMY.md` §2), which move no supply, and seals a receipt of kind
 `fold` citing the archived prefix's head hash, so the chain never breaks
 and heights continue; a fold changes no price, extent or ruling, it
