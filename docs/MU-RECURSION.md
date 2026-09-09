@@ -4303,6 +4303,8 @@ Prefix `  court ` as the existing court lines; addresses as
   court offer refused {addr} from {vk}: {REFUSE_*}
   court offer refused {addr} by {vk}: {REFUSE_*}
   court offer unmeasured {addr} at {vk}
+  court offer deferred {addr} by {peer}
+  court exchange deferred by {peer}
   court verdict refused {addr} from {vk}: {REFUSE_*}
   court verdict unread {addr}: the court is not readable
   court recall short voice {vk} lane {l} by {mu}
@@ -4317,7 +4319,13 @@ that reply — the witness admitted the frame and has re-derived nothing of
 its own on the class, which is neither agreement nor refusal (47.3).
 `court verdict unread` is not a refusal and names no 34.1 constant: a
 court whose kernel cannot be read has judged nothing, and answers
-nothing. The two `short` lines are the lanes on which a voice's balance
+nothing. `court offer deferred` and `court exchange deferred` are the
+deferral frame — the reply a full reflex pool gives every act (23.8) —
+read on a hypha-to-hypha reply as what it is, impedance: the peer refused
+nothing and witnessed nothing, and the act is asked again after that
+peer's Λ, never on the next cycle (Stage 12 S12.4c, S12.4d). Before this
+the home read the deferral's zero code as a witness's refusal by key
+`0000…` and re-sent the offer on every cycle. The two `short` lines are the lanes on which a voice's balance
 or bond did not cover what was asked, read per lane as `court room
 refused` reads a draw against a room (law 5).
 
