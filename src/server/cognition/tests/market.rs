@@ -474,3 +474,30 @@ assert!(
     "hb relocates the same listing at the same TUniversal"
 );
 }
+
+/// 23.8, 45.2, Stage 12 S12.4a (I39) — THE QUOTE REPLY CARRIES THE LEDGER
+/// HEIGHT. The book's height is the court's chain head, never the count of
+/// listings written: the height moves with the ledger while the book
+/// generation stands, and the quote's market view carries that height.
+#[test]
+fn the_quote_reply_height_is_the_chain_head_height_not_the_book_generation() {
+let mut k = Kernel::new();
+let a = vec![(0, 0, 1u8)];
+let b = vec![(0, 0, 2u8)];
+assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+assert_eq!(k.pending.len(), 1, "one listing written");
+assert_eq!(k.book_height(), k.height(), "the book's height is the chain's head height");
+let before = k.height();
+k.set_height(before + 40);
+assert_eq!(
+    k.book_height(),
+    before + 40,
+    "the height moves with the ledger and not with the listings written"
+);
+assert_eq!(k.pending.len(), 1, "the book generation did not move it");
+assert_eq!(
+    k.market_open().head_height,
+    before + 40,
+    "the quote's market view carries the same height"
+);
+}

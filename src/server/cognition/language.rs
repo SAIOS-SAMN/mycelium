@@ -118,6 +118,9 @@ pub struct MarketView {
     pub k_step: u64,
     /// Receipt-chain head K — the kernel's own receipt index, packed on Quote.
     pub head_k: u64,
+    /// The chain's head height (45.2): the book's height the quote reply
+    /// carries, so a voice paces on the ledger and never on a count.
+    pub head_height: u64,
     /// Standing extent per listing, in heights.
     pub standing_t: std::sync::Arc<crate::network::nerve::Keyed<u64>>,
     pub reserve: [u64; 4],

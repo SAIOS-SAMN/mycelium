@@ -173,6 +173,7 @@ impl Kernel {
             pool: self.treasury.bond_of(&self.identity),
             k_step: self.chain.next_step_index(),
             head_k: self.chain.head_k(),
+            head_height: now,
             standing_t: std::sync::Arc::new(standing_t),
             reserve: self.physics.reserve,
             gens,

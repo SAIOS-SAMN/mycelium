@@ -179,7 +179,8 @@ pub struct Quoted {
     /// The cohesion reading (C, I): closure work and coverage work, two
     /// lanes of one object, returned exactly and never compared.
     pub cohesion: (u64, u64),
-    /// The height the book stands at.
+    /// The height the book stands at: the chain's head height (45.2),
+    /// never the book generation (I39).
     pub height: u64,
 }
 
@@ -243,7 +244,7 @@ pub fn quote(
         priced,
         k_step: view.head_k,
         cohesion,
-        height: view.gens.1,
+        height: view.head_height,
     })
 }
 

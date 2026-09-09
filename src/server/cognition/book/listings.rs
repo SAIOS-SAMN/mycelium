@@ -161,9 +161,13 @@ impl Kernel {
         &self.pending
     }
 
-    /// Book generation: the height the quote and demand replies carry.
+    /// THE BOOK'S HEIGHT (23.8, 45.2): the height of this court's chain
+    /// head, which the quote and demand replies carry and a voice paces
+    /// on. It read `book_gen`, the count of listings written, so every
+    /// voice read `[h 0]` while the chain stood thousands of receipts high
+    /// and "quote asked when the height advanced" never fired (I39).
     pub fn book_height(&self) -> u64 {
-        self.book_gen
+        self.height()
     }
 
     /// Open (non-flat) charts of a listing, or its base chart if unprobed.
