@@ -39,6 +39,39 @@ pub fn cells_to_grid(cells: &[(i64, i64, u8)]) -> Grid {
     g
 }
 
+/// THE SCENE A CHAIN DESCRIBES, as the two grids of one frame (50.6 seam
+/// 1): the cells before and the cells after, both at the chain's own
+/// min-corner, so the motion between them is the chain's and never an
+/// artefact of two origins. `None` for an empty chain, which describes
+/// no scene.
+pub fn scene_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<(Grid, Grid)> {
+    let &(r0, c0, _, _) = chain.first()?;
+    let (mut min_r, mut min_c, mut max_r, mut max_c) = (r0, c0, r0, c0);
+    for &(r, c, _, _) in chain {
+        if r < min_r {
+            min_r = r;
+        }
+        if c < min_c {
+            min_c = c;
+        }
+        if r > max_r {
+            max_r = r;
+        }
+        if c > max_c {
+            max_c = c;
+        }
+    }
+    let h = (max_r - min_r + 1) as usize;
+    let w = (max_c - min_c + 1) as usize;
+    let mut before = vec![vec![0u8; w]; h];
+    let mut after = vec![vec![0u8; w]; h];
+    for &(r, c, b, a) in chain {
+        before[(r - min_r) as usize][(c - min_c) as usize] = b;
+        after[(r - min_r) as usize][(c - min_c) as usize] = a;
+    }
+    Some((before, after))
+}
+
 #[cfg(test)]
 pub(crate) fn q(v: i64) -> num_rational::BigRational {
     num_rational::BigRational::from_integer(num_bigint::BigInt::from(v))

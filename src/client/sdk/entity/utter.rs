@@ -106,16 +106,28 @@ impl Entity {
         self.taught_up.len()
     }
 
+    /// CITE a chain over the working atlas: the genome and the dialect by
+    /// index, and the held forms' words read at each body's chart as the
+    /// reading asks (24.1 as ruled 2026-09-09) — the vertex's action
+    /// evaluated on the body, never a list of elements built ahead of the
+    /// question. A remainder is not a citation of itself: the vertex whose
+    /// address is the chain's own key is passed over, since deconstruction
+    /// reads other words, never the chain under locate. A citation is a use
+    /// (45.4): a stood word cited here is touched at the mind's own K.
     pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)]) -> Cited {
-        // A remainder is not a citation of itself: deconstruction reads
-        // other words on the working atlas, never the chain under locate.
-        let self_addr = crate::transducer::element::from_residual(&chain.to_vec()).address();
-        let extras: Vec<Element> = self
-            .ideas
-            .fiber(crate::network::nerve::ROOT)
-            .filter_map(|(a, e)| (a.as_slice() != self_addr.as_bytes()).then(|| e.clone()))
-            .collect();
-        let located = self.epigenome.locate_on(chain, None, &extras);
+        // The chain's own key, a listing key (17.2): the one address the
+        // held stratum does not answer with.
+        let own = crate::transducer::element::from_residual(&chain.to_vec()).address();
+        let contemplation = &self.contemplation;
+        let held_at = |inv: &crate::transducer::stalk::Invariant, piece: &[(i64, i64, u8, u8)]| {
+            contemplation
+                .held_at(inv)
+                .into_iter()
+                .filter(|v| !matches!(v, crate::transducer::sentence::Vertex::Word { address, .. } if *address == own))
+                .filter_map(|v| crate::transducer::sentence::vertex_cites(v, piece))
+                .collect::<Vec<_>>()
+        };
+        let located = self.epigenome.locate_on(chain, None, &held_at);
         let n_genome = self.epigenome.genome_len();
         let dialect_addrs: Vec<Vec<u8>> = self
             .epigenome
@@ -123,14 +135,11 @@ impl Entity {
             .fiber(crate::network::nerve::ROOT)
             .map(|(a, _)| a)
             .collect();
-        let n_d = dialect_addrs.len();
         let word_of = |i: usize| -> Option<&Element> {
             if i < n_genome {
                 self.epigenome.genome().get(i)
-            } else if i < n_genome + n_d {
-                dialect_addrs.get(i - n_genome).and_then(|a| self.epigenome.working_word(a))
             } else {
-                extras.get(i - n_genome - n_d)
+                dialect_addrs.get(i - n_genome).and_then(|a| self.epigenome.working_word(a))
             }
         };
         // Standing is a coordinate on the cited word (Ruled, Stood, Held),
@@ -138,10 +147,8 @@ impl Entity {
         let standing_of = |i: usize| -> Standing {
             if i < n_genome {
                 Standing::Ruled
-            } else if i < n_genome + n_d {
-                Standing::Stood
             } else {
-                Standing::Held
+                Standing::Stood
             }
         };
         let mut cites: Vec<dialogue::CiteWire> = located
@@ -169,6 +176,24 @@ impl Entity {
                 gauge: u32::MAX,
                 body: p.cells.clone(),
             });
+        }
+        // A held cite carries the body in the frame the vertex's action
+        // was evaluated in — the chain's own — so its transport is the
+        // identity and its one section is the vertex's gauge.
+        for h in located.held {
+            cites.push(dialogue::CiteWire {
+                addr: h.address,
+                standing: Standing::Held.as_u8(),
+                transport: crate::transducer::element::identity_versor(),
+                gauge: 0,
+                body: h.body,
+            });
+        }
+        let k = self.session.voice().k();
+        for c in &cites {
+            if c.standing == Standing::Stood.as_u8() {
+                self.epigenome.touch(&c.addr, k);
+            }
         }
         (cites, located.residual)
     }
@@ -214,33 +239,10 @@ impl Entity {
         self.session.attest(chain, cites)
     }
 
-    /// CONCLUDE a listing in this genome's own algebra: the chain is
-    /// deconstructed into the words that compose it; the residual is
-    /// expressed as this entity's own word. Returns the citations, the
-    /// residual, and whether the residual was already claimed (familiar):
-    /// a familiar residual is not spoken again.
-    pub fn conclude(
-        &mut self,
-        chain: &[(i64, i64, u8, u8)],
-    ) -> crate::client::sdk::Concluded {
-        let (cites, residual) = self.cite(chain);
-        // The residual is expressed one BODY at a time (20; S12.3a): each
-        // connected piece stands as its own word on its own body chart, so
-        // the working atlas can cite it against another chain that holds
-        // the same body. Familiar when every body was already spoken.
-        let (k, tu) = (self.session.voice().k(), self.now_tu());
-        let mut familiar = true;
-        for body in crate::transducer::sentence::pieces(&residual) {
-            if self.epigenome.express(&body, k, tu) {
-                familiar = false;
-            }
-        }
-        Concluded { cites, residual, familiar }
-    }
-
     /// A served listing: cite over the working atlas. Residual strictly
     /// below the chain on a lane is expressed; residual that does not
-    /// descend is held as thought and never expressed.
+    /// descend is held as thought — the form of the listing's chain
+    /// (50.6) — and never expressed.
     pub fn conclude_listing(
         &mut self,
         chain: &[(i64, i64, u8, u8)],
@@ -252,26 +254,13 @@ impl Entity {
         if !crate::economy::lanes_risen(&reading).is_empty()
             || crate::economy::lanes_fallen(&reading).is_empty()
         {
-            self.hold_thought(chain.to_vec());
+            self.hold_chain(chain.to_vec());
             return Concluded { cites, residual: chain.to_vec(), familiar: false };
         }
         let familiar = !self
             .epigenome
             .express(&residual, self.session.voice().k(), self.now_tu());
         Concluded { cites, residual, familiar }
-    }
-
-    /// The word a cite rests on: genome, dialect, or idea. A citation is a
-    /// use (45.4): the dialect entry is touched at the mind's own K, so a
-    /// word cited on a listing stays held for an aperture and is still
-    /// there when the axis its multiplicity opens is asked for (24.3, V1).
-    pub fn cited_word(&mut self, addr: &[u8]) -> Option<Element> {
-        let k = self.session.voice().k();
-        self.epigenome.touch(addr, k);
-        self.epigenome
-            .working_word(addr)
-            .cloned()
-            .or_else(|| self.idea_word(addr))
     }
 
     pub fn probe(&self, target: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4], [u64; 4])> {
@@ -390,7 +379,7 @@ impl Entity {
         // A thought that still has a remainder is work, not a message: the
         // wire never carries ∂g. A word with a chain is held, not uttered.
         if let [_, ..] = word.sub() {
-            self.hold_thought(word.sub().to_vec());
+            self.hold_chain(word.sub().to_vec());
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "a remainder is thought, not speech"));
         }
         // Speech is a connection or a connection with an opened axis; a

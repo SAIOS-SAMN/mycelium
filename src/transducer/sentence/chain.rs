@@ -49,9 +49,25 @@ pub struct Puncture {
     pub cells: Vec<Cell>,
 }
 
-/// What deconstruction produced: the citations in body order, the
-/// connection between consecutive cited bodies (the relative transport
-/// `Vᵢ⁻¹ Vⱼ`), the residual no word speaks, and the widest stratum read.
+/// A HELD CITE (24.1 as ruled 2026-09-09): the word at a vertex of a held
+/// form, evaluated on the listing body it was asked about. It names the
+/// vertex by its address and carries the body the vertex's action
+/// reconstructed, in the body's own frame; no element was minted and no
+/// chain was decoded to ask the question. A held cite is never an index
+/// into a snapshot: the Held stratum is read at the coordinate, so there
+/// is no snapshot to index.
+#[derive(Debug, Clone)]
+pub struct HeldCite {
+    /// The vertex's address (M2): the word, never the chain.
+    pub address: crate::transducer::address::Address,
+    /// The body's cells the vertex's action reconstructed, sorted.
+    pub body: Vec<Cell>,
+}
+
+/// What deconstruction produced: the citations in body order, the held
+/// cites derived at the bodies' charts, the connection between
+/// consecutive cited bodies (the relative transport `Vᵢ⁻¹ Vⱼ`), the
+/// residual no word speaks, and the widest stratum read.
 #[derive(Debug, Clone, Default)]
 pub struct Sentence {
     pub cites: Vec<Cite>,
@@ -60,6 +76,9 @@ pub struct Sentence {
     /// body's own transitions). Spoken as sections of the word, not as new
     /// words: the fiber deepens instead of the vocabulary widening.
     pub punctures: Vec<Puncture>,
+    /// HELD CITES: bodies a held form's word reconstructs (24.1), one per
+    /// body, each derived at the body's chart when the reading asked.
+    pub held: Vec<HeldCite>,
     pub connection: Vec<Versor>,
     pub residual: Vec<Cell>,
     /// Stratum width per body key, never a maximum over bodies.
@@ -73,20 +92,30 @@ impl Sentence {
         self.residual.is_empty() && self.punctures.is_empty()
     }
 
+    /// The operators this sentence's citations carry: each cited word's
+    /// pattern under its transport, and each held cite's body in the frame
+    /// it was derived in, which is the chain's own.
+    fn operators_at<'a>(&self, word_at: &impl Fn(usize) -> Option<&'a Element>) -> Vec<(Versor, Vec<Cell>)> {
+        let mut ops: Vec<(Versor, Vec<Cell>)> = self
+            .cites
+            .iter()
+            .filter_map(|c| Some((c.transport.clone(), cited_pattern(word_at(c.word)?, c.gauge)?)))
+            .collect();
+        ops.extend(self.held.iter().map(|h| (element::identity_versor(), h.body.clone())));
+        ops
+    }
+
     /// What the language does not yet hold: the residual, together with the
     /// bodies spoken only as punctures — novelty in the fiber is novelty.
     /// Measured as the replay of the citations alone over the chain.
     pub fn open(&self, words: &[Element], chain: &[Cell]) -> Vec<Cell> {
-        match self.punctures.is_empty() {
-            true => self.residual.clone(),
-            false => replay(words, &self.cites, chain),
-        }
+        self.open_at(&|i| words.get(i), chain)
     }
 
     pub fn open_at<'a>(&self, word_at: &impl Fn(usize) -> Option<&'a Element>, chain: &[Cell]) -> Vec<Cell> {
         match self.punctures.is_empty() {
             true => self.residual.clone(),
-            false => replay_at(word_at, &self.cites, chain),
+            false => replay_operators(&self.operators_at(word_at), chain),
         }
     }
 }
@@ -245,7 +274,7 @@ pub fn replay_at<'a>(word_at: &impl Fn(usize) -> Option<&'a Element>, cites: &[C
 /// THE REPLAY OF OPERATORS: each operator is a body (the word's cells in
 /// its own frame) with the versor that carries it; nothing is fetched. The
 /// utterance is verified as it was spoken.
-fn cell_at_key(r: i64, c: i64) -> [u8; 32] {
+pub(crate) fn cell_at_key(r: i64, c: i64) -> [u8; 32] {
     let mut k = [0u8; 32];
     k[..8].copy_from_slice(&r.to_le_bytes());
     k[8..16].copy_from_slice(&c.to_le_bytes());
@@ -407,6 +436,10 @@ pub struct Located {
     /// The puncture, when one carries it by shape under another gauge. A
     /// citation is preferred; this stands only when none was found.
     pub puncture: Option<Puncture>,
+    /// The held cite, when no ruled or stood word is on the body's chart
+    /// and exactly one held form's word reconstructs the body (24.1):
+    /// Ruled first, then Stood, then Held.
+    pub held: Option<HeldCite>,
     /// The stratum's MULTIPLICITY — how many words shared the body's
     /// moduli. A measurement of the atlas, never a search width.
     pub multiplicity: usize,

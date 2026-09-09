@@ -16,7 +16,7 @@ fn two_bodies_deflating_one_listing_open_an_axis_on_the_versor_between_them() {
     let column = from_residual(&germinate(&[(0, 0, 1u8), (1, 0, 1)], &[(0, 0, 2u8), (1, 0, 2)]).unwrap());
     assert_ne!(row.address(), column.address(), "two words");
     let chain = vec![(0, 0, 1u8, 2u8), (0, 1, 1, 2), (0, 2, 1, 2)];
-    let germ = Entity::axis_germ(&chain, &[row.clone(), column.clone()]).expect("two bodies glue");
+    let germ = Entity::axis_germ(&chain, &[row.sub().to_vec(), column.sub().to_vec()]).expect("two bodies glue");
     let v = versor_between(&shape_of_chain(row.sub()).unwrap(), &shape_of_chain(column.sub()).unwrap())
         .expect("a quarter turn carries the row onto the column");
     assert!(germ.is_connection(), "the axis stands on a connection");
@@ -31,13 +31,13 @@ fn two_bodies_deflating_one_listing_open_an_axis_on_the_versor_between_them() {
     assert_ne!(germ.address(), row.address());
     assert_ne!(germ.address(), column.address());
     assert_eq!(
-        Entity::axis_germ(&chain, std::slice::from_ref(&row)).err(),
+        Entity::axis_germ(&chain, std::slice::from_ref(&row.sub().to_vec())).err(),
         Some(AXIS_ONE_BODY),
         "one body opens nothing"
     );
     let three = from_residual(&germinate(&[(0, 0, 1u8), (0, 1, 1), (0, 2, 1)], &[(0, 0, 2u8), (0, 1, 2), (0, 2, 2)]).unwrap());
     assert_eq!(
-        Entity::axis_germ(&chain, &[row, three]).err(),
+        Entity::axis_germ(&chain, &[row.sub().to_vec(), three.sub().to_vec()]).err(),
         Some(AXIS_NO_VERSOR),
         "two cells and three: no rational versor carries one onto the other"
     );

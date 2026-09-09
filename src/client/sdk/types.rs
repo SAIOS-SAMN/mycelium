@@ -123,11 +123,14 @@ pub struct Dialect {
 pub use crate::transducer::stalk::Standing;
 
 /// One working atlas, three strata. A fiber read is `(address, Standing)`,
-/// never a boolean. Genome-only `atlas()` remains for persistence.
+/// never a boolean. Genome-only `atlas()` remains for persistence. The
+/// Held stratum is the contemplation's forms, read at the coordinate
+/// (24.1 as ruled 2026-09-09): the Word vertices its held forms hold on
+/// a chart, through `Contemplation::held_at`, never a list kept beside it.
 pub struct WorkingAtlas<'a> {
     pub(crate) genome: &'a crate::transducer::stalk::Stalks,
     pub(crate) dialect: &'a crate::transducer::stalk::Stalks,
-    pub(crate) ideas: Option<&'a crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>>,
+    pub(crate) held: Option<&'a crate::transducer::bubble::Contemplation>,
 }
 
 impl<'a> WorkingAtlas<'a> {
@@ -148,15 +151,17 @@ impl<'a> WorkingAtlas<'a> {
             have.insert(&a, ());
             out.push((a, Standing::Stood));
         }
-        if let Some(ideas) = self.ideas {
-            if let Some(m) = ideas.get(inv.key().as_bytes()) {
-                for (a, _) in m.fiber(crate::network::nerve::ROOT) {
-                    if have.contains(&a) {
-                        continue;
-                    }
-                    have.insert(&a, ());
-                    out.push((a, Standing::Held));
+        if let Some(held) = self.held {
+            // index: the Word vertices the held forms hold on this chart
+            for v in held.held_at(inv) {
+                let crate::transducer::sentence::Vertex::Word { address, .. } = v else {
+                    continue;
+                };
+                if have.contains(address) {
+                    continue;
                 }
+                have.insert(address, ());
+                out.push((address.clone().into_vec(), Standing::Held));
             }
         }
         out
@@ -217,6 +222,8 @@ impl<'a> WorkingAtlas<'a> {
         out
     }
 
+    /// The standing of an address on a chart: the chart is the coordinate
+    /// the read happens at, in every stratum.
     pub fn standing_of(&self, addr: &[u8], inv: &crate::transducer::stalk::Invariant) -> Option<Standing> {
         if self.genome.chart_of(addr) == Some(inv) {
             return Some(Standing::Ruled);
@@ -224,27 +231,11 @@ impl<'a> WorkingAtlas<'a> {
         if self.dialect.chart_of(addr) == Some(inv) {
             return Some(Standing::Stood);
         }
-        if self
-            .ideas
-            .and_then(|m| m.get(inv.key().as_bytes()))
-            .is_some_and(|inner| inner.contains(addr))
-        {
+        let on_chart = |v: &crate::transducer::sentence::Vertex| {
+            matches!(v, crate::transducer::sentence::Vertex::Word { address, .. } if address.as_bytes() == addr)
+        };
+        if self.held.is_some_and(|held| held.held_at(inv).into_iter().any(on_chart)) {
             return Some(Standing::Held);
-        }
-        None
-    }
-
-    pub fn standing_addr(&self, addr: &[u8]) -> Option<Standing> {
-        if self.genome.contains(addr) {
-            return Some(Standing::Ruled);
-        }
-        if self.dialect.contains(addr) {
-            return Some(Standing::Stood);
-        }
-        if let Some(ideas) = self.ideas {
-            if ideas.fiber(crate::network::nerve::ROOT).any(|(_, m)| m.contains(addr)) {
-                return Some(Standing::Held);
-            }
         }
         None
     }
@@ -380,8 +371,10 @@ pub struct Entity {
     /// there again. The digest names what differs by address; the geometry
     /// decides what is fetched.
     pub(crate) glued: crate::network::nerve::Keyed<()>,
-    /// OPEN THOUGHTS: the contemplation over bubbles. Remainders persist;
-    /// residuals are never lost on restart.
+    /// OPEN THOUGHTS: the contemplation over bubbles, the one carrier of
+    /// held forms (24.1 as ruled 2026-09-09); a cite reads their words at
+    /// the listing body's chart. Remainders persist; residuals are never
+    /// lost on restart.
     pub(crate) contemplation: crate::transducer::bubble::Contemplation,
     /// Genome length last seen by the pivot; words added since dirty their charts.
     pub(crate) thought_gen: usize,
@@ -391,8 +384,6 @@ pub struct Entity {
     /// Axes this mind has spoken (24.3): the count the stroke line reads,
     /// kept apart from `opened`, which is cleared when the language moves.
     pub(crate) axes_spoken: usize,
-    /// Ideas keyed by address: a cite is a read, never a walk of bubbles.
-    pub(crate) ideas: crate::network::nerve::Keyed<Element>,
     pub(crate) physics: crate::physics::Physics,
     pub(crate) height: crate::chronometry::Height,
 }

@@ -168,6 +168,11 @@ pub struct Form {
     pub vortex: Keyed<Keyed<PivotCertificate>>,
     /// Word vertex address → index. The meet for A6 and Mayer–Vietoris.
     pub by_address: Keyed<u16>,
+    /// Chart key → the Word vertices on that chart (18.2): the fiber a
+    /// listing body's chart reads when a cite asks what this form holds
+    /// there (24.1 as ruled 2026-09-09). Derived by `reindex`, never on
+    /// the tape.
+    pub by_class: Keyed<Vec<u16>>,
     /// Vertex index key → Frame face index. Star incidence, one face per vertex.
     pub star: Keyed<u16>,
     /// Word vertex address → carriage, filled at construction.
@@ -198,6 +203,7 @@ impl Default for Form {
             glued: Keyed::new(),
             vortex: Keyed::new(),
             by_address: Keyed::new(),
+            by_class: Keyed::new(),
             star: Keyed::new(),
             carriages: Keyed::new(),
             by_rebased: Keyed::new(),
@@ -282,12 +288,15 @@ impl Form {
 }
 
 impl Form {
-    /// Fill by_address, star, carriages (by transport-class key) and
-    /// hue_maps from the vertices and faces. Two gauges on one word class
-    /// are two hue sections, each kept. Two carriages on one transport
-    /// class stay two sections: that class is refused as one carriage.
+    /// Fill by_address, by_class, star, carriages (by transport-class key)
+    /// and hue_maps from the vertices and faces, in one pass over the
+    /// form's own vertices. Two gauges on one word class are two hue
+    /// sections, each kept. Two carriages on one transport class stay two
+    /// sections: that class is refused as one carriage. Two Word vertices
+    /// on one chart are both on that chart's fiber (24.1).
     pub fn reindex(&mut self) {
         let mut by_address = Keyed::new();
+        let mut by_class: Keyed<Vec<u16>> = Keyed::new();
         let mut by_rebased = Keyed::new();
         let mut by_unfolded = Keyed::new();
         let mut demands = Keyed::new();
@@ -302,10 +311,17 @@ impl Form {
                     word,
                     carriage,
                     gauge,
-                    class: _,
+                    class,
                     ..
                 } => {
                     by_address.insert(address, i as u16);
+                    let chart = class.key();
+                    match by_class.get_mut(&chart) {
+                        Some(on) => on.push(i as u16),
+                        None => {
+                            by_class.insert(chart, vec![i as u16]);
+                        }
+                    }
                     if let Some(hk) = hue_section_key(word, gauge) {
                         hue_maps.insert(hk, gauge.clone());
                     }
@@ -359,6 +375,7 @@ impl Form {
             }
         }
         self.by_address = by_address;
+        self.by_class = by_class;
         self.by_rebased = by_rebased;
         self.by_unfolded = by_unfolded;
         self.demands = demands;

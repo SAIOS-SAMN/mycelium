@@ -85,23 +85,24 @@ impl Epigenome {
         self.atlas_len == 0 && self.dialect.is_empty()
     }
 
-    /// Working atlas of genome + dialect. Ideas join at Entity::working_atlas.
+    /// Working atlas of genome + dialect. The held forms join at
+    /// `Entity::working_atlas`, read from the contemplation (24.1).
     pub fn working_atlas(&self) -> WorkingAtlas<'_> {
         WorkingAtlas {
             genome: &self.atlas,
             dialect: &self.dialect_atlas,
-            ideas: None,
+            held: None,
         }
     }
 
     pub fn working_atlas_with<'a>(
         &'a self,
-        ideas: &'a crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
+        held: &'a crate::transducer::bubble::Contemplation,
     ) -> WorkingAtlas<'a> {
         WorkingAtlas {
             genome: &self.atlas,
             dialect: &self.dialect_atlas,
-            ideas: Some(ideas),
+            held: Some(held),
         }
     }
 
@@ -146,44 +147,39 @@ impl Epigenome {
         Some(i)
     }
 
-    /// Deconstruct a chain over the working language: genome, dialect, and
-    /// extra words (ideas). A word this mind stood closes a remainder
+    /// Deconstruct a chain over the working language: genome and dialect,
+    /// with no Held stratum. A word this mind stood closes a remainder
     /// without waiting for the court.
     pub(crate) fn locate(
         &mut self,
         chain: &[(i64, i64, u8, u8)],
         exclude: Option<usize>,
     ) -> crate::transducer::sentence::Sentence {
-        self.locate_on(chain, exclude, &[])
+        self.locate_on(chain, exclude, &crate::transducer::sentence::no_held)
     }
 
-    pub(crate) fn locate_on(
+    /// Deconstruct a chain over the working language with the Held stratum
+    /// the caller reads at each body's chart (24.1 as ruled 2026-09-09):
+    /// `held_at` is the contemplation's forms evaluated on the body, never
+    /// a list of elements joined to the snapshot.
+    pub(crate) fn locate_on<H>(
         &mut self,
         chain: &[(i64, i64, u8, u8)],
         exclude: Option<usize>,
-        extra: &[Element],
-    ) -> crate::transducer::sentence::Sentence {
+        held_at: &H,
+    ) -> crate::transducer::sentence::Sentence
+    where
+        H: Fn(&crate::transducer::stalk::Invariant, &[(i64, i64, u8, u8)]) -> Vec<crate::transducer::sentence::HeldCite>,
+    {
         let n = self.genome.len();
         let dialect_addrs: Vec<Vec<u8>> = self
             .dialect
             .fiber(crate::network::nerve::ROOT)
             .map(|(a, _)| a)
             .collect();
-        let n_d = dialect_addrs.len();
         let mut loc: crate::network::nerve::Keyed<usize> = crate::network::nerve::Keyed::new();
         for (j, a) in dialect_addrs.iter().enumerate() {
             loc.insert(a, n + j);
-        }
-        for (j, w) in extra.iter().enumerate() {
-            loc.insert(w.address(), n + n_d + j);
-        }
-        let extra_shapes: Vec<Option<crate::transducer::blade::Shape>> = extra
-            .iter()
-            .map(|w| crate::transducer::element::shape_of_chain(w.sub()))
-            .collect();
-        let mut extra_atlas = crate::transducer::stalk::Stalks::default();
-        for w in extra {
-            extra_atlas.admit(&crate::transducer::stalk::invariant_of(w), w.address());
         }
         let genome = &self.genome;
         let dialect = &self.dialect;
@@ -194,10 +190,8 @@ impl Epigenome {
         let word_at = |i: usize| -> Option<&Element> {
             if i < n {
                 genome.get(i)
-            } else if i < n + n_d {
-                dialect_addrs.get(i - n).and_then(|a| dialect.get(a).map(|d| &d.sentence))
             } else {
-                extra.get(i - n - n_d)
+                dialect_addrs.get(i - n).and_then(|a| dialect.get(a).map(|d| &d.sentence))
             }
         };
         let index_of = |a: &[u8]| -> Option<usize> {
@@ -206,20 +200,13 @@ impl Epigenome {
         let shape_at = |i: usize| -> Option<&crate::transducer::blade::Shape> {
             if i < n {
                 shapes.get(i).and_then(|c| c.get_or_init(|| crate::transducer::element::shape_of_chain(genome[i].sub())).as_ref())
-            } else if i < n + n_d {
-                dialect_addrs.get(i - n).and_then(|a| dialect.get(a).and_then(|d| d.shape.as_ref()))
             } else {
-                extra_shapes.get(i - n - n_d).and_then(|s| s.as_ref())
+                dialect_addrs.get(i - n).and_then(|a| dialect.get(a).and_then(|d| d.shape.as_ref()))
             }
         };
         let fiber_of = |inv: &crate::transducer::stalk::Invariant| {
             let mut v = atlas.fiber(inv);
             for a in dialect_atlas.fiber(inv) {
-                if !v.iter().any(|b| b == &a) {
-                    v.push(a);
-                }
-            }
-            for a in extra_atlas.fiber(inv) {
                 if !v.iter().any(|b| b == &a) {
                     v.push(a);
                 }
@@ -232,6 +219,7 @@ impl Epigenome {
                 fiber_of: &fiber_of,
                 index_of: &index_of,
                 shape_at: &shape_at,
+                held_at,
             },
             chain,
             exclude,

@@ -513,6 +513,7 @@ pub(crate) fn pair_form_uncached(
         glued: crate::network::nerve::Keyed::new(),
         vortex: crate::network::nerve::Keyed::new(),
         by_address: crate::network::nerve::Keyed::new(),
+        by_class: crate::network::nerve::Keyed::new(),
         star: crate::network::nerve::Keyed::new(),
         carriages: crate::network::nerve::Keyed::new(),
         by_rebased: crate::network::nerve::Keyed::new(),

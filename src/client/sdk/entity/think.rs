@@ -4,17 +4,6 @@
 use crate::client::sdk::*;
 
 impl Entity {
-    /// Submit a percept; COMPREHEND anything taught back (the C-stack, not a
-    /// byte-store). Returns the reply and the comprehension of the teaching.
-    /// CITE: this kernel's reduction of a chain over its own genome — the
-    /// citations (address, transport, gauge coordinate) and the residual it
-    /// could not reduce. Cognition happens here; the hypha only replays.
-    pub(crate) fn idea_word(&self, addr: &[u8]) -> Option<Element> {
-        self.ideas.get(addr).cloned()
-    }
-
-    /// The discordance measured at the last sync: strata whose roots differ
-    /// from the hypha's. Zero is a glued genome.
     /// The Čech obstructions measured after fetch: fetched words whose
     /// transition to a held word on the same fibre did not vanish.
     pub fn obstructions(&self) -> Vec<(Vec<u8>, Element)> {
@@ -24,16 +13,28 @@ impl Entity {
             .collect()
     }
 
-    /// HOLD A THOUGHT: a remainder this mind has not collapsed, as a bubble
-    /// whose cover is a peel of its invariant. Connections are the link of
-    /// the new bubble through by_chart.
-    pub fn hold_thought(&mut self, remainder: Vec<(i64, i64, u8, u8)>) {
-        self.contemplation.hold(remainder.clone());
-        let e = crate::transducer::element::from_residual(&remainder);
-        self.ideas.insert(e.address(), e);
+    /// HOLD A CHAIN AS THE FORM IT IS (50.6 seam 1): a demand this mind has
+    /// not closed is held as an idea — the pair form of the scene the chain
+    /// describes, its cells before against its cells after in one frame —
+    /// never as a bare chain minted into a word. An idea is a form; its
+    /// words are the vertices the eyes could pair and the alphabet could
+    /// spell, and what they could not is its demand vertices (50.5).
+    pub fn hold_chain(&mut self, chain: Vec<(i64, i64, u8, u8)>) {
+        use crate::transducer::family::{family_ratio, pair_form, scene_of_chain};
+        let Some(scene) = scene_of_chain(&chain) else {
+            return;
+        };
+        let scale = family_ratio(std::slice::from_ref(&scene));
+        let f = pair_form(&scene.0, &scene.1, scale);
+        self.hold_form(&f, &[], &[]);
     }
 
-    /// Hold a withheld form so the pivot loop sees it next stroke (ch. 30.2).
+    /// Hold a withheld form as an idea so the pivot loop sees it next
+    /// stroke (30.2). The contemplation is the one carrier of held forms
+    /// (24.1 as ruled 2026-09-09): its remainders stay on the bubble as
+    /// what the form does not speak, and its words are read at a chart
+    /// when a cite asks — through the form's own `by_class` — never
+    /// listed here ahead of the question.
     pub fn hold_form(
         &mut self,
         f: &crate::transducer::sentence::Form,
@@ -41,20 +42,13 @@ impl Entity {
         remainders: &[Vec<(i64, i64, u8, u8)>],
     ) {
         self.contemplation.hold_form(f, train, remainders);
-        if let Some(e) = crate::transducer::sentence::as_element_form(f, [0; 4]) {
-            self.ideas.insert(e.address(), e);
-        }
-        for r in remainders {
-            if r.is_empty() {
-                continue;
-            }
-            let e = crate::transducer::element::from_residual(r);
-            self.ideas.insert(e.address(), e);
-        }
     }
 
-    /// Stand a withheld form, hold it as an idea, conclude each remainder,
-    /// and utter each residual word once with its cites (24.3).
+    /// Stand a withheld form and hold it as an idea (24.3 as amended,
+    /// 50.6 seam 1). Nothing is expressed as a residual word and no chain
+    /// is uttered: what the form could not close is its demand vertices,
+    /// spoken with the sentence by `speak_form`, and a remainder no demand
+    /// names is the idea's own work.
     pub fn withhold_form(
         &mut self,
         f: &crate::transducer::sentence::Form,
@@ -68,52 +62,15 @@ impl Entity {
             self.epigenome.stand_dialect_withheld(word, k, tu);
         }
         self.hold_form(f, train, remainders);
-        for (i, r) in remainders.iter().enumerate() {
-            if r.is_empty() {
-                continue;
-            }
-            let Concluded { cites, residual, .. } = self.conclude(r);
-            if residual.is_empty() {
-                continue;
-            }
-            // WORDS ARE BODIES, NOT CHAINS (20, 24.4; Stage 12 S12.3a). The
-            // residual no held word deflates is uttered one body at a time:
-            // each connected piece is a word form on its own body chart, so
-            // a body another task's residual also holds is one stratum on
-            // the atlas and one listing on the book, and a held word can
-            // deflate it. Uttered whole, a pair's remainder was a chain of
-            // several bodies with a chart no other chain shared — 954
-            // charts, all unique, `cites 0` on every attest for seven hours
-            // (I34). The citations belong to the pair's conclusion and are
-            // logged with it; a body no word spoke is the voice's
-            // irreducible claim and travels with none (23.8).
-            for body in crate::transducer::sentence::pieces(&residual) {
-                let word = crate::transducer::element::from_residual(&body);
-                let addr = word.address();
-                eprintln!(
-                    "  remainder expressed {:02x}{:02x}… pair {i} cells {} cites {}",
-                    addr[0],
-                    addr[1],
-                    body.len(),
-                    cites.len()
-                );
-                self.file_taught(&word);
-                let mu = crate::transducer::element::measure_lanes(&body);
-                eprintln!(
-                    "  uttered {:02x}{:02x}… standing Stood K {k} lanes {mu:?}",
-                    addr[0], addr[1]
-                );
-                let _ = self.attest(&body, &[]);
-            }
-        }
     }
 
-    /// Hold a withheld sentence as a bubble: form, remainder, cover.
+    /// Hold a withheld sentence as a bubble: form, remainder, cover. A word
+    /// that is not a sentence is held as the form of its chain.
     pub fn hold_sentence(&mut self, word: &Element) {
         if let Some(f) = crate::transducer::sentence::from_element_form(word) {
             self.hold_form(&f, &[], &[]);
         } else {
-            self.hold_thought(word.sub().to_vec());
+            self.hold_chain(word.sub().to_vec());
         }
     }
 
@@ -155,18 +112,20 @@ impl Entity {
     }
 
     /// OPEN AN AXIS ON MULTIPLICITY (24.3) — several held words deflated
-    /// one listing; the glue between them is the new coordinate. Held words
-    /// are bodies on a chart, so the glue is the dislocation versor between
-    /// their shapes and the germ a connection carrying it (`axis_germ`).
-    /// The listing is recorded before the germ is spoken, so it is tried
-    /// once per language (`reopen_axes`); a glue that cannot be read or
-    /// spoken is refused with its reason, which the stroke writes. Never on
-    /// failure: a listing no held word deflates is a thought, not an axis.
+    /// one listing; the glue between them is the new coordinate. A held
+    /// word is a vertex of a held form, and what it deflated is a body of
+    /// the listing (the held cite's body, 24.1), so the glue is the
+    /// dislocation versor between the bodies' shapes and the germ a
+    /// connection carrying it (`axis_germ`). The listing is recorded before
+    /// the germ is spoken, so it is tried once per language
+    /// (`reopen_axes`); a glue that cannot be read or spoken is refused with
+    /// its reason, which the stroke writes. Never on failure: a listing no
+    /// held word deflates is a thought, not an axis.
     pub fn open_axis(
         &mut self,
         listing: &[u8],
         chain: &[(i64, i64, u8, u8)],
-        words: &[Element],
+        bodies: &[Vec<(i64, i64, u8, u8)>],
     ) -> Result<crate::transducer::address::Address, &'static str> {
         if let Some(a) = self.open_contemplation_axis() {
             return Ok(a);
@@ -174,7 +133,7 @@ impl Entity {
         if self.opened.contains(listing) {
             return Err(AXIS_TRIED);
         }
-        let germ = Self::axis_germ(chain, words)?;
+        let germ = Self::axis_germ(chain, bodies)?;
         self.opened.insert(listing, ());
         match self.speak_word(&germ) {
             Ok(Utterance::Spoken) => {
@@ -190,27 +149,20 @@ impl Entity {
     /// first body's shape onto the second's (the one the court's `Twisted`
     /// closure carries), minted as a connection with the identity word and
     /// that carriage, the axis opened on it, its magnitude the listing's
-    /// with the holonomic lane raised by the count of words that met. Two
-    /// connections glue by their transition, as before. One body, a word
-    /// with no body, or bodies no rational versor relates are refused by
-    /// name.
-    pub fn axis_germ(chain: &[(i64, i64, u8, u8)], words: &[Element]) -> Result<Element, &'static str> {
+    /// with the holonomic lane raised by the count of words that met. One
+    /// body, a body with no shape, or bodies no rational versor relates are
+    /// refused by name.
+    pub fn axis_germ(chain: &[(i64, i64, u8, u8)], bodies: &[Vec<(i64, i64, u8, u8)>]) -> Result<Element, &'static str> {
         use crate::transducer::element::{from_connection, measure_lanes, shape_of_chain};
-        let [base, other, ..] = words else { return Err(AXIS_ONE_BODY) };
-        let (v, mut germ) = if base.is_connection() && other.is_connection() {
-            let glue = crate::transducer::cech::transition(base, other).ok_or(AXIS_NO_VERSOR)?;
-            (glue.versor().ok_or(AXIS_NO_VERSOR)?, base.clone())
-        } else {
-            let sa = shape_of_chain(base.sub()).ok_or(AXIS_NO_BODY)?;
-            let sb = shape_of_chain(other.sub()).ok_or(AXIS_NO_BODY)?;
-            let v = crate::transducer::blade::versor_between(&sa, &sb).ok_or(AXIS_NO_VERSOR)?;
-            let germ = from_connection(&crate::transducer::alphabet::Word::identity(), &v, &[], &Vec::new(), [0; 4])
-                .ok_or(AXIS_NO_VERSOR)?;
-            (v, germ)
-        };
+        let [base, other, ..] = bodies else { return Err(AXIS_ONE_BODY) };
+        let sa = shape_of_chain(base).ok_or(AXIS_NO_BODY)?;
+        let sb = shape_of_chain(other).ok_or(AXIS_NO_BODY)?;
+        let v = crate::transducer::blade::versor_between(&sa, &sb).ok_or(AXIS_NO_VERSOR)?;
+        let mut germ = from_connection(&crate::transducer::alphabet::Word::identity(), &v, &[], &Vec::new(), [0; 4])
+            .ok_or(AXIS_NO_VERSOR)?;
         germ.open_axis(v);
         let mut mag = measure_lanes(chain);
-        mag[3] = mag[3].saturating_add(words.len() as u64);
+        mag[3] = mag[3].saturating_add(bodies.len() as u64);
         germ.set_magnitude(mag);
         Ok(germ)
     }
@@ -372,10 +324,11 @@ impl Entity {
         self.epigenome.dialect_len()
     }
 
-    /// The mind's working atlas: genome ∪ dialect ∪ ideas, each fiber
-    /// member carrying its standing.
+    /// The mind's working atlas: genome ∪ dialect ∪ the held forms' words,
+    /// each fiber member carrying its standing; the Held stratum is read
+    /// from the contemplation at the chart asked (24.1).
     pub fn working_atlas(&self) -> WorkingAtlas<'_> {
-        self.epigenome.working_atlas_with(&self.contemplation.by_chart)
+        self.epigenome.working_atlas_with(&self.contemplation)
     }
 
     /// Empty when genome, dialect and ideas are all empty.

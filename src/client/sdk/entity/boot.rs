@@ -31,7 +31,6 @@ impl Entity {
             thought_gen: 0,
             opened: crate::network::nerve::Keyed::new(),
             axes_spoken: 0,
-            ideas: crate::network::nerve::Keyed::new(),
             physics: crate::physics::Physics::default(),
             height: crate::chronometry::Height::default(),
         }
@@ -45,9 +44,8 @@ impl Entity {
     /// a quote or attest reply, and it only advances — a lower or absent
     /// reading moves nothing. It is this mind's TUniversal: its own chain
     /// cites no peer, so its own height is its K (45.2), and what it stamps
-    /// its dialect, ideas and expressed residuals with is this. Set once
-    /// to zero at boot and never again, every voice's temporal lane was a
-    /// point.
+    /// its dialect and its held forms with is this. Set once to zero at
+    /// boot and never again, every voice's temporal lane was a point.
     pub fn advance_height(&mut self, h: u64) {
         if h > self.height.get() {
             self.height = crate::chronometry::Height(h);

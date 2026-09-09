@@ -109,11 +109,12 @@ match entity.quote() {
             }
             // MULTIPLICITY: several held words deflated one listing.
             // The glue between them is a new coordinate, never a
-            // failure axis.
-            let held: Vec<_> = cites
+            // failure axis. A held cite carries the body its vertex
+            // reconstructed (24.1), and the glue is read off the bodies.
+            let held: Vec<Vec<(i64, i64, u8, u8)>> = cites
                 .iter()
                 .filter(|c| c.standing == mycelium::sdk::Standing::Held.as_u8())
-                .filter_map(|c| entity.cited_word(&c.addr))
+                .map(|c| c.body.clone())
                 .collect();
             // "MULTIPLICITY OPENS AN AXIS. `open_axis` fires when several
             // held words deflate one listing at once, and the glue between

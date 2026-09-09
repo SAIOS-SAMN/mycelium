@@ -164,6 +164,37 @@ impl Contemplation {
         }
     }
 
+    /// THE HELD STRATUM AT A CHART (24.1 as ruled 2026-09-09): the Word
+    /// vertices of the held forms on `inv`, read at the coordinate the
+    /// caller supplies — the chart names its bubbles (`by_chart`), and each
+    /// bubble's form names the vertices it holds on that chart
+    /// (`Form.by_class`, 18.2). Nothing is materialised ahead of the
+    /// question, no vertex list is walked, and no second carrier of held
+    /// words exists beside this contemplation.
+    pub fn held_at(&self, inv: &Invariant) -> Vec<&Vertex> {
+        let chart = inv.key();
+        let Some(ideas) = self.by_chart.get(chart.as_bytes()) else {
+            return Vec::new();
+        };
+        let mut out = Vec::new();
+        // index: the bubbles this chart names; then the vertices each
+        // form's by_class names on it
+        for (bk, _) in ideas.fiber(ROOT) {
+            let Some(form) = self.bubbles.get(&bk).and_then(|b| b.form.as_ref()) else {
+                continue;
+            };
+            let Some(on) = form.by_class.get(chart.as_bytes()) else {
+                continue;
+            };
+            for &i in on {
+                if let Some(v @ Vertex::Word { .. }) = form.vertices.get(i as usize) {
+                    out.push(v);
+                }
+            }
+        }
+        out
+    }
+
     pub(crate) fn rotor_between(&self, a: &[u8], b: &[u8]) -> Option<Rotor> {
         let ba = self.bubbles.get(a)?;
         let bb = self.bubbles.get(b)?;
@@ -227,9 +258,13 @@ impl Contemplation {
         self.decide_neighbors(&key);
     }
 
-    /// Hold a form as an idea (chapter 30 step 5): the form is the carrier.
-    /// The train is the germinating bundle; remainders are per-pair residual
-    /// chains. idea_key is the form's vertex key.
+    /// Hold a form as an idea (chapter 30 step 5): the form is the carrier,
+    /// and this contemplation is the one carrier of held forms (24.1 as
+    /// ruled 2026-09-09): its words are read at a chart when a cite asks,
+    /// through the form's own `by_class`, which is derived here as the
+    /// form is taken into custody. The train is the germinating bundle;
+    /// remainders are per-pair residual chains. idea_key is the form's
+    /// vertex key.
     pub fn hold_form(
         &mut self,
         f: &Form,
@@ -286,6 +321,8 @@ impl Contemplation {
         } else {
             Some(train.to_vec())
         };
+        let mut held = f.clone();
+        held.reindex();
         let bubble = Bubble {
             remainder: f.remainder.clone(),
             nerve: Complex::new(),
@@ -301,7 +338,7 @@ impl Contemplation {
             torsion: f.torsion.clone(),
             certificates: certs,
             vortex: f.vortex.clone(),
-            form: Some(f.clone()),
+            form: Some(held),
             bundle,
             remainders: rem_keyed,
         };

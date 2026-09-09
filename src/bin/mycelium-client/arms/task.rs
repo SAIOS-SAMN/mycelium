@@ -66,7 +66,7 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
                 let spoken = mycelium::transducer::family::speak_rule(rule, x, &entity.epigenome);
                 if let Some(s) = &spoken {
                     if !s.remainder.is_empty() {
-                        entity.hold_thought(
+                        entity.hold_chain(
                             s.remainder.iter().map(|&(r, c, h)| (r, c, h, h)).collect(),
                         );
                     }

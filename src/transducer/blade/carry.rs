@@ -105,19 +105,7 @@ pub fn versor_between(a: &Shape, b: &Shape) -> Option<Mv> {
     let half_turn = quarter.geo(&quarter);
     let flip_letter = LetterId::quarter((PLANE_COL, 2))?;
     let sheet = realise(&[(flip_letter, false), (flip_letter, false)])?;
-    let a_inv = a.blade.cells.clone();
-    let b_cells = b.blade.cells.clone();
-    let lands = |v: &Mv, r: i64, c: i64, held: &[(i64, i64)]| -> bool {
-        match crate::transducer::element::carry_center(v, r, c) {
-            Some(p) => held.binary_search(&crate::transducer::element::cell_of(&p)).is_ok(),
-            None => false,
-        }
-    };
-    let verify = |v: &Mv| -> bool {
-        let Some(inv) = v.versor_inverse() else { return false };
-        a_inv.iter().all(|&(r, c)| lands(v, r, c, &b_cells))
-            && b_cells.iter().all(|&(r, c)| lands(&inv, r, c, &a_inv))
-    };
+    let verify = |v: &Mv| -> bool { carries(v, a, b) };
     for reflect in [false, true] {
         let a2 = a.blade.harmonic2(reflect);
         let b2 = b.blade.harmonic2(false);
@@ -175,4 +163,41 @@ pub fn versor_between(a: &Shape, b: &Shape) -> Option<Mv> {
         }
     }
     None
+}
+
+/// EVERY CELL CARRIED, BOTH WAYS: `v` carries each cell center of `a` into
+/// a cell of `b`, and its inverse carries each cell center of `b` back into
+/// a cell of `a`. The verification every candidate of `versor_between`
+/// passes, and the one a held word's action passes on a listing body
+/// (24.1, 50.1 step 1). A versor with no inverse carries nothing.
+pub fn carries(v: &Mv, a: &Shape, b: &Shape) -> bool {
+    let lands = |v: &Mv, r: i64, c: i64, held: &[(i64, i64)]| -> bool {
+        match crate::transducer::element::carry_center(v, r, c) {
+            Some(p) => held.binary_search(&crate::transducer::element::cell_of(&p)).is_ok(),
+            None => false,
+        }
+    };
+    let Some(inv) = v.versor_inverse() else { return false };
+    a.blade.cells.iter().all(|&(r, c)| lands(v, r, c, &b.blade.cells))
+        && b.blade.cells.iter().all(|&(r, c)| lands(&inv, r, c, &a.blade.cells))
+}
+
+/// THE CARRIAGE OF A GIVEN LINEAR ACTION between two bodies (24.1 as ruled
+/// 2026-09-09): `linear` is a rotation with its dilation composed — a held
+/// word's rotor under its dilator — and the one freedom a listing's frame
+/// quotients is the translation, solved from the two centroids exactly as
+/// `versor_between` solves it. Nothing is measured from the harmonics and
+/// no candidate is tried: the word says which rotation, the bodies say
+/// where, and the result is verified cell by cell both ways. `None` when
+/// the action does not carry `a` onto `b`: the word is not a word for
+/// this body.
+pub fn versor_carrying(a: &Shape, b: &Shape, linear: &Mv) -> Option<Mv> {
+    if a.blade.cells.is_empty() || b.blade.cells.is_empty() {
+        return None;
+    }
+    let (ca1, ca2) = a.blade.centroid().map(|(x, y)| (x + qn(1, 2), y + qn(1, 2)))?;
+    let (cb1, cb2) = b.blade.centroid().map(|(x, y)| (x + qn(1, 2), y + qn(1, 2)))?;
+    let (ia, ib) = cga::base(&linear.sandwich(&cga::point(&ca1, &ca2)))?;
+    let v = cga::translator(&(cb1 - ia), &(cb2 - ib)).geo(linear);
+    carries(&v, a, b).then_some(v)
 }

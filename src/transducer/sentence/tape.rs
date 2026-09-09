@@ -478,6 +478,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
         glued,
         vortex: Keyed::new(),
         by_address: Keyed::new(),
+        by_class: Keyed::new(),
         star: Keyed::new(),
         carriages: Keyed::new(),
         by_rebased: Keyed::new(),

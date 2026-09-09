@@ -14,7 +14,7 @@ entity.epigenome.stand_dialect_at(e1.clone(), 0, 0);
 entity.epigenome.stand_dialect_at(e2.clone(), 0, 0);
 assert_eq!(entity.dialect_len(), 2);
 let addr = e1.address();
-entity.hold_thought(vec![(9, 0, 1, 2)]);
+entity.hold_chain(vec![(9, 0, 1, 2)]);
 let idea = entity
     .contemplation
     .bubbles

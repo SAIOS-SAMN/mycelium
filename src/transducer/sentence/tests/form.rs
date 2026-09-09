@@ -443,6 +443,39 @@ fn chord_is_never_a_star_face() {
     }
 }
 
+/// 18.2, 24.1 — A CHART NAMES THE WORD VERTICES ON IT. `reindex` files each
+/// Word vertex under its class in the one pass it already makes, so a
+/// listing body's chart reads its fiber of vertices and never walks the
+/// form; a chart no vertex is on names nothing, and a Demand vertex on a
+/// chart is not a word there.
+#[test]
+fn a_chart_names_the_word_vertices_on_it() {
+    let (near, far) = (stalk::Invariant(vec![3, 5]), stalk::Invariant(vec![7]));
+    let mut f = Form::default();
+    for (k, class) in [(1u8, &near), (2, &far), (3, &near)] {
+        let mut v = word_vertex(k, Word::identity());
+        if let Vertex::Word { class: c, .. } = &mut v {
+            *c = class.clone();
+        }
+        f.vertices.push(v);
+    }
+    f.vertices.push(Vertex::Demand {
+        kind: Demand::Creation,
+        chart: near.clone(),
+        bodies: vec![(0, 0, 0, 1)],
+    });
+    f.reindex();
+    assert_eq!(f.by_class.get(&near.key()), Some(&vec![1u16, 3]), "both words on the near chart, in vertex order");
+    assert_eq!(f.by_class.get(&far.key()), Some(&vec![2u16]), "the one word on the far chart");
+    assert_eq!(f.by_class.get(&stalk::Invariant(vec![9]).key()), None, "a chart no vertex is on names nothing");
+    for (chart, on) in f.by_class.fiber(ROOT) {
+        for &i in on {
+            let v = f.vertices.get(i as usize).expect("an index the fiber names is a vertex");
+            assert!(matches!(v, Vertex::Word { class, .. } if class.key().as_bytes() == chart.as_slice()), "vertex {i} is a Word on the chart that names it");
+        }
+    }
+}
+
 /// A6: the address→vertex meet a stroke reads is DERIVED at the stroke, not
 /// carried in from the caller. A form assembled vertex by vertex has an
 /// empty meet until something fills it; a pivot on such a form used to go

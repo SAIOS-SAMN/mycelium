@@ -5,13 +5,14 @@
 use crate::client::sdk::entity::utter::{read_speech_reply, vertex_stratum};
 use crate::anastome::dialogue;
 
-/// 20, 24.3, Stage 12 S12.3a — A WITHHELD REMAINDER IS UTTERED ONE BODY AT
-/// A TIME. A pair remainder of two disjoint bodies stands as two words on
-/// two body charts and is filed as two utterances; the chain of both never
-/// stands. The attest reaches no hypha here (§3.7); what is proved is the
-/// standing and the filing.
+/// 50.6 seam 1 — A WITHHELD REMAINDER IS NEVER A WORD: neither body of a
+/// pair remainder stands in the dialect, none is filed as an utterance,
+/// and the chain of both never stands; the withheld form itself stands
+/// and is held as an idea. (Before this each body stood and was attested
+/// as a word of its own — the residual utterance the soak of 2026-09-09
+/// read as garbage.)
 #[test]
-fn a_withheld_remainder_is_uttered_one_body_at_a_time() {
+fn a_withheld_remainder_is_never_a_word() {
     use super::common::closed_turn;
     use crate::client::sdk::*;
     use crate::transducer::element::from_residual;
@@ -22,23 +23,12 @@ fn a_withheld_remainder_is_uttered_one_body_at_a_time() {
     let first = from_residual(&vec![(0, 0, 1u8, 2u8)]);
     let second = from_residual(&vec![(5, 5, 3u8, 4u8)]);
     let whole = from_residual(&remainder);
-    assert!(
-        entity.epigenome.working_word(first.address().as_bytes()).is_some(),
-        "the first body stands as a word"
-    );
-    assert!(
-        entity.epigenome.working_word(second.address().as_bytes()).is_some(),
-        "the second body stands as a word"
-    );
-    assert!(
-        entity.epigenome.working_word(whole.address().as_bytes()).is_none(),
-        "the chain of both never stands"
-    );
-    assert!(
-        entity.already_taught(&first) && entity.already_taught(&second),
-        "each body is filed as its own utterance"
-    );
-    assert!(!entity.already_taught(&whole), "the chain of both is not an utterance");
+    for (name, w) in [("first body", &first), ("second body", &second), ("chain of both", &whole)] {
+        assert!(entity.epigenome.working_word(w.address().as_bytes()).is_none(), "the {name} never stands as a word");
+        assert!(!entity.already_taught(w), "the {name} is not an utterance");
+    }
+    assert!(entity.dialect_len() >= 1, "the withheld form stands");
+    assert!(entity.ideas_len() >= 1, "and is held as an idea");
 }
 
 /// 24.3, law 3: A MIND LOOKS IN ONE STRATUM, not through everything it has
