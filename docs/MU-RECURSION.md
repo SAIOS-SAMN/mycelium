@@ -4341,6 +4341,7 @@ Prefix `  court ` as the existing court lines; addresses as
   court offer deferred {addr} by {peer}
   court exchange deferred by {peer}
   court exchange asked {peer} K {k}
+  court receipt backfill {vk} {k0}..{k1} admitted {n}
   court orbit {carrier} {n} period {strokes}
   court phase h {h0}..{h1} comprehension {deflated}/{held} congruence {sections}/{strata} lineages {n} growth +{adjoined} -{retired} expansion {axes}/{splits}
   court fold {vk} K {k} h {h} prefix {k0}..{k1} identities {n}
@@ -6055,7 +6056,18 @@ any carrier is touched:
    re-derivation over the fold rows, and the archive behind the fold is
    fetched by K range and replayed on demand, never as a precondition
    (ruled 2026-09-09). The same K-range act serves a gap's back-fill (step
-   3) and an archived prefix (45.8).
+   3) and an archived prefix (45.8): `ACT_RECEIPTS` (0x36, S13.10),
+   `[ACT_RECEIPTS][voice 32][signer 32][from u64][to u64]`, answered with
+   `[n u32][receipt…]` — the signer's own receipts from its hot chain or
+   `ARC1`, or the receipts a holder admitted from that signer — as many as
+   fit the frame budget, from `from` upward. A fetched receipt carries no
+   signature of its own: it is admitted by its chain — it re-derives its
+   hash, links to the head this node holds for the signer, and its height
+   re-derives — and the signed head that reported the gap is admitted
+   again once the chain reaches it. One page is fetched per gap reported,
+   on the exchange that reported it (`court receipt backfill {vk}
+   {k0}..{k1} admitted {n}`), and nothing back-filled is cited as a
+   parent: the closing frame is.
 2. The signature verifies under the claimed key or, for a chart-scoped
    frame, under that key's active manifest entry: else `BAD_SIGNATURE` or
    `REFUSE_MANIFEST`.
