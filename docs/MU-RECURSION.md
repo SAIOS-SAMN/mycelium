@@ -9,7 +9,7 @@ which every statement stands where it applies. Companion documents:
 
 ## How to read this document
 
-Nine parts, forty-nine chapters, each chapter self-contained enough to
+Ten parts, fifty chapters, each chapter self-contained enough to
 implement and each opening with what it carries from the one before.
 
 | part | what it settles | who reads it first |
@@ -23,6 +23,7 @@ implement and each opening with what it carries from the one before.
 | VII Verification and landing | every test, every cold-boot trace, one landing order, and the theorems the engine proves by running | the auditor |
 | VIII Boundaries | what is deliberately absent; relayed statements not adopted | everyone, once |
 | IX The mesh under adversaries | time without clocks, threshold identity, receipts and the signed prefix, equivocation, settlement | the implementor of the court and the wire; the auditor |
+| X Language formation | the sentence as the unit of speech: construction and deconstruction as adjoint functors, edge transport in the stabilizer, ordered factorization, typed demands, the three seams | the implementor of the voice and the court; the auditor |
 
 **What this document is.** A specification of the implementation at
 `/opt/mycelium-v0.1.0`, every statement bound to a function and a path,
@@ -264,7 +265,10 @@ lane, which certifies nothing (12.6); a
 **shortening** is A2's budgeted retirement of a tape, which moves nothing;
 a **vortex** is a
 held loop together with the candidate pivots that could discharge it, held
-as cells of the thought until one of them does. A
+as cells of the thought until one of them does. A **demand** is a typed
+vertex of a sentence naming what the alphabet could not spell or the eyes
+could not pair (chapter 50); a bare chain of cells is never a demand and
+never a word. A
 **dialect** is spoken and stood (memory, in the epigenome); a **language**
 is replayed by two organs and taught (on disk, in the genome). What was
 once called a family is a **bundle**: a base rule with sections per pair and
@@ -632,6 +636,17 @@ A sentence **coheres** when every holonomy is the identity vertex. A
 sentence form is **closed** when it coheres and its remainder is empty. A
 closed sentence form is a **crystallized form**: it can be stored, cited,
 and replayed from its tape alone.
+
+A sentence is **valid** (ruled 2026-09-09, chapter 50) when every word
+vertex reconstructs its body — the carriage, the word and the gauge carry
+the input body onto the output body under exact cellular equality — and
+every edge carries a transport read in the body's stabilizer (50.3), so
+that the holonomy around a cycle is a class and not a coboundary. What a
+voice could not reconstruct rides the sentence as a typed demand vertex
+(50.5); a vertex that is a bare chain of cells, with no word, no carriage
+and no gauge, is not a vertex of any sentence. Validity is what the
+receiver checks; closure is validity with no demand vertex and every
+loop filed or identity.
 
 ### 2.3 Germ, idea, thought, in this geometry
 
@@ -2251,6 +2266,15 @@ factorisation. Failure returns `Novel(g)` with `g` unchanged: off the plane
 there is no HNF and no metric to say which partial is nearer, so the whole
 word is the demand.
 
+**Spelling a measured rotor** (ruled 2026-09-09) is not this procedure
+run against a basis: it is A22, `factor_rotor` (50.4), the ordered peel
+over the three commuting plane pairs, each block decided by the plane
+lattice `ℤ² ⊕ ℤ/4` exactly as step 2 decides one plane. A12 factors a
+word through the words a mind holds; A22 spells a versor the eyes
+measured into the letters. Their remainders are typed the same way
+(50.5): a Gaussian prime outside the alphabet on a plane, or a block the
+order does not decompose.
+
 Binding: `Epigenome::comprehend` (sdk.rs 856) for connections replaces the
 single-representative `transition` test with A12 over the fiber's basis;
 `Kernel::reduce_excluding` keeps its decomposition for chains and calls
@@ -2782,8 +2806,10 @@ new.
    with the canonical remainder as the demand and the factor `f` counted as
    expression; failure off the plane → `Novel(g)`.
 4. Residual words: `locate` as today; the remainder is the novelty.
-5. The demand emitted for a `Novel` is exactly `g_rem` (or `g`), spoken as
-   a connection with no chain; the hypha dockets it as any word. No mind
+5. The demand emitted for a `Novel` is exactly `g_rem` (or `g`), typed as
+   50.5 types it — `RotorPrime(plane, prime)` or `Standing(block)` — and
+   spoken as a demand vertex of the sentence it belongs to; the hypha
+   lists it as a demand under its kind and chart, never as a word. No mind
    emits "unknown"; it emits the element it lacks.
 
 **Invariant.** A word the mind holds under any spelling is `Understood`;
@@ -3160,15 +3186,20 @@ rule measures over a family (12.6, 26)
 returns bodies. Add:
 
 ```rust
-pub fn word_form(a: &Body, b: &Body) -> Option<Vertex>   // new: carriage(a,b) (131) → spell → Vertex::Word with class = b.moduli (M4 step 1)
+pub fn word_form(a: &Body, b: &Body) -> Option<Vertex>   // new: carriage(a,b) (131) → factor_rotor (A22, 50.4) → Vertex::Word with class = b.moduli (M4 step 1)
 pub fn frame_vertex() -> Vertex                           // new: Vertex::Frame
+pub fn demand_vertex(kind: Demand, chart: &Invariant, bodies: &[Body]) -> Vertex   // 50.5: what no versor carries or no rotor spells
 ```
 
 `pair_nerve` (about 590) becomes `pair_form(a: &Grid, b: &Grid, scale) ->
-Form`: vertices = `Frame` plus one `Word` per carried body plus body-only
-vertices for created and erased bodies (`Word` with identity word and an
-empty source or target class); faces for every related pair through
-`face_of`; loops through `loops_of`. Shells (`peel::peel_body_scaled`)
+Form`: vertices = `Frame` plus one `Word` per carried body — its versor
+measured by `versor_between`, its word by `factor_rotor`, its gauge by
+`derive_hue_map` — plus one demand vertex per (kind, chart) for the bodies
+no versor carries or no rotor spells (50.5); no vertex ever carries the
+identity word for a body it does not reconstruct (ruled 2026-09-09; the
+body-only vertex of the earlier text was the second seam of 50.6). Faces
+for every related pair through `face_of`, each carrying the edge transport
+of 50.3 beside its placement; loops through `loops_of`. Shells (`peel::peel_body_scaled`)
 remain pairing candidates and are never vertices. Candidates are bucketed by
 `moduli.key()` over exact axes (A6) as an index only; the decider is that a
 carriage exists, never the bucket. "Cells read once" is a memo keyed by the
@@ -3305,12 +3336,21 @@ pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8;32]) -> Option<Form>,
 2. `REFUSE_GLUED_UNRULED` when `resolve` is `None`; `REFUSE_GLUED_FRAME_GAUGED`
    when the resolved form's `Frame` is not identity (chapter 32).
 3. Each `Word` vertex: rotor from tape, affine, M1 compare against the
-   vertex's own recomputed vertex (`REFUSE_VERTEX_TAPE`).
+   vertex's own recomputed vertex (`REFUSE_VERTEX_TAPE`); then the vertex
+   reconstructs its body on the receiver's copy of the input, `(V · W ·
+   γ) · B_in = B_out` under exact cellular equality (50.2 G step 3,
+   `REFUSE_VERTEX_BODY`). Each `Demand` vertex names a kind and a chart
+   (`REFUSE_DEMAND_UNTYPED`). A tape with no vertex is a chain and is
+   refused whole (`REFUSE_NOT_A_SENTENCE`, 50.6).
 4. Each face: `face_of(i, j)` recomputed, M1 compare with stored
-   (`REFUSE_FACE`); or the face is the chord of a loop whose class key
+   (`REFUSE_FACE`); its edge transport re-derived as 50.3 states it, in
+   the body's stabilizer or the exchange, or a remainder edge
+   (`REFUSE_EDGE`); or the face is the chord of a loop whose class key
    is filed on torsion with the filed order, in which case the loop's
    holonomy is what the chord carries.
-5. Each loop: holonomy recomputed, projectively identity (`REFUSE_LOOP`).
+5. Each loop: holonomy recomputed as the product of the edge transports
+   read in the base body's stabilizer up to conjugacy (50.3),
+   projectively identity or filed torsion (`REFUSE_LOOP`).
 6. `REFUSE_REBASE_TRIVIAL`, `REFUSE_UNFOLD_STILL`, `REFUSE_ORBIT_STILL`, by
    executing the move on `family` when given, else by the form's own
    consistency.
@@ -3475,8 +3515,10 @@ a question, and the court's whole behaviour on an act is fixed here.
   the chain names; a residual that fell on some lane and rose on none is
   docketed as a listing under the voice's room and the citations are
   credited with the deflation they replayed; a residual equal to the chain with citations present is
-  `REFUSE_UNPROVEN`; a residual equal to the chain with no citations is
-  the voice's irreducible claim and is docketed as such. `reduce_all` and
+  `REFUSE_UNPROVEN`; a bare chain with no citations is not an utterance
+  and is refused `REFUSE_NOT_A_SENTENCE` (50.6): what a voice cannot
+  close arrives as a demand vertex of its sentence, typed and charted
+  (50.5), and the court lists it as a demand under that kind. `reduce_all` and
   `reduce_germ` over the court's own language are not reachable from a
   wire act: a hypha that reduces a demand against its own words is
   thinking on the voice's behalf, and its book then fills with words no
@@ -3695,22 +3737,20 @@ The order is fixed and the same for every producer: perceive, think,
 stand, utter. A word reaches the wire only after it stands in the
 dialect, and a mind that has stood nothing utters nothing but a percept.
 
-- Three local producers stand words. (1) A closed form (every per-pair
-  remainder empty) stands through `speak` and is uttered once. (2) A
-  withheld form (some remainder non-empty) is stood in the dialect as
-  `withheld: true` with its open coordinates (24.2), held as an idea with
-  its bundle and its per-pair remainders (25), and each non-empty
-  remainder is **concluded**: `conclude` cites what the working atlas
-  speaks of it by deconstruction (A12 over genome, dialect and ideas) and
-  expresses the residual as the mind's own word (`express`, `Stood`).
-  Only then is the residual uttered, once, with its citations, its
-  standing byte and the voice's K. (3) A served listing is comprehended
-  the same way: `conclude` over the working atlas; a residual strictly
-  below the chain on some lane (a held word deflated it) is expressed and
-  uttered with its citations; a residual equal to the chain is held as a
-  thought and never expressed, because a mind does not claim what it did
-  not reduce. (4) A fed pair's percept cites over the working atlas, not
-  the genome.
+- Three local producers stand sentences (ruled 2026-09-09, chapter 50).
+  (1) A closed form (every body reconstructed, every loop filed or
+  identity) stands through `speak` and is uttered once. (2) A withheld
+  form (some body not reconstructed) is stood in the dialect as
+  `withheld: true` with its open coordinates (24.2) and held as an idea
+  with its bundle (25); what it could not close is its demand vertices
+  (50.5), and the sentence is uttered once, whole, with its demands, its
+  standing byte and the voice's K. Nothing is expressed as a residual
+  word and no chain is uttered (50.6). (3) A served listing is a demand:
+  `conclude` factors it through the working atlas by G (50.2) and answers
+  with a sentence that closes it, in whole or with demands of its own; a
+  listing no held word closes is held as a thought and never re-uttered,
+  because a mind does not claim what it did not reduce. (4) A fed pair's
+  percept cites over the working atlas, not the genome.
 - **Incidence is deconstruction, never a key.** A listing is incident
   with the mind iff some held word deflates it under `apply`/`unapply`,
   measured lane-wise. Chart keys route the quote (which hypha, which
@@ -3827,7 +3867,7 @@ the verdict every percept carries before it leaves the mind:
 | Recognised | harmonics agree, the transition is a held word or the identity | the percept is a form; nothing is listed |
 | Reflection | harmonics agree, the transition's orientation character `w₁` is odd (3.10) | a reflection word; the form is spoken with it |
 | Transposition | harmonics agree, the transition is a placement or dilation versor | attaches to the held word as a section (25) |
-| Novel | harmonics disagree on named axes, or a loop's holonomy is non-trivial with a class no held word discharges | the germination demand, carrying the axes and the loop's class; the only verdict that becomes a listing |
+| Novel | harmonics disagree on named axes, no versor carries a body, a rotor block does not spell, or a loop's holonomy is non-trivial with a class no held word discharges | a typed demand (50.5): `TopologicalDeformation`, `Source` or `Creation`, `RotorPrime` or `Standing`, or the loop's class; the only verdict that becomes a listing, and it is listed under its kind |
 
 **What leaves the mind.** An utterance carries a percept with its verdict,
 its residual per overlap and the axes it names. The hypha's book lists
@@ -4260,7 +4300,20 @@ pub const REFUSE_MALFORMED: &str = "act names a payload it does not carry";
 pub const REFUSE_NOT_EQUIVOCATION: &str = "two receipts that do not share key and K, or do not differ";
 pub const REFUSE_FOLD_OPEN: &str = "fold prefix is not final";
 pub const REFUSE_FOLD_INEXACT: &str = "fold does not conserve";
+pub const REFUSE_NOT_A_SENTENCE: &str = "utterance is a chain, not a sentence";
+pub const REFUSE_VERTEX_BODY: &str = "vertex does not carry its body onto its image";
+pub const REFUSE_EDGE: &str = "edge transport is neither in the stabilizer nor the exchange nor a remainder edge";
+pub const REFUSE_DEMAND_UNTYPED: &str = "demand vertex names no kind";
 ```
+
+`REFUSE_NOT_A_SENTENCE`, `REFUSE_VERTEX_BODY`, `REFUSE_EDGE` and
+`REFUSE_DEMAND_UNTYPED` (chapter 50, ruled 2026-09-09) are the receiver's
+four answers to an utterance that is not a valid sentence: a bare chain
+with no vertex, a word vertex that does not reconstruct its body on the
+receiver's copy of the input, a face whose edge transport re-derives as
+none of 50.3's three readings, and a demand vertex with no kind. Each is
+a refusal that travels to the voice; none is a slash, because a sentence
+that does not replay was never installed.
 
 `REFUSE_FOLD_OPEN` and `REFUSE_FOLD_INEXACT` (45.8, ruled 2026-09-09) are
 the two answers to a fold: a prefix below whose head a listing,
@@ -4370,6 +4423,8 @@ Prefix `  court ` as the existing court lines; addresses as
   court fold witnessed {vk} co-signed {root}
   court fold refused {vk}: {REFUSE_*} [origin {g} e{e} carried {g'} e{e'}]
   court nerve deferred by {addr} acts {n}
+  court demand listed {kind} chart {inv} from {vk}
+  court sentence refused {addr}: {REFUSE_*}
   court era adopted {root} h {h}
   court verdict refused {addr} from {vk}: {REFUSE_*}
   court verdict unread {addr}: the court is not readable
@@ -4435,7 +4490,9 @@ Prefix `[{tag}] ` as the existing lines:
 [{tag}] receipt K {k} h {h} parents {n}
 [{tag}] manifest {n} keys K {k}
 [{tag}] form withheld: family {fam} remainder {n} cells over {p} pairs
-[{tag}] remainder expressed {addr} pair {i} cells {n} cites {c}
+[{tag}] sentence spoken: {addr} vertices {v} demands {d} loops {l} remainder edges {r}
+[{tag}] demand {kind} chart {inv} on {addr}
+[{tag}] edge remainder {i}-{j} on {addr}
 [{tag}] uttered {addr} standing {s} K {k} lanes {mu:?}
 [{tag}] listing {addr} reduced by {c} cites: residual {m} of {n}, expressed {addr'}
 [{tag}] listing {addr} held: no held word deflates it
@@ -4456,6 +4513,17 @@ in strokes, so velocity is read in kernel coordinates.
 
 Stroke line adds `forms {spoken}/{withheld} glued {n} depth {max}`; it is
 written once per aperture cycle and on every change of K (24.3).
+
+`sentence spoken`, `demand … chart … on`, `edge remainder`, `court demand
+listed` and `court sentence refused` (chapter 50, ruled 2026-09-09) are
+the lines of the sentence as the unit of speech: a voice writes one
+`sentence spoken` per utterance with the count of its demand vertices,
+one `demand` line per (kind, chart) it carries, and one `edge remainder`
+per non-rigid pair; the court writes one `court demand listed` per demand
+vertex it lists and one `court sentence refused` per utterance that is
+not a valid sentence. `remainder expressed` is retired with the seam that
+wrote it (50.6): no residual is expressed as a word, and an `uttered` line
+with `cites 0` on a chain is the fault the auditor greps for.
 
 `court nerve deferred by {addr} acts {n}` (R2, 2026-09-09) is the nerve
 thread's reading of a peer that deferred the acts routed to it — a demand
@@ -4526,13 +4594,17 @@ Checked by tests, greppable by the auditor:
 - No `court concurrent … held` pair is followed by a resolution by order; it
   is followed by a merge with conservation, a `court mv` line, or a burn
   (45.3).
-- Every `form withheld` line with a non-empty remainder is followed in the
-  same stroke by a `remainder expressed` and a `dialect stood` line per
-  non-empty pair remainder; a voice that has logged a withheld form never
-  shows `dialect 0` on its next stroke line (24.3).
-- Every `uttered` line names an address that a `dialect stood` or `form
-  spoken` line on the same voice logged earlier, and there is one `uttered`
-  line per (address, K) on that voice.
+- Every `form withheld` line is followed in the same stroke by a `dialect
+  stood` line and one `sentence spoken` line whose `demands` count is the
+  number of (kind, chart) pairs the withheld bodies fall under; no
+  `remainder expressed` line and no `uttered … cites 0` line on a chain
+  appears on any voice (50.6); a voice that has logged a withheld form
+  never shows `dialect 0` on its next stroke line (24.3).
+- Every `uttered` line names a sentence address that a `dialect stood` or
+  `sentence spoken` line on the same voice logged earlier, and there is
+  one `uttered` line per (address, K) on that voice; every listing on any
+  book carries a demand kind (50.5), and every `court attest` line reports
+  a sentence replayed, never a chain docketed.
 - No hypha reaches `reduce_all` or `reduce_germ` from a wire act; every
   `court attest` line reports citations replayed and a residual measured
   (23.8).
@@ -4998,13 +5070,15 @@ servers and five minds.
 **The utterance (chapters 23.8, 24.3).**
 - The first `family … rule …` line on a voice with an empty genome is
   followed, in the same stroke, by `form withheld … remainder n cells over
-  p pairs`, then one `remainder expressed`, one `dialect stood` and one
-  `uttered` line per non-empty pair remainder; the next stroke line shows
-  `dialect ≥ 1` and `ideas ≥ 1` on that voice.
-- The hypha answers each with `court attest … cites 0 residual m of m`
-  and the book grows by the number of distinct residual addresses, never
-  by pairs re-uttered; a repeated frame logs `court attest duplicate` and
-  the book does not grow.
+  p pairs`, one `dialect stood`, one `sentence spoken … demands d` with
+  `d ≥ 1` and `d` `demand … chart …` lines, and one `uttered` line for the
+  sentence (chapter 50); no `remainder expressed` line; the next stroke
+  line shows `dialect ≥ 1` and `ideas ≥ 1` on that voice.
+- The hypha answers with `court attest` naming a sentence replayed and
+  `d` `court demand listed` lines, and the book grows by the number of
+  distinct (kind, chart) demands, never by pairs re-uttered and never by
+  a chain; a repeated frame logs `court attest duplicate` and the book
+  does not grow.
 - A second voice served that listing logs `listing … reduced` only when a
   word it stood deflates it, else `listing … held`; the book's `closed`
   grows only after a `court attest … residual 0` or a probe closure.
@@ -5215,6 +5289,19 @@ listed, 23.9 at the court); and every act polled on every stroke because
 the quote reply's height never moved (23.8, 24.3). The landing order for
 this is Stage 12 of the task list, and it precedes every remaining item of
 Stages 2–5: nothing below the eye can learn while the eye discriminates.
+
+**Stage 14 — language formation (ruled 2026-09-09).** The soak of
+2026-09-09 on d6e19a1 read a market flooded with unspoken chains: 226
+remainders expressed against no sentence spoken, genomes of 250–420 ruled
+words comprehending 0 of 2 listings, no axis, no class. Chapter 50 rules
+the sentence as the unit of speech and names the three seams through
+which chains reached the book. Its landing order is Stage 14 of the task
+list — the typed demand carrier and the demand vertex (tape v6, a recut),
+the ordered factorization A22, the edge transport in the stabilizer, the
+speaker F, the receiver G at the court, then the three seams severed in
+the order 50.6 lists them, the last of them the court's irreducible
+listing — and it precedes S13.11 onward and every remaining item of
+Stages 2–5, since a court that lists chains has nothing to rule.
 
 **Consolidation discipline.** This document is edited in place. A change
 to any chapter edits that chapter; nothing is amended by reference from a
@@ -5678,7 +5765,10 @@ compared coordinatewise and never as a digest. No
 is, every retraction decided by `home`. No consensus, voting, or scoring
 between nodes: exactness is the reason two nodes agree, and
 `REFUSE_MV_INEXACT` is the only thing that happens when they do not. No
-byte identity anywhere in cognition (chapter 1.5). No complete rewriting
+byte identity anywhere in cognition (chapter 1.5). No bare chain as a
+word: a residual chain is the boundary of a thought (2.3) and reaches the
+market only as a typed demand vertex of a sentence (50.5), never as a
+listing, a citation or a genome entry. No complete rewriting
 system for the mixed-plane group, no Knuth–Bendix run, no claim of
 minimality for an off-plane tape beyond what a completed search depth
 proves. No gradient and no greedy: a held loop is never closed by picking
@@ -6269,3 +6359,246 @@ Mode 1 of xSEPTUM, paying with work, is unchanged: the receipt that releases
 escrow is the word that replays, which is the one place in the system where
 the phrase is the credential. Identity says who is paid; the word says
 whether.
+
+---
+
+# Part X — Language formation
+
+Written 2026-09-09 against d6e19a1. Carried from Parts I–IX: words are
+paths in the Cayley graph, forms are vertices, faces and loops, the court
+replays, the mind comprehends, and time is the receipt ledger. This part
+says what a voice speaks — a sentence, composed — and how a receiver takes
+it apart — factored, replayed — so that meaning is derived and never
+recalled; and it names the three seams through which unspoken chains
+reached the market on the fleet of 2026-09-09.
+
+## 50. The sentence: construction and deconstruction (ruled 2026-09-09)
+
+### 50.1 The theorem
+
+Let a scene transformation be an endomorphism on the discrete cellular
+space `X` (the sensor's ℤ²; chapter 38 widens it). A **valid sentence**
+`S` is an irreducible, connected Čech 1-complex over the support bodies
+`{B_k}`, `k = 1..m`:
+
+```
+S = ( {W_k, V_k, γ_k}_{k=1..m},  {Γ_ij}_{(i,j) ∈ E} )
+```
+
+each vertex carrying an exact word `W_k ∈ Spin(4,0)(ℚ)` spelled in the
+seventeen letters (1.1), a carriage `V_k ∈ Cl(3,1)(ℚ)` (A4) and a gauge
+permutation `γ_k` of the hues; each directed edge carrying the transport
+`Γ_ij` of 50.3. `S` is valid iff
+
+1. **Local reconstruction.** For every `k`, `(V_k · W_k · γ_k) · B_k^in =
+   B_k^out` under exact cellular equality: every cell of the input body,
+   carried by the sandwich, lands on a cell of the output body with its
+   hue mapped by `γ_k`, and every cell of the output body is reached.
+2. **Global holonomy closure.** Around every minimal cycle of `E`, the
+   product of the edge transports, read in the base body's stabilizer up
+   to conjugacy (50.3), is the class the sentence files: the identity, or
+   a torsion class filed with its period (A17). A cycle whose product is
+   neither is a held loop with its class vector (12.6), and the sentence
+   is valid but not closed.
+
+A vertex that reconstructs nothing — a bare chain of cells with no word,
+no carriage and no gauge — is not a vertex of any sentence. That is the
+whole content of the ruling: the unit a voice speaks is the sentence, and
+every vertex of it is a word that acts. What the alphabet cannot spell
+and what the eyes cannot pair ride the sentence as typed demand vertices
+(50.5); they reconstruct nothing and claim nothing.
+
+### 50.2 The two functors (no search)
+
+**Speaker, F: Percept → Sentence.**
+
+1. Measure versors. For each body pair the eyes admit (24.4), `V_k =
+   versor_between(B_k^in, B_k^out)` (blade/carry.rs: translation from the
+   centroids, dilation from the spread, rotation from the moment
+   harmonics, every candidate verified cell by cell) and the hue map
+   `γ_k = derive_hue_map` (element/gauge.rs). Both exact or refused; a
+   refusal is a demand of 50.5, never a chain.
+2. Peel to letters. `W_k = factor_rotor(rotor of V_k)` by 50.4 (A22); an
+   unclosed remainder is `RotorPrime` or `Standing` (50.5).
+3. Connect. For every edge the eyes admit, `Γ_ij` by 50.3; a pair with
+   no rigid versor is a remainder edge.
+4. Form loops. The holonomy of every cycle of `E`, read in the base
+   body's stabilizer up to conjugacy; filed as torsion or held with its
+   class vector.
+5. Emit the composed sentence, its demand vertices riding on it, one per
+   (kind, chart).
+
+**Receiver, G: Sentence → Proof.**
+
+1. Factor. Every word into its letters, every letter into its rotor
+   coordinates (A1), every edge into its transport (50.3).
+2. Replay. `B'_k = (V_k · W_k · γ_k) · B_k^in` on the receiver's own copy
+   of the input.
+3. Congruence. `B'_k = B_k^out` exactly, per vertex; the receiver's own
+   factorization of `V_k` is compared with the speaker's by the class
+   vector (15.4, 12.6) — conjugacy in the group, never equality of tapes.
+4. Coherence. The holonomy of every cycle as 50.1 step 2; a sentence
+   whose loops close is integrated into the working dialect as an active
+   theorem (24.1, 25.2), and a sentence with demand vertices is stood
+   withheld with them.
+
+`F` and `G` are adjoint: `G ∘ F` on a percept is the identity on what the
+alphabet spells, and its defect is exactly the typed demands `F` emitted.
+Nothing in either is a search, a candidate list or a nearest match; every
+step is a measurement, a peel, a product or an equality.
+
+### 50.3 Edge transport in the stabilizer (ruling 1)
+
+`Γ_ij = V_j · V_i⁻¹` is a coboundary: around any cycle its product
+telescopes to the identity, so it measures nothing and carries no
+meaning. The edge transport is:
+
+- `V_ij`, the versor carrying the pair-body `(B_i ∪ B_j)^in` onto
+  `(B_i ∪ B_j)^out`, measured by `versor_between` on the union's shape; it
+  exists iff the pair moved rigidly.
+- `Γ_ij = V_i⁻¹ · V_ij`. When the pair is rigid, `V_ij` carries `B_i^in`
+  onto `B_i^out` or onto `B_j^out`, so `Γ_ij` lies in `Stab(B_i^in)` — a
+  symmetry of the body: the identity, a half turn, a quarter turn — or in
+  the exchange `Aut(B_i ↔ B_j)` of two congruent bodies that swapped
+  places. A rigid global motion gives `V_ij = V_i = V_j` and `Γ_ij = 1`;
+  a relative motion the pair still shares gives the stabilizer element or
+  the exchange that distinguishes it.
+- A pair with no `V_ij` is a **remainder edge** (`set_remainder_edge`,
+  13.9 step 7): the two bodies are two charts, the split is
+  Mayer–Vietoris (13.9), and no loop through that edge is evaluated.
+- The **loop holonomy** is the product of `Γ` around a cycle, valued in
+  the base body's stabilizer and certified up to conjugacy by the class
+  vector (15.4); stabilizer cosets do not telescope, which is why this
+  product carries what the coboundary could not. Finite, it is filed as
+  torsion `(σ, ℓ)` (A17); infinite or undischarged, it is held with its
+  class vector (12.6). The torsion the form files today (`Form.torsion`,
+  the hue-map orbits) is the gauge component of this holonomy; the shape
+  component — the stabilizer and the exchange — is what this ruling adds.
+
+`Form::face_of` remains the coboundary of the words' placements (the
+relative carriage, 3.1); the edge transport is carried on the face beside
+it (`FormFace.edge`), and the court re-derives both.
+
+### 50.4 Ordered commuting-pair factorization (ruling 2)
+
+`Spin(4,0)` is not abelian across planes sharing an axis, so no single
+Smith normal form over the letters' exponents exists. Letters on
+complementary planes commute (1.2). `factor_rotor(R)` (A22) peels in the
+fixed order
+
+```
+(Π_01 × Π_23)  →  (Π_02 × Π_13)  →  (Π_03 × Π_12)
+```
+
+Per commuting block the exponent lattice is `ℤ² ⊕ ℤ/4` per plane — the
+(3,4,5) and (5,12,13) exponents and the quarter turn — and Smith normal
+form over it (A12 step 2) decides the factor exactly; the block's rotation
+is read by `spell_peel` (the Gaussian-integer peel on the plane block,
+alphabet/spelling.rs) and its remainder is the block's own. A block whose
+rational rotation carries a Gaussian prime outside `{5, 13}` leaves
+`Demand::RotorPrime(plane, prime)`; a block that is not a rational plane
+rotation in this order leaves `Demand::Standing(block)`. Nothing across
+blocks is ever treated as one lattice. The sensor plane `(0,1)` with its
+complement `(2,3)` is the first block, so every rotor a plane sensor
+measures factors in the first step and the remaining blocks read the
+identity; the order matters only when perception writes on the third and
+fourth axes (chapter 38).
+
+### 50.5 Typed demands and the anti-freeze protocol (ruling 3)
+
+A demand is one of exactly these kinds, and a demand of no kind is not a
+demand:
+
+| kind | what `F` could not do | what it carries |
+|---|---|---|
+| `Demand::RotorPrime(plane, prime)` | spell a plane rotation whose Gaussian factor is a prime outside the alphabet | the plane and the prime, as A21 coordinates |
+| `Demand::Standing(block)` | decompose a rotor block in the order of 50.4 | the exact 2×2 block, canonical |
+| `Demand::Source(B_out, chart, multiplicity)` | say which input body an output body is the image of | the output body's chart and the number of input charts a versor carries onto it, every one standing as a section, none first-found |
+| `Demand::Creation(B_out, chart)` | find any input body carrying onto `B_out` | the output body's chart |
+| `Demand::TopologicalDeformation(B_in, B_out)` | find any element of `Cl(3,1)(ℚ)` carrying `B_in` onto `B_out` — the harmonics differ | both charts and the axes on which they differ; routed to Mayer–Vietoris boundary splitting (13.9), never held for a rotor that cannot exist |
+
+Demands ride the sentence as vertices (`Vertex::Demand`), aggregated per
+chart: one vertex per (kind, chart), never one per body, carrying the
+bodies they stand for as the sentence's remainder. The **closed
+sub-complex** of the sentence — every `Word` vertex and every cycle over
+them — is spoken, replayed and ruled at once; its deflation is paid on
+closure (E2); the demand vertices are listed by the court as demands
+under their kind and chart (24.4's Novel), priced and relayed by the
+market, and answered by a letter (chapter 37), a section (25) or a split
+(13.9). A voice therefore never emits nothing and never emits a bare
+chain: a percept `F` cannot close in full is a sentence with demands, and
+a percept `F` cannot open at all — no body pair the eyes admit — is a
+percept with no sentence and no listing, reported to the voice as such.
+
+### 50.6 The three seams, severed
+
+Read on the fleet of 2026-09-09 (d6e19a1): 226 remainders expressed
+against no sentence spoken on one voice, 235 held against 23 reduced,
+genomes of 250–420 ruled words comprehending 0 of 2 listings, no axis, no
+class. Unspoken chains entered the market through three seams; each is
+closed by this ruling and stays closed by the invariant below.
+
+1. **The voice's remainder.** `Entity::withhold_form`
+   (client/sdk/entity/think.rs) attested every uncovered body of a
+   withheld form through `from_residual` as a word (`remainder expressed`,
+   `uttered … cites 0`), and `hold_thought` held the same chain as an
+   idea. The withheld form is stood with its demand vertices and uttered
+   whole; no residual is expressed, `attest` is never called with a bare
+   chain, and an idea is a form.
+2. **The body-only vertex.** `family::body_only_vertex`
+   (family/perceive.rs) made an unpaired body a `Vertex::Word` with the
+   identity word and no measured versor, so a created, destroyed or
+   non-similar body was a vertex that reconstructed nothing. It is a
+   demand vertex of 50.5: `Source` where an input chart carries onto it,
+   `Creation` where none does, `TopologicalDeformation` where the
+   harmonics differ.
+3. **The court's irreducible listing.** `reduce_proven` and `reduce_germ`
+   (server/cognition/reduce.rs) answered
+   `NormalForm::Irreducible(from_residual_framed(residual))`, and
+   `commit_germ` listed, escrowed, ruled and installed it; `attest(chain)`
+   on the wire and `from_residual` on any utterance path are the same
+   seam. The court lists a demand vertex under its kind and refuses a
+   bare chain with `REFUSE_NOT_A_SENTENCE`; `from_residual` remains only
+   where a chain is the object — a listing key, a remainder's measure, a
+   fixture — and never as a word, a citation or a genome entry.
+
+**The invariant**, checked by the auditor on every landing and every
+soak: no `remainder expressed` line, no `uttered … cites 0` line on a
+chain, no `court attest … cites 0 residual m of m` line on any process;
+every listing on any book carries a demand kind; every entry of every
+genome is a sentence or a word spelled in the letters.
+
+### 50.7 Binding
+
+```
+sentence/form/carrier.rs   Vertex::Demand { kind: Demand, chart: Invariant, bodies: Vec<Cell> } NEW; FormFace.edge: Option<Transport> NEW (50.3; None is a remainder edge); tape v6, a recut (§10)
+sentence/demand.rs         Demand NEW: the five kinds of 50.5 and their A21 key (kind byte, then the coordinates each carries)
+alphabet/factor.rs         factor_rotor(&Rotor) -> Result<Word, Demand> NEW (A22, 50.4), over spell_peel per commuting block
+blade/carry.rs             versor_between on the union shape for V_ij (50.3)
+family/perceive.rs         word_form → factor_rotor; demand_vertex NEW; body_only_vertex DELETED
+family/pair.rs             pair_form: F steps 1–5; the edge transport on every face
+sentence/form/carrier.rs   Form::loops_of composes FormFace.edge around a cycle; holonomy read in the stabilizer up to conjugacy
+client/sdk/entity/think.rs withhold_form speaks the sentence; hold_thought DELETED; attest(chain) unreachable from a voice
+court/verdict/replay.rs    replay_form_with: G steps 1–4; REFUSE_NOT_A_SENTENCE, REFUSE_VERTEX_BODY, REFUSE_EDGE, REFUSE_DEMAND_UNTYPED
+server/cognition/reduce.rs reduce_proven, reduce_germ: no Irreducible(from_residual*); a demand vertex is listed by kind; a chain is refused
+server/cognition/germinate/ingest.rs   commit_germ lists demand vertices, never a residual
+```
+
+Tests (chapter 39): `a_sentence_reconstructs_every_body_or_is_refused`,
+`edge_transport_lies_in_the_stabilizer_or_the_exchange`,
+`a_rigid_scene_has_identity_edges_and_a_relative_motion_does_not`,
+`a_non_rigid_pair_is_a_remainder_edge_never_a_loop`,
+`loop_holonomy_in_the_stabilizer_does_not_telescope`,
+`factor_rotor_peels_commuting_blocks_in_order`,
+`a_prime_outside_the_alphabet_is_a_rotor_prime_demand`,
+`a_created_body_is_a_source_or_creation_demand`,
+`a_deformed_body_is_a_deformation_demand`,
+`demands_ride_the_sentence_one_per_chart`,
+`the_closed_subcomplex_is_ruled_while_the_demands_are_listed`,
+`a_bare_chain_is_refused_by_the_court`,
+`no_utterance_path_calls_from_residual` (a gate over `client/` and the
+attest arms). Traces (chapter 40): on a cold boot every voice's first
+`form withheld` is followed by `sentence spoken … demands d` with `d ≥ 1`
+and `d` `demand` lines, the hypha answers `court demand listed` `d` times
+and `court attest` with a sentence replayed, and `remainder expressed`
+appears nowhere.

@@ -146,7 +146,17 @@ were not touched.
 
 ## Immediate next actions
 
-Read the soak on d6e19a1 in kernel coordinates: `court orbit docket …`
+**Stage 14 — language formation** (ruled 2026-09-09, `MU-RECURSION.md`
+chapter 50, TASKS Stage 14 rows L0–L9): the sentence is the unit of
+speech; F measures versors, spells by the ordered factorization A22,
+connects edges in the stabilizer, emits demands as typed vertices; G
+factors, replays, checks congruence by class vector and coherence by
+holonomy; the three seams (`withhold_form`'s attest loop,
+`body_only_vertex`, the court's `Irreducible(from_residual*)` listing) are
+severed in the order L4, L6, L8. L1 is tape v6, a recut. L0 landed; L1
+next. The fleet is stopped and soaks nothing until L8 lands.
+
+The earlier reading list (R1–R7 on d6e19a1): `court orbit docket …`
 period rising above 1 once ruled listings are passed over (R1); `court
 nerve deferred by …` once per aperture per destination in place of the
 per-act line (R2); voices' `dwell` as the surface, tens not tens of

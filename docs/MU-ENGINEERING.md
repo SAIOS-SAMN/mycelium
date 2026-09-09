@@ -31,7 +31,10 @@ and the ledger or genome it writes (state, wiped by a recut).
   chain; connections carry a letter tape, a dilation, a placement, a gauge
   map, and an optional remainder; sentences carry germs on germinated axes
   with faces as transitions and holonomy as torsion; rewrites and
-  translations carry their tapes. The address measures the tape.
+  translations carry their tapes. The address measures the tape. A
+  residual chain is never a word on the wire, the book or the genome: it
+  is the remainder of a sentence and travels only as a typed demand
+  vertex of one (`MU-RECURSION.md` chapter 50, ruled 2026-09-09).
 - **Sentence** (`transducer/sentence/`): a nerve of germs with a Čech
   complex over them; a rule is a sentence whose germ charts, face words,
   holonomies, and hue maps are constant across a family's pairs, the
