@@ -41,6 +41,42 @@ were not touched.
 
 ## State at handoff
 
+- Stage 13 (velocity, phase, eras; ratified 2026-09-09) landed through
+  S13.10, one item per commit, suite green on each (416/0/9/13/6/0, xtask
+  0 at 69983cd): doctrine c46117c; S13.1 f42c3fe, S13.5 7da548a, S13.4
+  ba38941, S13.2 04b4561, S13.3 23bd123…0e03f47 (eight, one per site),
+  S13.15 34c84cf, S13.6 c6a3324 (tape v6: `ActKind`, `MYC4`), S13.7
+  1601971, S13.8 6be34ad, S13.9 4795613, S13.10a dbe813d (`ACT_RECEIPTS`,
+  5.2g closed), S13.10b 69983cd (two-organ fold); rows cdbe41a; `main`
+  fast-forwarded there.
+- Open in Stage 13, in the ratified order: S13.11 (adoption from a fold
+  root; the era must carry the two signed prefixes for a joiner to verify
+  them), S13.12 (extraction), S13.13 (mesh record fold roots), S13.14
+  (simulator).
+- Departures to ratify, each named in its commit: `Settled` as a
+  thirteenth `ActKind` (6296cce); the read token `Physics::stroke` not
+  priced per lane (04b4561); the fold trigger read as the reserve
+  shortfall on a completed docket orbit (936a849); a recall record closing
+  a lane only while a claim is in flight and clearing when the voice's
+  occupancy returns to zero, a listing drawn once (34c84cf); epoch rows
+  anchored at the booking K; a fold witness as any bonded peer other than
+  the home (delegation closure unread).
+- The fleet still soaks on 2eff0de; the rebuild onto impl/soak is a recut
+  (tape v6, `MYC4`, `KCH1` root, `ARC1`, rows on the wire) and waits on
+  the operator's word.
+- Read on the soak of 2026-09-09 at the stopping point (journal tail only
+  — journald retains 281 MB, hypha a's tail spans K 3544–3574, b's
+  6899–7158, c's 1229–1270): `court exchange deferred` 602,720 on a at
+  cycle 2²⁰ (S13.1's fault, not yet deployed); b `organs reached 0 silent
+  2` at 87 % CPU and 354 MB (its reflex pool defers every act); `court
+  receipts parent 0` everywhere (5.2g, S13.10a not yet deployed); `axes
+  0`, `axis opened 0`, `chart refined 0`, `court cell class 0` on every
+  unit; voices 1, 3 and 5 logged 31, 69 and 91 quote closings with two or
+  more held cites and opened no axis — `open_axis` never fires though its
+  shape is met (a fault to find: `cited_word` on held cites, or the glue);
+  every voice's stroke line reads `[h 0]` — `set_height` is called once at
+  boot with zero and never from the book (a fault); voice RSS 181–370 MB
+  from 25–53 MB at the baseline.
 - Stage 12 landed on 2026-09-09, one item per commit, suite green on each:
   S12.4a fda0778, S12.4b b340ec0, S12.4c 5316fed/c7646b4, S12.4d 013cb09,
   S12.5a dc47ac1, S12.5b 14bf2e0, S12.5c 31abfd5, S12.2 470f324, I35
@@ -58,8 +94,18 @@ were not touched.
 
 ## Immediate next actions
 
-On the operator's word: rebuild is done, recut and soak the fleet on
-1cf2c1e, then read: `cites > 0` on attests (bodies as words, S12.3a),
+On the operator's word: rebuild and recut the fleet on impl/soak (69983cd
+or later), then read in kernel coordinates: `court orbit docket …` and
+`court orbit exchange …` periods per hypha, `court phase …` per docket
+orbit, `court receipt backfill …` closing the gaps and `court receipts
+parent N` rising, `court fold …`/`court fold witnessed …` once a lane is
+short, `[{tag}] orbit ring …` on voices, and whether `axis opened` and
+`court cell class` appear once sections stand at two vantages. Before or
+beside that: the two voice faults above (`open_axis` on held cites, `h 0`
+on the stroke line) as their own items, then S13.11 onward. The older
+reading list below stands for the items it names.
+
+Earlier list (Stage 12 recut): read: `cites > 0` on attests (bodies as words, S12.3a),
 shared strata in the cover (fewer unique charts), `pivot … discharged` or
 `vortex` lines (forms with loops, S12.2), `[h N]` climbing on stroke lines
 (I39), `ACT_DIGESTS` served per hypha in ten minutes (I37), `court offer
