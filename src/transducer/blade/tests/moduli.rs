@@ -53,6 +53,48 @@ fn moduli_and_transport_are_exact_and_similarity_invariant() {
     assert!(versor_between(&pin_shape, &shape_of(&pin_rot)).is_some(), "a quarter turn found");
 }
 
+/// 24.4, A21 §2, Stage 12 S12.1a — A CHART'S PREFIX IS THE TOPOLOGICAL
+/// STRATUM. Two rectangles of different proportions have the same
+/// components, holes and turns and different moment ratios: their charts
+/// differ, share the three coarsest axes, and the atlas read at that depth
+/// holds both — the stratum a peel walks out to. On the fleet 952 of 954
+/// charts had thirteen axes and no two shared one; the shared stratum is
+/// three axes in, and it is read by peel, never by the whole chart.
+#[test]
+fn a_chart_prefix_is_the_topological_stratum() {
+    use crate::transducer::element::from_residual;
+    use crate::transducer::stalk::{Invariant, Stalks};
+    let bar_cells = rect(0, 0, 2, 3);
+    let plank_cells = rect(0, 0, 2, 5);
+    let (a, b) = (moduli(&shape_of(&bar_cells).blade), moduli(&shape_of(&plank_cells).blade));
+    assert_ne!(a, b, "different proportions, different charts");
+    assert_eq!(a[..3], b[..3], "one topology: components, holes and turns lead the chart");
+    assert_eq!(a[..3], [1u64, 0, 4], "one component, no hole, four turns");
+    let word_of = |cells: &[(i64, i64)]| {
+        from_residual(&cells.iter().map(|&(r, c)| (r, c, 1u8, 2u8)).collect::<Vec<_>>()).address()
+    };
+    let (wa, wb) = (word_of(&bar_cells), word_of(&plank_cells));
+    let (ia, ib) = (Invariant(a.clone()), Invariant(b.clone()));
+    let mut atlas = Stalks::default();
+    atlas.admit(&ia, wa.clone());
+    atlas.admit(&ib, wb.clone());
+    assert_eq!(atlas.fiber(&ia).len(), 1, "the exact chart holds one word");
+    // The stratum is the fibre UNDER the prefix (A21 §2): `fiber` reads one
+    // node's own members and holds nothing at a prefix no word sits on.
+    let stratum = atlas.fiber_under(&Invariant(a[..3].to_vec()));
+    assert!(
+        stratum.contains(&wa.clone().into_vec()) && stratum.contains(&wb.clone().into_vec()),
+        "the topological stratum holds both: {} members",
+        stratum.len()
+    );
+    let mut at = ia.clone();
+    while at.0.len() > 3 {
+        at = at.peel();
+    }
+    assert_eq!(at.0, a[..3], "peel walks out to the topological stratum");
+    assert_eq!(atlas.fiber_under(&at).len(), 2, "and the stratum's fibre is read under that prefix");
+}
+
 #[test]
 fn a6_refuses_overflow_keeps_sign() {
     let neg = BigRational::new(BigInt::from(-3), BigInt::from(7));

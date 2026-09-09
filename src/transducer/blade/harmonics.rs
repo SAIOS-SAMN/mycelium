@@ -1,9 +1,11 @@
-// 20, A6 — THE HARMONICS of a body: the eleven scale-free coordinates it
-// is heard on.
+// 20, 24.4, A6 — THE HARMONICS of a body: seven conformal invariants and
+// the hue spectrum, the axes it is heard on, coarsest first.
 //
 //! Exact in ℚ and invariant under the whole conformal group: what a body
-//! sounds like, whatever its size, place, or orientation. The atlas is
-//! stratified by these axes, so hearing a body is reading its stratum.
+//! sounds like, whatever its size, place, or orientation. The axes run
+//! coarsest first — the topology (components, holes, turns), then the
+//! moment ratios, then the hue spectrum — so a prefix of a chart is a
+//! stratum bodies share (A21 §2) and the atlas is read by peel.
 
 use crate::transducer::blade::{self, Blade};
 use num_rational::BigRational;
