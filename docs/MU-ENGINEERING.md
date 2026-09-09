@@ -16,7 +16,10 @@ Companion documents: `MU-ECONOMY.md`, `MU-PRODUCT.md`, `XSEPTUM.md`,
 
 There is no court process. The lab fleet is three servers and five clients
 that differ only by key; per-node flags (`--id`, `--tier`, per-node corpus
-paths, kernel names) are lab residue to be removed (§10).
+paths, kernel names) are lab residue to be removed (§10). Every process
+runs with `--home <repository>/var/<unit>` and nothing else; a home holds
+its key, its signed mesh record and its corpus manifests (configuration)
+and the ledger or genome it writes (state, wiped by a recut).
 
 ## 2. The language
 

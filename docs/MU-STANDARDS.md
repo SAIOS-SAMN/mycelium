@@ -253,8 +253,11 @@ line; the document paths rebound; every `pub(crate)` widening; every
 move-only commit says `move only` on its first line.
 
 5.3 **Never committed.** Build artifacts (`target/`, `xtask/target/`),
-fleet state (`run/`, `~/.mycelium`), editor files, secrets. `.gitignore`
-covers them; a commit that adds one is amended before anything else lands.
+fleet state (`run/`, `var/` — the fleet's homes, `var/<unit>` under the
+repository since 2026-09-09; keys, mesh records and corpus manifests live
+there too and are configuration, not tracked), editor files, secrets.
+`.gitignore` covers them; a commit that adds one is amended before anything
+else lands.
 
 5.4 **Pushing and history.** Nothing is pushed and no history is rewritten
 without the operator's word. A commit that must be removed from history
