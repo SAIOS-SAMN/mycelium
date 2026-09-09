@@ -10,6 +10,25 @@ use crate::transducer::address::Address;
 use crate::transducer::element::{self, Element};
 
 impl Kernel {
+    /// THE BOOK EXTENDS BEFORE IT REFUSES (12.6, S9.7; Stage 12 S12.5c).
+    /// The room sweep before a voice's draw: standing extent that aged out
+    /// relocates (T-room), and where the voice's room is still short the
+    /// book relocates what no voice can reach — listings stagnant a full
+    /// aperture on every occupied lane leave the page for the cavity and
+    /// release the draws they held — and the shortfall is read again, per
+    /// lane. Only what still does not fit is refused, and the refusal names
+    /// the lane. The book's other moves (condense, torse, refine, puncture)
+    /// act on the basis and free no room, so they are not run here.
+    pub(super) fn room_after_extending(&mut self, voice: &[u8; 32], draw: &[u64; 4]) -> [u64; 4] {
+        self.relocate_t_exhausted();
+        let short = self.room_shortfall(voice, draw);
+        if crate::economy::lanes_short(&short).is_empty() {
+            return short;
+        }
+        self.drain_unreachable();
+        self.room_shortfall(voice, draw)
+    }
+
     pub fn ingest(&mut self, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)], voice: [u8; 32]) -> Outcome {
         let frame = frame_of(a, b);
         self.adjudicate(&[a.to_vec()], &[b.to_vec()], voice, &frame)
@@ -244,10 +263,12 @@ impl Kernel {
                     // relocates to the cavity so the lane it held is free.
                     // Drawing first would refuse an act the sweep would have
                     // covered, which reads as a cap and is really a stale row.
+                    // Where the room is still short the book extends before
+                    // it refuses (12.6, S9.7): what no voice can reach leaves
+                    // the page and the shortfall is read again.
                     let draw = residual.magnitude();
                     let k_now = self.k_step();
-                    self.relocate_t_exhausted();
-                    let short = self.room_shortfall(&voice, &draw);
+                    let short = self.room_after_extending(&voice, &draw);
                     if !crate::economy::lanes_short(&short).is_empty() {
                         self.log_room_refused(&voice, &draw, &short);
                         return Outcome::Refused(crate::verdict::REFUSE_ROOM);
@@ -304,8 +325,7 @@ impl Kernel {
                     let draw = residual.magnitude();
                     let listed = self.pending.contains(&addr);
                     if !listed {
-                        self.relocate_t_exhausted();
-                        let short = self.room_shortfall(&voice, &draw);
+                        let short = self.room_after_extending(&voice, &draw);
                         if !crate::economy::lanes_short(&short).is_empty() {
                             self.log_room_refused(&voice, &draw, &short);
                             return Outcome::Refused(crate::verdict::REFUSE_ROOM);
