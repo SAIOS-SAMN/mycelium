@@ -53,6 +53,9 @@ match entity.quote() {
         if q.height > m.last_height {
             m.last_height = q.height;
         }
+        // V2: the height read is the mind's TUniversal, and it only
+        // advances (23.8).
+        entity.advance_height(q.height);
         m.last_pressure = q.surface;
         // C4, again at the quote: T is a cost, never a pace.
         m.dwell_remaining = q.surface;
@@ -193,6 +196,7 @@ match entity.quote() {
                         if reply.height > m.last_height {
                             m.last_height = reply.height;
                         }
+                        entity.advance_height(reply.height);
                         m.dwell_remaining = reply.pressure;
                     }
                     Err(_) => {

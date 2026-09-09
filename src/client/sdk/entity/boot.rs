@@ -41,6 +41,19 @@ impl Entity {
         self.height = h;
     }
 
+    /// THE HEIGHT THE MIND READS (23.8, S13.5; V2): the book's height off
+    /// a quote or attest reply, and it only advances — a lower or absent
+    /// reading moves nothing. It is this mind's TUniversal: its own chain
+    /// cites no peer, so its own height is its K (45.2), and what it stamps
+    /// its dialect, ideas and expressed residuals with is this. Set once
+    /// to zero at boot and never again, every voice's temporal lane was a
+    /// point.
+    pub fn advance_height(&mut self, h: u64) {
+        if h > self.height.get() {
+            self.height = crate::chronometry::Height(h);
+        }
+    }
+
     pub fn now_tu(&self) -> u64 {
         self.height.get()
     }
