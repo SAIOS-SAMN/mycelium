@@ -6115,6 +6115,25 @@ and seals the `fold` receipt only when both signatures are held, and it
 keeps the cold prefix beside the witness that fetched it. Log `court fold
 witnessed {vk} co-signed {root}`.
 
+On the wire (S13.10): the home proposes with `ACT_FOLD` (0x37) —
+`[ACT_FOLD][k0 u64][root k u64 ‖ hash 32 ‖ height u64][n u32][(who 32 ‖
+μ⃗ 4×u64)…][47.1 receipt section, payload the root hash]` — to the peers
+with room on some lane, in key order, one per spend of its stroke. The
+witness runs 47.2 steps 1 and 2 on the section, fetches the prefix's
+receipts by `ACT_RECEIPTS` and its ledger rows by `ACT_ROWS` (0x38,
+`[voice 32][signer 32][from u64][to u64][cursor u32]` → `[total u32][m
+u32][row…]`, a page of the signer's own rows anchored in the span from
+the cursor), re-derives the receipts as one chain ending at the root and
+the rows' nets as the epochs proposed (`MU-ECONOMY.md` §6), and answers
+refused with the 34.1 constant, unmeasured when the prefix could not be
+fetched, or co-signed with its own signed position over the root hash. A
+witness without bond is `REFUSE_WITNESS_ROOM`; the home itself is
+`REFUSE_WITNESS_DEPENDENT`. On the co-signature the home checks the
+witness's signature under its key, that the proposal still reads exact
+and its prefix still final, and only then archives, seals and writes;
+the era carries the witness's key and both signatures, and the witness
+files the same era under the home's key.
+
 ### 47.4 Equivocation
 
 An **equivocation proof** is two signed receipts under one key with equal
