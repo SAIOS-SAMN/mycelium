@@ -39,8 +39,13 @@ if sync_due {
 {
     // THE PIVOT: expand dirty ideas once this phase, then pivot
     // new words on their charts only.
-    let pivoted_mu = entity.expand_ideas();
+    let (pivoted_mu, ring) = entity.expand_ideas();
     StrokeOutcome::add(&mut outcome.pivoted, &pivoted_mu);
+    // 45.7, S13.3: the mind's stroke ring, once per completed circuit —
+    // the orbit count and period beside K, velocity in kernel coordinates.
+    if let Some((n, period)) = ring {
+        eprintln!("[{tag}] orbit ring {n} period {period}");
+    }
     let pivoted = entity.pivot_thoughts();
     if pivoted > 0 {
         eprintln!("[{tag}] pivot: {pivoted} held thoughts spoken as demands on charts the language now holds");

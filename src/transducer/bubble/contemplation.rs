@@ -18,6 +18,10 @@ pub struct Contemplation {
     /// Bubbles whose cover still has work; written when dirty is set.
     pub(crate) dirty: Keyed<()>,
     pub(crate) expand_cursor: Vec<u8>,
+    /// The dirty ring's orbit (45.7, S13.3): the circuits `expand_all`
+    /// completed and the strokes the last one took — the mind's local time
+    /// beside K, written once per circuit as `[{tag}] orbit ring`.
+    pub(crate) ring: crate::physics::Orbit,
     pub fills: u64,
     pub torsion_merges: u64,
     pub classes: u64,

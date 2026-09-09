@@ -243,7 +243,8 @@ fn a_closed_idea_crystallizes_with_its_descent_and_leaves_the_contemplation() {
     assert_eq!(c.bubbles.len(), 1, "the closed form is held as an idea");
     let atlas = crate::transducer::stalk::Stalks::default();
     let mut budget = crate::physics::Physics::default().stroke_n(8);
-    let (_, _, crystallized) = c.expand_all(&atlas, &|_| None, &NoCrystal, &mut budget);
+    let crate::transducer::bubble::drive::Expanded { crystallized, .. } =
+        c.expand_all(&atlas, &|_| None, &NoCrystal, &mut budget);
     let [e] = crystallized.as_slice() else {
         panic!("one idea crystallizes, got {}", crystallized.len());
     };
@@ -308,4 +309,40 @@ fn work_of_one_thought_is_independent_of_n() {
     let b = run(128);
     eprintln!("work thought N=32 {a:?} N=128 {b:?}");
     assert_eq!(a, b, "4N differs by zero: {a:?} vs {b:?}");
+}
+
+/// 45.7, S13.3 — THE DIRTY RING IS AN ORBIT: three held thoughts, one
+/// bubble per stroke under a budget of one read, and the fourth stroke
+/// continues past the last bubble from the first and reports one circuit
+/// with a period of four strokes — where the cursor that stopped at the
+/// end of the ring left every later stroke expanding nothing.
+#[test]
+fn the_dirty_ring_orbits_and_reports_its_period() {
+    use crate::transducer::bubble::drive::Expanded;
+    use crate::transducer::family::NoCrystal;
+    let mut c = Contemplation::new();
+    // Three shapes on three rows: disjoint, so no two merge into one thought.
+    c.hold(vec![(0, 0, 1, 2)]);
+    c.hold(vec![(3, 0, 1, 2), (3, 1, 1, 2)]);
+    c.hold(vec![(6, 0, 1, 2), (6, 1, 1, 2), (6, 2, 1, 2)]);
+    assert_eq!(c.bubbles.len(), 3, "three thoughts held apart");
+    assert_eq!(c.dirty.len(), 3, "three thoughts on the ring");
+    let atlas = crate::transducer::stalk::Stalks::default();
+    let mut visited: Vec<Vec<u8>> = Vec::new();
+    for stroke in 1..=3 {
+        let mut budget = crate::physics::Physics::default().stroke_n(1);
+        let Expanded { orbit, .. } = c.expand_all(&atlas, &|_| None, &NoCrystal, &mut budget);
+        assert_eq!(orbit, None, "stroke {stroke}: three bubbles at one per stroke is no circuit yet");
+        visited.push(c.expand_cursor.clone());
+    }
+    assert!(
+        visited[0] != visited[1] && visited[1] != visited[2] && visited[0] != visited[2],
+        "each stroke read a different bubble: {visited:?}"
+    );
+    assert_eq!(c.dirty.len(), 3, "a bubble the budget did not reach stays on the ring");
+    let mut budget = crate::physics::Physics::default().stroke_n(1);
+    let Expanded { orbit, .. } = c.expand_all(&atlas, &|_| None, &NoCrystal, &mut budget);
+    assert_eq!(orbit, Some((1, 4)), "the fourth stroke passes the end of the ring: one circuit in four strokes");
+    assert_eq!(c.expand_cursor, visited[0], "and continues from the first bubble");
+    assert_eq!(c.ring.circuits(), 1);
 }

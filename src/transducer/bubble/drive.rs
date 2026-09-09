@@ -10,22 +10,38 @@
 
 use super::*;
 
+/// What one stroke of `expand_all` did: the charts spent, the lane measure
+/// of the A16 snaps, the forms that crystallized (25.2) in bubble key
+/// order, and the ring's orbit reading — circuits and period in strokes —
+/// when the stroke completed a circuit (45.7).
+pub struct Expanded {
+    pub spent: usize,
+    pub pivoted: [u64; 4],
+    pub crystallized: Vec<Element>,
+    pub orbit: Option<(u64, u64)>,
+}
+
 impl Contemplation {
-    /// Expand dirty bubbles from the atlas, one Budget of charts per call.
-    /// Returns the charts spent, the lane measure of the A16 snaps, and
-    /// the forms that crystallized this stroke (25.2), in bubble key order.
+    /// Expand dirty bubbles from the atlas, one Budget of charts per call
+    /// and at most one circuit of the ring per stroke (45.7).
     pub fn expand_all(
         &mut self,
         atlas: &dyn AtlasRead,
         rotor_at: &dyn Fn(&[u8]) -> Option<Rotor>,
         crystal: &dyn Crystal,
         budget: &mut Budget,
-    ) -> (usize, [u64; 4], Vec<Element>) {
+    ) -> Expanded {
         let mut spent = 0usize;
         let mut pivoted = [0u64; 4];
         let mut crystallized = Vec::new();
-        let mut from = self.expand_cursor.clone();
-        // index: budgeted keyed cursor over dirty bubbles; each expand spends the rest
+        let began = self.expand_cursor.clone();
+        let mut from = began.clone();
+        let mut wraps = 0u64;
+        // index: budgeted keyed cursor over dirty bubbles — an orbit (45.7,
+        // S13.3): past the last key it continues from the first, so a ring
+        // whose last key was reached no longer stalls every later stroke;
+        // the stroke stops where it began, one circuit of the ring, and
+        // each expand spends the rest of the budget.
         while budget.remaining() > 0 {
             let mut nxt = None;
             {
@@ -33,10 +49,22 @@ impl Contemplation {
                 if let Some((k, _)) = Iterator::next(&mut cur) {
                     nxt = Some(k.clone());
                 }
+                wraps += u64::from(cur.circuit());
             }
             let Some(k) = nxt else {
                 break;
             };
+            // The winding of the walk: past the end once and back to a
+            // key beyond where the stroke began, or past the end twice,
+            // the ring has been applied once.
+            let closed = match wraps {
+                0 => false,
+                1 => began.is_empty() || k.as_slice() > began.as_slice(),
+                _ => true,
+            };
+            if closed {
+                break;
+            }
             from = k.clone();
             self.expand_cursor = k.clone();
             if let Some(b) = self.bubbles.get_mut(&k) {
@@ -55,7 +83,8 @@ impl Contemplation {
                 crystallized.push(e);
             }
         }
-        (spent, pivoted, crystallized)
+        let orbit = self.ring.stroke(u64::from(wraps > 0));
+        Expanded { spent, pivoted, crystallized, orbit }
     }
 
     /// Attempt fill on the link of bubbles at `word`'s chart and prefixes.

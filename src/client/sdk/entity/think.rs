@@ -217,11 +217,13 @@ impl Entity {
     /// ruled or stood; an idea is glued only once it has closed and stood,
     /// 13.6). An idea that closes crystallizes (25.2), stands in the
     /// dialect and is uttered once (24.3). Returns the lane measure of the
-    /// A16 snaps (Discharged, Vortex, TorsionFiled).
-    pub fn expand_ideas(&mut self) -> [u64; 4] {
+    /// A16 snaps (Discharged, Vortex, TorsionFiled) and the dirty ring's
+    /// orbit reading — circuits and period in strokes — when this stroke
+    /// completed a circuit (45.7, S13.3).
+    pub fn expand_ideas(&mut self) -> ([u64; 4], Option<(u64, u64)>) {
         let mut budget = self.physics.stroke();
         self.contemplation.set_now(self.session.voice().k());
-        let (_spent, pivoted, crystallized) = {
+        let crate::transducer::bubble::drive::Expanded { pivoted, crystallized, orbit, .. } = {
             let epigenome = &self.epigenome;
             let atlas = epigenome.working_atlas();
             let rotor_at = |a: &[u8]| epigenome.working_word(a).and_then(crate::transducer::cech::rotor_of);
@@ -232,7 +234,7 @@ impl Entity {
         for e in &crystallized {
             self.stand_crystallized(e);
         }
-        pivoted
+        (pivoted, orbit)
     }
 
     /// A crystallized idea stands in the dialect and is uttered once
