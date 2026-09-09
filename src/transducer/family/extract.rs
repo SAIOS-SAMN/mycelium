@@ -301,34 +301,60 @@ pub fn extract_rule_with(
     }
     let ends = index_ends(&form);
     for (_, (ea, eb)) in candidates.fiber(crate::network::nerve::ROOT) {
-        let mut held: Option<crate::transducer::alphabet::Word> = None;
-        let mut constant = true;
-        for pf in &pair_forms {
-            match face_word_between(pf, ea, eb) {
-                None => {}
-                Some(w) => match &held {
-                    None => held = Some(w),
-                    Some(h) if h != &w => {
-                        constant = false;
-                        break;
-                    }
-                    _ => {}
-                },
-            }
-        }
-        if !constant {
-            continue;
-        }
-        if held.is_none() {
-            continue;
-        }
-        let i = ends.get(&end_key(ea)).copied();
-        let j = ends.get(&end_key(eb)).copied();
-        if let (Some(i), Some(j)) = (i, j) {
-            let Some(t) = form.face_of(i, j) else {
+        // 21 step 2, 25 (Stage 12 S12.2): the face word between two ends,
+        // read on every pair of the bundle. Constant, it is the rule's face.
+        // Not constant, it is KEPT as sections over the pairs and never
+        // dropped: the rule's face carries the first word, and every other
+        // word the bundle speaks between the same ends is a second face
+        // between the same vertices — two carriages on one class are two
+        // sections (18.2) — so the form has a loop whose holonomy is the
+        // transition between the sections, held with its class vector (12.6)
+        // for the pivot loop to read. Dropped, every rule was a star with no
+        // loop and the pivot had nothing to act on (I34). The words of one
+        // face are keyed by M1 (`Word::key`), never scanned.
+        let mut words: Vec<(crate::transducer::alphabet::Word, Vec<u16>)> = Vec::new();
+        let mut at: crate::network::nerve::Keyed<usize> = crate::network::nerve::Keyed::new();
+        for (pi, pf) in pair_forms.iter().enumerate() {
+            let Some(w) = face_word_between(pf, ea, eb) else {
                 continue;
             };
-            form.faces.push(FormFace { i, j, transport: t });
+            let k = w.key();
+            match at.get(k.as_bytes()).copied() {
+                Some(n) => {
+                    if let Some((_, pairs)) = words.get_mut(n) {
+                        pairs.push(pi as u16);
+                    }
+                }
+                None => {
+                    at.insert(k.as_bytes(), words.len());
+                    words.push((w, vec![pi as u16]));
+                }
+            }
+        }
+        let Some((i, j)) = ends
+            .get(&end_key(ea))
+            .copied()
+            .zip(ends.get(&end_key(eb)).copied())
+        else {
+            continue;
+        };
+        let mut sections_of_face = words.into_iter();
+        let Some((_, first_pairs)) = sections_of_face.next() else {
+            continue;
+        };
+        let Some(t) = form.face_of(i, j) else {
+            continue;
+        };
+        form.faces.push(FormFace { i, j, transport: t });
+        let mut rest = sections_of_face.peekable();
+        if rest.peek().is_some() {
+            sections.insert(ends_pair_key(ea, eb), first_pairs);
+        }
+        for (w, pairs) in rest {
+            let mut key = ends_pair_key(ea, eb);
+            crate::transducer::address::put_bytes(&mut key, w.key().as_bytes());
+            form.faces.push(FormFace::new(i, j, w));
+            sections.insert(key, pairs);
         }
     }
     form.loops = Form::loops_of(&form.faces, form.vertices.len());

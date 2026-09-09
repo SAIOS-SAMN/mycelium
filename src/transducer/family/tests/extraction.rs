@@ -36,6 +36,50 @@ assert!(
 );
 }
 
+/// 21 step 2, 25, 12.6, Stage 12 S12.2 — FORMS WITH LOOPS. A body carried
+/// by a quarter turn in one pair and by its inverse in the other is one
+/// transport class (the two words are conjugate), so the rule has one
+/// vertex for it; the face word from the Frame differs per pair and is KEPT
+/// as two sections over the pairs, never dropped. The form then has a loop
+/// whose holonomy is the transition between the sections — a half turn —
+/// held with a class vector the pivot loop reads on its unit axis.
+#[test]
+fn a_face_that_varies_across_the_pairs_is_kept_as_sections_and_holds_a_loop() {
+let l_in = ["100000", "100000", "110000", "000000", "000330", "000000"];
+let cw = ["111000", "100000", "000000", "000000", "000550", "000000"];
+let ccw = ["001000", "111000", "000000", "000000", "000550", "000000"];
+let family = vec![(grid(&l_in), grid(&cw)), (grid(&l_in), grid(&ccw))];
+let rule = extract_rule_with(&family, &NoCrystal).expect("extracts");
+let words = rule
+    .form
+    .vertices
+    .iter()
+    .filter(|v| matches!(v, Vertex::Word { .. }))
+    .count();
+assert_eq!(words, 2, "the turned L and the recoloured bar: two vertices, one class each");
+assert!(
+    rule.form.faces.len() > words,
+    "the varying face is kept, not dropped: {} faces over {words} words",
+    rule.form.faces.len()
+);
+assert!(rule.section_count() > 0, "the two words of one face are sections over the pairs");
+assert!(!rule.form.loops.is_empty(), "the second section closes a loop");
+let held: Vec<_> = (0..rule.form.loops.len())
+    .filter_map(|i| rule.form.class_vector(i))
+    .filter(|cv| !cv.is_zero())
+    .collect();
+assert!(!held.is_empty(), "a held loop with a class vector");
+assert!(
+    held.iter().any(|cv| cv.occupied().contains(&crate::transducer::sentence::Axis::Unit(0))),
+    "the half turn occupies the unit axis of the sensor plane: {:?}",
+    held.iter().map(|c| c.occupied()).collect::<Vec<_>>()
+);
+let mut form = rule.form.clone();
+let mut budget = crate::physics::Physics::default().stroke();
+let snaps = form.pivot_loop(b"idea", &crate::network::nerve::Keyed::new(), &NoCrystal, &mut budget, None, 0);
+assert!(!snaps.is_empty(), "the pivot loop reads the held loop and answers");
+}
+
 /// An unmeasured scale is not the identity ratio.
 #[test]
 fn extract_rule_refuses_unmeasured_scale() {

@@ -319,11 +319,21 @@ impl Form {
                 carriages.insert(&k, p.clone());
             }
         }
+        // ONE STAR FACE PER VERTEX: the rule's face, the first between the
+        // Frame and that vertex. A later face between the same two is a
+        // section over some pairs (21 step 2, S12.2) and stays as the
+        // bundle spoke it; the rebase pass re-derives star faces from their
+        // vertices, and a section it re-derived was a section erased.
         for (fi, f) in self.faces.iter().enumerate() {
-            if f.i == 0 {
-                star.insert(vertex_ix_key(f.j), fi as u16);
+            let key = if f.i == 0 {
+                vertex_ix_key(f.j)
             } else if f.j == 0 {
-                star.insert(vertex_ix_key(f.i), fi as u16);
+                vertex_ix_key(f.i)
+            } else {
+                continue;
+            };
+            if !star.contains(&key) {
+                star.insert(key, fi as u16);
             }
         }
         self.by_address = by_address;
