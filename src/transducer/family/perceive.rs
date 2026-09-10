@@ -142,9 +142,28 @@ pub fn perceive(grid: &Grid) -> Vec<Body> {
     blade::components(&cells).into_iter().map(body_of).collect()
 }
 
-/// The linear block of a conformal versor on the sensor plane: the images
-/// of the row and column steps, the translation subtracted.
-pub(crate) fn linear_block_of_versor(v: &Versor) -> Option<[[num_rational::BigRational; 2]; 2]> {
+/// A3 — THE SENSOR-PLANE BLOCK A VERSOR PROJECTS TO: the images of the
+/// row and column steps with the origin's image subtracted. It is the one
+/// matrix rule 11 allows, and it is a PROJECTION, not the versor: the
+/// placement residue is subtracted away by construction and a dilation
+/// survives only as the scalar `spell_peel_on` divides out.
+///
+/// It was called `linear_block_of_versor`. The name was wrong twice over.
+/// "Linear" is a coordinate-frame word for an object that is a versor in
+/// the geometric algebra, and the name said nothing about the projection
+/// being lossy, which is what invited a caller to classify a versor by it.
+///
+/// TWO CALLERS ARE LEGITIMATE AND THERE ARE NO OTHERS. `peel_versor`
+/// spells the block, and the ring branch divides its rotation by a
+/// Gaussian prime; both are asking a question ABOUT THE ROTATION and are
+/// handed the projection that answers it. Classifying a versor — its
+/// order, whether it is the identity, what class it carries — must be
+/// done ON THE VERSOR, because a versor whose block is the identity may
+/// be a translation or a dilation and reads here as nothing at all
+/// (12.6: the class vector is the rotor's conjugacy class, then the
+/// placement residue, then the dilation residue, and the plane blocks
+/// only afterwards).
+pub(crate) fn sensor_plane_block(v: &Versor) -> Option<[[num_rational::BigRational; 2]; 2]> {
     let qn = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
     let at = |r, c| {
         crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&qn(r), &qn(c))))
@@ -236,7 +255,7 @@ pub(crate) fn peel_versor(
     use crate::transducer::alphabet::{spell_peel_on, PLANE_COL, PLANE_ROW};
     use crate::transducer::peel::PeelNest;
     use crate::transducer::sentence::Demand;
-    let block = linear_block_of_versor(v)?;
+    let block = sensor_plane_block(v)?;
     let plane = (PLANE_ROW, PLANE_COL);
     Some(match spell_peel_on(plane, &block) {
         Some((PeelNest::Closed { cores }, _rho)) => {

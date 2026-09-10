@@ -11,7 +11,7 @@
 //! Split from `perceive.rs` at the §1.1 600-line reading bound; the
 //! items are moved, not rewritten (§1.6).
 
-use super::perceive::linear_block_of_versor;
+use super::perceive::sensor_plane_block;
 use crate::transducer::element::Versor;
 
 /// A plane block `[[s, −t], [t, s]]` as the Gaussian integer `s + t·i`,
@@ -115,7 +115,10 @@ pub(crate) fn ring_derivation(
 ) -> Option<crate::transducer::alphabet::Derivation> {
     use crate::transducer::alphabet::{Derivation, Rotor, PLANE_COL, PLANE_ROW};
     let plane = (PLANE_ROW, PLANE_COL);
-    let block = linear_block_of_versor(v)?;
+    // The projection is asked ABOUT THE ROTATION — which Gaussian integer
+    // the rotation is, so a prime may divide it — which is what the
+    // sensor-plane block answers exactly (A3).
+    let block = sensor_plane_block(v)?;
     let target = gauss_of_block(&block)?;
     // The chart the presentation is read at is the target's own, as it is
     // for the letter branch (42.6).

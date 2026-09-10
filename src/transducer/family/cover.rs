@@ -454,7 +454,14 @@ pub(crate) fn cover_deformation(
                     continue;
                 };
                 let gamma = pb.by.geo(&inv);
-                let Some(block) = crate::transducer::family::linear_block_of_versor(&gamma) else {
+                // THIS CALLER IS THE COLLAPSE, and it is named here until
+                // L11e replaces it with `meet_class` on the versor: Γ is
+                // classified by its sensor-plane block alone, so a Γ that
+                // is a translation or a dilation reads as the identity and
+                // a rotation about a point away from the origin is
+                // mis-ordered. The projection answers questions about a
+                // rotation; "what class is this versor" is not one.
+                let Some(block) = crate::transducer::family::sensor_plane_block(&gamma) else {
                     continue;
                 };
                 let Some(g) = rotor_of_transition(&block) else {
