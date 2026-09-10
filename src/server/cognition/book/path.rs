@@ -65,10 +65,18 @@ impl Kernel {
             if cited.is_empty() {
                 continue;
             }
-            // The composition is checked by the crystal the voice used
-            // (A12's `replays`), up to the coset representative of 50.2:
-            // projective equality, either sign (1.5).
-            if !crate::transducer::factor::replays(&tape, &basis, &target.rotor()) {
+            // The composition is checked by the crystal the voice used,
+            // up to the coset representative of 50.2: the generators
+            // composed, then the residue A22 spelled from the identity. A
+            // PARTIAL path — the common case — reaches the vertex only
+            // with its residue, and checked without it composed to nothing
+            // and paid nobody.
+            if !crate::transducer::factor::replays_with_residue(
+                &tape,
+                &basis,
+                &p.residue.rotor(),
+                &target.rotor(),
+            ) {
                 let (v0, v1) = head(&p.vertex);
                 eprintln!(
                     "  court path refused {v0:02x}{v1:02x}… generators {} do not compose to the vertex",

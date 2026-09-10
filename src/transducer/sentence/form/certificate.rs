@@ -515,9 +515,18 @@ pub struct Path {
         crate::transducer::address::Address,
         i64,
     )>,
-    /// Whether the generators alone compose to the vertex. False when the
-    /// presentation reached part of it and A22 peeled the residue.
-    pub whole: bool,
+    /// What the presentation did not reach, spelled from the identity in
+    /// the seventeen letters (A22). The identity means the generators
+    /// alone compose to the vertex.
+    pub residue: crate::transducer::alphabet::Word,
+}
+
+impl Path {
+    /// The presentation reached the whole vertex: nothing was left for A22
+    /// to spell.
+    pub fn whole(&self) -> bool {
+        self.residue.is_identity()
+    }
 }
 
 impl Path {
@@ -529,7 +538,7 @@ impl Path {
             crate::transducer::address::put_bytes(out, v.as_bytes());
             out.extend_from_slice(&e.to_le_bytes());
         }
-        out.push(u8::from(self.whole));
+        self.residue.to_bytes(out);
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Path> {
@@ -550,8 +559,7 @@ impl Path {
             *pos += 8;
             generators.push((f, v, e));
         }
-        let whole = *b.get(*pos)? == 1;
-        *pos += 1;
-        Some(Path { vertex, generators, whole })
+        let residue = crate::transducer::alphabet::Word::from_bytes(b, pos)?;
+        Some(Path { vertex, generators, residue })
     }
 }

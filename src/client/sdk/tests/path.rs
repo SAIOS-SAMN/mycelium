@@ -95,8 +95,8 @@ fn two_presentations_reach_one_vertex_by_two_paths() {
     let pa = a.path_of(&vertex, &half, &mut bud).expect("A reaches the half turn");
     let pb = b.path_of(&vertex, &half, &mut bud).expect("B reaches the half turn");
 
-    assert!(pa.whole, "A's generators compose to the vertex");
-    assert!(pb.whole, "B's generators compose to the vertex");
+    assert!(pa.whole(), "A's generators compose to the vertex");
+    assert!(pb.whole(), "B's generators compose to the vertex");
     assert_eq!(
         pa.generators.first().map(|(_, v, _)| v.clone()),
         Some(vertex_of(&ga)),

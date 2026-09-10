@@ -40,15 +40,6 @@ impl Kernel {
             }
         }
         let heard = self.hear_speech(act.voice, &act.task, &spoken)?;
-        // 50.2 step 2: the paths beside the tapes. Read after the
-        // sentences are heard, because a path is evidence for a USE of a
-        // generator and never a claim about the form (26); a path that
-        // does not compose pays nothing and refuses nothing.
-        for (i, (e, _)) in spoken.iter().enumerate() {
-            if let Some(ps) = act.paths.get(i) {
-                let _ = self.read_paths(act.voice, e, ps);
-            }
-        }
         let receipt = self.chain.head_hash();
         let mut out = Vec::with_capacity(act.sentences.len());
         let mut next = heard.into_iter();
@@ -64,6 +55,32 @@ impl Kernel {
             match next.next() {
                 Some(a) => out.push(a),
                 None => break,
+            }
+        }
+        // 50.2 step 2, 26: the paths beside the tapes, read AFTER the
+        // adjudications and only for a sentence that stood or was
+        // ratified. A path is evidence for a USE of a generator, and a use
+        // rests on a sentence the court admitted: read before the
+        // adjudication, a refused sentence's generators were paid for a
+        // form the court had just refused.
+        let mut si = 0usize;
+        for i in 0..act.sentences.len() {
+            if unparsed.contains(&i) {
+                continue;
+            }
+            let Some((e, _)) = spoken.get(si).cloned() else {
+                break;
+            };
+            si += 1;
+            let stood = matches!(
+                out.get(i),
+                Some(Adjudication::Stood { .. }) | Some(Adjudication::Ratified { .. })
+            );
+            if !stood {
+                continue;
+            }
+            if let Some(ps) = act.paths.get(i).cloned() {
+                let _ = self.read_paths(act.voice, &e, &ps);
             }
         }
         Ok(out)

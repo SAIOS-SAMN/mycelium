@@ -190,6 +190,35 @@ pub fn factor_off_plane(
 /// compare by A1. "A mind recognises what it can re-derive, and nothing
 /// else" — so the answer is checked, never trusted from the algebra that
 /// produced it (16.12 step 4).
+/// 50.2 step 2: the generators composed, then the residue A22 spelled from
+/// the identity, reach the vertex. A path is PARTIAL when the presentation
+/// reached part of the word and the residue carries the rest, which is the
+/// common case; `replays` alone asks that the generators reach it whole,
+/// so a partial path composed to nothing and was never a use.
+pub fn replays_with_residue(
+    tape: &[(usize, i64)],
+    basis: &[Rotor],
+    residue: &Rotor,
+    g: &Rotor,
+) -> bool {
+    let mut p = Rotor::identity();
+    for (i, e) in tape {
+        let Some(b) = basis.get(*i) else { return false };
+        let step = if *e >= 0 {
+            b.clone()
+        } else {
+            match b.inverse() {
+                Some(x) => x,
+                None => return false,
+            }
+        };
+        for _ in 0..e.unsigned_abs() {
+            p = p.geo(&step);
+        }
+    }
+    p.geo(residue).projective_eq(g)
+}
+
 pub fn replays(tape: &[(usize, i64)], basis: &[Rotor], g: &Rotor) -> bool {
     let mut p = Rotor::identity();
     for (i, e) in tape {

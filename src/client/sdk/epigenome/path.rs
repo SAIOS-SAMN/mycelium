@@ -70,9 +70,17 @@ impl Epigenome {
         // A22 over the seventeen is the residue's peel and never the
         // first read (1.8). An empty stratum is nothing to factor
         // through, not a refusal.
-        let taken = match crate::transducer::factor::factor_on_plane(&gf, &forms) {
-            crate::transducer::factor::Factored::Understood(tape) => tape,
-            crate::transducer::factor::Factored::Novel { understood, .. } => understood,
+        let (taken, residue) = match crate::transducer::factor::factor_on_plane(&gf, &forms) {
+            crate::transducer::factor::Factored::Understood(tape) => {
+                (tape, crate::transducer::alphabet::Word::identity())
+            }
+            // The canonical remainder is what the presentation did not
+            // reach (A12 step 5). Carried, a PARTIAL path is a use of the
+            // generators that did reach; dropped, only a whole path could
+            // ever compose and a partial one paid nobody.
+            crate::transducer::factor::Factored::Novel { understood, remainder } => {
+                (understood, remainder.to_word())
+            }
             // A budget that ran out is unmeasured, and a refusal is not a
             // path (rule 11).
             crate::transducer::factor::Factored::Unmeasured => return None,
@@ -86,13 +94,21 @@ impl Epigenome {
             return None;
         }
         // Verified by re-derivation, never trusted from the algebra that
-        // produced it (16.12 step 4). A path that does not replay is not
-        // a path this mind may speak.
-        let whole = crate::transducer::factor::replays(&taken, &basis, &g);
+        // produced it (16.12 step 4): the generators composed, then the
+        // residue, reach the vertex. A path that does not replay is not a
+        // path this mind may speak.
+        if !crate::transducer::factor::replays_with_residue(
+            &taken,
+            &basis,
+            &residue.rotor(),
+            &g,
+        ) {
+            return None;
+        }
         Some(Path {
             vertex: vertex.clone(),
             generators: generators_of_path,
-            whole,
+            residue,
         })
     }
 

@@ -88,8 +88,8 @@ fn two_paths_to_one_vertex_are_both_verified_and_each_speaker_is_paid() {
     // The half turn is the quarter turn squared, and the three-quarter
     // turn squared: q² and (q³)² = q⁶ ≡ q² on the plane lattice, which is
     // A12's `4·e_u` relator. Two paths, one vertex.
-    let pa = Path { vertex: vertex.clone(), generators: vec![(ga.address(), vertex_of(&ga), 2)], whole: true };
-    let pb = Path { vertex: vertex.clone(), generators: vec![(gb.address(), vertex_of(&gb), 2)], whole: true };
+    let pa = Path { vertex: vertex.clone(), generators: vec![(ga.address(), vertex_of(&ga), 2)], residue: crate::transducer::alphabet::Word::identity() };
+    let pb = Path { vertex: vertex.clone(), generators: vec![(gb.address(), vertex_of(&gb), 2)], residue: crate::transducer::alphabet::Word::identity() };
 
     // A citing voice pays from what it holds, and a genesis allocation is
     // how a voice is funded (MU-PRODUCT §4, `allocate`). An unfunded voice
@@ -144,7 +144,7 @@ fn a_path_citing_what_no_court_ruled_pays_nobody() {
     let spoken = sentence_of(plane_word(2), 9);
     let vertex = vertex_of(&spoken);
     let unruled = sentence_of(plane_word(1), 1);
-    let p = Path { vertex, generators: vec![(unruled.address(), vertex_of(&unruled), 2)], whole: true };
+    let p = Path { vertex, generators: vec![(unruled.address(), vertex_of(&unruled), 2)], residue: crate::transducer::alphabet::Word::identity() };
     let before = k.treasury_entry_count();
     assert_eq!(k.read_paths([3; 32], &spoken, std::slice::from_ref(&p)), 0);
     assert_eq!(k.treasury_entry_count(), before, "no entry is written");
@@ -161,8 +161,94 @@ fn a_path_that_does_not_compose_is_not_a_use() {
     let spoken = sentence_of(plane_word(2), 9);
     let vertex = vertex_of(&spoken);
     // One quarter turn does not reach the half turn.
-    let p = Path { vertex, generators: vec![(g.address(), vertex_of(&g), 1)], whole: true };
+    let p = Path { vertex, generators: vec![(g.address(), vertex_of(&g), 1)], residue: crate::transducer::alphabet::Word::identity() };
     let before = k.treasury_entry_count();
     assert_eq!(k.read_paths([3; 32], &spoken, std::slice::from_ref(&p)), 0);
     assert_eq!(k.treasury_entry_count(), before, "nothing is paid on a path that does not compose");
+}
+
+/// 50.2 step 2, 26: A PARTIAL PATH PAYS. The presentation reaches part of
+/// the vertex and A22 spells the residue from the identity; the generators
+/// that did reach are a use and their speaker is paid. Checked without the
+/// residue the composition reaches nothing, so the common case — a mind
+/// that holds some of what it says — paid nobody.
+#[test]
+fn a_partial_path_pays_the_generators_that_reached() {
+    use crate::transducer::sentence::Path;
+    let speaker = [1u8; 32];
+    let citer = [3u8; 32];
+    let mut k = Kernel::new();
+    // The generator is the quarter turn; the vertex is three quarter
+    // turns, so one quarter is reached and two are the residue.
+    let g = ruled_generator(&mut k, speaker, plane_word(1), 1);
+    k.allocate(citer, [8, 8, 8, 8]);
+    let spoken = sentence_of(plane_word(3), 9);
+    let p = Path {
+        vertex: vertex_of(&spoken),
+        generators: vec![(g.address(), vertex_of(&g), 1)],
+        residue: plane_word(2),
+    };
+    assert!(!p.whole(), "the presentation did not reach the whole vertex");
+    let before = k.treasury().balance_mu(&speaker);
+    assert_eq!(
+        k.read_paths(citer, &spoken, std::slice::from_ref(&p)),
+        1,
+        "generators then residue reach the vertex"
+    );
+    assert_ne!(
+        k.treasury().balance_mu(&speaker),
+        before,
+        "the generator that reached is a use and its speaker is paid"
+    );
+}
+
+/// 26: A USE RESTS ON A SENTENCE THE COURT ADMITTED. Read before the
+/// adjudication, a refused sentence's generators were paid for a form the
+/// court had just refused. `hear_frame` reads paths only for a sentence
+/// that Stood or was Ratified.
+#[test]
+fn a_refused_sentences_path_pays_nobody() {
+    use crate::anastome::dialogue::{Adjudication, SpeechAct, Spoken};
+    use crate::transducer::sentence::Path;
+    let speaker = [1u8; 32];
+    let citer = [3u8; 32];
+    let mut k = Kernel::new();
+    let g = ruled_generator(&mut k, speaker, plane_word(1), 1);
+    k.allocate(citer, [8, 8, 8, 8]);
+    // A tape that is not a sentence: the court refuses it whole (50.6).
+    let refused = vec![0xffu8; 8];
+    let p = Path {
+        vertex: crate::transducer::address::Address::from_bytes([
+            crate::transducer::address::TAG_FORM,
+            9,
+        ]),
+        generators: vec![(g.address(), vertex_of(&g), 2)],
+        residue: crate::transducer::alphabet::Word::identity(),
+    };
+    let act = SpeechAct {
+        voice: citer,
+        task: crate::transducer::address::Address::from_bytes([0u8; 32]),
+        k: 1,
+        sentences: vec![refused.clone()],
+        standing: vec![0],
+        contractions: vec![None],
+        paths: vec![vec![p]],
+    };
+    let before = k.treasury().balance_mu(&speaker);
+    let out = k.hear_frame(&act).unwrap_or_default();
+    assert!(
+        matches!(out.first(), Some(Adjudication::Refused { .. })),
+        "the court refuses a tape that is not a sentence"
+    );
+    assert_eq!(
+        k.treasury().balance_mu(&speaker),
+        before,
+        "and nothing on its frame is a use"
+    );
+    let _ = Spoken {
+        tape: refused,
+        standing: 0,
+        contraction: None,
+        paths: Vec::new(),
+    };
 }
