@@ -41,6 +41,14 @@ pub enum Outcome {
     /// Nothing was heard, docketed or drawn; the voice dwells on the lanes
     /// it carries and speaks again.
     Deferred([u64; 4]),
+    /// 21 step 3, 50.2 step 2: THIS SENTENCE WAITS on a cited form this
+    /// court has not ruled. It is docketed here and heard again when that
+    /// address is ruled; nothing is refused, sealed or drawn. Unlike
+    /// `Deferred`, which is the DOOR turning an act away on the lanes,
+    /// this is per sentence — the rest of the frame is adjudicated — and
+    /// it carries the cited address, because the voice holds that form
+    /// and must utter it here first (chapter 6's depth order).
+    Awaiting(crate::transducer::address::Address),
 }
 
 /// The Čech glue of a fetched word on an overlapping chart.

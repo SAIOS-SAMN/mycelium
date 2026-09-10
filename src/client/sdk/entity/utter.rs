@@ -351,14 +351,47 @@ impl Entity {
                 Some(dialogue::Adjudication::Refused { kind, at, receipt }) => {
                     self.receive_adjudication(&sentences[i], *kind, at.clone(), *receipt, train, task);
                 }
-                Some(a) => eprintln!(
-                    "  adjudicated {:02x}{:02x}…: {} receipt {:02x}{:02x}…",
-                    addr[0],
-                    addr[1],
-                    if a.code() == dialogue::SPEECH_RATIFIED { "ratified" } else { "stood" },
-                    a.receipt()[0],
-                    a.receipt()[1]
-                ),
+                // 21 step 3: the court has not ruled a form this sentence
+                // cited. Nothing is sealed — this is not a refusal — and
+                // the mind owes that court the cited form before the
+                // citer (chapter 6's depth order). The mind HOLDS it,
+                // because it derived through it.
+                Some(dialogue::Adjudication::Awaiting { form }) => {
+                    match self.epigenome.working_word(form.as_bytes()).cloned() {
+                        Some(cited) => {
+                            eprintln!(
+                                "  awaiting {:02x}{:02x}…: the court has not ruled {:02x}{:02x}…, teaching it first",
+                                addr[0], addr[1], form[0], form[1]
+                            );
+                            self.owed.push(crate::client::sdk::Owed {
+                                form: cited,
+                                citer: sentences[i].clone(),
+                                train: train.to_vec(),
+                                task: task.to_vec(),
+                            });
+                        }
+                        // A citation this mind cannot resolve on its own
+                        // language: it cited what it does not hold, which
+                        // is a fault in the utterance and not in the
+                        // court. Named, and nothing is queued (rule 11).
+                        None => eprintln!(
+                            "  awaiting {:02x}{:02x}…: cited {:02x}{:02x}… is not held here either",
+                            addr[0], addr[1], form[0], form[1]
+                        ),
+                    }
+                }
+                Some(a) => {
+                    let (r0, r1) = match a.receipt() {
+                        Some(r) => (r[0], r[1]),
+                        None => (0, 0),
+                    };
+                    eprintln!(
+                        "  adjudicated {:02x}{:02x}…: {} receipt {r0:02x}{r1:02x}…",
+                        addr[0],
+                        addr[1],
+                        if a.code() == dialogue::SPEECH_RATIFIED { "ratified" } else { "stood" },
+                    )
+                }
                 None => {}
             }
         }

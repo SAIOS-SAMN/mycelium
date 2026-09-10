@@ -83,22 +83,40 @@ pub enum Adjudication {
     Stood { receipt: [u8; 32] },
     Ratified { receipt: [u8; 32] },
     Refused { kind: crate::transducer::sentence::RefusalKind, at: crate::transducer::sentence::At, receipt: [u8; 32] },
+    /// 21 step 3, 50.2 step 2 — THIS SENTENCE WAITS ON A FORM THIS COURT
+    /// HAS NOT RULED. Not a refusal and not a verdict: the voice spoke
+    /// one syllabus step ahead of this court's cover, so nothing is
+    /// sealed and the sentence is docketed here under `form`. It carries
+    /// no receipt because no act was admitted — a receipt would be a
+    /// chain position for something that did not happen (rule 11) — and
+    /// it carries the CITED address instead, which is what the voice
+    /// needs: it holds that form, and utters it to this court before it
+    /// utters the citer again (chapter 6's depth order).
+    ///
+    /// It is per sentence. The rest of the frame is adjudicated as
+    /// normal, so a sentence that stood beside it keeps its verdict.
+    Awaiting { form: crate::transducer::address::Address },
 }
 
 impl Adjudication {
-    /// The kind byte a mind reads: `SPEECH_STOOD`, `SPEECH_RATIFIED` or
-    /// `SPEECH_REFUSED`.
+    /// The kind byte a mind reads: `SPEECH_STOOD`, `SPEECH_RATIFIED`,
+    /// `SPEECH_REFUSED`, or `SPEECH_DIALECT` for a sentence that waits —
+    /// "stood there, unanswered here, spoken again later".
     pub fn code(&self) -> u8 {
         match self {
             Adjudication::Stood { .. } => SPEECH_STOOD,
             Adjudication::Ratified { .. } => SPEECH_RATIFIED,
             Adjudication::Refused { .. } => SPEECH_REFUSED,
+            Adjudication::Awaiting { .. } => SPEECH_DIALECT,
         }
     }
 
-    pub fn receipt(&self) -> [u8; 32] {
+    /// The court's chain hash after the act. `None` where no act was
+    /// admitted: a wait is not a position on any chain.
+    pub fn receipt(&self) -> Option<[u8; 32]> {
         match self {
-            Adjudication::Stood { receipt } | Adjudication::Ratified { receipt } | Adjudication::Refused { receipt, .. } => *receipt,
+            Adjudication::Stood { receipt } | Adjudication::Ratified { receipt } | Adjudication::Refused { receipt, .. } => Some(*receipt),
+            Adjudication::Awaiting { .. } => None,
         }
     }
 }

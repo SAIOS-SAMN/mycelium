@@ -140,6 +140,36 @@ impl Entity {
         out
     }
 
+    /// UTTER WHAT THIS MIND OWES (21 step 3, chapter 6's depth order): for
+    /// every form a court answered `Awaiting` on, the cited form first and
+    /// the citer after it, in the same frame and in that order. A cited
+    /// form must precede its citer, so one frame carries both and the
+    /// court rules the generator before it hears the sentence that
+    /// derives through it.
+    pub fn speak_owed(&mut self) -> Vec<(crate::transducer::address::Address, u8)> {
+        let owed = std::mem::take(&mut self.owed);
+        let mut out = Vec::with_capacity(owed.len());
+        for o in owed {
+            let citer = o.citer.address();
+            let both = [o.form.clone(), o.citer.clone()];
+            match self.speak_with(&both, &o.train, &o.task) {
+                Ok(codes) => {
+                    if let [_, code] = codes.as_slice() {
+                        out.push((citer, *code));
+                    }
+                }
+                // The court is not reachable this stroke: still owed.
+                Err(_) => self.owed.push(o),
+            }
+        }
+        out
+    }
+
+    /// How many cited forms wait to be taught to a court.
+    pub fn owed_pending(&self) -> usize {
+        self.owed.len()
+    }
+
     /// The certificate a sentence cites: the contraction that produced the
     /// form it was minted from, read by the form's vertex key.
     pub(crate) fn certificate_for(&self, e: &Element) -> Option<Contraction> {

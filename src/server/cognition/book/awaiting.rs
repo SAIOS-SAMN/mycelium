@@ -95,7 +95,14 @@ impl Kernel {
                 "  court speech reheard {:02x}{:02x}…: cited {:02x}{:02x}… is ruled now",
                 a[0], a[1], form[0], form[1]
             );
-            let _ = self.hear_sentence(voice, task.as_bytes(), &s);
+            // Through `adjudicate_one`, not `hear_sentence`. A re-hearing
+            // is an adjudication like any other: a refusal on it must be
+            // RECORDED in `refusals` with its receipt, or the voice's next
+            // utterance cannot cite it as a contraction certificate (50.9)
+            // and the refusal exists only in a log line. Dropping the
+            // outcome here made the second hearing the one hearing whose
+            // verdict nobody kept.
+            let _ = self.adjudicate_one(voice, task.as_bytes(), &s, None);
         }
     }
 

@@ -11,6 +11,7 @@ mod court;
 mod era;
 mod extraction;
 mod awaiting;
+mod generator_pay;
 mod glue;
 mod ledger_clock;
 mod market;

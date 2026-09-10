@@ -45,6 +45,7 @@ impl Entity {
             sealed: crate::network::nerve::Keyed::new(),
             contractions: crate::network::nerve::Keyed::new(),
             contracted: Vec::new(),
+            owed: Vec::new(),
         }
     }
 

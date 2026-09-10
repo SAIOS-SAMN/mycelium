@@ -128,14 +128,29 @@ pub fn decode_speech(body: &[u8]) -> Option<SpeechAct> {
 
 /// `[ACT_SPEECH][n u8]` then per sentence `[code u8][receipt 32]` and, for
 /// a refusal, `[kind u8][at]`.
+/// `[ACT_SPEECH][n u8]` then per sentence `[code u8]` and what the code
+/// carries: a 32-byte receipt for a verdict, the refusal's kind and
+/// coordinate after it for `SPEECH_REFUSED`, and for `SPEECH_DIALECT` the
+/// CITED ADDRESS length-prefixed in the receipt's place — a wait admitted
+/// no act, so there is no chain position to write and none is invented
+/// (rule 11).
 pub fn encode_speech_reply(adjudications: &[Adjudication]) -> Vec<u8> {
     let mut out = vec![ACT_SPEECH, adjudications.len().min(255) as u8];
     for a in adjudications.iter().take(255) {
         out.push(a.code());
-        out.extend_from_slice(&a.receipt());
-        if let Adjudication::Refused { kind, at, .. } = a {
-            out.push(kind.to_byte());
-            at.to_bytes(&mut out);
+        match a {
+            Adjudication::Awaiting { form } => {
+                let _ = put_addr(&mut out, form);
+            }
+            _ => {
+                if let Some(r) = a.receipt() {
+                    out.extend_from_slice(&r);
+                }
+                if let Adjudication::Refused { kind, at, .. } = a {
+                    out.push(kind.to_byte());
+                    at.to_bytes(&mut out);
+                }
+            }
         }
     }
     out
@@ -151,6 +166,13 @@ pub fn decode_speech_reply(body: &[u8]) -> Option<Vec<Adjudication>> {
     for _ in 0..n {
         let code = *body.get(pos)?;
         pos += 1;
+        // A wait carries the cited address where a verdict carries its
+        // receipt, so the shape is read from the code and never assumed.
+        if code == SPEECH_DIALECT {
+            let form = take_addr(body, &mut pos)?;
+            out.push(Adjudication::Awaiting { form });
+            continue;
+        }
         let receipt: [u8; 32] = body.get(pos..pos + 32)?.try_into().ok()?;
         pos += 32;
         out.push(match code {

@@ -370,6 +370,23 @@ pub struct Entity {
     /// The contracted sentences waiting to be uttered, each with the family
     /// and the task it was minted for.
     pub(crate) contracted: Vec<Pending>,
+    /// 21 step 3, chapter 6's depth order — WHAT THIS MIND OWES A COURT
+    /// BEFORE IT SPEAKS AGAIN. A court that answered `Awaiting` has not
+    /// ruled a form this mind cited; the mind HOLDS that form, so it
+    /// utters the cited form first and the citer after it. Nothing was
+    /// sealed and nothing was refused: this is the mind teaching the
+    /// court what it was speaking from, in the order a cited form must
+    /// precede its citer.
+    pub(crate) owed: Vec<Owed>,
+}
+
+/// A cited form owed to a court, with the citer that waits on it and the
+/// family and task both were spoken over.
+pub struct Owed {
+    pub form: Element,
+    pub citer: Element,
+    pub train: Vec<crate::transducer::family::TrainPair>,
+    pub task: Vec<u8>,
 }
 
 /// A CONTRACTED SENTENCE WAITING TO BE UTTERED (50.9): the sentence the

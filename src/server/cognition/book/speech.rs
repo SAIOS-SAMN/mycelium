@@ -114,7 +114,7 @@ impl Kernel {
     /// certificate can be verified; a listing is `Stood`, a use of held
     /// language `Ratified`. The receipt is this court's chain head after
     /// the act (47.1).
-    fn adjudicate_one(
+    pub(crate) fn adjudicate_one(
         &mut self,
         voice: [u8; 32],
         task: &[u8],
@@ -153,6 +153,9 @@ impl Kernel {
         };
         match out {
             Outcome::Deferred(lanes) => Err(lanes),
+            // Per sentence: this one waits, the rest of the frame is
+            // adjudicated as normal and keeps its verdicts.
+            Outcome::Awaiting(form) => Ok(Adjudication::Awaiting { form }),
             Outcome::Refused(reason) if reason == crate::verdict::REFUSE_ROOM => {
                 Err(self.room_shortfall(&voice, &s.magnitude()))
             }
@@ -283,7 +286,7 @@ impl Kernel {
                 a[0], a[1], form[0], form[1]
             );
             self.await_citation(voice, task, s, &form);
-            return Ok(Outcome::Deferred([0; 4]));
+            return Ok(Outcome::Awaiting(form));
         }
         let family = self.task_family.get(task).cloned();
         if let Some(refusal) =

@@ -43,7 +43,11 @@ pub fn frame_of(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> crate::arc::Frame
 pub fn outcome_code(o: &Outcome) -> u8 {
     match o {
         Outcome::Decomposed(_) => 1,
-        Outcome::GermPending | Outcome::Deferred(_) => 2,
+        // A wait on a citation reads as pending, like the door's
+        // deferral: nothing was ruled and the voice speaks again. The
+        // per-sentence shape that carries the cited address is
+        // `Adjudication::Awaiting` on the speech reply, not this byte.
+        Outcome::GermPending | Outcome::Deferred(_) | Outcome::Awaiting(_) => 2,
         Outcome::Installed(_) => 3,
         Outcome::Sectioned(_) => 6,
         Outcome::Fragmented(_) => 5,
