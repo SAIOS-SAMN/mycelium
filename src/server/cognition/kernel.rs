@@ -276,6 +276,13 @@ pub struct Kernel {
     /// permanently for being early.
     pub(crate) awaiting:
         crate::network::nerve::Keyed<Vec<([u8; 32], crate::transducer::address::Address, Element)>>,
+    /// E2, 26 — THE INVERSE OF `discoverers`: voice → the addresses that
+    /// voice discovered. `use_credit` asks "which forms are this voice's",
+    /// and `discoverers` answers the other question; without this carrier
+    /// the read walks every discovered address on every room check, which
+    /// is the enumeration law 3 forbids. Written at the two sites that
+    /// write `discoverers` and nowhere else, so the two cannot diverge.
+    pub(crate) discovered_by: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// Per-voice occupancy of open draws, keyed by vk.
     pub(crate) drawn: crate::network::nerve::Keyed<[u64; 4]>,
     /// Per-voice recall fee it could not cover, per lane (MU-ECONOMY §3.1

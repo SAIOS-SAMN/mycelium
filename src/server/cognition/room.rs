@@ -19,10 +19,72 @@ impl Kernel {
         if let Some(cap) = self.lane_cap {
             return std::array::from_fn(|l| cap[l].saturating_sub(occ[l] as usize));
         }
-        let Some(bond) = self.treasury.bond_of(voice) else {
+        // E2, 26 as ruled 2026-09-10: a voice whose forms other voices
+        // derive through has more ROOM to speak, per lane. It is added to
+        // the bond at the read and stored nowhere — nothing is minted for
+        // a use, so no balance moves and no ledger entry is written; what
+        // a use earns is standing to say more.
+        //
+        // A voice with NEITHER a bond nor a use has no room, as before. A
+        // voice with a use and no bond has the room its language earned
+        // it, which is the whole of what E2 says a use is worth: the bond
+        // is what a voice staked, the credit is what its language did.
+        let credit = self.use_credit(voice);
+        let bond = match self.treasury.bond_of(voice) {
+            Some(b) => b,
+            None if credit.iter().all(|&c| c == 0) => return [0; 4],
+            None => [0; 4],
+        };
+        std::array::from_fn(|l| {
+            bond[l].saturating_add(credit[l]).saturating_sub(occ[l]) as usize
+        })
+    }
+
+    /// E2, 26 — WHAT THIS VOICE'S LANGUAGE EARNS IT. Lane-wise, over the
+    /// forms this voice discovered, each form's μ⃗ once per DISTINCT
+    /// citer of it. Two derivations in one sentence citing one form is
+    /// one use of one verdict; two sentences citing it are two.
+    ///
+    /// Both readings are keyed and neither walks: `discovered_by` gives
+    /// this voice's own addresses, and `cited_by` gives each address's
+    /// citers. Computed at the read and stored nowhere (law 12), summed
+    /// per lane and never across lanes (law 5).
+    pub fn use_credit(&self, voice: &[u8; 32]) -> [u64; 4] {
+        let Some(mine) = self.discovered_by.get(voice.as_slice()) else {
             return [0; 4];
         };
-        std::array::from_fn(|l| bond[l].saturating_sub(occ[l]) as usize)
+        let mut credit = [0u64; 4];
+        for (addr, ()) in mine.fiber(crate::network::nerve::ROOT) {
+            let Some(citers) = self.cited_by.get(&addr) else {
+                continue;
+            };
+            let Some(form) = self.word_at(&addr) else {
+                continue;
+            };
+            let mu = form.magnitude();
+            for (_citer, ()) in citers.fiber(crate::network::nerve::ROOT) {
+                for l in 0..4 {
+                    credit[l] = credit[l].saturating_add(mu[l]);
+                }
+            }
+        }
+        credit
+    }
+
+    /// Record a discovery on both readings at once, so `discoverers` and
+    /// its inverse cannot disagree.
+    pub(crate) fn note_discovered(&mut self, addr: &[u8], who: [u8; 32]) {
+        self.discoverers.insert(addr, who);
+        match self.discovered_by.get_mut(who.as_slice()) {
+            Some(mine) => {
+                mine.insert(addr, ());
+            }
+            None => {
+                let mut mine = crate::network::nerve::Keyed::new();
+                mine.insert(addr, ());
+                self.discovered_by.insert(who, mine);
+            }
+        }
     }
 
     pub fn occupancy(&self) -> [u64; 4] {

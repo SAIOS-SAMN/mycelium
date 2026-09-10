@@ -236,7 +236,7 @@ impl Kernel {
         self.index_word(&word);
         let arc = std::sync::Arc::new(word);
         self.basis.insert(&addr, std::sync::Arc::clone(&arc));
-        self.discoverers.insert(&addr, discoverer);
+        self.note_discovered(&addr, discoverer);
         self.basis_gen += 1;
         self.language_append_arc(arc);
     }

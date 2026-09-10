@@ -335,7 +335,7 @@ impl Kernel {
         // `drawers` is cleared by `pending_take` before the install, so the
         // install had no name to credit and wrote the null identity; a use
         // of the word was then paid to nobody (26).
-        self.discoverers.insert(&addr, ratifier);
+        self.note_discovered(&addr, ratifier);
         self.stamp_standing(&addr);
         self.provisional_h.insert(&addr, self.height());
         self.mark_persist();
