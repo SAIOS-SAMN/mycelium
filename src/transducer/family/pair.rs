@@ -386,20 +386,42 @@ fn unpaired_demands(
                     // pieces leave at their meets is the class the form
                     // files, and the demand stands only on what the cover
                     // did not reach.
-                    let cover = crate::transducer::family::cover::cover_deformation(
-                        &ic.body,
-                        &outs[*j].body,
-                        scale,
-                        budget,
-                    );
-                    for (_meet, (g, ell)) in cover.filed.fiber(crate::network::nerve::ROOT) {
-                        filed.push((g.clone(), *ell));
+                    // THE COVER IS ATOMIC UNDER ITS OWN SHARE. It runs to
+                    // the end of its pieces or it contributes nothing, and
+                    // either way the reads left to the peel are the reads
+                    // the peel would have had. A share that cannot be
+                    // withdrawn is a stroke with none to spare, which is
+                    // an UNMEASURED cover and not an empty one: the demand
+                    // then stands exactly as F typed it, which is what it
+                    // did before any cover existed.
+                    let covered = match budget.share(crate::physics::cover_share()) {
+                        Some(mut share) => {
+                            let c = crate::transducer::family::cover::cover_deformation(
+                                &ic.body,
+                                &outs[*j].body,
+                                scale,
+                                &mut share,
+                            );
+                            budget.refund(share);
+                            c.ok()
+                        }
+                        None => None,
+                    };
+                    // A cover that did not complete files nothing. Filing
+                    // what a half-run cover happened to reach would put a
+                    // class on the form that no measurement stands behind
+                    // (rule 11).
+                    if let Some(cover) = &covered {
+                        for (_meet, (g, ell)) in cover.filed.fiber(crate::network::nerve::ROOT) {
+                            filed.push((g.clone(), *ell));
+                        }
                     }
                     // The demand DISSOLVES only when every cell of both
                     // bodies is carried and no meet stands (50.8). A cover
                     // that reached everything and left nothing standing
-                    // answered the deformation; anything else leaves it.
-                    if cover.dissolves() {
+                    // answered the deformation; anything else leaves it,
+                    // and an unmeasured cover leaves it untouched.
+                    if covered.is_some_and(|c| c.dissolves()) {
                         continue;
                     }
                     let axes = differing_axes(&ic.body.moduli, image);

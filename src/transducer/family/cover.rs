@@ -198,11 +198,19 @@ pub(crate) struct Cover {
     /// cells carry different lane weight — so the dissolution reads the
     /// zero vector and never a cardinality.
     pub(crate) uncarried: [u64; 4],
-    /// Whether the cover ran to the end of its own pieces. A budget that
-    /// ended leaves this false, and an unmeasured cover dissolves
-    /// nothing: it is not a smaller cover (rule 11).
-    pub(crate) measured: bool,
 }
+
+/// THE COVER DID NOT RUN TO THE END OF ITS OWN PIECES, because its share
+/// of the stroke ended first. It is not a smaller cover (rule 11).
+///
+/// This is a TYPE and not a flag on the cover, because the alternative
+/// leaves a half-built `Cover` in existence: `carried` partly populated,
+/// and `uncarried` sitting at `[0; 4]` — a zero that was never measured
+/// and that reads exactly like a cover which reached everything. A
+/// boolean guarding that zero protects only the readers that remember to
+/// consult it. There is now no such value to read.
+#[derive(Debug)]
+pub(crate) struct Unmeasured;
 
 impl Cover {
     fn new() -> Cover {
@@ -211,7 +219,6 @@ impl Cover {
             filed: crate::network::nerve::Keyed::new(),
             standing: crate::network::nerve::Keyed::new(),
             uncarried: [0; 4],
-            measured: true,
         }
     }
 
@@ -220,9 +227,11 @@ impl Cover {
     /// holonomy is NOT an obstruction: it is filed as torsion and the
     /// sentence carries the class as its theorem (15.5), so a demand kept
     /// alive on it would be a demand for what the form already says.
+    ///
+    /// A `Cover` exists only where the cover completed, so this reads the
+    /// measurement and never a flag saying whether there was one.
     pub(crate) fn dissolves(&self) -> bool {
-        self.measured
-            && self.uncarried == [0; 4]
+        self.uncarried == [0; 4]
             && self.standing.fiber(crate::network::nerve::ROOT).next().is_none()
     }
 }
@@ -255,7 +264,7 @@ pub(crate) fn cover_deformation(
     image: &Body,
     scale: Option<((usize, usize), (usize, usize))>,
     budget: &mut crate::physics::Budget,
-) -> Cover {
+) -> Result<Cover, Unmeasured> {
     use crate::network::nerve::ROOT;
     let ins = pieces_of(&input.cells, scale);
     let outs = pieces_of(&image.cells, scale);
@@ -299,8 +308,7 @@ pub(crate) fn cover_deformation(
         let mut parts: Vec<Vec<u8>> = Vec::new();
         for (ki, ()) in named.fiber(ROOT) {
             if !budget.spend() {
-                cover.measured = false;
-                return cover;
+                return Err(Unmeasured);
             }
             let Some(ip) = ins.get(&ki) else { continue };
             cells.extend_from_slice(&ip.body.cells);
@@ -363,8 +371,7 @@ pub(crate) fn cover_deformation(
         // but the identity.
         for ko in fiber {
             if !budget.spend() {
-                cover.measured = false;
-                return cover;
+                return Err(Unmeasured);
             }
             let Some(op) = outs.get(&ko) else { continue };
             let Some(car) = carriage(&ip.body, &op.body) else { continue };
@@ -443,8 +450,7 @@ pub(crate) fn cover_deformation(
                     continue;
                 }
                 if !budget.spend() {
-                    cover.measured = false;
-                    return cover;
+                    return Err(Unmeasured);
                 }
                 let (Some(pa), Some(pb)) = (placed.get(&here[a]), placed.get(&here[b])) else {
                     continue;
@@ -483,7 +489,7 @@ pub(crate) fn cover_deformation(
             }
         }
     }
-    cover
+    Ok(cover)
 }
 
 /// The rotor of a transition's plane block, where the seventeen spell it.

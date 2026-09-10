@@ -61,7 +61,8 @@ pub fn expansion_unit() -> u64 {
 
 /// Linear token for one stroke's keyed reads. Non-Copy, non-Clone: a
 /// function that wants more than a fiber must take a Budget in its
-/// signature. Constructed only by [`Physics::stroke`].
+/// signature. Constructed by [`Physics::stroke`] and by [`Budget::share`],
+/// which splits one token into two and never creates reads.
 #[derive(Debug)]
 pub struct Budget {
     remaining: usize,
@@ -81,6 +82,46 @@ impl Budget {
         self.remaining -= 1;
         true
     }
+
+    /// WITHDRAW A SHARE, so a sub-read is ATOMIC: it completes within `n`
+    /// or it contributes nothing, and either way the caller's own reads
+    /// are untouched by it. Exact or refused (rule 11) — a token with
+    /// fewer than `n` reads left does not hand back a smaller share,
+    /// because a smaller share would let the sub-read end early and be
+    /// mistaken for one that ran to completion.
+    ///
+    /// `n` MUST be an invariant of the physics, never a number derived
+    /// from the scene. A share sized by what is being looked at is a
+    /// scalar read off content deciding how much work content gets, which
+    /// is the shape rule 4 refuses; the caller's constant belongs beside
+    /// `spend_unit` and is fixed for every scene.
+    pub fn share(&mut self, n: usize) -> Option<Budget> {
+        if self.remaining < n {
+            return None;
+        }
+        self.remaining -= n;
+        Some(Budget { remaining: n })
+    }
+
+    /// Return a share's UNSPENT reads. The share is consumed here, so a
+    /// share cannot be refunded twice and cannot be used after refund —
+    /// the linearity that makes [`Budget`] non-Clone holds across the
+    /// split as well.
+    pub fn refund(&mut self, unspent: Budget) {
+        self.remaining += unspent.remaining;
+    }
+}
+
+/// THE COVER'S SHARE OF ONE STROKE: half of it, the two-stroke ratio
+/// applied one level down. A percept does two things — it peels the pair
+/// into bodies and it covers what no versor carried — and they divide the
+/// stroke between them.
+///
+/// It is a constant of the physics in the same sense `spend_unit` is,
+/// derived from the same reserve algebra and identical for every scene.
+/// Nothing about the bodies being covered enters it.
+pub fn cover_share() -> usize {
+    (spend_unit() as usize / 2).max(1)
 }
 
 /// A CARRIER'S ORBIT (45.7): the circuits a stroke ring has completed and
@@ -496,6 +537,26 @@ mod tests {
         assert_eq!(o.stroke(1), Some((2, 1)), "a budget that covers the carrier orbits every stroke");
         assert_eq!(o.stroke(2), Some((4, 1)), "two circuits in one stroke are two");
         assert_eq!((o.circuits(), o.period()), (4, 1));
+    }
+
+    /// A share is withdrawn exactly or refused, its unspent reads come
+    /// back, and no read is created or lost across the split.
+    #[test]
+    fn a_share_is_exact_and_conserves_reads() {
+        let mut p = Physics::default();
+        let mut b = p.stroke_n(10);
+        assert!(b.share(11).is_none(), "a share larger than the token is refused, not shrunk");
+        assert_eq!(b.remaining(), 10, "a refused share withdraws nothing");
+        let mut s = b.share(4).expect("four of ten");
+        assert_eq!((b.remaining(), s.remaining()), (6, 4), "the reads moved, none were made");
+        assert!(s.spend() && s.spend());
+        b.refund(s);
+        assert_eq!(b.remaining(), 8, "two spent inside the share, eight left on the token");
+        let exact = b.share(8).expect("the whole remainder is a legal share");
+        assert_eq!(b.remaining(), 0, "a token may give all of itself away");
+        b.refund(exact);
+        assert_eq!(b.remaining(), 8, "and take it all back unspent");
+        assert!(cover_share() >= 1, "the cover's share is never zero reads");
     }
 
     #[test]
