@@ -103,7 +103,7 @@ fn a_voice_that_holds_nothing_spells_from_the_identity() {
         .expect("a linear block")
         .expect("the peel closes");
     assert!(d.is_spelled(), "no citation, because nothing is held");
-    assert!(d.word().rotor().projective_eq(&quarter(2).rotor()), "and it reaches the vertex");
+    assert!(d.rotor().projective_eq(&quarter(2).rotor()), "and it reaches the vertex");
 }
 
 /// 50.2 step 2, the whole claim of this row: the SAME measured versor,
@@ -127,7 +127,7 @@ fn a_voice_that_holds_a_generator_derives_through_it() {
     );
     assert!(d.residue.is_identity(), "the generator reached the whole word");
     assert!(
-        d.word().rotor().projective_eq(&quarter(2).rotor()),
+        d.rotor().projective_eq(&quarter(2).rotor()),
         "and the derivation composes to the same vertex the cipher reached"
     );
 }
@@ -146,7 +146,7 @@ fn two_presentations_read_one_versor_as_two_derivations_of_one_vertex() {
         .expect("the peel closes");
     assert_ne!(a.generators, b.generators, "two presentations, two proofs");
     assert!(
-        a.word().rotor().projective_eq(&b.word().rotor()),
+        a.rotor().projective_eq(&b.rotor()),
         "one vertex, one address, one ledger entry"
     );
 }

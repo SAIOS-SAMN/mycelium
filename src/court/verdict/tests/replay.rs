@@ -440,7 +440,9 @@ fn citing_form(
 ) -> Form {
     use crate::transducer::sentence::FormFace;
     let vertex = match inner.vertices.get(1) {
-        Some(Vertex::Word { address, derivation, .. }) => (address.clone(), derivation.word().clone()),
+        Some(Vertex::Word { address, derivation, .. }) => {
+            (address.clone(), derivation.word_local().expect("the inner vertex spells").clone())
+        }
         _ => panic!("the inner form's word vertex"),
     };
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
@@ -542,7 +544,7 @@ fn a_derivation_that_does_not_compose_to_its_word_is_refused_at_the_vertex() {
             *derivation = crate::transducer::alphabet::Derivation::factored(
                 other.generators.clone(),
                 other.residue.clone(),
-                derivation.word().clone(),
+                derivation.rotor(),
             );
         }
         _ => panic!("both forms carry a word vertex"),

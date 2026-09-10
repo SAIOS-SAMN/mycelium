@@ -142,7 +142,7 @@ impl Bubble {
     pub(crate) fn rotor(&self) -> Option<Rotor> {
         self.form.as_ref().and_then(|f| {
             f.vertices.iter().find_map(|v| match v {
-                Vertex::Word { derivation, .. } => Some(derivation.word().rotor()),
+                Vertex::Word { derivation, .. } => Some(derivation.rotor()),
                 _ => None,
             })
         })

@@ -262,12 +262,11 @@ pub(crate) fn vertex_tape_and_moves(
                 contact,
                 ..
             } => {
-                let word = derivation.word();
-                if element::conformal_of(word, carriage).is_none() {
+                if element::conformal_of_rotor(&derivation.rotor(), carriage).is_none() {
                     return Some(REFUSE_VERTEX_TAPE);
                 }
                 if contact.is_some() {
-                    if word.is_identity() {
+                    if derivation.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()) {
                         return Some(REFUSE_ORBIT_STILL);
                     }
                     if let Some(fam) = family {

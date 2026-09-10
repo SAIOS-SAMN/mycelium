@@ -68,7 +68,7 @@ pub(crate) fn apply_versor_cells(v: &Versor, cells: &[Cell3]) -> Vec<Cell3> {
 pub(crate) fn vertex_versor(v: &Vertex) -> Option<Versor> {
     match v {
         Vertex::Word { derivation, carriage, .. } => {
-            element::conformal_of(derivation.word(), carriage)
+            element::conformal_of_rotor(&derivation.rotor(), carriage)
         }
         _ => None,
     }

@@ -129,8 +129,11 @@ pub fn apply_form(
                 class,
                 ..
             } => {
-                let w = placement.compose(derivation.word());
-                let Some(versor) = element::conformal_of(&w, carriage) else {
+                // The action composes: the placement's rotor times the
+                // vertex's own (L14), so a cited vertex speaks its body
+                // without resolving a citation.
+                let r = placement.rotor().geo(&derivation.rotor());
+                let Some(versor) = element::conformal_of_rotor(&r, carriage) else {
                     unspoken.push(vi as u16);
                     continue;
                 };
@@ -176,8 +179,8 @@ pub fn apply_form(
                     continue;
                 };
                 let composed = carriage.geo(c);
-                let w = placement.compose(derivation.word());
-                let Some(versor) = element::conformal_of(&w, &composed) else {
+                let r = placement.rotor().geo(&derivation.rotor());
+                let Some(versor) = element::conformal_of_rotor(&r, &composed) else {
                     unspoken.push(vi as u16);
                     continue;
                 };

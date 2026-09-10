@@ -30,7 +30,7 @@ fn refraction_is_rebase_regauge_and_carriage() {
     let Vertex::Word { derivation, carriage, gauge, .. } = &out.vertices[1] else {
         panic!("word vertex");
     };
-    assert_eq!(derivation.word(), &old_d.word().rebase(&gamma.word));
+    assert!(derivation.rotor().projective_eq(&old_d.word_local().expect("spelled").rebase(&gamma.word).rotor()));
     assert!(element::same_versor(carriage, &gamma.carriage.geo(old_c)));
     assert_eq!(gauge, &compose_gauge(&gamma.gauge, old_g));
     let off = Transport {
@@ -71,7 +71,7 @@ fn refraction_replays_as_its_three_moves() {
                 Vertex::Word { derivation: da, carriage: ca, gauge: ga, .. },
                 Vertex::Word { derivation: db, carriage: cb, gauge: gb, .. },
             ) => {
-                assert_eq!(da.word(), db.word());
+                assert!(da.rotor().projective_eq(&db.rotor()));
                 assert!(element::same_versor(ca, cb));
                 assert_eq!(ga, gb);
             }

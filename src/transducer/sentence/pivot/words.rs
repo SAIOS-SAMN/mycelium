@@ -16,7 +16,10 @@ pub fn words_of_form(f: &Form) -> Vec<Word> {
     f.vertices
         .iter()
         .filter_map(|v| match v {
-            Vertex::Word { derivation, .. } => Some(derivation.word().clone()),
+            // The residue: the letters this vertex spells on its own.
+            // A cited vertex spells none until its citations resolve, so
+            // it contributes nothing here (L14).
+            Vertex::Word { derivation, .. } => derivation.word_local().cloned(),
             _ => None,
         })
         .collect()
@@ -105,8 +108,17 @@ pub type GeneratorIndex = Keyed<Keyed<crate::transducer::address::Address>>;
 /// step 2), then the rotor's conjugacy axes (15.3). A word with no
 /// conjugacy axes is not a generator and is not filed.
 pub fn versor_chart(w: &Word) -> Option<stalk::Invariant> {
+    versor_chart_of(&w.rotor())
+}
+
+/// The chart from the ACTION alone (L14): the coordinate the generator
+/// index is keyed by, read off a vertex's canonical rotor with no
+/// citation resolved.
+pub fn versor_chart_of(
+    r: &crate::transducer::alphabet::Rotor,
+) -> Option<stalk::Invariant> {
     let mut axes = vec![0u64];
-    axes.extend(w.rotor().class_axes()?);
+    axes.extend(r.class_axes()?);
     Some(stalk::Invariant(axes))
 }
 
@@ -121,7 +133,7 @@ pub fn admit_generators(
         let Vertex::Word { address, derivation, .. } = v else {
             continue;
         };
-        let Some(chart) = versor_chart(derivation.word()) else {
+        let Some(chart) = versor_chart_of(&derivation.rotor()) else {
             continue;
         };
         index.nested_insert(chart.key(), address, form.clone());
@@ -138,7 +150,7 @@ pub fn retract_generators(
         let Vertex::Word { address, derivation, .. } = v else {
             continue;
         };
-        let Some(chart) = versor_chart(derivation.word()) else {
+        let Some(chart) = versor_chart_of(&derivation.rotor()) else {
             continue;
         };
         if let Some(bucket) = index.get_mut(chart.key().as_bytes()) {
@@ -197,7 +209,7 @@ pub fn generators_under(
 pub fn word_at_vertex(f: &Form, vertex: &[u8]) -> Option<Word> {
     let i = *f.by_address.get(vertex)?;
     match f.vertices.get(i as usize)? {
-        Vertex::Word { derivation, .. } => Some(derivation.word().clone()),
+        Vertex::Word { derivation, .. } => derivation.word_local().cloned(),
         _ => None,
     }
 }

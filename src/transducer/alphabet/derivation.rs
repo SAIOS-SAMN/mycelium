@@ -13,27 +13,32 @@
 //! residue is the whole word; that is the cipher's case, and it is a
 //! boundary of the general one rather than the only one.
 //!
-//! **The composed product is a coordinate, and it is on the tape.** 50.2
-//! step 2 says the spelling is recomputed from the derivation and never
-//! stored; that is the rule for the *residue's* letters, which are
-//! recomputed and never kept beside a rotor. It cannot be the rule for
-//! the product, and the reason is a proof rather than a preference: a
-//! form's address is `form_vertex_key`, which reads each word vertex's
-//! `Word::key()` — the canonical rotor coordinates (1.5) — and it is
-//! computed by `from_element_form` at decode, where no resolver exists.
+//! **The composed ROTOR is a coordinate; the composed word is not**
+//! (L14, 1.9). A spelling of the composite beside the citations is two
+//! carriers for one meaning, and the one that goes stale is the one a
+//! court replays. The rotor is not a spelling: 1.5 says the vertex key
+//! IS the canonical rotor coordinates, and `Word::key()` reduces to
+//! `rotor().key()`, so what the vertex carries is its own identity
+//! written out once.
+//!
+//! It must be carried rather than resolved, and the reason is a proof
+//! rather than a preference: a form's address is `form_vertex_key`,
+//! computed by `from_element_form` at decode where no resolver exists.
 //! Two minds with different derivations must reach ONE address (1.5,
-//! 13.10), so the key must be the product and not the citations. And the
-//! deferral 21 step 3 requires — a sentence citing an unruled generator
-//! is docketed and the syllabus serves the generator — needs the
-//! sentence's own address BEFORE the citation resolves, so a tape that
-//! cannot be addressed without resolving its citations cannot be
-//! deferred at all. The product is therefore written, and the court's
-//! replay (`verify_with`) is what keeps it from going stale: a
-//! derivation whose citations do not compose to the product it carries
-//! is a refusal at that vertex, never a smaller answer.
+//! 13.10), so the key must be the composite and not the citations. And
+//! the deferral of 21 step 3 — a sentence citing an unruled generator is
+//! docketed while the syllabus serves it — needs the sentence's own
+//! address BEFORE the citation resolves. The court's replay
+//! (`verify_with`) is what keeps the carried rotor honest: citations
+//! that do not compose to it are a refusal at that vertex.
+//!
+//! A `Word` for a cited vertex is resolved through the crystal on the
+//! mind and the ruled cover on the court (`word_with`). Everything that
+//! only needs the action — the sandwich, the class, the chart, the key —
+//! reads `rotor()` and resolves nothing.
 
 use crate::transducer::address::Address;
-use crate::transducer::alphabet::Word;
+use crate::transducer::alphabet::{Rotor, Word};
 
 /// One cited generator: the form, the `Word` vertex inside it, and the
 /// exponent it is applied with.
@@ -46,13 +51,13 @@ pub struct Derivation {
     pub generators: Vec<Cited>,
     /// What no held generator reached, in letters.
     pub residue: Word,
-    /// The product `∏ g^e · r` as the speaker composed it. Written only
-    /// when there is something to compose: a spelled word's product is
-    /// its residue, and writing it twice would be the two carriers 50.2
-    /// step 2 refuses. Boxed for the reason the carriage is boxed — a
-    /// `Word` is a large field, and every `Vertex::Word` of every form
-    /// would carry a second one whether or not it cites anything.
-    composed: Option<Box<Word>>,
+    /// The canonical rotor of `∏ g^e · r` (A1), as the speaker composed
+    /// it. Written only when there is something to compose: a spelled
+    /// word's rotor is its residue's, and writing it twice would be the
+    /// two carriers 1.9 refuses. Boxed for the reason the carriage is
+    /// boxed — every `Vertex::Word` of every form would carry the field
+    /// whether or not it cites anything.
+    composed: Option<Box<Rotor>>,
 }
 
 impl Derivation {
@@ -61,12 +66,14 @@ impl Derivation {
         Derivation { generators: Vec::new(), residue: word, composed: None }
     }
 
-    /// A word factored through held generators. `composed` is the product
-    /// the speaker actually formed; the court re-derives it from the
-    /// citations and refuses a disagreement.
-    pub fn factored(generators: Vec<Cited>, residue: Word, composed: Word) -> Derivation {
+    /// A word factored through held generators. `composed` is the rotor
+    /// the speaker's composition reached; the court re-derives it from
+    /// the citations and refuses a disagreement. An empty citation list
+    /// is not a factorisation, whatever rotor is offered with it: the
+    /// residue alone is then the whole word and carries its own rotor.
+    pub fn factored(generators: Vec<Cited>, residue: Word, composed: Rotor) -> Derivation {
         match generators.is_empty() {
-            true => Derivation::spelled(composed),
+            true => Derivation::spelled(residue),
             false => Derivation { generators, residue, composed: Some(Box::new(composed)) },
         }
     }
@@ -78,17 +85,67 @@ impl Derivation {
         for (_, _, e, g) in cited {
             w = w.compose(&power_of(g, *e));
         }
-        let composed = w.compose(&residue).normal_form();
+        let composed = w.compose(&residue).rotor();
         let generators = cited.iter().map(|(f, v, e, _)| (f.clone(), v.clone(), *e)).collect();
         Derivation::factored(generators, residue, composed)
     }
 
-    /// The word this vertex speaks.
-    pub fn word(&self) -> &Word {
+    /// THE ACTION THIS VERTEX IS. Its identity (1.5), its key, its class,
+    /// its chart and its sandwich all read this and resolve nothing.
+    pub fn rotor(&self) -> Rotor {
         match &self.composed {
-            Some(w) => w.as_ref(),
-            None => &self.residue,
+            Some(r) => (**r).clone(),
+            None => self.residue.rotor(),
         }
+    }
+
+    /// The word a cited vertex spells, resolved: the generators composed
+    /// from what the reader holds, times the residue. `None` for a
+    /// citation the reader cannot resolve — which is the deferral of 21
+    /// step 3 at the caller, never a smaller word.
+    ///
+    /// Only a caller that needs LETTERS asks for this. The action is
+    /// `rotor()` and costs no resolution.
+    pub fn word_with<R>(&self, resolve: &R) -> Option<Word>
+    where
+        R: Fn(&Address, &Address) -> Option<Word>,
+    {
+        if self.is_spelled() {
+            return Some(self.residue.clone());
+        }
+        let mut w = Word::identity();
+        for (form, vertex, e) in &self.generators {
+            w = w.compose(&power_of(&resolve(form, vertex)?, *e));
+        }
+        Some(w.compose(&self.residue).normal_form())
+    }
+
+    /// The word this vertex spells when it spells one on its own: the
+    /// residue, and only when nothing is cited. A cited vertex answers
+    /// `None` here and is resolved with [`Derivation::word_with`].
+    pub fn word_local(&self) -> Option<&Word> {
+        match self.is_spelled() {
+            true => Some(&self.residue),
+            false => None,
+        }
+    }
+
+    /// A SPELLING OF THIS VERTEX'S ACTION, RECOMPUTED (50.2 step 2: "the
+    /// spelling from the identity is recomputed from the derivation and
+    /// never stored as the word"). The residue when nothing is cited;
+    /// otherwise A22 run on the carried rotor, which is the same vertex
+    /// by 1.5 and reached without resolving anything.
+    ///
+    /// This is what a FACE reads. A face is the coboundary of two
+    /// placements (3.1) and must re-derive identically on the speaker and
+    /// the court, so it is written from the action both hold and not from
+    /// letters only one of them can resolve. `None` when the seventeen
+    /// cannot spell the action — which is a demand, not a face.
+    pub fn spelling(&self) -> Option<Word> {
+        if let Some(w) = self.word_local() {
+            return Some(w.clone());
+        }
+        crate::transducer::alphabet::factor_rotor(&self.rotor())?.ok()
     }
 
     /// No citation: the whole word is the residue A22 peeled.
@@ -115,8 +172,8 @@ impl Derivation {
             };
             w = w.compose(&power_of(&g, *e));
         }
-        let got = w.compose(&self.residue).normal_form();
-        match got.rotor().projective_eq(&self.word().rotor()) {
+        let got = w.compose(&self.residue).rotor();
+        match got.projective_eq(&self.rotor()) {
             true => Verified::Composes,
             false => Verified::Differs,
         }
@@ -132,7 +189,7 @@ impl Derivation {
         }
         self.residue.to_bytes(out);
         if n > 0 {
-            self.word().to_bytes(out);
+            self.rotor().to_bytes(out);
         }
         Some(())
     }
@@ -157,7 +214,7 @@ impl Derivation {
         if n == 0 {
             return Some(Derivation::spelled(residue));
         }
-        let composed = Word::from_bytes(b, pos)?;
+        let composed = Rotor::from_bytes(b, pos)?;
         Some(Derivation::factored(generators, residue, composed))
     }
 }

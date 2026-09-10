@@ -324,7 +324,7 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
                 ..
             } => {
                 buf.push(1);
-                crate::transducer::address::put_bytes(&mut buf, &derivation.word().key());
+                crate::transducer::address::put_bytes(&mut buf, &derivation.rotor().key());
                 carriage.to_bytes(&mut buf);
                 match contact {
                     None => buf.push(0),

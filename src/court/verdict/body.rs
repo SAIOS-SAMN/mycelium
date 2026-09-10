@@ -54,13 +54,13 @@ pub(crate) fn vertex_carries_pair(vertex: &Vertex, x: &Grid, y: &Grid) -> Carrie
     let Vertex::Word { derivation, carriage, gauge, class, contact, .. } = vertex else {
         return Carried::Silent;
     };
-    let word = derivation.word();
+    let rotor = derivation.rotor();
     // A contact vertex is placed by its orbit, not its carriage; the
     // orbit's own replay (`REFUSE_ORBIT_STILL`) is its reconstruction.
     if contact.is_some() {
         return Carried::Silent;
     }
-    let Some(versor) = element::conformal_of(word, carriage) else {
+    let Some(versor) = element::conformal_of_rotor(&rotor, carriage) else {
         return Carried::Fails;
     };
     let bodies = perceive(x);
@@ -160,12 +160,14 @@ pub(crate) fn edges_rederive_family(f: &Form, family: &[(Grid, Grid)]) -> Option
         else {
             continue;
         };
-        let (wi, wj) = (di.word(), dj.word());
+        let (ri, rj) = (di.rotor(), dj.rotor());
         let refused = || Refusal { reason: REFUSE_EDGE, at: sentence::At::Face(ai.clone(), aj.clone()) };
         let Some(expected) = element::conformal_of(&edge.word, &edge.carriage) else {
             return Some(refused());
         };
-        let (Some(v_i), Some(v_j)) = (element::conformal_of(wi, ci), element::conformal_of(wj, cj)) else {
+        let (Some(v_i), Some(v_j)) =
+            (element::conformal_of_rotor(&ri, ci), element::conformal_of_rotor(&rj, cj))
+        else {
             return Some(refused());
         };
         for (x, y) in family {

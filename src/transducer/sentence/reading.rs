@@ -52,7 +52,7 @@ pub fn vertex_cites(vertex: &Vertex, piece: &[Cell]) -> Option<HeldCite> {
     let Vertex::Word { address, derivation, carriage, gauge, .. } = vertex else {
         return None;
     };
-    let word = derivation.word();
+    let rotor = derivation.rotor();
     let mut before: Vec<(i64, i64, u8)> = Vec::new();
     let mut after: Keyed<u8> = Keyed::new();
     let mut out_support: Vec<(i64, i64)> = Vec::new();
@@ -75,7 +75,7 @@ pub fn vertex_cites(vertex: &Vertex, piece: &[Cell]) -> Option<HeldCite> {
     let in_support: Vec<(i64, i64)> = before.iter().map(|&(r, c, _)| (r, c)).collect();
     let shape_in = blade::shape_of(&in_support);
     let shape_out = blade::shape_of(&out_support);
-    let linear = element::conformal_of(word, &element::dilator_of(carriage)?)?;
+    let linear = element::conformal_of_rotor(&rotor, &element::dilator_of(carriage)?)?;
     let v = blade::versor_carrying(&shape_in, &shape_out, &linear)?;
     for &(r, c, h) in &before {
         let p = element::carry_center(&v, r, c)?;

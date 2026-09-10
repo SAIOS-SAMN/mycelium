@@ -31,12 +31,29 @@ pub fn versor_of_word(word: &crate::transducer::alphabet::Word) -> Option<Versor
 /// composed with the carriage by the geometric product. `None` when the
 /// word does not preserve the plane.
 pub fn conformal_of(word: &crate::transducer::alphabet::Word, carriage: &Versor) -> Option<Versor> {
-    Some(carriage.geo(&linear_versor(word)?))
+    conformal_of_rotor(&word.rotor(), carriage)
+}
+
+/// The same versor from the ACTION alone (L14): a word vertex carries its
+/// canonical rotor and the sandwich needs nothing else, so no citation is
+/// resolved to speak a body.
+pub fn conformal_of_rotor(
+    rotor: &crate::transducer::alphabet::Rotor,
+    carriage: &Versor,
+) -> Option<Versor> {
+    Some(carriage.geo(&linear_versor_of(rotor)?))
 }
 
 fn linear_versor(word: &crate::transducer::alphabet::Word) -> Option<Versor> {
+    linear_versor_of(&word.rotor())
+}
+
+fn linear_versor_of(rotor: &crate::transducer::alphabet::Rotor) -> Option<Versor> {
     use crate::transducer::cga;
-    let block = word.plane_block()?;
+    let block = crate::transducer::alphabet::rotor_block_on(
+        rotor,
+        (crate::transducer::alphabet::PLANE_ROW, crate::transducer::alphabet::PLANE_COL),
+    )?;
     let rho2 = &block[0][0] * &block[0][0] + &block[1][0] * &block[1][0];
     if rho2.is_zero() {
         return None;

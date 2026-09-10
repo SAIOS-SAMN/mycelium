@@ -317,7 +317,7 @@ impl Form {
                     class,
                     ..
                 } => {
-                    let word = derivation.word();
+                    let rotor = derivation.rotor();
                     by_address.insert(address, i as u16);
                     let chart = class.key();
                     match by_class.get_mut(&chart) {
@@ -326,10 +326,10 @@ impl Form {
                             by_class.insert(chart, vec![i as u16]);
                         }
                     }
-                    if let Some(hk) = hue_section_key(word, gauge) {
+                    if let Some(hk) = hue_section_key_of(&rotor, gauge) {
                         hue_maps.insert(hk, gauge.clone());
                     }
-                    if let Some(tk) = vertex_transport_key(word, gauge) {
+                    if let Some(tk) = vertex_transport_key_of(&rotor, gauge) {
                     match places.get(&tk) {
                         None => {
                             places.insert(tk, (**carriage).clone());
@@ -396,7 +396,9 @@ impl Vertex {
     pub fn word_in(&self, form: &Form) -> Option<Word> {
         match self {
             Vertex::Frame | Vertex::Unfolded { .. } => Some(Word::identity()),
-            Vertex::Word { derivation, .. } => Some(derivation.word().clone()),
+            // A face reads the ACTION spelled, not the residue: a cited
+            // vertex spells its rotor by A22 (L14, 50.2 step 2).
+            Vertex::Word { derivation, .. } => derivation.spelling(),
             Vertex::Glued { placement, .. } => Some(placement.clone()),
             Vertex::Rebased { by, .. } => form.vertices.get(*by as usize)?.word_in(form),
             Vertex::Demand { .. } => None,

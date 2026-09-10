@@ -41,7 +41,7 @@ pub(crate) fn transport_class(v: &Vertex) -> Option<TransportClass> {
         // (50.2 step 2), and a class read off a residue would split them.
         Vertex::Word { derivation, .. } => Some(TransportClass {
             kind: crate::transducer::peel::ShellKind::Whole,
-            word_class: derivation.word().class_key()?.into_vec(),
+            word_class: derivation.rotor().class_key()?.into_vec(),
         }),
         _ => None,
     }
@@ -103,7 +103,7 @@ pub(crate) fn word_place_of_class(
 ) -> Option<(crate::transducer::alphabet::Word, Versor)> {
     match match_vertex(pf, tc) {
         Some(Vertex::Word { derivation, carriage, .. }) => {
-            Some((derivation.word().clone(), (**carriage).clone()))
+            Some((derivation.word_local()?.clone(), (**carriage).clone()))
         }
         _ => None,
     }
@@ -160,7 +160,7 @@ pub(crate) fn hue_maps_of_form(form: &Form) -> crate::network::nerve::Keyed<Vec<
     let mut m = form.hue_maps.clone();
     for v in &form.vertices {
         if let Vertex::Word { derivation, gauge, .. } = v {
-            if let Some(k) = crate::transducer::sentence::hue_section_key(derivation.word(), gauge) {
+            if let Some(k) = crate::transducer::sentence::hue_section_key_of(&derivation.rotor(), gauge) {
                 if !m.contains(&k) {
                     m.insert(k, gauge.clone());
                 }

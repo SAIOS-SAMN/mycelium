@@ -80,7 +80,10 @@ impl Form {
                 // spelled (50.2 step 2's boundary case), exactly as far
                 // as the mathematics carries.
                 Vertex::Word { derivation, .. } => {
-                    *derivation = Derivation::spelled(derivation.word().rebase(by));
+                    let Some(w) = derivation.word_local() else {
+                        continue;
+                    };
+                    *derivation = Derivation::spelled(w.rebase(by));
                 }
                 Vertex::Glued { placement, .. } => *placement = placement.rebase(by),
                 _ => {}

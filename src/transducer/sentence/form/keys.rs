@@ -37,10 +37,15 @@ pub(crate) fn unfolded_key(measure: &Measure) -> Vec<u8> {
 }
 
 /// Hue map as a section coordinate: word conjugacy and the map, never a
-/// matching key for correspondence (chapter 21 step 1).
-pub(crate) fn hue_section_key(word: &Word, gauge: &[(u8, u8)]) -> Option<crate::transducer::address::Address> {
+/// matching key for correspondence (chapter 21 step 1). Read from the
+/// ACTION alone (L14): a word vertex carries its canonical rotor, so
+/// being classed resolves no citation.
+pub(crate) fn hue_section_key_of(
+    rotor: &crate::transducer::alphabet::Rotor,
+    gauge: &[(u8, u8)],
+) -> Option<crate::transducer::address::Address> {
     let mut buf = vec![crate::transducer::address::TAG_HUE];
-    crate::transducer::address::put_bytes(&mut buf, word.class_key()?.as_bytes());
+    crate::transducer::address::put_bytes(&mut buf, rotor.class_key()?.as_bytes());
     buf.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
     for &(a, b) in gauge {
         buf.push(a);
@@ -49,9 +54,12 @@ pub(crate) fn hue_section_key(word: &Word, gauge: &[(u8, u8)]) -> Option<crate::
     Some(crate::transducer::address::Address::new(buf))
 }
 
-pub(crate) fn vertex_transport_key(word: &Word, gauge: &[(u8, u8)]) -> Option<crate::transducer::address::Address> {
+pub(crate) fn vertex_transport_key_of(
+    rotor: &crate::transducer::alphabet::Rotor,
+    gauge: &[(u8, u8)],
+) -> Option<crate::transducer::address::Address> {
     let mut buf = vec![crate::transducer::address::TAG_WORD, ShellKind::Whole.as_u8()];
-    crate::transducer::address::put_bytes(&mut buf, word.class_key()?.as_bytes());
+    crate::transducer::address::put_bytes(&mut buf, rotor.class_key()?.as_bytes());
     buf.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
     for &(b, a) in gauge {
         buf.push(b);

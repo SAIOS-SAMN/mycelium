@@ -31,7 +31,7 @@ pub(crate) fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
         ) else {
             continue;
         };
-        if di.word().is_identity() {
+        if di.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()) {
             continue;
         }
         let Some(tc_i) = transport_class(&form.vertices[i]) else {
@@ -167,7 +167,7 @@ pub fn extract_rule_with(
             let k = c.key();
             if let Vertex::Word { derivation, gauge, .. } = v {
                 if let Some(hk) =
-                    crate::transducer::sentence::hue_section_key(derivation.word(), gauge)
+                    crate::transducer::sentence::hue_section_key_of(&derivation.rotor(), gauge)
                 {
                     if !hue_maps.contains(&hk) {
                         hue_maps.insert(hk, gauge.clone());
