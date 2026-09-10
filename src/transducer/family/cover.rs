@@ -155,8 +155,17 @@ pub(crate) fn cover_deformation(
         // order. Carrying is exact, so the one that carries is read out
         // rather than chosen among candidates (rule 4).
         let Some(fiber) = by_chart.get(&ip.moduli.peel().key()) else {
+            // L11d: NO OUTPUT PIECE SHARES THIS PIECE'S PEELED CHART. The
+            // pairing never even reaches a carriage, so nothing about the
+            // carriage's strictness is being measured here.
+            eprintln!(
+                "  cover piece no-fiber charts_out {} axes_of_piece {}",
+                by_chart.fiber(crate::network::nerve::ROOT).count(),
+                ip.moduli.0.len()
+            );
             continue;
         };
+        let mut carried_here = false;
         for &j in fiber {
             if taken.contains(&j.to_le_bytes()) {
                 continue;
@@ -165,6 +174,20 @@ pub(crate) fn cover_deformation(
                 continue;
             };
             let Some(car) = carriage(ip, op) else {
+                // L11d: WHY THIS PIECE DID NOT CARRY. `versor_between`
+                // reads the shapes alone; `carriage` then reads the hue
+                // map cell by cell. Which of the two refused is the whole
+                // question, and it is written out rather than inferred.
+                let shaped = crate::transducer::blade::versor_between(&ip.shape, &op.shape).is_some();
+                eprintln!(
+                    "  cover piece refused axes {:?} versor {} at {}",
+                    crate::transducer::family::differing_axes(&ip.moduli, &op.moduli),
+                    shaped,
+                    match shaped {
+                        true => "the hue map or the cell walk",
+                        false => "the shapes",
+                    }
+                );
                 continue;
             };
             let Some(Ok(v)) = crate::transducer::family::word_or_demand(ip, op) else {
@@ -179,7 +202,13 @@ pub(crate) fn cover_deformation(
             }
             placed.push(Placed { idx: placed.len(), by: car.v.clone(), support: support_of(op) });
             cover.carried.push((v, car.v));
+            carried_here = true;
             break;
+        }
+        if !carried_here {
+            // No output piece on this piece's own chart carried it at
+            // all: the fiber was empty, or every member refused above.
+            eprintln!("  cover piece uncarried fiber {}", fiber.len());
         }
     }
 
