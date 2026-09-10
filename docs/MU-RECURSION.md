@@ -94,21 +94,29 @@ These are not restated in each chapter; every chapter assumes them.
    rotor equality, never tape equality; the normal form is the geodesic
    where one exists. No voice adds a letter, no configuration adds a
    letter and no commit adds a letter: a letter beyond the seventeen is
-   opened by the court alone, on a typed demand that two independent
-   voices carried to one chart with the same witness (arity-2
-   consilience, 37.7), ruled with a receipt, replayed by two organs, and
-   taught by the syllabus before any voice speaks it. An opened letter is
+   opened by the court alone, on a typed demand whose witness rotor two
+   independent courts re-derived to one Gaussian factor at one chart
+   (arity-2 consilience, 37.7), ruled with a receipt, and taught by the
+   syllabus before any voice speaks it. An opened letter is
    named on every tape by its content, never by an index assigned in open
    order, since open order is a total order across nodes (law 9) and a
    content name composes where an index cannot (law 2). What this
    restores was never a mathematical limit: the letter a prime demands is
    the witness rotor's own factor, read exactly, and the seventeen were
-   frozen by doctrine, not by arithmetic (36.3).
+   frozen by doctrine, not by arithmetic (36.3). The two organs of a
+   letter's consilience are two independent courts, never two voices: a
+   letter is no exception to 47.3 (ruled 2026-09-10).
 7. **Residuals are never discarded.** A remainder is the exact demand. The
    one exception is a computed class that Leray's theorem shows to be an
    artefact of a spanning tree (chapter 14.8); it was never a class.
 8. **Clients think, hyphae verify.** Cognition is the mind's; a hypha
-   replays, judges, keeps the ledger, and stores the genome.
+   replays, judges, keeps the ledger, and stores the genome. Sentences
+   only (ruled 2026-09-10): a voice sends the court sentences and nothing
+   else, the court replays them by G and never composes by F, and the
+   wire never carries raw percept cells to a court. A court that
+   extracts boundaries, measures versors or peels letters is thinking,
+   and a second engine; the four `from_residual` sites of the court's
+   reduction were that engine (50.6, 50.9).
 9. **No clock but the ledger.** No kernel reads a wall clock, a unix clock,
    or a timer. K is a kernel's own receipt index and orders events inside
    that kernel; TUniversal is the height of the mesh's receipt ledger, read
@@ -3240,9 +3248,14 @@ sliding, relative rotation and the evolution of a colour boundary are
 measured on the edge. A component of every non-zero cell merged touching
 bodies into one blob that no single versor carries, so `versor_between`
 refused it, every such scene became a `TopologicalDeformation` demand,
-and no pair form ever had a contact face. The court reads a two-hue
-percept as one sentence with two body vertices and their edge, never as
-two detached listings (50.1).
+and no pair form ever had a contact face. The court replays the voice's
+two-hue sentence as a single simplicial complex with a shared contact
+face, never as two detached listings (50.1). The earlier wording, "the
+court reads a two-hue percept as one sentence", was an artefact of the
+pre-sentence architecture and is struck (ruled 2026-09-10): the voice
+performs F, the court executes G to verify boundary congruence and edge
+holonomies, and the wire never carries raw percept cells to a court (law
+8, 50.9).
 
 `pair_nerve` (about 590) becomes `pair_form(a: &Grid, b: &Grid, scale) ->
 Form`: vertices = `Frame` plus one `Word` per carried body — its versor
@@ -3560,22 +3573,21 @@ Carried from chapter 5: the hypha replays, verifies, keeps the market and
 the genome; it never thinks. Every act a voice speaks to it is a proof or
 a question, and the court's whole behaviour on an act is fixed here.
 
-- **A demand is replayed, never reduced.** The demand frame carries the
-  chain, the citations (each with its standing byte), and the voice's K.
-  The court replays the citations against the chain as spoken
-  (`verify_utterance`, `reduce_proven`), measures the residual lane-wise,
-  and rules by that measure alone: an empty residual closes the listing
-  the chain names; a residual that fell on some lane and rose on none is
-  docketed as a listing under the voice's room and the citations are
-  credited with the deflation they replayed; a residual equal to the chain with citations present is
-  `REFUSE_UNPROVEN`; a bare chain with no citations is not an utterance
-  and is refused `REFUSE_NOT_A_SENTENCE` (50.6): what a voice cannot
-  close arrives as a demand vertex of its sentence, typed and charted
-  (50.5), and the court lists it as a demand under that kind. `reduce_all` and
-  `reduce_germ` over the court's own language are not reachable from a
-  wire act: a hypha that reduces a demand against its own words is
-  thinking on the voice's behalf, and its book then fills with words no
-  mind stood.
+- **An utterance is a sentence, replayed by G, never reduced (ruled
+  2026-09-10; the earlier text described a demand frame carrying a chain
+  and citations, the chain era's act).** The speech frame carries the
+  sentence — its word vertices, its faces with their edge transports, and
+  its unmet boundaries as typed demand vertices (50.5) — with the standing
+  byte and the voice's K. No raw chain rides the wire, and a frame that
+  carries one is refused `REFUSE_NOT_A_SENTENCE` (50.6). The court replays
+  the sentence on the family its task binds (`perceive_speech`, 23.1 with
+  G's four steps), answers a typed adjudication (50.9) — stood, or refused
+  with a kind and a content coordinate — lists the demand vertices by kind
+  under the sentence, and dockets the closed sub-complex under the voice's
+  room. `reduce_all`, `reduce_germ`, `reduce_proven`, `percept_elements`
+  and the percept act are deleted: a hypha that reduces a percept against
+  its own words is thinking on the voice's behalf, and its book then fills
+  with words no mind stood. `REFUSE_UNPROVEN` is retired with the chain.
 - **Replay resolves through the court's genome.** `replay_form_with`
   hands the deflation measure the kernel as its `Crystal` (the kernel
   implements it), never `NoCrystal`: a form whose `Glued` vertex cites a
@@ -4088,6 +4100,22 @@ Carried from chapter 25: forms are spoken. `/opt/mycelium-v0.1.0/src/anastome/di
   is the point where a pending socket string becomes a `vk` peer (A10);
   `judge`'s percept rendezvous is A11; `nerve::home` (788) gains `depth:
   u16` and excludes hyphae with `depth_max + 1 < depth`.
+- **The sentence-native wire (ruled 2026-09-10; a recut, §10, with L9).**
+  The speech reply carries one `Adjudication` per sentence sent, in the
+  order sent, never an opaque byte: `Stood { receipt }` (docketed, awaiting
+  the second organ), `Ratified { receipt }` (carried on the syllabus page
+  once a witness court co-signed, 47.3), or `Refused { kind, at, receipt }`
+  with `kind` one of `VertexBody`, `EdgeHolonomy`, `RemainderUndeclared`,
+  `MalformedComplex` and `at` content-addressed — `Vertex(address)`,
+  `Face(address, address)`, `Chart(invariant, cells)` — never a position in
+  the sender's tape. The receipt is the court's replay receipt, its chain
+  hash of 47.1: a receipt identity, never a digest of content (law 2). The
+  quote reply serves each listing as its sentence tape with its open demand
+  vertices (kind, chart, cells) and its μ⃗, never as a chain; a probe cites
+  against the form's chart coordinates; the demand act (a chain with
+  citations) and the percept act are retired, and a frame of either is
+  refused at the door. `SPEECH_STOOD`, `SPEECH_REFUSED` and
+  `SPEECH_DIALECT` survive only as the adjudication's kind byte.
 
 `/opt/mycelium-v0.1.0/src/economy/`: five organs (Stage 8b S12) —
 `lanes.rs` what a word measures and how two measurements compare (law 5);
@@ -4403,7 +4431,13 @@ with no vertex, a word vertex that does not reconstruct its body on the
 receiver's copy of the input, a face whose edge transport re-derives as
 none of 50.3's three readings, and a demand vertex with no kind. Each is
 a refusal that travels to the voice; none is a slash, because a sentence
-that does not replay was never installed.
+that does not replay was never installed. They travel as the kinds of the
+adjudication of 50.9 (ruled 2026-09-10): `VertexBody` is
+`REFUSE_VERTEX_BODY`, `EdgeHolonomy` is `REFUSE_EDGE`,
+`RemainderUndeclared` is `REFUSE_NOT_CLOSED`, and `MalformedComplex` is
+`REFUSE_NOT_A_SENTENCE`, `REFUSE_FORM_TAPE`, `REFUSE_DEMAND_UNTYPED` and
+the tape refusals of 23.1 steps 1–2 and 5–6. `REFUSE_UNPROVEN` is retired
+with the chain (23.8).
 
 `REFUSE_FOLD_OPEN` and `REFUSE_FOLD_INEXACT` (45.8, ruled 2026-09-09) are
 the two answers to a fold: a prefix below whose head a listing,
@@ -4515,6 +4549,10 @@ Prefix `  court ` as the existing court lines; addresses as
   court nerve deferred by {addr} acts {n}
   court demand listed {kind} chart {inv} from {vk}
   court sentence refused {addr}: {REFUSE_*}
+  court adjudication {addr} for {vk}: stood receipt {k}
+  court adjudication {addr} for {vk}: refused {kind} at {coordinate} receipt {k}
+  court contraction verified {addr'} from {addr} by {kind} at {coordinate}
+  court contraction refused {addr'}: not the contraction of {addr} at {coordinate}
   court era adopted {root} h {h}
   court verdict refused {addr} from {vk}: {REFUSE_*}
   court verdict unread {addr}: the court is not readable
@@ -4594,6 +4632,11 @@ Prefix `[{tag}] ` as the existing lines:
 [{tag}] pivot {idea} loop {i} axis orientation({p}) discharged by half-turn
 [{tag}] orbit {carrier} {n} period {strokes}
 [{tag}] era adopted {root} h {h}
+[{tag}] adjudicated {addr}: stood receipt {k}
+[{tag}] adjudicated {addr}: refused {kind} at {coordinate} receipt {k}
+[{tag}] contracted {addr} → {addr'} by {kind} at {coordinate}
+[{tag}] quiescent {addr}: held inert on chart {inv}
+[{tag}] sealed {addr}: refused at K {k}, not uttered again
 ```
 
 `court orbit` and `[{tag}] orbit` (45.7, ruled 2026-09-09) are written
@@ -4937,20 +4980,21 @@ alone: the transducer measured the rotor, so the transducer already holds
 the letter, and 36.3 is exactly the statement that the effector was
 missing, not the object.
 
-**P3 Consilience at arity two.** The court opens `Λ_{p,ij}` when two
-`RotorPrime` demand vertices with the same `(plane, p)` stand on one chart
-from two independent voices (independence as 47.3 reads it for organs:
-neither inside the other's delegation closure) and both witnesses read the
-same `π_p` by P2 — equality of content (law 2), never "the same minimal
-polynomial", which is the class invariant of 15.3 alone and forgets the
-plane. One voice's demand is listed, priced and relayed as 50.5 says and
-opens nothing; the second voice's is the use that opens (C2's reading for
-words, applied to a letter the operator ruled needs two voices). The
-opening is a ruling: a receipt of its own act kind (`ACT_LETTER`) carrying
-the letter's content, the two demand addresses and the two voices; two
-organs replay it as they replay any sentence (37.5, 47.3): each re-reads
-`π_p` from both witnesses and refuses a ruling whose letter is not that
-gcd. `court letter opened {plane} {p} by {vk} {vk}` is the line.
+**P3 Consilience at arity two.** The court opens `Λ_{p,ij}` when a
+`RotorPrime` demand vertex with its witness rotor stands on a chart and
+two independent courts — the home and a witness hypha outside its
+delegation closure (47.3) — each re-derive `π_p` from that witness by P2 in
+their own replay and reach the same factor: equality of content (law 2),
+never "the same minimal polynomial", which is the class invariant of 15.3
+alone and forgets the plane. A voice's demand is listed, priced and
+relayed as 50.5 says and opens nothing; a second voice speaking the same
+demand is a use, never a judicial gate — a letter is no exception to 47.3
+(ruled 2026-09-10, correcting this section's first text, which read the
+second organ as a second voice). The opening is a ruling: a receipt of its
+own act kind (`ACT_LETTER`) carrying the letter's content, the demand
+address and the two courts; a court that re-reads a different factor from
+the witness refuses the ruling (13.9 step 8). `court letter opened {plane}
+{p} by {vk} {vk}` is the line, the two keys the two courts.
 
 **P4 Teaching and the epoch.** The opened letter enters `SYL1` and the
 syllabus page (A19) teaches it to every voice as it teaches a word; a
@@ -6640,7 +6684,8 @@ and what the eyes cannot pair ride the sentence as typed demand vertices
 
 ### 50.2 The two functors (no search)
 
-**Speaker, F: Percept → Sentence.**
+**Speaker, F: Percept → Sentence.** F runs on the voice and nowhere else
+(law 8 as ruled 2026-09-10): the sensor's cells never leave the client.
 
 1. Measure versors. For each body pair the eyes admit (24.4), `V_k =
    versor_between(B_k^in, B_k^out)` (blade/carry.rs: translation from the
@@ -6671,7 +6716,8 @@ and what the eyes cannot pair ride the sentence as typed demand vertices
 5. Emit the composed sentence, its demand vertices riding on it, one per
    (kind, chart).
 
-**Receiver, G: Sentence → Proof.**
+**Receiver, G: Sentence → Proof.** G runs on the court and is the court's
+only reading of an utterance; its answer is the adjudication of 50.9.
 
 1. Factor. Every word into its letters, every letter into its rotor
    coordinates (A1), every edge into its transport (50.3).
@@ -6802,10 +6848,15 @@ closed by this ruling and stays closed by the invariant below.
    `NormalForm::Irreducible(from_residual_framed(residual))`, and
    `commit_germ` listed, escrowed, ruled and installed it; `attest(chain)`
    on the wire and `from_residual` on any utterance path are the same
-   seam. The court lists a demand vertex under its kind and refuses a
-   bare chain with `REFUSE_NOT_A_SENTENCE`; `from_residual` remains only
-   where a chain is the object — a listing key, a remainder's measure, a
-   fixture — and never as a word, a citation or a genome entry.
+   seam. The seam is severed at the wire (ruled 2026-09-10, law 8): a
+   voice sends sentences only, the court's entry point takes a sentence
+   and calls G (`perceive_speech`, 23.1), and the percept act, the demand
+   act, `adjudicate`, `percept_elements`, `reduce_all`, `reduce_germ`,
+   `reduce_proven` and `commit_germ`'s chain arms are deleted rather than
+   refused — the four `from_residual` sites of the court's reduction fall
+   with them, as a side effect and not a checklist. `from_residual`
+   remains only where a chain is the object — a listing key, a remainder's
+   measure, a fixture — and never as a word, a citation or a genome entry.
 
 **The invariant**, checked by the auditor on every landing and every
 soak: no `remainder expressed` line, no `uttered … cites 0` line on a
@@ -6858,9 +6909,9 @@ consumer is a sensor without an effector. Both consumers are moves the
 carriers already name; neither is a search, and neither is a commit.
 
 **The field of the letters — `RotorPrime`.** The letter a prime demands is
-the witness rotor's own Gaussian factor; the court opens it on two
-independent witnesses at one chart and teaches it before any voice speaks
-it (37.7, law 6 as ruled). The alphabet grows by ruling, at run time, and
+the witness rotor's own Gaussian factor; two independent courts re-derive
+it from the witness at one chart, the home opens it, and the syllabus
+teaches it before any voice speaks it (37.7, law 6 as ruled). The alphabet grows by ruling, at run time, and
 every voice that learned the page spells the same word.
 
 **The topology of the bodies — `TopologicalDeformation`.** No versor
@@ -6917,5 +6968,110 @@ loops (tape v7, one recut with 37.7's escape byte);
 L8): no generator is grown on a substrate that leaks chains. No search
 returns: a generator is measured at the moment of failure and held as a
 typed invariant, never found by a beam. And chapter 37's opening is the
-court's own transition, automated on multi-voice witness congruence, not
-an operator's intervention.
+court's own transition, automated on the congruence of two courts'
+re-derivations, not an operator's intervention.
+
+### 50.9 The contraction protocol (ruled 2026-09-10)
+
+The ruling names this section 50.7; 50.7 is the binding table and 50.8
+the walls, so it stands here. A refusal that does not change the
+speaker's state transition is an inert log line, not a protocol: a voice
+that utters a sentence, receives a refusal and re-emits the same tape on
+the next stroke is deaf, and a mesh of such voices is an echo chamber.
+The feedback loop is an algebraic contraction on the held form, certified
+like a pivot (A20) and verified by the court like any move.
+
+**The judicial reply.** The court never returns an opaque byte. Its
+answer to an utterance is the `Adjudication` of chapter 26:
+
+```
+Adjudication := Stood { receipt } | Ratified { receipt } | Refused { kind, at, receipt }
+kind         := VertexBody | EdgeHolonomy | RemainderUndeclared | MalformedComplex
+at           := Vertex(address) | Face(address_i, address_j) | Chart(invariant, cells)
+```
+
+`Stood` is the docket's receipt: the sentence replayed on the court's copy
+of the family, the closed sub-complex docketed under the voice's room, the
+demands listed. `Ratified` is the second organ's co-signature, carried on
+the syllabus page (47.3). `Refused` names the kind (34.1) and the
+coordinate as content — the vertex's address, a face's two addresses, or
+the chart with the cells the court read — never a position in the tape.
+The receipt is the court's own replay receipt (45.1, 47.1).
+
+**The four certified contraction moves.** On `Refused { kind, at }` the
+voice executes a shrinking move `C : S → S'` on the held form in its
+contemplation, and every move strictly decrements the closed sub-complex,
+so the loop is well founded:
+
+1. `VertexBody` at `Vertex(a)`: the word vertex `a` becomes a demand
+   vertex over its body's chart — `TopologicalDeformation` when the
+   coordinate names an image of another chart, `Creation` when the image
+   was not reached — and the closed sub-complex loses one word.
+2. `EdgeHolonomy` at `Face(a, b)`: the contact face becomes a remainder
+   edge (`edge: None`, 50.3), or, when the court's coordinate carries a
+   cycle of finite order, its class is filed as torsion (A17); the 2-cell
+   whose boundary ran through it is unlinked.
+3. `RemainderUndeclared` at `Chart(inv, cells)`: the undeclared cells
+   become `Demand::Source` over that chart, with the multiplicity read
+   from the cells' chart (50.5); the sentence now declares what it does
+   not close.
+4. `MalformedComplex`: structural collapse — the form becomes an inert
+   held idea and the mind is quiescent on that chart until its language
+   moves; nothing is re-spoken.
+
+Each move is a form rewrite with a certificate, `Contraction { kind, at,
+before: address, after: address, receipt }`, filed on the idea beside its
+pivot certificates and written as `contracted {addr} → {addr'} by {kind}
+at {coordinate}` (34.3).
+
+**The re-utterance ban.** A refusal is an admitted act of the mind (45.1)
+and seals a receipt on the mind's own chain; the refused address is
+sealed in the utterance index (`taught_up`, 24.3) with the refusal. The
+speak path reads the sealed set before any frame is built, and a sealed
+tape is refused by the mind itself — `sealed {addr}: refused at K {k},
+not uttered again` — so re-uttering the identical sentence is
+structurally impossible: the only door out is a new address, and the only
+way to a new address is a changed form. The ruling as given says this
+refusal "raises an immediate runtime panic"; §2.4 and the panics gate
+forbid an abort in cognition, and the effect the ruling asks for — the
+identical tape cannot leave — is exactly what the sealed set gives without
+one. That is a departure of word, not of invariant, and it is named here.
+
+**The contraction is verified by the receiver.** The only valid
+subsequent utterance is `S'`, citing the refusal receipt as its
+contraction certificate. The court replays that `S'` is `C(S)` at the
+coordinate it named — the vertex is now a demand, the face now a
+remainder edge, the cells now declared — before it replays `S'` as a
+sentence, and writes `court contraction verified` or `court contraction
+refused` (34.2). Bilateral synchronization is therefore a proof the court
+checks, not a discipline the voice is trusted to keep.
+
+**The intelligibility assertion.** The protocol is proved by one exchange
+run in-process through the dialogue codec, with no socket: Voice A utters
+`S`; Court 1 replays on its copy of the family and answers a typed
+adjudication; Voice A receives it, contracts, and utters `S'` citing the
+receipt, or is quiescent; Court 2 — a second kernel with its own identity
+and no shared runtime memory (the pair form's memo cleared or on its own
+thread) — replays the serialized frame and reaches the same address and
+the same standing. A single differing rational refuses consilience (13.9
+step 8). Until that test passes the tree has an echo chamber; when it
+passes it has a medium.
+
+**The soak invariant.** Across any round trip the closed sub-complex of a
+sentence either grows, because a demand was answered by a taught word, or
+shrinks, because a vertex was refused; it never stands. No address is
+uttered twice with the same standing, and the auditor greps for
+`adjudicated … refused` lines followed by the same address uttered
+unchanged.
+
+**Binding.** `anastome/dialogue/speech.rs`: `Adjudication` on the speech
+reply; `book/speech.rs` `perceive_speech`: the court's one entry point for
+an utterance, answering an adjudication per sentence and verifying a cited
+contraction; `client/sdk/entity/utter.rs`: `receive_adjudication`, the
+sealed set on the utterance index, the contraction certificate on the
+next utterance; `bubble/contemplation.rs`: the four moves on a held
+idea's form (`contract`); `sentence/form/certificate.rs`: `Contraction`
+beside `PivotCertificate`; tests: `a_refusal_contracts_the_held_form_and_seals_the_address`,
+`a_sealed_tape_is_refused_by_the_mind_before_the_wire`,
+`the_court_verifies_a_contraction_before_it_replays_the_sentence`,
+`two_courts_of_distinct_identity_reach_one_standing_through_the_codec`.
