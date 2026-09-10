@@ -15,7 +15,6 @@ pub(crate) const GATE: Gate = Gate {
     owed: &[
         ("anastome/dialogue/carrier.rs", 3),
         ("anastome/dialogue/cover.rs", 3),
-        ("anastome/dialogue/demand.rs", 1),
         ("anastome/dialogue/docket.rs", 12),
         ("anastome/dialogue/equivocation.rs", 1),
         ("anastome/dialogue/fold.rs", 4),
@@ -56,7 +55,6 @@ pub(crate) const GATE: Gate = Gate {
         ("server/cognition/market.rs", 1),
         ("server/cognition/reduce.rs", 2),
         ("server/cognition/snapshot/read.rs", 11),
-        ("server/cognition/wire.rs", 2),
         ("transducer/address.rs", 2),
         ("transducer/alphabet/word.rs", 2),
         ("transducer/beam.rs", 2),

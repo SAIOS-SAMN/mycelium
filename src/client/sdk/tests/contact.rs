@@ -107,23 +107,3 @@ assert_eq!(Kernel::named("sod").voice(), Kernel::named("sod").voice(), "stable s
 assert_ne!(Kernel::named("sod").voice(), Kernel::named("net").voice(), "distinct kernels");
 }
 
-/// A reply is read through the codec's one reader of the outcome layout
-/// (S13.4): the verdict with what it taught, the height, the lanes; a frame
-/// that does not parse whole is no reply, never a reply of zeros.
-#[test]
-fn verdicts_decode_from_the_wire_reply() {
-let body = dialogue::encode_outcome_reply(3, 5, &[1, 0, 2, 0], &[0xAB, 0xCD]);
-let reply = decode_reply(&body).expect("the codec reads its own layout");
-match reply.verdict {
-    Verdict::Installed { taught } => assert_eq!(taught, vec![0xAB, 0xCD]),
-    v => panic!("expected Installed, got {v:?}"),
-}
-assert_eq!((reply.height, reply.pressure), (5, [1, 0, 2, 0]));
-let empty = dialogue::encode_outcome_reply(1, 0, &[0; 4], &[]);
-assert_eq!(decode_reply(&empty).expect("parses").verdict, Verdict::Decomposed { taught: vec![] });
-assert_eq!(
-    decode_reply(&dialogue::encode_outcome_reply(2, 0, &[0; 4], &[])).expect("parses").verdict,
-    Verdict::GermPending
-);
-assert!(decode_reply(&body[..body.len() - 1]).is_none(), "a short frame is no reply");
-}

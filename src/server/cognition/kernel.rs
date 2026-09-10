@@ -121,10 +121,6 @@ pub struct Kernel {
     pub(crate) spoken: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// Transpose: voice → listings that voice holds. Written with `spoken`.
     pub(crate) spoken_by: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
-    /// Idempotence of an utterance: address → voice → K → the reply last given.
-    /// The receipt is (vk, M2 address, K); a second frame with the same
-    /// triple is answered from here, never re-docketed or re-charged.
-    pub(crate) utterances: crate::network::nerve::Keyed<crate::network::nerve::Keyed<crate::network::nerve::Keyed<Outcome>>>,
     /// THE QUOTE FRONTIER: remainder-of-g and unreached-moduli demands
     /// (empty-cites attest). Percept-pair coboundary tapes stay on the
     /// book for consilience but are not served on a quote page.

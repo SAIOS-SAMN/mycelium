@@ -1,6 +1,7 @@
 // 23.8, 12.6 — ROOM: what a voice's draw takes, what the corpus takes, and
 // what the book does before it refuses.
 
+use super::common::{sentence_of, speak_pair};
 use crate::cognition::*;
 use crate::transducer::germinate::germinate;
 
@@ -12,33 +13,32 @@ use crate::transducer::germinate::germinate;
 /// same lane is not — and admitted once the first closed.
 #[test]
 fn an_unbonded_voice_has_room_for_one_claim_in_flight_per_lane() {
-use crate::transducer::element::from_residual;
 let mut k = Kernel::new();
 let seeded = k.treasury().audit().expect("genesis conserves");
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8), (0, 1, 2)];
-assert_eq!(k.ingest(&a, &b, [7; 32]), Outcome::GermPending, "the first claim needs no bond");
+assert_eq!(speak_pair(&mut k, &a, &b, [7; 32]), Outcome::GermPending, "the first claim needs no bond");
 assert_eq!(k.treasury().bond_of(&[7; 32]), None, "nothing bonded the arriving identity");
 assert_eq!(k.treasury().audit().expect("a claim is not supply"), seeded, "and nothing funded it");
-let first = from_residual(&germinate(&a, &b).unwrap());
+let first = sentence_of(&a, &b).expect("the recolour is a sentence");
 let listed = k.quote().1[0].0.address();
 let c = vec![(0, 0, 3u8), (0, 1, 3)];
 let d = vec![(0, 0, 4u8), (0, 1, 4)];
 assert_eq!(
-    from_residual(&germinate(&c, &d).unwrap()).lanes(),
+    sentence_of(&c, &d).expect("a sentence").lanes(),
     first.lanes(),
     "the second claim draws on the lanes the first occupies"
 );
 assert_eq!(
-    k.ingest(&c, &d, [7; 32]),
+    speak_pair(&mut k, &c, &d, [7; 32]),
     Outcome::Refused(crate::verdict::REFUSE_ROOM),
     "a second claim on a lane with one in flight is refused"
 );
-assert_eq!(k.ingest(&c, &d, [8; 32]), Outcome::GermPending, "another voice's first claim is its own room");
+assert_eq!(speak_pair(&mut k, &c, &d, [8; 32]), Outcome::GermPending, "another voice's first claim is its own room");
 k.unlist(listed.as_bytes(), false);
 let e = vec![(0, 0, 5u8), (0, 1, 5)];
 let f = vec![(0, 0, 6u8), (0, 1, 6)];
-assert_eq!(k.ingest(&e, &f, [7; 32]), Outcome::GermPending, "admitted once the claim in flight closed");
+assert_eq!(speak_pair(&mut k, &e, &f, [7; 32]), Outcome::GermPending, "admitted once the claim in flight closed");
 }
 
 /// §3.1 as ruled (I22, S13.15) — AN UNPAID RECALL CLOSES THE LANE UNTIL THE
@@ -48,7 +48,6 @@ assert_eq!(k.ingest(&e, &f, [7; 32]), Outcome::GermPending, "admitted once the c
 /// waits and refuses nothing.
 #[test]
 fn an_unpaid_recall_closes_the_lane_until_the_claim_in_flight_closes() {
-use crate::transducer::element::from_residual;
 let mut k = Kernel::new();
 let cover = k.treasury().bond_of(&[0x11; 32]).expect("the fixture hypha is bonded");
 k.enroll([9; 32], cover);
@@ -56,23 +55,23 @@ let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8), (0, 1, 2)];
 let c = vec![(0, 0, 3u8), (0, 1, 3)];
 let d = vec![(0, 0, 4u8), (0, 1, 4)];
-assert_eq!(k.ingest(&a, &b, [9; 32]), Outcome::GermPending);
+assert_eq!(speak_pair(&mut k, &a, &b, [9; 32]), Outcome::GermPending);
 let listed = k.quote().1[0].0.address();
-let lanes = from_residual(&germinate(&a, &b).unwrap()).lanes();
+let lanes = sentence_of(&a, &b).expect("a sentence").lanes();
 let short: [u64; 4] = std::array::from_fn(|l| u64::from(lanes[l]) * 3);
 k.record_recall_short([9; 32], &short);
 assert_eq!(
-    k.ingest(&c, &d, [9; 32]),
+    speak_pair(&mut k, &c, &d, [9; 32]),
     Outcome::Refused(crate::verdict::REFUSE_ROOM),
     "the lane it owes on is closed while its claim stands, bond or no bond"
 );
 k.unlist(listed.as_bytes(), false);
-assert_eq!(k.ingest(&c, &d, [9; 32]), Outcome::GermPending, "the claim closed and the lane reopened");
+assert_eq!(speak_pair(&mut k, &c, &d, [9; 32]), Outcome::GermPending, "the claim closed and the lane reopened");
 let e = vec![(0, 0, 5u8), (0, 1, 5)];
 let f = vec![(0, 0, 6u8), (0, 1, 6)];
 k.record_recall_short([10; 32], &short);
 assert_eq!(
-    k.ingest(&e, &f, [10; 32]),
+    speak_pair(&mut k, &e, &f, [10; 32]),
     Outcome::GermPending,
     "owed on a lane with nothing in flight, the first claim is admitted"
 );
@@ -82,7 +81,10 @@ assert_eq!(
 /// voice's first listing takes its whole room on a lane; probed a full
 /// aperture without moving it is unreachable. The next draw on that lane
 /// relocates it to the cavity and is admitted, where it was refused with
-/// `REFUSE_ROOM` while the stagnant listing sat on the page.
+/// `REFUSE_ROOM` while the stagnant listing sat on the page. The first
+/// listing is a chain under the voice's draw — the shape a probe settles
+/// against (26), listed by the fixture as the book lists it, since no voice
+/// speaks a chain (law 8); the next draw is a sentence the voice speaks.
 #[test]
 fn the_book_relocates_the_unreachable_before_it_refuses_room() {
 use crate::anastome::dialogue::PROBE_NOTHING;
@@ -90,7 +92,8 @@ let mut k = Kernel::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8)];
 let chain = germinate(&a, &b).unwrap();
-assert!(matches!(k.attest(&chain, [1; 32]), Outcome::GermPending));
+let k_now = k.k_step();
+k.book_list(crate::transducer::element::from_residual(&chain), k_now, [1; 32]);
 let target = k.quote().1[0].0.address();
 let listed = k.quote().1[0].0.sub().to_vec();
 // The voice's room is exactly what its one listing drew on S, G and H;
@@ -99,11 +102,10 @@ let listed = k.quote().1[0].0.sub().to_vec();
 let drawn = k.occupancy();
 let t_lane = 2usize;
 k.set_lane_cap(std::array::from_fn(|l| if l == t_lane { 8 } else { drawn[l] as usize }));
-let c = vec![(0, 0, 3u8), (0, 1, 3)];
+let c = vec![(0, 0, 3u8)];
 let d = vec![(0, 0, 4u8)];
-let chain_cd = germinate(&c, &d).unwrap();
 assert_eq!(
-    k.attest(&chain_cd, [1; 32]),
+    speak_pair(&mut k, &c, &d, [1; 32]),
     Outcome::Refused(crate::verdict::REFUSE_ROOM),
     "while the first listing is reachable the second draw is refused"
 );
@@ -122,10 +124,8 @@ for _ in 0..crate::physics::aperture_cycle() {
         PROBE_NOTHING
     );
 }
-// The same chain at a later K is a use, never the refused frame answered
-// again from the docket (23.8 idempotence by receipt).
 assert_eq!(
-    k.attest_at(&chain_cd, [1; 32], &[], 1),
+    speak_pair(&mut k, &c, &d, [1; 32]),
     Outcome::GermPending,
     "the book relocated the unreachable listing and admitted the draw"
 );

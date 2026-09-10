@@ -1,4 +1,4 @@
-// 24.3 arm 2 — QUOTE: ask the market what is open, and attest against it.
+// 24.3 arm 2 — QUOTE: ask the market what is open, and probe against it.
 //
 //! An occluded wire skips the ask entirely — the impedance is already
 //! perceived, and the answer to it is patience rather than repetition. The
@@ -60,7 +60,7 @@ match entity.quote() {
         // C4, again at the quote: T is a cost, never a pace.
         m.dwell_remaining = q.surface;
         m.dwell_remaining[2] = 0;
-        let (mut n_closed, mut n_descent, mut n_nothing, mut n_settled, mut n_silent, mut n_attested, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32, 0u32, 0u32);
+        let (mut n_closed, mut n_descent, mut n_nothing, mut n_settled, mut n_silent, mut n_err) = (0u32, 0u32, 0u32, 0u32, 0u32, 0u32);
         let (mut n_closing, mut n_ruled_hit, mut n_stood, mut n_held) = (0u32, 0u32, 0u32, 0u32);
         for cluster in &q.clusters {
             if cluster.chain.is_empty() {
@@ -141,10 +141,11 @@ match entity.quote() {
                     ),
                 }
             }
-            // Two utterances at most: the sentence c.settles the
-            // listing; a residual not yet claimed is attested once
-            // as this voice's irreducible claim. Puncture cites
-            // (u32::MAX sections) are speech, not silence.
+            // One utterance: the sentence probes the listing. A residual
+            // no held word covers is this voice's own thought, held
+            // (24.2) and never attested as a chain (law 8, ruled
+            // 2026-09-10). Puncture cites (u32::MAX sections) are speech,
+            // not silence.
             if let (0, []) = (cites.len(), residual.as_slice()) {
                 n_silent += 1;
                 continue;
@@ -176,36 +177,6 @@ match entity.quote() {
                     }
                 }
             }
-            // The residual is attested whenever it stands: consensus is
-            // the hypha's receipts across voices, never this voice's
-            // memory of having said it. A familiar residual is one this
-            // genome already expressed — said again for the quorum.
-            let _ = familiar;
-            if let [_, ..] = residual.as_slice() {
-                match entity.attest(&residual, &cites) {
-                    Ok(reply) => {
-                        n_attested += 1;
-                        let _ = entity.puncture_verified(&cites);
-                        if reply.settle.is_some() {
-                            c.settles += 1;
-                        }
-                        if let t @ [_, ..] = reply.verdict.taught() {
-                            let _ = entity.absorb_taught(t);
-                        }
-                        m.last_pressure = reply.pressure;
-                        // The attest reply's height only advances too (S13.5).
-                        if reply.height > m.last_height {
-                            m.last_height = reply.height;
-                        }
-                        entity.advance_height(reply.height);
-                        m.dwell_remaining = reply.pressure;
-                    }
-                    Err(_) => {
-                        c.errors += 1;
-                        n_err += 1;
-                    }
-                }
-            }
         }
         let (atlas_ruled, atlas_stood, atlas_held) = entity.atlas_standing_counts();
         eprintln!(
@@ -217,7 +188,7 @@ match entity.quote() {
             mycelium::chronometry::Height::stamp_of(entity.now_tu()),
         );
         eprintln!(
-            "[{tag}] [{}] quote {} clusters: closed {n_closed} descent {n_descent} nothing {n_nothing} settled {n_settled} silent {n_silent} attested {n_attested} err {n_err}",
+            "[{tag}] [{}] quote {} clusters: closed {n_closed} descent {n_descent} nothing {n_nothing} settled {n_settled} silent {n_silent} err {n_err}",
             mycelium::chronometry::Height::stamp_of(entity.now_tu()),
             q.clusters.len(),
         );

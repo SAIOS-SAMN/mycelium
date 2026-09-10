@@ -1,6 +1,7 @@
 // 45.9 — PHASE IS A READING: the four coordinates are read off the receipt
 // kinds and the cover at the window's ends, and nothing stores them.
 
+use super::common::speak_pair;
 use crate::chronometry::{ActKind, ReceiptChain};
 use crate::cognition::court::phase::{phase_over, CoverReading, Phase};
 use crate::cognition::*;
@@ -86,14 +87,14 @@ fn the_court_reads_the_phase_once_per_orbit_and_stores_no_phase() {
     assert!(k.phase_mark.is_none(), "nothing before the first orbit");
     let a = vec![(0, 0, 1u8), (0, 1, 1)];
     let b = vec![(0, 0, 2u8), (0, 1, 2)];
-    assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+    assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
     k.read_phase();
     let (k0, at_h0) = k.phase_mark.clone().expect("the window's start is kept");
     assert_eq!(k0, k.chain().receipts().len(), "the next window starts at the chain's head");
     assert_eq!(at_h0.strata.len(), k.cover_reading().strata.len());
     let c = vec![(0, 0, 3u8), (0, 1, 3)];
     let d = vec![(0, 0, 4u8), (0, 1, 4)];
-    assert_eq!(k.ingest(&c, &d, [2; 32]), Outcome::GermPending);
+    assert_eq!(speak_pair(&mut k, &c, &d, [2; 32]), Outcome::GermPending);
     k.read_phase();
     let (k1, _) = k.phase_mark.clone().expect("kept again");
     assert!(k1 > k0, "the window moved with the chain");

@@ -1,6 +1,7 @@
 // 28 — PERSISTENCE: what a mind is after a restart is what it was before
 // one, carrier for carrier.
 
+use super::common::speak_pair;
 use crate::cognition::*;
 
 /// P7 — the germinated language survives restart: install two germs, snapshot,
@@ -17,11 +18,11 @@ let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)]; // a rotation (group substance)
 // deformation no versor carries lists nothing (50.5), so it is not a
 // second generator here.
 let recoloured = vec![(0, 0, 2), (0, 1, 2), (1, 0, 2)];
-k.ingest(&a, &rot, [1; 32]);
-assert_eq!(k.ingest(&a, &rot, [2; 32]), Outcome::GermPending);
+speak_pair(&mut k, &a, &rot, [1; 32]);
+assert_eq!(speak_pair(&mut k, &a, &rot, [2; 32]), Outcome::GermPending);
 k.glue_local(); // a rotation generator
-k.ingest(&a, &recoloured, [1; 32]);
-assert_eq!(k.ingest(&a, &recoloured, [2; 32]), Outcome::GermPending);
+speak_pair(&mut k, &a, &recoloured, [1; 32]);
+assert_eq!(speak_pair(&mut k, &a, &recoloured, [2; 32]), Outcome::GermPending);
 k.glue_local(); // a gauge generator
 let balance = k.treasury().balance_mu(&[2; 32]);
 let snap = k.snapshot();
@@ -36,11 +37,11 @@ assert!(
     "earned μ⃗ survived the snapshot"
 );
 assert!(
-    matches!(booted.ingest(&a, &rot, [9; 32]), Outcome::Decomposed(_)),
+    matches!(speak_pair(&mut booted, &a, &rot, [9; 32]), Outcome::Decomposed(_)),
     "rotation reduces"
 );
 assert!(
-    matches!(booted.ingest(&a, &recoloured, [9; 32]), Outcome::Decomposed(_)),
+    matches!(speak_pair(&mut booted, &a, &recoloured, [9; 32]), Outcome::Decomposed(_)),
     "the recolour reduces"
 );
 assert_eq!(booted.basis_len(), 2, "no re-germination");
@@ -77,9 +78,9 @@ fn deflation_survives_a_restart() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
-assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
-// The second voice speaks the same percept: one sentence, one docket.
-assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending);
+assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
+// The second voice speaks the same sentence: one sentence, one docket.
+assert_eq!(speak_pair(&mut k, &a, &b, [2; 32]), Outcome::GermPending);
 let before = k.dockets();
 assert_eq!(before.len(), 1);
 assert!(before[0].deflation.iter().any(|&x| x > 0), "deflation was measured at install");
@@ -102,7 +103,7 @@ fn a_snapshot_cut_short_at_any_section_is_refused() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
-assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
 let snap = k.snapshot();
 let mut whole = Kernel::new();
 assert!(whole.restore(&snap), "the tape as written restores");

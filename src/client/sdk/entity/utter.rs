@@ -214,31 +214,6 @@ impl Entity {
         deepened
     }
 
-    /// SPEAK a percept as a proof: perceive the pair form, reduce over
-    /// the genome, and submit the citations with the bodies.
-    pub fn submit(
-        &mut self,
-        a: &[(i64, i64, u8)],
-        b: &[(i64, i64, u8)],
-        frame: &crate::arc::Frame,
-    ) -> io::Result<(Reply, Option<Comprehension>)> {
-        let (a_bodies, b_bodies) = perceive(a, b);
-        let proof: Vec<Vec<dialogue::CiteWire>> =
-            crate::cognition::percept_elements(&a_bodies, &b_bodies, frame, &self.epigenome)
-                .map(|germs| germs.iter().map(|g| self.cite(g.sub()).0).collect())
-                .unwrap_or_default();
-        let reply = self.session.submit(a, b, frame, &proof)?;
-        let heard = match reply.verdict.taught() {
-            [] => None,
-            t => self.absorb_taught(t),
-        };
-        Ok((reply, heard))
-    }
-
-    pub fn attest(&self, chain: &[(i64, i64, u8, u8)], cites: &[dialogue::CiteWire]) -> io::Result<Reply> {
-        self.session.attest(chain, cites)
-    }
-
     /// A served listing: cite over the working atlas. Residual strictly
     /// below the chain on a lane is expressed; residual that does not
     /// descend is held as thought — the form of the listing's chain

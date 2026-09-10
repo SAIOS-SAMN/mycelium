@@ -479,34 +479,3 @@ pub(crate) fn relocate_corpus(
     }
 }
 
-/// The hypha a demand's residual homes on, read off the cover. `None` when a
-/// mesh lock is poisoned: no home is read, so none is routed to (§2.4); it
-/// panicked, and a caller that took "here" for an unread cover would route
-/// by a default (rule 11).
-pub(crate) fn demand_cover_home(mesh: &Mesh, kernel: &Mutex<Kernel>, chain: &[(i64, i64, u8, u8)]) -> Option<([u8; 32], String)> {
-    let residual = mycelium::transducer::element::from_residual(&chain.to_vec());
-    let inv = mycelium::transducer::stalk::invariant_of(&residual);
-    let mag = residual.magnitude();
-    let locked = kernel.lock();
-    let room = match locked.as_ref() {
-        Ok(k) => Some(room64(k.lane_room())),
-        Err(_) => None,
-    };
-    let self_id = room.as_ref().map(|room| (&mesh.vk, room, mesh.bind.as_str()));
-    let (Ok(c), Ok(r), Ok(a)) = (mesh.cover.lock(), mesh.rooms.lock(), mesh.addrs.lock()) else {
-        return None;
-    };
-    Some(home(&c, &inv, &mag, &r, &a, self_id))
-}
-
-/// The RENDEZVOUS for a content key: XOR-closest known hypha to the key's
-/// bits. A listing is not hashed; its Address walks the trie.
-pub(crate) fn rendezvous(key: &[u8], self_id: &[u8; 32], router: &Router) -> Option<String> {
-    let dist = |idb: &[u8]| -> [u8; 32] {
-        std::array::from_fn(|i| idb.get(i).copied().unwrap_or(0) ^ key.get(i).copied().unwrap_or(0))
-    };
-    match router.closest(key) {
-        Some((pid, addr)) if dist(&pid) < dist(self_id) => Some(addr),
-        _ => None,
-    }
-}

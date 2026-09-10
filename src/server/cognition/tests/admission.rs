@@ -24,7 +24,7 @@ for d in [b"p0".as_slice(), b"p1", b"p2"] {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
-k.ingest(&a, &b, [1; 32]);
+super::common::speak_pair(&mut k, &a, &b, [1; 32]);
 let mine = k.height();
 assert!(mine < peer.head_height(), "the peer is ahead: {mine} < {}", peer.head_height());
 
@@ -63,10 +63,10 @@ assert_eq!(k.known_head(&key.vk_bytes()), Some((2, head.chain_hash)));
 
 // The next step cites them, and its height is above the peer's head.
 let before = k.height();
-let c = vec![(0, 0, 5), (0, 1, 5)]; // a second recolour of the bar: a percept the eyes pair (20 as ruled, L7)
+let c = vec![(0, 0, 5), (0, 1, 5)]; // a second recolour of the bar: a pair the eyes open (20 as ruled, L7)
 // A second voice: the first has its one claim in flight on this lane
 // (§3.1 as ruled, S13.15), and any admitted act seals the step.
-k.ingest(&a, &c, [2; 32]);
+super::common::speak_pair(&mut k, &a, &c, [2; 32]);
 assert_eq!(k.pending_parents(), 0, "the step consumed them");
 assert!(
     k.height() > peer.head_height(),
@@ -87,7 +87,7 @@ fn a_bound_mind_seals_receipts_under_the_key_that_signs_for_it() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
-k.ingest(&a, &b, [1; 32]);
+super::common::speak_pair(&mut k, &a, &b, [1; 32]);
 let before: Vec<[u8; 32]> = k.chain().receipts().iter().map(|r| r.chain_hash).collect();
 assert!(!before.is_empty(), "the mind sealed receipts");
 assert!(

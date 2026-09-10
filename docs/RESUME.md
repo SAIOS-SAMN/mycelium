@@ -1,11 +1,11 @@
 # Resume notes (continuity across sessions)
 
-Last update: 2026-09-10, Stage 14 through the pre-L7 set (`impl/soak` at
-dd52a74 and the docs commit after it; `main` stands at 685a07c, before
-Stage 14, and is fast-forwarded on the operator's word). Living task list:
-`docs/MU-RECURSION-TASKS.md` (Stage 14 rows L0–L11 and the pre-L7 rows
-L7a–L9a). Spec: `docs/MU-RECURSION.md`. Standard: `docs/MU-STANDARDS.md`.
-Historical alpha landings: `docs/TRAJECTORY.md`.
+Last update: 2026-09-10, Stage 14 through L8p (`impl/soak`: the ruling
+"sentences only" d2a9c2e, then the L8p landing after it; `main` stands at
+685a07c, before Stage 14, and is fast-forwarded on the operator's word).
+Living task list: `docs/MU-RECURSION-TASKS.md` (Stage 14 rows L0–L11 and
+the pre-L7 rows L7a–L9a). Spec: `docs/MU-RECURSION.md`. Standard:
+`docs/MU-STANDARDS.md`. Historical alpha landings: `docs/TRAJECTORY.md`.
 
 ## Boot check
 
@@ -15,7 +15,7 @@ git log --oneline -1 main impl/soak          # impl/soak is ahead of main
 systemctl --user list-units 'mycelium-server@*' 'mycelium-client@*' --no-legend
 RUSTFLAGS='-D warnings' cargo test --release 2>&1 | grep -E "test result|FAILED"
 (cd xtask && cargo run)                        # gates, then clippy -D warnings
-# expected at dd52a74: lib 440, bins 9, alpha_plan 13, g_cga 6; xtask exit 0
+# expected at the L8p landing: lib 439, bins 9, alpha_plan 13, g_cga 6; xtask exit 0
 (cd xtask && cargo test)                       # the gates' own tests: 31
 ```
 
@@ -43,6 +43,34 @@ were not touched.
 
 ## State at handoff
 
+- **2026-09-10, "sentences only" and L8p.** The operator's critique: the
+  work was single-ended emission, and the court composing by F (the
+  percept act: `percept_elements` → `reduce_*` → `commit_germ`) was the
+  root of every misalignment with law 8. Ruled and written (d2a9c2e): law
+  8 sharpened, law 6 and 37.7 P3 corrected to two courts, 20 corrected,
+  23.8/26 sentence-native, 50.9 the contraction protocol, rows L8p and L8.
+  L8p landed after it: the percept, gossip, demand and routed-demand acts
+  are refused at the door (`REFUSE_NOT_A_SENTENCE`), `judge/percept.rs`
+  deleted; `ingest`, `adjudicate`, `attest`, `commit_germ`,
+  `reduce_all/germ/proven`, `percept_elements/family`, `resolve_cites`,
+  `taught_anchored_words`, the client's `submit`/`attest`, the seat's
+  percept/demand forms, the demand codec and the per-pair feed loop are
+  gone; `perceive_speech` → `perceive_sentence` (door, replay by G, then
+  `list_sentence`: a use of held language, a second voice as a party, the
+  room and reserve arms, listing + demands + escrow + docket + Offer) is
+  the one path from an utterance to the book; the second voice's use
+  re-escrows with every party. Tests reach the docket through the
+  fixture's voice-side F (`common::speak_pair`, `sentence_of`,
+  `strip_words`). Departures named in the commit: five chain-era tests
+  deleted with their claims (rebind/anchor, puncture-before-mint,
+  compound chain peeling, the projective leap, the wire judge), two more
+  retired with the codec (demand roundtrip, verdict decode), the
+  attest-idempotence claim moves to L8 (50.9's sealed address), the
+  probe/drain fixtures list a chain by `book_list`/`intake` (the corpus
+  intake still lists chains until L8's sentence-native quote), and the
+  kernel door's per-lane deferral is unreachable after the reflex
+  opening regenerates (the test now asserts the heard sentence and no
+  door fee for the broke speaker). 439/0/9/13/6/0, xtask 0. Next: L8.
 - **2026-09-10, the ruling on generative capacity and the pre-L7 set.**
   The operator ruled that the seams are severed first (L6→L8), that no beam
   search returns, and that chapter 37's opening of a letter is the court's
@@ -195,18 +223,16 @@ delegates; `cech::extend` reads the transition's own order), L6b 2686272
 puncture-before-mint move on residual chains only; twenty-seven tests
 re-asserted, none deleted). 437/0/9/13/6/0, xtask 0 at 2686272.
 
-Next, in order: L7 (G at the court: `replay_form_with` reconstructs every
-Word vertex on the court's copy of the family, re-derives every edge,
-reads every loop's holonomy in the stabilizer; the court binds a
-percept's pair as the sentence's family, so a percept-born sentence that
-closes mints on install and the stroke's `REFUSE_NOT_CLOSED` reads the
-closed sub-complex, not the demand vertices' remainder; `court demand
-listed` per demand vertex), L8 (seam 3: no `Irreducible(from_residual*)`,
-`attest(chain)` refused with `REFUSE_NOT_A_SENTENCE`, the gate
-`no_utterance_path_calls_from_residual`; the attest-path claims of L6b's
-court tests are re-asserted again there), L9 (the tape v6 recut on the
-operator's word, and the cold-boot reading of 50.7). The fleet is stopped
-and soaks nothing until L8 lands.
+Landed since: L7 (a0da3de and its rows) and, after the "sentences only"
+ruling (d2a9c2e), L8p — see "State at handoff". Next, in order: L8 (the
+contraction protocol, 50.9: `Adjudication` on the speech reply,
+`Entity::receive_adjudication`, `Contemplation::contract`, the sealed
+address in the utterance index, the receiver's `S' = C(S)` check, the
+sentence-native quote and probe, the gate
+`no_utterance_path_calls_from_residual`, the two-kernel codec test), then
+L9 (the tape v6 recut on the operator's word, and the cold-boot reading
+of 50.7), L10 (prime letters, a recut), L11 (the cover for a
+deformation). The fleet is stopped and soaks nothing until L8 lands.
 
 The earlier reading list (R1–R7 on d6e19a1): `court orbit docket …`
 period rising above 1 once ruled listings are passed over (R1); `court

@@ -16,7 +16,7 @@ pub(crate) const GATE: Gate = Gate {
     allow: &[],
     owed: &[
         ("bin/mycelium-server/transport.rs", 1),
-        ("client/sdk/entity/learn.rs", 3),
+        ("client/sdk/entity/learn.rs", 1),
         ("client/sdk/epigenome/atlas.rs", 1),
         ("client/sdk/epigenome/dialect.rs", 1),
         ("client/sdk/session.rs", 2),

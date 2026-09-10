@@ -31,13 +31,12 @@ pub(crate) fn retire_feed(path: &Path) {
     }
 }
 
-/// Corpus cursor: `next` is the next feed path. Pair index lives on the
-/// cursor so a depleted stroke resumes the same file.
+/// Corpus cursor: `next` is the next feed path. A family is thought through
+/// whole, so a depleted stroke resumes at the same file.
 pub(crate) struct Feed {
     home: PathBuf,
     files: Vec<PathBuf>,
     ti: usize,
-    pi: usize,
     conductor: Option<String>,
 }
 
@@ -47,7 +46,6 @@ impl Feed {
             home,
             files: Vec::new(),
             ti: 0,
-            pi: 0,
             conductor,
         }
     }
@@ -63,22 +61,12 @@ impl Feed {
                 self.files.rotate_left(cursor);
             }
             self.ti = 0;
-            self.pi = 0;
         }
         self.files.get(self.ti).cloned()
     }
 
-    pub(crate) fn pair_index(&self) -> usize {
-        self.pi
-    }
-
-    pub(crate) fn advance_pair(&mut self) {
-        self.pi += 1;
-    }
-
     pub(crate) fn finish(&mut self) {
         self.ti += 1;
-        self.pi = 0;
     }
 
     pub(crate) fn exhausted(&self) -> bool {

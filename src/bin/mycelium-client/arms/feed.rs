@@ -1,17 +1,17 @@
-// 24.3 arm 1 — FEED: present corpus transitions until the stroke spends.
+// 24.3 arm 1 — FEED: present the corpus, one family at a time, until the
+// stroke spends.
 //
-//! A percept is a PROOF spoken over this genome: what the genome reduces is
-//! cited, what it cannot is this voice's irreducible claim. The sync
-//! converges the genome between strokes.
+//! A family is thought through whole (21, 26): the form engine is the only
+//! extractor, the closed form is spoken as its sentence with its demands,
+//! and a family it does not close is a withheld form. No pair leaves this
+//! voice as cells (law 8, ruled 2026-09-10): the percept act is retired,
+//! and the per-pair presentation that spoke it with it.
 
-use crate::speak::{speak_form, withhold_unextracted};
 use crate::feed::{family_magnitude, retire_feed, Feed};
+use crate::speak::{speak_form, withhold_unextracted};
 use crate::Stroke;
-use mycelium::arc::{embed, grid_to_cells, parse_task};
+use mycelium::arc::parse_task;
 use mycelium::physics::{Physics, StrokeOutcome};
-use mycelium::sdk::Comprehension;
-use mycelium::transducer::element::measure_lanes;
-use mycelium::transducer::germinate::germinate;
 
 pub(crate) fn feed_arm(
     stroke: &mut Stroke<'_>,
@@ -22,28 +22,23 @@ pub(crate) fn feed_arm(
     )>,
     occluded: bool,
 ) {
-let Stroke { entity, physics, c, outcome, m, tag } = stroke;
-// ── FEED (entropic): present corpus transitions until the stroke
-// spends. A percept is a PROOF spoken over this genome: what the
-// genome reduces is cited, what it cannot is this voice's
-// irreducible claim; the sync converges the genome between strokes.
-while let Some(path) = feed.next() {
-    if occluded {
-        break;
-    }
-    let Ok(text) = std::fs::read_to_string(&path) else {
-        retire_feed(&path);
-        feed.finish();
-        continue;
-    };
-    let Some(task) = parse_task(&text) else {
-        retire_feed(&path);
-        feed.finish();
-        continue;
-    };
-    let Some((input, output)) = task.train.get(feed.pair_index()) else {
-        // TASK BOUNDARY — the form engine is the only extractor.
-        // A family it does not close is a withheld form (U1 stands it).
+    let Stroke { entity, physics, c, outcome, tag, .. } = stroke;
+    while let Some(path) = feed.next() {
+        if occluded {
+            break;
+        }
+        let Ok(text) = std::fs::read_to_string(&path) else {
+            retire_feed(&path);
+            feed.finish();
+            continue;
+        };
+        let Some(task) = parse_task(&text) else {
+            retire_feed(&path);
+            feed.finish();
+            continue;
+        };
+        // THE FAMILY WHOLE — the form engine is the only extractor. A family
+        // it does not close is a withheld form (U1 stands it).
         let mag = family_magnitude(&task.train);
         if !mycelium::economy::lanes_short(&physics.reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
             break;
@@ -81,62 +76,5 @@ while let Some(path) = feed.next() {
         }
         retire_feed(&path);
         feed.finish();
-        continue;
-    };
-    feed.advance_pair();
-    // THE EYE READS THROUGH ρ⁻¹ (sensor hardware, ruled): a
-    // dimension-changing pair is spoken on the codomain complex — the
-    // input pulled back along the exact frame map, the output native —
-    // so the engine digests an ordinary chain bounded by the output.
-    let (hi, wi) = (input.len(), input.first().map_or(0, |r| r.len()));
-    let (ho, wo) = (output.len(), output.first().map_or(0, |r| r.len()));
-    if hi == 0 || wi == 0 || ho == 0 || wo == 0 {
-        continue;
     }
-    let (a, b) = (grid_to_cells(&embed(input, ho, wo)), grid_to_cells(output));
-    if a.is_empty() || b.is_empty() {
-        continue;
-    }
-    let Some(g) = germinate(&a, &b) else {
-        continue;
-    };
-    let mag = measure_lanes(&g);
-    if !mycelium::economy::lanes_short(&physics.reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
-        break;
-    }
-    match entity.submit(&a, &b, &mycelium::arc::Frame::new(hi, wi, ho, wo)) {
-        Ok((reply, heard)) => {
-            c.fed += 1;
-            if reply.settle.is_some() {
-                c.settles += 1;
-            }
-            match heard {
-                Some(Comprehension::Understood(_)) | Some(Comprehension::Held) | Some(Comprehension::Admitted) => c.derived += 1,
-                Some(Comprehension::Novel { .. })
-                | Some(Comprehension::Dialect(_))
-                | Some(Comprehension::Withheld { .. }) => c.witnessed += 1,
-                None => {}
-            }
-            physics.bump(&mag);
-            StrokeOutcome::add(&mut outcome.fed, &mag);
-            m.last_pressure = reply.pressure;
-            m.last_height = reply.height;
-            // C4. T NEVER PACES A STROKE. Lane 2 is temporal extent
-            // -- a COST the listing carries, counted in heights
-            // (law 9, 45.4) -- not a coordinate a voice can expand
-            // on. The hypha's reported T pressure is the standing
-            // extent of listings that have not closed, so it climbs
-            // for as long as the book holds anything and never
-            // falls; dwelling on it paced voices into a stop, the
-            // soak reading `dwell [.., .., 909 -> 4048, ..]`. The
-            // voice dwells on the lanes it can actually expand.
-            m.dwell_remaining = reply.pressure;
-            m.dwell_remaining[2] = 0;
-        }
-        Err(_) => {
-            c.errors += 1;
-        }
-    }
-}
-
 }

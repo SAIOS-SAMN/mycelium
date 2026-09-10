@@ -130,28 +130,22 @@ impl Entity {
                     },
                 }
             }
-            let Some((held, g)) = held_g else { continue };
+            let Some((_, g)) = held_g else { continue };
             match (g.axes().as_slice(), g.sub()) {
                 ([], []) => {
                     self.glued.insert(inv.key(), ());
                 }
                 _ => {
                     if !self.obstructions.contains(&fetched.address()) {
-                        // THE OBSTRUCTION RIDES UP: the two views of one
-                        // object are spoken to the hypha as a percept pair
-                        // (held view → fetched view), a demand on the book
-                        // for the word that carries one onto the other. The
-                        // docket takes it to the court, where it lands on
-                        // the Dialect arm if the federation cannot glue it.
-                        let scene = |w: &Element| -> Vec<(i64, i64, u8)> { w.sub().iter().map(|&(r, c, _, h)| (r, c, h)).collect() };
-                        let (a, b) = (scene(held), scene(&fetched));
-                        let extent = |s: &[(i64, i64, u8)]| -> (usize, usize) {
-                            let h = s.iter().map(|c| c.0 + 1).max().unwrap_or(0).max(1) as usize;
-                            let w = s.iter().map(|c| c.1 + 1).max().unwrap_or(0).max(1) as usize;
-                            (h, w)
-                        };
-                        let ((ha, wa), (hb, wb)) = (extent(&a), extent(&b));
-                        let _ = self.session.submit(&a, &b, &crate::arc::Frame::new(ha, wa, hb, wb), &[]);
+                        // THE OBSTRUCTION IS KEPT AS MEASURED: two views of
+                        // one object whose transition does not vanish. It
+                        // rode up as a percept pair (held view → fetched
+                        // view), a demand on the book for the word that
+                        // carries one onto the other — a voice's cells at a
+                        // court, which law 8 refuses (ruled 2026-09-10). It
+                        // is held here as the dialect measured; the
+                        // contraction protocol (50.9, L8) carries it as a
+                        // demand vertex of a sentence.
                         self.obstructions.insert(fetched.address(), g);
                     }
                 }

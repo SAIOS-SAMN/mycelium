@@ -11,11 +11,6 @@ pub(crate) fn chart_simplex_key(inv: &crate::transducer::stalk::Invariant, sim: 
     buf
 }
 
-/// Canonical encoding of a voice's K: the index itself.
-pub(crate) fn utterance_k_key(k: u64) -> Vec<u8> {
-    k.to_le_bytes().to_vec()
-}
-
 pub(crate) fn loop_key(chart: &crate::transducer::stalk::Invariant, voice: &[u8; 32]) -> Vec<u8> {
     let mut buf = Vec::new();
     crate::transducer::address::put_bytes(&mut buf, &chart.key());
@@ -90,20 +85,4 @@ pub(crate) fn edge_pair(addrs: &[Address]) -> Option<(Address, Address)> {
 pub(crate) fn sentence_rule_of(form: &Element) -> Option<crate::transducer::sentence::SentenceRule> {
     use crate::transducer::sentence::{from_element_form, rule_of_form};
     Some(rule_of_form(from_element_form(form)?))
-}
-
-/// The consilience address of a SECTION prospect: the carrying thought's stable
-/// base address ⊕ the assignment — so two kernels independently proposing the
-/// same axis extension meet at one receipt (wire identity, never reasoned on).
-pub(crate) fn section_address(thought: &[u8], asg: &[(u8, u8)]) -> Vec<u8> {
-    let mut sigma = asg.to_vec();
-    sigma.sort_unstable();
-    let mut buf = Vec::new();
-    crate::transducer::address::put_bytes(&mut buf, thought);
-    buf.extend_from_slice(&(sigma.len() as u32).to_le_bytes());
-    for (b, a) in sigma {
-        buf.push(b);
-        buf.push(a);
-    }
-    buf
 }

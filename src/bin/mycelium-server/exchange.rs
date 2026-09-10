@@ -28,8 +28,8 @@ pub(crate) type Origin = ([u8; 32], u32);
 /// THE LOCK ORDER of this binary (Stage 11 I26), read from every site that
 /// holds one lock while taking another. The kernel is taken first, and
 /// under it, in this order and never the reverse: `cover`, then `rooms`,
-/// then `addrs` (`homes_here`, `demand_cover_home`, the glue in the
-/// exchange and the offer judge, the court stroke's Λ in
+/// then `addrs` (`homes_here`, the glue in the exchange and the offer
+/// judge, the court stroke's Λ in
 /// `withholding_lambda`), then, those three released, `rtt_window` (the
 /// same Λ). The router is never taken under the kernel. No path holds a
 /// mesh lock, the router, the registry, the syllabus, the roots or the
@@ -92,12 +92,6 @@ impl Clone for Mesh {
     }
 }
 
-/// THE JUDGE on a reflex worker. The kernel lock is held only for the reflex
-/// opening and the commit (synthesis::adjudicate / attest); the reduction
-/// runs over the language snapshot with no lock held. The reply carries the
-/// outcome, the per-lane metabolism, what was taught, and the settle
-/// receipt; a percept still awaiting consilience routes one receipt to its
-/// rendezvous.
 /// SPEAK A ROOT ON THE NERVE: to the one peer the router places closest to
 /// the family's key, other than this node and the voice it was heard from.
 /// Every node walks the same key to the same next hop, so a root crosses

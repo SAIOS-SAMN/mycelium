@@ -198,9 +198,15 @@ fn dialect_enters_on_stood_and_sheds() {
 #[test]
 fn hypha_snapshot_is_myc4() {
     let mut k = Kernel::new();
-    let a = vec![(0, 0, 1u8), (0, 1, 1)];
-    let b = vec![(0, 0, 2u8), (0, 1, 2)];
-    let _ = k.ingest(&a, &b, [1; 32]);
+    // A voice's sentence for a recolour, spoken through the one door an
+    // utterance has (law 8): a listing on the book to snapshot.
+    let family = vec![(grid(&["11"]), grid(&["22"]))];
+    let rule = extract_rule(&family).expect("a recolour extracts");
+    let spoken = mint_sentence(&rule, &family, &NoCrystal).expect("a sentence");
+    let task = mycelium::registry::task_id(&mycelium::arc::Task { train: family.clone(), test: Vec::new() });
+    k.bind_task_family(&task, family);
+    let codes = k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&spoken));
+    assert_eq!(codes, vec![dialogue::SPEECH_STOOD], "the sentence is listed");
     let snap = k.snapshot();
     assert_eq!(&snap[..4], b"MYC4");
     let mut k2 = Kernel::new();

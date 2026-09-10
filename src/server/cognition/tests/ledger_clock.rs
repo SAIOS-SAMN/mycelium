@@ -1,6 +1,7 @@
 // 45.2, 45.3 — THE LEDGER IS THE CLOCK: causal order is partial, and an
 // extent is replayed from the chain that holds it.
 
+use super::common::speak_pair;
 use crate::cognition::*;
 
 /// A2 / 5.2b. Supersession on the dialect book is CAUSAL ORDER (45.3), not
@@ -33,12 +34,12 @@ assert!(!crate::transducer::element::same_versor(&v1, &v2), "two transitions");
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
-k.ingest(&a, &b, [1; 32]);
+speak_pair(&mut k, &a, &b, [1; 32]);
 let r0 = k.chain().head_hash();
 k.push_cocycle_at(&inv, [1; 32], [2; 32], v1.clone(), ck1.clone(), r0);
 // A second voice: the first has its one claim in flight on this lane
 // (§3.1 as ruled, S13.15), and the act here only needs the mind to move.
-k.ingest(&a, &[(0, 0, 5), (0, 1, 5)], [2; 32]);
+speak_pair(&mut k, &a, &[(0, 0, 5), (0, 1, 5)], [2; 32]);
 let r1 = k.chain().head_hash();
 assert_ne!(r0, r1, "the mind moved");
 let chain_before = k.dialect_chain_len();
@@ -58,7 +59,7 @@ assert_eq!(k.dialect_chain_len(), chain_before + 1, "the superseded one is kept"
 // CONCURRENT: the second stands at a PEER's receipt, admitted but never
 // cited, so neither frontier is below the other. Nothing supersedes.
 let mut k = Kernel::new();
-k.ingest(&a, &b, [1; 32]);
+speak_pair(&mut k, &a, &b, [1; 32]);
 let mine = k.chain().head_hash();
 k.push_cocycle_at(&inv, [1; 32], [2; 32], v1.clone(), ck1.clone(), mine);
 
@@ -106,7 +107,7 @@ let mut k = Kernel::new();
 k.set_height(4);
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
-k.ingest(&a, &b, [1; 32]);
+speak_pair(&mut k, &a, &b, [1; 32]);
 let addr = k.pending.fiber(crate::network::nerve::ROOT).next().expect("listed").1.0.address();
 assert_eq!(k.t_extent(addr.as_bytes(), 4), 0, "extent is zero at first vantage");
 k.set_height(11);
@@ -133,8 +134,8 @@ fn docketed(me: [u8; 32]) -> (Kernel, crate::transducer::address::Address) {
     k.bind_identity(me);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole: one body, one word (20 as ruled, L7)
-    assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
-    assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending);
+    assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
+    assert_eq!(speak_pair(&mut k, &a, &b, [2; 32]), Outcome::GermPending);
     k.court_stroke(super::common::one_stroke_transport);
     let addr = k.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().0;
     (k, crate::transducer::address::Address::from(addr))
@@ -219,7 +220,7 @@ fn a_lapsed_citation_seals_a_receipt() {
     k.bind_identity([0x5d; 32]);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole: one body, one word (20 as ruled, L7)
-    assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+    assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
     let laddr = k.pending.fiber(crate::network::nerve::ROOT).next().unwrap().0;
     k.standing_h.insert(&laddr, 0);
     k.set_height(crate::physics::aperture_cycle() as u64 + 1);
@@ -247,7 +248,7 @@ fn a_citation_does_not_lapse_against_an_unmeasured_transport() {
     k.bind_identity([0x5d; 32]);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole: one body, one word (20 as ruled, L7)
-    assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+    assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
     let laddr = k.pending.fiber(crate::network::nerve::ROOT).next().unwrap().0;
     k.standing_h.insert(&laddr, 0);
     // Standing far past any aperture: the extent is not what holds it.

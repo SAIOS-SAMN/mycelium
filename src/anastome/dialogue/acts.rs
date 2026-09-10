@@ -7,8 +7,11 @@
 
 use super::*;
 
-/// Act tags — frame `body[0]`. ACT_PERCEPT/ACT_GOSSIP keep their historical
-/// values so existing kernels speak unchanged.
+/// Act tags — frame `body[0]`. ACT_PERCEPT, ACT_GOSSIP and ACT_DEMAND are
+/// RETIRED (26, law 8, ruled 2026-09-10): a court hears sentences and
+/// nothing else, and a frame carrying one of these is refused at the door
+/// with `REFUSE_NOT_A_SENTENCE`. The values stand so the door can name what
+/// it refused; nothing encodes them.
 pub const ACT_PERCEPT: u8 = 0x00;
 pub const ACT_GOSSIP: u8 = 0x01;
 pub const ACT_DEMAND: u8 = 0x02;
@@ -147,10 +150,8 @@ pub const ACT_ROOT: u8 = 0x13;
 /// to the key's home.
 pub const ACT_PEERS: u8 = 0x15;
 
-/// A DEMAND ROUTED ON THE NERVE to the listing key's home hypha — so the
-/// second voice on a listing can be a stranger's, not a local twin's:
-/// `[ACT_DEMAND_ROUTED][origin hypha 32][the demand body as spoken]`.
-/// Heard once as a demand at the home; never routed again.
+/// RETIRED with the demand (26, law 8, ruled 2026-09-10): a demand routed on
+/// the nerve to a listing's home. Refused at the door, never routed again.
 pub const ACT_DEMAND_ROUTED: u8 = 0x14;
 
 /// A CITATION ON THE WIRE. The versor and the body ARE the operator: the
@@ -359,18 +360,6 @@ pub struct SolveAct {
     pub rule: Option<Vec<u8>>,
 }
 
-/// A DEMAND with the citations that came with it.
-pub struct DemandAct {
-    /// The demanding voice.
-    pub voice: [u8; 32],
-    /// The chain it demands a word for.
-    pub chain: Vec<Cell>,
-    /// What it could already cite.
-    pub cites: Vec<CiteWire>,
-    /// The demander's own K, so a duplicate (voice, address, K) is answered
-    /// from the docket rather than re-reduced.
-    pub k: u64,
-}
 /// One selection's birth evidence: `(address, positions, scene)`
 pub type EvidenceItem = crate::transducer::anchor::AddressedEvidence;
 

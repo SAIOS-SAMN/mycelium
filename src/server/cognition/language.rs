@@ -36,6 +36,11 @@ pub enum Outcome {
     /// or sealed; the refusal is the whole of what happened, and it travels
     /// to the voice.
     Refused(&'static str),
+    /// The door DEFERRED the act on the lanes named (23.8, S13.4): the
+    /// book's reserve is spent there and the voice paid nothing on them.
+    /// Nothing was heard, docketed or drawn; the voice dwells on the lanes
+    /// it carries and speaks again.
+    Deferred([u64; 4]),
 }
 
 /// The Čech glue of a fetched word on an overlapping chart.
@@ -47,26 +52,15 @@ pub enum Glue {
     Slashed(&'static str),
 }
 
-/// The result of reducing a demand's substance against the generator basis: either
-/// a canonical sentence (fully decomposed; indices into the language the
-/// reduction ran over) or an irreducible residual (a critical pair to complete
-/// by germination).
-#[derive(Debug, Clone)]
+/// The result of the redundancy probe over the language: the held words a
+/// word's substance decomposes through (indices into the language the
+/// reduction ran over), or none. `Irreducible` carries no element: what
+/// the language does not span is not composed by the court (law 8).
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum NormalForm {
     Decomposed(Vec<usize>),
-    Irreducible(Box<Element>),
+    Irreducible,
 }
-
-impl PartialEq for NormalForm {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (NormalForm::Decomposed(a), NormalForm::Decomposed(b)) => a == b,
-            (NormalForm::Irreducible(a), NormalForm::Irreducible(b)) => a.same_vertex(b),
-            _ => false,
-        }
-    }
-}
-impl Eq for NormalForm {}
 
 /// THE LANGUAGE SNAPSHOT: the held words and their atlas, immutable and
 /// shared by pointer with every reflex worker. Reduction, congruence, and
@@ -196,34 +190,6 @@ pub struct Priced {
     pub open: Vec<crate::transducer::stalk::Invariant>,
 }
 
-/// A SELECTION CRITICAL PAIR: the index of the word that was placed and the
-/// support it was placed on.
-pub type CriticalPair = (usize, Vec<(i64, i64)>);
-
-/// A reduction computed off the lock, ready to commit: the germ, its context,
-/// the normal form over `language` (the snapshot it reduced over, so cited
-/// indices resolve to addresses at commit), and the selection critical pairs.
-pub struct Reduction {
-    pub germ: Element,
-    pub form: NormalForm,
-    pub qs: Vec<CriticalPair>,
-    pub language: std::sync::Arc<Language>,
-    /// The listing this reduction settles: the address of the whole
-    /// utterance's coboundary (a percept's pair, a demand's chain), where
-    /// the deflation an installed word earns is read.
-    pub listing: crate::transducer::address::Address,
-    /// Empty-cites irreducible: remainder of a spoken connection or an
-    /// unreached-moduli demand. Quoted. A percept-pair tape is not.
-    pub frontier: bool,
-}
-
-/// THE SHARED PROJECTIVE DECOMPOSITION — speculative projection over a held
-/// language, SECTION-AWARE (a bundle speaks its whole family through the
-/// punctured axis). This is one mathematics worn by two stacks: the kernel's
-/// reduction (perception-side) and the C-stack's COMPREHENSION — a received
-/// utterance decomposed toward understanding over the receiver's genome, never
-/// re-cognized, never recalled.
-///
 /// The adoption outcome — a deterministic status, never a boolean gate.
 /// Every arm names what actually happened; the caller maps states, it does
 /// not branch on success.

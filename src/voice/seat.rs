@@ -1,5 +1,5 @@
 // 45, 46 — THE SEAT: the identity a kernel speaks from, its own receipt
-// chain, and the five forms it utters.
+// chain, and the forms it utters.
 
 use crate::anastome::dialogue::{self, CiteWire};
 use crate::chronometry::{ActKind, ReceiptChain};
@@ -82,27 +82,10 @@ impl Voice {
         self.k()
     }
 
-    // ── the five forms and the acts that carry them ──────────────────────
-
-    /// A PERCEPT: two scenes as bodies with the frame and this voice's
-    /// proof per germ.
-    pub fn percept(
-        &self,
-        a: &[Vec<(i64, i64, u8)>],
-        b: &[Vec<(i64, i64, u8)>],
-        frame: &crate::arc::Frame,
-        proof: &[Vec<CiteWire>],
-    ) -> Vec<u8> {
-        let mut out = vec![dialogue::ACT_PERCEPT];
-        out.extend_from_slice(&crate::cognition::encode_percept(a, b, &self.identity, frame, proof));
-        out
-    }
-
-    /// A DEMAND: a residual with this voice's citations (empty: irreducible
-    /// for this voice).
-    pub fn demand(&self, chain: &[(i64, i64, u8, u8)], cites: &[CiteWire]) -> Vec<u8> {
-        dialogue::encode_demand_at(&self.identity, self.k(), chain, cites)
-    }
+    // ── the forms and the acts that carry them ───────────────────────────
+    // The percept and the demand that stood here carried this voice's cells
+    // and chains to a court (law 8, ruled 2026-09-10); a voice speaks
+    // sentences (`Entity::speak`), probes, quotes, learns and solves.
 
     /// A QUOTE request: "what is the highest-yield work?"
     pub fn quote(&self) -> Vec<u8> {

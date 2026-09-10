@@ -1,6 +1,7 @@
 // 24.1 — THE APERTURE: what the mind can afford to hold, what it sheds,
 // and that the cost of one word does not grow with the book.
 
+use super::common::speak_pair;
 use crate::cognition::*;
 
 /// THE TWO-STROKE BREATHES: sustained germination depletes the reserve; a germ
@@ -16,12 +17,12 @@ let mut k = Kernel::new();
 // lost a cell is a body no versor carries — no sentence, no listing.
 let a = vec![(0, 0, 1), (0, 1, 1)];
 // ENTROPIC EXPANSION: eight distinct germs drain the residual lane — each
-// a new cell of its own hue beside the bar, a creation the percept's
+// a new cell of its own hue beside the bar, a creation the voice's
 // sentence carries as a demand beside the bar's own word (20 as ruled, 50.5).
 for n in 0..8u8 {
     let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, n + 2)];
     // One vantage dockets; a second voice on the same pair is a use.
-    match k.ingest(&a, &b, [1; 32]) {
+    match speak_pair(&mut k, &a, &b, [1; 32]) {
         Outcome::GermPending => k.glue_local(),
         Outcome::Installed(_) | Outcome::Sectioned(_) | Outcome::Decomposed(_) => {}
         o => panic!("germ {n}: {o:?}"),
@@ -34,9 +35,9 @@ for n in 0..8u8 {
 let ga = vec![(0, 0, 4), (0, 1, 4)]; // 1→4
 let gb = vec![(0, 0, 5), (0, 1, 5)]; // 1→5
 let held: Vec<Vec<u8>> = k.provisional.fiber(crate::network::nerve::ROOT).map(|(key, _)| key).collect();
-assert_eq!(k.ingest(&a, &ga, [1; 32]), Outcome::GermPending);
-// The sentence A's percept listed, read off the docket by the address
-// the court gave it: the one listing that was not there before.
+assert_eq!(speak_pair(&mut k, &a, &ga, [1; 32]), Outcome::GermPending);
+// The sentence A spoke, read off the docket by the address the court
+// gave it: the one listing that was not there before.
 let ga_spoken = k
     .provisional
     .fiber(crate::network::nerve::ROOT)
@@ -45,20 +46,20 @@ let ga_spoken = k
     .expect("ga's sentence is on the docket");
 // Voice 1 has its one claim in flight on this lane (§3.1 as ruled,
 // S13.15); B's first voice is another arriving identity.
-assert_eq!(k.ingest(&a, &gb, [4; 32]), Outcome::GermPending);
+assert_eq!(speak_pair(&mut k, &a, &gb, [4; 32]), Outcome::GermPending);
 // A's quorum lands on the recovered lane and installs — spending it back out…
-assert_eq!(k.ingest(&a, &ga, [2; 32]), Outcome::GermPending);
+assert_eq!(speak_pair(&mut k, &a, &ga, [2; 32]), Outcome::GermPending);
 let mut cover = crate::network::nerve::Cover::new();
 let _ = k.glue_fetched(ga_spoken, [2; 32], [1; 32], &mut cover);
 // …so B finds the lane DEPLETED. The METABOLISM is what defers -- the
 // only thing that should gate here (E3) -- and the germ is not lost: a
 // later submission dockets it once the reserve recovers. What does NOT
 // gate it is a count of voices; that was the quorum this replaced.
-match k.ingest(&a, &gb, [2; 32]) {
+match speak_pair(&mut k, &a, &gb, [2; 32]) {
     Outcome::GermPending | Outcome::Sectioned(_) => {}
     o => panic!("deferred or sectioned, not lost: {o:?}"),
 }
-match k.ingest(&a, &gb, [3; 32]) {
+match speak_pair(&mut k, &a, &gb, [3; 32]) {
     Outcome::GermPending => k.glue_local(),
     Outcome::Installed(_) | Outcome::Sectioned(_) | Outcome::Decomposed(_) => {}
     o => panic!("deferral complete: {o:?}"),
@@ -89,8 +90,8 @@ let mut k = Kernel::new();
 k.set_height(5);
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
-assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending, "the percept lists a sentence");
-k.ingest(&a, &b, [2; 32]);
+assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending, "the sentence is listed");
+speak_pair(&mut k, &a, &b, [2; 32]);
 k.court_stroke(super::common::one_stroke_transport);
 let hot = (
     k.field_hot_len(),
@@ -193,7 +194,7 @@ fn a_depleted_lane_lists_the_demand_instead_of_germinating_it() {
         "the reserve is spent on some lane"
     );
     let before = k.field().len();
-    let out = k.ingest(&a, &b, [1; 32]);
+    let out = speak_pair(&mut k, &a, &b, [1; 32]);
     assert_eq!(out, Outcome::GermPending, "a deferred demand still stands");
     assert!(
         k.field().len() > before,
@@ -248,8 +249,8 @@ fn a_depleted_lane_charges_a_sentence_by_its_loop_words() {
     assert!(steps > 0, "the loops name a charge");
 
     let mut k = Kernel::new();
-    // Admission is room (23.8, S9.6): this fixture bypasses `reflex_open`
-    // to reach `commit_germ` directly with an unbonded voice, which has
+    // Admission is room (23.8, S9.6): this fixture bypasses the replay to
+    // reach `list_sentence` directly with an unbonded voice, which has
     // room for one claim in flight per lane (§3.1 as ruled, S13.15) —
     // nothing enrols it, and this first claim is admitted on that room.
     for _ in 0..8 {
@@ -260,23 +261,7 @@ fn a_depleted_lane_charges_a_sentence_by_its_loop_words() {
         "the reserve is spent on some lane"
     );
     let before = k.physics().pressure;
-    let language = k.language();
-    let (form, qs) = reduce_germ(&language, (0, 0), &spoken);
-    assert!(
-        matches!(form, NormalForm::Irreducible(_)),
-        "a sentence the language does not hold is irreducible, tape and all"
-    );
-    let out = k.commit_germ(
-        Reduction {
-            germ: spoken.clone(),
-            form,
-            qs,
-            language,
-            listing: spoken.address(),
-            frontier: true,
-        },
-        [1; 32],
-    );
+    let out = k.list_sentence(&spoken, [1; 32]);
     assert_eq!(out, Outcome::GermPending, "a deferred sentence still stands");
     let after = k.physics().pressure;
     assert!(

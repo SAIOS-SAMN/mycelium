@@ -1,6 +1,7 @@
 // 13 — the Čech cocycles a mind files, and the torsion it condenses: a
 // cycle is consilient, filed, or refused, and never invented.
 
+use super::common::speak_pair;
 use crate::cognition::*;
 use crate::transducer::element::{self, Element};
 
@@ -165,13 +166,13 @@ fn the_torse_stroke_extracts_the_cycle_and_relieves_torsion() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 9)];
 let b = vec![(0, 0, 4), (0, 1, 9)]; // (0,0): 1→4
-k.ingest(&a, &b, [1; 32]);
-assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending);
+speak_pair(&mut k, &a, &b, [1; 32]);
+assert_eq!(speak_pair(&mut k, &a, &b, [2; 32]), Outcome::GermPending);
 k.glue_local();
 let rev = vec![(0, 0, 1), (0, 1, 9)];
 let fwd = vec![(0, 0, 4), (0, 1, 9)];
-k.ingest(&fwd, &rev, [1; 32]);
-match k.ingest(&fwd, &rev, [2; 32]) {
+speak_pair(&mut k, &fwd, &rev, [1; 32]);
+match speak_pair(&mut k, &fwd, &rev, [2; 32]) {
     Outcome::GermPending => k.glue_local(),
     Outcome::Installed(_) | Outcome::Sectioned(_) | Outcome::Decomposed(_) => {}
     o => panic!("{o:?}"),
@@ -179,13 +180,13 @@ match k.ingest(&fwd, &rev, [2; 32]) {
 assert!(!k.basis().is_empty(), "the pair forms stand");
 k.optimize();
 assert!(
-    matches!(k.ingest(&a, &b, [3; 32]), Outcome::Decomposed(_) | Outcome::GermPending),
+    matches!(speak_pair(&mut k, &a, &b, [3; 32]), Outcome::Decomposed(_) | Outcome::GermPending),
     "the forward pair still speaks or its residual pends"
 );
 // A fourth voice: the third may hold its one claim in flight on this
 // lane from the forward pair (§3.1 as ruled, S13.15).
 assert!(
-    matches!(k.ingest(&fwd, &rev, [4; 32]), Outcome::Decomposed(_) | Outcome::GermPending),
+    matches!(speak_pair(&mut k, &fwd, &rev, [4; 32]), Outcome::Decomposed(_) | Outcome::GermPending),
     "the reverse pair is the same form or its residual"
 );
 }

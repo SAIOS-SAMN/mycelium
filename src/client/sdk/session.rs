@@ -311,41 +311,6 @@ impl Session {
         }
     }
 
-    /// PERCEIVE the scene pair (segment A and B into bodies) and SUBMIT it as an
-    /// A→B demand under this kernel's voice; return the judge's [`Reply`] — the
-    /// verdict with any taught element, plus the mesh's per-lane METABOLISM
-    /// (pressure) the kernel paces its intake against. The hypha only judges.
-    /// SPEAK a percept with its PROOF: the bodies, the measured frame, and
-    /// per germ the citations this kernel reduced it to over its genome.
-    pub fn submit(
-        &self,
-        a: &[(i64, i64, u8)],
-        b: &[(i64, i64, u8)],
-        frame: &crate::arc::Frame,
-        proof: &[Vec<dialogue::CiteWire>],
-    ) -> io::Result<Reply> {
-        let (a_bodies, b_bodies) = perceive(a, b);
-        let mut pbody = vec![dialogue::ACT_PERCEPT];
-        pbody.extend_from_slice(&encode_percept(&a_bodies, &b_bodies, &self.kernel.voice, frame, proof));
-        let body = self.exchange(pbody)?;
-        decode_reply(&body).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "reply decode"))
-    }
-
-    /// SPEAK a `demand` — this kernel's INDEPENDENT derivation of an open
-    /// residual with its citations (empty: irreducible for this voice).
-    pub fn attest(&self, chain: &[(i64, i64, u8, u8)], cites: &[dialogue::CiteWire]) -> io::Result<Reply> {
-        let key = crate::transducer::element::listing_key(chain, &crate::transducer::element::IDENTITY_FRAME);
-        let inv = crate::transducer::stalk::invariant(chain);
-        let mag = crate::transducer::element::measure_lanes(chain);
-        let dest = self.route_chart(&inv, &mag);
-        let body = self.exchange_at(
-            &dest,
-            dialogue::encode_demand_at(&self.kernel.voice, self.voice.k(), chain, cites),
-        )?;
-        let _ = key;
-        decode_reply(&body).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "reply decode"))
-    }
-
     /// PROBE an open listing with a tentative sentence; the hypha replays and
     /// settles graded descent or closure. Returns (code, paid, remaining).
     pub fn probe(&self, target: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4], [u64; 4])> {
@@ -441,15 +406,12 @@ impl Session {
     /// One exchange with a named hypha on the nerve; the impedance is
     /// measured on the wire as a whole.
     pub(crate) fn exchange_at(&self, addr: &str, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
-        let act = act_body.first().copied();
         let out = self.exchange_inner(addr, act_body);
         // A full reflex pool answers every act with the deferral shape (the
-        // pending outcome and four zero lanes). For a percept or a demand
-        // that is a verdict; for any other act it is the judge's measured
-        // impedance, and the aperture reads it as resistance.
+        // pending outcome and four zero lanes): the judge's measured
+        // impedance, which the aperture reads as resistance (23.8, S13.4).
         let deferred = matches!(&out, Ok(b)
-            if dialogue::is_deferral(b, crate::cognition::outcome_code(&crate::cognition::Outcome::GermPending))
-                && !matches!(act, Some(dialogue::ACT_PERCEPT) | Some(dialogue::ACT_DEMAND)));
+            if dialogue::is_deferral(b, crate::cognition::outcome_code(&crate::cognition::Outcome::GermPending)));
         // Impedance is a running measurement: a clear exchange relaxes it
         // by one stroke, a refused or timed-out one raises it by one, so a
         // judge deferring most of the time reads as sustained resistance

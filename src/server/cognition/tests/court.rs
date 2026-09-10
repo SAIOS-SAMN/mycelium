@@ -1,14 +1,13 @@
 // 42 — THE COURT: a verdict installs, excises or refuses, and every organ
 // reaches it by replaying the word rather than by trusting a signature.
 //
-// The percept fixture is an L recoloured WHOLE (one body, one word): under
-// 20 as ruled a body is one hue, and an L with one cell recoloured is three
-// bodies no versor pairs — a percept with no sentence and no listing
-// (50.5, L7), which is nothing a court could docket.
+// The pair fixture is an L recoloured WHOLE (one body, one word): under 20
+// as ruled a body is one hue, and an L with one cell recoloured is three
+// bodies no versor pairs — a pair the voice has no sentence for (50.5), so
+// nothing reaches a court.
 
 use super::common::*;
 use crate::cognition::*;
-use crate::transducer::germinate::germinate;
 use crate::transducer::element::{self, Element};
 
 /// THE BLIND REPLAY refutes every tamper axis and upholds honest speech —
@@ -45,7 +44,7 @@ fn an_offer_stands_pending_until_the_witness_answers() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8), (0, 1, 2)];
-assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
 let mut budget = k.stroke();
 let offers = k.offers_pending(&mut budget);
 let (addr, _) = offers.first().expect("the germ is offered at first vantage");
@@ -84,8 +83,8 @@ fn installs_are_provisional_until_verdict() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
-assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
-assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending);
+assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
+assert_eq!(speak_pair(&mut k, &a, &b, [2; 32]), Outcome::GermPending);
 // The install PAID NOTHING — the award sits in escrow.
 assert_eq!(k.treasury().balance_mu(&[1; 32]), [0; 4], "unfinalized speech earns nothing");
 assert_eq!(k.treasury().balance_mu(&[2; 32]), [0; 4]);
@@ -111,32 +110,28 @@ fn a_slashing_verdict_excises_and_debits() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
-assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
-assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending);
+assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
+assert_eq!(speak_pair(&mut k, &a, &b, [2; 32]), Outcome::GermPending);
 let addr = k.dockets()[0].addr.clone();
 assert!(k.apply_verdict(&addr, crate::anastome::dialogue::RULING_SLASHED));
 assert_eq!(k.treasury().balance_mu(&[1; 32]), [0; 4], "nothing was ever paid");
 assert!(k.dockets().is_empty());
 }
 
-/// Court organ: docketing a germ does not grow the basis. The stroke
+/// Court organ: docketing a sentence does not grow the basis. The stroke
 /// puts a section on the ruled cover. A peer's fetch glues by replay;
 /// a forged word is slashed with a reason. Signatures are not consulted.
-/// The germ is a chain attested on the wire, whose magnitude the blind
-/// replay re-derives from the chain itself; a percept lists a sentence
-/// (20 as ruled), whose magnitude is replayed against its family on the
-/// court's stroke and not at a fetch — L7 brings that replay to the
-/// witness, and L8 retires the attested chain.
+/// The forged word is the spoken sentence with its word vertices struck
+/// out: a tape of the Frame and a demand, refused as a chain (50.6).
 #[test]
 fn court_organ_glue_on_replay_not_on_signatures() {
 let mut home = Kernel::new();
 let mut peer = Kernel::new();
 let mut third = Kernel::new();
-let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
-let chain = germinate(&a, &b).unwrap();
-assert_eq!(home.attest(&chain, [1; 32]), Outcome::GermPending);
-assert_eq!(home.attest(&chain, [2; 32]), Outcome::GermPending);
+let a = vec![(0, 0, 1), (0, 1, 1)];
+let b = vec![(0, 0, 4), (0, 1, 4), (0, 2, 3)]; // the bar recoloured, a cell created beside it (50.5)
+assert_eq!(speak_pair(&mut home, &a, &b, [1; 32]), Outcome::GermPending);
+assert_eq!(speak_pair(&mut home, &a, &b, [2; 32]), Outcome::GermPending);
 assert_eq!(home.basis_len(), 0);
 home.court_stroke(one_stroke_transport);
 let spoken = home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().1.clone();
@@ -150,8 +145,7 @@ assert!(matches!(
     third.glue_fetched(spoken.clone(), [2; 32], [3; 32], &mut cover),
     Glue::Admitted
 ));
-let mut forged = spoken.clone();
-forged.mag = [999, 0, 0, 0];
+let forged = strip_words(&spoken);
 assert!(
     matches!(third.glue_fetched(forged, [2; 32], [3; 32], &mut cover), Glue::Slashed(_)),
     "never admit on a word that fails replay"
@@ -279,8 +273,8 @@ let mut home = Kernel::new();
 let mut peer = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
-assert_eq!(home.ingest(&a, &b, [1; 32]), Outcome::GermPending);
-assert_eq!(home.ingest(&a, &b, [2; 32]), Outcome::GermPending);
+assert_eq!(speak_pair(&mut home, &a, &b, [1; 32]), Outcome::GermPending);
+assert_eq!(speak_pair(&mut home, &a, &b, [2; 32]), Outcome::GermPending);
 assert_eq!(home.basis_len(), 0);
 home.rule_all_provisionals();
 let spoken = home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().1.clone();
@@ -301,7 +295,7 @@ fn home_installs_on_a_have_list_naming_a_ruled_provisional() {
 let mut home = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
-assert_eq!(home.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+assert_eq!(speak_pair(&mut home, &a, &b, [1; 32]), Outcome::GermPending);
 let addr = home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().0.clone();
 home.court_stroke(one_stroke_transport);
 assert!(home.provisional.contains(&addr), "still provisional until the second organ");
@@ -338,7 +332,7 @@ let wider = vec![(x, y), (grid(&["10"]), grid(&["23"]))];
 let mut refusing = Kernel::new();
 let task = [7u8; 32];
 refusing.bind_task_family(task, wider);
-refusing.docket_sentence(&word, [1; 32]);
+refusing.docket_connection(&word, [1; 32]);
 refusing.speech_task.insert(&addr, Address::from_bytes(task));
 assert!(refusing.provisional.contains(&addr), "docketed");
 refusing.court_stroke(one_stroke_transport);
@@ -348,7 +342,7 @@ assert!(!refusing.ruled_contains(&addr), "never ruled");
 
 let mut ruling = Kernel::new();
 ruling.bind_task_family(task, one_pair);
-ruling.docket_sentence(&word, [1; 32]);
+ruling.docket_connection(&word, [1; 32]);
 ruling.speech_task.insert(&addr, Address::from_bytes(task));
 ruling.court_stroke(one_stroke_transport);
 assert_eq!(ruling.court_slashed, 0, "the form closes every pair of the family it is bound to");
@@ -422,6 +416,11 @@ assert_eq!(
     vec![crate::anastome::dialogue::SPEECH_STOOD]
 );
 k.rule_all_provisionals();
+// 47.3: the witness is a vantage with room. Bonded, its re-derivation
+// installs the held form, and the install releases the voice's draw so
+// the same voice has room for the sentence that cites it (23.8).
+let cover = k.genesis_cover().expect("measured");
+k.enroll([2; 32], cover);
 k.confirm_peer_holds_addrs(std::slice::from_ref(&inner_addr), [2; 32]);
 let task = [9u8; 32];
 k.bind_task_family(task, family);
@@ -446,8 +445,8 @@ fn a_witness_glues_an_offer_at_the_homes_vantage() {
     let mut home = Kernel::new();
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
-    assert_eq!(home.ingest(&a, &b, home_vk), Outcome::GermPending);
-    assert_eq!(home.ingest(&a, &b, [3; 32]), Outcome::GermPending);
+    assert_eq!(speak_pair(&mut home, &a, &b, home_vk), Outcome::GermPending);
+    assert_eq!(speak_pair(&mut home, &a, &b, [3; 32]), Outcome::GermPending);
     home.court_stroke(one_stroke_transport);
     let spoken =
         home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().1.clone();
@@ -502,8 +501,8 @@ fn a_witness_that_rederived_nothing_answers_with_nothing() {
     home.bind_identity(home_vk);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
-    assert_eq!(home.ingest(&a, &b, home_vk), Outcome::GermPending);
-    assert_eq!(home.ingest(&a, &b, [3; 32]), Outcome::GermPending);
+    assert_eq!(speak_pair(&mut home, &a, &b, home_vk), Outcome::GermPending);
+    assert_eq!(speak_pair(&mut home, &a, &b, [3; 32]), Outcome::GermPending);
     home.court_stroke(one_stroke_transport);
     let spoken = home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().1.clone();
     let inv = crate::transducer::stalk::invariant_of(&spoken);
@@ -562,8 +561,8 @@ fn a_court_sections_what_it_ruled_itself_and_not_what_a_peer_sent() {
     // ITS OWN: perceived here, replayed here, ruled here on the stroke.
     let mut own = Kernel::new();
     own.bind_identity(me);
-    assert_eq!(own.ingest(&a, &b, [1; 32]), Outcome::GermPending);
-    assert_eq!(own.ingest(&a, &b, [2; 32]), Outcome::GermPending);
+    assert_eq!(speak_pair(&mut own, &a, &b, [1; 32]), Outcome::GermPending);
+    assert_eq!(speak_pair(&mut own, &a, &b, [2; 32]), Outcome::GermPending);
     let spoken = own.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().1.clone();
     let inv = crate::transducer::stalk::invariant_of(&spoken);
     assert!(

@@ -4,53 +4,6 @@
 
 use super::*;
 
-/// The judge's answer to a submitted demand, plus any taught ANASTOME element the
-/// kernel learns (the mesh's word for what it just described).
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Verdict {
-    /// The demand DECOMPOSED into a canonical sentence of installed generators (the
-    /// confluent normal form) — the mesh already speaks it, nothing minted.
-    Decomposed { taught: Vec<u8> },
-    /// A novel generator awaiting a second kernel's voice (consilience pending).
-    GermPending,
-    /// An irreducible residual that reached consilience and adjoined (KB completion).
-    Installed { taught: Vec<u8> },
-    /// A section of a held word. Not an install.
-    Sectioned,
-    /// The scene fragmented into per-body sub-demands.
-    Fragmented,
-    /// A degenerate demand — nothing to reduce.
-    Pivot,
-    /// The act was refused at the door of the book (23.8): a lane of this
-    /// voice's room did not cover the draw. Nothing was docketed; the
-    /// hypha logged the lanes.
-    Refused,
-    /// An unrecognized reply code (forward-compat).
-    Unknown(u8),
-}
-
-impl Verdict {
-    pub fn label(&self) -> &'static str {
-        match self {
-            Verdict::Decomposed { .. } => "decomposed",
-            Verdict::GermPending => "germ-pending",
-            Verdict::Installed { .. } => "installed",
-            Verdict::Sectioned => "section",
-            Verdict::Fragmented => "fragmented",
-            Verdict::Pivot => "pivot",
-            Verdict::Refused => "refused",
-            Verdict::Unknown(_) => "unknown",
-        }
-    }
-    /// The taught ANASTOME element the mesh handed back (empty when none).
-    pub fn taught(&self) -> &[u8] {
-        match self {
-            Verdict::Decomposed { taught } | Verdict::Installed { taught } => taught,
-            _ => &[],
-        }
-    }
-}
-
 /// The comprehension verdict — the C-STACK's terminal (congruence → coherence →
 /// cohesion → converse → COMPREHENSION): the received utterance DECOMPOSED over
 /// the local genome toward understanding. Never re-cognition (that is the
@@ -317,8 +270,8 @@ pub struct Epigenome {
 }
 
 /// THE ENTITY — a kernel identity with its genome/epigenome, conversing through
-/// a session: it submits percepts, learns what the mesh teaches (comprehending,
-/// not storing), asks quotes, and attests demands.
+/// a session: it speaks sentences, learns what the mesh teaches (comprehending,
+/// not storing), asks quotes, and probes listings.
 /// Why an axis did not open (24.3), written by the stroke as `axis refused`.
 pub const AXIS_ONE_BODY: &str = "one body deflated the listing";
 pub const AXIS_NO_BODY: &str = "a held word has no body";
@@ -457,15 +410,6 @@ pub struct Cluster {
     pub open: Vec<crate::transducer::stalk::Invariant>,
 }
 
-/// A settle receipt riding an install reply: the germ, its consilience parties,
-/// and the polytonic μ⃗ award priced at the moment's yield surface.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SettleReceipt {
-    pub germ: crate::transducer::address::Address,
-    pub voices: Vec<[u8; 32]>,
-    pub mu: [u64; 4],
-}
-
 /// THE DEFERRAL a judge answered with (23.8, S13.4): the door's per-lane
 /// reserve deficit, carried on the `WouldBlock` refusal so the arm dwells
 /// on the lanes the judge named.
@@ -481,44 +425,3 @@ impl std::fmt::Display for Deferral {
 }
 
 impl std::error::Error for Deferral {}
-
-/// A hypha's reply, read through the codec's one reader of the outcome
-/// layout (`dialogue::decode_outcome_reply`); a frame that does not parse
-/// whole is no reply (rule 11), never a reply of zeros.
-pub(crate) fn decode_reply(body: &[u8]) -> Option<Reply> {
-    let read = dialogue::decode_outcome_reply(body)?;
-    let settle = dialogue::decode_settle(read.rest)
-        .map(|(germ, voices, mu)| SettleReceipt { germ, voices, mu });
-    Some(Reply {
-        verdict: verdict_of(read.code, read.taught),
-        height: read.height,
-        pressure: read.pressure,
-        settle,
-    })
-}
-
-/// A hypha's answer: the verdict, the book height, and the per-lane
-/// pressure as four exact u64 lanes — never a max, never a saturated byte.
-#[derive(Clone, Debug)]
-pub struct Reply {
-    pub verdict: Verdict,
-    pub height: u64,
-    pub pressure: [u64; 4],
-    /// The settle receipt when this exchange completed a consilience install.
-    pub settle: Option<SettleReceipt>,
-}
-
-/// The verdict a reply's code names, with what it taught.
-pub(crate) fn verdict_of(code: u8, taught: &[u8]) -> Verdict {
-    let taught = taught.to_vec();
-    match code {
-        1 => Verdict::Decomposed { taught },
-        2 => Verdict::GermPending,
-        3 => Verdict::Installed { taught },
-        6 => Verdict::Sectioned,
-        4 => Verdict::Pivot,
-        5 => Verdict::Fragmented,
-        7 => Verdict::Refused,
-        c => Verdict::Unknown(c),
-    }
-}

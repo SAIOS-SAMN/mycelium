@@ -1,22 +1,15 @@
-// 26, 47.3 — ATTESTATION: what a voice says it derived, what this court
-// remembers of it, and where two organs converge.
+// 26, 47.3 — THE LOCAL QUOTE AND CONVERGENCE: a reading of the page, the
+// voices of an object, and where two organs converge.
 //
-//! A repeated demand is answered from the docket rather than re-docketed
-//! (23.8). Convergence is on a witness's RE-DERIVATION by `same_vertex`
-//! (M1) and never on the bytes it happens to be spelled with.
+//! Convergence is on a witness's RE-DERIVATION by `same_vertex` (M1) and
+//! never on the bytes it happens to be spelled with. The attested chain
+//! that stood here was the court composing by F over a voice's cells (law
+//! 8, ruled 2026-09-10); it is deleted, and a voice's one act is the
+//! sentence `perceive_speech` hears.
 
 use crate::cognition::*;
 use crate::transducer::address::Address;
-use crate::transducer::element::{self, Element};
-
-/// WHAT ONE UTTERANCE MEASURED: the words it cited, the residual it left,
-/// and the length of the chain it spoke to. Three counts that are read
-/// together, written to the receipt together, and mean nothing apart.
-pub struct Uttered {
-    pub cites: usize,
-    pub residual: usize,
-    pub chain_len: usize,
-}
+use crate::transducer::element::Element;
 
 impl Kernel {
     /// QUOTE — a local reading of the page: listings still on_page, in
@@ -45,91 +38,6 @@ impl Kernel {
         (surface, priced)
     }
 
-    /// ATTEST — a peer's INDEPENDENT derivation of an open residual arrives as a
-    /// spoken `demand` act. The projective reduction runs first (a stale quote
-    /// DECOMPOSES instead of double-minting); a genuine irreducible joins the
-    /// admission as this voice's attestation — consilience through conversation.
-    /// The local path has no voice K on the call: K = 0, same as a demand
-    /// frame that omits it. A later K is `attest_at`.
-    pub fn attest(&mut self, chain: &[(i64, i64, u8, u8)], voice: [u8; 32]) -> Outcome {
-        self.attest_at(chain, voice, &[], 0)
-    }
-
-    /// Demand with the speaker's citations and the voice's K. Same (vk,
-    /// address, K) is answered from the docket; a later K is a use.
-    pub fn attest_at(
-        &mut self,
-        chain: &[(i64, i64, u8, u8)],
-        voice: [u8; 32],
-        cites: &[crate::anastome::dialogue::CiteWire],
-        k: u64,
-    ) -> Outcome {
-        let germ = element::from_residual(&chain.to_vec());
-        let listing = germ.address();
-        if let Some(out) = self.answer_if_duplicate(&voice, &listing, k) {
-            return out;
-        }
-        let Some((language, _budget)) = self.reflex_open(voice) else {
-            return Outcome::GermPending;
-        };
-        let frame = crate::arc::Frame::default();
-        let reduction = reduce_proven(&language, germ, cites, &frame, listing.clone());
-        let residual = match &reduction.form {
-            NormalForm::Decomposed(_) => 0,
-            NormalForm::Irreducible(r) => r.sub().len(),
-        };
-        let out = self.commit_all(vec![reduction], voice);
-        let said = Uttered { cites: cites.len(), residual, chain_len: chain.len() };
-        self.record_utterance(voice, listing, k, said, out)
-    }
-
-    /// A repeated (vk, address, K) is the reply last given, if any.
-    pub fn answer_if_duplicate(&self, voice: &[u8; 32], addr: &[u8], k: u64) -> Option<Outcome> {
-        let out = self.utterance_of(voice, addr, k)?.clone();
-        eprintln!(
-            "  court attest duplicate {:02x}{:02x}… voice {:02x}{:02x}… K {k}",
-            addr[0], addr[1], voice[0], voice[1]
-        );
-        Some(out)
-    }
-
-    pub(crate) fn utterance_of(&self, voice: &[u8; 32], addr: &[u8], k: u64) -> Option<&Outcome> {
-        self.utterances.get(addr)?.get(voice)?.get(&utterance_k_key(k))
-    }
-
-    pub(crate) fn remember_utterance(&mut self, voice: [u8; 32], addr: Address, k: u64, out: Outcome) {
-        let kk = utterance_k_key(k);
-        let mut by_v = self.utterances.remove(&addr).unwrap_or_default();
-        let mut by_k = by_v.remove(&voice).unwrap_or_default();
-        by_k.insert(kk, out);
-        by_v.insert(voice, by_k);
-        self.utterances.insert(addr, by_v);
-    }
-
-    /// Seal the utterance receipt and log the first hearing.
-    pub fn record_utterance(
-        &mut self,
-        voice: [u8; 32],
-        addr: Address,
-        k: u64,
-        said: Uttered,
-        out: Outcome,
-    ) -> Outcome {
-        let Uttered { cites, residual, chain_len } = said;
-        eprintln!(
-            "  court attest {:02x}{:02x}… voice {:02x}{:02x}… K {k} cites {cites} residual {residual} of {chain_len}",
-            addr[0], addr[1], voice[0], voice[1]
-        );
-        self.remember_utterance(voice, addr, k, out.clone());
-        out
-    }
-
-    /// Words taught on a decomposed sentence: each cited word the docket
-    /// holds anchored. Sentence length does not decide.
-    pub fn taught_anchored(&self, word: &[usize]) -> Vec<u8> {
-        taught_anchored_words(word.iter().filter_map(|&i| self.language.words.get(i).map(|e| e.as_ref())))
-    }
-
     /// The voices that uttered this object — the settle receipt's parties.
     /// A use, credited (24.1); never a vantage.
     pub fn voices_of(&self, germ: &[u8]) -> Vec<[u8; 32]> {
@@ -146,9 +54,8 @@ impl Kernel {
     }
 
     /// The same, where the object is DOCKETED under a key that is not its
-    /// own address -- a section, which is keyed by `section_address` over
-    /// the held word and the assignment. The key is the docket's coordinate;
-    /// the object is what convergence compares.
+    /// own address. The key is the docket's coordinate; the object is what
+    /// convergence compares.
     pub(crate) fn converge_here_at(&mut self, addr: &Address, object: &Element, voice: [u8; 32]) {
         let me = self.identity;
         let (k, h) = (self.k_step(), self.height());

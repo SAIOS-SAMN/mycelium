@@ -6,22 +6,22 @@ use crate::cognition::*;
 use crate::transducer::element;
 use crate::transducer::germinate::germinate;
 
-/// STEP 3's ECONOMIC CONVERSATION CLOSES: A speaks a novel PERCEPT and the
-/// court lists its sentence with its demands (20 as ruled, 50.5); the
-/// listing is quoted as work; A speaks it again, a use of the address
-/// that draws nothing new; B independently speaks the same percept;
-/// consilience installs, the market CLEARS. {demand → quote → demand →
-/// settle}. A second vantage here is `glue_local`'s two fixture keys
-/// (§3.4's wire-identifier exception): this test proves nothing about
-/// 47.3's witness.
+/// STEP 3's ECONOMIC CONVERSATION CLOSES: A speaks a novel SENTENCE and the
+/// court lists it with its demands (20 as ruled, 50.5); the listing is
+/// quoted as work; A speaks it again, a use of the address that draws
+/// nothing new; B independently speaks the same sentence; consilience
+/// installs, the market CLEARS. {speech → quote → speech → settle}. A
+/// second vantage here is `glue_local`'s two fixture keys (§3.4's
+/// wire-identifier exception): this test proves nothing about 47.3's
+/// witness.
 #[test]
 fn the_five_act_conversation_closes_with_settlement() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
-assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending, "percept: voice A");
+assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending, "voice A speaks the sentence");
 assert_eq!(k.quote().1.len(), 1, "the sentence is quoted when the frontier is dry");
-assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending, "A again: a use of the listing, nothing drawn");
+assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending, "A again: a use of the listing, nothing drawn");
 let (surface, quoted) = k.quote();
 assert_eq!(quoted.len(), 1, "the open demand is quoted as work, once");
 assert!(surface.iter().any(|&s| s >= 1), "the open demand tensions the lanes it occupies");
@@ -30,7 +30,7 @@ assert!(
     (0..4).any(|l| work.magnitude()[l] > 0 && mu[l] > 0),
     "price is nonzero on a lane the word moves"
 );
-let out = k.ingest(&a, &b, [2; 32]);
+let out = speak_pair(&mut k, &a, &b, [2; 32]);
 assert_eq!(out, Outcome::GermPending, "consilience settles: {out:?}");
 k.glue_local();
 assert_eq!(k.voices_of(&k.basis()[0].address()).len(), 2, "the settle parties");
@@ -49,7 +49,7 @@ let c = vec![(1, 0, 3u8)];
 let d = vec![(1, 0, 4u8)];
 let mut short = Kernel::new();
 short.set_lane_cap([8, 1, 8, 8]);
-assert_eq!(short.ingest(&a, &b, [1; 32]), Outcome::GermPending, "the first draw covers");
+assert_eq!(speak_pair(&mut short, &a, &b, [1; 32]), Outcome::GermPending, "the first draw covers");
 assert_eq!(short.pending.len(), 1, "the first pair is listed on one vantage");
 let occupancy = short.occupancy();
 let provisional = short.provisional.len();
@@ -59,7 +59,7 @@ let k = short.k_step();
 // the act is refused with the reason, and the book, the room, the
 // escrow and the receipt chain are exactly as they were.
 assert_eq!(
-    short.ingest(&c, &d, [1; 32]),
+    speak_pair(&mut short, &c, &d, [1; 32]),
     Outcome::Refused(crate::verdict::REFUSE_ROOM),
     "a lane that does not cover the draw refuses the act"
 );
@@ -76,17 +76,15 @@ bonded.bind_identity([9; 32]);
 bonded.set_genesis_cover(cover);
 bonded.enroll([1; 32], cover);
 bonded.enroll([2; 32], cover);
-let chain_ab = germinate(&a, &b).unwrap();
-let chain_cd = germinate(&c, &d).unwrap();
-assert_eq!(bonded.attest(&chain_ab, [1; 32]), Outcome::GermPending);
+assert_eq!(speak_pair(&mut bonded, &a, &b, [1; 32]), Outcome::GermPending);
 assert_eq!(bonded.pending.len(), 1, "the cover admits one pair");
 assert_eq!(
-    bonded.attest(&chain_cd, [1; 32]),
+    speak_pair(&mut bonded, &c, &d, [1; 32]),
     Outcome::Refused(crate::verdict::REFUSE_ROOM),
     "a second pair of the same μ⃗ is refused until the first draw releases"
 );
 assert_eq!(bonded.pending.len(), 1, "and it is not listed");
-assert_eq!(bonded.attest(&chain_cd, [2; 32]), Outcome::GermPending);
+assert_eq!(speak_pair(&mut bonded, &c, &d, [2; 32]), Outcome::GermPending);
 assert_eq!(
     bonded.pending.len(),
     2,
@@ -101,7 +99,7 @@ fn docket_draw_releases_on_lapse() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1u8)];
 let b = vec![(0, 0, 2u8)];
-assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
 assert_eq!(k.pending.len(), 1, "listed");
 let occ = k.occupancy();
 assert!(occ.iter().any(|&x| x > 0), "the draw occupies");
@@ -128,7 +126,7 @@ fn the_lapse_asks_lambda_with_the_listing_chart_magnitude_and_the_court_room() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1u8)];
 let b = vec![(0, 0, 2u8)];
-assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
 let listed = k
     .pending
     .fiber(crate::network::nerve::ROOT)
@@ -161,10 +159,10 @@ assert_eq!(k.pending.len(), 1, "an unmeasured transport lapses nothing");
 #[test]
 fn the_door_charges_strain_and_defers_the_broke() {
 let mut k = Kernel::new();
-// Calm: the door is free — a normal percept adjudicates untouched.
-let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 3)];
-let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 3)];
-assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending, "calm door admits");
+// Calm: the door is free — a sentence is heard untouched.
+let a = vec![(0, 0, 1), (0, 1, 1)];
+let b = vec![(0, 0, 4), (0, 1, 4)];
+assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending, "calm door admits");
 // The door fee is a BURN (`settle_door`), and a calm mesh writes none.
 // This read `e.kind == "fee"`, which named a kind no writer in the tree
 // has ever produced, so the assertion held whatever the door did. The
@@ -186,19 +184,24 @@ assert_eq!(
     k.physics().reserve_deficit(),
     "a broke speaker on an exhausted mesh is deferred on every lane, by the deficit"
 );
-// A broke speaker (no earned balance) is DEFERRED at the door.
+// A broke speaker (no earned balance) reads as deferred on every lane
+// while the reserve stands at nothing. The reflex opening regenerates
+// the lanes before it hears (S13.2), so the sentence is heard on the
+// regenerated reserve, and the broke speaker paid nothing at the door.
 let a2 = vec![(5, 0, 2), (5, 1, 2)];
 let b2 = vec![(5, 0, 6), (5, 1, 6)];
-let broke = k.ingest(&a2, &b2, [9; 32]);
-assert_eq!(broke, Outcome::GermPending, "saturated door defers the broke: {broke:?}");
-assert!(k.basis().is_empty() || k.quote().1.iter().all(|(w, _)| w.sub() != [(0i64, 0i64, 2u8, 6u8)]),
-    "the deferred demand was never adjudicated");
+let broke = speak_pair(&mut k, &a2, &b2, [9; 32]);
+assert_eq!(broke, Outcome::GermPending, "heard on the regenerated lane: {broke:?}");
+assert!(
+    !k.treasury().entries().iter().any(|e| e.kind == crate::economy::Kind::Burn && e.who == [9; 32]),
+    "the broke speaker paid nothing at the door"
+);
 // A FUNDED speaker pays the congestion fee and passes the door.
 k.treasury_mut().settle_subsidy([7; 32], [8, 8, 8, 8], (0, [0; 32]));
 for _ in 0..16 {
     k.physics_mut().spend([true; 4]); // re-exhaust (the deferral relaxed some)
 }
-let _ = k.ingest(&a2, &b2, [7; 32]);
+let _ = speak_pair(&mut k, &a2, &b2, [7; 32]);
 // The fee is a BURN: §2 has no pool carrier for it to land in, so μ⃗
 // that leaves the speaker's balance leaves the supply with it. This
 // asserted a `transfer`, which is a payment to a payee, and there was
@@ -224,11 +227,15 @@ fn a_probe_settles_descent_then_closure_without_search() {
 use crate::anastome::dialogue::{PROBE_CLOSED, PROBE_DESCENT, PROBE_NOTHING};
 use crate::transducer::sentence::replay_at;
 let mut k = Kernel::new();
-// A coboundary listed on an empty language (the residual path).
+// A coboundary listed on an empty language: a chain listing under a
+// voice's draw — the shape the corpus intake lists (23.8) and a probe
+// settles against (26). No voice speaks a chain (law 8); the fixture
+// lists it as the book does.
 let c = vec![(0, 0, 1u8), (0, 1, 1), (0, 2, 1), (0, 3, 3)];
 let d = vec![(0, 0, 2u8), (0, 1, 2), (0, 2, 1), (0, 3, 4)];
 let chain = germinate(&c, &d).unwrap();
-assert!(matches!(k.attest(&chain, [1; 32]), Outcome::GermPending));
+let k_now = k.k_step();
+k.book_list(element::from_residual(&chain), k_now, [1; 32]);
 let target = k.quote().1[0].0.address();
 let chain = k.quote().1[0].0.sub().to_vec();
 assert_eq!(chain.len(), 3);
@@ -277,7 +284,7 @@ let mut k = Kernel::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8)];
 let chain = germinate(&a, &b).unwrap();
-assert!(matches!(k.attest(&chain, [1; 32]), Outcome::GermPending));
+assert!(k.intake(&chain, &frame_of(&a, &b)), "the corpus intake lists the body");
 let target = k.quote().1[0].0.address();
 let listed = k.quote().1[0].0.sub().to_vec();
 let rem = vec![(0, 1, 1u8, 0u8)];
@@ -360,79 +367,6 @@ assert!(
 );
 }
 
-/// THE PROOF: on the wire the judge replays; a proven percept commits its
-/// sentence, an unproven one is deferred, never searched.
-/// A second vantage here is `glue_local`'s two fixture keys (§3.4's
-/// wire-identifier exception): this test proves nothing about 47.3's witness.
-#[test]
-fn the_wire_judge_replays_proofs_and_defers_the_unproven() {
-let k = std::sync::Mutex::new(Kernel::new());
-let a = vec![(0, 0, 1u8), (0, 1, 1)];
-let b = vec![(0, 0, 2u8), (0, 1, 2)];
-{
-    let mut g = k.lock().unwrap();
-    g.ingest(&a, &b, [1; 32]);
-    g.ingest(&a, &b, [2; 32]);
-    g.glue_local();
-}
-{
-    let g = k.lock().unwrap();
-    assert!(!g.basis().is_empty(), "the pair form stands");
-}
-let (ca, cb) = perceive(&a, &b);
-let frame = frame_of(&a, &b);
-let out = crate::synthesis::adjudicate(&k, &ca, &cb, [3; 32], &frame, &[]);
-assert!(
-    matches!(out, Outcome::Decomposed(ref w) if w == &vec![0]),
-    "the held pair form is the word, got {out:?}"
-);
-let a2 = vec![(0, 0, 1u8), (0, 1, 1), (1, 0, 7)];
-let b2 = vec![(0, 0, 2u8), (0, 1, 2), (1, 0, 8)];
-let (ca2, cb2) = perceive(&a2, &b2);
-let frame2 = frame_of(&a2, &b2);
-let out = crate::synthesis::adjudicate(&k, &ca2, &cb2, [3; 32], &frame2, &[]);
-assert!(
-    matches!(out, Outcome::GermPending | Outcome::Decomposed(_)),
-    "a different pair is its own form or residual, got {out:?}"
-);
-}
-
-/// A repeated (vk, address, K) is answered from the docket: same reply,
-/// no re-docket, no re-charge. A later K is a use; another voice is
-/// consilience.
-#[test]
-fn repeated_demand_is_answered_not_redocketed() {
-let mut k = Kernel::new();
-let a = vec![(0, 0, 1u8)];
-let b = vec![(0, 0, 2u8)];
-let chain = germinate(&a, &b).unwrap();
-let first = k.attest(&chain, [1; 32]);
-assert_eq!(first, Outcome::GermPending, "one voice lists, does not install");
-let n = k.pending.len();
-assert_eq!(n, 1, "the first hearing dockets the residual");
-let pressure = k.physics().pressure;
-let occupancy = k.occupancy();
-let second = k.attest(&chain, [1; 32]);
-assert_eq!(second, first, "the docket answers the same receipt");
-assert_eq!(k.pending.len(), n, "nothing re-docketed");
-assert_eq!(k.physics().pressure, pressure, "nothing re-charged");
-assert_eq!(k.occupancy(), occupancy, "room is not drawn again");
-let used = k.attest_at(&chain, [1; 32], &[], 1);
-assert_eq!(used, Outcome::GermPending, "a later K is a use, not a duplicate");
-assert_eq!(k.pending.len(), n, "a use of a listed address does not re-docket");
-let other = k.attest(&chain, [2; 32]);
-assert_eq!(other, Outcome::GermPending, "another voice is consilience, not a duplicate");
-}
-
-/// The demand codec roundtrips.
-#[test]
-fn the_demand_codec_roundtrips() {
-let (a, b) = (scene(2, 2), scene(2, 5));
-let Demand { voice: v, a: ra, b: rb } =
-    decode_demand(&encode_demand(&a, &b, &[9; 32])).unwrap();
-assert_eq!((v, ra, rb), ([9; 32], a, b));
-}
-
 /// Two hyphas at different K relocate the same standing listing at the
 /// same TUniversal: T-room, never a stroke count.
 #[test]
@@ -444,7 +378,7 @@ fn t_room_relocates_at_tuniversal_independent_of_k() {
 let list = |k: &mut Kernel, hue: u8| -> Address {
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, hue), (0, 1, hue), (1, 0, hue)];
-    let _ = k.ingest(&a, &b, [1; 32]);
+    let _ = speak_pair(k, &a, &b, [1; 32]);
     k.pending.fiber(crate::network::nerve::ROOT).next().expect("listed").1.0.address()
 };
 let mut ha = Kernel::new();
@@ -484,7 +418,7 @@ fn the_quote_reply_height_is_the_chain_head_height_not_the_book_generation() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1u8)];
 let b = vec![(0, 0, 2u8)];
-assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
 assert_eq!(k.pending.len(), 1, "one listing written");
 assert_eq!(k.book_height(), k.height(), "the book's height is the chain's head height");
 let before = k.height();

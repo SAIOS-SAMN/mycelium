@@ -129,7 +129,7 @@ assert_eq!(k.chain().root().map(|r| r.k), Some(3));
 let mut open = Kernel::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8), (0, 1, 2)];
-assert_eq!(open.ingest(&a, &b, [7; 32]), Outcome::GermPending);
+assert_eq!(super::common::speak_pair(&mut open, &a, &b, [7; 32]), Outcome::GermPending);
 assert_eq!(open.final_prefix_head(), None, "a listing open at the first receipt leaves nothing final");
 assert_eq!(open.propose_fold(), Err(REFUSE_FOLD_OPEN));
 assert!(open.chain().root().is_none() && open.archive().is_empty(), "nothing was archived");

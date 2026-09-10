@@ -10,28 +10,27 @@ use crate::transducer::element::{self, Element};
 /// reads the book at depth zero.
 #[test]
 fn empty_atlas_is_incident_to_the_root_prefix() {
-use crate::transducer::germinate::germinate;
 let k = std::sync::Mutex::new(Kernel::new());
 {
     let mut g = k.lock().unwrap();
     let a = vec![(0, 0, 1u8), (0, 1, 1)];
     let b = vec![(0, 0, 2u8), (0, 1, 2)];
-    assert!(matches!(g.ingest(&a, &b, [1; 32]), Outcome::GermPending));
-    // A second voice: the percept and the attested chain list under two
-    // addresses (the framed and the unframed residual — a residue noted in
-    // S13.15), and voice 1 has its one claim in flight on this lane (§3.1
-    // as ruled).
-    assert!(matches!(g.attest(&germinate(&a, &b).unwrap(), [2; 32]), Outcome::GermPending));
+    assert!(matches!(speak_pair(&mut g, &a, &b, [1; 32]), Outcome::GermPending));
+    // A second voice on the same sentence is a use of the listed address
+    // (§3.1 as ruled): one listing, quoted.
+    assert!(matches!(speak_pair(&mut g, &a, &b, [2; 32]), Outcome::GermPending));
 }
 let quoted = crate::synthesis::quote(&k, [1u8; 32], &[]).expect("quote");
 assert!(!quoted.priced.is_empty(), "an empty atlas reads the book at depth zero");
 }
 
-/// CONFLUENT REDUCTION is TRANSPOSITION-INVARIANT (the win over lookup): install
-/// a rotation, then the SAME rotation FAR AWAY reduces to the same normal form
-/// (no re-mint) — a lookup on the coordinate-exact word would have missed it.
-/// And a pure translate has EMPTY substance — it decomposes to the empty
-/// sentence, minting nothing (a translate is pure transposition, not cognition).
+/// THE SENTENCE IS TRANSPOSITION-INVARIANT (the win over lookup): install a
+/// rotation, then the SAME rotation FAR AWAY is the same sentence (1.5: a
+/// body's placement is quotiented from its form) and is a use of the held
+/// word, no re-mint — a lookup on the coordinate-exact word would have
+/// missed it. A pure translate is a rule of its own under 20 as ruled —
+/// the form carries the carriage — so the chain-era claim that it "carries
+/// no substance" is not made here.
 /// A second vantage here is `glue_local`'s two fixture keys (§3.4's
 /// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
@@ -39,18 +38,14 @@ fn reduction_is_transposition_invariant() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)]; // R180 of L at origin
-k.ingest(&a, &rot, [1; 32]);
-assert_eq!(k.ingest(&a, &rot, [2; 32]), Outcome::GermPending);
+speak_pair(&mut k, &a, &rot, [1; 32]);
+assert_eq!(speak_pair(&mut k, &a, &rot, [2; 32]), Outcome::GermPending);
 k.glue_local();
-// the SAME rotation, transposed +10 in col: same substance → same sentence.
+// the SAME rotation, transposed +10 in col: the same sentence.
 let a_far = vec![(0, 10, 1), (0, 11, 1), (1, 10, 1)];
 let rot_far = vec![(0, 11, 1), (1, 10, 1), (1, 11, 1)];
-assert_eq!(k.ingest(&a_far, &rot_far, [3; 32]), Outcome::Decomposed(vec![0]), "transposed → same normal form");
+assert_eq!(speak_pair(&mut k, &a_far, &rot_far, [3; 32]), Outcome::Decomposed(vec![0]), "transposed → the same sentence");
 assert_eq!(k.basis_len(), 1, "transposition mints nothing");
-// a pure translate is pure transposition — empty substance, empty sentence.
-let t = vec![(0, 3, 1), (0, 4, 1), (1, 3, 1)];
-assert_eq!(k.ingest(&a, &t, [4; 32]), Outcome::Decomposed(vec![]), "a translate carries no substance");
-assert_eq!(k.basis_len(), 1, "still nothing minted");
 }
 
 /// THE SYNTROPIC STROKE CONSOLIDATES: a generator the rest of the basis already
@@ -99,47 +94,6 @@ k.refine_stratum(&survivor);
 assert!(k.word_at(&survivor).is_some(), "the last card stays keyed");
 assert!(k.basis_len() >= 1);
 assert!(k.basis_len() < 3, "at least one earlier duplicate retired");
-}
-
-/// THE PROJECTIVE LEAP (operator ruling): greedy largest-first descent is the
-/// mechanical trap — it would commit the BIG pattern, strand an orphan cell,
-/// and mint junk. The SUPERPOSITION holds both futures, rolls them out
-/// virtually (zero mutation), and COLLAPSES into the branch whose remainder
-/// closes (trivial holonomy): the two-word sentence. Nothing germinates —
-/// imagination beats reaction.
-/// A second vantage here is `glue_local`'s two fixture keys (§3.4's
-/// wire-identifier exception): this test proves nothing about 47.3's witness.
-#[test]
-fn projection_escapes_the_greedy_trap() {
-let mut k = Kernel::new();
-// A pair the held language already derives — the court glues the held
-// form into the percept's rule — is decomposed, not settled again (20 as
-// ruled: a percept is one sentence, and one the language spans is spoken
-// by it).
-let install = |k: &mut Kernel, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]| {
-    k.ingest(a, b, [1; 32]);
-    match k.ingest(a, b, [2; 32]) {
-        Outcome::GermPending => k.glue_local(),
-        Outcome::Installed(_) | Outcome::Sectioned(_) | Outcome::Decomposed(_) => {}
-        o => panic!("expected settle, puncture or a spanned pair, got {o:?}"),
-    }
-};
-install(&mut k, &[(0, 0, 1), (0, 1, 3), (0, 2, 5)], &[(0, 0, 2), (0, 1, 4), (0, 2, 6)]);
-install(&mut k, &[(0, 0, 1), (0, 1, 3)], &[(0, 0, 2), (0, 1, 4)]);
-install(&mut k, &[(0, 0, 5), (0, 1, 7)], &[(0, 0, 6), (0, 1, 8)]);
-assert!(k.basis_len() >= 1, "pair forms stand");
-let before = k.basis_len();
-let a = [(0, 0, 1), (0, 1, 3), (0, 2, 5), (0, 3, 7)];
-let b = [(0, 0, 2), (0, 1, 4), (0, 2, 6), (0, 3, 8)];
-// The saddle is one pair form: not peeled by search into two words. It
-// stands, decomposes through what is held, or sections a held word on
-// its own positions; it never mints a second word.
-let fused = k.ingest(&a, &b, [3; 32]);
-assert!(
-    matches!(fused, Outcome::GermPending | Outcome::Decomposed(_) | Outcome::Sectioned(_)),
-    "a fused pair is one percept, got {fused:?}"
-);
-assert_eq!(k.basis_len(), before, "nothing installs on one voice");
 }
 
 /// Restore keeps the lettered federation and drops a leaked basis card.
@@ -199,55 +153,24 @@ assert_eq!(
 }
 
 /// Dialect/Slashed addresses are heard once; a cocycle row is unique
-/// on (chart, pair, versor). The forged word is an attested chain, whose
-/// magnitude the blind replay re-derives from the chain (a percept's
-/// sentence is replayed against its family, L7; the chain retires at L8).
+/// on (chart, pair, versor). The forged word is a spoken sentence with its
+/// word vertices struck out — a tape of the Frame and a demand, which the
+/// blind replay refuses as a chain (50.6, `REFUSE_NOT_A_SENTENCE`).
 #[test]
 fn heard_and_cocycles_do_not_re_row() {
 let mut k = Kernel::new();
-let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
-let chain = germinate(&a, &b).unwrap();
-k.attest(&chain, [1; 32]);
-k.attest(&chain, [2; 32]);
+let a = vec![(0, 0, 1), (0, 1, 1)];
+let b = vec![(0, 0, 2), (0, 1, 2), (0, 2, 3)]; // the bar recoloured, a cell created beside it (50.5)
+speak_pair(&mut k, &a, &b, [1; 32]);
+speak_pair(&mut k, &a, &b, [2; 32]);
 let spoken = k.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().1.clone();
-let mut forged = spoken.clone();
-forged.mag = [999, 0, 0, 0];
+let forged = strip_words(&spoken);
 let mut cover = crate::network::nerve::Cover::new();
 assert!(matches!(k.glue_fetched(forged.clone(), [2; 32], [1; 32], &mut cover), Glue::Slashed(_)));
 let n = k.cochain_bytes();
 assert!(k.heard.contains(&forged.address()));
 assert!(matches!(k.glue_fetched(forged, [2; 32], [1; 32], &mut cover), Glue::Dialect));
 assert_eq!(k.cochain_bytes(), n, "a heard slash is not re-rowed");
-}
-
-/// Teaching is decided by the docket's anchoring of the cited word,
-/// never by sentence length.
-#[test]
-fn teaching_is_by_anchoring_not_length() {
-use crate::transducer::anchor::Sel;
-use crate::transducer::element::from_residual;
-let unanchored = from_residual(&vec![(0i64, 0i64, 1u8, 2u8)]);
-assert!(
-    taught_anchored_words(std::iter::once(&unanchored)).is_empty(),
-    "one unanchored word teaches nothing"
-);
-let a = from_residual(&vec![(0i64, 0i64, 1u8, 2u8)]).with_anchor(Sel::Hue(1));
-let b = from_residual(&vec![(1i64, 0i64, 3u8, 4u8)]).with_anchor(Sel::Hue(3));
-let taught = taught_anchored_words([&a, &b]);
-let mut pos = 0usize;
-let mut n = 0usize;
-while pos < taught.len() {
-    let before = pos;
-    if Element::from_bytes(&taught, &mut pos).is_none() {
-        break;
-    }
-    if pos == before {
-        break;
-    }
-    n += 1;
-}
-assert_eq!(n, 2, "two anchored words in one sentence both taught");
 }
 
 /// Quotes are incidence on charts. Permuting the pending list does not
@@ -298,19 +221,17 @@ assert_eq!(
 assert!(!pa.is_empty(), "the book is served");
 }
 
-/// heard drops when the peer's stratum root moves. The forged word is an
-/// attested chain, as in the test above.
+/// heard drops when the peer's stratum root moves. The forged word is a
+/// sentence with its word vertices struck out, as in the test above.
 #[test]
 fn heard_drops_when_stratum_root_moves() {
 let mut k = Kernel::new();
-let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
-let chain = germinate(&a, &b).unwrap();
-k.attest(&chain, [1; 32]);
-k.attest(&chain, [2; 32]);
+let a = vec![(0, 0, 1), (0, 1, 1)];
+let b = vec![(0, 0, 2), (0, 1, 2), (0, 2, 3)]; // the bar recoloured, a cell created beside it (50.5)
+speak_pair(&mut k, &a, &b, [1; 32]);
+speak_pair(&mut k, &a, &b, [2; 32]);
 let spoken = k.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().1.clone();
-let mut forged = spoken.clone();
-forged.mag = [999, 0, 0, 0];
+let forged = strip_words(&spoken);
 let mut cover = crate::network::nerve::Cover::new();
 assert!(matches!(k.glue_fetched(forged.clone(), [2; 32], [1; 32], &mut cover), Glue::Slashed(_)));
 assert_eq!(k.heard_len(), 1);

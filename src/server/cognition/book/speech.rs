@@ -6,38 +6,57 @@ use crate::transducer::address::Address;
 use crate::transducer::element::Element;
 
 impl Kernel {
-    /// List a sentence on the docket if it is not already provisional.
-    pub(crate) fn docket_sentence(&mut self, word: &Element, ratifier: [u8; 32]) {
-        self.docket_connection(word, ratifier);
+    /// PERCEIVE A FAMILY'S SPEECH — the one door an utterance has (law 8,
+    /// ruled 2026-09-10). Each sentence is heard by `perceive_sentence`,
+    /// and the code names what the book did with it: `SPEECH_STOOD` for a
+    /// sentence listed or already language, `SPEECH_REFUSED` for one the
+    /// replay or the room refused, `SPEECH_DIALECT` for one the door
+    /// deferred — stood there, unanswered here, spoken again later.
+    pub fn perceive_speech(&mut self, voice: [u8; 32], task: &[u8], sentences: &[Element]) -> Vec<u8> {
+        use crate::anastome::dialogue::{SPEECH_DIALECT, SPEECH_REFUSED, SPEECH_STOOD};
+        sentences
+            .iter()
+            .map(|s| match self.perceive_sentence(voice, task, s) {
+                Outcome::Refused(_) | Outcome::Pivot => SPEECH_REFUSED,
+                Outcome::Deferred(_) => SPEECH_DIALECT,
+                _ => SPEECH_STOOD,
+            })
+            .collect()
     }
 
-    /// Perceive a family's speech: replay each sentence, docket what stands.
-    /// A false sentence is refused with the replay reason in the journal
-    /// (`court refuse speech {addr}: {reason}`) before the wire code.
-    /// `task` binds the stood sentence to that family's trains so install
-    /// can mint only measured descent.
-    pub fn perceive_speech(&mut self, voice: [u8; 32], task: &[u8], sentences: &[Element]) -> Vec<u8> {
-        let mut codes = Vec::with_capacity(sentences.len());
-        let family = self.task_family.get(task).cloned();
-        for s in sentences {
-            if let Some(reason) = crate::court::verdict::blind_replay_on(
-                s,
-                &|a| self.resolve_form(a),
-                family.as_deref(),
-                self,
-            ) {
-                let a = s.address();
-                eprintln!("  court refuse speech {:02x}{:02x}…: {reason}", a[0], a[1]);
-                codes.push(crate::anastome::dialogue::SPEECH_REFUSED);
-                continue;
-            }
-            self.docket_sentence(s, voice);
-            if task != [0u8; 32] {
-                self.speech_task.insert(s.address(), Address::from(task));
-            }
-            codes.push(crate::anastome::dialogue::SPEECH_STOOD);
+    /// ONE SENTENCE AT THE COURT (50.2 G, 23.1). The door is read first
+    /// (`reflex_open`): deferred, the lanes are written and nothing is
+    /// heard. The tape is then replayed against the family of the task it
+    /// was spoken for — every word vertex carried onto the court's own copy
+    /// of each pair, every edge re-derived, the remainder what its demands
+    /// name — and refused with the reason in the journal (`court refuse
+    /// speech {addr}: {reason}`); what stands is listed (`list_sentence`)
+    /// and bound to the task, so the stroke replays it on the same family
+    /// and the install mints what it closes there. The court composes
+    /// nothing here.
+    pub(crate) fn perceive_sentence(&mut self, voice: [u8; 32], task: &[u8], s: &Element) -> Outcome {
+        if let Err(deficit) = self.reflex_open(voice) {
+            eprintln!(
+                "  court speech deferred voice {:02x}{:02x}… lanes {deficit:?}",
+                voice[0], voice[1]
+            );
+            return Outcome::Deferred(deficit);
         }
-        codes
+        let family = self.task_family.get(task).cloned();
+        if let Some(reason) =
+            crate::court::verdict::blind_replay_on(s, &|a| self.resolve_form(a), family.as_deref(), self)
+        {
+            let a = s.address();
+            eprintln!("  court refuse speech {:02x}{:02x}…: {reason}", a[0], a[1]);
+            return Outcome::Refused(reason);
+        }
+        let out = self.list_sentence(s, voice);
+        if !matches!(out, Outcome::Refused(_) | Outcome::Pivot) && task != [0u8; 32] {
+            let addr = s.address();
+            self.speech_task.insert(&addr, Address::from(task));
+            self.bind_listing_task(&addr, task);
+        }
+        out
     }
 
     /// List a word on the docket if it is not already provisional.

@@ -1,8 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! 24 — THE KERNEL SDK: how a kernel takes a stable mesh identity, perceives
-//! a scene of its own, speaks a demand to a hypha, and learns the word the
-//! court teaches back. Cells in, verdict out.
+//! a scene of its own, speaks a sentence to a hypha, and learns the word the
+//! court teaches back. Cells in, sentences out (law 8).
 
 mod entity;
 mod epigenome;
@@ -18,7 +18,6 @@ pub use types::*;
 
 use crate::anastome::dialogue;
 use crate::arc::Grid;
-use crate::cognition::{encode_percept, perceive};
 use crate::network::wire::{Frame, Stratum};
 use crate::transducer::element::Element;
 use std::cell::RefCell;

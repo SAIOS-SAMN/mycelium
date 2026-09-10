@@ -1,9 +1,12 @@
-// 16.12, 23.8 — REDUCTION: what a spoken chain becomes against the
-// language, and what the book is worth to a voice that asks.
+// 16.12, 23.8 — THE BOOK AS A MARKET READS IT, and the normal form the
+// redundancy probe reads over the language.
 //
-//! A reduction runs over the `Language` SNAPSHOT with no lock held.
-//! `rank_over` and `quote_incidence` read the book as a market view; the
-//! reductions carry a chain to what the language already says.
+//! Everything here runs over the `Language` SNAPSHOT with no lock held.
+//! `rank_over` and `quote_incidence` read the book as a market view;
+//! `normal_form` says whether the held words span a chain. Nothing here
+//! builds an element from a residual: the four sites that did were the
+//! court's F on a voice's cells (50.6, seam 3; law 8, ruled 2026-09-10),
+//! deleted with the percept and demand acts.
 
 use super::*;
 
@@ -260,82 +263,12 @@ pub fn cohesion_over(rank: &Rank) -> (u64, u64) {
     (c, i)
 }
 
-/// THE COURT'S COPY OF A PERCEPT'S PAIR (23.8, L7): the two scenes as one
-/// train pair, the family a percept-born sentence is bound to at listing
-/// so the court replays it on the pair it adjudicated and the install
-/// measures what the sentence closes. `None` for an empty percept.
-pub fn percept_family(
-    ca: &[Vec<(i64, i64, u8)>],
-    cb: &[Vec<(i64, i64, u8)>],
-) -> Option<Vec<crate::transducer::family::TrainPair>> {
-    use crate::transducer::family::cells_to_grid;
-    let a: Vec<(i64, i64, u8)> = ca.iter().flatten().copied().collect();
-    let b: Vec<(i64, i64, u8)> = cb.iter().flatten().copied().collect();
-    if a.is_empty() && b.is_empty() {
-        return None;
-    }
-    Some(vec![(cells_to_grid(&a), cells_to_grid(&b))])
-}
-
-/// A percept is the pair form: `pair_form` → `extract_rule_with` on the
-/// court as on the mind, and it is ONE SENTENCE (chapter 20 as ruled
-/// 2026-09-09, 50.1): the pair form's word vertices with their faces and
-/// edges, and its demand vertices riding it (50.5) — never one listing
-/// per body and never one per demand. A two-hue percept is two body
-/// vertices and their edge, not two detached listings. The court lists
-/// the sentence; under L8 it lists the demand vertices by kind beside the
-/// closed sub-complex. A family the engine does not extract, or a form
-/// with no measured descent and no demand, lists its remainder until L8.
-pub fn percept_elements(
-    ca: &[Vec<(i64, i64, u8)>],
-    cb: &[Vec<(i64, i64, u8)>],
-    frame: &crate::arc::Frame,
-    crystal: &dyn crate::transducer::family::Crystal,
-) -> Option<Vec<Element>> {
-    use crate::transducer::family::{extract_rule_with, family_ratio, form_descent, mint_sentence, pair_form};
-    let family = percept_family(ca, cb)?;
-    let from_remainders = |remainders: Vec<Vec<(i64, i64, u8, u8)>>| {
-        let rem: Vec<(i64, i64, u8, u8)> = remainders.into_iter().flatten().collect();
-        if rem.is_empty() {
-            Element::identity()
-        } else {
-            element::from_residual_framed(&rem, frame)
-        }
-    };
-    Some(vec![match extract_rule_with(&family, crystal) {
-        Some(rule) => {
-            // 50.5 (L7): a percept the eyes cannot open at all — no body
-            // pair admitted, so no vertex that acts — is a percept with no
-            // sentence and no listing, reported to the voice as such. A
-            // tape of the Frame and demands alone is a chain (50.6), and
-            // the court would refuse it as one (`REFUSE_NOT_A_SENTENCE`).
-            use crate::transducer::sentence::Vertex;
-            let acts = rule.form.vertices.iter().any(|v| {
-                matches!(v, Vertex::Word { .. } | Vertex::Glued { .. } | Vertex::Rebased { .. } | Vertex::Unfolded { .. })
-            });
-            if !acts {
-                return None;
-            }
-            match mint_sentence(&rule, &family, crystal) {
-                Some(e) => e,
-                None => {
-                    let (_, rem) = form_descent(&rule.form, &family, crystal);
-                    from_remainders(rem)
-                }
-            }
-        }
-        None => {
-            let scale = family_ratio(&family);
-            let f = pair_form(&family[0].0, &family[0].1, scale);
-            let (_, rem) = form_descent(&f, &family, crystal);
-            from_remainders(rem)
-        }
-    }])
-}
-
-/// THE NORMAL FORM of a chain over a language: its deconstruction into the
-/// words that compose it (a sentence, when closed), or the residual no word
-/// speaks (irreducible — a critical pair). One closed-form pass; no search.
+/// THE NORMAL FORM of a chain over a language: whether the held words
+/// compose it (the citation set, a sentence when closed), or leave a
+/// remainder. One closed-form pass; no search. The remainder is not
+/// composed into an element here: what the language does not span is the
+/// speaker's to say (law 8), and the redundancy probe asks only whether
+/// the rest of the basis derives a held word.
 pub fn normal_form(language: &Language, chain: &[(i64, i64, u8, u8)], exclude: Option<usize>) -> NormalForm {
     let sentence = crate::transducer::sentence::deconstruct_at(
         &|i| language.get(i),
@@ -347,157 +280,6 @@ pub fn normal_form(language: &Language, chain: &[(i64, i64, u8, u8)], exclude: O
     );
     match (sentence.residual.as_slice(), sentence.punctures.as_slice()) {
         ([], []) => NormalForm::Decomposed(sentence.cites.iter().map(|c| c.word).collect()),
-        _ => NormalForm::Irreducible(Box::new(element::from_residual(&sentence.open_at(&|i| language.get(i), chain)))),
-    }
-}
-
-/// Reduce a percept to normal form over the language snapshot — pure.
-/// A closed form is the word (held, or a new residual). An empty residual
-/// chain is a pure transposition.
-pub fn reduce_germ(
-    language: &Language,
-    _budget: (usize, usize),
-    g: &Element,
-) -> (NormalForm, Vec<CriticalPair>) {
-    if g.is_sentence() {
-        if let Some(i) = language.at(&g.address()) {
-            return (NormalForm::Decomposed(vec![i]), Vec::new());
-        }
-        if let Some(f) = g.form() {
-            let mut cited = Vec::new();
-            let mut all = true;
-            for v in &f.vertices {
-                if let crate::transducer::sentence::Vertex::Glued { address, .. } = v {
-                    match language.at(address) {
-                        Some(i) => cited.push(i),
-                        None => {
-                            all = false;
-                            break;
-                        }
-                    }
-                }
-            }
-            if all && !cited.is_empty() {
-                return (NormalForm::Decomposed(cited), Vec::new());
-            }
-        }
-        return (NormalForm::Irreducible(Box::new(g.clone())), Vec::new());
-    }
-    let sub = g.substance();
-    if sub.sub().is_empty() {
-        return (NormalForm::Decomposed(Vec::new()), Vec::new()); // a pure transposition
-    }
-    (normal_form(language, sub.sub(), None), Vec::new())
-}
-
-/// Cited words taught back: anchored ones only. Length of the sentence
-/// does not decide.
-pub fn taught_anchored_words<'a, I>(words: I) -> Vec<u8>
-where
-    I: IntoIterator<Item = &'a Element>,
-{
-    let mut taught = Vec::new();
-    for g in words.into_iter().filter(|g| g.anchor().is_some()) {
-        taught.extend_from_slice(&g.to_bytes());
-    }
-    taught
-}
-
-/// Reduce every germ over the snapshot — pure, off the lock.
-pub fn reduce_all(
-    language: &std::sync::Arc<Language>,
-    budget: (usize, usize),
-    germs: Vec<Element>,
-) -> Vec<Reduction> {
-    germs
-        .into_iter()
-        .map(|germ| {
-            let (form, qs) = reduce_germ(language, budget, &germ);
-            let listing = germ.address();
-            Reduction { germ, form, qs, language: std::sync::Arc::clone(language), listing, frontier: false }
-        })
-        .collect()
-}
-
-/// Resolve citations spoken by address into the language snapshot's
-/// coordinates — each by its own address, a bounded find; a citation naming
-/// nothing held is dropped (it speaks nothing in the replay).
-pub fn resolve_cites(
-    language: &Language,
-    cites: &[crate::anastome::dialogue::CiteWire],
-    target: &[(i64, i64, u8, u8)],
-) -> Vec<Cite> {
-    cites
-        .iter()
-        .filter_map(|c| {
-            let (addr, g) = (&c.addr, &c.transport);
-            let i = language.at(addr)?;
-            // The gauge coordinate is read from the target, never trusted
-            // as an index into this copy of the word.
-            let agreeing = crate::transducer::sentence::gauge_of(&language.words[i], g, target);
-            let n = agreeing.len();
-            let mut it = agreeing.fiber(crate::network::nerve::ROOT);
-            let (_, &gauge) = it.next()?;
-            if it.next().is_some() {
-                eprintln!(
-                    "  court cite gauge ambiguous {:02x}{:02x}… {n}",
-                    addr[0], addr[1]
-                );
-                return None;
-            }
-            Some(Cite { word: i, transport: g.clone(), gauge })
-        })
-        .collect()
-}
-
-/// THE PROVEN REDUCTION of one germ: the replay of the speaker's citations
-/// over the language snapshot decides the normal form — closure cites the
-/// sentence, a residual is the speaker's irreducible claim, carried as the
-/// germ to complete. No search runs here.
-pub fn reduce_proven(
-    language: &std::sync::Arc<Language>,
-    germ: Element,
-    cites: &[crate::anastome::dialogue::CiteWire],
-    frame: &crate::arc::Frame,
-    listing: crate::transducer::address::Address,
-) -> Reduction {
-    if germ.is_sentence() {
-        let (form, qs) = reduce_germ(language, (0, 0), &germ);
-        return Reduction {
-            germ,
-            form,
-            qs,
-            language: std::sync::Arc::clone(language),
-            listing,
-            frontier: cites.is_empty(),
-        };
-    }
-    let sub = germ.substance();
-    // The utterance is verified as spoken: the operators it carries are
-    // replayed against the germ; the lexicon is consulted only to name
-    // what was verified. A closing operator the language does not hold is
-    // the missing generator, listed as the demand.
-    let residual = crate::transducer::sentence::verify_utterance(cites, sub.sub());
-    let resolved = resolve_cites(language, cites, sub.sub());
-    let form = match (residual.as_slice(), resolved.len() == cites.len()) {
-        ([], true) => NormalForm::Decomposed(resolved.iter().map(|c| c.word).collect()),
-        ([], false) => {
-            let named: Vec<Address> = resolved.iter().map(|c| language.words[c.word].address()).collect();
-            let missing = cites
-                .iter()
-                .find(|c| !named.contains(&c.addr))
-                .map(|c| c.body.clone())
-                .unwrap_or_default();
-            NormalForm::Irreducible(Box::new(element::from_residual_framed(&missing, frame)))
-        }
-        ([_, ..], _) => NormalForm::Irreducible(Box::new(element::from_residual_framed(&residual, frame))),
-    };
-    Reduction {
-        germ,
-        form,
-        qs: Vec::new(),
-        language: std::sync::Arc::clone(language),
-        listing,
-        frontier: cites.is_empty(),
+        _ => NormalForm::Irreducible,
     }
 }

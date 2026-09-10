@@ -7,7 +7,7 @@ use crate::cognition::*;
 use crate::transducer::germinate::germinate;
 use crate::transducer::element::{self, Element};
 
-/// ONE VANTAGE DOCKETS: a percept this court re-derived is listed on the
+/// ONE VANTAGE DOCKETS: a sentence this court replayed is listed on the
 /// book, escrowed as a claim, and Offered — and mints NOTHING. The second
 /// vantage is a witness hypha that re-derives the same address and has room
 /// (47.3); on its arrival the escrow releases and the deflation mints. No
@@ -22,14 +22,14 @@ let mut peer = Kernel::new();
 // a sentence of demands closes nothing and mints nothing (50.5).
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
-assert_eq!(home.ingest(&a, &b, [1; 32]), Outcome::GermPending);
+assert_eq!(speak_pair(&mut home, &a, &b, [1; 32]), Outcome::GermPending);
 assert!(!home.pending.is_empty(), "the listing stays on the book");
 assert_eq!(home.provisional.len(), 1, "the sentence is on the docket");
 let addr = home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().0.clone();
-// The court holds the percept's own pair as the sentence's family (L7:
-// bound at listing, never by the test), so the install measures the
-// descent the sentence closes (E2).
-assert!(home.family_of(&addr).is_some(), "the court bound the pair it adjudicated");
+// The voice bound its task's family and the court bound the sentence to
+// it at speech (23.8), so the install measures the descent the sentence
+// closes (E2).
+assert!(home.family_of(&addr).is_some(), "the court bound the sentence to its task's family");
 assert!(home.offered(&addr), "the court Offers a first-vantage germ");
 assert!(home.treasury().escrow_of(&addr).is_some(), "the priced magnitude is the claim");
 assert_eq!(home.treasury().minted().expect("minted adds up"), [0; 4], "the claim is not yet payment: nothing minted");
@@ -261,8 +261,8 @@ k.treasury().audit().expect("an install conserves");
 // mint; a revocation makes it vanish with nothing ever issued. Counting
 // it as issued reported value the mesh had not created, and the audit
 // failed here at the first docket.
-let _ = k.ingest(&a, &b, [1; 32]);
-let _ = k.ingest(&a, &b, [2; 32]);
+let _ = speak_pair(&mut k, &a, &b, [1; 32]);
+let _ = speak_pair(&mut k, &a, &b, [2; 32]);
 let docketed = k.treasury().audit().expect("a claim is not yet supply");
 assert_eq!(k.treasury().minted().expect("minted"), [0; 4], "no claim has been ruled");
 

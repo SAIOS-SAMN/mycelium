@@ -1,19 +1,70 @@
-// Fixture constructors for the mind's tests (MU-STANDARDS 3.3): a scene, a
-// glued pair, and a grid of digits, each built through the constructors the
-// production code exports.
+// Fixture constructors for the mind's tests (MU-STANDARDS 3.3): a voice's
+// sentence for a pair, a glued pair, and a grid of digits, each built
+// through the constructors the production code exports.
 
 use crate::cognition::*;
+use crate::transducer::element::Element;
+use crate::transducer::family::TrainPair;
 
-pub fn scene(sr: i64, sc: i64) -> Vec<(i64, i64, u8)> {
-vec![(sr, sc, 1), (sr, sc + 1, 1), (sr + 1, sc, 1)]
+/// A pair of cell scenes as the one-pair family a voice reads it as: each
+/// scene on its own grid, exactly as the eyes of the voice would (20).
+pub fn family_of_pair(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Vec<TrainPair> {
+    use crate::transducer::family::cells_to_grid;
+    vec![(cells_to_grid(a), cells_to_grid(b))]
 }
 
-/// Two voices docket a pair and `glue_local` glues it: a basis reached
+/// THE VOICE'S F, IN-PROCESS (50.2, law 8): the rule the form engine
+/// extracts over an empty genome and the sentence it mints for the pair —
+/// with its demand vertices, uttered whole (50.5). `None` where the eyes
+/// admit no body pair: a form with no vertex that acts is a chain (50.6),
+/// and a voice speaks nothing for it.
+pub fn sentence_of(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Option<Element> {
+    use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
+    use crate::transducer::sentence::Vertex;
+    let family = family_of_pair(a, b);
+    let rule = extract_rule(&family)?;
+    let acts = rule.form.vertices.iter().any(|v| {
+        matches!(v, Vertex::Word { .. } | Vertex::Glued { .. } | Vertex::Rebased { .. } | Vertex::Unfolded { .. })
+    });
+    if !acts {
+        return None;
+    }
+    mint_sentence(&rule, &family, &NoCrystal)
+}
+
+/// A VOICE SPEAKS A PAIR TO THE COURT through the one door an utterance has
+/// (law 8, ruled 2026-09-10): the voice's sentence for the pair, bound to a
+/// task of that family (the voice's own binding, as the task arm binds it),
+/// heard by `perceive_sentence`. `Outcome::Pivot` where the voice has no
+/// sentence to speak. No cell of the pair reaches the court.
+pub fn speak_pair(k: &mut Kernel, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)], voice: [u8; 32]) -> Outcome {
+    let Some(e) = sentence_of(a, b) else {
+        return Outcome::Pivot;
+    };
+    let family = family_of_pair(a, b);
+    let task = crate::registry::task_id(&crate::arc::Task { train: family.clone(), test: Vec::new() });
+    k.bind_task_family(&task, family);
+    k.perceive_sentence(voice, task.as_bytes(), &e)
+}
+
+/// A sentence with its word vertices STRUCK OUT: a tape of the Frame and
+/// its demands alone, which is a chain and not a sentence (50.6), refused
+/// by the blind replay as `REFUSE_NOT_A_SENTENCE`. The tamper a forged word
+/// carries where a chain-era fixture inflated a magnitude.
+pub fn strip_words(spoken: &Element) -> Element {
+    use crate::transducer::sentence::{as_element_form, from_element_form, Vertex};
+    let mut f = from_element_form(spoken).expect("a sentence tape reads back");
+    f.vertices.retain(|v| !matches!(v, Vertex::Word { .. }));
+    f.reindex();
+    as_element_form(&f, spoken.magnitude()).expect("a tape")
+}
+
+/// Two voices speak a pair and `glue_local` glues it: a basis reached
 /// through the fixture's two wire identifiers (§3.4's exception), so a test
 /// built on this proves nothing about 47.3's witness and says so.
 pub fn glue_pair(k: &mut Kernel, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) {
-k.ingest(a, b, [1; 32]);
-let _ = k.ingest(a, b, [2; 32]);
+speak_pair(k, a, b, [1; 32]);
+let _ = speak_pair(k, a, b, [2; 32]);
 k.glue_local();
 }
 

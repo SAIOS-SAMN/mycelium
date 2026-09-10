@@ -1,8 +1,10 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 23.8, 26 — THE JUDGE OFF THE LOCK: adjudicate, attest, probe, quote,
-//! consolidate and adopt. Each replays the voice's own proof over the
-//! language snapshot with no lock held and settles under a brief one.
+//! 23.8, 26 — THE JUDGE OFF THE LOCK: probe, quote, consolidate and adopt.
+//! Each replays the voice's own proof over the language snapshot with no
+//! lock held and settles under a brief one. The percept and the demand
+//! that were judged here carried a voice's cells to the court (law 8,
+//! ruled 2026-09-10); a voice speaks sentences, heard by `perceive_speech`.
 
 use crate::arc::{frame_ratio, Grid};
 
@@ -37,78 +39,6 @@ pub enum Deliberation {
     /// Genome synchronization: a court-ratified word to verify and install
     /// (the ratifying voice is the provenance of record).
     Adopt([u8; 32], crate::transducer::element::Element),
-}
-
-/// THE JUDGE, off the lock — a verifier. The reflex opening (enrol, relax,
-/// cheap syntropic moves, the door) runs under a brief lock and hands out
-/// the language snapshot; germination and the linear replay of the
-/// speaker's proof run with no lock held; the commit re-resolves citations
-/// by address under a brief lock. No search runs on the hypha: a percept
-/// whose proof does not cover its germs is deferred, and the speaker's
-/// next sync converges it on the language.
-pub fn adjudicate(
-    k: &std::sync::Mutex<crate::cognition::Kernel>,
-    ca: &[Vec<(i64, i64, u8)>],
-    cb: &[Vec<(i64, i64, u8)>],
-    voice: [u8; 32],
-    frame: &crate::arc::Frame,
-    proof: &[Vec<crate::anastome::dialogue::CiteWire>],
-) -> crate::cognition::Outcome {
-    use crate::cognition::Outcome;
-    let Ok(mut g) = k.lock() else { return Outcome::GermPending };
-    let Some((language, _budget)) = g.reflex_open(voice) else { return Outcome::GermPending };
-    let Some(germs) = crate::cognition::percept_elements(ca, cb, frame, &*g) else {
-        return g.pivot();
-    };
-    // 23.8, L7: the court binds the pair it adjudicated as the sentence's
-    // family before the lock is dropped, so the stroke's replay and the
-    // install read it.
-    g.bind_percept_family(&germs, ca, cb);
-    drop(g);
-    let listing = germs[0].address();
-    let reductions: Vec<_> = germs
-        .into_iter()
-        .enumerate()
-        .map(|(i, germ)| {
-            let cites = proof.get(i).map(Vec::as_slice).unwrap_or(&[]);
-            crate::cognition::reduce_proven(&language, germ, cites, frame, listing.clone())
-        })
-        .collect();
-    let Ok(mut g) = k.lock() else { return Outcome::GermPending };
-    g.commit_all(reductions, voice)
-}
-
-/// A spoken coboundary demand with the speaker's own reduction: replayed,
-/// never searched; an empty citation list attests the chain irreducible
-/// for this voice (the consilience path).
-pub fn attest(
-    k: &std::sync::Mutex<crate::cognition::Kernel>,
-    chain: &[(i64, i64, u8, u8)],
-    voice: [u8; 32],
-    cites: &[crate::anastome::dialogue::CiteWire],
-    k_voice: u64,
-) -> crate::cognition::Outcome {
-    use crate::cognition::{NormalForm, Outcome};
-    let Ok(mut g) = k.lock() else { return Outcome::GermPending };
-    let germ = crate::transducer::element::from_residual(&chain.to_vec());
-    let listing = germ.address();
-    if let Some(out) = g.answer_if_duplicate(&voice, &listing, k_voice) {
-        return out;
-    }
-    let Some((language, _budget)) = g.reflex_open(voice) else { return Outcome::GermPending };
-    drop(g);
-    // A chain carries no frame: the planar word, every extent zero.
-    let frame = crate::arc::Frame::default();
-    let reduction = crate::cognition::reduce_proven(&language, germ, cites, &frame, listing.clone());
-    let residual = match &reduction.form {
-        NormalForm::Decomposed(_) => 0,
-        NormalForm::Irreducible(r) => r.sub().len(),
-    };
-    let Ok(mut g) = k.lock() else { return Outcome::GermPending };
-    g.puncture_from(cites);
-    let out = g.commit_all(vec![reduction], voice);
-    let said = crate::cognition::Uttered { cites: cites.len(), residual, chain_len: chain.len() };
-    g.record_utterance(voice, listing, k_voice, said, out)
 }
 
 /// THE PROBE, off the lock: the sentence replays over the language snapshot
