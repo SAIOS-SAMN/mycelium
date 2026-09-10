@@ -1,38 +1,105 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 50.8, L11c — THE COVER OF A DEFORMATION: the same constructor as the
-//! ring's, at the cover level.
+//! 50.8, L11c — THE COVER OF A DEFORMATION, BUILT FROM THE
+//! CORRESPONDENCE. The same constructor as the ring's, at the cover
+//! level.
 //!
 //! No single versor carries this body onto its image — that is what a
 //! `TopologicalDeformation` says. The cover splits both into PIECES that
 //! are each carried, and what is left is the transition between pieces
-//! where they meet. A transition of finite order is a class the form
-//! FILES as torsion; an infinite one is what the demand still stands on.
+//! where they meet.
+//!
+//! THE PIECES ARE PULLED BACK, NEVER COMPARED. Peeling both bodies alone
+//! and matching their charts afterwards produces two decompositions with
+//! no reason to share one: measured at 2c9fb0c, every failure was a chart
+//! miss and the carriage was never consulted once. An output piece's
+//! preimage is the set of input pieces standing under its own cells, read
+//! per cell from a keyed occupancy — so a piece in place is congruent by
+//! construction and the lookup cannot miss. That preimage is ONE set and
+//! is carried once: the two peels are under no obligation to agree on
+//! granularity, and requiring them to (one input piece against one output
+//! piece) refuses every carriage where they differ. A purely positional pullback
+//! would find ONLY pieces carried in place, and every transition would be
+//! the identity; the second pass by shell kind and hue is what lets a
+//! piece that MOVED be found, and the moduli are never the key there,
+//! because a deformed piece's moduli differ and that difference is the
+//! deformation itself.
 //!
 //! Nothing is added to the tape. `Form.torsion` already carries a filled
 //! cell as `FiledLoop { sigma, period, chord }` and the court already
-//! replays it (23.1 step 4), so the cell coordinate the row asks for is
-//! the one the form has had since 15.5.
+//! replays it (23.1 step 4).
 //!
-//! Nothing is ranked. Pieces come out in shell order and then key order,
-//! and a piece is paired to a piece by the same carriage the whole-body
-//! pairing uses; there is no nearest, no best and no first-found.
+//! Nothing is keyed by position. A piece is addressed by its content —
+//! shell kind, hue, and its support written out — so no arrival index
+//! survives into the nerve (rule 6, rule 15).
 
 use super::*;
 use crate::transducer::alphabet::Rotor;
+use crate::transducer::peel::ShellKind;
+
+/// A piece of a body: one shell, one hue, one connected component.
+pub(crate) struct Piece {
+    pub(crate) kind: ShellKind,
+    pub(crate) hue: u8,
+    pub(crate) body: Body,
+}
+
+/// The address of a piece, as content (A21): the shell kind, the hue, and
+/// the support written out, length-prefixed. No digest — a hash here
+/// would key cognition by bytes and lose the coordinates the nerve reads
+/// (rule 2, rule 6).
+pub(crate) fn piece_key(kind: ShellKind, hue: u8, support: &[(i64, i64)]) -> Vec<u8> {
+    let mut k = vec![kind.as_u8(), hue];
+    k.extend_from_slice(&(support.len() as u32).to_le_bytes());
+    for &(r, c) in support {
+        k.extend_from_slice(&r.to_le_bytes());
+        k.extend_from_slice(&c.to_le_bytes());
+    }
+    k
+}
+
+/// The address of a preimage: the pieces it is assembled from, written
+/// out length-prefixed in key order. A preimage of ONE piece is that
+/// piece and keeps its own address, so the pullback and the structural
+/// pass name the same cover piece the same way. Content, not a digest and
+/// not an arrival index (rule 2, rule 6, rule 15).
+fn preimage_key(parts: &[Vec<u8>]) -> Vec<u8> {
+    match parts {
+        [only] => only.clone(),
+        many => {
+            let mut k = Vec::new();
+            for p in many {
+                k.extend_from_slice(&(p.len() as u32).to_le_bytes());
+                k.extend_from_slice(p);
+            }
+            k
+        }
+    }
+}
+
+/// The unordered pair of two piece addresses: the 1-simplex of the nerve,
+/// named by its two ends and never by their positions.
+fn meet_key(a: &[u8], b: &[u8]) -> Vec<u8> {
+    let (lo, hi) = match a <= b {
+        true => (a, b),
+        false => (b, a),
+    };
+    let mut k = Vec::with_capacity(lo.len() + hi.len() + 8);
+    k.extend_from_slice(&(lo.len() as u32).to_le_bytes());
+    k.extend_from_slice(lo);
+    k.extend_from_slice(&(hi.len() as u32).to_le_bytes());
+    k.extend_from_slice(hi);
+    k
+}
 
 /// The pieces of a body: its peel shells, and within each shell the
 /// one-hue connected components (13.9's split, `sentence::pieces` over
-/// 4-adjacency). Shell order, then the component order the keyed read
-/// returns — an order by content, never a ranking (rule 4).
-///
-/// A body of one hue with no inner shell is one piece, and a cover of one
-/// piece has no meet: nothing to fill, and the demand stands as it did.
+/// 4-adjacency), filed by their own address.
 pub(crate) fn pieces_of(
     cells: &[Cell3],
     scale: Option<((usize, usize), (usize, usize))>,
-) -> Vec<Body> {
-    let mut out = Vec::new();
+) -> crate::network::nerve::Keyed<Piece> {
+    let mut out: crate::network::nerve::Keyed<Piece> = crate::network::nerve::Keyed::new();
     for shell in crate::transducer::peel::peel_body_scaled(cells, scale) {
         // One hue at a time, so a component is a piece of ONE colour: a
         // seam between two hues is a meet, not a body (13.9).
@@ -45,7 +112,12 @@ pub(crate) fn pieces_of(
                 }
             }
         }
-        for (_, of_hue) in hues.fiber(crate::network::nerve::ROOT) {
+        for (hue_key, of_hue) in hues.fiber(crate::network::nerve::ROOT) {
+            // The hue is the KEY this group was filed under, not a cell
+            // read out of it by position (rule 15): every cell here has
+            // that hue by construction.
+            let [hue] = hue_key.as_slice() else { continue };
+            let hue = *hue;
             let chain: Vec<crate::transducer::sentence::Cell> =
                 of_hue.iter().map(|&(r, c, h)| (r, c, h, h)).collect();
             for comp in crate::transducer::sentence::pieces(&chain) {
@@ -53,209 +125,268 @@ pub(crate) fn pieces_of(
                 if cells.is_empty() {
                     continue;
                 }
-                out.push(body_of(cells));
+                let body = body_of(cells);
+                let k = piece_key(shell.kind, hue, &support_of(&body));
+                out.insert(k, Piece { kind: shell.kind, hue, body });
             }
         }
     }
     out
 }
 
-/// One piece the cover placed: which piece it is, the versor that
-/// carried it, and the support it landed on.
+/// One piece the cover placed: the versor that carried it and the support
+/// it landed on.
 struct Placed {
-    idx: usize,
     by: Versor,
     support: Vec<(i64, i64)>,
 }
 
-/// What the cover of one deformation reached. Every field is content:
-/// the pieces carried and how, the classes their meets left, and the
-/// cells no piece reached.
+/// What the cover of one deformation reached. Every field is content, and
+/// every carrier is keyed by a piece's own address.
 pub(crate) struct Cover {
-    /// One `Word` vertex per carried piece, with the versor that carried
-    /// it, in the order the pieces came out.
-    pub(crate) carried: Vec<(Vertex, Versor)>,
-    /// Filed classes: a meet whose transition has FINITE order is a
-    /// torsion cycle of this form (15.5, A17), with the period it closes
-    /// at. The chord is written by the caller, which owns the face
-    /// indices.
-    pub(crate) filed: Vec<(Rotor, u32)>,
-    /// A meet whose transition has infinite order: nothing is filed and
-    /// the demand stands on it (50.5). Held as the transition itself, so
-    /// the caller can carry its class vector.
-    pub(crate) standing: Vec<Rotor>,
-    /// Cells of either body no piece carried. The demand dissolves only
-    /// when both are empty (50.8).
-    pub(crate) uncarried: usize,
+    /// The word vertex of each carried piece and the versor that carried
+    /// it, by piece address.
+    pub(crate) carried: crate::network::nerve::Keyed<(Vertex, Versor)>,
+    /// A meet whose transition has FINITE order: a torsion cycle of this
+    /// form (15.5, A17) with the period it closes at, by meet address.
+    pub(crate) filed: crate::network::nerve::Keyed<(Rotor, u32)>,
+    /// A meet whose transition has INFINITE order: nothing is filed and
+    /// the demand stands on it (50.5), by meet address.
+    pub(crate) standing: crate::network::nerve::Keyed<Rotor>,
+    /// What no piece carried, as a VOLUME on four lanes (law 5): the
+    /// input's cells no piece carried and the image's cells no piece
+    /// reached (50.8 case 4). A count of cells is not this quantity —
+    /// cells carry different lane weight — so the dissolution reads the
+    /// zero vector and never a cardinality.
+    pub(crate) uncarried: [u64; 4],
+    /// Whether the cover ran to the end of its own pieces. A budget that
+    /// ended leaves this false, and an unmeasured cover dissolves
+    /// nothing: it is not a smaller cover (rule 11).
+    pub(crate) measured: bool,
 }
 
-/// 50.8 — COVER ONE DEFORMATION. Both bodies are split into pieces; each
-/// input piece is paired to the output piece the SAME carriage rule the
-/// whole-body pairing uses admits (`carriage`, exact or nothing); the
-/// transition between two incident carried pieces is read by its own
-/// rotor.
+impl Cover {
+    fn new() -> Cover {
+        Cover {
+            carried: crate::network::nerve::Keyed::new(),
+            filed: crate::network::nerve::Keyed::new(),
+            standing: crate::network::nerve::Keyed::new(),
+            uncarried: [0; 4],
+            measured: true,
+        }
+    }
+
+    /// The deformation is answered when every cell of both bodies is
+    /// carried and no meet of infinite order stands. A finite-order
+    /// holonomy is NOT an obstruction: it is filed as torsion and the
+    /// sentence carries the class as its theorem (15.5), so a demand kept
+    /// alive on it would be a demand for what the form already says.
+    pub(crate) fn dissolves(&self) -> bool {
+        self.measured
+            && self.uncarried == [0; 4]
+            && self.standing.fiber(crate::network::nerve::ROOT).next().is_none()
+    }
+}
+
+/// 50.8 — COVER ONE DEFORMATION.
 ///
-/// The four readings, and none of them is a choice:
+/// Pass (a), THE PULLBACK: an output piece's preimage is the input pieces
+/// standing under its own cells, read per cell from the occupancy. Pass
+/// (b), BY STRUCTURE: an input piece still unplaced is looked for among
+/// the output pieces of its own shell kind and hue — never its moduli,
+/// which a deformed piece changes by definition. In both, `carriage`
+/// decides and nothing is ranked (rule 4).
 ///
-/// - identity: the pieces agree on their overlap and there is nothing to
+/// The readings at a meet, and none of them is a choice:
+///
+/// - identity: the pieces agree across the seam and there is nothing to
 ///   fill.
-/// - no versor between two pieces: a remainder edge (13.9, 50.3). Not a
-///   demand — the split is Mayer–Vietoris and no loop through that edge
-///   is evaluated.
-/// - finite order `ℓ`: the class is FILED as torsion at its period, and
-///   the cell is filled.
+/// - no versor: a remainder edge (13.9 step 7, 50.3), and no loop through
+///   it is evaluated.
+/// - finite order `ℓ`: the class is FILED as torsion at its period.
 /// - infinite order: the demand stands, carrying that class.
-///
-/// The loop over pieces spends the caller's `Budget` (rule 10): a cover
-/// that ran out of budget carried fewer pieces, so cells stay uncarried
-/// and the demand stands — which is the same answer an incomplete cover
-/// gives for any other reason, and never a claim that it closed.
 pub(crate) fn cover_deformation(
     input: &Body,
     image: &Body,
     scale: Option<((usize, usize), (usize, usize))>,
     budget: &mut crate::physics::Budget,
 ) -> Cover {
+    use crate::network::nerve::ROOT;
     let ins = pieces_of(&input.cells, scale);
     let outs = pieces_of(&image.cells, scale);
-    let mut cover =
-        Cover { carried: Vec::new(), filed: Vec::new(), standing: Vec::new(), uncarried: 0 };
+    let mut cover = Cover::new();
 
-    // Which cells any piece carried, so what is left is read from content
-    // rather than counted down from a total.
-    let mut reached: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    // The pieces this cover placed, for the meets below.
-    let mut placed: Vec<Placed> = Vec::new();
-
-    // THE OUTPUT PIECES BY CHART, once. The read is a keyed fiber at the
-    // input piece's chart and never a walk of the output pieces (rule 1:
-    // no pair loop over ins × outs).
-    //
-    // The PEELED chart, as `group_by_chart` uses for the whole-body
-    // pairing: a carriage between two pieces does not require their
-    // moduli to be equal — `pair_rank` reads that equality as a rank and
-    // not as a gate — so grouping on the exact chart would refuse pairs
-    // the whole-body path admits.
-    let mut by_chart: crate::network::nerve::Keyed<Vec<usize>> = crate::network::nerve::Keyed::new();
-    for (j, op) in outs.iter().enumerate() {
-        let k = op.moduli.peel().key();
-        match by_chart.get_mut(&k) {
-            Some(v) => v.push(j),
-            None => {
-                by_chart.insert(k, vec![j]);
-            }
+    // Cell position → the input piece holding it. This is Φ: the
+    // positional correspondence over the two supports, which is what a
+    // deformation-in-place has in place of a whole-body versor.
+    let mut occ_in: crate::network::nerve::Keyed<Vec<u8>> = crate::network::nerve::Keyed::new();
+    for (k, p) in ins.fiber(ROOT) {
+        for &(r, c, _) in &p.body.cells {
+            occ_in.insert(cell_pos_key(r, c), k.clone());
         }
     }
+
+    let mut placed: crate::network::nerve::Keyed<Placed> = crate::network::nerve::Keyed::new();
+    let mut consumed: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     let mut taken: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    for ip in &ins {
-        if !budget.spend() {
-            break;
+    let mut reached: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    let out_keys: Vec<Vec<u8>> = outs.fiber(ROOT).map(|(k, _)| k).collect();
+
+    // (a) THE PULLBACK, in place.
+    for ko in &out_keys {
+        if taken.contains(ko) {
+            continue;
         }
-        // The fiber of output pieces on this piece's own chart, in key
-        // order. Carrying is exact, so the one that carries is read out
-        // rather than chosen among candidates (rule 4).
-        let Some(fiber) = by_chart.get(&ip.moduli.peel().key()) else {
-            // L11d: NO OUTPUT PIECE SHARES THIS PIECE'S PEELED CHART. The
-            // pairing never even reaches a carriage, so nothing about the
-            // carriage's strictness is being measured here.
-            eprintln!(
-                "  cover piece no-fiber charts_out {} axes_of_piece {}",
-                by_chart.fiber(crate::network::nerve::ROOT).count(),
-                ip.moduli.0.len()
-            );
+        let Some(op) = outs.get(ko) else { continue };
+        // The preimage: the input pieces named under this piece's own
+        // cells, deduped by their address and read in key order.
+        let mut named: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        for &(r, c, _) in &op.body.cells {
+            if let Some(ki) = occ_in.get(&cell_pos_key(r, c)) {
+                named.insert(ki, ());
+            }
+        }
+        // Φ⁻¹(V) IS ONE SET. It is assembled whole and carried once, and
+        // it is closed up to whole pieces so no piece is cut across the
+        // preimage boundary. Measured before this line stood: tried piece
+        // by piece instead, 24 input pieces against 1 output piece carried
+        // NOTHING — a 3-cell piece has no versor onto a 60-cell image, so
+        // every carriage refused on granularity and the cover was empty.
+        // The granularity of the two peels is not required to agree; that
+        // it need not is the whole reason the preimage is taken.
+        let mut cells: Vec<Cell3> = Vec::new();
+        let mut parts: Vec<Vec<u8>> = Vec::new();
+        for (ki, ()) in named.fiber(ROOT) {
+            if consumed.contains(&ki) {
+                continue;
+            }
+            if !budget.spend() {
+                cover.measured = false;
+                return cover;
+            }
+            let Some(ip) = ins.get(&ki) else { continue };
+            cells.extend_from_slice(&ip.body.cells);
+            parts.push(ki);
+        }
+        // No preimage is no piece to carry, not a piece that failed to
+        // carry (rule 11): nothing is reached and nothing is consumed.
+        let Some(pre) = (!cells.is_empty()).then(|| body_of(cells)) else {
             continue;
         };
-        let mut carried_here = false;
-        for &j in fiber {
-            if taken.contains(&j.to_le_bytes()) {
-                continue;
-            }
-            let Some(op) = outs.get(j) else {
-                continue;
-            };
-            let Some(car) = carriage(ip, op) else {
-                // L11d: WHY THIS PIECE DID NOT CARRY. `versor_between`
-                // reads the shapes alone; `carriage` then reads the hue
-                // map cell by cell. Which of the two refused is the whole
-                // question, and it is written out rather than inferred.
-                let shaped = crate::transducer::blade::versor_between(&ip.shape, &op.shape).is_some();
-                eprintln!(
-                    "  cover piece refused axes {:?} versor {} at {}",
-                    crate::transducer::family::differing_axes(&ip.moduli, &op.moduli),
-                    shaped,
-                    match shaped {
-                        true => "the hue map or the cell walk",
-                        false => "the shapes",
-                    }
-                );
-                continue;
-            };
-            let Some(Ok(v)) = crate::transducer::family::word_or_demand(ip, op) else {
-                continue;
-            };
-            taken.insert(j.to_le_bytes(), ());
-            for &(r, c, _) in &ip.cells {
-                reached.insert(cell_pos_key(r, c), ());
-            }
-            for &(r, c, _) in &op.cells {
-                reached.insert(cell_pos_key(r, c), ());
-            }
-            placed.push(Placed { idx: placed.len(), by: car.v.clone(), support: support_of(op) });
-            cover.carried.push((v, car.v));
-            carried_here = true;
-            break;
+        let Some(car) = carriage(&pre, &op.body) else { continue };
+        let Some(Ok(v)) = word_or_demand(&pre, &op.body) else { continue };
+        let key = preimage_key(&parts);
+        taken.insert(ko, ());
+        for &(r, c, _) in pre.cells.iter().chain(op.body.cells.iter()) {
+            reached.insert(cell_pos_key(r, c), ());
         }
-        if !carried_here {
-            // No output piece on this piece's own chart carried it at
-            // all: the fiber was empty, or every member refused above.
-            eprintln!("  cover piece uncarried fiber {}", fiber.len());
+        for ki in &parts {
+            consumed.insert(ki, ());
+        }
+        placed.insert(&key, Placed { by: car.v.clone(), support: support_of(&op.body) });
+        cover.carried.insert(&key, (v, car.v));
+    }
+
+    // (b) BY STRUCTURE, for what the pullback left. The correspondence is
+    // the shell kind and the hue — what the piece IS — and never the
+    // moduli, which the deformation changed.
+    let mut by_kind_hue: crate::network::nerve::Keyed<Vec<Vec<u8>>> =
+        crate::network::nerve::Keyed::new();
+    for ko in &out_keys {
+        let Some(op) = outs.get(ko) else { continue };
+        let k = vec![op.kind.as_u8(), op.hue];
+        match by_kind_hue.get_mut(&k) {
+            Some(v) => v.push(ko.clone()),
+            None => {
+                by_kind_hue.insert(k, vec![ko.clone()]);
+            }
+        }
+    }
+    let in_keys: Vec<Vec<u8>> = ins.fiber(ROOT).map(|(k, _)| k).collect();
+    for ki in &in_keys {
+        if consumed.contains(ki) {
+            continue;
+        }
+        let Some(ip) = ins.get(ki) else { continue };
+        let Some(fiber) = by_kind_hue.get(&[ip.kind.as_u8(), ip.hue]).cloned() else { continue };
+        for ko in fiber {
+            if taken.contains(&ko) {
+                continue;
+            }
+            if !budget.spend() {
+                cover.measured = false;
+                return cover;
+            }
+            let Some(op) = outs.get(&ko) else { continue };
+            let Some(car) = carriage(&ip.body, &op.body) else { continue };
+            let Some(Ok(v)) = word_or_demand(&ip.body, &op.body) else { continue };
+            taken.insert(&ko, ());
+            for &(r, c, _) in ip.body.cells.iter().chain(op.body.cells.iter()) {
+                reached.insert(cell_pos_key(r, c), ());
+            }
+            consumed.insert(ki, ());
+            placed.insert(ki, Placed { by: car.v.clone(), support: support_of(&op.body) });
+            cover.carried.insert(ki, (v, car.v));
+            break;
         }
     }
 
-    // THE MEETS, read from a keyed occupancy rather than from a pair loop
-    // (rule 1): each placed piece's support and its ring are written into
-    // one cell-keyed carrier, and a cell holding two or more pieces IS a
-    // meet. The bound is the pieces' own cells — their boundary — and no
-    // pair is ever formed that a cell did not name.
-    let mut occ: crate::network::nerve::Keyed<Vec<usize>> = crate::network::nerve::Keyed::new();
-    for p in &placed {
-        let (idx, support) = (&p.idx, &p.support);
-        let cells: Vec<Cell3> = support.iter().map(|&(r, c)| (r, c, 0)).collect();
+    // (c) WHAT IS LEFT, AS A VOLUME. Both bodies (50.8 case 4): the
+    // input's cells no piece carried, and the image's cells no piece
+    // reached.
+    let mut left: Vec<crate::transducer::sentence::Cell> = Vec::new();
+    for &(r, c, h) in &input.cells {
+        if !reached.contains(&cell_pos_key(r, c)) {
+            left.push((r, c, h, 0));
+        }
+    }
+    for &(r, c, h) in &image.cells {
+        if !reached.contains(&cell_pos_key(r, c)) {
+            left.push((r, c, 0, h));
+        }
+    }
+    cover.uncarried = element::measure_lanes(&left);
+
+    // (d) THE MEETS, from a keyed occupancy of the placed supports and
+    // their rings (rule 1: never a pair loop over the pieces). A cell
+    // holding two or more placed pieces IS a meet, and the meet is
+    // addressed by its two ends.
+    let mut occ: crate::network::nerve::Keyed<Vec<Vec<u8>>> = crate::network::nerve::Keyed::new();
+    for (k, p) in placed.fiber(ROOT) {
+        let cells: Vec<Cell3> = p.support.iter().map(|&(r, c)| (r, c, 0)).collect();
         let ring = crate::transducer::blade::adjacent_ring(&cells);
-        for (r, c) in support.iter().copied().chain(ring.into_iter().map(|(r, c, _)| (r, c))) {
-            let k = cell_pos_key(r, c);
-            match occ.get_mut(&k) {
+        for (r, c) in p.support.iter().copied().chain(ring.into_iter().map(|(r, c, _)| (r, c))) {
+            let pos = cell_pos_key(r, c);
+            match occ.get_mut(&pos) {
                 Some(v) => {
-                    if !v.contains(idx) {
-                        v.push(*idx);
+                    if !v.contains(&k) {
+                        v.push(k.clone());
                     }
                 }
                 None => {
-                    occ.insert(k, vec![*idx]);
+                    occ.insert(pos, vec![k.clone()]);
                 }
             }
         }
     }
-    let mut met: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    for (_k, here) in occ.fiber(crate::network::nerve::ROOT) {
+    for (_pos, here) in occ.fiber(ROOT) {
         // A cell's OWN occupants: rule 1 allows this walk, because the
         // cell is the boundary the pair is read out of.
         for a in 0..here.len() {
             for b in (a + 1)..here.len() {
-                let key = pair_key(here[a] as u16, here[b] as u16);
-                if met.contains(&key) {
+                let key = meet_key(&here[a], &here[b]);
+                if cover.filed.contains(&key) || cover.standing.contains(&key) {
                     continue;
                 }
-                met.insert(key, ());
                 if !budget.spend() {
-                    break;
+                    cover.measured = false;
+                    return cover;
                 }
-                let (Some(pa), Some(pb)) = (placed.get(here[a]), placed.get(here[b])) else {
+                let (Some(pa), Some(pb)) = (placed.get(&here[a]), placed.get(&here[b])) else {
                     continue;
                 };
                 let Some(inv) = pa.by.versor_inverse() else {
-                    // No versor between them: a remainder edge, and no
-                    // loop through it is evaluated (13.9 step 7).
+                    // No versor: a remainder edge (13.9 step 7).
                     continue;
                 };
                 let gamma = pb.by.geo(&inv);
@@ -270,20 +401,15 @@ pub(crate) fn cover_deformation(
                 }
                 match g.order() {
                     Some(crate::transducer::alphabet::Order::Finite(ell)) => {
-                        cover.filed.push((g, ell));
+                        cover.filed.insert(&key, (g, ell));
                     }
-                    Some(crate::transducer::alphabet::Order::Infinite) => cover.standing.push(g),
-                    // Not a versor: no class (15.3), nothing filed and
-                    // nothing claimed.
+                    Some(crate::transducer::alphabet::Order::Infinite) => {
+                        cover.standing.insert(&key, g);
+                    }
+                    // Not a versor: no class (15.3), nothing filed.
                     None => {}
                 }
             }
-        }
-    }
-
-    for &(r, c, _) in input.cells.iter().chain(image.cells.iter()) {
-        if !reached.contains(&cell_pos_key(r, c)) {
-            cover.uncarried += 1;
         }
     }
     cover

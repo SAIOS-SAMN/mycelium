@@ -392,14 +392,14 @@ fn unpaired_demands(
                         scale,
                         budget,
                     );
-                    for (g, ell) in &cover.filed {
+                    for (_meet, (g, ell)) in cover.filed.fiber(crate::network::nerve::ROOT) {
                         filed.push((g.clone(), *ell));
                     }
                     // The demand DISSOLVES only when every cell of both
                     // bodies is carried and no meet stands (50.8). A cover
                     // that reached everything and left nothing standing
                     // answered the deformation; anything else leaves it.
-                    if cover.uncarried == 0 && cover.standing.is_empty() && !cover.carried.is_empty() {
+                    if cover.dissolves() {
                         continue;
                     }
                     let axes = differing_axes(&ic.body.moduli, image);
