@@ -222,7 +222,7 @@ fn a_depleted_lane_charges_a_sentence_by_its_loop_words() {
     for tag in [2u8, 3u8, 4u8] {
         f.vertices.push(Vertex::Word {
             address: Address::from_bytes([tag; 32]),
-            word: Word::identity(),
+            derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
             carriage: Box::new(element::carriage(&one, &(zero.clone(), zero.clone()))),
             gauge: vec![(1, 2)],
             class: crate::transducer::stalk::Invariant::default(),

@@ -23,13 +23,14 @@ fn refraction_is_rebase_regauge_and_carriage() {
         gauge: vec![(1, 3)],
     };
     let out = gamma.refract(&f).expect("on the plane");
-    let Vertex::Word { word: old_word, carriage: old_c, gauge: old_g, .. } = &f.vertices[1] else {
+    let Vertex::Word { derivation: old_d, carriage: old_c, gauge: old_g, .. } = &f.vertices[1]
+    else {
         panic!("word vertex");
     };
-    let Vertex::Word { word, carriage, gauge, .. } = &out.vertices[1] else {
+    let Vertex::Word { derivation, carriage, gauge, .. } = &out.vertices[1] else {
         panic!("word vertex");
     };
-    assert_eq!(word, &old_word.rebase(&gamma.word));
+    assert_eq!(derivation.word(), &old_d.word().rebase(&gamma.word));
     assert!(element::same_versor(carriage, &gamma.carriage.geo(old_c)));
     assert_eq!(gauge, &compose_gauge(&gamma.gauge, old_g));
     let off = Transport {
@@ -67,10 +68,10 @@ fn refraction_replays_as_its_three_moves() {
     for (a, b) in via.vertices.iter().zip(&by_hand.vertices) {
         match (a, b) {
             (
-                Vertex::Word { word: wa, carriage: ca, gauge: ga, .. },
-                Vertex::Word { word: wb, carriage: cb, gauge: gb, .. },
+                Vertex::Word { derivation: da, carriage: ca, gauge: ga, .. },
+                Vertex::Word { derivation: db, carriage: cb, gauge: gb, .. },
             ) => {
-                assert_eq!(wa, wb);
+                assert_eq!(da.word(), db.word());
                 assert!(element::same_versor(ca, cb));
                 assert_eq!(ga, gb);
             }

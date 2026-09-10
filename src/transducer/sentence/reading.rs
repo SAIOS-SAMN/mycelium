@@ -49,9 +49,10 @@ pub fn no_held(_inv: &stalk::Invariant, _piece: &[Cell]) -> Vec<HeldCite> {
 /// frame — the frame the action was evaluated in — and the vertex's
 /// address, which names the word and never the chain.
 pub fn vertex_cites(vertex: &Vertex, piece: &[Cell]) -> Option<HeldCite> {
-    let Vertex::Word { address, word, carriage, gauge, .. } = vertex else {
+    let Vertex::Word { address, derivation, carriage, gauge, .. } = vertex else {
         return None;
     };
+    let word = derivation.word();
     let mut before: Vec<(i64, i64, u8)> = Vec::new();
     let mut after: Keyed<u8> = Keyed::new();
     let mut out_support: Vec<(i64, i64)> = Vec::new();

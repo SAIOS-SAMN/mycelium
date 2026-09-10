@@ -37,7 +37,7 @@ fn sentence_of(w: Word, tag: u8) -> Element {
             crate::transducer::address::TAG_FORM,
             tag,
         ]),
-        word: w,
+        derivation: crate::transducer::alphabet::Derivation::spelled(w),
         carriage: Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
         gauge: Vec::new(),
         class: crate::transducer::stalk::Invariant::default(),

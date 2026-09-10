@@ -50,7 +50,7 @@ fn closed_turn_form() -> Form {
     let mut f = Form::default();
     f.vertices.push(Vertex::Word {
         address: crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 1]),
-        word: w,
+        derivation: crate::transducer::alphabet::Derivation::spelled(w),
         carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
         gauge: vec![(1, 2)],
         class: stalk::Invariant(vec![7]),
@@ -203,7 +203,7 @@ fn rank_lost_refused() {
     let mut f = Form::default();
     f.vertices.push(Vertex::Word {
         address: crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 1]),
-        word: Word::identity(),
+        derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
         carriage: Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
         gauge: vec![(1, 2)],
         class: stalk::Invariant::default(),
@@ -211,7 +211,7 @@ fn rank_lost_refused() {
     });
     f.vertices.push(Vertex::Word {
         address: crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 2]),
-        word: Word::identity(),
+        derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
         carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
         gauge: vec![(1, 2)],
         class: stalk::Invariant::default(),
@@ -286,9 +286,10 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     assert_eq!(replay_form(&e, &|_| None), None, "a closed word vertex re-derives");
 
     let mut rho0 = f.clone();
-    if let Vertex::Word { word, .. } = &mut rho0.vertices[1] {
+    if let Vertex::Word { derivation, .. } = &mut rho0.vertices[1] {
         let q02 = crate::transducer::alphabet::LetterId::quarter((0, 2)).expect("off-plane");
-        *word = Word::from_letters(&[(q02, false)]);
+        *derivation =
+            crate::transducer::alphabet::Derivation::spelled(Word::from_letters(&[(q02, false)]));
     }
     let bad_e = as_element_form(&rho0, [1, 0, 0, 0]).expect("off-plane tape");
     assert_eq!(
@@ -300,7 +301,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     let mut re = Form::default();
     re.vertices.push(Vertex::Word {
         address: crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 2]),
-        word: Word::identity(),
+        derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
         carriage: Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
         gauge: Vec::new(),
         class: stalk::Invariant::default(),
@@ -336,7 +337,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     let mut orb = Form::default();
     orb.vertices.push(Vertex::Word {
         address: crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 3]),
-        word: Word::identity(),
+        derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
         carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
         gauge: Vec::new(),
         class: stalk::Invariant::default(),

@@ -9,6 +9,16 @@ fn word(tape: &[(LetterId, bool)]) -> Word {
     Word::from_letters(tape)
 }
 
+/// 37.7 P2's precondition, asserted rather than assumed: the witness is
+/// the Gaussian arc `s + t·i` written out as a block, and the prime the
+/// demand names divides its norm — which is what makes
+/// `gcd_{ℤ[i]}(s + t·i, p)` a factor and not a unit. A witness that does
+/// not carry the prime is the `REFUSE_LETTER_WITNESS` case.
+fn witness_carries(w: &[[Q; 2]; 2], prime: u64) -> bool {
+    let n = &w[0][0] * &w[0][0] + &w[1][0] * &w[1][0];
+    n.is_integer() && (n.to_integer() % BigInt::from(prime)) == BigInt::from(0)
+}
+
 /// A rotor that is a product of letters on three planes, one per commuting
 /// block, factors to a word with the same rotor, and its tape holds the
 /// blocks in the order of 50.4: the sensor pair first.
@@ -56,17 +66,22 @@ fn a_prime_outside_the_alphabet_is_a_rotor_prime_demand() {
     let r = Rotor::scalar(q(8, 17)).add(&Rotor::blade(0b0011, q(15, 17)));
     assert!(r.weight().is_some(), "a rotor");
     match factor_rotor(&r).expect("a versor") {
-        Err(Demand::RotorPrime { plane, prime }) => {
+        Err(Demand::RotorPrime { plane, prime, witness }) => {
             assert_eq!(plane, (0, 1));
             assert_eq!(prime, 17);
+            assert!(
+                witness_carries(&witness, prime),
+                "37.7 P2: the prime is read off the witness, so the witness carries it"
+            );
         }
         other => panic!("expected a rotor prime demand, got {other:?}"),
     }
     let r13 = Rotor::scalar(q(8, 17)).add(&Rotor::blade(0b1010, q(15, 17)));
     match factor_rotor(&r13).expect("a versor") {
-        Err(Demand::RotorPrime { plane, prime }) => {
+        Err(Demand::RotorPrime { plane, prime, witness }) => {
             assert_eq!(plane, (1, 3), "the demand names the plane the block stood on");
             assert_eq!(prime, 17);
+            assert!(witness_carries(&witness, prime), "and the witness carries it");
         }
         other => panic!("expected a rotor prime demand on (1,3), got {other:?}"),
     }
@@ -102,8 +117,9 @@ fn a_block_the_order_does_not_decompose_is_a_standing_demand() {
     // a prime outside that plane's alphabet.
     let r23 = Rotor::scalar(q(5, 13)).add(&Rotor::blade(0b1100, q(12, 13)));
     match factor_rotor(&r23).expect("a versor") {
-        Err(Demand::RotorPrime { plane, prime }) => {
+        Err(Demand::RotorPrime { plane, prime, witness }) => {
             assert_eq!((plane, prime), ((2, 3), 13));
+            assert!(witness_carries(&witness, prime), "and the witness carries it");
         }
         other => panic!("expected the prime 13 on (2,3), got {other:?}"),
     }

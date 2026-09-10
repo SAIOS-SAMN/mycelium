@@ -10,7 +10,9 @@ let zero = q(0);
 let one = q(1);
 let moving = Vertex::Word {
     address: crate::transducer::address::Address::from(vec![1]),
-    word: crate::transducer::alphabet::Word::identity(),
+    derivation: crate::transducer::alphabet::Derivation::spelled(
+        crate::transducer::alphabet::Word::identity(),
+    ),
     carriage: Box::new(element::carriage(&one.clone(), &(zero.clone(), one.clone()))),
     gauge: Vec::new(),
     class: Invariant::default(),
@@ -18,7 +20,9 @@ let moving = Vertex::Word {
 };
 let still = Vertex::Word {
     address: crate::transducer::address::Address::from(vec![2]),
-    word: crate::transducer::alphabet::Word::identity(),
+    derivation: crate::transducer::alphabet::Derivation::spelled(
+        crate::transducer::alphabet::Word::identity(),
+    ),
     carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
     gauge: Vec::new(),
     class: Invariant::default(),
@@ -38,7 +42,9 @@ assert_eq!(
 );
 let with_c = Vertex::Word {
     address: crate::transducer::address::Address::from(vec![3]),
-    word: crate::transducer::alphabet::Word::identity(),
+    derivation: crate::transducer::alphabet::Derivation::spelled(
+        crate::transducer::alphabet::Word::identity(),
+    ),
     carriage: Box::new(element::carriage(&q(1), &(q(0), q(1)))),
     gauge: Vec::new(),
     class: Invariant::default(),

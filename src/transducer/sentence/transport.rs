@@ -6,7 +6,7 @@
 
 use super::form::{Form, Vertex};
 use crate::network::nerve::{Keyed, ROOT};
-use crate::transducer::alphabet::Word;
+use crate::transducer::alphabet::{Derivation, Word};
 use crate::transducer::element::{self, Versor};
 
 /// Face transport: the relative word, carriage versor and hue map from vertex
@@ -72,7 +72,16 @@ impl Form {
     pub(crate) fn rebase_by_word(&mut self, by: &Word) {
         for v in &mut self.vertices {
             match v {
-                Vertex::Word { word, .. } => *word = word.rebase(by),
+                // A rebase is conjugation (3.2), and a conjugated product
+                // is a product of conjugated generators — which these
+                // citations, naming held forms by address, are not. The
+                // derivation does not survive the change of frame, so it
+                // is not claimed in the new one: the rebased vertex is
+                // spelled (50.2 step 2's boundary case), exactly as far
+                // as the mathematics carries.
+                Vertex::Word { derivation, .. } => {
+                    *derivation = Derivation::spelled(derivation.word().rebase(by));
+                }
                 Vertex::Glued { placement, .. } => *placement = placement.rebase(by),
                 _ => {}
             }

@@ -59,7 +59,10 @@ pub enum Vertex {
     Frame,
     Word {
         address: crate::transducer::address::Address,
-        word: Word,
+        /// What this vertex IS (50.2 step 2, law 12): the generators it
+        /// factored through and the residue A22 peeled, the word read
+        /// back with `derivation.word()`.
+        derivation: crate::transducer::alphabet::Derivation,
         /// A4 carriage. Boxed: a versor is 1024 bytes and every vertex of a
         /// form — Glued, Rebased, Frame — would carry that footprint
         /// whether or not it holds one.
@@ -308,12 +311,13 @@ impl Form {
             match v {
                 Vertex::Word {
                     address,
-                    word,
+                    derivation,
                     carriage,
                     gauge,
                     class,
                     ..
                 } => {
+                    let word = derivation.word();
                     by_address.insert(address, i as u16);
                     let chart = class.key();
                     match by_class.get_mut(&chart) {
@@ -392,7 +396,7 @@ impl Vertex {
     pub fn word_in(&self, form: &Form) -> Option<Word> {
         match self {
             Vertex::Frame | Vertex::Unfolded { .. } => Some(Word::identity()),
-            Vertex::Word { word, .. } => Some(word.clone()),
+            Vertex::Word { derivation, .. } => Some(derivation.word().clone()),
             Vertex::Glued { placement, .. } => Some(placement.clone()),
             Vertex::Rebased { by, .. } => form.vertices.get(*by as usize)?.word_in(form),
             Vertex::Demand { .. } => None,

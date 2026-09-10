@@ -1,80 +1,25 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 19 — THE FORM TAPE: `SENTENCE_TAG` version 6 in both directions, with
+//! 19 — THE FORM TAPE: `SENTENCE_TAG` version 7 in both directions, with
 //! addresses as len16 + bytes, the torsion a sentence tape files, the
 //! demand vertices (50.5) and the edge transport on every face (50.3).
+//!
+//! v7 (50.2 step 2, ruled 2026-09-10) carries a word vertex's
+//! DERIVATION where v6 carried a spelling: the generators it factored
+//! through, cited by (form, vertex) with exponents in application order,
+//! the residue in letters, and the composed product. v6 is refused on
+//! read, as v5 is: the version is one equality and there is no reader
+//! for an older tape (MU-STANDARDS §10).
 
-use super::chain::Cell;
+use super::codec::{
+    derivation_from_form_bytes, derivation_to_form_bytes, put_inv, take_cell, take_count, take_inv,
+    take_u16, take_u32, word_from_form_bytes, word_to_form_bytes,
+};
 use super::form::*;
 use super::transport::*;
 use crate::network::nerve::Keyed;
-use crate::transducer::alphabet::{self, Rotor, Word};
+use crate::transducer::alphabet::Rotor;
 use crate::transducer::element::{self, Element};
-use crate::transducer::stalk;
-
-fn word_to_form_bytes(w: &Word, contact: Option<alphabet::Contact>, out: &mut Vec<u8>) {
-    w.to_bytes(out);
-    match contact {
-        None => out.push(0),
-        Some(c) => {
-            out.push(1);
-            out.extend_from_slice(&c.anchor.to_le_bytes());
-            out.push(c.ring);
-        }
-    }
-}
-
-fn word_from_form_bytes(b: &[u8], pos: &mut usize) -> Option<(Word, Option<alphabet::Contact>)> {
-    let w = Word::from_bytes(b, pos)?;
-    let tag = *b.get(*pos)?;
-    *pos += 1;
-    if tag == 0 {
-        return Some((w, None));
-    }
-    if tag != 1 {
-        return None;
-    }
-    let anchor = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
-    *pos += 2;
-    let ring = *b.get(*pos)?;
-    *pos += 1;
-    Some((w, Some(alphabet::Contact { anchor, ring })))
-}
-
-fn bytes_left(b: &[u8], pos: usize) -> usize {
-    b.len().saturating_sub(pos)
-}
-
-fn take_count(b: &[u8], pos: usize, n: usize, item: usize) -> Option<usize> {
-    if item == 0 {
-        return Some(n);
-    }
-    if n > bytes_left(b, pos) / item {
-        return None;
-    }
-    Some(n)
-}
-
-pub(crate) fn put_inv(inv: &stalk::Invariant, out: &mut Vec<u8>) -> Option<()> {
-    let n = u16::try_from(inv.0.len()).ok()?;
-    out.extend_from_slice(&n.to_le_bytes());
-    for a in &inv.0 {
-        out.extend_from_slice(&a.to_le_bytes());
-    }
-    Some(())
-}
-
-pub(crate) fn take_inv(b: &[u8], pos: &mut usize) -> Option<stalk::Invariant> {
-    let n = take_u16(b, pos)? as usize;
-    let n = take_count(b, *pos, n, 8)?;
-    let mut axes = Vec::with_capacity(n);
-    for _ in 0..n {
-        let v = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-        *pos += 8;
-        axes.push(v);
-    }
-    Some(stalk::Invariant(axes))
-}
 
 pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
     out.extend_from_slice(&(f.vertices.len() as u16).to_le_bytes());
@@ -83,7 +28,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
             Vertex::Frame => out.push(0),
             Vertex::Word {
                 address,
-                word,
+                derivation,
                 carriage,
                 gauge,
                 class,
@@ -91,7 +36,7 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
             } => {
                 out.push(1);
                 crate::transducer::address::put_addr(out, address);
-                word_to_form_bytes(word, *contact, out);
+                derivation_to_form_bytes(derivation, *contact, out)?;
                 carriage.to_bytes(out);
                 out.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
                 for &(a, b) in gauge {
@@ -235,12 +180,6 @@ pub(crate) fn encode_form_v2(f: &Form, out: &mut Vec<u8>) -> Option<()> {
     Some(())
 }
 
-fn take_u16(b: &[u8], pos: &mut usize) -> Option<u16> {
-    let v = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
-    *pos += 2;
-    Some(v)
-}
-
 fn put_transport(t: &Transport, out: &mut Vec<u8>) {
     word_to_form_bytes(&t.word, None, out);
     t.carriage.to_bytes(out);
@@ -276,7 +215,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
             0 => Vertex::Frame,
             1 => {
                 let address = crate::transducer::address::take_addr(b, pos)?;
-                let (word, contact) = word_from_form_bytes(b, pos)?;
+                let (derivation, contact) = derivation_from_form_bytes(b, pos)?;
                 let carriage = element::Versor::from_bytes(b, pos)?;
                 let ng = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
                 let mut gauge = Vec::with_capacity(ng);
@@ -287,7 +226,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
                 let class = take_inv(b, pos)?;
                 Vertex::Word {
                     address,
-                    word,
+                    derivation,
                     carriage: Box::new(carriage),
                     gauge,
                     class,
@@ -492,7 +431,7 @@ pub(crate) fn decode_form_v2(b: &[u8], pos: &mut usize) -> Option<Form> {
 /// The tape layout this tree writes and reads (chapter 19). A layout change
 /// is a recut: no reader for an older version exists (MU-STANDARDS §10).
 /// Version 6 (chapter 50, L1) adds the demand vertex and the edge transport.
-pub const FORM_TAPE_VERSION: u8 = 6;
+pub const FORM_TAPE_VERSION: u8 = 7;
 
 /// SENTENCE_TAG v6: the Form tape. Hue maps are derived from vertices.
 /// Addresses are len16 + bytes. `mag` is the descent the form measures over
@@ -549,24 +488,6 @@ pub fn carries_torsion(e: &Element) -> bool {
 pub fn torsion_loop_rotor(f: &Form, class: &[u8]) -> Option<Rotor> {
     let chord = f.torsion.get(class)?.chord;
     f.faces.get(chord as usize).map(|face| face.transport.word.rotor())
-}
-
-fn take_u32(b: &[u8], pos: &mut usize) -> Option<u32> {
-    let v = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
-    *pos += 4;
-    Some(v)
-}
-
-fn take_cell(b: &[u8], pos: &mut usize) -> Option<Cell> {
-    let r = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-    *pos += 8;
-    let c = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-    *pos += 8;
-    let before = *b.get(*pos)?;
-    *pos += 1;
-    let after = *b.get(*pos)?;
-    *pos += 1;
-    Some((r, c, before, after))
 }
 
 /// A sentence Element: tagged tape, not an opened-axis connection.

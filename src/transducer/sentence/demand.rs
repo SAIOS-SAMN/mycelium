@@ -13,8 +13,13 @@ use num_traits::Zero;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Demand {
-    /// A plane rotation whose Gaussian factor is a prime outside the alphabet.
-    RotorPrime { plane: (u8, u8), prime: u64 },
+    /// A plane rotation whose Gaussian factor is a prime outside the
+    /// alphabet. `witness` is the plane block the prime was read off —
+    /// the RESIDUE of 50.2 step 2, not the measured versor — in A1
+    /// canonical form: 37.7 P2 reads `π_p = gcd_{ℤ[i]}(s + t·i, p)` off
+    /// it, and two courts agreeing on that factor is what opens the
+    /// letter (P3). Boxed for the same reason `Standing`'s block is.
+    RotorPrime { plane: (u8, u8), prime: u64, witness: Box<[[Q; 2]; 2]> },
     /// A rotor block the ordered peel (50.4) does not decompose. Boxed:
     /// four rationals beside variants of a few bytes.
     Standing { block: Box<[[Q; 2]; 2]> },
@@ -54,7 +59,12 @@ impl Demand {
     /// deformation on no axis.
     pub fn typed(&self) -> Result<(), &'static str> {
         let ok = match self {
-            Demand::RotorPrime { plane, prime } => plane.0 != plane.1 && *prime > 13,
+            // A witness of all zeros names a prime it does not carry:
+            // 37.7 P2's gcd has nothing to read (`REFUSE_LETTER_WITNESS`
+            // is the court's own check on the same block).
+            Demand::RotorPrime { plane, prime, witness } => {
+                plane.0 != plane.1 && *prime > 13 && witness.iter().flatten().any(|q| !q.is_zero())
+            }
             Demand::Standing { block } => block.iter().flatten().any(|q| !q.is_zero()),
             Demand::Source { multiplicity } => *multiplicity > 0,
             Demand::Creation => true,
@@ -70,10 +80,15 @@ impl Demand {
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
         out.push(self.kind_byte());
         match self {
-            Demand::RotorPrime { plane, prime } => {
+            Demand::RotorPrime { plane, prime, witness } => {
                 out.push(plane.0);
                 out.push(plane.1);
                 out.extend_from_slice(&prime.to_le_bytes());
+                for row in witness.iter() {
+                    for q in row {
+                        put_q(out, q);
+                    }
+                }
             }
             Demand::Standing { block } => {
                 for row in block.iter() {
@@ -85,7 +100,7 @@ impl Demand {
             Demand::Source { multiplicity } => out.extend_from_slice(&multiplicity.to_le_bytes()),
             Demand::Creation => {}
             Demand::TopologicalDeformation { image, axes } => {
-                let _ = crate::transducer::sentence::tape::put_inv(image, out);
+                let _ = crate::transducer::sentence::codec::put_inv(image, out);
                 out.extend_from_slice(&(axes.len() as u16).to_le_bytes());
                 for a in axes {
                     out.extend_from_slice(&a.to_le_bytes());
@@ -104,7 +119,15 @@ impl Demand {
                 *pos += 2;
                 let prime = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                 *pos += 8;
-                Demand::RotorPrime { plane: (p0, p1), prime }
+                let w00 = take_q(b, pos)?;
+                let w01 = take_q(b, pos)?;
+                let w10 = take_q(b, pos)?;
+                let w11 = take_q(b, pos)?;
+                Demand::RotorPrime {
+                    plane: (p0, p1),
+                    prime,
+                    witness: Box::new([[w00, w01], [w10, w11]]),
+                }
             }
             1 => {
                 let a = take_q(b, pos)?;
@@ -120,7 +143,7 @@ impl Demand {
             }
             3 => Demand::Creation,
             4 => {
-                let image = crate::transducer::sentence::tape::take_inv(b, pos)?;
+                let image = crate::transducer::sentence::codec::take_inv(b, pos)?;
                 let n = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?) as usize;
                 *pos += 2;
                 if n > b.len().saturating_sub(*pos) / 2 {

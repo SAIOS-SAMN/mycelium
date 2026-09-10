@@ -120,7 +120,9 @@ fn word_of_vertex(
 ) -> Option<crate::transducer::alphabet::Word> {
     let i = *form.by_address.get(vertex.as_bytes())?;
     match form.vertices.get(i as usize)? {
-        crate::transducer::sentence::Vertex::Word { word, .. } => Some(word.clone()),
+        crate::transducer::sentence::Vertex::Word { derivation, .. } => {
+            Some(derivation.word().clone())
+        }
         _ => None,
     }
 }

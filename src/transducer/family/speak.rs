@@ -123,13 +123,13 @@ pub fn apply_form(
         match v {
             Vertex::Frame => {}
             Vertex::Word {
-                word,
+                derivation,
                 carriage,
                 gauge,
                 class,
                 ..
             } => {
-                let w = placement.compose(word);
+                let w = placement.compose(derivation.word());
                 let Some(versor) = element::conformal_of(&w, carriage) else {
                     unspoken.push(vi as u16);
                     continue;
@@ -169,12 +169,15 @@ pub fn apply_form(
             } => {
                 // `by`'s word, carriage composed with the relative carriage;
                 // the bodies and hue map are the rebased vertex's own.
-                let Some(Vertex::Word { word, carriage: c, .. }) = f.vertices.get(*by as usize) else {
+                let Some(Vertex::Word { derivation, carriage: c, .. }) =
+                    f.vertices.get(*by as usize)
+                else {
                     unspoken.push(vi as u16);
                     continue;
                 };
                 let composed = carriage.geo(c);
-                let Some(versor) = element::conformal_of(&placement.compose(word), &composed) else {
+                let w = placement.compose(derivation.word());
+                let Some(versor) = element::conformal_of(&w, &composed) else {
                     unspoken.push(vi as u16);
                     continue;
                 };

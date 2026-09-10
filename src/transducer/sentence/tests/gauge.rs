@@ -161,7 +161,7 @@ fn solve_coboundary_is_a_spanning_forest() {
     let mut f = Form::default();
     f.vertices.push(Vertex::Word {
         address: form_addr(1),
-        word: Word::identity(),
+        derivation: alphabet::Derivation::spelled(Word::identity()),
         carriage: Box::new(element::carriage(&q1(), &(q0(), q0()))),
         gauge: Vec::new(),
         class: stalk::Invariant::default(),
@@ -169,7 +169,7 @@ fn solve_coboundary_is_a_spanning_forest() {
     });
     f.vertices.push(Vertex::Word {
         address: form_addr(2),
-        word: Word::identity(),
+        derivation: alphabet::Derivation::spelled(Word::identity()),
         carriage: Box::new(element::carriage(&q1(), &(q0(), q0()))),
         gauge: Vec::new(),
         class: stalk::Invariant::default(),

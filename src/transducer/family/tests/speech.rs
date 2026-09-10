@@ -17,10 +17,12 @@ let class = bodies
 let mut f = Form::default();
 f.vertices.push(Vertex::Word {
     address: crate::transducer::address::Address::from(vec![1]),
-    word: crate::transducer::alphabet::Word::from_letters(&[(
-        crate::transducer::alphabet::LetterId::quarter((0, 2)).expect("off-plane"),
-        false,
-    )]),
+    derivation: crate::transducer::alphabet::Derivation::spelled(
+        crate::transducer::alphabet::Word::from_letters(&[(
+            crate::transducer::alphabet::LetterId::quarter((0, 2)).expect("off-plane"),
+            false,
+        )]),
+    ),
     carriage: Box::new(element::identity_versor()),
     gauge: Vec::new(),
     class,

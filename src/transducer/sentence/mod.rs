@@ -5,6 +5,7 @@
 //! comprehending a received chain back into the words that compose it.
 
 pub mod chain;
+pub mod codec;
 pub mod form;
 pub mod transport;
 pub mod class;

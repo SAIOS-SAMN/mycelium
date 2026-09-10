@@ -311,15 +311,20 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     for v in &f.vertices {
         match v {
             Vertex::Frame => buf.push(0),
+            // 1.5: the key is the COMPOSED product's canonical rotor, so
+            // two minds whose derivations differ reach one address. The
+            // citations are content the court replays (50.2 step 2) and
+            // are deliberately not keyed: keying them would fork one
+            // vertex into one address per presentation.
             Vertex::Word {
-                word,
+                derivation,
                 carriage,
                 gauge,
                 contact,
                 ..
             } => {
                 buf.push(1);
-                crate::transducer::address::put_bytes(&mut buf, &word.key());
+                crate::transducer::address::put_bytes(&mut buf, &derivation.word().key());
                 carriage.to_bytes(&mut buf);
                 match contact {
                     None => buf.push(0),

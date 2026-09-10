@@ -16,7 +16,7 @@ pub fn words_of_form(f: &Form) -> Vec<Word> {
     f.vertices
         .iter()
         .filter_map(|v| match v {
-            Vertex::Word { word, .. } => Some(word.clone()),
+            Vertex::Word { derivation, .. } => Some(derivation.word().clone()),
             _ => None,
         })
         .collect()
@@ -118,10 +118,10 @@ pub fn admit_generators(
     f: &Form,
 ) {
     for v in &f.vertices {
-        let Vertex::Word { address, word, .. } = v else {
+        let Vertex::Word { address, derivation, .. } = v else {
             continue;
         };
-        let Some(chart) = versor_chart(word) else {
+        let Some(chart) = versor_chart(derivation.word()) else {
             continue;
         };
         index.nested_insert(chart.key(), address, form.clone());
@@ -135,10 +135,10 @@ pub fn retract_generators(
     f: &Form,
 ) {
     for v in &f.vertices {
-        let Vertex::Word { address, word, .. } = v else {
+        let Vertex::Word { address, derivation, .. } = v else {
             continue;
         };
-        let Some(chart) = versor_chart(word) else {
+        let Some(chart) = versor_chart(derivation.word()) else {
             continue;
         };
         if let Some(bucket) = index.get_mut(chart.key().as_bytes()) {
@@ -197,7 +197,7 @@ pub fn generators_under(
 pub fn word_at_vertex(f: &Form, vertex: &[u8]) -> Option<Word> {
     let i = *f.by_address.get(vertex)?;
     match f.vertices.get(i as usize)? {
-        Vertex::Word { word, .. } => Some(word.clone()),
+        Vertex::Word { derivation, .. } => Some(derivation.word().clone()),
         _ => None,
     }
 }

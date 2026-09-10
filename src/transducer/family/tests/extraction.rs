@@ -124,7 +124,7 @@ assert_ne!(a.moduli, b.moduli, "two shapes, two charts");
 let mut pf = Form::default();
 pf.vertices.push(Vertex::Word {
     address: crate::transducer::address::Address::from(vec![1]),
-    word: rot.clone(),
+    derivation: crate::transducer::alphabet::Derivation::spelled(rot.clone()),
     carriage: Box::new(element::carriage(&q(1), &(q(3), q(3)))),
     gauge: vec![(1, 1)],
     class: a.moduli.clone(),
@@ -132,7 +132,7 @@ pf.vertices.push(Vertex::Word {
 });
 pf.vertices.push(Vertex::Word {
     address: crate::transducer::address::Address::from(vec![2]),
-    word: rot.clone(),
+    derivation: crate::transducer::alphabet::Derivation::spelled(rot.clone()),
     carriage: Box::new(element::carriage(&q(1), &(q(3), q(3)))),
     gauge: vec![(3, 5)],
     class: b.moduli.clone(),

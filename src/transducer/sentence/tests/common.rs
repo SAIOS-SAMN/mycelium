@@ -22,7 +22,7 @@ pub fn closed_word_form(word: Word, contact: Option<alphabet::Contact>) -> Form 
     let mut f = Form::default();
     f.vertices.push(Vertex::Word {
         address: crate::transducer::address::Address::new(Vec::new()),
-        word: word.clone(),
+        derivation: alphabet::Derivation::spelled(word.clone()),
         carriage: Box::new(element::carriage(&q1(), &(q0(), q1()))),
         gauge: vec![(1, 2)],
         class: stalk::Invariant(vec![3, 5]),
@@ -49,7 +49,7 @@ pub fn word_vertex(addr: u8, word: Word) -> Vertex {
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     Vertex::Word {
         address: form_addr(addr),
-        word,
+        derivation: alphabet::Derivation::spelled(word),
         carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
         gauge: vec![(1, 2)],
         class: stalk::Invariant::default(),

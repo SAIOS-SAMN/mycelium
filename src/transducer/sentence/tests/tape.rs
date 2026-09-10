@@ -71,8 +71,8 @@ fn form_tape_v6_round_trips() {
     assert_eq!(back.depth, f.depth);
     match (&f.vertices[1], &back.vertices[1]) {
         (
-            Vertex::Word { word: a, gauge: ga, class: ca, contact: ca_c, .. },
-            Vertex::Word { word: b, gauge: gb, class: cb, contact: cb_c, .. },
+            Vertex::Word { derivation: a, gauge: ga, class: ca, contact: ca_c, .. },
+            Vertex::Word { derivation: b, gauge: gb, class: cb, contact: cb_c, .. },
         ) => {
             assert_eq!(ca_c.map(|c| (c.anchor, c.ring)), Some((1, 2)));
             assert_eq!(cb_c.map(|c| (c.anchor, c.ring)), Some((1, 2)));
@@ -162,7 +162,11 @@ fn a_demand_keys_by_kind_and_coordinates_and_an_empty_one_is_untyped() {
     let chart = stalk::Invariant(vec![1, 4, 4]);
     let other = stalk::Invariant(vec![1, 6, 2]);
     let kinds = [
-        Demand::RotorPrime { plane: (0, 1), prime: 17 },
+        Demand::RotorPrime {
+            plane: (0, 1),
+            prime: 17,
+            witness: Box::new([[q1(), q0()], [q0(), q1()]]),
+        },
         Demand::Standing { block: Box::new([[q1(), q0()], [q0(), q1()]]) },
         Demand::Source { multiplicity: 3 },
         Demand::Creation,
@@ -181,8 +185,23 @@ fn a_demand_keys_by_kind_and_coordinates_and_an_empty_one_is_untyped() {
     assert_ne!(demand_key(&kinds[2], &chart), demand_key(&kinds[2], &other), "one kind on two charts is two demands");
     for untyped in [
         Demand::Source { multiplicity: 0 },
-        Demand::RotorPrime { plane: (1, 1), prime: 17 },
-        Demand::RotorPrime { plane: (0, 1), prime: 5 },
+        Demand::RotorPrime {
+            plane: (1, 1),
+            prime: 17,
+            witness: Box::new([[q1(), q0()], [q0(), q1()]]),
+        },
+        Demand::RotorPrime {
+            plane: (0, 1),
+            prime: 5,
+            witness: Box::new([[q1(), q0()], [q0(), q1()]]),
+        },
+        // 37.7 P2: a demand with no witness names a prime it does not
+        // carry, and the court has nothing to read the factor off.
+        Demand::RotorPrime {
+            plane: (0, 1),
+            prime: 17,
+            witness: Box::new([[q0(), q0()], [q0(), q0()]]),
+        },
         Demand::Standing { block: Box::new([[q0(), q0()], [q0(), q0()]]) },
         Demand::TopologicalDeformation { image: other.clone(), axes: Vec::new() },
     ] {

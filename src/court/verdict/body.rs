@@ -51,9 +51,10 @@ fn cell_key(r: i64, c: i64) -> Vec<u8> {
 /// 50.1 step 1 on one pair: `(V · W · γ) · B_in = B_out` under exact
 /// cellular equality, for every body of the vertex's chart on `x`.
 pub(crate) fn vertex_carries_pair(vertex: &Vertex, x: &Grid, y: &Grid) -> Carried {
-    let Vertex::Word { word, carriage, gauge, class, contact, .. } = vertex else {
+    let Vertex::Word { derivation, carriage, gauge, class, contact, .. } = vertex else {
         return Carried::Silent;
     };
+    let word = derivation.word();
     // A contact vertex is placed by its orbit, not its carriage; the
     // orbit's own replay (`REFUSE_ORBIT_STILL`) is its reconstruction.
     if contact.is_some() {
@@ -153,12 +154,13 @@ pub(crate) fn edges_rederive_family(f: &Form, family: &[(Grid, Grid)]) -> Option
             continue;
         };
         let (
-            Vertex::Word { address: ai, word: wi, carriage: ci, class: class_i, contact: None, .. },
-            Vertex::Word { address: aj, word: wj, carriage: cj, class: class_j, contact: None, .. },
+            Vertex::Word { address: ai, derivation: di, carriage: ci, class: class_i, contact: None, .. },
+            Vertex::Word { address: aj, derivation: dj, carriage: cj, class: class_j, contact: None, .. },
         ) = (vi, vj)
         else {
             continue;
         };
+        let (wi, wj) = (di.word(), dj.word());
         let refused = || Refusal { reason: REFUSE_EDGE, at: sentence::At::Face(ai.clone(), aj.clone()) };
         let Some(expected) = element::conformal_of(&edge.word, &edge.carriage) else {
             return Some(refused());

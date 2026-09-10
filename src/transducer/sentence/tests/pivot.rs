@@ -108,7 +108,7 @@ fn mu_neither_certifies_nor_selects() {
     let mut spoken = Form::default();
     spoken.vertices.push(Vertex::Word {
         address: form_addr(1),
-        word: q.clone(),
+        derivation: crate::transducer::alphabet::Derivation::spelled(q.clone()),
         carriage: Box::new(element::carriage(&q1(), &(q1() + q1() + q1(), q1() + q1() + q1()))),
         gauge: vec![(1, 1)],
         class: class.clone(),

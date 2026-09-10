@@ -245,7 +245,7 @@ fn offplane_quarter_to_the_fourth_is_closed_to_all_four_readers() {
     let mut f = Form::default();
     let empty = |addr: u8| Vertex::Word {
         address: form_addr(addr),
-        word: Word::identity(),
+        derivation: alphabet::Derivation::spelled(Word::identity()),
         carriage: Box::new(element::carriage(&q1(), &(q0(), q0()))),
         gauge: Vec::new(),
         class: stalk::Invariant::default(),

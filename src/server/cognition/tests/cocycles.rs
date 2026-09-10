@@ -59,7 +59,7 @@ let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
 let mut f = Form::default();
 f.vertices.push(Vertex::Word {
     address: Address::from_bytes([2u8; 32]),
-    word: Word::identity(),
+    derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
     carriage: Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
     gauge: vec![(1, 2)],
     class: crate::transducer::stalk::Invariant::default(),
@@ -67,7 +67,7 @@ f.vertices.push(Vertex::Word {
 });
 f.vertices.push(Vertex::Word {
     address: Address::from_bytes([3u8; 32]),
-    word: Word::identity(),
+    derivation: crate::transducer::alphabet::Derivation::spelled(Word::identity()),
     carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
     gauge: vec![(1, 2)],
     class: crate::transducer::stalk::Invariant::default(),

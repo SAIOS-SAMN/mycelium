@@ -23,7 +23,7 @@ fn loop_holonomy_in_the_stabilizer_does_not_telescope() {
     for k in 1..=3u8 {
         f.vertices.push(Vertex::Word {
             address: form_addr(k),
-            word: Word::identity(),
+            derivation: alphabet::Derivation::spelled(Word::identity()),
             carriage: Box::new(element::carriage(
                 &q1(),
                 &(q0(), num_rational::BigRational::from_integer(num_bigint::BigInt::from(k as i64))),
@@ -78,7 +78,7 @@ fn glue_retract_remaps_faces_and_placement_refuses() {
     let mut host = Form::default();
     host.vertices.push(Vertex::Word {
         address: form_addr(1),
-        word: w.clone(),
+        derivation: alphabet::Derivation::spelled(w.clone()),
         carriage: Box::new(element::carriage(&q1(), &(q0(), q0()))),
         gauge: Vec::new(),
         class: stalk::Invariant::default(),
@@ -86,7 +86,7 @@ fn glue_retract_remaps_faces_and_placement_refuses() {
     });
     host.vertices.push(Vertex::Word {
         address: form_addr(2),
-        word: w.clone(),
+        derivation: alphabet::Derivation::spelled(w.clone()),
         carriage: Box::new(element::carriage(&q1(), &(q0(), q1()))),
         gauge: Vec::new(),
         class: stalk::Invariant::default(),

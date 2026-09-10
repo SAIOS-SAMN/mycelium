@@ -181,7 +181,13 @@ pub(crate) fn factor_versor(v: &Versor) -> Option<Result<crate::transducer::alph
         Some((PeelNest::Standing { arc, .. }, _)) => {
             let norm = &arc.p * &arc.p + &arc.q * &arc.q;
             match crate::transducer::alphabet::prime_outside_the_alphabet(&norm, plane) {
-                Some(prime) => Err(Demand::RotorPrime { plane, prime }),
+                // 37.7 P2: the residue block the shells left, not the
+                // block the peel started from.
+                Some(prime) => Err(Demand::RotorPrime {
+                    plane,
+                    prime,
+                    witness: Box::new(crate::transducer::alphabet::arc_block(&arc.p, &arc.q)),
+                }),
                 None => Err(Demand::Standing { block: Box::new(block) }),
             }
         }
@@ -264,7 +270,10 @@ pub(crate) fn word_or_demand(a: &Body, b: &Body) -> Option<Result<Vertex, Demand
     };
     Some(Ok(Vertex::Word {
         address: element::from_residual(&chain).address(),
-        word,
+        // Spelled: `factor_versor` still peels from the identity here.
+        // L9 gives it the mind's generators and this becomes a factored
+        // derivation (50.2 step 2).
+        derivation: crate::transducer::alphabet::Derivation::spelled(word),
         carriage: Box::new(carriage),
         gauge,
         class: b.moduli.clone(),

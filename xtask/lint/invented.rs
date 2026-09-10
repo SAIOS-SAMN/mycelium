@@ -114,7 +114,9 @@ pub(crate) const GATE: Gate = Gate {
         ("transducer/sentence/demand.rs", 1),
         ("transducer/sentence/form/keys.rs", 1),
         ("transducer/sentence/pivot/snap.rs", 1),
-        ("transducer/sentence/tape.rs", 1),
+        // Moved, not paid: `bytes_left` left tape.rs for codec.rs in the
+        // v7 split (§1.6). One debt, one row, at its new address.
+        ("transducer/sentence/codec.rs", 1),
         ("transducer/stalk/chart.rs", 2),
         ("transducer/stalk/stalks.rs", 1),
         ("transducer/stalk/stratum.rs", 3),

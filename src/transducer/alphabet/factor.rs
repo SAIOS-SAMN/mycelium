@@ -178,12 +178,29 @@ fn spell_plane(plane: (u8, u8), rotor: &Rotor) -> Option<Result<Option<Word>, De
         Some((PeelNest::Standing { arc, .. }, _)) => {
             let norm: BigInt = &arc.p * &arc.p + &arc.q * &arc.q;
             match prime_outside_the_alphabet(&norm, plane) {
-                Some(prime) => Err(Demand::RotorPrime { plane, prime }),
+                // 37.7 P2: the witness is the block left AFTER the base
+                // shells — `R = s + t·e_ij` written out — never the block
+                // the peel started from. The court reads `π_p` off it by
+                // Euclid over ℤ[i]; a witness whose gcd with `p` is a
+                // unit names a prime it does not carry and is refused.
+                Some(prime) => Err(Demand::RotorPrime {
+                    plane,
+                    prime,
+                    witness: Box::new(arc_block(&arc.p, &arc.q)),
+                }),
                 None => Err(Demand::Standing { block: Box::new(block) }),
             }
         }
         None => Err(Demand::Standing { block: Box::new(block) }),
     })
+}
+
+/// The Gaussian arc `s + t·i` written out as the plane block it is:
+/// `[[s, −t], [t, s]]`, the rotation the residue still stands on (37.7
+/// P2). Exact over ℚ, nothing normalised away.
+pub(crate) fn arc_block(s: &BigInt, t: &BigInt) -> [[Q; 2]; 2] {
+    let (s, t) = (Q::from_integer(s.clone()), Q::from_integer(t.clone()));
+    [[s.clone(), -t.clone()], [t, s]]
 }
 
 /// The standing reading of a rotor that did not decompose: its own action

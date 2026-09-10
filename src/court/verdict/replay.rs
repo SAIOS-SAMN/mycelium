@@ -202,11 +202,12 @@ pub(crate) fn vertex_tape_and_moves(
     for v in &f.vertices {
         match v {
             Vertex::Word {
-                word,
+                derivation,
                 carriage,
                 contact,
                 ..
             } => {
+                let word = derivation.word();
                 if element::conformal_of(word, carriage).is_none() {
                     return Some(REFUSE_VERTEX_TAPE);
                 }

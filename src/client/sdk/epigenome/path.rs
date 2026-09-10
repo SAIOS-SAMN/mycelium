@@ -121,10 +121,10 @@ impl Epigenome {
     ) -> Vec<Path> {
         let mut out = Vec::new();
         for v in &f.vertices {
-            let crate::transducer::sentence::Vertex::Word { address, word, .. } = v else {
+            let crate::transducer::sentence::Vertex::Word { address, derivation, .. } = v else {
                 continue;
             };
-            if let Some(p) = self.path_of(address, word, budget) {
+            if let Some(p) = self.path_of(address, derivation.word(), budget) {
                 out.push(p);
             }
         }

@@ -36,9 +36,12 @@ impl TransportClass {
 
 pub(crate) fn transport_class(v: &Vertex) -> Option<TransportClass> {
     match v {
-        Vertex::Word { word, .. } => Some(TransportClass {
+        // The class is the composed product's, never the residue's: two
+        // minds reaching one vertex by different derivations correspond
+        // (50.2 step 2), and a class read off a residue would split them.
+        Vertex::Word { derivation, .. } => Some(TransportClass {
             kind: crate::transducer::peel::ShellKind::Whole,
-            word_class: word.class_key()?.into_vec(),
+            word_class: derivation.word().class_key()?.into_vec(),
         }),
         _ => None,
     }
@@ -99,7 +102,9 @@ pub(crate) fn word_place_of_class(
     tc: &TransportClass,
 ) -> Option<(crate::transducer::alphabet::Word, Versor)> {
     match match_vertex(pf, tc) {
-        Some(Vertex::Word { word, carriage, .. }) => Some((word.clone(), (**carriage).clone())),
+        Some(Vertex::Word { derivation, carriage, .. }) => {
+            Some((derivation.word().clone(), (**carriage).clone()))
+        }
         _ => None,
     }
 }
@@ -154,8 +159,8 @@ pub(crate) fn index_ends(form: &Form) -> crate::network::nerve::Keyed<u16> {
 pub(crate) fn hue_maps_of_form(form: &Form) -> crate::network::nerve::Keyed<Vec<(u8, u8)>> {
     let mut m = form.hue_maps.clone();
     for v in &form.vertices {
-        if let Vertex::Word { word, gauge, .. } = v {
-            if let Some(k) = crate::transducer::sentence::hue_section_key(word, gauge) {
+        if let Vertex::Word { derivation, gauge, .. } = v {
+            if let Some(k) = crate::transducer::sentence::hue_section_key(derivation.word(), gauge) {
                 if !m.contains(&k) {
                     m.insert(k, gauge.clone());
                 }

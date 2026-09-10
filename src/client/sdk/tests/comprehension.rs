@@ -59,7 +59,7 @@ let inner = {
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     f.vertices.push(Vertex::Word {
         address: crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 1]),
-        word: w.clone(),
+        derivation: crate::transducer::alphabet::Derivation::spelled(w.clone()),
         carriage: Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
         gauge: vec![(1, 2)],
         class: crate::transducer::stalk::Invariant::default(),
@@ -104,7 +104,7 @@ let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
 let word_vertex = |addr: crate::transducer::address::Address| Vertex::Word {
     address: addr,
-    word: w.clone(),
+    derivation: crate::transducer::alphabet::Derivation::spelled(w.clone()),
     carriage: Box::new(crate::transducer::element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
     gauge: vec![(1, 2)],
     class: crate::transducer::stalk::Invariant::default(),
@@ -216,7 +216,7 @@ let other = {
     let mut f = Form::default();
     f.vertices.push(Vertex::Word {
         address: crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 9]),
-        word: inf,
+        derivation: crate::transducer::alphabet::Derivation::spelled(inf),
         carriage: Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
         gauge: Vec::new(),
         class: crate::transducer::stalk::Invariant::default(),
@@ -259,7 +259,7 @@ let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
 let mut f = Form::default();
 f.vertices.push(Vertex::Word {
     address: crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 1]),
-    word: w,
+    derivation: crate::transducer::alphabet::Derivation::spelled(w),
     carriage: Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
     gauge: vec![(1, 2)],
     class: crate::transducer::stalk::Invariant::default(),
@@ -290,7 +290,7 @@ let inner = {
     let mut f = Form::default();
     f.vertices.push(Vertex::Word {
         address: crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 1]),
-        word: w,
+        derivation: crate::transducer::alphabet::Derivation::spelled(w),
         carriage: Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
         gauge: vec![(1, 2)],
         class: crate::transducer::stalk::Invariant::default(),

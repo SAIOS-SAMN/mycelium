@@ -339,7 +339,7 @@ impl At {
             At::Vertex { address, chart } => {
                 out.push(0);
                 let _ = crate::transducer::address::put_addr(out, address);
-                let _ = crate::transducer::sentence::tape::put_inv(chart, out);
+                let _ = crate::transducer::sentence::codec::put_inv(chart, out);
             }
             At::Face(a, b) => {
                 out.push(1);
@@ -348,7 +348,7 @@ impl At {
             }
             At::Chart(inv, cells) => {
                 out.push(2);
-                let _ = crate::transducer::sentence::tape::put_inv(inv, out);
+                let _ = crate::transducer::sentence::codec::put_inv(inv, out);
                 out.extend_from_slice(&(cells.len() as u32).to_le_bytes());
                 for (r, c, before, after) in cells {
                     out.extend_from_slice(&r.to_le_bytes());
@@ -370,7 +370,7 @@ impl At {
         Some(match tag {
             0 => {
                 let address = crate::transducer::address::take_addr(b, pos)?;
-                let chart = crate::transducer::sentence::tape::take_inv(b, pos)?;
+                let chart = crate::transducer::sentence::codec::take_inv(b, pos)?;
                 At::Vertex { address, chart }
             }
             1 => {
@@ -379,7 +379,7 @@ impl At {
                 At::Face(a, c)
             }
             2 => {
-                let inv = crate::transducer::sentence::tape::take_inv(b, pos)?;
+                let inv = crate::transducer::sentence::codec::take_inv(b, pos)?;
                 let n = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
                 *pos += 4;
                 let n = take_count(b, *pos, n, 18)?;
