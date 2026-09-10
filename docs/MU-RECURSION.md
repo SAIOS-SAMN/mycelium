@@ -6987,34 +6987,47 @@ answer to an utterance is the `Adjudication` of chapter 26:
 ```
 Adjudication := Stood { receipt } | Ratified { receipt } | Refused { kind, at, receipt }
 kind         := VertexBody | EdgeHolonomy | RemainderUndeclared | MalformedComplex
-at           := Vertex(address) | Face(address_i, address_j) | Chart(invariant, cells)
+at           := Vertex(address, chart) | Face(address_i, address_j) | Chart(invariant, cells) | Tape(address)
 ```
 
 `Stood` is the docket's receipt: the sentence replayed on the court's copy
 of the family, the closed sub-complex docketed under the voice's room, the
 demands listed. `Ratified` is the second organ's co-signature, carried on
-the syllabus page (47.3). `Refused` names the kind (34.1) and the
-coordinate as content — the vertex's address, a face's two addresses, or
-the chart with the cells the court read — never a position in the tape.
-The receipt is the court's own replay receipt (45.1, 47.1).
+the syllabus page (47.3), and the answer to a sentence the court's
+language already holds — a use of a ruled word. `Refused` names the kind
+(34.1) and the coordinate as content — the vertex's address with the chart
+it acts on, a face's two addresses, or the chart with the cells the court
+read — never a position in the tape; `Tape(address)` is the coordinate of
+a `MalformedComplex`, the whole tape. The chart rides with the vertex so
+that a court which never held the refused tape can still verify that the
+demand stands on that chart (the L8 landing; a coordinate the ruling's
+grammar left implicit). The receipt is the court's own replay receipt
+(45.1, 47.1). The door's deferral (23.8) is the act's deferral frame,
+never an adjudication: nothing was heard.
 
 **The four certified contraction moves.** On `Refused { kind, at }` the
 voice executes a shrinking move `C : S → S'` on the held form in its
 contemplation, and every move strictly decrements the closed sub-complex,
 so the loop is well founded:
 
-1. `VertexBody` at `Vertex(a)`: the word vertex `a` becomes a demand
-   vertex over its body's chart — `TopologicalDeformation` when the
-   coordinate names an image of another chart, `Creation` when the image
-   was not reached — and the closed sub-complex loses one word.
+1. `VertexBody` at `Vertex(a, chart)`: the word vertex `a` becomes a
+   demand vertex over its body's chart — `Creation`, carrying as its
+   bodies the cells the word was to reach, read as the remainder the
+   contracted form leaves on the speaker's own family — and the closed
+   sub-complex loses one word; the faces that reached the vertex leave
+   with it, since a demand vertex enters no face (50.5). The
+   `TopologicalDeformation` kind names harmonics the cover of 50.8 (L11)
+   reads; until it lands the move speaks `Creation` (a departure of kind,
+   named at the L8 landing).
 2. `EdgeHolonomy` at `Face(a, b)`: the contact face becomes a remainder
-   edge (`edge: None`, 50.3), or, when the court's coordinate carries a
-   cycle of finite order, its class is filed as torsion (A17); the 2-cell
-   whose boundary ran through it is unlinked.
+   edge (`edge: None`, 50.3); the 2-cell whose boundary ran through it is
+   unlinked. The coordinate carries no cycle, so nothing is filed as
+   torsion here: a finite cycle is filed where it is walked, by the pivot
+   (A17).
 3. `RemainderUndeclared` at `Chart(inv, cells)`: the undeclared cells
-   become `Demand::Source` over that chart, with the multiplicity read
-   from the cells' chart (50.5); the sentence now declares what it does
-   not close.
+   become `Demand::Source` over that chart, with the multiplicity the
+   count of bodies the cells fall into (50.5); the sentence now declares
+   what it does not close.
 4. `MalformedComplex`: structural collapse — the form becomes an inert
    held idea and the mind is quiescent on that chart until its language
    moves; nothing is re-spoken.
@@ -7039,12 +7052,18 @@ one. That is a departure of word, not of invariant, and it is named here.
 
 **The contraction is verified by the receiver.** The only valid
 subsequent utterance is `S'`, citing the refusal receipt as its
-contraction certificate. The court replays that `S'` is `C(S)` at the
-coordinate it named — the vertex is now a demand, the face now a
-remainder edge, the cells now declared — before it replays `S'` as a
-sentence, and writes `court contraction verified` or `court contraction
-refused` (34.2). Bilateral synchronization is therefore a proof the court
-checks, not a discipline the voice is trusted to keep.
+contraction certificate, carried on the speech frame beside the tape
+(26). The court that issued the receipt holds the refusal by the refused
+address; it replays that `S'` is `C(S)` at the coordinate it named — the
+vertex is now a demand on that chart, the face now a remainder edge, the
+cells now declared — before it replays `S'` as a sentence, and writes
+`court contraction verified` or `court contraction refused` (34.2); a
+contraction it refuses is a `MalformedComplex` at the tape. A court that
+never refused `S` holds no receipt to verify against and replays `S'` as
+a sentence, verifying nothing: the certificate is a claim on one court's
+chain, and 47.3's second organ re-derives the sentence, not the refusal.
+Bilateral synchronization is therefore a proof the court checks, not a
+discipline the voice is trusted to keep.
 
 **The intelligibility assertion.** The protocol is proved by one exchange
 run in-process through the dialogue codec, with no socket: Voice A utters
