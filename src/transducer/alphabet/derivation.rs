@@ -143,6 +143,26 @@ impl Derivation {
         }
     }
 
+    /// THE WORD THIS VERTEX CARRIES, resolving nothing: the residue when
+    /// it spells, and `Word::formed(rotor)` when it is an ADJOINED
+    /// generator — a word that carries an action and no letters (37.7).
+    /// `None` only when the vertex CITES, which is the one case that
+    /// needs a resolver.
+    ///
+    /// This is what a reader asking "what generator is at this vertex"
+    /// gets. `word_local` alone answered `None` for a letter, so a mind
+    /// holding one offered it to nobody and a court could not resolve a
+    /// citation of it.
+    pub fn word_carried(&self) -> Option<Word> {
+        if let Some(w) = self.word_local() {
+            return Some(w.clone());
+        }
+        match self.is_spelled() {
+            true => Some(Word::formed(self.rotor())),
+            false => None,
+        }
+    }
+
     /// A SPELLING OF THIS VERTEX'S ACTION, RECOMPUTED (50.2 step 2: "the
     /// spelling from the identity is recomputed from the derivation and
     /// never stored as the word"). The residue when nothing is cited;
@@ -171,21 +191,31 @@ impl Derivation {
     /// word of a cited `(form, vertex)`; a citation it cannot answer is
     /// not a failure of this check but an absence — the caller defers, as
     /// a `Glued` citation defers (21 step 3) — so it is reported apart.
+    /// The resolver answers a cited generator's ROTOR, not its letters
+    /// (L14). Composition is by the geometric product, so an adjoined
+    /// generator — which has no letters at all — composes exactly as a
+    /// spelled one does, and a court can verify a citation of a letter.
+    /// Composing words here could not: `Word::compose` concatenates
+    /// letter tapes, so a letterless word composes to the identity and
+    /// every citation of a letter would read as a disagreement.
     pub fn verify_with<R>(&self, resolve: &R) -> Verified
     where
-        R: Fn(&Address, &Address) -> Option<Word>,
+        R: Fn(&Address, &Address) -> Option<Rotor>,
     {
         if self.is_spelled() {
             return Verified::Composes;
         }
-        let mut w = Word::identity();
+        let mut r = Rotor::identity();
         for (form, vertex, e) in &self.generators {
             let Some(g) = resolve(form, vertex) else {
                 return Verified::Unresolved { form: form.clone(), vertex: vertex.clone() };
             };
-            w = w.compose(&power_of(&g, *e));
+            let Some(p) = rotor_power(&g, *e) else {
+                return Verified::Differs;
+            };
+            r = r.geo(&p);
         }
-        let got = w.compose(&self.residue).rotor();
+        let got = r.geo(&self.residue.rotor());
         match got.projective_eq(&self.rotor()) {
             true => Verified::Composes,
             false => Verified::Differs,
@@ -271,6 +301,36 @@ pub enum Verified {
 ///   bits of `|e|`, which is the most an `i64` can say.
 ///
 /// Neither bound is a limit on what a voice may cite. Both are exact.
+/// `g^e` on the ACTION (L14). The same two bounds as `power_of` and the
+/// same reasoning: a finite order reduces the exponent in ℤ/m, an
+/// infinite one squares and multiplies over the bits of `|e|`. `None`
+/// when a negative exponent meets a rotor with no inverse — exact or
+/// refused, never an identity standing in for one (rule 11).
+pub fn rotor_power(g: &Rotor, e: i64) -> Option<Rotor> {
+    let base = match e < 0 {
+        true => g.inverse()?,
+        false => g.clone(),
+    };
+    let n = e.unsigned_abs();
+    let n = match base.order() {
+        Some(crate::transducer::alphabet::Order::Finite(m)) if m > 0 => n % u64::from(m),
+        _ => n,
+    };
+    let mut r = Rotor::identity();
+    let mut square = base;
+    let mut rest = n;
+    while rest > 0 {
+        if rest & 1 == 1 {
+            r = r.geo(&square);
+        }
+        rest >>= 1;
+        if rest > 0 {
+            square = square.geo(&square);
+        }
+    }
+    Some(r)
+}
+
 pub fn power_of(g: &Word, e: i64) -> Word {
     let base = match e < 0 {
         true => g.inverse(),

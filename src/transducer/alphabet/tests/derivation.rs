@@ -59,9 +59,13 @@ fn a_factored_derivation_travels_its_citations_and_re_derives_the_product() {
     assert_eq!(pos, b.len(), "consuming exactly its bytes");
     assert_eq!(back.generators, d.generators, "the citations survive the wire");
 
-    let holds = |f: &Address, v: &Address| -> Option<Word> {
+    // The resolver answers the cited generator's ACTION, not its letters
+    // (L14): composition is by the geometric product either way, and a
+    // citation of a generator the alphabet cannot spell resolves here
+    // exactly as this one does.
+    let holds = |f: &Address, v: &Address| -> Option<crate::transducer::alphabet::Rotor> {
         match (f == &addr(1), v == &addr(2)) {
-            (true, true) => Some(quarter(1)),
+            (true, true) => Some(quarter(1).rotor()),
             _ => None,
         }
     };
@@ -87,7 +91,7 @@ fn a_negative_exponent_applies_the_generators_inverse() {
 fn citations_that_do_not_compose_to_the_product_are_refused() {
     let honest = Derivation::compose(&[(addr(1), addr(2), 2, quarter(1))], Word::identity());
     let lying = Derivation::factored(honest.generators.clone(), Word::identity(), quarter(3).rotor());
-    let holds = |_: &Address, _: &Address| Some(quarter(1));
+    let holds = |_: &Address, _: &Address| Some(quarter(1).rotor());
     assert_eq!(honest.verify_with(&holds), Verified::Composes);
     assert_eq!(lying.verify_with(&holds), Verified::Differs, "the court re-derives and disagrees");
 }

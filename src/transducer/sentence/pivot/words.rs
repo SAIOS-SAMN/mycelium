@@ -209,7 +209,24 @@ pub fn generators_under(
 pub fn word_at_vertex(f: &Form, vertex: &[u8]) -> Option<Word> {
     let i = *f.by_address.get(vertex)?;
     match f.vertices.get(i as usize)? {
-        Vertex::Word { derivation, .. } => derivation.word_local().cloned(),
+        // What the vertex CARRIES: its letters when it spells, its action
+        // when it is an adjoined generator (37.7). `word_local` alone
+        // answered `None` for a letter, so a mind holding one offered it
+        // as a generator to nobody.
+        Vertex::Word { derivation, .. } => derivation.word_carried(),
+        _ => None,
+    }
+}
+
+/// The ACTION at a form's vertex, by the address that names it (L14).
+/// What a court composes when it replays a citation: rotors compose by
+/// the geometric product whether or not the alphabet spells them, so a
+/// citation of an adjoined generator verifies exactly as one of a
+/// spelled generator does.
+pub fn rotor_at_vertex(f: &Form, vertex: &[u8]) -> Option<crate::transducer::alphabet::Rotor> {
+    let i = *f.by_address.get(vertex)?;
+    match f.vertices.get(i as usize)? {
+        Vertex::Word { derivation, .. } => Some(derivation.rotor()),
         _ => None,
     }
 }

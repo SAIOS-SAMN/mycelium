@@ -49,10 +49,14 @@ fn derivations_compose(f: &Form, resolve: &dyn Fn(&[u8]) -> Option<Form>) -> Opt
         let Vertex::Word { address, derivation, class, .. } = v else {
             continue;
         };
+        // The ACTION at the cited vertex (L14). A citation of an adjoined
+        // generator resolves here exactly as one of a spelled generator
+        // does, because rotors compose whether or not the seventeen
+        // spell them.
         let held = |form: &crate::transducer::address::Address,
                     vertex: &crate::transducer::address::Address| {
             let cited = resolve(form.as_bytes())?;
-            sentence::word_at_vertex(&cited, vertex.as_bytes())
+            sentence::rotor_at_vertex(&cited, vertex.as_bytes())
         };
         match derivation.verify_with(&held) {
             Verified::Composes => {}

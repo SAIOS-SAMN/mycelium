@@ -194,9 +194,21 @@ pub fn factor_versor(
         // It propagates as `None` — the same refusal a versor with no
         // linear block gives — and the caller withholds (L8w).
         Ok(w) => Ok(derivation_of(crystal, budget, w)?),
-        Err(demand) => Err(demand),
+        // THE RING BRANCH, and it belongs HERE rather than inside
+        // `derivation_of` (a departure from the queue's placement, named:
+        // §8.6). `derivation_of` runs only where the peel CLOSED, and a
+        // closed peel is a proof that no prime outside the seventeen
+        // divides the target's norm — so an adjoined generator can never
+        // divide it and the branch would be unreachable there. Where an
+        // adjoined generator CAN divide is exactly where the peel stood,
+        // which is this arm.
+        Err(demand) => match crate::transducer::family::ring::ring_derivation(crystal, budget, v, &demand) {
+            Some(d) => Ok(d),
+            None => Err(demand),
+        },
     })
 }
+
 
 /// 50.2 step 2 applied to an ALREADY PEELED vertex: the second step run
 /// on the memo's percept, per mind. A derivation that already cites
