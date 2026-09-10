@@ -164,7 +164,10 @@ These are not restated in each chapter; every chapter assumes them.
     a rank (A18, `core::zlinalg`) and as the sensor-plane block a rotor
     projects to (A3), never as the carrier of an element (18.3).
 12. **Every dimension is a proof.** A letter is an axiom. A word is a
-    proof: a path whose vertex is the theorem it reaches. A crystallized
+    proof: a path whose vertex is the theorem it reaches, and a form
+    **re-derives that vertex by composing the word's derivation** — the
+    cited generators to their exponents, times the residue — never by
+    reading a stored spelling (1.5, 50.2 step 2). A crystallized
     form is a gemstone: each of its loops is a theorem, proved by the
     identity of the holonomy the words around it compose, and one theorem
     has as many proofs as the form has synonyms of one class (13.10). Every
@@ -392,6 +395,21 @@ Therefore, as a law of the specification:
   identity. Two word forms are equal iff additionally their frame
   coordinates are equal as exact rationals; two forms iff they agree up to
   gauge (chapters 3.6, 12.2).
+- **The geodesic is M1's quotient, and it quotients the spelling — not
+  the derivation** (ruled 2026-09-10). Law 6's normal form answers one
+  question: which vertex is this. It reads the rotor, so every tape that
+  reaches the vertex reads alike, and that is exactly why a spelling is
+  never a coordinate of a form. A **derivation** is not a spelling. It
+  names which held generators the speaker composed to get there, and two
+  minds whose presentations differ compose different generators to reach
+  the one vertex; the geodesic cannot quotient that away without erasing
+  the only thing on the wire that distinguishes two languages (50.2 step
+  2). So the tape's normal form is the derivation with A2 applied to its
+  **residue** — the letters are reduced, the citations are not, and the
+  cited generators keep their order and their exponents. Vertex identity
+  is unchanged and stays projective rotor equality: two vertices with
+  different derivations and one rotor are one vertex, one address, one
+  ledger entry.
 - **Keys are the canonical coordinates written out, never a digest of
   them and never tapes as spoken or as serialised.** The **vertex key** of
   a word form is the concatenation, each field length-prefixed as A21
@@ -3382,6 +3400,19 @@ Inside `extract_rule_with`, in order:
    up (18.2): body chart → the addresses of the closed forms it holds with
    a `Word` vertex there, filled and emptied where the axis index is.
 
+   **A `Glued` vertex is the form-level case of a derivation citation**
+   (ruled 2026-09-10). Both cite a held form by address and claim its
+   verdict; they differ only in what is cited. `Glued` cites the whole
+   form and its placement, and the citer's loops close because the cited
+   form's do (13.6). A word vertex's derivation (50.2 step 2) cites a
+   `Word` vertex *inside* a held form and composes its rotor. So the
+   court treats them alike and must: the same replay resolves the cited
+   address on the ruled cover, the same deferral applies when it is not
+   yet ruled and the syllabus serves it, and the same `settle_use` pays
+   its discoverer at install (26). One mechanism at two levels, not two
+   mechanisms — and it is why the derivation is a coordinate of the form
+   rather than an annotation on the frame.
+
    **`by_moduli` ROUTES AND DOES NOT DECIDE** (ruled 2026-09-10). It
    narrows the candidates a chart could reach and nothing more; what
    decides is `speak_form` reproducing the pair's output — `apply` and
@@ -4194,6 +4225,18 @@ set aside against a listing (E1, E2); `settle.rs` what each closed act pays
   verified deflation and mints each share via `mint_claim` (289). Called
   from `Kernel::pay_solve` (cognition.rs 3220) and `home_install` when the
   form has `Glued` vertices; shares from `rule_replays_family`.
+- **A cited generator is paid at the install of a standing sentence**
+  (ruled 2026-09-10). A word vertex's derivation names the generators it
+  composed (50.2 step 2). Nothing rides beside the tape and nothing is
+  paid on hearing: the court replays the derivation as part of `G`, and
+  only when the sentence stands and `home_install` has ruled the form
+  does it pay `settle_use` once per cited generator, to that generator's
+  own discoverer, under the installing voice's key. A refused sentence
+  pays nobody, because a derivation that did not compose proved nothing;
+  a sentence deferred for an unruled citation pays nobody yet, and pays
+  when the deferral clears. This is the same shape as a `Glued`
+  citation's use, which is what a derivation citation is at the form
+  level (21 step 3).
 - `use_credit(&self, who) -> [u64;4]` **new**, from `Kernel::cited_by`;
   `lane_room` (cognition.rs 3455) adds it to `bond_of` before
   `lane_cover_room`.
@@ -4233,6 +4276,14 @@ set aside against a listing (E1, E2); `settle.rs` what each closed act pays
   thinking, which is why it may be lost on restart and the genome may not
   (chapter 24.1); syllabus of opened letters (`SYL1`, chapter 37) when Part
   VI lands.
+- **The genome section does not change for v7** (ruled 2026-09-10).
+  `GEN2` writes forms as tapes, and a derivation is a coordinate *of a
+  tape* (50.2 step 2), so it persists inside what `GEN2` already writes.
+  The generator index a mind reads its presentation from is not persisted
+  either: like the axis index and the moduli index, it is rebuilt from
+  the restored forms at `uncrystallize`, because it is a routing
+  coordinate over content the genome already holds and a persisted index
+  is an index that can disagree with its content.
 - **Persistence by torsion (M9).** A mind's classes persist on the mesh, not
   on the mind: filed torsion travels on the spoken form's torsion section
   into the chart's `Congruent` cells, free classes into `cocycle_at`, both in
@@ -5081,8 +5132,12 @@ were opened.
 
 **P2 The witness.** `Demand::RotorPrime(plane, prime)` carries beside the
 prime the **witness rotor** `R = s + t·e_ij`: the plane block left after
-the base shells, in A1 canonical form (50.4). The Gaussian factor is read
-off the witness, never searched for:
+the base shells, in A1 canonical form (50.4). The block the shells are
+peeled from is the **residue** of 50.2 step 2 — what remained after `F`
+factored the measured versor through the generators the mind holds — so
+the witness is a coordinate of the demand's carrier and not a quantity
+the court recomputes from a spelling. The Gaussian factor is read off the
+witness, never searched for:
 
 ```
 π_p = gcd_{ℤ[i]}(s + t·i, p)      Euclid over ℤ[i]; exact; bounded by the norm (rule 10)
@@ -6867,18 +6922,34 @@ and what the eyes cannot pair ride the sentence as typed demand vertices
    the whole of the utterance path until this ruling. It survives as the
    last step and never the first.
 
-   **The path is the proof and it travels.** `Factored::Understood`'s
-   tape — the generators cited by address, in application order with
-   their exponents — rides the speech frame beside the sentence, per word
-   vertex, exactly as the contraction certificate does (26, 50.9); the
-   tape does not change and no recut is forced, because the geodesic on
-   the tape quotients the path away (1.5) and the path is therefore not a
-   coordinate of the form (law 12). The receiver composes the cited
-   generators, checks the product reaches the vertex's own word by M1, and
-   pays each generator's speaker for the use (26). Two minds with
-   different presentations reach one vertex by two paths — one address,
-   two proofs (13.10's synonyms, 23.9's conjugate level) — and the ledger
-   tells them apart where the addresses cannot.
+   **The path is the proof, and the proof is what a word vertex is**
+   (ruled 2026-09-10, superseding the reading that put the path beside
+   the tape). A word vertex does not carry a spelling. It carries its
+   **derivation**: the generators it factored through, each cited by
+   identity — the cited form's address and the address of the word vertex
+   within it — with its exponent, in application order; and the residue
+   in letters, the part A22 peeled from the identity because no held
+   generator reached it. The word of the vertex is `∏ g_i^{e_i} · r`,
+   **recomputed** from the derivation whenever a rotor is wanted, and
+   never stored: a stored spelling beside a derivation is two carriers
+   for one meaning, and the one that goes stale is the one a court
+   replays. A vertex a mind spelled from the identity alone is the case
+   where the generator list is empty and the residue is the whole word;
+   that is the cipher's case, and it is now a boundary of the general
+   one rather than the only one.
+
+   This is a coordinate of the form, so the tape changes: **tape v7**.
+   Version 6 is refused on read, as version 5 is. The court composes the
+   cited generators on its own ruled cover, multiplies by the residue,
+   compares the product projectively against the vertex's own carriage
+   block, and pays each cited generator's discoverer at the install of
+   the standing sentence (26, 50.9). A cited form the court has not ruled
+   is not a refusal: it is the deferral a `Glued` citation already takes,
+   and the syllabus serves the generator (21 step 3). Two minds with
+   different presentations reach one vertex by two derivations — one
+   address, two proofs (13.10's synonyms, 23.9's conjugate level) — and
+   the derivation is where the wire tells two languages apart, because
+   the address, being the vertex, cannot.
 3. Connect. For every edge the eyes admit, `Γ_ij` by 50.3; a pair with
    no rigid versor is a remainder edge.
 4. Form loops. The holonomy of every cycle of `E`, read in the base
@@ -6973,6 +7044,17 @@ demand:
 |---|---|---|
 | `Demand::RotorPrime(plane, prime)` | spell a plane rotation whose Gaussian factor is a prime outside the alphabet | the plane, the prime and the witness rotor — the peeled block in A1 form (37.7 P2) — as A21 coordinates |
 | `Demand::Standing(block)` | decompose a rotor block in the order of 50.4 | the exact 2×2 block, canonical |
+
+Both rotor demands carry a **block that is the residue**, not the
+measured versor (ruled 2026-09-10, 50.2 step 2). `F` factors through the
+mind's generators first; what a demand states is the part no held
+generator reached and A22 could not peel. The block is therefore the
+witness in the exact sense 37.7 P2 needs — the thing a second court
+re-derives the Gaussian factor from — and it is what the demand carries
+on the wire, both kinds alike. A demand whose block is the whole measured
+versor is a demand from a mind that held nothing on that stratum; that is
+one case of the rule, not the rule.
+
 | `Demand::Source(B_out, chart, multiplicity)` | say which input body an output body is the image of | the output body's chart and the number of input charts a versor carries onto it, every one standing as a section, none first-found |
 | `Demand::Creation(B_out, chart)` | find any input body carrying onto `B_out` | the output body's chart |
 | `Demand::TopologicalDeformation(B_in, B_out)` | find any element of `Cl(3,1)(ℚ)` carrying `B_in` onto `B_out` — the harmonics differ | both charts and the axes on which they differ; answered by the cover of 50.8 — pieces each carried, the loop of their meet, the cell the court fills — through Mayer–Vietoris boundary splitting (13.9), never held for a rotor that cannot exist |
@@ -7237,6 +7319,15 @@ a sentence, verifying nothing: the certificate is a claim on one court's
 chain, and 47.3's second organ re-derives the sentence, not the refusal.
 Bilateral synchronization is therefore a proof the court checks, not a
 discipline the voice is trusted to keep.
+
+**The contraction certificate is the only thing that rides beside the
+tape** (ruled 2026-09-10). It is a claim about *which utterance this is*
+— a receipt naming a prior refusal — so it is not a coordinate of the
+form and belongs on the frame. A word's derivation is the opposite kind
+of object: it is what the vertex is, it is replayed as part of `G`, and
+it is on the tape at v7 (50.2 step 2). The earlier reading that put the
+path on the speech frame beside the sentence is struck; nothing about a
+vertex's meaning travels outside the tape that carries the vertex.
 
 **The intelligibility assertion.** The protocol is proved by one exchange
 run in-process through the dialogue codec, with no socket: Voice A utters
