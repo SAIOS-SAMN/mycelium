@@ -77,6 +77,32 @@ fn preimage_key(parts: &[Vec<u8>]) -> Vec<u8> {
     }
 }
 
+/// THE ADDRESS OF A COVER PIECE, which is a CARRIAGE and not a piece of a
+/// body: the ordered pair of the domain's address in the input and the
+/// codomain's address in the image. Ordered, unlike a meet, because a
+/// carriage has a direction.
+///
+/// Keying here by the domain alone would assert that Φ is injective on
+/// the input, and keying by the codomain alone that it is injective on
+/// the image. Neither holds. A shape occurring once in the input and ten
+/// times in the image is one domain carried by ten versors — replication —
+/// and a shape occurring many times in the input and once in the image is
+/// many domains reaching one codomain — merging. Measured at a35bb9d with
+/// both injectivity conditions enforced: sixteen covers over twelve
+/// tasks, `filed 0 standing 0` in every one, and on a family with one
+/// input piece and ten output pieces exactly ONE carriage was placed. The
+/// nine refused were refused by bookkeeping, not by geometry, and with
+/// only one piece placed there is no second node in the nerve, so no
+/// transition exists to have an order at all.
+fn carriage_key(domain: &[u8], codomain: &[u8]) -> Vec<u8> {
+    let mut k = Vec::with_capacity(domain.len() + codomain.len() + 8);
+    k.extend_from_slice(&(domain.len() as u32).to_le_bytes());
+    k.extend_from_slice(domain);
+    k.extend_from_slice(&(codomain.len() as u32).to_le_bytes());
+    k.extend_from_slice(codomain);
+    k
+}
+
 /// The unordered pair of two piece addresses: the 1-simplex of the nerve,
 /// named by its two ends and never by their positions.
 fn meet_key(a: &[u8], b: &[u8]) -> Vec<u8> {
@@ -134,11 +160,24 @@ pub(crate) fn pieces_of(
     out
 }
 
-/// One piece the cover placed: the versor that carried it and the support
-/// it landed on.
+/// One carriage the cover placed: the versor, the support it was carried
+/// FROM, and the support it landed on.
+///
+/// Both supports are kept because the nerve reads meets on both. A
+/// deformation is a map OUT OF the input, so the Čech nerve is the nerve
+/// of the cover of the SOURCE: two carriages sharing a domain overlap on
+/// the whole of it, however far apart their codomains land. That is the
+/// replication case, and it is the only case in which the transition
+/// between two copies of one shape is visible at all. Meets on the
+/// codomain are the merge case, where several domains reach one image
+/// region. Reading only the codomain — measured with `carried 2` on a
+/// family of one input piece and ten output pieces — leaves the nerve
+/// discrete: the two copies land apart, no ring touches, no 1-simplex is
+/// formed, and no cycle exists for a holonomy to be read around.
 struct Placed {
     by: Versor,
-    support: Vec<(i64, i64)>,
+    domain: Vec<(i64, i64)>,
+    codomain: Vec<(i64, i64)>,
 }
 
 /// What the cover of one deformation reached. Every field is content, and
@@ -192,10 +231,16 @@ impl Cover {
 ///
 /// Pass (a), THE PULLBACK: an output piece's preimage is the input pieces
 /// standing under its own cells, read per cell from the occupancy. Pass
-/// (b), BY STRUCTURE: an input piece still unplaced is looked for among
-/// the output pieces of its own shell kind and hue — never its moduli,
-/// which a deformed piece changes by definition. In both, `carriage`
-/// decides and nothing is ranked (rule 4).
+/// (b), BY STRUCTURE: an input piece the pullback placed nowhere is tried
+/// against EVERY output piece of its own shell kind and hue — never its
+/// moduli, which a deformed piece changes by definition. In both,
+/// `carriage` decides and nothing is ranked (rule 4).
+///
+/// Neither pass is injective in either direction, because Φ is not. A
+/// cover piece is a carriage — a domain, a codomain, a versor — keyed by
+/// `carriage_key`, so one domain carried to several codomains is several
+/// cover pieces and several nodes of the nerve. Both passes are bounded
+/// by the budget spent per attempt and by nothing else (rule 10).
 ///
 /// The readings at a meet, and none of them is a choice:
 ///
@@ -228,15 +273,11 @@ pub(crate) fn cover_deformation(
 
     let mut placed: crate::network::nerve::Keyed<Placed> = crate::network::nerve::Keyed::new();
     let mut consumed: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    let mut taken: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     let mut reached: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     let out_keys: Vec<Vec<u8>> = outs.fiber(ROOT).map(|(k, _)| k).collect();
 
     // (a) THE PULLBACK, in place.
     for ko in &out_keys {
-        if taken.contains(ko) {
-            continue;
-        }
         let Some(op) = outs.get(ko) else { continue };
         // The preimage: the input pieces named under this piece's own
         // cells, deduped by their address and read in key order.
@@ -257,9 +298,6 @@ pub(crate) fn cover_deformation(
         let mut cells: Vec<Cell3> = Vec::new();
         let mut parts: Vec<Vec<u8>> = Vec::new();
         for (ki, ()) in named.fiber(ROOT) {
-            if consumed.contains(&ki) {
-                continue;
-            }
             if !budget.spend() {
                 cover.measured = false;
                 return cover;
@@ -275,15 +313,21 @@ pub(crate) fn cover_deformation(
         };
         let Some(car) = carriage(&pre, &op.body) else { continue };
         let Some(Ok(v)) = word_or_demand(&pre, &op.body) else { continue };
-        let key = preimage_key(&parts);
-        taken.insert(ko, ());
+        let key = carriage_key(&preimage_key(&parts), ko);
         for &(r, c, _) in pre.cells.iter().chain(op.body.cells.iter()) {
             reached.insert(cell_pos_key(r, c), ());
         }
         for ki in &parts {
             consumed.insert(ki, ());
         }
-        placed.insert(&key, Placed { by: car.v.clone(), support: support_of(&op.body) });
+        placed.insert(
+            &key,
+            Placed {
+                by: car.v.clone(),
+                domain: support_of(&pre),
+                codomain: support_of(&op.body),
+            },
+        );
         cover.carried.insert(&key, (v, car.v));
     }
 
@@ -309,10 +353,15 @@ pub(crate) fn cover_deformation(
         }
         let Some(ip) = ins.get(ki) else { continue };
         let Some(fiber) = by_kind_hue.get(&[ip.kind.as_u8(), ip.hue]).cloned() else { continue };
+        // EVERY output of this kind and hue is tried, and one that carries
+        // is placed — not the first one only. A shape occurring once in
+        // the input and several times in the image is ONE piece carried by
+        // SEVERAL versors, and the transitions between those copies are
+        // the holonomy this cover exists to read. Stopping at the first
+        // success places one copy and refuses the rest by bookkeeping
+        // rather than by geometry, and then no transition can be anything
+        // but the identity.
         for ko in fiber {
-            if taken.contains(&ko) {
-                continue;
-            }
             if !budget.spend() {
                 cover.measured = false;
                 return cover;
@@ -320,14 +369,20 @@ pub(crate) fn cover_deformation(
             let Some(op) = outs.get(&ko) else { continue };
             let Some(car) = carriage(&ip.body, &op.body) else { continue };
             let Some(Ok(v)) = word_or_demand(&ip.body, &op.body) else { continue };
-            taken.insert(&ko, ());
+            let key = carriage_key(ki, &ko);
             for &(r, c, _) in ip.body.cells.iter().chain(op.body.cells.iter()) {
                 reached.insert(cell_pos_key(r, c), ());
             }
             consumed.insert(ki, ());
-            placed.insert(ki, Placed { by: car.v.clone(), support: support_of(&op.body) });
-            cover.carried.insert(ki, (v, car.v));
-            break;
+            placed.insert(
+                &key,
+                Placed {
+                    by: car.v.clone(),
+                    domain: support_of(&ip.body),
+                    codomain: support_of(&op.body),
+                },
+            );
+            cover.carried.insert(&key, (v, car.v));
         }
     }
 
@@ -351,20 +406,29 @@ pub(crate) fn cover_deformation(
     // their rings (rule 1: never a pair loop over the pieces). A cell
     // holding two or more placed pieces IS a meet, and the meet is
     // addressed by its two ends.
+    // The two sides are filed under DISTINCT keys — a side byte ahead of
+    // the position — so a domain cell and a codomain cell that happen to
+    // sit at one grid position are not read as a meet. They are cells of
+    // two different spaces that the correspondence relates; only the
+    // versor relates them, and a shared coordinate is a coincidence of the
+    // embedding, not an overlap.
     let mut occ: crate::network::nerve::Keyed<Vec<Vec<u8>>> = crate::network::nerve::Keyed::new();
     for (k, p) in placed.fiber(ROOT) {
-        let cells: Vec<Cell3> = p.support.iter().map(|&(r, c)| (r, c, 0)).collect();
-        let ring = crate::transducer::blade::adjacent_ring(&cells);
-        for (r, c) in p.support.iter().copied().chain(ring.into_iter().map(|(r, c, _)| (r, c))) {
-            let pos = cell_pos_key(r, c);
-            match occ.get_mut(&pos) {
-                Some(v) => {
-                    if !v.contains(&k) {
-                        v.push(k.clone());
+        for (side, support) in [(0u8, &p.domain), (1u8, &p.codomain)] {
+            let cells: Vec<Cell3> = support.iter().map(|&(r, c)| (r, c, 0)).collect();
+            let ring = crate::transducer::blade::adjacent_ring(&cells);
+            for (r, c) in support.iter().copied().chain(ring.into_iter().map(|(r, c, _)| (r, c))) {
+                let mut pos = vec![side];
+                pos.extend_from_slice(&cell_pos_key(r, c));
+                match occ.get_mut(&pos) {
+                    Some(v) => {
+                        if !v.contains(&k) {
+                            v.push(k.clone());
+                        }
                     }
-                }
-                None => {
-                    occ.insert(pos, vec![k.clone()]);
+                    None => {
+                        occ.insert(pos, vec![k.clone()]);
+                    }
                 }
             }
         }
