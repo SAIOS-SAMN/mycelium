@@ -6650,12 +6650,17 @@ and what the eyes cannot pair ride the sentence as typed demand vertices
    refusal is a demand of 50.5, never a chain. Where several candidates
    verify they are one coset of the body's stabilizer, and the versor
    returned is that coset's **canonical representative** (ruled
-   2026-09-09): least in A21 order of its rotation's coefficients read in
-   the block order of 50.4 after A1's sign step, never the first that
-   verified. Two voices measuring one pair therefore return one `V_k`,
-   and `Γ_ij` of 50.3 is the same class on both; the choice of
-   representative is a gauge fixed by content (A1 for cosets), not a
-   choice among candidates (rule 4).
+   2026-09-09): the member nearest the identity in the Cayley graph — the
+   geodesic of the coset, law 6's normal form read on a coset — which is
+   the greatest `a²/w` of its rotation part (15.3's class invariant, an
+   exact rational; a reflected member reads zero), ties broken by the
+   least A21 key of the canonical rotation; never the first that
+   verified. A dilated bar is therefore carried by the dilation and not
+   by the dilation composed with the bar's half turn, and a square by the
+   turn within the eighth. Two voices measuring one pair return one
+   `V_k`, so `Γ_ij` of 50.3 is the same class on both; the representative
+   is a gauge fixed by content, A1's sign step at the altitude of a
+   coset, and not a choice among candidates (rule 4).
 2. Peel to letters. `W_k = factor_rotor(rotor of V_k)` by 50.4 (A22); an
    unclosed remainder is `RotorPrime` or `Standing` (50.5).
 3. Connect. For every edge the eyes admit, `Γ_ij` by 50.3; a pair with
