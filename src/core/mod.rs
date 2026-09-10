@@ -6,6 +6,7 @@
 //!   Hermite form with its transform, which is the factorisation A12 looks
 //!   for (16.12).
 
+pub mod gaussian;
 pub mod lattice;
 pub mod q;
 
