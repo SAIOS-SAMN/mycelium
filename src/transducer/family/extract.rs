@@ -372,7 +372,7 @@ pub fn extract_rule_with(
         let Some(placement) = placement_of_class(&pair_forms, &tc) else {
             continue;
         };
-        for (e, s, _st) in crystal.on_class(&moduli) {
+        for (e, s, _st) in crystal.on_body(&moduli) {
             if !s.is_closed() {
                 continue;
             }

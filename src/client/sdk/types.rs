@@ -267,6 +267,20 @@ pub struct Epigenome {
     /// Missing cited address → citing dialect sentences. Filled when
     /// Withheld is banked; resolve_withheld reads this, never the dialect.
     pub(crate) waiting_on: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
+    /// CLOSED FORMS BY THE CHART OF A BODY THEY CARRY (21 step 3, 24.1):
+    /// body chart → the addresses of held forms with a `Word` vertex on
+    /// that chart. It is the epigenome's `Form.by_class` (18.2) — "the
+    /// fiber a listing body's chart reads" — one level up, filled and
+    /// emptied beside `axis_index`.
+    ///
+    /// The glue asks the crystal at a perceived body's moduli, and the
+    /// atlas files a sentence under `chart_of_form`: `[2, vertices, faces,
+    /// loops, …]` against `[components, …harmonics…]`, two coordinate
+    /// systems that meet only at the empty root. Read there, `on_class`
+    /// answered the empty vector to every question the glue could ask, so
+    /// no rule ever cited a held form, no citation was ever a use, and
+    /// nothing was ever paid for one (26, 27).
+    pub(crate) by_moduli: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
 }
 
 /// THE ENTITY — a kernel identity with its genome/epigenome, conversing through

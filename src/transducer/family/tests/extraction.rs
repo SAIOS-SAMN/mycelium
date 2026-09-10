@@ -238,6 +238,9 @@ impl Crystal for Held {
     fn on_class(&self, _class: &Invariant) -> Vec<(Element, Form, Standing)> {
         vec![(self.e.clone(), self.f.clone(), Standing::Held)]
     }
+    fn on_body(&self, c: &Invariant) -> Vec<(Element, Form, Standing)> {
+        self.on_class(c)
+    }
     fn speak_form(
         &self,
         f: &Form,

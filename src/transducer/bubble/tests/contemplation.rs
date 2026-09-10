@@ -135,6 +135,16 @@ fn hold_form_keeps_a_glued_open_loop() {
         )> {
             Vec::new()
         }
+        fn on_body(
+            &self,
+            c: &crate::transducer::stalk::Invariant,
+        ) -> Vec<(
+            crate::transducer::element::Element,
+            Form,
+            crate::transducer::stalk::Standing,
+        )> {
+            self.on_class(c)
+        }
         fn speak_form(
             &self,
             _f: &Form,

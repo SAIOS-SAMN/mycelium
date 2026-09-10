@@ -356,11 +356,28 @@ assert_eq!(epi.genome_len(), 1, "genome is the promoted vertex");
 let promoted = epi.take_promoted();
 assert_eq!(promoted.len(), 1);
 assert_eq!(epi.expression[0], 2, "uses ride with the promotion");
+// The crystal is read at two coordinates and they are not one (21 step 3
+// as ruled 2026-09-10): `on_class` at the form's own chart, which is what
+// comprehension of a citation asks, and `on_body` at the chart of a body
+// the form carries, which is what the glue asks. Both carry the standing.
 let inv = crate::transducer::stalk::invariant_of(&e1);
 let on = epi.on_class(&inv);
 assert!(
     on.iter().any(|(_, _, st)| *st == Standing::Ruled),
     "Crystal carries standing as a coordinate after promotion"
+);
+let body = crate::transducer::sentence::from_element_form(&e1)
+    .expect("the tape reads back")
+    .vertices
+    .iter()
+    .find_map(|v| match v {
+        crate::transducer::sentence::Vertex::Word { class, .. } => Some(class.clone()),
+        _ => None,
+    })
+    .expect("a word vertex carries its body's chart");
+assert!(
+    epi.on_body(&body).iter().any(|(_, _, st)| *st == Standing::Ruled),
+    "and the glue's read carries it at the body's chart too"
 );
 }
 

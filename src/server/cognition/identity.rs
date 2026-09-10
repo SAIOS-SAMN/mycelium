@@ -27,6 +27,24 @@ impl crate::transducer::family::Crystal for Kernel {
             .collect()
     }
 
+    /// 21 step 3, at the court: the ruled cover is filed by `chart_of_form`
+    /// and carries no index by the moduli of the bodies its forms act on.
+    /// It needs none yet — a court resolves a `Glued` vertex by address
+    /// (32) and never re-derives a glue, so this read has no caller here;
+    /// the kernel is never the crystal `extract_rule_with` speaks to. When
+    /// a court extracts, it gains the index the mind has (`by_moduli`), and
+    /// this answers from it. Row L8s.
+    fn on_body(
+        &self,
+        _chart: &crate::transducer::stalk::Invariant,
+    ) -> Vec<(
+        Element,
+        crate::transducer::sentence::Form,
+        crate::transducer::stalk::Standing,
+    )> {
+        Vec::new()
+    }
+
     fn speak_form(
         &self,
         f: &crate::transducer::sentence::Form,

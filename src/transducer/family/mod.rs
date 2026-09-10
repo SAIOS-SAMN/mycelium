@@ -36,7 +36,14 @@ use std::cell::Cell;
 /// Source of crystallized forms on a class. Standing is a coordinate on
 /// the working atlas, never a gate.
 pub trait Crystal {
+    /// 24.2: the closed forms held at a CITED FORM's chart (`chart_of_form`),
+    /// which is what comprehension of a citation asks for.
     fn on_class(&self, class: &Invariant) -> Vec<(Element, Form, Standing)>;
+    /// 21 step 3: the closed forms carrying a body on a BODY's chart (its
+    /// moduli), which is what the glue asks for. A form is filed under
+    /// `chart_of_form` and a body under its moduli, two coordinate systems
+    /// that meet only at the empty root, so one reader cannot answer both.
+    fn on_body(&self, chart: &Invariant) -> Vec<(Element, Form, Standing)>;
     fn speak_form(&self, f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Option<Speech>;
     /// Keyed read of a crystallized form by address. No scan.
     fn by_address(&self, addr: &[u8]) -> Option<(Element, Form)>;
@@ -51,6 +58,9 @@ pub struct NoCrystal;
 
 impl Crystal for NoCrystal {
     fn on_class(&self, _class: &Invariant) -> Vec<(Element, Form, Standing)> {
+        Vec::new()
+    }
+    fn on_body(&self, _chart: &Invariant) -> Vec<(Element, Form, Standing)> {
         Vec::new()
     }
     fn speak_form(&self, f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Option<Speech> {

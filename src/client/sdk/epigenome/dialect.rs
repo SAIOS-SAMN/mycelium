@@ -44,6 +44,10 @@ impl Epigenome {
     }
 
     pub(crate) fn drop_dialect(&mut self, da: &[u8]) {
+        if let Some(d) = self.dialect.get(da) {
+            let shed = d.sentence.clone();
+            self.moduli_retract(&shed);
+        }
         let (inv, words, missing) = match self.dialect.get(da) {
             Some(d) => (
                 crate::transducer::stalk::invariant_of(&d.sentence),
@@ -93,6 +97,7 @@ impl Epigenome {
         let inv = crate::transducer::stalk::invariant_of(&sentence);
         self.dialect_atlas.admit(&inv, addr.clone());
         self.axis_admit(&sentence);
+        self.moduli_admit(&sentence);
         let shape = crate::transducer::element::shape_of_chain(sentence.sub());
         self.dialect.insert(
             addr.clone(),

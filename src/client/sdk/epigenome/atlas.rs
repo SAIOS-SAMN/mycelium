@@ -62,6 +62,71 @@ impl Epigenome {
         );
     }
 
+    /// File a closed form under the chart of every body its words carry
+    /// (21 step 3): what the glue asks the crystal for. A form that is not
+    /// closed is not filed — 13.6 lets a citer reuse a cited form's verdict
+    /// only because the cited form is closed, and `Form::glue` refuses an
+    /// unclosed one.
+    pub(crate) fn moduli_admit(&mut self, e: &Element) {
+        let addr = e.address();
+        for chart in body_charts_of(e) {
+            self.by_moduli.nested_insert(chart.key(), &addr, ());
+        }
+    }
+
+    /// Empty what `moduli_admit` filled: a word that sheds, is retired, or
+    /// is promoted leaves the index with the stratum it left.
+    pub(crate) fn moduli_retract(&mut self, e: &Element) {
+        let addr = e.address();
+        for chart in body_charts_of(e) {
+            if let Some(bucket) = self.by_moduli.get_mut(chart.key().as_bytes()) {
+                bucket.remove(&addr);
+            }
+        }
+    }
+
+    /// The standing of a held address, read in the strata's own order
+    /// (24.1): Ruled, then Stood. A word this epigenome does not hold has
+    /// no standing here.
+    pub(crate) fn standing_of(&self, addr: &[u8]) -> Option<Standing> {
+        if self.index.contains(addr) {
+            return Some(Standing::Ruled);
+        }
+        if self.dialect.contains(addr) {
+            return Some(Standing::Stood);
+        }
+        None
+    }
+}
+
+/// The charts of the bodies a closed sentence's word vertices carry. A
+/// `Vertex::Word` states the chart it acts on (18.2); nothing is measured
+/// here and no cell is read.
+pub(crate) fn body_charts_of(e: &Element) -> Vec<crate::transducer::stalk::Invariant> {
+    let Some(f) = crate::transducer::sentence::from_element_form(e) else {
+        return Vec::new();
+    };
+    if !f.is_closed() {
+        return Vec::new();
+    }
+    let mut charts = Vec::new();
+    let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    for v in &f.vertices {
+        let crate::transducer::sentence::Vertex::Word { class, .. } = v else {
+            continue;
+        };
+        let k = class.key();
+        if seen.contains(k.as_bytes()) {
+            continue;
+        }
+        seen.insert(k.as_bytes(), ());
+        charts.push(class.clone());
+    }
+    charts
+}
+
+impl Epigenome {
+
     pub fn genome_len(&self) -> usize {
         self.genome.len()
     }

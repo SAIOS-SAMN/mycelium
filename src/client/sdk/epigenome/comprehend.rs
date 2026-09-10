@@ -12,6 +12,7 @@ impl Epigenome {
         let gone = self.genome[i].address();
         let held = self.genome[i].clone();
         self.axis_retract(&held);
+        self.moduli_retract(&held);
         self.genome.remove(i);
         if i < self.expression.len() {
             self.expression.remove(i);
@@ -396,6 +397,7 @@ impl Epigenome {
             } else {
                 self.atlas.admit(&crate::transducer::stalk::invariant_of(&e), e.address());
                 self.axis_admit(&e);
+                self.moduli_admit(&e);
                 self.shapes.push(std::sync::OnceLock::new());
                 self.atlas_len = self.atlas_len.saturating_add(1);
                 self.index.insert(e.address(), self.genome.len());
@@ -411,6 +413,7 @@ impl Epigenome {
             None => {
                 self.atlas.admit(&crate::transducer::stalk::invariant_of(&e), e.address());
                 self.axis_admit(&e);
+                self.moduli_admit(&e);
                 self.shapes.push(std::sync::OnceLock::new());
                 self.atlas_len = self.atlas_len.saturating_add(1);
                 self.index.insert(e.address(), self.genome.len());
