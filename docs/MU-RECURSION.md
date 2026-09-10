@@ -88,9 +88,22 @@ These are not restated in each chapter; every chapter assumes them.
    reduced to a scalar; a comparison of two lane vectors returns the
    reading per lane and never a verdict, and no lane falling certifies
    anything (12.6).
-6. **The alphabet is immutable.** Seventeen letters are the base; words are
-   their combinations; vertex equality is projective rotor equality, never
-   tape equality; the normal form is the geodesic where one exists.
+6. **The alphabet is immutable to a voice and grown only by the court**
+   (ruled 2026-09-10; before that date, immutable). Seventeen letters are
+   the base; words are their combinations; vertex equality is projective
+   rotor equality, never tape equality; the normal form is the geodesic
+   where one exists. No voice adds a letter, no configuration adds a
+   letter and no commit adds a letter: a letter beyond the seventeen is
+   opened by the court alone, on a typed demand that two independent
+   voices carried to one chart with the same witness (arity-2
+   consilience, 37.7), ruled with a receipt, replayed by two organs, and
+   taught by the syllabus before any voice speaks it. An opened letter is
+   named on every tape by its content, never by an index assigned in open
+   order, since open order is a total order across nodes (law 9) and a
+   content name composes where an index cannot (law 2). What this
+   restores was never a mathematical limit: the letter a prime demands is
+   the witness rotor's own factor, read exactly, and the seventeen were
+   frozen by doctrine, not by arithmetic (36.3).
 7. **Residuals are never discarded.** A remainder is the exact demand. The
    one exception is a computed class that Leray's theorem shows to be an
    artefact of a spanning tree (chapter 14.8); it was never a class.
@@ -4702,11 +4715,14 @@ Checked by tests, greppable by the auditor:
 
 # Part VI — Extensions: breaking the two walls
 
-Carried from Parts I–V: the engine on ℚ over the sensor plane. Two limits
-are built into the carriers, not the doctrine. This part specifies both
+Carried from Parts I–V: the engine on ℚ over the sensor plane. Three
+limits are built into the carriers, not the doctrine; the third, the prime
+wall, was named on 2026-09-10 when the ruling of law 6 gave the court the
+effector chapter 50's demand had been missing. This part specifies the
 upgrades as language extensions: nothing in Parts I–V changes, the 17
-letters remain the immutable base, exact arithmetic remains exact, and each
-upgrade opens only where a demand asks for it.
+letters remain the base no voice changes, exact arithmetic remains exact,
+each upgrade opens only where a demand asks for it, and since 37.7 the
+court answers the demand at run time.
 
 ## 36. Where the walls bite, exactly
 
@@ -4738,6 +4754,28 @@ have no coordinate on the base and land only as remainder or fibre tag.
 The alphabet already acts on four axes and six planes; three of the six
 touch the fourth axis and are unused by perception. The upgrade is to let
 perception write on them.
+
+### 36.3 The prime wall (ruled 2026-09-10)
+
+The rational points of the unit circle are a group: the units `±1, ±i`
+times a free abelian group with one generator per prime `p ≡ 1 (mod 4)`,
+the Gaussian prime `π_p = a + bi` with `a² + b² = p` (Fermat; the
+decomposition is unique under `a > b > 0`). A plane rotation over ℚ is a
+product of powers of these generators, and the alphabet's prime letters
+are the generators at `5` (`2 + i`) and `13` (`3 + 2i`) alone. A rotation
+whose weight carries `17`, `29`, `37`, `41`, … is exact over ℚ, is a rotor
+of `Spin(4,0)(ℚ)`, and spells in no word: the peel of `spell` stops at a
+remainder after the `5` and `13` shells, and `factor_rotor` names it
+`Demand::RotorPrime(plane, prime)` (50.4). This wall is inside ℚ. No
+cyclotomic arithmetic crosses it, no conductor rises, and nothing of
+37.1–37.4 is needed: what is missing is one letter, and the letter is the
+witness rotor's own Gaussian factor (37.7).
+
+On the sensor's ℤ² a rotation carries cells onto cells only in `D4`, so
+the prime wall, like the field wall, does not bite on ARC. It is
+specified because a demand without a consumer is a sensor without an
+effector: since chapter 50 a voice names the prime it cannot spell, and
+until 37.7 nothing in the running engine could answer it but a commit.
 
 ## 37. Upgrade F — the field tower
 
@@ -4803,12 +4841,16 @@ complementary planes commute; a sheet letter conjugates `τ` to its inverse;
 of `n/4`, `τ` is used for the rest).
 
 The letters live in the **extension stratum**: `Alphabet { base: [Letter;
-17], ext: Vec<ExtLetter> }`, `ExtLetter { n: u32, plane: (u8, u8),
-conductor: u32 }`. Letter ids above 16 index `ext`, assigned in open order
-and persisted in the genome's syllabus (`SYL1`), so every node that has
-learned a letter agrees on its id; a node that has not refuses the tape
-with `"letter not in syllabus"` and asks for the syllabus by the existing
-teach path.
+17], ext: Vec<ExtLetter> }`, `ExtLetter::Turn { n: u32, plane: (u8, u8),
+conductor: u32 }` beside `ExtLetter::Prime` of 37.7. An extension letter
+is named on the tape by its content under the escape byte `0x7f` — the
+kind, the plane and `n` (or `p`) as A21 coordinates — never by an id
+assigned in open order (law 6 as ruled 2026-09-10; 37.7 P4 says why), and
+the genome's syllabus section `SYL1` lists the opened letters by the same
+content, so two nodes that learned a letter hold one name for it without
+agreeing on an order; a node that has not learned it refuses the tape with
+`REFUSE_LETTER_UNTAUGHT` (`"letter not in syllabus"`) and asks for the
+syllabus by the existing teach path.
 
 ### 37.4 F4 Spelling in the tower
 
@@ -4851,6 +4893,109 @@ replay the opening as they replay any sentence.
 steps 1–4, `PlaneForm` torsion in `Z/N`; `element/letters.rs`: `Letters` carries
 the conductor; `economy/settle.rs`: conductor factor in the S-lane cost; genome
 section `SYL1` `(n, plane, id)*`. Tests and traces: chapters 39–40.
+
+### 37.7 Upgrade P — the prime letters, opened by the court (ruled 2026-09-10)
+
+The prime wall (36.3) is crossed without the tower: the letter is
+rational, the field is ℚ, and 37.1–37.4 stay closed. What crosses it is
+the effector the doctrine had withheld — the court opening a letter on a
+demand — and this section binds it.
+
+**P1 The letter.** For a prime `p ≡ 1 (mod 4)` and a pair plane `(i, j)`
+the letter is
+
+```
+Λ_{p,ij} = a + b·e_ij,   a² + b² = p,   a > b > 0
+```
+
+with the carried inverse `a − b·e_ij` (weight `p`), rational, conductor
+`1`. Fermat's decomposition is unique under `a > b > 0`, so the letter is
+a function of `p` and the plane and of nothing else: two nodes cannot open
+two letters for one prime. Its order is infinite (15.3, Niven) and its
+relators are the (3,4,5) letter's (1.2): infinite order, complementary
+planes commute, a sheet letter conjugates it to its inverse.
+`Rotor::order`, `class_key`, A1 and A21 need no change; the tape gains the
+content name of 37.3; `factor_rotor`'s lattice per plane becomes
+`ℤ^{1+k} ⊕ ℤ/4` with one `ℤ` per prime letter the syllabus holds; `spell`'s
+peel gains one shell per opened prime after the `5` and `13` shells, the
+primes in increasing order — an order by content, never by the order they
+were opened.
+
+**P2 The witness.** `Demand::RotorPrime(plane, prime)` carries beside the
+prime the **witness rotor** `R = s + t·e_ij`: the plane block left after
+the base shells, in A1 canonical form (50.4). The Gaussian factor is read
+off the witness, never searched for:
+
+```
+π_p = gcd_{ℤ[i]}(s + t·i, p)      Euclid over ℤ[i]; exact; bounded by the norm (rule 10)
+```
+
+normalised by a unit to `a > b > 0`. A witness whose gcd with `p` is a
+unit names a prime it does not carry and is refused
+`REFUSE_LETTER_WITNESS`. The two-squares problem is never solved from `p`
+alone: the transducer measured the rotor, so the transducer already holds
+the letter, and 36.3 is exactly the statement that the effector was
+missing, not the object.
+
+**P3 Consilience at arity two.** The court opens `Λ_{p,ij}` when two
+`RotorPrime` demand vertices with the same `(plane, p)` stand on one chart
+from two independent voices (independence as 47.3 reads it for organs:
+neither inside the other's delegation closure) and both witnesses read the
+same `π_p` by P2 — equality of content (law 2), never "the same minimal
+polynomial", which is the class invariant of 15.3 alone and forgets the
+plane. One voice's demand is listed, priced and relayed as 50.5 says and
+opens nothing; the second voice's is the use that opens (C2's reading for
+words, applied to a letter the operator ruled needs two voices). The
+opening is a ruling: a receipt of its own act kind (`ACT_LETTER`) carrying
+the letter's content, the two demand addresses and the two voices; two
+organs replay it as they replay any sentence (37.5, 47.3): each re-reads
+`π_p` from both witnesses and refuses a ruling whose letter is not that
+gcd. `court letter opened {plane} {p} by {vk} {vk}` is the line.
+
+**P4 Teaching and the epoch.** The opened letter enters `SYL1` and the
+syllabus page (A19) teaches it to every voice as it teaches a word; a
+voice logs `letter learned {plane} {p}`. The alphabet epoch is the
+syllabus page's height (45): a tape naming a letter above a receiver's
+page is `REFUSE_LETTER_UNTAUGHT`, and the receiver asks for the page. No
+voice speaks an opened letter before the page that teaches it; a word
+spelled in an untaught letter is not a word on that node; and that is the
+whole of intelligibility — the floor every voice speaks is the syllabus,
+not a constant. An index assigned in open order would need every node to
+agree on an order of openings, which is the totalisation law 9 refuses;
+the content name needs no agreement.
+
+**P5 The demand closes without re-perception.** A sentence stood withheld
+with a `RotorPrime` vertex (50.5) re-spells that vertex on the first stroke
+after the page arrives: `factor_rotor` over the syllabus's letters now
+peels the witness to a word, the demand vertex becomes a `Word` vertex with
+the same carriage and gauge, and the sentence is uttered whole (24.3). The
+percept is not re-read; the witness rotor was the measurement.
+
+**P6 What does not change.** The seventeen and their relators; exact ℚ;
+the T lane as extent; the cost of a word on the S lane, letters counted
+as now with no conductor factor; the court's two-organ replay. A voice
+holds no letter it was not taught, and no letter is ever opened for a
+prime no witness carried.
+
+**P7 Binding.** `alphabet/letters.rs`: `Letter::{Base(u8), Prime { plane,
+p }, Turn { plane, n }}` in place of `LetterId`, `Alphabet { base, ext }`,
+`letter`/`letter_inverse` over both, the relators appended per opened
+letter; `alphabet/spelling.rs`: the peel over the syllabus's primes;
+`alphabet/factor.rs`: the per-plane lattice over the held primes;
+`sentence/demand.rs`: the witness rotor on `RotorPrime`;
+`core/gaussian.rs` NEW: `gcd` over ℤ[i] with its unit normalisation;
+`court/letters.rs` NEW: the opening, P2–P3; `SYL1` in the genome;
+`ACT_LETTER`; `REFUSE_LETTER_WITNESS`, `REFUSE_LETTER_UNTAUGHT` in 34.1;
+the two log lines in 34.2/34.3. The tape's escape byte is a recut (§10).
+Tests: `a_prime_letter_is_read_off_the_witness_never_searched`,
+`one_voice_opens_no_letter`, `two_witnesses_of_one_prime_open_one_letter`,
+`a_witness_that_does_not_carry_the_prime_is_refused`,
+`a_tape_naming_an_untaught_letter_is_refused`,
+`an_opened_letter_spells_the_demand_that_opened_it`,
+`opened_primes_peel_in_increasing_order`. Traces: `court letter opened`
+once per `(plane, p)` on the mesh, `letter learned` on every voice after
+the page, and the sentence that carried the demand uttered without it on
+the next stroke.
 
 ## 38. Upgrade B — the base promotion
 
@@ -5378,7 +5523,13 @@ the ordered factorization A22, the edge transport in the stabilizer, the
 speaker F, the receiver G at the court, then the three seams severed in
 the order 50.6 lists them, the last of them the court's irreducible
 listing — and it precedes S13.11 onward and every remaining item of
-Stages 2–5, since a court that lists chains has nothing to rule.
+Stages 2–5, since a court that lists chains has nothing to rule. Ruled
+2026-09-10, after the recut of L9: the two walls answered by the running
+engine — L10 the prime letters opened by the court on two witnesses (36.3,
+37.7, law 6 as ruled; a recut for the tape's escape byte) and L11 the
+cover and the filled cell for a deformation (50.8). The order stands: the
+seams are severed before any generator is grown on the substrate they
+leaked through.
 
 **Consolidation discipline.** This document is edited in place. A change
 to any chapter edits that chapter; nothing is amended by reference from a
@@ -6590,11 +6741,11 @@ demand:
 
 | kind | what `F` could not do | what it carries |
 |---|---|---|
-| `Demand::RotorPrime(plane, prime)` | spell a plane rotation whose Gaussian factor is a prime outside the alphabet | the plane and the prime, as A21 coordinates |
+| `Demand::RotorPrime(plane, prime)` | spell a plane rotation whose Gaussian factor is a prime outside the alphabet | the plane, the prime and the witness rotor — the peeled block in A1 form (37.7 P2) — as A21 coordinates |
 | `Demand::Standing(block)` | decompose a rotor block in the order of 50.4 | the exact 2×2 block, canonical |
 | `Demand::Source(B_out, chart, multiplicity)` | say which input body an output body is the image of | the output body's chart and the number of input charts a versor carries onto it, every one standing as a section, none first-found |
 | `Demand::Creation(B_out, chart)` | find any input body carrying onto `B_out` | the output body's chart |
-| `Demand::TopologicalDeformation(B_in, B_out)` | find any element of `Cl(3,1)(ℚ)` carrying `B_in` onto `B_out` — the harmonics differ | both charts and the axes on which they differ; routed to Mayer–Vietoris boundary splitting (13.9), never held for a rotor that cannot exist |
+| `Demand::TopologicalDeformation(B_in, B_out)` | find any element of `Cl(3,1)(ℚ)` carrying `B_in` onto `B_out` — the harmonics differ | both charts and the axes on which they differ; answered by the cover of 50.8 — pieces each carried, the loop of their meet, the cell the court fills — through Mayer–Vietoris boundary splitting (13.9), never held for a rotor that cannot exist |
 
 Demands ride the sentence as vertices (`Vertex::Demand`), aggregated per
 chart: one vertex per (kind, chart), never one per body, carrying the
@@ -6603,8 +6754,9 @@ sub-complex** of the sentence — every `Word` vertex and every cycle over
 them — is spoken, replayed and ruled at once; its deflation is paid on
 closure (E2); the demand vertices are listed by the court as demands
 under their kind and chart (24.4's Novel), priced and relayed by the
-market, and answered by a letter (chapter 37), a section (25) or a split
-(13.9). A voice therefore never emits nothing and never emits a bare
+market, and answered inside the running engine — by a letter the court
+opens on two witnesses (37.7), a section (25), a split (13.9) or a filled
+cell (50.8) — never by a commit. A voice therefore never emits nothing and never emits a bare
 chain: a percept `F` cannot close in full is a sentence with demands, and
 a percept `F` cannot open at all — no body pair the eyes admit — is a
 percept with no sentence and no listing, reported to the voice as such.
@@ -6682,3 +6834,73 @@ attest arms). Traces (chapter 40): on a cold boot every voice's first
 and `d` `demand` lines, the hypha answers `court demand listed` `d` times
 and `court attest` with a sentence replayed, and `remainder expressed`
 appears nowhere.
+
+### 50.8 The two walls answered by the engine that runs (ruled 2026-09-10)
+
+Chapter 50.5 typed what `F` cannot do; until this ruling two of its
+demands had no consumer in the running engine, and a demand without a
+consumer is a sensor without an effector. Both consumers are moves the
+carriers already name; neither is a search, and neither is a commit.
+
+**The field of the letters — `RotorPrime`.** The letter a prime demands is
+the witness rotor's own Gaussian factor; the court opens it on two
+independent witnesses at one chart and teaches it before any voice speaks
+it (37.7, law 6 as ruled). The alphabet grows by ruling, at run time, and
+every voice that learned the page spells the same word.
+
+**The topology of the bodies — `TopologicalDeformation`.** No versor
+carries a body onto an image with different harmonics; but a body is a
+union of pieces, and pieces carry. `F` peels `B_in` into pieces each of
+which a versor carries onto a piece of `B_out` — the shells of
+`peel_body_scaled` (chapter 22) read against the image, or the one-hue
+components of each (20) — and speaks one `Word` vertex per piece, the
+contact faces between pieces carrying `Γ` (50.3). Then, by the pieces'
+overlap:
+
+1. **Every meet good and every edge in the stabilizer.** The pieces glue
+   to one section (13.9 step 5, `∂θ = 1`): the deformation was a rigid
+   motion of a body the eyes had cut, and there is no demand.
+2. **A pair of pieces with no `V_ij`.** A remainder edge (50.3): the two
+   pieces are two charts, the sentence is split by Mayer–Vietoris (13.9),
+   and it is valid with the split and no demand.
+3. **A loop through the meet.** Where two pieces' meet has more than one
+   component (13.9 step 0; the arcs of a ring, the arms of a fork), the
+   pieces' nerve has a cycle, and the product of `Γ` around it, read in
+   the base piece's stabilizer up to conjugacy, is the deformation's own
+   holonomy. Finite order (15.3): `cech::extend` files the 2-cell whose
+   boundary is that loop, `Fill::Class(ℓ)`, and the sentence carries the
+   class as its theorem (law 12) — the filled cell is a constructor the
+   mind glues by (25.3), the degree-2 class of 15.4 keyed by the loop and
+   the holonomy's invariants, carried or discharged under refinement
+   (15.5), and 13.9 step 7 finds the same class at the court. Infinite
+   order: `Fill::Open`, the loop is held with its class vector (12.6), and
+   the `TopologicalDeformation` vertex stands as 50.5 says.
+4. **Cells of `B_out` no piece reaches, or of `B_in` no piece carries.**
+   `Source` or `Creation` vertices ride beside (50.5): a hole that opens
+   or closes is those cells, not a holonomy, and is never a class.
+
+Nothing chooses the cover: the pieces are the peel's shells, the loop is
+the meet's, the order is the class's, and the court re-derives all three.
+`court cell filled` (34.2) is the line at the court and `cell filled
+{addr} class {ℓ}` at the voice.
+
+**Binding.** `family/perceive.rs`: `demand_vertex`'s deformation arm peels
+the pair into pieces and speaks them (`pieces_of` NEW over
+`peel_body_scaled` and `blade::components`); `family/pair.rs`: contact
+faces between pieces with their edges; `cech/cell.rs` `extend` unchanged;
+`sentence/form/carrier.rs`: the filled cell on the form's tape beside its
+loops (tape v7, one recut with 37.7's escape byte);
+`court/verdict/replay.rs`: the filled cell replayed as any loop
+(`REFUSE_CELL_ORDER` when the loop's order is not the filed `ℓ`). Tests:
+`a_deformed_body_is_spoken_as_pieces_that_carry`,
+`a_loop_of_pieces_with_finite_holonomy_fills_a_cell`,
+`a_loop_of_pieces_with_infinite_holonomy_stands_as_a_demand`,
+`a_hole_is_cells_never_a_class`,
+`the_court_rederives_a_filled_cell_or_refuses_it`.
+
+**The ruling, as given (2026-09-10).** The seams are severed first (L6 to
+L8): no generator is grown on a substrate that leaks chains. No search
+returns: a generator is measured at the moment of failure and held as a
+typed invariant, never found by a beam. And chapter 37's opening is the
+court's own transition, automated on multi-voice witness congruence, not
+an operator's intervention.

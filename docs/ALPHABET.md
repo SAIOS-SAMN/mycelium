@@ -19,6 +19,16 @@ Every letter is one pair, the rotor with its carried inverse, exact over ℚ.
 A letter acts by the sandwich, so its rotation is twice its half-angle.
 The sensor's plane is `(e0, e1)`: rows on `e0`, columns on `e1`.
 
+## Opened letters (ruled 2026-09-10)
+
+The seventeen are immutable to a voice, not to the court. A rotation over
+a prime outside 5 and 13 is a `RotorPrime` demand carrying its witness
+rotor; the court opens the letter `a + b·e_ij`, `a² + b² = p`, on two
+independent witnesses at one chart, rules it with a receipt, teaches it by
+the syllabus, and names it on the tape by content, never by an index
+(`MU-RECURSION.md` law 6, 36.3, 37.7). The peel gains one shell per
+opened prime, in increasing order of the primes.
+
 ## Words
 
 A word is an oriented tape of letters; its rotor is the product in tape

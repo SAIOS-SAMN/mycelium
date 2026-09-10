@@ -689,13 +689,22 @@ L1 changes the form tape and is a recut. Stage 14 precedes S13.11 onward.
 | L7 | **G: the receiver at the court.** `replay_form_with` steps 1–4 of 50.2: every `Word` vertex reconstructs its body on the court's copy of the family (`REFUSE_VERTEX_BODY`), every edge re-derives (`REFUSE_EDGE`), every loop's holonomy in the stabilizer; a tape with no vertex is `REFUSE_NOT_A_SENTENCE`; the closed sub-complex is ruled and paid on closure, the demand vertices listed by kind (`court demand listed`). The court's copy of a percept's family is the pair it adjudicated: bound to the sentence at listing, so the install measures what the sentence closes (found under L6b) and the stroke's `REFUSE_NOT_CLOSED` reads the closed sub-complex and not the remainder the demand vertices name (50.5: valid, not closed). | 50.2, 23.1, 34.2 | open |
 | L8 | **Seam 3: no irreducible listing.** `reduce_proven`/`reduce_germ` answer no `Irreducible(from_residual*)`; `commit_germ` lists demand vertices and never a residual; `attest(chain)` on the wire is `REFUSE_NOT_A_SENTENCE`; `from_residual` remains only as a listing key, a measure and a fixture; the gate `no_utterance_path_calls_from_residual`. | 50.6 (3), 23.8 | open |
 | L9 | **Recut and the reading.** Tape v6 recut on the operator's word; cold-boot traces of 50.7: `sentence spoken … demands d ≥ 1`, `court demand listed` per demand, no `remainder expressed`, no `uttered … cites 0`, every listing typed. | 50.7, 40 | open |
+| L10 | **Upgrade P: the prime letters, opened by the court** (law 6 as ruled 2026-09-10; 36.3, 37.7). `Letter::{Base, Prime, Turn}` named by content on the tape under the escape byte (a recut); `Alphabet { base, ext }`; the witness rotor on `Demand::RotorPrime`; `core/gaussian.rs`, the gcd over ℤ[i] read off the witness; `court/letters.rs` opens on two independent voices' witnesses at one chart, rules with a receipt (`ACT_LETTER`), two organs replay; `SYL1` and the syllabus page teach before any voice speaks it; `spell`'s peel and `factor_rotor`'s lattice over the syllabus's primes in increasing order; a withheld sentence re-spells its demand when the page arrives; `REFUSE_LETTER_WITNESS`, `REFUSE_LETTER_UNTAUGHT`; `court letter opened`, `letter learned`. | law 6, 36.3, 37.3, 37.7, 50.5, 50.8, 34.1–34.3 | open — after L9 |
+| L11 | **The cover for a deformation** (50.8). `pieces_of` over `peel_body_scaled` and the one-hue components; one `Word` vertex per piece with contact faces carrying Γ; the loop of a meet with several components read in the stabilizer; `extend` fills `Fill::Class(ℓ)` and the form's tape carries the cell (tape v7, one recut with L10); `Fill::Open` leaves the demand standing; `Source`/`Creation` for the cells no piece reaches; the court re-derives the cell (`REFUSE_CELL_ORDER`); `court cell filled`, `cell filled`. | 50.8, 13.9, 15.3–15.5, 20, 22, 25.3 | open — after L10 |
 
-Order: L0 · L1 · L2 · L3 · L4 · L5 · L6 · L2b · L6b · L7 · L8 · L9 (recut).
-L1–L8 are one soak; nothing soaks between them, since a fleet on L1
-without L8 lists chains beside demands. The ruling asked under L2 —
-`Word::order` read the sensor form of a non-sensor unit word — was given
-2026-09-09 and is recorded in 15.3; it lands as L2b after L6, on the
-operator's sequence.
+Order: L0 · L1 · L2 · L3 · L4 · L5 · L6 · L2b · L6b · L7 · L8 · L9 (recut)
+· L10 (recut) · L11. L1–L8 are one soak; nothing soaks between them, since
+a fleet on L1 without L8 lists chains beside demands. The ruling asked
+under L2 — `Word::order` read the sensor form of a non-sensor unit word —
+was given 2026-09-09 and is recorded in 15.3; it lands as L2b after L6, on
+the operator's sequence. L10 and L11 were ruled 2026-09-10 (the operator:
+the seams first, no beam search returns, the syllabus's opening is the
+court's own transition): no generator is grown on the substrate the seams
+leaked through, so both follow L9. The departure from the ruling as
+given, named here: the ruling said the court "assigns its index in the
+syllabus"; an index assigned in open order is a total order across nodes
+(law 9), so the letter is named by content and the syllabus page's height
+is the epoch (37.7 P4).
 
 ## Backtrack ledger
 
@@ -867,7 +876,7 @@ first recut after Cut B.
 | id | task | status |
 |---|---|---|
 | 4.1–4.5 | B1 cells → B2 harmonics → B3/B4 frames → B5 `Cl(4,1)` | open |
-| 4.6–4.10 | F1 cyclotomic → F2 conductor → F3/F4 letters and spelling → F5 opening by demand | open |
+| 4.6–4.10 | F1 cyclotomic → F2 conductor → F3/F4 letters and spelling → F5 opening by demand. The prime wall's opening is Stage 14 L10 (37.7), with no cyclotomic arithmetic; F1–F5 remain for the field wall, and F3's naming follows 37.3 as amended 2026-09-10 (content on the tape, never an id in open order) | open |
 
 ## Stage 5 — the mesh under adversaries (Part IX, chapters 45–49)
 
