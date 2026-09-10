@@ -521,3 +521,59 @@ assert!(
     "a form tape parses"
 );
 }
+
+/// L8w, rule 11, 50.2: AN EXTRACTION THE BUDGET CUTS OFF MEASURED
+/// NOTHING. A truncated bundle is not a smaller rule — what two pairs of
+/// four agree on is not what the family states — so the extraction says
+/// nothing and the voice withholds; the next stroke asks again with a
+/// budget of its own. Returned as a rule and minted, half of what the
+/// fleet says would be a shape the mind never measured.
+#[test]
+fn an_extraction_cut_off_by_its_budget_measures_nothing() {
+    let family = vec![
+        (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
+        (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
+    ];
+    let mut ph = crate::physics::Physics::default();
+    // One spend reaches the first pair form and no further.
+    let mut one = ph.stroke_n(1);
+    assert!(
+        extract_rule_with(&family, &NoCrystal, &mut one).is_none(),
+        "a bundle the budget cannot reach the end of is unmeasured, never a rule over the pairs it saw"
+    );
+    // The same family with a budget that reaches the end is a rule, and it
+    // is the rule of the WHOLE bundle.
+    let mut whole = ph.stroke_n(1 << 20);
+    let full = extract_rule_with(&family, &NoCrystal, &mut whole)
+        .expect("the bundle read end to end is a rule");
+    assert_eq!(
+        full.form.ratio,
+        family_ratio(&family).expect("scale"),
+        "and it carries the family's own frame ratio"
+    );
+}
+
+/// The cache never holds an unmeasured reading: a family too large for one
+/// stroke would otherwise be "no rule" for as long as the language stood
+/// still, and would never be spoken (L8w).
+#[test]
+fn an_unmeasured_extraction_is_not_cached() {
+    let family = vec![
+        (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
+        (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
+    ];
+    let mut ph = crate::physics::Physics::default();
+    let mut cache = crate::network::nerve::Keyed::new();
+    let root = crate::transducer::address::Address::new(Vec::new());
+    let mut small = ph.stroke_n(2);
+    assert!(
+        extract_rule_cached(&mut cache, b"fam", &family, root.clone(), &mut small, &NoCrystal)
+            .is_none(),
+        "the small budget measures nothing"
+    );
+    let mut large = ph.stroke_n(1 << 20);
+    assert!(
+        extract_rule_cached(&mut cache, b"fam", &family, root, &mut large, &NoCrystal).is_some(),
+        "the next stroke asks again and reads the family"
+    );
+}

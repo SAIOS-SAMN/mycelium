@@ -72,11 +72,11 @@ pub(crate) fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
 }
 
 
-/// The tail every exit runs: the demands of the bundle ride the rule, and
-/// the form is closed out with its depth, loops, ratio and sections. One
-/// place, so an extraction that ends on its budget leaves the same shape
-/// as one that ran to the end — a withheld form, never a `None` and never
-/// a half-built one (L8w).
+/// The tail of an extraction that RAN TO THE END of its bundle: the
+/// demands ride the rule and the form is closed out with its depth,
+/// loops, ratio and sections. An extraction cut off by its budget never
+/// reaches here — it measured nothing and says nothing (50.2's
+/// `Unmeasured`, rule 11).
 fn finish(
     mut form: Form,
     pair_forms: &[Form],
@@ -118,11 +118,17 @@ fn finish(
 /// `0607ce86.json` — three pairs at 21×22 — it did not return in 900s,
 /// where twelve smaller families take six seconds together. A voice on the
 /// fleet was therefore stalled on one listing with no way out. Every step
-/// below now spends the caller's `Budget` and, when it ends, the rule is
-/// finished from what it has and returned as a withheld form (24.3): a
-/// mind says what it reached and demands the rest, which is what it does
-/// on every other boundary. This is the STOP; the resolution is L8x, where
-/// F factors through the presentation and the search is gone (50.2 step 2).
+/// below spends the caller's `Budget`, and an extraction the budget cuts
+/// off MEASURED NOTHING: it returns `None` and says nothing at all. A
+/// truncated bundle is not a smaller rule — a rule read off two pairs of
+/// four states what those two agree on, which the other two may refuse —
+/// and minting it would utter as complete a shape the mind never
+/// measured, have the court refuse it, and seal the address against the
+/// shape that was never spoken (50.9). "A budget that ran out is
+/// UNMEASURED, and a refusal is not a demand" (rule 11, 50.2). The voice
+/// withholds and the next stroke resumes. This is the STOP; the
+/// resolution is L8x, where F factors through the presentation and the
+/// search is gone (50.2 step 2).
 pub fn extract_rule_with(
     family: &[(Grid, Grid)],
     crystal: &dyn Crystal,
@@ -135,12 +141,9 @@ pub fn extract_rule_with(
     let mut pair_forms: Vec<Form> = Vec::with_capacity(family.len());
     for (a, b) in family {
         if !budget.spend() {
-            break;
+            return None;
         }
         pair_forms.push(pair_form(a, b, Some(scale)));
-    }
-    if pair_forms.is_empty() {
-        return None;
     }
     let n_pairs = pair_forms.len();
     // 1. Correspondence by transport class (kind, word class).
@@ -322,7 +325,7 @@ pub fn extract_rule_with(
         .collect();
     for (tc, moduli) in glued_classes {
         if !budget.spend() {
-            return finish(form, &pair_forms, scale, sections);
+            return None;
         }
         let Some(placement) = placement_of_class(&pair_forms, &tc) else {
             continue;
@@ -360,7 +363,7 @@ pub fn extract_rule_with(
     let nverts = form.vertices.len();
     for vi in 0..nverts {
         if !budget.spend() {
-            return finish(form, &pair_forms, scale, sections);
+            return None;
         }
         let Some(tc) = transport_class(&form.vertices[vi]) else {
             continue;
@@ -447,7 +450,13 @@ pub fn extract_rule_cached(
         return cache.get(fam).and_then(|(_, r)| r.clone());
     }
     let rule = extract_rule_with(family, crystal, budget);
-    cache.insert(fam, (atlas_root, rule.clone()));
+    // An extraction that ended on its budget measured nothing, so nothing
+    // is cached: the next stroke asks again (L8w). Cached, the mind would
+    // hold "this family has no rule" for as long as its language stood
+    // still, and a family too large for one stroke would never be spoken.
+    if budget.remaining() > 0 {
+        cache.insert(fam, (atlas_root, rule.clone()));
+    }
     rule
 }
 
