@@ -9,6 +9,17 @@
 use crate::cognition::*;
 use crate::transducer::element::Element;
 
+/// The first two bytes of an address, for a trace line. Every arm is
+/// written out: a short address is short, not padded with an invented
+/// value (rule 11).
+fn head(a: &crate::transducer::address::Address) -> (u8, u8) {
+    match a.as_bytes() {
+        [x, y, ..] => (*x, *y),
+        [x] => (*x, *x),
+        [] => (0, 0),
+    }
+}
+
 impl Kernel {
     /// 47.3: THE HOME INSTALLS on a second vantage. `witness` is the organ
     /// whose re-derivation the install rests on, and it is the author of the
@@ -45,6 +56,15 @@ impl Kernel {
         // 13.9: the home's install is its OWN word, ruled on a witness's
         // re-derivation, so it becomes this court's section on the chart.
         self.rule_own(addr);
+        // 26, 50.2 step 2: the sentence stands and is ruled, so the
+        // generators its word vertices derived through are paid — once
+        // per citation, to that generator's own discoverer, drawn from
+        // the voice that spoke. Ruled first, because a form that did not
+        // install cites nothing yet; a refused sentence never reaches
+        // here and pays nobody.
+        if let Some(w) = held.as_ref() {
+            self.pay_cited_generators(addr, w, drawn);
+        }
         if let Some(w) = held {
             if w.is_rewrite() {
                 if self.treasury.release_rewrite(addr).is_none() {
@@ -86,6 +106,51 @@ impl Kernel {
         // found the install nowhere in it.
         self.append_step(crate::chronometry::ActKind::Install, addr, witness);
         eprintln!("  court home installed {:02x}{:02x}… peer holds the stratum", addr[0], addr[1]);
+    }
+
+    /// 26 as ruled 2026-09-10 — A CITED GENERATOR IS PAID AT THE INSTALL.
+    /// Each word vertex of the installed form names the generators it
+    /// factored through (50.2 step 2). Every one is resolved on THIS
+    /// court's ruled cover — a citation of what no court ruled cites
+    /// nothing (1.7) — and its own discoverer is credited from the voice
+    /// that drew the address. A form with no drawer pays nobody: there is
+    /// no voice to draw from, and inventing one is rule 11.
+    fn pay_cited_generators(&mut self, addr: &[u8], w: &Element, drawn: Option<[u8; 32]>) {
+        use crate::transducer::sentence::Vertex;
+        let Some(voice) = drawn else {
+            return;
+        };
+        let Some(f) = crate::transducer::sentence::from_element_form(w) else {
+            return;
+        };
+        let mut owed: Vec<([u8; 32], [u64; 4], crate::transducer::address::Address)> = Vec::new();
+        for v in &f.vertices {
+            let Vertex::Word { derivation, .. } = v else {
+                continue;
+            };
+            for (form_addr, _, _) in &derivation.generators {
+                if !self.ruled_contains(form_addr.as_bytes()) {
+                    continue;
+                }
+                let Some(cited) = self.word_at(form_addr.as_bytes()) else {
+                    continue;
+                };
+                let mag = cited.magnitude();
+                let Some(speaker) = self.discoverer_of(form_addr.as_bytes()) else {
+                    continue;
+                };
+                owed.push((speaker, mag, form_addr.clone()));
+            }
+        }
+        let anchor = self.anchor_pub();
+        for (speaker, mag, form_addr) in owed {
+            let paid = self.treasury.settle_use(voice, speaker, mag, anchor);
+            let (g0, g1) = head(&form_addr);
+            eprintln!(
+                "  court generator paid {:02x}{:02x}… generator {g0:02x}{g1:02x}… {paid:?}",
+                addr[0], addr[1]
+            );
+        }
     }
 
     pub(crate) fn note_form_citations(&mut self, addr: &[u8], w: &Element) {

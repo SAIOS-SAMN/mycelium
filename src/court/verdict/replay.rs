@@ -35,6 +35,44 @@ pub fn replay_form_with(
     replay_form_at(spoken, resolve, family, crystal).map(|r| r.reason)
 }
 
+/// 50.2 step 2 at the court. Each cited `(form, vertex)` is TWO keyed
+/// reads and no walk (law 3): the cover resolves the form by address, and
+/// the form's own `by_address` resolves the vertex inside it. `Composes`
+/// passes; `Differs` refuses at that vertex; `Unresolved` is the cited
+/// form the court has not ruled, which takes `REFUSE_GLUED_UNRULED` on
+/// the tape — the same deferral a `Glued` citation takes, so the sentence
+/// is docketed and the syllabus serves the generator rather than the
+/// voice being refused for speaking ahead of this court's cover.
+fn derivations_compose(f: &Form, resolve: &dyn Fn(&[u8]) -> Option<Form>) -> Option<Refusal> {
+    use crate::transducer::alphabet::Verified;
+    for v in &f.vertices {
+        let Vertex::Word { address, derivation, class, .. } = v else {
+            continue;
+        };
+        let held = |form: &crate::transducer::address::Address,
+                    vertex: &crate::transducer::address::Address| {
+            let cited = resolve(form.as_bytes())?;
+            sentence::word_at_vertex(&cited, vertex.as_bytes())
+        };
+        match derivation.verify_with(&held) {
+            Verified::Composes => {}
+            Verified::Differs => {
+                return Some(Refusal {
+                    reason: REFUSE_DERIVATION,
+                    at: sentence::At::Vertex { address: address.clone(), chart: class.clone() },
+                })
+            }
+            Verified::Unresolved { .. } => {
+                return Some(Refusal {
+                    reason: REFUSE_GLUED_UNRULED,
+                    at: sentence::At::Vertex { address: address.clone(), chart: class.clone() },
+                })
+            }
+        }
+    }
+    None
+}
+
 /// The same replay, refusing WITH THE COORDINATE (50.9): the vertex that
 /// does not carry its body, the face whose edge does not re-derive, the
 /// chart with the cells no demand declares; every other refusal is of the
@@ -75,6 +113,17 @@ pub fn replay_form_at(
         if !frame_is_identity {
             return Some(tape(REFUSE_GLUED_FRAME_GAUGED));
         }
+    }
+    // 50.2 step 2 — G COMPOSES THE DERIVATION. Every word vertex names
+    // the generators it factored through; the court resolves each on its
+    // own ruled cover, composes them with the residue, and compares the
+    // product projectively (1.5) against the word the vertex carries. A
+    // citation the cover does not hold is NOT a refusal: it is the
+    // deferral a `Glued` citation already takes above — the sentence is
+    // docketed and the syllabus serves the generator (21 step 3), one
+    // mechanism at two levels.
+    if let Some(refusal) = derivations_compose(&f, resolve) {
+        return Some(refusal);
     }
     // 23.1 step 3, 50.6 (L7): a tape whose only vertices are the Frame and
     // demands is a chain wearing a form's tape — nothing in it acts.

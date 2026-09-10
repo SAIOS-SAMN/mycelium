@@ -33,6 +33,10 @@ pub const REFUSE_GLUED_DEPTH: &str = "glued form depth not below sentence depth"
 pub const REFUSE_GLUED_UNRULED: &str = "glued form not ruled";
 pub const REFUSE_GLUED_FRAME_GAUGED: &str = "glued form frame is not identity";
 pub const REFUSE_VERTEX_TAPE: &str = "vertex does not re-derive from its tape";
+/// 50.2 step 2: the cited generators do not compose to the word the
+/// vertex carries. The court re-derived the derivation and disagreed —
+/// a refusal at that vertex, never a smaller answer.
+pub const REFUSE_DERIVATION: &str = "vertex derivation does not compose to its word";
 pub const REFUSE_FACE: &str = "face does not re-derive from its vertices";
 pub const REFUSE_LOOP: &str = "loop holonomy is not identity";
 pub const REFUSE_REBASE_TRIVIAL: &str = "rebased form equals its base";

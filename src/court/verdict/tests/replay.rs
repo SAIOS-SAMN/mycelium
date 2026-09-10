@@ -58,6 +58,10 @@ fn closed_turn_form() -> Form {
     });
     f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
     f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    // A form off the tape is indexed by the decoder; one built by hand
+    // must be indexed too, or its `by_address` answers nothing and a
+    // citation into it reads as unheld (50.2 step 2).
+    f.reindex();
     assert!(f.is_closed(), "the star form coheres");
     f
 }
@@ -421,5 +425,126 @@ fn a_form_that_leaves_a_remainder_is_refused_for_closure() {
         blind_replay_on(&word, &|_| None, Some(&wider), &NoCrystal),
         Some(REFUSE_NOT_CLOSED),
         "a remainder on any pair is the refusal"
+    );
+}
+
+/// A form whose one word vertex cites `inner`'s word vertex, with the
+/// exponent it was composed at and the residue that completes it. Built
+/// through `Derivation::compose`, so the product is what the citations
+/// actually reach and never a number written beside them (§3.4).
+fn citing_form(
+    inner_addr: &crate::transducer::address::Address,
+    inner: &Form,
+    exponent: i64,
+    residue: crate::transducer::alphabet::Word,
+) -> Form {
+    use crate::transducer::sentence::FormFace;
+    let vertex = match inner.vertices.get(1) {
+        Some(Vertex::Word { address, derivation, .. }) => (address.clone(), derivation.word().clone()),
+        _ => panic!("the inner form's word vertex"),
+    };
+    let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+    let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+    let derivation = crate::transducer::alphabet::Derivation::compose(
+        &[(inner_addr.clone(), vertex.0, exponent, vertex.1)],
+        residue,
+    );
+    let mut f = Form::default();
+    f.vertices.push(Vertex::Word {
+        address: crate::transducer::address::Address::from_bytes([
+            crate::transducer::address::TAG_FORM,
+            9,
+        ]),
+        derivation,
+        carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
+        gauge: vec![(1, 2)],
+        class: stalk::Invariant(vec![7]),
+        contact: None,
+    });
+    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("vertices"), edge: None });
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.reindex();
+    f
+}
+
+/// 50.2 step 2 at the court — G COMPOSES THE DERIVATION. A cited
+/// generator the cover resolves composes and the sentence replays; the
+/// same sentence read by a court whose cover resolves nothing takes the
+/// deferral a `Glued` citation takes, at the vertex, rather than being
+/// refused for speaking ahead of that court.
+#[test]
+fn a_court_composes_a_cited_generator_and_defers_one_it_has_not_ruled() {
+    use crate::transducer::family::NoCrystal;
+    use crate::transducer::sentence::as_element_form;
+    let inner = closed_turn_form();
+    let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner tape");
+    let inner_addr = inner_e.address();
+    let citer = citing_form(&inner_addr, &inner, 1, crate::transducer::alphabet::Word::identity());
+    let citer_e = as_element_form(&citer, [1, 0, 0, 0]).expect("citer tape");
+
+    let cover = |a: &[u8]| -> Option<Form> {
+        match a == inner_addr.as_bytes() {
+            true => Some(inner.clone()),
+            false => None,
+        }
+    };
+    assert_eq!(
+        replay_form_at(&citer_e, &cover, None, &NoCrystal).map(|r| r.reason),
+        None,
+        "the court resolved the citation, composed it, and agreed"
+    );
+
+    let refusal = replay_form_at(&citer_e, &|_| None, None, &NoCrystal)
+        .expect("a cover that resolves nothing cannot compose the citation");
+    assert_eq!(refusal.reason, REFUSE_GLUED_UNRULED, "not held is not wrong");
+    assert!(
+        matches!(refusal.at, crate::transducer::sentence::At::Vertex { .. }),
+        "and the deferral names the vertex that cited it"
+    );
+}
+
+/// The staleness answer of 50.2 step 2. The product is on the tape beside
+/// the citations, so a voice could carry citations that do not reach it;
+/// the court's own re-derivation is what refuses that, at the vertex.
+#[test]
+fn a_derivation_that_does_not_compose_to_its_word_is_refused_at_the_vertex() {
+    use crate::transducer::family::NoCrystal;
+    use crate::transducer::sentence::as_element_form;
+    let inner = closed_turn_form();
+    let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner tape");
+    let inner_addr = inner_e.address();
+    // The citation says the quarter turn once; the tape says it three
+    // times. One of them is wrong and the court says which vertex.
+    let honest = citing_form(&inner_addr, &inner, 1, crate::transducer::alphabet::Word::identity());
+    let lying = citing_form(&inner_addr, &inner, 3, crate::transducer::alphabet::Word::identity());
+    let cover = |a: &[u8]| -> Option<Form> {
+        match a == inner_addr.as_bytes() {
+            true => Some(inner.clone()),
+            false => None,
+        }
+    };
+    let mut tampered = honest.clone();
+    match (&mut tampered.vertices[1], lying.vertices.get(1)) {
+        (Vertex::Word { derivation, .. }, Some(Vertex::Word { derivation: other, .. })) => {
+            *derivation = crate::transducer::alphabet::Derivation::factored(
+                other.generators.clone(),
+                other.residue.clone(),
+                derivation.word().clone(),
+            );
+        }
+        _ => panic!("both forms carry a word vertex"),
+    }
+    let refusal = replay_form_at(
+        &as_element_form(&tampered, [1, 0, 0, 0]).expect("tampered tape"),
+        &cover,
+        None,
+        &NoCrystal,
+    )
+    .expect("the citations reach a different vertex than the word carried");
+    assert_eq!(refusal.reason, REFUSE_DERIVATION);
+    assert_eq!(refusal.kind(), crate::transducer::sentence::RefusalKind::MalformedComplex);
+    assert!(
+        matches!(refusal.at, crate::transducer::sentence::At::Vertex { .. }),
+        "the coordinate is the vertex, not the tape (50.9)"
     );
 }
