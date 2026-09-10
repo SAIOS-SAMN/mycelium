@@ -1,11 +1,11 @@
 # Resume notes (continuity across sessions)
 
-Last update: 2026-09-09, Stage 14 through L6b (`impl/soak` at 2686272 and
-the docs commit after it; `main` stands at 685a07c, before Stage 14, and
-is fast-forwarded on the operator's word). Living task list:
-`docs/MU-RECURSION-TASKS.md` (Stage 14 rows L0–L9 at the end). Spec:
-`docs/MU-RECURSION.md`. Standard: `docs/MU-STANDARDS.md`. Historical
-alpha landings: `docs/TRAJECTORY.md`.
+Last update: 2026-09-10, Stage 14 through the pre-L7 set (`impl/soak` at
+dd52a74 and the docs commit after it; `main` stands at 685a07c, before
+Stage 14, and is fast-forwarded on the operator's word). Living task list:
+`docs/MU-RECURSION-TASKS.md` (Stage 14 rows L0–L11 and the pre-L7 rows
+L7a–L9a). Spec: `docs/MU-RECURSION.md`. Standard: `docs/MU-STANDARDS.md`.
+Historical alpha landings: `docs/TRAJECTORY.md`.
 
 ## Boot check
 
@@ -15,7 +15,8 @@ git log --oneline -1 main impl/soak          # impl/soak is ahead of main
 systemctl --user list-units 'mycelium-server@*' 'mycelium-client@*' --no-legend
 RUSTFLAGS='-D warnings' cargo test --release 2>&1 | grep -E "test result|FAILED"
 (cd xtask && cargo run)                        # gates, then clippy -D warnings
-# expected at 2686272: lib 437, bins 9, alpha_plan 13, g_cga 6; xtask exit 0
+# expected at dd52a74: lib 440, bins 9, alpha_plan 13, g_cga 6; xtask exit 0
+(cd xtask && cargo test)                       # the gates' own tests: 31
 ```
 
 ## The fleet
@@ -42,6 +43,20 @@ were not touched.
 
 ## State at handoff
 
+- **2026-09-10, the ruling on generative capacity and the pre-L7 set.**
+  The operator ruled that the seams are severed first (L6→L8), that no beam
+  search returns, and that chapter 37's opening of a letter is the court's
+  own transition: law 6 amended (immutable to a voice, grown only by the
+  court on arity-2 consilience), 36.3 the prime wall, 37.7 Upgrade P, 50.5
+  and 50.8 (4cd2203); rows L10 (prime letters, a recut) and L11 (the cover
+  for a deformation) after L9. The scalar rulings of 2026-09-09 opened as
+  rows L7a–L7f, L8a, L9a (017db17); landed: L7a d19f2fb, L7b b792e8b, L7c
+  2173a5a (doctrine 3a0766a), L7e dd52a74 — the four §4.4 gates with the
+  OWED ratchet (605 hits in 246 rows measured at 2173a5a; the tables only
+  shrink). Rulings still asked: L7d (recolour pairing), L7f (Infinite
+  order on lane H), L9a (anchor::derive). 440/0/9/13/6/0, xtask 0, xtask
+  tests 31 at dd52a74. Next: L7, then L8, then L9 on the operator's word,
+  then L10, L11.
 - **Stage 14 through L6b landed 2026-09-09** on the operator's word (see
   "Immediate next actions" for the hashes and what each did). Departures
   named in the commits: the held cite's wire form is the identity
