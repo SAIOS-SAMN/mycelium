@@ -5,6 +5,7 @@
 //! leaves; `cell_reads` counts what the sensor was asked for.
 
 use super::*;
+use crate::transducer::element::sensor_plane_block;
 
 pub type Grid = Vec<Vec<u8>>;
 pub(crate) type Cell3 = (i64, i64, u8);
@@ -142,40 +143,9 @@ pub fn perceive(grid: &Grid) -> Vec<Body> {
     blade::components(&cells).into_iter().map(body_of).collect()
 }
 
-/// A3 — THE SENSOR-PLANE BLOCK A VERSOR PROJECTS TO: the images of the
-/// row and column steps with the origin's image subtracted. It is the one
-/// matrix rule 11 allows, and it is a PROJECTION, not the versor: the
-/// placement residue is subtracted away by construction and a dilation
-/// survives only as the scalar `spell_peel_on` divides out.
-///
-/// It was called `linear_block_of_versor`. The name was wrong twice over.
-/// "Linear" is a coordinate-frame word for an object that is a versor in
-/// the geometric algebra, and the name said nothing about the projection
-/// being lossy, which is what invited a caller to classify a versor by it.
-///
-/// TWO CALLERS ARE LEGITIMATE AND THERE ARE NO OTHERS. `peel_versor`
-/// spells the block, and the ring branch divides its rotation by a
-/// Gaussian prime; both are asking a question ABOUT THE ROTATION and are
-/// handed the projection that answers it. Classifying a versor — its
-/// order, whether it is the identity, what class it carries — must be
-/// done ON THE VERSOR, because a versor whose block is the identity may
-/// be a translation or a dilation and reads here as nothing at all
-/// (12.6: the class vector is the rotor's conjugacy class, then the
-/// placement residue, then the dilation residue, and the plane blocks
-/// only afterwards).
-pub(crate) fn sensor_plane_block(v: &Versor) -> Option<[[num_rational::BigRational; 2]; 2]> {
-    let qn = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
-    let at = |r, c| {
-        crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&qn(r), &qn(c))))
-    };
-    let o = at(0, 0)?;
-    let er = at(1, 0)?;
-    let ec = at(0, 1)?;
-    Some([
-        [&er.0 - &o.0, &ec.0 - &o.0],
-        [&er.1 - &o.1, &ec.1 - &o.1],
-    ])
-}
+// `linear_block_of_versor` was here, renamed to `sensor_plane_block` and
+// then moved to `element::letters` beside the three other readers of a
+// versor, which are only correct together (§1.6: moved, not rewritten).
 
 /// 50.2 F STEP 2 — FACTOR THROUGH THE PRESENTATION, AND PEEL ONLY THE
 /// RESIDUE. The sensor plane is the first block of 50.4 and the other

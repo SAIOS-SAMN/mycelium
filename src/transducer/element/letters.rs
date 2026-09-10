@@ -149,6 +149,31 @@ pub fn dilator_of(v: &Versor) -> Option<Versor> {
     }
 }
 
+/// A3 — THE SENSOR-PLANE BLOCK A VERSOR PROJECTS TO: the images of the
+/// row and column steps with the origin's image subtracted. It is the one
+/// matrix rule 11 allows, and it is a PROJECTION, not the versor: the
+/// placement residue is subtracted away by construction and a dilation
+/// survives only as the scalar a peel divides out.
+///
+/// It lives here, beside `rho_of`, `translator_of` and `dilator_of`,
+/// because it is the fourth reader of a versor and the three of them are
+/// only correct together — `V = D(ρ)·T(t)·R` and this returns the block of
+/// the `R`. It was in `family::perceive`, which put a versor reader inside
+/// one of its callers and left the court unable to reach it.
+///
+/// Ask it about a ROTATION and it answers exactly. Ask it to classify a
+/// versor — its order, whether it is the identity, what class it carries —
+/// and it answers wrongly, because a translation and a dilation both have
+/// the identity for a block. `meet_class` is that question's reader.
+pub fn sensor_plane_block(v: &Versor) -> Option<[[Q; 2]; 2]> {
+    let qn = |n: i64| num_rational::BigRational::from_integer(BigInt::from(n));
+    let at = |r, c| crate::transducer::cga::base(&v.sandwich(&crate::transducer::cga::point(&qn(r), &qn(c))));
+    let o = at(0, 0)?;
+    let er = at(1, 0)?;
+    let ec = at(0, 1)?;
+    Some([[&er.0 - &o.0, &ec.0 - &o.0], [&er.1 - &o.1, &ec.1 - &o.1]])
+}
+
 /// The translator by an integer lattice offset — the lattice peel's transport
 /// as a rational versor.
 pub fn translator_versor(r: i64, c: i64) -> Versor {

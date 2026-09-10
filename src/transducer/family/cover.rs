@@ -467,7 +467,7 @@ pub(crate) fn cover_deformation(
                 // a rotation about a point away from the origin is
                 // mis-ordered. The projection answers questions about a
                 // rotation; "what class is this versor" is not one.
-                let Some(block) = crate::transducer::family::sensor_plane_block(&gamma) else {
+                let Some(block) = crate::transducer::element::sensor_plane_block(&gamma) else {
                     continue;
                 };
                 let Some(g) = rotor_of_transition(&block) else {
