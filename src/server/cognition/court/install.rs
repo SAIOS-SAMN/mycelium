@@ -9,17 +9,6 @@
 use crate::cognition::*;
 use crate::transducer::element::Element;
 
-/// The first two bytes of an address, for a trace line. Every arm is
-/// written out: a short address is short, not padded with an invented
-/// value (rule 11).
-fn head(a: &crate::transducer::address::Address) -> (u8, u8) {
-    match a.as_bytes() {
-        [x, y, ..] => (*x, *y),
-        [x] => (*x, *x),
-        [] => (0, 0),
-    }
-}
-
 impl Kernel {
     /// 47.3: THE HOME INSTALLS on a second vantage. `witness` is the organ
     /// whose re-derivation the install rests on, and it is the author of the
@@ -56,15 +45,6 @@ impl Kernel {
         // 13.9: the home's install is its OWN word, ruled on a witness's
         // re-derivation, so it becomes this court's section on the chart.
         self.rule_own(addr);
-        // 26, 50.2 step 2: the sentence stands and is ruled, so the
-        // generators its word vertices derived through are paid — once
-        // per citation, to that generator's own discoverer, drawn from
-        // the voice that spoke. Ruled first, because a form that did not
-        // install cites nothing yet; a refused sentence never reaches
-        // here and pays nobody.
-        if let Some(w) = held.as_ref() {
-            self.pay_cited_generators(addr, w, drawn);
-        }
         if let Some(w) = held {
             if w.is_rewrite() {
                 if self.treasury.release_rewrite(addr).is_none() {
@@ -79,10 +59,23 @@ impl Kernel {
                         "  court form installed {:02x}{:02x}… mint none (closes nothing)",
                         addr[0], addr[1]
                     );
-                } else if let Some(crate::economy::escrow::Escrowed { voices, anchor, .. }) =
-                    self.treasury.release_award(addr)
-                {
-                    self.treasury.mint_claim(&voices, pay, anchor);
+                } else {
+                    // 26 as ruled 2026-09-10: what this form closed is
+                    // partly what the forms it CITED close inside it, and
+                    // that part is theirs. The shares come out of this
+                    // install's own mint before the escrow's voices take
+                    // the remainder — never out of the citing voice's
+                    // balance, which paid zero whenever its own draw
+                    // already occupied the lane (L8t).
+                    let shares = self.cited_shares(addr, &w, pay);
+                    let anchor = self.anchor_pub();
+                    self.treasury.settle_recursive(addr, &shares, anchor);
+                    for (who, share) in &shares {
+                        eprintln!(
+                            "  court generator paid {:02x}{:02x}… to {:02x}{:02x}… {share:?}",
+                            addr[0], addr[1], who[0], who[1]
+                        );
+                    }
                 }
             }
         } else {
@@ -108,59 +101,103 @@ impl Kernel {
         eprintln!("  court home installed {:02x}{:02x}… peer holds the stratum", addr[0], addr[1]);
     }
 
-    /// 26 as ruled 2026-09-10 — A CITED GENERATOR IS PAID AT THE INSTALL.
-    /// Each word vertex of the installed form names the generators it
-    /// factored through (50.2 step 2). Every one is resolved on THIS
-    /// court's ruled cover — a citation of what no court ruled cites
-    /// nothing (1.7) — and its own discoverer is credited from the voice
-    /// that drew the address. A form with no drawer pays nobody: there is
-    /// no voice to draw from, and inventing one is rule 11.
-    fn pay_cited_generators(&mut self, addr: &[u8], w: &Element, drawn: Option<[u8; 32]>) {
+    /// 26 AS RULED 2026-09-10 — THE SHARE EACH CITED FORM TAKES OF THIS
+    /// INSTALL'S MINT. Both levels of citation are read, because they are
+    /// one mechanism (21 step 3): a `Glued` vertex citing a whole form,
+    /// and a word vertex's derivation citing a `Word` vertex inside one.
+    ///
+    /// The share is the CITED FORM'S OWN verified deflation on the
+    /// citer's bound family — what that form closes, measured here on the
+    /// family this sentence was spoken over, not a magnitude copied off
+    /// its tape. A form whose verdict this court has not ruled takes
+    /// nothing (1.7); a form with no discoverer here takes nothing, which
+    /// is a fact and not a default (rule 11).
+    ///
+    /// ONE SHARE PER CITED VERDICT, not per citation: a form cited by two
+    /// vertices closes what it closes once. Keyed by the cited address,
+    /// so the second citation of one address is not a second share.
+    fn cited_shares(&self, addr: &[u8], w: &Element, pay: [u64; 4]) -> Vec<([u8; 32], [u64; 4])> {
         use crate::transducer::sentence::Vertex;
-        let Some(voice) = drawn else {
-            return;
-        };
+        if pay.iter().all(|&m| m == 0) {
+            return Vec::new();
+        }
         let Some(f) = crate::transducer::sentence::from_element_form(w) else {
-            return;
+            return Vec::new();
         };
-        let mut owed: Vec<([u8; 32], [u64; 4], crate::transducer::address::Address)> = Vec::new();
-        // 26: ONE USE PER CITED VERDICT, not per citation. A form's μ⃗ is
-        // what that form closes, and it closes it once however many of
-        // its word vertices this sentence composed — two vertices citing
-        // two words of one form are one use of one verdict. Keyed, so the
-        // second citation of an address is not a second draw.
-        let mut paid_for: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for v in &f.vertices {
-            let Vertex::Word { derivation, .. } = v else {
-                continue;
+        let mut cited: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        let mut out = Vec::new();
+        let take = |k: &mut crate::network::nerve::Keyed<()>,
+                    out: &mut Vec<([u8; 32], [u64; 4])>,
+                    form_addr: &crate::transducer::address::Address,
+                    placement: &crate::transducer::alphabet::Word| {
+            if k.contains(form_addr.as_bytes()) {
+                return;
+            }
+            k.insert(form_addr.clone(), ());
+            if !self.ruled_contains(form_addr.as_bytes()) {
+                return;
+            }
+            let Some(held) = self.word_at(form_addr.as_bytes()).cloned() else {
+                return;
             };
-            for (form_addr, _, _) in &derivation.generators {
-                if !self.ruled_contains(form_addr.as_bytes()) {
-                    continue;
+            let Some(who) = self.discoverer_of(form_addr.as_bytes()) else {
+                return;
+            };
+            // The cited form's own deflation, measured on the CITER's
+            // family: what it closes inside this sentence.
+            let share = self.cited_deflation(addr, &held, placement);
+            if share.iter().all(|&m| m == 0) {
+                return;
+            }
+            out.push((who, share));
+        };
+        for v in &f.vertices {
+            match v {
+                // A `Glued` vertex names the placement it cited at.
+                Vertex::Glued { address, placement, .. } => {
+                    take(&mut cited, &mut out, address, placement)
                 }
-                if paid_for.contains(form_addr.as_bytes()) {
-                    continue;
+                // A derivation citation's placement is the citing
+                // vertex's own frame. Its carriage is `D(ρ)·T(t)` and
+                // carries no rotation (L14), and `apply_form` places by a
+                // WORD, so what is passed here is the identity: the cited
+                // form speaks in its own frame. Where the generator acts
+                // on a body the citer's family does not carry, that
+                // measures zero, and a zero share is no share (rule 11).
+                Vertex::Word { derivation, .. } => {
+                    for (form_addr, _, _) in &derivation.generators {
+                        take(&mut cited, &mut out, form_addr, &crate::transducer::alphabet::Word::identity());
+                    }
                 }
-                paid_for.insert(form_addr.clone(), ());
-                let Some(cited) = self.word_at(form_addr.as_bytes()) else {
-                    continue;
-                };
-                let mag = cited.magnitude();
-                let Some(speaker) = self.discoverer_of(form_addr.as_bytes()) else {
-                    continue;
-                };
-                owed.push((speaker, mag, form_addr.clone()));
+                _ => {}
             }
         }
-        let anchor = self.anchor_pub();
-        for (speaker, mag, form_addr) in owed {
-            let paid = self.treasury.settle_use(voice, speaker, mag, anchor);
-            let (g0, g1) = head(&form_addr);
-            eprintln!(
-                "  court generator paid {:02x}{:02x}… generator {g0:02x}{g1:02x}… {paid:?}",
-                addr[0], addr[1]
-            );
-        }
+        out
+    }
+
+    /// What a cited form closes on the CITER's bound family. The citer's
+    /// task names the family (`verified_install_deflation` reads the same
+    /// binding for the citer itself), and the cited form is replayed over
+    /// it: a generator that closes nothing there is used for nothing
+    /// there, whatever it closes elsewhere.
+    fn cited_deflation(
+        &self,
+        citer: &[u8],
+        cited: &Element,
+        placement: &crate::transducer::alphabet::Word,
+    ) -> [u64; 4] {
+        let Some(task) = self
+            .speech_task
+            .get(citer)
+            .or_else(|| self.listing_task.get(citer))
+            .cloned()
+        else {
+            return [0; 4];
+        };
+        let Some(family) = self.task_family.get(&task) else {
+            return [0; 4];
+        };
+        self.measured_replay_descent_at(cited, family, placement)
     }
 
     pub(crate) fn note_form_citations(&mut self, addr: &[u8], w: &Element) {

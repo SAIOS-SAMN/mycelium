@@ -105,6 +105,55 @@ impl Treasury {
         self.mint_to(voice, asked, anchor)
     }
 
+    /// 26 AS RULED 2026-09-10 — THE USE OF A CITED GENERATOR IS A SHARE
+    /// OF THE INSTALL'S OWN MINT, NEVER A TRANSFER. A citer's mint is
+    /// what the citer closed, and part of what it closed is what the
+    /// forms it cited close inside it; that part is theirs. Drawn from
+    /// the released award and minted to each cited form's own discoverer,
+    /// the remainder to the escrow's voices.
+    ///
+    /// Read this against `settle_use`, which stays what it was: a
+    /// TRANSFER out of a demanding voice's balance, for a probe against
+    /// an open listing. As the use of a generator it was wrong twice over
+    /// — a voice holding nothing cited for free, and where the citer's
+    /// own draw already occupied the lane the generator is priced on, the
+    /// transfer paid zero however much either party held (measured at
+    /// cdb917f: mag [0,1,0,0] against a balance of [8,0,8,8]).
+    ///
+    /// `shares` is one entry per CITED ADDRESS — the caller keys them, so
+    /// a form cited by two vertices is one share of one verdict. A share
+    /// larger than what is left is paid what is left: the shares are
+    /// measured on the citer's own family and cannot exceed its mint
+    /// except by a rounding the caller did not intend, so the floor is a
+    /// bound on arithmetic and never an invented value (rule 11).
+    pub fn settle_recursive(
+        &mut self,
+        escrow: &[u8],
+        shares: &[([u8; 32], [u64; 4])],
+        anchor: Anchor,
+    ) -> [u64; 4] {
+        let Some(crate::economy::escrow::Escrowed { voices, mu, .. }) = self.release_award(escrow)
+        else {
+            return [0; 4];
+        };
+        let mut left = mu;
+        for (discoverer, share) in shares {
+            let paid: [u64; 4] = std::array::from_fn(|l| match share[l] < left[l] {
+                true => share[l],
+                false => left[l],
+            });
+            if paid.iter().all(|&m| m == 0) {
+                continue;
+            }
+            for l in 0..4 {
+                left[l] -= paid[l];
+            }
+            self.mint_to(*discoverer, paid, anchor);
+        }
+        self.mint_claim(&voices, left, anchor);
+        left
+    }
+
     /// THE ASSEMBLY PREMIUM (7d): a fragmented parent demand's children all
     /// completed and the overlap strips glued — distributed reassembly is
     /// substantially-more-useful work, paid ON TOP of the children's own

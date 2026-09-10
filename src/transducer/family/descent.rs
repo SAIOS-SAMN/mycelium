@@ -20,6 +20,19 @@ pub fn form_descent(
     family: &[(Grid, Grid)],
     crystal: &dyn Crystal,
 ) -> ([u64; 4], Vec<crate::transducer::germinate::ResidualGerm>) {
+    form_descent_at(form, family, crystal, &crate::transducer::alphabet::Word::identity())
+}
+
+/// The same descent spoken AT A PLACEMENT (26 as ruled 2026-09-10): what
+/// a cited form closes where the citer put it, which is the share it
+/// takes of the citer's mint. `Word::identity()` is the form speaking in
+/// its own frame, which is what `form_descent` asks for.
+pub fn form_descent_at(
+    form: &Form,
+    family: &[(Grid, Grid)],
+    crystal: &dyn Crystal,
+    placement: &crate::transducer::alphabet::Word,
+) -> ([u64; 4], Vec<crate::transducer::germinate::ResidualGerm>) {
     if family.is_empty() {
         return ([0; 4], Vec::new());
     }
@@ -29,7 +42,7 @@ pub fn form_descent(
         let before_chain = crate::arc::refine_delta(x, y)
             .map(|r| r.delta)
             .unwrap_or_else(|| residual_of(Some(x), y));
-        let spoken = apply_form(form, x, &crate::transducer::alphabet::Word::identity(), crystal);
+        let spoken = apply_form(form, x, placement, crystal);
         let grid = spoken.as_ref().map(|s| s.grid());
         let after_chain = residual_of(grid.as_ref(), y);
         let before_mu = element::measure_lanes(&before_chain);

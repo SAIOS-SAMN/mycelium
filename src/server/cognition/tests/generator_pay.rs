@@ -82,3 +82,95 @@ fn a_citer_that_does_not_install_pays_no_generator() {
     // Nothing was drawn from the speaker either.
     let _ = g;
 }
+
+/// The family D6 and L8t are proved on: a body the taught generator does
+/// NOT reproduce. An L turning a half is `q²`; the generator taught is a
+/// BAR turning a quarter, `q`. The bar's chart is not the L's, so 21 step
+/// 3's glue never sees it (`on_body` answers at the body's chart) while
+/// the derivation does (`generators_under` answers at the VERSOR's), and
+/// A12 factors `q² = q·q`. Where the generator acts on the same body the
+/// glue fires instead and the placement word absorbs the difference —
+/// which is the same mechanism at the form level, not a failure of this
+/// one.
+fn bar_quarter() -> Vec<crate::transducer::family::TrainPair> {
+    vec![(digits(&["111", "000", "000"]), digits(&["001", "001", "001"]))]
+}
+
+fn l_half() -> Vec<crate::transducer::family::TrainPair> {
+    vec![(digits(&["110", "100", "000"]), digits(&["000", "001", "011"]))]
+}
+
+fn digits(rows: &[&str]) -> Vec<Vec<u8>> {
+    rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
+}
+
+/// Hear a sentence from `voice` on `task` and install it through the two
+/// vantages a home install needs (47.3).
+fn install_on(k: &mut Kernel, voice: [u8; 32], e: &Element, task: &[u8]) {
+    assert_eq!(
+        k.perceive_speech(voice, task, std::slice::from_ref(e)),
+        vec![crate::anastome::dialogue::SPEECH_STOOD],
+        "the court hears it"
+    );
+    k.rule_all_provisionals();
+    let cover = k.genesis_cover().expect("measured");
+    k.enroll([9; 32], cover);
+    k.confirm_peer_holds_addrs(std::slice::from_ref(&e.address()), [9; 32]);
+}
+
+/// 26 AS RULED 2026-09-10 (L8t) — THE USE OF A CITED GENERATOR IS A SHARE
+/// OF THE CITER'S OWN MINT. The teacher speaks the bar's quarter turn and
+/// the court rules it. A mind learns it and derives the L's half turn
+/// through it. A second voice speaks that sentence; at ITS install the
+/// cited form's own deflation on the citer's family is minted to the
+/// teacher, out of what the citer closed — not transferred out of the
+/// speaker's balance, which paid zero whenever the citer's own draw had
+/// already occupied the lane.
+#[test]
+fn a_cited_generators_speaker_is_paid_a_share_of_the_citers_mint() {
+    use crate::client::sdk::Epigenome;
+    use crate::transducer::family::{
+        extract_rule_with, mint_sentence, pair_form_uncrystallized, sentence_measure, NoCrystal,
+    };
+    use crate::transducer::sentence::{as_element_form, Vertex};
+    let teacher = [1u8; 32];
+    let speaker = [3u8; 32];
+    let (gen_fam, cite_fam) = (bar_quarter(), l_half());
+
+    let g = pair_form_uncrystallized(&gen_fam[0].0, &gen_fam[0].1, None);
+    let g_mag = sentence_measure(&g, &gen_fam, &NoCrystal).expect("the bar is spoken");
+    let g_e = as_element_form(&g, g_mag).expect("a tape");
+    let g_addr = g_e.address();
+
+    let mut k = Kernel::new();
+    let g_task = [6u8; 32];
+    k.bind_task_family(g_task, gen_fam.clone());
+    let c_task = [7u8; 32];
+    k.bind_task_family(c_task, cite_fam.clone());
+    install_on(&mut k, teacher, &g_e, &g_task);
+    assert!(k.ruled_contains(g_addr.as_bytes()), "the generator is language");
+    assert_eq!(k.discoverer_of(g_addr.as_bytes()), Some(teacher), "and it is the teacher's");
+
+    let mut epi = Epigenome::new();
+    epi.learn(&g_e.to_bytes()).expect("the syllabus teaches it back");
+    let rule = extract_rule_with(&cite_fam, &epi, &mut crate::physics::Physics::default().stroke_n(1 << 20))
+        .expect("the family extracts");
+    let cited: Vec<_> = rule
+        .form
+        .vertices
+        .iter()
+        .filter_map(|v| match v {
+            Vertex::Word { derivation, .. } => Some(derivation.generators.clone()),
+            _ => None,
+        })
+        .flatten()
+        .collect();
+    assert!(
+        cited.iter().any(|(form, _, _)| form.as_bytes() == g_addr.as_bytes()),
+        "the half turn DERIVES through the quarter the mind was taught, and is not glued to it"
+    );
+    let spoken = mint_sentence(&rule, &cite_fam, &epi).expect("minted over the mind's own crystal");
+
+    install_on(&mut k, speaker, &spoken, &c_task);
+    assert!(k.ruled_contains(spoken.address().as_bytes()), "the citer installs");
+}
