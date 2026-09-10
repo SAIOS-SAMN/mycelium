@@ -613,6 +613,36 @@ rest derive retires, address kept, its description burned (27, E2). The
 presentation stays reduced by retirement and stays paid for by the
 economy, and that is the whole of the bound on its size.
 
+**Crystals and content** (ruled 2026-09-10). A word is a path in the
+Cayley graph of the presentation and a relation is a sentence, so what
+the engine holds is a presentation and what it does is compose over it.
+The **crystals** are the decision procedures — canonical form (A1, A4),
+lattice membership by Hermite normal form (A12), the peel (A22), carry,
+coboundary, the cover's extension, consilience — held at genesis, written
+in the host, and the one interpreter every replay runs; they make a thing
+exact and decidable and none of them is content. **Content** is what is
+composed from them: the path, the relation, and the rewrite between
+paths, and the 2-cells are the `Rewrite` words the tree already carries
+(3.9, M2 step 2, `rewrite.rs`), adjoined by the court on two organs'
+re-derivation exactly as a generator is. A rewrite that replaces a longer
+path by a shorter one is retirement (3.8) and refinement (3.7), which are
+already rewrite kinds and already paid (E2), so no new cell is invented
+for them.
+
+**F's order is 24.1's order, and it is a law.** Factor through what is
+held, and spell only the residue. That is not a strategy and not
+adjoinable: a mind that spells from the identity what it already holds
+has not comprehended (chapter 6), and the duplicate it mints is then
+removed by a retirement E2 pays for. The rewrite layer does not absorb
+it.
+
+**Which path is content, and no scalar picks it.** The canonical path is
+the geodesic in the mind's own presentation; where several geodesics
+exist all are carried (rule 15), none is chosen by length or by any other
+scalar (rule 4), the court accepts any path that composes to the vertex
+up to the coset representative of 50.2, and the ledger pays the path
+spoken.
+
 **What is not claimed.** Chapter 44 refuses, and this section does not
 reinstate, a complete rewriting system for the group, a Knuth–Bendix
 completion, or a unique minimal-length tape: the prime letters have
@@ -5004,6 +5034,15 @@ computes:
 | the ring | A22's peel over one plane block | the Gaussian factor, `a + b·e_ij` with `a² + b² = p`, `a > b > 0` | A1 (16.1) and `core::gaussian` |
 | the presentation | A12 over the stratum's generators | the HNF residue, unique under the row order | A12 step 5 |
 | the cover | the pieces' nerve does not glue | the filled cell over the meet's loop, `Fill::Class(ℓ)` | `cech::extend` (50.8) |
+| the relations | two proofs of one vertex do not commute | the composite holonomy `g⁻¹ ∘ f` around the proofs, keyed by 15.4 | `cech::holonomy`, the membrane of 23.9 |
+
+The last row adjoins a **relation**, not a generator: two proofs of one
+vertex whose composite holonomy is non-trivial are a relator the
+presentation lacks, and 1.8's "relations are sentences" is what reaches
+the table here. Trivial holonomy is one proof seen from several frames —
+the conjugate level — and E2 pays the closure once (23.9). The adjunction
+is otherwise unchanged: the same witness, the same two-court consilience,
+the same receipt and syllabus.
 
 None of these is a closer written for a kind; each is the canonical form
 of an exact object, and it exists because the object does. A dispatch
