@@ -676,6 +676,105 @@ of the language grows by its own perception and ruling, while the group
 it presents inside, and the alphabet that generates that group, never
 change.
 
+### 1.9 The ladder of re-derivation, and the tape retired (ruled 2026-09-10)
+
+**One coordinate, not a pipeline.** Perceive, think, speak, be judged
+is the human division of labour, and it is a serial protocol with one
+speaker and one judge. This engine has no such stages. It has one
+object, the derivation (50.2 step 2), and one coordinate on it: the
+**depth** of independent re-derivation, read from the receipts that name
+the derivation's address (45.1). Each rung is the previous rung's
+content, composed and re-derived by one more organ that shares no
+memory with the last:
+
+| depth | the object | who re-derived it | its constructor |
+|---|---|---|---|
+| 0 | a versor peeled from the identity, the residue in letters | nobody: the cipher | A22, the base case, kept |
+| 1 | a derivation composed from what the organ holds | the composing organ | A12 over the presentation on the versor's chart |
+| 2 | the same derivation replayed on a second ledger | one independent court | G: cited generators resolved on the court's own cover and composed |
+| 3 | a remainder two courts re-derived from one witness, adjoined | two independent courts | 37.7, the adjunction |
+| 4 | a relator: two depth-3 proofs of one vertex whose holonomy is non-trivial | two independent courts | 37.7's fourth row, `cech::holonomy`, 23.9 |
+| 5 | a rewrite between two derivations, the 2-cell | two independent courts | the `Rewrite` words of 3.9, adjoined as a generator is |
+| 6 | a procedure composed from the crystals that produces rewrites | two independent courts | the master algorithms as generators, below |
+
+Depth is a lane in the sense of law 5: read per address as the set of
+organs whose receipts re-derived it, never stored on a carrier, never
+summed into a score, never a threshold. `Standing` (`Ruled`, `Stood`,
+`Held`) is the projection of this coordinate onto three values and
+survives only as that projection; where a decision reads standing it
+reads depth. The one number that bears on the architecture (45.9) is a
+reading of this lane: generators at depth 3 that no commit wrote.
+
+**The tape is retired as content.** No organ holds a spelling as what a
+word is. What a word vertex is, is its derivation and its canonical
+rotor: the cited generators by identity with their exponents, the
+residue in letters as the base case of depth 0, and the composed rotor
+in A1 canonical form, which is the vertex's identity (1.5) and the
+coordinates its address is written from (rule 2). The composed *word*
+written beside the derivation at v7 is struck: a spelling of a composite
+is a second carrier for one meaning, and the rotor already carries it
+(row L14). Bytes remain where bytes are the object and nowhere else: the
+wire, the genome on disk, the receipt chain (rule 2, Part IX). A form is
+decoded once at that boundary and held as a value; an organ that holds a
+tape in memory and decodes it on every read holds the cipher's carrier
+as its working memory, and that is retired (row L16). Addresses were
+never digests of tapes and are not now: `form_vertex_key` writes the
+canonical coordinates out, so two derivations of one vertex have one
+address, and a proposal to hash a serialised buffer for an address is
+refused by rule 2 wherever it appears.
+
+**Receipts are kept, and they point at derivations.** A receipt is not
+content. It is a node in the causal poset of proofs: it names an
+address, the organ that re-derived it, the act, and the peer receipts
+that act verified (`parents`), sealed under the organ's key. Depth,
+payment, anti-equivocation and the causal order across nodes are defined
+on that poset and on nothing else, so removing receipts would remove
+accountability, not linearity. A receipt never names a tape and never
+names a byte offset; it names what `delta` already is, the address
+written out.
+
+**Propagation replaces utterance.** A derivation crosses a boundary
+between two ledgers; that is the whole of what was called an utterance.
+Every node composes over what it holds and replays what reaches it, and
+"court" is the role a node takes toward a derivation it did not compose.
+Law 8's separation is a rule about one derivation, which is never
+composed and judged by the same organ, not a rule about kinds of node.
+Nothing in this retires the room of 23.8: the dwell on a lane deficit is
+the economy's back-pressure on a draw, and it stays. The words
+`Uttered`, `Spoken`, speaker, on carriers and receipts, are retired as
+the rows that touch those carriers land, never by a rename-only commit
+(row L19).
+
+**One constructor at every depth.** 37.7 says one move, not one per
+wall, and the ladder says one move, not one per depth. Take two
+independent proofs of one boundary and read the loop their difference
+makes. Trivial: the two are one proof in two frames, the equivalence is
+an invariant, and closure is paid once (23.9). Non-trivial: the loop is
+an obstruction, and the obstruction is adjoined, as a generator at depth
+3, a relator at depth 4, a 2-cell at depth 5, a procedure at depth 6.
+The witness, the two-court consilience, the receipt and the syllabus are
+the same at every depth.
+
+**Depth 6, and what Part III now says.** The master algorithms are the
+generators of a presentation whose words are procedures: a procedure is
+a path over the crystals, cited by identity with exponents, and its
+relations are the identities that hold between them, such as canonical
+form being idempotent, or a peel followed by a factorisation equalling a
+factorisation on the residue. A procedure is replayed by running it
+twice on one witness on two ledgers and comparing the results by the
+algebra, and it is adjoined exactly as a generator is. Part III's
+binding sentence stands, amended in place: the master algorithms remain
+the only things that decide; a composition of them is content at depth
+6, held, cited, paid and retired like any other content, and it decides
+nothing until two courts have ruled it. The interpreter, the geometric
+product over exact ℚ, is never content.
+
+**What is still refused.** Chapter 44's refusals stand at every depth:
+no completion of the rewrites into a confluent system, no critical-pair
+procedure that manufactures 2-cells, no unique minimal path chosen by a
+scalar. A 2-cell or a procedure enters the language by consilience on a
+witness, and by nothing else.
+
 ## 2. Forms
 
 Carried from chapter 1: a word is a vertex with a frame; identity is the
@@ -2060,6 +2159,14 @@ states the eight master algorithms that compose them. Nothing in the
 codebase decides any of those things except through a master algorithm.
 Every procedure is exact over ℚ and ℤ, terminates by a count of its own
 inputs or a `Budget`, and refuses rather than rounds.
+
+Amended 2026-09-10 (1.9, depth 6): the master algorithms are also the
+generators of a presentation whose words are procedures. A composition
+of master algorithms is content — held, cited, paid, retired, and
+adjoined on two courts' re-derivation of one witness — and it decides
+nothing until it has been so adjoined; once adjoined it decides only
+what its generators decide, composed. The interpreter that runs every
+master algorithm is never content.
 
 ## 16. Component algorithms
 
@@ -6312,6 +6419,17 @@ pub struct KStepReceipt {
     pub chain_hash: [u8; 32],        // blake3(step ‖ height ‖ parents ‖ kind ‖ delta ‖ op ‖ prev)
 }
 ```
+
+**A receipt names a derivation, never a tape** (ruled 2026-09-10, 1.9).
+`delta` is the address written out — the canonical coordinates of the
+vertex, one address for every derivation of it — and `parents` are the
+peer receipts the act verified, so the chain of every kernel is a node
+set of one causal poset of proofs. The depth of a derivation (1.9) is
+read from this poset: the distinct signers whose receipts of kind
+`Install`, `Ruling` or `Adopted` name its address. It is computed at the
+read and stored nowhere. The receipt hash is a digest of bytes because
+the receipt is bytes (rule 2, Part IX); nothing in cognition reads it as
+a coordinate.
 
 `ActKind` (ruled 2026-09-09) names the act a receipt admits — `Attest`,
 `List`, `Section`, `Install`, `Ruling`, `Syllabus`, `Lapse`, `Fold`,

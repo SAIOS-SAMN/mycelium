@@ -1,12 +1,16 @@
 # Resume notes (continuity across sessions)
 
-Last update: 2026-09-10, Stage 14 through L8 (`impl/soak`: the ruling
-"sentences only" d2a9c2e, L8p 4b5e44c, the 50.9 amendment feecbf6, L8
-a488f00 and the rows after it; `main` stands at 685a07c, before Stage 14,
-and is fast-forwarded on the operator's word). Development is PAUSED
-after L8 on the operator's word; the summary of the trajectory is in
-"State at handoff".
-Living task list: `docs/MU-RECURSION-TASKS.md` (Stage 14 rows L0–L11 and
+Last update: 2026-09-10, Stage 14 through L9 (`impl/soak` at 3e2cf93:
+the derivation recut, tape v7, five commits c50c8b4…3e2cf93, after the
+"sentences only" ruling d2a9c2e, L8p, L8, L8r, L8w, L8y and their
+corrections; `main` stands at 685a07c, before Stage 14, and is
+fast-forwarded on the operator's word). The trajectory is ruled in
+`MU-RECURSION.md` 1.9 (the ladder of re-derivation, the tape retired as
+content) and carried by rows L14–L19; the implementor runs the relay
+list under "Immediate next actions". Two agents work this tree: the
+implementor (code, rows marked `landed`) and the auditor (reproduces,
+rules from the document, closes rows).
+Living task list: `docs/MU-RECURSION-TASKS.md` (Stage 14 rows L0–L19 and
 the pre-L7 rows L7a–L9a). Spec: `docs/MU-RECURSION.md`. Standard:
 `docs/MU-STANDARDS.md`. Historical alpha landings: `docs/TRAJECTORY.md`.
 
@@ -18,7 +22,7 @@ git log --oneline -1 main impl/soak          # impl/soak is ahead of main
 systemctl --user list-units 'mycelium-server@*' 'mycelium-client@*' --no-legend
 RUSTFLAGS='-D warnings' cargo test --release 2>&1 | grep -E "test result|FAILED"
 (cd xtask && cargo run)                        # gates, then clippy -D warnings
-# expected at a488f00: lib 443, bins 9, alpha_plan 13, g_cga 6; xtask exit 0
+# expected at 3e2cf93: lib 466, bins 9, alpha_plan 13, g_cga 6; xtask exit 0
 (cd xtask && cargo test)                       # the gates' own tests: 32
 ```
 
@@ -46,6 +50,59 @@ were not touched.
 
 ## State at handoff
 
+- **2026-09-10, the trajectory ruling (1.9) and the ladder.** After
+  L9 the auditor read the tree against the ladder of re-derivation and
+  the claim that the architecture was "built already". The reading, by
+  row, with what replaces each gap:
+
+  | claim | state at 3e2cf93 | where, or the row |
+  |---|---|---|
+  | depth 0, the peel from the identity | built, kept as the base case | `peel_versor`, A22 |
+  | depth 1, a derivation through held generators | built | `Derivation`, `derive_against`, A12; the ordered-peel limit is L13 |
+  | depth 2, replay on a second ledger | built | `replay_form_at`, `derivations_compose`, `verify_with` |
+  | depth 3, two courts re-derive one object | built for sentences, not for generators | 47.3 second-vantage install; 37.7 absent, adjoined count 0: L11 |
+  | depth 4, the relator from two proofs' holonomy | machinery built, adjunction not | `cech::holonomy`, `coheres`: L17 |
+  | depth 5, rewrites as 2-cells | five kinds in the host, no adjunction | `rewrite.rs`: L17 |
+  | depth 6, procedures as content | not built; Part III amended to admit it | L18, doctrine first |
+  | addresses as canonical invariants, never digests | built | `form_vertex_key`, rule 2 |
+  | receipts as a causal poset naming addresses | built | `KStepReceipt { parents, delta }`, 45.1 as amended |
+  | depth read from receipts, uncollapsed | not built | L15; `Standing` is its three-valued projection |
+  | the composed word stored on a vertex | present at v7, struck | L14: the canonical rotor replaces it |
+  | the tape as the organs' working memory | present: `Element.word` decoded on every read | L16 |
+  | the residue as a spelling in letters | kept: depth 0 | 1.9 |
+  | the glued form as a generator one level up | built | `Form::glue`, `Glued`, the generator index |
+  | sentences as pushouts with zero mismatch | built | faces with transports, `coheres`, `cech::extend` |
+  | disjoint bodies compose lane-wise | built as a rule, not as a tensor | 16.16 |
+  | termination | built by `Budget` and `Unmeasured`, not by strong normalisation | Part III |
+  | loops, curvature refusals, torsion | built | chapter 12, `Closure`, `REFUSE_LOOP`, `REFUSE_EDGE` |
+  | separated ledgers, no global state, partial order | built | separate kernels, law 9 |
+  | utterance as a speech act | present | L19: propagation; the room of 23.8 stays |
+  | one constructor at every depth | doctrine (1.9, 37.7) | L11, L17, L18 |
+  | Knuth–Bendix, critical pairs | refused | chapter 44, restated in 1.9 |
+  | hashed addresses | refused | rule 2 |
+
+  Corrections applied to the text that proposed the ladder: the organs
+  of consilience are courts, never voices (law 6); threads add nothing,
+  two kernels exchanging frames through the codec are the isolation; the
+  remainder is the Gaussian factor or the HNF residue, not a formula on
+  versors; the dwell is the room, not a speech trope; the signature of
+  the algebra is not named by the code and is not asserted.
+- **2026-09-10, L9 — the derivation recut (c50c8b4 doctrine, 7dabdea,
+  67176a5, c189be8, ed813ee, 3e2cf93).** A word vertex carries its
+  derivation (cited form, cited vertex, exponent; residue in letters;
+  and, struck by 1.9 and open as L14, the composed word); tape v7; both
+  rotor demands carry the residue block as witness; F factors through
+  the mind's generators inside `pair_form` with the crystal, per call,
+  with the percept memo keyed on grids only; G composes citations on the
+  ruled cover and refuses at the vertex; a cited generator is paid at
+  install once per cited form; an unruled citation waits in the
+  awaiting docket instead of being refused; Unmeasured propagates as
+  `None`; `power_of` is bounded by the rotor's order. Open from the
+  audit, in order: the per-sentence Awaiting adjudication naming the
+  cited form, `rehear_awaiting` through `adjudicate_one`, a payment
+  test at install, L14, the proof through the codec with two minds and
+  two courts, the instrument's engine coordinates, then L11. 466 / 0 /
+  9 / 0 / 13 / 6, xtask 0 at 3e2cf93.
 - **2026-09-10, L8 — the contraction protocol (a488f00; doctrine
   feecbf6).** The wire is a medium, not an echo: the court answers one
   `Adjudication` per sentence (Stood / Ratified / Refused { kind, at,
@@ -251,15 +308,49 @@ delegates; `cech::extend` reads the transition's own order), L6b 2686272
 puncture-before-mint move on residual chains only; twenty-seven tests
 re-asserted, none deleted). 437/0/9/13/6/0, xtask 0 at 2686272.
 
-Landed since: L7 (a0da3de and its rows), and after the "sentences only"
-ruling (d2a9c2e) L8p (4b5e44c) and L8 (a488f00) — see "State at
-handoff". Next, in order and on the operator's word: L8q (the
-sentence-native quote and probe; the corpus intake lists the task, not
-its chains), L9 (the tape v6 recut and the cold-boot reading of 50.7 and
-50.9: `adjudicated`, `contracted`, `court contraction verified` lines on
-every voice, no address uttered twice with the same standing), L10
-(prime letters, a recut), L11 (the cover for a deformation). The fleet is
-stopped and soaks nothing until the recut.
+Landed since: L7 (a0da3de and its rows), L8p (4b5e44c), L8 (a488f00),
+L8r, L8w, L8y and their corrections, and L9 (3e2cf93) — see "State at
+handoff".
+
+**Relay list for the implementor, in order, one commit each** (the
+awaiting protocol, the rehear through `adjudicate_one` and the payment
+test at install are directives 1–3 of the audit at 3e2cf93 and precede
+this list):
+
+1. L14: the canonical rotor replaces the composed word on the vertex;
+   `form_vertex_key` from the rotor; `verify_with` against it; `Word`
+   for a cited vertex resolved through the crystal or the cover.
+2. L9's proof through the codec: two `Epigenome` minds taught different
+   ruled forms by one court, one family extracted with the mind as
+   crystal, `speak_with` to `hear_frame` on two courts of distinct
+   identity, one address, two derivations, both installs paying each
+   teacher under their own key; vertices compared by `same_vertex`.
+   The auditor closes L9 on reproduction.
+3. The instrument prints the engine's coordinates: generators held,
+   adjoined, retired, cover rank, families comprehended per generator,
+   adjoined as a printed zero.
+4. L11, the ring instance: `core::gaussian` (gcd over ℤ[i] read off the
+   witness block), `ACT_LETTER` with its receipt kind and syllabus
+   page, the two-court effector; two voices' `RotorPrime` demands with
+   one witness, two courts agree by A1, the generator adjoined at run
+   time with no commit, the count prints 1, a third organ derives
+   through it by citation (no escape byte: L14). No corpus.
+5. L13: measure the ordered-peel limit against the adjoined basis.
+6. L15: depth read from receipts; `Standing` as its projection; the
+   instrument by depth.
+7. L16: the organs hold forms, not tapes; `from_element_form` call
+   sites outside the boundary reach zero, in green splits.
+8. L12: doctrine first (42.6, the stratum per lane, the meet read); the
+   draft goes to the operator; no code before the ruling.
+9. L17: depth 4 and 5 by the one constructor, in process, no corpus.
+10. L18: depth 6, doctrine first; the carrier's shape is the operator's
+    ruling.
+11. L19: propagation replaces utterance; the `ActKind` rename waits for
+    a recut.
+
+Held until L12 lands and on the operator's word: L8q, the wire beyond
+what v7 and the Awaiting adjudication force, the recut of the fleet,
+any soak. The fleet is stopped.
 
 The earlier reading list (R1–R7 on d6e19a1): `court orbit docket …`
 period rising above 1 once ruled listings are passed over (R1); `court
