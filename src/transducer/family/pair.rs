@@ -386,27 +386,26 @@ fn unpaired_demands(
                     // pieces leave at their meets is the class the form
                     // files, and the demand stands only on what the cover
                     // did not reach.
-                    // THE COVER IS ATOMIC UNDER ITS OWN SHARE. It runs to
-                    // the end of its pieces or it contributes nothing, and
-                    // either way the reads left to the peel are the reads
-                    // the peel would have had. A share that cannot be
-                    // withdrawn is a stroke with none to spare, which is
-                    // an UNMEASURED cover and not an empty one: the demand
+                    // THE COVER IS ATOMIC BY ROLLBACK OF ITS RESULT, and
+                    // it spends the CALLER'S budget. A cover that does not
+                    // reach the end of its pieces contributes nothing —
+                    // `Unmeasured` has no fields to read — and the demand
                     // then stands exactly as F typed it, which is what it
                     // did before any cover existed.
-                    let covered = match budget.halve() {
-                        Some(mut share) => {
-                            let c = crate::transducer::family::cover::cover_deformation(
-                                &ic.body,
-                                &outs[*j].body,
-                                scale,
-                                &mut share,
-                            );
-                            budget.refund(share);
-                            c.ok()
-                        }
-                        None => None,
-                    };
+                    //
+                    // NO SHARE AND NO RATIO: `cover_share` and
+                    // `Budget::halve` are both struck, and `physics/budget`
+                    // records why so a third is not written. The cost
+                    // belongs in `exhausted` and `unmeasured` where it can
+                    // be read; the cursor is what turns it into strokes
+                    // (L20).
+                    let covered = crate::transducer::family::cover::cover_deformation(
+                        &ic.body,
+                        &outs[*j].body,
+                        scale,
+                        budget,
+                    )
+                    .ok();
                     // A cover that did not complete files nothing. Filing
                     // what a half-run cover happened to reach would put a
                     // class on the form that no measurement stands behind
