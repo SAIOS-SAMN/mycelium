@@ -127,7 +127,9 @@ impl Form {
 }
 
 #[cfg(test)]
-pub(crate) fn apply_linear(
+/// The word's sensor-plane block applied to a point. Named for the block
+/// it uses, not for a linearity the engine does not have.
+pub(crate) fn apply_plane_block(
     word: &Word,
     t: &(num_rational::BigRational, num_rational::BigRational),
 ) -> Option<(num_rational::BigRational, num_rational::BigRational)> {

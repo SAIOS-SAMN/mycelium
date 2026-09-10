@@ -20,16 +20,16 @@ pub fn identity_versor() -> Versor {
     Versor::scalar(num_rational::BigRational::from_integer(BigInt::from(1)))
 }
 
-/// Linear word as a CGA versor, no translation. The identity translator is
-/// formed here, not at the call site. `None` when the word does not keep
-/// the sensor plane.
+/// The word's ORIGIN-FIXING action as a CGA versor, no translation. The
+/// identity translator is formed here, not at the call site. `None` when
+/// the word does not keep the sensor plane.
 pub fn versor_of_word(word: &crate::transducer::alphabet::Word) -> Option<Versor> {
-    linear_versor(word)
+    sensor_action_of_word(word)
 }
 
-/// THE CONFORMAL REALISATION OF A WORD: the linear versor of the word
-/// composed with the carriage by the geometric product. `None` when the
-/// word does not preserve the plane.
+/// THE CONFORMAL REALISATION OF A WORD: the word's sensor action composed
+/// with the carriage by the geometric product. `None` when the word does
+/// not preserve the plane.
 pub fn conformal_of(word: &crate::transducer::alphabet::Word, carriage: &Versor) -> Option<Versor> {
     conformal_of_rotor(&word.rotor(), carriage)
 }
@@ -41,11 +41,11 @@ pub fn conformal_of_rotor(
     rotor: &crate::transducer::alphabet::Rotor,
     carriage: &Versor,
 ) -> Option<Versor> {
-    Some(carriage.geo(&linear_versor_of(rotor)?))
+    Some(carriage.geo(&sensor_action_of(rotor)?))
 }
 
-fn linear_versor(word: &crate::transducer::alphabet::Word) -> Option<Versor> {
-    linear_versor_of(&word.rotor())
+fn sensor_action_of_word(word: &crate::transducer::alphabet::Word) -> Option<Versor> {
+    sensor_action_of(&word.rotor())
 }
 
 /// THE BRIDGE BETWEEN THE TWO ALGEBRAS, and the one place a rotation can
@@ -70,7 +70,7 @@ fn linear_versor(word: &crate::transducer::alphabet::Word) -> Option<Versor> {
 /// letters act above the sensor still has a sensor action, and it is this.
 /// A reader that treats the returned versor as the whole transition is
 /// where a collapse would be; this map is not that reader.
-fn linear_versor_of(rotor: &crate::transducer::alphabet::Rotor) -> Option<Versor> {
+fn sensor_action_of(rotor: &crate::transducer::alphabet::Rotor) -> Option<Versor> {
     use crate::transducer::cga;
     let block = crate::transducer::alphabet::rotor_block_on(
         rotor,
@@ -277,8 +277,8 @@ pub fn meet_class(
     // the ROTOR's algebra, Cl(4,0), a different space. Nothing off the
     // sensor plane can be present in `gamma` to be discarded.
     //
-    // The bridge between the two algebras is `linear_versor_of`, and that
-    // is where a second angle is lost. The refusal lives there.
+    // The bridge between the two algebras is `sensor_action_of`, and that
+    // is where a second angle is lost.
     // The rotor part is asked its ORDER, and the block is only how the
     // rotor is recovered from the action. `Finite` needs both residues to
     // be the identity: a quarter turn carried along a translation has the

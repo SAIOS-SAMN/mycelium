@@ -45,7 +45,8 @@ pub struct Transition {
 /// further versors. Nothing here is a matrix.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Action {
-    /// S: `V = carriage · linear_versor(word)`. None is the identity motion.
+    /// S: `V = carriage · sensor_action_of(word)`. None is the identity
+    /// motion.
     pub(crate) spatial: Option<Versor>,
     /// G: hue permutation as pairs. Empty is identity.
     pub(crate) gauge: Vec<(u8, u8)>,

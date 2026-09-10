@@ -97,18 +97,23 @@ pub fn from_residual_framed(g: &ResidualGerm, frame: &crate::arc::Frame) -> Elem
     e
 }
 
-/// MINT THE CONNECTION: the linear word, the A4 carriage, the gauge map,
-/// and the remainder chain. `V = carriage · linear_versor(word)`. A word
-/// that does not keep the plane is not a connection.
+/// MINT THE CONNECTION: the ORIGIN-FIXING word, the A4 carriage, the gauge
+/// map, and the remainder chain. `V = carriage · sensor_action_of(word)`. A
+/// word that does not keep the plane is not a connection.
+///
+/// The word was called `linear`. It is not linear and there is nothing
+/// linear in the engine: it is the part of the transport that fixes the
+/// origin — the rotor — as against the carriage, which is the translation
+/// and the dilation that do not.
 pub fn from_connection(
-    linear: &crate::transducer::alphabet::Word,
+    rotor_word: &crate::transducer::alphabet::Word,
     carriage: &Versor,
     sigma: &[(u8, u8)],
     remainder: &ResidualGerm,
     carried: [u64; 4],
 ) -> Option<Element> {
-    let v = conformal_of(linear, carriage)?;
-    let spelling = crate::transducer::alphabet::Spelling { word: linear.clone() };
+    let v = conformal_of(rotor_word, carriage)?;
+    let spelling = crate::transducer::alphabet::Spelling { word: rotor_word.clone() };
     let mut e = from_residual(remainder);
     e.word = connection_word(&spelling, carriage, sigma, &e.sub);
     e.action.spatial = Some(v);
@@ -153,8 +158,8 @@ pub(crate) fn connection_word(
 /// Its μ⃗ is read off the content by `reduction_magnitude` — what the
 /// connection carries — and never handed in as a constant. "No mind emits
 /// `unknown`; it emits the element it lacks."
-pub fn from_demand(linear: &crate::transducer::alphabet::Word) -> Option<Element> {
-    let mut e = from_connection(linear, &identity_versor(), &[], &Vec::new(), [0; 4])?;
+pub fn from_demand(rotor_word: &crate::transducer::alphabet::Word) -> Option<Element> {
+    let mut e = from_connection(rotor_word, &identity_versor(), &[], &Vec::new(), [0; 4])?;
     e.mag = e.reduction_magnitude();
     e.address.take();
     Some(e)

@@ -216,7 +216,7 @@ fn offplane_word_refuses_to_act_on_a_translation() {
     assert!(w.plane_block().is_none(), "a (0,2) quarter leaves the sensor plane");
     let t = (q1(), q0());
     assert!(
-        apply_linear(&w, &t).is_none(),
+        apply_plane_block(&w, &t).is_none(),
         "an off-plane word does not act as the identity on a translation"
     );
     let tr = Transport {
