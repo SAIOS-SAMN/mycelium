@@ -69,6 +69,13 @@ impl Epigenome {
         self.genome = genome;
         self.atlas = crate::transducer::stalk::Stalks::default();
         self.axis_index = crate::transducer::sentence::AxisIndex::new();
+        // 21 step 3 (L8r): the body-chart index is derived from the genome
+        // like the atlas and the axis index, and must be rebuilt with them.
+        // Left empty, `on_body` answered nothing after every restart, so a
+        // fleet client — which boots from its genome — could not glue until
+        // it learned something new, and the index was live only in a
+        // process that had never restarted.
+        self.by_moduli = crate::network::nerve::Keyed::new();
         self.shapes.clear();
         for w in &self.genome {
             self.atlas.admit(&crate::transducer::stalk::invariant_of(w), w.address());
@@ -78,6 +85,10 @@ impl Epigenome {
                 &crate::transducer::sentence::words_of_element(w),
             );
             self.shapes.push(std::sync::OnceLock::new());
+        }
+        let restored: Vec<crate::transducer::element::Element> = self.genome.clone();
+        for w in &restored {
+            self.moduli_admit(w);
         }
         self.atlas_len = self.genome.len();
         self.reindex();

@@ -98,3 +98,36 @@ fn a_chart_the_mind_holds_no_body_on_answers_nothing() {
         "the crystal answers at the coordinate asked and nowhere else"
     );
 }
+
+/// 21 step 3, 28 (L8r): the body-chart index is DERIVED from the genome,
+/// so a mind that restores its genome answers `on_body` exactly as the
+/// mind that stood the form did. Left out of `uncrystallize`, the index
+/// was live only in a process that had never restarted — and every fleet
+/// client boots from its genome, so on the fleet the glue answered nothing
+/// again after every start.
+#[test]
+fn a_restored_genome_answers_at_the_chart_of_the_bodies_it_carries() {
+    let (e, chart) = closed_form_and_body_chart();
+    let mut epi = Epigenome::new();
+    epi.learn(&e.to_bytes()).expect("the word enters the genome");
+    assert!(
+        !Crystal::on_body(&epi, &chart).is_empty(),
+        "the mind that learned it answers at the body's chart"
+    );
+    let tape = epi.crystallize();
+    let mut booted = Epigenome::new();
+    assert!(booted.uncrystallize(&tape), "the genome restores");
+    assert!(
+        booted
+            .genome()
+            .iter()
+            .any(|w| w.same_vertex(&e)),
+        "the restored genome holds the same vertex"
+    );
+    assert!(
+        Crystal::on_body(&booted, &chart)
+            .iter()
+            .any(|(held, _, _)| held.same_vertex(&e)),
+        "and answers at the body's chart, as the mind that stood it did"
+    );
+}
