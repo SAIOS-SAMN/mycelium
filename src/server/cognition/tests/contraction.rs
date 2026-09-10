@@ -132,7 +132,7 @@ fn two_courts_of_distinct_identity_reach_one_standing_through_the_codec() {
             &vk,
             &task,
             0,
-            &[Spoken { tape: utter.to_bytes(), standing: 0, contraction: cited.clone() }],
+            &[Spoken { tape: utter.to_bytes(), standing: 0, contraction: cited.clone(), paths: Vec::new() }],
         );
         let reply = hear(&mut court1, &frame);
         let adjudicated = dialogue::decode_speech_reply(&reply).expect("one adjudication per sentence");
@@ -170,7 +170,7 @@ fn two_courts_of_distinct_identity_reach_one_standing_through_the_codec() {
         &vk,
         &task,
         0,
-        &[Spoken { tape: utter.to_bytes(), standing: 0, contraction: cited.clone() }],
+        &[Spoken { tape: utter.to_bytes(), standing: 0, contraction: cited.clone(), paths: Vec::new() }],
     );
     let reply = hear(&mut court2, &frame);
     let adjudicated = dialogue::decode_speech_reply(&reply).expect("one adjudication per sentence");

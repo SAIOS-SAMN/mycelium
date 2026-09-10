@@ -6,5 +6,6 @@
 
 pub mod language;
 pub mod listings;
+pub mod path;
 pub mod speech;
 pub mod tension;

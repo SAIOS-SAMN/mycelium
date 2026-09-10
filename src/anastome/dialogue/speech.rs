@@ -35,6 +35,11 @@ pub struct Spoken {
     pub tape: Vec<u8>,
     pub standing: u8,
     pub contraction: Option<Contraction>,
+    /// 50.2 step 2: the generators this voice reached each word vertex
+    /// through. Beside the tape and never in it — the geodesic quotients
+    /// the path away (1.5), so it is not a coordinate of the form (law
+    /// 12) and carrying it forces no tape change.
+    pub paths: Vec<crate::transducer::sentence::Path>,
 }
 
 pub fn encode_speech(voice: &[u8; 32], task: impl AsRef<[u8]>, tu: u64, sentences: &[Vec<u8>]) -> Vec<u8> {
@@ -57,13 +62,14 @@ pub fn encode_speech_standing(
             tape: s.clone(),
             standing: standing.get(i).copied().unwrap_or(crate::transducer::stalk::Standing::Stood.as_u8()),
             contraction: None,
+            paths: Vec::new(),
         })
         .collect();
     encode_speech_spoken(voice, task, tu, &spoken)
 }
 
 /// `[ACT_SPEECH][voice 32][task address][K u64][n u32]` then per sentence
-/// `[standing u8][cert u8][contraction?][len u32][tape]`.
+/// `[standing u8][cert u8][contraction?][paths u32][path…][len u32][tape]`.
 pub fn encode_speech_spoken(voice: &[u8; 32], task: impl AsRef<[u8]>, tu: u64, sentences: &[Spoken]) -> Vec<u8> {
     let mut out = vec![ACT_SPEECH];
     out.extend_from_slice(voice);
@@ -78,6 +84,10 @@ pub fn encode_speech_spoken(voice: &[u8; 32], task: impl AsRef<[u8]>, tu: u64, s
                 c.to_bytes(&mut out);
             }
             None => out.push(0),
+        }
+        out.extend_from_slice(&(s.paths.len() as u32).to_le_bytes());
+        for p in &s.paths {
+            p.to_bytes(&mut out);
         }
         out.extend_from_slice(&(s.tape.len() as u32).to_le_bytes());
         out.extend_from_slice(&s.tape);
@@ -99,6 +109,7 @@ pub fn decode_speech(body: &[u8]) -> Option<SpeechAct> {
     let mut sentences = Vec::with_capacity(n.min(64));
     let mut standing = Vec::with_capacity(n.min(64));
     let mut contractions = Vec::with_capacity(n.min(64));
+    let mut paths: Vec<Vec<crate::transducer::sentence::Path>> = Vec::with_capacity(n.min(64));
     for _ in 0..n {
         let st = *body.get(pos)?;
         pos += 1;
@@ -109,15 +120,22 @@ pub fn decode_speech(body: &[u8]) -> Option<SpeechAct> {
             1 => Some(Contraction::from_bytes(body, &mut pos)?),
             _ => return None,
         };
+        let np = u32::from_le_bytes(body.get(pos..pos + 4)?.try_into().ok()?) as usize;
+        pos += 4;
+        let mut ps = Vec::with_capacity(np.min(64));
+        for _ in 0..np {
+            ps.push(crate::transducer::sentence::Path::from_bytes(body, &mut pos)?);
+        }
         let len = u32::from_le_bytes(body.get(pos..pos + 4)?.try_into().ok()?) as usize;
         pos += 4;
         let s = body.get(pos..pos + len)?.to_vec();
         pos += len;
         standing.push(st);
         contractions.push(cited);
+        paths.push(ps);
         sentences.push(s);
     }
-    Some(SpeechAct { voice, task, k: tu, sentences, standing, contractions })
+    Some(SpeechAct { voice, task, k: tu, sentences, standing, contractions, paths })
 }
 
 /// `[ACT_SPEECH][n u8]` then per sentence `[code u8][receipt 32]` and, for

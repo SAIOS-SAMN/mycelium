@@ -14,6 +14,7 @@ mod glue;
 mod ledger_clock;
 mod market;
 mod mint;
+mod path;
 mod persistence;
 mod phase;
 mod receiver;

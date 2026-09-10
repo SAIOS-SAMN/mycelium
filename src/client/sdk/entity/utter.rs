@@ -328,6 +328,13 @@ impl Entity {
                 tape: sentences[i].to_bytes(),
                 standing: Standing::Stood.as_u8(),
                 contraction: self.certificate_for(&sentences[i]),
+                // 50.2 step 2: the generators this mind reached each word
+                // vertex through, beside the tape. A sentence that is not
+                // a form carries none.
+                paths: match crate::transducer::sentence::from_element_form(&sentences[i]) {
+                    Some(f) => self.epigenome.paths_of_form(&f),
+                    None => Vec::new(),
+                },
             })
             .collect();
         let body = dialogue::encode_speech_spoken(&voice, task, tu, &spoken);
