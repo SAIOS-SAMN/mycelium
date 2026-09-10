@@ -4422,6 +4422,7 @@ pub const REFUSE_NOT_A_SENTENCE: &str = "utterance is a chain, not a sentence";
 pub const REFUSE_VERTEX_BODY: &str = "vertex does not carry its body onto its image";
 pub const REFUSE_EDGE: &str = "edge transport is neither in the stabilizer nor the exchange nor a remainder edge";
 pub const REFUSE_DEMAND_UNTYPED: &str = "demand vertex names no kind";
+pub const REFUSE_NOT_CONTRACTION: &str = "sentence is not the contraction of the refused sentence at the coordinate";
 ```
 
 `REFUSE_NOT_A_SENTENCE`, `REFUSE_VERTEX_BODY`, `REFUSE_EDGE` and
@@ -4435,9 +4436,11 @@ that does not replay was never installed. They travel as the kinds of the
 adjudication of 50.9 (ruled 2026-09-10): `VertexBody` is
 `REFUSE_VERTEX_BODY`, `EdgeHolonomy` is `REFUSE_EDGE`,
 `RemainderUndeclared` is `REFUSE_NOT_CLOSED`, and `MalformedComplex` is
-`REFUSE_NOT_A_SENTENCE`, `REFUSE_FORM_TAPE`, `REFUSE_DEMAND_UNTYPED` and
-the tape refusals of 23.1 steps 1–2 and 5–6. `REFUSE_UNPROVEN` is retired
-with the chain (23.8).
+`REFUSE_NOT_A_SENTENCE`, `REFUSE_FORM_TAPE`, `REFUSE_DEMAND_UNTYPED`,
+`REFUSE_NOT_CONTRACTION` (a sentence citing a refusal receipt that is not
+the contraction at the coordinate the court named, 50.9) and the tape
+refusals of 23.1 steps 1–2 and 5–6. `REFUSE_UNPROVEN` is retired with the
+chain (23.8).
 
 `REFUSE_FOLD_OPEN` and `REFUSE_FOLD_INEXACT` (45.8, ruled 2026-09-09) are
 the two answers to a fold: a prefix below whose head a listing,
@@ -4622,7 +4625,7 @@ Prefix `[{tag}] ` as the existing lines:
 [{tag}] demand {kind} chart {inv} on {addr}
 [{tag}] edge remainder {i}-{j} on {addr}
 [{tag}] uttered {addr} standing {s} K {k} lanes {mu:?}
-[{tag}] listing {addr} reduced by {c} cites: residual {m} of {n}, expressed {addr'}
+[{tag}] listing {addr} reduced by {c} cites: residual {m} of {n}
 [{tag}] listing {addr} held: no held word deflates it
 [{tag}] syllabus refused {addr}: {REFUSE_*}
 [{tag}] quote asked: language {changed|same} book {h}

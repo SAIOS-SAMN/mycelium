@@ -1,8 +1,11 @@
 # Resume notes (continuity across sessions)
 
-Last update: 2026-09-10, Stage 14 through L8p (`impl/soak`: the ruling
-"sentences only" d2a9c2e, then the L8p landing after it; `main` stands at
-685a07c, before Stage 14, and is fast-forwarded on the operator's word).
+Last update: 2026-09-10, Stage 14 through L8 (`impl/soak`: the ruling
+"sentences only" d2a9c2e, L8p 4b5e44c, the 50.9 amendment feecbf6, L8
+a488f00 and the rows after it; `main` stands at 685a07c, before Stage 14,
+and is fast-forwarded on the operator's word). Development is PAUSED
+after L8 on the operator's word; the summary of the trajectory is in
+"State at handoff".
 Living task list: `docs/MU-RECURSION-TASKS.md` (Stage 14 rows L0–L11 and
 the pre-L7 rows L7a–L9a). Spec: `docs/MU-RECURSION.md`. Standard:
 `docs/MU-STANDARDS.md`. Historical alpha landings: `docs/TRAJECTORY.md`.
@@ -15,8 +18,8 @@ git log --oneline -1 main impl/soak          # impl/soak is ahead of main
 systemctl --user list-units 'mycelium-server@*' 'mycelium-client@*' --no-legend
 RUSTFLAGS='-D warnings' cargo test --release 2>&1 | grep -E "test result|FAILED"
 (cd xtask && cargo run)                        # gates, then clippy -D warnings
-# expected at 4b5e44c: lib 439, bins 9, alpha_plan 13, g_cga 6; xtask exit 0
-(cd xtask && cargo test)                       # the gates' own tests: 31
+# expected at a488f00: lib 443, bins 9, alpha_plan 13, g_cga 6; xtask exit 0
+(cd xtask && cargo test)                       # the gates' own tests: 32
 ```
 
 ## The fleet
@@ -43,6 +46,31 @@ were not touched.
 
 ## State at handoff
 
+- **2026-09-10, L8 — the contraction protocol (a488f00; doctrine
+  feecbf6).** The wire is a medium, not an echo: the court answers one
+  `Adjudication` per sentence (Stood / Ratified / Refused { kind, at,
+  receipt } with the coordinate as content), the mind seals a refused
+  address on its own chain and in its utterance index and executes the
+  move the refusal names on the held form (`Form::contract`: a refused
+  word becomes a `Creation` demand carrying the remainder it leaves on
+  the mind's family; a refused edge a remainder edge; undeclared cells a
+  `Source` demand; a malformed complex is held inert), holds the
+  contracted form with its `Contraction` certificate, and utters the
+  contracted sentence next stroke citing the receipt; the court that
+  issued the receipt verifies `S' = C(S)` at the coordinate before it
+  replays. The intelligibility test runs three round trips through the
+  codec (VertexBody → RemainderUndeclared → Stood) and a second court of
+  its own identity reaches the same address and standing on the same
+  frame. Found and closed on the way: the speech frame carried no task,
+  so no court had ever replayed a voice's sentence on its copy of the
+  family. Not in this landing (row L8q): the sentence-native quote and
+  probe, and the corpus intake's chain listings — a codec change, the
+  recut with L9. Limits named in the commit: the refusal record, the
+  sealed set and the certificates are in-memory; the record is unbounded
+  by address; move 1 speaks `Creation` until L11 reads harmonics. PAUSED
+  here on the operator's word. Next, on that word: L8q, then L9 (the
+  recut and the cold-boot reading of 50.7/50.9), L10, L11; rulings still
+  asked: L7d, L7f, L9a.
 - **2026-09-10, "sentences only" and L8p.** The operator's critique: the
   work was single-ended emission, and the court composing by F (the
   percept act: `percept_elements` → `reduce_*` → `commit_germ`) was the
@@ -223,16 +251,15 @@ delegates; `cech::extend` reads the transition's own order), L6b 2686272
 puncture-before-mint move on residual chains only; twenty-seven tests
 re-asserted, none deleted). 437/0/9/13/6/0, xtask 0 at 2686272.
 
-Landed since: L7 (a0da3de and its rows) and, after the "sentences only"
-ruling (d2a9c2e), L8p — see "State at handoff". Next, in order: L8 (the
-contraction protocol, 50.9: `Adjudication` on the speech reply,
-`Entity::receive_adjudication`, `Contemplation::contract`, the sealed
-address in the utterance index, the receiver's `S' = C(S)` check, the
-sentence-native quote and probe, the gate
-`no_utterance_path_calls_from_residual`, the two-kernel codec test), then
-L9 (the tape v6 recut on the operator's word, and the cold-boot reading
-of 50.7), L10 (prime letters, a recut), L11 (the cover for a
-deformation). The fleet is stopped and soaks nothing until L8 lands.
+Landed since: L7 (a0da3de and its rows), and after the "sentences only"
+ruling (d2a9c2e) L8p (4b5e44c) and L8 (a488f00) — see "State at
+handoff". Next, in order and on the operator's word: L8q (the
+sentence-native quote and probe; the corpus intake lists the task, not
+its chains), L9 (the tape v6 recut and the cold-boot reading of 50.7 and
+50.9: `adjudicated`, `contracted`, `court contraction verified` lines on
+every voice, no address uttered twice with the same standing), L10
+(prime letters, a recut), L11 (the cover for a deformation). The fleet is
+stopped and soaks nothing until the recut.
 
 The earlier reading list (R1–R7 on d6e19a1): `court orbit docket …`
 period rising above 1 once ruled listings are passed over (R1); `court
