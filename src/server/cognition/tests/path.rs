@@ -88,8 +88,8 @@ fn two_paths_to_one_vertex_are_both_verified_and_each_speaker_is_paid() {
     // The half turn is the quarter turn squared, and the three-quarter
     // turn squared: q² and (q³)² = q⁶ ≡ q² on the plane lattice, which is
     // A12's `4·e_u` relator. Two paths, one vertex.
-    let pa = Path { vertex: vertex.clone(), generators: vec![(vertex_of(&ga), 2)], whole: true };
-    let pb = Path { vertex: vertex.clone(), generators: vec![(vertex_of(&gb), 2)], whole: true };
+    let pa = Path { vertex: vertex.clone(), generators: vec![(ga.address(), vertex_of(&ga), 2)], whole: true };
+    let pb = Path { vertex: vertex.clone(), generators: vec![(gb.address(), vertex_of(&gb), 2)], whole: true };
 
     // A citing voice pays from what it holds, and a genesis allocation is
     // how a voice is funded (MU-PRODUCT §4, `allocate`). An unfunded voice
@@ -144,7 +144,7 @@ fn a_path_citing_what_no_court_ruled_pays_nobody() {
     let spoken = sentence_of(plane_word(2), 9);
     let vertex = vertex_of(&spoken);
     let unruled = sentence_of(plane_word(1), 1);
-    let p = Path { vertex, generators: vec![(vertex_of(&unruled), 2)], whole: true };
+    let p = Path { vertex, generators: vec![(unruled.address(), vertex_of(&unruled), 2)], whole: true };
     let before = k.treasury_entry_count();
     assert_eq!(k.read_paths([3; 32], &spoken, std::slice::from_ref(&p)), 0);
     assert_eq!(k.treasury_entry_count(), before, "no entry is written");
@@ -161,7 +161,7 @@ fn a_path_that_does_not_compose_is_not_a_use() {
     let spoken = sentence_of(plane_word(2), 9);
     let vertex = vertex_of(&spoken);
     // One quarter turn does not reach the half turn.
-    let p = Path { vertex, generators: vec![(vertex_of(&g), 1)], whole: true };
+    let p = Path { vertex, generators: vec![(g.address(), vertex_of(&g), 1)], whole: true };
     let before = k.treasury_entry_count();
     assert_eq!(k.read_paths([3; 32], &spoken, std::slice::from_ref(&p)), 0);
     assert_eq!(k.treasury_entry_count(), before, "nothing is paid on a path that does not compose");

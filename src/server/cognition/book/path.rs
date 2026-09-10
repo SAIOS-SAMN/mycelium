@@ -38,14 +38,13 @@ impl Kernel {
             let mut basis = Vec::with_capacity(p.generators.len());
             let mut tape = Vec::with_capacity(p.generators.len());
             let mut cited = Vec::with_capacity(p.generators.len());
-            for (vertex, e) in &p.generators {
-                // A path cites a VERTEX of a ruled form (1.8). The court
-                // finds the form the vertex lives in through its own
-                // generator index and resolves the word there; nothing is
-                // taken from the frame (1.7).
-                let Some(form_addr) = self.generator_form(vertex) else {
-                    continue;
-                };
+            for (form_addr, vertex, e) in &p.generators {
+                // A path cites the FORM and the VERTEX in it (1.8), because
+                // the speaker knows both: the court does one keyed read on
+                // its own ruled cover and one on that form's own index.
+                // Given the vertex alone it had to walk every chart bucket
+                // to find which form held it, which is the enumeration law
+                // 3 forbids and which this reader's own comment denied.
                 if !self.ruled_contains(form_addr.as_bytes()) {
                     continue;
                 }
@@ -61,7 +60,7 @@ impl Kernel {
                 };
                 tape.push((basis.len(), *e));
                 basis.push(w.rotor());
-                cited.push((form_addr, held.magnitude()));
+                cited.push((form_addr.clone(), held.magnitude()));
             }
             if cited.is_empty() {
                 continue;
@@ -91,22 +90,6 @@ impl Kernel {
             }
         }
         verified
-    }
-}
-
-impl Kernel {
-    /// The ruled form a cited vertex lives in: one keyed read of the
-    /// court's own generator index, never a walk of the cover (law 3).
-    pub(crate) fn generator_form(
-        &self,
-        vertex: &crate::transducer::address::Address,
-    ) -> Option<crate::transducer::address::Address> {
-        for (_, bucket) in self.generators.fiber(crate::network::nerve::ROOT) {
-            if let Some(f) = bucket.get(vertex.as_bytes()) {
-                return Some(f.clone());
-            }
-        }
-        None
     }
 }
 

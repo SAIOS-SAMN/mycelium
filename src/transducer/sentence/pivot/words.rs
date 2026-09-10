@@ -147,50 +147,46 @@ pub fn retract_generators(
     }
 }
 
-/// The generators on one chart: (vertex address, form address).
+/// THE GENERATORS UNDER A CHART PREFIX: (form address, vertex address).
+/// A chart key is `TAG_CHART ‖ axes`, so a peeled chart's key is a byte
+/// prefix of the finer one's and `Keyed::fiber` reads the whole subtree —
+/// the same read `Stalks::fiber_under` performs. Read with `get` on the
+/// exact key instead, every level answered only its own node and the
+/// coarsest level had to be special-cased into a scan of everything held
+/// (law 3).
 pub fn generators_at(
     index: &GeneratorIndex,
     chart: &stalk::Invariant,
+    budget: &mut crate::physics::Budget,
 ) -> Vec<(crate::transducer::address::Address, crate::transducer::address::Address)> {
-    match index.get(chart.key().as_bytes()) {
-        Some(bucket) => bucket
-            .fiber(crate::network::nerve::ROOT)
-            .map(|(v, f)| (crate::transducer::address::Address::from(v), f.clone()))
-            .collect(),
-        None => Vec::new(),
+    let mut out = Vec::new();
+    for (_, bucket) in index.fiber(chart.key().as_bytes()) {
+        for (v, f) in bucket.fiber(crate::network::nerve::ROOT) {
+            if !budget.spend() {
+                return out;
+            }
+            out.push((f.clone(), crate::transducer::address::Address::from(v)));
+        }
     }
+    out
 }
 
-/// THE STRATUM'S GENERATORS (42.6, A21 §2): the chart coarsened one axis
-/// at a time until the read is not empty, exactly as `WorkingAtlas::stratum`
+/// THE STRATUM'S GENERATORS (42.6, A21 §2): the chart coarsened one axis at
+/// a time until the read is not empty, exactly as `WorkingAtlas::stratum`
 /// coarsens — a demand is reduced against the generators of one stratum,
-/// never the language, and no further than it must.
+/// never the language, and no further than it must. The empty chart's key
+/// is `TAG_CHART` alone, so the coarsest level is the same subtree read as
+/// every other and needs no arm of its own.
 pub fn generators_under(
     index: &GeneratorIndex,
     chart: &stalk::Invariant,
+    budget: &mut crate::physics::Budget,
 ) -> Vec<(crate::transducer::address::Address, crate::transducer::address::Address)> {
     let mut at = chart.clone();
     loop {
-        let held = generators_at(index, &at);
-        if !held.is_empty() {
+        let held = generators_at(index, &at, budget);
+        if !held.is_empty() || at.0.is_empty() {
             return held;
-        }
-        if at.0.is_empty() {
-            // The coarsest stratum is everything held: at the root there
-            // is no finer coordinate left to narrow by, and a read of the
-            // root's own key alone would answer nothing at all — the empty
-            // chart is a key, not the subtree under it.
-            return index
-                .fiber(crate::network::nerve::ROOT)
-                .flat_map(|(_, bucket)| {
-                    bucket
-                        .fiber(crate::network::nerve::ROOT)
-                        .map(|(v, f)| {
-                            (crate::transducer::address::Address::from(v), f.clone())
-                        })
-                        .collect::<Vec<_>>()
-                })
-                .collect();
         }
         at = at.peel();
     }

@@ -91,18 +91,19 @@ fn two_presentations_reach_one_vertex_by_two_paths() {
 
     let target = sentence_of(half.clone(), 9);
     let vertex = vertex_of(&target);
-    let pa = a.path_of(&vertex, &half).expect("A reaches the half turn");
-    let pb = b.path_of(&vertex, &half).expect("B reaches the half turn");
+    let mut bud = crate::physics::Physics::default().stroke_n(1 << 20);
+    let pa = a.path_of(&vertex, &half, &mut bud).expect("A reaches the half turn");
+    let pb = b.path_of(&vertex, &half, &mut bud).expect("B reaches the half turn");
 
     assert!(pa.whole, "A's generators compose to the vertex");
     assert!(pb.whole, "B's generators compose to the vertex");
     assert_eq!(
-        pa.generators.first().map(|(x, _)| x.clone()),
+        pa.generators.first().map(|(_, v, _)| v.clone()),
         Some(vertex_of(&ga)),
         "A cites the word vertex of the form it was taught"
     );
     assert_eq!(
-        pb.generators.first().map(|(x, _)| x.clone()),
+        pb.generators.first().map(|(_, v, _)| v.clone()),
         Some(vertex_of(&gb)),
         "B cites the word vertex of the form it was taught"
     );
@@ -139,7 +140,7 @@ fn a_mind_that_holds_nothing_has_no_path() {
     let epi = Epigenome::new();
     let vertex = vertex_of(&sentence_of(plane_word(2), 9));
     assert!(
-        epi.path_of(&vertex, &plane_word(2)).is_none(),
+        epi.path_of(&vertex, &plane_word(2), &mut crate::physics::Physics::default().stroke_n(1 << 20)).is_none(),
         "an empty presentation reaches nothing"
     );
 }

@@ -27,6 +27,7 @@ impl Epigenome {
         &self,
         vertex: &crate::transducer::address::Address,
         word: &crate::transducer::alphabet::Word,
+        budget: &mut crate::physics::Budget,
     ) -> Option<Path> {
         // 50.2: the stratum is the MEASURED VERSOR's, not the body's, and
         // the generators are the WORD VERTICES of the forms this mind holds
@@ -37,9 +38,12 @@ impl Epigenome {
         let chart = crate::transducer::sentence::versor_chart(word)?;
         let mut basis = Vec::new();
         let mut forms = Vec::new();
-        let mut at: Vec<crate::transducer::address::Address> = Vec::new();
-        for (v, form_addr) in
-            crate::transducer::sentence::generators_under(&self.generators, &chart)
+        let mut at: Vec<(
+            crate::transducer::address::Address,
+            crate::transducer::address::Address,
+        )> = Vec::new();
+        for (form_addr, v) in
+            crate::transducer::sentence::generators_under(&self.generators, &chart, budget)
         {
             // A word is not a generator of itself.
             if v.as_bytes() == vertex.as_bytes() {
@@ -59,7 +63,7 @@ impl Epigenome {
             };
             basis.push(w.rotor());
             forms.push(pf);
-            at.push(v);
+            at.push((form_addr, v));
         }
         let g = word.rotor();
         let gf = g.spelled_word().and_then(|w| w.form())?;
@@ -75,8 +79,8 @@ impl Epigenome {
         };
         let mut generators_of_path = Vec::with_capacity(taken.len());
         for (i, e) in &taken {
-            let a = at.get(*i)?;
-            generators_of_path.push((a.clone(), *e));
+            let (f, v) = at.get(*i)?;
+            generators_of_path.push((f.clone(), v.clone(), *e));
         }
         if generators_of_path.is_empty() {
             return None;
@@ -94,13 +98,17 @@ impl Epigenome {
 
     /// Every word vertex of a form, with the path this mind reached it
     /// through. Vertices the presentation does not touch carry none.
-    pub fn paths_of_form(&self, f: &crate::transducer::sentence::Form) -> Vec<Path> {
+    pub fn paths_of_form(
+        &self,
+        f: &crate::transducer::sentence::Form,
+        budget: &mut crate::physics::Budget,
+    ) -> Vec<Path> {
         let mut out = Vec::new();
         for v in &f.vertices {
             let crate::transducer::sentence::Vertex::Word { address, word, .. } = v else {
                 continue;
             };
-            if let Some(p) = self.path_of(address, word) {
+            if let Some(p) = self.path_of(address, word, budget) {
                 out.push(p);
             }
         }
