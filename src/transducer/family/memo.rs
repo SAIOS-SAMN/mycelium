@@ -47,15 +47,23 @@ pub fn pair_form(
     let peeled = match hit {
         Some(f) => f,
         None => {
-            let form = pair_form_uncached(a, b, scale);
-            PAIR_FORM_MEMO.with(|m| {
-                *m.borrow_mut() = Some(PairFormMemo {
-                    a: a.clone(),
-                    b: b.clone(),
-                    scale,
-                    form: form.clone(),
+            let form = pair_form_uncached(a, b, scale, budget);
+            // 50.8: the cover is part of the PERCEPT and is built under
+            // this budget. A budget that ended carried fewer pieces, so
+            // the reading is incomplete — and an incomplete percept is
+            // not memoised, or the next caller with a fuller stroke would
+            // be handed this one's shortfall as if it were the scene
+            // (rule 11: unmeasured is not a smaller answer).
+            if budget.remaining() > 0 {
+                PAIR_FORM_MEMO.with(|m| {
+                    *m.borrow_mut() = Some(PairFormMemo {
+                        a: a.clone(),
+                        b: b.clone(),
+                        scale,
+                        form: form.clone(),
+                    });
                 });
-            });
+            }
             form
         }
     };

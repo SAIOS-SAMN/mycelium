@@ -5,6 +5,7 @@
 //! onto a scene. A bundle it does not close is a withheld form.
 
 pub mod correspondence;
+pub mod cover;
 pub mod descent;
 pub mod extract;
 pub mod memo;

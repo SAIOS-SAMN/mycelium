@@ -331,7 +331,15 @@ pub(crate) fn pair_scene(
 /// each unpaired output body its support overlaps, on the axes their
 /// charts differ, and toward the empty chart on every axis when nothing
 /// overlaps it — it vanished.
-fn unpaired_demands(ins: &[Cand], outs: &[Cand], used_in: &[bool], used_out: &[bool]) -> Vec<Demanded> {
+fn unpaired_demands(
+    ins: &[Cand],
+    outs: &[Cand],
+    used_in: &[bool],
+    used_out: &[bool],
+    scale: Option<((usize, usize), (usize, usize))>,
+    budget: &mut crate::physics::Budget,
+    filed: &mut Vec<(crate::transducer::alphabet::Rotor, u32)>,
+) -> Vec<Demanded> {
     use crate::transducer::peel::ShellKind::Whole;
     use crate::transducer::sentence::Demand;
     let mut out = Vec::new();
@@ -372,6 +380,28 @@ fn unpaired_demands(ins: &[Cand], outs: &[Cand], used_in: &[bool], used_out: &[b
             Some(_) => {
                 for (_, (image, j)) in images.fiber(crate::network::nerve::ROOT) {
                     imaged_out.insert(j.to_le_bytes(), ());
+                    // 50.8, L11c — THE COVER IS BUILT BEFORE THE DEMAND IS
+                    // TYPED. No single versor carries this body onto its
+                    // image, but its PIECES may each be carried; what the
+                    // pieces leave at their meets is the class the form
+                    // files, and the demand stands only on what the cover
+                    // did not reach.
+                    let cover = crate::transducer::family::cover::cover_deformation(
+                        &ic.body,
+                        &outs[*j].body,
+                        scale,
+                        budget,
+                    );
+                    for (g, ell) in &cover.filed {
+                        filed.push((g.clone(), *ell));
+                    }
+                    // The demand DISSOLVES only when every cell of both
+                    // bodies is carried and no meet stands (50.8). A cover
+                    // that reached everything and left nothing standing
+                    // answered the deformation; anything else leaves it.
+                    if cover.uncarried == 0 && cover.standing.is_empty() && !cover.carried.is_empty() {
+                        continue;
+                    }
                     let axes = differing_axes(&ic.body.moduli, image);
                     let cells = delta_cells(&ic.body, &outs[*j].body);
                     out.push((Demand::TopologicalDeformation { image: image.clone(), axes }, ic.body.moduli.clone(), cells));
@@ -442,6 +472,7 @@ pub(crate) fn pair_form_uncached(
     a: &Grid,
     b: &Grid,
     scale: Option<((usize, usize), (usize, usize))>,
+    budget: &mut crate::physics::Budget,
 ) -> Form {
     let PairedScene { ins, outs, pairs, used_in, used_out } = pair_scene(a, b, scale);
     let mut vertices = vec![frame_vertex()];
@@ -461,7 +492,11 @@ pub(crate) fn pair_form_uncached(
             None => {}
         }
     }
-    demanded.extend(unpaired_demands(&ins, &outs, &used_in, &used_out));
+    // 50.8: the cover's filed classes travel back with the demands. The
+    // form's torsion carrier is where they belong (15.5) and writing them
+    // onto it is not reached here — named, not hidden.
+    let mut filed: Vec<(crate::transducer::alphabet::Rotor, u32)> = Vec::new();
+    demanded.extend(unpaired_demands(&ins, &outs, &used_in, &used_out, scale, budget, &mut filed));
     // One demand vertex per (kind, chart) (50.5), the bodies it stands for
     // gathered under it; key order, never arrival order.
     let mut by_demand: crate::network::nerve::Keyed<Demanded> = crate::network::nerve::Keyed::new();
