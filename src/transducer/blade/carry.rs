@@ -58,37 +58,56 @@ pub(crate) fn half_rotor(s: &BigRational, b: &BigRational) -> Option<(BigRationa
     }
 }
 
-/// THE TRANSPORT BETWEEN TWO BODIES, in closed form from their moments.
-/// Translation from the body centroids; the dilation ρ from the per-cell
-/// spread (a rational square, or the bodies are not similar in ℚ — a
-/// refusal, never a rounding); the rotation from the moment harmonics: the
-/// inertia's anisotropy turns at twice the body's angle, so the rotor
-/// carrying `a`'s anisotropy onto `b`'s is halved once; an isotropic body
-/// is oriented by its fourth harmonic, halved twice. Each harmonic leaves a
-/// finite ambiguity — the body's own stabilizer (a half turn for the
-/// second harmonic, quarter turns for the fourth) — and a reflection is
-/// tried as the odd versor; every candidate is verified by carrying every
-/// cell center of `a` into a cell of `b` and every cell center of `b` back
-/// into a cell of `a`. `None` when no rational versor carries `a` onto `b`.
+/// THE TRANSPORT BETWEEN TWO BODIES, in closed form from their moments:
+/// the canonical representative (50.2 step 1 as ruled 2026-09-09) of the
+/// coset `versor_coset` measures. `None` when no rational versor carries
+/// `a` onto `b`.
 pub fn versor_between(a: &Shape, b: &Shape) -> Option<Mv> {
+    coset_representative(&versor_coset(a, b))
+}
+
+/// THE COSET OF VERSORS carrying `a` onto `b`, each with the rotation it
+/// was built from. Translation from the body centroids; the dilation ρ
+/// from the per-cell spread (a rational square, or the bodies are not
+/// similar in ℚ — a refusal, never a rounding); the rotation from the
+/// moment harmonics: the inertia's anisotropy turns at twice the body's
+/// angle, so the rotor carrying `a`'s anisotropy onto `b`'s is halved
+/// once; an isotropic body is oriented by its fourth harmonic, halved
+/// twice. Each harmonic leaves a finite ambiguity — the body's own
+/// stabilizer (a half turn for the second harmonic, quarter turns for the
+/// fourth) — and a reflection is tried as the odd versor; every candidate
+/// is verified by carrying every cell center of `a` into a cell of `b` and
+/// every cell center of `b` back into a cell of `a`. The ones that carry
+/// are one coset of the stabilizer acting on one transport, and none is
+/// chosen here: the coset is what is measured (L7c), its representative
+/// is `coset_representative`'s.
+pub fn versor_coset(a: &Shape, b: &Shape) -> Vec<(Mv, Mv)> {
+    let mut coset: Vec<(Mv, Mv)> = Vec::new();
     if a.blade.cells.is_empty() || b.blade.cells.is_empty() {
-        return None;
+        return coset;
     }
     // Body centroids in the sensor's vertex coordinates: the cell-center
     // centroid plus one half on each axis.
-    let (ca1, ca2) = a.blade.centroid().map(|(x, y)| (x + qn(1, 2), y + qn(1, 2)))?;
-    let (cb1, cb2) = b.blade.centroid().map(|(x, y)| (x + qn(1, 2), y + qn(1, 2)))?;
+    let Some((ca1, ca2)) = a.blade.centroid().map(|(x, y)| (x + qn(1, 2), y + qn(1, 2))) else {
+        return coset;
+    };
+    let Some((cb1, cb2)) = b.blade.centroid().map(|(x, y)| (x + qn(1, 2), y + qn(1, 2))) else {
+        return coset;
+    };
     let spread = |s: &Shape| (&s.blade.inertia[0] + &s.blade.inertia[1]) / &s.blade.shell;
     let (sa, sb) = (spread(a), spread(b));
     let rho = match sa.is_zero() {
         true => match sb.is_zero() {
             true => q(1),
-            false => return None,
+            false => return coset,
         },
-        false => rational_sqrt(&(&sb / &sa))?,
+        false => match rational_sqrt(&(&sb / &sa)) {
+            Some(r) => r,
+            None => return coset,
+        },
     };
     if b.blade.shell != &a.blade.shell * &rho * &rho {
-        return None; // the cell counts do not scale as ρ²: not similar
+        return coset; // the cell counts do not scale as ρ²: not similar
     }
     let to_origin = cga::translator(&(-&ca1), &(-&ca2));
     let to_target = cga::translator(&cb1, &cb2);
@@ -101,11 +120,13 @@ pub fn versor_between(a: &Shape, b: &Shape) -> Option<Mv> {
     let realise = |tape: &[(LetterId, bool)]| -> Option<Mv> {
         crate::transducer::element::versor_of_word(&Word::from_letters(tape))
     };
-    let quarter = realise(&[(LetterId::quarter((PLANE_ROW, PLANE_COL))?, false)])?;
+    let Some(quarter) = LetterId::quarter((PLANE_ROW, PLANE_COL)).and_then(|q| realise(&[(q, false)])) else {
+        return coset;
+    };
     let half_turn = quarter.geo(&quarter);
-    let flip_letter = LetterId::quarter((PLANE_COL, 2))?;
-    let sheet = realise(&[(flip_letter, false), (flip_letter, false)])?;
-    let verify = |v: &Mv| -> bool { carries(v, a, b) };
+    let Some(sheet) = LetterId::quarter((PLANE_COL, 2)).and_then(|f| realise(&[(f, false), (f, false)])) else {
+        return coset;
+    };
     for reflect in [false, true] {
         let a2 = a.blade.harmonic2(reflect);
         let b2 = b.blade.harmonic2(false);
@@ -152,17 +173,47 @@ pub fn versor_between(a: &Shape, b: &Shape) -> Option<Mv> {
             if cga::is_versor(&rotor).is_none() {
                 continue;
             }
-            let mut v = rotor.geo(&to_origin);
-            if reflect {
-                v = rotor.geo(&sheet).geo(&to_origin);
-            }
-            v = to_target.geo(&dil).geo(&v);
-            if verify(&v) {
-                return Some(v);
+            let rotation = if reflect { rotor.geo(&sheet) } else { rotor };
+            let v = to_target.geo(&dil).geo(&rotation).geo(&to_origin);
+            if carries(&v, a, b) {
+                coset.push((rotation, v));
             }
         }
     }
-    None
+    coset
+}
+
+/// THE CANONICAL REPRESENTATIVE OF A COSET (50.2 step 1 as ruled, law 6):
+/// the member nearest the identity in the Cayley graph — the coset's
+/// geodesic — read as the greatest `a²/w` of its rotation part (15.3's
+/// class invariant, an exact rational; a reflected member reads zero),
+/// ties broken by the least A21 key of the canonical rotation. A gauge
+/// fixed by content, A1's sign step at the altitude of a coset: two voices
+/// measuring one pair return one versor, never the first that verified.
+/// Not a choice among candidates by a scalar (rule 4) — every member
+/// carries the body; what is fixed is which name the language gives the
+/// class, and a dilated bar is carried by the dilation, not by the
+/// dilation and the bar's own half turn.
+pub fn coset_representative(coset: &[(Mv, Mv)]) -> Option<Mv> {
+    let nearness = |rotation: &Mv| -> Option<BigRational> {
+        let w = cga::is_versor(rotation)?;
+        let a = rotation.scalar_part();
+        Some(&a * &a / w)
+    };
+    let mut geodesic: Option<(BigRational, Vec<u8>, &Mv)> = None;
+    for (rotation, v) in coset {
+        let Some(n) = nearness(rotation) else { continue };
+        let Some(key) = rotation.key() else { continue };
+        let key = key.into_vec();
+        let nearer = match &geodesic {
+            None => true,
+            Some((held, held_key, _)) => n > *held || (n == *held && key < *held_key),
+        };
+        if nearer {
+            geodesic = Some((n, key, v));
+        }
+    }
+    geodesic.map(|(_, _, v)| v.clone())
 }
 
 /// EVERY CELL CARRIED, BOTH WAYS: `v` carries each cell center of `a` into

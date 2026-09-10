@@ -53,6 +53,41 @@ fn moduli_and_transport_are_exact_and_similarity_invariant() {
     assert!(versor_between(&pin_shape, &shape_of(&pin_rot)).is_some(), "a quarter turn found");
 }
 
+/// 50.2 step 1 as ruled 2026-09-09 (L7c): several versors carry a
+/// symmetric body — the coset of its stabilizer on one transport — and the
+/// one returned is the coset's geodesic, the member nearest the identity,
+/// the same whatever order the candidates were tried in. A dilated square
+/// is carried by the dilation and not by the dilation and one of its
+/// turns; a dilated bar by the dilation and not by the dilation and its
+/// half turn.
+#[test]
+fn the_versor_between_symmetric_bodies_is_the_cosets_geodesic() {
+    let sq = shape_of(&rect(0, 0, 2, 2));
+    let sq3 = shape_of(&rect(4, 4, 6, 6));
+    let coset = versor_coset(&sq, &sq3);
+    assert!(coset.len() > 1, "a square's stabilizer is not trivial: {} members", coset.len());
+    let v = versor_between(&sq, &sq3).expect("carried");
+    let mut reversed = coset.clone();
+    reversed.reverse();
+    assert_eq!(
+        coset_representative(&reversed).map(|r| r.key()),
+        Some(v.key()),
+        "the representative does not depend on the order the coset was measured in"
+    );
+    assert_eq!(carry(&v, 0, 0), Some((q(4), q(4))), "the dilation alone: (0,0) → (4,4)");
+    assert_eq!(carry(&v, 2, 2), Some((q(10), q(10))), "and (2,2) → (10,10)");
+    for (_, member) in &coset {
+        assert!(carries(member, &sq, &sq3), "every member of the coset carries the body");
+    }
+    let bar = shape_of(&rect(0, 0, 2, 3));
+    let bar2 = shape_of(&rect(0, 0, 4, 6));
+    let coset = versor_coset(&bar, &bar2);
+    assert!(coset.len() > 1, "a bar's stabilizer holds its half turn: {} members", coset.len());
+    let v2 = versor_between(&bar, &bar2).expect("a dilation");
+    assert_eq!(carry(&v2, 0, 0), Some((q(0), q(0))), "the dilation, not the dilation and a half turn");
+    assert_eq!(carry(&v2, 2, 3), Some((q(4), q(6))));
+}
+
 /// 24.4, A21 §2, Stage 12 S12.1a — A CHART'S PREFIX IS THE TOPOLOGICAL
 /// STRATUM. Two rectangles of different proportions have the same
 /// components, holes and turns and different moment ratios: their charts
