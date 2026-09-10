@@ -3351,6 +3351,20 @@ Inside `extract_rule_with`, in order:
    answers `on_body` from `by_moduli`, its own `Form.by_class` one level
    up (18.2): body chart → the addresses of the closed forms it holds with
    a `Word` vertex there, filled and emptied where the axis index is.
+
+   **`by_moduli` ROUTES AND DOES NOT DECIDE** (ruled 2026-09-10). It
+   narrows the candidates a chart could reach and nothing more; what
+   decides is `speak_form` reproducing the pair's output — `apply` and
+   `unapply`, a deconstruction — on every pair of the bundle. 24.3 is the
+   standing rule: "incidence is deconstruction, never a key. A listing is
+   incident with the mind iff some held word deflates it under
+   `apply`/`unapply`, measured lane-wise. Chart keys route the quote; they
+   never decide comprehension." An index read as the comprehension is the
+   dictionary fault one level up from the cipher — the key becomes the
+   answer instead of handing the traversal its candidates — and it is
+   refused wherever it appears. Nor is the glue the operation: gluing is
+   the case where a **whole closed form** reproduces a sub-scene, and the
+   operation of which it is one case is the factorisation of 50.2 step 2.
 4. **Rebasing.** "Do to B what A did to itself": vertex `j` is `i` read in
    `j`'s frame when `w_j = t · w_i · t⁻¹` with `t` the relative placement
    from `i`'s body to `j`'s body (the translator factor of `face_of(i,
@@ -4964,12 +4978,47 @@ steps 1–4, `PlaneForm` torsion in `Z/N`; `element/letters.rs`: `Letters` carri
 the conductor; `economy/settle.rs`: conductor factor in the S-lane cost; genome
 section `SYL1` `(n, plane, id)*`. Tests and traces: chapters 39–40.
 
-### 37.7 Upgrade P — the prime letters, opened by the court (ruled 2026-09-10)
+### 37.7 THE ADJUNCTION — the court adjoins a remainder as a generator (ruled 2026-09-10)
 
-The prime wall (36.3) is crossed without the tower: the letter is
-rational, the field is ℚ, and 37.1–37.4 stay closed. What crosses it is
-the effector the doctrine had withheld — the court opening a letter on a
-demand — and this section binds it.
+**There is one move, not one per wall.** A demand is the canonical
+remainder a factorisation through the presentation left (A12 step 5,
+50.2 step 2), and the generator the presentation lacks **is that
+remainder**. It is already exact, already measured, already canonical,
+and it carries itself as its own witness; nothing is searched for and
+nothing is constructed. The court adjoins it when two independent courts
+re-derive the same remainder from the same witness, rules it with a
+receipt, and the syllabus teaches it before any voice speaks it. That is
+the whole of how the language grows a generator, and 1.8 already said so:
+"a residual that no generator reduces is adjoined as a new generator once
+the court has replayed it and independent lineages have reached the same
+conclusion".
+
+**The kind is a level, never a dispatch.** A remainder lives at the level
+its factorisation stopped at, and the level is a coordinate read off the
+remainder — for the log line and for the route — never a key into a table
+of closers. Its canonical form at that level is the one the tree already
+computes:
+
+| level | the factorisation that stopped | the remainder's canonical form | already in the tree |
+|---|---|---|---|
+| the ring | A22's peel over one plane block | the Gaussian factor, `a + b·e_ij` with `a² + b² = p`, `a > b > 0` | A1 (16.1) and `core::gaussian` |
+| the presentation | A12 over the stratum's generators | the HNF residue, unique under the row order | A12 step 5 |
+| the cover | the pieces' nerve does not glue | the filled cell over the meet's loop, `Fill::Class(ℓ)` | `cech::extend` (50.8) |
+
+None of these is a closer written for a kind; each is the canonical form
+of an exact object, and it exists because the object does. A dispatch
+table over the five demand kinds of 50.5 would be a dictionary of
+closers — the cipher's fault at the level of the effector — and it is
+refused for the same reason (1.7).
+
+**What follows for the walls.** The prime wall (36.3) is the ring level
+of the adjunction and needs no tower: the letter is rational, the field
+is ℚ, and 37.1–37.4 stay closed. The deformation wall (50.8) is the cover
+level of the same adjunction. P1–P7 below bind the ring level in full and
+are read as the instance, not as the procedure; 50.8 binds the cover
+level the same way. What varies between them is the canonical form in the
+table above and nothing else: the witness, the two-court consilience, the
+receipt, the syllabus, the content name and the epoch are one procedure.
 
 **P1 The letter.** For a prime `p ≡ 1 (mod 4)` and a pair plane `(i, j)`
 the letter is
@@ -5595,12 +5644,20 @@ speaker F, the receiver G at the court, then the three seams severed in
 the order 50.6 lists them, the last of them the court's irreducible
 listing — and it precedes S13.11 onward and every remaining item of
 Stages 2–5, since a court that lists chains has nothing to rule. Ruled
-2026-09-10, after the recut of L9: the two walls answered by the running
-engine — L10 the prime letters opened by the court on two witnesses (36.3,
-37.7, law 6 as ruled; a recut for the tape's escape byte) and L11 the
-cover and the filled cell for a deformation (50.8). The order stands: the
-seams are severed before any generator is grown on the substrate they
-leaked through.
+2026-09-10, after the recut of L9: the walls are answered by the running
+engine. Amended the same day — the two rows once called L10 (the prime
+letters) and L11 (the deformation cover) are **one** row, the adjunction
+of 37.7: the court adjoins the canonical remainder a factorisation left,
+at whatever level it stopped at, on two courts' re-derivation of the same
+witness. Two rows for two walls was a dispatch over a taxonomy, and the
+first proof of the adjunction is therefore at whichever level is cheapest
+to construct, in process, with no corpus in it — a generator adjoined at
+run time with no commit is the claim, and no order between levels is
+ruled. Before it, L8x: F factors through the presentation (50.2 step 2),
+without which the utterance path is a cipher and there is no presentation
+for a remainder to be the remainder *of*. The order stands: the seams are
+severed before any generator is grown on the substrate they leaked
+through.
 
 **Consolidation discipline.** This document is edited in place. A change
 to any chapter edits that chapter; nothing is amended by reference from a
@@ -6393,6 +6450,21 @@ receipts and not over the one receipt a single circuit may seal (R7,
 2026-09-09: `comprehension 0/0` on every orbit at period 1); `court phase
 …` is written once per window.
 
+**These four are the instrument** (ruled 2026-09-10). Any reading of this
+engine is taken in its own coordinates — addresses, ranks, generators
+adjoined against retired, the presentation's size against the families it
+comprehends — and never in a taxonomy a reader named. A tally of the
+demand kinds of 50.5 is an observation and orders nothing: it is the
+engine rendered into human buckets, and a build order chosen from it is a
+count deciding a branch (rule 2) with the implementor as the effector,
+which is the fault 37.7's adjunction exists to remove. Whether a corpus's
+families close is that corpus's score and measures the **cognition**;
+whether the presentation grows, converges, and comprehends more per
+generator measures the **engine**, and it is `growth` and `comprehension`
+below that read it. The one number that bears on the architecture is
+generators the engine adjoined at run time with no commit; until the
+adjunction of 37.7 runs, that number is zero and every report says so.
+
 A phase is computed from the receipts over a height window and is never
 stored, announced or thresholded; a transition is read after the fact and
 gates nothing. Four coordinates, each read from the receipt kinds (45.1)
@@ -6733,8 +6805,41 @@ and what the eyes cannot pair ride the sentence as typed demand vertices
    `V_k`, so `Γ_ij` of 50.3 is the same class on both; the representative
    is a gauge fixed by content, A1's sign step at the altitude of a
    coset, and not a choice among candidates (rule 4).
-2. Peel to letters. `W_k = factor_rotor(rotor of V_k)` by 50.4 (A22); an
-   unclosed remainder is `RotorPrime` or `Standing` (50.5).
+2. **Factor through the presentation, and peel only the residue** (ruled
+   2026-09-10). `W_k` is first factored through the generators the mind
+   holds on the measured versor's stratum (A12, `WorkingAtlas::stratum`,
+   42.6): the presentation is the language (1.8), and a voice says what
+   its own generators reach. The reading is `Factored`:
+   **Understood** — the versor is in the span, and `W_k` is the path
+   through those generators, each cited by address; **Novel** — the
+   factorisation leaves the canonical remainder of A12 step 5, unique and
+   with no choice in it, and only that residue goes to `factor_rotor`
+   (A22, 50.4), which peels it against the seventeen; **Unmeasured** — the
+   budget ended, which is not a demand (rule 11). A residue A22 cannot
+   spell either is the demand, and the demand carries it as its witness
+   (50.5).
+
+   A22 from the identity, run on every measured versor, is a **function of
+   the versor alone**: it returns the same tape whatever the mind knows,
+   has learned or has stood, so two voices with different languages emit
+   one tape, no held generator ever enters an utterance, and nothing a
+   mind learned can change what it says. That is a cipher — meaning
+   recovered from a table rather than reached by composition — and it was
+   the whole of the utterance path until this ruling. It survives as the
+   last step and never the first.
+
+   **The path is the proof and it travels.** `Factored::Understood`'s
+   tape — the generators cited by address, in application order with
+   their exponents — rides the speech frame beside the sentence, per word
+   vertex, exactly as the contraction certificate does (26, 50.9); the
+   tape does not change and no recut is forced, because the geodesic on
+   the tape quotients the path away (1.5) and the path is therefore not a
+   coordinate of the form (law 12). The receiver composes the cited
+   generators, checks the product reaches the vertex's own word by M1, and
+   pays each generator's speaker for the use (26). Two minds with
+   different presentations reach one vertex by two paths — one address,
+   two proofs (13.10's synonyms, 23.9's conjugate level) — and the ledger
+   tells them apart where the addresses cannot.
 3. Connect. For every edge the eyes admit, `Γ_ij` by 50.3; a pair with
    no rigid versor is a remainder edge.
 4. Form loops. The holonomy of every cycle of `E`, read in the base
@@ -6928,12 +7033,14 @@ and `d` `demand` lines, the hypha answers `court demand listed` `d` times
 and `court attest` with a sentence replayed, and `remainder expressed`
 appears nowhere.
 
-### 50.8 The two walls answered by the engine that runs (ruled 2026-09-10)
+### 50.8 The levels of one remainder (ruled 2026-09-10)
 
-Chapter 50.5 typed what `F` cannot do; until this ruling two of its
-demands had no consumer in the running engine, and a demand without a
-consumer is a sensor without an effector. Both consumers are moves the
-carriers already name; neither is a search, and neither is a commit.
+Chapter 50.5 typed what `F` cannot do; until this ruling its demands had
+no consumer in the running engine, and a demand without a consumer is a
+sensor without an effector. The consumer is **one** — 37.7's adjunction —
+and this section says what the remainder's canonical form is at each
+level the factorisation can stop at. Neither level is a search and
+neither is a commit; neither is a closer written for a kind.
 
 **The field of the letters — `RotorPrime`.** The letter a prime demands is
 the witness rotor's own Gaussian factor; two independent courts re-derive
