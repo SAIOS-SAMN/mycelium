@@ -406,7 +406,7 @@ fn a_form_that_leaves_a_remainder_is_refused_for_closure() {
     };
     let (x, y) = (grid(&["1"]), grid(&["2"]));
     let one_pair = vec![(x.clone(), y.clone())];
-    let rule = extract_rule(&one_pair).expect("a recolour is a rule");
+    let rule = extract_rule(&one_pair, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour is a rule");
     let word = mint_sentence(&rule, &one_pair, &NoCrystal).expect("it closes its own pair");
     assert_eq!(
         blind_replay_on(&word, &|_| None, Some(&one_pair), &NoCrystal),

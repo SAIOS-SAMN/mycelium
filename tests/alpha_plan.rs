@@ -54,7 +54,7 @@ fn faces_by_constancy_three_squares() {
         .map(|row| row.iter().map(|&h| if h == 1 { 2 } else { h }).collect())
         .collect();
     let family = vec![(train_in.clone(), train_out.clone())];
-    let rule = extract_rule(&family).expect("three squares extract");
+    let rule = extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20)).expect("three squares extract");
     let non_frame: Vec<(usize, &Vertex)> = rule
         .form
         .vertices
@@ -105,7 +105,7 @@ fn speak_rule_recolours_or_conflicts() {
     let train_in = grid(&["1100", "0000"]);
     let train_out = grid(&["2200", "0000"]);
     let family = vec![(train_in.clone(), train_out.clone())];
-    let rule = extract_rule(&family).expect("one square extracts");
+    let rule = extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20)).expect("one square extracts");
     let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("spoken");
     assert!(spoken.remainder.is_empty(), "the square is reached: {:?}", spoken.remainder);
     assert_eq!(spoken.grid(), train_out);
@@ -146,7 +146,7 @@ fn a_single_recolour_is_a_one_morphism_sentence() {
     let train_in = grid(&["1100", "0000"]);
     let train_out = grid(&["2200", "0000"]);
     let family = vec![(train_in, train_out)];
-    let rule = extract_rule(&family).expect("one body extracts");
+    let rule = extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20)).expect("one body extracts");
     let words: Vec<_> = rule
         .form
         .vertices
@@ -202,7 +202,7 @@ fn hypha_snapshot_is_myc4() {
     // A voice's sentence for a recolour, spoken through the one door an
     // utterance has (law 8): a listing on the book to snapshot.
     let family = vec![(grid(&["11"]), grid(&["22"]))];
-    let rule = extract_rule(&family).expect("a recolour extracts");
+    let rule = extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour extracts");
     let spoken = mint_sentence(&rule, &family, &NoCrystal).expect("a sentence");
     let task = mycelium::registry::task_id(&mycelium::arc::Task { train: family.clone(), test: Vec::new() });
     k.bind_task_family(&task, family);

@@ -70,7 +70,7 @@ fn a_mind_that_stood_a_form_cites_it_when_it_extracts_a_rule() {
     let mut epi = Epigenome::new();
     epi.stand_dialect_at(e.clone(), 1, 1).expect("stood");
 
-    let rule = crate::transducer::family::extract_rule_with(&family, &epi)
+    let rule = crate::transducer::family::extract_rule_with(&family, &epi, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("the family extracts");
     assert!(
         rule.form

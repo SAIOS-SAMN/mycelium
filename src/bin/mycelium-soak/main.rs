@@ -30,6 +30,10 @@ struct Reading {
     /// the alphabet could not spell and the eyes could not pair, and so
     /// which of L10 and L11 a corpus is actually asking for.
     kinds: [u64; 5],
+    /// Budget spent across the walk, and the families whose extraction
+    /// ended on it rather than on the bundle (L8w).
+    spent: u64,
+    exhausted: u64,
 }
 
 fn main() {
@@ -59,6 +63,10 @@ fn main() {
                 r.tasks, r.extracted, r.stood, r.glued, r.demands, r.words
             );
             println!(
+                "  soak budget spent {} exhausted {}",
+                r.spent, r.exhausted
+            );
+            println!(
                 "  soak demands rotor_prime {} standing {} source {} creation {} deformation {}",
                 r.kinds[0], r.kinds[1], r.kinds[2], r.kinds[3], r.kinds[4]
             );
@@ -86,6 +94,7 @@ fn walk(dir: &str, limit: usize) -> Result<Reading, String> {
     names.truncate(limit);
 
     let mut epi = Epigenome::new();
+    let mut physics = mycelium::physics::Physics::default();
     let mut r = Reading::default();
     let mut k = 0u64;
     for name in &names {
@@ -105,9 +114,22 @@ fn walk(dir: &str, limit: usize) -> Result<Reading, String> {
         eprintln!("  soak task {name} pairs {}", task.train.len());
         // 21 with the mind as its own crystal: what it stood on an earlier
         // family is what it may cite on this one.
-        let Some(rule) = extract_rule_with(&task.train, &epi) else {
+        // L8w: the extraction runs under a stroke like every other read,
+        // and what it has when the budget ends is a withheld form. The
+        // budget spent is itself a reading — a family that exhausts it is
+        // one the search could not finish, and 50.2 step 2 is why.
+        let mut budget = physics.stroke();
+        let before = budget.remaining();
+        let Some(rule) = extract_rule_with(&task.train, &epi, &mut budget) else {
             continue;
         };
+        // Exact, not saturating (rule 11): a budget's remaining reads only
+        // ever fall, so `before` is never below it and the difference is
+        // the spend itself.
+        r.spent += (before - budget.remaining()) as u64;
+        if budget.remaining() == 0 {
+            r.exhausted += 1;
+        }
         r.extracted += 1;
         for v in &rule.form.vertices {
             match v {

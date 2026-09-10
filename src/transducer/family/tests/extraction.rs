@@ -14,7 +14,7 @@ let family = vec![
     (squares(4, 1, 12), squares(4, 2, 12)),
     (squares(3, 1, 9), squares(3, 2, 9)),
 ];
-let rule = extract_rule_with(&family, &NoCrystal).expect("extracts");
+let rule = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extracts");
 let words = rule
     .form
     .vertices
@@ -29,7 +29,7 @@ let mixed = vec![
     (grid(&["1100", "1000", "0000"]), grid(&["0011", "0001", "0000"])),
     (grid(&["1100", "0000", "0000"]), grid(&["2200", "0000", "0000"])),
 ];
-let some = extract_rule_with(&mixed, &NoCrystal).expect("sectioned");
+let some = extract_rule_with(&mixed, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("sectioned");
 assert!(
     some.section_count() > 0,
     "a class present in some pairs is a section"
@@ -49,7 +49,7 @@ let l_in = ["100000", "100000", "110000", "000000", "000330", "000000"];
 let cw = ["111000", "100000", "000000", "000000", "000550", "000000"];
 let ccw = ["001000", "111000", "000000", "000000", "000550", "000000"];
 let family = vec![(grid(&l_in), grid(&cw)), (grid(&l_in), grid(&ccw))];
-let rule = extract_rule_with(&family, &NoCrystal).expect("extracts");
+let rule = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extracts");
 let words = rule
     .form
     .vertices
@@ -92,7 +92,7 @@ assert!(
     "two pairs with different frame ratios have no scale"
 );
 assert!(
-    extract_rule_with(&family, &NoCrystal).is_none(),
+    extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20)).is_none(),
     "extract_rule_with returns None when the scale is not measured"
 );
 }
@@ -220,7 +220,7 @@ let family = vec![
     (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
     (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
 ];
-let flat = extract_rule_with(&family, &NoCrystal).expect("flat");
+let flat = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("flat");
 let flat_words = flat
     .form
     .vertices
@@ -270,7 +270,7 @@ let crystal = Held {
     e: held_e,
     f: held_form,
 };
-let rule = extract_rule_with(&family, &crystal).expect("glues");
+let rule = extract_rule_with(&family, &crystal, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("glues");
 assert_eq!(rule.form.depth_of(), 1, "gluing a depth-0 form is depth 1");
 let glued = rule
     .form
@@ -321,7 +321,7 @@ let family = vec![
     (grid(&["1"]), grid(&["2"])),
     (grid(&["10"]), grid(&["23"])),
 ];
-let rule = extract_rule(&[(grid(&["1"]), grid(&["2"]))]).expect("recolour");
+let rule = extract_rule(&[(grid(&["1"]), grid(&["2"]))], &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("recolour");
 let (_pay, rems) = form_descent(&rule.form, &family, &NoCrystal);
 let listings: Vec<&Vec<(i64, i64, u8, u8)>> =
     rems.iter().filter(|r| !r.is_empty()).collect();
@@ -364,7 +364,7 @@ let family = vec![
     (grid(&["1100", "1000", "0000"]), grid(&["0011", "0001", "0000"])),
     (grid(&["1100", "0000", "0000"]), grid(&["2200", "0000", "0000"])),
 ];
-let rule = extract_rule(&family).expect("section class");
+let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("section class");
 assert!(
     rule.section_count() > 0,
     "a some-pair class exists, got {} vertices",
@@ -403,7 +403,7 @@ let family = vec![
     (grid(&["1100", "1000", "0000"]), grid(&["0011", "0001", "0000"])),
     (grid(&["1100", "0000", "0000"]), grid(&["2200", "0000", "0000"])),
 ];
-let rule = extract_rule(&family).expect("frame plus a some-pair class");
+let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("frame plus a some-pair class");
 assert!(
     rule.section_count() > 0,
     "a class present in some pairs is a section, got {} vertices {} sections",
@@ -421,7 +421,7 @@ let family = vec![
     (grid(&["1100", "1100"]), grid(&["2200", "2200"])),
     (grid(&["1110", "0000"]), grid(&["2220", "0000"])),
 ];
-let rule = extract_rule(&family).expect("different shapes, same recolour");
+let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("different shapes, same recolour");
 let bodies = rule
     .form
     .vertices
@@ -449,7 +449,7 @@ let family = vec![
     (grid(&["1100", "0000"]), grid(&["2200", "0000"])),
     (grid(&["1100", "0000"]), grid(&["3300", "0000"])),
 ];
-let rule = extract_rule(&family).expect("one recolour class");
+let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("one recolour class");
 let words: Vec<&Vertex> = rule
     .form
     .vertices
@@ -499,7 +499,7 @@ assert!(
     contact[0].edge.is_none(),
     "one bar moved and the other stood: no single versor carries the pair, a remainder edge (50.3)"
 );
-let rule = extract_rule(&family).expect("the family extracts");
+let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the family extracts");
 let words = rule
     .form
     .vertices

@@ -130,7 +130,7 @@ let family = vec![
     (digits(&["1100", "0000"]), digits(&["0022", "0000"])),
     (digits(&["0000", "1100"]), digits(&["0000", "0022"])),
 ];
-let rule = crate::transducer::family::extract_rule(&family).expect("extract");
+let rule = crate::transducer::family::extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extract");
 let spoken = crate::transducer::family::mint_sentence(&rule, &family, &crate::transducer::family::NoCrystal).expect("mint");
 assert!(spoken.is_sentence());
 let mut expect = [0u64; 4];

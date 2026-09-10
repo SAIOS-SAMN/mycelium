@@ -13,7 +13,7 @@ fn form_descent_measures_deflation_per_pair() {
 let x = grid(&["1"]);
 let y = grid(&["2"]);
 let family_exact = vec![(x.clone(), y.clone())];
-let rule = extract_rule(&family_exact).expect("recolour");
+let rule = extract_rule(&family_exact, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("recolour");
 let (pay, rems) = form_descent(&rule.form, &family_exact, &NoCrystal);
 assert!(
     rems.iter().all(|r| r.is_empty()),

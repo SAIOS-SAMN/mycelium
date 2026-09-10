@@ -4,6 +4,7 @@
 //! forms, the rule those forms already agree on, and that rule spoken back
 //! onto a scene. A bundle it does not close is a withheld form.
 
+pub mod correspondence;
 pub mod descent;
 pub mod extract;
 pub mod orbit;
@@ -11,6 +12,7 @@ pub mod pair;
 pub mod perceive;
 pub mod speak;
 
+pub(crate) use correspondence::*;
 pub use descent::*;
 
 /// ONE TRAIN PAIR — the scene a rule is shown and the scene it must speak

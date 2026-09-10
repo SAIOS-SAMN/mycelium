@@ -59,7 +59,7 @@ let cover = Held {
     e: held_e.clone(),
     f: held_form,
 };
-let rule = extract_rule_with(&family, &cover).expect("glues");
+let rule = extract_rule_with(&family, &cover, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("glues");
 assert!(
     rule.form
         .vertices
@@ -118,7 +118,7 @@ let mut epi = Epigenome::new();
 epi.stand_dialect_at(held_e.clone(), 1, 1).expect("stood");
 
 // The rule the voice extracts over the whole bundle cites it.
-let rule = extract_rule_with(&family, &epi).expect("the family extracts");
+let rule = extract_rule_with(&family, &epi, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the family extracts");
 assert!(
     rule.form.vertices.iter().any(|v| matches!(v, Vertex::Glued { .. })),
     "the voice cites what it stood"

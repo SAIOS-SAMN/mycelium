@@ -153,7 +153,7 @@ let family = vec![
     (grid(&["1100", "0000", "0000", "0000"]), grid(&["1100", "0000", "0220", "0000"])),
     (grid(&["0000", "1100", "0000", "0000"]), grid(&["0000", "1100", "0000", "0220"])),
 ];
-let rule = extract_rule(&family).expect("the bundle extracts");
+let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the bundle extracts");
 let demands: Vec<_> = rule.form.demand_vertices().collect();
 assert_eq!(demands.len(), 1, "one (kind, chart) over the bundle: {:?}", rule.form.vertices);
 let (_, kind, _, cells) = demands[0];
@@ -226,7 +226,7 @@ let family = vec![
     (grid(&["1100"]), grid(&["0011"])),
     (grid(&["111000"]), grid(&["000111"])),
 ];
-let rule = extract_rule_with(&family, &NoCrystal).expect("extracts");
+let rule = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extracts");
 let words = rule
     .form
     .vertices
@@ -247,7 +247,7 @@ assert!(
 #[test]
 fn pairing_is_carriage_not_a_moduli_digest() {
 let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
-let rule = extract_rule(&family).expect("a translated bar extracts");
+let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a translated bar extracts");
 let bodies = rule
     .form
     .vertices

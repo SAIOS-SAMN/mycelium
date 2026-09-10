@@ -7,92 +7,6 @@
 
 use super::*;
 
-pub(crate) fn class_of_vertex(v: &Vertex) -> Option<Invariant> {
-    match v {
-        Vertex::Word { class, .. } => Some(class.clone()),
-        Vertex::Glued { chart, .. } => Some(chart.clone()),
-        _ => None,
-    }
-}
-
-/// Correspondence class of a vertex: kind and conjugacy of the word.
-/// The hue map is a section coordinate on `Form.hue_maps`, never a matching
-/// key. The body's moduli stay on the vertex as a section coordinate.
-/// Frame matches by kind alone and is not a class.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct TransportClass {
-    kind: crate::transducer::peel::ShellKind,
-    word_class: Vec<u8>,
-}
-
-impl TransportClass {
-    pub(crate) fn key(&self) -> Vec<u8> {
-        let mut buf = vec![self.kind.as_u8()];
-        crate::transducer::address::put_bytes(&mut buf, &self.word_class);
-        buf
-    }
-}
-
-pub(crate) fn transport_class(v: &Vertex) -> Option<TransportClass> {
-    match v {
-        Vertex::Word { word, .. } => Some(TransportClass {
-            kind: crate::transducer::peel::ShellKind::Whole,
-            word_class: word.class_key()?.into_vec(),
-        }),
-        _ => None,
-    }
-}
-
-#[derive(Clone, PartialEq, Eq)]
-pub(crate) enum End {
-    Frame,
-    Class(TransportClass),
-}
-
-pub(crate) fn end_of(v: &Vertex) -> Option<End> {
-    match v {
-        Vertex::Frame => Some(End::Frame),
-        Vertex::Word { .. } => Some(End::Class(transport_class(v)?)),
-        _ => None,
-    }
-}
-
-pub(crate) fn one_vertex_of_class<'a>(f: &'a Form, class: &TransportClass) -> Option<&'a Vertex> {
-    match_vertex(f, class)
-}
-
-pub(crate) fn match_vertex<'a>(f: &'a Form, class: &TransportClass) -> Option<&'a Vertex> {
-    f.vertices
-        .iter()
-        .find(|v| transport_class(v).as_ref() == Some(class))
-}
-
-/// The unique relative word between two ends on a pair form, read from
-/// that form's named faces. Several instances of a class are a section:
-/// every such face must be one M1 vertex.
-pub(crate) fn face_word_between(pf: &Form, a: &End, b: &End) -> Option<crate::transducer::alphabet::Word> {
-    let mut held: Option<crate::transducer::alphabet::Word> = None;
-    for f in &pf.faces {
-        let ea = end_of(pf.vertices.get(f.i as usize)?)?;
-        let eb = end_of(pf.vertices.get(f.j as usize)?)?;
-        let (w, ok) = if &ea == a && &eb == b {
-            (f.transport.word.clone(), true)
-        } else if &ea == b && &eb == a {
-            (f.transport.word.inverse(), true)
-        } else {
-            (crate::transducer::alphabet::Word::identity(), false)
-        };
-        if !ok {
-            continue;
-        }
-        match &held {
-            None => held = Some(w),
-            Some(h) if h != &w => return None,
-            _ => {}
-        }
-    }
-    held
-}
 
 /// Step 4 of chapter 21: along each named face (i, j) with `w_i` not the
 /// identity, `j` is `i` read in `j`'s frame when, on every pair of the
@@ -157,42 +71,77 @@ pub(crate) fn rebase_named_faces(form: &mut Form, pair_forms: &[Form]) {
     }
 }
 
-pub(crate) fn word_place_of_class(
-    pf: &Form,
-    tc: &TransportClass,
-) -> Option<(crate::transducer::alphabet::Word, Versor)> {
-    match match_vertex(pf, tc) {
-        Some(Vertex::Word { word, carriage, .. }) => Some((word.clone(), (**carriage).clone())),
-        _ => None,
-    }
-}
 
-pub(crate) fn placement_of_class(pair_forms: &[Form], class: &TransportClass) -> Option<crate::transducer::alphabet::Word> {
-    let mut held: Option<crate::transducer::alphabet::Word> = None;
+/// The tail every exit runs: the demands of the bundle ride the rule, and
+/// the form is closed out with its depth, loops, ratio and sections. One
+/// place, so an extraction that ends on its budget leaves the same shape
+/// as one that ran to the end — a withheld form, never a `None` and never
+/// a half-built one (L8w).
+fn finish(
+    mut form: Form,
+    pair_forms: &[Form],
+    scale: ((usize, usize), (usize, usize)),
+    sections: crate::network::nerve::Keyed<Vec<u16>>,
+) -> Option<crate::transducer::sentence::SentenceRule> {
+    // 50.5 (F step 5): the demands of every pair ride the rule, one vertex
+    // per (kind, chart) over the bundle, carrying every pair's cells.
+    let mut by_demand: crate::network::nerve::Keyed<Demanded> = crate::network::nerve::Keyed::new();
     for pf in pair_forms {
-        let w = face_word_between(pf, &End::Frame, &End::Class(class.clone()))?;
-        match &held {
-            None => held = Some(w),
-            Some(h) if h != &w => return None,
-            _ => {}
+        for (_, kind, chart, cells) in pf.demand_vertices() {
+            let key = crate::transducer::sentence::demand_key(kind, chart);
+            match by_demand.get_mut(&key) {
+                Some((_, _, held)) => held.extend_from_slice(cells),
+                None => {
+                    by_demand.insert(key, (kind.clone(), chart.clone(), cells.to_vec()));
+                }
+            }
         }
     }
-    held
+    for (_, (kind, chart, cells)) in by_demand.fiber(crate::network::nerve::ROOT) {
+        let mut cells = cells.clone();
+        cells.sort_unstable();
+        cells.dedup();
+        form.vertices.push(demand_vertex(kind.clone(), chart, cells));
+    }
+    form.depth = form.depth_of();
+    form.loops = Form::loops_of(&form.faces, form.vertices.len());
+    form.ratio = scale;
+    form.sections = sections;
+    form.hue_maps = hue_maps_of_form(&form);
+    Some(crate::transducer::sentence::rule_of_form(form))
 }
 
-/// Seven moves on pair forms (chapter 21). `extract_rule` keeps the nerve path.
+/// Seven moves on pair forms (chapter 21), under the stroke (L8w, rule 10).
+///
+/// Extraction from cells SEARCHES for correspondence, so its cost grows
+/// with the scene and not with what the mind holds: on
+/// `0607ce86.json` — three pairs at 21×22 — it did not return in 900s,
+/// where twelve smaller families take six seconds together. A voice on the
+/// fleet was therefore stalled on one listing with no way out. Every step
+/// below now spends the caller's `Budget` and, when it ends, the rule is
+/// finished from what it has and returned as a withheld form (24.3): a
+/// mind says what it reached and demands the rest, which is what it does
+/// on every other boundary. This is the STOP; the resolution is L8x, where
+/// F factors through the presentation and the search is gone (50.2 step 2).
 pub fn extract_rule_with(
     family: &[(Grid, Grid)],
     crystal: &dyn Crystal,
+    budget: &mut crate::physics::Budget,
 ) -> Option<crate::transducer::sentence::SentenceRule> {
     if family.is_empty() {
         return None;
     }
     let scale = family_ratio(family)?;
-    let pair_forms: Vec<Form> = family
-        .iter()
-        .map(|(a, b)| pair_form(a, b, Some(scale)))
-        .collect();
+    let mut pair_forms: Vec<Form> = Vec::with_capacity(family.len());
+    for (a, b) in family {
+        if !budget.spend() {
+            break;
+        }
+        pair_forms.push(pair_form(a, b, Some(scale)));
+    }
+    if pair_forms.is_empty() {
+        return None;
+    }
     let n_pairs = pair_forms.len();
     // 1. Correspondence by transport class (kind, word class).
     // The hue map is a section on Form.hue_maps. Moduli stay a section
@@ -303,6 +252,9 @@ pub fn extract_rule_with(
     }
     let ends = index_ends(&form);
     for (_, (ea, eb)) in candidates.fiber(crate::network::nerve::ROOT) {
+        if !budget.spend() {
+            return finish(form, &pair_forms, scale, sections);
+        }
         // 21 step 2, 25 (Stage 12 S12.2): the face word between two ends,
         // read on every pair of the bundle. Constant, it is the rule's face.
         // Not constant, it is KEPT as sections over the pairs and never
@@ -369,6 +321,9 @@ pub fn extract_rule_with(
         .filter_map(|v| Some((transport_class(v)?, class_of_vertex(v)?)))
         .collect();
     for (tc, moduli) in glued_classes {
+        if !budget.spend() {
+            return finish(form, &pair_forms, scale, sections);
+        }
         let Some(placement) = placement_of_class(&pair_forms, &tc) else {
             continue;
         };
@@ -404,6 +359,9 @@ pub fn extract_rule_with(
     // 6. Contact: placement differs across pairs, peel ring to Frame is one value.
     let nverts = form.vertices.len();
     for vi in 0..nverts {
+        if !budget.spend() {
+            return finish(form, &pair_forms, scale, sections);
+        }
         let Some(tc) = transport_class(&form.vertices[vi]) else {
             continue;
         };
@@ -453,86 +411,18 @@ pub fn extract_rule_with(
             let _ = form.regauge(&gamma);
         }
     }
-    // 50.5 (F step 5): the demands of every pair ride the rule, one vertex
-    // per (kind, chart) over the bundle, carrying every pair's cells.
-    let mut by_demand: crate::network::nerve::Keyed<Demanded> = crate::network::nerve::Keyed::new();
-    for pf in &pair_forms {
-        for (_, kind, chart, cells) in pf.demand_vertices() {
-            let key = crate::transducer::sentence::demand_key(kind, chart);
-            match by_demand.get_mut(&key) {
-                Some((_, _, held)) => held.extend_from_slice(cells),
-                None => {
-                    by_demand.insert(key, (kind.clone(), chart.clone(), cells.to_vec()));
-                }
-            }
-        }
-    }
-    for (_, (kind, chart, cells)) in by_demand.fiber(crate::network::nerve::ROOT) {
-        let mut cells = cells.clone();
-        cells.sort_unstable();
-        cells.dedup();
-        form.vertices.push(demand_vertex(kind.clone(), chart, cells));
-    }
-    form.depth = form.depth_of();
-    form.loops = Form::loops_of(&form.faces, form.vertices.len());
-    form.ratio = scale;
-    form.sections = sections.clone();
-    form.hue_maps = hue_maps_of_form(&form);
-    Some(crate::transducer::sentence::rule_of_form(form))
+    finish(form, &pair_forms, scale, sections)
 }
 
-pub(crate) fn pair_idx_key(i: u16) -> Vec<u8> {
-    let mut k = vec![0u8];
-    k.extend_from_slice(&i.to_le_bytes());
-    k
-}
 
-pub(crate) fn end_key(e: &End) -> Vec<u8> {
-    match e {
-        End::Frame => vec![0xff],
-        End::Class(c) => c.key(),
-    }
-}
-
-pub(crate) fn ends_pair_key(a: &End, b: &End) -> Vec<u8> {
-    let (ka, kb) = (end_key(a), end_key(b));
-    let (lo, hi) = if ka <= kb { (ka, kb) } else { (kb, ka) };
-    let mut buf = Vec::new();
-    crate::transducer::address::put_bytes(&mut buf, &lo);
-    crate::transducer::address::put_bytes(&mut buf, &hi);
-    buf
-}
-
-pub(crate) fn index_ends(form: &Form) -> crate::network::nerve::Keyed<u16> {
-    let mut idx = crate::network::nerve::Keyed::new();
-    for (i, v) in form.vertices.iter().enumerate() {
-        if let Some(e) = end_of(v) {
-            let k = end_key(&e);
-            if !idx.contains(&k) {
-                idx.insert(k, i as u16);
-            }
-        }
-    }
-    idx
-}
-
-pub(crate) fn hue_maps_of_form(form: &Form) -> crate::network::nerve::Keyed<Vec<(u8, u8)>> {
-    let mut m = form.hue_maps.clone();
-    for v in &form.vertices {
-        if let Vertex::Word { word, gauge, .. } = v {
-            if let Some(k) = crate::transducer::sentence::hue_section_key(word, gauge) {
-                if !m.contains(&k) {
-                    m.insert(k, gauge.clone());
-                }
-            }
-        }
-    }
-    m
-}
-
-/// Re-derive the family's rule and check it agrees with `rule`.
-pub fn rule_replays_family(rule: &crate::transducer::sentence::SentenceRule, family: &[(Grid, Grid)]) -> bool {
-    let Some(again) = extract_rule(family) else {
+/// Re-derive the family's rule and check it agrees with `rule`. The court
+/// replays under its own stroke, as the voice extracted under its (L8w).
+pub fn rule_replays_family(
+    rule: &crate::transducer::sentence::SentenceRule,
+    family: &[(Grid, Grid)],
+    budget: &mut crate::physics::Budget,
+) -> bool {
+    let Some(again) = extract_rule(family, budget) else {
         return false;
     };
     again.form.vertices == rule.form.vertices && again.form.faces == rule.form.faces
@@ -556,13 +446,16 @@ pub fn extract_rule_cached(
     if !budget.spend() {
         return cache.get(fam).and_then(|(_, r)| r.clone());
     }
-    let rule = extract_rule_with(family, crystal);
+    let rule = extract_rule_with(family, crystal, budget);
     cache.insert(fam, (atlas_root, rule.clone()));
     rule
 }
 
 /// Extract the invariant cochain of a family. The live path is the form
 /// engine (`extract_rule_with`); the nerve extractor is retired.
-pub fn extract_rule(family: &[(Grid, Grid)]) -> Option<crate::transducer::sentence::SentenceRule> {
-    extract_rule_with(family, &NoCrystal)
+pub fn extract_rule(
+    family: &[(Grid, Grid)],
+    budget: &mut crate::physics::Budget,
+) -> Option<crate::transducer::sentence::SentenceRule> {
+    extract_rule_with(family, &NoCrystal, budget)
 }

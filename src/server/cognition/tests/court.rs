@@ -324,7 +324,7 @@ let grid = |rows: &[&str]| -> crate::arc::Grid {
 };
 let (x, y) = (grid(&["1"]), grid(&["2"]));
 let one_pair = vec![(x.clone(), y.clone())];
-let rule = extract_rule(&one_pair).expect("a recolour is a rule");
+let rule = extract_rule(&one_pair, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour is a rule");
 let word = mint_sentence(&rule, &one_pair, &NoCrystal).expect("it closes its own pair");
 let addr = word.address();
 let wider = vec![(x, y), (grid(&["10"]), grid(&["23"]))];

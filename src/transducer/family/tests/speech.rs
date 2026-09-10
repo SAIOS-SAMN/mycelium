@@ -81,7 +81,7 @@ let family = vec![
     (grid(&["10", "00"]), grid(&["11", "11"])),
     (grid(&["100", "000", "000"]), grid(&["111", "111", "111"])),
 ];
-let rule = extract_rule_with(&family, &NoCrystal).expect("unfolds");
+let rule = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("unfolds");
 assert!(
     rule.form
         .vertices
@@ -113,7 +113,7 @@ let family: Vec<(Grid, Grid)> = family
     .into_iter()
     .map(|(a, b)| (a, b.into_iter().map(|row| row.into_iter().map(|h| if h == 1 { 2 } else { h }).collect()).collect()))
     .collect();
-let rule = extract_rule(&family).expect("the shift family extracts");
+let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the shift family extracts");
 let (_, rems) = form_descent(&rule.form, &family, &NoCrystal);
 assert!(rems.iter().all(|r| r.is_empty()), "the family closes: {:?}", rems);
 let spoken = speak_rule(&rule, &grid(&["0000", "0000", "1100"]), &NoCrystal).expect("spoken");
@@ -123,7 +123,7 @@ let family = vec![
     (grid(&["100", "110", "000"]), grid(&["010", "110", "000"])),
     (grid(&["000", "010", "011"]), grid(&["000", "001", "011"])),
 ];
-match extract_rule(&family) {
+match extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)) {
     None => {}
     Some(rule) => {
         let (_, rems) = form_descent(&rule.form, &family, &NoCrystal);
@@ -137,7 +137,7 @@ let family = vec![
     (grid(&["10", "00"]), grid(&["1100", "1100", "0000", "0000"])),
     (grid(&["00", "03"]), grid(&["0000", "0000", "0033", "0033"])),
 ];
-let rule = extract_rule(&family).expect("the dilation family extracts");
+let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the dilation family extracts");
 assert_eq!(rule.form.ratio, ((2, 1), (2, 1)));
 let (_, rems) = form_descent(&rule.form, &family, &NoCrystal);
 assert!(rems.iter().all(|r| r.is_empty()), "the dilation family closes: {:?}", rems);
@@ -154,7 +154,7 @@ let family = vec![
     (grid(&["100", "000"]), grid(&["001", "000"])),
     (grid(&["100", "000"]), grid(&["000", "001"])),
 ];
-match extract_rule(&family) {
+match extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)) {
     None => {}
     Some(rule) => {
         let (_, rems) = form_descent(&rule.form, &family, &NoCrystal);
@@ -170,7 +170,7 @@ let disagree = vec![
     (grid(&["10", "00"]), grid(&["110", "110", "000"])),
 ];
 assert!(family_ratio(&disagree).is_none(), "frames that disagree are not one form");
-assert!(extract_rule(&disagree).is_none(), "the form engine withholds a family it does not extract");
+assert!(extract_rule(&disagree, &mut crate::physics::Physics::default().stroke_n(1 << 20)).is_none(), "the form engine withholds a family it does not extract");
 }
 
 #[test]
@@ -190,7 +190,7 @@ let family: Vec<(Grid, Grid)> = family
         )
     })
     .collect();
-let rule = extract_rule(&family).expect("the family extracts a rule");
+let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the family extracts a rule");
 let bodies = rule
     .form
     .vertices
@@ -237,7 +237,7 @@ let train_out: Grid = train_in
     .map(|row| row.iter().map(|&h| if h == 1 { 2 } else { h }).collect())
     .collect();
 let family = vec![(train_in.clone(), train_out.clone())];
-let rule = extract_rule(&family).expect("three squares extract as a section");
+let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("three squares extract as a section");
 let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("the test is spoken");
 assert!(spoken.remainder.is_empty(), "all three squares are reached: {:?}", spoken.remainder);
 assert_eq!(spoken.grid(), train_out);

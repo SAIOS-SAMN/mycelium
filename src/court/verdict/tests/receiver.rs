@@ -18,7 +18,7 @@ fn digits(rows: &[&str]) -> Grid {
 /// `Creation` demand, spoken as one sentence (50.5).
 fn a_recolour_with_a_creation() -> (Vec<(Grid, Grid)>, Element) {
     let family = vec![(digits(&["110", "000"]), digits(&["220", "003"]))];
-    let rule = extract_rule(&family).expect("the bar's recolour extracts");
+    let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the bar's recolour extracts");
     let words = rule.form.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).count();
     let demands = rule.form.demand_vertices().count();
     assert_eq!((words, demands), (1, 1), "one word and one demand ride the sentence");

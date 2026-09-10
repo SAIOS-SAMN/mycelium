@@ -162,7 +162,7 @@ let family = vec![
     (vec![vec![1u8]], vec![vec![2u8]]),
     (vec![vec![1u8, 0]], vec![vec![2u8, 3]]),
 ];
-let rule = extract_rule(&family).expect("rule");
+let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("rule");
 let (mag, rems) = form_descent(&rule.form, &family, &NoCrystal);
 let mut entity = Entity::open("127.0.0.1:1", Kernel::named("withhold"));
 entity.withhold_form(&rule.form, &family, &rems, mag);

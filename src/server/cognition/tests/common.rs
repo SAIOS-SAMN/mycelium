@@ -22,7 +22,7 @@ pub fn sentence_of(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Option<Element
     use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
     use crate::transducer::sentence::Vertex;
     let family = family_of_pair(a, b);
-    let rule = extract_rule(&family)?;
+    let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20))?;
     let acts = rule.form.vertices.iter().any(|v| {
         matches!(v, Vertex::Word { .. } | Vertex::Glued { .. } | Vertex::Rebased { .. } | Vertex::Unfolded { .. })
     });
