@@ -4356,6 +4356,27 @@ set aside against a listing (E1, E2); `settle.rs` what each closed act pays
   citation pays nobody yet, and pays when the deferral clears. This is
   the same shape as a `Glued` citation's use, which is what a derivation
   citation is at the form level (21 step 3), and it is row L8t.
+
+  **Two levels of citation, two measures** (ruled 2026-09-10, after
+  eece48a measured a derivation's share at zero). A `Glued` citation
+  closes part of the citer's family, and its share of the mint is that
+  closure, by `settle_recursive` as above. A derivation citation
+  contributes an **action** the citer composed from the generator and
+  closes nothing on the citer's family by itself; measured as a closure
+  its share is zero, and that zero is correct, not a fault of the
+  measure. What a use of a generator earns is the thing E2 already names
+  for a use: **room**. `use_credit(who)` is the lane-wise sum, over the
+  forms `who` discovered, of each form's μ⃗ once per distinct citer
+  recorded in `cited_by`, and `lane_room_of` adds it to the bond before
+  the draw is read. It is computed at the read and stored nowhere, it is
+  never summed across lanes, and it never mints: a generator many
+  derivations compose through lets its speaker draw more, which is the
+  reward the language pays for being composable. `cited_by` therefore
+  records a derivation citation as it records a `Glued` one, one entry
+  per citer address per cited address, however many of the citer's
+  vertices compose through it. The observable for a derivation
+  citation is the discoverer's room rising by the cited form's μ⃗ on the
+  citer's install, and its balance not moving.
 - `use_credit(&self, who) -> [u64;4]` **new**, from `Kernel::cited_by`;
   `lane_room` (cognition.rs 3455) adds it to `bond_of` before
   `lane_cover_room`.
