@@ -227,7 +227,7 @@ let flat_words = flat
     .iter()
     .filter(|v| matches!(v, Vertex::Word { .. }))
     .count();
-let held_form = pair_form(&family[0].0, &family[0].1, None);
+let held_form = pair_form_uncrystallized(&family[0].0, &family[0].1, None);
 assert!(held_form.is_closed(), "a pair form of a shift coheres");
 let held_e = crate::transducer::sentence::as_element_form(&held_form, [1, 0, 0, 0]).expect("tape");
 struct Held {
@@ -264,6 +264,22 @@ impl Crystal for Held {
         let mut index = crate::transducer::sentence::AxisIndex::new();
         crate::transducer::sentence::admit_words(&mut index, &Invariant::default(), &crate::transducer::sentence::words_of_form(&self.f));
         crate::transducer::sentence::on_axis_of(&index, &Invariant::default(), axis)
+    }
+    /// This fixture's claim is the glue, not the language: it holds one
+    /// form to be cited and offers no presentation to derive against.
+    fn generators_under(
+        &self,
+        _chart: &Invariant,
+        _budget: &mut crate::physics::Budget,
+    ) -> Vec<(
+        crate::transducer::address::Address,
+        crate::transducer::address::Address,
+        crate::transducer::alphabet::Word,
+    )> {
+        Vec::new()
+    }
+    fn presentation_root(&self) -> crate::transducer::address::Address {
+        crate::transducer::address::Address::new(Vec::new())
     }
 }
 let crystal = Held {
@@ -489,7 +505,7 @@ let family = vec![
     (grid(&["110022", "000000"]), grid(&["001122", "000000"])),
     (grid(&["000000", "110022"]), grid(&["000000", "001122"])),
 ];
-let pf = pair_form(&family[0].0, &family[0].1, None);
+let pf = pair_form_uncrystallized(&family[0].0, &family[0].1, None);
 let words = pf.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).count();
 assert_eq!(words, 2, "two bodies of one hue each, both carried: two word vertices, got {words}");
 assert_eq!(pf.demand_vertices().count(), 0, "nothing the eyes could not pair");

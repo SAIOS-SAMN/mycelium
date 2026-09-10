@@ -79,9 +79,11 @@ impl Kernel {
             if !stood {
                 continue;
             }
-            if let Some(ps) = act.paths.get(i).cloned() {
-                let _ = self.read_paths(act.voice, &e, &ps);
-            }
+            // The citations a stood sentence carries are paid at its
+            // install, from the derivations the court replayed (26, 50.2
+            // step 2); nothing is read from beside the tape here. L9 (4/5)
+            // wires the payment at `home_install`.
+            let _ = &e;
         }
         Ok(out)
     }

@@ -3,7 +3,7 @@
 
 use crate::arc::Grid;
 use crate::client::sdk::*;
-use crate::transducer::family::{pair_form, sentence_measure, Crystal, NoCrystal};
+use crate::transducer::family::{pair_form_uncrystallized, sentence_measure, Crystal, NoCrystal};
 use crate::transducer::sentence::{as_element_form, from_element_form, Vertex};
 
 fn digits(rows: &[&str]) -> Grid {
@@ -13,7 +13,7 @@ fn digits(rows: &[&str]) -> Grid {
 /// A closed form and one of the body charts its word vertices act on.
 fn closed_form_and_body_chart() -> (Element, crate::transducer::stalk::Invariant) {
     let family = vec![(digits(&["11200"]), digits(&["00112"]))];
-    let f = pair_form(&family[0].0, &family[0].1, None);
+    let f = pair_form_uncrystallized(&family[0].0, &family[0].1, None);
     let mag = sentence_measure(&f, &family, &NoCrystal).expect("both bodies are spoken");
     let e = as_element_form(&f, mag).expect("a tape");
     let chart = from_element_form(&e)
@@ -64,7 +64,7 @@ fn a_mind_that_stood_a_form_cites_it_when_it_extracts_a_rule() {
         (digits(&["1100", "0000"]), digits(&["0011", "0000"])),
         (digits(&["0000", "1100"]), digits(&["0000", "0011"])),
     ];
-    let held = pair_form(&family[0].0, &family[0].1, None);
+    let held = pair_form_uncrystallized(&family[0].0, &family[0].1, None);
     let mag = sentence_measure(&held, &family[..1], &NoCrystal).expect("the body is spoken");
     let e = as_element_form(&held, mag).expect("a tape");
     let mut epi = Epigenome::new();

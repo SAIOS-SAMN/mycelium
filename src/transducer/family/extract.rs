@@ -143,7 +143,10 @@ pub fn extract_rule_with(
         if !budget.spend() {
             return None;
         }
-        pair_forms.push(pair_form(a, b, Some(scale)));
+        // 50.2 step 2: the extraction's own crystal is the presentation
+        // its word vertices derive against, so a mind extracts in its own
+        // language and `NoCrystal` extracts in the cipher's.
+        pair_forms.push(pair_form(crystal, budget, a, b, Some(scale)));
     }
     let n_pairs = pair_forms.len();
     // 1. Correspondence by transport class (kind, word class).

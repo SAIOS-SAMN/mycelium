@@ -4,7 +4,7 @@
 
 use crate::arc::Grid;
 use crate::client::sdk::*;
-use crate::transducer::family::{pair_form, sentence_measure, NoCrystal, TrainPair};
+use crate::transducer::family::{pair_form_uncrystallized, sentence_measure, NoCrystal, TrainPair};
 use crate::transducer::sentence::{as_element_form, from_element_form, At, Contracted, RefusalKind, Vertex};
 
 fn digits(rows: &[&str]) -> Grid {
@@ -16,7 +16,7 @@ fn digits(rows: &[&str]) -> Grid {
 /// family and spoken as a sentence.
 fn two_bars() -> (Vec<TrainPair>, Element) {
     let family = vec![(digits(&["11200"]), digits(&["00112"]))];
-    let f = pair_form(&family[0].0, &family[0].1, None);
+    let f = pair_form_uncrystallized(&family[0].0, &family[0].1, None);
     let mag = sentence_measure(&f, &family, &NoCrystal).expect("both bodies are spoken");
     let e = as_element_form(&f, mag).expect("a tape");
     (family, e)

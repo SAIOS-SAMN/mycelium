@@ -70,6 +70,31 @@ impl crate::transducer::family::Crystal for Kernel {
     ) -> Vec<crate::transducer::alphabet::Word> {
         crate::transducer::sentence::on_axis_of(&self.axis_index, chart, axis)
     }
+
+    /// 50.2 step 2, at the court: a court does not speak, so it factors
+    /// nothing through a presentation. F runs on the voice and nowhere
+    /// else (law 8 as ruled 2026-09-10), and the court's reading of a
+    /// derivation is `replay_form_at` resolving the citations it was
+    /// SENT. Empty, and named rather than silent — the same standing as
+    /// `on_body` here (row L8s).
+    fn generators_under(
+        &self,
+        _chart: &crate::transducer::stalk::Invariant,
+        _budget: &mut crate::physics::Budget,
+    ) -> Vec<(
+        crate::transducer::address::Address,
+        crate::transducer::address::Address,
+        crate::transducer::alphabet::Word,
+    )> {
+        Vec::new()
+    }
+
+    /// The ruled cover's root: what this court holds. It answers no
+    /// generators, so a memo keyed on this never serves a court a voice's
+    /// derivation, and never serves one court's another's.
+    fn presentation_root(&self) -> crate::transducer::address::Address {
+        crate::transducer::address::Address::from_bytes(self.ruled_root())
+    }
 }
 
 impl Kernel {

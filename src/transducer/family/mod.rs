@@ -53,6 +53,27 @@ pub trait Crystal {
     /// vocabulary a pivot may write onto a loop on that chart. One keyed read
     /// of the axis index the crystal filled when the word was admitted.
     fn on_axis(&self, chart: &Invariant, axis: super::sentence::Axis) -> Vec<super::alphabet::Word>;
+    /// 1.8, 50.2 step 2 — THE PRESENTATION ON A CHART: the generators
+    /// this crystal holds on `chart`, each as the cited form's address,
+    /// the address of the `Word` vertex inside it, and that vertex's own
+    /// word. A keyed subtree read of the generator index, spending the
+    /// budget it is given (rule 10); a crystal that holds nothing on the
+    /// chart answers empty, which is a presentation of no generators and
+    /// not a refusal.
+    fn generators_under(
+        &self,
+        chart: &Invariant,
+        budget: &mut crate::physics::Budget,
+    ) -> Vec<(
+        crate::transducer::address::Address,
+        crate::transducer::address::Address,
+        super::alphabet::Word,
+    )>;
+    /// The root of what this crystal holds. A derivation is a function of
+    /// the presentation as well as of the percept, so a memo over
+    /// `pair_form` must key on this or it serves one mind's derivation to
+    /// another (rule 6). A crystal that holds nothing has the empty root.
+    fn presentation_root(&self) -> crate::transducer::address::Address;
 }
 
 /// A crystal that holds nothing. Glue is a no-op.
@@ -74,6 +95,36 @@ impl Crystal for NoCrystal {
     fn on_axis(&self, _chart: &Invariant, _axis: super::sentence::Axis) -> Vec<super::alphabet::Word> {
         Vec::new()
     }
+    fn generators_under(
+        &self,
+        _chart: &Invariant,
+        _budget: &mut crate::physics::Budget,
+    ) -> Vec<(
+        crate::transducer::address::Address,
+        crate::transducer::address::Address,
+        super::alphabet::Word,
+    )> {
+        Vec::new()
+    }
+    fn presentation_root(&self) -> crate::transducer::address::Address {
+        crate::transducer::address::Address::new(Vec::new())
+    }
+}
+
+/// A pair form derived against NO presentation, under one stroke: the
+/// reading a mind that holds nothing gets, which is the cipher's (50.2
+/// step 2). Named so a reviewer sees at the call site that no speaker's
+/// language is in the form — every test whose claim is about perception
+/// rather than about what a mind holds builds its fixture here, and a
+/// test about the language passes its own crystal to `pair_form`.
+#[cfg(test)]
+pub fn pair_form_uncrystallized(
+    a: &Grid,
+    b: &Grid,
+    scale: Option<((usize, usize), (usize, usize))>,
+) -> Form {
+    let mut budget = crate::physics::Physics::default().stroke();
+    pair_form(&NoCrystal, &mut budget, a, b, scale)
 }
 
 /// The scene frame as a form vertex.

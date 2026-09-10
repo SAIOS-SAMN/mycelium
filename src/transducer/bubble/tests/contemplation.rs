@@ -168,6 +168,22 @@ fn hold_form_keeps_a_glued_open_loop() {
                 Vec::new()
             }
         }
+        /// One word on one axis: this fixture is the pivot's vocabulary,
+        /// not a presentation to derive against.
+        fn generators_under(
+            &self,
+            _c: &crate::transducer::stalk::Invariant,
+            _budget: &mut crate::physics::Budget,
+        ) -> Vec<(
+            crate::transducer::address::Address,
+            crate::transducer::address::Address,
+            Word,
+        )> {
+            Vec::new()
+        }
+        fn presentation_root(&self) -> crate::transducer::address::Address {
+            crate::transducer::address::Address::new(Vec::new())
+        }
     }
     let mut budget = crate::physics::Physics::default().stroke_n(16);
     if let Some(b) = c2.bubbles.get_mut(&k) {

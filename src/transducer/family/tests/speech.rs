@@ -52,7 +52,7 @@ assert!(
 fn empty_fiber_is_unspoken_not_every_body() {
 let x = grid(&["1100", "0000"]);
 let y = grid(&["0011", "0000"]);
-let mut f = pair_form(&x, &y, None);
+let mut f = pair_form_uncrystallized(&x, &y, None);
 for v in &mut f.vertices {
     if let Vertex::Word { class, .. } = v {
         *class = Invariant(vec![0xEEEE_EEEE_EEEE_EEEE]);

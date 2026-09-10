@@ -158,11 +158,48 @@ pub(crate) fn linear_block_of_versor(v: &Versor) -> Option<[[num_rational::BigRa
     ])
 }
 
-/// A22 on a measured carriage (50.2 F step 2): the sensor plane is the
-/// first block of 50.4 and the other planes read the identity for a plane
-/// versor, so the ordered peel is the sensor peel with its remainder typed.
-/// `None` when the versor has no linear block; `Err` the demand it leaves.
-pub(crate) fn factor_versor(v: &Versor) -> Option<Result<crate::transducer::alphabet::Word, crate::transducer::sentence::Demand>> {
+/// 50.2 F STEP 2 — FACTOR THROUGH THE PRESENTATION, AND PEEL ONLY THE
+/// RESIDUE. The sensor plane is the first block of 50.4 and the other
+/// planes read the identity for a plane versor, so the ordered peel is
+/// the sensor peel with its remainder typed. What the mind holds on the
+/// versor's chart is then divided out by A12, and what those generators
+/// do not reach stays as the derivation's residue. `None` when the versor
+/// has no linear block; `Err` the demand it leaves.
+///
+/// THE ORDER OF THE TWO STEPS, named because it is not the order 50.2
+/// step 2 writes. The doctrine says factor first and peel the residue.
+/// `factor_on_plane` (A12) reduces in the LETTER-EXPONENT lattice, so its
+/// target must already be a word: there is no plane form of a block, and
+/// building one is the peel. So the peel runs first and the factorisation
+/// runs on the word it produced. The derivation that comes out is the
+/// same object in every case where the peel closes — the generators
+/// cited, the residue what they did not reach — and it is no longer a
+/// function of the versor alone, which is what made the old path a
+/// cipher. The two orders differ in exactly one case: a block the ORDERED
+/// peel cannot spell but which is a product of held generators. This
+/// implementation types a demand there; the doctrinal order would derive
+/// it. Reaching that case needs A12 over a basis of Gaussian primes wider
+/// than the alphabet's own, which is 37.7's adjunction (L11) and not this
+/// row.
+pub(crate) fn factor_versor(
+    crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
+    v: &Versor,
+) -> Option<Result<crate::transducer::alphabet::Derivation, crate::transducer::sentence::Demand>> {
+    Some(match peel_versor(v)? {
+        Ok(w) => Ok(derivation_of(crystal, budget, w)),
+        Err(demand) => Err(demand),
+    })
+}
+
+/// A22 alone on a measured carriage: the ordered peel with its remainder
+/// typed, and no presentation in it. This is what an EDGE reads (50.3) —
+/// an edge transport is the coboundary between two vertices' placements,
+/// a relation and not a vertex, so it has no derivation to carry and none
+/// is invented for it. Every vertex goes through `factor_versor`.
+pub(crate) fn peel_versor(
+    v: &Versor,
+) -> Option<Result<crate::transducer::alphabet::Word, crate::transducer::sentence::Demand>> {
     use crate::transducer::alphabet::{spell_peel_on, PLANE_COL, PLANE_ROW};
     use crate::transducer::peel::PeelNest;
     use crate::transducer::sentence::Demand;
@@ -193,6 +230,56 @@ pub(crate) fn factor_versor(v: &Versor) -> Option<Result<crate::transducer::alph
         }
         None => Err(Demand::Standing { block: Box::new(block) }),
     })
+}
+
+/// A12 over the mind's own generators (50.2 step 2, 42.6). The chart is
+/// the word's `versor_chart`, so the read is the presentation on the
+/// stratum this word acts on and nothing else. `Understood` is a word
+/// wholly in the span — the citations alone reach it, and the residue is
+/// the identity. `Novel` keeps the part that factored and leaves A12's
+/// canonical remainder, which is unique and has no choice in it (rule 4),
+/// as the residue in letters. `Unmeasured` is a budget that ended, which
+/// is not a demand and not a smaller answer: the word stands spelled, as
+/// A22 gave it (rule 11).
+fn derivation_of(
+    crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
+    w: crate::transducer::alphabet::Word,
+) -> crate::transducer::alphabet::Derivation {
+    use crate::transducer::alphabet::{Derivation, Word};
+    use crate::transducer::factor::Factored;
+    let spelled = || Derivation::spelled(w.clone());
+    let Some(chart) = crate::transducer::sentence::versor_chart(&w) else {
+        return spelled();
+    };
+    let held = crystal.generators_under(&chart, budget);
+    let Some(target) = w.form() else {
+        return spelled();
+    };
+    // A generator with no plane form is off the plane A12 reduces on and
+    // is not in the basis. The citation and its plane form are taken in
+    // ONE pass, so the index A12 returns names the same generator in both
+    // lists by construction — never by two lists agreeing on a length.
+    let cited: Vec<_> = held
+        .iter()
+        .filter_map(|(form, vertex, g)| g.form().map(|pf| (form, vertex, g, pf)))
+        .collect();
+    let basis: Vec<_> = cited.iter().map(|(_, _, _, pf)| *pf).collect();
+    let one = |tape: &[(usize, i64)], residue: Word| -> Derivation {
+        let mut with_words = Vec::new();
+        for (i, e) in tape {
+            let Some((form, vertex, g, _)) = cited.get(*i) else {
+                return Derivation::spelled(w.clone());
+            };
+            with_words.push(((*form).clone(), (*vertex).clone(), *e, (*g).clone()));
+        }
+        Derivation::compose(&with_words, residue)
+    };
+    match crate::transducer::factor::factor_on_plane(&target, &basis) {
+        Factored::Understood(tape) => one(&tape, Word::identity()),
+        Factored::Novel { remainder, understood } => one(&understood, remainder.to_word()),
+        Factored::Unmeasured => spelled(),
+    }
 }
 
 pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Vec<(i64, i64, u8, u8)> {
@@ -253,11 +340,16 @@ pub fn demand_vertex(kind: crate::transducer::sentence::Demand, chart: &Invarian
 /// Carriage of two bodies spelled as a word form (50.2 F steps 1–2), or the
 /// demand its rotor leaves: the versor measured, its rotor spelled by A22.
 /// Class is the target's chart. `None` when no versor carries `a` onto `b`.
-pub(crate) fn word_or_demand(a: &Body, b: &Body) -> Option<Result<Vertex, Demanded>> {
+pub(crate) fn word_or_demand(
+    crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
+    a: &Body,
+    b: &Body,
+) -> Option<Result<Vertex, Demanded>> {
     let car = carriage(a, b)?;
     let chain = chain_of(Some(a), Some(b), &car.v);
-    let word = match factor_versor(&car.v)? {
-        Ok(word) => word,
+    let derivation = match factor_versor(crystal, budget, &car.v)? {
+        Ok(d) => d,
         Err(demand) => return Some(Err((demand, b.moduli.clone(), chain))),
     };
     let t = element::translator_of(&car.v)?;
@@ -270,10 +362,7 @@ pub(crate) fn word_or_demand(a: &Body, b: &Body) -> Option<Result<Vertex, Demand
     };
     Some(Ok(Vertex::Word {
         address: element::from_residual(&chain).address(),
-        // Spelled: `factor_versor` still peels from the identity here.
-        // L9 gives it the mind's generators and this becomes a factored
-        // derivation (50.2 step 2).
-        derivation: crate::transducer::alphabet::Derivation::spelled(word),
+        derivation,
         carriage: Box::new(carriage),
         gauge,
         class: b.moduli.clone(),
@@ -281,11 +370,10 @@ pub(crate) fn word_or_demand(a: &Body, b: &Body) -> Option<Result<Vertex, Demand
     }))
 }
 
-/// The word vertex of two bodies; `None` when none carries or the rotor
-/// leaves a demand (`word_or_demand` carries the demand).
-pub fn word_form(a: &Body, b: &Body) -> Option<Vertex> {
-    word_or_demand(a, b)?.ok()
-}
+// `word_form` was here: `word_or_demand(a, b)?.ok()`, with no caller in
+// the tree. It is deleted rather than threaded — a wrapper that discards
+// the demand and now would also have to be handed a presentation and a
+// budget to discard them too.
 
 /// Whether two bodies' supports share a cell: the overlap the eyes admit
 /// as a correspondence when no versor carries one onto the other.
@@ -318,7 +406,7 @@ pub(crate) fn edge_transport(v_i: &Versor, a_i: &Body, a_j: &Body, b_i: &Body, b
     };
     let v_ij = blade::versor_between(&union(a_i, a_j), &union(b_i, b_j))?;
     let gamma = v_i.versor_inverse()?.geo(&v_ij);
-    let word = factor_versor(&gamma)?.ok()?;
+    let word = peel_versor(&gamma)?.ok()?;
     let t = element::translator_of(&gamma)?;
     let d = element::dilator_of(&gamma)?;
     Some(crate::transducer::sentence::Transport { word, carriage: d.geo(&t), gauge: Vec::new() })

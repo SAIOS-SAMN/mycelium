@@ -194,7 +194,14 @@ pub(crate) fn withhold_unextracted(
     let fam = format!("{:02x}{:02x}…", family[0], family[1]);
     let scale = mycelium::transducer::family::family_ratio(train);
     for (a, b) in train {
-        let f = mycelium::transducer::family::pair_form(a, b, scale);
+        let mut budget = entity.stroke();
+        let f = mycelium::transducer::family::pair_form(
+            &entity.epigenome,
+            &mut budget,
+            a,
+            b,
+            scale,
+        );
         let pair = vec![(a.clone(), b.clone())];
         let (mag, rem) = mycelium::transducer::family::form_descent(&f, &pair, &entity.epigenome);
         entity.withhold_form(&f, &pair, &rem, mag);

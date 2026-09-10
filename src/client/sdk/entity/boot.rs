@@ -4,6 +4,15 @@
 use crate::client::sdk::*;
 
 impl Entity {
+    /// One stroke of this mind's physics, for a caller outside the crate
+    /// that must spend a budget on this mind's behalf (rule 10): the
+    /// binary's own perception path, which derives against this mind's
+    /// presentation and so reads its generator index. The physics stays
+    /// private; what is public is a stroke of it.
+    pub fn stroke(&mut self) -> crate::physics::Budget {
+        self.physics.stroke()
+    }
+
     pub fn add_hypha(&mut self, addr: &str) {
         self.session.add_peer(addr);
     }

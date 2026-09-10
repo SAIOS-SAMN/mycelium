@@ -5,7 +5,7 @@
 use super::common::*;
 use crate::anastome::dialogue::{self, Adjudication, Spoken};
 use crate::cognition::*;
-use crate::transducer::family::{mint_sentence, pair_form, sentence_measure, NoCrystal, TrainPair};
+use crate::transducer::family::{mint_sentence, pair_form_uncrystallized, sentence_measure, NoCrystal, TrainPair};
 use crate::transducer::sentence::{
     as_element_form, form_vertex_key, from_element_form, rule_of_form, Contracted, Contraction, RefusalKind,
 };
@@ -29,7 +29,7 @@ fn sentence_over(family: &[TrainPair]) -> Element {
     let [(x, y)] = family else {
         panic!("one pair");
     };
-    let f = pair_form(x, y, None);
+    let f = pair_form_uncrystallized(x, y, None);
     let mag = sentence_measure(&f, family, &NoCrystal).expect("every body is spoken");
     as_element_form(&f, mag).expect("a tape")
 }
@@ -132,7 +132,7 @@ fn two_courts_of_distinct_identity_reach_one_standing_through_the_codec() {
             &vk,
             &task,
             0,
-            &[Spoken { tape: utter.to_bytes(), standing: 0, contraction: cited.clone(), paths: Vec::new() }],
+            &[Spoken { tape: utter.to_bytes(), standing: 0, contraction: cited.clone() }],
         );
         let reply = hear(&mut court1, &frame);
         let adjudicated = dialogue::decode_speech_reply(&reply).expect("one adjudication per sentence");
@@ -170,7 +170,7 @@ fn two_courts_of_distinct_identity_reach_one_standing_through_the_codec() {
         &vk,
         &task,
         0,
-        &[Spoken { tape: utter.to_bytes(), standing: 0, contraction: cited.clone(), paths: Vec::new() }],
+        &[Spoken { tape: utter.to_bytes(), standing: 0, contraction: cited.clone() }],
     );
     let reply = hear(&mut court2, &frame);
     let adjudicated = dialogue::decode_speech_reply(&reply).expect("one adjudication per sentence");

@@ -258,12 +258,10 @@ pub struct SpeechAct {
     /// cites (50.9): the refusal receipt this sentence is the contraction
     /// of, or none for a sentence spoken fresh.
     pub contractions: Vec<Option<crate::transducer::sentence::Contraction>>,
-    /// Per sentence, in the same order, the paths its word vertices were
-    /// reached through (50.2 step 2): the generators of the speaker's own
-    /// presentation, cited by address. The tape carries the vertex and
-    /// the path carries the proof, so two voices sending one address are
-    /// told apart here and each one's generators are paid (26).
-    pub paths: Vec<Vec<crate::transducer::sentence::Path>>,
+    // 50.2 step 2 as ruled 2026-09-10: `paths` was here. The derivation
+    // of every word vertex travels inside the tape at v7, so two voices
+    // sending one address are told apart by the tapes themselves and the
+    // court pays each one's generators from what it replayed (26).
 }
 /// A COVER announcement: who, where, and what it covers.
 pub struct Cover {

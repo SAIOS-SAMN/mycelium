@@ -82,4 +82,40 @@ impl crate::transducer::family::Crystal for Epigenome {
     ) -> Vec<crate::transducer::alphabet::Word> {
         crate::transducer::sentence::on_axis_of(&self.axis_index, chart, axis)
     }
+
+    /// 1.8: THE PRESENTATION THIS MIND SPEAKS FROM on a versor's chart.
+    /// The generator index is keyed by `versor_chart` — `[0,
+    /// class_axes…]` — so a peeled key is a byte prefix and the read is
+    /// one keyed subtree walk, never a scan of what the mind holds (law
+    /// 3, 24.3). Each cited vertex's word is resolved through the form
+    /// that carries it, by its own `by_address` index; a citation whose
+    /// form the mind no longer holds is dropped rather than guessed
+    /// (rule 11).
+    fn generators_under(
+        &self,
+        chart: &crate::transducer::stalk::Invariant,
+        budget: &mut crate::physics::Budget,
+    ) -> Vec<(
+        crate::transducer::address::Address,
+        crate::transducer::address::Address,
+        crate::transducer::alphabet::Word,
+    )> {
+        crate::transducer::sentence::generators_under(&self.generators, chart, budget)
+            .into_iter()
+            .filter_map(|(form, vertex)| {
+                let e = self.working_word(form.as_bytes())?;
+                let f = crate::transducer::sentence::from_element_form(e)?;
+                let w = crate::transducer::sentence::word_at_vertex(&f, vertex.as_bytes())?;
+                Some((form, vertex, w))
+            })
+            .collect()
+    }
+
+    /// The working atlas's A21 stratum roots: what this mind holds, as a
+    /// coordinate. The generator index is filled from the same forms the
+    /// atlas is filled from, so this root moves exactly when the
+    /// presentation does.
+    fn presentation_root(&self) -> crate::transducer::address::Address {
+        self.atlas_root()
+    }
 }

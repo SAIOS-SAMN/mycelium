@@ -322,23 +322,12 @@ impl Entity {
             return Ok(codes);
         }
         let voice = self.session.kernel().voice();
-        // The paths are read under one stroke like every other keyed read
-        // (rule 10); a mind whose budget ends says the sentence with the
-        // paths it reached.
-        let mut budget = self.physics.stroke();
         let spoken: Vec<dialogue::Spoken> = fresh
             .iter()
             .map(|&i| dialogue::Spoken {
                 tape: sentences[i].to_bytes(),
                 standing: Standing::Stood.as_u8(),
                 contraction: self.certificate_for(&sentences[i]),
-                // 50.2 step 2: the generators this mind reached each word
-                // vertex through, beside the tape. A sentence that is not
-                // a form carries none.
-                paths: match crate::transducer::sentence::from_element_form(&sentences[i]) {
-                    Some(f) => self.epigenome.paths_of_form(&f, &mut budget),
-                    None => Vec::new(),
-                },
             })
             .collect();
         let body = dialogue::encode_speech_spoken(&voice, task, tu, &spoken);

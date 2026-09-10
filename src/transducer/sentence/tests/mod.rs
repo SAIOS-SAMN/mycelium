@@ -7,6 +7,7 @@ pub mod common;
 mod form;
 mod gauge;
 mod pivot;
+mod pivot_loop;
 mod refraction;
 mod rotor_class;
 mod tape;

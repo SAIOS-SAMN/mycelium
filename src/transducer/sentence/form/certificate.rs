@@ -491,75 +491,12 @@ fn take_rank_move(b: &[u8], pos: &mut usize) -> Option<RankMove> {
     }
 }
 
-/// 50.2 STEP 2 — THE PATH a word vertex was reached through: the
-/// generators of the speaker's presentation, in application order with
-/// their exponents.
-///
-/// The path is the proof and it travels beside the tape (26, as the
-/// contraction certificate does); it is never a coordinate of the form,
-/// because the geodesic on the tape quotients it away (1.5) and law 12
-/// admits only what the form re-derives. Two minds reach one vertex by
-/// two paths — one address, two proofs (13.10, 23.9) — and the ledger
-/// tells them apart where the address cannot.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Path {
-    /// The word vertex this path reaches.
-    pub vertex: crate::transducer::address::Address,
-    /// The generators cited: the form each lives in, the word vertex
-    /// itself, and the exponent, in application order. The speaker knows
-    /// both addresses, so the receiver does one keyed read on its cover
-    /// and one on that form's own index — never a walk to find which form
-    /// a vertex belongs to (law 3).
-    pub generators: Vec<(
-        crate::transducer::address::Address,
-        crate::transducer::address::Address,
-        i64,
-    )>,
-    /// What the presentation did not reach, spelled from the identity in
-    /// the seventeen letters (A22). The identity means the generators
-    /// alone compose to the vertex.
-    pub residue: crate::transducer::alphabet::Word,
-}
-
-impl Path {
-    /// The presentation reached the whole vertex: nothing was left for A22
-    /// to spell.
-    pub fn whole(&self) -> bool {
-        self.residue.is_identity()
-    }
-}
-
-impl Path {
-    pub fn to_bytes(&self, out: &mut Vec<u8>) {
-        crate::transducer::address::put_bytes(out, self.vertex.as_bytes());
-        out.extend_from_slice(&(self.generators.len() as u32).to_le_bytes());
-        for (f, v, e) in &self.generators {
-            crate::transducer::address::put_bytes(out, f.as_bytes());
-            crate::transducer::address::put_bytes(out, v.as_bytes());
-            out.extend_from_slice(&e.to_le_bytes());
-        }
-        self.residue.to_bytes(out);
-    }
-
-    pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Path> {
-        let vertex = crate::transducer::address::Address::from(
-            crate::transducer::address::take_bytes(b, pos)?.to_vec(),
-        );
-        let n = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
-        *pos += 4;
-        let mut generators = Vec::with_capacity(n.min(64));
-        for _ in 0..n {
-            let f = crate::transducer::address::Address::from(
-                crate::transducer::address::take_bytes(b, pos)?.to_vec(),
-            );
-            let v = crate::transducer::address::Address::from(
-                crate::transducer::address::take_bytes(b, pos)?.to_vec(),
-            );
-            let e = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-            *pos += 8;
-            generators.push((f, v, e));
-        }
-        let residue = crate::transducer::alphabet::Word::from_bytes(b, pos)?;
-        Some(Path { vertex, generators, residue })
-    }
-}
+// 50.2 step 2 as ruled 2026-09-10: `Path` was here, a proof that rode
+// the speech frame beside the tape. It is deleted, not moved. A word
+// vertex's derivation is what the vertex IS and it is on the tape at v7
+// (`alphabet::Derivation`); a proof about a vertex's meaning travelling
+// outside the tape that carries the vertex was the defect, and the
+// carrier it lived on could not be replayed by a court that had only the
+// sentence. Nothing rides beside the tape now but the contraction
+// certificate above (50.9), which is a claim about which utterance this
+// is and not about what a vertex means.

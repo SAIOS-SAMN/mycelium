@@ -25,7 +25,11 @@ impl Entity {
             return;
         };
         let scale = family_ratio(std::slice::from_ref(&scene));
-        let f = pair_form(&scene.0, &scene.1, scale);
+        // 50.2 step 2: this mind's own presentation is what its word
+        // vertices derive against, under one stroke like every other
+        // keyed read (rule 10).
+        let mut budget = self.physics.stroke();
+        let f = pair_form(&self.epigenome, &mut budget, &scene.0, &scene.1, scale);
         self.hold_form(&f, &[], &[]);
     }
 
