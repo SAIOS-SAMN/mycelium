@@ -6,24 +6,6 @@
 //! the residual the form does not speak.
 
 use super::*;
-use std::cell::RefCell;
-
-thread_local! {
-    static PAIR_FORM_MEMO: RefCell<Option<PairFormMemo>> = const { RefCell::new(None) };
-}
-
-pub(crate) struct PairFormMemo {
-    a: Grid,
-    b: Grid,
-    scale: Option<((usize, usize), (usize, usize))>,
-    /// The presentation the held form was derived against (50.2 step 2).
-    /// A word vertex's derivation is a function of what the speaker
-    /// holds, so a memo keyed on the percept alone serves one mind's
-    /// derivation to another (rule 6). Two minds, two roots, two entries.
-    presentation: crate::transducer::address::Address,
-    form: Form,
-}
-
 thread_local! {
     static FACE_WORK: Cell<u64> = const { Cell::new(0) };
 }
@@ -457,8 +439,6 @@ fn delta_cells(a: &Body, b: &Body) -> Vec<crate::transducer::sentence::Cell> {
 }
 
 pub(crate) fn pair_form_uncached(
-    crystal: &dyn Crystal,
-    budget: &mut crate::physics::Budget,
     a: &Grid,
     b: &Grid,
     scale: Option<((usize, usize), (usize, usize))>,
@@ -471,7 +451,7 @@ pub(crate) fn pair_form_uncached(
     let mut carried: Vec<Option<(usize, usize, Versor)>> = vec![None];
     let mut demanded: Vec<Demanded> = Vec::new();
     for (i, j, car) in &pairs {
-        match word_or_demand(crystal, budget, &ins[*i].body, &outs[*j].body) {
+        match word_or_demand(&ins[*i].body, &outs[*j].body) {
             Some(Ok(v)) => {
                 vertices.push(v);
                 supports.push(support_of(&outs[*j].body));
@@ -548,37 +528,3 @@ pub(crate) fn pair_form_uncached(
     form
 }
 
-/// Perception of one pair as a form. Cells are read once; a second call on
-/// the same grids spends none. Shells pair and are never vertices.
-pub fn pair_form(
-    crystal: &dyn Crystal,
-    budget: &mut crate::physics::Budget,
-    a: &Grid,
-    b: &Grid,
-    scale: Option<((usize, usize), (usize, usize))>,
-) -> Form {
-    let presentation = crystal.presentation_root();
-    let hit = PAIR_FORM_MEMO.with(|m| {
-        m.borrow().as_ref().and_then(|held| {
-            if held.a == *a && held.b == *b && held.scale == scale && held.presentation == presentation {
-                Some(held.form.clone())
-            } else {
-                None
-            }
-        })
-    });
-    if let Some(f) = hit {
-        return f;
-    }
-    let form = pair_form_uncached(crystal, budget, a, b, scale);
-    PAIR_FORM_MEMO.with(|m| {
-        *m.borrow_mut() = Some(PairFormMemo {
-            a: a.clone(),
-            b: b.clone(),
-            scale,
-            presentation,
-            form: form.clone(),
-        });
-    });
-    form
-}

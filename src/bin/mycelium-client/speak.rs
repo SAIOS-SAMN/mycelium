@@ -195,13 +195,18 @@ pub(crate) fn withhold_unextracted(
     let scale = mycelium::transducer::family::family_ratio(train);
     for (a, b) in train {
         let mut budget = entity.stroke();
-        let f = mycelium::transducer::family::pair_form(
+        // `None` is a vertex the stroke could not factor through this
+        // mind's presentation: unmeasured, so this pair is left for the
+        // next stroke rather than withheld with a reach never read.
+        let Some(f) = mycelium::transducer::family::pair_form(
             &entity.epigenome,
             &mut budget,
             a,
             b,
             scale,
-        );
+        ) else {
+            continue;
+        };
         let pair = vec![(a.clone(), b.clone())];
         let (mag, rem) = mycelium::transducer::family::form_descent(&f, &pair, &entity.epigenome);
         entity.withhold_form(&f, &pair, &rem, mag);

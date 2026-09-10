@@ -61,9 +61,18 @@ impl Demand {
         let ok = match self {
             // A witness of all zeros names a prime it does not carry:
             // 37.7 P2's gcd has nothing to read (`REFUSE_LETTER_WITNESS`
-            // is the court's own check on the same block).
+            // is the court's own check on the same block). The prime is
+            // OUTSIDE THE ALPHABET or the demand is not one — asked of
+            // the alphabet itself, never of the literal 13, which is the
+            // (5,12,13) letter's norm written out as a constant (rule 6).
             Demand::RotorPrime { plane, prime, witness } => {
-                plane.0 != plane.1 && *prime > 13 && witness.iter().flatten().any(|q| !q.is_zero())
+                plane.0 != plane.1
+                    && crate::transducer::alphabet::prime_outside_the_alphabet(
+                        &num_bigint::BigInt::from(*prime),
+                        *plane,
+                    )
+                    .is_some()
+                    && witness.iter().flatten().any(|q| !q.is_zero())
             }
             Demand::Standing { block } => block.iter().flatten().any(|q| !q.is_zero()),
             Demand::Source { multiplicity } => *multiplicity > 0,

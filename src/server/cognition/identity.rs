@@ -88,13 +88,6 @@ impl crate::transducer::family::Crystal for Kernel {
     )> {
         Vec::new()
     }
-
-    /// The ruled cover's root: what this court holds. It answers no
-    /// generators, so a memo keyed on this never serves a court a voice's
-    /// derivation, and never serves one court's another's.
-    fn presentation_root(&self) -> crate::transducer::address::Address {
-        crate::transducer::address::Address::from_bytes(self.ruled_root())
-    }
 }
 
 impl Kernel {

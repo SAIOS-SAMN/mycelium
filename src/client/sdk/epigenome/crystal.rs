@@ -110,12 +110,4 @@ impl crate::transducer::family::Crystal for Epigenome {
             })
             .collect()
     }
-
-    /// The working atlas's A21 stratum roots: what this mind holds, as a
-    /// coordinate. The generator index is filled from the same forms the
-    /// atlas is filled from, so this root moves exactly when the
-    /// presentation does.
-    fn presentation_root(&self) -> crate::transducer::address::Address {
-        self.atlas_root()
-    }
 }

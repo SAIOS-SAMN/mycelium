@@ -4,7 +4,9 @@
 //! the field the market reads it from, the sentences a voice stands against
 //! it, and the language snapshot a reduction runs against.
 
+pub mod awaiting;
 pub mod language;
+pub mod rewrite;
 pub mod listings;
 pub mod speech;
 pub mod tension;

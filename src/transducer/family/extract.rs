@@ -145,8 +145,10 @@ pub fn extract_rule_with(
         }
         // 50.2 step 2: the extraction's own crystal is the presentation
         // its word vertices derive against, so a mind extracts in its own
-        // language and `NoCrystal` extracts in the cipher's.
-        pair_forms.push(pair_form(crystal, budget, a, b, Some(scale)));
+        // language and `NoCrystal` extracts in the cipher's. `None` is a
+        // vertex the budget could not factor — unmeasured, not spelled —
+        // and the whole extraction is unmeasured with it (rule 11, L8w).
+        pair_forms.push(pair_form(crystal, budget, a, b, Some(scale))?);
     }
     let n_pairs = pair_forms.len();
     // 1. Correspondence by transport class (kind, word class).

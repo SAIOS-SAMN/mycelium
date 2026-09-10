@@ -174,18 +174,45 @@ pub enum Verified {
     Unresolved { form: Address, vertex: Address },
 }
 
-/// `g^e` for an exact integer exponent: repeated composition of the word
-/// or of its inverse, bounded by the exponent the tape carries. A zero
-/// exponent is the identity, and a citation is never a multiplication by
-/// a scalar — the exponent counts applications of a generator (1.8).
+/// `g^e` for an exact integer exponent. A zero exponent is the identity,
+/// and a citation is never a multiplication by a scalar — the exponent
+/// counts applications of a generator (1.8).
+///
+/// THE EXPONENT COMES OFF THE TAPE, so the loop that applies it must be
+/// bounded by content and not by the number a stranger wrote (rule 10).
+/// Two bounds, and the generator's own algebra says which:
+///
+/// - **Finite order `m`** (15.3, `Rotor::order`): `g^m` is the identity,
+///   so `g^e = g^(e mod m)` exactly. On the seventeen letters `m ≤ 12`,
+///   and a citation with exponent 2⁶² costs the same as one with 3.
+/// - **Infinite order**: there is no period to reduce against, so the
+///   bound is the carrier's own width — square and multiply over the 63
+///   bits of `|e|`, which is the most an `i64` can say.
+///
+/// Neither bound is a limit on what a voice may cite. Both are exact.
 pub fn power_of(g: &Word, e: i64) -> Word {
-    let (base, n) = match e < 0 {
-        true => (g.inverse(), e.unsigned_abs()),
-        false => (g.clone(), e.unsigned_abs()),
+    let base = match e < 0 {
+        true => g.inverse(),
+        false => g.clone(),
+    };
+    let n = e.unsigned_abs();
+    let n = match base.rotor().order() {
+        // `g^m = 1`, so the exponent is read in ℤ/m: the period is a
+        // conjugacy invariant of the generator, not a cap on the tape.
+        Some(crate::transducer::alphabet::Order::Finite(m)) if m > 0 => n % u64::from(m),
+        _ => n,
     };
     let mut w = Word::identity();
-    for _ in 0..n {
-        w = w.compose(&base);
+    let mut square = base;
+    let mut rest = n;
+    while rest > 0 {
+        if rest & 1 == 1 {
+            w = w.compose(&square);
+        }
+        rest >>= 1;
+        if rest > 0 {
+            square = square.compose(&square);
+        }
     }
     w
 }

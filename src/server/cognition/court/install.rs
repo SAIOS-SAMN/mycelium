@@ -124,6 +124,12 @@ impl Kernel {
             return;
         };
         let mut owed: Vec<([u8; 32], [u64; 4], crate::transducer::address::Address)> = Vec::new();
+        // 26: ONE USE PER CITED VERDICT, not per citation. A form's μ⃗ is
+        // what that form closes, and it closes it once however many of
+        // its word vertices this sentence composed — two vertices citing
+        // two words of one form are one use of one verdict. Keyed, so the
+        // second citation of an address is not a second draw.
+        let mut paid_for: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         for v in &f.vertices {
             let Vertex::Word { derivation, .. } = v else {
                 continue;
@@ -132,6 +138,10 @@ impl Kernel {
                 if !self.ruled_contains(form_addr.as_bytes()) {
                     continue;
                 }
+                if paid_for.contains(form_addr.as_bytes()) {
+                    continue;
+                }
+                paid_for.insert(form_addr.clone(), ());
                 let Some(cited) = self.word_at(form_addr.as_bytes()) else {
                     continue;
                 };

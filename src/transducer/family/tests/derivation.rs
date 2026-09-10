@@ -42,7 +42,6 @@ fn sentence_of(w: Word, tag: u8) -> (Address, Form) {
 struct Holds {
     index: crate::transducer::sentence::GeneratorIndex,
     form: Form,
-    address: Address,
 }
 
 impl Holds {
@@ -50,7 +49,7 @@ impl Holds {
         let (address, form) = sentence_of(w, tag);
         let mut index = crate::transducer::sentence::GeneratorIndex::new();
         crate::transducer::sentence::admit_generators(&mut index, &address, &form);
-        Holds { index, form, address }
+        Holds { index, form }
     }
 }
 
@@ -87,9 +86,6 @@ impl Crystal for Holds {
                 Some((form, vertex, w))
             })
             .collect()
-    }
-    fn presentation_root(&self) -> Address {
-        self.address.clone()
     }
 }
 
@@ -155,20 +151,25 @@ fn two_presentations_read_one_versor_as_two_derivations_of_one_vertex() {
     );
 }
 
-/// Rule 6 on the memo. A word vertex's derivation is a function of the
-/// presentation as well as of the percept, so a memo keyed on the grids
-/// alone would serve one mind's derivation to the next. The two roots
-/// differ, and that is what keeps them apart.
+/// Rule 6 on the memo, asserted where it belongs — on the OUTPUT, not on
+/// a key. The percept is memoised on sensor bytes and the derivation is
+/// re-run per mind, so the same two grids read by two minds give two
+/// derivations with no cache root anywhere in it. A memo that keyed the
+/// presentation would let a digest decide whether F re-derives.
 #[test]
-fn two_minds_have_two_presentation_roots() {
-    assert_ne!(
-        Holds::of(quarter(1), 1).presentation_root(),
-        Holds::of(quarter(3), 3).presentation_root(),
-        "the memo can tell two presentations apart"
-    );
-    assert_ne!(
-        NoCrystal.presentation_root(),
-        Holds::of(quarter(1), 1).presentation_root(),
-        "and a mind that holds nothing from one that holds something"
-    );
+fn one_memoised_percept_gives_each_mind_its_own_derivation() {
+    let v = element::versor_of_word(&quarter(2)).expect("a plane versor");
+    let a = factor_versor(&Holds::of(quarter(1), 1), &mut budget(), &v)
+        .expect("a linear block")
+        .expect("the peel closes");
+    let bare = factor_versor(&NoCrystal, &mut budget(), &v)
+        .expect("a linear block")
+        .expect("the peel closes");
+    // Re-read by the first mind after the second: no root was consulted
+    // and no entry was overwritten, because there is no entry.
+    let again = factor_versor(&Holds::of(quarter(1), 1), &mut budget(), &v)
+        .expect("a linear block")
+        .expect("the peel closes");
+    assert!(bare.is_spelled(), "the mind that holds nothing still spells");
+    assert_eq!(a.generators, again.generators, "and the mind that holds one still cites it");
 }

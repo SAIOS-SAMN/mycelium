@@ -266,6 +266,16 @@ pub struct Kernel {
     /// which is where a presentation's generators live since a ruled word
     /// became a form (L5). Filled beside the axis index in `ruled_admit`.
     pub(crate) generators: crate::transducer::sentence::GeneratorIndex,
+    /// 21 step 3, 50.2 step 2 — SENTENCES AWAITING A CITED FORM. Keyed by
+    /// the cited address this court has not ruled; each entry is the
+    /// voice that spoke, the task it was bound to, and the tape. A voice
+    /// one syllabus step ahead of this court's cover is not wrong and its
+    /// sentence is not refused: it waits here, and `rehear_awaiting`
+    /// hears it again when that address is ruled. Without this the voice
+    /// received a refusal and sealed the address, losing the sentence
+    /// permanently for being early.
+    pub(crate) awaiting:
+        crate::network::nerve::Keyed<Vec<([u8; 32], crate::transducer::address::Address, Element)>>,
     /// Per-voice occupancy of open draws, keyed by vk.
     pub(crate) drawn: crate::network::nerve::Keyed<[u64; 4]>,
     /// Per-voice recall fee it could not cover, per lane (MU-ECONOMY §3.1
@@ -529,70 +539,6 @@ impl Kernel {
     #[cfg(test)]
     pub fn set_lane_cap(&mut self, cap: [usize; 4]) {
         self.lane_cap = Some(cap);
-    }
-
-    pub(crate) fn mark_persist(&mut self) {
-        self.persist_due = true;
-    }
-
-    pub fn take_persist(&mut self) -> bool {
-        let due = self.persist_due;
-        self.persist_due = false;
-        due
-    }
-
-    pub fn basis_len(&self) -> usize {
-        self.basis.len()
-    }
-
-    pub fn ruled_root(&self) -> [u8; 32] {
-        self.ruled_root
-    }
-
-    pub fn court_federation_len(&self) -> usize {
-        self.court_federation.len()
-    }
-
-    /// The demand vertices listed so far (50.5, L7): a counter read at the
-    /// wire and by the tests, derived from the listings, never a gate.
-    pub fn demands_listed(&self) -> u64 {
-        self.court_demands_listed
-    }
-
-    pub fn crt_imported(&self) -> bool {
-        self.crt_imported
-    }
-
-    pub fn offered(&self, addr: &[u8]) -> bool {
-        self.offered.get(addr).is_some()
-    }
-
-    pub fn dialect_len(&self) -> usize {
-        self.cocycle_at.len()
-    }
-
-    pub fn dialect_chain_len(&self) -> usize {
-        self.dialect_chain.len()
-    }
-
-    pub fn heard_len(&self) -> usize {
-        self.heard.len()
-    }
-
-    pub fn field_hot_len(&self) -> usize {
-        self.field.len()
-    }
-
-    pub fn field_cold_len(&self) -> usize {
-        self.field_cold.len()
-    }
-
-    pub fn settlements_hot_len(&self) -> usize {
-        self.settlements.len()
-    }
-
-    pub fn settlements_cold_len(&self) -> usize {
-        self.settlements_cold.len()
     }
 
 }

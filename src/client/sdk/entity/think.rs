@@ -29,7 +29,12 @@ impl Entity {
         // vertices derive against, under one stroke like every other
         // keyed read (rule 10).
         let mut budget = self.physics.stroke();
-        let f = pair_form(&self.epigenome, &mut budget, &scene.0, &scene.1, scale);
+        // `None` is a vertex the stroke could not factor through this
+        // mind's presentation: unmeasured, so nothing is held rather than
+        // a form held with the presentation's reach asserted unread.
+        let Some(f) = pair_form(&self.epigenome, &mut budget, &scene.0, &scene.1, scale) else {
+            return;
+        };
         self.hold_form(&f, &[], &[]);
     }
 

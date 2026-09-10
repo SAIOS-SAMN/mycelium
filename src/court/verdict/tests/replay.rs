@@ -468,12 +468,17 @@ fn citing_form(
 }
 
 /// 50.2 step 2 at the court — G COMPOSES THE DERIVATION. A cited
-/// generator the cover resolves composes and the sentence replays; the
-/// same sentence read by a court whose cover resolves nothing takes the
-/// deferral a `Glued` citation takes, at the vertex, rather than being
-/// refused for speaking ahead of that court.
+/// generator the cover resolves composes and the sentence replays.
+///
+/// A cited FORM the court has not ruled never reaches here: the door
+/// decides that before any replay runs and the sentence WAITS
+/// (`hear_sentence`, `unruled_citation`), because a refusal would be
+/// sealed by the voice and the sentence lost for being one syllabus step
+/// early. What reaches here is the other case — the form resolved and
+/// the vertex named is not in it — which is a claim about the tape and a
+/// refusal at the vertex that made it.
 #[test]
-fn a_court_composes_a_cited_generator_and_defers_one_it_has_not_ruled() {
+fn a_court_composes_a_resolved_citation_and_refuses_one_naming_no_vertex() {
     use crate::transducer::family::NoCrystal;
     use crate::transducer::sentence::as_element_form;
     let inner = closed_turn_form();
@@ -494,12 +499,20 @@ fn a_court_composes_a_cited_generator_and_defers_one_it_has_not_ruled() {
         "the court resolved the citation, composed it, and agreed"
     );
 
-    let refusal = replay_form_at(&citer_e, &|_| None, None, &NoCrystal)
-        .expect("a cover that resolves nothing cannot compose the citation");
-    assert_eq!(refusal.reason, REFUSE_GLUED_UNRULED, "not held is not wrong");
+    // The form resolves, and carries no vertex at the address cited: an
+    // empty form stands for one the citation names wrongly.
+    let hollow = |a: &[u8]| -> Option<Form> {
+        match a == inner_addr.as_bytes() {
+            true => Some(Form::default()),
+            false => None,
+        }
+    };
+    let refusal = replay_form_at(&citer_e, &hollow, None, &NoCrystal)
+        .expect("the cited form carries no such vertex");
+    assert_eq!(refusal.reason, REFUSE_DERIVATION);
     assert!(
         matches!(refusal.at, crate::transducer::sentence::At::Vertex { .. }),
-        "and the deferral names the vertex that cited it"
+        "and the refusal names the vertex that made the claim"
     );
 }
 

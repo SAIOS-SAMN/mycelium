@@ -181,15 +181,36 @@ pub(crate) fn linear_block_of_versor(v: &Versor) -> Option<[[num_rational::BigRa
 /// it. Reaching that case needs A12 over a basis of Gaussian primes wider
 /// than the alphabet's own, which is 37.7's adjunction (L11) and not this
 /// row.
-pub(crate) fn factor_versor(
+pub fn factor_versor(
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
     v: &Versor,
 ) -> Option<Result<crate::transducer::alphabet::Derivation, crate::transducer::sentence::Demand>> {
     Some(match peel_versor(v)? {
-        Ok(w) => Ok(derivation_of(crystal, budget, w)),
+        // `None` from the factorisation is the budget ending, which is
+        // UNMEASURED and not a spelling: answering `spelled(w)` there
+        // would assert "no held generator reached this" without having
+        // looked, which is exactly the invented value rule 11 refuses.
+        // It propagates as `None` — the same refusal a versor with no
+        // linear block gives — and the caller withholds (L8w).
+        Ok(w) => Ok(derivation_of(crystal, budget, w)?),
         Err(demand) => Err(demand),
     })
+}
+
+/// 50.2 step 2 applied to an ALREADY PEELED vertex: the second step run
+/// on the memo's percept, per mind. A derivation that already cites
+/// something is not re-derived — it is another mind's proof and this one
+/// does not overwrite it.
+pub(crate) fn derivation_of_spelled(
+    crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
+    d: &crate::transducer::alphabet::Derivation,
+) -> Option<crate::transducer::alphabet::Derivation> {
+    match d.is_spelled() {
+        true => derivation_of(crystal, budget, d.residue.clone()),
+        false => Some(d.clone()),
+    }
 }
 
 /// A22 alone on a measured carriage: the ordered peel with its remainder
@@ -238,17 +259,22 @@ pub(crate) fn peel_versor(
 /// wholly in the span — the citations alone reach it, and the residue is
 /// the identity. `Novel` keeps the part that factored and leaves A12's
 /// canonical remainder, which is unique and has no choice in it (rule 4),
-/// as the residue in letters. `Unmeasured` is a budget that ended, which
-/// is not a demand and not a smaller answer: the word stands spelled, as
-/// A22 gave it (rule 11).
+/// as the residue in letters. `Unmeasured` is a budget that ended: it is
+/// not a demand and not a spelling but `None`, because "this word cites
+/// nothing" is a claim about the presentation and a budget that ended
+/// made no such claim (rule 11).
+///
+/// A word with no versor chart, and a word with no plane form, ARE
+/// measured: they are off the plane A12 reduces on, so the presentation
+/// provably reached none of them and `spelled` is the true answer.
 fn derivation_of(
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
     w: crate::transducer::alphabet::Word,
-) -> crate::transducer::alphabet::Derivation {
+) -> Option<crate::transducer::alphabet::Derivation> {
     use crate::transducer::alphabet::{Derivation, Word};
     use crate::transducer::factor::Factored;
-    let spelled = || Derivation::spelled(w.clone());
+    let spelled = || Some(Derivation::spelled(w.clone()));
     let Some(chart) = crate::transducer::sentence::versor_chart(&w) else {
         return spelled();
     };
@@ -276,9 +302,9 @@ fn derivation_of(
         Derivation::compose(&with_words, residue)
     };
     match crate::transducer::factor::factor_on_plane(&target, &basis) {
-        Factored::Understood(tape) => one(&tape, Word::identity()),
-        Factored::Novel { remainder, understood } => one(&understood, remainder.to_word()),
-        Factored::Unmeasured => spelled(),
+        Factored::Understood(tape) => Some(one(&tape, Word::identity())),
+        Factored::Novel { remainder, understood } => Some(one(&understood, remainder.to_word())),
+        Factored::Unmeasured => None,
     }
 }
 
@@ -340,16 +366,13 @@ pub fn demand_vertex(kind: crate::transducer::sentence::Demand, chart: &Invarian
 /// Carriage of two bodies spelled as a word form (50.2 F steps 1–2), or the
 /// demand its rotor leaves: the versor measured, its rotor spelled by A22.
 /// Class is the target's chart. `None` when no versor carries `a` onto `b`.
-pub(crate) fn word_or_demand(
-    crystal: &dyn crate::transducer::family::Crystal,
-    budget: &mut crate::physics::Budget,
-    a: &Body,
-    b: &Body,
-) -> Option<Result<Vertex, Demanded>> {
+pub(crate) fn word_or_demand(a: &Body, b: &Body) -> Option<Result<Vertex, Demanded>> {
     let car = carriage(a, b)?;
     let chain = chain_of(Some(a), Some(b), &car.v);
-    let derivation = match factor_versor(crystal, budget, &car.v)? {
-        Ok(d) => d,
+    // A22 alone: this is the PERCEPT, which is what the memo holds. The
+    // presentation enters afterwards, per mind (50.2 step 2).
+    let derivation = match peel_versor(&car.v)? {
+        Ok(w) => crate::transducer::alphabet::Derivation::spelled(w),
         Err(demand) => return Some(Err((demand, b.moduli.clone(), chain))),
     };
     let t = element::translator_of(&car.v)?;

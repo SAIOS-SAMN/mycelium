@@ -470,6 +470,11 @@ impl Kernel {
             self.ruled_addrs.insert(addr, ());
             self.refresh_ruled_root();
         }
+        // 21 step 3: this address is ruled now, so every sentence that
+        // waited on it as a citation is heard again. Outside the
+        // `word_at` borrow, and after the cover carries it — a re-hearing
+        // that ran first would find it still unruled and wait again.
+        self.rehear_awaiting(addr);
     }
 
     /// A word this court reached on its OWN tapes and ruled: it joins the

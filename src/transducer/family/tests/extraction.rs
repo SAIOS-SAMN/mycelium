@@ -278,9 +278,6 @@ impl Crystal for Held {
     )> {
         Vec::new()
     }
-    fn presentation_root(&self) -> crate::transducer::address::Address {
-        crate::transducer::address::Address::new(Vec::new())
-    }
 }
 let crystal = Held {
     e: held_e,

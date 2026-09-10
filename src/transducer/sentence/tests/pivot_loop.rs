@@ -60,9 +60,6 @@ impl crate::transducer::family::Crystal for Hold {
     )> {
         Vec::new()
     }
-    fn presentation_root(&self) -> crate::transducer::address::Address {
-        crate::transducer::address::Address::new(Vec::new())
-    }
 }
 
 #[test]

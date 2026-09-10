@@ -131,3 +131,67 @@ fn a_restored_genome_answers_at_the_chart_of_the_bodies_it_carries() {
         "and answers at the body's chart, as the mind that stood it did"
     );
 }
+
+/// 28, 50.2 step 2: THE PRESENTATION SURVIVES A RESTART. The generator
+/// index is derived from the genome like the atlas, the axis index and
+/// the moduli index, so a mind that boots from its genome factors through
+/// the same generators the mind that learned them did. Left out of
+/// `uncrystallize`, every fleet client would speak the cipher's language
+/// after every start — A22 from the identity, a function of the versor
+/// alone — and the mind's own history would be invisible in what it said.
+///
+/// The comparison is projective rotor equality on the resolved word,
+/// never bytes (rule 3, 1.5): what must survive is the generator — the
+/// vertex it reaches — and not the letters that spell it.
+#[test]
+fn a_restored_genome_factors_through_the_generators_it_was_taught() {
+    let (e, _) = closed_form_and_body_chart();
+    let mut epi = Epigenome::new();
+    epi.learn(&e.to_bytes()).expect("the word enters the genome");
+
+    // The presentation is filed at the versor chart of every word the
+    // form carries — the coordinate F reads at, and the one the index is
+    // keyed by. This family is a pure translation, so those words are the
+    // identity and the chart is the root: the claim is not that a
+    // generator turns anything, it is that the mind offers the SAME
+    // generators after a restart as before one.
+    let held = from_element_form(&e).expect("the tape reads back");
+    let charts: Vec<_> = crate::transducer::sentence::words_of_form(&held)
+        .iter()
+        .filter_map(crate::transducer::sentence::versor_chart)
+        .collect();
+    assert!(!charts.is_empty(), "the form carries a word with a versor chart");
+
+    let read = |epi: &Epigenome, chart: &crate::transducer::stalk::Invariant| {
+        let mut budget = crate::physics::Physics::default().stroke();
+        Crystal::generators_under(epi, chart, &mut budget)
+    };
+
+    let tape = epi.crystallize();
+    let mut booted = Epigenome::new();
+    assert!(booted.uncrystallize(&tape), "the genome restores");
+
+    let mut offered = 0usize;
+    for chart in &charts {
+        let taught = read(&epi, chart);
+        let after = read(&booted, chart);
+        offered += after.len();
+        for (_, _, g) in &taught {
+            assert!(
+                after.iter().any(|(_, _, h)| h.rotor().projective_eq(&g.rotor())),
+                "every generator the taught mind offers, the booted mind offers too"
+            );
+        }
+        assert!(
+            after
+                .iter()
+                .all(|(form, _, _)| booted.working_word(form.as_bytes()).is_some()),
+            "and every citation it offers names a form it still holds"
+        );
+    }
+    assert!(
+        offered > 0,
+        "the restored index offers something: an index rebuilt to empty would pass every \
+         comparison above and prove nothing"
+    );
+}

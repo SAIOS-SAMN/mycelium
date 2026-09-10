@@ -62,9 +62,15 @@ fn derivations_compose(f: &Form, resolve: &dyn Fn(&[u8]) -> Option<Form>) -> Opt
                     at: sentence::At::Vertex { address: address.clone(), chart: class.clone() },
                 })
             }
+            // The door (`hear_sentence`) decides the WAIT before any
+            // replay runs, so an unruled cited FORM never reaches here.
+            // What reaches here is a citation naming a vertex the ruled
+            // form does not carry — the form resolved and the vertex was
+            // not in it — which is a claim about the tape and a refusal
+            // at the vertex that made it, not a deferral.
             Verified::Unresolved { .. } => {
                 return Some(Refusal {
-                    reason: REFUSE_GLUED_UNRULED,
+                    reason: REFUSE_DERIVATION,
                     at: sentence::At::Vertex { address: address.clone(), chart: class.clone() },
                 })
             }

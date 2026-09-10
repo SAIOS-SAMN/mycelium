@@ -7,6 +7,7 @@
 pub mod correspondence;
 pub mod descent;
 pub mod extract;
+pub mod memo;
 pub mod orbit;
 pub mod pair;
 pub mod perceive;
@@ -24,6 +25,7 @@ pub type TrainPair = (perceive::Grid, perceive::Grid);
 /// rule speaks the family or it is not a rule (21).
 pub type Family = [TrainPair];
 pub use extract::*;
+pub use memo::*;
 pub use orbit::*;
 pub use pair::*;
 pub use perceive::*;
@@ -69,11 +71,6 @@ pub trait Crystal {
         crate::transducer::address::Address,
         super::alphabet::Word,
     )>;
-    /// The root of what this crystal holds. A derivation is a function of
-    /// the presentation as well as of the percept, so a memo over
-    /// `pair_form` must key on this or it serves one mind's derivation to
-    /// another (rule 6). A crystal that holds nothing has the empty root.
-    fn presentation_root(&self) -> crate::transducer::address::Address;
 }
 
 /// A crystal that holds nothing. Glue is a no-op.
@@ -106,9 +103,6 @@ impl Crystal for NoCrystal {
     )> {
         Vec::new()
     }
-    fn presentation_root(&self) -> crate::transducer::address::Address {
-        crate::transducer::address::Address::new(Vec::new())
-    }
 }
 
 /// A pair form derived against NO presentation, under one stroke: the
@@ -124,7 +118,12 @@ pub fn pair_form_uncrystallized(
     scale: Option<((usize, usize), (usize, usize))>,
 ) -> Form {
     let mut budget = crate::physics::Physics::default().stroke();
+    // A crystal that holds nothing has nothing to factor through, so the
+    // factorisation is measured the moment it starts and cannot end on
+    // the budget: this expect is the absence of a presentation, not an
+    // unwrap of one that might be there.
     pair_form(&NoCrystal, &mut budget, a, b, scale)
+        .expect("a presentation of no generators measures at once")
 }
 
 /// The scene frame as a form vertex.
