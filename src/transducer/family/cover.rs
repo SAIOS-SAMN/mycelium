@@ -176,6 +176,9 @@ pub(crate) fn pieces_of(
 /// formed, and no cycle exists for a holonomy to be read around.
 struct Placed {
     by: Versor,
+    /// The hue map this carriage read cell by cell, which the transition
+    /// at a meet composes against its neighbour's.
+    sigma: Vec<(u8, u8)>,
     domain: Vec<(i64, i64)>,
     codomain: Vec<(i64, i64)>,
 }
@@ -189,9 +192,24 @@ pub(crate) struct Cover {
     /// A meet whose transition has FINITE order: a torsion cycle of this
     /// form (15.5, A17) with the period it closes at, by meet address.
     pub(crate) filed: crate::network::nerve::Keyed<(Rotor, u32)>,
-    /// A meet whose transition has INFINITE order: nothing is filed and
-    /// the demand stands on it (50.5), by meet address.
-    pub(crate) standing: crate::network::nerve::Keyed<Rotor>,
+    /// A meet whose transition is NOT a finite-order rotation about a
+    /// point: an infinite-order rotor, a placement residue, a dilation
+    /// residue, or a product of them. Nothing is filed and the demand
+    /// stands on it (50.5) CARRYING THIS CLASS VECTOR, by meet address.
+    ///
+    /// The class travels with the demand rather than being recomputed by
+    /// whoever meets it, which is what lets an arriving generator of the
+    /// conjugate class close it with no coordinator directing the match.
+    /// A bare `Rotor` here could not carry a placement or a dilation, so
+    /// every standing transition that was one read as the identity.
+    pub(crate) standing:
+        crate::network::nerve::Keyed<crate::transducer::sentence::ClassVector>,
+    /// A meet whose transition is a rotation THE SEVENTEEN DO NOT SPELL
+    /// (37.7), by meet address. Not a standing class — a standing class is
+    /// one the alphabet names and no held generator closes; this is one
+    /// the alphabet cannot name. It is where an adjoined generator would
+    /// come from at the cover level.
+    pub(crate) unspellable: crate::network::nerve::Keyed<Rotor>,
     /// What no piece carried, as a VOLUME on four lanes (law 5): the
     /// input's cells no piece carried and the image's cells no piece
     /// reached (50.8 case 4). A count of cells is not this quantity —
@@ -218,6 +236,7 @@ impl Cover {
             carried: crate::network::nerve::Keyed::new(),
             filed: crate::network::nerve::Keyed::new(),
             standing: crate::network::nerve::Keyed::new(),
+            unspellable: crate::network::nerve::Keyed::new(),
             uncarried: [0; 4],
         }
     }
@@ -233,6 +252,7 @@ impl Cover {
     pub(crate) fn dissolves(&self) -> bool {
         self.uncarried == [0; 4]
             && self.standing.fiber(crate::network::nerve::ROOT).next().is_none()
+            && self.unspellable.fiber(crate::network::nerve::ROOT).next().is_none()
     }
 }
 
@@ -332,6 +352,7 @@ pub(crate) fn cover_deformation(
             &key,
             Placed {
                 by: car.v.clone(),
+                sigma: car.sigma.clone(),
                 domain: support_of(&pre),
                 codomain: support_of(&op.body),
             },
@@ -385,6 +406,7 @@ pub(crate) fn cover_deformation(
                 &key,
                 Placed {
                     by: car.v.clone(),
+                    sigma: car.sigma.clone(),
                     domain: support_of(&ip.body),
                     codomain: support_of(&op.body),
                 },
@@ -460,30 +482,34 @@ pub(crate) fn cover_deformation(
                     continue;
                 };
                 let gamma = pb.by.geo(&inv);
-                // THIS CALLER IS THE COLLAPSE, and it is named here until
-                // L11e replaces it with `meet_class` on the versor: Γ is
-                // classified by its sensor-plane block alone, so a Γ that
-                // is a translation or a dilation reads as the identity and
-                // a rotation about a point away from the origin is
-                // mis-ordered. The projection answers questions about a
-                // rotation; "what class is this versor" is not one.
-                let Some(block) = crate::transducer::element::sensor_plane_block(&gamma) else {
-                    continue;
-                };
-                let Some(g) = rotor_of_transition(&block) else {
-                    continue;
-                };
-                if g.is_identity() {
-                    continue;
-                }
-                match g.order() {
-                    Some(crate::transducer::alphabet::Order::Finite(ell)) => {
-                        cover.filed.insert(&key, (g, ell));
+                // THE GAUGE AROUND THE SEAM, composed and not assumed:
+                // σ_a takes the input's hues to a's, σ_b to b's, so the
+                // transition's own hue map is σ_b ∘ σ_a⁻¹. Passing the
+                // identity here would claim the seam permutes no hue
+                // without having composed anything (rule 11).
+                let hue = crate::transducer::sentence::CycleType::of(&hue_transition(
+                    &pa.sigma, &pb.sigma,
+                ));
+                // CLASSIFIED ON THE VERSOR (12.6). A `None` is a versor
+                // these readers cannot factor, which is unmeasured and
+                // neither flat nor standing.
+                match crate::transducer::element::meet_class(&gamma, hue) {
+                    Some(crate::transducer::element::MeetClass::Flat) => {}
+                    Some(crate::transducer::element::MeetClass::Finite { ell, rotor }) => {
+                        cover.filed.insert(&key, (*rotor, ell));
                     }
-                    Some(crate::transducer::alphabet::Order::Infinite) => {
-                        cover.standing.insert(&key, g);
+                    Some(crate::transducer::element::MeetClass::Standing { kappa }) => {
+                        cover.standing.insert(&key, *kappa);
                     }
-                    // Not a versor: no class (15.3), nothing filed.
+                    // 37.7 AT A SEAM. Kept apart from `standing` because
+                    // it is a different question: a standing class is one
+                    // the alphabet names and no held generator closes, and
+                    // this is one the alphabet does not name at all. It is
+                    // an adjunction candidate, and Vent 1 measures how many
+                    // the cover finds.
+                    Some(crate::transducer::element::MeetClass::Unspellable { rotor, .. }) => {
+                        cover.unspellable.insert(&key, *rotor);
+                    }
                     None => {}
                 }
             }
@@ -492,23 +518,44 @@ pub(crate) fn cover_deformation(
     Ok(cover)
 }
 
-/// The rotor of a transition's plane block, where the seventeen spell it.
-/// A transition the plane does not close has no rotor here and files
-/// nothing.
-fn rotor_of_transition(block: &[[crate::core::Q; 2]; 2]) -> Option<Rotor> {
-    use crate::transducer::alphabet::{spell_peel_on, PLANE_COL, PLANE_ROW};
-    use crate::transducer::peel::PeelNest;
-    let plane = (PLANE_ROW, PLANE_COL);
-    match spell_peel_on(plane, block)? {
-        (PeelNest::Closed { cores }, _) => {
-            let mut w = crate::transducer::alphabet::Word::identity();
-            for syllable in cores.iter().rev() {
-                for &(id, inv) in syllable {
-                    w.push(id, inv);
-                }
-            }
-            Some(w.rotor())
-        }
-        _ => None,
+// `rotor_of_transition` was here. It classified a meet's transition by the
+// transition's sensor-plane block alone, which reads a translation or a
+// dilation as the identity and mis-orders a rotation about any point but
+// the origin. `element::meet_class` replaces it, on the versor.
+
+/// σ_b ∘ σ_a⁻¹ — the hue map of the transition between two carriages, as
+/// a listing. `a` takes the input's hues to a's image and `b` to b's, so
+/// crossing the seam is a's map undone and b's applied. A hue `a` does not
+/// list is one `a` did not move, so it enters `b` as itself.
+fn hue_transition(a: &[(u8, u8)], b: &[(u8, u8)]) -> Vec<(u8, u8)> {
+    use crate::network::nerve::{Keyed, ROOT};
+    let mut back: Keyed<u8> = Keyed::new();
+    for &(h, t) in a {
+        back.insert([t], h);
     }
+    let mut forward: Keyed<u8> = Keyed::new();
+    for &(h, t) in b {
+        forward.insert([h], t);
+    }
+    let mut out: Keyed<u8> = Keyed::new();
+    for &(_, t) in a {
+        let Some(source) = back.get(&[t]).copied() else { continue };
+        // A hue `b` does not list is one `b` leaves alone, which is the
+        // listing's own convention and not a default standing in for a
+        // missing value: `cycle_lengths` reads absence as a fixed point.
+        let image = match forward.get(&[source]) {
+            Some(h) => *h,
+            None => source,
+        };
+        out.insert([t], image);
+    }
+    let mut listing: Vec<(u8, u8)> = out
+        .fiber(ROOT)
+        .filter_map(|(k, v)| match k.as_slice() {
+            [h] => Some((*h, *v)),
+            _ => None,
+        })
+        .collect();
+    listing.sort_unstable();
+    listing
 }

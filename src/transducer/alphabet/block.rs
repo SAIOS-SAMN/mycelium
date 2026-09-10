@@ -59,15 +59,92 @@ pub(crate) fn block_of_gauss(g: &Gauss) -> [[Q; 2]; 2] {
 pub(crate) fn rotor_of_block(block: &[[Q; 2]; 2], plane: (u8, u8)) -> Option<super::Rotor> {
     use super::Rotor;
     let arc = gauss_of_block(block)?;
-    let root = gauss_sqrt(&arc)?;
+    let root = arc_half(&arc)?;
     let mask = (1usize << plane.0) | (1usize << plane.1);
     let q = |n: &num_bigint::BigInt| num_rational::BigRational::from_integer(n.clone());
     Some(Rotor::scalar(q(&root.a)).add(&Rotor::blade(mask, -q(&root.b))))
 }
 
+/// THE WORD A PLANE BLOCK SPELLS, where A22's peel closes on it: the
+/// cores in reverse, which is the one shape three callers had each written
+/// out for themselves (`peel_versor`, the ring's cofactor, and the cover's
+/// deleted `rotor_of_transition`). `None` where the peel stands, which is
+/// a block the seventeen do not reach — a refusal, never a shorter word.
+pub(crate) fn word_of_block(block: &[[Q; 2]; 2], plane: (u8, u8)) -> Option<super::Word> {
+    match super::spell_peel_on(plane, block)? {
+        (crate::transducer::peel::PeelNest::Closed { cores }, _) => {
+            let mut w = super::Word::identity();
+            for syllable in cores.iter().rev() {
+                for &(id, inv) in syllable {
+                    w.push(id, inv);
+                }
+            }
+            Some(w)
+        }
+        _ => None,
+    }
+}
+
+/// The word a ROTOR spells on the sensor plane, through its own block.
+/// `None` where the seventeen do not reach it, which is exactly 37.7's
+/// condition and not an error.
+pub(crate) fn word_of_rotor(rotor: &super::Rotor) -> Option<super::Word> {
+    let plane = (super::PLANE_ROW, super::PLANE_COL);
+    word_of_block(&super::rotor_block_on(rotor, plane)?, plane)
+}
+
+/// THE HALF-ANGLE OF AN ARC, PROJECTIVELY — the rotor's own square root.
+///
+/// A rotor is identified up to a nonzero rational scale (1.5), so the root
+/// of the arc `g` is wanted only up to one: any `r` with `r² = λ·g` for a
+/// positive rational `λ`. Writing `g = ρ·e^{iθ}` with `ρ = |g|`, the number
+/// `g + ρ = ρ(1 + e^{iθ})` has argument `θ/2` exactly, so `g + ρ` IS that
+/// root — `(g + ρ)² = 2ρ·(g + ρ)·cos(θ/2)²`, a positive rational multiple
+/// of `g`. It needs `ρ` to be an integer, which is the condition that the
+/// rotation is rational at all, and nothing else.
+///
+/// The exact root was here instead, and it refused every arc that is not a
+/// perfect square in ℤ[i]. A quarter turn's arc is `i`, whose exact root is
+/// `(1+i)/√2` and does not exist there — so `rotor_of_block` returned
+/// `None` for the commonest rotation in the corpus, and every caller that
+/// needed a rotor from a block, the ring branch included, was refused with
+/// it. `i + 1 = 1 + i` squares to `2i`, which is the same rotor.
+///
+/// The integer content is divided out to keep the coordinates small; it is
+/// a square scale and changes no rotor.
+pub(crate) fn arc_half(g: &Gauss) -> Option<Gauss> {
+    use num_bigint::BigInt;
+    use num_integer::Integer;
+    use num_traits::{Signed, Zero};
+    let n = g.norm();
+    let m = n.sqrt();
+    if &m * &m != n {
+        // |g| is not an integer: this block is not a rational rotation and
+        // no rotor over ℚ induces it (rule 11, refused rather than nearest).
+        return None;
+    }
+    let (a, b) = (&g.a + &m, g.b.clone());
+    if a.is_zero() && b.is_zero() {
+        // g = −ρ, the half turn: `g + ρ` degenerates to zero because the
+        // half-angle is a quarter turn, whose arc is `i` and whose root is
+        // the blade alone. Written out rather than reached by the formula,
+        // which has no argument to halve at θ = π.
+        return Some(Gauss::new(BigInt::from(0), BigInt::from(1)));
+    }
+    let content = a.gcd(&b);
+    match content.is_zero() {
+        true => Some(Gauss::new(a, b)),
+        false => Some(Gauss::new(&a / content.abs(), &b / content.abs())),
+    }
+}
+
 /// The square root of a Gaussian integer when it has one in ℤ[i], by the
 /// exact identity `√(a+bi) = ±(x + y·i)` with `x² = (a + |π|)/2`. Every
 /// step is an exact integer square root or a refusal; nothing is rounded.
+/// This is the root ON THE NOSE, wanted where an equality must hold in
+/// ℤ[i] itself; a ROTOR wants `arc_half` instead, because a rotor is
+/// projective and this refuses most rotations.
+#[allow(dead_code)]
 pub(crate) fn gauss_sqrt(g: &Gauss) -> Option<Gauss> {
     use num_bigint::BigInt;
     use num_integer::Integer;

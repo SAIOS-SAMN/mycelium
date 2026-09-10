@@ -174,6 +174,111 @@ pub fn sensor_plane_block(v: &Versor) -> Option<[[Q; 2]; 2]> {
     Some([[&er.0 - &o.0, &ec.0 - &o.0], [&er.1 - &o.1, &ec.1 - &o.1]])
 }
 
+/// WHAT A MEET'S TRANSITION IS (12.6, 15.5, 50.8 case 3). Three readings
+/// and none of them is a choice.
+#[derive(Debug, Clone)]
+pub enum MeetClass {
+    /// The two charts agree across the seam. Nothing to fill.
+    Flat,
+    /// A rotor of FINITE order about a point, with no placement or
+    /// dilation residue left over: a torsion class of this form, filed at
+    /// the period it closes at (15.5, A17). The sentence then carries the
+    /// class as its theorem and the demand does not stand on it.
+    Finite { ell: u32, rotor: Box<crate::transducer::alphabet::Rotor> },
+    /// Everything else the seventeen DO spell: an infinite-order rotor, a
+    /// placement residue, a dilation residue, or any product of them.
+    /// Nothing is filed and the demand stands CARRYING THIS CLASS, which
+    /// is what lets an arriving generator of the conjugate class close it
+    /// without a coordinator.
+    Standing { kappa: Box<crate::transducer::sentence::ClassVector> },
+    /// THE ROTOR PART EXISTS AND THE ALPHABET DOES NOT SPELL IT (37.7).
+    ///
+    /// This is not a worse `Standing`, and it is emphatically not `Flat`.
+    /// It is the adjunction's own condition met at a seam: a rotation the
+    /// seventeen cannot reach, standing on a prime outside them. It gets
+    /// its own arm because the alternative is to hand `ClassVector::read`
+    /// the identity word and file a class that says "this seam turns by
+    /// nothing", which is the invented value rule 11 refuses — and which
+    /// would silently consume every adjunction candidate the cover finds.
+    Unspellable { rotor: Box<crate::transducer::alphabet::Rotor>, carriage: Box<Versor> },
+}
+
+/// CLASSIFY A MEET'S TRANSITION, ON THE VERSOR (12.6).
+///
+/// The versor is factored exactly, `V = D(ρ)·T(t)·R`, by the three readers
+/// above; the rotor part is `R = T⁻¹·D⁻¹·V` and its order is read from the
+/// rotor, not from a matrix. `Finite` is returned ONLY when both residues
+/// are the identity, so a rotation carried along a translation is not
+/// mistaken for a pure rotation of the same order.
+///
+/// A rotation about a point away from the origin is `T_p R T_p⁻¹ =
+/// T(p − Rp)·R`: the placement residue is `p − Rp` and the rotor part is
+/// `R`, so this reads its order correctly where a block reading either
+/// mis-orders it or, for a pure translation or dilation, reads it as the
+/// identity and files nothing at all. That was measured: sixteen covers
+/// over twelve tasks filed nothing, and the last of them had a meet whose
+/// Γ was a translation and whose block was the identity.
+///
+/// `None` is not a class of transition: it is a versor these readers
+/// cannot factor — one that sends `e_∞` off itself or the origin to
+/// infinity — and an unfactored versor is unmeasured, never `Flat`
+/// (rule 11).
+pub fn meet_class(
+    gamma: &Versor,
+    hue: crate::transducer::sentence::CycleType,
+) -> Option<MeetClass> {
+    use crate::transducer::alphabet::{rotor_of_block, Order, PLANE_COL, PLANE_ROW};
+    use crate::transducer::sentence::ClassVector;
+    // Projective, because versors act projectively on the cone (1.5): a
+    // nonzero rational multiple of the identity is the identity.
+    if same_versor(gamma, &identity_versor()) {
+        return Some(MeetClass::Flat);
+    }
+    let t = translator_of(gamma)?;
+    let d = dilator_of(gamma)?;
+    let carriage = d.geo(&t);
+    let r = t.versor_inverse()?.geo(&d.versor_inverse()?).geo(gamma);
+    let flat_carriage = same_versor(&carriage, &identity_versor());
+    let rotor = rotor_of_block(&sensor_plane_block(&r)?, (PLANE_ROW, PLANE_COL));
+    // The rotor part is asked its ORDER, and the block is only how the
+    // rotor is recovered from the action. `Finite` needs both residues to
+    // be the identity: a quarter turn carried along a translation has the
+    // same rotor order as one about a fixed point and is not the same
+    // class, so filing it at period 4 would put a theorem on the form that
+    // the seam does not satisfy.
+    // Infinite order, or a rotor with no order over ℚ, falls through to
+    // the standing reading below, which writes the residues out even
+    // though they are the identity here — a class vector that omitted
+    // them would not be comparable with one that carries them.
+    if let (true, Some(Order::Finite(ell))) =
+        (flat_carriage, rotor.as_ref().and_then(|r| r.order()))
+    {
+        if let Some(rotor) = rotor {
+            return Some(MeetClass::Finite { ell, rotor: Box::new(rotor) });
+        }
+    }
+    // 12.6's order: the rotor's conjugacy class first, then the placement
+    // and dilation residues, which ride on the carriage. The word is the
+    // rotor's OWN spelling, and where the seventeen do not reach it there
+    // is no word to read a class from — that is 37.7's arm, not a class of
+    // the identity.
+    // A rotor part the rationals do not induce is one this reader could
+    // not factor. That is UNMEASURED and returns `None`: writing a class
+    // with the identity word and the true residues would assert the seam
+    // turns by nothing, which is the same invented value one line down.
+    // A pure translation does not land here — its rotor part is the
+    // identity versor, whose block is the identity and whose rotor is the
+    // identity rotor — so it stands with its placement residue, which is
+    // the reading the block collapse could not produce.
+    let r = rotor?;
+    match crate::transducer::alphabet::word_of_rotor(&r) {
+        Some(word) => Some(MeetClass::Standing {
+            kappa: Box::new(ClassVector::read(&word, carriage, hue)?),
+        }),
+        None => Some(MeetClass::Unspellable { rotor: Box::new(r), carriage: Box::new(carriage) }),
+    }
+}
+
 /// The translator by an integer lattice offset — the lattice peel's transport
 /// as a rational versor.
 pub fn translator_versor(r: i64, c: i64) -> Versor {
