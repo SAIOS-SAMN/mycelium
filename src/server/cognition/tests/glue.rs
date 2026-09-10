@@ -90,3 +90,72 @@ assert_eq!(
     "glued descent replays through the court genome, not NoCrystal"
 );
 }
+
+/// 21 step 3 → 26, ON THE LIVE PATH: a voice that stood a form cites it in
+/// the rule it extracts for a family that form closes part of, and the
+/// court records the citation as a use of the cited address (`cited_by`).
+/// This is the chain the index fault of L8r held shut end to end — no
+/// `Glued` vertex, so no `cited_by`, so nothing a citation could ever pay
+/// for (26, 27) — measured here through the epigenome the fleet runs and
+/// not through a stub.
+#[test]
+fn a_cited_form_is_a_use_at_the_court() {
+use crate::client::sdk::Epigenome;
+use crate::transducer::family::{extract_rule_with, mint_sentence, pair_form, sentence_measure, NoCrystal};
+use crate::transducer::sentence::{as_element_form, Vertex};
+fn digits(rows: &[&str]) -> Vec<Vec<u8>> {
+    rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
+}
+let family = vec![
+    (digits(&["1100", "0000"]), digits(&["0011", "0000"])),
+    (digits(&["0000", "1100"]), digits(&["0000", "0011"])),
+];
+// The sibling the voice solved and stood: one pair of the bundle.
+let held = pair_form(&family[0].0, &family[0].1, None);
+let mag = sentence_measure(&held, &family[..1], &NoCrystal).expect("the body is spoken");
+let held_e = as_element_form(&held, mag).expect("a tape");
+let mut epi = Epigenome::new();
+epi.stand_dialect_at(held_e.clone(), 1, 1).expect("stood");
+
+// The rule the voice extracts over the whole bundle cites it.
+let rule = extract_rule_with(&family, &epi).expect("the family extracts");
+assert!(
+    rule.form.vertices.iter().any(|v| matches!(v, Vertex::Glued { .. })),
+    "the voice cites what it stood"
+);
+let spoken = mint_sentence(&rule, &family, &epi).expect("minted over the voice's own crystal");
+
+// The court installs the cited form, then the citer.
+let mut k = Kernel::new();
+let inner = held_e.address();
+assert_eq!(
+    k.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&held_e)),
+    vec![crate::anastome::dialogue::SPEECH_STOOD]
+);
+k.rule_all_provisionals();
+let cover = k.genesis_cover().expect("measured");
+k.enroll([2; 32], cover);
+k.confirm_peer_holds_addrs(std::slice::from_ref(&inner), [2; 32]);
+assert!(k.ruled_contains(&inner), "the cited form is language");
+
+let task = [9u8; 32];
+k.bind_task_family(task, family);
+let outer = spoken.address();
+assert_eq!(
+    k.perceive_speech([1; 32], &task, std::slice::from_ref(&spoken)),
+    vec![crate::anastome::dialogue::SPEECH_STOOD],
+    "the citer replays through the genome that holds the citation"
+);
+k.rule_all_provisionals();
+k.confirm_peer_holds_addrs(std::slice::from_ref(&outer), [2; 32]);
+assert!(k.ruled_contains(&outer), "and installs");
+
+let uses = k
+    .cited_by
+    .get(inner.as_bytes())
+    .expect("the cited address has citers");
+assert!(
+    uses.contains(outer.as_bytes()),
+    "the court records the citation as a use of the cited address (26)"
+);
+}
