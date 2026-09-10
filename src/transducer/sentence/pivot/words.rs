@@ -88,3 +88,120 @@ pub fn on_axis_of(index: &AxisIndex, chart: &stalk::Invariant, axis: Axis) -> Ve
         None => Vec::new(),
     }
 }
+
+/// 1.8, 50.2 step 2 — THE GENERATOR INDEX: the word vertices a mind or a
+/// court holds, by the chart of the versor each carries. Versor chart →
+/// (vertex address → the address of the form the vertex lives in).
+///
+/// The generators of a presentation are the ruled words (1.8), and since
+/// L5 a ruled word is a FORM: `Element::letters` answers `None` for every
+/// sentence, so an index that reads a word off `letters` sees only the v1
+/// connection words the utterance path stopped producing. This index reads
+/// the word vertices themselves, which is where the generators are.
+pub type GeneratorIndex = Keyed<Keyed<crate::transducer::address::Address>>;
+
+/// The chart of a word's own versor: `connection_chart`'s shape — the
+/// leading 0 that keeps versor charts disjoint from residual charts (M4
+/// step 2), then the rotor's conjugacy axes (15.3). A word with no
+/// conjugacy axes is not a generator and is not filed.
+pub fn versor_chart(w: &Word) -> Option<stalk::Invariant> {
+    let mut axes = vec![0u64];
+    axes.extend(w.rotor().class_axes()?);
+    Some(stalk::Invariant(axes))
+}
+
+/// File every word vertex of a form under the chart of the versor it
+/// carries. A form with no word vertices files nothing.
+pub fn admit_generators(
+    index: &mut GeneratorIndex,
+    form: &crate::transducer::address::Address,
+    f: &Form,
+) {
+    for v in &f.vertices {
+        let Vertex::Word { address, word, .. } = v else {
+            continue;
+        };
+        let Some(chart) = versor_chart(word) else {
+            continue;
+        };
+        index.nested_insert(chart.key(), address, form.clone());
+    }
+}
+
+/// Empty what `admit_generators` filled.
+pub fn retract_generators(
+    index: &mut GeneratorIndex,
+    _form: &crate::transducer::address::Address,
+    f: &Form,
+) {
+    for v in &f.vertices {
+        let Vertex::Word { address, word, .. } = v else {
+            continue;
+        };
+        let Some(chart) = versor_chart(word) else {
+            continue;
+        };
+        if let Some(bucket) = index.get_mut(chart.key().as_bytes()) {
+            bucket.remove(address);
+        }
+    }
+}
+
+/// The generators on one chart: (vertex address, form address).
+pub fn generators_at(
+    index: &GeneratorIndex,
+    chart: &stalk::Invariant,
+) -> Vec<(crate::transducer::address::Address, crate::transducer::address::Address)> {
+    match index.get(chart.key().as_bytes()) {
+        Some(bucket) => bucket
+            .fiber(crate::network::nerve::ROOT)
+            .map(|(v, f)| (crate::transducer::address::Address::from(v), f.clone()))
+            .collect(),
+        None => Vec::new(),
+    }
+}
+
+/// THE STRATUM'S GENERATORS (42.6, A21 §2): the chart coarsened one axis
+/// at a time until the read is not empty, exactly as `WorkingAtlas::stratum`
+/// coarsens — a demand is reduced against the generators of one stratum,
+/// never the language, and no further than it must.
+pub fn generators_under(
+    index: &GeneratorIndex,
+    chart: &stalk::Invariant,
+) -> Vec<(crate::transducer::address::Address, crate::transducer::address::Address)> {
+    let mut at = chart.clone();
+    loop {
+        let held = generators_at(index, &at);
+        if !held.is_empty() {
+            return held;
+        }
+        if at.0.is_empty() {
+            // The coarsest stratum is everything held: at the root there
+            // is no finer coordinate left to narrow by, and a read of the
+            // root's own key alone would answer nothing at all — the empty
+            // chart is a key, not the subtree under it.
+            return index
+                .fiber(crate::network::nerve::ROOT)
+                .flat_map(|(_, bucket)| {
+                    bucket
+                        .fiber(crate::network::nerve::ROOT)
+                        .map(|(v, f)| {
+                            (crate::transducer::address::Address::from(v), f.clone())
+                        })
+                        .collect::<Vec<_>>()
+                })
+                .collect();
+        }
+        at = at.peel();
+    }
+}
+
+/// The word a form's vertex carries, by the address that names it. A keyed
+/// read of the form's own index, never a walk (law 3).
+pub fn word_at_vertex(f: &Form, vertex: &[u8]) -> Option<Word> {
+    let i = *f.by_address.get(vertex)?;
+    match f.vertices.get(i as usize)? {
+        Vertex::Word { word, .. } => Some(word.clone()),
+        _ => None,
+    }
+}

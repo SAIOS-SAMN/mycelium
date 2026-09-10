@@ -72,6 +72,11 @@ impl Epigenome {
         for chart in body_charts_of(e) {
             self.by_moduli.nested_insert(chart.key(), &addr, ());
         }
+        // 1.8: the form's word vertices are the generators it contributes
+        // to this mind's presentation.
+        if let Some(f) = crate::transducer::sentence::from_element_form(e) {
+            crate::transducer::sentence::admit_generators(&mut self.generators, &addr, &f);
+        }
     }
 
     /// Empty what `moduli_admit` filled: a word that sheds, is retired, or
@@ -82,6 +87,9 @@ impl Epigenome {
             if let Some(bucket) = self.by_moduli.get_mut(chart.key().as_bytes()) {
                 bucket.remove(&addr);
             }
+        }
+        if let Some(f) = crate::transducer::sentence::from_element_form(e) {
+            crate::transducer::sentence::retract_generators(&mut self.generators, &addr, &f);
         }
     }
 

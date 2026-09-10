@@ -454,8 +454,19 @@ impl Kernel {
         if let Some(w) = self.word_at(addr) {
             let inv = crate::transducer::stalk::invariant_of(w);
             let words = crate::transducer::sentence::words_of_element(w);
+            // 1.8: a ruled form's word vertices are the generators this
+            // court can compose a spoken path through (50.2 step 2). Read
+            // before the carriers are touched, so the word's borrow ends
+            // here and not across them.
+            let form = crate::transducer::sentence::from_element_form(w);
             self.ruled.admit(&inv, addr);
             crate::transducer::sentence::admit_words(&mut self.axis_index, &inv, &words);
+            if let Some(f) = form {
+                let a = crate::transducer::address::Address::from(addr.to_vec());
+                let mut ix = std::mem::take(&mut self.generators);
+                crate::transducer::sentence::admit_generators(&mut ix, &a, &f);
+                self.generators = ix;
+            }
             self.ruled_addrs.insert(addr, ());
             self.refresh_ruled_root();
         }

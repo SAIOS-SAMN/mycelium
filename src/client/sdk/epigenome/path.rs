@@ -28,34 +28,38 @@ impl Epigenome {
         vertex: &crate::transducer::address::Address,
         word: &crate::transducer::alphabet::Word,
     ) -> Option<Path> {
-        // 50.2: the stratum is the MEASURED VERSOR's, not the body's. A
-        // `Vertex::Word` states its body's moduli, which is a section
-        // coordinate (rule 7) in a different keyspace from the charts
-        // held generators are filed under; read there, the stratum is the
-        // wrong fibre. The word's own chart is `connection_chart`'s
-        // shape — the leading 0 that keeps connection charts disjoint
-        // from residual charts, then the rotor's conjugacy axes (15.3).
-        let mut axes = vec![0u64];
-        axes.extend(word.rotor().class_axes()?);
-        let chart = crate::transducer::stalk::Invariant(axes);
-        let (_, generators) = self.working_atlas().stratum(&chart);
+        // 50.2: the stratum is the MEASURED VERSOR's, not the body's, and
+        // the generators are the WORD VERTICES of the forms this mind holds
+        // (1.8). Read off `Element::letters` — which answers `None` for
+        // every sentence — the basis saw only the v1 connection words the
+        // utterance path stopped producing at L5, so a mind holding a
+        // language of forms factored through nothing.
+        let chart = crate::transducer::sentence::versor_chart(word)?;
         let mut basis = Vec::new();
         let mut forms = Vec::new();
         let mut at: Vec<crate::transducer::address::Address> = Vec::new();
-        for (a, _st) in &generators {
-            let Some(held) = self.working_word(a) else {
+        for (v, form_addr) in
+            crate::transducer::sentence::generators_under(&self.generators, &chart)
+        {
+            // A word is not a generator of itself.
+            if v.as_bytes() == vertex.as_bytes() {
+                continue;
+            }
+            let Some(held) = self.working_word(form_addr.as_bytes()) else {
                 continue;
             };
-            let Some(l) = held.letters() else {
+            let Some(f) = crate::transducer::sentence::from_element_form(held) else {
                 continue;
             };
-            let w = l.spelling.word.clone();
+            let Some(w) = crate::transducer::sentence::word_at_vertex(&f, v.as_bytes()) else {
+                continue;
+            };
             let Some(pf) = w.form() else {
                 continue;
             };
             basis.push(w.rotor());
             forms.push(pf);
-            at.push(held.address());
+            at.push(v);
         }
         let g = word.rotor();
         let gf = g.spelled_word().and_then(|w| w.form())?;

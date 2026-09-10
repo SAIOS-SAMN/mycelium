@@ -38,19 +38,30 @@ impl Kernel {
             let mut basis = Vec::with_capacity(p.generators.len());
             let mut tape = Vec::with_capacity(p.generators.len());
             let mut cited = Vec::with_capacity(p.generators.len());
-            for (addr, e) in &p.generators {
-                if !self.ruled_contains(addr.as_bytes()) {
-                    continue;
-                }
-                let Some(held) = self.word_at(addr.as_bytes()) else {
+            for (vertex, e) in &p.generators {
+                // A path cites a VERTEX of a ruled form (1.8). The court
+                // finds the form the vertex lives in through its own
+                // generator index and resolves the word there; nothing is
+                // taken from the frame (1.7).
+                let Some(form_addr) = self.generator_form(vertex) else {
                     continue;
                 };
-                let Some(l) = held.letters() else {
+                if !self.ruled_contains(form_addr.as_bytes()) {
+                    continue;
+                }
+                let Some(held) = self.word_at(form_addr.as_bytes()) else {
+                    continue;
+                };
+                let Some(f) = crate::transducer::sentence::from_element_form(held) else {
+                    continue;
+                };
+                let Some(w) = crate::transducer::sentence::word_at_vertex(&f, vertex.as_bytes())
+                else {
                     continue;
                 };
                 tape.push((basis.len(), *e));
-                basis.push(l.spelling.word.rotor());
-                cited.push((addr.clone(), held.magnitude()));
+                basis.push(w.rotor());
+                cited.push((form_addr, held.magnitude()));
             }
             if cited.is_empty() {
                 continue;
@@ -80,6 +91,22 @@ impl Kernel {
             }
         }
         verified
+    }
+}
+
+impl Kernel {
+    /// The ruled form a cited vertex lives in: one keyed read of the
+    /// court's own generator index, never a walk of the cover (law 3).
+    pub(crate) fn generator_form(
+        &self,
+        vertex: &crate::transducer::address::Address,
+    ) -> Option<crate::transducer::address::Address> {
+        for (_, bucket) in self.generators.fiber(crate::network::nerve::ROOT) {
+            if let Some(f) = bucket.get(vertex.as_bytes()) {
+                return Some(f.clone());
+            }
+        }
+        None
     }
 }
 

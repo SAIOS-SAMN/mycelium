@@ -281,6 +281,13 @@ pub struct Epigenome {
     /// no rule ever cited a held form, no citation was ever a use, and
     /// nothing was ever paid for one (26, 27).
     pub(crate) by_moduli: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
+    /// 1.8, 50.2 step 2 — THE GENERATORS this mind holds, by the chart of
+    /// the versor each carries: versor chart → (vertex address → form
+    /// address). A ruled word is a form since L5, so the generators of the
+    /// presentation are its WORD VERTICES; read off `Element::letters`,
+    /// which answers `None` for every sentence, a factorisation saw only
+    /// the v1 connection words the utterance path stopped producing.
+    pub(crate) generators: crate::transducer::sentence::GeneratorIndex,
 }
 
 /// THE ENTITY — a kernel identity with its genome/epigenome, conversing through

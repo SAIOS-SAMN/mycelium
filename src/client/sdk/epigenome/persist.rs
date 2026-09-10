@@ -76,6 +76,7 @@ impl Epigenome {
         // it learned something new, and the index was live only in a
         // process that had never restarted.
         self.by_moduli = crate::network::nerve::Keyed::new();
+        self.generators = crate::transducer::sentence::GeneratorIndex::new();
         self.shapes.clear();
         for w in &self.genome {
             self.atlas.admit(&crate::transducer::stalk::invariant_of(w), w.address());

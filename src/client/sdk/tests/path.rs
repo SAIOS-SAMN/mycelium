@@ -3,20 +3,56 @@
 
 use crate::client::sdk::*;
 use crate::transducer::alphabet::{LetterId, Word};
-use crate::transducer::element::{from_connection, identity_versor};
+use crate::transducer::element::Element;
 
 fn plane_word(n: usize) -> Word {
     let q = LetterId::quarter((0, 1)).expect("the quarter turn on the sensor plane");
     Word::from_letters(&vec![(q, false); n])
 }
 
-/// A generator this mind EARNED: a connection it spoke, a court ruled,
-/// and the syllabus taught back (§3.4, directive 5 — never a carrier
-/// filled by initialisation). The court's ruling is what makes it
-/// language; `learn` is the mind receiving it.
-fn taught(epi: &mut Epigenome, k: &mut crate::cognition::Kernel, w: Word) -> Element {
-    let e = from_connection(&w, &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0])
-        .expect("a connection on the plane");
+/// A sentence whose one word vertex carries `w`: a generator as the
+/// language actually holds one since L5 — a FORM, not a v1 connection.
+fn sentence_of(w: Word, tag: u8) -> Element {
+    use crate::transducer::sentence::{as_element_form, Form, FormFace, Vertex};
+    let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
+    let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+    let mut f = Form::default();
+    f.vertices.push(Vertex::Word {
+        address: crate::transducer::address::Address::from_bytes([
+            crate::transducer::address::TAG_FORM,
+            tag,
+        ]),
+        word: w,
+        carriage: Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
+        gauge: Vec::new(),
+        class: crate::transducer::stalk::Invariant::default(),
+        contact: None,
+    });
+    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("star"), edge: None });
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.reindex();
+    as_element_form(&f, [1, 0, 0, 0]).expect("a tape")
+}
+
+/// The word-vertex address of a sentence: what a path cites (1.8).
+fn vertex_of(e: &Element) -> crate::transducer::address::Address {
+    crate::transducer::sentence::from_element_form(e)
+        .expect("the tape reads back")
+        .vertices
+        .iter()
+        .find_map(|v| match v {
+            crate::transducer::sentence::Vertex::Word { address, .. } => Some(address.clone()),
+            _ => None,
+        })
+        .expect("one word vertex")
+}
+
+/// A generator this mind EARNED: a form it spoke, a court ruled, and the
+/// syllabus taught back (§3.4, directive 5 — never a carrier filled by
+/// initialisation). The court's ruling is what makes it language; `learn`
+/// is the mind receiving it.
+fn taught(epi: &mut Epigenome, k: &mut crate::cognition::Kernel, w: Word, tag: u8) -> Element {
+    let e = sentence_of(w, tag);
     assert_eq!(
         k.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&e)),
         vec![crate::anastome::dialogue::SPEECH_STOOD],
@@ -42,9 +78,9 @@ fn two_presentations_reach_one_vertex_by_two_paths() {
     let mut court = crate::cognition::Kernel::new();
 
     let mut a = Epigenome::new();
-    let ga = taught(&mut a, &mut court, plane_word(1));
+    let ga = taught(&mut a, &mut court, plane_word(1), 1);
     let mut b = Epigenome::new();
-    let gb = taught(&mut b, &mut court, plane_word(3));
+    let gb = taught(&mut b, &mut court, plane_word(3), 3);
 
     // The two minds hold different generators, compared by the algebra
     // and never by address (rule 3, directive 1).
@@ -53,10 +89,8 @@ fn two_presentations_reach_one_vertex_by_two_paths() {
         "the two minds earned different generators"
     );
 
-    let vertex = crate::transducer::address::Address::from_bytes([
-        crate::transducer::address::TAG_FORM,
-        1,
-    ]);
+    let target = sentence_of(half.clone(), 9);
+    let vertex = vertex_of(&target);
     let pa = a.path_of(&vertex, &half).expect("A reaches the half turn");
     let pb = b.path_of(&vertex, &half).expect("B reaches the half turn");
 
@@ -64,13 +98,13 @@ fn two_presentations_reach_one_vertex_by_two_paths() {
     assert!(pb.whole, "B's generators compose to the vertex");
     assert_eq!(
         pa.generators.first().map(|(x, _)| x.clone()),
-        Some(ga.address()),
-        "A cites the quarter turn it was taught"
+        Some(vertex_of(&ga)),
+        "A cites the word vertex of the form it was taught"
     );
     assert_eq!(
         pb.generators.first().map(|(x, _)| x.clone()),
-        Some(gb.address()),
-        "B cites the three-quarter turn it was taught"
+        Some(vertex_of(&gb)),
+        "B cites the word vertex of the form it was taught"
     );
     assert_ne!(
         pa.generators, pb.generators,
@@ -84,7 +118,7 @@ fn two_presentations_reach_one_vertex_by_two_paths() {
 fn every_generator_the_mind_holds_was_taught_to_it() {
     let mut court = crate::cognition::Kernel::new();
     let mut epi = Epigenome::new();
-    let g = taught(&mut epi, &mut court, plane_word(1));
+    let g = taught(&mut epi, &mut court, plane_word(1), 1);
     let chart = crate::transducer::stalk::invariant_of(&g);
     let held = epi.working_atlas().fiber(&chart);
     assert!(
@@ -103,10 +137,7 @@ fn every_generator_the_mind_holds_was_taught_to_it() {
 #[test]
 fn a_mind_that_holds_nothing_has_no_path() {
     let epi = Epigenome::new();
-    let vertex = crate::transducer::address::Address::from_bytes([
-        crate::transducer::address::TAG_FORM,
-        1,
-    ]);
+    let vertex = vertex_of(&sentence_of(plane_word(2), 9));
     assert!(
         epi.path_of(&vertex, &plane_word(2)).is_none(),
         "an empty presentation reaches nothing"

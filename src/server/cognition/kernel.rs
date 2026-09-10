@@ -261,6 +261,11 @@ pub struct Kernel {
     pub(crate) genesis_cover: Option<[u64; 4]>,
     /// Listing address → the voice whose bond the draw occupies.
     pub(crate) drawers: crate::network::nerve::Keyed<[u8; 32]>,
+    /// 1.8, 50.2 step 2 — THE GENERATORS this court has ruled, by the chart
+    /// of the versor each carries: the word vertices of the ruled forms,
+    /// which is where a presentation's generators live since a ruled word
+    /// became a form (L5). Filled beside the axis index in `ruled_admit`.
+    pub(crate) generators: crate::transducer::sentence::GeneratorIndex,
     /// Per-voice occupancy of open draws, keyed by vk.
     pub(crate) drawn: crate::network::nerve::Keyed<[u64; 4]>,
     /// Per-voice recall fee it could not cover, per lane (MU-ECONOMY §3.1
