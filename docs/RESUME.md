@@ -15,7 +15,7 @@ git log --oneline -1 main impl/soak          # impl/soak is ahead of main
 systemctl --user list-units 'mycelium-server@*' 'mycelium-client@*' --no-legend
 RUSTFLAGS='-D warnings' cargo test --release 2>&1 | grep -E "test result|FAILED"
 (cd xtask && cargo run)                        # gates, then clippy -D warnings
-# expected at the L8p landing: lib 439, bins 9, alpha_plan 13, g_cga 6; xtask exit 0
+# expected at 4b5e44c: lib 439, bins 9, alpha_plan 13, g_cga 6; xtask exit 0
 (cd xtask && cargo test)                       # the gates' own tests: 31
 ```
 
