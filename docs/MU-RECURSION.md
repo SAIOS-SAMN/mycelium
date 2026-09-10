@@ -3279,7 +3279,8 @@ Carried from chapter 20: pair forms. Extraction is seven moves on them.
 
 ```rust
 pub trait Crystal {                                       // source of crystallized forms
-    fn on_class(&self, class: &stalk::Invariant) -> Vec<(Element, Form, Standing)>;
+    fn on_class(&self, class: &stalk::Invariant) -> Vec<(Element, Form, Standing)>;   // 24.2: closed forms filed at a cited FORM's chart (chart_of_form)
+    fn on_body(&self, chart: &stalk::Invariant) -> Vec<(Element, Form, Standing)>;    // 21 step 3: closed forms carrying a body on a BODY's chart (its moduli)
     fn speak_form(&self, f: &Form, x: &Grid, placement: &Word) -> Option<Speech>;
     fn by_address(&self, addr: &[u8; 32]) -> Option<(Element, Form)>;  // keyed read, no scan
     fn on_axis(&self, chart: &Invariant, axis: Axis) -> Vec<Word>;     // A16 step 3 fiber
@@ -3323,12 +3324,33 @@ Inside `extract_rule_with`, in order:
    dropped; the vertices stay. A face for every pair of vertices carries no
    information beyond the vertices and makes every loop identity by
    construction, so torsion has nowhere to appear.
-3. **Gluing.** For each class present, `crystal.on_class(class)`; for each
-   crystallized `s`, the placement word from `s`'s `Frame` to the pair's
-   `Frame` via the matched vertex; if `crystal.speak_form(s, x, placement)`
-   reproduces a subset of the pair's output on every pair, the pair forms
-   `glue(s, addr, placement)` and the reproduced vertices leave the
-   remainder (3.3, 13.6).
+3. **Gluing.** For each class present, `crystal.on_body(class)` — the
+   class here is a `Vertex::Word`'s own `class`, the **moduli of the body
+   it carries** (18.2), so the read is at the coordinate the perceived
+   body supplies; for each crystallized `s`, the placement word from `s`'s
+   `Frame` to the pair's `Frame` via the matched vertex; if
+   `crystal.speak_form(s, x, placement)` reproduces a subset of the pair's
+   output on every pair, the pair forms `glue(s, addr, placement)` and the
+   reproduced vertices leave the remainder (3.3, 13.6). The chart routes
+   and `speak_form` decides: incidence is deconstruction, never a key
+   (24.3), and the chart is what keeps the read from becoming a scan of
+   everything the mind holds (law 3).
+
+   **`on_body` and `on_class` are two coordinates, not one** (ruled
+   2026-09-10). This step asks which closed forms carry a body on a body's
+   chart; 24.2 asks which closed forms the mind holds at a **cited form's**
+   chart, and a form is filed under `chart_of_form` — `[2, vertices,
+   faces, loops, …]` — while a body's moduli are `[components,
+   …harmonics…]`. The two systems meet only at the empty root. Named
+   `on_class` for both, the glue's read was performed against the form
+   index and answered the empty vector to every question it could ask: no
+   rule ever cited a held form, no citation was ever a use, and no speaker
+   was ever paid for one (26, 27). That is the mechanism under the fleet's
+   "genomes of 250–420 ruled words comprehending 0 of 2 listings" (50.6),
+   and it was an index fault, never an absence of anything to say. A mind
+   answers `on_body` from `by_moduli`, its own `Form.by_class` one level
+   up (18.2): body chart → the addresses of the closed forms it holds with
+   a `Word` vertex there, filled and emptied where the axis index is.
 4. **Rebasing.** "Do to B what A did to itself": vertex `j` is `i` read in
    `j`'s frame when `w_j = t · w_i · t⁻¹` with `t` the relative placement
    from `i`'s body to `j`'s body (the translator factor of `face_of(i,
@@ -4219,7 +4241,9 @@ cognition.rs  resolve_form, replay_memo, cited_by, cocycle_at fifth field, push_
               cover-change re-representation (15.6), restore: A8 + RMP1, composite_parent_id/section_address via M2,
               reduce_excluding calls A12 for connections, shorter_form, missing_forms, pay_solve → settle_recursive
 economy/       settle_recursive, use_credit, Treasury::restore A8 collision rule
-sdk.rs        Epigenome::working_atlas NEW, Standing NEW, dialect Stalks NEW (admitted in stand_dialect, retracted in shed),
+sdk.rs        Epigenome::by_moduli NEW (21 step 3: body chart → closed forms carrying a body there; moduli_admit/moduli_retract beside axis_admit/axis_retract,
+              standing_of NEW), Crystal::on_body NEW on every impl (the glue's read; on_class keeps 24.2's cited-form chart),
+              Epigenome::working_atlas NEW, Standing NEW, dialect Stalks NEW (admitted in stand_dialect, retracted in shed),
               learn_one promotion dialect → genome by same_vertex, Comprehension::Withheld, comprehend (24, M6),
               pull_syllabus depth order, uncrystallize A8, peers keyed by vk with pending_addrs (A10)
 bubble/drive.rs  pivot_on and expand_with call Form::pivot_loop (A16), vortex cells kept in Bubble.nerve with certificates (25.1),
