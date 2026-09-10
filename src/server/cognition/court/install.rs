@@ -16,10 +16,28 @@ impl Kernel {
     /// an install stood on cannot re-derive the install.
     pub(crate) fn home_install(&mut self, addr: &[u8], witness: [u8; 32]) {
         let held = self.word_at(addr).cloned().or_else(|| self.provisional.get(addr).cloned());
+        // L8y: the voice whose draw this address occupies is `drawers`,
+        // and where `pending_take` already cleared it the speaker recorded
+        // when the sentence was heard stands. Written as `[0; 32]`, every
+        // word this court ruled had no speaker, so a use of it was credited
+        // to the null identity and no speaker of a generator was ever paid
+        // (26).
+        let drawn = self
+            .drawers
+            .get(addr)
+            .copied()
+            .or_else(|| self.discoverer_of(addr));
         if self.basis.get(addr).is_none() {
             if let Some(w) = held.as_ref() {
                 if !(w.is_connection() && w.letters().is_none()) {
-                    self.basis_push(w.clone(), [0; 32]);
+                    match drawn {
+                        Some(voice) => self.basis_push(w.clone(), voice),
+                        // No draw: a word this court did not receive from a
+                        // voice — a peer's glue, a restore. It has no
+                        // speaker here, which is a fact and not a default
+                        // (rule 11).
+                        None => self.basis_push(w.clone(), [0; 32]),
+                    }
                     self.fed_admit(addr, w.clone());
                 }
             }

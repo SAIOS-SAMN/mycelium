@@ -105,18 +105,20 @@ fn two_paths_to_one_vertex_are_both_verified_and_each_speaker_is_paid() {
         k.treasury_entry_count() > entries,
         "a verified path draws a use from the citing voice and writes it (26)"
     );
-    // WHO it credits is `discoverer_of`, and a word ruled through the
-    // provisional path has none: `ruled_admit` fills `ruled`, `ruled_addrs`
-    // and the axis index and never `discoverers`, so the credit lands on
-    // the null identity and the speaker of a generator is not paid. Row
-    // L8y. The draw, the composition and the attribution mechanism are
-    // proven here; the name the credit carries is not yet the speaker's.
+    // L8y: the credit carries the SPEAKER's name. `home_install` reads the
+    // voice off `drawers` — the draw this address occupies — where it wrote
+    // the null identity before.
     assert_eq!(
         k.discoverer_of(ga.address().as_bytes()),
-        Some([0u8; 32]),
-        "L8y: the ruled cover records no speaker for a generator ruled from the docket"
+        Some(sa),
+        "the generator names the voice that spoke it"
     );
-    let _ = (before_a, before_b, gb);
+    assert_eq!(k.discoverer_of(gb.address().as_bytes()), Some(sb));
+    let (after_a, after_b) = (k.treasury().balance_mu(&sa), k.treasury().balance_mu(&sb));
+    assert!(
+        after_a != before_a && after_b != before_b,
+        "each generator's speaker is paid for the use (26): {before_a:?}->{after_a:?}, {before_b:?}->{after_b:?}"
+    );
 
     // The empty voice cites nothing: no path, no use, nothing paid.
     let before_empty = k.treasury().balance_mu(&empty);

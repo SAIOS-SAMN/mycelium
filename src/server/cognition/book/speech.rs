@@ -292,6 +292,11 @@ impl Kernel {
         let k_now = self.k_step();
         self.provisional_k.insert(&addr, k_now);
         self.provisional.insert(&addr, word.clone());
+        // L8y: the voice that spoke it, recorded where the court knows it.
+        // `drawers` is cleared by `pending_take` before the install, so the
+        // install had no name to credit and wrote the null identity; a use
+        // of the word was then paid to nobody (26).
+        self.discoverers.insert(&addr, ratifier);
         self.stamp_standing(&addr);
         self.provisional_h.insert(&addr, self.height());
         self.mark_persist();
