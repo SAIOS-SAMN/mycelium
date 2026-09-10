@@ -104,10 +104,13 @@ impl Contemplation {
         self.bubbles.fiber(ROOT).map(|(_, b)| b.remainder.as_slice()).collect()
     }
 
-    /// Unreduced boundary cochain norm of open thoughts: L1 of the
-    /// four-lane measure of the held remainders. An unmeasured space is
-    /// an open thought (∂g ≠ 0), not infinite discordance.
-    pub fn boundary_norm(&self) -> usize {
+    /// THE BOUNDARY MEASURE of the open thoughts (law 5, L7a): the
+    /// four-lane measure of the held remainders, read per lane and never
+    /// summed — a sum over lanes was the L1 norm of the convergence
+    /// engine's coherence functional, the scalar the doctrine refuses. An
+    /// unmeasured space is an open thought (∂g ≠ 0), not infinite
+    /// discordance; no thought is `[0; 4]`.
+    pub fn boundary_measure(&self) -> [u64; 4] {
         let mut acc: Vec<RemCell> = Vec::new();
         for r in self.remainders() {
             acc.extend(r.iter().copied());
@@ -115,8 +118,6 @@ impl Contemplation {
         acc.sort_unstable();
         acc.dedup();
         element::measure_lanes(&acc)
-            .iter()
-            .fold(0usize, |s, &x| s.saturating_add(x as usize))
     }
 
     pub(crate) fn retract_incidence(&mut self, key: &[u8], b: &Bubble) {

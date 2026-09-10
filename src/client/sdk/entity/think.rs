@@ -294,12 +294,22 @@ impl Entity {
         spoken
     }
 
-    pub fn discordance(&self) -> usize {
+    /// The strata whose roots differed at the last sync (learn.rs), or
+    /// `None` while no sync has measured it. It is not the boundary measure
+    /// of the held thoughts: the two were one `usize` once, which summed
+    /// four lanes into a count (law 5, L7a).
+    pub fn discordance(&self) -> Option<usize> {
         if self.discordance_measured {
-            self.discordance
+            Some(self.discordance)
         } else {
-            self.contemplation.boundary_norm()
+            None
         }
+    }
+
+    /// The four-lane measure of what this mind holds open (law 5), read
+    /// per lane by whoever reads it.
+    pub fn boundary_measure(&self) -> [u64; 4] {
+        self.contemplation.boundary_measure()
     }
 
     pub fn shed(&mut self) -> usize {

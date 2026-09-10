@@ -3,13 +3,23 @@
 
 use crate::transducer::bubble::*;
 
+/// Law 5, L7a: the boundary of the open thoughts is read on four lanes
+/// and is the measure of the held remainders themselves — never their sum,
+/// never a norm. No thought is `[0; 4]`; one held cell measures as that
+/// cell's chain does, lane by lane.
 #[test]
-fn unmeasured_space_is_a_finite_boundary_norm() {
+fn an_open_thought_measures_on_four_lanes_never_a_sum() {
     let mut c = Contemplation::new();
-    assert_eq!(c.boundary_norm(), 0, "no thought is zero, not MAX");
-    c.hold(vec![(0, 0, 1, 2)]);
-    let n = c.boundary_norm();
-    assert!(n > 0 && n < usize::MAX, "∂g ≠ 0 is a finite cochain, got {n}");
+    assert_eq!(c.boundary_measure(), [0; 4], "no thought is zero on every lane, not MAX");
+    let cell = (0, 0, 1, 2);
+    c.hold(vec![cell]);
+    let m = c.boundary_measure();
+    assert_eq!(
+        m,
+        element::measure_lanes(&[cell]),
+        "the boundary is the remainder's own lane measure, lane for lane"
+    );
+    assert!(m.iter().any(|&x| x > 0), "∂g ≠ 0 is a non-zero cochain: {m:?}");
 }
 
 #[test]
