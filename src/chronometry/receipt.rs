@@ -56,6 +56,10 @@ pub enum ActKind {
     Uttered,
     Learned,
     Settled,
+    /// 50.9 (L8): a court refused this mind's sentence, and the mind
+    /// contracted it — an admitted act of the mind, sealing the refused
+    /// address on its own chain.
+    Refused,
 }
 
 impl ActKind {
@@ -75,6 +79,7 @@ impl ActKind {
             ActKind::Uttered => 11,
             ActKind::Learned => 12,
             ActKind::Settled => 13,
+            ActKind::Refused => 14,
         }
     }
 
@@ -94,6 +99,7 @@ impl ActKind {
             11 => ActKind::Uttered,
             12 => ActKind::Learned,
             13 => ActKind::Settled,
+            14 => ActKind::Refused,
             _ => return None,
         })
     }
@@ -114,6 +120,7 @@ impl ActKind {
             ActKind::Uttered => b"uttered",
             ActKind::Learned => b"learned",
             ActKind::Settled => b"settled",
+            ActKind::Refused => b"refused",
         }
     }
 

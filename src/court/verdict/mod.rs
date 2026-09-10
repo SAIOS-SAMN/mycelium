@@ -59,6 +59,47 @@ pub const REFUSE_EDGE: &str = "edge transport is neither in the stabilizer nor t
 /// court's copy of the family is not a word for that body (50.1 step 1).
 pub const REFUSE_NOT_A_SENTENCE: &str = "utterance is a chain, not a sentence";
 pub const REFUSE_VERTEX_BODY: &str = "vertex does not carry its body onto its image";
+/// 50.9 (L8): a sentence citing a refusal receipt is not the contraction
+/// of the refused sentence at the coordinate the court named.
+pub const REFUSE_NOT_CONTRACTION: &str = "sentence is not the contraction of the refused sentence at the coordinate";
+
+/// A REFUSAL WITH ITS COORDINATE (50.9): the reason of 34.1 and where in
+/// the sentence the court found it, as content.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Refusal {
+    pub reason: &'static str,
+    pub at: sentence::At,
+}
+
+impl Refusal {
+    /// A refusal of the whole tape.
+    pub fn of_tape(reason: &'static str, spoken: &Element) -> Refusal {
+        Refusal { reason, at: sentence::At::Tape(spoken.address()) }
+    }
+
+    /// The kind the reason travels as (34.1): `VertexBody` is
+    /// `REFUSE_VERTEX_BODY`, `EdgeHolonomy` is `REFUSE_EDGE`,
+    /// `RemainderUndeclared` is `REFUSE_NOT_CLOSED`, and every other
+    /// refusal of the tape is a `MalformedComplex`.
+    pub fn kind(&self) -> sentence::RefusalKind {
+        match self.reason {
+            REFUSE_VERTEX_BODY => sentence::RefusalKind::VertexBody,
+            REFUSE_EDGE => sentence::RefusalKind::EdgeHolonomy,
+            REFUSE_NOT_CLOSED => sentence::RefusalKind::RemainderUndeclared,
+            _ => sentence::RefusalKind::MalformedComplex,
+        }
+    }
+}
+
+/// WHAT A COURT HOLDS OF A SENTENCE IT REFUSED (50.9): the kind, the
+/// coordinate and the receipt it answered with, keyed by the refused
+/// address, so the contraction the voice cites next can be verified.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Refused {
+    pub kind: sentence::RefusalKind,
+    pub at: sentence::At,
+    pub receipt: [u8; 32],
+}
 /// 47.3, 34.1: a second organ must hold bond outside the home's
 /// delegation closure and room on the lanes the act occupies.
 pub const REFUSE_WITNESS_DEPENDENT: &str = "witness bond lies inside the home's delegation closure";

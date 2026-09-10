@@ -8,7 +8,7 @@
 //! and the per-pair presentation that spoke it with it.
 
 use crate::feed::{family_magnitude, retire_feed, Feed};
-use crate::speak::{speak_form, withhold_unextracted};
+use crate::speak::{speak_contracted, speak_form, withhold_unextracted};
 use crate::Stroke;
 use mycelium::arc::parse_task;
 use mycelium::physics::{Physics, StrokeOutcome};
@@ -23,6 +23,11 @@ pub(crate) fn feed_arm(
     occluded: bool,
 ) {
     let Stroke { entity, physics, c, outcome, tag, .. } = stroke;
+    // 50.9: what the last refusals contracted is uttered first, citing
+    // the receipts, before any new family is presented.
+    if !occluded {
+        speak_contracted(entity, tag);
+    }
     while let Some(path) = feed.next() {
         if occluded {
             break;

@@ -120,8 +120,9 @@ fn speech_act_one_frame() {
     assert_eq!(act.task[0], 2);
     assert_eq!(act.k, 7);
     assert_eq!(act.sentences.len(), 1);
-    let reply = dialogue::encode_speech_reply(&[dialogue::SPEECH_STOOD]);
-    assert_eq!(dialogue::decode_speech_reply(&reply), Some(vec![dialogue::SPEECH_STOOD]));
+    let stood = dialogue::Adjudication::Stood { receipt: [4; 32] };
+    let reply = dialogue::encode_speech_reply(std::slice::from_ref(&stood));
+    assert_eq!(dialogue::decode_speech_reply(&reply), Some(vec![stood]));
 }
 
 #[test]

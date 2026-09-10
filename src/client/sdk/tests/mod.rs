@@ -7,6 +7,7 @@ mod axis;
 mod cite;
 mod comprehension;
 mod contact;
+mod contract;
 mod demand;
 mod height;
 mod refinement;

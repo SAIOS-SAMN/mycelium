@@ -5,7 +5,7 @@
 //! every loop's holonomy to the identity, and every pivot certificate from
 //! the axis it names. A form that does not is REFUSED, never scored.
 
-use super::body::{edges_rederive_family, remainder_undeclared, vertices_carry_family};
+use super::body::{edges_rederive_family, undeclared_remainder, vertices_carry_family};
 use super::*;
 
 /// Chapter 23.1: replay a crystallized form from its tape and the forms it
@@ -24,65 +24,76 @@ pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8]) -> Option<Form>) ->
 /// Chapter 23.1 with the bound family, so rebase/unfold/orbit execute on
 /// the trains when the kernel has them (step 6). Descent is measured
 /// through `crystal` (the court's genome). `NoCrystal` is only for a tape
-/// with no Glued vertex.
+/// with no Glued vertex. The reason alone; `replay_form_at` carries the
+/// coordinate.
 pub fn replay_form_with(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
     family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
 ) -> Option<&'static str> {
+    replay_form_at(spoken, resolve, family, crystal).map(|r| r.reason)
+}
+
+/// The same replay, refusing WITH THE COORDINATE (50.9): the vertex that
+/// does not carry its body, the face whose edge does not re-derive, the
+/// chart with the cells no demand declares; every other refusal is of the
+/// whole tape.
+pub fn replay_form_at(
+    spoken: &Element,
+    resolve: &dyn Fn(&[u8]) -> Option<Form>,
+    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    crystal: &dyn crate::transducer::family::Crystal,
+) -> Option<Refusal> {
+    let tape = |reason: &'static str| Refusal::of_tape(reason, spoken);
     let Some(f) = sentence::from_element_form(spoken) else {
-        return Some(REFUSE_FORM_TAPE);
+        return Some(tape(REFUSE_FORM_TAPE));
     };
     if f.depth != f.depth_of() {
-        return Some(REFUSE_GLUED_DEPTH);
+        return Some(tape(REFUSE_GLUED_DEPTH));
     }
     for v in &f.vertices {
         let Vertex::Glued { address, depth, .. } = v else {
             continue;
         };
         if *depth >= f.depth {
-            return Some(REFUSE_GLUED_DEPTH);
+            return Some(tape(REFUSE_GLUED_DEPTH));
         }
         let Some(cited) = resolve(address) else {
-            return Some(REFUSE_GLUED_UNRULED);
+            return Some(tape(REFUSE_GLUED_UNRULED));
         };
         if !cited.is_closed() {
-            return Some(REFUSE_GLUED_UNRULED);
+            return Some(tape(REFUSE_GLUED_UNRULED));
         }
         if cited.depth_of() != *depth {
-            return Some(REFUSE_GLUED_DEPTH);
+            return Some(tape(REFUSE_GLUED_DEPTH));
         }
         let frame_is_identity = match cited.vertices.first() {
             Some(fr @ Vertex::Frame) => fr.word_in(&cited).is_some_and(|w| w.is_identity()),
             _ => false,
         };
         if !frame_is_identity {
-            return Some(REFUSE_GLUED_FRAME_GAUGED);
+            return Some(tape(REFUSE_GLUED_FRAME_GAUGED));
         }
     }
     // 23.1 step 3, 50.6 (L7): a tape whose only vertices are the Frame and
     // demands is a chain wearing a form's tape — nothing in it acts.
-    let acts = f
-        .vertices
-        .iter()
-        .any(|v| matches!(v, Vertex::Word { .. } | Vertex::Glued { .. } | Vertex::Rebased { .. } | Vertex::Unfolded { .. }));
-    if !acts {
-        return Some(REFUSE_NOT_A_SENTENCE);
+    if !f.acts() {
+        return Some(tape(REFUSE_NOT_A_SENTENCE));
     }
     if let Some(reason) = vertex_tape_and_moves(&f, family) {
-        return Some(reason);
+        return Some(tape(reason));
     }
     // G steps 2–3 (50.2) on the court's copy of the family: every word
     // vertex carries its body onto its image, exactly (L7).
     if let Some(fam) = family {
-        if let Some(reason) = vertices_carry_family(&f, fam) {
-            return Some(reason);
+        if let Some(refusal) = vertices_carry_family(&f, fam) {
+            return Some(refusal);
         }
     }
     // Loops are derived, never trusted from the tape: re-walk the forest.
     let Some(taped_rank) = f.rank() else {
-        return Some(REFUSE_RANK_LOST);
+        return Some(tape(REFUSE_RANK_LOST));
     };
     let mut walked = f.clone();
     walked.loops = Form::loops_of(&f.faces, f.vertices.len());
@@ -99,28 +110,28 @@ pub fn replay_form_with(
         // with the family, L7).
         if let Some(edge) = &face.edge {
             if matches!(edge.word.order(), crate::transducer::alphabet::Order::Infinite) {
-                return Some(REFUSE_EDGE);
+                return Some(face_refusal(&f, face));
             }
         }
         if f.face_of(face.i, face.j).as_ref() == Some(&face.transport) {
             continue;
         }
         if !torsion_chord_carries(&walked, &by_chord, i, face) {
-            return Some(REFUSE_FACE);
+            return Some(tape(REFUSE_FACE));
         }
     }
     if !form_loops_replay(&walked) {
-        return Some(REFUSE_LOOP);
+        return Some(tape(REFUSE_LOOP));
     }
     // 23.1 step 4, 50.3 (L7): every carried edge re-measured on the union
     // of its two bodies, on every pair of the family.
     if let Some(fam) = family {
-        if let Some(reason) = edges_rederive_family(&walked, fam) {
-            return Some(reason);
+        if let Some(refusal) = edges_rederive_family(&walked, fam) {
+            return Some(refusal);
         }
     }
     let Some(derived) = walked.rank() else {
-        return Some(REFUSE_RANK_LOST);
+        return Some(tape(REFUSE_RANK_LOST));
     };
     // S9.2 — THE RANK RE-DERIVES OR THE WORD IS REFUSED. The court walks
     // the forest itself and compares the audit it derived against the one
@@ -132,7 +143,7 @@ pub fn replay_form_with(
     // Rule 11 is exact or refused, and a rank that does not re-derive is
     // not exact in either direction.
     if taped_rank != derived {
-        return Some(REFUSE_RANK_LOST);
+        return Some(tape(REFUSE_RANK_LOST));
     }
     if let Some(fam) = family {
         let glued = walked
@@ -152,13 +163,29 @@ pub fn replay_form_with(
         // economy's reading, taken after the court's. Under 50.5 (L7) the
         // clause reads the CLOSED SUB-COMPLEX: a remainder cell a demand
         // vertex names is what the sentence said it could not close — valid,
-        // not closed — and only an undeclared remainder refuses.
+        // not closed — and only an undeclared remainder refuses, at the
+        // chart of the cells it read (50.9).
         let _ = pay;
-        if remainder_undeclared(&rems, &walked) {
-            return Some(REFUSE_NOT_CLOSED);
+        let undeclared = undeclared_remainder(&rems, &walked);
+        if !undeclared.is_empty() {
+            let chart = stalk::invariant(&undeclared);
+            return Some(Refusal { reason: REFUSE_NOT_CLOSED, at: sentence::At::Chart(chart, undeclared) });
         }
     }
-    replay_certificates(&walked, &by_chord)
+    replay_certificates(&walked, &by_chord).map(tape)
+}
+
+/// `REFUSE_EDGE` at a face's two vertex addresses; a face reaching a vertex
+/// with no address is refused at the tape.
+fn face_refusal(f: &Form, face: &crate::transducer::sentence::FormFace) -> Refusal {
+    let addr_of = |i: u16| match f.vertices.get(i as usize) {
+        Some(Vertex::Word { address, .. }) | Some(Vertex::Glued { address, .. }) => Some(address.clone()),
+        _ => None,
+    };
+    match (addr_of(face.i), addr_of(face.j)) {
+        (Some(a), Some(b)) => Refusal { reason: REFUSE_EDGE, at: sentence::At::Face(a, b) },
+        _ => Refusal { reason: REFUSE_EDGE, at: sentence::At::Tape(sentence::form_vertex_key(f)) },
+    }
 }
 
 /// Chapter 23.1 steps 3 and 6: each Word vertex re-derives its rotor (M1)

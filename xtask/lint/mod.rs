@@ -2,8 +2,9 @@
 //
 //! MU-STANDARDS 4 — THE GATES: one file per gate, each named for the rule
 //! it enforces — the reading bound, rules 1 and 8, law 2, law 11, law 9,
-//! law 5, 2.4, and since 2026-09-10 rules 2, 4, 11 and 15 with the OWED
-//! ratchet (4.4). This file is the order they run in and nothing else.
+//! law 5, 2.4, since 2026-09-10 rules 2, 4, 11 and 15 with the OWED
+//! ratchet (4.4), and law 8's utterance path (50.9). This file is the
+//! order they run in and nothing else.
 
 pub mod choice;
 pub mod clock;
@@ -18,6 +19,7 @@ pub mod matrix;
 pub mod order;
 pub mod panics;
 pub mod position;
+pub mod residual;
 pub mod squaring;
 
 use length::lint_file_length;
@@ -65,6 +67,7 @@ pub fn run() -> Result<(), String> {
             choice::GATE,
             invented::GATE,
             position::GATE,
+            residual::GATE,
         ], &mut hits)?;
     if hits.is_empty() {
         return Ok(());

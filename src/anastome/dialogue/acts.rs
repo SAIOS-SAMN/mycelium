@@ -63,10 +63,45 @@ pub const ACT_ADOPT: u8 = 0x0E;
 /// One family's cohering sentences. `[ACT_SPEECH][voice 32][task address][tu u64][n u32][len u32|element]…`.
 pub const ACT_SPEECH: u8 = 0x16;
 
-/// Per-sentence: 0 Stood, 1 Dialect, 2 Refused.
+/// Per-sentence: 0 Stood, 1 Dialect, 2 Refused, 3 Ratified. Since 50.9
+/// (ruled 2026-09-10) these survive only as the adjudication's kind byte
+/// on the wire and the mind's reading of it; the reply itself is an
+/// `Adjudication` per sentence.
 pub const SPEECH_STOOD: u8 = 0;
 pub const SPEECH_DIALECT: u8 = 1;
 pub const SPEECH_REFUSED: u8 = 2;
+pub const SPEECH_RATIFIED: u8 = 3;
+
+/// THE JUDICIAL REPLY (50.9, 26): one per sentence sent, in the order
+/// sent, never an opaque byte. `Stood` is the docket's receipt; `Ratified`
+/// the language's — a use of a ruled word here, the second organ's
+/// co-signature on the syllabus page; `Refused` names the kind (34.1) and
+/// the coordinate as content. The receipt is the court's replay receipt,
+/// its chain hash (47.1).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Adjudication {
+    Stood { receipt: [u8; 32] },
+    Ratified { receipt: [u8; 32] },
+    Refused { kind: crate::transducer::sentence::RefusalKind, at: crate::transducer::sentence::At, receipt: [u8; 32] },
+}
+
+impl Adjudication {
+    /// The kind byte a mind reads: `SPEECH_STOOD`, `SPEECH_RATIFIED` or
+    /// `SPEECH_REFUSED`.
+    pub fn code(&self) -> u8 {
+        match self {
+            Adjudication::Stood { .. } => SPEECH_STOOD,
+            Adjudication::Ratified { .. } => SPEECH_RATIFIED,
+            Adjudication::Refused { .. } => SPEECH_REFUSED,
+        }
+    }
+
+    pub fn receipt(&self) -> [u8; 32] {
+        match self {
+            Adjudication::Stood { receipt } | Adjudication::Ratified { receipt } | Adjudication::Refused { receipt, .. } => *receipt,
+        }
+    }
+}
 
 /// GENESIS AUDIT (federation seeding): the court pages through a server's
 /// held basis, blind-replays each word, and seals the verified core into
@@ -219,6 +254,10 @@ pub struct SpeechAct {
     /// where the speaker holds it, Ruled where a court already has. A
     /// missing entry is Stood, never Ruled.
     pub standing: Vec<u8>,
+    /// Per sentence, in the same order, the contraction certificate it
+    /// cites (50.9): the refusal receipt this sentence is the contraction
+    /// of, or none for a sentence spoken fresh.
+    pub contractions: Vec<Option<crate::transducer::sentence::Contraction>>,
 }
 /// A COVER announcement: who, where, and what it covers.
 pub struct Cover {

@@ -33,6 +33,9 @@ impl Entity {
             axes_spoken: 0,
             physics: crate::physics::Physics::default(),
             height: crate::chronometry::Height::default(),
+            sealed: crate::network::nerve::Keyed::new(),
+            contractions: crate::network::nerve::Keyed::new(),
+            contracted: Vec::new(),
         }
     }
 

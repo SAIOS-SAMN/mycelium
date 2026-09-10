@@ -87,16 +87,13 @@ match entity.quote() {
                 );
                 continue;
             }
-            let expressed = mycelium::transducer::element::from_residual(&residual);
             eprintln!(
-                "[{tag}] listing {:02x}{:02x}… reduced by {} cites: residual {} of {}, expressed {:02x}{:02x}…",
+                "[{tag}] listing {:02x}{:02x}… reduced by {} cites: residual {} of {}",
                 cluster.address[0],
                 cluster.address[1],
                 cites.len(),
                 residual.len(),
-                cluster.chain.len(),
-                expressed.address()[0],
-                expressed.address()[1]
+                cluster.chain.len()
             );
             n_closing += cites.len() as u32;
             for mycelium::anastome::dialogue::CiteWire { standing: st, .. } in &cites {

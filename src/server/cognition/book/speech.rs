@@ -7,48 +7,246 @@ use crate::transducer::element::Element;
 
 impl Kernel {
     /// PERCEIVE A FAMILY'S SPEECH — the one door an utterance has (law 8,
-    /// ruled 2026-09-10). Each sentence is heard by `perceive_sentence`,
-    /// and the code names what the book did with it: `SPEECH_STOOD` for a
-    /// sentence listed or already language, `SPEECH_REFUSED` for one the
-    /// replay or the room refused, `SPEECH_DIALECT` for one the door
-    /// deferred — stood there, unanswered here, spoken again later.
+    /// ruled 2026-09-10) — read as codes: `SPEECH_STOOD` for a sentence
+    /// listed, `SPEECH_RATIFIED` for one already language, `SPEECH_REFUSED`
+    /// for one the replay refused, and `SPEECH_DIALECT` on every sentence
+    /// of an act the door deferred — stood there, unanswered here, spoken
+    /// again later. The adjudications themselves are `hear_speech`.
     pub fn perceive_speech(&mut self, voice: [u8; 32], task: &[u8], sentences: &[Element]) -> Vec<u8> {
-        use crate::anastome::dialogue::{SPEECH_DIALECT, SPEECH_REFUSED, SPEECH_STOOD};
-        sentences
-            .iter()
-            .map(|s| match self.perceive_sentence(voice, task, s) {
-                Outcome::Refused(_) | Outcome::Pivot => SPEECH_REFUSED,
-                Outcome::Deferred(_) => SPEECH_DIALECT,
-                _ => SPEECH_STOOD,
-            })
-            .collect()
+        let spoken: Vec<(Element, Option<crate::transducer::sentence::Contraction>)> =
+            sentences.iter().map(|s| (s.clone(), None)).collect();
+        match self.hear_speech(voice, task, &spoken) {
+            Ok(adjudicated) => adjudicated.iter().map(|a| a.code()).collect(),
+            Err(_) => vec![crate::anastome::dialogue::SPEECH_DIALECT; sentences.len()],
+        }
     }
 
-    /// ONE SENTENCE AT THE COURT (50.2 G, 23.1). The door is read first
-    /// (`reflex_open`): deferred, the lanes are written and nothing is
-    /// heard. The tape is then replayed against the family of the task it
-    /// was spoken for — every word vertex carried onto the court's own copy
-    /// of each pair, every edge re-derived, the remainder what its demands
-    /// name — and refused with the reason in the journal (`court refuse
-    /// speech {addr}: {reason}`); what stands is listed (`list_sentence`)
-    /// and bound to the task, so the stroke replays it on the same family
-    /// and the install mints what it closes there. The court composes
-    /// nothing here.
+    /// A SPEECH FRAME AS THE JUDGE HANDS IT OVER: every tape decoded, a
+    /// tape that does not parse adjudicated a `MalformedComplex` naming no
+    /// address, and the rest heard in the order sent.
+    pub fn hear_frame(
+        &mut self,
+        act: &crate::anastome::dialogue::SpeechAct,
+    ) -> Result<Vec<crate::anastome::dialogue::Adjudication>, [u64; 4]> {
+        use crate::anastome::dialogue::Adjudication;
+        use crate::transducer::sentence::{At, RefusalKind};
+        let mut spoken = Vec::with_capacity(act.sentences.len());
+        let mut unparsed: Vec<usize> = Vec::new();
+        for (i, tape) in act.sentences.iter().enumerate() {
+            let mut p = 0usize;
+            match Element::from_bytes(tape, &mut p) {
+                Some(e) => spoken.push((e, act.contractions.get(i).cloned().flatten())),
+                None => unparsed.push(i),
+            }
+        }
+        let heard = self.hear_speech(act.voice, &act.task, &spoken)?;
+        let receipt = self.chain.head_hash();
+        let mut out = Vec::with_capacity(act.sentences.len());
+        let mut next = heard.into_iter();
+        for i in 0..act.sentences.len() {
+            if unparsed.contains(&i) {
+                out.push(Adjudication::Refused {
+                    kind: RefusalKind::MalformedComplex,
+                    at: At::Tape(Address::new(Vec::new())),
+                    receipt,
+                });
+                continue;
+            }
+            match next.next() {
+                Some(a) => out.push(a),
+                None => break,
+            }
+        }
+        Ok(out)
+    }
+
+    /// HEAR A FAMILY'S SPEECH (50.9): one adjudication per sentence sent,
+    /// in the order sent. `Err` is the door's deferral on the lanes it
+    /// names, for the whole act — nothing was heard — as it is for a
+    /// sentence whose draw the voice's room does not cover (23.8): the
+    /// voice dwells on those lanes and speaks again.
+    pub fn hear_speech(
+        &mut self,
+        voice: [u8; 32],
+        task: &[u8],
+        spoken: &[(Element, Option<crate::transducer::sentence::Contraction>)],
+    ) -> Result<Vec<crate::anastome::dialogue::Adjudication>, [u64; 4]> {
+        let mut out = Vec::with_capacity(spoken.len());
+        for (s, cited) in spoken {
+            out.push(self.adjudicate_one(voice, task, s, cited.as_ref())?);
+        }
+        Ok(out)
+    }
+
+    /// ONE SENTENCE ADJUDICATED. A cited contraction is verified first
+    /// (`verify_contraction`) and a sentence that is not the contraction it
+    /// claims is refused as a `MalformedComplex` at the tape. Then the
+    /// sentence is heard (`hear_sentence`): a refusal is recorded by the
+    /// refused address with the receipt answered, so the next utterance's
+    /// certificate can be verified; a listing is `Stood`, a use of held
+    /// language `Ratified`. The receipt is this court's chain head after
+    /// the act (47.1).
+    fn adjudicate_one(
+        &mut self,
+        voice: [u8; 32],
+        task: &[u8],
+        s: &Element,
+        cited: Option<&crate::transducer::sentence::Contraction>,
+    ) -> Result<crate::anastome::dialogue::Adjudication, [u64; 4]> {
+        use crate::anastome::dialogue::Adjudication;
+        let addr = s.address();
+        if let Some(c) = cited {
+            if !self.verify_contraction(c, s) {
+                eprintln!(
+                    "  court contraction refused {:02x}{:02x}…: not the contraction of {:02x}{:02x}… at {}",
+                    addr[0],
+                    addr[1],
+                    c.before[0],
+                    c.before[1],
+                    c.at.label()
+                );
+                let refusal = crate::court::verdict::Refusal::of_tape(crate::court::verdict::REFUSE_NOT_CONTRACTION, s);
+                return Ok(self.refuse_sentence(voice, &addr, refusal));
+            }
+            eprintln!(
+                "  court contraction verified {:02x}{:02x}… from {:02x}{:02x}… by {} at {}",
+                addr[0],
+                addr[1],
+                c.before[0],
+                c.before[1],
+                c.kind.label(),
+                c.at.label()
+            );
+            self.refusals.remove(&c.before);
+        }
+        let out = match self.hear_sentence(voice, task, s) {
+            Err(refusal) => return Ok(self.refuse_sentence(voice, &addr, refusal)),
+            Ok(out) => out,
+        };
+        match out {
+            Outcome::Deferred(lanes) => Err(lanes),
+            Outcome::Refused(reason) if reason == crate::verdict::REFUSE_ROOM => {
+                Err(self.room_shortfall(&voice, &s.magnitude()))
+            }
+            Outcome::Refused(reason) => {
+                Ok(self.refuse_sentence(voice, &addr, crate::court::verdict::Refusal::of_tape(reason, s)))
+            }
+            Outcome::Pivot => Ok(self.refuse_sentence(
+                voice,
+                &addr,
+                crate::court::verdict::Refusal::of_tape(crate::verdict::REFUSE_NOT_A_SENTENCE, s),
+            )),
+            Outcome::Decomposed(_) => {
+                let receipt = self.chain.head_hash();
+                eprintln!(
+                    "  court adjudication {:02x}{:02x}… for {:02x}{:02x}…: ratified receipt {}",
+                    addr[0],
+                    addr[1],
+                    voice[0],
+                    voice[1],
+                    self.chain.head_k()
+                );
+                Ok(Adjudication::Ratified { receipt })
+            }
+            _ => {
+                let receipt = self.chain.head_hash();
+                eprintln!(
+                    "  court adjudication {:02x}{:02x}… for {:02x}{:02x}…: stood receipt {}",
+                    addr[0],
+                    addr[1],
+                    voice[0],
+                    voice[1],
+                    self.chain.head_k()
+                );
+                Ok(Adjudication::Stood { receipt })
+            }
+        }
+    }
+
+    /// A refusal answered and recorded (50.9): the adjudication names the
+    /// kind and the coordinate, the record keeps them under the refused
+    /// address with the receipt.
+    fn refuse_sentence(
+        &mut self,
+        voice: [u8; 32],
+        addr: &Address,
+        refusal: crate::court::verdict::Refusal,
+    ) -> crate::anastome::dialogue::Adjudication {
+        let kind = refusal.kind();
+        let receipt = self.chain.head_hash();
+        eprintln!(
+            "  court adjudication {:02x}{:02x}… for {:02x}{:02x}…: refused {} at {} receipt {}",
+            addr[0],
+            addr[1],
+            voice[0],
+            voice[1],
+            kind.label(),
+            refusal.at.label(),
+            self.chain.head_k()
+        );
+        self.refusals.insert(
+            addr,
+            crate::court::verdict::Refused { kind, at: refusal.at.clone(), receipt },
+        );
+        crate::anastome::dialogue::Adjudication::Refused { kind, at: refusal.at, receipt }
+    }
+
+    /// 50.9: a cited contraction is verified against what THIS court
+    /// refused — the kind, the coordinate and the receipt it answered with
+    /// — and the sentence is the contraction at that coordinate. A court
+    /// that never refused the cited address holds no receipt to verify and
+    /// replays the sentence as a sentence: the certificate is a claim on
+    /// another court's chain.
+    pub(crate) fn verify_contraction(&self, c: &crate::transducer::sentence::Contraction, s: &Element) -> bool {
+        let Some(held) = self.refusals.get(&c.before) else {
+            return true;
+        };
+        if held.kind != c.kind || held.at != c.at || held.receipt != c.receipt {
+            return false;
+        }
+        crate::transducer::sentence::from_element_form(s).is_some_and(|f| f.is_contraction_at(c.kind, &c.at))
+    }
+
+    /// ONE SENTENCE AT THE COURT (50.2 G, 23.1), the outcome alone — what
+    /// the tests read. `hear_sentence` carries the refusal's coordinate.
+    #[cfg(test)]
     pub(crate) fn perceive_sentence(&mut self, voice: [u8; 32], task: &[u8], s: &Element) -> Outcome {
+        match self.hear_sentence(voice, task, s) {
+            Ok(out) => out,
+            Err(refusal) => Outcome::Refused(refusal.reason),
+        }
+    }
+
+    /// ONE SENTENCE HEARD. The door is read first (`reflex_open`):
+    /// deferred, the lanes are written and nothing is heard. The tape is
+    /// then replayed against the family of the task it was spoken for —
+    /// every word vertex carried onto the court's own copy of each pair,
+    /// every edge re-derived, the remainder what its demands name — and
+    /// refused with the reason and its coordinate in the journal (`court
+    /// refuse speech {addr}: {reason}`); what stands is listed
+    /// (`list_sentence`) and bound to the task, so the stroke replays it on
+    /// the same family and the install mints what it closes there. The
+    /// court composes nothing here.
+    pub(crate) fn hear_sentence(
+        &mut self,
+        voice: [u8; 32],
+        task: &[u8],
+        s: &Element,
+    ) -> Result<Outcome, crate::court::verdict::Refusal> {
         if let Err(deficit) = self.reflex_open(voice) {
             eprintln!(
                 "  court speech deferred voice {:02x}{:02x}… lanes {deficit:?}",
                 voice[0], voice[1]
             );
-            return Outcome::Deferred(deficit);
+            return Ok(Outcome::Deferred(deficit));
         }
         let family = self.task_family.get(task).cloned();
-        if let Some(reason) =
-            crate::court::verdict::blind_replay_on(s, &|a| self.resolve_form(a), family.as_deref(), self)
+        if let Some(refusal) =
+            crate::court::verdict::blind_replay_at(s, &|a| self.resolve_form(a), family.as_deref(), self)
         {
             let a = s.address();
-            eprintln!("  court refuse speech {:02x}{:02x}…: {reason}", a[0], a[1]);
-            return Outcome::Refused(reason);
+            eprintln!("  court refuse speech {:02x}{:02x}…: {} at {}", a[0], a[1], refusal.reason, refusal.at.label());
+            return Err(refusal);
         }
         let out = self.list_sentence(s, voice);
         if !matches!(out, Outcome::Refused(_) | Outcome::Pivot) && task != [0u8; 32] {
@@ -56,7 +254,7 @@ impl Kernel {
             self.speech_task.insert(&addr, Address::from(task));
             self.bind_listing_task(&addr, task);
         }
-        out
+        Ok(out)
     }
 
     /// List a word on the docket if it is not already provisional.

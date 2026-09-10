@@ -57,7 +57,7 @@ pub(crate) fn speak_form(
     // its closed sub-complex and its demands together — never withheld
     // and never expressed as a residual.
     if form.demand_vertices().next().is_some() {
-        return speak_with_demands(entity, tag, rule, train, &fam);
+        return speak_with_demands(entity, tag, rule, train, family);
     }
     let n_rem: usize = remainders.iter().map(|r| r.len()).sum();
     if remainders.iter().any(|r| !r.is_empty()) {
@@ -77,7 +77,7 @@ pub(crate) fn speak_form(
         entity.remember_spoken(&word);
         return true;
     }
-    match entity.speak(std::slice::from_ref(&word)) {
+    match entity.speak_with(std::slice::from_ref(&word), train, family) {
         Ok(codes) => match codes.first().copied() {
             Some(mycelium::anastome::dialogue::SPEECH_REFUSED) => {
                 eprintln!("[{tag}] form withheld: family {fam} refused on the wire");
@@ -115,9 +115,10 @@ fn speak_with_demands(
     tag: &str,
     rule: &mycelium::transducer::sentence::SentenceRule,
     train: &mycelium::transducer::family::Family,
-    fam: &str,
+    family: &[u8],
 ) -> bool {
     use mycelium::transducer::sentence::Vertex;
+    let fam = format!("{:02x}{:02x}…", family[0], family[1]);
     let form = &rule.form;
     let Some(word) = mycelium::transducer::family::mint_sentence(rule, train, &entity.epigenome) else {
         eprintln!("[{tag}] form withheld: family {fam} no measured descent and no demand");
@@ -129,7 +130,7 @@ fn speak_with_demands(
         entity.remember_spoken(&word);
         return true;
     }
-    match entity.speak(std::slice::from_ref(&word)) {
+    match entity.speak_with(std::slice::from_ref(&word), train, family) {
         Ok(codes) => match codes.first().copied() {
             Some(mycelium::anastome::dialogue::SPEECH_REFUSED) => {
                 eprintln!("[{tag}] sentence withheld: family {fam} refused on the wire");
@@ -167,6 +168,18 @@ fn speak_with_demands(
             eprintln!("[{tag}] sentence withheld: family {fam} {e}");
             false
         }
+    }
+}
+
+/// 50.9: the sentences contracted after the last refusals, uttered with
+/// their certificates over the family and task each was minted for. The
+/// court that refused verifies the contraction before it replays.
+pub(crate) fn speak_contracted(entity: &mut Entity, tag: &str) {
+    for (addr, code) in entity.speak_contracted() {
+        eprintln!(
+            "[{tag}] contracted sentence spoken: {:02x}{:02x}… code {code}",
+            addr[0], addr[1]
+        );
     }
 }
 

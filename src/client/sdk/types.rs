@@ -339,6 +339,27 @@ pub struct Entity {
     pub(crate) axes_spoken: usize,
     pub(crate) physics: crate::physics::Physics,
     pub(crate) height: crate::chronometry::Height,
+    /// THE SEALED SET (50.9): addresses a court refused, each with the K
+    /// of this mind's own receipt of the refusal (45.1). Read before any
+    /// frame is built; a sealed tape is refused by the mind itself.
+    pub(crate) sealed: crate::network::nerve::Keyed<u64>,
+    /// Contraction certificates by the contracted form's vertex key, cited
+    /// on the next utterance of that form (50.9).
+    pub(crate) contractions: crate::network::nerve::Keyed<crate::transducer::sentence::Contraction>,
+    /// The contracted sentences waiting to be uttered, each with the family
+    /// and the task it was minted for.
+    pub(crate) contracted: Vec<Pending>,
+}
+
+/// A CONTRACTED SENTENCE WAITING TO BE UTTERED (50.9): the sentence the
+/// move produced, the family it was minted over, the task it answers, and
+/// the certificate it cites.
+#[derive(Clone, Debug)]
+pub struct Pending {
+    pub sentence: Element,
+    pub train: Vec<crate::transducer::family::TrainPair>,
+    pub task: Vec<u8>,
+    pub certificate: crate::transducer::sentence::Contraction,
 }
 
 /// WHAT THE MIND'S OWN REDUCTION DID, per lane: the residual measured

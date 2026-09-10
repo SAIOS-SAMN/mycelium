@@ -1,12 +1,16 @@
-// 26 — ACT_SPEECH: a voice stands sentences at their home court.
+// 26, 50.9 — ACT_SPEECH: a voice stands sentences at their home court and
+// is answered an adjudication per sentence.
 //
-//! The speaker's words are decoded, the book perceives them, and each one
-//! that stood is named in the reply by its own code (SPEECH_STOOD and its
-//! siblings), never by a count.
+//! The speaker's frame is handed to the kernel whole (`hear_frame`): every
+//! tape decoded there, every sentence heard in the order sent, and the
+//! reply one `Adjudication` per sentence — never an opaque byte. An act
+//! the door deferred is answered the deferral frame (23.8), which carries
+//! the lanes and nothing else.
 
 use crate::door::Door;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
+use mycelium::cognition::{outcome_code, Outcome};
 use mycelium::network::wire::Frame;
 use std::net::TcpStream;
 
@@ -15,32 +19,17 @@ use std::net::TcpStream;
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let kernel = &door.kernel;
 
-    let Some(dialogue::SpeechAct { voice: svoice, task, sentences: blobs, .. }) =
-        dialogue::decode_speech(&frame.body)
-    else {
+    let Some(act) = dialogue::decode_speech(&frame.body) else {
         return;
     };
-    let mut sentences = Vec::new();
-    for b in &blobs {
-        let mut p = 0usize;
-        if let Some(e) = mycelium::transducer::element::Element::from_bytes(b, &mut p) {
-            sentences.push(e);
-        }
-    }
-    let codes = match kernel.lock() {
-        Ok(mut k) => k.perceive_speech(svoice, &task, &sentences),
+    let heard = match kernel.lock() {
+        Ok(mut k) => k.hear_frame(&act),
         Err(_) => return,
     };
-    for (i, e) in sentences.iter().enumerate() {
-        if codes.get(i).copied() == Some(dialogue::SPEECH_STOOD) {
-            eprintln!(
-                "  speech stood {:02x}{:02x}… sectioned at home",
-                e.address()[0],
-                e.address()[1]
-            );
-        }
-    }
-    let body = dialogue::encode_speech_reply(&codes);
+    let body = match heard {
+        Ok(adjudicated) => dialogue::encode_speech_reply(&adjudicated),
+        Err(lanes) => dialogue::encode_deferral(outcome_code(&Outcome::GermPending), &lanes),
+    };
     let reply = Frame { lane: frame.lane, body };
     answer(stream, reply);
 }

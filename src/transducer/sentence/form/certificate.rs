@@ -262,6 +262,182 @@ impl PivotCertificate {
     }
 }
 
+/// THE KIND OF A REFUSAL (50.9, 34.1): what the court found and the
+/// contraction move it names. `VertexBody` is `REFUSE_VERTEX_BODY`,
+/// `EdgeHolonomy` is `REFUSE_EDGE`, `RemainderUndeclared` is
+/// `REFUSE_NOT_CLOSED`; every other refusal of the tape is a
+/// `MalformedComplex`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RefusalKind {
+    VertexBody,
+    EdgeHolonomy,
+    RemainderUndeclared,
+    MalformedComplex,
+}
+
+impl RefusalKind {
+    pub fn to_byte(self) -> u8 {
+        match self {
+            RefusalKind::VertexBody => 0,
+            RefusalKind::EdgeHolonomy => 1,
+            RefusalKind::RemainderUndeclared => 2,
+            RefusalKind::MalformedComplex => 3,
+        }
+    }
+
+    pub fn from_byte(b: u8) -> Option<RefusalKind> {
+        Some(match b {
+            0 => RefusalKind::VertexBody,
+            1 => RefusalKind::EdgeHolonomy,
+            2 => RefusalKind::RemainderUndeclared,
+            3 => RefusalKind::MalformedComplex,
+            _ => return None,
+        })
+    }
+
+    /// The word of 34.2 and 34.3's `refused {kind}` and `contracted … by {kind}` lines.
+    pub fn label(self) -> &'static str {
+        match self {
+            RefusalKind::VertexBody => "vertex body",
+            RefusalKind::EdgeHolonomy => "edge holonomy",
+            RefusalKind::RemainderUndeclared => "remainder undeclared",
+            RefusalKind::MalformedComplex => "malformed complex",
+        }
+    }
+}
+
+/// THE COORDINATE A REFUSAL NAMES (50.9), as content and never as a
+/// position in the sender's tape: the word vertex with the chart it acts
+/// on, a face's two vertex addresses, the chart with the cells the court
+/// read, or the whole tape.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum At {
+    Vertex { address: crate::transducer::address::Address, chart: stalk::Invariant },
+    Face(crate::transducer::address::Address, crate::transducer::address::Address),
+    Chart(stalk::Invariant, Vec<Cell>),
+    Tape(crate::transducer::address::Address),
+}
+
+impl At {
+    /// The coordinate as 34.2 and 34.3 write it.
+    pub fn label(&self) -> String {
+        let hx = |a: &[u8]| -> String {
+            let mut s: String = a.iter().take(2).map(|b| format!("{b:02x}")).collect();
+            s.push('…');
+            s
+        };
+        match self {
+            At::Vertex { address, chart } => format!("vertex {} chart {}", hx(address.as_bytes()), hx(chart.key().as_bytes())),
+            At::Face(a, b) => format!("face {}-{}", hx(a.as_bytes()), hx(b.as_bytes())),
+            At::Chart(inv, cells) => format!("chart {} cells {}", hx(inv.key().as_bytes()), cells.len()),
+            At::Tape(a) => format!("tape {}", hx(a.as_bytes())),
+        }
+    }
+
+    pub fn to_bytes(&self, out: &mut Vec<u8>) {
+        match self {
+            At::Vertex { address, chart } => {
+                out.push(0);
+                let _ = crate::transducer::address::put_addr(out, address);
+                let _ = crate::transducer::sentence::tape::put_inv(chart, out);
+            }
+            At::Face(a, b) => {
+                out.push(1);
+                let _ = crate::transducer::address::put_addr(out, a);
+                let _ = crate::transducer::address::put_addr(out, b);
+            }
+            At::Chart(inv, cells) => {
+                out.push(2);
+                let _ = crate::transducer::sentence::tape::put_inv(inv, out);
+                out.extend_from_slice(&(cells.len() as u32).to_le_bytes());
+                for (r, c, before, after) in cells {
+                    out.extend_from_slice(&r.to_le_bytes());
+                    out.extend_from_slice(&c.to_le_bytes());
+                    out.push(*before);
+                    out.push(*after);
+                }
+            }
+            At::Tape(a) => {
+                out.push(3);
+                let _ = crate::transducer::address::put_addr(out, a);
+            }
+        }
+    }
+
+    pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<At> {
+        let tag = *b.get(*pos)?;
+        *pos += 1;
+        Some(match tag {
+            0 => {
+                let address = crate::transducer::address::take_addr(b, pos)?;
+                let chart = crate::transducer::sentence::tape::take_inv(b, pos)?;
+                At::Vertex { address, chart }
+            }
+            1 => {
+                let a = crate::transducer::address::take_addr(b, pos)?;
+                let c = crate::transducer::address::take_addr(b, pos)?;
+                At::Face(a, c)
+            }
+            2 => {
+                let inv = crate::transducer::sentence::tape::take_inv(b, pos)?;
+                let n = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
+                *pos += 4;
+                let n = take_count(b, *pos, n, 18)?;
+                let mut cells = Vec::with_capacity(n);
+                for _ in 0..n {
+                    let r = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+                    let c = i64::from_le_bytes(b.get(*pos + 8..*pos + 16)?.try_into().ok()?);
+                    let before = *b.get(*pos + 16)?;
+                    let after = *b.get(*pos + 17)?;
+                    *pos += 18;
+                    cells.push((r, c, before, after));
+                }
+                At::Chart(inv, cells)
+            }
+            3 => At::Tape(crate::transducer::address::take_addr(b, pos)?),
+            _ => return None,
+        })
+    }
+}
+
+/// THE CONTRACTION CERTIFICATE (50.9): the refusal a court issued, the
+/// sentence it refused, the form the move produced, and the court's
+/// receipt. Filed on the idea beside its pivot certificates; cited on the
+/// next utterance, where the court that issued the receipt verifies that
+/// the uttered sentence is the contraction at the coordinate.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Contraction {
+    pub kind: RefusalKind,
+    pub at: At,
+    /// The refused sentence's address.
+    pub before: crate::transducer::address::Address,
+    /// The contracted form's vertex key.
+    pub after: crate::transducer::address::Address,
+    /// The court's replay receipt: its chain hash (47.1), never a digest of content.
+    pub receipt: [u8; 32],
+}
+
+impl Contraction {
+    pub fn to_bytes(&self, out: &mut Vec<u8>) {
+        out.push(self.kind.to_byte());
+        self.at.to_bytes(out);
+        let _ = crate::transducer::address::put_addr(out, &self.before);
+        let _ = crate::transducer::address::put_addr(out, &self.after);
+        out.extend_from_slice(&self.receipt);
+    }
+
+    pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Contraction> {
+        let kind = RefusalKind::from_byte(*b.get(*pos)?)?;
+        *pos += 1;
+        let at = At::from_bytes(b, pos)?;
+        let before = crate::transducer::address::take_addr(b, pos)?;
+        let after = crate::transducer::address::take_addr(b, pos)?;
+        let receipt: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+        *pos += 32;
+        Some(Contraction { kind, at, before, after, receipt })
+    }
+}
+
 /// The rank move on a tape: one tag byte, and for a discharge the
 /// coordinate the unit left. `Inadmissible` carries its four deltas so a
 /// refused move can still be written down; no trial produces one, and a

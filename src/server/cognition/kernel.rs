@@ -214,6 +214,12 @@ pub struct Kernel {
     pub(crate) task_family: crate::network::nerve::Keyed<Vec<crate::transducer::family::TrainPair>>,
     /// Sentence address → task, from perceive_speech. Replay reads the family.
     pub(crate) speech_task: crate::network::nerve::Keyed<Address>,
+    /// THE SENTENCES THIS COURT REFUSED (50.9): the kind, the coordinate
+    /// and the receipt it answered with, keyed by the refused address, so
+    /// the contraction a voice cites next is verified against what this
+    /// court actually named. A record leaves when its contraction is
+    /// verified. In-memory, never persisted: a restart refuses afresh.
+    pub(crate) refusals: crate::network::nerve::Keyed<crate::court::verdict::Refused>,
     /// THE SETTLEMENTS awaiting the court: (listing, its chain, the voice,
     /// the utterance, magnitude before, magnitude after). The court replays
     /// the utterance and measures the deflation itself — proof of

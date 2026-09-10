@@ -5,7 +5,9 @@
 //! Nothing here is trusted from the tape. A vertex is carried onto the
 //! court's own copy of each pair and every landed cell is read; an edge is
 //! re-measured on the union of the two bodies; a remainder cell stands only
-//! where a demand vertex said it would (50.5: valid, not closed).
+//! where a demand vertex said it would (50.5: valid, not closed). Each
+//! refusal names its coordinate as content (50.9): the vertex with its
+//! chart, the face's two addresses, the chart with the cells read.
 
 use super::*;
 use crate::transducer::family::{perceive, Body, Grid};
@@ -95,17 +97,21 @@ pub(crate) fn vertex_carries_pair(vertex: &Vertex, x: &Grid, y: &Grid) -> Carrie
     Carried::Carries
 }
 
-/// 23.1 step 3 over the family: `REFUSE_VERTEX_BODY` for a word vertex
-/// that fails on any pair; a vertex silent on every pair is a section
-/// nothing here contradicts, and the closure check reads it.
-pub(crate) fn vertices_carry_family(f: &Form, family: &[(Grid, Grid)]) -> Option<&'static str> {
+/// 23.1 step 3 over the family: `REFUSE_VERTEX_BODY` at the vertex, with
+/// its chart, for a word vertex that fails on any pair; a vertex silent on
+/// every pair is a section nothing here contradicts, and the closure check
+/// reads it.
+pub(crate) fn vertices_carry_family(f: &Form, family: &[(Grid, Grid)]) -> Option<Refusal> {
     for v in &f.vertices {
-        if !matches!(v, Vertex::Word { .. }) {
+        let Vertex::Word { address, class, .. } = v else {
             continue;
-        }
+        };
         for (x, y) in family {
             if let Carried::Fails = vertex_carries_pair(v, x, y) {
-                return Some(REFUSE_VERTEX_BODY);
+                return Some(Refusal {
+                    reason: REFUSE_VERTEX_BODY,
+                    at: sentence::At::Vertex { address: address.clone(), chart: class.clone() },
+                });
             }
         }
     }
@@ -135,10 +141,10 @@ fn union_shape(a: &Body, b: &Body) -> crate::transducer::blade::Shape {
 /// carried edge has exactly one body of its chart, `V_ij` is re-measured
 /// on the union of the two bodies and `Γ_ij = V_i⁻¹ · V_ij` must be the
 /// transport the face carries. A pair with several bodies of one chart is
-/// sections, read by the closure check. `REFUSE_EDGE` when the union has
-/// no versor (the speaker claimed an edge where the pair is not rigid) or
-/// the transport is not the one measured.
-pub(crate) fn edges_rederive_family(f: &Form, family: &[(Grid, Grid)]) -> Option<&'static str> {
+/// sections, read by the closure check. `REFUSE_EDGE` at the face's two
+/// addresses when the union has no versor (the speaker claimed an edge
+/// where the pair is not rigid) or the transport is not the one measured.
+pub(crate) fn edges_rederive_family(f: &Form, family: &[(Grid, Grid)]) -> Option<Refusal> {
     for face in &f.faces {
         let Some(edge) = &face.edge else {
             continue;
@@ -147,17 +153,18 @@ pub(crate) fn edges_rederive_family(f: &Form, family: &[(Grid, Grid)]) -> Option
             continue;
         };
         let (
-            Vertex::Word { word: wi, carriage: ci, class: class_i, contact: None, .. },
-            Vertex::Word { word: wj, carriage: cj, class: class_j, contact: None, .. },
+            Vertex::Word { address: ai, word: wi, carriage: ci, class: class_i, contact: None, .. },
+            Vertex::Word { address: aj, word: wj, carriage: cj, class: class_j, contact: None, .. },
         ) = (vi, vj)
         else {
             continue;
         };
+        let refused = || Refusal { reason: REFUSE_EDGE, at: sentence::At::Face(ai.clone(), aj.clone()) };
         let Some(expected) = element::conformal_of(&edge.word, &edge.carriage) else {
-            return Some(REFUSE_EDGE);
+            return Some(refused());
         };
         let (Some(v_i), Some(v_j)) = (element::conformal_of(wi, ci), element::conformal_of(wj, cj)) else {
-            return Some(REFUSE_EDGE);
+            return Some(refused());
         };
         for (x, y) in family {
             let bodies = perceive(x);
@@ -168,19 +175,19 @@ pub(crate) fn edges_rederive_family(f: &Form, family: &[(Grid, Grid)]) -> Option
                 continue;
             };
             let (Some(bi), Some(bj)) = (image_body(a_i, &v_i, &images), image_body(a_j, &v_j, &images)) else {
-                return Some(REFUSE_EDGE);
+                return Some(refused());
             };
             let Some(v_ij) = crate::transducer::blade::versor_between(
                 &union_shape(a_i, a_j),
                 &union_shape(&images[bi], &images[bj]),
             ) else {
-                return Some(REFUSE_EDGE);
+                return Some(refused());
             };
             let Some(inv) = v_i.versor_inverse() else {
-                return Some(REFUSE_EDGE);
+                return Some(refused());
             };
             if !element::same_versor(&inv.geo(&v_ij), &expected) {
-                return Some(REFUSE_EDGE);
+                return Some(refused());
             }
         }
     }
@@ -190,8 +197,9 @@ pub(crate) fn edges_rederive_family(f: &Form, family: &[(Grid, Grid)]) -> Option
 /// 23.1 step 7 as ruled (50.5): a remainder cell stands only where a demand
 /// vertex named it — unspoken, and its observed hue the one the demand
 /// carries — and a sentence with any other remainder does not close the
-/// family. `true` when an undeclared remainder cell exists on any pair.
-pub(crate) fn remainder_undeclared(remainders: &[Vec<(i64, i64, u8, u8)>], f: &Form) -> bool {
+/// family. The undeclared cells, read as content: empty when every
+/// remainder cell is declared.
+pub(crate) fn undeclared_remainder(remainders: &[Vec<(i64, i64, u8, u8)>], f: &Form) -> Vec<(i64, i64, u8, u8)> {
     let mut declared: Keyed<Vec<u8>> = Keyed::new();
     for (_, _, _, cells) in f.demand_vertices() {
         for &(r, c, _, after) in cells {
@@ -204,7 +212,15 @@ pub(crate) fn remainder_undeclared(remainders: &[Vec<(i64, i64, u8, u8)>], f: &F
             }
         }
     }
-    remainders.iter().flatten().any(|&(r, c, spoken, observed)| {
-        spoken != 0 || !declared.get(&cell_key(r, c)).is_some_and(|hues| hues.contains(&observed))
-    })
+    let mut out: Vec<(i64, i64, u8, u8)> = remainders
+        .iter()
+        .flatten()
+        .copied()
+        .filter(|&(r, c, spoken, observed)| {
+            spoken != 0 || !declared.get(&cell_key(r, c)).is_some_and(|hues| hues.contains(&observed))
+        })
+        .collect();
+    out.sort_unstable();
+    out.dedup();
+    out
 }

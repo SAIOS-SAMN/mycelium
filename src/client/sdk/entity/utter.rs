@@ -271,31 +271,69 @@ impl Entity {
         codes
     }
 
-    /// SPEAK a family's cohering sentences as one act. Refuses if two
-    /// sentences share a germ with a non-identity transition. Each word
-    /// STANDS in the dialect before it is uttered (24.3: perceive, think,
-    /// stand, utter); the genome is frozen. A vertex already on `taught_up`
-    /// stands in the dialect and does not go on the wire.
+    /// SPEAK sentences as one act, bound to no family and no task: a word
+    /// spoken for itself (an axis germ, a crystallized idea).
     pub fn speak(&mut self, sentences: &[Element]) -> io::Result<Vec<u8>> {
+        self.speak_with(sentences, &[], &[])
+    }
+
+    /// SPEAK a family's cohering sentences as one act, naming the task so
+    /// the court replays them on its copy of the family (23.8, 50.2 G).
+    /// Each word STANDS in the dialect before it is uttered (24.3:
+    /// perceive, think, stand, utter); the genome is frozen. A vertex
+    /// already on `taught_up` stands in the dialect and does not go on the
+    /// wire. THE SEALED SET IS READ FIRST (50.9): a tape a court refused is
+    /// refused by this mind before any frame is built, and never stood. The
+    /// reply is one adjudication per sentence sent: a stood or ratified
+    /// sentence is filed and its receipt sealed; a refused one is contracted
+    /// (`receive_adjudication`) and its contraction queued.
+    pub fn speak_with(
+        &mut self,
+        sentences: &[Element],
+        train: &crate::transducer::family::Family,
+        task: &[u8],
+    ) -> io::Result<Vec<u8>> {
         if sentences.is_empty() {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "no sentence"));
         }
         let tu = self.now_tu();
-        let mut codes = self.stand(sentences, tu);
-        let fresh: Vec<&Element> = sentences
-            .iter()
-            .enumerate()
-            .filter(|(i, _)| codes[*i] == 0xff)
-            .map(|(_, e)| e)
-            .collect();
+        let mut codes = vec![0xffu8; sentences.len()];
+        let mut open: Vec<usize> = Vec::new();
+        for (i, e) in sentences.iter().enumerate() {
+            let addr = e.address();
+            match self.sealed.get(&addr).copied() {
+                Some(k) => {
+                    eprintln!(
+                        "  sealed {:02x}{:02x}…: refused at K {k}, not uttered again",
+                        addr[0], addr[1]
+                    );
+                    codes[i] = dialogue::SPEECH_REFUSED;
+                }
+                None => open.push(i),
+            }
+        }
+        let standing: Vec<Element> = open.iter().map(|&i| sentences[i].clone()).collect();
+        let stood = self.stand(&standing, tu);
+        for (j, &i) in open.iter().enumerate() {
+            codes[i] = stood[j];
+        }
+        let fresh: Vec<usize> = (0..sentences.len()).filter(|&i| codes[i] == 0xff).collect();
         if fresh.is_empty() {
             return Ok(codes);
         }
         let voice = self.session.kernel().voice();
-        let bytes: Vec<Vec<u8>> = fresh.iter().map(|e| e.to_bytes()).collect();
-        let body = dialogue::encode_speech(&voice, crate::transducer::address::Address::new(Vec::new()), tu, &bytes);
+        let spoken: Vec<dialogue::Spoken> = fresh
+            .iter()
+            .map(|&i| dialogue::Spoken {
+                tape: sentences[i].to_bytes(),
+                standing: Standing::Stood.as_u8(),
+                contraction: self.certificate_for(&sentences[i]),
+            })
+            .collect();
+        let body = dialogue::encode_speech_spoken(&voice, task, tu, &spoken);
         let reply = self.session.speak_nerve(body)?;
-        let got = dialogue::decode_speech_reply(&reply).unwrap_or_default();
+        let adjudicated = dialogue::decode_speech_reply(&reply).unwrap_or_default();
+        let got: Vec<u8> = adjudicated.iter().map(|a| a.code()).collect();
         for i in read_speech_reply(&mut codes, &got) {
             // The utterance was admitted: the second act, and the second
             // receipt on this mind's chain (45.1, 45.4). A refused utterance
@@ -303,6 +341,26 @@ impl Entity {
             let e = sentences[i].clone();
             self.session.seal(crate::chronometry::ActKind::Uttered, e.address().as_bytes());
             self.file_taught(&e);
+            if let Some(f) = crate::transducer::sentence::from_element_form(&e) {
+                self.contractions.remove(&crate::transducer::sentence::form_vertex_key(&f));
+            }
+        }
+        for (j, &i) in fresh.iter().enumerate() {
+            let addr = sentences[i].address();
+            match adjudicated.get(j) {
+                Some(dialogue::Adjudication::Refused { kind, at, receipt }) => {
+                    self.receive_adjudication(&sentences[i], *kind, at.clone(), *receipt, train, task);
+                }
+                Some(a) => eprintln!(
+                    "  adjudicated {:02x}{:02x}…: {} receipt {:02x}{:02x}…",
+                    addr[0],
+                    addr[1],
+                    if a.code() == dialogue::SPEECH_RATIFIED { "ratified" } else { "stood" },
+                    a.receipt()[0],
+                    a.receipt()[1]
+                ),
+                None => {}
+            }
         }
         Ok(codes)
     }

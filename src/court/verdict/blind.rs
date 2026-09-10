@@ -25,6 +25,21 @@ pub fn blind_replay_on(
     blind_replay_on_inner(spoken, resolve, family, crystal)
 }
 
+/// The same replay, refusing WITH THE COORDINATE (50.9): a sentence is
+/// replayed by `replay_form_at`, which names the vertex, the face or the
+/// chart it refused at; every other word is refused at its tape.
+pub fn blind_replay_at(
+    spoken: &Element,
+    resolve: &dyn Fn(&[u8]) -> Option<Form>,
+    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    crystal: &dyn crate::transducer::family::Crystal,
+) -> Option<Refusal> {
+    if spoken.is_sentence() && !spoken.is_rewrite() && !spoken.is_connection() {
+        return replay_form_at(spoken, resolve, family, crystal);
+    }
+    blind_replay_on_inner(spoken, resolve, family, crystal).map(|reason| Refusal::of_tape(reason, spoken))
+}
+
 /// Deterministic re-derivation of a spoken word from its own evidence
 /// (the contradiction docket). Returns None when the word replays clean;
 /// Some(reason) when the speech was false. A residual word re-derives from
