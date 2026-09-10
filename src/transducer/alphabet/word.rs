@@ -64,8 +64,12 @@ impl Word {
         Word::raw(tape.to_vec())
     }
 
-    #[cfg(test)]
-    pub(crate) fn formed(r: Rotor) -> Word {
+    /// A word that carries an ACTION and no letters: the alphabet does
+    /// not spell it, and the rotor is the whole of what it is. This is
+    /// what an adjoined generator carries (37.7) — a letter named by
+    /// content (law 6), with no escape byte and no place in the
+    /// seventeen.
+    pub fn formed(r: Rotor) -> Word {
         let w = Word::raw(Vec::new());
         let _ = w.1.set(r);
         w

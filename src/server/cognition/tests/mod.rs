@@ -13,6 +13,7 @@ mod extraction;
 mod awaiting;
 mod generator_pay;
 mod glue;
+mod letter;
 mod ledger_clock;
 mod market;
 mod mint;

@@ -1,0 +1,167 @@
+// 37.7 P2–P3 — THE COURT OPENS A LETTER. A prime outside the seventeen
+// arrives as a witness on a demand; the factor is read off it by Euclid
+// over ℤ[i], docketed as a provisional generator, and installed when a
+// second organ reaches the same address. The adjoined count leaves zero.
+
+use crate::cognition::*;
+use crate::transducer::address::{Address, TAG_FORM};
+use crate::transducer::alphabet::Derivation;
+use crate::transducer::element::{self, Element};
+use crate::transducer::sentence::{as_element_form, Demand, Form, FormFace, Vertex};
+use num_rational::BigRational;
+
+fn q(n: i64) -> BigRational {
+    BigRational::from_integer(num_bigint::BigInt::from(n))
+}
+
+/// The witness block `[[s, −t], [t, s]]` of the arc `s + t·i`.
+fn witness(s: i64, t: i64) -> Box<[[BigRational; 2]; 2]> {
+    Box::new([[q(s), -q(t)], [q(t), q(s)]])
+}
+
+/// A sentence that ACTS and carries a `RotorPrime` demand beside its word
+/// vertex: a demand rides a sentence (50.5) and never travels alone.
+fn demanding_sentence(w: crate::transducer::alphabet::Word, tag: u8, kind: Demand) -> Element {
+    let one = q(1);
+    let zero = q(0);
+    let mut f = Form::default();
+    f.vertices.push(Vertex::Word {
+        address: Address::from_bytes([TAG_FORM, tag]),
+        derivation: Derivation::spelled(w),
+        carriage: Box::new(element::carriage(&one, &(zero.clone(), zero))),
+        gauge: Vec::new(),
+        class: crate::transducer::stalk::Invariant::default(),
+        contact: None,
+    });
+    f.faces.push(FormFace { i: 0, j: 1, transport: f.face_of(0, 1).expect("star"), edge: None });
+    f.vertices.push(Vertex::Demand {
+        kind,
+        chart: crate::transducer::stalk::Invariant(vec![17]),
+        // The cells the demand stands for, and they MOVE: a demand
+        // whose bodies measure nothing cost the language nothing.
+        bodies: vec![(0, 0, 0, 1), (0, 1, 0, 1)],
+    });
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.reindex();
+    as_element_form(&f, [1, 0, 0, 0]).expect("a tape")
+}
+
+fn quarter(n: usize) -> crate::transducer::alphabet::Word {
+    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("the quarter turn");
+    crate::transducer::alphabet::Word::from_letters(&vec![(q, false); n])
+}
+
+/// 17 = 4² + 1², a prime the seventeen letters do not spell.
+fn seventeen() -> Demand {
+    Demand::RotorPrime { plane: (0, 1), prime: 17, witness: witness(4, 1) }
+}
+
+/// 37.7 P2–P3, THE FIRST PROOF, IN PROCESS AND WITH NO CORPUS. Two
+/// voices demand the same prime on witnesses of it; two courts of
+/// distinct identity each read the factor off the witness by
+/// `core::gaussian` and docket it. Both reach ONE address, because the
+/// generator is a form and its address is `form_vertex_key` over the
+/// factor's canonical rotor. Arity 2 installs it, and the count of
+/// generators the ENGINE opened leaves zero on each court.
+#[test]
+fn two_courts_open_one_letter_from_two_witnesses_and_the_count_leaves_zero() {
+    let (voice_a, voice_b) = ([1u8; 32], [2u8; 32]);
+    let said_a = demanding_sentence(quarter(1), 1, seventeen());
+    let said_b = demanding_sentence(quarter(3), 3, seventeen());
+
+    // The premise, asserted rather than assumed: the factor's rotor is a
+    // versor the seventeen cannot spell. If A22 could spell it there
+    // would be no letter to open, and the whole row would be moot.
+    let pi = crate::transducer::alphabet::Rotor::scalar(q(4))
+        .add(&crate::transducer::alphabet::Rotor::blade(0b0011, q(1)));
+    assert!(
+        !matches!(crate::transducer::alphabet::factor_rotor(&pi), Some(Ok(_))),
+        "17 is outside the seventeen's span: {:?}",
+        crate::transducer::alphabet::factor_rotor(&pi)
+    );
+
+    let mut opened = Vec::new();
+    for (court, voice, said) in [([21u8; 32], voice_a, &said_a), ([22u8; 32], voice_b, &said_b)] {
+        let mut k = Kernel::new();
+        k.set_court_voice(court);
+        assert_eq!(k.adjoined(), 0, "a court that has heard nothing has opened nothing");
+        assert_eq!(
+            k.perceive_speech(voice, &[0; 32], std::slice::from_ref(said)),
+            vec![crate::anastome::dialogue::SPEECH_STOOD],
+            "the sentence stands and its demand is listed"
+        );
+        // The letter is on the docket, derived from the witness.
+        let provisional: Vec<Vec<u8>> = k
+            .provisional
+            .fiber(crate::network::nerve::ROOT)
+            .map(|(a, _)| a)
+            .collect();
+        let letter = provisional
+            .iter()
+            .find(|a| {
+                k.provisional.get(a).is_some_and(|e| {
+                    crate::transducer::sentence::from_element_form(e).is_some_and(|f| {
+                        f.vertices.iter().any(|v| match v {
+                            Vertex::Word { derivation, .. } => {
+                                derivation.generators.is_empty()
+                                    && !matches!(
+                                        crate::transducer::alphabet::factor_rotor(&derivation.rotor()),
+                                        Some(Ok(_))
+                                    )
+                            }
+                            _ => false,
+                        })
+                    })
+                })
+            })
+            .cloned()
+            .expect("the court opened a letter on the witness");
+
+        // Arity 2: a second organ reaches the same address and the home
+        // installs it under the ruling path that already exists.
+        k.rule_all_provisionals();
+        let cover = k.genesis_cover().expect("measured");
+        k.enroll([9; 32], cover);
+        k.confirm_peer_holds_addrs(&[Address::from(letter.clone())], [9; 32]);
+        assert!(k.ruled_contains(&letter), "arity 2 installs the letter on the ruled cover");
+
+        assert_eq!(
+            k.adjoined(),
+            1,
+            "and the count of generators the engine opened leaves zero"
+        );
+        assert_eq!(
+            k.discoverer_of(&letter),
+            Some(voice),
+            "the demanding voice is its discoverer; a court is never one"
+        );
+        opened.push(letter);
+    }
+
+    // ONE ADDRESS on both courts: the factor is canonical (A1 at the
+    // altitude of ℤ[i]), so two organs that each ran Euclid reach one
+    // form and P3's consilience is on content.
+    assert_eq!(opened[0], opened[1], "two witnesses, two courts, one letter");
+}
+
+/// 37.7 P2's refusal. A witness whose gcd with the prime is not of norm
+/// `p` names a prime it does not carry: refused AT THE DEMAND VERTEX,
+/// before anything is docketed, so no letter is opened on it.
+#[test]
+fn a_witness_that_does_not_carry_its_prime_is_refused_at_the_vertex() {
+    let mut k = Kernel::new();
+    // 2 + i has norm 5 and is coprime to 17.
+    let bad = Demand::RotorPrime { plane: (0, 1), prime: 17, witness: witness(2, 1) };
+    let said = demanding_sentence(quarter(1), 1, bad);
+    assert_eq!(
+        k.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&said)),
+        vec![crate::anastome::dialogue::SPEECH_REFUSED],
+        "the demand claims a prime its witness does not carry"
+    );
+    assert_eq!(k.adjoined(), 0, "and no letter is opened on it");
+    let refused = k.refusals.get(said.address().as_bytes()).expect("a receipt");
+    assert!(
+        matches!(refused.at, crate::transducer::sentence::At::Vertex { .. }),
+        "refused at the demand vertex, with its coordinate (50.9)"
+    );
+}

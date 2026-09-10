@@ -33,6 +33,11 @@ pub const REFUSE_GLUED_DEPTH: &str = "glued form depth not below sentence depth"
 pub const REFUSE_GLUED_UNRULED: &str = "glued form not ruled";
 pub const REFUSE_GLUED_FRAME_GAUGED: &str = "glued form frame is not identity";
 pub const REFUSE_VERTEX_TAPE: &str = "vertex does not re-derive from its tape";
+/// 37.7 P2: a `RotorPrime` demand whose witness does not carry the prime
+/// it names. `gcd_{ℤ[i]}(s + t·i, p)` has a norm that is not `p`, so
+/// there is no letter to open and the demand claims one anyway. Refused
+/// at the demand vertex, so a bad witness never reaches the docket.
+pub const REFUSE_LETTER_WITNESS: &str = "rotor prime witness does not carry its prime";
 /// 50.2 step 2: the cited generators do not compose to the word the
 /// vertex carries. The court re-derived the derivation and disagreed —
 /// a refusal at that vertex, never a smaller answer.

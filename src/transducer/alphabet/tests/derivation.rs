@@ -28,6 +28,9 @@ fn a_spelled_derivation_is_its_residue_and_carries_no_second_word() {
     let mut only_residue = Vec::new();
     (0u16).to_le_bytes().iter().for_each(|x| only_residue.push(*x));
     quarter(2).to_bytes(&mut only_residue);
+    // No rotor follows: the residue determines the action, so the
+    // presence byte is zero and nothing is written twice (1.9).
+    only_residue.push(0);
     assert_eq!(b, only_residue, "the product is not written twice (50.2 step 2)");
 
     let mut pos = 0;
@@ -144,6 +147,10 @@ fn a_cited_vertex_carries_a_rotor_and_no_second_spelling() {
     crate::transducer::address::put_addr(&mut expect, addr(2)).expect("vertex");
     expect.extend_from_slice(&2i64.to_le_bytes());
     Word::identity().to_bytes(&mut expect);
+    // A rotor follows, and one byte says so: "no citations" no longer
+    // implies "the residue is the action", because an adjoined generator
+    // cites nothing and spells nothing (37.7).
+    expect.push(1);
     quarter(2).rotor().to_bytes(&mut expect);
     assert_eq!(b, expect, "citations, residue, rotor — and no spelling of the composite");
 

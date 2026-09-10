@@ -79,6 +79,31 @@ fn derivations_compose(f: &Form, resolve: &dyn Fn(&[u8]) -> Option<Form>) -> Opt
     None
 }
 
+/// 37.7 P2 — EVERY `RotorPrime` DEMAND CARRIES ITS PRIME. The witness is
+/// the residue block the shells left (50.5 as amended); `π_p =
+/// gcd_{ℤ[i]}(s + t·i, p)` must have norm `p`, or the demand names a
+/// prime no witness of it carries and there is nothing to open. Refused
+/// at the demand vertex, addressed by the demand's own key — which is
+/// its coordinates written out (A21), so the coordinate is content.
+fn witnesses_carry_their_primes(f: &Form) -> Option<Refusal> {
+    use crate::transducer::sentence::Demand;
+    for (_, kind, chart, _) in f.demand_vertices() {
+        let Demand::RotorPrime { prime, witness, .. } = kind else {
+            continue;
+        };
+        let carries = crate::core::gaussian::from_block(witness).is_some_and(|w| {
+            crate::core::gaussian::prime_factor(&w, &num_bigint::BigInt::from(*prime)).is_some()
+        });
+        if !carries {
+            return Some(Refusal {
+                reason: REFUSE_LETTER_WITNESS,
+                at: sentence::At::Vertex { address: kind.key(), chart: chart.clone() },
+            });
+        }
+    }
+    None
+}
+
 /// The same replay, refusing WITH THE COORDINATE (50.9): the vertex that
 /// does not carry its body, the face whose edge does not re-derive, the
 /// chart with the cells no demand declares; every other refusal is of the
@@ -129,6 +154,12 @@ pub fn replay_form_at(
     // docketed and the syllabus serves the generator (21 step 3), one
     // mechanism at two levels.
     if let Some(refusal) = derivations_compose(&f, resolve) {
+        return Some(refusal);
+    }
+    // 37.7 P2: a demand that names a prime must carry a witness that
+    // carries it. Read before anything is docketed, so `list_demands`
+    // never opens a letter on a witness the arithmetic refuses.
+    if let Some(refusal) = witnesses_carry_their_primes(&f) {
         return Some(refusal);
     }
     // 23.1 step 3, 50.6 (L7): a tape whose only vertices are the Frame and

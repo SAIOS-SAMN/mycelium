@@ -66,6 +66,19 @@ impl Derivation {
         Derivation { generators: Vec::new(), residue: word, composed: None }
     }
 
+    /// AN ADJOINED GENERATOR (37.7): cites nothing, spells nothing, and
+    /// IS the rotor it carries. A letter named by content (law 6) with
+    /// no escape byte and no place in the seventeen.
+    ///
+    /// It must carry the rotor in the rotor field and not in the
+    /// residue: a `Word` travels as its LETTER TAPE, so a letterless
+    /// word carrying only a cached rotor reaches the wire as the
+    /// identity. That is why this is its own constructor and not
+    /// `spelled(Word::formed(r))`.
+    pub fn adjoined(rotor: Rotor) -> Derivation {
+        Derivation { generators: Vec::new(), residue: Word::identity(), composed: Some(Box::new(rotor)) }
+    }
+
     /// A word factored through held generators. `composed` is the rotor
     /// the speaker's composition reached; the court re-derives it from
     /// the citations and refuses a disagreement. An empty citation list
@@ -124,7 +137,7 @@ impl Derivation {
     /// residue, and only when nothing is cited. A cited vertex answers
     /// `None` here and is resolved with [`Derivation::word_with`].
     pub fn word_local(&self) -> Option<&Word> {
-        match self.is_spelled() {
+        match self.is_spelled() && self.composed.is_none() {
             true => Some(&self.residue),
             false => None,
         }
@@ -188,8 +201,16 @@ impl Derivation {
             out.extend_from_slice(&e.to_le_bytes());
         }
         self.residue.to_bytes(out);
-        if n > 0 {
-            self.rotor().to_bytes(out);
+        // The rotor travels when the residue does not determine it: a
+        // factored vertex's product, and an adjoined generator's own
+        // action. One byte says which, because "no citations" no longer
+        // implies "the residue is the word" (37.7).
+        match &self.composed {
+            Some(r) => {
+                out.push(1);
+                r.to_bytes(out);
+            }
+            None => out.push(0),
         }
         Some(())
     }
@@ -211,11 +232,14 @@ impl Derivation {
             generators.push((form, vertex, e));
         }
         let residue = Word::from_bytes(b, pos)?;
-        if n == 0 {
-            return Some(Derivation::spelled(residue));
-        }
-        let composed = Rotor::from_bytes(b, pos)?;
-        Some(Derivation::factored(generators, residue, composed))
+        let carried = *b.get(*pos)?;
+        *pos += 1;
+        let composed = match carried {
+            0 => None,
+            1 => Some(Box::new(Rotor::from_bytes(b, pos)?)),
+            _ => return None,
+        };
+        Some(Derivation { generators, residue, composed })
     }
 }
 

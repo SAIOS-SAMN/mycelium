@@ -71,6 +71,40 @@ impl Kernel {
         credit
     }
 
+    /// 37.7, 45.9 — THE ADJOINED COUNT, READ FROM CONTENT. A generator
+    /// the ENGINE opened is a ruled form whose word vertex cites nothing
+    /// and carries a rotor outside the seventeen's span: it spells no
+    /// letters, and A22 cannot spell its action either. Nothing is
+    /// counted that was not derived, and no counter is kept — the number
+    /// is read off the ruled cover at the read (law 12).
+    ///
+    /// This is the one number that bears on the architecture. It is zero
+    /// until a court opens a letter (37.7 P2–P3).
+    pub fn adjoined(&self) -> u64 {
+        let mut n = 0u64;
+        for (addr, ()) in self.ruled_addrs.fiber(crate::network::nerve::ROOT) {
+            let Some(e) = self.word_at(&addr) else {
+                continue;
+            };
+            let Some(f) = crate::transducer::sentence::from_element_form(e) else {
+                continue;
+            };
+            for v in &f.vertices {
+                let crate::transducer::sentence::Vertex::Word { derivation, .. } = v else {
+                    continue;
+                };
+                if !derivation.generators.is_empty() {
+                    continue;
+                }
+                let spelled = crate::transducer::alphabet::factor_rotor(&derivation.rotor());
+                if !matches!(spelled, Some(Ok(_))) {
+                    n += 1;
+                }
+            }
+        }
+        n
+    }
+
     /// Record a discovery on both readings at once, so `discoverers` and
     /// its inverse cannot disagree.
     pub(crate) fn note_discovered(&mut self, addr: &[u8], who: [u8; 32]) {

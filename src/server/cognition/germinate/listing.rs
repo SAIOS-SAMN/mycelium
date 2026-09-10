@@ -10,12 +10,85 @@
 use crate::cognition::*;
 use crate::transducer::element::Element;
 
+/// 37.7 P2 — THE LETTER AS A FORM. `π_p = a + b·i` becomes the rotor
+/// `a + b·e_ij` on the plane the demand named: a rotor acts by a
+/// two-sided sandwich, so it is the HALF-ANGLE of the rotation it
+/// induces, and the arc of its block is `π_p²` of norm `p²`. That is
+/// exactly the action a versor carrying this prime stands on, and it is
+/// why the factor of norm `p` is the right thing to adjoin.
+///
+/// The rotor is written UNNORMALISED — `a` and `b` as they came out of
+/// Euclid — because identity is projective (1.5) and normalising by
+/// `√p` would leave ℚ.
+fn letter_form(
+    pi: &crate::core::gaussian::Gauss,
+    plane: (u8, u8),
+    chart: &crate::transducer::stalk::Invariant,
+    bodies: &[crate::transducer::sentence::Cell],
+) -> Option<Element> {
+    use crate::transducer::alphabet::{Derivation, Rotor};
+    use crate::transducer::sentence::{as_element_form, Form, Vertex};
+    let mask = (1usize << plane.0) | (1usize << plane.1);
+    let q = |n: &num_bigint::BigInt| {
+        num_rational::BigRational::from_integer(n.clone())
+    };
+    let rotor = Rotor::scalar(q(&pi.a)).add(&Rotor::blade(mask, q(&pi.b)));
+    rotor.weight()?;
+    let mut f = Form::default();
+    f.vertices.push(Vertex::Word {
+        address: crate::transducer::address::Address::new(Vec::new()),
+        // Cites nothing and spells nothing: the whole of this vertex is
+        // the rotor it carries, which is what an ADJOINED generator is.
+        derivation: Derivation::adjoined(rotor),
+        carriage: crate::transducer::element::identity_versor().into(),
+        gauge: Vec::new(),
+        class: chart.clone(),
+        contact: None,
+    });
+    // NO STAR FACE, and the reason is structural rather than an omission.
+    // A face carries a `Transport` whose word is a `Word` — letters — and
+    // it is the coboundary of two placements (3.1). The face from the
+    // Frame to THIS vertex would be the letter's own action, which is
+    // exactly the action the seventeen cannot spell; `face_of` refuses it
+    // and is right to. A letter is not a placed body: it is the carrier
+    // of an action, with no placement to take a coboundary of. Its form
+    // is a Frame and the vertex, no faces, no loops — which coheres
+    // vacuously and is closed, as a generator should be.
+    f.loops = Form::loops_of(&f.faces, f.vertices.len());
+    f.reindex();
+    // What the language could not say without it: the demand's own
+    // bodies, measured lane-wise, the same measure a remainder takes.
+    let mu = crate::transducer::element::measure_lanes(bodies);
+    as_element_form(&f, mu)
+}
+
 impl Kernel {
     /// 50.5, 34.2 (L7): the demand vertices of a listed sentence, written
     /// by kind and chart as the court lists them — the market relays and
     /// prices them under the sentence; under L8 they are listed beside its
     /// closed sub-complex.
     pub(crate) fn list_demands(&mut self, sentence: &Element, voice: &[u8; 32]) {
+        let Some(f) = sentence.form() else {
+            return;
+        };
+        // 37.7 P2–P3 — THE COURT OPENS A LETTER. A `RotorPrime` demand
+        // carries the residue block the shells left; the factor is read
+        // off it by Euclid over ℤ[i] and docketed as a provisional
+        // generator, on the same path a sentence takes. The witness was
+        // already checked at replay (`REFUSE_LETTER_WITNESS`), so what
+        // arrives here carries its prime.
+        //
+        // The kind byte routes this line and nothing else: the docket
+        // path is the sentence's, and there is no per-kind closer.
+        let mut opened: Vec<(crate::transducer::sentence::Demand, crate::transducer::stalk::Invariant, Vec<crate::transducer::sentence::Cell>)> = Vec::new();
+        for (_, kind, chart, bodies) in f.demand_vertices() {
+            if matches!(kind, crate::transducer::sentence::Demand::RotorPrime { .. }) {
+                opened.push((kind.clone(), chart.clone(), bodies.to_vec()));
+            }
+        }
+        for (kind, chart, bodies) in opened {
+            self.open_letter(&kind, &chart, &bodies, voice);
+        }
         let Some(f) = sentence.form() else {
             return;
         };
@@ -30,6 +103,77 @@ impl Kernel {
             );
             self.court_demands_listed = self.court_demands_listed.saturating_add(1);
         }
+    }
+
+    /// 37.7 P2 — THE PROVISIONAL GENERATOR A DEMAND OPENS. The factor is
+    /// a form like any other: a Frame and one word vertex that cites
+    /// nothing, spells nothing, and carries the factor as its canonical
+    /// rotor — which L14 made representable with no escape byte, so a
+    /// letter is named by content (law 6) and no act byte is added.
+    ///
+    /// Its address is `form_vertex_key`, so two courts deriving one
+    /// factor reach ONE address and arity 2 converges on it (P3). Its μ⃗
+    /// is the demand's bodies measured lane-wise — what the language
+    /// could not say without it, the same measure a listing's remainder
+    /// takes. It closes nothing on any family by itself, so its install
+    /// mints none and says so; what its speakers earn is room when it is
+    /// used (26 as ruled).
+    fn open_letter(
+        &mut self,
+        kind: &crate::transducer::sentence::Demand,
+        chart: &crate::transducer::stalk::Invariant,
+        bodies: &[crate::transducer::sentence::Cell],
+        voice: &[u8; 32],
+    ) {
+        use crate::transducer::sentence::Demand;
+        let Demand::RotorPrime { plane, prime, witness } = kind else {
+            return;
+        };
+        let Some(arc) = crate::core::gaussian::from_block(witness) else {
+            return;
+        };
+        let Some(pi) = crate::core::gaussian::prime_factor(&arc, &num_bigint::BigInt::from(*prime))
+        else {
+            return;
+        };
+        // A demand whose bodies measure nothing opens nothing: there was
+        // no cost to what the language could not say, so there is no
+        // letter's worth to escrow (rule 11 — a zero is not a floor).
+        let Some(e) = letter_form(&pi, *plane, chart, bodies) else {
+            return;
+        };
+        let addr = e.address();
+        // The DEMANDING VOICE is the discoverer, through the same docket
+        // path a sentence takes; a second voice whose demand yields this
+        // factor is a party on the same address, as `list_sentence`
+        // already records one. A court is never a discoverer.
+        if self.provisional.contains(&addr) || self.ruled_contains(addr.as_bytes()) {
+            self.converge_here(&e, *voice);
+            return;
+        }
+        // The docket shape a sentence takes, written out: this court's own
+        // re-derivation recorded so a witness can converge with it (47.3),
+        // the escrow to the demanding voice as a party, the discoverer,
+        // and the provisional itself. `docket_connection` is not used
+        // because it refuses an element whose action is the identity, and
+        // a form's action is carried by its tape and not by its chain.
+        let addr_owned = addr.clone();
+        let mu = crate::economy::price(&e.magnitude(), &self.physics.pressure);
+        let anchor = self.anchor();
+        self.converge_here(&e, *voice);
+        self.treasury.escrow_award(&addr_owned, vec![*voice], mu, anchor);
+        self.deflations.insert(&addr_owned, e.magnitude());
+        let k_now = self.k_step();
+        self.provisional_k.insert(&addr_owned, k_now);
+        self.provisional.insert(&addr_owned, e.clone());
+        self.note_discovered(&addr_owned, *voice);
+        self.stamp_standing(&addr_owned);
+        self.provisional_h.insert(&addr_owned, self.height());
+        self.mark_persist();
+        eprintln!(
+            "  court letter opened {:02x}{:02x}… prime {prime} plane ({}, {}) from {:02x}{:02x}…",
+            addr[0], addr[1], plane.0, plane.1, voice[0], voice[1]
+        );
     }
 
     /// LIST A SENTENCE THE REPLAY STOOD (23.8, 26). A sentence the language
