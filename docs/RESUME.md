@@ -50,6 +50,21 @@ were not touched.
 
 ## State at handoff
 
+- **2026-09-10, the ring instance of the adjunction is done and audited
+  (65edee0).** The third fact holds: a mind taught a generator the
+  seventeen cannot spell derives through it (`family/ring.rs`, on
+  `factor_versor`'s `Err` arm), the letter travels the syllabus page and
+  is held as a generator, a court holding it composes the citation. L13
+  measured: 1554 arcs of the alphabet's own primes, 0 standing. The
+  first corpus reading (250feeb, twelve tasks, in process): held 0,
+  adjoined 0, retired 0, cover rank 0, comprehended 0; 83 demands, all
+  source, creation or deformation, none a prime — the corpus asks for
+  the cover instance (L11c). L8v re-measured: task `0607ce86` does not
+  return under L8w's bound, the loop is L20. `atlas_root` keys the
+  extraction cache by digest, L21. Auditor's reorder (§8.1): L15 · L11c
+  · L20 · L21 · L16 · L12 · L17 · L18 · L19. 487 / 0 / 9 / 0 / 13 / 6,
+  xtask 0, the gates' own tests 32, reproduced; the twelve-task walk
+  reproduced line for line.
 - **2026-09-10, the run-time adjoined count is 1 (d35ac33).** A court
   hearing a `RotorPrime` demand reads the Gaussian factor off the
   witness (`core::gaussian`, 7c61827), dockets it as a provisional
