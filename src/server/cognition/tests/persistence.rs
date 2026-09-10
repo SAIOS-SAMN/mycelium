@@ -13,13 +13,16 @@ fn the_basis_survives_a_restart() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)]; // a rotation (group substance)
-let bar = vec![(0, 0, 1), (0, 1, 1), (0, 2, 1)]; // a deformation (residual substance)
+// The L recoloured whole: a second word, its gauge (20 as ruled, L7). A
+// deformation no versor carries lists nothing (50.5), so it is not a
+// second generator here.
+let recoloured = vec![(0, 0, 2), (0, 1, 2), (1, 0, 2)];
 k.ingest(&a, &rot, [1; 32]);
 assert_eq!(k.ingest(&a, &rot, [2; 32]), Outcome::GermPending);
 k.glue_local(); // a rotation generator
-k.ingest(&a, &bar, [1; 32]);
-assert_eq!(k.ingest(&a, &bar, [2; 32]), Outcome::GermPending);
-k.glue_local(); // a residual generator
+k.ingest(&a, &recoloured, [1; 32]);
+assert_eq!(k.ingest(&a, &recoloured, [2; 32]), Outcome::GermPending);
+k.glue_local(); // a gauge generator
 let balance = k.treasury().balance_mu(&[2; 32]);
 let snap = k.snapshot();
 
@@ -37,8 +40,8 @@ assert!(
     "rotation reduces"
 );
 assert!(
-    matches!(booted.ingest(&a, &bar, [9; 32]), Outcome::Decomposed(_)),
-    "residual reduces"
+    matches!(booted.ingest(&a, &recoloured, [9; 32]), Outcome::Decomposed(_)),
+    "the recolour reduces"
 );
 assert_eq!(booted.basis_len(), 2, "no re-germination");
 }
@@ -73,7 +76,7 @@ assert_eq!(got, Some(ck), "class key survives the ledger");
 fn deflation_survives_a_restart() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
 assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
 // The second voice speaks the same percept: one sentence, one docket.
 assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending);
@@ -98,7 +101,7 @@ assert_eq!(after[0].deflation, before[0].deflation, "deflation survived; the cou
 fn a_snapshot_cut_short_at_any_section_is_refused() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
 assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
 let snap = k.snapshot();
 let mut whole = Kernel::new();

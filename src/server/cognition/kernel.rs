@@ -162,6 +162,9 @@ pub struct Kernel {
     pub(crate) court_fed_index: crate::network::nerve::Keyed<usize>,
     pub(crate) court_upheld: u64,
     pub(crate) court_slashed: u64,
+    /// Demand vertices this court has listed under a sentence (50.5, L7):
+    /// a wire read of the `court demand listed` lines, never branched on.
+    pub(crate) court_demands_listed: u64,
     pub(crate) crt_imported: bool,
     /// Čech complex per chart: vertices are covering hyphas, coefficients
     /// are Rotor. One Keyed entry per cell; never Elements.
@@ -541,6 +544,12 @@ impl Kernel {
 
     pub fn court_federation_len(&self) -> usize {
         self.court_federation.len()
+    }
+
+    /// The demand vertices listed so far (50.5, L7): a counter read at the
+    /// wire and by the tests, derived from the listings, never a gate.
+    pub fn demands_listed(&self) -> u64 {
+        self.court_demands_listed
     }
 
     pub fn crt_imported(&self) -> bool {

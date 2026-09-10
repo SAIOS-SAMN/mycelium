@@ -260,6 +260,23 @@ pub fn cohesion_over(rank: &Rank) -> (u64, u64) {
     (c, i)
 }
 
+/// THE COURT'S COPY OF A PERCEPT'S PAIR (23.8, L7): the two scenes as one
+/// train pair, the family a percept-born sentence is bound to at listing
+/// so the court replays it on the pair it adjudicated and the install
+/// measures what the sentence closes. `None` for an empty percept.
+pub fn percept_family(
+    ca: &[Vec<(i64, i64, u8)>],
+    cb: &[Vec<(i64, i64, u8)>],
+) -> Option<Vec<crate::transducer::family::TrainPair>> {
+    use crate::transducer::family::cells_to_grid;
+    let a: Vec<(i64, i64, u8)> = ca.iter().flatten().copied().collect();
+    let b: Vec<(i64, i64, u8)> = cb.iter().flatten().copied().collect();
+    if a.is_empty() && b.is_empty() {
+        return None;
+    }
+    Some(vec![(cells_to_grid(&a), cells_to_grid(&b))])
+}
+
 /// A percept is the pair form: `pair_form` → `extract_rule_with` on the
 /// court as on the mind, and it is ONE SENTENCE (chapter 20 as ruled
 /// 2026-09-09, 50.1): the pair form's word vertices with their faces and
@@ -275,15 +292,8 @@ pub fn percept_elements(
     frame: &crate::arc::Frame,
     crystal: &dyn crate::transducer::family::Crystal,
 ) -> Option<Vec<Element>> {
-    use crate::transducer::family::{
-        cells_to_grid, extract_rule_with, family_ratio, form_descent, mint_sentence, pair_form,
-    };
-    let a: Vec<(i64, i64, u8)> = ca.iter().flatten().copied().collect();
-    let b: Vec<(i64, i64, u8)> = cb.iter().flatten().copied().collect();
-    if a.is_empty() && b.is_empty() {
-        return None;
-    }
-    let family = vec![(cells_to_grid(&a), cells_to_grid(&b))];
+    use crate::transducer::family::{extract_rule_with, family_ratio, form_descent, mint_sentence, pair_form};
+    let family = percept_family(ca, cb)?;
     let from_remainders = |remainders: Vec<Vec<(i64, i64, u8, u8)>>| {
         let rem: Vec<(i64, i64, u8, u8)> = remainders.into_iter().flatten().collect();
         if rem.is_empty() {
@@ -293,13 +303,27 @@ pub fn percept_elements(
         }
     };
     Some(vec![match extract_rule_with(&family, crystal) {
-        Some(rule) => match mint_sentence(&rule, &family, crystal) {
-            Some(e) => e,
-            None => {
-                let (_, rem) = form_descent(&rule.form, &family, crystal);
-                from_remainders(rem)
+        Some(rule) => {
+            // 50.5 (L7): a percept the eyes cannot open at all — no body
+            // pair admitted, so no vertex that acts — is a percept with no
+            // sentence and no listing, reported to the voice as such. A
+            // tape of the Frame and demands alone is a chain (50.6), and
+            // the court would refuse it as one (`REFUSE_NOT_A_SENTENCE`).
+            use crate::transducer::sentence::Vertex;
+            let acts = rule.form.vertices.iter().any(|v| {
+                matches!(v, Vertex::Word { .. } | Vertex::Glued { .. } | Vertex::Rebased { .. } | Vertex::Unfolded { .. })
+            });
+            if !acts {
+                return None;
             }
-        },
+            match mint_sentence(&rule, &family, crystal) {
+                Some(e) => e,
+                None => {
+                    let (_, rem) = form_descent(&rule.form, &family, crystal);
+                    from_remainders(rem)
+                }
+            }
+        }
         None => {
             let scale = family_ratio(&family);
             let f = pair_form(&family[0].0, &family[0].1, scale);

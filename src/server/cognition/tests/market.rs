@@ -18,7 +18,7 @@ use crate::transducer::germinate::germinate;
 fn the_five_act_conversation_closes_with_settlement() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)]; // (0,0): 1→4
+let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
 assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending, "percept: voice A");
 assert_eq!(k.quote().1.len(), 1, "the sentence is quoted when the frontier is dry");
 assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending, "A again: a use of the listing, nothing drawn");
@@ -437,13 +437,13 @@ assert_eq!((v, ra, rb), ([9; 32], a, b));
 /// same TUniversal: T-room, never a stroke count.
 #[test]
 fn t_room_relocates_at_tuniversal_independent_of_k() {
-let list = |k: &mut Kernel, extra: bool| -> Address {
-    let mut a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-    let mut b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
-    if extra {
-        a.push((1, 1, 1));
-        b.push((1, 1, 5));
-    }
+// The L recoloured whole to `hue` (20 as ruled, L7). Two hues are two
+// sentences — the sentence is the rule, and a body's shape is quotiented
+// from its key (1.5), so the same recolour of another shape would be the
+// same listing and draw nothing new.
+let list = |k: &mut Kernel, hue: u8| -> Address {
+    let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, hue), (0, 1, hue), (1, 0, hue)];
     let _ = k.ingest(&a, &b, [1; 32]);
     k.pending.fiber(crate::network::nerve::ROOT).next().expect("listed").1.0.address()
 };
@@ -453,8 +453,8 @@ ha.set_lane_cap([64, 64, 1, 64]);
 hb.set_lane_cap([64, 64, 1, 64]);
 ha.set_height(10);
 hb.set_height(10);
-let first_a = list(&mut ha, false);
-let first_b = list(&mut hb, false);
+let first_a = list(&mut ha, 4);
+let first_b = list(&mut hb, 4);
 assert_eq!(first_a, first_b);
 // Advance K on ha only — TUniversal stays the clock we set.
 for _ in 0..8 {
@@ -463,8 +463,8 @@ for _ in 0..8 {
 assert!(ha.k_step() > hb.k_step());
 ha.set_height(40);
 hb.set_height(40);
-let _ = list(&mut ha, true);
-let _ = list(&mut hb, true);
+let _ = list(&mut ha, 5);
+let _ = list(&mut hb, 5);
 assert!(
     ha.cavity_book.contains(&first_a),
     "ha relocates the older listing on T"

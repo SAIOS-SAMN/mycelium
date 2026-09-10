@@ -6,5 +6,6 @@
 
 pub mod attest;
 pub mod ingest;
+pub mod listing;
 pub mod state;
 pub mod stroke;

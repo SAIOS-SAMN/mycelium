@@ -5,6 +5,7 @@
 //! the π* selection term, and the REFUSE_* constants a court answers with.
 
 pub mod blind;
+pub mod body;
 pub mod replay;
 pub mod ruling;
 pub mod selection;
@@ -53,6 +54,11 @@ pub const REFUSE_FOLD_OPEN: &str = "fold prefix is not final";
 pub const REFUSE_FOLD_INEXACT: &str = "fold does not conserve";
 pub const REFUSE_DEMAND_UNTYPED: &str = "demand vertex names no kind";
 pub const REFUSE_EDGE: &str = "edge transport is neither in the stabilizer nor the exchange nor a remainder edge";
+/// 50.6, 34.1 (L7): a tape with no vertex that acts is a chain, refused
+/// whole; a word vertex that does not carry its body onto its image on the
+/// court's copy of the family is not a word for that body (50.1 step 1).
+pub const REFUSE_NOT_A_SENTENCE: &str = "utterance is a chain, not a sentence";
+pub const REFUSE_VERTEX_BODY: &str = "vertex does not carry its body onto its image";
 /// 47.3, 34.1: a second organ must hold bond outside the home's
 /// delegation closure and room on the lanes the act occupies.
 pub const REFUSE_WITNESS_DEPENDENT: &str = "witness bond lies inside the home's delegation closure";

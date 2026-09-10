@@ -188,24 +188,19 @@ match k.attest(&germinate(&a3, &b3).expect("a coboundary"), [3; 32]) {
 assert_eq!(k.basis_len(), before, "a compound chain is not peeled into a second word");
 }
 
-/// A shape deformation (L → bar) that NO motor closes is not a dead-end: its
-/// residual IS the description, so it germinates a coordinate-exact coboundary
-/// germ and installs on two-voice consilience (priced on USE per R3, so a
-/// one-off earns ~0 — no basis flood). The reframe made operational: germinate
-/// the description, never discard the residual.
-/// A second vantage here is `glue_local`'s two fixture keys (§3.4's
-/// wire-identifier exception): this test proves nothing about 47.3's witness.
+/// A shape deformation (L → bar) that NO versor carries is a percept the
+/// eyes cannot open: no body pair admitted, no vertex that acts, so no
+/// sentence and no listing (50.5, L7) — never a residual chain germinated
+/// as a word, which was this test's claim in the chain era. The deformation
+/// is answered by the cover of 50.8 (L11), not by a listing of its cells.
 #[test]
-fn a_shape_deformation_germinates_a_residual() {
+fn a_shape_deformation_no_versor_carries_lists_nothing() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)]; // L
 let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, 1)]; // bar — no rigid motor
-assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending, "one voice awaits consilience");
-assert_eq!(k.basis_len(), 0, "not yet installed");
-assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending, "two voices settle the residual germ");
-k.glue_local();
-assert_eq!(k.basis_len(), 1, "the deformation germinated a new axis");
-assert_eq!(k.ingest(&a, &b, [3; 32]), Outcome::Decomposed(vec![0]), "and reduces to it");
+assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::Pivot, "no sentence, no listing");
+assert_eq!(k.basis_len(), 0);
+assert!(k.pending.is_empty(), "nothing on the book to await consilience");
 }
 
 /// Two distinct objects in one pair are one pair form, not a Cartesian

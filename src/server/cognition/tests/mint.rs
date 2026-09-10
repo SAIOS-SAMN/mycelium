@@ -26,15 +26,10 @@ assert_eq!(home.ingest(&a, &b, [1; 32]), Outcome::GermPending);
 assert!(!home.pending.is_empty(), "the listing stays on the book");
 assert_eq!(home.provisional.len(), 1, "the sentence is on the docket");
 let addr = home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().0.clone();
-// The court holds the percept's own pair as the sentence's family, so
-// the install measures the descent the sentence closes (E2). The court
-// binds it itself once G replays a percept on its copy of the pair (L7).
-let family = vec![(
-    crate::transducer::family::cells_to_grid(&a),
-    crate::transducer::family::cells_to_grid(&b),
-)];
-home.bind_listing_task(&addr, &addr);
-home.bind_task_family(&addr, family);
+// The court holds the percept's own pair as the sentence's family (L7:
+// bound at listing, never by the test), so the install measures the
+// descent the sentence closes (E2).
+assert!(home.family_of(&addr).is_some(), "the court bound the pair it adjudicated");
 assert!(home.offered(&addr), "the court Offers a first-vantage germ");
 assert!(home.treasury().escrow_of(&addr).is_some(), "the priced magnitude is the claim");
 assert_eq!(home.treasury().minted().expect("minted adds up"), [0; 4], "the claim is not yet payment: nothing minted");

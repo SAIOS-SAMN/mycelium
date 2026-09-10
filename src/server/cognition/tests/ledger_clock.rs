@@ -38,7 +38,7 @@ let r0 = k.chain().head_hash();
 k.push_cocycle_at(&inv, [1; 32], [2; 32], v1.clone(), ck1.clone(), r0);
 // A second voice: the first has its one claim in flight on this lane
 // (§3.1 as ruled, S13.15), and the act here only needs the mind to move.
-k.ingest(&a, &[(0, 0, 5), (0, 1, 3)], [2; 32]);
+k.ingest(&a, &[(0, 0, 5), (0, 1, 5)], [2; 32]);
 let r1 = k.chain().head_hash();
 assert_ne!(r0, r1, "the mind moved");
 let chain_before = k.dialect_chain_len();
@@ -132,7 +132,7 @@ fn docketed(me: [u8; 32]) -> (Kernel, crate::transducer::address::Address) {
     let mut k = Kernel::new();
     k.bind_identity(me);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-    let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole: one body, one word (20 as ruled, L7)
     assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
     assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending);
     k.court_stroke(super::common::one_stroke_transport);
@@ -218,7 +218,7 @@ fn a_lapsed_citation_seals_a_receipt() {
     let mut k = Kernel::new();
     k.bind_identity([0x5d; 32]);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-    let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole: one body, one word (20 as ruled, L7)
     assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
     let laddr = k.pending.fiber(crate::network::nerve::ROOT).next().unwrap().0;
     k.standing_h.insert(&laddr, 0);
@@ -246,7 +246,7 @@ fn a_citation_does_not_lapse_against_an_unmeasured_transport() {
     let mut k = Kernel::new();
     k.bind_identity([0x5d; 32]);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-    let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole: one body, one word (20 as ruled, L7)
     assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
     let laddr = k.pending.fiber(crate::network::nerve::ROOT).next().unwrap().0;
     k.standing_h.insert(&laddr, 0);

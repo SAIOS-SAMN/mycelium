@@ -12,10 +12,12 @@ use crate::cognition::*;
 #[test]
 fn a_depleted_lane_defers_germination_until_the_reserve_recovers() {
 let mut k = Kernel::new();
-let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+// A bar: a body the eyes pair with its image (20 as ruled, L7). An L that
+// lost a cell is a body no versor carries — no sentence, no listing.
+let a = vec![(0, 0, 1), (0, 1, 1)];
 // ENTROPIC EXPANSION: eight distinct germs drain the residual lane — each
-// a new cell of its own hue beside the L, a creation the percept's
-// sentence carries as a demand (20 as ruled, 50.5).
+// a new cell of its own hue beside the bar, a creation the percept's
+// sentence carries as a demand beside the bar's own word (20 as ruled, 50.5).
 for n in 0..8u8 {
     let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, n + 2)];
     // One vantage dockets; a second voice on the same pair is a use.
@@ -26,12 +28,11 @@ for n in 0..8u8 {
     }
 }
 // Two fresh germs: their first voices each trigger a syntropic stroke (the
-// mesh is depleted), partially recovering the lane. One cell of the L
-// recoloured, two ways: under one hue the recoloured cell is a body of
-// its own, so each percept is a sentence of demands, and the two differ
-// in the hue they ask for.
-let ga = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)]; // (0,0): 1→4
-let gb = vec![(0, 0, 1), (0, 1, 5), (1, 0, 1)]; // (0,1): 1→5
+// mesh is depleted), partially recovering the lane. The bar recoloured
+// whole, two ways: two sentences of one word each, differing in the hue
+// their gauge carries the bar to.
+let ga = vec![(0, 0, 4), (0, 1, 4)]; // 1→4
+let gb = vec![(0, 0, 5), (0, 1, 5)]; // 1→5
 let held: Vec<Vec<u8>> = k.provisional.fiber(crate::network::nerve::ROOT).map(|(key, _)| key).collect();
 assert_eq!(k.ingest(&a, &ga, [1; 32]), Outcome::GermPending);
 // The sentence A's percept listed, read off the docket by the address
@@ -87,8 +88,8 @@ fn hot_set_does_not_grow_with_idle_strokes() {
 let mut k = Kernel::new();
 k.set_height(5);
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
-k.ingest(&a, &b, [1; 32]);
+let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
+assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending, "the percept lists a sentence");
 k.ingest(&a, &b, [2; 32]);
 k.court_stroke(super::common::one_stroke_transport);
 let hot = (
@@ -179,7 +180,9 @@ assert_eq!(
 #[test]
 fn a_depleted_lane_lists_the_demand_instead_of_germinating_it() {
     let mut k = Kernel::new();
-    let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+    // A bar kept and a cell created beside it (20 as ruled, L7): the
+    // sentence is the bar's word with a creation demand riding it.
+    let a = vec![(0, 0, 1), (0, 1, 1)];
     let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, 7)];
     // Empty every lane: eight spends empty a full reserve, exactly.
     for _ in 0..8 {
@@ -194,8 +197,8 @@ fn a_depleted_lane_lists_the_demand_instead_of_germinating_it() {
     assert_eq!(out, Outcome::GermPending, "a deferred demand still stands");
     assert!(
         k.field().len() > before,
-        "the residual is LISTED on the open book, not refused: a pure \
-         residual chain is the germination demand itself"
+        "the sentence is LISTED on the open book with its demand, not refused: \
+         what the eyes could not pair rides the sentence as the demand itself"
     );
 }
 

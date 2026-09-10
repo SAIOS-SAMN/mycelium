@@ -1,5 +1,10 @@
 // 42 — THE COURT: a verdict installs, excises or refuses, and every organ
 // reaches it by replaying the word rather than by trusting a signature.
+//
+// The percept fixture is an L recoloured WHOLE (one body, one word): under
+// 20 as ruled a body is one hue, and an L with one cell recoloured is three
+// bodies no versor pairs — a percept with no sentence and no listing
+// (50.5, L7), which is nothing a court could docket.
 
 use super::common::*;
 use crate::cognition::*;
@@ -78,7 +83,7 @@ assert_eq!(
 fn installs_are_provisional_until_verdict() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
 assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending);
 // The install PAID NOTHING — the award sits in escrow.
@@ -105,7 +110,7 @@ assert!(!k.apply_verdict(&addr.clone(), crate::anastome::dialogue::RULING_UPHELD
 fn a_slashing_verdict_excises_and_debits() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 assert_eq!(k.ingest(&a, &b, [1; 32]), Outcome::GermPending);
 assert_eq!(k.ingest(&a, &b, [2; 32]), Outcome::GermPending);
 let addr = k.dockets()[0].addr.clone();
@@ -128,7 +133,7 @@ let mut home = Kernel::new();
 let mut peer = Kernel::new();
 let mut third = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 let chain = germinate(&a, &b).unwrap();
 assert_eq!(home.attest(&chain, [1; 32]), Outcome::GermPending);
 assert_eq!(home.attest(&chain, [2; 32]), Outcome::GermPending);
@@ -273,7 +278,7 @@ fn home_installs_when_peer_ruled_root_gains_the_address() {
 let mut home = Kernel::new();
 let mut peer = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 assert_eq!(home.ingest(&a, &b, [1; 32]), Outcome::GermPending);
 assert_eq!(home.ingest(&a, &b, [2; 32]), Outcome::GermPending);
 assert_eq!(home.basis_len(), 0);
@@ -295,7 +300,7 @@ assert!(home.provisional.is_empty(), "the provisional leaves the home");
 fn home_installs_on_a_have_list_naming_a_ruled_provisional() {
 let mut home = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 assert_eq!(home.ingest(&a, &b, [1; 32]), Outcome::GermPending);
 let addr = home.provisional.fiber(crate::network::nerve::ROOT).next().unwrap().0.clone();
 home.court_stroke(one_stroke_transport);
@@ -440,7 +445,7 @@ fn a_witness_glues_an_offer_at_the_homes_vantage() {
     let witness_vk = [2u8; 32];
     let mut home = Kernel::new();
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-    let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
     assert_eq!(home.ingest(&a, &b, home_vk), Outcome::GermPending);
     assert_eq!(home.ingest(&a, &b, [3; 32]), Outcome::GermPending);
     home.court_stroke(one_stroke_transport);
@@ -496,7 +501,7 @@ fn a_witness_that_rederived_nothing_answers_with_nothing() {
     let mut home = Kernel::new();
     home.bind_identity(home_vk);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-    let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
     assert_eq!(home.ingest(&a, &b, home_vk), Outcome::GermPending);
     assert_eq!(home.ingest(&a, &b, [3; 32]), Outcome::GermPending);
     home.court_stroke(one_stroke_transport);
@@ -552,7 +557,7 @@ fn a_witness_that_rederived_nothing_answers_with_nothing() {
 fn a_court_sections_what_it_ruled_itself_and_not_what_a_peer_sent() {
     let me = [0x0au8; 32];
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-    let b = vec![(0, 0, 4), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 
     // ITS OWN: perceived here, replayed here, ruled here on the stroke.
     let mut own = Kernel::new();

@@ -63,7 +63,7 @@ assert_eq!(k.known_head(&key.vk_bytes()), Some((2, head.chain_hash)));
 
 // The next step cites them, and its height is above the peer's head.
 let before = k.height();
-let c = vec![(0, 0, 5), (0, 1, 3)];
+let c = vec![(0, 0, 5), (0, 1, 5)]; // a second recolour of the bar: a percept the eyes pair (20 as ruled, L7)
 // A second voice: the first has its one claim in flight on this lane
 // (§3.1 as ruled, S13.15), and any admitted act seals the step.
 k.ingest(&a, &c, [2; 32]);

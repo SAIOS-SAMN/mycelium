@@ -5,6 +5,7 @@
 //! every loop's holonomy to the identity, and every pivot certificate from
 //! the axis it names. A form that does not is REFUSED, never scored.
 
+use super::body::{edges_rederive_family, remainder_undeclared, vertices_carry_family};
 use super::*;
 
 /// Chapter 23.1: replay a crystallized form from its tape and the forms it
@@ -60,8 +61,24 @@ pub fn replay_form_with(
             return Some(REFUSE_GLUED_FRAME_GAUGED);
         }
     }
+    // 23.1 step 3, 50.6 (L7): a tape whose only vertices are the Frame and
+    // demands is a chain wearing a form's tape — nothing in it acts.
+    let acts = f
+        .vertices
+        .iter()
+        .any(|v| matches!(v, Vertex::Word { .. } | Vertex::Glued { .. } | Vertex::Rebased { .. } | Vertex::Unfolded { .. }));
+    if !acts {
+        return Some(REFUSE_NOT_A_SENTENCE);
+    }
     if let Some(reason) = vertex_tape_and_moves(&f, family) {
         return Some(reason);
+    }
+    // G steps 2–3 (50.2) on the court's copy of the family: every word
+    // vertex carries its body onto its image, exactly (L7).
+    if let Some(fam) = family {
+        if let Some(reason) = vertices_carry_family(&f, fam) {
+            return Some(reason);
+        }
     }
     // Loops are derived, never trusted from the tape: re-walk the forest.
     let Some(taped_rank) = f.rank() else {
@@ -95,6 +112,13 @@ pub fn replay_form_with(
     if !form_loops_replay(&walked) {
         return Some(REFUSE_LOOP);
     }
+    // 23.1 step 4, 50.3 (L7): every carried edge re-measured on the union
+    // of its two bodies, on every pair of the family.
+    if let Some(fam) = family {
+        if let Some(reason) = edges_rederive_family(&walked, fam) {
+            return Some(reason);
+        }
+    }
     let Some(derived) = walked.rank() else {
         return Some(REFUSE_RANK_LOST);
     };
@@ -125,9 +149,12 @@ pub fn replay_form_with(
         // the form does not close the family it claims, and that is the
         // refusal. The μ⃗ it measured is NOT: a form that closes every pair
         // while measuring nothing has still closed them, and pricing is the
-        // economy's reading, taken after the court's.
+        // economy's reading, taken after the court's. Under 50.5 (L7) the
+        // clause reads the CLOSED SUB-COMPLEX: a remainder cell a demand
+        // vertex names is what the sentence said it could not close — valid,
+        // not closed — and only an undeclared remainder refuses.
         let _ = pay;
-        if rems.iter().any(|r| !r.is_empty()) {
+        if remainder_undeclared(&rems, &walked) {
             return Some(REFUSE_NOT_CLOSED);
         }
     }

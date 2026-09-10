@@ -60,6 +60,10 @@ pub fn adjudicate(
     let Some(germs) = crate::cognition::percept_elements(ca, cb, frame, &*g) else {
         return g.pivot();
     };
+    // 23.8, L7: the court binds the pair it adjudicated as the sentence's
+    // family before the lock is dropped, so the stroke's replay and the
+    // install read it.
+    g.bind_percept_family(&germs, ca, cb);
     drop(g);
     let listing = germs[0].address();
     let reductions: Vec<_> = germs

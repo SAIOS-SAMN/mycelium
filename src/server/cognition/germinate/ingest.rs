@@ -53,6 +53,9 @@ impl Kernel {
         let Some(germs) = percept_elements(ca, cb, frame, self) else {
             return self.pivot();
         };
+        // 23.8, L7: the pair the court adjudicated is the sentence's family
+        // (`listing.rs`), bound before the reduction is committed.
+        self.bind_percept_family(&germs, ca, cb);
         let reductions = reduce_all(&language, budget, germs);
         self.commit_all(reductions, voice)
     }
@@ -307,6 +310,7 @@ impl Kernel {
                     // it and be credited for the use. Only the install
                     // clears the page.
                     self.book_list((*residual).clone(), k_now, voice);
+                    self.list_demands(&residual, &voice);
                     let _ = self.treasury.settle_install(&residual, voice); // POW++ gate only
                     let mu = crate::economy::price(&residual.magnitude(), &self.physics.pressure);
                     let anchor = self.anchor();
@@ -470,6 +474,7 @@ impl Kernel {
                     if !listed {
                         let k_now = self.k_step();
                         self.book_list((*residual).clone(), k_now, voice);
+                        self.list_demands(&residual, &voice);
                         self.docket_connection(&residual, voice);
                         self.offered.insert(&addr, ());
                     }
