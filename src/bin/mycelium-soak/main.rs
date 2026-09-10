@@ -34,6 +34,24 @@ struct Reading {
     /// ended on it rather than on the bundle (L8w).
     spent: u64,
     exhausted: u64,
+    /// 45.9 — THE ENGINE'S OWN COORDINATES, which is what the instrument
+    /// is for. The kind tally above is the engine rendered into human
+    /// buckets and orders nothing; these are the language's own.
+    ///
+    /// `held` is the generators this mind can factor through — the
+    /// distinct `Word` vertices of the forms it holds. `adjoined` is how
+    /// many of them the ENGINE opened rather than received: read from
+    /// content, a vertex with no citations whose rotor the seventeen
+    /// cannot spell (L14 made that representable with no escape byte).
+    /// `retired` is what the language shed. `cover_rank` is the strata
+    /// the working atlas occupies. `comprehended` is families closed per
+    /// generator held, the one ratio that says whether the language is
+    /// doing work — carried as its two terms, never as a quotient.
+    held: u64,
+    adjoined: u64,
+    retired: u64,
+    cover_rank: u64,
+    comprehended: u64,
 }
 
 fn main() {
@@ -69,6 +87,15 @@ fn main() {
             println!(
                 "  soak demands rotor_prime {} standing {} source {} creation {} deformation {}",
                 r.kinds[0], r.kinds[1], r.kinds[2], r.kinds[3], r.kinds[4]
+            );
+            // The one number that bears on the architecture is `adjoined`.
+            // It is zero until 37.7's adjunction runs (L11), and it is
+            // printed every walk so that the day it is not zero is a
+            // measurement and not an anecdote.
+            println!(
+                "  soak generators held {} adjoined {} retired {} cover rank {} \
+                 families comprehended {}",
+                r.held, r.adjoined, r.retired, r.cover_rank, r.comprehended
             );
         }
         Err(e) => {
@@ -158,7 +185,46 @@ fn walk(dir: &str, limit: usize) -> Result<Reading, String> {
         };
         if epi.stand_dialect_at(spoken, k, k).is_some() {
             r.stood += 1;
+            r.comprehended += 1;
         }
     }
+    read_engine(&mut epi, &mut r);
     Ok(r)
+}
+
+/// 45.9: the engine's coordinates, read off the mind at the end of the
+/// walk. Every one is read from CONTENT — the forms the mind holds and
+/// the vertices in them — and nothing is counted that was not derived.
+fn read_engine(epi: &mut Epigenome, r: &mut Reading) {
+    use mycelium::network::nerve::ROOT;
+    let mut seen: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
+    let mut charts: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
+    for e in epi.genome() {
+        let Some(f) = from_element_form(e) else {
+            continue;
+        };
+        charts.insert(mycelium::transducer::stalk::invariant_of(e).key(), ());
+        for v in &f.vertices {
+            let Vertex::Word { address, derivation, .. } = v else {
+                continue;
+            };
+            if seen.contains(address.as_bytes()) {
+                continue;
+            }
+            seen.insert(address.clone(), ());
+            r.held += 1;
+            // ADJOINED, READ FROM CONTENT (37.7): a generator the engine
+            // opened is one that cites nothing and whose action the
+            // seventeen cannot spell. A vertex that spells is a word of
+            // the alphabet however it was reached; a vertex that cites is
+            // a composition of what was already there.
+            let spelled = mycelium::transducer::alphabet::factor_rotor(&derivation.rotor());
+            let unspellable = !matches!(spelled, Some(Ok(_)));
+            if derivation.generators.is_empty() && unspellable {
+                r.adjoined += 1;
+            }
+        }
+    }
+    r.cover_rank = charts.fiber(ROOT).count() as u64;
+    r.retired = epi.take_promoted().len() as u64;
 }
