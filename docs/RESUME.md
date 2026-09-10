@@ -50,6 +50,17 @@ were not touched.
 
 ## State at handoff
 
+- **2026-09-10, the run-time adjoined count is 1 (d35ac33).** A court
+  hearing a `RotorPrime` demand reads the Gaussian factor off the
+  witness (`core::gaussian`, 7c61827), dockets it as a provisional
+  generator (one word vertex, no citations, the factor as its rotor
+  under a presence byte, no star face), and a second court's agreement
+  installs it under `ActKind::Ruling`; two voices, two courts of
+  distinct identity, one address, `adjoined()` 1 on each, read from
+  content. In process, no corpus. Still owed on L11: the syllabus
+  teaching the letter to a mind whose generator index answers it, and
+  (3/3) the ring branch in `derivation_of`. 480 / 0 / 9 / 0 / 13 / 6,
+  xtask 0, reproduced by the auditor. L9 closed (d05ba08, 5c4c4eb).
 - **2026-09-10, the trajectory ruling (1.9) and the ladder.** After
   L9 the auditor read the tree against the ladder of re-derivation and
   the claim that the architecture was "built already". The reading, by

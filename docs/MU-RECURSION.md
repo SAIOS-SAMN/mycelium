@@ -5264,7 +5264,42 @@ the second-vantage install every ruled word takes (47.3), under
 be a recut — and the syllabus teaches it as any ruled form. The
 adjoined count (45.9) is read from content, never from a counter: the
 ruled forms whose vertex cites nothing and carries a rotor outside the
-span of the seventeen.
+span of the seventeen. Opened at d35ac33 (2026-09-10): two voices, two
+courts of distinct identity, one address, the count 1 on each, in
+process, no corpus, no new act byte, no per-kind closer. Two facts the
+landing found and ruled in place: a letterless word does not survive
+`Word::to_bytes`, so an adjoined generator carries its rotor in the
+derivation's rotor field under a presence byte, and "no citations" no
+longer means "the residue is the action"; and a letter's vertex has no
+star face, because the face from the Frame would be the letter's own
+action, which is what the seventeen cannot spell — Frame plus vertex,
+no faces, closed and coherent vacuously, as a generator should be.
+
+**Depth 4 and depth 5 use carriers the tree already has** (ruled
+2026-09-10, L17). At depth 4 the object is the holonomy of a loop two
+derivations of one vertex make through their two frames, read in the
+stabilizer with rotor coefficients (23.9, `cech::holonomy`); trivial,
+it is one proof in two frames and the closure is paid once; non-trivial
+and of finite order, it is the torsion class chapter 25 already files
+(`FiledLoop`, `Closure::Class`, `Fill::Class(ℓ)`), and the adjunction
+is that class ruled on two courts' re-derivation of the same A1
+canonical rotor and order, under `ActKind::Ruling`, taught by the
+syllabus, and cited by any later form whose loop carries it; of
+infinite order it is not a relator but a generator, and it takes the
+ring level's path. At depth 5 the object is a rewrite between two
+derivations of one vertex, and the kinds are the ones `rewrite.rs`
+carries: a generator **retires** (3.8, 27) when it derives through the
+others — decided by factorisation, A12 or the ring division, never by
+a length or any scalar (rule 4) — and the 2-cell is the substitution of
+its derivation into every citer, minted by `mint_rewrite` as
+`Retire` with the citers re-docketed (`redocket_citers_of`), ruled on
+two courts' re-derivation of the derivability, paid as E2 pays a
+rewrite. No carrier is invented for either depth.
+
+**v7's layout is fixed at the recut.** Until the fleet is recut on v7,
+a change to v7's layout (the presence byte above) is v7, and no
+version is spent on it; after the recut a layout change is v8 and a
+recut.
 
 **What follows for the walls.** The prime wall (36.3) is the ring level
 of the adjunction and needs no tower: the letter is rational, the field
