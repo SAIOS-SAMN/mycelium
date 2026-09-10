@@ -4337,13 +4337,25 @@ set aside against a listing (E1, E2); `settle.rs` what each closed act pays
   composed (50.2 step 2). Nothing rides beside the tape and nothing is
   paid on hearing: the court replays the derivation as part of `G`, and
   only when the sentence stands and `home_install` has ruled the form
-  does it pay `settle_use` once per cited generator, to that generator's
-  own discoverer, under the installing voice's key. A refused sentence
-  pays nobody, because a derivation that did not compose proved nothing;
-  a sentence deferred for an unruled citation pays nobody yet, and pays
-  when the deferral clears. This is the same shape as a `Glued`
-  citation's use, which is what a derivation citation is at the form
-  level (21 step 3).
+  is the use paid. **It is paid as a share of the install's own mint,
+  never as a transfer from the citing voice's balance** (corrected
+  2026-09-10, after cdb917f measured the transfer paying zero: the lane
+  a cited generator is priced on is the lane the citer's draw occupies
+  at the moment of install, so a transfer from the balance pays nothing
+  and a broke voice could cite for free). The mint at install is the
+  deflation the sentence closes on its family; the part a cited form
+  closed is that form's speaker's, and the citer earns the rest. So
+  `home_install` computes one share per cited form — its verified
+  deflation on the citer's family at the citer's placement, once per
+  cited address however many vertices cite it — and `settle_recursive`
+  draws the released award by those shares and mints each to its
+  discoverer, the remainder to the escrow's voices. `settle_use` is the
+  probe's transfer (a use settled against a listing) and is not called
+  at install. A refused sentence pays nobody, because a derivation that
+  did not compose proved nothing; a sentence deferred for an unruled
+  citation pays nobody yet, and pays when the deferral clears. This is
+  the same shape as a `Glued` citation's use, which is what a derivation
+  citation is at the form level (21 step 3), and it is row L8t.
 - `use_credit(&self, who) -> [u64;4]` **new**, from `Kernel::cited_by`;
   `lane_room` (cognition.rs 3455) adds it to `bond_of` before
   `lane_cover_room`.
