@@ -5250,6 +5250,22 @@ table over the five demand kinds of 50.5 would be a dictionary of
 closers — the cipher's fault at the level of the effector — and it is
 refused for the same reason (1.7).
 
+**The adjoined generator's carrier, parties and act** (ruled
+2026-09-10, L11 (2/2)). The remainder is docketed as a provisional form
+with one word vertex whose citation list is empty, whose residue is the
+identity, and whose canonical rotor is the remainder itself: named by
+its content on every tape (law 6) with no escape byte, because a
+vertex's identity is its rotor (1.5, L14). Its **discoverers** are the
+voices whose demands carried the witness, parties as a consilience
+award is split; a court is never a discoverer, because a court does
+not speak (law 8). The install on the second court's re-derivation is
+the second-vantage install every ruled word takes (47.3), under
+`ActKind::Ruling` with the generator's address — a new act byte would
+be a recut — and the syllabus teaches it as any ruled form. The
+adjoined count (45.9) is read from content, never from a counter: the
+ruled forms whose vertex cites nothing and carries a rotor outside the
+span of the seventeen.
+
 **What follows for the walls.** The prime wall (36.3) is the ring level
 of the adjunction and needs no tower: the letter is rational, the field
 is ℚ, and 37.1–37.4 stay closed. The deformation wall (50.8) is the cover
@@ -7110,6 +7126,22 @@ and what the eyes cannot pair ride the sentence as typed demand vertices
    address, two proofs (13.10's synonyms, 23.9's conjugate level) — and
    the derivation is where the wire tells two languages apart, because
    the address, being the vertex, cannot.
+
+   **The factorisation at the ring level** (ruled 2026-09-10, L11
+   (3/3), resolving L13). A12 over letter exponents reads only the
+   generators the seventeen span, and a generator the court adjoined at
+   the ring level (37.7) is a Gaussian prime the seventeen do not. On
+   the sensor plane a rotor's block is a Gaussian integer up to scale,
+   so the factorisation through such generators is division in ℤ[i]:
+   each held prime is divided out to its full multiplicity, in the
+   presentation's key order — unique factorisation up to units makes
+   the order a matter of the log line and nothing else — and cited with
+   that exponent; the cofactor is the residue, peeled by A22 against the
+   seventeen; a cofactor A22 cannot peel is the demand, with the
+   cofactor as its witness. The two readings are one operation at two
+   levels of the same table (37.7): the lattice over letter exponents
+   where the generators are words of the seventeen, the ring where they
+   are primes beyond it.
 3. Connect. For every edge the eyes admit, `Γ_ij` by 50.3; a pair with
    no rigid versor is a remainder edge.
 4. Form loops. The holonomy of every cycle of `E`, read in the base
