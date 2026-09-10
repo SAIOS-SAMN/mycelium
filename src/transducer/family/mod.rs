@@ -12,6 +12,7 @@ pub mod memo;
 pub mod orbit;
 pub mod pair;
 pub mod perceive;
+pub mod pieces;
 pub mod ring;
 pub mod speak;
 

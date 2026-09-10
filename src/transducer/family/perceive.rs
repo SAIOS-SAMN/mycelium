@@ -376,22 +376,40 @@ pub(crate) fn word_or_demand(a: &Body, b: &Body) -> Option<Result<Vertex, Demand
         Ok(w) => crate::transducer::alphabet::Derivation::spelled(w),
         Err(demand) => return Some(Err((demand, b.moduli.clone(), chain))),
     };
+    Some(Ok(word_vertex_with(a, b, &car, derivation)?))
+}
+
+/// THE WORD VERTEX OF A MEASURED CARRIAGE, given the derivation that
+/// reaches it — the placement and dilation residues off the versor, the
+/// gauge off the carriage or the chain, the address off the chain.
+///
+/// Split out because the derivation has TWO sources and the rest of the
+/// vertex has one. A22's peel is the percept's; the ring's is a mind's,
+/// found at 50.2 step 2 against a presentation the percept cannot hold.
+/// Both build the same vertex around it.
+pub(crate) fn word_vertex_with(
+    a: &Body,
+    b: &Body,
+    car: &Carriage,
+    derivation: crate::transducer::alphabet::Derivation,
+) -> Option<Vertex> {
+    let chain = chain_of(Some(a), Some(b), &car.v);
     let t = element::translator_of(&car.v)?;
     let d = element::dilator_of(&car.v)?;
     let carriage = d.geo(&t);
     let gauge = if car.sigma.is_empty() {
         hue_map_of_chain(&chain)
     } else {
-        car.sigma
+        car.sigma.clone()
     };
-    Some(Ok(Vertex::Word {
+    Some(Vertex::Word {
         address: element::from_residual(&chain).address(),
         derivation,
         carriage: Box::new(carriage),
         gauge,
         class: b.moduli.clone(),
         contact: None,
-    }))
+    })
 }
 
 // `word_form` was here: `word_or_demand(a, b)?.ok()`, with no caller in

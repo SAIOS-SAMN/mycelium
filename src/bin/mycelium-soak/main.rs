@@ -52,6 +52,9 @@ struct Reading {
     retired: u64,
     cover_rank: u64,
     comprehended: u64,
+    /// 50.8 — what the covers of this walk read, taken from the cover's
+    /// own instrument at the end of the walk.
+    cover: mycelium::transducer::family::cover::CoverTally,
 }
 
 fn main() {
@@ -74,7 +77,20 @@ fn main() {
         }
         None => usize::MAX,
     };
-    match walk(&dir, limit) {
+    // THE STROKE, so a reading can be told apart from a starvation. Every
+    // count on this walk falls when the budget ends before the work does,
+    // and the only way to know which happened is to run the same corpus at
+    // a stroke large enough that nothing ends on it. Absent, the machine's
+    // own stroke is used and the walk is what a mind actually gets.
+    let stroke: Option<usize> = match args.next().map(|n| n.parse::<usize>()) {
+        Some(Ok(n)) => Some(n),
+        Some(Err(e)) => {
+            eprintln!("  soak refused: the stroke does not read: {e}");
+            std::process::exit(1);
+        }
+        None => None,
+    };
+    match walk(&dir, limit, stroke) {
         Ok(r) => {
             println!(
                 "  soak tasks {} extracted {} stood {} glued {} demands {} words {}",
@@ -97,6 +113,22 @@ fn main() {
                  families comprehended {}",
                 r.held, r.adjoined, r.retired, r.cover_rank, r.comprehended
             );
+            // 50.8 — THE COVER'S OWN LINE. Its readings do not survive into
+            // the form: a filed class becomes torsion and a refused
+            // carriage becomes a demand vertex, but a cover that COMPLETED
+            // and found nothing leaves no trace in content. Without these,
+            // `cells filled 0` cannot be told from `no cover ran`, which is
+            // the ambiguity every reading of this chain has carried.
+            println!(
+                "  soak cover measured {} unmeasured {} spend {} carried {}",
+                r.cover.measured, r.cover.unmeasured, r.cover.spend, r.cover.carried
+            );
+            println!(
+                "  soak cover meets flat {} filed {} standing {} unspellable {} \
+                 pieces refused {}",
+                r.cover.flat, r.cover.filed, r.cover.standing, r.cover.unspellable,
+                r.cover.refused
+            );
         }
         Err(e) => {
             eprintln!("  soak refused: {e}");
@@ -108,7 +140,7 @@ fn main() {
 /// The corpus is the boundary this loop walks (rule 10): one file, one
 /// task, in name order so two runs read the same corpus in the same
 /// order.
-fn walk(dir: &str, limit: usize) -> Result<Reading, String> {
+fn walk(dir: &str, limit: usize, stroke: Option<usize>) -> Result<Reading, String> {
     let mut names: Vec<String> = Vec::new();
     let entries = std::fs::read_dir(dir).map_err(|e| format!("{dir}: {e}"))?;
     for e in entries {
@@ -145,7 +177,10 @@ fn walk(dir: &str, limit: usize) -> Result<Reading, String> {
         // and what it has when the budget ends is a withheld form. The
         // budget spent is itself a reading — a family that exhausts it is
         // one the search could not finish, and 50.2 step 2 is why.
-        let mut budget = physics.stroke();
+        let mut budget = match stroke {
+            Some(n) => physics.stroke_n(n),
+            None => physics.stroke(),
+        };
         let before = budget.remaining();
         let Some(rule) = extract_rule_with(&task.train, &epi, &mut budget) else {
             continue;
@@ -188,6 +223,7 @@ fn walk(dir: &str, limit: usize) -> Result<Reading, String> {
             r.comprehended += 1;
         }
     }
+    r.cover = mycelium::transducer::family::cover::take_cover_tally();
     read_engine(&mut epi, &mut r);
     Ok(r)
 }

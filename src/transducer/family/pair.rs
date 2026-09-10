@@ -394,7 +394,7 @@ fn unpaired_demands(
                     // an UNMEASURED cover and not an empty one: the demand
                     // then stands exactly as F typed it, which is what it
                     // did before any cover existed.
-                    let covered = match budget.share(crate::physics::cover_share()) {
+                    let covered = match budget.halve() {
                         Some(mut share) => {
                             let c = crate::transducer::family::cover::cover_deformation(
                                 &ic.body,
@@ -414,6 +414,17 @@ fn unpaired_demands(
                     if let Some(cover) = &covered {
                         for (_meet, (g, ell)) in cover.filed.fiber(crate::network::nerve::ROOT) {
                             filed.push((g.clone(), *ell));
+                        }
+                        // A PIECE THE COVER CARRIED AND COULD NOT SPELL is
+                        // 37.7's condition with the carriage already
+                        // confirmed, and it enters the form as the demand
+                        // the peel typed. It used to be a `continue` inside
+                        // the cover, which discarded the one place in the
+                        // engine where a versor is known to carry and its
+                        // rotor is outside the alphabet — the shortest
+                        // route the cover has to an adjoined generator.
+                        for (_piece, d) in cover.refused.fiber(crate::network::nerve::ROOT) {
+                            out.push(d.clone());
                         }
                     }
                     // The demand DISSOLVES only when every cell of both

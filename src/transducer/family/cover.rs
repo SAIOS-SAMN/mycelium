@@ -33,131 +33,54 @@
 //! shell kind, hue, and its support written out — so no arrival index
 //! survives into the nerve (rule 6, rule 15).
 
+use super::pieces::{carriage_key, hue_transition, meet_key, pieces_of, preimage_key};
 use super::*;
 use crate::transducer::alphabet::Rotor;
-use crate::transducer::peel::ShellKind;
 
-/// A piece of a body: one shell, one hue, one connected component.
-pub(crate) struct Piece {
-    pub(crate) kind: ShellKind,
-    pub(crate) hue: u8,
-    pub(crate) body: Body,
-}
-
-/// The address of a piece, as content (A21): the shell kind, the hue, and
-/// the support written out, length-prefixed. No digest — a hash here
-/// would key cognition by bytes and lose the coordinates the nerve reads
-/// (rule 2, rule 6).
-pub(crate) fn piece_key(kind: ShellKind, hue: u8, support: &[(i64, i64)]) -> Vec<u8> {
-    let mut k = vec![kind.as_u8(), hue];
-    k.extend_from_slice(&(support.len() as u32).to_le_bytes());
-    for &(r, c) in support {
-        k.extend_from_slice(&r.to_le_bytes());
-        k.extend_from_slice(&c.to_le_bytes());
-    }
-    k
-}
-
-/// The address of a preimage: the pieces it is assembled from, written
-/// out length-prefixed in key order. A preimage of ONE piece is that
-/// piece and keeps its own address, so the pullback and the structural
-/// pass name the same cover piece the same way. Content, not a digest and
-/// not an arrival index (rule 2, rule 6, rule 15).
-fn preimage_key(parts: &[Vec<u8>]) -> Vec<u8> {
-    match parts {
-        [only] => only.clone(),
-        many => {
-            let mut k = Vec::new();
-            for p in many {
-                k.extend_from_slice(&(p.len() as u32).to_le_bytes());
-                k.extend_from_slice(p);
-            }
-            k
-        }
-    }
-}
-
-/// THE ADDRESS OF A COVER PIECE, which is a CARRIAGE and not a piece of a
-/// body: the ordered pair of the domain's address in the input and the
-/// codomain's address in the image. Ordered, unlike a meet, because a
-/// carriage has a direction.
+/// WHAT THE COVERS OF ONE WALK READ. An instrument and nothing else: no
+/// cognition reads it, no branch consults it, and it is taken and cleared
+/// by the walker that prints it (§8.1 instrumentation).
 ///
-/// Keying here by the domain alone would assert that Φ is injective on
-/// the input, and keying by the codomain alone that it is injective on
-/// the image. Neither holds. A shape occurring once in the input and ten
-/// times in the image is one domain carried by ten versors — replication —
-/// and a shape occurring many times in the input and once in the image is
-/// many domains reaching one codomain — merging. Measured at a35bb9d with
-/// both injectivity conditions enforced: sixteen covers over twelve
-/// tasks, `filed 0 standing 0` in every one, and on a family with one
-/// input piece and ten output pieces exactly ONE carriage was placed. The
-/// nine refused were refused by bookkeeping, not by geometry, and with
-/// only one piece placed there is no second node in the nerve, so no
-/// transition exists to have an order at all.
-fn carriage_key(domain: &[u8], codomain: &[u8]) -> Vec<u8> {
-    let mut k = Vec::with_capacity(domain.len() + codomain.len() + 8);
-    k.extend_from_slice(&(domain.len() as u32).to_le_bytes());
-    k.extend_from_slice(domain);
-    k.extend_from_slice(&(codomain.len() as u32).to_le_bytes());
-    k.extend_from_slice(codomain);
-    k
+/// It exists because the cover's readings do not survive into the form.
+/// A filed class becomes torsion, a refused carriage becomes a demand
+/// vertex the soak already counts — but a cover that COMPLETED and found
+/// nothing, and the reads a cover spent, leave no trace in content, and
+/// without them `cells filled 0` cannot be told from `no cover ran`.
+#[derive(Default, Clone, Copy)]
+pub struct CoverTally {
+    /// Covers that ran to the end of their pieces, and covers whose share
+    /// ended first.
+    pub measured: u64,
+    pub unmeasured: u64,
+    /// Reads spent inside covers, apart from the peel's own.
+    pub spend: u64,
+    /// Carriages placed, and meets by their reading.
+    pub carried: u64,
+    pub flat: u64,
+    pub filed: u64,
+    pub standing: u64,
+    /// Meets whose transition the seventeen do not spell (37.7).
+    pub unspellable: u64,
+    /// Pieces carried geometrically whose rotor the seventeen do not
+    /// spell — the adjunction candidates the cover used to discard.
+    pub refused: u64,
 }
 
-/// The unordered pair of two piece addresses: the 1-simplex of the nerve,
-/// named by its two ends and never by their positions.
-fn meet_key(a: &[u8], b: &[u8]) -> Vec<u8> {
-    let (lo, hi) = match a <= b {
-        true => (a, b),
-        false => (b, a),
-    };
-    let mut k = Vec::with_capacity(lo.len() + hi.len() + 8);
-    k.extend_from_slice(&(lo.len() as u32).to_le_bytes());
-    k.extend_from_slice(lo);
-    k.extend_from_slice(&(hi.len() as u32).to_le_bytes());
-    k.extend_from_slice(hi);
-    k
+thread_local! {
+    static TALLY: std::cell::Cell<CoverTally> = std::cell::Cell::new(CoverTally::default());
 }
 
-/// The pieces of a body: its peel shells, and within each shell the
-/// one-hue connected components (13.9's split, `sentence::pieces` over
-/// 4-adjacency), filed by their own address.
-pub(crate) fn pieces_of(
-    cells: &[Cell3],
-    scale: Option<((usize, usize), (usize, usize))>,
-) -> crate::network::nerve::Keyed<Piece> {
-    let mut out: crate::network::nerve::Keyed<Piece> = crate::network::nerve::Keyed::new();
-    for shell in crate::transducer::peel::peel_body_scaled(cells, scale) {
-        // One hue at a time, so a component is a piece of ONE colour: a
-        // seam between two hues is a meet, not a body (13.9).
-        let mut hues: crate::network::nerve::Keyed<Vec<Cell3>> = crate::network::nerve::Keyed::new();
-        for &(r, c, h) in &shell.cells {
-            match hues.get_mut(&[h]) {
-                Some(v) => v.push((r, c, h)),
-                None => {
-                    hues.insert([h], vec![(r, c, h)]);
-                }
-            }
-        }
-        for (hue_key, of_hue) in hues.fiber(crate::network::nerve::ROOT) {
-            // The hue is the KEY this group was filed under, not a cell
-            // read out of it by position (rule 15): every cell here has
-            // that hue by construction.
-            let [hue] = hue_key.as_slice() else { continue };
-            let hue = *hue;
-            let chain: Vec<crate::transducer::sentence::Cell> =
-                of_hue.iter().map(|&(r, c, h)| (r, c, h, h)).collect();
-            for comp in crate::transducer::sentence::pieces(&chain) {
-                let cells: Vec<Cell3> = comp.iter().map(|&(r, c, h, _)| (r, c, h)).collect();
-                if cells.is_empty() {
-                    continue;
-                }
-                let body = body_of(cells);
-                let k = piece_key(shell.kind, hue, &support_of(&body));
-                out.insert(k, Piece { kind: shell.kind, hue, body });
-            }
-        }
-    }
-    out
+/// Read the walk's covers and clear the count.
+pub fn take_cover_tally() -> CoverTally {
+    TALLY.with(|t| t.replace(CoverTally::default()))
+}
+
+fn tally(f: impl Fn(&mut CoverTally)) {
+    TALLY.with(|t| {
+        let mut v = t.get();
+        f(&mut v);
+        t.set(v);
+    });
 }
 
 /// One carriage the cover placed: the versor, the support it was carried
@@ -210,6 +133,19 @@ pub(crate) struct Cover {
     /// the alphabet cannot name. It is where an adjoined generator would
     /// come from at the cover level.
     pub(crate) unspellable: crate::network::nerve::Keyed<Rotor>,
+    /// A PIECE THE COVER CARRIED GEOMETRICALLY AND COULD NOT SPELL, by
+    /// cover-piece address: `carriage` found the versor and `word_or_demand`
+    /// refused its rotor. Kept as the demand the peel typed, so the piece
+    /// enters the form as a vertex instead of vanishing.
+    ///
+    /// It was a `continue`. That discarded, silently, the only place in the
+    /// engine where a carriage is CONFIRMED and its rotor is outside the
+    /// alphabet — which is 37.7's condition exactly, and so the shortest
+    /// route the cover has to an adjoined generator. The cover cannot run
+    /// the ring itself: it is inside the memoised percept and 50.2 step 2
+    /// forbids the crystal there, so the candidate is carried out to
+    /// `derive_against`, which runs per mind.
+    pub(crate) refused: crate::network::nerve::Keyed<Demanded>,
     /// What no piece carried, as a VOLUME on four lanes (law 5): the
     /// input's cells no piece carried and the image's cells no piece
     /// reached (50.8 case 4). A count of cells is not this quantity —
@@ -237,6 +173,7 @@ impl Cover {
             filed: crate::network::nerve::Keyed::new(),
             standing: crate::network::nerve::Keyed::new(),
             unspellable: crate::network::nerve::Keyed::new(),
+            refused: crate::network::nerve::Keyed::new(),
             uncarried: [0; 4],
         }
     }
@@ -253,6 +190,7 @@ impl Cover {
         self.uncarried == [0; 4]
             && self.standing.fiber(crate::network::nerve::ROOT).next().is_none()
             && self.unspellable.fiber(crate::network::nerve::ROOT).next().is_none()
+            && self.refused.fiber(crate::network::nerve::ROOT).next().is_none()
     }
 }
 
@@ -286,6 +224,8 @@ pub(crate) fn cover_deformation(
     budget: &mut crate::physics::Budget,
 ) -> Result<Cover, Unmeasured> {
     use crate::network::nerve::ROOT;
+    let opened = budget.remaining();
+    let mut flat = 0u64;
     let ins = pieces_of(&input.cells, scale);
     let outs = pieces_of(&image.cells, scale);
     let mut cover = Cover::new();
@@ -328,6 +268,7 @@ pub(crate) fn cover_deformation(
         let mut parts: Vec<Vec<u8>> = Vec::new();
         for (ki, ()) in named.fiber(ROOT) {
             if !budget.spend() {
+                tally(|t| t.unmeasured += 1);
                 return Err(Unmeasured);
             }
             let Some(ip) = ins.get(&ki) else { continue };
@@ -340,8 +281,22 @@ pub(crate) fn cover_deformation(
             continue;
         };
         let Some(car) = carriage(&pre, &op.body) else { continue };
-        let Some(Ok(v)) = word_or_demand(&pre, &op.body) else { continue };
         let key = carriage_key(&preimage_key(&parts), ko);
+        // The carriage is CONFIRMED here — a versor exists and carries the
+        // preimage onto this piece. If its rotor does not spell, that is
+        // 37.7 and not a failure to carry, so the piece is kept as the
+        // demand the peel typed rather than dropped (rule 11: a refusal is
+        // a reading).
+        let v = match word_or_demand(&pre, &op.body) {
+            Some(Ok(v)) => v,
+            Some(Err(demanded)) => {
+                cover.refused.insert(&key, demanded);
+                continue;
+            }
+            // No sensor-plane block at all: the versor is not one this
+            // reader can factor, which is unmeasured and not a demand.
+            None => continue,
+        };
         for &(r, c, _) in pre.cells.iter().chain(op.body.cells.iter()) {
             reached.insert(cell_pos_key(r, c), ());
         }
@@ -392,12 +347,22 @@ pub(crate) fn cover_deformation(
         // but the identity.
         for ko in fiber {
             if !budget.spend() {
+                tally(|t| t.unmeasured += 1);
                 return Err(Unmeasured);
             }
             let Some(op) = outs.get(&ko) else { continue };
             let Some(car) = carriage(&ip.body, &op.body) else { continue };
-            let Some(Ok(v)) = word_or_demand(&ip.body, &op.body) else { continue };
             let key = carriage_key(ki, &ko);
+            // As in the pullback: a confirmed carriage whose rotor does not
+            // spell is 37.7, and it is carried out rather than dropped.
+            let v = match word_or_demand(&ip.body, &op.body) {
+                Some(Ok(v)) => v,
+                Some(Err(demanded)) => {
+                    cover.refused.insert(&key, demanded);
+                    continue;
+                }
+                None => continue,
+            };
             for &(r, c, _) in ip.body.cells.iter().chain(op.body.cells.iter()) {
                 reached.insert(cell_pos_key(r, c), ());
             }
@@ -472,7 +437,8 @@ pub(crate) fn cover_deformation(
                     continue;
                 }
                 if !budget.spend() {
-                    return Err(Unmeasured);
+                    tally(|t| t.unmeasured += 1);
+                return Err(Unmeasured);
                 }
                 let (Some(pa), Some(pb)) = (placed.get(&here[a]), placed.get(&here[b])) else {
                     continue;
@@ -494,7 +460,19 @@ pub(crate) fn cover_deformation(
                 // these readers cannot factor, which is unmeasured and
                 // neither flat nor standing.
                 match crate::transducer::element::meet_class(&gamma, hue) {
-                    Some(crate::transducer::element::MeetClass::Flat) => {}
+                    Some(crate::transducer::element::MeetClass::Flat) => {
+                        // Held locally, not tallied here. A cover that
+                        // returns `Unmeasured` must contribute NOTHING —
+                        // counting the flat meets it happened to reach
+                        // before its share ended reports readings from a
+                        // cover that did not complete, which is the same
+                        // half-measure `Result<Cover, Unmeasured>` exists
+                        // to make unrepresentable. Measured: `carried 0`
+                        // beside `flat 2`, which cannot both be true of
+                        // any completed cover, since a meet exists only
+                        // where two pieces were placed.
+                        flat += 1;
+                    }
                     Some(crate::transducer::element::MeetClass::Finite { ell, rotor }) => {
                         cover.filed.insert(&key, (*rotor, ell));
                     }
@@ -515,6 +493,19 @@ pub(crate) fn cover_deformation(
             }
         }
     }
+    // Exact, not saturating: a budget's remaining only falls, so the
+    // opening read is never below the closing one (rule 11).
+    let spent = (opened - budget.remaining()) as u64;
+    tally(|t| {
+        t.measured += 1;
+        t.spend += spent;
+        t.flat += flat;
+        t.carried += cover.carried.fiber(ROOT).count() as u64;
+        t.filed += cover.filed.fiber(ROOT).count() as u64;
+        t.standing += cover.standing.fiber(ROOT).count() as u64;
+        t.unspellable += cover.unspellable.fiber(ROOT).count() as u64;
+        t.refused += cover.refused.fiber(ROOT).count() as u64;
+    });
     Ok(cover)
 }
 
@@ -522,40 +513,3 @@ pub(crate) fn cover_deformation(
 // transition's sensor-plane block alone, which reads a translation or a
 // dilation as the identity and mis-orders a rotation about any point but
 // the origin. `element::meet_class` replaces it, on the versor.
-
-/// σ_b ∘ σ_a⁻¹ — the hue map of the transition between two carriages, as
-/// a listing. `a` takes the input's hues to a's image and `b` to b's, so
-/// crossing the seam is a's map undone and b's applied. A hue `a` does not
-/// list is one `a` did not move, so it enters `b` as itself.
-fn hue_transition(a: &[(u8, u8)], b: &[(u8, u8)]) -> Vec<(u8, u8)> {
-    use crate::network::nerve::{Keyed, ROOT};
-    let mut back: Keyed<u8> = Keyed::new();
-    for &(h, t) in a {
-        back.insert([t], h);
-    }
-    let mut forward: Keyed<u8> = Keyed::new();
-    for &(h, t) in b {
-        forward.insert([h], t);
-    }
-    let mut out: Keyed<u8> = Keyed::new();
-    for &(_, t) in a {
-        let Some(source) = back.get(&[t]).copied() else { continue };
-        // A hue `b` does not list is one `b` leaves alone, which is the
-        // listing's own convention and not a default standing in for a
-        // missing value: `cycle_lengths` reads absence as a fixed point.
-        let image = match forward.get(&[source]) {
-            Some(h) => *h,
-            None => source,
-        };
-        out.insert([t], image);
-    }
-    let mut listing: Vec<(u8, u8)> = out
-        .fiber(ROOT)
-        .filter_map(|(k, v)| match k.as_slice() {
-            [h] => Some((*h, *v)),
-            _ => None,
-        })
-        .collect();
-    listing.sort_unstable();
-    listing
-}

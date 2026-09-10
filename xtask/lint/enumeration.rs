@@ -23,7 +23,10 @@ fn scan(path: &Path, src: &str, hits: &mut Vec<String>) {
     // One pattern of the gate, not the whole gate, so it is a condition
     // here rather than an allow row. `physics.rs` is new to this gate: the
     // old scope was four directories and the crate root was outside it.
-    let allow_spend = p.ends_with("network/wire.rs") || p.ends_with("src/physics.rs");
+    // It became `physics/mod.rs` when the read token moved to
+    // `physics/budget.rs` at the §1.1 reading bound; the allowance follows
+    // the definition, which did not move.
+    let allow_spend = p.ends_with("network/wire.rs") || p.ends_with("src/physics/mod.rs");
     // FIVE PATTERNS SCOPED TO ONE DIRECTORY, inherited. `.position(`,
     // `.find(`, `.find_map(`, `Vec<bool>` and `unwrap_or` are rules 1, 8, 11
     // and 15, which hold everywhere, and the gate applies them under

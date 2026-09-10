@@ -85,13 +85,62 @@ fn derive_against(
     budget: &mut crate::physics::Budget,
 ) -> Option<Form> {
     for v in &mut peeled.vertices {
-        let Vertex::Word { derivation, .. } = v else {
-            continue;
-        };
-        *derivation = derivation_of_spelled(crystal, budget, derivation)?;
+        match v {
+            Vertex::Word { derivation, .. } => {
+                *derivation = derivation_of_spelled(crystal, budget, derivation)?;
+            }
+            // 37.7 AT THE SECOND STEP. A demand the peel typed is not
+            // final: the peel spells with the seventeen alone, and this
+            // mind may hold an adjoined generator that divides the very
+            // rotor the peel stood on. The ring is asked here and nowhere
+            // earlier, because the percept is memoised and a presentation
+            // is content, never a cache key (50.2 step 2).
+            //
+            // A demand the ring answers becomes a WORD vertex carrying the
+            // derivation it found. One it does not answer stays exactly the
+            // demand F typed — the ring having reached nothing is a
+            // reading, not a downgrade of the demand.
+            Vertex::Demand { .. } => {
+                if let Some(word) = ring_answer(crystal, budget, v) {
+                    *v = word;
+                }
+            }
+            _ => {}
+        }
     }
     // `reindex` reads the composed word of every word vertex, so it runs
     // after the derivations land and not before.
     peeled.reindex();
     Some(peeled)
+}
+
+/// 37.7 — ASK THE RING WHETHER THIS MIND CLOSES A DEMAND THE PEEL LEFT.
+///
+/// The demand carries the bodies it stands for (50.5), so the carriage is
+/// RE-DERIVED from them rather than stored beside them (law 12) — the two
+/// bodies are the chain's cells split by which side of the transition they
+/// occupy. `factor_versor` then runs the peel and, where it stands, the
+/// ring; a derivation that comes back is one this mind reached through a
+/// generator the seventeen cannot spell, and it is a word.
+///
+/// `None` is every other outcome and leaves the demand exactly as F typed
+/// it: no versor between the bodies, a budget that ended, or a ring that
+/// divided nothing. None of those is a smaller demand (rule 11).
+fn ring_answer(
+    crystal: &dyn Crystal,
+    budget: &mut crate::physics::Budget,
+    v: &Vertex,
+) -> Option<Vertex> {
+    let Vertex::Demand { bodies, .. } = v else {
+        return None;
+    };
+    let before: Vec<Cell3> = bodies.iter().filter(|c| c.2 != 0).map(|c| (c.0, c.1, c.2)).collect();
+    let after: Vec<Cell3> = bodies.iter().filter(|c| c.3 != 0).map(|c| (c.0, c.1, c.3)).collect();
+    if before.is_empty() || after.is_empty() {
+        return None;
+    }
+    let (a, b) = (body_of(before), body_of(after));
+    let car = carriage(&a, &b)?;
+    let derivation = factor_versor(crystal, budget, &car.v)?.ok()?;
+    word_vertex_with(&a, &b, &car, derivation)
 }
