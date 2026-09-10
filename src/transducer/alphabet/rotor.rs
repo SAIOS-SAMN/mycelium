@@ -251,6 +251,28 @@ impl Rotor {
         self.c[0].is_one() && (1..16).all(|i| self.c[i].is_zero())
     }
 
+    /// THE BLADES THIS ROTOR CARRIES OUTSIDE ONE PLANE — the masks with a
+    /// non-zero coefficient that are neither the scalar nor `plane`'s own
+    /// bivector. Empty means the rotor lives wholly in the subalgebra
+    /// `⟨1, e_ij⟩` and a single 2×2 block on that plane is the whole of it.
+    ///
+    /// Spin(4) is SU(2) × SU(2): a rotation of a rank-4 chart is TWO
+    /// independent commuting rotations, in `e₀∧e₁` and in `e₂∧e₃`, with
+    /// free and unrelated angles. A reader that takes one plane's block and
+    /// calls it the rotor reports a partial rotation as the whole
+    /// transition, and it loses the second angle exactly — including the
+    /// case that matters, where the two turn in OPPOSITE senses and the
+    /// pair's order is `lcm` of the two, an order neither plane has.
+    ///
+    /// This is a reading and never a gate (§2.3): it says which blades
+    /// carry content, and the caller decides what that means.
+    pub fn off_plane_blades(&self, plane: (u8, u8)) -> Vec<usize> {
+        let keep = (1usize << plane.0) | (1usize << plane.1);
+        (1..16)
+            .filter(|&m| m != keep && !self.c[m].is_zero())
+            .collect()
+    }
+
     /// `by Φ by⁻¹`. A non-invertible conjugator leaves Φ unmoved.
     pub fn conjugate(&self, by: &Rotor) -> Rotor {
         match by.inverse() {

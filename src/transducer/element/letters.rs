@@ -48,6 +48,28 @@ fn linear_versor(word: &crate::transducer::alphabet::Word) -> Option<Versor> {
     linear_versor_of(&word.rotor())
 }
 
+/// THE BRIDGE BETWEEN THE TWO ALGEBRAS, and the one place a rotation can
+/// lose an angle. A `Rotor` lives in Cl(4,0) over `e₀..e₃`, whose rotation
+/// group Spin(4) ≅ SU(2) × SU(2) turns in TWO independent commuting planes
+/// at once — `e₀∧e₁` and `e₂∧e₃`, with free and unrelated angles, and an
+/// order that is the `lcm` of the two when both are finite. A `Versor`
+/// lives in Cl(3,1) over `e1, e2, e+, e−`, the conformal algebra of a
+/// two-dimensional base, which has exactly ONE rotation plane.
+///
+/// So this map cannot be onto, and what it returns is THE SENSOR ACTION of
+/// the rotor — not the rotor. That is its correct meaning and not a
+/// truncation, because nothing is lost: `Word::rotor()` keeps every blade,
+/// and `ClassVector` carries the rotor's conjugacy invariants (15.3) plus
+/// all SIX plane slots of `PlaneForm::coordinates`. The dual plane is
+/// preserved everywhere it is representable and is invisible only here,
+/// where the target algebra has no room for it by construction.
+///
+/// MEASURED, because the opposite was assumed for one build: refusing a
+/// rotor with blades outside `⟨1, e₀e₁⟩` failed 116 of 498 tests. Off-plane
+/// rotors flow through this map constantly and are meant to — a word whose
+/// letters act above the sensor still has a sensor action, and it is this.
+/// A reader that treats the returned versor as the whole transition is
+/// where a collapse would be; this map is not that reader.
 fn linear_versor_of(rotor: &crate::transducer::alphabet::Rotor) -> Option<Versor> {
     use crate::transducer::cga;
     let block = crate::transducer::alphabet::rotor_block_on(
@@ -239,7 +261,24 @@ pub fn meet_class(
     let carriage = d.geo(&t);
     let r = t.versor_inverse()?.geo(&d.versor_inverse()?).geo(gamma);
     let flat_carriage = same_versor(&carriage, &identity_versor());
-    let rotor = rotor_of_block(&sensor_plane_block(&r)?, (PLANE_ROW, PLANE_COL));
+    let plane = (PLANE_ROW, PLANE_COL);
+    let rotor = rotor_of_block(&sensor_plane_block(&r)?, plane);
+    // THE DUAL PLANE CANNOT REACH THIS READER, and it is worth saying why
+    // rather than adding a check that never fires. Spin(4) is SU(2) ×
+    // SU(2): a rotation of the rank-4 chart is two independent commuting
+    // rotations, in `e₀∧e₁` and in `e₂∧e₃`, and a reader that takes one
+    // plane's block reports a partial rotation as the whole transition —
+    // losing exactly the case where the two turn in OPPOSITE senses and
+    // the pair's order is the `lcm` of the two, an order neither plane has.
+    //
+    // But `gamma` is a VERSOR, and the versor algebra here is Cl(3,1) over
+    // `e1, e2, e+, e−`: the conformal algebra of a TWO-dimensional base,
+    // with exactly one rotation plane. The rank-4 chart with six planes is
+    // the ROTOR's algebra, Cl(4,0), a different space. Nothing off the
+    // sensor plane can be present in `gamma` to be discarded.
+    //
+    // The bridge between the two algebras is `linear_versor_of`, and that
+    // is where a second angle is lost. The refusal lives there.
     // The rotor part is asked its ORDER, and the block is only how the
     // rotor is recovered from the action. `Finite` needs both residues to
     // be the identity: a quarter turn carried along a translation has the
