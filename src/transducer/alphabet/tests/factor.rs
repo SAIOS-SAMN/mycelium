@@ -124,3 +124,73 @@ fn a_block_the_order_does_not_decompose_is_a_standing_demand() {
         other => panic!("expected the prime 13 on (2,3), got {other:?}"),
     }
 }
+
+/// L13, MEASURED. The ordered peel of 50.4 is a greedy division by the
+/// alphabet's shells in a fixed order. The question the row asks is
+/// whether it MISSES anything the seventeen can reach: an arc whose norm
+/// factors entirely into the alphabet's own primes (5 and 13) but which
+/// the ordered peel leaves standing.
+///
+/// Enumerated over the ALPHABET'S OWN LETTERS, which is the only
+/// enumeration that answers the question. A letter's rotor is the
+/// Pythagorean pair itself — the (3,4,5) letter is `3 + 4·e01`, not
+/// `2 + e01` — so as a Gaussian it is `(2+i)²`, and the rotors the
+/// seventeen reach on one plane are the products of `3+4i`, `5+12i`,
+/// `1+i` and their conjugates. A `π` of norm 5 taken as a rotor is the
+/// HALF of the (3,4,5) rotation and the alphabet genuinely does not
+/// contain it; standing on that measures the enumeration, not the peel.
+///
+/// Every product of those generators up to total degree 4, peeled on the
+/// sensor plane. The bound is the enumeration's own; this is a test
+/// fixture, not a search in the engine (rule 10).
+#[test]
+fn l13_the_ordered_peel_against_the_alphabets_own_primes() {
+    use crate::core::gaussian::Gauss;
+    use crate::transducer::alphabet::{rotor_block_on, spell_peel_on, PLANE_COL, PLANE_ROW};
+    use crate::transducer::peel::PeelNest;
+    let plane = (PLANE_ROW, PLANE_COL);
+    // The letters as Gaussians: what the alphabet actually holds here.
+    let gens = [
+        Gauss::from_i64(3, 4),
+        Gauss::from_i64(3, -4),
+        Gauss::from_i64(5, 12),
+        Gauss::from_i64(5, -12),
+        Gauss::from_i64(1, 1),
+        Gauss::from_i64(1, -1),
+    ];
+    let qr = |n: &BigInt| Q::from_integer(n.clone());
+
+    let mut tried = 0usize;
+    let mut stood = Vec::new();
+    let mut words: Vec<Gauss> = vec![Gauss::from_i64(1, 0)];
+    for _ in 0..4usize {
+        let mut next = Vec::new();
+        for w in &words {
+            for g in &gens {
+                let p = w.mul(g);
+                let rotor = Rotor::scalar(qr(&p.a)).add(&Rotor::blade(0b0011, qr(&p.b)));
+                let Some(block) = rotor_block_on(&rotor, plane) else {
+                    continue;
+                };
+                tried += 1;
+                match spell_peel_on(plane, &block) {
+                    Some((PeelNest::Closed { .. }, _)) => {}
+                    _ => stood.push((p.a.clone(), p.b.clone())),
+                }
+                next.push(p);
+            }
+        }
+        words = next;
+    }
+    assert!(tried > 0, "the enumeration ran");
+    // THE ANSWER IS RECORDED HERE, whichever way it falls: an empty list
+    // means the ordered peel reaches every arc the alphabet's primes
+    // build, and L13's limit is unreachable within the seventeen; a
+    // non-empty one names the arcs it misses.
+    eprintln!("L13: {tried} arcs of norm 5^a·13^b tried, {} stood: {stood:?}", stood.len());
+    assert!(
+        stood.is_empty(),
+        "the ordered peel misses {} of {tried} arcs the alphabet's own primes build: {stood:?}",
+        stood.len()
+    );
+}
