@@ -11,5 +11,6 @@ mod contract;
 mod demand;
 mod glue;
 mod height;
+mod path;
 mod refinement;
 mod speech;

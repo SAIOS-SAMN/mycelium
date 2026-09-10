@@ -490,3 +490,56 @@ fn take_rank_move(b: &[u8], pos: &mut usize) -> Option<RankMove> {
         _ => None,
     }
 }
+
+/// 50.2 STEP 2 — THE PATH a word vertex was reached through: the
+/// generators of the speaker's presentation, in application order with
+/// their exponents.
+///
+/// The path is the proof and it travels beside the tape (26, as the
+/// contraction certificate does); it is never a coordinate of the form,
+/// because the geodesic on the tape quotients it away (1.5) and law 12
+/// admits only what the form re-derives. Two minds reach one vertex by
+/// two paths — one address, two proofs (13.10, 23.9) — and the ledger
+/// tells them apart where the address cannot.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Path {
+    /// The word vertex this path reaches.
+    pub vertex: crate::transducer::address::Address,
+    /// The generators cited, by address, with their exponents.
+    pub generators: Vec<(crate::transducer::address::Address, i64)>,
+    /// Whether the generators alone compose to the vertex. False when the
+    /// presentation reached part of it and A22 peeled the residue.
+    pub whole: bool,
+}
+
+impl Path {
+    pub fn to_bytes(&self, out: &mut Vec<u8>) {
+        crate::transducer::address::put_bytes(out, self.vertex.as_bytes());
+        out.extend_from_slice(&(self.generators.len() as u32).to_le_bytes());
+        for (a, e) in &self.generators {
+            crate::transducer::address::put_bytes(out, a.as_bytes());
+            out.extend_from_slice(&e.to_le_bytes());
+        }
+        out.push(u8::from(self.whole));
+    }
+
+    pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Path> {
+        let vertex = crate::transducer::address::Address::from(
+            crate::transducer::address::take_bytes(b, pos)?.to_vec(),
+        );
+        let n = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
+        *pos += 4;
+        let mut generators = Vec::with_capacity(n.min(64));
+        for _ in 0..n {
+            let a = crate::transducer::address::Address::from(
+                crate::transducer::address::take_bytes(b, pos)?.to_vec(),
+            );
+            let e = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+            *pos += 8;
+            generators.push((a, e));
+        }
+        let whole = *b.get(*pos)? == 1;
+        *pos += 1;
+        Some(Path { vertex, generators, whole })
+    }
+}

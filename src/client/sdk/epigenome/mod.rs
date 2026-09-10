@@ -7,5 +7,6 @@ pub mod atlas;
 pub mod comprehend;
 pub mod crystal;
 pub mod dialect;
-pub mod persist;
+pub mod path;
+mod persist;
 pub mod shed;
