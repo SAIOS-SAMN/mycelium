@@ -4271,14 +4271,23 @@ set aside against a listing (E1, E2); `settle.rs` what each closed act pays
   carrier in `MYC2`, `DEF1` and the genome is a height (45.4); no unix
   origin is persisted anywhere, and the mesh record carries genesis and
   epoch (45.5).
-- Genome (`crystallize` 1011 / `uncrystallize` 1025): `GEN2`; dialect,
+- **The genome section's tag is `GEN3`** (drift corrected 2026-09-10).
+  The code has written and refused on `GEN3` since the fibre-index tail
+  landed (`epigenome/persist.rs`); this chapter says `GEN2` at five
+  lines, and a sixth was added by the v7 paragraph below before the drift
+  was noticed. The tag on disk is the authority — `uncrystallize` refuses
+  anything else — so the name is corrected here rather than in the code,
+  and the older lines are left standing as the record of when each was
+  written (§5.4: nothing is amended silently). Every `GEN2` below that
+  names the genome section means `GEN3`.
+- Genome (`crystallize` 1011 / `uncrystallize` 1025): `GEN3`; dialect,
   ideas, and withheld forms never written; the epigenome is rebuilt by
   thinking, which is why it may be lost on restart and the genome may not
   (chapter 24.1); syllabus of opened letters (`SYL1`, chapter 37) when Part
   VI lands.
 - **The genome section does not change for v7** (ruled 2026-09-10).
-  `GEN2` writes forms as tapes, and a derivation is a coordinate *of a
-  tape* (50.2 step 2), so it persists inside what `GEN2` already writes.
+  `GEN3` writes forms as tapes, and a derivation is a coordinate *of a
+  tape* (50.2 step 2), so it persists inside what `GEN3` already writes.
   The generator index a mind reads its presentation from is not persisted
   either: like the axis index and the moduli index, it is rebuilt from
   the restored forms at `uncrystallize`, because it is a routing
