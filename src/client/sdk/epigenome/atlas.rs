@@ -76,6 +76,22 @@ impl Epigenome {
         // to this mind's presentation.
         if let Some(f) = crate::transducer::sentence::from_element_form(e) {
             crate::transducer::sentence::admit_generators(&mut self.generators, &addr, &f);
+            // 37.7: a generator the alphabet cannot spell, learned. Read
+            // from the vertex — cites nothing and A22 cannot spell its
+            // action — never from a flag on the tape.
+            for v in &f.vertices {
+                let crate::transducer::sentence::Vertex::Word { derivation, .. } = v else {
+                    continue;
+                };
+                if !derivation.generators.is_empty() {
+                    continue;
+                }
+                let spelled =
+                    crate::transducer::alphabet::factor_rotor(&derivation.rotor());
+                if !matches!(spelled, Some(Ok(_))) {
+                    eprintln!("  letter learned {:02x}{:02x}…", addr[0], addr[1]);
+                }
+            }
         }
     }
 

@@ -165,3 +165,74 @@ fn a_witness_that_does_not_carry_its_prime_is_refused_at_the_vertex() {
         "refused at the demand vertex, with its coordinate (50.9)"
     );
 }
+
+/// 37.7 — THE SYLLABUS TEACHES THE LETTER. A court that ruled a letter
+/// serves it as any ruled form; the mind learns it from the page's own
+/// bytes, files it under the versor chart of its rotor, and answers it as
+/// a generator to a versor whose norm the prime divides.
+///
+/// Taught through the page, not by direct insertion: what is proved is
+/// that the letter travels, which is the whole of what a syllabus is for.
+#[test]
+fn the_syllabus_teaches_a_letter_and_the_mind_then_holds_it_as_a_generator() {
+    use crate::client::sdk::Epigenome;
+    use crate::transducer::alphabet::Rotor;
+    use crate::transducer::element::Element as El;
+    let voice = [1u8; 32];
+    let said = demanding_sentence(quarter(1), 1, seventeen());
+
+    let mut k = Kernel::new();
+    assert_eq!(
+        k.perceive_speech(voice, &[0; 32], std::slice::from_ref(&said)),
+        vec![crate::anastome::dialogue::SPEECH_STOOD]
+    );
+    k.rule_all_provisionals();
+    let cover = k.genesis_cover().expect("measured");
+    k.enroll([9; 32], cover);
+    let ruled: Vec<Vec<u8>> = k.ruled_addrs.fiber(crate::network::nerve::ROOT).map(|(a, _)| a).collect();
+    for a in &ruled {
+        k.confirm_peer_holds_addrs(&[Address::from(a.clone())], [9; 32]);
+    }
+    assert_eq!(k.adjoined(), 1, "the court holds one letter");
+
+    // THE PAGE. Served from the root as an empty mind is seeded, and
+    // learned from its bytes.
+    let page = k.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20);
+    assert!(!page.is_empty(), "the syllabus serves what the court ruled");
+    let mut epi = Epigenome::new();
+    for bytes in &page {
+        let _ = epi.learn(bytes);
+    }
+
+    // The mind now holds the letter as a GENERATOR, at the chart a versor
+    // carrying that prime reads.
+    let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
+    let target = Rotor::scalar(q(15)).add(&Rotor::blade(0b0011, q(8)));
+    let chart = crate::transducer::sentence::versor_chart_of(&target).expect("a chart");
+    let held = crate::transducer::family::Crystal::generators_under(
+        &epi,
+        &chart,
+        &mut crate::physics::Physics::default().stroke(),
+    );
+    assert!(
+        held.iter().any(|(_, _, g)| {
+            g.letters().is_empty()
+                && !matches!(crate::transducer::alphabet::factor_rotor(&g.rotor()), Some(Ok(_)))
+        }),
+        "the taught letter is offered as a generator the alphabet cannot spell"
+    );
+
+    // And it is the one the court ruled, by address: the page carried the
+    // letter itself and not a re-derivation of it.
+    let taught: Vec<Vec<u8>> = page
+        .iter()
+        .filter_map(|b| {
+            let mut p = 0usize;
+            El::from_bytes(b, &mut p).map(|e| e.address().into_vec())
+        })
+        .collect();
+    assert!(
+        ruled.iter().any(|a| taught.contains(a)),
+        "the page carries an address this court ruled"
+    );
+}
