@@ -6824,9 +6824,11 @@ family/perceive.rs         word_form → factor_rotor; demand_vertex NEW; body_o
 family/pair.rs             pair_form: F steps 1–5; the edge transport on every face
 sentence/form/carrier.rs   Form::loops_of composes FormFace.edge around a cycle; holonomy read in the stabilizer up to conjugacy
 client/sdk/entity/think.rs withhold_form stands the sentence withheld and holds it; hold_thought DELETED (hold_chain holds a chain as the pair form of its scene); attest(chain) unreachable from a withheld form (L6); from a served listing until L8
-court/verdict/replay.rs    replay_form_with: G steps 1–4; REFUSE_NOT_A_SENTENCE, REFUSE_VERTEX_BODY, REFUSE_EDGE, REFUSE_DEMAND_UNTYPED
-server/cognition/reduce.rs reduce_proven, reduce_germ: no Irreducible(from_residual*); a demand vertex is listed by kind; a chain is refused
-server/cognition/germinate/ingest.rs   commit_germ lists demand vertices, never a residual
+court/verdict/replay.rs    replay_form_with: G steps 1–4; REFUSE_NOT_A_SENTENCE, REFUSE_VERTEX_BODY, REFUSE_EDGE, REFUSE_DEMAND_UNTYPED (L7)
+court/verdict/body.rs      vertices_carry_family (23.1 step 3), edges_rederive_family (step 4), remainder_undeclared (step 7 on the closed sub-complex) — G on the court's copy of the family (L7)
+server/cognition/germinate/listing.rs  bind_percept_family: the adjudicated pair is the sentence's family (23.8); list_demands: `court demand listed` per demand vertex (L7)
+server/cognition/reduce.rs percept_family (the court's copy of the pair); percept_elements lists no form without a vertex that acts (50.5, L7); reduce_proven, reduce_germ: no Irreducible(from_residual*) (L8); a demand vertex is listed by kind; a chain is refused
+server/cognition/germinate/ingest.rs   commit_germ lists demand vertices, never a residual (L8)
 ```
 
 Tests (chapter 39): `a_sentence_reconstructs_every_body_or_is_refused`,
