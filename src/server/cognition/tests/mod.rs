@@ -8,6 +8,7 @@ mod book;
 mod cocycles;
 mod contraction;
 mod court;
+mod depth;
 mod era;
 mod extraction;
 mod awaiting;

@@ -9,6 +9,7 @@ mod basis;
 mod book;
 mod cocycle;
 mod court;
+mod depth;
 mod germinate;
 mod identity;
 mod kernel;

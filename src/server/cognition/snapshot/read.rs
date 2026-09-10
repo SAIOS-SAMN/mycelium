@@ -521,6 +521,12 @@ impl Kernel {
                 self.deflations.insert(addr, mag);
             }
         }
+        // L15: the depth index is DERIVED and never persisted, so a
+        // restored court reads it back off its own chain — the receipts
+        // it wrote and the peer receipts it admitted — exactly as it read
+        // them when they arrived. Left out, every restored court read
+        // depth zero for every address it had ever ruled.
+        self.rebuild_attestors();
         // Unruled connections that survived the prune re-enter the docket.
         let held: Vec<Element> = self
             .basis

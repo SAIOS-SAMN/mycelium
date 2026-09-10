@@ -283,6 +283,22 @@ pub struct Kernel {
     /// is the enumeration law 3 forbids. Written at the two sites that
     /// write `discoverers` and nowhere else, so the two cannot diverge.
     pub(crate) discovered_by: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
+    /// L15, 45.1, 1.9 — WHO ATTESTED WHAT: the committed address of every
+    /// receipt this court holds → the signer and the kind of act, with
+    /// the K it stood at. Outer key is the address; inner is the signer's
+    /// verifying key followed by the act's kind byte, both written out
+    /// (A21), so the reading is by content and never by an act digest —
+    /// `operator_hash` names WHICH operation, and is never reasoned on.
+    ///
+    /// DEPTH IS NOT HERE. This is the index; the depth of an address is
+    /// the number of DISTINCT signers among these entries whose kind is
+    /// `Install`, `Ruling` or `Adopted`, computed at the read and stored
+    /// nowhere (law 12). Without the index that read walks the whole
+    /// chain per address, which is law 3's enumeration.
+    ///
+    /// Derived, never persisted: rebuilt from the chain's own receipts at
+    /// restore, like the axis and moduli indices.
+    pub(crate) attestors: crate::network::nerve::Keyed<crate::network::nerve::Keyed<u64>>,
     /// Per-voice occupancy of open draws, keyed by vk.
     pub(crate) drawn: crate::network::nerve::Keyed<[u64; 4]>,
     /// Per-voice recall fee it could not cover, per lane (MU-ECONOMY §3.1
@@ -437,6 +453,7 @@ impl Kernel {
         match &verdict {
             crate::court::admission::Admitted::Parent(p) => {
                 self.chain.admit(r.clone());
+                self.note_attestor(r);
                 self.pending_parents.insert(p.hash, p.clone());
             }
             crate::court::admission::Admitted::Equivocation { k, .. } => {
@@ -461,6 +478,7 @@ impl Kernel {
             match self.admissions.admit_backfilled(r, |p| chain.height_of(&p.hash)) {
                 crate::court::admission::Admitted::Parent(_) => {
                     self.chain.admit(r.clone());
+                    self.note_attestor(r);
                     n += 1;
                 }
                 crate::court::admission::Admitted::Stale => n += 1,

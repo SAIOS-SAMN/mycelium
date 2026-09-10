@@ -209,9 +209,19 @@ impl Kernel {
             .fiber(crate::network::nerve::ROOT)
             .map(|(_, p)| p.clone())
             .collect();
-        if self.chain.append(kind, addr.as_ref(), op, parents).is_none() {
-            self.pending_parents = queued;
-            self.chain.append(kind, addr.as_ref(), op, Vec::new());
+        // L15: this court's own act joins the depth index where it joins
+        // the chain, so the two cannot disagree. `append` hands back the
+        // receipt it wrote, which is the one to record — not a member
+        // read back by position (rule 15).
+        let written = match self.chain.append(kind, addr.as_ref(), op, parents) {
+            Some(r) => Some(r.clone()),
+            None => {
+                self.pending_parents = queued;
+                self.chain.append(kind, addr.as_ref(), op, Vec::new()).cloned()
+            }
+        };
+        if let Some(r) = written {
+            self.note_attestor(&r);
         }
     }
 
