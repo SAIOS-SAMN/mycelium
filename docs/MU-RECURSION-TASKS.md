@@ -706,6 +706,26 @@ syllabus"; an index assigned in open order is a total order across nodes
 (law 9), so the letter is named by content and the syllabus page's height
 is the epoch (37.7 P4).
 
+### The scalar rulings of 2026-09-09 and the gates (the operator's triage; rows opened 2026-09-10)
+
+Eight sites where a scalar collapsed a volume, ruled 2026-09-09 with the
+order in which each lands relative to L7, L8 and L9, and the §4.4 gates
+ruled to precede L7 and L8. One row per commit.
+
+| id | directive | chapters | status |
+|---|---|---|---|
+| L7a | **`Contemplation::boundary_norm` returns the four-lane measure** of the held remainders, never their sum (law 5): `[u64; 4]`, the caller reads per lane, the test claims the lanes. | law 5, 25 | open — pre-L7 |
+| L7b | **The contemplation's floors.** `Contemplation::hold` (`volume[2].max(1)`), `Bubble::expand_with` (`potential[2] … .max(1)`), `retire_on_t` (`room.max(1)`, `t.max(1)`), `merge`'s torse yield (`(ℓ − 1).max(1)`): a T extent of zero is zero, a room of zero is no room, a torsion yields what its period measures; T never paces a thought (law 9, rule 5, Cut B+1 C4). | law 9, rule 5, 24.1, 25.1 | open — pre-L7 |
+| L7c | **`versor_between` returns the coset's canonical representative** (50.2 step 1 as ruled): every candidate verified, the verifying ones the coset, the one returned least in A21 order of its rotation read in 50.4's block order after A1's sign step — never the first that verified. `blade::coset_representative`, its allow row in the rule-4 gate earned. Claim: a square body yields one versor whatever the candidate order. | 50.2, 50.3, 50.4, 16.4 | open — pre-L7 |
+| L7d | **`greedy_within` pairs first-found in support order** (rule 15). RULING ASKED 2026-09-09, unanswered: "pairing is monochromatic and hue transitions belong to γ" — does a same-cell recolour (one body, hue 1 → hue 2) stay one carried pair under the gauge, and when two input bodies of one chart each carry onto two output bodies, is the pairing the one whose edge transports are canonical (50.3's exchange) or are both held as sections (`Source{multiplicity}`)? Not implemented on a guess (§8.4). | 50.3, 50.5, 20, 21 | open — awaiting the ruling |
+| L7e | **The §4.4 gates** for rules 2, 4, 11 and 15 with the `OWED` ratchet (MU-STANDARDS §4.4 as amended 2026-09-10); rule 10 stays a review rule. Each gate has its own tests; the `OWED` tables are the measurement of 2026-09-10 and only shrink. | §4.1, §4.4 | open — pre-L7 |
+| L7f | **`axis_germ`: no word count on lane H**; the holonomic magnitude is the torsion order (ruling 3). RULING ASKED: the H lane of an axis whose transition reads `Order::Infinite`. Lands with L7. | 12.6, 15.3, 25 | open — with L7 |
+| L8a | **`commit_germ`'s chain arms retired** — folded into L8's row. | 50.6 (3) | with L8 |
+| L9a | **`anchor::derive` and `derive_carrying_all`**: `.min(255)` on the component count, `truncate(32)` on the carriers, `size()` as a term's rank — ruling 6 replaces the three by ideal and support inclusion; the A9 text is written before the code, pre-L9. | A9, 16.9 | open — ruling pre-L9 |
+
+Order within the set: L7a · L7b · L7c · L7e, then L7 (with L7f), L8 (with
+L8a), L9, L9a; L7d when ruled.
+
 ## Backtrack ledger
 
 What was lost, when, and what it cost, so that it is paid once.

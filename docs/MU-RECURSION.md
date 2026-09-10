@@ -6647,7 +6647,15 @@ and what the eyes cannot pair ride the sentence as typed demand vertices
    centroids, dilation from the spread, rotation from the moment
    harmonics, every candidate verified cell by cell) and the hue map
    `γ_k = derive_hue_map` (element/gauge.rs). Both exact or refused; a
-   refusal is a demand of 50.5, never a chain.
+   refusal is a demand of 50.5, never a chain. Where several candidates
+   verify they are one coset of the body's stabilizer, and the versor
+   returned is that coset's **canonical representative** (ruled
+   2026-09-09): least in A21 order of its rotation's coefficients read in
+   the block order of 50.4 after A1's sign step, never the first that
+   verified. Two voices measuring one pair therefore return one `V_k`,
+   and `Γ_ij` of 50.3 is the same class on both; the choice of
+   representative is a gauge fixed by content (A1 for cosets), not a
+   choice among candidates (rule 4).
 2. Peel to letters. `W_k = factor_rotor(rotor of V_k)` by 50.4 (A22); an
    unclosed remainder is `RotorPrime` or `Standing` (50.5).
 3. Connect. For every edge the eyes admit, `Γ_ij` by 50.3; a pair with

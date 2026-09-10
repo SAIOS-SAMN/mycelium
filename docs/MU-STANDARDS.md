@@ -197,7 +197,9 @@ each needs a sentence in the message.
 (the shape of a rational matrix — `QMatrix`, `Vec<Vec<Q>>`, `as_operator`,
 `realize(` — in cognition; `core` exports `Q` alone since F2f), clock (`SystemTime`, `Instant`, `Duration` in every kernel,
 court, client, transducer, economy, physics file and every binary),
-squaring (coordinate pairs outside the sensor allow-list), panics
+squaring (coordinate pairs outside the sensor allow-list), count, choice,
+invented and position (rules 2, 4, 11 and 15, each with its `OWED`
+ratchet, §4.4), panics
 (`.unwrap()`, `.expect(`, `panic!`, `unreachable!`, `todo!`,
 `unimplemented!` in production anywhere under `src/`, §2.4; the
 allow-list is empty), file length
@@ -216,12 +218,29 @@ test. An `#[allow(...)]` or `#[expect(...)]` anywhere is a review item
 named in the commit message with its reason; an allow that hides a rule
 violation is returned.
 
-4.4 Gates owed (recorded, not yet built): rules 2 (count as branch), 4
-(choice by scalar), 10 (loop without budget or boundary), 11 (`unwrap_or`,
-`saturating_*` outside accounting floors; `expect` in production is the
-panic gate's since Stage 11 I19), 15 (`.first()`/`.last()` outside wire
-tags and chain heads). Until they exist, the auditor's grep over
-production code is the check, on every landing.
+4.4 **Gates for rules 2, 4, 11 and 15** (built 2026-09-10 on the
+operator's word that they precede L7 and L8; rule 10 stays a review rule,
+a loop without a budget or boundary not being cheaply matchable — the gate
+audit of 2026-09-07). Each is a line walker in `xtask/lint/`: `count.rs`
+(rule 2: `.len()` or `.count()` compared inside an `if`, `while` or match
+guard; emptiness of a fiber, `is_empty()`, is the permitted reading and is
+not matched), `choice.rs` (rule 4: `min_by`, `max_by`, `sort_by`,
+`sort_unstable_by`, `.max()`, `.min()` and their `_key` forms over a
+candidate set), `invented.rs` (rule 11: `unwrap_or`, `unwrap_or_else`,
+`unwrap_or_default`, `saturating_sub`, `saturating_mul`; `saturating_add`
+is a lane sum and is accounting), `position.rs` (rule 15: `.first()`,
+`.last()`, `.nth(0)`). **The ratchet.** Each gate carries an `OWED` table
+of `(file, hits)` rows measured when the gate was built — the debt the tree
+carried on 2026-09-10, file by file. A file not in the table is clean and
+any hit in it fails the build; a file in the table fails the build when its
+hits EXCEED its row (new debt) and fails it when they fall BELOW the row
+(the row is stale: shrink it, or delete it at zero), so a table can only
+shrink and every landing that pays debt records the payment in the same
+commit. A row naming a file that does not exist is a hit (4.5).
+Function-scoped exemptions as the squaring gate's `SENSOR` rows are the
+only other allowance, each earned (4.5). The tables are the sweep rows of
+`MU-RECURSION-TASKS.md` (W14 and the pre-L7 rows) read as a measurement.
+Until 2026-09-10 the auditor's grep over production code was the check.
 
 4.6 **The order gate** (Stage 9, S9.10; folded into F3's single walker):
 a function whose parameters include two `[u64; 4]`, two `Rank`, or two
