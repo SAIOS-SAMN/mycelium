@@ -11,6 +11,7 @@ use std::path::Path;
 pub(crate) const GATE: Gate = Gate {
     name: "enumeration",
     allow: &[],
+    owed: &[],
     scan,
 };
 

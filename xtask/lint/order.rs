@@ -26,6 +26,7 @@ const AWAITING_READING: &[(&str, &str)] = &[];
 pub(crate) const GATE: Gate = Gate {
     name: "order",
     allow: &[],
+    owed: &[],
     scan,
 };
 

@@ -8,7 +8,8 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// One rule, its allow-list, and the scan it runs on a file's source.
+/// One rule, its allow-list, the debt it still owes, and the scan it runs
+/// on a file's source.
 pub(crate) struct Gate {
     /// What the rule is called in a hit line.
     pub(crate) name: &'static str,
@@ -16,6 +17,12 @@ pub(crate) struct Gate {
     /// is exempt. Matched against the walked path, so `network/wire.rs`
     /// names one file and never a directory.
     pub(crate) allow: &'static [(&'static str, &'static str)],
+    /// THE RATCHET (MU-STANDARDS 4.4): path suffixes the gate applies to
+    /// and the number of hits each carried when the row was measured. A
+    /// file above its row is new debt and fails; a file below its row is a
+    /// stale row and fails until the row shrinks; a row naming no walked
+    /// file fails. The table only shrinks.
+    pub(crate) owed: &'static [(&'static str, usize)],
     /// Read one file's production source and push a hit per offending line.
     pub(crate) scan: fn(&Path, &str, &mut Vec<String>),
 }
@@ -24,6 +31,31 @@ impl Gate {
     fn allows(&self, path: &Path) -> Option<&'static str> {
         let p = path.to_string_lossy().replace('\\', "/");
         self.allow.iter().find(|(f, _)| p.ends_with(f)).map(|(f, _)| *f)
+    }
+
+    fn owes(&self, path: &Path) -> Option<(&'static str, usize)> {
+        let p = path.to_string_lossy().replace('\\', "/");
+        self.owed.iter().find(|(f, _)| p.ends_with(f)).copied()
+    }
+}
+
+/// What a file's hits mean under its owed row: at the row, nothing; above
+/// it, every hit and the debt named; below it, the row is stale and says
+/// what to shrink it to. A pure reading, so the tests feed it directly.
+pub(crate) fn ratchet(gate: &str, file: &str, owed: usize, mine: Vec<String>, out: &mut Vec<String>) {
+    let n = mine.len();
+    match n.cmp(&owed) {
+        std::cmp::Ordering::Equal => {}
+        std::cmp::Ordering::Greater => {
+            out.extend(mine);
+            out.push(format!(
+                "{file}: {n} hits, {owed} owed under the {gate} gate — new debt; pay it, or the row is wrong"
+            ));
+        }
+        std::cmp::Ordering::Less => out.push(match n {
+            0 => format!("{file}: 0 hits, {owed} owed under the {gate} gate — the debt is paid; delete the row"),
+            _ => format!("{file}: {n} hits, {owed} owed under the {gate} gate — the debt shrank; set the row to {n}"),
+        }),
     }
 }
 
@@ -64,6 +96,7 @@ pub(crate) fn run_gates(
     // reached from the other side — it reads as a sanctioned exception and
     // sanctions nothing.
     let mut earned: Vec<(&'static str, &'static str)> = Vec::new();
+    let mut owed_seen: Vec<(&'static str, &'static str)> = Vec::new();
     for path in files {
         if super::length::is_declared_test_file(path) {
             continue;
@@ -79,7 +112,15 @@ pub(crate) fn run_gates(
                         earned.push((gate.name, row));
                     }
                 }
-                None => (gate.scan)(path, &production, hits),
+                None => match gate.owes(path) {
+                    Some((row, owed)) => {
+                        owed_seen.push((gate.name, row));
+                        let mut mine = Vec::new();
+                        (gate.scan)(path, &production, &mut mine);
+                        ratchet(gate.name, row, owed, mine, hits);
+                    }
+                    None => (gate.scan)(path, &production, hits),
+                },
             }
         }
     }
@@ -88,6 +129,14 @@ pub(crate) fn run_gates(
             if !earned.iter().any(|(g, f)| *g == gate.name && f == file) {
                 hits.push(format!(
                     "{file}: the {} gate allows it ({why}) and would not have hit it — delete the row",
+                    gate.name
+                ));
+            }
+        }
+        for (file, owed) in gate.owed {
+            if !owed_seen.iter().any(|(g, f)| *g == gate.name && f == file) {
+                hits.push(format!(
+                    "{file}: the {} gate owes it {owed} and no such file was walked — delete the row",
                     gate.name
                 ));
             }
@@ -160,7 +209,33 @@ fn strip_tests(src: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::strip_tests;
+    use super::{ratchet, strip_tests};
+
+    /// MU-STANDARDS 4.4: the ratchet only shrinks. A file at its row is
+    /// silent; above it, every hit is reported and the debt named; below
+    /// it, the row is stale and the report says what to set it to, or to
+    /// delete it when the debt is paid.
+    #[test]
+    fn the_ratchet_is_silent_at_the_row_and_refuses_above_and_below_it() {
+        let hit = |n: usize| -> Vec<String> { (0..n).map(|i| format!("src/x.rs:{i}: hit")).collect() };
+        let mut at = Vec::new();
+        ratchet("count", "x.rs", 2, hit(2), &mut at);
+        assert!(at.is_empty(), "at the row nothing is said: {at:?}");
+
+        let mut above = Vec::new();
+        ratchet("count", "x.rs", 2, hit(3), &mut above);
+        assert_eq!(above.len(), 4, "three hits and the debt line: {above:?}");
+        assert!(above[3].contains("new debt"), "{}", above[3]);
+
+        let mut below = Vec::new();
+        ratchet("count", "x.rs", 2, hit(1), &mut below);
+        assert_eq!(below.len(), 1, "one line: the row is stale: {below:?}");
+        assert!(below[0].contains("set the row to 1"), "{}", below[0]);
+
+        let mut paid = Vec::new();
+        ratchet("count", "x.rs", 2, hit(0), &mut paid);
+        assert!(paid[0].contains("delete the row"), "{}", paid[0]);
+    }
 
     /// F3f: `#[cfg(test)]` on a DECLARATION disarms. Left armed, the next
     /// braced item in the file — production code — was blanked and read by

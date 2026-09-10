@@ -32,6 +32,7 @@ const SENSOR: &[(&str, &str)] = &[
 pub(crate) const GATE: Gate = Gate {
     name: "squaring",
     allow: &[],
+    owed: &[],
     scan,
 };
 

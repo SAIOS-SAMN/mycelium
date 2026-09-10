@@ -15,6 +15,7 @@ pub(crate) const GATE: Gate = Gate {
         ("network/wire.rs", "frame integrity over bytes on the wire"),
         ("network/nerve/cover.rs", "the cold routing index, until A4 replaces the roots with heights"),
     ],
+    owed: &[],
     scan,
 };
 
