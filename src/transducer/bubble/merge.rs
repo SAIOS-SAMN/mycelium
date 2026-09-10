@@ -124,7 +124,9 @@ impl Contemplation {
                             &before,
                             nk.clone(),
                             payload,
-                            [0, 0, (ell as u64).saturating_sub(1).max(1), 0],
+                            // What the period measures (L7b): a torsion of
+                            // period ℓ closes ℓ − 1, never floored to one.
+                            [0, 0, (ell as u64).saturating_sub(1), 0],
                         ) {
                             self.pending_rewrites.push(rw);
                         }

@@ -11,7 +11,9 @@ impl Contemplation {
     /// the largest T magnitude (ticks since its charts last moved) goes to
     /// a cavity chart; pivot_on reads it back when its chart moves.
     pub fn retire_on_t(&mut self, room: usize) {
-        if self.bubbles.len() <= room.max(1) {
+        // A room of zero is no room (L7b, rule 5): nothing is floored so
+        // that one bubble is always kept; the reserve says how many stand.
+        if self.bubbles.len() <= room {
             return;
         }
         let now = self.now_k;
@@ -20,7 +22,9 @@ impl Contemplation {
             if !b.glued_by.is_empty() {
                 continue;
             }
-            let t = now.saturating_sub(b.moved_k).max(1);
+            // The receipts since the bubble's charts last moved — the FIFO
+            // head by the kernel's own K (law 9), zero when it moved now.
+            let t = now.saturating_sub(b.moved_k);
             match best {
                 Some((_, bt)) if t <= bt => {}
                 _ => best = Some((k.clone(), t)),

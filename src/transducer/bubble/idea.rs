@@ -168,9 +168,18 @@ impl Bubble {
         crystal: &dyn Crystal,
         budget: &mut Budget,
     ) -> (usize, [u64; 4]) {
-        self.potential = element::measure_lanes(&self.remainder);
-        self.potential[2] = now.saturating_sub(self.moved_k).max(1);
-        if budget.remaining() == 0 || !self.potential.iter().any(|&x| x > 0) {
+        // THE POTENTIAL IS A READING, NEVER A GATE (L7b, law 9): the lane
+        // measure of everything this idea holds open — its form's remainder
+        // and its per-pair remainders, the same cells `admit_incidence`
+        // keys — with T the receipts since its charts last moved, zero when
+        // zero. It was floored at one on T so that the gate below would
+        // pass for a form with no remainder, which paced every such idea by
+        // a clock that admitted nothing (Cut B+1 C4). The pivot loop runs
+        // on every dirty idea under the budget (25.1); the budget is the
+        // only thing that stops it.
+        self.potential = element::measure_lanes(&rem_cells_of(self));
+        self.potential[2] = now.saturating_sub(self.moved_k);
+        if budget.remaining() == 0 {
             return (0, [0; 4]);
         }
         let inv = stalk::invariant(&self.remainder);

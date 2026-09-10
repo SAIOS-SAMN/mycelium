@@ -364,8 +364,11 @@ impl Contemplation {
         let key = remainder_addr(&remainder);
         let inv = stalk::invariant(&remainder);
         let cover = cover_of(&inv);
-        let mut volume = element::measure_lanes(&remainder);
-        volume[2] = volume[2].max(1);
+        // The volume is the remainder's own measure (L7b): a T extent of
+        // zero is zero, and no lane is floored so that a gate downstream
+        // would pass — the pivot loop runs on every dirty idea (25.1), T
+        // paces nothing (law 9).
+        let volume = element::measure_lanes(&remainder);
         let mut horizon = Keyed::new();
         self.paint_seeded(&mut horizon);
         let bubble = Bubble {
