@@ -53,8 +53,29 @@ pub(crate) fn pages(kernel: &Mutex<Kernel>, mesh: &Mesh, dest: &str, vk: [u8; 32
         if !budget.spend() {
             return false;
         }
+        // ASK THE SIGNER THAT OWNS THE CHAIN, not the one that mentioned
+        // it. Every frontier entry went to `dest` — the peer whose digest
+        // reported the gap — so when a receipt of a cited a receipt of b,
+        // c asked A for B'S chain, and a serves another signer's receipts
+        // only as far as it happens to have admitted them itself. Measured
+        // on the fleet at epoch 11: `backfill ce02… 76..76 admitted 0
+        // cites 244b… K 75`, repeating, the chase never closing because
+        // the question was put to a node that could not answer it.
+        //
+        // The mesh already knows where each signer lives (`addrs`, written
+        // by `admit_peer_digest`), so the fetch is routed there. `dest`
+        // remains the fallback for a signer this node has no address for —
+        // a proxy hop is worse than the direct ask and better than none.
+        let at = match mesh.addrs.lock() {
+            Ok(a) => a.get(&who).cloned(),
+            Err(_) => None,
+        };
+        let to_ask: &str = match &at {
+            Some(a) => a.as_str(),
+            None => dest,
+        };
         let req = dialogue::encode_receipts_request(&mesh.vk, &who, lo, hi);
-        let Some((reply, _)) = tell_peer(dest, req) else { return false };
+        let Some((reply, _)) = tell_peer(to_ask, req) else { return false };
         if crate::transport::is_deferred(&reply) {
             return false;
         }

@@ -164,9 +164,30 @@ pub fn aperture_strokes() -> usize {
 /// There was no cap of any kind: the only sink was `lapse_docket`, gated
 /// on a round trip that had never been measured. Measured at epoch 10, the
 /// book grew 250 listings a minute and the node ran out of memory.
+///
+/// THE BOOK IS AN EPHEMERAL SCRATCHPAD, not a store. My first cut read
+/// 20,000 listings per GiB of headroom, which on this box is about 200,000
+/// listings — some five gigabytes at the ~26 KiB a listing weighs. That is
+/// an open door with a number written on it, not a boundary: hypha b sat
+/// at 2,888 listings and 197 MB, nowhere near it, growing freely. What the
+/// book holds is the work in flight; anything the mesh has not answered
+/// within a horizon is not in flight, it is drift.
+pub const BOOK_HIGH: usize = 1024;
+
+/// Where the sweep drains TO once the ceiling is crossed. A single
+/// threshold makes the sweep chatter on and off at the boundary; draining
+/// to a low watermark means one pass does the work and the next has none
+/// to do.
+pub const BOOK_LOW: usize = 256;
+
+/// The book's ceiling: the high watermark, or what this node's memory can
+/// carry, whichever is smaller. On any machine the mesh runs on the
+/// watermark is the binding one; the measured term is there so a node with
+/// less memory than the watermark assumes is still bounded by its own.
 pub fn book_ceiling() -> usize {
     const PER_GIB: u64 = 20_000;
-    (mem_available_gib().max(1) * PER_GIB) as usize
+    let measured = (mem_available_gib().max(1) * PER_GIB) as usize;
+    measured.min(BOOK_HIGH)
 }
 
 /// Deadline for one nerve dial, in strokes: an aperture of the measured

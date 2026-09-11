@@ -60,25 +60,36 @@ impl Kernel {
         let room: [u64; 4] = std::array::from_fn(|l| room[l] as u64);
         let mut lapse: Vec<(Address, u64)> = Vec::new();
         let mut last: Option<Vec<u8>> = None;
-        // Is the book past what this node's memory can carry? Read once
-        // for the pass, against the measured ceiling.
-        let over = self.pending.len() > crate::physics::book_ceiling();
-        // THE SWEEP HAS ITS OWN QUOTA. `court_stroke` builds ONE stroke
-        // and hands it to the docket orbit first, then here, then to the
-        // fills — so on a busy court the orbit spent all three and the
-        // eviction walk reached no listing at all. A book whose only sink
-        // is starved by whatever ran before it in the same function has no
-        // sink. Measured on the fleet at epoch 11: hypha b's book climbed
-        // 1701 → 1920 while a and c, with nothing on their dockets, held
-        // at zero.
+        // HOW DEEP IS THE BACKLOG? Read once for the pass, against the
+        // high watermark, and answered as the DEPTH — what the book holds
+        // beyond what it is entitled to — not as a yes or no.
+        let held = self.pending.len();
+        // The branch is what makes the subtraction exact: nothing is
+        // clamped, and a book under the low watermark has no depth.
+        let depth = match held > crate::physics::BOOK_LOW {
+            true => held - crate::physics::BOOK_LOW,
+            false => 0,
+        };
+        let over = held > crate::physics::book_ceiling();
+        // THE SWEEP HAS ITS OWN QUOTA, AND THE QUOTA IS THE BACKLOG.
         //
-        // The quota is the court's own stroke, taken fresh, so the sweep
-        // is paced by the same metabolism as everything else and is not
-        // competing with it (45.7, rule 10). Above the ceiling it is an
-        // aperture of strokes, because a book past the manifold is not a
-        // pacing question.
+        // `court_stroke` built ONE stroke and handed it to the docket orbit
+        // first, then here, then to the fills, so on a busy court the orbit
+        // spent it and the eviction walk reached no listing at all. Giving
+        // the sweep its own stroke removed the COMPETITION and left the
+        // RATE: three spends a pass against an inflow of some 250 listings
+        // a minute, which loses by two orders of magnitude. Measured on the
+        // fleet at epoch 11 — hypha b climbed 1701 → 1920 → 2888 while a
+        // and c held at zero — and that is the same fixed-scalar trap that
+        // choked extraction and the wire frame.
+        //
+        // A sink sized by a constant cannot match a source it does not
+        // read. Over the watermark the sweep is sized by the DEPTH it has
+        // to clear, so one pass drains to `BOOK_LOW` rather than shaving
+        // three off the top and losing ground; under it, one stroke, which
+        // is all a book in flight needs.
         let mut sweep = match over {
-            true => self.physics.stroke_n(crate::physics::aperture_strokes()),
+            true => self.physics.stroke_n(depth),
             false => self.physics.stroke(),
         };
         let budget = &mut sweep;
