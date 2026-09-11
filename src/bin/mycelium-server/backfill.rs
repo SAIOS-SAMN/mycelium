@@ -21,37 +21,71 @@ use std::sync::Mutex;
 /// Answers whether the chain reached it, so the caller admits the
 /// reporting frame again.
 pub(crate) fn pages(kernel: &Mutex<Kernel>, mesh: &Mesh, dest: &str, vk: [u8; 32], to: u64) -> bool {
-    let Some(hi) = to.checked_sub(1) else { return true };
+    let Some(hi0) = to.checked_sub(1) else { return true };
     let Some(mut budget) = kernel.lock().ok().map(|mut k| k.stroke()) else { return false };
-    loop {
+    // THE FETCH FRONTIER: the signer this gap was reported for, and every
+    // signer a fetched receipt turns out to cite and this node does not
+    // hold. A back-fill of one linear chain cannot close on a mesh whose
+    // receipts cite each other — the causal order is a poset — so a hole
+    // across signers is pushed here and chased, rather than ending the
+    // page (47.2 step 3). The frontier is bounded by the exchange's own
+    // stroke, which every fetch spends from.
+    let mut frontier: Vec<([u8; 32], u64)> = vec![(vk, hi0)];
+    let mut asked: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
+    while let Some((who, hi)) = frontier.pop() {
         let held = match kernel.lock() {
-            Ok(k) => k.known_head(&vk),
+            Ok(k) => k.known_head(&who),
             Err(_) => return false,
         };
         let lo = held.map_or(0, |(head_k, _)| head_k + 1);
         if lo > hi {
-            return true;
+            continue;
         }
+        // One range asked once per back-fill, so a citation two receipts
+        // both name is fetched once and a cycle in the frontier ends.
+        let mut key = who.to_vec();
+        key.extend_from_slice(&lo.to_le_bytes());
+        key.extend_from_slice(&hi.to_le_bytes());
+        if asked.contains(&key) {
+            continue;
+        }
+        asked.insert(&key, ());
         if !budget.spend() {
             return false;
         }
-        let req = dialogue::encode_receipts_request(&mesh.vk, &vk, lo, hi);
+        let req = dialogue::encode_receipts_request(&mesh.vk, &who, lo, hi);
         let Some((reply, _)) = tell_peer(dest, req) else { return false };
         if crate::transport::is_deferred(&reply) {
             return false;
         }
         let Some(receipts) = dialogue::decode_receipts_reply(&reply) else { return false };
-        let n = match kernel.lock() {
+        let (n, missing) = match kernel.lock() {
             Ok(mut k) => k.admit_backfill(&receipts),
             Err(_) => return false,
         };
         let last = lo + n.saturating_sub(1) as u64;
         eprintln!(
-            "  court receipt backfill {:02x}{:02x}… {lo}..{last} admitted {n}",
-            vk[0], vk[1]
+            "  court receipt backfill {:02x}{:02x}… {lo}..{last} admitted {n}{}",
+            who[0],
+            who[1],
+            match &missing {
+                Some(p) => format!(" cites {:02x}{:02x}… K {}", p.vk[0], p.vk[1], p.k),
+                None => String::new(),
+            }
         );
-        if n == 0 {
-            return false;
+        match missing {
+            // The page stopped on a citation: fetch that signer up to the
+            // K it was cited at, then come back to this range — the
+            // receipts are ingested parents before children.
+            Some(p) => {
+                frontier.push((who, hi));
+                frontier.push((p.vk, p.k));
+            }
+            // Nothing missing and nothing admitted: this peer cannot serve
+            // the range, and the gap does not close here.
+            None if n == 0 => return false,
+            None => frontier.push((who, hi)),
         }
     }
+    true
 }

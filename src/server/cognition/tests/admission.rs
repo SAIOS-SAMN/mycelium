@@ -341,23 +341,23 @@ assert!(matches!(
 ));
 assert_eq!(k.pending_parents(), 0, "nothing is cited while the chain is gapped");
 assert!(k.known_head(&vk).is_none());
-assert_eq!(k.admit_backfill(&peer.receipts()[..2]), 2, "a page of two admits by its chain");
+assert_eq!(k.admit_backfill(&peer.receipts()[..2]), (2, None), "a page of two admits by its chain, citing nothing unheld");
 assert_eq!(k.known_head(&vk).map(|h| h.0), Some(1), "the head this node holds moved to K 1");
 assert!(matches!(
     k.admit_receipt(origin, super::common::verified(&pre(&head), &key), &head),
     Admitted::Gap { from: 1, to: 3, .. }
 ), "the page stopped short: still a gap");
 assert_eq!(k.pending_parents(), 0, "and still nothing cited");
-assert_eq!(k.admit_backfill(&peer.receipts()[2..3]), 1, "the next page closes the chain");
+assert_eq!(k.admit_backfill(&peer.receipts()[2..3]), (1, None), "the next page closes the chain");
 assert!(matches!(
     k.admit_receipt(origin, super::common::verified(&pre(&head), &key), &head),
     Admitted::Parent(_)
 ), "the head admits once the chain reaches it");
 assert_eq!(k.pending_parents(), 1, "only the closing frame is cited");
-assert_eq!(k.admit_backfill(&peer.receipts()[..1]), 1, "a receipt already held is passed over");
+assert_eq!(k.admit_backfill(&peer.receipts()[..1]), (1, None), "a receipt already held is passed over");
 let mut forged = peer.receipts()[3].clone();
 forged.delta = b"x".to_vec();
-assert_eq!(k.admit_backfill(&[forged]), 0, "a receipt that does not re-derive admits nothing");
+assert_eq!(k.admit_backfill(&[forged]), (0, None), "a receipt that does not re-derive admits nothing, and names no hole: it is the AUTHOR that is wrong, not a citation this node lacks");
 assert_eq!(
     k.receipts_range(&vk, 0, 9, 100),
     peer.receipts().to_vec(),

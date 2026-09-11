@@ -24,6 +24,21 @@ pub enum Admitted {
     Stale,
     /// Two hashes at one K on one chain (47.4).
     Equivocation { k: u64, held: [u8; 32], claimed: [u8; 32] },
+    /// A CAUSAL HOLE ACROSS SIGNERS: the receipt re-derives its height
+    /// from the predecessor and every parent it cites, and one of those
+    /// citations names a receipt of ANOTHER signer this node does not
+    /// hold. That is not a refusal — the frame is well formed and its
+    /// author is not at fault — it is the mesh's own shape.
+    ///
+    /// THE MESH IS A POSET, NOT A LOG. This arm was `Refused(REFUSE_
+    /// RECEIPT)`, and `admit_backfill` broke on it, so a back-fill that
+    /// paged one signer's linear chain died the moment that chain cited a
+    /// third party. Measured on the fleet at epoch 10: `court receipt
+    /// backfill ce02… 940..940 admitted 0`, fifty-two times, forever — the
+    /// gap could not close by construction, so no peer receipt was ever
+    /// admitted as a parent and no docket entry could reach a witness.
+    /// Answering the missing citation instead lets the caller chase it.
+    MissingParent(Parent),
     /// Refused before any carrier was touched, with the reason.
     Refused(&'static str),
 }
@@ -34,7 +49,7 @@ impl Admitted {
     /// a refusal its own reason; a parent or a gap refuses nothing.
     pub fn reason(&self) -> Option<&'static str> {
         match self {
-            Admitted::Parent(_) | Admitted::Gap { .. } => None,
+            Admitted::Parent(_) | Admitted::Gap { .. } | Admitted::MissingParent(_) => None,
             Admitted::Stale => Some(REFUSE_RECEIPT_STALE),
             Admitted::Equivocation { .. } => Some(REFUSE_EQUIVOCATION),
             Admitted::Refused(why) => Some(why),
@@ -360,12 +375,18 @@ impl Admissions {
                 hash: r.prev_receipt_hash,
             };
             let Some(mut m) = parent_height(&prev) else {
-                return Admitted::Refused(REFUSE_RECEIPT);
+                return Admitted::MissingParent(prev);
             };
+            // A CITATION THIS NODE DOES NOT HOLD IS A HOLE, NOT A FAULT.
+            // Both arms above answered `Refused(REFUSE_RECEIPT)`, which
+            // says the author is wrong; what is actually true is that the
+            // reader is missing a receipt — of the predecessor, or of
+            // another signer entirely — and the answer names which one so
+            // it can be fetched (47.2 step 3).
             for p in &r.parents {
                 match parent_height(p) {
                     Some(h) => m = m.max(h),
-                    None => return Admitted::Refused(REFUSE_RECEIPT),
+                    None => return Admitted::MissingParent(p.clone()),
                 }
             }
             1 + m

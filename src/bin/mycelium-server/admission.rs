@@ -223,7 +223,10 @@ impl AdmissionTally {
         use mycelium::court::admission::Admitted;
         match r {
             Ok(Admitted::Parent(_)) => self.parent += 1,
-            Ok(Admitted::Gap { .. }) => self.gap += 1,
+            // A gap in one signer's chain and a citation of another signer
+            // this node does not hold are both holes, and the back-fill
+            // chases both; the tally reads them as one.
+            Ok(Admitted::Gap { .. }) | Ok(Admitted::MissingParent(_)) => self.gap += 1,
             Ok(Admitted::Stale) => self.stale += 1,
             Ok(Admitted::Equivocation { .. }) => self.equivocation += 1,
             Ok(Admitted::Refused(why)) => {

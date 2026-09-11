@@ -1,5 +1,11 @@
-// THE READING BOUND (MU-STANDARDS 1.1): no source file over 600 lines, and
-// the list of what is still over it.
+// THE READING BOUND (MU-STANDARDS 1.1): no source file over 1200 lines,
+// and the list of what is still over it.
+//
+// RAISED FROM 600 TO 1200 by the operator, 2026-09-11. At 600 the bound
+// was being paid in prose: a file at the edge refused a correct change
+// until a comment was shaved, which trades the reasoning a reader needs
+// for a line count. The bound exists so a file can be read whole, and
+// 1200 lines still can be.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -10,7 +16,7 @@ pub(crate) const AWAITING_SPLIT: &[(&str, &str)] = &[
 
 
 pub(crate) fn lint_file_length(roots: &[PathBuf], hits: &mut Vec<String>) -> Result<(), String> {
-    const BOUND: usize = 600;
+    const BOUND: usize = 1200;
     fn owed(path: &Path) -> Option<&'static str> {
         let p = path.to_string_lossy().replace('\\', "/");
         AWAITING_SPLIT

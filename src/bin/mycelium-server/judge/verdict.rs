@@ -118,6 +118,20 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         // signer or any peer holding them". This receiver dockets nothing
         // and fetches nothing, so the span it asks for has no local entry
         // waiting to close against it. Recorded, not papered over.
+        // A CITATION THIS NODE DOES NOT HOLD is the same shape of answer:
+        // the frame is well formed and its author is not at fault, and
+        // what is missing is a receipt of the signer the citation names.
+        // Asked for as the span it sits at, which is what the back-fill
+        // chases across signers (47.2 step 3).
+        Admitted::MissingParent(p) => {
+            eprintln!(
+                "  court receipt cites {:02x}{:02x}… K {} unheld, backfill",
+                p.vk[0], p.vk[1], p.k
+            );
+            drop(k);
+            say(s, dialogue::Ruled::Gap { from: p.k, to: p.k + 1 });
+            return;
+        }
         Admitted::Gap { vk, from, to } => {
             eprintln!("  court receipt gap {:02x}{:02x}… {from}→{to} backfill", vk[0], vk[1]);
             drop(k);

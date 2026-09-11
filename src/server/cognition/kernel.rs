@@ -486,9 +486,19 @@ impl Kernel {
     /// as known so later heights re-derive through them; one already held
     /// at its K is passed over. Nothing here is cited as a parent: the
     /// signed frame that closes the gap is, when it is admitted again.
-    /// Returns how many the page advanced by; the first that does not
-    /// admit ends it.
-    pub fn admit_backfill(&mut self, receipts: &[crate::chronometry::KStepReceipt]) -> usize {
+    /// Answers how many the page advanced by AND THE CITATION THAT STOPPED
+    /// IT, when one did: the `(signer, K)` of a receipt this node does not
+    /// hold and cannot re-derive a height without.
+    ///
+    /// THE MESH IS A DIRECTED ACYCLIC GRAPH, NOT ONE SIGNER'S LOG. This
+    /// broke on anything that was not `Parent` or `Stale`, so a back-fill
+    /// paging A's chain died the moment A's receipt cited B — which every
+    /// receipt on a live mesh does. On the fleet at epoch 10 that read
+    /// `backfill ce02… 940..940 admitted 0`, fifty-two times, forever.
+    pub fn admit_backfill(
+        &mut self,
+        receipts: &[crate::chronometry::KStepReceipt],
+    ) -> (usize, Option<crate::chronometry::Parent>) {
         let mut n = 0usize;
         for r in receipts {
             let chain = &self.chain;
@@ -499,10 +509,14 @@ impl Kernel {
                     n += 1;
                 }
                 crate::court::admission::Admitted::Stale => n += 1,
+                // The hole is named and handed back; the receipt that
+                // exposed it is not admitted and not refused, it waits for
+                // the citation to arrive (topological order).
+                crate::court::admission::Admitted::MissingParent(p) => return (n, Some(p)),
                 _ => break,
             }
         }
-        n
+        (n, None)
     }
 
     /// 47.4 ON A THIRD PARTY'S PROOF (`ACT_EQUIVOCATION`, I21): the proof

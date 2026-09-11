@@ -212,10 +212,19 @@ fn claimed_height_that_does_not_rederive_is_refused() {
         Admitted::Refused(REFUSE_RECEIPT),
         "a height that does not re-derive is refused"
     );
-    assert_eq!(
-        a.admit((G, E), &prefix_for(&r1), &r1, |_| None),
-        Admitted::Refused(REFUSE_RECEIPT),
-        "a parent this node does not hold is UNMEASURED, never height 0"
+    // A PARENT THIS NODE DOES NOT HOLD IS UNMEASURED, never height 0 —
+    // and it is not the AUTHOR'S fault either. This asserted
+    // `Refused(REFUSE_RECEIPT)`, which says the frame is wrong; what is
+    // true is that the reader is missing a receipt, and the answer now
+    // names which one so the back-fill can fetch it. The mesh's causal
+    // order is a poset: a receipt cites peers, and paging one signer's
+    // linear chain can never close a hole that lies on another's.
+    assert!(
+        matches!(
+            a.admit((G, E), &prefix_for(&r1), &r1, |_| None),
+            Admitted::MissingParent(_)
+        ),
+        "an unheld citation is the hole it names, not a refusal of the frame"
     );
     // The prefix and the receipt are one claim, not two opinions.
     let mut split = prefix_for(&r1);
