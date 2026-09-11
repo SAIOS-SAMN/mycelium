@@ -119,9 +119,13 @@ pub fn replay_form_at(
     crystal: &dyn crate::transducer::family::Crystal,
 ) -> Option<Refusal> {
     let tape = |reason: &'static str| Refusal::of_tape(reason, spoken);
-    let Some(f) = spoken.form() else {
+    // A SPOKEN word under replay: the court re-derives it from the tape it
+    // was sent, which is the point of a replay, so the decode is named
+    // (L16).
+    let Some(f) = crate::transducer::sentence::from_element_form(spoken) else {
         return Some(tape(REFUSE_FORM_TAPE));
     };
+    let f = &f;
     if f.depth != f.depth_of() {
         return Some(tape(REFUSE_GLUED_DEPTH));
     }

@@ -62,7 +62,7 @@ fn an_infinite_class_no_word_discharges_opens_an_axis_and_is_never_filed() {
 
     // The court replays the opened axis from the tape and the loop.
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("crystallizes");
-    let back = e.form().cloned().expect("tape");
+    let back = crate::transducer::sentence::from_element_form(&e).expect("tape");
     assert_eq!(back.axes.len(), 1, "the axis rides the tape");
     assert_eq!(
         crate::court::verdict::blind_replay(&e),
@@ -143,7 +143,7 @@ fn filed_torsion_chord_replays_or_refuses() {
         carries_torsion(&e),
         "the form carries the filed cycle"
     );
-    let keyed = e.form().cloned().expect("v2 tape");
+    let keyed = crate::transducer::sentence::from_element_form(&e).expect("v2 tape");
     let (class, chord) = keyed
         .torsion
         .fiber(crate::network::nerve::ROOT)
@@ -164,7 +164,7 @@ fn filed_torsion_chord_replays_or_refuses() {
         None,
         "a filed torsion chord replays: the chord carries the holonomy"
     );
-    let mut f = e.form().cloned().expect("v2 tape");
+    let mut f = crate::transducer::sentence::from_element_form(&e).expect("v2 tape");
     let mag = e.magnitude();
     let Some(ci) = f
         .faces
@@ -180,7 +180,7 @@ fn filed_torsion_chord_replays_or_refuses() {
         Some(crate::court::verdict::REFUSE_LOOP),
         "a chord whose holonomy is not the filed class refuses the loop"
     );
-    let mut gone = e.form().cloned().expect("v2 tape");
+    let mut gone = crate::transducer::sentence::from_element_form(&e).expect("v2 tape");
     gone.torsion = Keyed::new();
     let missing = as_element_form(&gone, mag).expect("torsion stripped");
     assert_eq!(

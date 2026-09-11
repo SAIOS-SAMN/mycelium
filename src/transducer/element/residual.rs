@@ -61,7 +61,6 @@ pub fn from_residual(g: &ResidualGerm) -> Element {
     let mut e = Element::identity();
     e.word = residual_word(&centered);
     e.address.take();
-    e.form.take();
     e.mag = measure_lanes(&centered);
     e.sub = centered;
     e

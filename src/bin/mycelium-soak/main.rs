@@ -215,14 +215,17 @@ fn walk(dir: &str, limit: usize, stroke: Option<usize>) -> Result<Reading, Strin
             continue;
         };
         // Only a closed form is citable (13.6, `Form::glue`), so only a
-        // closed form is stood here for the next family to reach.
-        let Some(form) = spoken.form() else {
+        // closed form is stood here for the next family to reach. The
+        // decode is `Held::of`'s, which is the same decode the dialect
+        // performs when it stands the sentence a line below (L16).
+        let held = mycelium::transducer::element::Held::of(spoken);
+        let Some(form) = held.form() else {
             continue;
         };
         let Some(()) = form.is_closed().then_some(()) else {
             continue;
         };
-        if epi.stand_dialect_at(spoken, k, k).is_some() {
+        if epi.stand_dialect_at(held.element().clone(), k, k).is_some() {
             r.stood += 1;
             r.comprehended += 1;
         }

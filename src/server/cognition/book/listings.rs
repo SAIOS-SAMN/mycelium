@@ -261,14 +261,16 @@ impl Kernel {
         if word.is_sentence() {
             let inv = crate::transducer::stalk::invariant_of(&word);
             let members: Vec<Vec<u8>> = self.stalks.fiber(&inv).iter().filter(|&a| a != addr).cloned().collect();
-            if let Some(na) = word.form().cloned() {
+            if let Some(na) = crate::transducer::sentence::from_element_form(&word) {
                 let mut survivor = crate::transducer::address::Address::from_bytes(addr);
                 for sib in members {
-                    // The sibling's form off the HELD element (L16): the
-                    // sibling stays in the book and its tape is parsed
-                    // once, where cloning it first parsed the tape again
-                    // on every comparison.
-                    let Some(nb) = self.word_at(&sib).and_then(|e| e.form()).cloned() else {
+                    // THE SIBLING'S FORM OFF THE HELD WORD (L16): the
+                    // sibling is installed, so its form is a field and this
+                    // comparison parses nothing. A sibling the court has
+                    // not installed has no form to compare and is skipped —
+                    // which is what `condense_on` wants, since it absorbs
+                    // into the basis.
+                    let Some(nb) = self.held_word(&sib).and_then(|e| e.form()).cloned() else {
                         continue;
                     };
                     if crate::transducer::sentence::coboundary_gauge(&na, &nb).is_some() {
@@ -474,8 +476,12 @@ impl Kernel {
             // 1.8: a ruled form's word vertices are the generators this
             // court can compose a spoken path through (50.2 step 2). Read
             // before the carriers are touched, so the word's borrow ends
-            // here and not across them.
-            let form = w.form().cloned();
+            // here and not across them. `word_at` reaches the cavity and
+            // the provisional as well as the basis, so the decode is named
+            // here rather than read off a held word that may not exist yet:
+            // `ruled_admit` runs BEFORE the word is installed on some paths
+            // (L16).
+            let form = crate::transducer::sentence::from_element_form(w);
             self.ruled.admit(&inv, addr);
             crate::transducer::sentence::admit_words(&mut self.axis_index, &inv, &words);
             if let Some(f) = form {
@@ -517,8 +523,12 @@ impl Kernel {
         if !self.ruled_contains(addr) && !self.cavity_book.contains(addr) {
             return None;
         }
-        let e = self.word_at(addr)?;
-        e.form().cloned()
+        // A RULED WORD is installed and its form is a field; a CAVITY word
+        // is not, and its tape is decoded here by name (L16).
+        if let Some(f) = self.held_word(addr).and_then(|h| h.form()) {
+            return Some(f.clone());
+        }
+        crate::transducer::sentence::from_element_form(self.word_at(addr)?)
     }
 
     /// THE DOCKET (Step 5): every provisional word, exported for the court's

@@ -100,7 +100,7 @@ fn two_courts_open_one_letter_from_two_witnesses_and_the_count_leaves_zero() {
             .iter()
             .find(|a| {
                 k.provisional.get(a).is_some_and(|e| {
-                    e.form().cloned().is_some_and(|f| {
+                    crate::transducer::sentence::from_element_form(e).is_some_and(|f| {
                         f.vertices.iter().any(|v| match v {
                             Vertex::Word { derivation, .. } => {
                                 derivation.generators.is_empty()

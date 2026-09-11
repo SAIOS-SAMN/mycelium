@@ -249,7 +249,7 @@ fn rank_lost_refused() {
     );
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("filed tape");
     assert_eq!(replay_form(&e, &|_| None), None, "filed torsion replays");
-    let mut gone = e.form().cloned().expect("v2");
+    let mut gone = crate::transducer::sentence::from_element_form(&e).expect("v2");
     gone.loops.clear();
     let bad = as_element_form(&gone, [1, 0, 0, 0]).expect("loops stripped");
     assert_eq!(
@@ -264,7 +264,7 @@ fn rank_lost_refused() {
     // court could not derive, admitted because it pointed the convenient
     // way. Duplicating a stored loop raises the tape's audit above the
     // forest's without touching a face.
-    let mut extra = e.form().cloned().expect("v2");
+    let mut extra = crate::transducer::sentence::from_element_form(&e).expect("v2");
     let held = extra.loops[0].clone();
     extra.loops.push(held);
     let over = as_element_form(&extra, [1, 0, 0, 0]).expect("loops duplicated");

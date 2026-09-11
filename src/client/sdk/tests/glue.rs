@@ -16,7 +16,7 @@ fn closed_form_and_body_chart() -> (Element, crate::transducer::stalk::Invariant
     let f = pair_form_uncrystallized(&family[0].0, &family[0].1, None);
     let mag = sentence_measure(&f, &family, &NoCrystal).expect("both bodies are spoken");
     let e = as_element_form(&f, mag).expect("a tape");
-    let chart = e.form().cloned()
+    let chart = crate::transducer::sentence::from_element_form(&e)
         .expect("the tape reads back")
         .vertices
         .iter()
@@ -38,7 +38,7 @@ fn closed_form_and_body_chart() -> (Element, crate::transducer::stalk::Invariant
 #[test]
 fn a_stood_form_is_found_at_the_chart_of_the_body_it_carries() {
     let (e, chart) = closed_form_and_body_chart();
-    let f = e.form().cloned().expect("the tape reads back");
+    let f = crate::transducer::sentence::from_element_form(&e).expect("the tape reads back");
     assert!(
         f.is_closed(),
         "the fixture's form is closed, so the crystal may return it at all"
@@ -155,7 +155,7 @@ fn a_restored_genome_factors_through_the_generators_it_was_taught() {
     // identity and the chart is the root: the claim is not that a
     // generator turns anything, it is that the mind offers the SAME
     // generators after a restart as before one.
-    let held = e.form().cloned().expect("the tape reads back");
+    let held = crate::transducer::sentence::from_element_form(&e).expect("the tape reads back");
     let charts: Vec<_> = crate::transducer::sentence::words_of_form(&held)
         .iter()
         .filter_map(crate::transducer::sentence::versor_chart)

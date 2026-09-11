@@ -5,6 +5,7 @@
 //! A21 vertex key, and the `SentenceRule` a form is spoken as.
 
 use super::form::*;
+use super::tape::from_element_form;
 use super::transport::*;
 use crate::network::nerve::{Keyed, ROOT};
 use crate::transducer::alphabet::Word;
@@ -302,7 +303,7 @@ pub fn rule_of_form(mut form: Form) -> SentenceRule {
 /// gauge) and face words. The body's absolute position is already quotiented
 /// on the chain; the bundle's carriage is meaning.
 pub fn vertex_address(e: &Element) -> Option<crate::transducer::address::Address> {
-    e.form().map(form_vertex_key)
+    from_element_form(e).map(|f| form_vertex_key(&f))
 }
 pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     let mut buf = vec![crate::transducer::address::TAG_FORM];
@@ -471,7 +472,7 @@ pub(crate) fn chart_of_form(f: &Form) -> Option<crate::transducer::stalk::Invari
 /// Chart of a sentence element. None when the tape does not decode or a
 /// vertex is off-plane. Never `[2,1,0,0]`.
 pub fn chart_of(e: &Element) -> Option<crate::transducer::stalk::Invariant> {
-    chart_of_form(e.form()?)
+    chart_of_form(&from_element_form(e)?)
 }
 
 pub(crate) fn vertex_match_key(form: &Form, i: u16) -> Option<Vec<u8>> {

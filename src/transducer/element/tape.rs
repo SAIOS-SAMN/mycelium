@@ -263,7 +263,6 @@ impl Element {
             transitions,
             address: std::sync::OnceLock::new(),
             profiles: std::sync::OnceLock::new(),
-            form: std::sync::OnceLock::new(),
             anchor,
         };
         e.sync_action_from_tape();

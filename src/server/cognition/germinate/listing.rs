@@ -68,7 +68,11 @@ impl Kernel {
     /// prices them under the sentence; under L8 they are listed beside its
     /// closed sub-complex.
     pub(crate) fn list_demands(&mut self, sentence: &Element, voice: &[u8; 32]) {
-        let Some(f) = sentence.form() else {
+        // A LISTED sentence: not on the basis, so the decode is named. It
+        // is taken ONCE here and the second read below is gone with it —
+        // the borrow that forced two reads ended with `Element::form`
+        // (L16).
+        let Some(f) = crate::transducer::sentence::from_element_form(sentence) else {
             return;
         };
         // 37.7 P2–P3 — THE COURT OPENS A LETTER. A `RotorPrime` demand
@@ -89,9 +93,6 @@ impl Kernel {
         for (kind, chart, bodies) in opened {
             self.open_letter(&kind, &chart, &bodies, voice);
         }
-        let Some(f) = sentence.form() else {
-            return;
-        };
         for (_, kind, chart, _) in f.demand_vertices() {
             let chart_key = chart.key();
             let prefix: String = chart_key.as_bytes().iter().take(2).map(|b| format!("{b:02x}")).collect();
@@ -322,7 +323,7 @@ impl Kernel {
     fn charge_loops(&mut self, word: &Element, mag: &[u64; 4]) {
         let witnesses = crate::transducer::torsion_witness::witness_thought(word);
         if witnesses.is_empty() {
-            let Some(f) = word.form() else {
+            let Some(f) = crate::transducer::sentence::from_element_form(word) else {
                 return;
             };
             for (w, _) in f.loop_words() {

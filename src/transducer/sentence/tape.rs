@@ -449,17 +449,18 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
 }
 
 /// Read a Form from a v6 tape. Every other version is refused.
-/// THE DECODER, AND THE ONE CALLER IT HAS (L16). It is `pub(crate)` and
-/// reached only through [`crate::transducer::element::Element::form`],
-/// which memoises the result on the element: the tape is parsed once for
-/// a word an organ holds, not once per read of it.
 ///
-/// It was `pub` and called at 81 sites — the epigenome's genome and
-/// dialect, the court's ruled cover and provisional docket, every replay,
-/// every glue, every listing — so the cipher's carrier was the working
-/// memory of both organs and every read re-parsed it. Narrowing the
-/// visibility is what keeps that from coming back: a new caller cannot
-/// reach the bytes without going through the form the organ already holds.
+/// THE DECODER, AND IT IS NAMED WHEREVER IT RUNS (L16). It was `pub` and
+/// called at 81 sites; then it was `pub(crate)` behind
+/// `Element::form`'s `OnceLock`, which parsed the tape once per COPY of
+/// the element rather than once per word, and had to be taken by hand at
+/// every mutation site.
+///
+/// Now the ORGANS hold `element::Held`, which decodes here exactly once —
+/// where the organ takes the word in — and re-decodes through
+/// `Held::update` when the word changes. A caller that has an element and
+/// no held word calls this by name, so the parse is visible at its own
+/// line and a reader can see that it is one.
 pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     if !e.is_sentence() {
         return None;
@@ -476,8 +477,8 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
 /// Empty when the word is not a sentence, or when the tape is v1 and the
 /// cycles live only on the element's residual section.
 pub fn form_torsion(e: &Element) -> Keyed<FiledLoop> {
-    match e.form() {
-        Some(f) => f.torsion.clone(),
+    match from_element_form(e) {
+        Some(f) => f.torsion,
         None => Keyed::new(),
     }
 }
@@ -486,7 +487,7 @@ pub fn form_torsion(e: &Element) -> Keyed<FiledLoop> {
 /// the residual element's section so a v1 tape that adopted torsion still
 /// reads as a bundle.
 pub fn carries_torsion(e: &Element) -> bool {
-    if let Some(f) = e.form() {
+    if let Some(f) = from_element_form(e) {
         if !f.torsion.is_empty() {
             return true;
         }

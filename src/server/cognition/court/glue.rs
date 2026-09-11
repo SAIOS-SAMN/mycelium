@@ -31,12 +31,14 @@ impl Kernel {
         let inv = crate::transducer::stalk::invariant_of(&spoken);
         let asg = element::assignment(spoken.sub());
         if spoken.is_sentence() {
-            if let Some(f) = spoken.form() {
+            // A sentence ARRIVING from a peer: not held here yet, so the
+            // decode is named (L16).
+            if let Some(f) = crate::transducer::sentence::from_element_form(&spoken) {
                 // A pair form's Word vertices are the percept's own bodies, not
                 // citations. Only Glued vertices name a held form that must resolve.
                 let missing = f.vertices.iter().any(|v| match v {
                     crate::transducer::sentence::Vertex::Glued { address, .. } => {
-                        address.clone() != addr && self.word_at(address).is_none()
+                        address.clone() != addr && self.word_at(address.as_bytes()).is_none()
                     }
                     _ => false,
                 });

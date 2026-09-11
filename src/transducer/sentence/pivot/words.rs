@@ -2,6 +2,7 @@
 // chart, admitted and retracted as coordinates.
 
 use super::*;
+use crate::transducer::sentence::tape::from_element_form;
 
 /// The axis index of a crystal (12.6, A16 step 3): chart → axis slot → M1
 /// word. Nested keyed reads, never a hash of the pair.
@@ -29,8 +30,8 @@ pub fn words_of_form(f: &Form) -> Vec<Word> {
 /// connection's letters.
 pub fn words_of_element(e: &Element) -> Vec<Word> {
     if e.is_sentence() {
-        return match e.form() {
-            Some(f) => words_of_form(f),
+        return match from_element_form(e) {
+            Some(f) => words_of_form(&f),
             None => Vec::new(),
         };
     }

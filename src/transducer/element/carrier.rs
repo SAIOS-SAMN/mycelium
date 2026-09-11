@@ -112,10 +112,17 @@ pub struct Element {
     /// body could be spoken with. Memoized; cleared wherever the fibre
     /// mutates. Never serialized.
     pub(crate) profiles: std::sync::OnceLock<Vec<(Vec<u8>, Vec<usize>)>>,
-    /// Decoded sentence Form, memoized from the description tape. Cleared
-    /// wherever the tape mutates. Never serialized.
-    pub(crate) form: std::sync::OnceLock<Option<crate::transducer::sentence::Form>>,
 }
+
+// `form: OnceLock<Option<Form>>` was here, with `Element::form()` decoding
+// the tape behind it on the first read (L16). It is deleted, not moved: a
+// decode cached inside a value that every organ clones is parsed once per
+// COPY and not once per word, and the lock had to be taken by hand at
+// `set_description` and `substance` — at every site that remembered to.
+// The organs hold `element::Held` now, which carries the form as a field
+// decoded where the word was taken in, and re-decodes with every mutation
+// through `Held::update`. A caller with an element and no held word has
+// `sentence::from_element_form`, which is the decode itself and says so.
 
 impl Element {
     /// The identity element — empty tape, identity action, no chain.
@@ -130,7 +137,6 @@ impl Element {
             transitions: Vec::new(),
             address: std::sync::OnceLock::new(),
             profiles: std::sync::OnceLock::new(),
-            form: std::sync::OnceLock::new(),
             anchor: None,
         }
     }
@@ -237,18 +243,10 @@ impl Element {
         &self.word
     }
 
-    /// Replace the description tape and drop the memoized address and form.
+    /// Replace the description tape and drop the memoized address.
     pub fn set_description(&mut self, word: Vec<u8>) {
         self.word = word;
         self.address.take();
-        self.form.take();
-    }
-
-    /// The sentence Form this word carries, decoded once from the tape.
-    pub fn form(&self) -> Option<&crate::transducer::sentence::Form> {
-        self.form
-            .get_or_init(|| crate::transducer::sentence::from_element_form(self))
-            .as_ref()
     }
 
     /// The free sections along the punctured axis (cycles live in `torsion`).
@@ -528,7 +526,6 @@ impl Element {
         let mut out = self.clone();
         out.word = Vec::new();
         out.address.take();
-        out.form.take();
         if let Some(v) = out.versor() {
             if let Some(t) = translator_of(&v) {
                 if !same_versor(&t, &identity_versor()) {

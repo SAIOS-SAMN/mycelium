@@ -366,7 +366,7 @@ assert!(
     on.iter().any(|(_, _, st)| *st == Standing::Ruled),
     "Crystal carries standing as a coordinate after promotion"
 );
-let body = e1.form().cloned()
+let body = crate::transducer::sentence::from_element_form(&e1)
     .expect("the tape reads back")
     .vertices
     .iter()

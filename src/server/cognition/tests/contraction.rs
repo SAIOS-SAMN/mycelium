@@ -75,7 +75,8 @@ fn the_court_verifies_a_contraction_before_it_replays_the_sentence() {
     assert_eq!(*kind, RefusalKind::VertexBody);
     // THE VOICE'S MOVE, on its own copy of the form: the demand's bodies
     // are the remainder the contracted form leaves on the voice's family.
-    let mut f = s.form().cloned().expect("the tape reads back");
+    let mut f =
+        crate::transducer::sentence::from_element_form(&s).expect("the tape reads back");
     let mut probe = f.clone();
     assert_eq!(probe.contract(*kind, at, &[]), Some(Contracted::Moved));
     let remainder: Vec<(i64, i64, u8, u8)> =

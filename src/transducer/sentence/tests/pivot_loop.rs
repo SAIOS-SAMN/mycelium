@@ -107,7 +107,8 @@ fn pivot_loop_discharges_held_word_and_vortices_a_pair() {
         None,
         "a certified discharge replays: every after-face is face_of, then the certificate"
     );
-    let mut tampered = e.form().cloned().expect("v2 tape");
+    let mut tampered =
+        crate::transducer::sentence::from_element_form(&e).expect("v2 tape");
     let fi = tampered
         .certificates
         .fiber(crate::network::nerve::ROOT)

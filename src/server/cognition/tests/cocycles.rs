@@ -141,7 +141,7 @@ assert_eq!(
     None,
     "second hearing is consilient"
 );
-let f = spoken.form().cloned().expect("v2 form");
+let f = crate::transducer::sentence::from_element_form(&spoken).expect("v2 form");
 let rep = torsion_loop_rotor(&f, &class).expect("the loop names the class");
 let mut k2 = Kernel::new();
 let mut cx = crate::transducer::cech::Complex::new();

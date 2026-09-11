@@ -44,7 +44,8 @@ fn a_remainder_a_demand_names_is_valid_and_replays_on_the_family() {
 #[test]
 fn an_undeclared_remainder_refuses_the_sentence_as_not_closed() {
     let (family, e) = a_recolour_with_a_creation();
-    let mut f = e.form().cloned().expect("the tape reads back");
+    let mut f =
+        crate::transducer::sentence::from_element_form(&e).expect("the tape reads back");
     f.vertices.retain(|v| !matches!(v, Vertex::Demand { .. }));
     f.reindex();
     let tampered = as_element_form(&f, e.magnitude()).expect("a tape");

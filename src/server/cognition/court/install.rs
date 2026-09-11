@@ -121,7 +121,9 @@ impl Kernel {
         if pay.iter().all(|&m| m == 0) {
             return Vec::new();
         }
-        let Some(f) = w.form() else {
+        // The word being INSTALLED — not yet on the basis, so the decode is
+        // named (L16).
+        let Some(f) = crate::transducer::sentence::from_element_form(w) else {
             return Vec::new();
         };
         let mut cited: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
@@ -202,7 +204,8 @@ impl Kernel {
 
     pub(crate) fn note_form_citations(&mut self, addr: &[u8], w: &Element) {
         use crate::transducer::sentence::Vertex;
-        let Some(f) = w.form() else {
+        // The word being INSTALLED, decoded by name (L16).
+        let Some(f) = crate::transducer::sentence::from_element_form(w) else {
             return;
         };
         // 26 as ruled 2026-09-10: BOTH LEVELS are uses. A `Glued` vertex

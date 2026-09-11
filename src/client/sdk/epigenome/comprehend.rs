@@ -43,7 +43,9 @@ impl Epigenome {
         // A taught sentence is re-derived as a form: vertices, faces, loops.
         // Understanding is re-deriving its cochain, not matching its bytes.
         if utterance.is_sentence() {
-            if let Some(f) = utterance.form().cloned() {
+            // AN UTTERANCE, not a word this mind holds: the decode is named
+            // here, and re-deriving it as a form is the comprehension (L16).
+            if let Some(f) = crate::transducer::sentence::from_element_form(utterance) {
                 return self.comprehend_form(&f);
             }
             // A sentence tape that does not re-derive as a form: what the
@@ -342,7 +344,7 @@ impl Epigenome {
                 return None;
             }
             None => {
-                if let Some(f) = e.form() {
+                if let Some(f) = crate::transducer::sentence::from_element_form(&e) {
                     if f.rank().is_none() {
                         eprintln!(
                             "  syllabus refused {:02x}{:02x}…: {}",

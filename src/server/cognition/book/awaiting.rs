@@ -35,7 +35,9 @@ impl Kernel {
         s: &Element,
     ) -> Option<crate::transducer::address::Address> {
         use crate::transducer::sentence::Vertex;
-        let f = s.form()?;
+        // An ARRIVING sentence, not one this court holds: it has no held
+        // word to read a form off, so the decode is named here (L16).
+        let f = crate::transducer::sentence::from_element_form(s)?;
         for v in &f.vertices {
             match v {
                 Vertex::Glued { address, .. } if !self.ruled_contains(address.as_bytes()) => {

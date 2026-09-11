@@ -344,7 +344,6 @@ impl Element {
         e.word = word;
         e.mag = mag;
         e.address.take();
-        e.form.take();
         e
     }
 

@@ -337,15 +337,17 @@ impl Kernel {
         spoken: &Element,
     ) -> Vec<(Address, u32, Option<crate::transducer::alphabet::Rotor>)> {
         use crate::transducer::sentence::torsion_loop_rotor;
-        if let Some(f) = spoken.form() {
+        // A SPOKEN word, decoded by name (L16): it is what a voice sent,
+        // not what this court holds.
+        if let Some(f) = crate::transducer::sentence::from_element_form(spoken) {
             if !f.torsion.is_empty() {
                 return f
                     .torsion
                     .fiber(crate::network::nerve::ROOT)
-                            .map(|(k, filed)| {
-                                let ell = &filed.period;
-                        let rotor = torsion_loop_rotor(f, &k);
-                        (Address::from(k), *ell, rotor)
+                    .map(|(k, filed)| {
+                        let ell = filed.period;
+                        let rotor = torsion_loop_rotor(&f, &k);
+                        (Address::from(k), ell, rotor)
                     })
                     .collect();
             }

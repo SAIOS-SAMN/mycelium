@@ -48,7 +48,7 @@ impl Entity {
         // own chain; the address is sealed in the utterance index.
         let k = self.session.seal(crate::chronometry::ActKind::Refused, addr.as_bytes());
         self.sealed.insert(&addr, k);
-        let Some(mut form) = spoken.form().cloned() else {
+        let Some(mut form) = crate::transducer::sentence::from_element_form(spoken) else {
             return self.quiescent(spoken, train);
         };
         if kind == RefusalKind::MalformedComplex {
@@ -113,7 +113,7 @@ impl Entity {
             hx(addr.as_bytes()),
             hx(chart.key().as_bytes())
         );
-        if let Some(f) = spoken.form().cloned() {
+        if let Some(f) = crate::transducer::sentence::from_element_form(spoken) {
             self.hold_form(&f, train, &[]);
             self.contemplation.dirty.remove(&form_vertex_key(&f));
         }
@@ -173,7 +173,9 @@ impl Entity {
     /// The certificate a sentence cites: the contraction that produced the
     /// form it was minted from, read by the form's vertex key.
     pub(crate) fn certificate_for(&self, e: &Element) -> Option<Contraction> {
-        let k = crate::transducer::sentence::form_vertex_key(e.form()?);
+        let k = crate::transducer::sentence::form_vertex_key(
+            &crate::transducer::sentence::from_element_form(e)?,
+        );
         self.contractions.get(&k).cloned()
     }
 

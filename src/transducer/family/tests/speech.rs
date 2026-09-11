@@ -93,7 +93,7 @@ assert!(
     rule.form.vertices.len()
 );
 let e = crate::transducer::sentence::as_element_form(&rule.form, [1, 0, 0, 0]).expect("v2 tape");
-let back = e.form().cloned().expect("round trip");
+let back = crate::transducer::sentence::from_element_form(&e).expect("round trip");
 assert!(
     back.vertices
         .iter()
@@ -268,7 +268,7 @@ assert_eq!(
 );
 // The hypha reads the form back from the tape and measures the same
 // descent the voice measured.
-let back = minted.form().cloned().expect("v2 form");
+let back = crate::transducer::sentence::from_element_form(&minted).expect("v2 form");
 assert_eq!(back.vertices, rule.form.vertices, "vertices survive the tape");
 assert_eq!(back.faces, rule.form.faces, "faces survive the tape");
 assert_eq!(back.ratio, rule.form.ratio);

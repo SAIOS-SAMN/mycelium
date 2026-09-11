@@ -24,7 +24,8 @@ fn two_bars() -> (Vec<TrainPair>, Element) {
 
 /// The word vertices of a sentence, with the charts they act on.
 fn words_of(e: &Element) -> Vec<(crate::transducer::address::Address, crate::transducer::stalk::Invariant)> {
-    let f = e.form().cloned().expect("a sentence tape reads back");
+    let f = crate::transducer::sentence::from_element_form(e)
+        .expect("a sentence tape reads back");
     f.vertices
         .iter()
         .filter_map(|v| match v {
@@ -65,9 +66,10 @@ fn a_refusal_contracts_the_held_form_and_seals_the_address() {
             let [p] = pending.as_slice() else {
                 panic!("one contracted sentence waits to be uttered, got {}", pending.len());
             };
-            let f = p.sentence.form().cloned().expect("the contracted tape reads back");
+            let f = crate::transducer::sentence::from_element_form(&p.sentence)
+                .expect("the contracted tape reads back");
             assert!(
-                !f.vertices.iter().any(|v| matches!(v, Vertex::Word { address, .. } if *address == refused_addr)),
+                !f.vertices.iter().any(|v| matches!(v, Vertex::Word { address, .. } if address.as_bytes() == refused_addr.as_bytes())),
                 "the refused word is gone"
             );
             assert!(

@@ -237,7 +237,8 @@ fn a_depleted_lane_charges_a_sentence_by_its_loop_words() {
     assert!(!f.loop_words().is_empty(), "and the loop carries a holonomy word");
     let spoken = as_element_form(&f, [1, 1, 0, 0]).expect("a sentence tape");
     assert!(spoken.letters().is_none(), "a sentence is not a word: it has no letters");
-    let decoded = spoken.form().expect("and it decodes to the nerve its words live in");
+    let decoded = crate::transducer::sentence::from_element_form(&spoken)
+        .expect("and it decodes to the nerve its words live in");
     let steps: u64 = decoded
         .loop_words()
         .iter()

@@ -251,7 +251,9 @@ impl Entity {
         words.sort_by_key(|w| {
             let mut pos = 0usize;
             match crate::transducer::element::Element::from_bytes(w, &mut pos) {
-                Some(e) => match e.form() {
+                // An ARRIVING syllabus tape: nothing holds it yet, so the
+                // decode is named here (L16).
+                Some(e) => match crate::transducer::sentence::from_element_form(&e) {
                     Some(f) => (0u8, f.depth),
                     None => (1u8, 0),
                 },
